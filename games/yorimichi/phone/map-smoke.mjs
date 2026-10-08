@@ -1,21 +1,16 @@
 // World map on the phone page: opens the map, checks the sheet, the pins and the player marker, travels to a zone
 // by tapping its pin, confirms the game moved there, then returns to spawn. Needs a running stream
 // (atelier stream yorimichi start [--local]); STREAM_URL selects another endpoint or port.
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
-const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
-const page=await context.newPage();const events=[];
+const {browser,page}=await openTouchPage();const events=[];
 page.on('console',m=>{events.push(m.type()+': '+m.text());if(m.type()==='error')console.log(m.text());});
 page.on('pageerror',e=>{events.push('PAGE ERROR '+e.message);console.log('PAGE ERROR',e.message)});
 const report={};
 try{
- await page.goto(STREAM_URL);
- await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:90000});
- await page.click('#play');
- await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&v.videoWidth>0&&v.currentTime>0;},{},{timeout:60000});
+ await playTouchPage(page,{telemetry:'yorimichi',ready:90000,video:{timeout:60000}});
  await page.waitForTimeout(1000);
  report.start=await page.evaluate(()=>window.yorimichi.state);
  // (The phone page has had no skateboard button since the player changed on 7 September; the travel checks below still

@@ -18,7 +18,7 @@ the floor: the joint heights below are only a proxy for the sole.
 
 The proxy is the toe joint's height over the ground (GroundAt straight under it, which ignores the player): Cairo's own
 rest pose puts it at about 2.8-3.1 cm (cairo/export.json), inside the shoe, which is authored with its sole on the
-floor. Before the level-foot retarget (botw.py) Link's 27-degree toe-down rest tipped it to 1.46 cm, the shoe into the
+floor. Before the level-foot retarget (botw/retarget.py) Link's 27-degree toe-down rest tipped it to 1.46 cm, the shoe into the
 ground. Checks per place: standing, both toes within 1.5-5 cm; walking, each foot's planted height (its lowest 15% of
 frames) within 1.5-5 cm, and no frame under 0.5 cm. done.json lists every check with what it measured, log.json the per-frame heights, and the stills
 are saved beside them. Optional globals: SHOTS (False for no stills), ONLY (place names: concrete, grass), RIDER

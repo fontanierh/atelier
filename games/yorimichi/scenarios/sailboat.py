@@ -8,8 +8,6 @@ import argparse
 import csv
 import hashlib
 import json
-import os
-from pathlib import Path
 import struct
 import subprocess
 import sys
@@ -18,6 +16,8 @@ ROOT = yori.GAME
 PROJECT = ROOT / 'unreal'
 sys.path.insert(0, str(ROOT / 'tools'))
 from benchmark import other_render_processes
+from atelier.engine import unreal_root
+from atelier.provenance import head, status
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
         raise RuntimeError(f'Wait for active render jobs before native QA: {busy}')
     folder = yori.OUT / 'sailboat' / args.session
     folder.mkdir(parents=True, exist_ok=False)
-    engine = Path(os.environ.get('UE_ROOT', '/Users/Shared/Epic Games/UE_5.8'))
+    engine = unreal_root()
     command = [str(engine / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'),
                str(PROJECT / 'Yorimichi.uproject'), '-game', '-windowed',
                '-resx=1920', '-resy=1080',  '-sailboatqa',
@@ -39,8 +39,7 @@ def main():
     settings = PROJECT / 'Saved/settings.txt'
     before = settings.read_bytes() if settings.exists() else None
     manifest = dict(command=command,
-                    commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-                    dirty=subprocess.check_output(['git', 'status', '--porcelain'], text=True),
+                    commit=head(), dirty=status(),
                     native_sha256=hashlib.sha256((PROJECT / 'Binaries/Mac/libUnrealEditor-Yorimichi.dylib').read_bytes()).hexdigest(),
                     fixed_step=True, performance_evidence=False)
     (folder / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')

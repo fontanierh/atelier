@@ -1,14 +1,13 @@
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const out=new URL('sprint/',BUILD);await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
-const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});const page=await context.newPage();const report={};
+const {browser,context,page}=await openTouchPage();const report={};
 let original=2;
 const state=()=>page.evaluate(()=>window.yorimichi.state);
 async function rings(n){await page.locator('#settings-button').tap();await page.locator('#setting-stamina_rings').evaluate((el,n)=>{el.value=n;el.dispatchEvent(new Event('change',{bubbles:true}));},n);await page.waitForFunction(n=>window.yorimichi.state.staminaRings===n,n);await page.locator('#close-settings').tap();}
 try {
- await page.goto(STREAM_URL);await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});await page.locator('#play').click();
+ await playTouchPage(page,{telemetry:'yorimichi'});
  await page.waitForTimeout(1000);original=(await state()).staminaRings;report.initialRings=original;
  await rings(3);if(await page.locator('#stamina .stamina-fill').count()!==3)throw Error('Ring count not reflected');
  const disk=await fs.readFile(new URL('../unreal/Saved/settings.txt',import.meta.url),'utf8');if(!disk.includes('stamina_rings=3'))throw Error('Capacity not saved');

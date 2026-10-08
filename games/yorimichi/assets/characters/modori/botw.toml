@@ -1,0 +1,51 @@
+# Modori with the merged BOTW move set (botw/README.md): Link's moves and Cairo's donor clips retargeted onto him
+# (botw/retarget.py --character modori), imported by Scripts/import_botw_moveset.py (BOTW_CHARACTER=modori).
+mesh = "/Game/Modori/SK_Modori"
+base = "/Game/Modori/DA_ModoriBase"            # from import_modori.py
+dest = "/Game/Modori/Botw"
+definition = "/Game/Modori/DA_Modori"
+keep_base_actions = true                       # the base's own gestures stay beside the move set's
+
+# Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up). His coat
+# stands off his back and his hair reaches his collar: from Link's chest his sword and sheath sank 2 cm into the coat
+# with the hilt in his hair, and the shield 10 cm (YorimichiFit in game: clear from 4 and 6 cm back). The sword also
+# comes down 17 cm, so the hilt's tip sits at his collar below the hair (close shots standing and crouched: 4 cm down
+# still reached into it; 12 cm, standing clear, still met his hair crouched, his chest leant 70 degrees forward).
+[fit.push]
+sword = [6.5, 0.0, -17.0]
+sheath = [6.5, 0.0, -17.0]
+shield = [7.0, 0.0, 0.0]
+
+# Carried pieces pitched about his left axis (degrees; positive brings the lower end out backward) through the sword's
+# top end (its pommel), which keeps the place `push` gives it. His coat flares out over the small of his back, so the
+# sheath's lower half needs a little: 10 degrees left it 8-16 cm off the coat standing (#7633, posed-mesh gaps along
+# the sheath); 3, with `push` 1.5 cm further back, keeps it 2-6 cm off the coat standing and walking. Closer (push 4.5,
+# tilt 1) its lower end went 1-3 cm into the flared coat.
+[fit.tilt]
+sword = 3.0
+sheath = 3.0
+
+# Carried pieces turned across his back (degrees about his backward axis; positive takes the hilt toward his right
+# shoulder) about a mount on his upper back, `mount` of the sword's length below its pommel: turned 15 degrees, the
+# hilt sits beside his head standing and walking, clear of his hair (#7633).
+[fit]
+mount = 0.45
+
+[fit.yaw]
+sword = 15.0
+sheath = 15.0
+
+# Crouched, his chest leans 50-70 degrees forward and the carry above lay almost flat across his shoulders, the hilt at
+# his hair and the sheath's lower end 36 cm off his back (#7633: "really weird" crouched). The game blends to a second
+# carry as he crouches: the pieces turned by `yaw` degrees about his chest's backward axis (negative takes the lower
+# end in toward his spine), then pitched by `pitch` about the sword's lateral axis (negative brings the lower end in to
+# his back), both through `pivot` of the sword's length below its pommel, then moved `out` cm backward. Fitted against
+# his posed crouching mesh as a height field along his back (a sheath vertex under its outermost surface is inside him):
+# his rounded upper back is the nearest point, 2 cm under the sheath, its ends 6-12 cm off as a straight sheath must be
+# over that curve; the hilt stays 10 cm clear of his hair. Out 6 sank the sheath's middle 10 cm into his shoulders
+# (seen clipping in game 24).
+[fit.crouch]
+pivot = 0.0
+yaw = -25.0
+pitch = -25.0
+out = 12.0

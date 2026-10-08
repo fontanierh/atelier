@@ -22,10 +22,10 @@ uncertain POST. Blender stages run under the guard (`python -m atelier.safety.gu
 | Tripo mesh | `sword_trainer_pipeline.py tripo` | P2 multiview model, textured (120 credits) |
 | Clean-up | `sword_trainer_cleanup.py` | one mesh, facing +X, soles on z = 0, `cleanup.glb` and review renders |
 | Tripo rig | `sword_trainer_pipeline.py rig --source cleanup.glb` | rig check, then Tripo's biped rig with Mixamo names under `Root` (25 credits) |
-| Fingers and own clips | `sword_trainer_rig.py` | 30 finger bones (`tripo_fingers.add_fingers`), the character's own clips |
-| **Eyes, light and noise** | `tripo_character_texture.py` + `face.json` | flat painted colour, chips gone, eyes and brows solid, the face clean, brows and mouth redrawn (below) |
+| Fingers and own clips | `sword_trainer_rig.py` | 30 finger bones (`atelier.blender.tripo_fingers.add_fingers`), the character's own clips |
+| **Eyes, light and noise** | `atelier.blender.tripo_character_texture` + `face.json` | flat painted colour, chips gone, eyes and brows solid, the face clean, brows and mouth redrawn (below) |
 | Promote | `promote.py sword-trainer <revision>` | the blend and its records in `assets/characters/<id>/` |
-| Move set | `cairo/botw.py --character <id>` | the merged move set retargeted onto the body (106 Link clips and Cairo's own 4) |
+| Move set | `botw/retarget.py --character <id>` | the merged move set retargeted onto the body (106 Link clips and Cairo's own 4) |
 
 ## Eyes, light and noise: the fix almost every Tripo character needs
 
@@ -45,16 +45,17 @@ Tripo bakes things into a character that the game must do itself or draws differ
 - **Normal map.** Tripo's normal map embosses its own drawing: clean the colour and the old outlines come back as
   creases under any light. The game's character material uses no normal map; the review material should not either.
 
-`tools/tripo_character_texture.py` fixes all of it on the rig's blend (mesh, rig and clips untouched), from a small
-**face spec** (`assets/characters/<id>/face.json`), in three stages so each fits the small slot's 4 GiB:
+The platform's [`tripo_character_texture.py`](../../../platform/studio/atelier/blender/tripo_character_texture.py)
+fixes all of it on the rig's blend (mesh, rig and clips untouched), from a small **face spec**
+(`assets/characters/<id>/face.json`), in three stages so each fits the small slot's 4 GiB:
 
 ```sh
 # raster (Blender): the mesh in texture space -> <out>/work/raster.npz, pixels.npy
-blender -b --python-exit-code 1 --python tools/tripo_character_texture.py -- --input <Name>-Rig-rNN.blend --output <out> --stage raster
+blender -b --python-exit-code 1 --python platform/studio/atelier/blender/tripo_character_texture.py -- --input <Name>-Rig-rNN.blend --output <out> --stage raster
 # paint (plain Python, the repo's venv): the colour -> work/colour.npy, paint.json
-python tools/tripo_character_texture.py --input ... --output <out> --face <id>/face.json --stage paint
+python platform/studio/atelier/blender/tripo_character_texture.py --input ... --output <out> --face <id>/face.json --stage paint
 # pack (Blender): the texture packed into <out>/<Name>-rMM.blend, renders, source-manifest.json, texture.json
-blender -b --python-exit-code 1 --python tools/tripo_character_texture.py -- --input ... --output <out> --face ... --stage pack
+blender -b --python-exit-code 1 --python platform/studio/atelier/blender/tripo_character_texture.py -- --input ... --output <out> --face ... --stage pack
 ```
 
 Run each under the guard (`python -m atelier.safety.guarded --small 3 ...`; paint peaks near 3 GiB). Raster once;
@@ -119,7 +120,7 @@ rounds to find.
 
 - Tripo's biped rig (`spec: mixamo`) gives 23 bones (`Root`, `mixamorig:Hips`...) facing +X with the left on +Y, as
   Cairo's; with the 30 finger bones it is the humanoid contract, and `atelier.character.names.mixamo_aliases` renames it.
-- `tripo_fingers.add_fingers` slices the hand's vertices along the hand to find four fingers and the thumb standing up
+- `atelier.blender.tripo_fingers.add_fingers` slices the hand's vertices along the hand to find four fingers and the thumb standing up
   above them. `thumb_band` (0.2 for Kaede, 0.35 for the fox hunter's claws) is the top share of the hand's height kept
   for the thumb: an index finger that sits a little high otherwise counts as the thumb and only three fingers remain.
 - Poses for a character's own clips are written in its frame (`sword_trainer_rig.py pose`): each bone turns about an

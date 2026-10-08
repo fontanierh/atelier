@@ -1,6 +1,7 @@
 #include "ModoriCharacter.h"
 #include "AtelierData.h"
 #include "BotwMoveSet.h"
+#include "PlayableCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -22,13 +23,14 @@ namespace
         if (!bLoaded)
         {
             bLoaded = true;
-            FString Text;
-            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("modori/botw.json"))))
-                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Record);
+            Record = AtelierReadJson(AtelierDataPath(TEXT("modori/botw.json")));
         }
         return Record;
     }
 }
+
+static const FPlayableCharacter::FRegister RegisterModori({AModoriCharacter::Name(), &AModoriCharacter::StaticClass, &AModoriCharacter::IsBuilt,
+                                                           TEXT("unreal.modori_botw")});
 
 AModoriCharacter::AModoriCharacter()
 {

@@ -8,7 +8,7 @@
 #include "JapanNetwork.h"
 #include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
-#include "ModoriCharacter.h"
+#include "PlayableCharacter.h"
 #include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -104,7 +104,12 @@ bool UBikeComponent::LoadData()
  return Clips.Contains(TEXT("BikeRide"))&&Clips.Contains(TEXT("BikeMount"));
 }
 
-FString UBikeComponent::RiderRig() const { return Rider&&Rider->IsA<AModoriCharacter>()?TEXT("Modori"):TEXT("Cairo"); }
+FString UBikeComponent::RiderRig() const
+{
+ // A rider without bike clips of its own borrows the default character's (and Toggle turns it away unless they fit).
+ const FString Own=Rider?Rider->GetBikeRig():FString();
+ return Own.IsEmpty()?CastChecked<AWandererCharacter>(FPlayableCharacter::Default().Class()->GetDefaultObject())->GetBikeRig():Own;
+}
 
 void UBikeComponent::Initialize(AWandererCharacter* C)
 {
@@ -192,8 +197,7 @@ void UBikeComponent::PlayCue(FName Cue,float Volume,float Pitch)
  if(Range->Y>1&&Pick==LastVariant)Pick=Range->X+(Pick-Range->X+1)%Range->Y;   // no back-to-back repeat
  LastVariant=Pick;
  const FVector At=BikeRoot->GetComponentLocation()+FVector(0,0,50.f);
- UGameplayStatics::PlaySoundAtLocation(this,Waves[Pick],At,FRotator::ZeroRotator,Volume,Pitch,0.f,Attenuation);
- FAtelierAudioLog::Record(Waves[Pick],At,Volume,Pitch,false);
+ AtelierPlaySound(this,Waves[Pick],At,Volume,Pitch,Attenuation);
 }
 
 void UBikeComponent::ClipCues()
@@ -359,7 +363,7 @@ bool UBikeComponent::Toggle()
  if(!bAssetsReady||!Rider){Hint=TEXT("The bike is not installed");return false;}
  UAnimSequence* Ride=Sequences.FindRef(TEXT("BikeRide"));
  const USkeletalMesh* Body=Rider->GetMesh()->GetSkeletalMeshAsset();
- if(!Ride||!Body||Ride->GetSkeleton()!=Body->GetSkeleton()){Hint=TEXT("Only Cairo and Modori ride the bike");return false;}
+ if(!Ride||!Body||Ride->GetSkeleton()!=Body->GetSkeleton()){Hint=TEXT("This character has no bike clips");return false;}
  if(State==EState::Riding)
  {
   if(Speed>40.f){Hint=TEXT("Slow down to get off");return false;}

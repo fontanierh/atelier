@@ -1,8 +1,9 @@
 #include "JapanNetwork.h"
+#include "AtelierExit.h"
 #include "Components/CapsuleComponent.h"
 #include "AtelierData.h"
 #include "BotwRider.h"
-#include "CairoCharacter.h"
+#include "PlayableCharacter.h"
 #include "JapanWorld.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
@@ -16,9 +17,6 @@
 #include "Serialization/JsonSerializer.h"
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
-#include "Misc/OutputDeviceRedirector.h"
-#include <cstdlib>
-#include <cstdio>
 
 #ifndef YORIMICHI_NETWORK_BUILD_ID
 #define YORIMICHI_NETWORK_BUILD_ID "unprepared"
@@ -26,38 +24,9 @@
 
 namespace JapanNetwork
 {
-namespace
-{
-#if PLATFORM_MAC
-bool bFailedExit = false;
-void PreserveFailedExitStatus()
-{
-    // Runs after the ordinary engine shutdown. No UObject, delegate or log is
-    // accessed here. UE keeps module code loaded at shutdown; packaged code is monolithic.
-    if (bFailedExit) { std::fflush(nullptr); std::_Exit(1); }
-}
-#endif
-}
-
 void RequestFailureExit()
 {
-#if PLATFORM_MAC
-    // Mac inherits the generic RequestExitWithStatus, which discards ReturnCode.
-    // Register only on failure so an ordinary Solo/listen shutdown still returns zero.
-    if (!bFailedExit)
-    {
-        bFailedExit = true;
-        if (std::atexit(PreserveFailedExitStatus) != 0)
-        {
-            UE_LOG(LogTemp, Error, TEXT("Could not register the network failure exit status"));
-            if (GLog) GLog->Flush();
-            std::_Exit(1);
-        }
-    }
-    FPlatformMisc::RequestExit(false);
-#else
-    FPlatformMisc::RequestExitWithStatus(false, 1);
-#endif
+    AtelierRequestExit(1);
 }
 
 const TCHAR* Map() { return TEXT("/Game/Japan/Maps/Slice"); }
@@ -248,12 +217,13 @@ AJapanWorld* EnsureWorld(UWorld* World)
 }
 bool IsPlayableRider(const FString& Name)
 {
-    return (Name == ACairoCharacter::BotwName() && ACairoCharacter::HasBotw()) || ABotwRider::Available().Contains(Name);
+    const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
+    return (Character && Character->IsRequestable() && Character->Built()) || ABotwRider::Available().Contains(Name);
 }
 FString DefaultRider()
 {
     const FString Requested = ABotwRider::Requested();
-    return IsPlayableRider(Requested) ? Requested : ACairoCharacter::BotwName();
+    return IsPlayableRider(Requested) ? Requested : FPlayableCharacter::Default().MoveSet;   // shared games play the merged set
 }
 }
 

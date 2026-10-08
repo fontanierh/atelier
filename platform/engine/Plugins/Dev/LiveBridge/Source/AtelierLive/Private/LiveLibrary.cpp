@@ -1,8 +1,15 @@
 #include "LiveLibrary.h"
 #include "Misc/App.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Rendering/SkeletalMeshRenderData.h"
+#include "ClothingSystemRuntimeTypes.h"
+#include "StaticMeshResources.h"
 #include "Engine/Engine.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/CollisionProfile.h"
+#include "DynamicRHI.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -37,6 +44,7 @@
 #include "HttpServerResponse.h"
 #if WITH_EDITOR
 #include "IPythonScriptPlugin.h"
+#include "Interfaces/IPluginManager.h"
 #endif
 
 // ------------------------------------------------------------------ props
@@ -260,12 +268,100 @@ bool ULiveLibrary::InputKey(const FString& Key, const FString& Event, float Valu
     return PC->InputKey(FInputKeyEventArgs::CreateSimulated(K, E, E == IE_Released ? 0.f : Value, 1));
 }
 
+// A plain blocking box for tests (the engine cube is 100 cm, centred), tagged so ClearTests removes it.
+static bool SpawnTestBox(const FVector& Centre, const FRotator& Rotation, const FVector& Size)
+{
+    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
+    UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+    if (!World || !Cube) return false;
+    FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AStaticMeshActor* Box = World->SpawnActor<AStaticMeshActor>(Centre, Rotation, Params);
+    if (!Box) return false;
+    Box->SetMobility(EComponentMobility::Movable);
+    Box->GetStaticMeshComponent()->SetStaticMesh(Cube);
+    Box->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+    Box->SetActorScale3D(Size / 100.f);
+    Box->Tags.Add(TEXT("LiveTest"));
+    return true;
+}
+bool ULiveLibrary::TestWall(FVector Ground, float Yaw, FVector Size) { return SpawnTestBox(Ground + FVector(0, 0, Size.Z * .5f), FRotator(0, Yaw, 0), Size); }
+bool ULiveLibrary::TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width)
+{
+    // Its top face rises from Start (on the ground) over Length cm to Rise cm, then drops; the rest of the box is under it.
+    const FRotator Rotation(FMath::RadiansToDegrees(FMath::Atan2(Rise, Length)), Yaw, 0);
+    const float Slope = FMath::Sqrt(Length * Length + Rise * Rise), Thick = Rise + 100.f;
+    return SpawnTestBox(Start + Rotation.Vector() * Slope * .5f - Rotation.RotateVector(FVector(0, 0, Thick * .5f)), Rotation, FVector(Slope, Width, Thick));
+}
+int32 ULiveLibrary::ClearTests()
+{
+    int32 Count = 0;
+    if (UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr)
+        for (TActorIterator<AStaticMeshActor> It(World); It; ++It) if (It->Tags.Contains(TEXT("LiveTest"))) { It->Destroy(); ++Count; }
+    return Count;
+}
+float ULiveLibrary::GpuFrameMs() { return FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)); }
 void ULiveLibrary::Say(const FString& Text, float Seconds) { Message = Text; MessageFrom = FPlatformTime::Seconds(); MessageUntil = MessageFrom + Seconds; UE_LOG(LogTemp, Display, TEXT("LIVE say: %s"), *Text); }
 
 bool ULiveLibrary::CurrentMessage(FString& Text, float& Alpha)
 {
     const double Now = FPlatformTime::Seconds(); if (Now > MessageUntil || Message.IsEmpty()) return false;
     Text = Message; Alpha = FMath::Clamp(float(FMath::Min(Now - MessageFrom, MessageUntil - Now) / .35), 0.f, 1.f); return true;
+}
+
+TArray<FVector> ULiveLibrary::SkinnedVertices(USkeletalMeshComponent* Mesh, const TArray<FName>& Bones)
+{
+    TArray<FVector> Out;
+    FSkeletalMeshRenderData* Render = Mesh ? Mesh->GetSkeletalMeshRenderData() : nullptr;
+    if (!Render || !Render->LODRenderData.Num() || !Mesh->GetSkinWeightBuffer(0)) return Out;
+    const FSkeletalMeshLODRenderData& LOD = Render->LODRenderData[0];
+    const FSkinWeightVertexBuffer& Weights = *Mesh->GetSkinWeightBuffer(0);
+    TArray<FMatrix44f> RefToLocals;
+    TArray<FVector3f> Positions;
+    Mesh->CacheRefToLocalMatrices(RefToLocals);
+    USkinnedMeshComponent::ComputeSkinnedPositions(Mesh, Positions, RefToLocals, LOD, Weights);
+    TSet<int32> Wanted;
+    for (const FName& Bone : Bones) if (const int32 I = Mesh->GetBoneIndex(Bone); I != INDEX_NONE) Wanted.Add(I);
+    const TMap<int32, FClothSimulData>& Cloth = Mesh->GetCurrentClothingData_GameThread();
+    const FTransform& ToWorld = Mesh->GetComponentTransform();
+    for (const FSkelMeshRenderSection& Section : LOD.RenderSections)
+    {
+        // A section its cloth asset is simulating shows that asset's particles (added below), not its skinned vertices.
+        const bool bSimulated = Section.HasClothingData() && Cloth.Contains(Section.CorrespondClothAssetIndex);
+        if (bSimulated && !Bones.Num()) continue;
+        for (uint32 V = Section.BaseVertexIndex; V < Section.BaseVertexIndex + Section.NumVertices && V < (uint32)Positions.Num(); ++V)
+        {
+            if (Bones.Num())
+            {
+                // A third of its weight on those bones counts (blended skin between two finger bones included).
+                uint32 On = 0, All = 0;
+                for (uint32 K = 0; K < Weights.GetMaxBoneInfluences(); ++K)
+                {
+                    const uint32 W = Weights.GetBoneWeight(V, K), Bone = Weights.GetBoneIndex(V, K);
+                    All += W;
+                    if (W && Section.BoneMap.IsValidIndex(Bone) && Wanted.Contains(Section.BoneMap[Bone])) On += W;
+                }
+                if (!All || On * 3 < All) continue;
+            }
+            Out.Add(ToWorld.TransformPosition(FVector(Positions[V])));
+        }
+    }
+    if (!Bones.Num())
+        for (const TPair<int32, FClothSimulData>& Pair : Cloth)
+            for (const FVector3f& P : Pair.Value.Positions) Out.Add(Pair.Value.Transform.TransformPosition(FVector(P)));
+    return Out;
+}
+
+TArray<FVector> ULiveLibrary::StaticVertices(UStaticMeshComponent* Mesh)
+{
+    TArray<FVector> Out;
+    const UStaticMesh* Asset = Mesh ? Mesh->GetStaticMesh() : nullptr;
+    const FStaticMeshRenderData* Render = Asset ? Asset->GetRenderData() : nullptr;
+    if (!Render || !Render->LODResources.Num()) return Out;
+    const FPositionVertexBuffer& Buffer = Render->LODResources[0].VertexBuffers.PositionVertexBuffer;
+    if (!Buffer.GetVertexData()) return Out;   // no CPU copy
+    const FTransform& ToWorld = Mesh->GetComponentTransform();
+    for (uint32 V = 0; V < Buffer.GetNumVertices(); ++V) Out.Add(ToWorld.TransformPosition(FVector(Buffer.VertexPosition(V))));
+    return Out;
 }
 
 void ULiveLibrary::Screenshot(const FString& Path) { FScreenshotRequest::RequestScreenshot(Resolve(Path), true, false); }
@@ -397,11 +493,16 @@ void AtelierLive::Start(UWorld* World)
     }
     else UE_LOG(LogTemp, Warning, TEXT("LIVE bridge: port %d unavailable (another game running?)"), Port);
 #if WITH_EDITOR
-    // The game's in-game helper module (PythonFolder/PythonModule), imported as `live` in the shared namespace.
-    if (IPythonScriptPlugin* Python = IPythonScriptPlugin::Get(); Python && Python->IsPythonAvailable() && !Settings().PythonModule.IsEmpty())
+    // The game's in-game helper module (PythonFolder/PythonModule), else the bridge's own atelier_live (Python/ beside
+    // this plugin, which the game's module builds on), imported as `live` in the shared namespace.
+    const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("LiveBridge"));
+    if (IPythonScriptPlugin* Python = IPythonScriptPlugin::Get(); Python && Python->IsPythonAvailable() && Plugin)
     {
+        const FString Own = FPaths::ConvertRelativePathToFull(Plugin->GetBaseDir() / TEXT("Python"));
+        const bool bGame = !Settings().PythonModule.IsEmpty();
         FPythonCommandEx Boot; Boot.FileExecutionScope = EPythonFileExecutionScope::Public;
-        Boot.Command = FString::Printf(TEXT("import sys\np=r'%s'\nif p not in sys.path: sys.path.insert(0, p)\nimport %s as live\n"), *(ULiveLibrary::LiveRoot() / Settings().PythonFolder), *Settings().PythonModule);
+        Boot.Command = FString::Printf(TEXT("import sys\nfor p in (r'%s', r'%s'):\n    if p not in sys.path: sys.path.insert(0, p)\nimport %s as live\n"),
+            *Own, *(bGame ? ULiveLibrary::LiveRoot() / Settings().PythonFolder : Own), bGame ? *Settings().PythonModule : TEXT("atelier_live"));
         Python->ExecPythonCommandEx(Boot);
         if (!Boot.CommandResult.IsEmpty() && Boot.CommandResult != TEXT("None")) UE_LOG(LogTemp, Warning, TEXT("LIVE python boot: %s"), *Boot.CommandResult);
     }

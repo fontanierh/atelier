@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { retargetMotion } from "./retarget.js";
 import { closeLoop } from "./loop.js";
+import { glbNodes, captureRest } from "./rest.js";
 
 if (!process.argv[2]) throw new Error("Pass the path to an installed three.module.js");
 const THREE = await import(pathToFileURL(path.resolve(process.argv[2])).href);
@@ -53,6 +54,27 @@ test("retargets a differently named rig under a rotated, scaled parent", () => {
   const override = retargetMotion(THREE, motion, "detail", rest);
   assert.equal(override.tracks.length, 3);
   assert.deepEqual(Array.from(override.tracks.find((t) => t.name === "limb.quaternion").values), [...local, ...local]);
+});
+
+test("builds glTF nodes and captures rest records under every key the caller names", () => {
+  const gltf = { scene: 0, scenes: [{ nodes: [0] }], nodes: [
+    { name: "rig:hips", translation: [0, 1, 0], rotation: [0, Math.SQRT1_2, 0, Math.SQRT1_2], scale: [2, 2, 2], children: [1] },
+    { name: "rig:spine", matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, .5, 0, 1] },
+  ] };
+  const { nodes, scene } = glbNodes(THREE, gltf);
+  assert.deepEqual(nodes.map((o) => [o.name, o.userData.name]), [["righips", "rig:hips"], ["rigspine", "rig:spine"]]);
+  assert.equal(nodes[1].parent, nodes[0]);
+  assert.equal(nodes[0].parent, scene);
+  assert.ok(nodes[1].getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(0, 2, 0)) < 1e-6);
+  const rest = captureRest(THREE, nodes);
+  assert.deepEqual([...rest.keys()], ["rig:hips", "rig:spine"]);
+  const spine = rest.get("rig:spine");
+  assert.equal(spine.name, "rigspine");
+  assert.ok(spine.worldQ.angleTo(nodes[0].quaternion) < 1e-6);
+  assert.ok(spine.parentInverse.clone().multiply(nodes[0].matrixWorld).equals(new THREE.Matrix4()));
+  const aliased = captureRest(THREE, nodes, (o) => [o.userData.name, o.name]);
+  assert.equal(aliased.size, 4);
+  assert.equal(aliased.get("rigspine"), aliased.get("rig:spine"));
 });
 
 test("restores a loop endpoint at its supplied period without changing the source", () => {

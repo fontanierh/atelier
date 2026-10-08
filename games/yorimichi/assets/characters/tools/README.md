@@ -4,9 +4,9 @@ The Blender and Python tools that author the game's characters: pose authoring o
 sword set, the Mixamo retarget, the fox hunter's pose language and checks, the Tripo rig and finger steps, the outfit
 body swap, and reference concepts. Blender scripts run with `blender -b --python-exit-code 1 --python <tool> -- ...`;
 the others with `uv run python <tool>`. Each guide below explains its workflow:
-[animation principles](../../../docs/ANIMATION_PRINCIPLES.md), [sword combat](../../../docs/SWORD_COMBAT.md),
+[animation principles](../../../../../docs/ANIMATION_PRINCIPLES.md), [sword combat](../../../docs/SWORD_COMBAT.md),
 [Mixamo](../../../docs/MIXAMO_WORKFLOW.md), [fox hunter animation](../../../docs/FOX_HUNTER_ANIMATION.md),
-[body swap](../../../docs/BODY_SWAP_GUIDE.md), [H3 reference videos](../../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md),
+[body swap](../../../docs/BODY_SWAP_GUIDE.md), [H3 reference videos](../../../../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md),
 [Tripo characters](../../../docs/TRIPO_CHARACTERS.md) (the whole Tripo workflow, and the eyes and baked light every
 Tripo model needs fixed).
 
@@ -38,8 +38,8 @@ its JSON records into the character's folder, removes the previous blend, and up
 | Clip sets | `cairo_sword_combat_build.py`, `cairo_sword_combat_r02.py`, `cairo_sword_combat_check.py`, `cairo_sword_combat_review.py`, `cairo_sword_locomotion.py` (armed copies), `cairo_sword_grip.py` |
 | Motion capture | `cairo_mixamo_test.py` (retarget), `cairo_mixamo_clearance.py` and `cairo_mixamo_clearance_check.py` (head clearance), `cairo_mixamo_review.py` |
 | Fox hunter | `fox_hunter_animate.py` (pose language, leg solve, contacts), `fox_hunter_clip.py` (self-intersection), `fox_hunter_clipcheck.py`, `fox_hunter_captures.py`, `fox_hunter_animref.py` (H3 references), `fox_hunter_pipeline.py` (staged concepts for Tripo), `add_fox_fingers.py`, `review_fox_rig.py` |
-| Tripo | `review_tripo_model.py`, `review_tripo_rig.py`, `add_tripo_fingers.py`, `inspect_tripo_rig.py`, `tripo_fingers.py` (fingers fitted from the mesh, as a function), `tripo_character_texture.py` (flat colour, chips, eyes and face: [TRIPO_CHARACTERS.md](../../../docs/TRIPO_CHARACTERS.md)); the API client is `atelier.ai.tripo_asset` |
-| Sword trainer (Kaede) | `sword_trainer_refs.py`, `sword_trainer_pipeline.py` (concept, views, approval, Tripo mesh and rig), `sword_trainer_cleanup.py`, `sword_trainer_rig.py` (fingers, her own clips), her face spec `../sword-trainer/face.json` for `tripo_character_texture.py` |
+| Tripo | `review_tripo_model.py`, `review_tripo_rig.py`, `add_tripo_fingers.py`, `inspect_tripo_rig.py`; the fingers fitted from the mesh (`atelier.blender.tripo_fingers`) and the texture fix (flat colour, chips, eyes and face: `atelier.blender.tripo_character_texture`, [TRIPO_CHARACTERS.md](../../../docs/TRIPO_CHARACTERS.md)) are in the platform, the API client is `atelier.ai.tripo_asset` |
+| Sword trainer (Kaede) | `sword_trainer_refs.py`, `sword_trainer_pipeline.py` (concept, views, approval, Tripo mesh and rig), `sword_trainer_cleanup.py`, `sword_trainer_rig.py` (fingers, her own clips), her face spec `../sword-trainer/face.json` for `atelier.blender.tripo_character_texture` |
 | Outfits | `cairo_outfit.py` runs the whole body swap from an outfit spec (resumable, paid stages behind `--spend`, Tripo behind `--approve`); its stages `cairo_body_swap_{references,sunburst,fit,assemble,capture,check,export}.py`; `cairo_body_key.py` reads the green body key; outfit specs in `../cairo/outfits/` |
 | Concepts | `cairo_back_concepts.py`, `spirit_concepts.py` (the spirit roster), `heroine_concepts.py` (eight directions for a new girl character); their Sunburst calls go through `atelier.ai.images`, and every paid call (here, in `fox_hunter_pipeline.py` and in the body swap) through `atelier.ai.ledger`, so a recorded call is never sent again by itself |
 | Captures | `capture_cairo_clip.py`, `capture_cairo_revision.py`, `compare_cairo_sprint.py` |
@@ -47,4 +47,4 @@ its JSON records into the character's folder, removes the previous blend, and up
 
 The platform holds the generic pieces: `atelier.ai.images` (the Sunburst image client), `atelier.ai.tripo_asset` (ledgered Tripo client),
 `atelier.review.{contact_sheet,video_reference,export_preview_gltf,review_service}`, `atelier.blender.renderdev`
-(Metal setup) and `platform/studio/node` (H3 Max and Seedance through the Vercel AI Gateway).
+(Metal setup), `atelier.blender.{tripo_fingers,tripo_character_texture}` and `platform/studio/node` (H3 Max and Seedance through the Vercel AI Gateway).

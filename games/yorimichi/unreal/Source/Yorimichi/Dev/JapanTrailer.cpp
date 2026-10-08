@@ -1,4 +1,5 @@
 #include "WandererCharacter.h"
+#include "AtelierExit.h"
 #include "AtelierData.h"
 #include "JapanWorld.h"
 #include "Dev/HidamariReview.h"
@@ -29,10 +30,8 @@
 // Uses the live collision scene, not the generator's heightfield approximation.
 static bool ValidateVillage(UWorld* World,AActor* Player,const FString& Directory)
 {
-    FString Text;
-    TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text,*(AtelierDataPath(TEXT("world.json")))) ||
-        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)) return false;
+    const TSharedPtr<FJsonObject> Root=AtelierReadJson(AtelierDataPath(TEXT("world.json")));
+    if (!Root) return false;
     const TSharedPtr<FJsonObject>* Village=nullptr;
     if (!Root->TryGetObjectField(TEXT("village"),Village)) return false;
     auto Position=[](const TArray<TSharedPtr<FJsonValue>>& A)
@@ -143,7 +142,7 @@ void AWandererCharacter::SaveTrailerFilmFrame(int32 Width,int32 Height,const TAr
     const FString Path=ReviewDirectory/FString::Printf(TEXT("frame_%05d.jpg"),TrailerPending);
     if(Width!=ExpectedWidth || Height!=ExpectedHeight ||
        !FImageUtils::SaveImageByExtension(*Path,FImageView(Pixels.GetData(),Width,Height),98))
-    { FPlatformMisc::RequestExitWithStatus(false,2);return; }
+    { AtelierRequestExit(2);return; }
     TrailerPending=-1;
 }
 
@@ -159,12 +158,10 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
 {
     if (!TrailerSpec)
     {
-        FString Text;
-        if (!FFileHelper::LoadFileToString(Text,*TrailerSpecPath) ||
-            !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),TrailerSpec))
+        if (!(TrailerSpec=AtelierReadJson(TrailerSpecPath)))
         {
             UE_LOG(LogTemp,Error,TEXT("Invalid trailer shot: %s"),*TrailerSpecPath);
-            FPlatformMisc::RequestExitWithStatus(false,2); return;
+            AtelierRequestExit(2); return;
         }
         FString Format;TrailerSpec->TryGetStringField(TEXT("format"),Format);
         if(Format==TEXT("jpg"))UGameViewportClient::OnScreenshotCaptured().AddUObject(this,&AWandererCharacter::SaveTrailerFilmFrame);
@@ -173,21 +170,21 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         if (auto* PC = Cast<APlayerController>(Controller); PC && PC->GetHUD()) PC->GetHUD()->bShowHUD = false;
         FString CameraMode;TrailerSpec->TryGetStringField(TEXT("camera_mode"),CameraMode);
         if(CameraMode!=TEXT("") && CameraMode!=TEXT("player"))
-        {UE_LOG(LogTemp,Error,TEXT("Unknown trailer camera_mode"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+        {UE_LOG(LogTemp,Error,TEXT("Unknown trailer camera_mode"));AtelierRequestExit(2);return;}
         bFixedView=CameraMode!=TEXT("player");
         if(bFixedView)FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         bool AuditCity=false;
         TrailerSpec->TryGetBoolField(TEXT("validate_hidamari"),AuditCity);
         if(AuditCity && !ValidateHidamari(GetWorld(),this,ReviewDirectory))
-        {FPlatformMisc::RequestExitWithStatus(false,2);return;}
+        {AtelierRequestExit(2);return;}
         bool AuditVillage=false;
         TrailerSpec->TryGetBoolField(TEXT("validate_village"),AuditVillage);
         if (AuditVillage && !ValidateVillage(GetWorld(),this,ReviewDirectory))
-        { FPlatformMisc::RequestExitWithStatus(false,2); return; }
+        { AtelierRequestExit(2); return; }
         GetRoadSteering(); // Load the authored road using the existing capture helper.
         const int32 Road = FMath::Clamp(int32(TrailerSpec->GetNumberField(TEXT("road_index"))),0,SkateReviewRoad.Num()-2);
         if (!SkateReviewRoad.IsValidIndex(Road+1))
-        { FPlatformMisc::RequestExitWithStatus(false,2); return; }
+        { AtelierRequestExit(2); return; }
         SetActorLocation(SkateReviewRoad[Road]+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+8),false,nullptr,ETeleportType::TeleportPhysics);
         ReviewForward = (SkateReviewRoad[Road+1]-SkateReviewRoad[Road]).GetSafeNormal2D();
         const TArray<TSharedPtr<FJsonValue>>* CustomStart=nullptr;
@@ -241,7 +238,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
             const TArray<TSharedPtr<FJsonValue>>* Start=nullptr;
             if(!Skate || !TrailerSpec->TryGetArrayField(TEXT("player_position"),Start) || Start->Num()!=3 ||
                !SkateRide->PlaceAt(AJapanWorld::ToUE((*Start)[0]->AsNumber(),(*Start)[1]->AsNumber(),(*Start)[2]->AsNumber()),TrailerHeading))
-            {UE_LOG(LogTemp,Error,TEXT("TRAILER place_on_board requires a skate shot, player_position and a placed ride"));FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER place_on_board requires a skate shot, player_position and a placed ride"));AtelierRequestExit(2);return;}
             const FSkateInput Still;SkateRide->SetScriptedInput(&Still);
             UE_LOG(LogTemp,Display,TEXT("TRAILER BOARD PLACED frame=%d at=%s"),TrailerFrame,*GetActorLocation().ToString());
         }
@@ -251,7 +248,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
             // IsRiding also covers the mount clip, before Launch can reach the Native session.
             if(SkateRide->GetMode()!=ESkateMode::Ground || !SkateRide->GetRetailState().StartsWith(TEXT("PhysicsGround ")) ||
                !FMath::IsFinite(Speed) || Speed<=0.)
-            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetRetailState());FPlatformMisc::RequestExitWithStatus(false,2);return;}
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetRetailState());AtelierRequestExit(2);return;}
             const FSkateInput Coast;SkateRide->SetScriptedInput(&Coast);
             const FVector Velocity=ReviewForward*Speed;
             SkateRide->Launch(Velocity);
@@ -321,7 +318,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
     {
         const int32 Index = int32(Number(TEXT("world_shot"),0));
         if (!Landscape->Shots.IsValidIndex(Index))
-        { FPlatformMisc::RequestExitWithStatus(false,2); return; }
+        { AtelierRequestExit(2); return; }
         const FWorldShot& Shot = Landscape->Shots[Index];
         const FVector Forward = Shot.Rotation.Vector();
         const FVector Right = FRotationMatrix(Shot.Rotation).GetUnitAxis(EAxis::Y);

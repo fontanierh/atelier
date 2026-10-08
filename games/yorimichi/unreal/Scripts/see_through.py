@@ -41,17 +41,23 @@ Run as a script (`atelier build yorimichi unreal.see_through`), it patches what 
 - M_Grass (the grass tufts: lens fade only);
 - M_Painted's mask pin, with the instances in PAINTED switched to masked (tree trunks, the road's guardrail, poles,
   stone lanterns, the torii);
-- /Game/Cairo's materials.
+- the playable characters' materials: those in a character.toml's unreal_path named after its `see_through` prefixes.
 It also upgrades an M_TreeHouse carrying the first version. import_treehouse.py builds M_TreeHouse with
 add_mask(pieces=True). A material carrying the first version (OLD, the hole round Cairo) is upgraded in place. Every
 patch is idempotent.
 """
+import tomllib
+from pathlib import Path
 import unreal
 
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary
 FOLDER = '/Game/SeeThrough'; MPC = FOLDER+'/MPC_SeeThrough'
 TAG = 'Japan see-through 2'
 OLD = 'Japan see-through'          # the first version: a round hole round Cairo, cut per pixel
+# The characters the camera fades near the lens: (unreal_path, material name prefixes) from their character.toml.
+CHARACTERS = [(spec['unreal_path'], tuple(spec['see_through'])) for spec in
+              (tomllib.loads(p.read_text()) for p in sorted((Path(__file__).resolve().parents[2] / 'assets' / 'characters').glob('*/character.toml')))
+              if 'see_through' in spec]
 TRAIL = ('Trail0', 'Trail1', 'Trail2', 'Trail3')
 VECTORS = (('Focus', (0., 0., -100000., 90.)), ('Cut', (55., 35., 0., 0.)), ('Room', (0., 0., -100000., 0.)),
            ('RoomSize', (100., 100., 100., 0.)), ('RoomShape', (0., 60., 90., 0.)),
@@ -529,12 +535,13 @@ def main():
         mi = material(name) if name.startswith('MI_') else None
         if mi and cut_scale(mi, value):
             E.save_loaded_asset(mi); changed.append(f'{name} CutScale')
-    for path in sorted(E.list_assets('/Game/Cairo', recursive=False)):
-        name = path.rsplit('/', 1)[-1].split('.')[0]
-        if not name.startswith(('M_Cairo', 'M_Bokken')): continue
-        m = E.load_asset(path)
-        if isinstance(m, unreal.Material) and character(m):
-            save(m); changed.append(name)
+    for folder, prefixes in CHARACTERS:
+        for path in sorted(E.list_assets(folder, recursive=False)):
+            name = path.rsplit('/', 1)[-1].split('.')[0]
+            if not name.startswith(prefixes): continue
+            m = E.load_asset(path)
+            if isinstance(m, unreal.Material) and character(m):
+                save(m); changed.append(name)
     # The tree house: import_treehouse.py builds it; an earlier import carries the first version, upgraded here.
     tree = E.load_asset(TREE) if E.does_asset_exist(TREE) else None
     if tree and tag(tree) == OLD and not stale(tree) and add_mask(tree, room=True, pieces=True):

@@ -1,0 +1,59 @@
+# Cairo with the merged BOTW move set (botw/README.md): Link's moves retargeted onto him (botw/retarget.py), imported
+# by Scripts/import_botw_moveset.py beside his own assets, which stay byte-identical. -rider=CairoBotw in play.
+mesh = "/Game/Cairo/SK_Cairo"
+base = "/Game/Cairo/DA_Cairo"                  # his own definition (mesh, framing, skate bones), copied
+dest = "/Game/CairoBotw"                       # the retargeted clips and blends
+definition = "/Game/CairoBotw/DA_CairoBotw"
+keep_base_actions = false                      # DA_Cairo's actions are his own move set, which the merged one replaces
+
+# The clips of his own the merged set plays (on every character): sampled by retarget.py --dump-own and retargeted onto
+# the others at their 60 fps; on Cairo they are his imported clips in /Game/Cairo (import_cairo.py).
+[donor]
+folder = "/Game/Cairo"
+fps = 60
+double_jump = "DoubleJump"                     # his somersault (UBotwMoveSet::StartDoubleJump)
+clips = ["DoubleJump", "SwordIdle", "SwordParry", "SwordParryHit"]
+# His everyday gestures the merged set has no clip for (WandererCharacter's Wave and Interact, WandererSword's sit):
+# retargeted with `clips` onto another character, whose definition takes them where its base has none of its own.
+gestures = ["Interact", "Wave", "SitDown", "SitIdle", "StandUp"]
+
+# Without the shield he guards and parries with his own two-handed bokken clips rather than Link's sword-only ones
+# (which barely show the blade on him): his guard stance, his parry and its recoil, timed by their authored windows
+# (source-manifest.json: the parry deflects from 0.0333 s to 0.3 s and may be cancelled from 0.3333 s; the recoil's
+# counter opens at 0.1 s).
+[donor.actions.SwordGuardCarry]
+clip = "SwordIdle"
+loop = true
+
+[donor.actions.SwordParry]
+clip = "SwordParry"
+guard = [[0.0333, 0.3]]
+input = 0.3333
+cancel = 0.3333
+idle = 0.4
+
+[donor.actions.SwordGuardHit]
+clip = "SwordParryHit"
+guard = [[0.0, 0.15]]
+input = 0.1
+cancel = 0.1
+idle = 0.15
+
+# Carried pieces fitted to his mesh (import_botw_moveset.py `equipment`). Moved from Link's chest, the shield sank 4 cm
+# into his deeper torso standing, and its top half stood behind his bigger head, which ran through it. `offset` (cm, his
+# component space) goes from his chest bone to the piece's pivot along Rig.body's axes (level backward, left, up); the
+# piece keeps its turn on Link's back, its face squared to his back and then turned by `pitch` degrees about his left
+# axis (see `fitted`). The shield stands 2.7 cm off his back. In Link's idle, walk, run, dash, crouch, lock-on, glide,
+# climb and swim retargeted onto him, his torso and clothes come at most 1 cm through its plate. It sits low enough that
+# his head stays clear of it, except in the crouch: there his chest leans 70 degrees forward and his head dips 6 cm into
+# its top edge.
+[fit.carry.shield]
+offset = [16.59, 8.69, -13.13]
+pitch = 16
+
+# Carried pieces moved out from where Link's chest puts them (cm along Rig.body's axes: backward, left, up): Link's sword
+# and its sheath, placed from his slimmer chest, sank into Cairo's deeper torso with only the hilt showing at his neck.
+# Fitted in game: 4 cm still sank in at the hip running, 12 floated.
+[fit.push]
+sword = [7.0, 0.0, 0.0]
+sheath = [7.0, 0.0, 0.0]

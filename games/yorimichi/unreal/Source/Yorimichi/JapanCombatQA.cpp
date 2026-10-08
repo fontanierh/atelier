@@ -1,4 +1,5 @@
 #include "JapanCombatQA.h"
+#include "AtelierData.h"
 #if !UE_BUILD_SHIPPING
 #include "JapanCombatResolver.h"
 #include "JapanCharacterMovement.h"
@@ -85,9 +86,7 @@ bool Write(const FString& File, const TSharedPtr<FJsonObject>& Data)
 }
 TSharedPtr<FJsonObject> Read(const FString& File)
 {
-    FString Text; TSharedPtr<FJsonObject> Data;
-    if (FFileHelper::LoadFileToString(Text, *File)) FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Data);
-    return Data;
+    return AtelierReadJson(File);
 }
 
 void Drive(AWandererCharacter* Player, const FString& Folder, int32 Person, FString& Error)

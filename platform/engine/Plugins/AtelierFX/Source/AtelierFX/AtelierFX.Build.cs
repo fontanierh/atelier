@@ -6,5 +6,6 @@ public class AtelierFX : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "DeveloperSettings", "ProceduralMeshComponent" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Json" });
     }
 }

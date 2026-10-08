@@ -1,6 +1,6 @@
 #include "SuperUltraMegaPark.h"
 #include "BotwRider.h"
-#include "CairoCharacter.h"
+#include "PlayableCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
 #include "Engine/World.h"
@@ -178,7 +178,7 @@ UClass* AMegaParkGameMode::GetDefaultPawnClassForController_Implementation(ACont
 
 AMegaParkGameMode::AMegaParkGameMode()
 {
-    DefaultPawnClass = ACairoCharacter::StaticClass();
+    DefaultPawnClass = FPlayableCharacter::Default().Class();
     HUDClass = AJapanHUD::StaticClass();
 }
 

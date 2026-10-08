@@ -10,10 +10,11 @@ import json, subprocess, sys, tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+from atelier.engine import unreal_root
 
 ROOT = Path(__file__).resolve().parents[3]
 FILMS = ROOT / 'build/yorimichi/fog_film'
-FONTS = Path('/Users/Shared/Epic Games/UE_5.8/Engine/Content/Slate/Fonts')
+FONTS = unreal_root()/'Engine/Content/Slate/Fonts'
 
 
 def font(size, bold=True):

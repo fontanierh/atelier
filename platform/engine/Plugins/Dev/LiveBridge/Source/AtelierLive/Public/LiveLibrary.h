@@ -7,6 +7,7 @@
 
 class UStaticMesh;
 class UStaticMeshComponent;
+class USkeletalMeshComponent;
 class UMaterialInterface;
 
 /** What the bridge needs from the game, set in the game's DefaultGame.ini under [/Script/AtelierLive.AtelierLiveSettings]. */
@@ -79,10 +80,24 @@ public:
     /** Playing at real speed with a fixed frame time (Fps > 0; 0 returns to real time): the engine waits out each frame
      *  to 1/Fps and counts every frame as 1/Fps, however long it took, so a recorded session replays exactly. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FixedFrameRate(float Fps);
+    /** A plain blocking wall for tests (a crash, a stop): Size cm (thickness, width, height) standing on Ground, facing Yaw. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestWall(FVector Ground, float Yaw, FVector Size);
+    /** A test ramp facing Yaw: from Start on the ground it rises Rise cm over Length cm, then drops off. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width = 300.f);
+    /** Removes the test walls and ramps; returns how many. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 ClearTests();
+    /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static float GpuFrameMs();
     /** A line of text for the player at the top of the screen (the game's HUD draws CurrentMessage). */
     UFUNCTION(BlueprintCallable, Category = "Live") static void Say(const FString& Text, float Seconds = 4.f);
     /** A screenshot of the game view (with the HUD) written to Path on the next frame. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void Screenshot(const FString& Path);
+    /** World positions of a skinned mesh's vertices as posed this frame (LOD 0, skinned on the CPU), for measuring contact
+     *  and clearance on the final geometry. With Bones, only the vertices with at least a third of their weight on them;
+     *  without, every vertex, and a simulated cloth section's particles in place of its skinned vertices. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static TArray<FVector> SkinnedVertices(USkeletalMeshComponent* Mesh, const TArray<FName>& Bones);
+    /** World positions of a static mesh component's LOD 0 vertices. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static TArray<FVector> StaticVertices(UStaticMeshComponent* Mesh);
     /** Overlays: <OverlayFolder>/<Name>.json lists props with their GLB, transform and collision. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SaveOverlay(const FString& Name);
     UFUNCTION(BlueprintCallable, Category = "Live") static int32 LoadOverlay(const FString& Name);

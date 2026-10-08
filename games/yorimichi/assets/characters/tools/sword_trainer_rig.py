@@ -6,7 +6,7 @@
 Input: Tripo's rig of the approved clean-up (23 body bones with Mixamo names under `Root`, the character facing +X,
 her left +Y). Adds the 30 finger bones (tripo_fingers.add_fingers) for the humanoid contract's 53, then authors her
 own clips at 30 fps on that rig: Bow (a standing bow, 2.2 s) and Talk (an explaining gesture with a nod, 2.6 s). Every
-move set clip is retargeted onto her later (cairo/botw.py --character sword-trainer); these two are hers alone.
+move set clip is retargeted onto her later (botw/retarget.py --character sword-trainer); these two are hers alone.
 
 Poses are written in her frame (forward +X, left +Y, up +Z): each bone turns about an axis of that frame through its
 own head, on top of its parent's posed place, so a pitch is always a pitch. Writes SwordTrainer-Rig-r01.blend,
@@ -18,8 +18,8 @@ from pathlib import Path
 import bpy
 from mathutils import Matrix, Vector
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from tripo_fingers import add_fingers  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E401,E402,F401 - puts atelier on the path
+from atelier.blender.tripo_fingers import add_fingers  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--input', required=True)

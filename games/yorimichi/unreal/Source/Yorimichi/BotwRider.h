@@ -21,17 +21,17 @@ public:
     // Crouching keeps the mesh where Fit stood it (ACharacter puts it back to the class default's height).
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-    /** The rider the command line asks for, when its definition was imported; empty otherwise. "CairoBotw" is Cairo with
-     *  the BotW move set (ACairoCharacter::BotwName). */
+    /** The rider the command line asks for, when its definition was imported; empty otherwise. A playable character
+     *  (FPlayableCharacter: CairoBotw, Modori) counts when it is built. */
     static FString Requested();
-    /** The pawn class a game mode uses when a rider is requested (this class, or Cairo's for CairoBotw), else null (the
-     *  mode's own default). */
+    /** The pawn class a game mode uses when a rider is requested (this class, or the playable character's), else null
+     *  (the mode's own default). */
     static UClass* PawnOverride();
-    /** The characters the character switch offers besides Cairo: Modori when he is built, then the BOTW characters with
-     *  a move set (Link) and an imported rider definition, in roster order. Checks the definitions exist without loading
-     *  them. */
+    /** The characters the character switch offers besides the default one (Cairo): the other playable characters when
+     *  built (Modori), then the BOTW characters with a move set (Link) and an imported rider definition, in roster order.
+     *  Checks the definitions exist without loading them. */
     static TArray<FString> Available();
-    /** The playing character's name: the rider's, "Cairo" or "CairoBotw". */
+    /** The playing character's name: the rider's or the playable character's ("Cairo", "CairoBotw", "Modori"). */
     static FString NameOf(const AWandererCharacter* Character);
     /** A playable name as the character switch shows it. */
     static FString Label(const FString& Name);

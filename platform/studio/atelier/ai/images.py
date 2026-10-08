@@ -28,6 +28,17 @@ def upload(path, maxw=1280):
     return (Path(path).stem+'.jpg', buf.getvalue(), 'image/jpeg')
 
 
+def compact(image, dest, width, quality, chroma='4:2:0'):
+    """Write a compact JPEG copy of an image (bytes or path) at most `width` pixels wide (a smaller image is never
+    enlarged), with `chroma` subsampling ('4:4:4', '4:2:2' or '4:2:0'). Returns its record."""
+    from PIL import Image
+    im = Image.open(io.BytesIO(image) if isinstance(image, bytes) else image).convert('RGB')
+    if im.width > width: im = im.resize((width, round(im.height*width/im.width)), Image.LANCZOS)
+    dest = Path(dest); dest.parent.mkdir(parents=True, exist_ok=True)
+    im.save(dest, 'JPEG', quality=quality, subsampling={'4:4:4': 0, '4:2:2': 1, '4:2:0': 2}[chroma])
+    return dict(file=dest.name, size=f'{im.width}x{im.height}', jpeg_quality=quality, chroma=chroma)
+
+
 def sunburst(prompt, size, images=(), n=1, *, quality=QUALITY, model=MODEL, key=None, timeout=900):
     """n images for prompt. Returns (list of PNG bytes, the response body without the image data, seconds).
 

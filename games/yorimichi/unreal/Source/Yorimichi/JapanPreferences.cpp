@@ -1,9 +1,10 @@
 #include "JapanPreferences.h"
+#include "AtelierSettings.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "BotwRider.h"
 #include "BotwMoveSet.h"
-#include "CairoCharacter.h"
+#include "PlayableCharacter.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -25,11 +26,6 @@
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
-#include "HAL/PlatformFileManager.h"
-#include "HAL/PlatformFile.h"
-#if PLATFORM_WINDOWS
-#include "Windows/WindowsHWrapper.h"
-#endif
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -201,7 +197,8 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
     }
     // The move set (UBotwMoveSet::Chosen: merged by default, Cairo's legacy moves or the legacy BOTW set) and its shield
     // (UBotwMoveSet::SetShield: off by default, the sword guards and parries).
-    if (ACairoCharacter::HasBotw() || ABotwRider::Available().Num())
+    const FPlayableCharacter* MergedDefault = FPlayableCharacter::Find(FPlayableCharacter::Default().MoveSet);
+    if ((MergedDefault && MergedDefault->Built()) || ABotwRider::Available().Num())
     {
         const int32 After = Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1;
         Values.Insert({TEXT("shield"),TEXT("Shield"),0.f,0.f,1.f},After);
@@ -237,25 +234,15 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 }
 FString UJapanPreferences::FilePath()
 {
-    // Desktop previews keep menu edits in their own file; ordinary play/stream
+    // Desktop previews keep menu edits in their own file (-preferencesfile=); ordinary play/stream
     // keeps the existing shared path. The launcher seeds a separate copy.
-    FString PreviewFile;
-    if (FParse::Value(FCommandLine::Get(),TEXT("preferencesfile="),PreviewFile) && !PreviewFile.IsEmpty())
-        return FPaths::ConvertRelativePathToFull(PreviewFile);
-    return FPaths::ProjectSavedDir()/TEXT("settings.txt");
+    return AtelierSettings::FilePath();
 }
 TMap<FString,FString> UJapanPreferences::ReadSaved()
 {
-    TMap<FString,FString> Result;
-    TArray<FString> Lines;
-    FFileHelper::LoadFileToStringArray(Lines,*FilePath());
-    for (const FString& Line : Lines)
-    {
-        FString K,V;
-        // A stale desktop key in the shared file must not switch a phone session into the profile.
-        if (Line.Split(TEXT("="),&K,&V) && !IsSessionOnly(K.TrimStartAndEnd()))
-            Result.Add(K.TrimStartAndEnd(),V.TrimStartAndEnd());
-    }
+    TMap<FString,FString> Result = AtelierSettings::ReadFile(FilePath());
+    // A stale desktop key in the shared file must not switch a phone session into the profile.
+    for (auto It = Result.CreateIterator(); It; ++It) if (IsSessionOnly(It.Key())) It.RemoveCurrent();
     // A file saved before the current default light keeps every light value it wrote, the old defaults
     // among them: let it take the new light once. Command-line overrides below still apply.
     if (float Version = 0; !Result.Contains(TEXT("light_version")) || !LexTryParseString(Version,*Result[TEXT("light_version")]) || Version < LightVersion)
@@ -263,12 +250,7 @@ TMap<FString,FString> UJapanPreferences::ReadSaved()
         for (const TCHAR* Key : LightKeys) Result.Remove(Key);
         Result.Add(TEXT("light_version"),FString::FromInt(LightVersion));
     }
-    FString Overrides;
-    if (FParse::Value(FCommandLine::Get(),TEXT("set="),Overrides))
-    {
-        TArray<FString> Pairs; Overrides.ParseIntoArray(Pairs,TEXT(";"));
-        for (const auto& Pair : Pairs) { FString K,V; if (Pair.Split(TEXT("="),&K,&V)) Result.Add(K,V); }
-    }
+    Result.Append(AtelierSettings::Overrides());
     return Result;
 }
 float UJapanPreferences::Saved(const FString& Key, float Default)
@@ -628,30 +610,10 @@ bool UJapanPreferences::Save()
         if (IsSessionOnly(V.Key)) { NextValues.Remove(V.Key); continue; }
         NextValues.Add(V.Key,FString::SanitizeFloat(V.Value));
     }
-    TArray<FString> Keys; NextValues.GetKeys(Keys); Keys.Sort();
-    FString Content;
-    for (const auto& K : Keys) Content += K+TEXT("=")+NextValues[K]+TEXT("\n");
-    // Flush a unique sibling first: an incomplete write must never truncate the previous settings.
-    const FString Temporary = FPaths::CreateTempFilename(*FPaths::GetPath(SettingsFile),TEXT("settings-"));
-    IPlatformFile& Files = FPlatformFileManager::Get().GetPlatformFile();
-    bool Saved = FFileHelper::SaveStringToFile(Content,*Temporary,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-    if (Saved)
-    {
-#if PLATFORM_WINDOWS
-        // Windows's IPlatformFile::MoveFile does not replace existing files.
-        const FString From = Files.ConvertToAbsolutePathForExternalAppForWrite(*Temporary);
-        const FString To = Files.ConvertToAbsolutePathForExternalAppForWrite(*SettingsFile);
-        Saved = ::MoveFileExW(*From,*To,MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
-#else
-        // Apple/Unix MoveFile uses rename(), which replaces a same-filesystem sibling atomically.
-        // IFileManager::Move deletes the destination first, so it is unsafe for this operation.
-        Saved = Files.MoveFile(*SettingsFile,*Temporary);
-#endif
-    }
+    const bool Saved = AtelierSettings::WriteFile(SettingsFile,NextValues);
     if (Saved) SavedValues = MoveTemp(NextValues);
     else
     {
-        Files.DeleteFile(*Temporary);
         UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s; previous file preserved"),*SettingsFile);
     }
     return Saved;
@@ -827,8 +789,8 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
         .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); })];
-    // The character switch (ABotwRider::SwitchPlayer): Cairo, with the merged move set when it is built, and every BOTW
-    // character with a rider definition. The switch waits for the next tick, out of the menu's click.
+    // The character switch (ABotwRider::SwitchPlayer): the default character (Cairo), with the merged move set when it is
+    // built, and every other playable character. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
     {
         CloseMenu();
@@ -836,19 +798,24 @@ void UJapanPreferences::OpenMenu(bool bSkate)
             Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { ABotwRider::SwitchPlayer(Pawn,Name); }));
     };
     const FString Playing = ABotwRider::NameOf(Owner);
-    const bool bPlayingCairo = Playing == TEXT("Cairo") || Playing == ACairoCharacter::BotwName();
-    const auto CairoName = [this] { return ACairoCharacter::HasBotw() && FMath::RoundToInt(Get(TEXT("moveset"))) != UBotwMoveSet::LegacyCairo
-        ? ACairoCharacter::BotwName() : FString(TEXT("Cairo")); };
+    const FPlayableCharacter& Default = FPlayableCharacter::Default();
+    const bool bPlayingDefault = Playing == Default.Name || Playing == Default.MoveSet;
+    const auto DefaultName = [this]
+    {
+        const FPlayableCharacter& Default = FPlayableCharacter::Default();
+        const FPlayableCharacter* Merged = FPlayableCharacter::Find(Default.MoveSet);
+        return Merged && Merged->Built() && FMath::RoundToInt(Get(TEXT("moveset"))) != UBotwMoveSet::LegacyCairo ? Merged->Name : Default.Name;
+    };
     if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
     {
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
-        TArray<FString> Names = {TEXT("Cairo")}; Names.Append(Riders);
+        TArray<FString> Names = {Default.Name}; Names.Append(Riders);
         for (const FString& Name : Names)
         {
-            const bool bCairo = Name == TEXT("Cairo");
-            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && (bCairo ? !bPlayingCairo : Name != Playing))
+            const bool bDefault = Name == Default.Name;
+            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && (bDefault ? !bPlayingDefault : Name != Playing))
                 .Text(FText::FromString(ABotwRider::Label(Name)))
-                .OnClicked_Lambda([Switch,CairoName,Name,bCairo] { Switch(bCairo ? CairoName() : Name); return FReply::Handled(); })];
+                .OnClicked_Lambda([Switch,DefaultName,Name,bDefault] { Switch(bDefault ? DefaultName() : Name); return FReply::Handled(); })];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
@@ -885,15 +852,15 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
             })
-            .OnClicked_Lambda([this,Key,Switch,CairoName,bPlayingCairo]
+            .OnClicked_Lambda([this,Key,Switch,DefaultName,bPlayingDefault]
             {
                 if (Key == TEXT("moveset"))
                 {
                     // Merged, Cairo (legacy), BOTW (legacy), round again. Cairo between his legacy moves and a move set
                     // needs the character switch; anything else takes it at once (Apply).
-                    const FString Before = CairoName();
+                    const FString Before = DefaultName();
                     SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%3));
-                    if (bPlayingCairo && CairoName() != Before) Switch(CairoName());
+                    if (bPlayingDefault && DefaultName() != Before) Switch(DefaultName());
                     return FReply::Handled();
                 }
                 SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);   // Apply hands the shield to the move set at once

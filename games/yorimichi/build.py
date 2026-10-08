@@ -131,12 +131,28 @@ def botw_library():
     return module
 
 
+def moveset_import(character):
+    """Scripts/import_botw_moveset.py for one character (its botw.toml), and its inputs: every character's botw.toml, for
+    its own layout and fit and the donor's clips."""
+    done = f'{character.upper().replace("-", " ")} BOTW IMPORT COMPLETE'
+    script = UnrealScript(SCRIPTS / 'import_botw_moveset.py', done, null_rhi=True, env=(('BOTW_CHARACTER', character),))
+    return script, [SCRIPTS / 'import_botw_moveset.py', SCRIPTS / 'animation_compression.py', *sorted(CHARS.glob('*/botw.toml'))]
+
+
+def moveset_retarget(character, *args):
+    """assets/characters/botw/retarget.py onto one character, and its inputs."""
+    retarget = CHARS / 'botw' / 'retarget.py'
+    return Blender(retarget, ('--character', character, *args), threads=4), [CHARS / character, retarget, *sorted(CHARS.glob('*/botw.toml')), NAMES]
+
+
 def botw_steps(out):
     """The BOTW characters (assets/characters/botw/README.md), only where the library has been fetched."""
     library = botw_library()
     if not library.available():
         return []
     botw = CHARS / 'botw'
+    (retarget, retarget_inputs), (dump_own, _) = moveset_retarget('cairo'), moveset_retarget('cairo', '--dump-own')
+    importer, import_inputs = moveset_import('cairo')
     return [
         Step('characters.botw', [Python(botw / 'export.py')], inputs=[botw, *library.sources()],
              outputs=[out / 'botw' / 'export.json'], about='BOTW characters: curve clips baked into rigged GLBs'),
@@ -144,13 +160,10 @@ def botw_steps(out):
              inputs=[SCRIPTS / 'import_botw.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.botw'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'botw' / 'roster.json'],
              heavy=True, about='/Game/Botw: meshes, materials and clips, and the roster the game reads'),
-        Step('characters.cairo_botw', [Blender(CHARS / 'cairo' / 'botw.py', threads=4), Blender(CHARS / 'cairo' / 'botw.py', ('--dump-own',), threads=4)],
-             inputs=[CHARS / 'cairo', NAMES], needs=['characters.botw'],
+        Step('characters.cairo_botw', [retarget, dump_own], inputs=retarget_inputs, needs=['characters.botw'],
              outputs=[out / 'cairo' / 'botw' / 'export.json', out / 'cairo' / 'botw' / 'own.npz'],
              about="Link's move set clips retargeted onto Cairo, to FBX, and Cairo's own clips in the set sampled for others"),
-        Step('unreal.cairo_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'CAIRO BOTW IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
-             needs=['characters.cairo_botw', 'unreal.cairo', 'unreal.botw'],
+        Step('unreal.cairo_botw', [importer], inputs=import_inputs, needs=['characters.cairo_botw', 'unreal.cairo', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'botw.json'], heavy=True,
              about='/Game/CairoBotw: Cairo with the BOTW move set (-rider=CairoBotw): his clips, definition and move record'),
         *sword_trainer_steps(out),
@@ -172,11 +185,11 @@ def horse_steps(out):
                      *module.sources()],
              outputs=[out / 'horses' / 'export.json'], about='Horses (every coat, mane merged) and their riders, baked'),
         Step('characters.cairo_rider', [Blender(horses / 'cairo_rider.py', threads=4)],
-             inputs=[horses / 'cairo_rider.py', CHARS / 'cairo', NAMES], needs=['characters.horses', 'characters.botw'],
+             inputs=[horses / 'cairo_rider.py', CHARS / 'cairo', CHARS / 'botw' / 'retarget.py', NAMES], needs=['characters.horses', 'characters.botw'],
              outputs=[out / 'horses' / 'cairo' / 'export.json'],
              about="The riders' clips retargeted onto Cairo, to FBX: the player on horseback"),
         Step('unreal.horses', [UnrealScript(SCRIPTS / 'import_horses.py', 'HORSES IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_horses.py', SCRIPTS / 'animation_compression.py'],
+             inputs=[SCRIPTS / 'import_horses.py', SCRIPTS / 'animation_compression.py', *sorted(CHARS.glob('*/character.toml'))],
              needs=['characters.horses', 'characters.cairo_rider', 'unreal.botw', 'unreal.cairo'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'horses' / 'roster.json'], heavy=True,
              about='/Game/Horses: the horses, riders and race master, and the roster the race reads'),
@@ -189,6 +202,7 @@ def sword_trainer_steps(out):
     trainer = CHARS / 'sword-trainer'
     if not (trainer / 'character.toml').exists():
         return []
+    (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('sword-trainer'), moveset_import('sword-trainer')
     return [
         Step('characters.sword_trainer', [Blender(trainer / 'export_unreal.py', threads=4)], inputs=[trainer, NAMES],
              outputs=[out / 'sword-trainer' / 'export.json'], about="Kaede's mesh, textures and own clips, to FBX"),
@@ -196,13 +210,9 @@ def sword_trainer_steps(out):
              inputs=[SCRIPTS / 'import_sword_trainer.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.sword_trainer'], outputs=[GAME / 'unreal' / 'Content' / 'SwordTrainer' / 'SK_SwordTrainer.uasset'],
              heavy=True, about='/Game/SwordTrainer: her mesh, materials, own clips and base definition'),
-        Step('characters.sword_trainer_botw', [Blender(CHARS / 'cairo' / 'botw.py', ('--character', 'sword-trainer'), threads=4)],
-             inputs=[trainer, CHARS / 'cairo' / 'botw.py', NAMES], needs=['characters.botw', 'characters.cairo_botw'],
+        Step('characters.sword_trainer_botw', [retarget], inputs=retarget_inputs, needs=['characters.botw', 'characters.cairo_botw'],
              outputs=[out / 'sword-trainer' / 'botw' / 'export.json'], about="The merged move set retargeted onto Kaede, to FBX"),
-        Step('unreal.sword_trainer_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'SWORD TRAINER BOTW IMPORT COMPLETE', null_rhi=True,
-                                                        env=(('BOTW_CHARACTER', 'sword-trainer'),))],
-             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
-             needs=['characters.sword_trainer_botw', 'unreal.sword_trainer', 'unreal.botw'],
+        Step('unreal.sword_trainer_botw', [importer], inputs=import_inputs, needs=['characters.sword_trainer_botw', 'unreal.sword_trainer', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'sword-trainer' / 'botw.json'], heavy=True,
              about='/Game/SwordTrainer/Botw and DA_SwordTrainer: her merged move set, definition and move record'),
     ]
@@ -212,6 +222,7 @@ def modori_steps(out):
     """Modori, the rival (assets/characters/modori/README.md), as a playable character: his body and coat, and the merged
     move set retargeted onto him."""
     modori = CHARS / 'modori'
+    (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('modori'), moveset_import('modori')
     return [
         Step('characters.modori', [Blender(modori / 'export_unreal.py', threads=4)], inputs=[modori, NAMES],
              outputs=[out / 'modori' / 'export.json'], about="Modori's body, coat (its cloth mask in the vertex colours) and textures, to FBX"),
@@ -219,18 +230,14 @@ def modori_steps(out):
              inputs=[SCRIPTS / 'import_modori.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
              needs=['characters.modori', 'unreal.compile'], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
-        Step('characters.modori_botw', [Blender(CHARS / 'cairo' / 'botw.py', ('--character', 'modori'), threads=4)],
-             inputs=[modori, CHARS / 'cairo' / 'botw.py', NAMES], needs=['characters.botw', 'characters.cairo_botw'],
+        Step('characters.modori_botw', [retarget], inputs=retarget_inputs, needs=['characters.botw', 'characters.cairo_botw'],
              outputs=[out / 'modori' / 'botw' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
-        Step('unreal.modori_botw', [UnrealScript(SCRIPTS / 'import_cairo_botw.py', 'MODORI BOTW IMPORT COMPLETE', null_rhi=True,
-                                                 env=(('BOTW_CHARACTER', 'modori'),))],
-             inputs=[SCRIPTS / 'import_cairo_botw.py', SCRIPTS / 'animation_compression.py'],
-             needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
+        Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'botw.json'], heavy=True,
              about='/Game/Modori/Botw and DA_Modori: his merged move set, definition and move record'),
-        Step('unreal.modori_bike', [UnrealScript(SCRIPTS / 'import_cairo_bike.py', 'MODORI BIKE IMPORT COMPLETE', null_rhi=True,
+        Step('unreal.modori_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'MODORI BIKE IMPORT COMPLETE', null_rhi=True,
                                                  env=(('BIKE_CHARACTER', 'modori'),))],
-             inputs=[SCRIPTS / 'import_cairo_bike.py', SCRIPTS / 'animation_compression.py'], needs=['characters.modori_bike', 'unreal.modori'],
+             inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'], needs=['characters.modori_bike', 'unreal.modori'],
              heavy=True, about="/Game/ModoriBike: his bike clips on SK_Modori"),
     ]
 
@@ -264,7 +271,7 @@ def communitypark_steps(out):
     return [
         Step('world.communitypark_restyle', [Python(TOOLS / 'communitypark_textures.py', ('finish',))],
              inputs=[TOOLS / 'communitypark_textures.py', TOOLS / 'megapark_textures.py', TOOLS / 'treehouse_art.py',
-                     ASSETS / 'communitypark' / 'restyle'],
+                     paths.STUDIO / 'atelier' / 'ai' / 'images.py', ASSETS / 'communitypark' / 'restyle'],
              outputs=[out / 'communitypark' / 'restyle' / 'textures.json'], pool_roots=[out / 'communitypark' / 'restyle'],
              about='community park restyle: painterly concrete, honey boards, indigo coping and mural panels'),
         Step('world.communitypark', [Blender(REGIONS / 'communitypark' / 'build.py', threads=4)],
@@ -526,13 +533,13 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
                                           'import_cairo_armed.py', 'animation_compression.py')],
              after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in three layers'),
-        Step('unreal.cairo_bike', [UnrealScript(SCRIPTS / 'import_cairo_bike.py', 'CAIRO BIKE IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_cairo_bike.py', SCRIPTS / 'animation_compression.py'], needs=['characters.cairo_bike', 'unreal.cairo'],
+        Step('unreal.cairo_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'CAIRO BIKE IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'], needs=['characters.cairo_bike', 'unreal.cairo'],
              heavy=True, about="/Game/CairoBike: Cairo's bike clips on SK_Cairo"),
         # The camera see-through (docs/CAMERA.md) patches materials the world and Cairo imports make, so it reruns after
         # either; the tree house builds its own with it (unreal.treehouse).
         Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
-             inputs=[SCRIPTS / 'see_through.py'], needs=['unreal.world', 'unreal.cairo'], heavy=True,
+             inputs=[SCRIPTS / 'see_through.py', *sorted(CHARS.glob('*/character.toml'))], needs=['unreal.world', 'unreal.cairo'], heavy=True,
              about='camera see-through on leaves, grass, trunks, the guardrail, poles, torii and Cairo (/Game/SeeThrough)'),
         # Runtime metadata is a separate overlay: changing it must not clear/reimport /Game/Japan.
         Step('unreal.city_tree_cpu_access', [UnrealScript(SCRIPTS / 'city_tree_cpu_access.py', 'CITY TREE CPU ACCESS COMPLETE')],

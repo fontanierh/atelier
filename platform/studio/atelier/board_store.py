@@ -15,17 +15,6 @@ TOPICS = ('info', 'request', 'handoff', 'blocked', 'release', 'evidence', 'ack',
 # The project owner's name on the board. Their messages are authoritative (AGENTS.md), so only the web board, behind
 # its Tailscale identity check, sends as them; the command line refuses the name.
 OPERATOR = 'operator'
-# The web board folds a message longer than this; board_web_assets/board.js uses the same limits.
-PREVIEW_CHARS, PREVIEW_LINES = 500, 8
-
-
-def folds(text):
-    """Whether people will see this message folded behind "Read more" on the web board."""
-    from .board_files import split_attachments
-    text = split_attachments(text)[0].strip()
-    return len(text) > PREVIEW_CHARS or len(text.split('\n')) > PREVIEW_LINES
-
-
 def agent_name(value):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}', value):
         raise ValueError('agent names need 1–80 letters, digits, dots, underscores or hyphens')
@@ -66,6 +55,10 @@ def database():
             CREATE TABLE IF NOT EXISTS reads (
                 reader TEXT NOT NULL, thread TEXT NOT NULL, last_read INTEGER NOT NULL DEFAULT 0, unfollowed INTEGER,
                 PRIMARY KEY (reader, thread)
+            );
+            -- The threads each reader starred (keyed as `reads` keys them), and when.
+            CREATE TABLE IF NOT EXISTS stars (
+                reader TEXT NOT NULL, thread TEXT NOT NULL, created REAL NOT NULL, PRIMARY KEY (reader, thread)
             );
         ''')
         # History from before read state existed starts read: the first store to have the table records where.

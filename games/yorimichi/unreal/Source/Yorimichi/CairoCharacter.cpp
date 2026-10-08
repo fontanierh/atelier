@@ -6,6 +6,8 @@
 #include "BotwRider.h"
 #include "JapanGameMode.h"
 #include "JapanPreferences.h"
+#include "Hippodrome.h"
+#include "PlayableCharacter.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -28,13 +30,19 @@ namespace
         if (!bLoaded)
         {
             bLoaded = true;
-            FString Text;
-            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("cairo/botw.json"))))
-                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Record);
+            Record = AtelierReadJson(AtelierDataPath(TEXT("cairo/botw.json")));
         }
         return Record;
     }
 }
+
+// Cairo is the default character, with his legacy moves or the merged set as he chooses at BeginPlay; CairoBotw is him
+// with the merged set (FPlayableCharacter). The switch tells a switched-in Cairo which.
+static void PrepareCairo(AWandererCharacter* Pawn, const FString& Name) { CastChecked<ACairoCharacter>(Pawn)->SetBotw(Name == ACairoCharacter::BotwName()); }
+static const FPlayableCharacter::FRegister RegisterCairo({TEXT("Cairo"), &ACairoCharacter::StaticClass, nullptr, TEXT("unreal.cairo"), &PrepareCairo, true,
+                                                          ACairoCharacter::BotwName()});
+static const FPlayableCharacter::FRegister RegisterCairoBotw({ACairoCharacter::BotwName(), &ACairoCharacter::StaticClass, &ACairoCharacter::HasBotw,
+                                                              TEXT("unreal.cairo_botw"), &PrepareCairo});
 
 ACairoCharacter::ACairoCharacter()
 {
@@ -52,6 +60,8 @@ bool ACairoCharacter::HasBotw()
     // Checked on disk, not loaded: the character switch asks every time the menu opens.
     return BotwRecord().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(BotwDefinition)));
 }
+
+FString ACairoCharacter::GetHorseRider() const { return FHorseSpec::PlayerRider(); }
 
 void ACairoCharacter::BeginPlay()
 {

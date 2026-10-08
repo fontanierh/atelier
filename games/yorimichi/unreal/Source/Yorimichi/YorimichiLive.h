@@ -42,25 +42,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateGoofy(bool bGoofy);
     /** The bike (docs/BIKE.md) as text: state, clip and its time, speed, steering, the rider and the bike's placement. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
-    /** A plain blocking wall for tests (the bike's crash): Size cm (thickness, width, height) standing on Ground, facing Yaw. */
-    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestWall(FVector Ground, float Yaw, FVector Size);
-    /** A test ramp facing Yaw: from Start on the ground it rises Rise cm over Length cm, then drops off (the bike's slopes). */
-    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width = 300.f);
-    /** Removes the test walls and ramps; returns how many. */
-    UFUNCTION(BlueprintCallable, Category = "Live") static int32 ClearTests();
     /** The skate loops now: "volume pitch" for roll, grind, slide, skid and scrape. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
     /** The bike's loops, "volume pitch" each (UBikeComponent::GetLoopState). */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeLoops();
     /** Filming the skating: the HUD keeps only the trick line and the balance needle. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FilmHud(bool bOn);
-    /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
-    UFUNCTION(BlueprintCallable, Category = "Live") static float GpuFrameMs();
     static bool IsFilmHud();
-    /** The sound log that films mix offline ("start" clears and records, "stop" writes the events to Path as JSON);
-     *  AudioFrame sets the frame index. */
-    UFUNCTION(BlueprintCallable, Category = "Live") static int32 AudioLog(const FString& Command, const FString& Path = TEXT(""));
-    UFUNCTION(BlueprintCallable, Category = "Live") static void AudioFrame(int32 Frame);
     /** Leave the camera where it is (no automatic skate follow) for Seconds, e.g. to film from the side. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool HoldCamera(float Seconds);
     /** BOTW characters (BotwCreature.h): the roster as JSON; spawn one standing on a ground point (Mode idle, showcase,

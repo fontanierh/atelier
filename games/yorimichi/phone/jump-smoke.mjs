@@ -1,15 +1,12 @@
 // Real multi-touch input over the local iPhone streaming frontend.
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const out=new URL('cape_boy/double-jump/phone/',BUILD);
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const {browser,context,page}=await openTouchPage();
 try {
- const context=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
- const page=await context.newPage();await page.goto(STREAM_URL);
- await page.waitForFunction(()=>window.yorimichi?.state?.ready,{},{timeout:60000});
- await page.click('#play');await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&v.videoWidth>0&&v.currentTime>0;},{},{timeout:60000});
+ await playTouchPage(page,{telemetry:'yorimichi',video:{timeout:60000}});
  await page.evaluate(()=>{window.jumpEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])document.getElementById('jump').addEventListener(type,e=>window.jumpEvents.push({type,id:e.pointerId,time:Date.now()}));});
  const cdp=await context.newCDPSession(page);
  const box=await page.locator('#stick').boundingBox(),jump=await page.locator('#jump').boundingBox();

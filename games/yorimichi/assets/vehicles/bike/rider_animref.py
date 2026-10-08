@@ -1,4 +1,4 @@
-"""Cairo's bike set: H3 Max reference revisions (docs/H3_ANIMATION_REFERENCE_WORKFLOW.md).
+"""Cairo's bike set: H3 Max reference revisions (the root docs/H3_ANIMATION_REFERENCE_WORKFLOW.md).
 
     python3 games/yorimichi/assets/vehicles/bike/rider_animref.py FRAMES OUT
 

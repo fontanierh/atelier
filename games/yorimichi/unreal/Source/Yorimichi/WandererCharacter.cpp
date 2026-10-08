@@ -1,4 +1,5 @@
 #include "WandererCharacter.h"
+#include "AtelierExit.h"
 #include "JapanCombatResolver.h"
 #include "JapanNetwork.h"
 #include "JapanSkateNetwork.h"
@@ -1520,7 +1521,7 @@ void AWandererCharacter::SampleShake(FVector& Offset,FRotator& Rotation) const
 
 void AWandererCharacter::AdvanceMapReview(float Dt)
 {
-    if (!Map || !Map->IsLoaded()) { UE_LOG(LogTemp,Error,TEXT("MAP QA: map not loaded")); FPlatformMisc::RequestExit(false); return; }
+    if (!Map || !Map->IsLoaded()) { UE_LOG(LogTemp,Error,TEXT("MAP QA: map not loaded")); AtelierRequestExit(1); return; }
     const TArray<FJapanMapZone>& Zones = Map->GetZones();
     const float StepSeconds = 2.5f;
     MapReviewTime += Dt;

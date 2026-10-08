@@ -9,18 +9,18 @@ the full-size PNG goes to build/yorimichi/houses/originals/. The context images 
 house, kept in build/yorimichi/houses/refs/ (not in git): playtest-road-house.webp (the house seen from the road) and
 playtest-bank-house.webp (the house beside the uphill bank).
 
-Every call is recorded before it is made and again when it returns: the provenance file is written with status
-"submitted" first. A concept whose provenance exists without its JPEG (a call that failed or never came back) is not
-asked for again unless --again names it, so a paid call is never repeated blindly. Existing JPEGs are skipped.
+Every call is recorded in atelier.ai.ledger before it is made and again when it returns: the provenance file is written
+with status "submitted" first. A concept whose provenance exists without its JPEG (a call that failed or never came
+back) is not asked for again unless --again names it, which sets the earlier record aside as
+<slug>.provenance.rejected-N.json, so a paid call is never repeated blindly. Existing JPEGs are skipped.
 The key comes from OPENAI_API_KEY (or the ignored .env) and is never printed.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
-import argparse, json, sys, time
+import argparse, sys, time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 
-from treehouse_art import MODEL, QUALITY, compact, redact, rel, sha, sunburst
+from treehouse_art import MODEL, QUALITY, compact, rel, set_aside, sha, sunburst
 
 OUT = yori.ASSETS / 'houses' / 'concepts'
 ORIGINALS = yori.OUT / 'houses' / 'originals'
@@ -99,30 +99,23 @@ def concepts():
         yield view, refs, '\n\n'.join([STYLE + ' ' + numbered, HOUSE, text, AVOID])
 
 
-def now():
-    return datetime.now(timezone.utc).isoformat()
-
-
 def run(slug, refs, prompt):
+    from atelier.ai.ledger import try_once
     (OUT/f'{slug}.prompt.txt').write_text(prompt + '\n')
-    prov = dict(stage='house-concept', concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE,
-                endpoint='/v1/images/edits', execution='games/yorimichi/tools/house_concepts.py',
-                prompt_file=f'{slug}.prompt.txt', prompt_sha256=sha(prompt.encode()),
-                reference_files={rel(STILLS[r][0]): sha(STILLS[r][0].read_bytes()) for r in refs},
-                status='submitted', started_at=now())
-    path = OUT/f'{slug}.provenance.json'
-    path.write_text(json.dumps(prov, indent=2) + '\n')          # recorded before the paid call
     t = time.time()
-    try:
+
+    def paint():
         png, usage = sunburst(prompt, SIZE, [STILLS[r][0] for r in refs])
         ORIGINALS.mkdir(parents=True, exist_ok=True); (ORIGINALS/f'{slug}.png').write_bytes(png)
-        prov.update(status='done', usage=usage, outputs={f'{slug}.png': sha(png)},
-                    compact_copy=compact(png, OUT/f'{slug}.jpg', 'concepts'), error=None)
-    except Exception as e:  # noqa: BLE001 - recorded in provenance, never retried here
-        prov.update(status='failed', error=redact(e)[:600])
-    prov.update(finished_at=now(), elapsed_seconds=round(time.time()-t, 1))
-    path.write_text(json.dumps(prov, indent=2) + '\n')          # and again when it returns
-    return slug, prov.get('error'), prov['elapsed_seconds']
+        return dict(usage=usage, outputs={f'{slug}.png': sha(png)}, compact_copy=compact(png, OUT/f'{slug}.jpg', 'concepts'),
+                    elapsed_seconds=round(time.time()-t, 1))
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    _, error = try_once(OUT/f'{slug}.provenance.json', dict(
+        stage='house-concept', concept=slug, requested_model=MODEL, quality=QUALITY, size=SIZE, endpoint='/v1/images/edits',
+        execution='games/yorimichi/tools/house_concepts.py', prompt_file=f'{slug}.prompt.txt',
+        prompt_sha256=sha(prompt.encode()), reference_files={rel(STILLS[r][0]): sha(STILLS[r][0].read_bytes()) for r in refs}),
+        paint)
+    return slug, error, round(time.time()-t, 1)
 
 
 def main():
@@ -150,6 +143,10 @@ def main():
     if todo:
         from atelier.env import require
         require('OPENAI_API_KEY')
+    for slug, _, _ in todo:   # --again: the earlier record and original are set aside, never overwritten
+        if (OUT/f'{slug}.provenance.json').exists():
+            set_aside(OUT/f'{slug}.provenance.json')
+            if (ORIGINALS/f'{slug}.png').exists(): set_aside(ORIGINALS/f'{slug}.png')
     print(f'{len(todo)} to generate')
     with ThreadPoolExecutor(3) as pool:
         for slug, error, secs in pool.map(lambda c: run(*c), todo):

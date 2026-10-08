@@ -1,4 +1,5 @@
 #include "JapanSession.h"
+#include "AtelierExit.h"
 #include "JapanNetwork.h"
 #include "JapanGameplayQA.h"
 #include "JapanCombatQA.h"
@@ -42,7 +43,7 @@ void UJapanGameInstance::StartNetworkQA()
         !FParse::Value(FCommandLine::Get(), TEXT("networkqadir="), NetworkQADirectory))
     {
         UE_LOG(LogTemp, Error, TEXT("NETWORK QA requires role server|client|bind-failure and an output directory"));
-        FPlatformMisc::RequestExitWithStatus(false, 1); return;
+        AtelierRequestExit(1); return;
     }
     IFileManager::Get().MakeDirectory(*NetworkQADirectory, true);
     NetworkQAStarted = FPlatformTime::Seconds();
@@ -154,13 +155,10 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
             // Sample both simple and complex gameplay collision at every staged map stop.
             // Exact imported bytes and these samples are complementary evidence, not a
             // claim that a handful of traces establishes Native render/Chaos triangle parity.
-            FString Text;
-            TSharedPtr<FJsonObject> Map;
+            const TSharedPtr<FJsonObject> Map = AtelierReadJson(AtelierDataPath(TEXT("map/map.json")));
             TArray<TSharedPtr<FJsonValue>> Probes;
             const TArray<TSharedPtr<FJsonValue>>* Zones = nullptr;
-            if (FFileHelper::LoadFileToString(Text, *AtelierDataPath(TEXT("map/map.json"))) &&
-                FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Map) && Map &&
-                Map->TryGetArrayField(TEXT("zones"), Zones))
+            if (Map && Map->TryGetArrayField(TEXT("zones"), Zones))
                 for (const auto& Zone : *Zones)
                 {
                     const auto Z = Zone->AsObject();
@@ -202,7 +200,7 @@ bool UJapanGameInstance::TickNetworkQA(float)
 {
     const double Now = FPlatformTime::Seconds();
     auto Fail = [this](const FString& Error)
-    { WriteNetworkQA(TEXT("failed"), Error); FPlatformMisc::RequestExitWithStatus(false, 1); return false; };
+    { WriteNetworkQA(TEXT("failed"), Error); AtelierRequestExit(1); return false; };
     if (Now - NetworkQAStarted > 240.) return Fail(TEXT("Native session lifecycle deadline expired"));
     UWorld* World = GetWorld();
     if (!World || !World->HasBegunPlay()) return true;

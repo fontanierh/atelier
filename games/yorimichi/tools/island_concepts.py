@@ -12,9 +12,9 @@ into games/yorimichi/assets/southwest/concepts/; the full-size PNG goes to
 build/yorimichi/southwest/originals/concepts/. Model gpt-image-2.5-sunburst, quality high, 1536x1024, through
 /v1/images/edits.
 
-The provenance file is the ledger of the paid call (its own, like atelier.ai.ledger but older): it is written with
-status `submitted` before the call is sent and completed (or marked failed) afterwards. A view that has a provenance
-file is never sent again, whatever its status; rename its files to <slug>.rejected-N.* to paint it again.
+The provenance file is the paid call's record in atelier.ai.ledger: it is written with status `submitted` before the
+call is sent and completed (or marked uncertain) afterwards. A view that has a provenance file is never sent again,
+whatever its status; rename its files to <slug>.rejected-N.* to paint it again.
 
 The stills are not in git; they are looked for in build/yorimichi/southwest/stills/:
 - hilltop-island.png: a player's screenshot of the island from a hilltop in the square (letterbox bars cropped);
@@ -25,10 +25,9 @@ The key comes from OPENAI_API_KEY (or the ignored .env).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 _sys.path.insert(0, str(_Path(__file__).resolve().parent))
-import argparse, json, sys, time
-from datetime import datetime, timezone
+import argparse, sys, time
 
-from treehouse_art import MODEL, QUALITY, compact, redact, rel, sha, sunburst
+from treehouse_art import MODEL, QUALITY, compact, rel, sha, sunburst
 
 OUT = yori.ASSETS / 'southwest' / 'concepts'
 ORIGINALS = yori.OUT / 'southwest' / 'originals' / 'concepts'
@@ -114,35 +113,28 @@ def prompt_of(view):
     return '\n\n'.join([STYLE + ' ' + numbered, ISLAND, SEA, text, AVOID])
 
 
-def now():
-    return datetime.now(timezone.utc).isoformat()
-
-
 def run(view):
+    """Paint one view; returns (elapsed seconds, None) when done, else (elapsed seconds, why)."""
+    from atelier.ai.ledger import try_once
     refs, _ = VIEWS[view]
     prompt = prompt_of(view)
     (OUT / f'{view}.prompt.txt').write_text(prompt + '\n')
     paths = [REFS[r][0] for r in refs]
-    record = dict(stage='southwest-island-concept', concept=view, status='submitted', requested_model=MODEL,
-                  quality=QUALITY, size=SIZE, endpoint='/v1/images/edits',
-                  execution='games/yorimichi/tools/island_concepts.py', prompt_file=f'{view}.prompt.txt',
-                  prompt_sha256=sha(prompt.encode()), reference_files={rel(p): sha(p.read_bytes()) for p in paths},
-                  started_at=now())
-    ledger = OUT / f'{view}.provenance.json'
-    ledger.write_text(json.dumps(record, indent=2) + '\n')          # recorded before the paid call
     t = time.time()
-    try:
+
+    def paint():
         png, usage = sunburst(prompt, SIZE, paths)
         ORIGINALS.mkdir(parents=True, exist_ok=True); (ORIGINALS / f'{view}.png').write_bytes(png)
-        record.update(status='done', usage=usage, outputs={f'{view}.png': sha(png)},
-                      compact_copy=compact(png, OUT / f'{view}.jpg', 'concepts'), error=None)
-    except Exception as e:  # noqa: BLE001 - recorded, never retried
-        record.update(status='failed', error=redact(e)[:600])
-    record.update(finished_at=now(), elapsed_seconds=round(time.time() - t, 1),
-                  hashes='of the files as the API saw and returned them; the full-size original is kept outside the '
-                         'repository')
-    ledger.write_text(json.dumps(record, indent=2) + '\n')
-    return record
+        return dict(usage=usage, outputs={f'{view}.png': sha(png)}, compact_copy=compact(png, OUT / f'{view}.jpg', 'concepts'),
+                    elapsed_seconds=round(time.time() - t, 1))
+    # The record is written before the paid call; a failed or uncertain one is never sent again by itself.
+    _, error = try_once(OUT / f'{view}.provenance.json', dict(
+        stage='southwest-island-concept', concept=view, requested_model=MODEL, quality=QUALITY, size=SIZE,
+        endpoint='/v1/images/edits', execution='games/yorimichi/tools/island_concepts.py', prompt_file=f'{view}.prompt.txt',
+        prompt_sha256=sha(prompt.encode()), reference_files={rel(p): sha(p.read_bytes()) for p in paths},
+        hashes='of the files as the API saw and returned them; the full-size original is kept outside the repository'),
+        paint)
+    return round(time.time() - t, 1), error
 
 
 def main():
@@ -165,10 +157,9 @@ def main():
         missing = [rel(REFS[r][0]) for r in VIEWS[v][0] if not REFS[r][0].exists()]
         if missing:
             sys.exit(f'{v}: missing references {missing}')
-        record = run(v)
-        print(f'{v}: {record["status"]}{" " + record["error"] if record.get("error") else ""} '
-              f'({record["elapsed_seconds"]} s)', flush=True)
-        if record['status'] != 'done':
+        secs, error = run(v)
+        print(f'{v}: {error or "done"} ({secs} s)', flush=True)
+        if error:
             sys.exit('stopped: a failed call is not retried')
 
 

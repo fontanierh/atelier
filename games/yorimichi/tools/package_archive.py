@@ -12,6 +12,8 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parents[2]
+sys.path.insert(0, str(REPO / 'platform' / 'studio'))
+from atelier.provenance import head  # noqa: E402
 # GitHub release assets must stay under 2 GiB each.
 PART_BYTES = 1900 * 1024 * 1024
 
@@ -123,8 +125,7 @@ def package_zip(root, log, *, cook_receipt=False):
     if len(apps) != 1:
         raise RuntimeError(f'expected one packaged .app under {root / "archive"} or {root / "Yorimichi"}')
     staged_data(apps[0])
-    revision = receipt['revision'][:8] if receipt else subprocess.run(
-        ['git', 'rev-parse', '--short=8', 'HEAD'], cwd=REPO, capture_output=True, text=True).stdout.strip()
+    revision = receipt['revision'][:8] if receipt else head(REPO, short=8)
     with tempfile.TemporaryDirectory(prefix='.assemble-', dir=root) as scratch:
         candidate = Path(scratch)
         folder = candidate / 'Yorimichi'; folder.mkdir()

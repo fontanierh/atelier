@@ -146,6 +146,9 @@ public:
      *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
     float TwoHandGripWeight() const { return TwoHandGrip; }
     FVector TwoHandGripOffset() const { return GripOffset; }   // the off hand's wrist on the handle, in the sword hand's frame
+    /** The two-handed grip: how much the off hand is a fist turned round the handle, and its rotation (component space). */
+    float TwoHandFistWeight() const { return bFistAxis ? TwoHandGrip : 0.f; }
+    FQuat TwoHandRotation() const { return TwoHandTurn; }
     /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
     float GlideHandWeight() const { return GlideHands; }
     FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
@@ -155,6 +158,20 @@ public:
      *  (the fingers from the sword guard's fists), and its rotation (component space). */
     float GlideFistWeight() const { return bOwnGlide || !bFistAxis ? 0.f : GlideHands; }
     FQuat GlideHandRotation(int32 Side) const { return GlideHandTurn[Side & 1]; }
+    /** The handle a hand holds, for the animation graph's finger wrap (#7633): how much that hand wraps it, the stretch a
+     *  hand closes round (component space, as placed this frame), its oval's major axis and the oval's radii (major,
+     *  minor; cm) at either end. A fitted body's sword hand (0) wraps the drawn sword, its off hand (1) the sword in a
+     *  two-handed hold, and its fists the glider's handles; Link's own hands are left to his clips. */
+    struct FHeldHandle
+    {
+        float Weight = 0.f;
+        bool bSword = false;
+        FVector A = FVector::ZeroVector, B = FVector::ZeroVector, Major = FVector::ForwardVector;
+        FVector2D R0 = FVector2D::ZeroVector, R1 = FVector2D::ZeroVector;
+        FVector2D RM = FVector2D::ZeroVector;   // at a waist MidAt of the way from A to B (none: MidAt outside 0-1)
+        float MidAt = -1.f;
+    };
+    FHeldHandle HeldHandle(int32 Side, bool bShape = false) const;   // bShape: its shape even before the hand closes
     /** A hit's recoil over the clip (the animation graph's flinch layer): the turn added to the spine (0), chest (1),
      *  neck (2) and head (3), component space. The body bends away from the blow and springs back, the head last. */
     FQuat FlinchRotation(int32 Bone) const;
@@ -209,8 +226,8 @@ private:
     struct FSlot
     {
         FName Hand, Back;
-        FTransform Held, Carry;   // relative to the hand and back bones
-        bool bInHand = false;
+        FTransform Held, Carry, Crouched;   // relative to the hand and back bones; Crouched, when fitted, the carry crouched
+        bool bInHand = false, bCrouched = false;
     };
     UPROPERTY() TObjectPtr<AWandererCharacter> Character;
     UPROPERTY() TMap<FName, TObjectPtr<UStaticMeshComponent>> Props;
@@ -271,6 +288,7 @@ private:
     bool bShield = false, bLegacy = false;
     float FreeArm = 0.f, TwoHandGrip = 0.f;
     FVector GripOffset = FVector::ZeroVector;
+    FQuat TwoHandTurn = FQuat::Identity;
     // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round, and its
     // middle (or, on Link, where his neutral glide holds it).
     FTransform GliderHeld = FTransform::Identity;
@@ -285,6 +303,15 @@ private:
     FVector PalmOf(int32 Side) const;
     /** The middle of a hand's curled index and middle fingers, in the mesh's component space. */
     FVector FingersOf(int32 Side) const;
+    /** The middle of the space a fist closes round, in the mesh's component space: Reach in front of its knuckle line, on
+     *  the side its fingers curl to, square to the palm (which the fingers' bending does not move). */
+    FVector CavityOf(int32 Side, float Reach) const;
+    /** How far in front of its knuckle line a fist holds its handle's axis (component cm): the handle's largest radius
+     *  plus the palm's thickness under the knuckles, the sword's or the glider's. */
+    float GripReach(bool bSword) const;
+    /** A fist's grip axis in its hand bone's frame, toward the thumb: the sword hand's from the sword's own hold, the off
+     *  hand's from its knuckle line (little finger's base to the index's), as its hand bone is the sword hand's mirrored. */
+    FVector FistAxisOf(int32 Side) const;
     FName GliderSocket;   // the hand bone it is held at
     // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
     // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
@@ -299,7 +326,13 @@ private:
     bool bFistAxis = false;
     FQuat GlideHandTurn[2] = { FQuat::Identity, FQuat::Identity };
     float GlideBank = 0.f, GlideHands = 0.f;
+    FVector GlideGrip[2][2] = { { FVector::ZeroVector, FVector::ZeroVector }, { FVector::ZeroVector, FVector::ZeroVector } };   // component space
+    FVector GlideGripUp = FVector::UpVector;   // the handles' ovals' major axis, component space
+    float GlideGripScale = 1.f;
+    float SwordHold = 0.f;   // the sword hand's wrap round the drawn sword, 0..1
     bool bGliderOnBody = false, bGliderBodyAttached = false;
+    bool bGliderOnRoot = false;   // placed from the import's fit, carried by the root bone
+    FTransform GliderOnRoot = FTransform::Identity;   // the import's fit, in the root bone's frame
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
@@ -308,7 +341,7 @@ private:
     FVector LockPoint = FVector::ZeroVector;
     bool bLockPoint = false;
     float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
-    float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
+    float CrouchCarry = 0.f, SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
     int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
     // Taking hits: the recoil (time since the blow, -1 when none; its angle in degrees and its time to peak), the axis it
@@ -324,6 +357,8 @@ private:
     TSet<TWeakObjectPtr<AActor>> HitThisSwing;
     TArray<FVector> PreviousBlade;
     FVector BladeBase = FVector::ZeroVector, BladeTip = FVector::ZeroVector;   // in the sword mesh's frame
+    FVector HiltEnd = FVector::ZeroVector;   // the handle's end behind the grip, in the sword mesh's frame
+    FVector SwordMajor = FVector::ForwardVector;   // across the blade's width (its grip's oval's major axis), sword mesh frame
     FName LastPlayed;
 
     // Actions
@@ -398,6 +433,7 @@ private:
     void SetArmed(bool bNow, bool bFeedback = true);
     void ArmedFeedback(bool bNow);
     void Attach(FName Slot);
+    FTransform CarryOf(const FSlot& S) const;
     /** A garment that simulates as cloth (Modori's coat) collides with the drawn blade: a capsule along it on the hand
      *  bone, a collision source while the sword is in hand. */
     void BladeCloth(bool bInHand);

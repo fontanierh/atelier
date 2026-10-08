@@ -45,7 +45,7 @@ shoes and eyeballs, and the riders' eyes, earring and hairband. Unreal imports e
 pose, so the exporter moves these pieces into model space and rebinds them to the body's skin. Left as they were,
 they floated at the horse's feet.
 `characters.cairo_rider` (`cairo_rider.py`, Blender) retargets RiderLink's clips onto Cairo with his BOTW move
-set's retarget (`../cairo/botw.py`), to `build/yorimichi/horses/cairo/fbx/A_<Clip>.fbx`. The root stays on the
+set's retarget (`../botw/retarget.py`), to `build/yorimichi/horses/cairo/fbx/A_<Clip>.fbx`. The root stays on the
 saddle, Cairo's hips sit above it at the ratio of the two hip heights, and his legs follow Link's round the horse.
 `unreal.horses` (`unreal/Scripts/import_horses.py`) imports them to `/Game/Horses` and writes
 `Content/Data/horses/roster.json`, which `FHorseSpec` reads. Cairo's clips go onto `/Game/Cairo/SK_Cairo`'s skeleton

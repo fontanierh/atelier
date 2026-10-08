@@ -10,6 +10,17 @@ namespace BotwMoveSetDetail
     // its U-shaped handles, measured on SK_LinkGlider's vertices.
     inline const FVector GliderHandles[2][2] = { { FVector(-24.8, -14.2, 1.2), FVector(-30.5, 2.8, 1.1) },
                                                  { FVector(25.4, -14.2, 1.6), FVector(30.1, 2.9, 1.0) } };
+    // Each handle tube's cross-section along that stretch (cm, its own frame): an even oval, the major radius along the
+    // glider's up axis and the minor across it, from the posed tube's vertices in game (#7633: the fingers wrap its
+    // surface, not its axis; rings at the stretch's ends take in the U's bends and read up to 20% larger).
+    inline const FVector2D GliderHandleRadii[2] = { FVector2D(3.30, 2.80), FVector2D(3.30, 2.80) };
+    // The sword's grip (LinkSword.glb's vertex rings), in lengths of its handle (its origin to the pommel's end; the origin
+    // lies inside the grip, the guard's face beyond it): the stretch a hand closes round, from where the pommel flares to
+    // the guard's face, and its oval at either end and at its waist, the major radius across the blade's width and the
+    // minor across its thickness (#7735: the old stretch stopped 4.5 cm short of the guard, a finger there unmodelled).
+    inline const float SwordGripSpan[2] = { .709f, -.231f };
+    inline const FVector2D SwordGripRadii[3] = { FVector2D(.125, .090), FVector2D(.126, .076), FVector2D(.113, .070) };
+    inline const float SwordGripWaist = .523f;   // the waist's ring (.217), of the way from the first end to the second
     inline bool In(FName Name, std::initializer_list<const TCHAR*> Names)
     {
         for (const TCHAR* N : Names) if (Name == FName(N)) return true;

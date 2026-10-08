@@ -165,28 +165,28 @@ def main():
             record('airborne_save_preserves_places', refused and snapshot()['marker'] == replacement and len(snapshot()['keys']) == 2, snapshot())
             travel(anchor[:3])
 
-            assert value(f'unreal.YorimichiLive.test_wall(unreal.Vector({replacement[0]},{replacement[1]},{replacement[2]+300}),0,unreal.Vector(800,800,20))')
+            assert value(f'unreal.LiveLibrary.test_wall(unreal.Vector({replacement[0]},{replacement[1]},{replacement[2]+300}),0,unreal.Vector(800,800,20))')
             assert value('m.return_to_marker()')
             time.sleep(.6)
             returned('return_stays_below_roof', replacement)
             travel(anchor[:3])
-            py('unreal.YorimichiLive.clear_tests()')
+            py('unreal.LiveLibrary.clear_tests()')
 
-            assert value(f'unreal.YorimichiLive.test_wall(unreal.Vector({replacement[0]},{replacement[1]},{replacement[2]}),0,unreal.Vector(100,100,220))')
+            assert value(f'unreal.LiveLibrary.test_wall(unreal.Vector({replacement[0]},{replacement[1]},{replacement[2]}),0,unreal.Vector(100,100,220))')
             prior = snapshot()
             refused = not value('m.return_to_marker()')
             after = snapshot()
             record('blocked_return_preserves_player_and_marker', refused and math.dist(after['feet'], prior['feet']) < .1 and after['marker'] == replacement, after)
-            py('unreal.YorimichiLive.clear_tests()')
+            py('unreal.LiveLibrary.clear_tests()')
 
             platform = [anchor[0]+2000, anchor[1], anchor[2]+400]
-            assert value(f'unreal.YorimichiLive.test_wall(unreal.Vector({platform[0]},{platform[1]},{platform[2]}),0,unreal.Vector(400,400,30))')
+            assert value(f'unreal.LiveLibrary.test_wall(unreal.Vector({platform[0]},{platform[1]},{platform[2]}),0,unreal.Vector(400,400,30))')
             travel([platform[0], platform[1], platform[2]+30])
             assert value('m.save_marker("Removed platform")')
             high = snapshot()
             record('marker_on_raised_platform', high['has'] and abs(high['marker'][2]-platform[2]-30) < 2, high)
             travel(anchor[:3])
-            py('unreal.YorimichiLive.clear_tests()')
+            py('unreal.LiveLibrary.clear_tests()')
             prior = snapshot()
             refused = not value('m.return_to_marker()')
             after = snapshot()
@@ -304,7 +304,7 @@ def main():
         record('scenario_completed', False, repr(exc))
     finally:
         try:
-            py('unreal.YorimichiLive.clear_tests()')
+            py('unreal.LiveLibrary.clear_tests()')
         except Exception as exc:
             record('qa_cleanup', False, repr(exc))
         result = dict(passed=all(c['ok'] for c in checks.values()), checks=checks)

@@ -1,4 +1,6 @@
 #include "WandererCharacter.h"
+#include "AtelierExit.h"
+#include "AtelierData.h"
 #include "JapanWorld.h"
 #include "SailboatComponent.h"
 #include "SkateComponent.h"
@@ -166,8 +168,9 @@ void AWandererCharacter::AdvanceBuildingReview(float)
   S.SettingsPath=FPaths::ProjectSavedDir()/TEXT("settings.txt");
   S.bSettingsExisted=FPaths::FileExists(S.SettingsPath);
   if(S.bSettingsExisted)FFileHelper::LoadFileToArray(S.SettingsBefore,*S.SettingsPath);
-  FString Text;const TArray<TSharedPtr<FJsonValue>>* Shots=nullptr;
-  if(!FFileHelper::LoadFileToString(Text,*BuildingReviewSpecPath)||!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),S.Spec)||!S.Spec.IsValid()||!S.Spec->TryGetArrayField(TEXT("shots"),Shots)||Shots->IsEmpty())
+  const TArray<TSharedPtr<FJsonValue>>* Shots=nullptr;
+  S.Spec=AtelierReadJson(BuildingReviewSpecPath);
+  if(!S.Spec||!S.Spec->TryGetArrayField(TEXT("shots"),Shots)||Shots->IsEmpty())
    S.Errors.Add(MakeShared<FJsonValueString>(TEXT("Missing or invalid nonempty shots array")));
   else
   {
@@ -218,7 +221,7 @@ void AWandererCharacter::AdvanceBuildingReview(float)
   if(!WriteReviewJSON(ReviewDirectory/TEXT("completed.json"),Manifest))S.Errors.Add(MakeShared<FJsonValueString>(TEXT("Could not write completed manifest")));
   auto Errors=MakeShared<FJsonObject>();Errors->SetArrayField(TEXT("errors"),S.Errors);WriteReviewJSON(ReviewDirectory/TEXT("errors.json"),Errors);Progress(true);
   UE_LOG(LogTemp,Display,TEXT("BUILDING REVIEW COMPLETE: %d/%d screenshots, %d errors"),S.Completed.Num(),S.Shots.Num(),S.Errors.Num());
-  FPlatformMisc::RequestExitWithStatus(false,S.Errors.IsEmpty()?0:2);
+  AtelierRequestExit(S.Errors.IsEmpty()?0:2);
  };
  if(!S.Errors.IsEmpty()||S.Index>=S.Shots.Num()){Finish();return;}
  const auto Shot=S.Shots[S.Index]->AsObject();
