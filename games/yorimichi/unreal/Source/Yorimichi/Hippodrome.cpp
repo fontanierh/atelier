@@ -16,9 +16,7 @@
 
 static TSharedPtr<FJsonObject> ReadHippodromeJson(const FString& Path)
 {
-    FString Text; TSharedPtr<FJsonObject> Root;
-    if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root)) return nullptr;
-    return Root;
+    return AtelierReadJson(Path);
 }
 
 static FVector JsonVector(const TArray<TSharedPtr<FJsonValue>>& A)

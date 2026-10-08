@@ -64,12 +64,10 @@ void AJapanWorld::Load()
 
     // The tree house's build (world/regions/treehouse/build.py) writes what depends on its meshes to a file of its
     // own: prop instances join the world's, and its lights and rooms join world['treehouse'].
-    FString HouseText;
     TSharedPtr<FJsonObject> HouseRuntime;
     const TSharedPtr<FJsonObject>* HouseLayout=nullptr;
     if(Root->TryGetObjectField(TEXT("treehouse"),HouseLayout) &&
-       FFileHelper::LoadFileToString(HouseText,*(FPaths::GetPath(JsonPath)/TEXT("treehouse/runtime.json"))) &&
-       FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(HouseText),HouseRuntime) && HouseRuntime.IsValid())
+       (HouseRuntime=AtelierReadJson(FPaths::GetPath(JsonPath)/TEXT("treehouse/runtime.json"))))
     {
         auto Instances=Root->GetObjectField(TEXT("instances"));
         for(const auto& Pair:HouseRuntime->GetObjectField(TEXT("instances"))->Values)
@@ -85,11 +83,9 @@ void AJapanWorld::Load()
 
     // Optional independently generated eastern district. Keep the original world
     // and southwest work untouched; append instance groups before creating HISMs.
-    TSharedPtr<FJsonObject> City;
-    FString CityText;
     const FString CityPath=FPaths::GetPath(JsonPath)/TEXT("hidamari/city.json");
-    if(FFileHelper::LoadFileToString(CityText,*CityPath) &&
-       FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(CityText),City) && City.IsValid())
+    TSharedPtr<FJsonObject> City=AtelierReadJson(CityPath);
+    if(City)
     {
         auto Instances=Root->GetObjectField(TEXT("instances"));
         // The old distant scenery inside the new playable district must disappear.

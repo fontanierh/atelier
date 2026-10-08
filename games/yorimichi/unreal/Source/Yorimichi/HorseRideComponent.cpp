@@ -1,4 +1,5 @@
 #include "HorseRideComponent.h"
+#include "AtelierData.h"
 #include "JapanNetwork.h"
 #include "AtelierFX.h"
 #include "BotwRider.h"
@@ -67,10 +68,9 @@ FString UHorseRideComponent::RiderFor(const AWandererCharacter* Character)
 FString UHorseRideComponent::ChosenHorse()
 {
     // The horse last raced at the hippodrome (AHorseRace::SaveResults), else Momo.
-    FString Text, Horse; TSharedPtr<FJsonObject> Root;
-    if (FFileHelper::LoadFileToString(Text, *(FPaths::ProjectSavedDir() / TEXT("hippodrome.json"))) &&
-        FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) && Root.IsValid() &&
-        Root->TryGetStringField(TEXT("horse"), Horse) && FHorseSpec::Find(Horse)) return Horse;
+    FString Horse;
+    if (const TSharedPtr<FJsonObject> Root = AtelierReadJson(FPaths::ProjectSavedDir() / TEXT("hippodrome.json"));
+        Root && Root->TryGetStringField(TEXT("horse"), Horse) && FHorseSpec::Find(Horse)) return Horse;
     return TEXT("HorseRoan");
 }
 

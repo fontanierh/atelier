@@ -1,4 +1,5 @@
 #include "JapanPreferences.h"
+#include "AtelierSettings.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "BotwRider.h"
@@ -25,11 +26,6 @@
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
-#include "HAL/PlatformFileManager.h"
-#include "HAL/PlatformFile.h"
-#if PLATFORM_WINDOWS
-#include "Windows/WindowsHWrapper.h"
-#endif
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -237,25 +233,15 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 }
 FString UJapanPreferences::FilePath()
 {
-    // Desktop previews keep menu edits in their own file; ordinary play/stream
+    // Desktop previews keep menu edits in their own file (-preferencesfile=); ordinary play/stream
     // keeps the existing shared path. The launcher seeds a separate copy.
-    FString PreviewFile;
-    if (FParse::Value(FCommandLine::Get(),TEXT("preferencesfile="),PreviewFile) && !PreviewFile.IsEmpty())
-        return FPaths::ConvertRelativePathToFull(PreviewFile);
-    return FPaths::ProjectSavedDir()/TEXT("settings.txt");
+    return AtelierSettings::FilePath();
 }
 TMap<FString,FString> UJapanPreferences::ReadSaved()
 {
-    TMap<FString,FString> Result;
-    TArray<FString> Lines;
-    FFileHelper::LoadFileToStringArray(Lines,*FilePath());
-    for (const FString& Line : Lines)
-    {
-        FString K,V;
-        // A stale desktop key in the shared file must not switch a phone session into the profile.
-        if (Line.Split(TEXT("="),&K,&V) && !IsSessionOnly(K.TrimStartAndEnd()))
-            Result.Add(K.TrimStartAndEnd(),V.TrimStartAndEnd());
-    }
+    TMap<FString,FString> Result = AtelierSettings::ReadFile(FilePath());
+    // A stale desktop key in the shared file must not switch a phone session into the profile.
+    for (auto It = Result.CreateIterator(); It; ++It) if (IsSessionOnly(It.Key())) It.RemoveCurrent();
     // A file saved before the current default light keeps every light value it wrote, the old defaults
     // among them: let it take the new light once. Command-line overrides below still apply.
     if (float Version = 0; !Result.Contains(TEXT("light_version")) || !LexTryParseString(Version,*Result[TEXT("light_version")]) || Version < LightVersion)
@@ -263,12 +249,7 @@ TMap<FString,FString> UJapanPreferences::ReadSaved()
         for (const TCHAR* Key : LightKeys) Result.Remove(Key);
         Result.Add(TEXT("light_version"),FString::FromInt(LightVersion));
     }
-    FString Overrides;
-    if (FParse::Value(FCommandLine::Get(),TEXT("set="),Overrides))
-    {
-        TArray<FString> Pairs; Overrides.ParseIntoArray(Pairs,TEXT(";"));
-        for (const auto& Pair : Pairs) { FString K,V; if (Pair.Split(TEXT("="),&K,&V)) Result.Add(K,V); }
-    }
+    Result.Append(AtelierSettings::Overrides());
     return Result;
 }
 float UJapanPreferences::Saved(const FString& Key, float Default)
@@ -628,30 +609,10 @@ bool UJapanPreferences::Save()
         if (IsSessionOnly(V.Key)) { NextValues.Remove(V.Key); continue; }
         NextValues.Add(V.Key,FString::SanitizeFloat(V.Value));
     }
-    TArray<FString> Keys; NextValues.GetKeys(Keys); Keys.Sort();
-    FString Content;
-    for (const auto& K : Keys) Content += K+TEXT("=")+NextValues[K]+TEXT("\n");
-    // Flush a unique sibling first: an incomplete write must never truncate the previous settings.
-    const FString Temporary = FPaths::CreateTempFilename(*FPaths::GetPath(SettingsFile),TEXT("settings-"));
-    IPlatformFile& Files = FPlatformFileManager::Get().GetPlatformFile();
-    bool Saved = FFileHelper::SaveStringToFile(Content,*Temporary,FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-    if (Saved)
-    {
-#if PLATFORM_WINDOWS
-        // Windows's IPlatformFile::MoveFile does not replace existing files.
-        const FString From = Files.ConvertToAbsolutePathForExternalAppForWrite(*Temporary);
-        const FString To = Files.ConvertToAbsolutePathForExternalAppForWrite(*SettingsFile);
-        Saved = ::MoveFileExW(*From,*To,MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
-#else
-        // Apple/Unix MoveFile uses rename(), which replaces a same-filesystem sibling atomically.
-        // IFileManager::Move deletes the destination first, so it is unsafe for this operation.
-        Saved = Files.MoveFile(*SettingsFile,*Temporary);
-#endif
-    }
+    const bool Saved = AtelierSettings::WriteFile(SettingsFile,NextValues);
     if (Saved) SavedValues = MoveTemp(NextValues);
     else
     {
-        Files.DeleteFile(*Temporary);
         UE_LOG(LogTemp,Error,TEXT("PREFERENCES could not save %s; previous file preserved"),*SettingsFile);
     }
     return Saved;

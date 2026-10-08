@@ -1,4 +1,5 @@
 #include "WandererCharacter.h"
+#include "AtelierExit.h"
 #include "SkateComponent.h"
 #include "JapanWorld.h"
 #include "Camera/CameraComponent.h"
@@ -122,7 +123,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
             if (!Valid || V[5]<5. || V[5]>170.)
             {
                 UE_LOG(LogTemp,Error,TEXT("Custom benchmark requires finite X,Y,Z,Pitch,Yaw,FOV; FOV 5..170"));
-                FPlatformMisc::RequestExitWithStatus(false,2); return;
+                AtelierRequestExit(2); return;
             }
             const FVector Camera(V[0],V[1],V[2]);
             SetActorLocation(Camera+FVector(0,0,200),false,nullptr,ETeleportType::TeleportPhysics);
@@ -139,7 +140,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
             if (!Landscape->Shots.IsValidIndex(Index))
             {
                 UE_LOG(LogTemp,Error,TEXT("Benchmark view missing from world export"));
-                FPlatformMisc::RequestExitWithStatus(false,2); return;
+                AtelierRequestExit(2); return;
             }
             const FWorldShot& Shot = Landscape->Shots[Index];
             FollowCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
@@ -149,7 +150,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         {
             GetRoadSteering();
             if (SkateReviewRoad.Num() < 2)
-            { FPlatformMisc::RequestExitWithStatus(false,2); return; }
+            { AtelierRequestExit(2); return; }
             int32 RequestedIndex=0;FParse::Value(FCommandLine::Get(),TEXT("benchmarkroadindex="),RequestedIndex);
             const int32 Start=FMath::Clamp(RequestedIndex,0,SkateReviewRoad.Num()-2);
             SetActorLocation(SkateReviewRoad[Start]+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+8),false,nullptr,ETeleportType::TeleportPhysics);

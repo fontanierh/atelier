@@ -1,4 +1,5 @@
 #include "WandererCharacter.h"
+#include "AtelierExit.h"
 #include "AtelierData.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -26,10 +27,7 @@ float AWandererCharacter::GetRoadSteering()
 {
     if (SkateReviewRoad.IsEmpty())
     {
-        FString Text;
-        TSharedPtr<FJsonObject> Json;
-        if (FFileHelper::LoadFileToString(Text,*(AtelierDataPath(TEXT("world.json")))) &&
-            FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Json))
+        if (const TSharedPtr<FJsonObject> Json=AtelierReadJson(AtelierDataPath(TEXT("world.json"))))
         {
             const TArray<TSharedPtr<FJsonValue>>* Route = &Json->GetArrayField(TEXT("road"));
             FString Requested;
@@ -38,26 +36,24 @@ float AWandererCharacter::GetRoadSteering()
             {
                 const TSharedPtr<FJsonObject>* Village = nullptr;
                 if (!Json->TryGetObjectField(TEXT("village"),Village))
-                { FPlatformMisc::RequestExitWithStatus(false,2); return 0.f; }
+                { AtelierRequestExit(2); return 0.f; }
                 const auto& Paths = (*Village)->GetArrayField(TEXT("paths"));
                 const int32 Index = Requested == TEXT("village_loop") ? 1 : 0;
                 if (!Paths.IsValidIndex(Index))
-                { FPlatformMisc::RequestExitWithStatus(false,2); return 0.f; }
+                { AtelierRequestExit(2); return 0.f; }
                 Route = &Paths[Index]->AsArray();
             }
             if(Requested==TEXT("mega"))
             {
                 const TSharedPtr<FJsonObject>* Mega=nullptr;
-                if(!Json->TryGetObjectField(TEXT("mega"),Mega)){FPlatformMisc::RequestExitWithStatus(false,2);return 0.f;}
+                if(!Json->TryGetObjectField(TEXT("mega"),Mega)){AtelierRequestExit(2);return 0.f;}
                 Route=&(*Mega)->GetArrayField(TEXT("trail"));
             }
             TSharedPtr<FJsonObject> CityRoute;
             if(Requested==TEXT("park") || Requested==TEXT("north") || Requested==TEXT("hidamari") || Requested==TEXT("arcade") || Requested==TEXT("plaza") || Requested==TEXT("plaza_steps") || Requested==TEXT("harbor") || Requested==TEXT("harbor_pier"))
             {
-                FString CityText;
-                if(!FFileHelper::LoadFileToString(CityText,*(AtelierDataPath(TEXT("hidamari/city.json")))) ||
-                   !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(CityText),CityRoute))
-                {FPlatformMisc::RequestExitWithStatus(false,2);return 0.f;}
+                if(!(CityRoute=AtelierReadJson(AtelierDataPath(TEXT("hidamari/city.json")))))
+                {AtelierRequestExit(2);return 0.f;}
                 Route=&CityRoute->GetArrayField(Requested==TEXT("park") ? TEXT("park_route") : Requested==TEXT("north") ? TEXT("north_trail") : Requested==TEXT("harbor") ? TEXT("harbor_route") : Requested==TEXT("harbor_pier") ? TEXT("harbor_pier_route") : Requested==TEXT("arcade") ? TEXT("arcade_route") : Requested==TEXT("plaza") ? TEXT("plaza_route") : Requested==TEXT("plaza_steps") ? TEXT("plaza_steps") : TEXT("review_route"));
             }
             for (const auto& Value : *Route)
@@ -216,7 +212,7 @@ namespace
             C->Phase=-1; C->Drop=0; C->Skin[0]=C->Skin[1]=-1e9f; C->Occluded=C->Samples=C->Missed=0; C->bBailed=false; return true;
         }
         UE_LOG(LogTemp,Display,TEXT("SKATE GROUND CHECK %s: %d of %d spots failed"),C->Failed ? TEXT("FAIL") : TEXT("PASS"),C->Failed,C->Spots.Num());
-        if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,C->Failed ? 1 : 0);
+        if (C->bQuit) AtelierRequestExit(C->Failed ? 1 : 0);
         return false;
     }
 }
@@ -228,9 +224,9 @@ namespace
     // logged, unless every index gives both.
     bool FindSkateGroundSpots(FSkateGroundCheck& C,UWorld* Game,const TArray<int32>& Indices)
     {
-        FString Text; TSharedPtr<FJsonObject> Json; const TArray<TSharedPtr<FJsonValue>>* Road=nullptr;
-        if (!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("world.json"))) ||
-            !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Json) || !Json->TryGetArrayField(TEXT("road"),Road)) return false;
+        const TArray<TSharedPtr<FJsonValue>>* Road=nullptr;
+        const TSharedPtr<FJsonObject> Json=AtelierReadJson(AtelierDataPath(TEXT("world.json")));
+        if (!Json || !Json->TryGetArrayField(TEXT("road"),Road)) return false;
         auto Point=[&](int32 I){ const auto& XYZ=(*Road)[I]->AsArray(); return AJapanWorld::ToUE(XYZ[0]->AsNumber(),XYZ[1]->AsNumber(),XYZ[2]->AsNumber()); };
         for (int32 I : Indices)
         {
@@ -275,14 +271,14 @@ static FAutoConsoleCommandWithWorldAndArgs SkateGroundCheckCommand(TEXT("japan.S
                 else if (Waited>60)
                 {
                     UE_LOG(LogTemp,Error,TEXT("SKATE GROUND CHECK FAIL: no player with a board after 60 s"));
-                    if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,1);
+                    if (C->bQuit) AtelierRequestExit(1);
                     return false;
                 }
                 if (Settled<10) return true;
                 if (!FindSkateGroundSpots(*C,World.Get(),Indices))
                 {
                     UE_LOG(LogTemp,Error,TEXT("SKATE GROUND CHECK FAIL: not every street and grass spot was found"));
-                    if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,1);
+                    if (C->bQuit) AtelierRequestExit(1);
                     return false;
                 }
                 UE_LOG(LogTemp,Display,TEXT("SKATE GROUND CHECK: %d spots"),C->Spots.Num());
@@ -306,7 +302,7 @@ static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.Ska
         TWeakObjectPtr<UWorld> World=Game; float Waited=0;
         FTSTicker::GetCoreTicker().AddTicker(TEXT("SkatePierCheck"),0.f,[World,bQuit,Waited](float Dt) mutable
         {
-            auto Finish=[bQuit](int32 Failed){ if (bQuit) FPlatformMisc::RequestExitWithStatus(false,Failed ? 1 : 0); return false; };
+            auto Finish=[bQuit](int32 Failed){ if (bQuit) AtelierRequestExit(Failed ? 1 : 0); return false; };
             UWorld* W=World.Get(); USkateRailSubsystem* Registry=W ? W->GetSubsystem<USkateRailSubsystem>() : nullptr;
             Waited+=Dt;
             if (!Registry || Registry->Rails.IsEmpty())
@@ -315,9 +311,9 @@ static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.Ska
                 UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: no rails registered after 60 s")); return Finish(1);
             }
             if (Waited<10) return true;   // the world around the player loads first
-            FString Text; TSharedPtr<FJsonObject> Json; const TArray<TSharedPtr<FJsonValue>>* Lines=nullptr;
-            if (!FFileHelper::LoadFileToString(Text,*AtelierDataPath(TEXT("skatepark/park.json"))) ||
-                !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Json) || !Json->TryGetArrayField(TEXT("rails"),Lines))
+            const TArray<TSharedPtr<FJsonValue>>* Lines=nullptr;
+            const TSharedPtr<FJsonObject> Json=AtelierReadJson(AtelierDataPath(TEXT("skatepark/park.json")));
+            if (!Json || !Json->TryGetArrayField(TEXT("rails"),Lines))
             { UE_LOG(LogTemp,Error,TEXT("SKATE PIER CHECK FAIL: skatepark/park.json is missing or has no rails")); return Finish(1); }
             int32 Failed=0,Checked=0;
             for (const auto& Value : *Lines)
@@ -407,7 +403,7 @@ namespace
             return true;
         }
         UE_LOG(LogTemp,Display,TEXT("SKATE BOWL CHECK %s: %d of %d runs failed"),C->Failed ? TEXT("FAIL") : TEXT("PASS"),C->Failed,C->Speeds.Num());
-        if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,C->Failed ? 1 : 0);
+        if (C->bQuit) AtelierRequestExit(C->Failed ? 1 : 0);
         return false;
     }
 
@@ -528,7 +524,7 @@ static FAutoConsoleCommandWithWorldAndArgs SkateBowlCheckCommand(TEXT("japan.Ska
         if (!Bad.IsEmpty())   // a mistyped argument would quietly ride the defaults: fail instead
         {
             UE_LOG(LogTemp,Error,TEXT("SKATE BOWL CHECK FAIL: bad arguments:%s"),*Bad);
-            if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,1);
+            if (C->bQuit) AtelierRequestExit(1);
             return;
         }
         TWeakObjectPtr<UWorld> World=Game; float Waited=0,Settled=-1;
@@ -543,7 +539,7 @@ static FAutoConsoleCommandWithWorldAndArgs SkateBowlCheckCommand(TEXT("japan.Ska
                 else if (Waited>60)
                 {
                     UE_LOG(LogTemp,Error,TEXT("SKATE BOWL CHECK FAIL: no player with a board after 60 s"));
-                    if (C->bQuit) FPlatformMisc::RequestExitWithStatus(false,1);
+                    if (C->bQuit) AtelierRequestExit(1);
                     return false;
                 }
                 if (Settled<10) return true;
