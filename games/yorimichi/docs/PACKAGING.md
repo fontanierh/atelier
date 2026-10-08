@@ -114,8 +114,7 @@ Editor builds keep both renderers.
 
 4. Double-click `Yorimichi/Play Yorimichi.command`. The app is not notarised: if macOS refuses to open it, right-click
    the launcher, choose Open, then Open again. The launcher removes the download quarantine from the folder itself.
-   The launcher keeps the engine's memory tracker on (`-llm`, about 0.25 GiB) to sidestep a suspected startup crash.
-   If the game still quits within seconds of starting, before any window, the launcher opens it once more by itself (see
+   If the game quits within seconds of starting, before any window, the launcher opens it once more by itself (see
    "A launch can crash before the game starts"). If that also fails, open the launcher again.
 
 ## Before publishing a release
@@ -143,8 +142,7 @@ Upload the verified ZIP or all numbered parts, SHA256SUMS, manifest.json and the
 
 **Seen three times, each time fixed by launching the same unchanged app again.** The game's process
 ends with SIGSEGV (exit status 139) within a second, before `game.log` exists. macOS writes `Yorimichi-<date>.ips`
-under `~/Library/Logs/DiagnosticReports/`. `Play Yorimichi.command` now launches with `-llm` to avoid the engine path
-the stacks implicate, and still retries that crash once by itself (below).
+under `~/Library/Logs/DiagnosticReports/`. `Play Yorimichi.command` now retries that crash once by itself (below).
 
 - 2026-10-06 12:05: the first launch of the re-signed `afc541e1` package, an earlier build that day (not a
   published release). A launch six seconds later started.
@@ -179,35 +177,22 @@ new allocation handlers. An `FLLMScope` that opened while LLM was still enabled 
 `DestructInTheOpen` pops its tag from the freed tracker without checking again. Nothing in the project configures LLM.
 LaunchServices does more of that work for a newly registered app, which is why a first launch is the usual victim.
 
-The launcher passes `-llm`, so `ProcessCommandLineInner` keeps LLM enabled and never runs the disable-and-`Clear()`
-branch; the only other `Clear()` is the tracker's destructor at process exit. This is a mitigation of the implicated
-path, not a measured reduction in crashes: the crash was seen three times, so many fresh-extraction launches would be
-needed to show a change in its rate. LLM still counts every allocation for the whole session, but with no `-llmcsv` and
-no memory trace channel it writes no CSV or trace files (`LLM enabled CsvWriter: off TraceWriter: off` in `game.log`).
-Its cost, measured 2026-10-08 on the published r5 package (`6f1bf097`) with the shipped launcher's `road_walk`
-benchmark, in the order default, `-llm`, `-llm`, default:
-
-| | default | `-llm` |
-|---|---|---|
-| peak footprint | 5.37 GiB | 5.62 GiB |
-| average FPS | 32.4 | 32.1 |
-| p95 / p99 frame time | 44.4 / 52.3 ms | 43.6 / 47.8 ms |
-
-The FPS differences are smaller than the spread between runs of the same condition (about 5 FPS). They are relative
-only: three unrelated `CrashReportClient` processes used about 190% CPU throughout, so every run was near 35 FPS rather
-than the 60 FPS r5 baseline. The 180-frame warmup also skips a longer stretch of the route at lower FPS. Re-measure on
-an idle machine, trimming by time or distance, before quoting an absolute cost.
-
-The launcher cannot see the crash stack, so it still retries the crash's observable shape, once: the game ended with
+The launcher cannot see the crash stack, so it retries the crash's observable shape, once: the game ended with
 SIGSEGV within 20 seconds, and this launch did not create or change `game.log` (same inode, size, and sub-second
 modify and change times). It appends a line to `launcher.log` beside `game.log`, and macOS keeps the first `.ips`.
 Any other exit, a crash after the engine wrote its log, or a second crash ends the launcher with the game's status.
 Double-clicking `Yorimichi.app` itself has no retry. In release checks, a first crash with this stack followed by a
 clean retry is the known limitation; a crash with a different stack, or after `game.log` exists, is a new failure.
 
-Removing the race outright needs an engine-side change, and each option here is **unvalidated**: it needs a cook and
-repeated launches of freshly extracted copies before adoption:
+Removing the race needs an engine-side change, and each option here is **unvalidated**: it needs a cook and repeated
+launches of freshly extracted copies before adoption:
 
+- Launch with `-llm`, so LLM never disables itself and the disable-and-`Clear()` branch never runs. **Tried and
+  dropped** (#170, reverted): on the r5 package, in the order default, `-llm`, `-llm`, default, it cost about
+  0.25 GiB of peak footprint (5.37 vs 5.62 GiB), with no FPS difference beyond the spread between runs. Those runs
+  were under unrelated CPU load, so the FPS result is relative only. It writes no LLM CSV or trace files. It was
+  dropped because the benefit is unproven for a rare crash the retry already recovers from, while it keeps a
+  profiler tracking every allocation in every session, with long-session cost unmeasured.
 - Build the game target with `LLM_ENABLED_IN_CONFIG=0`. This needs a unique build environment for the target, so the
   engine modules it uses compile with the game.
 - Package the Shipping configuration, which leaves LLM out (Test keeps it). Shipping also drops logging and console
