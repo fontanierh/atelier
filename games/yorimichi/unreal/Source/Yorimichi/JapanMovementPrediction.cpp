@@ -487,6 +487,9 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
         return;
     }
     auto* Client = GetPredictionData_Client_Character();
+    // A good ACK can free moves still needed by the previous correction.
+    // Finish that replay before the ACK advances LastAckedMove.
+    if (!Custom.IsCorrection() && Client->bUpdatePosition) ClientUpdatePositionAfterServerUpdate();
     const FSavedMovePtr PreviousAck = Client->LastAckedMove;
     Super::ClientHandleMoveResponse(Response);
     // A duplicate or stale response must not rewind state. CMC must have accepted this exact correction first.

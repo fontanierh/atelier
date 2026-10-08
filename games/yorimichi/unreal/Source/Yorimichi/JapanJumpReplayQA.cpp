@@ -25,6 +25,7 @@ struct FProbe
     bool Armed = false, Scheduled = false, Injecting = false, Done = false, Replayed = false;
     bool AckApplied = false, PendingBeforeAck = false;
     int32 Applications = 0, SavedBeforeAck = 0;
+    float FirstSavedBeforeAck = -1.f;
     FString Error;
     FString Folder;
     TArray<FJapanMoveResponse> Responses;
@@ -85,6 +86,7 @@ void Schedule(UJapanCharacterMovement* Movement)
             {
                 Probe.PendingBeforeAck = Client->bUpdatePosition;
                 Probe.SavedBeforeAck = Client->SavedMoves.Num();
+                if (!Client->SavedMoves.IsEmpty()) Probe.FirstSavedBeforeAck = Client->SavedMoves[0]->TimeStamp;
                 Movement->ClientHandleMoveResponse(Probe.Ack);
                 Probe.AckApplied = Client->LastAckedMove.IsValid() && Client->LastAckedMove->TimeStamp == Probe.Ack.ClientAdjustment.TimeStamp;
             }
@@ -219,6 +221,7 @@ TSharedPtr<FJsonObject> JapanJumpReplayQA::Receipt(bool Server)
             O->SetObjectField(TEXT("ack"), ResponseRow(Probe.Ack));
             O->SetBoolField(TEXT("ack_applied"), Probe.AckApplied); O->SetBoolField(TEXT("pending_before_ack"), Probe.PendingBeforeAck);
             O->SetNumberField(TEXT("saved_before_ack"), Probe.SavedBeforeAck);
+            O->SetNumberField(TEXT("first_saved_before_ack"), Probe.FirstSavedBeforeAck);
         }
         O->SetArrayField(TEXT("moves"), Probe.Comparisons);
     }
