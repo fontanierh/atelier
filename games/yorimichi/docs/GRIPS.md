@@ -16,7 +16,22 @@ place on the prop.
 ## The pipeline
 
 Everything lives in `games/yorimichi/assets/characters/grips/` and writes under `build/yorimichi/grips/<character>/`.
-The data is private: the prop meshes, the samples, the saved poses and the game's `grips.json` are never committed.
+Modori's posed grips are committed in `grips/modori/`:
+- `poses.json`, the saves the game uses, and `poses/`, every save in order, with its edit log;
+- `moments.json`, the scenes the grips were posed in;
+- `body.glb` and `body.json`, his posing body;
+- `grips.json`, what the game reads.
+
+`game.py --source games/yorimichi/assets/characters/grips/modori` rebuilds the game's file from them, and gives the
+same grips. To pose further, copy the folder to `build/yorimichi/grips/modori/` and run `serve.py`.
+
+Three things stay out of the public repository:
+- the BOTW prop meshes (`LinkSword.glb`, `LinkGlider.glb`), which come from the private library and are never committed;
+- the raw samples (about 160 MB, holding the props' vertices);
+- the page's view snapshots (renders of the props).
+
+A save records the visitor's Tailscale login in `by`, which the committed copy replaces with `operator`. Scrub it the
+same way before committing new saves.
 
 | Step | Command | Output |
 |---|---|---|
@@ -24,7 +39,7 @@ The data is private: the prop meshes, the samples, the saved poses and the game'
 | 2. Samples | `sample.py PORT OUT.jsonl SECONDS` beside a running game (two-handed guard, glide) | the hands' skin and joints, the props' vertices |
 | 3. Scenes | `moments.py --character modori --samples OUT.jsonl` | `moments.json`: each handle's frame, the prop placed in it, every sampled moment |
 | 4. Pose | `serve.py --character modori --port 8897 [--allowed-user LOGIN]` | the poser page; every save in `poses/`, the newest as `poses.json` |
-| 5. Game data | `game.py --character modori` | `unreal/Content/Data/<character>/grips.json` (ignored) |
+| 5. Game data | `game.py --character modori [--source DIR]` | `unreal/Content/Data/<character>/grips.json` (ignored) |
 | 6. Check | `sample.py PORT ROWS.jsonl SECONDS --held`, then `check.py ROWS.jsonl` | the drift and miss of every grip |
 
 Run the Python steps with `uv run python` from the repository root, and steps 1–3 once per character.
@@ -99,6 +114,7 @@ compile is needed.
 
 - `grips/export.py`, `moments.py`, `serve.py`, `web/`: the poser.
 - `grips/game.py`: poses to `grips.json`.
+- `grips/modori/`: Modori's posed grips (see above).
 - `grips/sample.py`: in-game sampling (scenes, or `--held` for checks).
 - `grips/check.py`: the per-grip drift report.
 - `GripPoseNode.h`: the animation node.

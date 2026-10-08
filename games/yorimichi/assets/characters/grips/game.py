@@ -1,10 +1,11 @@
 """The grip poser's saved grips for the game: each hand's place on its prop and each finger bone's turn, in the game's frames.
 
-    uv run python games/yorimichi/assets/characters/grips/game.py --character modori
+    uv run python games/yorimichi/assets/characters/grips/game.py --character modori [--source DIR]
 
 Reads build/yorimichi/grips/<character>/poses.json (the poser's saves), moments.json (each prop's mesh in its handle's
-frame) and body.glb (the rest skeleton) and writes games/yorimichi/unreal/Content/Data/<character>/grips.json, which the
-move set reads (UBotwMoveSet::ReadGrips) to hold every grip exactly as posed, in every clip:
+frame) and body.glb (the rest skeleton), or those in DIR (grips/<character>/ holds the committed copy), and writes
+games/yorimichi/unreal/Content/Data/<character>/grips.json, which the move set reads (UBotwMoveSet::ReadGrips) to hold
+every grip exactly as posed, in every clip:
 
 - `hand`: the hand bone's place in the prop's own frame (its mesh's, in the game's centimetres): `location`, and
   `rotation`, which the game turns onto its own bone frame: the bone's component rotation is `rotation` times its
@@ -46,7 +47,7 @@ def placed(p):
 
 
 def main(args):
-    source = yori.OUT / 'grips' / args.character
+    source = args.source or yori.OUT / 'grips' / args.character
     poses = json.loads((source / 'poses.json').read_text())
     moments = {g['id']: g for g in json.loads((source / 'moments.json').read_text())['grips']}
     glb = Glb(source / 'body.glb')
@@ -89,6 +90,9 @@ def main(args):
     target.parent.mkdir(parents=True, exist_ok=True)
     record = {'character': args.character, 'source': {'poses_sha256': hashlib.sha256((source / 'poses.json').read_bytes()).hexdigest(),
                                                        'saved': poses.get('saved')}, 'grips': out}
+    # who saved it (a Tailscale login) stays out of the game's data
+    if isinstance(record['source']['saved'], dict):
+        record['source']['saved'] = {k: v for k, v in record['source']['saved'].items() if k != 'by'}
     target.write_text(json.dumps(record, indent=1) + '\n')
     print('GRIPS FOR THE GAME', target.relative_to(yori.REPO), sorted(out), flush=True)
 
@@ -96,4 +100,5 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--character', default='modori')
+    parser.add_argument('--source', type=Path, help="the poser's files (default build/yorimichi/grips/<character>/)")
     main(parser.parse_args())
