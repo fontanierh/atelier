@@ -57,6 +57,7 @@ void AModoriCharacter::BeginPlay()
 {
     Super::BeginPlay();
     UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
-    if (Set->Initialize(this, ModoriRecord())) Moves = Set;
+    // His grips as posed in the grip poser, when they have been exported for the game (assets/characters/grips/game.py).
+    if (Set->Initialize(this, ModoriRecord(), AtelierReadJson(AtelierDataPath(TEXT("modori/grips.json"))))) Moves = Set;
     else UE_LOG(LogTemp, Warning, TEXT("Modori: no merged move set (build unreal.modori_botw)"));
 }

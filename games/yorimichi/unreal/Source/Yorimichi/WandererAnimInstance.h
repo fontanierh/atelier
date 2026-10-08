@@ -46,6 +46,7 @@ public:
         float Evaluated[2] = { 0.f, 0.f }, Pinch[2] = { 100.f, 100.f };
         uint8 State[2][5] = {};
         float Residual[2][5] = {}, Grip[2][5] = {};
+        float PoseWeight[2] = { 0.f, 0.f }, PoseMiss[2] = { 0.f, 0.f };   // the posed grips (FGripPoseNode)
     } GripDigits;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;

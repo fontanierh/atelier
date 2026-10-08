@@ -733,6 +733,107 @@ FTransform UBotwMoveSet::CarryOf(const FSlot& S) const
     return Out;
 }
 
+/** The grip poser's grips (Content/Data/<character>/grips.json, assets/characters/grips/game.py): each hand bone's place
+ *  in its prop's own frame and each finger bone's turn, given against the reference pose (a bone's component rotation is
+ *  the file's times its reference one) and turned here onto this skeleton's bone frames. The sword hand carries the
+ *  sword, so the sword is placed on it instead: its hold is the hand's place on it, inverted. */
+void UBotwMoveSet::ReadGrips(const TSharedPtr<FJsonObject>& Grips)
+{
+    const USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    const TSharedPtr<FJsonObject>* List = nullptr;
+    if (!Grips.IsValid() || !Body || !Body->GetSkeletalMeshAsset() || !Grips->TryGetObjectField(TEXT("grips"), List)) return;
+    const FReferenceSkeleton& Ref = Body->GetSkeletalMeshAsset()->GetRefSkeleton();
+    TArray<FQuat> Rest;   // each bone's reference rotation, component space
+    Rest.SetNum(Ref.GetNum());
+    for (int32 I = 0; I < Ref.GetNum(); ++I)
+    {
+        const int32 P = Ref.GetParentIndex(I);
+        Rest[I] = ((P == INDEX_NONE ? FQuat::Identity : Rest[P]) * Ref.GetRefBonePose()[I].GetRotation()).GetNormalized();
+    }
+    auto Quat = [](const TSharedPtr<FJsonObject>& O, const TCHAR* Key, FQuat& Out)
+    {
+        const TArray<TSharedPtr<FJsonValue>>* V = nullptr;
+        if (!O->TryGetArrayField(Key, V) || V->Num() != 4) return false;
+        Out = FQuat((*V)[0]->AsNumber(), (*V)[1]->AsNumber(), (*V)[2]->AsNumber(), (*V)[3]->AsNumber()).GetNormalized();
+        return true;
+    };
+    const TCHAR* const Joint[3] = { TEXT("finger_"), TEXT("finger_tip_"), TEXT("finger_end_") };
+    const TCHAR* const Thumb[3] = { TEXT("thumb_"), TEXT("thumb_tip_"), TEXT("thumb_end_") };
+    FString Read;
+    for (const auto& Pair : (*List)->Values)
+    {
+        const TSharedPtr<FJsonObject> O = Pair.Value->AsObject();
+        FString Prop, Side;
+        if (!O.IsValid() || !O->TryGetStringField(TEXT("prop"), Prop) || !O->TryGetStringField(TEXT("side"), Side)) continue;
+        const int32 Which = Prop == TEXT("sword") ? 0 : Prop == TEXT("glider") ? 1 : -1, I = Side == TEXT("L") ? 1 : 0;
+        const TSharedPtr<FJsonObject>* Hand = nullptr;
+        const TSharedPtr<FJsonObject>* Bones = nullptr;
+        const TArray<TSharedPtr<FJsonValue>>* At = nullptr;
+        const int32 HandBone = Ref.FindBoneIndex(Character->GetSkateBone(I ? TEXT("hand_L") : TEXT("hand_R")));
+        FQuat Turn;
+        if (Which < 0 || HandBone == INDEX_NONE || !O->TryGetObjectField(TEXT("hand"), Hand) || !O->TryGetObjectField(TEXT("bones"), Bones)
+            || !Quat(*Hand, TEXT("rotation"), Turn) || !(*Hand)->TryGetArrayField(TEXT("location"), At) || At->Num() != 3) continue;
+        FPosedGrip G;
+        G.Hand = FTransform((Turn * Rest[HandBone]).GetNormalized(), FVector((*At)[0]->AsNumber(), (*At)[1]->AsNumber(), (*At)[2]->AsNumber()));
+        bool bAll = true;
+        for (int32 F = 0; F < 5; ++F)
+            for (int32 K = 0; K < 3; ++K)
+            {
+                const FString Name = F < 4 ? FString::Printf(TEXT("%s%d_%s"), Joint[K], F, *Side) : FString::Printf(TEXT("%s%s"), Thumb[K], *Side);
+                const TSharedPtr<FJsonObject>* B = nullptr;
+                const int32 Bone = Ref.FindBoneIndex(FName(*Name));
+                const int32 P = Bone == INDEX_NONE ? INDEX_NONE : Ref.GetParentIndex(Bone);
+                FString Parent;
+                FQuat Local;
+                if (P == INDEX_NONE || !(*Bones)->TryGetObjectField(Name, B) || !(*B)->TryGetStringField(TEXT("parent"), Parent)
+                    || Ref.GetBoneName(P) != FName(*Parent) || !Quat(*B, TEXT("rotation"), Local)) { bAll = false; continue; }
+                G.Local[F][K] = (Rest[P].Inverse() * Local * Rest[Bone]).GetNormalized();
+            }
+        const FString Id(Pair.Key);
+        if (!bAll) { UE_LOG(LogTemp, Warning, TEXT("Grips: %s does not match this skeleton's fingers; not posed"), *Id); continue; }
+        G.bValid = true;
+        Posed[Which][I] = G;
+        Read += (Read.IsEmpty() ? TEXT("") : TEXT(", ")) + Id;
+    }
+    if (FSlot* S = Slots.Find(TEXT("sword")); S && Posed[0][0].bValid)
+    {
+        FTransform Hand = Posed[0][0].Hand;
+        Hand.SetScale3D(FVector(1. / FMath::Max(S->Held.GetScale3D().GetAbsMax(), UE_SMALL_NUMBER)));
+        S->Held = Hand.Inverse();
+        Attach(TEXT("sword"));
+    }
+    UE_LOG(LogTemp, Display, TEXT("Grips: %s posed (%s)"), *Character->GetName(), *Read);
+}
+
+void UBotwMoveSet::PlaceGliderForPose()
+{
+    GliderPoseFrame = GFrameCounter;
+    if (Glider && bGliderBodyAttached && bGliderPlaced) Glider->SetRelativeTransform(GliderPlaced);
+}
+
+UBotwMoveSet::FGripPose UBotwMoveSet::GripPose(int32 Side) const
+{
+    Side &= 1;
+    FGripPose P;
+    // Gliding: each hand on its handle, the glider where the move set has placed it on the body (component space).
+    const FPosedGrip& Glide = Posed[1][Side];
+    if (Glide.bValid && Glider && bGliderBodyAttached && GlideHands > 0.f)
+    {
+        P.Weight = GlideHands; P.bPin = true; P.Local = Glide.Local;
+        P.Target = Glide.Hand * Glider->GetRelativeTransform();
+        return P;
+    }
+    const FPosedGrip& Sword = Posed[0][Side];
+    const FSlot* S = Slots.Find(TEXT("sword"));
+    if (!Sword.bValid || !S || !S->bInHand) return P;
+    P.Local = Sword.Local;
+    if (!Side) { P.Weight = SwordHold; return P; }
+    // The off hand in a two-handed hold, in the frame of the sword hand that carries the sword.
+    P.Weight = TwoHandGrip; P.bPin = P.bInFrame = true;
+    P.Target = Sword.Hand * S->Held;
+    return P;
+}
+
 void UBotwMoveSet::BladeCloth(bool bInHand)
 {
     USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
