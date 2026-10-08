@@ -80,6 +80,9 @@ struct FVehicleProbe
     double Began=-1,PhaseBegan=0,LastWrite=-1,NextAction=0,ResolvedAt=-1,StableSince=-1;
     FVector StartPosition=FVector::ZeroVector,CrashStart=FVector::ZeroVector;
     float CrashYaw=0;bool CrashSiteReady=false;TSharedPtr<FJsonObject> CrashSite=MakeShared<FJsonObject>();
+    double CrashMinPeer=UE_BIG_NUMBER,CrashMaxPeer=0.,LastReadinessWrite=-1.,MissingReadySince=-1.;int32 CrashPeerSamples=0;
+    FVector CrashObserverStart()const
+    {return FVector(CrashSite->GetNumberField(TEXT("observer_x")),CrashSite->GetNumberField(TEXT("observer_y")),CrashSite->GetNumberField(TEXT("observer_z")));}
     bool CircuitReady=false;
     FVector CircuitStart[2];
     TSharedPtr<FJsonObject> CircuitSite[2];
@@ -177,6 +180,12 @@ struct FVehicleProbe
             Data->SetObjectField(TEXT("circuit_site"),Sites);
         }
         Data->SetStringField(TEXT("case"),Case);Data->SetStringField(TEXT("player"),Identity(P));
+        if(Case==TEXT("crash")&&CrashSiteReady)
+        {
+            Data->SetBoolField(TEXT("crash_host_staged"),Host.IsValid()&&FVector::Dist2D(Host->GetActorLocation(),CrashObserverStart())<30.);
+            Data->SetNumberField(TEXT("crash_peer_samples"),CrashPeerSamples);
+            Data->SetNumberField(TEXT("crash_min_peer_cm"),CrashMinPeer);Data->SetNumberField(TEXT("crash_max_peer_cm"),CrashMaxPeer);
+        }
         Data->SetNumberField(TEXT("phase"),Phase);Data->SetNumberField(TEXT("epoch"),P->GetActivityEpoch());
         Data->SetNumberField(TEXT("activity"),uint8(P->GetNetworkActivity()));
         Data->SetBoolField(TEXT("authority"),P->HasAuthority());Data->SetBoolField(TEXT("local"),P->IsLocallyControlled());
@@ -211,6 +220,11 @@ struct FVehicleProbe
             Data->SetNumberField(TEXT("parked_x"),Location.X);Data->SetNumberField(TEXT("parked_y"),Location.Y);Data->SetNumberField(TEXT("parked_z"),Location.Z);
             Data->SetNumberField(TEXT("parked_qx"),Rotation.X);Data->SetNumberField(TEXT("parked_qy"),Rotation.Y);
             Data->SetNumberField(TEXT("parked_qz"),Rotation.Z);Data->SetNumberField(TEXT("parked_qw"),Rotation.W);
+            const FVector RetainedLocation=ParkedState.Transform.GetLocation();const FQuat RetainedRotation=ParkedState.Transform.GetRotation();
+            Data->SetNumberField(TEXT("retained_parked_x"),RetainedLocation.X);Data->SetNumberField(TEXT("retained_parked_y"),RetainedLocation.Y);
+            Data->SetNumberField(TEXT("retained_parked_z"),RetainedLocation.Z);
+            Data->SetNumberField(TEXT("retained_parked_qx"),RetainedRotation.X);Data->SetNumberField(TEXT("retained_parked_qy"),RetainedRotation.Y);
+            Data->SetNumberField(TEXT("retained_parked_qz"),RetainedRotation.Z);Data->SetNumberField(TEXT("retained_parked_qw"),RetainedRotation.W);
         }
         if(ClockCase())
         {
@@ -324,7 +338,8 @@ struct FVehicleProbe
             P->TravelTo(CircuitStart[P==Guest.Get()?1:0],0.f,TEXT("network bike infield"));
         if(Phase==1&&Enter&&Sail())
             P->TravelTo(AJapanWorld::ToUE(P==Host.Get()?-226.f:-216.f,-169.f,1.6f),80.f,TEXT("network vehicle shore"));
-        if(Phase==1&&Enter&&Case==TEXT("crash")&&P==Guest.Get())P->TravelTo(CrashStart,CrashYaw,TEXT("network authored wall approach"));
+        if(Phase==1&&Enter&&Case==TEXT("crash"))
+            P->TravelTo(P==Guest.Get()?CrashStart:CrashObserverStart(),CrashYaw,TEXT("network authored wall approach"));
         if(!PendingCase()&&(Phase==2||Phase==8)&&!Riding(P)&&!P->IsNetworkActivityPending()&&P->GetCharacterMovement()->IsMovingOnGround()&&FPlatformTime::Seconds()>=NextAction)
         {LocalSent=Request(P);NextAction=FPlatformTime::Seconds()+.75;}
         if(Phase==3)P->Live_Drive(FVector2D(0,1),1);
@@ -417,16 +432,33 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     if(Began>=0.&&!Complete&&Now-Began>120.)Fail(FString::Printf(TEXT("Vehicle deadline: %s phase %d"),*Case,Phase));
     // Unsupported routes fail explicitly until their real stimulus is implemented.
     if(Case!=TEXT("bike")&&Case!=TEXT("sail")&&Case!=TEXT("mount-bike")&&Case!=TEXT("mount-sail")&&Case!=TEXT("park")&&Case!=TEXT("crash")&&!ClockCase())Fail(TEXT("Vehicle case has no native stimulus yet"));
-    int32 Count=0;
+    int32 Count=0;bool Ready=true;Host.Reset();Guest.Reset();
     for(TActorIterator<AWandererCharacter> It(World.Get());It;++It)
     {
         if(It->IsNpc())continue;
         const auto* State=It->GetPlayerState<AJapanPlayerState>();
-        if(!State||!State->bWorldReady||!It->IsReady()||!It->GetLandscape()||!It->GetLandscape()->bGameplayReady)return false;
+        Ready&=State&&State->bWorldReady&&It->IsReady()&&It->GetLandscape()&&It->GetLandscape()->bGameplayReady;
         ++Count;
         if(Server?It->IsLocallyControlled():!It->IsLocallyControlled())Host=*It;else Guest=*It;
     }
-    if(Count!=2||!Host.IsValid()||!Guest.IsValid())return false;
+    if(!Ready||Count!=2||!Host.IsValid()||!Guest.IsValid())
+    {
+        if(Began>=0.&&MissingReadySince<0.)MissingReadySince=Now;
+        const bool LostReady=MissingReadySince>=0.&&Now-MissingReadySince>2.;
+        if(LostReady)Fail(FString::Printf(TEXT("Vehicle phase %d lost ready replicated pawns for 2s: count=%d ready=%d host=%d guest=%d"),
+            Phase,Count,Ready,Host.IsValid(),Guest.IsValid()));
+        if(Began>=0.&&(LostReady||Now-LastReadinessWrite>=1.))
+        {
+            LastReadinessWrite=Now;auto Gate=MakeShared<FJsonObject>();
+            Gate->SetNumberField(TEXT("at"),Now);Gate->SetNumberField(TEXT("phase"),Phase);Gate->SetNumberField(TEXT("pawns"),Count);
+            Gate->SetBoolField(TEXT("ready"),Ready);Gate->SetBoolField(TEXT("host_present"),Host.IsValid());Gate->SetBoolField(TEXT("guest_present"),Guest.IsValid());
+            Gate->SetNumberField(TEXT("missing_seconds"),Now-MissingReadySince);Gate->SetStringField(TEXT("error"),Error);
+            Write(Folder/(Server?TEXT("vehicle-host-readiness.json"):TEXT("vehicle-guest-readiness.json")),Gate);
+            if(LostReady)Write(Folder/(Server?TEXT("vehicle-failed.json"):TEXT("vehicle-client-failed.json")),Gate);
+        }
+        return false;
+    }
+    MissingReadySince=-1.;
     if(CircuitCase()&&!CircuitReady)
     {
         CircuitReady=JapanVehicleQASite::Circuit(Host.Get(),false,CircuitStart[0],CircuitSite[0])&&
@@ -465,6 +497,12 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     const float Health=Guest->GetSword()->GetHealth();
     if(LastHealth>=0.f&&!FMath::IsNearlyEqual(Health,LastHealth,.01f))++HealthChanges;
     LastHealth=Health;LastGuestEpoch=Guest->GetActivityEpoch();LastGuestActivity=uint8(Guest->GetNetworkActivity());LastParked=Guest->GetBike()->IsParked();
+    if(Case==TEXT("crash")&&Phase>=2)
+    {
+        const double Distance=FVector::Dist(Host->GetActorLocation(),Guest->GetActorLocation());
+        ++CrashPeerSamples;CrashMinPeer=FMath::Min(CrashMinPeer,Distance);CrashMaxPeer=FMath::Max(CrashMaxPeer,Distance);
+        if(Distance<400.||Distance>3000.)Fail(TEXT("Crash fixture observer left its safe nearby position"));
+    }
     if(CircuitReady&&Phase>=2)
     {
         ++CircuitObservations;
@@ -564,7 +602,9 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
         Host->GetCharacterMovement()->IsMovingOnGround()&&Guest->GetCharacterMovement()->IsMovingOnGround()&&
         !Guest->IsNetworkActivityPending()&&(!CircuitCase()||
             (FVector::Dist2D(Host->GetActorLocation(),CircuitStart[0])<30.&&FVector::Dist2D(Guest->GetActorLocation(),CircuitStart[1])<30.&&
-            FMath::Abs(FRotator::NormalizeAxis(Host->GetActorRotation().Yaw))<1.&&FMath::Abs(FRotator::NormalizeAxis(Guest->GetActorRotation().Yaw))<1.))&&(Case!=TEXT("crash")||FVector::Dist2D(Guest->GetActorLocation(),CrashStart)<30.))Step(2);
+            FMath::Abs(FRotator::NormalizeAxis(Host->GetActorRotation().Yaw))<1.&&FMath::Abs(FRotator::NormalizeAxis(Guest->GetActorRotation().Yaw))<1.))&&
+        (Case!=TEXT("crash")||(FVector::Dist2D(Guest->GetActorLocation(),CrashStart)<30.&&
+            FVector::Dist2D(Host->GetActorLocation(),CrashObserverStart())<30.&&Peer->GetBoolField(TEXT("crash_host_staged")))))Step(2);
     else if(ClockCase())
     {
         if(Phase==2&&BothRiding)

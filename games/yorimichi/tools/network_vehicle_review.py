@@ -74,6 +74,18 @@ def circuit_agrees(host, guest):
                for role in ('host', 'guest'))
 
 
+def parked_transform_agrees(left, right, right_prefix='parked_'):
+    rows = ((left, 'parked_'), (right, right_prefix))
+    positions = [[r.get(prefix + axis) for axis in 'xyz'] for r, prefix in rows]
+    rotations = [[r.get(prefix + 'q' + axis) for axis in 'xyzw'] for r, prefix in rows]
+    if not (all(finite(v) for p in positions + rotations for v in p) and
+            all(abs(sum(v*v for v in q)-1) <= .001 for q in rotations)):
+        return False
+    # q and -q encode the same rotation.
+    cosine = abs(sum(a*b for a, b in zip(*rotations))) / math.sqrt(math.prod(sum(v*v for v in q) for q in rotations))
+    return math.dist(*positions) <= 1 and 2*math.degrees(math.acos(min(1, cosine))) <= 1
+
+
 def parked_pose_agrees(host, guest, clip):
     rows = (host, guest)
     if not all(r.get('parked') is True and r.get('parked_visible') is True and
@@ -81,13 +93,8 @@ def parked_pose_agrees(host, guest, clip):
                finite(r.get('parked_clip_time')) and r['parked_clip_time'] >= 0 and
                finite(r.get('parked_steering')) for r in rows):
         return False
-    positions = [[r.get('parked_' + axis) for axis in 'xyz'] for r in rows]
-    rotations = [[r.get('parked_q' + axis) for axis in 'xyzw'] for r in rows]
-    if not (all(finite(v) for p in positions + rotations for v in p) and
-            all(abs(sum(v*v for v in q)-1) <= .001 for q in rotations)):
-        return False
-    cosine = abs(sum(a*b for a, b in zip(*rotations))) / math.sqrt(math.prod(sum(v*v for v in q) for q in rotations))
-    return (math.dist(*positions) <= 1 and 2*math.degrees(math.acos(min(1, cosine))) <= 1 and
+    return (parked_transform_agrees(host, guest) and
+            all(parked_transform_agrees(r, r, 'retained_parked_') for r in rows) and
             all(abs(host[k]-guest[k]) <= 1.e-4 for k in ('parked_clip_time', 'parked_steering')))
 
 
@@ -177,6 +184,11 @@ def compare_vehicle(folder, case):
         site = result.get('crash_site', {})
         crashes = result.get('telemetry', {}).get('crashes', [])
         checks['vehicle_authored_crash_site'] = site.get('authored_fixed') is True and isinstance(site.get('owner_class'), str) and bool(site['owner_class']) and integer(site.get('item')) and isinstance(site.get('mesh'), str) and bool(site['mesh']) and site.get('flat_samples') == 9 and site.get('approach_cm') == 1800
+        checks['vehicle_crash_nearby_observer'] = (site.get('observer_clear') is True and
+            all(finite(site.get('observer_' + axis)) for axis in 'xyz') and
+            all(integer(r.get('crash_peer_samples')) and r['crash_peer_samples'] >= 30 and
+                finite(r.get('crash_min_peer_cm')) and finite(r.get('crash_max_peer_cm')) and
+                400 <= r['crash_min_peer_cm'] <= r['crash_max_peer_cm'] <= 3000 for r in (result, guest)))
         checks['vehicle_real_crash_contact'] = (len(crashes) == 1 and finite(crashes[0].get('speed')) and crashes[0]['speed'] > 450 and all(crashes[0].get(k) == site.get(k) for k in ('owner_class', 'mesh', 'item')))
         checks['vehicle_crash_terminal'] = result.get('terminal_at_contact') is True and result.get('hit_clip') == result.get('parked_clip') == 'BikeCrash' and result.get('end_epoch') == result.get('start_epoch', -1) + 1
         checks['vehicle_crash_supported_pose'] = all(r.get('parked') is True for r in (result, guest, final)) and all(finite(result.get(k)) and abs(result[k]) <= 5 for k in ('wheel_front_gap_cm', 'wheel_rear_gap_cm'))

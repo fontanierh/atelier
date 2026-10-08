@@ -63,6 +63,8 @@ bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Y
     auto Q=JapanGameplayCollision::Query(World,SCENE_QUERY_STAT(VehicleQASite),false);Q.AddIgnoredActor(Rider);
     const FVector Home=Rider->GetActorLocation();
     Evidence=MakeShared<FJsonObject>();Evidence->SetBoolField(TEXT("authored_fixed"),false);
+    // This map's supported ground lies inside -20m..200m. Anything outside
+    // that range fails the fixture instead of accepting an untraced surface.
     auto Ground=[&](FVector At,FHitResult& Hit)
     {return World->LineTraceSingleByChannel(Hit,FVector(At.X,At.Y,20000),FVector(At.X,At.Y,-2000),JapanGameplayCollision::Channel,Q)&&
         Hit.ImpactNormal.Z>.98&&JapanGameplayCollision::IsFixed(Hit.GetComponent());};
@@ -70,13 +72,14 @@ bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Y
     // and stable yard as well; every candidate still has to pass the same wall,
     // 18m approach, ground and width checks. No geometry is created or altered.
     const TArray<FVector> Centres={Home,AJapanWorld::ToUE(600.,535.,0.),AJapanWorld::ToUE(715.,520.,0.)};
-    int32 Queries=0,Regions=0,Origins=0,GroundRejected=0,WallCandidates=0,ApproachRejected=0,WidthRejected=0;
+    int32 Queries=0,Regions=0,Origins=0,GroundRejected=0,WallCandidates=0,ApproachRejected=0,WidthRejected=0,ObserverRejected=0;
     auto Counters=[&]()
     {
         Evidence->SetNumberField(TEXT("queries"),Queries);Evidence->SetNumberField(TEXT("regions"),Regions);
         Evidence->SetNumberField(TEXT("origins"),Origins);Evidence->SetNumberField(TEXT("ground_rejected"),GroundRejected);
         Evidence->SetNumberField(TEXT("wall_candidates"),WallCandidates);Evidence->SetNumberField(TEXT("approach_rejected"),ApproachRejected);
         Evidence->SetNumberField(TEXT("width_rejected"),WidthRejected);
+        Evidence->SetNumberField(TEXT("observer_rejected"),ObserverRejected);
     };
     auto Rejected=[&](const TCHAR* Reason,const FVector& At)
     {
@@ -120,8 +123,26 @@ bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Y
                     {Flat=false;break;}
                 }
                 if(!Flat){++WidthRejected;Rejected(TEXT("approach width obstructed or wall identity changed"),Back);continue;}
+                // Keep the host observer close enough to remain relevant, but
+                // twenty metres beside the approach so it cannot trigger the ray.
+                FVector ObserverStart;bool ObserverClear=false;
+                const float HalfHeight=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+                const float Radius=Rider->GetCapsuleComponent()->GetScaledCapsuleRadius();
+                for(float Offset:{2000.f,-2000.f})
+                {
+                    FHitResult ObserverFloor;++Queries;
+                    if(!Ground(Back+Side*Offset,ObserverFloor)||FMath::Abs(ObserverFloor.ImpactPoint.Z-First.ImpactPoint.Z)>=3.)continue;
+                    ObserverStart=ObserverFloor.ImpactPoint+FVector(0,0,HalfHeight+3);
+                    ++Queries;
+                    if(!World->OverlapBlockingTestByChannel(ObserverStart,FQuat::Identity,JapanGameplayCollision::Channel,
+                        FCollisionShape::MakeCapsule(Radius,HalfHeight),Q)){ObserverClear=true;break;}
+                }
+                if(!ObserverClear){++ObserverRejected;Rejected(TEXT("no supported clear observer position"),Back);continue;}
                 Start=First.ImpactPoint+FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3);
                 Yaw=(-Normal).Rotation().Yaw;Counters();
+                Evidence->SetBoolField(TEXT("observer_clear"),true);
+                Evidence->SetNumberField(TEXT("observer_x"),ObserverStart.X);Evidence->SetNumberField(TEXT("observer_y"),ObserverStart.Y);
+                Evidence->SetNumberField(TEXT("observer_z"),ObserverStart.Z);
                 Evidence->SetStringField(TEXT("owner_class"),Wall.GetActor()->GetClass()->GetName());
                 const auto* Mesh=Cast<UStaticMeshComponent>(Wall.GetComponent());
                 Evidence->SetStringField(TEXT("mesh"),Mesh&&Mesh->GetStaticMesh()?Mesh->GetStaticMesh()->GetPathName():FString());

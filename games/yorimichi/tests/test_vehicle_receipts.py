@@ -60,7 +60,9 @@ def fixture(folder, case):
         for observed in (result, guest):
             observed.update(parked_visible=True, parked_pose_valid=True,
                 parked_clip='BikeKickstand' if case == 'park' else 'BikeCrash', parked_clip_time=1.5, parked_steering=0.,
-                parked_x=100., parked_y=200., parked_z=300., parked_qx=0., parked_qy=0., parked_qz=0., parked_qw=1.)
+                parked_x=100., parked_y=200., parked_z=300., parked_qx=0., parked_qy=0., parked_qz=0., parked_qw=1.,
+                retained_parked_x=100., retained_parked_y=200., retained_parked_z=300.,
+                retained_parked_qx=0., retained_parked_qy=0., retained_parked_qz=0., retained_parked_qw=1.)
         result.update(terminal_at_contact=True, hit_clip='BikeKickstand' if case == 'park' else 'BikeCrash',
                       parked_clip='BikeKickstand' if case == 'park' else 'BikeCrash', wheel_front_gap_cm=1, wheel_rear_gap_cm=-1)
     if pending:
@@ -69,7 +71,10 @@ def fixture(folder, case):
                       pending_bike_refusals=0 if sail else 1, pending_sail_refusals=1 if sail else 0)
         result['telemetry']['requests'].append(dict(at=50.08, kind=kind, pending=True, locked=False, encounter=False, request_epoch=1))
     if case == 'crash':
-        result['crash_site'] = dict(authored_fixed=True, mesh='/Game/Wall', owner_class='JapanWorld', item=3, flat_samples=9, approach_cm=1800)
+        result['crash_site'] = dict(authored_fixed=True, mesh='/Game/Wall', owner_class='JapanWorld', item=3, flat_samples=9, approach_cm=1800,
+                                   observer_clear=True, observer_x=100., observer_y=2000., observer_z=40.)
+        for observed in (result, guest):
+            observed.update(crash_peer_samples=300, crash_min_peer_cm=2000., crash_max_peer_cm=2700.)
         result['telemetry']['crashes'] = [dict(mesh='/Game/Wall', owner_class='JapanWorld', item=3, speed=700)]
     order = [0, 2, 30, 31, 32] if pending else [0, 2, 7, 8, 3, 4, 5, 6, 9, 10] if sail else [0, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     if case == 'park': order.remove(9)
@@ -288,9 +293,60 @@ def test_terminal_pose_uses_retained_pose_not_cleared_active_clip(tmp_path, case
     assert all(review.compare_vehicle(tmp_path, case).values())
 
 
+@pytest.mark.parametrize('case', ['park', 'crash'])
+@pytest.mark.parametrize('file', ['vehicle-result', 'vehicle-observed'])
+@pytest.mark.parametrize('edit', [
+    lambda r: r.pop('retained_parked_x'),
+    lambda r: r.update(retained_parked_z=float('nan')),
+    lambda r: r.update(retained_parked_x=True),
+    lambda r: r.update(retained_parked_x=101.01),
+    lambda r: r.update(retained_parked_qz=.0174524064, retained_parked_qw=.9998476952),
+    lambda r: r.update(retained_parked_qw=0.),
+])
+def test_displayed_park_must_match_its_own_retained_state(tmp_path, case, file, edit):
+    fixture(tmp_path, case);mutate(tmp_path, file, edit)
+    assert review.compare_vehicle(tmp_path, case)['vehicle_parked_peer_pose'] is False
+
+
+@pytest.mark.parametrize('case', ['park', 'crash'])
+def test_agreeing_displays_cannot_hide_wrong_retained_transform(tmp_path, case):
+    fixture(tmp_path, case)
+    for file in ('vehicle-result', 'vehicle-observed'):
+        mutate(tmp_path, file, lambda r: r.update(parked_x=102.))
+    assert review.compare_vehicle(tmp_path, case)['vehicle_parked_peer_pose'] is False
+
+
+@pytest.mark.parametrize('case', ['park', 'crash'])
+def test_retained_park_quaternion_sign_is_equivalent(tmp_path, case):
+    fixture(tmp_path, case)
+    mutate(tmp_path, 'vehicle-observed', lambda r: r.update(retained_parked_qw=-1.))
+    assert all(review.compare_vehicle(tmp_path, case).values())
+
+
 def test_crash_must_hit_the_authored_fixture(tmp_path):
     fixture(tmp_path, 'crash');mutate(tmp_path, 'vehicle-result', lambda r: r['telemetry']['crashes'][0].update(mesh='/Game/Different'))
     assert not all(review.compare_vehicle(tmp_path, 'crash').values())
+
+
+@pytest.mark.parametrize('file', ['vehicle-result', 'vehicle-observed'])
+@pytest.mark.parametrize('edit', [
+    lambda r: r.pop('crash_peer_samples'),
+    lambda r: r.update(crash_peer_samples=True),
+    lambda r: r.update(crash_peer_samples=29),
+    lambda r: r.update(crash_min_peer_cm=399),
+    lambda r: r.update(crash_max_peer_cm=3001),
+    lambda r: r.update(crash_max_peer_cm=float('nan')),
+    lambda r: r.update(crash_min_peer_cm=2200, crash_max_peer_cm=2100),
+])
+def test_crash_requires_safe_nearby_observer(tmp_path, file, edit):
+    fixture(tmp_path, 'crash');mutate(tmp_path, file, edit)
+    assert review.compare_vehicle(tmp_path, 'crash')['vehicle_crash_nearby_observer'] is False
+
+
+@pytest.mark.parametrize('key', ['observer_clear', 'observer_x', 'observer_y', 'observer_z'])
+def test_crash_requires_observer_site_evidence(tmp_path, key):
+    fixture(tmp_path, 'crash');mutate(tmp_path, 'vehicle-result', lambda r: r['crash_site'].pop(key))
+    assert review.compare_vehicle(tmp_path, 'crash')['vehicle_crash_nearby_observer'] is False
 
 
 @pytest.mark.parametrize('key', ['owner_class', 'item'])
