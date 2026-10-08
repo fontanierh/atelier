@@ -183,13 +183,14 @@ COLLIDERS = [('pelvis', 'thigh_L', 'thigh_R', ('pelvis',)), ('spine', 'spine', '
              ('thigh_L', 'thigh_L', 'shin_L', ('thigh_L',)), ('thigh_R', 'thigh_R', 'shin_R', ('thigh_R',)),
              ('shin_L', 'shin_L', 'foot_L', ('shin_L',)), ('shin_R', 'shin_R', 'foot_R', ('shin_R',))]
 
-MARGIN_CM = 1.
+PERCENTILE = 90
 
 
 def colliders(arm, body):
-    """Capsules for the cloth, in centimetres: a segment between two joints and the radius that holds 99% of the skin
-    of the bones around it, and MARGIN_CM. At 80%, taking the coat's thickness for the margin, his baggy trousers came
-    through the coat at the thighs."""
+    """Capsules for the cloth, in centimetres: a segment between two joints and the radius that holds PERCENTILE% of
+    the skin of the bones around it. At 80% his baggy trousers came through the coat at the thighs; at 99% plus a
+    centimetre the thigh and pelvis capsules took in the trousers' outliers and held the skirt out like a hoop (the
+    operator, #7296: the coat should fall straight, as the references do)."""
     import numpy as np
     head = {b.name: np.array(arm.matrix_world @ b.head_local) for b in arm.data.bones}
     names = {g.index: g.name for g in body.vertex_groups}
@@ -205,7 +206,7 @@ def colliders(arm, body):
         assert len(p) > 20, (bone, 'too little skin to size its capsule', len(p))
         t = np.clip((p - a) @ (b - a) / ((b - a) @ (b - a)), 0, 1)
         distance = np.linalg.norm(p - (a + t[:, None] * (b - a)), axis=1)
-        out.append({'bone': bone, 'from': start, 'to': end, 'radius_cm': round(float(np.percentile(distance, 99)) * 100 + MARGIN_CM, 2)})
+        out.append({'bone': bone, 'from': start, 'to': end, 'radius_cm': round(float(np.percentile(distance, PERCENTILE)) * 100, 2)})
     return out
 
 
