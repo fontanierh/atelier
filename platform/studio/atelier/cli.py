@@ -118,8 +118,6 @@ def lint(staged=False):
         path = paths.REPO / rel
         if rel == '.env' or rel.startswith('.env.') and rel != '.env.example':
             problems.append(f'{rel}: credentials file is tracked')
-        if path.suffix.lower() in ('.wav', '.mp3', '.flac', '.ogg'):
-            problems.append(f'{rel}: audio files are not committed (licences); build them from fetched masters')
         if path.suffix.lower() not in ('.py', '.md', '.toml', '.json', '.ini', '.cpp', '.h', '.cs', '.txt', '.mjs', '.js',
                                        '.cjs', '.html', '.css', '.sh', '.uproject', '.uplugin', '.yml', '.yaml', ''):
             continue

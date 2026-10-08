@@ -1,14 +1,8 @@
 # BOTW characters
 
 Yorimichi can bring in characters from a local BOTW asset library: their rigged meshes, every animation clip, and a
-game-side actor that plays them. The library is not part of the repository and none of its files are committed; this
-folder holds only the roster and the scripts that convert it. Without the library the build skips these steps and the
-game runs as before.
-
-One exception, approved by the operator on 2026-10-08: Modori's committed grip poser files
-([grips/modori/](../grips/modori/), [docs/GRIPS.md](../../../docs/GRIPS.md)) include the sampled vertices of the sword,
-sheath and glider in `samples/surface28.jsonl.gz`, and renders of them in `snapshots/`. The prop meshes themselves
-(`LinkSword.glb`, `LinkGlider.glb`) stay in the library.
+game-side actor that plays them. The library lives outside the repository; this folder holds the roster and the
+scripts that convert it. Without the library the build skips these steps and the game runs as before.
 
 ## The library
 
