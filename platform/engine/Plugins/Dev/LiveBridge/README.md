@@ -9,8 +9,16 @@ Lets an agent or a tool change the running game without a rebuild. Loopback HTTP
 
 `ULiveLibrary` (Python: `unreal.LiveLibrary`) has the game-independent verbs: world and player queries, ground and aim
 traces, GLB props built at runtime (`SpawnModel`, cached per file), simulated input (`InputKey`), a fixed simulation
-step for filming, screenshots, a line of text for the HUD (`Say`), and overlays (props saved to JSON and reloaded at
-every start).
+step for filming, screenshots, a line of text for the HUD (`Say`), overlays (props saved to JSON and reloaded at
+every start), plain test boxes for collision checks (`TestWall`, `TestRamp`, `ClearTests`) and the last GPU frame time
+(`GpuFrameMs`).
+
+`Python/atelier_live.py` is the game-independent helper module: `L` (verb lookup over function libraries, starting with
+`unreal.LiveLibrary` and `unreal.AtelierFXLibrary` when that plugin is enabled), `here`, `ground`, `in_front`,
+`spawn`, `move`, `remove`, `save`, `say`, `teleport`, and `behave(name, fn)`/`stop(name)` for per-frame functions. The
+bridge puts it on `sys.path` and imports the game's `PythonModule` as `live`, or `atelier_live` itself when the game
+sets none. A game's module starts with `from atelier_live import *` and puts its own library first with
+`L.libraries.insert(0, unreal.MyGameLive)`.
 
 ## What a game provides
 
@@ -20,8 +28,8 @@ every start).
   `OverlayFolder`, `PythonFolder`, `PythonModule` (paths relative to the repository root), `Port`.
 - A call to `AtelierLive::Start(World)` once the player is ready, and optionally `AtelierLive::SetTeleport(...)` to
   route teleports through its own travel.
-- Its own verbs in its own function library (a `UBlueprintFunctionLibrary`), and a HUD that draws
-  `ULiveLibrary::CurrentMessage`.
+- Optionally, its own verbs in its own function library (a `UBlueprintFunctionLibrary`) and its own helper module,
+  and a HUD that draws `ULiveLibrary::CurrentMessage`.
 
 The CLI side is `atelier live state|py|shot` (`platform/studio/atelier/live.py`). The bridge has no authentication:
 it only listens on loopback (checked at start), and must stay that way.

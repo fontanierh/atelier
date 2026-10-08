@@ -233,9 +233,7 @@ void AHorseRace::Play(const TCHAR* CueName, const FVector& At, float Volume, boo
 {
     USoundBase* Sound = Cue(CueName);
     if (!Sound) return;
-    if (b2D) UGameplayStatics::PlaySound2D(this, Sound, Volume, Pitch);
-    else UGameplayStatics::PlaySoundAtLocation(this, Sound, At, Volume, Pitch);
-    FAtelierAudioLog::Record(Sound, At, Volume, Pitch, b2D);
+    AtelierPlaySound(this, Sound, At, Volume, Pitch, nullptr, b2D);
 }
 
 void AHorseRace::StartMusic(double At)
