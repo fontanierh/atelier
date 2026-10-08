@@ -1,0 +1,1463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contract",
+  "description": "Every shape in one document, so one schema file names them all.",
+  "type": "object",
+  "properties": {
+    "state": {
+      "$ref": "#/$defs/State"
+    },
+    "threads": {
+      "$ref": "#/$defs/Threads"
+    },
+    "activity": {
+      "$ref": "#/$defs/Activity"
+    },
+    "thread": {
+      "$ref": "#/$defs/Thread"
+    },
+    "document": {
+      "$ref": "#/$defs/Document"
+    },
+    "upload": {
+      "$ref": "#/$defs/Upload"
+    },
+    "sent": {
+      "$ref": "#/$defs/Sent"
+    },
+    "send_request": {
+      "$ref": "#/$defs/SendRequest"
+    },
+    "preview_request": {
+      "$ref": "#/$defs/PreviewRequest"
+    },
+    "preview": {
+      "$ref": "#/$defs/Preview"
+    },
+    "read_request": {
+      "$ref": "#/$defs/ReadRequest"
+    },
+    "read": {
+      "$ref": "#/$defs/Read"
+    },
+    "dismiss_request": {
+      "$ref": "#/$defs/DismissRequest"
+    },
+    "dismissed": {
+      "$ref": "#/$defs/Dismissed"
+    },
+    "remove_request": {
+      "$ref": "#/$defs/RemoveRequest"
+    },
+    "removed": {
+      "$ref": "#/$defs/Removed"
+    },
+    "push_subscribe_request": {
+      "$ref": "#/$defs/PushSubscribeRequest"
+    },
+    "push_unsubscribe_request": {
+      "$ref": "#/$defs/PushUnsubscribeRequest"
+    },
+    "subscribed": {
+      "$ref": "#/$defs/Subscribed"
+    },
+    "delivered": {
+      "$ref": "#/$defs/Delivered"
+    },
+    "push_key": {
+      "$ref": "#/$defs/PushKey"
+    },
+    "problem": {
+      "$ref": "#/$defs/Problem"
+    },
+    "ok": {
+      "$ref": "#/$defs/Ok"
+    }
+  },
+  "required": [
+    "state",
+    "threads",
+    "activity",
+    "thread",
+    "document",
+    "upload",
+    "sent",
+    "send_request",
+    "preview_request",
+    "preview",
+    "read_request",
+    "read",
+    "dismiss_request",
+    "dismissed",
+    "remove_request",
+    "removed",
+    "push_subscribe_request",
+    "push_unsubscribe_request",
+    "subscribed",
+    "delivered",
+    "push_key",
+    "problem",
+    "ok"
+  ],
+  "$defs": {
+    "State": {
+      "description": "`GET /api/state`: the feed page, the agents, the render board and everything the header shows.",
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "number",
+          "format": "double"
+        },
+        "messages": {
+          "description": "Newest first. Every copy of a web send on the page is included, even past the page's limit.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Message"
+          }
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Agent"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "tasks": {
+          "description": "The operator's open tasks, oldest first.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OperatorTask"
+          }
+        },
+        "schedule": {
+          "description": "The render board's Holding, Waiting, Handoffs and Log sections (Log cut to the newest `log` entries).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "log_total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "inbox": {
+          "$ref": "#/$defs/InboxSummary"
+        },
+        "holders": {
+          "$ref": "#/$defs/Holders"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Session"
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/Resources"
+        },
+        "csrf": {
+          "description": "Send it back as `X-Board-CSRF` on every POST.",
+          "type": "string"
+        },
+        "sender": {
+          "description": "The name the board posts as.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "time",
+        "messages",
+        "has_more",
+        "agents",
+        "total",
+        "tasks",
+        "schedule",
+        "log_total",
+        "inbox",
+        "holders",
+        "sessions",
+        "resources",
+        "csrf",
+        "sender"
+      ]
+    },
+    "Message": {
+      "description": "A message as the board shows it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "description": "Seconds since the Unix epoch.",
+          "type": "number",
+          "format": "double"
+        },
+        "sender": {
+          "type": "string"
+        },
+        "recipient": {
+          "description": "An agent's name, or `*` for the whole board.",
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "reply_to": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "dedup": {
+          "description": "`web-broadcast:{uuid}:{agent}`, `web-broadcast:{uuid}~m:{agent}` (a mention group) or\n`web-direct:{uuid}:{agent}` for the addressed copies of one web send; other keys are the sender's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notify": {
+          "description": "1 when its sender asked for a phone notification to the operator.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "audience": {
+          "description": "Everyone the message reached: `[\"*\"]` for the whole board, every addressed copy's recipient for a web send.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "body_html": {
+          "description": "The body without its attachment trailer, rendered as safe HTML.",
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          }
+        },
+        "acknowledged": {
+          "description": "Its recipient replied with an acknowledgement.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "created",
+        "sender",
+        "recipient",
+        "topic",
+        "body",
+        "notify",
+        "audience",
+        "body_html",
+        "attachments",
+        "acknowledged"
+      ]
+    },
+    "Attachment": {
+      "description": "A file named in a message's attachment trailer.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/File"
+        },
+        {
+          "description": "The file was removed from this machine, or never belonged to the board.",
+          "type": "object",
+          "properties": {
+            "missing": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "missing",
+            "name"
+          ]
+        }
+      ]
+    },
+    "File": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mime": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "url": {
+          "description": "Where the board serves it (with byte ranges, for video).",
+          "type": "string"
+        },
+        "width": {
+          "description": "A photo's or video's pixel size, when the uploader knew it.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "readable": {
+          "description": "Markdown or text small enough to open in the board's reader (`/api/document/{id}`).",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "mime",
+        "size",
+        "url",
+        "readable"
+      ]
+    },
+    "Agent": {
+      "type": "object",
+      "properties": {
+        "agent": {
+          "type": "string"
+        },
+        "cursor": {
+          "description": "The newest message delivered to the agent.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "pid": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "heartbeat": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "checkout": {
+          "description": "The folder name of the agent's checkout.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stop": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "supervised": {
+          "description": "Its listener runs as a launchd service.",
+          "type": "boolean"
+        },
+        "task": {
+          "description": "Its one-line status; `idle` when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "task_at": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "session": {
+          "description": "Whether the agent's own session is `busy` or `idle`, since `session_since`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "session_since": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "listening": {
+          "description": "A listener is armed and sent a heartbeat in the last 90 seconds.",
+          "type": "boolean"
+        },
+        "pending": {
+          "description": "Messages addressed to it that it has not received yet.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "delivery_error": {
+          "description": "Its listener's last delivery failed.",
+          "type": "boolean"
+        },
+        "last_to_me": {
+          "description": "The newest message it sent the board's sender (0 for none): marks unread direct messages.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "engaged": {
+          "description": "It has render work in flight (named on the render board, or holding a render lock).",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "agent",
+        "cursor",
+        "stop",
+        "supervised",
+        "listening",
+        "pending",
+        "delivery_error",
+        "last_to_me",
+        "engaged"
+      ]
+    },
+    "OperatorTask": {
+      "description": "An agent blocked on the operator.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "type": "number",
+          "format": "double"
+        },
+        "agent": {
+          "type": "string"
+        },
+        "message": {
+          "description": "The ask's message, the root of the task's thread.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "closed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "closed_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "edited": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "body": {
+          "description": "The ask (its newest wording once edited).",
+          "type": "string"
+        },
+        "body_html": {
+          "type": "string"
+        },
+        "asked": {
+          "type": "number",
+          "format": "double"
+        },
+        "replies": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "last_reply": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LastReply"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "created",
+        "agent",
+        "message",
+        "body",
+        "body_html",
+        "asked",
+        "replies"
+      ]
+    },
+    "LastReply": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "created": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "sender",
+        "body",
+        "created"
+      ]
+    },
+    "InboxSummary": {
+      "description": "The Threads and Activity tabs' unread badges.",
+      "type": "object",
+      "properties": {
+        "threads": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "activity": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "threads",
+        "activity"
+      ]
+    },
+    "Holders": {
+      "type": "object",
+      "properties": {
+        "big": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Holder"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "small": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Holder"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Holder": {
+      "description": "A live render lock holder.",
+      "type": "object",
+      "properties": {
+        "purpose": true,
+        "kind": true,
+        "checkout": {
+          "description": "The folder name of the checkout running the job.",
+          "type": "string"
+        },
+        "time": true
+      },
+      "required": [
+        "purpose",
+        "kind",
+        "checkout",
+        "time"
+      ]
+    },
+    "Session": {
+      "description": "A remote agent session the watchdog reports on.",
+      "type": "object",
+      "properties": {
+        "name": true,
+        "url": {
+          "type": "string"
+        },
+        "health": true,
+        "connection": true,
+        "fresh": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "url",
+        "health",
+        "connection",
+        "fresh"
+      ]
+    },
+    "Resources": {
+      "type": "object",
+      "properties": {
+        "fresh": {
+          "description": "The machine's resource report is under two minutes old.",
+          "type": "boolean"
+        },
+        "cpu": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "available_gib": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "required": [
+        "fresh"
+      ]
+    },
+    "Threads": {
+      "description": "`GET /api/threads`: the conversations the reader is part of, unread first, then by newest reply.",
+      "type": "object",
+      "properties": {
+        "threads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ThreadItem"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "unread": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "threads",
+        "total",
+        "unread"
+      ]
+    },
+    "ThreadItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "The root message's id.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "key": {
+          "description": "The thread's read-state key.",
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/Card"
+        },
+        "latest": {
+          "description": "The newest replies, oldest first.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Card"
+          }
+        },
+        "replies": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "unread": {
+          "description": "Unread replies.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reply_audience": {
+          "$ref": "#/$defs/ReplyAudience"
+        },
+        "last_activity": {
+          "type": "number",
+          "format": "double"
+        },
+        "newest": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "key",
+        "root",
+        "latest",
+        "replies",
+        "unread",
+        "participants",
+        "reply_audience",
+        "last_activity",
+        "newest"
+      ]
+    },
+    "Card": {
+      "description": "A message as the inbox shows it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "type": "number",
+          "format": "double"
+        },
+        "sender": {
+          "type": "string"
+        },
+        "recipient": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "reply_to": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "dedup": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "body": {
+          "type": "string"
+        },
+        "body_html": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          }
+        },
+        "acknowledged": {
+          "type": "boolean"
+        },
+        "snippet": {
+          "description": "One line of plain text, at most 160 characters and an ellipsis.",
+          "type": "string"
+        },
+        "audience": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "unread": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "created",
+        "sender",
+        "recipient",
+        "topic",
+        "body",
+        "body_html",
+        "attachments",
+        "acknowledged",
+        "snippet"
+      ]
+    },
+    "ReplyAudience": {
+      "description": "Who a reply goes to: `*` for the whole board, or these agents.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "Activity": {
+      "description": "`GET /api/activity`: what involves the reader, newest first.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActivityItem"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "unread": {
+          "$ref": "#/$defs/ActivityCounts"
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "unread"
+      ]
+    },
+    "ActivityItem": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "description": "`mention`, `reply`, `dm` or `ack`.",
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "type": "number",
+          "format": "double"
+        },
+        "unread": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "thread": {
+          "description": "The thread's root message id.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "replies": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Card"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "senders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reply_audience": {
+          "$ref": "#/$defs/ReplyAudience"
+        },
+        "root": {
+          "description": "The thread's root, when it is not the message itself.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Card"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "description": "For an acknowledgement, the reader's message it acknowledges.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Card"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "created",
+        "unread",
+        "count",
+        "thread",
+        "replies",
+        "senders",
+        "reply_audience"
+      ]
+    },
+    "ActivityCounts": {
+      "type": "object",
+      "properties": {
+        "all": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mention": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "reply": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "dm": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "ack": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "all",
+        "mention",
+        "reply",
+        "dm",
+        "ack"
+      ]
+    },
+    "Thread": {
+      "description": "`GET /api/thread?id=`: a whole conversation, oldest first.",
+      "type": "object",
+      "properties": {
+        "root": {
+          "description": "The root: every addressed copy of a web send.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Message"
+          }
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Message"
+          }
+        }
+      },
+      "required": [
+        "root",
+        "replies"
+      ]
+    },
+    "Document": {
+      "description": "`GET /api/document/{id}`: a Markdown or text attachment, rendered for the reader.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "html": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url",
+        "size",
+        "html"
+      ]
+    },
+    "Upload": {
+      "description": "`POST /api/upload` (the raw file as the body, `X-File-Name`, and optionally `X-Media-Width`/`X-Media-Height`).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mime": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "mime",
+        "size"
+      ]
+    },
+    "Sent": {
+      "description": "`POST /api/send` and `/api/broadcast`.",
+      "type": "object",
+      "properties": {
+        "messages": {
+          "description": "One addressed copy per recipient.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Row"
+          }
+        },
+        "recipients": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "messages",
+        "recipients"
+      ]
+    },
+    "Row": {
+      "description": "A stored message, exactly as the mailbox holds it.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "created": {
+          "description": "Seconds since the Unix epoch.",
+          "type": "number",
+          "format": "double"
+        },
+        "sender": {
+          "type": "string"
+        },
+        "recipient": {
+          "description": "An agent's name, or `*` for the whole board.",
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "reply_to": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "dedup": {
+          "description": "`web-broadcast:{uuid}:{agent}`, `web-broadcast:{uuid}~m:{agent}` (a mention group) or\n`web-direct:{uuid}:{agent}` for the addressed copies of one web send; other keys are the sender's own.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notify": {
+          "description": "1 when its sender asked for a phone notification to the operator.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "created",
+        "sender",
+        "recipient",
+        "topic",
+        "body",
+        "notify"
+      ]
+    },
+    "SendRequest": {
+      "description": "`POST /api/send`. `/api/broadcast` takes the same without `recipient` and reaches every listening agent.",
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "request_id": {
+          "description": "A fresh UUID per message: a retry with the same one never sends twice.",
+          "type": "string"
+        },
+        "topic": {
+          "description": "Defaults to `request`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recipient": {
+          "description": "One agent, the agents a message @mentions, or `*`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Recipient"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reply_to": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "attachments": {
+          "description": "Upload ids, at most 10.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "body",
+        "request_id"
+      ]
+    },
+    "Recipient": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "PreviewRequest": {
+      "description": "`POST /api/preview`.",
+      "type": "object",
+      "properties": {
+        "body": {
+          "description": "At most 8000 characters.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "body"
+      ]
+    },
+    "Preview": {
+      "type": "object",
+      "properties": {
+        "html": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "html"
+      ]
+    },
+    "ReadRequest": {
+      "description": "`POST /api/read`: mark a thread read (up to `through`, else its newest message), follow or unfollow it, or mark\neverything read with `all`.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "through": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "all": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "follow": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Read": {
+      "type": "object",
+      "properties": {
+        "read": {
+          "description": "The thread's key, or `*` for everything.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "read"
+      ]
+    },
+    "DismissRequest": {
+      "description": "`POST /api/task/dismiss`.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Dismissed": {
+      "type": "object",
+      "properties": {
+        "dismissed": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "already": {
+          "description": "It had been dismissed before.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "dismissed",
+        "already"
+      ]
+    },
+    "RemoveRequest": {
+      "description": "`POST /api/remove`.",
+      "type": "object",
+      "properties": {
+        "agent": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent"
+      ]
+    },
+    "Removed": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "removed"
+      ]
+    },
+    "PushSubscribeRequest": {
+      "description": "`POST /api/push/subscribe`: a browser's PushSubscription as JSON. `/api/push/unsubscribe` takes `{endpoint}`.",
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/$defs/PushSubscription"
+        }
+      },
+      "required": [
+        "subscription"
+      ]
+    },
+    "PushSubscription": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "keys": {
+          "$ref": "#/$defs/PushKeys"
+        }
+      },
+      "required": [
+        "endpoint",
+        "keys"
+      ]
+    },
+    "PushKeys": {
+      "type": "object",
+      "properties": {
+        "p256dh": {
+          "type": "string"
+        },
+        "auth": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "p256dh",
+        "auth"
+      ]
+    },
+    "PushUnsubscribeRequest": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "endpoint"
+      ]
+    },
+    "Subscribed": {
+      "type": "object",
+      "properties": {
+        "subscribed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "subscribed"
+      ]
+    },
+    "Delivered": {
+      "type": "object",
+      "properties": {
+        "delivered": {
+          "description": "Devices the sample notification reached.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "delivered"
+      ]
+    },
+    "PushKey": {
+      "description": "`GET /api/push/key`: the VAPID public key, for PushManager.subscribe.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ]
+    },
+    "Problem": {
+      "description": "Every failure: a sentence to show the person.",
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "error"
+      ]
+    },
+    "Ok": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ok"
+      ]
+    }
+  }
+}
