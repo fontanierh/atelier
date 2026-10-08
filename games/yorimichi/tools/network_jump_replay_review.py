@@ -70,11 +70,12 @@ def jump_replay_checks(server, client, case):
         checks['jump_replay_ack_order'] = bool(provenance and guest.get('ack_applied') is True and
             guest.get('pending_before_ack') is True and type(guest.get('saved_before_ack')) is int and guest['saved_before_ack'] >= 3)
         first_saved = guest.get('first_saved_before_ack')
-        later_host = [row['timestamp'] for row in host.get('responses', [])
+        later_host = [row['timestamp'] for row in host.get('processed_moves', [])
                       if type(row) is dict and exact_int(row.get('epoch'), epoch) and
-                      finite(row.get('timestamp')) and finite(target) and row['timestamp'] > target] if type(host.get('responses')) is list else []
-        # Bind the saved-move anchor to the next real host response as well as
-        # the guest's pre-ACK state, so a self-reported later anchor cannot pass.
+                      finite(row.get('timestamp')) and finite(row.get('dt')) and 0 < row['dt'] <= .125 and
+                      finite(target) and row['timestamp'] > target] if type(host.get('processed_moves')) is list else []
+        # Responses can skip moves because ACKs are throttled. Bind the anchor to
+        # the host's actual simulated moves, independent of the guest receipt.
         checks['jump_replay_ack_coverage'] = bool(provenance and finite(first_saved) and target < first_saved <= stamp and
             later_host and first_saved == min(later_host) and type(moves) is list and moves and
             type(moves[0]) is dict and moves[0].get('timestamp') == first_saved and

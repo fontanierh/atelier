@@ -14,6 +14,7 @@ namespace JapanJumpReplayQA
     bool Tick(FString& Error);
     bool ForceResponse(UJapanCharacterMovement* Movement);
     void Sent(const FJapanMoveResponse& Response);
+    void HostMove(UJapanCharacterMovement* Movement, float Timestamp, float Dt);
     bool Defer(UJapanCharacterMovement* Movement, const FJapanMoveResponse& Response);
     void Move(UJapanCharacterMovement* Movement, const FSavedMove_Japan& Saved, bool Replay,
         const FVector& OriginalLocation, const FVector& OriginalVelocity);

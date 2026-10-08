@@ -16,6 +16,7 @@ def receipts(case):
     moves = [dict(timestamp=round(target + .1*i, 6), dt=.1, epoch=2, mode=3,
                   original_z=1000.+i, replayed_z=1000.+i, original_vz=400.-49*i, replayed_vz=400.-49*i) for i in range(1, 5)]
     host, guest = (dict(jump_replay=dict(enabled=True, case=case, responses=[copy.deepcopy(selected)],
+                                 processed_moves=[dict(epoch=2, timestamp=m['timestamp'], dt=m['dt']) for m in moves],
                                  forced_epoch=2, forced_count=20, first_force_seconds=.03, last_force_seconds=.7, window_closed=True)),
             dict(jump_replay=dict(enabled=True, case=case, complete=True, replayed=True, error='', applications=1,
                                  epoch=2, target=target, takeoff=1., first_air=1.1, selected=selected, moves=moves)))
@@ -116,10 +117,10 @@ def test_invalid_or_shifted_saved_move_anchor_fails(first_saved):
     assert not review.jump_replay_checks(host, guest, 4)['jump_replay_ack_coverage']
 
 
-def test_host_response_independently_bounds_saved_move_anchor():
+def test_host_processed_move_independently_bounds_saved_move_anchor():
     host, guest = receipts(5)
     # Forge a later first-saved value and a later ACK together. At least three
-    # replay rows remain, but the real first host response exposes the skip.
+    # replay rows remain, but the real first host processed move exposes the skip.
     probe = guest['jump_replay']
     probe['moves'].pop(0)
     probe['first_saved_before_ack'] = probe['moves'][0]['timestamp']
@@ -136,4 +137,21 @@ def test_later_ack_must_itself_be_replayed():
     assert all(review.jump_replay_checks(host, guest, 4).values())
     probe['moves'].pop(1)
     assert len(probe['moves']) == 3
+    assert not review.jump_replay_checks(host, guest, 4)['jump_replay_ack_coverage']
+
+
+def test_sparse_host_responses_do_not_shift_the_processed_move_anchor():
+    host, guest = receipts(5)
+    probe = guest['jump_replay']
+    probe['ack']['timestamp'] = probe['moves'][1]['timestamp']
+    host['jump_replay']['responses'][1] = copy.deepcopy(probe['ack'])
+    assert all(review.jump_replay_checks(host, guest, 5).values())
+
+
+@pytest.mark.parametrize('processed', [[], None, False, [None],
+    [dict(epoch=1, timestamp=1.1, dt=.1)], [dict(epoch=2, timestamp=1.1, dt=False)],
+    [dict(epoch=2, timestamp=float('nan'), dt=.1)]])
+def test_missing_or_invalid_host_processed_moves_fail(processed):
+    host, guest = receipts(4)
+    host['jump_replay']['processed_moves'] = processed
     assert not review.jump_replay_checks(host, guest, 4)['jump_replay_ack_coverage']

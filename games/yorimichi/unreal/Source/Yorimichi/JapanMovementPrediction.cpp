@@ -415,6 +415,7 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
 #if !UE_BUILD_SHIPPING
+    if (PredictsMoves() && CharacterOwner->HasAuthority()) JapanJumpReplayQA::HostMove(this, Timestamp, Dt);
     if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= 4.f &&
         TraceNetworkGameplay() && ServerTraceRows++ < 512)
     {

@@ -33,7 +33,7 @@ struct FProbe
     FJapanMoveResponse Selected, Ack;
 };
 FProbe Probe;
-TArray<TSharedPtr<FJsonValue>> HostResponses;
+TArray<TSharedPtr<FJsonValue>> HostResponses, HostMoves;
 TWeakObjectPtr<UJapanCharacterMovement> HostMovement;
 uint32 HostEpoch = 0;
 double HostBegan = 0., HostFirstForce = 0., HostLastForce = 0.;
@@ -152,6 +152,15 @@ void JapanJumpReplayQA::Sent(const FJapanMoveResponse& Response)
     if (!Enabled() || HostResponses.Num() >= 512) return;
     HostResponses.Add(MakeShared<FJsonValueObject>(ResponseRow(Response)));
 }
+void JapanJumpReplayQA::HostMove(UJapanCharacterMovement* Movement, float Timestamp, float Dt)
+{
+    if (!Enabled() || !HostEpoch || Movement != HostMovement.Get() || Movement->GetActivityEpoch() != HostEpoch ||
+        FPlatformTime::Seconds() - HostBegan >= 3. || Dt <= 0.f || HostMoves.Num() >= 512) return;
+    auto O = MakeShared<FJsonObject>();
+    O->SetNumberField(TEXT("epoch"), HostEpoch); O->SetNumberField(TEXT("timestamp"), Timestamp);
+    O->SetNumberField(TEXT("dt"), Dt);
+    HostMoves.Add(MakeShared<FJsonValueObject>(O));
+}
 bool JapanJumpReplayQA::Defer(UJapanCharacterMovement* Movement, const FJapanMoveResponse& Response)
 {
     if (!Enabled() || !Probe.Armed || Probe.Injecting || Movement != Probe.Movement.Get()) return false;
@@ -205,6 +214,7 @@ TSharedPtr<FJsonObject> JapanJumpReplayQA::Receipt(bool Server)
     if (Server)
     {
         O->SetArrayField(TEXT("responses"), HostResponses);
+        O->SetArrayField(TEXT("processed_moves"), HostMoves);
         O->SetNumberField(TEXT("forced_epoch"), HostEpoch); O->SetNumberField(TEXT("forced_count"), HostForced);
         O->SetNumberField(TEXT("first_force_seconds"), HostFirstForce); O->SetNumberField(TEXT("last_force_seconds"), HostLastForce);
         O->SetBoolField(TEXT("window_closed"), HostStopped);
@@ -234,6 +244,7 @@ void JapanJumpReplayQA::ObserveHost(UJapanCharacterMovement*, const FString&) {}
 bool JapanJumpReplayQA::Tick(FString&) { return true; }
 bool JapanJumpReplayQA::ForceResponse(UJapanCharacterMovement*) { return false; }
 void JapanJumpReplayQA::Sent(const FJapanMoveResponse&) {}
+void JapanJumpReplayQA::HostMove(UJapanCharacterMovement*, float, float) {}
 bool JapanJumpReplayQA::Defer(UJapanCharacterMovement*, const FJapanMoveResponse&) { return false; }
 void JapanJumpReplayQA::Move(UJapanCharacterMovement*, const FSavedMove_Japan&, bool, const FVector&, const FVector&) {}
 TSharedPtr<FJsonObject> JapanJumpReplayQA::Receipt(bool) { return MakeShared<FJsonObject>(); }
