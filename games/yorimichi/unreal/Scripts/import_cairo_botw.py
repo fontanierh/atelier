@@ -262,10 +262,6 @@ def equipment(link, cairo, glide):
             if 'clip' in item:
                 held, miss = glider(*glide, item, scale)
                 entry['held'], checks[slot]['grip_miss_cm'] = record_of(held), miss
-                # Its place on the body on the neutral glide (component space) and the elbows there: the game holds the
-                # glider from a glide's first frame, before a straight glide has fitted it to his hands.
-                entry['on_body'] = record_of(U.MathLibrary.compose_transforms(held, glide[1].transform('hand_R')))
-                entry['elbows'] = [[round(v, 3) for v in glide[1].at(f'forearm_{side}')] for side in 'RL']
         if item.get('back') and item.get('carry'):
             carry = item['carry']
             local = U.Transform(U.Vector(*carry['location']), U.Quat(*carry['rotation']).rotator(), U.Vector(1, 1, 1))

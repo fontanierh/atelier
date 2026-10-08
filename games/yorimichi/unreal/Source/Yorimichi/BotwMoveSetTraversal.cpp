@@ -174,11 +174,10 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
     const bool bGliding = Mode == EBotwMoveMode::Glide && bGliderShown;
     const bool bNeutral = bGliding && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f;
     const FName HandBone[2] = { Character->GetSkateBone(TEXT("hand_R")), Character->GetSkateBone(TEXT("hand_L")) };
-    if (!bGliderOnBody || (bGliderRefit && bNeutral))
+    if (!bGliderOnBody)
     {
-        // Fit the one-handed hold onto both hands, then keep it once it has settled on the neutral glide. (Gliding with the
-        // import's place, the glider is on the body: the hand bone is its socket off it.)
-        const FTransform Bone = Body->GetSocketTransform(GliderSocket);
+        // Fit the one-handed hold onto both hands, then keep it once it has settled on the neutral glide.
+        const FTransform Bone = Body->GetSocketTransform(Glider->GetAttachSocketName());
         const FTransform Base = GliderHeld * Bone;
         const FTransform& MeshT = Body->GetComponentTransform();
         if (bOwnGlide && !bPalmKnown)
@@ -203,7 +202,7 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         if (bNeutral)
         {
             GliderOnBody = Fitted.GetRelativeTransform(Body->GetComponentTransform());
-            bGliderOnBody = true; bGliderRefit = false;
+            bGliderOnBody = true;
             for (int32 I = 0; I < 2; ++I)
                 ElbowLocal[I] = GliderOnBody.InverseTransformPosition(
                     Body->GetSocketTransform(Character->GetSkateBone(I ? TEXT("forearm_L") : TEXT("forearm_R")), RTS_Component).GetLocation());
