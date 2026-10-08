@@ -10,6 +10,7 @@ namespace JapanReactionDeliveryQA { struct FStimulus; }
 struct FJapanMoveCheckpoint;
 struct FBotwNetworkState;
 struct FJapanAvatarState;
+struct FBotwMovementReaction;
 class FJsonObject;
 class UStaticMeshComponent;
 class USkeletalMeshComponent;
@@ -68,6 +69,8 @@ public:
     void Advance(float Dt);
     FJapanMoveCheckpoint CaptureNetworkState() const;
     void ClearNetworkReactionTargets();
+    /** Applies a frozen movement delta, including on replay; never health or cues. */
+    void ApplyMovementReaction(const FBotwMovementReaction& Reaction);
     bool ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint);
     FJapanAvatarState CapturePresentation() const;
     void ApplyPresentation(const FJapanAvatarState& State, float Dt);
@@ -183,6 +186,10 @@ public:
     FString Describe() const;
 
 private:
+    friend class FJapanReactionPayloadTest;
+    void SubmitMovementReaction(const FBotwMovementReaction& Reaction);
+    void FreezeReactionAction(FBotwMovementReaction& Reaction, FName Name, float Blend) const;
+    void FreezeReactionFlinch(FBotwMovementReaction& Reaction, const FVector& Away, float Degrees, float Peak, float Side) const;
     friend struct FBotwNetworkState;
     friend struct JapanReactionDeliveryQA::FStimulus;
     FJapanDefenceTimeline DefenceTimeline;
@@ -381,7 +388,8 @@ private:
     void Face(float Range);
     void Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction);
     void TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact);
-    void SetArmed(bool bNow);
+    void SetArmed(bool bNow, bool bFeedback = true);
+    void ArmedFeedback(bool bNow);
     void Attach(FName Slot);
     /** A garment that simulates as cloth (Modori's coat) collides with the drawn blade: a capsule along it on the hand
      *  bone, a collision source while the sword is in hand. */
