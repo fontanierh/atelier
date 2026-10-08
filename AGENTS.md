@@ -21,9 +21,8 @@ uv run pytest                            # studio and game Python tests
 
 ## Repository
 
-- The repository is **public**. Never commit credentials, tokens, personal hostnames or home-directory paths, and
-  never commit third-party files whose licence forbids redistribution (Sonniss sounds, raw Mixamo downloads, licensed
-  music). `atelier lint` checks the common cases; run it before pushing.
+- The repository is **public**. Never commit credentials, tokens, personal hostnames or home-directory paths.
+  `atelier lint` checks the common cases; run it before pushing.
 - Before every commit, run `atelier lint` and read `git diff`. The Unreal editor rewrites `Config/*.ini` when it starts
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.

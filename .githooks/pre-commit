@@ -1,5 +1,5 @@
 #!/bin/sh
-# Refuse commits that would publish credentials, personal paths or licence-restricted files (this repository is public).
+# Refuse commits that would publish credentials or personal paths (this repository is public).
 # Enable once per clone:  git config core.hooksPath .githooks
 ROOT="$(git rev-parse --show-toplevel)"
 PY="${ATELIER_PYTHON:-$(command -v python3)}"
