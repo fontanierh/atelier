@@ -55,11 +55,24 @@ bool GestureInputPublication::Load(const SettingsDatabase& data,std::vector<Gest
         { error = "Invalid authored gesture set "+std::string(names[i]); return false; }
         recognizers.emplace_back(sticks[i],GestureRecognizer(std::move(bank[i].patterns)));
     }
-    recognizers_ = std::move(recognizers); maximum_misses_ = authored_misses_ = misses; pace_ = 1.f;
+    recognizers_ = std::move(recognizers); maximum_misses_ = authored_misses_ = misses; pace_ = 1.f; tight_flicks_ = false;
     held_pattern_.reset(); trace_.clear(); return true;
 }
-void GestureInputPublication::Tune(float radius,float window,float pace)
+void GestureInputPublication::Tune(float radius,float window,float pace,bool tight_flicks)
 {
+    if (tight_flicks != tight_flicks_ && !recognizers_.empty())
+    {
+        // The authored hardflip starts down-left, rolls through down and ends 38 degrees off up (the inward heelflip
+        // mirrors it), so a flick closer to straight down then up fails its first circle and the ollie, whose wider
+        // circles overlap it, completes first. Tight flicks add a narrower copy of each centred on that motion:
+        // packet angles -110, -88 and 112 degrees (regular stance) at radius 0.3.
+        std::vector<GesturePattern> extra;
+        if (tight_flicks)
+            extra = {{"Hardflip",{{0.34202f,0.93969f},{-0.03490f,0.99939f},{0.37461f,-0.92718f}},0.09f},
+                {"InwardHeelflip",{{-0.34202f,0.93969f},{0.03490f,0.99939f},{-0.37461f,-0.92718f}},0.09f}};
+        recognizers_[0].second.SetExtraPatterns(std::move(extra));
+        tight_flicks_ = tight_flicks;
+    }
     for (auto& entry : recognizers_) entry.second.ScaleRadius(radius);
     // A node's miss count wraps at 64, so the window stays below it.
     for (std::size_t i = 0; i < 2; ++i)

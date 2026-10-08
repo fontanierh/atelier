@@ -143,9 +143,10 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0.):
+        on_slot=None, watch=(), progress=0., track_tree=False):
     """Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
-    `on_slot(slot, why)` hears which slot the child runs in."""
+    `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
+    when a compound worker attaches its own actual-child guards immediately at launch."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     horizon = timeout if timeout > 0 else None
@@ -169,7 +170,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         monitor = stack.enter_context(attach_memory_guard(child.pid, folder/'memory-health.json',
                                                           duration=horizon, limit_gib=limit_gib))
         tree = None
-        if watch:
+        if watch or track_tree:
             tree = Descendants(child.pid, process_tree.started(child.pid), folder, watch, horizon, limit_gib, stack)
             # Runs before the child is reaped; after a success it only reaps leftovers such as shader workers.
             stack.callback(tree.unwind)

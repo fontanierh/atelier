@@ -114,6 +114,32 @@ def flick(load, snap):
     return controls
 
 
+def arc(angles):
+    """A flip flick from frame 150 through stick angles in degrees (0 right, 90 up): out to the first, round to each
+    middle one, then a straight snap to the last."""
+    point = lambda degrees, r=1.: (r * math.cos(math.radians(degrees)), r * math.sin(math.radians(degrees)))
+    path = [point(angles[0], k / 3) for k in (1, 2, 3)] + [point(angles[0])] * 4
+    for a, b in zip(angles[:-2], angles[1:-1]):
+        path += [point(a + (b - a) * k / 5) for k in range(1, 6)]
+    (ax, ay), (bx, by) = point(angles[-2]), point(angles[-1])
+    path += [(ax + (bx - ax) * k / 3, ay + (by - ay) * k / 3) for k in (1, 2, 3)] + [point(angles[-1])] * 2
+    def controls(frame):
+        if 150 <= frame < 150 + len(path):
+            x, y = path[frame - 150]
+            return 0, [0, 0], [round(x * 32767), round(y * 32767)]
+        return 0, [0, 0], [0, 0]
+    return controls
+
+
+def takeoff_trick(session, angles, feel):
+    """The trick named on the frame the board leaves the ground (the label sticks afterwards)."""
+    rows = session.ride(240, arc(angles), feel, velocity=(0, 0, 5))
+    for before, row in zip(rows, rows[1:]):
+        if 'Air' in row['state'] and 'Air' not in before['state']:
+            return row['trick'].replace('ID_TRICK_FLIP_', '') or 'blank'
+    return 'none'
+
+
 def jump(session, feel, load=18, snap=2):
     rows = session.ride(330, flick(load, snap), feel, velocity=(0, 0, 5))
     air = [r for r in rows if 'Air' in r['state']]
@@ -148,7 +174,7 @@ def main():
                                'rail_magnetism', 'grind_pop', 'grind_friction', 'braking', 'steering', 'carve', 'grip',
                                'powerslide', 'rolling_friction', 'hill_speed', 'pump', 'wobble', 'wobble_onset',
                                'manual_drift', 'landing', 'impact')}
-        ones.update(auto_push=-1, assisted_air=-1)
+        ones.update(auto_push=-1, assisted_air=-1, tight_flicks=0)
         rides = [flat.ride(330, flick(18, 2), feel, velocity=(0, 0, 5)) for feel in (None, ones)]
         same = all(a['root'] == b['root'] and a['bones'] == b['bones'] and a['velocity'] == b['velocity'] for a, b in zip(*rides))
         check('defaults_exact', same, 'stock feel spelled out matches no feel over 330 frames, bit for bit')
@@ -172,6 +198,18 @@ def main():
         report['flick_pace_slow_snap'] = slow
         check('flick_pace_order', slow['0.6']['height_m'] >= slow['1']['height_m'] >= slow['1.6']['height_m']
               and slow['0.6']['height_m'] > slow['1.6']['height_m'], slow)
+
+        # Tight flicks: a hardflip or inward heelflip flicked close to straight down then up (regular stance) reads as the
+        # flip with the switch on; the authored wide arcs and a straight ollie read the same either way.
+        flips = {'tight_hardflip': ([-110, -88, 112], 'HARDFLIP'), 'tight_inward_heelflip': ([-70, -92, 68], 'INWARD_HEELFLIP'),
+                 'hardflip': ([-138, -82, 128], 'HARDFLIP'), 'inward_heelflip': ([-42, -98, 41], 'INWARD_HEELFLIP'),
+                 'ollie': ([-90, 90], 'OLLIE')}
+        tight = {name: {str(on): takeoff_trick(flat, angles, {'tight_flicks': on}) for on in (0, 1)}
+                 for name, (angles, _) in flips.items()}
+        report['tight_flicks'] = tight
+        check('tight_flicks_read', all(tight[name]['1'] == trick for name, (_, trick) in flips.items()), tight)
+        check('tight_flicks_keep_authored', all(tight[name]['0'] == trick for name, (_, trick) in flips.items()
+                                                if not name.startswith('tight')), tight)
 
         # Rolling resistance: the board holds its cruising speed on the flat, and rolling resistance bleeds off the speed
         # above it, so coast from 14 m/s. Then braking.

@@ -1,9 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "JapanDefenceTimeline.h"
+#include "JapanDefenceClock.h"
 #include "BotwMoveSet.generated.h"
 
 class AWandererCharacter;
+struct FJapanMoveCheckpoint;
+struct FBotwNetworkState;
+struct FJapanAvatarState;
 class FJsonObject;
 class UStaticMeshComponent;
 class USkeletalMeshComponent;
@@ -53,11 +58,17 @@ class YORIMICHI_API UBotwMoveSet : public UObject
     GENERATED_BODY()
 public:
     /** The custom movement mode the move set's own physics runs in (the skate board's is 2). */
-    static constexpr uint8 MovementMode = 3;
+    static constexpr uint8 MovementMode = 3, ClimbMovementMode = 4, SwimMovementMode = 5;
+    static bool IsTraversalMode(uint8 Value) { return Value >= MovementMode && Value <= SwimMovementMode; }
+    void ApplyInputHolds(uint8 Flags);
     /** Read the record and attach the equipment; false when the character lacks an action the set needs. */
     bool Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record);
     /** Per frame, in place of the character's own action bookkeeping. */
     void Advance(float Dt);
+    FJapanMoveCheckpoint CaptureNetworkState() const;
+    bool ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint);
+    FJapanAvatarState CapturePresentation() const;
+    void ApplyPresentation(const FJapanAvatarState& State, float Dt);
     /** UJapanCharacterMovement::PhysCustom in MovementMode. */
     void Phys(float Dt, int32 Iterations);
     /** UJapanCharacterMovement::CalcVelocity on the ground and in the air: a driven attack or a hop sets the velocity. */
@@ -83,9 +94,20 @@ public:
     void SetShield(bool bOn);
     bool HasShield() const { return bShield || bLegacy; }
     /** The menu opened: buttons held down are let go without acting. */
-    void DropHolds() { bAttackHeld = bGuardHeld = false; }
+    void DropHolds();
     /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
     int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
+    bool MapDefenceMove(float Timestamp, float Dt);
+    void RecordDefence(uint16 ThroughEdge, double BeforeStep = 0., bool bAcceptedMove = false);
+    bool PressNetwork(FName Button, uint16 Edge, uint16 AgeMilliseconds);
+    void ResetDefence();
+    double DefenceWait() const;
+    void RetainDefenceThrough(double Time) { DefenceTimeline.RetainThrough(Time); }
+    int32 ResolveNetworkStrike(AActor* Source, float Damage, const FVector& From, double Contact);
+    uint32 DefenceRejectedTimes = 0, DefensiveRejectedTimes = 0;
+    uint32 DefenceMissingSamples() const { return DefenceTimeline.MissingSamples; }
+    uint32 DefenceAuthoredFallbacks() const { return DefenceTimeline.AuthoredFallbacks; }
+    bool DefenceRecovering() const { return bDown || Invulnerable > 0.f || InFlurry(); }
     /** This character's blow was parried: it recoils, open, without losing health. */
     void Deflected(AActor* By);
 
@@ -99,6 +121,7 @@ public:
     bool IsArmed() const { return bArmed; }
     /** The guard is up: held, the sword out, and not just broken by a heavy blow. */
     bool IsGuarding() const { return bGuardHeld && bArmed && GuardBroken <= 0.f; }
+    bool HasInputHolds() const { return bAttackHeld || bGuardHeld || bJumpHeld; }
     bool IsSwordGuarding() const { return IsGuarding() && !HasShield(); }
     bool IsLocked() const { return bLocked; }
     bool IsDown() const { return bDown; }
@@ -158,6 +181,14 @@ public:
     FString Describe() const;
 
 private:
+    friend struct FBotwNetworkState;
+    FJapanDefenceTimeline DefenceTimeline;
+    FJapanDefenceClock DefenceClock;
+    uint32 DefenceActionSerial = 0;
+    double DefenceActionStart = 0., DefenceInputTime = -1., DefenceLastPress = -1.;
+    bool bExternalDefenceChange = false, bHopInvulnerability = false, bDefenceMapped = false;
+    TOptional<EJapanDefence> DefenceOverride;
+    void EndDefenceAction();
     struct FSlot
     {
         FName Hand, Back;
@@ -258,6 +289,10 @@ private:
     // A cut's step in toward the enemy it is aimed at (BOTW's attack homing), and the reach a cut's arc counts.
     TWeakObjectPtr<AActor> LungeTarget;
     float LungeTime = 0.f, LungeStand = 0.f;
+    FVector LungePoint = FVector::ZeroVector, FlurryPoint = FVector::ZeroVector;
+    bool bLungePoint = false, bFlurryPoint = false;
+    FVector LockPoint = FVector::ZeroVector;
+    bool bLockPoint = false;
     float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
     float SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
     bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
@@ -309,7 +344,7 @@ private:
     void AdvanceSwim(float Dt);
     void AdvanceDown(float Dt);
     void AdvanceCombat(float Dt);
-    void AdvanceFlurry();
+    void AdvanceFlurry(float Dt);
     void AdvanceEquipment(float Dt);
     void AdvanceMeshOffset(float Dt);
     void AdvanceEffects(float Dt);

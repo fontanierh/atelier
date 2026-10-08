@@ -189,7 +189,8 @@ def export_one(character, owner, out):
     idle = next((clip for clip in curves['animations'] if unreal_name(clip['name']) == idle_role), None)
     return {
         'name': character['name'], 'id': character['id'], 'label': item['name'], 'kind': item['kind'],
-        'glb': str(target), 'skeleton': owner['name'] if owner else character['name'], 'bones': summary['bones'],
+        # Relative to the export's folder: a verified reuse clones export.json into another checkout as it is.
+        'glb': str(target.relative_to(out)), 'skeleton': owner['name'] if owner else character['name'], 'bones': summary['bones'],
         'fps': summary['fps'], 'scale': scale, 'height': height(target, curves['skeleton'], idle) * scale,
         'coat': character.get('coat', ''), **record, 'seconds': round(time.time() - started, 1),
     }

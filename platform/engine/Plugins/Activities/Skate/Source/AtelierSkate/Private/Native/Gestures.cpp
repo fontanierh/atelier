@@ -79,11 +79,28 @@ GestureRecognizer::GestureRecognizer(std::vector<GesturePattern> patterns)
 {
     assert(ValidGesturePatterns(patterns_));
     for (const auto& pattern : patterns_) authored_tolerance_.push_back(pattern.tolerance_squared);
+    authored_count_ = patterns_.size();
 }
 
 void GestureRecognizer::ScaleRadius(float scale)
 {
+    radius_scale_ = scale;
     for (std::size_t i = 0; i < patterns_.size(); ++i) patterns_[i].tolerance_squared = authored_tolerance_[i] * (scale * scale);
+}
+
+void GestureRecognizer::SetExtraPatterns(std::vector<GesturePattern> extra)
+{
+    assert(ValidGesturePatterns(extra));
+    patterns_.resize(authored_count_);
+    authored_tolerance_.resize(authored_count_);
+    for (auto& pattern : extra)
+    {
+        authored_tolerance_.push_back(pattern.tolerance_squared);
+        patterns_.push_back(std::move(pattern));
+    }
+    ScaleRadius(radius_scale_);
+    nodes_.assign(patterns_.size(), Node{});
+    if (held_ && *held_ >= patterns_.size()) held_.reset();
 }
 
 void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses)

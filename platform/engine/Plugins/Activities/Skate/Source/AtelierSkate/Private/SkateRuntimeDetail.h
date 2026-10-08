@@ -813,7 +813,7 @@ public:
         P.Pop=S.Pop;P.Spin=S.Spin;P.PushSpeed=S.PushSpeed;P.PushPower=S.PushPower;P.VertAssist=S.VertAssist;
         P.PumpTrick=CVarSkatePumpTrick.GetValueOnAnyThread();
         auto& N=P.Feel;
-        N.flick_radius=S.FlickRadius;N.flick_window=S.FlickWindow;N.flick_pace=S.FlickPace;
+        N.flick_radius=S.FlickRadius;N.flick_window=S.FlickWindow;N.flick_pace=S.FlickPace;N.tight_flicks=S.TightFlicks;
         N.gravity=S.Gravity;N.boneless=S.Boneless;N.hippy=S.Hippy;
         N.rail_magnetism=S.RailMagnetism;N.grind_pop=S.GrindPop;N.grind_friction=S.GrindFriction;
         N.braking=S.Braking;N.steering=S.Steering;N.carve=S.Carve;N.grip=S.Grip;N.powerslide=S.Powerslide;

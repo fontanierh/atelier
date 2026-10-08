@@ -24,6 +24,7 @@ FSkateFeel FSkateFeel::Defaults()
     FSkateFeel F;
     F.Difficulty = S->Difficulty; F.TruckTightness = S->TruckTightness; F.Pop = S->PopHeightScale; F.Spin = S->AirSpinScale;
     F.PushSpeed = S->PushSpeedScale; F.PushPower = S->PushPowerScale; F.VertAssist = S->VertAssist;
+    F.TightFlicks = int8(S->bTightFlicks ? 1 : 0);
     return F;
 }
 
@@ -49,5 +50,6 @@ bool FSkateFeel::Validate(FString& Error) const
         { Error = FString::Printf(TEXT("%s %g is outside %g..%g"), R.Name, R.Value, R.Low, R.High); return false; }
     if (StickReach < StickDeadZone + .2f) { Error = TEXT("StickReach must be at least 0.2 past StickDeadZone"); return false; }
     if (AutoPush < -1 || AutoPush > 1 || AssistedAir < -1 || AssistedAir > 1) { Error = TEXT("AutoPush and AssistedAir are -1, 0 or 1"); return false; }
+    if (TightFlicks < 0 || TightFlicks > 1) { Error = TEXT("TightFlicks is 0 or 1"); return false; }
     Error.Reset(); return true;
 }

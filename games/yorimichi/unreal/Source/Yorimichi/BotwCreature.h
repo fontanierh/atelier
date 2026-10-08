@@ -7,6 +7,22 @@ class UCapsuleComponent;
 class USkeletalMeshComponent;
 class UAnimSequence;
 class FJsonObject;
+class AWandererCharacter;
+
+USTRUCT()
+struct FBotwCreatureNetState
+{
+    GENERATED_BODY()
+    UPROPERTY() FString SpecName;
+    UPROPERTY() FName Clip;
+    UPROPERTY() uint32 Serial = 0;
+    UPROPERTY() float Began = 0.f;
+    UPROPERTY() float Rate = 1.f;
+    UPROPERTY() bool bLoop = false;
+    UPROPERTY() uint8 Mode = 0;
+    UPROPERTY() uint8 Phase = 0;
+    UPROPERTY() int32 Health = 3;
+};
 
 /** One character of Content/Data/botw/roster.json (import_botw.py): its mesh, clips by name, and the clip each role plays. */
 struct FBotwSpec
@@ -50,6 +66,7 @@ public:
     static ABotwCreature* SpawnAt(UWorld* World, const FString& Name, const FVector& Ground, float Yaw, EBotwMode Mode);
 
     virtual void Tick(float Dt) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     /** Play a clip by name, or by role ("role:attack"); returns its length in seconds (0 when unknown). */
     float Play(const FString& ClipOrRole, bool bLoop, float Rate = 1.f, float Blend = .2f);
@@ -65,6 +82,17 @@ public:
     USkeletalMeshComponent* GetMesh() const { return Mesh; }
 
 private:
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkState) FBotwCreatureNetState NetworkState;
+    UPROPERTY() TObjectPtr<AWandererCharacter> CombatTarget;
+    UFUNCTION() void OnRep_NetworkState();
+    void PublishNetworkState();
+    void PresentNetworkState();
+    double ClipBegan = 0.;
+    float ClipRate = 1.f;
+    uint32 ClipSerial = 0, AppliedClipSerial = 0;
+    bool bClipLoop = false, bHealthScaled = false;
+    void EngageNetworkEncounter();
+    bool bReturningFromEncounter = false;
     enum class EPhase : uint8 { Rest, Moving, Action, Notice, Chase, Attack, Hit, Down, GetUp };
     void Initialize(const FBotwSpec& Spec, EBotwMode StartMode);
     UAnimSequence* Clip(FName Name) const;

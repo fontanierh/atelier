@@ -1,11 +1,28 @@
 #include "YorimichiCombatFX.h"
+#include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "Engine/World.h"
 
 // Yorimichi's combat reactions, composed from the platform's effects (AAtelierFX): which sparks, flashes, rings, light,
 // shake, slow motion and sound each moment of the sword fight gets.
 
-AYorimichiCombatFX* AYorimichiCombatFX::Get(const UObject* WorldContext) { return Cast<AYorimichiCombatFX>(AAtelierFX::Get(WorldContext)); }
+AYorimichiCombatFX* AYorimichiCombatFX::Get(const UObject* WorldContext)
+{
+    if (!WorldContext || !WorldContext->GetWorld() || WorldContext->GetWorld()->GetNetMode() == NM_DedicatedServer) return nullptr;
+    if (const auto* Rider = Cast<AWandererCharacter>(WorldContext))
+        if (const auto* Movement = Cast<UJapanCharacterMovement>(Rider->GetCharacterMovement()); Movement && Movement->IsReplaying()) return nullptr;
+    return Cast<AYorimichiCombatFX>(AAtelierFX::Get(WorldContext));
+}
+
+void AYorimichiCombatFX::HitStop(float Seconds, AActor* A, AActor* B)
+{
+    if (!JapanNetwork::IsOnline(GetWorld())) Super::HitStop(Seconds, A, B);
+}
+void AYorimichiCombatFX::SlowMotion(float Seconds, float Dilation)
+{
+    if (!JapanNetwork::IsOnline(GetWorld())) Super::SlowMotion(Seconds, Dilation);
+}
 
 static FVector RandomUnit(FRandomStream& R) { return R.GetUnitVector(); }
 

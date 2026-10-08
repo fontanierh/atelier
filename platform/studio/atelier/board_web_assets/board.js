@@ -173,7 +173,7 @@ $("searchToggle").addEventListener("click",()=>{
   else if($("search").value||$("topicFilter").value){$("search").value="";$("topicFilter").value="";syncPills();refreshFilters();}
   $("searchToggle").classList.toggle("active",show);
 });
-function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set(conversationMode==="dm"?"dm":"agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); return q.toString(); }
+function query(before=0) { const q=new URLSearchParams(); if(selectedAgent)q.set(conversationMode==="dm"?"dm":"agent",selectedAgent); if($("search").value.trim())q.set("q",$("search").value.trim()); if($("topicFilter").value)q.set("topic",$("topicFilter").value); if(before)q.set("before",before); q.set("log",Math.min(logShown,5000)); return q.toString(); }
 function refreshFilters() { settle(1500); records.clear(); feedSignature=""; historyComplete=false; stickToBottom=true; prepending=false; lastSeenId=0; feedPainted=false; load(true); }
 let searchTimer;
 $("search").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refreshFilters,250);});
@@ -1441,12 +1441,14 @@ function renderSchedule() {
     let items=entries(state.schedule[title]);
     if(title==="Log")items=items.reverse();
     const card=node("details","card schedule-card");card.open=title!=="Handoffs";card.style.setProperty("--i",i+3);
-    const summary=node("summary");summary.append(node("span","",title),node("span","count-pill",String(items.length)),icon("chevron"));card.append(summary);
+    const summary=node("summary");summary.append(node("span","",title),node("span","count-pill",String(title==="Log"?state.log_total??items.length:items.length)),icon("chevron"));card.append(summary);
     if(!items.length){card.append(node("p","quiet",blurbs[title]));view.append(card);continue;}
     const list=node("ul","entries");
     for(const item of title==="Log"?items.slice(0,logShown):items){const li=node("li");li.append(inline(item));list.append(li);}
     card.append(list);
-    if(title==="Log"&&items.length>logShown){const more=node("button","text-button",`Show ${Math.min(30,items.length-logShown)} older entries`);more.type="button";more.addEventListener("click",()=>{logShown+=30;renderSchedule();});card.append(more);}
+    // The server sends only the newest entries the page shows; older ones arrive on request.
+    const logTotal=state.log_total??items.length;
+    if(title==="Log"&&logTotal>logShown){const more=node("button","text-button",`Show ${Math.min(30,logTotal-logShown)} older entries`);more.type="button";more.addEventListener("click",()=>{logShown+=30;renderSchedule();load();});card.append(more);}
     view.append(card);
   }
 }

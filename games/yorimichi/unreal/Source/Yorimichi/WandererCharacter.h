@@ -5,6 +5,8 @@
 #include "SprintStamina.h"
 #include "AtelierFX.h"
 #include "SkateRider.h"
+#include "JapanAvatarState.h"
+#include "JapanActivityState.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -35,6 +37,11 @@ class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTar
 public:
     AWandererCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void PawnClientRestart() override;
+    virtual void ConfigureNetworkRider(const FString& Name, bool bShield);
+    const FString& GetNetworkRiderName() const { return NetworkRiderName; }
+    bool GetNetworkShield() const { return bNetworkShield; }
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult) override;
@@ -72,6 +79,8 @@ public:
     bool HasMovementIntent() const { return !MoveIntent.IsNearlyZero(); }
     bool DoesActionLoop() const { return bActionLoops; }
     bool IsReady() const { return bReady; }
+    /** Current action or vehicle prevents ordinary movement/input. Read-only for native probes. */
+    bool MovementLocked() const;
     bool IsMouseReleased() const { return bMouseReleased; }
     /** The phone stream's touch page is driving the game (it draws its own controls and status). */
     bool IsPhoneTouchActive() const;
@@ -103,6 +112,17 @@ public:
     /** Travel to a world position (Unreal cm) facing Yaw: stows the board and sailboat, clears momentum, lands on the ground actually built there
      *  (the highest surface from Above cm over the position down). */
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
+    uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
+    EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
+    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0);
+    UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
+        FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
+    UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
+    bool RequestNetworkSkate();
+    void TickNetworkActivity();
+    bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
     void SetMenuOpen(bool bOpen);
     /** A minigame that reads the keys itself (the horse races) takes the character's input mapping away until it hands it back. */
     void SetControlsSuspended(bool bSuspended);
@@ -144,10 +164,31 @@ protected:
     void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
 
 private:
+    void InitializeLocalPlayer();
+    UFUNCTION() void OnRep_NetworkLoadout();
+    UPROPERTY(Replicated) FString NetworkRiderName;
+    UPROPERTY(Replicated) bool bNetworkMovementReady = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkLoadout) bool bNetworkShield = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkActivity) FJapanActivityState NetworkActivity;
+    UFUNCTION() void OnRep_NetworkActivity();
+    uint32 AppliedActivityEpoch = 1;
+    bool bApplyingNetworkActivity = false, bNetworkSkateObserved = false, bNetworkActivityPending = false;
+    double LastNetworkTravel = -10., NetworkActivityRequestTime = 0.;
+    UPROPERTY() TObjectPtr<class UJapanSkateNetwork> NetworkSkate;
+    bool bLocalPlayerInitialized = false;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkAvatar) FJapanAvatarState NetworkAvatar;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) float NetworkHealth = 100.f;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) int32 NetworkHitsTaken = 0;
+    UFUNCTION() void OnRep_NetworkAvatar();
+    UFUNCTION() void OnRep_NetworkHealth();
+    bool bNetworkAvatarReceived = false;
+    float LastAvatarPublication = -1.f;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class UBotwMoveSet;
+    friend class UJapanCharacterMovement;
+    friend struct FBotwNetworkState;
     float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
@@ -293,7 +334,6 @@ private:
     /** A button for the move set, when there is one and nothing else (a menu, the board, the boat) has the input. */
     bool PressMove(FName Button);
     bool StandForAction();
-    bool MovementLocked() const;
     bool IsRollRecovering() const;
     void SetAction(FName Action, bool bLoop = false, float BlendSeconds = .16f, bool bRestart = false);
     void SetMouseReleased(bool bReleased);

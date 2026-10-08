@@ -25,6 +25,7 @@
 #include "BoneControllers/AnimNode_ModifyBone.h"
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
+#include "JapanNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void FWandererStateNode::Initialize_AnyThread(const FAnimationInitializeContext& C)
@@ -379,6 +380,18 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         if (bBiking) Action.SetAccumulatedTime(BikeC->GetPoseTime());
         const bool bCarrying = !bSailing && !bRiding && !bBiking && !Pawn->IsZeppelinPassenger();
         const UBotwMoveSet* Moves = Pawn->GetMoves();
+        if (Moves && JapanNetwork::IsOnline(Pawn->GetWorld()) && !bSailing && !bRiding && !bBiking && State.bAction)
+        {
+            // Both prediction corrections and late-joining proxies use the authoritative action phase.
+            // A separate sequence-player clock would retain the old phase after a same-action correction.
+            if (const UAnimSequenceBase* Clip = Action.GetSequence())
+            {
+                const float Length = FMath::Max(Clip->GetPlayLength(), .001f);
+                const float Phase = FMath::Max(0.f, Pawn->GetActionSourceTime());
+                Action.SetAccumulatedTime(Pawn->DoesActionLoop() ? FMath::Fmod(Phase, Length) : FMath::Min(Phase, Length));
+                Action.SetPlayRate(0.f);
+            }
+        }
         const float SwordGuardWeight = bCarrying && Moves && Pawn->GetDefinition()->FindAction(TEXT("SwordGuardCarry")) ? Moves->SwordGuardWeight() : 0.f;
         const float ShieldWeight = bCarrying && Moves ? Moves->GuardWeight() : 0.f;
         const float FreeWeight = bCarrying && Moves ? Moves->FreeArmWeight() : 0.f;

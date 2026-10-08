@@ -62,6 +62,9 @@ public:
     /** How far short of vertical a quarter pipe still sends a straight air back down into it: 0 is stock (vertical
      *  walls only), 1 reaches lips of about 50 degrees. The transfer input always leaves the ramp. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float VertAssist = 0.f;
+    /** Also read a hardflip or inward heelflip flicked close to straight down then up, as newer skate games do, beside
+     *  the authored wide arc. Off is stock. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") bool bTightFlicks = false;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;

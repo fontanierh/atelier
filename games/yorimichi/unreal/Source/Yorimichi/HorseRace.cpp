@@ -1,4 +1,5 @@
 #include "HorseRace.h"
+#include "JapanNetwork.h"
 #include "AtelierData.h"
 #include "AtelierFX.h"
 #include "Hippodrome.h"
@@ -296,6 +297,7 @@ bool AHorseRace::CanTalk(const AWandererCharacter* P) const
 
 bool AHorseRace::TryInteract(AWandererCharacter* P)
 {
+    if (!P || !JapanNetwork::Allows(P->GetWorld(), JapanNetwork::EActivity::Race)) return false;
     AHorseRace* Race = Find(P);
     if (!Race || !Race->CanTalk(P)) return false;
     Race->OpenMenu(P);
@@ -405,6 +407,7 @@ FVector AHorseRace::RunnerPoint(const FRaceRunner& R, float* Yaw) const
 
 bool AHorseRace::StartRace(AWandererCharacter* P, int32 Cup, const FString& Horse, float Auto)
 {
+    if (!JapanNetwork::Allows(GetWorld(), JapanNetwork::EActivity::Race)) return false;
     AHippodrome* V = Venue.Get();
     if (!V || !P || IsRacing()) return false;
     CloseMenu();

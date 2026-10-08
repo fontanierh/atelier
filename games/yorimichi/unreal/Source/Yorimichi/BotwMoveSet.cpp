@@ -1,4 +1,6 @@
 #include "BotwMoveSet.h"
+#include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "BotwMoveSetDetail.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -204,8 +206,13 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
     }
     // The shield is the "Shield" setting's (off by default); -shield / -noshield decide for a scripted session.
     const TCHAR* Line = FCommandLine::Get();
-    SetShield(FParse::Param(Line, TEXT("shield")) || (!FParse::Param(Line, TEXT("noshield")) && UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f));
-    SetLegacy(Chosen() == LegacyBotw);
+    if (JapanNetwork::IsOnline(Owner->GetWorld()) && !Owner->IsNpc())
+    { SetShield(Owner->GetNetworkShield()); SetLegacy(false); }
+    else
+    {
+        SetShield(FParse::Param(Line, TEXT("shield")) || (!FParse::Param(Line, TEXT("noshield")) && UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f));
+        SetLegacy(Chosen() == LegacyBotw);
+    }
     Mode = EBotwMoveMode::Ground;
     UE_LOG(LogTemp, Display, TEXT("BOTW move set: %d actions, %d parameters, %d props%s, scale %.2f, %s, double jump %s"), Moves.Num(), Params.Num(), Props.Num(),
         Glider ? TEXT(" and the paraglider") : TEXT(""), Scale(), bLegacy ? TEXT("legacy BOTW") : bShield ? TEXT("shield") : TEXT("no shield"),
@@ -250,6 +257,7 @@ void UBotwMoveSet::Play(FName Name, float Blend, float StartAt, float Speed)
 {
     const FBotwMove* M = Moves.Find(Name);
     if (!M || !Character) return;
+    EndDefenceAction();
     const bool bLoop = M->bLoop || In(Name, { TEXT("Fall"), TEXT("PlungeAir"), TEXT("JumpCutAir") });
     Character->SetAction(Name, bLoop, Blend >= 0.f ? Blend : FMath::Clamp(M->Blend, .06f, .25f), true);
     if (Character->GetAnimationAction() != Name) return;
@@ -276,6 +284,7 @@ void UBotwMoveSet::PlayLoop(FName Name, float Blend)
 
 void UBotwMoveSet::Stop(float Blend)
 {
+    EndDefenceAction();
     if (Character) Character->SetAction(NAME_None, false, Blend);
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
 }
@@ -361,9 +370,10 @@ void UBotwMoveSet::Advance(float Dt)
     NoClimb = FMath::Max(0.f, NoClimb - Dt); SinceImpact += Dt; Invulnerable = FMath::Max(0.f, Invulnerable - Dt); JustAvoid = FMath::Max(0.f, JustAvoid - Dt);
     GuardBroken = FMath::Max(0.f, GuardBroken - Dt); SinceHit += Dt;
     if (FlinchTime >= 0.f) { FlinchTime += Dt; if (FlinchTime > FlinchPeak * 9.f) FlinchTime = -1.f; }
-    AdvanceFlurry();
+    if (Invulnerable <= 0.f) bHopInvulnerability = false;
+    AdvanceFlurry(Dt);
     // Leaving the move set's movement mode from outside (travel, the board) ends gliding, climbing and swimming.
-    const bool bCustom = Movement->MovementMode == MOVE_Custom && Movement->CustomMovementMode == MovementMode;
+    const bool bCustom = Movement->MovementMode == MOVE_Custom && IsTraversalMode(Movement->CustomMovementMode);
     if (Mode == EBotwMoveMode::Glide || Mode == EBotwMoveMode::Climb || Mode == EBotwMoveMode::Swim)
     {
         if (!bCustom) { Mode = Movement->IsMovingOnGround() ? EBotwMoveMode::Ground : EBotwMoveMode::Air; ClimbShiftTarget = 0.f; bDriving = false; }
@@ -394,7 +404,7 @@ void UBotwMoveSet::Advance(float Dt)
     AdvanceEquipment(Dt);
     AdvanceGliderGrip(Dt);
     AdvanceMeshOffset(Dt);
-    AdvanceEffects(Dt);
+    if (const auto* MovementComponent = Cast<UJapanCharacterMovement>(Movement); !MovementComponent || !MovementComponent->IsReplaying()) AdvanceEffects(Dt);
 }
 
 void UBotwMoveSet::Phys(float Dt, int32 Iterations)
@@ -418,9 +428,9 @@ bool UBotwMoveSet::OverrideVelocity(FVector& Velocity) const
     {
         // Toward where the blade reaches the target, stopping there (re-aimed every step as either moves).
         FVector V = FVector::ZeroVector;
-        if (const AActor* Focus = LungeTarget.Get())
+        if (const AActor* Focus = LungeTarget.Get(); Focus || (JapanNetwork::IsOnline(Character->GetWorld()) && bLungePoint))
         {
-            const FVector To = (Focus->GetActorLocation() - Character->GetActorLocation()) * FVector(1, 1, 0);
+            const FVector To = ((JapanNetwork::IsOnline(Character->GetWorld()) ? LungePoint : Focus->GetActorLocation()) - Character->GetActorLocation()) * FVector(1, 1, 0);
             const float Gap = float(To.Size()) - LungeStand;
             if (Gap > 2.f) V = To.GetSafeNormal() * FMath::Min(Gap / FMath::Max(LungeTime, .03f), 1100.f);
         }
@@ -429,9 +439,9 @@ bool UBotwMoveSet::OverrideVelocity(FVector& Velocity) const
     if (Mode == EBotwMoveMode::Air && (IsHop(Name) || In(Name, { TEXT("JumpCut"), TEXT("JumpCutAir") }))) { Velocity.X = HopVelocity.X; Velocity.Y = HopVelocity.Y; return true; }
     if (Mode == EBotwMoveMode::Air && In(Name, { TEXT("Plunge"), TEXT("PlungeAir") })) { Velocity.X = Velocity.Y = 0.; return true; }
     // The flurry rush closes in on its target.
-    if (InFlurry() && Target.IsValid() && Prefixed(Name, { TEXT("Flurry"), TEXT("Rush") }))
+    if (InFlurry() && (Target.IsValid() || (JapanNetwork::IsOnline(Character->GetWorld()) && bFlurryPoint)) && Prefixed(Name, { TEXT("Flurry"), TEXT("Rush") }))
     {
-        const FVector To = (Target->GetActorLocation() - Character->GetActorLocation()) * FVector(1, 1, 0);
+        const FVector To = ((JapanNetwork::IsOnline(Character->GetWorld()) ? FlurryPoint : Target->GetActorLocation()) - Character->GetActorLocation()) * FVector(1, 1, 0);
         const FVector V = To.Size() > Reach() ? To.GetSafeNormal() * 900.f : FVector::ZeroVector;
         Velocity.X = V.X; Velocity.Y = V.Y; return true;
     }
@@ -478,21 +488,25 @@ void UBotwMoveSet::AdvanceGround(float Dt)
     if (bWantLock != bLocked)
     {
         bLocked = bWantLock;
-        if (bLocked) { Target = FindTarget(1500.f, 70.f); LockYaw = Character->GetActorRotation().Yaw; }
-        else Target = nullptr;
+        if (bLocked) { Target = !JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority() ? FindTarget(1500.f, 70.f) : nullptr; LockYaw = Character->GetActorRotation().Yaw; }
+        else { Target = nullptr; bLockPoint = false; }
     }
     const FBotwMove* Now = Current();
     FName Name = Now ? Now->Name : NAME_None;
     if (bLocked)
     {
         // Locked on with nothing to face (nothing was in front at the press): look again a few times a second.
-        if (!Target.IsValid() && FMath::FloorToInt(Clock * 4.f) != FMath::FloorToInt((Clock - Dt) * 4.f)) Target = FindTarget(1500.f, 70.f);
+        if ((!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority()) && !Target.IsValid() && FMath::FloorToInt(Clock * 4.f) != FMath::FloorToInt((Clock - Dt) * 4.f)) Target = FindTarget(1500.f, 70.f);
         AActor* Focus = Target.Get();
         if (Focus && (FVector::Dist2D(Focus->GetActorLocation(), Here) > 2500.f || !IsTargetable(Focus))) { Target = nullptr; Focus = nullptr; }
-        const float FaceYaw = Focus ? (Focus->GetActorLocation() - Here).Rotation().Yaw : LockYaw;
+        if (Focus && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority())) { LockPoint = Focus->GetActorLocation(); bLockPoint = true; }
+        else if (Character->HasAuthority()) bLockPoint = false;
+        const float FaceYaw = JapanNetwork::IsOnline(Character->GetWorld())
+            ? (bLockPoint ? (LockPoint - Here).Rotation().Yaw : LockYaw)
+            : (Focus ? (Focus->GetActorLocation() - Here).Rotation().Yaw : LockYaw);
         if (!Busy() || IsLockLoop(Name))
             Character->SetActorRotation(FRotator(0, FMath::FixedTurn(Character->GetActorRotation().Yaw, FaceYaw, 720.f * Dt), 0));
-        if (Character->Controller && Character->LookGrace <= 0.f)
+        if (!JapanNetwork::IsOnline(Character->GetWorld()) && Character->Controller && Character->LookGrace <= 0.f)
         {
             const FRotator View = Character->Controller->GetControlRotation();
             Character->Controller->SetControlRotation(FMath::RInterpTo(View, FRotator(View.Pitch, FaceYaw, 0), Dt, Focus ? 5.f : 3.f));
@@ -788,7 +802,7 @@ void UBotwMoveSet::StartHop()
     Mode = EBotwMoveMode::Air; bJumped = true; JumpBuffer = 0.f; FallStartZ = Character->GetActorLocation().Z;
     const float Flight = 2.f * float(V.Z) / FMath::Max(G, 1.f);
     Invulnerable = FMath::Min(GetParam(TEXT("PlayerSideStep.NoDamageTime"), 40.f) / 30.f, Flight + .1f);
-    JustAvoid = .25f;
+    JustAvoid = .25f; bHopInvulnerability = true;
     Play(Clip, .05f);
     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
     {
@@ -910,15 +924,15 @@ void UBotwMoveSet::Reset()
 {
     if (!Character) return;
     UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
-    if (Movement->MovementMode == MOVE_Custom && Movement->CustomMovementMode == MovementMode) Movement->SetMovementMode(MOVE_Falling);
+    if (Movement->MovementMode == MOVE_Custom && IsTraversalMode(Movement->CustomMovementMode)) Movement->SetMovementMode(MOVE_Falling);
     Mode = Movement->IsMovingOnGround() ? EBotwMoveMode::Ground : EBotwMoveMode::Air;
     ShowGlider(false);
     SetArmed(false);
     bLocked = bGuardHeld = bAttackHeld = bJumpHeld = bCharging = bDown = bDriving = bJumped = false;
-    Target = nullptr; HopVelocity = DriveVelocity = FVector::ZeroVector;
+    Target = nullptr; bLockPoint = false; HopVelocity = DriveVelocity = FVector::ZeroVector;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
-    if (FlurryTime > 0.f) { FlurryTime = 0.f; Character->CustomTimeDilation = 1.f; }
+    if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
     if ((bMeshOffset || bMeshTurned) && Character->GetMesh())
