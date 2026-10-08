@@ -1,5 +1,6 @@
 #include "JapanCharacterMovement.h"
 #include "JapanEnemyQA.h"
+#include "JapanJumpReplayQA.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
@@ -459,6 +460,9 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
     const FVector& RelativeLocation, FMovementBaseInterfaceData* Base, FName Bone, uint8 Mode)
 {
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves()) return;
+    const bool ForceProbe = JapanJumpReplayQA::ForceResponse(this);
+    TGuardValue<float> ProbeRate(NetworkMinTimeBetweenClientAdjustments, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustments);
+    TGuardValue<float> ProbeLargeRate(NetworkMinTimeBetweenClientAdjustmentsLargeCorrection, ForceProbe ? 0.f : NetworkMinTimeBetweenClientAdjustmentsLargeCorrection);
     Super::ServerMoveHandleClientError(Timestamp, Dt, Accel, RelativeLocation, Base, Bone, Mode);
     const auto* Server = GetPredictionData_Server_Character();
     if (!Server || Server->PendingAdjustment.TimeStamp != Timestamp) return;
@@ -469,11 +473,13 @@ void UJapanCharacterMovement::ServerMoveHandleClientError(float Timestamp, float
         PendingCheckpoint = CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->CaptureNetworkState();
 
     }
+    if (ForceProbe) SendClientAdjustment();
 }
 
 void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& Response)
 {
     const auto& Custom = static_cast<const FJapanMoveResponse&>(Response);
+    if (JapanJumpReplayQA::Defer(this, Custom)) return;
     if (Custom.ActivityEpoch != GetActivityEpoch()) return;
     if (JapanNetwork::IsOnline(GetWorld()) && !PredictsMoves())
     {

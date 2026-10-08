@@ -1,5 +1,6 @@
 #include "JapanGameplayQA.h"
 #include "JapanCharacterMovement.h"
+#include "JapanJumpReplayQA.h"
 #include "JapanActivityState.h"
 #include "JapanSession.h"
 #include "Misc/CommandLine.h"
@@ -43,6 +44,7 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
 {
     auto Data = MakeShared<FJsonObject>();
     Data->SetBoolField(TEXT("passed"), true);
+    if (JapanJumpReplayQA::Enabled()) Data->SetObjectField(TEXT("jump_replay"), JapanJumpReplayQA::Receipt(Server));
     Data->SetNumberField(TEXT("applied_peer_frames"), State.PeerFrames);
     Data->SetNumberField(TEXT("received_peer_frames"), State.ReceivedPeerFrames);
     Data->SetNumberField(TEXT("walk_cm"), State.WalkDistance);
@@ -129,6 +131,7 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
 
 bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FString& Error)
 {
+    if (!JapanJumpReplayQA::Tick(Error)) return false;
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     if (Listen)
     {
@@ -187,6 +190,7 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     Script.HighestEpoch = FMath::Max(Script.HighestEpoch, Player->GetActivityEpoch());
     if (Server)
     {
+        JapanJumpReplayQA::ObserveHost(Movement, Folder);
         if (!Script.SawSkate && Player->GetNetworkActivity() == EJapanActivity::OnFoot)
         {
             Script.WalkDistance = FMath::Max(Script.WalkDistance, float(FVector::Dist2D(Script.Start, Player->GetActorLocation())));
@@ -252,6 +256,7 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
         }
         break;
     case 1:
+        JapanJumpReplayQA::Arm(Movement, Folder);
         if (Elapsed > .5) { Script.Foot = Player->GetActorLocation(); Player->Live_Press(TEXT("jump")); Next(); }
         break;
     case 2:

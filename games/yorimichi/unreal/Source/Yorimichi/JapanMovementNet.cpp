@@ -1,5 +1,6 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.h"
+#include "JapanJumpReplayQA.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
 #include "Engine/PackageMapClient.h"
@@ -96,12 +97,15 @@ void FSavedMove_Japan::PrepareStaleClockProbe(ACharacter* Character,
 
 void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
 {
+    const FVector OriginalLocation = Mode == PostUpdate_Replay ? SavedLocation : FVector::ZeroVector;
+    const FVector OriginalVelocity = Mode == PostUpdate_Replay ? SavedVelocity : FVector::ZeroVector;
     Super::PostUpdate(Character, Mode);
     if (auto* Movement = MovementOf(Character); Movement && Movement->PredictsMoves())
     {
         PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
+        JapanJumpReplayQA::Move(Movement, *this, Mode == PostUpdate_Replay, OriginalLocation, OriginalVelocity);
 #if !UE_BUILD_SHIPPING
         static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
         if (Trace && Movement->TraceClientStep(TimeStamp))
@@ -174,6 +178,7 @@ void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponen
     Checkpoint = static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpoint;
     bHasCheckpoint = IsCorrection() && !Checkpoint.Bytes.IsEmpty() &&
         static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpointTime == Adjustment.TimeStamp;
+    JapanJumpReplayQA::Sent(*this);
 }
 
 bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)
