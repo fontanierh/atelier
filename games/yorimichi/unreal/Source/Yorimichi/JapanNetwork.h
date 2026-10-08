@@ -15,7 +15,7 @@ namespace JapanNetwork
     bool IsOnline(const UWorld* World);
     /** Players pass through one another while authored Pawn-channel attacks still see their capsules. */
     void ConfigurePlayerCollision(UCapsuleComponent* Capsule);
-    enum class EActivity : uint8 { Horse, Race, WorldEdit };
+    enum class EActivity : uint8 { WorldEdit };
     /** One policy for every entry point, including menus and live commands. */
     bool Allows(UWorld* World, EActivity Activity);
     bool IsTailnetIPv4(const FString& Address);

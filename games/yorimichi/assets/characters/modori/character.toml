@@ -1,5 +1,5 @@
 # Modori, the rival (README.md). Source of truth: the current revision's .blend (textures packed) and its manifest.
-# Playable: export_unreal.py, Scripts/import_modori.py and the merged move set (botw/retarget.py --character modori).
+# Playable: export_unreal.py, Scripts/import_modori.py and the merged move set (adventure/retarget.py --character modori).
 id = "modori"
 display_name = "Modori"               # named on 7 October 2026 (earlier: the came-back take)
 role = "player"                       # the rival in the story, playable in place of Cairo

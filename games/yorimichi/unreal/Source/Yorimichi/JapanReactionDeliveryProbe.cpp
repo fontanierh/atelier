@@ -4,9 +4,9 @@
 #include "JapanCharacterMovement.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
-#include "BotwMoveSet.h"
-#include "BotwMoveSetDetail.h"
-#include "BotwMovementReaction.h"
+#include "AdventureMoveSet.h"
+#include "AdventureMoveSetDetail.h"
+#include "AdventureMovementReaction.h"
 #include "WandererSword.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
@@ -25,7 +25,7 @@ namespace JapanReactionDeliveryQA
 // still executes the ordinary guard reaction, health/FX and checkpoint request.
 struct FStimulus
 {
-    static int32 Guard(UBotwMoveSet& Moves, AActor* Source, const FVector& From)
+    static int32 Guard(UAdventureMoveSet& Moves, AActor* Source, const FVector& From)
     {
         TGuardValue<TOptional<EJapanDefence>> Override(Moves.DefenceOverride, TOptional<EJapanDefence>(EJapanDefence::Guard));
         return Moves.IncomingStrike(Source, 1.f, From);
@@ -266,7 +266,7 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
     if(LethalDelivery()&&Guest->GetActivityEpoch()==S.InitialEpoch+1&&Guest->GetSword()->GetHealth()==0.f)
     {
         ++S.DeadFrames;S.LastDeadAt=Now;S.DeadAttack|=Guest->GetMoves()->IsAttacking();
-        S.DeadDefence|=Guest->GetMoves()->IsGuarding()||BotwMoveSetDetail::IsParry(Guest->GetAnimationAction());
+        S.DeadDefence|=Guest->GetMoves()->IsGuarding()||AdventureMoveSetDetail::IsParry(Guest->GetAnimationAction());
     }
     if(Now-S.Began>12.&&!S.Complete){Error=TEXT("Reaction delivery stimulus deadline expired");return false;}
     if(!S.Failure.IsEmpty()){Error=S.Failure;return false;}
@@ -302,7 +302,7 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
         {
             // Deliberate valid old-epoch delivery only after the owner reports
             // applying epoch+1. This is labelled, never a production retry.
-            FBotwMovementReaction Payload;Payload.Flags=FBotwMovementReaction::ClearHop;
+            FAdventureMovementReaction Payload;Payload.Flags=FAdventureMovementReaction::ClearHop;
             FJapanReactionValue Value;
             if(!Payload.Encode(Value)){Error=TEXT("Cannot encode stale lethal probe");return false;}
             FJapanScheduledReaction Old{S.InitialEpoch,1,{0,0.f},Value};

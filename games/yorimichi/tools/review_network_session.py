@@ -285,7 +285,7 @@ def modori_checks(folder, shield):
         log = folder / (role + '.log')
         text = log.read_text(errors='replace') if log.is_file() else ''
         checks[role + '_modori_load'] = ('Character ready: /Game/Modori/DA_Modori.DA_Modori' in text and
-            '/Game/Botw/Modori' not in text and 'Modori: no merged move set' not in text)
+            '/Game/Adventure/Modori' not in text and 'Modori: no merged move set' not in text)
     return checks
 
 

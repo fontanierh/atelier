@@ -91,7 +91,7 @@ public:
     // HoldThreshold: a press still held this long after strike 1 began turns into a charge once the cut has landed.
     static constexpr float DrawTime = .3f, HoldThreshold = .25f, FullChargeTime = .9f, BufferWindow = .3f, ParryActiveStart = .03f, ParryActiveEnd = .3f;
 private:
-    friend class UBotwMoveSet;   // a move set keeps the wielder's health and hit counts here
+    friend class UAdventureMoveSet;   // a move set keeps the wielder's health and hit counts here
     void Enter(ESwordState Next, FName Clip, float Blend, float Rate = 1.f, bool bLoop = false, float StartTime = 0.f);
     void StartAttack(int32 Combo, float Blend);
     /** Faces the stick/camera, or a soft-locked fox: StepToDistance > 0 steps in to that distance during the wind-up; YawOffset

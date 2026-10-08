@@ -14,7 +14,7 @@ two-machine or packaged release certification.
   `AJapanGameState::bPredictedVehicles`, which remains **false by default**.
   The development vehicle fixture enables it explicitly. Do not mistake those
   fixture results for vehicles being enabled in ordinary online play.
-- Online zeppelin integration is unfinished. Horse riding, racing and world
+- Online zeppelin integration is unfinished. World
   editing are unavailable online.
 - Rendered multiplayer, packaged sessions, real Tailscale connections between
   machines and Windows native acceptance remain unverified. Source work for

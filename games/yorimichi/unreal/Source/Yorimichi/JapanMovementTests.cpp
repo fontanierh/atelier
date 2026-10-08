@@ -1,5 +1,5 @@
 #include "JapanMovementNet.h"
-#include "BotwNetworkState.h"
+#include "AdventureNetworkState.h"
 #include "JapanMoveClock.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -208,7 +208,7 @@ bool FJapanCheckpointTest::RunTest(const FString&)
             FMath::IsNearlyEqual(ClientDelta, ServerDelta, .000001f));
         Server.CurrentClientTimeStamp = Client.CurrentTimeStamp;
     }
-    FBotwNetworkState State;
+    FAdventureNetworkState State;
     State.MeshBaseRotation = FQuat::Identity;
     State.Stamina.Capacity = 2.f; State.Stamina.Units = 1.25f;
     State.Clock = 40.f; State.ActionTime = .35f;
@@ -221,7 +221,7 @@ bool FJapanCheckpointTest::RunTest(const FString&)
     TestTrue(TEXT("A complete traversal checkpoint encodes"), State.Serialize(Writer));
     TestTrue(TEXT("The full checkpoint fits the correction payload cap"), Bytes.Num() <= FJapanMoveCheckpoint::MaximumBytes);
     FMemoryReader Reader(Bytes, true);
-    FBotwNetworkState Restored;
+    FAdventureNetworkState Restored;
     TestTrue(TEXT("A complete traversal checkpoint decodes"), Restored.Serialize(Reader));
     TestEqual(TEXT("Action phase survives a correction"), Restored.ActionTime, State.ActionTime);
     TestEqual(TEXT("Previous authored-path time survives"), Restored.DrivePrevious, State.DrivePrevious);
@@ -232,7 +232,7 @@ bool FJapanCheckpointTest::RunTest(const FString&)
     TestTrue(TEXT("Stamina and held guard survive"), Restored.Stamina.Units == State.Stamina.Units && Restored.bGuardHeld);
     Bytes[0] = 255;
     FMemoryReader BadSchema(Bytes, true);
-    FBotwNetworkState Rejected;
+    FAdventureNetworkState Rejected;
     TestFalse(TEXT("A mismatched checkpoint schema is rejected"), Rejected.Serialize(BadSchema));
     return true;
 }

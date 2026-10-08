@@ -1,7 +1,7 @@
-"""Cairo's shoes on the merged move set (CairoBotw: Link's clips retargeted onto Cairo): idle and walk on flat concrete and on
+"""Cairo's shoes on the merged move set (CairoAdventure: the reference rig's clips retargeted onto Cairo): idle and walk on flat concrete and on
 grass, each foot's height over the ground measured every frame, and sole close-ups at floor level.
 
-    atelier play yorimichi -- -rider=CairoBotw -nofox -nosound -RenderOffscreen -ForceRes
+    atelier play yorimichi -- -rider=CairoAdventure -nofox -nosound -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/cairo_shoes.py
     ... wait for build/yorimichi/cairo/shoes/<take>/done.json
 
@@ -18,11 +18,11 @@ the floor: the joint heights below are only a proxy for the sole.
 
 The proxy is the toe joint's height over the ground (GroundAt straight under it, which ignores the player): Cairo's own
 rest pose puts it at about 2.8-3.1 cm (cairo/export.json), inside the shoe, which is authored with its sole on the
-floor. Before the level-foot retarget (botw/retarget.py) Link's 27-degree toe-down rest tipped it to 1.46 cm, the shoe into the
+floor. Before the level-foot retarget (adventure/retarget.py) the reference rig's 27-degree toe-down rest tipped it to 1.46 cm, the shoe into the
 ground. Checks per place: standing, both toes within 1.5-5 cm; walking, each foot's planted height (its lowest 15% of
 frames) within 1.5-5 cm, and no frame under 0.5 cm. done.json lists every check with what it measured, log.json the per-frame heights, and the stills
 are saved beside them. Optional globals: SHOTS (False for no stills), ONLY (place names: concrete, grass), RIDER
-(CairoBotw by default). An existing take is refused, never overwritten; an error mid-run still writes done.json (failed,
+(CairoAdventure by default). An existing take is refused, never overwritten; an error mid-run still writes done.json (failed,
 with the error) and gives the camera and controls back.
 """
 import json, math, os
@@ -31,7 +31,7 @@ import unreal
 L = live.L
 TAKE = globals().get('TAKE', 'take1')
 SHOTS = globals().get('SHOTS', True)
-RIDER = globals().get('RIDER') or 'CairoBotw'
+RIDER = globals().get('RIDER') or 'CairoAdventure'
 OUT = os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'), 'yorimichi/cairo/shoes', TAKE)
 if os.path.isdir(OUT) and os.listdir(OUT):
     raise RuntimeError(f'take {TAKE} already exists at {OUT}: choose a new TAKE')

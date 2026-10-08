@@ -184,7 +184,7 @@ def cloud_shadow_material(tex):
 
 def painterly_material():
     """Post-process look: sparse eight-sector Kuwahara (21 taps independent of brush size), then an
-    optional BotW-style soft toon pass (luminance quantized into a few bands with smooth steps, thin depth-only
+    optional adventure-style soft toon pass (luminance quantized into a few bands with smooth steps, thin depth-only
     outlines, the sky excluded by depth). Every knob is a scalar parameter driven at runtime by the settings menu."""
     U = unreal
     m = create("M_Painterly", U.Material, U.MaterialFactoryNew())

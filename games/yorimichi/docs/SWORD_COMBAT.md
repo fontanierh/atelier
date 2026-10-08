@@ -140,7 +140,7 @@ The carry is zeroed while sailing, riding the skateboard or travelling as a zepp
 Times are clip source seconds, from `assets/characters/cairo/source-manifest.json`. Contact yaw is the bearing of the
 measured contact point, positive to the left.
 
-| Clip | Length | Active window | Link from | Cancel | Notes |
+| Clip | Length | Active window | the reference rig from | Cancel | Notes |
 | --- | --- | --- | --- | --- | --- |
 | SwordAttack1 | 0.55 s | 0.140–0.259 | 0.259 | 0.259 | contact yaw +27.7° |
 | SwordAttack2 | 0.50 s | 0.122–0.251 | 0.241 | 0.241 | contact yaw −23.9° |

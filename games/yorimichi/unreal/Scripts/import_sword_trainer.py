@@ -4,8 +4,8 @@
 
 SK_SwordTrainer with its skeleton and physics asset, her materials in the game's character look (base colour with a
 30% emissive fill, roughness 0.7, specular 0.3, as Cairo's), her own clips (A_Bow, A_Talk) and DA_SwordTrainerBase:
-the mesh, the clips and her measurements. Her merged move set comes on top (unreal.sword_trainer_botw:
-import_botw_moveset.py with BOTW_CHARACTER=sword-trainer copies the base into DA_SwordTrainer with every move).
+the mesh, the clips and her measurements. Her merged move set comes on top (unreal.sword_trainer_adventure:
+import_adventure_moveset.py with ADVENTURE_CHARACTER=sword-trainer copies the base into DA_SwordTrainer with every move).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402
 import json, sys

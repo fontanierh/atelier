@@ -26,7 +26,7 @@ def test_cpu_metadata_edit_reruns_only_the_tree_overlay_desktop_and_package(tmp_
     after = fingerprints()
     # Changed imported bytes must also refresh the multiplayer compatibility manifest.
     assert {name for name in before if before[name] != after[name]} == {
-        'unreal.city_tree_cpu_access', 'unreal.desktop', 'data.network', 'unreal.cook', 'unreal.package'}
+        'unreal.city_tree_cpu_access', 'unreal.desktop', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
     # A real world importer change still invalidates the world and overlays.
     versions[recipe.SCRIPTS / 'import_hidamari.py'] = 'v2'

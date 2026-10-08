@@ -3,9 +3,9 @@
 #include "ModoriCharacter.generated.h"
 
 /** Modori, the rival (assets/characters/modori/README.md), as a playable character: Cairo's controls and animation graph
- * on his own 1.75 m body and coat, always with the merged move set (UBotwMoveSet: Link's moves with Cairo's double jump
- * and gestures, retargeted to him by botw/retarget.py --character modori, Scripts/import_botw_moveset.py). Chosen with
- * -rider=Modori or the Esc menu's character switch, whenever his move set is built (unreal.modori_botw).
+ * on his own 1.75 m body and coat, always with the merged move set (UAdventureMoveSet: the reference rig's moves with Cairo's double jump
+ * and gestures, retargeted to him by adventure/retarget.py --character modori, Scripts/import_adventure_moveset.py). Chosen with
+ * -rider=Modori or the Esc menu's character switch, whenever his move set is built (unreal.modori_adventure).
  */
 UCLASS()
 class YORIMICHI_API AModoriCharacter : public AWandererCharacter
@@ -21,6 +21,6 @@ public:
     virtual float SailboatReach(float LegLength) const override { return FMath::Clamp(LegLength / 55.f, 1.f, 1.6f); }
     /** His name for -rider= and the character switch. */
     static FString Name() { return TEXT("Modori"); }
-    /** His definition and move record (Content/Data/modori/botw.json) are imported; checked on disk, never loaded. */
+    /** His definition and move record (Content/Data/modori/adventure.json) are imported; checked on disk, never loaded. */
     static bool IsBuilt();
 };

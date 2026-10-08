@@ -1,0 +1,26 @@
+# Modori with the merged adventure move set (adventure/README.md): the reference rig's moves and Cairo's donor clips retargeted onto him
+# (adventure/retarget.py --character modori), imported by Scripts/import_adventure_moveset.py (ADVENTURE_CHARACTER=modori).
+mesh = "/Game/Modori/SK_Modori"
+base = "/Game/Modori/DA_ModoriBase"            # from import_modori.py
+dest = "/Game/Modori/Adventure"
+definition = "/Game/Modori/DA_Modori"
+keep_base_actions = true                       # the base's own gestures stay beside the move set's
+
+# Keep the sword below his hair and clear of the coat, including the crouched carry.
+[fit.push]
+sword = [6.5, 0.0, -17.0]
+
+[fit.tilt]
+sword = 3.0
+
+[fit]
+mount = 0.45
+
+[fit.yaw]
+sword = 15.0
+
+[fit.crouch]
+pivot = 0.0
+yaw = -25.0
+pitch = -25.0
+out = 12.0

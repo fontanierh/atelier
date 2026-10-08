@@ -1,8 +1,0 @@
-# Kaede with the merged BOTW move set (docs/SWORD_TRAINER.md): Link's moves and Cairo's donor clips retargeted onto her
-# (botw/retarget.py --character sword-trainer), imported by Scripts/import_botw_moveset.py (BOTW_CHARACTER=sword-trainer).
-# Her equipment keeps Link's chest placement (no fit).
-mesh = "/Game/SwordTrainer/SK_SwordTrainer"
-base = "/Game/SwordTrainer/DA_SwordTrainerBase"   # from import_sword_trainer.py
-dest = "/Game/SwordTrainer/Botw"
-definition = "/Game/SwordTrainer/DA_SwordTrainer"
-keep_base_actions = true                          # her own bow and words stay beside the move set's

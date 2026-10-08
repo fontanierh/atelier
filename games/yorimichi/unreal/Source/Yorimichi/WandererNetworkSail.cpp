@@ -6,7 +6,7 @@
 #include "JapanEncounters.h"
 #include "JapanCombatResolver.h"
 #include "JapanVehicleTelemetry.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "Engine/World.h"
 
 bool AWandererCharacter::RequestNetworkSail()

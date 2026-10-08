@@ -128,9 +128,8 @@ def run_bot(seconds, style='spar', camera='side'):
         t += dt
 
 
-def start(level, her_shield=False, player_shield=False):
-    L.set_preference('shield', 1. if player_shield else 0.)
-    YL.trainer_bout(level, her_shield, player_shield)
+def start(level):
+    YL.trainer_bout(level)
 
 
 def home():
@@ -158,7 +157,7 @@ def approach():
     label('Interact (E / D-pad Down): "Talk to Kaede"')
     yield from wait(2.)
     live.press('interact')
-    label('Her menu: the level, her shield, yours')
+    label('Her menu: choose the training level')
     yield from wait(1.)
     L.screenshot(os.path.join(OUT, 'menu.png'))
     yield from wait(2.5)
@@ -166,14 +165,14 @@ def approach():
     cut()
 
 
-def bout(level, name, seconds, her_shield=False, player_shield=False):
+def bout(level, name, seconds):
     home()
     yield from wait(1.)
     st['side'] = rng.choice([-1., 1.]); st['cam_eye'] = None
-    start(level, her_shield, player_shield)
+    start(level)
     label(f'{name}: "Take your stance."')
     yield from run_bot(3., 'passive')
-    label(f'A bout at {name}' + (' · she carries the shield' if her_shield else '') + (' · you carry the shield' if player_shield else ''))
+    label(f'A bout at {name}')
     yield from run_bot(seconds)
     cut()
 
@@ -320,7 +319,7 @@ def finish_bout():
 def steps():
     st['home_yaw'] = trainer()['location'] and math.degrees(math.atan2(0, 1))
     sections = [('approach', approach), ('gentle', lambda: bout(0, 'Gentle', 14.)), ('steady', lambda: bout(1, 'Steady', 16.)),
-                ('master', lambda: bout(2, 'Master', 18., True, True)), ('showcase', showcase), ('hits', hits), ('end', finish_bout)]
+                ('master', lambda: bout(2, 'Master', 18.)), ('showcase', showcase), ('hits', hits), ('end', finish_bout)]
     for name, fn in sections:
         if ONLY and name not in ONLY:
             continue

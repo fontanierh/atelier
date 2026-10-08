@@ -1,5 +1,5 @@
 # Kaede, the sword teacher of Momiji Hamlet (docs/SWORD_TRAINER.md). Source of truth: the current revision's .blend
-# (textures packed) and its manifest. Her move set is the player's, retargeted onto her (botw/retarget.py --character).
+# (textures packed) and its manifest. Her move set is the player's, retargeted onto her (adventure/retarget.py --character).
 id = "sword-trainer"
 display_name = "Kaede"
 role = "npc"

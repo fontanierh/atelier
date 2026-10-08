@@ -5,20 +5,16 @@
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
-#include "HorseRideComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
-#include "BotwCreature.h"
-#include "BotwRider.h"
-#include "BotwMoveSet.h"
+#include "PlayableCharacter.h"
+#include "AdventureMoveSet.h"
 #include "SwordTrainer.h"
-#include "HorseRace.h"
 #include "Hippodrome.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
@@ -58,37 +54,7 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
 }
 
-FString UYorimichiLive::RaceState()
-{
-    const AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
-    return R ? R->Describe() : FString(TEXT("{}"));
-}
-
-bool UYorimichiLive::RaceStart(int32 Cup, const FString& Horse, float AutoAccuracy)
-{
-    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
-    AHorseRace* R = AHorseRace::Find(P);
-    return R && R->StartRace(P, Cup, Horse, AutoAccuracy);
-}
-
-bool UYorimichiLive::RaceMenu()
-{
-    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
-    AHorseRace* R = AHorseRace::Find(P);
-    if (!R || R->IsRacing()) return false;
-    if (R->IsMenuOpen()) R->CloseMenu(); else R->OpenMenu(P);
-    return true;
-}
-
-bool UYorimichiLive::RaceEnd()
-{
-    AHorseRace* R = AHorseRace::Find(ULiveLibrary::Player());
-    if (!R) return false;
-    R->EndRace(TEXT("live"));
-    return true;
-}
-
-bool UYorimichiLive::RaceVisit()
+bool UYorimichiLive::HippodromeVisit()
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     const AHippodrome* V = AHippodrome::Find(P);
@@ -185,17 +151,6 @@ FString UYorimichiLive::BikeState()
         int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->IsSprinting() ? 1 : 0, B->GetSteering(), B->IsParked() ? 1 : 0, P->GetCharacterMovement()->IsMovingOnGround() ? 0 : 1, Gaps.X, Gaps.Y, B->GetGroundPitch(), *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
 }
-FString UYorimichiLive::HorseState()
-{
-    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UHorseRideComponent* H = P ? P->GetHorse() : nullptr;
-    if (!H) return TEXT("no horse");
-    const FVector A = P->GetActorLocation(); const AHippodromeFigure* F = H->GetFigure();
-    const FVector At = F ? F->GetActorLocation() : FVector::ZeroVector; const FRotator R = F ? F->GetActorRotation() : FRotator::ZeroRotator;
-    return FString::Printf(TEXT("mounted=%d horse=%s rider=%s gait=%s speed=%.0f spurs=%d hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f figure=%d at=(%.0f,%.0f,%.0f) rot=(%.1f,%.1f) hidden=%d ticking=%d prereq=%d"),
-        H->IsEquipped() ? 1 : 0, *H->GetHorse(), F ? *F->GetRider().Name : TEXT("-"), *H->GetGait().ToString(), H->GetSpeed(), H->GetSpurs(),
-        *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0, H->IsComponentTickEnabled() ? 1 : 0,
-        P->GetCharacterMovement()->PrimaryComponentTick.GetPrerequisites().ContainsByPredicate([H](const FTickPrerequisite& T) { return T.PrerequisiteObject.Get() == H; }) ? 1 : 0);
-}
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
 bool UYorimichiLive::IsFilmHud() { return GFilmHud; }
@@ -216,95 +171,9 @@ FTransform UYorimichiLive::SkateParkSpawn()
     return FTransform::Identity;
 }
 
-static bool BotwModeFromText(const FString& Text, EBotwMode& Mode)
-{
-    static const TMap<FString, EBotwMode> Modes = { { TEXT("idle"), EBotwMode::Idle }, { TEXT("showcase"), EBotwMode::Showcase },
-        { TEXT("wander"), EBotwMode::Wander }, { TEXT("camp"), EBotwMode::Camp }, { TEXT("scripted"), EBotwMode::Scripted } };
-    const EBotwMode* Found = Modes.Find(Text.ToLower());
-    if (Found) Mode = *Found;
-    return Found != nullptr;
-}
-
-static ABotwCreature* FindBotw(const FString& Name)
-{
-    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
-    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It) if (It->GetName() == Name) return *It;
-    return nullptr;
-}
-
-FString UYorimichiLive::BotwRoster()
-{
-    TArray<TSharedPtr<FJsonValue>> Out;
-    for (const auto& Entry : FBotwSpec::All())
-    {
-        const FBotwSpec& S = Entry.Value;
-        TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
-        O->SetStringField(TEXT("name"), S.Name); O->SetStringField(TEXT("label"), S.Label);
-        O->SetNumberField(TEXT("height_cm"), S.HeightCm); O->SetNumberField(TEXT("clips"), S.Clips.Num());
-        TSharedPtr<FJsonObject> Roles = MakeShared<FJsonObject>();
-        for (const auto& R : S.Roles) Roles->SetStringField(R.Key.ToString(), R.Value.ToString());
-        O->SetObjectField(TEXT("roles"), Roles);
-        Out.Add(MakeShared<FJsonValueObject>(O));
-    }
-    FString Text; TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
-    FJsonSerializer::Serialize(Out, Writer); return Text;
-}
-
-FString UYorimichiLive::BotwSpawn(const FString& Name, FVector Ground, float Yaw, const FString& Mode)
-{
-    EBotwMode Parsed = EBotwMode::Idle;
-    if (!BotwModeFromText(Mode, Parsed) || !ULiveLibrary::Player()) return FString();
-    ABotwCreature* Creature = ABotwCreature::SpawnAt(ULiveLibrary::Player()->GetWorld(), Name, Ground, Yaw, Parsed);
-    return Creature ? Creature->GetName() : FString();
-}
-
-float UYorimichiLive::BotwPlay(const FString& Actor, const FString& Clip, bool bLoop, float Rate)
-{
-    ABotwCreature* Creature = FindBotw(Actor); return Creature ? Creature->Play(Clip, bLoop, Rate) : 0.f;
-}
-
-bool UYorimichiLive::BotwMoveTo(const FString& Actor, FVector Ground, bool bRun)
-{
-    ABotwCreature* Creature = FindBotw(Actor); if (!Creature) return false;
-    Creature->MoveTo(Ground, bRun); return true;
-}
-
-bool UYorimichiLive::BotwMode(const FString& Actor, const FString& Mode)
-{
-    ABotwCreature* Creature = FindBotw(Actor); EBotwMode Parsed;
-    if (!Creature || !BotwModeFromText(Mode, Parsed)) return false;
-    Creature->SetMode(Parsed); return true;
-}
-
-FString UYorimichiLive::BotwList()
-{
-    TArray<TSharedPtr<FJsonValue>> Out;
-    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
-    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It)
-    {
-        TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
-        O->SetStringField(TEXT("actor"), It->GetName()); O->SetStringField(TEXT("name"), It->Spec().Name);
-        O->SetStringField(TEXT("clip"), It->CurrentClip());
-        const FVector L = It->GetActorLocation();
-        O->SetArrayField(TEXT("location"), { MakeShared<FJsonValueNumber>(L.X), MakeShared<FJsonValueNumber>(L.Y), MakeShared<FJsonValueNumber>(L.Z) });
-        O->SetNumberField(TEXT("yaw"), It->GetActorRotation().Yaw);
-        Out.Add(MakeShared<FJsonValueObject>(O));
-    }
-    FString Text; TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Text);
-    FJsonSerializer::Serialize(Out, Writer); return Text;
-}
-
-int32 UYorimichiLive::BotwClear()
-{
-    int32 Removed = 0;
-    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
-    if (World) for (TActorIterator<ABotwCreature> It(World); It; ++It) { It->Destroy(); ++Removed; }
-    return Removed;
-}
-
 FString UYorimichiLive::SwitchCharacter(const FString& Name)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
-    if (P) if (AWandererCharacter* To = ABotwRider::SwitchPlayer(P, Name)) P = To;
-    return P ? ABotwRider::NameOf(P) : FString();
+    if (P) if (AWandererCharacter* To = FPlayableCharacter::SwitchPlayer(P, Name)) P = To;
+    return P ? FPlayableCharacter::NameOf(P) : FString();
 }

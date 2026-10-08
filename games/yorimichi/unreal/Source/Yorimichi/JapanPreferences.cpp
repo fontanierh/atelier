@@ -2,9 +2,8 @@
 #include "AtelierSettings.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
-#include "BotwRider.h"
-#include "BotwMoveSet.h"
 #include "PlayableCharacter.h"
+#include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -195,14 +194,12 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             for (const FSkateKnob& Knob : Group.Knobs)
                 Values.Add({Knob.Key, Knob.Label, SkateDefault(Knob, Defaults), Knob.Minimum, Knob.Maximum, Knob.Step});
     }
-    // The move set (UBotwMoveSet::Chosen: merged by default, Cairo's legacy moves or the legacy BOTW set) and its shield
-    // (UBotwMoveSet::SetShield: off by default, the sword guards and parries).
+    // The merged move set is the default; Cairo's original moves remain available.
     const FPlayableCharacter* MergedDefault = FPlayableCharacter::Find(FPlayableCharacter::Default().MoveSet);
-    if ((MergedDefault && MergedDefault->Built()) || ABotwRider::Available().Num())
+    if ((MergedDefault && MergedDefault->Built()) || FPlayableCharacter::Available().Num())
     {
         const int32 After = Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1;
-        Values.Insert({TEXT("shield"),TEXT("Shield"),0.f,0.f,1.f},After);
-        Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,2.f},After);
+        Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,1.f},After);
     }
     DefaultValues.Reset();
     for (const FJapanPreference& V : Values) DefaultValues.Add(V.Key,V.Value);
@@ -377,13 +374,7 @@ void UJapanPreferences::Apply()
         FString Error;
         if (!Skate->SetFeel(JapanNetwork::IsOnline(Owner->GetWorld()) ? FSkateFeel::Defaults() : GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
     }
-    // The move set takes the shield and the merged or legacy BOTW rules at once; Cairo's legacy moves need the
-    // character switch (ToggleMenu).
-    if (UBotwMoveSet* Moves = Owner->GetMoves(); !JapanNetwork::IsOnline(Owner->GetWorld()) && Moves && Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); }))
-    {
-        Moves->SetLegacy(FMath::RoundToInt(Get(TEXT("moveset"))) == UBotwMoveSet::LegacyBotw);
-        Moves->SetShield(Get(TEXT("shield")) > .5f);
-    }
+    // Cairo changes between his original moves and the merged set through the character switch.
     const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
     const auto Set = [](const TCHAR* Name, float Value)
@@ -789,24 +780,24 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
         .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); })];
-    // The character switch (ABotwRider::SwitchPlayer): the default character (Cairo), with the merged move set when it is
+    // The character switch (FPlayableCharacter::SwitchPlayer): the default character (Cairo), with the merged move set when it is
     // built, and every other playable character. The switch waits for the next tick, out of the menu's click.
     const auto Switch = [this](const FString& Name)
     {
         CloseMenu();
         if (AWandererCharacter* Pawn = Owner)
-            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { ABotwRider::SwitchPlayer(Pawn,Name); }));
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(Pawn,[Pawn,Name] { FPlayableCharacter::SwitchPlayer(Pawn,Name); }));
     };
-    const FString Playing = ABotwRider::NameOf(Owner);
+    const FString Playing = FPlayableCharacter::NameOf(Owner);
     const FPlayableCharacter& Default = FPlayableCharacter::Default();
     const bool bPlayingDefault = Playing == Default.Name || Playing == Default.MoveSet;
     const auto DefaultName = [this]
     {
         const FPlayableCharacter& Default = FPlayableCharacter::Default();
         const FPlayableCharacter* Merged = FPlayableCharacter::Find(Default.MoveSet);
-        return Merged && Merged->Built() && FMath::RoundToInt(Get(TEXT("moveset"))) != UBotwMoveSet::LegacyCairo ? Merged->Name : Default.Name;
+        return Merged && Merged->Built() && FMath::RoundToInt(Get(TEXT("moveset"))) != UAdventureMoveSet::LegacyCairo ? Merged->Name : Default.Name;
     };
-    if (const TArray<FString> Riders = ABotwRider::Available(); Riders.Num())
+    if (const TArray<FString> Riders = FPlayableCharacter::Available(); Riders.Num())
     {
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
         TArray<FString> Names = {Default.Name}; Names.Append(Riders);
@@ -814,7 +805,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         {
             const bool bDefault = Name == Default.Name;
             Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && (bDefault ? !bPlayingDefault : Name != Playing))
-                .Text(FText::FromString(ABotwRider::Label(Name)))
+                .Text(FText::FromString(FPlayableCharacter::Label(Name)))
                 .OnClicked_Lambda([Switch,DefaultName,Name,bDefault] { Switch(bDefault ? DefaultName() : Name); return FReply::Handled(); })];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
@@ -822,9 +813,9 @@ void UJapanPreferences::OpenMenu(bool bSkate)
     }
     if (JapanNetwork::IsOnline(Owner->GetWorld()))
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
-            .Text(FText::FromString(TEXT("Choose your character and shield before joining. Shared games use the merged move set, two stamina rings and default skate physics. Horses and races are available in solo play.")))];
+            .Text(FText::FromString(TEXT("Choose your character before joining. Shared games use the merged move set, two stamina rings and default skate physics.")))];
     TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
-    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Append({TEXT("moveset"),TEXT("shield")});
+    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Add(TEXT("moveset"));
     for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
@@ -838,16 +829,12 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                 if (Key == TEXT("moveset"))
                 {
                     const int32 Choice = FMath::RoundToInt(Get(*Key));
-                    return FText::FromString(Choice == UBotwMoveSet::LegacyCairo ? TEXT("Move set: Cairo (legacy) · roll and dashes")
-                        : Choice == UBotwMoveSet::LegacyBotw ? TEXT("Move set: Breath of the Wild (legacy) · no double jump")
+                    return FText::FromString(Choice == UAdventureMoveSet::LegacyCairo ? TEXT("Move set: Cairo (legacy) · roll and dashes")
                         : TEXT("Move set: merged · double jump, glider, dodges"));
                 }
                 if (Key == TEXT("fog")) return FText::FromString(Enabled
                     ? TEXT("Volumetric fog: on · valley mist and light shafts")
                     : TEXT("Volumetric fog: off"));
-                if (Key == TEXT("shield")) return FText::FromString(Enabled
-                    ? TEXT("Shield: carried · it guards and parries")
-                    : TEXT("Shield: off · the sword guards and parries"));
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
@@ -856,14 +843,14 @@ void UJapanPreferences::OpenMenu(bool bSkate)
             {
                 if (Key == TEXT("moveset"))
                 {
-                    // Merged, Cairo (legacy), BOTW (legacy), round again. Cairo between his legacy moves and a move set
+                    // Merged and Cairo (legacy), round again. Cairo between his legacy moves and a move set
                     // needs the character switch; anything else takes it at once (Apply).
                     const FString Before = DefaultName();
-                    SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%3));
+                    SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%2));
                     if (bPlayingDefault && DefaultName() != Before) Switch(DefaultName());
                     return FReply::Handled();
                 }
-                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);   // Apply hands the shield to the move set at once
+                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
                 return FReply::Handled();
             });
         if (!FirstControl) FirstControl = Button;

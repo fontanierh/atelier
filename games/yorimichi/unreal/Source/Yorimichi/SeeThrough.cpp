@@ -80,7 +80,7 @@ namespace
     const TCHAR* ModeName(bool bHole)
     {
         return bHole ? TEXT("the first version's hole and room cutaway (japan.SeeThroughHole 1)")
-                     : TEXT("whole fades like Breath of the Wild (japan.SeeThroughHole 0)");
+                     : TEXT("whole-object fades (japan.SeeThroughHole 0)");
     }
 }
 

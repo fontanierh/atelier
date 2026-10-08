@@ -1,0 +1,492 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "JapanDefenceTimeline.h"
+#include "JapanDefenceClock.h"
+#include "JapanReactionJournal.h"
+#include "AdventureMoveSet.generated.h"
+
+class AWandererCharacter;
+namespace JapanReactionDeliveryQA { struct FStimulus; }
+struct FJapanMoveCheckpoint;
+struct FAdventureNetworkState;
+struct FJapanAvatarState;
+struct FAdventureMovementReaction;
+class FJsonObject;
+class UStaticMeshComponent;
+class USkeletalMeshComponent;
+class UAnimSequence;
+class UAtelierTrail;
+class UPhysicsAsset;
+struct FHitResult;
+
+/** One action of a move set (assets/characters/adventure/moves.py `record`): where its clip starts and ends, the rate it plays
+ *  at and its windows, all in clip seconds (-1 when it has none), and for a driven clip the root path it moves along. */
+struct FAdventureMove
+{
+    FName Name;
+    float Length = 0.f, Rate = 1.f, Start = 0.f, End = 0.f, Blend = 0.f;
+    float Speed = 0.f;   // a locomotion loop's ground speed (cm/s), from its root path
+    // From `Input` the next press is acted on; from `Cancel` anything may follow; at `Idle` it is over; at `Bind` and
+    // `Unbind` the equipment goes to the hands and back.
+    float Input = -1.f, Cancel = -1.f, Idle = -1.f, Bind = -1.f, Unbind = -1.f;
+    bool bLoop = false;
+    TArray<FVector2f> Active, Guard;   // hits land; a strike is parried
+    // Driven: per 30 fps frame, forward, right and up (cm) and the turn (degrees, positive right) from the clip's start.
+    TArray<FVector4f> Path;
+    FVector4f PathAt(float SourceTime) const;
+    bool InWindow(const TArray<FVector2f>& Windows, float SourceTime) const;
+};
+
+/** What the character is doing with its body: the move set's state machine has one branch for each. */
+enum class EAdventureMoveMode : uint8 { Ground, Air, Glide, Climb, Swim };
+
+/**
+ * The player's move set, Cairo's and the reference rig's merged (the roster's `moves` record, assets/characters/adventure/moves.toml, or
+ * Cairo's retargeted copy, Content/Data/cairo/adventure.json): the adventure library's jumping, landing and sprint, Cairo's
+ * double jump (his own somersault, or a tucked one turned by the game), the side hop and backflip, the paraglider,
+ * climbing any steep surface, swimming, and sword combat (the four-cut combo, the charged spin, the dash, jump and plunge
+ * attacks, the sneakstrike, the guard and parry, lock-on strafing, the flurry rush after a perfect dodge, hit reactions).
+ * The sword guards and parries using the merged set's timings. There is no dash on foot. The "Move set" setting also
+ * offers Cairo's original moves (no UAdventureMoveSet; ACairoCharacter). It drives the character's action clip,
+ * timing every action by the adventure library's own action timelines, and moves the capsule itself while gliding, climbing and swimming
+ * (UJapanCharacterMovement's custom mode). It names actions and equipment slots only, never a character's bones or
+ * clips, so any character with the actions and a carry bone map can use it. Stamina is the adventure library's: 1000 to a ring.
+ */
+UCLASS()
+class YORIMICHI_API UAdventureMoveSet : public UObject
+{
+    GENERATED_BODY()
+public:
+    /** The custom movement mode the move set's own physics runs in (the skate board's is 2). */
+    static constexpr uint8 MovementMode = 3, ClimbMovementMode = 4, SwimMovementMode = 5;
+    static bool IsTraversalMode(uint8 Value) { return Value >= MovementMode && Value <= SwimMovementMode; }
+    void ApplyInputHolds(uint8 Flags);
+    /** Read the record and attach the equipment; false when the character lacks an action the set needs. */
+    bool Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonObject>& Record, const TSharedPtr<FJsonObject>& Grips = nullptr);
+    /** Per frame, in place of the character's own action bookkeeping. */
+    void Advance(float Dt);
+    FJapanMoveCheckpoint CaptureNetworkState() const;
+    void ClearNetworkReactionTargets();
+    /** Applies a frozen movement delta, including on replay; never health or cues. */
+    void ApplyMovementReaction(const FAdventureMovementReaction& Reaction);
+    bool ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint);
+    FJapanAvatarState CapturePresentation() const;
+    void ApplyPresentation(const FJapanAvatarState& State, float Dt);
+    /** UJapanCharacterMovement::PhysCustom in MovementMode. */
+    void Phys(float Dt, int32 Iterations);
+    /** UJapanCharacterMovement::CalcVelocity on the ground and in the air: a driven attack or a hop sets the velocity. */
+    bool OverrideVelocity(FVector& Velocity) const;
+    /** The move set turns the character itself (lock-on, gliding, climbing, driven clips). */
+    bool ControlsRotation() const;
+    void Landed(const FHitResult& Hit);
+    /** UJapanCharacterMovement::HandleImpact: the capsule ran into something (a steep slope it walks into is a wall). */
+    void Impact(const FHitResult& Hit);
+    /** Stand on the ground with nothing in hand or underway: travel, the board, the sailboat, the character switch. */
+    void Reset();
+    /** A button through the character's input handler: "jump", "jump_release", "dodge", "attack", "attack_release",
+     *  "guard", "guard_release", "weapon", "crouch", "dash". True when the move set took it. */
+    bool Press(FName Button);
+    /** The "Move set" setting: 0 merged (the default), 1 Cairo's legacy moves; -moveset=merged
+     *  or cairo on the command line decides instead. */
+    enum EChoice : int32 { Merged = 0, LegacyCairo = 1 };
+    static int32 Chosen();
+    /** The "Shield" setting: carry the shield and guard and parry with it, or leave it off and use the sword. */
+    void SetShield(bool bOn);
+    bool HasShield() const { return bShield; }
+    /** The menu opened: buttons held down are let go without acting. */
+    void DropHolds();
+    /** An enemy strike: 0 hit, 1 parried, 2 dodged, 3 absorbed (guarded or recovering) (UWandererSwordComponent's contract). */
+    int32 IncomingStrike(AActor* Source, float Damage, const FVector& From);
+    bool MapDefenceMove(float Timestamp, float Dt);
+    void RecordDefence(uint16 ThroughEdge, double BeforeStep = 0., bool bAcceptedMove = false);
+    bool PressNetwork(FName Button, uint16 Edge, uint16 AgeMilliseconds);
+    void ResetDefence();
+    double DefenceWait() const;
+    void RetainDefenceThrough(double Time) { DefenceTimeline.RetainThrough(Time); }
+    int32 ResolveUnprotectedStrike(AActor* Source, float Damage, const FVector& From);
+    int32 ResolveNetworkStrike(AActor* Source, float Damage, const FVector& From, double Contact);
+    uint32 DefenceRejectedTimes = 0, DefensiveRejectedTimes = 0;
+    uint32 DefenceMissingSamples() const { return DefenceTimeline.MissingSamples; }
+    uint32 DefenceAuthoredFallbacks() const { return DefenceTimeline.AuthoredFallbacks; }
+    bool DefenceRecovering() const { return bDown || Invulnerable > 0.f || InFlurry(); }
+    /** This character's blow was parried: it recoils, open, without losing health. */
+    void Deflected(AActor* By);
+
+    // Queries for the character, its animation graph, the HUD and the QA scenarios.
+    EAdventureMoveMode GetMode() const { return Mode; }
+    FString ModeName() const;
+    bool LocksMovement() const;
+    bool CanSprint() const { return Mode == EAdventureMoveMode::Ground && !bLocked && !bGuardHeld && !bCharging; }
+    /** Stamina recovers only standing on the ground (the adventure library's EnergyAutoRecoverInAir is 0). */
+    bool HoldsStamina() const { return Mode != EAdventureMoveMode::Ground || bCharging; }
+    bool IsArmed() const { return bArmed; }
+    /** The guard is up: held, the sword out, and not just broken by a heavy blow. */
+    bool IsGuarding() const { return bGuardHeld && bArmed && GuardBroken <= 0.f; }
+    bool HasInputHolds() const { return bAttackHeld || bGuardHeld || bJumpHeld; }
+    bool IsSwordGuarding() const { return IsGuarding() && !HasShield(); }
+    bool IsLocked() const { return bLocked; }
+    bool IsDown() const { return bDown; }
+    bool InFlurry() const { return FlurryTime > 0.f; }
+    /** Carry layers of the animation graph: the sword arm's pose over locomotion, and the raised shield. */
+    float SwordCarryWeight() const { return SwordCarry; }
+    float GuardWeight() const { return GuardCarry; }
+    float SwordGuardWeight() const { return SwordGuardCarry; }
+    /** The guard pose's off-hand arm: a two-handed guard (Cairo's bokken) holds the grip; a one-handed one (the reference rig's
+     *  sword-only guard) leaves that arm free, not holding up a shield that is not there. */
+    float SwordGuardOffHandWeight() const { return GetParam(TEXT("TwoHandedGuard")) > .5f ? SwordGuardCarry : 0.f; }
+    /** Without the shield, the off hand's arm swings free (locomotion) over sword work instead of the clips' shield pose. */
+    float FreeArmWeight() const { return FreeArm; }
+    /** A two-handed hold (Cairo's bokken guard, parry and recoil) on the move set's sword: how much the off hand is put on
+     *  its handle, and where that is from the sword hand's bone (one hand's width along the handle toward the pommel). */
+    float TwoHandGripWeight() const { return TwoHandGrip; }
+    FVector TwoHandGripOffset() const { return GripOffset; }   // the off hand's wrist on the handle, in the sword hand's frame
+    /** The two-handed grip: how much the off hand is a fist turned round the handle, and its rotation (component space). */
+    float TwoHandFistWeight() const { return bFistAxis ? TwoHandGrip : 0.f; }
+    FQuat TwoHandRotation() const { return TwoHandTurn; }
+    /** Gliding: how much each wrist is put on its grip on the bar, and where (mesh component space; 0 right, 1 left). */
+    float GlideHandWeight() const { return GlideHands; }
+    FVector GlideHandLocation(int32 Side) const { return GlideHandTarget[Side & 1]; }
+    /** Gliding: where each elbow bends toward (its place on the neutral glide, component space). */
+    FVector GlideElbowLocation(int32 Side) const { return GlideElbow[Side & 1]; }
+    /** Gliding, a body fitted to the glider (not the reference rig's own hold): how much each hand is a fist turned round its handle
+     *  (the fingers from the sword guard's fists), and its rotation (component space). */
+    float GlideFistWeight() const { return bOwnGlide || !bFistAxis ? 0.f : GlideHands; }
+    FQuat GlideHandRotation(int32 Side) const { return GlideHandTurn[Side & 1]; }
+    /** The handle a hand holds, for the animation graph's finger wrap (#7633): how much that hand wraps it, the stretch a
+     *  hand closes round (component space, as placed this frame), its oval's major axis and the oval's radii (major,
+     *  minor; cm) at either end. A fitted body's sword hand (0) wraps the drawn sword, its off hand (1) the sword in a
+     *  two-handed hold, and its fists the glider's handles; the reference rig's own hands are left to his clips. */
+    struct FHeldHandle
+    {
+        float Weight = 0.f;
+        bool bSword = false;
+        FVector A = FVector::ZeroVector, B = FVector::ZeroVector, Major = FVector::ForwardVector;
+        FVector2D R0 = FVector2D::ZeroVector, R1 = FVector2D::ZeroVector;
+        FVector2D RM = FVector2D::ZeroVector;   // at a waist MidAt of the way from A to B (none: MidAt outside 0-1)
+        float MidAt = -1.f;
+    };
+    FHeldHandle HeldHandle(int32 Side, bool bShape = false) const;   // bShape: its shape even before the hand closes
+    /** A grip posed in the grip poser (assets/characters/grips/game.py), held exactly as posed: how much (0 none), whether
+     *  the hand is moved onto its prop (the sword hand carries the sword, so only its fingers are posed), where its hand
+     *  bone goes (location and rotation) in the sword hand's bone space (bInFrame) or the component's, and each finger
+     *  bone's rotation on its parent (index to little, then the thumb; base, middle, end). 0 right, 1 left. */
+    struct FGripPose
+    {
+        float Weight = 0.f;
+        bool bPin = false, bInFrame = false;
+        FTransform Target = FTransform::Identity;
+        const FQuat (*Local)[3] = nullptr;
+    };
+    FGripPose GripPose(int32 Side) const;
+    /** Puts the glider where the move set last placed it on the body. The animation calls it as it reads the grips, so
+     *  the glider and the hands posed on it are placed in the same tick: put on in the actor's tick, the glider was a
+     *  tick ahead of the hands, whose animation updates first (3 to 5 mm off the posed grip while it banked). */
+    void PlaceGliderForPose();
+    /** A hit's recoil over the clip (the animation graph's flinch layer): the turn added to the spine (0), chest (1),
+     *  neck (2) and head (3), component space. The body bends away from the blow and springs back, the head last. */
+    FQuat FlinchRotation(int32 Bone) const;
+    bool IsFlinching() const { return FlinchTime >= 0.f; }
+    float GetMaxWalkSpeed(float Default) const;
+    float GetParam(const TCHAR* Key, float Default = 0.f) const;
+    const FAdventureMove* Find(FName Name) const { return Moves.Find(Name); }
+    AActor* GetTarget() const { return Target.Get(); }
+    int32 HitsLanded() const { return HitCount; }
+    int32 Parries() const { return ParryCount; }
+    int32 Dodges() const { return DodgeCount; }
+    int32 DoubleJumps() const { return DoubleJumpCount; }
+    // For a character the game drives (ASwordTrainer) reading its own body and its opponent's, like a player watching.
+    FName GetActionName() const { return CurrentName(); }
+    /** The action's clip time (seconds into its clip) and whether it is a blow (a cut, rush, plunge, the spin...). */
+    float GetActionClipTime() const { return SourceTime(); }
+    bool IsAttacking() const;
+    bool IsCharging() const { return bCharging; }
+    bool IsFullyCharged() const { return bCharging && bFullCharge; }
+    bool IsHopping() const;
+    bool IsBusy() const { return Busy(); }
+    /** Shared water support for swimming and online sailing admission. */
+    bool WaterAt(const FVector& Where, float& Surface) const;
+    /** Real seconds until the playing blow's next active window opens: 0 inside one, -1 when no blow is coming. */
+    float NextBlowIn() const;
+    /** In a combo cut that can be followed: real seconds until the next cut may come (its input point), 0 from then on;
+     *  -1 otherwise. The cuts strike from their first frame, so a watcher answers the next one, not the one swinging. */
+    float NextCutIn() const;
+    /** Live and QA: the facts the scenarios check, as JSON. */
+    FString Describe() const;
+
+private:
+    friend class FJapanReactionTransportTest;
+    friend class FJapanReactionPayloadTest;
+    void SubmitMovementReaction(const FAdventureMovementReaction& Reaction);
+    void FreezeReactionAction(FAdventureMovementReaction& Reaction, FName Name, float Blend) const;
+    void FreezeReactionFlinch(FAdventureMovementReaction& Reaction, const FVector& Away, float Degrees, float Peak, float Side) const;
+    friend struct FAdventureNetworkState;
+    friend struct JapanReactionDeliveryQA::FStimulus;
+    FJapanDefenceTimeline DefenceTimeline;
+    FJapanDefenceClock DefenceClock;
+    uint32 DefenceActionSerial = 0;
+    double DefenceActionStart = 0., DefenceInputTime = -1., DefenceLastPress = -1.;
+    bool bExternalDefenceChange = false, bHopInvulnerability = false, bDefenceMapped = false;
+    float ResolvedRecoverySeconds = 0.f, ResolvedGuardBrokenSeconds = 0.f;
+    TOptional<uint16> ReactionActionEdge, ReactionAttackEdge, ReactionGuardEdge;
+    bool bDefenceGetUpPending = false;
+    double DefenceGetUpUntil = -1.;
+    TOptional<EJapanDefence> DefenceOverride;
+    bool GetUpProtectedAt(double SampleTime);
+    void EndDefenceAction();
+    struct FSlot
+    {
+        FName Hand, Back;
+        FTransform Held, Carry, Crouched;   // relative to the hand and back bones; Crouched, when fitted, the carry crouched
+        bool bInHand = false, bCrouched = false;
+    };
+    UPROPERTY() TObjectPtr<AWandererCharacter> Character;
+    UPROPERTY() TMap<FName, TObjectPtr<UStaticMeshComponent>> Props;
+    UPROPERTY() TObjectPtr<USkeletalMeshComponent> Glider;
+    UPROPERTY() TObjectPtr<UAnimSequence> GliderClip;
+    UPROPERTY() TObjectPtr<UAtelierTrail> BladeTrail;
+    UPROPERTY() TObjectPtr<UPhysicsAsset> BladeCollision;
+    TMap<FName, FAdventureMove> Moves;
+    TMap<FString, float> Params;
+    TMap<FName, FSlot> Slots;
+    TWeakObjectPtr<AActor> Target;
+
+    EAdventureMoveMode Mode = EAdventureMoveMode::Ground;
+    // Input
+    bool bAttackHeld = false, bGuardHeld = false, bJumpHeld = false;
+    float AttackPressTime = -100.f, AttackBuffer = 0.f, JumpBuffer = 0.f, Clock = 0.f;
+    // Ground and air
+    bool bJumped = false, bLocked = false, bArmed = false, bRunFoot = false, bAttackAfterDraw = false;
+    float SinceGrounded = 0.f, FallSpeed = 0.f, FallStartZ = 0.f, NoClimb = 0.f, PushTime = 0.f, LockYaw = 0.f;
+    FVector HopVelocity = FVector::ZeroVector;
+    int32 Combo = 0;
+    // The double jump: once per time in the air. A tucked one (no somersault clip) turns the mesh about its middle.
+    bool bAirJumpUsed = false;
+    float FlipTime = -1.f, FlipAngle = 0.f;
+    FVector FlipPivot = FVector::ZeroVector;   // in the capsule's frame
+    float FlipHips = 0.f, FlipLift = 0.f, FlipSettle = 0.f;   // the hips' height (mesh frame) at take-off; the mesh's lift
+    FQuat MeshBaseRotation = FQuat::Identity;
+    bool bMeshTurned = false;
+    // Driven clips: where the clip started and how its path maps onto the world.
+    FVector DriveOrigin = FVector::ZeroVector, DriveForward = FVector::ForwardVector, DriveRight = FVector::RightVector, DriveUp = FVector::UpVector;
+    FVector DriveScale = FVector::OneVector;   // fitted to a ledge: forward, right, up
+    FVector DriveMesh = FVector::ZeroVector;   // a placed drive: the mesh's world offset from the capsule at the clip's start
+    float DriveYaw = 0.f, DrivePrevious = 0.f;
+    bool bDriving = false, bDriveSweep = true;
+    FVector DriveVelocity = FVector::ZeroVector;
+    // The mesh's offset in the capsule: the lean into a climbed wall, a pose and capsule that disagree for a moment (into
+    // and out of the water), and a placed drive's start, each eased out.
+    FVector MeshBase = FVector::ZeroVector, MeshOffsetStart = FVector::ZeroVector, MeshDriveLocal = FVector::ZeroVector;
+    float MeshOffsetTime = 0.f, MeshOffsetLength = 0.f;
+    bool bMeshOffset = false;
+    // Gliding
+    float GlideSpeed = 0.f, GlideYaw = 0.f, GlideTime = 0.f, GlideTurn = 0.f;
+    bool bGlideBrake = false, bGliderShown = false;
+    // Climbing
+    FVector WallNormal = FVector::ForwardVector, WallPoint = FVector::ZeroVector;
+    float ClimbShift = 0.f, ClimbShiftTarget = 0.f, ClimbStill = 0.f;
+    // A climb direction that has stopped getting anywhere (an overhang, a corner) holds on instead.
+    FVector ClimbProbeFrom = FVector::ZeroVector;
+    float ClimbProbe = 0.f;
+    int32 ClimbBlocked = -1;
+    FHitResult LastImpact;
+    float SinceImpact = 1.f;
+    // Swimming
+    float WaterSurface = 0.f, SwimSpeed = 0.f, SwimDashTime = 0.f, SwimYaw = 0.f;
+    FVector SafeShore = FVector::ZeroVector;
+    bool bHasSafeShore = false;
+    // Combat
+    bool bShield = false;
+    float FreeArm = 0.f, TwoHandGrip = 0.f;
+    FVector GripOffset = FVector::ZeroVector;
+    FQuat TwoHandTurn = FQuat::Identity;
+    // The paraglider's grips, right then left, in its own frame: each a stretch of handle a hand closes round, and its
+    // middle (or, on the reference rig, where his neutral glide holds it).
+    FTransform GliderHeld = FTransform::Identity;
+    FVector BarGrip[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    FVector GripEnds[2][2] = { { FVector::ZeroVector, FVector::ZeroVector }, { FVector::ZeroVector, FVector::ZeroVector } };
+    bool bOwnGlide = false;   // the reference rig: his own glide holds the glider (at his weapon bones); any other body is fitted to it
+    // the reference rig's grips in his wrists' frames, from his neutral glide (his right weapon bone is the glider's attach point, not
+    // his palm, and his turning clips move it off his hand).
+    FVector PalmLocal[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    bool bPalmKnown = false;
+    /** A hand's grip point in the mesh's component space: the reference rig's from his wrist, else the middle of the curled fingers. */
+    FVector PalmOf(int32 Side) const;
+    /** The middle of a hand's curled index and middle fingers, in the mesh's component space. */
+    FVector FingersOf(int32 Side) const;
+    /** The middle of the space a fist closes round, in the mesh's component space: Reach in front of its knuckle line, on
+     *  the side its fingers curl to, square to the palm (which the fingers' bending does not move). */
+    FVector CavityOf(int32 Side, float Reach) const;
+    /** How far in front of its knuckle line a fist holds its handle's axis (component cm): the handle's largest radius
+     *  plus the palm's thickness under the knuckles, the sword's or the glider's. */
+    float GripReach(bool bSword) const;
+    /** A fist's grip axis in its hand bone's frame, toward the thumb: the sword hand's from the sword's own hold, the off
+     *  hand's from its knuckle line (little finger's base to the index's), as its hand bone is the sword hand's mirrored. */
+    FVector FistAxisOf(int32 Side) const;
+    FName GliderSocket;   // the hand bone it is held at
+    // Once fitted to the neutral glide, the glider keeps that place on the body (banking about its grips as he turns) and
+    // each hand is put on its grip (IK), so the turning clips' arms never carry it, or a hand, into his head.
+    FTransform GliderOnBody = FTransform::Identity;   // relative to the mesh component
+    FVector GlideHandTarget[2] = { FVector::ZeroVector, FVector::ZeroVector };   // the wrists' targets, component space
+    // The elbows on the neutral glide, in the glider's frame, so the turning clips' arms (swung in across the face) keep
+    // the straight glide's elbows, banked with it; and where they are now.
+    FVector ElbowLocal[2] = { FVector::ZeroVector, FVector::ZeroVector }, GlideElbow[2] = { FVector::ZeroVector, FVector::ZeroVector };
+    // A fist's grip axis in its hand's frame, toward the thumb: the sword's (its blade comes out on the thumb side), the
+    // same in either hand's frame on this rig. Gliding, each fist is turned so it runs along its handle, thumb forward.
+    FVector FistAxis = FVector::ZeroVector;
+    bool bFistAxis = false;
+    FQuat GlideHandTurn[2] = { FQuat::Identity, FQuat::Identity };
+    float GlideBank = 0.f, GlideHands = 0.f;
+    FVector GlideGrip[2][2] = { { FVector::ZeroVector, FVector::ZeroVector }, { FVector::ZeroVector, FVector::ZeroVector } };   // component space
+    FVector GlideGripUp = FVector::UpVector;   // the handles' ovals' major axis, component space
+    float GlideGripScale = 1.f;
+    float SwordHold = 0.f;   // the sword hand's wrap round the drawn sword, 0..1
+    // The posed grips (ReadGrips), by prop (0 the sword, 1 the glider) and hand: the hand bone's place in the prop's own
+    // frame and each finger bone's rotation on its parent, turned onto this skeleton's bone frames.
+    struct FPosedGrip
+    {
+        bool bValid = false;
+        FTransform Hand = FTransform::Identity;
+        FQuat Local[5][3];
+    };
+    FPosedGrip Posed[2][2];
+    void ReadGrips(const TSharedPtr<FJsonObject>& Grips);
+    bool bGliderOnBody = false, bGliderBodyAttached = false;
+    FTransform GliderPlaced = FTransform::Identity;   // its place on the body, put on by PlaceGliderForPose
+    bool bGliderPlaced = false;
+    uint64 GliderPoseFrame = 0;   // the frame the animation last put it on
+    bool bGliderOnRoot = false;   // placed from the import's fit, carried by the root bone
+    FTransform GliderOnRoot = FTransform::Identity;   // the import's fit, in the root bone's frame
+    // A cut's step in toward the enemy it is aimed at (the adventure library's attack homing), and the reach a cut's arc counts.
+    TWeakObjectPtr<AActor> LungeTarget;
+    float LungeTime = 0.f, LungeStand = 0.f;
+    FVector LungePoint = FVector::ZeroVector, FlurryPoint = FVector::ZeroVector;
+    bool bLungePoint = false, bFlurryPoint = false;
+    FVector LockPoint = FVector::ZeroVector;
+    bool bLockPoint = false;
+    float ArcEnd = -1.f;   // a homing cut's contact lasts to here (clip seconds): past its swing, until it has closed in
+    float CrouchCarry = 0.f, SwordCarry = 0.f, GuardCarry = 0.f, SwordGuardCarry = 0.f, ChargeTime = 0.f, Invulnerable = 0.f, FlurryTime = 0.f, JustAvoid = 0.f, DownTime = 0.f;
+    bool bCharging = false, bFullCharge = false, bDown = false, bSwung = false;
+    int32 HitCount = 0, ParryCount = 0, DodgeCount = 0, DoubleJumpCount = 0, Strength = 1;
+    // Taking hits: the recoil (time since the blow, -1 when none; its angle in degrees and its time to peak), the axis it
+    // bends about and the twist toward the struck side; how long the guard stays down after a guard break; hits taken
+    // in quick succession (the third staggers).
+    float FlinchTime = -1.f, FlinchAngle = 0.f, FlinchPeak = .07f, FlinchTwist = 0.f, GuardBroken = 0.f, SinceHit = 99.f;
+    FVector FlinchAxis = FVector::ZeroVector;
+    int32 HitStreak = 0, StaggerCount = 0, GuardBreakCount = 0;
+    void Flinch(const FVector& Away, float Degrees, float Peak, float Side);
+    // Effects: the sprint's dust and speed lines, the glider's wind.
+    float SprintFX = 0.f, GlideFX = 0.f;
+    bool bWasSprinting = false;
+    TSet<TWeakObjectPtr<AActor>> HitThisSwing;
+    TArray<FVector> PreviousBlade;
+    FVector BladeBase = FVector::ZeroVector, BladeTip = FVector::ZeroVector;   // in the sword mesh's frame
+    FVector HiltEnd = FVector::ZeroVector;   // the handle's end behind the grip, in the sword mesh's frame
+    FVector SwordMajor = FVector::ForwardVector;   // across the blade's width (its grip's oval's major axis), sword mesh frame
+    FName LastPlayed;
+
+    // Actions
+    bool Has(FName Name) const { return Moves.Contains(Name); }
+    const FAdventureMove* Current() const;
+    FName CurrentName() const;
+    float SourceTime() const;
+    bool Playing(FName Name) const;
+    bool Over() const;
+    /** Where the stick takes over again: the cancel point, else the idle point, else the end. */
+    static float FreeAt(const FAdventureMove& M);
+    /** A locking action (an attack, a hop, a reaction, a climb or swim transition) before its free point. */
+    bool Busy() const;
+    /** Play a move from its timeline's start (or StartAt in clip seconds), at its timeline's rate times Speed. */
+    void Play(FName Name, float Blend = -1.f, float StartAt = -1.f, float Speed = 1.f);
+    /** Switch between directional loops keeping the phase. */
+    void PlayLoop(FName Name, float Blend = .2f);
+    void Stop(float Blend = .16f);
+    int32 StrengthOf(FName Name) const;
+    /** Move along the playing clip's root path from here; Fit scales it (forward, right, up) to a ledge, and MeshFrom is
+     *  the mesh's world offset from the capsule at the start of a placed drive (bSweep false). */
+    void BeginDrive(bool bSweep, const FVector& Fit = FVector::OneVector, const FVector& MeshFrom = FVector::ZeroVector);
+    void AdvanceDrive(float Dt);
+    FVector WorldPath(const FVector4f& P) const;
+    float DriveProgress() const;
+
+    // Branches
+    void AdvanceGround(float Dt);
+    void AdvanceAir(float Dt);
+    void AdvanceGlide(float Dt);
+    void AdvanceClimb(float Dt);
+    void AdvanceSwim(float Dt);
+    void AdvanceDown(float Dt);
+    void AdvanceCombat(float Dt);
+    void AdvanceFlurry(float Dt);
+    void AdvanceEquipment(float Dt);
+    void AdvanceMeshOffset(float Dt);
+    void AdvanceEffects(float Dt);
+    void AdvanceGliderGrip(float Dt);
+    /** A blow's arc in front: anything targetable within the blade's reach and the cut's arc counts, as in adventure. */
+    void SweepArc();
+    /** The blade's length in the world (the sword mesh's grip to tip, at its scale). */
+    float BladeLength() const;
+    /** How far the hips have drawn up into the tuck since take-off (capsule cm): the mesh rises that much. */
+    float HipLift() const;
+    void PhysGlide(float Dt);
+    void PhysClimb(float Dt);
+    void PhysSwim(float Dt);
+
+    // Transitions
+    bool CanJump() const;
+    bool CanDodge() const;
+    bool CanGlide() const;
+    bool CanDoubleJump() const;
+    void StartJump();
+    void StartDoubleJump();
+    void AdvanceDoubleJump(float Dt);
+    void StartHop();
+    void OpenGlider();
+    void CloseGlider(bool bLanding);
+    void StartClimb(const FHitResult& Wall, bool bFromAir);
+    void LeaveClimb(bool bFall);
+    bool TryClimbTop();
+    void StartSwim();
+    void LeaveSwim(const FVector& Stand);
+    bool TrySwimOut(const FHitResult& Wall);
+    void StartAttack();
+    void StartCut(int32 Index);
+    void Face(float Range);
+    void Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction);
+    void TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact);
+    void SetArmed(bool bNow, bool bFeedback = true);
+    void ArmedFeedback(bool bNow);
+    void Attach(FName Slot);
+    FTransform CarryOf(const FSlot& S) const;
+    /** A garment that simulates as cloth (Modori's coat) collides with the drawn blade: a capsule along it on the hand
+     *  bone, a collision source while the sword is in hand. */
+    void BladeCloth(bool bInHand);
+    void ShowGlider(bool bShow);
+    void EaseMesh(const FVector& From, float Seconds);
+
+    // World queries
+    FVector Wish() const;   // the stick as a world direction (camera-relative), length 0..1
+    bool Trace(const FVector& From, const FVector& To, FHitResult& Hit) const;
+    bool Blocked(const FVector& Center) const;   // the capsule does not fit there
+    bool Climbable(const FHitResult& Hit) const;
+    bool FindWall(const FVector& Direction, FHitResult& Hit, float Up = 0.f, float Side = 0.f, float Reach = 0.f) const;
+    void ClimbBasis(FVector& Forward, FVector& Right, FVector& Up) const;
+    AActor* FindTarget(float Range, float Cone) const;
+    bool IsTargetable(AActor* Actor) const;
+    bool IsUnawareTarget(AActor* Actor) const;
+    void SweepBlade();
+    void BladePoints(TArray<FVector>& Out) const;
+    /** Where a guard meets a blow: the shield, or without it the sword's blade. */
+    FVector GuardPoint() const;
+    /** The adventure library's metres to the character's centimetres: the record's BodyScale, else the mesh's scale. */
+    float Scale() const;
+    float Gravity() const;
+    float Feet() const;
+    float HalfHeight() const;
+    float Reach() const;
+    float BodyHold() const;
+    float HoldDistance() const;
+    float SwimHang() const;
+    void UseStamina(float Rings);
+    bool HasStamina() const;
+};

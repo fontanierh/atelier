@@ -12,7 +12,7 @@
 #include "WandererSword.h"
 #include "BikeComponent.h"
 #include "SailboatComponent.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "EngineUtils.h"
 #include "Engine/TargetPoint.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -251,7 +251,7 @@ struct FVehicleProbe
         Data->SetNumberField(TEXT("x"),P->GetActorLocation().X);Data->SetNumberField(TEXT("y"),P->GetActorLocation().Y);Data->SetNumberField(TEXT("z"),P->GetActorLocation().Z);
         Data->SetNumberField(TEXT("yaw"),P->GetActorRotation().Yaw);
         Data->SetBoolField(TEXT("walking"),P->GetCharacterMovement()->IsMovingOnGround());
-        Data->SetBoolField(TEXT("swimming"),P->GetMoves()->GetMode()==EBotwMoveMode::Swim);
+        Data->SetBoolField(TEXT("swimming"),P->GetMoves()->GetMode()==EAdventureMoveMode::Swim);
         Data->SetBoolField(TEXT("menu_sent"),MenuSent);
         Data->SetNumberField(TEXT("action_count"),ActionIndex);
         Data->SetNumberField(TEXT("callbacks"),Callbacks);Data->SetNumberField(TEXT("contacts"),Contacts);
@@ -690,7 +690,7 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     else if(Phase==10&&Callbacks==1&&Outcome==0&&Now-ResolvedAt>=2.&&Guest->GetActivityEpoch()==EndEpoch&&
         Guest->GetNetworkActivity()==EJapanActivity::OnFoot&&Peer->GetNumberField(TEXT("health"))==Health&&HealthChanges==1&&
         Peer->GetNumberField(TEXT("health_changes"))==1&&
-        (Sail()?(Guest->GetMoves()->GetMode()==EBotwMoveMode::Swim||Guest->GetCharacterMovement()->IsMovingOnGround()):Guest->GetCharacterMovement()->IsMovingOnGround()))
+        (Sail()?(Guest->GetMoves()->GetMode()==EAdventureMoveMode::Swim||Guest->GetCharacterMovement()->IsMovingOnGround()):Guest->GetCharacterMovement()->IsMovingOnGround()))
     {
         SavePhase(Peer);Complete=true;
         auto Result=Snapshot(Guest.Get());Result->SetBoolField(TEXT("passed"),true);

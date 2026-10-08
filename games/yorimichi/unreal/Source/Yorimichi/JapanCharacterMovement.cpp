@@ -4,7 +4,7 @@
 #include "BikeComponent.h"
 #include "JapanNetwork.h"
 #include "SkateComponent.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 
 float UJapanCharacterMovement::GetMaxSpeed() const
 {
@@ -40,7 +40,7 @@ void UJapanCharacterMovement::PhysCustom(float Dt, int32 Iterations)
         if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetSkate()) Rider->GetSkate()->PhysSkate(Dt);
         return;
     }
-    if (UBotwMoveSet::IsTraversalMode(CustomMovementMode))
+    if (UAdventureMoveSet::IsTraversalMode(CustomMovementMode))
     {
         if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetMoves()) Rider->GetMoves()->Phys(Dt, Iterations);
         else SetMovementMode(MOVE_Falling);

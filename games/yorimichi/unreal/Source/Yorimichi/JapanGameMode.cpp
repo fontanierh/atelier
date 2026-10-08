@@ -1,9 +1,8 @@
 #include "JapanGameMode.h"
 #include "JapanSession.h"
-#include "BotwRider.h"
+#include "PlayableCharacter.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
@@ -40,7 +39,7 @@ void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 
 UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
-    if (UClass* Rider = ABotwRider::PawnOverride()) return Rider;
+    if (UClass* Rider = FPlayableCharacter::PawnOverride()) return Rider;
     return Super::GetDefaultPawnClassForController_Implementation(Controller);
 }
 

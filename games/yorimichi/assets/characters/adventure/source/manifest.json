@@ -1,0 +1,54 @@
+{
+  "entries": {
+    "reference": {
+      "name": "Motion reference",
+      "kind": "motion",
+      "model": "MotionReference",
+      "fps": 30,
+      "bones": 166,
+      "clip_count": 109,
+      "glb": "reference-rig.glb",
+      "curves": "animations.json",
+      "weapon_bones": [
+        "Wrist_Assist_L",
+        "Wrist_L",
+        "Weapon_L",
+        "Wrist_Assist_R",
+        "Wrist_R",
+        "Weapon_R",
+        "Pod_A",
+        "Pod_B",
+        "Pod_C",
+        "Weapon_Root"
+      ]
+    },
+    "sword": {
+      "name": "Sword",
+      "kind": "equipment",
+      "model": "Sword",
+      "fps": 30,
+      "bones": 1,
+      "clip_count": 0,
+      "glb": "sword.glb",
+      "curves": null
+    },
+    "glider": {
+      "name": "Glider",
+      "kind": "equipment",
+      "model": "Glider",
+      "fps": 30,
+      "bones": 3,
+      "clip_count": 1,
+      "glb": "glider.glb",
+      "curves": "glider-animation.json"
+    }
+  },
+  "files": {
+    "animations.json": "56ab2d1a6bb953ceca654c0ba7ce3b45e59467eb9a62168729200a5b482bb9f0",
+    "glider-animation.json": "bdf8a19a1141e1bfccfa9926c6c7e56e61b06413c114f2b3528f8c7c561dba63",
+    "glider.glb": "d159ff17a81423394bc4a56b97fbe4f9cf270cae79023dfc025f1a53bbebf4f6",
+    "mechanics.json": "d951bfe4f7c838f992f0ff11e457fc74af981f5e038271d632ccf7a0c6aa33dc",
+    "reference-rig.glb": "d5109b6940512f7305aec3ab855dc649b81ff6fe72d568710bd76801f99098a6",
+    "sword.glb": "1ce1d8426e6a4d9f43776d82153b942fd64799c5bfe2082a5b43f4d6e56957df"
+  }
+}

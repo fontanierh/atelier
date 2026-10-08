@@ -263,9 +263,9 @@ async function load() {
   const loader = new GLTFLoader();
   const [moments, poses, body, sword, glider] = await Promise.all([
     fetch('data/moments.json').then(r => r.json()), fetch('api/poses').then(r => r.json()),
-    loader.loadAsync('data/body.glb'), loader.loadAsync('data/LinkSword.glb'), loader.loadAsync('data/LinkGlider.glb')]);
+    loader.loadAsync('data/body.glb'), loader.loadAsync('data/ReferenceSword.glb'), loader.loadAsync('data/ReferenceGlider.glb')]);
   data = moments; saved = poses; bodyGltf = body;
-  props = { 'LinkSword.glb': sword.scene, 'LinkGlider.glb': glider.scene };
+  props = { 'ReferenceSword.glb': sword.scene, 'ReferenceGlider.glb': glider.scene };
   if (saved.grips) state.grips = saved.grips;
   const remirror = placeGliderPoses();
   $('character').textContent = data.character[0].toUpperCase() + data.character.slice(1);
@@ -384,7 +384,7 @@ function placeGliderPoses() {
   let moved = false;
   for (const g of data.grips) {
     const st = state.grips[g.id];
-    if (g.prop_mesh.file !== 'LinkGlider.glb' || !st?.offset || st.prop_placed) continue;
+    if (g.prop_mesh.file !== 'ReferenceGlider.glb' || !st?.offset || st.prop_placed) continue;
     if (st.log.length && st.log.every(l => l.action.startsWith('mirror'))) { st.remirror = true; remirror.push(g.id); }
     else {
       const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();

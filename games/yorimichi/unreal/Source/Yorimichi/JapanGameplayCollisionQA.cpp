@@ -47,7 +47,6 @@ void JapanGameplayCollisionQA::Write(UWorld* World, const TSharedPtr<FJsonObject
         TArray<UPrimitiveComponent*> Parts; It->GetComponents(Parts);
         for (const auto* Part : Parts)
         {
-            if (It->IsA<AHippodrome>() && Part->GetFName() == TEXT("SM_HD_StartingGate")) Reference.AddIgnoredComponent(Part);
             if (Part->Mobility != EComponentMobility::Stationary || JapanGameplayCollision::IsFixed(Part) ||
                 !Part->IsQueryCollisionEnabled() || Part->GetCollisionResponseToChannel(ECC_Visibility) != ECR_Block) continue;
             const auto* Mesh = Cast<UStaticMeshComponent>(Part);

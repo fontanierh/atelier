@@ -54,7 +54,7 @@ class YORIMICHI_API AMegaParkGameMode : public AGameModeBase
     GENERATED_BODY()
 public:
     AMegaParkGameMode();
-    /** -rider=<Name> plays as a BOTW character (BotwRider.h). */
+    /** -rider=<Name> plays as an adventure character (PlayableCharacter.h). */
     virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
     virtual void BeginPlay() override;
 };

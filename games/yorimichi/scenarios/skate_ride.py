@@ -7,7 +7,7 @@ floor (it starts on it), pushing (from rest, nose-first), steering, braking, the
 flicks on the player's pad (`--only pad`: native's quickest ollie, an ollie flicked mid-push, a manual flicked into a
 kickflip and a nose manual into a nollie, every nollie in native's table, goofy and rolling fakie too), a grab, a 360,
 a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
-regular and goofy, Link), lip airs
+regular and goofy, the reference rig), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
 and a coasting back-and-forth in the bowl (`--only vert`), a player's lip airs (an angled approach with the stick held
 sideways, `--only lip_air_player`), spins against native's controller for the same stick (flat 180s and 360s; a stick
@@ -173,7 +173,7 @@ def mount_ride():
 # thigh bodies (cm, below 0 inside), skin_groups= the skin under the ground (skate.RideSkinCheck).
 HAND_GAP = -1.   # cm: no hand deeper inside the rider's own body than this, at rest, rolling or carving
 ARM_STEP, ARM_JITTER = 3., 2.   # degrees per 60 Hz frame: the arm swing's largest step, and its step's largest change
-HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'Link', False),
+HAND_RIDERS = (('cairo_regular', 'Cairo', False), ('cairo_goofy', 'Cairo', True), ('link', 'the reference rig', False),
                ('modori_regular', 'Modori', False), ('modori_goofy', 'Modori', True))
 # The rest close-up shows the right hand from the rider's right side (out from the hips through the hand), frozen at
 # the idle loop's worst phase for that hand: a watcher reads hand_gap= every frame for 1.6 s (more than the loop), then
@@ -184,7 +184,7 @@ WORST_PHASE = (INGAME / 'skate_ride' / 'worst_phase.py').read_text()
 
 def hand_rows(record):
     """Each hand against the rider's own body (hand_gap=) and the feet's skin under the ground (skin_groups= feet) at
-    rest for a second, then through a push, rolling and carving both ways, for Cairo and Modori regular and goofy and Link; a
+    rest for a second, then through a push, rolling and carving both ways, for Cairo and Modori regular and goofy and the reference rig; a
     close-up at rest (build/yorimichi/skateqa/ride-hands-<rider>.png)."""
     qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck 1')")
     who_now = 'Cairo'
@@ -544,7 +544,7 @@ def main():
         time.sleep(1.5)
         mounting = frame_report()
         frame_sampler()
-        switched = qa.py("print(live.L.switch_character('Link'))").strip()
+        switched = qa.py("print(live.L.switch_character('the reference rig'))").strip()
         time.sleep(2.5)
         qa.py("live.skate_park(); live.skate_input()")
         time.sleep(1.5)

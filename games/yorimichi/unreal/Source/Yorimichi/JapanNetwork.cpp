@@ -2,7 +2,6 @@
 #include "AtelierExit.h"
 #include "Components/CapsuleComponent.h"
 #include "AtelierData.h"
-#include "BotwRider.h"
 #include "PlayableCharacter.h"
 #include "JapanWorld.h"
 #include "Dom/JsonObject.h"
@@ -37,8 +36,6 @@ bool Allows(UWorld* World, EActivity Activity)
     if (!IsOnline(World)) return true;
     switch (Activity)
     {
-    case EActivity::Horse:
-    case EActivity::Race:
     case EActivity::WorldEdit:
         return false;
     }
@@ -218,11 +215,11 @@ AJapanWorld* EnsureWorld(UWorld* World)
 bool IsPlayableRider(const FString& Name)
 {
     const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
-    return (Character && Character->IsRequestable() && Character->Built()) || ABotwRider::Available().Contains(Name);
+    return (Character && Character->IsRequestable() && Character->Built()) || FPlayableCharacter::Available().Contains(Name);
 }
 FString DefaultRider()
 {
-    const FString Requested = ABotwRider::Requested();
+    const FString Requested = FPlayableCharacter::Requested();
     return IsPlayableRider(Requested) ? Requested : FPlayableCharacter::Default().MoveSet;   // shared games play the merged set
 }
 }

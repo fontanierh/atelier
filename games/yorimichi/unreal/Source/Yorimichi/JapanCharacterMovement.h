@@ -46,7 +46,7 @@ struct FJapanScheduledReactionStats
 };
 
 /** The player's movement: ordinary CharacterMovement, the sailboat holding its own velocity, the skate plugin's custom
- *  movement mode (USkateComponent::MovementMode) handed to the board, and a BOTW move set's (UBotwMoveSet::MovementMode:
+ *  movement mode (USkateComponent::MovementMode) handed to the board, and an adventure move set's (UAdventureMoveSet::MovementMode:
  *  gliding, climbing, swimming), which also sets the velocity of its hops and driven attacks, turns the character and
  *  hears what the capsule runs into. */
 UCLASS()

@@ -22,7 +22,6 @@ class UJapanPreferences;
 class USkateComponent;
 class USailboatComponent;
 class UBikeComponent;
-class UHorseRideComponent;
 class FJsonObject;
 class FYorimichiPhone;
 class UJapanMap;
@@ -30,7 +29,7 @@ class UJapanFootstepComponent;
 class UWandererSwordComponent;
 class ASwordDummy;
 class USeeThroughComponent;
-class UBotwMoveSet;
+class UAdventureMoveSet;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
@@ -64,14 +63,12 @@ public:
     virtual FString GetPlayableName() const { return FString(); }
     /** Whose bike clips it rides with (/Game/<Rig>Bike, Content/Data/<rig>/bike); empty: the default character's. */
     virtual FString GetBikeRig() const { return FString(); }
-    /** The horse roster's rider it rides and races as; empty: the BOTW rider -rider= names, if the roster has one. */
-    virtual FString GetHorseRider() const { return FString(); }
     /** The animation graph plants its feet on the ground where it stands (foot IK). */
     virtual bool PlantsFeet() const { return false; }
     /** How far the sailboat's seat stretches its fitted stance, from its leg length (cm); 1 keeps it as fitted. */
     virtual float SailboatReach(float LegLength) const { return 1.f; }
     AJapanWorld* GetLandscape() const { return Landscape; }
-    /** The character switch (ABotwRider::SwitchPlayer) sets this on the new character before it finishes spawning: it
+    /** The character switch (FPlayableCharacter::SwitchPlayer) sets this on the new character before it finishes spawning: it
      *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */
     bool bSwitchedIn = false;
     /** The character switch, before the player moves to another character: closes the menus, stows the board and the
@@ -112,13 +109,12 @@ public:
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
     UWandererSwordComponent* GetSword() const { return Sword; }
-    /** A Breath of the Wild move set (UBotwMoveSet), for a character whose roster entry has one; null otherwise. */
-    UBotwMoveSet* GetMoves() const { return Moves; }
+    /** An adventure move set (UAdventureMoveSet), for a character whose roster entry has one; null otherwise. */
+    UAdventureMoveSet* GetMoves() const { return Moves; }
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UBikeComponent* GetBike() const { return Bike; }
-    UHorseRideComponent* GetHorse() const { return Horse; }
-    /** On the sailboat, the bike or a horse: the vehicle owns his movement, his animation and his buttons. */
+    /** On the sailboat, the bike: the vehicle owns his movement, his animation and his buttons. */
     bool OnVehicle() const;
     UJapanPreferences* GetPreferences() const { return Preferences; }
     UFUNCTION(BlueprintPure, Category = "Map")
@@ -143,7 +139,7 @@ public:
     void TickNetworkActivity();
     bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
     void SetMenuOpen(bool bOpen);
-    /** A minigame that reads the keys itself (the horse races) takes the character's input mapping away until it hands it back. */
+    /** A minigame that reads the keys itself takes the character's input mapping away until it hands it back. */
     void SetControlsSuspended(bool bSuspended);
     bool AreControlsSuspended() const { return bControlsSuspended; }
     void SetStaminaRings(int Rings) { Stamina.SetCapacity(Rings); }
@@ -177,7 +173,7 @@ protected:
     FString DefinitionAssetPath = TEXT("/Game/Wanderer/DA_Wanderer.DA_Wanderer");
     // Gameplay tuning; the definition keeps the clip's authored stride speed.
     float SprintSpeedMultiplier = 1.f;
-    UPROPERTY() TObjectPtr<UBotwMoveSet> Moves;
+    UPROPERTY() TObjectPtr<UAdventureMoveSet> Moves;
     /** A one-off clip outside the move set (an NPC's bow or a word), and its end. */
     void PlayGesture(FName Action, float BlendSeconds = .25f) { SetAction(Action, false, BlendSeconds, true); }
     void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
@@ -221,11 +217,11 @@ private:
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
-    friend class UBotwMoveSet;
+    friend class UAdventureMoveSet;
     friend class UJapanCharacterMovement;
-    friend struct FBotwNetworkState;
+    friend struct FAdventureNetworkState;
     friend struct FJapanVehicleQAAccess;
-    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
+    float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
     FMinimalViewInfo BoardCamera;
@@ -234,7 +230,6 @@ private:
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UBikeComponent> Bike;
-    UPROPERTY() TObjectPtr<UHorseRideComponent> Horse;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
     UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
@@ -343,7 +338,6 @@ private:
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleBike(const FInputActionValue& Value);
-    void ToggleHorse(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);
     void Dodge(const FInputActionValue& Value);
     void Wave(const FInputActionValue& Value);

@@ -1,7 +1,7 @@
 # Camera, see-through and the noren
 
 The island is crowded and the tree house rooms are tight, so the chase camera keeps ending up behind something:
-leaves, trunks, posts, rails, props, a hut's wall. The camera works the way Breath of the Wild's does. Solid things
+leaves, trunks, posts, rails, props, a hut's wall. Solid things
 push it in. Thin things between it and Cairo fade out whole and come back. Nothing is cut open: there is no hole round
 him, no room cutaway and no silhouette (a hole mode remains as a fallback switch).
 
@@ -38,7 +38,7 @@ uv run atelier build yorimichi unreal.compile unreal.treehouse unreal.see_throug
     chest and knees, and they widen toward him by 30 cm, his body.
   - A big thing (a tree's crown, the torii) counts only by a core 40 cm in radius along its axis, its trunk or post,
     and only near the camera: fully within 2.5 m, not at all beyond 3.5 m. Further off, a big thing may hide him for
-    a moment, as a tree does in Breath of the Wild; a whole crown vanishing next to him would be the bigger jolt.
+    a moment, as a tree does in the exploration camera; a whole crown vanishing next to him would be the bigger jolt.
   - Anything thin whose surface comes within 60 cm of the camera fades whole, fully at 30 cm, before the lens clips
     it.
 - **Near the lens.** Everything, solid or thin, also dithers out right at the lens:
@@ -196,7 +196,7 @@ of a second.
 | `japan.SeeThroughHole` | 0 | 1: the hole and room cutaway instead of the whole fades, and the camera probe passes the tree house |
 | `japan.SeeThroughRadius` | 55 | the hole's radius round Cairo, in cm (10 to 300), in hole mode |
 
-At start the log says `SEE-THROUGH active: whole fades like Breath of the Wild (japan.SeeThroughHole 0), N tree
+At start the log says `SEE-THROUGH active: whole-object fades (japan.SeeThroughHole 0), N tree
 house rooms, N tree house groups, tree house material ready, switch japan.SeeThrough 1`. A change of mode logs
 `SEE-THROUGH now ...`. At load, the world logs `SEE-THROUGH TH_Dressing: fades piece by piece (5 uv channels)`, or
 `fades at the lens only, no piece bake`. If the collection is missing, it says `SEE-THROUGH off: ... missing`. The

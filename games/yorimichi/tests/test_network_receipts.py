@@ -331,7 +331,7 @@ def test_modori_actual_class_and_applied_loadout(modori_receipts):
 @pytest.mark.parametrize('role', ('server', 'client'))
 @pytest.mark.parametrize('index', (0, 1))
 @pytest.mark.parametrize('edit', [
-    lambda p: p.update(pawn_class='/Script/Yorimichi.BotwRider'),
+    lambda p: p.update(pawn_class='/Script/Yorimichi.WandererCharacter'),
     lambda p: p.update(pawn_shield=not p['pawn_shield']),
     lambda p: p.update(applied_shield=not p['applied_shield']),
     lambda p: p.update(applied_shield=int(p['applied_shield'])),
@@ -346,7 +346,7 @@ def test_modori_rejects_wrong_or_missing_per_pawn_evidence(modori_receipts, role
 
 
 @pytest.mark.parametrize('role', ('server', 'client'))
-@pytest.mark.parametrize('warning', ('/Game/Botw/Modori/DA_ModoriRider', 'Modori: no merged move set'))
+@pytest.mark.parametrize('warning', ('/Game/Adventure/Modori/DA_ModoriRider', 'Modori: no merged move set'))
 def test_modori_rejects_old_spawn_and_missing_moves(modori_receipts, role, warning):
     folder, shield = modori_receipts
     with (folder / (role + '.log')).open('a') as log:

@@ -14,7 +14,7 @@ there, so every clip is authored with the rig's origin at the bike's.
 A clip is a list of keys. Each key sets some channels and the rest hold. The pelvis, spine and head are posed
 directly. Each hand and foot either holds its grip or pedal, which moves with the crank, steering and the bike's
 own lift, pitch and lean, or goes to an explicit point; a solved two-bone IK reaches it. Every frame is solved and
-keyed as plain bone rotations at 60 fps, then exported like botw/retarget.py to build/yorimichi/cairo/bike/fbx/A_<Clip>.fbx.
+keyed as plain bone rotations at 60 fps, then exported like adventure/retarget.py to build/yorimichi/cairo/bike/fbx/A_<Clip>.fbx.
 
 export.json lists each clip with:
 - frames and loop;

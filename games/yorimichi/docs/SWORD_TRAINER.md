@@ -1,12 +1,12 @@
 # Sword trainer
 
 Kaede, the sword teacher of Momiji Hamlet, spars with the player on the lawn beside the tea house. Walk up to
-her and press Interact (E, D-pad Down): her menu picks the level (**Gentle**, **Steady**, **Master**), her sword or her
-sword and shield, and yours (the player's "Shield" setting). A bout ends when either of you is knocked down at no
+her and press Interact (E, D-pad Down): her menu picks the level (**Gentle**, **Steady**, **Master**) for a sword bout.
+A bout ends when either of you is knocked down at no
 health; she says a word, bows if you won, and walks back to her spot.
 
-Both fighters play the same move set: the player's merged move set (Link's moves from Breath of the Wild with Cairo's
-double jump and two-handed guard, [the botw README](../assets/characters/botw/README.md#the-merged-move-set)). Kaede is
+Both fighters play the same move set: the player's merged move set (the reference rig's moves from the adventure library with Cairo's
+double jump and two-handed guard, [the adventure README](../assets/characters/adventure/README.md#the-merged-move-set)). Kaede is
 a person in the game's own body, not a creature with its own rules: an AI holds her stick and presses her buttons, so
 every move she makes is one the player can make, and the move set's guard, parry, dodges, flurry rush and hit
 reactions answer both sides alike.
@@ -16,30 +16,30 @@ reactions answer both sides alike.
 Concept to rig through the Tripo workflow, with the eyes and the baked light fixed
 ([TRIPO_CHARACTERS.md](TRIPO_CHARACTERS.md)); source `assets/characters/sword-trainer/` (the rig revision's blend,
 `source-manifest.json`, `face.json`, `texture.json`). 1.68 m, the humanoid contract's 53 bones, her own clips Bow and
-Talk, and the merged move set retargeted onto her by `botw/retarget.py --character sword-trainer`: Link's 106 clips, and
+Talk, and the merged move set retargeted onto her by `adventure/retarget.py --character sword-trainer`: the reference rig's motion clips, and
 Cairo's own four (his double jump, his two-handed guard stance, parry and recoil), sampled from his source
-(`botw/retarget.py --dump-own`) and retargeted bone for bone, so her set is Cairo's.
+(`adventure/retarget.py --dump-own`) and retargeted bone for bone, so her set is Cairo's.
 
 ```sh
-atelier build yorimichi characters.sword_trainer unreal.sword_trainer characters.sword_trainer_botw unreal.sword_trainer_botw
+atelier build yorimichi characters.sword_trainer unreal.sword_trainer characters.sword_trainer_adventure unreal.sword_trainer_adventure
 ```
 
 `unreal.sword_trainer` (`Scripts/import_sword_trainer.py`) imports `SK_SwordTrainer`, her material and clips and
-`DA_SwordTrainerBase`; `unreal.sword_trainer_botw` runs `import_botw_moveset.py` with `BOTW_CHARACTER=sword-trainer`:
-her move clips into `/Game/SwordTrainer/Botw`, `DA_SwordTrainer` and her move record `Content/Data/sword-trainer/botw.json`.
-Until her body is built, Cairo's merged-move-set body stands in for her (`DA_CairoBotw`), so the fights work from a
+`DA_SwordTrainerBase`; `unreal.sword_trainer_adventure` runs `import_adventure_moveset.py` with `ADVENTURE_CHARACTER=sword-trainer`:
+her move clips into `/Game/SwordTrainer/Adventure`, `DA_SwordTrainer` and her move record `Content/Data/sword-trainer/adventure.json`.
+Until her body is built, Cairo's merged-move-set body stands in for her (`DA_CairoAdventure`), so the fights work from a
 plain build.
 
 ## How she fights
 
 `ASwordTrainer` (`Source/Yorimichi/SwordTrainer.h/.cpp`) is an `AWandererCharacter` with `IsNpc()`: no camera, menus,
-phone, map or board, an `AAIController` for her view. The move set (`UBotwMoveSet`) treats a sparring partner
+phone, map or board, an `AAIController` for her view. The move set (`UAdventureMoveSet`) treats a sparring partner
 (`IsSparringWith`, from the stance to the end of the bout) as a target: the blade sweep and arc reach it, its lock-on
 and soft lock find it, and a blow that reaches it goes through its own `IncomingStrike` (a parried blow throws the
 striker back, `Deflected`). Blows take `SparringDamage`: 10 a cut, 18 a strong blow (which staggers), 28 at full
 power (which knocks down, or breaks a guard), times her level's share for hers: at Gentle her blows only flinch, at
-Master her full-power blows break the player's guard. Both fighters take hits alike ([the botw
-README](../assets/characters/botw/README.md#the-merged-move-set), "Taking hits").
+Master her full-power blows break the player's guard. Both fighters take hits alike ([the adventure
+README](../assets/characters/adventure/README.md#the-merged-move-set), "Taking hits").
 
 Her brain, each frame:
 
@@ -67,7 +67,7 @@ The HUD shows "Talk to Kaede" near her, and in a bout her bar, her level, the bo
 ## Live and review
 
 `YorimichiLive`: `trainer_state()` (her bout, level, intent, health, the player's, counts of her openings and answers),
-`trainer_bout(level, her_shield, player_shield)`, `trainer_menu()`, `trainer_end()`, `trainer_force(attack, answer)`
+`trainer_bout(level)`, `trainer_menu()`, `trainer_end()`, `trainer_force(attack, answer)`
 (her next opening or answer), `trainer_place(ground, yaw)`. `scenarios/trainer_film.py` films the approach, her menu,
 a bout at each level, each forced opening and answer, and the end of a bout; `trainer_film_cut.py` captions it.
 `-notrainer` leaves her out; scripted sessions have her only with `-trainer`.

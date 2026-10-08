@@ -59,7 +59,7 @@ CONCEPTS = {
           "sandals. Round diving goggles pushed up on her forehead, a rope net bag with two glass fishing floats on "
           "her hip, a small knife sheath strapped to the calf. Sun-browned skin, short wavy hair bleached at the tips. "
           "Cheerful, salt-weathered look."),
-    'E': ('Mountain rider', "Concept: a horse rider from the mountain pastures. A fitted moss-green riding jacket with "
+    'E': ('Mountain guide', "Concept: a guide from the mountain pastures. A fitted moss-green riding jacket with "
           "a high collar and brass buttons, a cream scarf, tan riding trousers, tall dark-brown boots, leather gloves "
           "tucked into the belt. A coiled rope on her hip and a small saddlebag-style pouch. Dark hair in a low "
           "ponytail under a flat-brimmed felt hat with a feather. Steady, outdoorsy, determined."),

@@ -6,10 +6,10 @@ class AWandererCharacter;
 /**
  * A hand-made playable character (ACairoCharacter, AModoriCharacter), registered from its own .cpp
  * (FPlayableCharacter::FRegister), so the player's generic code (-rider=, the character switch, a shared game's roster
- * and pawn) needs no branch per character. The BOTW characters (ABotwRider, FBotwSpec) are the data-driven rest.
+ * and pawn) needs no branch per character.
  *
  * One entry is the default (Cairo): the character a player plays when nothing names one, whose class decides its own
- * move set at BeginPlay. Its MoveSet entry (CairoBotw) is the same character with the merged move set: what the "Move
+ * move set at BeginPlay. Its MoveSet entry (CairoAdventure) is the same character with the merged move set: what the "Move
  * set" setting picks and what a shared game plays by default. -rider= and a shared game name any entry but the default;
  * the character switch offers the default (as its MoveSet twin when chosen) and then every other entry but that twin.
  */
@@ -39,6 +39,13 @@ struct YORIMICHI_API FPlayableCharacter
     static const FPlayableCharacter* Find(const FString& Name);
     /** The default character. */
     static const FPlayableCharacter& Default();
+
+    static FString Requested();
+    static UClass* PawnOverride();
+    static TArray<FString> Available();
+    static FString NameOf(const AWandererCharacter* Character);
+    static FString Label(const FString& Name) { return Name; }
+    static AWandererCharacter* SwitchPlayer(AWandererCharacter* From, const FString& Name);
 
     struct YORIMICHI_API FRegister
     {

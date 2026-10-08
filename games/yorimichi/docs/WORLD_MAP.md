@@ -56,7 +56,7 @@ Each zone is a travel target with a key, name, position, yaw and hint. Zones are
 | Hidamari | `arrival`, `arcade`, `plaza`, `harbor`, `hillside`, `park`, `station`, `foothills` |
 | Elsewhere | `forest_lake`, `megapark`, `skatepier`, `hippodrome`, `zeppelin_forest`, `zeppelin_city`, `zeppelin_megapark` |
 
-`UJapanMap` adds a `skatepier` stop from `skatepark/park.json`, and a `hippodrome` stop (by Hudson, at the
+`UJapanMap` adds a `skatepier` stop from `skatepark/park.json`, and a `hippodrome` stop (by the grandstand, at the
 grandstand) from `hippodrome/hippodrome.json`, when `map.json` has none ([HIPPODROME.md](HIPPODROME.md)).
 
 ## Saved skate-line markers
@@ -92,7 +92,7 @@ under it. Missing, changed or obstructed ground refuses travel and preserves the
 save attempt also leaves previous places intact.
 
 The durable review scenario is `uv run atelier qa yorimichi session_marker --port PORT --save-file FILE`. Start a
-fresh guarded CairoBotw game with `-markersave=FILE` pointing to a new review file; the scenario refuses to operate
+fresh guarded CairoAdventure game with `-markersave=FILE` pointing to a new review file; the scenario refuses to operate
 on a game using the player's normal save. It checks keyboard input, the controller's View tap and hold, the
 saved-places bar (choose, save, return, two-press delete, close), several named places, selection, rename/delete,
 map/phone travel, text-input isolation and Enter-to-save, airborne refusal, roofs, blocked or removed floors and

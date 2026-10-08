@@ -66,7 +66,7 @@ def export_sword(arm, transform, scale, floor):
             'note':'Relative attachment = rest_component_transform * inverse(hand_R reference-pose component transform), computed in Unreal from the imported skeleton.'}
 
 
-# The FBX settings every Cairo export shares (the mesh, its clips and botw/retarget.py's clips).
+# The FBX settings every Cairo export shares (the mesh, its clips and adventure/retarget.py's clips).
 FBX = dict(use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
     axis_forward='-Y',axis_up='Z',add_leaf_bones=False,use_armature_deform_only=False,
     bake_anim_use_nla_strips=False,bake_anim_use_all_actions=False,bake_anim_simplify_factor=0,

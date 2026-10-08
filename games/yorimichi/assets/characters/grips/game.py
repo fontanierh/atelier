@@ -4,7 +4,7 @@
 
 Reads build/yorimichi/grips/<character>/poses.json (the poser's saves), moments.json (each prop's mesh in its handle's
 frame) and body.glb (the rest skeleton), or those in DIR (grips/<character>/ holds the committed copy), and writes
-games/yorimichi/unreal/Content/Data/<character>/grips.json, which the move set reads (UBotwMoveSet::ReadGrips) to hold
+games/yorimichi/unreal/Content/Data/<character>/grips.json, which the move set reads (UAdventureMoveSet::ReadGrips) to hold
 every grip exactly as posed, in every clip:
 
 - `hand`: the hand bone's place in the prop's own frame (its mesh's, in the game's centimetres): `location`, and
@@ -14,7 +14,7 @@ every grip exactly as posed, in every clip:
   inverted, times `rotation`, times its own reference rotation.
 
 A glTF point (x, y, z) in metres is the game's (x, z, y) / 100 (export.py), a reflection G; a turn R in glTF's frame is
-G R G in the game's. The props' meshes are LinkSword.glb and LinkGlider.glb in their game frames (centimetres) the same way.
+G R G in the game's. The props' meshes are ReferenceSword.glb and ReferenceGlider.glb in their game frames (centimetres) the same way.
 """
 from pathlib import Path
 import argparse

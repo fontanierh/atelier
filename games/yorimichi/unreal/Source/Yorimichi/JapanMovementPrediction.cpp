@@ -9,7 +9,7 @@
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "WandererSword.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
 #include "JapanBikeSubsteps.h"
@@ -364,7 +364,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
     TGuardValue<bool> SimulationMenu(Rider->bMenuOpen, (ActiveInput.Flags & FJapanMoveInput::Menu) != 0);
     ApplyMoveInput(ActiveInput);
     TGuardValue<bool> Executing(bExecutingMove, true);
-    UBotwMoveSet* Moves = Rider->GetMoves();
+    UAdventureMoveSet* Moves = Rider->GetMoves();
     if (bReplaying) ++NetworkStats.ReplayedMoves;
     const FVector VehicleBefore=Rider->GetActorLocation();
     const float VehicleYawBefore=Rider->GetActorRotation().Yaw;

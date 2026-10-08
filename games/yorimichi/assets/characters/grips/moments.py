@@ -8,7 +8,7 @@ grip (a prop and a hand) it writes, to build/yorimichi/grips/<character>/moments
 
 - the handle as the finger wrap sees it (FingerWrapNode.h): its usable span from A to B, its oval's radii at either end
   and at its waist, in a frame with A at the origin, the span along +x and the oval's major axis along +y;
-- the prop's mesh placed in that frame (LinkSword.glb fitted to the game's vertices; LinkGlider.glb by its handles);
+- the prop's mesh placed in that frame (ReferenceSword.glb fitted to the game's vertices; ReferenceGlider.glb by its handles);
 - each moment's hand: the hand bone's place in that frame, from the palm (the wrist, the index and the little finger's
   base joints; how the game held it, which the poser keeps while the fingers move), and the other hand's;
 - the game's own finger pose at a typical moment, fitted to its joints and skin: the poser's starting pose, and its ghost.
@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world')); import y
 
 DIGITS = [[f'finger_{f}_{{s}}', f'finger_tip_{f}_{{s}}', f'finger_end_{f}_{{s}}'] for f in range(4)] + \
          [['thumb_{s}', 'thumb_tip_{s}', 'thumb_end_{s}']]
-# FingerWrapNode's handles (BotwMoveSetDetail.h): the glider's tubes in its own frame (cm, the game's axes) and their
+# FingerWrapNode's handles (AdventureMoveSetDetail.h): the glider's tubes in its own frame (cm, the game's axes) and their
 # oval; the sword's grip in lengths of its handle (its origin to the pommel's end).
 GLIDER_HANDLES = {'R': ((-24.8, -14.2, 1.2), (-30.5, 2.8, 1.1)), 'L': ((25.4, -14.2, 1.6), (30.1, 2.9, 1.0))}
 GLIDER_RADII = (3.30, 2.80)
@@ -38,7 +38,7 @@ SWORD_SPAN = (.709, -.231)
 SWORD_RADII = ((.125, .090), (.126, .076), (.113, .070))
 SWORD_WAIST = .523
 BEYOND = .02   # the wood past the usable span, then capped (m)
-BOTW = yori.OUT / 'botw' / 'glb'
+Adventure = yori.OUT / 'adventure' / 'glb'
 
 
 def from_game(p):
@@ -162,7 +162,7 @@ def frame(A, B, major):
 
 def palm(joints, side):
     """The palm's frame (y from the wrist to the knuckles, z from the index's base to the little finger's) and length:
-    import_botw_moveset.py's Rig.hand, columns x, y, z."""
+    import_adventure_moveset.py's Rig.hand, columns x, y, z."""
     wrist = joints[f'hand_{side}']
     reach = (joints[f'finger_0_{side}'] + joints[f'finger_3_{side}']) / 2 - wrist
     across = joints[f'finger_3_{side}'] - joints[f'finger_0_{side}']
@@ -291,7 +291,7 @@ def placement(M):
 
 
 def sword_handle(glb_path):
-    """The sword's grip in its own mesh frame (BotwMoveSet.cpp: the blade along the bounds' longest axis from the
+    """The sword's grip in its own mesh frame (AdventureMoveSet.cpp: the blade along the bounds' longest axis from the
     origin to the far end; the handle from the origin to the near end; the oval's major axis the bounds' middle size)."""
     glb = Glb(glb_path)
     X = glb.accessor(glb.json['meshes'][0]['primitives'][0]['attributes']['POSITION'])
@@ -314,7 +314,7 @@ def main(args):
     rows = [json.loads(line) for line in data.decode().splitlines() if line.strip()]
     held = [r for r in rows if r.get('handle') in ('sword', 'glider') and all(h['weight'] > .99 for h in r['grip']['hands'])]
     body = Body(yori.OUT / 'grips' / args.character / 'body.glb')
-    sword_vertices, hilt, major = sword_handle(BOTW / 'LinkSword.glb')
+    sword_vertices, hilt, major = sword_handle(Adventure / 'ReferenceSword.glb')
     length = float(np.linalg.norm(hilt))
     grips, checks = [], {}
     for prop in ('sword', 'glider'):
@@ -385,7 +385,7 @@ def main(args):
                 'id': gid, 'prop': prop, 'side': side,
                 'label': f"{'Sword' if prop == 'sword' else 'Glider'}, {'right' if side == 'R' else 'left'} hand",
                 'handle': {**{k: v for k, v in m['handle'].items()}, 'beyond': BEYOND},
-                'prop_mesh': {'file': 'LinkSword.glb' if prop == 'sword' else 'LinkGlider.glb', **placement(m['prop'])},
+                'prop_mesh': {'file': 'ReferenceSword.glb' if prop == 'sword' else 'ReferenceGlider.glb', **placement(m['prop'])},
                 'moments': [{'t': d['row']['t'], 'hand': placement(d['hands'][side]),
                              'other': placement(d['hands']['L' if side == 'R' else 'R'])} for d in distinct],
                 'typical': typical,

@@ -1,0 +1,8 @@
+# Kaede with the merged adventure move set (docs/SWORD_TRAINER.md): the reference rig's moves and Cairo's donor clips retargeted onto her
+# (adventure/retarget.py --character sword-trainer), imported by Scripts/import_adventure_moveset.py (ADVENTURE_CHARACTER=sword-trainer).
+# Her equipment keeps the reference rig's chest placement (no fit).
+mesh = "/Game/SwordTrainer/SK_SwordTrainer"
+base = "/Game/SwordTrainer/DA_SwordTrainerBase"   # from import_sword_trainer.py
+dest = "/Game/SwordTrainer/Adventure"
+definition = "/Game/SwordTrainer/DA_SwordTrainer"
+keep_base_actions = true                          # her own bow and words stay beside the move set's

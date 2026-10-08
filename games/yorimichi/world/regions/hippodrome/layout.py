@@ -19,8 +19,8 @@ LAP = 4 * HALF + 2 * math.pi * RADIUS
 FINISH_X = ORIGIN[0]   # the finish post's line across the home straight
 MARGIN = 7.            # flat ground outside the outer rail
 
-# The platform rectangle (x0, y0, x1, y1): the oval and its margin, the grandstand apron to the south and the stable
-# yard to the east.
+# The platform rectangle (x0, y0, x1, y1): the oval and its margin, the grandstand apron to the south and the
+# open grounds to the east.
 PLATFORM = (ORIGIN[0] - HALF - RADIUS - WIDTH / 2 - MARGIN, ORIGIN[1] - 82.,
             ORIGIN[0] + HALF + RADIUS + WIDTH / 2 + 30., ORIGIN[1] + RADIUS + WIDTH / 2 + MARGIN)
 PLATFORM_CLEARANCE = .18   # above the highest ground sample under the platform
@@ -35,16 +35,13 @@ LANE_START_Z = 36.0        # the street's height at its north end
 # it, height) in metres; the model's front (its glTF +X) turns to face `yaw` (degrees, counter-clockwise from east).
 STRUCTURES = {
     'grandstand':    dict(size=(16., 56., 15.), at=(ORIGIN[0], ORIGIN[1] - 72.), yaw=90.),
-    'starting_gate': dict(size=(4.2, 13., 4.8), at=(ORIGIN[0], ORIGIN[1] + RADIUS), yaw=180.),
     'judges_tower':  dict(size=(5., 6.2, 8.), at=(ORIGIN[0] - 22., ORIGIN[1] - 25.), yaw=-90.),
     'finish_post':   dict(size=(1.2, 1.2, 5.5), at=(FINISH_X, ORIGIN[1] - RADIUS + WIDTH / 2 + 1.2), yaw=-90.),
     'tote_board':    dict(size=(3.7, 10., 8.1), at=(ORIGIN[0] + 25., ORIGIN[1] + 18.), yaw=-90.),
-    'stable':        dict(size=(11., 28., 7.5), at=(ORIGIN[0] + HALF + RADIUS + WIDTH / 2 + 18., ORIGIN[1] - 5.), yaw=180.),
 }
 
-# Where people stand: the race master by the grandstand's west end, where the lane arrives; the player's return spot.
-MASTER = dict(at=(ORIGIN[0] - 38., ORIGIN[1] - 64.), yaw=45.)
-RETURN = dict(at=(ORIGIN[0] - 36.5, ORIGIN[1] - 66.5), yaw=120.)   # facing Hudson, within talking range (3.8 m)
+# Where people stand: the player's arrival spot by the grandstand.
+RETURN = dict(at=(ORIGIN[0] - 36.5, ORIGIN[1] - 66.5), yaw=120.)   # facing the grandstand
 # Gaps in the rails (centre x on the home straight, width) so people can walk into the infield.
 RAIL_GAPS = [(ORIGIN[0] - 45., 5.)]
 RAIL_HEIGHT = 1.15

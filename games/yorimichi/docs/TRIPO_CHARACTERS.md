@@ -25,7 +25,7 @@ uncertain POST. Blender stages run under the guard (`python -m atelier.safety.gu
 | Fingers and own clips | `sword_trainer_rig.py` | 30 finger bones (`atelier.blender.tripo_fingers.add_fingers`), the character's own clips |
 | **Eyes, light and noise** | `atelier.blender.tripo_character_texture` + `face.json` | flat painted colour, chips gone, eyes and brows solid, the face clean, brows and mouth redrawn (below) |
 | Promote | `promote.py sword-trainer <revision>` | the blend and its records in `assets/characters/<id>/` |
-| Move set | `botw/retarget.py --character <id>` | the merged move set retargeted onto the body (106 Link clips and Cairo's own 4) |
+| Move set | `adventure/retarget.py --character <id>` | the merged move set retargeted onto the body (106 the reference rig clips and Cairo's own 4) |
 
 ## Eyes, light and noise: the fix almost every Tripo character needs
 

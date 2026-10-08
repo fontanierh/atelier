@@ -1,7 +1,7 @@
 #include "SailboatComponent.h"
 #include "JapanVehicleVisuals.h"
 #include "JapanNetwork.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"

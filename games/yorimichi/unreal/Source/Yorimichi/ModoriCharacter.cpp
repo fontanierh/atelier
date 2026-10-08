@@ -1,6 +1,6 @@
 #include "ModoriCharacter.h"
 #include "AtelierData.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "PlayableCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -23,19 +23,19 @@ namespace
         if (!bLoaded)
         {
             bLoaded = true;
-            Record = AtelierReadJson(AtelierDataPath(TEXT("modori/botw.json")));
+            Record = AtelierReadJson(AtelierDataPath(TEXT("modori/adventure.json")));
         }
         return Record;
     }
 }
 
 static const FPlayableCharacter::FRegister RegisterModori({AModoriCharacter::Name(), &AModoriCharacter::StaticClass, &AModoriCharacter::IsBuilt,
-                                                           TEXT("unreal.modori_botw")});
+                                                           TEXT("unreal.modori_adventure")});
 
 AModoriCharacter::AModoriCharacter()
 {
     DefinitionAssetPath = ModoriDefinition;
-    SprintSpeedMultiplier = 1.f;   // Link's sprint: the dash clip's own stride speed
+    SprintSpeedMultiplier = 1.f;   // the reference rig's sprint: the dash clip's own stride speed
     // 1.75 m: the capsule's half height to the crown, the soles 0.65 cm under its bottom as Cairo's (export_unreal.py).
     GetCapsuleComponent()->InitCapsuleSize(24.f, 88.f);
     GetCharacterMovement()->SetCrouchedHalfHeight(77.f);
@@ -56,10 +56,10 @@ bool AModoriCharacter::IsBuilt()
 void AModoriCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
+    UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("AdventureMoves"));
     // His grips as posed in the grip poser, exported for the game by the characters.modori_grips step (grips/game.py).
     const TSharedPtr<FJsonObject> Grips = AtelierReadJson(AtelierDataPath(TEXT("modori/grips.json")));
     if (!Grips.IsValid()) UE_LOG(LogTemp, Warning, TEXT("Modori: no posed grips (build characters.modori_grips); his hands keep the clips' grips"));
     if (Set->Initialize(this, ModoriRecord(), Grips)) Moves = Set;
-    else UE_LOG(LogTemp, Warning, TEXT("Modori: no merged move set (build unreal.modori_botw)"));
+    else UE_LOG(LogTemp, Warning, TEXT("Modori: no merged move set (build unreal.modori_adventure)"));
 }

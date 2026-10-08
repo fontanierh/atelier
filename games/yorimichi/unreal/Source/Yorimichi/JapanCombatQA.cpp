@@ -6,8 +6,8 @@
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
-#include "BotwMoveSet.h"
-#include "BotwMoveSetDetail.h"
+#include "AdventureMoveSet.h"
+#include "AdventureMoveSetDetail.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/TargetPoint.h"
 #include "Engine/World.h"
@@ -152,11 +152,11 @@ void Drive(AWandererCharacter* Player, const FString& Folder, int32 Person, FStr
     double StrikeAt = Now + .15, WindowEnd = StrikeAt + .5;
     if (Driver.Phase < 2)
     {
-        if (Driver.Phase == 0 ? !BotwMoveSetDetail::IsParry(Action) : !BotwMoveSetDetail::IsHop(Action)) return;
+        if (Driver.Phase == 0 ? !AdventureMoveSetDetail::IsParry(Action) : !AdventureMoveSetDetail::IsHop(Action)) return;
         const double Started = Now - Player->GetActionTime();
         if (Driver.Phase == 0)
         {
-            const FBotwMove* Move = Moves->Find(Action);
+            const FAdventureMove* Move = Moves->Find(Action);
             if (!Move || Move->Guard.IsEmpty()) { Error = TEXT("The live parry has no authored defence window"); return; }
             const FVector2f Window = Move->Guard[0];
             StrikeAt = FMath::Max(Now, Started + (Window.X - Move->Start) / Move->Rate + .015);
@@ -242,7 +242,7 @@ void Contact(AWandererCharacter* Victim, int32 Person, int32 Phase, const TShare
             Report->SetNumberField(TEXT("missing_samples"), After.Missing - Baseline.Missing);
             Report->SetNumberField(TEXT("authored_fallbacks"), After.Fallback - Baseline.Fallback);
             Report->SetNumberField(TEXT("rejected_defence_times"), After.Rejected - Baseline.Rejected);
-            Report->SetBoolField(TEXT("guard_hit"), BotwMoveSetDetail::IsGuardHit(Player->GetAnimationAction()));
+            Report->SetBoolField(TEXT("guard_hit"), AdventureMoveSetDetail::IsGuardHit(Player->GetAnimationAction()));
             const auto* Movement = Cast<UJapanCharacterMovement>(Player->GetCharacterMovement());
             const bool ScheduledGuard = Expected == 3 && !Player->IsLocallyControlled() && Movement && Movement->HasScheduledReaction();
             Report->SetBoolField(TEXT("scheduled_guard"), ScheduledGuard);
@@ -352,7 +352,7 @@ bool JapanCombatQA::Tick(UWorld* World, bool Server, const FString& Folder, FStr
                 Report.Data->SetStringField(TEXT("reaction_action"), Proof->Action.ToString());
                 Report.Data->SetNumberField(TEXT("reaction_apply_delay"), Delay);
                 Report.Data->SetNumberField(TEXT("reaction_forced"), Proof->Forced);
-                Report.Data->SetBoolField(TEXT("guard_hit"), BotwMoveSetDetail::IsGuardHit(Proof->Action));
+                Report.Data->SetBoolField(TEXT("guard_hit"), AdventureMoveSetDetail::IsGuardHit(Proof->Action));
                 ReactionOK = Sequence > 0 && Delay >= 0. && Delay <= .5 && Proof->Forced == 0 && Report.Data->GetBoolField(TEXT("guard_hit"));
                 ReactionProofs.RemoveAll([&](const FReactionProof& P)
                     { return P.Movement.Get() == Movement && P.Epoch == Epoch && P.Sequence == Sequence; });

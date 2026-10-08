@@ -24,7 +24,7 @@
 #include "BoneControllers/AnimNode_TwoBoneIK.h"
 #include "BoneControllers/AnimNode_ModifyBone.h"
 #include "WandererSword.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "JapanNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -119,7 +119,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_SequencePlayer_Standalone GuardPose, SwordGuardRight, SwordGuardLeft;
     FAnimNode_TwoWayBlend RightArm, LeftArm;
     // Without the shield the off hand is free: during sword work its arm swings with the locomotion (its own player, in
-    // step with the stride) instead of holding the shield pose the BOTW clips give it.
+    // step with the stride) instead of holding the shield pose the adventure clips give it.
     FAnimNode_BlendSpacePlayer_Standalone FreeArm;
     FAnimNode_TwoWayBlend LeftHand;
     FAnimNode_LayeredBoneBlend CarryLayer;
@@ -128,26 +128,26 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_SequencePlayer_Standalone Fist;
     FAnimNode_LayeredBoneBlend FistLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
-    // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
+    // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on the reference rig's sword): the off hand is put
     // on the handle beside the sword hand, its elbow bending as the clip has it.
     FAnimNode_TwoBoneIK GripIK;
-    // Gliding, each wrist on its grip on the paraglider's handle (UBotwMoveSet::GlideHandLocation), each elbow toward its
-    // place on the neutral glide; then each fist turned round its handle (UBotwMoveSet::GlideHandRotation).
+    // Gliding, each wrist on its grip on the paraglider's handle (UAdventureMoveSet::GlideHandLocation), each elbow toward its
+    // place on the neutral glide; then each fist turned round its handle (UAdventureMoveSet::GlideHandRotation).
     FAnimNode_TwoBoneIK GlideIK[2];
     FAnimNode_ModifyBone GlideTurn[2];
-    // Then each hand's fingers wrapped round the handle it holds, its surface and not its axis (UBotwMoveSet::HeldHandle,
+    // Then each hand's fingers wrapped round the handle it holds, its surface and not its axis (UAdventureMoveSet::HeldHandle,
     // #7633): the sword's grip in either hand, the glider's handles; and its thumb closed round it too (the guard clip's
     // thumb lies nearly straight, so from the front a closed hand read as an open one, #7296), onto the wrapped index
     // finger's outside.
     FFingerWrapNode Wrap;
-    // A hit's recoil (UBotwMoveSet::FlinchRotation): the spine, chest, neck and head each turned a little further,
+    // A hit's recoil (UAdventureMoveSet::FlinchRotation): the spine, chest, neck and head each turned a little further,
     // added in component space, the bones above following.
     FAnimNode_ModifyBone Flinch[4];
     FGroundContactNode Feet;
     FSailboatStanceNode Stance;
     // On the bike: the gripping hands follow bars the player steers past the clip's own steering.
     FBikeGripNode Grip;
-    // Last, the grips posed in the grip poser (UBotwMoveSet::GripPose): each hand exactly where it was posed on its prop.
+    // Last, the grips posed in the grip poser (UAdventureMoveSet::GripPose): each hand exactly where it was posed on its prop.
     FGripPoseNode Pose;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
     float Speed = 0.f, CrouchTarget = 0.f, CrouchWeight = 0.f, StanceWeight = 0.f, ArmedTarget = 0.f, ArmedWeight = 0.f;
@@ -253,7 +253,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 // The layers' branch bones by the skate contract's names (a character's own clavicles).
                 CarryLayer.LayerSetup[0].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_R"));
                 CarryLayer.LayerSetup[1].BranchFilters[0].BoneName = Pawn->GetSkateBone(TEXT("clavicle_L"));
-                // The off hand's IK: the left wrist onto the sword's handle (UBotwMoveSet::TwoHandGripOffset), its elbow
+                // The off hand's IK: the left wrist onto the sword's handle (UAdventureMoveSet::TwoHandGripOffset), its elbow
                 // as the clip bends it.
                 GripIK.IKBone.BoneName = Pawn->GetSkateBone(TEXT("hand_L"));
                 GripIK.EffectorTarget = FBoneSocketTarget(Pawn->GetSkateBone(TEXT("hand_R")));
@@ -403,8 +403,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         if (bBiking) Action.SetAccumulatedTime(BikeC->GetPoseTime());
         const bool bCarrying = !bSailing && !bRiding && !bBiking && !Pawn->IsZeppelinPassenger();
         // The glider on the body where the grips read it, this tick.
-        if (UBotwMoveSet* Set = Pawn->GetMoves(); Set && !bRiding && !bSailing && !bBiking) Set->PlaceGliderForPose();
-        const UBotwMoveSet* Moves = Pawn->GetMoves();
+        if (UAdventureMoveSet* Set = Pawn->GetMoves(); Set && !bRiding && !bSailing && !bBiking) Set->PlaceGliderForPose();
+        const UAdventureMoveSet* Moves = Pawn->GetMoves();
         if (Moves && JapanNetwork::IsOnline(Pawn->GetWorld()) && !bSailing && !bRiding && !bBiking && State.bAction)
         {
             // Both prediction corrections and late-joining proxies use the authoritative action phase.
@@ -459,7 +459,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                 R.PoseWeight[I] = Pose.Hands[I].Weight; R.PoseMiss[I] = Pose.Hands[I].Miss;
             }
         }
-        UBotwMoveSet::FHeldHandle Held[2];
+        UAdventureMoveSet::FHeldHandle Held[2];
         for (int32 I = 0; I < 2; ++I)
         {
             if (bHands) Held[I] = Moves->HeldHandle(I);
@@ -470,7 +470,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         }
         for (int32 I = 0; I < 2; ++I)
         {
-            const UBotwMoveSet::FGripPose G = bHands ? Moves->GripPose(I) : UBotwMoveSet::FGripPose();
+            const UAdventureMoveSet::FGripPose G = bHands ? Moves->GripPose(I) : UAdventureMoveSet::FGripPose();
             FGripPoseNode::FHand& P = Pose.Hands[I];
             P.Weight = G.Local ? G.Weight : 0.f; P.bPin = G.bPin; P.bInFrame = G.bInFrame; P.Target = G.Target;
             if (G.Local) for (int32 F = 0; F < 5; ++F) for (int32 K = 0; K < 3; ++K) P.Local[F][K] = G.Local[F][K];

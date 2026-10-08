@@ -3,7 +3,7 @@
 #include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "Engine/World.h"
 #if !UE_BUILD_SHIPPING
 #include "GameFramework/CharacterMovementComponent.h"
@@ -57,7 +57,7 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
         if (Result) Result(Outcome);
         return;
     }
-    UBotwMoveSet* Moves = Victim->GetMoves();
+    UAdventureMoveSet* Moves = Victim->GetMoves();
     const double Now = GetWorld()->GetTimeSeconds();
     const double Wait = FMath::Clamp(Moves->DefenceWait(), 0., FJapanDefenceClock::MaximumCompensation);
     int32 VictimCount = 0;

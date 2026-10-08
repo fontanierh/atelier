@@ -2,7 +2,7 @@
 #include "AtelierData.h"
 #if !UE_BUILD_SHIPPING
 #include "FoxHunter.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "JapanSession.h"
 #include "JapanCombatResolver.h"
 #include "JapanEncounters.h"
