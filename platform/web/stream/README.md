@@ -24,8 +24,9 @@ too. A native mobile build would be a third way to play and needs neither.
 | `server.cjs` | Epic's signalling server plus the pages, diagnostics and extra static routes, on loopback |
 | `stream.js` | the browser connection: video, diagnostics, and the message channel keyed by the game's protocol name |
 | `touch.js` | touch primitives for a game's page: stick, look pad, hold buttons, hold axes, keyboard, the 50 ms resend |
+| `page.js` | the page around the stream for both pages: status line, Play/Reconnect, wake lock, full screen, sound, toast, dialogs that pause the input, suspend in the background |
 | `player.*` | the plain player page |
-| `smoke.mjs`, `player-smoke.mjs` | the browser driver for the games' smoke tests; the plain player's own end-to-end check |
+| `smoke.mjs`, `player-smoke.mjs` | the browser driver for the games' smoke tests (`openTouchPage`, `playTouchPage`: a phone-sized touch page, started); the plain player's own end-to-end check |
 | `platform/engine/Plugins/Streaming` | the game's end (module AtelierStream): `FAtelierStream` routes action messages to the game's handlers and holds touch controls under a lease |
 
 The packages (Epic's frontend and signalling libraries, express, esbuild, playwright-core) are pinned in

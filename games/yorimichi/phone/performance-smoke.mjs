@@ -1,6 +1,6 @@
 // Manual live-stream diagnostic. Uses the single player slot and returns to spawn.
 // Reports sampled native FPS separately from actual decoded video throughput.
-import {chromium,CHROME,STREAM_URL,buildDir} from '../../../platform/web/stream/smoke.mjs';
+import {STREAM_URL,openTouchPage,playTouchPage,buildDir} from '../../../platform/web/stream/smoke.mjs';
 const BUILD=buildDir('yorimichi');
 import fs from 'node:fs/promises';
 const url=STREAM_URL;
@@ -8,14 +8,10 @@ const label=process.argv[2]||'stream-performance';
 const out=new URL('stream/smoke/',BUILD);await fs.mkdir(out,{recursive:true});
 const health=await(await fetch(new URL('/health',url))).json();
 if(health.players)throw Error('A player is already connected; do not displace the phone.');
-const browser=await chromium.launch({executablePath:CHROME,headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+const {browser,page}=await openTouchPage();
 try{
- const page=await browser.newPage({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
  await page.addInitScript(()=>{window.testPeers=[];const Base=window.RTCPeerConnection;window.RTCPeerConnection=class extends Base{constructor(...args){super(...args);window.testPeers.push(this);}};});
- await page.goto(url);
- await page.waitForFunction(()=>window.yorimichi?.state?.ready,null,{timeout:45000});
- await page.locator('#play').click();
- await page.waitForFunction(()=>document.querySelector('video')?.videoWidth>0);
+ await playTouchPage(page,{telemetry:'yorimichi',ready:45000,video:{time:false}});
  await page.waitForTimeout(3000);
  const sample=()=>page.evaluate(async()=>{
   const reports=(await Promise.all(window.testPeers.map(async p=>[...await p.getStats()].map(x=>x[1])))).flat();

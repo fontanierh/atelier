@@ -1,5 +1,6 @@
 import { retargetMotion } from "../../../platform/web/motion/retarget.js";
 import { closeLoop } from "../../../platform/web/motion/loop.js";
+import { captureRest } from "../../../platform/web/motion/rest.js";
 import * as THREE from "three";
 import { GIFEncoder, quantize, applyPalette } from "gifenc";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -150,19 +151,13 @@ async function loadModel() {
   const gltf = await new GLTFLoader().loadAsync("/assets/fox.glb");
   model = gltf.scene;
   model.updateMatrixWorld(true);
+  // GLTFLoader sanitizes colons; motion names a bone by either spelling.
+  const bones = model.getObjectsByProperty("isBone", true);
+  rest = captureRest(THREE, bones, (o) => [
+    o.userData.name || o.name,
+    o.name.replace("mixamorig", "mixamorig:"),
+  ]);
   model.traverse((o) => {
-    if (o.isBone) {
-      const original = o.userData.name || o.name; // GLTFLoader sanitizes colons.
-      const record = {
-        name: o.name,
-        localQ: o.quaternion.clone(),
-        worldQ: o.getWorldQuaternion(new THREE.Quaternion()),
-        worldPos: o.getWorldPosition(new THREE.Vector3()),
-        parentInverse: o.parent.matrixWorld.clone().invert(),
-      };
-      rest.set(original, record);
-      rest.set(o.name.replace("mixamorig", "mixamorig:"), record);
-    }
     if (o.isMesh) {
       o.castShadow = true;
       o.receiveShadow = true;

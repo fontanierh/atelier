@@ -27,8 +27,8 @@ build/            ignored: everything a build generates, per game
 | Skate | `engine/Plugins/Activities/Skate` | in-process native skateboarding behind `ISkateRider`, with its tracked data checks |
 | AtelierStream | `engine/Plugins/Streaming` | the game's end of a browser stream: actions and leased touch controls |
 | LiveBridge | `engine/Plugins/Dev/LiveBridge` | the loopback live bridge: Python in the running game, runtime GLB props, overlays |
-| Stream pages | `platform/web/stream` | stream server, browser connection, touch primitives, the plain player |
-| Motion helpers | `platform/web/motion` | Three.js helpers that apply generated motion to an existing skin and close authored loops |
+| Stream pages | `platform/web/stream` | stream server, browser connection, page lifecycle, touch primitives, the plain player, smoke-test helpers |
+| Motion helpers | `platform/web/motion` | Three.js helpers that capture a rig's rest pose, apply generated motion to an existing skin and close authored loops |
 
 Systems that only one game uses stay in that game. In Yorimichi these are the player character (on-foot movement,
 actions, camera), sword combat and the fox hunter, the sailboat, the zeppelin, the mini-mega ramp, footsteps, the

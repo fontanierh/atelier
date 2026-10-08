@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as THREE from "three";
 import { closeLoop } from "../../../platform/web/motion/loop.js";
+import { glbNodes } from "../../../platform/web/motion/rest.js";
 const root = process.argv[2] || "build/yorimichi/unimate";
 const bytes = fs.readFileSync(path.join(root, "assets/fox.glb"));
 const jsonSize = bytes.readUInt32LE(12);
@@ -19,25 +20,7 @@ function accessor(index) {
     bytes.readFloatLE(28 + jsonSize + offset + i * 4),
   );
 }
-const nodes = gltf.nodes.map((n) => {
-  const o = new THREE.Object3D();
-  o.name = n.name.replaceAll(":", "");
-  if (n.matrix) {
-    o.matrix.fromArray(n.matrix);
-    o.matrix.decompose(o.position, o.quaternion, o.scale);
-  } else {
-    if (n.translation) o.position.fromArray(n.translation);
-    if (n.rotation) o.quaternion.fromArray(n.rotation);
-    if (n.scale) o.scale.fromArray(n.scale);
-  }
-  return o;
-});
-gltf.nodes.forEach((n, i) =>
-  n.children?.forEach((j) => nodes[i].add(nodes[j])),
-);
-const scene = new THREE.Group();
-gltf.scenes[gltf.scene || 0].nodes.forEach((i) => scene.add(nodes[i]));
-scene.updateMatrixWorld(true);
+const { nodes, scene } = glbNodes(THREE, gltf);
 const restWorld = nodes.map((o) =>
   o.getWorldQuaternion(new THREE.Quaternion()),
 );
