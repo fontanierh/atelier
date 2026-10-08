@@ -128,6 +128,10 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FAnimNode_SequencePlayer_Standalone Fist;
     FAnimNode_LayeredBoneBlend FistLayer;
     FAnimNode_ConvertLocalToComponentSpace ToComponent;
+    // Each fist's thumb closed round the handle too (the guard clip's thumb lies nearly straight, so from the front a
+    // closed hand read as an open one, #7296): its tip onto the curled index finger's outside, in the hand's own frame,
+    // so the arms' IK after it carries it. Weighted as the fist layer.
+    FAnimNode_TwoBoneIK ThumbIK[2];
     // A two-handed hold on a sword shorter than the clip's own (Cairo's bokken clips on Link's sword): the off hand is put
     // on the handle beside the sword hand, its elbow bending as the clip has it.
     FAnimNode_TwoBoneIK GripIK;
@@ -178,7 +182,16 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         FistLayer.BlendWeights.SetNum(2); FistLayer.BlendWeights[0] = FistLayer.BlendWeights[1] = 0.f;
         FistLayer.bMeshSpaceRotationBlend = false; FistLayer.bBlendRootMotionBasedOnRootBone = false;
         ToComponent.LocalPose.SetLinkNode(&FistLayer);
-        GripIK.ComponentPose.SetLinkNode(&ToComponent);
+        ThumbIK[0].ComponentPose.SetLinkNode(&ToComponent);
+        ThumbIK[1].ComponentPose.SetLinkNode(&ThumbIK[0]);
+        for (FAnimNode_TwoBoneIK& IK : ThumbIK)
+        {
+            IK.EffectorLocationSpace = BCS_BoneSpace; IK.JointTargetLocationSpace = BCS_BoneSpace;
+            IK.EffectorLocation = IK.JointTargetLocation = FVector::ZeroVector;
+            IK.bAllowStretching = false; IK.bTakeRotationFromEffectorSpace = false; IK.bMaintainEffectorRelRot = false;
+            IK.Alpha = 0.f;
+        }
+        GripIK.ComponentPose.SetLinkNode(&ThumbIK[1]);
         GripIK.EffectorLocationSpace = BCS_BoneSpace; GripIK.JointTargetLocationSpace = BCS_BoneSpace;
         GripIK.EffectorLocation = GripIK.JointTargetLocation = FVector::ZeroVector;
         GripIK.bAllowStretching = false; GripIK.bTakeRotationFromEffectorSpace = false; GripIK.bMaintainEffectorRelRot = false;
@@ -224,7 +237,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &ThumbIK[0], &ThumbIK[1], &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -252,6 +265,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     const TCHAR* Side = I ? TEXT("L") : TEXT("R");
                     GlideIK[I].IKBone.BoneName = Pawn->GetSkateBone(FName(*FString::Printf(TEXT("hand_%s"), Side)));
                     GlideTurn[I].BoneToModify.BoneName = GlideIK[I].IKBone.BoneName;
+                    ThumbIK[I].IKBone.BoneName = FName(*FString::Printf(TEXT("thumb_end_%s"), Side));
+                    ThumbIK[I].EffectorTarget = ThumbIK[I].JointTarget = FBoneSocketTarget(GlideIK[I].IKBone.BoneName);
                 }
                 const TCHAR* const Chain[4] = { TEXT("spine"), TEXT("chest"), TEXT("neck"), TEXT("head") };
                 for (int32 I = 0; I < 4; ++I) Flinch[I].BoneToModify.BoneName = Pawn->GetSkateBone(Chain[I]);
@@ -418,6 +433,25 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         const float GlideFist = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
         FistLayer.BlendWeights[0] = GlideFist;
         FistLayer.BlendWeights[1] = FMath::Max(GlideFist, GripFist);   // the off hand closes round the sword's handle too
+        // The thumbs' targets from the last pose, in each hand's frame: the tip onto the middle of the index finger's
+        // outer half, the middle joint where it was (so the thumb keeps bending the way it did).
+        const USkeletalMeshComponent* Body = Instance->GetSkelMeshComponent();
+        for (int32 I = 0; I < 2; ++I)
+        {
+            const TCHAR* Side = I ? TEXT("L") : TEXT("R");
+            const FName Hand = ThumbIK[I].EffectorTarget.BoneReference.BoneName;
+            const FName Index[2] = { FName(*FString::Printf(TEXT("finger_tip_0_%s"), Side)), FName(*FString::Printf(TEXT("finger_end_0_%s"), Side)) };
+            const FName Joint(*FString::Printf(TEXT("thumb_tip_%s"), Side));
+            ThumbIK[I].Alpha = 0.f;
+            if (!Body || FistLayer.BlendWeights[I] <= 0.f || Body->GetBoneIndex(ThumbIK[I].IKBone.BoneName) == INDEX_NONE || Body->GetBoneIndex(Hand) == INDEX_NONE
+                || Body->GetBoneIndex(Index[0]) == INDEX_NONE || Body->GetBoneIndex(Index[1]) == INDEX_NONE || Body->GetBoneIndex(Joint) == INDEX_NONE)
+                continue;
+            const FTransform H = Body->GetSocketTransform(Hand, RTS_Component);
+            const FVector Outside = (Body->GetSocketTransform(Index[0], RTS_Component).GetLocation() + Body->GetSocketTransform(Index[1], RTS_Component).GetLocation()) * .5f;
+            ThumbIK[I].EffectorLocation = H.InverseTransformPosition(Outside);
+            ThumbIK[I].JointTargetLocation = H.InverseTransformPosition(Body->GetSocketTransform(Joint, RTS_Component).GetLocation());
+            ThumbIK[I].Alpha = FistLayer.BlendWeights[I];
+        }
         const bool bFlinch = Moves && Moves->IsFlinching() && !bRiding && !bSailing && !bBiking;
         for (int32 I = 0; I < 4; ++I)
         {
