@@ -174,7 +174,7 @@ def pin_colours(coat, arm):
     coat.data.color_attributes.render_color_index = coat.data.color_attributes.active_color_index
     values = list(weight.values())
     return {'vertices': len(values), 'pinned': sum(w >= .999 for w in values), 'free': sum(w <= .001 for w in values),
-            'outer': sum(outer.values())}
+            'outer': sum(outer.values()), 'simulated': [i for i, w in weight.items() if w < .999 and outer[i]]}
 
 
 # The coat's collision (Unreal cloth collides with capsules): each (bone carrying it, from joint, to joint, the bones
@@ -186,15 +186,20 @@ COLLIDERS = [('pelvis', 'pelvis', 'spine', ('pelvis',)), ('spine', 'spine', 'che
              ('shin_L', 'shin_L', 'foot_L', ('shin_L',)), ('shin_R', 'shin_R', 'foot_R', ('shin_R',))]
 
 PERCENTILE = 90
+CLEARANCE = .015   # metres between each capsule and the nearest simulated coat vertex at rest
 
 
-def colliders(arm, body):
+def colliders(arm, body, coat, simulated):
     """Capsules for the cloth, in centimetres: a segment between two joints and the radius that holds PERCENTILE% of
-    the skin of the bones around it. At 80% his baggy trousers came through the coat at the thighs; at 99% plus a
-    centimetre the thigh and pelvis capsules took in the trousers' outliers and held the skirt out like a hoop (the
-    operator, #7296: the coat should fall straight, as the references do)."""
+    the skin of the bones around it, but never closer than CLEARANCE to a simulated coat vertex at rest (`simulated`,
+    indices into `coat`). At 80% his baggy trousers came through the coat at the thighs; at 99% plus a centimetre the
+    thigh and pelvis capsules took in the trousers' outliers and held the skirt out like a hoop (the operator, #7296:
+    the coat should fall straight, as the references do). At 90% the spine capsule still started 1.8 cm outside the
+    back of the coat at the waist and the thighs pushed its front out a centimetre: a capsule the coat starts inside
+    pushes it out."""
     import numpy as np
     head = {b.name: np.array(arm.matrix_world @ b.head_local) for b in arm.data.bones}
+    cloth = np.array([list(coat.matrix_world @ coat.data.vertices[i].co) for i in sorted(simulated)])
     names = {g.index: g.name for g in body.vertex_groups}
     points = {}
     for v in body.data.vertices:
@@ -208,7 +213,13 @@ def colliders(arm, body):
         assert len(p) > 20, (bone, 'too little skin to size its capsule', len(p))
         t = np.clip((p - a) @ (b - a) / ((b - a) @ (b - a)), 0, 1)
         distance = np.linalg.norm(p - (a + t[:, None] * (b - a)), axis=1)
-        out.append({'bone': bone, 'from': start, 'to': end, 'radius_cm': round(float(np.percentile(distance, PERCENTILE)) * 100, 2)})
+        t = np.clip((cloth - a) @ (b - a) / ((b - a) @ (b - a)), 0, 1)
+        clearance = float(np.linalg.norm(cloth - (a + t[:, None] * (b - a)), axis=1).min())
+        skin = float(np.percentile(distance, PERCENTILE))
+        radius = math.floor(min(skin, clearance - CLEARANCE) * 1e4) / 100
+        assert radius > 5, (bone, 'the coat leaves no room for its capsule', clearance)
+        out.append({'bone': bone, 'from': start, 'to': end, 'radius_cm': radius,
+                    'skin_cm': round(skin * 100, 2), 'coat_cm': round(clearance * 100, 2)})
     return out
 
 
@@ -245,7 +256,7 @@ def main(args):
                                         'two_sided': obj.name.endswith('Coat'), 'roughness': 1., 'metallic': 0., 'specular': 0.}
     coat = next(o for o in meshes if o.name.endswith('Coat'))
     pins = pin_colours(coat, arm)
-    capsules = colliders(arm, next(o for o in meshes if o.name.endswith('Body')))
+    capsules = colliders(arm, next(o for o in meshes if o.name.endswith('Body')), coat, pins.pop('simulated'))
     bpy.ops.object.select_all(action='DESELECT')
     for obj in [arm, *meshes]:
         obj.hide_viewport = False
