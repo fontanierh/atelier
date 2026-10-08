@@ -178,8 +178,10 @@ def pin_colours(coat, arm):
 
 
 # The coat's collision (Unreal cloth collides with capsules): each (bone carrying it, from joint, to joint, the bones
-# whose skin sets its radius), measured on the body alone, so the coat hangs on his legs and hips, not on itself.
-COLLIDERS = [('pelvis', 'thigh_L', 'thigh_R', ('pelvis',)), ('spine', 'spine', 'chest', ('spine', 'spine_mid')),
+# whose skin sets its radius), measured on the body alone, so the coat hangs on his legs and hips, not on itself. The
+# pelvis capsule stands up his middle (pelvis to spine): run across from hip to hip, its rounded ends stood a radius out
+# past each hip joint and the skirt hung off them, a bump at the waist (megapark #7325, the operator #7329).
+COLLIDERS = [('pelvis', 'pelvis', 'spine', ('pelvis',)), ('spine', 'spine', 'chest', ('spine', 'spine_mid')),
              ('thigh_L', 'thigh_L', 'shin_L', ('thigh_L',)), ('thigh_R', 'thigh_R', 'shin_R', ('thigh_R',)),
              ('shin_L', 'shin_L', 'foot_L', ('shin_L',)), ('shin_R', 'shin_R', 'foot_R', ('shin_R',))]
 
