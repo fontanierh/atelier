@@ -75,6 +75,38 @@ void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const
         Data->SetStringField(TEXT("digest"), Digest);
     }
 }
+TSharedPtr<FJsonObject> LargestCorrection(const FJapanMovementStats& Stats)
+{
+    if (Stats.LargestCorrectionCm <= 0.f) return {};
+    const auto& Sample = Stats.LargestCorrection;
+    auto Data = MakeShared<FJsonObject>();
+    Data->SetNumberField(TEXT("epoch"), Sample.Epoch);
+    Data->SetNumberField(TEXT("stamp"), Sample.Timestamp);
+    Data->SetNumberField(TEXT("dt"), Sample.DeltaTime);
+    Data->SetNumberField(TEXT("world_time"), Sample.WorldTime);
+    Data->SetNumberField(TEXT("through_edge"), Sample.ThroughEdge);
+    Data->SetNumberField(TEXT("predicted_edge"), Sample.PredictedEdge);
+    Data->SetNumberField(TEXT("predicted_mode"), Sample.PredictedMode);
+    Data->SetNumberField(TEXT("authoritative_mode"), Sample.AuthoritativeMode);
+    Data->SetNumberField(TEXT("checkpoint_bytes"), Sample.CheckpointBytes);
+    auto Vector = [&](const TCHAR* Name, const FVector& Value)
+    {
+        Data->SetArrayField(Name, {MakeShared<FJsonValueNumber>(Value.X),
+            MakeShared<FJsonValueNumber>(Value.Y), MakeShared<FJsonValueNumber>(Value.Z)});
+    };
+    // Numeric XYZ retains the saved sample's precision; ToString rounds small
+    // errors at large world coordinates and cannot establish their direction.
+    Vector(TEXT("predicted_position"), Sample.PredictedLocation);
+    Vector(TEXT("authoritative_position"), Sample.AuthoritativeLocation);
+    Vector(TEXT("predicted_velocity"), Sample.PredictedVelocity);
+    Vector(TEXT("authoritative_velocity"), Sample.AuthoritativeVelocity);
+    Vector(TEXT("delta_cm"), Sample.AuthoritativeLocation - Sample.PredictedLocation);
+    Data->SetNumberField(TEXT("position_error_cm"), FVector::Dist(Sample.PredictedLocation, Sample.AuthoritativeLocation));
+    Data->SetNumberField(TEXT("velocity_error_cm_s"), FVector::Dist(Sample.PredictedVelocity, Sample.AuthoritativeVelocity));
+    Data->SetStringField(TEXT("predicted_action"), Sample.PredictedAction.ToString());
+    Data->SetStringField(TEXT("authoritative_action"), Sample.AuthoritativeAction.ToString());
+    return Data;
+}
 TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
 {
     auto Data = MakeShared<FJsonObject>();
@@ -100,4 +132,5 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
 void JapanReactionDeliveryQA::State(const UJapanCharacterMovement*, const TCHAR*, bool, bool, float) {}
 void JapanReactionDeliveryQA::Response(const UJapanCharacterMovement*, const TCHAR*, const FJapanMoveResponse&) {}
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::Snapshot(const UJapanCharacterMovement*) { return {}; }
+TSharedPtr<FJsonObject> JapanReactionDeliveryQA::LargestCorrection(const FJapanMovementStats&) { return {}; }
 #endif

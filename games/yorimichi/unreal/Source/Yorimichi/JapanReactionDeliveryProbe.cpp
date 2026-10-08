@@ -192,6 +192,7 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
         const auto& Stats=Movement->GetNetworkStats();
         Data->SetNumberField(TEXT("position_corrections"),Stats.PositionCorrections);
         Data->SetNumberField(TEXT("largest_correction_cm"),Stats.LargestCorrectionCm);
+        if (auto Detail = LargestCorrection(Stats)) Data->SetObjectField(TEXT("largest_correction"), Detail);
         Data->SetNumberField(TEXT("rejected_checkpoints"),Stats.Rejected);
         Data->SetNumberField(TEXT("response_window_end"),Control->GetNumberField(TEXT("response_window_end")));
         Data->SetNumberField(TEXT("observed_until"),FPlatformTime::Seconds());

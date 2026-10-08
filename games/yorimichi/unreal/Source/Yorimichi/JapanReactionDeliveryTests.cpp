@@ -3,6 +3,10 @@
 #include "Misc/AutomationTest.h"
 #include "Serialization/BitWriter.h"
 #include "Serialization/BitReader.h"
+#include "JapanReactionDeliveryQA.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanReactionSerializationTest,"Yorimichi.Network.ReactionDelivery",
     EAutomationTestFlags_ApplicationContextMask|EAutomationTestFlags::EngineFilter)
@@ -64,6 +68,28 @@ bool FJapanReactionSerializationTest::RunTest(const FString&)
     TestFalse(TEXT("Correction without checkpoint clears the prior flag"),Reused.bHasCheckpoint);
     TestTrue(TEXT("Correction without checkpoint clears prior payload"),Reused.Checkpoint.Bytes.IsEmpty());
     TestTrue(TEXT("Correction without checkpoint clears prior action"),Reused.Checkpoint.Action.IsNone());
+    FJapanMovementStats Stats;
+    TestFalse(TEXT("No correction does not manufacture a sample"),JapanReactionDeliveryQA::LargestCorrection(Stats).IsValid());
+    Stats.LargestCorrectionCm=5.f;
+    auto& Sample=Stats.LargestCorrection;
+    Sample.Epoch=3; Sample.Timestamp=1.25f; Sample.DeltaTime=1.f/30.f;
+    Sample.PredictedLocation=FVector(-25000.123456,-12345.987654,1000.125);
+    Sample.AuthoritativeLocation=Sample.PredictedLocation+FVector(3,4,0);
+    Sample.PredictedVelocity=FVector(99.9,0,0); Sample.AuthoritativeVelocity=FVector(-46.95,0,0);
+    Sample.PredictedAction=TEXT("Run"); Sample.AuthoritativeAction=TEXT("HitF");
+    const auto Detail=JapanReactionDeliveryQA::LargestCorrection(Stats);
+    FString Text;
+    TestTrue(TEXT("Largest correction JSON serializes"),FJsonSerializer::Serialize(Detail.ToSharedRef(),TJsonWriterFactory<>::Create(&Text)));
+    TSharedPtr<FJsonObject> Decoded;
+    if (!TestTrue(TEXT("Largest correction JSON decodes"),FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Decoded))) return false;
+    TestEqual(TEXT("Sample epoch retained"),Decoded->GetNumberField(TEXT("epoch")),3.);
+    TestEqual(TEXT("Sample stamp retained"),Decoded->GetNumberField(TEXT("stamp")),1.25);
+    TestEqual(TEXT("Predicted XYZ remains numeric without ToString rounding"),Decoded->GetArrayField(TEXT("predicted_position"))[0]->AsNumber(),Sample.PredictedLocation.X);
+    TestEqual(TEXT("Measured correction magnitude retained"),Decoded->GetNumberField(TEXT("position_error_cm")),5.);
+    TestEqual(TEXT("Measured correction direction retained"),Decoded->GetArrayField(TEXT("delta_cm"))[1]->AsNumber(),4.);
+    TestTrue(TEXT("Measured velocity difference retained"),FMath::IsNearlyEqual(Decoded->GetNumberField(TEXT("velocity_error_cm_s")),146.85,1.e-6));
+    TestEqual(TEXT("Predicted action retained"),Decoded->GetStringField(TEXT("predicted_action")),FString(TEXT("Run")));
+    TestEqual(TEXT("Authoritative action retained"),Decoded->GetStringField(TEXT("authoritative_action")),FString(TEXT("HitF")));
     return true;
 }
 #endif
