@@ -39,6 +39,11 @@ int32 DeliveryCase()
     }();
     return Value;
 }
+bool MovingDelivery()
+{
+    static const bool Value=FParse::Param(FCommandLine::Get(),TEXT("networkreactionmoving"));
+    return Value;
+}
 bool SaveDelivery(const FString& File,const TSharedPtr<FJsonObject>& Data)
 {
     FString Text;
@@ -55,7 +60,7 @@ TSharedPtr<FJsonObject> ReadDelivery(const FString& File)
 struct FDeliveryStimulusState
 {
     TWeakObjectPtr<AWandererCharacter> Host, Guest;
-    double Began=0., TriggerAt=0., CompleteAt=0.;
+    double Began=0., TriggerAt=0., MovingSeconds=0.;
     bool Active=false, Triggered=false, SecondTriggered=false, Complete=false, Saved=false;
     int32 Captures=0, Holds=0, Serialized=0;
     uint32 InitialEpoch=0;
@@ -79,10 +84,14 @@ struct FDeliveryStimulusState
         if(!Rider||!Movement||!Rider->GetMoves()){Failure=TEXT("Reaction stimulus lost its pawn/move set");return;}
         Triggered=true;if(!TriggerAt)TriggerAt=FPlatformTime::Seconds();
         const FVector From=Rider->GetActorLocation()+(Guard?FVector::ZeroVector:Rider->GetActorForwardVector()*100.);
+        const double BeforeSpeed=Movement->Velocity.Size2D();
+        const int32 BeforeY=Movement->ReadMoveInput().Y;
         const int32 Outcome=Guard?FStimulus::Guard(*Rider->GetMoves(),OwnPawn?Guest.Get():Host.Get(),From):
             Rider->GetMoves()->ResolveUnprotectedStrike(OwnPawn?Guest.Get():Host.Get(),1.f,From);
         Event(OwnPawn?TEXT("host_own_hit"):Guard?TEXT("zero_impulse_guard"):TEXT("hit"),Movement);
         auto Row=Events.Last()->AsObject();Row->SetNumberField(TEXT("outcome"),Outcome);
+        Row->SetNumberField(TEXT("pre_hit_speed"),BeforeSpeed);Row->SetNumberField(TEXT("pre_hit_input_y"),BeforeY);
+        Row->SetNumberField(TEXT("moving_seconds_before_hit"),MovingSeconds);
         Row->SetStringField(TEXT("action"),Rider->GetAnimationAction().ToString());
         Row->SetNumberField(TEXT("speed"),Movement->Velocity.Size());
         Row->SetBoolField(TEXT("guard"),Guard);
@@ -100,6 +109,7 @@ struct FDeliveryStimulusState
     {
         auto Data=Snapshot(Movement);Data->SetNumberField(TEXT("case"),DeliveryCase());
         Data->SetNumberField(TEXT("initial_epoch"),InitialEpoch);
+        Data->SetBoolField(TEXT("moving"),MovingDelivery());
         Data->SetBoolField(TEXT("complete"),Complete);Data->SetStringField(TEXT("error"),Failure);
         Data->SetBoolField(TEXT("artificial_send_hold"),DeliveryCase()==2);
         Data->SetNumberField(TEXT("response_window_end"),TriggerAt+2.);
@@ -119,7 +129,10 @@ void AfterCapture(UJapanCharacterMovement* Movement,bool Pending,bool Captured,b
     const auto* Server=Movement->GetPredictionData_Server_Character();
     if(S.Triggered&&Pending&&Captured)++S.Captures;
     if(DeliveryCase()==3&&!S.Triggered&&Server&&Server->PendingAdjustment.bAckGoodMove&&GoodAckEligible)
-    {S.Event(TEXT("prepared_good_ack"),Movement);S.Hit();Movement->SendClientAdjustment();}
+    {
+        // The hit lands after this accepted move was captured, between moves.
+        S.Event(TEXT("prepared_good_ack"),Movement);S.Hit();Movement->SendClientAdjustment();
+    }
     if(DeliveryCase()==4&&S.Triggered&&!S.SecondTriggered&&Captured)
     {S.SecondTriggered=true;S.Event(TEXT("second_after_capture"),Movement);S.Hit(true);}
 }
@@ -148,6 +161,7 @@ void AfterSend(UJapanCharacterMovement* Movement,bool Serialized)
 bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
 {
     const int32 Case=DeliveryCase();if(Case<0||Case>7){Error=TEXT("Invalid reaction delivery case");return false;}
+    if(MovingDelivery()&&Case!=0&&Case!=5){Error=TEXT("Moving delivery only supports cases 0 and 5");return false;}
     if(DeliveryStimulus.Saved)return true;
     const auto* Session=World->GetGameState<AJapanGameState>();
     if(!Session||!Session->bWorldReady||Session->PlayerArray.Num()!=2)return false;
@@ -166,10 +180,12 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
     DeliveryStimulus.FrameTimes.Add(World->GetDeltaSeconds());
     if(!Server)
     {
-        Guest->Live_Drive(FVector2D::ZeroVector,0.f);
+        Guest->Live_Drive(MovingDelivery()?FVector2D(0,1):FVector2D::ZeroVector,0.f);
         auto Control=ReadDelivery(Folder/TEXT("reaction-control.json"));
         if(!Control||!Control->GetBoolField(TEXT("complete")))return false;
         auto Data=Snapshot(Movement);Data->SetNumberField(TEXT("case"),Case);
+        Data->SetBoolField(TEXT("moving"),MovingDelivery());
+        Data->SetNumberField(TEXT("drive_y"),Movement->ReadMoveInput().Y);
         Data->SetObjectField(TEXT("frame_statistics"),DeliveryStimulus.Frames());
         Data->SetBoolField(TEXT("complete"),true);
         Data->SetStringField(TEXT("error"),TEXT(""));
@@ -188,7 +204,14 @@ bool Tick(UWorld* World,bool Server,const FString& Folder,FString& Error)
     if(Now-S.Began>12.&&!S.Complete){Error=TEXT("Reaction delivery stimulus deadline expired");return false;}
     if(!S.Failure.IsEmpty()){Error=S.Failure;return false;}
     if(Now-S.Began<1.)return false;
-    S.Active=true;
+    if(MovingDelivery()&&!S.Triggered)
+    {
+        const bool Driving=Movement->ReadMoveInput().Y==127&&Movement->Velocity.Size2D()>40.;
+        S.MovingSeconds=Driving?S.MovingSeconds+World->GetDeltaSeconds():0.;
+        S.Active=Driving&&S.MovingSeconds>=.15;
+        if(!S.Active)return false;
+    }
+    else S.Active=true;
     if(!S.Triggered)
     {
         if(Case==1)S.Hit(true);

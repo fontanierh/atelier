@@ -94,10 +94,10 @@ def delivery_outcomes(host, guest):
                 lost=sum(row['outcome'] == 'lost' for row in outcomes), responses=outcomes)
 
 
-def _reaction_delivery_checks(host, guest, case):
+def _reaction_delivery_checks(host, guest, case, moving=False):
     """Require native ordering witnesses; reported packet loss never excuses drift."""
     checks = dict(reaction_receipts=False)
-    if type(case) is not int or not 0 <= case <= 7:
+    if type(case) is not int or not 0 <= case <= 7 or type(moving) is not bool or (moving and case not in (0, 5)):
         return checks, {}
     try:
         outcomes = delivery_outcomes(host, guest)
@@ -112,6 +112,15 @@ def _reaction_delivery_checks(host, guest, case):
     checks['reaction_receipts'] = all(r.get('case') == case and type(r.get('case')) is int and
         r.get('complete') is True and r.get('error') == '' and r.get('enabled') is True and
         r.get('packed_responses') is True for r in (host, guest))
+    checks['reaction_drive_mode'] = host.get('moving') is moving and guest.get('moving') is moving
+    if moving:
+        hits = [r for r in stimuli if r.get('event') == 'hit']
+        checks['reaction_moving_victim'] = len(hits) == 1 and all(
+            type(hits[0].get(k)) in (int, float) and math.isfinite(hits[0][k])
+            for k in ('pre_hit_speed', 'moving_seconds_before_hit')) and (
+            hits[0]['pre_hit_speed'] > 40 and hits[0]['moving_seconds_before_hit'] >= .15 and
+            type(hits[0].get('pre_hit_input_y')) is int and hits[0]['pre_hit_input_y'] == 127 and
+            type(guest.get('drive_y')) is int and guest['drive_y'] == 127)
     checks['reaction_closed_window'] = all(type(r.get('response_window_end')) in (int, float) and
         math.isfinite(r['response_window_end']) and type(r.get('observed_until')) in (int, float) and
         math.isfinite(r['observed_until']) and r['observed_until'] >= r['response_window_end'] + 1
@@ -217,8 +226,8 @@ def _reaction_delivery_checks(host, guest, case):
     return checks, outcomes | dict(deliveries=deliveries)
 
 
-def reaction_delivery_checks(host, guest, case):
+def reaction_delivery_checks(host, guest, case, moving=False):
     try:
-        return _reaction_delivery_checks(host, guest, case)
+        return _reaction_delivery_checks(host, guest, case, moving)
     except (KeyError, TypeError, ValueError):
         return dict(reaction_receipts=False), {}

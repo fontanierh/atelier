@@ -103,7 +103,7 @@ def test_short_drain_cannot_claim_packet_loss():
 
 def native_ordering(case):
     frames = dict(count=100, median=1/30, p95=.034)
-    common = dict(case=case, complete=True, error='', enabled=True, packed_responses=True,
+    common = dict(moving=False, case=case, complete=True, error='', enabled=True, packed_responses=True,
                   minimum_adjustment_interval=.05, frame_statistics=frames,
                   response_window_end=12., observed_until=13.1, player_id='guest', overflow=0)
     host = common | dict(rows=[], stimuli=[], artificial_send_hold=case == 2, held_sends=3 if case == 2 else 0)
@@ -230,7 +230,7 @@ def test_reaction_cli_selects_only_its_listen_route(monkeypatch, tmp_path, extra
     monkeypatch.setattr(sys, 'argv', ['review', '--worker', '--output', str(tmp_path), '--port', '43210',
                                     '--reaction-delivery-case', '0', *extra])
     assert module.main() == 0
-    assert len(seen) == 1 and seen[0][2] is False and seen[0][3] is True and seen[0][-1] == 0
+    assert len(seen) == 1 and seen[0][2] is False and seen[0][3] is True and seen[0][-2] == 0 and seen[0][-1] is False
 
 
 @pytest.mark.parametrize('extra', [['--gameplay'], ['--vehicle-case','bike'], ['--enemy'], ['--combat'],
@@ -242,4 +242,31 @@ def test_reaction_cli_rejects_other_stimuli_before_admission(monkeypatch, extra)
     monkeypatch.setattr(sys, 'argv', ['review', '--reaction-delivery-case', '0', *extra])
     with pytest.raises(SystemExit) as raised:
         module.main()
+    assert raised.value.code == 2
+
+
+@pytest.mark.parametrize('case', [0, 5])
+def test_moving_reaction_needs_measured_drive_before_the_real_hit(case):
+    host, guest = native_ordering(case)
+    for receipt in (host, guest): receipt['moving'] = True
+    guest['drive_y'] = 127
+    hit = next(r for r in host['stimuli'] if r['event'] == 'hit')
+    hit.update(pre_hit_speed=160., pre_hit_input_y=127, moving_seconds_before_hit=.2)
+    assert all(_module.reaction_delivery_checks(host, guest, case, True)[0].values())
+    for field, value in [('pre_hit_speed', 0.), ('pre_hit_speed', float('nan')),
+                         ('pre_hit_input_y', 0), ('moving_seconds_before_hit', .01)]:
+        modified = copy.deepcopy(host)
+        next(r for r in modified['stimuli'] if r['event'] == 'hit')[field] = value
+        assert not all(_module.reaction_delivery_checks(modified, guest, case, True)[0].values())
+    guest['drive_y'] = 0
+    assert not all(_module.reaction_delivery_checks(host, guest, case, True)[0].values())
+
+
+@pytest.mark.parametrize('case', [None, 1, 2, 3, 4, 6, 7])
+def test_moving_reaction_cli_rejects_unsupported_case_before_admission(monkeypatch, case):
+    import sys
+    module = session_module()
+    monkeypatch.setattr(sys, 'argv', ['review', '--reaction-delivery-moving'] +
+                       ([] if case is None else ['--reaction-delivery-case', str(case)]))
+    with pytest.raises(SystemExit) as raised: module.main()
     assert raised.value.code == 2
