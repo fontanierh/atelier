@@ -78,6 +78,12 @@ struct FVehicleProbe
     double Began=-1,PhaseBegan=0,LastWrite=-1,NextAction=0,ResolvedAt=-1,StableSince=-1;
     FVector StartPosition=FVector::ZeroVector,CrashStart=FVector::ZeroVector;
     float CrashYaw=0;bool CrashSiteReady=false;TSharedPtr<FJsonObject> CrashSite=MakeShared<FJsonObject>();
+    bool CircuitReady=false;
+    FVector CircuitStart[2];
+    TSharedPtr<FJsonObject> CircuitSite[2];
+    double CircuitMaxRadius[2]={0.,0.},CircuitMaxSpeed[2]={0.,0.};
+    double CircuitMinPeerDistance=UE_BIG_NUMBER;int32 CircuitObservations=0;
+    bool CircuitCase()const{return Case==TEXT("bike")||Case==TEXT("park");}
     float StartYaw=0;
     int32 MeasuredPhase=-1;
     TArray<double> FrameTimes;
@@ -154,6 +160,20 @@ struct FVehicleProbe
     {
         auto Data=MakeShared<FJsonObject>();
         const auto* Rules=World->GetGameState<AJapanGameState>();
+        if(CircuitReady)
+        {
+            auto Sites=MakeShared<FJsonObject>();
+            Sites->SetNumberField(TEXT("observations"),CircuitObservations);
+            Sites->SetNumberField(TEXT("min_peer_distance_cm"),CircuitMinPeerDistance);
+            for(int32 I=0;I<2;++I)
+            {
+                auto Site=MakeShared<FJsonObject>(*CircuitSite[I]);
+                Site->SetNumberField(TEXT("max_radius_cm"),CircuitMaxRadius[I]);
+                Site->SetNumberField(TEXT("max_speed_cm_s"),CircuitMaxSpeed[I]);
+                Sites->SetObjectField(I==0?TEXT("host"):TEXT("guest"),Site);
+            }
+            Data->SetObjectField(TEXT("circuit_site"),Sites);
+        }
         Data->SetStringField(TEXT("case"),Case);Data->SetStringField(TEXT("player"),Identity(P));
         Data->SetNumberField(TEXT("phase"),Phase);Data->SetNumberField(TEXT("epoch"),P->GetActivityEpoch());
         Data->SetNumberField(TEXT("activity"),uint8(P->GetNetworkActivity()));
@@ -280,6 +300,8 @@ struct FVehicleProbe
             // Also exercise the host gate through the ordinary owner RPC.
             FJapanVehicleQAAccess::SendRequest(P,Sail());
         }
+        if(Phase==1&&Enter&&CircuitCase())
+            P->TravelTo(CircuitStart[P==Guest.Get()?1:0],0.f,TEXT("network bike infield"));
         if(Phase==1&&Enter&&Sail())
             P->TravelTo(AJapanWorld::ToUE(P==Host.Get()?-226.f:-216.f,-169.f,1.6f),80.f,TEXT("network vehicle shore"));
         if(Phase==1&&Enter&&Case==TEXT("crash")&&P==Guest.Get())P->TravelTo(CrashStart,CrashYaw,TEXT("network authored wall approach"));
@@ -290,7 +312,9 @@ struct FVehicleProbe
         if(Phase==5)
         {
             if(Sail()){P->Live_Drive(FVector2D(0,FPlatformTime::Seconds()-PhaseBegan<2.?-1.:1.),1);return;}
-            P->Live_Drive(FVector2D(0,1),1);
+            // Keep the action sequence inside the certified infield disk.
+            // Steering still runs through the ordinary predicted move input.
+            P->Live_Drive(FVector2D(.6f,1),1);
             if(!Sail()&&P->GetBike()->GetClip()==TEXT("BikeRide")&&FPlatformTime::Seconds()>=NextAction)
             {
                 static const FName Buttons[]={TEXT("attack"),TEXT("wave"),TEXT("bike_sprint"),TEXT("dodge")};
@@ -317,7 +341,7 @@ struct FVehicleProbe
         }
         if(Phase==9)
         {
-            P->Live_Drive(FVector2D(0,1),1);
+            P->Live_Drive(FVector2D(CircuitCase()?.6f:0.f,1),1);
             if(!Sail()&&P==Guest.Get()&&!LocalSent&&P->GetBike()->IsRiding()&&FPlatformTime::Seconds()-PhaseBegan>=1.1)LocalSent=P->Live_Press(TEXT("jump"));
         }
         if(Phase>=10){P->Live_Drive(FVector2D::ZeroVector,1);P->Live_Press(TEXT("attack_release"));P->Live_Press(TEXT("jump_release"));}
@@ -383,6 +407,18 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
         if(Server?It->IsLocallyControlled():!It->IsLocallyControlled())Host=*It;else Guest=*It;
     }
     if(Count!=2||!Host.IsValid()||!Guest.IsValid())return false;
+    if(CircuitCase()&&!CircuitReady)
+    {
+        CircuitReady=JapanVehicleQASite::Circuit(Host.Get(),false,CircuitStart[0],CircuitSite[0])&&
+            JapanVehicleQASite::Circuit(Guest.Get(),true,CircuitStart[1],CircuitSite[1]);
+        if(!CircuitReady)
+        {
+            auto Failed=MakeShared<FJsonObject>();
+            for(int32 I=0;I<2;++I)if(CircuitSite[I])Failed->SetObjectField(I==0?TEXT("host"):TEXT("guest"),CircuitSite[I]);
+            Write(Folder/(Server?TEXT("circuit-host-failed.json"):TEXT("circuit-guest-failed.json")),Failed);
+            Fail(TEXT("Bike fixture has no clear supported infield circuit"));return false;
+        }
+    }
     if(Began<0.)Began=PhaseBegan=Now;
     if(Server&&Case==TEXT("crash")&&!CrashSiteReady)
     {
@@ -405,6 +441,20 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     const float Health=Guest->GetSword()->GetHealth();
     if(LastHealth>=0.f&&!FMath::IsNearlyEqual(Health,LastHealth,.01f))++HealthChanges;
     LastHealth=Health;LastGuestEpoch=Guest->GetActivityEpoch();LastGuestActivity=uint8(Guest->GetNetworkActivity());LastParked=Guest->GetBike()->IsParked();
+    if(CircuitReady&&Phase>=2)
+    {
+        ++CircuitObservations;
+        CircuitMinPeerDistance=FMath::Min(CircuitMinPeerDistance,FVector::Dist2D(Host->GetActorLocation(),Guest->GetActorLocation()));
+        if(CircuitMinPeerDistance<400.)Fail(TEXT("Bike fixture riders approached within four metres"));
+        for(int32 I=0;I<2;++I)
+        {
+            const auto* Player=I==0?Host.Get():Guest.Get();
+            const FVector Centre(CircuitSite[I]->GetNumberField(TEXT("x")),CircuitSite[I]->GetNumberField(TEXT("y")),0);
+            CircuitMaxSpeed[I]=FMath::Max(CircuitMaxSpeed[I],double(FMath::Abs(Player->GetBike()->GetSpeed())));
+            CircuitMaxRadius[I]=FMath::Max(CircuitMaxRadius[I],FVector::Dist2D(Player->GetActorLocation(),Centre));
+            if(CircuitMaxRadius[I]>2200.)Fail(TEXT("Bike fixture left its certified infield circuit"));
+        }
+    }
     Observe();Drive(Server?Host.Get():Guest.Get());
     // Sample authored hop lift at the world tick cadence, not the 10 Hz receipt
     // cadence. The peer must have observed this phase before the host stimulus.
@@ -474,7 +524,9 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     }
     else if(Phase==1&&Elapsed>1.&&Peer->GetBoolField(TEXT("rule_enabled"))&&
         Host->GetCharacterMovement()->IsMovingOnGround()&&Guest->GetCharacterMovement()->IsMovingOnGround()&&
-        !Guest->IsNetworkActivityPending()&&(Case!=TEXT("crash")||FVector::Dist2D(Guest->GetActorLocation(),CrashStart)<30.))Step(2);
+        !Guest->IsNetworkActivityPending()&&(!CircuitCase()||
+            (FVector::Dist2D(Host->GetActorLocation(),CircuitStart[0])<30.&&FVector::Dist2D(Guest->GetActorLocation(),CircuitStart[1])<30.&&
+            FMath::Abs(FRotator::NormalizeAxis(Host->GetActorRotation().Yaw))<1.&&FMath::Abs(FRotator::NormalizeAxis(Guest->GetActorRotation().Yaw))<1.))&&(Case!=TEXT("crash")||FVector::Dist2D(Guest->GetActorLocation(),CrashStart)<30.))Step(2);
     else if(ClockCase())
     {
         if(Phase==2&&BothRiding)

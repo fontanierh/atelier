@@ -2,11 +2,59 @@
 #if !UE_BUILD_SHIPPING
 #include "WandererCharacter.h"
 #include "JapanGameplayCollision.h"
+#include "JapanWorld.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "Dom/JsonObject.h"
+
+bool JapanVehicleQASite::Circuit(AWandererCharacter* Rider,bool Guest,FVector& Start,TSharedPtr<FJsonObject>& Evidence)
+{
+    // Two separate disks in the existing Hippodrome infield. The probe never
+    // creates a floor or changes an actor's collision to make the route pass.
+    UWorld* World=Rider->GetWorld();
+    const FVector Centre=AJapanWorld::ToUE(Guest?585.:545.,535.,0.);
+    auto Q=JapanGameplayCollision::Query(World,SCENE_QUERY_STAT(VehicleQACircuit),false);Q.AddIgnoredActor(Rider);
+    Evidence=MakeShared<FJsonObject>();
+    Evidence->SetNumberField(TEXT("x"),Centre.X);Evidence->SetNumberField(TEXT("y"),Centre.Y);
+    Evidence->SetNumberField(TEXT("radius_cm"),2400);Evidence->SetNumberField(TEXT("limit_cm"),2200);
+    Evidence->SetNumberField(TEXT("grid_cm"),200);Evidence->SetBoolField(TEXT("clear"),false);
+    int32 Samples=0,Blocked=0;double Low=UE_BIG_NUMBER,High=-UE_BIG_NUMBER,MinNormal=1.;
+    FString Asset;
+    for(int32 X=-2400;X<=2400;X+=200)for(int32 Y=-2400;Y<=2400;Y+=200)
+    {
+        if(X*X+Y*Y>2400*2400)continue;
+        const FVector At=Centre+FVector(X,Y,0);FHitResult Floor;
+        auto FailedCell=[&](const TCHAR* Reason)
+        {
+            Evidence->SetNumberField(TEXT("failed_x"),At.X);Evidence->SetNumberField(TEXT("failed_y"),At.Y);
+            Evidence->SetStringField(TEXT("reason"),Reason);
+        };
+        if(!World->LineTraceSingleByChannel(Floor,At+FVector(0,0,20000),At-FVector(0,0,2000),JapanGameplayCollision::Channel,Q)||
+            !JapanGameplayCollision::IsFixed(Floor.GetComponent()))
+        {FailedCell(TEXT("missing fixed ground"));return false;}
+        const auto* Mesh=Cast<UStaticMeshComponent>(Floor.GetComponent());
+        const FString HitAsset=Mesh&&Mesh->GetStaticMesh()?Mesh->GetStaticMesh()->GetPathName():FString();
+        if(HitAsset.IsEmpty()||(!Asset.IsEmpty()&&Asset!=HitAsset))
+        {FailedCell(TEXT("ground asset changed"));Evidence->SetStringField(TEXT("failed_mesh"),HitAsset);return false;}
+        Asset=HitAsset;++Samples;Low=FMath::Min(Low,Floor.ImpactPoint.Z);High=FMath::Max(High,Floor.ImpactPoint.Z);
+        MinNormal=FMath::Min(MinNormal,double(Floor.ImpactNormal.Z));
+        if(High-Low>3.||Floor.ImpactNormal.Z<.98)FailedCell(TEXT("ground is not level"));
+        // Adjacent 2m cells meet; each tests the whole body-height volume, not
+        // only a ray that could miss an obstacle between floor samples.
+        if(World->OverlapBlockingTestByChannel(Floor.ImpactPoint+FVector(0,0,100),FQuat::Identity,
+            JapanGameplayCollision::Channel,FCollisionShape::MakeBox(FVector(100,100,95)),Q))
+        {++Blocked;FailedCell(TEXT("body cell obstructed"));}
+    }
+    Evidence->SetNumberField(TEXT("ground_samples"),Samples);Evidence->SetNumberField(TEXT("blocked_cells"),Blocked);
+    Evidence->SetNumberField(TEXT("height_range_cm"),High-Low);Evidence->SetNumberField(TEXT("min_normal_z"),MinNormal);
+    Evidence->SetStringField(TEXT("mesh"),Asset);Evidence->SetNumberField(TEXT("z"),High);
+    const bool Clear=Samples==441&&Blocked==0&&High-Low<=3.&&MinNormal>=.98;
+    Evidence->SetBoolField(TEXT("clear"),Clear);
+    Start=FVector(Centre.X-1200,Centre.Y,High+3.);
+    return Clear;
+}
 
 bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Yaw,TSharedPtr<FJsonObject>& Evidence)
 {
@@ -61,5 +109,6 @@ bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Y
     return false;
 }
 #else
+bool JapanVehicleQASite::Circuit(AWandererCharacter*,bool,FVector&,TSharedPtr<FJsonObject>&){return false;}
 bool JapanVehicleQASite::Crash(AWandererCharacter*,FVector&,float&,TSharedPtr<FJsonObject>&){return false;}
 #endif

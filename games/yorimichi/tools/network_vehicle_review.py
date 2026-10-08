@@ -23,6 +23,36 @@ def frame_rate(row, fps):
             .9 / fps <= stats['median'] <= 1.15 / fps and stats['p95'] <= 1.5 / fps)
 
 
+def circuit_valid(sites):
+    if not isinstance(sites, dict):
+        return False
+    if (not integer(sites.get('observations')) or sites['observations'] < 30 or
+            not finite(sites.get('min_peer_distance_cm')) or sites['min_peer_distance_cm'] < 400):
+        return False
+    for role, x in (('host', 54500), ('guest', 58500)):
+        site = sites.get(role, {})
+        if not isinstance(site, dict):
+            return False
+        if not (site.get('clear') is True and isinstance(site.get('mesh'), str) and site['mesh'].startswith('/Game/Hippodrome/') and
+                all(finite(site.get(k)) for k in ('x', 'y', 'z', 'radius_cm', 'limit_cm', 'grid_cm',
+                    'height_range_cm', 'min_normal_z', 'max_radius_cm', 'max_speed_cm_s')) and
+                site['x'] == x and site['y'] == -53500 and site['radius_cm'] == 2400 and
+                site['limit_cm'] == 2200 and site['grid_cm'] == 200 and
+                integer(site.get('ground_samples')) and site['ground_samples'] == 441 and
+                integer(site.get('blocked_cells')) and site['blocked_cells'] == 0 and
+                0 <= site['height_range_cm'] <= 3 and .98 <= site['min_normal_z'] <= 1 and
+                0 <= site['max_radius_cm'] <= 2200 and 200 < site['max_speed_cm_s'] <= 1200.1):
+            return False
+    return True
+
+
+def circuit_agrees(host, guest):
+    if not circuit_valid(host) or not circuit_valid(guest):
+        return False
+    return all(host[role]['mesh'] == guest[role]['mesh'] and abs(host[role]['z'] - guest[role]['z']) <= 1
+               for role in ('host', 'guest'))
+
+
 def compare_vehicle(folder, case):
     if case == 'clock-bike':
         from network_vehicle_clock_review import compare_clock_bike
@@ -55,6 +85,8 @@ def compare_vehicle(folder, case):
         'vehicle_normal_park': case == 'crash' or result.get('normal_park_and_remount') is True,
         'vehicle_recovery_deadline': pending or (finite(result.get('since_resolve')) and 2 <= result['since_resolve'] <= 12),
     }
+    if case in ('bike', 'park'):
+        checks['vehicle_supported_circuit'] = circuit_agrees(result.get('circuit_site'), guest.get('circuit_site'))
     for phase in order:
         row = phases.get(phase, {})
         peer = row.get('owner_observation', {})

@@ -41,6 +41,13 @@ def fixture(folder, case):
                  health=92, health_changes=1, complete=True, bike_equipped=False, sail_equipped=False,
                  parked=case in ('park', 'crash'), walking=True, swimming=False,
                  riding=False, movement_mode=1, telemetry=telemetry(False), peer_telemetry=dict(applied_presentations=20))
+    if case in ('bike', 'park'):
+        sites = dict(observations=200, min_peer_distance_cm=3800)
+        for role, x in (('host', 54500), ('guest', 58500)):
+            sites[role] = dict(clear=True, mesh='/Game/Hippodrome/SM_HD_Platform.SM_HD_Platform', x=x, y=-53500,
+                z=5000, radius_cm=2400, limit_cm=2200, grid_cm=200, ground_samples=441, blocked_cells=0,
+                height_range_cm=0, min_normal_z=1, max_radius_cm=1800, max_speed_cm_s=1029)
+        guest['circuit_site'] = sites
     result = guest | dict(passed=True, authority=True, local=False, contacts=1, callbacks=1, outcome=0,
                          health_before=100, start_epoch=start, end_epoch=end, normal_park_and_remount=True,
                          hop_at_contact=True, hop_lift_cm=25, hit_clip='BikeHop', telemetry=telemetry(True),
@@ -215,3 +222,28 @@ def test_crash_missing_identity_cannot_match_missing_hit_identity(tmp_path, key)
 def test_unimplemented_cases_fail_closed(vehicle):
     with pytest.raises(ValueError, match='Unsupported'):
         review.compare_vehicle(vehicle, 'unsupported')
+
+
+@pytest.mark.parametrize('edit', [
+    lambda r: r.pop('circuit_site'),
+    lambda r: r['circuit_site'].update(observations=0),
+    lambda r: r['circuit_site'].update(observations=True),
+    lambda r: r['circuit_site'].update(min_peer_distance_cm=399),
+    lambda r: r['circuit_site']['host'].update(clear=False),
+    lambda r: r['circuit_site']['guest'].update(blocked_cells=1),
+    lambda r: r['circuit_site']['host'].update(blocked_cells=False),
+    lambda r: r['circuit_site']['guest'].update(ground_samples=440),
+    lambda r: r['circuit_site']['host'].update(max_radius_cm=2200.01),
+    lambda r: r['circuit_site']['guest'].update(min_normal_z=.979),
+    lambda r: r['circuit_site']['guest'].update(height_range_cm=3.01),
+    lambda r: r['circuit_site']['host'].update(z=5001.01),
+    lambda r: r['circuit_site']['guest'].update(x=54500),
+    lambda r: r['circuit_site']['host'].update(mesh='/Game/Hippodrome/Other'),
+    lambda r: r['circuit_site']['guest'].update(mesh='/Game/InjectedFloor'),
+    lambda r: r['circuit_site']['host'].update(max_speed_cm_s=0),
+    lambda r: r['circuit_site']['guest'].update(max_radius_cm=float('nan')),
+])
+@pytest.mark.parametrize('file', ['vehicle-result', 'vehicle-observed'])
+def test_circuit_rejects_missing_geometry_or_live_evidence(vehicle, file, edit):
+    mutate(vehicle, file, edit)
+    assert not review.compare_vehicle(vehicle, 'bike')['vehicle_supported_circuit']
