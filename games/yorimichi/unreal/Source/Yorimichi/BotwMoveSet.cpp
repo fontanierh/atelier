@@ -142,6 +142,20 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                     BarGrip[I] = (GripEnds[I][0] + GripEnds[I][1]) * .5f;
                 }
                 bOwnGlide = Body->GetBoneIndex(TEXT("Weapon_R")) != INDEX_NONE && Body->GetBoneIndex(TEXT("Weapon_L")) != INDEX_NONE;
+                // A fitted body's place for it on the neutral glide, from the import (its first frame, and the elbows
+                // there): held from the first frame of a glide that steers at once, then fitted again to the live hands
+                // on the first neutral glide.
+                const TArray<TSharedPtr<FJsonValue>>* Elbows = nullptr;
+                if (!bOwnGlide && O->HasField(TEXT("on_body")) && O->TryGetArrayField(TEXT("elbows"), Elbows) && Elbows->Num() == 2)
+                {
+                    ReadTransform(O, TEXT("on_body"), GliderOnBody);
+                    for (int32 I = 0; I < 2; ++I)
+                    {
+                        const TArray<TSharedPtr<FJsonValue>>& E = (*Elbows)[I]->AsArray();
+                        if (E.Num() == 3) ElbowLocal[I] = GliderOnBody.InverseTransformPosition(FVector(E[0]->AsNumber(), E[1]->AsNumber(), E[2]->AsNumber()));
+                    }
+                    bGliderOnBody = bGliderRefit = true;
+                }
                 Glider->SetVisibility(false, true);
                 continue;
             }
