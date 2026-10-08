@@ -230,6 +230,7 @@ void AJapanGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AJapanGameState, StartupError);
     DOREPLIFETIME(AJapanGameState, Capacity);
     DOREPLIFETIME(AJapanGameState, bTrustedSkating);
+    DOREPLIFETIME(AJapanGameState, bPredictedVehicles);
     DOREPLIFETIME(AJapanGameState, bWorldReady);
 }
 

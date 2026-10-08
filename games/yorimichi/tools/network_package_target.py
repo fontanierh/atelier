@@ -161,15 +161,15 @@ def verify_cook_source(repo, receipt):
 
 
 def plain_launch_checks(folder, text, code, source_code):
-    diagnostics = re.findall(r'NETWORK diagnostics session=(\d+) gameplay=(\d+) combat=(\d+) enemy=(\d+) vehicles=(\d+) code=([a-z0-9]+) target=(\S+) input=([a-z0-9]+)', text)
+    diagnostics = re.findall(r'NETWORK diagnostics session=(\d+) gameplay=(\d+) combat=(\d+) enemy=(\d+) vehicles=(\d+) reaction=(\d+) code=([a-z0-9]+) target=(\S+) input=([a-z0-9]+)', text)
     expected_input = hashlib.sha256((source_code + '\nMac/Game/Development\n').encode()).hexdigest()
     return dict(plain_exit=code == 0, plain_world_ready='Character ready:' in text,
                 plain_normal_deadline='FEngineLoop::Tick.Benchmarking' in text,
                 plain_no_network_diagnostics=bool(diagnostics) and all(
-                    row[:5] == ('0',)*5 and row[5:] == (source_code, 'Mac/Game/Development', expected_input)
+                    row[:6] == ('0',)*6 and row[6:] == (source_code, 'Mac/Game/Development', expected_input)
                     for row in diagnostics),
                 plain_no_qa_receipts=not any(any(Path(folder).rglob(pattern)) for pattern in
-                    ('*-connected.json', '*-world.json', '*-gameplay.json', '*-complete.json', '*-failed.json', 'combat-*.json', 'enemy-*.json', 'vehicle-*.json')))
+                    ('*-connected.json', '*-world.json', '*-gameplay.json', '*-complete.json', '*-failed.json', 'combat-*.json', 'enemy-*.json', 'vehicle-*.json', 'reaction-*.json')))
 
 
 def cook_binding_checks(cook, binary, source, expected_identity):

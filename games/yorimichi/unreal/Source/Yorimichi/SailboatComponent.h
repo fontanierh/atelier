@@ -1,7 +1,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "JapanSailState.h"
+#include "JapanSkateClock.h"
 #include "SailboatComponent.generated.h"
+struct FCollisionShape;
 class UMaterialInstanceDynamic; class AWandererCharacter; class AJapanWorld; class UStaticMeshComponent; class USceneComponent; class UAnimSequence;
 /** Shore-launched dinghy with deliberately forgiving sailing, hull clearance and safe landing. */
 UCLASS()
@@ -12,6 +15,12 @@ public:
  USailboatComponent();
  void Initialize(AWandererCharacter*,AJapanWorld*);
  bool Toggle();
+ bool IsAvailable() const {return bAssetsReady;}
+ void SimulateNetwork(float Dt,FVector2D Stick,bool Menu);
+ FJapanSailState CaptureNetworkState() const;
+ bool ApplyNetworkState(const FJapanSailState& Snapshot,bool RestoreFacing=true);
+ void ReceiveNetworkPresentation(uint32 Epoch,double Stamp,const FJapanSailState& Snapshot);
+ bool ApplyNetworkActivity(const FJapanSailState& Snapshot);
  void StowImmediately();
  void EmergencyStop();
  void SetInput(FVector2D Intent,bool bMenuOpen);
@@ -20,6 +29,8 @@ public:
  bool IsOnWater() const { return bEquipped; }
  FVector GetRideVelocity() const { return RideVelocity; }
  float GetSpeed() const { return Speed; }
+ /** Depth below the sea, using the same fixed-world query as the hull. Negative means no ground. */
+ float GetWaterDepth() const;
  uint32 GetSerial() const { return Serial; }
  UAnimSequence* GetSequence() const;
  FString GetStatus() const { return Hint; }
@@ -52,6 +63,12 @@ private:
  void QueryParams(FCollisionQueryParams&) const;
  bool GroundAt(FVector,FHitResult&) const;
  bool ClearWater(FVector Center,float Yaw) const;
+ bool PawnClear(FVector At,FQuat Rotation,const FCollisionShape& Shape) const;
  bool FindLanding(FVector& Point) const;
+ struct FNetworkPose {double At;FJapanSailState State;};
+ TArray<FNetworkPose> NetworkPoses;FJapanSkatePlayout NetworkPlayout;
+ uint32 PresentationEpoch=0;double LastPresentationStamp=-1.;
+ void SampleNetworkPresentation();
+ void AdvanceSimulation(float Dt);
  void UpdateVisuals(float Dt);
 };

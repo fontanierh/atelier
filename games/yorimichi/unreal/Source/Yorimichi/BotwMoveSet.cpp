@@ -273,6 +273,12 @@ void UBotwMoveSet::Play(FName Name, float Blend, float StartAt, float Speed)
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
     HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false;
     Strength = StrengthOf(Name);
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()))
+        {
+            const bool FromAttack = IsAttack(Name) || Prefixed(Name, {TEXT("Charge")});
+            ReactionActionEdge = FromAttack ? ReactionAttackEdge : TOptional<uint16>();
+        }
     LastPlayed = Name;
 }
 
@@ -936,6 +942,8 @@ void UBotwMoveSet::Reset()
     SetArmed(false);
     bLocked = bGuardHeld = bAttackHeld = bJumpHeld = bCharging = bDown = bDriving = bJumped = false;
     Target = nullptr; bLockPoint = false; HopVelocity = DriveVelocity = FVector::ZeroVector;
+    // An activity reset cannot retain an old cut's lunge or actor reference.
+    LungeTarget = nullptr; LungeTime = 0.f; bLungePoint = false;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
     if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }

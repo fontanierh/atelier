@@ -115,6 +115,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | World | [WORLD_MAP](docs/WORLD_MAP.md), [TREEHOUSE_PLAN](docs/TREEHOUSE_PLAN.md), [MEGAPARK](docs/MEGAPARK.md), [CAMERA](docs/CAMERA.md), [DESKTOP_PERFORMANCE](docs/DESKTOP_PERFORMANCE.md) |
 | Play | [CONTROLLER_CONTROLS](docs/CONTROLLER_CONTROLS.md), [SKATE](docs/SKATE.md), [FOOTSTEPS](docs/FOOTSTEPS.md), [LIVE_WORKSHOP](docs/LIVE_WORKSHOP.md) |
 | Combat | [SWORD_COMBAT](docs/SWORD_COMBAT.md), [FOX_HUNTER_COMBAT](docs/FOX_HUNTER_COMBAT.md), [COMBAT_FEEDBACK](docs/COMBAT_FEEDBACK.md) |
+| Multiplayer | [Implementation, verified scope and test handoff](docs/MULTIPLAYER.md) |
 | Characters and animation | [BODY_SWAP_GUIDE](docs/BODY_SWAP_GUIDE.md), [MIXAMO_WORKFLOW](docs/MIXAMO_WORKFLOW.md), [H3_ANIMATION_REFERENCE_WORKFLOW](../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md), [ANIMATION_PRINCIPLES](../../docs/ANIMATION_PRINCIPLES.md), [FOX_HUNTER_ANIMATION](docs/FOX_HUNTER_ANIMATION.md), [UNIMATE_EXPERIMENT](docs/UNIMATE_EXPERIMENT.md), [KIMODO_EXPERIMENT](docs/KIMODO_EXPERIMENT.md) |
 | Story | [LORE](docs/LORE.md) |
 

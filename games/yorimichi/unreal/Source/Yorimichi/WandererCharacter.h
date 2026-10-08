@@ -7,6 +7,9 @@
 #include "SkateRider.h"
 #include "JapanAvatarState.h"
 #include "JapanActivityState.h"
+#include "JapanParkedBikeState.h"
+#include "JapanBikePresentation.h"
+#include "JapanSailPresentation.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -91,6 +94,7 @@ public:
     bool IsReady() const { return bReady; }
     /** Current action or vehicle prevents ordinary movement/input. Read-only for native probes. */
     bool MovementLocked() const;
+    bool bVehicleBrakeIntent = false;
     bool IsMouseReleased() const { return bMouseReleased; }
     /** The phone stream's touch page is driving the game (it draws its own controls and status). */
     bool IsPhoneTouchActive() const;
@@ -124,12 +128,17 @@ public:
     bool TravelTo(FVector Location, float Yaw, const TCHAR* Reason = TEXT("map"), float Above = 2500.f);
     uint32 GetActivityEpoch() const { return NetworkActivity.Epoch; }
     EJapanActivity GetNetworkActivity() const { return NetworkActivity.Kind; }
-    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0);
+    void BeginNetworkActivity(EJapanActivity Kind, bool bFalling = false, uint8 ClockCorrection = 0,
+        TFunction<void()> FootReaction = {});
+    /** Host-only supported park/stow followed by one foot epoch; clock resets also discard vehicle momentum. */
+    bool ExitNetworkVehicle(uint8 ClockCorrection = 0, TFunction<void()> FootReaction = {});
     UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch);
     UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
     UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
         FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
     UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
+    UFUNCTION(Client, Reliable) void ClientReceiveMovementReaction(const TArray<uint8>& Encoded);
+    UFUNCTION(Server, Reliable) void ServerRecoverMovementReactions(uint32 Epoch);
     bool RequestNetworkSkate();
     void TickNetworkActivity();
     bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
@@ -175,6 +184,21 @@ protected:
 
 private:
     void InitializeLocalPlayer();
+    bool RequestNetworkBike();
+    bool RequestNetworkSail();
+    void TickNetworkSail();
+    UFUNCTION(Server,Reliable) void ServerRequestSail(uint32 Epoch);
+    UFUNCTION() void OnRep_NetworkSailPresentation();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkSailPresentation) FJapanSailPresentation NetworkSailPresentation;
+    double LastSailPublication=-1.;
+    void TickNetworkBike();
+    UFUNCTION(Server, Reliable) void ServerRequestBike(uint32 Epoch);
+    UFUNCTION() void OnRep_NetworkParkedBike();
+    UFUNCTION() void OnRep_NetworkBikePresentation();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkBikePresentation) FJapanBikePresentation NetworkBikePresentation;
+    double LastBikePublication=-1.;
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkParkedBike) FJapanParkedBikeState NetworkParkedBike;
+
     UFUNCTION() void OnRep_NetworkLoadout();
     UPROPERTY(Replicated) FString NetworkRiderName;
     UPROPERTY(Replicated) bool bNetworkMovementReady = false;
@@ -193,12 +217,14 @@ private:
     UFUNCTION() void OnRep_NetworkHealth();
     bool bNetworkAvatarReceived = false;
     float LastAvatarPublication = -1.f;
+    friend class FJapanReactionTransportTest;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class UBotwMoveSet;
     friend class UJapanCharacterMovement;
     friend struct FBotwNetworkState;
+    friend struct FJapanVehicleQAAccess;
     float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;

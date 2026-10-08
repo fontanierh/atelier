@@ -111,16 +111,19 @@ def test_matching_unprepared_values_are_not_build_identity(tmp_path):
     assert not any(target.runtime_identity_checks(tmp_path, receipt['identity'], 'unversioned').values())
 
 
-@pytest.mark.parametrize('mutation', ['ready', 'deadline', 'flags', 'code', 'receipt'])
+@pytest.mark.parametrize('mutation', ['ready', 'deadline', 'flags', 'reaction', 'missing_reaction', 'code', 'receipt', 'reaction_receipt'])
 def test_plain_launch_requires_positive_inactive_evidence(tmp_path, mutation):
     import hashlib
     code='a'*40; digest=hashlib.sha256((code+'\nMac/Game/Development\n').encode()).hexdigest()
-    text=f'Character ready: Cairo\nNETWORK diagnostics session=0 gameplay=0 combat=0 enemy=0 vehicles=0 code={code} target=Mac/Game/Development input={digest}\nFEngineLoop::Tick.Benchmarking'
+    text=f'Character ready: Cairo\nNETWORK diagnostics session=0 gameplay=0 combat=0 enemy=0 vehicles=0 reaction=0 code={code} target=Mac/Game/Development input={digest}\nFEngineLoop::Tick.Benchmarking'
     assert all(target.plain_launch_checks(tmp_path, text, 0, code).values())
     if mutation=='ready': text=text.replace('Character ready:', 'not initialized')
     elif mutation=='deadline': text=text.replace('FEngineLoop::Tick.Benchmarking','crashed')
     elif mutation=='flags': text=text.replace('enemy=0','enemy=1')
+    elif mutation=='reaction': text=text.replace('reaction=0','reaction=1')
+    elif mutation=='missing_reaction': text=text.replace(' reaction=0','')
     elif mutation=='code': text=text.replace('code='+code,'code=unprepared')
+    elif mutation=='reaction_receipt': (tmp_path/'reaction-client.json').write_text('{}')
     else: (tmp_path/'vehicle-result.json').write_text('{}')
     assert not all(target.plain_launch_checks(tmp_path, text, 0, code).values())
 

@@ -1,4 +1,5 @@
 #include "BotwMoveSet.h"
+#include "BotwMovementReaction.h"
 #include "JapanEnemyQA.h"
 #include "JapanCombat.h"
 #include "JapanNetwork.h"
@@ -356,6 +357,9 @@ void UBotwMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const 
 {
     JapanEnemyQA::BladeCandidate(Character, Victim);
     if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
+            Movement && !Movement->AllowScheduledAttack(ReactionActionEdge)) return;
     // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
     // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
     if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
@@ -393,7 +397,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
     {
         if (JapanNetwork::IsOnline(Character->GetWorld()))
         {
-            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
             Character->ForceNetUpdate();
         }
     };
@@ -431,18 +435,20 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         ++DodgeCount;
         if ((DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::PerfectDodge : JustAvoid > 0.f) && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
         {
-            FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
-            Target = Source;
-            FlurryPoint = Source ? Source->GetActorLocation() : Here; bFlurryPoint = Source != nullptr;
-            // A character the game drives rushes without slowing the world (the person it fights keeps their own time).
-            const float OriginalInvulnerability = FlurryTime;
-            if (!Character->IsPlayerControlled() || JapanNetwork::IsOnline(Character->GetWorld())) FlurryTime = FMath::Min(FlurryTime, 1.4f);
-            Invulnerable = JapanNetwork::IsOnline(Character->GetWorld()) ? FlurryTime : OriginalInvulnerability;
-            bHopInvulnerability = false;
+            FBotwMovementReaction Reaction;
+            Reaction.Flags = FBotwMovementReaction::PerfectDodge | FBotwMovementReaction::ClearHop;
+            Reaction.FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
+            const float OriginalInvulnerability = Reaction.FlurryTime;
+            if (!Character->IsPlayerControlled() || JapanNetwork::IsOnline(Character->GetWorld()))
+                Reaction.FlurryTime = FMath::Min(Reaction.FlurryTime, 1.4f);
+            Reaction.Invulnerable = JapanNetwork::IsOnline(Character->GetWorld()) ? Reaction.FlurryTime : OriginalInvulnerability;
+            Reaction.FlurryPoint = Source ? Source->GetActorLocation() : Here;
+            if (Source) Reaction.Flags |= FBotwMovementReaction::HasFlurryPoint;
+            Target = Source; // Authority focus remains immediate; the payload carries only the point.
             const bool NetworkDodge = JapanCombat::Publish(Character, EJapanCombatCue::Dodge, Here + FVector(0,0,HalfHeight()*.3f), Toward, 0.f, Character, Source);
             if (Character->IsPlayerControlled() && FX && !NetworkDodge)
             {
-                if (!JapanNetwork::IsOnline(Character->GetWorld())) FX->SlowMotion(FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
+                if (!JapanNetwork::IsOnline(Character->GetWorld())) FX->SlowMotion(Reaction.FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
                 // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
                 const FVector Chest = Here + FVector(0, 0, HalfHeight() * .3f);
                 FX->Flash(Chest, 110.f, FLinearColor(.6f, .82f, 1.f) * 3.f, .2f);
@@ -451,7 +457,7 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
                 FX->LightFlash(Chest, FLinearColor(.6f, .8f, 1.f), 9000.f, 500.f, .25f);
                 FX->Play(TEXT("charge_ready"), Chest, .8f, .02f);
             }
-            if (!bArmed) SetArmed(true);
+            SubmitMovementReaction(Reaction);
         }
         return 2;
     }
@@ -465,11 +471,13 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
         if (Damage >= GetParam(TEXT("GuardBreakDamage"), 25.f))
         {
             const FName Break = !HasShield() && Has(TEXT("SwordGuardBreak")) ? FName(TEXT("SwordGuardBreak")) : FName(TEXT("GuardBreak"));
-            if (Has(Break)) Play(Break, .04f);
-            GuardBroken = GetParam(TEXT("GuardBreakTime"), 1.f); ++GuardBreakCount;
-            bCharging = false; AttackBuffer = 0.f;
-            Character->GetCharacterMovement()->Velocity = -Toward * 380.f;
-            Flinch(-Toward, 18.f, .09f, Side);
+            FBotwMovementReaction Reaction;
+            Reaction.Flags = FBotwMovementReaction::BreakGuard | FBotwMovementReaction::ClearCharge | FBotwMovementReaction::SetVelocity;
+            Reaction.GuardBroken = GetParam(TEXT("GuardBreakTime"), 1.f); ++GuardBreakCount;
+            Reaction.Impulse = -Toward * 380.f;
+            FreezeReactionAction(Reaction, Break, .04f);
+            FreezeReactionFlinch(Reaction, -Toward, 18.f, .09f, Side);
+            SubmitMovementReaction(Reaction);
             if (!JapanCombat::Publish(Character, EJapanCombatCue::GuardBreak, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
             {
                 const FVector At = GuardPoint();
@@ -481,9 +489,11 @@ int32 UBotwMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& 
             return 3;
         }
         const FName Hit = !HasShield() && Has(TEXT("SwordGuardHit")) ? FName(TEXT("SwordGuardHit")) : FName(TEXT("GuardHit"));
-        if (Has(Hit)) Play(Hit, .03f);
-        Character->GetCharacterMovement()->Velocity = -Toward * 220.f;
-        Flinch(-Toward, 7.f, .06f, Side);
+        FBotwMovementReaction Reaction;
+        Reaction.Flags = FBotwMovementReaction::SetVelocity; Reaction.Impulse = -Toward * 220.f;
+        FreezeReactionAction(Reaction, Hit, .03f);
+        FreezeReactionFlinch(Reaction, -Toward, 7.f, .06f, Side);
+        SubmitMovementReaction(Reaction);
         if (!JapanCombat::Publish(Character, EJapanCombatCue::Guard, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
         {
             const FVector At = GuardPoint();
@@ -510,14 +520,15 @@ void UBotwMoveSet::Deflected(AActor* By)
 {
     TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
     if (!Character || bDown || Mode != EBotwMoveMode::Ground) return;
-    bCharging = false; AttackBuffer = 0.f; LungeTime = 0.f;
-    // Thrown back off the guard: the front stagger, a step back, the next blow from scratch.
+    FBotwMovementReaction Reaction;
+    Reaction.Flags = FBotwMovementReaction::ClearCharge | FBotwMovementReaction::ClearLunge |
+        FBotwMovementReaction::ResetCombo | FBotwMovementReaction::SetVelocity;
+    // Thrown back off the guard: freeze the resolved direction, never the actor.
     const FVector Away = By ? FVector((Character->GetActorLocation() - By->GetActorLocation()).GetSafeNormal2D()) : -Character->GetActorForwardVector();
-    if (Has(TEXT("HitMF"))) Play(TEXT("HitMF"), .04f);
-    else if (Has(TEXT("HitF"))) Play(TEXT("HitF"), .04f);
-    Character->GetCharacterMovement()->Velocity = Away * 320.f;
-    Flinch(Away, 16.f, .08f, 0.f);
-    Combo = 0;
+    FreezeReactionAction(Reaction, Has(TEXT("HitMF")) ? FName(TEXT("HitMF")) : FName(TEXT("HitF")), .04f);
+    Reaction.Impulse = Away * 320.f;
+    FreezeReactionFlinch(Reaction, Away, 16.f, .08f, 0.f);
+    SubmitMovementReaction(Reaction);
 }
 
 bool UBotwMoveSet::IsAttacking() const { return IsAttack(CurrentName()) || bCharging; }
@@ -550,21 +561,24 @@ float UBotwMoveSet::NextBlowIn() const
 void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
 {
     TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
-    bHopInvulnerability = false;
-    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority())
+    { bHopInvulnerability = false; return; }
     ON_SCOPE_EXIT
     {
         if (JapanNetwork::IsOnline(Character->GetWorld()))
         {
-            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->ForceClientAdjustment();
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
             Character->ForceNetUpdate();
         }
     };
     UWandererSwordComponent* Sword = Character->GetSword();
-    if (!Sword) return;
+    if (!Sword) { bHopInvulnerability = false; return; }
     ++Sword->HitsTakenCount;
     Sword->Health = FMath::Max(0.f, Sword->Health - Damage);
-    Invulnerable = FMath::Max(Invulnerable, .7f);
+    FBotwMovementReaction Reaction;
+    Reaction.Flags = FBotwMovementReaction::ClearHop | FBotwMovementReaction::Immunity;
+    Reaction.Invulnerable = FBotwMovementReaction::HitImmunitySeconds;
+    ON_SCOPE_EXIT { SubmitMovementReaction(Reaction); };
     const bool bKnock = bHeavy || Sword->Health <= 0.f;
     if (!Character->IsNpc())
     {
@@ -574,9 +588,14 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
             if (auto* FX = AYorimichiCombatFX::Get(Character)) FX->PlayerHurt(At, From, Damage, Character, Source, bKnock);
     }
     if (!bReact) return;
-    bCharging = false; AttackBuffer = 0.f;
-    if (Mode == EBotwMoveMode::Glide) CloseGlider(false);
-    else if (Mode == EBotwMoveMode::Climb) LeaveClimb(true);
+    Reaction.Flags |= FBotwMovementReaction::ClearCharge;
+    if (Mode == EBotwMoveMode::Glide) Reaction.Flags |= FBotwMovementReaction::LeaveGlide;
+    else if (Mode == EBotwMoveMode::Climb)
+    {
+        Reaction.Flags |= FBotwMovementReaction::LeaveClimb;
+        Reaction.ClimbRelease = WallNormal.GetSafeNormal2D() * 80.f;
+        Reaction.NoClimb = GetParam(TEXT("PlayerFall.NoClimbTime"), 8.f) / 30.f;
+    }
     if (Mode == EBotwMoveMode::Swim) return;
     UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
     const FVector Local = Character->GetActorRotation().UnrotateVector(From - Character->GetActorLocation());
@@ -589,21 +608,25 @@ void UBotwMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActo
     SinceHit = 0.f;
     if (bKnock && Has(TEXT("KnockF")) && Has(TEXT("KnockB")))
     {
-        bDown = true; DownTime = 0.f; HitStreak = 0;
+        Reaction.Flags |= FBotwMovementReaction::Down | FBotwMovementReaction::Launch; HitStreak = 0;
         const FName Knock(*(FString(TEXT("Knock")) + Dir));
-        Play(Has(Knock) ? Knock : FName(bFront ? TEXT("KnockF") : TEXT("KnockB")), .05f);
-        Flinch(Away, 12.f, .06f, Local.Y);
-        Character->LaunchCharacter(Away * 380.f + FVector(0, 0, 280.f), true, true);
+        FreezeReactionAction(Reaction, Has(Knock) ? Knock : FName(bFront ? TEXT("KnockF") : TEXT("KnockB")), .05f);
+        FreezeReactionFlinch(Reaction, Away, 12.f, .06f, Local.Y);
+        Reaction.Impulse = Away * 380.f + FVector(0, 0, 280.f);
         return;
     }
     // A strong blow, or the third hit in quick succession, staggers: BOTW's medium reaction, a bigger recoil, pushed
     // further. Anything lighter flinches.
     const bool bStagger = (Damage >= GetParam(TEXT("StaggerDamage"), 15.f) || HitStreak >= 3) && Has(TEXT("HitMF"));
     const FName Clip(*(FString(bStagger ? TEXT("HitM") : TEXT("Hit")) + Dir));
-    if (Has(Clip)) Play(Clip, .05f);
+    FreezeReactionAction(Reaction, Clip, .05f);
     if (bStagger) { ++StaggerCount; HitStreak = 0; }
-    Flinch(Away, bStagger ? 24.f : 15.f, bStagger ? .09f : .07f, Local.Y);
-    if (Movement->IsMovingOnGround()) Movement->Velocity = Away * (bStagger ? 380.f : 160.f);   // a flinch leaves him in reach of the next cut
+    FreezeReactionFlinch(Reaction, Away, bStagger ? 24.f : 15.f, bStagger ? .09f : .07f, Local.Y);
+    if (Movement->IsMovingOnGround())
+    {
+        Reaction.Flags |= FBotwMovementReaction::SetVelocity;
+        Reaction.Impulse = Away * (bStagger ? 380.f : 160.f); // Still in reach of the next cut.
+    }
 }
 
 void UBotwMoveSet::Flinch(const FVector& Away, float Degrees, float Peak, float Side)
@@ -660,6 +683,9 @@ void UBotwMoveSet::AdvanceDown(float Dt)
         if (Over() || (Now->Idle >= 0.f && SourceTime() >= Now->Idle))
         {
             bDown = false; Invulnerable = 1.f;
+            // Authority records this simulated get-up at the next post-step
+            // defence sample; later ACK-applied timers cannot extend it.
+            if (Character->HasAuthority() && JapanNetwork::IsOnline(Character->GetWorld())) bDefenceGetUpPending = true;
             if (UWandererSwordComponent* Sword = Character->GetSword(); Sword && Sword->Health <= 0.f && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority())) Sword->Health = UWandererSwordComponent::MaxHealth;
             Stop(.25f);
         }
@@ -744,7 +770,7 @@ void UBotwMoveSet::BladeCloth(bool bInHand)
     if (bInHand) Body->AddClothCollisionSource(Body, BladeCollision);
 }
 
-void UBotwMoveSet::SetArmed(bool bNow)
+void UBotwMoveSet::SetArmed(bool bNow, bool bFeedback)
 {
     if (bArmed == bNow || !Character) return;
     bArmed = bNow;
@@ -753,6 +779,11 @@ void UBotwMoveSet::SetArmed(bool bNow)
         const bool bHand = bNow && !Pair.Value.Hand.IsNone();
         if (bHand != Pair.Value.bInHand) { Pair.Value.bInHand = bHand; Attach(Pair.Key); }
     }
+    if (bFeedback) ArmedFeedback(bNow);
+}
+
+void UBotwMoveSet::ArmedFeedback(bool bNow)
+{
     if (!JapanCombat::Publish(Character, EJapanCombatCue::Draw, Character->GetActorLocation()+FVector(0,0,30), FVector::ZeroVector, bNow ? 1.f : 0.f, Character))
     if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
         FX->Play(bNow ? TEXT("sword_draw") : TEXT("sword_sheathe"), Character->GetActorLocation() + FVector(0, 0, 30), .8f);

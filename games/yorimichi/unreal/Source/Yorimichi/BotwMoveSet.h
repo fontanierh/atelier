@@ -3,12 +3,15 @@
 #include "UObject/Object.h"
 #include "JapanDefenceTimeline.h"
 #include "JapanDefenceClock.h"
+#include "JapanReactionJournal.h"
 #include "BotwMoveSet.generated.h"
 
 class AWandererCharacter;
+namespace JapanReactionDeliveryQA { struct FStimulus; }
 struct FJapanMoveCheckpoint;
 struct FBotwNetworkState;
 struct FJapanAvatarState;
+struct FBotwMovementReaction;
 class FJsonObject;
 class UStaticMeshComponent;
 class USkeletalMeshComponent;
@@ -66,6 +69,9 @@ public:
     /** Per frame, in place of the character's own action bookkeeping. */
     void Advance(float Dt);
     FJapanMoveCheckpoint CaptureNetworkState() const;
+    void ClearNetworkReactionTargets();
+    /** Applies a frozen movement delta, including on replay; never health or cues. */
+    void ApplyMovementReaction(const FBotwMovementReaction& Reaction);
     bool ApplyNetworkState(const FJapanMoveCheckpoint& Checkpoint);
     FJapanAvatarState CapturePresentation() const;
     void ApplyPresentation(const FJapanAvatarState& State, float Dt);
@@ -103,6 +109,7 @@ public:
     void ResetDefence();
     double DefenceWait() const;
     void RetainDefenceThrough(double Time) { DefenceTimeline.RetainThrough(Time); }
+    int32 ResolveUnprotectedStrike(AActor* Source, float Damage, const FVector& From);
     int32 ResolveNetworkStrike(AActor* Source, float Damage, const FVector& From, double Contact);
     uint32 DefenceRejectedTimes = 0, DefensiveRejectedTimes = 0;
     uint32 DefenceMissingSamples() const { return DefenceTimeline.MissingSamples; }
@@ -186,6 +193,8 @@ public:
     bool IsFullyCharged() const { return bCharging && bFullCharge; }
     bool IsHopping() const;
     bool IsBusy() const { return Busy(); }
+    /** Shared water support for swimming and online sailing admission. */
+    bool WaterAt(const FVector& Where, float& Surface) const;
     /** Real seconds until the playing blow's next active window opens: 0 inside one, -1 when no blow is coming. */
     float NextBlowIn() const;
     /** In a combo cut that can be followed: real seconds until the next cut may come (its input point), 0 from then on;
@@ -195,13 +204,24 @@ public:
     FString Describe() const;
 
 private:
+    friend class FJapanReactionTransportTest;
+    friend class FJapanReactionPayloadTest;
+    void SubmitMovementReaction(const FBotwMovementReaction& Reaction);
+    void FreezeReactionAction(FBotwMovementReaction& Reaction, FName Name, float Blend) const;
+    void FreezeReactionFlinch(FBotwMovementReaction& Reaction, const FVector& Away, float Degrees, float Peak, float Side) const;
     friend struct FBotwNetworkState;
+    friend struct JapanReactionDeliveryQA::FStimulus;
     FJapanDefenceTimeline DefenceTimeline;
     FJapanDefenceClock DefenceClock;
     uint32 DefenceActionSerial = 0;
     double DefenceActionStart = 0., DefenceInputTime = -1., DefenceLastPress = -1.;
     bool bExternalDefenceChange = false, bHopInvulnerability = false, bDefenceMapped = false;
+    float ResolvedRecoverySeconds = 0.f, ResolvedGuardBrokenSeconds = 0.f;
+    TOptional<uint16> ReactionActionEdge, ReactionAttackEdge, ReactionGuardEdge;
+    bool bDefenceGetUpPending = false;
+    double DefenceGetUpUntil = -1.;
     TOptional<EJapanDefence> DefenceOverride;
+    bool GetUpProtectedAt(double SampleTime);
     void EndDefenceAction();
     struct FSlot
     {
@@ -410,7 +430,8 @@ private:
     void Face(float Range);
     void Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction);
     void TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact);
-    void SetArmed(bool bNow);
+    void SetArmed(bool bNow, bool bFeedback = true);
+    void ArmedFeedback(bool bNow);
     void Attach(FName Slot);
     FTransform CarryOf(const FSlot& S) const;
     /** A garment that simulates as cloth (Modori's coat) collides with the drawn blade: a capsule along it on the hand
@@ -426,7 +447,6 @@ private:
     bool Climbable(const FHitResult& Hit) const;
     bool FindWall(const FVector& Direction, FHitResult& Hit, float Up = 0.f, float Side = 0.f, float Reach = 0.f) const;
     void ClimbBasis(FVector& Forward, FVector& Right, FVector& Up) const;
-    bool WaterAt(const FVector& Where, float& Surface) const;
     AActor* FindTarget(float Range, float Cone) const;
     bool IsTargetable(AActor* Actor) const;
     bool IsUnawareTarget(AActor* Actor) const;

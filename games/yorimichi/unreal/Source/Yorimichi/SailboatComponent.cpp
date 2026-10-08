@@ -1,4 +1,8 @@
 #include "SailboatComponent.h"
+#include "JapanVehicleVisuals.h"
+#include "JapanNetwork.h"
+#include "BotwMoveSet.h"
+#include "JapanGameplayCollision.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "JapanWorld.h"
@@ -11,6 +15,7 @@
 #include "Animation/AnimSequence.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 // Before physics, like the movement component it follows: the mesh waits on it (Initialize), so a later group would carry
@@ -18,6 +23,7 @@
 USailboatComponent::USailboatComponent(){PrimaryComponentTick.bCanEverTick=true;PrimaryComponentTick.TickGroup=TG_PrePhysics;}
 void USailboatComponent::Initialize(AWandererCharacter* C,AJapanWorld* W)
 {
+ if(Rider){Landscape=W;return;}
  Rider=C;Landscape=W;
  OriginalMeshLocation=C->GetMesh()->GetRelativeLocation();OriginalMeshRotation=C->GetMesh()->GetRelativeRotation().Quaternion();
  AddTickPrerequisiteComponent(C->GetCharacterMovement());C->GetMesh()->AddTickPrerequisiteComponent(this);
@@ -41,8 +47,17 @@ void USailboatComponent::QueryParams(FCollisionQueryParams& P) const
 }
 bool USailboatComponent::GroundAt(FVector P,FHitResult& Hit) const
 {
- FCollisionQueryParams Q(SCENE_QUERY_STAT(SailboatGround),true);QueryParams(Q);
- return GetWorld()->LineTraceSingleByChannel(Hit,FVector(P.X,P.Y,4000),FVector(P.X,P.Y,-10000),ECC_Visibility,Q);
+ const bool Online=JapanNetwork::IsOnline(GetWorld());
+ FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(SailboatGround),true):FCollisionQueryParams(SCENE_QUERY_STAT(SailboatGround),true);QueryParams(Q);
+ return GetWorld()->LineTraceSingleByChannel(Hit,FVector(P.X,P.Y,4000),FVector(P.X,P.Y,-10000),Online?JapanGameplayCollision::Channel:ECC_Visibility,Q);
+}
+bool USailboatComponent::PawnClear(FVector At,FQuat Rotation,const FCollisionShape& Shape) const
+{
+ if(!JapanNetwork::IsOnline(GetWorld()))return true;
+ FCollisionQueryParams Q(SCENE_QUERY_STAT(SailboatPeople),false,Rider);
+ FCollisionObjectQueryParams People;People.AddObjectTypesToQuery(ECC_Pawn);
+ TArray<FOverlapResult> Hits;GetWorld()->OverlapMultiByObjectType(Hits,At,Rotation,People,Shape,Q);
+ return Hits.IsEmpty();
 }
 bool USailboatComponent::ClearWater(FVector Center,float Yaw) const
 {
@@ -50,13 +65,22 @@ bool USailboatComponent::ClearWater(FVector Center,float Yaw) const
  if(FMath::Abs(Center.X)>220000 || Center.Y<4000 || Center.Y>150000)return false;
  FRotator R(0,Yaw,0);
  for(FVector Offset:{FVector(170,0,0),FVector(-180,0,0),FVector(0,70,0),FVector(0,-70,0),FVector(0,0,0)})
- {FHitResult H;if(GroundAt(Center+R.RotateVector(Offset),H)&&H.ImpactPoint.Z>-42.f)return false;}
- FCollisionQueryParams Q(SCENE_QUERY_STAT(SailboatHull),false);QueryParams(Q);
- return !GetWorld()->OverlapBlockingTestByChannel(Center+FVector(0,0,52),R.Quaternion(),ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,78,67)),Q);
+ {
+  const FVector At=Center+R.RotateVector(Offset);
+  if(JapanNetwork::IsOnline(GetWorld()))
+  {
+   float Surface=0.f;
+   if(!Rider->GetMoves()||!Rider->GetMoves()->WaterAt(At,Surface)||!FMath::IsNearlyZero(Surface,1.f))return false;
+  }
+  FHitResult H;if(GroundAt(At,H)&&H.ImpactPoint.Z>-42.f)return false;
+ }
+ const bool Online=JapanNetwork::IsOnline(GetWorld());
+ FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(SailboatHull),false):FCollisionQueryParams(SCENE_QUERY_STAT(SailboatHull),false);QueryParams(Q);
+ return !GetWorld()->OverlapBlockingTestByChannel(Center+FVector(0,0,52),R.Quaternion(),Online?JapanGameplayCollision::Channel:ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,78,67)),Q);
 }
 bool USailboatComponent::FindLanding(FVector& Point) const
 {
- const FVector C=HullRoot->GetComponentLocation();const float Half=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+ const FVector C=JapanNetwork::IsOnline(GetWorld())?Rider->GetActorLocation()+Rider->GetActorForwardVector()*115-FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()):HullRoot->GetComponentLocation();const float Half=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
  for(float Distance:{180.f,260.f,360.f,480.f,600.f})for(int32 I=0;I<16;++I)
  {
   const FVector P=C+FRotator(0,Rider->GetActorRotation().Yaw+I*22.5f,0).Vector()*Distance;FHitResult H;
@@ -65,12 +89,13 @@ bool USailboatComponent::FindLanding(FVector& Point) const
   const FVector At=H.ImpactPoint+FVector(0,0,Half+3);
   FHitResult Barrier;
   if(GetWorld()->LineTraceSingleByChannel(Barrier,C+FVector(0,0,Half+60),At,ECC_Visibility,Q))continue;
-  if(!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,FCollisionShape::MakeCapsule(Rider->GetCapsuleComponent()->GetScaledCapsuleRadius(),Half),Q)){Point=At;return true;}
+  if(PawnClear(At,FQuat::Identity,FCollisionShape::MakeCapsule(Rider->GetCapsuleComponent()->GetScaledCapsuleRadius(),Half))&&!GetWorld()->OverlapBlockingTestByChannel(At,FQuat::Identity,ECC_Pawn,FCollisionShape::MakeCapsule(Rider->GetCapsuleComponent()->GetScaledCapsuleRadius(),Half),Q)){Point=At;return true;}
  }
  return false;
 }
 bool USailboatComponent::Toggle()
 {
+ if(JapanNetwork::IsOnline(GetWorld())&&(!Rider||!Rider->HasAuthority()))return false;
  if(!bAssetsReady||!Rider){Hint=TEXT("Sailboat assets are unavailable");return false;}
  if(bEquipped)
  {
@@ -83,7 +108,7 @@ bool USailboatComponent::Toggle()
  FVector Center;float Yaw=Rider->GetActorRotation().Yaw;bool Found=false;
  for(float Distance:{220.f,350.f,500.f,700.f,950.f})
  {for(float Angle:{0.f,30.f,-30.f,60.f,-60.f,90.f,-90.f,135.f,-135.f,180.f})
-  {const float A=Rider->GetActorRotation().Yaw+Angle;const FVector P=Start+FRotator(0,A,0).Vector()*Distance;if(ClearWater(FVector(P.X,P.Y,0),A)){Center=FVector(P.X,P.Y,0);Yaw=A;Found=true;break;}}
+  {const float A=Rider->GetActorRotation().Yaw+Angle;const FVector P=Start+FRotator(0,A,0).Vector()*Distance;if(ClearWater(FVector(P.X,P.Y,0),A)&&PawnClear(FVector(P.X,P.Y,52),FRotator(0,A,0).Quaternion(),FCollisionShape::MakeBox(FVector(190,78,67)))){Center=FVector(P.X,P.Y,0);Yaw=A;Found=true;break;}}
   if(Found)break;
  }
  if(!Found){Hint=TEXT("Find an open stretch of shoreline");return false;}
@@ -98,7 +123,7 @@ void USailboatComponent::StowImmediately()
 {
  if(!bEquipped)return;
  bEquipped=false;++Serial;EmergencyStop();HullRoot->SetVisibility(false,true);
- Rider->GetMesh()->SetRelativeLocationAndRotation(OriginalMeshLocation,OriginalMeshRotation);
+ JapanVehicleVisuals::SetRiderPose(Rider,OriginalMeshLocation,OriginalMeshRotation,false);
  Rider->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
  if(auto* Arm=Rider->FindComponentByClass<USpringArmComponent>()){Arm->SocketOffset=OriginalSocketOffset;Arm->TargetArmLength=OriginalArmLength;}
  Hint=TEXT("Launch near a shore or low dock");
@@ -108,7 +133,7 @@ void USailboatComponent::SetCameraDistance(float Distance)
  if(bEquipped)OriginalArmLength=Distance;
  if(auto* Arm=Rider->FindComponentByClass<USpringArmComponent>())Arm->TargetArmLength=bEquipped?FMath::Max(850.f,Distance):Distance;
 }
-void USailboatComponent::SetInput(FVector2D V,bool Menu){Input=V;bMenu=Menu;if(Menu&&bEquipped)EmergencyStop();}
+void USailboatComponent::SetInput(FVector2D V,bool Menu){Input=V;bMenu=Menu;if(Menu&&bEquipped&&!JapanNetwork::IsOnline(GetWorld()))EmergencyStop();}
 UAnimSequence* USailboatComponent::GetSequence() const{return Rider&&Rider->GetDefinition()?Rider->GetDefinition()->FindAction(TEXT("Idle")):nullptr;}
 FVector USailboatComponent::PosePoint(FVector Local) const{return HullRoot->GetComponentTransform().TransformPosition(Local);}
 FVector USailboatComponent::HandPoint(int32 Side) const{return Side?Rudder->GetComponentTransform().TransformPosition(FVector(100,22,4)):PosePoint(FVector(-84,-25,67));}
@@ -117,7 +142,13 @@ FVector USailboatComponent::TillerUp() const{return Rudder->GetUpVector();}
 void USailboatComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
  Super::TickComponent(Dt,Type,Tick);if(!bEquipped||!Rider)return;
- if(bMenu){EmergencyStop();UpdateVisuals(Dt);return;}
+ if(!JapanNetwork::IsOnline(GetWorld()))AdvanceSimulation(Dt);
+ else SampleNetworkPresentation();
+ UpdateVisuals(Dt);
+}
+void USailboatComponent::AdvanceSimulation(float Dt)
+{
+ if(bMenu){EmergencyStop();return;}
  if(Input.Y>.15f)SailTarget=1;else if(Input.Y<-.15f)SailTarget=0;
  SailAmount=FMath::FInterpConstantTo(SailAmount,SailTarget,Dt,1.4f);
  Speed=FMath::FInterpConstantTo(Speed,SailTarget*650,Dt,SailTarget>0?110:340);
@@ -126,8 +157,9 @@ void USailboatComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentT
  const float OldYaw=Rider->GetActorRotation().Yaw,Yaw=OldYaw+Turn;
  const FVector OldCenter=Rider->GetActorLocation()+Rider->GetActorForwardVector()*115-FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
  const FVector Forward=FRotator(0,Yaw,0).Vector(),Delta=Forward*Speed*Dt;
- FCollisionQueryParams Q(SCENE_QUERY_STAT(SailboatSweep),false);QueryParams(Q);FHitResult Hit;
- const bool Blocked=GetWorld()->SweepSingleByChannel(Hit,OldCenter+FVector(0,0,52),OldCenter+Delta+FVector(0,0,52),FRotator(0,Yaw,0).Quaternion(),ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,78,67)),Q);
+ const bool Online=JapanNetwork::IsOnline(GetWorld());
+ FCollisionQueryParams Q=Online?JapanGameplayCollision::Query(GetWorld(),SCENE_QUERY_STAT(SailboatSweep),false):FCollisionQueryParams(SCENE_QUERY_STAT(SailboatSweep),false);QueryParams(Q);FHitResult Hit;
+ const bool Blocked=GetWorld()->SweepSingleByChannel(Hit,OldCenter+FVector(0,0,52),OldCenter+Delta+FVector(0,0,52),FRotator(0,Yaw,0).Quaternion(),Online?JapanGameplayCollision::Channel:ECC_WorldStatic,FCollisionShape::MakeBox(FVector(190,78,67)),Q);
  if(Blocked||!ClearWater(OldCenter+Delta,Yaw)){Speed=0;SailTarget=0;RideVelocity=FVector::ZeroVector;Hint=TEXT("Shallows ahead - turn away or step ashore");}
  else
  {
@@ -135,13 +167,16 @@ void USailboatComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentT
   Rider->SetActorLocationAndRotation(OldCenter+Delta-Forward*115+FVector(0,0,Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
   RideVelocity=Forward*Speed;Hint=SailTarget>0?TEXT("Sailing"):TEXT("Sail lowered");
  }
- Rider->GetCharacterMovement()->Velocity=FVector::ZeroVector;UpdateVisuals(Dt);
+ Rider->GetCharacterMovement()->Velocity=FVector::ZeroVector;
 }
+
 void USailboatComponent::UpdateVisuals(float Dt)
 {
  Phase+=Dt;const float Half=Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
  const float Heel=Steering*FMath::Clamp(Speed/650.f,0.f,1.f)*3.f+FMath::Sin(Phase*.9f)*1.0f;
- HullRoot->SetRelativeLocationAndRotation(FVector(115,0,-Half+FMath::Sin(Phase*1.3f)*2),FRotator(FMath::Sin(Phase)*.5f,0,Heel));
+ const FTransform HullPose(FRotator(FMath::Sin(Phase)*.5f,0,Heel),FVector(115,0,-Half+FMath::Sin(Phase*1.3f)*2));
+ if(JapanNetwork::IsOnline(GetWorld()))HullRoot->SetWorldTransform(HullPose*JapanVehicleVisuals::SmoothedRoot(Rider));
+ else HullRoot->SetRelativeTransform(HullPose);
  const float Side=Landscape&&FVector::DotProduct(Landscape->WindDir,Rider->GetActorRightVector())<0?-1.f:1.f;
  BoomAngle=FMath::FInterpTo(BoomAngle,Side*(12+20*SailAmount),Dt,2.f);
  Sail->SetRelativeLocationAndRotation(FVector(48,0,160),FRotator(0,BoomAngle,0));Sail->SetRelativeScale3D(FVector(1,1,.035+.965*SailAmount));
@@ -152,4 +187,9 @@ void USailboatComponent::UpdateVisuals(float Dt)
  const FVector Center=HullRoot->GetComponentLocation();
  Wake->SetWorldLocationAndRotation(FVector(Center.X,Center.Y,3),FRotator(0,Rider->GetActorRotation().Yaw,0));
  Wake->SetVisibility(WakeAmount>.01f);if(FoamMaterial)FoamMaterial->SetScalarParameterValue(TEXT("WakeAmount"),WakeAmount);
+}
+
+float USailboatComponent::GetWaterDepth() const
+{
+ FHitResult Hit;return Rider&&GroundAt(Rider->GetActorLocation(),Hit)?-Hit.ImpactPoint.Z:-1.f;
 }

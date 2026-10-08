@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/NetSerialization.h"
+#include "JapanBikeState.h"
+#include "JapanSailState.h"
 #include "JapanActivityState.generated.h"
 
 UENUM()
@@ -19,4 +21,11 @@ struct FJapanActivityState
     UPROPERTY() bool bFalling = false;
     /** 0: ordinary activity; 1: input timeout; 2: excessive simulation-time burst. */
     UPROPERTY() uint8 ClockCorrection = 0;
+    UPROPERTY() FJapanBikeState Bike;
+    UPROPERTY() FJapanSailState Sail;
+    /** Optional post-exit reaction, using the existing bounded foot checkpoint.
+     * Published with the epoch so prediction cannot start from the pre-hit state. */
+    UPROPERTY() bool bFootReaction = false;
+    UPROPERTY() TArray<uint8> FootBytes;
+    UPROPERTY() FName FootAction;
 };

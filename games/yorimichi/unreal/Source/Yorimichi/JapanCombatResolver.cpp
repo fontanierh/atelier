@@ -1,9 +1,14 @@
 #include "JapanCombatResolver.h"
 #include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
 #include "BotwMoveSet.h"
 #include "Engine/World.h"
+#if !UE_BUILD_SHIPPING
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/CommandLine.h"
+#endif
 
 bool UJapanCombatResolver::DoesSupportWorldType(EWorldType::Type Type) const
 {
@@ -27,6 +32,25 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
 {
     if (!Source || !Victim || !Victim->HasAuthority() || !Victim->GetSword() ||
         !FMath::IsFinite(Damage) || Damage < 0.f || From.ContainsNaN()) return;
+    // Vehicle contacts are immediate and undefended. They never consult foot
+    // defence history, and the old mount epoch is invalidated before damage.
+    if(JapanNetwork::IsOnline(GetWorld())&&
+        (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat))
+    {
+        const bool Alive=Victim->GetSword()->GetHealth()>0.f;
+        if (!Alive) { ++Resolved;if(Result)Result(3);return; }
+        bool Applied=false; int32 Outcome=3;
+        Victim->ExitNetworkVehicle(0,[&]()
+        {
+            if (Applied) return;
+            Applied=true;
+            Outcome=Victim->GetMoves()?Victim->GetMoves()->ResolveUnprotectedStrike(Source,Damage,From):
+                Victim->GetSword()->IncomingStrike(Source,Damage,From);
+        });
+        if (Applied) { ++Resolved;if(Result)Result(Outcome);return; }
+        // A refused/no-op handoff cannot swallow damage. The ordinary path below
+        // still owns the contact; it also handles already-on-foot/pending mounts.
+    }
     if (!JapanNetwork::IsOnline(GetWorld()) || !Victim->GetMoves() || Victim->IsNpc() || Victim->IsLocallyControlled())
     {
         const int32 Outcome = Victim->GetSword()->IncomingStrike(Source, Damage, From);
@@ -90,8 +114,22 @@ void UJapanCombatResolver::Resolve(FContact&& Contact)
     // IncomingStrike accepts null Source; its position/damage were already captured.
     // State may have changed while awaiting input. A dead or already down victim
     // stays down; no delayed decision resurrects or rewrites previous health loss.
+#if !UE_BUILD_SHIPPING
+    static const bool TraceVehicleReaction = FParse::Param(FCommandLine::Get(), TEXT("networkvehicles"));
+    const FVector BeforeLocation = TraceVehicleReaction ? Victim->GetActorLocation() : FVector::ZeroVector;
+    const FVector BeforeVelocity = TraceVehicleReaction ? Victim->GetCharacterMovement()->Velocity : FVector::ZeroVector;
+    const FName BeforeAction = TraceVehicleReaction ? Victim->GetAnimationAction() : NAME_None;
+#endif
     const int32 Outcome = Victim->GetSword()->GetHealth() <= 0.f || Victim->GetMoves()->IsDown() ? 3 :
         Victim->GetMoves()->ResolveNetworkStrike(Source, Contact.Damage, Contact.From, Contact.Time);
+#if !UE_BUILD_SHIPPING
+    if (TraceVehicleReaction)
+        UE_LOG(LogTemp, Display, TEXT("NETWORK foot reaction pawn=%s epoch=%u world=%.6f contact=%.6f due=%.6f outcome=%d damage=%.3f position_before=%s position_after=%s velocity_before=%s velocity_after=%s action_before=%s action_after=%s action_time=%.6f"),
+            *Victim->GetName(), Victim->GetActivityEpoch(), GetWorld()->GetTimeSeconds(), Contact.Time, Contact.Due, Outcome, Contact.Damage,
+            *BeforeLocation.ToString(), *Victim->GetActorLocation().ToString(), *BeforeVelocity.ToString(),
+            *Victim->GetCharacterMovement()->Velocity.ToString(), *BeforeAction.ToString(),
+            *Victim->GetAnimationAction().ToString(), Victim->GetActionTime());
+#endif
     ++Resolved;
     if (Contact.Result) Contact.Result(Outcome);
 }
@@ -107,7 +145,9 @@ void UJapanCombatResolver::RefreshRetention(AWandererCharacter* Victim)
 
 bool UJapanCombatResolver::HasPending(const AWandererCharacter* Victim) const
 {
-    return Victim && Pending.ContainsByPredicate([&](const FContact& Contact)
+    if (!Victim) return false;
+    const auto* Movement = Cast<UJapanCharacterMovement>(Victim->GetCharacterMovement());
+    return (Movement && Movement->HasScheduledReaction()) || Pending.ContainsByPredicate([&](const FContact& Contact)
         { return Contact.Victim == Victim && Contact.Epoch == Victim->GetActivityEpoch(); });
 }
 

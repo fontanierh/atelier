@@ -23,6 +23,7 @@ public:
     /** Mandatory server recovery drains contacts before moving/resetting the victim. */
     void Flush(AWandererCharacter* Victim);
     uint32 PendingSkateRefusals = 0, PendingTravelRefusals = 0;
+    uint32 PendingBikeRefusals = 0, PendingSailRefusals = 0;
     uint32 Queued = 0, Resolved = 0, Cancelled = 0, Overflows = 0, Flushed = 0;
 private:
     struct FContact

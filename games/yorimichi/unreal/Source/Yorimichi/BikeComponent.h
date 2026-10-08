@@ -1,6 +1,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "JapanBikeState.h"
+#include "JapanSkateClock.h"
 #include "BikeComponent.generated.h"
 class AWandererCharacter; class UStaticMeshComponent; class USceneComponent; class UAnimSequence; class UAudioComponent; class USoundWave; class USoundAttenuation; class UPhysicsAsset;
 
@@ -26,6 +28,19 @@ public:
  bool IsSprinting() const { return bSprint; }
  bool Hop(); bool Skid(); bool Bell(); bool Wave();
  virtual void TickComponent(float,ELevelTick,FActorComponentTickFunction*) override;
+ /** Online simulation advances with CMC in bounded substeps inside each saved move. No presentation or parking side effects. */
+ void RefreshTickOrder();
+ void SimulateNetwork(float Dt,FVector2D Stick,bool Menu);
+ FJapanBikeState CaptureNetworkState() const;
+ bool ApplyNetworkActivity(const FJapanBikeState& Snapshot);
+ bool ApplyNetworkState(const FJapanBikeState& Snapshot,bool RestoreFacing=true);
+ void ReceiveNetworkPresentation(uint32 Epoch,double Stamp,const FJapanBikeState& Snapshot);
+ bool NeedsNetworkPark() const { return bTerminal; }
+ /** Host activity handoff only; never call from movement simulation or correction replay. */
+ bool CommitNetworkPark();
+ bool ForceNetworkPark(FJapanBikeState& ParkedPose);
+ bool ShowNetworkParked(const FJapanBikeState& Pose,const FTransform& Transform);
+ void HideNetworkParked();
  bool IsAvailable() const { return bAssetsReady; }
  /** He is on (or getting on or off) the bike: the bike owns his movement and his animation. */
  bool IsEquipped() const { return State!=EState::Off; }
@@ -37,6 +52,8 @@ public:
  UAnimSequence* GetSequence() const;
  FName GetClip() const { return Clip; }
  float GetClipTime() const { return ClipTime; }
+ /** Authored visual hop lift in centimetres; does not imply ballistic CMC movement. */
+ float GetAuthoredLift() const;
  /** Where the animation should be in the clip: the clock wrapped for loops, held at the end for one-shots. */
  float GetPoseTime() const;
  FString GetStatus() const { return Hint; }
@@ -46,8 +63,12 @@ public:
  /** The bike's assembled world transform and its parts, for QA and reviews. */
  FTransform GetBikeTransform() const;
  bool IsParked() const { return bParked; }
- /** How far each wheel's lowest point is above the ground straight under it (cm; negative: sunk in), front then rear. */
+ /** Minimum mesh-support gap to ground under each wheel (cm; negative: sunk in), front then rear.
+  * Unavailable CPU geometry or ground returns a large invalid value, never zero. */
  FVector2D GetWheelGaps() const;
+ FIntPoint GetWheelSupportCounts() const { return FIntPoint(WheelSupport[0].Num(),WheelSupport[1].Num()); }
+ double GetWheelSupportBuildMs() const { return WheelSupportBuildMs; }
+ double GetWheelSupportQueryMs() const { return WheelSupportQueryMs; }
  /** The pitch (degrees, nose up) the bike and he take from the ground under the wheels. */
  float GetGroundPitch() const { return GroundPitch; }
  /** Each loop's "volume pitch" (tyre, tyre_wood, tyre_stone, tyre_dirt, tyre_grass, freewheel, chain, wind, skid,
@@ -61,6 +82,9 @@ private:
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Steer;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelFront;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> WheelRear;
+ mutable TArray<FVector> WheelSupport[2];
+ mutable bool bWheelSupportLoaded=false;
+ mutable double WheelSupportBuildMs=0.,WheelSupportQueryMs=0.;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalL;
  UPROPERTY() TObjectPtr<UStaticMeshComponent> PedalR;
@@ -68,6 +92,7 @@ private:
  UPROPERTY() TObjectPtr<UStaticMeshComponent> RackBoard;
  /** A rider's cloth (Modori's coat) collides with the bike while he rides it: the rack and its board, the rear wheel. */
  UPROPERTY() TObjectPtr<UPhysicsAsset> ClothBodies;
+ bool bClothCollidersOn=false;
  void ClothColliders(bool bOn);
  UPROPERTY() TMap<FName,TObjectPtr<UAnimSequence>> Sequences;
  TMap<FName,FClip> Clips;
@@ -81,6 +106,21 @@ private:
  float ClipTime=0,Speed=0,Steering=0,Lean=0,WheelAngle=0,StillTime=0,AppliedYaw=0,CrankAngle=0;
  FVector2D Input=FVector2D::ZeroVector;
  bool bSprint=false,bMenu=false,bAssetsReady=false,bParked=false;
+ bool bTickModeSet=false,bNetworkTickOrder=false;
+ bool QueueNetworkAction(FName Button,bool& Accepted);
+ float SimCrank=0.f; bool bTerminal=false,bNetworkPedalling=false;
+ uint32 PresentedSerial=0,PresentedEpoch=0;
+ uint32 PresentationBufferEpoch=0;
+ struct FNetworkPose { double At; FJapanBikeState State; };
+ TArray<FNetworkPose> NetworkPoses;
+ FJapanSkatePlayout NetworkPlayout;
+ double LastPresentationStamp=-1.;
+ void SampleNetworkPresentation();
+ TSet<uint64> PlayedNetworkCues;
+ TArray<uint64> NetworkCueOrder;
+ bool AdvanceSimulation(float Dt,bool& Pedal,float& Cadence);
+ void PresentNetwork(float Dt);
+ void PresentParts(float Dt,TArray<float>& Channels,bool Pedal,float Cadence);
  float Coast=0;   // s since he last pedalled, for ending the sprint
  // The ground under the wheels: he and the bike pitch to it and sit on it between them (cm), snapped on getting on.
  float GroundPitch=0,GroundOffset=0,WheelGround[2]={0,0},WheelFall[2]={0,0}; bool bSnapGround=false;   // front, rear: cm, cm/s

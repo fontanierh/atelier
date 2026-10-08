@@ -16,6 +16,8 @@ unreal.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Imp
 mat = material(); report = {}
 for name, entry in json.loads((OUT / 'manifest.json').read_text())['parts'].items():
     mesh = import_mesh(OUT / 'assets' / (name + '.fbx'), '/Game/Japan/Assets', name); mesh.set_material(0, mat)
+    if name in ('BK_WheelFront', 'BK_WheelRear'):
+        mesh.set_editor_property('allow_cpu_access', True)  # Mesh support QA also runs in cooked builds.
     b = mesh.get_bounding_box()
     # Unreal's FBX import mirrors Y into its left-handed frame, so check X and Z.
     assert abs(b.max.x - entry['max'][0] * 100) < .3 and abs(b.max.z - entry['max'][2] * 100) < .3, (name, 'axis/scale', b.max, entry['max'])

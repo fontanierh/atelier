@@ -1,6 +1,7 @@
 #include "JapanMovementNet.h"
 #include "JapanCharacterMovement.h"
 #include "JapanJumpReplayQA.h"
+#include "JapanReactionDeliveryQA.h"
 #include "WandererCharacter.h"
 #include "BotwMoveSet.h"
 #include "Engine/PackageMapClient.h"
@@ -10,7 +11,7 @@ namespace
 {
 const FName Buttons[] = { TEXT("jump"), TEXT("jump_release"), TEXT("dodge"), TEXT("attack"),
     TEXT("attack_release"), TEXT("guard"), TEXT("guard_release"), TEXT("weapon"), TEXT("crouch"),
-    TEXT("dash"), TEXT("drop_holds"), TEXT("wave") };
+    TEXT("dash"), TEXT("drop_holds"), TEXT("wave"), TEXT("bike_sprint") };
 UJapanCharacterMovement* MovementOf(ACharacter* Character)
 {
     return Character ? Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()) : nullptr;
@@ -25,11 +26,14 @@ int32 FJapanMoveInput::ButtonIndex(FName Name)
 
 FName FJapanMoveInput::ButtonName(uint8 Index) { return Index < UE_ARRAY_COUNT(Buttons) ? Buttons[Index] : NAME_None; }
 
-void FJapanMoveInput::ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply) const
+void FJapanMoveInput::ApplyNewEdges(uint16& LastApplied, TFunctionRef<void(uint8)> Apply, TOptional<uint16> Through) const
 {
     for (int32 I = 0; I < Edges.Num(); ++I)
         if (uint16(FirstEdge + I) == uint16(LastApplied + 1))
         {
+            // A lost marked move carries exact journal boundaries; wall-clock
+            // sample ages cannot locate an edge inside CMC simulation time.
+            if (Through.IsSet() && int16(uint16(FirstEdge + I) - Through.GetValue()) > 0) break;
             ++LastApplied;
             Apply(Edges[I]);
         }
@@ -52,11 +56,30 @@ bool FJapanMoveInput::Serialize(FArchive& Ar)
         Ar.SerializeBits(&EdgeAgeMilliseconds[I], 9);
         if (Edges[I] >= UE_ARRAY_COUNT(Buttons) || (EdgeAgeMilliseconds[I] > 500 && EdgeAgeMilliseconds[I] != 511)) { Ar.SetError(); return false; }
     }
+    Ar << ReactionThrough;
+    uint8 Reactions = uint8(ReactionOrigins.Num());
+    Ar.SerializeBits(&Reactions, 4);
+    if (Reactions > FJapanReactionJournal::RetainedCapacity) { Ar.SetError(); return false; }
+    if (Ar.IsLoading()) ReactionOrigins.SetNum(Reactions);
+    uint32 PreviousSequence = 0;
+    for (auto& Marker : ReactionOrigins)
+    {
+        Ar << Marker.Sequence << Marker.Origin.Previous.Generation << Marker.Origin.Previous.Time;
+        Ar << Marker.Origin.End.Generation << Marker.Origin.End.Time << Marker.Origin.DeltaTime;
+        Ar << Marker.EdgeBefore << Marker.EdgeAfter;
+        if (Marker.Sequence <= PreviousSequence || Marker.Sequence > ReactionThrough ||
+            !Marker.Origin.Previous.IsValid() || !Marker.Origin.End.IsValid() ||
+            !FMath::IsFinite(Marker.Origin.DeltaTime) || Marker.Origin.DeltaTime <= 0.f ||
+            uint16(Marker.EdgeAfter - Marker.EdgeBefore) > MaximumEdges)
+        { Ar.SetError(); return false; }
+        PreviousSequence = Marker.Sequence;
+    }
     return !Ar.IsError();
 }
 
 bool FJapanMoveCheckpoint::Serialize(FArchive& Ar, UPackageMap* Map)
 {
+    Ar << ReactionThrough;
     uint32 Count = Bytes.Num();
     Ar.SerializeIntPacked(Count);
     if (Count == 0 || Count > MaximumBytes || !Map) { Ar.SetError(); return false; }
@@ -102,12 +125,13 @@ void FSavedMove_Japan::PostUpdate(ACharacter* Character, EPostUpdateMode Mode)
     Super::PostUpdate(Character, Mode);
     if (auto* Movement = MovementOf(Character); Movement && Movement->PredictsMoves())
     {
-        PostState = CastChecked<AWandererCharacter>(Character)->GetMoves()->CaptureNetworkState();
+        PostState = Movement->CaptureMovementState();
         PostEdge = Movement->GetProcessedEdge();
         PostCrouch = Movement->bWantsToCrouch;
         JapanJumpReplayQA::Move(Movement, *this, Mode == PostUpdate_Replay, OriginalLocation, OriginalVelocity);
 #if !UE_BUILD_SHIPPING
-        static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
+        static const bool Trace = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay")) ||
+            FParse::Param(FCommandLine::Get(), TEXT("networkvehicles"));
         if (Trace && Movement->TraceClientStep(TimeStamp))
             UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK move client epoch=%u timestamp=%.6f dt=%.6f stick=%d,%d flags=%u mode=%u accel=%s maxspeed=%.3f position=%s velocity=%s replay=%d first_edge=%u edges=%d applied_edge=%u action=%s action_time=%.6f pending_launch=%s"),
                 Input.ActivityEpoch, TimeStamp, DeltaTime, Input.X, Input.Y, Input.Flags, Movement->PackNetworkMovementMode(), *Movement->GetCurrentAcceleration().ToString(),
@@ -125,6 +149,7 @@ void FSavedMove_Japan::SetMoveFor(ACharacter* Character, float Dt, const FVector
     if (UJapanCharacterMovement* Movement = MovementOf(Character))
     {
         Input = Movement->ConsumeMoveInput(Dt);
+        Movement->PrepareReactionMove(Input, TimeStamp, Dt);
         Movement->SetMoveInput(Input);
     }
 }
@@ -140,7 +165,8 @@ bool FSavedMove_Japan::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* 
 {
     const auto& Next = static_cast<const FSavedMove_Japan&>(*NewMove);
     if (!Input.Edges.IsEmpty() || !Next.Input.Edges.IsEmpty() || Input.Flags != Next.Input.Flags ||
-        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch) return false;
+        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch ||
+        Input.ReactionThrough != Next.Input.ReactionThrough || Input.ReactionOrigins != Next.Input.ReactionOrigins) return false;
     if (const UJapanCharacterMovement* Movement = MovementOf(Character); Movement && Movement->PredictsMoves()) return false;
     return Super::CanCombineWith(NewMove, Character, MaxDelta);
 }
@@ -151,6 +177,7 @@ bool FSavedMove_Japan::IsImportantMove(const FSavedMovePtr& LastAcked) const
     if (LastAcked.IsValid())
     {
         const FJapanMoveInput& Previous = static_cast<const FSavedMove_Japan&>(*LastAcked).Input;
+        if (Input.ReactionThrough != Previous.ReactionThrough) return true;
         if (Input.Flags != Previous.Flags || Input.X != Previous.X || Input.Y != Previous.Y) return true;
     }
     return Super::IsImportantMove(LastAcked);
@@ -179,13 +206,27 @@ void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponen
     bHasCheckpoint = IsCorrection() && !Checkpoint.Bytes.IsEmpty() &&
         static_cast<const UJapanCharacterMovement&>(Movement).PendingCheckpointTime == Adjustment.TimeStamp;
     JapanJumpReplayQA::Sent(*this);
+    JapanReactionDeliveryQA::Response(static_cast<const UJapanCharacterMovement*>(&Movement), TEXT("prepared"), *this);
 }
 
 bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)
 {
+    // UE reuses one response container. ACK packets carry no checkpoint flag
+    // or payload, so they must not inherit the preceding correction's state.
+    if (Ar.IsLoading()) { bHasCheckpoint = false; Checkpoint = FJapanMoveCheckpoint(); }
     if (!FCharacterMoveResponseDataContainer::Serialize(Movement, Ar, Map)) return false;
     Ar << AcknowledgedEdge << ActivityEpoch;
-    if (!IsCorrection()) return !Ar.IsError();
-    Ar.SerializeBits(&bHasCheckpoint, 1);
-    return !bHasCheckpoint || Checkpoint.Serialize(Ar, Map);
+    bool Result = !Ar.IsError();
+    if (IsCorrection())
+    {
+        Ar.SerializeBits(&bHasCheckpoint, 1);
+        Result = !bHasCheckpoint || Checkpoint.Serialize(Ar, Map);
+    }
+    if (Result && !Ar.IsError() && Ar.IsSaving())
+    {
+        if (IsCorrection() && bHasCheckpoint)
+            static_cast<UJapanCharacterMovement&>(Movement).MovementCheckpointSerialized(ActivityEpoch, ClientAdjustment.TimeStamp);
+        JapanReactionDeliveryQA::Response(static_cast<const UJapanCharacterMovement*>(&Movement), TEXT("serialized"), *this);
+    }
+    return Result;
 }

@@ -6,6 +6,18 @@ Compile and stage data.network first. Uses one big render turn, one independent 
 aggregate guard from before either game starts, and the normal per-game guards. NullRHI
 editor processes prove session/collision diagnostics only, never a packaged server cook,
 rendered remote poses, or clean-machine/Tailscale acceptance.
+
+Development reaction-delivery probes use --reaction-delivery-case N (0..9):
+0 hit after correction; 1 zero-impulse guard; 2 labelled send hold across captures;
+3 stale good ACK; 4 second hit after capture; 5 stale correction then real throttle;
+6 epoch cancellation; 7 host-own hit; 8 moving lethal; 9 moving lethal with one pending hit.
+Cases 8/9 require moving; cases 0 and 5 also support
+--reaction-delivery-moving, which requires measured pre-hit forward motion.
+Both peers run at 30 fps. Use zero lag or --lag-ms 60 --variance-ms 15 --loss-percent 2.
+The probe uses the ordinary aggregate/child guards and admission above.
+Scheduled reactions require identical payloads and saved-move boundaries on both
+peers, no forced recovery, and the strict <1 cm correction check; no recoil exemption. Stationary and moving variants
+are separate runs; none establishes rendered, packaged or two-machine acceptance.
 """
 import argparse
 from contextlib import ExitStack
@@ -107,7 +119,7 @@ def defence_edge_statistics(folder):
     return dict(edges=edges, invalid=invalid)
 
 
-def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False):
+def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound_endpoint=None, combat=False, combat_host_fps=20, enemy=False, vehicle_case=None):
     def read(name):
         value = load(folder / (name + '.json'))
         if not value or value.get('error'):
@@ -227,6 +239,14 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
                 if phase == 2:
                     checks[f'combat_{person}_actual_guard'] = (receipt.get('guard_hit') is True and
                         receipt.get('recovering_at_contact') is False)
+                    if person_id == 1:
+                        delay = receipt.get('reaction_apply_delay')
+                        checks['combat_guest_scheduled_guard'] = (receipt.get('scheduled_guard') is True and
+                            type(receipt.get('reaction_sequence')) is int and receipt['reaction_sequence'] > 0 and
+                            type(receipt.get('reaction_epoch')) is int and receipt['reaction_epoch'] > 0 and
+                            receipt.get('reaction_action') in ('GuardHit', 'SwordGuardHit') and
+                            type(delay) in (int, float) and math.isfinite(delay) and 0 <= delay <= .5 and
+                            type(receipt.get('reaction_forced')) is int and receipt['reaction_forced'] == 0)
         pending = read('combat-guest-3-result')
         checks['pending_contact_blocks_optional_activity'] = (pending.get('pending_gate_passed') is True and
             pending.get('pending_skate_refusals') == pending.get('pending_travel_refusals') == 1)
@@ -235,6 +255,11 @@ def compare_receipts(folder, gameplay=False, listen=False, emulation=None, bound
         flushed = read('combat-guest-4-result')
         checks['forced_recovery_resolves_contact_before_epoch'] = (flushed.get('forced_flush_passed') is True and
                                                                    flushed.get('flushed') == 1 and flushed.get('cancelled') == 0)
+    if vehicle_case:
+        from network_vehicle_review import compare_vehicle
+        from network_fixed_collision_review import compare_fixed_collision
+        checks.update(compare_vehicle(folder, vehicle_case))
+        checks.update(compare_fixed_collision(server, client))
     if enemy:
         from network_enemy_review import compare_enemy
         checks.update(compare_enemy(folder))
@@ -264,7 +289,7 @@ def modori_checks(folder, shield):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, jump_replay=None):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -322,7 +347,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            '-unattended', '-stdout', '-FullStdOutLogOutput',
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
-                           '-ExecCmds=t.MaxFPS ' + (str(combat_host_fps) if combat and role == 'server' else '30')]
+                           '-ExecCmds=t.MaxFPS ' + ('60' if vehicle_case and role == 'server' else str(combat_host_fps) if combat and role == 'server' else '30')]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
                 if jump_replay is not None:
                     command.append('-networkjumpreplay=' + str(jump_replay))
@@ -334,6 +359,11 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command += ['-networkcombat', '-networkcombathostfps=' + str(combat_host_fps)]
                 if enemy:
                     command += ['-networkenemy', '-foxhunter']
+                if vehicle_case:
+                    command += ['-networkvehicles', '-networkvehiclecase=' + vehicle_case]
+                if reaction_delivery_case is not None:
+                    command += ['-networkreactiondelivery', '-networkreactioncase=' + str(reaction_delivery_case)]
+                    if reaction_delivery_moving: command.append('-networkreactionmoving')
                 if gameplay:
                     command.append('-networkgameplay')
                     if role == 'client':
@@ -413,7 +443,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         if plain_package:
             checks = plain_launch_checks(folder, (folder / 'plain.log').read_text(errors='replace'), games[0][1].returncode, package_source['code_digest'])
         else:
-            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy)
+            checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy, vehicle_case)
             if app:
                 checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
         if movement_hitch_ms or skate_hitch_ms:
@@ -425,6 +455,12 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             checks.update(jump_replay_checks(load(folder / 'server-gameplay.json') or {}, load(folder / 'client-gameplay.json') or {}, jump_replay))
         if modori_shield is not None:
             checks.update(modori_checks(folder, modori_shield))
+        reaction_delivery = None
+        if reaction_delivery_case is not None:
+            from network_scheduled_reaction_review import scheduled_reaction_checks
+            reaction_checks, reaction_delivery = scheduled_reaction_checks(load(folder / 'reaction-server.json') or {},
+                load(folder / 'reaction-client.json') or {}, reaction_delivery_case, reaction_delivery_moving)
+            checks.update(reaction_checks)
         checks['source_unchanged'] = source_revision() == revision
         checks['native_build_unchanged'] = (package_fingerprint(app, expected_identity) if app else current_native_build(ctx)) == binary
         if app:
@@ -443,6 +479,14 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             report['modori_shield'] = dict(host=modori_shield, guest=1-modori_shield)
         if jump_replay is not None:
             report['jump_replay_case'] = jump_replay
+        if reaction_delivery_case is not None:
+            report['reaction_delivery_case'] = reaction_delivery_case
+            report['reaction_delivery_moving'] = reaction_delivery_moving
+            # Diagnostic expectations never alter passed or any strict check.
+            expected_failures = [] # Scheduled production reactions must pass the unchanged strict position gate.
+            report['diagnostic_expected_failures'] = expected_failures
+            report['unexpected_failed_checks'] = [name for name, ok in checks.items() if not ok and name not in expected_failures]
+            report['reaction_delivery'] = reaction_delivery
         if combat:
             report['combat_host_frames'] = host_frame_statistics(folder)
             report['combat_defence_edges'] = defence_edge_statistics(folder)
@@ -472,6 +516,9 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
+    parser.add_argument('--reaction-delivery-moving', action='store_true', help='Keep forward drive through reaction case 0, 5, 8 or 9; report measured pre-hit motion')
+    parser.add_argument('--reaction-delivery-case', type=int, choices=range(10), help='Development-only ordering/death probe; intentional holds and stale deliveries are labelled')
+    parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash', 'clock-bike'), help='Native vehicle route; clock-bike injects one real 1050 ms owner outage at zero lag')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
@@ -482,13 +529,34 @@ def main():
     args = parser.parse_args()
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
+    if args.reaction_delivery_moving and args.reaction_delivery_case not in (0, 5, 8, 9):
+        parser.error('Moving reaction delivery requires case 0, 5, 8 or 9')
+    if args.reaction_delivery_case in (8, 9) and not args.reaction_delivery_moving:
+        parser.error('Lethal reaction proof requires a moving victim')
+    if args.reaction_delivery_case is not None:
+        if (args.app or args.gameplay or args.combat or args.enemy or args.vehicle_case or
+                args.modori_shield is not None or args.jump_replay is not None or args.movement_hitch_ms or args.skate_hitch_ms):
+            parser.error('Reaction delivery uses its own editor listen route')
+        if (args.lag_ms, args.variance_ms, args.loss_percent) not in ((0, 0, 0), (60, 15, 2)):
+            parser.error('Reaction delivery requires zero lag or 60/15/2')
+        args.listen = True
     if args.modori_shield is not None:
-        if args.app or args.combat or args.enemy:
+        if args.app or args.combat or args.enemy or args.vehicle_case:
             parser.error('Modori loadout proof uses an editor listen/gameplay pair')
         args.listen = True
+    if args.vehicle_case and (args.enemy or args.combat or args.gameplay):
+        parser.error('--vehicle-case uses a separate native route')
     if args.enemy and (args.combat or args.gameplay):
         parser.error('--enemy has a separate native route; do not combine it with combat/gameplay')
-    if args.enemy:
+    if args.reaction_delivery_case is not None:
+        args.gameplay = False
+    elif args.vehicle_case:
+        expected = (0, 0, 0) if args.vehicle_case == 'clock-bike' else (60, 15, 2)
+        if (args.lag_ms, args.variance_ms, args.loss_percent) != expected:
+            parser.error('Vehicle clock acceptance requires zero lag; other vehicle routes require 60/15/2')
+        args.listen = True
+        args.gameplay = False
+    elif args.enemy:
         if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
             parser.error('Shared-enemy acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
         args.listen = True
@@ -528,7 +596,7 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.jump_replay)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay, args.reaction_delivery_case, args.reaction_delivery_moving)
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -536,11 +604,13 @@ def main():
         port = sock.getsockname()[1]
     return guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(folder), '--port', str(port), '--combat-host-fps', str(args.combat_host_fps),
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent), '--movement-hitch-ms', str(args.movement_hitch_ms), '--skate-hitch-ms', str(args.skate_hitch_ms)] +
+                       (['--reaction-delivery-moving'] if args.reaction_delivery_moving else []) +
+                       (['--reaction-delivery-case', str(args.reaction_delivery_case)] if args.reaction_delivery_case is not None else []) +
                        (['--jump-replay', str(args.jump_replay)] if args.jump_replay is not None else []) +
                        (['--modori-shield', str(args.modori_shield)] if args.modori_shield is not None else []) +
                        (['--gameplay'] if args.gameplay else []) + (['--listen'] if args.listen else []) + (['--tailnet'] if args.tailnet else []) + (['--combat'] if args.combat else []) + (['--enemy'] if args.enemy else []) +
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
-                       (['--plain-package'] if args.plain_package else []),
+                       (['--plain-package'] if args.plain_package else []) + (['--vehicle-case', args.vehicle_case] if args.vehicle_case else []),
                        folder / 'guard', timeout=750 if args.app else 330, purpose='native local network session smoke', kind='game',
                        progress=15, track_tree=True)
 

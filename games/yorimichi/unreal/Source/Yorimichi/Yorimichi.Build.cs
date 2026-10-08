@@ -48,6 +48,7 @@ public class Yorimichi : ModuleRules
         PrivateDependencyModuleNames.Add("AnimationCore");
         PrivateDependencyModuleNames.Add("ClothingSystemRuntimeInterface");   // YorimichiCloth: the running cloth's data
         PrivateDependencyModuleNames.Add("RHI");
+        PrivateDependencyModuleNames.Add("GeometryCore");
         PrivateDependencyModuleNames.Add("AIModule");
         PrivateDependencyModuleNames.Add("ImageCore");
         PrivateDependencyModuleNames.Add("ApplicationCore");

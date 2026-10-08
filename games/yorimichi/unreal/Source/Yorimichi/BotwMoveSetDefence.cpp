@@ -1,6 +1,7 @@
 #include "BotwMoveSet.h"
 #include "BotwMoveSetDetail.h"
 #include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -28,6 +29,8 @@ void UBotwMoveSet::ResetDefence()
     DefenceTimeline.Reset(); DefenceClock.Reset(); DefenceOverride.Reset();
     DefenceActionSerial = 0; DefenceInputTime = DefenceLastPress = -1.;
     bExternalDefenceChange = bHopInvulnerability = bDefenceMapped = false;
+    bDefenceGetUpPending = false; DefenceGetUpUntil = -1.;
+    ReactionActionEdge.Reset(); ReactionAttackEdge.Reset(); ReactionGuardEdge.Reset();
 }
 
 double UBotwMoveSet::DefenceWait() const
@@ -52,6 +55,15 @@ bool UBotwMoveSet::MapDefenceMove(float Timestamp, float Dt)
     return bDefenceMapped;
 }
 
+bool UBotwMoveSet::GetUpProtectedAt(double SampleTime)
+{
+    // First post-step sample: at most one admitted sub-step later than get-up.
+    // Unlike Invulnerable this deadline cannot be rewritten by an ACK payload.
+    if (bDefenceGetUpPending)
+    { DefenceGetUpUntil = SampleTime + 1.; bDefenceGetUpPending = false; }
+    return SampleTime < DefenceGetUpUntil;
+}
+
 void UBotwMoveSet::RecordDefence(uint16 ThroughEdge, double BeforeStep, bool bAcceptedMove)
 {
     if (!Character || !Character->HasAuthority() || Character->IsNpc() || !JapanNetwork::IsOnline(Character->GetWorld())) return;
@@ -63,14 +75,19 @@ void UBotwMoveSet::RecordDefence(uint16 ThroughEdge, double BeforeStep, bool bAc
     FJapanDefenceSample S;
     S.Time = Character->GetWorld()->GetTimeSeconds(); S.ThroughEdge = ThroughEdge;
     S.bGround = Mode == EBotwMoveMode::Ground; S.bArmed = bArmed;
-    S.bGuardHeld = bGuardHeld; S.bGuardBroken = GuardBroken > 0.f;
+    const auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
+    S.bGuardHeld = bGuardHeld && (!bRemote || !Movement || Movement->ReactionEdgeEligible(ReactionGuardEdge, true));
+    S.bGuardBroken = !bRemote && GuardBroken > 0.f; // Remote breaks are contact-time timeline entries.
     const FName Parry = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
     S.bCanParry = S.bGround && !bDown && Has(Parry) &&
         (!Busy() || (Action && IsGuardHit(Action->Name) && SourceTime() >= Action->Input));
     S.bCanDodge = CanDodge(); S.bJumpDodge = bLocked && !bArmed;
-    // A late live hop must not add a second invulnerability interval after its
-    // original timeline window. Damage/flurry/down recovery remains world state.
-    S.bRecovering = bDown || InFlurry() || (Invulnerable > 0.f && !bHopInvulnerability);
+    const double SampleTime = bRemote ? DefenceClock.LastMapped - BeforeStep : S.Time;
+    const bool GetUpProtection = GetUpProtectedAt(SampleTime);
+    // Remote hit/flurry immunity is resolved at contact, not when ACK motion
+    // starts. Heavy down state remains physical; get-up has its own fixed end.
+    S.bRecovering = bDown || (bRemote ? GetUpProtection :
+        (InFlurry() || (Invulnerable > 0.f && !bHopInvulnerability)));
     S.Location = Character->GetActorLocation(); S.Forward = Character->GetActorForwardVector();
     if (bRemote) DefenceTimeline.RecordMapped(S, DefenceClock.LastMapped, BeforeStep);
     else DefenceTimeline.Record(S);
@@ -100,7 +117,13 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
     double Original = Now - AgeMilliseconds * .001;
     const bool TimeValid = bDefenceMapped && DefenceClock.OriginalPress(AgeMilliseconds, Now, Original);
     const bool Ordered = Original >= DefenceLastPress;
+    auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
+    const bool Eligible = !Movement || Movement->ReactionEdgeEligible(Edge);
+    if (!Eligible && (Button == TEXT("guard") || Button == TEXT("dodge") || Button == TEXT("jump")))
+        Movement->RecordSuppressedDefenceInput();
     const bool Valid = TimeValid && Ordered;
+    if (Button == TEXT("attack")) ReactionAttackEdge = Edge;
+    if (Button == TEXT("guard")) ReactionGuardEdge = Edge;
     if (TraceNetworkDefence())
         UE_LOG(LogTemp, Display, TEXT("NETWORK defence edge=%u button=%s ts=%.6f age_ms=%u now=%.6f mapped=%.6f press=%.6f press_source=%s prior=%.6f oldest=%.6f map_valid=%d time_valid=%d ordered=%d valid=%d one_way=%.6f spread=%.6f step=%.6f slow_host=%.6f"),
             Edge, *Button.ToString(), DefenceClock.LastTimestamp, AgeMilliseconds, Now, DefenceClock.LastMapped,
@@ -116,10 +139,15 @@ bool UBotwMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillisecond
     }
     else DefenceLastPress = Original;
     bool Added = false;
+    // Eligibility alone is masked. Press below still runs with the exact input
+    // so authority physics stays in the owner's predicted lineage.
     if (Valid)
     {
-        if (Button == TEXT("guard")) DefenceTimeline.Hold(Edge, Original, true);
+        if (Button == TEXT("guard")) DefenceTimeline.Hold(Edge, Original, Eligible);
         if (Button == TEXT("guard_release") || Button == TEXT("drop_holds")) DefenceTimeline.Hold(Edge, Original, false);
+    }
+    if (Valid && Eligible)
+    {
         const auto* Sample = DefenceTimeline.At(Original);
         if (TraceNetworkDefence())
             UE_LOG(LogTemp, Display, TEXT("NETWORK defence eligibility edge=%u button=%s press=%.6f sample=%.6f through=%u ground=%d armed=%d can_parry=%d can_dodge=%d jump_dodge=%d held=%d broken=%d recovering=%d"),
@@ -190,9 +218,20 @@ int32 UBotwMoveSet::ResolveNetworkStrike(AActor* Source, float Damage, const FVe
         DefenceTimeline.Trace(Contact, TEXT("contact"));
     }
     TGuardValue<TOptional<EJapanDefence>> Override(DefenceOverride, TOptional<EJapanDefence>(Decision));
-    const float PriorGuardBroken = GuardBroken;
+    TGuardValue<float> RecoveryScope(ResolvedRecoverySeconds, 0.f);
+    TGuardValue<float> BrokenScope(ResolvedGuardBrokenSeconds, 0.f);
     const int32 Outcome = IncomingStrike(Source, Damage, From);
-    const double Recovery = Outcome == 0 || InFlurry() ? Invulnerable : 0.;
-    DefenceTimeline.Reaction(Contact, Recovery, GuardBroken > PriorGuardBroken ? GuardBroken : 0.);
+    DefenceTimeline.Reaction(Contact, ResolvedRecoverySeconds, ResolvedGuardBrokenSeconds);
+    return Outcome;
+}
+
+int32 UBotwMoveSet::ResolveUnprotectedStrike(AActor* Source, float Damage, const FVector& From)
+{
+    TGuardValue<TOptional<EJapanDefence>> Override(DefenceOverride,TOptional<EJapanDefence>(EJapanDefence::None));
+    TGuardValue<float> RecoveryScope(ResolvedRecoverySeconds, 0.f);
+    TGuardValue<float> BrokenScope(ResolvedGuardBrokenSeconds, 0.f);
+    const int32 Outcome = IncomingStrike(Source,Damage,From);
+    if (Character && Character->HasAuthority() && JapanNetwork::IsOnline(Character->GetWorld()))
+        DefenceTimeline.Reaction(Character->GetWorld()->GetTimeSeconds(), ResolvedRecoverySeconds, ResolvedGuardBrokenSeconds);
     return Outcome;
 }

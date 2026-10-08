@@ -1,4 +1,5 @@
 #include "JapanWorld.h"
+#include "JapanGameplayCollision.h"
 #include "AtelierData.h"
 #include "HarborLook.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -584,6 +585,7 @@ void AJapanWorld::Load()
     if (!City.IsValid()) Incomplete.Add(TEXT("Hidamari data"));
     if (HouseLayout && !HouseRuntime.IsValid()) Incomplete.Add(TEXT("tree house data"));
     if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
+    JapanGameplayCollision::Install(GetWorld());
     BootstrapError = FString::Join(Incomplete, TEXT(", "));
     bGameplayReady = bLoaded && Incomplete.IsEmpty();
     if (!bGameplayReady) UE_LOG(LogTemp, Warning, TEXT("NETWORK world incomplete: %s"), *BootstrapError);
