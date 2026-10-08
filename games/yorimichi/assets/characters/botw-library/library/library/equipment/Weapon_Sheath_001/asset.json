@@ -1,0 +1,39 @@
+{
+  "id": "Weapon_Sheath_001",
+  "name": "Weapon_Sheath_001",
+  "kind": "equipment",
+  "actors": [
+    "Weapon_Sheath_001"
+  ],
+  "units": [
+    {
+      "model": "Weapon_Sheath_001",
+      "resource": "Weapon_Sheath_001",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/bc7005405b8b0e76.glb",
+      "bytes": 77232,
+      "animation_asset": "../../../viewer/public/assets/library/c4f77926d633330e.json",
+      "animation_bytes": 213,
+      "clip_count": 0,
+      "bone_count": 1,
+      "vertices": 778,
+      "triangles": 662,
+      "weapon_bones": [],
+      "source_bfres": "../../../work/enemies/source/Weapon_Sheath_001.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Weapon_Sheath_001/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 0,
+  "profile": "OptionalWeapon",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Weapon_Sheath_001",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Weapon_Sheath_001.sbactorpack"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "Enemy_Guardian_Mini_Practice",
+  "name": "Guardian Scout II",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Guardian_Mini_Practice"
+  ],
+  "units": [
+    {
+      "model": "Enemy_Guardian_Mini",
+      "resource": "Enemy_Guardian_Mini",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/fcec60b5f3328b5c.glb",
+      "bytes": 1853756,
+      "animation_asset": "../../../viewer/public/assets/library/c35fad52ec7a9c76.json",
+      "animation_bytes": 7204644,
+      "clip_count": 75,
+      "bone_count": 64,
+      "vertices": 11701,
+      "triangles": 9466,
+      "weapon_bones": [
+        "Wrist_1_UB",
+        "Weapon_1_UB",
+        "Weapon_B",
+        "Wrist_1_UFL",
+        "Weapon_1_UFL",
+        "Weapon_L",
+        "Wrist_1_UFR",
+        "Weapon_1_UFR",
+        "Weapon_R"
+      ],
+      "source_bfres": "../../../work/enemies/source/Enemy_Guardian_Mini.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Guardian_Mini/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 75,
+  "profile": "Enemy",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Guardian_Mini_Practice",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Guardian_Mini_Practice.sbactorpack"
+  ]
+}

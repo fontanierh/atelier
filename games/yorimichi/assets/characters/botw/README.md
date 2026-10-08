@@ -1,10 +1,22 @@
 # BOTW characters
 
 Yorimichi can bring in characters from a local BOTW asset library: their rigged meshes, every animation clip, and a
-game-side actor that plays them. The library lives outside the repository; this folder holds the roster and the
-scripts that convert it. Without the library the build skips these steps and the game runs as before.
+game-side actor that plays them. The files the game uses (every character, prop and horse the rosters name) are
+committed in [../botw-library/](../botw-library/), laid out as in the full library, and `library.py` reads them from
+there, so a fresh clone builds them. This folder holds the rosters and the scripts that convert them.
 
 ## The library
+
+The committed copy holds only what the rosters read. To add an entry to a roster (`roster.toml`, `moves.toml`,
+`../horses/roster.toml`), fetch the full library as below, then refresh the copy and commit it:
+
+```sh
+uv run python games/yorimichi/assets/characters/botw/vendor.py
+```
+
+It reads the cache (`ATELIER_BOTW_CACHE=1` makes `library.py` do the same anywhere), copies every file the BOTW and horse
+rosters read with the asset.json of each entry, cuts botw-extract's extended catalogs down to those entries, and drops
+files no roster reads any more.
 
 Extract the library zip so that `~/.cache/atelier/botw/library/catalog/archive-info.json` exists (the folder holds
 `START_HERE.md`, `catalog/`, `library/` and `viewer/`). `library.py` reads it from there; the build hashes only the

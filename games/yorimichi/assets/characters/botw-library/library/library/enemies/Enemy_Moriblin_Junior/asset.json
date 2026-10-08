@@ -1,0 +1,44 @@
+{
+  "id": "Enemy_Moriblin_Junior",
+  "name": "Moblin",
+  "kind": "enemy",
+  "actors": [
+    "Enemy_Moriblin_Junior"
+  ],
+  "units": [
+    {
+      "model": "Moriblin_Blue",
+      "resource": "Enemy_Moriblin",
+      "bind": "",
+      "asset": "../../../viewer/public/assets/library/fc26dcb365bee22b.glb",
+      "bytes": 891384,
+      "animation_asset": "../../../viewer/public/assets/library/a53b867128dcfeab.json",
+      "animation_bytes": 19952172,
+      "clip_count": 134,
+      "bone_count": 81,
+      "vertices": 4739,
+      "triangles": 5610,
+      "weapon_bones": [
+        "Wrist_L",
+        "Weapon_L",
+        "Wrist_R",
+        "Weapon_R"
+      ],
+      "source_bfres": "../../../work/enemies/source/Enemy_Moriblin.bfres",
+      "decoded_resource": "../../../work/enemies/resources/Enemy_Moriblin/resource.json"
+    }
+  ],
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "fps": 30,
+  "clip_count": 134,
+  "profile": "Enemy",
+  "assembly_preview": false,
+  "viewer_url": "../../../viewer/public/index.html#asset=Enemy_Moriblin_Junior",
+  "actor_packs": [
+    "../../../work/romfs/base/Actor/Pack/Enemy_Moriblin_Junior.sbactorpack"
+  ]
+}

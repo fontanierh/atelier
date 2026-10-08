@@ -1,0 +1,106 @@
+{
+ "schema": 1,
+ "source": "Supplied Switch base game; original BFRES models, textures and actor parameters",
+ "count": 88,
+ "sourceResources": 39,
+ "upgradeAliases": 369,
+ "entries": [
+  {
+   "id": "Armor_001_Lower",
+   "name": "Hylian Trousers",
+   "slot": "lower",
+   "compatible": [
+    "GameROMPlayer"
+   ],
+   "series": "Hylia",
+   "description": "Hylian Trousers; lower clothing for Link; Hylian Set. Recovered base defense 3. Original skinned mesh and textures, follows player skeletal animations; original cloth physics and dye effects are not simulated.",
+   "actors": [
+    "Armor_001_Lower",
+    "Armor_002_Lower",
+    "Armor_003_Lower",
+    "Armor_004_Lower",
+    "Armor_015_Lower"
+   ],
+   "sourceModel": "Armor_001",
+   "default": false,
+   "stats": {
+    "defense": 3
+   },
+   "unit": {
+    "model": "Armor_001_Lower",
+    "resource": "Armor_001",
+    "asset": "assets/library/536788f124fb0947.glb",
+    "bytes": 176688,
+    "bone_count": 166,
+    "vertices": 1021,
+    "triangles": 1336,
+    "weapon_bones": [
+     "Wrist_Assist_L",
+     "Wrist_L",
+     "Weapon_L",
+     "Wrist_Assist_R",
+     "Wrist_R",
+     "Weapon_R",
+     "Pod_A",
+     "Pod_B",
+     "Pod_C",
+     "Weapon_Root"
+    ],
+    "rig_asset": "assets/library/abc74d335f378348.json",
+    "rig_bytes": 34887
+   }
+  },
+  {
+   "id": "Armor_116_Upper",
+   "name": "Champion's Tunic",
+   "slot": "upper",
+   "compatible": [
+    "GameROMPlayer"
+   ],
+   "series": "Hero",
+   "description": "Champion's Tunic; upper clothing for Link; Champion's Tunic. Recovered base defense 5. Original skinned mesh and textures, follows player skeletal animations; original cloth physics and dye effects are not simulated.",
+   "actors": [
+    "Armor_116_Upper",
+    "Armor_148_Upper",
+    "Armor_149_Upper",
+    "Armor_150_Upper",
+    "Armor_151_Upper"
+   ],
+   "sourceModel": "Armor_116",
+   "default": false,
+   "stats": {
+    "defense": 5
+   },
+   "unit": {
+    "model": "Armor_116_Upper",
+    "resource": "Armor_116",
+    "asset": "assets/library/c37f66282080a68e.glb",
+    "bytes": 710924,
+    "bone_count": 184,
+    "vertices": 5428,
+    "triangles": 5796,
+    "weapon_bones": [
+     "Wrist_Assist_L",
+     "Wrist_L",
+     "Weapon_L",
+     "Wrist_Assist_R",
+     "Wrist_R",
+     "Weapon_R",
+     "Pod_A",
+     "Pod_B",
+     "Pod_C",
+     "Weapon_Root"
+    ],
+    "rig_asset": "assets/library/c9a6eeab6906dae9.json",
+    "rig_bytes": 38768
+   }
+  }
+ ],
+ "defaults": {
+  "head": "Armor_Default_Head",
+  "upper": "Armor_116_Upper",
+  "lower": "Armor_001_Lower"
+ },
+ "errors": [],
+ "fidelity": "Canonical Link skeleton drives each garment; extra garment bones follow their rest hierarchy. Cloth simulation, dye variants and armor gameplay effects are not implemented."
+}

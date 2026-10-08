@@ -99,11 +99,13 @@ def play(game, profile, settings, extra, memory_gib=None):
                        kind='game', limit_gib=limit)
 
 
+# (pattern, what, literals): a pattern is searched only in text holding one of its literals, which keeps large data quick
 PERSONAL = [
-    (re.compile(r'/Users/(?!Shared/)[A-Za-z0-9._-]+/'), 'a home-directory path'),
-    (re.compile(r'\b[a-z0-9-]+\.tail[0-9a-f]{4,}\.ts\.net\b'), 'a tailnet hostname'),
-    (re.compile(r'\b(sk-[A-Za-z0-9_-]{20,}|tsk_[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10,})'), 'an API token'),
-    (re.compile(r'SecurityToken=[A-Za-z0-9]{8,}'), 'an engine security token'),
+    (re.compile(r'/Users/(?!Shared/)[A-Za-z0-9._-]+/'), 'a home-directory path', ('/Users/',)),
+    (re.compile(r'\b[a-z0-9-]+\.tail[0-9a-f]{4,}\.ts\.net\b'), 'a tailnet hostname', ('.ts.net',)),
+    (re.compile(r'\b(sk-[A-Za-z0-9_-]{20,}|tsk_[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10,})'), 'an API token',
+     ('sk-', 'tsk_', 'ghp_', 'xoxb-', 'xoxp-')),
+    (re.compile(r'SecurityToken=[A-Za-z0-9]{8,}'), 'an engine security token', ('SecurityToken=',)),
 ]
 
 
@@ -128,7 +130,9 @@ def lint(staged=False):
                 text = path.read_text(errors='ignore')
         except OSError:
             continue
-        for pattern, what in PERSONAL:
+        for pattern, what, literals in PERSONAL:
+            if not any(literal in text for literal in literals):
+                continue
             for match in pattern.finditer(text):
                 line = text.count('\n', 0, match.start()) + 1
                 problems.append(f'{rel}:{line}: {what}')

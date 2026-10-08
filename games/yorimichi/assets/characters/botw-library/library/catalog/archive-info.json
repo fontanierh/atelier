@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-02T07:08:17.194140+00:00",
+  "entries": 1095,
+  "kinds": {
+    "enemy": 116,
+    "equipment": 404,
+    "npc": 575
+  },
+  "distinct_models": 812,
+  "distinct_animation_libraries": 399,
+  "clips_across_libraries": 44711,
+  "actor_packs": 1104,
+  "source": "Supplied Switch BOTW base game; no update or DLC",
+  "limitations": [
+    "Shared animations can appear in more than one rig library.",
+    "Procedural UMii NPCs are assembly previews; original face generation is incomplete.",
+    "Bulk GLBs contain rigs; their animation curves are external JSON.",
+    "Only the Bokoblin has a baked, validated Blender scene.",
+    "Original shaders, procedural physics, and gameplay state machines are not reproduced."
+  ]
+}
