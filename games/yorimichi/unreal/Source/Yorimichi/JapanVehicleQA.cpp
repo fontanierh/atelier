@@ -483,7 +483,12 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
         const bool Ready=Sail()?GroundBelowWater>=80.:
             Guest->GetBike()->GetClip()==TEXT("BikeHop")&&Guest->GetBike()->GetAuthoredLift()>5.f&&
             Guest->GetCharacterMovement()->IsMovingOnGround()&&InPhase&&HopPeer->GetBoolField(TEXT("walking"));
-        if(InPhase&&Ready){SavePhase(HopPeer);Strike(Guest.Get());Step(10);}
+        // Wait for the owner's measured phase, not just the host's elapsed
+        // time: replication/file cadence can leave fewer than 30 owner frames.
+        const TSharedPtr<FJsonObject>* OwnerFrameStats=nullptr;double OwnerFrameCount=0.;
+        const bool OwnerFramesReady=InPhase&&HopPeer->TryGetObjectField(TEXT("frame_statistics"),OwnerFrameStats)&&
+            OwnerFrameStats&&OwnerFrameStats->IsValid()&&(*OwnerFrameStats)->TryGetNumberField(TEXT("count"),OwnerFrameCount)&&OwnerFrameCount>=30.;
+        if(InPhase&&Ready&&OwnerFramesReady){SavePhase(HopPeer);Strike(Guest.Get());Step(10);}
     }
     if(!Error.IsEmpty())
     {Write(Folder/(Server?TEXT("vehicle-failed.json"):TEXT("vehicle-client-failed.json")),Snapshot(Guest.Get()));return false;}
