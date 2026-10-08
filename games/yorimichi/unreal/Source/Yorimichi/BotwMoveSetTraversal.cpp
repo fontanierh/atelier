@@ -174,6 +174,8 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
     const bool bGliding = Mode == EBotwMoveMode::Glide && bGliderShown;
     const bool bNeutral = bGliding && In(Name, { TEXT("Glide"), TEXT("GlideF") }) && GlideTime > .5f && FMath::Abs(GlideTurn) < 8.f;
     const FName HandBone[2] = { Character->GetSkateBone(TEXT("hand_R")), Character->GetSkateBone(TEXT("hand_L")) };
+    // The import's fit until the first neutral glide, carried by the root bone as the mesh has it now.
+    if (bGliderRefit) GliderOnBody = GliderOnRoot * Body->GetSocketTransform(Body->GetBoneName(0), RTS_Component);
     if (!bGliderOnBody || (bGliderRefit && bNeutral))
     {
         // Fit the one-handed hold onto both hands, then keep it once it has settled on the neutral glide. (Gliding with the
@@ -202,6 +204,9 @@ void UBotwMoveSet::AdvanceGliderGrip(float Dt)
         const FTransform Fitted(Turn * Base.GetRotation(), (HandR + HandL) * .5f + Turn.RotateVector(Base.GetLocation() - (BarR + BarL) * .5f), Base.GetScale3D());
         if (bNeutral)
         {
+            if (bGliderRefit)
+                UE_LOG(LogTemp, Display, TEXT("BOTW glider fitted on the neutral glide: the import's place %s, the hands' %s"),
+                    *GliderOnBody.ToHumanReadableString(), *Fitted.GetRelativeTransform(Body->GetComponentTransform()).ToHumanReadableString());
             GliderOnBody = Fitted.GetRelativeTransform(Body->GetComponentTransform());
             bGliderOnBody = true; bGliderRefit = false;
             for (int32 I = 0; I < 2; ++I)

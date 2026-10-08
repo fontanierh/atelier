@@ -146,13 +146,13 @@ bool UBotwMoveSet::Initialize(AWandererCharacter* Owner, const TSharedPtr<FJsonO
                 // there): held from the first frame of a glide that steers at once, then fitted again to the live hands
                 // on the first neutral glide.
                 const TArray<TSharedPtr<FJsonValue>>* Elbows = nullptr;
-                if (!bOwnGlide && O->HasField(TEXT("on_body")) && O->TryGetArrayField(TEXT("elbows"), Elbows) && Elbows->Num() == 2)
+                if (!bOwnGlide && O->HasField(TEXT("on_root")) && O->TryGetArrayField(TEXT("elbows_on_root"), Elbows) && Elbows->Num() == 2)
                 {
-                    ReadTransform(O, TEXT("on_body"), GliderOnBody);
+                    ReadTransform(O, TEXT("on_root"), GliderOnRoot);
                     for (int32 I = 0; I < 2; ++I)
                     {
                         const TArray<TSharedPtr<FJsonValue>>& E = (*Elbows)[I]->AsArray();
-                        if (E.Num() == 3) ElbowLocal[I] = GliderOnBody.InverseTransformPosition(FVector(E[0]->AsNumber(), E[1]->AsNumber(), E[2]->AsNumber()));
+                        if (E.Num() == 3) ElbowLocal[I] = GliderOnRoot.InverseTransformPosition(FVector(E[0]->AsNumber(), E[1]->AsNumber(), E[2]->AsNumber()));
                     }
                     bGliderOnBody = bGliderRefit = true;
                 }
