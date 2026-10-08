@@ -186,6 +186,9 @@ void FJapanMoveResponse::ServerFillResponseData(const UCharacterMovementComponen
 
 bool FJapanMoveResponse::Serialize(UCharacterMovementComponent& Movement, FArchive& Ar, UPackageMap* Map)
 {
+    // UE reuses one response container. ACK packets carry no checkpoint flag
+    // or payload, so they must not inherit the preceding correction's state.
+    if (Ar.IsLoading()) { bHasCheckpoint = false; Checkpoint = FJapanMoveCheckpoint(); }
     if (!FCharacterMoveResponseDataContainer::Serialize(Movement, Ar, Map)) return false;
     Ar << AcknowledgedEdge << ActivityEpoch;
     bool Result = !Ar.IsError();
