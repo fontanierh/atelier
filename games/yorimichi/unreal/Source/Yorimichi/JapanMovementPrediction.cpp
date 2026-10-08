@@ -114,6 +114,17 @@ void UJapanCharacterMovement::QueueClockReset(uint8 Reason)
         Rider->BeginNetworkActivity(EJapanActivity::OnFoot, !IsMovingOnGround(), Reason);
         bWaitingAfterClockReset = true;
         ClockResetAt = FPlatformTime::Seconds();
+#if !UE_BUILD_SHIPPING
+        if (Reason == 1 && TraceNetworkGameplay())
+        {
+            auto& Recovery = NetworkStats.TimeoutRecovery;
+            Recovery = FJapanMovementStats::FTimeoutRecovery();
+            Recovery.Epoch = GetActivityEpoch(); Recovery.HandoffRoot = CharacterOwner->GetActorLocation();
+            Recovery.bAllGrounded = IsMovingOnGround();
+            Recovery.InitialSpeed = Recovery.MaximumSpeed = float(Velocity.Size2D());
+            Recovery.MinimumBraking = GetMaxBrakingDeceleration();
+        }
+#endif
         UE_LOG(LogJapanMovementQA, Display, TEXT("NETWORK movement clock reset reason=%u old_epoch=%u epoch=%u"),
             Reason, Epoch, GetActivityEpoch());
     }));
@@ -128,7 +139,21 @@ void UJapanCharacterMovement::TickComponent(float Dt, ELevelTick TickType, FActo
         // until the first move in the new epoch arrives. No client time is consumed.
         FJapanMoveInput Neutral; Neutral.ActivityEpoch = GetActivityEpoch(); SetMoveInput(Neutral);
         Acceleration = FVector::ZeroVector;
+#if !UE_BUILD_SHIPPING
+        const FVector NeutralBefore = CharacterOwner->GetActorLocation();
+#endif
         PerformMovement(FMath::Min(Dt, .125f));
+#if !UE_BUILD_SHIPPING
+        auto& Recovery = NetworkStats.TimeoutRecovery;
+        if (TraceNetworkGameplay() && Recovery.Epoch == GetActivityEpoch() && !Recovery.bArrived)
+        {
+            ++Recovery.NeutralFrames;
+            Recovery.bAllGrounded &= IsMovingOnGround();
+            Recovery.MinimumBraking = FMath::Min(Recovery.MinimumBraking, GetMaxBrakingDeceleration());
+            Recovery.MaximumSpeed = FMath::Max(Recovery.MaximumSpeed, float(Velocity.Size2D()));
+            Recovery.PathCm += float(FVector::Dist2D(NeutralBefore, CharacterOwner->GetActorLocation()));
+        }
+#endif
         NetworkStats.NeutralMaxAcceleration = FMath::Max(NetworkStats.NeutralMaxAcceleration, float(Acceleration.Size()));
         if (IsMovingOnGround() && FPlatformTime::Seconds() - ClockResetAt >= .2)
         {
@@ -373,6 +398,16 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
 void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Flags, const FVector& Accel)
 {
     TGuardValue<bool> DefenceMoveScope(bAcceptedDefenceMove, false);
+#if !UE_BUILD_SHIPPING
+    auto& Recovery = NetworkStats.TimeoutRecovery;
+    const bool bRecoveryArrival = TraceNetworkGameplay() && CharacterOwner->HasAuthority() && Dt > 0.f &&
+        bWaitingAfterClockReset && Recovery.Epoch == GetActivityEpoch() && !Recovery.bArrived;
+    if (bRecoveryArrival)
+    {
+        Recovery.ArrivalRoot = CharacterOwner->GetActorLocation();
+        Recovery.FirstTimestamp = Timestamp; Recovery.FirstDt = Dt;
+    }
+#endif
     if (PredictsMoves())
         if (const auto* Data = static_cast<const FJapanNetworkMoveData*>(GetCurrentNetworkMoveData()))
         {
@@ -395,6 +430,13 @@ void UJapanCharacterMovement::MoveAutonomous(float Timestamp, float Dt, uint8 Fl
             if (CharacterOwner->Controller) CharacterOwner->Controller->SetControlRotation(Data->ControlRotation);
         }
     Super::MoveAutonomous(Timestamp, Dt, Flags, Accel);
+#if !UE_BUILD_SHIPPING
+    if (bRecoveryArrival)
+    {
+        Recovery.FirstMoveRoot = CharacterOwner->GetActorLocation();
+        Recovery.bArrived = true;
+    }
+#endif
     if (PredictsMoves() && CharacterOwner->HasAuthority() && Timestamp <= .8f &&
         TraceNetworkGameplay() && ServerTraceRows++ < 64)
     {

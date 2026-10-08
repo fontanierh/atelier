@@ -22,6 +22,14 @@ struct FJapanCorrectionSample
 
 struct FJapanMovementStats
 {
+    struct FTimeoutRecovery
+    {
+        uint32 Epoch = 0, NeutralFrames = 0;
+        bool bArrived = false, bAllGrounded = false;
+        float FirstTimestamp = -1.f, FirstDt = 0.f;
+        float InitialSpeed = 0.f, MaximumSpeed = 0.f, MinimumBraking = 0.f, PathCm = 0.f;
+        FVector HandoffRoot = FVector::ZeroVector, ArrivalRoot = FVector::ZeroVector, FirstMoveRoot = FVector::ZeroVector;
+    } TimeoutRecovery;
     uint32 Corrections = 0, PositionCorrections = 0, Checkpoints = 0, Rejected = 0, ReplayedMoves = 0;
     uint32 InitialForcedUpdatesSkipped = 0, MovesBeforeReady = 0, MovesBeforeAck = 0, StartedEpochs = 0;
     uint32 DeferredForcedUpdates = 0, TimeBudgetRejected = 0, StaleEpochMoves = 0;

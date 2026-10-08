@@ -94,6 +94,26 @@ bool Save(const FString& Folder, bool Server, const FScript& State)
     Data->SetNumberField(TEXT("neutral_late_max_speed"), State.MovementStats.NeutralLateMaxSpeed);
     Data->SetBoolField(TEXT("guard_before_timeout"), State.GuardBeforeTimeout);
     Data->SetBoolField(TEXT("cleared_timeout_holds"), State.ClearedTimeoutHolds);
+    if (State.MovementStats.TimeoutRecovery.Epoch)
+    {
+        const auto& Recovery = State.MovementStats.TimeoutRecovery;
+        auto Detail = MakeShared<FJsonObject>();
+        Detail->SetNumberField(TEXT("epoch"), Recovery.Epoch);
+        Detail->SetNumberField(TEXT("reason"), 1);
+        Detail->SetBoolField(TEXT("arrived"), Recovery.bArrived);
+        Detail->SetBoolField(TEXT("all_grounded"), Recovery.bAllGrounded);
+        Detail->SetNumberField(TEXT("neutral_frames"), Recovery.NeutralFrames);
+        Detail->SetNumberField(TEXT("first_timestamp"), Recovery.FirstTimestamp);
+        Detail->SetNumberField(TEXT("first_dt"), Recovery.FirstDt);
+        Detail->SetNumberField(TEXT("initial_speed"), Recovery.InitialSpeed);
+        Detail->SetNumberField(TEXT("maximum_speed"), Recovery.MaximumSpeed);
+        Detail->SetNumberField(TEXT("minimum_braking"), Recovery.MinimumBraking);
+        Detail->SetNumberField(TEXT("path_cm"), Recovery.PathCm);
+        Detail->SetStringField(TEXT("handoff_root"), Recovery.HandoffRoot.ToString());
+        Detail->SetStringField(TEXT("arrival_root"), Recovery.ArrivalRoot.ToString());
+        Detail->SetStringField(TEXT("first_move_root"), Recovery.FirstMoveRoot.ToString());
+        Data->SetObjectField(TEXT("timeout_recovery"), Detail);
+    }
     if (State.MovementStats.LargestCorrectionCm > 0.f)
     {
         const auto& Event = State.MovementStats.LargestCorrection;
