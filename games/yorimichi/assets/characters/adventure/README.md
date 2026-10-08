@@ -19,5 +19,6 @@ uv run atelier build yorimichi unreal.cairo_adventure unreal.modori_adventure un
 ```
 
 The merged moves retain jumping, the double jump, sprinting, dodges, climbing, swimming, gliding,
-sword attacks and parries. The player's character switch offers only the game's own built characters.
+sword attacks and parries. Every playable character always uses its merged move set, including in scripted and
+shared sessions. The player's character switch offers only the game's own built characters.
 `scenarios/adventure_moves.py` exercises those moves on Cairo.

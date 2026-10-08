@@ -47,8 +47,7 @@ enum class EAdventureMoveMode : uint8 { Ground, Air, Glide, Climb, Swim };
  * double jump (his own somersault, or a tucked one turned by the game), the side hop and backflip, the paraglider,
  * climbing any steep surface, swimming, and sword combat (the four-cut combo, the charged spin, the dash, jump and plunge
  * attacks, the sneakstrike, the guard and parry, lock-on strafing, the flurry rush after a perfect dodge, hit reactions).
- * The sword guards and parries using the merged set's timings. There is no dash on foot. The "Move set" setting also
- * offers Cairo's original moves (no UAdventureMoveSet; ACairoCharacter). It drives the character's action clip,
+ * The sword guards and parries using the merged set's timings. There is no dash on foot. It drives the character's action clip,
  * timing every action by the adventure library's own action timelines, and moves the capsule itself while gliding, climbing and swimming
  * (UJapanCharacterMovement's custom mode). It names actions and equipment slots only, never a character's bones or
  * clips, so any character with the actions and a carry bone map can use it. Stamina is the adventure library's: 1000 to a ring.
@@ -87,11 +86,7 @@ public:
     /** A button through the character's input handler: "jump", "jump_release", "dodge", "attack", "attack_release",
      *  "guard", "guard_release", "weapon", "crouch", "dash". True when the move set took it. */
     bool Press(FName Button);
-    /** The "Move set" setting: 0 merged (the default), 1 Cairo's legacy moves; -moveset=merged
-     *  or cairo on the command line decides instead. */
-    enum EChoice : int32 { Merged = 0, LegacyCairo = 1 };
-    static int32 Chosen();
-    /** The "Shield" setting: carry the shield and guard and parry with it, or leave it off and use the sword. */
+    /** Preserve the shared loadout field; these characters always guard and parry with their sword. */
     void SetShield(bool bOn);
     bool HasShield() const { return bShield; }
     /** The menu opened: buttons held down are let go without acting. */

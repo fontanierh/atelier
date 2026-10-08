@@ -1,31 +1,29 @@
 # Cairo
 
-Cairo is the player character: a boy 148 cm tall, in the skate outfit, with a bokken he can draw. His source of truth
+Cairo is the player character: a boy 148 cm tall, in the skate outfit, carrying the merged set's sword. His source of truth
 is the current revision's blend, `Cairo-Game-r18.blend` (textures packed inside), and the JSON records beside it. The
-rig is the humanoid bone contract with fingers: 53 bones (23 core and 30 finger bones). The blend carries 56 clip
-roles: 25 unarmed (locomotion, crouch, jumps, dashes, dodge, roll, sitting, climbing, gliding, turns, interact,
-wave), 12 combat clips (guard, draw, sheath, three strikes, charge, parry, combo) and 19 armed clips that keep the
-sword in hand through locomotion, crouch, jumps, dashes, sitting and the roll.
+rig is the humanoid bone contract with fingers: 53 bones (23 core and 30 finger bones). His game import uses the
+body and nine authored donor clips: double jump, sword guard/parry/recoil, interact, wave and the three sitting clips.
+`adventure.toml` lists these clips; all other movement and combat come from the merged set.
 
 ## Build
 
 ```sh
-uv run atelier build yorimichi characters.cairo unreal.cairo
+uv run atelier build yorimichi unreal.cairo_adventure
 ```
 
-`characters.cairo` runs `export_unreal.py` in Blender three times into `build/yorimichi/cairo/`: the mesh, skeleton,
-bokken and every clip role (`export.json`), the combat clips with the sword (`export-sword.json`), and the armed clips
-(`export-armed.json`). The export checks the blend against `native_sha256` in `source-manifest.json` first.
-`unreal.cairo` imports the result into `/Game/Cairo` in three layers: `import_cairo.py` (`SK_Cairo`, the `A_*` clips,
-`BS_Locomotion`, `BS_Crouching`, `DA_Cairo`), `import_cairo_sword.py` (the `A_Sword*` combat clips, `SM_Bokken`, the
-sword fields of `DA_Cairo`) and `import_cairo_armed.py` (`BS_SwordLocomotion`, `BS_SwordCrouching`, the armed clips).
+`characters.cairo` runs `export_unreal.py` once into `build/yorimichi/cairo/`, exporting his body and the nine donor
+clips. The export checks the blend against `native_sha256` in `source-manifest.json` first. `unreal.cairo` imports
+`SK_Cairo`, the donor clips and `DA_CairoBase`, which supplies body and framing data to the merged importer.
+It creates no standalone movement or combat set. The content cleanup archives older movement/combat imports before cooking.
 
 Cairo has no skate clips: on the board, the skate runtime's solved pose is retargeted onto him at run time. See
 [skating](../../../docs/SKATE.md) and the [runtime assets](../../skate/README.md).
 
 `characters.cairo_adventure` and `unreal.cairo_adventure` give Cairo the merged move set (the reference rig's moves with his own double jump),
-which he plays whenever it is built unless the "Move set" setting picks his legacy moves (or the legacy adventure set): `../adventure/retarget.py` retargets the reference rig's clips onto him, as `adventure.toml` lays out, using `export_unreal.prepare` for his
-rig. See [Cairo with the merged move set](../adventure/README.md#cairo-with-the-merged-move-set).
+which he uses in every game session. `../adventure/retarget.py` retargets the reference rig's clips onto him, as
+`adventure.toml` lays out, using `export_unreal.prepare` for his rig. His base export supplies the body and donor clips;
+it is never a separate playable move set. See [the merged move set](../adventure/README.md).
 
 ## Files
 

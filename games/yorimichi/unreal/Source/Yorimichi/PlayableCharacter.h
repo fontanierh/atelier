@@ -8,10 +8,8 @@ class AWandererCharacter;
  * (FPlayableCharacter::FRegister), so the player's generic code (-rider=, the character switch, a shared game's roster
  * and pawn) needs no branch per character.
  *
- * One entry is the default (Cairo): the character a player plays when nothing names one, whose class decides its own
- * move set at BeginPlay. Its MoveSet entry (CairoAdventure) is the same character with the merged move set: what the "Move
- * set" setting picks and what a shared game plays by default. -rider= and a shared game name any entry but the default;
- * the character switch offers the default (as its MoveSet twin when chosen) and then every other entry but that twin.
+ * One entry is the default (Cairo). Every entry uses its character's merged move set, in normal play, scripted
+ * sessions and shared games. The character switch and -rider= use the same names.
  */
 struct YORIMICHI_API FPlayableCharacter
 {
@@ -23,17 +21,12 @@ struct YORIMICHI_API FPlayableCharacter
     bool (*IsBuilt)() = nullptr;
     /** The build step that imports it, named when -rider= asks for it unbuilt. */
     FString BuildStep;
-    /** Called on a pawn the character switch spawned as Name, before it finishes spawning (null: nothing). */
-    void (*Prepare)(AWandererCharacter* Pawn, const FString& Name) = nullptr;
     /** The default character (see above). */
     bool bDefault = false;
-    /** The default's twin with the merged move set (the default's entry only). */
-    FString MoveSet;
+    /** Older launch names resolve to this same character, never another move set or a menu entry. */
+    TArray<FString> Aliases;
 
     bool Built() const { return !IsBuilt || IsBuilt(); }
-    /** -rider= and a shared game may ask for it by name. */
-    bool IsRequestable() const { return !bDefault; }
-
     /** Every registered character, by name. */
     static const TArray<FPlayableCharacter>& All();
     static const FPlayableCharacter* Find(const FString& Name);

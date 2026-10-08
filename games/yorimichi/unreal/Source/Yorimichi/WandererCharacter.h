@@ -174,6 +174,8 @@ protected:
     // Gameplay tuning; the definition keeps the clip's authored stride speed.
     float SprintSpeedMultiplier = 1.f;
     UPROPERTY() TObjectPtr<UAdventureMoveSet> Moves;
+    /** A playable character whose required move set failed to load cannot use generic movement instead. */
+    void DisablePlayerMovement();
     /** A one-off clip outside the move set (an NPC's bow or a word), and its end. */
     void PlayGesture(FName Action, float BlendSeconds = .25f) { SetAction(Action, false, BlendSeconds, true); }
     void StopGesture(float BlendSeconds = .3f) { SetAction(NAME_None, false, BlendSeconds); }
@@ -233,9 +235,6 @@ private:
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
     UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
-    // -swordqa: scripted combat timing/state review; -sworddummy: a training post in front of the spawn
-    bool bSwordReview=false; float SwordReviewTime=0.f; int32 SwordReviewStep=-1; TArray<FString> SwordErrors; FString SwordTelemetry=TEXT("time,state,action,source_time,locked,armed,strikes,dummy_hits,hits_taken,parries,x,y,z,vz,falling,yaw,tip_x,tip_y,tip_z\n");
-    void AdvanceSwordReview(float Dt);
     void SpawnSwordDummy();
     UPROPERTY() TObjectPtr<UWandererDefinition> Definition;
     UPROPERTY() TObjectPtr<USpringArmComponent> CameraArm;
@@ -259,6 +258,7 @@ private:
     float ShakeTrauma = 0.f, ShakeClock = 0.f, DamageFlash = 0.f;
     bool bActionLoops = false, bJog = false, bWalk = false;
     bool bReady = false, bMouseReleased = false, bMenuOpen = false;
+    bool bMoveSetUnavailable = false;
     bool bControlsSuspended = false;
     bool bPendingTakeoff = false, bGroundJumped = false, bAirJumpUsed = false;
     float JumpBuffer = 0.f, SinceGrounded = 0.f, FallSpeed = 0.f;

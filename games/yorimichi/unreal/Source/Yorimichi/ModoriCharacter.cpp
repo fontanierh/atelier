@@ -61,5 +61,9 @@ void AModoriCharacter::BeginPlay()
     const TSharedPtr<FJsonObject> Grips = AtelierReadJson(AtelierDataPath(TEXT("modori/grips.json")));
     if (!Grips.IsValid()) UE_LOG(LogTemp, Warning, TEXT("Modori: no posed grips (build characters.modori_grips); his hands keep the clips' grips"));
     if (Set->Initialize(this, ModoriRecord(), Grips)) Moves = Set;
-    else UE_LOG(LogTemp, Warning, TEXT("Modori: no merged move set (build unreal.modori_adventure)"));
+    else
+    {
+        DisablePlayerMovement();
+        UE_LOG(LogTemp, Error, TEXT("Modori: no merged move set (build unreal.modori_adventure)"));
+    }
 }

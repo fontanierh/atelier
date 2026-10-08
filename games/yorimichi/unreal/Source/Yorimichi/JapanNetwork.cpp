@@ -215,12 +215,12 @@ AJapanWorld* EnsureWorld(UWorld* World)
 bool IsPlayableRider(const FString& Name)
 {
     const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
-    return (Character && Character->IsRequestable() && Character->Built()) || FPlayableCharacter::Available().Contains(Name);
+    return Character && Character->Built();
 }
 FString DefaultRider()
 {
     const FString Requested = FPlayableCharacter::Requested();
-    return IsPlayableRider(Requested) ? Requested : FPlayableCharacter::Default().MoveSet;   // shared games play the merged set
+    return IsPlayableRider(Requested) ? Requested : FPlayableCharacter::Default().Name;
 }
 }
 

@@ -1,7 +1,7 @@
 """Move set checks: the player's merged move set (UAdventureMoveSet; Cairo with the merged set) driven through the live bridge as
 a player would drive it.
 
-    atelier play yorimichi -- -rider=CairoAdventure -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
+    atelier play yorimichi -- -rider=Cairo -nofox -nosound -ForceDPCVars=r.Streaming.PoolSize=250 -RenderOffscreen -ForceRes
     atelier live py "TAKE='take1'" && atelier live py - < games/yorimichi/scenarios/adventure_moves.py
     ... wait for build/yorimichi/adventure/moves/<take>/done.json
 
@@ -16,8 +16,7 @@ dash and the swim back to the shore; the climb up a steep bank onto its top, and
 plunge and the hard landing.
 Each check reads UAdventureMoveSet's state (YorimichiLive::MoveState) every frame at a fixed 60 fps step; done.json lists
 every check with what it measured, log.json the per-frame state, and the key moments are saved as stills. Optional
-globals: ONLY, the checks to run; SHOTS, False for no stills; RIDER, the character switched to when the player has no
-move set (CairoAdventure: Cairo with the move set, -rider=CairoAdventure).
+globals: ONLY, the checks to run; SHOTS, False for no stills; RIDER, the character requested for the check (default Cairo).
 """
 import json, math, os
 import unreal
@@ -25,7 +24,7 @@ import unreal
 L = live.L
 TAKE = globals().get('TAKE', 'take1')
 SHOTS = globals().get('SHOTS', True)
-RIDER = globals().get('RIDER') or 'CairoAdventure'
+RIDER = globals().get('RIDER') or 'Cairo'
 OUT = os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'), 'yorimichi/adventure/moves', TAKE)
 os.makedirs(OUT, exist_ok=True)
 for f in os.listdir(OUT):
@@ -129,6 +128,7 @@ def on_foot():
     place(*RUN)
     s, _ = yield from until(settled, 6.)
     check('has a move set on the ground', s is not None, mode=s and s['mode'])
+    check('removed move set choices are refused', not L.set_preference('moveset', 1.) and not L.set_preference('moveset', 2.))
     yield from wait(1.)
     start = z(); stamina = state()['stamina']
     live.press('jump'); live.press('jump_release')
@@ -384,7 +384,6 @@ def steps():
         yield from wait(2.)
     st['size'] = state().get('scale', .8) / .8     # the speeds checked are the reference rig's (scale .8); a smaller body is slower
     st['shield'] = bool(state().get('shield'))
-    st['moveset'] = 0.
     for name, fn in CHECKS:
         st['check'] = name
         yield from fn()

@@ -165,6 +165,13 @@ void AWandererCharacter::BeginPlay()
     InitializeLocalPlayer();
 }
 
+void AWandererCharacter::DisablePlayerMovement()
+{
+    bMoveSetUnavailable = true;
+    bReady = false;
+    GetCharacterMovement()->DisableMovement();
+}
+
 void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -235,7 +242,6 @@ void AWandererCharacter::InitializeLocalPlayer()
     if (bSwitchedIn) ReadyTime = 1.3f;
     else if (USoundWave* Ambience = LoadObject<USoundWave>(nullptr, TEXT("/Game/Audio/Combat/ambience_countryside_01.ambience_countryside_01"), nullptr, LOAD_NoWarn | LOAD_Quiet))
         UGameplayStatics::SpawnSound2D(this, Ambience, .5f);
-    bSwordReview = FParse::Param(FCommandLine::Get(),TEXT("swordqa"));
     if (FParse::Param(FCommandLine::Get(),TEXT("fightfilm")))
     { FightFilm = CreateFightFilm(this); FApp::SetFixedDeltaTime(1.0/60.0); FApp::SetUseFixedTimeStep(true); }
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -261,7 +267,7 @@ void AWandererCharacter::InitializeLocalPlayer()
         bFixedView = true;
         DisableInput(Cast<APlayerController>(Controller));
     }
-    if (bCairoReview || bMapReview || bSwordReview || !TrailerSpecPath.IsEmpty())
+    if (bCairoReview || bMapReview || !TrailerSpecPath.IsEmpty())
     {
         FParse::Value(FCommandLine::Get(),TEXT("reviewdir="),ReviewDirectory);
         if (ReviewDirectory.IsEmpty()) ReviewDirectory = FPaths::ProjectSavedDir()/TEXT("Screenshots/Wanderer")/FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"));
@@ -1263,6 +1269,7 @@ void AWandererCharacter::Landed(const FHitResult& Hit)
 void AWandererCharacter::Tick(float Dt)
 {
     Super::Tick(Dt);
+    if (bMoveSetUnavailable) return;
     InitializeLocalPlayer();
     if (!Landscape && JapanNetwork::IsOnline(GetWorld()))
         if (AJapanWorld* World = JapanNetwork::FindWorld(GetWorld()); World && World->bGameplayReady) EnterWorld(World);
@@ -1379,7 +1386,6 @@ void AWandererCharacter::Tick(float Dt)
     if (bCairoReview) AdvanceCairoReview(Dt);
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview) AdvanceMapReview(Dt);
-    if (bSwordReview) AdvanceSwordReview(Dt);
     if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
     if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
     if (PhoneInput) PhoneInput->Tick(Dt);

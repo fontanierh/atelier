@@ -6,6 +6,8 @@ imports out of Content as well as stop producing them. Archives stay under build
 import json
 import shutil
 import time
+import tomllib
+from pathlib import Path
 
 ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'Cairo', 'CairoAdventure', 'CairoBike', 'Collections', 'CommunityPark',
@@ -23,6 +25,9 @@ CHARACTER_DATA = {
     'sword-trainer': {'adventure.json'},
 }
 
+DONOR = tomllib.loads((Path(__file__).parent / 'assets/characters/cairo/adventure.toml').read_text())['donor']
+CAIRO_CLIPS = frozenset('A_' + clip for clip in DONOR['clips'] + DONOR['gestures'])
+
 
 def retired(content):
     """Unknown generated imports at owned recipe boundaries; no traversal inside committed source data."""
@@ -32,6 +37,16 @@ def retired(content):
     for parent, allowed in boundaries:
         if parent.is_dir():
             yield from sorted(p for p in parent.iterdir() if p.name not in allowed and not p.name.startswith('.'))
+    # Incremental imports can leave the old movement/combat set beside the retained body and donor clips.
+    cairo = content / 'Cairo'
+    for parent in (cairo, cairo / 'Textures'):
+        if not parent.is_dir():
+            continue
+        for path in sorted(parent.iterdir()):
+            name = path.stem
+            if ((name.startswith('A_') and name not in CAIRO_CLIPS) or
+                    name.startswith(('BS_', 'SM_Bokken', 'M_Bokken', 'T_M_Bokken')) or name == 'DA_Cairo'):
+                yield path
 
 
 def archive(ctx, log):

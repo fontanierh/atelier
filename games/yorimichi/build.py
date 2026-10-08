@@ -9,9 +9,9 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
 /Game/Japan (textures, props, terrain, foliage, the villager, Momiji Hamlet, Hidamari, the sailboat, the zeppelin and
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
-after it. The player is installed in the prototype's three layers (full, sword, armed) from one source blend.
+after it. Cairo's base import supplies his body and the nine authored clips used by the merged move set.
 """
-import importlib.util, json, os
+import importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,14 +37,10 @@ SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,b
                     'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
 
 
-def cairo_roles():
-    """Clip role groups of the player, from its manifest (the export partitions the prototype used)."""
-    manifest = json.loads((CHARS / 'cairo' / 'source-manifest.json').read_text())
-    roles = [r['role'] for r in manifest['roles']]
-    combat = ['SwordIdle', 'SwordDraw', 'SwordSheath', 'SwordAttack1', 'SwordAttack2', 'SwordAttack3',
-              'SwordChargeUp', 'SwordChargeHold', 'SwordChargeRelease', 'SwordParry', 'SwordParryHit', 'SwordCombo']
-    armed = [r for r in roles if r.startswith('Sword') and r not in combat and r != 'SwordRun']
-    return combat, armed, roles
+def cairo_donor_clips():
+    """The authored clips consumed by the merged set; Cairo has no separate movement export."""
+    donor = tomllib.loads((CHARS / 'cairo' / 'adventure.toml').read_text())['donor']
+    return donor['clips'] + donor['gestures']
 
 
 # Keep the recipe's helpers available while the staging implementation has its own narrow input.
@@ -379,18 +375,14 @@ def world_steps(ctx, park):
 
 
 def character_steps(ctx):
-    """The base player and villagers; optional move sets are appended separately."""
+    """Character bodies, merged-set donor clips and villagers."""
     out = ctx.out
-    combat, armed, locomotion = cairo_roles()
     cairo = CHARS / 'cairo' / 'export_unreal.py'
     return [
         # ------------------------------------------------------------ characters
-        Step('characters.cairo', [
-                Blender(cairo, ('--sword', '--clips', ','.join(locomotion)), threads=4),
-                Blender(cairo, ('--clips', ','.join(combat), '--clips-only', '--sword', '--report', 'export-sword.json'), threads=4),
-                Blender(cairo, ('--clips', ','.join(armed), '--clips-only', '--report', 'export-armed.json'), threads=4)],
+        Step('characters.cairo', [Blender(cairo, ('--clips', ','.join(cairo_donor_clips())), threads=4)],
              inputs=[CHARS / 'cairo', NAMES], outputs=[out / 'cairo' / 'export.json'],
-             about='the player: mesh, locomotion/action clips and the bokken to FBX (full + sword and armed records)'),
+             about='Cairo: body and the nine donor clips used by the merged move set'),
         Step('characters.cairo_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py')], inputs=[CHARS / 'cairo', NAMES, ASSETS / 'vehicles' / 'bike'],
              needs=['world.bike'], outputs=[out / 'cairo' / 'bike' / 'export.json'],
              about="Cairo's bike clips (ride, mount, dismount, kickstand, hop, skid, foot down, bell, wave, crash) and the bike's channels"),
@@ -503,13 +495,9 @@ def unreal_steps(ctx):
         Step('unreal.fox_hunter', [UnrealScript(SCRIPTS / 'import_fox_hunter.py', 'FOX HUNTER IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_fox_hunter.py', SCRIPTS / 'animation_compression.py'],
              after=['unreal.world'], needs=['characters.fox_hunter'], heavy=True, about='/Game/FoxHunter'),
-        Step('unreal.cairo', [
-                UnrealScript(SCRIPTS / 'import_cairo.py', 'CAIRO IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_cairo_sword.py', 'CAIRO SWORD IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SCRIPTS / 'import_cairo_armed.py', 'CAIRO ARMED IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'import_cairo_sword.py',
-                                          'import_cairo_armed.py', 'animation_compression.py')],
-             after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo in three layers'),
+        Step('unreal.cairo', [UnrealScript(SCRIPTS / 'import_cairo.py', 'CAIRO IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / n for n in ('import_cairo.py', 'verify_cairo.py', 'animation_compression.py')],
+             after=['unreal.world'], needs=['characters.cairo'], heavy=True, about='/Game/Cairo: body and merged-set donor clips'),
         Step('unreal.cairo_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'CAIRO BIKE IMPORT COMPLETE', null_rhi=True)],
              inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'], needs=['characters.cairo_bike', 'unreal.cairo'],
              heavy=True, about="/Game/CairoBike: Cairo's bike clips on SK_Cairo"),

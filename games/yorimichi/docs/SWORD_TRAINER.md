@@ -6,7 +6,7 @@ A bout ends when either of you is knocked down at no
 health; she says a word, bows if you won, and walks back to her spot.
 
 Both fighters play the same move set: the player's merged move set (the reference rig's moves from the adventure library with Cairo's
-double jump and two-handed guard, [the adventure README](../assets/characters/adventure/README.md#the-merged-move-set)). Kaede is
+double jump and two-handed guard, [the adventure README](../assets/characters/adventure/README.md)). Kaede is
 a person in the game's own body, not a creature with its own rules: an AI holds her stick and presses her buttons, so
 every move she makes is one the player can make, and the move set's guard, parry, dodges, flurry rush and hit
 reactions answer both sides alike.
@@ -39,7 +39,7 @@ and soft lock find it, and a blow that reaches it goes through its own `Incoming
 striker back, `Deflected`). Blows take `SparringDamage`: 10 a cut, 18 a strong blow (which staggers), 28 at full
 power (which knocks down, or breaks a guard), times her level's share for hers: at Gentle her blows only flinch, at
 Master her full-power blows break the player's guard. Both fighters take hits alike ([the adventure
-README](../assets/characters/adventure/README.md#the-merged-move-set), "Taking hits").
+README](../assets/characters/adventure/README.md)).
 
 Her brain, each frame:
 

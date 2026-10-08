@@ -246,7 +246,8 @@ def main(args):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--clips')
+    donor = tomllib.loads((SOURCE / 'adventure.toml').read_text())['donor']
+    parser.add_argument('--clips', default=','.join(donor['clips'] + donor['gestures']))
     parser.add_argument('--clips-only',action='store_true')
     parser.add_argument('--revision',help='Folder of another revision (from the archive); default is this folder')
     parser.add_argument('--sword',action='store_true',help='Also export the bone-parented bokken as a static mesh with attachment data')

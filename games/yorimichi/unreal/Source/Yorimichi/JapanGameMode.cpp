@@ -25,7 +25,7 @@ bool AJapanGameMode::IsScriptedSession()
 void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 {
     if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nofox"))) return;
-    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter")) && !FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) return;
+    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter"))) return;
     const FRotator Facing = W->PlayerStart.Rotator();
     FVector Where = W->PlayerStart.GetLocation() + Facing.Vector() * 1200.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * -350.f;
     FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(FoxSpawn), false, Player);

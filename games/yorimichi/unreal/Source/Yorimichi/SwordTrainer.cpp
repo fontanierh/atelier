@@ -219,7 +219,7 @@ void ASwordTrainer::OpenMenu(AWandererCharacter* Player)
     Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 16)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
         .Text(FText::FromString(bCanSpar
             ? TEXT("\"Nothing in these woods waits for you to be ready. Let's see your blade. Pick how hard I push; a bout ends when one of us is down.\"")
-            : TEXT("\"Your feet aren't ready for my lessons yet. Come back with the merged move set (Esc, Move set).\"")))];
+            : TEXT("\"Your feet aren't ready for my lessons yet. Come back when you're ready to train.\"")))];
     TSharedPtr<SButton> First;
     if (bCanSpar)
     {

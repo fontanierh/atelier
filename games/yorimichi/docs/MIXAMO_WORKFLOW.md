@@ -162,29 +162,24 @@ With the sword out, every other clip keeps its own arm movement with the fist cl
 where it would hit something (the rule for every armed clip). `cairo_sword_locomotion.py` makes the armed copies
 (`SwordWalk`, `SwordSprint`, `Sword<Jump/Roll/...>`) from the unarmed clips, changing only the right arm and the grip,
 and records its measurements in [locomotion-build.json](../assets/characters/cairo/locomotion-build.json). Design rules
-and numbers: the "Armed animation" section of [SWORD_COMBAT.md](SWORD_COMBAT.md#armed-animation).
+and measurements are recorded in the authoring build files.
 
 ## 8. Into Unreal
 
 ```sh
-uv run atelier build yorimichi characters.cairo unreal.cairo   # export from Blender, import into Unreal
-uv run atelier play yorimichi --profile swordqa                # a scripted duel checks every sword mechanic
+uv run atelier build yorimichi unreal.cairo_adventure
+uv run atelier play yorimichi
+uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
-The export ([export_unreal.py](../assets/characters/cairo/export_unreal.py) `--sword`) writes the clips and the bokken;
-[import_cairo_sword.py](../unreal/Scripts/import_cairo_sword.py) makes the `A_Sword*` clips, `SM_Bokken` and the sword
-fields of `DA_Cairo`. What the game side needs to get right:
+The game imports only Cairo's body and the nine donor clips listed in
+[adventure.toml](../assets/characters/cairo/adventure.toml): double jump, guard/parry/recoil and everyday gestures.
+[import_cairo.py](../unreal/Scripts/import_cairo.py) installs those inputs; the
+[merged importer](../unreal/Scripts/import_adventure_moveset.py) supplies the movement and combat set, action timings
+and sword/paraglider fits. The authored combo and armed copies described above remain source authoring material;
+they are not exported or imported as another playable move set. Older generated imports are archived before cooking.
 
-- **Root motion** is on for the sword clips only (`enable_root_motion`, root locked at the reference pose), and the anim
-  instance takes root motion from everything.
-- **The root bone's scale.** The FBX root carries the armature scale times 100 (148), so root-motion travel arrives 148×
-  too large; `WandererSword.cpp` sets the translation scale to 1/148.
-- **The sword attachment** is computed in the importer: the sword's exported rest transform times the inverse of
-  `hand_R`'s reference pose. It matches Blender to 6 µm.
-- **Aim**: `ContactYaw` and `ContactDistance` on each `FWandererSwordClip` come from `combat-build.json`.
-
-Gameplay (controls, chain windows, charge, parry, hits) is in [SWORD_COMBAT.md](SWORD_COMBAT.md); effects and sound in
-[COMBAT_FEEDBACK.md](COMBAT_FEEDBACK.md).
+Gameplay is in [sword combat](SWORD_COMBAT.md); effects and sound in [combat feedback](COMBAT_FEEDBACK.md).
 
 ## Revisions and reproducing
 

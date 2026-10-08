@@ -986,7 +986,6 @@ FString UAdventureMoveSet::Describe() const
     O->SetBoolField(TEXT("air_jump_used"), bAirJumpUsed);
     O->SetNumberField(TEXT("flip"), FlipAngle);
     O->SetBoolField(TEXT("shield"), HasShield());
-    O->SetBoolField(TEXT("legacy"), false);
     O->SetBoolField(TEXT("sword_guard"), IsSwordGuarding());
     O->SetNumberField(TEXT("sword_guard_carry"), SwordGuardCarry);
     O->SetNumberField(TEXT("sword_carry"), SwordCarry);

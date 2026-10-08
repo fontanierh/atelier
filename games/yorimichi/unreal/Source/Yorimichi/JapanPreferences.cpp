@@ -3,7 +3,6 @@
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "PlayableCharacter.h"
-#include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -194,13 +193,6 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             for (const FSkateKnob& Knob : Group.Knobs)
                 Values.Add({Knob.Key, Knob.Label, SkateDefault(Knob, Defaults), Knob.Minimum, Knob.Maximum, Knob.Step});
     }
-    // The merged move set is the default; Cairo's original moves remain available.
-    const FPlayableCharacter* MergedDefault = FPlayableCharacter::Find(FPlayableCharacter::Default().MoveSet);
-    if ((MergedDefault && MergedDefault->Built()) || FPlayableCharacter::Available().Num())
-    {
-        const int32 After = Values.IndexOfByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("goofy"); })+1;
-        Values.Insert({TEXT("moveset"),TEXT("Move set"),0.f,0.f,1.f},After);
-    }
     DefaultValues.Reset();
     for (const FJapanPreference& V : Values) DefaultValues.Add(V.Key,V.Value);
     SettingsFile=FilePath();
@@ -260,7 +252,7 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
     return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
-        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy") || Key == TEXT("shield");
+        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -289,7 +281,7 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
         V.Value = FMath::Clamp(Number,V.Minimum,V.Maximum);
         if (V.Step > 0.f) V.Value = FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
         if (IsToggle(Key)) V.Value = V.Value > .5f ? 1.f : 0.f;
-        if (Key == TEXT("stamina_rings") || Key == TEXT("moveset")) V.Value=FMath::RoundToFloat(V.Value);
+        if (Key == TEXT("stamina_rings")) V.Value=FMath::RoundToFloat(V.Value);
         Apply(); Save(); return true;
     }
     return false;
@@ -374,7 +366,6 @@ void UJapanPreferences::Apply()
         FString Error;
         if (!Skate->SetFeel(JapanNetwork::IsOnline(Owner->GetWorld()) ? FSkateFeel::Defaults() : GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
     }
-    // Cairo changes between his original moves and the merged set through the character switch.
     const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
     const auto Set = [](const TCHAR* Name, float Value)
@@ -780,8 +771,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
         .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); })];
-    // The character switch (FPlayableCharacter::SwitchPlayer): the default character (Cairo), with the merged move set when it is
-    // built, and every other playable character. The switch waits for the next tick, out of the menu's click.
+    // The character switch waits for the next tick, out of the menu's click. Each character uses its merged move set.
     const auto Switch = [this](const FString& Name)
     {
         CloseMenu();
@@ -790,23 +780,16 @@ void UJapanPreferences::OpenMenu(bool bSkate)
     };
     const FString Playing = FPlayableCharacter::NameOf(Owner);
     const FPlayableCharacter& Default = FPlayableCharacter::Default();
-    const bool bPlayingDefault = Playing == Default.Name || Playing == Default.MoveSet;
-    const auto DefaultName = [this]
-    {
-        const FPlayableCharacter& Default = FPlayableCharacter::Default();
-        const FPlayableCharacter* Merged = FPlayableCharacter::Find(Default.MoveSet);
-        return Merged && Merged->Built() && FMath::RoundToInt(Get(TEXT("moveset"))) != UAdventureMoveSet::LegacyCairo ? Merged->Name : Default.Name;
-    };
     if (const TArray<FString> Riders = FPlayableCharacter::Available(); Riders.Num())
     {
         TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
         TArray<FString> Names = {Default.Name}; Names.Append(Riders);
         for (const FString& Name : Names)
         {
-            const bool bDefault = Name == Default.Name;
-            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && (bDefault ? !bPlayingDefault : Name != Playing))
+            const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
+            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && Name != Playing && Character && Character->Built())
                 .Text(FText::FromString(FPlayableCharacter::Label(Name)))
-                .OnClicked_Lambda([Switch,DefaultName,Name,bDefault] { Switch(bDefault ? DefaultName() : Name); return FReply::Handled(); })];
+                .OnClicked_Lambda([Switch,Name] { Switch(Name); return FReply::Handled(); })];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
@@ -815,23 +798,15 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
             .Text(FText::FromString(TEXT("Choose your character before joining. Shared games use the merged move set, two stamina rings and default skate physics.")))];
     TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
-    if (Values.ContainsByPredicate([](const FJapanPreference& V) { return V.Key == TEXT("moveset"); })) Toggles.Add(TEXT("moveset"));
     for (const FString& Key : Toggles)
     {
         TSharedRef<SButton> Button = SNew(SButton)
-            .IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) || (Key != TEXT("moveset") && Key != TEXT("shield")))
             .Text_Lambda([this,Key]
             {
                 const bool Enabled = Get(*Key) > .5f;
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
                     ? TEXT("Skate stance: Goofy · right foot forward")
                     : TEXT("Skate stance: Regular · left foot forward"));
-                if (Key == TEXT("moveset"))
-                {
-                    const int32 Choice = FMath::RoundToInt(Get(*Key));
-                    return FText::FromString(Choice == UAdventureMoveSet::LegacyCairo ? TEXT("Move set: Cairo (legacy) · roll and dashes")
-                        : TEXT("Move set: merged · double jump, glider, dodges"));
-                }
                 if (Key == TEXT("fog")) return FText::FromString(Enabled
                     ? TEXT("Volumetric fog: on · valley mist and light shafts")
                     : TEXT("Volumetric fog: off"));
@@ -839,17 +814,8 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
             })
-            .OnClicked_Lambda([this,Key,Switch,DefaultName,bPlayingDefault]
+            .OnClicked_Lambda([this,Key]
             {
-                if (Key == TEXT("moveset"))
-                {
-                    // Merged and Cairo (legacy), round again. Cairo between his legacy moves and a move set
-                    // needs the character switch; anything else takes it at once (Apply).
-                    const FString Before = DefaultName();
-                    SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%2));
-                    if (bPlayingDefault && DefaultName() != Before) Switch(DefaultName());
-                    return FReply::Handled();
-                }
                 SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
                 return FReply::Handled();
             });
@@ -864,7 +830,7 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         // Session-only keys are launch flags (the desktop play profile), not player settings, so they
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
-        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("moveset") || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
+        if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
         if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
         if (Values[I].Key == LightKeys[0])
             Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];

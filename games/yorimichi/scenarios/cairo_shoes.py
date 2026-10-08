@@ -10,7 +10,7 @@ grass by the forest lake's cabin, from (-51, 235) north to (-51, 241) (an 8 m co
 game; GRASS=((x, y), (x, y)) in island metres sets another). Should that grass ever stop being level, the levellest 6 m
 line by GroundAt within 20 m of it, above the lake's surface, is used. A place whose ground spans more than 10 cm along
 the walk, or with no ground under any point of it, is reported as not level and its foot checks are skipped. At each, Cairo stands 3 s, walks 6 m across
-the camera's view and stands again; the walk is checked to be the merged move set's (ground mode, not the legacy set,
+the camera's view and stands again; the walk is checked to be the merged move set's (ground mode,
 walking speed). Stills: a wide side-on view standing; close-ups of each shoe from its own
 side, the camera 3 cm over the floor and 70 cm away, standing before and after the walk; and every 0.3 s of the walk,
 a camera 1.2 m to his left at the same height tracking his feet. The close-ups are the evidence that the shoe mesh meets
@@ -111,7 +111,7 @@ def watch(seconds, phase):
     while t < seconds:
         s = state()
         h = heights(); h['t'] = round(t, 3); h['phase'] = phase
-        h.update(action=s.get('action'), mode=s.get('mode'), speed=round(s.get('speed', 0.), 1), legacy=bool(s.get('legacy')))
+        h.update(action=s.get('action'), mode=s.get('mode'), speed=round(s.get('speed', 0.), 1))
         seen.append(h); st['log'].append(dict(place=st['place'], **h))
         t += (yield)
     return seen
@@ -224,8 +224,8 @@ def visit(name, start, toward, height):
     lowest = {b: min(h[b] for h in walk) for b in ('toe_L', 'toe_R')}
     speeds = sorted(h['speed'] for h in walk)
     modes = sorted({h['mode'] for h in walk})
-    check('walking on the merged move set', modes == ['ground'] and not any(h['legacy'] for h in walk) and speeds[len(speeds) // 2] > 50.,
-          modes=modes, legacy=any(h['legacy'] for h in walk), median_speed=round(speeds[len(speeds) // 2]),
+    check('walking on the merged move set', modes == ['ground'] and speeds[len(speeds) // 2] > 50.,
+          modes=modes, median_speed=round(speeds[len(speeds) // 2]),
           actions=sorted({h['action'] for h in walk}))
     check('walking: planted toe joints at rest height (proxy)', all(LOW <= plant[b] <= HIGH for b in ('toe_L', 'toe_R')),
           planted=plant)

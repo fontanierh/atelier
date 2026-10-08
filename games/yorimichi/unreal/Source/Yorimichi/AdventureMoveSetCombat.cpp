@@ -11,7 +11,6 @@
 #include "JapanWorld.h"
 #include "JapanFootsteps.h"
 #include "YorimichiCombatFX.h"
-#include "JapanPreferences.h"
 #include "FoxHunter.h"
 #include "MegaRamp.h"
 #include "SuperUltraMegaPark.h"
@@ -890,14 +889,6 @@ void UAdventureMoveSet::SetShield(bool bOn)
 {
     bShield = bOn && Props.Contains(TEXT("shield"));
     if (const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield")); Shield && *Shield) (*Shield)->SetVisibility(HasShield(), true);
-}
-
-int32 UAdventureMoveSet::Chosen()
-{
-    FString Name;
-    if (FParse::Value(FCommandLine::Get(), TEXT("moveset="), Name))
-        return Name == TEXT("cairo") ? LegacyCairo : Merged;
-    return FMath::Clamp(FMath::RoundToInt(UJapanPreferences::Saved(TEXT("moveset"), 0.f)), 0, 1);
 }
 
 void UAdventureMoveSet::AdvanceEquipment(float Dt)

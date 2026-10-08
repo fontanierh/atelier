@@ -1,10 +1,10 @@
 # Cairo with the merged adventure move set (adventure/README.md): the reference rig's moves retargeted onto him (adventure/retarget.py), imported
-# by Scripts/import_adventure_moveset.py beside his own assets, which stay byte-identical. -rider=CairoAdventure in play.
+# by Scripts/import_adventure_moveset.py beside his body and donor clips, which stay byte-identical.
 mesh = "/Game/Cairo/SK_Cairo"
-base = "/Game/Cairo/DA_Cairo"                  # his own definition (mesh, framing, skate bones), copied
+base = "/Game/Cairo/DA_CairoBase"              # body, framing and donor clips; no standalone move set
 dest = "/Game/CairoAdventure"                       # the retargeted clips and blends
 definition = "/Game/CairoAdventure/DA_CairoAdventure"
-keep_base_actions = false                      # DA_Cairo's actions are his own move set, which the merged one replaces
+keep_base_actions = true                       # retain his authored gestures alongside the merged actions
 
 # The clips of his own the merged set plays (on every character): sampled by retarget.py --dump-own and retargeted onto
 # the others at their 60 fps; on Cairo they are his imported clips in /Game/Cairo (import_cairo.py).

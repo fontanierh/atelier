@@ -1,17 +1,15 @@
 #include "CairoCharacter.h"
-#include "JapanNetwork.h"
 #include "AtelierData.h"
 #include "AdventureMoveSet.h"
-#include "AtelierStream.h"
 #include "PlayableCharacter.h"
-#include "JapanGameMode.h"
-#include "JapanPreferences.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -34,18 +32,13 @@ namespace
     }
 }
 
-// Cairo is the default character, with his legacy moves or the merged set as he chooses at BeginPlay; CairoAdventure is him
-// with the merged set (FPlayableCharacter). The switch tells a switched-in Cairo which.
-static void PrepareCairo(AWandererCharacter* Pawn, const FString& Name) { CastChecked<ACairoCharacter>(Pawn)->SetAdventure(Name == ACairoCharacter::AdventureName()); }
-static const FPlayableCharacter::FRegister RegisterCairo({TEXT("Cairo"), &ACairoCharacter::StaticClass, nullptr, TEXT("unreal.cairo"), &PrepareCairo, true,
-                                                          ACairoCharacter::AdventureName()});
-static const FPlayableCharacter::FRegister RegisterCairoAdventure({ACairoCharacter::AdventureName(), &ACairoCharacter::StaticClass, &ACairoCharacter::HasAdventure,
-                                                              TEXT("unreal.cairo_adventure"), &PrepareCairo});
+static const FPlayableCharacter::FRegister RegisterCairo({TEXT("Cairo"), &ACairoCharacter::StaticClass, &ACairoCharacter::HasAdventure,
+                                                         TEXT("unreal.cairo_adventure"), true, {TEXT("CairoAdventure")}});
 
 ACairoCharacter::ACairoCharacter()
 {
-    DefinitionAssetPath = TEXT("/Game/Cairo/DA_Cairo.DA_Cairo");
-    SprintSpeedMultiplier = 1.25f;
+    DefinitionAssetPath = AdventureDefinition;
+    SprintSpeedMultiplier = 1.f;
     GetCapsuleComponent()->InitCapsuleSize(22.f,74.f);
     GetCharacterMovement()->SetCrouchedHalfHeight(65.f);
     GetMesh()->SetRelativeLocation(FVector(0,0,-74.65f));
@@ -62,26 +55,13 @@ bool ACairoCharacter::HasAdventure()
 
 void ACairoCharacter::BeginPlay()
 {
-    // Where a person plays, the "Move set" setting picks the merged set (the default), when built, or his original moves.
-    // QA, reviews and benchmarks keep his original moves
-    // unless the command line asks (-rider=CairoAdventure). A switched-in Cairo was told by the switch.
-    if (JapanNetwork::IsOnline(GetWorld()) && !IsNpc()) bAdventure = true;
-    else if (!bSwitchedIn)
-    {
-        const FString Requested = FPlayableCharacter::Requested();
-        const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
-        bAdventure = Requested == AdventureName() || (Requested.IsEmpty() && bPlayed && HasAdventure() && UAdventureMoveSet::Chosen() != UAdventureMoveSet::LegacyCairo);
-    }
-    if (bAdventure)
-    {
-        DefinitionAssetPath = AdventureDefinition;
-        SprintSpeedMultiplier = 1.f;   // the reference rig's sprint: the dash clip's own stride speed
-    }
     Super::BeginPlay();
-    if (bAdventure)
+    UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("AdventureMoves"));
+    if (Set->Initialize(this, AdventureRecord())) Moves = Set;
+    else
     {
-        UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("AdventureMoves"));
-        if (Set->Initialize(this, AdventureRecord())) Moves = Set;
+        DisablePlayerMovement();
+        UE_LOG(LogTemp, Error, TEXT("Cairo: no merged move set (build unreal.cairo_adventure)"));
     }
 }
 

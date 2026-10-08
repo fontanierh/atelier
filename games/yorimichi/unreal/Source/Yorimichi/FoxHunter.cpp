@@ -22,9 +22,6 @@
 #include "Misc/Parse.h"
 #include "YorimichiCombatFX.h"
 
-TSharedPtr<FFoxReview> CreateFoxReview(AFoxHunter* Fox);
-void AdvanceFoxReview(FFoxReview& Review, float Dt);
-
 UAnimSequence* UFoxHunterDefinition::FindAction(FName Name) const { const TObjectPtr<UAnimSequence>* Found = Actions.Find(Name); return Found ? Found->Get() : nullptr; }
 const FFoxHunterClip* UFoxHunterDefinition::FindClip(FName Role) const { return Clips.FindByPredicate([&](const FFoxHunterClip& C) { return C.Role == Role; }); }
 
@@ -84,7 +81,6 @@ void AFoxHunter::BeginPlay()
     Home = GetActorLocation(); HomeYaw = GetActorRotation().Yaw;
     Rand.Initialize(int32(FPlatformTime::Cycles() & 0x7fffffff));
     JapanEnemyQA::BeginHunter(this);
-    if (FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) Review = CreateFoxReview(this);
     UE_LOG(LogTemp, Display, TEXT("Fox hunter ready: %d clips, capsule %.0f/%.0f, home %s"), Definition->Clips.Num(), Definition->CapsuleRadius, Definition->CapsuleHalfHeight, *Home.ToString());
 }
 
@@ -307,7 +303,6 @@ void AFoxHunter::Tick(float Dt)
         else Target = JapanCombat::FindPlayer(this, Target, ForgetRadius);
     }
     else if (!IsValid(Target)) Target = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));   // also after a character switch
-    if (Review) AdvanceFoxReview(*Review, Dt);
     if (Target && !Target->IsReady()) return;
     AdvanceAction(Dt);
     StateTime += Dt; Cooldown = FMath::Max(0.f, Cooldown - Dt); NoticeBlock = FMath::Max(0.f, NoticeBlock - Dt);

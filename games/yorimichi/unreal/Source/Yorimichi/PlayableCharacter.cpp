@@ -26,7 +26,8 @@ const TArray<FPlayableCharacter>& FPlayableCharacter::All() { return Registry();
 
 const FPlayableCharacter* FPlayableCharacter::Find(const FString& Name)
 {
-    return Name.IsEmpty() ? nullptr : Registry().FindByPredicate([&](const FPlayableCharacter& C) { return C.Name == Name; });
+    return Name.IsEmpty() ? nullptr : Registry().FindByPredicate([&](const FPlayableCharacter& C)
+        { return C.Name == Name || C.Aliases.Contains(Name); });
 }
 
 const FPlayableCharacter& FPlayableCharacter::Default()
@@ -41,7 +42,7 @@ FString FPlayableCharacter::Requested()
     FString Name;
     if (!FParse::Value(FCommandLine::Get(), TEXT("rider="), Name) || Name.IsEmpty()) return FString();
     const FPlayableCharacter* Character = Find(Name);
-    if (Character && Character->IsRequestable() && Character->Built()) return Name;
+    if (Character && Character->Built()) return Character->Name;
     UE_LOG(LogTemp, Warning, TEXT("Playable character %s is unavailable"), *Name);
     return FString();
 }
@@ -55,9 +56,8 @@ UClass* FPlayableCharacter::PawnOverride()
 TArray<FString> FPlayableCharacter::Available()
 {
     TArray<FString> Names;
-    const FPlayableCharacter& Main = Default();
     for (const FPlayableCharacter& Character : All())
-        if (!Character.bDefault && Character.Name != Main.MoveSet && Character.Built()) Names.Add(Character.Name);
+        if (!Character.bDefault && Character.Built()) Names.Add(Character.Name);
     return Names;
 }
 
@@ -73,7 +73,7 @@ AWandererCharacter* FPlayableCharacter::SwitchPlayer(AWandererCharacter* From, c
     APlayerController* PC = From ? Cast<APlayerController>(From->GetController()) : nullptr;
     UWorld* World = From ? From->GetWorld() : nullptr;
     const FPlayableCharacter* Character = Find(Name);
-    if (!PC || !World || !From->IsReady() || From->IsZeppelinPassenger() || Name == NameOf(From) || !Character || !Character->Built())
+    if (!PC || !World || !From->IsReady() || From->IsZeppelinPassenger() || !Character || Character->Name == NameOf(From) || !Character->Built())
     {
         UE_LOG(LogTemp, Warning, TEXT("Character switch to %s refused"), *Name);
         return nullptr;
@@ -85,7 +85,6 @@ AWandererCharacter* FPlayableCharacter::SwitchPlayer(AWandererCharacter* From, c
     From->SetActorEnableCollision(false);
     AWandererCharacter* To = World->SpawnActorDeferred<AWandererCharacter>(Character->Class(), FTransform(Facing, Feet), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
     if (!To) { From->SetActorEnableCollision(true); return nullptr; }
-    if (Character->Prepare) Character->Prepare(To, Name);
     To->bSwitchedIn = true;
     To->EnterWorld(From->GetLandscape());
     To->FinishSpawning(FTransform(Facing, Feet + FVector(0, 0, To->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2.f)));

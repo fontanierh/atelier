@@ -369,7 +369,7 @@ UClass* AJapanNetworkGameMode::GetDefaultPawnClassForController_Implementation(A
     const auto* State = Controller ? Controller->GetPlayerState<AJapanPlayerState>() : nullptr;
     if (!State) return FPlayableCharacter::Default().Class();
     const FPlayableCharacter* Character = FPlayableCharacter::Find(State->RiderName);
-    return Character && Character->IsRequestable() ? Character->Class() : FPlayableCharacter::Default().Class();
+    return Character && Character->Built() ? Character->Class() : FPlayableCharacter::Default().Class();
 }
 APawn* AJapanNetworkGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Controller, const FTransform& Transform)
 {

@@ -323,7 +323,7 @@ def done(m):
 
 def stale(m, blend=True):
     """Whether m's opacity mask still leads to a see-through that a rebuild deleted. import_treehouse.py,
-    import_cairo.py and import_cairo_sword.py rebuild their materials with delete_all_material_expressions, which leaves
+    import_cairo.py rebuilds its materials with delete_all_material_expressions, which leaves
     the opacity mask on the deleted nodes: done() still finds the tag, and the material fails to compile (Missing input
     Shadow) and renders as the default. Those imports reset the material to opaque, and the see-through (blend) always
     leaves it masked; a shadow switch that lost an input is stale too."""
