@@ -197,7 +197,17 @@ def _checks(host, guest, case, moving):
             (key := tuple(r.get(k) for k in response_key)) in sent and
             sent[key].get('reaction_through') == expected
             for r in events(guest, 'applied'))
-    return checks, outcomes | {'scheduled_reactions': measurements}
+    # Report only: response acceptance time on the same-machine platform clock.
+    # This includes a pre-hit response still in flight when the contact resolved.
+    # No samples means unknown, never an inferred zero. The global gate above
+    # continues to cover every correction, including spawn and earlier responses.
+    first_hit = min((r['at'] for r in hits), default=math.inf)
+    post_hit = [r['correction_cm'] for r in events(guest, 'accepted')
+                if r['at'] >= first_hit and r.get('correction') is True and
+                finite(r.get('correction_cm')) and r['correction_cm'] >= 0]
+    return checks, outcomes | {'scheduled_reactions': measurements,
+        'post_hit_max_cm': max(post_hit, default=None), 'post_hit_correction_samples': len(post_hit),
+        'post_hit_scope': 'Accepted after first host contact; includes pre-hit responses still in flight'}
 
 
 def scheduled_reaction_checks(host, guest, case, moving=False):

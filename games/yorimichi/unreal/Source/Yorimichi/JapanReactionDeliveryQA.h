@@ -13,7 +13,8 @@ namespace JapanReactionDeliveryQA
 {
     void State(const UJapanCharacterMovement* Movement, const TCHAR* Event, bool Pending, bool Captured,
         float Stamp = -1.f);
-    void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanMoveResponse& Response);
+    void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanMoveResponse& Response,
+        float CorrectionCm = -1.f);
     void Scheduled(const UJapanCharacterMovement* Movement, const TCHAR* Event,
         const FJapanScheduledReaction& Reaction, const FJapanReactionMarker* Marker = nullptr);
     TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement);

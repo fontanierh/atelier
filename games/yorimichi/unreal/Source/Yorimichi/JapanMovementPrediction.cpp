@@ -600,16 +600,16 @@ void UJapanCharacterMovement::ClientHandleMoveResponse(const FCharacterMoveRespo
     // A duplicate or stale response must not rewind state. CMC must have accepted this exact correction first.
     if (Client->LastAckedMove == PreviousAck || !Client->LastAckedMove.IsValid() ||
         Client->LastAckedMove->TimeStamp != Response.ClientAdjustment.TimeStamp) return;
-    JapanReactionDeliveryQA::Response(this, TEXT("accepted"), Custom);
+    const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
+    const float CorrectionCm = Custom.IsCorrection() ? float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation())) : -1.f;
+    JapanReactionDeliveryQA::Response(this, TEXT("accepted"), Custom, CorrectionCm);
     AcknowledgeEdges(Custom.AcknowledgedEdge);
     if (!Custom.IsCorrection())
     {
         DisposeReactionMoves(static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove).PostState.ReactionThrough);
         return;
     }
-    const auto& Saved = static_cast<const FSavedMove_Japan&>(*Client->LastAckedMove);
     ++NetworkStats.Corrections;
-    const float CorrectionCm = float(FVector::Dist(Saved.SavedLocation, CharacterOwner->GetActorLocation()));
     if (CorrectionCm > 1.f) ++NetworkStats.PositionCorrections;
     if (CorrectionCm > NetworkStats.LargestCorrectionCm)
     {

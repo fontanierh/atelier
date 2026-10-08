@@ -55,7 +55,8 @@ void State(const UJapanCharacterMovement* Movement, const TCHAR* Event, bool Pen
             Data->SetStringField(TEXT("live_action"),Rider->GetAnimationAction().ToString());
     }
 }
-void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanMoveResponse& ResponseData)
+void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanMoveResponse& ResponseData,
+    float CorrectionCm)
 {
     if (auto Data = DeliveryRow(Movement, Event))
     {
@@ -64,6 +65,7 @@ void Response(const UJapanCharacterMovement* Movement, const TCHAR* Event, const
         Data->SetNumberField(TEXT("edge"), ResponseData.AcknowledgedEdge);
         Data->SetBoolField(TEXT("correction"), ResponseData.IsCorrection());
         Data->SetBoolField(TEXT("checkpoint"), ResponseData.bHasCheckpoint);
+        if (CorrectionCm >= 0.f) Data->SetNumberField(TEXT("correction_cm"), CorrectionCm);
         Data->SetNumberField(TEXT("reaction_through"), ResponseData.bHasCheckpoint ? ResponseData.Checkpoint.ReactionThrough : 0);
         Data->SetStringField(TEXT("action"), ResponseData.bHasCheckpoint ? ResponseData.Checkpoint.Action.ToString() : FString());
         FString Digest;
@@ -183,7 +185,7 @@ TSharedPtr<FJsonObject> Snapshot(const UJapanCharacterMovement* Movement)
 }
 #else
 void JapanReactionDeliveryQA::State(const UJapanCharacterMovement*, const TCHAR*, bool, bool, float) {}
-void JapanReactionDeliveryQA::Response(const UJapanCharacterMovement*, const TCHAR*, const FJapanMoveResponse&) {}
+void JapanReactionDeliveryQA::Response(const UJapanCharacterMovement*, const TCHAR*, const FJapanMoveResponse&, float) {}
 void JapanReactionDeliveryQA::Scheduled(const UJapanCharacterMovement*, const TCHAR*, const FJapanScheduledReaction&, const FJapanReactionMarker*) {}
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::Snapshot(const UJapanCharacterMovement*) { return {}; }
 TSharedPtr<FJsonObject> JapanReactionDeliveryQA::LargestCorrection(const FJapanMovementStats&) { return {}; }

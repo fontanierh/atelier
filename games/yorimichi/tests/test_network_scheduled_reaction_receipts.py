@@ -120,6 +120,24 @@ def test_no_recoil_exemption(error):
     assert passed(pair) is (error < 1)
 
 
+def test_post_hit_error_reports_samples_without_changing_acceptance():
+    host, guest = receipts()
+    contact = next(r['at'] for r in host['stimuli'] if r['event'] == 'hit')
+    before, _ = scheduled_reaction_checks(host, guest, 0)
+    guest['rows'] += [dict(event='accepted', at=contact+offset, correction=True, correction_cm=error)
+                      for offset, error in ((-.1, 100.), (0., .02), (.1, .03))]
+    after, report = scheduled_reaction_checks(host, guest, 0)
+    assert after == before
+    assert report['post_hit_max_cm'] == .03
+    assert report['post_hit_correction_samples'] == 2
+
+
+def test_absent_post_hit_samples_are_unknown_not_zero():
+    _, report = scheduled_reaction_checks(*receipts(), 0)
+    assert report['post_hit_max_cm'] is None
+    assert report['post_hit_correction_samples'] == 0
+
+
 @pytest.mark.parametrize('case,event', [(0, 'correction_before_hit'), (1, 'zero_impulse_guard'),
     (3, 'prepared_good_ack'), (4, 'second_after_capture'), (5, 'prepared_correction_before_hit'),
     (6, 'cancel_after_epoch'), (7, 'host_own_hit')])
