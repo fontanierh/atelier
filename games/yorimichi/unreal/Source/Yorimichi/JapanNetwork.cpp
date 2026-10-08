@@ -3,7 +3,7 @@
 #include "Components/CapsuleComponent.h"
 #include "AtelierData.h"
 #include "BotwRider.h"
-#include "CairoCharacter.h"
+#include "PlayableCharacter.h"
 #include "JapanWorld.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
@@ -217,12 +217,13 @@ AJapanWorld* EnsureWorld(UWorld* World)
 }
 bool IsPlayableRider(const FString& Name)
 {
-    return (Name == ACairoCharacter::BotwName() && ACairoCharacter::HasBotw()) || ABotwRider::Available().Contains(Name);
+    const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
+    return (Character && Character->IsRequestable() && Character->Built()) || ABotwRider::Available().Contains(Name);
 }
 FString DefaultRider()
 {
     const FString Requested = ABotwRider::Requested();
-    return IsPlayableRider(Requested) ? Requested : ACairoCharacter::BotwName();
+    return IsPlayableRider(Requested) ? Requested : FPlayableCharacter::Default().MoveSet;   // shared games play the merged set
 }
 }
 

@@ -3,7 +3,6 @@
 #include "JapanNetwork.h"
 #include "AtelierFX.h"
 #include "BotwRider.h"
-#include "CairoCharacter.h"
 #include "Hippodrome.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
@@ -60,7 +59,7 @@ AHippodromeFigure* UHorseRideComponent::GetFigure() const { return Figure.Get();
 FString UHorseRideComponent::RiderFor(const AWandererCharacter* Character)
 {
     if (!Character) return FString();
-    if (Character->IsA<ACairoCharacter>()) return FHorseSpec::PlayerRider();
+    if (const FString Own = Character->GetHorseRider(); !Own.IsEmpty()) return Own;
     const FString Name = TEXT("Rider") + ABotwRider::Requested();
     return FHorseSpec::Find(Name) ? Name : FString();
 }
@@ -104,7 +103,7 @@ bool UHorseRideComponent::Toggle()
         return true;
     }
     const FString RiderName = RiderFor(Rider);
-    if (RiderName.IsEmpty()) { Hint = TEXT("Only Cairo and Link ride the horses"); return false; }
+    if (RiderName.IsEmpty()) { Hint = TEXT("This character has no horse rider"); return false; }
     if (!FHorseSpec::Find(ChosenHorse())) { Hint = TEXT("The horses are not installed"); return false; }
     UCharacterMovementComponent* M = Rider->GetCharacterMovement();
     if (!M->IsMovingOnGround() || M->IsSwimming() || Rider->bIsCrouched) { Hint = TEXT("Stand on firm ground to call the horse"); return false; }

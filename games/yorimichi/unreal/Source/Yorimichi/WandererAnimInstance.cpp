@@ -11,8 +11,6 @@
 #include "AnimNode_SkateRider.h"
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
-#include "CairoCharacter.h"
-#include "ModoriCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "SailboatStanceNode.h"
@@ -304,7 +302,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // up. Finish blending shortly after steering returns at source .94.
         const float Recovery=MovingRoll?FMath::Clamp((Pawn->GetActionSourceTime()-.85f)/.15f,0.f,1.f):0.f;
         State.RecoveryAlpha=Recovery*Recovery*(3.f-2.f*Recovery);
-        const bool Grounded=(Pawn->IsA<ACairoCharacter>() || Pawn->IsA<AModoriCharacter>()) && !bSailing && !bBiking &&
+        const bool Grounded=Pawn->PlantsFeet() && !bSailing && !bBiking &&
             Pawn->GetCharacterMovement()->IsMovingOnGround() && Pawn->GetAnimationAction()!=TEXT("Roll");
         Feet.Alpha=Grounded?1.f:0.f;
         Feet.DeltaSeconds=Dt;
@@ -350,8 +348,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
                     };
                     LegLength = FVector::Dist(Where(TEXT("thigh_L")), Where(TEXT("shin_L"))) + FVector::Dist(Where(TEXT("shin_L")), Where(TEXT("foot_L")));
                 }
-            // Only Modori's longer legs move them; Cairo and the others keep the stance as it was fitted.
-            const float Reach = Pawn->IsA<AModoriCharacter>() ? FMath::Clamp(LegLength / 55.f, 1.f, 1.6f) : 1.f;
+            const float Reach = Pawn->SailboatReach(LegLength);
             const FVector HullRight=(SailboatC->PosePoint(FVector(0,1,0))-SailboatC->PosePoint(FVector::ZeroVector)).GetSafeNormal();
             const float GripSide=FVector::DotProduct(SailboatC->HandPoint(1)-SailboatC->PosePoint(FVector::ZeroVector),HullRight);
             // Slide naturally along the wide thwart to keep the moving tiller within the child's reach.

@@ -57,6 +57,16 @@ public:
     /** The health a sparring blow of this strength (1 a cut, 2 a charged or finishing one, 3 full power) takes from
      *  the partner: a full-power blow knocks down (the move set's HeavyDamage, 25). */
     virtual float SparringDamage(int32 Power) const { return Power >= 3 ? 28.f : Power == 2 ? 18.f : 10.f; }
+    /** Its name as -rider= and the character switch know it (FPlayableCharacter); empty: the default character's. */
+    virtual FString GetPlayableName() const { return FString(); }
+    /** Whose bike clips it rides with (/Game/<Rig>Bike, Content/Data/<rig>/bike); empty: the default character's. */
+    virtual FString GetBikeRig() const { return FString(); }
+    /** The horse roster's rider it rides and races as; empty: the BOTW rider -rider= names, if the roster has one. */
+    virtual FString GetHorseRider() const { return FString(); }
+    /** The animation graph plants its feet on the ground where it stands (foot IK). */
+    virtual bool PlantsFeet() const { return false; }
+    /** How far the sailboat's seat stretches its fitted stance, from its leg length (cm); 1 keeps it as fitted. */
+    virtual float SailboatReach(float LegLength) const { return 1.f; }
     AJapanWorld* GetLandscape() const { return Landscape; }
     /** The character switch (ABotwRider::SwitchPlayer) sets this on the new character before it finishes spawning: it
      *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */

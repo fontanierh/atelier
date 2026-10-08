@@ -8,18 +8,20 @@ M_BotwCharacter (or its masked twin), so horses and riders are shaded like every
 Writes Content/Data/horses/roster.json, which the race (HorseRace.h) reads: mesh and clip paths, roles, gait speeds and
 heights, and build/yorimichi/horses/unreal_import.json. The whole /Game/Horses folder is rebuilt.
 
-When the Cairo rider export is there (assets/characters/horses/cairo_rider.py), its FBX clips import onto
-/Game/Cairo/SK_Cairo's skeleton as /Game/Horses/RiderCairo/A_RiderCairo_<Clip>, and the roster gains RiderCairo: the
+Where a playable character's rider export is there (build/yorimichi/horses/<id>/, Cairo's from
+assets/characters/horses/cairo_rider.py), its FBX clips import onto the character's own skeleton (SK_<Name> in its
+character.toml's unreal_path) as /Game/Horses/Rider<Name>/A_Rider<Name>_<Clip>, and the roster gains Rider<Name>: the
 player in the saddle, in the races and riding about the world.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
-import json, sys, time
+import json, sys, time, tomllib
 from pathlib import Path
 import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
 
 OUT = yori.OUT / 'horses'
+CHARS = yori.ASSETS / 'characters'
 CONFIG = json.loads((OUT / 'export.json').read_text())
 DEST = '/Game/Horses'
 MASTERS = '/Game/Botw'
@@ -141,18 +143,22 @@ def import_character(character, owners, masters):
     return {'record': record, 'skeleton_asset': skeleton}
 
 
-def import_cairo():
-    """RiderCairo: cairo_rider.py's clips on Cairo's own mesh and skeleton (the FBX import of import_cairo_botw.py)."""
-    report = json.loads((OUT / 'cairo' / 'export.json').read_text())
-    mesh = E.load_asset('/Game/Cairo/SK_Cairo')
-    assert mesh, 'run unreal.cairo first: RiderCairo rides on its mesh'
-    skeleton, folder, started = mesh.skeleton, f'{DEST}/RiderCairo', time.time()
+def import_hero(character):
+    """Rider<Name>: a playable character's rider clips (cairo_rider.py's for Cairo) on its own mesh and skeleton (the FBX
+    import of import_botw_moveset.py)."""
+    spec = tomllib.loads((CHARS / character / 'character.toml').read_text())
+    pascal = ''.join(word.title() for word in character.split('-'))
+    rider = f'Rider{pascal}'
+    report = json.loads((OUT / character / 'export.json').read_text())
+    mesh = E.load_asset(f"{spec['unreal_path']}/SK_{pascal}")
+    assert mesh, f'run unreal.{character.replace("-", "_")} first: {rider} rides on its mesh'
+    skeleton, folder, started = mesh.skeleton, f'{DEST}/{rider}', time.time()
     E.make_directory(folder)
     clips = {}
     for name, clip in report['clips'].items():
         task = U.AssetImportTask()
-        for key, value in dict(filename=str(OUT / 'cairo' / 'fbx' / f'A_{name}.fbx'), destination_path=folder,
-                               destination_name=f'A_RiderCairo_{name}', automated=True, replace_existing=True,
+        for key, value in dict(filename=str(OUT / character / 'fbx' / f'A_{name}.fbx'), destination_path=folder,
+                               destination_name=f'A_{rider}_{name}', automated=True, replace_existing=True,
                                save=True).items():
             task.set_editor_property(key, value)
         options = U.FbxImportUI()
@@ -169,16 +175,16 @@ def import_cairo():
         AT.import_asset_tasks([task])
         sequence = next((a for a in (E.load_asset(p) for p in task.get_editor_property('imported_object_paths'))
                          if isinstance(a, U.AnimSequence)), None)
-        assert sequence and sequence.get_editor_property('skeleton') == skeleton, ('RiderCairo import failed', name)
+        assert sequence and sequence.get_editor_property('skeleton') == skeleton, (f'{rider} import failed', name)
         length = sequence.get_editor_property('sequence_length')
-        assert abs(length - clip['duration']) < .04, ('RiderCairo', name, length, clip['duration'])
+        assert abs(length - clip['duration']) < .04, (rider, name, length, clip['duration'])
         sequence.set_editor_property('enable_root_motion', False)
         animation_compression.apply_to(sequence)
         E.save_loaded_asset(sequence)
         clips[name] = {'path': sequence.get_path_name(), 'length': round(length, 4), 'loop': clip['loop'],
                        'travel_cm': [0., 0., 0.]}
-    # SK_Cairo faces +X and is authored in centimetres: no turn and no scale, unlike the glTF characters.
-    return {'name': 'RiderCairo', 'label': 'Cairo', 'kind': 'hero', 'coat': '', 'mesh': mesh.get_path_name(),
+    # SK_<Name> faces +X and is authored in centimetres: no turn and no scale, unlike the glTF characters.
+    return {'name': rider, 'label': spec['display_name'], 'kind': 'hero', 'coat': '', 'mesh': mesh.get_path_name(),
             'skeleton': skeleton.get_path_name(), 'mesh_yaw': 0., 'scale': 1., 'height_cm': 0.,
             'speeds_cm': {}, 'clips': clips, 'roles': report['roles'],
             'materials': [str(slot.material_slot_name) for slot in mesh.materials], 'looks': [],
@@ -200,9 +206,9 @@ for character in ordered:
     U.log(f"HORSES {record['name']}: {len(record['clips'])} clips, {record['height_cm']} cm, {record['seconds']} s")
 
 roster = [done[c['name']]['record'] for c in CONFIG['characters']]
-if (OUT / 'cairo' / 'export.json').exists():
-    roster.append(import_cairo())
-    U.log(f"HORSES RiderCairo: {len(roster[-1]['clips'])} clips, {roster[-1]['seconds']} s")
+for hero in sorted(p.parent.name for p in OUT.glob('*/export.json') if (CHARS / p.parent.name / 'character.toml').exists()):
+    roster.append(import_hero(hero))
+    U.log(f"HORSES {roster[-1]['name']}: {len(roster[-1]['clips'])} clips, {roster[-1]['seconds']} s")
 DATA.mkdir(parents=True, exist_ok=True)
 (DATA / 'roster.json').write_text(json.dumps({'characters': roster}, indent=1) + '\n')
 (OUT / 'unreal_import.json').write_text(json.dumps({'characters': roster}, indent=1) + '\n')

@@ -1,5 +1,5 @@
 """Cairo on horseback: the hippodrome riders' clips (Link's BOTW riding clips, RiderLink in roster.toml) retargeted onto
-Cairo with his BOTW move set's retarget (../cairo/botw.py), so the player races and rides as himself.
+Cairo with his BOTW move set's retarget (../botw/retarget.py), so the player races and rides as himself.
 
     blender -b --python games/yorimichi/assets/characters/horses/cairo_rider.py
 
@@ -15,10 +15,10 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-spec = importlib.util.spec_from_file_location('cairo_botw', HERE.parent / 'cairo' / 'botw.py')
+spec = importlib.util.spec_from_file_location('botw_retarget', HERE.parent / 'botw' / 'retarget.py')
 retarget = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(retarget)
-import yori   # noqa: E402  (on the path through cairo/export_unreal.py)
+import yori   # noqa: E402  (on the path through botw/retarget.py)
 
 HORSES = yori.OUT / 'horses'
 OUT = HORSES / 'cairo'

@@ -1,6 +1,7 @@
 #include "ModoriCharacter.h"
 #include "AtelierData.h"
 #include "BotwMoveSet.h"
+#include "PlayableCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -27,6 +28,9 @@ namespace
         return Record;
     }
 }
+
+static const FPlayableCharacter::FRegister RegisterModori({AModoriCharacter::Name(), &AModoriCharacter::StaticClass, &AModoriCharacter::IsBuilt,
+                                                           TEXT("unreal.modori_botw")});
 
 AModoriCharacter::AModoriCharacter()
 {

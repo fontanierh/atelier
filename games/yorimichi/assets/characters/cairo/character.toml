@@ -13,4 +13,5 @@ clip_roles = 56
 export = "export_unreal.py"
 export_args = ["--sword"]             # also the bokken, bone-parented to hand_R
 unreal_path = "/Game/Cairo"
+see_through = ["M_Cairo", "M_Bokken"]   # his and the bokken's materials in unreal_path fade near the camera (Scripts/see_through.py)
 licence = "own; the sword attacks were retargeted from Mixamo motion, baked into the source (raw Mixamo files not included)"
