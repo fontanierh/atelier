@@ -24,6 +24,10 @@ CHARACTER_DATA = {
     'modori': {'adventure.json', 'bike', 'grips.json'},
     'sword-trainer': {'adventure.json'},
 }
+CHARACTER_ASSET_DIRECTORIES = {
+    'Modori': {'Adventure', 'Textures'},
+    'SwordTrainer': {'Adventure', 'Textures'},
+}
 
 DONOR = tomllib.loads((Path(__file__).parent / 'assets/characters/cairo/adventure.toml').read_text())['donor']
 CAIRO_CLIPS = frozenset('A_' + clip for clip in DONOR['clips'] + DONOR['gestures'])
@@ -37,6 +41,12 @@ def retired(content):
     for parent, allowed in boundaries:
         if parent.is_dir():
             yield from sorted(p for p in parent.iterdir() if p.name not in allowed and not p.name.startswith('.'))
+    # Renamed move folders can survive beside the body's current imports in an incremental checkout.
+    for name, allowed in CHARACTER_ASSET_DIRECTORIES.items():
+        parent = content / name
+        if parent.is_dir():
+            yield from sorted(p for p in parent.iterdir()
+                              if p.is_dir() and p.name not in allowed and not p.name.startswith('.'))
     # Incremental imports can leave the old movement/combat set beside the retained body and donor clips.
     cairo = content / 'Cairo'
     for parent in (cairo, cairo / 'Textures'):

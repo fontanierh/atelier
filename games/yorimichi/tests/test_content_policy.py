@@ -15,11 +15,14 @@ def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
     active = ['Adventure/Reference/A_Idle.uasset', 'CairoAdventure/DA_CairoAdventure.uasset',
               'Cairo/SK_Cairo.uasset', 'Cairo/DA_CairoBase.uasset', 'Cairo/A_DoubleJump.uasset', 'Cairo/A_Wave.uasset',
               'Cairo/A_SwordParry.uasset', 'Cairo/M_CairoOutfit.uasset', 'Cairo/Textures/T_M_Cairo.uasset',
+              'Modori/Adventure/A_Run.uasset', 'Modori/Textures/coat.uasset', 'Modori/PA_Modori_Cloth.uasset',
+              'SwordTrainer/Adventure/A_Run.uasset', 'SwordTrainer/A_Bow.uasset', 'SwordTrainer/Textures/body.uasset',
               'Data/SkateNative/native.bin', 'Data/cairo/adventure.json', 'Audio/Skate/roll.uasset']
     old = ['RetiredCharacter/mesh.uasset', 'Data/retired-roster/roster.json',
            'Cairo/A_Roll.uasset', 'Cairo/A_DashGround.uasset', 'Cairo/A_SwordAttack1.uasset',
            'Cairo/BS_Locomotion.uasset', 'Cairo/DA_Cairo.uasset', 'Cairo/SM_Bokken.uasset',
            'Cairo/M_Bokken_Wood.uasset', 'Cairo/Textures/T_M_Bokken_Wood.uasset',
+           'Modori/RetiredMoves/A_Run.uasset', 'SwordTrainer/RetiredMoves/A_Idle.uasset',
            'Data/cairo/old-moves.json', 'Audio/RetiredActivity/song.uasset']
     for relative in active + old:
         path = content / relative
