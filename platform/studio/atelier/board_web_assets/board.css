@@ -1139,5 +1139,40 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
   .threads-pane .inbox-thread { padding: 10px 12px 10px; gap: 8px; border-radius: 16px; }
   .threads-pane .inbox-thread-head { flex-wrap: nowrap; gap: 4px; }
   .threads-pane .inbox-thread-title { flex: 1 1 0; }
+  /* The thread on screen is read as you look at it, and a swipe right reads it too: the title gets the room. */
+  .threads-pane .inbox-actions .mark-read { display: none; }
   .threads-pane .inbox-thread-body, .threads-pane .inbox-replies { gap: 8px; }
 }
+
+/* Swipe actions (Mail style): a row dragged sideways shows its action behind it; past the line it is armed. */
+.swipe-host { position: relative; }
+.swipe-hint { position: absolute; z-index: 0; display: flex; align-items: center; gap: 6px; padding: 0 18px; border-radius: 18px; background: rgb(var(--tint) / .07); color: var(--muted); font-size: 13px; font-weight: 650; pointer-events: none; opacity: calc(.35 + var(--p, 0) * .65); transition: background .18s, color .18s, opacity .25s; }
+.swipe-hint.left { justify-content: flex-end; }
+.swipe-hint svg { width: 20px; height: 20px; transform: scale(calc(.7 + var(--p, 0) * .3)); transition: transform .2s cubic-bezier(.3, 1.4, .5, 1); }
+.swipe-hint.armed { background: var(--coral); color: #fff; }
+.swipe-hint.armed svg { transform: scale(1.12); }
+.swipe-hint.read.armed { background: var(--live); }
+.swipe-hint.star.armed { background: var(--warn); }
+.swipe-hint.gone { opacity: 0; }
+
+/* Stars */
+.star-button .icon svg, .star-toggle .icon svg, .star-mark .icon svg, .threads-filter .icon svg { width: 16px; height: 16px; }
+.star-button { margin-left: auto; }
+.star-button.on, .star-toggle.on, .star-mark { color: var(--warn); }
+.star-button.on svg, .star-toggle.on svg, .star-mark svg { fill: currentColor; }
+.star-toggle { display: inline-flex; align-items: center; padding-inline: 6px; }
+.star-mark { display: inline-flex; align-items: center; }
+.threads-filter button { display: inline-flex; align-items: center; gap: 4px; }
+.threads-filter .icon svg { width: 13px; height: 13px; }
+.inbox-list.stale { opacity: .55; transition: opacity .2s; }
+
+/* Slide along the tab bar: the highlight follows the thumb. */
+.tabbar.scrubbing .tab-indicator { transition: none; }
+.tabbar .tab.scrub-over { color: var(--ink); }
+
+/* A view that failed to render, in its own place. */
+.pane-error { margin: auto; padding: 24px; }
+.noscript { padding: 24px; font: 16px/1.5 system-ui, sans-serif; }
+/* A thread opened from Threads or Activity slides over a still copy of that list, so the conversation stays hidden. */
+.app.over-list .chat-pane { background: transparent; }
+.app.in-thread.over-list :is(#topbar, #feed, #errorBanner) { visibility: hidden; }

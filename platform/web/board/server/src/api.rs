@@ -88,8 +88,10 @@ pub struct Agent {
     pub pending: i64,
     /// Its listener's last delivery failed.
     pub delivery_error: bool,
-    /// The newest message it sent the board's sender (0 for none): marks unread direct messages.
+    /// The newest message it sent the board's sender (0 for none).
     pub last_to_me: i64,
+    /// Its direct messages to the board's sender that are still unread, by the board's one read state.
+    pub unread: i64,
     /// It has render work in flight (named on the render board, or holding a render lock).
     pub engaged: bool,
 }
@@ -234,6 +236,7 @@ pub struct ThreadItem {
     pub reply_audience: ReplyAudience,
     pub last_activity: f64,
     pub newest: i64,
+    pub starred: bool,
 }
 
 /// `GET /api/threads`: the conversations the reader is part of, unread first, then by newest reply.
@@ -242,6 +245,8 @@ pub struct Threads {
     pub threads: Vec<ThreadItem>,
     pub total: i64,
     pub unread: i64,
+    /// How many threads the reader starred (`?starred=1` lists only those).
+    pub starred: i64,
 }
 
 #[derive(Serialize, JsonSchema, Clone, Debug)]
@@ -288,6 +293,9 @@ pub struct Thread {
     /// The root: every addressed copy of a web send.
     pub root: Vec<Message>,
     pub replies: Vec<Message>,
+    /// The thread's read-state key.
+    pub key: String,
+    pub starred: bool,
 }
 
 /// `GET /api/document/{id}`: a Markdown or text attachment, rendered for the reader.
@@ -370,6 +378,35 @@ pub struct ReadRequest {
 pub struct Read {
     /// The thread's key, or `*` for everything.
     pub read: String,
+}
+
+/// `POST /api/seen`: the messages the reader has had on screen. Each one's thread is read up to the newest of them.
+#[derive(JsonSchema)]
+#[allow(dead_code)]
+pub struct SeenRequest {
+    /// At most 500.
+    pub ids: Vec<i64>,
+}
+
+#[derive(Serialize, JsonSchema)]
+pub struct Seen {
+    /// The threads whose read mark moved forward.
+    pub threads: i64,
+}
+
+/// `POST /api/star`: star or unstar the thread a message is in.
+#[derive(JsonSchema)]
+#[allow(dead_code)]
+pub struct StarRequest {
+    pub id: i64,
+    pub starred: bool,
+}
+
+#[derive(Serialize, JsonSchema)]
+pub struct Starred {
+    /// The thread's key.
+    pub key: String,
+    pub starred: bool,
 }
 
 /// `POST /api/task/dismiss`.
@@ -470,6 +507,10 @@ pub struct Contract {
     preview: Preview,
     read_request: ReadRequest,
     read: Read,
+    seen_request: SeenRequest,
+    seen: Seen,
+    star_request: StarRequest,
+    starred: Starred,
     dismiss_request: DismissRequest,
     dismissed: Dismissed,
     remove_request: RemoveRequest,

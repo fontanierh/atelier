@@ -132,6 +132,9 @@ pub fn ensure_schema() -> Result<()> {
             reader TEXT NOT NULL, thread TEXT NOT NULL, last_read INTEGER NOT NULL DEFAULT 0, unfollowed INTEGER,
             PRIMARY KEY (reader, thread)
         );
+        CREATE TABLE IF NOT EXISTS stars (
+            reader TEXT NOT NULL, thread TEXT NOT NULL, created REAL NOT NULL, PRIMARY KEY (reader, thread)
+        );
         INSERT OR IGNORE INTO reads (reader, thread, last_read) SELECT '*', '*', coalesce(max(id), 0) FROM messages;",
     )?;
     for (column, kind) in [

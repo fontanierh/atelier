@@ -1,0 +1,24 @@
+{
+  "name": "atelier-board",
+  "private": true,
+  "type": "module",
+  "description": "The agent board web app (React + TypeScript). `npm run build` bundles it into platform/studio/atelier/board_web_assets/app.js, which is committed so `atelier board serve` needs no Node.",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "types": "node gen-types.mjs",
+    "check": "node gen-types.mjs --check && tsc --noEmit && node build.mjs --check"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.25.12",
+    "json-schema-to-typescript": "15.0.4",
+    "playwright-core": "1.58.2",
+    "typescript": "5.9.3"
+  }
+}

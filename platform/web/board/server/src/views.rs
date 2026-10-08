@@ -186,6 +186,7 @@ pub fn snapshot(query: &Query, remote_status: Option<&Path>, sender: &str, csrf:
                 // Transport errors are generated diagnostics, never shown in full.
                 delivery_error: error.is_some_and(|e| !e.is_empty()),
                 engaged: false,
+                unread: 0,
                 agent: name,
                 cursor,
                 pid,
@@ -215,7 +216,7 @@ pub fn snapshot(query: &Query, remote_status: Option<&Path>, sender: &str, csrf:
         }
     }
     let acks = ack_ids(&db, None)?;
-    let summary = inbox::summary(&db, sender)?;
+    let (summary, direct) = inbox::summary(&db, sender)?;
     let mut schedule = floor::sections(&floor::board_text());
     let holders = floor::holders();
     let telemetry = files::read_json(&db::root().join("render-supervisor/latest.json")).unwrap_or(Value::Null);
@@ -246,6 +247,7 @@ pub fn snapshot(query: &Query, remote_status: Option<&Path>, sender: &str, csrf:
     );
     for agent in &mut agents {
         agent.engaged = engaged.contains(&agent.agent);
+        agent.unread = direct.get(&agent.agent).copied().unwrap_or(0);
     }
     let (log_text, log_total) = floor::recent_log(schedule.get("Log").map_or("", String::as_str), log as usize);
     schedule.insert("Log".into(), log_text);
@@ -282,10 +284,12 @@ fn sql_value(value: &Value) -> rusqlite::types::Value {
 }
 
 /// A whole conversation: the root (every copy of a web send) and all replies beneath it, oldest first.
-pub fn thread(id: i64) -> Result<Thread> {
+pub fn thread(id: i64, reader: &str) -> Result<Thread> {
     let db = db::read()?;
     let (roots, replies) = store::thread_rows(&db, id)?;
     let ids: Vec<i64> = roots.iter().chain(&replies).map(|row| row.id).collect();
     let acks = ack_ids(&db, Some(&ids))?;
-    Ok(Thread { root: decorate(&db, roots, &acks)?, replies: decorate(&db, replies, &acks)? })
+    let key = inbox::group_key(roots[0].id, roots[0].dedup.as_deref());
+    let starred = inbox::is_starred(&db, reader, &key)?;
+    Ok(Thread { root: decorate(&db, roots, &acks)?, replies: decorate(&db, replies, &acks)?, key, starred })
 }

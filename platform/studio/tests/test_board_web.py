@@ -108,8 +108,11 @@ def request(server, path='/', payload=None, headers=None):
 
 def test_http_static_and_read_only_api(http_server):
     status, body, headers = request(http_server)
-    assert status == 200 and b'Send a message' in body and b'id="recipient"' in body
-    assert "script-src 'self'" in headers['Content-Security-Policy']
+    assert status == 200 and b'id="app"' in body and "script-src 'self'" in headers['Content-Security-Policy']
+    # The app renders the board before the effects and the scene, which decorate what it rendered, start.
+    assert body.index(b'src="/app.js" defer') < body.index(b'src="/board-fx.js" defer') < body.index(b'src="/board-scene.js"')
+    status, app, headers = request(http_server, '/app.js')
+    assert status == 200 and b'Send a message' in app and headers['Content-Type'].startswith('text/javascript')
     status, body, headers = request(http_server, '/manifest.webmanifest')
     assert status == 200 and json.loads(body)['display'] == 'standalone'
     assert headers['Content-Type'] == 'application/manifest+json'
@@ -390,10 +393,10 @@ def test_long_posts_go_out_without_a_length_warning(cache, capsys):
 
 def test_static_files_load_fast_gzipped_revalidated_and_paintings_cached(http_server):
     import gzip
-    status, body, headers = request(http_server, '/board.js', headers={'Accept-Encoding': 'gzip'})
+    status, body, headers = request(http_server, '/app.js', headers={'Accept-Encoding': 'gzip'})
     assert status == 200 and headers['Content-Encoding'] == 'gzip' and headers['Cache-Control'] == 'no-cache'
-    assert gzip.decompress(body) == (board_web.ASSETS / 'board.js').read_bytes()
-    assert request(http_server, '/board.js', headers={'If-None-Match': headers['ETag']})[0] == 304
+    assert gzip.decompress(body) == (board_web.ASSETS / 'app.js').read_bytes()
+    assert request(http_server, '/app.js', headers={'If-None-Match': headers['ETag']})[0] == 304
     # The page is never kept, so a launch without network can't show an old board.
     assert request(http_server, '/')[2]['Cache-Control'] == 'no-store'
     for painting in ('/meadow-portrait-1.webp', '/meadow-night-portrait-1.webp'):
@@ -608,3 +611,15 @@ def test_the_api_contract_is_the_servers_own(cache):
     committed = (paths.PLATFORM / 'web' / 'board' / 'api' / 'board-api.schema.json').read_text()
     current = subprocess.run([str(binary()), '--schema'], capture_output=True, text=True, check=True).stdout
     assert committed == current, 'regenerate it: atelier-board-server --schema > platform/web/board/api/board-api.schema.json'
+
+
+def test_the_web_app_bundle_and_types_are_built_from_their_sources():
+    # The page's types come from the schema and its committed bundle from the app's sources; both must be current.
+    import shutil
+    import subprocess
+    from atelier import paths
+    app = paths.PLATFORM / 'web' / 'board' / 'app'
+    if not shutil.which('node') or not (app / 'node_modules').is_dir():
+        pytest.skip('the board app is not installed (npm ci in platform/web/board/app)')
+    result = subprocess.run(['npm', 'run', '-s', 'check'], cwd=app, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
