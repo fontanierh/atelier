@@ -210,6 +210,7 @@ private:
     friend class UBotwMoveSet;
     friend class UJapanCharacterMovement;
     friend struct FBotwNetworkState;
+    friend struct FJapanVehicleQAAccess;
     float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the native skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;

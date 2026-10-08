@@ -23,6 +23,19 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
+// QA uses the ordinary request and RPC entry points, including their host gates.
+// Keep this access local to the nonshipping probe rather than exposing the RPCs.
+struct FJapanVehicleQAAccess
+{
+    static bool Request(AWandererCharacter* Player,bool Sail)
+    {return Sail?Player->RequestNetworkSail():Player->RequestNetworkBike();}
+    static void SendRequest(AWandererCharacter* Player,bool Sail)
+    {
+        if(Sail)Player->ServerRequestSail(Player->GetActivityEpoch());
+        else Player->ServerRequestBike(Player->GetActivityEpoch());
+    }
+};
+
 namespace
 {
 bool Enabled(){static const bool Value=FParse::Param(FCommandLine::Get(),TEXT("networkvehicles"));return Value;}
@@ -105,7 +118,7 @@ struct FVehicleProbe
     EJapanActivity Activity()const{return Sail()?EJapanActivity::Sailboat:EJapanActivity::Bike;}
     bool Riding(const AWandererCharacter* P)const
     {return P&&P->GetNetworkActivity()==Activity()&&(Sail()?P->GetSailboat()->IsEquipped():P->GetBike()->IsRiding());}
-    bool Request(AWandererCharacter* P)const{return Sail()?P->RequestNetworkSail():P->RequestNetworkBike();}
+    bool Request(AWandererCharacter* P)const{return FJapanVehicleQAAccess::Request(P,Sail());}
     void Step(int32 Next){Phase=Next;PhaseBegan=FPlatformTime::Seconds();StableSince=-1;}
     TSharedPtr<FJsonObject> Snapshot(AWandererCharacter* P)
     {
@@ -180,7 +193,7 @@ struct FVehicleProbe
             DefaultDisabled=Rules&&!Rules->bPredictedVehicles;
             DefaultAttempt=DefaultDisabled&&!Request(P);
             // Also exercise the host gate through the ordinary owner RPC.
-            if(Sail())P->ServerRequestSail(P->GetActivityEpoch());else P->ServerRequestBike(P->GetActivityEpoch());
+            FJapanVehicleQAAccess::SendRequest(P,Sail());
         }
         if(Phase==1&&Enter&&Sail())
             P->TravelTo(AJapanWorld::ToUE(P==Host.Get()?-226.f:-216.f,-169.f,1.6f),80.f,TEXT("network vehicle shore"));
