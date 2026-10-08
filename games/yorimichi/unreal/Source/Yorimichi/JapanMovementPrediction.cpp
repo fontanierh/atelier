@@ -26,7 +26,12 @@ namespace
 bool TraceNetworkGameplay()
 {
     static const bool Enabled = FParse::Param(FCommandLine::Get(), TEXT("networkgameplay"));
+#if !UE_BUILD_SHIPPING
+    static const bool Vehicles = FParse::Param(FCommandLine::Get(), TEXT("networkvehicles"));
+    return Enabled || Vehicles;
+#else
     return Enabled;
+#endif
 }
 }
 

@@ -20,6 +20,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
@@ -66,6 +67,8 @@ struct FVehicleProbe
     bool HitTerminal=false,HitHop=false;
     bool LandedOnce=false;
     bool PendingRefused=false,LaterMount=false;
+    double ClockDriveAt=-1.,HitchSeconds=0.,HitchEnded=-1.;
+    float HitchSpeed=0.;int32 HitchInputY=0;uint32 HitchEpoch=0,ControlEpoch=0;
     double PendingRequestAt=-1.;uint32 ContactEpoch=0,LaterRequestEpoch=0;
     double GroundBelowWater=0.,ContactAt=-1.,Due=-1.;
     uint32 StartEpoch=0,EndEpoch=0,PendingBikeBefore=0,PendingSailBefore=0;
@@ -113,6 +116,7 @@ struct FVehicleProbe
         return LastPeer;
     }
     bool Sail()const{return Case.EndsWith(TEXT("sail"));}
+    bool ClockCase()const{return Case==TEXT("clock-bike");}
     bool PendingCase()const{return Case.StartsWith(TEXT("mount-"));}
     void Fail(const FString& Why){if(Error.IsEmpty())Error=Why;}
     EJapanActivity Activity()const{return Sail()?EJapanActivity::Sailboat:EJapanActivity::Bike;}
@@ -145,6 +149,22 @@ struct FVehicleProbe
         const FVector2D Gaps=P->GetBike()->GetWheelGaps();
         Data->SetNumberField(TEXT("wheel_front_gap_cm"),Gaps.X);Data->SetNumberField(TEXT("wheel_rear_gap_cm"),Gaps.Y);
         Data->SetBoolField(TEXT("parked"),P->GetBike()->IsParked());Data->SetBoolField(TEXT("riding"),Riding(P));
+        if(ClockCase())
+        {
+            const FTransform Parked=P->GetBike()->GetBikeTransform();
+            const FVector Location=Parked.GetLocation();const FQuat Rotation=Parked.GetRotation();
+            Data->SetNumberField(TEXT("parked_x"),Location.X);Data->SetNumberField(TEXT("parked_y"),Location.Y);Data->SetNumberField(TEXT("parked_z"),Location.Z);
+            Data->SetNumberField(TEXT("parked_qx"),Rotation.X);Data->SetNumberField(TEXT("parked_qy"),Rotation.Y);
+            Data->SetNumberField(TEXT("parked_qz"),Rotation.Z);Data->SetNumberField(TEXT("parked_qw"),Rotation.W);
+            Data->SetNumberField(TEXT("hitch_seconds"),HitchSeconds);Data->SetNumberField(TEXT("hitch_ended"),HitchEnded);
+            Data->SetNumberField(TEXT("hitch_speed"),HitchSpeed);Data->SetNumberField(TEXT("hitch_input_y"),HitchInputY);
+            Data->SetNumberField(TEXT("hitch_epoch"),HitchEpoch);
+            Data->SetNumberField(TEXT("drive_seconds"),HitchEnded<0.?0.:HitchEnded-HitchSeconds-ClockDriveAt);
+            Data->SetNumberField(TEXT("control_start_epoch"),ControlEpoch);
+            Data->SetNumberField(TEXT("control_epoch"),Host->GetActivityEpoch());
+            Data->SetBoolField(TEXT("control_riding"),Riding(Host.Get()));
+            Data->SetNumberField(TEXT("control_timeouts"),CastChecked<UJapanCharacterMovement>(Host->GetCharacterMovement())->GetNetworkStats().TimeoutCorrections);
+        }
         Data->SetNumberField(TEXT("speed"),Sail()?P->GetSailboat()->GetSpeed():P->GetBike()->GetSpeed());
         Data->SetNumberField(TEXT("sail"),P->GetSailboat()->GetSailAmount());
         Data->SetStringField(TEXT("clip"),P->GetBike()->GetClip().ToString());
@@ -172,7 +192,27 @@ struct FVehicleProbe
         Data->SetNumberField(TEXT("movement_mode"),uint8(P->GetCharacterMovement()->MovementMode));
         if(auto* Movement=Cast<UJapanCharacterMovement>(P->GetCharacterMovement()))
         {const auto& Stats=Movement->GetNetworkStats();Data->SetNumberField(TEXT("replayed_moves"),Stats.ReplayedMoves);
-         Data->SetNumberField(TEXT("largest_correction_cm"),Stats.LargestCorrectionCm);}
+         Data->SetNumberField(TEXT("largest_correction_cm"),Stats.LargestCorrectionCm);
+         if(ClockCase())
+         {
+             Data->SetNumberField(TEXT("position_corrections_over_1cm"),Stats.PositionCorrections);
+             Data->SetNumberField(TEXT("timeout_corrections"),Stats.TimeoutCorrections);
+             Data->SetNumberField(TEXT("time_budget_corrections"),Stats.TimeBudgetCorrections);
+             Data->SetNumberField(TEXT("time_budget_rejected"),Stats.TimeBudgetRejected);
+             Data->SetNumberField(TEXT("stale_epoch_moves"),Stats.StaleEpochMoves);
+             Data->SetNumberField(TEXT("stale_probe_sent"),Stats.StaleProbeSent);
+             Data->SetNumberField(TEXT("stale_probe_rejected"),Stats.StaleProbeRejected);
+             Data->SetNumberField(TEXT("stale_probe_root_cm"),Stats.StaleProbeRootCm);
+             Data->SetNumberField(TEXT("stale_probe_clock_delta"),Stats.StaleProbeClockDelta);
+             Data->SetNumberField(TEXT("clock_arrivals"),Stats.ClockArrivals);
+             Data->SetNumberField(TEXT("neutral_path_cm"),Stats.NeutralPathCm);
+             Data->SetNumberField(TEXT("clock_arrival_drift_cm"),FVector::Dist(Stats.ClockArrivalRoot,Stats.ClockHandoffRoot));
+             Data->SetNumberField(TEXT("neutral_max_acceleration"),Stats.NeutralMaxAcceleration);
+             Data->SetNumberField(TEXT("neutral_late_ground_frames"),Stats.NeutralLateGroundFrames);
+             Data->SetNumberField(TEXT("neutral_late_max_speed"),Stats.NeutralLateMaxSpeed);
+             const auto Input=Movement->ReadMoveInput();
+             Data->SetNumberField(TEXT("input_x"),Input.X);Data->SetNumberField(TEXT("input_y"),Input.Y);Data->SetNumberField(TEXT("input_flags"),Input.Flags);
+         }}
         Data->SetArrayField(TEXT("phases"),Phases);Data->SetObjectField(TEXT("crash_site"),CrashSite);
         Data->SetBoolField(TEXT("complete"),Complete);Data->SetStringField(TEXT("error"),Error);
         Data->SetNumberField(TEXT("at"),FPlatformTime::Seconds());
@@ -185,6 +225,25 @@ struct FVehicleProbe
     {
         const bool Enter=Seen!=Phase;
         if(Enter){Seen=Phase;LocalSent=false;NextAction=0;ActionIndex=0;}
+        if(ClockCase()&&Phase>=40)
+        {
+            if(Phase==40&&Enter)
+            {
+                ControlEpoch=Host->GetActivityEpoch();
+                if(P==Guest.Get()){P->Live_Drive(FVector2D(0,1),2);ClockDriveAt=FPlatformTime::Seconds();}
+            }
+            if(Phase==41&&P==Guest.Get()&&Enter)
+            {
+                auto* Movement=CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement());
+                HitchEpoch=P->GetActivityEpoch();HitchSpeed=Movement->Velocity.Size2D();HitchInputY=Movement->ReadMoveInput().Y;
+                const double Started=FPlatformTime::Seconds();
+                FPlatformProcess::Sleep(1.05f);
+                HitchEnded=FPlatformTime::Seconds();HitchSeconds=HitchEnded-Started;
+            }
+            // No neutralization or repeated drive call: the ordinary epoch reset must clear the latched input.
+            if(P==Guest.Get())CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->SendStaleClockProbe();
+            return;
+        }
         P->Live_Drive(FVector2D::ZeroVector,1);
         if(Phase!=6)P->SetMenuOpen(false);
         if(Phase==0&&Enter)
@@ -287,7 +346,7 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     const double Now=FPlatformTime::Seconds();
     if(Began>=0.&&!Complete&&Now-Began>120.)Fail(FString::Printf(TEXT("Vehicle deadline: %s phase %d"),*Case,Phase));
     // Unsupported routes fail explicitly until their real stimulus is implemented.
-    if(Case!=TEXT("bike")&&Case!=TEXT("sail")&&Case!=TEXT("mount-bike")&&Case!=TEXT("mount-sail")&&Case!=TEXT("park")&&Case!=TEXT("crash"))Fail(TEXT("Vehicle case has no native stimulus yet"));
+    if(Case!=TEXT("bike")&&Case!=TEXT("sail")&&Case!=TEXT("mount-bike")&&Case!=TEXT("mount-sail")&&Case!=TEXT("park")&&Case!=TEXT("crash")&&!ClockCase())Fail(TEXT("Vehicle case has no native stimulus yet"));
     int32 Count=0;
     for(TActorIterator<AWandererCharacter> It(World.Get());It;++It)
     {
@@ -349,7 +408,7 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     if(Peer&&!Peer->GetStringField(TEXT("error")).IsEmpty()){Fail(Peer->GetStringField(TEXT("error")));return false;}
     if(Complete)
     {
-        if(Callbacks!=1||Guest->GetActivityEpoch()!=EndEpoch||!FMath::IsNearlyEqual(HealthBefore-Health,8.f,.01f))Fail(TEXT("Vehicle outcome changed after completion"));
+        if(Callbacks!=(ClockCase()?0:1)||Guest->GetActivityEpoch()!=EndEpoch||!FMath::IsNearlyEqual(HealthBefore-Health,ClockCase()?0.f:8.f,.01f))Fail(TEXT("Vehicle outcome changed after completion"));
         return Error.IsEmpty();
     }
     if(!PeerMatches(Peer))return false;
@@ -374,6 +433,25 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     else if(Phase==1&&Elapsed>1.&&Peer->GetBoolField(TEXT("rule_enabled"))&&
         Host->GetCharacterMovement()->IsMovingOnGround()&&Guest->GetCharacterMovement()->IsMovingOnGround()&&
         !Guest->IsNetworkActivityPending()&&(Case!=TEXT("crash")||FVector::Dist2D(Guest->GetActorLocation(),CrashStart)<30.))Step(2);
+    else if(ClockCase())
+    {
+        if(Phase==2&&BothRiding)
+        {StartEpoch=Guest->GetActivityEpoch();HealthBefore=Health;SavePhase(Peer);Step(40);}
+        else if(Phase==40&&BothRiding&&Elapsed>=1.2&&Guest->GetCharacterMovement()->Velocity.Size2D()>200.f&&Peer->GetNumberField(TEXT("speed"))>200.)
+        {SavePhase(Peer);Step(41);}
+        else if(Phase==41)
+        {
+            const double End=Peer->GetNumberField(TEXT("hitch_ended"));
+            if(End>0.&&Now-End>=.85&&Guest->GetNetworkActivity()==EJapanActivity::OnFoot&&Guest->GetCharacterMovement()->IsMovingOnGround())
+            {
+                EndEpoch=Guest->GetActivityEpoch();SavePhase(Peer);Complete=true;
+                auto Result=Snapshot(Guest.Get());Result->SetBoolField(TEXT("passed"),true);
+                if(!Write(Folder/TEXT("vehicle-result.json"),Result))Fail(TEXT("Could not save clock vehicle result"));
+                Control->SetBoolField(TEXT("complete"),true);Write(Folder/TEXT("vehicle-control.json"),Control);
+            }
+            else if(Elapsed>8.)Fail(TEXT("Bike timeout did not reach a replicated foot state within eight seconds"));
+        }
+    }
     else if(PendingCase())
     {
         if(Phase==2&&Elapsed>=3.&&Guest->GetNetworkActivity()==EJapanActivity::OnFoot&&!Guest->MovementLocked())
@@ -441,7 +519,7 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
         Control->SetBoolField(TEXT("complete"),true);Write(Folder/TEXT("vehicle-control.json"),Control);
     }
     if(Phase==10&&ResolvedAt>0.&&Now-ResolvedAt>12.&&!Complete)Fail(TEXT("Vehicle strike did not reach a safe replicated foot state"));
-    if(Complete&&(Callbacks!=1||Guest->GetActivityEpoch()!=EndEpoch||!FMath::IsNearlyEqual(HealthBefore-Health,8.f,.01f)))
+    if(Complete&&(Callbacks!=(ClockCase()?0:1)||Guest->GetActivityEpoch()!=EndEpoch||!FMath::IsNearlyEqual(HealthBefore-Health,ClockCase()?0.f:8.f,.01f)))
         Fail(TEXT("Vehicle outcome changed after completion"));
     return Complete;
 }
@@ -462,8 +540,8 @@ bool JapanVehicleQA::Finalize(const FString& Folder,FString& Error)
 {
     // The session invokes Finalize after the remote pawn is destroyed. Tick kept
     // its last live state; callback counts remain live through this audit.
-    if(!Probe.Complete||Probe.Callbacks!=1||Probe.Contacts!=1||Probe.LastGuestEpoch!=Probe.EndEpoch||
-        Probe.LastGuestActivity!=uint8(EJapanActivity::OnFoot)||!FMath::IsNearlyEqual(Probe.HealthBefore-Probe.LastHealth,8.f,.01f))Probe.Fail(TEXT("Vehicle teardown changed the exactly-once outcome"));
+    if(!Probe.Complete||Probe.Callbacks!=(Probe.ClockCase()?0:1)||Probe.Contacts!=(Probe.ClockCase()?0:1)||Probe.LastGuestEpoch!=Probe.EndEpoch||
+        Probe.LastGuestActivity!=uint8(EJapanActivity::OnFoot)||!FMath::IsNearlyEqual(Probe.HealthBefore-Probe.LastHealth,Probe.ClockCase()?0.f:8.f,.01f))Probe.Fail(TEXT("Vehicle teardown changed the exactly-once outcome"));
     Error=Probe.Error;
     auto Data=MakeShared<FJsonObject>();
     Data->SetStringField(TEXT("case"),Probe.Case);Data->SetBoolField(TEXT("passed"),Error.IsEmpty());

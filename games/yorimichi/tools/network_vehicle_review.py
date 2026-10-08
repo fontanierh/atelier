@@ -24,6 +24,9 @@ def frame_rate(row, fps):
 
 
 def compare_vehicle(folder, case):
+    if case == 'clock-bike':
+        from network_vehicle_clock_review import compare_clock_bike
+        return compare_clock_bike(folder)
     if case not in ('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash'):
         raise ValueError('Unsupported native vehicle case')
     def read(name):

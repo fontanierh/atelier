@@ -479,7 +479,7 @@ def main():
     parser.add_argument('--port', type=int)
     parser.add_argument('--tailnet', action='store_true', help='Use the verified local Tailscale adapter through the ordinary private-listener path')
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
-    parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash'), help='Native motion and vehicle-hit route; each pending and terminal route needs its own native receipt')
+    parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash', 'clock-bike'), help='Native vehicle route; clock-bike injects one real 1050 ms owner outage at zero lag')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
@@ -499,8 +499,9 @@ def main():
     if args.enemy and (args.combat or args.gameplay):
         parser.error('--enemy has a separate native route; do not combine it with combat/gameplay')
     if args.vehicle_case:
-        if (args.lag_ms, args.variance_ms, args.loss_percent) != (60, 15, 2):
-            parser.error('Vehicle acceptance requires --lag-ms 60 --variance-ms 15 --loss-percent 2')
+        expected = (0, 0, 0) if args.vehicle_case == 'clock-bike' else (60, 15, 2)
+        if (args.lag_ms, args.variance_ms, args.loss_percent) != expected:
+            parser.error('Vehicle clock acceptance requires zero lag; other vehicle routes require 60/15/2')
         args.listen = True
         args.gameplay = False
     elif args.enemy:
