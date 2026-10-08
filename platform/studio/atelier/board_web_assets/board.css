@@ -1129,4 +1129,15 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
   .threads-pane .inbox-thread > .inbox-reply, .threads-pane .inbox-thread > .task-status, .threads-pane .inbox-thread-head { flex: none; }
   /* Older threads load as you near the end, so nothing sits past the last card. */
   .threads-pane .inbox-more, .threads-pane .pane-note { display: none; }
+  /* Every line the chrome gives up is a line of the conversation: a one-line heading, narrow gutters, and the card's
+     actions beside its title instead of on a row of their own. */
+  .threads-pane .pane-head { padding: calc(var(--safe-top) + 8px) 16px 6px; display: flex; align-items: baseline; gap: 10px; }
+  .threads-pane .pane-head .inbox-title { flex: none; }
+  .threads-pane .pane-head h1 { font-size: 22px; }
+  .threads-pane .pane-sub { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .threads-pane .pane-body { padding-inline: 8px; scroll-padding-block: 4px 0; margin-bottom: calc(var(--tab-space) + 6px); }
+  .threads-pane .inbox-thread { padding: 10px 12px 10px; gap: 8px; border-radius: 16px; }
+  .threads-pane .inbox-thread-head { flex-wrap: nowrap; gap: 4px; }
+  .threads-pane .inbox-thread-title { flex: 1 1 0; }
+  .threads-pane .inbox-thread-body, .threads-pane .inbox-replies { gap: 8px; }
 }

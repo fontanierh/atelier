@@ -412,7 +412,7 @@ async function openReader(f) {
   $("readerBody").replaceChildren(node("p","quiet","Opening…"));$("readerBody").scrollTop=0;
   $("reader").hidden=false;$("app").classList.add("reader-open");holdBoard(true);$("readerClose").focus();
   try {
-    const response=await fetch(`/api/document/${f.id}`);const result=await response.json();
+    const {response,result}=await fetchJSON(`/api/document/${f.id}`);
     if(!response.ok)throw Error(result.error||"This file could not be opened.");
     if(readerFor===f.id)markdown($("readerBody"),result.html);
   } catch(error) { if(readerFor===f.id)$("readerBody").replaceChildren(node("p","quiet",error.message||"This file could not be opened.")); }
@@ -555,8 +555,8 @@ async function removeAgent(name) {
   const ok=await confirmSheet(`Remove ${name}?`,`${name} leaves the board and stops receiving messages${agent?.pending?`, including ${agent.pending} still queued`:""}. Its messages stay in the history, and it comes back if it subscribes again.`,`Remove ${name}`);
   if(!ok){closeSwiped();return;}
   try {
-    const response=await fetch("/api/remove",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({agent:name})});
-    const result=await response.json();if(!response.ok)throw Error(result.error||"Could not remove the agent.");
+    const {response,result}=await fetchJSON("/api/remove",{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify({agent:name})});
+    if(!response.ok)throw Error(result.error||"Could not remove the agent.");
     const cell=document.querySelector(`.agent-cell[data-agent="${CSS.escape(name)}"]`);
     if(cell){cell.style.height=`${cell.offsetHeight}px`;cell.classList.add("leaving");}
     if(selectedAgent===name){if(nav.at(-1)?.kind==="dm")navBack();else selectAgent("");}
@@ -1020,7 +1020,7 @@ $("chatPane").addEventListener("touchend",endSwipe);$("chatPane").addEventListen
 async function loadThread() {
   const current=thread;if(!current)return;
   try {
-    const response=await fetch(`/api/thread?id=${current.id}`,{cache:"no-store"});const result=await response.json();
+    const {response,result}=await fetchJSON(`/api/thread?id=${current.id}`,{cache:"no-store"});
     if(thread!==current)return;
     if(!response.ok){$("threadSubtitle").textContent=result.error||"This conversation could not be loaded.";return;}
     current.data=result;renderThread();
@@ -1070,16 +1070,23 @@ $("threadFeed").addEventListener("scroll",()=>{if(thread){const f=$("threadFeed"
 const inbox={threads:null,activity:null,threadLimit:30,activityLimit:60,kind:"",unreadOnly:false,loading:{},signature:{}};
 const threadCards=new Map();
 const inboxView=()=>["threads","activity"].includes($("app").dataset.view)?$("app").dataset.view:"";
-async function loadInbox(view=inboxView()) {
-  if(!view||inbox.loading[view]||!state)return;
-  inbox.loading[view]=true;
+// A request caught when iOS froze the app may never settle. Waiting on it held Threads or Activity on "Loading" until
+// a reload, so one older than 15 s is abandoned, and coming back to the app always starts over.
+async function loadInbox(view=inboxView(), restart=false) {
+  if(!view||!state)return;
+  const busy=inbox.loading[view];
+  if(busy&&!restart&&Date.now()-busy.started<15000)return;
+  busy?.abort.abort();
+  const mine={abort:new AbortController(),started:Date.now()};inbox.loading[view]=mine;
   const q=view==="threads"?`limit=${inbox.threadLimit}`:`limit=${inbox.activityLimit}${inbox.kind?`&kind=${inbox.kind}`:""}${inbox.unreadOnly?"&unread=1":""}`;
   try {
-    const response=await fetch(`/api/${view}?${q}`,{cache:"no-store"}), result=await response.json();
+    const {response,result}=await fetchJSON(`/api/${view}?${q}`,{cache:"no-store",signal:mine.abort.signal});
+    if(inbox.loading[view]!==mine)return;
     if(!response.ok)throw Error(result.error||"Could not load.");
     inbox[view]=result;view==="threads"?renderThreads():renderActivity();
-  } catch(error) { $(`${view}Summary`).textContent=error instanceof TypeError?"Reconnecting…":error.message; }
-  finally { inbox.loading[view]=false; }
+  } catch(error) {
+    if(inbox.loading[view]===mine)$(`${view}Summary`).textContent=error instanceof TypeError||error.name==="AbortError"||error instanceof SyntaxError?"Reconnecting…":error.message;
+  } finally { if(inbox.loading[view]===mine)inbox.loading[view]=null; }
 }
 async function markInboxRead(body) {
   try { await postJSON("/api/read",body); } catch {}
@@ -1597,9 +1604,16 @@ const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Noti
 let pushRegistration=null;
 const notifyNote=text=>{$("notifyNote").textContent=text;};
 function unb64(text) { const raw=atob(text.replace(/-/g,"+").replace(/_/g,"/")+"=".repeat((4-text.length%4)%4)); return Uint8Array.from(raw,c=>c.charCodeAt(0)); }
+// Every request gives up after `ms`, so one that never settles cannot hold up what waits on it.
+async function fetchJSON(url, {signal=null, ms=12000, ...options}={}) {
+  const abort=new AbortController(), stop=()=>abort.abort(), timer=setTimeout(stop,ms);
+  signal?.addEventListener("abort",stop);
+  try { const response=await fetch(url,{...options,signal:abort.signal});return {response,result:await response.json()}; }
+  finally { clearTimeout(timer);signal?.removeEventListener("abort",stop); }
+}
 async function postJSON(path, body) {
-  const response=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify(body)});
-  const result=await response.json();if(!response.ok)throw Error(result.error||"Something went wrong. Try again.");return result;
+  const {response,result}=await fetchJSON(path,{method:"POST",headers:{"Content-Type":"application/json","X-Board-CSRF":state.csrf},body:JSON.stringify(body),ms:15000});
+  if(!response.ok)throw Error(result.error||"Something went wrong. Try again.");return result;
 }
 async function setupPush() {
   if(!pushSupported){
@@ -1618,7 +1632,7 @@ $("notifyToggle").addEventListener("change",async()=>{
   try {
     if(on) {
       if(await Notification.requestPermission()!=="granted")throw Error("Allow notifications for the board to turn them on.");
-      const {key}=await (await fetch("/api/push/key",{cache:"no-store"})).json();
+      const {result:{key}}=await fetchJSON("/api/push/key",{cache:"no-store"});
       const subscription=await pushRegistration.pushManager.getSubscription()||await pushRegistration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:unb64(key)});
       await postJSON("/api/push/subscribe",{subscription:subscription.toJSON()});
       notifyNote("On. Agents notify you only when you've asked to be told, or it's urgent.");
@@ -1669,7 +1683,7 @@ waitFor(()=>state,15000).then(()=>{
 // iOS freezes the app in the background, and a request caught mid-flight may never settle, which used to block
 // every later refresh until the app was killed. Coming back always starts over, and a request older than 15 s (by
 // the wall clock, which keeps running while frozen) is abandoned.
-function resume() { if(document.hidden)return; load(true); if(thread)loadThread(); }
+function resume() { if(document.hidden)return; load(true); if(thread)loadThread(); if(inboxView())loadInbox(inboxView(),true); }
 renderTray();grow();formState();load();
 setInterval(()=>{if(!document.hidden){if(loading&&Date.now()-loadStarted>15000)load(true);else load();}},3000);
 document.addEventListener("visibilitychange",resume);
