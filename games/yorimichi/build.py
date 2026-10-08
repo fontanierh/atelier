@@ -233,7 +233,7 @@ def modori_steps(out):
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
         Step('characters.modori_botw', [retarget], inputs=retarget_inputs, needs=['characters.botw', 'characters.cairo_botw'],
              outputs=[out / 'modori' / 'botw' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
-        Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw'],
+        Step('unreal.modori_botw', [importer], inputs=import_inputs, needs=['characters.modori_botw', 'unreal.modori', 'unreal.botw', 'characters.modori_grips'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'botw.json'], heavy=True,
              about='/Game/Modori/Botw and DA_Modori: his merged move set, definition and move record'),
         Step('characters.modori_grips', [Python(grips / 'game.py', ('--character', 'modori', '--source', grips / 'modori'))],
