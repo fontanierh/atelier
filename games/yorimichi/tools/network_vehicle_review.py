@@ -74,6 +74,23 @@ def circuit_agrees(host, guest):
                for role in ('host', 'guest'))
 
 
+def parked_pose_agrees(host, guest, clip):
+    rows = (host, guest)
+    if not all(r.get('parked') is True and r.get('parked_visible') is True and
+               r.get('parked_pose_valid') is True and r.get('parked_clip') == clip and
+               finite(r.get('parked_clip_time')) and r['parked_clip_time'] >= 0 and
+               finite(r.get('parked_steering')) for r in rows):
+        return False
+    positions = [[r.get('parked_' + axis) for axis in 'xyz'] for r in rows]
+    rotations = [[r.get('parked_q' + axis) for axis in 'xyzw'] for r in rows]
+    if not (all(finite(v) for p in positions + rotations for v in p) and
+            all(abs(sum(v*v for v in q)-1) <= .001 for q in rotations)):
+        return False
+    cosine = abs(sum(a*b for a, b in zip(*rotations))) / math.sqrt(math.prod(sum(v*v for v in q) for q in rotations))
+    return (math.dist(*positions) <= 1 and 2*math.degrees(math.acos(min(1, cosine))) <= 1 and
+            all(abs(host[k]-guest[k]) <= 1.e-4 for k in ('parked_clip_time', 'parked_steering')))
+
+
 def compare_vehicle(folder, case):
     if case == 'clock-bike':
         from network_vehicle_clock_review import compare_clock_bike
@@ -109,6 +126,8 @@ def compare_vehicle(folder, case):
     }
     if case in ('bike', 'park'):
         checks['vehicle_supported_circuit'] = circuit_agrees(result.get('circuit_site'), guest.get('circuit_site'))
+    if case in ('park', 'crash'):
+        checks['vehicle_parked_peer_pose'] = parked_pose_agrees(result, guest, 'BikeKickstand' if case == 'park' else 'BikeCrash')
     for phase in order:
         row = phases.get(phase, {})
         peer = row.get('owner_observation', {})

@@ -28,6 +28,8 @@
 // Keep this access local to the nonshipping probe rather than exposing the RPCs.
 struct FJapanVehicleQAAccess
 {
+    static const FJapanParkedBikeState& ParkedBike(const AWandererCharacter* Player)
+    {return Player->NetworkParkedBike;}
     static bool Request(AWandererCharacter* Player,bool Sail)
     {return Sail?Player->RequestNetworkSail():Player->RequestNetworkBike();}
     static void SendRequest(AWandererCharacter* Player,bool Sail)
@@ -74,7 +76,7 @@ struct FVehicleProbe
     uint32 StartEpoch=0,EndEpoch=0,PendingBikeBefore=0,PendingSailBefore=0;
     float HealthBefore=0,LastHealth=-1,HopLift=0;
     uint32 LastGuestEpoch=0;uint8 LastGuestActivity=0;bool LastParked=false;
-    FName HitClip,ParkedClip;
+    FName HitClip;
     double Began=-1,PhaseBegan=0,LastWrite=-1,NextAction=0,ResolvedAt=-1,StableSince=-1;
     FVector StartPosition=FVector::ZeroVector,CrashStart=FVector::ZeroVector;
     float CrashYaw=0;bool CrashSiteReady=false;TSharedPtr<FJsonObject> CrashSite=MakeShared<FJsonObject>();
@@ -191,17 +193,27 @@ struct FVehicleProbe
         Data->SetNumberField(TEXT("phase_turn_degrees"),PhaseTurn);
         Data->SetNumberField(TEXT("phase_began"),PhaseBegan);
         Data->SetNumberField(TEXT("sail_start"),SailStart);Data->SetNumberField(TEXT("sail_min"),SailMin);Data->SetNumberField(TEXT("sail_max"),SailMax);
-        Data->SetStringField(TEXT("parked_clip"),ParkedClip.ToString());
+        // Park clears the live clip. Read the retained replicated object pose
+        // independently on each peer, rather than that inactive simulation.
+        const auto& ParkedState=FJapanVehicleQAAccess::ParkedBike(P);
+        Data->SetBoolField(TEXT("parked_visible"),ParkedState.Visible);
+        Data->SetBoolField(TEXT("parked_pose_valid"),ParkedState.Pose.IsValid());
+        Data->SetStringField(TEXT("parked_clip"),ParkedState.Pose.Clip.ToString());
+        Data->SetNumberField(TEXT("parked_clip_time"),ParkedState.Pose.ClipTime);
+        Data->SetNumberField(TEXT("parked_steering"),ParkedState.Pose.Steering);
         const FVector2D Gaps=P->GetBike()->GetWheelGaps();
         Data->SetNumberField(TEXT("wheel_front_gap_cm"),Gaps.X);Data->SetNumberField(TEXT("wheel_rear_gap_cm"),Gaps.Y);
         Data->SetBoolField(TEXT("parked"),P->GetBike()->IsParked());Data->SetBoolField(TEXT("riding"),Riding(P));
-        if(ClockCase())
+        if(ClockCase()||Case==TEXT("park")||Case==TEXT("crash"))
         {
             const FTransform Parked=P->GetBike()->GetBikeTransform();
             const FVector Location=Parked.GetLocation();const FQuat Rotation=Parked.GetRotation();
             Data->SetNumberField(TEXT("parked_x"),Location.X);Data->SetNumberField(TEXT("parked_y"),Location.Y);Data->SetNumberField(TEXT("parked_z"),Location.Z);
             Data->SetNumberField(TEXT("parked_qx"),Rotation.X);Data->SetNumberField(TEXT("parked_qy"),Rotation.Y);
             Data->SetNumberField(TEXT("parked_qz"),Rotation.Z);Data->SetNumberField(TEXT("parked_qw"),Rotation.W);
+        }
+        if(ClockCase())
+        {
             Data->SetNumberField(TEXT("hitch_seconds"),HitchSeconds);Data->SetNumberField(TEXT("hitch_ended"),HitchEnded);
             Data->SetNumberField(TEXT("hitch_speed"),HitchSpeed);Data->SetNumberField(TEXT("hitch_input_y"),HitchInputY);
             Data->SetNumberField(TEXT("hitch_epoch"),HitchEpoch);
@@ -375,7 +387,7 @@ struct FVehicleProbe
             [this](int32 Result)
             {
                 ++Callbacks;Outcome=Result;ResolvedAt=FPlatformTime::Seconds();
-                if(Guest.IsValid()){EndEpoch=Guest->GetActivityEpoch();ParkedClip=Guest->GetBike()->GetClip();}
+                if(Guest.IsValid())EndEpoch=Guest->GetActivityEpoch();
             });
     }
     bool Tick(bool Server,const FString& Folder);
@@ -431,7 +443,11 @@ bool FVehicleProbe::Tick(bool Server,const FString& Folder)
     if(Server&&Case==TEXT("crash")&&!CrashSiteReady)
     {
         CrashSiteReady=JapanVehicleQASite::Crash(Guest.Get(),CrashStart,CrashYaw,CrashSite);
-        if(!CrashSiteReady){Fail(TEXT("No flat approach to an existing fixed wall was found"));return false;}
+        if(!CrashSiteReady)
+        {
+            Write(Folder/TEXT("crash-site-failed.json"),CrashSite);
+            Fail(TEXT("No flat approach to an existing fixed wall was found"));return false;
+        }
     }
     if(!Server)
     {

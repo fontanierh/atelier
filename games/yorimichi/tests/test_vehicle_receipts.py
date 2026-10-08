@@ -57,6 +57,10 @@ def fixture(folder, case):
                          resolved_at=100, since_resolve=2.5, ground_below_water_cm=150,
                          contact_frame_statistics=dict(count=60, min=.016, median=.0167, p95=.018, max=.023), contact_frame_dt=.0167)
     if case in ('park', 'crash'):
+        for observed in (result, guest):
+            observed.update(parked_visible=True, parked_pose_valid=True,
+                parked_clip='BikeKickstand' if case == 'park' else 'BikeCrash', parked_clip_time=1.5, parked_steering=0.,
+                parked_x=100., parked_y=200., parked_z=300., parked_qx=0., parked_qy=0., parked_qz=0., parked_qw=1.)
         result.update(terminal_at_contact=True, hit_clip='BikeKickstand' if case == 'park' else 'BikeCrash',
                       parked_clip='BikeKickstand' if case == 'park' else 'BikeCrash', wheel_front_gap_cm=1, wheel_rear_gap_cm=-1)
     if pending:
@@ -253,6 +257,35 @@ def test_pending_refusal_requires_cause_window_and_positive_control(tmp_path, ca
 def test_terminal_pose_and_single_handoff_required(tmp_path, case, edit):
     fixture(tmp_path, case);mutate(tmp_path, 'vehicle-result', edit)
     assert not all(review.compare_vehicle(tmp_path, case).values())
+
+
+@pytest.mark.parametrize('case', ['park', 'crash'])
+@pytest.mark.parametrize('file', ['vehicle-result', 'vehicle-observed'])
+@pytest.mark.parametrize('edit', [
+    lambda r: r.pop('parked_clip'),
+    lambda r: r.update(parked_clip='None'),
+    lambda r: r.update(parked_clip='BikeDismount'),
+    lambda r: r.update(parked_visible=False),
+    lambda r: r.update(parked_pose_valid=False),
+    lambda r: r.update(parked_clip_time=True),
+    lambda r: r.update(parked_clip_time=1.6),
+    lambda r: r.update(parked_steering=2.),
+    lambda r: r.update(parked_x=101.01),
+    lambda r: r.update(parked_z=float('nan')),
+    lambda r: r.update(parked_qz=.0174524064, parked_qw=.9998476952),
+    lambda r: r.update(parked_qw=0.),
+])
+def test_terminal_pose_requires_independent_peer_evidence(tmp_path, case, file, edit):
+    fixture(tmp_path, case);mutate(tmp_path, file, edit)
+    assert review.compare_vehicle(tmp_path, case)['vehicle_parked_peer_pose'] is False
+
+
+@pytest.mark.parametrize('case', ['park', 'crash'])
+def test_terminal_pose_uses_retained_pose_not_cleared_active_clip(tmp_path, case):
+    fixture(tmp_path, case)
+    for file in ('vehicle-result', 'vehicle-observed'):
+        mutate(tmp_path, file, lambda r: r.update(clip='None'))
+    assert all(review.compare_vehicle(tmp_path, case).values())
 
 
 def test_crash_must_hit_the_authored_fixture(tmp_path):
