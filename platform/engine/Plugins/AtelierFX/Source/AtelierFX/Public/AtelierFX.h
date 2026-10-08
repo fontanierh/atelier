@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "Engine/DeveloperSettings.h"
 #include "UObject/Interface.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "ProceduralMeshComponent.h"
 #include "AtelierFX.generated.h"
 
@@ -61,6 +62,47 @@ struct ATELIERFX_API FAtelierAudioLog
     static int32 Frame;
     static TArray<FAtelierAudioEvent> Events;
     static void Record(USoundBase* Sound, const FVector& At, float Volume, float Pitch, bool b2D, bool bLoop = false);
+};
+
+/** Plays a sound the game owns and records it in the audio log, as AAtelierFX::Play does for its cues: 2D, or at At
+ *  with the attenuation. */
+ATELIERFX_API void AtelierPlaySound(const UObject* WorldContext, USoundBase* Sound, const FVector& At, float Volume = 1.f,
+    float Pitch = 1.f, USoundAttenuation* Attenuation = nullptr, bool b2D = false);
+
+/** Indices of a pool of variants drawn without replacement, so a small pool still never repeats back to back until it
+ *  is used up. */
+struct FAtelierShuffleBag
+{
+    /** INDEX_NONE for an empty pool. */
+    int32 Draw(int32 Count) { return Draw(Count, [](int32 N) { return FMath::RandHelper(N); }); }
+    int32 Draw(int32 Count, FRandomStream& Rand) { return Draw(Count, [&Rand](int32 N) { return Rand.RandHelper(N); }); }
+private:
+    TArray<int32> Left;
+    template <typename FRandom> int32 Draw(int32 Count, FRandom&& Random)
+    {
+        if (Count <= 0) return INDEX_NONE;
+        if (!Left.Num())
+        {
+            Left.Reserve(Count);
+            for (int32 I = 0; I < Count; ++I) Left.Add(I);
+            for (int32 I = Left.Num() - 1; I > 0; --I) Left.Swap(I, Random(I + 1));
+        }
+        return Left.Pop(EAllowShrinking::No);
+    }
+};
+
+/** AtelierFX's verbs for scripts and the live bridge (Python: unreal.AtelierFXLibrary). */
+UCLASS()
+class ATELIERFX_API UAtelierFXLibrary : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
+public:
+    /** The sound log that films mix offline: "start" clears it and records every sound from then on, "stop" ends it and
+     *  writes the events to Path (absolute) as JSON (frame, sound, source, x, y, z, volume, pitch, 2d). Returns the event
+     *  count. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 AudioLog(const FString& Command, const FString& Path = TEXT(""));
+    /** The frame index the next logged sounds carry. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static void AudioFrame(int32 Frame);
 };
 
 /**
@@ -138,7 +180,7 @@ private:
     UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> Lights;
     UPROPERTY() TObjectPtr<USoundAttenuation> Attenuation;
     UPROPERTY() TMap<FName, FAtelierSoundBank> Banks;
-    TMap<FName, TArray<int32>> Bags;
+    TMap<FName, FAtelierShuffleBag> Bags;
     struct FLightFlash { float Age = 0.f, Life = .1f, Intensity = 0.f; };
     TArray<FLightFlash> LightState;
     struct FFrozen { TWeakObjectPtr<AActor> Actor; float Remaining = 0.f; };

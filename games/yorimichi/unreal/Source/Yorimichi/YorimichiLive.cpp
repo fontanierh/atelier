@@ -17,13 +17,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
-#include "DynamicRHI.h"
-#include "Engine/StaticMeshActor.h"
-#include "Engine/StaticMesh.h"
-#include "Engine/CollisionProfile.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Misc/FileHelper.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
@@ -201,62 +196,9 @@ FString UYorimichiLive::HorseState()
         *H->GetStatus().Replace(TEXT(" "), TEXT("_")), A.X, A.Y, A.Z, P->GetActorRotation().Yaw, F ? 1 : 0, At.X, At.Y, At.Z, R.Pitch, R.Yaw, P->IsHidden() ? 1 : 0, H->IsComponentTickEnabled() ? 1 : 0,
         P->GetCharacterMovement()->PrimaryComponentTick.GetPrerequisites().ContainsByPredicate([H](const FTickPrerequisite& T) { return T.PrerequisiteObject.Get() == H; }) ? 1 : 0);
 }
-// A plain blocking box for tests (the engine cube is 100 cm, centred), tagged so ClearTests removes it.
-static bool SpawnTestBox(const FVector& Centre, const FRotator& Rotation, const FVector& Size)
-{
-    UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr;
-    UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
-    if (!World || !Cube) return false;
-    FActorSpawnParameters Params; Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    AStaticMeshActor* Box = World->SpawnActor<AStaticMeshActor>(Centre, Rotation, Params);
-    if (!Box) return false;
-    Box->SetMobility(EComponentMobility::Movable);
-    Box->GetStaticMeshComponent()->SetStaticMesh(Cube);
-    Box->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-    Box->SetActorScale3D(Size / 100.f);
-    Box->Tags.Add(TEXT("LiveTest"));
-    return true;
-}
-bool UYorimichiLive::TestWall(FVector Ground, float Yaw, FVector Size) { return SpawnTestBox(Ground + FVector(0, 0, Size.Z * .5f), FRotator(0, Yaw, 0), Size); }
-bool UYorimichiLive::TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width)
-{
-    // Its top face rises from Start (on the ground) over Length cm to Rise cm, then drops; the rest of the box is under it.
-    const FRotator Rotation(FMath::RadiansToDegrees(FMath::Atan2(Rise, Length)), Yaw, 0);
-    const float Slope = FMath::Sqrt(Length * Length + Rise * Rise), Thick = Rise + 100.f;
-    return SpawnTestBox(Start + Rotation.Vector() * Slope * .5f - Rotation.RotateVector(FVector(0, 0, Thick * .5f)), Rotation, FVector(Slope, Width, Thick));
-}
-int32 UYorimichiLive::ClearTests()
-{
-    int32 Count = 0;
-    if (UWorld* World = ULiveLibrary::Player() ? ULiveLibrary::Player()->GetWorld() : nullptr)
-        for (TActorIterator<AStaticMeshActor> It(World); It; ++It) if (It->Tags.Contains(TEXT("LiveTest"))) { It->Destroy(); ++Count; }
-    return Count;
-}
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
 bool UYorimichiLive::IsFilmHud() { return GFilmHud; }
-float UYorimichiLive::GpuFrameMs() { return FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)); }
-int32 UYorimichiLive::AudioLog(const FString& Command, const FString& Path)
-{
-    if (Command == TEXT("start")) { FAtelierAudioLog::Events.Reset(); FAtelierAudioLog::Frame = 0; FAtelierAudioLog::bRecording = true; return 0; }
-    FAtelierAudioLog::bRecording = false;
-    if (Command == TEXT("stop") && !Path.IsEmpty())
-    {
-        TArray<TSharedPtr<FJsonValue>> Rows;
-        for (const FAtelierAudioEvent& E : FAtelierAudioLog::Events)
-        {
-            TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
-            O->SetNumberField(TEXT("frame"), E.Frame); O->SetStringField(TEXT("sound"), E.Sound); O->SetStringField(TEXT("source"), E.Source);
-            O->SetNumberField(TEXT("x"), E.At.X); O->SetNumberField(TEXT("y"), E.At.Y); O->SetNumberField(TEXT("z"), E.At.Z);
-            O->SetNumberField(TEXT("volume"), E.Volume); O->SetNumberField(TEXT("pitch"), E.Pitch); O->SetBoolField(TEXT("2d"), E.b2D);
-            Rows.Add(MakeShared<FJsonValueObject>(O));
-        }
-        FString Text; auto Writer = TJsonWriterFactory<>::Create(&Text); FJsonSerializer::Serialize(Rows, Writer);
-        FFileHelper::SaveStringToFile(Text, *ULiveLibrary::Resolve(Path));
-    }
-    return FAtelierAudioLog::Events.Num();
-}
-void UYorimichiLive::AudioFrame(int32 Frame) { FAtelierAudioLog::Frame = Frame; }
 FString UYorimichiLive::SkateLoops() { USkateComponent* S = PlayerSkate(); return S ? S->GetLoopState() : FString(); }
 FString UYorimichiLive::BikeLoops()
 {

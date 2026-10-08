@@ -221,8 +221,7 @@ bool UHorseRideComponent::Spur()
     Horse->PlayRiderOnce(TEXT("spur"));
     if (SpurSound)
     {
-        UGameplayStatics::PlaySoundAtLocation(this, SpurSound, Feet(), .7f);
-        FAtelierAudioLog::Record(SpurSound, Feet(), .7f, 1.f, false);
+        AtelierPlaySound(this, SpurSound, Feet(), .7f);
     }
     return true;
 }
@@ -328,8 +327,7 @@ void UHorseRideComponent::Pose(float Dt)
             StrideClock -= 1.f;
             USoundBase* Sound = Hooves[FMath::RandRange(0, Hooves.Num() - 1)];
             const float Pitch01 = FMath::FRandRange(.94f, 1.06f);
-            UGameplayStatics::PlaySoundAtLocation(this, Sound, At, .5f, Pitch01);
-            FAtelierAudioLog::Record(Sound, At, .5f, Pitch01, false);
+            AtelierPlaySound(this, Sound, At, .5f, Pitch01);
         }
     }
 }

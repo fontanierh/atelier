@@ -12,6 +12,10 @@
 #include "Sound/SoundWave.h"
 #include "Sound/SoundAttenuation.h"
 #include "Misc/App.h"
+#include "Misc/FileHelper.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #if WITH_EDITORONLY_DATA
 #include "EditorFramework/AssetImportData.h"
 #endif
@@ -175,15 +179,43 @@ bool AAtelierFX::Play(FName Cue, const FVector& At, float Volume, float PitchSpr
 {
     const TArray<TObjectPtr<USoundWave>>& Waves = Bank(Cue);
     if (!Waves.Num()) return false;
-    TArray<int32>& Bag = Bags.FindOrAdd(Cue);
-    if (!Bag.Num()) { for (int32 I = 0; I < Waves.Num(); ++I) Bag.Add(I); for (int32 I = Bag.Num() - 1; I > 0; --I) Bag.Swap(I, Rand.RandHelper(I + 1)); }
-    USoundWave* Wave = Waves[Bag.Pop(EAllowShrinking::No)];
+    USoundWave* Wave = Waves[Bags.FindOrAdd(Cue).Draw(Waves.Num(), Rand)];
     const float Pitch = 1.f + Rand.FRandRange(-PitchSpread, PitchSpread);
-    if (b2D) UGameplayStatics::PlaySound2D(this, Wave, Volume, Pitch);
-    else UGameplayStatics::PlaySoundAtLocation(this, Wave, At, FRotator::ZeroRotator, Volume, Pitch, 0.f, Attenuation);
-    FAtelierAudioLog::Record(Wave, At, Volume, Pitch, b2D);
+    AtelierPlaySound(this, Wave, At, Volume, Pitch, Attenuation, b2D);
     return true;
 }
+
+void AtelierPlaySound(const UObject* WorldContext, USoundBase* Sound, const FVector& At, float Volume, float Pitch,
+    USoundAttenuation* Attenuation, bool b2D)
+{
+    if (!Sound) return;
+    if (b2D) UGameplayStatics::PlaySound2D(WorldContext, Sound, Volume, Pitch);
+    else UGameplayStatics::PlaySoundAtLocation(WorldContext, Sound, At, FRotator::ZeroRotator, Volume, Pitch, 0.f, Attenuation);
+    FAtelierAudioLog::Record(Sound, At, Volume, Pitch, b2D);
+}
+
+int32 UAtelierFXLibrary::AudioLog(const FString& Command, const FString& Path)
+{
+    if (Command == TEXT("start")) { FAtelierAudioLog::Events.Reset(); FAtelierAudioLog::Frame = 0; FAtelierAudioLog::bRecording = true; return 0; }
+    FAtelierAudioLog::bRecording = false;
+    if (Command == TEXT("stop") && !Path.IsEmpty())
+    {
+        TArray<TSharedPtr<FJsonValue>> Rows;
+        for (const FAtelierAudioEvent& E : FAtelierAudioLog::Events)
+        {
+            TSharedPtr<FJsonObject> O = MakeShared<FJsonObject>();
+            O->SetNumberField(TEXT("frame"), E.Frame); O->SetStringField(TEXT("sound"), E.Sound); O->SetStringField(TEXT("source"), E.Source);
+            O->SetNumberField(TEXT("x"), E.At.X); O->SetNumberField(TEXT("y"), E.At.Y); O->SetNumberField(TEXT("z"), E.At.Z);
+            O->SetNumberField(TEXT("volume"), E.Volume); O->SetNumberField(TEXT("pitch"), E.Pitch); O->SetBoolField(TEXT("2d"), E.b2D);
+            Rows.Add(MakeShared<FJsonValueObject>(O));
+        }
+        FString Text; auto Writer = TJsonWriterFactory<>::Create(&Text); FJsonSerializer::Serialize(Rows, Writer);
+        FFileHelper::SaveStringToFile(Text, *Path);
+    }
+    return FAtelierAudioLog::Events.Num();
+}
+
+void UAtelierFXLibrary::AudioFrame(int32 Frame) { FAtelierAudioLog::Frame = Frame; }
 
 // ---- timing
 void AAtelierFX::HitStop(float Seconds, AActor* A, AActor* B)

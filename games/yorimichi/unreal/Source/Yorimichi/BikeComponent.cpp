@@ -184,8 +184,7 @@ void UBikeComponent::PlayCue(FName Cue,float Volume,float Pitch)
  if(Range->Y>1&&Pick==LastVariant)Pick=Range->X+(Pick-Range->X+1)%Range->Y;   // no back-to-back repeat
  LastVariant=Pick;
  const FVector At=BikeRoot->GetComponentLocation()+FVector(0,0,50.f);
- UGameplayStatics::PlaySoundAtLocation(this,Waves[Pick],At,FRotator::ZeroRotator,Volume,Pitch,0.f,Attenuation);
- FAtelierAudioLog::Record(Waves[Pick],At,Volume,Pitch,false);
+ AtelierPlaySound(this,Waves[Pick],At,Volume,Pitch,Attenuation);
 }
 
 void UBikeComponent::ClipCues()

@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Engine/DataAsset.h"
+#include "AtelierFX.h"
 #include "JapanFootsteps.generated.h"
 
 class AJapanWorld;
@@ -60,7 +61,7 @@ private:
     float Height[2] = {0.f,0.f};
     float SincePlant[2] = {0.f,0.f};
     // Per surface shuffled queue, so the same one-shot never comes round twice in a row.
-    TMap<FName,TArray<int32>> Bags;
+    TMap<FName,FAtelierShuffleBag> Bags;
     void Plant(int32 Side,const FVector& Foot,float Speed);
     void Play(FName Surface,const FVector& At,float Volume,float Pitch);
 };

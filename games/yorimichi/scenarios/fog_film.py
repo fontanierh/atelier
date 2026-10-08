@@ -132,7 +132,7 @@ def gpu_ms(seconds):
     total, n = 0., 0
     t = 0.
     while t < seconds:
-        total += unreal.YorimichiLive.gpu_frame_ms() if hasattr(unreal.YorimichiLive, 'gpu_frame_ms') else 0.
+        total += unreal.LiveLibrary.gpu_frame_ms()
         n += 1
         t += (yield)
     return round(total / max(n, 1), 2)

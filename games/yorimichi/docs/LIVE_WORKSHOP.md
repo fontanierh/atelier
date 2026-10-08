@@ -54,9 +54,10 @@ The bridge's settings are in `DefaultGame.ini` under `[/Script/AtelierLive.Ateli
 | `PythonModule` | `yorimichi_live`, imported as `live` |
 | `Port` | 8830 |
 
-Verbs come from two function libraries: the platform's `unreal.LiveLibrary` (props, traces, screenshots, overlays,
-HUD text) and the game's `unreal.YorimichiLive` (`YorimichiLive.h/.cpp`: player input, the sword, skating, film HUD,
-audio logging, camera hold). The helper module looks a verb up in the game's library first.
+Verbs come from three function libraries: the game's `unreal.YorimichiLive` (`YorimichiLive.h/.cpp`: player input,
+the sword, skating, film HUD, camera hold), the platform's `unreal.LiveLibrary` (props, traces, screenshots, overlays,
+HUD text, test boxes, GPU frame time) and `unreal.AtelierFXLibrary` (audio logging). The helper module looks a verb up
+in that order.
 
 ### Runtime props
 
@@ -71,8 +72,10 @@ world.
 
 ### The `live` module
 
-`games/yorimichi/live/python/yorimichi_live.py`, imported in the game as `live`. Units are Unreal's (centimetres,
-degrees); paths are relative to the repository root.
+`games/yorimichi/live/python/yorimichi_live.py`, imported in the game as `live`. It builds on the bridge's
+game-independent `atelier_live` module (`platform/engine/Plugins/Dev/LiveBridge/Python/`), which supplies the
+placement helpers and `behave`/`stop`. Units are Unreal's (centimetres, degrees); paths are relative to the repository
+root.
 
 | Function | Does |
 | --- | --- |

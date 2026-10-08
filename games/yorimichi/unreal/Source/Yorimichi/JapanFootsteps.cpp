@@ -97,19 +97,9 @@ void UJapanFootstepComponent::Play(FName Surface,const FVector& At,float Volume,
     if(!Set || Scale<=0.f) return;
     const FJapanFootstepBank* Bank=Set->Find(Surface);
     if(!Bank) return;
-    // Draw without replacement so a small pool still never repeats back to back.
-    TArray<int32>& Bag=Bags.FindOrAdd(Surface);
-    if(!Bag.Num())
-    {
-        Bag.Reserve(Bank->Steps.Num());
-        for(int32 I=0;I<Bank->Steps.Num();++I) Bag.Add(I);
-        for(int32 I=Bag.Num()-1;I>0;--I) Bag.Swap(I,FMath::RandHelper(I+1));
-    }
-    const int32 Index=Bag.Pop(EAllowShrinking::No);
+    const int32 Index=Bags.FindOrAdd(Surface).Draw(Bank->Steps.Num());
     if(!Bank->Steps.IsValidIndex(Index) || !Bank->Steps[Index]) return;
-    UGameplayStatics::PlaySoundAtLocation(this,Bank->Steps[Index],At,FRotator::ZeroRotator,
-        Volume*Scale,Pitch,0.f,Set->Attenuation);
-    FAtelierAudioLog::Record(Bank->Steps[Index],At,Volume*Scale,Pitch,false);
+    AtelierPlaySound(this,Bank->Steps[Index],At,Volume*Scale,Pitch,Set->Attenuation);
     if(CVarFootstepDebug.GetValueOnGameThread())
         UE_LOG(LogTemp,Display,TEXT("footstep %s %s vol %.2f pitch %.2f"),*Surface.ToString(),
             *Bank->Steps[Index]->GetName(),Volume*Scale,Pitch);

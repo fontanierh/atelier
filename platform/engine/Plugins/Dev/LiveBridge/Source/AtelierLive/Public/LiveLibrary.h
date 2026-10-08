@@ -79,6 +79,14 @@ public:
     /** Playing at real speed with a fixed frame time (Fps > 0; 0 returns to real time): the engine waits out each frame
      *  to 1/Fps and counts every frame as 1/Fps, however long it took, so a recorded session replays exactly. */
     UFUNCTION(BlueprintCallable, Category = "Live") static void FixedFrameRate(float Fps);
+    /** A plain blocking wall for tests (a crash, a stop): Size cm (thickness, width, height) standing on Ground, facing Yaw. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestWall(FVector Ground, float Yaw, FVector Size);
+    /** A test ramp facing Yaw: from Start on the ground it rises Rise cm over Length cm, then drops off. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool TestRamp(FVector Start, float Yaw, float Length, float Rise, float Width = 300.f);
+    /** Removes the test walls and ramps; returns how many. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static int32 ClearTests();
+    /** The GPU's time for the last frame (ms), as stat unit shows it: pricing a setting in place. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static float GpuFrameMs();
     /** A line of text for the player at the top of the screen (the game's HUD draws CurrentMessage). */
     UFUNCTION(BlueprintCallable, Category = "Live") static void Say(const FString& Text, float Seconds = 4.f);
     /** A screenshot of the game view (with the HUD) written to Path on the next frame. */
