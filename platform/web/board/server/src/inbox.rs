@@ -96,6 +96,7 @@ struct Conversation {
     read: i64,
     unfollowed: Option<i64>,
     following: bool,
+    starred: bool,
     newest: usize,
 }
 
@@ -162,6 +163,7 @@ impl<'a> Inbox<'a> {
                     read: 0,
                     unfollowed: None,
                     following: false,
+                    starred: false,
                     newest: i,
                 });
                 threads.len() - 1
@@ -174,12 +176,20 @@ impl<'a> Inbox<'a> {
         Ok(inbox)
     }
 
+    fn has_table(&self, name: &str) -> Result<bool> {
+        let found = self.db.query_row("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", [name], |_| Ok(()));
+        Ok(found.optional()?.is_some())
+    }
+
     fn read_state(&mut self) -> Result<()> {
-        let has_reads = self
-            .db
-            .query_row("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reads'", [], |_| Ok(()))
-            .optional()?
-            .is_some();
+        let has_reads = self.has_table("reads")?;
+        let mut stars = HashSet::new();
+        if self.has_table("stars")? {
+            let mut statement = self.db.prepare("SELECT thread FROM stars WHERE reader=?")?;
+            for key in statement.query_map([self.reader], |r| r.get::<_, String>(0))? {
+                stars.insert(key?);
+            }
+        }
         let mut marks: HashMap<(String, String), (i64, Option<i64>)> = HashMap::new();
         if has_reads {
             let mut statement =
@@ -214,6 +224,7 @@ impl<'a> Inbox<'a> {
             }
             let newest = *every.last().unwrap();
             let thread = &mut self.threads[t];
+            thread.starred = stars.contains(&thread.key);
             thread.first_involved = involved;
             thread.read = read;
             thread.unfollowed = unfollowed;
@@ -316,12 +327,17 @@ fn unique<'a>(names: impl IntoIterator<Item = &'a str>) -> Vec<String> {
     names.into_iter().filter(|name| seen.insert(*name)).map(str::to_owned).collect()
 }
 
-/// The Threads view: unread threads first, then the rest, each by newest reply, as Slack orders them.
-pub fn threads(db: &Connection, reader: &str, limit: usize) -> Result<Threads> {
+/// The Threads view: unread threads first, then the rest, each by newest reply, as Slack orders them. `starred` lists
+/// only the reader's starred threads, replies or not, followed or not.
+pub fn threads(db: &Connection, reader: &str, limit: usize, starred: bool) -> Result<Threads> {
     const LATEST: usize = 3;
     let inbox = Inbox::new(db, reader)?;
-    let mut listed: Vec<(usize, Vec<i64>)> = inbox
-        .open_threads()
+    let chosen: Vec<usize> = if starred {
+        (0..inbox.threads.len()).filter(|&t| inbox.threads[t].starred).collect()
+    } else {
+        inbox.open_threads()
+    };
+    let mut listed: Vec<(usize, Vec<i64>)> = chosen
         .into_iter()
         .map(|t| {
             let thread = &inbox.threads[t];
@@ -387,12 +403,14 @@ pub fn threads(db: &Connection, reader: &str, limit: usize) -> Result<Threads> {
             reply_audience: inbox.audience(thread),
             last_activity: newest.created,
             newest: newest.id,
+            starred: thread.starred,
         });
     }
     Ok(Threads {
         threads: items,
         total: listed.len() as i64,
         unread: listed.iter().filter(|(_, unread)| !unread.is_empty()).count() as i64,
+        starred: inbox.threads.iter().filter(|thread| thread.starred).count() as i64,
     })
 }
 
@@ -511,8 +529,9 @@ pub fn activity(db: &Connection, reader: &str, kind: &str, unread_only: bool, li
     Ok(Activity { items, total, unread: counts })
 }
 
-/// The badges: threads with unread replies, and unread activity (acknowledgements aside).
-pub fn summary(db: &Connection, reader: &str) -> Result<InboxSummary> {
+/// The badges: threads with unread replies, and unread activity (acknowledgements aside); and, by agent, how many of
+/// its direct messages to the reader are unread.
+pub fn summary(db: &Connection, reader: &str) -> Result<(InboxSummary, HashMap<String, i64>)> {
     let inbox = Inbox::new(db, reader)?;
     let threads = inbox
         .open_threads()
@@ -524,7 +543,89 @@ pub fn summary(db: &Connection, reader: &str) -> Result<InboxSummary> {
         .count() as i64;
     let activity =
         activity_entries(&inbox).iter().filter(|entry| entry.kind != "ack" && entry.unread > 0).count() as i64;
-    Ok(InboxSummary { threads, activity })
+    let mut direct: HashMap<String, i64> = HashMap::new();
+    for i in 0..inbox.rows.len() {
+        if inbox.rows[i].recipient == reader && inbox.rows[i].topic != "ack" && inbox.unread(i) {
+            *direct.entry(inbox.rows[i].sender.clone()).or_default() += 1;
+        }
+    }
+    Ok((InboxSummary { threads, activity }, direct))
+}
+
+/// Each message's thread key, for every message on the board (as Inbox::new finds a thread's root).
+fn thread_keys(db: &Connection) -> Result<HashMap<i64, String>> {
+    let mut statement = db.prepare("SELECT id, reply_to, dedup FROM messages ORDER BY id")?;
+    let rows = statement.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, Option<i64>>(1)?, r.get(2)?)))?;
+    let mut keys: HashMap<i64, String> = HashMap::new();
+    for row in rows {
+        let (id, reply_to, dedup): (i64, Option<i64>, Option<String>) = row?;
+        let key = match reply_to.and_then(|parent| keys.get(&parent)) {
+            Some(key) => key.clone(),
+            None => group_key(id, dedup.as_deref()),
+        };
+        keys.insert(id, key);
+    }
+    Ok(keys)
+}
+
+/// The reader had these messages on screen: each one's thread is read up to the newest of them there. Marks only move
+/// forward. Returns how many threads moved.
+pub fn mark_seen(reader: &str, ids: &serde_json::Value) -> Result<i64> {
+    store::agent_name(reader)?;
+    let Some(list) = ids.as_array().filter(|list| list.len() <= 500) else {
+        return bad("ids must be a list of at most 500 message ids");
+    };
+    let mut wanted = Vec::new();
+    for value in list {
+        match store::integer(value) {
+            Some(id) => wanted.push(id),
+            None => return bad("ids must be message ids"),
+        }
+    }
+    let mut db = db::write()?;
+    let tx = db::immediate(&mut db)?;
+    let keys = thread_keys(&tx)?;
+    let mut through: HashMap<&str, i64> = HashMap::new();
+    for id in wanted {
+        if let Some(key) = keys.get(&id) {
+            let mark = through.entry(key.as_str()).or_default();
+            *mark = (*mark).max(id);
+        }
+    }
+    let mut moved = 0;
+    for (key, mark) in through {
+        moved += tx.execute(
+            "INSERT INTO reads (reader, thread, last_read) VALUES (?, ?, ?) ON CONFLICT (reader, thread) \
+             DO UPDATE SET last_read=excluded.last_read WHERE excluded.last_read > last_read",
+            params![reader, key, mark],
+        )? as i64;
+    }
+    tx.commit()?;
+    Ok(moved)
+}
+
+/// Star or unstar the thread `id` is in. Returns the thread's key.
+pub fn star(reader: &str, id: &serde_json::Value, starred: bool) -> Result<String> {
+    store::agent_name(reader)?;
+    let Some(id) = store::integer(id) else {
+        return bad("Choose a message.");
+    };
+    let mut db = db::write()?;
+    let tx = db::immediate(&mut db)?;
+    let key = thread_keys(&tx)?.remove(&id).ok_or_else(|| db::Error::Missing(format!("message {id} is not on the board")))?;
+    if starred {
+        tx.execute("INSERT OR IGNORE INTO stars (reader, thread, created) VALUES (?, ?, ?)", params![reader, key, db::now()])?;
+    } else {
+        tx.execute("DELETE FROM stars WHERE reader=? AND thread=?", params![reader, key])?;
+    }
+    tx.commit()?;
+    Ok(key)
+}
+
+/// Whether the reader starred the thread with this key.
+pub fn is_starred(db: &Connection, reader: &str, key: &str) -> Result<bool> {
+    let found = db.query_row("SELECT 1 FROM stars WHERE reader=? AND thread=?", params![reader, key], |_| Ok(()));
+    Ok(found.optional()?.is_some())
 }
 
 /// Mark a conversation read up to `through` (the newest message the reader saw in it; its newest message when

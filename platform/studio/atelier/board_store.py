@@ -56,6 +56,10 @@ def database():
                 reader TEXT NOT NULL, thread TEXT NOT NULL, last_read INTEGER NOT NULL DEFAULT 0, unfollowed INTEGER,
                 PRIMARY KEY (reader, thread)
             );
+            -- The threads each reader starred (keyed as `reads` keys them), and when.
+            CREATE TABLE IF NOT EXISTS stars (
+                reader TEXT NOT NULL, thread TEXT NOT NULL, created REAL NOT NULL, PRIMARY KEY (reader, thread)
+            );
         ''')
         # History from before read state existed starts read: the first store to have the table records where.
         db.execute("INSERT OR IGNORE INTO reads (reader, thread, last_read) "

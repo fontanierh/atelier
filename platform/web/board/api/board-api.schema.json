@@ -40,6 +40,18 @@
     "read": {
       "$ref": "#/$defs/Read"
     },
+    "seen_request": {
+      "$ref": "#/$defs/SeenRequest"
+    },
+    "seen": {
+      "$ref": "#/$defs/Seen"
+    },
+    "star_request": {
+      "$ref": "#/$defs/StarRequest"
+    },
+    "starred": {
+      "$ref": "#/$defs/Starred"
+    },
     "dismiss_request": {
       "$ref": "#/$defs/DismissRequest"
     },
@@ -87,6 +99,10 @@
     "preview",
     "read_request",
     "read",
+    "seen_request",
+    "seen",
+    "star_request",
+    "starred",
     "dismiss_request",
     "dismissed",
     "remove_request",
@@ -426,7 +442,12 @@
           "type": "boolean"
         },
         "last_to_me": {
-          "description": "The newest message it sent the board's sender (0 for none): marks unread direct messages.",
+          "description": "The newest message it sent the board's sender (0 for none).",
+          "type": "integer",
+          "format": "int64"
+        },
+        "unread": {
+          "description": "Its direct messages to the board's sender that are still unread, by the board's one read state.",
           "type": "integer",
           "format": "int64"
         },
@@ -444,6 +465,7 @@
         "pending",
         "delivery_error",
         "last_to_me",
+        "unread",
         "engaged"
       ]
     },
@@ -677,12 +699,18 @@
         "unread": {
           "type": "integer",
           "format": "int64"
+        },
+        "starred": {
+          "description": "How many threads the reader starred (`?starred=1` lists only those).",
+          "type": "integer",
+          "format": "int64"
         }
       },
       "required": [
         "threads",
         "total",
-        "unread"
+        "unread",
+        "starred"
       ]
     },
     "ThreadItem": {
@@ -732,6 +760,9 @@
         "newest": {
           "type": "integer",
           "format": "int64"
+        },
+        "starred": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -744,7 +775,8 @@
         "participants",
         "reply_audience",
         "last_activity",
-        "newest"
+        "newest",
+        "starred"
       ]
     },
     "Card": {
@@ -1001,11 +1033,20 @@
           "items": {
             "$ref": "#/$defs/Message"
           }
+        },
+        "key": {
+          "description": "The thread's read-state key.",
+          "type": "string"
+        },
+        "starred": {
+          "type": "boolean"
         }
       },
       "required": [
         "root",
-        "replies"
+        "replies",
+        "key",
+        "starred"
       ]
     },
     "Document": {
@@ -1286,6 +1327,69 @@
       },
       "required": [
         "read"
+      ]
+    },
+    "SeenRequest": {
+      "description": "`POST /api/seen`: the messages the reader has had on screen. Each one's thread is read up to the newest of them.",
+      "type": "object",
+      "properties": {
+        "ids": {
+          "description": "At most 500.",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "required": [
+        "ids"
+      ]
+    },
+    "Seen": {
+      "type": "object",
+      "properties": {
+        "threads": {
+          "description": "The threads whose read mark moved forward.",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "threads"
+      ]
+    },
+    "StarRequest": {
+      "description": "`POST /api/star`: star or unstar the thread a message is in.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "starred": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "starred"
+      ]
+    },
+    "Starred": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "description": "The thread's key.",
+          "type": "string"
+        },
+        "starred": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "starred"
       ]
     },
     "DismissRequest": {

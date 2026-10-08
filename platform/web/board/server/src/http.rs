@@ -31,7 +31,7 @@ const REVIEW_CSP: &str = "default-src 'none'; style-src 'unsafe-inline' https://
                           frame-ancestors 'none'";
 const WORLD_TIMING_BYTES: usize = 4096;
 const POSTS: &[&str] = &[
-    "/api/broadcast", "/api/send", "/api/preview", "/api/upload", "/api/remove", "/api/task/dismiss", "/api/read",
+    "/api/broadcast", "/api/send", "/api/preview", "/api/upload", "/api/remove", "/api/task/dismiss", "/api/read", "/api/seen", "/api/star",
     "/api/world/timing", "/api/push/subscribe", "/api/push/unsubscribe", "/api/push/test",
 ];
 
@@ -39,7 +39,7 @@ static STATIC: LazyLock<HashMap<&str, (&str, &str)>> = LazyLock::new(|| {
     HashMap::from([
         ("/", ("index.html", "text/html; charset=utf-8")),
         ("/board.css", ("board.css", "text/css; charset=utf-8")),
-        ("/board.js", ("board.js", "text/javascript; charset=utf-8")),
+        ("/app.js", ("app.js", "text/javascript; charset=utf-8")),
         ("/board-fx.js", ("board-fx.js", "text/javascript; charset=utf-8")),
         ("/board-scene.js", ("board-scene.js", "text/javascript; charset=utf-8")),
         ("/icon.svg", ("icon.svg", "image/svg+xml")),
@@ -270,7 +270,8 @@ async fn route(config: &Arc<Config>, path: &str, query: Query, headers: &HeaderM
                     let db = db::read()?;
                     if view == "/api/threads" {
                         let limit = query.bounded("limit", 30, 200)?;
-                        Ok(serde_json::to_value(inbox::threads(&db, &config.sender, limit)?).unwrap())
+                        let starred = query.text("starred") == "1";
+                        Ok(serde_json::to_value(inbox::threads(&db, &config.sender, limit, starred)?).unwrap())
                     } else {
                         let limit = query.bounded("limit", 60, 300)?;
                         let unread = query.text("unread") == "1";
@@ -283,7 +284,8 @@ async fn route(config: &Arc<Config>, path: &str, query: Query, headers: &HeaderM
         }
         "/api/thread" => {
             let id = query.number("id", 0)?;
-            match blocking(move || views::thread(id)).await {
+            let sender = config.sender.clone();
+            match blocking(move || views::thread(id, &sender)).await {
                 Err(Error::Missing(_)) => {
                     Ok(problem(StatusCode::NOT_FOUND, "This conversation is no longer on the board.", headers))
                 }
@@ -528,6 +530,20 @@ async fn act(config: &Arc<Config>, target: &str, data: Map<String, Value>) -> db
             })
             .await?;
             Ok(value(&api::Read { read: key }))
+        }
+        "/api/seen" => {
+            let sender = config.sender.clone();
+            let ids = field(&data, "ids");
+            let threads = blocking(move || inbox::mark_seen(&sender, &ids)).await?;
+            Ok(value(&api::Seen { threads }))
+        }
+        "/api/star" => {
+            let Some(Value::Bool(starred)) = data.get("starred").cloned() else {
+                return db::bad("starred must be true or false");
+            };
+            let (sender, id) = (config.sender.clone(), field(&data, "id"));
+            let key = blocking(move || inbox::star(&sender, &id, starred)).await?;
+            Ok(value(&api::Starred { key, starred }))
         }
         "/api/remove" => {
             let Some(Value::String(agent)) = data.get("agent").cloned() else {

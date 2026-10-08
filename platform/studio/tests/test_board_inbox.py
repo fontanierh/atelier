@@ -177,3 +177,58 @@ def test_http_views_badges_and_csrf_protected_read_marks(http_server):
     board.post('one', 'One more thing.', 'operator', reply_to=reply)
     assert request(http_server, '/api/read', {'all': True}) == (200, {'read': '*'})
     assert request(http_server, '/api/state')[1]['inbox'] == {'threads': 0, 'activity': 0}
+
+
+def post(server, path, payload):
+    """A POST from the board's page; returns the status and the decoded reply."""
+    status, body, _ = call(server, path, payload)
+    return status, json.loads(body)
+
+
+def test_what_was_on_screen_is_read_once_and_agents_count_their_unread_direct_messages(http_server):
+    view = views(http_server)
+    root = ask('one', 'Can you look at the ramp?')
+    first = board.post('one', 'Looking.', 'operator', reply_to=root)
+    second = board.post('one', 'Found it.', 'operator', reply_to=root)
+    hello = board.post('two', 'Hello operator.', 'operator')
+    unread = {a['agent']: a['unread'] for a in snapshot(http_server, limit=1)['agents']}
+    assert unread['one'] == 2 and unread['two'] == 1 and unread['three'] == 0
+    assert view('summary') == {'threads': 1, 'activity': 3}
+
+    # The page reports what was on screen; each thread is read up to the newest message seen there, and only forward.
+    assert post(http_server, '/api/seen', {'ids': [first, hello]}) == (200, {'threads': 2})
+    assert [(t['id'], t['unread']) for t in view('threads')['threads']] == [(root, 1)]
+    assert {a['agent']: a['unread'] for a in snapshot(http_server, limit=1)['agents']}['one'] == 1
+    assert post(http_server, '/api/seen', {'ids': [first]}) == (200, {'threads': 0})
+    assert post(http_server, '/api/seen', {'ids': [second, 99999]}) == (200, {'threads': 1})
+    assert view('summary') == {'threads': 0, 'activity': 0}
+    assert {a['agent']: a['unread'] for a in snapshot(http_server, limit=1)['agents']} == {'one': 0, 'two': 0, 'three': 0}
+    for bad in ({'ids': first}, {'ids': ['1']}, {'ids': list(range(501))}):
+        assert post(http_server, '/api/seen', bad)[0] == 400
+
+
+def test_starred_threads_are_listed_on_their_own_whether_followed_or_not(http_server):
+    view, mark_read = views(http_server), reader(http_server)
+    ramp, bowl = ask('one', 'Can you look at the ramp?'), ask('two', 'Can you look at the bowl?')
+    reply = board.post('one', 'Looking.', 'operator', reply_to=ramp)
+    board.post('two', 'Looking too.', 'operator', reply_to=bowl)
+    # Starring any message stars its thread.
+    status, starred = post(http_server, '/api/star', {'id': reply, 'starred': True})
+    assert status == 200 and starred['starred'] is True
+    listed = view('threads')
+    assert listed['starred'] == 1 and {t['id']: t['starred'] for t in listed['threads']} == {ramp: True, bowl: False}
+    assert get(http_server, '/api/thread', id=bowl)['starred'] is False
+    thread = get(http_server, '/api/thread', id=reply)
+    assert thread['starred'] is True and thread['key'] == starred['key']
+
+    # Unfollowing hides it from All, but Starred keeps it.
+    mark_read('operator', ramp, follow=False)
+    assert [t['id'] for t in view('threads')['threads']] == [bowl]
+    assert [t['id'] for t in view('threads', starred=1)['threads']] == [ramp]
+    assert post(http_server, '/api/star', {'id': ramp, 'starred': True})[0] == 200
+    assert view('threads')['starred'] == 1
+    assert post(http_server, '/api/star', {'id': ramp, 'starred': False})[1]['starred'] is False
+    assert view('threads', starred=1)['threads'] == [] and view('threads')['starred'] == 0
+    assert post(http_server, '/api/star', {'id': 99999, 'starred': True})[0] == 400
+    assert post(http_server, '/api/star', {'id': '1', 'starred': True})[0] == 400
+
