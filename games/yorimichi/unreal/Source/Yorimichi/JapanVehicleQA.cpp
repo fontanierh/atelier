@@ -317,7 +317,7 @@ struct FVehicleProbe
             P->Live_Drive(FVector2D(.6f,1),1);
             if(!Sail()&&P->GetBike()->GetClip()==TEXT("BikeRide")&&FPlatformTime::Seconds()>=NextAction)
             {
-                static const FName Buttons[]={TEXT("attack"),TEXT("wave"),TEXT("bike_sprint"),TEXT("dodge")};
+                static const FName Buttons[]={TEXT("attack"),TEXT("wave"),TEXT("sprint"),TEXT("dodge")};
                 if(ActionIndex<UE_ARRAY_COUNT(Buttons))
                 {
                     if(P->Live_Press(Buttons[ActionIndex]))++ActionIndex;
