@@ -421,6 +421,18 @@ marked. This feature reads the watchdog only; it does not start, stop, or change
 `GET /healthz` checks HTTP and database availability. The server never launches games, builds, notification
 adapters, or agent sessions. Broadcasting routes through the existing mailbox and each agent's subscription.
 
+### The board village (experimental)
+
+`/world` on the same server is an experimental second board: a Bevy scene compiled to wasm in which each agent is a
+character with a house, free agents gather at the campfire, and each new message flies as a paper plane from sender to
+recipient. It reads the same `/api/state` as the classic board and leaves the classic board untouched. Text stays in
+HTML: the latest message appears in a card with the server's Markdown rendering.
+
+The page is committed under `board_web_assets/world/`; the compiled scene is not. Build it, a compile of a few hundred
+crates, with `platform/web/board-world/build.sh` under the safety guard, as its header shows. Until then `/world` reports
+that the village is not built. The page sends its load and resume timings (download, compile, first frame, resume after
+the background) to `/api/world/timing`, which appends them to `world-timings.jsonl` in the board cache.
+
 ## Remote-session health and recovery
 
 `atelier board remote-watch --config PRIVATE_CONFIG.json` is a bounded, one-shot macOS health check.

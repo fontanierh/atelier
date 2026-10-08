@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlsplit
 
-from . import board, board_inbox, board_markdown, board_presence, board_push
+from . import board, board_inbox, board_markdown, board_presence, board_push, paths
 from .board_files import (INLINE_TYPES, MARKDOWN_SUFFIXES, attachment, read_json, readable, split_attachments,
                           store_upload, with_attachments)
 
@@ -31,18 +31,33 @@ STATIC = {'/': ('index.html', 'text/html; charset=utf-8'),
           '/meadow-landscape-2.webp': ('meadow-landscape-2.webp', 'image/webp'),
           '/meadow-night-portrait-1.webp': ('meadow-night-portrait-1.webp', 'image/webp'),
           '/meadow-night-landscape-1.webp': ('meadow-night-landscape-1.webp', 'image/webp')}
+# The board village (platform/web/board-world): a Bevy scene in wasm beside the classic board, which it leaves alone.
+# Its page is committed; the compiled scene comes from `platform/web/board-world/build.sh` and is never committed.
+WORLD_BUILD = paths.REPO / 'build' / 'board-world' / 'dist'
+WORLD = {'/world': ('world/index.html', 'text/html; charset=utf-8'),
+         '/world/': ('world/index.html', 'text/html; charset=utf-8'),
+         '/world/world.css': ('world/world.css', 'text/css; charset=utf-8'),
+         '/world/world.js': ('world/world.js', 'text/javascript; charset=utf-8'),
+         '/world/manifest.webmanifest': ('world/manifest.webmanifest', 'application/manifest+json'),
+         '/world/board_world.js': (WORLD_BUILD / 'board_world.js', 'text/javascript; charset=utf-8'),
+         '/world/board_world_bg.wasm': (WORLD_BUILD / 'board_world_bg.wasm', 'application/wasm')}
+# The scene compiles its own wasm, which the classic page's policy rightly forbids.
+WORLD_CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob:; "
+             "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+WORLD_TIMING_BYTES = 4096
 _assets = {}
 
 
 def asset(filename):
-    """A static file, its ETag and (for text) a gzip copy, reread only when the file changes on disk."""
+    """A static file (named under ASSETS, or a full path), its ETag and (for text) a gzip copy, reread only when the file
+    changes on disk."""
     path = ASSETS / filename
     stamp = path.stat().st_mtime_ns
-    cached = _assets.get(filename)
+    cached = _assets.get(str(path))
     if not cached or cached[0] != stamp:
         data = path.read_bytes()
-        packed = None if filename.endswith(('.webp', '.png')) else gzip.compress(data, 9)
-        cached = _assets[filename] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
+        packed = None if path.suffix in ('.webp', '.png') else gzip.compress(data, 9 if len(data) < 1 << 20 else 6)
+        cached = _assets[str(path)] = (stamp, data, f'"{hashlib.sha256(data).hexdigest()[:24]}"', packed)
     return cached[1:]
 PUSH_PATHS = ('/api/push/subscribe', '/api/push/unsubscribe', '/api/push/test')
 
@@ -270,13 +285,13 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def static(self, filename, mime):
+    def static(self, filename, mime, csp=None):
         """Fast loads: the versioned paintings cache for a year (a new painting gets a new name); the app's own files
         revalidate with an ETag, so a reload costs a 304 until they change, and travel gzipped."""
         data, tag, packed = asset(filename)
         # The page itself is never stored: a home-screen app launched before the network was up used to show an old
         # copy of the board from the browser's cache (fewer tabs, no dark theme) stuck on 'Connecting'.
-        cache = ('public, max-age=31536000, immutable' if filename.endswith('.webp')
+        cache = ('public, max-age=31536000, immutable' if str(filename).endswith('.webp')
                  else 'no-store' if mime.startswith('text/html') else 'no-cache')
         if self.headers.get('If-None-Match') == tag:
             self.send_response(304)
@@ -284,11 +299,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Cache-Control', cache)
             self.end_headers()
             return
-        headers = [('ETag', tag), ('Vary', 'Accept-Encoding')]
+        # The village's loader shows real progress from the size it will have once unpacked.
+        headers = [('ETag', tag), ('Vary', 'Accept-Encoding'), ('X-Uncompressed-Length', str(len(data)))]
         if packed and 'gzip' in self.headers.get('Accept-Encoding', ''):
             data = packed
             headers.append(('Content-Encoding', 'gzip'))
-        self.send(200, data, mime, cache, headers)
+        self.send(200, data, mime, cache, headers, csp)
 
     def review(self, name):
         """A report page (an agents' research write-up) from the board cache, for the same people as the board.
@@ -369,6 +385,11 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if parsed.path in STATIC:
                 self.static(*STATIC[parsed.path])
+            elif parsed.path in WORLD:
+                filename, mime = WORLD[parsed.path]
+                if not (ASSETS / filename).is_file():
+                    self.send(404, {'error': 'The board village is not built on this machine.'}); return
+                self.static(filename, mime, WORLD_CSP)
             elif parsed.path == '/api/state':
                 state = snapshot(parse_qs(parsed.query), self.server.remote_status, self.server.sender)
                 state.update(csrf=self.server.csrf, sender=self.server.sender)
@@ -403,7 +424,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.permitted():
             return
         if self.path not in ('/api/broadcast', '/api/send', '/api/preview', '/api/upload', '/api/remove', '/api/task/dismiss',
-                             '/api/read', *PUSH_PATHS):
+                             '/api/read', '/api/world/timing', *PUSH_PATHS):
             self.send(404, {'error': 'Not found.'}); return
         origin = self.headers.get('Origin', '')
         if (origin not in self.server.origins or urlsplit(origin).netloc != self.headers.get('Host')
@@ -432,6 +453,15 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
                 raise ValueError('A message object is required.')
+            if self.path == '/api/world/timing':
+                # Load and resume timings from the village on real phones, kept for reading back (one JSON per line).
+                line = json.dumps({'time': time.time(), **data}, separators=(',', ':'))
+                if len(line) > WORLD_TIMING_BYTES:
+                    raise ValueError('Timing report is too large.')
+                with (board.root() / 'world-timings.jsonl').open('a') as log:
+                    log.write(line + '\n')
+                self.send(200, {'ok': True})
+                return
             if self.path == '/api/preview':
                 body = data.get('body')
                 if not isinstance(body, str) or len(body) > 8000:
