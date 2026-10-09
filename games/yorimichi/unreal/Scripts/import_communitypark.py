@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori
+from communitypark.source import FILE as SOURCE
 import json
 import runpy
 import unreal
@@ -58,7 +59,7 @@ def materials():
 build = json.loads((OUT / 'build-report.json').read_text())
 park = json.loads((OUT / 'park.json').read_text())
 assert sha(OUT / 'park.json') == build['park_sha256'], 'Rebuild changed community park manifest'
-assert sha(OUT / 'source' / 'megapark-textured.glb') == build['source_sha256'], 'Changed community park source'
+assert sha(SOURCE) == build['source_sha256'], 'Changed community park source'
 for name in park['trees']:
     assert E.does_asset_exist('/Game/Japan/Assets/'+name), 'Missing woodland mesh: '+name
 surfaces = materials(); report = {'meshes': {}, 'source_instances': build['source_instances']}

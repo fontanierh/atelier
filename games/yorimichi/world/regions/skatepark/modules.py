@@ -1,6 +1,6 @@
-"""Extracted obstacles the skate pier is built from (assets/skatepark/modules.json), placed in park-local metres.
+"""Atelier library obstacles the skate pier is built from, placed in park-local metres.
 
-The meshes stay in the ignored build folder (assets/skatepark/fetch.py). Their sizes and grind lines are measured once
+The GLBs are committed in assets/skatepark/modules. Their sizes and grind lines are measured once
 into the pin, so the park's layout and rails are the same with or without them: without them, features.py draws
 procedural stand-ins on the same lines. A placement is a dict with the part, its centre `at` (x, y, deck height) and
 `yaw`, the degrees its local +y (every part's long or uphill axis) is turned anticlockwise from north.
@@ -14,7 +14,7 @@ import numpy as np
 import yori
 
 SPEC = yori.ASSETS / 'skatepark' / 'modules.json'
-FOLDER = yori.OUT / 'skatepark' / 'modules'
+FOLDER = SPEC.parent / 'modules'
 FRAME = np.array([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])   # glTF Y-up to park Z-up
 TYPES = {5120: 'i1', 5121: 'u1', 5122: '<i2', 5123: '<u2', 5125: '<u4', 5126: '<f4'}
 WIDTH = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
@@ -31,10 +31,10 @@ def part(name):
 
 @lru_cache(maxsize=1)
 def available():
-    """Whether every pinned mesh is fetched and verified (atelier fetch yorimichi needs access to the handoff)."""
+    """Whether every committed library mesh matches its recorded size and checksum."""
     for name, entry in spec()['parts'].items():
         path = FOLDER / f'{name}.glb'
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
+        if not path.is_file() or path.stat().st_size != entry['bytes'] or hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
             return False
     return True
 
@@ -56,7 +56,7 @@ def local_triangles(name):
     """A part's triangles in its own Z-up metres, (n, 3, 3), every node's transform applied."""
     data = (FOLDER / f'{name}.glb').read_bytes()
     if hashlib.sha256(data).hexdigest() != part(name)['sha256']:
-        raise ValueError(f'Skate pier module {name} is missing or changed; run atelier fetch yorimichi')
+        raise ValueError(f'Committed skate pier module {name} checksum mismatch')
     size = struct.unpack_from('<I', data, 12)[0]
     gltf = json.loads(data[20:20+size])
     buffer = data[len(data)-struct.unpack_from('<I', data, 20+size)[0]:]

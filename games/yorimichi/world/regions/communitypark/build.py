@@ -4,7 +4,7 @@ Geometry is batched by the shared source meshes without changing placements. Tho
 the skate rides one hidden collision mesh of the same triangles, welded across placements with the joint lips ramped
 (collision.py).
 The zero-area source triangles (source.json counts them) are omitted explicitly for
-Unreal import; the private source retains them. No other render face is removed or simplified.
+Unreal import; the committed source retains them. No other render face is removed or simplified.
 """
 import sys
 from pathlib import Path
@@ -88,7 +88,7 @@ def export(obj):
 
 def source_materials(source):
     specs = source.write_textures(OUT / 'textures'); result = []
-    # The restyle paints replace the recovered maps (tools/communitypark_textures.py).
+    # The restyle paints replace the library maps (tools/communitypark_textures.py).
     restyle = json.loads((OUT / 'restyle' / 'textures.json').read_text())
     for spec in specs:
         shutil.copyfile(OUT / 'restyle' / restyle[spec['name']]['png'], OUT / 'textures' / spec['file'])

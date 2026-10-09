@@ -1,4 +1,4 @@
-"""Skate pier module placements and grind lines come from the committed pin, not from the private meshes."""
+"""Skate pier library modules, placements and measured grind lines."""
 import itertools
 import numpy as np
 import math
@@ -52,7 +52,7 @@ class PierModules(unittest.TestCase):
             self.assertFalse(overlap[0] > .01 and overlap[1] > .01, f'{a} overlaps {b}')
 
     def test_stand_in_joints_have_no_buried_caps(self):
-        """Without the fetched meshes a line of several pieces is one tube: no face stands across it at a joint."""
+        """Without the library meshes a line of several pieces is one tube: no face stands across it at a joint."""
         with mock.patch.object(M, 'available', return_value=False):
             for g in L.GRIND_LINES:
                 if len(g['pieces']) < 2:

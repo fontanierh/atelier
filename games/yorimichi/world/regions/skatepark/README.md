@@ -30,7 +30,7 @@ remain in the ignored build folder.
 
 | Area | Features and approach |
 | --- | --- |
-| North rail promenade | Bars from the extracted park kits at y = 43: an 18 m vermilion flat bar (three 6 m park bars, 50 cm), a sage hi-lo kink rail (6 m, 96 cm down to 20 cm) and, after a 9 m run-out, a 6 m, 50 cm round rail (both set into the deck), and a blue rainbow pair (85 and 66 cm). Wide approaches and exits serve both directions. |
+| North rail promenade | Bars from the library park kits at y = 43: an 18 m vermilion flat bar (three 6 m park bars, 50 cm), a sage hi-lo kink rail (6 m, 96 cm down to 20 cm) and, after a 9 m run-out, a 6 m, 50 cm round rail (both set into the deck), and a blue rainbow pair (85 and 66 cm). Wide approaches and exits serve both directions. |
 | Street plaza | North of the rainbows: a 6 m, 75 cm concrete ledge and a 50 cm manual pad with steel lips, two 44 cm concrete benches, a 46 cm steel curb rail, a pair of jersey barriers and a picnic table. |
 | Manual promenade | Two 14 m pads at y = 53–56, 22 and 30 cm high, with a 9 m link. The entrance opens onto the broad promenade behind them. |
 | Street court | 22 m approach decks. The big terrace drops 1.5 m down the kit's eight-stair (two sets side by side) with its two sloped handrails, 36 cm over every nosing; the low terrace drops 75 cm down the park's two-step set with its handrails, flat over the top step and set 40 cm into the ground so they ride 55 cm over the top nosing. Steel-edged hubbas and access/return banks; a smooth rise connects the two terraces. |
@@ -69,20 +69,20 @@ input and state; bails, silent walking transitions, repeated captured poses and 
 The capture deadline defaults to 300 seconds, including final image saving. The mixer preserves
 16:9 proportions, combines recorded board audio with an original procedural beat, and exports 1080p and 720p MP4s.
 
-## Extracted modules
+## Library modules
 
-The bars, stair sets, handrails and plaza pieces are obstacles recovered from a skate game's 2024 playtest build, the
-same handoff the community park comes from (`docs/COMMUNITY_PARK.md`). The repository holds only the pin,
-`assets/skatepark/modules.json`, with the release archive, each member's SHA-256 and the measured sizes and grind lines. `atelier fetch yorimichi` downloads the archive into the
-ignored cache and extracts the pinned members to `build/yorimichi/skatepark/modules/`; it needs `gh` signed in with
-access to the private handoff. `modules.py` places them; `features.py` gives them the pier's own surfaces (painted
-bars and handrails, two-tone stairs, steel angles on ledge lips, timber, steel). Without the fetch the pier builds
-procedural stand-ins on the same lines and footprints, so `park.json` and every grind line are the same either way.
+The bars, stair sets, handrails and plaza pieces are part of Atelier's own asset
+library, alongside the community park (`docs/COMMUNITY_PARK.md`). All 18 GLBs are
+committed in `assets/skatepark/modules/`. `assets/skatepark/modules.json` records
+each local filename, size, SHA-256, measured dimensions and grind lines.
+`modules.py` reads and verifies these files directly; no model fetch or login is
+needed. `features.py` applies the pier's surfaces: painted bars and handrails,
+two-tone stairs, steel angles on ledge lips, timber and steel.
 
 ## Sources
 
 - `layout.py`: dimensions, profiles, routes, contact lines, module placements and the coastal path.
-- `modules.py`: the pinned extracted obstacles, placed (with `assets/skatepark/fetch.py`).
+- `modules.py`: the committed library obstacles, verified and placed.
 - `features.py`: skating surfaces, street features, pier and promenade.
 - `board.py`: the trick board's deck, truck and wheel meshes (`SM_SkateDeck`, `SM_SkateTruck`, `SM_SkateWheel`).
 - `geom.py`: shared-vertex geometry, material routing, colour/AO and FBX export.

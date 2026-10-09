@@ -1,6 +1,6 @@
 # Hidamari community skate park
 
-The textured April 2024 community megapark from `fontanierh/skate-extractions`
+The textured community megapark from Atelier's own asset library
 sits in the northern apron above Hidamari station, east of the summit trail. It
 is separate from the original Super Ultra Mega Park in the western foothills.
 Travel to **Hidamari · community skate park** from the world map, or take the
@@ -15,22 +15,19 @@ on the street's last uncarved row, flush with the asphalt.
 
 ## Source and build
 
-Recovered geometry and texture pixels belong to their original owners. The
-public repository contains the pin, importer and placement code; the GLB and
-five PNGs remain in the ignored cache/build folders. The fetch needs `gh`
-authenticated with access to the private handoff repository. Without it the
-fetch skips the park and the island builds as before: no park steps, ground
-patch, vegetation clearing, map drawing or travel entry.
+The scene and its five embedded texture maps are part of Atelier's own asset
+library. The complete GLB is committed at
+`assets/communitypark/megapark-textured.glb`, so a fresh checkout includes the
+park, terrain patch, vegetation clearing, map drawing and travel entry.
 
 ```sh
-uv run atelier fetch yorimichi
 uv run atelier build yorimichi
 ```
 
-`assets/communitypark/source.json` pins commit, blob, size and SHA-256. The
-fetch refuses a changed checksum. Both original UV channels and source normals
-are retained; the colour textures use UV1. Surface assignment and PBR factors
-are the handoff's reconstruction, rather than the original game's shaders.
+`assets/communitypark/source.json` records its local filename, size, SHA-256 and
+geometry inventory. The reader rejects changed source bytes. Both UV channels
+and source normals are retained; the colour textures use UV1. Surface assignments
+and PBR factors are stored in the library scene.
 Fifty zero-area source triangles are explicitly omitted from Unreal import;
 the other 39,545 source triangles retain their positions without simplification.
 
@@ -50,7 +47,7 @@ Trunks and plants stay outside the source footprint. Mature trunks leave
 4.8 m and ground plants 3.2 m, preserving the four-metre riding ribbon.
 
 Faded indigo steel frames carry the elevated ramp groups from braced
-four-legged trestle towers outside the recovered skating footprint, never from
+four-legged trestle towers outside the source skating footprint, never from
 a lone pole. Each girder keeps its audited anchor on the tower's headstock; the
 tower stands outward from it, 1.8 m square where the ground allows and narrower
 in the slots between deck pieces, with ring struts every 2.6 m and X-bracing on
@@ -72,11 +69,11 @@ The park follows three Sunburst concepts painted over its game views
 `assets/communitypark/concepts/prompts.json`, paintings and provenance in the
 ignored build folder): braced indigo towers, warm painterly concrete, indigo
 coping, stencilled wall panels and lawn furniture. `tools/communitypark_textures.py
-paint` makes the textures from text alone, so no recovered pixel reaches them, and
+paint` makes the textures from text alone and
 keeps their compact copies and provenance in `assets/communitypark/restyle`.
 `finish` (`world.communitypark_restyle`) makes them seamless, brings them to the
 island palette and saws a 2 m joint grid into the concrete at the UV1 tile edge.
-They replace the recovered smooth concrete, poured concrete, skatelite, steel
+They replace the library smooth concrete, poured concrete, skatelite, steel
 and granite maps; source geometry and UVs are unchanged.
 `world/regions/communitypark/murals.py` paints the exposed flat walls (open air in
 front, open sky above; coplanar neighbours merged) with faded indigo waves or

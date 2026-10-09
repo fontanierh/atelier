@@ -37,6 +37,8 @@ uv run pytest                            # studio and game Python tests
   that is already running is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
   `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
+- Commit every GLB source a game consumes under its `assets/` library. Record its local path and checksum in the
+  source manifest; fresh checkouts must use the committed model without a private fetch or personal cache.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
 
 ## Credentials and paid calls
@@ -215,12 +217,10 @@ uv run pytest                            # studio and game Python tests
   Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
   required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
   to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
-- Fetch optional source inputs in the fresh worktree before reuse (`uv run atelier fetch <game>` from that
-  worktree). Their presence can select build steps: Yorimichi's fetched community-park GLB enables the park steps
-  and is an input to the city, terrain and map. Matching clean Git revisions alone therefore do not guarantee
-  matching recipes. If a fetch skips a source present in the donor, stop and resolve that input mismatch; do not
-  bypass verification or manufacture stamps. An independent copy of that pinned source is valid only after its
-  size and checksum match the committed source manifest, followed by the normal verified reuse command.
+- Fetch sound masters in the fresh worktree before reuse (`uv run atelier fetch <game>` from that worktree).
+  Yorimichi's model GLB sources are committed in the asset library, including the community park and skate pier
+  modules; Super Ultra Mega Park's source arrays and textures are committed too. If any consumed input differs
+  from the donor, resolve the mismatch before reuse. Never bypass verification or manufacture stamps.
 - Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as
   built: use it only after verifying those outputs, never to hide a failed or incomplete build. A source change
   must still invalidate its affected steps and compile when required.

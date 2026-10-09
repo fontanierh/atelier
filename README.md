@@ -88,6 +88,11 @@ variable for UAT and the build tool it starts.
 
 ## Build Yorimichi
 
+The clone contains the game's model, texture, collision, geometry and animation
+sources in [the asset library](games/yorimichi/assets/README.md), including all
+three skate parks. The build uses these committed sources; asset authoring is a
+separate workflow. Fetch supplies the public sound masters.
+
 ```sh
 uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
 uv run atelier fetch yorimichi          # downloads the Sonniss sound masters (not redistributed here)
@@ -105,17 +110,17 @@ Keep a completed build and Unreal's shared derived-data cache for subsequent wor
 same source revision can reuse independent copies of the generated assets and compiled modules:
 
 ```sh
-(cd ../fresh-worktree && uv run atelier fetch yorimichi)  # obtain the same optional source inputs first
+(cd ../fresh-worktree && uv run atelier fetch yorimichi)  # obtain the sound masters first
 uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
 cd ../fresh-worktree && uv sync
 uv run atelier build yorimichi          # confirms the carried-over steps are up to date
 uv run atelier play yorimichi
 ```
 
-Fetch in the target first: optional downloaded sources can select additional recipe steps. For example, the
-community park's source GLB enables its steps and feeds the city, terrain and map. If a source present in the
-completed checkout cannot be fetched in the target, resolve that mismatch before reusing; a clean matching Git
-revision is necessary but does not cover these inputs.
+Fetch sound masters in the target first. All model GLB sources are committed in our asset library, including
+the community park and the skate pier's 18 obstacle modules. Super Ultra Mega Park uses committed geometry,
+collision arrays and textures in `assets/megapark/`. Reuse still verifies every consumed input; resolve a source
+mismatch before reusing a completed build.
 
 The reuse command checks source fingerprints, outputs, engine version and compiled module build IDs before writing
 stamps. On APFS it uses independent copy-on-write clones. It excludes mutable `Intermediate`, logs and capture
@@ -399,11 +404,12 @@ reports where the player and the camera are. It only listens on your own machine
 ## Licences of what is in this repository
 
 The project-authored code and assets (layouts, generated meshes, the characters' source files, AI-generated
-concepts and textures) are the author's. Third-party sources and data are identified below:
+concepts and textures), all model GLBs, and the community park, skate pier and Super Ultra Mega Park library
+assets are the author's. External code, audio and font licences are identified below:
 
 - **Skating**: the native C++ module ports the recovered implementation, with its
   [source licence](platform/engine/Plugins/Activities/Skate/ThirdParty/skate-core-LICENSE) retained. The tracked
-  native bundle contains converted EA Skate 3 animation and gameplay records; its
+  native bundle is part of our asset library; its
   [provenance and contents](games/yorimichi/assets/skate/README.md) are documented separately.
 - **Sounds** come from the Sonniss GDC Game Audio Bundles. Their licence allows shipping them inside a game but not
   redistributing them as files, so `atelier fetch` downloads the masters from the public archive and the build slices

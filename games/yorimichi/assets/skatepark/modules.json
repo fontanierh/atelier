@@ -1,13 +1,7 @@
 {
- "repository": "fontanierh/skate-extractions",
- "release": "extraction-2024-v1",
- "asset": "skate-parks-and-obstacles.zip",
- "bytes": 8463163,
- "sha256": "70eaa68d7560b0414317286ecc36cd4062203a3577cdd3acc8063b5097c51613",
  "parts": {
   "park_flatbar": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_skatepark_01_railflatrectangularlarge_50x15x600cm_hxwxd_mesh_ee7e5ae9.glb",
-   "sha256": "bd2ddccbb5e7b7c39c0c80053316dd064497dc1d5c9c869c5b28cd86e5da856f",
+   "sha256": "18bed978caa576659b94718ff868761d17b9af68004b89329967256bd579818c",
    "triangles": 36,
    "bounds": [
     [
@@ -33,11 +27,12 @@
      2.9999,
      0.5
     ]
-   ]
+   ],
+   "bytes": 4264,
+   "file": "modules/park_flatbar.glb"
   },
   "kit_flatrail": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_own_bk_rails_flatrailstraight_mesh_e18f914f.glb",
-   "sha256": "f444e975817c643510a56a9b55819cadd2d6288011311fe67a93be66cdbd112a",
+   "sha256": "683ef0bd2588eb2c17ba63a089f1188bb90dd451d18e4910c1600a82f1d3a99d",
    "triangles": 56,
    "bounds": [
     [
@@ -63,11 +58,12 @@
      1.4999,
      0.5449
     ]
-   ]
+   ],
+   "bytes": 5308,
+   "file": "modules/kit_flatrail.glb"
   },
   "kink_rail": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/roundrail_hilokink_mesh_8cc5f055.glb",
-   "sha256": "d70a010662f62046d9b4cc69efacde8aa384b398ac7b4f781dd3559f6c1fdafc",
+   "sha256": "d5263e0b969cf2cb89c83f6aa6ff2fca41ddd5d23af4e57b105494322957b739",
    "triangles": 54,
    "bounds": [
     [
@@ -103,11 +99,12 @@
      3.0005,
      0.7046
     ]
-   ]
+   ],
+   "bytes": 5012,
+   "file": "modules/kink_rail.glb"
   },
   "round_rail": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/roundrail_mesh_60436157.glb",
-   "sha256": "847a30824f5ed27a3d69434e8cd3f6ff5c22e23b51a69af35959f59ba50575dd",
+   "sha256": "9c2ae1f12e2a273cf3f7dd5fb4684d0f206c908c2f1d30cbb13242da74d5e964",
    "triangles": 40,
    "bounds": [
     [
@@ -133,11 +130,12 @@
      3.0005,
      0.7046
     ]
-   ]
+   ],
+   "bytes": 4584,
+   "file": "modules/round_rail.glb"
   },
   "rainbow_medium": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_own_bk_rails_rainbowrailmedium_mesh_5583c5d9.glb",
-   "sha256": "53b453de04d7400af016c5251ca07241b7b03cf3d413ef0eb86213504e460fda",
+   "sha256": "a336151b2866ee9a03422f81f2587c5dea25f29f376e669798e06d266a0dc159",
    "triangles": 456,
    "bounds": [
     [
@@ -218,11 +216,12 @@
      1.4991,
      0.2738
     ]
-   ]
+   ],
+   "bytes": 23976,
+   "file": "modules/rainbow_medium.glb"
   },
   "rainbow_low": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_own_bk_rails_rainbowraillow_mesh_3fcad021.glb",
-   "sha256": "27527e76a20e687d6beb2cc43650e3edbaf3398a2bb50191f355fc2d33037dba",
+   "sha256": "c7ecc1767192600d621eeb865cfb747ee0100641920d3290eda8e11313c012ce",
    "triangles": 312,
    "bounds": [
     [
@@ -293,11 +292,12 @@
      1.2589,
      0.2149
     ]
-   ]
+   ],
+   "bytes": 18396,
+   "file": "modules/rainbow_low.glb"
   },
   "stairs_med": {
-   "member": "skate-parks-and-obstacles/obstacles/ledges-stairs-platforms/startpark_stairs_med_mesh_39d11d2b.glb",
-   "sha256": "546a8ce7bd4bd240442a1832a326943f022f0991059a4d7832a892cf4eac9574",
+   "sha256": "cb135fbd10a977742cca52dfff6dd3958aed4007ed7c1ae8d8788d7688256615",
    "triangles": 404,
    "bounds": [
     [
@@ -311,11 +311,12 @@
      1.5
     ]
    ],
-   "long_axis": "x"
+   "long_axis": "x",
+   "bytes": 22748,
+   "file": "modules/stairs_med.glb"
   },
   "kit_stairs": {
-   "member": "skate-parks-and-obstacles/obstacles/ledges-stairs-platforms/cmn_prp_own_bk_stairs_stairsstandard_mesh_4eba6a9b.glb",
-   "sha256": "036b27388afe3260e9f293890b9752884cc17aac289f3697be5668159747e8d7",
+   "sha256": "6a62185063a6f134a6e9027995a8e08073980652bd6f2d8347caab8f2bf90d2d",
    "triangles": 68,
    "bounds": [
     [
@@ -329,11 +330,12 @@
      1.5
     ]
    ],
-   "long_axis": "x"
+   "long_axis": "x",
+   "bytes": 6380,
+   "file": "modules/kit_stairs.glb"
   },
   "kit_handrail": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_own_bk_rails_roundrailslopedhigh_mesh_09f6f3a5.glb",
-   "sha256": "4f41b6419239e9360753be35b9ee3c8041cb6698b5b8a47a3ea7c12971c24186",
+   "sha256": "5f44851b7755ba8414fd3a6f8330148ba0e7dcbe11b453b916e445bc2896dacc",
    "triangles": 168,
    "bounds": [
     [
@@ -359,11 +361,12 @@
      1.4999,
      2.0449
     ]
-   ]
+   ],
+   "bytes": 9112,
+   "file": "modules/kit_handrail.glb"
   },
   "stairs_sml": {
-   "member": "skate-parks-and-obstacles/obstacles/ledges-stairs-platforms/startpark_stairs_sml_mesh_05f3d9b1.glb",
-   "sha256": "baebc4bc9c5f8d42ac3a6b844b642978194c6520601ac8f5548cb19156bb2f21",
+   "sha256": "305dd9ae12872f7231d1e07ed05d2746b9d0330d1fe058eaa66c19775a561d94",
    "triangles": 338,
    "bounds": [
     [
@@ -377,11 +380,12 @@
      0.7501
     ]
    ],
-   "long_axis": "y"
+   "long_axis": "y",
+   "bytes": 17988,
+   "file": "modules/stairs_sml.glb"
   },
   "handrail_med": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/squarerail_med_mesh_b4c4ee6f.glb",
-   "sha256": "085c8b544bbedcaff8b70a5ced200755e84e8c6ab9dd2affde5475486dda3295",
+   "sha256": "5b66101704a8ad8e46a0c2463964f35a6ab9e1febae9b47b6e0dd63e2b7cd288",
    "triangles": 28,
    "bounds": [
     [
@@ -407,11 +411,12 @@
      3.0,
      2.4804
     ]
-   ]
+   ],
+   "bytes": 3660,
+   "file": "modules/handrail_med.glb"
   },
   "handrail_sml": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/roundrail_sml_mesh_32ea6163.glb",
-   "sha256": "5369a113f7f906d34a9568788935d83b8c19543513aa148c5ab35bcda1bd07ad",
+   "sha256": "31a858566eb5fc332dd5b08abb18c4babaf3c9c03a12f448e4504b3241497660",
    "triangles": 62,
    "bounds": [
     [
@@ -447,11 +452,12 @@
      2.9999,
      1.7549
     ]
-   ]
+   ],
+   "bytes": 5732,
+   "file": "modules/handrail_sml.glb"
   },
   "park_ledge": {
-   "member": "skate-parks-and-obstacles/obstacles/ledges-stairs-platforms/skateparkledge_mesh_4a7f0e5d.glb",
-   "sha256": "41f09ba69e7b7ea0efe06cadfdd238572b9db9b4c0f51a5d3cc2795477600672",
+   "sha256": "56c5f0a88e0bc49dc90476c9787cf17dcf1199319d74c602c03d63ac785ffdaa",
    "triangles": 68,
    "bounds": [
     [
@@ -505,11 +511,12 @@
       0.0
      ]
     }
-   ]
+   ],
+   "bytes": 5004,
+   "file": "modules/park_ledge.glb"
   },
   "manual_pad": {
-   "member": "skate-parks-and-obstacles/obstacles/ledges-stairs-platforms/cmn_prp_skatepark_01_box_50x150x300cm_hxwxd_mesh_5660f10f.glb",
-   "sha256": "77c735cc5fb3e17fd2f67f5f9ac048b996910302a3b4c164a4638e4eb32ea6fc",
+   "sha256": "626a58411a79464cc6d0eebd41f68610fd8028a086babb364ed226935b78d346",
    "triangles": 92,
    "bounds": [
     [
@@ -563,11 +570,12 @@
       0.0
      ]
     }
-   ]
+   ],
+   "bytes": 9904,
+   "file": "modules/manual_pad.glb"
   },
   "bench": {
-   "member": "skate-parks-and-obstacles/obstacles/other-obstacles/cmn_prp_own_bk_propsfurniture_generic_benchbacklessconcrete_01_2m_mesh_47860175.glb",
-   "sha256": "68cc814e4eca2706a9590c52940ed7f53fba741ca1201d7dbf04c200dcefaffb",
+   "sha256": "efa0d7c99dd67476b50438c81f369e2631caa4c464b0de7c5c67f33a30d5c827",
    "triangles": 100,
    "bounds": [
     [
@@ -621,11 +629,12 @@
       0.0
      ]
     }
-   ]
+   ],
+   "bytes": 5616,
+   "file": "modules/bench.glb"
   },
   "jersey": {
-   "member": "skate-parks-and-obstacles/obstacles/other-obstacles/cmn_prp_own_bk_props_industrial_generic_jerseybarrier_01_mesh_89d0e953.glb",
-   "sha256": "d6f909bd6f9a668f770aca6e70b67a448a67411cb051a16ad48711b283cf8a70",
+   "sha256": "c98452f5f9d6711d3cf20ce9acf1deb0774cda5955c7bebb96bd1f2fd983c169",
    "triangles": 442,
    "bounds": [
     [
@@ -639,11 +648,12 @@
      1.0859
     ]
    ],
-   "long_axis": "y"
+   "long_axis": "y",
+   "bytes": 15868,
+   "file": "modules/jersey.glb"
   },
   "curb_rail": {
-   "member": "skate-parks-and-obstacles/obstacles/rails/cmn_prp_bollardwheelrail_01_mesh_cbf82503.glb",
-   "sha256": "821f69b3156bbfdd18b169413e6aa5a94f5cc6ec810896247178df612bed0eb8",
+   "sha256": "9960b827b00deaa1fbc2aaef79511e2cd7ab560ae117f7c620c516f7ce6393c3",
    "triangles": 740,
    "bounds": [
     [
@@ -674,11 +684,12 @@
      0.0,
      0.419
     ]
-   ]
+   ],
+   "bytes": 30392,
+   "file": "modules/curb_rail.glb"
   },
   "picnic_table": {
-   "member": "skate-parks-and-obstacles/obstacles/other-obstacles/cmn_prp_own_bk_propsfurniture_generic_picnictablelong_01_mesh_315f523b.glb",
-   "sha256": "6e974881c988cb3163cc50ab5eceafbd5f928cc3691cf16077142bb14d8430dd",
+   "sha256": "6fc43afd6aa7ee549eaae8f4c993fb123e0ef67f1caabb9f555373dab9094b29",
    "triangles": 616,
    "bounds": [
     [
@@ -692,7 +703,10 @@
      0.7969
     ]
    ],
-   "long_axis": "x"
+   "long_axis": "x",
+   "bytes": 26044,
+   "file": "modules/picnic_table.glb"
   }
- }
+ },
+ "ownership": "Atelier's own asset library."
 }

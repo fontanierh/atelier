@@ -1,6 +1,6 @@
 # Super Ultra Mega Park
 
-The original Skate 3 Super Ultra Mega Park sits in the island's western foothills, about a
+Super Ultra Mega Park, from Atelier's own asset library, sits in the island's western foothills, about a
 kilometre north of the forest lake. It is also an editable, standalone Unreal level at
 `/Game/MegaPark/Maps/SuperUltraMegaPark`, the parity reference for the placed park.
 The wooden transitions, large gaps, bowls, coping, lower vert section and grandstands keep their
@@ -9,8 +9,7 @@ original scale and shape; in the island the whole park is turned and moved as on
 Build with `atelier build yorimichi world.megapark unreal.megapark`, then open that level in the
 editor or run `atelier play yorimichi --profile megapark`. A fresh checkout also needs the usual
 player and board asset imports (`atelier build yorimichi` installs everything). The park's own
-build does not require an extracted game, downloaded asset bundle, Python retail decoder or
-external Rust map loader. It uses only the committed source below.
+build reads the committed geometry, collision arrays and textures described below.
 Use `--profile megapark-fullscreen` for a fullscreen controller playtest.
 
 ## Placement
@@ -224,18 +223,17 @@ every other render and collision triangle must still match exactly.
 
 | Source | Contents |
 | --- | --- |
-| `geometry/*.npz` | 50 complete source model resources, 955 mesh parts, 227,275 vertices and 213,482 triangles; original position words, faces, UVs, lightmap/decal UVs and decoded retail normal/tangent arrays |
+| `geometry/*.npz` | 50 complete source model resources, 955 mesh parts, 227,275 vertices and 213,482 triangles; original position words, faces, UVs, lightmap/decal UVs and decoded normal/tangent arrays |
 | `collision/*.npz` | 29 collision resources, 147,660 original triangles; original surface/group IDs, edge codes, unit flags and sidedness |
 | `textures/*.png` | 405 lossless RGBA textures at the original dimensions, including diffuse, alpha, normal, specular, baked lightmap, decal, detail and environment data |
 | `map.json` rails | 151 complete grind paths with 1,507 untouched 120-byte big-endian cubic segment payloads, source IDs and flags |
-| `provenance.json` | Original archive SHA-256, extraction tool revision, coordinate transform and independent source comparison results |
+| `provenance.json` | Library ownership, source manifest SHA-256, coordinate transform and source comparison results |
 
-The source is `worldDIST_University.big`. Despite its name, `worldDIST_MegaPark.big` is a
-different area. Selection keeps whole resources intersecting native X=200..500 and Z=-800..-500
-metres. This includes all 32 University model resources using authored `_MP` material names
-and whole surrounding rock, terrain, road and foliage resources. Resource bounds extend beyond
-that selection rectangle. This is the full park with adjacent context, not the whole University
-district. No ramp triangles were cut at the boundary or simplified.
+The library stores complete park resources, including all 32 models using authored
+`_MP` material names and their adjacent rock, terrain, road and foliage resources.
+Selection keeps whole resources intersecting native X=200..500 and Z=-800..-500
+metres; resource bounds extend beyond that rectangle. Ramp triangles remain
+complete and unsimplified.
 The native draw meshes omit 42 proven zero-area render faces that Unreal cannot import;
 their original words remain in the source arrays. All 147,660 collision faces survive.
 
@@ -252,7 +250,7 @@ geometry has no gameplay collision. Hidden collision actors use the original col
 with Chaos complex-as-simple collision, rather than convex approximations or the decorative
 render mesh. CPU access is retained for the skating backend's world queries. Original collision
 attributes remain in the committed arrays; standard Chaos collision does not itself reproduce
-EA's feature-edge and surface-ID solver behavior.
+the skating backend's feature-edge and surface-ID solver behavior.
 
 The level-owned `SuperUltraMegaPark` actor registers the original grind curves with the skating
 subsystem. Curves are sampled with at most 2 mm control-point chord deviation and 50 cm segments;
@@ -263,29 +261,26 @@ Materials retain original texture bindings and UVs, with the restyled images in 
 originals. Shared Unreal graphs translate diffuse, decal, macro overlay,
 normal/detail, specular and alpha into lit native materials, and the baked irradiance
 (`4*L*L`) into ambient occlusion (see "Restyle"). Lightmaps use UV1, decals UV2; UVs are stored
-at full precision. This is not a reproduction of EA's renderer: reflection cubemaps, animated
-tree shaders and special shader effects remain source data. A texture is reimported when its
-source image changes (its hash is kept in the asset's metadata).
+at full precision. Reflection cubemaps, animated tree shaders and special shader effects remain source data.
+A texture is reimported when its source image changes (its hash is kept in the asset's metadata).
 
 `MegaParkGameMode` uses Cairo and the skating backend. `MegaParkWorld` supplies the
 player's world services without generating the island, leaf storm, villagers or other island
 effects. The level and asset paths are independent of the skating runtime implementation.
 
-## Extraction and verification
+## Source verification
 
-The one-time extraction uses SK8-ENGINE/skate-3-rust-engine tools pinned to
-`60efdef86600d8d8d4feb4b7c608fa0efd0643d7`. Prepare the University Pres/Sim/Tex streams with
-`tools/vendor/university/tools/vanilla_map_extraction/tools/prepare_hawaiian_dream.py`, enabling
-the raw texture cache, then run `world/regions/megapark/extract.py --cache <cache> --upstream <tools>`.
-This is an optional provenance workflow; normal builds consume the committed native source.
+`assets/megapark/provenance.json` records the library identity, coordinate
+transform, manifest checksum and completed source comparisons. The checks cover
+all 147,660 collision triangles, 3,718,591 render-array elements, pixels of all
+405 textures and all 32 authored park models. Normal builds consume this
+committed source directly.
 
-Collision decoding: compressed deltas are unsigned 16-bit values, with saturating signed base
-addition, integer-to-f32 rounding, then f32 multiplication. `extract.py` applies that
-interpretation before converting collision. `verify_source.py` independently compares the
-converted collision against the unmodified Rust retail reader, reading the untouched original RX2
-sections: every vertex float word, surface/group ID, edge code and sidedness byte matches across
-all 147,660 triangles. It also checks all 3,718,591 render-array elements and every decoded pixel
-of all 405 textures, and confirms coverage of all 32 authored park model resources.
+The optional `world/regions/megapark/extract.py` and `verify_source.py` tools
+convert and compare a library map cache when maintaining its native format.
+Collision decoding uses unsigned 16-bit deltas, saturating signed base addition,
+integer-to-f32 rounding and f32 multiplication; verification compares every vertex
+float word, surface/group ID, edge code and sidedness byte.
 
 The Unreal importer fails if source/export hashes disagree, any material slot is unresolved,
 any imported mesh loses triangles, or any world bounds drift by 0.05 cm or more. Its import
@@ -300,5 +295,5 @@ every render mesh keeps its three UV channels. The runtime review is
 guard, checks original ground heights at 11 deck/transition/bowl sites, records a push session on
 the upper deck, captures the park, and quits that game. It matches all 11 heights within
 0.0013 cm, registers 151 grind paths, and rides 48.5 metres on the original deck without bailing.
-This is a map import check, not proof that the skating backend handles every original mega gap or
-transition identically to Skate 3.
+These results validate the map import. The skating backend's mega-gap and transition behavior
+has separate runtime checks.

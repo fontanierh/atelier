@@ -1,6 +1,6 @@
 """Build /Game/MegaPark/Maps/SuperUltraMegaPark from the committed native source.
 
-Only /Game/MegaPark is written. No external game files or runtime decoder are
+Only /Game/MegaPark is written. The committed library source and build exports are
 needed. The saved level owns ordinary mesh actors, Chaos collision and rails.
 """
 import sys

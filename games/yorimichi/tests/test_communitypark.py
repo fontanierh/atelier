@@ -1,4 +1,4 @@
-"""Scene transforms and ground clearance, without needing private game assets."""
+"""Scene transforms and ground clearance for the community park library scene."""
 import json
 import struct
 import sys

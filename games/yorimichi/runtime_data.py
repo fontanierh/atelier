@@ -6,6 +6,7 @@ from atelier import paths
 
 GAME = Path(__file__).resolve().parent
 REGIONS = GAME / 'world' / 'regions'
+ASSETS = GAME / 'assets'
 
 
 # Runtime files the game reads through AtelierDataPath, relative to unreal/Content/Data. Each is also an output of
@@ -17,8 +18,8 @@ STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.j
 
 
 def communitypark(out):
-    """The private community park's fetched source (docs/COMMUNITY_PARK.md), or None: the island builds without it."""
-    source = out / 'communitypark' / 'source' / 'megapark-textured.glb'
+    """The committed community park library scene (docs/COMMUNITY_PARK.md)."""
+    source = ASSETS / 'communitypark' / 'megapark-textured.glb'
     return source if source.is_file() else None
 
 

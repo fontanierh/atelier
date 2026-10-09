@@ -8,9 +8,8 @@ player = "assets/characters/cairo"
 build = "build.py"                      # the build recipe: `atelier build yorimichi --list`
 
 [fetch]
-# Non-redistributable downloads stay in the ignored Atelier cache. The optional community park needs authenticated gh.
-scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py", "assets/communitypark/fetch.py",
-           "assets/skatepark/fetch.py"]
+# Audio masters stay in the ignored Atelier cache. Model sources are committed in assets/.
+scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py"]
 needs = ["sonniss/footsteps", "sonniss/combat"]
 
 [play.play]
