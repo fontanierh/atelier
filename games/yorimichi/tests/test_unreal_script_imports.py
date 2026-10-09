@@ -11,8 +11,8 @@ MISSING = {'numpy', 'scipy', 'bpy', 'PIL', 'trimesh'}
 sys.path.insert(0, str(GAME / 'world'))
 
 
-def top_level_imports(path):
-    """Module names imported when the file loads; imports inside functions and classes run later."""
+def imports(path, everywhere=False):
+    """Module names the file imports: at load time, or anywhere (an Unreal script's functions run in Unreal)."""
     names = []; body = list(ast.parse(path.read_text(), str(path)).body)
     while body:
         node = body.pop(0)
@@ -20,9 +20,8 @@ def top_level_imports(path):
             names += [a.name for a in node.names]
         elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
             names.append(node.module)
-        elif isinstance(node, (ast.If, ast.Try)):
-            body += node.body + node.orelse + getattr(node, 'finalbody', [])
-            body += [n for h in getattr(node, 'handlers', []) for n in h.body]
+        elif everywhere or isinstance(node, (ast.If, ast.Try)):
+            body += list(ast.iter_child_nodes(node))
     return names
 
 
@@ -35,11 +34,14 @@ def local_file(name):
 
 
 def missing_imports(path):
-    """Unavailable modules reached through local imports, as 'chain -> module'."""
+    """Unavailable modules reached through local imports, as 'chain -> module'.
+
+    Every import in an Unreal script counts; a world module counts only what it imports when it loads.
+    """
     found = []; seen = set(); queue = [(path, path.name)]
     while queue:
         current, chain = queue.pop()
-        for name in top_level_imports(current):
+        for name in imports(current, everywhere=current.parent == SCRIPTS):
             if name.split('.')[0] in MISSING:
                 found.append(f'{chain} -> {name}')
             parts = name.split('.')
