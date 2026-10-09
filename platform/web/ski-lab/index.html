@@ -50,6 +50,8 @@
     background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
   button:hover { border-color: var(--accent); }
   .note { font-size: 12px; color: var(--ink-dim); margin: 0; }
+  #start { left: 50%; top: 42%; transform: translateX(-50%); padding: 10px 16px; border-radius: 10px; background: var(--panel);
+    border: 1px solid var(--line); font-size: 15px; text-align: center; max-width: calc(100vw - 32px); }
 </style>
 </head>
 <body>
@@ -58,6 +60,7 @@
 <div class="hud" id="score"></div>
 <ol id="feed" aria-live="polite"></ol>
 <div class="hud" id="trick"></div>
+<div class="hud" id="start">Click the slope, then ride: <kbd>A</kbd> <kbd>D</kbd> to lean, <kbd>Space</kbd> to pop</div>
 <div class="panel">
   <details open>
     <summary>Controls and assists</summary>

@@ -256,7 +256,8 @@ function emitSpray(st, dt) {
 
 // Input: keyboard, and the first gamepad when the page may read it.
 const keys = new Set();
-addEventListener('keydown', (e) => { keys.add(e.code); if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); });
+const hint = document.getElementById('start');
+addEventListener('keydown', (e) => { keys.add(e.code); hint.hidden = true; if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
 let usingPad = false;
@@ -280,7 +281,7 @@ function readInput() {
     const dead = (x) => (Math.abs(x) < 0.12 ? 0 : x);
     const b = (i) => pad.buttons[i]?.pressed;
     const any = dead(pad.axes[0]) || dead(pad.axes[1]) || dead(pad.axes[2]) || pad.buttons.some((x) => x.pressed);
-    if (any) usingPad = true;
+    if (any) { usingPad = true; hint.hidden = true; }
     if (usingPad) {
       input.steer = dead(pad.axes[0]) || input.steer;
       input.lean = -dead(pad.axes[1]) || input.lean;
