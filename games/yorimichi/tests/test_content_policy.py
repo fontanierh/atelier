@@ -18,7 +18,7 @@ def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
               'Modori/Adventure/A_Run.uasset', 'Modori/Textures/coat.uasset', 'Modori/PA_Modori_Cloth.uasset',
               'SwordTrainer/Adventure/A_Run.uasset', 'SwordTrainer/A_Bow.uasset', 'SwordTrainer/Textures/body.uasset',
               'Data/SkateNative/native.bin', 'Data/cairo/adventure.json', 'Data/hippodrome/hippodrome.json',
-              'Audio/Skate/roll.uasset']
+              'Audio/Skate/roll.uasset', 'SkateMotion/MotionData.uasset', 'SkateMotion/Banks/Bank_000.uasset']
     old = ['RetiredCharacter/mesh.uasset', 'Data/retired-roster/roster.json',
            'Cairo/A_Roll.uasset', 'Cairo/A_DashGround.uasset', 'Cairo/A_SwordAttack1.uasset',
            'Cairo/BS_Locomotion.uasset', 'Cairo/DA_Cairo.uasset', 'Cairo/SM_Bokken.uasset',
