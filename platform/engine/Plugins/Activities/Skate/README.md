@@ -14,13 +14,13 @@ systems, the data bundle and how both are verified.
 
 1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
    depends on AtelierCore, AtelierFX and the engine's PhysicsControl.
-2. Stage the plugin's runtime data into the game's `unreal/Content/Data/SkateNative` with a build step that runs
-   `Tools/native_package.py --stage` ([Data/README.md](Data/README.md)), and package that folder as loose files. The
-   loader reads it with standard file reads, so a pak alone is not enough:
+2. Add a build step that assembles the plugin's data with `Tools/native_package.py --assemble`
+   ([Data/README.md](Data/README.md)) and imports it as typed assets (step 9), and cook their folders:
 
    ```ini
    [/Script/UnrealEd.ProjectPackagingSettings]
-   +DirectoriesToAlwaysStageAsNonUFS=(Path="Data")
+   +DirectoriesToAlwaysCook=(Path="/Game/SkateRuntime")
+   +DirectoriesToAlwaysCook=(Path="/Game/SkateMotion")
    ```
 
 3. Make the player an `ACharacter` that implements `ISkateRider`, give it a `USkateComponent` and call
@@ -34,8 +34,8 @@ systems, the data bundle and how both are verified.
 7. Register grindable lines with `USkateRailSubsystem::Add`: rails, ledge and box edges, coping and curbs, as their top
    contact line in centimetres.
 8. Set the board meshes, sounds and tuning in `DefaultGame.ini` (below).
-9. Import the animation as typed assets with `USkateMotionLibrary::ImportMotion` and name the bank in `MotionData`
-   ([MOTION_DATA.md](MOTION_DATA.md)).
+9. Import the data as typed assets with `USkateDataLibrary::ImportRuntime` and `ImportMotion`, and name them in
+   `RuntimeData` and `MotionData` ([TYPED_DATA.md](TYPED_DATA.md)).
 
 | `ISkateRider` | Meaning |
 | --- | --- |
@@ -73,7 +73,8 @@ sounds and HUD getters.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `MotionData` | none | The typed motion bank ([MOTION_DATA.md](MOTION_DATA.md)); a named bank that fails to load is an error |
+| `MotionData` | none | The typed motion bank ([TYPED_DATA.md](TYPED_DATA.md)); the session requires it |
+| `RuntimeData` | none | The typed settings, graphs, camera, gestures and physical skeletons ([TYPED_DATA.md](TYPED_DATA.md)); the session requires it |
 | `Backend` | `Ride` | `Ride` (the ride) or `Native` (the reference; see Backends); `skate.Backend` overrides it on the next mount |
 | `Difficulty` | `normal` | Controller preset: `easy`, `normal` or `hardcore` |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the steering scalar |
@@ -314,11 +315,10 @@ The wire format, timing and interest are the game's.
 
 ## Data and limits
 
-The plugin's [`Data/`](Data/README.md) holds the data every game shares: the runtime payloads (settings, graphs,
-gesture sets, physical skeletons and camera shots) and the animation rig, clips and metadata banks as JSON. The game
-stages the runtime payloads into `unreal/Content/Data/SkateNative`, where the session reads them, and reads the
-animation from [typed motion assets](MOTION_DATA.md) named by `USkateSettings::MotionData`. `package-manifest.json`
-lists every payload with its size and SHA-256; the build assembles the complete package and checks every file against
+The plugin's [`Data/`](Data/README.md) holds the data every game shares as JSON: settings, graphs, gesture sets,
+physical skeletons, camera shots and the animation rig, clips and metadata banks. The game imports it into
+[typed assets](TYPED_DATA.md) named by `USkateSettings::RuntimeData` and `MotionData`, which the session reads.
+`package-manifest.json` lists every payload with its size and SHA-256; the build assembles the complete package and checks every file against
 it before Unreal compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
 [verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
 whose triangles carry the [surface](#surfaces) they were classified as, and editor builds are the checked path.

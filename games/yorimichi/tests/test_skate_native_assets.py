@@ -40,7 +40,7 @@ def write_manifest(bundle, descriptor, *, change=None):
         change(manifest)
     raw = (json.dumps(manifest, indent=2) + '\n').encode()
     (bundle / native.MANIFEST).write_bytes(raw)
-    descriptor.write_text(json.dumps(dict(version=3, backend='in-process-cpp',
+    descriptor.write_text(json.dumps(dict(version=4,
         manifest_sha256=hashlib.sha256(raw).hexdigest(), source_identity='a' * 64,
         formats=list(native.FORMATS), expected={'payloads': len(files),
         **{key: manifest[key] for key in ('clips', 'animation_frames', 'patterns', 'metadata_banks', 'bytes')}})))
@@ -101,25 +101,27 @@ class CommittedPackageTests(unittest.TestCase):
         clip['bones']['TRAJECTORY']['translation_x'][0] = float(numpy.nextafter(numpy.float32(value), numpy.float32(1)))
         self.assertNotEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
 
-    def test_stage_replaces_the_game_folder_with_the_runtime_payloads(self):
-        folder = Path(self.temporary.name) / 'Content/Data/SkateNative'
-        (folder / 'animation').mkdir(parents=True)
-        (folder / 'animation/stale.skate').write_bytes(b'stale')
-        native.stage(folder)
-        staged = {path.relative_to(folder).as_posix(): path.read_bytes() for path in folder.rglob('*') if path.is_file()}
-        self.assertEqual(staged, {path.relative_to(native.RUNTIME).as_posix(): path.read_bytes()
-                                  for path in native.RUNTIME.rglob('*') if path.is_file()})
-        self.assertEqual(len(staged), 8)
-        self.assertEqual(staged[native.MANIFEST], (self.package / native.MANIFEST).read_bytes())
+    def test_runtime_text_is_exact(self):
+        runtime_text = sys.modules['runtime_text']
+        sources = {name: json.loads((native.RUNTIME / name).read_text()) for name in runtime_text.FILES}
+        for name, binary in runtime_text.FILES.items():
+            self.assertEqual(runtime_text.FORMATS[binary][1](sources[name]), (self.package / binary).read_bytes())
+        # A narrow field reads as the session reads it: a one-byte Bool holding 1 is true.
+        self.assertEqual(runtime_text.field_native('Bool', True), ('EA::Reflection::Bool', 0, 1, [1]))
+        self.assertEqual(runtime_text.field_native('Bool', True, 4), ('EA::Reflection::Bool', 0, 4, [0x01000000]))
+        # Another decimal of the same binary32 builds the same bytes; the next binary32 does not.
+        camera = sources['camera.json']
+        value = camera['shots'][0]['distance']
+        camera['shots'][0]['distance'] = float(f'{value:.12e}')
+        self.assertEqual(runtime_text.camera_native(camera), (self.package / 'camera.skate').read_bytes())
+        camera['shots'][0]['distance'] = float(numpy.nextafter(numpy.float32(value), numpy.float32(1e9)))
+        self.assertNotEqual(runtime_text.camera_native(camera), (self.package / 'camera.skate').read_bytes())
 
-    def test_runtime_folder_ships_no_motion_payloads(self):
+    def test_runtime_source_holds_only_the_runtime_text(self):
         runtime = Path(self.temporary.name) / 'runtime'
         shutil.copytree(native.RUNTIME, runtime)
-        for name in ('animation', 'metadata'):
-            self.assertFalse((native.RUNTIME / name).exists())
-        (runtime / 'animation').mkdir()
-        (runtime / 'animation/rig.skate').write_bytes((self.package / 'animation/rig.skate').read_bytes())
-        with self.assertRaisesRegex(ValueError, 'not the runtime folder'):
+        (runtime / 'rig.json').write_text('{}')
+        with self.assertRaisesRegex(ValueError, 'runtime source holds exactly'):
             native.assemble(Path(self.temporary.name) / 'other', runtime=runtime)
         self.assertFalse((Path(self.temporary.name) / 'other').exists())
 
@@ -225,7 +227,6 @@ class NativeDataTests(unittest.TestCase):
         steps = {step.name: step for step in declared}
         runtime, compile_step = steps['skate.runtime'], steps['unreal.compile']
         descriptor = json.loads(native.DESCRIPTOR.read_text())
-        self.assertEqual(descriptor['backend'], 'in-process-cpp')
         self.assertEqual((native.DATA / descriptor['data_directory'], native.DATA / descriptor['motion_directory']),
                          (native.RUNTIME, native.MOTION))
         report, package = output / 'skate-native/verification.json', output / 'skate-native/package'
@@ -233,10 +234,11 @@ class NativeDataTests(unittest.TestCase):
         self.assertIsInstance(runtime.commands[0], build.Python)
         self.assertEqual(runtime.commands[0].script, TOOLS / 'native_package.py')
         self.assertEqual(tuple(runtime.commands[0].args),
-                         ('--assemble', package, '--stage', data / 'SkateNative', '--output', report))
-        self.assertEqual(set(runtime.inputs), {TOOLS / 'native_package.py', TOOLS / 'motion_text.py', native.DATA})
-        self.assertEqual(runtime.outputs, [report, package / native.MANIFEST, data / 'SkateNative' / native.MANIFEST])
-        for name in ('unreal.skate_clips', 'unreal.skate_motion'):
+                         ('--assemble', package, '--output', report))
+        self.assertEqual(set(runtime.inputs), {TOOLS / 'native_package.py', TOOLS / 'motion_text.py',
+                                               TOOLS / 'runtime_text.py', native.DATA})
+        self.assertEqual(runtime.outputs, [report, package / native.MANIFEST])
+        for name in ('unreal.skate_clips', 'unreal.skate_data'):
             self.assertIn(runtime.name, steps[name].needs)
             self.assertTrue(any(native.MOTION.is_relative_to(path) for path in steps[name].inputs))
         self.assertEqual(runtime.needs, [])

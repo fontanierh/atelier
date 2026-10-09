@@ -212,7 +212,6 @@ bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, co
     T.MeshSettleTime = -1.f;
     Pos = Ground; Rot = Rotation; Vel = Velocity;
     const FTransform MeshWorld = Mesh->GetRelativeTransform() * Rider->GetActorTransform();
-    bRideBody = true;
     ResetInput(); ShownCombo.Reset(); ComboFade = 0;
     Mode = ESkateMode::Ground;
     // A board left lying elsewhere goes; the board is placed in the world from now on, so it can stay behind when the

@@ -65,7 +65,7 @@ bool USkateComponent::WantsGetUpOnFoot() const { return Transition && Transition
 
 bool USkateComponent::PrepareRideClips()
 {
-    if (!Rider || USkateSettings::ActiveBackend() != ESkateBackend::Ride) return false;
+    if (!Rider) return false;
     FRideTransition& T = Transit();
     if (!Clips) PreloadRide();
     FRideAnimator& Animator = Clips->GetAnimator();
@@ -175,7 +175,7 @@ void USkateComponent::TickTransition(float Dt)
     if (T.bReleasePending) ReleaseDrive();
     // The transition clips load on foot once the Ride backend is chosen (PreloadRetailRuntime preloads the session 2 s
     // after play; a backend chosen later loads it here), not at the first mount.
-    if (bRetailPreloaded && Mode == ESkateMode::Off && !T.bClipsTried && USkateSettings::ActiveBackend() == ESkateBackend::Ride)
+    if (bRetailPreloaded && Mode == ESkateMode::Off && !T.bClipsTried)
     {
         T.ClipsRetry -= Dt;
         if (T.ClipsRetry <= 0.f) { T.ClipsRetry = 5.f; PrepareRideClips(); }

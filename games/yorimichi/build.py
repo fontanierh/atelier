@@ -66,14 +66,15 @@ class PackageArchive(Python):
     progress: float = 25.
 
 
-def skate_motion_present(out):
-    """Every referenced generated bank must exist, not just the previous verification report."""
+def skate_data_present(out):
+    """The runtime asset and every referenced generated bank must exist, not just the previous verification report."""
     try:
-        report = json.loads((out / 'skate-motion' / 'verify.json').read_text())
+        report = json.loads((out / 'skate-data' / 'verify.json').read_text())
         content = GAME / 'unreal' / 'Content'
-        return report['exact'] and report['negative_control'] and bool(report['banks']) and all(
-            (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
-            for path in report['banks'])
+        return (report['exact'] and report['negative_control'] and report['runtime_exact']
+                and report['runtime_negative_control'] and bool(report['banks']) and all(
+                    (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
+                    for path in [*report['banks'], report['runtime_asset']]))
     except (OSError, ValueError, KeyError, TypeError):
         return False
 
@@ -446,18 +447,16 @@ def unreal_steps(ctx):
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
-        # The Skate plugin's native package: its runtime payloads plus the rig, clips and metadata banks built from its
-        # motion text, every payload checked against its manifest. The game ships only the runtime payloads, staged
-        # into Content/Data/SkateNative, and reads motion from the typed assets (unreal.skate_motion); tools read the
-        # whole package.
+        # The Skate plugin's native package: the runtime payloads, rig, clips and metadata banks built from its runtime
+        # and motion text, every payload checked against its manifest. The game reads them from typed assets
+        # (unreal.skate_data); tools read the package.
         Step('skate.runtime', [Python(SKATE_TOOLS / 'native_package.py',
                                      ('--assemble', out / 'skate-native/package',
-                                      '--stage', paths.content_data(ctx.game) / 'SkateNative',
                                       '--output', out / 'skate-native/verification.json'))],
-             inputs=[SKATE_TOOLS / 'native_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_DATA],
-             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json',
-                      paths.content_data(ctx.game) / 'SkateNative' / 'package-manifest.json'],
-             about="assemble the Skate plugin's native package and verify every payload; stage its runtime payloads"),
+             inputs=[SKATE_TOOLS / 'native_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_TOOLS / 'runtime_text.py',
+                     SKATE_DATA],
+             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json'],
+             about="assemble the Skate plugin's native package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
@@ -557,17 +556,19 @@ def unreal_steps(ctx):
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
              about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
         # Independent NullRHI processes: write typed packages, then reload and verify production resource decoding.
-        Step('unreal.skate_motion', [
+        Step('unreal.skate_data', [
+                UnrealScript(SKATE_RIDE / 'import_runtime.py', 'SKATE RUNTIME IMPORT COMPLETE', null_rhi=True),
                 UnrealScript(SKATE_RIDE / 'import_motion.py', 'SKATE MOTION IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
-             inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
+                UnrealScript(SKATE_RIDE / 'verify_data.py', 'SKATE DATA VERIFY COMPLETE', null_rhi=True)],
+             inputs=[SKATE_RIDE / 'import_runtime.py', SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_data.py',
                      paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
                      SKATE_DATA, GAME / 'unreal/Config/DefaultGame.ini',
                      *engine_version(ctx)],
              needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
-             outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],
-             verify=lambda: skate_motion_present(out),
-             about='typed native motion records; exact serialized reload and offline gameplay replays'),
+             outputs=[GAME / 'unreal/Content/SkateRuntime/RuntimeData.uasset',
+                      GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-data/verify.json'],
+             verify=lambda: skate_data_present(out),
+             about='typed native runtime and motion records; exact serialized reload and offline gameplay replays'),
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
              inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),

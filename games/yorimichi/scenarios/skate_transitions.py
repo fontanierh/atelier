@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""In-game checks for getting on and off the board with the Ride backend (Skate plugin, RIDE.md "Transitions").
+"""In-game checks for getting on and off the board with Ride (Skate plugin, RIDE.md "Transitions").
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_transitions [--only name,name] [--film]
-On the skate pier's long flat, with skate.Backend Ride and the player's own buttons (the top face button gets on and
+On the skate pier's long flat, with the player's own buttons (the top face button gets on and
 off, D-pad Right brings the board to the hand or puts it away): mounts from standing, walking, running and sprinting
 (each its own BR_*_INTO_MOUNT clip), a mount from the board carry, dismounts to a stand, a run and a fast run (the
 BR_DISMOUNT_* clips, into the carry), the carry put away after its hold time, the board button with no board and
@@ -312,7 +312,6 @@ def main():
     only = [o for o in args.only.split(',') if o]
     wanted = lambda name: not only or any(name.startswith(o) for o in only)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Ride')")
     qa.py('live.L.skate_goofy(False)')
     results, frames = {}, []
     # Every check's frames, for a closer look at a failure.

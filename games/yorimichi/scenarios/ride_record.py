@@ -1,8 +1,8 @@
 """Ride record: the player's pad, keys and skate state, one JSON line per frame, while they play. It only reads, so a
-playtest can run under it. To replay a ride exactly through either skating backend, record it with
+playtest can run under it. To replay a ride exactly, record it with
 scenarios/ride_session.py instead.
 
-    atelier live py "REC_TAKE='native-2302'" && atelier live py - < games/yorimichi/scenarios/ride_record.py
+    atelier live py "REC_TAKE='take-2302'" && atelier live py - < games/yorimichi/scenarios/ride_record.py
     ... the player plays, then:
     atelier live py "print(rec_close())"
 
@@ -37,8 +37,7 @@ REC_DIR = os.path.join(live.ROOT, 'build/yorimichi/ride-record', globals().get('
 os.makedirs(REC_DIR, exist_ok=True)
 _rec = {'f': open(os.path.join(REC_DIR, 'frames.jsonl'), 'a'), 'n': 0, 't0': time.perf_counter()}
 with open(os.path.join(REC_DIR, 'meta.json'), 'w') as _m:
-    json.dump({'axes': AXES, 'buttons': BUTTONS, 'started': time.strftime('%Y-%m-%d %H:%M:%S'),
-               'backend': unreal.SystemLibrary.get_console_variable_string_value('skate.Backend')}, _m, indent=1)
+    json.dump({'axes': AXES, 'buttons': BUTTONS, 'started': time.strftime('%Y-%m-%d %H:%M:%S')}, _m, indent=1)
 
 
 def _frame(dt):

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""In-game checks for the Ride skating backend (Skate plugin, Private/Ride, RIDE.md) on the skate pier park.
+"""In-game checks for Ride skating (Skate plugin, Private/Ride, RIDE.md) on the skate pier park.
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
-Mounts with skate.Backend Ride, then checks a ride's first frame (it moves like every later one), a start inside the
+Mounts, then checks a ride's first frame (it moves like every later one), a start inside the
 floor (it starts on it), pushing (from rest, nose-first), steering, braking, the ollie's height, every Flick-It trick,
 flicks on the player's pad (`--only pad`: native's quickest ollie, an ollie flicked mid-push, a manual flicked into a
 kickflip and a nose manual into a nollie, every nollie in native's table, goofy and rolling fakie too), a grab, a 360,
@@ -26,8 +26,6 @@ frozen close-up of the worst pose), and its frame cost in Mega Park. Over
 every frame recorded, the rider's pose (Native's, shown on Ride's body) must keep both feet on the deck while rolling,
 carry no NaN and never pop, in both stances.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
-`--only native` runs the pumps, a flat 360 and the held grab on the Native backend, the reference, beside Ride's (only
-when asked).
 Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
 frames around it.
 """
@@ -157,11 +155,10 @@ def record_while(code, seconds):
 
 
 def mount_ride():
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Ride')")
     qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
     for _ in range(40):
         state = qa.py('print(live.skate_state())')
-        if 'backend=Ride' in state and 'retail=PhysicsGround' in state:
+        if 'retail=PhysicsGround' in state:
             return state
         time.sleep(.5)
     raise RuntimeError('Ride did not mount: ' + state.strip())
@@ -295,7 +292,6 @@ def main():
     wanted = lambda name: not only or any(name.startswith(o) for o in only)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
     results = {}
-    parity = {}   # Ride's pump passes, for the Native rows
 
     seen = {}
 
@@ -488,7 +484,7 @@ def main():
         record('quarter_360', rows, '360' in qa.combos(rows) or '540' in qa.combos(rows), qa.combos(rows) or '(none)')
         spin_held(record)
     if wanted('pump'):
-        pump_rows(record, parity)
+        pump_rows(record)
     if wanted('lip_air_player'):
         lip_air_player(record)
     if wanted('grind'):
@@ -569,8 +565,6 @@ def main():
         physical_checks(record, wanted)
     if any(wanted(name) for name in COLLIDE_ROWS):
         collide_checks(record, wanted)
-    if any(o.startswith('native') for o in only):
-        native_checks(record, parity)
     qa.py('live.skate_input(); live.skate_park(); live.skate_release()')
     out = qa.yori.OUT / 'skateqa' / 'ride.json'
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -683,12 +677,12 @@ def judge_spin(record, name, rows, stick, want='', land=True):
         return None
     takeoff, last = int(rows[a]['tick']), int(rows[b - 1]['tick'])
     yaw = sum((float(r['yaw']) - float(p['yaw']) + 180) % 360 - 180 for p, r in zip(rows[a - 1:b - 1], rows[a:b]))
-    # Ride's spin readout; the board's yaw on the Native backend, which has none.
+    # Ride's spin readout, else the board's yaw.
     ride, native = float(rows[b - 1].get('spin', yaw)), native_spin(stick, takeoff, last)
     held = sum(1 for t in range(takeoff + 1, last + 1) if abs(stick(t)) > .06)
     bailed = any(r['mode'] == '4' for r in rows)
     combos = qa.combos(rows)
-    # The readout turns with the stick as native's does; the yaw's sense is the backend's own, so only its size counts.
+    # The readout turns with the stick as native's does; for the yaw only its size counts.
     same = ride * native > 0 or 'spin' not in rows[b - 1]
     ok = same and abs(abs(ride) - abs(native)) <= max(15., SPIN_SLACK * abs(native)) and (
         not land or (not bailed and rows[-1]['mode'] == '1' and want in combos))
@@ -735,11 +729,11 @@ def floor_passes(rows):
     return out
 
 
-def pump_rows(record, parity):
+def pump_rows(record):
     """Three passes across the bowl's floor from 6 m/s, by native's pump (its model in the bowl: coasting 600 -> 840
     -> 1040 cm/s, timed 600 -> 1000 -> 1210, mistimed 600 -> 640 -> 670): coasting gains (the transitions crouch the
     rider and he rises out of them), a trigger pump timed to stand up through the transitions gains more (native's own
-    runs, `--only native`: 1.27 times its coasting, 591 -> 872 -> 1107 against 591 -> 1150 -> 1249; the row asks
+    runs: 1.27 times its coasting, 591 -> 872 -> 1107 against 591 -> 1150 -> 1249; the row asks
     1.2), one held through them and let go on the floor less; none passes native's cap (13 m/s) or bails."""
     gains = {}
     for name, when in PUMP_RECIPES:
@@ -747,7 +741,6 @@ def pump_rows(record, parity):
                             + PUMP_RUN.replace('PULL', f'{PUMP_PULL:.4f}').replace('WHEN', when), 13)
         qa.py("live.stop('pump'); live.skate_input()")
         passes = floor_passes(rows)
-        parity[name] = passes
         bailed = any(r['mode'] == '4' for r in rows)
         gains[name] = passes[2] - passes[0] if len(passes) >= 3 else 0.
         coast = gains.get('pump_coast', 0.)
@@ -812,77 +805,6 @@ live.behave('grab', grab)
 ''', 5)
     qa.py("live.stop('grab'); live.skate_input()")
     return rows
-
-
-def mount_native():
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
-    qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
-    for _ in range(60):
-        state = qa.py('print(live.skate_state())')
-        if 'backend=Native' in state and 'retail=PhysicsGround' in state:
-            return state
-        time.sleep(.5)
-    raise RuntimeError('Native did not mount: ' + state.strip())
-
-
-def native_checks(record, parity):
-    """The same on the Native backend (only when asked: `--only native`), beside Ride's: the bowl's pumps (the third
-    floor pass within 12% of Ride's: Ride's are run first when this run has none, and a pump without Ride's three passes
-    fails, not evaluated), a flat 360 (its yaw within SPIN_SLACK of the oracle's) and an Indy held through the quarter's
-    landing (ridden away). Ride is mounted again after."""
-    if any(name not in parity for name, _ in PUMP_RECIPES):
-        pump_rows(record, parity)
-    mount_native()
-    try:
-        for name, when in PUMP_RECIPES:
-            rows = record_while(f"live.park.place({BOWL[0]},{BOWL[1]},0); live.park.look(-12,0); live.park.launch(600)\n"
-                                + PUMP_RUN.replace('PULL', f'{PUMP_PULL:.4f}').replace('WHEN', when), 13)
-            qa.py("live.stop('pump'); live.skate_input()")
-            passes, ride = floor_passes(rows), parity.get(name, [])
-            ok = len(passes) >= 3 and len(ride) >= 3 and abs(ride[2] - passes[2]) <= .12 * passes[2]
-            record('native_' + name, rows, ok, f"Native floor passes {' -> '.join(f'{v:.0f}' for v in passes)} cm/s; "
-                   f"Ride {' -> '.join(f'{v:.0f}' for v in ride) or '(none)'}"
-                   + ('' if len(ride) >= 3 and len(passes) >= 3 else '; not evaluated: three passes on each backend needed'))
-        flat = f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.look(-12,0); live.park.launch(500)\n"
-        # Native pops only off a longer load than Ride's (skate_runtime's flat 360s: .3 s down, then the flick).
-        rows, stick = spin_run(flat, '1 if air and a < .27 else 0', 2.6, ollie=True, load=.3)
-        judge_spin(record, 'native_flat_spin', rows, stick, '360')
-        rows = grab_air({'grab_right': True}, 2.5)
-        record('native_grab_held_landing', rows, rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
-               f"{qa.combos(rows) or '(none)'}; {'bailed' if qa.count(rows, 'bails') else 'rode away'}")
-        # The lip airs, the held spins up Mega Park's pool wall and the rails by Native's own board, judged as the
-        # hybrid's are: where Native itself misses a row, the row asks for Ride's board, not Native's.
-        native_record = lambda name, rows, ok, note: record('native_' + name, rows, ok, note)
-        vert_checks(native_record)
-        spin_held(native_record)
-        grind_rows(native_record)
-        # What the hybrid shows of Native's pose and board, on Native itself: the wheels, the fakie rows, and the feet
-        # and pops of the pose rides in both stances.
-        wheels_contact(native_record)
-        fakie_checks(native_record, lambda name: name in ('fakie_roll', 'fakie_switch', 'fakie_push'))
-        # The manual pad's flicks and the player's lip airs (where the hybrid's pose pops, H24), with their pops by run.
-        flicks = {}
-        def flick_record(name, rows, ok, note):
-            flicks[name] = rows
-            native_record(name, rows, ok, note)
-        manual_pad_rows(flick_record, [n for n, _, _ in MANUAL_PADS], .2 + 2 / 60.)
-        lip_air_player(flick_record)
-        _, continuity, context = pose_health(flicks)
-        native_record('pose_continuity_flicks', [r for run in flicks.values() for r in run], continuity[0],
-                      continuity[1] + ''.join(f"; {c['run']} frame {c['frame']} {c['step']:.0f}" for c in context[:8]))
-        try:
-            for goofy in (False, True):
-                qa.py(f'live.L.skate_goofy({goofy})')
-                seen = {}
-                pose_rides(seen)
-                feet, continuity, _ = pose_health(seen)
-                rows = [r for run in seen.values() for r in run]
-                native_record(f"pose_feet_{'goofy' if goofy else 'regular'}", rows, *feet)
-                native_record(f"pose_continuity_{'goofy' if goofy else 'regular'}", rows, *continuity)
-        finally:
-            qa.py('live.L.skate_goofy(False)')
-    finally:
-        mount_ride()
 
 
 def lip_air(rows, out):
@@ -1276,7 +1198,7 @@ def fakie_checks(record, wanted):
             rows = fakie_landing(goofy, False, 1.2)
             head, chest = (settled(rows, key, .75, 1.05) for key in ('headyaw', 'chestyaw'))
             fakie = bool(rows) and all(r.get('fakie') == '1' for t, r in zip(clock(rows), rows) if t < 1.05)
-            # Native itself lands either way (its own backend, 6 landings: 3 with the look at 67-69/125, 3 without at
+            # Native itself lands either way (6 landings: 3 with the look at 67-69/125, 3 without at
             # 147-174/136-140, Native's "fakie with no channel" 177/134): the hybrid shows one of Native's two.
             looked = near(head, FAKIE_ROLL[0]) and near(chest, FAKIE_ROLL[1])
             unlooked = head is not None and chest is not None and head >= 140 and abs(chest - 138) <= 6

@@ -44,7 +44,7 @@ def test_corrupt_or_incomplete_capture_cannot_pass(capture, tmp_path, data, expe
         capture.read_telemetry(path, expected)
 
 
-def launch_rows(speed, state='PhysicsGround tick=10 backend=Ride'):
+def launch_rows(speed, state='PhysicsGround tick=10'):
     return [{'frame': str(i), 'skating': '1', 'clip': state, 'speed': str(speed if i else 0)}
             for i in range(8)]
 
@@ -56,8 +56,8 @@ def test_launch_is_verified_after_native_command_is_applied(capture):
 
 @pytest.mark.parametrize('speed,state,message', [
     (50, '', 'no ready PhysicsGround'),
-    (50, 'PhysicsGround tick=10 backend=Ride', 'never reached 500'),
-    (float('nan'), 'PhysicsGround tick=10 backend=Ride', 'never reached 500'),
+    (50, 'PhysicsGround tick=10', 'never reached 500'),
+    (float('nan'), 'PhysicsGround tick=10', 'never reached 500'),
 ])
 def test_ignored_or_unmeasured_launch_cannot_pass(capture, speed, state, message):
     with pytest.raises(RuntimeError, match=message):

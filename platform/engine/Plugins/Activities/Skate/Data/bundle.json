@@ -1,6 +1,5 @@
 {
-  "version": 3,
-  "backend": "in-process-cpp",
+  "version": 4,
   "data_directory": "runtime",
   "motion_directory": "motion",
   "manifest": "package-manifest.json",
@@ -24,14 +23,5 @@
     "patterns": 285,
     "metadata_banks": 2,
     "bytes": 70695340
-  },
-  "migration": {
-    "reference_revision": "46513a6",
-    "assembler": "platform/engine/Plugins/Activities/Skate/Tools/assemble_native_package.py",
-    "normal_build_requires_conversion": false
-  },
-  "validation": {
-    "status": "editor-validated",
-    "scope": "Native data conversion and complete baseline/latest-main Session comparisons passed, followed by native Unreal editor compilation, live gameplay/park scenarios and real-time frame-pacing checks. This is finite-corpus equivalence to the recovered implementation, not original-console parity or packaged/cooked validation."
   }
 }

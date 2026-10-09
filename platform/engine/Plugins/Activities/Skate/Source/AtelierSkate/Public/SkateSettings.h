@@ -4,16 +4,6 @@
 #include "SkateSettings.generated.h"
 struct FHitResult;
 
-/** Which simulation rides the board. */
-UENUM()
-enum class ESkateBackend : uint8
-{
-    /** The native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
-    Native,
-    /** Ride (RIDE.md): Native's session rides the board under Ride's physical body, transitions and bails. */
-    Ride
-};
-
 /** What the board rolls on. Each surface picks one of the native session's authored ground profiles (how fast it
  *  coasts, brakes, grips and wobbles) and its own roll sound (roll_<surface>_01 in SoundFolder, else roll_01). */
 UENUM(BlueprintType)
@@ -44,12 +34,9 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
-    /** Typed motion bank. Empty keeps the native reference loader for other games; a configured missing asset fails. */
+    /** Typed motion (USkateMotionData) and runtime data (USkateRuntimeData) the session loads; skating needs both. */
     UPROPERTY(Config, EditAnywhere, Category="Skate") FSoftObjectPath MotionData;
-    /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
-    /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
-    static ESkateBackend ActiveBackend();
+    UPROPERTY(Config, EditAnywhere, Category="Skate") FSoftObjectPath RuntimeData;
     /** Controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
     /** 0 loose / 1 tight; feeds the steering scalar. */

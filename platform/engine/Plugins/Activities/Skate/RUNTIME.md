@@ -64,14 +64,12 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 
 ## Data bundle
 
-The plugin's [`Data/`](Data/README.md) holds the bundle: the runtime payloads and their manifest in `Data/runtime/`,
-the rig, clips and metadata banks as JSON in `Data/motion/`, and the descriptor `Data/bundle.json`. A game stages
-`Data/runtime/` into `unreal/Content/Data/SkateNative/`; the adapter reads it from
-`FPaths::ProjectContentDir()/Data/SkateNative` and refuses to start when `package-manifest.json` is missing. The rig,
-clips and metadata come from typed motion assets ([MOTION_DATA.md](MOTION_DATA.md)), so the game ships without
-`animation/` and `metadata/`. The build writes the complete package, with those files rebuilt from the JSON by
-`Tools/motion_text.py`, to `build/<game>/skate-native/package/` for the offline tools.
-`LoadGameplayResources` reads the files in this order and checks each one's magic tag:
+The plugin's [`Data/`](Data/README.md) holds the bundle as JSON: the rig, clips and metadata banks in `Data/motion/`,
+the other payloads in `Data/runtime/`, the manifest `Data/package-manifest.json` and the descriptor
+`Data/bundle.json`. The build writes the complete package, every file rebuilt from the JSON by `Tools/motion_text.py`
+and `Tools/runtime_text.py`, to `build/<game>/skate-native/package/` for the offline tools and the typed-asset import.
+A game reads the same files from its typed assets ([TYPED_DATA.md](TYPED_DATA.md)). `LoadGameplayResources` reads the
+files in this order and checks each one's magic tag:
 
 | File | Magic | Content |
 | --- | --- | --- |
@@ -98,10 +96,9 @@ The complete package has 3,334 payloads totalling 70,695,340 bytes: 3,324 clips 
 ### Bundle check
 
 A game's `skate.runtime` build step runs `Tools/native_package.py` against `Data/bundle.json`, and `unreal.compile`
-depends on it. It assembles the package (the runtime payloads plus the files `Tools/motion_text.py` builds from
-`Data/motion/`), checks it and stages `Data/runtime/` into the game's `Content/Data/SkateNative`. The checks are:
+depends on it. It assembles the package from the JSON and checks it. The checks are:
 
-- the descriptor's version and backend, the manifest's SHA-256, version, formats, source identity and counts;
+- the descriptor's version, the manifest's SHA-256, version, formats, source identity and counts;
 - that the file set matches the manifest exactly, with safe relative paths and no symlinks;
 - each file's size, SHA-256 and magic tag, rejecting any file the table above does not allow;
 - the rig header (at most 255 bones), each clip's layout (bank, weights per rig bone, ten tracks per bone, one sample
@@ -109,15 +106,15 @@ depends on it. It assembles the package (the runtime payloads plus the files `To
 - the source identity inside `physics-skeletons.skate` and `metadata/bank-0.skate`.
 
 It writes `build/<game>/skate-native/verification.json`. It checks integrity, not behaviour; the parity checks below
-cover behaviour, and [MOTION_DATA.md](MOTION_DATA.md#building-and-verifying) the typed motion assets.
+cover behaviour, and [TYPED_DATA.md](TYPED_DATA.md#building-and-verifying) the typed assets.
 
 ### Rebuilding the bundle
 
-The converters in `Tools/` turn the source assets into the bundle; normal builds run only `motion_text.py`. Rerun the
-converters only to change a native format or to add an optional `custom/` file. Then copy the new runtime payloads
-and `package-manifest.json` into `Data/runtime/`, export the animation into `Data/motion/` with
-`Tools/motion_text.py export --native <package> --source Data/motion`, and update `manifest_sha256` and the counts in
-`Data/bundle.json`.
+The converters in `Tools/` turn the source assets into the bundle; normal builds run only `motion_text.py` and
+`runtime_text.py`. Rerun the converters only to change a native format or to add an optional `custom/` file. Then copy
+`package-manifest.json` into `Data/`, export the JSON with `Tools/motion_text.py export --native <package> --source
+Data/motion` and `Tools/runtime_text.py export --native <package> --source Data/runtime`, and update
+`manifest_sha256` and the counts in `Data/bundle.json`.
 
 | Tool | Input | Output |
 | --- | --- | --- |

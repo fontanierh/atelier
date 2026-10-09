@@ -1,6 +1,6 @@
 # megapark_ride_film.py: runs inside the game (atelier live py - < this file). This line keeps the bridge from taking
 # the code for a file name: Unreal's Python reads any text whose first .py is followed by a space as a script path.
-"""Mega Park Ride film: the Ride skating backend (skate.Backend Ride) through the Mega Park. A push-off and hard carves
+"""Mega Park Ride film: Ride skating through the Mega Park. A push-off and hard carves
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
 parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs that come back down
@@ -71,7 +71,6 @@ CLOSE = float(globals().get('CLOSE', 4.3))       # m across at the rider: Cairo 
 MIN_FOV = 8.
 RECALL = bool(globals().get('RECALL', True))     # the road bail ends on foot with the board recalled to the hand
 PHYSICAL = bool(globals().get('PHYSICAL', True))
-BACKEND = globals().get('BACKEND', 'Ride')         # Native: the same shots on the original, to compare
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
 os.makedirs(OUT, exist_ok=True)
@@ -221,7 +220,7 @@ def observe(s):
     text = L.skate_state(); d = parse(text); c = Ctx()
     c.text, c.d = text, d
     c.t = s['t']
-    c.mode = int(d.get('mode', 0)); c.retail = d.get('retail', ''); c.backend = d.get('backend', '')
+    c.mode = int(d.get('mode', 0)); c.retail = d.get('retail', '')
     c.zb = float(d.get('z', 0.)) / 100.
     c.manual, c.slide, c.fakie, c.switch = d.get('manual') == '1', d.get('slide') == '1', d.get('fakie') == '1', d.get('switch') == '1'
     c.combo, c.last = d.get('combo', ''), d.get('last', '')
@@ -801,7 +800,7 @@ SHOTS = [
          trig=[{'when': lambda s, c: s.get('jumped') is not None and c.mode == 0 and c.t > s['jumped'] + .08 and (c.vz > .3 or c.t > s['jumped'] + .35), 'act': 'toggle'},
                {'when': lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.t > s['mounted'] + .5, 'do': [hold(secs=1.2, push=True)]}],
          cams=[(0., chase(back=2.2, side=2.0, up=.7))],
-         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.backend == 'Ride' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
+         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.retail != '' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
     # The opener: a wide view down the park road as he pushes off.
     dict(name='open_wide', unless='open_caveman', road=(0., 8.5), speed=3.,
          secs=6.5, cams=[(0., WIDE_ROAD)], expect=[]),
@@ -1004,8 +1003,7 @@ def ready(feature):
 
 
 # ------------------------------------------------------------------------------------------------ the run
-st = {'i': -1, 'shot': None, 'k': 0, 'kept': {}, 'done': [], 'errors': 0, 'finishing': 0, 'film': 0, 'backend': None,
-      'hz': 60}
+st = {'i': -1, 'shot': None, 'k': 0, 'kept': {}, 'done': [], 'errors': 0, 'finishing': 0, 'film': 0, 'hz': 60}
 
 
 def say(*a):
@@ -1308,11 +1306,10 @@ def step_shot(s, dt):
         if not s.get('foot'): live.skate_input()
         camera(s, c, dt)
         if s['pt'] >= s.get('settle', 1.0):
-            if not s.get('foot') and c.backend != BACKEND:
+            if not s.get('foot') and not c.retail:
                 if s['placed'] < 3:
-                    say(f'not {BACKEND} yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
-                s['error'] = f'{BACKEND} did not mount: ' + c.text.split(' | ')[0]; return 'done'
-            st['backend'] = c.backend or st['backend']
+                    say('not riding yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
+                s['error'] = 'Ride did not mount: ' + c.text.split(' | ')[0]; return 'done'
             if s.get('foot'):
                 s['ph'] = 'ride'; s['t'] = 0.
             else:
@@ -1446,7 +1443,7 @@ def finish():
     live.skate_input(); live.skate_release(); live.drive(0)
     MV.restore_player_camera(); L.film_hud(False); L.fixed_step(0)
     n = L.audio_log('stop', os.path.join(OUT, 'audio.json'))
-    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'extras': EXTRAS, 'moves': st.get('moves'), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
+    json.dump({'take': TAKE, 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'extras': EXTRAS, 'moves': st.get('moves'), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
                'unrecorded': UNRECORDED, 'sounds': n, 'rehearse': REHEARSE, 'film_frames': st['film'], 'errors': st['errors'],
                'shots': st['done'], 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
     say('finished', OUT, st['film'], 'frames')
@@ -1502,7 +1499,6 @@ def run(dt):
         except Exception: live.stop('ride_film')
 
 
-unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend ' + BACKEND); st['backend'] = 'asked'   # at each mount
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical %d' % PHYSICAL)
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 st['probe'] = {'f': 0} if probe_moves() else None

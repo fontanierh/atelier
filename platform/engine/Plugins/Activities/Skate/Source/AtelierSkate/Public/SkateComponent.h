@@ -224,7 +224,7 @@ private:
     /** The host's half of the canonical pad (Private/SkatePad.h) that both backends sample: In, whether the board is
      *  rolling, and the buttons and analog triggers of the player's controller when it drives the ride. */
     FSkateHostPad ReadHostPad() const;
-    void SetMeshForRiding(bool bRiding);
+    void SetMeshForRiding();
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
 
     // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md): Native's session rides (the board, its
@@ -242,7 +242,6 @@ private:
     void StopRide();
     void PreloadRide();
     TSharedPtr<FSkateRuntime> RideNative;
-    bool bRideNative = false;                  // the current ride is Native's session under Ride's body
     bool bNativeBail = false;                  // a Native wipeout handed to the body: the body falls
     FVector RideSpin = FVector::ZeroVector;    // the Native deck's angular velocity (rad/s, world)
     // Through the body's bail the session goes on with its wipeout (controls neutral) and the loose board is placed on
@@ -285,7 +284,6 @@ private:
     // place across each switch and eases back to its on-foot offset, the pose switch is inertialized and the speed
     // carries over both ways; the board dissolves in and out rather than popping.
     TSharedPtr<FRideTransition> Transition;
-    bool bRideBody=false;                                      // the current or last ride used the Ride backend
     bool bRideClip=false;                                      // a mount or dismount clip drives the character (IsRiding)
     // The off-board pose (carry, mount, dismount clips through FRideClipPlayer::Step) published by
     // PublishOffBoardPose through RetargetRetailPose: the visible deck follows the clip's board, on the ground or in

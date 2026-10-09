@@ -1,6 +1,7 @@
 #pragma once
 #include "FeelTuning.h"
 #include "GameplayFrameRuntime.h"
+#include <map>
 namespace atelier::skate
 {
 // Immutable, project-native resources. Sessions share clip storage and graph
@@ -16,9 +17,16 @@ struct GameplayResources
     std::vector<GestureSet> gestures;
     std::optional<ClimbingClipFile> climbing;
 };
+// A package folder: the runtime files, with the animation files unless motion is given, and the optional custom files.
 bool LoadGameplayResources(const std::filesystem::path&,
     std::shared_ptr<const GameplayResources>& output,std::string& error,
     std::shared_ptr<const AnimationSource> motion = {});
+// Runtime file name (settings.skate, physics-skeletons.skate, action.graph, motion.graph, camera.graph, camera.skate,
+// gestures.skate) -> its bytes.
+using RuntimePayloads=std::map<std::string,std::vector<std::uint8_t>>;
+// The runtime payloads with typed motion, read as from a folder holding just those files.
+bool LoadGameplayResources(const RuntimePayloads&,const AnimationSource& motion,
+    std::shared_ptr<const GameplayResources>& output,std::string& error);
 // Sole owning tree for the original GamePhysics + SkaterRuntime. BorrowFrame
 // constructs ephemeral views, so all phases consume these exact same records.
 // Its address is stable: grab and teleport owners borrow its member histories.

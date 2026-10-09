@@ -8,7 +8,7 @@ E.T = 0.0; E.N = 0; E.ROWS = []; E.EV = []; E.ERR = []; E.STEP = 'setup'; E.WANT
 E.PILOT = None; E.WHEN = []; E.DONE = {}; E.F = {}; E.AT = (0.0, 0.0, 0.0); E.YAW = 0.0; E.LOOPS = None; E.SHOTDIR = ''
 E.AIR = 0.0; E.PREV = '0'; E.LAND = -1.0; E.SKIPTO = 0; E.CM = None; E.GOOFY = False
 KEEP = ('mm', 'mode', 'speed', 'fakie', 'manual', 'slide', 'push', 'ps', 'yaw', 'board', 'shown', 'vis', 'hip', 'deck', 'vel',
-        'momentum', 'foot', 'clip', 't', 'hold', 'loose', 'retail', 'backend', 'combo', 'last', 'landed', 'bails', 'grinds', 'pos')
+        'momentum', 'foot', 'clip', 't', 'hold', 'loose', 'retail', 'combo', 'last', 'landed', 'bails', 'grinds', 'pos')
 KEYS = {'A': 'Gamepad_FaceButton_Bottom', 'B': 'Gamepad_FaceButton_Right', 'X': 'Gamepad_FaceButton_Left',
         'Y': 'Gamepad_FaceButton_Top', 'L3': 'Gamepad_LeftThumbstick', 'R3': 'Gamepad_RightThumbstick',
         'DL': 'Gamepad_DPad_Left', 'DR': 'Gamepad_DPad_Right', 'DU': 'Gamepad_DPad_Up', 'DD': 'Gamepad_DPad_Down',

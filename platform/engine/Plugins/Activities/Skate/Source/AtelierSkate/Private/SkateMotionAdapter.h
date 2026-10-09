@@ -6,6 +6,7 @@
 namespace atelier::skate { struct AnimationSource; }
 class USkateMotionData;
 class USkateMotionBank;
+struct FStreamableManager;
 
 struct FSkateMotionLoad
 {
@@ -14,6 +15,8 @@ struct FSkateMotionLoad
 };
 using FSkateMotionFuture = std::shared_future<FSkateMotionLoad>;
 
+// The streamable manager the typed skating data loads through.
+FStreamableManager& SkateStreamer();
 // Game thread, never blocks: starts the asynchronous package load of Path once per process, then decodes it on a task
 // thread while the packages are held. The decoded immutable source is kept for later sessions and the packages are
 // released; a failure is forgotten, so the next request retries.

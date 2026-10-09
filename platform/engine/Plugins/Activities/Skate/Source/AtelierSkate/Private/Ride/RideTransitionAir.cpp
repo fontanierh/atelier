@@ -275,7 +275,6 @@ bool USkateComponent::BeginAirDismountClip()
 void USkateComponent::RecallBoard()
 {
     if (!Rider || !bAvailable || Mode != ESkateMode::Off || bRideClip) return;
-    if (USkateSettings::ActiveBackend() != ESkateBackend::Ride) return;
     FRideTransition& T = Transit();
     if (T.Foot == ERideFoot::Carry) { PutBoardAway(); return; }
     if (!RiderApi->CanCarrySkateBoard() || !PrepareRideClips()) return;

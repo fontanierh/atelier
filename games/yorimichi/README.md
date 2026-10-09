@@ -26,7 +26,7 @@ reuse completed steps. Every model, texture, collision and animation source the 
 [the asset library](assets/README.md): the model GLBs, including the community park and the skate pier's obstacle
 modules, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The
 skating data is shared: it lives in the [Skate plugin](../../platform/engine/Plugins/Activities/Skate/Data/README.md)
-and `skate.runtime` stages it into `Content/Data/SkateNative`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
+and `unreal.skate_data` imports it into typed assets under `Content/SkateRuntime` and `Content/SkateMotion`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
 masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download

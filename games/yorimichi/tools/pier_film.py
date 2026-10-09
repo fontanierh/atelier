@@ -58,8 +58,6 @@ def capture(args, shots=None):
     try:
         deadline=time.monotonic()+args.timeout
         execute((GAME/'scenarios/skate_live_skate.py').read_text())
-        # The pier film rides the native runtime; the game rides on Ride by default.
-        execute("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
         execute('live.skate_park();live.skate_input()')
         ready=time.monotonic()+30
         while 'retail=PhysicsGround' not in execute('print(live.skate_state())'):

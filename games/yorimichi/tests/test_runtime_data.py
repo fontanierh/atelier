@@ -32,7 +32,7 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     # The committed skatepark source wins over any similarly named generated file.
     (ctx.out / 'skatepark').mkdir(exist_ok=True)
     (ctx.out / 'skatepark/park.json').write_bytes(b'wrong generated park')
-    retained = destination / 'SkateNative/metadata/reference.json'
+    retained = destination / 'SkateRide/clips.json'
     retained.parent.mkdir(parents=True)
     retained.write_bytes(b'keep source data')
     stale = destination / 'communitypark/park.json'

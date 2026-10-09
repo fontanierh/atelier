@@ -1,4 +1,4 @@
-"""Bake the package's motion into typed Unreal properties (no opaque payloads)."""
+"""Bake the package's runtime files into typed Unreal properties that encode back to the same bytes."""
 from pathlib import Path
 import sys
 import unreal
@@ -8,11 +8,11 @@ sys.path.insert(0, str(HERE.parents[2] / 'world'))
 import yori  # noqa: E402
 
 PACKAGE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
-result = unreal.SkateDataLibrary.import_motion(str(PACKAGE), '/Game/SkateMotion')
+result = unreal.SkateDataLibrary.import_runtime(str(PACKAGE), '/Game/SkateRuntime')
 # Unreal Python suppresses a bool return when out parameters are present:
 # success returns the Error string (empty); failure returns None.
 if result is None:
-    raise RuntimeError('Motion import failed; inspect the commandlet log')
+    raise RuntimeError('Runtime import failed; inspect the commandlet log')
 if result:
     raise RuntimeError(result)
-unreal.log('SKATE MOTION IMPORT COMPLETE')
+unreal.log('SKATE RUNTIME IMPORT COMPLETE')

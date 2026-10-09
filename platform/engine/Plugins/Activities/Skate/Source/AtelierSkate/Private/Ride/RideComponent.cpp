@@ -201,7 +201,7 @@ void USkateComponent::GetUpFromNativeBail()
 
 bool USkateComponent::IsNativeOnFoot() const
 {
-    return bRideNative && bRetailActive && NativeStateStarts(TEXT("Biped"));
+    return bRetailActive && NativeStateStarts(TEXT("Biped"));
 }
 
 bool USkateComponent::TakeNativeOnFoot(float Dt)

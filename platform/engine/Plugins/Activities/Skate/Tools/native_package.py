@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Assemble, verify and stage the plugin's native skating package without conversion or compilation.
+"""Assemble and verify the plugin's native skating package without conversion or compilation.
 
-    native_package.py --assemble PACKAGE [--stage RUNTIME_FOLDER] [--output REPORT]
+    native_package.py --assemble PACKAGE [--output REPORT]
     native_package.py --bundle PACKAGE
 
-The package is the runtime payloads (Data/runtime) plus the rig, clips and metadata banks built from the motion
-text (Data/motion). Every payload must match the manifest's SHA-256 recorded in Data/bundle.json. `--stage` then
-replaces a game's runtime folder (Content/Data/SkateNative) with the verified runtime payloads, the only files a
-game ships. Only project-native data is read. The migration assembler and frozen Rust reference are development
-proof tools, not dependencies of this tool.
+The package is the runtime payloads built from the runtime text (Data/runtime) plus the rig, clips and metadata banks
+built from the motion text (Data/motion), with the manifest (Data/package-manifest.json). Every payload must match
+the manifest's SHA-256, and the manifest the SHA-256 recorded in Data/bundle.json.
 """
 import argparse
 import hashlib
@@ -155,21 +153,19 @@ def inspect_gestures(raw):
     return patterns
 
 
-def assemble(bundle, runtime=RUNTIME, motion=MOTION):
-    """Replace bundle with the runtime payloads plus the motion payloads built from text; verify_bundle checks it."""
-    bundle, runtime = Path(bundle), Path(runtime)
-    files = {path.relative_to(runtime).as_posix(): path for path in sorted(runtime.rglob('*')) if path.is_file()}
-    # Everything in the runtime folder is packaged with the game, which reads its motion from typed assets instead.
-    shipped = sorted(name for name in files if name.startswith(('animation/', 'metadata/')))
-    if shipped:
-        raise ValueError(f'Native skating motion payloads belong in the motion source, not the runtime folder: {shipped[:3]}')
+def assemble(bundle, runtime=RUNTIME, motion=MOTION, manifest=DATA / MANIFEST):
+    """Replace bundle with the payloads built from the runtime and motion text plus the manifest; verify_bundle checks
+    it."""
+    bundle = Path(bundle)
     if bundle.is_symlink() or bundle.is_file():
         raise ValueError(f'Native skating package path is not a directory: {bundle}')
     if str(TOOLS) not in sys.path:
         sys.path.insert(0, str(TOOLS))
     import motion_text
+    import runtime_text
     built = motion_text.build(Path(motion))
-    built.update((name, path.read_bytes()) for name, path in files.items())
+    built.update(runtime_text.build(Path(runtime)))
+    built[MANIFEST] = Path(manifest).read_bytes()
     if bundle.exists():
         shutil.rmtree(bundle)
     for name, raw in built.items():
@@ -179,28 +175,12 @@ def assemble(bundle, runtime=RUNTIME, motion=MOTION):
     return bundle
 
 
-def stage(folder, runtime=RUNTIME):
-    """Replace a game's runtime folder with exactly the runtime payloads and their manifest."""
-    folder, runtime = Path(folder), Path(runtime)
-    if folder.is_symlink() or folder.is_file():
-        raise ValueError(f'Native skating runtime folder is not a directory: {folder}')
-    if folder.exists():
-        shutil.rmtree(folder)
-    for path in sorted(runtime.rglob('*')):
-        if path.is_file():
-            target = folder.joinpath(*safe_relative(path.relative_to(runtime).as_posix()).parts)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target)
-    return folder
-
-
 def verify_bundle(bundle, descriptor=DESCRIPTOR):
     bundle, descriptor = Path(bundle), Path(descriptor)
     if bundle.is_symlink() or not bundle.is_dir():
         raise ValueError('Missing native skating package directory')
     contract = load_json(descriptor.read_bytes())
-    if (not isinstance(contract, dict) or contract.get('version') != 3
-            or contract.get('backend') != 'in-process-cpp'):
+    if not isinstance(contract, dict) or contract.get('version') != 4:
         raise ValueError('Invalid native skating package descriptor')
     manifest_path = bundle / MANIFEST
     if manifest_path.is_symlink() or not manifest_path.is_file():
@@ -256,14 +236,9 @@ def verify_bundle(bundle, descriptor=DESCRIPTOR):
         magic = REQUIRED.get(name)
         if name.startswith('animation/clips/') and name.endswith('.skate'):
             magic = b'ATCLIP01'
-        elif name == 'custom/climbing.skate':
-            magic = b'SKCLIP1\0'
-        elif name == 'custom/crouch-treflip.json':
-            if not isinstance(load_json(raw), dict):
-                raise ValueError('Invalid project-authored skating override')
         elif magic is None:
             raise ValueError(f'Unsupported native skating payload: {name}')
-        if magic is not None and raw[:8] != magic:
+        if raw[:8] != magic:
             raise ValueError(f'Native skating format mismatch: {name}')
         payloads[name] = raw
         total += size
@@ -284,10 +259,10 @@ def verify_bundle(bundle, descriptor=DESCRIPTOR):
     if physics.text() != source_identity:
         raise ValueError('Native skating physical source identity differs')
     metadata = Reader(payloads['metadata/bank-0.skate'], 'metadata/bank-0.skate')
-    metadata.text()  # Original source label is retained provenance, not parsed source data.
+    metadata.text()  # The bank label.
     if metadata.text() != source_identity:
         raise ValueError('Native skating animation source identity differs')
-    return dict(version=1, backend='in-process-cpp', manifest_sha256=manifest_sha,
+    return dict(version=1, manifest_sha256=manifest_sha,
                 payloads=len(entries), clips=len(clips), animation_frames=frames,
                 patterns=patterns, metadata_banks=len(banks), bytes=total,
                 formats=list(FORMATS), source_identity=source_identity)
@@ -299,14 +274,10 @@ def main():
     mode.add_argument('--assemble', type=Path, metavar='BUNDLE', help='Assemble the package here, then verify it')
     mode.add_argument('--bundle', type=Path, help='Verify an existing package')
     parser.add_argument('--descriptor', type=Path, default=DESCRIPTOR)
-    parser.add_argument('--stage', type=Path, metavar='FOLDER',
-                        help="After verifying, replace this game runtime folder with the runtime payloads")
     parser.add_argument('--output', type=Path, help='Build verification report; no source files are written')
     args = parser.parse_args()
     try:
         result = verify_bundle(assemble(args.assemble) if args.assemble else args.bundle, args.descriptor)
-        if args.stage:
-            stage(args.stage)
     except (ValueError, OSError) as error:
         parser.exit(1, f'Native skating verification failed: {error}\n')
     if args.output:

@@ -1,5 +1,9 @@
 #include "SkateMotionData.h"
 #include "SkateMotionAdapter.h"
+#include "SkateRuntimeData.h"
+#include "SkateRuntimeAdapter.h"
+#include "SkateDataLibrary.h"
+#include "SkateAssetPackages.h"
 #include "SkateSettings.h"
 #include "Native/GameplaySession.h"
 #include "Native/AnimationName.h"
@@ -17,11 +21,7 @@
 #include <utility>
 #include <cstring>
 #include <cmath>
-#if WITH_EDITOR
-#include "AssetRegistry/AssetRegistryModule.h"
-#include "UObject/SavePackage.h"
 #include "Misc/PackageName.h"
-#endif
 
 namespace skate = atelier::skate;
 namespace
@@ -185,12 +185,6 @@ struct FMotionLoad
     std::promise<FSkateMotionLoad> Promise;FSkateMotionFuture Future;
     TSharedPtr<FStreamableHandle> Root,Banks;bool bDecoding=false,bDone=false;
 };
-FStreamableManager& Streamer()
-{
-    // The engine's manager; one of its own (never destroyed, so not at process exit) where no asset manager exists.
-    if(UAssetManager::IsInitialized())return UAssetManager::GetStreamableManager();
-    static FStreamableManager* Own=new FStreamableManager;return *Own;
-}
 TMap<FSoftObjectPath,TSharedRef<FMotionLoad>>& MotionLoads(){static TMap<FSoftObjectPath,TSharedRef<FMotionLoad>> Loads;return Loads;}
 void ReleaseMotion(const FSoftObjectPath& Path,const TSharedRef<FMotionLoad>& Load,bool bForget)
 {
@@ -231,19 +225,25 @@ void LoadMotionBanks(const FSoftObjectPath& Path,const TSharedRef<FMotionLoad>& 
     TArray<FSoftObjectPath> Paths;
     for(const auto& Ref:Data->Banks)Paths.Add(Ref.ToSoftObjectPath());
     if(Paths.IsEmpty()){DecodeMotion(Path,Load);return;}
-    Load->Banks=Streamer().RequestAsyncLoad(Paths,
+    Load->Banks=SkateStreamer().RequestAsyncLoad(Paths,
         FStreamableDelegate::CreateLambda([Path,Load](){DecodeMotion(Path,Load);}));
     if(!Load->Banks)FailMotion(Path,Load,"Cannot request the skate motion banks");
 }
 }
 
+FStreamableManager& SkateStreamer()
+{
+    // The engine's manager; one of its own (never destroyed, so not at process exit) where no asset manager exists.
+    if(UAssetManager::IsInitialized())return UAssetManager::GetStreamableManager();
+    static FStreamableManager* Own=new FStreamableManager;return *Own;
+}
 FSkateMotionFuture RequestSkateMotion(const FSoftObjectPath& Path)
 {
     check(IsInGameThread());
     if(const auto* Found=MotionLoads().Find(Path))return (*Found)->Future;
     TSharedRef<FMotionLoad> Load=MakeShared<FMotionLoad>();Load->Future=Load->Promise.get_future().share();
     MotionLoads().Add(Path,Load);
-    Load->Root=Streamer().RequestAsyncLoad(Path,
+    Load->Root=SkateStreamer().RequestAsyncLoad(Path,
         FStreamableDelegate::CreateLambda([Path,Load](){LoadMotionBanks(Path,Load);}));
     if(!Load->Root)FailMotion(Path,Load,"Cannot request the skate motion asset "+String(Path.ToString()));
     return Load->Future;
@@ -270,30 +270,17 @@ bool ReadFile(const FString& Path,std::vector<uint8>& Out,std::string& Error)
     TArray<uint8> Bytes;if(!FFileHelper::LoadFileToArray(Bytes,*Path)) {Error="Cannot read "+String(Path);return false;}
     Out.assign(Bytes.GetData(),Bytes.GetData()+Bytes.Num());return true;
 }
-template<class T> T* Asset(const FString& PackageName)
-{
-    const auto Name=FPackageName::GetLongPackageAssetName(PackageName);
-    if(T* Existing=LoadObject<T>(nullptr,*(PackageName+TEXT(".")+Name)))return Existing;
-    T* Out=NewObject<T>(CreatePackage(*PackageName),*Name,RF_Public|RF_Standalone);
-    FAssetRegistryModule::AssetCreated(Out);return Out;
-}
-bool Save(UObject* Object,FString& Error)
-{
-    Object->MarkPackageDirty();FSavePackageArgs Args;Args.TopLevelFlags=RF_Public|RF_Standalone;
-    const auto File=FPackageName::LongPackageNameToFilename(Object->GetOutermost()->GetName(),FPackageName::GetAssetPackageExtension());
-    IFileManager::Get().MakeDirectory(*FPaths::GetPath(File),true);
-    if(!UPackage::SavePackage(Object->GetOutermost(),Object,*File,Args)) {Error=TEXT("Cannot save ")+File;return false;}
-    return true;
-}
+using SkateAssetPackages::Asset;
+using SkateAssetPackages::Save;
 bool AttributeTargets(FSkateMetadataBank& Out,const skate::AnimationMetadata& In,const skate::AnimationRig& Rig,std::string& Error)
 {
     for(int32 C=0;C<Out.Clips.Num();++C) for(int32 I=0;I<Out.Clips[C].Attributes.Num();++I)
     {
         const auto& A=In.clips[C].attributes[I];const auto& P=A.payload_words;
         if((A.type_id!=0 && A.type_id!=3) || P.size()!=(A.type_id==3 ? 8u : 4u))
-        {Error="Migration does not support attribute kind/shape for "+A.name;return false;}
+        {Error="Motion import does not support attribute kind/shape for "+A.name;return false;}
         for(std::size_t J=A.type_id==3 ? 6 : 1;J<P.size();++J) if(P[J]!=0)
-        {Error="Migration requires zero attribute alignment padding";return false;}
+        {Error="Motion import requires zero attribute alignment padding";return false;}
         if(A.type_id==3)
         {
             const auto Found=std::find_if(Rig.bones.begin(),Rig.bones.end(),[&](const auto& B)
@@ -307,14 +294,14 @@ bool AttributeTargets(FSkateMetadataBank& Out,const skate::AnimationMetadata& In
 }
 #endif
 
-bool USkateMotionLibrary::ImportMotion(const FString& ReferenceFolder,const FString& AssetFolder,FString& Error)
+bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString& AssetFolder,FString& Error)
 {
     Error.Reset();
     ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
 #if WITH_EDITOR
     if(!FPackageName::IsValidLongPackageName(AssetFolder)) {Error=TEXT("Invalid motion asset folder");return false;}
     std::string NativeError;std::shared_ptr<const skate::GameplayResources> Resources;
-    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(ReferenceFolder)),Resources,NativeError))
+    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(PackageFolder)),Resources,NativeError))
     {Error=Text(NativeError);return false;}
     const auto& Frames=Resources->animation->evaluator->frames;
     TStrongObjectPtr<USkateMotionData> Data(Asset<USkateMotionData>(AssetFolder/TEXT("MotionData")));
@@ -324,7 +311,7 @@ bool USkateMotionLibrary::ImportMotion(const FString& ReferenceFolder,const FStr
     for(int32 B=0;B<2;++B)
     {
         skate::AnimationMetadata Bank;std::vector<uint8> Bytes;
-        if(!ReadFile(ReferenceFolder/FString::Printf(TEXT("metadata/bank-%d.skate"),B),Bytes,NativeError)||!Bank.Load(Bytes,NativeError))
+        if(!ReadFile(PackageFolder/FString::Printf(TEXT("metadata/bank-%d.skate"),B),Bytes,NativeError)||!Bank.Load(Bytes,NativeError))
         {Error=Text(NativeError);return false;}
         auto Typed=ToAsset(Bank);
         if(!AttributeTargets(Typed,Bank,Frames.rig,NativeError)) {Error=Text(NativeError);return false;}
@@ -357,7 +344,7 @@ bool USkateMotionLibrary::ImportMotion(const FString& ReferenceFolder,const FStr
     }
     UE_LOG(LogTemp,Display,TEXT("SKATE MOTION IMPORT saved %d clips in %d banks"),Index,Chunk);Error.Reset();return true;
 #else
-    Error=TEXT("Motion migration requires an editor build");return false;
+    Error=TEXT("Motion import requires an editor build");return false;
 #endif
 }
 
@@ -483,33 +470,34 @@ bool Replays(std::shared_ptr<const skate::GameplayResources> A,std::shared_ptr<c
 }
 #endif
 
-bool USkateMotionLibrary::VerifyMotion(const FString& ReferenceFolder,const FString& ReportFile,FString& Error)
+bool USkateDataLibrary::Verify(const FString& PackageFolder,const FString& ReportFile,FString& Error)
 {
     Error.Reset();
-    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION VERIFY: %s"),*Error); };
+    ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE DATA VERIFY: %s"),*Error); };
 #if WITH_EDITOR
-    // The configured asset through the game's own loader: asynchronous package load, decode on a task thread.
-    const FSoftObjectPath Path=GetDefault<USkateSettings>()->MotionData;
-    if(Path.IsNull()){Error=TEXT("USkateSettings::MotionData is not configured");return false;}
-    CompleteSkateMotion(Path);const FSkateMotionLoad Loaded=RequestSkateMotion(Path).get();
+    // The configured assets through the game's own loaders: asynchronous package loads, decode and encode on task threads.
+    const FSoftObjectPath Path=GetDefault<USkateSettings>()->MotionData,RuntimePath=GetDefault<USkateSettings>()->RuntimeData;
+    if(Path.IsNull()||RuntimePath.IsNull()){Error=TEXT("USkateSettings::MotionData or RuntimeData is not configured");return false;}
+    CompleteSkateMotion(Path);CompleteSkateRuntime(RuntimePath);
+    const FSkateMotionLoad Loaded=RequestSkateMotion(Path).get();
     if(!Loaded.Source){Error=Text(Loaded.Error);return false;}
+    const FSkateRuntimeLoad LoadedRuntime=RequestSkateRuntime(RuntimePath).get();
+    if(!LoadedRuntime.Payloads){Error=Text(LoadedRuntime.Error);return false;}
     const std::shared_ptr<const skate::AnimationSource> Typed=Loaded.Source;
     std::string E;std::shared_ptr<const skate::GameplayResources> Reference,Runtime;
-    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(ReferenceFolder)),Reference,E)){Error=Text(E);return false;}
-    uint64 Frames=0,Samples=0,Steps=0;
+    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(PackageFolder)),Reference,E)){Error=Text(E);return false;}
+    uint64 Frames=0,Samples=0,Steps=0,RuntimeBytes=0;
     if(!CompareMotion(*Reference->animation,*Typed,Frames,Samples,E)){Error=Text(E);return false;}
-    // Prove the production asset-backed resource loader needs no animation/metadata .skate files: the fixture has every
-    // other reference file, including optional authored ones, so authored clips apply over typed frames as in the game.
-    const FString Fixture=FPaths::GetPath(ReportFile)/TEXT("asset-runtime-fixture");
-    IFileManager::Get().DeleteDirectory(*Fixture,false,true);
-    TArray<FString> Files;IFileManager::Get().FindFilesRecursive(Files,*ReferenceFolder,TEXT("*"),true,false);
-    for(const auto& File:Files)
+    // Every runtime file the game encodes is the package's, byte for byte.
+    for(const auto& Pair:*LoadedRuntime.Payloads)
     {
-        FString Relative=File;FPaths::MakePathRelativeTo(Relative,*(ReferenceFolder/TEXT("")));
-        if(Relative.StartsWith(TEXT("animation/"))||Relative.StartsWith(TEXT("metadata/")))continue;
-        if(IFileManager::Get().Copy(*(Fixture/Relative),*File)!=COPY_OK){Error=TEXT("Cannot create isolated runtime fixture");return false;}
+        std::vector<uint8> Bytes;
+        if(!ReadFile(PackageFolder/Text(Pair.first),Bytes,E)){Error=Text(E);return false;}
+        if(Bytes!=Pair.second){Error=TEXT("Typed runtime file differs from the package: ")+Text(Pair.first);return false;}
+        RuntimeBytes+=Bytes.size();
     }
-    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(Fixture)),Runtime,E,Typed)||!Replays(Reference,Runtime,Steps,E))
+    // The game's resources, from the typed assets alone, replay as the package's.
+    if(!skate::LoadGameplayResources(*LoadedRuntime.Payloads,*Typed,Runtime,E)||!Replays(Reference,Runtime,Steps,E))
     {Error=Text(E);return false;}
     // The controls below edit the loaded objects in memory (never saved) and decode them directly.
     auto* Data=Cast<USkateMotionData>(Path.TryLoad());TArray<const USkateMotionBank*> Banks;
@@ -530,22 +518,47 @@ bool USkateMotionLibrary::VerifyMotion(const FString& ReferenceFolder,const FStr
     const float Rate=Data->Metadata[0].Clips[0].FrameRate;Data->Metadata[0].Clips[0].FrameRate=0;
     const bool RejectedMetadata=!DecodeSkateMotion(*Data,Banks,Invalid,E);Data->Metadata[0].Clips[0].FrameRate=Rate;
     if(!RejectedRig||!RejectedTrack||!RejectedMetadata) {Error=TEXT("Malformed typed record was accepted");return false;}
-    // The whole folder is cooked: a package the data does not reference (a bank left from a larger import) would ship.
+    // A one-bit runtime change must fail its digest; malformed runtime records must fail to encode.
+    auto* RuntimeData=Cast<USkateRuntimeData>(RuntimePath.TryLoad());
+    if(!RuntimeData||RuntimeData->CameraShots.IsEmpty()||RuntimeData->MotionGraph.Elements.IsEmpty()
+        ||RuntimeData->PhysicalSkeletons.IsEmpty()||RuntimeData->PhysicalSkeletons[0].Bones.IsEmpty())
+    {Error=TEXT("Typed runtime data is missing");return false;}
+    skate::RuntimePayloads Encoded;
+    uint32& Distance=RuntimeData->CameraShots[0].Distance;Distance^=1u;
+    const bool RuntimeDetected=!EncodeSkateRuntime(*RuntimeData,Encoded,E);Distance^=1u;
+    if(!RuntimeDetected){Error=TEXT("Negative control did not detect the changed runtime word");return false;}
+    auto& Children=RuntimeData->MotionGraph.Elements[0].Children;Children.Add(RuntimeData->MotionGraph.Elements.Num());
+    const bool RejectedGraph=!EncodeSkateRuntime(*RuntimeData,Encoded,E);Children.Pop();
+    auto& Words=RuntimeData->PhysicalSkeletons[0].Bones[0].Words;const uint32 Last=Words.Pop();
+    const bool RejectedBone=!EncodeSkateRuntime(*RuntimeData,Encoded,E);Words.Add(Last);
+    const int32 Schema=RuntimeData->SchemaVersion;RuntimeData->SchemaVersion=0;
+    const bool RejectedSchema=!EncodeSkateRuntime(*RuntimeData,Encoded,E);RuntimeData->SchemaVersion=Schema;
+    if(!RejectedGraph||!RejectedBone||!RejectedSchema) {Error=TEXT("Malformed typed runtime record was accepted");return false;}
+    if(!EncodeSkateRuntime(*RuntimeData,Encoded,E)||Encoded!=*LoadedRuntime.Payloads){Error=TEXT("Restored typed runtime data differs");return false;}
+    // Each folder is cooked whole: a package the data does not reference (a bank left from a larger import) would ship.
     TSet<FString> Referenced;FString BankPaths;
+    auto Package=[](const FString& Name){return FPaths::ConvertRelativePathToFull(FPackageName::LongPackageNameToFilename(Name,FPackageName::GetAssetPackageExtension()));};
     for(const auto& Ref:Data->Banks)
     {
-        Referenced.Add(FPaths::ConvertRelativePathToFull(FPackageName::LongPackageNameToFilename(Ref.GetLongPackageName(),FPackageName::GetAssetPackageExtension())));
+        Referenced.Add(Package(Ref.GetLongPackageName()));
         if(!BankPaths.IsEmpty())BankPaths+=TEXT(",");BankPaths+=TEXT("\"")+Ref.ToSoftObjectPath().ToString()+TEXT("\"");
     }
-    TArray<FString> Packages;
-    IFileManager::Get().FindFilesRecursive(Packages,*FPaths::GetPath(*Referenced.CreateConstIterator()),TEXT("*.uasset"),true,false);
-    for(const auto& Package:Packages)if(!Referenced.Contains(FPaths::ConvertRelativePathToFull(Package)))
-    {Error=TEXT("Unreferenced motion package would be cooked: ")+Package;return false;}
-    const auto Report=FString::Printf(TEXT("{\"schema\":%d,\"asset\":\"%s\",\"clips\":%llu,\"frames\":%llu,\"bone_samples\":%llu,\"replay_steps\":%llu,\"replay_cases\":12,\"exact\":true,\"negative_control\":true,\"invalid_record_controls\":3,\"runtime_without_motion_files\":true,\"banks\":[%s]}\n"),
-        USkateMotionData::CurrentSchema,*Path.ToString(),uint64(Typed->evaluator->frames.clips.size()),Frames,Samples,Steps,*BankPaths);
-    if(!FFileHelper::SaveStringToFile(Report,*ReportFile)){Error=TEXT("Cannot save motion verification report");return false;}
+    const FString RuntimePackage=Package(RuntimePath.GetLongPackageName());
+    for(const FString& Folder:{FPaths::GetPath(*Referenced.CreateConstIterator()),FPaths::GetPath(RuntimePackage)})
+    {
+        TArray<FString> Packages;IFileManager::Get().FindFilesRecursive(Packages,*Folder,TEXT("*.uasset"),true,false);
+        for(const auto& File:Packages)
+        {
+            const FString Full=FPaths::ConvertRelativePathToFull(File);
+            if(!Referenced.Contains(Full)&&Full!=RuntimePackage){Error=TEXT("Unreferenced skate data package would be cooked: ")+File;return false;}
+        }
+    }
+    const auto Report=FString::Printf(TEXT("{\"schema\":%d,\"asset\":\"%s\",\"clips\":%llu,\"frames\":%llu,\"bone_samples\":%llu,\"replay_steps\":%llu,\"replay_cases\":12,\"exact\":true,\"negative_control\":true,\"invalid_record_controls\":3,\"runtime_schema\":%d,\"runtime_asset\":\"%s\",\"runtime_files\":%d,\"runtime_bytes\":%llu,\"runtime_exact\":true,\"runtime_negative_control\":true,\"runtime_invalid_record_controls\":3,\"banks\":[%s]}\n"),
+        USkateMotionData::CurrentSchema,*Path.ToString(),uint64(Typed->evaluator->frames.clips.size()),Frames,Samples,Steps,
+        USkateRuntimeData::CurrentSchema,*RuntimePath.ToString(),int32(LoadedRuntime.Payloads->size()),RuntimeBytes,*BankPaths);
+    if(!FFileHelper::SaveStringToFile(Report,*ReportFile)){Error=TEXT("Cannot save skate data verification report");return false;}
     Error.Reset();return true;
 #else
-    Error=TEXT("Motion verification requires an editor build");return false;
+    Error=TEXT("Skate data verification requires an editor build");return false;
 #endif
 }

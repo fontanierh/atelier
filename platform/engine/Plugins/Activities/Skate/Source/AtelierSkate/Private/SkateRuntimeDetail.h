@@ -13,6 +13,7 @@
 #include "SkateRider.h"
 #include "SkateSettings.h"
 #include "SkateMotionAdapter.h"
+#include "SkateRuntimeAdapter.h"
 #include "SkateFeel.h"
 #include "SkateRails.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -135,7 +136,6 @@ namespace SkateRuntimeDetail
         };
         return {Scalar(P.X),Scalar(P.Y),Scalar(P.Z)};
     }
-    inline FString RuntimeFolder() { return FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()/TEXT("Data/SkateNative")); }
     inline FString TrickLabel(FString Name)
     {
         Name.RemoveFromStart(TEXT("ID_TRICK_"));
@@ -563,9 +563,9 @@ public:
         uint32 Pumps=0;float PumpGain=0;   // the session's successful pumps and the last one's gain (m/s)
         uint8 Surface=0,Wheels=0;   // the surface the wheels are on (ESkateSurface, 0 untagged) and the wheels in contact
     };
-    FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
-        skate_native::Vec3 Spawn,float Heading,FSkateMotionFuture Motion)
-        :Motion_(std::move(Motion)),Folder_(MoveTemp(Folder)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
+    FNativeSkateWorker(skate_native::GameplayWorldSnapshot World,skate_native::Vec3 Spawn,float Heading,
+        FSkateMotionFuture Motion,FSkateRuntimeFuture Runtime)
+        :Motion_(std::move(Motion)),Runtime_(std::move(Runtime)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
     {Wake_=FPlatformProcess::GetSynchEventFromPool(false);}
     ~FNativeSkateWorker()
     {
@@ -585,16 +585,17 @@ public:
         if(!FloatEnvironment.IsReady())
         {Fail("Native skating floating-point environment setup failed");Finished_.store(true);return 1;}
         std::string Error;std::shared_ptr<const skate_native::GameplayResources> Resources;
-        std::shared_ptr<const skate_native::AnimationSource> Motion;
-        if(Motion_.valid())
+        auto Wait=[this](const auto& Future)
         {
-            while(Motion_.wait_for(std::chrono::milliseconds(20))!=std::future_status::ready)
-                if(Stopping_.load()){Finished_.store(true);return 1;}
-            const auto& Loaded=Motion_.get();
-            if(!Loaded.Source){Fail(Loaded.Error.empty()?"Skate motion could not load":Loaded.Error);Finished_.store(true);return 1;}
-            Motion=Loaded.Source;
-        }
-        if(!skate_native::LoadGameplayResources(std::filesystem::u8path(TCHAR_TO_UTF8(*Folder_)),Resources,Error,Motion)
+            while(Future.wait_for(std::chrono::milliseconds(20))!=std::future_status::ready)if(Stopping_.load())return false;
+            return true;
+        };
+        if(!Wait(Motion_)||!Wait(Runtime_)){Finished_.store(true);return 1;}
+        const auto& Motion=Motion_.get();
+        if(!Motion.Source){Fail(Motion.Error.empty()?"Skate motion could not load":Motion.Error);Finished_.store(true);return 1;}
+        const auto& Runtime=Runtime_.get();
+        if(!Runtime.Payloads){Fail(Runtime.Error.empty()?"Skate runtime data could not load":Runtime.Error);Finished_.store(true);return 1;}
+        if(!skate_native::LoadGameplayResources(*Runtime.Payloads,*Motion.Source,Resources,Error)
             ||!skate_native::GameplaySession::Create(Resources,InitialWorld_,Spawn_,Heading_,Session_,Error)
             ||!Session_->Activate(Spawn_,Heading_,Error)||!Publish(true,Error))
         {Fail(Error);Finished_.store(true);return 1;}
@@ -733,7 +734,7 @@ private:
     }
     void Fail(const std::string& Error) {FOutput Out;Out.Error=Error.empty()?"Native skating failed":Error;Outputs_.Enqueue(MoveTemp(Out));}
     FSkateMotionFuture Motion_;
-    FString Folder_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
+    FSkateRuntimeFuture Runtime_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
     FEvent* Wake_=nullptr;FRunnableThread* Thread_=nullptr;std::atomic<bool> Stopping_{false},Finished_{false};
     TQueue<FCommand,EQueueMode::Mpsc> Commands_;TQueue<FOutput,EQueueMode::Spsc> Outputs_;
     std::unique_ptr<skate_native::GameplaySession> Session_;uint32 Generation_=0;

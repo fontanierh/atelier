@@ -1,7 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkateMotionData.generated.h"
 
 /** Native motion units (Y-up metres), unnormalised quaternion components and binary32 samples. */
@@ -246,16 +245,4 @@ public:
     UPROPERTY(VisibleAnywhere, Category="Motion", meta=(TitleProperty="Name")) TArray<FSkateReferencePose> ReferencePoses;
     UPROPERTY(VisibleAnywhere, Category="Motion") TArray<FSkateMetadataBank> Metadata;
     UPROPERTY(VisibleAnywhere, Category="Motion") TArray<TSoftObjectPtr<USkateMotionBank>> Banks;
-};
-
-UCLASS()
-class ATELIERSKATE_API USkateMotionLibrary : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-public:
-    /** One-time migration: decode the reference bundle into named Unreal properties and save packages. */
-    UFUNCTION(BlueprintCallable, Category="Skate Motion") static bool ImportMotion(const FString& ReferenceFolder, const FString& AssetFolder, FString& Error);
-    /** Fresh editor process: loads USkateSettings::MotionData through the game's loader, then runs the exhaustive
-     * comparison and deterministic production-session replays. */
-    UFUNCTION(BlueprintCallable, Category="Skate Motion") static bool VerifyMotion(const FString& ReferenceFolder, const FString& ReportFile, FString& Error);
 };

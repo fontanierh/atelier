@@ -127,17 +127,15 @@ is kept; 2079 bone frames in 44 clips (`snap_guarded_keys` per clip in the manif
 `build/yorimichi/skate-ride/clip-stills/` has six frames each of an ollie, a kickflip, a push and a 50-50 grind: the
 rider drawn from Unreal's sampled poses, with the native joints as blue rings.
 
-The exact native motion source also has typed Unreal assets under `/Game/SkateMotion`.
+The session reads its data from typed Unreal assets under `/Game/SkateRuntime` and `/Game/SkateMotion`.
 Build or verify them without launching the game with:
 
 ```sh
-uv run atelier build yorimichi unreal.skate_motion
+uv run atelier build yorimichi unreal.skate_data
 ```
 
-This runs a NullRHI import, then a separate editor process that reloads the saved
-packages, compares all samples and metadata exactly, and replays twelve controller
-cases through both production resource paths. See the platform's
-[MOTION_DATA.md](../../../../../platform/engine/Plugins/Activities/Skate/MOTION_DATA.md)
-for the schema, validation and first-migration boundaries. The `.skate` animation
-bundle remains the reference input; settings/physics/graphs/camera still use their
-existing loaders. Generated typed assets are overwritten when this step rebuilds.
+This runs NullRHI imports, then a separate editor process that reloads the saved
+packages, compares every runtime file, sample and metadata record exactly, and replays
+twelve controller cases through both production resource paths. See the platform's
+[TYPED_DATA.md](../../../../../platform/engine/Plugins/Activities/Skate/TYPED_DATA.md)
+for the schema and validation. Generated typed assets are overwritten when this step rebuilds.
