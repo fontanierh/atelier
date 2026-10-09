@@ -65,6 +65,9 @@ public:
     /** Also read a hardflip or inward heelflip flicked close to straight down then up, as newer skate games do, beside
      *  the authored wide arc. Off is stock. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") bool bTightFlicks = false;
+    /** Read the trick stick at 120 Hz, from a controller thread, instead of once per 60 Hz tick (README, "120 Hz
+     *  flicks"). Off is stock. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") bool bFlick120Hz = false;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;

@@ -91,7 +91,9 @@ bool PlayerControls::UpdateForPhysics(ActionMap& map,const PhysicalPlayerInput& 
     // Rust evaluates source.value(64) before source.value(65).
     const float horizontal=map.Value(64);const float vertical=map.Value(65);
     axes=PlayerCameraRelativeAxes({horizontal,vertical},camera.frame->basis);
+    offboard_basis_=camera.frame->basis;
   }
+  else offboard_basis_.reset();
   PlayerSimulationActions simulation(map,axes);
   Update(simulation,settings.board.step.simulation.time_step,
     settings.board.input_magnitude_threshold,physical.scoring.capabilities_204);
@@ -104,10 +106,33 @@ bool PlayerControls::PublishGestures(std::uint32_t difficulty,std::uint32_t stat
 {
   if(!gestures_){error.clear();return true;}
   const auto& words=controller.Words();
-  const bool ok=gestures_->Publish({StickPoint{Float(words[7]),Float(words[8])},
-    StickPoint{Float(words[9]),Float(words[10])}},difficulty,actor_flags,state,action_intents,error);
+  const std::array<StickPoint,2> axes{StickPoint{Float(words[7]),Float(words[8])},
+    StickPoint{Float(words[9]),Float(words[10])}};
+  bool ok;
+  if(gestures_->SamplesPerTick()==2)
+  {
+    // 120 Hz: the stick half a tick ago, then now. A tick without fine readings (scripted or injected input, no reader)
+    // reads its packet once for the whole tick, exactly as at 60 Hz.
+    if(fine_)
+    {
+      const auto half=GestureAxes(fine_->half_left,fine_->half_right);
+      ok=gestures_->PublishFine(&half,GestureAxes(fine_->left,fine_->right),difficulty,actor_flags,state,action_intents,error);
+    }
+    else ok=gestures_->PublishFine(nullptr,axes,difficulty,actor_flags,state,action_intents,error);
+  }
+  else ok=gestures_->Publish(axes,difficulty,actor_flags,state,action_intents,error);
   if(ok)error.clear();
   return ok;
+}
+std::array<StickPoint,2> PlayerControls::GestureAxes(std::array<std::int16_t,2> left,std::array<std::int16_t,2> right) const
+{
+  // The same values the controller words hold for a packet with these sticks: ConvertXbox's conditioned halves, as
+  // GameplayActions subtracts them (Input.cpp), and off the board the camera-relative left stick.
+  XboxState state;state.left=left;state.right=right;
+  const auto v=ConvertXbox(state,0);
+  StickPoint l{v[16]-v[17],v[18]-v[19]};
+  if(offboard_basis_)l=PlayerCameraRelativeAxes(l,*offboard_basis_);
+  return {l,StickPoint{v[20]-v[21],v[22]-v[23]}};
 }
 bool PlayerControls::Sample(const TickInput& input,const PhysicalPlayerInput& physical,
   const PhysicalSimulationSettings& settings,const AnimationProfile& profile,

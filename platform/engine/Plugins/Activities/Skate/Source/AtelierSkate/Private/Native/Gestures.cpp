@@ -103,7 +103,8 @@ void GestureRecognizer::SetExtraPatterns(std::vector<GesturePattern> extra)
     if (held_ && *held_ >= patterns_.size()) held_.reset();
 }
 
-void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses)
+void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses,
+    std::uint8_t miss_mask, std::uint8_t weight)
 {
     if (!active)
     {
@@ -113,7 +114,8 @@ void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sam
             *this = Node{};
             active = true;
             next = 1;
-            elapsed = 1;
+            // A whole tick read once enters at 0, so that Ticks counts its ticks as at 60 Hz.
+            elapsed = weight == 2 ? 0 : 1;
             distance = current;
         }
     }
@@ -123,7 +125,7 @@ void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sam
         if (current <= pattern.tolerance_squared)
         {
             distance += current;
-            elapsed = (elapsed + 1) & 0x3ff;
+            elapsed = (elapsed + weight) & 0x3ff;
             if (next + 1 == pattern.points.size()) complete = true;
             else { ++next; misses = 0; }
         }
@@ -131,19 +133,19 @@ void GestureRecognizer::Node::Tick(const GesturePattern& pattern, StickPoint sam
         {
             if (next != 1 || DistanceSquared(pattern.points[0], sample) > pattern.tolerance_squared)
             {
-                elapsed = (elapsed + 1) & 0x3ff;
-                misses = (misses + 1) & 0x3f;
+                elapsed = (elapsed + weight) & 0x3ff;
+                misses = static_cast<std::uint8_t>((misses + weight) & miss_mask);
             }
             if (misses > maximum_misses) *this = Node{};
         }
     }
 }
 
-float GestureRecognizer::Node::Score(std::size_t points) const
+float GestureRecognizer::Node::Score(std::size_t points, float elapsed_ticks) const
 {
     const float count = static_cast<float>(points);
     const float mean = std::fmin(std::fmax(distance, .15f) / count, .15f);
-    return (count * count * count * count) / (mean * static_cast<float>(elapsed));
+    return (count * count * count * count) / (mean * elapsed_ticks);
 }
 
 std::optional<std::size_t> GestureRecognizer::Held(StickPoint sample)
@@ -156,29 +158,88 @@ std::optional<std::size_t> GestureRecognizer::Held(StickPoint sample)
     return held_;
 }
 
-std::optional<GestureRecognition> GestureRecognizer::Sample(StickPoint sample, GestureSettings settings)
+namespace
+{
+// A node's elapsed is 1 plus the samples from the last one in the first circle to the one completing the pattern. At
+// 60 Hz each end of that span falls on average half a tick past the stick's own moment, a whole tick in all; at 120 Hz
+// a quarter tick, half a tick in all. elapsed/2 + 1 is then the 60 Hz count a flick of that duration has on average,
+// and, for a whole tick read once (weight 2, entering at 0), exactly the 60 Hz count.
+float Ticks(std::uint16_t elapsed, GestureSettings settings)
+{
+    return settings.samples_per_tick == 2 ? static_cast<float>(elapsed) / 2.f + 1.f : static_cast<float>(elapsed);
+}
+}
+
+bool GestureRecognizer::Advance(StickPoint sample, GestureSettings settings, std::uint8_t weight)
 {
     if (refractory_)
     {
         std::fill(nodes_.begin(), nodes_.end(), Node{});
-        refractory_ = false;
-        return std::nullopt;
+        refractory_ = static_cast<std::uint8_t>(refractory_ > weight ? refractory_ - weight : 0);
+        return false;
     }
     if (!has_previous_sample_)
     {
         has_previous_sample_ = true;
-        return std::nullopt;
+        return false;
     }
-    for (std::size_t i = 0; i < nodes_.size(); ++i) nodes_[i].Tick(patterns_[i], sample, settings.maximum_misses);
+    const std::uint8_t miss_mask = settings.samples_per_tick == 2 ? 0x7f : 0x3f;
+    for (std::size_t i = 0; i < nodes_.size(); ++i)
+        nodes_[i].Tick(patterns_[i], sample, settings.maximum_misses, miss_mask, weight);
+    return true;
+}
+
+float GestureRecognizer::Score(std::size_t node, GestureSettings settings) const
+{
+    return nodes_[node].Score(patterns_[node].points.size(), Ticks(nodes_[node].elapsed, settings));
+}
+
+std::optional<std::size_t> GestureRecognizer::Best(GestureSettings settings) const
+{
     std::optional<std::size_t> best;
     for (std::size_t i = 0; i < nodes_.size(); ++i)
-    {
-        if (nodes_[i].complete && (!best || nodes_[i].Score(patterns_[i].points.size()) >
-            nodes_[*best].Score(patterns_[*best].points.size()))) best = i;
-    }
+        if (nodes_[i].complete && (!best || Score(i, settings) > Score(*best, settings))) best = i;
+    return best;
+}
+
+std::optional<GestureRecognition> GestureRecognizer::Sample(StickPoint sample, GestureSettings settings)
+{
+    if (!Advance(sample, settings)) return std::nullopt;
+    const auto best = Best(settings);
     if (!best) return std::nullopt;
-    const Node& node = nodes_[*best];
-    const float ratio = static_cast<float>(node.elapsed) / static_cast<float>(patterns_[*best].points.size());
+    return Recognize(*best, settings);
+}
+
+std::optional<GestureRecognition> GestureRecognizer::SampleTick(std::optional<StickPoint> half, StickPoint now,
+    GestureSettings settings)
+{
+    if (!half)
+    {
+        if (!Advance(now, settings, 2)) return std::nullopt;
+        const auto best = Best(settings);
+        if (!best) return std::nullopt;
+        return Recognize(*best, settings);
+    }
+    if (!Advance(*half, settings)) return Sample(now, settings);
+    const auto first = Best(settings);
+    if (!first) return Sample(now, settings);
+    // The half sample completed a pattern. Read on to the tick's end as if it had not; a different pattern completed
+    // there with a better score wins, as on one sample. Otherwise the half sample's stands and the end is the pause.
+    const auto at_half = nodes_;
+    Advance(now, settings);
+    if (const auto second = Best(settings); second && *second != *first && Score(*second, settings) > Score(*first, settings))
+        return Recognize(*second, settings);
+    nodes_ = at_half;
+    const auto recognition = Recognize(*first, settings);
+    Advance(now, settings);
+    return recognition;
+}
+
+GestureRecognition GestureRecognizer::Recognize(std::size_t best, GestureSettings settings)
+{
+    const Node& node = nodes_[best];
+    const float elapsed = Ticks(node.elapsed, settings);
+    const float ratio = elapsed / static_cast<float>(patterns_[best].points.size());
     const float low = (settings.difficulty == 2 ? 1.5f : 1.75f) / settings.pace;
     const float high = (settings.difficulty == 2 ? 3.f : 4.4f) / settings.pace;
     float strength;
@@ -189,8 +250,8 @@ std::optional<GestureRecognition> GestureRecognizer::Sample(StickPoint sample, G
         const float slope = 1.f / (low - high);
         strength = std::fma(slope, ratio, -(slope * high));
     }
-    refractory_ = true;
+    refractory_ = settings.samples_per_tick == 2 ? 2 : 1;
     held_ = best;
-    return GestureRecognition{*best, strength, node.distance, static_cast<float>(node.elapsed)};
+    return GestureRecognition{best, strength, node.distance, elapsed};
 }
 }

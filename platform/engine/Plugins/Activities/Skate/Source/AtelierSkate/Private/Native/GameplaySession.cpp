@@ -2,6 +2,7 @@
 #include "GameplaySession.h"
 #include "ClimbingMath.h"
 #include "DebugString.h"
+#include "PlayerControls.h"
 #include <algorithm>
 #include <cstring>
 #if defined(__clang__)
@@ -129,11 +130,32 @@ float GameplaySession::Period() const
 {return float(gameplay->clock.PeriodNanoseconds())/1000000000.0f;}
 bool GameplaySession::Step(XboxState state,float dt,std::string& error)
 {
+    return Step(state,dt,{},error);
+}
+bool GameplaySession::Step(XboxState state,float dt,const std::vector<StickReading>& readings,std::string& error)
+{
     if(!std::isfinite(dt)||dt<0){error="Invalid frame interval";return false;}
     elapsed_=VectorMin(elapsed_+dt,0.1f);
+    // After a tick takes its period, elapsed_ is the frame time from that tick's end to the frame's end.
+    const auto at=[&readings](float age)
+    {
+        const StickReading* held=&readings.front();
+        for(const auto& reading:readings)if(reading.age>=age-1.0e-6f)held=&reading;
+        return held;
+    };
+    bool ok=true;
     while(elapsed_+1.0e-7f>=Period())
-    {elapsed_-=Period();if(!Tick(state,error))return false;}
-    return CheckPublishedPose(error);
+    {
+        const float period=Period();elapsed_-=period;
+        if(!readings.empty())
+        {
+            const auto* half=at(elapsed_+period*0.5f);const auto* end=at(elapsed_);
+            gameplay->controls->SetFineSticks(FineSticks{half->left,half->right,end->left,end->right});
+        }
+        if(!(ok=Tick(state,error)))break;
+    }
+    if(!readings.empty())gameplay->controls->SetFineSticks(std::nullopt);
+    return ok&&CheckPublishedPose(error);
 }
 void GameplaySession::SetAspectRatio(float value)
 {if(std::isfinite(value)&&value>0)gameplay->camera.SetAspectRatio(value);}

@@ -4,6 +4,7 @@
 #include "Native/GroundSurfaceRuntime.h"
 #include "Native/HostScalar.h"
 #include "SkatePad.h"
+#include "SkatePadReader.h"
 #include <deque>
 #include <limits>
 #include <cfenv>
@@ -307,13 +308,13 @@ void USkateComponent::SuspendRetailRuntime()
     StopRide();
     EndNativeBoardInBail(); SuspendNativeRide(); bNativeBail=false;
     if (RetailRuntime && RetailRuntime->Worker) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
-    bRetailActive=false; RetailPose.Reset();
+    bRetailActive=false; RetailPose.Reset(); PadReader.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (PhysicalRider) PhysicalRider->End();
     ReleaseRootMotion();
-    RetailRuntime.Reset(); RideNative.Reset(); Super::EndPlay(Reason);
+    RetailRuntime.Reset(); RideNative.Reset(); PadReader.Reset(); Super::EndPlay(Reason);
 }
 void USkateComponent::LaunchRetail(const FVector& V)
 {
@@ -584,10 +585,14 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
     R.FrameTime=FMath::Min(.1f,R.FrameTime+Dt);
     if (R.AwaitingPose) return Changed;
     // The canonical pad (SkatePad.h); GameplaySession takes the host transfer bit off before Xbox sampling.
-    const skate_native::XboxState Input=bNeutral?skate_native::XboxState{}:atelier::skate_pad::Pack(ReadHostPad());
-    auto Send=[&R,&Input]()
+    const FSkateHostPad Pad=ReadHostPad();
+    const skate_native::XboxState Input=bNeutral?skate_native::XboxState{}:atelier::skate_pad::Pack(Pad);
+    auto Send=[this,&R,&Input,&Pad,bNeutral]()
     {
         FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Step;Command.Dt=R.FrameTime;
+        R.Readings.clear();
+        if (!bNeutral) ReadFineSticks(R,R.FrameTime,Pad);
+        Command.Readings=std::move(R.Readings);R.Readings.clear();R.LastSend=FPlatformTime::Seconds();
         Command.Input=Input;R.Sent=Input;R.Worker->Enqueue(MoveTemp(Command));
         R.AwaitingPose=true; R.FrameTime=0;
     };
@@ -603,6 +608,73 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
         if (!R.AwaitingPose) { R.FrameTime=Dt; Send(); }
     }
     return Changed;
+}
+
+void USkateComponent::ReadFineSticks(FSkateRuntime& R, float Dt, const FSkateHostPad& Pad)
+{
+    // The 120 Hz flick reading (README.md, "120 Hz flicks"): each tick's gestures read the sticks at its middle and its
+    // end. Off, the reader stops; without one (or readings that disagree with the frame) the ticks read the packet.
+    if (!Feel.Flick120Hz) { PadReader.Reset(); return; }
+    if (!PadReader) PadReader=FSkatePadReader::Acquire();
+    const FSkateFrameSticks& F=FrameSticks;
+    if (!PadReader || !F.bValid || Dt<=0.f) return;
+    // The step's end is now; its Dt of session time spans the wall time since the last step, unless that is far off
+    // (slow motion, a hitch, the first step): then the readings of the last Dt stand in, at their own pace.
+    const double Now=FPlatformTime::Seconds();
+    double Span=Now-R.LastSend,Scale=Dt/FMath::Max(Span,1e-6);
+    if (R.LastSend<=0. || Span>.25 || Scale<.25 || Scale>4.) { Span=Dt; Scale=1.; }
+    const double Since=Now-Span;
+    TArray<FSkatePadReading> Got;
+    PadReader->Read(FMath::Min(Since,F.Time-.05),Got);
+    // The readings are the controller the frame read only if one of the 50 ms before ReadInput is what the engine
+    // read (its raw axes: GameController's, RightY negated by the viewport). Injected or replayed input, or another
+    // controller, keeps the packet.
+    bool bAgree=false;
+    for (int32 I=0;I<Got.Num() && Got[I].Time<=F.Time+.002 && !bAgree;++I)
+    {
+        if (I+1<Got.Num() && Got[I+1].Time<F.Time-.05) continue;
+        const FSkatePadReading& G=Got[I];
+        bAgree=FMath::Abs(G.LeftX-F.Raw[0])<=.01f && FMath::Abs(G.LeftY-F.Raw[1])<=.01f
+            && FMath::Abs(G.RightX-F.Raw[2])<=.01f && FMath::Abs(-G.RightY-F.Raw[3])<=.01f;
+    }
+    if (int8(bAgree)!=R.FineSource)
+    {
+        R.FineSource=int8(bAgree);
+        UE_LOG(LogTemp,Display,TEXT("SKATE 120 Hz flicks read %s"),bAgree?TEXT("the controller's readings"):TEXT("each frame's sticks (no controller readings agree)"));
+    }
+    if (!bAgree) return;
+    // Each reading as ReadInput reads the frame: the engine's massage (UPlayerInput::MassageAxisInput), the keys on
+    // the left stick, the dead zone undone, the feel's stick travel, then the mouse or the space bar if larger.
+    const auto Massage=[&F](int32 A,float V)
+    {
+        if (F.DeadZone[A]>0.f) V=V>0.f?FMath::Max(0.f,V-F.DeadZone[A])/(1.f-F.DeadZone[A]):-FMath::Max(0.f,-V-F.DeadZone[A])/(1.f-F.DeadZone[A]);
+        if (F.Exponent[A]!=1.f) V=FMath::Sign(V)*FMath::Pow(FMath::Abs(V),F.Exponent[A]);
+        return V*F.Scale[A];
+    };
+    using atelier::skate_pad::Unsqueeze;
+    const bool bRetravel=Feel.StickDeadZone!=.25f || Feel.StickReach!=.95f;
+    int32 First=0;
+    for (int32 I=0;I<Got.Num();++I) if (Got[I].Time<=Since) First=I;
+    R.Readings.reserve(Got.Num()-First);
+    for (int32 I=First;I<Got.Num();++I)
+    {
+        const FSkatePadReading& G=Got[I];
+        float LX=Unsqueeze(FMath::Clamp(Massage(0,G.LeftX)+F.KeysX,-1.f,1.f)),LY=Unsqueeze(Massage(1,G.LeftY));
+        float RX=Unsqueeze(Massage(2,G.RightX)),RY=-Unsqueeze(Massage(3,-G.RightY));
+        if (bRetravel)
+        {
+            atelier::skate_pad::Retravel(LX,LY,Feel.StickDeadZone,Feel.StickReach);
+            atelier::skate_pad::Retravel(RX,RY,Feel.StickDeadZone,Feel.StickReach);
+        }
+        FVector2D Right(RX,RY);
+        if (F.Mouse.Size()>Right.Size()) Right=F.Mouse;
+        if (F.Keys.Size()>Right.Size()) Right=F.Keys;
+        FSkateHostPad P=Pad;P.LeftX=LX;P.LeftY=LY;P.RightX=Right.X;P.RightY=Right.Y;
+        const skate_native::XboxState Packed=atelier::skate_pad::Pack(P);
+        skate_native::StickReading Reading;Reading.age=float(FMath::Max(0.,(Now-G.Time)*Scale));
+        Reading.left=Packed.left;Reading.right=Packed.right;
+        R.Readings.push_back(Reading);
+    }
 }
 
 void USkateComponent::RefreshNativeCollision(FSkateRuntime& R, const FVector& At, float Yaw, bool bIdle)

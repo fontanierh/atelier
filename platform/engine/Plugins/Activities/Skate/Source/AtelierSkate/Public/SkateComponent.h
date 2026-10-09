@@ -24,6 +24,20 @@ class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UAnimInstance;
 struct FRideTransition; enum class ERideFoot : uint8; enum class ERideBailKind : uint8; enum class ERideGrab : uint8; struct FSkateHostPad;
+class FSkatePadReader;
+
+/** The controller's sticks as ReadInput read them in a frame, for the 120 Hz flick reading (FSkateFeel::Flick120Hz) to
+ *  read the off-thread readings (Private/SkatePadReader.h) the same way. Valid only when the player's controller drove
+ *  the frame. */
+struct FSkateFrameSticks
+{
+    bool bValid = false;
+    double Time = 0;                      // FPlatformTime::Seconds when ReadInput ran
+    float Raw[4] = {};                    // the engine's raw axes, LeftX LeftY RightX RightY (the viewport negates RightY)
+    float DeadZone[4] = {}, Exponent[4] = {1, 1, 1, 1}, Scale[4] = {1, 1, 1, 1};   // each axis's UPlayerInput massage
+    float KeysX = 0;                      // the arrow and A/D keys on the left stick
+    FVector2D Mouse = FVector2D::ZeroVector, Keys = FVector2D::ZeroVector;   // the mouse's and the space bar's right stick
+};
 
 enum class ESkateMode : uint8 { Off, Ground, Air, Grind, Bail };
 
@@ -197,6 +211,11 @@ private:
     void RuntimeFailure(const FString& Message);
     void ResetInput();
     FVector2D MouseStick=FVector2D::ZeroVector;
+    FSkateFrameSticks FrameSticks;
+    TSharedPtr<FSkatePadReader> PadReader;   // while the feel reads flicks at 120 Hz (SkateRuntime.cpp)
+    /** Runtime's readings for its next step, of Dt, of the sticks since its last (FSkateFeel::Flick120Hz), converted as
+     *  ReadInput converts the frame's into Pad; none (the step reads the packet) unless the reader's agree with it. */
+    void ReadFineSticks(FSkateRuntime& Runtime, float Dt, const FSkateHostPad& Pad);
     float MouseQuiet=0; bool bMouseSwiped=false;
     float SpaceHeld=-1.f,SpaceRelease=-1.f;
     FVector Pos=FVector::ZeroVector,Vel=FVector::ZeroVector;

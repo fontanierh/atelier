@@ -27,5 +27,8 @@ struct FeelTuning
     // 0 off (stock); 1 on. Tight flicks also read a hardflip or inward heelflip flicked close to straight down then
     // up, as in newer skate games, beside the authored wide arc.
     std::int8_t tight_flicks=0;
+    // 0 off (stock): Flick-It reads the stick once per 60 Hz tick. 1: twice per tick (120 Hz), from the host's stick
+    // readings (GameplaySession::Step). The flick window, pace and the pause after a trick keep their times.
+    std::int8_t flick_120hz=0;
 };
 }

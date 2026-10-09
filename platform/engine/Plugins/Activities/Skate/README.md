@@ -79,6 +79,7 @@ sounds and HUD getters.
 | `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
 | `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
 | `bTightFlicks` | false | Also read a hardflip or inward heelflip flicked close to straight down then up (newer skate games' motion), beside the authored wide arc: the main gesture set gains a narrower copy of each (`GestureInputPublication::Tune`). Off is stock |
+| `bFlick120Hz` | false | Read Flick-It at 120 Hz (see 120 Hz flicks). Off is stock: one reading a tick |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
 | `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
@@ -131,8 +132,9 @@ bit-exact with stock.
 | --- | --- | --- |
 | `Difficulty`, `TruckTightness`, `Pop`, `Spin`, `PushSpeed`, `PushPower`, `VertAssist` | as above | The settings above |
 | `TightFlicks` | 0, 1 | `bTightFlicks` |
+| `Flick120Hz` | 0, 1 | `bFlick120Hz` |
 | `FlickRadius` | 0.5 to 2 | Each Flick-It pattern's match radius: how far a flick may stray from a trick's shape |
-| `FlickWindow` | 0.5 to 3 | The samples a flick may take (the stick's authored miss limit) |
+| `FlickWindow` | 0.5 to 3 | The time a flick may take (the stick's authored miss limit, in ticks) |
 | `FlickPace` | 0.5 to 2 | The flick speeds that map to low and full pop (lower needs a gentler flick) |
 | `StickDeadZone`, `StickReach` | 0.25 to 0.6, 0.6 to 1 | Stick travel ignored, and travel that counts as full: remapped onto the pad's live 0.25 to 0.95 (`SkatePad.h`) |
 | `MouseFlick` | 0.25 to 4 | The mouse trick stick's travel, beside the game's mouse sensitivity |
@@ -188,6 +190,42 @@ RB and both stick clicks pass through to the recovered pad; clicking both sticks
 deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead zone, because Flick-It and the manual
 balance read real stick positions. A fast mouse flick points the stick in its direction and springs back after 0.1 s;
 slow movement moves it gradually.
+
+### 120 Hz flicks
+
+Flick-It reads the sticks once a tick, at 60 Hz, and the host reads them once a frame. A flick through a trick's middle
+point in under a sixtieth of a second, such as a quick hardflip, can pass that point between two readings, and the
+trick reads as something else. `bFlick120Hz` (`FSkateFeel::Flick120Hz`, `FeelTuning::flick_120hz`) has the gesture
+recognizer read each tick twice, half a tick before its end and at its end. The rest of the session (physics, the
+manual's balance, steering) still reads the tick's packet. Off, nothing changes, bit for bit.
+
+The host reads the sticks between frames on macOS: `FSkatePadReader` polls the GameController framework's current
+controller every millisecond on its own thread while the setting is on. Each step's readings since the last are
+converted as `USkateComponent::ReadInput` converts the frame's (the engine's dead zone and the A/D keys, the dead zone
+undone, the feel's stick travel, the mouse or the space bar when larger), packed like the packet and timed from the
+step's end (`GameplaySession::Step`'s `StickReading`). They are used only while one of them matches what the engine
+read for the frame: injected or replayed input, scripted input, another controller and other platforms read the
+packet instead, once a tick with the weight of two readings, so a flick reads exactly as at 60 Hz.
+
+The feel keeps its meaning at 120 Hz because each setting is a time or a distance rather than a count of readings
+(`Gestures.cpp`, `GestureInputPublication.cpp`):
+
+- `FlickWindow`: a pattern's miss limit doubles with the readings (the authored count, times the window, times two),
+  so a flick may take as long as at 60 Hz.
+- `FlickPace` and the pop's strength: a flick's duration is counted in ticks. At 60 Hz each end of a flick is found on
+  average half a tick after the stick gets there, at 120 Hz a quarter tick, so the duration in readings is converted
+  to the count 60 Hz gives the same flick on average (`Ticks`). A given flick may still pop a little higher or lower
+  than at 60 Hz, as its ends are found up to half a tick apart from 60 Hz's.
+- `FlickRadius`, `TightFlicks`, `StickDeadZone` and `StickReach`: positions on the stick, the same at either rate.
+- The pause after a recognised trick lasts a tick (two readings), and a hold (a manual's stick) is read once a tick.
+- Patterns completed within one tick compete on score as they do on one 60 Hz reading
+  (`GestureRecognizer::SampleTick`): a wide pattern whose last circle the half-tick reading reaches first (an ollie's)
+  does not pre-empt a tighter one the tick's end completes (a tight inward heelflip).
+
+The offline QA session (`Tests/Native/gameplay_session_cli.cpp`) takes `flick_120hz` in its feel and a step's
+readings as `readings` (`[age, left x, left y, right x, right y]`, oldest first), so a game's feel check can ride the
+same flick at both rates: the authored flicks read the same, the window and pace give the same results, and a quick
+hardflip whose bottom falls between frames reads only at 120 Hz.
 
 ## Board contract
 

@@ -33,6 +33,11 @@ struct GestureSettings
     // still pop at full strength, and those past which a flick pops weakest, are divided by it, so below 1 a gentler
     // flick pops fully.
     float pace = 1.f;
+    // Stick samples per simulation tick: 1 is the authored 60 Hz reading; 2 reads the stick at 120 Hz
+    // (FeelTuning::flick_120hz). Every count in samples (maximum_misses here, the elapsed time, the pause after a
+    // recognition) stands for the same time at either rate: maximum_misses is already given in samples, and elapsed is
+    // reported and scored in ticks.
+    std::uint8_t samples_per_tick = 1;
 };
 
 struct GestureRecognition
@@ -40,7 +45,7 @@ struct GestureRecognition
     std::size_t pattern = 0;
     float strength = 0;
     float distance = 0;
-    float elapsed = 0;
+    float elapsed = 0;   // in ticks at either sampling rate
 };
 
 // This is the project-native format. Runtime code has no PAT parser.
@@ -54,6 +59,11 @@ public:
     const std::vector<GesturePattern>& Patterns() const { return patterns_; }
     std::optional<std::size_t> Held(StickPoint sample);
     std::optional<GestureRecognition> Sample(StickPoint sample, GestureSettings settings);
+    // One tick read at 120 Hz (settings.samples_per_tick 2): the stick half a tick before its end, then at its end.
+    // Patterns completed within the tick compete on score as they do on one 60 Hz sample: one whose last circle the
+    // half sample reaches first does not pre-empt a better one that the tick's end completes. Without `half` (no
+    // reading between frames) the tick's end counts as both samples, and the flick reads exactly as at 60 Hz.
+    std::optional<GestureRecognition> SampleTick(std::optional<StickPoint> half, StickPoint now, GestureSettings settings);
     // Every pattern's radius as authored times this (FeelTuning::flick_radius); 1 restores them.
     void ScaleRadius(float scale);
     // Patterns recognised beside the authored ones, appended after them so an authored pattern wins a tied score.
@@ -69,16 +79,27 @@ private:
         std::uint16_t elapsed = 0;
         std::uint8_t misses = 0;
         float distance = 0;
-        void Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses);
-        float Score(std::size_t count) const;
+        // miss_mask is the miss counter's wrap: the authored 6 bits at 60 Hz, 7 at 120 Hz (twice the samples). A
+        // sample of weight 2 stands for two at 120 Hz (a whole tick read once).
+        void Tick(const GesturePattern& pattern, StickPoint sample, std::uint8_t maximum_misses, std::uint8_t miss_mask,
+            std::uint8_t weight);
+        float Score(std::size_t count, float elapsed_ticks) const;
     };
+    // Sample's steps: tick every node with a sample of `weight` samples (false when it is skipped: the first sample, or
+    // the pause after a recognition),
+    // the best complete node, its score, and its recognition (which starts the pause).
+    bool Advance(StickPoint sample, GestureSettings settings, std::uint8_t weight = 1);
+    std::optional<std::size_t> Best(GestureSettings settings) const;
+    float Score(std::size_t node, GestureSettings settings) const;
+    GestureRecognition Recognize(std::size_t node, GestureSettings settings);
     std::vector<GesturePattern> patterns_;
     std::vector<float> authored_tolerance_;
     std::size_t authored_count_ = 0;
     float radius_scale_ = 1.f;
     std::vector<Node> nodes_;
     bool has_previous_sample_ = false;
-    bool refractory_ = false;
+    // Samples still skipped after a recognition: one tick's worth (the authored one sample at 60 Hz, two at 120 Hz).
+    std::uint8_t refractory_ = 0;
     std::optional<std::size_t> held_;
 };
 }
