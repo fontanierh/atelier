@@ -12,6 +12,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerInput.h"
+#include "HAL/PlatformTime.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
@@ -334,13 +336,15 @@ FQuat USkateComponent::AlignUp(const FQuat& Q, const FVector& NewUp, float Alpha
 
 void USkateComponent::ReadInput(float Dt)
 {
+    FrameSticks.bValid = false;
     if (bScripted) { In = Scripted; return; }
     APlayerController* PC = Rider ? Cast<APlayerController>(Rider->GetController()) : nullptr;
     FSkateInput I;
     if (!PC || RiderApi->IsSkateInputBlocked()) { In = I; MouseStick = FVector2D::ZeroVector; return; }
     if (RiderApi->IsSkateMouseFree()) { In = I; return; }
     auto Down = [&](const FKey& K) { return PC->IsInputKeyDown(K); };
-    I.Left.X = FMath::Clamp(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX) + ((Down(EKeys::D) || Down(EKeys::Right)) ? 1.f : 0.f) - ((Down(EKeys::A) || Down(EKeys::Left)) ? 1.f : 0.f), -1.f, 1.f);
+    const float KeysX = ((Down(EKeys::D) || Down(EKeys::Right)) ? 1.f : 0.f) - ((Down(EKeys::A) || Down(EKeys::Left)) ? 1.f : 0.f);
+    I.Left.X = FMath::Clamp(PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftX) + KeysX, -1.f, 1.f);
     I.Left.Y = PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftY);
     // SceneViewport negates Gamepad_RightY (up reads negative); Flick-It wants up positive. The engine's 0.25 dead
     // zone on each axis (BaseInput.ini) squeezes the stick (half-way reads as a third, diagonals bend); Flick-It and
@@ -382,6 +386,21 @@ void USkateComponent::ReadInput(float Dt)
     I.Right = Pad;
     if (MouseStick.Size() > I.Right.Size()) I.Right = MouseStick;
     if (Keys.Size() > I.Right.Size()) I.Right = Keys;
+    // What the 120 Hz flick reading needs to read the controller's readings between frames as this frame was read.
+    if (Feel.Flick120Hz && PC->PlayerInput)
+    {
+        FSkateFrameSticks& F = FrameSticks;
+        const FKey Axes[4] = {EKeys::Gamepad_LeftX, EKeys::Gamepad_LeftY, EKeys::Gamepad_RightX, EKeys::Gamepad_RightY};
+        for (int32 A = 0; A < 4; ++A)
+        {
+            F.Raw[A] = PC->PlayerInput->GetRawKeyValue(Axes[A]);
+            FInputAxisProperties Props;
+            if (PC->PlayerInput->GetAxisProperties(Axes[A], Props))
+            { F.DeadZone[A] = Props.DeadZone; F.Exponent[A] = Props.Exponent; F.Scale[A] = Props.Sensitivity * (Props.bInvert ? -1.f : 1.f); }
+            else { F.DeadZone[A] = 0.f; F.Exponent[A] = 1.f; F.Scale[A] = 1.f; }
+        }
+        F.KeysX = KeysX; F.Mouse = MouseStick; F.Keys = Keys; F.Time = FPlatformTime::Seconds(); F.bValid = true;
+    }
     I.bPush = Down(EKeys::W) || Down(EKeys::Up) || Down(EKeys::Gamepad_FaceButton_Bottom) || Down(EKeys::Gamepad_FaceButton_Left);
     I.bBrake = Down(EKeys::S) || Down(EKeys::Down) || Down(EKeys::Gamepad_FaceButton_Right);
     I.bPowerslide = Down(EKeys::C);

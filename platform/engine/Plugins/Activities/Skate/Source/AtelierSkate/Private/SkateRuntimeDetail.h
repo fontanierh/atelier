@@ -544,6 +544,7 @@ public:
     struct FCommand
     {
         ECommand Kind=ECommand::Step;skate_native::XboxState Input{};float Dt=0,Heading=0;
+        std::vector<skate_native::StickReading> Readings;   // a Step's 120 Hz stick readings (empty: the packet's)
         skate_native::Vec3 Spawn{},Velocity{};uint32 Generation=0;FPreferences Preferences;
         std::optional<skate_native::GameplayWorldSnapshot> Snapshot;
         std::optional<skate_native::PreparedGameplayWorld> World;std::string Error;bool Background=false;
@@ -606,7 +607,7 @@ public:
                 for(auto& Pending:PendingCollisions_)
                     if(!InstallWorld(Pending,Error)){Okay=false;break;}
                 PendingCollisions_.clear();
-                if(Okay)Okay=Session_->Step(Command.Input,Command.Dt,Error);
+                if(Okay)Okay=Session_->Step(Command.Input,Command.Dt,Command.Readings,Error);
                 if(Okay)Okay=Publish(false,Error,float((FPlatformTime::Seconds()-Began)*1000.));
                 break;
             }
@@ -763,6 +764,9 @@ public:
     TUniquePtr<FNativeSkateWorker> Worker;
     bool Ready=false,PendingActivation=false,AwaitingPose=false,HasPose=false;
     uint32 Generation=0;float FrameTime=0;
+    // The next step's 120 Hz stick readings (USkateComponent::ReadFineSticks), when the last step was sent, and which
+    // the last controller-driven step read (logged when it changes): -1 neither yet, 0 the packet, 1 the readings.
+    std::vector<skate_native::StickReading> Readings;double LastSend=0;int8 FineSource=-1;
     FString State=TEXT("Loading skater"),Error,Trick;
     // Spin: the deck's angular velocity (rad/s, UE axes; the axis change is a reflection, so the pseudovector flips).
     FVector CollisionCentre=FVector::ZeroVector,Spawn=FVector::ZeroVector,Velocity=FVector::ZeroVector,Spin=FVector::ZeroVector;
@@ -813,7 +817,7 @@ public:
         P.Pop=S.Pop;P.Spin=S.Spin;P.PushSpeed=S.PushSpeed;P.PushPower=S.PushPower;P.VertAssist=S.VertAssist;
         P.PumpTrick=CVarSkatePumpTrick.GetValueOnAnyThread();
         auto& N=P.Feel;
-        N.flick_radius=S.FlickRadius;N.flick_window=S.FlickWindow;N.flick_pace=S.FlickPace;N.tight_flicks=S.TightFlicks;
+        N.flick_radius=S.FlickRadius;N.flick_window=S.FlickWindow;N.flick_pace=S.FlickPace;N.tight_flicks=S.TightFlicks;N.flick_120hz=S.Flick120Hz;
         N.gravity=S.Gravity;N.boneless=S.Boneless;N.hippy=S.Hippy;
         N.rail_magnetism=S.RailMagnetism;N.grind_pop=S.GrindPop;N.grind_friction=S.GrindFriction;
         N.braking=S.Braking;N.steering=S.Steering;N.carve=S.Carve;N.grip=S.Grip;N.powerslide=S.Powerslide;

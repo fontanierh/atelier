@@ -114,11 +114,11 @@ bool Feel(const Json& value,FeelTuning& feel,std::string& error)
             if(!(choice==-1 || choice==0 || choice==1)){error="`"+key+"` is -1, 0 or 1";return false;}
             (key=="auto_push"?feel.auto_push:feel.assisted_air)=std::int8_t(choice);continue;
         }
-        if(key=="tight_flicks")
+        if(key=="tight_flicks" || key=="flick_120hz")
         {
             float choice=0;if(!Float(child,choice,error))return false;
-            if(!(choice==0 || choice==1)){error="`tight_flicks` is 0 or 1";return false;}
-            feel.tight_flicks=std::int8_t(choice);continue;
+            if(!(choice==0 || choice==1)){error="`"+key+"` is 0 or 1";return false;}
+            (key=="tight_flicks"?feel.tight_flicks:feel.flick_120hz)=std::int8_t(choice);continue;
         }
         bool known=false;
         for(const auto& [name,field]:fields)if(key==name){if(!Float(child,feel.*field,error))return false;known=true;}
@@ -406,16 +406,32 @@ bool Run(int argc,char** argv,std::string& error)
         if(!String(*operation,op,error))return false;
         if(op=="step")
         {
-            if(!Fields(command,{"op","dt","buttons","left","right","triggers"},
+            if(!Fields(command,{"op","dt","buttons","left","right","triggers","readings"},
                 {"op","dt","buttons","left","right","triggers"},error))return false;
             float dt=0;XboxState controls;
             if(!Float(*Field(command,"dt"),dt,error) || !Integer(*Field(command,"buttons"),controls.buttons,error)
                 || !Integers(*Field(command,"left"),controls.left,error)
                 || !Integers(*Field(command,"right"),controls.right,error)
                 || !Integers(*Field(command,"triggers"),controls.triggers,error))return false;
+            // The host's 120 Hz stick readings, oldest first: [age, left x, left y, right x, right y] (StickReading).
+            std::vector<StickReading> readings;
+            if(const auto* list=Field(command,"readings"))
+            {
+                if(list->kind!=Json::Array){error="Expected readings array";return false;}
+                for(const auto& item:list->children)
+                {
+                    if(item.kind!=Json::Array || item.children.size()!=5){error="Expected [age, lx, ly, rx, ry] reading";return false;}
+                    StickReading reading;
+                    if(!Float(item.children[0],reading.age,error) || !Integer(item.children[1],reading.left[0],error)
+                        || !Integer(item.children[2],reading.left[1],error) || !Integer(item.children[3],reading.right[0],error)
+                        || !Integer(item.children[4],reading.right[1],error))return false;
+                    if(!std::isfinite(reading.age)||reading.age<0){error="Invalid reading age";return false;}
+                    readings.push_back(reading);
+                }
+            }
             // Source validates dt before consuming any background completion.
             if(!std::isfinite(dt)||dt<0){error="Invalid frame interval";return false;}
-            if(!InstallCompleted(session,queue,error) || !session.Step(controls,dt,error)
+            if(!InstallCompleted(session,queue,error) || !session.Step(controls,dt,readings,error)
                 || !Publish(session,false,generation,error))return false;
         }
         else if(op=="activate" || op=="configure")

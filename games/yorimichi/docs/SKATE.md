@@ -65,6 +65,10 @@ hardflip, the heel side for an inward heelflip), rolls through down and finishes
 skate. motion starts just off down and finishes just off up. **Tight hardflips and inwards** (Skate feel menu, on by
 default, `bTightFlicks` in `DefaultGame.ini`) adds the second. Without it, a tight flick usually reads as an ollie.
 
+**120 Hz flick reading** (Skate feel menu, off by default, `bFlick120Hz`) reads the trick stick twice a tick, between
+frames too, so a quick hardflip keeps the point at the bottom of its arc. The flick window, pace and tolerance keep
+their meaning. It reads a controller between frames on macOS. See the plugin README's "120 Hz flicks".
+
 A grab never sends Cairo over the coping; only the transfer input does.
 
 ### Trick line and HUD
@@ -150,7 +154,7 @@ It starts with the **skating mode**:
 
 The custom values are grouped as Custom base (base difficulty, trucks), Flick-It, Air, Rails, Pushing and rolling,
 Turning, Balance and Bails. **Controls and camera** (stick dead zone and full tilt, mouse flick strength, tight
-hardflips and inwards, skate camera distance and field of view) apply in every mode. Hover a row for what it does. Changes apply at once, even mid-ride,
+hardflips and inwards, 120 Hz flick reading, skate camera distance and field of view) apply in every mode. Hover a row for what it does. Changes apply at once, even mid-ride,
 and are saved in `settings.txt` as `skate_*` keys (`skate_mode` 0 Easy, 1 Normal, 2 Hardcore, 3 Custom). The phone's
 settings show the same values under "Skate mode", "Skate feel · Custom" and "Skate controls & camera". **Reset custom
 values to stock** and **Reset controls and camera** return those values to their defaults.

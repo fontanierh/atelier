@@ -2,7 +2,9 @@
 #pragma once
 #include "GameplayWorld.h"
 #include "SessionMarkerRuntime.h"
+#include <array>
 #include <cstdint>
+#include <vector>
 namespace atelier::skate
 {
 // Host-only button; strip it before publishing the original Xbox pad.
@@ -27,6 +29,13 @@ struct GameplayPumps
     float gain=0,last_gain=0,quiet=0;
     bool counted=false;
     void Observe(const GameplayRuntime&,float dt);
+};
+// The sticks as the host read them during a frame, for the 120 Hz flick reading (FeelTuning::flick_120hz): `age` is
+// the frame time from the reading to the frame's end. A step's readings run oldest first (ages falling).
+struct StickReading
+{
+    float age=0;
+    std::array<std::int16_t,2> left{},right{};
 };
 // Sole in-process session used by the Unreal adapter. The host elapsed clock
 // selects whole ticks; GameplayRuntime owns the actual simulation timestep.
@@ -56,6 +65,10 @@ public:
     bool Advance(std::string& error);
     bool Tick(XboxState,std::string& error);
     bool Step(XboxState,float frame_interval,std::string& error);
+    // With the frame's stick readings: each tick's gestures read the sticks half a tick before its end and at its end,
+    // the latest reading at or before each (the oldest before them all), when the feel reads flicks at 120 Hz. The
+    // rest of the tick reads the packet. Without readings this is the plain Step.
+    bool Step(XboxState,float frame_interval,const std::vector<StickReading>& readings,std::string& error);
     float Period() const;
     void SetAspectRatio(float);
     bool InstallCollision(PreparedGameplayWorld,std::string& error);

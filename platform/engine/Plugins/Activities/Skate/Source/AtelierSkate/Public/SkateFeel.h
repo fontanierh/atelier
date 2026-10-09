@@ -15,6 +15,7 @@ struct ATELIERSKATE_API FSkateFeel
     float PushPower = 1.f;                       // speed gained per push (0.5..3)
     float VertAssist = 0.f;                      // airs back into quarter pipes short of vertical (0..1)
     int8 TightFlicks = 0;                        // also read hardflips and inward heelflips flicked near straight down-up: 0, 1
+    int8 Flick120Hz = 0;                         // read the trick stick at 120 Hz instead of 60 (README, "120 Hz flicks"): 0, 1
 
     // Flick-It.
     float FlickRadius = 1.f;                     // how far a flick may stray from a trick's shape (0.5..2)

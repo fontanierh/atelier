@@ -56,10 +56,12 @@ bool GestureInputPublication::Load(const SettingsDatabase& data,std::vector<Gest
         recognizers.emplace_back(sticks[i],GestureRecognizer(std::move(bank[i].patterns)));
     }
     recognizers_ = std::move(recognizers); maximum_misses_ = authored_misses_ = misses; pace_ = 1.f; tight_flicks_ = false;
+    samples_per_tick_ = 1;
     held_pattern_.reset(); trace_.clear(); return true;
 }
-void GestureInputPublication::Tune(float radius,float window,float pace,bool tight_flicks)
+void GestureInputPublication::Tune(float radius,float window,float pace,bool tight_flicks,std::uint8_t samples_per_tick)
 {
+    samples_per_tick_ = samples_per_tick == 2 ? 2 : 1;
     if (tight_flicks != tight_flicks_ && !recognizers_.empty())
     {
         // The authored hardflip starts down-left, rolls through down and ends 38 degrees off up (the inward heelflip
@@ -74,30 +76,51 @@ void GestureInputPublication::Tune(float radius,float window,float pace,bool tig
         tight_flicks_ = tight_flicks;
     }
     for (auto& entry : recognizers_) entry.second.ScaleRadius(radius);
-    // A node's miss count wraps at 64, so the window stays below it.
+    // A node's miss count wraps at 64 samples (128 at 120 Hz), so the window stays below it. The authored window and
+    // the player's scale on it are in ticks; at 120 Hz each tick is two samples.
+    const long rate = samples_per_tick_;
     for (std::size_t i = 0; i < 2; ++i)
-        maximum_misses_[i] = window == 1.f ? authored_misses_[i]
-            : static_cast<std::uint8_t>(std::clamp(std::lround(authored_misses_[i] * window), 1l, 60l));
+        maximum_misses_[i] = window == 1.f && rate == 1 ? authored_misses_[i]
+            : static_cast<std::uint8_t>(std::clamp(std::lround(authored_misses_[i] * window * float(rate)), rate, 60l * rate));
     pace_ = pace;
 }
 bool GestureInputPublication::Publish(std::array<StickPoint,2> axes,std::uint32_t difficulty,std::uint32_t flags,
     std::uint32_t state,IntentMap& action,std::string& error)
 {
+    return Publish(false,nullptr,axes,difficulty,flags,state,action,error);
+}
+bool GestureInputPublication::PublishFine(const std::array<StickPoint,2>* half,std::array<StickPoint,2> now,
+    std::uint32_t difficulty,std::uint32_t flags,std::uint32_t state,IntentMap& action,std::string& error)
+{
+    return Publish(true,half,now,difficulty,flags,state,action,error);
+}
+bool GestureInputPublication::Publish(bool fine,const std::array<StickPoint,2>* half,std::array<StickPoint,2> axes,
+    std::uint32_t difficulty,std::uint32_t flags,std::uint32_t state,IntentMap& action,std::string& error)
+{
     if (recognizers_.size() != 7) { error = "Gesture input requires initialized authored recognizers"; return false; }
-    for (auto& sample : axes)
+    const auto condition = [](std::array<StickPoint,2>& sticks)
     {
-        sample[1] = -sample[1];
-        for (auto& value : sample) if (std::abs(value) < 0.1f) value = 0;
-    }
+        for (auto& sample : sticks)
+        {
+            sample[1] = -sample[1];
+            for (auto& value : sample) if (std::abs(value) < 0.1f) value = 0;
+        }
+    };
+    condition(axes);
+    std::array<StickPoint,2> earlier{};
+    if (half) { earlier = *half; condition(earlier); }
+    const GestureSettings settings_base{0,difficulty,pace_,samples_per_tick_};
     bool held = false; std::vector<std::pair<std::string,float>> events; trace_.clear();
     for (const auto stick : {1u,0u})
     {
+        auto settings = settings_base; settings.maximum_misses = maximum_misses_[stick];
         // Every Held query on this stick precedes every Sample query.
         for (auto& entry : recognizers_) if (entry.first == stick)
             if (const auto pattern = entry.second.Held(axes[stick]))
                 if (held_pattern_ && AsciiEqual(*held_pattern_,entry.second.Patterns()[*pattern].name)) held = true;
         for (auto& entry : recognizers_) if (entry.first == stick)
-            if (const auto match = entry.second.Sample(axes[stick],{maximum_misses_[stick],difficulty,pace_}))
+            if (const auto match = fine ? entry.second.SampleTick(half ? std::optional<StickPoint>(earlier[stick])
+                : std::nullopt,axes[stick],settings) : entry.second.Sample(axes[stick],settings))
             {
                 const auto& name = entry.second.Patterns()[match->pattern].name;
                 if (name == "Kickflip" || name == "Heelflip" || name == "N_Kickflip" || name == "N_Heelflip") held_pattern_ = name;

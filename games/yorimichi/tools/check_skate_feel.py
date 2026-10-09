@@ -3,7 +3,8 @@
 
 Each case rides the same inputs with stock feel and with one value changed, and checks that the change does what the
 menu says: the defaults are bit-exact with no feel at all, gravity keeps jump heights but stretches air time, a gentler
-flick pops higher with a lower flick pace, rolling resistance and braking change the coast, and rail magnetism catches
+flick pops higher with a lower flick pace, the 120 Hz flick reading reads the same flicks with the same window and pace
+and keeps a fast hardflip's bottom point that 60 Hz misses, rolling resistance and braking change the coast, and rail magnetism catches
 a rail from farther. Requires SkateNative and the explicitly built test-only gameplay-session-cli
 (Tests/build_native_session_cli.py --compile, under the render lock and memory guard). Results go to
 build/yorimichi/skate-native/feel.
@@ -71,7 +72,8 @@ class Session:
         self.proc.stdin.flush()
 
     def ride(self, frames, controls, feel=None, velocity=(0, 0, 0), spawn=(0, 0, 0), difficulty='normal'):
-        """Rows of every frame, from a fresh session; controls(frame) gives (buttons, left, right)."""
+        """Rows of every frame, from a fresh session; controls(frame) gives (buttons, left, right), or with the frame's
+        120 Hz stick readings after them (with_readings)."""
         if self.generation:
             self.stop()
             self.start()
@@ -82,8 +84,9 @@ class Session:
         self.read()
         rows = []
         for frame in range(frames):
-            buttons, left, right = controls(frame)
-            self.send('step', dt=1 / 60, buttons=buttons, left=left, right=right, triggers=[0, 0])
+            buttons, left, right, *readings = controls(frame)
+            extra = {'readings': readings[0]} if readings else {}
+            self.send('step', dt=1 / 60, buttons=buttons, left=left, right=right, triggers=[0, 0], **extra)
             rows.append(self.read())
         return rows
 
@@ -131,17 +134,66 @@ def arc(angles):
     return controls
 
 
-def takeoff_trick(session, angles, feel):
+def with_readings(controls, half=None):
+    """controls with the host's 120 Hz stick readings: each frame's sticks half a frame before its end (half(frame),
+    by default midway from the last frame's) and at its end. Ages sit a hair past each tick's end, as a reading taken
+    just before it would be."""
+    def stick(frame):
+        buttons, left, right = controls(frame)[:3]
+        return left + right
+    def fine(frame):
+        buttons, left, right = controls(frame)[:3]
+        middle = half(frame) if half else [round((a + b) / 2) for a, b in zip(stick(frame - 1), left + right)]
+        return buttons, left, right, [[1 / 120 + 1e-4, *middle], [1e-4, *left, *right]]
+    return fine
+
+
+def traced(path, start=150):
+    """A right-stick flick traced at 120 Hz from frame `start`: the frame's sticks are every second point, the
+    readings half a frame before them the points between."""
+    stick = lambda p: [round(p[0] * 32767), round(p[1] * 32767)]
+    point = lambda k: path[k] if 0 <= k < len(path) else (0, 0)
+    controls = lambda frame: (0, [0, 0], stick(point(2 * (frame - start) + 1)))
+    return with_readings(controls, lambda frame: [0, 0, *stick(point(2 * (frame - start)))])
+
+
+def sampled(stick, phase):
+    """A continuous right stick, stick(t) in frames, read at frame ends `phase` of a frame late: each frame's packet
+    and the 120 Hz reading half a frame before it."""
+    to = lambda p: [round(p[0] * 32767), round(p[1] * 32767)]
+    return with_readings(lambda frame: (0, [0, 0], to(stick(frame - phase))),
+                         lambda frame: [0, 0, *to(stick(frame - .5 - phase))])
+
+
+def stretched(controls, by, start=150):
+    """controls slowed `by` times from frame `start`, each stick moving linearly between the original frames."""
+    def slow(frame):
+        if frame < start:
+            return controls(frame)
+        at = start + (frame - start) / by
+        (b, l0, r0), (_, l1, r1) = controls(math.floor(at))[:3], controls(math.floor(at) + 1)[:3]
+        t = at - math.floor(at)
+        mix = lambda p, q: [round(a + (c - a) * t) for a, c in zip(p, q)]
+        return b, mix(l0, l1), mix(r0, r1)
+    return slow
+
+
+def first_trick(session, controls, feel):
     """The trick named on the frame the board leaves the ground (the label sticks afterwards)."""
-    rows = session.ride(240, arc(angles), feel, velocity=(0, 0, 5))
+    rows = session.ride(240, controls, feel, velocity=(0, 0, 5))
     for before, row in zip(rows, rows[1:]):
         if 'Air' in row['state'] and 'Air' not in before['state']:
             return row['trick'].replace('ID_TRICK_FLIP_', '') or 'blank'
     return 'none'
 
 
-def jump(session, feel, load=18, snap=2):
-    rows = session.ride(330, flick(load, snap), feel, velocity=(0, 0, 5))
+def takeoff_trick(session, angles, feel):
+    return first_trick(session, arc(angles), feel)
+
+
+def jump(session, feel, load=18, snap=2, fine=False):
+    controls = flick(load, snap)
+    rows = session.ride(330, with_readings(controls) if fine else controls, feel, velocity=(0, 0, 5))
     air = [r for r in rows if 'Air' in r['state']]
     return {'height_m': max(session.deck_height(r) for r in rows), 'airtime_s': len(air) / 60,
             'bailed': any('Wipeout' in r['state'] for r in rows), 'states': sorted({r['state'] for r in rows})}
@@ -174,7 +226,7 @@ def main():
                                'rail_magnetism', 'grind_pop', 'grind_friction', 'braking', 'steering', 'carve', 'grip',
                                'powerslide', 'rolling_friction', 'hill_speed', 'pump', 'wobble', 'wobble_onset',
                                'manual_drift', 'landing', 'impact')}
-        ones.update(auto_push=-1, assisted_air=-1, tight_flicks=0)
+        ones.update(auto_push=-1, assisted_air=-1, tight_flicks=0, flick_120hz=0)
         rides = [flat.ride(330, flick(18, 2), feel, velocity=(0, 0, 5)) for feel in (None, ones)]
         same = all(a['root'] == b['root'] and a['bones'] == b['bones'] and a['velocity'] == b['velocity'] for a, b in zip(*rides))
         check('defaults_exact', same, 'stock feel spelled out matches no feel over 330 frames, bit for bit')
@@ -210,6 +262,69 @@ def main():
         check('tight_flicks_read', all(tight[name]['1'] == trick for name, (_, trick) in flips.items()), tight)
         check('tight_flicks_keep_authored', all(tight[name]['0'] == trick for name, (_, trick) in flips.items()
                                                 if not name.startswith('tight')), tight)
+
+        # 120 Hz flicks: every flick above reads as at 60 Hz, from the host's readings between frames or (no readings:
+        # another platform, injected input) from each frame's packet (read once a tick), with tight flicks off and on.
+        fine = {}
+        for name, (angles, _) in flips.items():
+            for on in (0, 1):
+                feel = {'tight_flicks': on, 'flick_120hz': 1}
+                fine[f'{name}_{on}'] = {'readings': first_trick(flat, with_readings(arc(angles)), feel),
+                                        'packet': first_trick(flat, arc(angles), feel), '60hz': tight[name][str(on)]}
+        report['flick_120hz_tricks'] = fine
+        check('flick_120hz_same_tricks', all(r['readings'] == r['60hz'] and r['packet'] == r['60hz'] for r in fine.values()), fine)
+
+        # The window is a time at either rate: a hardflip slowed down reads at the same windows at 60 and 120 Hz,
+        # and more window reads slower flicks.
+        slowed = {}
+        for by in (2, 3, 4):
+            for window in (.5, 1, 2, 3):
+                feel = {'flick_window': window}
+                controls = stretched(arc(flips['hardflip'][0]), by)
+                slowed[f'x{by}_{window}'] = {'60hz': first_trick(flat, controls, feel),
+                                             '120hz': first_trick(flat, with_readings(controls), {**feel, 'flick_120hz': 1})}
+        report['flick_120hz_window'] = slowed
+        reads = lambda rate, by: [slowed[f'x{by}_{w}'][rate] == 'HARDFLIP' for w in (.5, 1, 2, 3)]
+        check('flick_120hz_window_matches', all(reads('120hz', by) == reads('60hz', by) for by in (2, 3, 4)), slowed)
+        check('flick_120hz_window_order', all(reads('120hz', by) == sorted(reads('120hz', by)) for by in (2, 3, 4))
+              and any(not all(reads('120hz', by)) and any(reads('120hz', by)) for by in (2, 3, 4)), slowed)
+
+        # The pace is a time too: read from the packet, a flick pops exactly as high at either rate; from the readings
+        # its ends are found up to half a tick apart from 60 Hz's, so close to it; and a lower pace pops a slow snap
+        # higher.
+        paced = {f'{p}_{snap}': {'60hz': jump(flat, {'flick_pace': p}, snap=snap)['height_m'],
+                                 '120hz_packet': jump(flat, {'flick_pace': p, 'flick_120hz': 1}, snap=snap)['height_m'],
+                                 '120hz': jump(flat, {'flick_pace': p, 'flick_120hz': 1}, snap=snap, fine=True)['height_m']}
+                 for p in (.6, 1, 1.6) for snap in (2, 12)}
+        report['flick_120hz_pace'] = paced
+        check('flick_120hz_pace_matches', all(r['120hz_packet'] == r['60hz'] and abs(r['120hz'] - r['60hz']) <= .12 * r['60hz']
+                                              for r in paced.values()), paced)
+        # On average over where a flick falls between frames, it pops as high at either rate (the tick count is unbiased).
+        def snap_over(frames):
+            return lambda t: (0, -1) if 150 <= t < 168 else (0, min(1, -1 + 2 * (t - 168) / frames)) if 168 <= t < 168 + frames + 1 else (0, 0)
+        phases = [k / 8 for k in range(8)]
+        unbiased = {}
+        for frames in (6, 9):
+            rides = {rate: [max(flat.deck_height(r) for r in flat.ride(330, sampled(snap_over(frames), phase), feel, velocity=(0, 0, 5)))
+                            for phase in phases] for rate, feel in (('60hz', None), ('120hz', {'flick_120hz': 1}))}
+            unbiased[str(frames)] = {rate: sum(h) / len(h) for rate, h in rides.items()}
+        report['flick_120hz_pace_unbiased'] = unbiased
+        check('flick_120hz_pace_unbiased', all(abs(r['120hz'] - r['60hz']) <= .04 * r['60hz'] for r in unbiased.values()), unbiased)
+        check('flick_120hz_pace_order', paced['0.6_12']['120hz'] >= paced['1_12']['120hz'] >= paced['1.6_12']['120hz']
+              and paced['0.6_12']['120hz'] > paced['1.6_12']['120hz'], paced)
+
+        # A hardflip flicked in a sixtieth of a second through its bottom: the stick passes straight down between two
+        # frames, so 60 Hz never sees it, and the 120 Hz readings do.
+        point = lambda degrees, r=1.: (r * math.cos(math.radians(degrees)), r * math.sin(math.radians(degrees)))
+        quick = [point(-138, r) for r in (.25, .5, .75)] + [point(-138)] * 5 + [point(-82)]
+        (ax, ay), (bx, by) = point(-82), point(128)
+        quick += [(ax + (bx - ax) * k / 2, ay + (by - ay) * k / 2) for k in (1, 2)] + [point(128)] * 5
+        fast = {'60hz': first_trick(flat, traced(quick), {'tight_flicks': 1}),
+                '120hz': first_trick(flat, traced(quick), {'tight_flicks': 1, 'flick_120hz': 1}),
+                '120hz_packet': first_trick(flat, lambda frame: traced(quick)(frame)[:3], {'tight_flicks': 1, 'flick_120hz': 1})}
+        report['flick_120hz_fast_hardflip'] = fast
+        check('flick_120hz_fast_hardflip', fast['120hz'] == 'HARDFLIP' and fast['60hz'] != 'HARDFLIP'
+              and fast['120hz_packet'] == fast['60hz'], fast)
 
         # Rolling resistance: the board holds its cruising speed on the flat, and rolling resistance bleeds off the speed
         # above it, so coast from 14 m/s. Then braking.
