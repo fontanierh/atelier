@@ -1,0 +1,200 @@
+diff --git a/hmr4d/model/gvhmr/gvhmr_pl_demo.py b/hmr4d/model/gvhmr/gvhmr_pl_demo.py
+index 3cd49db..3f6325e 100644
+--- a/hmr4d/model/gvhmr/gvhmr_pl_demo.py
++++ b/hmr4d/model/gvhmr/gvhmr_pl_demo.py
+@@ -5,6 +5,7 @@ from hmr4d.utils.pylogger import Log
+ from hmr4d.configs import MainStore, builds
+ 
+ from hmr4d.utils.geo.hmr_cam import normalize_kp2d
++from hmr4d.utils.net_utils import get_device
+ 
+ 
+ class DemoPL(pl.LightningModule):
+@@ -34,7 +35,7 @@ class DemoPL(pl.LightningModule):
+             "cam_angvel": data["cam_angvel"][None],
+             "f_imgseq": data["f_imgseq"][None],
+         }
+-        batch = {k: v.cuda() for k, v in batch.items()}
++        batch = {k: v.to(get_device()) for k, v in batch.items()}
+         outputs = self.pipeline.forward(batch, train=False, postproc=True, static_cam=static_cam)
+ 
+         pred = {
+diff --git a/hmr4d/network/hmr2/hmr2.py b/hmr4d/network/hmr2/hmr2.py
+index b018fb8..f37b362 100644
+--- a/hmr4d/network/hmr2/hmr2.py
++++ b/hmr4d/network/hmr2/hmr2.py
+@@ -33,7 +33,7 @@ class HMR2(pl.LightningModule):
+                        when False, the full process of HMR2 will be executed.
+         """
+         # Backbone
+-        x = batch["img"][:, :, :, 32:-32]
++        x = batch["img"][:, :, :, 32:-32].contiguous()  # MPS conv2d rejects the strided view
+         vit_feats = self.backbone(x)
+ 
+         # Output head
+diff --git a/hmr4d/utils/geo_transform.py b/hmr4d/utils/geo_transform.py
+index 028cc35..e9e40a6 100644
+--- a/hmr4d/utils/geo_transform.py
++++ b/hmr4d/utils/geo_transform.py
+@@ -4,7 +4,6 @@ import torch
+ import torch.nn.functional as F
+ from pytorch3d.transforms import so3_exp_map, so3_log_map
+ from pytorch3d.transforms import matrix_to_quaternion, quaternion_to_axis_angle, matrix_to_rotation_6d
+-import pytorch3d.ops.knn as knn
+ from hmr4d.utils.pylogger import Log
+ from pytorch3d.transforms import euler_angles_to_matrix
+ import hmr4d.utils.matrix as matrix
+@@ -293,6 +292,8 @@ def get_nearby_points(points, query_verts, padding=0.0, p=1):
+         idx = (((points - min_xyz) > 0).all(dim=-1) * ((points - max_xyz) < 0).all(dim=-1)).nonzero().squeeze(-1)
+         nearby_points = points[idx]
+     elif p == 2:
++        import pytorch3d.ops.knn as knn  # compiled operator, absent from transforms-only installs
++
+         squared_dist, _, _ = knn.knn_points(points[None], query_verts[None], K=1, return_nn=False)
+         mask = squared_dist[0, :, 0] < padding**2  # (S,)
+         nearby_points = points[mask]
+diff --git a/hmr4d/utils/net_utils.py b/hmr4d/utils/net_utils.py
+index 698d61b..fe5f132 100644
+--- a/hmr4d/utils/net_utils.py
++++ b/hmr4d/utils/net_utils.py
+@@ -76,10 +76,23 @@ def detach_to_cpu(in_dict):
+     return recursive_detach(in_dict, to_cpu=True)
+ 
+ 
++def get_device():
++    """HMR4D_DEVICE if set, else CUDA, else Apple MPS, else CPU."""
++    import os
++
++    if os.environ.get("HMR4D_DEVICE"):
++        return torch.device(os.environ["HMR4D_DEVICE"])
++    if torch.cuda.is_available():
++        return torch.device("cuda")
++    if torch.backends.mps.is_available():
++        return torch.device("mps")
++    return torch.device("cpu")
++
++
+ def to_cuda(data):
+-    """Move data in the batch to cuda(), carefully handle data that is not tensor"""
++    """Move data in the batch to the inference device, carefully handle data that is not tensor"""
+     if isinstance(data, torch.Tensor):
+-        return data.cuda()
++        return data.to(get_device())
+     elif isinstance(data, dict):
+         return {k: to_cuda(v) for k, v in data.items()}
+     elif isinstance(data, list):
+diff --git a/hmr4d/utils/preproc/relpose/solver_two_view.py b/hmr4d/utils/preproc/relpose/solver_two_view.py
+index b11e7c6..2203d57 100644
+--- a/hmr4d/utils/preproc/relpose/solver_two_view.py
++++ b/hmr4d/utils/preproc/relpose/solver_two_view.py
+@@ -85,6 +85,7 @@ class PycolmapRansacTwoViewGeometrySolver:
+             max_H_inlier_ratio=0.9,
+             compute_relative_pose=True,
+         )
++        self.options.ransac.random_seed = 0  # reproducible camera rotations, whatever the worker count
+         print(self.options.summary())
+ 
+     def get_K(self):
+@@ -102,8 +103,10 @@ class PycolmapRansacTwoViewGeometrySolver:
+         )
+ 
+         # cam2_from_cam1 means T_0_to_1 in our language
+-        Rt = answer.cam2_from_cam1.matrix().astype(np.float32)  # shape (3, 4)
+         T = np.eye(4)
++        if answer.cam2_from_cam1 is None:  # pycolmap >= 3.11 leaves it unset on failure; older releases gave identity
++            return T
++        Rt = answer.cam2_from_cam1.matrix().astype(np.float32)  # shape (3, 4)
+         T[:3] = Rt
+         return T
+ 
+diff --git a/hmr4d/utils/preproc/tracker.py b/hmr4d/utils/preproc/tracker.py
+index b093ed4..f92289e 100644
+--- a/hmr4d/utils/preproc/tracker.py
++++ b/hmr4d/utils/preproc/tracker.py
+@@ -13,7 +13,7 @@ from hmr4d.utils.seq_utils import (
+     rearrange_by_mask,
+ )
+ from hmr4d.utils.video_io_utils import get_video_lwh
+-from hmr4d.utils.net_utils import moving_average_smooth
++from hmr4d.utils.net_utils import moving_average_smooth, get_device
+ 
+ 
+ class Tracker:
+@@ -24,7 +24,7 @@ class Tracker:
+     def track(self, video_path):
+         track_history = []
+         cfg = {
+-            "device": "cuda",
++            "device": get_device().type,
+             "conf": 0.5,  # default 0.25, wham 0.5
+             "classes": 0,  # human
+             "verbose": False,
+diff --git a/hmr4d/utils/preproc/vitfeat_extractor.py b/hmr4d/utils/preproc/vitfeat_extractor.py
+index 6ae37f5..69afc20 100644
+--- a/hmr4d/utils/preproc/vitfeat_extractor.py
++++ b/hmr4d/utils/preproc/vitfeat_extractor.py
+@@ -8,6 +8,7 @@ import numpy as np
+ 
+ from hmr4d.network.hmr2.utils.preproc import crop_and_resize, IMAGE_MEAN, IMAGE_STD
+ from tqdm import tqdm
++from hmr4d.utils.net_utils import get_device
+ 
+ 
+ def get_batch(input_path, bbx_xys, img_ds=0.5, img_dst_size=256, path_type="video"):
+@@ -59,7 +60,7 @@ def get_batch(input_path, bbx_xys, img_ds=0.5, img_dst_size=256, path_type="vide
+ 
+ class Extractor:
+     def __init__(self, tqdm_leave=True):
+-        self.extractor: HMR2 = load_hmr2().cuda().eval()
++        self.extractor: HMR2 = load_hmr2().to(get_device()).eval()
+         self.tqdm_leave = tqdm_leave
+ 
+     def extract_video_features(self, video_path, bbx_xys, img_ds=0.5):
+@@ -75,7 +76,7 @@ class Extractor:
+ 
+         # Inference
+         F, _, H, W = imgs.shape  # (F, 3, H, W)
+-        imgs = imgs.cuda()
++        imgs = imgs.to(get_device())
+         batch_size = 16  # 5GB GPU memory, occupies all CUDA cores of 3090
+         features = []
+         for j in tqdm(range(0, F, batch_size), desc="HMR2 Feature", leave=self.tqdm_leave):
+diff --git a/hmr4d/utils/preproc/vitpose.py b/hmr4d/utils/preproc/vitpose.py
+index 215adc8..346d181 100644
+--- a/hmr4d/utils/preproc/vitpose.py
++++ b/hmr4d/utils/preproc/vitpose.py
+@@ -7,6 +7,7 @@ from tqdm import tqdm
+ 
+ from hmr4d.utils.kpts.kp2d_utils import keypoints_from_heatmaps
+ from hmr4d.utils.geo_transform import cvt_p2d_from_pm1_to_i
++from hmr4d.utils.net_utils import get_device
+ from hmr4d.utils.geo.flip_utils import flip_heatmap_coco17
+ 
+ 
+@@ -14,7 +15,7 @@ class VitPoseExtractor:
+     def __init__(self, tqdm_leave=True):
+         ckpt_path = "inputs/checkpoints/vitpose/vitpose-h-multi-coco.pth"
+         self.pose = build_model("ViTPose_huge_coco_256x192", ckpt_path)
+-        self.pose.cuda().eval()
++        self.pose.to(get_device()).eval()
+ 
+         self.flip_test = True
+         self.tqdm_leave = tqdm_leave
+@@ -34,7 +35,7 @@ class VitPoseExtractor:
+         vitpose = []
+         for j in tqdm(range(0, L, batch_size), desc="ViTPose", leave=self.tqdm_leave):
+             # Heat map
+-            imgs_batch = imgs[j : j + batch_size, :, :, 32:224].cuda()
++            imgs_batch = imgs[j : j + batch_size, :, :, 32:224].to(get_device())
+             if self.flip_test:
+                 heatmap, heatmap_flipped = self.pose(torch.cat([imgs_batch, imgs_batch.flip(3)], dim=0)).chunk(2)
+                 heatmap_flipped = flip_heatmap_coco17(heatmap_flipped)
+@@ -45,7 +46,7 @@ class VitPoseExtractor:
+ 
+             if False:
+                 # Get joint
+-                bbx_xys_batch = bbx_xys[j : j + batch_size].cuda()
++                bbx_xys_batch = bbx_xys[j : j + batch_size].to(get_device())
+                 method = "hard"
+                 if method == "hard":
+                     kp2d_pm1, conf = get_heatmap_preds(heatmap)

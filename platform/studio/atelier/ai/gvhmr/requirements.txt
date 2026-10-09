@@ -1,0 +1,26 @@
+# macOS arm64 inference only. Upstream pins CUDA torch 2.3 and a Linux pytorch3d wheel; neither exists here.
+# Rendering, training, DPVO and TensorRT dependencies are left out.
+av==13.0.0
+einops==0.8.2
+ffmpeg-python==0.2.0
+hydra-colorlog==1.2.0
+hydra-core==1.3.2
+hydra-zen==0.16.0
+imageio==2.34.1
+joblib==1.6.0
+lapx==0.10.0
+lightning==2.3.0
+matplotlib==3.11.2
+numpy==1.26.4
+opencv-python==4.11.0.86
+pycolmap==4.2.1
+rich==15.0.0
+scipy==1.17.1
+setuptools==80.10.2
+smplx==0.1.28
+timm==0.9.12
+torch==2.5.1
+torchvision==0.20.1
+ultralytics==8.2.42
+yacs==0.1.8
+wis3d==1.0.1

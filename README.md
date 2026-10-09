@@ -409,6 +409,9 @@ Results depend on the action. Prompt-only backflips and a forward roll are usabl
 than the authored Run. The [UniMate](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) and
 [Kimodo](games/yorimichi/docs/KIMODO_EXPERIMENT.md) write-ups give the settings, measurements and limits.
 
+A third runner works from video instead of text: the [GVHMR port](platform/studio/atelier/ai/gvhmr/README.md)
+recovers SMPL-X body motion from footage of one person on Apple silicon and writes the same motion representation.
+
 <p align="center">
   <img src="docs/media/unimate-backflip.gif" width="640" alt="The fox performs a prompt-only UniMate backflip and lands">
   <br><sub><b>UniMate backflip.</b> “A person does a backflip” · seed 99 · guidance 2 · 32 steps. No authored
