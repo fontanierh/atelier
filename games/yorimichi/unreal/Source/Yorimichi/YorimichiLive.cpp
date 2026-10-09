@@ -45,13 +45,33 @@ bool UYorimichiLive::MenuKey(const FString& Key)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     if (!P || !P->GetPreferences() || !P->GetPreferences()->IsMenuOpen() || !FSlateApplication::IsInitialized()) return false;
-    if (Key != TEXT("accept") && Key != TEXT("next") && Key != TEXT("previous")) return false;
+    // accept, next and previous (Enter, Tab and Shift+Tab), or any key by name, such as Gamepad_DPad_Down.
+    const bool bNamed = Key == TEXT("accept") || Key == TEXT("next") || Key == TEXT("previous");
+    const FKey Named = bNamed ? (Key == TEXT("accept") ? EKeys::Enter : EKeys::Tab) : FKey(*Key);
+    if (!Named.IsValid()) return false;
     const FModifierKeysState Modifiers(Key == TEXT("previous"),false,false,false,false,false,false,false,false);
-    const FKeyEvent Event(Key == TEXT("accept") ? EKeys::Enter : EKeys::Tab,Modifiers,uint32(0),false,0,0);
+    const FKeyEvent Event(Named,Modifiers,uint32(0),false,0,0);
     auto& Slate = FSlateApplication::Get();
     const bool Down = Slate.ProcessKeyDownEvent(Event);
     const bool Up = Slate.ProcessKeyUpEvent(Event);
     return Down || Up;
+}
+
+bool UYorimichiLive::PadInput(const FString& Key, float Value)
+{
+    const FKey Input(*Key);
+    if (!Input.IsValid() || !Input.IsGamepadKey() || !FSlateApplication::IsInitialized()) return false;
+    auto& Slate = FSlateApplication::Get();
+    if (Input.IsAxis1D()) Slate.ProcessAnalogInputEvent(FAnalogInputEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0,Value));
+    else if (Value > .5f) Slate.ProcessKeyDownEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
+    else Slate.ProcessKeyUpEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
+    return true;
+}
+
+FString UYorimichiLive::MenuFocus()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
+    return P && P->GetPreferences() ? P->GetPreferences()->FocusedControl() : FString();
 }
 
 bool UYorimichiLive::SetPreference(const FString& Key, float Value)
