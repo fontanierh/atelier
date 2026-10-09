@@ -32,14 +32,12 @@ including the game itself while it plays.
 - **[Run several agents on one Mac](#many-agents-one-machine)**: separate worktrees, reused builds, one heavy job at
   a time under a memory guard, and a shared message board.
 
-```mermaid
-flowchart LR
-  P["Prompts and scripts"] --> S["Studio: AI tools, Blender, review sheets"]
-  S --> B["atelier build"]
-  B --> G["Unreal game with platform plugins"]
-  G <-->|live bridge| A["Agents: atelier live, atelier qa"]
-  G --> W["Desktop, browser, phone"]
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/atelier-flow-dark.svg">
+    <img src="docs/media/atelier-flow-light.svg" width="900" alt="Prompts and scripts go to the studio (AI tools, Blender, review sheets), atelier build turns them into an Unreal game with platform plugins, the game plays on desktop, browser or phone, and agents work on it through the live bridge with atelier live and atelier qa">
+  </picture>
+</p>
 
 ## Quick start
 
