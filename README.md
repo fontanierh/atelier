@@ -18,9 +18,11 @@ rigs, clips, worlds and materials; `atelier build` turns them into the game.
 **Yorimichi**, the game in this repository, shows what it makes. Its models, rigs, animation, world and code are
 made with scripts, AI tools and the committed asset library:
 
-- **Cairo**, the player: a rigged character with articulated fingers and a
+- **Cairo**, the default player: a rigged character with articulated fingers and a
   [merged move set](games/yorimichi/assets/characters/adventure/README.md) for running, jumping, dodging, climbing,
   swimming, sword fighting and gliding;
+- **[Modori](games/yorimichi/assets/characters/modori/README.md)**, the playable rival: a tall, dark-haired young man
+  in a long coat, with articulated fingers, a cloth skirt and the merged moves retargeted onto his own rig;
 - **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
   a zeppelin line;
 - **three skate parks**: the skate pier, the community skate park and the Super Ultra Mega Park;
@@ -355,6 +357,23 @@ atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 The tools for each step and their options are in
 [games/yorimichi/assets/characters/tools](games/yorimichi/assets/characters/tools/README.md) and
 [games/yorimichi/docs](games/yorimichi/docs). The fox hunter goes through the same steps (`fox_hunter_pipeline.py`).
+
+### Modori, the playable rival
+
+Modori is the story's rival, a calm young man who returned alone from the forest sinkhole. He is also playable:
+his 1.75 m body, long coat, textures and finger rig are packed into the committed `Modori-Rig-r01.blend`.
+The build exports his own mesh and retargets the merged move set onto his skeleton, with sword and paraglider
+fitting adjusted for his proportions. His coat skirt uses Unreal's Chaos Cloth; the native skating runtime
+retargets the rider pose onto him too.
+
+After building Yorimichi, start as Modori with:
+
+```sh
+nice -n 10 uv run atelier play yorimichi -- -rider=Modori
+```
+
+His [character README](games/yorimichi/assets/characters/modori/README.md) describes the source, body and coat
+pipeline, imports and merged moves. Cairo remains the default character and the example in the walkthrough above.
 
 ## Text-driven motion
 
