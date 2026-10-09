@@ -8,10 +8,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
 
-void UBikeComponent::SimulateNetwork(float Dt,FVector2D Stick,bool Menu)
+void UBikeComponent::SimulateNetwork(float Dt,FVector2D Stick,float RiderLean,bool Menu)
 {
     if(!JapanNetwork::IsOnline(GetWorld())||!Rider||State==EState::Off||!FMath::IsFinite(Dt)||Dt<=0.f)return;
-    SetInput(Stick,Menu);
+    SetInput(Stick,RiderLean,Menu);
     if(bTerminal){Rider->GetCharacterMovement()->Velocity=FVector(0,0,Rider->GetCharacterMovement()->Velocity.Z);return;}
     bool Pedal=false;float Cadence=0.f;
     AdvanceSimulation(Dt,Pedal,Cadence);bNetworkPedalling=Pedal;
@@ -24,6 +24,7 @@ FJapanBikeState UBikeComponent::CaptureNetworkState() const
     S.State=uint8(State);S.Clip=Clip;S.Resume=Resume;S.Serial=Serial;S.ClipTime=ClipTime;
     S.Speed=Speed;S.Steering=Steering;S.StillTime=StillTime;S.AppliedYaw=AppliedYaw;S.Crank=SimCrank;
     S.Coast=Coast;S.Recoil=Recoil;S.Sprint=bSprint;S.Terminal=bTerminal;S.Pedalling=bNetworkPedalling;
+    S.Drift=Drift;S.Wheelie=Wheelie;S.WheelieRate=WheelieRate;S.Rise=Rise;S.Air=Air;S.AirFall=AirFall;
     return S;
 }
 
@@ -38,6 +39,7 @@ bool UBikeComponent::ApplyNetworkState(const FJapanBikeState& S,bool RestoreFaci
     State=EState(S.State);Clip=S.Clip;Resume=S.Resume;Serial=S.Serial;ClipTime=S.ClipTime;
     Speed=S.Speed;Steering=S.Steering;StillTime=S.StillTime;AppliedYaw=S.AppliedYaw;SimCrank=S.Crank;
     Coast=S.Coast;Recoil=S.Recoil;bSprint=S.Sprint;bTerminal=S.Terminal;bNetworkPedalling=S.Pedalling;
+    Drift=S.Drift;Wheelie=S.Wheelie;WheelieRate=S.WheelieRate;Rise=S.Rise;Air=S.Air;AirFall=S.AirFall;
     return true;
 }
 
@@ -60,7 +62,7 @@ bool UBikeComponent::ForceNetworkPark(FJapanBikeState& ParkedPose)
     const FClip* End=Clips.Find(TEXT("BikeDismount"));
     if(!End)return false;
     State=EState::Parking;Clip=TEXT("BikeDismount");ClipTime=End->Duration;Resume=NAME_None;
-    ++Serial;bTerminal=true;bNetworkPedalling=false;Speed=Steering=0.f;
+    ++Serial;bTerminal=true;bNetworkPedalling=false;Speed=Steering=Drift=Wheelie=WheelieRate=Rise=Air=AirFall=0.f;
     ParkedPose=CaptureNetworkState();
     return CommitNetworkPark();
 }

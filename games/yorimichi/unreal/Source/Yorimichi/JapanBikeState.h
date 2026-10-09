@@ -12,7 +12,7 @@ struct FJapanBikeState
     UPROPERTY() FName Clip;
     UPROPERTY() FName Resume;
     UPROPERTY() uint32 Serial = 0;
-    static constexpr int32 CheckpointBytes = 44;
+    static constexpr int32 CheckpointBytes = 68;
     UPROPERTY() float Yaw = 0.f;
     UPROPERTY() float ClipTime = 0.f;
     UPROPERTY() float Speed = 0.f;
@@ -22,6 +22,16 @@ struct FJapanBikeState
     UPROPERTY() float Crank = 0.f;
     UPROPERTY() float Coast = 0.f;
     UPROPERTY() float Recoil = 0.f;
+    /** Seconds into a drift, signed by its side (+ right); zero when not drifting. */
+    UPROPERTY() float Drift = 0.f;
+    /** Front wheel lift in degrees, and its rate. */
+    UPROPERTY() float Wheelie = 0.f;
+    UPROPERTY() float WheelieRate = 0.f;
+    /** cm/s the ground was carrying him up at his last grounded step (a ramp's lip launches him with it). */
+    UPROPERTY() float Rise = 0.f;
+    /** Seconds off the ground, and the fastest he has come down in that time (cm/s). */
+    UPROPERTY() float Air = 0.f;
+    UPROPERTY() float AirFall = 0.f;
     UPROPERTY() bool Sprint = false;
     UPROPERTY() bool Terminal = false;
     UPROPERTY() bool Pedalling = false;

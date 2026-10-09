@@ -10,7 +10,7 @@ float UJapanCharacterMovement::GetMaxSpeed() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return 1400.f;
-    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return 1200.f;
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return 2400.f;   // UBikeComponent::MaxSpeed: downhill and a drift boost carry him past his pedalling speed
     return Super::GetMaxSpeed();
 }
 

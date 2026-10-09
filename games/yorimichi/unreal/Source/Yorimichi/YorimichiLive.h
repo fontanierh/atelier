@@ -16,6 +16,8 @@ public:
     /** Move the player as if the stick were held: Intent is camera-relative (Y forward, X right), Gait 0 walk, 1 run, 2 sprint.
      *  Zero intent stops. Any player input takes over again. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Drive(FVector2D Intent, int32 Gait = 1);
+    /** Hold the bike lean, -1 back (wheelie) .. 1 forward, as the left stick's forward axis does on the bike. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool BikeLean(float Lean);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
     /** Send accept (Enter), next (Tab) or previous (Shift+Tab) through the open native settings menu's actual widgets.

@@ -22,7 +22,8 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     Original.State=5;Original.Clip=TEXT("BikeCrash");Original.Resume=TEXT("BikeRide");
     Original.Serial=193;Original.Yaw=135.f;Original.ClipTime=.2f;Original.Speed=-200.f;
     Original.Steering=.35f;Original.StillTime=.1f;Original.AppliedYaw=13.f;
-    Original.Crank=-354.f;Original.Coast=.3f;Original.Recoil=60.f;Original.Terminal=false;Original.Pedalling=true;
+    Original.Crank=-354.f;Original.Coast=.3f;Original.Recoil=60.f;
+    Original.Drift=-1.25f;Original.Wheelie=18.f;Original.WheelieRate=-40.f;Original.Rise=210.f;Original.Air=.4f;Original.AirFall=380.f;Original.Terminal=false;Original.Pedalling=true;
     TArray<uint8> Bytes;FMemoryWriter Writer(Bytes,true);
     TestTrue(TEXT("Recoil checkpoint encodes"),Original.SerializeCheckpoint(Writer));
     TestEqual(TEXT("Fixed bike checkpoint size"),Bytes.Num(),FJapanBikeState::CheckpointBytes);
@@ -35,10 +36,13 @@ bool FJapanBikeCheckpointTest::RunTest(const FString&)
     TestEqual(TEXT("Transition destination survives"),Restored.Resume,FName(TEXT("BikeRide")));
     TestEqual(TEXT("One-shot serial survives"),Restored.Serial,193u);
     TestTrue(TEXT("Remote pedal audio follows the accepted input"),Restored.Pedalling);
+    TestEqual(TEXT("Drift side and time survive correction"),Restored.Drift,-1.25f);
+    TestEqual(TEXT("Wheelie angle and rate survive correction"),FVector2D(Restored.Wheelie,Restored.WheelieRate),FVector2D(18.f,-40.f));
+    TestEqual(TEXT("Ramp rise and airtime survive correction"),FVector(Restored.Rise,Restored.Air,Restored.AirFall),FVector(210.f,.4f,380.f));
     FJapanBikeState Bad=Restored;Bad.State=2;Bad.Terminal=true;
     TestFalse(TEXT("Riding cannot be a terminal parking state"),Bad.IsValid());
     Bad=Restored;Bad.Clip=TEXT("UnknownBikeAction");TestFalse(TEXT("Unknown clip rejected"),Bad.IsValid());
-    Bad=Restored;Bad.Speed=1201.f;TestFalse(TEXT("Out-of-policy velocity rejected"),Bad.IsValid());
+    Bad=Restored;Bad.Speed=2401.f;TestFalse(TEXT("Out-of-policy velocity rejected"),Bad.IsValid());
     Bytes[1]=255;FMemoryReader BadReader(Bytes,true);FJapanBikeState Rejected;
     TestFalse(TEXT("Wire vocabulary out of bounds is rejected before lookup"),Rejected.SerializeCheckpoint(BadReader));
 

@@ -136,6 +136,13 @@ bool FJapanMoveInputTest::RunTest(const FString&)
     TestTrue(TEXT("Press-release-jump ordering survives"), Decoded.Edges == Input.Edges);
     TestTrue(TEXT("Press ages and the expired marker survive"), Decoded.EdgeAgeMilliseconds == Input.EdgeAgeMilliseconds);
     TestTrue(TEXT("Diagonal input is normalized"), Decoded.Stick().Size() <= 1.000001);
+    FJapanMoveInput Leaning = Input; Leaning.Lean = -90;
+    FBitWriter LeanWriter(256, true);
+    TestTrue(TEXT("A bike lean encodes"), Leaning.Serialize(LeanWriter));
+    FBitReader LeanReader(LeanWriter.GetData(), LeanWriter.GetNumBits());
+    FJapanMoveInput LeanDecoded;
+    TestTrue(TEXT("A bike lean survives and no lean decodes as none"), LeanDecoded.Serialize(LeanReader) && LeanDecoded.Lean == -90 && Decoded.Lean == 0);
+    TestTrue(TEXT("No lean costs one bit"), LeanWriter.GetNumBits() - Writer.GetNumBits() == 8);
 
     FBitReader Truncated(Writer.GetData(), Writer.GetNumBits() - 4);
     FJapanMoveInput MissingRelease;

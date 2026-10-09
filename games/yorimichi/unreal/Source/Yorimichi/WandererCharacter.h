@@ -106,6 +106,11 @@ public:
     virtual float GetSkateBoardScale() const override;
     virtual bool CanCarrySkateBoard() const override;
     FVector2D GetMoveIntent() const { return MoveIntent; }
+    /** The bike's own controls: X steers as on foot; Y pedals (right trigger, W) or brakes (left trigger, S). A
+     *  scripted intent (live bridge, reviews, the phone) still pedals with its forward axis. */
+    FVector2D GetBikeIntent() const;
+    /** Rider lean, -1 back (wheelie) .. 1 forward: left stick up/down or the arrow keys. */
+    float GetBikeLean() const { return FMath::Clamp(BikeLeanInput + ScriptedBikeLean, -1.f, 1.f); }
     float GetMouseSensitivity() const { return MouseSensitivity; }
     UJapanFootstepComponent* GetFootsteps() const { return Footsteps; }
     UWandererSwordComponent* GetSword() const { return Sword; }
@@ -165,6 +170,7 @@ public:
     /** Live bridge: leave the camera where it is (no automatic follow) for Seconds. */
     void Live_HoldCamera(float Seconds) { LookGrace = Seconds; }
     void Live_Drive(FVector2D Intent, int32 Gait) { MoveIntent = Intent; bWalk = Gait == 0; bJog = false; bSprintHeld = Gait == 2; }
+    void Live_BikeLean(float Lean) { ScriptedBikeLean = FMath::Clamp(Lean, -1.f, 1.f); }
     void Review_Dodge();
 
 protected:
@@ -245,6 +251,9 @@ private:
     UPROPERTY() TObjectPtr<UJapanMap> Map;
     UPROPERTY() TObjectPtr<AJapanWorld> Landscape;
     FVector2D MoveIntent = FVector2D::ZeroVector;
+    // What the Move action last wrote into MoveIntent, so the bike can swap its forward axis for the triggers.
+    FVector2D InputMove = FVector2D::ZeroVector;
+    float BikeThrottleInput = 0.f, BikeLeanInput = 0.f, ScriptedBikeLean = 0.f;
     FName AnimationAction;
     uint32 ActionSerial = 0;
     float ActionBlendTime = .16f, ActionTime = 0.f, ActionDuration = 0.f;

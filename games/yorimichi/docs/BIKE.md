@@ -9,16 +9,49 @@ gamepad), rides it on the island's ground with the walking physics, and parks it
 | | Keyboard and mouse | Gamepad |
 |---|---|---|
 | Bike out and on / off and parked (stopped) | V | Hold Y (0.4 s; a tap is still the skateboard) |
-| Pedal / brake / steer | W / S / A, D | Left stick |
+| Pedal | W | Right trigger (analogue) |
+| Brake | S | Left trigger (analogue) |
+| Steer | A / D | Left stick left / right |
+| Lean back / forward (wheelie, balance) | Down / Up arrows | Left stick back / forward |
 | Pedal hard (on / off) | Shift | Sprint (press the left stick) |
-| Hop | Space | Jump |
-| Skid stop | C | Crouch |
-| Bell | Left click | Attack |
+| Jump | Space | Jump |
+| Skid stop; drift while steering | C | Crouch |
+| Wheelie | Down while pedalling, then balance with Down / Up | Pull back while pedalling, then balance on the stick |
+| Bell | Left click | Dash (X) |
 | Wave | Q | |
 
-He cruises at up to 22 km/h (600 cm/s). Pedalling hard is a toggle: one press and he pulls away harder, up to 43 km/h
-(1200 cm/s), and keeps it while he pedals. It ends at a second press, a brake, a skid, a stop or when he stops pedalling
-for more than 0.6 s. Above cruising speed the hub's higher gears keep his legs from spinning with the wheels.
+He pedals up to 22 km/h (600 cm/s) on the flat. Pedalling hard is a toggle: one press and he pulls away harder, up to
+43 km/h (1200 cm/s), and keeps it while he pedals. It ends at a second press, a brake, a skid, a stop or when he stops
+pedalling for more than 0.6 s. The pedals and brake are their own controls (the triggers), so leaning never brakes and
+he can pedal on through a wheelie. Above cruising speed the hub's higher gears keep his legs from spinning with the wheels.
+
+## Riding for fun
+
+The ride is the walking physics underneath, but the speed is the bike's own and answers to the ground:
+
+- **Hills.** Gravity along the slope under him, rolling resistance and air drag act whether he pedals or not. Downhill
+  he gathers speed with no pedalling and past his top speed (a 5 degree hill runs him up to about 36 km/h, 10 degrees to
+  about 56, the cap is 86); uphill he slows and pedalling only just holds his pace. Pedalling drives him up to his top
+  speed and no further: past it he freewheels. He never rolls backwards; stopping on a hill puts a foot down. The view
+  widens up to 10 degrees from 25 to 65 km/h.
+- **Jumps.** Jump is a real jump (a hop of about 60 cm, about 1.2 m out of a wheelie) that keeps his speed and steers
+  a third as much in the air. Riding off a ramp's lip launches him with the rise the ramp was giving him (12.5 degrees at
+  22 km/h is about 1.3 m/s up). Flights over 0.45 s show "Air 0.8 s" and every landing dips him by how hard it was; a
+  fall faster than 11.5 m/s (a drop of about 6 m) throws him off.
+- **Drift.** Crouch while steering above 13 km/h breaks the back wheel loose: the bike swings 25 to 40 degrees out of
+  line, he leans harder, turns half as tight again and scrubs speed, with the skid's sound. It lasts while he keeps
+  steering that way; letting the steering go ends it with a boost of 4.3 km/h per second held (up to 2.5 s). Too slow,
+  or leaving the ground, ends it without one. Crouch with no steering is still the skid stop.
+- **Wheelie.** Lean back on a pedal stroke above 9 km/h: the front kicks up and balances near 22 degrees. He keeps
+  pedalling on the back wheel (a little less hard). Past 22 degrees gravity tips him further back, under it the front
+  drops; leaning back lifts it, leaning forward or the brake lowers it. At 42 degrees he loops out
+  (a hard landing that costs him most of his speed and the sprint). Wheelies over a second show their time when the
+  front comes down. Jump out of one for the higher hop. Steering is looser on one wheel.
+
+The wheelie and the drift pose the rider and the bike together (tipped about the rear tyre, swung about the bike);
+neither has an authored clip yet. The new state (drift time and side, wheelie angle and rate, the ramp's rise, airtime
+and fall speed) is in `FJapanBikeState`, so prediction and replay carry it; the slope is derived from the movement
+component's floor at each step. `live.bike_state()` reports `drift`, `wheelie`, `airtime` and `slope`.
 
 Getting off needs him stopped (the HUD says "Slow down to get off"). Getting the bike out needs level ground beside
 him: it appears at his left, facing his way or the nearest clear way (30 and 60 degrees either side, or behind). V

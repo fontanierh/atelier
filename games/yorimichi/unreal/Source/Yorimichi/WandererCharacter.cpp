@@ -393,6 +393,14 @@ void AWandererCharacter::BuildInput()
     Key(MoveAxis,EKeys::Left,true); Key(MoveAxis,EKeys::Right);
     auto& LeftStick = Mapping->MapKey(MoveAxis,EKeys::Gamepad_Left2D);
     LeftStick.Modifiers.Add(NewObject<UInputModifierDeadZone>(Mapping));
+    // On the bike the triggers (or W / S) pedal and brake, and the stick's forward axis (or the arrows) leans him, so he
+    // can pedal through a wheelie. Steering stays on Move.
+    UInputAction* Throttle = Axis(TEXT("BikeThrottle"),EInputActionValueType::Axis1D);
+    Key(Throttle,EKeys::W); Key(Throttle,EKeys::S,true);
+    Key(Throttle,EKeys::Gamepad_RightTriggerAxis); Key(Throttle,EKeys::Gamepad_LeftTriggerAxis,true);
+    UInputAction* BikeLean = Axis(TEXT("BikeLean"),EInputActionValueType::Axis1D);
+    Key(BikeLean,EKeys::Up); Key(BikeLean,EKeys::Down,true);
+    Mapping->MapKey(BikeLean,EKeys::Gamepad_LeftY).Modifiers.Add(NewObject<UInputModifierDeadZone>(Mapping));
     UInputAction* Mouse = Axis(TEXT("Mouse"),EInputActionValueType::Axis2D);
     Key(Mouse,EKeys::MouseX); Key(Mouse,EKeys::MouseY,false,true);
     auto& RightStick = Mapping->MapKey(Axis(TEXT("Stick"),EInputActionValueType::Axis2D),EKeys::Gamepad_Right2D);
@@ -454,6 +462,13 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
             E->BindAction(Inputs[Binding.Key],ETriggerEvent::Completed,this,Binding.Value);
             E->BindAction(Inputs[Binding.Key],ETriggerEvent::Canceled,this,Binding.Value);
         }
+        for (ETriggerEvent Event : {ETriggerEvent::Triggered,ETriggerEvent::Completed,ETriggerEvent::Canceled})
+        {
+            E->BindActionValueLambda(Inputs[TEXT("BikeThrottle")],Event,[this](const FInputActionValue& V)
+            { BikeThrottleInput = (bMenuOpen || bFixedView) ? 0.f : V.Get<float>(); });
+            E->BindActionValueLambda(Inputs[TEXT("BikeLean")],Event,[this](const FInputActionValue& V)
+            { BikeLeanInput = (bMenuOpen || bFixedView) ? 0.f : V.Get<float>(); });
+        }
         for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
             {TEXT("Jump"),&AWandererCharacter::RequestJump},{TEXT("Crouch"),&AWandererCharacter::ToggleCrouch},
             {TEXT("Dodge"),&AWandererCharacter::Dodge},{TEXT("Wave"),&AWandererCharacter::Wave},{TEXT("Interact"),&AWandererCharacter::Interact},
@@ -493,7 +508,14 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     }
 }
 
-void AWandererCharacter::Move(const FInputActionValue& V) { MoveIntent = (bMenuOpen || bFixedView) ? FVector2D::ZeroVector : V.Get<FVector2D>(); }
+void AWandererCharacter::Move(const FInputActionValue& V) { MoveIntent = InputMove = (bMenuOpen || bFixedView) ? FVector2D::ZeroVector : V.Get<FVector2D>(); }
+FVector2D AWandererCharacter::GetBikeIntent() const
+{
+    // The Move action's forward axis is the bike's lean. A MoveIntent written by anything else (the live bridge, a
+    // review, the phone) pedals with its forward axis; one a menu cleared pedals with nothing.
+    const double Scripted = MoveIntent == InputMove ? 0. : MoveIntent.Y;
+    return FVector2D(MoveIntent.X, FMath::Clamp(Scripted + BikeThrottleInput, -1., 1.));
+}
 void AWandererCharacter::MouseLook(const FInputActionValue& V)
 {
     if (!bReady || bMenuOpen || bMouseReleased || bFixedView) return;
@@ -780,6 +802,7 @@ void AWandererCharacter::Dodge(const FInputActionValue&)
 void AWandererCharacter::Review_Dodge() { Dodge(FInputActionValue(true)); }
 void AWandererCharacter::Dash(const FInputActionValue&)
 {
+    if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // the pad's bell (X), the triggers being the pedals
     if (SkateRide->IsRiding() && !SkateRide->CanYieldToCharacter()) return;   // on foot the dash takes over from the board
     if (Moves) { if (SkateRide->IsRiding() && !TakeOverFromSkate(true)) return; PressMove(TEXT("dash")); return; }   // no air dash; the swimming dash
     if (bReady && !bMenuOpen && Sword && !Sword->CancelForInterrupt(false)) return;
@@ -847,7 +870,13 @@ void AWandererCharacter::Dash(const FInputActionValue&)
 void AWandererCharacter::Wave(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) { PressMove(TEXT("wave")); return; } if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Wave(); return; } if (SkateRide->IsRiding()) return; if (Sword && !Sword->CancelForInterrupt(true)) return; if (CanAct() && StandForAction()) SetAction(TEXT("Wave")); }
 void AWandererCharacter::AttackPressed(const FInputActionValue&)
 {
-    if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // before the move set, which is idle on the bike
+    // Before the move set, which is idle on the bike. The right trigger pedals there; the mouse button still rings.
+    if (Bike->IsEquipped())
+    {
+        const APlayerController* PC = Cast<APlayerController>(Controller);
+        if (bReady && !bMenuOpen && !(PC && PC->IsInputKeyDown(EKeys::Gamepad_RightTrigger))) Bike->Bell();
+        return;
+    }
     if (Moves) { PressMove(TEXT("attack")); return; }
     if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed();
 }
@@ -1377,7 +1406,7 @@ void AWandererCharacter::Tick(float Dt)
     if (PhoneInput) PhoneInput->Tick(Dt);
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     if (!JapanNetwork::IsOnline(GetWorld())) Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
-    if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
+    if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(GetBikeIntent(),GetBikeLean(),bMenuOpen || (Map && Map->IsOpen()));
     const bool bPredictedMoves = CastChecked<UJapanCharacterMovement>(GetCharacterMovement())->PredictsMoves();
     if (!bPredictedMoves && !OnVehicle() && !SkateRide->IsRiding())   // offline moves advance in actor Tick
     {
@@ -1429,9 +1458,10 @@ void AWandererCharacter::Tick(float Dt)
         }
     }
     }
-    // Riding fast widens the view a little (up to 9 degrees at 45 km/h).
+    // Riding fast widens the view a little (up to 9 degrees at 45 km/h on the board). On the bike, from pedalling hard on: up to 10 degrees at 65 km/h down a hill.
     const float SkateFOV=SkateRide->IsRiding()?9.f*FMath::Clamp((SkateRide->GetSpeed()-500.f)/750.f,0.f,1.f):0.f;
-    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
+    const float BikeFOV=Bike->IsRiding()?10.f*FMath::Clamp((Bike->GetSpeed()-700.f)/1100.f,0.f,1.f):0.f;
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+BikeFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
     // Combat camera shake: smooth noise scaled by trauma squared, decaying in real time (hit-stop freezes this actor's clock).
     {
         const float Real=FApp::GetDeltaTime();

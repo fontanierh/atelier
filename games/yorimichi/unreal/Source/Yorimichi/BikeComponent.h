@@ -21,7 +21,8 @@ public:
  /** V / hold Y: summon and mount, or (stopped) step off and park. False with the reason in GetStatus(). */
  bool Toggle();
  void StowImmediately();
- void SetInput(FVector2D Intent,bool bMenuOpen);
+ /** Intent: X steers, Y pedals (+) or brakes (-). Lean: the rider's weight, back (-) lifts the front into a wheelie. */
+ void SetInput(FVector2D Intent,float Lean,bool bMenuOpen);
  /** Sprint (Shift, left stick press): pedal hard until pressed again, or until he stops pedalling, brakes, skids or
   *  gets off. False when he is not riding. */
  bool ToggleSprint();
@@ -30,7 +31,7 @@ public:
  virtual void TickComponent(float,ELevelTick,FActorComponentTickFunction*) override;
  /** Online simulation advances with CMC in bounded substeps inside each saved move. No presentation or parking side effects. */
  void RefreshTickOrder();
- void SimulateNetwork(float Dt,FVector2D Stick,bool Menu);
+ void SimulateNetwork(float Dt,FVector2D Stick,float RiderLean,bool Menu);
  FJapanBikeState CaptureNetworkState() const;
  bool ApplyNetworkActivity(const FJapanBikeState& Snapshot);
  bool ApplyNetworkState(const FJapanBikeState& Snapshot,bool RestoreFacing=true);
@@ -48,6 +49,14 @@ public:
  EState GetState() const { return State; }
  float GetSpeed() const { return Speed; }
  float GetSteering() const { return Steering; }
+ /** Seconds into a drift, signed by its side (+ right); zero when not drifting. */
+ float GetDrift() const { return Drift; }
+ /** Front wheel lift in degrees (a wheelie). */
+ float GetWheelie() const { return Wheelie; }
+ /** Seconds off the ground on the bike (a hop, a ramp's lip or a drop). */
+ float GetAirTime() const { return Air; }
+ /** The ground's slope along his heading (degrees, up positive) at his last grounded step. */
+ float GetSlope() const { return Slope; }
  uint32 GetSerial() const { return Serial; }
  UAnimSequence* GetSequence() const;
  FName GetClip() const { return Clip; }
@@ -105,6 +114,7 @@ private:
  FName Clip,Resume;
  float ClipTime=0,Speed=0,Steering=0,Lean=0,WheelAngle=0,StillTime=0,AppliedYaw=0,CrankAngle=0;
  FVector2D Input=FVector2D::ZeroVector;
+ float LeanIn=0.f;
  bool bSprint=false,bMenu=false,bAssetsReady=false,bParked=false;
  bool bTickModeSet=false,bNetworkTickOrder=false;
  bool QueueNetworkAction(FName Button,bool& Accepted);
@@ -122,6 +132,17 @@ private:
  void PresentNetwork(float Dt);
  void PresentParts(float Dt,TArray<float>& Channels,bool Pedal,float Cadence);
  float Coast=0;   // s since he last pedalled, for ending the sprint
+ // The fun layer (docs/BIKE.md, "Riding for fun"): simulation state, carried by FJapanBikeState.
+ float Drift=0;                    // s into a drift, signed by its side (+ right); zero when not drifting
+ float Wheelie=0,WheelieRate=0;    // front wheel lift, degrees and degrees/s
+ float Rise=0;                     // cm/s the ground carried him up at his last grounded step
+ float Air=0,AirFall=0;            // s off the ground; fastest fall in that time, cm/s
+ float Slope=0;                    // degrees, up positive, along his heading (derived from the floor each step)
+ // Presentation only: the bike's swing out of line in a drift, the landing's dip, the trick line on the HUD.
+ float DriftYaw=0,LandDip=0,WheelieTime=0,TrickTime=0; FString Trick;
+ void ShowTrick(const FString& Text){Trick=Text;TrickTime=1.6f;}
+ void EndDrift(bool bBoost);
+ void AdvanceFun(float Dt,bool bPedal);
  // The ground under the wheels: he and the bike pitch to it and sit on it between them (cm), snapped on getting on.
  float GroundPitch=0,GroundOffset=0,WheelGround[2]={0,0},WheelFall[2]={0,0}; bool bSnapGround=false;   // front, rear: cm, cm/s
  void FollowGround(float Dt);

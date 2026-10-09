@@ -23,6 +23,7 @@ struct FJapanMoveInput
     static constexpr uint8 MaximumEdges = 16;
     enum : uint8 { Walk = 1, Jog = 2, Sprint = 4, Menu = 8, AttackHeld = 16, GuardHeld = 32, JumpHeld = 64 };
     int8 X = 0, Y = 0;
+    int8 Lean = 0; // Bike rider lean; sent only while nonzero.
     uint8 Flags = 0;
     uint32 ActivityEpoch = 1;
     uint16 FirstEdge = 1; // The journal is repeated until acknowledged, independently of CMC old-move selection.
