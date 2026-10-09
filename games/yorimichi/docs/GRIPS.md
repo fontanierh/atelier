@@ -66,11 +66,13 @@ grips; this workflow is for editing them.
    ```
 
 6. **Keep an accepted correction.** Copy the current `poses.json` back into
-   `games/yorimichi/assets/characters/grips/modori/` after replacing visitor identities in `by` with `operator`.
+   `games/yorimichi/assets/characters/grips/modori/` after replacing every visitor identity in its `by` fields
+   (including `saved.by`) with `operator`.
    Re-export from that committed source and copy the generated `unreal/Content/Data/modori/grips.json` into the same
    source folder. The build's `characters.modori_grips` step will then reproduce the correction for every clone.
-   Keep superseded saves, edit logs and review captures in the archive. Check the diff and run the repository's
-   required lint and Python checks before committing.
+   Only `poses.json` and `grips.json` go back to Git for a pose correction. New timestamped `poses/<time>.json`
+   saves, edit logs and `snapshots/*.png` stay in the ignored `build/yorimichi/grips/modori/` workspace.
+   Check the diff and run the repository's required lint and Python checks before committing.
 
    ```sh
    uv run python games/yorimichi/assets/characters/grips/game.py --character modori --source games/yorimichi/assets/characters/grips/modori
