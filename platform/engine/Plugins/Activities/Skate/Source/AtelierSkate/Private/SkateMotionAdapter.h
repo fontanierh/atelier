@@ -1,9 +1,26 @@
 #pragma once
 #include "CoreMinimal.h"
+#include <future>
 #include <memory>
 #include <string>
 namespace atelier::skate { struct AnimationSource; }
 class USkateMotionData;
-// Unreal objects are resolved on the game thread; only immutable native values cross to the simulation worker.
-bool LoadSkateMotion(const FSoftObjectPath& Path, std::shared_ptr<const atelier::skate::AnimationSource>& Out, FString& Error);
-bool DecodeSkateMotion(const USkateMotionData& Data, std::shared_ptr<const atelier::skate::AnimationSource>& Out, std::string& Error);
+class USkateMotionBank;
+
+struct FSkateMotionLoad
+{
+    std::shared_ptr<const atelier::skate::AnimationSource> Source;
+    std::string Error;
+};
+using FSkateMotionFuture = std::shared_future<FSkateMotionLoad>;
+
+// Game thread, never blocks: starts the asynchronous package load of Path once per process, then decodes it on a task
+// thread while the packages are held. The decoded immutable source is kept for later sessions and the packages are
+// released; a failure is forgotten, so the next request retries.
+FSkateMotionFuture RequestSkateMotion(const FSoftObjectPath& Path);
+// Game thread: finishes loading Path's packages now and starts its decode, for a caller about to wait on the result
+// without ticking (the async load's completion runs on the game thread).
+void CompleteSkateMotion(const FSoftObjectPath& Path);
+// Any thread, while the caller keeps Data and Banks loaded: copies typed fields into native animation structures.
+bool DecodeSkateMotion(const USkateMotionData& Data, TConstArrayView<const USkateMotionBank*> Banks,
+    std::shared_ptr<const atelier::skate::AnimationSource>& Out, std::string& Error);

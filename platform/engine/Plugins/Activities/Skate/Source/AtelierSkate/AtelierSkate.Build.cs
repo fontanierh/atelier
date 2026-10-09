@@ -15,7 +15,7 @@ public class AtelierSkate : ModuleRules
         CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Warning;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "DeveloperSettings" });
         PrivateDependencyModuleNames.AddRange(new string[] { "Json", "AtelierCore", "AtelierFX", "RenderCore", "RHI", "AnimationCore", "AnimGraphRuntime", "PhysicsCore", "PhysicsControl", "Chaos" });
-        if (Target.bBuildEditor) PrivateDependencyModuleNames.AddRange(new string[] { "AssetRegistry", "UnrealEd" });
+        if (Target.bBuildEditor) PrivateDependencyModuleNames.Add("AssetRegistry");
         // The 120 Hz flick reading polls the controller off the game thread (SkatePadReader.cpp).
         if (Target.Platform == UnrealTargetPlatform.Mac) PublicFrameworks.Add("GameController");
     }

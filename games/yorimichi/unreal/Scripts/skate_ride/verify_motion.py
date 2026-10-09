@@ -11,10 +11,8 @@ import yori
 CONTENT = HERE.parents[1] / 'Content'
 OUT = yori.OUT / 'skate-motion'
 OUT.mkdir(parents=True, exist_ok=True)
-data = unreal.load_asset('/Game/SkateMotion/MotionData')
-if data is None:
-    raise RuntimeError('Typed motion data is missing')
-result = unreal.SkateMotionLibrary.verify_motion(str(CONTENT / 'Data/SkateNative'), data, str(OUT / 'verify.json'))
+# Verifies the asset the game is configured with (USkateSettings::MotionData), through the game's loader.
+result = unreal.SkateMotionLibrary.verify_motion(str(CONTENT / 'Data/SkateNative'), str(OUT / 'verify.json'))
 if result is None:
     raise RuntimeError('Motion verification failed; inspect the commandlet log')
 if result:

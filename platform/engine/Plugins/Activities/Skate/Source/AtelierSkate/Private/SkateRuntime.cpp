@@ -91,9 +91,10 @@ bool USkateComponent::LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into,const 
 {
     if(!FPaths::FileExists(RuntimeFolder()/TEXT("package-manifest.json")))
     {Failure=TEXT("Native skating data is missing from this build.");return false;}
-    std::shared_ptr<const skate_native::AnimationSource> Motion;
+    // Typed motion loads asynchronously, once per process; the worker waits for it off the game thread.
+    FSkateMotionFuture Motion;
     const auto& MotionPath=GetDefault<USkateSettings>()->MotionData;
-    if(!MotionPath.IsNull() && !LoadSkateMotion(MotionPath,Motion,Failure))return false;
+    if(!MotionPath.IsNull())Motion=RequestSkateMotion(MotionPath);
     FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
     if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
     {Failure=TEXT("Skating could not load nearby collision.");return false;}
@@ -193,6 +194,10 @@ bool USkateComponent::StartNativeRide()
     { UE_LOG(LogTemp,Warning,TEXT("SKATE Native ride: %s"),*Failure); return false; }
     FSkateRuntime& N=*RideNative;
     if (!ActivateNative(N)) return false;
+    // The wait below does not tick, so typed motion still loading finishes its package load here; its decode then
+    // completes on a task thread.
+    const auto& MotionPath=GetDefault<USkateSettings>()->MotionData;
+    if (!MotionPath.IsNull()) CompleteSkateMotion(MotionPath);
     const double Started=FPlatformTime::Seconds();
     while (!N.HasPose && N.Error.IsEmpty() && !N.Worker->Finished() && FPlatformTime::Seconds()<Started+30.)
     {

@@ -106,11 +106,16 @@ package_cook = importlib.util.module_from_spec(_cook_spec)
 _cook_spec.loader.exec_module(package_cook)
 
 
+def engine_version(ctx):
+    """The installed engine's version files: saved packages and cooked output depend on the engine build."""
+    engine = getattr(ctx, 'unreal_root', None)
+    return [engine / 'Engine' / 'Build' / 'Build.version',
+            engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+
+
 def cook_step(ctx, steps):
     out = ctx.out
-    engine = getattr(ctx, 'unreal_root', None)
-    engine_inputs = [engine / 'Engine' / 'Build' / 'Build.version',
-                     engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+    engine_inputs = engine_version(ctx)
     return Step('unreal.cook',
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
@@ -549,7 +554,7 @@ def unreal_steps(ctx):
                 UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
              inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
                      paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
-                     paths.content_data(ctx.game) / 'SkateNative'],
+                     paths.content_data(ctx.game) / 'SkateNative', GAME / 'unreal/Config/DefaultGame.ini', *engine_version(ctx)],
              after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],
              verify=lambda: skate_motion_present(out),

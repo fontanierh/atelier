@@ -564,7 +564,7 @@ public:
         uint8 Surface=0,Wheels=0;   // the surface the wheels are on (ESkateSurface, 0 untagged) and the wheels in contact
     };
     FNativeSkateWorker(FString Folder,skate_native::GameplayWorldSnapshot World,
-        skate_native::Vec3 Spawn,float Heading,std::shared_ptr<const skate_native::AnimationSource> Motion)
+        skate_native::Vec3 Spawn,float Heading,FSkateMotionFuture Motion)
         :Motion_(std::move(Motion)),Folder_(MoveTemp(Folder)),InitialWorld_(std::move(World)),Spawn_(Spawn),Heading_(Heading)
     {Wake_=FPlatformProcess::GetSynchEventFromPool(false);}
     ~FNativeSkateWorker()
@@ -585,7 +585,16 @@ public:
         if(!FloatEnvironment.IsReady())
         {Fail("Native skating floating-point environment setup failed");Finished_.store(true);return 1;}
         std::string Error;std::shared_ptr<const skate_native::GameplayResources> Resources;
-        if(!skate_native::LoadGameplayResources(std::filesystem::u8path(TCHAR_TO_UTF8(*Folder_)),Resources,Error,Motion_)
+        std::shared_ptr<const skate_native::AnimationSource> Motion;
+        if(Motion_.valid())
+        {
+            while(Motion_.wait_for(std::chrono::milliseconds(20))!=std::future_status::ready)
+                if(Stopping_.load()){Finished_.store(true);return 1;}
+            const auto& Loaded=Motion_.get();
+            if(!Loaded.Source){Fail(Loaded.Error.empty()?"Skate motion could not load":Loaded.Error);Finished_.store(true);return 1;}
+            Motion=Loaded.Source;
+        }
+        if(!skate_native::LoadGameplayResources(std::filesystem::u8path(TCHAR_TO_UTF8(*Folder_)),Resources,Error,Motion)
             ||!skate_native::GameplaySession::Create(Resources,InitialWorld_,Spawn_,Heading_,Session_,Error)
             ||!Session_->Activate(Spawn_,Heading_,Error)||!Publish(true,Error))
         {Fail(Error);Finished_.store(true);return 1;}
@@ -723,7 +732,7 @@ private:
         Outputs_.Enqueue(MoveTemp(Out));return true;
     }
     void Fail(const std::string& Error) {FOutput Out;Out.Error=Error.empty()?"Native skating failed":Error;Outputs_.Enqueue(MoveTemp(Out));}
-    std::shared_ptr<const skate_native::AnimationSource> Motion_;
+    FSkateMotionFuture Motion_;
     FString Folder_;skate_native::GameplayWorldSnapshot InitialWorld_;skate_native::Vec3 Spawn_;float Heading_;
     FEvent* Wake_=nullptr;FRunnableThread* Thread_=nullptr;std::atomic<bool> Stopping_{false},Finished_{false};
     TQueue<FCommand,EQueueMode::Mpsc> Commands_;TQueue<FOutput,EQueueMode::Spsc> Outputs_;
