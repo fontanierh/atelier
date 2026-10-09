@@ -11,6 +11,9 @@ class UMaterialInterface;
 class USkiPhysicalBody;
 struct FSkiRuntime;
 
+/** Deletes the runtime where its type is complete: UHT's generated code instantiates the member's destructor. */
+struct ATELIERSKI_API FSkiRuntimeDeleter { void operator()(FSkiRuntime* Ptr) const; };
+
 /** The skier's controls for one frame (README.md, "Controls"). */
 USTRUCT(BlueprintType)
 struct ATELIERSKI_API FSkiInput
@@ -52,7 +55,6 @@ class ATELIERSKI_API USkiComponent : public UActorComponent
     GENERATED_BODY()
 public:
     USkiComponent();
-    virtual ~USkiComponent() override;
 
     /** The custom movement mode the skiing runs in: the game's PhysCustom calls PhysSki for it. */
     static constexpr uint8 MovementMode = 6;
@@ -108,7 +110,7 @@ private:
     UPROPERTY() TObjectPtr<UStaticMesh> DefaultSkiMesh;
     UPROPERTY() TObjectPtr<UMaterialInterface> DefaultSkiMaterial;
 
-    TUniquePtr<FSkiRuntime> Runtime;
+    TUniquePtr<FSkiRuntime, FSkiRuntimeDeleter> Runtime;
     FSkiPose Pose;
     /** The skis on the snow under the simulated boots, and relative to the feet once a crash lets the body go. */
     FTransform SkiWorld[2], SkiOnFoot[2];

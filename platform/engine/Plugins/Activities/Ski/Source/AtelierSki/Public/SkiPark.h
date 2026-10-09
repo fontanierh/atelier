@@ -7,6 +7,9 @@ class UProceduralMeshComponent;
 class UMaterialInterface;
 struct FSkiParkData;
 
+/** Deletes the park data where its type is complete: UHT's generated code instantiates the member's destructor. */
+struct ATELIERSKI_API FSkiParkDataDeleter { void operator()(FSkiParkData* Ptr) const; };
+
 /** A terrain park (README.md, "Park"): the native park's heightfield (Private/Native/SkiPark.h) as a snow surface with
  *  collision, its jumps built for their speed windows. The actor's location is the park's origin and its yaw the fall
  *  line (park x forward, y to the left); pitch and roll are ignored. Skiers inside it read the exact surface, not the
@@ -17,7 +20,6 @@ class ATELIERSKI_API ASkiPark : public AActor
     GENERATED_BODY()
 public:
     ASkiPark();
-    virtual ~ASkiPark() override;
     virtual void OnConstruction(const FTransform& Transform) override;
     virtual void BeginPlay() override;
 
@@ -39,6 +41,6 @@ private:
 
     UPROPERTY(VisibleAnywhere, Category = Ski) TObjectPtr<UProceduralMeshComponent> Surface;
     UPROPERTY() TObjectPtr<UMaterialInterface> DefaultMaterial;
-    TUniquePtr<FSkiParkData> Data;
+    TUniquePtr<FSkiParkData, FSkiParkDataDeleter> Data;
     bool bBuilt = false;
 };

@@ -102,7 +102,7 @@ USkiComponent::USkiComponent()
     DefaultSkiMaterial = Plain.Object;
 }
 
-USkiComponent::~USkiComponent() = default;
+void FSkiRuntimeDeleter::operator()(FSkiRuntime* Ptr) const { delete Ptr; }
 
 void USkiComponent::Initialize(ACharacter* InCharacter)
 {
@@ -171,7 +171,7 @@ bool USkiComponent::StartAt(FVector Location, float Yaw, float Speed)
 
 bool USkiComponent::BeginRide(const FVector& Feet, float Yaw, float Speed)
 {
-    Runtime = MakeUnique<FSkiRuntime>(GetWorld(), Character);
+    Runtime.Reset(new FSkiRuntime(GetWorld(), Character));
     ski::Settings& S = Runtime->Settings;
     const USkiSettings* Project = GetDefault<USkiSettings>();
     S.balanceAssist = Project->BalanceAssist;

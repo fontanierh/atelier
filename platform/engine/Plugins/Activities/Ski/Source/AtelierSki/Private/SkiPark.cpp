@@ -25,7 +25,7 @@ ASkiPark::ASkiPark()
     DefaultMaterial = Plain.Object;
 }
 
-ASkiPark::~ASkiPark() = default;
+void FSkiParkDataDeleter::operator()(FSkiParkData* Ptr) const { delete Ptr; }
 
 void ASkiPark::OnConstruction(const FTransform& Transform)
 {
@@ -43,7 +43,7 @@ void ASkiPark::Build()
 {
     if (bBuilt) return;
     bBuilt = true;
-    Data = MakeUnique<FSkiParkData>();
+    Data.Reset(new FSkiParkData());
     const atelier::ski::ParkSpec& Spec = Data->Park.Spec();
     Data->MinX = Spec.startX - Margin;
     Data->MaxX = Spec.finishX + Margin + 20;
