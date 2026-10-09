@@ -20,7 +20,7 @@ def imports(path, everywhere=False):
             names += [a.name for a in node.names]
         elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
             names.append(node.module)
-        elif everywhere or isinstance(node, (ast.If, ast.Try)):
+        elif everywhere or isinstance(node, (ast.If, ast.Try, ast.ExceptHandler)):
             body += list(ast.iter_child_nodes(node))
     return names
 
