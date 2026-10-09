@@ -57,6 +57,17 @@ bool UYorimichiLive::MenuKey(const FString& Key)
     return Down || Up;
 }
 
+bool UYorimichiLive::PadInput(const FString& Key, float Value)
+{
+    const FKey Input(*Key);
+    if (!Input.IsValid() || !Input.IsGamepadKey() || !FSlateApplication::IsInitialized()) return false;
+    auto& Slate = FSlateApplication::Get();
+    if (Input.IsAxis1D()) Slate.ProcessAnalogInputEvent(FAnalogInputEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0,Value));
+    else if (Value > .5f) Slate.ProcessKeyDownEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
+    else Slate.ProcessKeyUpEvent(FKeyEvent(Input,Slate.GetModifierKeys(),uint32(0),false,0,0));
+    return true;
+}
+
 FString UYorimichiLive::MenuFocus()
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());

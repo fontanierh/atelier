@@ -742,6 +742,11 @@ public:
         if (Found) FSlateApplication::Get().SetUserFocus(0, Found->Control.Pin(), EFocusCause::Navigation);
     }
     FString FocusedKey() const { const FEntry* E = Focused(); return E ? E->Key : FString(); }
+    /** Take the input kind (pad, keys or mouse) from the page this one replaces, so the legend keeps it. */
+    void Follow(const TSharedPtr<SWidget>& Before)
+    {
+        if (const TSharedPtr<SPreferencesPanel> Panel = StaticCastSharedPtr<SPreferencesPanel>(Before)) { bPad = Panel->bPad; bNavigating = Panel->bNavigating; }
+    }
     virtual bool SupportsKeyboardFocus() const override { return false; }
     virtual void Tick(const FGeometry& Geometry, const double Now, const float Dt) override
     {
@@ -852,6 +857,7 @@ void UJapanPreferences::ToggleMenu()
 void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
 {
     if (!GEngine || !GEngine->GameViewport) return;
+    const TSharedPtr<SWidget> Before = Menu;
     if (Menu) { GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef()); Menu.Reset(); }
     TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
     // Another page, out of the click that asked for it, with focus on the control named FocusOn.
@@ -863,6 +869,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     // The right face button: from Skate feel back to its button on the main page; from the main page, out of the menu.
     TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).BackCloses(!bSkate)
         .OnBack_Lambda([this,bSkate,ShowPage] { if (bSkate) ShowPage(false,TEXT("skate_feel")); else CloseMenu(); });
+    Page->Follow(Before);
     // A value's slider row: its label, the slider and the value with as many decimals as its step shows. Left and Right
     // move it at once (no press to grab it), by its step or a fiftieth of its range.
     const auto AddSlider = [this,&Rows,&Page](int32 I, TFunction<bool()> Enabled, const FString& Hint)
@@ -1120,6 +1127,7 @@ void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
         Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,Key] { if (Menu) OpenMenu(false,Key); }));
     };
     TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).Scrolls(false).BackCloses(false).OnBack_Lambda(Return);
+    Page->Follow(Menu);
     Rows->AddSlot().AutoHeight().Padding(0,0,0,16)[SNew(STextBlock).Text(FText::FromString(Title))
         .Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(Warning)).AutoWrapText(true)

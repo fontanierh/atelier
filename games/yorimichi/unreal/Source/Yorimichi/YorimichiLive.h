@@ -24,6 +24,10 @@ public:
      *  Gamepad_FaceButton_Right...) through the open native settings menu's actual widgets, as one press and release.
      *  Refuses unknown keys or a closed menu; useful for reviewing warnings, cancellation and the controller path. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool MenuKey(const FString& Key);
+    /** Hold a gamepad input through Slate as a pad would, menu open or not: an axis (Gamepad_RightTriggerAxis,
+     *  Gamepad_RightX...) moves to Value and stays there; a button (Gamepad_RightTrigger...) goes down above .5 and
+     *  up otherwise. Whatever has focus gets it (the open menu, or the game viewport). Refuses keys that aren't the pad's. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static bool PadInput(const FString& Key, float Value);
     /** The key of the settings menu control with focus (a setting's key, or a button's name such as resume); empty when closed. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString MenuFocus();
     /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
