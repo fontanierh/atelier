@@ -38,6 +38,8 @@ public:
     /** The skate_ values as the board's feel (FSkateFeel; docs/SKATE.md, "Feel"). */
     FSkateFeel GetSkateFeel() const;
     void CloseMenu();
+    /** The key of the menu control with focus (a value's key, or the button's name such as resume), for the live bridge. */
+    FString FocusedControl() const;
     bool ShowFrameRate() const { return Get(TEXT("show_fps")) > .5f; }
     // Keys chosen per launch and never written to the shared settings file.
     static bool IsSessionOnly(const FString& Key);
@@ -56,8 +58,8 @@ private:
     TSharedPtr<SWidget> Menu;
     int32 AppliedPerformanceMode = -1;
     FString GraphicsError;
-    /** Show the menu's main page, or its Skate feel page. */
-    void OpenMenu(bool bSkate);
+    /** Show the menu's main page, or its Skate feel page, with focus on the control named FocusKey (the first one by default). */
+    void OpenMenu(bool bSkate, const FString& FocusKey = FString());
     /** Confirm the resource cost and, for a renderer change, the required restart. */
     void OpenGraphicsWarning(const FString& Key);
     bool SetGraphicsChoice(const FString& Key, float Value);

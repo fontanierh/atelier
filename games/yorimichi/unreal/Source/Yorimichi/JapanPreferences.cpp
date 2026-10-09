@@ -1,5 +1,6 @@
 #include "JapanPreferences.h"
 #include "AtelierSettings.h"
+#include "JapanHUD.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "PlayableCharacter.h"
@@ -610,53 +611,250 @@ void UJapanPreferences::ResetLight()
             if (V.Key == Key) V.Value = DefaultValues.FindRef(V.Key);
     Apply(); Save();
 }
+namespace
+{
+const FSlateBrush* White() { return FCoreStyle::Get().GetBrush("WhiteBrush"); }
+
+/** A button that is a value: Left and Right step through its choices, as a press does. */
+class SChoiceButton : public SButton
+{
+public:
+    TFunction<void(int32)> Step;
+    virtual FNavigationReply OnNavigation(const FGeometry& Geometry, const FNavigationEvent& Event) override
+    {
+        const EUINavigation Way = Event.GetNavigationType();
+        if (Step && IsEnabled() && (Way == EUINavigation::Left || Way == EUINavigation::Right))
+        {
+            Step(Way == EUINavigation::Right ? 1 : -1);
+            return FNavigationReply::Stop();
+        }
+        return SButton::OnNavigation(Geometry, Event);
+    }
+};
+
+/** A d-pad press on a slider, as a fraction of its range: the value's own step, a few at a time when it has more than
+ *  60, or a fiftieth of the range when it is continuous. */
+float PadStep(const FJapanPreference& V)
+{
+    const float Range = V.Maximum - V.Minimum;
+    if (Range <= 0.f) return 1.f;
+    if (V.Step <= 0.f) return .02f;
+    const int32 Steps = FMath::Max(1, FMath::RoundToInt(Range / V.Step));
+    return FMath::DivideAndRoundUp(Steps, 60) * V.Step / Range;
+}
+}
+
+/** The menu's frame, made for a controller as much as for a mouse. Each control is added with its row: the focused row
+ *  is lit and its hint shows under the page, the page scrolls to follow focus, and focus comes back to the menu
+ *  whenever it strays, so the pad always has a control. Sliders and choices change with Left and Right at once, with
+ *  no press to grab them. The right face button (Escape on a keyboard is the game's Menu action) goes back a page or
+ *  closes, the shoulders (Page Up and Down) jump a section, and every other pad button is kept from the game behind
+ *  the menu; Menu and View still reach it, and Menu closes the menu. */
+class SPreferencesPanel : public SCompoundWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SPreferencesPanel) : _Scrolls(true), _BackCloses(true) {}
+        SLATE_ARGUMENT(bool, Scrolls)
+        SLATE_ARGUMENT(bool, BackCloses)
+        SLATE_EVENT(FSimpleDelegate, OnBack)
+    SLATE_END_ARGS()
+    void Construct(const FArguments& In, const TSharedRef<SVerticalBox>& Rows)
+    {
+        OnBack = In._OnBack; bBackCloses = In._BackCloses;
+        PadStyle = AJapanHUD::CurrentControllerStyle(); bPad = PadStyle != 0;
+        TSharedRef<SWidget> Page = Rows;
+        if (In._Scrolls)
+            Page = SAssignNew(Scroll, SScrollBox).NavigationScrollPadding(96.f).ScrollWhenFocusChanges(EScrollWhenFocusChanges::AnimatedScroll)
+                + SScrollBox::Slot()[Rows];
+        TSharedRef<SVerticalBox> Frame = SNew(SVerticalBox);
+        if (In._Scrolls) Frame->AddSlot().FillHeight(1.f)[Page]; else Frame->AddSlot().AutoHeight()[Page];
+        Frame->AddSlot().AutoHeight().Padding(0,14,0,8)[SNew(SBox).HeightOverride(1)[SNew(SBorder).BorderImage(White()).BorderBackgroundColor(FLinearColor(1,1,1,.12f))]];
+        Frame->AddSlot().AutoHeight()[SNew(SBox).MinDesiredHeight(40)[SNew(STextBlock).AutoWrapText(true)
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular",13)).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
+            .Text_Lambda([this] { const FEntry* E = Focused(); return FText::FromString(E ? E->Hint : FString()); })]];
+        Frame->AddSlot().AutoHeight().Padding(0,6,0,0)[SNew(STextBlock).AutoWrapText(true)
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(1,.9f,.6f,1))
+            .Text_Lambda([this] { return FText::FromString(Legend()); })];
+        ChildSlot[SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(White()).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
+            [SNew(SBox).WidthOverride(660).MaxDesiredHeight(In._Scrolls ? FOptionalSize(860.f) : FOptionalSize())
+                [SNew(SBorder).Padding(28).BorderImage(White()).BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))[Frame]]]];
+    }
+    /** A control and the row it sits in (the control alone by default), lit while the control has focus. Key names it
+     *  for focus and the live bridge; the hint shows under the page while it is focused. */
+    TSharedRef<SWidget> Add(const TSharedRef<SWidget>& Control, const FString& Key, const FString& Hint = FString(), TSharedPtr<SWidget> Row = nullptr)
+    {
+        Entries.Add({Control, Key, Hint, bNextSection}); bNextSection = false;
+        const TWeakPtr<SWidget> Weak = Control;
+        return SNew(SBorder).Padding(FMargin(0,3,8,3)).BorderImage(White())
+            .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(.95f,.72f,.3f,.2f) : FLinearColor::Transparent); })
+            [SNew(SHorizontalBox)
+                + SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(4)[SNew(SBorder).BorderImage(White())
+                    .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(1,.78f,.35f,1) : FLinearColor::Transparent); })]]
+                + SHorizontalBox::Slot().FillWidth(1.f).Padding(8,0,0,0)[Row ? Row.ToSharedRef() : Control]];
+    }
+    /** The next control added starts a section (the shoulders jump between them). */
+    void Section() { bNextSection = true; }
+    /** Focus the control added under Key, or the first one. */
+    void Focus(const FString& Key)
+    {
+        const FEntry* Found = Entries.FindByPredicate([&Key](const FEntry& E) { return !Key.IsEmpty() && E.Key == Key && E.Control.IsValid(); });
+        if (!Found) Found = Entries.FindByPredicate([](const FEntry& E) { return E.Control.IsValid() && E.Control.Pin()->IsEnabled(); });
+        if (Found) FSlateApplication::Get().SetUserFocus(0, Found->Control.Pin(), EFocusCause::Navigation);
+    }
+    FString FocusedKey() const { const FEntry* E = Focused(); return E ? E->Key : FString(); }
+    virtual bool SupportsKeyboardFocus() const override { return false; }
+    virtual void Tick(const FGeometry& Geometry, const double Now, const float Dt) override
+    {
+        SCompoundWidget::Tick(Geometry, Now, Dt);
+        // Focus left on the game behind (a click beside the controls, say) comes back; a console or another window keeps it.
+        if (const FEntry* E = Focused()) LastFocused = E->Key;
+        else if (FSlateApplication::Get().GetActiveTopLevelWindow().IsValid())
+        {
+            const TSharedPtr<SWidget> Holder = FSlateApplication::Get().GetUserFocusedWidget(0);
+            if (!Holder || Holder->GetType() == TEXT("SViewport") || Holder->GetType() == TEXT("SWindow")) Focus(LastFocused);
+        }
+    }
+    virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        bNavigating = true; bPad = E.GetKey().IsGamepadKey();
+        return FReply::Unhandled();
+    }
+    virtual FReply OnPreviewMouseButtonDown(const FGeometry&, const FPointerEvent&) override
+    {
+        bNavigating = false; bPad = false;
+        return FReply::Unhandled();
+    }
+    virtual FReply OnAnalogValueChanged(const FGeometry&, const FAnalogInputEvent& E) override
+    {
+        if (FMath::Abs(E.GetAnalogValue()) > .5f) { bNavigating = true; bPad = true; }
+        return FReply::Unhandled();
+    }
+    virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
+    {
+        const FKey K = E.GetKey();
+        if (K == EKeys::Gamepad_FaceButton_Right) { if (!E.IsRepeat()) OnBack.ExecuteIfBound(); return FReply::Handled(); }
+        if (K == EKeys::Gamepad_LeftShoulder || K == EKeys::PageUp) { Jump(-1); return FReply::Handled(); }
+        if (K == EKeys::Gamepad_RightShoulder || K == EKeys::PageDown) { Jump(1); return FReply::Handled(); }
+        if (K.IsGamepadKey() && K != EKeys::Gamepad_Special_Left && K != EKeys::Gamepad_Special_Right) return FReply::Handled();
+        return FReply::Unhandled();
+    }
+    virtual FReply OnKeyUp(const FGeometry&, const FKeyEvent& E) override
+    {
+        const FKey K = E.GetKey();
+        return K.IsGamepadKey() && K != EKeys::Gamepad_Special_Left && K != EKeys::Gamepad_Special_Right ? FReply::Handled() : FReply::Unhandled();
+    }
+private:
+    struct FEntry { TWeakPtr<SWidget> Control; FString Key, Hint; bool bSection = false; };
+    TArray<FEntry> Entries;
+    TSharedPtr<SScrollBox> Scroll;
+    FSimpleDelegate OnBack;
+    FString LastFocused;
+    int32 PadStyle = 0;
+    bool bPad = false, bNavigating = true, bNextSection = true, bBackCloses = true;
+    bool Lit(const TWeakPtr<SWidget>& Weak) const
+    {
+        const TSharedPtr<SWidget> W = Weak.Pin();
+        return bNavigating && W && W->HasAnyUserFocus().IsSet();
+    }
+    const FEntry* Focused() const
+    {
+        return Entries.FindByPredicate([](const FEntry& E) { const TSharedPtr<SWidget> W = E.Control.Pin(); return W && W->HasAnyUserFocus().IsSet(); });
+    }
+    /** To the start of the next section, or of this one (then the one before) going back; disabled controls are passed. */
+    void Jump(int32 Way)
+    {
+        const FEntry* Current = Focused();
+        const int32 From = Current ? int32(Current - Entries.GetData()) : 0;
+        int32 Start = INDEX_NONE;
+        if (Way > 0) { for (int32 I = From+1; I < Entries.Num() && Start == INDEX_NONE; ++I) if (Entries[I].bSection) Start = I; }
+        else
+        {
+            int32 Own = From; while (Own > 0 && !Entries[Own].bSection) --Own;
+            if (Own < From) Start = Own;
+            else for (int32 I = Own-1; I >= 0 && Start == INDEX_NONE; --I) if (Entries[I].bSection) Start = I;
+        }
+        if (Start == INDEX_NONE) Start = Way > 0 ? Entries.Num()-1 : 0;   // past the last section: the last control
+        for (int32 I = FMath::Max(Start, 0); I < Entries.Num(); ++I)
+            if (const TSharedPtr<SWidget> W = Entries[I].Control.Pin(); W && W->IsEnabled())
+            {
+                FSlateApplication::Get().SetUserFocus(0, W, EFocusCause::Navigation);
+                return;
+            }
+    }
+    FString Legend() const
+    {
+        if (!bPad) return TEXT("Arrows choose and change  ·  Enter select  ·  Page Up / Down section  ·  Esc close");
+        const TCHAR *Accept, *Cancel, *Shoulders;
+        switch (PadStyle)
+        {
+            case 1: Accept = TEXT("A"); Cancel = TEXT("B"); Shoulders = TEXT("LB / RB"); break;
+            case 2: Accept = TEXT("Cross"); Cancel = TEXT("Circle"); Shoulders = TEXT("L1 / R1"); break;
+            case 3: Accept = TEXT("B"); Cancel = TEXT("A"); Shoulders = TEXT("L / R"); break;
+            default: Accept = TEXT("Bottom button"); Cancel = TEXT("Right button"); Shoulders = TEXT("Shoulders"); break;
+        }
+        return FString::Printf(TEXT("D-pad choose, Left / Right change  ·  %s select  ·  %s section  ·  %s %s"), Accept, Shoulders, Cancel,
+            bBackCloses ? TEXT("close") : TEXT("back"));
+    }
+};
+
 void UJapanPreferences::ToggleMenu()
 {
     if (Menu) { CloseMenu(); return; }
     OpenMenu(false);
 }
-void UJapanPreferences::OpenMenu(bool bSkate)
+void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
 {
     if (!GEngine || !GEngine->GameViewport) return;
     if (Menu) { GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef()); Menu.Reset(); }
     TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
-    TSharedPtr<SButton> FirstControl;
-    // A value's slider row: its label, the slider and the value with as many decimals as its step shows.
-    const auto AddSlider = [this,&Rows](int32 I, TFunction<bool()> Enabled, const FString& Hint)
+    // Another page, out of the click that asked for it, with focus on the control named FocusOn.
+    const auto ShowPage = [this](bool bToSkate, const FString& FocusOn)
+    {
+        if (AWandererCharacter* Pawn = Owner)
+            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,bToSkate,FocusOn] { if (Menu) OpenMenu(bToSkate,FocusOn); }));
+    };
+    // The right face button: from Skate feel back to its button on the main page; from the main page, out of the menu.
+    TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).BackCloses(!bSkate)
+        .OnBack_Lambda([this,bSkate,ShowPage] { if (bSkate) ShowPage(false,TEXT("skate_feel")); else CloseMenu(); });
+    // A value's slider row: its label, the slider and the value with as many decimals as its step shows. Left and Right
+    // move it at once (no press to grab it), by its step or a fiftieth of its range.
+    const auto AddSlider = [this,&Rows,&Page](int32 I, TFunction<bool()> Enabled, const FString& Hint)
     {
         TSharedRef<SSlider> Slider = SNew(SSlider)
-            .StepSize(Values[I].Step > 0.f ? Values[I].Step/(Values[I].Maximum-Values[I].Minimum) : .01f)
+            .RequiresControllerLock(false)
+            .StepSize(PadStep(Values[I]))
             .IsEnabled_Lambda([Enabled] { return !Enabled || Enabled(); })
             .Value_Lambda([this,I] { const auto& V = Values[I]; return (V.Value-V.Minimum)/(V.Maximum-V.Minimum); })
             .OnValueChanged_Lambda([this,I](float N) { const auto& V = Values[I]; SetValue(V.Key,FMath::Lerp(V.Minimum,V.Maximum,N)); });
-        Rows->AddSlot().AutoHeight().Padding(0,6)[SNew(SHorizontalBox).ToolTipText(FText::FromString(Hint))
-            + SHorizontalBox::Slot().FillWidth(.48f)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
-            + SHorizontalBox::Slot().FillWidth(.38f)[Slider]
-            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
+        TSharedRef<SWidget> Row = SNew(SHorizontalBox).ToolTipText(FText::FromString(Hint))
+            + SHorizontalBox::Slot().FillWidth(.48f).VAlign(VAlign_Center)[SNew(STextBlock).Text(FText::FromString(Values[I].Label)).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White)]
+            + SHorizontalBox::Slot().FillWidth(.38f).VAlign(VAlign_Center)[Slider]
+            + SHorizontalBox::Slot().FillWidth(.14f).Padding(12,0).VAlign(VAlign_Center)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor::White).Text_Lambda([this,I]
             {
                 // As many decimals as the slider's step shows (fog density moves by 0.005).
                 const float Step = Values[I].Step;
                 const int32 Digits = Step <= 0.f ? 2 : Step >= 1.f ? 0 : FMath::Clamp(FMath::CeilToInt(-FMath::LogX(10.f,Step)-1e-3f),1,3);
                 FNumberFormattingOptions Format; Format.SetUseGrouping(false).SetMinimumFractionalDigits(Digits).SetMaximumFractionalDigits(Digits);
                 return FText::AsNumber(Values[I].Value,&Format);
-            })]];
+            })];
+        Rows->AddSlot().AutoHeight().Padding(0,3)[Page->Add(Slider,Values[I].Key,Hint,Row)];
     };
-    // Another page, out of the click that asked for it.
-    const auto ShowPage = [this](bool bToSkate)
+    // A setting's button: a press acts, and so do Left and Right (Step, given the way; a press by default).
+    const auto Setting = [](TFunction<FText()> Text, TFunction<void()> Press, TFunction<void(int32)> Step = nullptr)
     {
-        if (AWandererCharacter* Pawn = Owner)
-            Pawn->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,bToSkate] { if (Menu) OpenMenu(bToSkate); }));
+        TSharedRef<SChoiceButton> Button = SNew(SChoiceButton).Text_Lambda(MoveTemp(Text))
+            .OnClicked_Lambda([Press] { Press(); return FReply::Handled(); });
+        Button->Step = Step ? MoveTemp(Step) : TFunction<void(int32)>([Press](int32) { Press(); });
+        return Button;
     };
-    const auto Finish = [this,&Rows,&FirstControl]
+    FString Focus = FocusKey;
+    const auto Finish = [this,&Page,&Focus]
     {
-        Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
-            [SNew(SBox).WidthOverride(620).MaxDesiredHeight(760)
-                [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))
-                    [SNew(SScrollBox)+SScrollBox::Slot()[Rows]]]];
+        Menu = Page;
         GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
         Owner->SetMenuOpen(true);
         GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
-        FSlateApplication::Get().SetKeyboardFocus(FirstControl, EFocusCause::SetDirectly);
+        Page->Focus(Focus);
     };
     if (bSkate)
     {
@@ -673,21 +871,23 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                 .ToolTipText(FText::FromString(M == SkateCustom ? TEXT("Tune every value below on a base difficulty.") : TEXT("This difficulty as made.")))
                 .ButtonColorAndOpacity_Lambda([this,M] { return FSlateColor(FMath::RoundToInt(Get(TEXT("skate_mode"))) == M ? FLinearColor(.35f,.75f,.55f) : FLinearColor(.45f,.45f,.45f)); })
                 .OnClicked_Lambda([this,M] { SetValue(TEXT("skate_mode"), float(M)); return FReply::Handled(); });
-            if (!FirstControl) FirstControl = Button;
-            Modes->AddSlot().FillWidth(1.f).Padding(M ? 6 : 0,0,0,0)[Button];
+            Modes->AddSlot().FillWidth(1.f).Padding(M ? 2 : 0,0,0,0)[Page->Add(Button,FString::Printf(TEXT("skate_mode:%d"),M),
+                M == SkateCustom ? TEXT("Custom: tune every value below on a base difficulty.") : FString::Printf(TEXT("%s, as made."),SkateModes[M]))];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Modes];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
             .Text_Lambda([this,IsCustom] { return FText::FromString(IsCustom()
-                ? TEXT("Custom: multipliers on the base difficulty's own values. Changes take effect at once, even mid-ride; Reset custom values puts each back to the game's own. Hover a row for what it does.")
+                ? TEXT("Custom: multipliers on the base difficulty's own values. Changes take effect at once, even mid-ride; Reset custom values puts each back to the game's own.")
                 : FString::Printf(TEXT("%s, as made. Pick Custom to tune the values below; your custom values are kept while you play a preset."), SkateModes[FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))),0,2)])); })];
         for (const FSkateGroup& Group : SkateGroups())
         {
             if (FCString::Strcmp(Group.Name, TEXT("Mode")) == 0) continue;
             const bool bAlways = Group.Knobs.Num() && Group.Knobs[0].bAlways;
+            Page->Section();
             if (bAlways)
-                Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset custom values to stock")))
-                    .IsEnabled_Lambda(IsCustom).OnClicked_Lambda([this] { ResetSkate(true); return FReply::Handled(); })];
+                Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset custom values to stock")))
+                    .IsEnabled_Lambda(IsCustom).OnClicked_Lambda([this] { ResetSkate(true); return FReply::Handled(); }),TEXT("reset_custom"),
+                    TEXT("Every custom value back to the game's own."))];
             Rows->AddSlot().AutoHeight().Padding(0,14,0,4)[SNew(STextBlock).Text(FText::FromString(Group.Name)).Font(FCoreStyle::GetDefaultFontStyle("Bold",16))
                 .ColorAndOpacity_Lambda([IsCustom,bAlways] { return FSlateColor(bAlways || IsCustom() ? FLinearColor::White : FLinearColor(.5f,.52f,.5f)); })];
             for (const FSkateKnob& Knob : Group.Knobs)
@@ -698,15 +898,21 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                 if (Knob.Field) { AddSlider(I, Enabled, Knob.Hint); continue; }
                 const FString Key = Knob.Key, Label = Knob.Label;
                 const int32 Choices = FMath::RoundToInt(Knob.Maximum) + 1;
-                Rows->AddSlot().AutoHeight().Padding(0,4)[SNew(SButton).ToolTipText(FText::FromString(Knob.Hint)).IsEnabled_Lambda([Enabled] { return !Enabled || Enabled(); })
-                    .Text_Lambda([this,Key,Label] { return FText::FromString(Label+TEXT(": ")+SkateChoice(Key,FMath::RoundToInt(Get(*Key)))); })
-                    .OnClicked_Lambda([this,Key,Choices] { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%Choices)); return FReply::Handled(); })];
+                TSharedRef<SChoiceButton> Button = Setting(
+                    [this,Key,Label] { return FText::FromString(Label+TEXT(": ")+SkateChoice(Key,FMath::RoundToInt(Get(*Key)))); },
+                    [this,Key,Choices] { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+1)%Choices)); },
+                    [this,Key,Choices](int32 Way) { SetValue(Key,float((FMath::RoundToInt(Get(*Key))+Way+Choices)%Choices)); });
+                Button->SetToolTipText(FText::FromString(Knob.Hint));
+                Button->SetEnabled(TAttribute<bool>::CreateLambda([Enabled] { return !Enabled || Enabled(); }));
+                Rows->AddSlot().AutoHeight().Padding(0,2)[Page->Add(Button,Key,Knob.Hint)];
             }
         }
-        Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset controls and camera")))
-            .OnClicked_Lambda([this] { ResetSkate(false); return FReply::Handled(); })];
-        Rows->AddSlot().AutoHeight().Padding(0,10,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Back")))
-            .OnClicked_Lambda([ShowPage] { ShowPage(false); return FReply::Handled(); })];
+        Page->Section();
+        Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset controls and camera")))
+            .OnClicked_Lambda([this] { ResetSkate(false); return FReply::Handled(); }),TEXT("reset_controls"),TEXT("The stick, mouse and camera values back to the game's own."))];
+        Rows->AddSlot().AutoHeight().Padding(0,10,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Back")))
+            .OnClicked_Lambda([ShowPage] { ShowPage(false,TEXT("skate_feel")); return FReply::Handled(); }),TEXT("back"))];
+        if (Focus.IsEmpty()) Focus = FString::Printf(TEXT("skate_mode:%d"),FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))),0,SkateCustom));
         Finish();
         return;
     }
@@ -717,63 +923,56 @@ void UJapanPreferences::OpenMenu(bool bSkate)
             : TEXT("Quality increases shadow detail at the selected resolution.")); })];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
         .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
+    // A confirmation page for a costly graphics choice, out of the press that asked for it.
+    const auto Warn = [this](const FString& Key)
+    {
+        Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,Key] { if (Menu) OpenGraphicsWarning(Key); }));
+    };
     // Renderer selection is persisted, but forward/deferred shaders are chosen before the process starts.
     // Never try to turn r.ForwardShading into a runtime console toggle.
     // It stays focusable (it is the menu's first control); in a packaged build it explains instead of switching.
-    FirstControl = SNew(SButton).Text_Lambda([this]
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
         {
             if (!bLumenAvailable) return FText::FromString(TEXT("Lighting: Forward · Lumen is not in this build"));
             const int32 Choice = Get(TEXT("renderer")) > .5f ? 1 : 0;
             return FText::FromString(FString::Printf(TEXT("Lighting: %s%s"),RendererName(Choice),
                 Choice == CurrentRenderer() ? TEXT("") : TEXT(" · saved, restart pending")));
-        })
-        .OnClicked_Lambda([this]
+        },
+        [this,Warn]
         {
             GraphicsError.Reset();
-            if (!bLumenAvailable)
-            {
-                GraphicsError = LumenUnavailable;
-                return FReply::Handled();
-            }
-            Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
-                [this] { if (Menu) OpenGraphicsWarning(TEXT("renderer")); }));
-            return FReply::Handled();
-        });
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[FirstControl.ToSharedRef()];
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).Text_Lambda([this]
+            if (!bLumenAvailable) { GraphicsError = LumenUnavailable; return; }
+            Warn(TEXT("renderer"));
+        }),TEXT("renderer"),TEXT("Forward lighting, or Lumen where the build has it. Lumen costs much more GPU time."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
         { return FText::FromString(Get(TEXT("tree_optimization")) > .5f
-            ? TEXT("Tree optimization: on · lighter distant leaves") : TEXT("Tree optimization: off · full detail at every distance")); })
-        .OnClicked_Lambda([this]
+            ? TEXT("Tree optimization: on · lighter distant leaves") : TEXT("Tree optimization: off · full detail at every distance")); },
+        [this,Warn]
         {
             if (Get(TEXT("tree_optimization")) < .5f) SetValue(TEXT("tree_optimization"),1.f);
-            else
-            {
-                GraphicsError.Reset();
-                Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
-                    [this] { if (Menu) OpenGraphicsWarning(TEXT("tree_optimization")); }));
-            }
-            return FReply::Handled();
-        })];
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton)
-        .IsEnabled_Lambda([this] { return Get(TEXT("tree_optimization"))>.5f; })
-        .Text_Lambda([this]
+            else { GraphicsError.Reset(); Warn(TEXT("tree_optimization")); }
+        }),TEXT("tree_optimization"),TEXT("Automatic changes distant leaf outlines only. Turning optimization off restores original full-detail trees immediately."))];
+    {
+        const auto StepDetail = [this,Warn](int32 Way)
         {
-            const TCHAR* Names[]={TEXT("Automatic · nearby trees retain full detail"),TEXT("Full detail · higher GPU cost"),
-                TEXT("Intermediate detail · comparison at every distance"),TEXT("Distant detail · comparison at every distance")};
-            return FText::FromString(FString(TEXT("Tree detail: "))+Names[FMath::Clamp(FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),0,3)]);
-        })
-        .OnClicked_Lambda([this]
-        {
-            const int32 Next=(FMath::RoundToInt(Get(TEXT("tree_lod_mode")))+1)%4;
-            if (Next==1) Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,
-                [this] { if (Menu) OpenGraphicsWarning(TEXT("tree_lod_mode")); }));
+            const int32 Next=(FMath::RoundToInt(Get(TEXT("tree_lod_mode")))+Way+4)%4;
+            if (Next==1) Warn(TEXT("tree_lod_mode"));
             else SetValue(TEXT("tree_lod_mode"),float(Next));
-            return FReply::Handled();
-        })];
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(STextBlock).AutoWrapText(true)
-        .Text(FText::FromString(TEXT("Automatic changes distant leaf outlines only. Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default. Turning optimization off restores original full-detail trees immediately.")))];
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
-        .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); })];
+        };
+        TSharedRef<SChoiceButton> Detail = Setting([this]
+            {
+                const TCHAR* Names[]={TEXT("Automatic · nearby trees retain full detail"),TEXT("Full detail · higher GPU cost"),
+                    TEXT("Intermediate detail · comparison at every distance"),TEXT("Distant detail · comparison at every distance")};
+                return FText::FromString(FString(TEXT("Tree detail: "))+Names[FMath::Clamp(FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),0,3)]);
+            },
+            [StepDetail] { StepDetail(1); }, StepDetail);
+        Detail->SetEnabled(TAttribute<bool>::CreateLambda([this] { return Get(TEXT("tree_optimization"))>.5f; }));
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Detail,TEXT("tree_lod_mode"),
+            TEXT("Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default."))];
+    }
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
+        .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); }),
+        TEXT("friends"),TEXT("Host a shared game or join one."))];
     // The character switch waits for the next tick, out of the menu's click. Each character uses its merged move set.
     const auto Switch = [this](const FString& Name)
     {
@@ -785,14 +984,16 @@ void UJapanPreferences::OpenMenu(bool bSkate)
     const FPlayableCharacter& Default = FPlayableCharacter::Default();
     if (const TArray<FString> Riders = FPlayableCharacter::Available(); Riders.Num())
     {
-        TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8,8));
+        TSharedRef<SWrapBox> Characters = SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(2,2));
         TArray<FString> Names = {Default.Name}; Names.Append(Riders);
+        Page->Section();
         for (const FString& Name : Names)
         {
             const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
-            Characters->AddSlot()[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && Name != Playing && Character && Character->Built())
+            Characters->AddSlot()[Page->Add(SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && Name != Playing && Character && Character->Built())
                 .Text(FText::FromString(FPlayableCharacter::Label(Name)))
-                .OnClicked_Lambda([Switch,Name] { Switch(Name); return FReply::Handled(); })];
+                .OnClicked_Lambda([Switch,Name] { Switch(Name); return FReply::Handled(); }),TEXT("character:")+Name,
+                FString::Printf(TEXT("Play as %s."),*FPlayableCharacter::Label(Name)))];
         }
         Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[SNew(STextBlock).Text(FText::FromString(TEXT("Character"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Characters];
@@ -801,10 +1002,11 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
             .Text(FText::FromString(TEXT("Choose your character before joining. Shared games use the merged move set, two stamina rings and default skate physics.")))];
     TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
+    Page->Section();
     for (const FString& Key : Toggles)
     {
-        TSharedRef<SButton> Button = SNew(SButton)
-            .Text_Lambda([this,Key]
+        const auto Flip = [this,Key] { SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f); };
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this,Key]
             {
                 const bool Enabled = Get(*Key) > .5f;
                 if (Key == TEXT("goofy")) return FText::FromString(Enabled
@@ -816,18 +1018,12 @@ void UJapanPreferences::OpenMenu(bool bSkate)
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
-            })
-            .OnClicked_Lambda([this,Key]
-            {
-                SetValue(Key,Get(*Key) > .5f ? 0.f : 1.f);
-                return FReply::Handled();
-            });
-        if (!FirstControl) FirstControl = Button;
-        Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Button];
+            }, Flip),Key)];
     }
     // Every way the board rides, on a page of its own.
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld())).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
-        .OnClicked_Lambda([ShowPage] { ShowPage(true); return FReply::Handled(); })];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Page->Add(SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld())).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
+        .OnClicked_Lambda([ShowPage] { ShowPage(true,FString()); return FReply::Handled(); }),TEXT("skate_feel"),TEXT("Difficulty presets, or every value of the board's feel."))];
+    Page->Section();
     for (int32 I = 0; I < Values.Num(); ++I)
     {
         // Session-only keys are launch flags (the desktop play profile), not player settings, so they
@@ -836,16 +1032,20 @@ void UJapanPreferences::OpenMenu(bool bSkate)
         if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
         if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
         if (Values[I].Key == LightKeys[0])
+        {
+            Page->Section();
             Rows->AddSlot().AutoHeight().Padding(0,16,0,4)[SNew(STextBlock).Text(FText::FromString(TEXT("Light"))).Font(FCoreStyle::GetDefaultFontStyle("Bold",16)).ColorAndOpacity(FLinearColor::White)];
+        }
         if (Values[I].Key == TEXT("stamina_rings") && JapanNetwork::IsOnline(Owner->GetWorld())) continue;
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         if (Values[I].Key==TEXT("tree_lod_distance"))
         { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },FString());continue; }
         AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), FString());
     }
-    Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
-        .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); })];
-    Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); })];
+    Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
+        .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); }),TEXT("reset_light"),TEXT("Every Light value back to its default."))];
+    Page->Section();
+    Rows->AddSlot().AutoHeight().Padding(0,18,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Resume"))).OnClicked_Lambda([this] { CloseMenu(); return FReply::Handled(); }),TEXT("resume"))];
     Finish();
 }
 void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
@@ -867,40 +1067,41 @@ void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
         : TEXT("\n\nLighting changes take effect on the next launch through the game launcher. Your current lighting stays active until then.");
     if (Menu) GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef());
     TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
+    // Back to the main page, on the setting that asked.
+    const auto Return = [this,Key]
+    {
+        Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this,Key] { if (Menu) OpenMenu(false,Key); }));
+    };
+    TSharedRef<SPreferencesPanel> Page = SNew(SPreferencesPanel, Rows).Scrolls(false).BackCloses(false).OnBack_Lambda(Return);
     Rows->AddSlot().AutoHeight().Padding(0,0,0,16)[SNew(STextBlock).Text(FText::FromString(Title))
         .Font(FCoreStyle::GetDefaultFontStyle("Bold",24)).ColorAndOpacity(FLinearColor::White)];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[SNew(STextBlock).Text(FText::FromString(Warning)).AutoWrapText(true)
         .ColorAndOpacity(FLinearColor(.9f,.85f,.7f))];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).Text_Lambda([this] { return FText::FromString(GraphicsError); })
         .AutoWrapText(true).ColorAndOpacity(FLinearColor(1.f,.5f,.4f))];
-    TSharedRef<SButton> Cancel = SNew(SButton).Text(FText::FromString(TEXT("Cancel")))
-        .OnClicked_Lambda([this]
-        {
-            Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this] { if (Menu) OpenMenu(false); }));
-            return FReply::Handled();
-        });
-    Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Cancel];
-    Rows->AddSlot().AutoHeight()[SNew(SButton).Text(FText::FromString(bRestart && bLauncherRestart ? TEXT("Save and restart")
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,6)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Cancel")))
+        .OnClicked_Lambda([Return] { Return(); return FReply::Handled(); }),TEXT("cancel"))];
+    Rows->AddSlot().AutoHeight()[Page->Add(SNew(SButton).Text(FText::FromString(bRestart && bLauncherRestart ? TEXT("Save and restart")
         : bRestart ? TEXT("Save for next launch") : TEXT("Confirm")))
-        .OnClicked_Lambda([this,Key,Choice,bRestart,bLauncherRestart]
+        .OnClicked_Lambda([this,Key,Choice,bRestart,bLauncherRestart,Return]
         {
             if (!SetValue(Key,Choice)) return FReply::Handled();
-            if (!bRestart || !bLauncherRestart)
-                Owner->GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this] { if (Menu) OpenMenu(false); }));
+            if (!bRestart || !bLauncherRestart) Return();
             return FReply::Handled();
-        })];
-    Menu = SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-        .BorderBackgroundColor(FLinearColor(0,0,0,.55f))
-        [SNew(SBox).WidthOverride(620)[SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
-            .BorderBackgroundColor(FLinearColor(.025f,.032f,.028f,1))[Rows]]];
+        }),TEXT("confirm"))];
+    Menu = Page;
     GEngine->GameViewport->AddViewportWidgetContent(Menu.ToSharedRef(),20);
     Owner->SetMenuOpen(true);
     GEngine->GameViewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
-    FSlateApplication::Get().SetKeyboardFocus(Cancel,EFocusCause::SetDirectly);
+    Page->Focus(TEXT("cancel"));
 }
 void UJapanPreferences::CloseMenu()
 {
     if (Menu && GEngine && GEngine->GameViewport) GEngine->GameViewport->RemoveViewportWidgetContent(Menu.ToSharedRef());
     Menu.Reset();
     if (Owner) Owner->SetMenuOpen(false);
+}
+FString UJapanPreferences::FocusedControl() const
+{
+    return Menu ? StaticCastSharedPtr<SPreferencesPanel>(Menu)->FocusedKey() : FString();   // every page is a panel
 }

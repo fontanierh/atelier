@@ -20,9 +20,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool BikeLean(float Lean);
     /** Press a button through the character's input handler (AWandererCharacter::Live_Press lists them). */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool Press(const FString& Button);
-    /** Send accept (Enter), next (Tab) or previous (Shift+Tab) through the open native settings menu's actual widgets.
-     *  Refuses unknown keys or a closed menu; useful for reviewing warnings and cancellation without changing preferences directly. */
+    /** Send accept (Enter), next (Tab), previous (Shift+Tab) or any key by its name (Gamepad_DPad_Down,
+     *  Gamepad_FaceButton_Right...) through the open native settings menu's actual widgets, as one press and release.
+     *  Refuses unknown keys or a closed menu; useful for reviewing warnings, cancellation and the controller path. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool MenuKey(const FString& Key);
+    /** The key of the settings menu control with focus (a setting's key, or a button's name such as resume); empty when closed. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString MenuFocus();
     /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
     /** An adventure move set's state (UAdventureMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;
