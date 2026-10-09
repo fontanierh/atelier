@@ -3,12 +3,13 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori
-from communitypark.source import FILE as SOURCE
 import json
 import runpy
 import unreal
 
 OUT = yori.OUT / 'communitypark'
+# communitypark.source.FILE; that module needs numpy, which Unreal's Python lacks.
+SOURCE = yori.ASSETS / 'communitypark' / 'megapark-textured.glb'
 ROOT = '/Game/CommunityPark'
 E = unreal.EditorAssetLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
