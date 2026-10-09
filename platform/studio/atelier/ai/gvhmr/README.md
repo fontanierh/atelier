@@ -66,7 +66,8 @@ estimated.
 ## Performance
 
 Measured on an M1 Max (32-core GPU, 32 GB) with PyTorch 2.5.1 on a 10-second, 300-frame 1600×1000 clip. The
-neural stages run one after another; peak memory was 8.4 GB.
+neural stages run one after another; peak memory was 8.4 GB. GVHMR on MPS matches the same inputs on the CPU within
+1 mm of translation and 0.05° of orientation.
 
 | Stage | Time |
 | --- | --- |
@@ -75,7 +76,8 @@ neural stages run one after another; peak memory was 8.4 GB.
 | ViTPose-H keypoints with flip test | 29–32 s |
 | HMR2 ViT-H features | 15–17 s |
 | SimpleVO, moving camera only (6 threads, alongside the GPU stages) | 1.5 s; 6.9 s on one thread |
-| GVHMR transformer | not yet measured |
+| GVHMR transformer, including its model load | 13.5 s |
+| **Whole run, video to motion** | **76 s, 3.9 frames per second** |
 
 The defaults are the fastest settings that match upstream exactly. Their keypoints and features are identical to
 upstream's own preprocessing. The alternatives were slower or barely faster:

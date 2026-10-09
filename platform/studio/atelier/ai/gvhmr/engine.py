@@ -197,7 +197,6 @@ class Engine:
     def predict(self, data, static_cam):
         import hydra
         from hydra import compose, initialize_config_module
-        from hmr4d.configs import register_store_gvhmr
         from hmr4d.utils.net_utils import detach_to_cpu
 
         if not (self.root / 'checkpoints' / BODY_MODEL).exists():
@@ -205,7 +204,11 @@ class Engine:
         started = time.perf_counter()
         with chdir(self.upstream):
             with initialize_config_module(version_base='1.3', config_module='hmr4d.configs'):
-                register_store_gvhmr()
+                # Register only the demo's model, network and encoder. Upstream's register_store_gvhmr also imports
+                # every training dataset, which pulls in the pytorch3d mesh renderer this port does not build.
+                import hmr4d.model.gvhmr.gvhmr_pl_demo  # noqa: F401
+                import hmr4d.model.gvhmr.utils.endecoder  # noqa: F401
+                import hmr4d.network.gvhmr.relative_transformer  # noqa: F401
                 cfg = compose(config_name='demo', overrides=['video_name=atelier', f'static_cam={static_cam}'])
             model = hydra.utils.instantiate(cfg.model, _recursive_=False)
             model.load_pretrained_model(cfg.ckpt_path)
