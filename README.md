@@ -1,5 +1,6 @@
 <p align="center">
   <img src="docs/media/hero.gif" width="760" alt="Cairo lands a 360 flip at the skate pier, parries the fox hunter's claw on the coastal road, and a zeppelin drifts over the autumn island">
+  <br><sub><a href="#made-with-atelier-yorimichi">Yorimichi</a>, the game in this repository, made with Atelier.</sub>
 </p>
 
 <h1 align="center">Atelier</h1>
@@ -10,45 +11,37 @@ game with Blender, Unreal Engine 5.8 and generative models.</p>
 
 ---
 
-Atelier is a platform for making games with AI agents: the `atelier` command (build, play, test, stream, talk to the
-running game), Unreal plugins any game can switch on, browser pages for streaming, and the conventions that let
-characters, animation and gameplay code fit together. Scripts and committed asset sources describe the meshes,
-rigs, clips, worlds and materials; `atelier build` turns them into the game.
+Atelier is a toolkit for making games with AI agents. Scripts and committed asset sources describe the meshes, rigs,
+clips, worlds and materials; `atelier build` turns them into an Unreal game. Agents run every step from the terminal,
+including the game itself while it plays.
 
-**Yorimichi**, the game in this repository, shows what it makes. Its models, rigs, animation, world and code are
-made with scripts, AI tools and the committed asset library:
+## What you can do with it
 
-- **Cairo**, the default player: a rigged character with articulated fingers and a
-  [merged move set](games/yorimichi/assets/characters/adventure/README.md) for running, jumping, dodging, climbing,
-  swimming, sword fighting and gliding;
-- **[Modori](games/yorimichi/assets/characters/modori/README.md)**, the playable rival: a tall, dark-haired young man
-  in a long coat, with articulated fingers, a cloth skirt and the merged moves retargeted onto his own rig;
-- **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
-  a zeppelin line;
-- **three skate parks**: the skate pier, the community skate park and the Super Ultra Mega Park;
-- **a fox-masked hunter** that notices you, stalks, claws, gets parried and falls;
-- **native C++ skateboarding** with skate.-style flick controls, manuals, grinds, powerslides, pumping and vert;
-- **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
-- **phone play**: stream the game to a phone, a handheld or a friend's laptop.
+- **[Make a character from a prompt](#a-character-from-a-prompt)**: concepts, a 3D model, a skeleton with fingers,
+  outfits and a reviewed library of clips.
+- **[Build worlds from code](#worlds-from-code)**: Blender scripts generate the meshes, the build imports them into
+  Unreal and reruns only what changed.
+- **[Put a prop in the running game from a sentence](#a-prop-from-a-sentence)**, with no editor and no rebuild.
+- **[Get motion from text, video or motion capture](#motion-from-text-video-or-capture)**: local text-to-motion
+  models, AI video references, body capture from footage, retargeted mocap.
+- **[Switch on ready-made mechanics](#building-blocks)**: native skateboarding, effects and streaming, as Unreal
+  plugins any game can enable.
+- **[Let agents drive the game](#agents-in-the-loop)**: run Python inside it, script QA checks, take screenshots and
+  review sheets.
+- **[Play anywhere](#play-anywhere)**: stream the game to a browser, a phone or a friend's laptop.
+- **[Run several agents on one Mac](#many-agents-one-machine)**: separate worktrees, reused builds, one heavy job at
+  a time under a memory guard, and a shared message board.
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/media/skate.gif" alt="A flat-ground 360 flip, a one-foot 180 in the bowl, a 360 tuck knee on vert and a big Christ air, slowed down as the hand takes the board"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) like in skate.: a 360 flip on flat, a one-foot 180 in the bowl, a 360 tuck knee on vert, a big Christ air. In grabs the rider's hand closes on the board's edge. The native C++ runtime solves the board and rider, and retargets its animation onto Cairo every frame.</sub></td>
-    <td width="50%"><img src="docs/media/fight.gif" alt="A parry with a spark flash, a counter, then a charged strike on the fox hunter"><br><sub><b>Sword fighting.</b> Parry windows, counters, charged strikes, hit-stop, camera shake, knock-downs. Scripted fights check the mechanics at a fixed 60 Hz.</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/media/world.gif" alt="The Hidamari clock square, the woodland lake, sailing along the coast and the fishing harbour"><br><sub><b>An island made by scripts.</b> The city, the lake, the coast and the harbour are generated in Blender from code and imported into Unreal by the build.</sub></td>
-    <td width="50%"><img src="docs/media/phone-map.jpg" alt="The painted world map on the phone page, with numbered places to travel to"><br><sub><b>Play on your phone.</b> The game runs on your Mac and streams to Safari: touch controls, a painted world map, travel, settings.</sub></td>
-  </tr>
-</table>
-
-## Set up
-
-```sh
-git clone https://github.com/fontanierh/atelier && cd atelier
-git config core.hooksPath .githooks     # the pre-commit check (this repository is public)
-uv sync                                 # the atelier command and its Python packages
+```mermaid
+flowchart LR
+  P["Prompts and scripts"] --> S["Studio: AI tools, Blender, review sheets"]
+  S --> B["atelier build"]
+  B --> G["Unreal game with platform plugins"]
+  G <-->|live bridge| A["Agents: atelier live, atelier qa"]
+  G --> W["Desktop, browser, phone"]
 ```
+
+## Quick start
 
 ### Requirements
 
@@ -58,86 +51,25 @@ uv sync                                 # the atelier command and its Python pac
 | Unreal Engine | 5.8 (`/Users/Shared/Epic Games/UE_5.8`, or set `UE_ROOT`) | the games |
 | Full Xcode | licence accepted, selected with `xcode-select`, macOS SDK and Metal toolchain installed | C++ and shaders; CLI tools alone are insufficient |
 | Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
-| Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio and generated park signs |
+| Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node | 24+ (optional) | streaming pages, H3 and Seedance scripts |
 | coturn, Tailscale | (optional) | streaming to other devices (`brew install coturn`) |
 
+Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
+preparation a Mac reached over SSH needs (`atelier setup --headless`).
+
+```sh
+git clone https://github.com/fontanierh/atelier && cd atelier
+git config core.hooksPath .githooks     # the pre-commit check (this repository is public)
+uv sync                                 # the atelier command and its Python packages
+uv run atelier setup                    # checks Xcode and Metal by compiling a small shader
+```
+
 Paid AI calls (Sunburst, Tripo, H3, Seedance) never run as part of a build. They need keys in a local `.env`
 ([.env.example](.env.example)), which git ignores.
 
-After installing Xcode, select it, accept its licence and install Metal:
-
-```sh
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-sudo xcodebuild -license accept
-sudo xcodebuild -runFirstLaunch
-xcodebuild -downloadComponent MetalToolchain
-uv run atelier setup                  # compiles and links a small Metal shader to check the installation
-```
-
-For a Mac accessed over SSH, run `uv run atelier setup --headless` before compiling. On the tested installed
-UE **5.8.2 CL 56702186**, this repairs the build tool's protected Documents lookup, uses explicit default build
-configuration, and caps C++ and shader compiles at three workers (C++ at priority 10). It rebuilds the managed .NET build
-tool and shared library under the render lock and memory guard. Originals and logs are retained in `~/.cache/atelier/toolchain/`;
-other engine versions are refused without modification. Repeating it is safe. Use `--workers N` to set another cap.
-This mode bypasses user and project `BuildConfiguration.xml`; pass desired build settings on the command line.
-It also needs Rosetta for the managed tool's Intel protobuf compiler; setup checks this before modifying the engine.
-Install it with `softwareupdate --install-rosetta --agree-to-license` if missing.
-AutomationTool (UAT, used by packaging) loads its own copies of the build tool's DLLs and reads the XML config
-in-process. On .NET 10, `SpecialFolder.Personal` is `~/Documents`, and looking it up waits on the macOS privacy prompt,
-so a headless UAT would hang at startup. The repair therefore also patches that lookup to use `UE_HEADLESS_USER_DIR`, and
-replaces UAT's shipped copies with the rebuilt ones (originals kept, restored on failure). `unreal.package` exports the
-variable for UAT and the build tool it starts.
-
-## Build Yorimichi
-
-The clone contains all 73 source GLBs and the game's texture, collision, geometry
-and animation sources in [the asset library](games/yorimichi/assets/README.md),
-including all three skate parks, the packed character sources, the merged moves,
-sword and paraglider, and the native skating bundle. The
-[source manifest](games/yorimichi/assets/source-library.json) records their paths
-and checksums. Rebuilding uses these committed sources and the tools listed above;
-AI credentials are only needed to author new assets. Fetch supplies the public sound masters.
-
-```sh
-uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
-uv run atelier fetch yorimichi          # downloads the Sonniss sound masters (not redistributed here)
-uv run python games/yorimichi/tools/verify_asset_library.py  # verifies committed sources before a build
-uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
-uv run atelier play yorimichi           # native 1440 window, forward and optimized trees by default
-uv run atelier play yorimichi --profile fullscreen
-```
-
-`atelier build yorimichi --list` shows every step; name one to run just it (and what it needs). Generated files go
-to `build/yorimichi/` and the game's ignored `unreal/Content/`. When clearing `Content/`, keep the tracked
-`Content/Data/SkateNative` bundle: it is source data for the skating module. The [Yorimichi README](games/yorimichi/README.md)
-lists the play profiles, the QA scenarios and the game's docs.
-
-Keep a completed build and Unreal's shared derived-data cache for subsequent work. A new agent worktree at the
-same source revision can reuse independent copies of the generated assets and compiled modules:
-
-```sh
-(cd ../fresh-worktree && uv run atelier fetch yorimichi)  # obtain the sound masters first
-uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
-cd ../fresh-worktree && uv sync
-uv run atelier build yorimichi          # confirms the carried-over steps are up to date
-uv run atelier play yorimichi
-```
-
-Fetch sound masters in the target first. All model GLB sources are committed in our asset library, including
-the community park and the skate pier's 18 obstacle modules. Super Ultra Mega Park uses committed geometry,
-collision arrays and textures in `assets/megapark/`. Reuse still verifies every consumed input; resolve a source
-mismatch before reusing a completed build.
-
-The reuse command checks source fingerprints, outputs, engine version and compiled module build IDs before writing
-stamps. On APFS it uses independent copy-on-write clones. It excludes mutable `Intermediate`, logs and capture
-evidence. Code changes still rebuild the affected module or assets. Agents share the machine's render board and
-lock, with one game or compile at a time; [AGENTS.md](AGENTS.md) describes the board and resource logs.
-The [agent messaging board](docs/AGENT_BOARD.md) delivers addressed handoffs and lack-of-progress notices
-to background subscribers across worktrees (`atelier board`).
-
-## Start your own game
+### Your first game
 
 ```sh
 uv run atelier new moon_garden --title "Moon Garden"  # a new game, copied from the sandbox and renamed
@@ -157,35 +89,204 @@ uv run atelier live shot                              # a screenshot, path print
 
 Where to go next, in the order most games grow:
 
-1. **Your world.** Add a step to `games/moon_garden/build.py` that runs a Blender script (`Blender(...)`) to generate
-   meshes, and an Unreal script (`UnrealScript(...)`) that imports them. `atelier build` reruns only what changed.
-   Yorimichi's [build.py](games/yorimichi/build.py) has examples from textures to a whole city.
-2. **Your props.** Copy `make_prop.py` ([below](#a-prop-from-a-sentence-into-the-running-game)), put your keys in
-   `.env`, describe things.
-3. **Your character.** Follow the [character pipeline](#making-a-character). The character goes in
+1. **Your world.** Add build steps that generate meshes in Blender and import them into Unreal
+   ([worlds from code](#worlds-from-code)).
+2. **Your props.** Copy `make_prop.py`, put your keys in `.env` and describe things ([a prop from a sentence](#a-prop-from-a-sentence)).
+3. **Your character.** Follow the [character pipeline](#a-character-from-a-prompt). The character goes in
    `assets/characters/<name>/` with a `character.toml` and follows the humanoid bone contract, so the platform's
    animation and gameplay code fits it.
 4. **Mechanics.** Switch on platform plugins in your `.uproject`: effects (`AtelierFX`), skateboarding (`Skate`; give
-   your character `ISkateRider`), streaming (`AtelierStream`). Each plugin's README says what your game provides (AtelierStream's is
-   [platform/web/stream](platform/web/stream/README.md)).
-5. **Play anywhere.** `uv run atelier stream moon_garden start --local`, then open http://127.0.0.1:8080 (keyboard,
-   mouse or a controller), or drop `--local` to reach it from your phone over Tailscale.
+   your character `ISkateRider`), streaming (`AtelierStream`). Each plugin's README says what your game provides.
+5. **Play anywhere.** Stream it to a browser or a phone ([play anywhere](#play-anywhere)).
 
-## What's inside
+## Workflows
+
+Every workflow below runs from the terminal, so an agent can drive it end to end. Several of the authoring tools
+(characters, props, the fox motion lab) still live with Yorimichi, the game they were built for; a new game copies
+the ones it needs.
+
+### A character from a prompt
+
+Each step is a prompt or a script an agent runs, followed by a human look (often with a second AI reviewer):
+
+1. **Concepts.** A text prompt to an image model asks for four directions; one gets picked.
+2. **A turnaround.** The picked concept is redrawn in a T-pose from the front, back and both sides, each view an edit
+   of the approved front so the face and proportions hold.
+3. **A 3D model.** The four views go to [Tripo](https://www.tripo3d.ai) for a textured mesh; Blender scripts clean
+   up the details.
+4. **A skeleton with fingers.** An auto-rig plus 30 finger bones, following the
+   [humanoid bone contract](platform/conventions/rigs/humanoid.toml), so a hand can grip a sword or a skateboard
+   and the platform's animation code works on any character.
+5. **Outfits.** Clothes are drawn, modelled and fitted onto the same rig.
+6. **Motion from video.** AI video models act a move out; an agent authors the clip in Blender from the frames
+   (more motion sources [below](#motion-from-text-video-or-capture)).
+7. **Motion capture, retargeted** onto the character's own skeleton.
+8. **A reviewed clip library.** Every clip is rendered from several cameras and checked. Clips are named by
+   [role](platform/conventions/clip-roles.toml) (`Run`, `DashAir`, `SwordParry`...), so game code asks for a role,
+   never for a file.
+9. **Into the game.** `atelier build` imports the character; QA scenarios check it in motion.
+
+<table><tr>
+<td width="50%"><img src="docs/media/character/01-concepts.jpg" alt="Four concept images of the boy; the first is picked"><br><sub><b>1. Concepts.</b> Four directions; the first is picked.</sub></td>
+<td width="50%"><img src="docs/media/character/02-turnaround.jpg" alt="Front, left, back and right views in a T-pose"><br><sub><b>2. Turnaround.</b> Four views for the 3D model.</sub></td>
+</tr><tr>
+<td width="50%"><img src="docs/media/character/04-rig.jpg" alt="Rest pose and three hand poses"><br><sub><b>4. Skeleton.</b> The rest pose and three hand poses from the added finger bones.</sub></td>
+<td width="50%"><img src="docs/media/character/05-outfit.jpg" alt="Outfit concept, the dressed mannequin, the final character"><br><sub><b>5. Outfit.</b> Concept, dressed mannequin, final character.</sub></td>
+</tr></table>
+
+<p><img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
+<br><sub><b>8. Clip review.</b> A sword strike from three cameras, eight frames each.</sub></p>
+
+Generation does not settle every detail. When a hand sat differently on the sword from one clip to the next, an agent
+built a small [browser grip poser](games/yorimichi/docs/GRIPS.md): a person drags the fingertips on the real rigged
+hand, and a runtime solver applies the saved pose in every clip. AI makes the first version, a person spots the
+problem, the agent builds a tool to capture their intent, and code applies the correction consistently.
+
+**[Making a character](docs/CHARACTER_PIPELINE.md)** walks through every step with Cairo, Yorimichi's player: the
+prompts, the commands, the costs and the pitfalls.
+
+### Worlds from code
+
+<img src="docs/media/world.gif" width="640" alt="The Hidamari clock square, the woodland lake, sailing along the coast and the fishing harbour">
+
+A game's `build.py` lists its steps. A step runs a Blender script to generate meshes, or an Unreal editor script to
+import them; its inputs are hashed, so `atelier build` reruns only what changed:
+
+```python
+from atelier.build import Blender, Step, UnrealScript
+
+def steps(ctx):
+    garden, importer = GAME / 'world' / 'garden.py', SCRIPTS / 'import_garden.py'
+    return [
+        Step('world.garden', [Blender(garden)], inputs=[garden],
+             outputs=[ctx.out / 'garden' / 'manifest.json'], about='the garden meshes'),
+        Step('unreal.garden', [UnrealScript(importer, 'GARDEN IMPORTED')], inputs=[importer],
+             needs=['world.garden'], after=['unreal.compile'], heavy=True, about='the garden in the level'),
+    ]
+```
+
+`atelier build <game> --list` shows every step; name one to run just it and what it needs. Yorimichi's
+[build.py](games/yorimichi/build.py) has examples from textures to a whole city, a harbour and three skate parks.
+
+### A prop from a sentence
+
+Describe a prop; a couple of minutes later it stands in the world while the game runs.
+
+<img src="docs/media/lantern.jpg" alt="The Sunburst concept of a stone lantern, Tripo's model, and the lantern on the hamlet path next to Cairo">
+
+```sh
+uv run python games/yorimichi/assets/props/make_prop.py make stone_lantern \
+  "a small weathered granite stone lantern for a roadside shrine, a little moss on the base and cap"
+uv run atelier live py "unreal.LiveLibrary.spawn_model('lantern', 'games/yorimichi/assets/props/stone_lantern/stone_lantern.glb', \
+  unreal.LiveLibrary.aim_point(1500), 0, 1.3, 'box', 'workshop'); unreal.LiveLibrary.save_overlay('workshop')"
+```
+
+`make_prop.py concept` and `make_prop.py model` run the two stages separately, so the concept can be checked before
+paying for a model.
+
+### Motion from text, video or capture
+
+<table><tr>
+<td width="50%"><img src="docs/media/kimodo-backflip.gif" alt="The fox performs a locally generated Kimodo backflip and returns to standing"><br><sub><b>Kimodo backflip.</b> “A person does a backflip.” Seed 99, three seconds, no authored constraint.</sub></td>
+<td width="50%"><img src="docs/media/unimate-backflip.gif" alt="The fox performs a prompt-only UniMate backflip and lands"><br><sub><b>UniMate backflip.</b> The same prompt, seed 99, 32 steps, no authored reference.</sub></td>
+</tr><tr>
+<td width="50%"><img src="docs/media/kimodo-forward-roll.gif" alt="The fox performs a Kimodo forward roll and stands back up"><br><sub><b>Kimodo forward roll.</b> “A person crouches down and performs one forward roll...” Seed 56.</sub></td>
+<td width="50%"><img src="docs/media/character/06-mixamo-combo.gif" alt="Cairo performing the retargeted Mixamo great-sword combo"><br><sub><b>Retargeted mocap.</b> A Mixamo great-sword combo on Cairo's own skeleton.</sub></td>
+</tr></table>
+
+- **From text.** [UniMate](platform/studio/atelier/ai/unimate/README.md) and
+  [Kimodo](platform/studio/atelier/ai/kimodo/README.md) run locally, with no API key. The
+  [fox motion lab](games/yorimichi/animation_lab/README.md) at http://127.0.0.1:8843/ compares each authored animation
+  with generated takes on the fox hunter's own rig, makes new takes from a prompt and seed, and exports skinned GLBs.
+  Backflips and a forward roll come out usable; generated sprints are no better than the authored run.
+- **From video.** AI video models (MiniMax H3, Seedance) act a move out with the character; an agent reads the video
+  frame by frame and authors the clip in Blender, with foot planting and clipping checks
+  ([H3 workflow](docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)). The [GVHMR port](platform/studio/atelier/ai/gvhmr/README.md)
+  recovers SMPL-X body motion from footage of one person on Apple silicon; for a locked-off camera,
+  `--root-height camera` (experimental) keeps the jumps its world trajectory flattens
+  ([details](platform/studio/atelier/ai/gvhmr/README.md#root-height-from-the-camera-experimental)).
+- **From motion capture.** Blender scripts move a capture onto the character's own skeleton: bones matched by
+  anatomy, travel scaled to its height, the second hand re-solved onto the grip every frame
+  ([Mixamo guide](games/yorimichi/docs/MIXAMO_WORKFLOW.md)).
+
+UniMate, Kimodo and GVHMR write one motion representation, so the
+[retargeting helpers](platform/web/motion/README.md) work on any of them.
+
+### Agents in the loop
+
+The **live bridge** is how agents work on a running game. `atelier live py` runs Python inside it: spawn and move
+props, teleport, press buttons, put a line on screen, take screenshots. `atelier live state` reports where the player
+and the camera are. It only listens on your own machine.
+
+```sh
+uv run atelier live state                              # where the player and the camera are
+uv run atelier qa yorimichi skatepark                  # a scripted check: games/<game>/scenarios/<scenario>.py
+uv run python platform/studio/atelier/review/video_reference.py <take>  # timestamped frame sheets from a video
+```
+
+QA scenarios drive the game like a player and check what happens; Yorimichi's range from skating controls to frame
+pacing, and some film takes for review. [Review sheets](platform/studio/atelier/review) turn clips and videos into contact sheets
+that a person or a second AI can judge at a glance.
+
+### Play anywhere
+
+<img src="docs/media/phone-map.jpg" width="480" alt="The painted world map on the phone page, with numbered places to travel to">
+
+The game runs on your Mac and streams to a browser. `atelier stream <game> start --local` serves it at
+http://127.0.0.1:8080 (keyboard, mouse or a controller); without `--local` it is reachable from your phone over
+Tailscale. `/play/` is the plain player, and `/` serves the game's own touch page when its `game.toml` names one
+(Yorimichi's has touch controls, the painted map above, travel and settings). The [stream pages](platform/web/stream/README.md) say what a game provides.
+
+## Building blocks
 
 | Part | Where | What |
 |---|---|---|
-| The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint; AI helpers for Tripo, Sunburst, H3 and Seedance; review sheets; machine safety (one heavy job at a time, optionally a small one beside it, a memory guard) |
+| The `atelier` command | [platform/studio](platform/studio/atelier) | new, setup, doctor, fetch, build, reuse, pool, play, stream, live, qa, lint, board; review sheets; machine safety |
+| AI runners | [platform/studio/atelier/ai](platform/studio/atelier/ai) | Tripo and image generation, UniMate, Kimodo and GVHMR, and the ledger every paid call goes through |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
-| Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera; tracked native data and its checks |
+| Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
+| Motion helpers | [platform/web/motion](platform/web/motion/README.md) | retargeting generated motion onto a game's rig |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
-| Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate and Kimodo text-to-motion on the fox hunter's rig, with comparisons, custom prompts and GLB/GIF export |
-| Games | [games/yorimichi](games/yorimichi/README.md), [games/sandbox](games/sandbox/README.md) | a full game, and the smallest one (the template for `atelier new`) |
+| Games | [games/sandbox](games/sandbox/README.md), [games/yorimichi](games/yorimichi/README.md) | the smallest game (the template for `atelier new`), and a full one |
 
-[ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.
+**Native skating.** The [Skate plugin](platform/engine/Plugins/Activities/Skate/README.md) runs one C++ session
+inside Unreal that simulates the deck, trucks, wheels and a physical rider together: Flick-It gestures, manuals and
+powerslides, grinds, pumping, airs, landings and bails, plus the animation graphs, trick scoring and skating camera.
+A game supplies the static collision, rails, controls, meshes, sounds and HUD, and gives its character
+`ISkateRider`; the retargeter fits the solved animation to that character's own skeleton every frame. The
+[runtime reference](platform/engine/Plugins/Activities/Skate/RUNTIME.md) describes its systems, data and limits.
 
-## Everyday commands
+**Conventions are what make the pieces fit.** A character that follows the humanoid bone contract gets foot
+planting, the animation nodes and skating; a clip named by role plays wherever a game asks for that role. Platform code never names
+a game. [ARCHITECTURE.md](ARCHITECTURE.md) explains how the parts fit and the rules that keep the platform reusable.
+
+## Many agents, one machine
+
+Atelier is built for several AI agents working on one Mac at once, each in its own Git worktree.
+
+- **Reuse a build.** A fresh worktree at the same clean revision takes independent copy-on-write clones of a
+  completed checkout's generated assets and compiled modules. The command checks source fingerprints, outputs, the
+  engine version and module build IDs, and refuses stale, dirty or mismatched sources; code changes still rebuild what
+  they touch.
+
+  ```sh
+  uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
+  cd ../fresh-worktree && uv sync && uv run atelier build yorimichi   # confirms the carried-over steps
+  ```
+
+- **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
+- **One heavy job at a time.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
+  optionally a small one beside it) and run Unreal and Blender under a memory guard that stops a job before it
+  exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
+- **A message board between agents.** `atelier board` delivers addressed handoffs and lack-of-progress notices to
+  background subscribers across worktrees, with a web view ([agent board](docs/AGENT_BOARD.md)).
+- **Paid AI calls are recorded before they are sent.** The ledger writes the record first, refuses a call whose record
+  already exists and never retries one, so a rerun cannot pay again for the same revision.
+- **The repository is public.** `atelier lint` and the pre-commit hook refuse secrets, personal paths and game names in
+  the platform.
+
+## Commands
 
 | Command | What |
 |---|---|
@@ -198,280 +299,48 @@ Where to go next, in the order most games grow:
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |
 | `atelier qa <game> <scenario>` | run `games/<game>/scenarios/<scenario>.py` against the running game |
-| `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/` is the game's touch page, `/play/` the plain player |
+| `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/play/` is the plain player, `/` the game's touch page when it has one |
+| `atelier board` | messages and handoffs between agents ([guide](docs/AGENT_BOARD.md)) |
 | `atelier lint` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
 
 **Tests.** `uv run pytest` runs the studio tests (`platform/studio/tests`) and the games' Python tests. In-game
-checks use QA scenarios and the merged movement checks through the live bridge; with a local stream, the phone smoke tests in
+checks use QA scenarios through the live bridge; with a local stream, the phone smoke tests in
 `games/yorimichi/phone/` and `platform/web/stream/player-smoke.mjs` run in a browser.
 
-## Native skating
+## Made with Atelier: Yorimichi
 
-The [Skate plugin](platform/engine/Plugins/Activities/Skate/README.md) runs one C++ `GameplaySession` inside Unreal.
-It simulates the deck, trucks, wheels and physical rider together: contacts and constraints, steering and pushes,
-Flick-It gestures, manuals and powerslides, rail selection and grinds, pumping, airs, landings and bails. Animation
-graphs, procedural pose adjustments, trick scoring and the skating camera run in the same session.
+Yorimichi (寄り道, "a detour on the way home") is a painterly Japanese island: walk, climb, swim and glide through a
+coastal countryside, a forest hamlet and a harbour city, sail a dinghy, ride the zeppelin, skate three parks and fight
+a fox-masked hunter with a sword. Its models, rigs, animation, world and code were made with the workflows above.
 
-It is a C++ port of the recovered Skate 3 implementation from
-[2010-rust-rewrite-mashup/skate](https://github.com/chasmlol/2010-rust-rewrite-mashup/tree/7842b9e70e9aac22ed176b655dd63302618ee023/skate),
-which originated in [SK8-ENGINE's skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine).
-The game supplies nearby static collision, registered rails, controls, meshes, sounds and HUD. Cairo keeps his own
-skeleton and proportions: the retargeter fits the solved animation to him, follows the solved board parts and keeps
-his skinned surface above the ground during bails. Running onto the board keeps position and speed; vert assistance
-sends straight airs back into the transition, with a separate input for transferring over the coping.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/media/skate.gif" alt="A flat-ground 360 flip, a one-foot 180 in the bowl, a 360 tuck knee on vert and a big Christ air, slowed down as the hand takes the board"><br><sub><b>Skateboarding.</b> Flick the right stick (or the mouse) for a 360 flip on flat, a one-foot 180 in the bowl, a 360 tuck knee on vert, a big Christ air. The Skate plugin solves the board and rider and retargets the animation onto Cairo every frame.</sub></td>
+    <td width="50%"><img src="docs/media/fight.gif" alt="A parry with a spark flash, a counter, then a charged strike on the fox hunter"><br><sub><b>Sword fighting.</b> Parry windows, counters, charged strikes, hit-stop, camera shake, knock-downs. Scripted fights check the mechanics at a fixed 60 Hz.</sub></td>
+  </tr>
+</table>
 
-All the [skating data](games/yorimichi/assets/skate/README.md) is tracked in
-[`Content/Data/SkateNative`](games/yorimichi/unreal/Content/Data/SkateNative): 3,334 native payloads, including
-3,324 animation clips, 131,642 frames and 285 gesture patterns, plus settings, skeletons, graphs and camera data.
-The build checks the bundle's manifest and hashes before compiling the C++ module; it needs no Rust toolchain,
-extracted game, conversion step or separate worker process.
+- **Cairo**, the default player, with articulated fingers and a
+  [merged move set](games/yorimichi/assets/characters/adventure/README.md) for running, jumping, dodging, climbing,
+  swimming, sword fighting and gliding;
+- **[Modori](games/yorimichi/assets/characters/modori/README.md)**, the playable rival in a long cloth coat, with the
+  same moves retargeted onto his own rig;
+- **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
+  a zeppelin line;
+- **three skate parks**: the skate pier, the community skate park and the Super Ultra Mega Park;
+- **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
+- **phone play** through the streaming plugin.
 
-In Yorimichi, **Triangle / Y** (keyboard **B**) gets on or off the board, and **D-pad Down** interacts on foot. Flick
-the right stick, or hold the left mouse button and flick, for tricks; **C** holds a powerslide. To pump, hold a
-trigger (**Q/E**) to compress high on the descent, then release through the bottom of the curve to extend. Triggers
-grab in the air; **Shift** or left stick forward requests a transfer. Full controls, tuning and the park guide are in
-[Skateboarding](games/yorimichi/docs/SKATE.md).
-
-```sh
-uv run atelier build yorimichi skate.runtime       # verify the tracked native bundle
-uv run atelier play yorimichi --profile desktop-1440
-# From another terminal, with the game running:
-uv run atelier qa yorimichi skate_runtime          # controls, animation, mounting, bails and both stances
-uv run atelier qa yorimichi skatepark              # roll-ins, handrail and bowl re-entry
-uv run atelier qa yorimichi skate_performance      # real-time frame pacing through six activities
-```
-
-The [runtime reference](platform/engine/Plugins/Activities/Skate/RUNTIME.md) describes the session's systems, the data
-formats, the differential checks against the recovered implementation, and the limits: collision uses static
-snapshots and one default surface material, and cooked builds are not covered.
-
-## Making a character
-
-Each step is a prompt or a script an agent runs, followed by a human look (often with a second AI reviewer). Cairo is
-the example.
-
-**1. Concepts.** A text prompt to *GPT Image 2.5 Sunburst* asks for four directions (for Cairo: "a youthful boy for a
-warm Japanese exploration game, around four head heights tall, dark softly rectangular eyes without visible
-whites..."). One gets picked.
-
-<img src="docs/media/character/01-concepts.jpg" alt="Four concept images of the boy; the first is picked">
-
-**2. A turnaround for 3D.** The picked concept is redrawn in a neutral T-pose and a grey fitting suit, then from the
-back and both sides, each view an edit of the approved front so the face and proportions hold.
-
-<img src="docs/media/character/02-turnaround.jpg" alt="Front, left, back and right views in a T-pose">
-
-**3. A 3D model.** The four views go to [Tripo](https://www.tripo3d.ai) (multiview to 3D, model P2) for a textured
-mesh, about two minutes and 120 credits. Blender scripts then clean up details such as the brows, mouth and collar.
-
-<table><tr>
-<td width="70%"><img src="docs/media/character/03-mesh.jpg" alt="Tripo's raw model and the cleaned model"></td>
-<td width="30%"><img src="docs/media/character/03-turntable.gif" alt="The model turning"></td>
-</tr></table>
+The clone contains the game's model, texture, collision and animation sources in
+[its asset library](games/yorimichi/assets/README.md), so a build needs no AI credentials; `atelier fetch` downloads
+the sound masters:
 
 ```sh
-uv run python platform/studio/atelier/ai/tripo_asset.py generate --references <revision>/references --output <revision> --faces 8000
-blender -b --python games/yorimichi/assets/characters/tools/review_tripo_model.py -- --input model.glb --output review
+uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
+uv run atelier fetch yorimichi          # downloads the sound masters
+uv run atelier build yorimichi          # world, characters, sounds, effects, compile, Unreal import
+uv run atelier play yorimichi           # native 1440 window
 ```
 
-**4. A skeleton with fingers.** Tripo's auto-rig gives a 23-bone body (25 credits); a Blender script adds 30 finger
-bones and reweights the hands, so the character can grip a sword or a skateboard. Every rig follows the same
-[humanoid bone contract](platform/conventions/rigs/humanoid.toml), which is what lets animation, foot planting and
-gameplay code work for any character.
-
-<table><tr>
-<td width="70%"><img src="docs/media/character/04-rig.jpg" alt="Rest pose and three hand poses"></td>
-<td width="30%"><img src="docs/media/character/04-fingers.gif" alt="The fingers closing and opening"></td>
-</tr></table>
-
-```sh
-uv run python platform/studio/atelier/ai/tripo_asset.py rig --source <cleanup>.glb --output <revision>
-blender -b --python games/yorimichi/assets/characters/tools/add_tripo_fingers.py
-```
-
-**5. Outfits.** An outfit changes without changing the rig: the image model draws the outfit and dresses a headless
-mannequin rendered from the rigged body, Tripo builds the clothes, and a script fits them onto the skeleton
-([body swap guide](games/yorimichi/docs/BODY_SWAP_GUIDE.md)). The image model also paints the bare body green in the
-same four views, so the script knows exactly which skin to keep (V necks, bare arms and legs), and coats and hakama
-hang as a skirt rather than splitting into trouser legs. One command runs it all, from an outfit spec to a review
-sheet, and stops before anything paid until someone has looked at the images. The same rules handle skate, hoodie,
-keikogi with hakama, basketball jersey and long coat outfits
-([the three fixes](games/yorimichi/docs/BODY_SWAP_GUIDE.md#13-the-three-fixes)).
-
-<img src="docs/media/character/05-outfit.jpg" alt="Outfit concept, the dressed mannequin, the final character">
-
-**6. Motion from video.** AI video models act a move out with the character: MiniMax H3 Max at 480p by default (about
-$0.15 for the dodge roll), [Seedance](https://seed.bytedance.com) when its quality justifies the cost (about $1.40 a
-take), both through the Vercel AI Gateway. The video is a reference, not the animation: an agent reads it frame by
-frame and writes the clip in Blender pose by pose, with foot planting and clipping checks, so it loops, lands and
-reads well in the game ([H3 workflow](docs/H3_ANIMATION_REFERENCE_WORKFLOW.md)).
-
-<table><tr>
-<td width="62%"><img src="docs/media/character/06-motion.jpg" alt="Seedance sprint frames above, the authored Blender sprint below"></td>
-<td width="38%"><img src="docs/media/character/06-h3-roll.gif" alt="An H3 Max reference video of Cairo doing a forward shoulder roll"></td>
-</tr></table>
-
-```sh
-node --env-file=.env platform/studio/node/h3_max_reference.mjs submit --resolution 480p --out <revision>
-node --env-file=.env platform/studio/node/seedance_vercel.mjs submit --out <revision>
-uv run python platform/studio/atelier/review/video_reference.py <revision>        # timestamped frame sheets to author from
-```
-
-**7. Motion capture, retargeted.** For the sword, a great-sword combo from Adobe's
-[Mixamo](https://www.mixamo.com/) library is moved onto Cairo's own skeleton by a Blender script. Bones are matched by
-anatomy (not by axes), travel is scaled to his height, palms are aligned separately, and the second hand is re-solved
-onto the grip every frame. A correction layer lifts the overhead cuts clear of his head, checked at 240 samples a
-second. The combo is then cut into strikes, a charge and a parry; the capture's full-turn spin is taken out with the
-feet re-planted, the strikes are sped up, and each one records where it lands so the game can aim it.
-
-<table><tr>
-<td width="34%"><img src="docs/media/character/06-mixamo-combo.gif" alt="Cairo performing the retargeted Mixamo great-sword combo"></td>
-<td width="66%"><img src="docs/media/character/06-despun.jpg" alt="A game strike cut from the combo: guard, raise, cut, contact, follow-through"></td>
-</tr></table>
-
-```sh
-blender -b --python games/yorimichi/assets/characters/tools/cairo_mixamo_test.py -- --source combo.fbx --out <r01>
-blender -b --python games/yorimichi/assets/characters/tools/cairo_mixamo_clearance.py -- --source <r01>/... --out <r02>
-blender -b --python games/yorimichi/assets/characters/tools/cairo_sword_combat_r02.py   # strikes: de-spun, faster, aimed
-```
-
-The settings, the maths and the pitfalls are in the [Mixamo guide](games/yorimichi/docs/MIXAMO_WORKFLOW.md).
-
-**8. A reviewed clip library.** Every clip is rendered from several cameras and checked before it ships. Clips are
-named by [role](platform/conventions/clip-roles.toml) (`Run`, `DashAir`, `SwordParry`...), so game code asks for a
-role, never for a file.
-
-<img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
-
-**9. Into the game.** `atelier build` exports the character's body, donor clips and textures, then imports its
-merged moves, sword and paraglider into Unreal; scripted QA runs check it in motion.
-
-```sh
-atelier build yorimichi unreal.cairo_adventure
-atelier play yorimichi
-# In another terminal, against the running game:
-atelier live py "ONLY=['sword']; TAKE='combat_review'"
-atelier live py - < games/yorimichi/scenarios/adventure_moves.py
-```
-
-The tools for each step and their options are in
-[games/yorimichi/assets/characters/tools](games/yorimichi/assets/characters/tools/README.md) and
-[games/yorimichi/docs](games/yorimichi/docs). The fox hunter goes through the same steps (`fox_hunter_pipeline.py`).
-
-### Modori, the playable rival
-
-Modori is the story's rival, a calm young man who returned alone from the forest sinkhole. He is also playable:
-his 1.75 m body, long coat, textures and finger rig are packed into the committed `Modori-Rig-r01.blend`.
-The build exports his own mesh and retargets the merged move set onto his skeleton, with sword and paraglider
-fitting adjusted for his proportions. His coat skirt uses Unreal's Chaos Cloth; the native skating runtime
-retargets the rider pose onto him too.
-
-After building Yorimichi, start as Modori with:
-
-```sh
-nice -n 10 uv run atelier play yorimichi -- -rider=Modori
-```
-
-His [character README](games/yorimichi/assets/characters/modori/README.md) describes the source, body and coat
-pipeline, imports and merged moves. Cairo remains the default character and the example in the walkthrough above.
-
-### Fixing a grip with human input
-
-Generating a character and retargeting its animation does not settle every detail. Modori's fingers could close
-around a sword handle, yet the hand sat differently on it from one clip to another. An AI agent built a bespoke
-[browser grip poser](games/yorimichi/docs/GRIPS.md) to collect the correction that was hard to describe in words.
-It shows his actual rigged hand against the actual sword or paraglider. A person drags fingertips, moves and turns
-the wrist, and checks the contact colours: green touches the handle; red goes through it.
-
-The saved pose supplies concrete targets: where each hand belongs on the prop, its orientation and the bend of
-each finger joint. The agent used those targets to build the runtime solver. The sword follows the carrying
-hand at the calibrated offset; two-bone arm IK keeps the other sword hand and both glider hands on their handles,
-while the fingers take their saved rotations. The constraints blend in with the animation and are checked across
-swings, guards and glider banks.
-
-That is a useful part of the process: AI makes the first version, a person spots a visual problem, the agent builds
-a small tool to capture their intent, and code applies that correction consistently. To fix another bad grip,
-edit the saved pose, export it and restart the game; the solver can use the new targets without recompiling.
-The [grip guide](games/yorimichi/docs/GRIPS.md#fix-a-grip-on-modori) gives the commands and checks. Modori's four
-calibrated sword and paraglider grips are committed, so a normal build already uses them.
-
-## Text-driven motion
-
-The [Fox motion lab](games/yorimichi/animation_lab/README.md) runs [UniMate](https://github.com/Friedrich-M/UniMate)
-and [Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/) locally on the fox hunter's own rig. One playground
-at **http://127.0.0.1:8843/** compares each authored animation with its generated counterparts and creates new takes
-from a prompt and seed, with playback, phase matching, rig overlays, labelled snapshots and skinned GLB export. No API
-key is needed; takes go under `build/yorimichi/`. The reusable runners ([UniMate](platform/studio/atelier/ai/unimate/README.md),
-[Kimodo](platform/studio/atelier/ai/kimodo/README.md)) and [retargeting helpers](platform/web/motion/README.md) live in
-the platform; the fox assets, policies and UI stay with the game.
-
-Results depend on the action. Prompt-only backflips and a forward roll are usable; generated sprints are no better
-than the authored Run. The [UniMate](games/yorimichi/docs/UNIMATE_EXPERIMENT.md) and
-[Kimodo](games/yorimichi/docs/KIMODO_EXPERIMENT.md) write-ups give the settings, measurements and limits.
-
-A third runner works from video instead of text: the [GVHMR port](platform/studio/atelier/ai/gvhmr/README.md)
-recovers SMPL-X body motion from footage of one person on Apple silicon and writes the same motion representation.
-For footage from a locked-off camera, `--root-height camera` (experimental) takes the root's height from GVHMR's
-in-camera estimate, which keeps jumps that its world trajectory flattens. On a rendered kickflip, the pelvis rose
-34 cm against the source's 33 cm, where the default world output gave 5 cm. The
-[port's README](platform/studio/atelier/ai/gvhmr/README.md#root-height-from-the-camera-experimental) covers the
-anchor, the measurements and when not to use it.
-
-<p align="center">
-  <img src="docs/media/unimate-backflip.gif" width="640" alt="The fox performs a prompt-only UniMate backflip and lands">
-  <br><sub><b>UniMate backflip.</b> “A person does a backflip” · seed 99 · guidance 2 · 32 steps. No authored
-  reference. The GIF repeats the full two-second take; its restart is not a synthesized loop.</sub>
-</p>
-
-<p align="center">
-  <img src="docs/media/kimodo-backflip.gif" width="640" alt="The fox performs a locally generated Kimodo backflip and returns to standing">
-  <br><sub><b>Kimodo backflip.</b> “A person does a backflip.” · seed 99 · guidance [2, 2] · 100 steps. Three seconds
-  at normal speed, no authored constraint; the GIF repeats the full take.</sub>
-</p>
-
-<p align="center">
-  <img src="docs/media/kimodo-forward-roll.gif" width="640" alt="The fox performs a Kimodo forward roll and stands back up">
-  <br><sub><b>Kimodo forward roll.</b> “A person crouches down and performs one forward roll on the ground, rolling
-  over their shoulders with tucked knees, then stands back up.”<br>
-  Seed 56 · guidance [5, 5] · 100 steps · three seconds at normal speed. No authored constraint.</sub>
-</p>
-
-## A prop from a sentence, into the running game
-
-Describe a prop; a couple of minutes later it stands in the world while the game runs, with no editor and no rebuild.
-
-<img src="docs/media/lantern.jpg" alt="The Sunburst concept of a stone lantern, Tripo's model, and the lantern on the hamlet path next to Cairo">
-
-```sh
-python games/yorimichi/assets/props/make_prop.py make stone_lantern \
-  "a small weathered granite stone lantern for a roadside shrine, a little moss on the base and cap"
-atelier live py "unreal.LiveLibrary.spawn_model('lantern', 'games/yorimichi/assets/props/stone_lantern/stone_lantern.glb', \
-  unreal.LiveLibrary.aim_point(1500), 0, 1.3, 'box', 'workshop'); unreal.LiveLibrary.save_overlay('workshop')"
-```
-
-`make_prop.py concept` and `make_prop.py model` run the two stages separately, so the concept can be checked before
-paying for a model. The **live bridge** is how agents work on a running game: `atelier live py` runs Python inside it
-(spawn and move props, teleport, press buttons, put a line on screen, take screenshots), and `atelier live state`
-reports where the player and the camera are. It only listens on your own machine.
-
-## Licences of what is in this repository
-
-The project-authored code and assets (layouts, generated meshes, the characters' source files, AI-generated
-concepts and textures), all model GLBs, and the community park, skate pier and Super Ultra Mega Park library
-assets are the author's. External code, audio and font licences are identified below:
-
-- **Skating**: the native C++ module ports the recovered implementation, with its
-  [source licence](platform/engine/Plugins/Activities/Skate/ThirdParty/skate-core-LICENSE) retained. The tracked
-  native bundle is part of our asset library; its
-  [provenance and contents](games/yorimichi/assets/skate/README.md) are documented separately.
-- **Sounds** come from the Sonniss GDC Game Audio Bundles. Their licence allows shipping them inside a game but not
-  redistributing them as files, so `atelier fetch` downloads the masters from the public archive and the build slices
-  them. The licence also forbids using them with AI tools.
-- **Mixamo** motion was retargeted onto Cairo's sword attacks and is baked into the character's source file; the
-  downloaded Mixamo files are not included.
-- **Fonts**: Noto Sans JP, under the SIL Open Font License (`games/yorimichi/world/regions/hidamari/fonts/OFL.txt`).
-- **Engine content**: the sandbox references Unreal's basic shapes and textures; nothing from the engine is copied.
-- **Packages**: Epic's Pixel Streaming libraries, express, esbuild and Playwright are installed by `npm ci` from
-  `platform/web/package-lock.json`; they are not in the repository.
-- **The pictures in `docs/media`** are frames from the game and from the character pipeline's own outputs; the GIFs
-  have no sound.
+The [Yorimichi README](games/yorimichi/README.md) covers the rest: play profiles, QA scenarios, the world and its
+regions, the characters, the controls, packaging and the game's docs.
