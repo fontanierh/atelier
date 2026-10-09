@@ -10,6 +10,7 @@
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "SkateComponent.h"
 #include "AnimNode_SkateRider.h"
+#include "AnimNode_SkiRider.h"
 #include "GroundContactNode.h"
 #include "ZeppelinService.h"
 #include "Components/CapsuleComponent.h"
@@ -157,6 +158,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     float LegLength = 0.f;
     FName AppliedClip;
     // The skate pose over everything above, with the switches between them inertialized.
+    FAnimNode_SkiRider Ski;      // the skiing pose over the own graph (the Ski plugin)
     FAnimNode_SkateRider Skate;
     bool bArmedCrouch = false;
 
@@ -225,7 +227,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Pose.ComponentPose.SetLinkNode(&Grip);
         Pose.Alpha = 1.f;
         ToLocal.ComponentPose.SetLinkNode(&Pose);
-        Skate.OnFoot.SetLinkNode(&ToLocal);
+        Ski.OnFoot.SetLinkNode(&ToLocal);
+        Skate.OnFoot.SetLinkNode(&Ski);
         Moving.SetGroupName(TEXT("Stride")); Crouching.SetGroupName(TEXT("Stride"));
         Moving.SetGroupMethod(EAnimSyncMethod::SyncGroup); Crouching.SetGroupMethod(EAnimSyncMethod::SyncGroup);
         // Same samples and lengths as Moving, so the sword arm swings on the body's stride phase.
@@ -235,7 +238,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &Pose, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &Pose, &ToLocal }; Ski.GetNodes(Nodes); Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))

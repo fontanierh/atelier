@@ -4,6 +4,7 @@
 #include "BikeComponent.h"
 #include "JapanNetwork.h"
 #include "SkateComponent.h"
+#include "SkiComponent.h"
 #include "AdventureMoveSet.h"
 
 float UJapanCharacterMovement::GetMaxSpeed() const
@@ -29,6 +30,7 @@ void UJapanCharacterMovement::PhysicsRotation(float Dt)
     if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return;
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return;
     if (Rider && Rider->GetSkate() && Rider->GetSkate()->IsRiding()) return;   // the board frame is the actor's rotation
+    if (Rider && Rider->GetSki() && Rider->GetSki()->IsSkiing()) return;       // the skier's heading likewise
     if (Rider && Rider->GetMoves() && Rider->GetMoves()->ControlsRotation()) return;   // lock-on, gliding, climbing, attacks
     Super::PhysicsRotation(Dt);
 }
@@ -38,6 +40,12 @@ void UJapanCharacterMovement::PhysCustom(float Dt, int32 Iterations)
     if (CustomMovementMode == USkateComponent::MovementMode)
     {
         if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetSkate()) Rider->GetSkate()->PhysSkate(Dt);
+        return;
+    }
+    if (CustomMovementMode == USkiComponent::MovementMode)
+    {
+        if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner); Rider && Rider->GetSki() && Rider->GetSki()->IsSkiing()) Rider->GetSki()->PhysSki(Dt);
+        else SetMovementMode(MOVE_Falling);
         return;
     }
     if (UAdventureMoveSet::IsTraversalMode(CustomMovementMode))

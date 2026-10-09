@@ -63,6 +63,13 @@ tumble is the crash.
 
 Above walking speed the view turns toward the direction of travel (`CameraFollow`).
 
+Console commands, for play and QA:
+
+- `ski.Park [speed]` puts the skis on at the top of the first terrain park, at a speed in m/s.
+- `ski.Input steer lean crouch spin grab brake` replaces the controls until `ski.Input off`.
+- `ski.Describe` logs the skier's state.
+- `ski.Off` takes the skis off at once.
+
 ## Park
 
 `ASkiPark` builds the native park (`SkiParkShape`) as a procedural snow mesh with collision:

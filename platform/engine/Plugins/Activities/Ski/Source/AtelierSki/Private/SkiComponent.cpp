@@ -1,4 +1,5 @@
 #include "SkiComponent.h"
+#include "SkiPark.h"
 #include "SkiPhysicalBody.h"
 #include "SkiRider.h"
 #include "SkiSettings.h"
@@ -6,8 +7,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -22,6 +25,44 @@ namespace
 {
 TAutoConsoleVariable<int32> CVarPhysical(TEXT("ski.Physical"),
     -1, TEXT("The skier's body as an active ragdoll: 1 on, 0 the pose alone, -1 the project setting (takes effect on the next start)."));
+
+/** The first local player's skis. */
+USkiComponent* PlayerSki(UWorld* World)
+{
+    const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+    const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+    return Pawn ? Pawn->FindComponentByClass<USkiComponent>() : nullptr;
+}
+
+// QA and play: to the top of the first park on skis, scripted controls, and a line of state.
+FAutoConsoleCommandWithWorldAndArgs ParkCommand(TEXT("ski.Park"), TEXT("Skis on at the top of the terrain park: ski.Park [speed m/s]"),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+    {
+        USkiComponent* Ski = PlayerSki(World);
+        TActorIterator<ASkiPark> Park(World);
+        if (!Ski || !Park) { UE_LOG(LogTemp, Warning, TEXT("SKI no skier or no park")); return; }
+        const float Speed = Args.Num() > 0 ? FCString::Atof(*Args[0]) * 100.f : 0.f;
+        Ski->StartAt(Park->GetStartLocation(), Park->GetStartYaw(), Speed);
+    }));
+FAutoConsoleCommandWithWorldAndArgs InputCommand(TEXT("ski.Input"),
+    TEXT("Scripted controls until ski.Input off: ski.Input steer lean crouch(0/1) spin grab(0-2) brake(0/1)"),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+    {
+        USkiComponent* Ski = PlayerSki(World);
+        if (!Ski) return;
+        if (Args.Num() == 0 || Args[0] == TEXT("off")) { Ski->SetScriptedInput(false, FSkiInput()); return; }
+        auto Arg = [&Args](int32 I) { return Args.IsValidIndex(I) ? FCString::Atof(*Args[I]) : 0.f; };
+        FSkiInput I;
+        I.Steer = Arg(0); I.Lean = Arg(1); I.bCrouch = Arg(2) > .5f; I.Spin = Arg(3); I.Grab = int32(Arg(4)); I.bBrake = Arg(5) > .5f;
+        Ski->SetScriptedInput(true, I);
+    }));
+FAutoConsoleCommandWithWorld DescribeCommand(TEXT("ski.Describe"), TEXT("Logs the skier's state."),
+    FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+    {
+        if (const USkiComponent* Ski = PlayerSki(World)) UE_LOG(LogTemp, Display, TEXT("SKI %s"), *Ski->Describe());
+    }));
+FAutoConsoleCommandWithWorld OffCommand(TEXT("ski.Off"), TEXT("Skis off at once."),
+    FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World) { if (USkiComponent* Ski = PlayerSki(World)) Ski->Stop(); }));
 
 constexpr float SkiThickness = 3.f;   // cm
 constexpr float SkiLength = 175.f;    // cm
@@ -297,7 +338,7 @@ void USkiComponent::StepSimulation(float Dt, const FSkiInput& In)
     Accumulator += FMath::Min(Dt, .1f);
     const int32 Steps = FMath::FloorToInt32(Accumulator / S.dt);
     Accumulator -= float(Steps * S.dt);
-    for (int32 Step = 0; Step < Steps; ++Step)
+    for (int32 N = 0; N < Steps; ++N)
     {
         Runtime->Terrain.SetHint(Runtime->State.p.z);
         ski::Step(Runtime->State, I, Runtime->Terrain, S);
@@ -406,7 +447,7 @@ void USkiComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
     APlayerController* PC = Cast<APlayerController>(Character->GetController());
     const FVector V = Character->GetCharacterMovement()->Velocity;
     const FVector Flat(V.X, V.Y, 0);
-    if (PC && PC->IsLocalController() && Follow > 0.f && Flat.Size() > 200.f && !bScripted)
+    if (PC && PC->IsLocalController() && Follow > 0.f && Flat.Size() > 200.f)
     {
         FRotator View = PC->GetControlRotation();
         View.Yaw = FMath::RInterpTo(FRotator(0, View.Yaw, 0), FRotator(0, Flat.Rotation().Yaw, 0), DeltaTime, Follow).Yaw;

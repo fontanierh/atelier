@@ -3,6 +3,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "PhysicsControlComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 #include "PhysicsEngine/BodyInstance.h"
 
 namespace
@@ -42,7 +43,7 @@ bool USkiPhysicalBody::Begin(USkeletalMeshComponent* InMesh, FName Pelvis, const
     Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
     Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
-    Control = NewObject<UPhysicsControlComponent>(Mesh->GetOwner(), TEXT("SkiPhysicsControl"), RF_Transient);
+    Control = NewObject<UPhysicsControlComponent>(Mesh->GetOwner(), NAME_None, RF_Transient);
     Control->RegisterComponent();
     Control->AddTickPrerequisiteComponent(Mesh);
 

@@ -3,7 +3,8 @@
 The game plays with a keyboard and mouse or with a gamepad, through one set of Enhanced Input actions
 (`AWandererCharacter::BuildInput`, `WandererCharacter.cpp`). The HUD shows hints for whichever is in use: controller
 hints, lettered for the connected pad, while a gamepad is attached, and keyboard hints otherwise. Skating has its own
-controls: see [SKATE.md](SKATE.md).
+controls: see [SKATE.md](SKATE.md). So does skiing: see the
+[Ski plugin](../../../platform/engine/Plugins/Activities/Ski/README.md#controls).
 
 ## Bindings
 
@@ -19,6 +20,7 @@ controls: see [SKATE.md](SKATE.md).
 | Crouch | C | Right stick click | R3 | Right stick click |
 | Get on / step off the skateboard | B | Y (tap) | Triangle (tap) | X (tap) |
 | Bike out and on / off and parked (stopped) | V | Y (hold 0.4 s) | Triangle (hold) | X (hold) |
+| Skis on / off (offline; standing on the ground, off when not crashed or in the air) | N | LB | L1 | L |
 | Skateboard to the hand / put it away (Ride backend) | G | D-pad Right | D-pad Right | D-pad Right |
 | Interact, board the zeppelin | E | D-pad Down | D-pad Down | D-pad Down |
 | Sailboat / step ashore | K | D-pad Up | D-pad Up | D-pad Up |
@@ -33,7 +35,8 @@ controls: see [SKATE.md](SKATE.md).
 | Screenshot | F12 | | | |
 
 Getting on the board while running carries the running speed onto it. Riding, the right stick (or the mouse with the
-left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
+left button held) is Flick-It, not the camera. Skiing, the right stick winds up spins and the camera follows the
+direction of travel; `ski.Park` in the console puts the skis on at the top of the terrain park on the volcano. On the sailboat the left stick steers and raises or lowers the sail.
 On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, a press of Sprint (the left stick) pedals hard until pressed again or he stops pedalling, Jump hops, Crouch
 is a skid stop, Attack rings the bell and Wave waves.
 

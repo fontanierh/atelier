@@ -29,6 +29,7 @@
 #include "MegaRamp.h"
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
+#include "SkiPark.h"
 #include "Hippodrome.h"
 #include "ZeppelinService.h"
 #include "SeeThrough.h"
@@ -555,6 +556,9 @@ void AJapanWorld::Load()
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
     const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
     if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
+    // The ski park on the volcano's south-east flank (the Ski plugin, experimental): its run-in faces down the fall line,
+    // its base clear of the slope (up to 18 m above it until the slope is carved to it).
+    GetWorld()->SpawnActor<ASkiPark>(ToUE(1032.68, 1053.97, 147.35), FRotator(0, 60.f, 0));
     InstallPark(CommunityParkPath, TEXT("community park"));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));

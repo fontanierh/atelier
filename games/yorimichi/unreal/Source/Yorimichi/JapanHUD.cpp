@@ -6,6 +6,7 @@
 #include "WandererCharacter.h"
 #include "JapanPreferences.h"
 #include "SkateComponent.h"
+#include "SkiComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
 #include "WandererSword.h"
@@ -117,6 +118,25 @@ void AJapanHUD::DrawHUD()
         }
         if (Ride->GetScore() > 0) DrawText(FString::Printf(TEXT("%d"), Ride->GetScore()), FLinearColor(1.f, .93f, .72f), Canvas->SizeX - 140 * Scale, 54 * Scale, Font, 1.3f * Scale);
     };
+    // Skiing (the Ski plugin): the last trick for a few seconds and the score.
+    auto DrawSkiLine = [&]()
+    {
+        const USkiComponent* Ski = Pawn->GetSki();
+        if (!Ski || !Ski->IsSkiing()) return;
+        const float Scale = Canvas->SizeY / 1080.f;
+        const FLinearColor Ink(1.f, .93f, .72f);
+        float Age = 0.f;
+        const FString Trick = Ski->GetLastTrick(Age);
+        const float Alpha = FMath::Clamp(3.f - Age, 0.f, 1.f);
+        if (!Trick.IsEmpty() && Alpha > .02f)
+        {
+            float W = 0.f, H = 0.f; Canvas->StrLen(Font, Trick, W, H); const float S = 2.1f * Scale;
+            const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .84f;
+            DrawText(Trick, FLinearColor(0, 0, 0, .55f * Alpha), X + 2, Y + 2, Font, S);
+            DrawText(Trick, FLinearColor(Ink.R, Ink.G, Ink.B, Alpha), X, Y, Font, S);
+        }
+        if (Ski->GetScore() > 0) DrawText(FString::Printf(TEXT("%d"), Ski->GetScore()), Ink, Canvas->SizeX - 140 * Scale, 54 * Scale, Font, 1.3f * Scale);
+    };
     // The sword trainer (ASwordTrainer): the prompt to ask her, and in a bout her bar and her words at the top (kept in
     // filmed frames).
     auto DrawTrainer = [&](bool bController, bool bSailboat)
@@ -154,7 +174,7 @@ void AJapanHUD::DrawHUD()
     }
     };
     // Filming the skating (UYorimichiLive::FilmHud): only the trick line, and the sword trainer's bar and words.
-    if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
+    if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawSkiLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
     const double Now = FPlatformTime::Seconds();
@@ -239,6 +259,15 @@ void AJapanHUD::DrawHUD()
         Secondary=bController?FString::Printf(TEXT("Flick: down-up ollie   down-up-%s kickflip   down-up-%s heelflip   down-left / down-right shove-its   sweep around for 360s   start from up for nollies"),Kick,Heel)
             :FString::Printf(TEXT("Flick the mouse like the stick: pull back then forward = ollie, forward-%s = kickflip, forward-%s = heelflip, pull back then sideways = shove-it   Mouse look"),Kick,Heel);
         DrawSkateLine();
+    }
+    if (const USkiComponent* Ski = Pawn->GetSki(); Ski && Ski->IsSkiing())
+    {
+        const float Kmh = Ski->GetSpeed() * .036f;
+        Controls = bController
+            ? FString::Printf(TEXT("Left stick steer / lean   %s crouch, release to pop   Right stick spin   LT / RT grab   %s brake   LB skis off      %s   %.0f km/h"),Pad.Jump,Pad.Roll,*Ski->GetStatus(),Kmh)
+            : FString::Printf(TEXT("A / D steer   W / S lean   Space crouch, release to pop   J / L spin   Q / E grab   Shift brake   N skis off      %s   %.0f km/h"),*Ski->GetStatus(),Kmh);
+        Secondary = FString();
+        DrawSkiLine();
     }
     const UBikeComponent* Bike=Pawn->GetBike();
     if (Bike && Bike->IsEquipped())

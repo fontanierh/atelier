@@ -5,6 +5,7 @@
 #include "SprintStamina.h"
 #include "AtelierFX.h"
 #include "SkateRider.h"
+#include "SkiRider.h"
 #include "JapanAvatarState.h"
 #include "JapanActivityState.h"
 #include "JapanParkedBikeState.h"
@@ -20,6 +21,7 @@ class UInputMappingContext;
 class AJapanWorld;
 class UJapanPreferences;
 class USkateComponent;
+class USkiComponent;
 class USailboatComponent;
 class UBikeComponent;
 class FJsonObject;
@@ -33,7 +35,7 @@ class UAdventureMoveSet;
 
 /** A skinned adventurer driven by CharacterMovement and the native animation graph. */
 UCLASS()
-class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget, public ISkateRider
+class YORIMICHI_API AWandererCharacter : public ACharacter, public IAtelierFXTarget, public ISkateRider, public ISkiRider
 {
     GENERATED_BODY()
 public:
@@ -97,6 +99,12 @@ public:
     bool IsPhoneTouchActive() const;
     /** skate.-style skateboarding (docs/SKATE.md; the platform's Skate plugin). */
     USkateComponent* GetSkate() const { return SkateRide; }
+    /** Freestyle skiing (the platform's Ski plugin): single-player, N or the left shoulder. */
+    USkiComponent* GetSki() const { return SkiRide; }
+    // ISkiRider: the same preparation, input block and bone map as the board.
+    virtual void PrepareToSki() override { PrepareToSkate(); }
+    virtual bool IsSkiInputBlocked() const override { return IsSkateInputBlocked(); }
+    virtual FName GetSkiBone(FName Contract) const override { return GetSkateBone(Contract); }
     // ISkateRider: stop actions on mounting; menus take the board's input.
     virtual void PrepareToSkate() override;
     virtual bool IsSkateInputBlocked() const override;
@@ -228,6 +236,7 @@ private:
     bool bRemountSkate=false;
     TSharedPtr<FYorimichiPhone> PhoneInput;
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
+    UPROPERTY() TObjectPtr<USkiComponent> SkiRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UBikeComponent> Bike;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
@@ -321,6 +330,7 @@ private:
     void Dash(const FInputActionValue& Value);
     void ReleaseJump(const FInputActionValue& Value);
     void ToggleSkateboard(const FInputActionValue& Value);
+    void ToggleSki(const FInputActionValue& Value);
     void SkateboardHand(const FInputActionValue& Value);
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);

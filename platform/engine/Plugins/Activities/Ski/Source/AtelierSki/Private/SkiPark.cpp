@@ -2,6 +2,7 @@
 #include "SkiSettings.h"
 #include "Native/SkiParkShape.h"
 #include "ProceduralMeshComponent.h"
+#include "Engine/CollisionProfile.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 

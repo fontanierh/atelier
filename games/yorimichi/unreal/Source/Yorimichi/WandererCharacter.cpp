@@ -21,6 +21,7 @@
 #include "WandererAnimInstance.h"
 #include "SwordTrainer.h"
 #include "SkateComponent.h"
+#include "SkiComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
 #include "JapanCharacterMovement.h"
@@ -73,6 +74,7 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
 {
     PrimaryActorTick.bCanEverTick = true;
     SkateRide = CreateDefaultSubobject<USkateComponent>(TEXT("Skate"));
+    SkiRide = CreateDefaultSubobject<USkiComponent>(TEXT("SkiRide"));
     Sailboat = CreateDefaultSubobject<USailboatComponent>(TEXT("EquippedSailboat"));
     Bike = CreateDefaultSubobject<UBikeComponent>(TEXT("BikeRide"));   // "Bike" is the input action's name
     Footsteps = CreateDefaultSubobject<UJapanFootstepComponent>(TEXT("Footsteps"));
@@ -230,6 +232,7 @@ void AWandererCharacter::InitializeLocalPlayer()
     }
     if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
     SkateRide->Initialize(this);
+    SkiRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
     Map = NewObject<UJapanMap>(this);
@@ -313,6 +316,7 @@ void AWandererCharacter::Leave()
     if (Map) Map->Close();
     if (Moves) Moves->Reset();
     SkateRide->StowImmediately();
+    SkiRide->Stop();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -348,6 +352,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     // Leave custom ramp physics before restoring the ordinary character pose.
     Movement->SetMovementMode(MOVE_Falling);
     SkateRide->StowImmediately();
+    SkiRide->Stop();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
     MoveIntent = FVector2D::ZeroVector;
@@ -400,7 +405,7 @@ void AWandererCharacter::BuildInput()
     for (const auto& Pair : TArray<TPair<FName,FKey>>{
         {TEXT("Jog"),EKeys::J},{TEXT("Sprint"),EKeys::LeftShift},{TEXT("Walk"),EKeys::LeftAlt},{TEXT("Jump"),EKeys::SpaceBar},
         {TEXT("Crouch"),EKeys::C},{TEXT("Dodge"),EKeys::LeftControl},{TEXT("Wave"),EKeys::Q},
-        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},{TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
+        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Ski"),EKeys::N},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},{TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
         {TEXT("SetMarker"),EKeys::F5},{TEXT("ReturnMarker"),EKeys::F9},
         {TEXT("FlightSlower"),EKeys::LeftBracket},{TEXT("FlightFaster"),EKeys::RightBracket},
         {TEXT("Attack"),EKeys::LeftMouseButton},{TEXT("Parry"),EKeys::RightMouseButton},{TEXT("Weapon"),EKeys::R}})
@@ -435,6 +440,7 @@ void AWandererCharacter::BuildInput()
     Key(Axis(TEXT("SkateboardHand"),EInputActionValueType::Boolean),EKeys::G);
     Key(Inputs[TEXT("SkateboardHand")],EKeys::Gamepad_DPad_Right);
     Key(Inputs[TEXT("FlightSlower")],EKeys::Gamepad_LeftShoulder);
+    Key(Inputs[TEXT("Ski")],EKeys::Gamepad_LeftShoulder);   // the zeppelin's slower only aboard, skis only off it
     Key(Inputs[TEXT("FlightFaster")],EKeys::Gamepad_RightShoulder);
     if (APlayerController* PC = Cast<APlayerController>(Controller))
         if (ULocalPlayer* LP = PC->GetLocalPlayer())
@@ -457,7 +463,7 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
             {TEXT("Jump"),&AWandererCharacter::RequestJump},{TEXT("Crouch"),&AWandererCharacter::ToggleCrouch},
             {TEXT("Dodge"),&AWandererCharacter::Dodge},{TEXT("Wave"),&AWandererCharacter::Wave},{TEXT("Interact"),&AWandererCharacter::Interact},
-            {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},{TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
+            {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Ski"),&AWandererCharacter::ToggleSki},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},{TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
             {TEXT("FlightSlower"),&AWandererCharacter::FlightSlower},{TEXT("FlightFaster"),&AWandererCharacter::FlightFaster},
             {TEXT("Attack"),&AWandererCharacter::AttackPressed},{TEXT("Parry"),&AWandererCharacter::ParryPressed},{TEXT("Weapon"),&AWandererCharacter::ToggleWeapon}})
             E->BindAction(Inputs[Binding.Key],ETriggerEvent::Started,this,Binding.Value);
@@ -506,7 +512,7 @@ void AWandererCharacter::MouseLook(const FInputActionValue& V)
 }
 void AWandererCharacter::StickLook(const FInputActionValue& V)
 {
-    if (!bReady || bMenuOpen || bFixedView || SkateRide->IsRiding()) return;   // riding: the right stick is Flick-It
+    if (!bReady || bMenuOpen || bFixedView || SkateRide->IsRiding() || SkiRide->IsSkiing()) return;   // riding: the right stick is Flick-It; skiing: the spin
     const FVector2D Delta = V.Get<FVector2D>()*145.f*GetWorld()->GetDeltaSeconds();
     if(!Delta.IsNearlyZero())LookGrace=2.f;
     // SceneViewport negates Gamepad_RightY. Restore up-is-look-up with legacy scales disabled.
@@ -617,16 +623,16 @@ bool AWandererCharacter::PressMove(FName Button)
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
     if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkSail(); return; } // Enabled by the vehicle prediction layer.
-    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding()) return;
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || SkiRide->IsSkiing()) return;
     if (Sailboat->IsEquipped()) { Sailboat->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Sailboat->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
-bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped(); }
+bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || SkiRide->IsSkiing(); }
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
     if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkBike(); return; } // Enabled by the vehicle prediction layer.
-    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped()) return;
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || SkiRide->IsSkiing()) return;
     if (Bike->IsEquipped()) { Bike->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Bike->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
@@ -643,6 +649,15 @@ void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
         // Mid-jump the board goes under the feet (Ride backend: a caveman).
         else if (bReady && !bMenuOpen && GetCharacterMovement()->IsFalling() && !MovementLocked() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; StopJumping(); }
     }
+}
+void AWandererCharacter::ToggleSki(const FInputActionValue&)
+{
+    // Skiing is not a networked activity: offline only.
+    if (JapanNetwork::IsOnline(GetWorld()) || !bReady || bMenuOpen || IsZeppelinPassenger()) return;
+    if (SkiRide->IsSkiing()) { SkiRide->Toggle(); return; }
+    if (SkateRide->IsRiding() || OnVehicle()) return;
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && SkiRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
 void AWandererCharacter::SkateboardHand(const FInputActionValue&)
 {
@@ -849,7 +864,7 @@ void AWandererCharacter::AttackPressed(const FInputActionValue&)
 {
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Bell(); return; }   // before the move set, which is idle on the bike
     if (Moves) { PressMove(TEXT("attack")); return; }
-    if (Sword && !SkateRide->IsRiding() && !Sailboat->IsEquipped() && !IsZeppelinPassenger()) Sword->AttackPressed();
+    if (Sword && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger()) Sword->AttackPressed();
 }
 void AWandererCharacter::AttackReleased(const FInputActionValue&) { if (Moves) Moves->Press(TEXT("attack_release")); else if (Sword) Sword->AttackReleased(); }
 void AWandererCharacter::ParryPressed(const FInputActionValue&)
@@ -873,7 +888,7 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
 void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) return; // Shared interaction routing follows the activity layer.
- if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
+ if(SkateRide->IsRiding()||SkiRide->IsSkiing())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
     if (!bReady) return;
