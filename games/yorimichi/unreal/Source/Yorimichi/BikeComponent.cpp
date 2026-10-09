@@ -45,13 +45,26 @@ namespace
  // BikeCrash throws him over the bars: his hands land 1.64 m ahead of where the bike stopped (rider.py). Against a wall the
  // bike and he rebound in the first CrashRecoil seconds to make that room.
  constexpr float CrashRoom=185.f,CrashRecoil=.3f;   // ClipBlend: the anim instance's
+ // Riding for fun (docs/BIKE.md). Gravity along the slope, rolling resistance (cm/s^2) and air drag (per cm: a rider's
+ // half rho CdA over his and the bike's mass) set how he coasts: a 5 degree hill runs him up to about 36 km/h, 10 degrees
+ // to 56. MaxSpeed is the network state's bound.
+ constexpr float Gravity=980.f,RollDrag=25.f,AirDrag=6.e-5f,MaxSpeed=2400.f;
+ // The hop is a real jump (cm/s up; out of a wheelie he pops higher). A ramp's lip launches him with the rise the ramp
+ // was giving him when it is more than LaunchRise. Coming down faster than BailFall (a drop of about 6 m) throws him.
+ constexpr float HopSpeed=340.f,WheelieHopSpeed=480.f,LaunchRise=60.f,BailFall=1150.f;
+ // Drift: crouch while steering at speed. The back steps out, he turns half as tight again and scrubs speed; letting the
+ // steering go pays it back as a boost by how long he held it.
+ constexpr float DriftStart=350.f,DriftKeep=200.f,DriftDrag=90.f,DriftBoost=120.f,DriftBoostCap=2.5f;
+ // Wheelie: pedalling hard, pull back. The front comes up with a kick and balances about WheelieBalance degrees: past
+ // it gravity tips him further back, under it the front drops; the stick lifts (back) and lowers (forward) it.
+ constexpr float WheelieKick=55.f,WheelieBalance=22.f,WheelieGravity=3.f,WheeliePull=100.f,WheelieDamping=5.f,WheelieLoopOut=42.f;
  // The one-shots on each clip, at rider.py's key times: the saddle taking his weight, the stand flipping up (stowed at
  // 1.38 s) and down (on the ground at .60 s), the hop's take-off and landing, the bell's two thumb strikes, the crash
  // into the wall and the bike falling on its side (lean_bike 84 at 1.15 s).
  struct FClipSound{const TCHAR* Clip;float Time;const TCHAR* Cue;float Volume;};
  const FClipSound ClipSounds[]={
   {TEXT("BikeMount"),.95f,TEXT("creak"),.6f},{TEXT("BikeMount"),1.38f,TEXT("stand_up"),.8f},{TEXT("BikeDismount"),.48f,TEXT("creak"),.5f},
-  {TEXT("BikeKickstand"),.60f,TEXT("stand_down"),.9f},{TEXT("BikeHop"),.42f,TEXT("creak"),.45f},{TEXT("BikeHop"),.74f,TEXT("land"),.9f},
+  {TEXT("BikeKickstand"),.60f,TEXT("stand_down"),.9f},{TEXT("BikeHop"),.42f,TEXT("creak"),.45f},
   {TEXT("BikeBell"),.20f,TEXT("bell"),1.f},{TEXT("BikeBell"),.38f,TEXT("bell"),.85f},{TEXT("BikeCrash"),0.f,TEXT("crash"),1.f},
   {TEXT("BikeCrash"),1.15f,TEXT("fall"),.9f}};
  // The loops, in UBikeComponent::Loops order: the tyre on smooth ground (concrete, asphalt, metal), then on wood,
@@ -226,7 +239,7 @@ void UBikeComponent::UpdateAudio(float Dt,bool bPedal,float Cadence)
  if(!M->IsMovingOnGround()){Airborne+=Dt;FallSpeed=FMath::Max(FallSpeed,-M->Velocity.Z);}
  else{if(Airborne>.2f&&State==EState::Riding)PlayCue(TEXT("land"),FMath::Clamp(FallSpeed/600.f,.3f,1.f));Airborne=FallSpeed=0.f;}
  const bool bRolling=State==EState::Riding&&M->IsMovingOnGround()&&!bLifted&&Speed>5.f;
- const bool bSkid=State==EState::Riding&&Clip==TEXT("BikeSkid")&&ClipTime>.1f&&Speed>30.f;
+ const bool bSkid=State==EState::Riding&&((Clip==TEXT("BikeSkid")&&ClipTime>.1f)||(Drift!=0.f&&M->IsMovingOnGround()))&&Speed>30.f;
  const float Fast=FMath::Clamp(Speed/SprintSpeed,0.f,1.f);
  // A bump now and then on rough ground: the basket and chain case knocking.
  if(bRolling&&(S==ESkateSurface::Stone||S==ESkateSurface::Dirt)&&Speed>300.f&&(RattleWait-=Dt)<=0.f)
@@ -237,7 +250,7 @@ void UBikeComponent::UpdateAudio(float Dt,bool bPedal,float Cadence)
  if(bRolling&&!bSkid){const int32 T=TyreLoop(S);Want[T]=FMath::Clamp(Speed/250.f,0.f,1.f)*(.35f+.45f*Fast);Pitch[T]=.75f+.45f*Fast;}
  if(bRolling&&!bPedal&&!bSkid&&Speed>20.f){Want[LoopFreewheel]=.3f*FMath::Clamp(Speed/200.f,0.f,1.f);Pitch[LoopFreewheel]=FMath::Clamp(WheelTurns*FreewheelTeeth/FreewheelLoopTicks,.3f,2.5f);}
  if(Clip==TEXT("BikeRide")&&bPedal&&Speed>10.f){Want[LoopChain]=(bSprint?.45f:.3f)*FMath::Clamp(Speed/200.f,0.f,1.f);Pitch[LoopChain]=FMath::Clamp(Cadence*ChainTurn,.4f,2.5f);}
- if(State==EState::Riding){Want[LoopWind]=.7f*FMath::Clamp((Speed-350.f)/850.f,0.f,1.f);Pitch[LoopWind]=.8f+.4f*Fast;}
+ if(State==EState::Riding){Want[LoopWind]=.85f*FMath::Clamp((Speed-350.f)/1450.f,0.f,1.f);Pitch[LoopWind]=.8f+.4f*Fast;}
  if(bSkid){const bool bSoft=S==ESkateSurface::Dirt||S==ESkateSurface::Sand||S==ESkateSurface::Grass;const int32 K=bSoft?LoopSkidDirt:LoopSkid;Want[K]=.9f*FMath::Clamp(Speed/600.f,.3f,1.f);Pitch[K]=.9f+.2f*FMath::Clamp(Speed/800.f,0.f,1.f);}
  for(int32 I=0;I<LoopCount;++I)
  {
@@ -367,6 +380,7 @@ bool UBikeComponent::Toggle()
  if(State==EState::Riding)
  {
   if(Speed>40.f){Hint=TEXT("Slow down to get off");return false;}
+  if(!Rider->GetCharacterMovement()->IsMovingOnGround())return false;
   State=EState::Dismounting;Speed=0;Play(TEXT("BikeDismount"),TEXT("BikeKickstand"));Hint=TEXT("Parking");ClothColliders(false);return true;
  }
  if(State!=EState::Off)return false;
@@ -395,7 +409,7 @@ bool UBikeComponent::Toggle()
  M->StopMovementImmediately();
  Rider->SetActorLocationAndRotation(Origin+FVector(0,0,Half),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
  SavedFriction=M->GroundFriction;SavedBraking=M->BrakingDecelerationWalking;M->GroundFriction=0.f;M->BrakingDecelerationWalking=0.f;
- bTerminal=false;SimCrank=Coast=Recoil=0.f;
+ bTerminal=false;SimCrank=Coast=Recoil=Drift=Wheelie=WheelieRate=Rise=Air=AirFall=DriftYaw=LandDip=TrickTime=0.f;
  State=EState::Mounting;Speed=Steering=Lean=StillTime=0.f;bSnapGround=true;Play(TEXT("BikeMount"),TEXT("BikeRide"));
  BikeRoot->SetVisibility(true,true);Hint=TEXT("Getting on");
  UE_LOG(LogTemp,Display,TEXT("BIKE summon: materials ready=%d"),MaterialsReady(false)?1:0);
@@ -429,7 +443,7 @@ void UBikeComponent::Park()
   }
  }
  M->bForceNextFloorCheck=true;
- State=EState::Off;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;ClothColliders(false);
+ State=EState::Off;Speed=Steering=Lean=BlendLeft=Drift=Wheelie=WheelieRate=Rise=Air=AirFall=DriftYaw=LandDip=TrickTime=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Clip=NAME_None;Displayed.Reset();++Serial;Hint=TEXT("V bike");bSprint=false;ClothColliders(false);
  if(JapanNetwork::IsOnline(GetWorld()))JapanBikeGround::SettlePark(Rider);
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
@@ -447,14 +461,40 @@ void UBikeComponent::StowImmediately()
   if(bParked)BikeRoot->AttachToComponent(Rider->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale);
   BikeRoot->SetVisibility(false,true);
  }
- bParked=false;Speed=Steering=Lean=BlendLeft=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Displayed.Reset();Hint=TEXT("V bike");bSprint=false;
+ bParked=false;Speed=Steering=Lean=BlendLeft=Drift=Wheelie=WheelieRate=Rise=Air=AirFall=DriftYaw=LandDip=TrickTime=GroundPitch=GroundOffset=WheelGround[0]=WheelGround[1]=WheelFall[0]=WheelFall[1]=0.f;Displayed.Reset();Hint=TEXT("V bike");bSprint=false;
  for(int32 I=0;I<Loops.Num();++I){if(Loops[I])Loops[I]->Stop();LoopVolume[I]=0.f;}
 }
 
-void UBikeComponent::SetInput(FVector2D V,bool Menu){Input=Menu?FVector2D::ZeroVector:V;bMenu=Menu;}
+void UBikeComponent::SetInput(FVector2D V,float L,bool Menu){Input=Menu?FVector2D::ZeroVector:V;LeanIn=Menu?0.f:FMath::Clamp(L,-1.f,1.f);bMenu=Menu;}
 bool UBikeComponent::ToggleSprint(){bool Accepted=false;if(QueueNetworkAction(TEXT("bike_sprint"),Accepted))return Accepted;if(State!=EState::Riding||bMenu)return false;bSprint=!bSprint;Coast=0.f;return true;}
-bool UBikeComponent::Hop(){bool Accepted=false;if(QueueNetworkAction(TEXT("jump"),Accepted))return Accepted;if(State!=EState::Riding||Clip==TEXT("BikeHop")||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeHop"),TEXT("BikeRide"));return true;}
-bool UBikeComponent::Skid(){bool Accepted=false;if(QueueNetworkAction(TEXT("dodge"),Accepted))return Accepted;if(State!=EState::Riding||Speed<250.f||Clip==TEXT("BikeSkid"))return false;Play(TEXT("BikeSkid"),TEXT("BikeFootDown"));return true;}
+bool UBikeComponent::Hop()
+{
+ bool Accepted=false;if(QueueNetworkAction(TEXT("jump"),Accepted))return Accepted;
+ auto* M=Rider?Rider->GetCharacterMovement():nullptr;
+ if(State!=EState::Riding||!M||!M->IsMovingOnGround()||Clip==TEXT("BikeHop")||Clip==TEXT("BikeSkid"))return false;
+ // A real jump: he leaves the ground with what the ramp under him was already giving him, higher out of a wheelie.
+ if(Drift!=0.f)EndDrift(false);
+ M->Velocity.Z=(Wheelie>8.f?WheelieHopSpeed:HopSpeed)+FMath::Max(Rise,0.f);M->SetMovementMode(MOVE_Falling);
+ Rise=Air=AirFall=0.f;
+ Play(TEXT("BikeHop"),TEXT("BikeRide"));return true;
+}
+bool UBikeComponent::Skid()
+{
+ bool Accepted=false;if(QueueNetworkAction(TEXT("dodge"),Accepted))return Accepted;
+ if(State!=EState::Riding||Clip==TEXT("BikeSkid")||Drift!=0.f)return false;
+ // Steering at speed it is a drift; straight on, the skid stop.
+ if(FMath::Abs(Input.X)>.35f&&Speed>DriftStart&&Clip==TEXT("BikeRide")&&Wheelie<=0.f&&Rider->GetCharacterMovement()->IsMovingOnGround())
+ {Drift=FMath::Sign(Input.X)*.001f;return true;}
+ if(Speed<250.f)return false;
+ Wheelie=WheelieRate=0.f;Play(TEXT("BikeSkid"),TEXT("BikeFootDown"));return true;
+}
+void UBikeComponent::EndDrift(bool bBoost)
+{
+ const float Held=FMath::Abs(Drift);Drift=0.f;
+ if(!bBoost||Held<.4f)return;
+ const float Boost=FMath::Min(Held,DriftBoostCap)*DriftBoost;Speed=FMath::Min(Speed+Boost,MaxSpeed);
+ ShowTrick(FString::Printf(TEXT("Drift %.1f s  +%.0f km/h"),Held,Boost*.036f));
+}
 bool UBikeComponent::Bell(){bool Accepted=false;if(QueueNetworkAction(TEXT("attack"),Accepted))return Accepted;if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeBell"),TEXT("BikeRide"));return true;}
 bool UBikeComponent::Wave(){bool Accepted=false;if(QueueNetworkAction(TEXT("wave"),Accepted))return Accepted;if(State!=EState::Riding||Clip!=TEXT("BikeRide"))return false;Play(TEXT("BikeWave"),TEXT("BikeRide"));return true;}
 
@@ -496,34 +536,47 @@ bool UBikeComponent::AdvanceSimulation(float Dt,bool& bPedal,float& Cadence)
   const float Reach=Speed>CrashSpeed?190.f:FrontAxle.X+WheelRadius+Speed*Dt;
   const bool Ahead=GetWorld()->LineTraceSingleByChannel(Hit,From,From+Rider->GetActorForwardVector()*Reach,Online?JapanGameplayCollision::Channel:ECC_Visibility,Q)&&Hit.ImpactNormal.Z<.6f;
   if(Ahead&&Speed>CrashSpeed&&Clip!=TEXT("BikeSkid"))
-  {JapanVehicleTelemetry::Crash(Rider,Hit,Speed);State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Ouch");C=Clips.Find(Clip);Recoil=FMath::Max(0.f,CrashRoom-Hit.Distance);Speed=0.f;}
+  {JapanVehicleTelemetry::Crash(Rider,Hit,Speed);State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Ouch");C=Clips.Find(Clip);Recoil=FMath::Max(0.f,CrashRoom-Hit.Distance);Speed=Drift=Wheelie=WheelieRate=0.f;}
   // Slower, he stops as the front wheel meets it (the capsule alone stopped half a bike length on, the wheel and basket
   // through the wall).
-  else if(Ahead)Speed=0.f;
+  else if(Ahead){Speed=0.f;if(Drift!=0.f)EndDrift(false);}
   else if(M->IsMovingOnGround()&&Speed>60.f&&Moved<Speed*.4f)Speed=FMath::Min(Speed,FMath::Max(0.f,Moved));
  }
  // The clock: the ride loop turns at the cadence of the wheels; everything else plays in real time.
  bPedal=Input.Y>.1f&&!bMenu;
+ if(State==EState::Riding&&!bMenu){AdvanceFun(Dt,bPedal);C=Clips.Find(Clip);if(!C)return false;}
  if(State==EState::Riding&&!bMenu)
  {
+  const bool bGround=M->IsMovingOnGround(),bWheelie=Wheelie>0.f;
   // The sprint is a toggle: it lasts while he keeps pedalling (a moment's let-go is fine) and ends at a brake or stop.
   Coast=bPedal?0.f:Coast+Dt;
   if(Coast>.6f||Input.Y<-.1f||Clip==TEXT("BikeSkid")||Clip==TEXT("BikeFootDown"))bSprint=false;
   const float Top=bSprint?SprintSpeed:TopSpeed;
-  // The skid locks the back wheel and stops him inside the clip; a foot down at a roll drags him to a stop.
+  // Whatever he does, gravity along the slope, the tyres and the air act on him: downhill he gathers speed without
+  // pedalling (past his top speed), uphill he slows. He never rolls backwards: a stop puts a foot down.
+  Speed+=((bGround?-Gravity*FMath::Sin(FMath::DegreesToRadians(Slope))-RollDrag:0.f)-AirDrag*Speed*Speed)*Dt;
+  Speed=FMath::Clamp(Speed,0.f,MaxSpeed);
+  // The skid locks the back wheel and stops him inside the clip; a foot down at a roll drags him to a stop. Pedalling
+  // only drives him up to his top speed; past it (downhill, a drift's boost) he is freewheeling.
   if(Clip==TEXT("BikeSkid"))Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,950.f);
   else if(Clip==TEXT("BikeFootDown")&&!bPedal)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,500.f);
-  else if(bPedal)Speed=FMath::FInterpConstantTo(Speed,Top*FMath::Clamp(Input.Y,0.f,1.f),Dt,Speed>Top?300.f:bSprint?420.f:260.f);
-  else if(Input.Y<-.1f)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,700.f*-Input.Y);
-  else Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,40.f);
+  else if(Drift!=0.f)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,DriftDrag);
+  else if(bPedal&&bGround){const float Want=Top*FMath::Clamp(Input.Y,0.f,1.f);if(Speed<Want)Speed=FMath::FInterpConstantTo(Speed,Want,Dt,(bSprint?420.f:260.f)*(bWheelie?.7f:1.f));}
+  else if(Input.Y<-.1f&&bGround&&!bWheelie)Speed=FMath::FInterpConstantTo(Speed,0.f,Dt,700.f*-Input.Y);
   Steering=FMath::FInterpTo(Steering,Clip==TEXT("BikeSkid")?0.f:Input.X,Dt,5.f);
-  // Tighter at a crawl, wider when fast; a stopped rider shuffles round on his planted foot.
-  const float TurnRate=Speed<30.f?60.f*Steering:FMath::Clamp(FMath::RadiansToDegrees(Speed/260.f),0.f,110.f)*Steering;
+  // Tighter at a crawl, wider when fast; a stopped rider shuffles round on his planted foot. A drift turns tighter, the
+  // air and a wheelie looser.
+  float TurnRate=Speed<30.f?60.f*Steering:FMath::Clamp(FMath::RadiansToDegrees(Speed/260.f),0.f,110.f)*Steering;
+  TurnRate*=!bGround?.35f:Drift!=0.f?1.5f:bWheelie?.6f:1.f;
   Rider->AddActorWorldRotation(FRotator(0,TurnRate*Dt,0));
-  if(Clip==TEXT("BikeRide")&&Speed<15.f&&!bPedal){StillTime+=Dt;if(StillTime>.25f)Play(TEXT("BikeFootDown"));}
+  if(Clip==TEXT("BikeRide")&&bGround&&Speed<15.f&&!bPedal){StillTime+=Dt;if(StillTime>.25f)Play(TEXT("BikeFootDown"));}
   else StillTime=0.f;
   if(Clip==TEXT("BikeFootDown")&&bPedal)Play(TEXT("BikeRide"));
-  Hint=Speed<15.f?TEXT("V get off"):bSprint?TEXT("Pedalling hard"):TEXT("Riding");
+  if(TrickTime>0.f)Hint=Trick;
+  else if(Drift!=0.f)Hint=TEXT("Drifting");
+  else if(Wheelie>0.f)Hint=FString::Printf(TEXT("Wheelie %.1f s"),WheelieTime);
+  else if(!bGround)Hint=TEXT("Air");
+  else Hint=Speed<15.f?TEXT("V get off"):Speed>Top+50.f&&!bPedal?TEXT("Freewheeling"):bSprint?TEXT("Pedalling hard"):TEXT("Riding");
  }
  else if(State==EState::Crashing)Speed=ClipTime<CrashRecoil?-Recoil/CrashRecoil:0.f;
  else Speed=0.f;
@@ -549,6 +602,71 @@ bool UBikeComponent::AdvanceSimulation(float Dt,bool& bPedal,float& Cadence)
  return true;
 }
 
+void UBikeComponent::AdvanceFun(float Dt,bool bPedal)
+{
+ auto* M=Rider->GetCharacterMovement();
+ const bool bGround=M->IsMovingOnGround();
+ if(bGround)
+ {
+  // The slope along his heading, from the floor the walking physics stands him on.
+  const FVector N=M->CurrentFloor.IsWalkableFloor()?FVector(M->CurrentFloor.HitResult.ImpactNormal):FVector::UpVector;
+  const FVector Ahead=Rider->GetActorForwardVector();
+  const float Tan=N.Z>.5f?FMath::Clamp(-(N.X*Ahead.X+N.Y*Ahead.Y)/N.Z,-.7f,.7f):0.f;
+  Slope=FMath::RadiansToDegrees(FMath::Atan(Tan));
+  // Down again: a long enough flight gets its line on the HUD and a dip as the tyres take him; too hard a fall throws him.
+  if(Air>0.f)
+  {
+   if(AirFall>BailFall)
+   {
+    State=EState::Crashing;Play(TEXT("BikeCrash"));Hint=TEXT("Bailed");Recoil=0.f;Speed=Drift=Wheelie=WheelieRate=Rise=Air=AirFall=0.f;bSprint=false;
+    return;
+   }
+   if(Air>.45f)ShowTrick(FString::Printf(TEXT("Air %.1f s"),Air));
+   LandDip=FMath::Clamp(AirFall/45.f,2.f,16.f);Air=AirFall=0.f;
+  }
+  Rise=Speed*Tan;
+ }
+ else
+ {
+  // Off a ramp's lip the walking physics leaves the ground level; he carries on up with what the ramp was giving him.
+  if(Air==0.f&&Rise>LaunchRise&&M->Velocity.Z<Rise)M->Velocity.Z=Rise;
+  Rise=0.f;Air=FMath::Min(Air+Dt,60.f);AirFall=FMath::Min(FMath::Max(AirFall,-M->Velocity.Z),10000.f);
+  if(Drift!=0.f)EndDrift(false);
+ }
+ // Wheelie: lean back on a pedal stroke. He keeps pedalling on the back wheel; leaning and the brake balance it.
+ if(Wheelie<=0.f&&bGround&&bPedal&&LeanIn<-.5f&&Speed>250.f&&Clip==TEXT("BikeRide")&&Drift==0.f)
+ {Wheelie=.5f;WheelieRate=WheelieKick;WheelieTime=0.f;}
+ if(Wheelie>0.f)
+ {
+  if(bGround)
+  {
+   const float Pull=FMath::Max(-LeanIn,0.f),Push=FMath::Max(LeanIn,0.f)+FMath::Max(-Input.Y,0.f);
+   WheelieRate+=(WheelieGravity*(Wheelie-WheelieBalance)+WheeliePull*(Pull-Push)-WheelieDamping*WheelieRate)*Dt;
+  }
+  else WheelieRate=FMath::FInterpConstantTo(WheelieRate,-40.f,Dt,200.f);   // in the air the front settles
+  Wheelie+=WheelieRate*Dt;WheelieTime+=Dt;
+  if(Wheelie>=WheelieLoopOut)
+  {
+   // Too far back: the back of the bike takes him down hard and the run is gone.
+   Wheelie=WheelieRate=0.f;Speed*=.35f;bSprint=false;LandDip=14.f;ShowTrick(TEXT("Looped out!"));
+   if(!JapanNetwork::IsOnline(GetWorld()))PlayCue(TEXT("land"),1.f,.8f);
+  }
+  else if(Wheelie<=0.f)
+  {
+   if(WheelieTime>1.f&&bGround)ShowTrick(FString::Printf(TEXT("Wheelie %.1f s"),WheelieTime));
+   Wheelie=WheelieRate=0.f;if(bGround)LandDip=FMath::Max(LandDip,4.f);
+  }
+ }
+ // A drift lasts while he keeps steering its way at speed; letting go pays it back as a boost.
+ if(Drift!=0.f)
+ {
+  const float Side=FMath::Sign(Drift);
+  Drift=Side*FMath::Min(FMath::Abs(Drift)+Dt,59.f);
+  if(Input.X*Side<.2f)EndDrift(true);
+  else if(Speed<DriftKeep)EndDrift(false);
+ }
+}
+
 void UBikeComponent::PresentParts(float Dt,TArray<float>& Ch,bool bPedal,float Cadence)
 {
  if(BlendLeft>0.f)
@@ -560,11 +678,16 @@ void UBikeComponent::PresentParts(float Dt,TArray<float>& Ch,bool bPedal,float C
   BlendLeft-=Dt;
  }
  WheelAngle=FMath::Fmod(WheelAngle+Speed*Dt/WheelRadius,2.f*PI);
- // Into the turn: he and the bike lean together about the ground line under them.
- Lean=FMath::FInterpTo(Lean,State==EState::Riding?-Steering*FMath::Clamp(Speed/TopSpeed,0.f,1.5f)*14.f:0.f,Dt,4.f);
+ // Into the turn: he and the bike lean together about the ground line under them (harder in a drift).
+ Lean=FMath::FInterpTo(Lean,State==EState::Riding?-Steering*FMath::Clamp(Speed/TopSpeed,0.f,1.5f)*(Drift!=0.f?20.f:14.f):0.f,Dt,4.f);
+ // A drift swings the bike out of line with where he is going; a landing dips him; the HUD's trick line times out.
+ DriftYaw=FMath::FInterpTo(DriftYaw,Drift!=0.f?FMath::Sign(Drift)*(25.f+15.f*FMath::Abs(Steering)):0.f,Dt,6.f);
+ LandDip=FMath::FInterpTo(LandDip,0.f,Dt,7.f);TrickTime=FMath::Max(0.f,TrickTime-Dt);
  FollowGround(Dt);
- JapanVehicleVisuals::SetRiderPose(Rider,MeshLocation+FVector(0,0,GroundOffset),
-  (FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion()*FRotator(GroundPitch,0,0).Quaternion()).GetNormalized());   // pitch in the bike's frame
+ // A wheelie tips him and the bike back about the rear tyre's contact (pitch in the bike's frame).
+ const FQuat Out=FQuat(FVector::UpVector,FMath::DegreesToRadians(DriftYaw))*FQuat(FVector::ForwardVector,FMath::DegreesToRadians(Lean))*MeshRotation.Quaternion();
+ const FQuat Level=Out*FRotator(GroundPitch,0,0).Quaternion(),Lifted=Out*FRotator(GroundPitch+Wheelie,0,0).Quaternion();
+ JapanVehicleVisuals::SetRiderPose(Rider,MeshLocation+FVector(0,0,GroundOffset-LandDip)+Level.RotateVector(RearContact)-Lifted.RotateVector(RearContact),Lifted.GetNormalized());
  Pose(Ch);
  UpdateAudio(Dt,bPedal,Cadence);
 }

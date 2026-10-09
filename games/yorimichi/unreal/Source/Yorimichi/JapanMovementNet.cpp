@@ -74,6 +74,11 @@ bool FJapanMoveInput::Serialize(FArchive& Ar)
         { Ar.SetError(); return false; }
         PreviousSequence = Marker.Sequence;
     }
+    uint8 bLean = Lean != 0;
+    Ar.SerializeBits(&bLean, 1);
+    if (bLean) Ar << Lean;
+    else if (Ar.IsLoading()) Lean = 0;
+    if (Lean == -128) { Ar.SetError(); return false; }
     return !Ar.IsError();
 }
 
@@ -165,7 +170,7 @@ bool FSavedMove_Japan::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* 
 {
     const auto& Next = static_cast<const FSavedMove_Japan&>(*NewMove);
     if (!Input.Edges.IsEmpty() || !Next.Input.Edges.IsEmpty() || Input.Flags != Next.Input.Flags ||
-        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.ActivityEpoch != Next.Input.ActivityEpoch ||
+        Input.X != Next.Input.X || Input.Y != Next.Input.Y || Input.Lean != Next.Input.Lean || Input.ActivityEpoch != Next.Input.ActivityEpoch ||
         Input.ReactionThrough != Next.Input.ReactionThrough || Input.ReactionOrigins != Next.Input.ReactionOrigins) return false;
     if (const UJapanCharacterMovement* Movement = MovementOf(Character); Movement && Movement->PredictsMoves()) return false;
     return Super::CanCombineWith(NewMove, Character, MaxDelta);
@@ -178,7 +183,7 @@ bool FSavedMove_Japan::IsImportantMove(const FSavedMovePtr& LastAcked) const
     {
         const FJapanMoveInput& Previous = static_cast<const FSavedMove_Japan&>(*LastAcked).Input;
         if (Input.ReactionThrough != Previous.ReactionThrough) return true;
-        if (Input.Flags != Previous.Flags || Input.X != Previous.X || Input.Y != Previous.Y) return true;
+        if (Input.Flags != Previous.Flags || Input.X != Previous.X || Input.Y != Previous.Y || Input.Lean != Previous.Lean) return true;
     }
     return Super::IsImportantMove(LastAcked);
 }

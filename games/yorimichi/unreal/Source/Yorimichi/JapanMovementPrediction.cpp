@@ -302,9 +302,11 @@ FJapanMoveInput UJapanCharacterMovement::ReadMoveInput() const
     {
         const bool Menu = Rider->bMenuOpen || Rider->bControlsSuspended ||
             (Rider->GetNetworkActivity()==EJapanActivity::Sailboat && Rider->bVehicleBrakeIntent);
-        const FVector2D Stick = Menu ? FVector2D::ZeroVector : Rider->MoveIntent.GetClampedToMaxSize(1.);
+        const bool OnBike = Rider->GetNetworkActivity() == EJapanActivity::Bike;
+        const FVector2D Stick = Menu ? FVector2D::ZeroVector : (OnBike ? Rider->GetBikeIntent() : Rider->MoveIntent).GetClampedToMaxSize(1.);
         Input.X = int8(FMath::Clamp(FMath::RoundToInt(Stick.X * 127.), -127, 127));
         Input.Y = int8(FMath::Clamp(FMath::RoundToInt(Stick.Y * 127.), -127, 127));
+        Input.Lean = Menu || !OnBike ? 0 : int8(FMath::Clamp(FMath::RoundToInt(Rider->GetBikeLean() * 127.), -127, 127));
         Input.Flags = (Rider->bWalk ? FJapanMoveInput::Walk : 0) | (Rider->bJog ? FJapanMoveInput::Jog : 0) |
             (Rider->bSprintHeld ? FJapanMoveInput::Sprint : 0) | (Menu ? FJapanMoveInput::Menu : HeldButtons);
     }
@@ -333,7 +335,8 @@ void UJapanCharacterMovement::ApplyMoveInput(const FJapanMoveInput& Input)
 {
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner))
     {
-        Rider->MoveIntent = Input.Stick();
+        // On the bike the stick's forward axis is the pedals; the rider's own MoveIntent keeps the stick.
+        if (Rider->GetNetworkActivity() != EJapanActivity::Bike) Rider->MoveIntent = Input.Stick();
         Rider->bWalk = (Input.Flags & FJapanMoveInput::Walk) != 0;
         Rider->bJog = (Input.Flags & FJapanMoveInput::Jog) != 0;
         Rider->bSprintHeld = (Input.Flags & FJapanMoveInput::Sprint) != 0;
@@ -385,7 +388,7 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         auto* Bike = Rider->GetBike();
         const bool MoveMenu = (ActiveInput.Flags & FJapanMoveInput::Menu) != 0;
         // Menu braking is part of this move; a host's own menus never brake its guest.
-        Bike->SetInput(ActiveInput.Stick(), MoveMenu);
+        Bike->SetInput(ActiveInput.Stick(), ActiveInput.Lean / 127.f, MoveMenu);
         ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
         {
             if (!Rider->bReady || MoveMenu || Bike->NeedsNetworkPark()) return;
@@ -401,8 +404,8 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
         if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
         JapanBikeSubsteps::Run(Dt,[&](float Step)
         {
-            Bike->SimulateNetwork(Step, ActiveInput.Stick(), MoveMenu);
-            Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 1200.f;
+            Bike->SimulateNetwork(Step, ActiveInput.Stick(), ActiveInput.Lean / 127.f, MoveMenu);
+            Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 2400.f;
             Super::PerformMovement(Step);
         });
         JapanVehicleTelemetry::Move(Rider,ActiveInput,Dt,bReplaying,VehicleBefore,VehicleYawBefore);

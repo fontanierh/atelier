@@ -19,6 +19,11 @@ def drive(forward=1.0, right=0.0, gait='run'):
     return L.drive(unreal.Vector2D(float(right), float(forward)), {'walk': 0, 'run': 1, 'sprint': 2}[gait])
 
 
+def bike_lean(lean=0.0):
+    """Hold the bike lean, -1 back .. 1 forward (left stick up/down on the bike): on a pedal stroke, back pops a wheelie."""
+    return L.bike_lean(float(lean))
+
+
 def press(button):
     """Press a button as the player would: Live_Press lists them (jump, jump_release, roll, crouch toggles, attack, wave, bike...)."""
     return L.press(str(button))
@@ -35,8 +40,8 @@ def sword():
 
 
 def bike():
-    """Get the bike out and on it, or (stopped) get off and park it (docs/BIKE.md). Ride it with drive(); press('jump')
-    hops, press('crouch') skid-stops, press('attack') rings the bell, press('wave') waves."""
+    """Get the bike out and on it, or (stopped) get off and park it (docs/BIKE.md). Ride it with drive() (forward pedals,
+    back brakes) and bike_lean(); press('jump') hops, press('crouch') skid-stops (a drift while steering), press('attack') rings the bell, press('wave') waves."""
     return L.press('bike')
 
 

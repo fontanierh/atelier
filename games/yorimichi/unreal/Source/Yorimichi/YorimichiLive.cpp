@@ -30,6 +30,12 @@ bool UYorimichiLive::Drive(FVector2D Intent, int32 Gait)
     P->Live_Drive(Intent.GetClampedToMaxSize(1.f), FMath::Clamp(Gait, 0, 2)); return true;
 }
 
+bool UYorimichiLive::BikeLean(float Lean)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); if (!P) return false;
+    P->Live_BikeLean(Lean); return true;
+}
+
 bool UYorimichiLive::Press(const FString& Button)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); return P && P->Live_Press(FName(*Button));
@@ -147,8 +153,8 @@ FString UYorimichiLive::BikeState()
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UBikeComponent* B = P ? P->GetBike() : nullptr;
     if (!B) return TEXT("no bike");
     const FVector A = P->GetActorLocation(); const FTransform T = B->GetBikeTransform(); const FRotator R = T.Rotator(); const FVector2D Gaps = B->GetWheelGaps();
-    return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f sprint=%d steer=%.2f parked=%d air=%d gaps=(%.1f,%.1f) groundpitch=%.1f hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
-        int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->IsSprinting() ? 1 : 0, B->GetSteering(), B->IsParked() ? 1 : 0, P->GetCharacterMovement()->IsMovingOnGround() ? 0 : 1, Gaps.X, Gaps.Y, B->GetGroundPitch(), *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
+    return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f sprint=%d steer=%.2f parked=%d air=%d gaps=(%.1f,%.1f) groundpitch=%.1f drift=%.2f wheelie=%.1f airtime=%.2f slope=%.1f hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
+        int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->IsSprinting() ? 1 : 0, B->GetSteering(), B->IsParked() ? 1 : 0, P->GetCharacterMovement()->IsMovingOnGround() ? 0 : 1, Gaps.X, Gaps.Y, B->GetGroundPitch(), B->GetDrift(), B->GetWheelie(), B->GetAirTime(), B->GetSlope(), *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
 }
 static bool GFilmHud = false;
