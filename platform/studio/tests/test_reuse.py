@@ -40,3 +40,16 @@ def test_partial_target_build_is_rejected_without_overwriting_stamps(tmp_path, m
     with pytest.raises(ValueError, match='incremental build'):
         reuse.main('sandbox', source, target)
     assert stamp.read_text() == 'existing state'
+
+
+def test_differing_sources_names_each_step():
+    def snapshot(**steps):
+        return {'steps': [{'name': n, 'source': v} for n, v in steps.items()]}
+    assert reuse.differing_sources(snapshot(a='1', b='2'), snapshot(a='1', b='2')) == []
+    assert reuse.differing_sources(snapshot(a='1', b='2'), snapshot(a='1', b='3', c='4')) == ['b', 'c']
+
+
+def test_inspect_reports_a_source_fingerprint_for_every_step():
+    from atelier import paths
+    snapshot = reuse.inspect(paths.REPO, 'sandbox')
+    assert snapshot['steps'] and all(len(s['source']) == 64 for s in snapshot['steps'])
