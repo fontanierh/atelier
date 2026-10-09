@@ -44,6 +44,16 @@ motion = body_motion({k: v.numpy() for k, v in pred['smpl_params_global'].items(
                      load_body_model('build/gvhmr/checkpoints/body_models/smplx/SMPLX_NEUTRAL.npz'))
 ```
 
+The command line does the same and writes `gvhmr.pt`, `provenance.json` and `motion.json` into `--out`:
+
+```sh
+uv run python -m atelier.safety.guarded --report build/gvhmr/guard --purpose 'GVHMR take' -- \
+    build/gvhmr/venv/bin/python -m atelier.ai.gvhmr take.mp4 --root build/gvhmr --out build/gvhmr/takes/take \
+    --static-cam [--root-height camera] [--f-mm 26]
+```
+
+Pass exactly one of `--static-cam` and `--moving-cam`. `--root-height camera` is described below.
+
 | Option | Contract |
 | --- | --- |
 | `static_cam` | Required. `True` only for a locked-off camera; otherwise SimpleVO estimates camera rotation |
@@ -62,6 +72,35 @@ parameter set into the 22-joint motion dict: `names` and `parents` root first, `
 parent-relative rotation deltas, `root_positions`, `rest_root`, `rest_positions`, all `joint_positions`, the mean `betas`, and
 `canonical_to_gltf`. It uses one body shape per take, the mean of GVHMR's per-frame betas. Hands, jaw and eyes are not
 estimated.
+
+### Root height from the camera (experimental)
+
+GVHMR's world trajectory can flatten vertical motion that its in-camera estimate keeps. On a rendered in-game kickflip
+filmed from a locked camera, the world output raised the pelvis 5 cm where the source rose 33 cm. For a locked-off
+camera only, `camera_anchored_transl(global, incam, body_model)` replaces the world root's height with the in-camera
+pelvis carried into the world by GVHMR's own frame-0 camera. It fixes one rotation on frame 0,
+R = R_global[0] · R_incam[0]ᵀ, and sets p(t) = R (p_cam(t) − p_cam(0)) + p_global(0), where a pelvis is the rest root
+plus `transl`. Only the height of p(t) is kept: frame 0, X and Z, and every rotation stay as GVHMR's world output has
+them. The command line exposes this as `--root-height camera`, which it refuses without `--static-cam`, and it records
+the anchor under `provenance.export`. `gvhmr.pt` still holds the raw predictions.
+
+```python
+from atelier.ai.gvhmr.motion import camera_anchored_transl
+
+body_model = load_body_model('build/gvhmr/checkpoints/body_models/smplx/SMPLX_NEUTRAL.npz')
+world = {k: v.numpy() for k, v in pred['smpl_params_global'].items()}
+incam = {k: v.numpy() for k, v in pred['smpl_params_incam'].items()}
+world['transl'], anchor = camera_anchored_transl(world, incam, body_model)  # locked-off camera only
+motion = body_motion(world, body_model)
+```
+
+Use it when the subject leaves the ground (jumps, tricks, falls) and the camera never moves. A panning or handheld
+camera breaks the frame-0 anchor, so keep the default there.
+
+On the kickflip, this raised the pelvis 34 cm against the source's 33 cm, moved the peak from frame 44 to the source's
+frame 47, and cut the world joint error from 107 mm to 81 mm. On a ground-only pushing clip from the same camera, it did no harm: the mean error in root height relative to frame 0
+fell from 33 mm to 23 mm, the worst from 78 mm to 41 mm, and the world joint error went from 179 mm to 177 mm. It changes the trajectory only. GVHMR's
+estimate of the camera's tilt was still about 9° off, and its joint rotations about 16°.
 
 ## Performance
 

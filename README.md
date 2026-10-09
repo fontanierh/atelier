@@ -411,6 +411,11 @@ than the authored Run. The [UniMate](games/yorimichi/docs/UNIMATE_EXPERIMENT.md)
 
 A third runner works from video instead of text: the [GVHMR port](platform/studio/atelier/ai/gvhmr/README.md)
 recovers SMPL-X body motion from footage of one person on Apple silicon and writes the same motion representation.
+For footage from a locked-off camera, `--root-height camera` (experimental) takes the root's height from GVHMR's
+in-camera estimate, which keeps jumps that its world trajectory flattens. On a rendered kickflip, the pelvis rose
+34 cm against the source's 33 cm, where the default world output gave 5 cm. The
+[port's README](platform/studio/atelier/ai/gvhmr/README.md#root-height-from-the-camera-experimental) covers the
+anchor, the measurements and when not to use it.
 
 <p align="center">
   <img src="docs/media/unimate-backflip.gif" width="640" alt="The fox performs a prompt-only UniMate backflip and lands">

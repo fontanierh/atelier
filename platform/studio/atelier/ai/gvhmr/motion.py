@@ -67,6 +67,30 @@ def body_motion(params, body_model, fps=30):
     }
 
 
+def camera_anchored_transl(global_params, incam_params, body_model):
+    """Experimental, locked-off camera only: `global_params['transl']` with its height taken from the in-camera body.
+
+    GVHMR's world trajectory can flatten jumps that its in-camera estimate keeps. One camera-to-world rotation is
+    fixed on frame 0, R = R_global[0] @ R_incam[0].T, and the in-camera pelvis is carried into the world from the
+    frame-0 global pelvis: p(t) = R @ (p_c(t) - p_c(0)) + p_global(0), where a pelvis is the rest root plus `transl`
+    (SMPL-X rotates the body about its pelvis). Only the height of p(t) is kept; X and Z, every rotation and frame 0
+    stay exactly as GVHMR's world output has them. Returns the new `transl` and the anchor for provenance.
+    """
+    g = {k: np.asarray(v, dtype=np.float64) for k, v in global_params.items()}
+    c = {k: np.asarray(v, dtype=np.float64) for k, v in incam_params.items()}
+    frames = len(g['transl'])
+    rest_root = rest_joints(body_model, g['betas'].reshape(frames, -1).mean(0))[0]
+    R = (Rotation.from_rotvec(g['global_orient'].reshape(frames, 3)[0])
+         * Rotation.from_rotvec(c['global_orient'].reshape(frames, 3)[0]).inv()).as_matrix()
+    pelvis_cam = rest_root + c['transl'].reshape(frames, 3)
+    origin = rest_root + g['transl'].reshape(frames, 3)[0]
+    anchored = (pelvis_cam - pelvis_cam[0]) @ R.T + origin
+    transl = g['transl'].reshape(frames, 3).copy()
+    transl[:, 1] = anchored[:, 1] - rest_root[1]
+    return transl, {'root_height': 'camera', 'anchor_frame': 0, 'camera_to_world': R.tolist(),
+                    'world_pelvis_at_anchor': origin.tolist()}
+
+
 def load_body_model(path):
     """The arrays `body_motion` needs from SMPLX_NEUTRAL.npz."""
     with np.load(path, allow_pickle=True) as data:
