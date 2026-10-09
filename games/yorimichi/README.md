@@ -65,12 +65,17 @@ You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), o
 [zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and
 villagers ([wanderer](assets/characters/wanderer/README.md)) keep the island moving.
 
-**Cairo, the player** ([assets/characters/cairo](assets/characters/cairo/README.md)): walk, run, sprint with stamina,
-double jump, ground and air dash, chained rolls, crouch, wave and interact, with foot placement on slopes and
+**Cairo, the default player** ([assets/characters/cairo](assets/characters/cairo/README.md)): walk, run, sprint with stamina,
+double jump, side hops and backflips, crouch, climb, swim, glide, wave and interact, with foot placement on slopes and
 [footsteps by surface](docs/FOOTSTEPS.md). Controls are in [docs/CONTROLLER_CONTROLS.md](docs/CONTROLLER_CONTROLS.md);
 the chase camera and its see-through in [docs/CAMERA.md](docs/CAMERA.md).
 
-**Sword** ([docs/SWORD_COMBAT.md](docs/SWORD_COMBAT.md)): draw and sheathe, a three-hit chain, hold to charge, parry,
+**Modori, the playable rival** ([assets/characters/modori](assets/characters/modori/README.md)): a tall, dark-haired
+young man in a long coat with a Chaos Cloth skirt. His own rig carries the retargeted merged move set, sword and
+paraglider, and the native skating runtime fits its rider pose to his body. After building the game, launch him with
+`nice -n 10 uv run atelier play yorimichi -- -rider=Modori`.
+
+**Sword** ([docs/SWORD_COMBAT.md](docs/SWORD_COMBAT.md)): draw and sheathe, a four-cut combo, a charged spin, guard and parry,
 health and knock-downs. Hits carry trails, sparks, hit-stop, slow motion on parries, camera shake and sound
 ([docs/COMBAT_FEEDBACK.md](docs/COMBAT_FEEDBACK.md)).
 
@@ -95,7 +100,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `game.toml` | the game's description for Atelier: project, fetches, play profiles, streaming |
 | `build.py` | the build recipe |
 | `world/` | the island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` one folder per region; `world/map/` the map tools and painted sheet |
-| `assets/characters/` | the player (`cairo`), the enemy (`fox-hunter`), the villagers (`wanderer`) and the shared character [tools](assets/characters/tools/README.md) |
+| `assets/characters/` | the default player (`cairo`), playable rival (`modori`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`) and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
 | `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
 | `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |

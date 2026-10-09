@@ -6,7 +6,9 @@ calls the ones who came back from the openings *modori* (戻り, "returned"), an
 [concept and its T-pose references](../concepts/README.md#the-chosen-take-modori-in-t-pose) and the
 [lore](../../../docs/LORE.md).
 
-He is modelled, textured and dressed, **not in the game yet**: there is no export or Unreal import for him so far.
+He is playable in the game, with his own body, long coat and finger rig. The build exports his committed source,
+imports the mesh and Chaos Cloth skirt into Unreal, and retargets the merged move set onto him. He carries the
+merged set's sword and paraglider; the native skating runtime retargets its rider pose onto his body too.
 
 ## The source: `Modori-Rig-r01.blend`
 
@@ -19,8 +21,8 @@ SHA-256 and the counts below.
 | `Modori-Body` | Tripo Studio's body (Smart Mesh and Smart UV), 5,172 vertices, skinned to the rig. One material, matte (specular 0, roughness 1), its normal map disconnected; base colour `basecolor-redo.png`, 4096 px |
 | `Modori-Coat` | Tripo's long coat, a separate mesh of 5,404 vertices fitted onto the body and skinned to the same rig, with a `cloth_pin` vertex group; base colour 4096 px |
 
-- **Scale and axes:** 1 m tall as Tripo exports him, Z up, facing -Y. He is meant to be 1.75 m (`height_cm`), about
-  5 heads tall to Cairo's 4: scale on export, as Kaede's `export_unreal.py` does.
+- **Scale and axes:** 1 m tall in the source, Z up, facing -Y. `export_unreal.py` scales him to 1.75 m (`height_cm`),
+  places the soles at the floor and turns him to face +X. He is about 5 heads tall to Cairo's 4.
 - **Texture:** the *redo* variant of [`modori_texture.py`](../tools/modori_texture.py), chosen by the user on
   7 October 2026: each head triangle is labelled skin, hair or collar, and the skin and hair are painted fresh with soft
   shading from the geometry; the eyes, brows and mouth are drawn from its `FACE` table. Below the neck it is Tripo's
@@ -31,24 +33,31 @@ SHA-256 and the counts below.
   130-frame test take (`Modori-RigAction`: rest, arms down, a few steps, a quick turn) as a look check only; the
   baked frames are not kept, so the cloth simulates again when the take plays.
 
-## Putting him in the game
+## Build and play
 
-The steps Kaede took ([`sword-trainer/`](../sword-trainer), [Tripo characters](../../../docs/TRIPO_CHARACTERS.md)),
-are the model:
+From the repository root:
 
-1. **Export** (`export_unreal.py` here, a build step in `games/yorimichi/build.py`): scale to 1.75 m with the soles on
-   the floor, rename the Mixamo bones to the humanoid contract (`atelier.character.names.mixamo_aliases`,
-   [`platform/conventions/rigs/humanoid.toml`](../../../../../platform/conventions/rigs/humanoid.toml)), drop the
-   Blender cloth modifier and the test action, and write the skinned mesh (body and coat) and textures to FBX.
-2. **Coat in Unreal:** Chaos Cloth on the coat's skirt, its max-distance mask painted from `cloth_pin` (max
-   distance 0 where `cloth_pin` is 1, free where it is 0), colliding with capsules on his hips, spine, thighs and shins
-   (`export_unreal.colliders`: each holds 90% of the skin around it but stays 1.5 cm inside the coat's simulated
-   surface at rest, so no capsule pushes the coat out); or skirt bones if cloth costs too much.
-3. **Moves:** retarget the merged move set onto him as for Kaede (`adventure/retarget.py --character modori`, which loads
-   this folder's `export_unreal.py` for its `prepare`, `SOURCE` and `OUT`). His own weapon
-   (a knotted rope with a bell-metal weight, left off the T-pose) and its clips come later.
-4. **Import** (`unreal/Scripts/import_<...>.py`), then play him: as the player in Cairo's place first, to check the
-   skinning, the face and the coat in motion.
+```sh
+nice -n 10 uv run atelier build yorimichi
+nice -n 10 uv run atelier play yorimichi -- -rider=Modori
+```
+
+The normal build includes him. `unreal.modori_adventure` selects his mesh and merged-motion imports with their
+dependencies when only those assets need rebuilding after an existing full build.
+
+- `characters.modori` runs [`export_unreal.py`](export_unreal.py), checks the source hash, renames the bones to the
+  humanoid contract and writes his body, coat, textures and cloth mask into `build/yorimichi/modori/`.
+- `unreal.modori` runs `unreal/Scripts/import_modori.py`, creating `SK_Modori`, materials, coat cloth and colliders,
+  and `DA_ModoriBase`. The base supplies the mesh and measurements to the merged importer.
+- `characters.modori_adventure` runs `adventure/retarget.py --character modori`, using Cairo's donor clips and the
+  committed motion reference. `unreal.modori_adventure` imports those clips into `/Game/Modori/Adventure` and writes
+  `DA_Modori` and his move record. [`adventure.toml`](adventure.toml) records his equipment fit.
+- `characters.modori_grips` exports his posed hand grips for the sword and paraglider.
+
+`AModoriCharacter` is registered as a playable character and always uses his merged move set. His coat skirt is
+simulated by Chaos Cloth, with the upper coat pinned and the free skirt colliding with capsules on his body.
+The cloth resets after teleports and board mounts. His story weapon, the rope and bell-metal weight, is still a
+concept; the playable character uses the merged set's sword.
 
 ## Known limits
 
@@ -56,10 +65,12 @@ are the model:
   is soft at 60 mm close-ups. Two material slots (hair and skin) would make it exact.
 - The matte material reads the hair a little darker than Tripo's sheen did.
 
-## Rebuilding the source
+## Authoring a new source revision
 
-The Tripo Studio downloads are not in Git; they stay in `build/yorimichi/characters/modori/` on the machine that made
-them (`tripo-body-r01/` with its `rigged/modori-rigged.fbx`, `tripo-coat-r01/`). From there, under the guard
+Game rebuilds use the committed blend and its packed textures. The original Tripo Studio downloads below are
+inputs to the authoring tools, rather than the game build. They stay in the author's ignored
+`build/yorimichi/characters/modori/` (`tripo-body-r01/` with its `rigged/modori-rigged.fbx`, `tripo-coat-r01/`).
+To author a replacement from those files, under the guard
 (`uv run python -m atelier.safety.guarded --small 3 ...`):
 
 ```sh
