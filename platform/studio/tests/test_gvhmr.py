@@ -66,7 +66,7 @@ class BodyMotionTests(unittest.TestCase):
         self.assertEqual(motion['root_positions'][1], (self.joints[0] + [1, 2, 3]).tolist())
         self.assertEqual((motion['names'][0], motion['canonical_to_gltf']), ('pelvis', [0, 0, 0, 1]))
 
-    def test_rotations_compose_down_the_chain_and_move_only_the_subtree(self):
+    def test_rotations_are_parent_relative_and_move_only_the_subtree(self):
         from scipy.spatial.transform import Rotation
         from atelier.ai.gvhmr.motion import body_motion
 
@@ -78,14 +78,32 @@ class BodyMotionTests(unittest.TestCase):
         positions, quats = np.array(motion['joint_positions'][0]), np.array(motion['rotations'][0])
         root = self.joints[0]
         for j, name in enumerate(self.names):
-            below_knee = name in ('left_ankle', 'left_foot')
-            expected = yaw * bend if below_knee or name == 'left_knee' else yaw
+            expected = {'pelvis': yaw, 'left_knee': bend}.get(name, Rotation.identity())
             self.assertLess((Rotation.from_quat(quats[j]) * expected.inv()).magnitude(), 1e-9, name)
-            if not below_knee:
+            if name not in ('left_ankle', 'left_foot'):
                 np.testing.assert_allclose(positions[j], root + yaw.apply(self.joints[j] - root), atol=1e-12)
         ankle = self.names.index('left_ankle')
         np.testing.assert_allclose(
             positions[ankle], positions[knee] + (yaw * bend).apply(self.joints[ankle] - self.joints[knee]), atol=1e-12)
+
+    def test_deltas_composed_like_the_retargeter_reproduce_the_joints(self):
+        from scipy.spatial.transform import Rotation
+        from atelier.ai.gvhmr.motion import body_motion
+
+        rng = np.random.default_rng(5)
+        motion = body_motion(self.params(3, global_orient=rng.normal(size=(3, 3)), body_pose=rng.normal(size=(3, 63)),
+                                         transl=rng.normal(size=(3, 3))), self.model)
+        rest = np.array(motion['rest_positions'])
+        for f in range(3):
+            # platform/web/motion/retarget.js: a bone's world delta is its parent's animated delta times its own.
+            world = [None] * len(self.names)
+            positions = np.empty_like(rest)
+            for j, p in enumerate(self.parents):
+                delta = Rotation.from_quat(motion['rotations'][f][j])
+                world[j] = delta if p < 0 else world[p] * delta
+                positions[j] = (motion['root_positions'][f] if p < 0
+                                else positions[p] + world[p].apply(rest[j] - rest[p]))
+            np.testing.assert_allclose(positions, motion['joint_positions'][f], atol=1e-9)
 
     def test_shape_uses_the_mean_betas(self):
         from atelier.ai.gvhmr.motion import body_motion

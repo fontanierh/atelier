@@ -1,8 +1,9 @@
 """SMPL-X body parameters to the motion representation the shared retargeter reads.
 
 GVHMR predicts SMPL-X parameters per frame: `global_orient` (3), `body_pose` (21×3, axis-angle), `transl` (3) and
-`betas` (10). The 22 body joints rest with identity rotations, so a joint's world rotation is also its delta from
-rest, which is what [platform/web/motion](../../../../web/motion/README.md) consumes. The global frame is
+`betas` (10). The 22 body joints rest with identity rotations, so each joint's local SMPL-X rotation is already the
+parent-relative delta in canonical axes that [platform/web/motion](../../../../web/motion/README.md) composes down the
+rig. The global frame is
 gravity-aligned and Y-up, and the rest body faces +Z, matching that canonical frame. Hands, jaw and eyes stay out:
 GVHMR does not estimate them.
 """
@@ -50,7 +51,7 @@ def body_motion(params, body_model, fps=30):
         p = PARENTS[j]
         world[:, j] = world[:, p] @ local[:, j]
         positions[:, j] = positions[:, p] + world[:, p] @ (rest[j] - rest[p])
-    quats = Rotation.from_matrix(world.reshape(-1, 3, 3)).as_quat().reshape(frames, len(NAMES), 4)
+    quats = Rotation.from_matrix(local.reshape(-1, 3, 3)).as_quat().reshape(frames, len(NAMES), 4)
     return {
         'fps': fps,
         'frames': frames,

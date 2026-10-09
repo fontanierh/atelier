@@ -58,8 +58,8 @@ Upstream treats consecutive frames as 30 fps samples whatever the file's rate. S
 
 `pred` holds upstream's `smpl_params_global` and `smpl_params_incam` (SMPL-X `global_orient`, `body_pose`, `transl`,
 `betas`), the intrinsics, the person boxes, the ViTPose keypoints and the camera rotations. `body_motion` turns either
-parameter set into the 22-joint motion dict: `names` and `parents` root first, `fps`, `frames`, per-frame xyzw world
-rotation deltas, `root_positions`, `rest_root`, `rest_positions`, all `joint_positions`, the mean `betas`, and
+parameter set into the 22-joint motion dict: `names` and `parents` root first, `fps`, `frames`, per-frame xyzw
+parent-relative rotation deltas, `root_positions`, `rest_root`, `rest_positions`, all `joint_positions`, the mean `betas`, and
 `canonical_to_gltf`. It uses one body shape per take, the mean of GVHMR's per-frame betas. Hands, jaw and eyes are not
 estimated.
 
