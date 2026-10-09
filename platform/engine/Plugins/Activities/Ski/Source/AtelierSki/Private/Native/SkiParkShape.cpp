@@ -1,4 +1,4 @@
-#include "SkiPark.h"
+#include "SkiParkShape.h"
 
 #include <algorithm>
 #include <cmath>

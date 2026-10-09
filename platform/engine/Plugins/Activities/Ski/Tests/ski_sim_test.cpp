@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "SkiPark.h"
+#include "SkiParkShape.h"
 #include "SkiSim.h"
 
 using namespace atelier::ski;

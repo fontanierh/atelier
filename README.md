@@ -178,6 +178,7 @@ Where to go next, in the order most games grow:
 | The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint; AI helpers for Tripo, Sunburst, H3 and Seedance; review sheets; machine safety (one heavy job at a time, optionally a small one beside it, a memory guard) |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
 | Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera; tracked native data and its checks |
+| Skiing | [Ski](platform/engine/Plugins/Activities/Ski/README.md) | native ski physics (carving, pops, spins, grabs), an active-ragdoll rider, terrain parks |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Ski lab | [platform/web/ski-lab](platform/web/ski-lab/README.md) | experimental freestyle-skiing physics (carving, pops, spins, hockey stops) and a speed-designed terrain park, playable in a browser |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |

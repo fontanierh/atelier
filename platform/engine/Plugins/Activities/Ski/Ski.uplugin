@@ -1,0 +1,15 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier Ski",
+  "Description": "Physics-based freestyle skiing: one simulated skier carves on its sidecut, pops, spins, grabs and hockey-stops on any static collision, the character's own body rides it as an active ragdoll and goes limp in a crash, and a terrain park whose jumps are built for their speeds.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierSki", "Type": "Runtime", "LoadingPhase": "Default" }],
+  "Plugins": [
+    { "Name": "PhysicsControl", "Enabled": true },
+    { "Name": "ProceduralMeshComponent", "Enabled": true }
+  ]
+}
