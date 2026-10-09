@@ -128,12 +128,12 @@ Each step is a prompt or a script an agent runs, followed by a human look (often
 <td width="50%"><img src="docs/media/character/01-concepts.jpg" alt="Four concept images of the boy; the first is picked"><br><sub><b>1. Concepts.</b> Four directions; the first is picked.</sub></td>
 <td width="50%"><img src="docs/media/character/02-turnaround.jpg" alt="Front, left, back and right views in a T-pose"><br><sub><b>2. Turnaround.</b> Four views for the 3D model.</sub></td>
 </tr><tr>
-<td width="50%"><img src="docs/media/character/04-fingers.gif" alt="The fingers closing and opening"><br><sub><b>4. Fingers.</b> 30 finger bones added to the auto-rig.</sub></td>
+<td width="50%"><img src="docs/media/character/04-rig.jpg" alt="Rest pose and three hand poses"><br><sub><b>4. Skeleton.</b> The rest pose and three hand poses from the added finger bones.</sub></td>
 <td width="50%"><img src="docs/media/character/05-outfit.jpg" alt="Outfit concept, the dressed mannequin, the final character"><br><sub><b>5. Outfit.</b> Concept, dressed mannequin, final character.</sub></td>
 </tr></table>
 
-<img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
-<sub><b>7. Clip review.</b> A sword strike from three cameras, eight frames each.</sub>
+<p><img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
+<br><sub><b>7. Clip review.</b> A sword strike from three cameras, eight frames each.</sub></p>
 
 Generation does not settle every detail. When a hand sat differently on the sword from one clip to the next, an agent
 built a small [browser grip poser](games/yorimichi/docs/GRIPS.md): a person drags the fingertips on the real rigged
@@ -154,12 +154,12 @@ import them; its inputs are hashed, so `atelier build` reruns only what changed:
 from atelier.build import Blender, Step, UnrealScript
 
 def steps(ctx):
+    garden, importer = GAME / 'world' / 'garden.py', SCRIPTS / 'import_garden.py'
     return [
-        Step('world.garden', [Blender(GAME / 'world' / 'garden.py')], inputs=[GAME / 'world' / 'garden.py'],
+        Step('world.garden', [Blender(garden)], inputs=[garden],
              outputs=[ctx.out / 'garden' / 'manifest.json'], about='the garden meshes'),
-        Step('unreal.garden', [UnrealScript(SCRIPTS / 'import_garden.py', 'GARDEN IMPORTED')],
-             inputs=[SCRIPTS / 'import_garden.py'], needs=['world.garden'], after=['unreal.compile'], heavy=True,
-             about='the garden in the level'),
+        Step('unreal.garden', [UnrealScript(importer, 'GARDEN IMPORTED')], inputs=[importer],
+             needs=['world.garden'], after=['unreal.compile'], heavy=True, about='the garden in the level'),
     ]
 ```
 
