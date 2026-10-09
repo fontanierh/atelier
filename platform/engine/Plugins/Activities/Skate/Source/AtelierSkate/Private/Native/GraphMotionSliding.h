@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "InputIntentions.h"
 #include "Settings.h"
@@ -6,7 +5,7 @@
 namespace atelier::skate
 {
 // Distinct production-host implementation from graph_host/motion_sliding.rs.
-// Do not substitute the recovered core PowerSliding state for this owner.
+// Do not substitute the core PowerSliding state for this owner.
 struct GraphMotionSlidingSettings
 {
     float speed_threshold, well_into_slide;

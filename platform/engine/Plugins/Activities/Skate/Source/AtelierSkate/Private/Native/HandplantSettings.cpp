@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "HandplantSettings.h"
 #include "PlantMath.h"
 #include "StockSettingsReader.h"

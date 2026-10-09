@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Braking.h"
 #include "GroundAnimationRuntime.h"
 #include "GroundJumpMath.h"

@@ -60,8 +60,6 @@ FRideTransition& USkateComponent::Transit()
 
 bool USkateComponent::WantsGetUpOnFoot() const { return Transition && Transition->bGetUpOnFoot; }
 
-bool USkateComponent::IsBoardInHand() const { return Transition && Transition->Foot == ERideFoot::Carry; }
-
 // ---------------------------------------------------------------------------------------------------------------
 // The clips.
 

@@ -6,7 +6,7 @@ binary32 values written as their shortest round-trip decimal (negative zero as -
 file byte for byte; callers check the result against the native package manifest's SHA-256 digests. `export` is the
 one-time conversion from the native files.
 
-    motion_text.py export --native <SkateNative bundle> --source <motion source>
+    motion_text.py export --native <native package> --source <motion source>
     motion_text.py build --source <motion source> --native <output folder>
 """
 import argparse

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "PlayerInputTypes.h"
 namespace atelier::skate

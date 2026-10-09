@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Checker prepends tested body, collision and constraint record adapters.
 #include "SkeletonPhysicsSettings.h"
 #include <fstream>

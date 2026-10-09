@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CompiledGraph.h"
 #include <fstream>
 #include <iostream>

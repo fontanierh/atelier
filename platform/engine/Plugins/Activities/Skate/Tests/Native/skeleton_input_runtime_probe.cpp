@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Prefixed by accepted physical/adjusted probe observation adapters.
 #include "SkeletonInputRuntime.h"
 struct Input

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "WipeoutRuntime.h"
 #include <cmath>
 #include <cstring>

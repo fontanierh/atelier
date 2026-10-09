@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prepends the skeleton-body probe's public record adapters.
 #include "BoardGroundAngle.h"
 #include "SkeletonPoseErrors.h"

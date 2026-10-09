@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ClimbingRuntime.h"
 #include <cmath>
 #include <cstring>

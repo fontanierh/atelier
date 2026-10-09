@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GameplayRuntime.h"
 #include <algorithm>
 #include <fstream>

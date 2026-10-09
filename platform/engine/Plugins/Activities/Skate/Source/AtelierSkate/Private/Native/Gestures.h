@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
-// C++ port of the recovered gesture recognizer; see ThirdParty/skate-core-LICENSE.
+// The Flick-It gesture recognizer.
 #pragma once
 #include <array>
 #include <cstdint>

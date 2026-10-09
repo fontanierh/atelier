@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AnimationChannels.h"
 #include <algorithm>
 #if defined(__clang__)

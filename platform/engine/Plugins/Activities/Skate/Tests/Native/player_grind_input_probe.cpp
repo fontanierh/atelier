@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Prefixed by the frozen world probe's declaration/transport adapters only.
 #include "PlayerGrindMaterials.h"
 #include <fstream>

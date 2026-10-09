@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // GENERATED_WHOLE_HOST_MODULE_DECLARATIONS
 use std::io::{Read,Write};
 use skate_core::{animation::{output::attributes::AttributeName,landing_quality as landing},physics::filtered_state as filtered,point_graph};

@@ -1,11 +1,8 @@
 # Skate runtime reference
 
-The skating runtime is the C++ under `Source/AtelierSkate/Private/Native/`, namespace `atelier::skate`. It is a port of
-the recovered Skate 3 implementation from
-[2010-rust-rewrite-mashup/skate](https://github.com/chasmlol/2010-rust-rewrite-mashup/tree/7842b9e70e9aac22ed176b655dd63302618ee023/skate),
-which originated in [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine). It reads
-only the project's native data formats. The parity checks in `Tests/` compare it, bit for bit, with that Rust
-implementation as pinned in this repository's history at commit `46513a6` (and `1536531` for the transfer and vert
+The skating runtime is the C++ under `Source/AtelierSkate/Private/Native/`, namespace `atelier::skate`. It reads only
+the project's native data formats. The parity checks in `Tests/` compare it, bit for bit, with a Rust reference
+implementation kept in this repository's history at commit `46513a6` (and `1536531` for the transfer and vert
 assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the Unreal side.
 
 ## Session
@@ -21,6 +18,7 @@ assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the U
 | `Feel(feel)` | The `FeelTuning` scales (flick, air, rails, rolling, balance; README "Feel"); out-of-range values are an error |
 | `Activate(position, heading)` | Puts the rider on the board at a spot |
 | `Step(pad, frame_interval)` | Adds host time and runs whole ticks |
+| `Step(pad, frame_interval, readings)` | The same, with the frame's stick readings for the gestures (120 Hz flicks) |
 | `SuspendInput()` | Stops reading the pad between rides |
 | `InstallCollision(world)` | Swaps in a prepared collision snapshot between steps |
 | `AdoptWorld(from)` | Takes over another session's installed collision and grind world |
@@ -34,7 +32,7 @@ possession, solves the bodies and publishes pose, score and camera. The pad is a
 (`GameplayTransferButton`) is the host's transfer button and is removed before the pad is sampled.
 
 The module compiles without unity builds and with precise floating-point semantics; the adapter runs native work in
-the default floating-point environment and restores the caller's afterwards. Native space is metres, left/up/forward;
+the default floating-point environment with denormals flushed to zero, and restores the caller's afterwards. Native space is metres, left/up/forward;
 the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle winding.
 
 ## Systems
@@ -66,11 +64,13 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 
 ## Data bundle
 
-The game tracks the bundle in `unreal/Content/Data/SkateNative/`. The adapter reads it from
-`FPaths::ProjectContentDir()/Data/SkateNative` and refuses to start when `package-manifest.json` is missing.
-With typed motion ([MOTION_DATA.md](MOTION_DATA.md)) the rig, clips and metadata come from the assets instead, and the
-game ships without `animation/` and `metadata/`. A game can commit those three as JSON (`Tools/motion_text.py`), and its
-build writes the complete package to `build/<game>/skate-native/package/` for the offline tools.
+The plugin's [`Data/`](Data/README.md) holds the bundle: the runtime payloads and their manifest in `Data/runtime/`,
+the rig, clips and metadata banks as JSON in `Data/motion/`, and the descriptor `Data/bundle.json`. A game stages
+`Data/runtime/` into `unreal/Content/Data/SkateNative/`; the adapter reads it from
+`FPaths::ProjectContentDir()/Data/SkateNative` and refuses to start when `package-manifest.json` is missing. The rig,
+clips and metadata come from typed motion assets ([MOTION_DATA.md](MOTION_DATA.md)), so the game ships without
+`animation/` and `metadata/`. The build writes the complete package, with those files rebuilt from the JSON by
+`Tools/motion_text.py`, to `build/<game>/skate-native/package/` for the offline tools.
 `LoadGameplayResources` reads the files in this order and checks each one's magic tag:
 
 | File | Magic | Content |
@@ -90,16 +90,16 @@ All formats are little-endian; strings carry a u32 byte count. A clip stores one
 per frame for a varying one.
 
 `package-manifest.json` (version 1) lists the formats, the source identity and every file's path, size and SHA-256.
-The tracked bundle has 3,334 payloads totalling 70,695,340 bytes: 3,324 clips (2,672 in bank 0, 652 in bank 1) with
+The complete package has 3,334 payloads totalling 70,695,340 bytes: 3,324 clips (2,672 in bank 0, 652 in bank 1) with
 131,642 frames, 285 gesture patterns and two metadata banks. It has no `custom/` files.
 
 ## Verification
 
 ### Bundle check
 
-The game's `skate.runtime` build step runs its `tools/verify_skate_native.py` against the descriptor in
-`assets/skate/runtime.json`, and `unreal.compile` depends on it. It assembles the package (runtime payloads plus the
-files `Tools/motion_text.py` builds from the JSON motion source) and checks:
+A game's `skate.runtime` build step runs `Tools/native_package.py` against `Data/bundle.json`, and `unreal.compile`
+depends on it. It assembles the package (the runtime payloads plus the files `Tools/motion_text.py` builds from
+`Data/motion/`), checks it and stages `Data/runtime/` into the game's `Content/Data/SkateNative`. The checks are:
 
 - the descriptor's version and backend, the manifest's SHA-256, version, formats, source identity and counts;
 - that the file set matches the manifest exactly, with safe relative paths and no symlinks;
@@ -109,17 +109,19 @@ files `Tools/motion_text.py` builds from the JSON motion source) and checks:
 - the source identity inside `physics-skeletons.skate` and `metadata/bank-0.skate`.
 
 It writes `build/<game>/skate-native/verification.json`. It checks integrity, not behaviour; the parity checks below
-cover behaviour.
+cover behaviour, and [MOTION_DATA.md](MOTION_DATA.md#building-and-verifying) the typed motion assets.
 
 ### Rebuilding the bundle
 
-The tools in `Tools/` turn the original data into the bundle. Normal builds never run them. Rerun them only to change
-a native format or to add an optional `custom/` file, then copy the runtime payloads over the bundle, export the
-animation with `Tools/motion_text.py export`, and update the descriptor's `manifest_sha256` and counts.
+The converters in `Tools/` turn the source assets into the bundle; normal builds run only `motion_text.py`. Rerun the
+converters only to change a native format or to add an optional `custom/` file. Then copy the new runtime payloads
+and `package-manifest.json` into `Data/runtime/`, export the animation into `Data/motion/` with
+`Tools/motion_text.py export --native <package> --source Data/motion`, and update `manifest_sha256` and the counts in
+`Data/bundle.json`.
 
 | Tool | Input | Output |
 | --- | --- | --- |
-| `convert_native_data.py --source A --output O [--animation-samples S]` | Restored original assets (`A/private/...`), decoded clip export | Settings, gestures, graphs, physical skeletons; clips with `samples-manifest.json` |
+| `convert_native_data.py --source A --output O [--animation-samples S]` | Restored source assets (`A/private/...`), decoded clip export | Settings, gestures, graphs, physical skeletons; clips with `samples-manifest.json` |
 | `convert_animation_metadata.py --decoded D --output O` | Decoded metadata export | `bank-*.skate` and `metadata-manifest.json` |
 | `convert_camera_data.py --decoded D --output O` | Decoded camera export | `camera.skate` |
 | `assemble_native_package.py --assets A --samples S --metadata M --camera C --output O` | The above | A complete bundle and its `package-manifest.json` (`O` must not exist) |
@@ -132,11 +134,13 @@ from the assets when present.
 ### Parity checks
 
 `Tests/` holds 155 `check_*_parity.py` scripts, one per system or slice of a system, plus helpers
-(`historical_oracle.py`, `reference_build.py`, `session_parity.py`, `session_terrain.py`, `player_input_protocol.py`,
-`reference_case_runner.py`). Each script builds a C++ probe from `Tests/Native/` against the native sources and a Rust
+(`historical_oracle.py`, `reference_build.py`, `build_reference.py`, `session_parity.py`, `session_terrain.py`,
+`player_input_protocol.py`, `reference_case_runner.py`, `build_native_session_cli.py`, `air_settings_fixtures.py`,
+`camera_probe_schema.py`, `camera_reference_build.py`, `camera_output_reference_build.py`,
+`motion_reference_build.py`). Each script builds a C++ probe from `Tests/Native/` against the native sources and a Rust
 probe from `Tests/Reference/` against a Git snapshot of the reference, runs both on the same inputs and compares the
 outputs bit for bit. The docstring of each script says what it covers; `--help` lists its options. Most take
-`--assets` (the restored original assets), `--output` and `--target-dir` (a Cargo target directory), all under
+`--assets` (the restored source assets), `--output` and `--target-dir` (a Cargo target directory), all under
 `build/`; many accept `--preflight`, which stages and hashes the sources without compiling. The widest checks are:
 
 - `check_gameplay_session_parity.py`: complete sessions through `GameplaySession` against the `46513a6` reference;
@@ -144,13 +148,13 @@ outputs bit for bit. The docstring of each script says what it covers; `--help` 
   previous check's output as `--baseline-build`.
 
 Compiling and running probes is heavy: run it under the render lock and memory guard. With `<game>` the game whose
-history holds the original assets:
+history holds the source assets:
 
 ```sh
 P=platform/engine/Plugins/Activities/Skate
 O=build/<game>/skate-cpp
 python3 $P/Tests/historical_oracle.py --game <game> --check-history --output $O/oracle   # pinned objects present?
-python3 $P/Tests/historical_oracle.py --game <game> --output $O/assets                   # restore the original assets
+python3 $P/Tests/historical_oracle.py --game <game> --output $O/assets                   # restore the source assets
 uv run python -m atelier.safety.guarded --report $O/guard --kind compile --purpose "skate session parity" -- \
   python3 $P/Tests/check_gameplay_session_parity.py --assets $O/assets \
     --native-package build/<game>/skate-native/package --output $O/session --target-dir $O/cargo
@@ -162,7 +166,7 @@ uv run python -m atelier.safety.guarded --report $O/guard --kind compile --purpo
 
 ### Reference build
 
-`build_reference.py` extracts `ThirdParty/skate-runtime` at the pinned commit with `git archive` and builds the
+`build_reference.py` extracts the reference source, `ThirdParty/skate-runtime` in commit `46513a6`, with `git archive` and builds the
 reference binary `atelier-skate-runtime` with `cargo +1.97.1 build --release --locked --jobs 2`, recording
 `provenance.json` beside it. No script installs the toolchain or fetches dependencies; prepare them by hand, once
 (with `P` and `O` as above):
@@ -188,8 +192,7 @@ to check that it is deterministic.
 
 ## Limits
 
-- The checks establish equivalence with the recovered implementation over their recorded inputs, not with the
-  original console game. Operating-system input timing and the timing of background collision builds are outside
+- The checks establish equivalence with the reference implementation over their recorded inputs. Operating-system input timing and the timing of background collision builds are outside
   them.
 - The reference's own test
   `physics::board_world::broadphase_tests::predictive_contacts_and_retention_match_full_scan_for_every_primitive`
@@ -197,15 +200,14 @@ to check that it is deterministic.
   rejects. The C++ keeps the indexed behaviour.
 - Collision is a static snapshot: moving objects, skeletal meshes, procedural meshes and streamed-out terrain are
   not seen.
-- Every surface gets one collision material (friction and restitution). Ground kinds differ only by the recovered
+- Every surface gets one collision material (friction and restitution). Ground kinds differ only by the
   surface profile that the wheels' vote selects (smooth, rough, slow, very slow), and by their sounds.
-- Rails reach the session as polylines only; their kind, side and radius are not used.
+- Rails reach the session as polylines.
 - A complex-as-simple mesh whose importer does not enable CPU access has no CPU render triangles in a cooked build;
   the snapshot then reads its cooked Chaos collision triangles instead. Those lose the authored per-vertex normal, so
-  each triangle faces by its cooked winding (the physics convention, the reverse of the render one). A mesh with neither is logged once and not collided with. Cooked loading of
-  the bundle is otherwise unverified.
-- The solver keeps the recovered rider's proportions, so contacts near low obstacles can need visual review on a
+  each triangle faces by its cooked winding (the physics convention, the reverse of the render one). A mesh with neither is logged once and not collided with.
+- The solver keeps the session rider's proportions, so contacts near low obstacles can need visual review on a
   differently proportioned character. Grab grips scale with the host's hand, but the finger curl angles are fixed:
   on a hand with short fingers for its knuckle spacing, the fingertips end at the rail rather than under the deck.
 - Only the `pop`, `land` and `clatter` sounds play; `catch`, `push`, `flick` and `fall` are loaded but not
-  triggered. The original audio and interface are not part of the runtime.
+  triggered.

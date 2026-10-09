@@ -8,7 +8,7 @@ struct FHitResult;
 UENUM()
 enum class ESkateBackend : uint8
 {
-    /** The recovered native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
+    /** The native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
     Native,
     /** Ride (RIDE.md): Native's session rides the board under Ride's physical body, transitions and bails. */
     Ride
@@ -50,13 +50,13 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
     /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
     static ESkateBackend ActiveBackend();
-    /** Original controller preset: easy, normal or hardcore. */
+    /** Controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
-    /** 0 loose / 1 tight; feeds the original steering scalar. */
+    /** 0 loose / 1 tight; feeds the steering scalar. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float TruckTightness = .5f;
-    /** Multiplier on the recovered jump-height presets (1 is stock). */
+    /** Multiplier on the jump-height presets (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
-    /** Multiplier on the recovered air-spin target (1 is stock). */
+    /** Multiplier on the air-spin target (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
     /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;

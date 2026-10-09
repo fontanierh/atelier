@@ -169,8 +169,7 @@ void USkateComponent::GetUpFromNativeBail()
     if (WantsGetUpOnFoot())
     {
         Body.StartGetUp(ERideGetUpExit::OnFoot);
-        Transit().bRecoverAway = false;
-        BeginGetUpOnFoot(Ground, Yaw, bFaceUp);
+        BeginGetUpOnFoot(bFaceUp);
         return;
     }
     Body.StartGetUp(ERideGetUpExit::Board);

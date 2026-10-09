@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Immutable wire/owner helper prefixes are staged with exact boundaries/hash.
 #include "GroundAnimationRuntime.h"
 #include "ground_animation_helpers.inc"

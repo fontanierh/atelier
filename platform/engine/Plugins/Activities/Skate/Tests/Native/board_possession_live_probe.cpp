@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prefixes the shared exact possession transport helpers.
 #include "BoardPossessionSettings.h"
 #include <fstream>

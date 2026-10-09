@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <array>
 #include <cmath>
@@ -48,7 +47,7 @@ Vec3 Scale(Vec3 value, float factor);
 Vec3 Subtract(Vec3 left, Vec3 right);
 Vec4 LimitLength3(const Vec4& value, float limit);
 
-// Distinct recovered power trees; Sin/Cos are not wrappers around SinCos.
+// Distinct power trees; Sin/Cos are not wrappers around SinCos.
 std::pair<float,float> SinCos(float angle);
 float Sin(float angle);
 float Cos(float angle);

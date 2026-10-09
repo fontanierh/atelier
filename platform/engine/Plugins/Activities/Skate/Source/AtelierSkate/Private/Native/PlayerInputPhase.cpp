@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerInputPhase.h"
 #include "GravityScale.h"
 #include "StockSettingsReader.h"

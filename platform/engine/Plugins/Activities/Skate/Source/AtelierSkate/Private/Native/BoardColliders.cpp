@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BoardColliders.h"
 #include "NativeMath.h"
 #include <algorithm>

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Whole production runtime from native data. No completed pose, input, contact,
 // graph or solver result is supplied by this executable.
 // clang-format off

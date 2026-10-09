@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GrindRuntimeInternal.h"
 #include "PlayerStateSelector.h"
 #include "AntiFlip.h"

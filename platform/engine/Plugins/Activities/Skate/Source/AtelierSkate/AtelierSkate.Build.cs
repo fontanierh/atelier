@@ -11,7 +11,7 @@ public class AtelierSkate : ModuleRules
         // Explicit std::fma calls supply only the original fused operations.
         FPSemantics = FPSemanticsMode.Precise;
         // The translated routines retain scoped source variable names. Keep
-        // shadow diagnostics visible without rejecting the recovered code.
+        // shadow diagnostics visible without rejecting the simulation code.
         CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Warning;
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "DeveloperSettings" });
         PrivateDependencyModuleNames.AddRange(new string[] { "Json", "AtelierCore", "AtelierFX", "RenderCore", "RHI", "AnimationCore", "AnimGraphRuntime", "PhysicsCore", "PhysicsControl", "Chaos" });

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prefixes immutable actual owner observation/wire helpers.
 #include "AirPhaseRuntime.h"
 #include "KnownAirRuntime.h"

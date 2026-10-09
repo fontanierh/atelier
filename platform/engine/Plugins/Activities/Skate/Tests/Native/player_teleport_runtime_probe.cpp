@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Generated helper prefixes are observations/wire readers, never reset logic.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"

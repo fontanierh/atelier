@@ -1,7 +1,7 @@
 """Archive generated content outside the current game recipe before identity generation and cooking.
 
 Unreal's cook includes every asset and stages all of Data. Incremental checkouts therefore need to move retired
-imports out of Content as well as stop producing them. Archives stay under build/; committed skating data stays put.
+imports out of Content as well as stop producing them. Archives stay under build/.
 """
 import json
 import shutil

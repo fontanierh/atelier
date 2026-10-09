@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundLaunchInfo.h"
 namespace atelier::skate
 {

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundMotion.h"
 #include "GroundOutput.h"
 #include <cassert>

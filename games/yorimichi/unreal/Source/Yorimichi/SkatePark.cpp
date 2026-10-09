@@ -167,13 +167,7 @@ bool ASkatePark::Initialize(const FString& Path)
         {
             const TSharedPtr<FJsonObject> R = Value->AsObject();
             FSkateRail Rail; Rail.Id = FName(*R->GetStringField(TEXT("id")));
-            const FString Kind = R->GetStringField(TEXT("kind"));
-            Rail.Kind = Kind == TEXT("ledge") ? ESkateRailKind::Ledge : Kind == TEXT("coping") ? ESkateRailKind::Coping : Kind == TEXT("curb") ? ESkateRailKind::Curb : ESkateRailKind::Rail;
             for (const auto& P : R->GetArrayField(TEXT("points"))) { const FVector L = ArrayVector(P->AsArray()); Rail.Points.Add(LocalToWorld(L.X, L.Y, L.Z)); }
-            double Radius = 2.5; if (R->TryGetNumberField(TEXT("radius"), Radius)) Rail.Radius = Radius * 100.;
-            const TArray<TSharedPtr<FJsonValue>>* Side = nullptr;
-            if (R->TryGetArrayField(TEXT("side"), Side) && Side->Num() >= 2)
-                Rail.Side = (LocalToWorld((*Side)[0]->AsNumber(), (*Side)[1]->AsNumber(), 0.) - LocalToWorld(0., 0., 0.)).GetSafeNormal2D();
             if (Registry->Add(MoveTemp(Rail)) != INDEX_NONE) ++RailCount;
         }
     const TSharedPtr<FJsonObject>* Spawns = nullptr;

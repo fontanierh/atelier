@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "LandingOnDeckSettings.h"
 #include "StockSettingsReader.h"
 namespace atelier::skate

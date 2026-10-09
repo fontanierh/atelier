@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SkeletonOutputRuntime.h"
 #include "StockSettingsReader.h"
 #include "TruckDriveFrames.h"

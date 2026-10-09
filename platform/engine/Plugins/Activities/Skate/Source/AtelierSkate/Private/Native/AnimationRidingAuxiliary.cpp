@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AnimationRidingAuxiliary.h"
 #include "GraphMotionName.h"
 #include "RidingAnimation.h"

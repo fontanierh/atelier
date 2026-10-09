@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Gestures.h"
 #include "DataReader.h"
 #include <algorithm>

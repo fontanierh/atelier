@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prefixes complete accepted physical/pose/dispatcher adapters.
 #include "SkeletonBiped.h"
 namespace

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Standalone test adapter; this main is not part of the Unreal module.
 #include "Gestures.h"
 #include <cstring>

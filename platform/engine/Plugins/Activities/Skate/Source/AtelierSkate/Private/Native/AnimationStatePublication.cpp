@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AnimationStatePublication.h"
 #include <cstring>
 #pragma clang fp contract(off)

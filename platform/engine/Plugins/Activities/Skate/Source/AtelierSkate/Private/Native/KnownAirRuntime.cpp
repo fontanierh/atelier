@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "KnownAirRuntime.h"
 #include "KnownAirPrivate.h"
 namespace atelier::skate

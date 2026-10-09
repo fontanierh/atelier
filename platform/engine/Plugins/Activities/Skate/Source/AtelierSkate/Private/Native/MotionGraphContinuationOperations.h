@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "AnimationAirborne.h"
 #include "AnimationKickturn.h"

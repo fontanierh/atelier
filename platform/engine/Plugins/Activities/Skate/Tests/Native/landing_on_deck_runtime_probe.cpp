@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Appended to the immutable whole-Biped test adapter, before its main.
 #include "LandingOnDeckRuntime.h"
 namespace landing_host_detail

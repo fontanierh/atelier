@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardGrabRuntime.h"
 #include "OffboardGrabMath.h"
 #include <limits>

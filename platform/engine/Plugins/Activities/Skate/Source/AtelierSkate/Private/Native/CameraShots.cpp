@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CameraShots.h"
 #include "CameraWorld.h"
 #if defined(__clang__)

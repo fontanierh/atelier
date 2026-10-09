@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Shared tree protocol scaffolding is prepended by the parity driver.
 #include "AnimationChannels.h"
 static ChannelSettings Settings(Input& input)

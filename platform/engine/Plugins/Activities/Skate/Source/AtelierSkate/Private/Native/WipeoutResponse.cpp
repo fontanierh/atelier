@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "WipeoutControls.h"
 #include "WipeoutPhysicalMath.h"
 #ifdef __clang__

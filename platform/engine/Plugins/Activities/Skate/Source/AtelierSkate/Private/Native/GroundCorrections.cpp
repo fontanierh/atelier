@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundCorrections.h"
 #include <cstring>
 #if defined(__clang__)
@@ -62,7 +61,7 @@ Vec4 GroundScaleToMagnitude(Vec4 vector, float squared, float magnitude)
 {
     const float inverse = InverseLengthSquared(squared, 2);
     const float length = squared == 0.0f ? 0.0f : squared * inverse;
-    // The recovered scalar division is distinct from inverse-length scaling.
+    // The scalar division is distinct from inverse-length scaling.
     return Scale4(vector, magnitude / length);
 }
 void GroundApplyWorldForce(BodySnapshot& body, Vec3 deck_part_position, Vec3 force, Vec3 point)

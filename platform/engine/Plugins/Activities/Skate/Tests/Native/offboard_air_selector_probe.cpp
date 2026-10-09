@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardAirSelector.h"
 #include "OffboardAirMath.h"
 #include "OffboardStaticScene.h"

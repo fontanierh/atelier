@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "RidingAngles.h"
 #include "BoardGroundAngle.h"
 #include <cstring>

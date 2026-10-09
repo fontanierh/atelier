@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BoardProbes.h"
 #include <cstring>
 namespace atelier::skate

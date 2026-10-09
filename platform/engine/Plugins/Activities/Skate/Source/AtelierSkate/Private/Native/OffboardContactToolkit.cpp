@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardContactToolkit.h"
 #include "OffboardContactPrivate.h"
 #if defined(__clang__)

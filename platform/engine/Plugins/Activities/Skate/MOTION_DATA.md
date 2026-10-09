@@ -1,8 +1,11 @@
 # Typed motion assets
 
 `USkateMotionData` is the native simulation's animation source. It references bounded
-`USkateMotionBank` assets, each containing at most 128 clips. The simulation,
-interpolation, graph evaluation and retargeting arithmetic are unchanged.
+`USkateMotionBank` assets, each containing at most 128 clips (`SkateMotionData.h`,
+`SkateMotionData.cpp`). `USkateMotionLibrary::ImportMotion` builds them from a native
+package; `USkateSettings::MotionData` names the one a game loads. The simulation reads
+them into the same structures, with the same interpolation, graph evaluation and
+retargeting arithmetic, as the native files.
 
 Loading (`SkateMotionAdapter.h`) never blocks the game thread in normal play:
 
@@ -18,10 +21,11 @@ Loading (`SkateMotionAdapter.h`) never blocks the game thread in normal play:
    that must wait for its first pose without ticking first finishes the package load
    on demand; the decode still runs on a task thread.
 
-Cooked-package behavior and the measured startup cost still need a runtime check.
-Offline replay equality does not measure them.
+In a packaged game the whole bank decodes off the game thread in about 70 ms on an
+Apple-silicon Mac, before the first mount needs it. Offline replay equality does not
+cover that timing; a packaged ground check does.
 
-The assets contain named fields rather than a serialized `.skate` blob:
+The assets hold named fields:
 
 - Bone names, parent/mirror indices and reference poses.
 - Per-bone scale XYZ, quaternion XYZW and translation XYZ float tracks. A constant
@@ -37,19 +41,19 @@ would change these values: the existing animation-sequence importer composes a
 reference pose, changes coordinate space, normalizes rotations and passes through
 Unreal's key storage. The sequences remain the derived assets used by the Ride
 body and retargeting; exact native simulation sampling uses the typed component
-tracks. There are no changes to the runtime's loop or mirror rules.
+tracks.
 
 ## Building and verifying
 
-The game recipe's `unreal.skate_motion` step reads the complete native package that
-`skate.runtime` assembles from the committed sources (the game's runtime payloads plus
-the rig, clips and metadata built from its JSON motion source with `Tools/motion_text.py`,
-every file checked against the committed manifest). It runs two separate NullRHI editor
+A game recipe's `unreal.skate_motion` step reads the complete native package that
+`skate.runtime` assembles from the plugin's [`Data/`](Data/README.md) (the runtime
+payloads plus the rig, clips and metadata built from `Data/motion/` with
+`Tools/motion_text.py`, every file checked against the manifest). It runs two separate NullRHI editor
 processes. The first imports and saves typed packages, and deletes banks left by an
 earlier, larger import. The second loads the asset named by `USkateSettings::MotionData`
 through the game's own asynchronous loader and invokes `USkateMotionLibrary::VerifyMotion`:
 
-1. Compare every original rig/reference field, metadata record, track component,
+1. Compare every native rig/reference field, metadata record, track component,
    loop transform, channel weight and expanded frame/bone sample exactly. This
    compares float bits, including signed zero, rather than accepting a tolerance.
 2. Load the production resources with typed motion from a fixture containing every
@@ -77,22 +81,20 @@ behavioral regression corpus. Exhaustive source-field equality plus unchanged
 native evaluation code establishes that the storage conversion preserves inputs;
 it does not claim to exercise every possible game interaction.
 
-## First migration boundaries
+## Scope
 
-This first migration covers animation data. Settings, physical skeletons, action/
-motion graphs, gestures and camera data still use their existing native loaders.
-An empty `USkateSettings::MotionData` keeps the file path: the loader then reads
-`animation/` and `metadata/` from the runtime folder, so a game that has not migrated
-must ship them there. A configured missing/invalid asset fails rather than silently
-falling back. Asset references are cooked with the game.
+Typed assets hold the animation. Settings, physical skeletons, action/motion graphs,
+gestures and camera data are read from the runtime folder by their native loaders.
+With `USkateSettings::MotionData` empty the loader reads `animation/` and `metadata/`
+from the runtime folder as well; a configured missing or invalid asset fails. Asset
+references are cooked with the game.
 
-A game can commit its animation as readable JSON (`Tools/motion_text.py`, one file per
-clip) and ship no `.skate` animation files: its runtime folder then holds only the other
-payloads, and its verifier should refuse `animation/` or `metadata/` there. The JSON writes
+The animation is committed as readable JSON in `Data/motion/` (`Tools/motion_text.py`,
+one file per clip), and a game's runtime folder holds only the other payloads;
+`Tools/native_package.py` refuses `animation/` or `metadata/` there. The JSON writes
 each binary32 value as its shortest round-trip decimal, so the build regenerates the
 native files byte for byte, and those native files remain the independent reference.
-Typed packages are generated under ignored Content, like the existing sequences;
-rebuilding the motion step overwrites edits to these generated packages. No raw
-byte array is embedded in the new motion assets. The importer currently supports
-the scalar and bone-contact attribute types present throughout the reference
-bundle and explicitly rejects an unsupported kind or nonzero alignment padding.
+Typed packages are generated under the game's ignored Content, like the Ride clip
+sequences; rebuilding the motion step overwrites edits to them. The assets hold only
+named fields. The importer supports the scalar and bone-contact attribute types the
+bundle uses and rejects any other kind or nonzero alignment padding.

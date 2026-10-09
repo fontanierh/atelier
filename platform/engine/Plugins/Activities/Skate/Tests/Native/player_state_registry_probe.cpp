@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerStateRegistry.h"
 #include <iostream>
 using namespace atelier::skate;

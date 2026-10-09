@@ -1,4 +1,4 @@
-"""Normal builds validate only committed project-native skating data."""
+"""Normal builds validate only the Skate plugin's committed project-native skating data."""
 import hashlib
 import importlib.util
 import json
@@ -14,7 +14,8 @@ import unittest
 import numpy
 
 GAME = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('verify_skate_native', GAME / 'tools/verify_skate_native.py')
+TOOLS = GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Tools'
+spec = importlib.util.spec_from_file_location('native_package', TOOLS / 'native_package.py')
 native = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(native)
 
@@ -99,6 +100,17 @@ class CommittedPackageTests(unittest.TestCase):
         self.assertEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
         clip['bones']['TRAJECTORY']['translation_x'][0] = float(numpy.nextafter(numpy.float32(value), numpy.float32(1)))
         self.assertNotEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
+
+    def test_stage_replaces_the_game_folder_with_the_runtime_payloads(self):
+        folder = Path(self.temporary.name) / 'Content/Data/SkateNative'
+        (folder / 'animation').mkdir(parents=True)
+        (folder / 'animation/stale.skate').write_bytes(b'stale')
+        native.stage(folder)
+        staged = {path.relative_to(folder).as_posix(): path.read_bytes() for path in folder.rglob('*') if path.is_file()}
+        self.assertEqual(staged, {path.relative_to(native.RUNTIME).as_posix(): path.read_bytes()
+                                  for path in native.RUNTIME.rglob('*') if path.is_file()})
+        self.assertEqual(len(staged), 8)
+        self.assertEqual(staged[native.MANIFEST], (self.package / native.MANIFEST).read_bytes())
 
     def test_runtime_folder_ships_no_motion_payloads(self):
         runtime = Path(self.temporary.name) / 'runtime'
@@ -212,22 +224,21 @@ class NativeDataTests(unittest.TestCase):
             declared = recipe.steps(context)
         steps = {step.name: step for step in declared}
         runtime, compile_step = steps['skate.runtime'], steps['unreal.compile']
-        descriptor = json.loads((GAME / 'assets/skate/runtime.json').read_text())
+        descriptor = json.loads(native.DESCRIPTOR.read_text())
         self.assertEqual(descriptor['backend'], 'in-process-cpp')
-        bundle = GAME / descriptor['data_directory']
-        self.assertEqual((bundle, GAME / descriptor['motion_directory']), (native.RUNTIME, native.MOTION))
+        self.assertEqual((native.DATA / descriptor['data_directory'], native.DATA / descriptor['motion_directory']),
+                         (native.RUNTIME, native.MOTION))
         report, package = output / 'skate-native/verification.json', output / 'skate-native/package'
         self.assertEqual(len(runtime.commands), 1)
         self.assertIsInstance(runtime.commands[0], build.Python)
-        self.assertEqual(runtime.commands[0].script, GAME / 'tools/verify_skate_native.py')
-        self.assertEqual(tuple(runtime.commands[0].args), ('--assemble', package, '--output', report))
-        self.assertEqual(set(runtime.inputs), {GAME / 'tools/verify_skate_native.py',
-                         GAME / 'assets/skate/runtime.json', GAME / 'assets/skate/motion',
-                         native.MOTION_TOOLS / 'motion_text.py', data / bundle.name})
-        self.assertEqual(runtime.outputs, [report, package / native.MANIFEST])
+        self.assertEqual(runtime.commands[0].script, TOOLS / 'native_package.py')
+        self.assertEqual(tuple(runtime.commands[0].args),
+                         ('--assemble', package, '--stage', data / 'SkateNative', '--output', report))
+        self.assertEqual(set(runtime.inputs), {TOOLS / 'native_package.py', TOOLS / 'motion_text.py', native.DATA})
+        self.assertEqual(runtime.outputs, [report, package / native.MANIFEST, data / 'SkateNative' / native.MANIFEST])
         for name in ('unreal.skate_clips', 'unreal.skate_motion'):
             self.assertIn(runtime.name, steps[name].needs)
-            self.assertIn(GAME / 'assets/skate/motion', steps[name].inputs)
+            self.assertTrue(any(native.MOTION.is_relative_to(path) for path in steps[name].inputs))
         self.assertEqual(runtime.needs, [])
         self.assertFalse(runtime.heavy)
         self.assertIn(runtime.name, compile_step.needs)

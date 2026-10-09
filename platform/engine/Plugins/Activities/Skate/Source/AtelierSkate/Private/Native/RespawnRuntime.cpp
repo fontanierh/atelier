@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "RespawnRuntime.h"
 #include "GroundSurfaceRuntime.h"
 #include "PlayerInputRuntime.h"

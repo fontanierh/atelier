@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BipedAirState.h"
 #include "BipedAirMath.h"
 #include "WipeoutOrientation.h"

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ClimbingLedge.h"
 #include <cmath>
 #if defined(__clang__)

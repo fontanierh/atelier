@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Full real owner construction and observation helpers are byte-hashed;
 // every numerical operation below calls the unchanged production owner.
 #include "plant_air_owner_helpers.inc"

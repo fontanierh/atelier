@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 //! Entire actual host AnimationInput plus unchanged Skeleton attribute modules.
 use std::io::{Read,Write};
 use skate_core::{animation::{output::attributes::{AnimationAttribute,AttributeName,AttributePayload},skeleton_input::{scalar_attributes::{ScalarAttributeInputs,AnimationControlOutput},extended_attributes::ExtendedAttributes,attribute_finalization::{FinalizationInput,JumpAttributeState},contact_events::ContactEventState}},input::controller::ActionMap};

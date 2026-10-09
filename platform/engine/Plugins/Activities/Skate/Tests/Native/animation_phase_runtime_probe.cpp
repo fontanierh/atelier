@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker supplies immutable observation/transport helpers from the actual
 // accepted physical factory. All callbacks below invoke production owners.
 // GENERATED_NATIVE_OWNER_PREFIX

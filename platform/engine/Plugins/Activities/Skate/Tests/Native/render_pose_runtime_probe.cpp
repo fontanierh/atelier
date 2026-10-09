@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Only explicit caller transport and read-only observations; every operation
 // invokes the complete production owner over the canonical live objects.
 #include "RenderPoseRuntime.h"

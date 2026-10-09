@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker stages the complete unchanged numeric probe for its wire helpers.
 // Its renamed entry point is never invoked by this composition probe.
 #define main HandplantNumericProbeEntry

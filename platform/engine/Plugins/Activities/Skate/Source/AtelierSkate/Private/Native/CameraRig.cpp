@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CameraRig.h"
 #include "RigidBody.h"
 #include <limits>

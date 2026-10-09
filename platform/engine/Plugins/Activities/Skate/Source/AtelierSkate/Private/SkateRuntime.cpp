@@ -48,7 +48,6 @@
 #include "Async/ParallelFor.h"
 #include "Ride/RideClipPlayer.h"
 #include "Ride/RidePoseMeasure.h"
-#include "Ride/RideTuning.h"
 #include "Ride/RidePhysicalRider.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -359,11 +358,6 @@ void USkateComponent::ConfigureRetail()
     C.Preferences=RetailRuntime->Preferences(bGoofy);RetailRuntime->Worker->Enqueue(MoveTemp(C));
 }
 
-bool USkateComponent::GetRidePoseBone(FName Bone, FTransform& World) const
-{
-    if (!bRideNative || !RetailRuntime || !RetailRuntime->HasPose || !RetailRuntime->Names.Contains(Bone)) return false;
-    World=RetailRuntime->Bone(Bone); return true;
-}
 bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
 {
     // A bail handed to the body has no session camera (the session waits): the character's own camera follows the body.

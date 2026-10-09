@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Graph.h"
 #include "DataReader.h"
 #include <utility>

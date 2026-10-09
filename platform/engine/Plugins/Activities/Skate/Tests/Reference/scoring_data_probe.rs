@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::Write;
 mod collections{pub use skate_data::collections::*;}
 mod attrib_hash{pub use skate_data::attrib_hash::*;}

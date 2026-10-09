@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Independent oracle: actual pinned Rust 1.97.1 std formatter, not table copies.
 use std::io::{self, Read, Write};
 

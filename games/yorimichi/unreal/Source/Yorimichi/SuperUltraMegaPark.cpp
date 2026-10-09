@@ -158,8 +158,6 @@ void ASuperUltraMegaPark::RegisterRails()
         if (Source.Points.Num() < 2) continue;
         FSkateRail Rail;
         Rail.Id = FName(*Source.SourceId);
-        Rail.Kind = ESkateRailKind::Rail;
-        Rail.Radius = 2.5f;
         for (const FVector& Point : Source.Points)
             Rail.Points.Add(GetActorTransform().TransformPosition(Point));
         if (Source.Closed && !Rail.Points[0].Equals(Rail.Points.Last(), .01f))

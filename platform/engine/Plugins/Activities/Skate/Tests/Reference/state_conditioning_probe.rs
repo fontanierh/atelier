@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 pub use skate_core::{animation,physics,point_graph};
 use skate_core::animation::output::attributes::AttributeName;
 use std::io::{Read,Write};

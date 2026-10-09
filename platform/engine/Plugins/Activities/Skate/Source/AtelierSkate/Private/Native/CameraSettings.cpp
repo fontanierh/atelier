@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CameraSettings.h"
 #include "DataReader.h"
 #include "StockSettingsReader.h"

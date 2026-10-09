@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "StockSettingsReader.h"
 #include <algorithm>
 #include <cmath>

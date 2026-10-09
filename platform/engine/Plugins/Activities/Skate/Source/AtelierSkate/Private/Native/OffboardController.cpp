@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardController.h"
 #include "GravityScale.h"
 #include "OffboardControllerMath.h"

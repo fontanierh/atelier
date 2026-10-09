@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Geometry.h"
 #include <cstring>
 #if defined(__clang__)

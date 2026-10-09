@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Shared production tree/channel IO is prepended by the parity driver.
 #include "MotionAnimation.h"
 #include "MotionAnimationOperations.h"

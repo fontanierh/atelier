@@ -1,8 +1,8 @@
 {
   "version": 3,
   "backend": "in-process-cpp",
-  "data_directory": "unreal/Content/Data/SkateNative",
-  "motion_directory": "assets/skate/motion",
+  "data_directory": "runtime",
+  "motion_directory": "motion",
   "manifest": "package-manifest.json",
   "manifest_sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d",
   "source": "Atelier library animation, graph, input, camera and physics records",

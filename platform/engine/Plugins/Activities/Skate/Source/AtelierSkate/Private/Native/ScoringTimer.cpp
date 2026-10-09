@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ScoringTimer.h"
 #include "NativeMath.h"
 #if defined(__clang__)

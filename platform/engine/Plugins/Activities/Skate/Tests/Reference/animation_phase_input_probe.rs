@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::{Read,Write};
 use skate_core::{player::input_phase::*,animation::output::{actor_packet::{ExternalPhysicsInput,ExternalReset},attributes::AttributeName,physics_packet::PhysicsPosePacket,packet_reset},input::animation_packet::AnimationPacketFields};
 mod original_host {

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "AirTrajectoryQuery.h"
 #include "SkeletonPoseFrames.h"

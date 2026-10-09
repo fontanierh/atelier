@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GameplaySession.h"
 #include "ClimbingMath.h"
 #include "DebugString.h"

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "MotionGraphContinuationHost.h"
 #include <algorithm>
 namespace atelier::skate {

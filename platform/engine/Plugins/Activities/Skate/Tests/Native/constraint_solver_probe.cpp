@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ConstraintSolver.h"
 #include <iostream>
 #include <stdexcept>

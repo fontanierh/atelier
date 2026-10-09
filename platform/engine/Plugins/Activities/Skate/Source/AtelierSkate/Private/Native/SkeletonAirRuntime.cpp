@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SkeletonAirRuntime.h"
 #include "StockSettingsReader.h"
 #if defined(__clang__)

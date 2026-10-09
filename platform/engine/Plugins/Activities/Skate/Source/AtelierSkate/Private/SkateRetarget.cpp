@@ -47,9 +47,7 @@
 #include "UObject/ObjectKey.h"
 #include "Async/Async.h"
 #include "Async/ParallelFor.h"
-#include "Ride/RideClipPlayer.h"
 #include "Ride/RidePoseMeasure.h"
-#include "Ride/RideTuning.h"
 #include "Ride/RidePhysicalRider.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -638,7 +636,7 @@ void USkateComponent::RetargetRetailPose()
     }
     // The source physical rider has adult proportions; the character's head and clothing can extend beyond it.
     // During a bail, keep the retargeted skin above the supporting surface without changing bone lengths
-    // or feeding visual corrections back into the recovered rigid-body solver.
+    // or feeding visual corrections back into the session's rigid-body solver.
     RetailFloorClearance=0.f;
     if (Mode==ESkateMode::Bail)
     {

@@ -566,7 +566,7 @@ void AJapanWorld::Load()
         if (Root->TryGetArrayField(TEXT("rail_runs"), Runs))
             for (int32 R = 0; R < Runs->Num(); ++R)
             {
-                FSkateRail Rail; Rail.Id = FName(*FString::Printf(TEXT("guardrail_%d"), R)); Rail.Kind = ESkateRailKind::Rail; Rail.Radius = 3.f;
+                FSkateRail Rail; Rail.Id = FName(*FString::Printf(TEXT("guardrail_%d"), R));
                 for (const auto& P : (*Runs)[R]->AsArray())
                 {
                     const auto& A = P->AsArray();

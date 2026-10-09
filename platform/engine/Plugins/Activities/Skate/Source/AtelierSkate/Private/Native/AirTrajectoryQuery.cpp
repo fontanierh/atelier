@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AirTrajectoryQuery.h"
 #include <cstring>
 #include <limits>

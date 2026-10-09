@@ -150,12 +150,8 @@ struct FRideTransition
     /** The physical rider handed over a run-out (OnBailStart): it starts after the ride's frame (TickTransition). */
     bool bRunOutPending = false;
     UAnimSequence* PendingClip = nullptr;
-    /** A settled body gets up on foot: where it lies, the way it faces (head from hips) and how it lies. Away: the body
-     *  went through a wall or a floor the ride's root never followed it through, and gets up on the root's side, the
-     *  recovery not matched to where it lies. */
-    bool bRecoverPending = false, bRecoverFaceUp = false, bRecoverAway = false;
-    FVector RecoverGround = FVector::ZeroVector;
-    float RecoverYaw = 0.f;
+    /** A settled body gets up on foot, with the recovery that fits how it lies (face up or down). */
+    bool bRecoverPending = false, bRecoverFaceUp = false;
     /** A get-up's first frame held while the physical rider hands its bodies over to the animation (s). */
     float WaitTime = 0.f;
     /** A board kicked away (a kick-out) flies as a small sphere moved by a projectile movement (LooseBoard), turning

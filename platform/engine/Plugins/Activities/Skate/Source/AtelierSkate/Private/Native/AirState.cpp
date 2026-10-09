@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AirState.h"
 #include "AirStateRuntime.h"
 #include <cstring>

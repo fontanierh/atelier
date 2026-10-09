@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SessionMarkerRuntime.h"
 #include "ClimbingMath.h"
 #include "StockSettingsReader.h"

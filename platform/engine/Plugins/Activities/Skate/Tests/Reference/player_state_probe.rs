@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #![allow(non_snake_case)]
 use std::io::{Read,Write};
 use std::cell::RefCell;

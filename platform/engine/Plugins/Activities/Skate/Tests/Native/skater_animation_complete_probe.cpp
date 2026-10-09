@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker supplies exact, hashed prefixes from the existing facade probe
 // and its explicit-publication helper. No production method is substituted.
 #include "skater_animation_facade_helpers.h"

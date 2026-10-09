@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundPropulsion.h"
 namespace atelier::skate
 {

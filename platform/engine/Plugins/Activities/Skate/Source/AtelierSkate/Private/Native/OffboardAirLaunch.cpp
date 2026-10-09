@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardAirLaunch.h"
 #include "OffboardAirMath.h"
 #if defined(__clang__)

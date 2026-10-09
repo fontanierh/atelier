@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GraphMotionSpecialConditions.h"
 #include <array>
 #include <cmath>

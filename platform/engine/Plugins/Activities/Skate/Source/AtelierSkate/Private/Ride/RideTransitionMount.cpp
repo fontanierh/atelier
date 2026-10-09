@@ -398,7 +398,7 @@ bool USkateComponent::BeginDismountClip()
     return true;
 }
 
-void USkateComponent::BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp)
+void USkateComponent::BeginGetUpOnFoot(bool bFaceUp)
 {
     FRideTransition& T = Transit();
     T.bGetUpOnFoot = true;
@@ -412,7 +412,7 @@ void USkateComponent::BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bF
         }
     // The body gets up where it lies with the recovery that fits how it lies (BeginRecover, after the ride's frame,
     // blended out of the fallen pose's snapshot).
-    if (PrepareRideClips()) { T.bRecoverPending = true; T.RecoverGround = Ground; T.RecoverYaw = Yaw; T.bRecoverFaceUp = bFaceUp; }
+    if (PrepareRideClips()) { T.bRecoverPending = true; T.bRecoverFaceUp = bFaceUp; }
 }
 
 bool USkateComponent::BeginRecover()
@@ -420,8 +420,6 @@ bool USkateComponent::BeginRecover()
     // The recovery whose first frame lies most like the fallen body: its head-from-hips way turned onto the body's,
     // then the hands, feet and the way the front faces compared about the hips (scaled to the character).
     FRideTransition& T = Transit();
-    const bool bAway = T.bRecoverAway;
-    T.bRecoverAway = false;
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     if (!Clips || !Mesh) return false;
     struct FPart { const TCHAR* Own; const TCHAR* Clip; };
@@ -466,10 +464,10 @@ bool USkateComponent::BeginRecover()
     StandUpOffBoard(BestYaw);
     StartClip(Best, ERideFoot::Recover, false, BestYaw, 0.f);
     // No travel: the clip's trajectory is held where its pelvis lies on the body's (MatchPelvis), and the capsule
-    // moves under it; a body away through a wall gets up over the capsule, unmatched.
+    // moves under it.
     T.SpeedStart = T.SpeedEnd = 0.f;
     T.bAnchored = true; T.Anchor = OffBoardGround();
-    T.bMatchPelvis = !bAway; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
+    T.bMatchPelvis = true; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
     T.bEndsStanding = true;
     T.bGetUpOnFoot = false;
     if (T.Board == ERideBoard::Ride) { T.Board = ERideBoard::World; T.BoardTime = 0.f; }

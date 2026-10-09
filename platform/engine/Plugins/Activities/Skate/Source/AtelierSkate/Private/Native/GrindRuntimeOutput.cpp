@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GrindRuntimeInternal.h"
 #ifdef __clang__
 #pragma clang fp contract(off)

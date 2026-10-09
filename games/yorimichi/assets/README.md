@@ -28,6 +28,5 @@ from committed models, Blender sources or mesh-building scripts and go under
 
 The four character Blender sources pack their meshes, textures, rigs and authored
 animations. The merged set's 109 motion-reference clips and paraglider animation
-are committed in `characters/adventure/source/`. The native skating data contains
-3,324 clips (131,642 frames): the clips, rig and metadata are readable JSON in `skate/motion`, and the gameplay
-records are under `unreal/Content/Data/SkateNative`.
+are committed in `characters/adventure/source/`. The native skating data is not part of this library: it
+is shared by every game in the [Skate plugin](../../../platform/engine/Plugins/Activities/Skate/Data/README.md).

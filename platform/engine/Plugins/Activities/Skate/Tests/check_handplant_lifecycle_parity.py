@@ -361,13 +361,13 @@ def validate_probe_extensions():
     last=native.read_text().index('    std::vector<PlayerGrindPrimitive> edges;',first)
     segment=native.read_text()[first:last]
     restored=native.read_text()[:first]+'    auto world = World(i);\n'+native.read_text()[last:]
-    assert hashlib.sha256(restored.encode()).hexdigest()=='c56a3d6701b482a247f4763cc3483f2a6b45fca701fe0e3a7f83dbc16cbc65a8'
+    assert hashlib.sha256(restored.encode()).hexdigest()=='63475da2b21d70b071f5ed889dbd5ef7c209e9607fac6c09c1b73be6851b5cbe'
     reference=PLUGIN/'Tests/Reference/handplant_lifecycle_observer.rs'
     branch='let world_header=i.word();i.at-=4;physics.world=if world_header==u32::MAX{i.word();authored_query_world(i)}else{world(i)};'
     assert reference.read_text().count(branch)==1
     restored=reference.read_text().replace(branch,'physics.world=world(i);')
     assert hashlib.sha256(restored.encode()).hexdigest()=='6de4471fb51a44a39f88749074eba0000b1b5314aaa47e4c63506f0e652df9cf'
-    return dict(old_native_sha256='c56a3d6701b482a247f4763cc3483f2a6b45fca701fe0e3a7f83dbc16cbc65a8',
+    return dict(old_native_sha256='63475da2b21d70b071f5ed889dbd5ef7c209e9607fac6c09c1b73be6851b5cbe',
         old_reference_helper_sha256='6de4471fb51a44a39f88749074eba0000b1b5314aaa47e4c63506f0e652df9cf',
         native_append_sha256=hashlib.sha256(segment.encode()).hexdigest(),reference_append_sha256=hashlib.sha256(branch.encode()).hexdigest(),
         reused_metadata_transport=numeric.validate_probe_extensions())

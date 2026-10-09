@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardControllerMath.h"
 #include <limits>
 #if defined(__clang__)

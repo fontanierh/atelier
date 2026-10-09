@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // This fixture borrows actual owners and invokes the complete production phase.
 #include "GroundPhaseRuntime.h"
 #include "PlayerInputPhase.h"

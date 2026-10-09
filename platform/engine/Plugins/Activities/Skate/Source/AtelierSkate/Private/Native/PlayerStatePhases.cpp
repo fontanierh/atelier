@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerStatePhases.h"
 #include "OffboardStaticScene.h"
 #include "SkeletonLineQueries.h"

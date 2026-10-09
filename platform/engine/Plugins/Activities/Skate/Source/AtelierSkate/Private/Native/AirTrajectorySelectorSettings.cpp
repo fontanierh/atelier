@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AirTrajectorySelectorSettings.h"
 #include "StockSettingsReader.h"
 #include <algorithm>

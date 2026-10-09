@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GameplayWorld.h"
 #include <algorithm>
 #include <charconv>
@@ -15,7 +14,7 @@ namespace atelier::skate
 namespace
 {
 // This host adapter used glam ordinary Vec3 arithmetic, independently of the
-// recovered solver's explicit FMA and reciprocal-refinement operations.
+// solver's explicit FMA and reciprocal-refinement operations.
 Vec3 HostCross(Vec3 a,Vec3 b)
 {return {a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x};}
 std::string DebugFloat(float value)

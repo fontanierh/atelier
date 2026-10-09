@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GraphMotionGestureOperations.h"
 #include "DataReader.h"
 #include <fstream>

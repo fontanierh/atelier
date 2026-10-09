@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Root/board value transport is prepended by the checker.
 #include "BoardAnimation.h"
 #include "SkeletonAirFrames.h"

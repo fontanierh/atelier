@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prepends the record readers/encoders from skeleton_body_probe.cpp.
 #include "SkeletonJoints.h"
 #include "SkeletonDrives.h"

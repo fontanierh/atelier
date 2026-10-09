@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PhysicalSimulationRuntime.h"
 #include <algorithm>
 #include <cmath>

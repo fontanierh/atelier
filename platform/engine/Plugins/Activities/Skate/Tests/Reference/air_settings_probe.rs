@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use skate_data::collections::Collections;
 use std::io::Write;
 // The entire original input.rs module is a byte-identical staged alias. The

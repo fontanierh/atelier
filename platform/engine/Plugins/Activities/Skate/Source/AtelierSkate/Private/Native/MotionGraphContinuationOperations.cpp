@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "MotionGraphContinuationOperations.h"
 namespace atelier::skate {
 bool ParseMotionGraphContinuationOperation(

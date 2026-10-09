@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ScoringSession.h"
 #include "ScoringCarrier.h"
 #include "DataReader.h"

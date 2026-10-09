@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Checker prepends accepted body/collision/volume transport adapters.
 #include "NetworkProxies.h"
 namespace

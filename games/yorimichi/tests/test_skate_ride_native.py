@@ -15,7 +15,8 @@ SCRIPTS = GAME / 'unreal' / 'Scripts' / 'skate_ride'
 NATIVE_CODE = REPO / 'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/Native'
 PROBE = REPO / 'platform/engine/Plugins/Activities/Skate/Tests/Native/animation_samples_probe.cpp'
 
-_verifier = importlib.util.spec_from_file_location('verify_skate_native', GAME / 'tools' / 'verify_skate_native.py')
+_verifier = importlib.util.spec_from_file_location(
+    'native_package', GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Tools/native_package.py')
 V = importlib.util.module_from_spec(_verifier)
 _verifier.loader.exec_module(V)
 spec = importlib.util.spec_from_file_location('skate_ride_native', SCRIPTS / 'native.py')

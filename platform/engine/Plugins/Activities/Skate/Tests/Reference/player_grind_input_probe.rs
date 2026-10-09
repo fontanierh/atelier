@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Full unchanged original host manager; only transport/observation adapters.
 use skate_core::{player::input_phase::*,animation::output::{actor_packet::ExternalPhysicsInput,attributes::AttributeName},input::animation_packet::AnimationPacketFields};
 use skate_core::physics::grind_contact::{balance::{BalanceState,TargetUpInput,ExitLeanInput,BalanceVectors},control::Control,entry::Engagement,manager::{Jumper,JumpGeometry,GeometryInput}};

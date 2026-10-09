@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "RigidBody.h"
 #include "BodyMass.h"
 #include <cstring>

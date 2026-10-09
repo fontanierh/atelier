@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prepends the accepted physical probe adapters, before main.
 #include "FootIk.h"
 #include "GrindAirPoseAdjustment.h"

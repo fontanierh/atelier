@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "NativeMath.h"
 #include <optional>
 namespace atelier::skate::climbing_math {
 // This is the current authored extension's glam 0.32.1 arithmetic, distinct
-// from recovered native affine frames and reciprocal/trigonometric kernels.
+// from the simulation's affine frames and reciprocal/trigonometric kernels.
 inline constexpr Mat4 Identity{{Vec4{1,0,0,0},Vec4{0,1,0,0},Vec4{0,0,1,0},Vec4{0,0,0,1}}};
 inline constexpr Vec3 Up{0,1,0};
 Vec3 Add(Vec3,Vec3);Vec3 Sub(Vec3,Vec3);Vec3 ScaleVector(Vec3,float);

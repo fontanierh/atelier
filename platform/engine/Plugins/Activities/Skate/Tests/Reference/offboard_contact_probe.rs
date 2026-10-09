@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 mod math{pub use skate_core::math::*;}
 mod physics{pub use skate_core::physics::*;
 #[path="native_arithmetic.rs"]pub(crate)mod native_arithmetic;

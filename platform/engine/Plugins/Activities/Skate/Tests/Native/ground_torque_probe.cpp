@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundTorqueSettings.h"
 #include "DataReader.h"
 #include <filesystem>

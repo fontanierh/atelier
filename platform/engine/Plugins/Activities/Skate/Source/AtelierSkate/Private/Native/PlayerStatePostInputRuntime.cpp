@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerStatePostInputRuntime.h"
 #include "PlayerPostInput.h"
 #include <cassert>

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "NativeMath.h"
 #if defined(__x86_64__) || defined(_M_X64)
 #include <xmmintrin.h>

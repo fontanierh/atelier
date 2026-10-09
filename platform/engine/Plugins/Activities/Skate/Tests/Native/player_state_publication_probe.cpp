@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Inserted into the read-only copied Biped/Landing fixture before its main.
 #include "PlayerStatePublication.h"
 #include "PlayerGrindInput.h"

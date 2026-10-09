@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // GENERATED_WORLD_HELPERS
 #include "ClimbingLedge.h"
 namespace {

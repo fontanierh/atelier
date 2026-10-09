@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerGrindControl.h"
 #include "PlayerGrindInputDetail.h"
 #if defined(__clang__)

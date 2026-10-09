@@ -28,6 +28,8 @@ AUDIO = ASSETS / 'audio'
 SCRIPTS = GAME / 'unreal' / 'Scripts'
 TOOLS = GAME / 'tools'
 SKATE_RIDE = SCRIPTS / 'skate_ride'
+SKATE_TOOLS = paths.ENGINE_PLUGINS / 'Activities/Skate/Tools'
+SKATE_DATA = paths.ENGINE_PLUGINS / 'Activities/Skate/Data'
 RIDE_IMPORT_BATCHES, RIDE_VERIFY_BATCHES = 4, 2   # editor runs of the clip import and its verification
 TREEHOUSE = REGIONS / 'treehouse'
 SOURCE = GAME / 'unreal' / 'Source'
@@ -444,17 +446,18 @@ def unreal_steps(ctx):
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
-        # The complete native package: the committed runtime payloads plus the rig, clips and metadata banks built from
-        # the committed motion text, every payload checked against the committed manifest. The game ships only the
-        # runtime payloads and reads motion from the typed assets (unreal.skate_motion); tools read the whole package.
-        Step('skate.runtime', [Python(TOOLS / 'verify_skate_native.py',
+        # The Skate plugin's native package: its runtime payloads plus the rig, clips and metadata banks built from its
+        # motion text, every payload checked against its manifest. The game ships only the runtime payloads, staged
+        # into Content/Data/SkateNative, and reads motion from the typed assets (unreal.skate_motion); tools read the
+        # whole package.
+        Step('skate.runtime', [Python(SKATE_TOOLS / 'native_package.py',
                                      ('--assemble', out / 'skate-native/package',
+                                      '--stage', paths.content_data(ctx.game) / 'SkateNative',
                                       '--output', out / 'skate-native/verification.json'))],
-             inputs=[TOOLS / 'verify_skate_native.py', ASSETS / 'skate/runtime.json', ASSETS / 'skate/motion',
-                     paths.ENGINE_PLUGINS / 'Activities/Skate/Tools/motion_text.py',
-                     paths.content_data(ctx.game) / 'SkateNative'],
-             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json'],
-             about='assemble the native skating package from runtime data and motion text; verify every payload'),
+             inputs=[SKATE_TOOLS / 'native_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_DATA],
+             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json',
+                      paths.content_data(ctx.game) / 'SkateNative' / 'package-manifest.json'],
+             about="assemble the Skate plugin's native package and verify every payload; stage its runtime payloads"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
@@ -549,7 +552,7 @@ def unreal_steps(ctx):
                 *[UnrealScript(SKATE_RIDE / 'verify_clips.py', 'SKATE RIDE CLIPS VERIFY COMPLETE', null_rhi=True,
                                env=(('SKATE_RIDE_VERIFY_BATCH', f'{i}/{RIDE_VERIFY_BATCHES}'),)) for i in range(1, RIDE_VERIFY_BATCHES + 1)]],
              inputs=[SKATE_RIDE / n for n in ('import_clips.py', 'verify_clips.py', 'native.py', 'rider_mesh.py')] +
-                    [ASSETS / 'skate/motion'],
+                    [SKATE_DATA / 'motion'],
              needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
              about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
@@ -559,7 +562,7 @@ def unreal_steps(ctx):
                 UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
              inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
                      paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
-                     ASSETS / 'skate/motion', paths.content_data(ctx.game) / 'SkateNative', GAME / 'unreal/Config/DefaultGame.ini',
+                     SKATE_DATA, GAME / 'unreal/Config/DefaultGame.ini',
                      *engine_version(ctx)],
              needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],

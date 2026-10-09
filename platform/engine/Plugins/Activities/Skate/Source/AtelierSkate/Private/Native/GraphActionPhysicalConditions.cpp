@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GraphActionPhysicalConditions.h"
 #include "GraphMotionPhysicalConditions.h"
 #include <cstring>

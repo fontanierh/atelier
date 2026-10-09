@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Steering.h"
 #include "SpeedWobble.h"
 #include <cstdlib>

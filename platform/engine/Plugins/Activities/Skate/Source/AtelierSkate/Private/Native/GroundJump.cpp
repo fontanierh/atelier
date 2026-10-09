@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundJump.h"
 #include "AirMath.h"
 #include "GroundJumpMath.h"

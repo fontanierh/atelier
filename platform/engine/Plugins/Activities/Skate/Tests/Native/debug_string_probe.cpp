@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "DebugString.h"
 #include <cstdint>
 #include <cstdlib>

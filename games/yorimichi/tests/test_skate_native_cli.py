@@ -30,12 +30,13 @@ class NativeCommandTests(unittest.TestCase):
         if OPTIONS is None:
             raise unittest.SkipTest('Native simulation QA requires an explicit --binary and root-owned guard')
         cls.binary, cls.package, cls.output = OPTIONS.binary, OPTIONS.native_package, OPTIONS.output
-        spec = importlib.util.spec_from_file_location('verify_skate_native', GAME/'tools/verify_skate_native.py')
+        spec = importlib.util.spec_from_file_location(
+            'native_package', GAME.parents[1]/'platform/engine/Plugins/Activities/Skate/Tools/native_package.py')
         verifier = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(verifier)
-        descriptor = GAME/'assets/skate/runtime.json'
-        cls.package = cls.package or verifier.PACKAGE
-        verifier.verify_bundle(cls.package, descriptor)
+        # The skate.runtime build step's assembled package.
+        cls.package = cls.package or GAME.parents[1]/'build'/GAME.name/'skate-native/package'
+        verifier.verify_bundle(cls.package)
         if not cls.binary.is_file():
             raise FileNotFoundError('Explicit native CLI is missing; build it separately under the render guard')
         cls.output.mkdir(parents=True, exist_ok=True)

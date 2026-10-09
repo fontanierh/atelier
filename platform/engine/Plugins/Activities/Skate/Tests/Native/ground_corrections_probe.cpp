@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundCorrections.h"
 #include "GroundContactResponse.h"
 #include <cstdlib>

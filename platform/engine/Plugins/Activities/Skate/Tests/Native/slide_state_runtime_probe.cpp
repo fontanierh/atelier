@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SlideStateRuntime.h"
 #include "GroundControlSettings.h"
 #include "DeckGeometry.h"

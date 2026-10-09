@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prepends the tested skeleton record adapters.
 #include "PhysicalSimulationRuntime.h"
 #include <fstream>

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SkeletonPhysicalRecord.h"
 #include <cstring>
 #if defined(__clang__)

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundAnimationRuntime.h"
 namespace atelier::skate {
 bool GroundAnimationRuntime::AdvanceSkeleton(GroundAnimationOwners o,

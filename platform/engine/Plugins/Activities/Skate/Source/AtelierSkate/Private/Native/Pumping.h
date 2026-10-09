@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "GroundForce.h"
 namespace atelier::skate
@@ -34,7 +33,7 @@ struct PumpingState
     float absorption=0,ground_normal_absorption=0,minimum_crouch=0,deck_angle_absorption=0,reset_only_scalar=0;
     bool record_valid=false;
     std::uint8_t intentional_pumping=0;
-    // These fields describe the recovered reset output, not a memory overlay.
+    // These fields describe the reset output, not a memory overlay.
     void Reset() {*this=PumpingState{};}
     PumpingOutput PhysicsOutput() const;
 };

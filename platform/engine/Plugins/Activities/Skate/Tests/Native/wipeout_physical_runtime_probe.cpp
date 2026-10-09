@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Shared canonical owner constructors and observations come from the reset proof.
 // GENERATED_NATIVE_OWNER_PREFIX
 #include "WipeoutPhysicalRuntime.h"

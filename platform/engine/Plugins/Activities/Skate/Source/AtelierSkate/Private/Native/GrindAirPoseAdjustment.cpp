@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GrindAirPoseAdjustment.h"
 #include "SkeletonSettingReader.h"
 namespace atelier::skate

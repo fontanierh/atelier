@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "NetworkProxies.h"
 #include "WorldGeometry.h"
 #include <cstdlib>

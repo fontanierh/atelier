@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GraphMotionScoreOperations.h"
 #include <algorithm>
 #include <cmath>
@@ -32,8 +31,8 @@ bool MotionGraphMovingObjectRegistry::Update(std::string_view path,bool& enabled
 std::string_view SelectGraphMotionGrabScore(std::string_view base,const std::array<std::optional<std::string>,4>& d,float x,float y)
 {
     if (std::sqrt(x*x+y*y)<=.5f) return base;
-    // The pinned host uses standard f32 atan2/rem_euclid here. Recovered
-    // native trig approximations belong to other operations and must not leak.
+    // The pinned host uses standard f32 atan2/rem_euclid here. The
+    // simulation's trig approximations belong to other operations and must not leak.
     auto angle=std::fmod(std::atan2(y,x),Float(0x40c90fdb));if (angle<0) angle+=Float(0x40c90fdb);
     const std::array<std::pair<float,float>,4> windows{{
         {d[3]?44.0f:359.0f,d[1]?134.0f:181.0f}, {d[0]?44.0f:89.0f,d[2]?226.0f:271.0f},

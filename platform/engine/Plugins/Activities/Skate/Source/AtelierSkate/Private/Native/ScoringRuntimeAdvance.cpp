@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ScoringRuntime.h"
 #include "NativeMath.h"
 #include <cmath>

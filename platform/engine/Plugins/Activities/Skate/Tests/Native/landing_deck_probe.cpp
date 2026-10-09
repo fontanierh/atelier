@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "LandingDeck.h"
 #include "LandingOnDeckSettings.h"
 #include "LandingDeckMath.h"

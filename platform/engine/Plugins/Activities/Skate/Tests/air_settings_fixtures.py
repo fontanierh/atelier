@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
 """Shared original AirSettings ordered loader fixtures for independent proofs."""
 import copy
 import json

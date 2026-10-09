@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BipedGroundRuntime.h"
 #include "BipedAirRuntime.h"
 #include "SkeletonLineQueries.h"

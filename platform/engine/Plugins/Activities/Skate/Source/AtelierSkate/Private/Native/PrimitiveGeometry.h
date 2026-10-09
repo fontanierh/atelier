@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 // Shared original GP packing, feature selection and triangle/box SAT expressions.
 // These helpers are internal to the typed geometry queries.

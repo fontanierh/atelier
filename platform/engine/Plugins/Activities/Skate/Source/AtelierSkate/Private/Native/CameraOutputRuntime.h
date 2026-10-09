@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "CameraPublication.h"
 namespace atelier::skate::camera {

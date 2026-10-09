@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "RidingCollisionResponse.h"
 #include "RidingAngles.h"
 #include <cstring>

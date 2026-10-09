@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BoardAnimation.h"
 #include "ConstraintFrames.h"
 #include "DriveFrames.h"

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BipedGroundLifecycle.h"
 #include "StockSettingsReader.h"
 #include <cmath>

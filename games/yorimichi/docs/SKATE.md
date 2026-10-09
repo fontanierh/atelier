@@ -60,7 +60,7 @@ around for 360s, and starting from up for nollies. With the mouse, pull back the
 for a kickflip, forward-right for a heelflip, and back then sideways for a shove-it. The mouse flick scales with the
 game's mouse sensitivity. Goofy stance mirrors the gestures.
 
-Hardflips and inward heelflips take either motion. The Skate 3 arc starts wide (down and towards the toe side for a
+Hardflips and inward heelflips take either motion. The authored arc starts wide (down and towards the toe side for a
 hardflip, the heel side for an inward heelflip), rolls through down and finishes about 40° off up on that side. The
 skate. motion starts just off down and finishes just off up. **Tight hardflips and inwards** (Skate feel menu, on by
 default, `bTightFlicks` in `DefaultGame.ini`) adds the second. Without it, a tight flick usually reads as an ollie.
@@ -273,7 +273,7 @@ Offline, without Unreal, after building the native QA executable (see the plugin
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):
 
 ```sh
-python3 games/yorimichi/tools/verify_skate_native.py      # the tracked bundle against its manifest
+python3 platform/engine/Plugins/Activities/Skate/Tools/native_package.py --bundle build/yorimichi/skate-native/package  # against its manifest
 python3 games/yorimichi/tools/check_skate_runtime.py      # flat ground, both stances -> build/yorimichi/skate-native/check
 python3 games/yorimichi/tools/check_skatepark_runtime.py  # the pier's exported collision -> build/yorimichi/skatepark/physics
 ```

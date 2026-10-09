@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Accepted physical/adjusted/dispatcher declaration adapters are prepended.
 #include "PlayerInputRuntime.h"
 #include "PlayerGroundPosition.h"

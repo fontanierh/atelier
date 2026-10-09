@@ -1,7 +1,8 @@
 # Ride clips
 
-The native skating animation (the rig, clips and metadata banks of the assembled native package, built from
-[`assets/skate/motion`](../../../assets/skate/motion) by `skate.runtime`) as ordinary Unreal assets,
+The native skating animation (the rig, clips and metadata banks of the assembled native package, built from the Skate
+plugin's [`Data/motion`](../../../../../platform/engine/Plugins/Activities/Skate/Data/motion) by `skate.runtime`) as
+ordinary Unreal assets,
 keyed frame for frame and measured against the native decode. The build step `unreal.skate_clips` makes them; the
 Ride runtime reads the manifest.
 

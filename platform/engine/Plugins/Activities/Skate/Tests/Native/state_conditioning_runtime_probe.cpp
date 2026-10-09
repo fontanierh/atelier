@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // GENERATED_NATIVE_OWNER_PREFIX
 #include "PlayerStateConditioning.h"
 #include "AnimationStatePublication.h"

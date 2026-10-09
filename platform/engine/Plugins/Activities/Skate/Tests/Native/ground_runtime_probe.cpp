@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // The checker prefixes the unchanged physical/pose/dispatcher probe adapters.
 #include "GroundStateRuntime.h"
 #include "SkeletonController.h"

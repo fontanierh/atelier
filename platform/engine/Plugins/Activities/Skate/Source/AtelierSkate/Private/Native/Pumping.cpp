@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "Pumping.h"
 #include "StockSettingsReader.h"
 #include <cstring>

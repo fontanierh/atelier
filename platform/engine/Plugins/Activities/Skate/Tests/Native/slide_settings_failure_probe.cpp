@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SlideStateSettings.h"
 #include "DataReader.h"
 #include <fstream>

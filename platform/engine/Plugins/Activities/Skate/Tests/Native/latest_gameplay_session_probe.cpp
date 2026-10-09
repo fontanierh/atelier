@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Latest pinned Session APIs; every frame, state, body, marker query and pose is live.
 // The seventh block reads authoritative retained owners; the leaf footer calls the actual helper.
 #include "GameplaySession.h"

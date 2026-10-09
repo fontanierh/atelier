@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "ReckoningFrames.h"
 #include "RidingAngles.h"
 #include <cstdlib>

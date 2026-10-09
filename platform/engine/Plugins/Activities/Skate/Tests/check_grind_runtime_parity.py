@@ -80,7 +80,7 @@ def native_plan(output):
  transport=(snap/'GrindFilteredOutput.h').read_text();start=transport.index('struct GrindFilteredOutput\n{');end=transport.index('\n};',start)+3;declaration=transport[start:end]
  assert hashlib.sha256(declaration.encode()).hexdigest()=='0a4bdb6d4792e87633638ce03405c10e018edd3fe0b30b2b8307041fe3c0c78c'
  reconstructed=(snap/'GrindRuntime.h').read_text().replace('#include "GrindFilteredOutput.h"\n','').replace('class GrindRuntime\n',declaration+'\nclass GrindRuntime\n')
- assert hashlib.sha256(reconstructed.encode()).hexdigest()=='4e5ba1d484067134c644719482f5daf8ea6a0483017e2b40183c9bc3f55885f7'
+ assert hashlib.sha256(reconstructed.encode()).hexdigest()=='ea2e0edf5fa66116eb800a791c7d48fb29a27ca00f6496e1602b40ffa39dc253'
  report['grind_transport_extraction']=dict(header_sha256=digest(snap/'GrindFilteredOutput.h'),declaration_sha256=hashlib.sha256(declaration.encode()).hexdigest(),previous_complete_header_sha256=hashlib.sha256(reconstructed.encode()).hexdigest(),scope='Identical transport declaration moved once; no fields/defaults/layout/methods/protocol/corpus change.')
  return snap,report
 

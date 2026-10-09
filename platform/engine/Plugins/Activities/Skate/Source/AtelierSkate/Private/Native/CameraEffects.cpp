@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CameraEffects.h"
 #include "Geometry.h"
 #include <limits>

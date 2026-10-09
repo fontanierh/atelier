@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SlideStateRuntime.h"
 #include "DeckAngularCorrections.h"
 #include "RidingAngles.h"

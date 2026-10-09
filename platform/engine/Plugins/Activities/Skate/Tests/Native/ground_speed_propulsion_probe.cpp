@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundPropulsion.h"
 #include "SpeedModel.h"
 #include "RidingAngles.h"

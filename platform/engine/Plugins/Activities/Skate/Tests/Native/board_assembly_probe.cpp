@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "BoardAssembly.h"
 #include "DeckGeometry.h"
 #include <cstdlib>

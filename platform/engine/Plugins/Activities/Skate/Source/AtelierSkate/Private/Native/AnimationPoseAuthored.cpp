@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AnimationPose.h"
 #include <algorithm>
 #include <cmath>

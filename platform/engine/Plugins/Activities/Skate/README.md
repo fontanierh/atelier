@@ -3,7 +3,7 @@
 The Atelier Skate plugin (module `AtelierSkate`) puts an Unreal character on a skateboard. One C++
 `atelier::skate::GameplaySession` runs in process and simulates the deck, trucks, wheels and physical rider together:
 contacts and constraints, steering and pushes, Flick-It gestures, manuals and powerslides, grinds, pumping, airs,
-landings and bails, with the recovered animation graphs, trick scoring and skating camera. The game supplies nearby
+landings and bails, with its animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
 `Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two, and `SkateRetarget.cpp` retargets the solved rider
 onto the game's character. Under the Ride backend the character's body is an active ragdoll that takes over in bails
@@ -13,10 +13,10 @@ systems, the data bundle and how both are verified.
 ## Adding it to a game
 
 1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
-   depends on AtelierCore and AtelierFX.
-2. Track the native data bundle in the game's `unreal/Content/Data/SkateNative` and stage it as loose files. The
-   loader reads it with standard file reads, so a pak alone is not enough. With typed motion assets
-   ([MOTION_DATA.md](MOTION_DATA.md)) the animation, rig and metadata files stay out of this folder:
+   depends on AtelierCore, AtelierFX and the engine's PhysicsControl.
+2. Stage the plugin's runtime data into the game's `unreal/Content/Data/SkateNative` with a build step that runs
+   `Tools/native_package.py --stage` ([Data/README.md](Data/README.md)), and package that folder as loose files. The
+   loader reads it with standard file reads, so a pak alone is not enough:
 
    ```ini
    [/Script/UnrealEd.ProjectPackagingSettings]
@@ -34,6 +34,8 @@ systems, the data bundle and how both are verified.
 7. Register grindable lines with `USkateRailSubsystem::Add`: rails, ledge and box edges, coping and curbs, as their top
    contact line in centimetres.
 8. Set the board meshes, sounds and tuning in `DefaultGame.ini` (below).
+9. Import the animation as typed assets with `USkateMotionLibrary::ImportMotion` and name the bank in `MotionData`
+   ([MOTION_DATA.md](MOTION_DATA.md)).
 
 | `ISkateRider` | Meaning |
 | --- | --- |
@@ -71,10 +73,11 @@ sounds and HUD getters.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `MotionData` | none | The typed motion bank ([MOTION_DATA.md](MOTION_DATA.md)); a named bank that fails to load is an error |
 | `Backend` | `Ride` | `Ride` (the ride) or `Native` (the reference; see Backends); `skate.Backend` overrides it on the next mount |
-| `Difficulty` | `normal` | Recovered controller preset: `easy`, `normal` or `hardcore` |
-| `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the recovered steering scalar |
-| `PopHeightScale` | 1 | 0.5 to 2; scales the recovered jump-height presets |
+| `Difficulty` | `normal` | Controller preset: `easy`, `normal` or `hardcore` |
+| `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the steering scalar |
+| `PopHeightScale` | 1 | 0.5 to 2; scales the jump-height presets |
 | `AirSpinScale` | 1 | 0.5 to 3; scales the air-spin target and the spin response curves |
 | `PushSpeedScale` | 1 | 0.5 to 2; scales the animation-timed push speed target |
 | `PushPowerScale` | 1 | 0.5 to 3; scales the planted-foot push propulsion |
@@ -84,7 +87,7 @@ sounds and HUD getters.
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
 | `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
-| `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue) |
+| `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue; loaded, not yet played, see [RIDE.md](RIDE.md) H62) |
 | `SurfaceMeshes`, `SurfaceMaterials` | empty | What the ground rides like, by static mesh or material name (see Surfaces) |
 | `DefaultSurface` | `Concrete` | The surface of a triangle nothing names |
 
@@ -93,8 +96,8 @@ its range is an error and the board does not start.
 
 ### Surfaces
 
-Every colliding triangle in the snapshot carries an `ESkateSurface`, and the board rides it with the recovered
-surface profile Skate 3 gives that kind of ground. The four wheels vote, so a board half on the grass rides half
+Every colliding triangle in the snapshot carries an `ESkateSurface`, and the board rides it with the session's
+surface profile for that kind of ground. The four wheels vote, so a board half on the grass rides half
 slow. The surface's own sounds also play (see Feel).
 
 | Surface | Profile | Rides |
@@ -113,8 +116,8 @@ The first match wins:
 
 Names drop a leading `SM_`, `MI_` or `M_`, so `MI_Road` is `Road`. Use a mesh name when several kinds of ground share
 one material. The ini form is `SurfaceMaterials=(("Grass",Grass),("Road",Asphalt))`. `skate.SurfaceDebug 1` logs
-each mesh section's surface the next time the snapshot is built. `GetSurface()` returns the surface under the
-wheels, and `GetRetailState` reports it as `surface=<name>:<wheels>`.
+each mesh section's surface the next time the snapshot is built. `GetRetailState` reports the surface under the
+wheels as `surface=<name>:<wheels>`.
 
 ## Feel
 
@@ -161,7 +164,8 @@ bit-exact with stock.
 | `CameraFOV` | -20 to 20 | Degrees added to the skate camera's field of view |
 
 `SoundFolder` holds the loops `roll_01`, `grind_01`, `slide_01`, `skid_01` (powerslide) and `scrape_01` (foot brake),
-and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`. The loops
+and one-shot variants `<cue>_01` to `<cue>_08` for `pop`, `land`, `catch`, `push`, `flick` and `clatter`; while riding, `pop`, `land` and `clatter` play on changes of
+mode (H62 in [RIDE.md](RIDE.md)). The loops
 follow the board with volume and pitch set by mode and speed; a one-shot never repeats the previous variant. Each
 surface after `Concrete` can have its own roll loop `roll_<surface>_01` (`roll_wood_01`) and its own `pop_<surface>`
 and `land_<surface>` variants. The board plays whichever the ground under it has, and otherwise falls back to `roll`,
@@ -187,7 +191,7 @@ attenuate over a 500 cm inner radius and 4500 cm falloff.
 Kickflips flick down then up-left, heelflips down then up-right; goofy mirrors the gestures. Holding the left-trigger
 grab, B makes it a Christ air and A a one-foot; holding the right stick to one side changes the grab, and the right
 trigger with the stick held left is a tuck knee. A grab never requests a transfer: the transfer has its own input. LB,
-RB and both stick clicks pass through to the recovered pad; clicking both sticks with both triggers held is the
+RB and both stick clicks pass through to the session's pad; clicking both sticks with both triggers held is the
 deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead zone, because Flick-It and the manual
 balance read real stick positions. A fast mouse flick points the stick in its direction and springs back after 0.1 s;
 slow movement moves it gradually.
@@ -250,12 +254,14 @@ bones, velocity, state, trick, score, manual balance and camera. Each activation
 output from a previous ride never moves a new one.
 
 - **Loading.** Two seconds after play begins the component preloads the data and nearby collision, so the first mount
-  is immediate. The session stays loaded between rides: getting off suspends its input, `EndPlay` releases it.
-- **Collision.** The adapter snapshots registered, collision-enabled static meshes that block `Pawn` within a 100 m
-  cube around the rider, shrinking it to 60, 35 or 20 m when it exceeds 500,000 triangles. Complex-as-simple meshes
+  is immediate. The session thread stays loaded between rides: getting off suspends its input, `EndPlay` releases
+  it. Each ride starts on a fresh session, made ahead in the background with two kept spare, that takes over the
+  last one's collision, so the same controls from the same place ride the same way whatever was ridden before.
+- **Collision.** The adapter snapshots registered, collision-enabled static meshes that block `Pawn` within 100 m
+  (on each axis) of the rider's 10 m grid cell, shrinking that to 60, 35 or 20 m when it exceeds 500,000 triangles. Complex-as-simple meshes
   give their collision triangles: their collision LOD's render triangles, or, in a cooked build that keeps no CPU copy
   of those, the cooked Chaos triangles Unreal itself collides with (`skate.CookedSurface 1` reads those in the editor
-  too, which checks their contents but not the cooked build's choice of them; the packaged `japan.SkateGroundCheck`
+  too, which checks their contents but not the cooked build's choice of them; a packaged ground check
   does). Other meshes give their boxes, spheres, capsules and convex hulls. Instanced meshes
   count; the rider's own components do not. Registered rails within the cube go with it. When the rider leaves the
   inner 60%, the game thread gathers the next snapshot, a background task builds it and the session installs it
@@ -308,10 +314,11 @@ The wire format, timing and interest are the game's.
 
 ## Data and limits
 
-The session reads the game's `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets, physical
-skeletons and camera shots, plus the animation rig, clips and metadata banks, which come from
-[typed motion assets](MOTION_DATA.md) when `USkateSettings::MotionData` names one. `package-manifest.json` lists every
-payload with its size and SHA-256. A game may keep the animation as JSON (`Tools/motion_text.py`); its build then writes the complete package from both
-and checks every file against that manifest before Unreal compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
+The plugin's [`Data/`](Data/README.md) holds the data every game shares: the runtime payloads (settings, graphs,
+gesture sets, physical skeletons and camera shots) and the animation rig, clips and metadata banks as JSON. The game
+stages the runtime payloads into `unreal/Content/Data/SkateNative`, where the session reads them, and reads the
+animation from [typed motion assets](MOTION_DATA.md) named by `USkateSettings::MotionData`. `package-manifest.json`
+lists every payload with its size and SHA-256; the build assembles the complete package and checks every file against
+it before Unreal compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
 [verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
 whose triangles carry the [surface](#surfaces) they were classified as, and editor builds are the checked path.

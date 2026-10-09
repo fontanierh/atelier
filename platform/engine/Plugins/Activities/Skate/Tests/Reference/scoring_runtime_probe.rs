@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::{Read,Write};
 struct Input{data:Vec<u8>,at:usize}
 impl Input {

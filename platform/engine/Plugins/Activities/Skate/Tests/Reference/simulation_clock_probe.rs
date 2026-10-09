@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::{Read,Write};
 use skate_core::camera::SimulationRateRequest;
 mod clock;

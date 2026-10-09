@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AntiFlip.h"
 #include "GroundForce.h"
 #include <cstring>

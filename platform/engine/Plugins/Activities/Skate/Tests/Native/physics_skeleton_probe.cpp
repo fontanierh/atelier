@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PhysicsSkeleton.h"
 #include <cstring>
 #include <fstream>

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "FootIk.h"
 #include "SkeletonSettingReader.h"
 #if defined(__clang__)

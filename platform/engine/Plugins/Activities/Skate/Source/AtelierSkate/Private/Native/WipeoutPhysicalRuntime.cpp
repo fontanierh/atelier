@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "WipeoutPhysicalRuntime.h"
 #include "WipeoutControls.h"
 #include "WipeoutPhysicalMath.h"

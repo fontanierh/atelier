@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Shared probe declarations and independent converted-provider transport are
 // prefixed by the checker; the full root runtime executes every owner method.
 #include "AirTrajectoryRuntime.h"

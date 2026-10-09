@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Offline QA transport only. GameplaySession is the sole simulation owner.
 #include "GroundSurfaceRuntime.h"
 #include "GameplaySession.h"

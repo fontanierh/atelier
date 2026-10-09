@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AnimationName.h"
 #include "Input.h"
 #include "InputIntentions.h"

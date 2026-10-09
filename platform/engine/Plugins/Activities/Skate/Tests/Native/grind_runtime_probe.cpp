@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Actual shared owner constructors/observers are staged from the reset proof.
 // GENERATED_NATIVE_OWNER_PREFIX
 #include "GrindRuntime.h"

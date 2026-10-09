@@ -22,12 +22,6 @@ games/*/unreal/Build/Mac/Resources/Sandbox.Server.entitlements
 games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.bat
 games/*/unreal/Samples/PixelStreaming2/WebServers/get_ps_servers.sh
 games/*/unreal/Content/
-# Skate's runtime data is source-controlled at the exact path the game reads.
-!games/yorimichi/unreal/Content/
-games/yorimichi/unreal/Content/*
-!games/yorimichi/unreal/Content/Data/
-games/yorimichi/unreal/Content/Data/*
-!games/yorimichi/unreal/Content/Data/SkateNative/
 games/*/unreal/*.xcworkspace
 games/*/unreal/.vscode/
 platform/engine/Plugins/**/Binaries/

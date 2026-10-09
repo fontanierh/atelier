@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AssemblyContacts.h"
 #include "GeometryPrimitivePair.h"
 #include <algorithm>

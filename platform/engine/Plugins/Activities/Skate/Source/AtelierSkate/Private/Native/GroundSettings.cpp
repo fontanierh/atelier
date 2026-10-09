@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundSettings.h"
 #include "GroundControlSettings.h"
 #include "StockSettingsReader.h"

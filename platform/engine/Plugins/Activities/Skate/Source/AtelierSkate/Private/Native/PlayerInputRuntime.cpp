@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerInputRuntime.h"
 #include "PlayerGroundPosition.h"
 #include "PlayerGrindInputDetail.h"

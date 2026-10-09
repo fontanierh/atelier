@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "DataReader.h"
 #include "MotionGraphContinuationHost.h"
 #include <fstream>

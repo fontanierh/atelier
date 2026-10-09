@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "CollisionBody.h"
 #include <cstdlib>
 #include <limits>

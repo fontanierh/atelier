@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "PlayerStateCoordinator.h"
 #include "KnownAirRuntime.h"

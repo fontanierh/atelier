@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Test-only friends are appended to immutable snapshot headers by the checker.
 #include "GameplayWorld.h"
 #include "ControllerInputRuntime.h"

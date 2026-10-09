@@ -1,7 +1,7 @@
 # Ride
 
 Ride is the skating backend (`skate.Backend Ride`, `USkateSettings::Backend`). A ride is Native's
-`atelier::skate::GameplaySession` (the recovered C++ in `Source/AtelierSkate/Private/Native/`, described in
+`atelier::skate::GameplaySession` (the C++ in `Source/AtelierSkate/Private/Native/`, described in
 [RUNTIME.md](RUNTIME.md)) running on its own thread under Ride's Unreal body. Native simulates the board, reads the
 controls, recognises the tricks, scores them, decides landings and bails, poses the rider and frames the camera. Unreal
 hosts the ride in CharacterMovement, retargets Native's pose onto the game's character, makes that character an active
@@ -12,10 +12,6 @@ Unreal is `Source/AtelierSkate/Private/SkateRuntime.cpp` (with `SkateRuntimeDeta
 Native's own backend (`skate.Backend Native`: the session's pose with no physical body, no transitions and no Chaos
 bails) is kept only as the reference that QA and replays compare the ride against. Games do not offer it to players.
 
-Ride had its own board solver, an Unreal re-implementation of part of Native's riding. It was removed; commit
-`479a895` is the last one that has it. [What a full port to Unreal would need](#what-a-full-port-to-unreal-would-need)
-says what it covered.
-
 ## What runs where
 
 "Native" is the session's code, which Unreal neither reads into nor changes during a step. "Unreal" is Ride, the glue
@@ -25,8 +21,8 @@ and the engine. Native's file names are its families in `Private/Native/` (see [
 |---|---|---|
 | Ride host | Unreal | CharacterMovement's custom mode (`MOVE_Custom`, `USkateComponent::MovementMode`). `PhysSkate` calls `StepRetailRuntime` (`SkateRuntime.cpp`), which steps the session, sets the actor on Native's root (plus the body's lift onto the deck) and the movement velocity to Native's, without a physics teleport. |
 | Board physics | Native | The deck, two trucks and four wheels as rigid bodies with joints and drives, solved with the rider's bodies (`Board*`, `RigidBody`, `ConstraintSolver`, `Truck*`, `Deck*`, `Drive*`). Unreal only shows them: `PlaceBoardParts` puts the board meshes on the solved bones. |
-| Collision world | Native, from Unreal meshes | Native's own world (`GameplayWorld`, `WorldGeometry`, `WorldContactProducer`), built from a snapshot of Unreal's static meshes that block `Pawn`: `CollectWorld` lists them on the game thread, `FillWorld` and `BuildGameplayWorld` make the triangles and the BVH off it. Budget 500,000 triangles: a 100 m cube, shrunk to 60, 35 or 20 m. The next snapshot is gathered when the rider leaves the inner 60% and installed between steps. See [The world](#the-world). |
-| Rails and grinds | Native | Grind selection, balance and forces (`Grind*`, `PlayerGrind*`, `Slide*`) on polylines made from the `USkateRailSubsystem` rails within the snapshot. A game registers its rails; their kind, side and radius are not used. |
+| Collision world | Native, from Unreal meshes | Native's own world (`GameplayWorld`, `WorldGeometry`, `WorldContactProducer`), built from a snapshot of Unreal's static meshes that block `Pawn`: `CollectWorld` lists them on the game thread, `FillWorld` and `BuildGameplayWorld` make the triangles and the BVH off it. Budget 500,000 triangles: 100 m on each axis around the rider's 10 m cell, shrunk to 60, 35 or 20 m. The next snapshot is gathered when the rider leaves the inner 60% and installed between steps. See [The world](#the-world). |
+| Rails and grinds | Native | Grind selection, balance and forces (`Grind*`, `PlayerGrind*`, `Slide*`) on polylines made from the `USkateRailSubsystem` rails within the snapshot. A game registers its rails as polylines. |
 | Input mapping | Unreal, then Native | `USkateComponent::ReadInput` and `ReadHostPad` sample the controls into an Xbox-style packet (`SkatePad.h`); Native maps it to intents (`ControllerInputRuntime`, `PlayerControls`, `InputIntentions`). |
 | Flick recognizer | Native | Flick-It gestures and the action graph (`Gestures`, `GestureInputPublication`, `GraphGestureOperations`, `ActionGraphFrame`). |
 | Tricks, score, trick line | Native, labels in the glue | Native names and scores tricks and combos (`Scoring*`). The glue renames for display: `TrickLabel` (`Kickflip`, `Nollie`, `50-50`, `Pop Shove-it`), the `Fakie` or `Switch` prefix from the trick's start stance, `NameNativeSpin` (an air spin from the root's yaw, at least 150 degrees, shown as `Trick / FS 360`), a successful pump as `Pump` (U121), and `RideGrab` (the grab held, for an air dismount). |
@@ -55,10 +51,9 @@ Measured with `wc -l` on this tree, headers included:
 
 | Code | Files | Lines | What it is |
 |---|---|---|---|
-| `Private/Native/` | 769 (410 `.cpp`, 359 `.h`) | about 59,400 (43,273 + 16,088) | All of the riding, as recovered |
-| `Private/Ride/` with the solver (`479a895`) | 23 | 11,492 | The body, bails, get-up, transitions and the solver |
-| of which the solver's own files (`RideSession.*`, `RideFlick.*`, `RideManual.*`, `RideNative.cpp`, `RideSpeedModel.*`) | 9 | 3,555 | Removed; about 4,000 with its parts of `RideTuning.*`, `RideComponent.cpp` and `RideAnimator.*` (inferred) |
-| The glue (`SkateRuntime.cpp`, `SkateRuntimeDetail.h`, `SkateRetarget.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`) | 18 | about 4,100 | Hosting, snapshot, threading, retarget, audio, HUD |
+| `Private/Native/` | 769 (410 `.cpp`, 359 `.h`) | about 59,700 (43,545 + 16,165) | All of the riding |
+| `Private/Ride/` | 23 | 6,834 | The body, bails, get-up and transitions |
+| The glue (`SkateRuntime.cpp`, `SkateRuntimeDetail.h`, `SkateRetarget.cpp`, `SkateComponent.*`, `SkatePad.h`, `AnimNode_SkateRider.*`, `AnimNode_RideInertialization.*`, `SkateRails.*`, `SkateSettings.*`, `SkateFeel.h`, `SkateInput.h`, `SkateRider.h`, `AtelierSkateModule.cpp`, `SkateNetworkPresentation.cpp`, `SkatePadReader.*`, `SkateMotion*`) | 26 | about 5,700 | Hosting, snapshot, threading, retarget, audio, HUD, remote riders, the pad reader, typed motion |
 
 "Ported" here means Unreal code does the job and Native's version of it does not run. By that measure the ride's
 **body** is ported: the active ragdoll, the bail ragdoll, the get-up, the transitions on and off the board, the
@@ -66,41 +61,6 @@ retarget, the inertialization and the audio are Unreal's. Its **riding** is not:
 (board dynamics, contacts, grinds, flicks, manuals, pumping, airs, landings, bail rules, scoring, the riding pose's
 choice of clips, the camera) is Native's code running inside Unreal's process. Unreal feeds it controls, collision and
 rails and reads back a pose.
-
-## What a full port to Unreal would need
-
-A full port replaces each Native system with Unreal code and the session with Unreal objects. The table gives, per
-subsystem, the Native code involved (measured: `wc -l` over the family's files; families overlap a little, so the rows
-do not add up), what the removed solver had at `479a895` and how faithful it was (measured where a test or the gap
-audit says so), and what a port needs (inferred).
-
-| Subsystem | Native code | The removed solver | A port needs |
-|---|---|---|---|
-| Board dynamics | `Board*`, `RigidBody`, `ConstraintSolver`, `Contact*`, `Joint*`, `Drive*`, `Truck*`, `Deck*`, `AssemblyContacts`, `AggregateMass`, `SpeedWobble`: 73 files, about 4,900 lines | One rigid board on the game thread at 60 Hz against Unreal sweeps, not Native's seven bodies: ground follow with a 15 cm step, a crest window and a launch factor; a speed model (`RideSpeedModel`: a gain, a 7 m/s² gravity limit, a 25 m/s² load-free limit); the push (`PushDvStart` 0.6 against Native's 0.5). Not bit-equal; its paths differed from Native's by place. | Either Native's seven-body assembly on a custom integrator (comparable tick for tick with the reference) or Chaos bodies and constraints (comparable only by outcome). The truck drives and wheel contacts decide the feel. |
-| Collision | `Geometry*`, `WorldGeometry`, `WorldContact*`, `WorldPrimitive*`, `CollisionBody`, `GameplayWorld`: 23 files, about 2,400 lines | Unreal sweeps (a box and wheel-sized shapes) against the scene. | Contacts from Unreal queries instead of a snapshot, with physical materials mapped (the snapshot has one). Removes the snapshot, its budget and its rebuilds. |
-| Grinds | `Grind*`, `PlayerGrind*`, `AirTrajectoryGrind*`: 52 files, about 3,500 lines | Grind capture within 30 cm, from up to 40 cm above, at up to 65 degrees across; 50-50, 5-0 and slides; lip airs on coping. Partial in the gap audit. | Rail selection, balance and forces on Unreal splines; `USkateRailSubsystem` would carry kind, side and radius. |
-| Input and flick recognizer | `Controller*`, `Input*`, `Intents`, `PlayerControls`, `PlayerInput*`, `Gesture*`, `GraphGesture*`: 26 files, about 3,400 lines | The Flick-It chain as a translation (`RideFlick`: `ControllerInputRuntime::Sample`, `PlayerControls::Update`, `PublishGestures`, `SelectGestureTrick`). Measured bit for bit with Native over a recorded 1,573-tick replay (`Tests/Native/ride_input_replay_probe.cpp`: the packet equal on 1,461 rolling ticks, the owners bit for bit, six tricks). Gaps: no action graph, so the pop was timed by hand; the physical capabilities and state were fed 0. | The action graph, or an Unreal state machine standing in for it, driven by the recognizer's gestures; the recognizer itself ports as a translation. |
-| Manuals | `Manual*`: 2 files, 174 lines | `RideManual`: `CalculateManual`'s balance PID. Measured: the manual ended one tick before Native's balance cleared. | A translation; small. |
-| Pumping | `*Pump*`: 4 files, 213 lines | `UpdateGroundPumping`, with the crouch height and a pump angle of 0. | A translation; it reads the rider's crouch from the riding pose. |
-| Airs, spins, landing | `Air*`, `KnownAir*`, `Landing*`, `BodySpin`, `BodyFlip`: 63 files, about 4,300 lines | Spins (`BodySpin`), flips through the clips, bad-landing limits, a landing predictor. Measured: `BailImpact` 13.5 against Native's 11.2; `BailGrindImpact` 8. | Trajectory selection, air control, landing prediction and quality; tied to the board bodies and the motion graph. |
-| Bail decisions | `Wipeout*`: 32 files, about 1,500 lines | Curb bails at 7.1 m/s (impact 60), wall bails at 8 m/s, bad landings, a danger zone. | The wipeout requests and prediction; the ragdoll part is already Unreal's. |
-| Riding pose | `ActionGraph*`, `Graph*`, `CompiledGraph`, `MotionGraph*`: 52 files, about 5,800 lines; `Animation*`, `SkaterAnimation`, `RidingAnimation*`, `GroundAnimation*`, `BoardAnimation`, `MotionAnimation*`, `Footplant*`, `FootIk*`, `Skeleton*`, `PhysicsSkeleton`, `PhysicsAnimation*`: 135 files, about 10,400 lines | A C++ anim graph (`USkateRideAnimInstance`: four explicit-time sequence evaluators, a multi-way blend, a mirror, inertialization) choosing clips from the solver's state, with the fakie channel, the switch turn and the air legs. Missing: Native's physical feedback (crouch and tilt) and the spin overlays (U111). | The motion graph as an AnimGraph or C++ state machine with its blend trees, the procedural layers (feedback, spin channels, foot IK, footplants) and the physical skeleton's targets. The largest part. |
-| Scoring | `Scoring*`: 15 files, about 1,500 lines | Trick names and a simple combo. | A translation of the catalogue, combos and timers. |
-| Camera | `Camera*`, `GrindCamera`: 26 files, about 5,500 lines | One follow shot. | Native's shots per state (air, grind, bail), tracking and effects as Unreal camera modes (G7). |
-| Off the board, handplants, climbing | `Biped*`, `Offboard*`: 83 files, about 4,400 lines; `Climbing*`, `Handplant*`: 21 files, about 1,600 lines | None; Ride's transitions play the off-board clips. | Only what a game wants beyond the transitions (G10, G18). |
-| Session, settings, respawn | `Gameplay*`, `PlayerState*`, `Settings`, `StockSettingsReader`, `Respawn*`, `Revert*`, `Teleport*`, `SessionMarker*`, `NativeMath`, `NetworkProxies`: 48 files, about 4,200 lines | The solver's own session (`FRideSession`). | The riding state machine as Unreal objects; the data readers stay. |
-
-The gap audit of the solver against Native counted 183 features: 49 present, 50 partial, 66 missing, 8 unverified and
-10 not applicable (measured by reading both codes). To recover the solver, take `Source/AtelierSkate/Private/Ride/` and
-`Tests/Native/ride_input_replay_probe.cpp` from `479a895`, with `skate.RideSolver` in `SkateRuntime.cpp` and the
-solver's branches in `RideComponent.cpp` (`StepRide`, `AfterRideFrame`).
-
-Suggested order (inferred): board dynamics and collision together, since every other system reads their contacts;
-then input with the action graph, so tricks start from the recognizer rather than hand timing; then the ground moves
-(push, steering, pumping, manuals, powerslides); airs and landing; grinds; bail decisions; scoring; the riding pose;
-the camera last, since it only reads. After each step, replay the same recorded pad on the Native backend and on the
-port: bit for bit where the port is a translation, by outcome (tricks, landings, bails, places within a tolerance)
-where it runs on Chaos.
 
 ## Native's session under Ride's body
 
@@ -281,7 +241,7 @@ the first second and comes to rest at 1.24–1.26 times (the reference: 0.97–0
 joint stays within 1.5–8.4 degrees of its range and two bodies meet at most 2.9 cm deep. Skin under the ground with
 the fitted hulls: at most about 1 cm sliding and lying, 0.7–2.6 cm for the feet getting up. Frame cost with the
 physical rider on and off is within the noise (p99 17.11 against 17.17 ms riding a park road). These were measured
-on the removed solver's board; the body code is the same under Native's board.
+before the body rode Native's board; the body code is the same.
 
 ### Why the component and not RigidBodyWithControl
 
@@ -347,10 +307,11 @@ board settles the start onto the floor (`SettleRideStart`, `RideComponent.cpp`).
 Tunables (`skate.RideTune Name=Value`, names as in `RideTuning.h`): `MountBlend`, `DismountBlend`, `ClipBlend`,
 `CarryBlend`, `RecoverBlend`, `MeshSettle`, `BoardDissolveTime`, `BoardHoldTime`, `BoardLyingTime`, `BoardReach`,
 `MomentumDecay`, `MomentumBrake`. The dissolve uses `USkateSettings::BoardDissolveMaterial`. The state line's
-transition fields are `board=`, `shown=`, `vis=`, `hip=`, `deck=`, `vel=`, `offset=`, `turn=`, `momentum=`, `foot=`,
-`clip=`, `t=`, `lift=`, `phase=`, `hold=`, `hand=`, `air=`, `loose=` and `deckup=`. `skate.RideTrace N` logs every
-frame from the frame before each switch to N frames after it; `FAnimNode_SkateRider` and
-`FAnimNode_RideInertialization` log their switches, requests, recaches and resets.
+transition fields are `board=`, `shown=`, `vis=`, `hip=`, `deck=`, `vel=`, `offset=`, `turn=`, `momentum=`,
+`getup_on_foot=`, `foot=`, `clip=`, `t=`, `lift=`, `phase=`, `hold=`, `hand=`, `air=`, `loose=`, `deckup=` and
+`moves=` (the transitions the component has). `skate.RideTrace N` logs every frame from the frame before each switch
+to N frames after it; `FAnimNode_SkateRider` and `FAnimNode_RideInertialization` log their switches, requests,
+recaches and resets.
 
 ## Testing
 
@@ -359,8 +320,8 @@ frame from the frame before each switch to N frames after it; `FAnimNode_SkateRi
   the same replay on the ride match to the bit on the board; the body after a Chaos bail does not (H61).
 - **The game's QA scenarios** drive the ride through the live bridge: riding rows on both backends, the transitions,
   and a replay of a recorded session (the pad, packet by packet, in lockstep).
-- **Native's own tests** (`Tests/Native/`, [RUNTIME.md](RUNTIME.md#verification)) check the session bit for bit
-  against the recovered implementation.
+- **Native's own tests**, the parity checks in `Tests/` ([RUNTIME.md](RUNTIME.md#verification)), check the session
+  bit for bit against the reference implementation.
 - **Console variables.** `skate.Backend` (`Ride` or `Native`, from the next mount), `skate.FailNative 1` (the session fails, to test recovery), `skate.RidePhysical` (0: no
   active ragdoll), `skate.Lockstep` (-1, 0 or 1), `skate.PumpTrick` (the m/s one pump must add to show as `Pump`, 0.5), `skate.RideTrace N`, `skate.RideBailTrace N`,
   `skate.RideJointCheck`, `skate.RideSkinCheck 1`, `skate.RidePhysicalDump`, `skate.RideTune`.
@@ -380,15 +341,15 @@ in but no one has ridden it yet.
 | H35 | A foot joint goes 1.8–3.5 degrees past its range in the joint check | Unknown | `skate.RideJointCheck`, `BailJoints` |
 | H37 | A quarter pipe's straight air is not repeatable (an occasional 70-degree yaw on the face, a bail at the landing) | Possibly fixed by fresh sessions; to measure again | The same launch repeated on both backends |
 | H43 | A grind's exit at the end of a long ledge drifts outward; the board yaws 15–20 degrees on the lock | Unknown: Native's grind exit or the rail's end | The rail's polyline and end, `Grind*` |
-| H44 | Filmed boardslides over-rotate | The film script predicts the spin with the removed solver's model; Native turns 98–120 degrees for a 70–88 degree target | The film script's spin model |
+| H44 | Filmed boardslides over-rotate | The film script's spin model does not match Native: Native turns 98–120 degrees for a 70–88 degree target | The film script's spin model |
 | H60 | Replays on the ride started two rest steps later than on the Native backend | The replay harness counted the ride's frames from the body's mount; fixed in the harness (it starts at the session's own settle), to confirm | The game's replay scenario |
 | H61 | Two identical replays match on the board, but the body after a bail differs by up to 13.7 cm | The Chaos ragdoll is not repeatable across runs (inferred) | `StartBail`, the Chaos settings |
-| H62 | No push foot-scrape, flick, catch or fall sounds while riding; only `pop`, `land` and `clatter` play, on changes of mode | The cues came from the removed solver's cue list; a fix needs a push-contact signal (and flick and catch events) from Native | `USkateComponent::PlayCue`, `AfterNativeRideFrame`, Native's `Push` and `PUSH_CONTACT` |
-| H63 | The "Rolling fakie" and "Rolling switch" status read the removed solver's idle state, not Native's stance | Fixed: `GetStatus` reads the stance shown (`ShownSwitch`, `ShownFakie`, from Native's `riding_switch` and `fakie`), to playtest | `USkateComponent::GetStatus` |
+| H62 | No push foot-scrape, flick, catch or fall sounds while riding; only `pop`, `land` and `clatter` play, on changes of mode | Native publishes no push-contact, flick or catch events for the cues; a fix needs them from Native | `USkateComponent::PlayCue`, `AfterNativeRideFrame`, Native's `Push` and `PUSH_CONTACT` |
+| H63 | The "Rolling fakie" and "Rolling switch" status did not follow Native's stance | Fixed: `GetStatus` reads the stance shown (`ShownSwitch`, `ShownFakie`, from Native's `riding_switch` and `fakie`), to playtest | `USkateComponent::GetStatus` |
 | U119 | Hard to lock into a grind, and a grind loses much speed | Investigating: grinds are Native's own, so a difference would come from what the session is given (rails, collision, input) | The same rail on both backends |
 | U120 | After losing the board, getting back on could move the character 4–12 m at once | The actor followed Native's root while Native's rider walked away from the board; fixed by handing Native's on-foot states to the character (`TakeNativeOnFoot`), to playtest | `RideComponent.cpp` |
 | U121 | A successful pump did not show in the trick line | Native scores no pump; fixed (the session counts pumps, `skate.PumpTrick`), to playtest. QA: the timed bowl pumps show `Pump` and `Pump x2` (0.6 m/s a rise); the mistimed row's rises that gain speed show too (0.5-0.67 m/s each), although that row ends slower than coasting, so the count is per rise, not per line | The trick line in `SkateRuntime.cpp`, `pump=` |
-| U122 | On foot after a get-up, sprint, double jump and dash stayed off while the board was carried | The carry blocked them; fixed (using one puts the board away), to playtest. A rider with an adventure move set (Link) puts the board away the same way before its dodge or dash; untested, as this checkout had no move-set import | `RideTransitionAir.cpp` (`PutBoardAway`), the game's character |
+| U122 | On foot after a get-up, sprint, double jump and dash stayed off while the board was carried | The carry blocked them; fixed (using one puts the board away), to playtest. A rider with an adventure move set puts the board away the same way before its dodge or dash; untested, as this checkout had no move-set import | `RideTransitionAir.cpp` (`PutBoardAway`), the game's character |
 | U123 | In jumps the feet hovered behind and above the deck, in manuals they clipped into it, worse at speed and at 30 fps | The game's bike and sailboat components ticked in `TG_DuringPhysics` with the mesh waiting on them, which carried the mesh and Physics Control past the physics step (a frame's lag); fixed (both tick in `TG_PrePhysics`). QA: the physical feet now match the animated ones at every speed (4.0 cm along the deck, 1–9.75 m/s), and in the air they stay within 9 cm (60 fps) and 4.3 cm (30 fps) above the deck, from 15.5 and 27 cm. `review_skate_jump_feet.py` checks the physical feet against the animated ones at 60 and 30 fps, and fails on the late-tick warning. To playtest | `BikeComponent.cpp`, `SailboatComponent.cpp`, the tick order above |
 | H65 | `caveman_run` and `caveman_sprint` fail one run in three: a one-frame move or speed spike (8 cm, 340 cm/s) at the air mount's landing | Native's wheels touching a frame before its state lands, or a double step on a long frame; the rows pass on reruns | `skate_transitions` `caveman_*`, the landing frame in `continuity` |
 | U5, U13 | Turning, the rider bends too much for the board's tilt | The retarget of Native's lean onto our proportions (inferred) | `RetargetRetailPose` |

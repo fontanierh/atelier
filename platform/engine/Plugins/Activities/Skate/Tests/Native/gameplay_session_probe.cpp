@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Actual Session APIs; every frame, state, body, marker query and pose is live.
 #include "GameplaySession.h"
 #pragma clang diagnostic push

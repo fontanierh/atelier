@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Checker prepends the tested skeleton body/collision record adapters.
 #include "SkeletonColliders.h"
 #include "AssemblyContacts.h"

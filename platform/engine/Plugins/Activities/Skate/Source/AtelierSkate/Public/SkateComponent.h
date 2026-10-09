@@ -77,8 +77,6 @@ public:
      *  (ISkateRider::CanCarrySkateBoard). Callable from scripts (Python: recall_board()). */
     UFUNCTION(BlueprintCallable, Category="Skate")
     void RecallBoard();
-    /** On foot with the board in hand (the board-carry locomotion). */
-    bool IsBoardInHand() const;
     /** On foot with the Ride backend: whether the character's own move (a sprint, a dash, a double jump...) may take
      *  over from the board now. Not riding or getting on; a clip on foot once the stick may end it (a jump with the
      *  board in hand at once). Without a board or a clip, always. */
@@ -95,10 +93,8 @@ public:
     /** The player's skating feel (SkateFeel.h): applied at once while riding, and to every later ride. False (with the
      *  reason) when a value is out of its range; the feel then stays as it was. */
     bool SetFeel(const FSkateFeel& NewFeel, FString& Error);
-    const FSkateFeel& GetFeel() const { return Feel; }
     /** QA / live bridge: replace the player's controls; nullptr gives them back. */
     void SetScriptedInput(const FSkateInput* Input) { bScripted = Input != nullptr; if (Input) Scripted = *Input; }
-    const FSkateInput& GetInput() const { return In; }
     /** The whole ride, called from the movement component's PhysCustom in the game's skate mode. */
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
@@ -110,13 +106,9 @@ public:
     /** A bail the player asked to leave on foot (the skate button during the bail): the settled body gets up with
      *  BeginGetUpOnFoot rather than back onto the board. */
     bool WantsGetUpOnFoot() const;
-    /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
-    void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
+    /** The physical rider's get-up on foot, where the body lies, with the board left lying. */
+    void BeginGetUpOnFoot(bool bFaceUp);
     FString GetRetailState() const;
-    /** QA: a bone of the shown ride pose in the world under the Ride backend (Native's skeleton names, as
-     *  SKATEBOARD_ROOT or HIPS). False without one. */
-    UFUNCTION(BlueprintCallable, Category="Skate")
-    bool GetRidePoseBone(FName Bone, FTransform& World) const;
     bool GetRetailCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
     /** Teleport the rider (and board) to a spot, stopped, on the board. */
@@ -140,8 +132,6 @@ public:
     /** "volume pitch" pairs for the roll, grind, slide, skid and scrape loops, then the surfaces' own rolls (wood, metal,
      *  asphalt, stone, dirt, grass, sand; see ESkateSurface) (films mix them offline). */
     FString GetLoopState() const;
-    /** What the wheels are rolling on (None in the air, or on collision the surface tables don't reach). */
-    ESkateSurface GetSurface() const { return Surface; }
 
     // QA
     FName GetLastTrick() const { return LastTrickName; }
@@ -149,8 +139,6 @@ public:
     int32 GetBailCount() const { return Bails; }
     int32 GetGrindCount() const { return Grinds; }
     FVector GetBoardVelocity() const { return Vel; }
-    bool IsFakie() const { return bFakie; }
-    bool IsManual() const { return bManual; }
 
 private:
     UPROPERTY() TObjectPtr<ACharacter> Rider;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "AirReckoning.h"
 #include "BoardGroundAngle.h"
 #include "StockSettingsReader.h"

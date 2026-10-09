@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "WipeoutContactResponse.h"
 #include "GravityScale.h"
 #include "WipeoutBody.h"

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "NativeMath.h"
 #include "Geometry.h"
 #include <cstring>

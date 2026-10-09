@@ -174,7 +174,7 @@ def build_native(output):
     transport=(snapshot/'GrindFilteredOutput.h').read_text();start=transport.index('struct GrindFilteredOutput\n{');end=transport.index('\n};',start)+3;declaration=transport[start:end]
     assert hashlib.sha256(declaration.encode()).hexdigest()=='0a4bdb6d4792e87633638ce03405c10e018edd3fe0b30b2b8307041fe3c0c78c'
     reconstructed=(snapshot/'FilteredState.h').read_text().replace('#include "GrindFilteredOutput.h"','#include "GrindRuntime.h"')
-    assert hashlib.sha256(reconstructed.encode()).hexdigest()=='d4411dbb4b4357a212230e3498b74f828947b6defb57b0922d8c9e6a75f2a12a'
+    assert hashlib.sha256(reconstructed.encode()).hexdigest()=='f743fa1cc68c38edc801aa27cda4676fdaa4290a363a12b4fcf183df53864cac'
     report=dict(immutable_sources={p.name:digest(p) for p in sorted(snapshot.iterdir())},grind_transport_extraction=dict(header_sha256=digest(snapshot/'GrindFilteredOutput.h'),declaration_sha256=hashlib.sha256(declaration.encode()).hexdigest(),previous_filtered_header_sha256=hashlib.sha256(reconstructed.encode()).hexdigest(),scope='Existing exact transport reused after declaration-only extraction; no duplicate storage/layout/numerical change.'))
     (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     binary=output/'state-conditioning-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp')) for u in units],str(probe),'-o',str(binary)],check=True);return binary

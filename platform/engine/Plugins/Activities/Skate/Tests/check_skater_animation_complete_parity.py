@@ -443,7 +443,7 @@ def stage_native(output):
     if snap.exists():shutil.rmtree(snap)
     snap.mkdir()
     for p in[*sorted(CODE.glob('*.h')),*[CODE/(n+'.cpp')for n in UNITS]]:shutil.copy2(p,snap/p.name)
-    prefix,base=extract(TESTS/'Native/skater_animation_probe.cpp',b'// SPDX-License-Identifier: Apache-2.0',b'int main(int argc,char** argv)')
+    prefix,base=extract(TESTS/'Native/skater_animation_probe.cpp',b'#include "SkaterAnimation.h"',b'int main(int argc,char** argv)')
     physical,publication=extract(TESTS/'Native/motion_graph_continuation_probe.cpp',b'void Physical(Input &r, MotionGraphContinuationHost &h)',b'void Snapshot(Output &o, MotionGraphContinuationHost &h,')
     (snap/'skater_animation_facade_helpers.h').write_bytes(prefix);(snap/'motion_graph_complete_publication.h').write_bytes(physical)
     probe=TESTS/'Native/skater_animation_complete_probe.cpp';shutil.copy2(probe,snap/probe.name)

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "SkeletonCollisionMode.h"
 #include "SkeletonCollisionFeedback.h"
 #include <cstdlib>

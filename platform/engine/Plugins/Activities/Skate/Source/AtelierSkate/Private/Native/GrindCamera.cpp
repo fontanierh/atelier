@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GrindCamera.h"
 #include <cstring>
 #ifdef __clang__

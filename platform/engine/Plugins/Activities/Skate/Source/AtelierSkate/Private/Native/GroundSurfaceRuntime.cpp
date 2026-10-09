@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "GroundSurfaceRuntime.h"
 #include "PhysicalSimulationRuntime.h"
 namespace atelier::skate

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // GENERATED_COMPLETE_OWNER_HELPERS
 #include "BonelessRuntime.h"
 namespace {

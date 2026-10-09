@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "FilteredState.h"
 #include "LandingQuality.h"
 #include "DataReader.h"

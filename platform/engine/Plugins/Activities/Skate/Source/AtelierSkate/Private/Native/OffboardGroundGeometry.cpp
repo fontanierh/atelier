@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardGroundGeometry.h"
 #include "OffboardGroundScene.h"
 #include "StockSettingsReader.h"

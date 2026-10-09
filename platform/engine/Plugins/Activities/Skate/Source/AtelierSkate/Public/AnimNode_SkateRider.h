@@ -28,8 +28,6 @@ struct ATELIERSKATE_API FAnimNode_SkateRider : public FAnimNode_Base
     FAnimNode_Base* GetRoot();
     /** The nodes the proxy initializes (both need their pre-update or dynamics reset). */
     void GetNodes(TArray<FAnimNode_Base*>& Nodes);
-    /** Whether the last update showed the skate pose. */
-    bool IsSkatePose() const { return bSkate; }
 
     virtual void Initialize_AnyThread(const FAnimationInitializeContext& Context) override;
     virtual void CacheBones_AnyThread(const FAnimationCacheBonesContext& Context) override;

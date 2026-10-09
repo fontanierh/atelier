@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Appended to a read-only copy of the complete common-publication fixture.
 #include "PlayerInputHostPhase.h"
 namespace input_host_detail

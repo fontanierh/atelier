@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "PlayerInputPublication.h"
 #include "GroundSurfaceRuntime.h"
 #include "RidingAngles.h"

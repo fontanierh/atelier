@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 #include "OffboardGroundScene.h"
 // WORLD_PROTOCOL
 #include "DataReader.h"
