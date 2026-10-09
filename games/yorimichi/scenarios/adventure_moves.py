@@ -13,7 +13,7 @@ next press), the side hop and backflip, the sword's draw, the four-cut combo, th
 parry, sheathing and the guard button drawing the sword; the paraglider,
 opened at the top of a throw over the lake, steered, braked, closed and opened again; the swim it lands in, the swim
 dash and the swim back to the shore; the climb up a steep bank onto its top, and up the cabin's wall to its eave; the
-plunge and the hard landing.
+plunge and the hard landing; a long fall, which holds its pose.
 Each check reads UAdventureMoveSet's state (YorimichiLive::MoveState) every frame at a fixed 60 fps step; done.json lists
 every check with what it measured, log.json the per-frame state, and the key moments are saved as stills. Optional
 globals: ONLY, the checks to run; SHOTS, False for no stills; RIDER, the character requested for the check (default Cairo).
@@ -373,8 +373,31 @@ def plunge():
         live.press('weapon'); yield from wait(1.)
 
 
+def hands():
+    """Both hands in the body's own frame (cm), the pose whatever the capsule does."""
+    m = pc.get_controlled_pawn().mesh
+    names = [str(m.get_bone_name(i)) for i in range(m.get_num_bones())]
+    picked = [n for n in names if n.lower() in ('hand_l', 'hand_r')] or [n for n in names if 'hand' in n.lower()][:2]
+    return [m.get_socket_transform(n, unreal.RelativeTransformSpace.RTS_COMPONENT).translation for n in picked]
+
+
+def fall():
+    place(*RUN)
+    yield from until(settled, 6.)
+    L.launch(unreal.Vector(0, 0, 1600))
+    seen = yield from watch(3.6, each=lambda s: s.update(hands=hands()))
+    # Fall turns into its pose once and holds it; a looping Fall snapped the arms back every 0.17 s.
+    held = [s for s in seen if s['action'] == 'Fall' and s['mode'] == 'air']
+    held = [s for s in held if s['t'] >= held[0]['t'] + .6] if held else []
+    steps = [max((a - b).length() for a, b in zip(s['hands'], r['hands'])) for r, s in zip(held, held[1:])]
+    check('a long fall holds its pose', len(held) > 60 and steps and max(steps) < 3., frames=len(held),
+          most=round(max(steps), 2) if steps else None, actions=actions(seen))
+    shot('fall')
+    yield from until(settled, 6.)
+
+
 CHECKS = [('on_foot', on_foot), ('double_jump', double_jump), ('hops', hops), ('sword', sword), ('glide', glide), ('swim', swim), ('climb', climb),
-          ('plunge', plunge)]
+          ('plunge', plunge), ('fall', fall)]
 CHECKS = [c for c in CHECKS if c[0] in (globals().get('ONLY') or [c[0] for c in CHECKS])]
 
 
