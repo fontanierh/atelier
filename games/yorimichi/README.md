@@ -11,7 +11,9 @@ The story and setting are drafted in [docs/LORE.md](docs/LORE.md).
 From the repository root (requirements in the [top-level README](../../README.md#requirements)):
 
 ```sh
+uv run atelier doctor yorimichi     # checks Unreal, Blender, ffmpeg, the sources and the sound masters
 uv run atelier fetch yorimichi      # the sound masters, once per machine
+uv run python games/yorimichi/tools/verify_asset_library.py  # checks the committed sources against their manifest
 nice -n 10 uv run atelier build yorimichi  # development steps; only changed steps rerun
 nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferences honored
 ```
@@ -20,7 +22,10 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 (`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
-reuse completed steps. The community park and skate pier use committed GLBs from our asset library. Build stamps,
+reuse completed steps. Every source the game consumes is committed in [the asset library](assets/README.md): the
+model GLBs, including the community park and the skate pier's obstacle modules, the Mega Park's geometry, collision
+and textures, the packed character sources and merged moves, and the native skating bundle. The
+[source manifest](assets/source-library.json) records their paths and checksums. Build stamps,
 generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
