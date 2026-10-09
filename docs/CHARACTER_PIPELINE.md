@@ -100,11 +100,11 @@ role, never for a file.
 merged moves, sword and paraglider into Unreal; scripted QA runs check it in motion.
 
 ```sh
-atelier build yorimichi unreal.cairo_adventure
-atelier play yorimichi
+uv run atelier build yorimichi unreal.cairo_adventure
+uv run atelier play yorimichi
 # In another terminal, against the running game:
-atelier live py "ONLY=['sword']; TAKE='combat_review'"
-atelier live py - < games/yorimichi/scenarios/adventure_moves.py
+uv run atelier live py "ONLY=['sword']; TAKE='combat_review'"
+uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
 The tools for each step and their options are in

@@ -22,11 +22,11 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 (`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
-reuse completed steps. Every source the game consumes is committed in [the asset library](assets/README.md): the
-model GLBs, including the community park and the skate pier's obstacle modules, the Mega Park's geometry, collision
-and textures, the packed character sources and merged moves, and the native skating bundle. The
-[source manifest](assets/source-library.json) records their paths and checksums. Build stamps,
-generated Content and the shared derived-data cache are kept for incremental work.
+reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
+[the asset library](assets/README.md): the model GLBs, including the community park and the skate pier's obstacle
+modules, the Mega Park's geometry, collision and textures, the packed character sources and merged moves, and the
+native skating bundle. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
+masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
 assembly, and neither runs in an ordinary development build. Launcher edits and failed ZIP retries reuse the completed

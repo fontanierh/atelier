@@ -91,7 +91,7 @@ Where to go next, in the order most games grow:
 
 1. **Your world.** Add build steps that generate meshes in Blender and import them into Unreal
    ([worlds from code](#worlds-from-code)).
-2. **Your props.** Put your keys in `.env` and describe things ([a prop from a sentence](#a-prop-from-a-sentence)).
+2. **Your props.** Copy `make_prop.py`, put your keys in `.env` and describe things ([a prop from a sentence](#a-prop-from-a-sentence)).
 3. **Your character.** Follow the [character pipeline](#a-character-from-a-prompt). The character goes in
    `assets/characters/<name>/` with a `character.toml` and follows the humanoid bone contract, so the platform's
    animation and gameplay code fits it.
@@ -118,11 +118,13 @@ Each step is a prompt or a script an agent runs, followed by a human look (often
    [humanoid bone contract](platform/conventions/rigs/humanoid.toml), so a hand can grip a sword or a skateboard
    and the platform's animation code works on any character.
 5. **Outfits.** Clothes are drawn, modelled and fitted onto the same rig.
-6. **Motion.** From AI video references, motion capture or text ([below](#motion-from-text-video-or-capture)).
-7. **A reviewed clip library.** Every clip is rendered from several cameras and checked. Clips are named by
+6. **Motion from video.** AI video models act a move out; an agent authors the clip in Blender from the frames
+   (more motion sources [below](#motion-from-text-video-or-capture)).
+7. **Motion capture, retargeted** onto the character's own skeleton.
+8. **A reviewed clip library.** Every clip is rendered from several cameras and checked. Clips are named by
    [role](platform/conventions/clip-roles.toml) (`Run`, `DashAir`, `SwordParry`...), so game code asks for a role,
    never for a file.
-8. **Into the game.** `atelier build` imports the character; QA scenarios check it in motion.
+9. **Into the game.** `atelier build` imports the character; QA scenarios check it in motion.
 
 <table><tr>
 <td width="50%"><img src="docs/media/character/01-concepts.jpg" alt="Four concept images of the boy; the first is picked"><br><sub><b>1. Concepts.</b> Four directions; the first is picked.</sub></td>
@@ -133,7 +135,7 @@ Each step is a prompt or a script an agent runs, followed by a human look (often
 </tr></table>
 
 <p><img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
-<br><sub><b>7. Clip review.</b> A sword strike from three cameras, eight frames each.</sub></p>
+<br><sub><b>8. Clip review.</b> A sword strike from three cameras, eight frames each.</sub></p>
 
 Generation does not settle every detail. When a hand sat differently on the sword from one clip to the next, an agent
 built a small [browser grip poser](games/yorimichi/docs/GRIPS.md): a person drags the fingertips on the real rigged
@@ -173,9 +175,9 @@ Describe a prop; a couple of minutes later it stands in the world while the game
 <img src="docs/media/lantern.jpg" alt="The Sunburst concept of a stone lantern, Tripo's model, and the lantern on the hamlet path next to Cairo">
 
 ```sh
-python games/yorimichi/assets/props/make_prop.py make stone_lantern \
+uv run python games/yorimichi/assets/props/make_prop.py make stone_lantern \
   "a small weathered granite stone lantern for a roadside shrine, a little moss on the base and cap"
-atelier live py "unreal.LiveLibrary.spawn_model('lantern', 'games/yorimichi/assets/props/stone_lantern/stone_lantern.glb', \
+uv run atelier live py "unreal.LiveLibrary.spawn_model('lantern', 'games/yorimichi/assets/props/stone_lantern/stone_lantern.glb', \
   unreal.LiveLibrary.aim_point(1500), 0, 1.3, 'box', 'workshop'); unreal.LiveLibrary.save_overlay('workshop')"
 ```
 
@@ -207,8 +209,8 @@ paying for a model.
   anatomy, travel scaled to its height, the second hand re-solved onto the grip every frame
   ([Mixamo guide](games/yorimichi/docs/MIXAMO_WORKFLOW.md)).
 
-The three runners write one motion representation, so the [retargeting helpers](platform/web/motion/README.md) work
-on any of them.
+UniMate, Kimodo and GVHMR write one motion representation, so the
+[retargeting helpers](platform/web/motion/README.md) work on any of them.
 
 ### Agents in the loop
 
@@ -232,14 +234,14 @@ that a person or a second AI can judge at a glance.
 
 The game runs on your Mac and streams to a browser. `atelier stream <game> start --local` serves it at
 http://127.0.0.1:8080 (keyboard, mouse or a controller); without `--local` it is reachable from your phone over
-Tailscale. `/` is the game's own touch page (Yorimichi's has touch controls, the painted map above, travel and
-settings) and `/play/` the plain player. The [stream pages](platform/web/stream/README.md) say what a game provides.
+Tailscale. `/play/` is the plain player, and `/` serves the game's own touch page when its `game.toml` names one
+(Yorimichi's has touch controls, the painted map above, travel and settings). The [stream pages](platform/web/stream/README.md) say what a game provides.
 
 ## Building blocks
 
 | Part | Where | What |
 |---|---|---|
-| The `atelier` command | [platform/studio](platform/studio/atelier) | new, doctor, fetch, build, play, stream, live, qa, lint, board; review sheets; machine safety |
+| The `atelier` command | [platform/studio](platform/studio/atelier) | new, setup, doctor, fetch, build, reuse, pool, play, stream, live, qa, lint, board; review sheets; machine safety |
 | AI runners | [platform/studio/atelier/ai](platform/studio/atelier/ai) | Tripo and image generation, UniMate, Kimodo and GVHMR, and the ledger every paid call goes through |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
 | Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
@@ -279,8 +281,8 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
 - **A message board between agents.** `atelier board` delivers addressed handoffs and lack-of-progress notices to
   background subscribers across worktrees, with a web view ([agent board](docs/AGENT_BOARD.md)).
-- **Paid AI calls are recorded before they are sent** and never retried automatically, so two agents cannot pay for
-  the same revision twice.
+- **Paid AI calls are recorded before they are sent.** The ledger writes the record first, refuses a call whose record
+  already exists and never retries one, so a rerun cannot pay again for the same revision.
 - **The repository is public.** `atelier lint` and the pre-commit hook refuse secrets, personal paths and game names in
   the platform.
 
@@ -297,7 +299,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |
 | `atelier qa <game> <scenario>` | run `games/<game>/scenarios/<scenario>.py` against the running game |
-| `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/` is the game's touch page, `/play/` the plain player |
+| `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/play/` is the plain player, `/` the game's touch page when it has one |
 | `atelier board` | messages and handoffs between agents ([guide](docs/AGENT_BOARD.md)) |
 | `atelier lint` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
 
@@ -329,8 +331,9 @@ a fox-masked hunter with a sword. Its models, rigs, animation, world and code we
 - **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
 - **phone play** through the streaming plugin.
 
-The clone contains every source the game consumes in [its asset library](games/yorimichi/assets/README.md), so a build
-needs no AI credentials:
+The clone contains the game's model, texture, collision and animation sources in
+[its asset library](games/yorimichi/assets/README.md), so a build needs no AI credentials; `atelier fetch` downloads
+the sound masters:
 
 ```sh
 uv run atelier doctor yorimichi         # checks Unreal, Blender, ffmpeg, the sources and the sound masters
