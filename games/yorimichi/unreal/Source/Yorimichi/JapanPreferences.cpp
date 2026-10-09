@@ -632,6 +632,46 @@ public:
     }
 };
 
+/** What a main-page setting does, shown under the page while it is focused. */
+FString MainHint(const FString& Key)
+{
+    static const TMap<FString,FString> Hints = {
+        {TEXT("performance"),TEXT("Performance keeps movement smooth with lighter shadows and distant detail; Quality sharpens shadows.")},
+        {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. Off saves GPU time.")},
+        {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
+        {TEXT("goofy"),TEXT("Which foot leads on the skateboard: Regular is the left foot, Goofy the right.")},
+        {TEXT("tree_lod_distance"),TEXT("How far detailed trees reach, with Automatic tree detail. Farther costs more GPU time.")},
+        {TEXT("fog_density"),TEXT("How thick the volumetric fog is.")},
+        {TEXT("fog_reach"),TEXT("How far the volumetric fog reaches from the camera, in metres.")},
+        {TEXT("fog_falloff"),TEXT("How quickly the fog thins with height. Higher keeps it low in the valleys.")},
+        {TEXT("fog_glow"),TEXT("How much the fog brightens looking toward the sun.")},
+        {TEXT("fog_shafts"),TEXT("How strong the shafts of light through the fog are.")},
+        {TEXT("fog_town"),TEXT("How much fog stays in the streets of Hidamari.")},
+        {TEXT("volume"),TEXT("The game's overall sound volume.")},
+        {TEXT("stamina_rings"),TEXT("How many stamina rings you have.")},
+        {TEXT("mouse"),TEXT("How fast the mouse turns the camera.")},
+        {TEXT("cam_dist"),TEXT("How far the camera follows behind you.")},
+        {TEXT("fov"),TEXT("The camera's field of view, in degrees.")},
+        {TEXT("render_scale"),TEXT("The highest resolution the game renders at, as a percentage of the screen. Lower is faster and softer.")},
+        {TEXT("painterly"),TEXT("How strongly the painted look brushes over the image. 0 turns it off.")},
+        {TEXT("paint_radius"),TEXT("The size of the painted look's brush strokes.")},
+        {TEXT("toon"),TEXT("How strongly the shading is drawn in flat bands. 0 turns it off.")},
+        {TEXT("toon_bands"),TEXT("How many bands the toon shading uses.")},
+        {TEXT("toon_soft"),TEXT("How softly the toon bands blend into each other.")},
+        {TEXT("outline"),TEXT("Ink outlines around shapes. 0 turns them off.")},
+        {TEXT("wind"),TEXT("The wind in the trees and grass, in metres per second.")},
+        {TEXT("exposure"),TEXT("The overall brightness of the image.")},
+        {TEXT("saturation"),TEXT("How rich the colours are.")},
+        {TEXT("sun_height"),TEXT("How high the sun stands, in degrees. Lower makes long shadows.")},
+        {TEXT("sun_yaw"),TEXT("Where the sun shines from, in degrees around the compass.")},
+        {TEXT("sun_warmth"),TEXT("How warm the sunlight's colour is.")},
+        {TEXT("sun_strength"),TEXT("How bright the sun is, in lux.")},
+        {TEXT("sky_fill"),TEXT("How much the sky lights the shadows.")},
+        {TEXT("bounce"),TEXT("How much light bounces off the ground and walls into the shade.")}};
+    const FString* Hint = Hints.Find(Key);
+    return Hint ? *Hint : FString();
+}
+
 /** A d-pad press on a slider, as a fraction of its range: the value's own step, a few at a time when it has more than
  *  60, or a fiftieth of the range when it is continuous. */
 float PadStep(const FJapanPreference& V)
@@ -648,8 +688,8 @@ float PadStep(const FJapanPreference& V)
  *  is lit and its hint shows under the page, the page scrolls to follow focus, and focus comes back to the menu
  *  whenever it strays, so the pad always has a control. Sliders and choices change with Left and Right at once, with
  *  no press to grab them. The right face button (Escape on a keyboard is the game's Menu action) goes back a page or
- *  closes, the shoulders (Page Up and Down) jump a section, and every other pad button is kept from the game behind
- *  the menu; Menu and View still reach it, and Menu closes the menu. */
+ *  closes, the shoulders (Page Up and Down) jump a section, and every other pad button, stick and trigger is kept from
+ *  the game behind the menu; Menu and View still reach it, and Menu closes the menu. */
 class SPreferencesPanel : public SCompoundWidget
 {
 public:
@@ -697,7 +737,7 @@ public:
     /** Focus the control added under Key, or the first one. */
     void Focus(const FString& Key)
     {
-        const FEntry* Found = Entries.FindByPredicate([&Key](const FEntry& E) { return !Key.IsEmpty() && E.Key == Key && E.Control.IsValid(); });
+        const FEntry* Found = Entries.FindByPredicate([&Key](const FEntry& E) { return !Key.IsEmpty() && E.Key == Key && E.Control.IsValid() && E.Control.Pin()->IsEnabled(); });
         if (!Found) Found = Entries.FindByPredicate([](const FEntry& E) { return E.Control.IsValid() && E.Control.Pin()->IsEnabled(); });
         if (Found) FSlateApplication::Get().SetUserFocus(0, Found->Control.Pin(), EFocusCause::Navigation);
     }
@@ -727,7 +767,9 @@ public:
     virtual FReply OnAnalogValueChanged(const FGeometry&, const FAnalogInputEvent& E) override
     {
         if (FMath::Abs(E.GetAnalogValue()) > .5f) { bNavigating = true; bPad = true; }
-        return FReply::Unhandled();
+        // The focused control has already turned a pushed left stick into navigation; what is left (the right stick,
+        // the triggers) must not reach the game behind the menu.
+        return E.GetKey().IsGamepadKey() ? FReply::Handled() : FReply::Unhandled();
     }
     virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
     {
@@ -760,26 +802,31 @@ private:
     {
         return Entries.FindByPredicate([](const FEntry& E) { const TSharedPtr<SWidget> W = E.Control.Pin(); return W && W->HasAnyUserFocus().IsSet(); });
     }
-    /** To the start of the next section, or of this one (then the one before) going back; disabled controls are passed. */
+    bool Usable(int32 I) const { const TSharedPtr<SWidget> W = Entries[I].Control.Pin(); return W && W->IsEnabled(); }
+    /** To the next section, or back to the start of this one (then the one before). A section starts at its first
+     *  enabled control, so a disabled one at its head (Reset custom values, outside Custom) is passed. Past the last
+     *  section RB goes to the last control. */
     void Jump(int32 Way)
     {
+        TArray<int32> Starts;
+        for (int32 I = 0; I < Entries.Num(); ++I)
+            if (Entries[I].bSection)
+                for (int32 J = I; J < Entries.Num() && (J == I || !Entries[J].bSection); ++J)
+                    if (Usable(J)) { Starts.Add(J); break; }
         const FEntry* Current = Focused();
         const int32 From = Current ? int32(Current - Entries.GetData()) : 0;
-        int32 Start = INDEX_NONE;
-        if (Way > 0) { for (int32 I = From+1; I < Entries.Num() && Start == INDEX_NONE; ++I) if (Entries[I].bSection) Start = I; }
+        int32 To = INDEX_NONE;
+        if (Way > 0)
+        {
+            for (int32 S : Starts) if (S > From) { To = S; break; }
+            for (int32 I = Entries.Num()-1; To == INDEX_NONE && I > From; --I) if (Usable(I)) To = I;
+        }
         else
         {
-            int32 Own = From; while (Own > 0 && !Entries[Own].bSection) --Own;
-            if (Own < From) Start = Own;
-            else for (int32 I = Own-1; I >= 0 && Start == INDEX_NONE; --I) if (Entries[I].bSection) Start = I;
+            for (int32 S : Starts) if (S < From) To = S;
+            if (To == INDEX_NONE && Starts.Num()) To = Starts[0];
         }
-        if (Start == INDEX_NONE) Start = Way > 0 ? Entries.Num()-1 : 0;   // past the last section: the last control
-        for (int32 I = FMath::Max(Start, 0); I < Entries.Num(); ++I)
-            if (const TSharedPtr<SWidget> W = Entries[I].Control.Pin(); W && W->IsEnabled())
-            {
-                FSlateApplication::Get().SetUserFocus(0, W, EFocusCause::Navigation);
-                return;
-            }
+        if (To != INDEX_NONE && To != From) FSlateApplication::Get().SetUserFocus(0, Entries[To].Control.Pin(), EFocusCause::Navigation);
     }
     FString Legend() const
     {
@@ -1018,7 +1065,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));
-            }, Flip),Key)];
+            }, Flip),Key,MainHint(Key))];
     }
     // Every way the board rides, on a page of its own.
     Rows->AddSlot().AutoHeight().Padding(0,0,0,10)[Page->Add(SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld())).Text(FText::FromString(TEXT("Skate feel · pop, flicks, rails, speed, bails...")))
@@ -1039,8 +1086,8 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
         if (Values[I].Key == TEXT("stamina_rings") && JapanNetwork::IsOnline(Owner->GetWorld())) continue;
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         if (Values[I].Key==TEXT("tree_lod_distance"))
-        { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },FString());continue; }
-        AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), FString());
+        { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },MainHint(Values[I].Key));continue; }
+        AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), MainHint(Values[I].Key));
     }
     Rows->AddSlot().AutoHeight().Padding(0,8,0,0)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Reset the light")))
         .OnClicked_Lambda([this] { ResetLight(); return FReply::Handled(); }),TEXT("reset_light"),TEXT("Every Light value back to its default."))];

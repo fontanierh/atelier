@@ -51,8 +51,8 @@ and Right change the focused setting at once, sliders and choice buttons alike, 
 bottom face button presses a button, the right face button goes back a page (from Skate feel, or a graphics warning)
 or closes the menu, and LB / RB (L1 / R1, L / R) jump a section. The focused row is lit, the page scrolls with it, and
 the footer shows what the setting does and the buttons for the pad in hand. The keyboard has arrows, Enter, Page Up /
-Down and Esc. Menu and View pass through to the game, so Menu closes the menu; every other gamepad button is
-swallowed.
+Down and Esc. Menu and View pass through to the game, so Menu closes the menu; every other gamepad button, stick and
+trigger is swallowed.
 
 Right-stick look: UE 5.8's `FSceneViewport` negates `Gamepad_RightY` before player input, and the project disables
 legacy input scales, so `StickLook` applies `-Delta.Y` to the pitch. Right stick up looks up; mouse look keeps its own
