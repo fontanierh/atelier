@@ -49,7 +49,10 @@ def test_park_geometry_matches_library_contract():
     sys.path.insert(0, str(GAME / 'world'))
     import yori  # noqa: F401
     from communitypark.source import FILE, SPEC, scene
-    from skatepark import modules
+    # Scenario collection also imports a skatepark.py; load the region reader independently.
+    module_spec = importlib.util.spec_from_file_location('library_skate_modules', GAME / 'world/regions/skatepark/modules.py')
+    modules = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(modules)
 
     pin = json.loads(SPEC.read_text())
     assert FILE == ASSETS / 'communitypark' / pin['file']
