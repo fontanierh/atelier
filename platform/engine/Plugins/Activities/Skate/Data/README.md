@@ -1,7 +1,7 @@
-# Native skating data
+# Skating data
 
 The data the Skate session runs on, shared by every game that uses the plugin. It holds 3,334 payloads in the
-plugin's native formats: 3,324 animation clips (131,642 frames), the animation rig and both metadata banks, the
+plugin's simulation formats: 3,324 animation clips (131,642 frames), the animation rig and both metadata banks, the
 action, motion and camera graphs, 285 gesture patterns, camera data, settings and physical skeletons, 70,695,340
 bytes in all.
 
@@ -19,19 +19,19 @@ accordingly; the manifest and `bundle.json` then need updating with them.
 
 ## Using it in a game
 
-[`Tools/native_package.py`](../Tools/native_package.py) assembles the complete package (the rig, clips and metadata
+[`Tools/simulation_package.py`](../Tools/simulation_package.py) assembles the complete package (the rig, clips and metadata
 banks built from `motion/` by [`motion_text.py`](../Tools/motion_text.py), and the other payloads built from
 `runtime/` by [`runtime_text.py`](../Tools/runtime_text.py)) and checks every payload against the manifest and
 `bundle.json`:
 
 ```sh
-python3 platform/engine/Plugins/Activities/Skate/Tools/native_package.py \
-  --assemble build/<game>/skate-native/package --output build/<game>/skate-native/verification.json
+python3 platform/engine/Plugins/Activities/Skate/Tools/simulation_package.py \
+  --assemble build/<game>/skate-simulation/package --output build/<game>/skate-simulation/verification.json
 ```
 
 A game runs this as a build step, then imports the package into typed Unreal assets ([TYPED_DATA.md](../TYPED_DATA.md))
 that it loads and cooks. The Ride clip imports and offline skating checks read the assembled package.
 
-`motion_text.py export --native <package> --source motion` and `runtime_text.py export --native <package> --source
+`motion_text.py export --package <package> --source motion` and `runtime_text.py export --package <package> --source
 runtime` write the JSON back from a package; both converters rebuild every payload byte for byte. The
 [runtime reference](../RUNTIME.md#data-bundle) describes the formats and the parity checks.

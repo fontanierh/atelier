@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bounded real MotionHost/controller lifecycle comparison.
 
-Compile only through atelier.safety. Native metadata/settings/graphs and the
+Compile only through atelier.safety. Simulation metadata/settings/graphs and the
 unchanged pinned host consume the same explicit completed physical inputs.
 """
 import argparse
@@ -137,17 +137,17 @@ def corpus(case):
 
 
 def build_probes(output, target_dir):
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     cpp = output/'motion-host-cpp'
-    sources = ('NativeMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings',
+    sources = ('SimulationMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings',
         'Graph', 'CompiledGraph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphIntentOperations',
         'GraphMotionSliding', 'AnimationSamples', 'AnimationMetadata', 'AnimationPlayback', 'AnimationPlaybackParameters',
         'AnimationTrees', 'AnimationChannels', 'MotionAnimation', 'MotionAnimationOperations', 'MotionFrame',
         'GraphMotionName', 'GraphMotionConditions', 'GraphMotionPhysicalConditions', 'GraphMotionSpecialConditions',
         'RidingAnimation', 'RidingAnimationSettings', 'GraphMotionFeedbackOperations', 'GraphMotionScoreOperations', 'GraphMotionPushOperations', 'GraphMotionGestureOperations', 'MotionGraphHost')
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti',
-        '-Wall', '-Wextra', '-Werror', '-I', str(native), *(str(native/f'{n}.cpp') for n in sources),
-        str(PLUGIN/'Tests/Native/motion_host_probe.cpp'), '-o', str(cpp)], check=True)
+        '-Wall', '-Wextra', '-Werror', '-I', str(simulation), *(str(simulation/f'{n}.cpp') for n in sources),
+        str(PLUGIN/'Tests/Simulation/motion_host_probe.cpp'), '-o', str(cpp)], check=True)
     root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=PLUGIN, text=True).strip())
     relative = (PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix()
     revision = subprocess.check_output(['git', 'rev-parse', REFERENCE_REVISION], cwd=root, text=True).strip()
@@ -293,18 +293,18 @@ def main():
     for marker in ('result.json', 'first-divergence.json'):
         (output/marker).unlink(missing_ok=True)
     cpp, rust = build_probes(output, args.target_dir)
-    settings = output/'settings.native'
+    settings = output/'settings.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     results, combined_truth, raw_cases = [], defaultdict(set), []
     for case in range(8):
         graph = fixture(case)
-        reference, native = output/f'host-{case}.reference-graph', output/f'host-{case}.graph'
+        reference, simulation = output/f'host-{case}.reference-graph', output/f'host-{case}.graph'
         reference.write_bytes(original_graph(graph))
-        native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+        simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
         inputs = corpus(case)
         (output/f'host-{case}-input.bin').write_bytes(inputs)
         expected = subprocess.check_output([str(rust), str(args.assets), str(reference)], input=inputs)
-        actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(native), str(settings)], input=inputs)
+        actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(simulation), str(settings)], input=inputs)
         # Retain exact oracle evidence even if a subsequent coverage assertion
         # rejects the fixture after byte comparison succeeds.
         (output/f'host-{case}-reference.bin').write_bytes(expected)

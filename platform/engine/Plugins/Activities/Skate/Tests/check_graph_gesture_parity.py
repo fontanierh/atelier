@@ -128,11 +128,11 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     reference = build_probe(output, 'graph-gesture-reference', PLUGIN/'Tests/Reference/graph_gesture_probe.rs', args.target_dir)
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     candidate = output/'graph-gesture-cpp'
-    subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-Wall', '-Wextra', '-Werror', '-I', str(native),
-                    *(str(native/f'{name}.cpp') for name in ('AnimationName', 'Intents', 'GraphGestureOperations')),
-                    str(PLUGIN/'Tests/Native/graph_gesture_probe.cpp'), '-o', str(candidate)], check=True)
+    subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-Wall', '-Wextra', '-Werror', '-I', str(simulation),
+                    *(str(simulation/f'{name}.cpp') for name in ('AnimationName', 'Intents', 'GraphGestureOperations')),
+                    str(PLUGIN/'Tests/Simulation/graph_gesture_probe.cpp'), '-o', str(candidate)], check=True)
     inputs, cases = corpus()
     (output/'input.bin').write_bytes(inputs)
     (output/'cases.json').write_text(json.dumps(cases, indent=2)+'\n')

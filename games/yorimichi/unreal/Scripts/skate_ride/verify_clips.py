@@ -1,9 +1,9 @@
-"""Measure the imported Ride clips against the native data: build/yorimichi/skate-ride/clips-verify.json.
+"""Measure the imported Ride clips against the simulation data: build/yorimichi/skate-ride/clips-verify.json.
 
 For every clip in Content/Data/SkateRide/clips.json, every frame and every bone, the pose Unreal samples from the
 asset's compressed data (UAnimPoseExtensions, EvaluationType Compressed, retargeting left on so the compressed path is
-really taken, root motion kept in the root bone) is compared with the native local pose (native.local_pose: the clip
-sample, rotation normalised as the native sampler does, added onto RIG_TPOSE as the runtime's BindPose tree does)
+really taken, root motion kept in the root bone) is compared with the simulation local pose (simulation.local_pose: the clip
+sample, rotation normalised as the simulation sampler does, added onto RIG_TPOSE as the runtime's BindPose tree does)
 converted to Unreal space. The errors are the translation distance (cm), the rotation angle
 (rad) and the largest scale component difference, reported per clip and overall. The curves are checked at every
 frame against the attribute values they encode.
@@ -27,11 +27,11 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
 sys.path.insert(0, str(HERE))
 import yori  # noqa: E402
-import native as N  # noqa: E402
+import simulation as N  # noqa: E402
 import unreal as U  # noqa: E402
 
 CONTENT = HERE.parents[1] / 'Content'
-BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
+BUNDLE = yori.OUT / 'skate-simulation' / 'package'  # the skate.runtime build step assembles it
 MANIFEST = CONTENT / 'Data' / 'SkateRide' / 'clips.json'
 OUT = yori.OUT / 'skate-ride'
 STATE = OUT / 'verify-state.json'
@@ -41,7 +41,7 @@ CONTROL = 'R_HIGHANTIC_FS360SHUVIT_L_0_CYC'
 CONTROL_SETTINGS = ('/Engine/Animation/DefaultAnimBoneCompressionSettings.DefaultAnimBoneCompressionSettings',
                     '/ACLPlugin/ACLAnimBoneCompressionSettings.ACLAnimBoneCompressionSettings')
 LIMITS = dict(translation_cm=0.01, rotation_rad=1e-4, scale=1e-4)
-STORED_MATCH = 2e-5     # rad: a sample this close to native.euler_stored(key) is the engine's Euler key storage
+STORED_MATCH = 2e-5     # rad: a sample this close to simulation.euler_stored(key) is the engine's Euler key storage
 E = U.EditorAssetLibrary
 P = U.AnimPoseExtensions
 
@@ -85,8 +85,8 @@ def curve_value(keys, t):
 
 
 def measure(clip, rig, reference, poses):
-    """The largest errors of the sampled poses against the native local poses. A rotation over the limit that the
-    engine's Euler key storage explains (it matches native.euler_stored within STORED_MATCH) is counted apart, in
+    """The largest errors of the sampled poses against the simulation local poses. A rotation over the limit that the
+    engine's Euler key storage explains (it matches simulation.euler_stored within STORED_MATCH) is counted apart, in
     `euler_storage`, and left out of the rotation maximum."""
     worst = dict(translation_cm=0.0, rotation_rad=0.0, scale=0.0)
     where = {}
@@ -119,7 +119,7 @@ def measure(clip, rig, reference, poses):
 
 def control(rig, reference, bundle, manifest):
     """A copy of CONTROL under the engine's default bone compression, measured the same way: proves that the
-    measurement reads compressed data (the copy must differ from the native pose; the exact clip must not)."""
+    measurement reads compressed data (the copy must differ from the simulation pose; the exact clip must not)."""
     record = manifest['clips'].get(CONTROL)
     if not record:
         return None
@@ -209,7 +209,7 @@ def main():
     manifest_text = MANIFEST.read_text()
     manifest = json.loads(manifest_text)
     # the state is valid for this manifest measured by this code
-    key = hashlib.sha256(manifest_text.encode() + Path(__file__).read_bytes() + (HERE / 'native.py').read_bytes()).hexdigest()
+    key = hashlib.sha256(manifest_text.encode() + Path(__file__).read_bytes() + (HERE / 'simulation.py').read_bytes()).hexdigest()
     bundle = N.Bundle(BUNDLE)
     rig = bundle.rig()
     reference = rig.named_pose(0, 'RIG_TPOSE')
@@ -255,7 +255,7 @@ def main():
         over = {k: sorted(n for n, c in clips.items() if c[k] > LIMITS[k]) for k in LIMITS}
         stored_all = [dict(clip=n, **c) for n, record in sorted(clips.items()) for c in record.get('euler_storage', [])]
         report = dict(
-            about='Runtime-sampled (compressed) Unreal poses against the native decode in Unreal space, every clip, '
+            about='Runtime-sampled (compressed) Unreal poses against the simulation decode in Unreal space, every clip, '
                   'frame and bone (unreal/Scripts/skate_ride/verify_clips.py)',
             clips=len(clips), frames=sum(c['frames'] for c in clips.values()), bones=len(rig.bones),
             limits=LIMITS, max=overall, worst_clip=worst_clip,
@@ -263,8 +263,8 @@ def main():
             euler_storage=dict(
                 about='Keys within 0.081 degrees of local pitch +-90: UE 5 keeps bone keys as single-precision Euler '
                       'angles and snaps such a pitch to +-90, so the sequence holds a slightly different rotation. '
-                      'Each sample here matches that stored rotation (native.euler_stored) within to_stored_rad and '
-                      'is counted in max.rotation_rad by that distance; rotation_rad is its distance to the native key.',
+                      'Each sample here matches that stored rotation (simulation.euler_stored) within to_stored_rad and '
+                      'is counted in max.rotation_rad by that distance; rotation_rad is its distance to the simulation key.',
                 samples=len(stored_all), max_rotation_rad=max((c['rotation_rad'] for c in stored_all), default=0.0),
                 max_to_stored_rad=max((c['to_stored_rad'] for c in stored_all), default=0.0),
                 bones=sorted({c['bone'] for c in stored_all}), cases=stored_all),

@@ -528,8 +528,8 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         const FVector Bound = JointAngles((Centre * Frame).Inverse() * Frame);
         UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s: swing limits %.0f (across) and %.0f (flexion), twist %.0f; the bind pose %.0f past them"),
             *Body->BoneName.ToString(), Swing1, Swing2, Part.Twist, PastLimits(Bound, Part.Twist, Swing1, Swing2));
-        // The bail envelope: the same child frame, the parent's turned to Native's centre (the child's anatomical frame
-        // in the parent part's at the centre), and Native's limits, hard. A part whose parent part has no body of its
+        // The bail envelope: the same child frame, the parent's turned to the simulation's centre (the child's anatomical frame
+        // in the parent part's at the centre), and the simulation's limits, hard. A part whose parent part has no body of its
         // own (two contract names on one bone) keeps the riding envelope in a bail.
         if (!OutBail) continue;
         const FBailJoint* Row = Algo::FindByPredicate(BailJoints, [&](const FBailJoint& R) { return FCString::Strcmp(R.Contract, Part.Bone) == 0; });
@@ -537,7 +537,7 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         if (!Row || !ParentFrame)
         {
             UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s: no bail envelope (%s), the riding one holds in a bail"),
-                *Body->BoneName.ToString(), !Row ? TEXT("not in Native's table") : TEXT("its parent part has no body"));
+                *Body->BoneName.ToString(), !Row ? TEXT("not in the simulation's table") : TEXT("its parent part has no body"));
             continue;
         }
         FRideJointEnvelope Bail = FRideJointEnvelope::Of(C);
@@ -545,13 +545,13 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         Bail.Frame2 = FTransform(Bind[Parent].GetRotation().Inverse() * BailCentre, Bail.Frame2.GetLocation());
         Bail.Twist = Row->Twist; Bail.Swing1 = Row->Swing1; Bail.Swing2 = Row->Swing2;
         Bail.TwistMotion = Bail.Swing1Motion = Bail.Swing2Motion = ACM_Limited;
-        // Hard, as Native's are: a soft limit gives way to whatever pushes on it (a contact pinning the hand under the
+        // Hard, as the simulation's are: a soft limit gives way to whatever pushes on it (a contact pinning the hand under the
         // body) by as much as the push needs.
         Bail.bSoftSwing = Bail.bSoftTwist = false;
         OutBail->Add(C.JointName, Bail);
         // Where the bind pose sits in it, as Chaos measures (the parent's frame to the child's).
         const FVector BindInBail = JointAngles(BailCentre.Inverse() * Frame);
-        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s in a bail: twist %.1f, swing limits %.1f (across) and %.1f (flexion) about Native's centre, %.0f degrees from the riding one; the bind pose %.0f past them"),
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride physical rider joint %s in a bail: twist %.1f, swing limits %.1f (across) and %.1f (flexion) about the simulation's centre, %.0f degrees from the riding one; the bind pose %.0f past them"),
             *Body->BoneName.ToString(), Row->Twist, Row->Swing1, Row->Swing2, FMath::RadiansToDegrees((Centre * Frame).AngularDistance(BailCentre)),
             PastLimits(BindInBail, Row->Twist, Row->Swing1, Row->Swing2));
     }

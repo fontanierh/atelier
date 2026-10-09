@@ -69,8 +69,8 @@ pub fn execute(op:&MotionOperation,instance:&mut PlayAnimationInstance,phase:u8,
 '''+execute_arm+'''},MotionOperation::Unsupported=>return Err("Unsupported MotionAnimation operation".into())}Ok(())}
 }\n'''
     base+='\n'+(PLUGIN/'Tests/Reference/motion_animation_probe.rs').read_text();reference=output/'motion-animation-oracle.rs';reference.write_text(base)
-    native=channels.strip_functions(cpp.read_text(),('int main(',));cpp=output/'motion-animation-probe.cpp';cpp.write_text(native+'\n'+(PLUGIN/'Tests/Native/motion_animation_probe.cpp').read_text())
-    report=dict(owner_implementation_sha256=hashlib.sha256(host.encode()).hexdigest(),owner_extractions=records,grab_enum_extractions=[er,ir],factory_source_sha256=hashlib.sha256(nodes.encode()).hexdigest(),riding_source_sha256=hashlib.sha256(riding.encode()).hexdigest(),factory_extractions=factory_records,baseline_extractions=json.loads((output/'channel-extraction-provenance.json').read_text()),callbacks='Original real IntentMap getters, first cached LastAttribute, original AttributeSink and PlaybackService; actual channel preparation, parameters, fades, poses and retained state. Factory adapter invokes verbatim play/transition/AddParam and CreateAttribute arms; no physics dependencies or substituted producer callbacks.',reference_probe_sha256=hashlib.sha256(reference.read_bytes()).hexdigest(),native_probe_sha256=hashlib.sha256(cpp.read_bytes()).hexdigest())
+    simulation=channels.strip_functions(cpp.read_text(),('int main(',));cpp=output/'motion-animation-probe.cpp';cpp.write_text(simulation+'\n'+(PLUGIN/'Tests/Simulation/motion_animation_probe.cpp').read_text())
+    report=dict(owner_implementation_sha256=hashlib.sha256(host.encode()).hexdigest(),owner_extractions=records,grab_enum_extractions=[er,ir],factory_source_sha256=hashlib.sha256(nodes.encode()).hexdigest(),riding_source_sha256=hashlib.sha256(riding.encode()).hexdigest(),factory_extractions=factory_records,baseline_extractions=json.loads((output/'channel-extraction-provenance.json').read_text()),callbacks='Original real IntentMap getters, first cached LastAttribute, original AttributeSink and PlaybackService; actual channel preparation, parameters, fades, poses and retained state. Factory adapter invokes verbatim play/transition/AddParam and CreateAttribute arms; no physics dependencies or substituted producer callbacks.',reference_probe_sha256=hashlib.sha256(reference.read_bytes()).hexdigest(),simulation_probe_sha256=hashlib.sha256(cpp.read_bytes()).hexdigest())
     (output/'motion-owner-extraction-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return reference,cpp
 
 
@@ -202,25 +202,25 @@ def validate_fixture_attributes(fixture):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True);fixture=fixture_metadata();source,cpp=prepare_sources(output);reference=build_probe(output,'motion-animation-reference',source,args.target_dir)
     fixture=fixture_metadata()
-    fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_native=output/'fixture.skate';fixture_native.write_bytes(trees.converter.pack_metadata(fixture))
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source';code.mkdir(exist_ok=True);binary=output/'motion-animation-cpp';files=['MotionAnimation.cpp','MotionAnimationOperations.cpp','GraphMotionName.cpp','Graph.cpp','AnimationChannels.cpp','AnimationTrees.cpp','AnimationMetadata.cpp','AnimationPlaybackParameters.cpp','AnimationPlayback.cpp','AnimationName.cpp','AnimationSamples.cpp','NativeMath.cpp','Intents.cpp']
+    fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_simulation=output/'fixture.skate';fixture_simulation.write_bytes(trees.converter.pack_metadata(fixture))
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source';code.mkdir(exist_ok=True);binary=output/'motion-animation-cpp';files=['MotionAnimation.cpp','MotionAnimationOperations.cpp','GraphMotionName.cpp','Graph.cpp','AnimationChannels.cpp','AnimationTrees.cpp','AnimationMetadata.cpp','AnimationPlaybackParameters.cpp','AnimationPlayback.cpp','AnimationName.cpp','AnimationSamples.cpp','SimulationMath.cpp','Intents.cpp']
     for path in list(live.glob('*.h'))+[live/f for f in files]:shutil.copyfile(path,code/path.name)
     probe=code/'motion-animation-probe.cpp';shutil.copyfile(cpp,probe)
-    native_snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()}
-    (output/'native-source-provenance.json').write_text(json.dumps(native_snapshot,indent=2)+'\n')
+    simulation_snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()}
+    (output/'simulation-source-provenance.json').write_text(json.dumps(simulation_snapshot,indent=2)+'\n')
     subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/f) for f in files],str(probe),'-o',str(binary)],check=True)
     cases=corpus();commands=encoded(cases);(output/'input.bin').write_bytes(commands)
     def run(exe,path,data):return subprocess.check_output([str(exe),str(path)],input=data)
-    expected=run(reference,fixture_json,commands);actual=run(binary,fixture_native,commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=run(reference,fixture_json,commands);actual=run(binary,fixture_simulation,commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
             m=(lo+hi)//2;data=encoded(cases[lo:m])
-            if run(reference,fixture_json,data)==run(binary,fixture_native,data):lo=m
+            if run(reference,fixture_json,data)==run(binary,fixture_simulation,data):lo=m
             else:hi=m
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[lo:hi]));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)))
         raise AssertionError(f'Motion owner differs at byte {first}, case {lo}; isolated command saved')
-    result=dict(passed=True,cases=len(cases),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='live combined owner, ordered tree/channel progression/parameters/attrs/pose commands, immediate graph side effects, reset/stance, actual PlayAnimation/CreateAttribute factories/parameters/lifecycle with real service callbacks',extraction_provenance_sha256=hashlib.sha256((output/'motion-owner-extraction-provenance.json').read_bytes()).hexdigest(),native_source_provenance_sha256=hashlib.sha256((output/'native-source-provenance.json').read_bytes()).hexdigest())
+    result=dict(passed=True,cases=len(cases),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='live combined owner, ordered tree/channel progression/parameters/attrs/pose commands, immediate graph side effects, reset/stance, actual PlayAnimation/CreateAttribute factories/parameters/lifecycle with real service callbacks',extraction_provenance_sha256=hashlib.sha256((output/'motion-owner-extraction-provenance.json').read_bytes()).hexdigest(),simulation_source_provenance_sha256=hashlib.sha256((output/'simulation-source-provenance.json').read_bytes()).hexdigest())
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

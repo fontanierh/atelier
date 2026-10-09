@@ -2,7 +2,7 @@
 """Complete unchanged original GroundPhase over real retained physical owners.
 
 Only root runs guarded compilers and binaries. --preflight stages exact original
-prefixes, immutable native units and validates every wire byte without compiling.
+prefixes, immutable simulation units and validates every wire byte without compiling.
 """
 import argparse
 from collections import Counter
@@ -50,8 +50,8 @@ def transport_helpers():
     provider,meta=block(PLUGIN/'Tests/Reference/player_grind_input_probe.rs','fn read_provider(');proof.append(meta)
     rhelpers.append(provider)
     nhelpers=[]
-    publish,meta=block(PLUGIN/'Tests/Native/ground_animation_probe.cpp','void GroundPublish(');nhelpers.append(publish);proof.append(meta)
-    reader,meta=block(PLUGIN/'Tests/Native/player_grind_input_probe.cpp','PlayerGrindStaticProvider ReadProvider(');proof.append(meta)
+    publish,meta=block(PLUGIN/'Tests/Simulation/ground_animation_probe.cpp','void GroundPublish(');nhelpers.append(publish);proof.append(meta)
+    reader,meta=block(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp','PlayerGrindStaticProvider ReadProvider(');proof.append(meta)
     # Only a transport adapter changes: shared Input has Floats/Word and the
     # fixture constructor returns a checked optional rather than calling Fail.
     reader=reader.replace('i.Text()','Text(i)').replace('i.Vector()','i.Floats<3>()')
@@ -62,7 +62,7 @@ def transport_helpers():
     proof.append(dict(path=str(cached.relative_to(PLUGIN)),start=a,end=b,source_sha256=digest(cached),extracted_sha256=hashlib.sha256(cache.encode()).hexdigest(),bytes=len(cache.encode())))
     cache=cache.replace('pub fn seed(','pub fn migration_seed(').replace('pub fn observe(','pub fn migration_observe(')
     for marker in ('OffboardGrabRecord GroundGrabRecord(','void SeedGroundGrab(','void OutGroundGrabRecord(','void OutGroundGrab('):
-        text,meta=block(PLUGIN/'Tests/Native/ground_runtime_probe.cpp',marker);proof.append(meta)
+        text,meta=block(PLUGIN/'Tests/Simulation/ground_runtime_probe.cpp',marker);proof.append(meta)
         if marker.startswith('void Out'):
             text=text.replace('void OutGroundGrabRecord(','void OutGroundGrabRecord(GroundOutputWriter& o,').replace('void OutGroundGrab(','void OutGroundGrab(GroundOutputWriter& o,').replace('Out(', 'o.Value(').replace('OutGroundGrabRecord(r)','OutGroundGrabRecord(o,r)').replace('OutGroundGrabRecord(*r)','OutGroundGrabRecord(o,*r)')
         nhelpers.append(text)
@@ -76,7 +76,7 @@ pub(super) fn migration_observe(o:&mut crate::Output,s:&GroundState){crate::obse
         'physics/ground_runtime/settings.rs':settings.encode(),
         'physics/biped_ground/grab_runtime.rs':cache.encode(),
         'physics/ground_runtime/mod.rs':b'\npub(crate) fn migration_observe_state(o:&mut crate::Output,s:&GroundState){state::migration_observe(o,s);}pub(crate) fn migration_observe_settings(o:&mut crate::Output,s:&GroundSettings){settings::observe_GroundSettings(o,s);}pub(crate) fn migration_observe_runtime(o:&mut crate::Output,s:&GroundRuntime){o.floats(s.retained_board_normal);let c=s.contact;o.word(c.active_2731 as u32);o.word(c.tag_16_force.tag);o.vector(c.tag_16_force.force_world);o.vector(c.tag_16_force.point_body);o.floats(c.vector_2688);o.float(c.scalar_2704);o.word(c.animated_board_2708 as u32);o.word(s.collision_force.is_some()as u32);if let Some(c)=s.collision_force{o.floats(c.force_2528);o.floats(c.point_2544);o.floats(c.vector_2592);}}\n'}
-    return dict(phase_helpers='\n'.join(rhelpers).encode(),native_helpers='\n'.join(nhelpers).encode(),host_append=append),proof,cpp,rust
+    return dict(phase_helpers='\n'.join(rhelpers).encode(),simulation_helpers='\n'.join(nhelpers).encode(),host_append=append),proof,cpp,rust
 
 def build_reference(output, target, *, compile=True):
     original, report = frozen_sources(output); observed = output / 'observed-source'
@@ -135,30 +135,30 @@ path="src/migration_probe.rs"
     for relative, row in staged.items(): assert digest(crate / 'src' / relative) == row['generated_sha256']
     report.update(staged_host_original_prefixes=staged, extracted_observer_prefixes=[hmeta, lmeta, ameta, fmeta],
         appended_core_observers={relative: dict(original_prefix_sha256=digest(original / relative), generated_sha256=digest(observed / relative), observer_sha256=hashlib.sha256(extra).hexdigest()) for relative, extra in core.items()},
-        probe_sha256=digest(template), observer_sha256=digest(observer), transport_helper_extractions=adapter_proof, scope='Whole original host/core prefixes remain byte-for-byte unchanged. Appended methods only supply explicit upstream caller fields and observe private owners. Complete GroundPhase Enter/Advance/reset and later input_phase::update_ground execute with original skeleton, board, world, trajectory, settings and native helpers. No numerical method or callback is replaced.')
+        probe_sha256=digest(template), observer_sha256=digest(observer), transport_helper_extractions=adapter_proof, scope='Whole original host/core prefixes remain byte-for-byte unchanged. Appended methods only supply explicit upstream caller fields and observe private owners. Complete GroundPhase Enter/Advance/reset and later input_phase::update_ground execute with original skeleton, board, world, trajectory, settings and simulation helpers. No numerical method or callback is replaced.')
     (output / 'reference-provenance.json').write_text(json.dumps(report, indent=2) + '\n'); return binary
 
-def build_native(output, *, compile=True):
-    snapshot = output / 'native-source'
+def build_simulation(output, *, compile=True):
+    snapshot = output / 'simulation-source'
     if snapshot.exists(): shutil.rmtree(snapshot)
     snapshot.mkdir(); hashes = {}
     for path in [*sorted(CODE.glob('*.h')), *[CODE / (u + '.cpp') for u in UNITS]]:
         shutil.copy2(path, snapshot / path.name); hashes[path.name] = digest(snapshot / path.name)
     for name in ('handplant_probe.cpp', 'ground_phase_probe.cpp'):
-        path = PLUGIN / 'Tests/Native' / name; shutil.copy2(path, snapshot / name); hashes[name] = digest(snapshot / name)
-    hprefix, hmeta = extract(PLUGIN / 'Tests/Native/handplant_lifecycle_probe.cpp', 'int main(')
-    fprefix, fmeta = extract(PLUGIN / 'Tests/Native/footplant_probe.cpp', 'KnownAirFootplantInput Packet(')
+        path = PLUGIN / 'Tests/Simulation' / name; shutil.copy2(path, snapshot / name); hashes[name] = digest(snapshot / name)
+    hprefix, hmeta = extract(PLUGIN / 'Tests/Simulation/handplant_lifecycle_probe.cpp', 'int main(')
+    fprefix, fmeta = extract(PLUGIN / 'Tests/Simulation/footplant_probe.cpp', 'KnownAirFootplantInput Packet(')
     (snapshot / 'handplant_lifecycle_helpers.inc').write_bytes(hprefix)
     (snapshot / 'ground_phase_helpers.inc').write_bytes(fprefix + b'\n} // namespace\n')
     ext, adapter_proof, generated_cpp, generated_rust = transport_helpers()
     probe = snapshot / 'ground_phase_probe.cpp'
-    probe.write_bytes(probe.read_bytes().replace(b'// GENERATED_GROUND_PROTOCOL', generated_cpp.encode()).replace(b'// GENERATED_TRANSPORT_HELPERS', ext['native_helpers']))
+    probe.write_bytes(probe.read_bytes().replace(b'// GENERATED_GROUND_PROTOCOL', generated_cpp.encode()).replace(b'// GENERATED_TRANSPORT_HELPERS', ext['simulation_helpers']))
     hashes[probe.name] = digest(probe)
-    binary = output / 'ground-phase-native'
+    binary = output / 'ground-phase-simulation'
     if compile:
         subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti', '-Wall', '-Wextra', '-Werror', '-I', str(snapshot), *[str(snapshot / (u + '.cpp')) for u in UNITS], str(snapshot / 'ground_phase_probe.cpp'), '-o', str(binary)], check=True)
     for name, sha in hashes.items(): assert digest(snapshot / name) == sha
-    (output / 'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes, extracted_helper_prefixes=[hmeta, fmeta], transport_helper_extractions=adapter_proof, units=UNITS), indent=2) + '\n'); return binary
+    (output / 'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes, extracted_helper_prefixes=[hmeta, fmeta], transport_helper_extractions=adapter_proof, units=UNITS), indent=2) + '\n'); return binary
 
 
 def encoded(kind,value):
@@ -441,15 +441,15 @@ def prepare(assets,output):
     fixtures=output/'fixtures';fixtures.mkdir(exist_ok=True)
     settings=assets/'private/stock/skater-collections.json'
     skeletons=assets/'private/stock/physics-skeletons.json'
-    (fixtures/'settings.native').write_bytes(converter.encode_settings(settings))
-    (fixtures/'physics.native').write_bytes(converter.encode_physics_skeletons(skeletons))
+    (fixtures/'settings.simulation').write_bytes(converter.encode_settings(settings))
+    (fixtures/'physics.simulation').write_bytes(converter.encode_physics_skeletons(skeletons))
     for kind in ('action','motion'):
         (fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
     (fixtures/'fixture-provenance.json').write_text(json.dumps(dict(
-        settings_original_sha256=digest(settings),settings_native_sha256=digest(fixtures/'settings.native'),
-        physics_original_sha256=digest(skeletons),physics_native_sha256=digest(fixtures/'physics.native'),
+        settings_original_sha256=digest(settings),settings_simulation_sha256=digest(fixtures/'settings.simulation'),
+        physics_original_sha256=digest(skeletons),physics_simulation_sha256=digest(fixtures/'physics.simulation'),
         graphs={kind:digest(fixtures/f'actor.{kind}.reference')for kind in ('action','motion')},
-        boundary='Stock settings/physics are independently loaded by the original; only converted project-native data enters C++. Caller-authored engine triangles and exact query metadata (surfaces/mesh ranges/bounds/groups/pools), plus rail source records, are transported independently from converted rail primitives/metadata.'),indent=2)+'\n')
+        boundary='Stock settings/physics are independently loaded by the original; only converted project data enters C++. Caller-authored engine triangles and exact query metadata (surfaces/mesh ranges/bounds/groups/pools), plus rail source records, are transported independently from converted rail primitives/metadata.'),indent=2)+'\n')
     return fixtures,json.loads(skeletons.read_text())['source_sha256']
 
 def preflight(raw,cases):
@@ -480,8 +480,8 @@ def preflight(raw,cases):
         ('Tests/Reference/handplant_lifecycle_observer.rs','pub(super) fn run('),
         ('Tests/Reference/air_reckoning_observer.rs','fn core_input('),
         ('Tests/Reference/footplant_observer.rs','pub(super) fn run('),
-        ('Tests/Native/handplant_lifecycle_probe.cpp','int main('),
-        ('Tests/Native/footplant_probe.cpp','KnownAirFootplantInput Packet(')):
+        ('Tests/Simulation/handplant_lifecycle_probe.cpp','int main('),
+        ('Tests/Simulation/footplant_probe.cpp','KnownAirFootplantInput Packet(')):
         extract(PLUGIN/path,boundary)
     return ranges
 
@@ -498,27 +498,27 @@ def main():
     (output/'input.bin').write_bytes(inputs);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     fixtures,identity=prepare(args.assets.resolve(),output)
     if args.preflight:
-        build_reference(output/'reference',args.target_dir,compile=False);build_native(output,compile=False)
+        build_reference(output/'reference',args.target_dir,compile=False);build_simulation(output,compile=False)
         print(json.dumps(dict(cases=len(cases),commands=sum(len(case['commands'])for case in cases),input_bytes=len(inputs),units=len(UNITS),input_sha256=hashlib.sha256(inputs).hexdigest()),indent=2));return
-    reference=build_reference(output/'reference',args.target_dir);native=build_native(output)
+    reference=build_reference(output/'reference',args.target_dir);simulation=build_simulation(output)
     if args.reference_case_runner:
         from reference_case_runner import run_reference_cases
         expected=run_reference_cases(reference,[args.assets.resolve(),fixtures],inputs,ranges,
             output/'reference-cases',workers=args.reference_workers,
             validate_output=lambda index,raw:decode(raw,[copy.deepcopy(cases[index])]))
     else:expected=subprocess.check_output([str(reference),str(args.assets.resolve()),str(fixtures)],input=inputs)
-    actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(args.samples.resolve()/'native/rig.skate'),identity,str(args.assets.resolve()),str(fixtures)],input=inputs)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(args.samples.resolve()/'simulation/rig.skate'),identity,str(args.assets.resolve()),str(fixtures)],input=inputs)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4
         case=next((case for case in cases if case['first_output_word']<=word<case['last_output_word']),None)
         row=next((row for rows in frames for row in rows if row['first_word']<=word<row['last_word']),None)
         section=next(((name,word-span[0])for name,span in (row['spans'].items()if row else[])if span[0]<=word<span[1]),None)
-        failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex())
+        failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex())
         (output/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(case['commands'])for case in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=coverage(frames,cases),
         scope='Complete original GroundPhase Enter/Advance/reset_board_state and input_phase::update_ground, with actual Ground retained controllers/settings/services, Handplant GroundQuery/GroundUpdate, real BoardProbes geometry batches, selector Launch/Update, body-force queue, future-deck prediction, source selective cache invalidation, FootIK/AnimatedSkeleton/GeneralUpdate and SkeletonAir capture.',
-        boundaries='Caller supplies completed processed fields, source state/category, animation attributes, optional current BoardToolkit, stock authored pose, initial retained state and engine triangle/rail fixtures. The original StaticProvider::new consumes the authored rail source/WMET and C++ independently consumes native-converted primitives/metadata in exact source order. Each original case performs the complete real GamePhysics/SkaterRuntime constructors. No numerical method, callback, completed hit/trajectory/up or skeleton target is substituted. Global state-selection/input/solve/publication scheduling remains a separate coordinator integration; info logging is unclaimed.')
+        boundaries='Caller supplies completed processed fields, source state/category, animation attributes, optional current BoardToolkit, stock authored pose, initial retained state and engine triangle/rail fixtures. The original StaticProvider::new consumes the authored rail source/WMET and C++ independently consumes converted primitives/metadata in exact source order. Each original case performs the complete real GamePhysics/SkaterRuntime constructors. No numerical method, callback, completed hit/trajectory/up or skeleton target is substituted. Global state-selection/input/solve/publication scheduling remains a separate coordinator integration; info logging is unclaimed.')
     if args.reference_case_runner:result['reference_execution']=dict(strategy='exact independent outer cases; unchanged original constructors per case',workers=args.reference_workers,worker_limit_bytes=2*1024**3,report='reference-cases/result.json')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

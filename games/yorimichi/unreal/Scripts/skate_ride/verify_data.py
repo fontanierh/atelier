@@ -9,7 +9,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
 import yori
 
-PACKAGE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
+PACKAGE = yori.OUT / 'skate-simulation' / 'package'  # the skate.runtime build step assembles it
 OUT = yori.OUT / 'skate-data'
 OUT.mkdir(parents=True, exist_ok=True)
 # Verifies the assets the game is configured with (USkateSettings::MotionData and RuntimeData), through its loaders.

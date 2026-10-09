@@ -439,7 +439,7 @@ void AWandererCharacter::BuildInput()
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("MarkersPad"),EInputActionValueType::Boolean),EKeys::Gamepad_Special_Left);
         auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
-    // The board button on foot: a board to the hand, or put away (the Ride backend's carry).
+    // The board button on foot: a board to the hand, or put away (Ride's carry).
     Key(Axis(TEXT("SkateboardHand"),EInputActionValueType::Boolean),EKeys::G);
     Key(Inputs[TEXT("SkateboardHand")],EKeys::Gamepad_DPad_Right);
     Key(Inputs[TEXT("FlightSlower")],EKeys::Gamepad_LeftShoulder);
@@ -662,7 +662,7 @@ void AWandererCharacter::ToggleSkateboard(const FInputActionValue&)
         if (SkateRide->IsRiding()) { SkateRide->Toggle(); return; }
         if (Sword && !Sword->CancelForInterrupt(true)) return;
         if (CanAct() && StandForAction() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
-        // Mid-jump the board goes under the feet (Ride backend: a caveman).
+        // Mid-jump the board goes under the feet (Ride: a caveman).
         else if (bReady && !bMenuOpen && GetCharacterMovement()->IsFalling() && !MovementLocked() && SkateRide->Toggle()) { SetAction(NAME_None); JumpBuffer = 0.f; StopJumping(); }
     }
 }
@@ -1296,7 +1296,7 @@ void AWandererCharacter::Tick(float Dt)
         if (!HasAuthority() && !IsLocallyControlled())
         {
             bReady = true;
-            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived && SkateRide->GetRetailPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
+            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived && SkateRide->GetRiderPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
             return;
         }
         if (HasAuthority())
@@ -1478,7 +1478,7 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
 {
     Super::CalcCamera(DeltaTime,OutResult);
     FTransform Camera; float FOV=0;
-    const bool bBoard=SkateRide && SkateRide->GetRetailCamera(Camera,FOV);
+    const bool bBoard=SkateRide && SkateRide->GetSimulationCamera(Camera,FOV);
     if (bBoard)
     {
         BoardCamera.Location=Camera.GetLocation(); BoardCamera.Rotation=Camera.Rotator();
@@ -1488,7 +1488,7 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
         const float Aspect=Height>0?float(Width)/Height:16.f/9.f;
         BoardCamera.FOV=FMath::RadiansToDegrees(2.f*FMath::Atan(FMath::Tan(FMath::DegreesToRadians(FOV)*.5f)*Aspect));
     }
-    // Ease between the follow camera and the native skating camera over about 0.6 s when mounting, stepping off,
+    // Ease between the follow camera and the skating camera over about 0.6 s when mounting, stepping off,
     // or looking around with the right stick, instead of cutting between them.
     const bool bWantBoard=bBoard && !bFixedView && LookGrace<=0;
     BoardCameraBlend=bFixedView?0.f:FMath::FInterpConstantTo(BoardCameraBlend,bWantBoard?1.f:0.f,DeltaTime,1.7f);

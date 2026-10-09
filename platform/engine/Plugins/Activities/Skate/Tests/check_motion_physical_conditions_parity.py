@@ -99,12 +99,12 @@ def corpus():
 
 
 def build_probes(output, target_dir):
-    native, cpp = PLUGIN/'Source/AtelierSkate/Private/Native', output/'motion-physical-cpp'
-    sources = ('NativeMath', 'AnimationName', 'Intents', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations',
+    simulation, cpp = PLUGIN/'Source/AtelierSkate/Private/Simulation', output/'motion-physical-cpp'
+    sources = ('SimulationMath', 'AnimationName', 'Intents', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations',
         'AnimationSamples', 'AnimationMetadata', 'AnimationPlayback', 'AnimationPlaybackParameters', 'AnimationTrees', 'AnimationChannels', 'MotionAnimation',
         'MotionFrame', 'GraphMotionName', 'GraphMotionPhysicalConditions')
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti', '-Wall', '-Wextra', '-Werror',
-        '-I', str(native), *(str(native/f'{n}.cpp') for n in sources), str(PLUGIN/'Tests/Native/motion_physical_conditions_probe.cpp'), '-o', str(cpp)], check=True)
+        '-I', str(simulation), *(str(simulation/f'{n}.cpp') for n in sources), str(PLUGIN/'Tests/Simulation/motion_physical_conditions_probe.cpp'), '-o', str(cpp)], check=True)
     root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=PLUGIN, text=True).strip())
     relative = (PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix()
     revision = subprocess.check_output(['git', 'rev-parse', REFERENCE_REVISION], cwd=root, text=True).strip()
@@ -194,13 +194,13 @@ def main():
         (output/marker).unlink(missing_ok=True)
     cpp, rust = build_probes(output, args.target_dir)
     graph, configs = fixture()
-    reference, native = output/'conditions.reference-graph', output/'conditions.graph'
+    reference, simulation = output/'conditions.reference-graph', output/'conditions.graph'
     reference.write_bytes(original_graph(graph))
-    native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+    simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
     inputs, frames = corpus()
     (output/'input.bin').write_bytes(inputs)
     expected = subprocess.check_output([str(rust), str(args.assets), str(reference)], input=inputs)
-    actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(native)], input=inputs)
+    actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(simulation)], input=inputs)
     if actual != expected:
         (output/'reference.bin').write_bytes(expected)
         (output/'cpp.bin').write_bytes(actual)

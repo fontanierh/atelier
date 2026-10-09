@@ -8,7 +8,7 @@ calls the ones who came back from the openings *modori* (戻り, "returned"), an
 
 He is playable in the game, with his own body, long coat and finger rig. The build exports his committed source,
 imports the mesh and Chaos Cloth skirt into Unreal, and retargets the merged move set onto him. He carries the
-merged set's sword and paraglider; the native skating runtime retargets its rider pose onto his body too.
+merged set's sword and paraglider; the skating runtime retargets its rider pose onto his body too.
 
 ## The source: `Modori-Rig-r01.blend`
 

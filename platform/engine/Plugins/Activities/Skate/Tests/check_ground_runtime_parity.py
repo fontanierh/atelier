@@ -213,26 +213,26 @@ def preflight():
    elif op==7:world()
    else:at+={1:0,2:2,4:2,5:0,6:0,8:0,9:1,10:12}[op]
  assert at==len(words),(at,len(words))
- for unit in UNITS:assert(PLUGIN/f'Source/AtelierSkate/Private/Native/{unit}.cpp').is_file(),unit
+ for unit in UNITS:assert(PLUGIN/f'Source/AtelierSkate/Private/Simulation/{unit}.cpp').is_file(),unit
  return raw,cases
 
 def build(output,target):
- live=PLUGIN/'Source/AtelierSkate/Private/Native';native_source=output/'native-source'
- if native_source.exists():shutil.rmtree(native_source)
- native_source.mkdir()
- for path in live.glob('*.h'):shutil.copy2(path,native_source/path.name)
- for unit in UNITS:shutil.copy2(live/f'{unit}.cpp',native_source/f'{unit}.cpp')
- prefixes=[PLUGIN/f'Tests/Native/skeleton_{name}_probe.cpp'for name in('body','collision','constraint')]+[PLUGIN/f'Tests/Native/{name}_probe.cpp'for name in('physical_simulation_runtime','adjusted_skeleton','skeleton_input_runtime')]
+ live=PLUGIN/'Source/AtelierSkate/Private/Simulation';simulation_source=output/'simulation-source'
+ if simulation_source.exists():shutil.rmtree(simulation_source)
+ simulation_source.mkdir()
+ for path in live.glob('*.h'):shutil.copy2(path,simulation_source/path.name)
+ for unit in UNITS:shutil.copy2(live/f'{unit}.cpp',simulation_source/f'{unit}.cpp')
+ prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{name}_probe.cpp'for name in('body','collision','constraint')]+[PLUGIN/f'Tests/Simulation/{name}_probe.cpp'for name in('physical_simulation_runtime','adjusted_skeleton','skeleton_input_runtime')]
  dispatcher_helpers,_=dispatcher.helpers();ground_helpers,_,_=helpers()
  prefix=''.join(path.read_text().split('int main(',1)[0].split('int main()',1)[0].replace('// GENERATED_PROTOCOL',dispatcher_helpers)for path in prefixes)
- own=PLUGIN/'Tests/Native/ground_runtime_probe.cpp';combined=native_source/own.name
+ own=PLUGIN/'Tests/Simulation/ground_runtime_probe.cpp';combined=simulation_source/own.name
  combined.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+'\n#pragma clang diagnostic pop\n'+own.read_text().replace('// GENERATED_GROUND_PROTOCOL',ground_helpers))
  binary=output/'ground-runtime-cpp'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(native_source),*[str(native_source/f'{unit}.cpp')for unit in UNITS],str(combined),'-o',str(binary)],check=True)
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(simulation_source),*[str(simulation_source/f'{unit}.cpp')for unit in UNITS],str(combined),'-o',str(binary)],check=True)
  rust_prefixes=[PLUGIN/f'Tests/Reference/skeleton_{name}_probe.rs'for name in('body','collision','constraint')]
  prefix=''.join(path.read_text().split('fn main(){',1)[0]for path in rust_prefixes).replace('use crate::{','use skate_core::{').replace('skeleton_root::inverse_rigid,','').replace('solver::{packed,JointConstraint}','solver::{JointConstraint}').replace('#[path="physics/solver/packing.rs"] mod skeleton_constraint_packing;','mod skeleton_constraint_packing{use skate_core::physics::solver::{packed,JointConstraint};use crate::{RetailDriveRows,RetailContactJacobian};use skate_core::physics::rigid_body::RetailReactionCorrections;#[path="packing.rs"]mod original;pub fn drive(r:&RetailDriveRows)->packed::Drive{original::drive(r)}}')
  own_rs=PLUGIN/'Tests/Reference/ground_runtime_probe.rs';generated=output/'ground-runtime-combined.rs';generated.write_text(prefix+prepare_oracle(own_rs));reference=build_probe(output,'ground-runtime-reference',generated,target,bevy=True,extra_sources=aliases())
- (output/'native-provenance.json').write_text(json.dumps(dict(native_source_sha256={path.name:digest(path)for path in native_source.iterdir()},probe_sha256={path.name:digest(path)for path in[*prefixes,*rust_prefixes,own,own_rs]}),indent=2)+'\n')
+ (output/'simulation-provenance.json').write_text(json.dumps(dict(simulation_source_sha256={path.name:digest(path)for path in simulation_source.iterdir()},probe_sha256={path.name:digest(path)for path in[*prefixes,*rust_prefixes,own,own_rs]}),indent=2)+'\n')
  return binary,reference
 
 def observe_ground(words,definitions):
@@ -316,7 +316,7 @@ def loader_fixtures(original):
 def run_loaders(output,cpp,reference,assets):
  original=json.loads((assets/'private/stock/skater-collections.json').read_text());results=[];root=output/'loader-fixtures';root.mkdir(exist_ok=True)
  for index,fixture in enumerate(loader_fixtures(original)):
-  fixture_root=root/str(index);path=fixture_root/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'],separators=(',',':'))+'\n');native=fixture_root/'settings.native';native.write_bytes(dispatcher.adjusted.physical.converter.encode_settings(path));input_bytes=struct.pack('<I',fixture['stage']);expected=subprocess.check_output([str(reference),str(fixture_root),'--load-only'],input=input_bytes);actual=subprocess.check_output([str(cpp),str(native),'--load-only'],input=input_bytes)
+  fixture_root=root/str(index);path=fixture_root/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'],separators=(',',':'))+'\n');simulation=fixture_root/'settings.simulation';simulation.write_bytes(dispatcher.adjusted.physical.converter.encode_settings(path));input_bytes=struct.pack('<I',fixture['stage']);expected=subprocess.check_output([str(reference),str(fixture_root),'--load-only'],input=input_bytes);actual=subprocess.check_output([str(cpp),str(simulation),'--load-only'],input=input_bytes)
   (fixture_root/'reference.bin').write_bytes(expected);(fixture_root/'cpp.bin').write_bytes(actual)
   if expected!=actual:raise AssertionError(dict(loader_fixture=fixture['label'],reference=expected.hex(),cpp=actual.hex()))
   success=bool(struct.unpack_from('<I',expected)[0]);assert success==('stock loader'in fixture['label']),fixture['label'];results.append(dict(label=fixture['label'],success=success,bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),collections_sha256=digest(path),input_sha256=hashlib.sha256(input_bytes).hexdigest()))
@@ -329,11 +329,11 @@ def main():
  (output/'original-source-preflight.rs').write_text(generated)
  if args.preflight:
   print(json.dumps(dict(streams=len(cases),commands=sum(len(case['commands'])for case in cases),ticks=sum(case['commands'].count(0)for case in cases),input_bytes=len(inputs),input_sha256=hashlib.sha256(inputs).hexdigest(),units=len(UNITS),aliases=len(aliases()),generated_original_bytes=len(generated.encode())),indent=2));return
- assets=args.assets.resolve();stock=assets/'private/stock';settings=output/'settings.native';physical=output/'physics.native';settings.write_bytes(dispatcher.adjusted.physical.converter.encode_settings(stock/'skater-collections.json'));physical.write_bytes(dispatcher.adjusted.physical.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];cpp,reference=build(output,args.target_dir)
- expected=subprocess.check_output([str(reference),str(assets)],input=inputs);actual=subprocess.check_output([str(cpp),str(settings),str(physical),str(args.samples.resolve()/'native/rig.skate'),identity],input=inputs);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual);coverage,frames=decode(expected,cases);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');(output/'ground-state-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+ assets=args.assets.resolve();stock=assets/'private/stock';settings=output/'settings.simulation';physical=output/'physics.simulation';settings.write_bytes(dispatcher.adjusted.physical.converter.encode_settings(stock/'skater-collections.json'));physical.write_bytes(dispatcher.adjusted.physical.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];cpp,reference=build(output,args.target_dir)
+ expected=subprocess.check_output([str(reference),str(assets)],input=inputs);actual=subprocess.check_output([str(cpp),str(settings),str(physical),str(args.samples.resolve()/'simulation/rig.skate'),identity],input=inputs);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual);coverage,frames=decode(expected,cases);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');(output/'ground-state-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
  if expected!=actual:
   first=next((n for n,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)))//4;case=next((case for case in cases if case['first_output_word']<=first<case['first_output_word']+case['output_words']),None);report=dict(passed=False,first_word=first,case=case,reference_bytes=len(expected),cpp_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
- loaders=run_loaders(output,cpp,reference,assets);result=dict(passed=True,streams=len(cases),commands=sum(len(case['commands'])for case in cases),exact_words=len(expected)//4,coverage=coverage,loaders=loaders,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='Full original GroundState entry/update/exit, stock profiles, pumping/input/corrections and concrete GroundRuntime forces/world geometry over actual hierarchy, FootIK, collision feedback, persistent bodies/targets and shared solver. All owner fields/publication/partial writes compared exactly.',limitations='GroundPhase Handplant dispatch, Air trajectory Launch/Update continuation and later SkeletonAir capture are explicitly ordered pending owner boundaries with argument observations, not neutral results. Processed flags/actions/edge observations and world triangles are supplied producer boundaries. Complete PlayerInput/coordinator/grab Scene query/selection execution remain separate integration proofs.',native_provenance_sha256=digest(output/'native-provenance.json'))
+ loaders=run_loaders(output,cpp,reference,assets);result=dict(passed=True,streams=len(cases),commands=sum(len(case['commands'])for case in cases),exact_words=len(expected)//4,coverage=coverage,loaders=loaders,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='Full original GroundState entry/update/exit, stock profiles, pumping/input/corrections and concrete GroundRuntime forces/world geometry over actual hierarchy, FootIK, collision feedback, persistent bodies/targets and shared solver. All owner fields/publication/partial writes compared exactly.',limitations='GroundPhase Handplant dispatch, Air trajectory Launch/Update continuation and later SkeletonAir capture are explicitly ordered pending owner boundaries with argument observations, not neutral results. Processed flags/actions/edge observations and world triangles are supplied producer boundaries. Complete PlayerInput/coordinator/grab Scene query/selection execution remain separate integration proofs.',simulation_provenance_sha256=digest(output/'simulation-provenance.json'))
  (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 if __name__=='__main__':main()

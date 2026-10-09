@@ -22,8 +22,8 @@ from check_scoring_data_parity import schema,SCORABLE,COLLECTOR,TUNING
 from check_animation_trees_parity import name
 from session_parity import digest,REFERENCE_REVISION
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=('NativeMath','NameId','Settings','StockSettingsReader','AnimationName','ScoringCatalog','ScoringData',
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=('SimulationMath','NameId','Settings','StockSettingsReader','AnimationName','ScoringCatalog','ScoringData',
        'ScoringCore','ScoringTimer','ScoringCarrier','ScoringSession','ScoringRuntime','ScoringRuntimeAdvance')
 HOST='crates/skate-host/src/scoring_runtime.rs'
 CORE='crates/skate-core/src/scoring.rs'
@@ -124,12 +124,12 @@ def build_reference(output,target,compile=True):
                   scope='Complete original host Runtime and actual original data/core dependencies. Only read-only holder observer appended; all production methods and original source prefixes unchanged.')
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
-def build_native(output,compile=True):
-    snapshot=output/'native-source'
+def build_simulation(output,compile=True):
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    for p in [*CODE.glob('*.h'),*[CODE/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Native/scoring_runtime_probe.cpp']:shutil.copy2(p,snapshot/p.name)
-    provenance={p.name:digest(p)for p in snapshot.iterdir()};(output/'native-provenance.json').write_text(json.dumps(dict(units=UNITS,source_sha256=provenance),indent=2)+'\n');binary=output/'scoring-runtime-native'
+    for p in [*CODE.glob('*.h'),*[CODE/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Simulation/scoring_runtime_probe.cpp']:shutil.copy2(p,snapshot/p.name)
+    provenance={p.name:digest(p)for p in snapshot.iterdir()};(output/'simulation-provenance.json').write_text(json.dumps(dict(units=UNITS,source_sha256=provenance),indent=2)+'\n');binary=output/'scoring-runtime-simulation'
     if compile:subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'scoring_runtime_probe.cpp'),'-o',str(binary)],check=True)
     for n,sha in provenance.items():assert digest(snapshot/n)==sha
     return binary
@@ -180,23 +180,23 @@ def prepare_settings(assets,output):
     retained=[r for r in data['collections']if converter.name_id(r['class'])in categories];identities={(converter.name_id(r['class']),converter.name_id(r['key']))for r in retained}
     for r in retained:
         if r['parent']:assert(converter.name_id(r['class']),converter.name_id(r['parent']))in identities
-    folder=output/'stock-assets';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(dict(version=data['version'],collections=retained))+'\n');bank=output/'stock.native';bank.write_bytes(converter.encode_settings(path))
-    full=output/'full-stock.native';full.write_bytes(converter.encode_settings(complete))
-    (output/'settings-provenance.json').write_text(json.dumps(dict(complete_json_sha256=digest(complete),focused_json_sha256=digest(path),complete_native_sha256=digest(full),focused_native_sha256=digest(bank),complete_records=len(data['collections']),retained_records=len(retained),scope='All scoring definitions, inherited parents, fields and tuning retained unchanged in original order. One complete-bank session comparison audits omission of unrelated classes.'),indent=2)+'\n');return folder,bank,full
+    folder=output/'stock-assets';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(dict(version=data['version'],collections=retained))+'\n');bank=output/'stock.simulation';bank.write_bytes(converter.encode_settings(path))
+    full=output/'full-stock.simulation';full.write_bytes(converter.encode_settings(complete))
+    (output/'settings-provenance.json').write_text(json.dumps(dict(complete_json_sha256=digest(complete),focused_json_sha256=digest(path),complete_simulation_sha256=digest(full),focused_simulation_sha256=digest(bank),complete_records=len(data['collections']),retained_records=len(retained),scope='All scoring definitions, inherited parents, fields and tuning retained unchanged in original order. One complete-bank session comparison audits omission of unrelated classes.'),indent=2)+'\n');return folder,bank,full
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in('assets','output','target-dir'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);raw,cases=corpus();(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');folder,bank,full=prepare_settings(a.assets.resolve(),out)
-    reference=build_reference(out/'reference',a.target_dir,not a.preflight);native=build_native(out,not a.preflight)
+    reference=build_reference(out/'reference',a.target_dir,not a.preflight);simulation=build_simulation(out,not a.preflight)
     if a.preflight:print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS)),indent=2));return
-    expected=subprocess.check_output([str(reference),str(folder)],input=raw);actual=subprocess.check_output([str(native),str(bank)],input=raw);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    expected=subprocess.check_output([str(reference),str(folder)],input=raw);actual=subprocess.check_output([str(simulation),str(bank)],input=raw);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
-        byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));failure=dict(byte=byte,word=byte//4,reference_bytes=len(expected),native_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));failure=dict(byte=byte,word=byte//4,reference_bytes=len(expected),simulation_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     count=len(cases[0]['commands']);subset=struct.pack('<II',1,count)+b''.join(struct.pack('<'+'I'*len(c),*c)for c in cases[0]['commands'])
-    baseline_reference=subprocess.check_output([str(reference),str(a.assets.resolve())],input=subset);baseline_native=subprocess.check_output([str(native),str(full)],input=subset)
-    focused_reference=subprocess.check_output([str(reference),str(folder)],input=subset);focused_native=subprocess.check_output([str(native),str(bank)],input=subset)
-    assert baseline_reference==baseline_native==focused_reference==focused_native,'Complete versus focused bank session differs'
+    baseline_reference=subprocess.check_output([str(reference),str(a.assets.resolve())],input=subset);baseline_simulation=subprocess.check_output([str(simulation),str(full)],input=subset)
+    focused_reference=subprocess.check_output([str(reference),str(folder)],input=subset);focused_simulation=subprocess.check_output([str(simulation),str(bank)],input=subset)
+    assert baseline_reference==baseline_simulation==focused_reference==focused_simulation,'Complete versus focused bank session differs'
     result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),full_bank_audit_bytes=len(baseline_reference),full_bank_audit_sha256=hashlib.sha256(baseline_reference).hexdigest(),coverage=coverage(frames,cases),scope='Complete pinned original host scoring recognition/collectors/conversions/metric/air/landing/sequence publication with original loaded data and score holder/carrier/timer/session owners. Every retained state, all 678 private history entries, timer, event and publication observed. Physical conditioner Frame inputs explicit; global frame dispatch remains separate.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

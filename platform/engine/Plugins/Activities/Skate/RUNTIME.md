@@ -1,7 +1,7 @@
 # Skate runtime reference
 
-The skating runtime is the C++ under `Source/AtelierSkate/Private/Native/`, namespace `atelier::skate`. It reads only
-the project's native data formats. The parity checks in `Tests/` compare it, bit for bit, with a Rust reference
+The skating runtime is the C++ under `Source/AtelierSkate/Private/Simulation/`, namespace `atelier::skate`. It reads only
+the project's simulation data formats. The parity checks in `Tests/` compare it, bit for bit, with a Rust reference
 implementation kept in this repository's history at commit `46513a6` (and `1536531` for the transfer and vert
 assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the Unreal side.
 
@@ -31,8 +31,8 @@ animation graphs, samples input, selects the ground profile, selects and updates
 possession, solves the bodies and publishes pose, score and camera. The pad is an Xbox-style packet; bit `0x0800`
 (`GameplayTransferButton`) is the host's transfer button and is removed before the pad is sampled.
 
-The module compiles without unity builds and with precise floating-point semantics; the adapter runs native work in
-the default floating-point environment with denormals flushed to zero, and restores the caller's afterwards. Native space is metres, left/up/forward;
+The module compiles without unity builds and with precise floating-point semantics; the adapter runs the simulation work in
+the default floating-point environment with denormals flushed to zero, and restores the caller's afterwards. Simulation space is metres, left/up/forward;
 the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle winding.
 
 ## Systems
@@ -40,8 +40,8 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 | Group | Units | What they do |
 | --- | --- | --- |
 | Session and frame | `GameplaySession`, `GameplayRuntime`, `GameplayFrameRuntime`, `GameplayResources`, `SimulationClock`, `SessionMarkerRuntime`, `ControllerInputRuntime` | Own the runtime, load data, schedule ticks, keep controller history and session markers |
-| Data readers | `DataReader`, `Settings`, `StockSettingsReader`, `NameId`, `PhysicsSkeleton`, `AnimationSamples`, `AnimationMetadata`, `Graph`, `CompiledGraph`, `Gestures`, `ClimbingClips` | Parse the native formats into settings, skeletons, clips, metadata, graphs and gesture sets |
-| Maths and geometry | `NativeMath`, `Geometry*`, `PrimitiveGeometry`, `WorldGeometry`, `GameplayWorld` | Vectors and matrices, primitive pairs, sweeps, prisms, the world BVH and snapshot preparation |
+| Data readers | `DataReader`, `Settings`, `StockSettingsReader`, `NameId`, `PhysicsSkeleton`, `AnimationSamples`, `AnimationMetadata`, `Graph`, `CompiledGraph`, `Gestures`, `ClimbingClips` | Parse the simulation formats into settings, skeletons, clips, metadata, graphs and gesture sets |
+| Maths and geometry | `SimulationMath`, `Geometry*`, `PrimitiveGeometry`, `WorldGeometry`, `GameplayWorld` | Vectors and matrices, primitive pairs, sweeps, prisms, the world BVH and snapshot preparation |
 | Contacts | `WorldContactProducer`, `WorldPrimitiveContact`, `ContactGeneration`, `ContactRetention`, `ContactBuild`, `AssemblyContacts`, `CollisionBody` | Generate, retain and build contacts between bodies and the world |
 | Bodies and solver | `RigidBody`, `BodyMass`, `AggregateMass`, `ConstraintSolver`, `ConstraintFrames`, `JointBuild`, `JointRecords`, `Drive*`, `ForceQueue` | Rigid bodies, joints, drives and the constraint solver |
 | Board | `Board*`, `DeckGeometry`, `DeckAngularCorrections`, `TruckDriveFrames`, `HookDrive` | The seven-body deck, truck and wheel assembly, its colliders, probes and possession by the rider |
@@ -67,7 +67,7 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 The plugin's [`Data/`](Data/README.md) holds the bundle as JSON: the rig, clips and metadata banks in `Data/motion/`,
 the other payloads in `Data/runtime/`, the manifest `Data/package-manifest.json` and the descriptor
 `Data/bundle.json`. The build writes the complete package, every file rebuilt from the JSON by `Tools/motion_text.py`
-and `Tools/runtime_text.py`, to `build/<game>/skate-native/package/` for the offline tools and the typed-asset import.
+and `Tools/runtime_text.py`, to `build/<game>/skate-simulation/package/` for the offline tools and the typed-asset import.
 A game reads the same files from its typed assets ([TYPED_DATA.md](TYPED_DATA.md)). `LoadGameplayResources` reads the
 files in this order and checks each one's magic tag:
 
@@ -95,7 +95,7 @@ The complete package has 3,334 payloads totalling 70,695,340 bytes: 3,324 clips 
 
 ### Bundle check
 
-A game's `skate.runtime` build step runs `Tools/native_package.py` against `Data/bundle.json`, and `unreal.compile`
+A game's `skate.runtime` build step runs `Tools/simulation_package.py` against `Data/bundle.json`, and `unreal.compile`
 depends on it. It assembles the package from the JSON and checks it. The checks are:
 
 - the descriptor's version, the manifest's SHA-256, version, formats, source identity and counts;
@@ -105,36 +105,36 @@ depends on it. It assembles the package from the JSON and checks it. The checks 
   or one per frame) and each gesture pattern (2 to 15 points);
 - the source identity inside `physics-skeletons.skate` and `metadata/bank-0.skate`.
 
-It writes `build/<game>/skate-native/verification.json`. It checks integrity, not behaviour; the parity checks below
+It writes `build/<game>/skate-simulation/verification.json`. It checks integrity, not behaviour; the parity checks below
 cover behaviour, and [TYPED_DATA.md](TYPED_DATA.md#building-and-verifying) the typed assets.
 
 ### Rebuilding the bundle
 
 The converters in `Tools/` turn the source assets into the bundle; normal builds run only `motion_text.py` and
-`runtime_text.py`. Rerun the converters only to change a native format or to add an optional `custom/` file. Then copy
-`package-manifest.json` into `Data/`, export the JSON with `Tools/motion_text.py export --native <package> --source
-Data/motion` and `Tools/runtime_text.py export --native <package> --source Data/runtime`, and update
+`runtime_text.py`. Rerun the converters only to change a simulation format or to add an optional `custom/` file. Then copy
+`package-manifest.json` into `Data/`, export the JSON with `Tools/motion_text.py export --package <package> --source
+Data/motion` and `Tools/runtime_text.py export --package <package> --source Data/runtime`, and update
 `manifest_sha256` and the counts in `Data/bundle.json`.
 
 | Tool | Input | Output |
 | --- | --- | --- |
-| `convert_native_data.py --source A --output O [--animation-samples S]` | Restored source assets (`A/private/...`), decoded clip export | Settings, gestures, graphs, physical skeletons; clips with `samples-manifest.json` |
+| `convert_simulation_data.py --source A --output O [--animation-samples S]` | Restored source assets (`A/private/...`), decoded clip export | Settings, gestures, graphs, physical skeletons; clips with `samples-manifest.json` |
 | `convert_animation_metadata.py --decoded D --output O` | Decoded metadata export | `bank-*.skate` and `metadata-manifest.json` |
 | `convert_camera_data.py --decoded D --output O` | Decoded camera export | `camera.skate` |
-| `assemble_native_package.py --assets A --samples S --metadata M --camera C --output O` | The above | A complete bundle and its `package-manifest.json` (`O` must not exist) |
+| `assemble_simulation_package.py --assets A --samples S --metadata M --camera C --output O` | The above | A complete bundle and its `package-manifest.json` (`O` must not exist) |
 
 The decoded exports come from the reference readers: `check_animation_samples_parity.py` and
-`check_animation_metadata_parity.py` write them under their `--output` as `decoded/` and convert them to `native/`.
-`assemble_native_package.py` also picks up `private/custom/crouch-treflip.json` and `private/custom/climbing.json`
+`check_animation_metadata_parity.py` write them under their `--output` as `decoded/` and convert them to `simulation/`.
+`assemble_simulation_package.py` also picks up `private/custom/crouch-treflip.json` and `private/custom/climbing.json`
 from the assets when present.
 
 ### Parity checks
 
 `Tests/` holds 155 `check_*_parity.py` scripts, one per system or slice of a system, plus helpers
 (`historical_oracle.py`, `reference_build.py`, `build_reference.py`, `session_parity.py`, `session_terrain.py`,
-`player_input_protocol.py`, `reference_case_runner.py`, `build_native_session_cli.py`, `air_settings_fixtures.py`,
+`player_input_protocol.py`, `reference_case_runner.py`, `build_simulation_session_cli.py`, `air_settings_fixtures.py`,
 `camera_probe_schema.py`, `camera_reference_build.py`, `camera_output_reference_build.py`,
-`motion_reference_build.py`). Each script builds a C++ probe from `Tests/Native/` against the native sources and a Rust
+`motion_reference_build.py`). Each script builds a C++ probe from `Tests/Simulation/` against the simulation sources and a Rust
 probe from `Tests/Reference/` against a Git snapshot of the reference, runs both on the same inputs and compares the
 outputs bit for bit. The docstring of each script says what it covers; `--help` lists its options. Most take
 `--assets` (the restored source assets), `--output` and `--target-dir` (a Cargo target directory), all under
@@ -154,7 +154,7 @@ python3 $P/Tests/historical_oracle.py --game <game> --check-history --output $O/
 python3 $P/Tests/historical_oracle.py --game <game> --output $O/assets                   # restore the source assets
 uv run python -m atelier.safety.guarded --report $O/guard --kind compile --purpose "skate session parity" -- \
   python3 $P/Tests/check_gameplay_session_parity.py --assets $O/assets \
-    --native-package build/<game>/skate-native/package --output $O/session --target-dir $O/cargo
+    --simulation-package build/<game>/skate-simulation/package --output $O/session --target-dir $O/cargo
 ```
 
 `historical_oracle.py` reads only Git objects already in the clone and never fetches; output must stay under
@@ -182,10 +182,10 @@ $O/reference/provenance.json --assets A --recording R` records a fixed-step sess
 it against another executable speaking the same protocol; `repeat-reference` replays it against the reference binary
 to check that it is deterministic.
 
-`build_native_session_cli.py` stages (default, `--preflight`) or compiles (`--compile`) the offline QA executable
-`build/skate-native-session-cli/gameplay-session-cli` from every native source plus
-`Tests/Native/gameplay_session_cli.cpp`, with `clang++ -std=c++17 -O2 -ffp-contract=off -fno-fast-math`. Run
-`--compile` under the guard. The game's offline checks drive it; it is a test tool, not a game backend.
+`build_simulation_session_cli.py` stages (default, `--preflight`) or compiles (`--compile`) the offline QA executable
+`build/skate-simulation-session-cli/gameplay-session-cli` from every simulation source plus
+`Tests/Simulation/gameplay_session_cli.cpp`, with `clang++ -std=c++17 -O2 -ffp-contract=off -fno-fast-math`. Run
+`--compile` under the guard. The game's offline checks drive it; it is a test tool.
 
 ## Limits
 
@@ -203,7 +203,7 @@ to check that it is deterministic.
 - A complex-as-simple mesh whose importer does not enable CPU access has no CPU render triangles in a cooked build;
   the snapshot then reads its cooked Chaos collision triangles instead. Those lose the authored per-vertex normal, so
   each triangle faces by its cooked winding (the physics convention, the reverse of the render one). A mesh with neither is logged once and not collided with.
-- The solver keeps the session rider's proportions, so contacts near low obstacles can need visual review on a
+- The solver keeps the simulation rider's proportions, so contacts near low obstacles can need visual review on a
   differently proportioned character. Grab grips scale with the host's hand, but the finger curl angles are fixed:
   on a hand with short fingers for its knuckle spacing, the fingertips end at the rail rather than under the deck.
 - Only the `pop`, `land` and `clatter` sounds play; `catch`, `push`, `flick` and `fall` are loaded but not

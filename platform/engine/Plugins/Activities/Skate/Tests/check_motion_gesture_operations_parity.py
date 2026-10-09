@@ -204,14 +204,14 @@ def main():
     for n in ('assets','metadata','output','target-dir'):p.add_argument('--'+n,type=Path,required=True)
     args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for marker in ('result.json','first-divergence.json'):(output/marker).unlink(missing_ok=True)
-    sources=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','GraphController','GraphConditions','GraphGestureOperations',
+    sources=('SimulationMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','GraphController','GraphConditions','GraphGestureOperations',
         'AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','GraphMotionName','GraphMotionGestureOperations')
     cpp,rust=build_probes(output,args.target_dir,'motion_gesture_operations',sources)
-    graph,configs=fixture();reference,native=output/'operations.reference-graph',output/'operations.graph';reference.write_bytes(original_graph(graph));native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
-    md=fixture_metadata();metadata_json,metadata_native=output/'fixture.json',output/'fixture.skate';metadata_json.write_text(json.dumps(md));metadata_native.write_bytes(metadata_converter.pack_metadata(md));inputs,rows=corpus()
+    graph,configs=fixture();reference,simulation=output/'operations.reference-graph',output/'operations.graph';reference.write_bytes(original_graph(graph));simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+    md=fixture_metadata();metadata_json,metadata_simulation=output/'fixture.json',output/'fixture.skate';metadata_json.write_text(json.dumps(md));metadata_simulation.write_bytes(metadata_converter.pack_metadata(md));inputs,rows=corpus()
     (output/'input.bin').write_bytes(inputs);(output/'authored-commands.json').write_text(json.dumps(rows,indent=2)+'\n');(output/'source-catalog.json').write_text(json.dumps(original_catalog(),indent=2)+'\n')
     expected=subprocess.check_output([str(rust),str(args.assets),str(reference),str(metadata_json)],input=inputs)
-    actual=subprocess.check_output([str(cpp),str(args.metadata/'bank-0.skate'),str(args.metadata/'bank-1.skate'),str(metadata_native),str(native)],input=inputs)
+    actual=subprocess.check_output([str(cpp),str(args.metadata/'bank-0.skate'),str(args.metadata/'bank-1.skate'),str(metadata_simulation),str(simulation)],input=inputs)
     (output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
     if actual!=expected:
         first=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)));report=dict(passed=False,first_byte=first,reference_length=len(expected),cpp_length=len(actual),reference_hex=expected[max(0,first-16):first+32].hex(),cpp_hex=actual[max(0,first-16):first+32].hex())

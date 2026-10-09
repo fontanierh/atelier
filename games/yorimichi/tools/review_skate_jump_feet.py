@@ -63,7 +63,7 @@ QUARTER_X = 56.                       # where the quarter's transition starts, a
 OLLIES = 3
 QUARTER_PUSHES = (2.5, 3.0, 3.5)   # seconds of pushing from the lane, as a player would; the board reaches the transition
                                    # ~11 m on, at 8.4-8.9 m/s (Easy, Normal), so a longer push adds nothing
-QUARTER_LAUNCHES = (11., 12., 13.)  # m/s along +x from the lane, no push: the native regression's speeds, as from a drop-in.
+QUARTER_LAUNCHES = (11., 12., 13.)  # m/s along +x from the lane, no push: the simulation regression's speeds, as from a drop-in.
                                     # A regression trial for landing back in the transition, not a measure of ordinary pushing
 # A physical foot may differ from the animated one by this much (cm, a phase's mean, any bone, up or along the deck).
 # They match within 0.6 cm when Physics Control ticks before the physics step; a frame behind, the feet sit 10 cm off
@@ -261,7 +261,7 @@ F = lambda pattern, s, default=None: (m.group(1) if (m := re.search(pattern, s))
 
 def frames():
     rows = json.loads(run("import json; live.stop('feet_rec'); print(json.dumps(live.FEET))").strip().splitlines()[-1])
-    return [dict(dt=dt, retail=F(r'retail=(\w+)', s, ''), phys=F(r'phys=(\w+)', s, ''), manual=F(r'manual=(\d)', s) == '1',
+    return [dict(dt=dt, simulation=F(r'simulation=(\w+)', s, ''), phys=F(r'phys=(\w+)', s, ''), manual=F(r'manual=(\d)', s) == '1',
                  push=F(r' push=(\d)', s) == '1' or F(r' ps=(\d)', s, '0') != '0', bail=F(r' bail=(\d)', s, '0') != '0',
                  speed=float(F(r' speed=(-?\d+)', s, 0)), bails=int(F(r'bails=(\d+)', s, 0)), surface=F(r'surface=(\w+)', s, ''),
                  deck=[float(v) for v in F(r'deck=(-?[\d.]+,-?[\d.]+,-?[\d.]+)', s, '0,0,0').split(',')],
@@ -297,11 +297,11 @@ def feet(name, physical):
     (out / f'rows_{name}.json').write_text(json.dumps(trials) + '\n')
     phases = {'rolling': [], 'air': [], 'manual': []}
     for kind, rows in trials:
-        first_air = next((i for i, r in enumerate(rows) if 'Air' in r['retail']), len(rows))
+        first_air = next((i for i, r in enumerate(rows) if 'Air' in r['simulation']), len(rows))
         clean = lambda r: not r['bail'] and r['phys'] not in ('Bail', 'GetUp')
-        phases['rolling'] += [r for r in rows[:first_air] if clean(r) and r['retail'] in ('PhysicsGround', 'GroundAnimation') and not r['push']
+        phases['rolling'] += [r for r in rows[:first_air] if clean(r) and r['simulation'] in ('PhysicsGround', 'GroundAnimation') and not r['push']
                               and not r['manual'] and r['phys'] in ('Riding', '') and r['speed'] > 50]
-        if kind == 'ollie': phases['air'] += [r for r in rows if clean(r) and 'Air' in r['retail']]
+        if kind == 'ollie': phases['air'] += [r for r in rows if clean(r) and 'Air' in r['simulation']]
         else: phases['manual'] += [r for r in rows if clean(r) and r['manual']]
     dts = sorted(r['dt'] for _, rows in trials for r in rows)
     return dict({k: dict(frames=len(v), height=mean(v, 'height'), along=mean(v, 'along')) for k, v in phases.items()},
@@ -327,7 +327,7 @@ def airs_out(name, physical, push, at=LANE, window=None, launch=None):
     else: run(f"live.skate_script([({push}, {{'push': True}}), (.05, {{}})])")
     wait(push + 9.); rows = frames(); (out / f'rows_{name}.json').write_text(json.dumps(rows) + '\n')
     rows = window(rows) if window else rows
-    runs = [(air, len(list(g))) for air, g in itertools.groupby('Air' in r['retail'] for r in rows)]
+    runs = [(air, len(list(g))) for air, g in itertools.groupby('Air' in r['simulation'] for r in rows)]
     airs = [dict(frames=n, landed=k + 1 < len(runs) and runs[k + 1][1] >= 30) for k, (air, n) in enumerate(runs) if air and n >= 10]
     return dict(airs=airs, bails=rows[-1]['bails'] - rows[0]['bails'] if rows else None,
                 top_speed_mps=round(max((r['speed'] for r in rows), default=0) / 100, 2),

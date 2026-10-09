@@ -21,7 +21,7 @@ import subprocess
 import tarfile
 from check_gesture_parity import PLUGIN,converter
 from session_parity import REFERENCE_REVISION
-UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','PlayerGrindSurface','PlayerGrindInputWorld','Settings','NameId','StockSettingsReader','AirTrajectoryLaunch','AirTrajectoryGrind','AirTrajectoryScoring','AirTrajectorySelector','AirTrajectorySelectorSettings')
+UNITS=('SimulationMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','PlayerGrindSurface','PlayerGrindInputWorld','Settings','NameId','StockSettingsReader','AirTrajectoryLaunch','AirTrajectoryGrind','AirTrajectoryScoring','AirTrajectorySelector','AirTrajectorySelectorSettings')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
 def fs(v):return list(map(bits,v))
@@ -144,12 +144,12 @@ skate-data={path="../crates/skate-data"}
 name="air-trajectory-selector-reference"
 path="src/migration_probe.rs"
 ''')
- code=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ code=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in list(code.glob('*.h'))+[code/(u+'.cpp')for u in UNITS]:shutil.copy2(p,snapshot/p.name)
- cpp=PLUGIN/'Tests/Native/air_trajectory_selector_probe.cpp';shutil.copy2(cpp,snapshot/cpp.name)
- provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,source_observer_appends={path:hashlib.sha256(extra.encode()).hexdigest()for path,extra in appends.items()},host_settings_sha256=digest(host_settings),native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in(probe,cpp)})
+ cpp=PLUGIN/'Tests/Simulation/air_trajectory_selector_probe.cpp';shutil.copy2(cpp,snapshot/cpp.name)
+ provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,source_observer_appends={path:hashlib.sha256(extra.encode()).hexdigest()for path,extra in appends.items()},host_settings_sha256=digest(host_settings),simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in(probe,cpp)})
  (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
  return source,observed,snapshot,provenance
 
@@ -157,13 +157,13 @@ def build(output,target):
  source,observed,snapshot,report=prepare(output);crate=observed/'atelier-host'
  subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','air-trajectory-selector-reference'],check=True)
  reference=output/'air-trajectory-selector-reference';shutil.copy2(target.resolve()/'release/air-trajectory-selector-reference',reference)
- native=output/'air-trajectory-selector-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'air_trajectory_selector_probe.cpp'),'-o',str(native)],check=True)
+ simulation=output/'air-trajectory-selector-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'air_trajectory_selector_probe.cpp'),'-o',str(simulation)],check=True)
  for relative,expected in report['original_source_sha256'].items():
   assert digest(source/relative)==expected
   if relative in ('crates/skate-core/src/lib.rs','crates/skate-core/src/air/trajectory/mod.rs','crates/skate-core/src/air/trajectory/selector.rs'):
    original=(source/relative).read_bytes();assert (observed/relative).read_bytes()[:len(original)]==original
   else:assert digest(observed/relative)==expected,(relative,'numeric source changed')
- report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,reference
+ report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,reference
 
 class Read:
  def __init__(self,words):self.w=words;self.at=0
@@ -273,25 +273,25 @@ def variants(output,assets):
    elif failure=='negative_bits':f[key]['data']='FFFFFFFF'
    # Preserve the existing one-word bits fixture: scalar/integer readers accept
    # that width. A separate stock-plus-one-word fixture tests their rejection.
-   label=f'{category}-{name}-'+('one_word_bits'if failure=='words'and kind!='graph'else failure);stock=output/'asset-fixtures'/label/'private/stock';stock.mkdir(parents=True,exist_ok=True);path=stock/'skater-collections.json';path.write_text(json.dumps(d));bank=output/'asset-fixtures'/label/'settings.native';bank.write_bytes(converter.encode_settings(path));spec.append(dict(label=label,assets=stock.parents[1],bank=bank,success=failure in('nonfinite_graph','negative_bits')or(failure=='words'and kind!='graph')))
+   label=f'{category}-{name}-'+('one_word_bits'if failure=='words'and kind!='graph'else failure);stock=output/'asset-fixtures'/label/'private/stock';stock.mkdir(parents=True,exist_ok=True);path=stock/'skater-collections.json';path.write_text(json.dumps(d));bank=output/'asset-fixtures'/label/'settings.simulation';bank.write_bytes(converter.encode_settings(path));spec.append(dict(label=label,assets=stock.parents[1],bank=bank,success=failure in('nonfinite_graph','negative_bits')or(failure=='words'and kind!='graph')))
  return spec
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);assets=a.assets.resolve();data,cases=corpus();annotate_cases(data,cases);(out/'input.bin').write_bytes(data);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');bank=out/'settings.native';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));fixture_list=variants(out,assets)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);assets=a.assets.resolve();data,cases=corpus();annotate_cases(data,cases);(out/'input.bin').write_bytes(data);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');bank=out/'settings.simulation';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));fixture_list=variants(out,assets)
  if a.preflight:
   _,_,_,report=prepare(out);print(json.dumps(dict(cases=len(cases),input_bytes=len(data),loader_fixtures=len(fixture_list),settings_words=SETTINGS_WORDS,units=UNITS,input_sha256=hashlib.sha256(data).hexdigest(),source_archive_sha256=report['source_archive_sha256']),indent=2));return
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
- native,reference=build(out,a.target_dir)
- expected=subprocess.check_output([str(reference),str(assets)],input=data,timeout=120);actual=subprocess.check_output([str(native),str(bank)],input=data,timeout=120);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+ simulation,reference=build(out,a.target_dir)
+ expected=subprocess.check_output([str(reference),str(assets)],input=data,timeout=120);actual=subprocess.check_output([str(simulation),str(bank)],input=data,timeout=120);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(first_word=at//4,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at//4*4-16):at//4*4+32].hex(),native_hex=actual[max(0,at//4*4-16):at//4*4+32].hex());(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+  at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(first_word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at//4*4-16):at//4*4+32].hex(),simulation_hex=actual[max(0,at//4*4-16):at//4*4+32].hex());(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  coverage=inspect(expected,cases);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');fixture_reports=[]
  empty=struct.pack('<I',0)
  for fixture in fixture_list:
-  e=subprocess.check_output([str(reference),str(fixture['assets'])],input=empty);v=subprocess.check_output([str(native),str(fixture['bank'])],input=empty);assert e==v,fixture['label'];r=Read(struct.unpack('<'+'I'*(len(e)//4),e));okay,error=r.status();assert okay==fixture['success'],(fixture['label'],okay,error)
+  e=subprocess.check_output([str(reference),str(fixture['assets'])],input=empty);v=subprocess.check_output([str(simulation),str(fixture['bank'])],input=empty);assert e==v,fixture['label'];r=Read(struct.unpack('<'+'I'*(len(e)//4),e));okay,error=r.status();assert okay==fixture['success'],(fixture['label'],okay,error)
   if okay:r.take(SETTINGS_WORDS)
   else:assert error
   assert r.at==len(r.w);fixture_reports.append(dict(label=fixture['label'],success=bool(okay),error=error,exact_words=len(e)//4,sha256=hashlib.sha256(e).hexdigest()))
- result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4+sum(r['exact_words']for r in fixture_reports),stock_output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=fixture_reports,comparison='All complete retained owner fields, ordered callbacks and loader values/errors exact. Original numerical source prefixes and complete unchanged modules hash verified.',limitations='Pure selector service proof uses explicit canonical primitive-vector provider boundary and real original/native geometry surface probes plus candidate/admission. This is not the full host provider broadphase/nearby retention/metadata error or AirTrajectoryRuntime pending-batch scheduling proof; root owns those. No completed trajectory or grind hits are seeded. Nonadvancing original query horizons remain outside the valid source execution corpus.')
+ result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4+sum(r['exact_words']for r in fixture_reports),stock_output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=fixture_reports,comparison='All complete retained owner fields, ordered callbacks and loader values/errors exact. Original numerical source prefixes and complete unchanged modules hash verified.',limitations='Pure selector service proof uses explicit canonical primitive-vector provider boundary and real original/simulation geometry surface probes plus candidate/admission. This is not the full host provider broadphase/nearby retention/metadata error or AirTrajectoryRuntime pending-batch scheduling proof; root owns those. No completed trajectory or grind hits are seeded. Nonadvancing original query horizons remain outside the valid source execution corpus.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':historical.run_cli(main)

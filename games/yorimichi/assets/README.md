@@ -7,8 +7,8 @@ Hidamari, hippodrome and treehouse props.
 
 `source-library.json` records the local paths, sizes and SHA-256 hashes of all
 source GLBs, texture images, geometry/collision arrays, character Blender files
-and merged motion data. It also pins the native skating bundle's manifest.
-`tools/verify_asset_library.py` checks those sources and all 3,334 native skating
+and merged motion data. It also pins the skating bundle's manifest.
+`tools/verify_asset_library.py` checks those sources and all 3,334 skating
 payloads without existing build output. The library tests check the GLBs' embedded
 geometry and images and confirm that a fresh checkout includes every park step.
 
@@ -28,5 +28,5 @@ from committed models, Blender sources or mesh-building scripts and go under
 
 The four character Blender sources pack their meshes, textures, rigs and authored
 animations. The merged set's 109 motion-reference clips and paraglider animation
-are committed in `characters/adventure/source/`. The native skating data is not part of this library: it
+are committed in `characters/adventure/source/`. The skating data is not part of this library: it
 is shared by every game in the [Skate plugin](../../../platform/engine/Plugins/Activities/Skate/Data/README.md).

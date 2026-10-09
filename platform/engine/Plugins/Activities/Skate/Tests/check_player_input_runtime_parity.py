@@ -104,17 +104,17 @@ pub fn observe_owner(o:&mut crate::Output,r:&PlayerInputRuntime){crate::observe_
     for marker in('fn geometry_kind(','fn read_provider(','fn observe_plan(','fn observe_observation('):base+='\n'+block(first,marker)
     return base+(PLUGIN/'Tests/Reference/player_input_runtime_probe.rs').read_text()
 
-def prepare_native():
-    prefixes=[PLUGIN/f'Tests/Native/skeleton_{n}_probe.cpp'for n in('body','collision','constraint')]+[PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Native/adjusted_skeleton_probe.cpp',PLUGIN/'Tests/Native/skeleton_input_runtime_probe.cpp']
+def prepare_simulation():
+    prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{n}_probe.cpp'for n in('body','collision','constraint')]+[PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Simulation/adjusted_skeleton_probe.cpp',PLUGIN/'Tests/Simulation/skeleton_input_runtime_probe.cpp']
     cpp,_,_,_=helpers();base='#include "PlayerInputRuntime.h"\n#include "PlayerGroundPosition.h"\n'+''.join(p.read_text().split('int main(',1)[0].split('int main()',1)[0]for p in prefixes)
     base=base.replace('// GENERATED_PROTOCOL',cpp)
     # Add word-oriented string transport to the existing declarations only.
     base=base.replace('AnimationAttribute Attribute(){','Vec3 Vector(){return ::Vector();}std::string Text(){const auto n=Word();std::string s;for(unsigned j=0;j<n;++j)s+=char(Word());return s;}\n    AnimationAttribute Attribute(){')
     base=base.replace('void Float(float v){std::uint32_t w;std::memcpy(&w,&v,4);Word(w);}','void Float(float v){std::uint32_t w;std::memcpy(&w,&v,4);Word(w);}void Error(const char* s){std::string_view v(s?s:"");Word(std::uint32_t(v.size()));for(unsigned char c:v)Word(c);}')
     base+='\n[[noreturn]]void Fail(const char* error){std::cerr<<error;std::exit(2);}\n'
-    first=(PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text()
+    first=(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text()
     for marker in('PlayerGrindStaticProvider ReadProvider(','void ObserveProvider(','void ObservePlan(','void ObservePending(','void ObserveObservation('):base+='\n'+block(first,marker)
-    return '#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+base+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Native/player_input_runtime_probe.cpp').read_text(),prefixes
+    return '#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+base+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Simulation/player_input_runtime_probe.cpp').read_text(),prefixes
 
 def corpus():
     defs,_=protocol.declarations();_,_,_,pre=helpers();cases=[]
@@ -266,24 +266,24 @@ def preflight():
                 for _,kind in pre:r.value(kind,defs)
             elif op==8:r.value('TeleportOutputFields',defs)
     assert r.at==len(blob),(r.at,len(blob))
-    for u in UNITS:assert(PLUGIN/f'Source/AtelierSkate/Private/Native/{u}.cpp').is_file(),u
+    for u in UNITS:assert(PLUGIN/f'Source/AtelierSkate/Private/Simulation/{u}.cpp').is_file(),u
     return blob,cases
 
 def build(output,target):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
     for p in live.glob('*.h'):shutil.copy2(p,snapshot/p.name)
     for u in UNITS:shutil.copy2(live/f'{u}.cpp',snapshot/f'{u}.cpp')
-    cpp,prefixes=prepare_native();generated=snapshot/'player-input-runtime-combined.cpp';generated.write_text(cpp)
+    cpp,prefixes=prepare_simulation();generated=snapshot/'player-input-runtime-combined.cpp';generated.write_text(cpp)
     rust_prefixes=[PLUGIN/f'Tests/Reference/skeleton_{n}_probe.rs'for n in('body','collision','constraint')]
     prefix=''.join(p.read_text().split('fn main(){',1)[0]for p in rust_prefixes).replace('use crate::{','use skate_core::{').replace('skeleton_root::inverse_rigid,','').replace('solver::{packed,JointConstraint}','solver::{JointConstraint}').replace('#[path="physics/solver/packing.rs"] mod skeleton_constraint_packing;','mod skeleton_constraint_packing{use skate_core::physics::solver::{packed,JointConstraint};use crate::{RetailDriveRows,RetailContactJacobian};use skate_core::physics::rigid_body::RetailReactionCorrections;#[path="packing.rs"]mod original;pub fn drive(r:&RetailDriveRows)->packed::Drive{original::drive(r)}}')
     original=output/'player-input-runtime-combined.rs';original.write_text(prefix+prepare_oracle())
     reference=build_probe(output,'player-input-runtime-reference',original,target,bevy=True,extra_sources=aliases())
-    native=output/'player-input-runtime-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(generated),'-o',str(native)],check=True)
-    (output/'native-provenance.json').write_text(json.dumps(dict(native_source_sha256={p.name:digest(p)for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p)for p in[*prefixes,*rust_prefixes,PLUGIN/'Tests/Native/player_input_runtime_probe.cpp',PLUGIN/'Tests/Reference/player_input_runtime_probe.rs']},original_host_callbacks='Verbatim prepare_grind/process_skeleton methods from input_phase.rs; mandatory global teleport fails explicitly. GroundRuntime prepare_toolkit is verbatim original; full ground lifecycle is outside this proof.'),indent=2)+'\n')
-    return native,reference
+    simulation=output/'player-input-runtime-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(generated),'-o',str(simulation)],check=True)
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(simulation_source_sha256={p.name:digest(p)for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p)for p in[*prefixes,*rust_prefixes,PLUGIN/'Tests/Simulation/player_input_runtime_probe.cpp',PLUGIN/'Tests/Reference/player_input_runtime_probe.rs']},original_host_callbacks='Verbatim prepare_grind/process_skeleton methods from input_phase.rs; mandatory global teleport fails explicitly. GroundRuntime prepare_toolkit is verbatim original; full ground lifecycle is outside this proof.'),indent=2)+'\n')
+    return simulation,reference
 
 def decode(data,cases):
     defs,_=protocol.declarations();gdefs,state=grind.declarations();defs.update(gdefs);_,_,_,pre=helpers();r=protocol.Reader(data);frames=[]
@@ -415,14 +415,14 @@ def main():
     for n in('result.json','first-divergence.json'):(out/n).unlink(missing_ok=True)
     blob,cases=preflight();(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if a.preflight:print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),units=len(UNITS),module_aliases=len(aliases())),indent=2));return
-    stock=a.assets.resolve()/'private/stock';settings=out/'settings.native';physical=out/'physics.native';settings.write_bytes(grind.converter.encode_settings(stock/'skater-collections.json'));physical.write_bytes(grind.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];native,reference=build(out,a.target_dir)
-    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(native),str(settings),str(physical),str(a.samples.resolve()/'native/rig.skate'),identity],input=blob);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    stock=a.assets.resolve()/'private/stock';settings=out/'settings.simulation';physical=out/'physics.simulation';settings.write_bytes(grind.converter.encode_settings(stock/'skater-collections.json'));physical.write_bytes(grind.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];simulation,reference=build(out,a.target_dir)
+    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(simulation),str(settings),str(physical),str(a.samples.resolve()/'simulation/rig.skate'),identity],input=blob);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        first=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('PlayerInputRuntime differs')
+        first=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('PlayerInputRuntime differs')
     proof=coverage(expected,cases);negative=[];original=json.loads((stock/'skater-collections.json').read_text())
     for n,(query,fixture)in enumerate(settings_failures(original)):
         root=out/f'settings-failure-{n}';path=root/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture));settings.write_bytes(grind.converter.encode_settings(path))
-        x=subprocess.check_output([str(reference),str(root),'--settings-only']);y=subprocess.check_output([str(native),str(settings),'--settings-only']);assert x==y,(query,x,y);r=protocol.Reader(x);assert r.word()==0;error=bytes(r.word()for _ in range(r.word())).decode();assert error and r.at==len(x);negative.append(dict(query=query,error=error))
+        x=subprocess.check_output([str(reference),str(root),'--settings-only']);y=subprocess.check_output([str(simulation),str(settings),'--settings-only']);assert x==y,(query,x,y);r=protocol.Reader(x);assert r.word()==0;error=bytes(r.word()for _ in range(r.word())).decode();assert error and r.at==len(x);negative.append(dict(query=query,error=error))
     (out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');result=dict(passed=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,negative_settings=negative,boundary='Complete canonical input owner and verbatim source prepare_grind/process_skeleton callbacks, actual static grind queries/materials, actual loaded physical/pose/IK/shared solve/toolkit/publication. Full global coordinator and successful whole-player teleport reset remain external. Fresh source TrajectorySelector false publication is checked; actual CompleteBatch true publication is still pending its separately assigned producer.');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 if __name__=='__main__':main()

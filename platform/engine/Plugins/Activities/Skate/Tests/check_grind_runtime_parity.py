@@ -25,7 +25,7 @@ PLUGIN=reset.PLUGIN
 CODE=reset.CODE
 HOST=reset.HOST
 _actor=ast.parse((PLUGIN/'Tests/check_skater_animation_parity.py').read_text())
-_actor_build=next(f for f in _actor.body if isinstance(f,ast.FunctionDef)and f.name=='build_native')
+_actor_build=next(f for f in _actor.body if isinstance(f,ast.FunctionDef)and f.name=='build_simulation')
 # Include the actor's later continuation extension as well as its first tuple.
 ACTOR_UNITS=tuple(dict.fromkeys(v.value for n in ast.walk(_actor_build)if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='files'for t in n.targets)for v in ast.walk(n.value)if isinstance(v,ast.Constant)and isinstance(v.value,str)))
 ACTOR_UNITS=tuple(dict.fromkeys((*ACTOR_UNITS,'GraphActionPhysicalConditions')))
@@ -47,7 +47,7 @@ def reset_observer_cpp(prefix):
  overload='void ResetOut(Output& o,const Basis3& value){for(const auto& column:value.columns)ResetOut(o,column);}\n'
  return prefix.replace(marker,overload+marker)
 def provider_helpers():
- cpp=block((PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text(),'PlayerGrindStaticProvider ReadProvider(')
+ cpp=block((PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text(),'PlayerGrindStaticProvider ReadProvider(')
  cpp=cpp.replace('i.Text()','TextRead(i)').replace('i.Vector()','Vec3{i.Float(),i.Float(),i.Float()}')
  cpp=re.sub(r'i.Array<float,(\d+)>\(\[\]\(Input& r\)\{return r.Float\(\);\}\)',r'i.Floats<\1>()',cpp).replace('Fail(error.c_str())','std::abort()')
  cpp='std::string TextRead(Input& i){std::string s;for(auto n=i.Word();n;--n)s+=char(i.Word());return s;}\n'+cpp
@@ -55,13 +55,13 @@ def provider_helpers():
  return cpp,rust
 
 def world_helpers():
- cpp=block((PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text(),'WorldGeometry World(').replace('WorldGeometry World(','WorldGeometry GrindWorld(').replace('Fail(error)','std::abort()')
+ cpp=block((PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text(),'WorldGeometry World(').replace('WorldGeometry World(','WorldGeometry GrindWorld(').replace('Fail(error)','std::abort()')
  rust=block((PLUGIN/'Tests/Reference/player_grind_input_probe.rs').read_text(),'fn fixture_world(')
  rust=rust.replace('fn fixture_world(kind:u32)->BoardWorld{','fn fixture_world(kind:u32)->BoardWorld{use skate_core::physics::{board_world::query_metadata::{QueryMetadata,QueryMesh,Bounds,QueryPool},drive_frames::RetailAffineTransform};')
  return cpp,rust
 
-def native_plan(output):
- snap,report=reset.native_plan(output)
+def simulation_plan(output):
+ snap,report=reset.simulation_plan(output)
  for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snap/(u+'.cpp'))
  raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=reset_observer_cpp(raw[:raw.index('int main(')])
  initialization=raw[raw.index(' if(argc!=6)'):raw.index(' Input i{{')]
@@ -69,12 +69,12 @@ def native_plan(output):
  construction=construction.replace('World(i)','GrindWorld(i.Word())').replace('SkeletonControllerState controller;bool elapsed=false;std::uint8_t animated=0;','GroundPhaseLifecycle life;auto& controller=life.skeleton_controller;auto& elapsed=life.skeleton_elapsed_16505;auto& animated=life.board_animated_290;')
  cases=raw[raw.index(' case 0:'):raw.index(' case 2:')]
  solve=raw[raw.index(' case 6:'):raw.index(' case 5:')]
- template=PLUGIN/'Tests/Native/grind_runtime_probe.cpp';code=template.read_text().replace('// GENERATED_NATIVE_OWNER_PREFIX',prefix).replace('// GENERATED_NATIVE_OWNER_INITIALIZATION',initialization).replace('// GENERATED_NATIVE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_NATIVE_PACKET_RESET_CASES',cases+solve).replace('// GENERATED_PROVIDER_READER',provider_helpers()[0]).replace('// GENERATED_GRIND_WORLD',world_helpers()[0])
+ template=PLUGIN/'Tests/Simulation/grind_runtime_probe.cpp';code=template.read_text().replace('// GENERATED_SIMULATION_OWNER_PREFIX',prefix).replace('// GENERATED_SIMULATION_OWNER_INITIALIZATION',initialization).replace('// GENERATED_SIMULATION_OWNER_CONSTRUCTION',construction).replace('// GENERATED_SIMULATION_PACKET_RESET_CASES',cases+solve).replace('// GENERATED_PROVIDER_READER',provider_helpers()[0]).replace('// GENERATED_GRIND_WORLD',world_helpers()[0])
  code=code.replace('std::uint32_t jump_fix=1000;GroundPhaseLifecycle life;','std::uint32_t jump_fix=1000;')
  # The reset bootstrap receives the SAME lifecycle aliases consumed by Grind.
  assert code.count('GroundPhaseLifecycle life;')==1
  (snap/'grind_runtime_probe.cpp').write_text(code)
- report.update(units=UNITS,immutable_native_sources={p.name:digest(p)for p in sorted(snap.glob('*.h'))+sorted(snap.glob('*.cpp'))},generated_probe_sha256=digest(snap/'grind_runtime_probe.cpp'))
+ report.update(units=UNITS,immutable_simulation_sources={p.name:digest(p)for p in sorted(snap.glob('*.h'))+sorted(snap.glob('*.cpp'))},generated_probe_sha256=digest(snap/'grind_runtime_probe.cpp'))
  # Authorized declaration-only extraction; reconstruct the complete previous
  # frozen header and verify every byte, independent of its new include layout.
  transport=(snap/'GrindFilteredOutput.h').read_text();start=transport.index('struct GrindFilteredOutput\n{');end=transport.index('\n};',start)+3;declaration=transport[start:end]
@@ -136,10 +136,10 @@ def reference_plan(output):
  report.update(grind_extensions=hashes,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/grind_runtime_observer.rs'),grind_fixture_visibility=dict(borrowed_reset_replacement=dict(old=old,new=new,original_prefix_sha256=hashlib.sha256(phase_original).hexdigest()),bindings=['crate::physics and crate::grind_world imports in appended input_phase scope','parent physics loader forwarding into private grind module','GroundRuntime retained_board_normal exact owning-scope fixture setter','Runtime manager exact owning-scope fixture clear','AttributeName.0 five-word observation','GamePhysics.grind_materials authoritative material table']),scope='Full untouched host: real GamePhysics/SkaterRuntime constructors; six grind states/Nonspecific, all original core forces/reckoning/chromosome/camera/settings and original skeleton/world/IK/solve owners. Append-only read observers and explicit caller/transport adapters.')
  return original,observed,crate,cargo,report
 
-def build_native(output):
- snap,report=native_plan(output);binary=output/'grind-runtime-native'
+def build_simulation(output):
+ snap,report=simulation_plan(output);binary=output/'grind-runtime-simulation'
  subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(u+'.cpp'))for u in UNITS],str(snap/'grind_runtime_probe.cpp'),'-o',str(binary)],check=True)
- report['binary_sha256']=digest(binary);(output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
+ report['binary_sha256']=digest(binary);(output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 def build_reference(output,target):
  original,observed,crate,cargo,report=reference_plan(output);subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(target.resolve()),'--bin','grind-runtime-reference'],check=True)
@@ -200,7 +200,7 @@ def corpus():
  # True collision force precedes pop; full queue still selects prediction-only.
  for capacity in(0,20,21,29):
   commands=setup()+[dict(op=20,manager=manager(0)),dict(op=10,state=401),dict(op=23,count=capacity),packet(flags=0x00402000,collision=0x20000,velocity=(-3.,0.,-.731,0.))]+step()+[dict(op=32),dict(op=11)]
-  add('collision-before-pop with native queue '+str(capacity),commands)
+  add('collision-before-pop with the simulation queue '+str(capacity),commands)
  # Low-energy geometry cache, balance clamp and trainer scale. All five stock modes.
  for family in range(6):
   commands=setup(ids[family])+[dict(op=20,manager=manager(family,1)),dict(op=10,state=ids[family])]
@@ -414,7 +414,7 @@ def settings_queries():
  q += [('physics_collision','default',n,'float')for n in('MaxVelDelta','ForceYOffset','CollisionForceScalar','TargetDisplacementVel')]
  return q
 
-def check_settings(output,path,native,reference):
+def check_settings(output,path,simulation,reference):
  import check_ground_control_settings_parity as stock
  original=json.loads(path.read_text());fixtures=[original];labels=['stock'];queries=settings_queries();independent=copy.deepcopy(original)
  # Materialize the source-resolved inherited values in each queried collection,
@@ -429,8 +429,8 @@ def check_settings(output,path,native,reference):
  output.mkdir(parents=True,exist_ok=True)
  folder=stock.prepare_fixtures(output,fixtures,path);errors=Counter();records=[]
  for n,label in enumerate(labels):
-  expected=subprocess.check_output([str(reference),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(native),str(folder/str(n)/'settings.native'),'--settings-only'])
-  (output/f'settings-{n}-reference.bin').write_bytes(expected);(output/f'settings-{n}-native.bin').write_bytes(actual)
+  expected=subprocess.check_output([str(reference),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(simulation),str(folder/str(n)/'settings.simulation'),'--settings-only'])
+  (output/f'settings-{n}-reference.bin').write_bytes(expected);(output/f'settings-{n}-simulation.bin').write_bytes(actual)
   if expected!=actual:raise AssertionError(('Grind settings mismatch',n,label,expected.hex(),actual.hex()))
   r=Reader(expected);error=r.status();values=r.take(110)if not error else[];assert r.at==len(r.words);assert bool(error)==(n!=0),(label,error)
   if n:
@@ -489,22 +489,22 @@ def main():
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
  raw,cases=corpus();preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if a.preflight:
-  snap,native=native_plan(out);original,observed,crate,cargo,reference=reference_plan(out/'reference')
+  snap,simulation=simulation_plan(out);original,observed,crate,cargo,reference=reference_plan(out/'reference')
   for source in(snap/'grind_runtime_probe.cpp',crate/'src/migration_probe.rs',crate/'src/physics/input_phase.rs'):
    assert 'GENERATED_'not in source.read_text(),source
   for rel,sha in reference['original_source_sha256'].items():
    assert digest(original/rel)==sha;source=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(source)]==source
-  (out/'native-preflight.json').write_text(json.dumps(native,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n')
+  (out/'simulation-preflight.json').write_text(json.dumps(simulation,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n')
   print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS),settings_first_failed_reads=len(settings_queries())),indent=2));return
- fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.native').write_bytes(reset.foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(reset.foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+ fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.simulation').write_bytes(reset.foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(reset.foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
  for kind in('action','motion'):(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
- identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);native=build_native(out)
- expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())],input=raw)
- (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+ identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);simulation=build_simulation(out)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())],input=raw)
+ (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
  if expected!=actual:
   at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_word']<=word<c['last_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-a)for n,(a,b)in(row['sections'].items()if row else[])if a<=word<b),None)
-  failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
- settings=check_settings(out/'settings',stock/'skater-collections.json',native,reference)
+  failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+ settings=check_settings(out/'settings',stock/'skater-collections.json',simulation,reference)
  result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),coverage=coverage(frames,cases),settings=settings,scope='Full original physical Grind host: six retained states and Nonspecific; actual stock GamePhysics/SkaterRuntime construction; original force/reckoning/skeleton/IK/solve owners, StaticProvider Pre/Post, names/chromosome/camera and stock loader order.',boundaries='Canonical completed player/physical/animation packet inputs, manager snapshots for focused family cases, selected lifecycle state, jump-fix counter and trainer pop are explicit upstream/caller publications. Actual provider admission is separately executed and required by coverage. Entire global state/physics schedule and source actor logging remain separate; no completed query/contact/force observation is fabricated.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

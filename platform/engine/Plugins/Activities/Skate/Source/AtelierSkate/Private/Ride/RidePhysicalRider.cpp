@@ -53,18 +53,18 @@ namespace RidePhysicalRiderDetail
         TEXT("Ride: 1 (the default) lets the physical rider's bodies meet each other in a bail (the arms the torso, a leg the ")
         TEXT("other); 0 lets them pass through each other, as they do riding. Read as a bail starts."));
     TAutoConsoleVariable<int32> CVarRideBailTighten(TEXT("skate.RideBailTighten"), 1,
-        TEXT("Ride: 1 (the default) holds the built asset's joints in a bail within Native's bail envelope (each joint's own ")
+        TEXT("Ride: 1 (the default) holds the built asset's joints in a bail within the simulation's bail envelope (each joint's own ")
         TEXT("centre, hard limits a half to a third of the riding ones, the drives' targets clamped to them); 0 keeps the riding ")
         TEXT("limits in a bail. Read as a bail starts."));
     TAutoConsoleVariable<float> CVarRideBailTightenRate(TEXT("skate.RideBailTightenRate"), 120.f,
-        TEXT("Ride: how fast a bail's joint limits close from the pose the bail began in to Native's envelope (degrees a second; ")
+        TEXT("Ride: how fast a bail's joint limits close from the pose the bail began in to the simulation's envelope (degrees a second; ")
         TEXT("0 closes them at the bail's first update)."));
     TAutoConsoleVariable<float> CVarRideBailProjection(TEXT("skate.RideBailProjection"), .8f,
         TEXT("Ride: how much of a bail joint's error past its hard limits Chaos's angular projection takes back each step (0 to 1; ")
-        TEXT("the asset has 0). Without it a hard hit puts a knee or a hand 12 to 24 degrees past Native's bail envelope. Read as a bail starts."));
+        TEXT("the asset has 0). Without it a hard hit puts a knee or a hand 12 to 24 degrees past the simulation's bail envelope. Read as a bail starts."));
     TAutoConsoleVariable<float> CVarRideBailDriveFade(TEXT("skate.RideBailDriveFade"), 0.f,
         TEXT("Ride: N > 0 fades the Bail profile's joint drives (its tone toward the clip) to nothing over N seconds, as the ")
-        TEXT("square of the time left, as Native's wipeout fades its drives (1.5 s); 0 (the default) keeps the tone through the bail."));
+        TEXT("square of the time left, as the simulation's wipeout fades its drives (1.5 s); 0 (the default) keeps the tone through the bail."));
     TAutoConsoleVariable<int32> CVarRideBailApplyNow(TEXT("skate.RideBailApplyNow"), 1,
         TEXT("Ride: 1 (the default) applies the Bail profile to the bodies as the bail begins, so that frame's physics already ")
         TEXT("lets go of the anchors; 0 leaves it to Physics Control's next update."));
@@ -175,7 +175,7 @@ void URidePhysicalRider::ApplyBailDrag(float Drag)
 
 // Riding: the rider's constraint profile, with limits that widen to the animation, and the bodies pass through each
 // other. Bailing: the bail profile and the bodies meet. The built asset's joints take their riding envelope (the
-// asset's) or, in a bail, Native's (ApplyEnvelopes), with the drives' targets clamped into it; skate.RideBailTighten 0
+// asset's) or, in a bail, the simulation's (ApplyEnvelopes), with the drives' targets clamped into it; skate.RideBailTighten 0
 // keeps the riding envelope in a bail. Physics Control reads the response from the live constraints each update, so
 // it is set after the profile (which would copy the template's over it).
 void URidePhysicalRider::ApplyJointLimits(bool bRidingProfile, bool bWiden)
@@ -277,7 +277,7 @@ void URidePhysicalRider::UpdateRamp(float Dt)
     }
 }
 
-// Native fades its wipeout's drives over 1.5 s by the square of the time left (WipeoutResponse.cpp:44): here the Bail
+// The simulation fades its wipeout's drives over 1.5 s by the square of the time left (WipeoutResponse.cpp:44): here the Bail
 // profile's joint drives, through Physics Control's multipliers, which the profiles never set. An authored control
 // asset keeps its own.
 void URidePhysicalRider::ApplyDriveFade(float Multiplier)

@@ -37,10 +37,10 @@ def main():
     names = sorted(names)
     corpus = ('\n'.join(names)+'\n').encode()
     (output/'input.txt').write_bytes(corpus)
-    code = PLUGIN/'Source/AtelierSkate/Private/Native'
+    code = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     cpp, rust = output/'name-cpp', output/'name-reference'
     subprocess.run(['clang++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(code),str(code/'NameId.cpp'),
-                    str(PLUGIN/'Tests/Native/name_probe.cpp'),'-o',str(cpp)],check=True)
+                    str(PLUGIN/'Tests/Simulation/name_probe.cpp'),'-o',str(cpp)],check=True)
     rust_source = historical.stage_path_probe(PLUGIN/'Tests/Reference/name_probe.rs', output, {
         '../../ThirdParty/skate-runtime/crates/skate-data/src/attrib_hash.rs': 'crates/skate-data/src/attrib_hash.rs'})
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O',str(rust_source),'-o',str(rust)],check=True)

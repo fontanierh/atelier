@@ -6,8 +6,8 @@ round-trip decimal (negative zero as -0.0), as in motion_text.py; a word that is
 string "0x" plus 8 hex digits. `build` rewrites every runtime file byte for byte; callers check the result against
 the package manifest's SHA-256 digests. `export` is the conversion from the runtime files.
 
-    runtime_text.py export --native <package> --source <runtime source>
-    runtime_text.py build --source <runtime source> --native <output folder>
+    runtime_text.py export --package <package> --source <runtime source>
+    runtime_text.py build --source <runtime source> --package <output folder>
 """
 import argparse
 import json
@@ -115,7 +115,7 @@ def field_text(name, size, encoding, value):
     return [kind, {'words': [raw(v) for v in value], 'bytes': size}]
 
 
-def field_native(kind, value, size=None):
+def field_binary(kind, value, size=None):
     """(type, text encoding, byte count, words or text) of a field's source value."""
     if size is not None and not (kind == 'Bool' and isinstance(value, bool) and integer(size, 2)):
         raise ValueError('only a Bool names its byte count')
@@ -175,11 +175,11 @@ def settings_text(data):
     return categories
 
 
-def settings_native(categories):
+def settings_binary(categories):
     records = []
     for category in categories:
         for row in category['records']:
-            fields = [(name, *field_native(*value)) for name, value in row['fields'].items()]
+            fields = [(name, *field_binary(*value)) for name, value in row['fields'].items()]
             records.append((category['category'], row['key'], row.get('parent', ''), fields))
     strings = sorted({s for c, k, p, fields in records for s in (c, k, p, *(n for f in fields for n in f[:2]))})
     index = {s: i for i, s in enumerate(strings)}
@@ -239,7 +239,7 @@ def graph_text(data):
     return node(0)
 
 
-def graph_native(root):
+def graph_binary(root):
     elements = []
     offset = 0
 
@@ -317,7 +317,7 @@ def camera_text(data):
     return {'source_identity': identity, 'shots': shots, 'shakes': shakes}
 
 
-def camera_native(value):
+def camera_binary(value):
     w = Writer(CAMERA)
     w.string(value['source_identity'])
     w.word(len(value['shots']))
@@ -375,7 +375,7 @@ def gestures_text(data):
     return sets
 
 
-def gestures_native(sets):
+def gestures_binary(sets):
     w = Writer(GESTURES)
     w.word(len(sets))
     for gesture in sets:
@@ -410,7 +410,7 @@ def physics_text(data):
     return value
 
 
-def physics_native(value):
+def physics_binary(value):
     w = Writer(PHYSICS)
     w.string(value['source_sha256'])
     w.word(len(value['skeletons']))
@@ -428,13 +428,13 @@ def physics_native(value):
 
 
 FORMATS = {
-    'settings.skate': (settings_text, settings_native),
-    'action.graph': (graph_text, graph_native),
-    'motion.graph': (graph_text, graph_native),
-    'camera.graph': (graph_text, graph_native),
-    'camera.skate': (camera_text, camera_native),
-    'gestures.skate': (gestures_text, gestures_native),
-    'physics-skeletons.skate': (physics_text, physics_native),
+    'settings.skate': (settings_text, settings_binary),
+    'action.graph': (graph_text, graph_binary),
+    'motion.graph': (graph_text, graph_binary),
+    'camera.graph': (graph_text, graph_binary),
+    'camera.skate': (camera_text, camera_binary),
+    'gestures.skate': (gestures_text, gestures_binary),
+    'physics-skeletons.skate': (physics_text, physics_binary),
 }
 
 
@@ -470,12 +470,12 @@ def unique(pairs):
     return result
 
 
-def export(native, source):
+def export(package, source):
     """Runtime files -> readable source. Returns the written relative paths."""
-    native, source = Path(native), Path(source)
+    package, source = Path(package), Path(source)
     source.mkdir(parents=True, exist_ok=True)
     for text, binary in FILES.items():
-        (source / text).write_text(dumps(FORMATS[binary][0]((native / binary).read_bytes())) + '\n')
+        (source / text).write_text(dumps(FORMATS[binary][0]((package / binary).read_bytes())) + '\n')
     return sorted(FILES)
 
 
@@ -492,16 +492,16 @@ def build(source):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('command', choices=('export', 'build'))
-    parser.add_argument('--native', type=Path, required=True)
+    parser.add_argument('--package', type=Path, required=True)
     parser.add_argument('--source', type=Path, required=True)
     args = parser.parse_args()
     if args.command == 'export':
-        print(f'{len(export(args.native, args.source))} source files')
+        print(f'{len(export(args.package, args.source))} source files')
         return
     files = build(args.source)
-    args.native.mkdir(parents=True, exist_ok=True)
+    args.package.mkdir(parents=True, exist_ok=True)
     for name, data in files.items():
-        (args.native / name).write_bytes(data)
+        (args.package / name).write_bytes(data)
     print(f'{len(files)} runtime files')
 
 

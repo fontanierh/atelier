@@ -2,7 +2,7 @@
 """Whole unchanged Slide host bound to real pose/world/controller/solve owners.
 
 Only the root render guard compiles or executes. --preflight validates source
-prefixes, lossless upstream wire and the complete named native closure only.
+prefixes, lossless upstream wire and the complete named simulation closure only.
 """
 import argparse
 from collections import Counter
@@ -51,21 +51,21 @@ def prepare(output):
   source=host/rel;raw=source.read_bytes();target=crate/'src'/rel;target.write_bytes(raw+b'\n'+extra);assert target.read_bytes()[:len(raw)]==raw
   report['staged_host_original_prefixes'][rel]=dict(original_prefix_bytes=len(raw),original_prefix_sha256=digest(source),append_sha256=hashlib.sha256(b'\n'+extra).hexdigest(),generated_sha256=digest(target))
  cp,rp=slide_protocol();ac,ar=air.helpers();fc,fr=air.feedback_helpers();pc,pr=air.providers()
- world_cpp=air.extract(PLUGIN/'Tests/Native/player_grind_input_probe.cpp','WorldGeometry World(unsigned kind)').replace('World(unsigned kind)','FixtureWorld(unsigned kind)')
+ world_cpp=air.extract(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp','WorldGeometry World(unsigned kind)').replace('World(unsigned kind)','FixtureWorld(unsigned kind)')
  world_rs=air.extract(PLUGIN/'Tests/Reference/player_grind_input_probe.rs','fn fixture_world(kind:u32)');world_rs=re.sub(r'(?<![\w.])\.(\d)',r'0.\1',world_rs)
  # Added vector transport is read-only; no original arithmetic is rewritten.
  rust_probe=PLUGIN/'Tests/Reference/slide_phase_runtime_probe.rs';rs=rust_probe.read_text().replace('// GENERATED_PROTOCOL',ar+'\n'+fr).replace('// GENERATED_PROVIDER',pr+'\n'+world_rs).replace('// GENERATED_SLIDE_PROTOCOL',rp)
  rs=rs.replace('struct Output(Vec<u32>);','struct Output(Vec<u32>);').replace(' fn float(&mut self,v:f32)', ' fn vector(&mut self,v:Vector3){self.floats([v.x,v.y,v.z]);}\n fn float(&mut self,v:f32)')
  (crate/'src/migration_probe.rs').write_text(rs)
  cargo=crate/'Cargo.toml';cargo.write_text(cargo.read_text().replace('name="air-phase-runtime-reference"','name="slide-phase-runtime-reference"'))
- prefix,meta=air.foot.extraction(PLUGIN/'Tests/Native/footplant_probe.cpp','int main(')
+ prefix,meta=air.foot.extraction(PLUGIN/'Tests/Simulation/footplant_probe.cpp','int main(')
  for name in UNITS:
-  path=CODE/(name+'.cpp');assert path.is_file(),name;shutil.copy2(path,snapshot/path.name);report['native_source_sha256'][path.name]=digest(path)
+  path=CODE/(name+'.cpp');assert path.is_file(),name;shutil.copy2(path,snapshot/path.name);report['simulation_source_sha256'][path.name]=digest(path)
  ac=re.sub(r'\bInput\b','AirInput',ac);ac=re.sub(r'\bOutput\b','AirOutput',ac);pc=re.sub(r'\bInput\b','AirInput',pc);pc=re.sub(r'\bOutput\b','AirOutput',pc)
- probe=PLUGIN/'Tests/Native/slide_phase_runtime_probe.cpp';native=probe.read_text().replace('// GENERATED_PROTOCOL',ac+'\n'+fc).replace('// GENERATED_PROVIDER',pc+'\n'+world_cpp).replace('// GENERATED_SLIDE_PROTOCOL',cp).replace('// GENERATED_COLLISION_OBSERVER','ObserveFeedback(o,p.collision_feedback);')
- native=native.replace('void Value(Vec4 v){Floats(v);}', 'void Value(Vec3 v){VectorOut(*this,v);}void Value(Vec4 v){Floats(v);}')
- (snapshot/probe.name).write_bytes(b'#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+b'\n#pragma clang diagnostic pop\n'+native.encode())
- report.update(scope='Whole unchanged host slide_state.rs/settings.rs/update.rs and all actual upstream physical/skeleton/controller/trajectory owners.',generated_native_probe_sha256=digest(snapshot/probe.name),generated_reference_probe_sha256=digest(crate/'src/migration_probe.rs'),probe_sha256={p.name:digest(p)for p in(probe,rust_probe,PLUGIN/'Tests/Reference/slide_phase_runtime_observer.rs')},native_units=list(UNITS),slide_original_source_sha256={HOST+rel:digest(original/HOST/rel)for rel in ('slide_state.rs','slide_state/settings.rs','slide_state/update.rs','input_phase.rs','riding_outputs.rs','air_phase/input.rs')})
+ probe=PLUGIN/'Tests/Simulation/slide_phase_runtime_probe.cpp';simulation=probe.read_text().replace('// GENERATED_PROTOCOL',ac+'\n'+fc).replace('// GENERATED_PROVIDER',pc+'\n'+world_cpp).replace('// GENERATED_SLIDE_PROTOCOL',cp).replace('// GENERATED_COLLISION_OBSERVER','ObserveFeedback(o,p.collision_feedback);')
+ simulation=simulation.replace('void Value(Vec4 v){Floats(v);}', 'void Value(Vec3 v){VectorOut(*this,v);}void Value(Vec4 v){Floats(v);}')
+ (snapshot/probe.name).write_bytes(b'#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+b'\n#pragma clang diagnostic pop\n'+simulation.encode())
+ report.update(scope='Whole unchanged host slide_state.rs/settings.rs/update.rs and all actual upstream physical/skeleton/controller/trajectory owners.',generated_simulation_probe_sha256=digest(snapshot/probe.name),generated_reference_probe_sha256=digest(crate/'src/migration_probe.rs'),probe_sha256={p.name:digest(p)for p in(probe,rust_probe,PLUGIN/'Tests/Reference/slide_phase_runtime_observer.rs')},simulation_units=list(UNITS),slide_original_source_sha256={HOST+rel:digest(original/HOST/rel)for rel in ('slide_state.rs','slide_state/settings.rs','slide_state/update.rs','input_phase.rs','riding_outputs.rs','air_phase/input.rs')})
  for rel,row in report['staged_host_original_prefixes'].items():raw=(host/rel).read_bytes();assert (crate/'src'/rel).read_bytes()[:len(raw)]==raw,rel
  (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,observed,snapshot,report
 
@@ -194,11 +194,11 @@ def preflight(raw,cases):
 
 def build(output,target):
  original,observed,snapshot,report=prepare(output);crate=observed/'atelier-host';subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','slide-phase-runtime-reference'],check=True)
- reference=output/'slide-phase-runtime-reference';shutil.copy2(target.resolve()/'release/slide-phase-runtime-reference',reference);native=output/'slide-phase-runtime-native'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'slide_phase_runtime_probe.cpp'),'-o',str(native)],check=True)
+ reference=output/'slide-phase-runtime-reference';shutil.copy2(target.resolve()/'release/slide-phase-runtime-reference',reference);simulation=output/'slide-phase-runtime-simulation'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'slide_phase_runtime_probe.cpp'),'-o',str(simulation)],check=True)
  for rel,sha in report['original_source_sha256'].items():assert digest(original/rel)==sha;raw=(original/rel).read_bytes();assert (observed/rel).read_bytes()[:len(raw)]==raw,rel
  for rel,row in report['staged_host_original_prefixes'].items():assert digest(crate/'src'/rel)==row['generated_sha256'],rel
- report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,reference
+ report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,reference
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
@@ -207,19 +207,19 @@ def main():
  raw,cases=corpus();preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');fixtures=loader_fixtures(a.assets.resolve())
  if a.preflight:
   prepare(out);print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),loader_fixtures=len(fixtures),units=len(UNITS),input_sha256=hashlib.sha256(raw).hexdigest()),indent=2));return
- bank=out/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(bank/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+ bank=out/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(bank/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
  for kind in('action','motion'):(bank/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
- identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];native,reference=build(out,a.target_dir)
- native_args=[str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())]
- expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(native),*native_args],input=raw);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+ identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];simulation,reference=build(out,a.target_dir)
+ simulation_args=[str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())]
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(simulation),*simulation_args],input=raw);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
  if expected!=actual:
   at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-s[0])for n,s in(row['spans'].items()if row else[])if s[0]<=word<s[1]),None)
-  failure=dict(byte=at,word=word,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+  failure=dict(byte=at,word=word,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
  covered=coverage(frames,cases);del frames
  reports=[]
  for n,f in enumerate(fixtures):
-  folder=out/'loader-fixtures'/f'{n:03d}-{f["label"]}';(folder/'private/stock').mkdir(parents=True,exist_ok=True);path=folder/'private/stock/skater-collections.json';path.write_text(json.dumps(f['data'])+'\n');bankfile=folder/'settings.native';bankfile.write_bytes(converter.encode_settings(path))
-  ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)],input=b'');cpp=subprocess.check_output([str(native),*native_args,str(bankfile)],input=b'');(folder/'reference.bin').write_bytes(ref);(folder/'native.bin').write_bytes(cpp);assert ref==cpp,(f['label'],ref.hex(),cpp.hex());success=bool(struct.unpack_from('<I',ref)[0]);assert success==f['success'],f['label'];reports.append(dict(label=f['label'],success=success,sha256=hashlib.sha256(ref).hexdigest(),first_position=f['first_position']))
+  folder=out/'loader-fixtures'/f'{n:03d}-{f["label"]}';(folder/'private/stock').mkdir(parents=True,exist_ok=True);path=folder/'private/stock/skater-collections.json';path.write_text(json.dumps(f['data'])+'\n');bankfile=folder/'settings.simulation';bankfile.write_bytes(converter.encode_settings(path))
+  ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)],input=b'');cpp=subprocess.check_output([str(simulation),*simulation_args,str(bankfile)],input=b'');(folder/'reference.bin').write_bytes(ref);(folder/'simulation.bin').write_bytes(cpp);assert ref==cpp,(f['label'],ref.hex(),cpp.hex());success=bool(struct.unpack_from('<I',ref)[0]);assert success==f['success'],f['label'];reports.append(dict(label=f['label'],success=success,sha256=hashlib.sha256(ref).hexdigest(),first_position=f['first_position']))
  result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),coverage=covered,loader_fixtures=reports,scope='Complete unchanged active Slide host lifecycle/update/settings with concrete reckoning, skeleton Ground, both captures, original controllers/materials/force queue/collision response and real trajectory Launch/Update.',boundaries='Canonical processed/animation scalar producer packets and explicit initial board transforms/rates/external forces, authored pose choice and raw rails/world metadata remain upstream inputs. World hits, skeleton targets, IK/drives/body reactions/collision feedback and trajectory predictions are actual owners. Overall session/state selection/scoring/render publication remains root coordinator scope; no result or callback success is supplied.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({k:v for k,v in result.items()if k!='loader_fixtures'},indent=2))
 if __name__=='__main__':main()

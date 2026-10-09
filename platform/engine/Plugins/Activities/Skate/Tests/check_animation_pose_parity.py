@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare production pose commands, hierarchy, and project-authored overrides.
 
-Stock data uses the already verified project-native ATSKEL01/ATCLIP01 files.
+Stock data uses the already verified project ATSKEL01/ATCLIP01 files.
 The override JSON is the project's own body-animation/mod format, not EA data.
 The oracle includes the original frozen production host evaluator unchanged.
 Run compilation and execution under the shared render lock/memory guard.
@@ -24,7 +24,7 @@ SLOTS=['R_ANTIC_OLLIE_N_0_INTO','R_ANTIC_OLLIE_N_0_CYC','R_ANTIC_360SHUVIT_N_0_C
 
 
 def rig_names(samples):
-    raw=(samples/'native/rig.skate').read_bytes();at=8
+    raw=(samples/'simulation/rig.skate').read_bytes();at=8
     def word():
         nonlocal at
         v=struct.unpack_from('<I',raw,at)[0];at+=4;return v
@@ -63,7 +63,7 @@ class Writer(Stream):
 
 
 def corpus(samples):
-    manifest=json.loads((samples/'native/samples-manifest.json').read_text());clips=manifest['clips'];lookup={c['name'].split('/',1)[1]:c for c in clips};names=rig_names(samples);cases=[];counts=Counter();rng=random.Random(0x46513a6)
+    manifest=json.loads((samples/'simulation/samples-manifest.json').read_text());clips=manifest['clips'];lookup={c['name'].split('/',1)[1]:c for c in clips};names=rig_names(samples);cases=[];counts=Counter();rng=random.Random(0x46513a6)
     def new(op):
         s=Writer();s.word(op);cases.append(s);counts[op]+=1;return s
     def evaluate(cs):new(4).commands(cs)
@@ -131,25 +131,25 @@ def encoded(cases,clips):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--samples',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     reference=build_probe(output,'animation-pose-reference',PLUGIN/'Tests/Reference/animation_pose_probe.rs',args.target_dir,bevy=True,extra_sources={"crates/skate-host/src/authored_clips.rs":"crates/skate-host/src/animation_pose/authored_clips.rs"})
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source';code.mkdir(exist_ok=True);binary=output/'animation-pose-cpp'
-    sources=['AnimationPose.cpp','AnimationPoseAuthored.cpp','AnimationPoseJson.cpp','AnimationPlayback.cpp','AnimationSamples.cpp','AnimationName.cpp','NativeMath.cpp']
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source';code.mkdir(exist_ok=True);binary=output/'animation-pose-cpp'
+    sources=['AnimationPose.cpp','AnimationPoseAuthored.cpp','AnimationPoseJson.cpp','AnimationPlayback.cpp','AnimationSamples.cpp','AnimationName.cpp','SimulationMath.cpp']
     for path in list(live.glob('*.h'))+[live/s for s in sources]:shutil.copyfile(path,code/path.name)
-    probe=code/'animation_pose_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/animation_pose_probe.cpp',probe)
-    native_snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()}
-    (output/'native-source-provenance.json').write_text(json.dumps(native_snapshot,indent=2)+'\n')
+    probe=code/'animation_pose_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/animation_pose_probe.cpp',probe)
+    simulation_snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()}
+    (output/'simulation-source-provenance.json').write_text(json.dumps(simulation_snapshot,indent=2)+'\n')
     subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/s) for s in sources],str(probe),'-o',str(binary)],check=True)
     cases,clips,counts=corpus(args.samples);commands=encoded(cases,clips);(output/'input.bin').write_bytes(commands);fixture=output/'authored-fixture'
     def run(exe,source,data):return subprocess.check_output([str(exe),str(source),str(fixture)],input=data)
-    expected=run(reference,args.assets.resolve(),commands);actual=run(binary,args.samples.resolve()/'native',commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=run(reference,args.assets.resolve(),commands);actual=run(binary,args.samples.resolve()/'simulation',commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
             m=(lo+hi)//2;data=encoded(cases[:m],clips)
-            if run(reference,args.assets.resolve(),data)==run(binary,args.samples.resolve()/'native',data):lo=m
+            if run(reference,args.assets.resolve(),data)==run(binary,args.samples.resolve()/'simulation',data):lo=m
             else:hi=m
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[:hi],clips));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)))
         raise AssertionError(f'Animation pose differs at byte {first}, case {lo}; reproducing prefix saved')
-    result=dict(passed=True,cases=len(cases),counts=counts,stock_clips=len(clips),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='production command stacks, trajectory/add/mirror, complete poses/hierarchy, project-authored body baking, mod ownership/conflict/precedence/removal',stock_format='ATSKEL01/ATCLIP01; no original stock-data reader in native runtime',override_format='project-authored version1 absolute-joint JSON, original production custom/mod format',source='untouched frozen skate-host/animation_pose.rs and authored_clips.rs, independent stock bank reader',native_source_provenance_sha256=hashlib.sha256((output/'native-source-provenance.json').read_bytes()).hexdigest())
+    result=dict(passed=True,cases=len(cases),counts=counts,stock_clips=len(clips),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='production command stacks, trajectory/add/mirror, complete poses/hierarchy, project-authored body baking, mod ownership/conflict/precedence/removal',stock_format='ATSKEL01/ATCLIP01; no original stock-data reader in simulation runtime',override_format='project-authored version1 absolute-joint JSON, original production custom/mod format',source='untouched frozen skate-host/animation_pose.rs and authored_clips.rs, independent stock bank reader',simulation_source_provenance_sha256=hashlib.sha256((output/'simulation-source-provenance.json').read_bytes()).hexdigest())
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

@@ -29,17 +29,17 @@ def block(raw,marker):return conditioning.grind.block(raw,marker)
 def append(path,text):path.write_bytes(path.read_bytes()+text.encode())
 
 def actor_helpers():
-    native=(TESTS/'Native/skater_animation_probe.cpp').read_text();native=native[:native.index('int main(')]
-    cpp_body='\n'.join(line for line in native.splitlines()if not line.startswith('#include'))+'\n'
-    includes='\n'.join(line for line in native.splitlines()if line.startswith('#include'))+'\n'
-    complete=block((TESTS/'Native/skater_animation_complete_probe.cpp').read_text(),'void CompleteSnapshot(')
+    simulation=(TESTS/'Simulation/skater_animation_probe.cpp').read_text();simulation=simulation[:simulation.index('int main(')]
+    cpp_body='\n'.join(line for line in simulation.splitlines()if not line.startswith('#include'))+'\n'
+    includes='\n'.join(line for line in simulation.splitlines()if line.startswith('#include'))+'\n'
+    complete=block((TESTS/'Simulation/skater_animation_complete_probe.cpp').read_text(),'void CompleteSnapshot(')
     cpp=includes+'namespace phase_actor_wire {\n'+cpp_body+complete+'\n}\n'
     rust=(TESTS/'Reference/skater_animation_probe.rs').read_text();rust=rust[:rust.index('fn run()')]
     lines=[line for line in rust.splitlines()if not(line.startswith('//!')or line.startswith('#!')or line.startswith('mod ')or line.startswith('pub use physics::'))]
     rbody='\n'.join(lines)+'\n';complete_r=block((TESTS/'Reference/skater_animation_complete_probe.rs').read_text(),'fn complete_snapshot(')
     wrapper='\npub(crate)fn observe(actor:&SkaterAnimation,reset:&AdditionalResetFields)->Vec<u8>{let mut out=Output(Vec::new(),true,true);let names:Vec<String>=QUERIES.iter().map(|n|(*n).to_string()).collect();complete_snapshot(&mut out,actor,reset,&names);out.0}\n'
     rust='\nmod phase_actor_wire {\nuse crate::{physics,graph_host,graph_runtime,skater_animation};\n'+rbody+complete_r+'\nconst QUERIES:&[&str]=&'+json.dumps(QUERIES)+';'+wrapper+'}\n'
-    report=dict(native_facade_prefix_sha256=hashlib.sha256(native.encode()).hexdigest(),native_complete_snapshot_sha256=hashlib.sha256(complete.encode()).hexdigest(),rust_facade_prefix_sha256=hashlib.sha256((TESTS/'Reference/skater_animation_probe.rs').read_text().split('fn run()')[0].encode()).hexdigest(),rust_complete_snapshot_sha256=hashlib.sha256(complete_r.encode()).hexdigest(),scope='Read-only complete actor observation methods copied byte-identically; only includes/module declarations are relocated to avoid collisions with the physical transport types. No callbacks/factories/numeric body changes.')
+    report=dict(simulation_facade_prefix_sha256=hashlib.sha256(simulation.encode()).hexdigest(),simulation_complete_snapshot_sha256=hashlib.sha256(complete.encode()).hexdigest(),rust_facade_prefix_sha256=hashlib.sha256((TESTS/'Reference/skater_animation_probe.rs').read_text().split('fn run()')[0].encode()).hexdigest(),rust_complete_snapshot_sha256=hashlib.sha256(complete_r.encode()).hexdigest(),scope='Read-only complete actor observation methods copied byte-identically; only includes/module declarations are relocated to avoid collisions with the physical transport types. No callbacks/factories/numeric body changes.')
     return cpp,rust,report
 
 # Each tuple is one actual retained producer record. Types drive ONLY read-only
@@ -61,7 +61,7 @@ RECORDS=[
  ('landing','h.landing_inputs','h.landing_physical',[(n,n,t)for n,t in [('height','f'),('spin','f'),('kind','w'),('last_good_landing_velocity','f')]]),
  ('prelanding','h.prelanding_inputs','h.prelanding_physical',[(n,n,t)for n,t in [('air_444','w'),('air_normal_144_y','f'),('animation_16_x','f'),('com_velocity_y','f'),('offboard_316','w'),('offboard_319','w'),('offboard_time_32','f'),('air_437','w'),('air_normal_36','f'),('air_remaining_184','f'),('animation_height_72','f')]]),
  ('air_leg','cp.air_leg','h.air_leg_physical',[(n,n,t)for n,t in [('com_velocity','v4'),('com_position','v4'),('system_up','v4'),('right_toe','v4'),('left_toe','v4'),('animation_height','f'),('offboard_316','w'),('remaining_air_time','f')]]),
- ('native_velocity','cp.landing_velocity','h.native_physical',[('com_velocity','centre_of_mass_velocity','v4'),('system_up','system_up','v4'),('h.reckoning_z.value()','board_reckoning_z','outside4'),('h.reckoning_ground.value()','board_reckoning','outside16')]),
+ ('simulation_velocity','cp.landing_velocity','h.native_physical',[('com_velocity','centre_of_mass_velocity','v4'),('system_up','system_up','v4'),('h.reckoning_z.value()','board_reckoning_z','outside4'),('h.reckoning_ground.value()','board_reckoning','outside16')]),
  ('shove','h.shove_physical','h.shove_physical',[(n,n,t)for n,t in [('interaction_trigger','w'),('direction','v4'),('in_biped_category','w'),('board_on_ground','w'),('animation_height','f')]]),
  ('riding','h.riding_condition_inputs','h.riding_conditions',[(n,n,t)for n,t in [('com_velocity','v4'),('skeleton_x','v4'),('skeleton_z','v4'),('skate_up_y','f'),('surface_up_y','f')]]),
 ]
@@ -88,12 +88,12 @@ def publication_helpers():
         for cn,rn,kind in fields:
             ce=cn if kind.startswith('outside')else ('v.'+cn if cn else 'v');re='v.'+rn if rn else 'v';c,rs=emit(ce,re,kind);cpp.append(c);rust.append(rs)
         cpp.append('}');rust.append('}')
-    owner=block((TESTS/'Native/animation_feedback_runtime_probe.cpp').read_text(),'  void Owner(')
+    owner=block((TESTS/'Simulation/animation_feedback_runtime_probe.cpp').read_text(),'  void Owner(')
     owner=owner[owner.index('{')+1:owner.rindex('}')].replace('Floats(','o.Floats(').replace('Float(','o.Float(')
     cpp.append('{const auto& o=f;'+owner+'}')
     # Avoid shadowing the output named o in the verbatim observer body.
     cpp[-1]=cpp[-1].replace('const auto& o=f;','const auto& owner=f;').replace('o.settings','owner.settings').replace('o.bump_settings','owner.bump_settings').replace('o.state','owner.state').replace('o.previous','owner.previous').replace('o.published','owner.published')
-    feed=block((TESTS/'Native/animation_feedback_runtime_probe.cpp').read_text(),'  void Feedback(')
+    feed=block((TESTS/'Simulation/animation_feedback_runtime_probe.cpp').read_text(),'  void Feedback(')
     feed=feed[feed.index('{')+1:feed.rindex('}')].replace('Floats(','o.Floats(').replace('Float(','o.Float(').replace('Word(','o.Word(')
     cpp.append('{const auto& v=feedback;'+feed+'}');rust.append('s.animation_feedback.migration_observe(o);migration_phase_feedback(o,s.physical_feedback);')
     cpp.append('Observe(o,output.Packet());o.Word(bool(teleport.PendingReply()));if(teleport.PendingReply()){for(auto v:teleport.PendingReply()->transform)for(auto w:v)o.Word(w);o.Word(teleport.PendingReply()->on_board);}}')
@@ -111,8 +111,8 @@ TELEPORT_OBSERVER='''
 impl Runtime{pub(crate)fn migration_phase_reply(&self,o:&mut crate::Output){o.word(self.pending_reply.is_some()as u32);if let Some(reply)=self.pending_reply{for v in reply.transform{o.words(v)}o.word(reply.on_board as u32)}}}
 '''
 
-def native_plan(output):
-    snapshot,report=conditioning.native_plan(output)
+def simulation_plan(output):
+    snapshot,report=conditioning.simulation_plan(output)
     for unit in UNITS:shutil.copy2(CODE/(unit+'.cpp'),snapshot/(unit+'.cpp'))
     raw=(snapshot/'state_conditioning_runtime_probe.cpp').read_text();prefix=raw[:raw.index('int main(')]
     initialization=raw[raw.index(' if(argc!=6)'):raw.index(' Input i{{')].replace('argc!=6','argc!=9')
@@ -122,9 +122,9 @@ def native_plan(output):
     cases=raw[raw.index(' case 0:'):raw.index(' case 1:')]
     c,r,helpers_report=actor_helpers();(snapshot/'phase_actor_helpers.inc').write_text(c)
     observations,_=publication_helpers()
-    source=(TESTS/'Native/animation_phase_runtime_probe.cpp').read_text().replace('// GENERATED_NATIVE_OWNER_PREFIX',prefix).replace('// GENERATED_NATIVE_OWNER_INITIALIZATION',initialization).replace('// GENERATED_NATIVE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_NATIVE_PACKET_RESET_CASES',cases).replace('// GENERATED_PHASE_PUBLICATION_OBSERVERS',observations).replace('PHASE_QUERY_NAMES','{'+','.join(json.dumps(n)for n in QUERIES)+'}')
+    source=(TESTS/'Simulation/animation_phase_runtime_probe.cpp').read_text().replace('// GENERATED_SIMULATION_OWNER_PREFIX',prefix).replace('// GENERATED_SIMULATION_OWNER_INITIALIZATION',initialization).replace('// GENERATED_SIMULATION_OWNER_CONSTRUCTION',construction).replace('// GENERATED_SIMULATION_PACKET_RESET_CASES',cases).replace('// GENERATED_PHASE_PUBLICATION_OBSERVERS',observations).replace('PHASE_QUERY_NAMES','{'+','.join(json.dumps(n)for n in QUERIES)+'}')
     (snapshot/'animation_phase_runtime_probe.cpp').write_text(source)
-    report.update(units=UNITS,actor_helpers=helpers_report,publication_schema_sha256=hashlib.sha256(json.dumps(RECORDS).encode()).hexdigest(),immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())if p.is_file()})
+    report.update(units=UNITS,actor_helpers=helpers_report,publication_schema_sha256=hashlib.sha256(json.dumps(RECORDS).encode()).hexdigest(),immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())if p.is_file()})
     return snapshot,report
 
 def reference_plan(output):
@@ -355,16 +355,16 @@ def coverage(frames,cases):
 def prepare(output,assets,samples):
     stock=assets/'private/stock';fixtures=output/'fixtures';fixtures.mkdir(parents=True,exist_ok=True)
     converter=facade.converter
-    (fixtures/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (fixtures/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for k in range(4):
         for kind,graph in zip(('action','motion'),graph_pair(k)):
-            path=fixtures/f'actor-{k}.{kind}.reference';path.write_bytes(original_graph(graph));(fixtures/f'actor-{k}.{kind}.native').write_bytes(converter.encode_graph(converter.read_graph(path)))
+            path=fixtures/f'actor-{k}.{kind}.reference';path.write_bytes(original_graph(graph));(fixtures/f'actor-{k}.{kind}.simulation').write_bytes(converter.encode_graph(converter.read_graph(path)))
     cases=corpus();raw=encode(cases,samples);framing=validate_input(raw,cases,samples);(output/'input-framing.json').write_text(json.dumps(framing,indent=2)+'\n');(output/'input.bin').write_bytes(raw);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');return fixtures,cases,raw
 
-def build_native(output):
-    snapshot,report=native_plan(output);binary=output/'animation-phase-runtime-native'
+def build_simulation(output):
+    snapshot,report=simulation_plan(output);binary=output/'animation-phase-runtime-simulation'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'animation_phase_runtime_probe.cpp'),'-o',str(binary)],check=True)
-    report['binary_sha256']=digest(binary);(output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
+    report['binary_sha256']=digest(binary);(output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 def build_reference(output,target):
     original,observed,crate,cargo,report=reference_plan(output);subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(target.resolve()),'--bin','animation-phase-runtime-reference'],check=True)
@@ -375,20 +375,20 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('assets','samples','metadata','output','target-dir'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--preflight',action='store_true');args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
-    fixtures,cases,raw=prepare(output,args.assets.resolve(),args.samples.resolve()/'native')
+    fixtures,cases,raw=prepare(output,args.assets.resolve(),args.samples.resolve()/'simulation')
     if args.preflight:
-        snapshot,native=native_plan(output);original,observed,crate,cargo,reference=reference_plan(output/'reference')
+        snapshot,simulation=simulation_plan(output);original,observed,crate,cargo,reference=reference_plan(output/'reference')
         for path in (snapshot/'animation_phase_runtime_probe.cpp',crate/'src/migration_probe.rs',crate/'src/physics/input_phase.rs'):assert 'GENERATED_'not in path.read_text(),path
         for rel,sha in reference['original_source_sha256'].items():assert digest(original/rel)==sha;prefix=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(prefix)]==prefix
-        files=[CODE/(u+ext)for u in ('AnimationFeedbackRuntime','AnimationPhaseRuntime','GraphActionPhysicalConditions','GraphIntentOperations')for ext in('.h','.cpp')]+[TESTS/'check_animation_phase_runtime_parity.py',TESTS/'Native/animation_phase_runtime_probe.cpp',TESTS/'Reference/animation_phase_runtime_probe.rs',TESTS/'Reference/animation_phase_runtime_observer.rs']
-        report=dict(preflight=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),frozen_files={p.relative_to(PLUGIN).as_posix():digest(p)for p in files},native=native,reference=reference)
-        (output/'preflight.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k not in('native','reference')},indent=2));return
-    stock=args.assets.resolve()/'private/stock';identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(output/'reference',args.target_dir);native=build_native(output)
-    expected=subprocess.check_output([str(reference),str(args.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(args.samples.resolve()/'native/rig.skate'),identity,str(args.assets.resolve()),str(args.metadata.resolve()),str(args.samples.resolve()/'native'),str(fixtures)],input=raw)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+        files=[CODE/(u+ext)for u in ('AnimationFeedbackRuntime','AnimationPhaseRuntime','GraphActionPhysicalConditions','GraphIntentOperations')for ext in('.h','.cpp')]+[TESTS/'check_animation_phase_runtime_parity.py',TESTS/'Simulation/animation_phase_runtime_probe.cpp',TESTS/'Reference/animation_phase_runtime_probe.rs',TESTS/'Reference/animation_phase_runtime_observer.rs']
+        report=dict(preflight=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),frozen_files={p.relative_to(PLUGIN).as_posix():digest(p)for p in files},simulation=simulation,reference=reference)
+        (output/'preflight.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k not in('simulation','reference')},indent=2));return
+    stock=args.assets.resolve()/'private/stock';identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(output/'reference',args.target_dir);simulation=build_simulation(output)
+    expected=subprocess.check_output([str(reference),str(args.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(args.samples.resolve()/'simulation/rig.skate'),identity,str(args.assets.resolve()),str(args.metadata.resolve()),str(args.samples.resolve()/'simulation'),str(fixtures)],input=raw)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-32):at+64].hex(),native_hex=actual[max(0,at-32):at+64].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
-    proof=coverage(decode(expected,cases),cases);report=dict(passed=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,scope='Entire untouched animation_phase.rs advance, publish_feedback and initial_feedback with actual same physical/board/skeleton/IK/plant/input/conditioning/animation/graph owners. Source order, seven continuation records, earlier producer writes, packet/reply retention, actual full actor callbacks and ordered output publication are exact.',boundaries='The six physical Action families are registered and evaluated through the same host publication member. The global frame/state coordinator, preceding selected-state Fill, sampled controls/gestures and completed canonical input packets are caller-owned producer boundaries. Walking contact borrows the accepted canonical OffboardController constructed from actual native stock clip metadata; full BipedGround scheduling is separate.',reference_provenance='reference/reference-provenance.json',native_provenance='native-provenance.json')
+        at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-32):at+64].hex(),simulation_hex=actual[max(0,at-32):at+64].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+    proof=coverage(decode(expected,cases),cases);report=dict(passed=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,scope='Entire untouched animation_phase.rs advance, publish_feedback and initial_feedback with actual same physical/board/skeleton/IK/plant/input/conditioning/animation/graph owners. Source order, seven continuation records, earlier producer writes, packet/reply retention, actual full actor callbacks and ordered output publication are exact.',boundaries='The six physical Action families are registered and evaluated through the same host publication member. The global frame/state coordinator, preceding selected-state Fill, sampled controls/gestures and completed canonical input packets are caller-owned producer boundaries. Walking contact borrows the accepted canonical OffboardController constructed from actual simulation stock clip metadata; full BipedGround scheduling is separate.',reference_provenance='reference/reference-provenance.json',simulation_provenance='simulation-provenance.json')
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()

@@ -127,7 +127,7 @@ try:
  for _ in range(6):
   time.sleep(1); samples.append(run('print(unreal.YorimichiLive.skate_state())')['output'])
  assert 'bails=0' in samples[-1], samples[-1]
- assert 'retail=PhysicsGround' in samples[-1], samples[-1]
+ assert 'simulation=PhysicsGround' in samples[-1], samples[-1]
  (out/'ride.txt').write_text('\n'.join(samples))
  run('ride_end=p.get_actor_location()\ntravel=unreal.Vector2D(ride_end.x-ride_start.x,ride_end.y-ride_start.y).length()\nassert travel>500.,travel\nprint(\"ride displacement cm\",travel)')
  run('unreal.YorimichiLive.skate_input(unreal.Vector2D(),unreal.Vector2D(),False,True)')

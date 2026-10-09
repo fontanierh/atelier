@@ -112,7 +112,7 @@ float AWandererCharacter::GetRoadSteering()
 // The skate ground check (packaged QA, no Python): on the authored road at two samples, and on the grass 20 or 30 m beside
 // each, the rider is put on the board and launched, then thrown off it. A ride whose height over the ground drops more than
 // 50 cm below where it started has gone through it; a bail or get-up whose deepest skin is over 2 cm under the ground has
-// sunk into it (skate.RideSkinCheck, Ride backend). Readings of 20 cm and more are counted apart: the measure's probe
+// sunk into it (skate.RideSkinCheck). Readings of 20 cm and more are counted apart: the measure's probe
 // starts 30 cm above each vertex, so the board or a body part above it reads that deep. A check that cannot measure fails:
 // a road index without both its street and grass spot, a ride frame with no ground under it, a bail with no lying or no
 // get-up reading. One SKATE GROUND line per spot, then the summary line, which is the result; `quit` then exits and

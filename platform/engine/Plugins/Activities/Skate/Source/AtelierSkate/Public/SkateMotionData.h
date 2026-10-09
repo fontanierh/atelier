@@ -3,7 +3,7 @@
 #include "Engine/DataAsset.h"
 #include "SkateMotionData.generated.h"
 
-/** Native motion units (Y-up metres), unnormalised quaternion components and binary32 samples. */
+/** Simulation motion units (Y-up metres), unnormalised quaternion components and binary32 samples. */
 USTRUCT()
 struct ATELIERSKATE_API FSkateFloat3
 {

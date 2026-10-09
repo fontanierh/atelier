@@ -82,18 +82,18 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     for marker in ('result.json', 'first-divergence.json'):
         (output/marker).unlink(missing_ok=True)
-    sources = ('NativeMath', 'AnimationName', 'Intents', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphMotionSpecialConditions')
+    sources = ('SimulationMath', 'AnimationName', 'Intents', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphMotionSpecialConditions')
     cpp, rust = build_probes(output, args.target_dir, 'motion_special_conditions', sources)
     graph, configs = fixture()
-    reference, native = output/'conditions.reference-graph', output/'conditions.graph'
+    reference, simulation = output/'conditions.reference-graph', output/'conditions.graph'
     reference.write_bytes(original_graph(graph))
-    native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
-    settings = output/'settings.native'
+    simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+    settings = output/'settings.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     inputs, frames = corpus()
     (output/'input.bin').write_bytes(inputs)
     expected = subprocess.check_output([str(rust), str(args.assets), str(reference)], input=inputs)
-    actual = subprocess.check_output([str(cpp), str(native), str(settings)], input=inputs)
+    actual = subprocess.check_output([str(cpp), str(simulation), str(settings)], input=inputs)
     if actual != expected:
         (output/'reference.bin').write_bytes(expected)
         (output/'cpp.bin').write_bytes(actual)

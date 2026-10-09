@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise the native offline QA session: support, push, ollie, landing and reset.
+"""Exercise the simulation offline QA session: support, push, ollie, landing and reset.
 
-Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli.
-This check does not select a shipping backend. Results go to build/yorimichi.
+Requires the assembled simulation package (skate.runtime) and the explicitly built test-only gameplay-session-cli.
+Results go to build/yorimichi.
 """
 import argparse
 import json
@@ -14,38 +14,38 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
-BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
+SIMULATION_PACKAGE = ROOT / 'build/yorimichi/skate-simulation/package'  # atelier build yorimichi skate.runtime
+BINARY = ROOT / 'build/skate-simulation-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 # AirSpinScale in unreal/Config/DefaultGame.ini.
 SPIN = 1.6
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--native-package', type=Path, default=NATIVE_PACKAGE)
-    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline native QA executable')
+    parser.add_argument('--simulation-package', type=Path, default=SIMULATION_PACKAGE)
+    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline simulation QA executable')
     args = parser.parse_args()
     if not args.binary.is_file():
-        parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
-    if not (args.native_package / 'package-manifest.json').is_file():
-        parser.error('Native bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.native_package))
-    output = ROOT / 'build/yorimichi/skate-native/check'
+        parser.error('Simulation QA executable is missing; build Tests/build_simulation_session_cli.py --compile under the render lock and memory guard first')
+    if not (args.simulation_package / 'package-manifest.json').is_file():
+        parser.error('Simulation bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.simulation_package))
+    output = ROOT / 'build/yorimichi/skate-simulation/check'
     output.mkdir(parents=True, exist_ok=True)
     world = output / 'world.json'
     world.write_text(json.dumps({'triangles': [[[-100, 0, -100], [-100, 0, 100], [100, 0, 100]],
                                                [[-100, 0, -100], [100, 0, 100], [100, 0, -100]]],
                                  'rails': [], 'spawn': [0, 0, 0], 'heading': 0}))
-    with (output / 'native-session.log').open('w') as log:
-        proc = subprocess.Popen([str(args.binary), str(args.native_package), str(world)], stdin=subprocess.PIPE,
+    with (output / 'simulation-session.log').open('w') as log:
+        proc = subprocess.Popen([str(args.binary), str(args.simulation_package), str(world)], stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
         selector = selectors.DefaultSelector()
         selector.register(proc.stdout, selectors.EVENT_READ)
         def read():
             if not selector.select(60):
-                raise TimeoutError('No native QA response within 60 seconds')
+                raise TimeoutError('No simulation QA response within 60 seconds')
             line = proc.stdout.readline()
             if not line:
-                raise RuntimeError('Native QA exited; see native-session.log')
+                raise RuntimeError('Simulation QA exited; see simulation-session.log')
             result = json.loads(line)
             if result['type'] == 'error':
                 raise RuntimeError(result['message'])
@@ -66,7 +66,7 @@ def main():
                 records = []
                 started = time.monotonic()
                 for frame in range(240):
-                    # 30 Hz transport, 60 Hz native ticks. Neutral / planted push / loaded straight ollie / roll away.
+                    # 30 Hz transport, 60 Hz simulation ticks. Neutral / planted push / loaded straight ollie / roll away.
                     right = [0, -32767] if 100 <= frame < 112 else [0, 32767] if frame == 112 else [0, 0]
                     send('step', dt=1/30, buttons=0x1000 if 30 <= frame < 95 else 0,
                          left=[0, 0], right=right, triggers=[0, 0])

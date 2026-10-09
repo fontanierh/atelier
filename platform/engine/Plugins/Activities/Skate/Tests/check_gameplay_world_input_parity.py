@@ -22,12 +22,12 @@ import subprocess
 from camera_reference_build import frozen_sources
 from session_parity import PLUGIN, REFERENCE_REVISION, digest
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=('NativeMath','Geometry','GeometrySweep','GeometryFeatures','GeometryPrism',
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=('SimulationMath','Geometry','GeometrySweep','GeometryFeatures','GeometryPrism',
        'GeometryTriangleFixup','WorldPrimitiveContact','ContactRetention',
        'WorldContactProducer','WorldGeometry','PlayerGrindInputWorld','Input',
        'ControllerInputRuntime','GameplayWorld')
-OWNED=(PLUGIN/'Tests/Native/gameplay_world_input_probe.cpp',
+OWNED=(PLUGIN/'Tests/Simulation/gameplay_world_input_probe.cpp',
        PLUGIN/'Tests/Reference/gameplay_world_input_probe.rs',
        PLUGIN/'Tests/Reference/gameplay_world_input_observer.rs',Path(__file__))
 WORLD_OPS={0:'build',1:'query',2:'contacts',3:'clear',4:'observe'}
@@ -211,7 +211,7 @@ def corpus():
             query(grind_min=(0.,0.,0.),grind_max=(0.,0.,0.)),
             query(grind_min=(value(0x37800000),)*3,grind_max=(0.,)*3)])
     dense=[[[float(n%8)*.03,float((n//8)%8)*.02,float(n//64)*.04],[float(n%8)*.03+.0137,float((n//8)%8)*.02,float(n//64)*.04+.0173]]for n in range(192)]
-    add(0,'native grind octree cap40 and authored query ordering',[
+    add(0,'Simulation grind octree cap40 and authored query ordering',[
         build(dict(triangles=floor(),rails=dense)),query(),query(grind_min=(.06,0.,.03),grind_max=(.18,.13,.09)),
         query(grind_min=(-1.,-1.,-1.),grind_max=(1.,1.,1.)),query(grind_min=(9.,9.,9.),grind_max=(10.,10.,10.))])
     for rail in([],[[0.,0.,0.]],[[0.,0.,0.],[1.e38,0.,0.]],[[0.,0.,0.],[1.e20,0.,0.]]):
@@ -227,7 +227,7 @@ def corpus():
             build(valid),build(dict(triangles=floor(),rails=rr)),query()])
     add(0,'uint16 rail table count rejection precedes malformed individual rails',[build(valid),build(dict(triangles=[],rails=[[]for _ in range(65536)])),query()])
     too_many=[[float(n%256)*.01,0.,float(n//256)*.01]for n in range(65537)]
-    add(0,'native octree entry capacity after complete authored cubic decoding',[build(valid),build(dict(triangles=[],rails=[too_many])),query()])
+    add(0,'The simulation octree entry capacity after complete authored cubic decoding',[build(valid),build(dict(triangles=[],rails=[too_many])),query()])
     # Line/grind bounds rejection paths come from the actual world/provider.
     queries=[]
     for word in(0,0x80000000,bits(-.1),0x7f800000,0x7fc12345):
@@ -386,8 +386,8 @@ def add_friend(raw,name):
     return staged
 
 
-def stage_native(output,*,compile=False):
-    snapshot=output/'native-source'
+def stage_simulation(output,*,compile=False):
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();hashes={};adapters={}
     for name in[*header_closure(),*[u+'.cpp'for u in UNITS]]:
@@ -395,13 +395,13 @@ def stage_native(output,*,compile=False):
     for file,name in(('Input.h','PadHistory'),('ControllerInputRuntime.h','ControllerInputRuntime')):
         p=snapshot/file;raw=p.read_text();p.write_text(add_friend(raw,name));assert p.read_text().replace(FRIEND,'')==raw
         adapters[file]=dict(original_sha256=hashes[file],generated_sha256=digest(p),access='One friend declaration only; stripping it reconstructs byte-identical original header. Private read-only ring/cache observation and tick/publication/consumption counter fixture setter; no stored geometry/controller result inputs.')
-    probe=snapshot/OWNED[0].name;shutil.copy2(OWNED[0],probe);binary=output/'gameplay-world-input-native'
+    probe=snapshot/OWNED[0].name;shutil.copy2(OWNED[0],probe);binary=output/'gameplay-world-input-simulation'
     if compile:subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(binary)],check=True)
     for name,sha in hashes.items():
         if name in adapters:assert hashlib.sha256((snapshot/name).read_text().replace(FRIEND,'').encode()).hexdigest()==sha
         else:assert digest(snapshot/name)==sha
-    report=dict(native_source_sha256=hashes,declaration_only_snapshot_adapters=adapters,units=UNITS,probe_sha256=digest(OWNED[0]),binary_sha256=digest(binary)if compile else None)
-    (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary,report
+    report=dict(simulation_source_sha256=hashes,declaration_only_snapshot_adapters=adapters,units=UNITS,probe_sha256=digest(OWNED[0]),binary_sha256=digest(binary)if compile else None)
+    (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary,report
 
 
 def decode(data,cases):
@@ -500,9 +500,9 @@ def coverage(rows,cases):
 
 
 def first_divergence(expected,actual,cases,rows):
-    first=next((n for n,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(passed=False,first_word=first//4,reference_bytes=len(expected),native_bytes=len(actual));candidate=None
+    first=next((n for n,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(passed=False,first_word=first//4,reference_bytes=len(expected),simulation_bytes=len(actual));candidate=None
     try:candidate=decode(actual,copy.deepcopy(cases))
-    except(AssertionError,ValueError,IndexError)as e:report['native_decode_error']=str(e)
+    except(AssertionError,ValueError,IndexError)as e:report['simulation_decode_error']=str(e)
     if candidate is not None:
         for c,rr,aa in zip(cases,rows,candidate):
             found=False
@@ -510,7 +510,7 @@ def first_divergence(expected,actual,cases,rows):
                 for tag in(0,1):
                     rw,aw=r['blocks'][tag]['words'],a['blocks'][tag]['words']
                     if rw==aw:continue
-                    offset=next((n for n,(x,y)in enumerate(zip(rw,aw))if x!=y),min(len(rw),len(aw)));report.update(case=c['index'],label=c['label'],operation=r['operation'],step=r['step'],block='result'if tag==0 else'owner',block_word=offset,reference_word=rw[offset]if offset<len(rw)else None,native_word=aw[offset]if offset<len(aw)else None,reference_block_words=len(rw),native_block_words=len(aw))
+                    offset=next((n for n,(x,y)in enumerate(zip(rw,aw))if x!=y),min(len(rw),len(aw)));report.update(case=c['index'],label=c['label'],operation=r['operation'],step=r['step'],block='result'if tag==0 else'owner',block_word=offset,reference_word=rw[offset]if offset<len(rw)else None,simulation_word=aw[offset]if offset<len(aw)else None,reference_block_words=len(rw),simulation_block_words=len(aw))
                     if tag==1:
                         counts=Counter();labels=read_world_snapshot(rw,counts,True)if c['kind']==0 else read_input_snapshot(rw,counts,True)[3];report['owner_field']=labels[offset]if offset<len(labels)else'end_of_owner'
                     found=True;break
@@ -520,8 +520,8 @@ def first_divergence(expected,actual,cases,rows):
 
 
 def preflight(output,raw,ranges,cases):
-    protocol=validate_protocol(raw,ranges,cases);_,rp=stage_reference(output,output/'unused-reference-target',compile=False);_,np=stage_native(output,compile=False)
-    report=dict(preflight=True,execution=False,histories=len(cases),world_histories=sum(c['kind']==0 for c in cases),controller_histories=sum(c['kind']==1 for c in cases),operations=sum(len(c['commands'])for c in cases),protocol=protocol,input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),reference_host_prefixes=len(rp['staged_host_original_prefixes']),native_units=UNITS,owned_sha256={str(p.relative_to(PLUGIN)):digest(p)for p in OWNED},production_sha256={p.name:digest(p)for u in('GameplayWorld','ControllerInputRuntime')for p in(CODE/(u+'.h'),CODE/(u+'.cpp'))},closure='Full original host including bridge/collision_map/skate_world/provider/controllers/platform. Native14 concrete TUs. Core append-only privacy observers and native friend declarations only. Actual contact producer + seam flag. No whole session/global/OS poll claim.')
+    protocol=validate_protocol(raw,ranges,cases);_,rp=stage_reference(output,output/'unused-reference-target',compile=False);_,np=stage_simulation(output,compile=False)
+    report=dict(preflight=True,execution=False,histories=len(cases),world_histories=sum(c['kind']==0 for c in cases),controller_histories=sum(c['kind']==1 for c in cases),operations=sum(len(c['commands'])for c in cases),protocol=protocol,input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),reference_host_prefixes=len(rp['staged_host_original_prefixes']),simulation_units=UNITS,owned_sha256={str(p.relative_to(PLUGIN)):digest(p)for p in OWNED},production_sha256={p.name:digest(p)for u in('GameplayWorld','ControllerInputRuntime')for p in(CODE/(u+'.h'),CODE/(u+'.cpp'))},closure='Full original host including bridge/collision_map/skate_world/provider/controllers/platform. 14 simulation translation units. Core append-only privacy observers and the simulation friend declarations only. Actual contact producer + seam flag. No whole session/global/OS poll claim.')
     (output/'owner-freeze.json').write_text(json.dumps(report,indent=2)+'\n');return report
 
 
@@ -531,7 +531,7 @@ def main():
     if args.preflight:print(json.dumps(preflight(output,raw,ranges,cases),indent=2));return
     if args.target_dir is None:parser.error('--target-dir required for guarded execution')
     for name in('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
-    cpp,_=stage_native(output,compile=True);ref,_=stage_reference(output,args.target_dir,compile=True)
+    cpp,_=stage_simulation(output,compile=True);ref,_=stage_reference(output,args.target_dir,compile=True)
     expected=subprocess.check_output([str(ref)],input=raw);actual=subprocess.check_output([str(cpp)],input=raw);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
     rows=decode(expected,cases);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if expected!=actual:

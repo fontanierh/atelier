@@ -91,7 +91,7 @@ hidden `SM_CP_Collision` instead (`collision.py`): the same triangles with
 coincident vertices welded across the 586 placements. Wherever a riding edge
 stands 4 mm to 8 cm proud of the neighbouring piece, a 1:8 ramp runs from it
 down onto that piece's plane. The ramp's run ends taper along the edge too. The
-native skate rolls over at most 12 mm, so a taller joint lip used to stop the
+skating simulation rolls over at most 12 mm, so a taller joint lip used to stop the
 wheels and bail the rider. Ledges and the flat rail stay sharp; steps over
 8 cm stay as they are. `ASkatePark` loads the generated manifest through its
 optional asset root and key. A manifest entry marked `hidden` is collision

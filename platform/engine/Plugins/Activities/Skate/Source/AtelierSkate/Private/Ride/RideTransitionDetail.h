@@ -69,7 +69,7 @@ namespace RideTransitionDetail
     // The board-carry locomotion, slowest first; the mount clips come from the same gaits at four phases of the step.
     const TCHAR* const CycleNames[4] = {TEXT("BR_STAND_0_CYC"), TEXT("BR_WALK_FWD_CYC"), TEXT("BR_RUN_FWD_CYC"), TEXT("BR_SPRINT_FWD_CYC")};
     const TCHAR* const Gaits[4] = {TEXT("STAND"), TEXT("WALK"), TEXT("RUN"), TEXT("SPRINT")};
-    // The drive follows the clip's travel averaged over this long either side of the time shown (s): the native
+    // The drive follows the clip's travel averaged over this long either side of the time shown (s): the simulation
     // trajectories step unevenly from frame to frame.
     constexpr float DriveWindow = .1f;
     // A trajectory held in the world (a step onto a lying board, a get-up) pulls the capsule after it at this rate
@@ -92,7 +92,7 @@ namespace RideTransitionDetail
     constexpr float BoardSettle = .2f, UpsideDownDeck = 4.3f;
     // The kick: at least this fast away from the rider (cm/s).
     constexpr float KickSpeed = 250.f;
-    // The loose deck's box (cm at board scale 1) holds Native's whole board: 45.6 from the pivot to the nose and the
+    // The loose deck's box (cm at board scale 1) holds the simulation's whole board: 45.6 from the pivot to the nose and the
     // tail, 12 to each side, from the wheels' plane (DeckPivot under the pivot) to the kicks' top (DeckKickTop over
     // it). It is checked this much smaller all round, so the ground the board rests on, wheels or kicks down, is not
     // inside it; out of what it starts in it moves at most DeckFitPush.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Complete active camera comparison against byte-preserved frozen Rust.
 
-Build and execution belong to the parent render guard. Runtime inputs are native
+Build and execution belong to the parent render guard. Runtime inputs are the simulation formats
 ATATTR01/ATGRPH01/ATCAM001; original collections/graphs/shakes are oracle and
 conversion inputs only. All camera numeric owners, private state, callback order,
 full active graph schedule, output and failure side effects are observed.
@@ -25,8 +25,8 @@ from check_graph_parity import attribute, element, original_graph
 from check_gesture_parity import converter, PLUGIN
 from session_parity import REFERENCE_REVISION, digest
 
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
-UNITS = ('NativeMath', 'RigidBody', 'Geometry', 'GeometrySweep', 'WorldGeometry',
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
+UNITS = ('SimulationMath', 'RigidBody', 'Geometry', 'GeometrySweep', 'WorldGeometry',
          'NameId', 'Settings', 'StockSettingsReader', 'Graph', 'GraphController',
          'CompiledGraph', 'GraphConditions', 'GraphGestureOperations',
          'AnimationName', 'Intents', 'CameraTracking', 'CameraSubject',
@@ -482,20 +482,20 @@ def coverage(decoded, cases):
     return dict(counters=counters, position_variants=len(frames), positioner_variants=len(positioner), mirror_variants=len(mirror), shake_variants=len(shakes), drop_pending_variants=len(drops), selected_shots=len(selected), moving_counts=sorted(obstacles), conditions={name:sorted(v) for name,v in conditions.items()}, simulation_rate_variants=len(all_rates), source_ordered_rate_transitions=rate_transitions, errors=errors)
 
 
-def build_native(output, values):
-    snapshot_dir = output / 'native-source'; snapshot_dir.mkdir(exist_ok=True)
+def build_simulation(output, values):
+    snapshot_dir = output / 'simulation-source'; snapshot_dir.mkdir(exist_ok=True)
     files = list(CODE.glob('*.h')) + [CODE / (name + '.cpp') for name in UNITS]
     records = {}
     for source in files:
         destination = snapshot_dir / source.name; shutil.copy2(source, destination); records[source.name] = digest(source); assert digest(destination) == records[source.name]
-    template = PLUGIN / 'Tests/Native/camera_runtime_probe.cpp'; raw = template.read_text()
+    template = PLUGIN / 'Tests/Simulation/camera_runtime_probe.cpp'; raw = template.read_text()
     assert raw.count('// @CPP_OBSERVERS@') == 1
     observer = schema.cpp_observers(values).replace('// @CPP_GENERIC_WRITERS@', schema.CPP_GENERIC_WRITERS)
     generated = snapshot_dir / 'camera_runtime_probe.cpp'; generated.write_text(raw.replace('// @CPP_OBSERVERS@', observer))
     records[generated.name] = digest(generated)
-    binary = output / 'camera-runtime-native'
+    binary = output / 'camera-runtime-simulation'
     command = ['clang++', '-std=c++17', '-O2', '-fno-exceptions', '-ffp-contract=off', '-Wall', '-Wextra', '-Werror', '-I', str(snapshot_dir), *[str(snapshot_dir / (name + '.cpp')) for name in UNITS], str(generated), '-o', str(binary)]
-    (output / 'native-source-provenance.json').write_text(json.dumps(dict(source_sha256=records, template_sha256=digest(template), compile_flags=command[1:9]), indent=2) + '\n')
+    (output / 'simulation-source-provenance.json').write_text(json.dumps(dict(source_sha256=records, template_sha256=digest(template), compile_flags=command[1:9]), indent=2) + '\n')
     subprocess.run(command, check=True)
     for name, sha in records.items(): assert digest(snapshot_dir / name) == sha
     return binary
@@ -530,10 +530,10 @@ def prepare_fixtures(assets, output, data_probe, values):
         graph_path = folder / GRAPH
         if case['graph'] is None: shutil.copy2(assets / GRAPH, graph_path)
         else: graph_path.write_bytes(original_graph(case['graph']))
-        (folder / 'settings.native').write_bytes(converter.encode_settings(folder / COLLECTION))
-        (folder / 'graph.native').write_bytes(converter.encode_graph(converter.read_graph(graph_path)))
-        (folder / 'camera.native').write_bytes(packages[case['bank']])
-        manifests.append(dict(case=case_id, name=case['name'], rows=len(case['rows']), bank=case['bank'], original_graph_sha256=digest(graph_path), native_graph_sha256=digest(folder / 'graph.native'), original_settings_sha256=digest(folder / COLLECTION), native_settings_sha256=digest(folder / 'settings.native'), camera_sha256=digest(folder / 'camera.native')))
+        (folder / 'settings.simulation').write_bytes(converter.encode_settings(folder / COLLECTION))
+        (folder / 'graph.simulation').write_bytes(converter.encode_graph(converter.read_graph(graph_path)))
+        (folder / 'camera.simulation').write_bytes(packages[case['bank']])
+        manifests.append(dict(case=case_id, name=case['name'], rows=len(case['rows']), bank=case['bank'], original_graph_sha256=digest(graph_path), simulation_graph_sha256=digest(folder / 'graph.simulation'), original_settings_sha256=digest(folder / COLLECTION), simulation_settings_sha256=digest(folder / 'settings.simulation'), camera_sha256=digest(folder / 'camera.simulation')))
     out = Writer(); out.word(len(cases))
     for i, case in enumerate(cases):
         out.word(i); out.data.extend(world()); out.word(len(case['rows']))
@@ -550,28 +550,28 @@ def main():
     output = args.output.resolve(); output.mkdir(parents=True, exist_ok=True)
     data_probe = reference.build_data_probe(output, args.target_dir / 'export')
     rust, values = reference.build_runtime_probe(output, args.target_dir / 'runtime')
-    native = build_native(output, values)
+    simulation = build_simulation(output, values)
     fixtures, cases, packages, corpus = prepare_fixtures(args.assets.resolve(), output, data_probe, values)
     for name, package in packages.items():
         path = output / (name + '.camera'); path.write_bytes(package)
-        assert subprocess.check_output([str(native), '--dump', str(path)]) == package
+        assert subprocess.check_output([str(simulation), '--dump', str(path)]) == package
     expected = subprocess.check_output([str(rust), str(fixtures)], input=corpus); (output / 'reference.bin').write_bytes(expected)
-    actual = subprocess.check_output([str(native), str(fixtures)], input=corpus); (output / 'native.bin').write_bytes(actual)
+    actual = subprocess.check_output([str(simulation), str(fixtures)], input=corpus); (output / 'simulation.bin').write_bytes(actual)
     difference_at = next((i for i,(a,b) in enumerate(zip(actual,expected)) if a != b), min(len(actual),len(expected))) if actual != expected else None
     decoded, labels = decode(expected, cases, values, difference_at)
     if actual != expected:
         at = difference_at
         field = next((path for offset,path in reversed(labels) if offset <= at), 'end-of-stream')
-        failure = dict(byte=at, field=field, reference_bytes=len(expected), native_bytes=len(actual), reference_hex=expected[max(0,at-16):at+32].hex(), native_hex=actual[max(0,at-16):at+32].hex())
+        failure = dict(byte=at, field=field, reference_bytes=len(expected), simulation_bytes=len(actual), reference_hex=expected[max(0,at-16):at+32].hex(), simulation_hex=actual[max(0,at-16):at+32].hex())
         (output / 'first-divergence.json').write_text(json.dumps(failure, indent=2) + '\n'); raise AssertionError(failure)
     proof = coverage(decoded, cases)
     malformed = []
     valid = packages['stock']
     for i, raw in enumerate((b'', valid[:7], valid[:19], valid[:-1], valid+b'\0', b'BADxxxxx'+valid[8:])):
-        path = output / f'invalid-native-{i}.camera'; path.write_bytes(raw)
-        run = subprocess.run([str(native), '--dump', str(path)], capture_output=True)
+        path = output / f'invalid-simulation-{i}.camera'; path.write_bytes(raw)
+        run = subprocess.run([str(simulation), '--dump', str(path)], capture_output=True)
         assert run.returncode == 2 and not run.stdout, (i, run.returncode); malformed.append(run.stderr.decode().strip())
-    report = dict(passed=True, comparison='Exact complete active camera outputs, settings, all stock shot fields/centered samples, every clock/owner/private state, original graph callback order, moving-obstacle callbacks, real world queries and failure side effects', reference_revision=REFERENCE_REVISION, cases=len(cases), operations=sum(len(c['rows']) for c in cases), bytes=len(expected), sha256=hashlib.sha256(expected).hexdigest(), input_sha256=hashlib.sha256(corpus).hexdigest(), schema_types=len(values), schema_fields=sum(len(v['fields']) for v in values.values()), stock_shots=len(decoded[8]['shots']), coverage=proof, malformed_native_package_errors=malformed, boundary='Runtime native ATATTR01/ATGRPH01/ATCAM001 only. Complete original source prefixes and appended observation-only implementations are hashed in reference-provenance.json; immutable native snapshot is hashed separately. No numerical method or executed callback is replaced. Completed physical/animation subject records, authored world region membership, query gravity and moving obstacle list remain explicit live producer inputs. Root simulation scheduling and Unreal camera presentation are not claimed by this isolated comparison. Native rejection of invalid/nonadvancing trajectory steps, invalid angle conversion and out-of-capacity anchor/compass indexes is outside original valid domain; hanging/panicking original cases are excluded from parity claims.')
+    report = dict(passed=True, comparison='Exact complete active camera outputs, settings, all stock shot fields/centered samples, every clock/owner/private state, original graph callback order, moving-obstacle callbacks, real world queries and failure side effects', reference_revision=REFERENCE_REVISION, cases=len(cases), operations=sum(len(c['rows']) for c in cases), bytes=len(expected), sha256=hashlib.sha256(expected).hexdigest(), input_sha256=hashlib.sha256(corpus).hexdigest(), schema_types=len(values), schema_fields=sum(len(v['fields']) for v in values.values()), stock_shots=len(decoded[8]['shots']), coverage=proof, malformed_simulation_package_errors=malformed, boundary='Runtime simulation ATATTR01/ATGRPH01/ATCAM001 only. Complete original source prefixes and appended observation-only implementations are hashed in reference-provenance.json; immutable simulation snapshot is hashed separately. No numerical method or executed callback is replaced. Completed physical/animation subject records, authored world region membership, query gravity and moving obstacle list remain explicit live producer inputs. Root simulation scheduling and Unreal camera presentation are not claimed by this isolated comparison. Simulation rejection of invalid/nonadvancing trajectory steps, invalid angle conversion and out-of-capacity anchor/compass indexes is outside original valid domain; hanging/panicking original cases are excluded from parity claims.')
     (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n'); print(json.dumps(report, indent=2), flush=True)
 
 

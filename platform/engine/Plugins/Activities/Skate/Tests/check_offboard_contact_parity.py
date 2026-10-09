@@ -3,7 +3,7 @@
 
 Only the root coordinator builds/runs this proof. Geometry is authored fixture
 input; all queries, samples, candidates, publications and retained histories are
-computed by the original and native owners, with exact word comparison.
+computed by the original and simulation owners, with exact word comparison.
 """
 import argparse
 from collections import Counter
@@ -19,7 +19,7 @@ import subprocess
 from reference_build import build_probe
 from check_skeleton_input_runtime_parity import source
 from session_parity import PLUGIN
-UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','OffboardContactToolkit','OffboardContactProbes','OffboardContactCollection','OffboardContactCandidates','OffboardStaticScene')
+UNITS=('SimulationMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','OffboardContactToolkit','OffboardContactProbes','OffboardContactCollection','OffboardContactCandidates','OffboardStaticScene')
 CORE='crates/skate-core/src/player/offboard/contact_toolkit'
 IDENTITY=[1.,0.,0.,0.,1.,0.,0.,0.,1.,0.,0.,0.]
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
@@ -94,17 +94,17 @@ def aliases():
  for name in ('native_arithmetic','reciprocal_sqrt'):out[f'atelier-host/src/physics/{name}.rs']=f'crates/skate-core/src/physics/{name}.rs'
  return out
 def prepare(output):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for unit in UNITS:shutil.copy2(native/f'{unit}.cpp',snapshot/f'{unit}.cpp')
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0]
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for unit in UNITS:shutil.copy2(simulation/f'{unit}.cpp',snapshot/f'{unit}.cpp')
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0]
  rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
- core=source(CORE+'.rs');probe=snapshot/'offboard_contact_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/offboard_contact_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world))
+ core=source(CORE+'.rs');probe=snapshot/'offboard_contact_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/offboard_contact_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world))
  generated=output/'offboard-contact-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/offboard_contact_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_TOOLKIT',core))
- report=dict(native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_toolkit_body_sha256=hashlib.sha256(core.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},cpp_world_transport_sha256=hashlib.sha256(cpp_world.encode()).hexdigest(),rust_world_transport_sha256=hashlib.sha256(rust_world.encode()).hexdigest())
- (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
+ report=dict(simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_toolkit_body_sha256=hashlib.sha256(core.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},cpp_world_transport_sha256=hashlib.sha256(cpp_world.encode()).hexdigest(),rust_world_transport_sha256=hashlib.sha256(rust_world.encode()).hexdigest())
+ (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
 class Reader:
  def __init__(self,raw):self.words=struct.unpack('<'+'I'*(len(raw)//4),raw);self.at=0
  def word(self):v=self.words[self.at];self.at+=1;return v
@@ -171,9 +171,9 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
  blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=output/'offboard-contact-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True)
+ simulation=output/'offboard-contact-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True)
  reference=build_probe(output,'offboard-contact-reference',generated,a.target_dir,bevy=True,extra_sources=aliases())
- expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(native)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+ expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(simulation)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;at=0;words=struct.unpack('<'+'I'*(len(expected)//4),expected)
   for case in cases:

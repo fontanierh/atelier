@@ -10,7 +10,7 @@ void FRidePoseMeasure::Measure(const TArray<FName>& Names, const TArray<FTransfo
         for (int32 I = 0; I < Names.Num(); ++I)
         {
             const FString Name = Names[I].ToString();
-            // TRAJECTORY is Native's motion bone, not the body: it slides under the root as the session moves.
+            // TRAJECTORY is the simulation's motion bone, not the body: it slides under the root as the session moves.
             BodyBone[I] = !Name.Contains(TEXT("SKATEBOARD")) && !Name.Contains(TEXT("TRUCK")) && !Name.Contains(TEXT("WHEEL")) && !Name.Contains(TEXT("REPARENTED"))
                 && Name != TEXT("TRAJECTORY");
         }

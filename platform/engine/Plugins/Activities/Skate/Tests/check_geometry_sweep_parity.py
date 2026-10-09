@@ -104,20 +104,20 @@ def build_probes(output):
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
     for name,expected in originals.items():
         if digest(source/name)!=expected:raise AssertionError(f'Frozen numerical reference module changed: {name}')
-    code=output/'native-source'
+    code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir()
-    original=PLUGIN/'Source/AtelierSkate/Private/Native'
-    for name in ('NativeMath.h','NativeMath.cpp','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp'):
+    original=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+    for name in ('SimulationMath.h','SimulationMath.cpp','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp'):
         shutil.copy2(original/name,code/name)
-    shutil.copy2(PLUGIN/'Tests/Native/geometry_sweep_probe.cpp',code/'geometry_sweep_probe.cpp')
+    shutil.copy2(PLUGIN/'Tests/Simulation/geometry_sweep_probe.cpp',code/'geometry_sweep_probe.cpp')
     cpp=output/'geometry-sweep-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror',
-                    '-I',str(code),str(code/'NativeMath.cpp'),str(code/'Geometry.cpp'),str(code/'GeometrySweep.cpp'),
+                    '-I',str(code),str(code/'SimulationMath.cpp'),str(code/'Geometry.cpp'),str(code/'GeometrySweep.cpp'),
                     str(code/'geometry_sweep_probe.cpp'),'-o',str(cpp)],check=True)
     provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),
         original_source_sha256=originals,probe_sha256=digest(probe),reference_binary_sha256=digest(reference),
-        cpp_binary_sha256=digest(cpp),native_source_sha256={p.name:digest(p) for p in sorted(code.iterdir())},
+        cpp_binary_sha256=digest(cpp),simulation_source_sha256={p.name:digest(p) for p in sorted(code.iterdir())},
         rust_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),
         cpp_compiler=subprocess.check_output(['clang++','--version'],text=True).strip())
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')

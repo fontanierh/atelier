@@ -19,7 +19,7 @@ controls: see [SKATE.md](SKATE.md).
 | Crouch | C | Right stick click | R3 | Right stick click |
 | Get on / step off the skateboard | B | Y (tap) | Triangle (tap) | X (tap) |
 | Bike out and on / off and parked (stopped) | V | Y (hold 0.4 s) | Triangle (hold) | X (hold) |
-| Skateboard to the hand / put it away (Ride backend) | G | D-pad Right | D-pad Right | D-pad Right |
+| Skateboard to the hand / put it away | G | D-pad Right | D-pad Right | D-pad Right |
 | Interact, board the zeppelin | E | D-pad Down | D-pad Down | D-pad Down |
 | Sailboat / step ashore | K | D-pad Up | D-pad Up | D-pad Up |
 | Attack (hold to charge) | Left click | RT | R2 | ZR |

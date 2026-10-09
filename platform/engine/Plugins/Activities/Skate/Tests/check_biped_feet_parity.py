@@ -25,8 +25,8 @@ from reference_build import build_probe
 from session_parity import PLUGIN
 CORE='crates/skate-core/src/'
 HOST='crates/skate-host/src/physics/'
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=('NativeMath','RigidBody','SkeletonPoseFrames','SkeletonAnimationRecord','BoardPossessionManager','BipedFeet','BipedFeetGround','BipedFeetAir')
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=('SimulationMath','RigidBody','SkeletonPoseFrames','SkeletonAnimationRecord','BoardPossessionManager','BipedFeet','BipedFeetGround','BipedFeetAir')
 ALIAS={'BoardManagerHand':'manager::Hand','BoardPossessionManager':'manager::State','BipedFootLine':'feet::Line','BipedFeetInput':'feet::Input','BipedFootTarget':'feet::Target','BipedExternalTarget':'ExternalTarget','OffBoardOutputFields':'OffBoardOutputFields'}
 def definitions():
  vector='[f32;4]';matrix='[[f32;4];4]';d=OrderedDict()
@@ -132,15 +132,15 @@ def corpus(d):
 def aliases():return {'atelier-host/src/ground_feet.rs':HOST+'biped_ground/feet.rs','atelier-host/src/air_feet.rs':HOST+'offboard/air_feet.rs'}
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def prepare(out,d):
- snapshot=out/'native-source'
+ snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in CODE.glob('*.h'):shutil.copy2(p,snapshot/p.name)
  for unit in UNITS:shutil.copy2(CODE/(unit+'.cpp'),snapshot/(unit+'.cpp'))
- cpp,rust=generated(d);native=snapshot/'biped_feet_probe.cpp';native.write_text((PLUGIN/'Tests/Native/biped_feet_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp));reference=out/'biped-feet-reference.rs';reference.write_text((PLUGIN/'Tests/Reference/biped_feet_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust))
+ cpp,rust=generated(d);simulation=snapshot/'biped_feet_probe.cpp';simulation.write_text((PLUGIN/'Tests/Simulation/biped_feet_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp));reference=out/'biped-feet-reference.rs';reference.write_text((PLUGIN/'Tests/Reference/biped_feet_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust))
  sources={CORE+'player/offboard/biped_air/feet.rs',CORE+'player/offboard/biped_air/recovered.rs',CORE+'player/offboard/board_possession/manager.rs',CORE+'player/offboard/air_launch/math.rs',CORE+'player/wipeout_state/math.rs',*aliases().values()}
- report=dict(native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_sources={p:hashlib.sha256(source(p).encode()).hexdigest()for p in sorted(sources)},protocol=d,boundary='Complete actual core feet and unchanged full host ground/air adapters; canonical incoming contacts, pose matrices and root frames are explicit borrowed upstream inputs. No query, body/drive or phase scheduling result is fabricated.')
- (out/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,snapshot,reference
+ report=dict(simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_sources={p:hashlib.sha256(source(p).encode()).hexdigest()for p in sorted(sources)},protocol=d,boundary='Complete actual core feet and unchanged full host ground/air adapters; canonical incoming contacts, pose matrices and root frames are explicit borrowed upstream inputs. No query, body/drive or phase scheduling result is fabricated.')
+ (out/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,snapshot,reference
 
 def audit(raw,cases,d):
  r=wire.Reader(raw);assert r.word()==len(cases)
@@ -179,8 +179,8 @@ def inspect(raw,cases,d):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);d=definitions();blob,cases=corpus(d);audit(blob,cases,d);(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(out,d);summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=out/'biped-feet-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(out,'biped-feet-reference',generated,a.target_dir,extra_sources=aliases())
- expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(native)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
+ simulation=out/'biped-feet-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(out,'biped-feet-reference',generated,a.target_dir,extra_sources=aliases())
+ expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(simulation)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;divergence=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
  result=dict(passed=True,**summary,exact_words=len(expected)//4,output_sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases,d),comparison='All source feet/State56 and all FootIK fields/publication exact; full original active Ground/Air wrappers unchanged.',limitations='Canonical processed contacts, actual incoming24 pose matrices and root frames are explicit upstream fixtures. This leaf does not establish complete Biped phase/controller/geometry/physical integration.')

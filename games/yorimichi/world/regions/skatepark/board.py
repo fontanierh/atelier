@@ -1,4 +1,4 @@
-"""Modern trick skateboard for the native skate system (docs/SKATE.md board contract).
+"""Modern trick skateboard for the skating simulation (docs/SKATE.md board contract).
 
 Metres, Blender axes. Unreal imports Blender (x, y, z) as (x, -y, z), so the deck's toe
 side (+Y in Unreal) is -Y here. Three meshes, each with its own origin:

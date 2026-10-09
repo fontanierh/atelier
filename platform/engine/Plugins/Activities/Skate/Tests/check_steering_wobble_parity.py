@@ -155,13 +155,13 @@ def prepare_source(output):
     (output/'extraction-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return probe
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','NameId','Settings','StockSettingsReader','Steering','SpeedWobble','SteeringWobbleSettings')
+    code.mkdir();files=('SimulationMath','NameId','Settings','StockSettingsReader','Steering','SpeedWobble','SteeringWobbleSettings')
     for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in files]:shutil.copyfile(p,code/p.name)
-    probe=code/'steering_wobble_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/steering_wobble_probe.cpp',probe)
-    (output/'native-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
+    probe=code/'steering_wobble_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/steering_wobble_probe.cpp',probe)
+    (output/'simulation-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
     binary=output/'steering-wobble-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(binary)],check=True);return binary
 
 
@@ -200,10 +200,10 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
     cases,records=corpus();validate_corpus(cases,records);commands=encode(cases);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(records,indent=2)+'\n')
-    reference=build_probe(output,'steering-wobble-reference',prepare_source(output),args.target_dir);native=build_native(output);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
+    reference=build_probe(output,'steering-wobble-reference',prepare_source(output),args.target_dir);simulation=build_simulation(output);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     def expected(data):return subprocess.check_output([str(reference),str(args.assets.resolve())],input=data)
-    def actual(data):return subprocess.check_output([str(native),str(settings)],input=data)
-    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'native.bin').write_bytes(candidate)
+    def actual(data):return subprocess.check_output([str(simulation),str(settings)],input=data)
+    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'simulation.bin').write_bytes(candidate)
     if oracle!=candidate:
         lo=0;hi=len(cases)
         while hi-lo>1:
@@ -211,7 +211,7 @@ def main():
             if expected(part)==actual(part):lo=mid
             else:hi=mid
         (output/'first-divergence-input.bin').write_bytes(encode(cases[lo:hi]));first=next((i for i,(a,b) in enumerate(zip(candidate,oracle)) if a!=b),min(len(candidate),len(oracle)));(output/'first-divergence.json').write_text(json.dumps(dict(case=lo,record=records[lo],byte=first),indent=2)+'\n');raise AssertionError(f'Steering/wobble differs at byte {first}, case {lo}; isolated input saved')
-    result=dict(passed=True,cases=len(cases),coverage=coverage(oracle,records),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='Exact output and all mutable steering pointers, truck state fields and opaque eight-word wobble state; verbatim original host stock curves/scalars and five selected modes.',limitations='Pure core/settings boundary. Full Ground scheduling, trainer tuning, processed physical producers and live gameplay remain separate tests.',extraction_provenance_sha256=hashlib.sha256((output/'extraction-provenance.json').read_bytes()).hexdigest(),native_source_provenance_sha256=hashlib.sha256((output/'native-source-provenance.json').read_bytes()).hexdigest())
+    result=dict(passed=True,cases=len(cases),coverage=coverage(oracle,records),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='Exact output and all mutable steering pointers, truck state fields and opaque eight-word wobble state; verbatim original host stock curves/scalars and five selected modes.',limitations='Pure core/settings boundary. Full Ground scheduling, trainer tuning, processed physical producers and live gameplay remain separate tests.',extraction_provenance_sha256=hashlib.sha256((output/'extraction-provenance.json').read_bytes()).hexdigest(),simulation_source_provenance_sha256=hashlib.sha256((output/'simulation-source-provenance.json').read_bytes()).hexdigest())
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

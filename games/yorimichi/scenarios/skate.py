@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared live-bridge helpers and entry point for the recovered skating runtime checks."""
+"""Shared live-bridge helpers and entry point for the skating runtime checks."""
 import argparse, json, sys, time
 from pathlib import Path
 

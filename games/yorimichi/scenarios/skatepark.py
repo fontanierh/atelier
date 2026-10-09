@@ -14,7 +14,7 @@ def main():
     qa.py((qa.GAME/'scenarios/skate_live_skate.py').read_text())
     qa.py('live.skate_park(); live.skate_input()')
     for _ in range(60):
-        if 'retail=PhysicsGround' in qa.py('print(live.skate_state())'):break
+        if 'simulation=PhysicsGround' in qa.py('print(live.skate_state())'):break
         time.sleep(1)
     else:raise RuntimeError('Skater failed to become ready')
     report={}

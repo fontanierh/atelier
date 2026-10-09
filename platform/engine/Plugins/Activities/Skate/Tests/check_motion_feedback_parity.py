@@ -3,7 +3,7 @@
 
 The oracle uses original allocation and Begin/Update/End dispatch, with ordered
 calls, independently absent completed producer records and real B_PUMP trees.
-Project-native data is the candidate's only stock input. Observer trees are
+Project data is the candidate's only stock input. Observer trees are
 synthetic fixture data that expose consumed parameters through public queries;
 there are no private accessor substitutes or original-method replacements.
 Run builds/execution only through atelier.safety.
@@ -135,12 +135,12 @@ def build_reference(output,target):
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','GraphMotionName','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations')
+    code.mkdir();files=('SimulationMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','GraphMotionName','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations')
     for path in list(live.glob('*.h'))+[live/(f+'.cpp') for f in files]:shutil.copy2(path,code/path.name)
-    probe=code/'motion_feedback_probe.cpp';shutil.copy2(PLUGIN/'Tests/Native/motion_feedback_probe.cpp',probe);(output/'native-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(code.iterdir())},indent=2)+'\n')
+    probe=code/'motion_feedback_probe.cpp';shutil.copy2(PLUGIN/'Tests/Simulation/motion_feedback_probe.cpp',probe);(output/'simulation-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(code.iterdir())},indent=2)+'\n')
     binary=output/'motion-feedback-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(f+'.cpp')) for f in files],str(probe),'-o',str(binary)],check=True);return binary
 
 
@@ -192,18 +192,18 @@ def main():
     cases=[];counts=Counter()
     for case in range(FIXTURES):
         graph,names,order=fixture(case);commands,calls=corpus(case,names,order);validate_input(commands,names);cases.append((commands,names));counts.update(calls)
-        path=output/f'feedback-{case}.reference';path.write_bytes(original_graph(graph));(output/f'feedback-{case}.native').write_bytes(converter.encode_graph(converter.read_graph(path)))
+        path=output/f'feedback-{case}.reference';path.write_bytes(original_graph(graph));(output/f'feedback-{case}.simulation').write_bytes(converter.encode_graph(converter.read_graph(path)))
         metadata=observer_metadata(names);(output/f'observers-{case}.json').write_text(json.dumps(metadata));(output/f'observers-{case}.skate').write_bytes(trees.converter.pack_metadata(metadata));(output/f'input-{case}.bin').write_bytes(commands)
-    reference=build_reference(output,a.target_dir);native=build_native(output);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+    reference=build_reference(output,a.target_dir);simulation=build_simulation(output);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
     expected=bytearray();actual=bytearray();checks=[]
     for case,(commands,names) in enumerate(cases):
         oracle=subprocess.check_output([str(reference),str(a.assets.resolve()),str(output/f'feedback-{case}.reference'),str(output/f'observers-{case}.json')],input=commands)
-        candidate=subprocess.check_output([str(native),str(a.metadata.resolve()/'bank-0.skate'),str(a.metadata.resolve()/'bank-1.skate'),str(output/f'observers-{case}.skate'),str(output/f'feedback-{case}.native'),str(settings)],input=commands)
-        (output/f'reference-{case}.bin').write_bytes(oracle);(output/f'native-{case}.bin').write_bytes(candidate)
+        candidate=subprocess.check_output([str(simulation),str(a.metadata.resolve()/'bank-0.skate'),str(a.metadata.resolve()/'bank-1.skate'),str(output/f'observers-{case}.skate'),str(output/f'feedback-{case}.simulation'),str(settings)],input=commands)
+        (output/f'reference-{case}.bin').write_bytes(oracle);(output/f'simulation-{case}.bin').write_bytes(candidate)
         if candidate!=oracle:
             first=next((i for i,(x,y) in enumerate(zip(candidate,oracle)) if x!=y),min(len(candidate),len(oracle)));raise AssertionError(f'Motion feedback differs at byte {first}, fixture {case}; full per-fixture commands and results saved')
         checks.append(coverage(oracle,names));expected.extend(oracle);actual.extend(candidate)
-    result=dict(passed=True,fixtures=FIXTURES,ticks=FIXTURES*TICKS,behavior_calls=sum(counts.values()),calls_by_operation={f'{name}/{phase}':n for (name,phase),n in counts.items()},coverage=checks,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Original full host factories/allocation and ordered lifecycle, producer absence/partial effects, live fakie/Turning flag visibility, consumed parameters, actual B_PUMP ownership/fades and pose commands.',limitations='Dedicated physical feedback operation boundary. Actual C++ MotionGraphHost registration, complete controller/actor physical producer scheduling and full authored sessions require subsequent integration checks.',data_boundary='Shipping candidate reads ATMETA01 plus native settings. Observer metadata JSON is synthetic original-oracle fixture data, never a runtime EA reader.',reference_provenance_sha256=digest(output/'reference-provenance.json'),native_source_provenance_sha256=digest(output/'native-source-provenance.json'))
+    result=dict(passed=True,fixtures=FIXTURES,ticks=FIXTURES*TICKS,behavior_calls=sum(counts.values()),calls_by_operation={f'{name}/{phase}':n for (name,phase),n in counts.items()},coverage=checks,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Original full host factories/allocation and ordered lifecycle, producer absence/partial effects, live fakie/Turning flag visibility, consumed parameters, actual B_PUMP ownership/fades and pose commands.',limitations='Dedicated physical feedback operation boundary. Actual C++ MotionGraphHost registration, complete controller/actor physical producer scheduling and full authored sessions require subsequent integration checks.',data_boundary='Shipping candidate reads ATMETA01 plus the simulation settings. Observer metadata JSON is synthetic original-oracle fixture data, never a runtime EA reader.',reference_provenance_sha256=digest(output/'reference-provenance.json'),simulation_source_provenance_sha256=digest(output/'simulation-source-provenance.json'))
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

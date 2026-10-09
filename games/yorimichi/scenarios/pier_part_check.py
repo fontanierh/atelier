@@ -26,7 +26,7 @@ def assess(take):
         grab = sum(s.get('mode') == '2' and bool(row.get('inputs',{}).get('grab_left') or
                     row.get('inputs',{}).get('grab_right')) for row,s in zip(ride,states)) / 60
         manual = sum(s.get('manual') == '1' for s in states) / 60
-        dismounted=sum(s.get('retail')=='BipedGround' for s in states)
+        dismounted=sum(s.get('simulation')=='BipedGround' for s in states)
         captured=[s for row,s in zip(ride,states) if row['frame']%2==0]
         pose_repeats=sum(a.get('tick') is not None and a['tick']==b.get('tick') for a,b in zip(captured,captured[1:]))
         needed=requirements.get(name,{})

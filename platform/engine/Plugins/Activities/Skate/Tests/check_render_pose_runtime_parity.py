@@ -86,9 +86,9 @@ def loader_fixtures():
 def prepare(assets,output):
     fixtures=output/'fixtures';fixtures.mkdir(exist_ok=True)
     source=assets/'private/stock/skater-collections.json';stock=json.loads(source.read_text())
-    (fixtures/'settings.native').write_bytes(plant.converter.encode_settings(source))
+    (fixtures/'settings.simulation').write_bytes(plant.converter.encode_settings(source))
     skeletons=assets/'private/stock/physics-skeletons.json'
-    (fixtures/'physics.native').write_bytes(plant.converter.encode_physics_skeletons(skeletons))
+    (fixtures/'physics.simulation').write_bytes(plant.converter.encode_physics_skeletons(skeletons))
     rows=loader_fixtures()
     for index,row in enumerate(rows):
         data=copy.deepcopy(stock)
@@ -101,11 +101,11 @@ def prepare(assets,output):
             else:raise AssertionError(mode)
         folder=fixtures/f'case-{index}';original=folder/'private/stock/skater-collections.json'
         original.parent.mkdir(parents=True,exist_ok=True);original.write_text(json.dumps(data))
-        (folder/'settings.native').write_bytes(plant.converter.encode_settings(original))
-        row.update(original_sha256=digest(original),native_sha256=digest(folder/'settings.native'))
+        (folder/'settings.simulation').write_bytes(plant.converter.encode_settings(original))
+        row.update(original_sha256=digest(original),simulation_sha256=digest(folder/'settings.simulation'))
     for kind in ('action','motion'):
         graph=element('state','idle');(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(graph))
-        (fixtures/f'actor.{kind}.native').write_bytes(plant.converter.encode_graph(plant.converter.read_graph(fixtures/f'actor.{kind}.reference')))
+        (fixtures/f'actor.{kind}.simulation').write_bytes(plant.converter.encode_graph(plant.converter.read_graph(fixtures/f'actor.{kind}.reference')))
     (fixtures/'loader-provenance.json').write_text(json.dumps(rows,indent=2)+'\n')
     return fixtures,json.loads(skeletons.read_text())['source_sha256'],stock
 
@@ -226,18 +226,18 @@ def build_reference(output,target,*,compile=True):
     report.update(extracted_observer_prefixes=[he,le,*report['extracted_observer_prefixes'][2:]],probe_sha256=digest(template),helper_sha256=digest(observer),binary_sha256=digest(binary)if compile else None,scope='Whole untouched host render_pose/skeleton_output/foot_physical_output and complete core output/board/foot/correction/wobble/IK. Only transport, explicit caller writes and read-only observers append. Full original GamePhysics/SkaterRuntime constructors per stream; no completed numeric callback is substituted.')
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
-def build_native(output,*,compile=True):
-    snapshot=output/'native-source'
+def build_simulation(output,*,compile=True):
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();hashes={}
-    for p in [*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS],TESTS/'Native/handplant_probe.cpp',TESTS/'Native/render_pose_runtime_probe.cpp']:
+    for p in [*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS],TESTS/'Simulation/handplant_probe.cpp',TESTS/'Simulation/render_pose_runtime_probe.cpp']:
         shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
-    prefix,proof=plant.extraction(TESTS/'Native/handplant_lifecycle_probe.cpp','int main(')
+    prefix,proof=plant.extraction(TESTS/'Simulation/handplant_lifecycle_probe.cpp','int main(')
     (snapshot/'render_pose_owner_helpers.inc').write_bytes(prefix)
-    binary=output/'render-pose-runtime-native'
+    binary=output/'render-pose-runtime-simulation'
     if compile:subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'render_pose_runtime_probe.cpp'),'-o',str(binary)],check=True)
     for name,sha in hashes.items():assert digest(snapshot/name)==sha,name
-    (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,reused_helper_prefix=proof,units=UNITS,binary_sha256=digest(binary)if compile else None),indent=2)+'\n');return binary
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,reused_helper_prefix=proof,units=UNITS,binary_sha256=digest(binary)if compile else None),indent=2)+'\n');return binary
 
 class Reader(plant.numeric.Reader):
     def snapshot(self):
@@ -332,19 +332,19 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in('assets','samples','metadata','output','target-dir'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
-    samples=a.samples.resolve()/'native';fixtures,identity,stock=prepare(a.assets.resolve(),out);raw,cases,names=corpus(samples,stock);ranges=preflight(raw,cases,names)
+    samples=a.samples.resolve()/'simulation';fixtures,identity,stock=prepare(a.assets.resolve(),out);raw,cases,names=corpus(samples,stock);ranges=preflight(raw,cases,names)
     (out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
-    reference=build_reference(out/'reference',a.target_dir,compile=not a.preflight);native=build_native(out,compile=not a.preflight)
+    reference=build_reference(out/'reference',a.target_dir,compile=not a.preflight);simulation=build_simulation(out,compile=not a.preflight)
     manifest=dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),sampled_clips=len(names),loader_fixtures=len(loader_fixtures()),input_ranges=ranges)
     if a.preflight:
         (out/'preflight.json').write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2));return
     expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw)
-    actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(samples/'rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve()),str(samples),str(fixtures)],input=raw)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(samples/'rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve()),str(samples),str(fixtures)],input=raw)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));row=next((r for rows in frames for r in rows if r['first_word']<=at//4<r['last_word']),None)
         section=next(((name,at//4-span[0])for name,span in(row['spans'].items()if row else[])if span[0]<=at//4<span[1]),None)
-        failure=dict(byte=at,operation=row['operation']if row else'initial',section=section,reference_bytes=len(expected),native_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
-    result=dict(passed=True,reference_revision=REFERENCE_REVISION,**manifest,bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames,cases),scope='Complete original render_pose publication plus physical-pose/board/compression/wobble/correction/IK and foot outputs. Real stock clip evaluation, same current physical history and ordered late failure retention. Full caller coordinator and preceding physical state producers remain separate mandatory inputs; no original data parser is present in native production.')
+        failure=dict(byte=at,operation=row['operation']if row else'initial',section=section,reference_bytes=len(expected),simulation_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+    result=dict(passed=True,reference_revision=REFERENCE_REVISION,**manifest,bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames,cases),scope='Complete original render_pose publication plus physical-pose/board/compression/wobble/correction/IK and foot outputs. Real stock clip evaluation, same current physical history and ordered late failure retention. Full caller coordinator and preceding physical state producers remain separate mandatory inputs; no original data parser is present in simulation production.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

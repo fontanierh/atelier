@@ -131,27 +131,27 @@ def build_reference(output,target):
  for rel,sha in report['original_source_sha256'].items():assert digest(original/rel)==sha;raw=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(raw)]==raw
  binary=output/'player-teleport-reference';shutil.copy2(target.resolve()/'release/player-teleport-reference',binary);report['binary_sha256']=digest(binary);(output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
-def native_plan(output):
- snapshot=output/'native-source'
+def simulation_plan(output):
+ snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir();hashes={}
  for p in[*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS]]:shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
- numeric=PLUGIN/'Tests/Native/handplant_probe.cpp';raw=numeric.read_text();at='  float Float() { return plant_math::Float(Word()); }'
+ numeric=PLUGIN/'Tests/Simulation/handplant_probe.cpp';raw=numeric.read_text();at='  float Float() { return plant_math::Float(Word()); }'
  wire='''template<std::size_t N>std::array<std::uint32_t,N> Words(){std::array<std::uint32_t,N> v;for(auto& x:v)x=Word();return v;}
  template<class T,std::size_t N,class F>std::array<T,N> Array(F f){std::array<T,N> v;for(auto& x:v)x=f(*this);return v;}
  template<class T,class F>std::optional<T> Optional(F f){return Word()?std::optional<T>{f(*this)}:std::nullopt;}
  AnimationAttribute Attribute(){AnimationAttribute a;a.name=Words<5>();a.kind=std::uint8_t(Word());a.status=std::uint8_t(Word());a.sequence_id=std::int32_t(Word());a.begin_time=Float();a.end_time=Float();for(auto& v:a.payload){if(Word())v=Word();else v.reset();}return a;}
 '''
  assert at in raw;raw=raw.replace(at,wire+at);(snapshot/'handplant_probe.cpp').write_text(raw)
- life,lmeta=extract(PLUGIN/'Tests/Native/handplant_lifecycle_probe.cpp','int main(');(snapshot/'handplant_lifecycle_helpers.inc').write_bytes(life)
- fp,fmeta=extract(PLUGIN/'Tests/Native/footplant_probe.cpp','int main(');(snapshot/'footplant_helpers.inc').write_bytes(fp)
- cpp,_=canonical_helpers();gcpp,_=ground_helpers();p=PLUGIN/'Tests/Native/player_teleport_runtime_probe.cpp';probe=p.read_text().replace('// GENERATED_CANONICAL_PROTOCOL',cpp).replace('// GENERATED_GROUND_PROTOCOL',gcpp)
- collision=(PLUGIN/'Tests/Native/skeleton_collision_probe.cpp').read_text();coll=[]
+ life,lmeta=extract(PLUGIN/'Tests/Simulation/handplant_lifecycle_probe.cpp','int main(');(snapshot/'handplant_lifecycle_helpers.inc').write_bytes(life)
+ fp,fmeta=extract(PLUGIN/'Tests/Simulation/footplant_probe.cpp','int main(');(snapshot/'footplant_helpers.inc').write_bytes(fp)
+ cpp,_=canonical_helpers();gcpp,_=ground_helpers();p=PLUGIN/'Tests/Simulation/player_teleport_runtime_probe.cpp';probe=p.read_text().replace('// GENERATED_CANONICAL_PROTOCOL',cpp).replace('// GENERATED_GROUND_PROTOCOL',gcpp)
+ collision=(PLUGIN/'Tests/Simulation/skeleton_collision_probe.cpp').read_text();coll=[]
  for n in('OutSettings','OutFlags','OutFeedback','OutMode'):
   fn=block(collision,'void '+n+'(');fn=fn.replace('void '+n+'(','void Reset'+n+'(Output& o,');fn=re.sub(r'\bOutSettings\(','ResetOutSettings(o,',fn);fn=re.sub(r'\bOutFlags\(','ResetOutFlags(o,',fn);fn=re.sub(r'\bOut\(','ResetOut(o,',fn);coll.append(fn)
  probe=probe.replace('// GENERATED_COLLISION_OBSERVERS','\n'.join(coll))
- riding=block((PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp').read_text(),'void OutGround(').replace('void OutGround(','void ResetOutGround(Output& o,');riding=re.sub(r'\bOut\(','ResetOut(o,',riding);probe=probe.replace('// GENERATED_RIDING_OBSERVER',riding)
- cache=(PLUGIN/'Tests/Native/ground_runtime_probe.cpp').read_text();functions=[]
+ riding=block((PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp').read_text(),'void OutGround(').replace('void OutGround(','void ResetOutGround(Output& o,');riding=re.sub(r'\bOut\(','ResetOut(o,',riding);probe=probe.replace('// GENERATED_RIDING_OBSERVER',riding)
+ cache=(PLUGIN/'Tests/Simulation/ground_runtime_probe.cpp').read_text();functions=[]
  for n in('GroundGrabRecord','SeedGroundGrab','OutGroundGrabRecord','OutGroundGrab'):
   prefix='OffboardGrabRecord 'if n=='GroundGrabRecord'else 'void ';fn=block(cache,prefix+n+'(')
   if n.startswith('Out'):
@@ -159,12 +159,12 @@ def native_plan(output):
   functions.append(fn)
  probe=probe.replace('// GENERATED_GRAB_OBSERVER','\n'.join(functions));(snapshot/'player_teleport_runtime_probe.cpp').write_text(probe)
  hashes.update({p.name:digest(p),'handplant_probe.original':digest(numeric)})
- return snapshot,dict(immutable_native_sources=hashes,generated_probe_sha256=digest(snapshot/'player_teleport_runtime_probe.cpp'),generated_wire_helper_sha256=digest(snapshot/'handplant_probe.cpp'),extracted_helper_prefixes=[lmeta,fmeta],units=UNITS)
+ return snapshot,dict(immutable_simulation_sources=hashes,generated_probe_sha256=digest(snapshot/'player_teleport_runtime_probe.cpp'),generated_wire_helper_sha256=digest(snapshot/'handplant_probe.cpp'),extracted_helper_prefixes=[lmeta,fmeta],units=UNITS)
 
-def build_native(output):
- snapshot,report=native_plan(output);binary=output/'player-teleport-native'
+def build_simulation(output):
+ snapshot,report=simulation_plan(output);binary=output/'player-teleport-simulation'
  subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_teleport_runtime_probe.cpp'),'-o',str(binary)],check=True)
- report['binary_sha256']=digest(binary);(output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
+ report['binary_sha256']=digest(binary);(output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 def zero(kind,defs):
  if kind.startswith('&'):return zero(kind[1:],defs)
@@ -338,15 +338,15 @@ def main():
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
  raw,cases=corpus();preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2,allow_nan=True)+'\n')
  if a.preflight:
-  snapshot,report=native_plan(out);original,observed,crate,cargo,proof=reference_plan(out/'reference');(out/'native-preflight.json').write_text(json.dumps(report,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
- fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.native').write_bytes(foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+  snapshot,report=simulation_plan(out);original,observed,crate,cargo,proof=reference_plan(out/'reference');(out/'simulation-preflight.json').write_text(json.dumps(report,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
+ fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.simulation').write_bytes(foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
  for k in('action','motion'):(fixtures/f'actor.{k}.reference').write_bytes(original_graph(element('state','idle')))
- identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);native=build_native(out)
- expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())],input=raw)
- (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+ identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);simulation=build_simulation(out)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())],input=raw)
+ (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
  if expected!=actual:
   at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_word']<=word<c['last_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-a)for n,(a,b)in(row['sections'].items()if row else[])if a<=word<b),None)
-  failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+  failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
  result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),coverage=coverage(frames,cases),scope='Entire source reset_player composition over real stock physical board/skeleton/adjusted pose/IK/Ground/Footplant/Handplant/SkeletonAir/riding/wipeout/input owners; mutable callback collision and success latch; pure horizontal spawn boundaries; real attribute/mode/hierarchy error prefixes.',boundaries='Canonical player/physical/processed/animation packets and prior mutable histories are explicit initial/caller inputs. Actual authored hierarchy, stock settings and flat world are real owner constructors. Source global input coordinator/possession stop and complete scene respawn Observe/Request scheduling remain separate. No Ground.Enter or fabricated completed producer is used. Info logging is not asserted.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

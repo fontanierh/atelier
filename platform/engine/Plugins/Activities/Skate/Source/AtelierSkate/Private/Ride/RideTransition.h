@@ -29,7 +29,7 @@ enum class ERideFoot : uint8
 };
 
 /**
- * USkateComponent's state between riding and on foot with the Ride backend (RideTransition.cpp): the board's place
+ * USkateComponent's state between riding and on foot (RideTransition.cpp): the board's place
  * and dissolve, the mesh's offset from its on-foot place, the speed carried off the board, and the clips that play
  * off the board (carry, mount, dismount).
  */
@@ -105,7 +105,7 @@ struct FRideTransition
      *  clip's end, eased from the clip time AnchorBlendFrom (below 0: the trajectory pulls the capsule instead). */
     FVector AnchorFrom = FVector::ZeroVector;
     float AnchorBlendFrom = -1.f;
-    /** The body standing on the deck (1) or on the ground (0): RetargetRetailPose's OffBoardLift. */
+    /** The body standing on the deck (1) or on the ground (0): RetargetRiderPose's OffBoardLift. */
     float Lift = 0.f;
     uint16 DriveId = 0;
     FVector DriveVelocity = FVector::ZeroVector;

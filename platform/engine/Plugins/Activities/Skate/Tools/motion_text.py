@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Readable skating motion source <-> native ATSKEL01/ATCLIP01/ATMETA01 files.
+"""Readable skating motion source <-> ATSKEL01/ATCLIP01/ATMETA01 files.
 
 The committed source is JSON: the rig and its reference poses, two metadata banks and one file per clip. Floats are
-binary32 values written as their shortest round-trip decimal (negative zero as -0.0), so `build` rewrites every native
-file byte for byte; callers check the result against the native package manifest's SHA-256 digests. `export` is the
-one-time conversion from the native files.
+binary32 values written as their shortest round-trip decimal (negative zero as -0.0), so `build` rewrites every binary
+file byte for byte; callers check the result against the package manifest's SHA-256 digests. `export` is the
+one-time conversion from the binary files.
 
-    motion_text.py export --native <native package> --source <motion source>
-    motion_text.py build --source <motion source> --native <output folder>
+    motion_text.py export --package <package> --source <motion source>
+    motion_text.py build --source <motion source> --package <output folder>
 """
 import argparse
 import json
@@ -107,7 +107,7 @@ class Reader:
 
     def end(self):
         if self.at != len(self.data):
-            raise ValueError('trailing native bytes')
+            raise ValueError('trailing binary bytes')
 
 
 class Writer:
@@ -178,7 +178,7 @@ def rig_text(data):
                 reference_poses=poses)
 
 
-def rig_native(value):
+def rig_binary(value):
     if value.get('version') != SOURCE_VERSION:
         raise ValueError('unsupported motion rig version')
     names = [b['name'] for b in value['bones']]
@@ -230,7 +230,7 @@ def clip_text(data, names):
                 channel_animation=bool(channel), loop=dict(translation=loop_t, rotation=loop_r), bones=bones)
 
 
-def clip_native(value, names):
+def clip_binary(value, names):
     if value.get('version') != SOURCE_VERSION:
         raise ValueError('unsupported motion clip version')
     if list(value['bones']) != names:
@@ -318,7 +318,7 @@ def metadata_text(data, names):
     return out
 
 
-def metadata_native(value, names):
+def metadata_binary(value, names):
     if value.get('version') != SOURCE_VERSION:
         raise ValueError('unsupported motion metadata version')
     kinds = {v: k for k, v in ATTRIBUTE_KINDS.items()}
@@ -417,15 +417,15 @@ def dumps(value, indent=0):
     return json.dumps(value)
 
 
-def export(native, source):
-    """Native bundle -> readable source. Returns the written relative paths."""
-    native, source = Path(native), Path(source)
-    rig = rig_text((native / 'animation/rig.skate').read_bytes())
+def export(package, source):
+    """Binary bundle -> readable source. Returns the written relative paths."""
+    package, source = Path(package), Path(source)
+    rig = rig_text((package / 'animation/rig.skate').read_bytes())
     names = [b['name'] for b in rig['bones']]
     written = {'rig.json': rig}
     for bank in (0, 1):
-        written[f'metadata/bank-{bank}.json'] = metadata_text((native / f'metadata/bank-{bank}.skate').read_bytes(), names)
-    for path in sorted((native / 'animation/clips').rglob('*.skate')):
+        written[f'metadata/bank-{bank}.json'] = metadata_text((package / f'metadata/bank-{bank}.skate').read_bytes(), names)
+    for path in sorted((package / 'animation/clips').rglob('*.skate')):
         clip = clip_text(path.read_bytes(), names)
         written[f'clips/{clip["bank"]}/{clip["name"]}.json'] = clip
     for rel, value in written.items():
@@ -436,37 +436,37 @@ def export(native, source):
 
 
 def build(source):
-    """Readable source -> {native relative path: bytes}."""
+    """Readable source -> {binary relative path: bytes}."""
     source = Path(source)
     rig = json.loads((source / 'rig.json').read_text())
     names = [b['name'] for b in rig['bones']]
-    out = {'animation/rig.skate': rig_native(rig)}
+    out = {'animation/rig.skate': rig_binary(rig)}
     for bank in (0, 1):
-        out[f'metadata/bank-{bank}.skate'] = metadata_native(
+        out[f'metadata/bank-{bank}.skate'] = metadata_binary(
             json.loads((source / f'metadata/bank-{bank}.json').read_text()), names)
     for path in sorted((source / 'clips').glob('*/*.json')):
         clip = json.loads(path.read_text())
         if path.stem != clip['name'] or path.parent.name != str(clip['bank']):
             raise ValueError(f'{path.relative_to(source)} must be clips/<bank>/<name>.json')
-        out[f'animation/clips/{clip["bank"]}/{clip["name"]}.skate'] = clip_native(clip, names)
+        out[f'animation/clips/{clip["bank"]}/{clip["name"]}.skate'] = clip_binary(clip, names)
     return out
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('command', choices=('export', 'build'))
-    parser.add_argument('--native', type=Path, required=True)
+    parser.add_argument('--package', type=Path, required=True)
     parser.add_argument('--source', type=Path, required=True)
     args = parser.parse_args()
     if args.command == 'export':
-        print(f'{len(export(args.native, args.source))} source files')
+        print(f'{len(export(args.package, args.source))} source files')
         return
     files = build(args.source)
     for rel, data in files.items():
-        target = args.native / rel
+        target = args.package / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    print(f'{len(files)} native files')
+    print(f'{len(files)} binary files')
 
 
 if __name__ == '__main__':

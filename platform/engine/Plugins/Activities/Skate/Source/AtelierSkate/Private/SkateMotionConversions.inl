@@ -7,7 +7,7 @@ FSkateBone ToAsset(const skate::AnimationBone& In)
     return Out;
 }
 
-skate::AnimationBone ToNative(const FSkateBone& In)
+skate::AnimationBone ToSimulation(const FSkateBone& In)
 {
     skate::AnimationBone Out;
     Out.name = String(In.Name);
@@ -26,13 +26,13 @@ FSkateReferencePose ToAsset(const skate::AnimationReferencePose& In)
     return Out;
 }
 
-skate::AnimationReferencePose ToNative(const FSkateReferencePose& In)
+skate::AnimationReferencePose ToSimulation(const FSkateReferencePose& In)
 {
     skate::AnimationReferencePose Out;
     Out.bank = In.Bank;
     Out.name = String(In.Name);
     Out.record = In.SourceRecord;
-    Out.samples = Map(In.Samples, [](const auto& V) { return ToNative(V); });
+    Out.samples = Map(In.Samples, [](const auto& V) { return ToSimulation(V); });
     return Out;
 }
 
@@ -49,7 +49,7 @@ FSkateClipMetadata ToAsset(const skate::ClipMetadata& In)
     return Out;
 }
 
-skate::ClipMetadata ToNative(const FSkateClipMetadata& In)
+skate::ClipMetadata ToSimulation(const FSkateClipMetadata& In)
 {
     skate::ClipMetadata Out;
     Out.name = String(In.Name);
@@ -58,7 +58,7 @@ skate::ClipMetadata ToNative(const FSkateClipMetadata& In)
     Out.frames_bits = Bits(In.Frames);
     Out.base_speed_bits = Bits(In.BaseSpeed);
     Out.flags_word = In.Flags;
-    Out.attributes = Map(In.Attributes, [](const auto& V) { return ToNative(V); });
+    Out.attributes = Map(In.Attributes, [](const auto& V) { return ToSimulation(V); });
     return Out;
 }
 
@@ -72,7 +72,7 @@ FSkatePhaseBlend ToAsset(const skate::PhaseBlendMetadata& In)
     return Out;
 }
 
-skate::PhaseBlendMetadata ToNative(const FSkatePhaseBlend& In)
+skate::PhaseBlendMetadata ToSimulation(const FSkatePhaseBlend& In)
 {
     skate::PhaseBlendMetadata Out;
     Out.name = String(In.Name);
@@ -92,7 +92,7 @@ FSkateBlendSimplex ToAsset(const skate::BlendSimplexMetadata& In)
     return Out;
 }
 
-skate::BlendSimplexMetadata ToNative(const FSkateBlendSimplex& In)
+skate::BlendSimplexMetadata ToSimulation(const FSkateBlendSimplex& In)
 {
     skate::BlendSimplexMetadata Out;
     Out.children = Indices(In.Children);
@@ -113,14 +113,14 @@ FSkateBlendSpace ToAsset(const skate::BlendSpaceMetadata& In)
     return Out;
 }
 
-skate::BlendSpaceMetadata ToNative(const FSkateBlendSpace& In)
+skate::BlendSpaceMetadata ToSimulation(const FSkateBlendSpace& In)
 {
     skate::BlendSpaceMetadata Out;
     Out.name = String(In.Name);
     Out.source_offset = In.SourceOffset;
     Out.parameters = Strings(In.Parameters);
     Out.children = Strings(In.Children);
-    Out.simplexes = Map(In.Simplexes, [](const auto& V) { return ToNative(V); });
+    Out.simplexes = Map(In.Simplexes, [](const auto& V) { return ToSimulation(V); });
     return Out;
 }
 
@@ -136,7 +136,7 @@ FSkateSelector ToAsset(const skate::SelectorMetadata& In)
     return Out;
 }
 
-skate::SelectorMetadata ToNative(const FSkateSelector& In)
+skate::SelectorMetadata ToSimulation(const FSkateSelector& In)
 {
     skate::SelectorMetadata Out;
     Out.name = String(In.Name);
@@ -159,7 +159,7 @@ FSkateSelectionParameter ToAsset(const skate::SelectionParameterMetadata& In)
     return Out;
 }
 
-skate::SelectionParameterMetadata ToNative(const FSkateSelectionParameter& In)
+skate::SelectionParameterMetadata ToSimulation(const FSkateSelectionParameter& In)
 {
     skate::SelectionParameterMetadata Out;
     Out.name = String(In.Name);
@@ -178,7 +178,7 @@ FSkateSelectionCandidate ToAsset(const skate::SelectionCandidateMetadata& In)
     return Out;
 }
 
-skate::SelectionCandidateMetadata ToNative(const FSkateSelectionCandidate& In)
+skate::SelectionCandidateMetadata ToSimulation(const FSkateSelectionCandidate& In)
 {
     skate::SelectionCandidateMetadata Out;
     Out.child = String(In.Child);
@@ -196,13 +196,13 @@ FSkateSelectionSpace ToAsset(const skate::SelectionSpaceMetadata& In)
     return Out;
 }
 
-skate::SelectionSpaceMetadata ToNative(const FSkateSelectionSpace& In)
+skate::SelectionSpaceMetadata ToSimulation(const FSkateSelectionSpace& In)
 {
     skate::SelectionSpaceMetadata Out;
     Out.name = String(In.Name);
     Out.source_offset = In.SourceOffset;
-    Out.parameters = Map(In.Parameters, [](const auto& V) { return ToNative(V); });
-    Out.candidates = Map(In.Candidates, [](const auto& V) { return ToNative(V); });
+    Out.parameters = Map(In.Parameters, [](const auto& V) { return ToSimulation(V); });
+    Out.candidates = Map(In.Candidates, [](const auto& V) { return ToSimulation(V); });
     return Out;
 }
 
@@ -215,7 +215,7 @@ FSkateUnsupportedTree ToAsset(const skate::UnsupportedAnimationTree& In)
     return Out;
 }
 
-skate::UnsupportedAnimationTree ToNative(const FSkateUnsupportedTree& In)
+skate::UnsupportedAnimationTree ToSimulation(const FSkateUnsupportedTree& In)
 {
     skate::UnsupportedAnimationTree Out;
     Out.name = String(In.Name);

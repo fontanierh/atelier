@@ -4,16 +4,16 @@
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_ride [--only name,name]
 Mounts, then checks a ride's first frame (it moves like every later one), a start inside the
 floor (it starts on it), pushing (from rest, nose-first), steering, braking, the ollie's height, every Flick-It trick,
-flicks on the player's pad (`--only pad`: native's quickest ollie, an ollie flicked mid-push, a manual flicked into a
-kickflip and a nose manual into a nollie, every nollie in native's table, goofy and rolling fakie too), a grab, a 360,
+flicks on the player's pad (`--only pad`: the simulation's quickest ollie, an ollie flicked mid-push, a manual flicked into a
+kickflip and a nose manual into a nollie, every nollie in the simulation's table, goofy and rolling fakie too), a grab, a 360,
 a grind, a manual, a bail and its recovery, the hands clear of the body and the pushing foot out of the ground (Cairo
 and Modori, regular and goofy), lip airs
 back into the transition (straight, 180 and 360 on the pier's quarter; straight and across on Mega Park's pool wall)
 and a coasting back-and-forth in the bowl (`--only vert`), a player's lip airs (an angled approach with the stick held
-sideways, `--only lip_air_player`), spins against native's controller for the same stick (flat 180s and 360s; a stick
+sideways, `--only lip_air_player`), spins against the simulation's controller for the same stick (flat 180s and 360s; a stick
 held through a pool air, pushed as the board leaves or held from the wall, `--only spin`), pumping in the bowl
 (coasting, a trigger pump timed with the transitions and a mistimed one, `--only pump`), a grab held through the
-landing (ridden away, as native's), every wheel on the ground through carves, a pump, a
+landing (ridden away, as the simulation's), every wheel on the ground through carves, a pump, a
 powerslide and a manual (`--only wheels`), frame pacing (including mounting and switching character), Mega Park's
 roll-in from the upper deck (over the crest without leaving it, through the concave at the bottom without a bail) and a
 grind into
@@ -23,7 +23,7 @@ that go limp at once, lie down within a second and travel as far as the referenc
 under the ground in any group of bodies (riding, falling, lying or getting up), every joint within its human range and
 no two bodies deep in each other through bails on flat (6, 12 and 18 m/s), on the quarter and out of a grind (with a
 frozen close-up of the worst pose), and its frame cost in Mega Park. Over
-every frame recorded, the rider's pose (Native's, shown on Ride's body) must keep both feet on the deck while rolling,
+every frame recorded, the rider's pose (the simulation's, shown on Ride's body) must keep both feet on the deck while rolling,
 carry no NaN and never pop, in both stances.
 The cost check (`--only cost`) measures the frame, the animator and the session with the physical rider off and on.
 Writes build/yorimichi/skateqa/ride.json, and ride-pose.json: every frame of the pose checks and each pop with the
@@ -49,7 +49,7 @@ FLIPS = {
     'inward_heelflip': 'Inward Heelflip', '360_flip': '360 Flip', 'laser_flip': 'Laser Flip',
     '360_hardflip': '360 Hardflip', '360_inward_heelflip': '360 Inward Heelflip',
 }
-# Native's nollie table (gestures.skate, "main": Nollie and N_*) in Ride's stick frame (x right, y up, regular stance):
+# The simulation's nollie table (gestures.skate, "main": Nollie and N_*) in Ride's stick frame (x right, y up, regular stance):
 # the name Ride shows -> the stick's points. Some wind up only part-way out (N_Kickflip at 0.69, tolerance 0.4).
 NOLLIES = {
     'Nollie': [(0.01, 0.99), (0.01, -1.0)],
@@ -158,7 +158,7 @@ def mount_ride():
     qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
     for _ in range(40):
         state = qa.py('print(live.skate_state())')
-        if 'retail=PhysicsGround' in state:
+        if 'simulation=PhysicsGround' in state:
             return state
         time.sleep(.5)
     raise RuntimeError('Ride did not mount: ' + state.strip())
@@ -202,7 +202,7 @@ def hand_rows(record):
                     gaps, near = [float(v) for v in r['hand_gap'].split(',')], r.get('hand_near', '-').split(',')
                     side = min(range(len(gaps)), key=gaps.__getitem__)
                     (rest if clock < 1 else moving).append(
-                        (gaps[side], f"{'LR'[side]} hand, {near[min(side, len(near) - 1)]}, {clock:.2f} s, {r.get('retail', '-')}"))
+                        (gaps[side], f"{'LR'[side]} hand, {near[min(side, len(near) - 1)]}, {clock:.2f} s, {r.get('simulation', '-')}"))
                 clock += float(r.get('dt', 16.7)) / 1000
             feet = max((float(part.partition(':')[2]) for r in rows for part in r.get('skin_groups', '').split(',')
                         if part.startswith('feet:')), default=float('nan'))
@@ -244,7 +244,7 @@ def hand_rows(record):
                     if last is not None and dt > 0:
                         for side in (0, 1):
                             step = (swing[side] - last[side]) * 16.67 / dt
-                            where = f"{'LR'[side]} arm, {clock:.2f} s, {r.get('retail', '-')}"
+                            where = f"{'LR'[side]} arm, {clock:.2f} s, {r.get('simulation', '-')}"
                             step_worst = max(step_worst, (abs(step), where))
                             if steps[side] is not None:
                                 jitter_worst = max(jitter_worst, (abs(step - steps[side]), where))
@@ -365,7 +365,7 @@ def main():
         rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,700,[(.3,{{'slide':True,'left':(.6,0)}}),(1.3,{{}})],duration=2", 2)
         record('powerslide', rows, qa.ever(rows, 'slide', '1') and speed(rows[-1]) < 600 and not qa.count(rows, 'bails'),
                f'{speed(rows[0]):.0f} -> {speed(rows[-1]):.0f} cm/s')
-        # A pad's powerslide (native's slide intents): the left stick pushed out to a rear diagonal, no key, on either
+        # A pad's powerslide (the simulation's slide intents): the left stick pushed out to a rear diagonal, no key, on either
         # side in either stance; the stick pulled straight back does not slide.
         for goofy in (False, True):
             qa.py(f'live.L.skate_goofy({goofy})')
@@ -406,7 +406,7 @@ def main():
         record('flick_pad_reference', rows, trick_named(rows, 'Ollie') and late is not None and landed,
                f'{qa.combos(rows) or "(none)"}; took off {"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}')
     if wanted('flick_pad_fastest') or wanted('pad'):
-        # Native's fastest gesture: one tick at the wind-up (its second Ollie point: half-way down, tolerance 0.4), the
+        # The simulation's fastest gesture: one tick at the wind-up (its second Ollie point: half-way down, tolerance 0.4), the
         # next at the flick. It pops within the pop clip's ground part.
         rows = pad_ride(FLAT[0], FLAT[1], 0, 450, [(0.0, (0.0, 0.0)), (.4, (0.0, -.5)), (.4 + 1 / 60., (0.0, 1.0)),
                                                    (.4 + 3 / 60., (0.0, 0.0))], 2.4)
@@ -430,12 +430,12 @@ def main():
         loaded_push = [r for r in loaded[1:] if r.get('push') == '1']
         off = next((r for r in rows if r.get('mode') == '0'), None)
         why = '' if landed else (f" (mode {rows[-1].get('mode')} at the end, {qa.count(rows, 'bails')} bails"
-                                 + (f"; off at {off.get('padt')} s: foot {off.get('foot')}, {off.get('retail')}" if off else '') + ')')
+                                 + (f"; off at {off.get('padt')} s: foot {off.get('foot')}, {off.get('simulation')}" if off else '') + ')')
         record('flick_pad_push', rows, pushed and trick_named(rows, 'Ollie') and late is not None and late <= allowed and landed,
                f'pushing before: {pushed}; {len(loaded_push)} of {len(loaded)} loaded frames pushing; {qa.combos(rows) or "(none)"}; '
                f'took off {"-" if late is None else f"{late:.3f} s"} after the flick; landed={landed}{why}')
     manual_pad_rows(record, [n for n, _, _ in MANUAL_PADS if wanted(n) or wanted('pad')], allowed)
-    # Every nollie in native's table and both of its diagonal nollies, from the pad; then a goofy rider (his stick's x
+    # Every nollie in the simulation's table and both of its diagonal nollies, from the pad; then a goofy rider (his stick's x
     # mirrored) for one of each family.
     runs = [(n, p, False) for n, p in NOLLIES.items()] + [('Nollie', p, False) for p in NOLLIE_DIAGONALS]
     runs += [(n, NOLLIES[n], True) for n in GOOFY_NOLLIES]
@@ -459,7 +459,7 @@ def main():
         record(key, rows, trick_named(rows, name) and landed, f'{qa.combos(rows) or "(none)"}; landed={landed}')
     if wanted('grab'):
         # The right trigger for the first half second of the air; then held through the landing and after it, which
-        # rides away as native's does (it holds an Indy 17 ticks past the touch-down). Native names the right
+        # rides away as the simulation's does (it holds an Indy 17 ticks past the touch-down). The simulation names the right
         # trigger's grab by its edge, "FS Grab".
         rows = grab_air({'grab_right': True}, .52)
         combos = qa.combos(rows)
@@ -469,9 +469,9 @@ def main():
         record('grab_held_landing', rows, 'FS Grab' in combos and rows[-1]['mode'] == '1' and not qa.count(rows, 'bails'),
                f"{combos or '(none)'}; {'bailed' if qa.count(rows, 'bails') else 'rode away'}")
     if wanted('spin'):
-        # Flat spins off an ollie at 5 m/s, the left stick pushed full as the board leaves (native's snap, weighed
-        # fully) and let go after .27 s (native: 360-380 degrees in a flat ollie's 44-50 air ticks) or .09 s (about
-        # 190): Ride's spin is native's for the same stick, and the landing is clean.
+        # Flat spins off an ollie at 5 m/s, the left stick pushed full as the board leaves (the simulation's snap, weighed
+        # fully) and let go after .27 s (the simulation: 360-380 degrees in a flat ollie's 44-50 air ticks) or .09 s (about
+        # 190): Ride's spin is the simulation's for the same stick, and the landing is clean.
         flat = f"live.park.place({FLAT[0]},{FLAT[1]},0); live.park.look(-12,0); live.park.launch(500)\n"
         for label, hold, want in (('', .27, '360'), ('180_', .09, '180')):
             for direction in (-1, 1):
@@ -490,7 +490,7 @@ def main():
     if wanted('grind'):
         grind_rows(record)
     if wanted('manual'):
-        # Native's manual (RIDE.md, Manuals): half way down (or up) the stick starts one 0.2 s on, and it lasts, without
+        # The simulation's manual (RIDE.md, Manuals): half way down (or up) the stick starts one 0.2 s on, and it lasts, without
         # a fall, until the stick centres at 1.8 s. The nose manual's balance comes after its Into, 25 ticks later.
         for name, combo, y in (('manual', 'Manual', -.5), ('nose_manual', 'Nose Manual', .5)):
             rows = qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,480,[(.3,{{'right':(0,{y})}}),(1.8,{{}})],duration=2.3", 2.3)
@@ -580,13 +580,13 @@ POOL_OUT = (0, 1)
 # Held from the take-off: the left stick, full right, for HOLD seconds of the air.
 SPIN_HOLD = (INGAME / 'skate_ride' / 'spin_hold.py').read_text()
 
-# Native's body spin (BodySpin.cpp: PhysicalBodySpin's normal mode at spin scale 1.6) is the spin rows' reference. Its
+# The simulation's body spin (BodySpin.cpp: PhysicalBodySpin's normal mode at spin scale 1.6) is the spin rows' reference. Its
 # tables against the air's time (s): the rate per unit of stick (rad/s) and the most it changes in a tick; and the
 # snap's weight against the age of the stick's push (s, negative before the take-off).
 SPIN_PROP = ((0, .052, .127, .244, .368, .564, .906, 2.), (3.15, 6.364, 7.779, 7.939, 7.714, 6.975, 5.689, 3.664))
 SPIN_DELTA = ((0, .116, .256, .394, .533, .678, .878, 1.), (.993, .761, .507, .35, .225, .171, .157, .154))
 SPIN_SNAP = ((-.497, -.375, -.254, 0, .135, .228, .337, .5), (0, .05, 1, 1, 1, .629, .386, .286))
-SPIN_SLACK = .12   # Ride's air spin is native's for the same stick, tick for tick, within 12% (or 15 degrees)
+SPIN_SLACK = .12   # Ride's air spin is the simulation's for the same stick, tick for tick, within 12% (or 15 degrees)
 
 
 def table(curve, x):
@@ -599,14 +599,14 @@ def table(curve, x):
     return ys[-1]
 
 
-def native_spin(stick, takeoff, last, carry=0., scale=1.6):
-    """The degrees native's controller turns the board from the take-off (`takeoff`, the last tick on the ground) to
+def simulation_spin(stick, takeoff, last, carry=0., scale=1.6):
+    """The degrees the simulation's controller turns the board from the take-off (`takeoff`, the last tick on the ground) to
     tick `last`, for the left stick's x at each 60 Hz tick (`stick(tick)`) and a turn of `carry` degrees/s at the
     take-off; positive with the stick, as Ride's air spin (spin=). A stick held before the take-off is smoothed into
     the air, and its push (the snap) counts fully up to a quarter second old: a push as the board leaves spins it
     2.5 times faster than a stick held from before."""
     dt, held, smooth, history, peak, clock, angle = 1 / 60, 0., 0., [], 0., 0., 0.
-    rate = -math.radians(carry)   # native's sense: turning against the stick
+    rate = -math.radians(carry)   # The simulation's sense: turning against the stick
     for tick in range(takeoff - 40, last + 1):
         x = stick(tick)
         x = x if abs(x) > .06 else 0.
@@ -668,7 +668,7 @@ def spin_run(place, left, seconds, ollie=False, load=.16):
 
 
 def judge_spin(record, name, rows, stick, want='', land=True):
-    """The first air in `rows`: Ride's spin (spin= at its last tick) against native's for the same stick; with `land`, a
+    """The first air in `rows`: Ride's spin (spin= at its last tick) against the simulation's for the same stick; with `land`, a
     clean landing whose combo has `want`."""
     a = next((i for i in range(1, len(rows)) if rows[i]['mode'] == '2' and rows[i - 1]['mode'] != '2'), None)
     b = next((i for i in range(a, len(rows)) if rows[i]['mode'] != '2'), None) if a is not None else None
@@ -678,24 +678,24 @@ def judge_spin(record, name, rows, stick, want='', land=True):
     takeoff, last = int(rows[a]['tick']), int(rows[b - 1]['tick'])
     yaw = sum((float(r['yaw']) - float(p['yaw']) + 180) % 360 - 180 for p, r in zip(rows[a - 1:b - 1], rows[a:b]))
     # Ride's spin readout, else the board's yaw.
-    ride, native = float(rows[b - 1].get('spin', yaw)), native_spin(stick, takeoff, last)
+    ride, simulation = float(rows[b - 1].get('spin', yaw)), simulation_spin(stick, takeoff, last)
     held = sum(1 for t in range(takeoff + 1, last + 1) if abs(stick(t)) > .06)
     bailed = any(r['mode'] == '4' for r in rows)
     combos = qa.combos(rows)
-    # The readout turns with the stick as native's does; for the yaw only its size counts.
-    same = ride * native > 0 or 'spin' not in rows[b - 1]
-    ok = same and abs(abs(ride) - abs(native)) <= max(15., SPIN_SLACK * abs(native)) and (
+    # The readout turns with the stick as the simulation's does; for the yaw only its size counts.
+    same = ride * simulation > 0 or 'spin' not in rows[b - 1]
+    ok = same and abs(abs(ride) - abs(simulation)) <= max(15., SPIN_SLACK * abs(simulation)) and (
         not land or (not bailed and rows[-1]['mode'] == '1' and want in combos))
-    record(name, rows, ok, f"air spin {ride:.0f} degrees, native {native:.0f} for the same stick (held {held} of "
+    record(name, rows, ok, f"air spin {ride:.0f} degrees, simulation {simulation:.0f} for the same stick (held {held} of "
            f"{last - takeoff} air ticks, {sum(1 for t in range(takeoff - 30, takeoff + 1) if abs(stick(t)) > .06)} before the "
            f"take-off); yaw turned {yaw:.0f}; {'bailed' if bailed else 'no bail'}; {combos or '(no tricks)'}")
-    return ride, native
+    return ride, simulation
 
 
 def spin_held(record):
     """A spin held through an air off Mega Park's pool wall (11.5 m/s up it, the film's): the left stick full right
     from the take-off (a snap, weighed fully) and from the climb up the wall (held before the take-off, weighed less),
-    to the touch-down. Ride's air spin is native's for the same stick (in 1.6 s of air about 870 degrees snapped, 490
+    to the touch-down. Ride's air spin is the simulation's for the same stick (in 1.6 s of air about 870 degrees snapped, 490
     held from 20 ticks before)."""
     x, y, z = POOL
     ground = qa.py(f"g=live.L.ground_at(unreal.Vector({x * 100},{-y * 100},{z * 100}))\nprint(g.x, g.y, g.z)").split()
@@ -706,7 +706,7 @@ def spin_held(record):
 
 
 # Pumping (RIDE.md, "Pumping"): in the pier's bowl, launched east across its floor (20 m between the walls) at 6 m/s,
-# the triggers pulled to PULL while WHEN holds, an expression of ground and up (the deck's up z). Native's reference
+# the triggers pulled to PULL while WHEN holds, an expression of ground and up (the deck's up z). The simulation's reference
 # pumps pull the left trigger to 200 of 255.
 PUMP_RUN = (INGAME / 'skate_ride' / 'pump_run.py').read_text()
 PUMP_PULL = 200 / 255
@@ -730,11 +730,11 @@ def floor_passes(rows):
 
 
 def pump_rows(record):
-    """Three passes across the bowl's floor from 6 m/s, by native's pump (its model in the bowl: coasting 600 -> 840
+    """Three passes across the bowl's floor from 6 m/s, by the simulation's pump (its model in the bowl: coasting 600 -> 840
     -> 1040 cm/s, timed 600 -> 1000 -> 1210, mistimed 600 -> 640 -> 670): coasting gains (the transitions crouch the
-    rider and he rises out of them), a trigger pump timed to stand up through the transitions gains more (native's own
+    rider and he rises out of them), a trigger pump timed to stand up through the transitions gains more (the simulation's own
     runs: 1.27 times its coasting, 591 -> 872 -> 1107 against 591 -> 1150 -> 1249; the row asks
-    1.2), one held through them and let go on the floor less; none passes native's cap (13 m/s) or bails."""
+    1.2), one held through them and let go on the floor less; none passes the simulation's cap (13 m/s) or bails."""
     gains = {}
     for name, when in PUMP_RECIPES:
         rows = record_while(f"live.park.place({BOWL[0]},{BOWL[1]},0); live.park.look(-12,0); live.park.launch(600)\n"
@@ -768,7 +768,7 @@ def manual_pad_rows(record, names, allowed):
     for name, hold, flick in MANUAL_PADS:
         if name not in names:
             continue
-        # Flick out of a held manual, as native does: its wind-up points contain the manual's stick position, so the
+        # Flick out of a held manual, as the simulation does: its wind-up points contain the manual's stick position, so the
         # stick never goes back to the centre or out to the rim first. The nose manual balances after its Into (25 ticks).
         trick = 'Kickflip' if 'kickflip' in name else 'Nollie'
         timeline = [(0.0, (0.0, 0.0)), (.3, hold), (1.3, flick), (1.3 + .05, (0.0, 0.0))]
@@ -852,10 +852,10 @@ def vert_checks(record):
     forward and a 360 fakie (the stick let go short of each, the rest turned by touch-down); on Mega Park's pool wall
     (the film's) a straight air, and the same climbing it 20 degrees across either way; each comes down within a metre
     of the lip, below it, without a bail, and rides away. Then a back-and-forth in the pier's bowl, coasting: three
-    airs keep or gain speed at the bottom, short of native's cap (native: 10 -> 11.9 -> 12.3 m/s)."""
+    airs keep or gain speed at the bottom, short of the simulation's cap (the simulation: 10 -> 11.9 -> 12.3 m/s)."""
     quarter = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
     judge_lip(record, 'vert_quarter_straight', record_while(quarter, 5), QUARTER_OUT, True)
-    # Native's spin pushed full as the board leaves a lip (the snap) turns 180 degrees in 4-6 ticks and 360 in 10-14,
+    # The simulation's spin pushed full as the board leaves a lip (the snap) turns 180 degrees in 4-6 ticks and 360 in 10-14,
     # and the released stick turns the rest to the nearer of forward and fakie by the touch-down: .08 s for a 180, .2 s
     # for a 360.
     for name, hold, fakie, want in (('vert_quarter_180', .08, False, '180'), ('vert_quarter_360', .2, True, '360')):
@@ -885,9 +885,9 @@ def vert_checks(record):
     # Each landing: the speed into it and out of it, on a face whose up is this steep (deck up z).
     landings = '; landings ' + ', '.join(f"{speed(rows[b - 1]):.0f}->{speed(rows[b]):.0f} at up z {rows[b].get('deckup', '?')}"
                                          for _, b in airs if b < len(rows))
-    # Native's band: no air loses speed at the bottom (2% slack) and none passes its cap (12.3 m/s, plus 0.7).
+    # The simulation's band: no air loses speed at the bottom (2% slack) and none passes its cap (12.3 m/s, plus 0.7).
     record('vert_back_and_forth', rows, len(airs) >= 3 and not bailed and all(v >= .98 * got[0] for v in got[1:4]) and max(got) <= 1300,
-           f"bottom speeds {' -> '.join(f'{v:.0f}' for v in got)} cm/s before each air (native 1000 -> 1190 -> 1230), "
+           f"bottom speeds {' -> '.join(f'{v:.0f}' for v in got)} cm/s before each air (the simulation 1000 -> 1190 -> 1230), "
            f"{len(airs)} airs, {'bailed' if bailed else 'no bail'}{landings}")
 
 
@@ -910,7 +910,7 @@ def wheel_run(args, seconds):
 def wheels_contact(record):
     """Wheels on the ground (RIDE.md, Rider, "Placement" and "Board"): carves at 3, 6 and 9 m/s both ways in both
     stances, a pump in the bowl, a powerslide and a manual. On the ground (mode 1) no wheel is more than 1 cm into the
-    ground; rolling (Native's PhysicsGround) none is more than 1.5 cm above it (in a manual, the axle it rolls on, and
+    ground; rolling (the simulation's PhysicsGround) none is more than 1.5 cm above it (in a manual, the axle it rolls on, and
     so for 0.2 s after one, while the raised end comes down).
     Writes a low close-up of a hard carve to build/yorimichi/skateqa/ride-carve-closeup.png."""
     qa.py(WHEELS.replace('WHEEL_R', '3.1'))
@@ -932,7 +932,7 @@ def wheels_contact(record):
             if row.get('mode') != '1' or None in clear:
                 continue
             judged += 1
-            state = row.get('retail', '')
+            state = row.get('simulation', '')
             low = min(clear)
             run_sink = min(run_sink, low)
             if low < sink[0]: sink = (low, f'{label} {state}')
@@ -987,7 +987,7 @@ def pose_health(named):
             planted += 1
             if int(r.get('feetoff', 0)):
                 off += 1
-                worst.setdefault(r.get('retail', '-'), r.get('feet'))
+                worst.setdefault(r.get('simulation', '-'), r.get('feet'))
     feet = (planted > 60 and off / planted < .03,
             f'{off} of {planted} planted frames with a foot off the deck'
             + (' (' + ', '.join(f'{c} toes at {f} cm' for c, f in list(worst.items())[:4]) + ')' if worst else ''))
@@ -1003,7 +1003,7 @@ def pose_health(named):
             around = sorted(steps[i - 3:i] + steps[i + 1:i + 4])[3]
             if steps[i] > POP_SPEED and steps[i] > 3 * around:
                 bone = f" {run[i]['stepbone']}" if 'stepbone' in run[i] else ''
-                pops.append(f"{run[i - 1].get('retail')}->{run[i].get('retail')} {steps[i]:.0f} cm/s{bone}")
+                pops.append(f"{run[i - 1].get('simulation')}->{run[i].get('simulation')} {steps[i]:.0f} cm/s{bone}")
                 context.append({'run': name, 'frame': i, 'step': steps[i], 'around': around, 'rows': run[i - 6:i + 4]})
     continuity = (not pops, f'{len(pops)} pops' + (': ' + '; '.join(pops[:4]) if pops else '')
                   + f'; fastest body bone {fastest:.0f} cm/s')
@@ -1042,9 +1042,9 @@ def pose_checks(record, seen):
                                'goofy_pops': goofy_pops}) + '\n')
 
 
-# The reference (RIDE.md, Physical rider): Native's published body against its animation pose.
+# The reference (RIDE.md, Physical rider): the simulation's published body against its animation pose.
 BAIL_REFERENCE = {.125: (0, 8), .25: (8, 26), .5: (14, 37), 1.: (64, 127)}
-# The reference's falls (Native's traces): the pelvis's travel 1 s after the bail and where it comes to rest, over the
+# The reference's falls (the simulation's traces): the pelvis's travel 1 s after the bail and where it comes to rest, over the
 # entry speed times 1 s. A deliberate bail on flat at 4.6 m/s: 0.97 and 1.04 (across the ground); launched faster
 # (5.6 to 12.2 m/s) 0.96 to 1.00 and 1.16 to 1.40, 0.97 and 1.26 at 10.6 m/s: the travel grows with the speed, and the
 # body is at rest 1.5 to 2.4 s after the bail at any speed. One in the air at 4.8 m/s across, rising at 8.7 m/s: 1.04
@@ -1068,7 +1068,7 @@ PHYSICAL = ('physical_riding', 'physical_landing', 'physical_bail', 'physical_ba
             'physical_joints', 'physical_cost')
 
 
-# Rolling fakie the head and chest turn toward the travel. Native's angles from the travel (degrees, head and chest):
+# Rolling fakie the head and chest turn toward the travel. The simulation's angles from the travel (degrees, head and chest):
 # riding forward head 3, chest 46; fakie with no look 177, 134; fakie 72, 126.
 FAKIE_ROLL = (72., 126.)
 FAKIE_DEG = 6.
@@ -1131,8 +1131,8 @@ def fakie_run(goofy, speed, events, duration, x=FLAT[0], cam=None):
 
 
 def fakie_landing(goofy, push, seconds):
-    """Native's way into fakie: a straight air off the quarter lands fakie (QUARTER_AIR, vert_quarter_straight). A
-    board launched backward from rest is not fakie in Native: it shows the forward pose and turns round after a second.
+    """The simulation's way into fakie: a straight air off the quarter lands fakie (QUARTER_AIR, vert_quarter_straight). A
+    board launched backward from rest is not fakie in the simulation: it shows the forward pose and turns round after a second.
     The rows from the landing (about 2.6 s after the launch) to `seconds` after it; push holds the push from .5 s
     after it to 1.7 s, on the flat (from .3 s the rider turned round still on the quarter's face, hips 5.4-5.9 cm)."""
     qa.py(f'live.L.skate_goofy({goofy})')
@@ -1143,7 +1143,7 @@ def fakie_landing(goofy, push, seconds):
             "    if f[1] is not None and ' mode=1 ' in s: f[0]+=dt\n"
             "    live.skate_input(push=.5<=f[0]<1.7)\n"
             "live.behave('fp', _fp)\n") if push else ''
-    # The same launch does not always fly the same air (Native's too: now and then the board yaws on the face and
+    # The same launch does not always fly the same air (the simulation's too: now and then the board yaws on the face and
     # flies longer, H37): up to four tries for the straight one, 35 to 50 frames up and no bail.
     for k in range(4):
         rows = record_while(QUARTER_AIR + hold, 3.2 + seconds)
@@ -1176,9 +1176,9 @@ def drift(rows, key):
 
 
 def fakie_checks(record, wanted):
-    """The fakie rows (Native's session under Ride's body): Native's motion graph turns the rider round and picks the
+    """The fakie rows (the simulation's session under Ride's body): the simulation's motion graph turns the rider round and picks the
     pose. What the shown body does is measured: the stance flags and turns, the head's and chest's facing from the
-    travel (headyaw, chestyaw: Native's own pose, so FAKIE_ROLL and FORWARD hold by construction), the board's and the
+    travel (headyaw, chestyaw: the simulation's own pose, so FAKIE_ROLL and FORWARD hold by construction), the board's and the
     hips' steps, the speed a push gains, and no bail."""
     def steady(rows):
         if not rows:
@@ -1193,18 +1193,18 @@ def fakie_checks(record, wanted):
     for goofy in (False, True):
         stance = 'goofy' if goofy else 'regular'
         if wanted('fakie_roll'):
-            # Native blends the fakie look in from about .4 s after the touch-down; it holds from .75 s until the rider
+            # The simulation blends the fakie look in from about .4 s after the touch-down; it holds from .75 s until the rider
             # turns round by himself (about 1.1 s).
             rows = fakie_landing(goofy, False, 1.2)
             head, chest = (settled(rows, key, .75, 1.05) for key in ('headyaw', 'chestyaw'))
             fakie = bool(rows) and all(r.get('fakie') == '1' for t, r in zip(clock(rows), rows) if t < 1.05)
-            # Native itself lands either way (6 landings: 3 with the look at 67-69/125, 3 without at
-            # 147-174/136-140, Native's "fakie with no channel" 177/134): the hybrid shows one of Native's two.
+            # The simulation lands either way (6 landings: 3 with the look at 67-69/125, 3 without at
+            # 147-174/136-140, the simulation's "fakie with no channel" 177/134): a ride shows one of the two.
             looked = near(head, FAKIE_ROLL[0]) and near(chest, FAKIE_ROLL[1])
             unlooked = head is not None and chest is not None and head >= 140 and abs(chest - 138) <= 6
             record(f'fakie_roll_{stance}', rows, fakie and (looked or unlooked),
                    f'landed fakie off the quarter: fakie={fakie}; head {head} chest {chest} degrees from the travel '
-                   f'(native {FAKIE_ROLL[0]:.0f}, {FAKIE_ROLL[1]:.0f}, or without the look about 160, 138; .75-1.05 s after '
+                   f'(the simulation: {FAKIE_ROLL[0]:.0f}, {FAKIE_ROLL[1]:.0f}, or without the look about 160, 138; .75-1.05 s after '
                    f'the landing)')
         if wanted('fakie_switch'):
             rows = fakie_landing(goofy, False, 2.2)
@@ -1220,7 +1220,7 @@ def fakie_checks(record, wanted):
             rows = fakie_landing(goofy, True, 2.)
             flip = flipped(rows)
             gained = max((speed(r) for r in rows), default=0.) - (at_time(rows, .5, 'speed') or 0.)
-            # Turned round, the rider pushes facing the travel (Native's turn takes about .6 s to settle).
+            # Turned round, the rider pushes facing the travel (the simulation's turn takes about .6 s to settle).
             chest = settled([r for t, r in zip(clock(rows), rows) if r.get('push') == '1' and t >= (flip or 9.) + .6], 'chestyaw', 0.)
             healthy, health = steady(rows[30:])
             ok = flip is not None and turned(rows) == 1 and rows[-1].get('switch') == '1' and gained > 30 and chest is not None and chest < 90 and healthy
@@ -1418,7 +1418,7 @@ def physical_bail_fast(record):
     physical_bail(record, 'physical_bail_fast', FLAT[0], 1100, 'fast')
 
 
-# A Christ air (left trigger and B) from the take-off to the touch-down, which wipes out as native's does (a hand grab
+# A Christ air (left trigger and B) from the take-off to the touch-down, which wipes out as the simulation's does (a hand grab
 # held into the landing rides away); the controls let go once the air ends.
 CHRIST_AIR = (INGAME / 'skate_ride' / 'christ_air.py').read_text()
 QUARTER_AIR = f"live.park.place({QUARTER[0]},{QUARTER[1]},0); live.park.look(-12,0); live.park.launch(950)\n"
@@ -1438,7 +1438,7 @@ def physical_bail_quarter(record):
 # twist, swing1 and swing2), joint_limits= (its live limits, -1 for a free axis) and joint_soft=, and pair_depth= (cm:
 # the two bodies that may meet deepest in each other, below 0 apart) with pair=, and pairs_kept= and pairs_released=
 # (pairs that overlapped as the bail began, kept apart until they come apart, and how many have met again).
-# A bail tightens the built asset's joints to Native's bail envelope (skate.RideBailTighten): joint_env= says which
+# A bail tightens the built asset's joints to the simulation's bail envelope (skate.RideBailTighten): joint_env= says which
 # frames the joints hold (bail, riding or mixed), joint_lost= how many joints lost the limits the rider set (Physics
 # Control putting the asset's back, or a soft limit), joint_ramp= how far past the envelope the limits still stand
 # (degrees: they open to fit the pose a bail starts in and close from there), and joint_tighten= the setting.
@@ -1527,7 +1527,7 @@ def joint_envelope(limp):
 
 
 def joint_held(w):
-    """Whether the bail's joints held what the rider set: with skate.RideBailTighten on, Native's envelope from the
+    """Whether the bail's joints held what the rider set: with skate.RideBailTighten on, the simulation's envelope from the
     first frames on, every joint's limits as set, and the limits closed onto it before the bail ended; off, the riding
     frames with nothing lost."""
     if 'env' not in w:
@@ -1820,7 +1820,7 @@ def parapet_corner(record):
     after = rows[lock:end + 36] if end is not None else []
     slowest = min(map(speed, after), default=0)
     bailed = any(r['mode'] == '4' for r in after)
-    # The board's step at the lock beyond its own speed: the native board touches the line before it locks.
+    # The board's step at the lock beyond its own speed: the simulation's board touches the line before it locks.
     jump = max((math.dist(position(a), position(b)) - speed(b) * float(b.get('dt', 16.7)) / 1000
                 for a, b in zip(rows[max(0, lock - 1):lock + 8], rows[max(0, lock - 1) + 1:lock + 9])), default=99) if lock is not None else 99
     record('parapet_corner', rows, lock is not None and end is not None and not bailed and slowest >= 100 and jump < 15,
@@ -1831,7 +1831,7 @@ def parapet_corner(record):
 
 
 def grind_rows(record):
-    """flatbar_red is 18 m long and a grind loses 0.97 m/s² on a rail (Native's):
+    """flatbar_red is 18 m long and a grind loses 0.97 m/s² on a rail (the simulation's):
     at 7 m/s the board grinds it to its end, flies off and rolls away; at 5.2 m/s it stalls about 13 m along and comes
     down on the deck beside it (at the deck's height, at least 20 cm off the line, on the ground from its deck landing
     on), neither bailing. The bar is square (an extracted 15 cm park flatbar), so a stall can end on its flat top
@@ -1884,7 +1884,7 @@ WALL_SINK = .5     # cm: no deck point further past a wall (a face steeper than 
 FLOOR_SINK = 5.    # cm: nor past a floor (a deck lying upside down rests on its kicks, a little into it)
 LAND_GAP, LAND_HOLD = 1., .5   # cm, s: after a landing in a transition, no wheel further off the face for this long
 WHEEL_NAMES = ('front right', 'front left', 'back right', 'back left')   # WHEELS' order
-# cost= is Native's whole session step (physics, animation, scoring) on its own thread, pipelined with the game's
+# cost= is the simulation's whole session step (physics, animation, scoring) on its own thread, pipelined with the game's
 # frame: it must be done well inside the frame it overlaps (half of one at 60 Hz, at worst), mean on Mega Park's road
 # and any tick's (any second's worst) in any of the rows, walls, airs and landings included. The game thread's share
 # shows in the pacing rows.
@@ -2296,7 +2296,7 @@ def collide_cost(record):
     record('collide_cost', rows, bool(sim) and mean < STEP_MEAN and worst < STEP_WORST,
            f"session step {mean:.3f} ms mean per tick over {len(sim)} seconds (the worst second {max((m for m, _ in sim), default=0):.3f}), "
            f"worst tick {max((w for _, w in sim), default=0):.3f} ms on the road, {max((w for _, w in seen), default=0):.3f} ms over "
-           f"{len(seen)} seconds of the guarded rows; budget {STEP_MEAN:g} ms mean, {STEP_WORST:g} ms worst (Native step on its "
+           f"{len(seen)} seconds of the guarded rows; budget {STEP_MEAN:g} ms mean, {STEP_WORST:g} ms worst (the simulation's step on its "
            f"own thread); load average {os.getloadavg()[0]:.1f}")
 
 

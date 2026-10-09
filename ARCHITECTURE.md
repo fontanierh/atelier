@@ -24,7 +24,7 @@ build/            ignored: everything a build generates, per game
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina |
 | AtelierAnimation | `engine/Plugins/AtelierAnimation` | ground contact, sailboat stance and bike grip animation nodes |
 | AtelierFX | `engine/Plugins/AtelierFX` | sprites, light flashes, hit-stop, slow motion, camera shake, sound cues, blade trails |
-| Skate | `engine/Plugins/Activities/Skate` | in-process native skateboarding behind `ISkateRider`, with its tracked data checks |
+| Skate | `engine/Plugins/Activities/Skate` | in-process skateboarding behind `ISkateRider`, with its tracked data checks |
 | AtelierStream | `engine/Plugins/Streaming` | the game's end of a browser stream: actions and leased touch controls |
 | LiveBridge | `engine/Plugins/Dev/LiveBridge` | the loopback live bridge: Python in the running game, runtime GLB props, overlays |
 | Stream pages | `platform/web/stream` | stream server, browser connection, page lifecycle, touch primitives, the plain player, smoke-test helpers |

@@ -99,7 +99,7 @@ def coverage(raw,histories):
     return dict(operations=dict(counts),errors=dict(errors),ordered_prior_writes_retained_at_failure=partial,failed_apply_retained_all_owner_fields=failure_retention,ordered_End_Begin_witnesses=order,default_counter_wrapping=default_wrap,normal_period_reset=expiry,distinct_integer_periods=len(periods),distinct_counter_values=len(counters),finite_exact_Display_diagnostics=finite_text,negative_Display_diagnostics=negative)
 def prepare(output,histories):
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip());relative=(PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix();archive=subprocess.check_output(['git','archive',f'{REFERENCE_REVISION}:{relative}'],cwd=root)
-    original=output/'reference-source';snapshot=output/'native-source'
+    original=output/'reference-source';snapshot=output/'simulation-source'
     for path in(original,snapshot):
         if path.exists():shutil.rmtree(path)
         path.mkdir()
@@ -114,13 +114,13 @@ def prepare(output,histories):
         if name in visited:continue
         visited.add(name);text=(CODE/name).read_text();shutil.copy2(CODE/name,snapshot/name)
         pending += re.findall(r'^#include "([^\"]+)"',text,flags=re.M)
-    shutil.copy2(CODE/'SimulationClock.cpp',snapshot/'SimulationClock.cpp');shutil.copy2(PLUGIN/'Tests/Native/simulation_clock_probe.cpp',snapshot/'simulation_clock_probe.cpp')
+    shutil.copy2(CODE/'SimulationClock.cpp',snapshot/'SimulationClock.cpp');shutil.copy2(PLUGIN/'Tests/Simulation/simulation_clock_probe.cpp',snapshot/'simulation_clock_probe.cpp')
     raw=encode(histories);prior=encode(histories[:-1])
     assert len(histories[:-1])==18 and sum(len(h['commands'])for h in histories[:-1])==5370
     assert hashlib.sha256(prior).hexdigest()=='02a37fabfc0ca7fe339ec16cb89b7927fb63c56c4da17424688a0c464e86b629'
     assert raw[4:len(prior)]==prior[4:],'All original eighteen records/5,370 command bytes must remain verbatim'
     (output/'input.bin').write_bytes(raw);(output/'cases.json').write_text(json.dumps(histories,indent=2)+'\n')
-    report=dict(preserved_original_corpus=dict(histories=18,commands=5370,input_bytes=len(prior),input_sha256=hashlib.sha256(prior).hexdigest(),verbatim_record_bytes=len(prior)-4,verbatim_record_prefix_sha256=hashlib.sha256(raw[4:len(prior)]).hexdigest(),outer_count_only_changed_for_append=True),reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,whole_original_clock_sha256=hashlib.sha256(body).hexdigest(),original_clock_prefix_bytes=len(body),read_only_ticks_observer_sha256=hashlib.sha256(getter).hexdigest(),generated_clock_sha256=digest(crate/'src/clock.rs'),immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},reference_probe_sha256=digest(crate/'src/main.rs'),input_sha256=digest(output/'input.bin'),histories=len(histories),commands=sum(len(h['commands'])for h in histories),scope='Complete unchanged original clock.rs executes; only a read-only private tick-counter observer is appended. Ordered ApplyRequests oracle invokes original Apply in order and stops at the first original error. Exact f32 Display strings, integer period arithmetic, Rust saturating cast edge, signed tick interpretation and all retained fields are compared. No frame/physics clock is simulated in parallel.')
+    report=dict(preserved_original_corpus=dict(histories=18,commands=5370,input_bytes=len(prior),input_sha256=hashlib.sha256(prior).hexdigest(),verbatim_record_bytes=len(prior)-4,verbatim_record_prefix_sha256=hashlib.sha256(raw[4:len(prior)]).hexdigest(),outer_count_only_changed_for_append=True),reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,whole_original_clock_sha256=hashlib.sha256(body).hexdigest(),original_clock_prefix_bytes=len(body),read_only_ticks_observer_sha256=hashlib.sha256(getter).hexdigest(),generated_clock_sha256=digest(crate/'src/clock.rs'),immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},reference_probe_sha256=digest(crate/'src/main.rs'),input_sha256=digest(output/'input.bin'),histories=len(histories),commands=sum(len(h['commands'])for h in histories),scope='Complete unchanged original clock.rs executes; only a read-only private tick-counter observer is appended. Ordered ApplyRequests oracle invokes original Apply in order and stops at the first original error. Exact f32 Display strings, integer period arithmetic, Rust saturating cast edge, signed tick interpretation and all retained fields are compared. No frame/physics clock is simulated in parallel.')
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,crate,snapshot,report
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
@@ -128,12 +128,12 @@ def main():
     histories=corpus();original,crate,snapshot,report=prepare(output,histories)
     if a.preflight:print(json.dumps(dict(preflight='PASS',histories=len(histories),commands=report['commands'],input_bytes=len(encode(histories)),input_sha256=report['input_sha256'])));return
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(a.target_dir.resolve()),'--bin','simulation-clock-reference'],check=True);reference=output/'simulation-clock-reference';shutil.copy2(a.target_dir.resolve()/'release/simulation-clock-reference',reference)
-    candidate=output/'simulation-clock-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'SimulationClock.cpp'),str(snapshot/'simulation_clock_probe.cpp'),'-o',str(candidate)],check=True)
+    candidate=output/'simulation-clock-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'SimulationClock.cpp'),str(snapshot/'simulation_clock_probe.cpp'),'-o',str(candidate)],check=True)
     for relative,expected in report['original_source_sha256'].items():assert digest(original/relative)==expected
     assert digest(crate/'src/clock.rs')==report['generated_clock_sha256'];raw=(output/'input.bin').read_bytes();values=[]
-    for binary,label in((reference,'reference'),(candidate,'native')):
+    for binary,label in((reference,'reference'),(candidate,'simulation')):
         run=subprocess.run([str(binary)],input=raw,stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=True);(output/(label+'.bin')).write_bytes(run.stdout);(output/(label+'.stderr')).write_bytes(run.stderr);values.append(run.stdout)
     if values[0]!=values[1]:
-        offset=next((i for i,(x,y)in enumerate(zip(*values))if x!=y),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),native_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('SimulationClock first mismatch at '+str(offset))
+        offset=next((i for i,(x,y)in enumerate(zip(*values))if x!=y),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),simulation_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('SimulationClock first mismatch at '+str(offset))
     proof=coverage(values[0],histories);result=dict(result='PASS',histories=len(histories),commands=report['commands'],exact_bytes=len(values[0]),sha256=hashlib.sha256(values[0]).hexdigest(),coverage=proof);(output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 if __name__=='__main__':main()

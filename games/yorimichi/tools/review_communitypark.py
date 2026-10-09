@@ -70,7 +70,7 @@ def main():
             f'assert unreal.YorimichiLive.skate_place({vector(start)},{-heading})\nunreal.YorimichiLive.skate_release()')
         for _ in range(40):
             state = run('print(unreal.YorimichiLive.skate_state())')
-            if 'retail=PhysicsGround' in state: break
+            if 'simulation=PhysicsGround' in state: break
             time.sleep(.5)
         else: raise RuntimeError('Skate collision did not settle: '+state)
         run('ride_start=unreal.LiveLibrary.player().get_actor_location()')

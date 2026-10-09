@@ -49,7 +49,7 @@ def launch_rows(speed, state='PhysicsGround tick=10'):
             for i in range(8)]
 
 
-def test_launch_is_verified_after_native_command_is_applied(capture):
+def test_launch_is_verified_after_simulation_command_is_applied(capture):
     result = capture.verify_launches({'events': [{'time': 0, 'action': 'launch', 'speed': 500}]}, launch_rows(498), 60)
     assert result == [{'frame': 0, 'requested_cm_s': 500, 'observed_frame': 1, 'observed_cm_s': 498}]
 
@@ -71,7 +71,7 @@ def test_capture_hashes_generated_and_game_inputs_before_render_admission(captur
     output = tmp_path / ('cache/yorimichi' if external_build else 'checkout/build/yorimichi')
     for path, data in [
         (project / 'Saved/settings.txt', b''),
-        (project / 'Binaries/Mac/libUnrealEditor-Yorimichi.dylib', b'native binary'),
+        (project / 'Binaries/Mac/libUnrealEditor-Yorimichi.dylib', b'editor binary'),
         (project / 'Content/Japan/Terrain.uasset', b'terrain'),
         (output / 'world.json', b'world'),
     ]:

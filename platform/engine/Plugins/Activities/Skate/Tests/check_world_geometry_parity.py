@@ -185,19 +185,19 @@ def build_probes(output):
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
     for name,expected in originals.items():
         if digest(source/name)!=expected:raise AssertionError(f'Frozen reference module changed: {name}')
-    snapshot=output/'native-source'
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    native=PLUGIN/'Source/AtelierSkate/Private/Native'
-    for name in ('NativeMath.h','NativeMath.cpp','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp',
-                 'GeometryTypes.h','WorldGeometry.h','WorldGeometry.cpp'):shutil.copy2(native/name,snapshot/name)
-    shutil.copy2(PLUGIN/'Tests/Native/world_geometry_probe.cpp',snapshot/'world_geometry_probe.cpp')
+    simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+    for name in ('SimulationMath.h','SimulationMath.cpp','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp',
+                 'GeometryTypes.h','WorldGeometry.h','WorldGeometry.cpp'):shutil.copy2(simulation/name,snapshot/name)
+    shutil.copy2(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp',snapshot/'world_geometry_probe.cpp')
     cpp=output/'world-geometry-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),
-        *[str(snapshot/name) for name in ('NativeMath.cpp','Geometry.cpp','GeometrySweep.cpp','WorldGeometry.cpp','world_geometry_probe.cpp')],'-o',str(cpp)],check=True)
+        *[str(snapshot/name) for name in ('SimulationMath.cpp','Geometry.cpp','GeometrySweep.cpp','WorldGeometry.cpp','world_geometry_probe.cpp')],'-o',str(cpp)],check=True)
     provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),
         original_source_sha256=originals,probe_sha256=digest(probe),reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),
-        native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
+        simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
         rust_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),
         cpp_compiler=subprocess.check_output(['clang++','--version'],text=True).strip())
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')

@@ -5,8 +5,8 @@
 #include "SkateDataLibrary.h"
 #include "SkateAssetPackages.h"
 #include "SkateSettings.h"
-#include "Native/GameplaySession.h"
-#include "Native/AnimationName.h"
+#include "Simulation/GameplaySession.h"
+#include "Simulation/AnimationName.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Misc/ScopeExit.h"
@@ -58,7 +58,7 @@ FSkateSample ToAsset(const skate::SampleWords& In)
     Out.RotationX=Float(In[3]); Out.RotationY=Float(In[4]); Out.RotationZ=Float(In[5]); Out.RotationW=Float(In[6]);
     Out.TranslationX=Float(In[7]); Out.TranslationY=Float(In[8]); Out.TranslationZ=Float(In[9]); return Out;
 }
-skate::SampleWords ToNative(const FSkateSample& In)
+skate::SampleWords ToSimulation(const FSkateSample& In)
 {
     return {Bits(In.ScaleX),Bits(In.ScaleY),Bits(In.ScaleZ),Bits(In.RotationX),Bits(In.RotationY),Bits(In.RotationZ),Bits(In.RotationW),Bits(In.TranslationX),Bits(In.TranslationY),Bits(In.TranslationZ)};
 }
@@ -70,7 +70,7 @@ FSkateAttribute ToAsset(const skate::ClipAttributeMetadata& In)
     Out.Begin=Float(In.begin_bits); Out.End=Float(In.end_bits); Out.SourceOffset=int64(In.source_offset);
     Out.Value=Float(In.payload_words.size()>(In.type_id==3 ? 5u : 0u) ? In.payload_words[In.type_id==3 ? 5 : 0] : 0u); return Out;
 }
-skate::ClipAttributeMetadata ToNative(const FSkateAttribute& In)
+skate::ClipAttributeMetadata ToSimulation(const FSkateAttribute& In)
 {
     skate::ClipAttributeMetadata Out; Out.name=String(In.Name); Out.type_id=In.Type;
     Out.begin_bits=Bits(In.Begin); Out.end_bits=Bits(In.End); Out.source_offset=uint64(In.SourceOffset);
@@ -96,7 +96,7 @@ FSkateMetadataBank ToAsset(const skate::AnimationMetadata& In)
     Out.SelectionSpaces=Map(In.selection_spaces,[](const auto& V){return ToAsset(V);});
     Out.UnsupportedTrees=Map(In.unsupported_trees,[](const auto& V){return ToAsset(V);}); return Out;
 }
-bool ToNative(const FSkateMetadataBank& In, const skate::AnimationRig& Rig, skate::AnimationMetadata& Out, std::string& Error)
+bool ToSimulation(const FSkateMetadataBank& In, const skate::AnimationRig& Rig, skate::AnimationMetadata& Out, std::string& Error)
 {
     if(In.SourceBytes<48) {Error="Invalid motion provenance size";return false;}
     for(const auto& Clip:In.Clips) for(const auto& A:Clip.Attributes)
@@ -105,12 +105,12 @@ bool ToNative(const FSkateMetadataBank& In, const skate::AnimationRig& Rig, skat
         if(A.Type==3 && std::none_of(Rig.bones.begin(),Rig.bones.end(),[&](const auto& B){return Text(B.name).Equals(A.TargetBone,ESearchCase::CaseSensitive);}))
         {Error="Motion attribute references an unknown bone";return false;}
     }
-    Out.clips=Map(In.Clips,[](const auto& V){return ToNative(V);});
-    Out.phase_blends=Map(In.PhaseBlends,[](const auto& V){return ToNative(V);});
-    Out.blend_spaces=Map(In.BlendSpaces,[](const auto& V){return ToNative(V);});
-    Out.selectors=Map(In.Selectors,[](const auto& V){return ToNative(V);});
-    Out.selection_spaces=Map(In.SelectionSpaces,[](const auto& V){return ToNative(V);});
-    Out.unsupported_trees=Map(In.UnsupportedTrees,[](const auto& V){return ToNative(V);});
+    Out.clips=Map(In.Clips,[](const auto& V){return ToSimulation(V);});
+    Out.phase_blends=Map(In.PhaseBlends,[](const auto& V){return ToSimulation(V);});
+    Out.blend_spaces=Map(In.BlendSpaces,[](const auto& V){return ToSimulation(V);});
+    Out.selectors=Map(In.Selectors,[](const auto& V){return ToSimulation(V);});
+    Out.selection_spaces=Map(In.SelectionSpaces,[](const auto& V){return ToSimulation(V);});
+    Out.unsupported_trees=Map(In.UnsupportedTrees,[](const auto& V){return ToSimulation(V);});
     return Out.InitializeBank({String(In.SourceBank),String(In.SourceSha256),uint64(In.SourceBytes)},Error);
 }
 using Tracks=std::vector<std::vector<uint32>>;
@@ -129,7 +129,7 @@ FSkateMotionClip ToAsset(const skate::AnimationClipSamples& In)
     }
     return Out;
 }
-bool ToNative(const FSkateMotionClip& In, skate::AnimationClipSamples& Out, std::string& Error)
+bool ToSimulation(const FSkateMotionClip& In, skate::AnimationClipSamples& Out, std::string& Error)
 {
     if(In.Bank<0 || In.SourceRecord<0 || In.FrameCount<=0) {Error="Invalid motion clip identity or frame count";return false;}
     Out.name=String(In.Name);Out.bank=uint32(In.Bank);Out.record=uint64(In.SourceRecord);
@@ -152,15 +152,15 @@ bool DecodeSkateMotion(const USkateMotionData& Data, TConstArrayView<const USkat
     if(Data.SchemaVersion!=USkateMotionData::CurrentSchema || Data.Banks.IsEmpty() || Data.Metadata.IsEmpty())
     {Error="Invalid motion data schema or empty banks; rerun the motion import";return false;}
     if(Banks.Num()!=Data.Banks.Num()) {Error="Motion banks are not all loaded";return false;}
-    skate::AnimationPoseFrames Frames;Frames.rig.bones=Map(Data.Bones,[](const auto& V){return ToNative(V);});
+    skate::AnimationPoseFrames Frames;Frames.rig.bones=Map(Data.Bones,[](const auto& V){return ToSimulation(V);});
     Frames.rig.has_trajectory=Data.bHasTrajectory;
     for(const auto& Pose:Data.ReferencePoses)if(Pose.Bank<0||Pose.SourceRecord<0) {Error="Invalid reference pose identity";return false;}
-    Frames.rig.poses=Map(Data.ReferencePoses,[](const auto& V){return ToNative(V);});
+    Frames.rig.poses=Map(Data.ReferencePoses,[](const auto& V){return ToSimulation(V);});
     if(!Frames.rig.Reindex(Error))return false;
     auto Animation=std::make_shared<skate::AnimationSource>();
     for(int32 I=0;I<Data.Metadata.Num();++I)
     {
-        skate::AnimationMetadata Bank;if(!ToNative(Data.Metadata[I],Frames.rig,Bank,Error))return false;
+        skate::AnimationMetadata Bank;if(!ToSimulation(Data.Metadata[I],Frames.rig,Bank,Error))return false;
         if(I==0)Animation->metadata=std::move(Bank);else if(!Animation->metadata.Merge(Bank,Error))return false;
     }
     for(int32 B=0;B<Banks.Num();++B)
@@ -170,7 +170,7 @@ bool DecodeSkateMotion(const USkateMotionData& Data, TConstArrayView<const USkat
         {
             if(In.Bones.Num()!=Data.Bones.Num()){Error="Motion clip bone count differs from rig";return false;}
             auto Clip=std::make_shared<skate::AnimationClipSamples>();
-            if(!ToNative(In,*Clip,Error)||!Frames.RegisterClip(Clip,Error))return false;
+            if(!ToSimulation(In,*Clip,Error)||!Frames.RegisterClip(Clip,Error))return false;
         }
     }
     Animation->evaluator=std::make_shared<skate::AnimationPoseEvaluator>(std::move(Frames));
@@ -300,9 +300,9 @@ bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString&
     ON_SCOPE_EXIT { if(!Error.IsEmpty())UE_LOG(LogTemp,Error,TEXT("SKATE MOTION IMPORT: %s"),*Error); };
 #if WITH_EDITOR
     if(!FPackageName::IsValidLongPackageName(AssetFolder)) {Error=TEXT("Invalid motion asset folder");return false;}
-    std::string NativeError;std::shared_ptr<const skate::GameplayResources> Resources;
-    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(PackageFolder)),Resources,NativeError))
-    {Error=Text(NativeError);return false;}
+    std::string SimulationError;std::shared_ptr<const skate::GameplayResources> Resources;
+    if(!skate::LoadGameplayResources(std::filesystem::u8path(String(PackageFolder)),Resources,SimulationError))
+    {Error=Text(SimulationError);return false;}
     const auto& Frames=Resources->animation->evaluator->frames;
     TStrongObjectPtr<USkateMotionData> Data(Asset<USkateMotionData>(AssetFolder/TEXT("MotionData")));
     Data->SchemaVersion=USkateMotionData::CurrentSchema;Data->bHasTrajectory=Frames.rig.has_trajectory;
@@ -311,10 +311,10 @@ bool USkateDataLibrary::ImportMotion(const FString& PackageFolder,const FString&
     for(int32 B=0;B<2;++B)
     {
         skate::AnimationMetadata Bank;std::vector<uint8> Bytes;
-        if(!ReadFile(PackageFolder/FString::Printf(TEXT("metadata/bank-%d.skate"),B),Bytes,NativeError)||!Bank.Load(Bytes,NativeError))
-        {Error=Text(NativeError);return false;}
+        if(!ReadFile(PackageFolder/FString::Printf(TEXT("metadata/bank-%d.skate"),B),Bytes,SimulationError)||!Bank.Load(Bytes,SimulationError))
+        {Error=Text(SimulationError);return false;}
         auto Typed=ToAsset(Bank);
-        if(!AttributeTargets(Typed,Bank,Frames.rig,NativeError)) {Error=Text(NativeError);return false;}
+        if(!AttributeTargets(Typed,Bank,Frames.rig,SimulationError)) {Error=Text(SimulationError);return false;}
         Data->Metadata.Add(MoveTemp(Typed));
     }
     constexpr int32 ChunkSize=128;int32 Index=0,Chunk=0;USkateMotionBank* Bank=nullptr;
@@ -510,7 +510,7 @@ bool USkateDataLibrary::Verify(const FString& PackageFolder,const FString& Repor
     std::shared_ptr<const skate::AnimationSource> Changed;const bool Decoded=DecodeSkateMotion(*Data,Banks,Changed,E);V=Saved;
     uint64 F=0,S=0;const bool Detected=Decoded&&!CompareMotion(*Reference->animation,*Changed,F,S,E);
     if(!Detected){Error=TEXT("Negative control did not detect the changed motion sample");return false;}
-    // Invalid records must fail admission, rather than reaching native assertions.
+    // Invalid records must fail admission, rather than reaching the simulation assertions.
     const int32 Parent=Data->Bones[0].Parent;Data->Bones[0].Parent=0;
     std::shared_ptr<const skate::AnimationSource> Invalid;const bool RejectedRig=!DecodeSkateMotion(*Data,Banks,Invalid,E);Data->Bones[0].Parent=Parent;
     auto& Track=Bank->Clips[0].Bones[0].ScaleX;TArray<float> SavedTrack=Track;Track.Reset();

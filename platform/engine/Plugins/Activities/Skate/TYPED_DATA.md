@@ -8,7 +8,7 @@ A game's session reads all of its data from two typed assets that `USkateSetting
   action, motion and camera graphs, the camera shots and shakes, the gesture sets and
   the physical skeletons.
 
-`USkateDataLibrary::ImportMotion` and `ImportRuntime` build them from a native package.
+`USkateDataLibrary::ImportMotion` and `ImportRuntime` build them from a simulation package.
 The simulation reads them into the same structures, with the same interpolation, graph
 evaluation and retargeting arithmetic, as the package files.
 
@@ -19,7 +19,7 @@ in normal play:
    assets through the engine's streamable manager. The motion root and then its banks
    load asynchronously, as does the runtime asset.
 2. While the packages are held, a task thread copies their fields into the existing
-   immutable native structures. Nothing edits the assets at runtime. The runtime
+   immutable simulation structures. Nothing edits the assets at runtime. The runtime
    asset is encoded to the package's runtime files, each checked against the size and
    SHA-1 the import recorded, and read by the same loaders as the package files.
 3. The decoded data is kept for the rest of the process and the packages are
@@ -41,14 +41,14 @@ The motion assets hold named fields:
 - Frame rates/counts, loop rotation/translation and per-bone channel weights.
 - Clip flags, speeds, scalar attributes and bone-contact events with named targets.
 - Phase blends, blend-space simplexes, selectors and selection-space candidates.
-- Bank provenance and record identifiers, including authored duplicate ordering.
+- Bank source identity and record identifiers, including authored duplicate ordering.
 
-The components use native Y-up metres and binary32 floats. Quaternion components
+The components use the simulation Y-up metres and binary32 floats. Quaternion components
 are preserved without normalizing them. `FTransform` and compressed animation keys
 would change these values: the existing animation-sequence importer composes a
 reference pose, changes coordinate space, normalizes rotations and passes through
 Unreal's key storage. The sequences remain the derived assets used by the Ride
-body and retargeting; exact native simulation sampling uses the typed component
+body and retargeting; exact simulation sampling uses the typed component
 tracks.
 
 The runtime asset keeps each record's named fields in order. Every value the session
@@ -59,7 +59,7 @@ width.
 
 ## Building and verifying
 
-A game recipe's `unreal.skate_data` step reads the complete native package that
+A game recipe's `unreal.skate_data` step reads the complete simulation package that
 `skate.runtime` assembles from the plugin's [`Data/`](Data/README.md) (every payload
 built from the JSON in `Data/motion/` and `Data/runtime/` and checked against the
 manifest). It runs three separate NullRHI editor processes. The first imports the
@@ -69,7 +69,7 @@ packages, and deletes banks left by an earlier, larger import. The third loads b
 assets named by `USkateSettings` through the game's own asynchronous loaders and invokes
 `USkateDataLibrary::Verify`:
 
-1. Compare every native rig/reference field, metadata record, track component,
+1. Compare every simulation rig/reference field, metadata record, track component,
    loop transform, channel weight and expanded frame/bone sample exactly. This
    compares float bits, including signed zero, rather than accepting a tolerance.
 2. Compare every encoded runtime file with the package's, byte for byte, and load the
@@ -95,7 +95,7 @@ older schema are rejected rather than read as current.
 No game, map, renderer or live bridge is started. The verification report lives in
 the game's build output under `skate-data/verify.json`. Replays provide a finite
 behavioral regression corpus. Exhaustive source-field equality plus unchanged
-native evaluation code establishes that the storage conversion preserves inputs;
+the simulation evaluation code establishes that the storage conversion preserves inputs;
 it does not claim to exercise every possible game interaction.
 
 ## Scope
@@ -106,7 +106,7 @@ assembled package.
 
 The data is committed as readable JSON (`Tools/motion_text.py` for the animation, one
 file per clip, and `Tools/runtime_text.py` for the rest). The JSON writes each binary32
-value as its shortest round-trip decimal, so the build regenerates the native files byte
+value as its shortest round-trip decimal, so the build regenerates the simulation files byte
 for byte, and those files remain the independent reference. Typed packages are generated
 under the game's ignored Content, like the Ride clip sequences; rebuilding the step
 overwrites edits to them. The assets hold only named fields. The motion importer

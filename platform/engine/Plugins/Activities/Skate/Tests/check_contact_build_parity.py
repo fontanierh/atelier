@@ -26,7 +26,7 @@ def corpus():
         record=[bits(rng.choice((0.0,-0.0,rng.uniform(-2,2)))) for _ in range(64)]
         states=((4,0),(0,4),(4,4),(0,0))[index%4]
         for body,state in enumerate(states):
-            # Symmetric positive diagonal inverse inertia keeps the native
+            # Symmetric positive diagonal inverse inertia keeps the simulation
             # reciprocal path inside its documented finite arithmetic domain.
             record[(8+body)*4:(9+body)*4]=[bits(rng.uniform(0.01,4)),0,0,bits(rng.uniform(0.01,2))]
             record[(10+body)*4:(11+body)*4]=[bits(rng.uniform(0.01,4)),bits(rng.uniform(0.01,4)),0,state|(8 if index%3==0 else 0)]
@@ -50,12 +50,12 @@ def main():
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
     reference=build_probe(output,'contact-build-reference',PLUGIN/'Tests/Reference/contact_build_probe.rs',args.target_dir)
-    code=output/'native-source'
+    code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir()
-    for name in ('ContactBuild.h','ContactBuild.cpp','NativeMath.h'):shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name,code/name)
+    for name in ('ContactBuild.h','ContactBuild.cpp','SimulationMath.h'):shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name,code/name)
     candidate=output/'contact-build-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(code),str(code/'ContactBuild.cpp'),str(PLUGIN/'Tests/Native/contact_build_probe.cpp'),'-o',str(candidate)],check=True)
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(code),str(code/'ContactBuild.cpp'),str(PLUGIN/'Tests/Simulation/contact_build_probe.cpp'),'-o',str(candidate)],check=True)
     source,labels,counts=corpus();(output/'inputs.bin').write_bytes(source)
     expected=subprocess.check_output([str(reference)],input=source);actual=subprocess.check_output([str(candidate)],input=source)
     (output/'reference.bin').write_bytes(expected);(output/'candidate.bin').write_bytes(actual)

@@ -19,7 +19,7 @@ from check_animation_playback_parity import Stream
 from session_parity import digest,REFERENCE_REVISION
 PLUGIN,CODE=common.PLUGIN,common.CODE
 UNITS=tuple(dict.fromkeys((*common.UNITS,'PlayerInputHostPhase','PlayerTeleportRuntime')))
-OWNED=(PLUGIN/'Tests/Native/player_input_host_phase_probe.cpp',PLUGIN/'Tests/Reference/player_input_host_phase_observer.rs',Path(__file__))
+OWNED=(PLUGIN/'Tests/Simulation/player_input_host_phase_probe.cpp',PLUGIN/'Tests/Reference/player_input_host_phase_observer.rs',Path(__file__))
 PRODUCTION=(CODE/'PlayerInputHostPhase.h',CODE/'PlayerInputHostPhase.cpp')
 OPS={**common.OPS,90:'complete_input_host',91:'initial_player',92:'request_teleport',93:'pending_geometry',94:'actual_grind_post',95:'retained_caller_result',96:'missing_reset_output',97:'actual_state61_publication',98:'actual_trajectory_launch',99:'actual_trajectory_update',100:'actual_trajectory_provider',101:'actual_trajectory_world',102:'actual_trajectory_reset',103:'actual_trajectory_poll',104:'actual_trajectory_cancel'}
 
@@ -53,7 +53,7 @@ def observers():
         body=''.join(wire.observe_expr(k,'s.'+f,'cpp')if not(name=='GrindSurface'and f=='kind')else'o.Word(std::uint32_t(s.kind));'for f,k in fields)
         cp.append('void HostObserve(BipedOutput& o,const '+name+'& s){'+body.replace('Observe(','HostObserve(')+'}')
     cp.append('void HostObserveState(BipedOutput& o,const PlayerGrindInputState& s){'+''.join(wire.observe_expr(k,'s.'+f,'cpp')for f,k in state).replace('Observe(','HostObserve(')+'}')
-    raw=(PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text()
+    raw=(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text()
     for marker in('void ObservePlan(','void ObservePending('):
         cp.append(common.grind.block(raw,marker).replace('Output&','BipedOutput&').replace('ObservePlan','HostObservePlan').replace('ObservePending','HostObservePending').replace('Observe(','HostObserve('))
     pre=grind.struct_fields(grind.source(grind.HOST+'physics/player_input/pre_input.rs'),'PreInputResult')
@@ -71,7 +71,7 @@ def observers():
 
 def trajectory_readers():
     # Exact borrowed proof transport, not numerical owner implementation.
-    raw=(PLUGIN/'Tests/Native/air_trajectory_selector_probe.cpp').read_text()
+    raw=(PLUGIN/'Tests/Simulation/air_trajectory_selector_probe.cpp').read_text()
     cp=[]
     for marker,name in(('AirLaunchInfo ReadLaunch()','ReadLaunch'),('AirSelectorInput ReadSelectorInput()','ReadSelectorInput')):
         body=common.grind.block(raw,marker).replace(name+'()',name+'(BipedInput& i)',1)
@@ -79,9 +79,9 @@ def trajectory_readers():
         body=re.sub(r'\bVector\(\)',r'i.Floats<4>()',body)
         body=re.sub(r'\bFloat\(\)',r'i.Float()',body)
         body=re.sub(r'\bWord\(\)',r'i.Word()',body);cp.append(body)
-    raw=(PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text()
+    raw=(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text()
     world=common.grind.block(raw,'WorldGeometry World(unsigned kind)').replace('World(unsigned kind)','TrajectoryWorldBase(unsigned kind)',1)
-    runtime=common.grind.block((PLUGIN/'Tests/Native/air_trajectory_runtime_probe.cpp').read_text(),'WorldGeometry RuntimeWorld(unsigned kind)')
+    runtime=common.grind.block((PLUGIN/'Tests/Simulation/air_trajectory_runtime_probe.cpp').read_text(),'WorldGeometry RuntimeWorld(unsigned kind)')
     runtime=runtime.replace('RuntimeWorld(unsigned kind)','TrajectoryWorld(unsigned kind)',1);runtime=re.sub(r'\bWorld\(',r'TrajectoryWorldBase(',runtime)
     cp.extend((world,runtime))
     raw=(PLUGIN/'Tests/Reference/air_trajectory_runtime_probe.rs').read_text();rp=[]
@@ -154,8 +154,8 @@ _=>panic!("Biped owner operation")'''
         dest=crate/'src'/rel;raw=p.read_bytes();assert dest.read_bytes()[:len(raw)]==raw,rel
         prefixes[rel]=dict(original_sha256=digest(p),original_bytes=len(raw),generated_sha256=digest(dest))
     report.update(input_host_original_prefixes=prefixes,input_host_production={p.name:digest(p)for p in PRODUCTION},input_host_proof={p.name:digest(p)for p in OWNED},
-        input_host_extensions={rel:hashlib.sha256(v.encode()).hexdigest()for rel,v in extensions.items()},input_host_native_sha256=digest(snapshot/'player_input_host_phase_probe.cpp'),
-        input_host_reference_sha256=digest(main),input_host_middle_lock_witness=dict(case=1,world=1,commands=81,stock_settings=True,source_proof_sha256=digest(Path(trajectory_proof.__file__))),input_host_units=UNITS,input_host_boundary=__doc__,input_host_native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},input_host_borrowed_trajectory_transport={p.name:digest(p)for p in(PLUGIN/'Tests/Native/air_trajectory_selector_probe.cpp',PLUGIN/'Tests/Native/player_grind_input_probe.cpp',PLUGIN/'Tests/Reference/air_trajectory_runtime_probe.rs',PLUGIN/'Tests/Reference/player_grind_input_probe.rs',PLUGIN/'Tests/Native/air_trajectory_runtime_probe.cpp')})
+        input_host_extensions={rel:hashlib.sha256(v.encode()).hexdigest()for rel,v in extensions.items()},input_host_simulation_sha256=digest(snapshot/'player_input_host_phase_probe.cpp'),
+        input_host_reference_sha256=digest(main),input_host_middle_lock_witness=dict(case=1,world=1,commands=81,stock_settings=True,source_proof_sha256=digest(Path(trajectory_proof.__file__))),input_host_units=UNITS,input_host_boundary=__doc__,input_host_simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},input_host_borrowed_trajectory_transport={p.name:digest(p)for p in(PLUGIN/'Tests/Simulation/air_trajectory_selector_probe.cpp',PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp',PLUGIN/'Tests/Reference/air_trajectory_runtime_probe.rs',PLUGIN/'Tests/Reference/player_grind_input_probe.rs',PLUGIN/'Tests/Simulation/air_trajectory_runtime_probe.cpp')})
     (out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,observed,snapshot,report
 
 def corpus():
@@ -332,18 +332,18 @@ def main():
         (out/'owner-freeze.json').write_text(json.dumps(dict(**summary,production={p.name:digest(p)for p in PRODUCTION},proof={p.name:digest(p)for p in OWNED}),indent=2)+'\n');print(json.dumps(summary,indent=2));return
     crate=observed/'atelier-host';subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(a.target_dir.resolve()),'--bin','player-input-host-phase-reference'],check=True)
     reference=out/'player-input-host-phase-reference';shutil.copy2(a.target_dir.resolve()/'release/player-input-host-phase-reference',reference)
-    native=out/'player-input-host-phase-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_input_host_phase_probe.cpp'),'-o',str(native)],check=True)
+    simulation=out/'player-input-host-phase-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_input_host_phase_probe.cpp'),'-o',str(simulation)],check=True)
     bank=out/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';converter=common.landing.biped.phase.converter
-    (bank/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (bank/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for name in('action','motion'):(bank/f'actor.{name}.reference').write_bytes(common.landing.biped.phase.original_graph(common.landing.biped.phase.element('state','idle')))
     identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw)
-    actual=subprocess.check_output([str(native),str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         byte=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=byte//4
         c=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);r=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None)
-        div=dict(first_byte=byte,first_word=word,case=c['index']if c else None,operation=OPS[r['operation']]if r else'initial',section=next(((n,word-b)for n,(b,e)in(r['spans'].items()if r else[])if b<=word<e),None),reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,byte-16):byte+32].hex(),native_hex=actual[max(0,byte-16):byte+32].hex())
+        div=dict(first_byte=byte,first_word=word,case=c['index']if c else None,operation=OPS[r['operation']]if r else'initial',section=next(((n,word-b)for n,(b,e)in(r['spans'].items()if r else[])if b<=word<e),None),reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,byte-16):byte+32].hex(),simulation_hex=actual[max(0,byte-16):byte+32].hex())
         (out/'first-divergence.json').write_text(json.dumps(div,indent=2)+'\n');raise AssertionError(div)
     result=dict(**summary,passed=True,reference_revision=REFERENCE_REVISION,exact_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames),limitations=__doc__)
-    report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
+    report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

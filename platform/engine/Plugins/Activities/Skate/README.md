@@ -6,15 +6,15 @@ contacts and constraints, steering and pushes, Flick-It gestures, manuals and po
 landings and bails, with its animation graphs, trick scoring and skating camera. The game supplies nearby
 static collision, rails, controls, its character, the board meshes, sounds and the HUD; the adapter in
 `Source/AtelierSkate/Private/SkateRuntime.cpp` connects the two, and `SkateRetarget.cpp` retargets the solved rider
-onto the game's character. Under the Ride backend the character's body is an active ragdoll that takes over in bails
-and plays the transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's
+onto the game's character. Ride gives the character's body an active ragdoll that takes over in bails, and plays the
+transitions on and off the board ([RIDE.md](RIDE.md)). [RUNTIME.md](RUNTIME.md) lists the session's
 systems, the data bundle and how both are verified.
 
 ## Adding it to a game
 
 1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
    depends on AtelierCore, AtelierFX and the engine's PhysicsControl.
-2. Add a build step that assembles the plugin's data with `Tools/native_package.py --assemble`
+2. Add a build step that assembles the plugin's data with `Tools/simulation_package.py --assemble`
    ([Data/README.md](Data/README.md)) and imports it as typed assets (step 9), and cook their folders:
 
    ```ini
@@ -27,9 +27,9 @@ systems, the data bundle and how both are verified.
    `Initialize(Character)`. Bind a button to `Toggle()`.
 4. In the character movement component's `PhysCustom`, call `PhysSkate(Dt)` for custom mode
    `USkateComponent::MovementMode` (2), and leave the actor's rotation alone while `IsRiding()` (true during a bail).
-5. In the animation instance, use `GetRetailPose()` while riding: local transforms for every bone of the host
+5. In the animation instance, use `GetRiderPose()` while riding: local transforms for every bone of the host
    skeleton.
-6. Optionally drive the camera from `GetRetailCamera(Transform, FOV)`. The FOV is vertical; convert it to Unreal's
+6. Optionally drive the camera from `GetSimulationCamera(Transform, FOV)`. The FOV is vertical; convert it to Unreal's
    horizontal FOV with the viewport aspect.
 7. Register grindable lines with `USkateRailSubsystem::Add`: rails, ledge and box edges, coping and curbs, as their top
    contact line in centimetres.
@@ -45,27 +45,21 @@ systems, the data bundle and how both are verified.
 | `GetSkateMouseSensitivity()` | The player's mouse sensitivity (default 0.4); scales the mouse flick |
 | `GetSkateBone(Contract)` | The rider's bone for a humanoid contract name, `NAME_None` when it has none (default: the name itself); the retargeter finds every bone through it |
 | `GetSkateBoardScale()` | The visible board's size (default 1): it grows about the wheels' contact and the pose rises onto its deck; the physics keep the standard board |
-| `CanCarrySkateBoard()` | Ride only: the hands are free to carry the board on foot (default true); false puts a carried board away and refuses the board button |
+| `CanCarrySkateBoard()` | The hands are free to carry the board on foot (default true); false puts a carried board away and refuses the board button |
 
 `Toggle()` mounts only on the ground and not crouched. The board starts at the player's feet, aligned with their
 travel above 30 cm/s, and keeps their velocity. Stepping off works only on the ground (not in the air, on a rail or
 in a bail) and leaves the player facing the board's travel at up to 420 cm/s. `StowImmediately()`, `SetGoofy()`,
 `PlaceAt()` and `Launch()` serve the game and QA; `SetScriptedInput()` replaces the player's controls.
 
-## Backends
+## Ride
 
-`USkateSettings::Backend` picks the backend, and the console variable `skate.Backend` (`Native` or `Ride`) overrides it
-from the next mount on. Both ride the same `GameplaySession` and serve the same `ISkateRider`, controls, board meshes,
-sounds and HUD getters.
-
-- **Ride**: the backend games ship, described in [RIDE.md](RIDE.md). The session rides the board under the
-  character's own body: an active ragdoll that Physics Control drives toward the retargeted pose
-  (`skate.RidePhysical 0` shows the pose alone), Chaos bails and get-ups, and transitions on and off the board played
-  from the native clips. The game imports the clips as Unreal assets under `/Game/SkateRide` (`SK_SkateRider`,
-  `MDT_SkateRider` and the clips in `Clips/B0` and `Clips/B1`) with its own build step. `skate.RideTune` overrides the
-  transitions' tuning live (`Name=Value` words, names as in `RideTuning.h`).
-- **Native**: the session's pose on the character with no physical body, no transitions and no Chaos bails. It is
-  the reference that QA and replays compare the Ride backend against, not a backend for players.
+Ride is described in [RIDE.md](RIDE.md). The session rides the board under the character's own body: an active
+ragdoll that Physics Control drives toward the retargeted pose (`skate.RidePhysical 0` shows the pose alone), Chaos
+bails and get-ups, and transitions on and off the board played from the skating clips. The game imports the clips as
+Unreal assets under `/Game/SkateRide` (`SK_SkateRider`, `MDT_SkateRider` and the clips in `Clips/B0` and `Clips/B1`)
+with its own build step. `skate.RideTune` overrides the transitions' tuning live (`Name=Value` words, names as in
+`RideTuning.h`).
 
 ## Settings
 
@@ -75,7 +69,6 @@ sounds and HUD getters.
 | --- | --- | --- |
 | `MotionData` | none | The typed motion bank ([TYPED_DATA.md](TYPED_DATA.md)); the session requires it |
 | `RuntimeData` | none | The typed settings, graphs, camera, gestures and physical skeletons ([TYPED_DATA.md](TYPED_DATA.md)); the session requires it |
-| `Backend` | `Ride` | `Ride` (the ride) or `Native` (the reference; see Backends); `skate.Backend` overrides it on the next mount |
 | `Difficulty` | `normal` | Controller preset: `easy`, `normal` or `hardcore` |
 | `TruckTightness` | 0.5 | 0 loose to 1 tight; feeds the steering scalar |
 | `PopHeightScale` | 1 | 0.5 to 2; scales the jump-height presets |
@@ -86,7 +79,7 @@ sounds and HUD getters.
 | `bTightFlicks` | false | Also read a hardflip or inward heelflip flicked close to straight down then up (newer skate games' motion), beside the authored wide arc: the main gesture set gains a narrower copy of each (`GestureInputPublication::Tune`). Off is stock |
 | `bFlick120Hz` | false | Read Flick-It at 120 Hz (see 120 Hz flicks). Off is stock: one reading a tick |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
-| `BoardDissolveMaterial` | none | Ride only: a masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
+| `BoardDissolveMaterial` | none | A masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
 | `FallSounds` | none | Body-hitting-the-ground sounds for a bail (the `fall` cue; loaded, not yet played, see [RIDE.md](RIDE.md) H62) |
 | `SurfaceMeshes`, `SurfaceMaterials` | empty | What the ground rides like, by static mesh or material name (see Surfaces) |
@@ -117,7 +110,7 @@ The first match wins:
 
 Names drop a leading `SM_`, `MI_` or `M_`, so `MI_Road` is `Road`. Use a mesh name when several kinds of ground share
 one material. The ini form is `SurfaceMaterials=(("Grass",Grass),("Road",Asphalt))`. `skate.SurfaceDebug 1` logs
-each mesh section's surface the next time the snapshot is built. `GetRetailState` reports the surface under the
+each mesh section's surface the next time the snapshot is built. `GetSimulationState` reports the surface under the
 wheels as `surface=<name>:<wheels>`.
 
 ## Feel
@@ -129,7 +122,7 @@ Multipliers scale the active difficulty's authored values, so 1 is the game as m
 difficulty's own choice. Values outside their ranges are refused with the reason (`FSkateFeel::Validate`), and the
 feel then stays as it was.
 
-The session side is `FeelTuning` (`Private/Native/FeelTuning.h`), applied by `GameplayRuntime::Feel`. It works on
+The session side is `FeelTuning` (`Private/Simulation/FeelTuning.h`), applied by `GameplayRuntime::Feel`. It works on
 copies of the authored settings captured when the session is created, so values never compound and the defaults are
 bit-exact with stock.
 
@@ -228,7 +221,7 @@ The feel keeps its meaning at 120 Hz because each setting is a time or a distanc
   (`GestureRecognizer::SampleTick`): a wide pattern whose last circle the half-tick reading reaches first (an ollie's)
   does not pre-empt a tighter one the tick's end completes (a tight inward heelflip).
 
-The offline QA session (`Tests/Native/gameplay_session_cli.cpp`) takes `flick_120hz` in its feel and a step's
+The offline QA session (`Tests/Simulation/gameplay_session_cli.cpp`) takes `flick_120hz` in its feel and a step's
 readings as `readings` (`[age, left x, left y, right x, right y]`, oldest first), so a game's feel check can ride the
 same flick at both rates: the authored flicks read the same, the window and pace give the same results, and a quick
 hardflip whose bottom falls between frames reads only at 120 Hz.
@@ -249,7 +242,7 @@ from a 2.65 cm host radius to the session's 3.1 cm. Board parts render with cust
 
 ## How a ride runs
 
-The session runs on its own thread, `AtelierSkateNative` (32 MiB stack), which owns every mutable simulation object.
+The session runs on its own thread, `AtelierSkateSimulation` (32 MiB stack), which owns every mutable simulation object.
 The game thread sends it typed commands (activate, configure, step, world, launch, suspend) and reads back the root,
 bones, velocity, state, trick, score, manual balance and camera. Each activation carries a generation number so that
 output from a previous ride never moves a new one.
@@ -292,14 +285,14 @@ output from a previous ride never moves a new one.
 - **Modes.** The session's state name sets the component mode: `Wipeout` states are a bail, `Grind` states a grind,
   `Air` states the air, anything else the ground. The HUD getters (`GetComboLine`, `GetComboAlpha`, `GetScore`,
   `GetStatus`, `GetSpeed`, `GetCameraYaw`) read from it.
-- **Errors.** Missing or corrupt data, or a session error, logs `SKATE: <message>`, shows it on screen and stows the
-  board; the player keeps walking. Under the Ride backend a session error during a ride bails the body instead and
-  loads a fresh session (see [RIDE.md](RIDE.md#failures)).
+- **Errors.** Missing or corrupt data, or a session that cannot start, logs `SKATE: <message>`, shows it on screen and
+  stows the board; the player keeps walking. A session error during a ride bails the body instead and loads a fresh
+  session (see [RIDE.md](RIDE.md#failures)).
 
 ## Showing a remote rider
 
 The plugin does not replicate a ride; a networked game sends the riding player's state itself and shows it on the
-other machines through a proxy component. `InitializeNetworkProxy(Character)` sets one up: no Native session, input,
+other machines through a proxy component. `InitializeNetworkProxy(Character)` sets one up: no simulation session, input,
 physics bodies or local simulation, only the board, the pose and the sound.
 
 - **Pose.** `ApplyNetworkPose(ComponentPose, MeshWorld)` takes the rider's component-space bone transforms (one per

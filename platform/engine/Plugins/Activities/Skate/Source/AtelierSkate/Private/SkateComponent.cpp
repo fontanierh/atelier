@@ -193,7 +193,7 @@ void USkateComponent::SetGoofy(bool bNewGoofy)
 {
     if (bGoofy == bNewGoofy) return;
     bGoofy = bNewGoofy;
-    if (bRetailActive) ConfigureRetail();
+    if (bSimulationActive) ConfigureSimulation();
     if (Mode != ESkateMode::Off && Mode != ESkateMode::Bail) { SetMeshForRiding(); ++Serial; }
 }
 
@@ -215,7 +215,7 @@ bool USkateComponent::Toggle()
 
 void USkateComponent::StowImmediately()
 {
-    SuspendRetailRuntime();
+    SuspendSimulation();
     // A cut: no board left lying, no carried speed, the body back on its capsule.
     ResetTransition(); RequestPoseBlend(0.f);
     if (Mode == ESkateMode::Off || !Rider) return;
@@ -264,7 +264,7 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false;
     Mode=ESkateMode::Ground;
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
-    if (!StartRetailRuntime()) { StowImmediately(); return false; }
+    if (!StartSimulation()) { StowImmediately(); return false; }
     // A placement is a cut: the board is there at once.
     Transit().Board = ERideBoard::Ride; ShowBoard(1.f, true); RequestPoseBlend(0.f);
     return true;
@@ -298,7 +298,7 @@ void USkateComponent::ReadInput(float Dt)
     using atelier::skate_pad::Unsqueeze;
     I.Left.X=Unsqueeze(I.Left.X); I.Left.Y=Unsqueeze(I.Left.Y);
     FVector2D Pad(Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightX)), -Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightY)));
-    // The player's stick travel (FSkateFeel): the native pad reads 0.25..0.95 of a stick's reach as its whole range.
+    // The player's stick travel (FSkateFeel): the simulation pad reads 0.25..0.95 of a stick's reach as its whole range.
     if (Feel.StickDeadZone != .25f || Feel.StickReach != .95f)
     {
         using atelier::skate_pad::Retravel;
@@ -349,7 +349,7 @@ void USkateComponent::ReadInput(float Dt)
     I.bPush = Down(EKeys::W) || Down(EKeys::Up) || Down(EKeys::Gamepad_FaceButton_Bottom) || Down(EKeys::Gamepad_FaceButton_Left);
     I.bBrake = Down(EKeys::S) || Down(EKeys::Down) || Down(EKeys::Gamepad_FaceButton_Right);
     I.bPowerslide = Down(EKeys::C);
-    // The triggers in the pad's 255 steps, as the native backend reads them (SkateRuntime): any press grabs.
+    // The triggers in the pad's 255 steps, as the simulation reads them (SkateRuntime): any press grabs.
     auto Trigger = [&](const FKey& Key, const FKey& Axis) { return Down(Key) ? 1.f : FMath::Clamp(FMath::RoundToFloat(255.f * PC->GetInputAnalogKeyState(Axis)), 0.f, 255.f) / 255.f; };
     I.TriggerLeft = Trigger(EKeys::Q, EKeys::Gamepad_LeftTriggerAxis);
     I.TriggerRight = Trigger(EKeys::E, EKeys::Gamepad_RightTriggerAxis);
@@ -361,7 +361,7 @@ void USkateComponent::ReadInput(float Dt)
 
 FString USkateComponent::GetStatus() const
 {
-    if (bRetailActive && RetailPose.IsEmpty()) return TEXT("Loading skater");
+    if (bSimulationActive && RiderPose.IsEmpty()) return TEXT("Loading skater");
     switch (Mode)
     {
     case ESkateMode::Air: return TEXT("Airborne");
@@ -401,16 +401,16 @@ void USkateComponent::ResetInput()
     In={}; MouseStick=FVector2D::ZeroVector; MouseQuiet=0; bMouseSwiped=false;
     SpaceHeld=SpaceRelease=-1.f;
 }
-void USkateComponent::PhysSkate(float Dt) { if (!bNetworkProxy) StepRetailRuntime(Dt); }
-void USkateComponent::Launch(const FVector& Velocity) { LaunchRetail(Velocity); }
+void USkateComponent::PhysSkate(float Dt) { if (!bNetworkProxy) TickSimulation(Dt); }
+void USkateComponent::Launch(const FVector& Velocity) { LaunchSimulation(Velocity); }
 void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
     if (bNetworkProxy) return;
     Super::TickComponent(Dt,Type,Tick);
     if (Mode != ESkateMode::Off) UpdateAudio(Dt);
-    // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
-    if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
-    PollIdleRetail();
+    // Preload the skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
+    if (bAvailable && Rider && !ShownRuntime && !bSimulationPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadSimulation();
+    PollIdleSimulation();
     // After the ride's step (in CharacterMovement's tick) and before the mesh animates.
     if (bAvailable && Rider) { TickTransition(Dt); SyncRootMotion(); }
 }
@@ -423,5 +423,5 @@ FString USkateComponent::GetDebug() const
     const UCharacterMovementComponent* M=Movement();
     return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d switch=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
         M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),ShownFakie(),ShownSwitch(),bManual,bPowerslide,bPushing,
-        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+DescribeTransition()+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
+        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,ShownFloorClearance,BailVisualLift)+DescribeTransition()+(bSimulationActive?TEXT(" simulation=")+GetSimulationState():FString());
 }

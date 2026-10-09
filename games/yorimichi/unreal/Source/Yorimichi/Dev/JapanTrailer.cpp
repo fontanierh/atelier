@@ -245,10 +245,10 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         if(Action==TEXT("launch"))
         {
             double Speed=0.;E->TryGetNumberField(TEXT("speed"),Speed);
-            // IsRiding also covers the mount clip, before Launch can reach the Native session.
-            if(SkateRide->GetMode()!=ESkateMode::Ground || !SkateRide->GetRetailState().StartsWith(TEXT("PhysicsGround ")) ||
+            // IsRiding also covers the mount clip, before Launch can reach the simulation session.
+            if(SkateRide->GetMode()!=ESkateMode::Ground || !SkateRide->GetSimulationState().StartsWith(TEXT("PhysicsGround ")) ||
                !FMath::IsFinite(Speed) || Speed<=0.)
-            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetRetailState());AtelierRequestExit(2);return;}
+            {UE_LOG(LogTemp,Error,TEXT("TRAILER LAUNCH requires a ready PhysicsGround ride and positive speed in cm/s: %s"),*SkateRide->GetSimulationState());AtelierRequestExit(2);return;}
             const FSkateInput Coast;SkateRide->SetScriptedInput(&Coast);
             const FVector Velocity=ReviewForward*Speed;
             SkateRide->Launch(Velocity);
@@ -279,7 +279,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
     const TArray<TSharedPtr<FJsonValue>>* Keys=nullptr;
     if(PlayerCamera)
     {
-        // The normal camera owns its spring arm and native ride blend. Log the last rendered view.
+        // The normal camera owns its spring arm and simulation ride blend. Log the last rendered view.
         const auto* PC=Cast<APlayerController>(Controller);
         Camera=PC && PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraLocation():FollowCamera->GetComponentLocation();
         Rotation=PC && PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraRotation():FollowCamera->GetComponentRotation();
@@ -343,7 +343,7 @@ void AWandererCharacter::AdvanceTrailer(float Dt)
         const FVector P = GetActorLocation();
         TrailerTelemetry += FString::Printf(TEXT("%d,%.4f,%.4f,%.4f,%.4f,%d,%d,%s,%.4f,%.4f,%.4f,%s,%d,%d,%.4f,%d,%.4f\n"),
             TrailerFrame/CaptureStride,GetVelocity().Size2D(),P.X,P.Y,P.Z,GetCharacterMovement()->IsFalling(),SkateRide->IsRiding(),
-            *TrailerCSVField(SkateRide->GetRetailState()),Camera.X,Camera.Y,Camera.Z,*TrailerCSVField(AnimationAction.ToString()),
+            *TrailerCSVField(SkateRide->GetSimulationState()),Camera.X,Camera.Y,Camera.Z,*TrailerCSVField(AnimationAction.ToString()),
             Stamina.Sprinting,Sailing,Sailboat->GetSailAmount(),GetZeppelin()?GetZeppelin()->GetStage():-1,
             GetZeppelin()?GetZeppelin()->GetPropellerAngle():0.f);
         TrailerPending=TrailerFrame/CaptureStride;

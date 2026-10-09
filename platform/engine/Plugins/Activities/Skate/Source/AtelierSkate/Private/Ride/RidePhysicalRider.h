@@ -261,8 +261,8 @@ public:
     UBoxComponent* TakeLooseBoard();
     /** Destroy the loose board if it is still ours (the ride's board is back under the rider). */
     void DropLooseBoard();
-    /** Put the loose board's deck at Deck (scaled, as GetLooseBoardDeck) and hold it there, out of physics: another
-     *  simulation (the hybrid's Native session) moves the board. ReleaseLooseBoard gives it back to physics, moving
+    /** Put the loose board's deck at Deck (scaled, as GetLooseBoardDeck) and hold it there, out of physics: the
+     *  simulation session moves the board. ReleaseLooseBoard gives it back to physics, moving
      *  with Velocity (cm/s) and Spin (rad/s). */
     void PlaceLooseBoard(const FTransform& Deck);
     void ReleaseLooseBoard(const FVector& Velocity, const FVector& Spin);
@@ -274,7 +274,7 @@ public:
 
     /** The physics asset built from the bone contract: a body per part (fitted to the skin, or a capsule), wide joint
      *  limits that every riding pose fits, no collision between the rider's own bodies. Fitted: how many bodies were
-     *  fitted to the skin. BailEnvelopes, when given, gets each joint's bail envelope (Native's, by joint name): the
+     *  fitted to the skin. BailEnvelopes, when given, gets each joint's bail envelope (the simulation's, by joint name): the
      *  asset keeps the riding one. */
     static UPhysicsAsset* BuildPhysicsAsset(USkeletalMesh* Mesh, const ISkateRider* Api, UObject* Outer, bool bFitToSkin,
         int32* Fitted = nullptr, TMap<FName, FRideJointEnvelope>* BailEnvelopes = nullptr);
@@ -330,7 +330,7 @@ private:
     UPROPERTY() TObjectPtr<USkeletalMesh> BuiltFor;
     bool bBuiltFit = false;
     int32 BuiltFitted = 0;
-    // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (Native's, made
+    // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (the simulation's, made
     // with the built asset). In a bail, RampLimits holds each joint's limits now (twist, Swing1, Swing2): they start
     // open to the pose the bail began in and close to the envelope at skate.RideBailTightenRate.
     TMap<FName, FRideJointEnvelope> RidingEnvelopes, BailEnvelopes;

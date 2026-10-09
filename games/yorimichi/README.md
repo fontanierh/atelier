@@ -19,7 +19,7 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
-(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the Skate plugin's native skating package, assembled, checked and staged (`skate.runtime`), the C++
+(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the Skate plugin's skating package, assembled, checked and staged (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
@@ -78,7 +78,7 @@ the chase camera and its see-through in [docs/CAMERA.md](docs/CAMERA.md).
 
 **Modori, the playable rival** ([assets/characters/modori](assets/characters/modori/README.md)): a tall, dark-haired
 young man in a long coat with a Chaos Cloth skirt. His own rig carries the retargeted merged move set, sword and
-paraglider, and the native skating runtime fits its rider pose to his body. After building the game, launch him with
+paraglider, and the skating runtime fits its rider pose to his body. After building the game, launch him with
 `nice -n 10 uv run atelier play yorimichi -- -rider=Modori`.
 
 **Sword** ([docs/SWORD_COMBAT.md](docs/SWORD_COMBAT.md)): draw and sheathe, a four-cut combo, a charged spin, guard and parry,
@@ -89,7 +89,7 @@ health and knock-downs. Hits carry trails, sparks, hit-stop, slow motion on parr
 [docs/FOX_HUNTER_ANIMATION.md](docs/FOX_HUNTER_ANIMATION.md)) waits up the road from the start and fights with claws
 and a kick, parries included.
 
-**Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's native
+**Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's
 [Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md): Flick-It tricks, grabs, manuals, grinds,
 powerslides, pumping, vert and bails, with the solved rider retargeted onto Cairo every frame.
 

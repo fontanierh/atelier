@@ -10,7 +10,7 @@
 Both modes start the same way, so a replay starts where the recording did. The rider gets off and rides Ride a moment at
 the start, AT, so that the next mount opens a new session. Then he gets on the board, stopped at AT, and
 stands with every control released for SETTLE frames. From the start the game runs at a fixed 60 Hz frame rate in real time: the engine waits out each frame
-and counts it as 1/60 s, and Native steps in lockstep with its thread (skate.Lockstep), so the same controls ride the
+and counts it as 1/60 s, and the simulation steps in lockstep with its thread (skate.Lockstep), so the same controls ride the
 same way.
 
 record: from GO the player's pad drives, and each frame writes one row, flushed at once: quitting the game ends it.
@@ -34,7 +34,7 @@ A row has:
 Writes build/yorimichi/ride-record/<TAKE>/:
 - record: meta.json and frames.jsonl.
 - replay: <OUT>/ beside them, with frames.jsonl, report.json (the board's error, and the first frames where the board or
-  the pad sent to Native differ) and shots/.
+  the pad sent to the simulation differ) and shots/.
 - done.json when it ends, and error.txt on a failure.
 
 Globals:
@@ -296,7 +296,7 @@ def tick(dt):
         state = L.skate_state()
         riding = mode() == 1
         hold(riding, SETTLE, 60.)
-        # The Native session goes at its SETTLE + 3rd step: it rides two steps before the body has mounted, and two
+        # The simulation session goes at its SETTLE + 3rd step: it rides two steps before the body has mounted, and two
         # more steps at rest put the board centimetres off by the pier's end.
         step = field(state, 'tick')
         ready = riding and S['ok'] >= SETTLE // 2 and step is not None and int(step) >= SETTLE + 3

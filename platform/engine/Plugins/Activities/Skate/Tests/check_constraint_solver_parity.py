@@ -102,12 +102,12 @@ def main():
     parser.add_argument('--output',type=Path,required=True);parser.add_argument('--target-dir',type=Path,required=True)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     reference=build_probe(output,'constraint-solver-reference',PLUGIN/'Tests/Reference/constraint_solver_probe.rs',args.target_dir)
-    source_code=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+    source_code=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir()
     for name in ('ConstraintSolver.h','ConstraintSolver.cpp'):shutil.copy2(source_code/name,code/name)
     candidate=output/'constraint-solver-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'ConstraintSolver.cpp'),str(PLUGIN/'Tests/Native/constraint_solver_probe.cpp'),'-o',str(candidate)],check=True)
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'ConstraintSolver.cpp'),str(PLUGIN/'Tests/Simulation/constraint_solver_probe.cpp'),'-o',str(candidate)],check=True)
     source,offsets,counts,words=corpus();(output/'inputs.bin').write_bytes(source)
     expected=subprocess.check_output([str(reference)],input=source);actual=subprocess.check_output([str(candidate)],input=source)
     (output/'reference.bin').write_bytes(expected);(output/'candidate.bin').write_bytes(actual)

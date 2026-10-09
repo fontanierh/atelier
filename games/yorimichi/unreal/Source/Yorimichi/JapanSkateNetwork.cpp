@@ -105,7 +105,7 @@ void UJapanSkateNetwork::Capture()
         ServerBoard(State); LastBoardSent = Now;
     }
     CaptureBodies(Now);
-    const bool bHasPose = Rider->GetNetworkActivity() == EJapanActivity::Skate || !Skate->GetRetailPose().IsEmpty();
+    const bool bHasPose = Rider->GetNetworkActivity() == EJapanActivity::Skate || !Skate->GetRiderPose().IsEmpty();
     if (bHasPose) LastActivePose = Now;
     else if (Now - LastActivePose > 1.) return; // CMC already replicates ordinary foot movement.
     // Full post-physics poses run at 30 Hz, with a separate 60 Hz stream for bail body anchors.

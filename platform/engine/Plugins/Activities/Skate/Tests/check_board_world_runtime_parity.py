@@ -120,8 +120,8 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     for name in ('result.json', 'first-divergence.json'):
         (output/name).unlink(missing_ok=True)
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
-    sources = ('NativeMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
+    sources = ('SimulationMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
         'ConstraintFrames', 'ConstraintSolver', 'JointBuild', 'DriveBuild', 'JointRecords', 'TruckDriveFrames',
         'DrivePreparation', 'HookDrive', 'BoardAssembly', 'ContactBuild', 'ContactGeneration', 'BoardPose',
         'ForceQueue', 'CollisionBody', 'BoardContactFeedback', 'BoardStep', 'BoardRuntime', 'Geometry',
@@ -130,17 +130,17 @@ def main():
         'BoardPhysicsSettings', 'BoardColliders')
     cpp = output/'board-world-runtime-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions',
-        '-Wall', '-Wextra', '-Werror', '-I', str(native), *(str(native/f'{n}.cpp') for n in sources),
-        str(PLUGIN/'Tests/Native/board_world_runtime_probe.cpp'), '-o', str(cpp)], check=True)
+        '-Wall', '-Wextra', '-Werror', '-I', str(simulation), *(str(simulation/f'{n}.cpp') for n in sources),
+        str(PLUGIN/'Tests/Simulation/board_world_runtime_probe.cpp'), '-o', str(cpp)], check=True)
     rust = build_probe(output, 'board-world-runtime-reference', PLUGIN/'Tests/Reference/board_world_runtime_probe.rs', args.target_dir)
-    settings = output/'settings.native'
+    settings = output/'settings.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     commands = corpus()
     (output/'input.bin').write_bytes(commands)
     expected = subprocess.check_output([str(rust), str(args.assets.resolve())], input=commands)
     actual = subprocess.check_output([str(cpp), str(settings)], input=commands)
     (output/'reference.bin').write_bytes(expected)
-    (output/'native.bin').write_bytes(actual)
+    (output/'simulation.bin').write_bytes(actual)
     if actual != expected:
         first = next((i for i, (a, b) in enumerate(zip(actual, expected)) if a != b), min(len(actual), len(expected)))
         (output/'first-divergence.json').write_text(json.dumps(dict(byte=first, word=first//4, expected_bytes=len(expected), actual_bytes=len(actual)), indent=2)+'\n')

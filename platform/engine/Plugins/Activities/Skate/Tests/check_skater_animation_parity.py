@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Compare the complete supported native actor graph/tree/pose/packet schedule.
+"""Compare the complete supported simulation actor graph/tree/pose/packet schedule.
 
 The reference calls untouched SkaterAnimation::from_source and ::advance with
-the real original ActionHost and MotionHost. Project-native stock data is used
+the real original ActionHost and MotionHost. Project stock data is used
 only by C++; optional override JSON is the project's own format. This bounded
 fixture check does not establish complete authored gameplay or session parity.
 Run compilation/execution through atelier.safety.
@@ -23,7 +23,7 @@ from check_animation_playback_parity import Stream,bits
 from check_animation_trees_parity import name as attribute_name
 from session_parity import REFERENCE_REVISION,digest
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 QUERIES=('A','X','Y','Clock','Const','PriorTrick','PriorBoard','Turn','RawTurn','HardTurn','enable','exit','push','other','TweakX','TweakY','Marker','')
 TICKS=128
 FIXTURES=12
@@ -154,17 +154,17 @@ def build_reference(output,target):
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 
-def build_native(output):
-    live=CODE;code=output/'native-source'
+def build_simulation(output):
+    live=CODE;code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations','ActionGraphFrame','GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName','GraphMotionConditions','GraphMotionPhysicalConditions','GraphMotionSpecialConditions','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations','GraphMotionScoreOperations','GraphMotionPushOperations','GraphMotionGestureOperations','MotionGraphHost','AnimationPose','AnimationPoseAuthored','AnimationPoseJson','AnimationPublication','SkaterAnimation')
+    code.mkdir();files=('SimulationMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations','ActionGraphFrame','GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName','GraphMotionConditions','GraphMotionPhysicalConditions','GraphMotionSpecialConditions','RidingAnimation','RidingAnimationSettings','GraphMotionFeedbackOperations','GraphMotionScoreOperations','GraphMotionPushOperations','GraphMotionGestureOperations','MotionGraphHost','AnimationPose','AnimationPoseAuthored','AnimationPoseJson','AnimationPublication','SkaterAnimation')
     files=tuple(dict.fromkeys((*files,'StockSettingsReader','AnimationRidingAuxiliary','AnimationKickturn',
         'AnimationAirborne','AnimationAirborneSettings','WipeoutOrientation','GraphMotionOffboardTiming',
         'GraphMotionTrickLifecycle','GraphMotionGrindOperations','GraphMotionOffboardWipeoutOperations',
         'GraphMotionToggleBoard','MotionGraphContinuationOperations','MotionGraphContinuationSettings',
         'MotionGraphContinuationHost')))
     for path in list(live.glob('*.h'))+[live/(f+'.cpp') for f in files]:shutil.copyfile(path,code/path.name)
-    probe=code/'skater_animation_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/skater_animation_probe.cpp',probe);snapshot={p.name:digest(p) for p in sorted(code.iterdir())};(output/'native-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
+    probe=code/'skater_animation_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/skater_animation_probe.cpp',probe);snapshot={p.name:digest(p) for p in sorted(code.iterdir())};(output/'simulation-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
     binary=output/'skater-animation-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(f+'.cpp')) for f in files],str(probe),'-o',str(binary)],check=True);return binary
 
 
@@ -248,14 +248,14 @@ def operation_codes(case):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--samples',type=Path,required=True);p.add_argument('--metadata',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
-    rust=build_reference(output,args.target_dir);native=build_native(output);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
+    rust=build_reference(output,args.target_dir);simulation=build_simulation(output);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     for case in range(FIXTURES):
         for kind,graph in zip(('action','motion'),fixtures(case)):
-            original=output/f'actor-{case}.{kind}.reference';original.write_bytes(original_graph(graph));(output/f'actor-{case}.{kind}.native').write_bytes(converter.encode_graph(converter.read_graph(original)))
+            original=output/f'actor-{case}.{kind}.reference';original.write_bytes(original_graph(graph));(output/f'actor-{case}.{kind}.simulation').write_bytes(converter.encode_graph(converter.read_graph(original)))
     prefix,cases,counts=corpus(args.samples);commands=encode(prefix,cases);(output/'input.bin').write_bytes(commands)
     def reference(data):return subprocess.check_output([str(rust),str(args.assets.resolve()),str(output)],input=data)
-    def candidate(data):return subprocess.check_output([str(native),str(args.samples.resolve()),str(args.metadata.resolve()),str(output),str(settings),str(args.assets.resolve())],input=data)
-    expected=reference(commands);actual=candidate(commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    def candidate(data):return subprocess.check_output([str(simulation),str(args.samples.resolve()),str(args.metadata.resolve()),str(output),str(settings),str(args.assets.resolve())],input=data)
+    expected=reference(commands);actual=candidate(commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
@@ -263,7 +263,7 @@ def main():
             if reference(data)==candidate(data):lo=mid
             else:hi=mid
         (output/'first-divergence-input.bin').write_bytes(encode(prefix,cases[lo:hi]));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)));raise AssertionError(f'SkaterAnimation differs at byte {first}, fixture {lo}; isolated input saved')
-    report=dict(passed=True,coverage=coverage(expected,[operation_codes(i) for i in range(FIXTURES)]),counts=counts,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Direct original actor initialization and complete AG→MG→parameters→clocks→cache→pose→hierarchy→attributes→selective reset→fixed-step packet publication, with live controllers/channels/stance/checkpoint state and exact matrices.',limitations='Supported graph fixtures only. Native physical-backed graph leaves not yet ported retain explicit errors. Actual board/rider producer scheduling and complete authored gameplay/session parity remain pending.',stock_data_format='Project-native ATSKEL01/ATCLIP01/ATMETA01; original readers exist only in frozen oracle.',override_format='Project-authored custom/mod JSON, not an EA stock data format.',reference_provenance_sha256=digest(output/'reference-provenance.json'),native_source_provenance_sha256=digest(output/'native-source-provenance.json'))
+    report=dict(passed=True,coverage=coverage(expected,[operation_codes(i) for i in range(FIXTURES)]),counts=counts,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Direct original actor initialization and complete AG→MG→parameters→clocks→cache→pose→hierarchy→attributes→selective reset→fixed-step packet publication, with live controllers/channels/stance/checkpoint state and exact matrices.',limitations='Supported graph fixtures only. The simulation physical-backed graph leaves not yet ported retain explicit errors. Actual board/rider producer scheduling and complete authored gameplay/session parity remain pending.',stock_data_format='Project ATSKEL01/ATCLIP01/ATMETA01; original readers exist only in frozen oracle.',override_format='Project-authored custom/mod JSON, not an EA stock data format.',reference_provenance_sha256=digest(output/'reference-provenance.json'),simulation_source_provenance_sha256=digest(output/'simulation-source-provenance.json'))
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 

@@ -2,7 +2,7 @@
 """Actual optional Climbing retained runtime and original physical/camera prefix.
 
 Only root compiles/runs under the render guard. --preflight stages immutable
-original/native sources and corpus without compiling or running either probe.
+original/simulation sources and corpus without compiling or running either probe.
 The actual missing-exchange camera failure is the reachable prefix boundary;
 no completed camera/physics snapshot, successful clock tick or resume is seeded.
 """
@@ -47,7 +47,7 @@ def additional_observers(cpp_prefix,rust_prefix):
         if name not in existing_rust:rust.append(f'fn observe_{name}(o:&mut Output,s:&{wire.rust_kind(name)}){{'+''.join(wire.observe_expr(k,'s.'+f,'rust')for f,k in fields)+'}')
     # Complete accepted selector observation helpers; only wire/type spelling
     # changes are made. They never implement a numerical selector method.
-    cp=(PLUGIN/'Tests/Native/offboard_air_selector_probe.cpp').read_text();cp=cp[cp.index('void VO('):cp.index('void SettingsOut(')]
+    cp=(PLUGIN/'Tests/Simulation/offboard_air_selector_probe.cpp').read_text();cp=cp[cp.index('void VO('):cp.index('void SettingsOut(')]
     cp=cp.replace('Writer&','AirOutput&').replace('.Scalar(','.Float(')
     start=cp.index('void OwnerOut(');cp=cp[:start]+cp[start:].replace('void OwnerOut(AirOutput& o,const OffboardAirSelector& owner,const OffboardAirLaunchPacket& p,const BipedAirTrajectoryResult& r)','void OwnerOut(AirOutput& o,const OffboardAirSelector& owner)',1)
     cp=cp.replace('PacketOut(o,p);ResultOut(o,r);','')
@@ -58,7 +58,7 @@ def additional_observers(cpp_prefix,rust_prefix):
     return '\n'.join(cpp),'\n'.join(rust),rp
 
 def world_input():
-    cpp=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text();cpp=cpp[cpp.index('struct TriangleInput'):cpp.index('struct Query {')]
+    cpp=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text();cpp=cpp[cpp.index('struct TriangleInput'):cpp.index('struct Query {')]
     cpp='namespace climb_world_wire{\nstruct Reader{AirInput& i;std::uint32_t Word(){return i.Word();}float Scalar(){return i.Float();}Vec3 Vector(){return i.Vector();}Bounds Box(){return {Vector(),Vector()};}AffineTransform Transform(){AffineTransform t;for(auto& c:t.basis.columns)for(auto& v:c)v=Scalar();t.translation=Vector();return t;}};\n'+cpp+'\n}\nWorldGeometry ReadClimbWorld(AirInput& i){climb_world_wire::Reader r{i};std::vector<WorldTriangle> triangles;const auto n=r.Word();for(unsigned k=0;k<n;++k)triangles.push_back(climb_world_wire::Cached(climb_world_wire::ReadTriangle(r)));const bool enabled=r.Word()!=0;auto metadata=climb_world_wire::Metadata(r);const char* error=nullptr;if(!enabled)return WorldGeometry(std::move(triangles));auto world=WorldGeometry::WithQueryMetadata(std::move(triangles),std::move(metadata),error);if(!world)Fail(error);return std::move(*world);}'
     rust=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text();rust=rust[rust.index('struct TriangleInput'):rust.index('struct Query {')]
     rust=rust.replace('Reader','Input').replace('reader.scalar()','reader.float()').replace('reader.vector()','vector(reader)').replace('reader.transform()','transform(reader)').replace('reader.bounds()','bounds(reader)')
@@ -66,10 +66,10 @@ def world_input():
     return cpp,rust
 
 def riding_observers():
-    native=(PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp').read_text()
-    body=native[native.index('void OutGround('):native.index('void OutBatch(')].replace('void OutGround(const PhysicalRidingOutputs& r)','void RidingOut(AirOutput& o,const PhysicalRidingOutputs& r)')
+    simulation=(PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp').read_text()
+    body=simulation[simulation.index('void OutGround('):simulation.index('void OutBatch(')].replace('void OutGround(const PhysicalRidingOutputs& r)','void RidingOut(AirOutput& o,const PhysicalRidingOutputs& r)')
     body=re.sub(r'\bOut\(', 'Out(o,',body)
-    native='namespace climb_riding_obs{\nvoid Out(AirOutput& o,float v){o.Float(v);}void Out(AirOutput& o,std::uint32_t v){o.Word(v);}void Out(AirOutput& o,Vec3 v){o.Float(v.x);o.Float(v.y);o.Float(v.z);}void Out(AirOutput& o,Basis3 v){for(auto c:v.columns)for(auto x:c)o.Float(x);}template<class T,std::size_t N>void Out(AirOutput& o,const std::array<T,N>& v){for(const auto& x:v)Out(o,x);}\n'+body+r'''
+    simulation='namespace climb_riding_obs{\nvoid Out(AirOutput& o,float v){o.Float(v);}void Out(AirOutput& o,std::uint32_t v){o.Word(v);}void Out(AirOutput& o,Vec3 v){o.Float(v.x);o.Float(v.y);o.Float(v.z);}void Out(AirOutput& o,Basis3 v){for(auto c:v.columns)for(auto x:c)o.Float(x);}template<class T,std::size_t N>void Out(AirOutput& o,const std::array<T,N>& v){for(const auto& x:v)Out(o,x);}\n'+body+r'''
 void PendingOut(AirOutput& o,const PhysicalRidingOutputs& r){
  const auto vector=[&](Vec3 v){o.Float(v.x);o.Float(v.y);o.Float(v.z);};const auto hit=[&](const std::optional<BoardProbeHit>& h){o.Word(bool(h));if(h){vector(h->point);vector(h->normal);o.Word(h->surface_tag);}};
  o.Word(bool(r.pending_wheel_queries));if(r.pending_wheel_queries)for(const auto& h:*r.pending_wheel_queries){o.Word(bool(h));if(h){o.Float(h->fraction);vector(h->normal);o.Word(h->surface_tag);}}
@@ -93,14 +93,14 @@ impl BoardProbes{pub(super)fn migration_climber_observe(&self,o:&mut crate::Outp
  o.word(self.wall_line.is_some()as u32);if let Some(line)=self.wall_line{vector(o,line.start);vector(o,line.end)}o.word(self.pending.is_some()as u32);if let Some(p)=&self.pending{hit(o,p.deck);o.word(p.wall.is_some()as u32);if let Some(h)=p.wall{hit(o,h)}}
 }}
 '''
-    return native,rust,probes
+    return simulation,rust,probes
 
 def prepare(output):
     original,observed,snapshot,report=air.prepare(output);crate=observed/'atelier-host'
-    native=(snapshot/'air_phase_runtime_probe.cpp').read_text();prefix=native[:native.index('int main(')]
+    simulation=(snapshot/'air_phase_runtime_probe.cpp').read_text();prefix=simulation[:simulation.index('int main(')]
     observer=(PLUGIN/'Tests/Reference/air_phase_runtime_observer.rs').read_text();rp=observer[:observer.index('pub(super)fn load(')].replace('mod migration_air {','mod migration_climbing {')
     cpp,rust,selector_rust=additional_observers(prefix,(crate/'src/migration_probe.rs').read_text());cw,rw=world_input();riding_cpp,riding_rust,probes_rust=riding_observers()
-    cp=(PLUGIN/'Tests/Native/climbing_runtime_probe.cpp').read_text().replace('// GENERATED_COMPLETE_OWNER_HELPERS',prefix).replace('// GENERATED_ADDITIONAL_OBSERVERS',cpp).replace('// GENERATED_WORLD_INPUT',cw).replace('// GENERATED_RIDING_OBSERVERS',riding_cpp);(snapshot/'climbing_runtime_probe.cpp').write_text(cp)
+    cp=(PLUGIN/'Tests/Simulation/climbing_runtime_probe.cpp').read_text().replace('// GENERATED_COMPLETE_OWNER_HELPERS',prefix).replace('// GENERATED_ADDITIONAL_OBSERVERS',cpp).replace('// GENERATED_WORLD_INPUT',cw).replace('// GENERATED_RIDING_OBSERVERS',riding_cpp);(snapshot/'climbing_runtime_probe.cpp').write_text(cp)
     construction=observer[observer.index(' let graphs='):observer.index('snapshot(o,&p,&s,&last);')].replace('p.world=crate::fixture_world(i.word())','p.world=crate::climb_world_wire::read(i)')
     run=(PLUGIN/'Tests/Reference/climbing_runtime_probe.rs').read_text().replace('// GENERATED_COMPLETE_OWNER_OBSERVATIONS',rp+'\n'+selector_rust).replace('// GENERATED_COMPLETE_OWNER_CONSTRUCTION',construction)
     additions={'physics.rs':run,'physics/riding_outputs.rs':riding_rust,'physics/riding_outputs/probes.rs':probes_rust,'physics/climbing/mod.rs':(PLUGIN/'Tests/Reference/climbing_runtime_observer.rs').read_text(),'physics/climbing/approach.rs':'\npub(super)fn migration_climber_observe(o:&mut crate::Output,a:&Approach){super::migration_ledge(o,a.ledge);o.float(a.weight);}\n','physics/clock.rs':'\nimpl SimulationClock{pub(crate)fn migration_climber_ticks(&self)->u32{self.ticks_until_reset}}\n','physics/offboard/air_selector.rs':'\npub(crate)fn migration_climbing_completions(s:&AirSelector)->(&Option<Vec<QueryResult>>,&Option<Prediction>){(&s.completed_launch,&s.completed_requery)}\n'}
@@ -110,7 +110,7 @@ def prepare(output):
     main=crate/'src/migration_probe.rs';s=main.read_text();s=s.replace('physics::migration_air_run','physics::migration_climbing_run');s=s[:s.index('fn main()')]+rust+'\n'+rw+'\n'+s[s.index('fn main()'):];main.write_text(s)
     cargo=crate/'Cargo.toml';cargo.write_text(cargo.read_text().replace('name="air-phase-runtime-reference"','name="climbing-runtime-reference"'))
     for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snapshot/(u+'.cpp'))
-    report.update(units=UNITS,climbing_owned_sources={p.name:digest(p)for p in [CODE/'ClimbingRuntime.h',CODE/'ClimbingRuntime.cpp',CODE/'ClimbingApproach.cpp']},read_only_helper_sources={p.name:digest(p)for p in [PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Reference/physical_simulation_runtime_probe.rs',PLUGIN/'Tests/Native/offboard_air_selector_probe.cpp',PLUGIN/'Tests/Reference/offboard_air_selector_probe.rs',PLUGIN/'Tests/Native/world_geometry_probe.cpp',PLUGIN/'Tests/Reference/world_geometry_probe.rs',PLUGIN/'Tests/check_biped_feet_parity.py']},immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_native_probe_sha256=digest(snapshot/'climbing_runtime_probe.cpp'),generated_reference_probe_sha256=digest(main),proof_files={p.name:digest(p)for p in [Path(__file__),PLUGIN/'Tests/Native/climbing_runtime_probe.cpp',PLUGIN/'Tests/Reference/climbing_runtime_probe.rs',PLUGIN/'Tests/Reference/climbing_runtime_observer.rs']},scope='Entire unchanged optional Climbing mod/approach/ledge/contacts/clip and canonical stock constructors, physical board/wheel/contact/riding, animated pose/body/target/input/COM/IK owners execute. Only upstream controller/selected-state/retained attachment fixtures and raw authored world are supplied. Every attachment uses a real original ledge query. Actual camera-output missing-exchange failure bounds the executed prefix; finish_clock/resume are asserted unreachable, not supplied completed observations.')
+    report.update(units=UNITS,climbing_owned_sources={p.name:digest(p)for p in [CODE/'ClimbingRuntime.h',CODE/'ClimbingRuntime.cpp',CODE/'ClimbingApproach.cpp']},read_only_helper_sources={p.name:digest(p)for p in [PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Reference/physical_simulation_runtime_probe.rs',PLUGIN/'Tests/Simulation/offboard_air_selector_probe.cpp',PLUGIN/'Tests/Reference/offboard_air_selector_probe.rs',PLUGIN/'Tests/Simulation/world_geometry_probe.cpp',PLUGIN/'Tests/Reference/world_geometry_probe.rs',PLUGIN/'Tests/check_biped_feet_parity.py']},immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_simulation_probe_sha256=digest(snapshot/'climbing_runtime_probe.cpp'),generated_reference_probe_sha256=digest(main),proof_files={p.name:digest(p)for p in [Path(__file__),PLUGIN/'Tests/Simulation/climbing_runtime_probe.cpp',PLUGIN/'Tests/Reference/climbing_runtime_probe.rs',PLUGIN/'Tests/Reference/climbing_runtime_observer.rs']},scope='Entire unchanged optional Climbing mod/approach/ledge/contacts/clip and canonical stock constructors, physical board/wheel/contact/riding, animated pose/body/target/input/COM/IK owners execute. Only upstream controller/selected-state/retained attachment fixtures and raw authored world are supplied. Every attachment uses a real original ledge query. Actual camera-output missing-exchange failure bounds the executed prefix; finish_clock/resume are asserted unreachable, not supplied completed observations.')
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,observed,snapshot,report
 
 def control(pressed=False,held=False,n=0):
@@ -297,22 +297,22 @@ def clip_package():
 def build(output,target):
     original,observed,snapshot,report=prepare(output);crate=observed/'atelier-host'
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','climbing-runtime-reference'],check=True)
-    reference=output/'climbing-runtime-reference';shutil.copy2(target.resolve()/'release/climbing-runtime-reference',reference);native=output/'climbing-runtime-native'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_runtime_probe.cpp'),'-o',str(native)],check=True)
+    reference=output/'climbing-runtime-reference';shutil.copy2(target.resolve()/'release/climbing-runtime-reference',reference);simulation=output/'climbing-runtime-simulation'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_runtime_probe.cpp'),'-o',str(simulation)],check=True)
     for rel,sha in report['original_source_sha256'].items():
         assert digest(original/rel)==sha;raw=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(raw)]==raw
     for rel,row in report['staged_host_original_prefixes'].items():assert digest(crate/'src'/rel)==row['generated_sha256'],rel
-    for name,sha in report['immutable_native_sources'].items():assert digest(snapshot/name)==sha,name
-    report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,reference
+    for name,sha in report['immutable_simulation_sources'].items():assert digest(snapshot/name)==sha,name
+    report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,reference
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in('assets','samples','metadata','output','target-dir'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
     for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
-    raw,cases=corpus();ranges=preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');clips=clip_package();(out/'climbing-clips.json').write_text(json.dumps(clips)+'\n');(out/'climbing.native').write_bytes(core.native(clips));(out/'runtime-loader-fixtures.json').write_text(json.dumps(runtime_loaders(),indent=2)+'\n')
+    raw,cases=corpus();ranges=preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');clips=clip_package();(out/'climbing-clips.json').write_text(json.dumps(clips)+'\n');(out/'climbing.simulation').write_bytes(core.simulation(clips));(out/'runtime-loader-fixtures.json').write_text(json.dumps(runtime_loaders(),indent=2)+'\n')
     if a.preflight:
-        prepare(out);print(json.dumps(dict(preflight='PASS',histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),native_clips_sha256=digest(out/'climbing.native')),indent=2));return
+        prepare(out);print(json.dumps(dict(preflight='PASS',histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),simulation_clips_sha256=digest(out/'climbing.simulation')),indent=2));return
     data_probe=camera.camera_reference.build_data_probe(out/'data',a.target_dir);base=out/'stock-camera'
     subprocess.run([str(data_probe),str(a.assets.resolve()),str(base),'climbing-stock:'+digest(a.assets/camera.camera.COLLECTION)],check=True)
     spec=importlib.util.spec_from_file_location('climbing_camera_conversion',PLUGIN/'Tools/convert_camera_data.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);package=module.pack_camera(json.loads(base.with_suffix('.json').read_text()));assert package==base.with_suffix('.raw').read_bytes()
@@ -320,15 +320,15 @@ def main():
     for index,fixture in enumerate(runtime_loaders()):
         folder=bank/'climbing-loaders'/str(index);folder.mkdir(parents=True,exist_ok=True)
         if fixture['data']:
-            path=folder/'private/custom/climbing.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'])+'\n');(folder/'climbing.native').write_bytes(core.native(fixture['data']))
-    clip_path=bank/'private/custom/climbing.json';clip_path.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(out/'climbing-clips.json',clip_path);shutil.copy2(out/'climbing.native',bank/'climbing.native')
-    identity=json.loads((a.assets.resolve()/'private/stock/physics-skeletons.json').read_text())['source_sha256'];native,reference=build(out,a.target_dir)
-    args=[str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(bank),str(a.metadata.resolve())]
-    expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(native),*args],input=raw);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+            path=folder/'private/custom/climbing.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'])+'\n');(folder/'climbing.simulation').write_bytes(core.simulation(fixture['data']))
+    clip_path=bank/'private/custom/climbing.json';clip_path.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(out/'climbing-clips.json',clip_path);shutil.copy2(out/'climbing.simulation',bank/'climbing.simulation')
+    identity=json.loads((a.assets.resolve()/'private/stock/physics-skeletons.json').read_text())['source_sha256'];simulation,reference=build(out,a.target_dir)
+    args=[str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(bank),str(a.metadata.resolve())]
+    expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(simulation),*args],input=raw);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     frames=decode(expected,cases)
     if expected!=actual:
         at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-span[0])for n,span in(row['spans'].items()if row else[])if span[0]<=word<span[1]),None)
-        failure=dict(byte=at,word=word,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        failure=dict(byte=at,word=word,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     proof=coverage(frames,cases);result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),coverage=proof,scope='Whole original retained Climbing/Approach and actual world/board/wheel/contact/riding/pose/target/input/COM/selector/feet/IK constructors and prefix publication.',boundaries='Explicit authored world/custom clip/controller/selected-state/retained attachment inputs; original real ledge queries independently construct every attachment. Actual camera output missing-exchange error occurs before physical tick/clock/resume. Completed camera output, successful global resume and whole frame scheduling remain unexecuted and unproved. No completed camera/physics observations or successful resume are fabricated.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

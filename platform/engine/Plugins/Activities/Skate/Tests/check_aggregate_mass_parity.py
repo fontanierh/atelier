@@ -63,7 +63,7 @@ def corpus():
         add(0, [*shape(kind), bits(1.), bits(30.), bits(.1)], 2, shape=kind)
 
     # Realistic compound shapes retain every intermediate volume moment, the
-    # mutation into the center-of-mass frame, native axis order, and final inverse.
+    # mutation into the center-of-mass frame, the simulation axis order, and final inverse.
     for index in range(1024):
         count = (1, 2, 4, 8)[index % 4]
         words = [count]
@@ -105,18 +105,18 @@ def main():
         (output/name).unlink(missing_ok=True)
     reference = build_probe(output, 'aggregate-mass-reference',
                             PLUGIN/'Tests/Reference/aggregate_mass_probe.rs', args.target_dir)
-    code = output/'native-source'
+    code = output/'simulation-source'
     if code.exists():
         shutil.rmtree(code)
     code.mkdir()
-    for name in ('NativeMath.h', 'NativeMath.cpp', 'RigidBody.h', 'BodyMass.h',
+    for name in ('SimulationMath.h', 'SimulationMath.cpp', 'RigidBody.h', 'BodyMass.h',
                  'BodyMass.cpp', 'AggregateMass.h', 'AggregateMass.cpp'):
-        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, code/name)
+        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name, code/name)
     candidate = output/'aggregate-mass-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(code),
-                    *[str(code/name) for name in ('NativeMath.cpp', 'BodyMass.cpp', 'AggregateMass.cpp')],
-                    str(PLUGIN/'Tests/Native/aggregate_mass_probe.cpp'), '-o', str(candidate)], check=True)
+                    *[str(code/name) for name in ('SimulationMath.cpp', 'BodyMass.cpp', 'AggregateMass.cpp')],
+                    str(PLUGIN/'Tests/Simulation/aggregate_mass_probe.cpp'), '-o', str(candidate)], check=True)
     source, labels, output_words = corpus()
     (output/'inputs.bin').write_bytes(source)
     (output/'cases.json').write_text(json.dumps(labels, indent=2)+'\n')

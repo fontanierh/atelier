@@ -248,9 +248,9 @@ origin for convenient selection and editing; placement reconstructs its original
 Native Y-up metres become Unreal centimetres with `(x,y,z) -> (100*x,100*z,100*y)`. Render
 geometry has no gameplay collision. Hidden collision actors use the original collision triangles
 with Chaos complex-as-simple collision, rather than convex approximations or the decorative
-render mesh. CPU access is retained for the skating backend's world queries. Original collision
+render mesh. CPU access is retained for the skating simulation's world queries. Original collision
 attributes remain in the committed arrays; standard Chaos collision does not itself reproduce
-the skating backend's feature-edge and surface-ID solver behavior.
+the skating simulation's feature-edge and surface-ID solver behavior.
 
 The level-owned `SuperUltraMegaPark` actor registers the original grind curves with the skating
 subsystem. Curves are sampled with at most 2 mm control-point chord deviation and 50 cm segments;
@@ -264,7 +264,7 @@ normal/detail, specular and alpha into lit native materials, and the baked irrad
 at full precision. Reflection cubemaps, animated tree shaders and special shader effects remain source data.
 A texture is reimported when its source image changes (its hash is kept in the asset's metadata).
 
-`MegaParkGameMode` uses Cairo and the skating backend. `MegaParkWorld` supplies the
+`MegaParkGameMode` uses Cairo and the skating simulation. `MegaParkWorld` supplies the
 player's world services without generating the island, leaf storm, villagers or other island
 effects. The level and asset paths are independent of the skating runtime implementation.
 
@@ -295,5 +295,5 @@ every render mesh keeps its three UV channels. The runtime review is
 guard, checks original ground heights at 11 deck/transition/bowl sites, records a push session on
 the upper deck, captures the park, and quits that game. It matches all 11 heights within
 0.0013 cm, registers 151 grind paths, and rides 48.5 metres on the original deck without bailing.
-These results validate the map import. The skating backend's mega-gap and transition behavior
+These results validate the map import. The skating simulation's mega-gap and transition behavior
 has separate runtime checks.

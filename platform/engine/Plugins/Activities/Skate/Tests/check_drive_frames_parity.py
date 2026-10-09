@@ -76,19 +76,19 @@ def main():
     for name in ('result.json', 'first-divergence.json'):
         (output/name).unlink(missing_ok=True)
     reference = build_probe(output, 'drive-frames-reference', PLUGIN/'Tests/Reference/drive_frames_probe.rs', args.target_dir)
-    code = output/'native-source'
+    code = output/'simulation-source'
     if code.exists():
         shutil.rmtree(code)
     code.mkdir()
-    for name in ('NativeMath.h', 'NativeMath.cpp', 'RigidBody.h', 'BodyMass.h', 'BodyMass.cpp',
+    for name in ('SimulationMath.h', 'SimulationMath.cpp', 'RigidBody.h', 'BodyMass.h', 'BodyMass.cpp',
                  'AggregateMass.h', 'AggregateMass.cpp', 'GeometryTypes.h', 'DeckGeometry.h', 'DeckGeometry.cpp',
                  'DriveFrames.h', 'DriveFrames.cpp'):
-        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, code/name)
+        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name, code/name)
     candidate = output/'drive-frames-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(code),
-                    *[str(code/name) for name in ('NativeMath.cpp', 'BodyMass.cpp', 'AggregateMass.cpp', 'DeckGeometry.cpp', 'DriveFrames.cpp')],
-                    str(PLUGIN/'Tests/Native/drive_frames_probe.cpp'), '-o', str(candidate)], check=True)
+                    *[str(code/name) for name in ('SimulationMath.cpp', 'BodyMass.cpp', 'AggregateMass.cpp', 'DeckGeometry.cpp', 'DriveFrames.cpp')],
+                    str(PLUGIN/'Tests/Simulation/drive_frames_probe.cpp'), '-o', str(candidate)], check=True)
     source, labels, output_words = corpus()
     (output/'inputs.bin').write_bytes(source)
     (output/'cases.json').write_text(json.dumps(labels, indent=2)+'\n')

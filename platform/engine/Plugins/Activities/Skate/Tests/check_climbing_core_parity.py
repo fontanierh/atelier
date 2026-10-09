@@ -19,7 +19,7 @@ import subprocess
 import check_animation_trees_parity as source
 from session_parity import PLUGIN, REFERENCE_REVISION, digest
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 UNITS=('ClimbingMath','ClimbingClips','ClimbingContacts')
 NAMES=('HIPS','SPINE3','LEFTSHOULDER','RIGHTSHOULDER','LEFTARM','RIGHTARM','LEFTFOREARM','RIGHTFOREARM','LEFTHAND','RIGHTHAND','LEFTFOOT','RIGHTFOOT','SKATEBOARD_ROOT','BOARD_HELPER')
 PARENTS=(-1,0,1,1,2,3,4,5,6,7,0,0,0,12)
@@ -45,7 +45,7 @@ def clip(name,n=0):
             frame.append([*scale,*q,*translation])
         frames.append(frame)
     return dict(name=name,fps=30+n*3.137,names=list(NAMES),parents=list(PARENTS),frames=frames)
-def native(data):
+def simulation(data):
     b=b'SKCLIP1\0'+word(data['version'])+word(len(data['clips']))
     for c in data['clips']:
         b+=text(c['name'])+word(bits(c['fps']))+word(len(c['names']))+b''.join(text(n)for n in c['names'])
@@ -134,13 +134,13 @@ def coverage(raw,commands,rows):
     assert any('unused'in e for e in errors)and sum(e.startswith('Missing climbing bone')for e in errors)==13
     return dict(operations=dict(counts),loader_errors=dict(errors),successful_loads=loaded,failed_loads_preserving_prior_owner=retained,distinct_glam_outputs=len(mathrows),distinct_global_poses=len(poses),distinct_local_poses=len(locals),distinct_wrist_pairs=len(wrists))
 def prepare(output,rows,commands):
-    snapshot=output/'native-source';crate=output/'reference-source/climbing-core';fixture_root=output/'fixtures'
+    snapshot=output/'simulation-source';crate=output/'reference-source/climbing-core';fixture_root=output/'fixtures'
     for path in(snapshot,crate,fixture_root):
         if path.exists():shutil.rmtree(path)
         path.mkdir(parents=True)
-    headers=('NativeMath.h','ClimbingMath.h','ClimbingClips.h','ClimbingContacts.h','ClimbingTypes.h')
+    headers=('SimulationMath.h','ClimbingMath.h','ClimbingClips.h','ClimbingContacts.h','ClimbingTypes.h')
     for p in [CODE/h for h in headers]+[CODE/(u+'.cpp')for u in UNITS]:shutil.copy2(p,snapshot/p.name)
-    shutil.copy2(PLUGIN/'Tests/Native/climbing_core_probe.cpp',snapshot/'climbing_core_probe.cpp')
+    shutil.copy2(PLUGIN/'Tests/Simulation/climbing_core_probe.cpp',snapshot/'climbing_core_probe.cpp')
     originals={};modules=crate/'src/climbing';modules.mkdir(parents=True)
     for name in('clip','contacts'):
         relative='crates/skate-host/src/physics/climbing/'+name+'.rs';body=source.source_at_reference(relative);(modules/(name+'.rs')).write_text(body);originals[relative]=hashlib.sha256(body.encode()).hexdigest();assert (modules/(name+'.rs')).read_bytes()==body.encode()
@@ -153,9 +153,9 @@ def prepare(output,rows,commands):
         path=fixture_root/('case-'+str(i));(path/'private/custom').mkdir(parents=True)
         if row['data'] is not None:
             (path/'private/custom/climbing.json').write_text(json.dumps(row['data'],ensure_ascii=False,allow_nan=False))
-            (path/'climbing.skclip').write_bytes(native(row['data']))
+            (path/'climbing.skclip').write_bytes(simulation(row['data']))
     (output/'input.bin').write_bytes(encode(commands));(output/'commands.json').write_text(json.dumps(commands,indent=2)+'\n');(output/'fixtures.json').write_text(json.dumps(rows,indent=2,ensure_ascii=False)+'\n')
-    report=dict(reference_revision=REFERENCE_REVISION,original_complete_modules=originals,original_smooth_extraction=record,original_ledge_declaration_extraction=ledge_record,immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},tracked_native_dependency=dict(header='NativeMath.h',sha256=digest(CODE/'NativeMath.h'),usage='Canonical types only, no recovered numerical kernels linked'),arithmetic_backend='Actual pinned glam 0.32.1 AArch64 neon operation tree; other target SIMD backends require separate proof',reference_probe_sha256=digest(crate/'src/main.rs'),initial_cargo_lock_sha256=digest(crate/'Cargo.lock'),input_sha256=digest(output/'input.bin'),commands=len(commands),fixtures=len(rows),scope='Complete original clip.rs and contacts.rs remain byte-identical. The source Ledge data declaration and smooth function are extracted verbatim with byte offsets/hashes. Only stdin/stdout observers are authored. All glam/Bevy arithmetic executes its actual pinned implementation. Native transport encodes the same original JSON typed fields; corrupt JSON/native byte parsers are distinct formats and are not claimed equivalent. This is a leaf proof; no global frame, world admission or physical owner is substituted.')
+    report=dict(reference_revision=REFERENCE_REVISION,original_complete_modules=originals,original_smooth_extraction=record,original_ledge_declaration_extraction=ledge_record,immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},tracked_simulation_dependency=dict(header='SimulationMath.h',sha256=digest(CODE/'SimulationMath.h'),usage='Canonical types only, no recovered numerical kernels linked'),arithmetic_backend='Actual pinned glam 0.32.1 AArch64 neon operation tree; other target SIMD backends require separate proof',reference_probe_sha256=digest(crate/'src/main.rs'),initial_cargo_lock_sha256=digest(crate/'Cargo.lock'),input_sha256=digest(output/'input.bin'),commands=len(commands),fixtures=len(rows),scope='Complete original clip.rs and contacts.rs remain byte-identical. The source Ledge data declaration and smooth function are extracted verbatim with byte offsets/hashes. Only stdin/stdout observers are authored. All glam/Bevy arithmetic executes its actual pinned implementation. Simulation transport encodes the same original JSON typed fields; corrupt JSON/binary byte parsers are distinct formats and are not claimed equivalent. This is a leaf proof; no global frame, world admission or physical owner is substituted.')
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return snapshot,crate,fixture_root,report
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--target-dir',type=Path,required=True);parser.add_argument('--preflight',action='store_true');args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
@@ -164,13 +164,13 @@ def main():
     if args.preflight:print(json.dumps(dict(preflight='PASS',commands=len(commands),fixtures=len(rows),input_bytes=len(encode(commands)),input_sha256=report['input_sha256'])));return
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(args.target_dir.resolve()),'--bin','climbing-core-reference'],check=True)
     reference=output/'climbing-core-reference';shutil.copy2(args.target_dir.resolve()/'release/climbing-core-reference',reference)
-    candidate=output/'climbing-core-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_core_probe.cpp'),'-o',str(candidate)],check=True)
+    candidate=output/'climbing-core-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_core_probe.cpp'),'-o',str(candidate)],check=True)
     for path,expected in report['original_complete_modules'].items():assert digest(crate/'src/climbing'/Path(path).name)==expected
     raw=(output/'input.bin').read_bytes();values=[]
-    for binary,label in((reference,'reference'),(candidate,'native')):
+    for binary,label in((reference,'reference'),(candidate,'simulation')):
         run=subprocess.run([str(binary),str(fixtures_path)],input=raw,stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=True);(output/(label+'.bin')).write_bytes(run.stdout);(output/(label+'.stderr')).write_bytes(run.stderr);values.append(run.stdout)
     if values[0]!=values[1]:
-        offset=next((i for i,(a,b)in enumerate(zip(*values))if a!=b),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),native_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('Climbing core first mismatch at byte '+str(offset))
-    proof=coverage(values[0],commands,rows);report.update(reference_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),candidate_compiler=subprocess.check_output(['clang++','--version'],text=True).strip(),final_cargo_lock_sha256=digest(crate/'Cargo.lock'),reference_binary_sha256=digest(reference),native_binary_sha256=digest(candidate));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+        offset=next((i for i,(a,b)in enumerate(zip(*values))if a!=b),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),simulation_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('Climbing core first mismatch at byte '+str(offset))
+    proof=coverage(values[0],commands,rows);report.update(reference_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),candidate_compiler=subprocess.check_output(['clang++','--version'],text=True).strip(),final_cargo_lock_sha256=digest(crate/'Cargo.lock'),reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(candidate));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     result=dict(result='PASS',commands=len(commands),fixtures=len(rows),exact_bytes=len(values[0]),sha256=hashlib.sha256(values[0]).hexdigest(),coverage=proof);(output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 if __name__=='__main__':main()

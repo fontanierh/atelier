@@ -74,7 +74,7 @@ def corpus():
         ak,bk=rng.randrange(4),rng.randrange(4);center=[rng.uniform(-1.5,1.5) for _ in range(3)]
         a=primitive(ak,[rng.uniform(-.25,.25) for _ in range(3)],rng.uniform(.001,.3),rng.uniform(-math.pi,math.pi),rng.uniform(-.6,.6),[rng.uniform(.05,.7) for _ in range(3)],rng.choice((0,0xe0,0x10,0x110,0xff0)),[rng.uniform(.01,.999) for _ in range(3)],bool(rng.randrange(2)))
         b=primitive(bk,center,rng.uniform(.001,.3),rng.uniform(-math.pi,math.pi),rng.uniform(-.6,.6),[rng.uniform(.05,.7) for _ in range(3)],rng.choice((0,0xe0,0x10,0x110,0xff0)),[rng.uniform(.01,.999) for _ in range(3)],bool(rng.randrange(2)))
-        pair(ak,bk,a,b,'random native dispatch/SAT/feature/prism/fixup/padding',f([rng.uniform(0.,.15),rng.uniform(0.,.15),rng.uniform(0.,.15),rng.uniform(.8,.9999),rng.uniform(0.,.02)]))
+        pair(ak,bk,a,b,'random simulation dispatch/SAT/feature/prism/fixup/padding',f([rng.uniform(0.,.15),rng.uniform(0.,.15),rng.uniform(0.,.15),rng.uniform(.8,.9999),rng.uniform(0.,.02)]))
     return struct.pack('<I',len(records))+b''.join(records),cases
 def build_probes(output):
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
@@ -90,17 +90,17 @@ def build_probes(output):
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
     for name,expected in originals.items():
         if digest(source/name)!=expected:raise AssertionError(f'Frozen reference module changed: {name}')
-    snapshot=output/'native-source'
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();native=PLUGIN/'Source/AtelierSkate/Private/Native'
-    sources=('NativeMath.h','NativeMath.cpp','GeometryTypes.h','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp','WorldGeometry.h','WorldGeometry.cpp','GeometryFeatures.h','GeometryFeatures.cpp','GeometryPrism.h','GeometryPrism.cpp','GeometryTriangleFixup.h','GeometryTriangleFixup.cpp','WorldPrimitiveContact.h','WorldPrimitiveContact.cpp','PrimitiveGeometry.h','GeometryPrimitivePair.h','GeometryPrimitivePair.cpp')
-    for name in sources:shutil.copy2(native/name,snapshot/name)
-    shutil.copy2(PLUGIN/'Tests/Native/primitive_pair_probe.cpp',snapshot/'primitive_pair_probe.cpp');cpp=output/'primitive-pair-cpp'
+    snapshot.mkdir();simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+    sources=('SimulationMath.h','SimulationMath.cpp','GeometryTypes.h','Geometry.h','Geometry.cpp','GeometrySweep.h','GeometrySweep.cpp','WorldGeometry.h','WorldGeometry.cpp','GeometryFeatures.h','GeometryFeatures.cpp','GeometryPrism.h','GeometryPrism.cpp','GeometryTriangleFixup.h','GeometryTriangleFixup.cpp','WorldPrimitiveContact.h','WorldPrimitiveContact.cpp','PrimitiveGeometry.h','GeometryPrimitivePair.h','GeometryPrimitivePair.cpp')
+    for name in sources:shutil.copy2(simulation/name,snapshot/name)
+    shutil.copy2(PLUGIN/'Tests/Simulation/primitive_pair_probe.cpp',snapshot/'primitive_pair_probe.cpp');cpp=output/'primitive-pair-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),
-        *[str(snapshot/name) for name in ('NativeMath.cpp','Geometry.cpp','GeometrySweep.cpp','WorldGeometry.cpp','GeometryFeatures.cpp','GeometryPrism.cpp','GeometryTriangleFixup.cpp','WorldPrimitiveContact.cpp','GeometryPrimitivePair.cpp','primitive_pair_probe.cpp')],'-o',str(cpp)],check=True)
+        *[str(snapshot/name) for name in ('SimulationMath.cpp','Geometry.cpp','GeometrySweep.cpp','WorldGeometry.cpp','GeometryFeatures.cpp','GeometryPrism.cpp','GeometryTriangleFixup.cpp','WorldPrimitiveContact.cpp','GeometryPrimitivePair.cpp','primitive_pair_probe.cpp')],'-o',str(cpp)],check=True)
     provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,
         probe_sha256=digest(probe),reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),
-        native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
+        simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
         rust_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),cpp_compiler=subprocess.check_output(['clang++','--version'],text=True).strip())
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return cpp,reference
 
@@ -121,7 +121,7 @@ def coverage(data,cases):
             if not case['degenerate'] and not all(math.isfinite(value(v)) for v in row[3:6]+row[7:7+n*6]):raise AssertionError(f'Nonfinite valid primitive pair: {case}')
         elif any(row[3:]):raise AssertionError('Absent manifold payload changed')
     for key,c in kinds.items():
-        if not c['hits'] or not c['misses']:raise AssertionError(f'Uncovered native pair dispatch hits/misses: {key} {c}')
+        if not c['hits'] or not c['misses']:raise AssertionError(f'Uncovered simulation pair dispatch hits/misses: {key} {c}')
     if not counts['point_count_1'] or not counts['point_count_2'] or not any(counts[f'point_count_{n}'] for n in range(3,17)):raise AssertionError('Missing point/edge/face paths')
     return dict(counts),{key:dict(c) for key,c in kinds.items()}
 def main():
@@ -137,7 +137,7 @@ def main():
         (output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
     counts,kinds=coverage(expected,cases)
     report=dict(passed=True,cases=len(cases),exact_words=len(expected)//4,coverage=counts,dispatches=kinds,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),
-        comparison='All ordered pair manifolds and native self-collision constants exact; no tolerance; original numerical modules unchanged',
+        comparison='All ordered pair manifolds and simulation self-collision constants exact; no tolerance; original numerical modules unchanged',
         indirect_coverage='GP packing, maximum features and specialized box SAT are compared through original public pair contacts; coincident sphere fixtures preserve exact original nonfinite bits')
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

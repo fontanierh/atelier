@@ -60,7 +60,7 @@ def capture(args, shots=None):
         execute((GAME/'scenarios/skate_live_skate.py').read_text())
         execute('live.skate_park();live.skate_input()')
         ready=time.monotonic()+30
-        while 'retail=PhysicsGround' not in execute('print(live.skate_state())'):
+        while 'simulation=PhysicsGround' not in execute('print(live.skate_state())'):
             if not owns_game(expected): raise RuntimeError('The game released during skater preparation')
             if time.monotonic()>min(ready,deadline): raise TimeoutError('Skater failed to become ready')
             time.sleep(.5)

@@ -139,7 +139,7 @@ for entry in park['meshes']:
         slot.set_editor_property('material_interface', surfaces[key]); found.add(key)
     mesh.set_editor_property('static_materials', slots)
     assert found == set(build['material_slots'][name]), (name, found, build['material_slots'][name])
-    mesh.set_editor_property('allow_cpu_access', True)  # Native collision snapshots also need vertices in cooked builds.
+    mesh.set_editor_property('allow_cpu_access', True)  # Simulation collision snapshots also need vertices in cooked builds.
     body = mesh.get_editor_property('body_setup'); assert body, name
     flag = unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE if entry['blocks'] else unreal.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX
     body.set_editor_property('collision_trace_flag', flag)

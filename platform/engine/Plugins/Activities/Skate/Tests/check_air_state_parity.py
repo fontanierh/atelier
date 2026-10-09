@@ -184,12 +184,12 @@ def provenance(output):
  return {'atelier-host/src/bindings/input.rs':'crates/skate-host/src/physics/air_phase/input.rs'}
 
 
-def build_native(output):
- live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+def build_simulation(output):
+ live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
- snapshot.mkdir();units=('NativeMath','NameId','Settings','StockSettingsReader','AirMath','AirState','AirStateSettings')
+ snapshot.mkdir();units=('SimulationMath','NameId','Settings','StockSettingsReader','AirMath','AirState','AirStateSettings')
  for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in units]:shutil.copyfile(p,snapshot/p.name)
- shutil.copyfile(PLUGIN/'Tests/Native/air_state_probe.cpp',snapshot/'air_state_probe.cpp');report={p.name:digest(p) for p in sorted(snapshot.iterdir())};(output/'native-source-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+ shutil.copyfile(PLUGIN/'Tests/Simulation/air_state_probe.cpp',snapshot/'air_state_probe.cpp');report={p.name:digest(p) for p in sorted(snapshot.iterdir())};(output/'simulation-source-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
  binary=output/'air-state-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(unit+'.cpp')) for unit in units],str(snapshot/'air_state_probe.cpp'),'-o',str(binary)],check=True);return binary
 
 
@@ -199,13 +199,13 @@ def main():
  args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
  for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
  commands,rows=corpus();validate_input(commands,rows);(output/'input.bin').write_bytes(commands);aliases=provenance(output)
- original=build_probe(output,'air-state-reference',PLUGIN/'Tests/Reference/air_state_probe.rs',args.target_dir,extra_sources=aliases);native=build_native(output);settings=output/'settings.skate';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
- expected=subprocess.check_output([str(original),str(args.assets.resolve())],input=commands);actual=subprocess.check_output([str(native),str(settings)],input=commands)
- (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+ original=build_probe(output,'air-state-reference',PLUGIN/'Tests/Reference/air_state_probe.rs',args.target_dir,extra_sources=aliases);simulation=build_simulation(output);settings=output/'settings.skate';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
+ expected=subprocess.check_output([str(original),str(args.assets.resolve())],input=commands);actual=subprocess.check_output([str(simulation),str(settings)],input=commands)
+ (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
  if expected!=actual:
   byte=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)));(output/'first-divergence.json').write_text(json.dumps(dict(byte=byte,expected_bytes=len(expected),actual_bytes=len(actual)),indent=2)+'\n');raise AssertionError(f'PhysicsAir differs at byte {byte}')
  proof,decoded=coverage(expected,rows);(output/'original-trace.json').write_text(json.dumps(decoded,indent=2)+'\n')
- report=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Unchanged original PhysicsAir Enter/Exit/Update/Board/Post/output/constructor and AirMath, with every required callback read/argument/order and launch setter write; unchanged original active-host stock load/frame/selector/launch bindings.',limitations='Full active-host schedule and real selector launch/update, collision-controller, AirReckoning, SkeletonInput/board/wipeout producer implementations are explicit future integration dependencies. Core generic COM repeated Fill and active-host prepared-launch ordering remain distinct. Runtime callbacks receive fixture-completed observations, not substitutes for full producers. Native error return on engine failure is outside the original infallible generic-core parity domain. Valid stock setting values are compared; malformed-setting diagnostics are not.',stock_data_format='Native ATATTR01; original collection parsing exists only in tooling/oracle.',reference_provenance_sha256=digest(output/'air-state-reference-provenance.json'),host_bindings_provenance_sha256=digest(output/'host-bindings-provenance.json'),native_source_provenance_sha256=digest(output/'native-source-provenance.json'))
+ report=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Unchanged original PhysicsAir Enter/Exit/Update/Board/Post/output/constructor and AirMath, with every required callback read/argument/order and launch setter write; unchanged original active-host stock load/frame/selector/launch bindings.',limitations='Full active-host schedule and real selector launch/update, collision-controller, AirReckoning, SkeletonInput/board/wipeout producer implementations are explicit future integration dependencies. Core generic COM repeated Fill and active-host prepared-launch ordering remain distinct. Runtime callbacks receive fixture-completed observations, not substitutes for full producers. Simulation error return on engine failure is outside the original infallible generic-core parity domain. Valid stock setting values are compared; malformed-setting diagnostics are not.',stock_data_format='Simulation ATATTR01; original collection parsing exists only in tooling/oracle.',reference_provenance_sha256=digest(output/'air-state-reference-provenance.json'),host_bindings_provenance_sha256=digest(output/'host-bindings-provenance.json'),simulation_source_provenance_sha256=digest(output/'simulation-source-provenance.json'))
  (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 

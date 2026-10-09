@@ -203,7 +203,7 @@ def host_fixture(case):
         element('expression', attributes=[attribute('op', 'and')], children=[condition('HasAGIntent', [attribute('intent', 'enable')]), condition('CurrentState', [attribute('state', 'root')])]),
         behavior('CreateMGTimeIntentFromAGIntent', [attribute('MGIntent', 'ChildClock'), attribute('AGIntent', 'push')]),
         element('transition', attributes=[attribute('target', 'idle'), attribute('priority', 'urgent')], children=[element('expression', attributes=[attribute('op', 'and')], children=[condition('HasAGIntent', [attribute('intent', 'exit')]), condition('InParentStateForTime', [attribute('greaterEqual', bits=0)])])])])
-    # Native selection returns None if every child fails activation. This leaf
+    # The simulation selection returns None if every child fails activation. This leaf
     # lets the first frame select a state before CurrentState(root) can pass.
     return element('state', 'root', children=base+[gated, element('state', 'idle')])
 
@@ -266,12 +266,12 @@ def state_time_corpus():
 
 
 def build_probes(output, target_dir):
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     cpp = output/'graph-intents-cpp'
-    sources = ('NativeMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings',
+    sources = ('SimulationMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings',
                'Graph', 'CompiledGraph', 'GraphController', 'GraphConditions', 'GraphGestureOperations', 'GraphIntentOperations', 'GraphMotionSliding')
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror',
-                    '-I', str(native), *(str(native/f'{name}.cpp') for name in sources), str(PLUGIN/'Tests/Native/graph_intents_probe.cpp'), '-o', str(cpp)], check=True)
+                    '-I', str(simulation), *(str(simulation/f'{name}.cpp') for name in sources), str(PLUGIN/'Tests/Simulation/graph_intents_probe.cpp'), '-o', str(cpp)], check=True)
     root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=PLUGIN, text=True).strip())
     relative = (PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix()
     revision = subprocess.check_output(['git', 'rev-parse', REFERENCE_REVISION], cwd=root, text=True).strip()
@@ -427,7 +427,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     cpp, rust = build_probes(output, args.target_dir)
-    settings = output/'settings.native'
+    settings = output/'settings.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     inputs, cases = corpus()
     (output/'input.bin').write_bytes(inputs)
@@ -436,21 +436,21 @@ def main():
     for case in range(12):
         reference = output/f'host-{case}.reference-graph'
         reference.write_bytes(original_graph(host_fixture(case)))
-        native = output/f'host-{case}.graph'
-        native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
-        results.append(compare(output, f'host-{case}-config', cpp, rust, ['config', native, args.assets], ['config', reference, args.assets]))
+        simulation = output/f'host-{case}.graph'
+        simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+        results.append(compare(output, f'host-{case}-config', cpp, rust, ['config', simulation, args.assets], ['config', reference, args.assets]))
         inputs = host_corpus(case)
         (output/f'host-{case}-input.bin').write_bytes(inputs)
-        results.append(compare(output, f'host-{case}', cpp, rust, ['stream', settings, args.assets, native], ['stream', settings, args.assets, reference], inputs, coverage=host_coverage, host_case=case))
+        results.append(compare(output, f'host-{case}', cpp, rust, ['stream', settings, args.assets, simulation], ['stream', settings, args.assets, reference], inputs, coverage=host_coverage, host_case=case))
         inputs = state_time_corpus()
         (output/f'host-{case}-state-time-input.bin').write_bytes(inputs)
-        results.append(compare(output, f'host-{case}-state-time', cpp, rust, ['stream', settings, args.assets, native], ['stream', settings, args.assets, reference], inputs, coverage=bound_condition_coverage))
+        results.append(compare(output, f'host-{case}-state-time', cpp, rust, ['stream', settings, args.assets, simulation], ['stream', settings, args.assets, reference], inputs, coverage=bound_condition_coverage))
     host_hashes = {result['output_sha256'] for result in results if re.fullmatch(r'host-\d+', result['name'])}
     assert len(host_hashes) >= 4, 'Case-specific input/constructor variants did not produce distinct host traces'
     authored = args.assets/'private/stock/data/state/ActionGraph_OnBoard.stategraph'
-    native = output/'authored-action.graph'
-    native.write_bytes(converter.encode_graph(converter.read_graph(authored)))
-    results.append(compare(output, 'authored-action-parameters', cpp, rust, ['config', native, args.assets], ['config', authored, args.assets]))
+    simulation = output/'authored-action.graph'
+    simulation.write_bytes(converter.encode_graph(converter.read_graph(authored)))
+    results.append(compare(output, 'authored-action-parameters', cpp, rust, ['config', simulation, args.assets], ['config', authored, args.assets]))
     report = dict(passed=True, commands=len(cases), operations=dict(Counter(case['operation'] for case in cases)),
                   host_fixtures=12, host_ticks=12*256, bound_condition_frames=12*256, results=results,
                   comparison='exact typed constructors, conditions, intent mutation/map lifecycle, controller host state, production sliding outputs; no tolerance',

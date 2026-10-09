@@ -13,11 +13,11 @@ import tarfile
 from session_parity import PLUGIN, REFERENCE_REVISION, digest
 
 
-def build_probes(output, target_dir, name, native_sources):
-    native, cpp = PLUGIN/'Source/AtelierSkate/Private/Native', output/f'{name}-cpp'
+def build_probes(output, target_dir, name, simulation_sources):
+    simulation, cpp = PLUGIN/'Source/AtelierSkate/Private/Simulation', output/f'{name}-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti',
-        '-Wall', '-Wextra', '-Werror', '-I', str(native), *(str(native/f'{n}.cpp') for n in native_sources),
-        str(PLUGIN/f'Tests/Native/{name}_probe.cpp'), '-o', str(cpp)], check=True)
+        '-Wall', '-Wextra', '-Werror', '-I', str(simulation), *(str(simulation/f'{n}.cpp') for n in simulation_sources),
+        str(PLUGIN/f'Tests/Simulation/{name}_probe.cpp'), '-o', str(cpp)], check=True)
     root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], cwd=PLUGIN, text=True).strip())
     relative = (PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix()
     revision = subprocess.check_output(['git', 'rev-parse', REFERENCE_REVISION], cwd=root, text=True).strip()

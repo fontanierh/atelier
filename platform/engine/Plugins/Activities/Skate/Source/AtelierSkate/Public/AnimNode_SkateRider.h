@@ -7,9 +7,9 @@
 class USkateComponent;
 
 /**
- * The skate pose over the character's own animation, for a native anim instance (README.md, "Adding it to a game").
+ * The skate pose over the character's own animation, for a C++ anim instance (README.md, "Adding it to a game").
  * While the skate component drives the body (riding, a bail, a mount or dismount, carrying the board on foot) its pose
- * (USkateComponent::GetRetailPose) replaces OnFoot. Each switch the component asks to conceal (GetPoseBlendSerial) is
+ * (USkateComponent::GetRiderPose) replaces OnFoot. Each switch the component asks to conceal (GetPoseBlendSerial) is
  * inertialized above both (FAnimNode_RideInertialization), and OnFoot restarts fresh when it comes back, as a blend
  * list's "reset child on activation" does.
  *

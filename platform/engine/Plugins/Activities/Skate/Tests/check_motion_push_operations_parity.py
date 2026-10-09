@@ -204,24 +204,24 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     for marker in ('result.json', 'first-divergence.json'):
         (output/marker).unlink(missing_ok=True)
-    sources = ('NativeMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations',
+    sources = ('SimulationMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions', 'NameId', 'Settings', 'Graph', 'GraphController', 'GraphConditions', 'GraphGestureOperations',
         'AnimationSamples', 'AnimationMetadata', 'AnimationPlayback', 'AnimationPlaybackParameters', 'AnimationTrees', 'AnimationChannels', 'MotionAnimation', 'MotionFrame', 'GraphMotionPushOperations')
     cpp, rust = build_probes(output, args.target_dir, 'motion_push_operations', sources)
     graph, configs, groups = fixture()
-    reference, native = output/'operations.reference-graph', output/'operations.graph'
+    reference, simulation = output/'operations.reference-graph', output/'operations.graph'
     reference.write_bytes(original_graph(graph))
-    native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+    simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
     metadata = fixture_metadata()
-    metadata_json, metadata_native = output/'fixture.json', output/'fixture.skate'
+    metadata_json, metadata_simulation = output/'fixture.json', output/'fixture.skate'
     metadata_json.write_text(json.dumps(metadata))
-    metadata_native.write_bytes(metadata_converter.pack_metadata(metadata))
-    settings = output/'settings.native'
+    metadata_simulation.write_bytes(metadata_converter.pack_metadata(metadata))
+    settings = output/'settings.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     inputs, rows = corpus(configs, groups)
     (output/'input.bin').write_bytes(inputs)
     (output/'authored-commands.json').write_text(json.dumps(rows, indent=2)+'\n')
     expected = subprocess.check_output([str(rust), str(args.assets), str(reference), str(metadata_json)], input=inputs)
-    actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(metadata_native), str(native), str(settings)], input=inputs)
+    actual = subprocess.check_output([str(cpp), str(args.metadata/'bank-0.skate'), str(args.metadata/'bank-1.skate'), str(metadata_simulation), str(simulation), str(settings)], input=inputs)
     (output/'reference.bin').write_bytes(expected)
     (output/'cpp.bin').write_bytes(actual)
     if actual != expected:

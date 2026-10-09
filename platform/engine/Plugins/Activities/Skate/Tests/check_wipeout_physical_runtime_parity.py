@@ -2,7 +2,7 @@
 """Complete pinned Wipeout300 host over canonical physical/pose/IK owners.
 
 Only the root coordinator compiles/runs this proof. --preflight stages the
-unchanged reference and immutable native snapshot without compiler/probe calls.
+unchanged reference and immutable simulation snapshot without compiler/probe calls.
 """
 import argparse
 from collections import Counter,OrderedDict
@@ -44,30 +44,30 @@ def schemas():
 
 def observers():
  d=schemas();cpp=[];rust=[]
- native={'State':'WipeoutPhysicalState','Output':'WipeoutPhysicalOutput','Profile':'WipeoutControlProfile'}
+ simulation={'State':'WipeoutPhysicalState','Output':'WipeoutPhysicalOutput','Profile':'WipeoutControlProfile'}
  original={'State':'skate_core::player::wipeout_state::State','Output':'skate_core::player::wipeout_state::output::Output','Profile':'skate_core::player::wipeout_state::profiles::Profile'}
  for name,fields in d.items():
   def observe(f,k,lang):
    if k=='Graph8':return ('o.Floats(s.'+f+'.x);o.Floats(s.'+f+'.y);')if lang=='cpp'else('o.floats(s.'+f+'.x);o.floats(s.'+f+'.y);')
    return protocol.observe_expr(k,'s.'+f,lang)
-  cpp.append('void ObserveWipeout'+name+'(Output& o,const '+native[name]+'& s){'+''.join(observe(f,k,'cpp')for f,k in fields)+'}')
+  cpp.append('void ObserveWipeout'+name+'(Output& o,const '+simulation[name]+'& s){'+''.join(observe(f,k,'cpp')for f,k in fields)+'}')
   rust.append('fn observe_wipeout_'+name+'(o:&mut Output,s:&'+original[name]+'){'+''.join(observe(f,k,'rust')for f,k in fields)+'}')
  fields=d['State'];cpp.append('WipeoutPhysicalState ReadWipeoutState(Input& i){WipeoutPhysicalState s;'+''.join('s.'+f+'='+protocol.read_expr(k,'cpp')+';'for f,k in fields)+'return s;}')
  rust.append('fn read_wipeout_State(i:&mut Input)->'+original['State']+'{'+original['State']+'{'+''.join(f+':'+protocol.read_expr(k,'rust')+(' as usize'if f=='profile'else'')+','for f,k in fields)+'}}')
  return '\n'.join(cpp),'\n'.join(rust)
 
-def native_plan(output):
- snap,report=reset.native_plan(output)
+def simulation_plan(output):
+ snap,report=reset.simulation_plan(output)
  for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snap/(u+'.cpp'))
  raw=(snap/'player_teleport_runtime_probe.cpp').read_text();prefix=grind.reset_observer_cpp(raw[:raw.index('int main(')])
  initialization=raw[raw.index(' if(argc!=6)'):raw.index(' Input i{{')]
  construction=raw[raw.index(' for(unsigned c=0;c<count;++c){')+len(' for(unsigned c=0;c<count;++c){'):raw.index('const auto rows=i.Word();')]
  construction=construction.replace('World(i)','WipeoutWorld(i)').replace('SkeletonControllerState controller;bool elapsed=false;std::uint8_t animated=0;','GroundPhaseLifecycle life;auto& controller=life.skeleton_controller;auto& elapsed=life.skeleton_elapsed_16505;auto& animated=life.board_animated_290;').replace('WipeoutRequests wipeout;','WipeoutRuntime checks;auto& wipeout=checks.state;')
  cases=raw[raw.index(' case 0:'):raw.index(' case 2:')]+raw[raw.index(' case 6:'):raw.index(' case 5:')]
- template=PLUGIN/'Tests/Native/wipeout_physical_runtime_probe.cpp';code=template.read_text().replace('// GENERATED_NATIVE_OWNER_PREFIX',prefix).replace('// GENERATED_NATIVE_OWNER_INITIALIZATION',initialization).replace('// GENERATED_NATIVE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_NATIVE_PACKET_RESET_CASES',cases).replace('// GENERATED_WIPEOUT_PROTOCOL',observers()[0])
+ template=PLUGIN/'Tests/Simulation/wipeout_physical_runtime_probe.cpp';code=template.read_text().replace('// GENERATED_SIMULATION_OWNER_PREFIX',prefix).replace('// GENERATED_SIMULATION_OWNER_INITIALIZATION',initialization).replace('// GENERATED_SIMULATION_OWNER_CONSTRUCTION',construction).replace('// GENERATED_SIMULATION_PACKET_RESET_CASES',cases).replace('// GENERATED_WIPEOUT_PROTOCOL',observers()[0])
  assert code.count('GroundPhaseLifecycle life;')==1
  (snap/'wipeout_physical_runtime_probe.cpp').write_text(code)
- report.update(units=UNITS,immutable_native_sources={p.name:digest(p)for p in sorted(snap.glob('*.h'))+sorted(snap.glob('*.cpp'))},generated_probe_sha256=digest(snap/'wipeout_physical_runtime_probe.cpp'))
+ report.update(units=UNITS,immutable_simulation_sources={p.name:digest(p)for p in sorted(snap.glob('*.h'))+sorted(snap.glob('*.cpp'))},generated_probe_sha256=digest(snap/'wipeout_physical_runtime_probe.cpp'))
  return snap,report
 
 MATERIAL10='''
@@ -117,10 +117,10 @@ def reference_plan(output):
  report.update(wipeout_extensions=hashes,wipeout_local_declaration_adapters=local,generated_probe_sha256=digest(crate/'src/migration_probe.rs'),observer_sha256=digest(PLUGIN/'Tests/Reference/wipeout_physical_runtime_observer.rs'),scope='Complete untouched original Wipeout300 host/core, actual stock GamePhysics/SkaterRuntime constructors, original ragdoll/IK/solve/contact/query bodies. Append-only data observations and caller/wire adapters.')
  return original,observed,crate,cargo,report
 
-def build_native(output):
- snap,report=native_plan(output);binary=output/'wipeout-physical-native'
+def build_simulation(output):
+ snap,report=simulation_plan(output);binary=output/'wipeout-physical-simulation'
  subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(u+'.cpp'))for u in UNITS],str(snap/'wipeout_physical_runtime_probe.cpp'),'-o',str(binary)],check=True)
- report['binary_sha256']=digest(binary);(output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
+ report['binary_sha256']=digest(binary);(output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 def build_reference(output,target):
  original,observed,crate,cargo,report=reference_plan(output);subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(target.resolve()),'--bin','wipeout-physical-reference'],check=True)
@@ -195,7 +195,7 @@ def corpus():
   p=packet(flags=flags,special=special);p['processed']['vector_1520']=[bits(x)for x in(.137,.731,.317,0.)];p['processed']['probe_1792']['byte_104']=1;p['processed']['probe_1792']['vector_80']=[bits(x)for x in(.731,.317,.137,0.)]
   commands=setup()+[p,dict(op=38,reason=6,value=.731)]+[dict(op=37,part=n,velocity=[3.+n,-2.,.731])for n in(1,12,23)]+[dict(op=10),dict(op=14),dict(op=11)]
   add('complete Enter body/board/IK/material writes '+str(flags)+'/'+str(special),commands)
- # Native source partial failures after earlier state/skeleton stores.
+ # Simulation source partial failures after earlier state/skeleton stores.
  for missing in('board_toolkit','ik_bone','empty_hierarchy','truncated_hierarchy'):
   commands=setup(secondary=0x800)+[dict(op=10)]
   if missing=='board_toolkit':commands += [dict(op=18)]
@@ -329,7 +329,7 @@ def coverage(frames,cases):
 
 def feedback_flags(collision):
  # The independent accepted collision observer ends with collision_flags. Its
- # order is read from that exact observer rather than a native object layout.
+ # order is read from that exact observer rather than a simulation object layout.
  observer=reset.block((PLUGIN/'Tests/Reference/skeleton_collision_probe.rs').read_text(),'fn collision_flags(')
  names=re.findall(r'\bf\.(\w+)',observer);assert len(names)==15 and len(set(names))==15
  return dict(zip(names,collision[-len(names):]))
@@ -349,7 +349,7 @@ def profile_queries(key):
  n=[('Hash_1BC908CDB3520A8E','float'),('TorqueVelScalar','float'),('TorqueDistScalar','float'),('SpinInertia','float'),('RollOnGround','bool'),('RollingOnGroundTorqueVelScalar','float'),('Hash_40B2B3C1A87A4D76','float'),('Hash_9047531918285FC3','float'),('Hash_6009FD75F9EDC436','bool'),('DriftMaxSpeed','float'),('DriftFactorZ','float'),('DriftFactorX','float'),('AlignWithVel','bool'),('Hash_9626703A9939FE36','bool'),('AlignOnGroundTorqueVelScalar','float'),('Hash_B65276A8CC7FB760','float'),('Hash_7E6B3A99C0A33ABC','float')]
  return r+[('physics_wipeout_control',key,name,kind)for name,kind in n]
 
-def check_settings(output,path,physics_native,identity,assets,native,reference):
+def check_settings(output,path,physics_simulation,identity,assets,simulation,reference):
  original=json.loads(path.read_text());pbank=json.loads((assets/'private/stock/physics-skeletons.json').read_text());bank=next(s for s in pbank['skeletons']if s['name'].casefold()=='phys_tpose');bones=bank['bones'];queries=settings_queries()
  queries += [('physics_skeleton_drives','default','PART_'+b['name'],'words9')for b in bones[1:24]]
  queries += [('physics_skeleton_drives','default',n,'float')for n in('root_drive_start_scalar','root_drive_scalar','root_drive_controlled_scalar','root_drive_end_scalar')]+[('animation','default','DriveStrengthLocal','float'),('animation','default','DriveStrengthRootLocal','float')]+[('physics_animation','default',n,'float')for n in('HookSoftDsp','HookSoftStr','HookSoftDmp')]
@@ -365,8 +365,8 @@ def check_settings(output,path,physics_native,identity,assets,native,reference):
  output.mkdir(parents=True,exist_ok=True)
  folder=stock.prepare_fixtures(output,fixtures,path);errors=Counter();records=[]
  for n,label in enumerate(labels):
-  expected=subprocess.check_output([str(reference),str(assets),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(native),str(folder/str(n)/'settings.native'),str(physics_native),identity,'--settings-only'])
-  (output/f'{n}-reference.bin').write_bytes(expected);(output/f'{n}-native.bin').write_bytes(actual)
+  expected=subprocess.check_output([str(reference),str(assets),str(folder/str(n)),'--settings-only']);actual=subprocess.check_output([str(simulation),str(folder/str(n)/'settings.simulation'),str(physics_simulation),identity,'--settings-only'])
+  (output/f'{n}-reference.bin').write_bytes(expected);(output/f'{n}-simulation.bin').write_bytes(actual)
   assert expected==actual,(n,label,expected.hex(),actual.hex());r=Reader(expected);error=r.status();values=r.take(len(r.words)-r.at);assert bool(error)==(n!=0),(label,error)
   if n:
    c,k,name,kind=queries[n-1];wanted='Expected '+('boolean'if kind=='bool'else'float')+' at '+c+'/'+k+'/'+name if kind in('float','bool')else 'Expected '+kind[5:]+' big-endian words, found 8 bytes of hex';assert error==wanted,(label,wanted,error)
@@ -412,18 +412,18 @@ def main():
  for n in('result.json','first-divergence.json'):(out/n).unlink(missing_ok=True)
  raw,cases=corpus();preflight(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if a.preflight:
-  snap,native=native_plan(out);original,observed,crate,cargo,reference=reference_plan(out/'reference')
+  snap,simulation=simulation_plan(out);original,observed,crate,cargo,reference=reference_plan(out/'reference')
   for s in(snap/'wipeout_physical_runtime_probe.cpp',crate/'src/migration_probe.rs',crate/'src/physics/input_phase.rs'):assert 'GENERATED_'not in s.read_text(),s
   for rel,sha in reference['original_source_sha256'].items():assert digest(original/rel)==sha;v=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(v)]==v
-  (out/'native-preflight.json').write_text(json.dumps(native,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
- fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);assets=a.assets.resolve();stockpath=assets/'private/stock';(fixtures/'settings.native').write_bytes(reset.foot.converter.encode_settings(stockpath/'skater-collections.json'));(fixtures/'physics.native').write_bytes(reset.foot.converter.encode_physics_skeletons(stockpath/'physics-skeletons.json'))
+  (out/'simulation-preflight.json').write_text(json.dumps(simulation,indent=2)+'\n');(out/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
+ fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);assets=a.assets.resolve();stockpath=assets/'private/stock';(fixtures/'settings.simulation').write_bytes(reset.foot.converter.encode_settings(stockpath/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(reset.foot.converter.encode_physics_skeletons(stockpath/'physics-skeletons.json'))
  for kind in('action','motion'):(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
- identity=json.loads((stockpath/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);native=build_native(out)
- expected=subprocess.check_output([str(reference),str(assets),str(fixtures)],input=raw);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(assets)],input=raw)
- (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+ identity=json.loads((stockpath/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);simulation=build_simulation(out)
+ expected=subprocess.check_output([str(reference),str(assets),str(fixtures)],input=raw);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(assets)],input=raw)
+ (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
  if expected!=actual:
-  at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_word']<=word<c['last_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-a)for n,(a,b)in(row['sections'].items()if row else[])if a<=word<b),None);failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
- verified=coverage(frames,cases);settings=check_settings(out/'settings',stockpath/'skater-collections.json',fixtures/'physics.native',identity,assets,native,reference)
+  at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_word']<=word<c['last_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-a)for n,(a,b)in(row['sections'].items()if row else[])if a<=word<b),None);failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['op']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+ verified=coverage(frames,cases);settings=check_settings(out/'settings',stockpath/'skater-collections.json',fixtures/'physics.simulation',identity,assets,simulation,reference)
  result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=verified,settings=settings,scope='Complete original active physical Wipeout300: State300/profile/material/prediction/ragdoll owners, real shared physical/pose/IK and original solve/contact/query kernels.',boundaries='Completed canonical input/animation attributes and explicit prior retained State300 are caller publications. World triangles/tags/metadata are authored source transport; actual contact feedback and trajectory results are never seeded. Full global scheduling, conditional publication of the returned Output into the coordinator state flags and source logging remain separate.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

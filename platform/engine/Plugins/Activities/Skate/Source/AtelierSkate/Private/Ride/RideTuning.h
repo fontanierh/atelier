@@ -2,14 +2,14 @@
 #include "CoreMinimal.h"
 
 /**
- * The Ride backend's own numbers, in Unreal units (cm, s): the ride's start on the floor, the bail's get-up and the
- * transitions between foot and board. Riding itself is Native's session, tuned by its own data and USkateSettings.
+ * Ride's own numbers, in Unreal units (cm, s): the ride's start on the floor, the bail's get-up and the
+ * transitions between foot and board. Riding itself is the simulation's session, tuned by its own data and USkateSettings.
  * skate.RideTune "Name=Value Name=Value" overrides any of them live.
  */
 struct FRideTuning
 {
     // The ride's start on the floor (USkateComponent::SettleRideStart) and the transitions' floor probes.
-    float WheelRadius = 3.1f;         // cm, the native rig's wheels
+    float WheelRadius = 3.1f;         // cm, the simulation rig's wheels
     float StepUp = 6.f;               // ground rising more than this under the board is a wall (cm)
     float StartRecover = 40.f;        // a ride starting inside the floor finds its top up to this far above (cm)
     float WallSlope = .5f;            // a contact whose normal is within acos(this) of up is ground

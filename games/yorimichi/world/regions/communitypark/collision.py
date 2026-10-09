@@ -1,6 +1,6 @@
 """Hidden riding collision for the community park: the source triangles, welded, with short ramps over joint lips.
 
-The native skate rolls over an edge of at most 12 mm; a taller lip where two separately placed pieces meet stops
+The skating simulation rolls over an edge of at most 12 mm; a taller lip where two separately placed pieces meet stops
 the wheels and bails the rider. The rendered pieces keep their exact geometry and stop blocking. This mesh welds
 coincident vertices across placements and, wherever a riding edge stands 4 mm to 8 cm proud of the neighbouring
 piece's surface, adds a 1:8 wedge from the edge down onto that surface, laid in its plane so bowl walls blend too.
@@ -13,7 +13,7 @@ An angled underside meeting a riding crest can create a speculative contact abov
 closed pocket down to the neighbouring slab foundation, retaining a flat ceiling and the outside walls. Riding
 tops stay exact. Exposed overhangs, steep kicker noses and pockets over other source riding surfaces stay exact.
 Horizontal zero-thickness plates keep their tops and gain a 4 mm underside and perimeter. A coincident ceiling
-can make the native solver treat a riding rim as a 180-degree fold; a closed thin plate retains the real rim.
+can make the simulation solver treat a riding rim as a 180-degree fold; a closed thin plate retains the real rim.
 """
 import numpy as np
 

@@ -17,7 +17,7 @@ import subprocess
 import player_input_protocol as wire
 from reference_build import build_probe
 from session_parity import PLUGIN,digest
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 DEFS=OrderedDict([
  ('PostInputPlayerFields',[('jump_reference_1264','[u32;4]'),('flags_1296','u32'),('state_frames_1304','u32'),('jump_fix_frames_1308','u32'),('latch_frames_1320','u32')]),
  ('PostInputProcessedFields',[('jump_reference_848','[u32;4]'),*[(n,'u32')for n in ('word_2464','flags_2468','flags_2472','flags_2480','flags_2484','current_state_2508','state_frames_2572','jump_fix_frames_2576')],('scalar_2740','f32')]),
@@ -83,15 +83,15 @@ def coverage(raw,cases):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
- blob,cases=corpus();(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases)+'\n');cpp,rust=protocol();snapshot=out/'native-source';snapshot.mkdir(exist_ok=True)
+ blob,cases=corpus();(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases)+'\n');cpp,rust=protocol();snapshot=out/'simulation-source';snapshot.mkdir(exist_ok=True)
  for name in('PlayerPostInput.h','PlayerPostInput.cpp'):shutil.copy2(CODE/name,snapshot/name)
- np=PLUGIN/'Tests/Native/player_post_input_probe.cpp';rp=PLUGIN/'Tests/Reference/player_post_input_probe.rs';(snapshot/np.name).write_text(np.read_text().replace('// GENERATED_PROTOCOL',cpp));reference=out/rp.name;reference.write_text(rp.read_text().replace('// GENERATED_PROTOCOL',rust))
- report=dict(histories=len(cases),commands=sum(len(c['operations'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),native_source_sha256={q.name:digest(q)for q in snapshot.iterdir()},proof_sha256={q.name:digest(q)for q in(Path(__file__),np,rp)},scope=__doc__);(out/'preflight.json').write_text(json.dumps(report,indent=2)+'\n')
+ np=PLUGIN/'Tests/Simulation/player_post_input_probe.cpp';rp=PLUGIN/'Tests/Reference/player_post_input_probe.rs';(snapshot/np.name).write_text(np.read_text().replace('// GENERATED_PROTOCOL',cpp));reference=out/rp.name;reference.write_text(rp.read_text().replace('// GENERATED_PROTOCOL',rust))
+ report=dict(histories=len(cases),commands=sum(len(c['operations'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),simulation_source_sha256={q.name:digest(q)for q in snapshot.iterdir()},proof_sha256={q.name:digest(q)for q in(Path(__file__),np,rp)},scope=__doc__);(out/'preflight.json').write_text(json.dumps(report,indent=2)+'\n')
  if a.preflight:print(json.dumps(report,indent=2));return
  assert a.target_dir
- native=out/'player-post-input-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'PlayerPostInput.cpp'),str(snapshot/np.name),'-o',str(native)],check=True)
- oracle=build_probe(out,'player-post-input-reference',reference,a.target_dir);expected=subprocess.check_output([str(oracle)],input=blob);actual=subprocess.check_output([str(native)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+ simulation=out/'player-post-input-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'PlayerPostInput.cpp'),str(snapshot/np.name),'-o',str(simulation)],check=True)
+ oracle=build_probe(out,'player-post-input-reference',reference,a.target_dir);expected=subprocess.check_output([str(oracle)],input=blob);actual=subprocess.check_output([str(simulation)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),native_bytes=len(actual)))+'\n');raise AssertionError('PostInput differs')
+  first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),simulation_bytes=len(actual)))+'\n');raise AssertionError('PostInput differs')
  result=dict(passed=True,**report,exact_output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(expected,cases));(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

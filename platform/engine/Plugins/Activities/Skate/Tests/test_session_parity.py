@@ -27,7 +27,7 @@ class ComparatorTests(unittest.TestCase):
         self.assertIsNotNone(first_difference(2**54,2**54+1))
         self.assertIsNotNone(first_difference(1,True))
 
-    def test_same_native_float_serialized_with_more_decimal_digits_matches(self):
+    def test_same_simulation_float_serialized_with_more_decimal_digits_matches(self):
         self.assertIsNone(first_difference(0.10000000149011612,0.1))
         self.assertIsNone(first_difference({'score':0.0,'tick':12}, {'score':0,'tick':12}))
 

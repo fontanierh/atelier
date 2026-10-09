@@ -4,7 +4,7 @@
 #include "SkateSettings.generated.h"
 struct FHitResult;
 
-/** What the board rolls on. Each surface picks one of the native session's authored ground profiles (how fast it
+/** What the board rolls on. Each surface picks one of the simulation session's authored ground profiles (how fast it
  *  coasts, brakes, grips and wobbles) and its own roll sound (roll_<surface>_01 in SoundFolder, else roll_01). */
 UENUM(BlueprintType)
 enum class ESkateSurface : uint8
@@ -45,7 +45,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
     /** Multiplier on the air-spin target (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
-    /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
+    /** Multipliers on the simulation animation-timed push target and planted-foot propulsion. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float PushPowerScale = 1.f;
     /** How far short of vertical a quarter pipe still sends a straight air back down into it: 0 is stock (vertical
@@ -61,7 +61,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath WheelMesh;
-    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): the Ride backend
+    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): Ride
      *  dissolves the board in and out with it (RIDE.md, "Transitions"). Without one the board shows and hides. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath BoardDissolveMaterial;
     /** Content folder of the board sounds: loops roll_01, grind_01, slide_01, skid_01, scrape_01 and one-shot banks

@@ -16,7 +16,7 @@ import check_gameplay_world_input_parity as world_input
 from session_parity import REFERENCE_REVISION,digest
 PLUGIN,CODE,TESTS=frame.PLUGIN,frame.CODE,frame.TESTS
 UNITS=tuple(dict.fromkeys((*frame.UNITS,*world_input.UNITS,'GameplaySession','SessionMarkerRuntime','DebugString')))
-OWNED=(TESTS/'Native/gameplay_session_probe.cpp',TESTS/'Reference/gameplay_session_probe.rs',TESTS/'Reference/gameplay_session_observer.rs',Path(__file__))
+OWNED=(TESTS/'Simulation/gameplay_session_probe.cpp',TESTS/'Reference/gameplay_session_probe.rs',TESTS/'Reference/gameplay_session_observer.rs',Path(__file__))
 PRODUCTION=tuple(CODE/(name+ext)for name in('GameplaySession','SessionMarkerRuntime')for ext in('.h','.cpp'))
 SECTIONS=('pose','reference','marker','controller','host','gameplay')
 OPS={0:'activate',1:'tick',2:'collect',3:'advance',4:'suspend',5:'host_step',6:'configure',7:'tune',8:'launch',9:'aspect',10:'install_collision',11:'observe'}
@@ -68,17 +68,17 @@ def build_reference(out,target,compile=False):
   subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(target.resolve()),'--bin','gameplay-session-reference'],check=True);shutil.copy2(target.resolve()/'release/gameplay-session-reference',binary)
  return binary
 
-def build_native(out,compile=False):
- frame.build_native(out,compile=False);snapshot=out/'native-source';raw=(TESTS/'Native/gameplay_runtime_probe.cpp').read_bytes();prefix=raw[:raw.index(b'int main(')]
+def build_simulation(out,compile=False):
+ frame.build_simulation(out,compile=False);snapshot=out/'simulation-source';raw=(TESTS/'Simulation/gameplay_runtime_probe.cpp').read_bytes();prefix=raw[:raw.index(b'int main(')]
  (snapshot/'gameplay_session_helpers.inc').write_bytes(prefix);shutil.copy2(OWNED[0],snapshot/OWNED[0].name)
- raw=(TESTS/'Native/gameplay_world_input_probe.cpp').read_text();helper=frame.function(raw,'struct GameplayWorldInputObserver')+';'
+ raw=(TESTS/'Simulation/gameplay_world_input_probe.cpp').read_text();helper=frame.function(raw,'struct GameplayWorldInputObserver')+';'
  (snapshot/'gameplay_session_controller.inc').write_text('namespace atelier::skate{\n'+helper+'\n}\n')
  friends={}
  for filename,name in(('Input.h','PadHistory'),('ControllerInputRuntime.h','ControllerInputRuntime')):
   p=snapshot/filename;old=p.read_text();new=world_input.add_friend(old,name);assert new.replace(world_input.FRIEND,'')==old;p.write_text(new);friends[filename]=dict(original_sha256=hashlib.sha256(old.encode()).hexdigest(),snapshot_sha256=digest(p))
  for name in UNITS:shutil.copy2(CODE/(name+'.cpp'),snapshot/(name+'.cpp'))
- report=json.loads((out/'native-provenance.json').read_text());report.update(session_friends=friends,session_snapshot_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},session_production={p.name:digest(p)for p in PRODUCTION},session_borrowed_cpp=dict(gameplay_full_sha256=digest(TESTS/'Native/gameplay_runtime_probe.cpp'),gameplay_prefix_sha256=hashlib.sha256(prefix).hexdigest(),controller_file_sha256=digest(TESTS/'Native/gameplay_world_input_probe.cpp'),controller_struct_sha256=hashlib.sha256(helper.encode()).hexdigest()),units=UNITS)
- (out/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');binary=out/'gameplay-session-native'
+ report=json.loads((out/'simulation-provenance.json').read_text());report.update(session_friends=friends,session_snapshot_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},session_production={p.name:digest(p)for p in PRODUCTION},session_borrowed_cpp=dict(gameplay_full_sha256=digest(TESTS/'Simulation/gameplay_runtime_probe.cpp'),gameplay_prefix_sha256=hashlib.sha256(prefix).hexdigest(),controller_file_sha256=digest(TESTS/'Simulation/gameplay_world_input_probe.cpp'),controller_struct_sha256=hashlib.sha256(helper.encode()).hexdigest()),units=UNITS)
+ (out/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');binary=out/'gameplay-session-simulation'
  if compile:subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(name+'.cpp'))for name in UNITS],str(snapshot/OWNED[0].name),'-o',str(binary)],check=True)
  return binary
 
@@ -196,7 +196,7 @@ def coverage(traces,cases):
   for row,cmd in zip(trace['frames'],c['rows']):
    after=row['sections'];okay=row['status']['okay'];counts[OPS[row['op']]]+=1;counts['successes'if okay else'failures']+=1
    pose=after['pose'];poses.add(tuple(pose));periods.add(pose[-1]);marker=after['marker'];markers.add(tuple(marker));counts['marker_observations']+=marker[0]
-   # Complete immutable source/native snapshots are compared before assertions.
+   # Complete immutable source/simulation snapshots are compared before assertions.
    if row['op']in(6,7,10)and not okay:assert after==prior,('rejected public mutation changed owners',c['index'],cmd)
    if row['op']==5 and cmd[1]in(0x7fc12345,bits(-.1)):assert row['status']['error']=='Invalid frame interval'and after==prior
    world_input.read_input_snapshot(after['controller'],counts)
@@ -219,16 +219,16 @@ def coverage(traces,cases):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- for name in('assets','native-package','output','target-dir'):p.add_argument('--'+name,type=Path,required=True)
+ for name in('assets','simulation-package','output','target-dir'):p.add_argument('--'+name,type=Path,required=True)
  p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
  cases=corpus();raw,ranges=encode(cases);protocol=protocol_audit(raw,cases,ranges);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
- reference=build_reference(out,a.target_dir,compile=not a.preflight);native=build_native(out,compile=not a.preflight)
+ reference=build_reference(out,a.target_dir,compile=not a.preflight);simulation=build_simulation(out,compile=not a.preflight)
  summary=dict(histories=len(cases),commands=sum(len(c['rows'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),protocol=protocol,proof_sha256={str(p.relative_to(PLUGIN)):digest(p)for p in OWNED},production_sha256={p.name:digest(p)for p in PRODUCTION},ranges=ranges,limitations=__doc__)
  if a.preflight:(out/'owner-freeze.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary,indent=2));return
  expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=raw);(out/'reference.bin').write_bytes(expected)
- actual=subprocess.check_output([str(native),str(a.native_package.resolve())],input=raw);(out/'native.bin').write_bytes(actual)
+ actual=subprocess.check_output([str(simulation),str(a.simulation_package.resolve())],input=raw);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  at=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(first_byte=at,first_word=at//4,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+  at=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));report=dict(first_byte=at,first_word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  covered=coverage(decode(expected,cases),cases);result=dict(**summary,passed=True,reference_revision=REFERENCE_REVISION,exact_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=covered);(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

@@ -16,7 +16,7 @@ import check_physics_animation_input_parity as animation_input
 from check_animation_playback_parity import attribute
 from check_gesture_parity import converter
 from camera_reference_build import frozen_sources
-PLUGIN=dispatcher.PLUGIN;CODE=PLUGIN/'Source/AtelierSkate/Private/Native';HOST='crates/skate-host/src/physics/'
+PLUGIN=dispatcher.PLUGIN;CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation';HOST='crates/skate-host/src/physics/'
 OWN=('SkeletonBiped','SkeletonBipedGround','SkeletonBipedAir','SkeletonBipedReckoning')
 UNITS=tuple(dict.fromkeys(dispatcher.UNITS+('BodySpin','BodyFlip','AirReckoning','BoardAnimation','SkeletonAirFrames','SkeletonAirRuntime','BipedGroundState','BipedGroundInput','BipedGroundJob')+tuple(n for n in OWN if(CODE/(n+'.cpp')).exists())+tuple(__import__('check_biped_ground_state_parity').UNITS)))
 STATE_OBSERVER='''
@@ -46,13 +46,13 @@ def aliases():
  return a
 
 def prepare(out):
- n=out/'native-source'
+ n=out/'simulation-source'
  if n.exists():shutil.rmtree(n)
  n.mkdir()
  for p in CODE.glob('*.h'):shutil.copy2(p,n/p.name)
  for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),n/(u+'.cpp'))
- prefixes=[PLUGIN/f'Tests/Native/skeleton_{v}_probe.cpp'for v in('body','collision','constraint')]+[PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Native/adjusted_skeleton_probe.cpp',PLUGIN/'Tests/Native/skeleton_input_runtime_probe.cpp']
- cpp_helpers,_=dispatcher.helpers();prefix=''.join(p.read_text().split('int main(',1)[0].split('int main()',1)[0]for p in prefixes).replace('// GENERATED_PROTOCOL',cpp_helpers);probe=n/'biped_skeleton_probe.cpp';probe.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Native/biped_skeleton_probe.cpp').read_text())
+ prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{v}_probe.cpp'for v in('body','collision','constraint')]+[PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp',PLUGIN/'Tests/Simulation/adjusted_skeleton_probe.cpp',PLUGIN/'Tests/Simulation/skeleton_input_runtime_probe.cpp']
+ cpp_helpers,_=dispatcher.helpers();prefix=''.join(p.read_text().split('int main(',1)[0].split('int main()',1)[0]for p in prefixes).replace('// GENERATED_PROTOCOL',cpp_helpers);probe=n/'biped_skeleton_probe.cpp';probe.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Simulation/biped_skeleton_probe.cpp').read_text())
  rust_prefixes=[PLUGIN/f'Tests/Reference/skeleton_{v}_probe.rs'for v in('body','collision','constraint')];prefix=''.join(p.read_text().split('fn main(){',1)[0]for p in rust_prefixes).replace('use crate::{','use skate_core::{').replace('skeleton_root::inverse_rigid,','').replace('solver::{packed,JointConstraint}','solver::{JointConstraint}').replace('#[path="physics/solver/packing.rs"] mod skeleton_constraint_packing;','mod skeleton_constraint_packing{use skate_core::physics::solver::{packed,JointConstraint};use crate::{RetailDriveRows,RetailContactJacobian};use skate_core::physics::rigid_body::RetailReactionCorrections;#[path="packing.rs"]mod original;pub fn drive(r:&RetailDriveRows)->packed::Drive{original::drive(r)}}')
  base=dispatcher.prepare_oracle(PLUGIN/'Tests/Reference/skeleton_input_runtime_probe.rs').split('fn main(){',1)[0]
  base=base.replace(' pub struct PlayerInput{',' pub(crate) mod skeleton_air;pub(crate) mod air_reckoning;\n pub struct PlayerInput{').replace(' pub mod offboard{',' pub mod offboard{pub(crate) mod skeleton_ground;pub(crate) mod skeleton_air;')
@@ -63,8 +63,8 @@ def prepare(out):
  staged={}
  for destination,origin in aliases().items():
   p=observed/destination;raw=(frozen/origin).read_bytes();append=appends.get(destination,'').encode();assert not p.exists(),destination;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw+append);assert p.read_bytes()[:len(raw)]==raw;staged[destination]=dict(source=origin,original_prefix_bytes=len(raw),original_prefix_sha256=hashlib.sha256(raw).hexdigest(),append_sha256=hashlib.sha256(append).hexdigest(),generated_sha256=digest(p))
- report.update(staged_module_aliases=staged,native_source_sha256={p.name:digest(p)for p in n.iterdir()},probe_sha256={p.name:digest(p)for p in prefixes+rust_prefixes+[PLUGIN/'Tests/Native/biped_skeleton_probe.cpp',PLUGIN/'Tests/Reference/biped_skeleton_probe.rs']},boundary=__doc__,callback_transport='Ground callback captures only unchanged immutable reckoning settings and the processed/physical-spin input values. It invokes original State::finish_reckoning on the actual shared riding/air/body-spin owners; original retained_board is mutated only by actual update_biped_ground. No neutral service or completed pose/query result is supplied.')
- (out/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,n,reference,observed,report
+ report.update(staged_module_aliases=staged,simulation_source_sha256={p.name:digest(p)for p in n.iterdir()},probe_sha256={p.name:digest(p)for p in prefixes+rust_prefixes+[PLUGIN/'Tests/Simulation/biped_skeleton_probe.cpp',PLUGIN/'Tests/Reference/biped_skeleton_probe.rs']},boundary=__doc__,callback_transport='Ground callback captures only unchanged immutable reckoning settings and the processed/physical-spin input values. It invokes original State::finish_reckoning on the actual shared riding/air/body-spin owners; original retained_board is mutated only by actual update_biped_ground. No neutral service or completed pose/query result is supplied.')
+ (out/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,n,reference,observed,report
 
 def corpus():
  bits=physical.bits;fs=physical.floats;cases=[];programs=[]
@@ -170,7 +170,7 @@ def variants(out,assets):
    d=copy.deepcopy(data);absent(d,name);fields,n=field(d,names[index+1]);fields[n]['data']='DEADBEEF';fixtures.append((name+'-before-malformed-'+names[index+1],d,False))
  d=copy.deepcopy(data);d['collections']=[r for r in d['collections']if converter.name_id(r['class'])!=converter.name_id('physics_reckoning')];fixtures.append(('missing-collection',d,False));result=[]
  for label,d,success in fixtures:
-  folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);p=folder/'skater-collections.json';p.write_text(json.dumps(d));bank=folder.parents[1]/'settings.native';bank.write_bytes(converter.encode_settings(p));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=success))
+  folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);p=folder/'skater-collections.json';p.write_text(json.dumps(d));bank=folder.parents[1]/'settings.simulation';bank.write_bytes(converter.encode_settings(p));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=success))
  return result
 
 def build_reference(out,target,generated,observed,report):
@@ -201,13 +201,13 @@ def decode(raw,cases):
  assert at==len(w);assert coverage['process_success']and coverage['process_failure']and coverage['ground']and coverage['air']and coverage['actual_solves'] and coverage['actual_contact_rows'] and coverage['actual_drive_rows'] and coverage['update_failure'];assert all(coverage['op'+str(n)]for n in range(9));return dict(coverage)
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--samples',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);raw,cases=corpus();audit(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,n,generated,observed,report=prepare(out);fixtures=variants(out,a.assets.resolve());bank=out/'settings.native';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));phys=out/'physical.native';phys.write_bytes(converter.encode_physics_skeletons(a.assets.resolve()/'private/stock/physics-skeletons.json'));identity=json.loads((a.assets.resolve()/'private/stock/physics-skeletons.json').read_text())['source_sha256'];summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--samples',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);raw,cases=corpus();audit(raw,cases);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,n,generated,observed,report=prepare(out);fixtures=variants(out,a.assets.resolve());bank=out/'settings.simulation';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));phys=out/'physical.simulation';phys.write_bytes(converter.encode_physics_skeletons(a.assets.resolve()/'private/stock/physics-skeletons.json'));identity=json.loads((a.assets.resolve()/'private/stock/physics-skeletons.json').read_text())['source_sha256'];summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=out/'biped-skeleton-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(n),*[str(n/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_reference(out,a.target_dir,generated,observed,report);expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=raw);actual=subprocess.check_output([str(native),str(bank),str(phys),str(a.samples.resolve()/'native/rig.skate'),identity],input=raw);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
+ simulation=out/'biped-skeleton-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(n),*[str(n/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_reference(out,a.target_dir,generated,observed,report);expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=raw);actual=subprocess.check_output([str(simulation),str(bank),str(phys),str(a.samples.resolve()/'simulation/rig.skate'),identity],input=raw);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;divergence=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
  coverage=decode(expected,cases);loader=[]
  for f in fixtures:
-  ref=subprocess.check_output([str(reference),str(f['assets']),'--load-only']);cpp=subprocess.check_output([str(native),str(f['bank']),'--load-only']);assert ref==cpp,f['label'];assert bool(struct.unpack_from('<I',ref)[0])==f['success'],f['label'];loader.append(dict(label=f['label'],success=f['success'],exact_words=len(ref)//4))
+  ref=subprocess.check_output([str(reference),str(f['assets']),'--load-only']);cpp=subprocess.check_output([str(simulation),str(f['bank']),'--load-only']);assert ref==cpp,f['label'];assert bool(struct.unpack_from('<I',ref)[0])==f['success'],f['label'];loader.append(dict(label=f['label'],success=f['success'],exact_words=len(ref)//4))
  result=dict(passed=True,**summary,stock_exact_words=len(expected)//4,output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=loader,limitations=__doc__);(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

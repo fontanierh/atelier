@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Native/GameplayRuntime.h"
+#include "Simulation/GameplayRuntime.h"
 #include <future>
 #include <memory>
 #include <string>

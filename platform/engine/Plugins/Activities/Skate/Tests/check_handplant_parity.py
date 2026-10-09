@@ -23,8 +23,8 @@ from camera_reference_build import frozen_sources
 from check_gesture_parity import PLUGIN,converter
 from check_graph_parity import element,original_graph
 from session_parity import REFERENCE_REVISION,digest
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=tuple(dict.fromkeys((*air_reckoning.UNITS,*trajectory_query.UNITS,*skeleton.UNITS,'NameId','Settings','StockSettingsReader','NativeMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase','PlayerGrindSurface','PlayerGrindInputWorld','BoardAnimation','SkeletonAirFrames','SkeletonAirRuntime','HandplantSettings','HandplantContact','HandplantRotation','HandplantTrajectory','Handplant','PlantSkeleton')))
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=tuple(dict.fromkeys((*air_reckoning.UNITS,*trajectory_query.UNITS,*skeleton.UNITS,'NameId','Settings','StockSettingsReader','SimulationMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase','PlayerGrindSurface','PlayerGrindInputWorld','BoardAnimation','SkeletonAirFrames','SkeletonAirRuntime','HandplantSettings','HandplantContact','HandplantRotation','HandplantTrajectory','Handplant','PlantSkeleton')))
 OPS=('seed','reset','full_reset','ground_query','ground_update','launch','values','ik','time_warp','hold_foot','build_curve','estimate_apex','rotation_frame','rotation_blend','missing_entry','plant_math','authored_query_world')
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
 def fs(values):return [bits(v)for v in values]
@@ -190,7 +190,7 @@ def validate_probe_extensions():
  # Removing only the new fixture helper and opcode reconstructs the exact
  # accepted baseline adapters; every old wire/numerical invocation is intact.
  rows={}
- definitions=(('Native/handplant_probe.cpp','// Explicit caller-authored scene metadata; numerical queries remain production.','class MissingCandidateQuery','      case 16:\n        p.world = AuthoredQueryWorld(i);\n        break;\n','2c60a1c1bd7acba56678aa01ea235f0bd914d3156c581daecfc2b097d3b50702'),('Reference/handplant_observer.rs','// Explicit caller-authored static scene metadata, not inferred from tags.','fn loaded(','   16=>physics.world=authored_query_world(i),\n','2f9841166888038dfd6512d3ca07f2803536e23d163a1e5ea25e6a70afbc6545'))
+ definitions=(('Simulation/handplant_probe.cpp','// Explicit caller-authored scene metadata; numerical queries remain production.','class MissingCandidateQuery','      case 16:\n        p.world = AuthoredQueryWorld(i);\n        break;\n','c020c905ef675e5d2371bd6aae25b2fb1749b4cf6141748682de70283dbfdd67'),('Reference/handplant_observer.rs','// Explicit caller-authored static scene metadata, not inferred from tags.','fn loaded(','   16=>physics.world=authored_query_world(i),\n','2f9841166888038dfd6512d3ca07f2803536e23d163a1e5ea25e6a70afbc6545'))
  for rel,start,end,opcode,baseline in definitions:
   path=PLUGIN/'Tests'/rel;current=path.read_text();assert current.count(start)==current.count(opcode)==1
   first=current.index(start);last=current.index(end,first);helper=current[first:last];rest=current[:first]+current[last:];legacy=rest.replace(opcode,'')
@@ -230,13 +230,13 @@ path="src/migration_probe.rs"
  report.update(staged_host_original_prefixes=staged,probe_sha256=digest(template),helper_sha256=digest(helper),binary_sha256=digest(binary),scope='All original host production source byte prefixes unchanged. Appended observation/fixture setters and one privacy-only migration_build_curve wrapper, whose complete original trajectory prefix is hashed in staged_host_original_prefixes. Ground/reset/contact/launch/values/IK/hold-foot/math/rotation invoke complete original bodies. Enter is tested only with absent candidate: query cannot run. Successful entry, complete active Update and PlantSkeleton advance remain later concrete AirTrajectory/AirReckoning integration proofs. Authored primitive entries explicitly fill the real world owner; metadata/octree are unused by original Handplant selection.')
  (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
-def build_native(output):
- snapshot=output/'native-source';snapshot.mkdir(exist_ok=True);hashes={}
+def build_simulation(output):
+ snapshot=output/'simulation-source';snapshot.mkdir(exist_ok=True);hashes={}
  for p in sorted(CODE.glob('*.h')):shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
  for unit in UNITS:p=CODE/(unit+'.cpp');shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
- probe=PLUGIN/'Tests/Native/handplant_probe.cpp';shutil.copy2(probe,snapshot/probe.name);hashes[probe.name]=digest(snapshot/probe.name);binary=output/'handplant-native'
+ probe=PLUGIN/'Tests/Simulation/handplant_probe.cpp';shutil.copy2(probe,snapshot/probe.name);hashes[probe.name]=digest(snapshot/probe.name);binary=output/'handplant-simulation'
  subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/probe.name),'-o',str(binary)],check=True)
- (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,units=UNITS),indent=2)+'\n');return binary
+ (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,units=UNITS),indent=2)+'\n');return binary
 
 class Reader:
  def __init__(self,data):self.words=struct.unpack('<'+'I'*(len(data)//4),data);self.at=0
@@ -303,13 +303,13 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--samples',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);inputs,cases=corpus();audit=validate_corpus(inputs,cases);audit['probe_extensions']=validate_probe_extensions();(out/'input.bin').write_bytes(inputs);(out/'wire-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
  for unit in UNITS:assert (CODE/(unit+'.cpp')).is_file(),unit
  if a.preflight:print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(inputs),units=len(UNITS)),indent=2));return
- fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+ fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(fixtures/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
  for kind in('action','motion'):(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
- reference=build_reference(out/'reference',a.target_dir);native=build_native(out);identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256']
- expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=inputs);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
- (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+ reference=build_reference(out/'reference',a.target_dir);simulation=build_simulation(out);identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256']
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=inputs);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
+ (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));failure=dict(byte=at,word=at//4,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+  at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));failure=dict(byte=at,word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
  proof=coverage(decode(expected,cases),cases);result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),wire_audit=audit,coverage=proof,boundary='Complete actual ground_query/full_reset/reset/ground_update with real surface investigation and actual FootIK targets; retained settings/state, contact cap/order/connectivity, launch/curves/values/rotations/IK and full PlantMath original bodies. Successful Enter and whole Update await actual root-owned trajectory and air reckoning. PlantSkeleton is implemented against real SkeletonAir/GeneralUpdate but its full scheduling proof is pending. No substitute callback executes; missing-entry query aborts if reached, and the unchanged Rust owner checks the absent candidate before query.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

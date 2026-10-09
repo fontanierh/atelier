@@ -5,11 +5,11 @@ or the mouse, manuals, grinds, powerslides, pumping, airs and bails. The riding 
 [Skate plugin](../../../platform/engine/Plugins/Activities/Skate/README.md), which simulates the board and a physical
 rider, then fits the solved pose onto Cairo and the board meshes. This page covers what the game adds: the controls
 as the player sees them, the tuning, the board, the skate pier, the sounds and the checks. The plugin's
-[runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md) covers the native data and its
+[runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md) covers the simulation data and its
 verification.
 
 ```sh
-uv run atelier build yorimichi skate.runtime unreal.compile   # verify the tracked native data, compile
+uv run atelier build yorimichi skate.runtime unreal.compile   # verify the tracked simulation data, compile
 uv run atelier play yorimichi
 uv run atelier qa yorimichi skate                              # with the game running
 ```
@@ -22,11 +22,10 @@ in a menu, as a zeppelin passenger or with the sailboat out. It sheathes the swo
 position, the direction of travel and the speed. Getting off works while the board is on the ground (not in the air,
 on a rail or in a bail) and keeps a jog's worth of speed.
 
-Yorimichi rides on the plugin's Ride backend (`Backend=Ride` in DefaultGame.ini): the native session rides the board
+Yorimichi rides with the plugin's Ride: the simulation session rides the board
 under Cairo's own physical body, which takes over in bails and plays the moves on and off the board. The plugin's
-[RIDE.md](../../../platform/engine/Plugins/Activities/Skate/RIDE.md) says what runs in the native session and what in
-Unreal, how much is ported and the known bugs. The Native backend is only the reference the QA compares against:
-`skate.Backend Native` on the console switches to it from the next mount; the game does not offer it to players.
+[RIDE.md](../../../platform/engine/Plugins/Activities/Skate/RIDE.md) says what runs in the simulation session and what in
+Unreal, how much is ported and the known bugs.
 
 Getting on and off is one continuous move. Running, walking or standing,
 the rider drops the board and steps on at speed. Stepping off, the rider runs out with the board in hand, and the
@@ -225,17 +224,17 @@ With the game running (`atelier play yorimichi`):
 | Scenario | What it checks | Report in `build/yorimichi/` |
 | --- | --- | --- |
 | `skate`, `skate_runtime` | 19 checks: push, flip and landing; steering; manual; rail; vert; deliberate bail and recovery; skin clearance during the bail (at least 0.45 cm); retargeted bone lengths, head direction and camera; keyboard pushing; stow and remount; goofy push and ollie; flat 360s both ways; keyboard powerslides both ways; running mount; Triangle mount and stow; coasting pose stability | `skateqa/runtime.json` |
-| `skate_transitions` | With `skate.Backend Ride`, getting on and off: mounts from a stand, a walk, a run, a sprint and the carry; dismounts to a stand, a run and a fast run; the carry put away; the board button; a fall got up from on foot and back onto the board; a lying board dissolving; jumps with the board in hand; cavemans; an air dismount from a grab and a kick-out; a slow bail run out; a step onto a lying board; Modori; the capsule (Modori's keeps its size through three board toggles and a jump, a crouched Cairo stands up for the board). Every frame: the character, its hips, its velocity and the camera move no more than the speed explains; frame p99 under 17 ms | `skateqa/transitions.json`, each check's frames in `skateqa/transitions-rows/` |
-| `ride_e2e` | On the default game (Ride is the default backend): a playtest dry run on the pad from the island's start to Sunset Pier, every input a pad key or stick: the first mounts (stand, run, sprint) and dismounts, the road (carve, brake, a push from a stop, an ollie, a kickflip), Flick-It tricks, a manual, a grab, a grind, pad and C powerslides, a quarter air, the hold-time dissolve and the recall, the sword, an interaction and the sailboat taking the board, a slam at speed, air and kick-out dismounts, a caveman, a bail off a grind, Modori, and the Native backend and back. Every frame: frame time, camera and hip jumps, the board's places and pops, the sounds; flick directions follow the saved stance; `--post` after quitting adds the memory peak and the whole log | `skateqa/ride_e2e.json`, `.md`, frames and screenshots in `skateqa/ride_e2e/` |
-| `skate_ride` | The ride (`skate.Backend Ride`) on the pier park and Mega Park: the first frame, pushing, steering, braking, the ollie, every Flick-It trick (also flicked on the player's pad, `--only pad`), grabs, spins, grinds, manuals, lip airs and vert (`--only vert`), pumping (`--only pump`), wheel contact, frame pacing, and the physical rider (how closely it holds the pose, bails that go limp at once and travel as far as the reference's, skin above the ground, joints within their ranges, its frame cost); `--only native` runs some rows on the Native backend beside it | `skateqa/ride.json`, `skateqa/ride-pose.json` |
-| `ride_session.py` (through `atelier live py`, not `qa`) | Records a session from the player's pad, then replays it packet by packet on either backend at a fixed 60 Hz in lockstep; the replay reports the board's error against the recording (see the script) | `ride-record/<take>/`, a replay in `replay-<backend>/` |
+| `skate_transitions` | Getting on and off: mounts from a stand, a walk, a run, a sprint and the carry; dismounts to a stand, a run and a fast run; the carry put away; the board button; a fall got up from on foot and back onto the board; a lying board dissolving; jumps with the board in hand; cavemans; an air dismount from a grab and a kick-out; a slow bail run out; a step onto a lying board; Modori; the capsule (Modori's keeps its size through three board toggles and a jump, a crouched Cairo stands up for the board). Every frame: the character, its hips, its velocity and the camera move no more than the speed explains; frame p99 under 17 ms | `skateqa/transitions.json`, each check's frames in `skateqa/transitions-rows/` |
+| `ride_e2e` | On the default game: a playtest dry run on the pad from the island's start to Sunset Pier, every input a pad key or stick: the first mounts (stand, run, sprint) and dismounts, the road (carve, brake, a push from a stop, an ollie, a kickflip), Flick-It tricks, a manual, a grab, a grind, pad and C powerslides, a quarter air, the hold-time dissolve and the recall, the sword, an interaction and the sailboat taking the board, a slam at speed, air and kick-out dismounts, a caveman, a bail off a grind and Modori. Every frame: frame time, camera and hip jumps, the board's places and pops, the sounds; flick directions follow the saved stance; `--post` after quitting adds the memory peak and the whole log | `skateqa/ride_e2e.json`, `.md`, frames and screenshots in `skateqa/ride_e2e/` |
+| `skate_ride` | The ride on the pier park and Mega Park: the first frame, pushing, steering, braking, the ollie, every Flick-It trick (also flicked on the player's pad, `--only pad`), grabs, spins, grinds, manuals, lip airs and vert (`--only vert`), pumping (`--only pump`), wheel contact, frame pacing, and the physical rider (how closely it holds the pose, bails that go limp at once and travel as far as the simulation's rider's, skin above the ground, joints within their ranges, its frame cost) | `skateqa/ride.json`, `skateqa/ride-pose.json` |
+| `ride_session.py` (through `atelier live py`, not `qa`) | Records a session from the player's pad, then replays it packet by packet at a fixed 60 Hz in lockstep; the replay reports the board's error against the recording (see the script) | `ride-record/<take>/`, a replay in `replay/` |
 | `skatepark` | Roll-ins on the bowl, mini, east and mellow returns, market, seven-stair and four-stair banks; the stair handrail; an air up and back in the bowl (apex above 3.5 m, landing back on the wall) | `skateqa/park.json` |
-| `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no native pose repeated three frames running | `skateqa/performance.json` |
+| `skate_performance` | Real-time frame pacing through six activities (push and flip, bowl air, mini air, quarter air, street to mini, bail): at least 58.5 fps, p95 under 20 ms, p99 under 33.34 ms, no frame over 50 ms, no simulation pose repeated three frames running | `skateqa/performance.json` |
 | `pier_part`, `pier_part_check` | Self-stopping control-driven rehearsals and films; complete telemetry and bail checks | `skatefilm/<take>/` |
 | `pier_part_mix` | Assembles approved takes, original procedural soundtrack and board audio | `skatefilm/<part>/` |
 | `skate_showreel` | A filmed line of shots at the pier, at a fixed 60 fps step; run through the live bridge (see the script) | `skatefilm/<take>/` |
 | `skate_mix_showreel` | Mixes a showreel take's sounds and encodes 1080p and 720p MP4s | `skatefilm/<take>/` |
-| `megapark_ride_film` | A filmed Mega Park line on the Ride backend (20 shots: carves, flips, manuals, grinds, powerslide, the drop-in, quarter airs, three ragdoll bails with the get-up and a board recall, a final line; optional caveman and grab-dismount shots), per-shot parts with slow-motion replays, the rider about 40% of the frame's height; run through the live bridge (see the script) | `megapark/ride-film/<take>/` |
+| `megapark_ride_film` | A filmed Mega Park line (20 shots: carves, flips, manuals, grinds, powerslide, the drop-in, quarter airs, three ragdoll bails with the get-up and a board recall, a final line; optional caveman and grab-dismount shots), per-shot parts with slow-motion replays, the rider about 40% of the frame's height; run through the live bridge (see the script) | `megapark/ride-film/<take>/` |
 | `megapark_ride_film_mix` | Cuts the kept parts and their replays into one film and mixes it through `skate_mix_showreel` (`--audio` reads another build's sounds; `--trim shot:first-last` leaves out frames where a camera lost the rider; `--replays a,b` picks the slow-motion replays) | `megapark/ride-film/<take>/` |
 
 `skate` runs `skate_runtime` and always gives the controls back. `skate_live_skate.py` is the in-game helper module
@@ -247,7 +246,7 @@ A packaged game has no Python. `japan.SkateGroundCheck` checks the ground there,
 (`-ExecCmds="japan.SkateGroundCheck quit"`). At the road's samples 150 and 300, and on the grass beside each clear of
 trees, it rides 4 s at 6 m/s and bails at 12 m/s. It logs a `SKATE GROUND` line per ride and bail: a ride fails when it
 drops more than 50 cm through the ground, a bail when the body's skin goes more than 2 cm under it lying or getting up
-(`skate.RideSkinCheck`, the Ride backend). A check that cannot measure fails too: a sample without both its street and
+(`skate.RideSkinCheck`). A check that cannot measure fails too: a sample without both its street and
 grass spot, a ride frame with no ground under it, or a bail with no lying or no get-up reading. The summary is
 `SKATE GROUND CHECK PASS` or `FAIL`; that line is the result. `quit` then exits, asking for status 1 on a failure
 (Windows and Linux pass it on; macOS always exits with 0). Other road samples can be passed as numbers.
@@ -269,12 +268,12 @@ nothing on macOS. An editor run, even with `skate.CookedSurface 1`, shows only w
 contain, not that a packaged game picks them: a cooked mesh without CPU access still reports its render index count,
 and that once sent every terrain and road mesh down an empty render path (#122).
 
-Offline, without Unreal, after building the native QA executable (see the plugin's
+Offline, without Unreal, after building the simulation QA executable (see the plugin's
 [runtime reference](../../../platform/engine/Plugins/Activities/Skate/RUNTIME.md#reference-build)):
 
 ```sh
-python3 platform/engine/Plugins/Activities/Skate/Tools/native_package.py --bundle build/yorimichi/skate-native/package  # against its manifest
-python3 games/yorimichi/tools/check_skate_runtime.py      # flat ground, both stances -> build/yorimichi/skate-native/check
+python3 platform/engine/Plugins/Activities/Skate/Tools/simulation_package.py --bundle build/yorimichi/skate-simulation/package  # against its manifest
+python3 games/yorimichi/tools/check_skate_runtime.py      # flat ground, both stances -> build/yorimichi/skate-simulation/check
 python3 games/yorimichi/tools/check_skatepark_runtime.py  # the pier's exported collision -> build/yorimichi/skatepark/physics
 ```
 

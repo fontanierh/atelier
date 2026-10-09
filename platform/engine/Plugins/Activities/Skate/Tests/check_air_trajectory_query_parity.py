@@ -19,7 +19,7 @@ import subprocess
 import tarfile
 from session_parity import PLUGIN, REFERENCE_REVISION
 
-UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','AirTrajectoryRuntime')
+UNITS=('SimulationMath','Geometry','GeometrySweep','WorldGeometry','AirTrajectoryQuery','AirTrajectoryRuntime')
 WORLD='crates/skate-host/src/physics/air_trajectory/world.rs'
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
 def fs(v):return list(map(bits,v))
@@ -82,14 +82,14 @@ def build(out):
  subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
  assert all(digest(source/p)==sha for p,sha in original.items())
  assert (source/'air-host-world.rs').read_bytes()==world
- live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+ live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in list(live.glob('*.h'))+[live/(u+'.cpp')for u in UNITS]:shutil.copy2(p,snapshot/p.name)
- cpp=PLUGIN/'Tests/Native/air_trajectory_query_probe.cpp';shutil.copy2(cpp,snapshot/cpp.name);native=out/'air-trajectory-query-native'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/cpp.name),'-o',str(native)],check=True)
- (out/'provenance.json').write_text(json.dumps(dict(reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=original,host_world_sha256=hashlib.sha256(world).hexdigest(),native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in(rust,cpp)}),indent=2)+'\n')
- return native,reference
+ cpp=PLUGIN/'Tests/Simulation/air_trajectory_query_probe.cpp';shutil.copy2(cpp,snapshot/cpp.name);simulation=out/'air-trajectory-query-simulation'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/cpp.name),'-o',str(simulation)],check=True)
+ (out/'provenance.json').write_text(json.dumps(dict(reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=original,host_world_sha256=hashlib.sha256(world).hexdigest(),simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in(rust,cpp)}),indent=2)+'\n')
+ return simulation,reference
 def inspect(raw,cases):
  w=struct.unpack('<'+'I'*(len(raw)//4),raw);at=0;coverage=Counter();queries=Counter()
  for case in cases:
@@ -127,9 +127,9 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);data,cases=corpus();(out/'input.bin').write_bytes(data);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if a.preflight:print(json.dumps(dict(cases=len(cases),input_bytes=len(data)),indent=2));return
  for name in('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
- native,reference=build(out);expected=subprocess.check_output([str(reference)],input=data,timeout=60);actual=subprocess.check_output([str(native)],input=data,timeout=60);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+ simulation,reference=build(out);expected=subprocess.check_output([str(reference)],input=data,timeout=60);actual=subprocess.check_output([str(simulation)],input=data,timeout=60);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=byte,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Complete trajectory/world query differs')
- result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases),boundary='Whole unchanged core trajectory query/prediction and complete host world leaves. Real triangle broadphase, rounded line tests and full triangle/AABB SAT collector execute. Explicit callback failures separately check propagation and retained caller output. Selection/scoring/grind admission and complete gameplay scheduling remain separate. Original nonadvancing/hanging query inputs are outside this parity corpus; the native nonadvancing guard is not claimed as an original error.')
+  byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=byte,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Complete trajectory/world query differs')
+ result=dict(passed=True,cases=len(cases),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases),boundary='Whole unchanged core trajectory query/prediction and complete host world leaves. Real triangle broadphase, rounded line tests and full triangle/AABB SAT collector execute. Explicit callback failures separately check propagation and retained caller output. Selection/scoring/grind admission and complete gameplay scheduling remain separate. Original nonadvancing/hanging query inputs are outside this parity corpus; the simulation nonadvancing guard is not claimed as an original error.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':historical.run_cli(main)

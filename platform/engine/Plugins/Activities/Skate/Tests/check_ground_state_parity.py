@@ -121,11 +121,11 @@ def build_probes(output):
     probe=PLUGIN/'Tests/Reference/ground_state_probe.rs';main=source/'ground-state-oracle.rs';main.write_text((source/'lib.rs').read_text()+probe.read_text())
     reference=output/'ground-state-reference';subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
     for name,expected in originals.items():assert digest(source/name)==expected,name
-    native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();units=('NativeMath','RigidBody','ForceQueue','Braking','GroundCorrections','GroundState','GroundStateCorrections','GroundDrag')
+    snapshot.mkdir();units=('SimulationMath','RigidBody','ForceQueue','Braking','GroundCorrections','GroundState','GroundStateCorrections','GroundDrag')
     for unit in units:
-        for ext in ('h','cpp'):shutil.copy2(native/f'{unit}.{ext}',snapshot/f'{unit}.{ext}')
+        for ext in ('h','cpp'):shutil.copy2(simulation/f'{unit}.{ext}',snapshot/f'{unit}.{ext}')
     pending=list(snapshot.iterdir());seen=set()
     while pending:
         path=pending.pop()
@@ -133,11 +133,11 @@ def build_probes(output):
         seen.add(path.name)
         for name in re.findall(r'^#include "([^"\n]+)"',path.read_text(),re.M):
             target=snapshot/name
-            if not target.exists():shutil.copy2(native/name,target)
+            if not target.exists():shutil.copy2(simulation/name,target)
             pending.append(target)
-    cpp_probe=PLUGIN/'Tests/Native/ground_state_probe.cpp';shutil.copy2(cpp_probe,snapshot/cpp_probe.name)
+    cpp_probe=PLUGIN/'Tests/Simulation/ground_state_probe.cpp';shutil.copy2(cpp_probe,snapshot/cpp_probe.name)
     cpp=output/'ground-state-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp') for u in units],str(snapshot/cpp_probe.name),'-o',str(cpp)],check=True)
-    provenance=dict(reference_revision=revision,original_source_sha256=originals,source_archive_sha256=hashlib.sha256(archive).hexdigest(),reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (probe,cpp_probe)})
+    provenance=dict(reference_revision=revision,original_source_sha256=originals,source_archive_sha256=hashlib.sha256(archive).hexdigest(),reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (probe,cpp_probe)})
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return cpp,reference
 
 def coverage(data,cases):

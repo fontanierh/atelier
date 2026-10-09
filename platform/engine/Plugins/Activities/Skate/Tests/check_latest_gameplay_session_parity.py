@@ -6,7 +6,7 @@ from immutable Git pin1536531; only the five changed compiled host prefixes are
 replaced in a fresh historical staging tree, with complete latest bodies and
 append-only observation/visibility adapters. Actual world, input, graphs,
 animation, contacts, solve, trajectory, camera and scoring owners run together.
-All stock assets and native packages remain supplied caller resources.
+All stock assets and simulation packages remain supplied caller resources.
 
 --preflight stages and hashes only. --run-under-root-guard compiles and executes
 and MUST be invoked by the root render/memory guard. Outputs are streamed into
@@ -38,7 +38,7 @@ import historical_oracle
 
 PLUGIN, CODE, TESTS = session.PLUGIN, session.CODE, session.TESTS
 ROOT = historical_oracle.ROOT
-OWNED = (Path(__file__), TESTS/'Native/latest_gameplay_session_probe.cpp',
+OWNED = (Path(__file__), TESTS/'Simulation/latest_gameplay_session_probe.cpp',
          TESTS/'Reference/latest_gameplay_session_probe.rs',
          TESTS/'Reference/latest_gameplay_session_observer.rs')
 
@@ -251,11 +251,11 @@ def stage_reference(out, target, payload, identity):
     return report
 
 
-def stage_native(out, overlay):
-    session.build_native(out, compile=False)
-    base = json.loads((out / 'native-provenance.json').read_text())
-    (out / 'baseline-native-provenance.json').write_text(json.dumps(base, indent=2) + '\n')
-    snapshot = out / 'native-source'
+def stage_simulation(out, overlay):
+    session.build_simulation(out, compile=False)
+    base = json.loads((out / 'simulation-provenance.json').read_text())
+    (out / 'baseline-simulation-provenance.json').write_text(json.dumps(base, indent=2) + '\n')
+    snapshot = out / 'simulation-source'
     changes = {}
     if overlay is not None:
         manifest_path = overlay.parent / 'draft-manifest.json'
@@ -273,17 +273,17 @@ def stage_native(out, overlay):
             p.write_bytes(replacement.read_bytes())
             changes[name] = dict(**row, staged_sha256=session.digest(p))
     if overlay is None:
-        assert 'std::optional<bool> transfer' in (snapshot/'PhysicalSimulationRuntime.h').read_text(), 'Latest production is not applied; use an explicit ignored native overlay for staging.'
+        assert 'std::optional<bool> transfer' in (snapshot/'PhysicalSimulationRuntime.h').read_text(), 'Latest production is not applied; use an explicit ignored simulation overlay for staging.'
         assert 'float vert_assist' in (snapshot/'AirTrajectoryRuntime.h').read_text()
     shutil.copy2(OWNED[1],snapshot/OWNED[1].name)
     report = dict(reference_commit=PIN, baseline_reference_commit=BASE_PIN,
-        baseline_native_provenance_sha256=session.digest(out / 'baseline-native-provenance.json'),
-        latest_native_overlays=changes, latest_candidate_ready=True,
+        baseline_simulation_provenance_sha256=session.digest(out / 'baseline-simulation-provenance.json'),
+        latest_simulation_overlays=changes, latest_candidate_ready=True,
         ignored_overlay_manifest_sha256=session.digest(manifest_path) if overlay is not None else None,
         units=list(session.UNITS),
         snapshot_sources={p.name:session.digest(p) for p in sorted(snapshot.iterdir()) if p.is_file()},
         scope='Source-derived accepted Session snapshot plus explicit ignored latest production overlay; local data-only observer and tune transport changes.')
-    (out / 'native-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
+    (out / 'simulation-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
 
 
@@ -740,22 +740,22 @@ def coverage(path, cases, leaves):
     return report
 
 
-def first_difference(reference, native):
+def first_difference(reference, simulation):
     """Hash and compare fixed chunks, retaining just the first differing offset."""
-    sizes=(reference.stat().st_size,native.stat().st_size)
-    digest_reference,digest_native=hashlib.sha256(),hashlib.sha256()
+    sizes=(reference.stat().st_size,simulation.stat().st_size)
+    digest_reference,digest_simulation=hashlib.sha256(),hashlib.sha256()
     first=None;offset=0
-    with reference.open('rb') as a,native.open('rb') as b:
+    with reference.open('rb') as a,simulation.open('rb') as b:
         while True:
             x,y=a.read(4<<20),b.read(4<<20)
             if not x and not y:
                 break
-            digest_reference.update(x);digest_native.update(y)
+            digest_reference.update(x);digest_simulation.update(y)
             if first is None and x!=y:
                 first=offset+next((n for n,(u,v)in enumerate(zip(x,y))if u!=v),min(len(x),len(y)))
             offset+=max(len(x),len(y))
-    return dict(equal=first is None,first_byte=first,reference_bytes=sizes[0],native_bytes=sizes[1],
-                reference_sha256=digest_reference.hexdigest(),native_sha256=digest_native.hexdigest())
+    return dict(equal=first is None,first_byte=first,reference_bytes=sizes[0],simulation_bytes=sizes[1],
+                reference_sha256=digest_reference.hexdigest(),simulation_sha256=digest_simulation.hexdigest())
 
 
 def locate_difference(path,offset,cases,leaves):
@@ -813,50 +813,50 @@ def dependency_hashes():
             and Path(module.__file__).suffix=='.py'}
 
 
-def verify_snapshot(out,reference,native):
+def verify_snapshot(out,reference,simulation):
     for relative,row in reference['latest_original_prefixes'].items():
         p=destination(out,relative);raw=p.read_bytes()
         assert sha(raw[:row['original_bytes']])==row['original_sha256'],relative
         assert session.digest(p)==row['generated_sha256'],relative
     assert session.digest(out/'observed-source/atelier-host/src/migration_probe.rs')==reference['generated_probe_sha256']
-    for name,expected in native['snapshot_sources'].items():
-        assert session.digest(out/'native-source'/name)==expected,name
+    for name,expected in simulation['snapshot_sources'].items():
+        assert session.digest(out/'simulation-source'/name)==expected,name
 
 
 def build_plan(out,target):
-    snapshot=out/'native-source';crate=out/'observed-source/atelier-host'
+    snapshot=out/'simulation-source';crate=out/'observed-source/atelier-host'
     return dict(reference=['cargo','+1.97.1','build','--release','--offline','--jobs','2',
             '--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target),
             '--bin','latest-gameplay-session-reference'],
-        native=['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math',
+        simulation=['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math',
             '-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),
             *[str(snapshot/(name+'.cpp'))for name in session.UNITS],
-            str(snapshot/OWNED[1].name),'-o',str(out/'latest-gameplay-session-native')])
+            str(snapshot/OWNED[1].name),'-o',str(out/'latest-gameplay-session-simulation')])
 
 
-def execute(plan,out,target,assets,native_package,reference,native):
+def execute(plan,out,target,assets,simulation_package,reference,simulation):
     # The explicit caller flag authorizes this path only from root's guard.
     # Independent agent execution and unguarded CI invocation are forbidden.
-    verify_snapshot(out,reference,native)
-    for name in ('reference','native'):
+    verify_snapshot(out,reference,simulation)
+    for name in ('reference','simulation'):
         print('Root guarded compile: '+name,flush=True)
         subprocess.run(plan[name],check=True)
     shutil.copy2(target/'release/latest-gameplay-session-reference',out/'latest-gameplay-session-reference')
-    verify_snapshot(out,reference,native)
-    for name,resource in (('reference',assets),('native',native_package)):
+    verify_snapshot(out,reference,simulation)
+    for name,resource in (('reference',assets),('simulation',simulation_package)):
         print('Root guarded live Session comparison: '+name,flush=True)
         with (out/'input.bin').open('rb')as i,(out/(name+'.bin')).open('wb')as o:
             subprocess.run([str(out/('latest-gameplay-session-'+name)),str(resource)],
                            stdin=i,stdout=o,check=True)
-    verify_snapshot(out,reference,native)
-    return {name:session.digest(out/('latest-gameplay-session-'+name))for name in ('reference','native')}
+    verify_snapshot(out,reference,simulation)
+    return {name:session.digest(out/('latest-gameplay-session-'+name))for name in ('reference','simulation')}
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for name in ('output','target-dir','baseline-build','assets','native-package'):
+    for name in ('output','target-dir','baseline-build','assets','simulation-package'):
         p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--native-overlay',type=Path,
+    p.add_argument('--simulation-overlay',type=Path,
                    help='Explicit ignored latest production draft; omit after root applies that port.')
     mode=p.add_mutually_exclusive_group(required=True)
     mode.add_argument('--preflight',action='store_true')
@@ -879,27 +879,27 @@ def main():
     old=session.corpus();old_raw,_=session.encode(old)
     assert old==json.loads((baseline/'cases.json').read_text())
     assert sha(old_raw)==stock['input_sha256']
-    assets,native_package=a.assets.resolve(),a.native_package.resolve()
+    assets,simulation_package=a.assets.resolve(),a.simulation_package.resolve()
     for relative in ('private/stock/skater-collections.json',
                      'private/stock/data/script/camera/Default_cameragraph.stategraph'):
         assert (assets/relative).is_file(),('incomplete original asset root',relative)
     for relative in ('settings.skate','metadata/bank-0.skate','metadata/bank-1.skate',
                      'physics-skeletons.skate','animation/rig.skate','action.graph',
                      'motion.graph','camera.graph','camera.skate','gestures.skate'):
-        assert (native_package/relative).is_file(),('incomplete native resource root',relative)
-    assert any((native_package/'animation/clips').rglob('*.skate'))
-    resources=dict(original_assets=resource_hashes(assets),native_package=resource_hashes(native_package))
+        assert (simulation_package/relative).is_file(),('incomplete simulation resource root',relative)
+    assert any((simulation_package/'animation/clips').rglob('*.skate'))
+    resources=dict(original_assets=resource_hashes(assets),simulation_package=resource_hashes(simulation_package))
     (out/'input.bin').write_bytes(raw)
     (out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     (out/'leaf-cases.json').write_text(json.dumps(leaves,indent=2)+'\n')
     ref=stage_reference(out,target,payload,identity)
-    native=stage_native(out,a.native_overlay.resolve()if a.native_overlay else None)
-    verify_snapshot(out,ref,native)
+    simulation=stage_simulation(out,a.simulation_overlay.resolve()if a.simulation_overlay else None)
+    verify_snapshot(out,ref,simulation)
     plan=build_plan(out,target)
     (out/'build-plan.json').write_text(json.dumps(plan,indent=2)+'\n')
     summary=dict(reference_commit=PIN,reference_revision=PIN,baseline_reference_commit=BASE_PIN,
         preflight=a.preflight,numeric_pass=False,root_guard_only=True,
-        latest_native_overlay_ready=native['latest_candidate_ready'],
+        latest_simulation_overlay_ready=simulation['latest_candidate_ready'],
         histories=len(cases),commands=sum(len(c['rows'])for c in cases),
         legacy_histories=len(preserved),legacy_commands=sum(c['commands']for c in preserved),
         added_histories=len(cases)-len(preserved),leaf_cases=len(leaves),leaf_output_bytes=4+32*len(leaves),
@@ -913,7 +913,7 @@ def main():
         dependency_sha256=dependency_hashes(),
         imported_session_proof_sha256={str(q.relative_to(ROOT)):session.digest(q)for q in session.OWNED},
         reference_provenance_sha256=session.digest(out/'reference-provenance.json'),
-        native_provenance_sha256=session.digest(out/'native-provenance.json'),
+        simulation_provenance_sha256=session.digest(out/'simulation-provenance.json'),
         source_witness_locations=source_locations(payload),resources=resources,limitations=__doc__)
     (out/'owner-freeze.json').write_text(json.dumps(summary,indent=2)+'\n')
     if a.preflight:
@@ -921,14 +921,14 @@ def main():
             'whole_latest_original_sha256','ranges','legacy_preservation',
             'imported_session_proof_sha256','resources','source_witness_locations')}
         print(json.dumps(view,indent=2));return
-    binaries=execute(plan,out,target,assets,native_package,ref,native)
-    assert resources==dict(original_assets=resource_hashes(assets),native_package=resource_hashes(native_package))
-    comparison=first_difference(out/'reference.bin',out/'native.bin')
+    binaries=execute(plan,out,target,assets,simulation_package,ref,simulation)
+    assert resources==dict(original_assets=resource_hashes(assets),simulation_package=resource_hashes(simulation_package))
+    comparison=first_difference(out/'reference.bin',out/'simulation.bin')
     if not comparison['equal']:
         at=comparison['first_byte']
         report=dict(**comparison,first_word=at//4,
                     reference=locate_difference(out/'reference.bin',at,cases,leaves),
-                    native=locate_difference(out/'native.bin',at,cases,leaves))
+                    simulation=locate_difference(out/'simulation.bin',at,cases,leaves))
         (out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n')
         raise AssertionError(report)
     print('Exact full streams match; decoding actual retained witnesses with mmap.',flush=True)
