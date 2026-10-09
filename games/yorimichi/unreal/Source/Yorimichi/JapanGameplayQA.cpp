@@ -7,7 +7,7 @@
 #include "JapanSkateNetwork.h"
 #include "WandererCharacter.h"
 #include "SkateComponent.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"

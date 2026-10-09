@@ -12,7 +12,6 @@ over the fifteen clips described in [FOX_HUNTER_ANIMATION.md](FOX_HUNTER_ANIMATI
 ```sh
 atelier build yorimichi characters.fox_hunter unreal.fox_hunter   # export the mesh and clips, build /Game/FoxHunter
 atelier play yorimichi                                            # the hunter is up the road, a little to the left
-atelier play yorimichi --profile foxqa                            # the scripted fight (see below)
 ```
 
 Draw the sword with R (D-pad Left) or just attack. `atelier play yorimichi -- -nofox` starts without the hunter.
@@ -112,7 +111,7 @@ that is engaged or within 15 m, a line at the top with its state, its last event
 
 `JapanGameMode` spawns the hunter 12 m ahead of the player start and 3.5 m to the left, on traced ground, facing the
 player. `-nofox` suppresses it. Scripted sessions (a command line containing `qa`, `benchmark`, `trailershot`,
-`buildingreview` or `AtelierStream`) get no fox unless `-foxhunter` or `-foxqa` is given, so the phone stream has
+`buildingreview` or `AtelierStream`) get no fox unless `-foxhunter` is given, so the phone stream has
 none.
 
 ### Animation
@@ -122,40 +121,12 @@ Run sample (591 cm/s) only the playback rate rises. The FBX root bone carries th
 translation is normalised with `SetAnimRootMotionTranslationScale`. Death has no root motion: the body pitches over in
 the mesh.
 
-## Fox QA run (foxqa profile)
+## Combat checks
 
-`atelier play yorimichi --profile foxqa` starts the game with `-foxqa -foxqafps=60 -reviewdir={run}`.
-`FoxHunterReview.cpp` steps the game on a fixed clock (`-foxqafps`, clamped to 15–240), puts the player on a flat floor
-20 m above the world and the fox 5.2 m ahead (random seed 7), and drives both through the real handlers. Attacks are
-forced where a check needs a particular one.
-
-Its 16 checks:
-
-1. The fox definition (`DA_FoxHunter`) is installed.
-2. The fox starts idle at its spot.
-3. The sword set is installed on the player.
-4. The fox runs in (peak above 300 cm/s).
-5. The player parries a forced AttackR_A (parry pressed 0.2 s before the window) and takes no hit.
-6. The counter takes one point.
-7. A forced AttackL_B takes health.
-8. The hit plays the flinch.
-9. Rolling through a forced AttackR_B costs no health.
-10. Quick strikes bring the fox to 3 or less while it is passive.
-11. A full charge kills it.
-12. The body holds its pose, then fades.
-13. It returns to its home spot at full health.
-14. Standing still, the player is knocked down.
-15. The fox withdraws.
-16. The player stands up with full health, still armed.
-
-It writes to the run folder (`build/yorimichi/logs/play-foxqa-<stamp>/`) and exits:
-
-- `fox_qa.json`: `passed`, `errors`, `fox_attacks`, `landed`, `parried`, `dodged`, `missed`, `fox_hits_taken`,
-  `fox_deaths`, `player_hits_taken`, `player_parries`, `fixed_fps`, `seconds`.
-- `fox_telemetry.csv`: per step, the fox's state, clip, health, position, speed and strike point, the distance, the
-  player's state, clip, health and position, and the running outcome counters.
-- Screenshots: `fox_approach.png`, `fox_parry.png`, `fox_counter.png`, `fox_hit.png`, `fox_roll.png`,
-  `fox_charge.png`, `fox_death.png`, `fox_down.png`, `fox_up.png`.
+The player uses the merged Adventure move set in every session. Its attacks, sword guard, parry and dodges meet
+the fox's existing strike and hit interfaces; the player's authored legacy combat set is not installed.
+For movement and combat checks, use `scenarios/adventure_moves.py` through the live bridge. Kaede's
+[training bouts](SWORD_TRAINER.md) exercise both fighters on the merged set.
 
 ## Files
 
@@ -165,8 +136,7 @@ All under `games/yorimichi/`.
 | --- | --- |
 | State machine, strikes, hit reactions, death and return | `unreal/Source/Yorimichi/FoxHunter.h/.cpp` |
 | Animation graph | `unreal/Source/Yorimichi/FoxHunterAnimInstance.h/.cpp` |
-| Fox QA run | `unreal/Source/Yorimichi/Dev/FoxHunterReview.cpp` |
-| Player side: `IncomingStrike`, health, soft lock | `unreal/Source/Yorimichi/WandererSword.h/.cpp` |
+| Player side: combat and reactions, health | `unreal/Source/Yorimichi/AdventureMoveSetCombat.cpp`, `WandererSword.h/.cpp` |
 | Spawning | `unreal/Source/Yorimichi/JapanGameMode.cpp` |
 | Health bar and fox line | `unreal/Source/Yorimichi/JapanHUD.cpp` |
 | Source, manifest, export | `assets/characters/fox-hunter/` (`FoxHunter-Anim-r05.blend`, `manifest.json`, `character.toml`, `export_unreal.py`) |

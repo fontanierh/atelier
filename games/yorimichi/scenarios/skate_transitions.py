@@ -13,9 +13,9 @@ in the air from a grab (BR_DISMOUNT_*_INTO_BR_AIR, then a landing), a kick-out i
 the board flying on by itself; also just after a take-off, still rising), a slow bail run out on foot (RUNOUT_*, the
 board rolling on), a fallen rider getting up on foot where the body lies (W_RECOVERY_*), a
 step onto a board lying on its wheels, the rider turning round on the board rolling fakie (by himself, and pushing
-after a fakie landing off a quarter, the board not turning), and Link as the rider (the switch offers Cairo and
-Link). The capsule checks: a crouched Cairo
-stands up for the board, and a BotW rider's fitted capsule keeps its size through three board toggles and a jump.
+after a fakie landing off a quarter, the board not turning), and Modori as the rider (the switch offers Cairo and
+Modori). The capsule checks: a crouched Cairo
+stands up for the board, and an adventure rider's fitted capsule keeps its size through three board toggles and a jump.
 
 Every frame is checked for continuity: the character moves no farther than its speed allows, the hips do not jump,
 the velocity changes no faster than a push or a brake could (at a landing, the horizontal velocity), the camera eases
@@ -335,7 +335,7 @@ def main():
     qa.settle(minimum=50, seconds=2, limit=60)
 
     def toggles(name):
-        """The board on and off three times from a stand, then a jump: the capsule keeps its size (a fitted one, a BotW
+        """The board on and off three times from a stand, then a jump: the capsule keeps its size (a fitted one, an adventure
         rider's, too: standing up for an action must not give back the class default)."""
         on_foot()
         before = capsule()
@@ -858,8 +858,8 @@ live.behave('bail', _bail)
         switch_push('switch_push')
     if wanted('switch_landing'):
         switch_landing('switch_landing')
-    for rider in ('Link',):
-        # Another rider's body (Link, taller and slighter) through the same transitions.
+    for rider in ('Modori',):
+        # Another rider's body (Modori, taller and slighter) through the same transitions.
         key = rider.lower()
         if not wanted(key) and not wanted('capsule'):
             continue

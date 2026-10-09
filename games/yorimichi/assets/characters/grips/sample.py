@@ -44,7 +44,7 @@ def _grips_sample():
         out['hand_' + s] = pts(L.skinned_vertices(m, [f'hand_{s}'] + thumb(s) + [b for f in range(4) for b in digits(f, s)]))
         out['joints_' + s] = {n: pts([m.get_socket_location(n)])[0] for n in [b for f in range(4) for b in digits(f, s)] + thumb(s) + [f'hand_{s}'] if m.get_bone_index(n) != -1}
     if st.get('mode') == 'glide' and g:
-        # each handle's axis in the glider's component frame (BotwMoveSetDetail.h GliderHandles)
+        # each handle's axis in the glider's component frame (AdventureMoveSetDetail.h GliderHandles)
         T = g[0].get_world_transform()
         H = {'R': ((-24.8, -14.2, 1.2), (-30.5, 2.8, 1.1)), 'L': ((25.4, -14.2, 1.6), (30.1, 2.9, 1.0))}
         out['handle'] = 'glider'

@@ -5,7 +5,7 @@
 SK_Modori (body and coat, one skeleton) with its physics asset and CPU access (the skating retargeter samples the
 rider's skin), the coat's cloth_pin mask kept as its vertex colours, both materials in the game's character look
 (base colour with a 30% emissive fill; matte, as his source) and DA_ModoriBase: the mesh and his measurements. His
-merged move set comes on top (unreal.modori_botw: import_botw_moveset.py with BOTW_CHARACTER=modori copies the base into
+merged move set comes on top (unreal.modori_adventure: import_adventure_moveset.py with ADVENTURE_CHARACTER=modori copies the base into
 DA_Modori with every move).
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402

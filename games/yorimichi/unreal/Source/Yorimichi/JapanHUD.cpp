@@ -1,18 +1,16 @@
 #include "JapanHUD.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "ZeppelinService.h"
 #include "WandererCharacter.h"
 #include "JapanPreferences.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
-#include "HorseRideComponent.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
 #include "SwordTrainer.h"
-#include "HorseRace.h"
 #include "LiveLibrary.h"
 #include "YorimichiLive.h"
 #include "EngineUtils.h"
@@ -155,38 +153,10 @@ void AJapanHUD::DrawHUD()
         }
     }
     };
-    // A horse race (AHorseRace) takes the whole screen: its note highway, standings, map and stride meter.
-    if (AHorseRace* Race = AHorseRace::Find(Pawn); Race && Race->IsRacing()) { Race->DrawHud(this, Canvas, CurrentControllerStyle()); return; }
     // Filming the skating (UYorimichiLive::FilmHud): only the trick line, and the sword trainer's bar and words.
     if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
-    // -fightfilm: the filmed fight keeps only the player's health and the fox's bar.
-    const bool bFilm=FParse::Param(FCommandLine::Get(),TEXT("fightfilm"));
-    if (bFilm)
-    {
-        const float Scale=Canvas->SizeY/1080.f;
-        if (const UWandererSwordComponent* Sword=Pawn->GetSword())
-        {
-            const float Health=FMath::Clamp(Sword->GetHealth()/UWandererSwordComponent::MaxHealth,0.f,1.f);
-            const float X=48*Scale,Y=Canvas->SizeY-78*Scale,W=300*Scale,H=12*Scale;
-            DrawRect(FLinearColor(0,0,0,.4f),X-3*Scale,Y-3*Scale,W+6*Scale,H+6*Scale);
-            DrawRect(FLinearColor(.2f,.08f,.06f,.8f),X,Y,W,H);
-            DrawRect(Health>.3f?FLinearColor(.86f,.32f,.28f):FLinearColor(1.f,.15f,.1f),X,Y,W*Health,H);
-        }
-        for (TActorIterator<AFoxHunter> It(GetWorld());It;++It)
-        {
-            if (!It->IsReady() || (!It->IsEngaged() && It->IsAlive()) || It->IsHidden()) continue;
-            const float W=420*Scale,X=Canvas->SizeX*.5f-W*.5f,Y=44*Scale;
-            DrawText(TEXT("FOX HUNTER"),FLinearColor(.97f,.9f,.76f),X,Y-26*Scale,Font,1.4f*Scale);
-            DrawRect(FLinearColor(0,0,0,.42f),X-3*Scale,Y-3*Scale,W+6*Scale,14*Scale);
-            const float Seg=W/AFoxHunter::MaxHealth;
-            for (int32 Pip=0;Pip<AFoxHunter::MaxHealth;++Pip)
-                DrawRect(Pip<It->GetHealth()?FLinearColor(.95f,.52f,.18f):FLinearColor(.22f,.16f,.12f,.9f),X+Pip*Seg+1.5f*Scale,Y,Seg-3*Scale,8*Scale);
-            break;
-        }
-        return;
-    }
     const double Now = FPlatformTime::Seconds();
     if (Now >= NextControllerCheck)
     {
@@ -226,13 +196,13 @@ void AJapanHUD::DrawHUD()
         Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   %s parry   %s draw / sheathe sword   %s crouch   %s interact   %s map (hold: places)   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Crouch,TEXT("D-pad Down"),Pad.Map,Pad.Menu)
             : TEXT("Left click attack, hold to charge   Right click parry   R draw / sheathe sword   Mouse look   M map   Esc settings   Tab release mouse");
     }
-    // The merged move set (or the legacy BOTW set, without the double jump): jump in the air is the double jump, then the paraglider; the roll button is the dodge (side
-    // hop or backflip); the parry button guards and locks on, with the shield or else the sword (jump while guarding
+    // The merged move set: jump in the air is the double jump, then the paraglider; the roll button is the dodge (side
+    // hop or backflip); the parry button guards with the sword and locks on (jump while guarding
     // parries); the dash button only swims fast.
-    if (const UBotwMoveSet* Moves = Pawn->GetMoves(); Moves && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()))
+    if (const UAdventureMoveSet* Moves = Pawn->GetMoves(); Moves && !bSailboat && !Pawn->IsZeppelinPassenger() && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()))
     {
-        const TCHAR* Guard = Moves->HasShield() ? TEXT("shield guard") : TEXT("sword guard");
-        const TCHAR* Jump = Moves->IsLegacy() ? TEXT("jump / paraglider") : TEXT("jump / double jump / paraglider");   // the legacy BOTW set has no double jump
+        const TCHAR* Guard = TEXT("sword guard");
+        const TCHAR* Jump = TEXT("jump / double jump / paraglider");
         Controls = bController ? FString::Printf(TEXT("Left stick move   Hold %s sprint   %s %s   %s dodge / backflip   %s swim dash   %s crouch"),Pad.Sprint,Pad.Jump,Jump,Pad.Roll,Pad.Dash,Pad.Crouch)
             : FString::Printf(TEXT("WASD run   Alt / J walk   Shift sprint   Space %s   Ctrl dodge / backflip   F swim dash   C crouch   K sailboat   M map"),Jump);
         Secondary = bController ? FString::Printf(TEXT("%s attack, hold to charge   Hold %s %s / lock-on, %s parry   %s draw / sheathe   %s map (hold: places)   %s settings"),Pad.Attack,Pad.Parry,Guard,Pad.Jump,Pad.Weapon,Pad.Map,Pad.Menu)
@@ -281,18 +251,7 @@ void AJapanHUD::DrawHUD()
     }
     else if (Bike && Bike->IsAvailable() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())
         Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
-    const UHorseRideComponent* Horse=Pawn->GetHorse();
-    if (Horse && Horse->IsEquipped())
-    {
-        const float Kmh=Horse->GetSpeed()*.036f;
-        FString Spurs; for (int32 I=0;I<UHorseRideComponent::MaxSpurs;++I) Spurs+=I<Horse->GetSpurs()?TEXT("U"):TEXT("-");
-        Controls=bController
-            ? FString::Printf(TEXT("Left stick urge / rein in / turn   Hold %s gallop   %s spur [%s]   H get off (at a walk)      %s   %.0f km/h"),Pad.Sprint,Pad.Jump,*Spurs,*Horse->GetStatus(),Kmh)
-            : FString::Printf(TEXT("W trot   Shift gallop   Alt walk   S rein in   A / D turn   Space spur [%s]   Q rear (standing)   H get off (at a walk)      %s   %.0f km/h"),*Spurs,*Horse->GetStatus(),Kmh);
-        Secondary=bController?FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
-    }
-    else if (Horse && !bRide && !bSailboat && !(Bike && Bike->IsEquipped()) && !Pawn->IsZeppelinPassenger() && Horse->IsAvailable())
-        Secondary += Horse->GetFigure() ? TEXT("   H back on the horse") : TEXT("   H horse");
+
     if(!bSailboat&&!Pawn->IsZeppelinPassenger())
     {
         const auto& Stamina=Pawn->GetStamina();
@@ -332,16 +291,7 @@ void AJapanHUD::DrawHUD()
         }
     }
     DrawTrainer(bController, bSailboat);
-    // Hudson, the race master at the hippodrome: the prompt to ask him for a race.
-    if (const AHorseRace* Race = AHorseRace::Find(Pawn); Race && !bSailboat && Race->CanTalk(Pawn))
-    {
-        const float Scale = Canvas->SizeY / 1080.f;
-        const FString Ask = FString::Printf(TEXT("%s   Talk to Hudson (horse races)"), bController ? TEXT("D-pad Down") : TEXT("E"));
-        float W = 0.f, H = 0.f; Canvas->StrLen(Font, Ask, W, H); const float S = 1.3f * FMath::Max(Scale, .75f);
-        const float X = Canvas->SizeX * .5f - W * S * .5f, Y = Canvas->SizeY * .7f;
-        DrawRect(FLinearColor(0, 0, 0, .45f), X - 14, Y - 8, W * S + 28, H * S + 16);
-        DrawText(Ask, FLinearColor(1.f, .9f, .74f), X, Y, Font, S);
-    }
+
     if (bSwordSet)
     {
         FString Weapon=Sword->IsArmed()?FString::Printf(TEXT("Sword: %s"),*Sword->StateName()):TEXT("Sword: put away");

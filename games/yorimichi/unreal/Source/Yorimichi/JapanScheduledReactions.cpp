@@ -1,6 +1,6 @@
 #include "JapanCharacterMovement.h"
-#include "BotwMoveSet.h"
-#include "BotwMovementReaction.h"
+#include "AdventureMoveSet.h"
+#include "AdventureMovementReaction.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
 #include "JapanNetwork.h"
@@ -44,8 +44,8 @@ bool UJapanCharacterMovement::QueueScheduledReaction(const FJapanReactionValue& 
         Rider->GetRemoteRole() != ROLE_AutonomousProxy || Rider->IsNpc() || !PredictsMoves() ||
         Rider->GetNetworkActivity() != EJapanActivity::OnFoot || bImmediateMovementReaction ||
         !Rider->GetSword() || Rider->GetSword()->GetHealth() <= 0.f) return false;
-    FBotwMovementReaction Payload;
-    if (!FBotwMovementReaction::Decode(Value, Payload)) { ++ReactionStats.InvalidPayloads; return false; }
+    FAdventureMovementReaction Payload;
+    if (!FAdventureMovementReaction::Decode(Value, Payload)) { ++ReactionStats.InvalidPayloads; return false; }
     FJapanScheduledReaction Event;
     if (!ReactionJournal.Issue(ReactionCurrent, Value, Event))
     {
@@ -101,8 +101,8 @@ bool UJapanCharacterMovement::QueueLethalReaction(const FJapanReactionValue& Val
         Rider->GetNetworkActivity() != EJapanActivity::OnFoot || bImmediateMovementReaction ||
         !Rider->GetSword() || Rider->GetSword()->GetHealth() > 0.f) return false;
     if (bLethalReactionQueued) return true;
-    FBotwMovementReaction Payload;
-    if (!FBotwMovementReaction::Decode(Value, Payload)) { ++ReactionStats.InvalidPayloads; return false; }
+    FAdventureMovementReaction Payload;
+    if (!FAdventureMovementReaction::Decode(Value, Payload)) { ++ReactionStats.InvalidPayloads; return false; }
     bLethalReactionQueued = true;
     const uint32 Epoch = GetActivityEpoch();
     // Health/cues are already committed. End the epoch at the next safe CMC
@@ -149,8 +149,8 @@ void UJapanCharacterMovement::ReceiveScheduledReaction(const TArray<uint8>& Enco
     { ++ReactionStats.InvalidPayloads; return; }
     FMemoryReader Reader(Encoded, true);
     FJapanScheduledReaction Event;
-    FBotwMovementReaction Payload;
-    if (!Event.Serialize(Reader) || !Reader.AtEnd() || !FBotwMovementReaction::Decode(Event.Value, Payload))
+    FAdventureMovementReaction Payload;
+    if (!Event.Serialize(Reader) || !Reader.AtEnd() || !FAdventureMovementReaction::Decode(Event.Value, Payload))
     { ++ReactionStats.InvalidPayloads; return; }
     if (Event.Epoch > GetActivityEpoch())
     {
@@ -217,8 +217,8 @@ void UJapanCharacterMovement::ApplyScheduledThrough(uint32 Through)
     for (uint32 Sequence = ReactionJournal.Applied(); Sequence < Through && Sequence < ReactionJournal.Known();)
     {
         const auto* Event = ReactionJournal.Find(++Sequence);
-        FBotwMovementReaction Payload;
-        if (Event && !FBotwMovementReaction::Decode(Event->Value, Payload))
+        FAdventureMovementReaction Payload;
+        if (Event && !FAdventureMovementReaction::Decode(Event->Value, Payload))
         {
             ++ReactionStats.InvalidPayloads; ++ReactionStats.FailedApply;
             UE_LOG(LogJapanMovementQA, Error, TEXT("Invalid retained reaction payload epoch=%u sequence=%u"), GetActivityEpoch(), Sequence);
@@ -227,8 +227,8 @@ void UJapanCharacterMovement::ApplyScheduledThrough(uint32 Through)
     }
     if (!ReactionJournal.Apply(Through, [&](const FJapanScheduledReaction& Event)
     {
-        FBotwMovementReaction Payload;
-        if (!FBotwMovementReaction::Decode(Event.Value, Payload))
+        FAdventureMovementReaction Payload;
+        if (!FAdventureMovementReaction::Decode(Event.Value, Payload))
         { ++ReactionStats.InvalidPayloads; return; }
         CastChecked<AWandererCharacter>(CharacterOwner)->GetMoves()->ApplyMovementReaction(Payload);
         if (CharacterOwner->HasAuthority())
@@ -251,7 +251,7 @@ void UJapanCharacterMovement::ApplyScheduledThrough(uint32 Through)
 
 void UJapanCharacterMovement::ScheduleReactionDeadline(uint32 Sequence, double Now, double RTT, double Jitter)
 {
-    static_assert(MaximumReactionWait < FBotwMovementReaction::HitImmunitySeconds,
+    static_assert(MaximumReactionWait < FAdventureMovementReaction::HitImmunitySeconds,
         "A heavy hit must reach physical down before its contact-time immunity ends");
     ReactionDeadlines.Add({Sequence, Now + (RTT > 0. ?
         FMath::Clamp(3. * RTT + Jitter + .03, .25, MaximumReactionWait) : MaximumReactionWait)});

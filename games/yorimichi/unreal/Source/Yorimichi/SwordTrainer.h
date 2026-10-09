@@ -25,8 +25,8 @@ struct FTrainerStyle
 
 /**
  * Kaede, the sword teacher of Momiji Hamlet: ask her (Interact) and she spars with the player at one of three levels,
- * with the sword or the sword and shield, each side's shield chosen in her menu. She is a person in the game's own
- * body (AWandererCharacter, IsNpc) playing the player's merged move set (UBotwMoveSet, her retargeted copy of Link's
+ * with swords. She is a person in the game's own
+ * body (AWandererCharacter, IsNpc) playing the player's merged move set (UAdventureMoveSet, her retargeted copy of the reference rig's
  * clips with Cairo's double jump and two-handed guard): an AI presses the same buttons and holds the same stick a
  * player does, so every move she makes is one the player can make, and the move set's guard, parry, dodges, flurry
  * rush and hit reactions answer both sides alike. A bout ends when either is knocked down at no health.
@@ -55,7 +55,7 @@ public:
     enum class EBout : uint8 { Home, Talking, Ready, Fighting, Over, Return };
     EBout GetBout() const { return Bout; }
     FString BoutName() const;
-    /** Start a bout with Player: Level 0 gentle, 1 steady, 2 master; her shield and the player's (the "Shield" setting). */
+    /** Start a sword bout: Level 0 gentle, 1 steady, 2 master. Retired shield flags must be false. */
     bool StartBout(AWandererCharacter* Player, int32 Level, bool bOwnShield, bool bPlayerShield);
     void EndBout(const FString& Why);
     void OpenMenu(AWandererCharacter* Player);
@@ -93,7 +93,6 @@ private:
     FString Callout;
     TSharedPtr<SWidget> Menu;
     int32 MenuLevel = 1;
-    bool bMenuOwnShield = false;
 
     // The brain: what she holds and presses, like a player's hands.
     FString Intent = TEXT("home"), Forced, ForcedDefence;

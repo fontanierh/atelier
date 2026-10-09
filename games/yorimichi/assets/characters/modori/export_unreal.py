@@ -3,8 +3,8 @@
     blender -b --python games/yorimichi/assets/characters/modori/export_unreal.py
 
 Reads the current revision (character.toml `source`, checked against source-manifest.json) and writes
-build/yorimichi/modori/: fbx/Modori.fbx, textures/ and export.json. `prepare` is also what botw/retarget.py --character
-modori retargets Link's move set onto: the revision turned to face +X, scaled to 1.75 m with the soles on the floor
+build/yorimichi/modori/: fbx/Modori.fbx, textures/ and export.json. `prepare` is also what adventure/retarget.py --character
+modori retargets the reference rig's move set onto: the revision turned to face +X, scaled to 1.75 m with the soles on the floor
 (0.65 cm under, as Cairo's), Tripo Studio's Mixamo rig given a `Root` and its end bones (finger tips, head top, toe
 ends; they carry no weights) dropped, and its bones renamed to the humanoid contract's. The coat's `cloth_pin` group
 (1 where the coat follows the body, 0 where it hangs free) travels as its vertex colour, for the cloth in Unreal.

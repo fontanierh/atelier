@@ -27,10 +27,7 @@ bool JapanGameplayCollision::IsFixed(const AActor* Actor)
 
 bool JapanGameplayCollision::IsFixed(const UPrimitiveComponent* Component)
 {
-    if (!Component || !IsFixed(Component->GetOwner())) return false;
-    // Racing toggles this gate. It cannot enter a deterministic static query until
-    // that service has replicated state; the other hippodrome meshes remain fixed.
-    return !(Component->GetOwner()->IsA<AHippodrome>() && Component->GetFName() == TEXT("SM_HD_StartingGate"));
+    return Component && IsFixed(Component->GetOwner());
 }
 
 void JapanGameplayCollision::Install(UWorld* World)

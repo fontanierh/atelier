@@ -66,7 +66,7 @@ def export_sword(arm, transform, scale, floor):
             'note':'Relative attachment = rest_component_transform * inverse(hand_R reference-pose component transform), computed in Unreal from the imported skeleton.'}
 
 
-# The FBX settings every Cairo export shares (the mesh, its clips and botw/retarget.py's clips).
+# The FBX settings every Cairo export shares (the mesh, its clips and adventure/retarget.py's clips).
 FBX = dict(use_selection=True,apply_unit_scale=True,apply_scale_options='FBX_SCALE_ALL',
     axis_forward='-Y',axis_up='Z',add_leaf_bones=False,use_armature_deform_only=False,
     bake_anim_use_nla_strips=False,bake_anim_use_all_actions=False,bake_anim_simplify_factor=0,
@@ -246,7 +246,8 @@ def main(args):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--clips')
+    donor = tomllib.loads((SOURCE / 'adventure.toml').read_text())['donor']
+    parser.add_argument('--clips', default=','.join(donor['clips'] + donor['gestures']))
     parser.add_argument('--clips-only',action='store_true')
     parser.add_argument('--revision',help='Folder of another revision (from the archive); default is this folder')
     parser.add_argument('--sword',action='store_true',help='Also export the bone-parented bokken as a static mesh with attachment data')

@@ -1,6 +1,6 @@
 #include "SuperUltraMegaPark.h"
-#include "BotwRider.h"
 #include "PlayableCharacter.h"
+#include "WandererCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
 #include "Engine/World.h"
@@ -172,7 +172,7 @@ void ASuperUltraMegaPark::RegisterRails()
 
 UClass* AMegaParkGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
-    if (UClass* Rider = ABotwRider::PawnOverride()) return Rider;
+    if (UClass* Rider = FPlayableCharacter::PawnOverride()) return Rider;
     return Super::GetDefaultPawnClassForController_Implementation(Controller);
 }
 

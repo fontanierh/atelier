@@ -1,4 +1,4 @@
-"""The hippodrome's course (world/regions/hippodrome/layout.py): the centre line HorseRace.cpp mirrors, and the plan."""
+"""The hippodrome's course (world/regions/hippodrome/layout.py): the oval and the public venue plan."""
 import math
 import sys
 import unittest
@@ -44,11 +44,6 @@ class Course(unittest.TestCase):
         self.assertAlmostEqual(L.curvature_scale(s, 5.), d, places=3)
         self.assertEqual(L.curvature_scale(10., 5.), 1.)
 
-    def test_gate_is_half_a_lap_from_the_post_on_the_back_straight(self):
-        gx, gy = L.STRUCTURES['starting_gate']['at']
-        x, y, h = L.centre(L.LAP / 2)
-        self.assertAlmostEqual(x, gx); self.assertAlmostEqual(y, gy); self.assertAlmostEqual(h, math.pi)
-
     def test_plan_fits_the_platform_and_its_clearance(self):
         x0, y0, x1, y1 = L.PLATFORM
         for s in range(0, int(L.LAP)):
@@ -56,16 +51,11 @@ class Course(unittest.TestCase):
                 x, y, _ = L.centre(s, off)
                 self.assertTrue(x0 <= x <= x1 and y0 <= y <= y1, (s, off, x, y))
         pad = L.clearance()[0]
-        for spot in (L.MASTER['at'], L.RETURN['at'], *(v['at'] for v in L.STRUCTURES.values())):
+        for spot in (L.RETURN['at'], *(v['at'] for v in L.STRUCTURES.values())):
             self.assertTrue(inside(pad, *spot), spot)
-        # Hudson and the return spot stand off the track, between it and the grandstand.
-        for spot in (L.MASTER['at'], L.RETURN['at']):
+        # The arrival point stands off the track, between it and the grandstand.
+        for spot in (L.RETURN['at'],):
             self.assertLess(spot[1], L.ORIGIN[1] - L.RADIUS - L.WIDTH / 2)
-        # Arriving at the return spot puts Hudson's prompt up (AHorseRace::CanTalk: 3.8 m), and the player faces him.
-        (mx, my), (rx, ry) = L.MASTER['at'], L.RETURN['at']
-        self.assertLess(math.hypot(mx - rx, my - ry), 3.5)
-        bearing = math.degrees(math.atan2(my - ry, mx - rx))
-        self.assertLess(abs((bearing - L.RETURN['yaw'] + 180) % 360 - 180), 15)
 
 
 if __name__ == '__main__':

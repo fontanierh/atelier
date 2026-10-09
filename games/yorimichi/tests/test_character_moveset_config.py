@@ -1,12 +1,12 @@
-"""Each character's merged-move-set config (assets/characters/<id>/botw.toml), which the generic retarget
-(botw/retarget.py) and import (Scripts/import_botw_moveset.py) read in place of per-character branches."""
+"""Each character's merged-move-set config (assets/characters/<id>/adventure.toml), which the generic retarget
+(adventure/retarget.py) and import (Scripts/import_adventure_moveset.py) read in place of per-character branches."""
 import tomllib
 from pathlib import Path
 
 import pytest
 
 CHARS = Path(__file__).resolve().parents[1] / 'assets' / 'characters'
-SPECS = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(CHARS.glob('*/botw.toml'))}
+SPECS = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(CHARS.glob('*/adventure.toml'))}
 FIT = {'carry', 'push', 'tilt', 'yaw', 'mount', 'crouch'}
 
 
@@ -22,7 +22,7 @@ def test_the_playable_characters_have_one():
 def test_layout(character):
     spec = SPECS[character]
     assert (CHARS / character / 'character.toml').exists()
-    assert spec['mesh'] == f'/Game/{pascal(character)}/SK_{pascal(character)}'   # the bike and horse imports name it so
+    assert spec['mesh'] == f'/Game/{pascal(character)}/SK_{pascal(character)}'   # the character importer names it so
     for key in ('base', 'dest', 'definition'):
         assert spec[key].startswith('/Game/'), key
     assert isinstance(spec['keep_base_actions'], bool)

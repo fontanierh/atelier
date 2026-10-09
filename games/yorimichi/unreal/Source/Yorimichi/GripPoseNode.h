@@ -8,7 +8,7 @@
  *  on the body): its arm reaches it with a two-bone IK in the plane the arm already bends in (its collar bone turned
  *  toward it when the arm alone is too short: Reach), and the hand takes the posed turn. Then each finger bone takes its
  *  posed turn on its parent. A hand that carries its prop (the sword hand) is not moved, only its fingers posed: the prop
- *  is placed on the hand instead (UBotwMoveSet::ReadGrips). Each hand's Weight blends from the incoming pose. */
+ *  is placed on the hand instead (UAdventureMoveSet::ReadGrips). Each hand's Weight blends from the incoming pose. */
 struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
 {
     struct FHand

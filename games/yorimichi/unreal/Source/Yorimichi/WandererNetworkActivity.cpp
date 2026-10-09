@@ -8,7 +8,7 @@
 #include "JapanSkateNetwork.h"
 #include "JapanVehicleTelemetry.h"
 #include "JapanReactionDeliveryQA.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
 #include "SailboatComponent.h"

@@ -2,7 +2,7 @@
 #include "WandererCharacter.h"
 #include "BikeComponent.h"
 #include "SailboatComponent.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "Serialization/MemoryWriter.h"
 #include "Serialization/MemoryReader.h"
 

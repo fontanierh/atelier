@@ -10,7 +10,6 @@ class UAnimSequence;
 class UBlendSpace;
 class AWandererCharacter;
 class UMaterialInstanceDynamic;
-struct FFoxReview;
 
 /** Gameplay data of one fox clip, in clip seconds at 1x (from the animation-r04 manifest through the export). */
 USTRUCT(BlueprintType)
@@ -163,8 +162,5 @@ private:
     FString Event;
     TArray<FVector> PreviousStrike;
     FRandomStream Rand;
-    // -foxqa: the scripted fight review
-    friend struct FFoxReview;
     friend struct FJapanEnemyProbe;
-    TSharedPtr<FFoxReview> Review;
 };

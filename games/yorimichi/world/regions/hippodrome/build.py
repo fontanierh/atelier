@@ -261,7 +261,7 @@ def textures():
     folder.mkdir(parents=True, exist_ok=True)
     size = 512
     soft, fine = tiling_noise(size, 11, 1.4), tiling_noise(size, 12, .6)
-    # Raked dirt: warm ochre with darker hoof-churned patches and pale grit.
+    # Raked dirt: warm ochre with darker worn patches and pale grit.
     dirt0, dirt1, grit = np.array([.62, .46, .30]), np.array([.47, .33, .21]), np.array([.78, .66, .50])
     mix = np.clip((soft - .35) * 2.2, 0, 1)[..., None]
     dirt = dirt0 * (1 - mix) + dirt1 * mix
@@ -300,14 +300,11 @@ def main():
     for name in report:
         report[name]['sha256'] = hashlib.sha256((glb / f'{name}.glb').read_bytes()).hexdigest()
 
-    gate = L.STRUCTURES['starting_gate']
     data = {
         'key': 'hippodrome', 'asset_root': '/Game/Hippodrome', 'origin': [ox, oy, z0], 'yaw_deg': 0.,
         'meshes': meshes, 'textures': textures(),
         'course': {'origin': [ox, oy], 'half': L.HALF, 'radius': L.RADIUS, 'width': L.WIDTH, 'lap': round(L.LAP, 3),
                    'finish_x': L.FINISH_X, 'direction': 'counter-clockwise', 'z': z0},
-        'gate': {'at': [gate['at'][0] - ox, gate['at'][1] - oy, 0.], 'yaw': gate['yaw'], 's': round(L.LAP / 2, 3)},
-        'master': {'at': [L.MASTER['at'][0] - ox, L.MASTER['at'][1] - oy, 0.], 'yaw': L.MASTER['yaw']},
         'return': {'at': [L.RETURN['at'][0] - ox, L.RETURN['at'][1] - oy, 0.], 'yaw': L.RETURN['yaw']},
         'clearance': L.clearance(),
     }

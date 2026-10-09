@@ -31,7 +31,7 @@ def changed_by(edited, tmp_path, monkeypatch):
 def test_ramp_shape_rebuilds_only_the_ramp_and_the_map(tmp_path, monkeypatch):
     # The package certifies and cooks every changed import before assembling its download.
     assert changed_by(MEGA/'ramp.py', tmp_path, monkeypatch) == {'world.mega', 'world.map', 'unreal.mega', 'data.stage',
-                                                             'data.network', 'unreal.cook', 'unreal.package'}
+                                                             'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
 
 def test_ramp_place_still_reshapes_the_terrain(tmp_path, monkeypatch):

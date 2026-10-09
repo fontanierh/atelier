@@ -3,7 +3,7 @@
 #include "JapanJumpReplayQA.h"
 #include "JapanReactionDeliveryQA.h"
 #include "WandererCharacter.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "Engine/PackageMapClient.h"
 #include "Misc/CommandLine.h"
 

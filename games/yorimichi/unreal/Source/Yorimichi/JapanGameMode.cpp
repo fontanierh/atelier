@@ -1,9 +1,8 @@
 #include "JapanGameMode.h"
 #include "JapanSession.h"
-#include "BotwRider.h"
+#include "PlayableCharacter.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "PlayableCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "JapanHUD.h"
 #include "FoxHunter.h"
@@ -26,7 +25,7 @@ bool AJapanGameMode::IsScriptedSession()
 void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 {
     if (!W || !W->bLoaded || FParse::Param(FCommandLine::Get(), TEXT("nofox"))) return;
-    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter")) && !FParse::Param(FCommandLine::Get(), TEXT("foxqa"))) return;
+    if (IsScriptedSession() && !FParse::Param(FCommandLine::Get(), TEXT("foxhunter"))) return;
     const FRotator Facing = W->PlayerStart.Rotator();
     FVector Where = W->PlayerStart.GetLocation() + Facing.Vector() * 1200.f + FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * -350.f;
     FHitResult Hit; FCollisionQueryParams Params(SCENE_QUERY_STAT(FoxSpawn), false, Player);
@@ -40,7 +39,7 @@ void AJapanGameMode::SpawnFoxHunter(AJapanWorld* W, AWandererCharacter* Player)
 
 UClass* AJapanGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
-    if (UClass* Rider = ABotwRider::PawnOverride()) return Rider;
+    if (UClass* Rider = FPlayableCharacter::PawnOverride()) return Rider;
     return Super::GetDefaultPawnClassForController_Implementation(Controller);
 }
 

@@ -39,7 +39,7 @@ namespace JapanSeeThrough
  *  - where the camera is, smoothed;
  *  - how strong the fades are;
  *  - the trail of where he walked in the last second.
- *  The materials that read it (unreal/Scripts/see_through.py) use it as Breath of the Wild does:
+ *  The materials that read it (unreal/Scripts/see_through.py) use it as the exploration camera does:
  *  - the thin things between the camera and him fade out whole and come back;
  *  - everything fades right at the lens;
  *  - he fades when the camera comes too close;

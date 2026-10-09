@@ -67,33 +67,24 @@ Each cue plays a random variant from a shuffled bag (every variant once per roun
 spatialised: full volume inside 4.5 m, then a natural falloff over 50 m down to −48 dB. The ambience
 (`/Game/Audio/Combat/ambience_countryside_01`) plays in 2D at half volume from the start of play.
 
-## Filming the fight
+## Reviewing combat
 
-`-fightfilm` (`JapanFightFilm.cpp`) films a scripted fight against the fox through the real input handlers on a fixed
-60 Hz step:
+Normal play, scripted QA and benchmarks all use the merged combat set. The live scenario checks sword drawing,
+the four-cut combo, charged spin, sword guard and parry through the player's actual input handlers:
 
 ```sh
-games/yorimichi/tools/film_fight.sh take01                                        # frames, camera.csv, audio.json, film.json
-python3 games/yorimichi/tools/mix_fight_film.py build/yorimichi/fightfilm/take01  # soundtrack, fight.mp4 and fight-720p.mp4
+uv run atelier play yorimichi
+# In another terminal, against the running game:
+uv run atelier live py "TAKE='combat_review'; ONLY=['sword']; SHOTS=True"
+uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
-`film_fight.sh <take> [extra -set= preferences]` runs the game offscreen at 1920 × 1080 under the memory guard
-(`atelier.safety.guarded`) and writes `build/yorimichi/fightfilm/<take>/`: `frame_NNNNN.jpg`, `camera.csv`,
-`audio.json` (every sound the game started, by captured frame), `film.json` (the counts and the step log) and
-`game.log`.
+Results and stills go to `build/yorimichi/adventure/moves/combat_review/`. Kaede's live training helpers exercise
+the same move set against an opponent ([SWORD_TRAINER.md](SWORD_TRAINER.md)); the shield option has been removed.
 
-- **Staging.** Traces every 20 cm across the road, 2 m behind and 10 m ahead of the spawn, find the edges of the
-  `Road` material. The player starts on the centreline; the fox waits about 11 m ahead, on the road (seed 11).
-- **Script.** Settle, walk up, draw, parry a claw into a counter, roll back out of a kick, draw again, take a claw,
-  recover, a three-strike chain, breathe, a cut held into a full charge that kills the fox, sheathe, hold. Any attack
-  the script did not ask to land is parried 0.19 s before its window. The film stops after 70 s at most.
-- **Camera.** A three-quarter view from behind the player along the road, held within 35° of it, pushing in on
-  parries and charges. It changes side when the view is blocked for 0.2 s and ends on a side view of the body burning
-  away.
-- **Mix.** `mix_fight_film.py <take folder> [--out fight]` rebuilds the soundtrack from the WAVs in
-  `build/yorimichi/audio/combat/` and the footsteps: each sound is pitched, attenuated by its distance from the camera
-  with the game's falloff, and panned by its bearing in the camera frame; the ambience loops underneath. A soft limiter
-  peaks at −1 dBFS. The output is H.264/AAC at 1080p60 plus a 720p copy, with a 0.5 s fade in and a 1.2 s fade out.
+`tools/mix_capture.py` remains the soundtrack mixer for live captures such as `scenarios/treehouse_walk.py`.
+It rebuilds captured `audio.json` and `camera.csv` records from the source WAVs, with the game's attenuation and
+panning, then encodes the frames and mix as H.264/AAC with a 720p copy.
 
 ## Limits
 
@@ -101,6 +92,3 @@ python3 games/yorimichi/tools/mix_fight_film.py build/yorimichi/fightfilm/take01
   thread.
 - The film mixer approximates Unreal's attenuation and panning; it is not a recording of the audio engine.
 - Sound in play is untested on the phone stream.
-- Reading the film script: the roll keeps the sword drawn, so the "draw again" step sheathes it, and the steps that
-  wait for guard (recover, the chain, the full charge) would time out with the fox alive. Check a take before relying
-  on it.

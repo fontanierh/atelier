@@ -39,8 +39,8 @@ def main(args):
             material.use_nodes = True
             nodes, links = material.node_tree.nodes, material.node_tree.links
             shader = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
-            for link in list(shader.inputs['Base Color'].links):
-                links.remove(link)
+            for reference in list(shader.inputs['Base Color'].links):
+                links.remove(reference)
             image = nodes.new('ShaderNodeTexImage')
             image.image = bpy.data.images.load(str(source / entry['texture']))
             links.new(image.outputs['Color'], shader.inputs['Base Color'])

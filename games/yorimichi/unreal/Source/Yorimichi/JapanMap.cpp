@@ -480,7 +480,7 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             Zones.Add(Zone);
         }
     }
-    // The hippodrome (docs/HIPPODROME.md) is newer than the painted sheet too: its stop is the grandstand's walk, by Hudson.
+    // The hippodrome (docs/HIPPODROME.md) is newer than the painted sheet too: its stop is the grandstand's walk, by the grandstand.
     if (!Zones.ContainsByPredicate([](const FJapanMapZone& Zone) { return Zone.Key == TEXT("hippodrome"); }))
     {
         FString HippodromeText; TSharedPtr<FJsonObject> Hippodrome;
@@ -491,7 +491,7 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             && Hippodrome->TryGetObjectField(TEXT("return"), Return) && (*Return)->TryGetArrayField(TEXT("at"), At) && At->Num() >= 2)
         {
             FJapanMapZone Zone; Zone.Key = TEXT("hippodrome"); Zone.Name = TEXT("Hidamari Hippodrome");
-            Zone.Hint = TEXT("The racecourse north of the city: ask Hudson by the grandstand for a race");
+            Zone.Hint = TEXT("The oval north of the city: explore the grounds and grandstand");
             Zone.Location = AJapanWorld::ToUE((*Origin)[0]->AsNumber() + (*At)[0]->AsNumber(), (*Origin)[1]->AsNumber() + (*At)[1]->AsNumber(), (*Origin)[2]->AsNumber());
             Zone.Yaw = -float((*Return)->GetNumberField(TEXT("yaw")));
             Zones.Add(Zone);

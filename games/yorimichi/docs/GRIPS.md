@@ -29,8 +29,8 @@ fresh clone or package gets the game's file from them; `tests/test_grips.py` che
 `grips.json` exactly. Without the file, Modori logs a warning and his hands keep the clips' grips. To pose further, copy
 the folder to `build/yorimichi/grips/modori/`, run `serve.py`, then copy `poses.json`, `poses/` and the new `grips.json`
 back. The props' meshes
-(`LinkSword.glb`, `LinkGlider.glb`) are not in it: `moments.py` and `serve.py` read them from the BOTW library
-([botw/README.md](../assets/characters/botw/README.md)).
+(`ReferenceSword.glb`, `ReferenceGlider.glb`) are not in it: `moments.py` and `serve.py` read them from the adventure library
+([adventure/README.md](../assets/characters/adventure/README.md)).
 
 A save records the visitor's Tailscale login in `by`, which the committed copy replaces with `operator`. Scrub it the
 same way before committing new saves.
@@ -49,7 +49,7 @@ Run the Python steps with `uv run python` from the repository root, and steps 1�
 `serve.py` listens on loopback only. To publish it on the tailnet, use
 `tailscale serve --bg --set-path /grips http://127.0.0.1:8897`. With `--allowed-user`, only that Tailscale login (or a
 loopback visitor) gets in. A posed grip reaches the game only through step 5, and the game reads it at startup
-(`ModoriCharacter.cpp` passes it to `UBotwMoveSet::Initialize`). After posing, run `game.py` and restart the game; no
+(`ModoriCharacter.cpp` passes it to `UAdventureMoveSet::Initialize`). After posing, run `game.py` and restart the game; no
 compile is needed.
 
 ## How the game holds a posed grip
@@ -73,7 +73,7 @@ compile is needed.
 - The poser works in glTF's frame (Y up, metres), the game in Unreal's (Z up, centimetres). A point maps as
   `(x, y, z) → (x, z, y) × 100`. This is a reflection `G`, not a rotation. A turn `R` in glTF's frame is `G R G` in the
   game's, so convert the matrix and then take its quaternion. Swapping a quaternion's components does not work.
-- The prop meshes (`LinkSword.glb`, `LinkGlider.glb`) map into their Unreal mesh frames the same way.
+- The prop meshes (`ReferenceSword.glb`, `ReferenceGlider.glb`) map into their Unreal mesh frames the same way.
 - Bone frames differ too. A glTF node's rotation is not an Unreal bone's: the game's component rotation for a bone is
   the posed turn times that bone's reference-pose rotation. A finger's local rotation is the parent's reference rotation
   inverted, times the posed rotation, times its own reference rotation. `game.py` writes turns in the first form, and
@@ -89,7 +89,7 @@ compile is needed.
 **Holding it exactly, every clip.**
 - **One-tick lag.** The animation proxy's `PreUpdate` runs in the mesh's tick, before the actor's `Tick` that advances
   the move set and places the glider. The hands were therefore posed on the previous tick's glider: 3–5 mm off while
-  it banked. `UBotwMoveSet::PlaceGliderForPose` now puts the glider on as the animation reads the grips, so both use
+  it banked. `UAdventureMoveSet::PlaceGliderForPose` now puts the glider on as the animation reads the grips, so both use
   the same placement. The move set still places it directly on the first frame of a glide, or when no animation reads
   it.
   - The diagnosis: films run two game ticks per film frame. Comparing the hand with the glider interpolated halfway to
@@ -120,6 +120,6 @@ compile is needed.
 - `grips/sample.py`: in-game sampling (scenes, or `--held` for checks).
 - `grips/check.py`: the per-grip drift report.
 - `GripPoseNode.h`: the animation node.
-- `BotwMoveSetCombat.cpp`: `ReadGrips`, `GripPose`, `PlaceGliderForPose`.
-- `BotwMoveSetTraversal.cpp`: the glider's placement on the body.
+- `AdventureMoveSetCombat.cpp`: `ReadGrips`, `GripPose`, `PlaceGliderForPose`.
+- `AdventureMoveSetTraversal.cpp`: the glider's placement on the body.
 - `WandererAnimInstance.cpp`: the node's place in the graph and its inputs.

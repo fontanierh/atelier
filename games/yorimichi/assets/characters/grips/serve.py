@@ -70,8 +70,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.file(WEB / path[1:])
         if path in ('/data/moments.json', '/data/body.glb'):
             return self.file(out / path.split('/')[-1])
-        if path in ('/data/LinkSword.glb', '/data/LinkGlider.glb'):
-            return self.file(yori.OUT / 'botw' / 'glb' / path.split('/')[-1])
+        if path in ('/data/ReferenceSword.glb', '/data/ReferenceGlider.glb'):
+            return self.file(yori.OUT / 'adventure' / 'glb' / path.split('/')[-1])
         if path == '/api/poses':
             saved = out / 'poses.json'
             return self.reply(200, saved.read_bytes() if saved.is_file() else b'{}', 'application/json')

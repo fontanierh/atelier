@@ -3,10 +3,10 @@
 Each GLB becomes a static mesh SM_HD_<Part> with complex-as-simple collision (people walk the platform, climb the
 grandstand and stop at the rails). The course's own surfaces get small materials of their own: the tiling turf and
 raked dirt maps (world-scaled UVs), stone for the skirts and white paint for the rails. The Tripo structures keep their
-painted maps on import_botw.py's M_BotwCharacter, the shading every imported model shares. Bounds are checked against
+painted maps on the venue's own M_HD_Structure material. Bounds are checked against
 the build report (Blender metres -> Unreal centimetres, y mirrored).
 
-Copies hippodrome.json to Content/Data/hippodrome/, which AHippodrome reads to place the meshes and the race to run.
+Copies hippodrome.json to Content/Data/hippodrome/, which AHippodrome reads to place the venue meshes.
 """
 import sys
 from pathlib import Path
@@ -51,6 +51,26 @@ def surface(key, colour, roughness, two_sided):
     return m
 
 
+
+def structure_material():
+    material = AT.create_asset('M_HD_Structure', ROOT + '/Materials', unreal.Material, unreal.MaterialFactoryNew())
+    material.set_editor_property('two_sided', True)
+    base = MEL.create_material_expression(material, unreal.MaterialExpressionTextureSampleParameter2D)
+    base.set_editor_property('parameter_name', 'BaseColorTexture')
+    base.set_editor_property('texture', E.load_asset('/Engine/EngineResources/WhiteSquareTexture'))
+    assert MEL.connect_material_property(base, 'RGB', unreal.MaterialProperty.MP_BASE_COLOR)
+    fill = MEL.create_material_expression(material, unreal.MaterialExpressionMultiply)
+    fill.set_editor_property('const_b', .3)
+    assert MEL.connect_material_expressions(base, 'RGB', fill, 'A')
+    assert MEL.connect_material_property(fill, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    for value, prop in [(.7, unreal.MaterialProperty.MP_ROUGHNESS), (.3, unreal.MaterialProperty.MP_SPECULAR)]:
+        node = MEL.create_material_expression(material, unreal.MaterialExpressionConstant)
+        node.set_editor_property('r', value)
+        assert MEL.connect_material_property(node, '', prop)
+    MEL.recompile_material(material)
+    E.save_loaded_asset(material)
+    return material
+
 def pipeline():
     generic = unreal.InterchangeGenericAssetsPipeline()
     mesh = generic.get_editor_property('mesh_pipeline')
@@ -88,7 +108,7 @@ def import_mesh(path, name):
 
 
 def restyle(instance, master):
-    """A Tripo structure's glTF material onto the BOTW character look, keeping its painted map."""
+    """A Tripo structure's glTF material onto the adventure character look, keeping its painted map."""
     albedo = MEL.get_material_instance_texture_parameter_value(instance, 'BaseColorTexture')
     MEL.clear_all_material_instance_parameters(instance)
     MEL.set_material_instance_parent(instance, master)
@@ -100,11 +120,10 @@ def restyle(instance, master):
 
 report = json.loads((OUT / 'build-report.json').read_text())
 data = json.loads((OUT / 'hippodrome.json').read_text())
-master = E.load_asset('/Game/Botw/M_BotwCharacter')
-assert master, 'run unreal.botw first: its M_BotwCharacter shades the structures'
 if E.does_directory_exist(ROOT):
     E.delete_directory(ROOT)
 E.make_directory(ROOT)
+master = structure_material()
 surfaces = {key: surface(key, *spec) for key, spec in SURFACES.items()}
 result = {}
 for entry in data['meshes']:

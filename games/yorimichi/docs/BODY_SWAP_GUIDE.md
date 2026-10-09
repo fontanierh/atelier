@@ -207,24 +207,21 @@ unhidden `body_region`; the assembled outfit carries `body_region = outfit_body`
 up without changes. Materials must have a base colour that is either constant or a single image texture; Tripo's
 material satisfies that.
 
-## 8. Film it in the game
+## 8. Review it in the game
 
-The character review mode drives Cairo on a flat floor through walk, run, sprint, ground and air dashes, jump, double
-jump and rolls on a fixed 60 Hz step, and logs a PASS or FAIL line per check:
+Cairo always uses the merged move set, including scripted checks and benchmarks. Build the body and its retargeted
+motions, then run the live movement scenario on a fixed 60 Hz step:
 
 ```sh
-for VIEW in front back; do
-  D="$PWD/build/yorimichi/cairo/film/$VIEW"; mkdir -p "$D"
-  uv run atelier play yorimichi -- -cairoqa -cairofilm -framestride=2 -cairoview=$VIEW "-reviewdir=$D"
-  ffmpeg -framerate 30 -pattern_type glob -i "$D/frame_*.jpg" -pix_fmt yuv420p "$D.mp4"
-done
+uv run atelier build yorimichi unreal.cairo_adventure
+uv run atelier play yorimichi
+# In another terminal, against the running game:
+uv run atelier live py "TAKE='body_review'; ONLY=['on_foot','double_jump','sword']; SHOTS=True"
+uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
-`-cairofilm` records every frame as `frame_NNNNN.jpg` (`-framestride=2` keeps one in two: a 30 fps film);
-`-cairoview` accepts `front`, `back` and `side`. The run writes `cairo.csv` (time, action, speed, height, airborne
-and air-ability flags, the pelvis's up axis, the waist corrective curve) and `result.json` into the review folder. The check
-"waist corrective survives runtime graph" fails with a merged body-swap outfit: it reads the original shorts'
-corrective, which the outfit does not have.
+The scenario writes `done.json`, per-frame movement state and stills under `build/yorimichi/adventure/moves/body_review/`.
+The body importer separately checks the retained donor clips' corrective curves in `build/yorimichi/cairo/unreal_validation.json`.
 
 ## 9. Constants
 

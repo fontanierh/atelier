@@ -1,4 +1,4 @@
-"""Camera see-through (docs/CAMERA.md), the way Breath of the Wild does it. A thin thing between the chase camera and
+"""Camera see-through (docs/CAMERA.md), the way adventure does it. A thin thing between the chase camera and
 Cairo (a trunk, a bush, a post, a rail, a lantern, a noren) fades out whole and comes back once it has passed.
 Everything fades right at the lens. Cairo fades when the camera comes close to him. Solid things are never faded,
 because the camera arm (JapanCameraArm.cpp) stays in front of them. The tree house's door curtains also bend round
@@ -112,7 +112,7 @@ PIECE = (' if (U4.y > 0.5) return 0.0;'
 # - between: the closest approach between the piece's segment and three sight lines, from the smoothed camera (E) to
 #   his head, chest and knees. The lines widen toward him by G.y (his body), and the piece must be in front of him.
 #   Within 30 cm, it fades. A big thing counts only by a 40 cm core along its axis (a trunk), and only within G.w
-#   (2.5 m, gone by 3.5 m) of the camera: further off it may hide him for a moment, as a tree does in BotW, rather
+#   (2.5 m, gone by 3.5 m) of the camera: further off it may hide him for a moment, as a tree does in the adventure library, rather
 #   than a whole crown vanishing next to him.
 # C camera, E smoothed camera, F body centre + half height, G Fade, M the group's fade mode.
 BETWEEN = (' float3 ab = B - A; float ab2 = dot(ab, ab); bool big = r > 150.0; float rb = big ? 40.0 : r;'
@@ -323,7 +323,7 @@ def done(m):
 
 def stale(m, blend=True):
     """Whether m's opacity mask still leads to a see-through that a rebuild deleted. import_treehouse.py,
-    import_cairo.py and import_cairo_sword.py rebuild their materials with delete_all_material_expressions, which leaves
+    import_cairo.py rebuilds its materials with delete_all_material_expressions, which leaves
     the opacity mask on the deleted nodes: done() still finds the tag, and the material fails to compile (Missing input
     Shadow) and renders as the default. Those imports reset the material to opaque, and the see-through (blend) always
     leaves it masked; a shadow switch that lost an input is stale too."""

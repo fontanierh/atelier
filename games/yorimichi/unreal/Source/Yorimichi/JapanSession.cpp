@@ -4,9 +4,8 @@
 #include "JapanWorld.h"
 #include "JapanPreferences.h"
 #include "JapanHUD.h"
-#include "BotwRider.h"
-#include "BotwMoveSet.h"
 #include "PlayableCharacter.h"
+#include "AdventureMoveSet.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -53,7 +52,7 @@ void UJapanGameInstance::RememberRider()
 {
     if (APlayerController* Player = GetFirstLocalPlayerController())
         if (auto* Pawn = Cast<AWandererCharacter>(Player->GetPawn()))
-            JoinRider = ABotwRider::NameOf(Pawn);
+            JoinRider = FPlayableCharacter::NameOf(Pawn);
     if (!JapanNetwork::IsPlayableRider(JoinRider)) JoinRider = JapanNetwork::DefaultRider();
 }
 FString UJapanGameInstance::GetJoinRider() const
@@ -287,7 +286,7 @@ void AJapanPlayerController::Tick(float Dt)
     }
     bReadinessSent = true;
     const auto* Session = GetGameInstance<UJapanGameInstance>();
-    ServerWorldReady(Identity, Session ? Session->GetJoinRider() : JapanNetwork::DefaultRider(), UJapanPreferences::Saved(TEXT("shield"), 0.f) > .5f);
+    ServerWorldReady(Identity, Session ? Session->GetJoinRider() : JapanNetwork::DefaultRider(), false);
 }
 void AJapanPlayerController::ServerWorldReady_Implementation(const FString& Identity, const FString& RiderName, bool bShield)
 {
@@ -370,7 +369,7 @@ UClass* AJapanNetworkGameMode::GetDefaultPawnClassForController_Implementation(A
     const auto* State = Controller ? Controller->GetPlayerState<AJapanPlayerState>() : nullptr;
     if (!State) return FPlayableCharacter::Default().Class();
     const FPlayableCharacter* Character = FPlayableCharacter::Find(State->RiderName);
-    return Character && Character->IsRequestable() ? Character->Class() : ABotwRider::StaticClass();
+    return Character && Character->Built() ? Character->Class() : FPlayableCharacter::Default().Class();
 }
 APawn* AJapanNetworkGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* Controller, const FTransform& Transform)
 {

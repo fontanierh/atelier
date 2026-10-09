@@ -1,0 +1,44 @@
+# Cairo with the merged adventure move set (adventure/README.md): the reference rig's moves retargeted onto him (adventure/retarget.py), imported
+# by Scripts/import_adventure_moveset.py beside his body and donor clips, which stay byte-identical.
+mesh = "/Game/Cairo/SK_Cairo"
+base = "/Game/Cairo/DA_CairoBase"              # body, framing and donor clips; no standalone move set
+dest = "/Game/CairoAdventure"                       # the retargeted clips and blends
+definition = "/Game/CairoAdventure/DA_CairoAdventure"
+keep_base_actions = true                       # retain his authored gestures alongside the merged actions
+
+# The clips of his own the merged set plays (on every character): sampled by retarget.py --dump-own and retargeted onto
+# the others at their 60 fps; on Cairo they are his imported clips in /Game/Cairo (import_cairo.py).
+[donor]
+folder = "/Game/Cairo"
+fps = 60
+double_jump = "DoubleJump"                     # his somersault (UAdventureMoveSet::StartDoubleJump)
+clips = ["DoubleJump", "SwordIdle", "SwordParry", "SwordParryHit"]
+# His everyday gestures the merged set has no clip for (WandererCharacter's Wave and Interact, WandererSword's sit):
+# retargeted with `clips` onto another character, whose definition takes them where its base has none of its own.
+gestures = ["Interact", "Wave", "SitDown", "SitIdle", "StandUp"]
+
+# Without the shield he guards and parries with his own two-handed bokken clips rather than the reference rig's sword-only ones
+# (which barely show the blade on him): his guard stance, his parry and its recoil, timed by their authored windows
+# (source-manifest.json: the parry deflects from 0.0333 s to 0.3 s and may be cancelled from 0.3333 s; the recoil's
+# counter opens at 0.1 s).
+[donor.actions.SwordGuardCarry]
+clip = "SwordIdle"
+loop = true
+
+[donor.actions.SwordParry]
+clip = "SwordParry"
+guard = [[0.0333, 0.3]]
+input = 0.3333
+cancel = 0.3333
+idle = 0.4
+
+[donor.actions.SwordGuardHit]
+clip = "SwordParryHit"
+guard = [[0.0, 0.15]]
+input = 0.1
+cancel = 0.1
+idle = 0.15
+
+# Carry the sword clear of Cairo's torso, in centimetres along the body's backward, left and up axes.
+[fit.push]
+sword = [7.0, 0.0, 0.0]

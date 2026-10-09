@@ -69,7 +69,7 @@ bool JapanVehicleQASite::Crash(AWandererCharacter* Rider,FVector& Start,float& Y
     {return World->LineTraceSingleByChannel(Hit,FVector(At.X,At.Y,20000),FVector(At.X,At.Y,-2000),JapanGameplayCollision::Channel,Q)&&
         Hit.ImpactNormal.Z>.98&&JapanGameplayCollision::IsFixed(Hit.GetComponent());};
     // The coastal spawn is sloped. Search the existing flat Hippodrome infield
-    // and stable yard as well; every candidate still has to pass the same wall,
+    // and venue grounds as well; every candidate still has to pass the same wall,
     // 18m approach, ground and width checks. No geometry is created or altered.
     const TArray<FVector> Centres={Home,AJapanWorld::ToUE(600.,535.,0.),AJapanWorld::ToUE(715.,520.,0.)};
     int32 Queries=0,Regions=0,Origins=0,GroundRejected=0,WallCandidates=0,ApproachRejected=0,WidthRejected=0,ObserverRejected=0;

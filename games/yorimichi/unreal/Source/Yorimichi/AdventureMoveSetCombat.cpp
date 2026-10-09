@@ -1,0 +1,1105 @@
+#include "AdventureMoveSet.h"
+#include "AdventureMovementReaction.h"
+#include "JapanEnemyQA.h"
+#include "JapanCombat.h"
+#include "JapanNetwork.h"
+#include "JapanCharacterMovement.h"
+#include "AdventureMoveSetDetail.h"
+#include "WandererCharacter.h"
+#include "WandererSword.h"
+#include "WandererDefinition.h"
+#include "JapanWorld.h"
+#include "JapanFootsteps.h"
+#include "YorimichiCombatFX.h"
+#include "FoxHunter.h"
+#include "MegaRamp.h"
+#include "SuperUltraMegaPark.h"
+#include "Animation/AnimSequence.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
+#include "Engine/SkeletalMesh.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/WorldSettings.h"
+#include "Misc/App.h"
+#include "Misc/ScopeExit.h"
+#include "Misc/CommandLine.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
+
+using namespace AdventureMoveSetDetail;
+
+// Every timing below is in clip seconds (the action timelines' frames at 30 fps), every distance in game centimetres at
+// the character's scale, and the adventure library's lengths (metres) and speeds (metres per 30 fps frame) are converted with that scale.
+
+// ---------------------------------------------------------------------------------------------------------- Combat
+
+bool UAdventureMoveSet::Press(FName Button)
+{
+    if (!Character) return false;
+    if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()); Movement && Movement->QueueMoveButton(Button)) return true;
+    const FName Name = CurrentName();
+    if (Button == TEXT("wave"))
+    {
+        if (Character->CanAct() && Character->StandForAction()) Character->SetAction(TEXT("Wave"));
+        return true;
+    }
+    if (Button == TEXT("jump"))
+    {
+        bJumpHeld = true;
+        if (bDown) return true;
+        switch (Mode)
+        {
+        case EAdventureMoveMode::Ground:
+        {
+            // The parry: the shield's, or without it the sword's (the shield's clip when an older build lacks it).
+            const FName Parry = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
+            if (IsGuarding() && Has(Parry) && (!Busy() || (IsGuardHit(Name) && Current() && SourceTime() >= Current()->Input)))
+            {
+                Play(Parry, .03f);
+                if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->Play(TEXT("sword_swing"), GuardPoint(), .55f, .08f);
+                return true;
+            }
+        }
+            if (bLocked && !bArmed) { if (CanDodge()) StartHop(); return true; }
+            if (CanJump()) StartJump(); else JumpBuffer = .15f;
+            return true;
+        case EAdventureMoveMode::Air:
+            if (CanJump()) { StartJump(); return true; }   // just off an edge
+            if (CanDoubleJump()) { StartDoubleJump(); return true; }   // Cairo's double jump first, then the glider
+            if (CanGlide()) OpenGlider(); else JumpBuffer = .2f;
+            return true;
+        case EAdventureMoveMode::Glide: CloseGlider(false); return true;
+        default: JumpBuffer = .15f; return true;
+        }
+    }
+    if (Button == TEXT("jump_release")) { bJumpHeld = false; return true; }
+    if (Button == TEXT("dodge"))
+    {
+        if (bDown) return true;
+        if (Mode == EAdventureMoveMode::Ground) { if (CanDodge()) StartHop(); }
+        else if (Mode == EAdventureMoveMode::Glide) CloseGlider(false);
+        else if (Mode == EAdventureMoveMode::Climb && !(bDriving && !bDriveSweep)) LeaveClimb(true);   // not while pulling up onto a ledge
+        return true;
+    }
+    if (Button == TEXT("attack"))
+    {
+        bAttackHeld = true; AttackPressTime = Clock;
+        if (Mode == EAdventureMoveMode::Ground || Mode == EAdventureMoveMode::Air) AttackBuffer = .35f;
+        return true;
+    }
+    if (Button == TEXT("attack_release")) { bAttackHeld = false; return true; }
+    if (Button == TEXT("guard"))
+    {
+        // Guarding takes the sword in hand (and the shield with it): sheathed, the press draws.
+        bGuardHeld = true;
+        if (Mode == EAdventureMoveMode::Ground && !bArmed && !bDown && !Busy() && Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword")); bAttackAfterDraw = false; }
+        return true;
+    }
+    if (Button == TEXT("guard_release")) { bGuardHeld = false; return true; }
+    if (Button == TEXT("weapon"))
+    {
+        if (Mode != EAdventureMoveMode::Ground || bDown || Busy()) return true;
+        if (bArmed && Has(TEXT("SheatheSword"))) Play(TEXT("SheatheSword"));
+        else if (!bArmed && Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword")); bAttackAfterDraw = false; }
+        else SetArmed(!bArmed);
+        return true;
+    }
+    if (Button == TEXT("crouch")) return Mode != EAdventureMoveMode::Ground || bDown || Busy();   // on foot the character crouches as usual
+    if (Button == TEXT("dash")) { if (Mode == EAdventureMoveMode::Swim) JumpBuffer = .15f; return true; }   // no air dash; the swim's dash
+    return false;
+}
+
+void UAdventureMoveSet::StartCut(int32 Index)
+{
+    const FName Clip = CutNames[FMath::Clamp(Index, 0, 3)];
+    if (!Has(Clip)) return;
+    if (Character->bIsCrouched) Character->UnCrouch();
+    Face(600.f);
+    const bool HadBufferedPress = AttackBuffer > 0.f;
+    Combo = Index; AttackBuffer = 0.f; bAttackAfterDraw = false;
+    // Adventure homes a cut onto the enemy it is aimed at: a quick step in when it stands beyond the blade's reach. The cuts'
+    // clips open mid-swing, so the step is short and the blow keeps landing until it has closed in.
+    LungeTime = 0.f; LungeTarget = nullptr; bLungePoint = false;
+    if (AActor* Focus = Target.IsValid() ? Target.Get() : FindTarget(Reach() + 250.f, 60.f))
+    {
+        float Radius = 0.f, Half = 0.f;
+        Focus->GetSimpleCollisionCylinder(Radius, Half);
+        const float Stand = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + Radius + BladeLength() * .7f;
+        const float Gap = float(FVector::Dist2D(Focus->GetActorLocation(), Character->GetActorLocation())) - Stand;
+        if (Gap > 5.f) { LungeTarget = Focus; LungePoint = Focus->GetActorLocation(); bLungePoint = true; LungeStand = Stand; LungeTime = FMath::Clamp(Gap / 1100.f, .06f, .16f); }
+    }
+    if (const FAdventureMove* M = Current())
+    {
+        float End = -1.f;
+        for (const FVector2f& W : M->Active) End = FMath::Max(End, W.Y);
+        ArcEnd = LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : End;
+    }
+    Play(Clip, .05f);
+    JapanEnemyQA::StartedCut(Character, HadBufferedPress);
+}
+
+/** Turns to the nearest enemy in reach and in front (a soft lock), else to the stick. */
+void UAdventureMoveSet::Face(float Range)
+{
+    AActor* Focus = Target.IsValid() ? Target.Get() : FindTarget(Range, 70.f);
+    FVector Toward = Focus ? FVector(Focus->GetActorLocation() - Character->GetActorLocation()) : Wish();
+    Toward.Z = 0.;
+    if (Toward.SizeSquared() > 1.) Character->SetActorRotation(FRotator(0, Toward.Rotation().Yaw, 0));
+}
+
+void UAdventureMoveSet::StartAttack()
+{
+    UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    const FAdventureMove* Now = Current();
+    const FName Name = Now ? Now->Name : NAME_None;
+    if (Mode == EAdventureMoveMode::Air)
+    {
+        if (IsAttack(Name) || IsHop(Name) || bDown) return;
+        AttackBuffer = 0.f;
+        if (!bArmed) SetArmed(true);
+        FHitResult Below;
+        const FVector Here = Character->GetActorLocation();
+        const bool bHigh = !Trace(Here, Here - FVector(0, 0, HalfHeight() + GetParam(TEXT("PlungeHeight"), 300.f)), Below);
+        if (bHigh && Has(TEXT("Plunge")))
+        {
+            Play(TEXT("Plunge"), .05f);
+            Movement->Velocity = FVector(0, 0, FMath::Min(float(Movement->Velocity.Z), -1200.f));
+            FallStartZ = Here.Z;   // no fall damage
+        }
+        else if (Has(TEXT("JumpCut")))
+        {
+            Face(500.f);
+            const float S = Scale();
+            HopVelocity = Character->GetActorForwardVector() * GetParam(TEXT("PlayerCutJump.CutJumpSpeedF"), .16f) * 3000.f * S;
+            Movement->Velocity.Z = FMath::Max(float(Movement->Velocity.Z), 250.f);
+            Play(TEXT("JumpCut"), .05f);
+        }
+        return;
+    }
+    if (Mode != EAdventureMoveMode::Ground || bDown) return;
+    // The flurry rush: a perfect dodge slowed the world; each press is the next blow of the rush.
+    if (InFlurry() && bArmed)
+    {
+        int32 Next = 0;
+        for (int32 I = 0; I < RushCount; ++I) if (Name == RushNames[I]) Next = I + 1;
+        if (Next > 0 && Now && SourceTime() < Now->Input) return;   // too early: keep it buffered
+        if (Next >= RushCount) return;
+        if (Next == RushCount - 1 || FlurryTime < .5f) Next = RushCount - 1;
+        if (!Has(RushNames[Next])) return;
+        AttackBuffer = 0.f; Face(1200.f);
+        Play(RushNames[Next], .04f);
+        return;
+    }
+    // The combo: each cut takes the next press from its input point.
+    for (int32 I = 0; I < 4; ++I)
+        if (Name == CutNames[I])
+        {
+            if (!Now || SourceTime() < Now->Input) return;
+            if (I == 3 && SourceTime() < FreeAt(*Now)) return;
+            StartCut(I == 3 ? 0 : I + 1);
+            return;
+        }
+    if (Name == TEXT("DrawSword"))
+    {
+        bAttackAfterDraw = true;
+        if (Now && SourceTime() >= Now->Input) StartCut(0);
+        return;
+    }
+    if (Busy()) return;
+    // Crouched behind an unaware enemy: the sneakstrike, drawing the sword in the same motion.
+    if (Character->bIsCrouched && Has(TEXT("Sneakstrike")))
+        if (AActor* Victim = FindTarget(Reach() + 120.f, 60.f); Victim && IsUnawareTarget(Victim))
+        {
+            SetArmed(true);
+            Character->UnCrouch();
+            Target = Victim; Face(Reach() + 120.f); Target = nullptr;
+            AttackBuffer = 0.f;
+            Play(TEXT("Sneakstrike"), .06f);
+            return;
+        }
+    // Sprinting: the dash attack, driven along its clip (drawing the sword in the same motion).
+    if (Character->Stamina.Sprinting && Has(TEXT("DashCut")))
+    {
+        SetArmed(true);
+        AttackBuffer = 0.f; Face(700.f);
+        Play(TEXT("DashCut"), .04f); BeginDrive(true);
+        return;
+    }
+    if (!bArmed)
+    {
+        // Unarmed, the press draws the sword and cuts as soon as the draw allows.
+        if (Has(TEXT("DrawSword"))) { Play(TEXT("DrawSword"), .1f); bAttackAfterDraw = true; AttackBuffer = 0.f; return; }
+        SetArmed(true);
+    }
+    StartCut(0);
+}
+
+void UAdventureMoveSet::AdvanceCombat(float Dt)
+{
+    const FAdventureMove* Now = Current();
+    const FName Name = Now ? Now->Name : NAME_None;
+    LungeTime = FMath::Max(0.f, LungeTime - Dt);
+    if (!IsAttack(Name)) { LungeTime = 0.f; ArcEnd = -1.f; }
+    // The blade hits inside the playing clip's active windows: what it sweeps through, and what stands in its arc; a
+    // homing cut's arc lasts until it has closed in.
+    const bool bActive = Now && bArmed && Now->Active.Num() && Now->InWindow(Now->Active, SourceTime());
+    if (bActive) SweepBlade(); else PreviousBlade.Reset();
+    if (bActive || (Now && bArmed && IsAttack(Name) && SourceTime() <= ArcEnd)) SweepArc();
+    if (Mode != EAdventureMoveMode::Ground && Mode != EAdventureMoveMode::Air) { AttackBuffer = 0.f; bCharging = false; return; }
+    // The draw that an attack press started cuts from its input point.
+    if (Name == TEXT("DrawSword") && bAttackAfterDraw && Now && SourceTime() >= Now->Input && bArmed) StartCut(0);
+    // Holding the button through the first cut, or standing armed, charges the spin attack.
+    if (bAttackHeld && bArmed && Mode == EAdventureMoveMode::Ground && !bCharging && !InFlurry() && Has(TEXT("ChargeStart")) && Has(TEXT("ChargeSpin")) &&
+        Clock - AttackPressTime > GetParam(TEXT("ChargeHold"), .35f) && (Name.IsNone() || IsLockLoop(Name) || Name == TEXT("CutS1")))
+    {
+        bCharging = true; bFullCharge = false; ChargeTime = 0.f; AttackBuffer = 0.f;
+        Play(TEXT("ChargeStart"), .12f);
+    }
+    if (bCharging)
+    {
+        if (!In(CurrentName(), { TEXT("ChargeStart"), TEXT("ChargeWait") })) bCharging = false;
+        else
+        {
+            ChargeTime += Dt;
+            UseStamina(GetParam(TEXT("EnergyCharge"), 250.f) / 1000.f * Dt);
+            const float Full = GetParam(TEXT("FullCharge"), .9f);
+            AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
+            TArray<FVector> Blade; BladePoints(Blade);
+            if (FX && Blade.Num()) FX->ChargeTick(Blade[0], Blade.Last(), FMath::Clamp(ChargeTime / Full, 0.f, 1.f), Dt);
+            if (!bFullCharge && ChargeTime >= Full) { bFullCharge = true; if (Blade.Num() && !JapanCombat::Publish(Character, EJapanCombatCue::ChargeReady, Blade.Last(), FVector::ZeroVector, 0.f, Character) && FX) FX->ChargeReady(Blade.Last()); }
+            if (!bAttackHeld || Character->Stamina.Exhausted)
+            {
+                bCharging = false;
+                if (ChargeTime >= GetParam(TEXT("MinCharge"), .5f)) { Play(TEXT("ChargeSpin"), .06f); BeginDrive(true); }
+                else Stop(.15f);
+            }
+        }
+        return;
+    }
+    if (AttackBuffer > 0.f) StartAttack();
+}
+
+void UAdventureMoveSet::BladePoints(TArray<FVector>& Out) const
+{
+    Out.Reset();
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    if (!Sword || !*Sword || BladeTip.IsNearlyZero()) return;
+    const FTransform& T = (*Sword)->GetComponentTransform();
+    for (int32 I = 0; I < 6; ++I) Out.Add(T.TransformPosition(FMath::Lerp(BladeBase, BladeTip, I / 5.f)));
+}
+
+void UAdventureMoveSet::SweepBlade()
+{
+    TArray<FVector> Now; BladePoints(Now);
+    if (Now.IsEmpty()) return;
+    if (!bSwung) { bSwung = true; if (!JapanCombat::Publish(Character, EJapanCombatCue::Swing, Now.Last(), FVector::ZeroVector, FMath::Min(Strength, 3), Character))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordSwing(Now.Last(), FMath::Min(Strength, 3)); }
+    if (PreviousBlade.Num() == Now.Num())
+    {
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(AdventureBlade), false, Character);
+        for (int32 I = 0; I < Now.Num(); ++I)
+        {
+            TArray<FHitResult> Hits;
+            Character->GetWorld()->SweepMultiByChannel(Hits, PreviousBlade[I], Now[I], FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(8.f), Query);
+            for (const FHitResult& H : Hits)
+            {
+                AActor* A = H.GetActor();
+                if (!A || A == Character || HitThisSwing.Contains(A) || !IsTargetable(A)) continue;
+                HitThisSwing.Add(A);
+                Strike(A, Strength, H.bStartPenetrating ? Now[I] : FVector(H.ImpactPoint), Now[I] - PreviousBlade[I]);
+            }
+        }
+    }
+    PreviousBlade = Now;
+}
+
+void UAdventureMoveSet::SweepArc()
+{
+    const FVector Here = Character->GetActorLocation();
+    const FVector Forward = Character->GetActorForwardVector();
+    const float Range = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + BladeLength() + 20.f;
+    auto Consider = [&](AActor* A)
+    {
+        if (!A || A == Character || HitThisSwing.Contains(A) || !IsTargetable(A)) return;
+        float Radius = 0.f, Half = 0.f;
+        A->GetSimpleCollisionCylinder(Radius, Half);
+        const FVector To = (A->GetActorLocation() - Here) * FVector(1, 1, 0);
+        if (To.Size() - Radius > Range || (Forward | To.GetSafeNormal()) < FMath::Cos(FMath::DegreesToRadians(75.f))) return;
+        if (FMath::Abs(A->GetActorLocation().Z - Here.Z) > Half + HalfHeight()) return;
+        HitThisSwing.Add(A);
+        const FVector At = A->GetActorLocation() - To.GetSafeNormal() * Radius + FVector(0, 0, HalfHeight() * .3f);
+        Strike(A, Strength, At, Forward);
+    };
+    // The few things a blade can strike (IsTargetable), found directly rather than through a collision channel.
+    UWorld* World = Character->GetWorld();
+    for (TActorIterator<AFoxHunter> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<ASwordDummy> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<AWandererCharacter> It(World); It; ++It) Consider(*It);
+}
+
+float UAdventureMoveSet::BladeLength() const
+{
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    return Sword && *Sword ? float((BladeTip * (*Sword)->GetComponentScale()).Size()) : 60.f;
+}
+
+void UAdventureMoveSet::Strike(AActor* Victim, int32 Power, const FVector& At, const FVector& Direction)
+{
+    JapanEnemyQA::BladeCandidate(Character, Victim);
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return;
+    if (Character->HasAuthority() && !Character->IsLocallyControlled())
+        if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
+            Movement && !Movement->AllowScheduledAttack(ReactionActionEdge)) return;
+    // A sparring partner meets the blow with its own move set: its guard, parry and dodges answer it as they answer a
+    // fox's claw, and only a blow that lands counts (the guard, parry and dodge make their own effects).
+    if (AWandererCharacter* Other = Cast<AWandererCharacter>(Victim))
+    {
+        if (!Other->GetMoves()) return;
+        TWeakObjectPtr<UAdventureMoveSet> WeakSelf(this);
+        TWeakObjectPtr<AWandererCharacter> TargetPlayer(Other);
+        JapanCombat::Strike(Character, Other, Character->SparringDamage(Power), Character->GetActorLocation(),
+            [WeakSelf, TargetPlayer, Power, At, Direction](int32 Outcome)
+            {
+                UAdventureMoveSet* Self = WeakSelf.Get();
+                if (Outcome != 0 || !Self || !Self->Character || !TargetPlayer.IsValid()) return;
+                ++Self->HitCount;
+                if (!JapanCombat::Publish(Self->Character, EJapanCombatCue::Hit, At, Direction,
+                    FMath::Clamp(Power, 1, 3), Self->Character, TargetPlayer.Get()))
+                    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Self->Character))
+                        FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Self->Character, TargetPlayer.Get());
+            });
+        return;
+    }
+    if (ASwordDummy* Dummy = Cast<ASwordDummy>(Victim)) Dummy->TakeSwordHit(FMath::Min(Power, 3));
+    else if (AFoxHunter* Fox = Cast<AFoxHunter>(Victim)) Fox->TakeSwordHit(FMath::Min(Power, 3), Character);
+    else return;
+    ++HitCount;
+    if (!JapanCombat::Publish(Character, EJapanCombatCue::Hit, At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim))
+        if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) FX->SwordHit(At, Direction, FMath::Clamp(Power, 1, 3), Character, Victim);
+}
+
+int32 UAdventureMoveSet::IncomingStrike(AActor* Source, float Damage, const FVector& From)
+{
+    if (!Character) return 0;
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority()) return 3;
+    ON_SCOPE_EXIT
+    {
+        if (JapanNetwork::IsOnline(Character->GetWorld()))
+        {
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
+            Character->ForceNetUpdate();
+        }
+    };
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
+    const FAdventureMove* Now = Current();
+    const FName Name = Now ? Now->Name : NAME_None;
+    AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
+    const FVector Here = Character->GetActorLocation();
+    const FVector Toward = (From - Here).GetSafeNormal2D();
+    // The parry, shield or sword: the strike bounces off and the striker staggers.
+    if (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Parry : (Now && IsParry(Name) && Now->InWindow(Now->Guard, SourceTime())))
+    {
+        ++ParryCount;
+        const bool NetworkParry = JapanCombat::Publish(Character, EJapanCombatCue::Parry, GuardPoint(), Toward, (!HasShield() && Has(TEXT("SwordParry"))) ? 1.f : 0.f, Character, Source);
+        if (FX && !NetworkParry)
+        {
+            const FVector At = GuardPoint();
+            FX->Parry(At, Character, Source);
+            if (Name == TEXT("SwordParry"))
+            {
+                // Steel on steel: a fan of hot sparks off the blade toward the striker, and a second, brighter ring.
+                FX->Burst(At, Toward, 26, 1700.f, FLinearColor(1.f, .7f, .3f) * 9.f, .3f, 2.6f);
+                AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, At); Ring.Size0 = 12.f; Ring.Size1 = 200.f; Ring.Life = .24f;
+                Ring.Color = FLinearColor(1.f, .82f, .5f) * 3.f;
+                FX->Play(TEXT("hit_heavy"), At, .45f, .06f);
+            }
+        }
+        if (AWandererCharacter* Other = Cast<AWandererCharacter>(Source); Other && Other->GetMoves()) Other->GetMoves()->Deflected(Character);
+        return 1;
+    }
+    // A hop or backflip in the air: dodged; just as the strike lands, a perfect dodge and the flurry rush.
+    if (DefenceOverride.IsSet() ? (DefenceOverride.GetValue() == EJapanDefence::Dodge || DefenceOverride.GetValue() == EJapanDefence::PerfectDodge) : (IsHop(Name) && Invulnerable > 0.f))
+    {
+        ++DodgeCount;
+        if ((DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::PerfectDodge : JustAvoid > 0.f) && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
+        {
+            FAdventureMovementReaction Reaction;
+            Reaction.Flags = FAdventureMovementReaction::PerfectDodge | FAdventureMovementReaction::ClearHop;
+            Reaction.FlurryTime = GetParam(TEXT("PlayerCutAfterJust.ForceSlowTime"), 80.f) / 30.f;
+            const float OriginalInvulnerability = Reaction.FlurryTime;
+            if (!Character->IsPlayerControlled() || JapanNetwork::IsOnline(Character->GetWorld()))
+                Reaction.FlurryTime = FMath::Min(Reaction.FlurryTime, 1.4f);
+            Reaction.Invulnerable = JapanNetwork::IsOnline(Character->GetWorld()) ? Reaction.FlurryTime : OriginalInvulnerability;
+            Reaction.FlurryPoint = Source ? Source->GetActorLocation() : Here;
+            if (Source) Reaction.Flags |= FAdventureMovementReaction::HasFlurryPoint;
+            Target = Source; // Authority focus remains immediate; the payload carries only the point.
+            const bool NetworkDodge = JapanCombat::Publish(Character, EJapanCombatCue::Dodge, Here + FVector(0,0,HalfHeight()*.3f), Toward, 0.f, Character, Source);
+            if (Character->IsPlayerControlled() && FX && !NetworkDodge)
+            {
+                if (!JapanNetwork::IsOnline(Character->GetWorld())) FX->SlowMotion(Reaction.FlurryTime, GetParam(TEXT("FlurryDilation"), .25f));
+                // The perfect dodge: a cold flash and a wide ring where he was, and a chime.
+                const FVector Chest = Here + FVector(0, 0, HalfHeight() * .3f);
+                FX->Flash(Chest, 110.f, FLinearColor(.6f, .82f, 1.f) * 3.f, .2f);
+                AAtelierFX::FParticle& Ring = FX->Spawn(AAtelierFX::ESprite::Ring, Chest); Ring.Size0 = 30.f; Ring.Size1 = 260.f; Ring.Life = .4f;
+                Ring.Color = FLinearColor(.55f, .78f, 1.f) * 2.6f;
+                FX->LightFlash(Chest, FLinearColor(.6f, .8f, 1.f), 9000.f, 500.f, .25f);
+                FX->Play(TEXT("charge_ready"), Chest, .8f, .02f);
+            }
+            SubmitMovementReaction(Reaction);
+        }
+        return 2;
+    }
+    if (bDown || (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Recovering : (Invulnerable > 0.f || InFlurry()))) return 3;
+    // Guarding with the shield toward the strike: absorbed, pushed back a little.
+    const float Guardable = GetParam(TEXT("GuardableAngle"), 120.f) * .5f;
+    if (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::Guard : (IsGuarding() && Mode == EAdventureMoveMode::Ground && (Character->GetActorForwardVector() | Toward) >= FMath::Cos(FMath::DegreesToRadians(Guardable))))
+    {
+        const float Side = Character->GetActorRotation().UnrotateVector(From - Here).Y;
+        // A heavy blow (a full charge, full power) breaks the guard: the arms thrown wide, the guard down for a moment.
+        if (Damage >= GetParam(TEXT("GuardBreakDamage"), 25.f))
+        {
+            const FName Break = !HasShield() && Has(TEXT("SwordGuardBreak")) ? FName(TEXT("SwordGuardBreak")) : FName(TEXT("GuardBreak"));
+            FAdventureMovementReaction Reaction;
+            Reaction.Flags = FAdventureMovementReaction::BreakGuard | FAdventureMovementReaction::ClearCharge | FAdventureMovementReaction::SetVelocity;
+            Reaction.GuardBroken = GetParam(TEXT("GuardBreakTime"), 1.f); ++GuardBreakCount;
+            Reaction.Impulse = -Toward * 380.f;
+            FreezeReactionAction(Reaction, Break, .04f);
+            FreezeReactionFlinch(Reaction, -Toward, 18.f, .09f, Side);
+            SubmitMovementReaction(Reaction);
+            if (!JapanCombat::Publish(Character, EJapanCombatCue::GuardBreak, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
+            {
+                const FVector At = GuardPoint();
+                FX->Burst(At, -Toward, 26, 1100.f, FLinearColor(1.f, .8f, .45f) * 7.f, .3f, 3.f);
+                FX->Flash(At, 70.f, FLinearColor(1.f, .8f, .5f) * 3.f, .12f);
+                FX->Play(TEXT("hit_heavy"), At, .8f, .05f);
+                FX->Shake(.6f);
+            }
+            return 3;
+        }
+        const FName Hit = !HasShield() && Has(TEXT("SwordGuardHit")) ? FName(TEXT("SwordGuardHit")) : FName(TEXT("GuardHit"));
+        FAdventureMovementReaction Reaction;
+        Reaction.Flags = FAdventureMovementReaction::SetVelocity; Reaction.Impulse = -Toward * 220.f;
+        FreezeReactionAction(Reaction, Hit, .03f);
+        FreezeReactionFlinch(Reaction, -Toward, 7.f, .06f, Side);
+        SubmitMovementReaction(Reaction);
+        if (!JapanCombat::Publish(Character, EJapanCombatCue::Guard, GuardPoint(), -Toward, 0.f, Character, Source) && FX)
+        {
+            const FVector At = GuardPoint();
+            FX->Burst(At, -Toward, 14, 700.f, FLinearColor(1.f, .85f, .55f) * 4.f, .25f, 3.f);
+            FX->Play(TEXT("parry"), At, .6f, .06f);
+            FX->Shake(.2f);
+        }
+        return 3;
+    }
+    TakeHit(Damage, From, Damage >= GetParam(TEXT("HeavyDamage"), 25.f), Source, true);
+    return 0;
+}
+
+FVector UAdventureMoveSet::GuardPoint() const
+{
+    if (HasShield())
+        if (const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield")); Shield && *Shield) return (*Shield)->Bounds.Origin;
+    TArray<FVector> Blade; BladePoints(Blade);
+    if (Blade.Num()) return Blade[Blade.Num() / 2];
+    return Character->GetActorLocation() + Character->GetActorForwardVector() * 30.f + FVector(0, 0, 30.f);
+}
+
+void UAdventureMoveSet::Deflected(AActor* By)
+{
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
+    if (!Character || bDown || Mode != EAdventureMoveMode::Ground) return;
+    FAdventureMovementReaction Reaction;
+    Reaction.Flags = FAdventureMovementReaction::ClearCharge | FAdventureMovementReaction::ClearLunge |
+        FAdventureMovementReaction::ResetCombo | FAdventureMovementReaction::SetVelocity;
+    // Thrown back off the guard: freeze the resolved direction, never the actor.
+    const FVector Away = By ? FVector((Character->GetActorLocation() - By->GetActorLocation()).GetSafeNormal2D()) : -Character->GetActorForwardVector();
+    FreezeReactionAction(Reaction, Has(TEXT("HitMF")) ? FName(TEXT("HitMF")) : FName(TEXT("HitF")), .04f);
+    Reaction.Impulse = Away * 320.f;
+    FreezeReactionFlinch(Reaction, Away, 16.f, .08f, 0.f);
+    SubmitMovementReaction(Reaction);
+}
+
+bool UAdventureMoveSet::IsAttacking() const { return IsAttack(CurrentName()) || bCharging; }
+bool UAdventureMoveSet::IsHopping() const { return IsHop(CurrentName()); }
+
+float UAdventureMoveSet::NextCutIn() const
+{
+    const FAdventureMove* M = Current();
+    if (!M) return -1.f;
+    for (int32 I = 0; I < 3; ++I)
+        if (M->Name == CutNames[I]) return FMath::Max(0.f, (M->Input - SourceTime()) / FMath::Max(Character->GetActionPlayRate(), .05f));
+    return -1.f;
+}
+
+float UAdventureMoveSet::NextBlowIn() const
+{
+    const FAdventureMove* M = Current();
+    if (!M || !IsAttack(M->Name) || M->Active.IsEmpty()) return -1.f;
+    const float T = SourceTime();
+    float Next = -1.f;
+    for (const FVector2f& W : M->Active)
+    {
+        if (T >= W.X && T <= W.Y) return 0.f;
+        if (W.X > T && (Next < 0.f || W.X < Next)) Next = W.X;
+    }
+    const float Rate = FMath::Max(Character->GetActionPlayRate(), .05f);
+    return Next < 0.f ? -1.f : (Next - T) / Rate;
+}
+
+void UAdventureMoveSet::TakeHit(float Damage, const FVector& From, bool bHeavy, AActor* Source, bool bReact)
+{
+    TGuardValue<bool> ExternalChange(bExternalDefenceChange, true);
+    if (JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority())
+    { bHopInvulnerability = false; return; }
+    ON_SCOPE_EXIT
+    {
+        if (JapanNetwork::IsOnline(Character->GetWorld()))
+        {
+            if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement())) Movement->QueueReactionCheckpoint();
+            Character->ForceNetUpdate();
+        }
+    };
+    UWandererSwordComponent* Sword = Character->GetSword();
+    if (!Sword) { bHopInvulnerability = false; return; }
+    ++Sword->HitsTakenCount;
+    Sword->Health = FMath::Max(0.f, Sword->Health - Damage);
+    FAdventureMovementReaction Reaction;
+    Reaction.Flags = FAdventureMovementReaction::ClearHop | FAdventureMovementReaction::Immunity;
+    Reaction.Invulnerable = FAdventureMovementReaction::HitImmunitySeconds;
+    ON_SCOPE_EXIT { SubmitMovementReaction(Reaction); };
+    const bool bKnock = bHeavy || Sword->Health <= 0.f;
+    if (!Character->IsNpc())
+    {
+        const FVector Chest = Character->GetActorLocation() + FVector(0, 0, 20);
+        const FVector At = Chest + (From - Chest).GetSafeNormal2D() * 18.f;
+        if (!JapanCombat::Publish(Character, EJapanCombatCue::Hurt, At, From, Damage, Character, Source, bKnock))
+            if (auto* FX = AYorimichiCombatFX::Get(Character)) FX->PlayerHurt(At, From, Damage, Character, Source, bKnock);
+    }
+    if (!bReact) return;
+    Reaction.Flags |= FAdventureMovementReaction::ClearCharge;
+    if (Mode == EAdventureMoveMode::Glide) Reaction.Flags |= FAdventureMovementReaction::LeaveGlide;
+    else if (Mode == EAdventureMoveMode::Climb)
+    {
+        Reaction.Flags |= FAdventureMovementReaction::LeaveClimb;
+        Reaction.ClimbRelease = WallNormal.GetSafeNormal2D() * 80.f;
+        Reaction.NoClimb = GetParam(TEXT("PlayerFall.NoClimbTime"), 8.f) / 30.f;
+    }
+    if (Mode == EAdventureMoveMode::Swim) return;
+    UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    const FVector Local = Character->GetActorRotation().UnrotateVector(From - Character->GetActorLocation());
+    const bool bFront = Local.X >= 0.f;
+    const bool bSide = FMath::Abs(Local.X) < FMath::Abs(Local.Y);
+    const FVector Away = (Character->GetActorLocation() - From).GetSafeNormal2D();
+    // The way the blow came: front, back, or the side it struck (R: from his right).
+    const TCHAR* Dir = bSide ? (Local.Y > 0 ? TEXT("R") : TEXT("L")) : (bFront ? TEXT("F") : TEXT("B"));
+    HitStreak = SinceHit < GetParam(TEXT("StaggerStreakTime"), 1.2f) ? HitStreak + 1 : 1;
+    SinceHit = 0.f;
+    if (bKnock && Has(TEXT("KnockF")) && Has(TEXT("KnockB")))
+    {
+        Reaction.Flags |= FAdventureMovementReaction::Down | FAdventureMovementReaction::Launch; HitStreak = 0;
+        const FName Knock(*(FString(TEXT("Knock")) + Dir));
+        FreezeReactionAction(Reaction, Has(Knock) ? Knock : FName(bFront ? TEXT("KnockF") : TEXT("KnockB")), .05f);
+        FreezeReactionFlinch(Reaction, Away, 12.f, .06f, Local.Y);
+        Reaction.Impulse = Away * 380.f + FVector(0, 0, 280.f);
+        return;
+    }
+    // A strong blow, or the third hit in quick succession, staggers: the adventure library's medium reaction, a bigger recoil, pushed
+    // further. Anything lighter flinches.
+    const bool bStagger = (Damage >= GetParam(TEXT("StaggerDamage"), 15.f) || HitStreak >= 3) && Has(TEXT("HitMF"));
+    const FName Clip(*(FString(bStagger ? TEXT("HitM") : TEXT("Hit")) + Dir));
+    FreezeReactionAction(Reaction, Clip, .05f);
+    if (bStagger) { ++StaggerCount; HitStreak = 0; }
+    FreezeReactionFlinch(Reaction, Away, bStagger ? 24.f : 15.f, bStagger ? .09f : .07f, Local.Y);
+    if (Movement->IsMovingOnGround())
+    {
+        Reaction.Flags |= FAdventureMovementReaction::SetVelocity;
+        Reaction.Impulse = Away * (bStagger ? 380.f : 160.f); // Still in reach of the next cut.
+    }
+}
+
+void UAdventureMoveSet::Flinch(const FVector& Away, float Degrees, float Peak, float Side)
+{
+    // Bent away from the blow (about the horizontal axis across it), twisted a little away from the struck side.
+    FlinchAxis = FVector::CrossProduct(FVector::UpVector, Away.GetSafeNormal2D());
+    if (FlinchAxis.IsNearlyZero()) FlinchAxis = -Character->GetActorRightVector();
+    FlinchAngle = Degrees * GetParam(TEXT("FlinchScale"), 1.f);
+    FlinchPeak = FMath::Max(Peak, .02f);
+    FlinchTwist = FMath::Sign(Side) * .45f;
+    FlinchTime = 0.f;
+}
+
+FQuat UAdventureMoveSet::FlinchRotation(int32 Bone) const
+{
+    if (FlinchTime < 0.f || !Character || !Character->GetMesh()) return FQuat::Identity;
+    // An impulse response: up to its peak in FlinchPeak, then easing back (t/T e^(1 - t/T)); each bone further up the
+    // chain peaks a little later, so the head whips after the chest.
+    static const float Share[4] = { .3f, .35f, .15f, .2f };
+    static const float Lag[4] = { 1.f, 1.15f, 1.35f, 1.55f };
+    const float T = FlinchPeak * Lag[Bone & 3];
+    const float U = FlinchTime / T;
+    const float Amount = FlinchAngle * Share[Bone & 3] * U * FMath::Exp(1.f - U);
+    const FTransform& Mesh = Character->GetMesh()->GetComponentTransform();
+    const FVector Axis = Mesh.InverseTransformVectorNoScale(FlinchAxis).GetSafeNormal();
+    const FVector Up = Mesh.InverseTransformVectorNoScale(FVector::UpVector).GetSafeNormal();
+    return FQuat(Up, FMath::DegreesToRadians(Amount * FlinchTwist)) * FQuat(Axis, FMath::DegreesToRadians(Amount));
+}
+
+void UAdventureMoveSet::AdvanceDown(float Dt)
+{
+    DownTime += Dt;
+    const FAdventureMove* Now = Current();
+    const FName Name = Now ? Now->Name : NAME_None;
+    if (In(Name, { TEXT("KnockF"), TEXT("KnockB"), TEXT("KnockL"), TEXT("KnockR") }))
+    {
+        // The adventure library's knockdowns end mid-tumble, curled in the air: once on the ground he falls flat into the first frame of
+        // the get-up the way he fell, and lies there.
+        if (DownTime > .3f && Character->GetCharacterMovement()->IsMovingOnGround())
+        {
+            const FName Up(*(FString(TEXT("KnockUp")) + Name.ToString().RightChop(5)));
+            Play(Has(Up) ? Up : FName(TEXT("KnockUpF")), .22f, -1.f, .001f);
+        }
+        return;
+    }
+    if (In(Name, { TEXT("KnockUpF"), TEXT("KnockUpB"), TEXT("KnockUpL"), TEXT("KnockUpR") }))
+    {
+        // Lying (the get-up held on its first frame) until the down time is up, then he gets up.
+        if (Character->GetActionPlayRate() < .01f)
+        {
+            if (DownTime > GetParam(TEXT("KnockDownTime"), 1.4f)) Play(Name, .1f);
+            return;
+        }
+        if (Over() || (Now->Idle >= 0.f && SourceTime() >= Now->Idle))
+        {
+            bDown = false; Invulnerable = 1.f;
+            // Authority records this simulated get-up at the next post-step
+            // defence sample; later ACK-applied timers cannot extend it.
+            if (Character->HasAuthority() && JapanNetwork::IsOnline(Character->GetWorld())) bDefenceGetUpPending = true;
+            if (UWandererSwordComponent* Sword = Character->GetSword(); Sword && Sword->Health <= 0.f && (!JapanNetwork::IsOnline(Character->GetWorld()) || Character->HasAuthority())) Sword->Health = UWandererSwordComponent::MaxHealth;
+            Stop(.25f);
+        }
+        return;
+    }
+    bDown = false;
+}
+
+void UAdventureMoveSet::AdvanceFlurry(float Dt)
+{
+    if (FlurryTime <= 0.f) return;
+    if (JapanNetwork::IsOnline(Character->GetWorld()))
+    {
+        FlurryTime = FMath::Max(0.f, FlurryTime - Dt);
+        if (FlurryTime <= 0.f) Target = nullptr;
+        return;
+    }
+    FlurryTime -= FApp::GetDeltaTime();
+    // The world is slowed; the player is not (a hit-stop freeze, far below one, is left alone).
+    if (Character->CustomTimeDilation > .1f)
+    {
+        const float World = Character->GetWorldSettings() ? Character->GetWorldSettings()->GetEffectiveTimeDilation() : 1.f;
+        Character->CustomTimeDilation = FlurryTime > 0.f ? 1.f / FMath::Max(World, .05f) : 1.f;
+    }
+    if (FlurryTime <= 0.f) { FlurryTime = 0.f; Character->CustomTimeDilation = 1.f; Target = nullptr; }
+}
+
+// ------------------------------------------------------------------------------------------------------- Equipment
+
+void UAdventureMoveSet::Attach(FName Slot)
+{
+    const FSlot* S = Slots.Find(Slot);
+    const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Slot);
+    if (!S || !Prop || !*Prop || !Character->GetMesh()) return;
+    (*Prop)->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, S->bInHand ? S->Hand : S->Back);
+    (*Prop)->SetRelativeTransform(S->bInHand ? S->Held : CarryOf(*S));
+    if (Slot == TEXT("sword")) BladeCloth(S->bInHand);
+}
+
+FTransform UAdventureMoveSet::CarryOf(const FSlot& S) const
+{
+    if (!S.bCrouched || CrouchCarry <= 0.f) return S.Carry;
+    FTransform Out;
+    Out.Blend(S.Carry, S.Crouched, CrouchCarry);
+    return Out;
+}
+
+/** The grip poser's grips (Content/Data/<character>/grips.json, assets/characters/grips/game.py): each hand bone's place
+ *  in its prop's own frame and each finger bone's turn, given against the reference pose (a bone's component rotation is
+ *  the file's times its reference one) and turned here onto this skeleton's bone frames. The sword hand carries the
+ *  sword, so the sword is placed on it instead: its hold is the hand's place on it, inverted. */
+void UAdventureMoveSet::ReadGrips(const TSharedPtr<FJsonObject>& Grips)
+{
+    const USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    const TSharedPtr<FJsonObject>* List = nullptr;
+    if (!Grips.IsValid() || !Body || !Body->GetSkeletalMeshAsset() || !Grips->TryGetObjectField(TEXT("grips"), List)) return;
+    const FReferenceSkeleton& Ref = Body->GetSkeletalMeshAsset()->GetRefSkeleton();
+    TArray<FQuat> Rest;   // each bone's reference rotation, component space
+    Rest.SetNum(Ref.GetNum());
+    for (int32 I = 0; I < Ref.GetNum(); ++I)
+    {
+        const int32 P = Ref.GetParentIndex(I);
+        Rest[I] = ((P == INDEX_NONE ? FQuat::Identity : Rest[P]) * Ref.GetRefBonePose()[I].GetRotation()).GetNormalized();
+    }
+    auto Quat = [](const TSharedPtr<FJsonObject>& O, const TCHAR* Key, FQuat& Out)
+    {
+        const TArray<TSharedPtr<FJsonValue>>* V = nullptr;
+        if (!O->TryGetArrayField(Key, V) || V->Num() != 4) return false;
+        Out = FQuat((*V)[0]->AsNumber(), (*V)[1]->AsNumber(), (*V)[2]->AsNumber(), (*V)[3]->AsNumber()).GetNormalized();
+        return true;
+    };
+    const TCHAR* const Joint[3] = { TEXT("finger_"), TEXT("finger_tip_"), TEXT("finger_end_") };
+    const TCHAR* const Thumb[3] = { TEXT("thumb_"), TEXT("thumb_tip_"), TEXT("thumb_end_") };
+    FString Read;
+    for (const auto& Pair : (*List)->Values)
+    {
+        const TSharedPtr<FJsonObject> O = Pair.Value->AsObject();
+        FString Prop, Side;
+        if (!O.IsValid() || !O->TryGetStringField(TEXT("prop"), Prop) || !O->TryGetStringField(TEXT("side"), Side)) continue;
+        const int32 Which = Prop == TEXT("sword") ? 0 : Prop == TEXT("glider") ? 1 : -1, I = Side == TEXT("L") ? 1 : 0;
+        const TSharedPtr<FJsonObject>* Hand = nullptr;
+        const TSharedPtr<FJsonObject>* Bones = nullptr;
+        const TArray<TSharedPtr<FJsonValue>>* At = nullptr;
+        const int32 HandBone = Ref.FindBoneIndex(Character->GetSkateBone(I ? TEXT("hand_L") : TEXT("hand_R")));
+        FQuat Turn;
+        if (Which < 0 || HandBone == INDEX_NONE || !O->TryGetObjectField(TEXT("hand"), Hand) || !O->TryGetObjectField(TEXT("bones"), Bones)
+            || !Quat(*Hand, TEXT("rotation"), Turn) || !(*Hand)->TryGetArrayField(TEXT("location"), At) || At->Num() != 3) continue;
+        FPosedGrip G;
+        G.Hand = FTransform((Turn * Rest[HandBone]).GetNormalized(), FVector((*At)[0]->AsNumber(), (*At)[1]->AsNumber(), (*At)[2]->AsNumber()));
+        bool bAll = true;
+        for (int32 F = 0; F < 5; ++F)
+            for (int32 K = 0; K < 3; ++K)
+            {
+                const FString Name = F < 4 ? FString::Printf(TEXT("%s%d_%s"), Joint[K], F, *Side) : FString::Printf(TEXT("%s%s"), Thumb[K], *Side);
+                const TSharedPtr<FJsonObject>* B = nullptr;
+                const int32 Bone = Ref.FindBoneIndex(FName(*Name));
+                const int32 P = Bone == INDEX_NONE ? INDEX_NONE : Ref.GetParentIndex(Bone);
+                FString Parent;
+                FQuat Local;
+                if (P == INDEX_NONE || !(*Bones)->TryGetObjectField(Name, B) || !(*B)->TryGetStringField(TEXT("parent"), Parent)
+                    || Ref.GetBoneName(P) != FName(*Parent) || !Quat(*B, TEXT("rotation"), Local)) { bAll = false; continue; }
+                G.Local[F][K] = (Rest[P].Inverse() * Local * Rest[Bone]).GetNormalized();
+            }
+        const FString Id(Pair.Key);
+        if (!bAll) { UE_LOG(LogTemp, Warning, TEXT("Grips: %s does not match this skeleton's fingers; not posed"), *Id); continue; }
+        G.bValid = true;
+        Posed[Which][I] = G;
+        Read += (Read.IsEmpty() ? TEXT("") : TEXT(", ")) + Id;
+    }
+    if (FSlot* S = Slots.Find(TEXT("sword")); S && Posed[0][0].bValid)
+    {
+        FTransform Hand = Posed[0][0].Hand;
+        Hand.SetScale3D(FVector(1. / FMath::Max(S->Held.GetScale3D().GetAbsMax(), UE_SMALL_NUMBER)));
+        S->Held = Hand.Inverse();
+        Attach(TEXT("sword"));
+    }
+    UE_LOG(LogTemp, Display, TEXT("Grips: %s posed (%s)"), *Character->GetName(), *Read);
+}
+
+void UAdventureMoveSet::PlaceGliderForPose()
+{
+    GliderPoseFrame = GFrameCounter;
+    if (Glider && bGliderBodyAttached && bGliderPlaced) Glider->SetRelativeTransform(GliderPlaced);
+}
+
+UAdventureMoveSet::FGripPose UAdventureMoveSet::GripPose(int32 Side) const
+{
+    Side &= 1;
+    FGripPose P;
+    // Gliding: each hand on its handle, the glider where the move set has placed it on the body (component space).
+    const FPosedGrip& Glide = Posed[1][Side];
+    if (Glide.bValid && Glider && bGliderBodyAttached && GlideHands > 0.f)
+    {
+        P.Weight = GlideHands; P.bPin = true; P.Local = Glide.Local;
+        P.Target = Glide.Hand * Glider->GetRelativeTransform();
+        return P;
+    }
+    const FPosedGrip& Sword = Posed[0][Side];
+    const FSlot* S = Slots.Find(TEXT("sword"));
+    if (!Sword.bValid || !S || !S->bInHand) return P;
+    P.Local = Sword.Local;
+    if (!Side) { P.Weight = SwordHold; return P; }
+    // The off hand in a two-handed hold, in the frame of the sword hand that carries the sword.
+    P.Weight = TwoHandGrip; P.bPin = P.bInFrame = true;
+    P.Target = Sword.Hand * S->Held;
+    return P;
+}
+
+void UAdventureMoveSet::BladeCloth(bool bInHand)
+{
+    USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    const FSlot* S = Slots.Find(TEXT("sword"));
+    const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(TEXT("sword"));
+    if (!Body || !S || !Prop || !*Prop || !(*Prop)->GetStaticMesh() || !Body->GetSkeletalMeshAsset()
+        || !Body->GetSkeletalMeshAsset()->GetMeshClothingAssets().Num()) return;
+    if (!BladeCollision)
+    {
+        // The blade's capsule in the hand bone's space, its scale included (Chaos scales the shape by the bone's, an
+        // FBX in metres puts x100 on it): along the piece's longest axis, through its bounds, 2 cm round.
+        const int32 Bone = Body->GetBoneIndex(S->Hand);
+        if (Bone == INDEX_NONE) return;
+        const float BoneScale = FMath::Max(Body->GetBoneTransform(Bone, FTransform::Identity).GetScale3D().GetAbsMax(), KINDA_SMALL_NUMBER);
+        const FBox Bounds = (*Prop)->GetStaticMesh()->GetBoundingBox();
+        const FVector Extent = Bounds.GetExtent();
+        const int32 Long = Extent.X >= Extent.Y && Extent.X >= Extent.Z ? 0 : Extent.Y >= Extent.Z ? 1 : 2;
+        FVector Axis = FVector::ZeroVector;
+        Axis[Long] = Extent[Long];
+        const FVector A = S->Held.TransformPosition(Bounds.GetCenter() - Axis), B = S->Held.TransformPosition(Bounds.GetCenter() + Axis);
+        FKSphylElem Capsule;
+        Capsule.Radius = 2.f / BoneScale;
+        Capsule.Center = (A + B) * .5f;
+        Capsule.Rotation = FRotationMatrix::MakeFromZ((B - A).GetSafeNormal()).Rotator();
+        Capsule.Length = FMath::Max((B - A).Size() - 2.f * Capsule.Radius, 0.f);
+        BladeCollision = NewObject<UPhysicsAsset>(this, TEXT("BladeCloth"));
+        USkeletalBodySetup* Setup = NewObject<USkeletalBodySetup>(BladeCollision);
+        Setup->BoneName = S->Hand;
+        Setup->PhysicsType = PhysType_Kinematic;
+        Setup->AggGeom.SphylElems.Add(Capsule);
+        BladeCollision->SkeletalBodySetups.Add(Setup);
+        BladeCollision->UpdateBodySetupIndexMap();
+    }
+    Body->RemoveClothCollisionSource(Body, BladeCollision);
+    if (bInHand) Body->AddClothCollisionSource(Body, BladeCollision);
+}
+
+void UAdventureMoveSet::SetArmed(bool bNow, bool bFeedback)
+{
+    if (bArmed == bNow || !Character) return;
+    bArmed = bNow;
+    for (auto& Pair : Slots)
+    {
+        const bool bHand = bNow && !Pair.Value.Hand.IsNone();
+        if (bHand != Pair.Value.bInHand) { Pair.Value.bInHand = bHand; Attach(Pair.Key); }
+    }
+    if (bFeedback) ArmedFeedback(bNow);
+}
+
+void UAdventureMoveSet::ArmedFeedback(bool bNow)
+{
+    if (!JapanCombat::Publish(Character, EJapanCombatCue::Draw, Character->GetActorLocation()+FVector(0,0,30), FVector::ZeroVector, bNow ? 1.f : 0.f, Character))
+    if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character))
+        FX->Play(bNow ? TEXT("sword_draw") : TEXT("sword_sheathe"), Character->GetActorLocation() + FVector(0, 0, 30), .8f);
+}
+
+void UAdventureMoveSet::SetShield(bool bOn)
+{
+    bShield = bOn && Props.Contains(TEXT("shield"));
+    if (const TObjectPtr<UStaticMeshComponent>* Shield = Props.Find(TEXT("shield")); Shield && *Shield) (*Shield)->SetVisibility(HasShield(), true);
+}
+
+void UAdventureMoveSet::AdvanceEquipment(float Dt)
+{
+    const FAdventureMove* Now = Current();
+    const FName Name = Now ? Now->Name : NAME_None;
+    const float T = SourceTime();
+    const bool bRemotePresentation = JapanNetwork::IsOnline(Character->GetWorld()) && !Character->HasAuthority() && !Character->IsLocallyControlled();
+    if (!bRemotePresentation)
+    {
+    if (Name == TEXT("DrawSword") && T >= FMath::Max(Now->Bind, 0.f)) SetArmed(true);
+    if (Name == TEXT("SheatheSword") && T >= (Now->Unbind >= 0.f ? Now->Unbind : Now->End * .5f)) SetArmed(false);
+    // The paraglider is in the hands from the opening's bind point until the closing's unbind point.
+    bool bGlider = Mode == EAdventureMoveMode::Glide;
+    if (Now && In(Name, { TEXT("GlideOn"), TEXT("GlideOnFall") }) && T < FMath::Max(Now->Bind, 0.f)) bGlider = false;
+    if (Now && Name == TEXT("GlideOff") && T < (Now->Unbind >= 0.f ? Now->Unbind : .1f)) bGlider = true;
+    ShowGlider(bGlider);
+    }
+    // Crouched, the carried pieces swing down toward his hip: carried as standing, his chest's lean left the sheath's end
+    // hanging clear of his side, 36 cm from him, with the hilt at his hair (#7633). At the rate and on the linear ramp
+    // the anim instance blends his crouching pose (CrouchWeight), so the carry follows his back between the two.
+    const float WasCrouched = CrouchCarry;
+    CrouchCarry = FMath::FInterpConstantTo(CrouchCarry, Character->bIsCrouched ? 1.f : 0.f, Dt, 7.f);
+    if (CrouchCarry != WasCrouched)
+        for (const auto& Pair : Slots)
+            if (const TObjectPtr<UStaticMeshComponent>* Prop = Props.Find(Pair.Key); Prop && *Prop && Pair.Value.bCrouched && !Pair.Value.bInHand)
+                (*Prop)->SetRelativeTransform(CarryOf(Pair.Value));
+    // The carry layers: the sword arm over everything but blade work, and while guarding on foot the raised shield, or
+    // without it the sword raised across the body (both arms).
+    const bool bGuardPose = IsGuarding() && Mode == EAdventureMoveMode::Ground && (Name.IsNone() || IsLockLoop(Name));
+    const bool bSwordGuard = bGuardPose && !HasShield();
+    const bool bCarry = bArmed && !IsSwordAction(Name) && (Mode == EAdventureMoveMode::Ground || Mode == EAdventureMoveMode::Air) && !bDown && !bSwordGuard;
+    SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
+    GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
+    SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
+    // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
+    // than holding the shield pose the adventure clips give it (not in Cairo's two-handed guard, parry and recoil, nor
+    // drawing and sheathing).
+    // Strafing in a one-handed guard the arm swings free too; a two-handed guard keeps both hands on the grip.
+    const bool bTwoHanded = GetParam(TEXT("TwoHandedGuard")) > .5f;
+    const bool bFree = !HasShield() && bArmed && (Mode == EAdventureMoveMode::Ground || Mode == EAdventureMoveMode::Air) && !bDown &&
+        !(bSwordGuard && bTwoHanded) && !In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit"), TEXT("DrawSword"), TEXT("SheatheSword") });
+    FreeArm = FMath::FInterpConstantTo(FreeArm, bFree ? 1.f : 0.f, Dt, 8.f);
+    // Cairo's own two-handed clips were made for his longer bokken: on this sword the off hand is moved onto the handle.
+    const bool bTwoHand = bTwoHanded && bArmed && !bDown && (bSwordGuard || In(Name, { TEXT("SwordParry"), TEXT("SwordGuardHit") }));
+    TwoHandGrip = FMath::FInterpConstantTo(TwoHandGrip, bTwoHand ? 1.f : 0.f, Dt, 12.f);
+    // A fitted body's sword hand wraps the drawn sword's grip (the reference rig's own clips hold it).
+    const FSlot* Held = Slots.Find(TEXT("sword"));
+    SwordHold = FMath::FInterpConstantTo(SwordHold, Held && Held->bInHand && bFistAxis && !bOwnGlide ? 1.f : 0.f, Dt, 8.f);
+    // The off hand closed round the handle: the space its fist closes round on the sword's axis, one hand's width
+    // (the adventure library's 13 cm) toward the pommel from where the sword hand closes round it, but never past the handle's end (on
+    // the reference rig's short hilt it closed round nothing, a finger past the cap); its wrist moved with it.
+    const TObjectPtr<UStaticMeshComponent>* Sword = Props.Find(TEXT("sword"));
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (TwoHandGrip > 0.f && Sword && *Sword && Body && !BladeTip.IsNearlyZero())
+    {
+        const FTransform& MeshT = Body->GetComponentTransform();
+        const FTransform& SwordT = (*Sword)->GetComponentTransform();
+        const FVector Origin = MeshT.InverseTransformPosition(SwordT.GetLocation());
+        const FVector Pommel = MeshT.InverseTransformVectorNoScale(SwordT.TransformVectorNoScale(-BladeTip)).GetSafeNormal();
+        const FVector SwordHand = Origin + Pommel * ((FingersOf(0) - Origin) | Pommel);
+        float Reach = 13.f * Scale();
+        const FName Index(TEXT("finger_0_L")), Little(TEXT("finger_3_L"));
+        if (!HiltEnd.IsNearlyZero() && Body->GetBoneIndex(Index) != INDEX_NONE && Body->GetBoneIndex(Little) != INDEX_NONE)
+        {
+            // Its little finger inside the cap; a fist's short of the pommel's flare, by its skin (#7735: it lay on the flare).
+            const FVector Hilt = MeshT.InverseTransformPosition(SwordT.TransformPosition(HiltEnd * (bFistAxis ? SwordGripSpan[0] : 1.f)));
+            const float Palm = (Body->GetSocketTransform(Index, RTS_Component).GetLocation() - Body->GetSocketTransform(Little, RTS_Component).GetLocation()).Size();
+            const float Margin = bFistAxis ? 1.f / FMath::Max(float(MeshT.GetScale3D().GetAbsMax()), KINDA_SMALL_NUMBER) : 1.f;
+            Reach = FMath::Min(Reach, ((Hilt - SwordHand) | Pommel) - Palm * .5f - Margin);
+        }
+        const FVector OnGrip = SwordHand + Pommel * Reach;
+        const FTransform Hand = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_L")), RTS_Component);
+        // A fist's grip point is the grip's radius in front of its knuckles (#7633: the curled fingers' middle, put on
+        // the axis, buried them in the grip).
+        const FVector Grip = bFistAxis ? CavityOf(1, GripReach(true)) : FingersOf(1);
+        FVector Wrist = Hand.GetLocation() + (OnGrip - Grip);
+        if (bFistAxis)
+        {
+            // The clip's hand kept its own turn (Cairo's guard on his thicker bokken left Modori's palm flat beside the
+            // handle): a fist turned round the handle as on the glider's, its grip axis along it toward the blade (both
+            // thumbs forward) and its fingers on the far side from the elbow, the wrist placed under them.
+            const FVector Along = -Pommel;
+            const FVector GripLocal = Hand.InverseTransformPosition(Grip);
+            const FVector Axis = FistAxisOf(1);
+            const FVector Out = (GripLocal - Axis * (GripLocal | Axis)).GetSafeNormal();
+            const FVector Elbow = Body->GetSocketTransform(Character->GetSkateBone(TEXT("forearm_L")), RTS_Component).GetLocation();
+            const FVector Away = OnGrip - Elbow;
+            const FVector Want = (Away - Along * (Away | Along)).GetSafeNormal();
+            const FQuat Onto = FQuat::FindBetweenNormals(Axis, Along);
+            const FVector Turned = Onto.RotateVector(Out);
+            TwoHandTurn = FQuat(Along, FMath::Atan2((Turned ^ Want) | Along, Turned | Want)) * Onto;
+            Wrist = OnGrip - FTransform(TwoHandTurn, FVector::ZeroVector, Hand.GetScale3D()).TransformVector(GripLocal);
+        }
+        // Kept in the sword hand's frame, so it goes with that hand in the frame it is evaluated (the strafe's bob).
+        GripOffset = Body->GetSocketTransform(Character->GetSkateBone(TEXT("hand_R")), RTS_Component).InverseTransformPosition(Wrist);
+    }
+}
+
+void UAdventureMoveSet::EaseMesh(const FVector& From, float Seconds)
+{
+    MeshOffsetStart = From; MeshOffsetLength = FMath::Max(Seconds, .01f); MeshOffsetTime = 0.f;
+}
+
+/** The mesh's offset from its place in the capsule: the lean into a climbed wall, a pose and capsule that disagree for a
+ *  moment (into and out of the water), and a fitted ledge climb's start, each eased out. */
+void UAdventureMoveSet::AdvanceMeshOffset(float Dt)
+{
+    USkeletalMeshComponent* Body = Character->GetMesh();
+    if (!Body) return;
+    ClimbShift = FMath::FInterpConstantTo(ClimbShift, ClimbShiftTarget, Dt, 60.f);
+    MeshOffsetTime += Dt;
+    FVector Offset(ClimbShift, 0, 0);
+    if (MeshOffsetLength > 0.f) Offset += MeshOffsetStart * (1.f - Smooth(MeshOffsetTime / MeshOffsetLength));
+    if (MeshOffsetTime >= MeshOffsetLength) MeshOffsetLength = 0.f;
+    if (bDriving && !MeshDriveLocal.IsZero()) Offset += MeshDriveLocal * (1.f - DriveProgress());
+    // A tucked somersault: after it (or a landing that cut it short) the turn finishes to upright and the lift fades as
+    // the hips come back down.
+    if (FlipTime < 0.f && FlipAngle != 0.f)
+    {
+        FlipAngle = FMath::FInterpConstantTo(FlipAngle, FlipAngle > 180.f ? 360.f : 0.f, Dt, 900.f);
+        if (FlipAngle < .01f || FlipAngle > 359.99f) FlipAngle = 0.f;
+    }
+    if (FlipTime < 0.f && FlipSettle > 0.f)
+    {
+        FlipSettle = FMath::Max(0.f, FlipSettle - Dt);
+        FlipLift = FlipSettle > 0.f ? FMath::Min(FlipLift, HipLift()) * FMath::Min(1.f, FlipSettle / .15f) : 0.f;
+    }
+    else if (FlipTime < 0.f) FlipLift = 0.f;
+    if (FlipAngle != 0.f || FlipLift != 0.f)
+    {
+        FTransform Placed(MeshBaseRotation, MeshBase + Offset + FVector(0, 0, FlipLift), Body->GetRelativeScale3D());
+        if (FlipAngle != 0.f)
+        {
+            // About the capsule's right axis, head first: forward.
+            const FVector Pivot = FlipPivot.IsZero() ? FVector(0, 0, FlipLift) : FlipPivot;
+            Placed = Placed * FTransform(-Pivot) * FTransform(FQuat(FVector::YAxisVector, FMath::DegreesToRadians(FlipAngle))) * FTransform(Pivot);
+        }
+        Body->SetRelativeTransform(Placed);
+        bMeshTurned = bMeshOffset = true;
+        return;
+    }
+    if (bMeshTurned) { Body->SetRelativeRotation(MeshBaseRotation); bMeshTurned = false; bMeshOffset = true; }
+    if (Offset.IsNearlyZero(.01) && !bMeshOffset) return;
+    Body->SetRelativeLocation(MeshBase + Offset);
+    bMeshOffset = !Offset.IsNearlyZero(.01);
+}
+
+/** Cosmetic only: the sprint's dust and speed lines, the glider's wind off its tips and the blade's ribbon. */
+void UAdventureMoveSet::AdvanceEffects(float Dt)
+{
+    AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character);
+    // The blade's ribbon: through every cut's active windows, a little either side, at the blow's strength.
+    if (BladeTrail)
+    {
+        const FAdventureMove* Now = Current();
+        bool bEmit = false;
+        if (Now && bArmed && IsAttack(Now->Name))
+            for (const FVector2f& W : Now->Active) bEmit |= SourceTime() >= W.X - .05f && SourceTime() <= W.Y + .04f;
+        TArray<FVector> Blade; BladePoints(Blade);
+        if (Blade.Num()) BladeTrail->Sample(Blade[0], Blade.Last(), bEmit, FMath::Clamp(Strength, 1, 3), Dt);
+    }
+    if (!FX) return;
+    const UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    const FVector Here = Character->GetActorLocation();
+    const FVector Velocity = Movement->Velocity;
+    // Sprinting: a burst of dust as it starts, then puffs at the heels and pale speed lines streaming past.
+    const bool bSprinting = Mode == EAdventureMoveMode::Ground && Character->Stamina.Sprinting && Velocity.Size2D() > 300.f;
+    if (bSprinting)
+    {
+        const FVector Ground = Here - FVector(0, 0, HalfHeight());
+        const FVector Back = -FVector(Velocity.GetSafeNormal2D());
+        if (!bWasSprinting) { FX->Dust(Ground, .8f, Back * .6f); FX->Play(TEXT("dash"), Ground, .3f, .1f); SprintFX = 0.f; }
+        SprintFX += Dt;
+        while (SprintFX >= .09f)
+        {
+            SprintFX -= .09f;
+            FX->Dust(Ground + Back * 25.f, .22f, Back * .5f);
+            for (int32 I = 0; I < 2; ++I)
+            {
+                const FVector Side = FVector::CrossProduct(FVector::UpVector, Back) * FMath::FRandRange(-45.f, 45.f);
+                AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Spark, Here + Side + FVector(0, 0, FMath::FRandRange(-.7f, .5f) * HalfHeight()) - Back * 40.f);
+                P.V = Back * FMath::FRandRange(700.f, 1100.f); P.Stretch = .04f; P.Drag = 2.f;
+                P.Life = FMath::FRandRange(.12f, .2f); P.Size0 = 1.8f; P.Size1 = .8f; P.Color = FLinearColor(.95f, .97f, 1.f) * 2.f;
+            }
+        }
+    }
+    bWasSprinting = bSprinting;
+    // Gliding: wind streaming off the canopy's tips, more of it the faster he flies.
+    if (Mode == EAdventureMoveMode::Glide && bGliderShown && Glider)
+    {
+        GlideFX += Dt * FMath::GetMappedRangeValueClamped(FVector2f(150.f, 600.f), FVector2f(10.f, 34.f), GlideSpeed);
+        const FBoxSphereBounds Canopy = Glider->Bounds;
+        const FVector Right = Character->GetActorRightVector(), Back = -Character->GetActorForwardVector();
+        while (GlideFX >= 1.f)
+        {
+            GlideFX -= 1.f;
+            const float Sign = FMath::RandBool() ? 1.f : -1.f;
+            const FVector Tip = Canopy.Origin + Right * Sign * Canopy.BoxExtent.Size2D() * .85f + Back * FMath::FRandRange(0.f, 20.f);
+            AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Spark, Tip);
+            P.V = Back * FMath::FRandRange(250.f, 420.f) + Velocity * .2f; P.Stretch = .06f; P.Drag = 1.2f;
+            P.Life = FMath::FRandRange(.25f, .45f); P.Size0 = 1.6f; P.Size1 = .5f; P.Color = FLinearColor(.92f, .96f, 1.f) * 1.8f; P.FadeIn = .05f;
+        }
+    }
+    else GlideFX = 0.f;
+}
+
+float UAdventureMoveSet::HipLift() const
+{
+    const USkeletalMeshComponent* Body = Character ? Character->GetMesh() : nullptr;
+    if (!Body) return 0.f;
+    const float Now = Body->GetSocketTransform(Character->GetSkateBone(TEXT("pelvis")), RTS_Component).GetLocation().Z;
+    return FMath::Max(0.f, (FlipHips - Now) * float(Body->GetRelativeScale3D().Z));
+}

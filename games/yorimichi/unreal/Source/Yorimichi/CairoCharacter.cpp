@@ -1,12 +1,6 @@
 #include "CairoCharacter.h"
-#include "JapanNetwork.h"
 #include "AtelierData.h"
-#include "BotwMoveSet.h"
-#include "AtelierStream.h"
-#include "BotwRider.h"
-#include "JapanGameMode.h"
-#include "JapanPreferences.h"
-#include "Hippodrome.h"
+#include "AdventureMoveSet.h"
 #include "PlayableCharacter.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
@@ -14,40 +8,37 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
 namespace
 {
-    const TCHAR* BotwDefinition = TEXT("/Game/CairoBotw/DA_CairoBotw.DA_CairoBotw");
+    const TCHAR* AdventureDefinition = TEXT("/Game/CairoAdventure/DA_CairoAdventure.DA_CairoAdventure");
 
     /** Cairo's move record, read once; null when it has not been built. */
-    TSharedPtr<FJsonObject> BotwRecord()
+    TSharedPtr<FJsonObject> AdventureRecord()
     {
         static TSharedPtr<FJsonObject> Record;
         static bool bLoaded = false;
         if (!bLoaded)
         {
             bLoaded = true;
-            Record = AtelierReadJson(AtelierDataPath(TEXT("cairo/botw.json")));
+            Record = AtelierReadJson(AtelierDataPath(TEXT("cairo/adventure.json")));
         }
         return Record;
     }
 }
 
-// Cairo is the default character, with his legacy moves or the merged set as he chooses at BeginPlay; CairoBotw is him
-// with the merged set (FPlayableCharacter). The switch tells a switched-in Cairo which.
-static void PrepareCairo(AWandererCharacter* Pawn, const FString& Name) { CastChecked<ACairoCharacter>(Pawn)->SetBotw(Name == ACairoCharacter::BotwName()); }
-static const FPlayableCharacter::FRegister RegisterCairo({TEXT("Cairo"), &ACairoCharacter::StaticClass, nullptr, TEXT("unreal.cairo"), &PrepareCairo, true,
-                                                          ACairoCharacter::BotwName()});
-static const FPlayableCharacter::FRegister RegisterCairoBotw({ACairoCharacter::BotwName(), &ACairoCharacter::StaticClass, &ACairoCharacter::HasBotw,
-                                                              TEXT("unreal.cairo_botw"), &PrepareCairo});
+static const FPlayableCharacter::FRegister RegisterCairo({TEXT("Cairo"), &ACairoCharacter::StaticClass, &ACairoCharacter::HasAdventure,
+                                                         TEXT("unreal.cairo_adventure"), true, {TEXT("CairoAdventure")}});
 
 ACairoCharacter::ACairoCharacter()
 {
-    DefinitionAssetPath = TEXT("/Game/Cairo/DA_Cairo.DA_Cairo");
-    SprintSpeedMultiplier = 1.25f;
+    DefinitionAssetPath = AdventureDefinition;
+    SprintSpeedMultiplier = 1.f;
     GetCapsuleComponent()->InitCapsuleSize(22.f,74.f);
     GetCharacterMovement()->SetCrouchedHalfHeight(65.f);
     GetMesh()->SetRelativeLocation(FVector(0,0,-74.65f));
@@ -55,36 +46,22 @@ ACairoCharacter::ACairoCharacter()
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
 }
 
-bool ACairoCharacter::HasBotw()
+bool ACairoCharacter::HasAdventure()
 {
     // Checked on disk, not loaded: the character switch asks every time the menu opens.
-    return BotwRecord().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(BotwDefinition)));
+    return AdventureRecord().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(AdventureDefinition)));
 }
 
-FString ACairoCharacter::GetHorseRider() const { return FHorseSpec::PlayerRider(); }
 
 void ACairoCharacter::BeginPlay()
 {
-    // Where a person plays, the "Move set" setting picks: the merged set (the default) or the legacy BOTW set on Link's
-    // retargeted clips, whenever they are built, or his legacy moves. QA, reviews and benchmarks keep his legacy moves
-    // unless the command line asks (-rider=CairoBotw). A switched-in Cairo was told by the switch.
-    if (JapanNetwork::IsOnline(GetWorld()) && !IsNpc()) bBotw = true;
-    else if (!bSwitchedIn)
-    {
-        const FString Requested = ABotwRider::Requested();
-        const bool bPlayed = !AJapanGameMode::IsScriptedSession() || FAtelierStream::IsRequested();
-        bBotw = Requested == BotwName() || (Requested.IsEmpty() && bPlayed && HasBotw() && UBotwMoveSet::Chosen() != UBotwMoveSet::LegacyCairo);
-    }
-    if (bBotw)
-    {
-        DefinitionAssetPath = BotwDefinition;
-        SprintSpeedMultiplier = 1.f;   // Link's sprint: the dash clip's own stride speed
-    }
     Super::BeginPlay();
-    if (bBotw)
+    UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("AdventureMoves"));
+    if (Set->Initialize(this, AdventureRecord())) Moves = Set;
+    else
     {
-        UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("BotwMoves"));
-        if (Set->Initialize(this, BotwRecord())) Moves = Set;
+        DisablePlayerMovement();
+        UE_LOG(LogTemp, Error, TEXT("Cairo: no merged move set (build unreal.cairo_adventure)"));
     }
 }
 

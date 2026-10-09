@@ -15,7 +15,7 @@ from rest, an ollie, a kickflip) and the access path down to Sunset Pier; on the
 a manual, a grab, a grind on the red flatbar and two powerslides (the pad's down-diagonal, then the C key); an air on
 the east return quarter; a stand dismount, the board carried past its hold time, recalled, put away for the sword and
 an interaction; a slam at speed; dismounts into a run, fast, from a grab in the air and a kick-out, each followed by a
-mount from the run; a caveman; a bail off a grind on the long flatbar; Link's mount, ride, bail and dismount; the
+mount from the run; a caveman; a bail off a grind on the long flatbar; Modori's mount, ride, bail and dismount; the
 Native backend; the sailboat from the beach. Every frame records the skate state, the camera, the frame time and the
 board's sound loops; the sound log records the one-shots.
 
@@ -902,7 +902,7 @@ def run():
     hands('hands_interact', 'DD', lambda: (True, 'interaction played (see the screenshot)'), settle=1.6)
     wait(1.0)
     recall('recall_after_interact')
-    check('hands_climb_glide_swim', None, 'not on this build: no climb or glide (the BotW move set is unmerged), and the '
+    check('hands_climb_glide_swim', None, 'not on this build: no climb or glide (the adventure move set is unmerged), and the '
           'island has no swimmable water (the sea and the forest lake are recovery teleports)')
 
     # Back to the lane y 48 heading west, on foot around the quarter and between the rails, then a mount from the carry.
@@ -1040,25 +1040,25 @@ def run():
     else:
         check('bail_off_grind', False, f'never lined up on the long flatbar (at {tuple(round(c, 1) for c in px(last()))})')
 
-    # 8. Link through the Esc menu's character switch: mount, ride, bail, dismount; then back to Cairo.
+    # 8. Modori through the Esc menu's character switch: mount, ride, bail, dismount; then back to Cairo.
     step('8_character')
     ensure_on_foot()
     g('live.E2E.SKIPTO = live.E2E.N + 150')
-    switched = g("print(live.L.switch_character('Link'))").strip().splitlines()[-1]
+    switched = g("print(live.L.switch_character('Modori'))").strip().splitlines()[-1]
     wait(3.0)
-    check('switch_to_link', switched == 'Link', f'the switch returned {switched!r}', shots=[shot('link')])
+    check('switch_to_link', switched == 'Modori', f'the switch returned {switched!r}', shots=[shot('modori')])
     w3 = route((W3, None))
-    if switched == 'Link':
-        pilot('walk', *w3, name='link-walk', gait='walk', mag=.5)
+    if switched == 'Modori':
+        pilot('walk', *w3, name='modori-walk', gait='walk', mag=.5)
         wait(1.0)
         stop_pilot()
         wait(.5)
         if mount('link_mount_stand', 'BR_STAND_0_INTO_MOUNT'):
-            pilot('ride', *w3, name='link', v=650)
+            pilot('ride', *w3, name='modori', v=650)
             wait(3.2)
             shot('link_riding')
             bail_now('link_bail')
-            ride_on(*w3, name='link', v=380)
+            ride_on(*w3, name='modori', v=380)
             wait(until=lambda r: abs(speed(r) - 380) < 80, timeout=5)
             dismount('link_dismount_run', 'BR_DISMOUNT_HI_INTO_RUN_FWD', run=1.0, path=w3)
         ensure_on_foot()

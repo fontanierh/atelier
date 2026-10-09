@@ -11,7 +11,7 @@ the floor) with the gait and camera for each point, and the stops where Cairo st
 the game through the guarded runner and sends treehouse_walk_live.py over the live bridge; it steers Cairo along the
 route with stick input at a fixed 60 fps step and saves every frame, the camera and the sounds the game starts into
 build/yorimichi/treehouse/walk/TAKE. --rehearse runs the same route without saving frames and reports where Cairo got
-stuck. cut mixes the footsteps under the ambience (tools/mix_fight_film.py) and makes a phone copy under 30 MB.
+stuck. cut mixes the footsteps under the ambience (tools/mix_capture.py) and makes a phone copy under 30 MB.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / 'world')); import yori  # noqa: E402
 import importlib.util, json, math, os, shutil, subprocess, sys, time, urllib.request
@@ -262,7 +262,7 @@ def cut(take):
     crow's nest (as in the tour)."""
     import treehouse_tour as tour                                 # this script's folder is on the path
     out = WALK/take; done = json.loads((out/'done.json').read_text()); route = json.loads((WALK/'route.json').read_text())
-    subprocess.run([sys.executable, str(REPO/'games/yorimichi/tools/mix_fight_film.py'), str(out), '--out', 'mix'], check=True)
+    subprocess.run([sys.executable, str(REPO/'games/yorimichi/tools/mix_capture.py'), str(out), '--out', 'mix'], check=True)
     lay = json.loads((yori.OUT/'treehouse'/'layout.json').read_text()); P = lay['places']
     near = lambda q, n, r: math.hypot(q[0]-P[n]['xy'][0], q[1]-P[n]['xy'][1]) < r and abs(q[2]-(lay['crow']['floor'] if n == 'lookout' else P[n]['deck'])) < 1.
     bells = [m['frame']/60+.4 for m in done['stops'] if any(near(route['points'][m['stop']], n, 3.) for n in ('chimes', 'lookout'))]

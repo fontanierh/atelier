@@ -5,7 +5,7 @@
 
 class AJapanWorld;
 
-/** The chase camera's arm (docs/CAMERA.md), as in Breath of the Wild:
+/** The chase camera's arm (docs/CAMERA.md):
  *  - solid things (the terrain, walls, roofs, decks, cliffs, houses, the tree house) stop it: the arm pulls in fast in
  *    front of them and eases back out once they clear;
  *  - thin things (trees, posts, lanterns, props) do not stop it: they ignore the camera channel and fade whole instead

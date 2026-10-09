@@ -1,8 +1,8 @@
 #include "JapanCharacterMovement.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
-#include "BotwMoveSet.h"
-#include "BotwMovementReaction.h"
+#include "AdventureMoveSet.h"
+#include "AdventureMovementReaction.h"
 #include "WandererCharacter.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -25,14 +25,14 @@ bool FJapanReactionTransportTest::RunTest(const FString&)
     ON_SCOPE_EXIT { Rider->Destroy(); };
     auto* Movement = CastChecked<UJapanCharacterMovement>(Rider->GetCharacterMovement());
     Movement->SetUpdatedComponent(Rider->GetCapsuleComponent()); Movement->Activate(true);
-    Rider->Moves = NewObject<UBotwMoveSet>(Rider); Rider->Moves->Character = Rider;
+    Rider->Moves = NewObject<UAdventureMoveSet>(Rider); Rider->Moves->Character = Rider;
     auto Reset = [&]()
     {
         ++Rider->NetworkActivity.Epoch;
         Movement->ResetActivityPrediction();
         Movement->SetMovementMode(MOVE_Walking);
     };
-    FBotwMovementReaction Hit; Hit.Flags = FBotwMovementReaction::SetVelocity;
+    FAdventureMovementReaction Hit; Hit.Flags = FAdventureMovementReaction::SetVelocity;
     Hit.Impulse = FVector(-46.9, 0., 0.);
     FJapanReactionValue Value; if (!TestTrue(TEXT("Transport uses the actual payload codec"), Hit.Encode(Value))) return false;
     FJapanScheduledReaction Event;
@@ -199,7 +199,7 @@ bool FJapanReactionTransportTest::RunTest(const FString&)
     TestTrue(TEXT("Get-up receives protection on its first post-step sample"), Moves->GetUpProtectedAt(30. + Step));
     const double GetUpEnd = Moves->DefenceGetUpUntil;
     TestTrue(TEXT("Get-up sampling adds at most the admitted step to its one second"), GetUpEnd >= 31. && GetUpEnd <= 31. + Step);
-    FBotwMovementReaction Dodge; Dodge.Flags = FBotwMovementReaction::PerfectDodge;
+    FAdventureMovementReaction Dodge; Dodge.Flags = FAdventureMovementReaction::PerfectDodge;
     Dodge.FlurryTime = Dodge.Invulnerable = 1.4f;
     Moves->ApplyMovementReaction(Dodge);
     TestTrue(TEXT("Perfect dodge at get-up plus .3 does not rewrite get-up's damage deadline"),
@@ -207,7 +207,7 @@ bool FJapanReactionTransportTest::RunTest(const FString&)
     TestFalse(TEXT("Get-up protection expires independently of the rewritten animation timer"), Moves->GetUpProtectedAt(GetUpEnd + .001));
     FJapanDefenceSample Sample; Sample.Time = 40.; Sample.Forward = FVector::ForwardVector;
     Moves->DefenceTimeline.Reset(); Moves->DefenceTimeline.Record(Sample);
-    Moves->DefenceTimeline.Reaction(40., FBotwMovementReaction::HitImmunitySeconds, 0.);
+    Moves->DefenceTimeline.Reaction(40., FAdventureMovementReaction::HitImmunitySeconds, 0.);
     Sample.Time = 40.69; Moves->DefenceTimeline.Record(Sample);
     uint16 Edge = 0;
     TestTrue(TEXT("Second contact before .7 is immune even without a reaction ACK"),

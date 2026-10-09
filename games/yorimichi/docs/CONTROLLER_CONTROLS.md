@@ -37,14 +37,10 @@ left button held) is Flick-It, not the camera. On the sailboat the left stick st
 On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, a press of Sprint (the left stick) pedals hard until pressed again or he stops pedalling, Jump hops, Crouch
 is a skid stop, Attack rings the bell and Wave waves.
 
-The player plays the merged move set (Link, and Cairo whenever it is built; see [the move set](../assets/characters/botw/README.md#the-merged-move-set)),
-which keeps these buttons with these meanings: Jump in the air is the double jump, and pressed again it opens the
-paraglider; Roll is the dodge (a side hop with the stick left or right, else the backflip); Parry held draws the sword,
-guards (with the shield when the "Shield" setting carries it, else with the sword) and locks on, and Jump while guarding
-parries; Dash is only the swim dash (there is no dash on foot). The "Move set" setting can pick the legacy sets
-instead: Cairo's (Roll is his dive roll, Dash his ground and air dash), which he also plays without the local BOTW
-library and in scripted QA sessions that do not ask for the merged set, or BOTW's (no double jump: Jump in the air
-opens the paraglider).
+The player plays the merged move set (Cairo and Modori; see [the move set](../assets/characters/adventure/README.md)).
+Jump in the air is the double jump; pressed again, it opens the paraglider. Roll is the dodge (a side hop with the
+stick left or right, otherwise a backflip). Parry held draws the sword, guards with it and locks on; Jump while
+guarding parries. Dash is the swim dash. Every playable character uses its merged move set.
 
 The map takes the controller while it is open: left stick or D-pad to choose a pin, the bottom face button to travel
 there, the right face button to close, LB / RB (L1 / R1, L / R) to zoom and the right stick to pan when zoomed in. The
@@ -65,7 +61,7 @@ click.
 
 The hints follow the situation: sailboat steering and sail, zeppelin boarding and flight speed with the interaction
 button, the sword's attack, parry and draw while it is installed, the move set's double jump and paraglider, dodge,
-guard (shield or sword) and swim dash,
+the sword guard and swim dash,
 and the skate controls while riding. With a controller the mouse-release tip is hidden; stamina rings and the FPS
 counter stay. The two hint rows measure their text and shrink to fit the viewport.
 

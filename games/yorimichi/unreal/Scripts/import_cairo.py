@@ -128,46 +128,13 @@ for name,cfg in CONFIG['clips'].items():
         curves[str(curve)]={'count':len(values),'min':min(values,default=0),'max':max(values,default=0),'values':list(values)}
     clips[name]=clip
     report_clips[name]={'path':clip.get_path_name(),'duration':clip.get_editor_property('sequence_length'),'curves':curves}
-# Run deliberately reuses Sprint at 0.8; there is no independent jog clip. SwordRun (armed, since game-r16) is the same
-# kind of alias and is made by import_cairo_armed.py, so neither is exported.
-if set(clips)=={r['role'] for r in CONFIG['roles']}-{'Run','SwordRun'}:
-    run=fbx('A_Sprint.fbx','A_Run',skeleton,CONFIG['clips']['Sprint'].get('sample_rate',60))
-    animation_compression.apply_to(run)
-    run.set_editor_property('rate_scale',.8)
-    E.save_loaded_asset(run,only_if_is_dirty=False)
-    clips['Run']=run
-    rolemap={r['role']:r for r in CONFIG['roles']}
-    scale=100*CONFIG['model_scale']
-    speed=lambda role: float(rolemap[role].get('travel') or 0)*scale
-    def blendspace(name,names):
-        speeds=[speed(n) for n in names]
-        factory=U.BlendSpaceFactory1D();factory.set_editor_property('target_skeleton',skeleton)
-        blend=asset(name,U.BlendSpace1D,factory)
-        params=list(blend.get_editor_property('blend_parameters'))
-        for k,v in dict(display_name='Speed (cm/s)',min=0.,max=max(speeds)).items():params[0].set_editor_property(k,v)
-        blend.set_editor_property('blend_parameters',params)
-        blend.set_editor_property('scale_animation',True)
-        smoothing=list(blend.get_editor_property('interpolation_param'))
-        smoothing[0].set_editor_property('interpolation_time',.12)
-        blend.set_editor_property('interpolation_param',smoothing)
-        assert U.WandererContentLibrary.configure_blend_space(blend,[clips[n] for n in names],speeds)
-        E.save_loaded_asset(blend)
-        return blend
-    moving=blendspace('BS_Locomotion',['Idle','Walk','Run','Sprint'])
-    crouching=blendspace('BS_Crouching',['CrouchIdle','CrouchWalk'])
-    factory=U.DataAssetFactory();factory.set_editor_property('data_asset_class',U.WandererDefinition)
-    definition=asset('DA_Cairo',U.WandererDefinition,factory)
-    for k,v in dict(mesh=mesh,locomotion=moving,crouching=crouching,actions=clips,
-        use_authored_movement=True,
-        rest_ankle_heights=U.Vector2D(CONFIG['rest_ankles_cm']['L'],CONFIG['rest_ankles_cm']['R']),
-        sole_height=CONFIG['sole_cm'],camera_height=35.,walk_speed=speed('Walk'),
-        jog_speed=speed('Walk'),run_speed=speed('Run'),sprint_speed=speed('Sprint'),crouch_speed=speed('CrouchWalk'),
-        ground_dash_profile=[U.Vector2D(t,v*scale) for t,v in rolemap['DashGround']['travel_profile_units_per_second']],
-        air_dash_profile=[U.Vector2D(t,v*scale) for t,v in rolemap['DashAir']['travel_profile_units_per_second']],
-        roll_profile=[U.Vector2D(t,v*scale) for t,v in rolemap.get('Roll',{}).get('travel_profile_units_per_second',[])],
-        roll_dive_takeoff=rolemap.get('Roll',{}).get('dive_takeoff_seconds',0.),
-        roll_dive_touchdown=rolemap.get('Roll',{}).get('dive_touchdown_seconds',0.)).items():definition.set_editor_property(k,v)
-    E.save_loaded_asset(definition)
+# This definition supplies only the body, framing and donor actions. The merged importer installs all movement.
+factory=U.DataAssetFactory();factory.set_editor_property('data_asset_class',U.WandererDefinition)
+definition=asset('DA_CairoBase',U.WandererDefinition,factory)
+for key,value in dict(mesh=mesh,actions=clips,use_authored_movement=True,
+    rest_ankle_heights=U.Vector2D(CONFIG['rest_ankles_cm']['L'],CONFIG['rest_ankles_cm']['R']),
+    sole_height=CONFIG['sole_cm'],camera_height=35.).items():definition.set_editor_property(key,value)
+E.save_loaded_asset(definition)
 E.save_loaded_asset(skeleton)
 report={'mesh':mesh.get_path_name(),'bones':bones,'materials':[str(s.material_slot_name) for s in slots],
     'lod_vertices':[editor.get_num_verts(mesh,i) for i in range(editor.get_lod_count(mesh))],'morphs':[m.get_name() for m in mesh.get_editor_property('morph_targets')],

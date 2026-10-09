@@ -12,14 +12,10 @@ mesh=E.load_asset('/Game/Cairo/SK_Cairo')
 options=U.AnimPoseEvaluationOptions()
 options.evaluation_type=U.AnimDataEvalType.COMPRESSED
 options.optional_skeletal_mesh=mesh
-definition=E.load_asset('/Game/Cairo/DA_Cairo')
-roles={r['role'] for r in config['roles']}
+definition=E.load_asset('/Game/Cairo/DA_CairoBase')
 actions={str(k) for k in definition.get_editor_property('actions')}
-# SwordRun is an alias of SwordSprint added by import_cairo_armed.py, which runs after this check.
-assert roles-{'SwordRun'}<=actions<=roles,(sorted(roles-actions),sorted(actions-roles))
+assert actions == set(config['clips']), (sorted(actions), sorted(config['clips']))
 assert definition.get_editor_property('use_authored_movement')
-run=E.load_asset('/Game/Cairo/A_Run')
-assert abs(run.get_editor_property('rate_scale')-.8)<1e-6
 reference=P.get_reference_pose(mesh.skeleton)
 rest={b:[getattr(P.get_bone_pose(reference,b,U.AnimPoseSpaces.WORLD).translation,a) for a in ["x","y","z"]] for b in ['root','pelvis','head','foot_L','foot_R','toe_L','toe_R']}
 morphs=[m.get_name() for m in mesh.get_editor_property('morph_targets')]

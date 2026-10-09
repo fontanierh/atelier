@@ -189,7 +189,7 @@ Where to go next, in the order most games grow:
 | `atelier lint` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
 
 **Tests.** `uv run pytest` runs the studio tests (`platform/studio/tests`) and the games' Python tests. In-game
-checks are QA scenarios and the `foxqa` / `swordqa` play profiles; with a local stream, the phone smoke tests in
+checks use QA scenarios and the merged movement checks through the live bridge; with a local stream, the phone smoke tests in
 `games/yorimichi/phone/` and `platform/web/stream/player-smoke.mjs` run in a browser.
 
 ## Native skating
@@ -330,12 +330,15 @@ role, never for a file.
 
 <img src="docs/media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
 
-**9. Into the game.** `atelier build` exports the character from Blender (mesh, clips, sword, textures) and imports
-it into Unreal; scripted QA runs then check it in motion.
+**9. Into the game.** `atelier build` exports the character's body, donor clips and textures, then imports its
+merged moves, sword and paraglider into Unreal; scripted QA runs check it in motion.
 
 ```sh
-atelier build yorimichi characters.cairo unreal.cairo
-atelier play yorimichi --profile swordqa     # the sword against a training dummy, scripted at 60 Hz
+atelier build yorimichi unreal.cairo_adventure
+atelier play yorimichi
+# In another terminal, against the running game:
+atelier live py "ONLY=['sword']; TAKE='combat_review'"
+atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
 The tools for each step and their options are in

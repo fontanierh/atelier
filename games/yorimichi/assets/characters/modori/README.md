@@ -44,7 +44,7 @@ are the model:
    distance 0 where `cloth_pin` is 1, free where it is 0), colliding with capsules on his hips, spine, thighs and shins
    (`export_unreal.colliders`: each holds 90% of the skin around it but stays 1.5 cm inside the coat's simulated
    surface at rest, so no capsule pushes the coat out); or skirt bones if cloth costs too much.
-3. **Moves:** retarget the merged move set onto him as for Kaede (`botw/retarget.py --character modori`, which loads
+3. **Moves:** retarget the merged move set onto him as for Kaede (`adventure/retarget.py --character modori`, which loads
    this folder's `export_unreal.py` for its `prepare`, `SOURCE` and `OUT`). His own weapon
    (a knotted rope with a bell-metal weight, left off the T-pose) and its clips come later.
 4. **Import** (`unreal/Scripts/import_<...>.py`), then play him: as the player in Cairo's place first, to check the

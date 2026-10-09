@@ -6,7 +6,7 @@
 Input: Tripo's rig of the approved clean-up (23 body bones with Mixamo names under `Root`, the character facing +X,
 her left +Y). Adds the 30 finger bones (tripo_fingers.add_fingers) for the humanoid contract's 53, then authors her
 own clips at 30 fps on that rig: Bow (a standing bow, 2.2 s) and Talk (an explaining gesture with a nod, 2.6 s). Every
-move set clip is retargeted onto her later (botw/retarget.py --character sword-trainer); these two are hers alone.
+move set clip is retargeted onto her later (adventure/retarget.py --character sword-trainer); these two are hers alone.
 
 Poses are written in her frame (forward +X, left +Y, up +Z): each bone turns about an axis of that frame through its
 own head, on top of its parent's posed place, so a pitch is always a pitch. Writes SwordTrainer-Rig-r01.blend,

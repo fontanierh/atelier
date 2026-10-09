@@ -10,7 +10,7 @@ class YORIMICHI_API AJapanGameMode : public AGameModeBase
 public:
     AJapanGameMode();
     virtual void BeginPlay() override;
-    /** -rider=<Name> plays as a BOTW character (BotwRider.h). */
+    /** -rider=<Name> plays as an adventure character (PlayableCharacter.h). */
     virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
     /** Scripted sessions (reviews, benchmarks, films, demos, the phone stream) keep the road clear unless asked. */
     static bool IsScriptedSession();

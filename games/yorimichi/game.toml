@@ -39,16 +39,6 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-Forc
 script = "tools/desktop_preview.py"
 args = ["--shared-settings", "--memory-gib={memory_gib}"]
 
-[play.foxqa]
-# The fox hunter fight, scripted on a fixed 60 Hz clock (docs/FOX_HUNTER_COMBAT.md): fox_qa.json in the run folder.
-args = ["-game", "-windowed", "-resx=1280", "-resy=720", "-foxqa", "-foxqafps=60", "-reviewdir={run}"]
-timeout = 900
-
-[play.swordqa]
-# The sword against a training dummy, scripted at 60 Hz (docs/SWORD_COMBAT.md): sword_qa.json in the run folder.
-args = ["-game", "-windowed", "-resx=1280", "-resy=720", "-swordqa", "-swordqafps=60", "-reviewdir={run}"]
-timeout = 900
-
 [stream]
 # `atelier stream yorimichi start`: the phone page (touch controls, map, settings) at /, the platform's plain player
 # (keyboard, mouse or controller on the far device) at /play/. Messages use the "yorimichi" protocol key.

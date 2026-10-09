@@ -9,7 +9,7 @@
 #include "JapanGameplayCollisionQA.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "AtelierData.h"
 #include "SkateRails.h"
 #include "Containers/Ticker.h"

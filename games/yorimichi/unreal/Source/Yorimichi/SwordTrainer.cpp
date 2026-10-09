@@ -1,6 +1,6 @@
 #include "SwordTrainer.h"
 #include "AtelierData.h"
-#include "BotwMoveSet.h"
+#include "AdventureMoveSet.h"
 #include "JapanGameMode.h"
 #include "JapanPreferences.h"
 #include "JapanWorld.h"
@@ -39,7 +39,7 @@ namespace
 {
     // Her own body (unreal.sword_trainer) and move record; until it is built, Cairo's merged-move-set body stands in.
     const TCHAR* OwnDefinition = TEXT("/Game/SwordTrainer/DA_SwordTrainer.DA_SwordTrainer");
-    const TCHAR* StandInDefinition = TEXT("/Game/CairoBotw/DA_CairoBotw.DA_CairoBotw");
+    const TCHAR* StandInDefinition = TEXT("/Game/CairoAdventure/DA_CairoAdventure.DA_CairoAdventure");
     bool HasOwnBody() { return FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(OwnDefinition))); }
 
     TSharedPtr<FJsonObject> Record(const TCHAR* Relative)
@@ -92,11 +92,10 @@ void ASwordTrainer::BeginPlay()
         GetCharacterMovement()->SetCrouchedHalfHeight(72.f);
     }
     Super::BeginPlay();
-    UBotwMoveSet* Set = NewObject<UBotwMoveSet>(this, TEXT("TrainerMoves"));
-    if (Set->Initialize(this, Record(bOwn ? TEXT("sword-trainer/botw.json") : TEXT("cairo/botw.json")))) Moves = Set;
-    else UE_LOG(LogTemp, Error, TEXT("Sword trainer: no move set (build unreal.cairo_botw or unreal.sword_trainer)"));
+    UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("TrainerMoves"));
+    if (Set->Initialize(this, Record(bOwn ? TEXT("sword-trainer/adventure.json") : TEXT("cairo/adventure.json")))) Moves = Set;
+    else UE_LOG(LogTemp, Error, TEXT("Sword trainer: no move set (build unreal.cairo_adventure or unreal.sword_trainer)"));
     if (Moves) Moves->SetShield(false);
-    if (Moves) Moves->SetLegacy(false);
     Home = GetActorLocation(); HomeYaw = GetActorRotation().Yaw;
     Dice.Initialize(FParse::Param(FCommandLine::Get(), TEXT("trainerqa")) ? 7 : int32(FPlatformTime::Cycles() & 0x7fffffff));
 }
@@ -211,7 +210,6 @@ void ASwordTrainer::OpenMenu(AWandererCharacter* Player)
     Opponent = Player;
     Bout = EBout::Talking;
     MenuLevel = Level;
-    bMenuOwnShield = bOwnShield;
     TWeakObjectPtr<ASwordTrainer> Self(this);
     const bool bCanSpar = Player->GetMoves() != nullptr;
     auto Title = [](const TCHAR* Text, int32 Size) { return SNew(STextBlock).Text(FText::FromString(Text)).Font(FCoreStyle::GetDefaultFontStyle("Bold", Size)).ColorAndOpacity(FLinearColor::White); };
@@ -221,7 +219,7 @@ void ASwordTrainer::OpenMenu(AWandererCharacter* Player)
     Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 16)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
         .Text(FText::FromString(bCanSpar
             ? TEXT("\"Nothing in these woods waits for you to be ready. Let's see your blade. Pick how hard I push; a bout ends when one of us is down.\"")
-            : TEXT("\"Your feet aren't ready for my lessons yet. Come back with the merged move set (Esc, Move set).\"")))];
+            : TEXT("\"Your feet aren't ready for my lessons yet. Come back when you're ready to train.\"")))];
     TSharedPtr<SButton> First;
     if (bCanSpar)
     {
@@ -239,28 +237,16 @@ void ASwordTrainer::OpenMenu(AWandererCharacter* Player)
             Levels->AddSlot().FillWidth(1.f).Padding(0, 0, 8, 0)[B];
         }
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 16)[Levels];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 8)[SNew(SButton)
-            .Text_Lambda([Self] { return FText::FromString(Self.IsValid() && Self->bMenuOwnShield ? TEXT("Kaede: sword and shield") : TEXT("Kaede: sword only")); })
-            .OnClicked_Lambda([Self] { if (Self.IsValid()) Self->bMenuOwnShield = !Self->bMenuOwnShield; return FReply::Handled(); })];
         TWeakObjectPtr<AWandererCharacter> Who(Player);
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 18)[SNew(SButton)
-            .Text_Lambda([Who] { return FText::FromString(Who.IsValid() && Who->GetMoves() && Who->GetMoves()->HasShield() ? TEXT("You: sword and shield") : TEXT("You: sword only")); })
-            .OnClicked_Lambda([Who]
-            {
-                // The player's own "Shield" setting, saved like every setting (the Esc menu shows the same choice).
-                if (Who.IsValid() && Who->GetPreferences() && Who->GetMoves()) Who->GetPreferences()->SetValue(TEXT("shield"), Who->GetMoves()->HasShield() ? 0.f : 1.f);
-                return FReply::Handled();
-            })];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 8)[SNew(SButton).HAlign(HAlign_Center)
             .Text(FText::FromString(TEXT("Begin the bout")))
             .OnClicked_Lambda([Self, Who]
             {
                 if (Self.IsValid() && Who.IsValid())
                 {
-                    const int32 L = Self->MenuLevel; const bool bShield = Self->bMenuOwnShield;
-                    const bool bTheirs = Who->GetMoves() && Who->GetMoves()->HasShield();
+                    const int32 L = Self->MenuLevel;
                     Self->CloseMenu();
-                    Self->StartBout(Who.Get(), L, bShield, bTheirs);
+                    Self->StartBout(Who.Get(), L, false, false);
                 }
                 return FReply::Handled();
             })];
@@ -297,17 +283,13 @@ void ASwordTrainer::Restore(AWandererCharacter* Who)
 
 bool ASwordTrainer::StartBout(AWandererCharacter* Player, int32 NewLevel, bool bShield, bool bPlayerShield)
 {
-    if (!Player || !Player->GetMoves() || !Moves || Bout == EBout::Fighting) return false;
+    if (bShield || bPlayerShield || !Player || !Player->GetMoves() || !Moves || Bout == EBout::Fighting) return false;
     CloseMenu();
     Opponent = Player;
     Level = FMath::Clamp(NewLevel, 0, 2);
-    bOwnShield = bShield;
+    bOwnShield = false;
     Moves->SetShield(bOwnShield);
-    if (Player->GetMoves()->HasShield() != bPlayerShield)
-    {
-        if (Player->GetPreferences()) Player->GetPreferences()->SetValue(TEXT("shield"), bPlayerShield ? 1.f : 0.f);
-        else Player->GetMoves()->SetShield(bPlayerShield);
-    }
+
     Restore(this); Restore(Player);
     Counts.Reset();
     ReleaseAll();
@@ -438,7 +420,7 @@ void ASwordTrainer::AdvanceReturn(float Dt)
 void ASwordTrainer::AdvanceFight(float Dt)
 {
     AWandererCharacter* P = Opponent.Get();
-    UBotwMoveSet* Theirs = P ? P->GetMoves() : nullptr;
+    UAdventureMoveSet* Theirs = P ? P->GetMoves() : nullptr;
     if (!P || !Theirs || P->GetSkate()->IsRiding() || P->OnVehicle()) { EndBout(TEXT("Kaede: \"Another time, then.\"")); return; }
     if (FVector::Dist2D(P->GetActorLocation(), Home) > LeaveReach) { EndBout(TEXT("Kaede: \"Running is a lesson too.\"")); return; }
     // Someone is down at no health: the bout is over.
@@ -508,7 +490,7 @@ void ASwordTrainer::AdvanceFight(float Dt)
 bool ASwordTrainer::Defend(float Dt, float Distance)
 {
     AWandererCharacter* P = Opponent.Get();
-    UBotwMoveSet* Theirs = P ? P->GetMoves() : nullptr;
+    UAdventureMoveSet* Theirs = P ? P->GetMoves() : nullptr;
     if (!Theirs) return false;
     const FTrainerStyle& S = GetStyle();
     // The blow she can still answer: the playing blow's next window (a charged spin, a dash or jump attack wind up
@@ -554,7 +536,7 @@ bool ASwordTrainer::Defend(float Dt, float Distance)
     {
         SetIntent(TEXT("parry")); Hold(TEXT("guard"), true); Drive(FVector2D::ZeroVector, 0);
         // The parry's window opens a moment into its clip: pressed so that it is open when the blow can land.
-        const FBotwMove* Parry = Moves->Find(Moves->HasShield() ? FName(TEXT("Parry")) : FName(TEXT("SwordParry")));
+        const FAdventureMove* Parry = Moves->Find(Moves->HasShield() ? FName(TEXT("Parry")) : FName(TEXT("SwordParry")));
         const float Opens = Parry && Parry->Guard.Num() ? (Parry->Guard[0].X - Parry->Start) / Parry->Rate : .05f;
         // Only once the guard is up (a press without it would be a jump).
         if (Answer == TEXT("parry") && In <= Opens + .05f && Moves->IsGuarding() && !Moves->IsBusy()) { Press(TEXT("jump")); Answer = TEXT("parry!"); }

@@ -16,7 +16,7 @@ villain as the spine (too much of a solo game), and cute spirits.
 One large island. A spine of high mountains runs down the middle. West of it, the coast in the game today: forest,
 fishing villages, Hidamari. East and inland: high plains, a great lake, river towns, terraced farming valleys, a
 mining region, a cold northern plateau, a hot southern cape. The coast is fishermen and traders. The mountains are
-miners, monks and guides. The plains are farmers and horse people. Inland cities are older and prouder than the coast
+miners, monks and guides. The plains are farmers and herders. Inland cities are older and prouder than the coast
 and do not think of the coast as the centre of anything. A second continent across the sea is a later expansion.
 
 ## The openings

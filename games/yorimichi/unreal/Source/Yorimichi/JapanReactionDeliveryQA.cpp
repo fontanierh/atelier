@@ -4,8 +4,8 @@
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
-#include "BotwMoveSet.h"
-#include "BotwMoveSetDetail.h"
+#include "AdventureMoveSet.h"
+#include "AdventureMoveSetDetail.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "Misc/CommandLine.h"
@@ -71,7 +71,7 @@ void DeadInput(const UJapanCharacterMovement* Movement, FName Button, uint16 Edg
         Data->SetBoolField(TEXT("down"), Rider->GetMoves()->IsDown());
         Data->SetBoolField(TEXT("attacking"), Rider->GetMoves()->IsAttacking());
         Data->SetBoolField(TEXT("guarding"), Rider->GetMoves()->IsGuarding());
-        Data->SetBoolField(TEXT("parrying"), BotwMoveSetDetail::IsParry(Rider->GetAnimationAction()));
+        Data->SetBoolField(TEXT("parrying"), AdventureMoveSetDetail::IsParry(Rider->GetAnimationAction()));
     }
 }
 void Activity(const UJapanCharacterMovement* Movement, const TCHAR* Event, const FJapanActivityState& State)
