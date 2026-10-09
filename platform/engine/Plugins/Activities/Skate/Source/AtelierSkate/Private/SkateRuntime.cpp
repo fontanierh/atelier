@@ -91,13 +91,16 @@ bool USkateComponent::LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into,const 
 {
     if(!FPaths::FileExists(RuntimeFolder()/TEXT("package-manifest.json")))
     {Failure=TEXT("Native skating data is missing from this build.");return false;}
+    std::shared_ptr<const skate_native::AnimationSource> Motion;
+    const auto& MotionPath=GetDefault<USkateSettings>()->MotionData;
+    if(!MotionPath.IsNull() && !LoadSkateMotion(MotionPath,Motion,Failure))return false;
     FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
     if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
     {Failure=TEXT("Skating could not load nearby collision.");return false;}
     Into=MakeShared<FSkateRuntime>();Into->Feel=Feel;Into->CollisionCentre=Into->WantCentre=Centre;Into->CollisionReach=Reach;
     Into->Worlds=1;Into->WorldTriangles=Snapshot.Num();
     Into->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
-        SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading));
+        SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading),std::move(Motion));
     if(!Into->Worker->Start()){Into.Reset();Failure=TEXT("Native skating thread could not start.");return false;}
     return true;
 }

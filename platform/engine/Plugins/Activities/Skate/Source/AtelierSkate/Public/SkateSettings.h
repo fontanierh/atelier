@@ -44,6 +44,8 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
+    /** Typed motion bank. Empty keeps the native reference loader for other games; a configured missing asset fails. */
+    UPROPERTY(Config, EditAnywhere, Category="Skate") FSoftObjectPath MotionData;
     /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
     /** The backend the next mount uses: skate.Backend when it names one, else Backend. */

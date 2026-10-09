@@ -125,4 +125,44 @@ SampleWords AnimationClipSamples::Sample(std::uint32_t frame, std::uint32_t bone
     }
     return result;
 }
+bool AnimationRig::Reindex(std::string& error)
+{
+    auto fail=[&](){error="Invalid typed animation rig";return false;};
+    if(bones.empty() || bones.size()>255)return fail();
+    std::set<std::string> names;
+    for(std::size_t i=0;i<bones.size();++i)
+    {
+        const auto& b=bones[i];
+        if(b.name.empty()||!names.insert(b.name).second||b.parent < -1||b.parent>=std::int32_t(i)
+            ||b.mirror < -1||b.mirror>=std::int32_t(bones.size()))return fail();
+    }
+    for(std::size_t i=0;i<bones.size();++i)
+        if(bones[i].mirror>=0 && bones[bones[i].mirror].mirror!=std::int32_t(i))return fail();
+    decltype(names_) next_names;decltype(records_) next_records;
+    for(std::size_t i=0;i<poses.size();++i)
+    {
+        const auto& p=poses[i];if(p.name.empty()||p.samples.size()!=bones.size())return fail();
+        for(const auto& s:p.samples)for(auto word:s)if(!Finite(word))return fail();
+        if(!next_records.emplace(std::make_pair(p.bank,p.record),i).second)return fail();
+        next_names[{p.bank,AnimationName(p.name)}]=i;
+    }
+    names_=std::move(next_names);records_=std::move(next_records);error.clear();return true;
+}
+bool AnimationClipSamples::SetTracks(std::vector<std::vector<std::uint32_t>> tracks,std::string& error)
+{
+    auto fail=[&](){error="Invalid typed animation samples";return false;};
+    float fps;std::memcpy(&fps,&fps_bits,4);
+    if(name.empty()||!std::isfinite(fps)||fps<=0||frame_count==0||bone_count==0||bone_count>255
+        ||channel_weights.size()!=bone_count||tracks.size()!=bone_count*10)return fail();
+    for(auto word:loop_translation)if(!Finite(word))return fail();
+    for(auto word:loop_rotation)if(!Finite(word))return fail();
+    for(auto word:channel_weights)if(!Finite(word))return fail();
+    for(const auto& t:tracks)
+    {
+        if(t.size()!=1 && t.size()!=frame_count)return fail();
+        for(auto word:t)if(!Finite(word))return fail();
+    }
+    tracks_=std::move(tracks);error.clear();return true;
+}
+
 }

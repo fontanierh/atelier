@@ -101,6 +101,8 @@ public:
     std::string source_bank, source_sha256;
 
     bool Load(const std::vector<std::uint8_t>& bytes, std::string& error);
+    // Validate typed records and reconstruct bank/name provenance without serializing a byte payload.
+    bool InitializeBank(AnimationBankSource source, std::string& error);
     // Reject namespace collisions before mutation, preserving primary identity.
     bool Merge(const AnimationMetadata& other, std::string& error);
     const std::vector<AnimationBankSource>& Sources() const { return sources_; }

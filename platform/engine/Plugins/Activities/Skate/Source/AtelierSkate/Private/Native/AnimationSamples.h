@@ -26,6 +26,8 @@ public:
     bool has_trajectory = false;
     std::vector<AnimationReferencePose> poses;
     bool Load(const std::vector<std::uint8_t>& bytes, std::string& error);
+    // Rebuild lookup tables after constructing typed records; validates the same invariants as Load.
+    bool Reindex(std::string& error);
     const AnimationReferencePose* NamedPose(std::uint32_t bank, std::string_view name) const;
     const AnimationReferencePose* Pose(std::uint32_t bank, std::uint64_t record) const;
 private:
@@ -47,6 +49,8 @@ public:
     std::uint32_t frame_count = 0, bone_count = 0;
 
     bool Load(const std::vector<std::uint8_t>& bytes, std::string& error);
+    const std::vector<std::vector<std::uint32_t>>& Tracks() const { return tracks_; }
+    bool SetTracks(std::vector<std::vector<std::uint32_t>> tracks, std::string& error);
     SampleWords Sample(std::uint32_t frame, std::uint32_t bone) const;
 private:
     // One word for a constant track; otherwise one original word per frame.

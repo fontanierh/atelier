@@ -64,6 +64,18 @@ class PackageArchive(Python):
     progress: float = 25.
 
 
+def skate_motion_present(out):
+    """Every referenced generated bank must exist, not just the previous verification report."""
+    try:
+        report = json.loads((out / 'skate-motion' / 'verify.json').read_text())
+        content = GAME / 'unreal' / 'Content'
+        return report['exact'] and report['negative_control'] and bool(report['banks']) and all(
+            (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
+            for path in report['banks'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def city_tree_cpu_access_present(ctx):
     """A same-input world reimport can overwrite these flags without changing its fingerprint: verify the overlay."""
     import hashlib
@@ -531,6 +543,17 @@ def unreal_steps(ctx):
              after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
              about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
+        # Independent NullRHI processes: write typed packages, then reload and verify production resource decoding.
+        Step('unreal.skate_motion', [
+                UnrealScript(SKATE_RIDE / 'import_motion.py', 'SKATE MOTION IMPORT COMPLETE', null_rhi=True),
+                UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
+             inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
+                     paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
+                     paths.content_data(ctx.game) / 'SkateNative'],
+             after=['unreal.compile'], heavy=True,
+             outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],
+             verify=lambda: skate_motion_present(out),
+             about='typed native motion records; exact serialized reload and offline gameplay replays'),
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
              inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
