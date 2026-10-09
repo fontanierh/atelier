@@ -262,7 +262,9 @@ void UAdventureMoveSet::Play(FName Name, float Blend, float StartAt, float Speed
     const FAdventureMove* M = Moves.Find(Name);
     if (!M || !Character) return;
     EndDefenceAction();
-    const bool bLoop = M->bLoop || In(Name, { TEXT("Fall"), TEXT("PlungeAir"), TEXT("JumpCutAir") });
+    // Fall plays once and holds its last frame: its clip is a five-frame turn into the falling pose, not a cycle, so
+    // looping it snapped the pose back about six times a second on a long drop.
+    const bool bLoop = M->bLoop || In(Name, { TEXT("PlungeAir"), TEXT("JumpCutAir") });
     Character->SetAction(Name, bLoop, Blend >= 0.f ? Blend : FMath::Clamp(M->Blend, .06f, .25f), true);
     if (Character->GetAnimationAction() != Name) return;
     Character->ActionSourceStartTime = StartAt >= 0.f ? StartAt : M->Start;
