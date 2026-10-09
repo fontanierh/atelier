@@ -64,6 +64,18 @@ class PackageArchive(Python):
     progress: float = 25.
 
 
+def skate_motion_present(out):
+    """Every referenced generated bank must exist, not just the previous verification report."""
+    try:
+        report = json.loads((out / 'skate-motion' / 'verify.json').read_text())
+        content = GAME / 'unreal' / 'Content'
+        return report['exact'] and report['negative_control'] and bool(report['banks']) and all(
+            (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
+            for path in report['banks'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def city_tree_cpu_access_present(ctx):
     """A same-input world reimport can overwrite these flags without changing its fingerprint: verify the overlay."""
     import hashlib
@@ -94,11 +106,16 @@ package_cook = importlib.util.module_from_spec(_cook_spec)
 _cook_spec.loader.exec_module(package_cook)
 
 
+def engine_version(ctx):
+    """The installed engine's version files: saved packages and cooked output depend on the engine build."""
+    engine = getattr(ctx, 'unreal_root', None)
+    return [engine / 'Engine' / 'Build' / 'Build.version',
+            engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+
+
 def cook_step(ctx, steps):
     out = ctx.out
-    engine = getattr(ctx, 'unreal_root', None)
-    engine_inputs = [engine / 'Engine' / 'Build' / 'Build.version',
-                     engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
+    engine_inputs = engine_version(ctx)
     return Step('unreal.cook',
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
@@ -427,12 +444,17 @@ def unreal_steps(ctx):
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
+        # The complete native package: the committed runtime payloads plus the rig, clips and metadata banks built from
+        # the committed motion text, every payload checked against the committed manifest. The game ships only the
+        # runtime payloads and reads motion from the typed assets (unreal.skate_motion); tools read the whole package.
         Step('skate.runtime', [Python(TOOLS / 'verify_skate_native.py',
-                                     ('--output', out / 'skate-native/verification.json'))],
-             inputs=[TOOLS / 'verify_skate_native.py', ASSETS / 'skate/runtime.json',
+                                     ('--assemble', out / 'skate-native/package',
+                                      '--output', out / 'skate-native/verification.json'))],
+             inputs=[TOOLS / 'verify_skate_native.py', ASSETS / 'skate/runtime.json', ASSETS / 'skate/motion',
+                     paths.ENGINE_PLUGINS / 'Activities/Skate/Tools/motion_text.py',
                      paths.content_data(ctx.game) / 'SkateNative'],
-             outputs=[out / 'skate-native/verification.json'],
-             about='verify committed native skating data for the in-process C++ backend'),
+             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json'],
+             about='assemble the native skating package from runtime data and motion text; verify every payload'),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
@@ -527,10 +549,22 @@ def unreal_steps(ctx):
                 *[UnrealScript(SKATE_RIDE / 'verify_clips.py', 'SKATE RIDE CLIPS VERIFY COMPLETE', null_rhi=True,
                                env=(('SKATE_RIDE_VERIFY_BATCH', f'{i}/{RIDE_VERIFY_BATCHES}'),)) for i in range(1, RIDE_VERIFY_BATCHES + 1)]],
              inputs=[SKATE_RIDE / n for n in ('import_clips.py', 'verify_clips.py', 'native.py', 'rider_mesh.py')] +
-                    [paths.content_data(ctx.game) / 'SkateNative' / n for n in ('animation', 'metadata')],
-             after=['unreal.compile'], heavy=True,
+                    [ASSETS / 'skate/motion'],
+             needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
              about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
+        # Independent NullRHI processes: write typed packages, then reload and verify production resource decoding.
+        Step('unreal.skate_motion', [
+                UnrealScript(SKATE_RIDE / 'import_motion.py', 'SKATE MOTION IMPORT COMPLETE', null_rhi=True),
+                UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
+             inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
+                     paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
+                     ASSETS / 'skate/motion', paths.content_data(ctx.game) / 'SkateNative', GAME / 'unreal/Config/DefaultGame.ini',
+                     *engine_version(ctx)],
+             needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
+             outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],
+             verify=lambda: skate_motion_present(out),
+             about='typed native motion records; exact serialized reload and offline gameplay replays'),
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
              inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),

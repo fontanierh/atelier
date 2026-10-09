@@ -19,13 +19,13 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
-(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
+(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating package, built from the JSON motion source and checked (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
 [the asset library](assets/README.md): the model GLBs, including the community park and the skate pier's obstacle
 modules, the Mega Park's geometry, collision and textures, the packed character sources and merged moves, and the
-native skating bundle. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
+native skating data (the animation as JSON in `assets/skate/motion`). The [source manifest](assets/source-library.json) records their paths and checksums. The sound
 masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
@@ -108,7 +108,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `assets/characters/` | the default player (`cairo`), playable rival (`modori`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`) and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
 | `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |
+| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating runtime data in `Content/Data/SkateNative` |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
 | `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |

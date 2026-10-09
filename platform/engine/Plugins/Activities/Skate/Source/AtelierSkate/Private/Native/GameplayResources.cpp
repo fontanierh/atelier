@@ -23,39 +23,53 @@ bool LoadedGraph(const std::filesystem::path& path,AnimationLoadedGraph& graph,s
 }
 }
 bool LoadGameplayResources(const std::filesystem::path& root,
-    std::shared_ptr<const GameplayResources>& output,std::string& error)
+    std::shared_ptr<const GameplayResources>& output,std::string& error,
+    std::shared_ptr<const AnimationSource> motion)
 {
     auto resources=std::make_shared<GameplayResources>();
     auto animation=std::make_shared<AnimationSource>();
     std::vector<std::uint8_t> bytes;
+    std::error_code ec;
     if(!Read(root/"settings.skate",bytes,error) || !resources->settings.Load(bytes,error))return false;
-    if(!Read(root/"metadata/bank-0.skate",bytes,error) || !animation->metadata.Load(bytes,error))return false;
-    AnimationMetadata offboard;
-    if(!Read(root/"metadata/bank-1.skate",bytes,error) || !offboard.Load(bytes,error)
-        || !animation->metadata.Merge(offboard,error))return false;
+    if(motion)
+    {
+        if(!motion->evaluator){error="Typed motion requires a pose evaluator";return false;}
+        animation->metadata=motion->metadata;
+        animation->evaluator=std::make_shared<AnimationPoseEvaluator>(motion->evaluator->frames);
+    }
+    else
+    {
+        if(!Read(root/"metadata/bank-0.skate",bytes,error) || !animation->metadata.Load(bytes,error))return false;
+        AnimationMetadata offboard;
+        if(!Read(root/"metadata/bank-1.skate",bytes,error) || !offboard.Load(bytes,error)
+            || !animation->metadata.Merge(offboard,error))return false;
+    }
     PhysicsSkeletons skeletons;
     if(!Read(root/"physics-skeletons.skate",bytes,error)
         || !skeletons.Load(bytes,animation->metadata.source_sha256,error))return false;
     const auto* physical=skeletons.Find("PHYS_TPOSE");
     if(!physical){error="Native skating resources require PHYS_TPOSE";return false;}
     resources->physical_skeleton=*physical;
-    AnimationPoseFrames frames;
-    if(!Read(root/"animation/rig.skate",bytes,error) || !frames.rig.Load(bytes,error))return false;
-    std::error_code ec;std::vector<std::filesystem::path> clips;
-    std::filesystem::recursive_directory_iterator end,entry(root/"animation/clips",ec);
-    while(!ec && entry!=end)
+    if(!motion)
     {
-        if(entry->is_regular_file(ec) && entry->path().extension()==".skate")clips.push_back(entry->path());
-        entry.increment(ec);
+        AnimationPoseFrames frames;
+        if(!Read(root/"animation/rig.skate",bytes,error) || !frames.rig.Load(bytes,error))return false;
+        std::vector<std::filesystem::path> clips;
+        std::filesystem::recursive_directory_iterator end,entry(root/"animation/clips",ec);
+        while(!ec && entry!=end)
+        {
+            if(entry->is_regular_file(ec) && entry->path().extension()==".skate")clips.push_back(entry->path());
+            entry.increment(ec);
+        }
+        if(ec || clips.empty()){error="Cannot enumerate native skating clips";return false;}
+        std::sort(clips.begin(),clips.end());
+        for(const auto& path:clips)
+        {
+            auto clip=std::make_shared<AnimationClipSamples>();
+            if(!Read(path,bytes,error) || !clip->Load(bytes,error) || !frames.RegisterClip(clip,error))return false;
+        }
+        animation->evaluator=std::make_shared<AnimationPoseEvaluator>(std::move(frames));
     }
-    if(ec || clips.empty()){error="Cannot enumerate native skating clips";return false;}
-    std::sort(clips.begin(),clips.end());
-    for(const auto& path:clips)
-    {
-        auto clip=std::make_shared<AnimationClipSamples>();
-        if(!Read(path,bytes,error) || !clip->Load(bytes,error) || !frames.RegisterClip(clip,error))return false;
-    }
-    animation->evaluator=std::make_shared<AnimationPoseEvaluator>(std::move(frames));
     const auto authored=root/"custom/crouch-treflip.json";
     const bool has_authored=std::filesystem::exists(authored,ec);
     if(ec){error="Cannot inspect native skating custom animation";return false;}

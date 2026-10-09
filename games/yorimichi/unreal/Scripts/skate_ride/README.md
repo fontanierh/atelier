@@ -1,6 +1,7 @@
 # Ride clips
 
-The native skating animation (`unreal/Content/Data/SkateNative/animation` and `metadata`) as ordinary Unreal assets,
+The native skating animation (the rig, clips and metadata banks of the assembled native package, built from
+[`assets/skate/motion`](../../../assets/skate/motion) by `skate.runtime`) as ordinary Unreal assets,
 keyed frame for frame and measured against the native decode. The build step `unreal.skate_clips` makes them; the
 Ride runtime reads the manifest.
 
@@ -124,3 +125,18 @@ is kept; 2079 bone frames in 44 clips (`snap_guarded_keys` per clip in the manif
 
 `build/yorimichi/skate-ride/clip-stills/` has six frames each of an ollie, a kickflip, a push and a 50-50 grind: the
 rider drawn from Unreal's sampled poses, with the native joints as blue rings.
+
+The exact native motion source also has typed Unreal assets under `/Game/SkateMotion`.
+Build or verify them without launching the game with:
+
+```sh
+uv run atelier build yorimichi unreal.skate_motion
+```
+
+This runs a NullRHI import, then a separate editor process that reloads the saved
+packages, compares all samples and metadata exactly, and replays twelve controller
+cases through both production resource paths. See the platform's
+[MOTION_DATA.md](../../../../../platform/engine/Plugins/Activities/Skate/MOTION_DATA.md)
+for the schema, validation and first-migration boundaries. The `.skate` animation
+bundle remains the reference input; settings/physics/graphs/camera still use their
+existing loaders. Generated typed assets are overwritten when this step rebuilds.

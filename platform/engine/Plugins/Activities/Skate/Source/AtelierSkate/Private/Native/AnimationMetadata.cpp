@@ -187,4 +187,60 @@ bool AnimationMetadata::Tree(std::string_view text,AnimationTreeMetadata& output
     { error="Animation "+name+" is tree type "+std::to_string(t.type_id)+"; tree evaluation is required"; return false; }
     return false;
 }
+bool AnimationMetadata::InitializeBank(AnimationBankSource source,std::string& error)
+{
+    auto fail=[&](){error="Invalid typed animation metadata";return false;};
+    if(source.source_bank.empty()||source.source_sha256.size()!=64||source.source_bytes<48)return fail();
+    for(char c:source.source_sha256)if(!((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F')))return fail();
+    auto identity=[&](const auto& v){return Name(v.name,36)&&v.source_offset<source.source_bytes;};
+    for(const auto& c:clips)
+    {
+        if(!identity(c)||!Finite(c.fps_bits)||Float(c.fps_bits)<=0||!Finite(c.frames_bits)||Float(c.frames_bits)<1
+            ||!Finite(c.base_speed_bits)||Float(c.base_speed_bits)<=0)return fail();
+        auto previous=c.source_offset;
+        for(const auto& a:c.attributes)
+        {
+            const std::size_t minimum=a.type_id==0?1:a.type_id==1?4:a.type_id==3?6:0;
+            if(!Name(a.name,30)||!Finite(a.begin_bits)||!Finite(a.end_bits)||a.source_offset<=previous
+                ||a.source_offset>=source.source_bytes||a.payload_words.size()<minimum)return fail();
+            previous=a.source_offset;
+        }
+    }
+    for(const auto& t:phase_blends)
+        if(!identity(t)||!Name(t.parameter,30)||t.children.size()<2||!NamesValid(t.children,36))return fail();
+    for(const auto& t:blend_spaces)
+    {
+        const auto d=t.parameters.size();
+        if(!identity(t)||d==0||d>4||t.children.size()<d+1||!NamesValid(t.parameters,30)
+            ||!NamesValid(t.children,36)||t.simplexes.empty())return fail();
+        for(const auto& s:t.simplexes)
+        {
+            if(s.children.size()!=d+1||s.vertex_bits.size()!=d+1||s.normal_bits.size()!=d+1||s.scale_bits.size()!=d+1)return fail();
+            for(auto i:s.children)if(i>=t.children.size())return fail();
+            for(const auto* m:{&s.vertex_bits,&s.normal_bits})for(const auto& row:*m)
+            {if(row.size()!=d)return fail();for(auto v:row)if(!Finite(v))return fail();}
+            for(auto v:s.scale_bits)if(!Finite(v))return fail();
+        }
+    }
+    for(const auto& t:selectors)
+        if(!identity(t)||!Name(t.parameter,30)||!Name(t.default_child,36)||t.children.size()!=t.values.size()
+            ||!NamesValid(t.children,36)||!NamesValid(t.values,30))return fail();
+    for(const auto& t:selection_spaces)
+    {
+        if(!identity(t)||t.parameters.size()>10||t.candidates.empty())return fail();
+        for(const auto& p:t.parameters)
+            if(!Name(p.name,30)||!Finite(p.weight_bits)||!Finite(p.minimum_bits)||!Finite(p.maximum_bits))return fail();
+        for(const auto& c:t.candidates)
+        {
+            if(!Name(c.child,36)||c.value_bits.size()!=t.parameters.size())return fail();
+            for(auto v:c.value_bits)if(!Finite(v))return fail();
+        }
+    }
+    for(const auto& t:unsupported_trees)if(!identity(t))return fail();
+    source_bank=source.source_bank;source_sha256=source.source_sha256;sources_={std::move(source)};origins_.clear();
+    auto index=[&](const auto& values){for(const auto& v:values)origins_[v.name]=0;};
+    index(clips);index(phase_blends);index(blend_spaces);index(selectors);index(selection_spaces);index(unsupported_trees);
+    error.clear();return true;
+}
+
 }

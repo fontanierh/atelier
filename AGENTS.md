@@ -36,7 +36,7 @@ uv run pytest                            # studio and game Python tests
   admitted, including the next step of a running `atelier build`. Rerun it once the suite has finished; a game or step
   that is already running is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources. The tracked
-  `unreal/Content/Data/SkateNative` bundle is source data: keep it when clearing `Content/`.
+  `unreal/Content/Data/SkateNative` runtime data is source data: keep it when clearing `Content/`.
 - Commit every GLB source a game consumes under its `assets/` library. Record its local path and checksum in the
   source manifest; fresh checkouts must use the committed model without a private fetch or personal cache.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.

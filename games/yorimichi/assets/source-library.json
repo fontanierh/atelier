@@ -3176,6 +3176,7 @@
   },
   "native_skating": {
     "directory": "unreal/Content/Data/SkateNative",
+    "motion": "skate/motion",
     "manifest": "package-manifest.json",
     "sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d"
   }

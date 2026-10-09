@@ -34,7 +34,7 @@ class NativeCommandTests(unittest.TestCase):
         verifier = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(verifier)
         descriptor = GAME/'assets/skate/runtime.json'
-        cls.package = cls.package or GAME/json.loads(descriptor.read_text())['data_directory']
+        cls.package = cls.package or verifier.PACKAGE
         verifier.verify_bundle(cls.package, descriptor)
         if not cls.binary.is_file():
             raise FileNotFoundError('Explicit native CLI is missing; build it separately under the render guard')

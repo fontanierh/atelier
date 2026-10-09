@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Verify the committed native skating package without conversion or compilation.
+"""Assemble and verify the native skating package without conversion or compilation.
 
-Only project-native payloads are read. The migration assembler and frozen Rust
+The package is the committed runtime payloads (unreal/Content/Data/SkateNative) plus the rig, clips and
+metadata banks built from the committed motion text (assets/skate/motion). Every payload must match the
+committed manifest's SHA-256. Only project-native data is read. The migration assembler and frozen Rust
 reference are development proof tools, not dependencies of this verifier.
 """
 import argparse
@@ -9,10 +11,15 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import struct
+import sys
 
 GAME = Path(__file__).resolve().parents[1]
-BUNDLE = GAME / 'unreal/Content/Data/SkateNative'
+RUNTIME = GAME / 'unreal/Content/Data/SkateNative'
+MOTION = GAME / 'assets/skate/motion'
+PACKAGE = GAME.parents[1] / 'build/yorimichi/skate-native/package'  # The skate.runtime build step's output.
+MOTION_TOOLS = GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Tools'
 DESCRIPTOR = GAME / 'assets/skate/runtime.json'
 MANIFEST = 'package-manifest.json'
 FORMATS = ('ATATTR01', 'ATGEST01', 'ATGRPH01', 'ATPHYS01',
@@ -145,7 +152,31 @@ def inspect_gestures(raw):
     return patterns
 
 
-def verify_bundle(bundle=BUNDLE, descriptor=DESCRIPTOR):
+def assemble(bundle, runtime=RUNTIME, motion=MOTION):
+    """Replace bundle with the runtime payloads plus the motion payloads built from text; verify_bundle checks it."""
+    bundle, runtime = Path(bundle), Path(runtime)
+    files = {path.relative_to(runtime).as_posix(): path for path in sorted(runtime.rglob('*')) if path.is_file()}
+    # Everything in the runtime folder is packaged with the game, which reads its motion from typed assets instead.
+    shipped = sorted(name for name in files if name.startswith(('animation/', 'metadata/')))
+    if shipped:
+        raise ValueError(f'Native skating motion payloads belong in the motion source, not the runtime folder: {shipped[:3]}')
+    if bundle.is_symlink() or bundle.is_file():
+        raise ValueError(f'Native skating package path is not a directory: {bundle}')
+    if str(MOTION_TOOLS) not in sys.path:
+        sys.path.insert(0, str(MOTION_TOOLS))
+    import motion_text
+    built = motion_text.build(Path(motion))
+    built.update((name, path.read_bytes()) for name, path in files.items())
+    if bundle.exists():
+        shutil.rmtree(bundle)
+    for name, raw in built.items():
+        path = bundle.joinpath(*safe_relative(name).parts)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(raw)
+    return bundle
+
+
+def verify_bundle(bundle, descriptor=DESCRIPTOR):
     bundle, descriptor = Path(bundle), Path(descriptor)
     if bundle.is_symlink() or not bundle.is_dir():
         raise ValueError('Missing native skating package directory')
@@ -246,12 +277,14 @@ def verify_bundle(bundle=BUNDLE, descriptor=DESCRIPTOR):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bundle', type=Path, default=BUNDLE)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--assemble', type=Path, metavar='BUNDLE', help='Assemble the package here, then verify it')
+    mode.add_argument('--bundle', type=Path, help='Verify an existing package')
     parser.add_argument('--descriptor', type=Path, default=DESCRIPTOR)
     parser.add_argument('--output', type=Path, help='Build verification report; no source files are written')
     args = parser.parse_args()
     try:
-        result = verify_bundle(args.bundle, args.descriptor)
+        result = verify_bundle(assemble(args.assemble) if args.assemble else args.bundle, args.descriptor)
     except (ValueError, OSError) as error:
         parser.exit(1, f'Native skating verification failed: {error}\n')
     if args.output:

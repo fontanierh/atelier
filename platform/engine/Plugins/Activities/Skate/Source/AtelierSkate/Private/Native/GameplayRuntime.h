@@ -18,7 +18,8 @@ struct GameplayResources
     std::optional<ClimbingClipFile> climbing;
 };
 bool LoadGameplayResources(const std::filesystem::path&,
-    std::shared_ptr<const GameplayResources>& output,std::string& error);
+    std::shared_ptr<const GameplayResources>& output,std::string& error,
+    std::shared_ptr<const AnimationSource> motion = {});
 // Sole owning tree for the original GamePhysics + SkaterRuntime. BorrowFrame
 // constructs ephemeral views, so all phases consume these exact same records.
 // Its address is stable: grab and teleport owners borrow its member histories.
