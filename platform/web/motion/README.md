@@ -3,8 +3,9 @@
 Small browser/Node helpers for applying canonical world-axis rotation deltas to an existing skin and restoring
 an authored loop's duplicate endpoint. They accept the caller's Three.js namespace so they use the same classes
 as its viewer/exporter, with no dependency on a character or a game package. The
-[local UniMate runner](../../studio/atelier/ai/unimate/README.md) and the
-[Kimodo adapter](../../studio/atelier/ai/kimodo/README.md) publish the motion representation they read.
+[local UniMate runner](../../studio/atelier/ai/unimate/README.md), the
+[Kimodo adapter](../../studio/atelier/ai/kimodo/README.md) and the video-driven
+[GVHMR port](../../studio/atelier/ai/gvhmr/README.md) publish the motion representation they read.
 
 ## Use
 
