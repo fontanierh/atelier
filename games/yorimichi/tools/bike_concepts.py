@@ -2,9 +2,8 @@
 
 uv run python games/yorimichi/tools/bike_concepts.py [--only ID,ID]
 References live under build/yorimichi/bike/concepts: a game-review capture of Cairo, the community park restyle
-concept as the shared art direction, and Blender stills of Cairo (`cairo_*.png`). The capture shows recovered park
-surfaces, so the paintings, their full PNGs and provenance stay in the ignored build folder; only the prompts are
-tracked.
+concept as the shared art direction, and Blender stills of Cairo (`cairo_*.png`). The full paintings and provenance
+stay in the ignored build folder; only the prompts are tracked.
 """
 import argparse
 import json

@@ -233,7 +233,7 @@ def hippodrome_steps(out):
 
 
 def communitypark_steps(out):
-    """The community park (docs/COMMUNITY_PARK.md), only where `atelier fetch` got its private source."""
+    """The community park built from its committed library scene (docs/COMMUNITY_PARK.md)."""
     if not communitypark(out):
         return []
     return [
@@ -348,7 +348,7 @@ def world_steps(ctx, park):
              outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
         Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
              inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
-                     *([out / 'skatepark' / 'modules'] if (out / 'skatepark' / 'modules').is_dir() else [])],
+                     ASSETS / 'skatepark' / 'modules'],
              needs=['world.layout', 'world.skatepark_textures'],
              outputs=[out / 'skatepark' / 'build-report.json'], heavy=True, about='the skate pier, its rails and the trick board (park.json)'),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],

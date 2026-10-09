@@ -16,11 +16,12 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build')
     destination = tmp_path / 'Content' / 'Data'
     monkeypatch.setattr(data, 'REGIONS', tmp_path / 'regions')
+    monkeypatch.setattr(data, 'ASSETS', tmp_path / 'assets')
     monkeypatch.setattr(data.paths, 'content_data', lambda game: destination)
     if optional_park:
-        source = ctx.out / 'communitypark/source/megapark-textured.glb'
+        source = data.ASSETS / 'communitypark/megapark-textured.glb'
         source.parent.mkdir(parents=True)
-        source.write_bytes(b'optional source')
+        source.write_bytes(b'library source')
     expected = {}
     for rel in data.staged(ctx.out):
         source = data.staged_source(ctx.out, rel)

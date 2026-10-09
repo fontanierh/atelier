@@ -41,7 +41,7 @@ def local(points):
 
 
 def upward(triangles):
-    """Which triangles face up. Recovered quarter-turn quaternions have float noise: a vertical wall
+    """Which triangles face up. Source quarter-turn quaternions have float noise: a vertical wall
     can otherwise appear to have a tiny upward projection."""
     normal = np.cross(triangles[:, 1]-triangles[:, 0], triangles[:, 2]-triangles[:, 0])
     return normal[:, 2] > np.linalg.norm(normal, axis=1)*1e-4

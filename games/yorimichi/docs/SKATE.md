@@ -187,8 +187,8 @@ bones (see the [plugin's board contract](../../../platform/engine/Plugins/Activi
 Sunset Pier is a 170 × 132 m textured waterfront skate plaza below the road: long rail and manual promenades,
 street terraces with stairs and hubbas, a banked market plaza, curved ledges and rails, a central wave, a sunset hip
 line, a horseshoe mini-ramp, deep bowl and two return quarters. Its bars, stair sets, handrails and street plaza are
-obstacles recovered from a skate game's 2024 playtest, fetched from the private handoff and given the pier's own
-surfaces (procedural stand-ins on the same lines without it). Concrete, glazed tile, stone, steel and cedar use
+obstacles from Atelier's own asset library, committed in `assets/skatepark/modules/` and given the pier's
+surfaces. Concrete, glazed tile, stone, steel and cedar use
 Sunburst material detail with distinct roughness and normal maps. The
 [park guide](../world/regions/skatepark/README.md) gives its layout and build. `ASkatePark` loads its meshes and
 spawn from `Content/Data/skatepark/park.json`, registers its rails, ledges, coping and curbs with the plugin, and is

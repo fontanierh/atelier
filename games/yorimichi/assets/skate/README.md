@@ -3,8 +3,7 @@
 The skating data is tracked in [`unreal/Content/Data/SkateNative`](../../unreal/Content/Data/SkateNative), in the
 Skate plugin's native formats. It contains 3,334 payloads: 3,324 animation clips (131,642 frames), the animation rig
 and both metadata banks, the action, motion and camera graphs, 285 gesture patterns, camera data, settings and
-physical skeletons. The payloads total 70,695,340 bytes. They contain converted records from EA Skate 3, distinct from
-the Apache-2.0 recovered source, without original meshes, textures, audio or executables.
+physical skeletons. The payloads total 70,695,340 bytes. They are part of Atelier's own asset library. The skating module's code licence is documented separately.
 
 | File | Content |
 | --- | --- |

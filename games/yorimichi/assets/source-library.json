@@ -1,0 +1,3182 @@
+{
+  "ownership": "Atelier's own asset library.",
+  "files": {
+    "characters/adventure/source/animations.json": {
+      "bytes": 8652444,
+      "sha256": "56ab2d1a6bb953ceca654c0ba7ce3b45e59467eb9a62168729200a5b482bb9f0"
+    },
+    "characters/adventure/source/glider-animation.json": {
+      "bytes": 3178,
+      "sha256": "bdf8a19a1141e1bfccfa9926c6c7e56e61b06413c114f2b3528f8c7c561dba63"
+    },
+    "characters/adventure/source/glider.glb": {
+      "bytes": 176476,
+      "sha256": "d159ff17a81423394bc4a56b97fbe4f9cf270cae79023dfc025f1a53bbebf4f6"
+    },
+    "characters/adventure/source/manifest.json": {
+      "bytes": 1490,
+      "sha256": "75316ebc381aebb5e6f330df1d731d7a41fc57710040456fa172b7c1afe3f4f4"
+    },
+    "characters/adventure/source/mechanics.json": {
+      "bytes": 53507,
+      "sha256": "d951bfe4f7c838f992f0ff11e457fc74af981f5e038271d632ccf7a0c6aa33dc"
+    },
+    "characters/adventure/source/reference-rig.glb": {
+      "bytes": 40832,
+      "sha256": "d5109b6940512f7305aec3ab855dc649b81ff6fe72d568710bd76801f99098a6"
+    },
+    "characters/adventure/source/sword.glb": {
+      "bytes": 98352,
+      "sha256": "1ce1d8426e6a4d9f43776d82153b942fd64799c5bfe2082a5b43f4d6e56957df"
+    },
+    "characters/cairo/Cairo-Game-r18.blend": {
+      "bytes": 19616991,
+      "sha256": "1d2b07733f98e2bbc5b92751b72acaff9926b8c62a0a268227cbd9b13fec4f7e"
+    },
+    "characters/concepts/bell-reader.jpg": {
+      "bytes": 153463,
+      "sha256": "76688f455b00bd19bbd5ff1b67d418cc0e3a2cfe91ba48a352e481223ee4f0f4"
+    },
+    "characters/concepts/ferry-courier.jpg": {
+      "bytes": 149064,
+      "sha256": "8e7c2f5ed27ebcca12bf83b7380480a9ef288c1e0e4e7060b516ac81464fdd6e"
+    },
+    "characters/concepts/guild-defector.jpg": {
+      "bytes": 160106,
+      "sha256": "698c358990a969c6c4cbf250817224a044858a578008e1d55a911800a7317159"
+    },
+    "characters/concepts/modori-tpose/back.jpg": {
+      "bytes": 61368,
+      "sha256": "32ea75ac10bb04a97642e8fe6b80cbe05d9f7541adefa0c884133fad621dddfd"
+    },
+    "characters/concepts/modori-tpose/body-back.jpg": {
+      "bytes": 59321,
+      "sha256": "90280b103be4a267e157509e3057970d73b92857e906b701d55d84a4d3e83c79"
+    },
+    "characters/concepts/modori-tpose/body-front.jpg": {
+      "bytes": 57876,
+      "sha256": "a49a92a7dd5fc1ea42718c0881a9d9aa2791ca01d5846ec3d36e4093ac9904e3"
+    },
+    "characters/concepts/modori-tpose/body-left.jpg": {
+      "bytes": 49248,
+      "sha256": "ee33fd5922b481a7f43b4137f002a1ed8b2c592d50fecfa41312d47795ca8fec"
+    },
+    "characters/concepts/modori-tpose/body-right.jpg": {
+      "bytes": 49594,
+      "sha256": "b4609480677aaada2f3ebc6573c695180c96cd1b138ef4c6cfdfbc5bbec936ec"
+    },
+    "characters/concepts/modori-tpose/coat-back.jpg": {
+      "bytes": 59048,
+      "sha256": "a29faa9d0bebda7456bda831e2aeb3e59b6ab53e557380b80d8fac2703a76a82"
+    },
+    "characters/concepts/modori-tpose/coat-front.jpg": {
+      "bytes": 53767,
+      "sha256": "b8a9eb75ad4f4dc0b2aa78c8615c325185f1ca6d26bea8e6db9800a50134c6b4"
+    },
+    "characters/concepts/modori-tpose/coat-left.jpg": {
+      "bytes": 45357,
+      "sha256": "47932963882aa3d397b8934d1b3900253011085c789ebb17cd7bcad657c93fd7"
+    },
+    "characters/concepts/modori-tpose/coat-right.jpg": {
+      "bytes": 41217,
+      "sha256": "21c277d016618ab5e500e96ea710ea182b2e8540d2cfb9076b9a30688f249531"
+    },
+    "characters/concepts/modori-tpose/front.jpg": {
+      "bytes": 62876,
+      "sha256": "04ccc0d8f3a81425caaf7ccb5f6f45c57bd009d4f2709c340539b84da632d60a"
+    },
+    "characters/concepts/modori-tpose/left.jpg": {
+      "bytes": 52283,
+      "sha256": "a39cb38eb9953c69e9de9630e2a973a71daded746c37f8ca725beae137be90b1"
+    },
+    "characters/concepts/modori-tpose/right.jpg": {
+      "bytes": 50480,
+      "sha256": "ebfb5bbe58a2d327e98f73479d5476e17d062092b34961b928497d9921b2bb87"
+    },
+    "characters/concepts/modori.jpg": {
+      "bytes": 154558,
+      "sha256": "ed08287e77de7c7bb166ae6ffd5fea7d88541a1ec2cf66a14fb0695fb5a4009e"
+    },
+    "characters/fox-hunter/FoxHunter-Anim-r05.blend": {
+      "bytes": 15201536,
+      "sha256": "8103d0bf2c970d4adcd6d9af32f109e376b29433b3cc3597387efd75a3a6219c"
+    },
+    "characters/grips/modori/body.glb": {
+      "bytes": 4812204,
+      "sha256": "772f4fa222dcde46bae1b6a4e64c36704b5a1420cc0699b2404aaaf1ba21ac5a"
+    },
+    "characters/grips/modori/snapshots/20261008-190548-314-sword_R-back.png": {
+      "bytes": 635445,
+      "sha256": "7a6c31097c3a959db7c3928d43b4ecd0cfc7969f9eb06b18effac5eb750859c3"
+    },
+    "characters/grips/modori/snapshots/20261008-190548-314-sword_R-end.png": {
+      "bytes": 573484,
+      "sha256": "7450e982c9b1ce04cddcd4e0287ed396354ec961226b0fed87f7cb5f284a6ddb"
+    },
+    "characters/grips/modori/snapshots/20261008-190548-314-sword_R-palm.png": {
+      "bytes": 728821,
+      "sha256": "db716b837b84281746bb79dac70855ba4219b9387ee7abfb57c25e2e42847fec"
+    },
+    "characters/grips/modori/snapshots/20261008-190548-314-sword_R-thumb.png": {
+      "bytes": 448687,
+      "sha256": "5b0cd10ab6f4f3cfe5f9923c148d116e6442f97b4d7568bd085fe3714b388d2e"
+    },
+    "characters/grips/modori/snapshots/20261008-190939-977-sword_L-back.png": {
+      "bytes": 476943,
+      "sha256": "779b098f3b50a332a4833863214294df34dc4da0b8561b63dc6244d9c13c5580"
+    },
+    "characters/grips/modori/snapshots/20261008-190939-977-sword_L-end.png": {
+      "bytes": 408156,
+      "sha256": "66d41cf0000c1dbd487ee52ed217061f13b6dc53dc2abd14878a60f855b18c5d"
+    },
+    "characters/grips/modori/snapshots/20261008-190939-977-sword_L-palm.png": {
+      "bytes": 737104,
+      "sha256": "50b93b9a4d382a682e164f975a9d0f73c17c8dedcfaeb9cef29fa43a92c42d0d"
+    },
+    "characters/grips/modori/snapshots/20261008-190939-977-sword_L-thumb.png": {
+      "bytes": 419607,
+      "sha256": "4e17f9a5b8f2759736a8a5acead86ae7e7fdc2ada3445929a1afe1825d1e4676"
+    },
+    "characters/grips/modori/snapshots/20261008-192736-864-glider_R-back.png": {
+      "bytes": 482119,
+      "sha256": "9c7e5d13d5adfd9ad5fc2bd567011c82f19042d42230b55b75a7ded326185a5e"
+    },
+    "characters/grips/modori/snapshots/20261008-192736-864-glider_R-end.png": {
+      "bytes": 549329,
+      "sha256": "63b99238c1515671cfc554752b3993d6837843a923aede352aa84de6640d0e5e"
+    },
+    "characters/grips/modori/snapshots/20261008-192736-864-glider_R-palm.png": {
+      "bytes": 556421,
+      "sha256": "7284f3450196b16e6346ad1d7922af580fcd6adc069e1810f40d497ea989f4d3"
+    },
+    "characters/grips/modori/snapshots/20261008-192736-864-glider_R-thumb.png": {
+      "bytes": 641631,
+      "sha256": "f3e5eb46bf282297b97321a74fede5228508a6ad34aa8c98f092cd5296e8b27a"
+    },
+    "characters/grips/modori/snapshots/20261008-192800-993-glider_R-back.png": {
+      "bytes": 482119,
+      "sha256": "9c7e5d13d5adfd9ad5fc2bd567011c82f19042d42230b55b75a7ded326185a5e"
+    },
+    "characters/grips/modori/snapshots/20261008-192800-993-glider_R-end.png": {
+      "bytes": 549329,
+      "sha256": "63b99238c1515671cfc554752b3993d6837843a923aede352aa84de6640d0e5e"
+    },
+    "characters/grips/modori/snapshots/20261008-192800-993-glider_R-palm.png": {
+      "bytes": 556421,
+      "sha256": "7284f3450196b16e6346ad1d7922af580fcd6adc069e1810f40d497ea989f4d3"
+    },
+    "characters/grips/modori/snapshots/20261008-192800-993-glider_R-thumb.png": {
+      "bytes": 641631,
+      "sha256": "f3e5eb46bf282297b97321a74fede5228508a6ad34aa8c98f092cd5296e8b27a"
+    },
+    "characters/grips/modori/snapshots/20261008-194815-209-glider_L-back.png": {
+      "bytes": 590287,
+      "sha256": "f4e9feb593434a05d80b8974ca2211668296920ab5dd2a74b8920b511aa6d6c8"
+    },
+    "characters/grips/modori/snapshots/20261008-194815-209-glider_L-end.png": {
+      "bytes": 469718,
+      "sha256": "db83b8be822394682084eb50fa9836dee87b844674a7ebfca607773e35799463"
+    },
+    "characters/grips/modori/snapshots/20261008-194815-209-glider_L-palm.png": {
+      "bytes": 624253,
+      "sha256": "e547b10c0c66c64770e5cab4e3a61ea119b4fd3c95393cfb8a2a202b073b0745"
+    },
+    "characters/grips/modori/snapshots/20261008-194815-209-glider_L-thumb.png": {
+      "bytes": 475801,
+      "sha256": "0e7b36816e758ac83e59330dbc4232444b8787489bea5eaf26496bdc539c950e"
+    },
+    "characters/grips/modori/snapshots/20261008-194818-869-glider_L-back.png": {
+      "bytes": 590287,
+      "sha256": "f4e9feb593434a05d80b8974ca2211668296920ab5dd2a74b8920b511aa6d6c8"
+    },
+    "characters/grips/modori/snapshots/20261008-194818-869-glider_L-end.png": {
+      "bytes": 469718,
+      "sha256": "db83b8be822394682084eb50fa9836dee87b844674a7ebfca607773e35799463"
+    },
+    "characters/grips/modori/snapshots/20261008-194818-869-glider_L-palm.png": {
+      "bytes": 624253,
+      "sha256": "e547b10c0c66c64770e5cab4e3a61ea119b4fd3c95393cfb8a2a202b073b0745"
+    },
+    "characters/grips/modori/snapshots/20261008-194818-869-glider_L-thumb.png": {
+      "bytes": 475801,
+      "sha256": "0e7b36816e758ac83e59330dbc4232444b8787489bea5eaf26496bdc539c950e"
+    },
+    "characters/modori/Modori-Rig-r01.blend": {
+      "bytes": 10602509,
+      "sha256": "d455d593f413af9cc026a2bbf6aa77f5a2419220b505d215f05ac54ee9279be1"
+    },
+    "characters/sword-trainer/SwordTrainer-Rig-r03.blend": {
+      "bytes": 21263282,
+      "sha256": "c83abba40d047f34852108485645b8e35a3207edb1159432dfe49c796313e0c6"
+    },
+    "characters/wanderer/references/design-sheet.png": {
+      "bytes": 1864774,
+      "sha256": "3eefbe3a66710e46a5e9f1ecf17d322e28d4dd9f1935ce0461a4ede22bea815e"
+    },
+    "characters/wanderer/references/motion-sheet.png": {
+      "bytes": 1894799,
+      "sha256": "f52e9bb716abc139f16e58f911d3c7882a9a369c143559391071f029c51f3190"
+    },
+    "communitypark/megapark-textured.glb": {
+      "bytes": 2951252,
+      "sha256": "1c7ad62a132f1bf0a544ae6d9f44482b2e701aeb821d884271f64e1c5b918d02"
+    },
+    "communitypark/restyle/granite.jpg": {
+      "bytes": 613665,
+      "sha256": "f9d4b860e8f22084ec6a3940c368d83efb2fb153857e0b0151ffec335492ddc8"
+    },
+    "communitypark/restyle/maples.jpg": {
+      "bytes": 401556,
+      "sha256": "8c4ff7cdace04ca4ca2ee54573475ee577b66dfe9f31b70789339239da11e85b"
+    },
+    "communitypark/restyle/poured_concrete.jpg": {
+      "bytes": 469603,
+      "sha256": "5f6ef2cdcb00f7eb4e45d6f5d4bb98bc194422a5c10357efac13447037e77503"
+    },
+    "communitypark/restyle/skatelite.jpg": {
+      "bytes": 395064,
+      "sha256": "89f5088cdbb65363c75749db5b303c99732303f9e7c12197477e0de6929f0c20"
+    },
+    "communitypark/restyle/smooth_concrete.jpg": {
+      "bytes": 285244,
+      "sha256": "ef0b4823e6a17b36ed3f4489292ceb20dc6acebc097a78a5297e591926f5b641"
+    },
+    "communitypark/restyle/steel.jpg": {
+      "bytes": 482169,
+      "sha256": "f98bf7808d45f3405fdd60e71a9450b0f7a5dcfe8f48dc2682ad48f0a15eeef0"
+    },
+    "communitypark/restyle/sunburst.jpg": {
+      "bytes": 329542,
+      "sha256": "e190eade31f4e38d526c1c16193f3207dbb2e82aab69cadeb80c94a2a1957e5c"
+    },
+    "communitypark/restyle/waves.jpg": {
+      "bytes": 417077,
+      "sha256": "d6edc9f51b8a28e42fbc5db395b029d13bae308f34cf8c274fa51592c4030c7f"
+    },
+    "hidamari/concepts/arrival_road.jpg": {
+      "bytes": 470040,
+      "sha256": "dc8f34e48e64ec889b538b1e7cd18b82f114836df13516500e5dd7417b883b0b"
+    },
+    "hidamari/concepts/canopy_north_aerial.jpg": {
+      "bytes": 546301,
+      "sha256": "4d26f71080b3a668c958648a733b46508722dc03abec31da4b47f52f763bce47"
+    },
+    "hidamari/concepts/cross_street_ns730.jpg": {
+      "bytes": 455205,
+      "sha256": "d90010f5cd63460abe5e72b60942586944c84938f80f05eb63d719909fdbfd05"
+    },
+    "hidamari/concepts/far_sea_south.jpg": {
+      "bytes": 373294,
+      "sha256": "56ca1a9d65cce1b8adf493e2611120782a1120500e958770c4671aa44f55859f"
+    },
+    "hidamari/concepts/far_sea_southeast.jpg": {
+      "bytes": 386819,
+      "sha256": "ae907c233f21138901a05c5c43fa8ff7fdd655ceb41ea7674d286963915598ba"
+    },
+    "hidamari/concepts/station.jpg": {
+      "bytes": 593086,
+      "sha256": "08279405476519938bd5d692623aff1f504a9dee6c0eb5a50f7ab8c986ebabe5"
+    },
+    "hidamari/concepts/street_ew140.jpg": {
+      "bytes": 509628,
+      "sha256": "6d94943278f7baba090ccb9963354c7162dd70a6f4c43ca297c7a5a0b5f51f97"
+    },
+    "hidamari/concepts/sunlit_park.jpg": {
+      "bytes": 585919,
+      "sha256": "6aa7278349c85d4ea904e889cdf9c5a0f0f86099d452b81430bddf26da3f4e49"
+    },
+    "hidamari/concepts/temple_hillside.jpg": {
+      "bytes": 551581,
+      "sha256": "225388adc3ceb420ccd68a4fcc12ef8711d59860dd2261cc6d479d21886aad0f"
+    },
+    "hidamari/houses/0/concept.jpg": {
+      "bytes": 302166,
+      "sha256": "52c2091439fee959c8d139a76945792a165c8419b18b44667d77cba19b075949"
+    },
+    "hidamari/houses/1/concept.jpg": {
+      "bytes": 368898,
+      "sha256": "1f2ae30b4f33f3c10c2d4b76ae2c8d82dc3a03016482962aeaba1ce8ff9f38d4"
+    },
+    "hidamari/houses/2/concept.jpg": {
+      "bytes": 333759,
+      "sha256": "284904bfb03ff2d8b8af64bc3a8351e673b69fe617d63c56547e7bfc634abdb7"
+    },
+    "hidamari/houses/3/concept.jpg": {
+      "bytes": 293403,
+      "sha256": "8a1d1a96c15b623b0775e19ccafe2bee97148f9a13d9d2bd23854f8fc35fdf49"
+    },
+    "hidamari/props/ac_unit/ac_unit.glb": {
+      "bytes": 662296,
+      "sha256": "a6dfe6c7fd01b8de8732ff4599d83816524423c412ca398631c44f95792a612f"
+    },
+    "hidamari/props/ac_unit/concept.jpg": {
+      "bytes": 151404,
+      "sha256": "d259d241bd4fe746acb5efd66c0fa1654f07ebab5870ea006e82fad67c0cdf60"
+    },
+    "hidamari/props/bicycle/bicycle.glb": {
+      "bytes": 944196,
+      "sha256": "6f9d7b8bd272d0c031a3010300ce2a303e82fa352ea9ffc5bfa6d0255a696dec"
+    },
+    "hidamari/props/bicycle/concept.jpg": {
+      "bytes": 182110,
+      "sha256": "8773e89523cf5db4318870846dbe52c756d2ee2a61d08ada0d28b9caa568e91d"
+    },
+    "hidamari/props/bicycle_shelter/bicycle_shelter.glb": {
+      "bytes": 885740,
+      "sha256": "9eb6f928f1bcba77dc35060898ef4b009cff8e8e388adceb831ccf88ec0d660f"
+    },
+    "hidamari/props/bicycle_shelter/concept.jpg": {
+      "bytes": 189739,
+      "sha256": "98a85db8b59e9978e958ba39f49d5bdcda13ed7ff98f3d030d695794df509453"
+    },
+    "hidamari/props/bonsai_shelf/bonsai_shelf.glb": {
+      "bytes": 770240,
+      "sha256": "dd561863f165d694b1cbb37107a5cfae7423193e7b2dc65f7a19367af8c53e7e"
+    },
+    "hidamari/props/bonsai_shelf/concept.jpg": {
+      "bytes": 195510,
+      "sha256": "720e2c477e394371de1392731dbe83ffe9d76099f2dbd3feddea4780a08e1b40"
+    },
+    "hidamari/props/bus_stop/bus_stop.glb": {
+      "bytes": 809548,
+      "sha256": "95c1d4132a11261afadcbe672aa70d0e91ed1617d4bd3dee43de2c50fe778956"
+    },
+    "hidamari/props/bus_stop/concept.jpg": {
+      "bytes": 150700,
+      "sha256": "e3ed1726d7a9acd8454d72bc1c5e7eadcfc14a3847b0cc1486b23021ddd99149"
+    },
+    "hidamari/props/curve_mirror/concept.jpg": {
+      "bytes": 76092,
+      "sha256": "986b3994be976395579bb4490b211e5192d31f0139d08d1fe4939a3458954eae"
+    },
+    "hidamari/props/curve_mirror/curve_mirror.glb": {
+      "bytes": 791528,
+      "sha256": "4717710846ee30f79f831404dc8b2a41cd00f74b8cb97cc5cd60a6ed198f798e"
+    },
+    "hidamari/props/drink_crates/concept.jpg": {
+      "bytes": 145241,
+      "sha256": "f472b644fa80d7f1a0b5f599e27827bcf380adb6dc2ec35b38f972bb2690966a"
+    },
+    "hidamari/props/drink_crates/drink_crates.glb": {
+      "bytes": 907380,
+      "sha256": "abdecd9921953a4e4cec2a11a6bde31ebd386888e3014fc3de56b2ab85f006e0"
+    },
+    "hidamari/props/fire_buckets/concept.jpg": {
+      "bytes": 135533,
+      "sha256": "237cee5de4e5ce4d3a5a50f9f127962994c36384f756ebd77970878ad095e51c"
+    },
+    "hidamari/props/fire_buckets/fire_buckets.glb": {
+      "bytes": 725580,
+      "sha256": "a00125d400a75658e7b729ba1e3aa427fcb7d193a4c9020607bc8a94e13b6cfe"
+    },
+    "hidamari/props/garbage_station/concept.jpg": {
+      "bytes": 231338,
+      "sha256": "fe76bcf5bbff69cc8edbde08eeff7e9ff7fe07cd663fc127d26a40aad7cf2334"
+    },
+    "hidamari/props/garbage_station/garbage_station.glb": {
+      "bytes": 609696,
+      "sha256": "3cfa081b60a587083c9fe25dcc69c33e861a64c4292d19419700f792d0ebeecb"
+    },
+    "hidamari/props/hokora/concept.jpg": {
+      "bytes": 192851,
+      "sha256": "db6c2eef7916d2f2e15c60d2b923893df363c557d46181cbac747928a365252f"
+    },
+    "hidamari/props/hokora/hokora.glb": {
+      "bytes": 783660,
+      "sha256": "f8f9842fbadfe02c7c9e032d4d1b90a3020cf001cfdeb26ce01906acb80019ff"
+    },
+    "hidamari/props/jizo/concept.jpg": {
+      "bytes": 128775,
+      "sha256": "4de67ac0f16876a4a9a0b0de910865306dc4dee16b619e3672cd3ae640f56e1e"
+    },
+    "hidamari/props/jizo/jizo.glb": {
+      "bytes": 846096,
+      "sha256": "4321cc8f8681d69600262d45f406e338033ae5554b6e1e1dde7aaa03db4aad10"
+    },
+    "hidamari/props/kei_car/concept.jpg": {
+      "bytes": 127571,
+      "sha256": "e6f9e3f5b8ce50c3445377a046a75f1ede86328a1d071a22736bf10f41847dd6"
+    },
+    "hidamari/props/kei_car/kei_car.glb": {
+      "bytes": 775212,
+      "sha256": "f05290f0909b13f064986057a4c5744a5887c5ee54502e44bbabdab9feb6ff75"
+    },
+    "hidamari/props/kei_truck/concept.jpg": {
+      "bytes": 152852,
+      "sha256": "5103aa1a1fb788fd119b542b7279d5eb7e7692af9dd5c51d259465086b8a638a"
+    },
+    "hidamari/props/kei_truck/kei_truck.glb": {
+      "bytes": 878548,
+      "sha256": "cfdfdd6d949b2ade8eda81c893337b91f5e42931f9a0d93f9a87ed03eaf6bb66"
+    },
+    "hidamari/props/komainu/concept.jpg": {
+      "bytes": 177501,
+      "sha256": "2d029f3ac709a2ec8f61363a0040a3b6cf3b6b45788b6a0bbc71adacc3f743e1"
+    },
+    "hidamari/props/komainu/komainu.glb": {
+      "bytes": 1000780,
+      "sha256": "fb8ccd7be1e88891a0a31e531ed79e9467672acc4c5f56e8efe033eae32151d6"
+    },
+    "hidamari/props/lantern_sign/concept.jpg": {
+      "bytes": 127870,
+      "sha256": "09d0ff98df820d12ee4fb47a2f0d836966594b65cf9530113be1ce10ad8056ba"
+    },
+    "hidamari/props/lantern_sign/lantern_sign.glb": {
+      "bytes": 615596,
+      "sha256": "3f0c3f5ccbf2d02658956daa3dbe7262d7bc4f1703808241fe0a4503daf51bf6"
+    },
+    "hidamari/props/laundry_stand/concept.jpg": {
+      "bytes": 117809,
+      "sha256": "76066d6cdc38b36436e57dc1e5bce3c9df136735b5122b3f7476d6491356cd32"
+    },
+    "hidamari/props/laundry_stand/laundry_stand.glb": {
+      "bytes": 807336,
+      "sha256": "bf016ba58c1f54800aac741fec2f91dce206252c67371b8b90be09649b55d649"
+    },
+    "hidamari/props/phone_booth/concept.jpg": {
+      "bytes": 124385,
+      "sha256": "caa9f9bd0b783b262f31420baec85dc7338619b5ac1d6bac31f0252784a8f1c4"
+    },
+    "hidamari/props/phone_booth/phone_booth.glb": {
+      "bytes": 764276,
+      "sha256": "437ce3f23b0a09554139f50745050521bbd3f339386e5bae7c61b1064c9acfe4"
+    },
+    "hidamari/props/planter_box/concept.jpg": {
+      "bytes": 186082,
+      "sha256": "4010f5ee92bda63873f93817f3e811169ca143ef62a7f9932b4ddf575ba76e9c"
+    },
+    "hidamari/props/planter_box/planter_box.glb": {
+      "bytes": 858404,
+      "sha256": "2d2447b7594921e0aad6988db6bbe465b430ae1c0ba82c39697d68276105a141"
+    },
+    "hidamari/props/postbox/concept.jpg": {
+      "bytes": 97506,
+      "sha256": "912d8a86c779ecc8281d6160bfb61700eca2ce6550f5d477df34d650c05a8c24"
+    },
+    "hidamari/props/postbox/postbox.glb": {
+      "bytes": 599180,
+      "sha256": "e8ee0a08665e26d9f19549a707496a77306fcd5bef0d3980b419ea67a0f97efe"
+    },
+    "hidamari/props/potted_plants/concept.jpg": {
+      "bytes": 221702,
+      "sha256": "2b9d800f11c9e7b9e32e1856b32fc1371d1cfb5fc1dc46189d99f65fa4c802b3"
+    },
+    "hidamari/props/potted_plants/potted_plants.glb": {
+      "bytes": 944892,
+      "sha256": "f780e7ea47f94662f8acb36b742ebf39c8f9006dc45eeb01eaf36e0150bbe0db"
+    },
+    "hidamari/props/produce_stand/concept.jpg": {
+      "bytes": 197901,
+      "sha256": "2b20e62d176c8b2f8ac18be3765395992ac6bf355056117ee6608b39870c9c1d"
+    },
+    "hidamari/props/produce_stand/produce_stand.glb": {
+      "bytes": 807184,
+      "sha256": "7205de67c6967ecc152cf54f2e7aaf9b3d76fc66af3c5e4fa56927608b55a763"
+    },
+    "hidamari/props/propane_tanks/concept.jpg": {
+      "bytes": 139104,
+      "sha256": "5e047b51226aae87ba569b3e55b1372344367bd1dc9a3b7f0afcf7d1af90228e"
+    },
+    "hidamari/props/propane_tanks/propane_tanks.glb": {
+      "bytes": 744456,
+      "sha256": "c3f46a1339212fcab32367c9a161547ceb09c74e6670f8976e725f6155e9e3ee"
+    },
+    "hidamari/props/sake_barrels/concept.jpg": {
+      "bytes": 197503,
+      "sha256": "9a3c41f3a387c8e6b02116c125ab9c51154a3912a9213c7c41156ffc1568c276"
+    },
+    "hidamari/props/sake_barrels/sake_barrels.glb": {
+      "bytes": 855680,
+      "sha256": "307b5f0ce2ccef2da8dd5212df0bf490a1057779d8c4a780fca2fb9e6e8204ac"
+    },
+    "hidamari/props/scooter/concept.jpg": {
+      "bytes": 170229,
+      "sha256": "5ae99c2b204102f90e3ba6a7c6c0f2e0f428e0c2b628c69dcdcc58a619828a40"
+    },
+    "hidamari/props/scooter/scooter.glb": {
+      "bytes": 911988,
+      "sha256": "157576564f561a03115ae38450e61ace59e06ad23cf799fed2f2b1c5456232f2"
+    },
+    "hidamari/props/stone_lantern/concept.jpg": {
+      "bytes": 112428,
+      "sha256": "6319d9b1894704c16130d9de60b0bba85c54b685daacd8b4f329b4988873576f"
+    },
+    "hidamari/props/stone_lantern/stone_lantern.glb": {
+      "bytes": 895492,
+      "sha256": "5e9248f15092265cc1d4dd968ac3df3556c390ff3e22e6f586b129321265d6b9"
+    },
+    "hidamari/props/street_bench/concept.jpg": {
+      "bytes": 138976,
+      "sha256": "0b452329e41f80204f225f191e8412aa5856976c9179305706addf6b72cc64dd"
+    },
+    "hidamari/props/street_bench/street_bench.glb": {
+      "bytes": 724204,
+      "sha256": "a3ba40fda013bbc4235ae1cef753dcb7863e6d97655b35a73d657068b5a6520a"
+    },
+    "hidamari/props/tanuki/concept.jpg": {
+      "bytes": 142144,
+      "sha256": "48ef2ee955100cf8ac9ce7095e40ad8de4d0c06b153469db7a9043e44b1168d6"
+    },
+    "hidamari/props/tanuki/tanuki.glb": {
+      "bytes": 771500,
+      "sha256": "4137f0364160429ee1c3e42372a63a2ebdd4cde5e5a27b1a14086953ad40b65b"
+    },
+    "hidamari/props/taxi/concept.jpg": {
+      "bytes": 142388,
+      "sha256": "55666f24676d1a475be9d7c24361c5ba0fab302e09bf5d832beeb4683e776889"
+    },
+    "hidamari/props/taxi/taxi.glb": {
+      "bytes": 828116,
+      "sha256": "ea36bb87f49d8047385c6f0b59dbef80b8f43ac31f0a4b0ceec492a5aa6c23d8"
+    },
+    "hidamari/props/town_bus/concept.jpg": {
+      "bytes": 145656,
+      "sha256": "927931c7c309e1b6d33076ef1f168b5eea0b14d201e0a862794c629b7aef6779"
+    },
+    "hidamari/props/town_bus/town_bus.glb": {
+      "bytes": 838252,
+      "sha256": "1cec82ce1fece3ba3923c0f6e316ebe2b108f68a38e1909538d034ba2adb66c8"
+    },
+    "hidamari/props/vending_machine/concept.jpg": {
+      "bytes": 143104,
+      "sha256": "e0de1310f2542901d392cf473f38dcdf22f6cf471f84e39dfbf017aa55ff41d2"
+    },
+    "hidamari/props/vending_machine/vending_machine.glb": {
+      "bytes": 747460,
+      "sha256": "e62051959a0058efd3fba2b7a1616e369900e18395d779d122aa93224e5612a2"
+    },
+    "hidamari/props/water_basin/concept.jpg": {
+      "bytes": 220696,
+      "sha256": "ca3ca139e3090e91c3f8e171fbb4f7049f4e5a6591729120c6ddfa50458dcd5f"
+    },
+    "hidamari/props/water_basin/water_basin.glb": {
+      "bytes": 831196,
+      "sha256": "6eaf3407cd323531bb2fbd81d7a76084fc8af562f42249e26ea0483f64160354"
+    },
+    "hidamari/props/yatai/concept.jpg": {
+      "bytes": 190446,
+      "sha256": "5f46289ef0b2bffbd1122fd2c9cb82b7c1f99757c9de2e88574e3ef36ecff759"
+    },
+    "hidamari/props/yatai/yatai.glb": {
+      "bytes": 839376,
+      "sha256": "43acb96ce44d5585fe82f5cca309973eff8fe255533378e3ad65b878c948f034"
+    },
+    "hidamari/textures/asphalt.jpg": {
+      "bytes": 590369,
+      "sha256": "98f75b15cbe994b0895fd81fe522a77cab92a66db445e6b44cd1b5c4bb7fe8aa"
+    },
+    "hidamari/textures/blockwall.jpg": {
+      "bytes": 598803,
+      "sha256": "cd7734118634edab0b001e56762dee910843e4e2f59d145910974b39c0279a67"
+    },
+    "hidamari/textures/brick.jpg": {
+      "bytes": 449156,
+      "sha256": "53c2c3fc4e6dac3873e058b6c20b323ddb00926240369159ba4f68c7dd465f98"
+    },
+    "hidamari/textures/concrete.jpg": {
+      "bytes": 416157,
+      "sha256": "154e8b4f9c587d75ba12f854a77ce5371b34e0d4439fee423f4eaa0c194450e3"
+    },
+    "hidamari/textures/drystone.jpg": {
+      "bytes": 583799,
+      "sha256": "c249feb85fe3096c6805507faf6efc59541d1fdf27754d539432de8053deecb0"
+    },
+    "hidamari/textures/earth.jpg": {
+      "bytes": 531012,
+      "sha256": "0129401dc92621d55b5dc6dd7e604b22aafbfa2770ccbdce0f28421f66d3d61a"
+    },
+    "hidamari/textures/flagstone.jpg": {
+      "bytes": 529545,
+      "sha256": "1067045af4b95c569b55e4ff0c93ac46a1aacc5aafeceb770ce3551df41eea1e"
+    },
+    "hidamari/textures/grass.jpg": {
+      "bytes": 564497,
+      "sha256": "7c5dd2316c4294adfdb73f13ff49bc6bf8a5888525b8efdcdd889bc58f1374a9"
+    },
+    "hidamari/textures/gravel.jpg": {
+      "bytes": 574685,
+      "sha256": "a306e75b6fc9c59d19d994d3a945fb59d926ae8ac2dfe994b54e702c9ce28178"
+    },
+    "hidamari/textures/metal.jpg": {
+      "bytes": 396929,
+      "sha256": "b7be76839985bb83799eac18d1b25d8c0a817a915701f8652d3b65a98d0eeaa5"
+    },
+    "hidamari/textures/moss.jpg": {
+      "bytes": 663151,
+      "sha256": "148182a0906d8b4f2eb002c4090e8d0968abdd689cfeee6c69d3847b8937d327"
+    },
+    "hidamari/textures/paint.jpg": {
+      "bytes": 274507,
+      "sha256": "8f357be9d154c2b1be6f3c384ca0ceb3d64e69ea5f36beed280338e2594e6acd"
+    },
+    "hidamari/textures/plaster.jpg": {
+      "bytes": 469163,
+      "sha256": "e0204be30b781c74f94ab47c02dd31e942a8ef7f6e64c346c8c4bfb3fa3f14f1"
+    },
+    "hidamari/textures/rice.jpg": {
+      "bytes": 674829,
+      "sha256": "1cfb28c2b56f8d229758552985f9fb70d3fcd25dc7f05bc4b4bce37475f61763"
+    },
+    "hidamari/textures/roof.jpg": {
+      "bytes": 504013,
+      "sha256": "6af91045dacb7beac4c1db6817b12d333360c609652d9a276b7f11784ba11bc6"
+    },
+    "hidamari/textures/sidewalk.jpg": {
+      "bytes": 529426,
+      "sha256": "5c67ae942a3f882153814cbd2dcf3036bb015eeb79d8c78863ed4915dc0695d6"
+    },
+    "hidamari/textures/siding.jpg": {
+      "bytes": 451228,
+      "sha256": "2afb7b8e297895f629714ef9fc23a481403a7899f84e0228e7acc8a9162d6d98"
+    },
+    "hidamari/textures/stone.jpg": {
+      "bytes": 638155,
+      "sha256": "c15c6a231a5f8b6e5cdb50d14b25490bcf76cbf31fbbdc1b3f330707de3c2959"
+    },
+    "hidamari/textures/timber.jpg": {
+      "bytes": 306929,
+      "sha256": "2f5ce754d13aef40a0967b5ff99b75ff89893ec537477efa713a7db803cc5e92"
+    },
+    "hippodrome/props/finish_post/concept.jpg": {
+      "bytes": 124773,
+      "sha256": "e0fa3a9dbdfced23c3163bee91be08c88da40e406120cc8b2fe78999bd76f6ef"
+    },
+    "hippodrome/props/finish_post/finish_post.glb": {
+      "bytes": 513572,
+      "sha256": "26917833326972ea5df684cb92ac861b63e929cc07188d2301da529dab5b9751"
+    },
+    "hippodrome/props/grandstand/concept.jpg": {
+      "bytes": 143782,
+      "sha256": "0c107645cf2db9c7bc364b17844cc73f34ad6b2c7c91455e60dda5f794ecda5e"
+    },
+    "hippodrome/props/grandstand/grandstand.glb": {
+      "bytes": 1835036,
+      "sha256": "00b870bc75b4093bb2f3f3823181db738257658f5f6647611ecd4798a23617f0"
+    },
+    "hippodrome/props/judges_tower/concept.jpg": {
+      "bytes": 259983,
+      "sha256": "37513c121ce56ee41acf1a23a35179d3573137763323532fcb88629252403004"
+    },
+    "hippodrome/props/judges_tower/judges_tower.glb": {
+      "bytes": 1003576,
+      "sha256": "c72c3fec47468211a62d0edbcadeb6cbe98dd5d8a4268f910383227295c89381"
+    },
+    "hippodrome/props/tote_board/concept.jpg": {
+      "bytes": 223819,
+      "sha256": "917b584608efe2e319e2a705f887cd99bf89f98c48b953ad6aa166e53f185435"
+    },
+    "hippodrome/props/tote_board/tote_board.glb": {
+      "bytes": 853680,
+      "sha256": "2346a9f31874bb5d66ca334a025db082d5f4caab9e206a3e48ff8bfeda9f67f8"
+    },
+    "houses/concepts/street.jpg": {
+      "bytes": 325610,
+      "sha256": "c2ab7456957c8da199661a3e26d0ead062e54a3ea127f73263e0f461981140fc"
+    },
+    "houses/concepts/uphill.jpg": {
+      "bytes": 298565,
+      "sha256": "72a1f7dc7f67eab84f7dd7dd32a5504fba9789cd4244d26b4b9600a0914c7ffc"
+    },
+    "houses/concepts/variants.jpg": {
+      "bytes": 268589,
+      "sha256": "95a33b0e893d4ca7028f4a6c11a4f879bc60afbe6838b98c2c465bd6eef9fb99"
+    },
+    "megapark/collision/010DC6B25668810F_0.npz": {
+      "bytes": 277098,
+      "sha256": "f41db9f5af2b4ea5262ba7f90ae11810c60c14d866abd525c2a8e88826822893"
+    },
+    "megapark/collision/01880F3528AF906B_0.npz": {
+      "bytes": 16944,
+      "sha256": "30320078008825db87cda5d8c926c4a4cd2ada1fcd7a8b4e6a5c1c163742b866"
+    },
+    "megapark/collision/0AA6238270286C2E_0.npz": {
+      "bytes": 59373,
+      "sha256": "0fb43073fd7e67864a7853e105a0bb398530d2ff8bc00bb69d65a978ee931e22"
+    },
+    "megapark/collision/141DD6F757FB62D6_0.npz": {
+      "bytes": 4300,
+      "sha256": "845ce42785be6e8e290f298057d6c61f6d57e28b313c9438848161804f0ceffe"
+    },
+    "megapark/collision/1E789931B316F679_0.npz": {
+      "bytes": 3513,
+      "sha256": "31f0025e74942766e7c16a0286fa021f993d797a8cb387db9772bd45635cbd90"
+    },
+    "megapark/collision/393316F6A0664791_0.npz": {
+      "bytes": 3794,
+      "sha256": "d3c52da14231b5a1eaaa4142e153cdda07c6192fd5d6be0d6429be3d8e7ebc9a"
+    },
+    "megapark/collision/40A58EF9D5F1AE6E_0.npz": {
+      "bytes": 140867,
+      "sha256": "43558fed332085e4f35f72d594109edab598a5274d36459a3bcc16d6ad79e2cd"
+    },
+    "megapark/collision/550AC3210EC10CB1_0.npz": {
+      "bytes": 1796,
+      "sha256": "c1140dc7ad7e04a9cdd3421b916e8fe78b7a589e7e1c5d2df3f18bd87bc57210"
+    },
+    "megapark/collision/5DB95324F1AA68C6_0.npz": {
+      "bytes": 8453,
+      "sha256": "45271f7b4d198b341faa657c84c1be3da5d793701854a2a963d173f0b254f7f1"
+    },
+    "megapark/collision/65313BFD727B566A_0.npz": {
+      "bytes": 3210,
+      "sha256": "2df9b84cf91ea5059ed5d83d19c6c6af05de1e380ee487870c9ab2b874b6374e"
+    },
+    "megapark/collision/68E1C35F248107AC_0.npz": {
+      "bytes": 38108,
+      "sha256": "f851b3a804dba97473dceeea8165bb4b96b1da677180bfa15b45a605f60d54b5"
+    },
+    "megapark/collision/715219D1D6FFC624_0.npz": {
+      "bytes": 57106,
+      "sha256": "0a93ab0f552de35aee12db495b8d9784d9456db14cf70f88d500189af5a6b7b3"
+    },
+    "megapark/collision/79BF297E1999261B_0.npz": {
+      "bytes": 19591,
+      "sha256": "dcfdc92f19f3f3ded63b27d51c00dea8e08112257b3b3d1ece86fd1734fd46d2"
+    },
+    "megapark/collision/85B482F74109D22C_0.npz": {
+      "bytes": 1947,
+      "sha256": "342ba6e3226699737e4b2870180700c23771192ed391583f48fe37b65465d404"
+    },
+    "megapark/collision/977D6BD059BA8AD7_0.npz": {
+      "bytes": 2233,
+      "sha256": "6bf3945b46dc415ed9d31a82d4f15e346549b5864b9bc911609a9cb10df0efed"
+    },
+    "megapark/collision/B117BE4BFBAC7F57_0.npz": {
+      "bytes": 52719,
+      "sha256": "35683fd65e3b55b7f1b0f862afa9954bf66a9fdb3d790b18dd335b066d3196cd"
+    },
+    "megapark/collision/B26DDF218A25D8BE_0.npz": {
+      "bytes": 231394,
+      "sha256": "88132e84b22cd1ba14308632ec0f73dcf21e00e3b6210d1bb037e611dedabf31"
+    },
+    "megapark/collision/B9117148FE4DDA75_0.npz": {
+      "bytes": 1966,
+      "sha256": "1a70df3beac455c7398b5aeec9a2561e8bf69d0d1a3f01eb4dce7136a618a864"
+    },
+    "megapark/collision/B919FC9A9E030611_0.npz": {
+      "bytes": 2196,
+      "sha256": "980271a91f9ab74468c2b289f0a461a540d8384c0e47b8f61cc3a920afa42be3"
+    },
+    "megapark/collision/BE312953A8A85B86_0.npz": {
+      "bytes": 8415,
+      "sha256": "fdd17a9dd1bee59225e6b1f85a091edc9691aac6b424bcf4d5bfce72a27c5d19"
+    },
+    "megapark/collision/CB45D603D6D5E8AE_0.npz": {
+      "bytes": 1521,
+      "sha256": "481e474da78ef789c8779b554f22bcc3f3d831a2d381033f7e0a807aecb49eaf"
+    },
+    "megapark/collision/D904B17D5E3AB505_0.npz": {
+      "bytes": 1442,
+      "sha256": "705d696d9ad770a9edbcdb1a73afac0dbef662ab4a2b6582f9e51ac25b7685dc"
+    },
+    "megapark/collision/DC5A848A9C1D9A30_0.npz": {
+      "bytes": 61978,
+      "sha256": "730454aa61eaffde250ac94b98d413003fc41176ae8e49189c2014c7668602c0"
+    },
+    "megapark/collision/DE463D6F91D30023_0.npz": {
+      "bytes": 163656,
+      "sha256": "938810ffc68b81867358377e799ca37d81083671ece96c060b486fd8f3ca2ba0"
+    },
+    "megapark/collision/DF7E3E667186E81A_0.npz": {
+      "bytes": 34418,
+      "sha256": "b27c68c554113b08c91463014c8574645fbb35af64eea1f417560e667c0ee175"
+    },
+    "megapark/collision/E3F9D354AB7015F2_0.npz": {
+      "bytes": 1942,
+      "sha256": "203b4f4e49f74370938272c724307483e0afad086563d1b0a5e6086049c8a112"
+    },
+    "megapark/collision/E9DF0292DA1846B5_0.npz": {
+      "bytes": 115960,
+      "sha256": "3273e322667045556855c746b13d15a86b18853ed4ce70bfaa87c34f34aefd05"
+    },
+    "megapark/collision/F43DB60DE9FB598C_0.npz": {
+      "bytes": 1715,
+      "sha256": "3c2b8e7c004914eed624e125cb82cc506e17e702d0868ea81c68833b9904c8c0"
+    },
+    "megapark/collision/F88E770813AA4764_0.npz": {
+      "bytes": 218854,
+      "sha256": "86fedc419c6b56c6e8a622f84a7d12c6a3b4f50ba376797aa878a37b1db2e095"
+    },
+    "megapark/concepts/gate-ground.jpg": {
+      "bytes": 360280,
+      "sha256": "3ad471c38bc724f1b8834ea5a4899982ae92017fdccc6d8bff91330ea0180083"
+    },
+    "megapark/concepts/improve-ridge.jpg": {
+      "bytes": 301456,
+      "sha256": "087956153143e909061c6f8da559cb316bfc462ae4f1f773614491f3e158e38c"
+    },
+    "megapark/concepts/improve-riding.jpg": {
+      "bytes": 356417,
+      "sha256": "6c1e206c08e0ad27dc944baa96f4553e7aafb8bceb0074109a55194743c4a2ed"
+    },
+    "megapark/concepts/improve-south.jpg": {
+      "bytes": 511692,
+      "sha256": "bcfb9376f6749b3424213eda74bb35a491c8099b2c7777adb05563d4c55c7f76"
+    },
+    "megapark/concepts/improve-west.jpg": {
+      "bytes": 422330,
+      "sha256": "e228e0bdc5afa87456e5c23e26e74ae8cee053af90982293be3ebfed6088da7a"
+    },
+    "megapark/concepts/kei-carpark.jpg": {
+      "bytes": 267174,
+      "sha256": "742b5e2b185833bae6980669ce9cef9856636f227d79cccacebc16732ad2e95a"
+    },
+    "megapark/concepts/kei-sheet.jpg": {
+      "bytes": 135548,
+      "sha256": "f4231cedeeace020393fa6d8bd81b1c9b637a588aa82d01bfc0b2fe2327ad3dc"
+    },
+    "megapark/concepts/restyle-flank.jpg": {
+      "bytes": 378811,
+      "sha256": "5a4eea825e96b12fa8ebf7bc935967b155347ecf7e3afb7d45a1e5f8609e3d12"
+    },
+    "megapark/concepts/restyle-inside.jpg": {
+      "bytes": 306668,
+      "sha256": "133d6b213df1f2804b13d81db12da213be4607132ff89de65c53376ff318bd03"
+    },
+    "megapark/concepts/restyle-west.jpg": {
+      "bytes": 337870,
+      "sha256": "0c23cfd709a1dc4aa5d35caa6d5434510350b56983fb14ba5b808da5013c6887"
+    },
+    "megapark/concepts/seam-gate.jpg": {
+      "bytes": 371652,
+      "sha256": "afd286c02b1fb80fcc615e42ce849a0c45ec8d594603ecd3cc97767dbb45727c"
+    },
+    "megapark/geometry/04CCB1FDB63D6C87.npz": {
+      "bytes": 16849,
+      "sha256": "247fbc5fe7d689ca39255d5dfddde1f9c589c4b58d0641da09dddbf7e7b47d62"
+    },
+    "megapark/geometry/072BEA8B3D376763.npz": {
+      "bytes": 95088,
+      "sha256": "bc56e1ab69be466fecb289b6d98732ef4c6a67bfbbf4b69a2db45ba4ba105039"
+    },
+    "megapark/geometry/0D601DA7CE12176C.npz": {
+      "bytes": 338075,
+      "sha256": "8ec497ec24b8b3d719611e38eb53af39d1b0cb475ca53ff835ff5b5425514c68"
+    },
+    "megapark/geometry/1700B3D8FB9AB703.npz": {
+      "bytes": 32909,
+      "sha256": "54870cf53be608d52ad3e2a81f0ae00a39fe1bbdf91b696f36e290338661350c"
+    },
+    "megapark/geometry/1E077DDD5C16EF04.npz": {
+      "bytes": 282671,
+      "sha256": "8e8f75ebc6ff8f42a5c8571a72895b3e6779db524b3fc5d496c0287af967ff25"
+    },
+    "megapark/geometry/20EF3EEEEFC658B7.npz": {
+      "bytes": 23903,
+      "sha256": "36a70802916d5ad40cdd5af9fe2b46a120f3fcc7eb0922b45ec72c573f139f64"
+    },
+    "megapark/geometry/2386D0A7C698F48A.npz": {
+      "bytes": 252910,
+      "sha256": "65ed29ebcbeba114c3e92e3fbd70aee62ab213338d7543ceedf4bfbcf4a2f92c"
+    },
+    "megapark/geometry/23BEE1BECD19BE5A.npz": {
+      "bytes": 8600,
+      "sha256": "3c24496f8b8900d373b0a1c2b7b10eb42f1ab532473d4b5e15575c3b1c0d2aa6"
+    },
+    "megapark/geometry/2A4ACEDB492E1152.npz": {
+      "bytes": 291250,
+      "sha256": "5903d6b374f8ff950bc820fa836b82fc11cadb33e6c9a248493193dd032fc6e9"
+    },
+    "megapark/geometry/44214047ACFF84CE.npz": {
+      "bytes": 134660,
+      "sha256": "ea1c1893a484790088400a9a4b004e86fda79ded2fab756db6d825656eb893e6"
+    },
+    "megapark/geometry/497D79468122553D.npz": {
+      "bytes": 6691,
+      "sha256": "fa734d1c9423cf0c14fe6024e3355849224209dc38df4b2d490afef798c7fab0"
+    },
+    "megapark/geometry/49FCE212AF609520.npz": {
+      "bytes": 27426,
+      "sha256": "c02dd2727e3977aba99c785f274ad9233dc05d8f4d94441d0f473d0881bf2953"
+    },
+    "megapark/geometry/4F30D544AAE05618.npz": {
+      "bytes": 10560,
+      "sha256": "1dcebc637a6cada120fcb8438eab250fd1b86bf91de13d9250e38b9e1642b9d3"
+    },
+    "megapark/geometry/517C499144026147.npz": {
+      "bytes": 132668,
+      "sha256": "edeaa46c2db40ff1173c79c587c17e30e69e5a0ee6a5385d1865823a4d92f17a"
+    },
+    "megapark/geometry/5B3CA6D5163630B2.npz": {
+      "bytes": 22222,
+      "sha256": "332caa1f2a7dc7a26aabe3cb4be914dc493c3319698e62f133c386e8cc1be2bc"
+    },
+    "megapark/geometry/6988628140DF5E40.npz": {
+      "bytes": 687481,
+      "sha256": "0055cfa3386ea6805871638771423bb70a2b1f083b81a1ab705599d6a9338574"
+    },
+    "megapark/geometry/6A5170620386E3BA.npz": {
+      "bytes": 151638,
+      "sha256": "ae23256e2222536b134de5e32846e80e9a801a54f184a8212518664a3141eaa1"
+    },
+    "megapark/geometry/78C490ADD37F1397.npz": {
+      "bytes": 346515,
+      "sha256": "c284f5348096173289a4e0074d9b6a7a26fdc83f479ec2e299e1cd0795a66b4b"
+    },
+    "megapark/geometry/78DABDFB1C74ABB9.npz": {
+      "bytes": 293588,
+      "sha256": "133bd8a7d2e6fbcda002f07dfd913769ebd3257a76931b33202e7829a6f8838a"
+    },
+    "megapark/geometry/7D05C890200776E1.npz": {
+      "bytes": 89312,
+      "sha256": "4671ffab102d32b55d475134a7c94cb7bba9340f08cf962edd4c677165dd6e6d"
+    },
+    "megapark/geometry/7F33C0EB48F375F5.npz": {
+      "bytes": 186008,
+      "sha256": "170fdb75ef9d573b773c2ef2d56e13cb9d35f35945bdad3452968d77bdc4a1f3"
+    },
+    "megapark/geometry/80C8F2395B012D9F.npz": {
+      "bytes": 52720,
+      "sha256": "6dbdb3c9e53b2b1064b0052b9a28432d533757d8703a567a2d10b92e60af734c"
+    },
+    "megapark/geometry/97881E4457D561E6.npz": {
+      "bytes": 102600,
+      "sha256": "31517890b07e3fe7fe8e3571fcc8a40364c53a1e216c83d81a78cf1d82b8b1a1"
+    },
+    "megapark/geometry/97E970447A822ABF.npz": {
+      "bytes": 651145,
+      "sha256": "de99f1bb2b207c93e10e06ad62a9c0301abf0f906a2694a112abd12c44bbe564"
+    },
+    "megapark/geometry/9D8FA15A3EB6BF2F.npz": {
+      "bytes": 214407,
+      "sha256": "ae68b41f02fee98c8887686a9fe2c8f65f1b013f0423512f4dcc9caa17be43ca"
+    },
+    "megapark/geometry/A41E3A10C48B5DA3.npz": {
+      "bytes": 1913,
+      "sha256": "b724131192973d9df6f3263e8ea0fb1d96dcc3fc4dc9296a406a6207a053d56a"
+    },
+    "megapark/geometry/A79ABAE2264637B0.npz": {
+      "bytes": 93249,
+      "sha256": "010d2bf9a43c39b67faad80df84f0bb7bb1c515854bbe9dc3b31a9151ed55470"
+    },
+    "megapark/geometry/B482B33EDA279C4A.npz": {
+      "bytes": 40327,
+      "sha256": "298f6f18bae49b578eec1e977f9ce1b38dd7f3c35793bcceaa6d4ba626342931"
+    },
+    "megapark/geometry/B5FC108CCBDF28D8.npz": {
+      "bytes": 173041,
+      "sha256": "3fcec9c6d4cc8baea1581d570741e1a5ec5668f2644d4fe1a909eff3bd9d957e"
+    },
+    "megapark/geometry/B99C161736634778.npz": {
+      "bytes": 91672,
+      "sha256": "6d693ceeda688df2f2d7ec77a78c0c9dd45c73cef01e83d83ec7316d8491e290"
+    },
+    "megapark/geometry/BB462637C794A55E.npz": {
+      "bytes": 13863,
+      "sha256": "07e71d743f12f1f0d8a62ed01fdac6776bd67cc5985709ccd283d0df30917816"
+    },
+    "megapark/geometry/BD340E588EB1B8A8.npz": {
+      "bytes": 190104,
+      "sha256": "951f2cfb813f52582456864ed3bb11f2134a9fcb44cbd580b8928cbfb63ae49c"
+    },
+    "megapark/geometry/BFD920538C420ABC.npz": {
+      "bytes": 121173,
+      "sha256": "9581e8e94cd84d6109576cf82cc7d6ec7516c9632d4de32a05cba114db0ec742"
+    },
+    "megapark/geometry/C41D333E7557EA22.npz": {
+      "bytes": 11248,
+      "sha256": "c6b72d5a0d76d76aa0102145850fb42717b05a4d5a8513c497cf6bb907096555"
+    },
+    "megapark/geometry/C809B0BD30B056FC.npz": {
+      "bytes": 16403,
+      "sha256": "257d723a57730803ed52ff77f65764f303503f5427fb27d7deb84f5ce4965a3c"
+    },
+    "megapark/geometry/C888FCF815E09C53.npz": {
+      "bytes": 388891,
+      "sha256": "32fd01806c9494b69a454428b149af30a7eaf2c908cc5b2ae023db826e4cd131"
+    },
+    "megapark/geometry/D0A698D4B8E19DA3.npz": {
+      "bytes": 311398,
+      "sha256": "a1e74a14464dd785884f52c48971ec40c8758d9afad4bd21511f19b274634d7b"
+    },
+    "megapark/geometry/D20218BAEC3CAEF8.npz": {
+      "bytes": 2148,
+      "sha256": "c38ae5f5a6d620ea09f2ab9f5643a101da881d3513f819d2d0ba0e828d43c52f"
+    },
+    "megapark/geometry/D9800C0C164BE6DF.npz": {
+      "bytes": 200097,
+      "sha256": "e3010bb4533db4a664963de31aadf8b261a703f7380b54de9f8d6aad40387717"
+    },
+    "megapark/geometry/DBDE3D0EED110A40.npz": {
+      "bytes": 19632,
+      "sha256": "c95ea09d457b8ce4713f00ad3adcb02f80cfeca519d7e1df62aa3b42224616a0"
+    },
+    "megapark/geometry/DCEFF8F63009B573.npz": {
+      "bytes": 372334,
+      "sha256": "2f74b6aef64f527b6bef758dd1de6dab65958aab3e08628ca9a6a270cd86e8f5"
+    },
+    "megapark/geometry/DE2ECF040F079D1C.npz": {
+      "bytes": 7964,
+      "sha256": "1d9cae7ba6ff748a34291d59cbf91cc11a094da561932031ef6205b61aa0a3f0"
+    },
+    "megapark/geometry/E12A6008908C21E6.npz": {
+      "bytes": 19187,
+      "sha256": "09e9d05d18ae3c4692ab3111c507f41a49d4c880cebc586248622c1fc22378a2"
+    },
+    "megapark/geometry/E33675EB8A7CAFB7.npz": {
+      "bytes": 10417,
+      "sha256": "1458fa8d092959d0b6c3dcbe3f4ffe8d2ba445ac8786a5105f2ce19d7895b2a7"
+    },
+    "megapark/geometry/EB6AB76807F5192A.npz": {
+      "bytes": 152991,
+      "sha256": "aa15b1bedfa28f7e5a8ed7dafa9554efb2c113541558a5b63e0346d97bd1be3e"
+    },
+    "megapark/geometry/F03BD8AEFE8D7AA1.npz": {
+      "bytes": 316853,
+      "sha256": "8ed0049ff134a7369d3e53ddc3d6fa3fb36452e18d77723691a65db5181f2e3c"
+    },
+    "megapark/geometry/F1A2EEC1D33D38AF.npz": {
+      "bytes": 552713,
+      "sha256": "8ad5ca19823265934ef493b375194f9dd5eb1944c70a1837f4f7348829b4901f"
+    },
+    "megapark/geometry/F3ACAD491674B546.npz": {
+      "bytes": 2749,
+      "sha256": "085e94e40efa65ba5fb59e09da5fb1e4969b2512face2af6c6a4942cc3f9fb8f"
+    },
+    "megapark/geometry/FA1B51A9664C0BC5.npz": {
+      "bytes": 14884,
+      "sha256": "53d55f5c3114f718a07ddb841e1907502c60392ca2c01e92e78a3cd9823ba524"
+    },
+    "megapark/geometry/FCCBD6F3DD6D6D2E.npz": {
+      "bytes": 463471,
+      "sha256": "4af5a4583087b74adcca473c7c3e244c5256595575548917aa0fd334699f579e"
+    },
+    "megapark/restyle/earth.jpg": {
+      "bytes": 567664,
+      "sha256": "dcd914894ff4ec14c970cca3a6f3bc440ec3b3ebb1d19acf7d8c90c64bb73a15"
+    },
+    "megapark/restyle/emblem.jpg": {
+      "bytes": 346306,
+      "sha256": "ee8ecbb76167828e18847b859422623ce94d822012e989e3ec4e850c9956f21a"
+    },
+    "megapark/restyle/grass.jpg": {
+      "bytes": 650111,
+      "sha256": "12f0159ff6caa9f1d0924835b0019c5065c9c904237fbbb70266e8606bd6983f"
+    },
+    "megapark/restyle/poster_noodles.jpg": {
+      "bytes": 314311,
+      "sha256": "e15c87b746b9a9bd4c36314f508423952a9fae5acc1877fe0dd9993759b7b7a0"
+    },
+    "megapark/restyle/poster_oni.jpg": {
+      "bytes": 698168,
+      "sha256": "0680fd93201bc9b46bdbe482e49a071e1b9a3f025535fa7278248b9d26c1a8de"
+    },
+    "megapark/restyle/poster_samurai.jpg": {
+      "bytes": 680338,
+      "sha256": "37ae9511bc09e69df547dec232c4283d8b0abada3ff8038b4cc9e62fefad8522"
+    },
+    "megapark/restyle/rock.jpg": {
+      "bytes": 596000,
+      "sha256": "4a4afa5ec21d15ef27f10d04d112f584c7ab00c02777f625b2d3261f5834cb50"
+    },
+    "megapark/restyle/rock_smooth.jpg": {
+      "bytes": 527082,
+      "sha256": "316e9f87038656fdc6f33ca875a6631fe7287ed2b3254e37721dbe9d523bb0ab"
+    },
+    "megapark/restyle/stone_cut.jpg": {
+      "bytes": 463052,
+      "sha256": "6633f073a8463e39016262f91c0149d781368994b0bff6231fa0559a476e0d50"
+    },
+    "megapark/restyle/waves.jpg": {
+      "bytes": 510589,
+      "sha256": "7357e2a3ec92fb1fd6b1f8559a012c5e00382e1bd40db59aa5e0cddaf5abd12d"
+    },
+    "megapark/textures/000002b403e3870a.png": {
+      "bytes": 86,
+      "sha256": "2ddb605ab0f852ab8871cfdcef5c36df1610a2935cb7a6e7522e39af7162cf80"
+    },
+    "megapark/textures/0000043d03e3870a.png": {
+      "bytes": 86,
+      "sha256": "bd94436b378a4872f954e44a8a8ca1244a6694b1fb4c687ac10e66c23756abe1"
+    },
+    "megapark/textures/0000127a03e3870a.png": {
+      "bytes": 3536,
+      "sha256": "4f3ff2ec96b64cc0e9ddfa9e60adfda90815e3b401e328be5dd151ee52adf952"
+    },
+    "megapark/textures/000015e003e3870a.png": {
+      "bytes": 56632,
+      "sha256": "d6201e60ad76319c1693228b4fe78bf10e4617fcfec1845169e3e55014bc0c4c"
+    },
+    "megapark/textures/00002ca803e3870a.png": {
+      "bytes": 23655,
+      "sha256": "a6ac9597023bf212e5a313582833add3f63146fff5933fd8fbaf83f9cd67d256"
+    },
+    "megapark/textures/00002fd203e3870a.png": {
+      "bytes": 53768,
+      "sha256": "e8f8778d3b400d65e70b7df52226337082cdebbe1fd5185b7091f5e84d142f6d"
+    },
+    "megapark/textures/000033a503e3870a.png": {
+      "bytes": 15260,
+      "sha256": "ee8df8839f1281169f84be953fb7dee7b860c8b9a4b181952d98484d922db2bc"
+    },
+    "megapark/textures/000033a703e3870a.png": {
+      "bytes": 32596,
+      "sha256": "ec40051056adba89a54d8fdeef1561c2d44e8e98b987b83cfdbae38c6ae958bd"
+    },
+    "megapark/textures/000038fc03e3870a.png": {
+      "bytes": 80365,
+      "sha256": "41beb5a5ae908e6ae31d370cafb02c923cb7a4e1ccb69890c13c61995c17b70a"
+    },
+    "megapark/textures/0000395903e3870a.png": {
+      "bytes": 9092,
+      "sha256": "daa2bda1358599c6eb005c11f034a8d7b934ef869b2d053d7882ec12a9f7a59b"
+    },
+    "megapark/textures/0000395a03e3870a.png": {
+      "bytes": 19619,
+      "sha256": "8da8c442b341bc549d7daf68ac967162162b91b0cc7c1919708fc2abef3f4945"
+    },
+    "megapark/textures/0000396003e3870a.png": {
+      "bytes": 468,
+      "sha256": "ae5968a58d3108eb7d42cd3897570f3a8db1a3a60d801c39052c05c5bae8c342"
+    },
+    "megapark/textures/0000396103e3870a.png": {
+      "bytes": 384407,
+      "sha256": "9bdd1b5bf4dee33eea4205a5327f4a095626ad03d6db186d6d6320c4e6c5a3c5"
+    },
+    "megapark/textures/0000396203e3870a.png": {
+      "bytes": 25840,
+      "sha256": "f01075240ded880720bd75c3a699079ab98cbdcb6e0414ddfc70971c8689f85e"
+    },
+    "megapark/textures/000039a603e3870a.png": {
+      "bytes": 757,
+      "sha256": "47ef6e29a319292ef637f097d3bfc0cac5098f734b4338360734fa704e26b6d0"
+    },
+    "megapark/textures/000039a703e3870a.png": {
+      "bytes": 8542,
+      "sha256": "9b022a0daadcdc8471d25e7fadf8e38189811c941dbf615c39d37195004423f0"
+    },
+    "megapark/textures/000039a803e3870a.png": {
+      "bytes": 72745,
+      "sha256": "7074e0f704ec850752fe460aaeccd3a253a6fb1f756f01e8cd2276940ee66798"
+    },
+    "megapark/textures/000039ac03e3870a.png": {
+      "bytes": 138506,
+      "sha256": "788178806f2f880b2f5b60f031249b3b963da31635c630b7be821e6ab9c915b5"
+    },
+    "megapark/textures/000039b303e3870a.png": {
+      "bytes": 46146,
+      "sha256": "e0fed1486a75d87885d993e4efe3bc0acb1763cbc12ecd6719deedaba3adfe8e"
+    },
+    "megapark/textures/00003a2f03e3870a.png": {
+      "bytes": 16077,
+      "sha256": "99f031c46713afe2759a08cdd06dd3b6a21ebea6ca85bd17d69e2ee06ce04939"
+    },
+    "megapark/textures/00003fc503e3870a.png": {
+      "bytes": 20110,
+      "sha256": "81328913d9c4ffb746998df70d5c35a2cd2e603f49972d7a329da80db75cbf2d"
+    },
+    "megapark/textures/0000475d03e3870a.png": {
+      "bytes": 86,
+      "sha256": "bd94436b378a4872f954e44a8a8ca1244a6694b1fb4c687ac10e66c23756abe1"
+    },
+    "megapark/textures/00004eb103e3870a.png": {
+      "bytes": 217079,
+      "sha256": "9fe52b3dbc0f4aa65012dc1a80a1a1bd5b5035bd324d75d725206cdde1109752"
+    },
+    "megapark/textures/00007c0f03e3870a.png": {
+      "bytes": 685948,
+      "sha256": "f91d9c0245ce95cb4e065b8af4f34c58593a75699cb97775e8747dff8614f10a"
+    },
+    "megapark/textures/00007c1003e3870a.png": {
+      "bytes": 78877,
+      "sha256": "844312f41c9b584fb7f3cbe58b86206782605424e3fe94d10fbc4d4d78e7ec62"
+    },
+    "megapark/textures/00007c1103e3870a.png": {
+      "bytes": 46079,
+      "sha256": "90ec67cc79f23a7d252f3d80b7a23c16f1be20fe5c50cfa9287383868203d951"
+    },
+    "megapark/textures/00007d4b03e3870a.png": {
+      "bytes": 86337,
+      "sha256": "d8e4941423237d8b8ad32f9c027bf3850aca07e3c7816f46d14a7224849f5c57"
+    },
+    "megapark/textures/00007d4c03e3870a.png": {
+      "bytes": 82483,
+      "sha256": "17d4adf5691573346cffb08ddf0d14195e42698fb38d39962ef26d2cdd217e2f"
+    },
+    "megapark/textures/00007d4d03e3870a.png": {
+      "bytes": 62591,
+      "sha256": "eed17f9967bf15320ee22b69bdf6b9cfd9d51298f8d5bc02a3b656b589554d87"
+    },
+    "megapark/textures/00007dc203e3870a.png": {
+      "bytes": 127397,
+      "sha256": "fae7f8809b29580c1dbfd0283ce76fc62e068de331d13298a2697d197436199b"
+    },
+    "megapark/textures/00007dc403e3870a.png": {
+      "bytes": 73202,
+      "sha256": "71cdf73a220f5ffeb560f295314e9be4b2e8aea3dbbdc18124a675a2c229918f"
+    },
+    "megapark/textures/00007e1c03e3870a.png": {
+      "bytes": 51251,
+      "sha256": "dc945a255106cdaa757d39584e5ef308e5d1c7a48b90b1e8a1ac53c78fa96201"
+    },
+    "megapark/textures/00007e2a03e3870a.png": {
+      "bytes": 19166,
+      "sha256": "7cb74137bceefcb23927de8eeca2bef784c1e3d834cdf422d7f3f6c21a55ba5e"
+    },
+    "megapark/textures/00007e3203e3870a.png": {
+      "bytes": 151355,
+      "sha256": "a5d572d4d166e736d82a5bbf2a626fa3e09e5fe800d8bee588a15c8c395d8c54"
+    },
+    "megapark/textures/00007e3303e3870a.png": {
+      "bytes": 23956,
+      "sha256": "cc39b9267716b8d9cb973984fff5c92b34bd4be90a50a03271d82439a7bc3a06"
+    },
+    "megapark/textures/00007e3403e3870a.png": {
+      "bytes": 22365,
+      "sha256": "cf96d04de5c49f34ec8a8ac0d3ec3410bbc6a17b5410be55d2e349f8ed9195f7"
+    },
+    "megapark/textures/0000809703e3870a.png": {
+      "bytes": 294,
+      "sha256": "1391fa34295e4eb7ae8070c7c90f8aa7a06cd1920cabed8c885ee95c4b2f2c14"
+    },
+    "megapark/textures/00008c3603e3870a.png": {
+      "bytes": 448175,
+      "sha256": "4ba866ccaddef1579d9203594ab08b60917743526291f83a915b03d4b54c8b3b"
+    },
+    "megapark/textures/00008c3803e3870a.png": {
+      "bytes": 69954,
+      "sha256": "5006c3b982a035d99b21bfe0c03a9fe6abaf41b75a5fb3197566d1ebcc22027d"
+    },
+    "megapark/textures/00008c3d03e3870a.png": {
+      "bytes": 14288,
+      "sha256": "de9aa4a2ed62c2a8173b9f202b5a1fec6dcccbf60cd448ee75e1d18eba417b31"
+    },
+    "megapark/textures/00008c6803e3870a.png": {
+      "bytes": 711231,
+      "sha256": "dab0fb0be158e070860ba028e246afdbd531521f010ef37d88b9931c1d23fc63"
+    },
+    "megapark/textures/00008ccc03e3870a.png": {
+      "bytes": 29304,
+      "sha256": "1e6e3b8b2d5528e3ba6e3c0393d9c3c4a147ec608ed76d5f4344e064afc00451"
+    },
+    "megapark/textures/00008d0103e3870a.png": {
+      "bytes": 50499,
+      "sha256": "ec1dce2072ae2030e119a6d94a9361c36d0c571123f995135c22b90edcb9ec92"
+    },
+    "megapark/textures/00008d3103e3870a.png": {
+      "bytes": 59778,
+      "sha256": "349e6acdc863ee455242c112596579f04f75cc1b77c4307ce895fccdfff19c6e"
+    },
+    "megapark/textures/00008d3703e3870a.png": {
+      "bytes": 4970,
+      "sha256": "67e1bfc99eb6f991f4093c35095ad00adc94b278dc99ad232bfc2802d8c0fa28"
+    },
+    "megapark/textures/00008d6a03e3870a.png": {
+      "bytes": 652665,
+      "sha256": "626e0ab9fbdf0e44f34c1e21ec521bc9d4fd07d78d2e9495b3a8befe4b6f7e4d"
+    },
+    "megapark/textures/00008d6b03e3870a.png": {
+      "bytes": 34607,
+      "sha256": "8b5605925c0d366bb15cf837865c6f4a23302db6b31b5898ef6e75df23b38541"
+    },
+    "megapark/textures/019d79bd6380fc1e.png": {
+      "bytes": 230,
+      "sha256": "a25461a294e728d311956deccfae46b0b701e7b4e6c2666eb4cae08cb6445bf2"
+    },
+    "megapark/textures/02329263db644bdc.png": {
+      "bytes": 31929,
+      "sha256": "3370b3c86953914689e07f55a740b94cb945830ccadb60282f2fbe490699f9d7"
+    },
+    "megapark/textures/03d173389b7807a5.png": {
+      "bytes": 163019,
+      "sha256": "c474dabc6b35d9ad7994a0dab8eb5fd226e6ca79445d2ac7c40c0d4bd9a62caa"
+    },
+    "megapark/textures/04c8e16fd9e6478d.png": {
+      "bytes": 23302,
+      "sha256": "1619f701b5b7e2615f0bd891ff0b5600ac5e7b248e152aaa064e1b03d10a2b03"
+    },
+    "megapark/textures/067198ad598d52df.png": {
+      "bytes": 44633,
+      "sha256": "5c184a9b059b11d0e94bb34ff0e18ee0658222575128512e1e04f28f5fa02600"
+    },
+    "megapark/textures/07d1c324782a12d9.png": {
+      "bytes": 137,
+      "sha256": "6caa82616485e652c2098534fdb838ff30a047a6d2d9d0fd9dd75909d09cbaee"
+    },
+    "megapark/textures/081694c4b8553cb8.png": {
+      "bytes": 539,
+      "sha256": "82102760a001cd40a1edcba0d6fdf86296f3ff212c598420c62781dfc4eac712"
+    },
+    "megapark/textures/0858690dd0d764ef.png": {
+      "bytes": 215,
+      "sha256": "e0ee4c902e1b395442cda5ed1c889a3479ccf37fb33c0731b5296cb47e14f424"
+    },
+    "megapark/textures/08da44d88279c8bb.png": {
+      "bytes": 52695,
+      "sha256": "f244ed45ab60cb18223283a894cc8afcdbb0f5e5f6bd2b03444d65338a56566a"
+    },
+    "megapark/textures/09648c8b1423960e.png": {
+      "bytes": 256,
+      "sha256": "3c2f72feba26d3d817a348c95678acde99e0f35d4f8fd16cc9e4828138bf3334"
+    },
+    "megapark/textures/0bb0cdf2fd9825cc.png": {
+      "bytes": 602581,
+      "sha256": "8bde23c1d86d41203549ce58f6cd940ae3a8e6ebb289fc4895fc22e21cd2c7fd"
+    },
+    "megapark/textures/0bfd6047d8f9e482.png": {
+      "bytes": 120463,
+      "sha256": "3081c2a7ca5b25699ec20d2503beb6d374e6b9e61b713b4d2fb324fa1d706bed"
+    },
+    "megapark/textures/0deeafba09afcc56.png": {
+      "bytes": 274,
+      "sha256": "c4e3c5bf76c8e11bd270f706de45a4012e8421842e1406ce0c537af8cab94616"
+    },
+    "megapark/textures/0e008e67d5c7ea9d.png": {
+      "bytes": 40917,
+      "sha256": "842da0e08fb639c84ddbf787851a5f798b2026883c05b69d5adb087736963ee1"
+    },
+    "megapark/textures/0e087d6e08ca5ce6.png": {
+      "bytes": 10438,
+      "sha256": "e28883411eca0378e129b4422fce18e3400966b7c6475ba84507244424b38f6b"
+    },
+    "megapark/textures/0e390e035fe78286.png": {
+      "bytes": 65843,
+      "sha256": "e30072d7c974502dbb2f7c36d4418bdc0f22245ac67a4178d0eae425abe90cd1"
+    },
+    "megapark/textures/118ce35a123af08d.png": {
+      "bytes": 17740,
+      "sha256": "1d1d52ed7d68ff429f912410adabea47b6f008e096d6cdb4cb676edc3cca476c"
+    },
+    "megapark/textures/1388a8ee83f05a88.png": {
+      "bytes": 10655,
+      "sha256": "c3c442880605f439bfc47e992d4901edff59dda25ceaa684a98e67743e33f354"
+    },
+    "megapark/textures/138a93d6f0482bcd.png": {
+      "bytes": 233,
+      "sha256": "0ecfabd4ffffaf5cb48a9dc0b90d156d79874a7db0171f9384c545477561015a"
+    },
+    "megapark/textures/1486a8fd4a502375.png": {
+      "bytes": 85327,
+      "sha256": "428f983589660874d2e8cef78f60d38bd1dfefb217a53da3b034f137b195a73f"
+    },
+    "megapark/textures/1582a39f67167c17.png": {
+      "bytes": 49529,
+      "sha256": "9fa4292ad396c1f3c4674e516f7eac207a8fb76c15e6926745e84475b7da14ba"
+    },
+    "megapark/textures/16af1aebbaa226e1.png": {
+      "bytes": 236,
+      "sha256": "3c5a74c986199f21e6ab258e949e8825cbc620b93c34ba2590e40a54a305849b"
+    },
+    "megapark/textures/16b8113a7b851f46.png": {
+      "bytes": 235,
+      "sha256": "eae106ad60872e0f13310bc0fa8d400b33ab66428f0df78ad1fb8eac91a5d62a"
+    },
+    "megapark/textures/1a42234f6d34d0db.png": {
+      "bytes": 167479,
+      "sha256": "514443a6bb1d519cb99da3d05ddb859c1b2af7564f09f922e2f12a376c391dd5"
+    },
+    "megapark/textures/1a7733e29c7aaa49.png": {
+      "bytes": 4327,
+      "sha256": "35be39b800263f429ec28642e11813baba0f37afb1b7a187883406580776998d"
+    },
+    "megapark/textures/1c888ac4aa494547.png": {
+      "bytes": 43727,
+      "sha256": "a1b09825323ffef6657b29530ec07e53c5ded09fa6571a9b7133a4dc34922551"
+    },
+    "megapark/textures/1ca8e267c91f9ee4.png": {
+      "bytes": 224,
+      "sha256": "9427caf33e55a6815080310ce0dcbf2ef2dad0fe3b8e8a52ce528a7828c921b8"
+    },
+    "megapark/textures/1f265ee4ef1b12c5.png": {
+      "bytes": 10148,
+      "sha256": "af416f126bb42f4213fdb92f3081a462210255e654cef3a765519d76d9d2219a"
+    },
+    "megapark/textures/1f3646ab8a9abfa5.png": {
+      "bytes": 14816,
+      "sha256": "33d19a1323243767b90b5e0bb89527169263db085b461a09e75ccda26b340db2"
+    },
+    "megapark/textures/1f3d017ebb35deb8.png": {
+      "bytes": 188,
+      "sha256": "8dbd8e33b0150182403cf583dfdb1ed8c02ee2efa7ca2ebb70985a6a6dc7c6f8"
+    },
+    "megapark/textures/1f6a83ff94cf44c6.png": {
+      "bytes": 632,
+      "sha256": "3ea3215fc75bf49564a444bb42c5435eb67bf7f1f1b736f09b85374d9e3a8b79"
+    },
+    "megapark/textures/1fcebd0c53c7f9e2.png": {
+      "bytes": 78962,
+      "sha256": "7ff73b866120fb99911036b5398a45e14bfb433e8567ce454c3e82310b39c913"
+    },
+    "megapark/textures/20dee42563593e76.png": {
+      "bytes": 38111,
+      "sha256": "583b73122bd5a07603da653290be15c449400122b12ef2a78ba07749b184c35c"
+    },
+    "megapark/textures/20ee744e00b99db6.png": {
+      "bytes": 238,
+      "sha256": "6dba01b6581b8d30fa1a01c0e1772d7c7a439738a68f6d7712729cea603ce0da"
+    },
+    "megapark/textures/2153cd38e8608321.png": {
+      "bytes": 4938,
+      "sha256": "e527032ba89f650f76526ce8f5c729e49ae38ab41ae1de17da0044d62b4afbb1"
+    },
+    "megapark/textures/22e5091296ca2b90.png": {
+      "bytes": 39496,
+      "sha256": "33b6464040638a68add8eabedd7be5d978048f411c1631cb0607d88ce74ee17f"
+    },
+    "megapark/textures/2435fe6d2d79c031.png": {
+      "bytes": 196298,
+      "sha256": "2fc6e509ec2d0dbe1f2f4d409dff589cf664d75af7387e79ef70e509d604a4ed"
+    },
+    "megapark/textures/269922c1779d74f2.png": {
+      "bytes": 654,
+      "sha256": "699b28f073acc57e4e37d53ac6f5eedf545e0c48c7ff4b48e6e66c17ed606287"
+    },
+    "megapark/textures/26dab19d986e55d6.png": {
+      "bytes": 171180,
+      "sha256": "469f3cdaaf70b23f12c3539427294babba8478eb8c133b8472b746d00c1b92cd"
+    },
+    "megapark/textures/26f972601f7619ae.png": {
+      "bytes": 150144,
+      "sha256": "92a7aa4c49d271970f01807cfb5f2007b0938728ff3bbb63b63e37d0fce310a1"
+    },
+    "megapark/textures/2777120a4a69e0b5.png": {
+      "bytes": 620317,
+      "sha256": "730c6773bb4f2f42947720b2998bfc502f1417c16d7c03b3915ad0b22b31f9a2"
+    },
+    "megapark/textures/283eca85cff74060.png": {
+      "bytes": 224065,
+      "sha256": "95b247508a1c040252aaa2609092303538975e72e87b1635e71add73b780e734"
+    },
+    "megapark/textures/289631f26c56876c.png": {
+      "bytes": 14825,
+      "sha256": "545ca9c6daefb075d14ed0b344b10f58ced48dfc15fe38d4d2f9399860fb8e2f"
+    },
+    "megapark/textures/29634285ffa51fd9.png": {
+      "bytes": 10935,
+      "sha256": "b8f59e9e0d1da4194691b515d01b59ac59c847b76207323d6f3e426e8bdfb636"
+    },
+    "megapark/textures/29cb8df2ab061b32.png": {
+      "bytes": 55687,
+      "sha256": "f94b72d78360181e57636e253661b2910f6f3b6bf1268cd98e6f1b6325e1b089"
+    },
+    "megapark/textures/2a224bba3987b77d.png": {
+      "bytes": 524,
+      "sha256": "4b2041277fdd29d0d717f806e71c1ac2cd1153797930fb7d2dff64b2055980ab"
+    },
+    "megapark/textures/2a2d7a1a19e06218.png": {
+      "bytes": 229010,
+      "sha256": "a1146c4f6e5829a1fbe78368f02dc24c462f28a861285b9c5070194427b0b802"
+    },
+    "megapark/textures/2c314a862174ebf4.png": {
+      "bytes": 159691,
+      "sha256": "747db91d8667b6fcc319288671471d02c18f551172ea25423a24d14eefeab6cc"
+    },
+    "megapark/textures/2c6b2d77d368e404.png": {
+      "bytes": 224,
+      "sha256": "7c3bedbabb718060918ce644111be8c0410d1e1d22becd5df1843accd49ead3a"
+    },
+    "megapark/textures/2c70170a00030062.png": {
+      "bytes": 75943,
+      "sha256": "3efdfecdafb3c5befccafcfaece8a4a8aba4d1bc42c46e072d77fe26fe0c5292"
+    },
+    "megapark/textures/2c70170a00030065.png": {
+      "bytes": 95065,
+      "sha256": "0d28821e381392ef2226859ef9532a4caf08cc34d0fb9808d18034958c015550"
+    },
+    "megapark/textures/2c70170a00030066.png": {
+      "bytes": 12397,
+      "sha256": "c1e5bd4ee81dc20595c338bd391cca61ca35be382dc208806d3217c3e3cd9ec6"
+    },
+    "megapark/textures/2c70170a00030067.png": {
+      "bytes": 83091,
+      "sha256": "923cc4b7fe7c7a5a66ea892141fea68cc4174e302c6a0fec910fa51d6d3d7acc"
+    },
+    "megapark/textures/2c70170a00030171.png": {
+      "bytes": 652665,
+      "sha256": "626e0ab9fbdf0e44f34c1e21ec521bc9d4fd07d78d2e9495b3a8befe4b6f7e4d"
+    },
+    "megapark/textures/2c70170a0004000a.png": {
+      "bytes": 748668,
+      "sha256": "e33533286d839b54d4573a70cb38eb42bdc0a60f652fcde2a27e9a29a98398dd"
+    },
+    "megapark/textures/2c70170a0004000b.png": {
+      "bytes": 94735,
+      "sha256": "8f0c7d47480aa5ccc9ccb05fbcc65afd34b57bc58eb5551b4c6f345c1695fec0"
+    },
+    "megapark/textures/2c70170a0004000c.png": {
+      "bytes": 75829,
+      "sha256": "5267c891dfd43aa99f22e4f1b5afcad5917bf64669b0fe7fff756e6c76941efd"
+    },
+    "megapark/textures/2c70170a0004000d.png": {
+      "bytes": 567485,
+      "sha256": "0ca553b47be26d59dc0a9fd7f2a64a73fe3abaf0b2c23693ab02c7ee31765274"
+    },
+    "megapark/textures/2c70170a0004000e.png": {
+      "bytes": 316695,
+      "sha256": "c4a75f9ff19f68ac9c55b4ed8cb7ae3f04b95619c8dab25c4fe85a1ab7938872"
+    },
+    "megapark/textures/2c70170a0004000f.png": {
+      "bytes": 28023,
+      "sha256": "9ddd990f8da7900efbe51fa0be32210610bee066a5d716c98ff14130c6804343"
+    },
+    "megapark/textures/2c70170a00040010.png": {
+      "bytes": 79844,
+      "sha256": "33a7bfa39eae60c6245a5369ee3ff09a6d66ec0faa8ef4ee457fe79cdee657ec"
+    },
+    "megapark/textures/2c70170a00040011.png": {
+      "bytes": 700547,
+      "sha256": "56e0169a33273aa3d1d508b3073568a1ec64e15ce73bb6ccce544edbbf9b5436"
+    },
+    "megapark/textures/2c70170a00040012.png": {
+      "bytes": 240060,
+      "sha256": "d006527ebe9a87d2ad433828a0390efd8a5e778773374746469f684ae4ded88a"
+    },
+    "megapark/textures/2c70170a00040013.png": {
+      "bytes": 60520,
+      "sha256": "9c8c17c6dfb15696c37792db18b87adfd6ca53d37cb2086461f153fd885c6d85"
+    },
+    "megapark/textures/2c70170a00040014.png": {
+      "bytes": 30601,
+      "sha256": "b47ed59ac8cb96dde177d582b204c4982cc18a5b2a213975e1b6a931f3c24a79"
+    },
+    "megapark/textures/2c70170a00040015.png": {
+      "bytes": 259729,
+      "sha256": "e42c2e87bc7fc613b20444e5bf42684323314fdc1b24f07d075cb688bdfe7085"
+    },
+    "megapark/textures/2c70170a00040016.png": {
+      "bytes": 87,
+      "sha256": "9b383c1753d1ef4f17fd7e49a337526e6afcb89716df7bb8f7cc7095e4a9b0ff"
+    },
+    "megapark/textures/2c70170a00040017.png": {
+      "bytes": 79826,
+      "sha256": "a755e71b2a0ec4fe86a20e77e547b6f9d860d36058fd358812a561020268e9ab"
+    },
+    "megapark/textures/2c70170a00040018.png": {
+      "bytes": 651189,
+      "sha256": "ed5a5e7b1d5cbb183eaa664ddb5729f97534d80fd5627a6b66bf9a20c0b0a218"
+    },
+    "megapark/textures/2c70170a00040019.png": {
+      "bytes": 63261,
+      "sha256": "26a6130385258e9c29a4046f7d7093cd1063d853e5ce462a1fc0056789bec628"
+    },
+    "megapark/textures/2c70170a0004001a.png": {
+      "bytes": 440179,
+      "sha256": "5874bbda3deb7d34a953145949eb78189a6e5396a263c8e26c37a3dab7f2b9b0"
+    },
+    "megapark/textures/2c70170a0004001b.png": {
+      "bytes": 21970,
+      "sha256": "c2543367c5b0fc853cd255f0703abb94002f3910a86d97bdcfb6cd8f75c35435"
+    },
+    "megapark/textures/2c70170a0004001c.png": {
+      "bytes": 106342,
+      "sha256": "d344f8ec109ea1624e67778fa95e7f03d258fea4b52f361f7b0f394fb6278301"
+    },
+    "megapark/textures/2c70170a0004001d.png": {
+      "bytes": 649789,
+      "sha256": "fb9ec730c90bf30bd3087b3baca4341e427ca34893b52d267ed7b6da9d5f5292"
+    },
+    "megapark/textures/2c70170a0004001e.png": {
+      "bytes": 26520,
+      "sha256": "3b2e209592a167fbda1accaa2310551afe6e10f9bc009377698a60eaf55e17b9"
+    },
+    "megapark/textures/2c70170a0004001f.png": {
+      "bytes": 309958,
+      "sha256": "8cb953ec371426ecf4257fc077be79b829e57c4fdcd95767dee7081fc6e79c82"
+    },
+    "megapark/textures/2c70170a00040020.png": {
+      "bytes": 10983,
+      "sha256": "7daf3924623e320a7a62bbdc41f3361df79cbf2004bdde799a11469f5ca3e5a6"
+    },
+    "megapark/textures/2c70170a00040032.png": {
+      "bytes": 455914,
+      "sha256": "3400f21a7e4214a9a24c8836d6200ebfc0787f1d3ebae86c459c57e0e862c82c"
+    },
+    "megapark/textures/2c70170a00040034.png": {
+      "bytes": 53026,
+      "sha256": "9192a00bbc8b9597b02138b5385b40bb746ca5a61c7c6071f045b7c84433f309"
+    },
+    "megapark/textures/2c70170a00040094.png": {
+      "bytes": 758272,
+      "sha256": "ec5453f6159740aee1b8b37dd1aed75ce8b87510a97c07db582e91d1b864b533"
+    },
+    "megapark/textures/2c70170a00040095.png": {
+      "bytes": 74291,
+      "sha256": "26312364530678533515038b1a081c41b4d8838571c44a59b5b0b1296ceafc58"
+    },
+    "megapark/textures/2c70170a000400c4.png": {
+      "bytes": 3391,
+      "sha256": "1622c7f3f1784f50e30cac2e3ce446bc8948d69d27b9db67758cfdc68479b6de"
+    },
+    "megapark/textures/2c70170a000400c5.png": {
+      "bytes": 3040,
+      "sha256": "afeb58f312268a28c7ef3e5dba451c2ebc085f730cc3fc2c1da10e0c6ee96c28"
+    },
+    "megapark/textures/2c70170a000400cc.png": {
+      "bytes": 46129,
+      "sha256": "5d6bae77c73d65b10dcc418ec3fceeea644cd76d13d0a050135f4292970eed06"
+    },
+    "megapark/textures/2c70170a000400d3.png": {
+      "bytes": 39304,
+      "sha256": "f02e45d5852b38ecd8e17130575804a0ca0e1b4d1f9b4d371b5024dca6ab8d36"
+    },
+    "megapark/textures/2c70170a000400d4.png": {
+      "bytes": 23311,
+      "sha256": "ee08497a0b22be31443210f7bd69e3f6ae05deb12e11f55f7a0b058ec018214f"
+    },
+    "megapark/textures/2c70170a000400d6.png": {
+      "bytes": 1188,
+      "sha256": "67feea5f59367e1d1a05a3e2f47280ac1b34369448d05a44de4b3ddd2995ec1c"
+    },
+    "megapark/textures/2c70170a0005005c.png": {
+      "bytes": 93774,
+      "sha256": "f834548bca249091532050885a693c574662bce0af99baa4dac21604b4c02e81"
+    },
+    "megapark/textures/2c70170a00050064.png": {
+      "bytes": 60754,
+      "sha256": "ac801119d71a85558d476e0eaef5193ba8c2be7ed2ce4f94bef86b437ad781f5"
+    },
+    "megapark/textures/2c70170a0005006e.png": {
+      "bytes": 89692,
+      "sha256": "a5c98e6d9843a7078df0cc4ac47f4cfc90fe8e261f996fc49b57888afa5490be"
+    },
+    "megapark/textures/2c70170a0005025f.png": {
+      "bytes": 31636,
+      "sha256": "6121bfa812974dec427f62ae7866c1a47efe0aabe3c1c70db17389cd9d60ceec"
+    },
+    "megapark/textures/2c70170a00050262.png": {
+      "bytes": 54684,
+      "sha256": "4b7a9c020df068ed33d943cd3ff46e1da1f2db253ed14b72224b97b934ea2561"
+    },
+    "megapark/textures/2c70170a0005026f.png": {
+      "bytes": 205987,
+      "sha256": "04860e7a63c04742e4179ae47d64cc069eb32632a82d42ebe14ed1800ae86ee9"
+    },
+    "megapark/textures/2c70170a00050270.png": {
+      "bytes": 37849,
+      "sha256": "e13f4281b499964fb9526c45a87c2a9b3abcb292317659ed8b079d11a3a841f1"
+    },
+    "megapark/textures/2c70170a00050275.png": {
+      "bytes": 13598,
+      "sha256": "2a05596ff0fa3240edbc0017671752ef1506145d6d3c349f288e8b6b5617f8de"
+    },
+    "megapark/textures/2c70170a00050276.png": {
+      "bytes": 13034,
+      "sha256": "a5f5a4c96b6c96c4b78b4fe603bb1221c1c7451da0c2939552ae92b23e9d780a"
+    },
+    "megapark/textures/2c70170a00050277.png": {
+      "bytes": 13701,
+      "sha256": "68a223ea545da7d9a9d1e3acb3f7cdd15fcbbb850bb83facf470837e73dd1d91"
+    },
+    "megapark/textures/2c70170a00050278.png": {
+      "bytes": 13873,
+      "sha256": "1e4ea722f456335520059b9ddd2d2bec8fc3aea1b5c61081a542aeccf0025a5f"
+    },
+    "megapark/textures/2c70170a00050279.png": {
+      "bytes": 257210,
+      "sha256": "17f3f2c6248b950223dfb994a4540ce20bf748f8b1e166d01734342a6870561c"
+    },
+    "megapark/textures/2c70170a0005027a.png": {
+      "bytes": 57664,
+      "sha256": "125583ac6861c39bfbca2d012d25a5c760715b5f0f97a71819dde6fede699d22"
+    },
+    "megapark/textures/2c70170a0005027b.png": {
+      "bytes": 5963,
+      "sha256": "cf72fc0da1517db0d1dbd3f511484d18ecfa5ed01e648deaf7929a8835bbc475"
+    },
+    "megapark/textures/2c70170a0005027c.png": {
+      "bytes": 273128,
+      "sha256": "14fdcdc0bb07a6488de9d948b3dcd4147d274c9fc279a3f75ae7ef64da5a2155"
+    },
+    "megapark/textures/2c70170a0005027d.png": {
+      "bytes": 24740,
+      "sha256": "94de08dcd083f2487ac23bb544764b16a95da6eee9758e0d8ee0fd495cc3885a"
+    },
+    "megapark/textures/2c70170a0005027e.png": {
+      "bytes": 55212,
+      "sha256": "350dee760b4a5d701ef2f63c01a66344e5ca80c21c50d09e585fac1e4627f39a"
+    },
+    "megapark/textures/2c70170a00050556.png": {
+      "bytes": 38907,
+      "sha256": "3c443e6c08c4824da7b7d8d97b6d2824a5d2d9df52228bb88c4d03e38a3968eb"
+    },
+    "megapark/textures/2c70170a00050558.png": {
+      "bytes": 110524,
+      "sha256": "0e90ef66f5a986fd14999e4ac7d5f097056fedc338b8fa68d4ecd6b0d60808c2"
+    },
+    "megapark/textures/2c70170a00053a88.png": {
+      "bytes": 316428,
+      "sha256": "6c5e577d0a725bfa43d59812d69842b8198198273d4570f0876e4dd3676f472a"
+    },
+    "megapark/textures/2c70170a00060003.png": {
+      "bytes": 27054,
+      "sha256": "4695fa11efb40e088b1e83bbe8b353d5028fe4aebd50ced80a3bd47174a2b2b1"
+    },
+    "megapark/textures/2c70170a00060004.png": {
+      "bytes": 8972,
+      "sha256": "ed8c5117d59224a7f4c30060ea14e35ac1125e27c9649b3f7ee4b02cbe62a080"
+    },
+    "megapark/textures/2c70170a00060005.png": {
+      "bytes": 21727,
+      "sha256": "0c2ab16eb40e8f76fad3c51e7bdc2fa04fb0fc392196764c08f87696592b47f9"
+    },
+    "megapark/textures/2c70170a00060009.png": {
+      "bytes": 226,
+      "sha256": "5783598259d89ccac81250f3f2fd54864e33cfda9290f8e1487737a1080b494b"
+    },
+    "megapark/textures/2c70170a000b0040.png": {
+      "bytes": 87,
+      "sha256": "1b285f3936913e90a0dd6e0e07b8f09b964a4e4b95cca70b1883a576183642fc"
+    },
+    "megapark/textures/2c70170a000b004a.png": {
+      "bytes": 2138648,
+      "sha256": "a4526c4351b7d2e71ce43fc102f3ab50412e1f49717983c48686d815dc602922"
+    },
+    "megapark/textures/2c70170a00120009.png": {
+      "bytes": 2651512,
+      "sha256": "413953b9b76b07b9603fb8f224896d85f5d2da524a0f8bf46b2c749ebe56facc"
+    },
+    "megapark/textures/2c70170a0012002c.png": {
+      "bytes": 123367,
+      "sha256": "53c6b68e7a1cfd611345229d32f9e488dc9a7d79a224a45faacf70eb48532b92"
+    },
+    "megapark/textures/2c70170a0012009a.png": {
+      "bytes": 86,
+      "sha256": "f06e6880a6a0cb72f45c33ae49ff6a917e717bb3926bcb65421ab9e547d0bfd3"
+    },
+    "megapark/textures/2c70170a001d001b.png": {
+      "bytes": 626478,
+      "sha256": "4bf13be70f9661e58eff0203fd97c76aad1d90453865b6e2a2202ede0c224712"
+    },
+    "megapark/textures/2c70170a001d001c.png": {
+      "bytes": 80456,
+      "sha256": "63023dd15852d72f2e0d51f4e298343a459ab348660ecc682565f6f7b55cbdb9"
+    },
+    "megapark/textures/2c70170a001d002d.png": {
+      "bytes": 59936,
+      "sha256": "ada4c5d5f6112622dbce6cdd1297a45f8f7444a613a495da75b36e5af98fff30"
+    },
+    "megapark/textures/2c70170a001d003c.png": {
+      "bytes": 204308,
+      "sha256": "b77c791a9560e77a83a6bdcf4b51fb21591afb7d7a2874c10d59293f08e39f07"
+    },
+    "megapark/textures/2c70170a001d003d.png": {
+      "bytes": 22898,
+      "sha256": "1b0dccf12d6840a17648e5a7f8f28fe6413013e49bdce954bc6a23c3227187c3"
+    },
+    "megapark/textures/2c70170a001d0060.png": {
+      "bytes": 226131,
+      "sha256": "74ab488bb6da42c4435d0b30b20c840b7235fc03b56be897171c43660d0ec618"
+    },
+    "megapark/textures/2c70170a001d0061.png": {
+      "bytes": 19654,
+      "sha256": "9d435e14476c5230ca51c6381bf0f4dc52628c07d39d3e35f09a6b02688af473"
+    },
+    "megapark/textures/2c70170a001d0087.png": {
+      "bytes": 18530,
+      "sha256": "b0071604de325605cc9bfa6f885783ee56bd174c511e66f51fad74baa6fc29ce"
+    },
+    "megapark/textures/2c70170a001d008e.png": {
+      "bytes": 1062252,
+      "sha256": "fecb98ff16aeabf662f03aa5beb3ee70189057d119bb4ca062a396be0a9b86b7"
+    },
+    "megapark/textures/2c70170a001d008f.png": {
+      "bytes": 18530,
+      "sha256": "b0071604de325605cc9bfa6f885783ee56bd174c511e66f51fad74baa6fc29ce"
+    },
+    "megapark/textures/2c70170a001d009a.png": {
+      "bytes": 430952,
+      "sha256": "cc72f79d7f972303e79dba68df8c622b5f02c85ee20e2d5a0ecfee89d1449c4d"
+    },
+    "megapark/textures/2c70170a001d00a3.png": {
+      "bytes": 24776,
+      "sha256": "459fa772353fec1abf783559628b38d6130df517824ab514d366a0dfa5c0f91b"
+    },
+    "megapark/textures/2c70170a001d00a4.png": {
+      "bytes": 212595,
+      "sha256": "14b474ec64f0a01abed1f8b55541bd7e50b9c7d7fbe25bad339651cb4f6b48ef"
+    },
+    "megapark/textures/2c70170a001d00a6.png": {
+      "bytes": 674859,
+      "sha256": "bccaabe5dd7bf2c85f9339e980c8b415e6c1f45626ac9b64785e0925ab7eba3b"
+    },
+    "megapark/textures/2c70170a001d00a7.png": {
+      "bytes": 60591,
+      "sha256": "55f85a552e862633bcd7215a5c52594e821a8c023c8aeff606577c138e5bbee6"
+    },
+    "megapark/textures/2c70170a001d00a8.png": {
+      "bytes": 39523,
+      "sha256": "628119571f62f5e2fae481f51470d22f3c6db062b5c72c4157035eb104622e5e"
+    },
+    "megapark/textures/2c70170a001d00a9.png": {
+      "bytes": 2784640,
+      "sha256": "fe90c17164a73b19749e1aa023ae4f03080f43c1a8ee845fe8ee8542a355b036"
+    },
+    "megapark/textures/2c70170a001d00aa.png": {
+      "bytes": 3024780,
+      "sha256": "e93474b211275793d8a3f41d312d1dcf5db222372a44a017ffed27a3740996e7"
+    },
+    "megapark/textures/2c70170a001d00ab.png": {
+      "bytes": 52917,
+      "sha256": "a713c8126287e37340b5c87dfc984c77749d45d465aa5d13b02558bebda8c02a"
+    },
+    "megapark/textures/2c70170a001d00ad.png": {
+      "bytes": 44654,
+      "sha256": "814666a38170b78e0ae3768fca4939803d4eddfb6b375de4e41058af00f1dc74"
+    },
+    "megapark/textures/2c70170a001d00ae.png": {
+      "bytes": 593213,
+      "sha256": "d505fad8a26dcd50364389c05efcb963753027956e5cf3093eeaf61677558a68"
+    },
+    "megapark/textures/2c70170a001d00b0.png": {
+      "bytes": 1495647,
+      "sha256": "49ac94517ac76863bce79d82262a33286b0dc54b624a78255bf188793802cf2a"
+    },
+    "megapark/textures/2c70170a001d00b1.png": {
+      "bytes": 333112,
+      "sha256": "af920dcf9c4bc27a881c35f46e8e839ba608fd7c9e1500354e44ed3edc0249f7"
+    },
+    "megapark/textures/2c70170a001d00b2.png": {
+      "bytes": 197570,
+      "sha256": "2ef0dac6e2d9bca4afc509373620277cf4a1b554dffe298f6d3b3651a945b0e9"
+    },
+    "megapark/textures/2c70170a001d00f2.png": {
+      "bytes": 215916,
+      "sha256": "f9934c6cb3bdd561d36f4b0eb47474a34d003ac8aef6ed6e717358f89dc12d47"
+    },
+    "megapark/textures/2c70170a001d00fb.png": {
+      "bytes": 114134,
+      "sha256": "1a3f844deaf5dbe083c6ef4fa0049a1c5377bcb5d1f2c25b5d42c7a34dca9ea0"
+    },
+    "megapark/textures/2c70170a001d00fc.png": {
+      "bytes": 2746107,
+      "sha256": "f91c3f1d8f501c2f39b25c350d7cec48ea65b95c8051fa626de3f50714260829"
+    },
+    "megapark/textures/2c70170a001d00fd.png": {
+      "bytes": 87464,
+      "sha256": "47eecc48dfa056b8602845e9705b6c927314b0b727a449f8d27f673f57093a54"
+    },
+    "megapark/textures/2c70170a001d00fe.png": {
+      "bytes": 145409,
+      "sha256": "55ff784912341acc7abbbb577117fbc472b48d17bdd34d59aad3fb36ab5b489a"
+    },
+    "megapark/textures/2c70170a001d0100.png": {
+      "bytes": 46701,
+      "sha256": "cc9d84b3c1f042969e215714a22ba7b700a376b3430cebde017a7d9a0a30401e"
+    },
+    "megapark/textures/2c70170a001d0101.png": {
+      "bytes": 21744,
+      "sha256": "820931a2de7d888d3f44076c2c8989165544e373bb8671b7cfee99566328efc1"
+    },
+    "megapark/textures/2c70170a001d010a.png": {
+      "bytes": 124777,
+      "sha256": "32e3e31934832010238ef6e322cf6f4f8c0bea904bb59670807b3a488458c7e8"
+    },
+    "megapark/textures/2c70170a001d010c.png": {
+      "bytes": 724370,
+      "sha256": "370cce5057fdb579e5258e726ee36d3170ac6b5faa0a3cbe4ef087c4c307a192"
+    },
+    "megapark/textures/2c70170a001d0115.png": {
+      "bytes": 44695,
+      "sha256": "b22ad92e307d37b2bc86a5e09054c8bb94f12eec2d37f98af1eaa8a6d7bcddeb"
+    },
+    "megapark/textures/2c70170a001d011f.png": {
+      "bytes": 559539,
+      "sha256": "e58d85ed3b2c3f83f6b235e266787f81e57acb97d899f07e15114845454319e5"
+    },
+    "megapark/textures/2c70170a001d0120.png": {
+      "bytes": 608788,
+      "sha256": "cd232bf58c548fb350a47a6bce9fab2821bbaffb1967241f5e15d67dc2ccefbf"
+    },
+    "megapark/textures/2c70170a001d0121.png": {
+      "bytes": 51657,
+      "sha256": "f4dec96044667b9c3bbb716eddf1d9dc0f7cc9bc5cabde302424c2bf2e9e8acc"
+    },
+    "megapark/textures/2c70170a001d0122.png": {
+      "bytes": 50614,
+      "sha256": "49d5d34c1d7fd7811fdf632b67f9a24e72346736d426ccc11fc96f9884f931e4"
+    },
+    "megapark/textures/2c70170a001d0128.png": {
+      "bytes": 297180,
+      "sha256": "7e39f195d6deffb5a4a628178e306f5a0597b00e6978cbdc2c1aa3b50bd38266"
+    },
+    "megapark/textures/2c70170a001d0129.png": {
+      "bytes": 428984,
+      "sha256": "382f6acc03090b0462e8f914bccf7dbd3829845c24f81650271d6ac374b98b98"
+    },
+    "megapark/textures/2c70170a001d012a.png": {
+      "bytes": 22445,
+      "sha256": "bf28d7dffc2957083d32f336399428062e1333e54d95f6a310ff01519d7212ee"
+    },
+    "megapark/textures/2c70170a001d012b.png": {
+      "bytes": 9949,
+      "sha256": "4c77639593b660e1d86cb160f9bc73eef22643d93daa4d69626f4859ac181951"
+    },
+    "megapark/textures/2c70170a001d012c.png": {
+      "bytes": 53332,
+      "sha256": "37cc23b4a9238cf6a166dd42452bdc568ddd2c185fa4ce662f1316a06bd5aa09"
+    },
+    "megapark/textures/2c70170a001d0130.png": {
+      "bytes": 22064,
+      "sha256": "b5199a235ed54826d8ea10edb1b3deb97d05ff48c413681df3e6e324e9f420eb"
+    },
+    "megapark/textures/2c70170a001d0131.png": {
+      "bytes": 13247,
+      "sha256": "ad0fe274c5de3bc379152d009f5389b61fbf3e640b3a7f021bab79390d1b9fcd"
+    },
+    "megapark/textures/2c70170a001d0132.png": {
+      "bytes": 59658,
+      "sha256": "e273928659e994895189c0584599de261eba234ebca37ba2a6a78063f262cf95"
+    },
+    "megapark/textures/2c70170a001d0133.png": {
+      "bytes": 574553,
+      "sha256": "460ea2192a218af88809d59afbc3f377d9e10a8824f8169be37f693591d3494c"
+    },
+    "megapark/textures/2c70170a001d0134.png": {
+      "bytes": 37636,
+      "sha256": "1fbed41e663bb720127c99f760536e91313f397bbeb3bfccce4ad0dbfaaa2597"
+    },
+    "megapark/textures/2c70170a001d0135.png": {
+      "bytes": 605449,
+      "sha256": "2033904b7cb7493f399236fe997ddc100d3de350207aaabdac0f178127e69ffc"
+    },
+    "megapark/textures/2c70170a001d0136.png": {
+      "bytes": 52464,
+      "sha256": "86af3000eb97c8324ccdf14adc7e231f82b1b19769d72dee6a577c3987da34eb"
+    },
+    "megapark/textures/2c70170a001d0137.png": {
+      "bytes": 313706,
+      "sha256": "0de35e217e69cc21c6349c5910f537594e682017d4e8b3368c41f1e351e67e71"
+    },
+    "megapark/textures/2c70170a001d014e.png": {
+      "bytes": 48987,
+      "sha256": "7a7c6f5316b8f6dc1b4dd262bd33dd065663e9e21cbf01cc51130fdb4655b788"
+    },
+    "megapark/textures/2c70170a001d014f.png": {
+      "bytes": 576590,
+      "sha256": "f0434240a83c885b523e4e37e4160132d21db07fc6f1b70aea69920d90541490"
+    },
+    "megapark/textures/2c70170a001d0150.png": {
+      "bytes": 14965,
+      "sha256": "e7df7afbd94380ee8f05e0628e6084f5b4fe6870707b36d959b4a82b5ce9fad2"
+    },
+    "megapark/textures/2c70170a001d0151.png": {
+      "bytes": 82069,
+      "sha256": "77b2c61798ccd53856c5019cca74266a6ba444e9e3b3f70d6fe7d864067a51d0"
+    },
+    "megapark/textures/2c70170a001d0159.png": {
+      "bytes": 48987,
+      "sha256": "7a7c6f5316b8f6dc1b4dd262bd33dd065663e9e21cbf01cc51130fdb4655b788"
+    },
+    "megapark/textures/2c70170a001d015a.png": {
+      "bytes": 598991,
+      "sha256": "6c1b09516919cecf42076ecf295dd490f854cc710c3e21087738dc9dc0f7063b"
+    },
+    "megapark/textures/2c70170a001d0162.png": {
+      "bytes": 632535,
+      "sha256": "a153057709115409699fcd4b186dc186cab259566563f29ee55bf480f13b046b"
+    },
+    "megapark/textures/2c70170a001d0163.png": {
+      "bytes": 581139,
+      "sha256": "852b0c8a8273e86118c44a3748d5d9e9618730ed8aff745b5c919a316b92bcaf"
+    },
+    "megapark/textures/2c70170a001d0166.png": {
+      "bytes": 162559,
+      "sha256": "4063d85c029e7e1b213f822e21dea8eca65d23b2782ce40ce2d3d7e70dc01cc4"
+    },
+    "megapark/textures/2c70170a001d0167.png": {
+      "bytes": 137006,
+      "sha256": "bf6b67b7389eb9e052487c1fa55d63413eb0f589d12e0c2bbcddbf2e8b0454c6"
+    },
+    "megapark/textures/2c70170a001d0169.png": {
+      "bytes": 83643,
+      "sha256": "5eb884e9b36a858fc3b5b4bd9b0ae926c90628583e10ca0b3114d15c8605b53c"
+    },
+    "megapark/textures/2c70170a001d016a.png": {
+      "bytes": 73243,
+      "sha256": "7a6e8b93a2dea87a511075f0f9f9b726106727ec0fa490710c92c0597265efde"
+    },
+    "megapark/textures/2c70170a001d016c.png": {
+      "bytes": 20165,
+      "sha256": "8cc06a627326af793ccbeb37c0151d2c6f76c90e59af9d7160f88089172999a2"
+    },
+    "megapark/textures/2c70170a001d016d.png": {
+      "bytes": 97075,
+      "sha256": "83074472fae06d2ea5153d939004bf95803ccb1d3c6c14d03c4fecdcac4af9b7"
+    },
+    "megapark/textures/2c70170a001d0178.png": {
+      "bytes": 160896,
+      "sha256": "ace2293ad3e23f4542ca0b021e0ca49174807ccc4ac197b4d694e1ec85765592"
+    },
+    "megapark/textures/2c70170a001d0179.png": {
+      "bytes": 74196,
+      "sha256": "41cda99b0a4b25720597ade0d0778677f0b61471e1bd71f33cff88716b025c43"
+    },
+    "megapark/textures/2c70170a001d0183.png": {
+      "bytes": 223900,
+      "sha256": "2333921eeb06bfdcaffc146303ac37668683b25131824fded0345a09ef1a0d9e"
+    },
+    "megapark/textures/2c70170a001d0199.png": {
+      "bytes": 639216,
+      "sha256": "2e86c130efa64455b0329fc3ebf6d012c07d495178a6c4ddb8936696c7e75633"
+    },
+    "megapark/textures/2c70170a001d01a5.png": {
+      "bytes": 8186,
+      "sha256": "f21a372c3e8e877edbd37f8c57e18f6544997c38ce66bb5068f20a78406c0f96"
+    },
+    "megapark/textures/2c70170a001d01a6.png": {
+      "bytes": 17945,
+      "sha256": "b4d5881a7bc406925d737c72c44edd6245dcddb8031b34956074790b72ca5b3b"
+    },
+    "megapark/textures/2c70170a001d01b2.png": {
+      "bytes": 40751,
+      "sha256": "ab249257300519a206995e6301bd75be66f2fa562a7acf3058a882b0472d904e"
+    },
+    "megapark/textures/2c70170a001d01b3.png": {
+      "bytes": 106558,
+      "sha256": "13ad7405aa0d26d63f8cb617e86cc6ce209108dd2ff4c17e06bff017db45c849"
+    },
+    "megapark/textures/2c70170a001d01b4.png": {
+      "bytes": 115432,
+      "sha256": "3536eb057c12eabff054d4d3ef4d45084691744dab6ba9bf0bdf9815615bc2b8"
+    },
+    "megapark/textures/2c70170a001d01b5.png": {
+      "bytes": 111573,
+      "sha256": "e014424be10c6f7da17c4608681e69c5b2bce630eaac17268c655c73ac767d08"
+    },
+    "megapark/textures/2c70170a001d01b6.png": {
+      "bytes": 561559,
+      "sha256": "3d9828b456e55d139ead6c891fc710d4e07298453499b7928aa5f1f02e43f494"
+    },
+    "megapark/textures/2c70170a001d01b7.png": {
+      "bytes": 117045,
+      "sha256": "af3fa3cd1e87c3be41c2b1ec7dadcf0551549a3dc4ddf2acb6c5a529346a6a79"
+    },
+    "megapark/textures/2c70170a001d01b8.png": {
+      "bytes": 104957,
+      "sha256": "0ca15945754b2395070daa072c71f3c1b46d9f7a62d3143be9cf244f9b532d98"
+    },
+    "megapark/textures/2c70170a001d01bb.png": {
+      "bytes": 39738,
+      "sha256": "79df87d2750cad3ad77a57b3dba6506b0a57a8cf4acca964251744ed62fb3702"
+    },
+    "megapark/textures/2c70170a001d01bc.png": {
+      "bytes": 67840,
+      "sha256": "abd07e02548d410be78b75799863fea3bf958fd064123d200a5b58448bd727c2"
+    },
+    "megapark/textures/2c70170a001d01be.png": {
+      "bytes": 534918,
+      "sha256": "fe51bd0619c7ae345944a74c8282d2ef6949c41de8e4b6d4b4ec233389ab30c3"
+    },
+    "megapark/textures/2c70170a001d01bf.png": {
+      "bytes": 2374,
+      "sha256": "aa72f705cdbbc83e4f5c18ee3d21f55ab177a26f97606760c73d5bd36dca3af0"
+    },
+    "megapark/textures/2c70170a001d01c6.png": {
+      "bytes": 202372,
+      "sha256": "ae7cf28d775dc8233eb5df4611799f8f06640dcfb6306ebdb5d0e63870617c9c"
+    },
+    "megapark/textures/2c70170a001d01c8.png": {
+      "bytes": 26408,
+      "sha256": "bf609f00e57d67bffa3ebfad5e15c89510f825f422eb600fde275745805e9a40"
+    },
+    "megapark/textures/2c70170a001d01c9.png": {
+      "bytes": 35769,
+      "sha256": "f26e66e9788d4c258679f8b34b1fcfa0e5fc359a90614d5471120c6fe40c37c7"
+    },
+    "megapark/textures/2c70170a001d01d5.png": {
+      "bytes": 315068,
+      "sha256": "e92e29d590689e39758c790239e5c3ccb5e22969e7d4cdb70071caa7b725a9cf"
+    },
+    "megapark/textures/2c70170a001d01db.png": {
+      "bytes": 144703,
+      "sha256": "2d91612dde96820d3d87e1be8feb707c0d7cc18ca61247961d5b6fbf1a0470b5"
+    },
+    "megapark/textures/2c70170a001d01e1.png": {
+      "bytes": 621821,
+      "sha256": "948b087fb1a36dc803347ee5ca7d722c94b766bf6d1d4590fe3b29734918f86d"
+    },
+    "megapark/textures/2c70170a002f0353.png": {
+      "bytes": 477860,
+      "sha256": "89256e7157fadee461b23387a37827d0bc7936026ca35d9b4825a2ce17cb6052"
+    },
+    "megapark/textures/2c70170a002f0355.png": {
+      "bytes": 658597,
+      "sha256": "f92465fc87ef8946e7481b5e5b4c30360f5b481abfcc75236073a1ff94a4b13a"
+    },
+    "megapark/textures/2c70170a002f0359.png": {
+      "bytes": 1118,
+      "sha256": "2f6c0c42ebb069786bafd9350261b70893161e30596eddda8b19f51a1ce05b07"
+    },
+    "megapark/textures/2c70170a002f03b5.png": {
+      "bytes": 378998,
+      "sha256": "6ba6521c78b36d85a243736334057e1295a4f0cd803320c5c59072e3998fcba7"
+    },
+    "megapark/textures/2c70170a002f03b6.png": {
+      "bytes": 29701,
+      "sha256": "692ce38c549e770737e4d39a98844b6e49521418e5a3ffcf78c9863b53679343"
+    },
+    "megapark/textures/2c70170a002f03b7.png": {
+      "bytes": 96342,
+      "sha256": "4609ca0d98400b2fc5b2d2eced8d747bf6f3ed630d149de318725f9698d0e5ac"
+    },
+    "megapark/textures/2c70170a002f040c.png": {
+      "bytes": 114363,
+      "sha256": "f9e17273f3f63708b9cfc6f8c6ec8f32e39d461c95a6943d72c6b3d5cf975b00"
+    },
+    "megapark/textures/2c70170a002f040d.png": {
+      "bytes": 44865,
+      "sha256": "3f856fd60171a69e375c450b34744e5b68be870a9c60a88b2313a7ff26315435"
+    },
+    "megapark/textures/2c70170a002f040e.png": {
+      "bytes": 33200,
+      "sha256": "e7d160a7b385c29dbb2d6abf68ea5f1e5273af53f5680ac1b10886a7d1881b23"
+    },
+    "megapark/textures/2c70170a002f0412.png": {
+      "bytes": 293067,
+      "sha256": "6583f6caed8c6f412e0789e483b6042b71e5a7034d216f1e0eb16b24bed95220"
+    },
+    "megapark/textures/2c70170a002f0413.png": {
+      "bytes": 24323,
+      "sha256": "0c63723bea8576ae72b54ebf1c45c5c702e71e4a1c4334b45a394bc14d8a0a4e"
+    },
+    "megapark/textures/2c70170a002f0414.png": {
+      "bytes": 81280,
+      "sha256": "8ef05a515067dddbd7b6798d63a38df0129296708dfb686271b21984baa73989"
+    },
+    "megapark/textures/2c70170a002f053d.png": {
+      "bytes": 269943,
+      "sha256": "40fa3d8f00d7e5519ab90e2903a38df976ca77796126e244d7c6df1f514ac1ce"
+    },
+    "megapark/textures/2c70170a002f053e.png": {
+      "bytes": 259602,
+      "sha256": "f6190d4316e7de5ff2fb098687730f96e99abdb2221ee0129a13bba682cae67a"
+    },
+    "megapark/textures/2c70170a002f053f.png": {
+      "bytes": 498959,
+      "sha256": "ccc1f76b23d709ecb96c4b7d7279db8470c20e4efc3d4a3e2f2e6180c94388d1"
+    },
+    "megapark/textures/2c70170a002f0543.png": {
+      "bytes": 329714,
+      "sha256": "e2078bb5d7215983a564530c7e8729d68cb55873be3b8fd537d2cb84fa0bd2d2"
+    },
+    "megapark/textures/2c70170a002f0544.png": {
+      "bytes": 126110,
+      "sha256": "faa30931203fa899c03b2ced9c5f14710f0046e240ff726461967478715ad140"
+    },
+    "megapark/textures/2c70170a002f061d.png": {
+      "bytes": 72107,
+      "sha256": "5a694357992e165763c143723f08f5b690314c2dfca944fcec977902e37a20cd"
+    },
+    "megapark/textures/2c70170a002f061e.png": {
+      "bytes": 21419,
+      "sha256": "6a237a70d7d378f67263533b8fa96814460e0463c9610a85e7d3cc9a3a7b1004"
+    },
+    "megapark/textures/2c70170a002f0aa4.png": {
+      "bytes": 482647,
+      "sha256": "25a4ebdbfedfcee8cd0461659bef4935e79cdc4baba1583fe5b6708470fa52fd"
+    },
+    "megapark/textures/2c70170a002f0b09.png": {
+      "bytes": 97850,
+      "sha256": "c1ca6b14cdcb00d171ed849828cda85a5e501b352f7f5ac375f56757a1bdf9c7"
+    },
+    "megapark/textures/2c70170a002f0b10.png": {
+      "bytes": 297538,
+      "sha256": "c3b88033252ce82d85a44a295dfb6bba8565fb38e9cbea24f4456b14adc40df3"
+    },
+    "megapark/textures/2c70170a002f0b5a.png": {
+      "bytes": 283171,
+      "sha256": "f18693a98ad9e20fd7781ff0d021240fa483b88054b9b5f584e938a0b6ba593e"
+    },
+    "megapark/textures/2c70170a002f0b75.png": {
+      "bytes": 220583,
+      "sha256": "f5abe1353a480701ef797f6c6e1e34fe29833a4cc9b1d3a310aa395fc9362205"
+    },
+    "megapark/textures/2c70170a002f0b86.png": {
+      "bytes": 86579,
+      "sha256": "bd13550ba835b0f496eaefe3ac699a7f21ee42532ddfd027452849362ba6112b"
+    },
+    "megapark/textures/2c70170a002f0ba0.png": {
+      "bytes": 498959,
+      "sha256": "ccc1f76b23d709ecb96c4b7d7279db8470c20e4efc3d4a3e2f2e6180c94388d1"
+    },
+    "megapark/textures/2c70170a002f0ba3.png": {
+      "bytes": 110510,
+      "sha256": "fe0e7ac6ba14235af0070d1e3baf51845d77beef4f8c02134b926f0cd92046ac"
+    },
+    "megapark/textures/2c70170a002f0ba7.png": {
+      "bytes": 283651,
+      "sha256": "5ff0f8595697078bf4f285b3e19bb10c2e81a954fb3c31c35559b152b81f5dc4"
+    },
+    "megapark/textures/2c70170a002f0bb0.png": {
+      "bytes": 659656,
+      "sha256": "71487200e00524675fa798577ef2aaa4b40027679ac7bd7330c184fb01eff353"
+    },
+    "megapark/textures/2c70170a002f0bf7.png": {
+      "bytes": 482247,
+      "sha256": "f04290f53fda437635bfcde89b2a750c5ab79f975832342290d45acf9b6fbf5e"
+    },
+    "megapark/textures/2c70170a002f0c26.png": {
+      "bytes": 564998,
+      "sha256": "0797ca98bb8de48c95030b7d3ce190d374f944339a00cd1e3d6c233edc339976"
+    },
+    "megapark/textures/2c70170a002f0c2c.png": {
+      "bytes": 483524,
+      "sha256": "de8abdd6cc7f94377123d3f74ff6920dcd93543f52e7b118c07e99ae3f59e402"
+    },
+    "megapark/textures/2c70170a002f0cac.png": {
+      "bytes": 592662,
+      "sha256": "eb5529752df38c1a72eb5018770b5ddafbbafd25b40da85491166e02d2689478"
+    },
+    "megapark/textures/2c70170a002f0d02.png": {
+      "bytes": 193581,
+      "sha256": "f1da5153659b063963a0ed701c3e07da2136fc92e53858050bde40a39ca85c48"
+    },
+    "megapark/textures/2c70170a002f0d0a.png": {
+      "bytes": 131158,
+      "sha256": "84f3c5ea3b6e48e6990a32e95fe99e3104b0d0076134974c062b9b4d11ee9abe"
+    },
+    "megapark/textures/2c70170a002f0d0c.png": {
+      "bytes": 23953,
+      "sha256": "909edaf0e823cf93e9baa75f89e298fa50a8c0a5e73d9e9d3c8393196f99d225"
+    },
+    "megapark/textures/2c70170a002f1107.png": {
+      "bytes": 7845,
+      "sha256": "9a65930316c216e3e8ce4e378b59c54ec0dac00fae9de677e46b62bc789acd97"
+    },
+    "megapark/textures/2c70170a002f1108.png": {
+      "bytes": 153763,
+      "sha256": "f47f613eceffb7c8ff6312e7f61b786ecb1e88464d818af64640aa4f39226a5d"
+    },
+    "megapark/textures/2c70170a002f1109.png": {
+      "bytes": 95382,
+      "sha256": "5b782d787eff4243fa4db47f6b7907461d8514b8ef7b2318ba8637bab54debfb"
+    },
+    "megapark/textures/2c70170a002f110a.png": {
+      "bytes": 35593,
+      "sha256": "b12715025a33e9de21b6337738f90b06c04692943158beb7d1d65233aa9ad1ac"
+    },
+    "megapark/textures/2c70170a002f110b.png": {
+      "bytes": 151658,
+      "sha256": "3d707b5dd0f13e917dbc0228689e680dc8c3d15968376ec9dce39d2869c208b9"
+    },
+    "megapark/textures/2c70170a002f110c.png": {
+      "bytes": 72981,
+      "sha256": "61ecd570d1fc08d38c7739e2317b359a71162beaa44dc06b84d5db209051c7c2"
+    },
+    "megapark/textures/2c70170a002f110e.png": {
+      "bytes": 461612,
+      "sha256": "b665d0d99c093955ed74a8f607b09d911fda7db4ca4c962267788fb8d5f7e7cc"
+    },
+    "megapark/textures/2c70170a002f110f.png": {
+      "bytes": 530820,
+      "sha256": "9e27b17e2e5b0f25134a5dacbc19286863995395d0c09129f12c38f13e023040"
+    },
+    "megapark/textures/2c70170a002f1110.png": {
+      "bytes": 542851,
+      "sha256": "9b2e9d6ae81c84948d6f3afd7d5ea54e30018cef94d7c08443a4719dcbe86932"
+    },
+    "megapark/textures/2c70170a002f1111.png": {
+      "bytes": 302409,
+      "sha256": "b523e936b2ec91411484d3b08273ad8d94fad50be2e4093fe840ad7ccc40e76b"
+    },
+    "megapark/textures/2c70170a002f1112.png": {
+      "bytes": 114507,
+      "sha256": "5062558d27a66b7a035ad46bfe225027819164677edb14af7a16453a14994d61"
+    },
+    "megapark/textures/2c70170a002f1113.png": {
+      "bytes": 179208,
+      "sha256": "3cc6608121190ab8721f3ff20573a2498517882c4cd129c7b84f7b9c55d109d7"
+    },
+    "megapark/textures/2c70170a002f1114.png": {
+      "bytes": 7603,
+      "sha256": "6398ca8aad117c53bd5b9d0b8e0df9f63fd10af4da5bbc8c0abd4cfddcac2da5"
+    },
+    "megapark/textures/2c70170a002f1115.png": {
+      "bytes": 43917,
+      "sha256": "e31e5245dba0cc5231aaab00002c945ec2b52accb68a853955d985611a9af1cc"
+    },
+    "megapark/textures/2c70170a002f1116.png": {
+      "bytes": 103029,
+      "sha256": "af1428592f5d64b9039a2e94525e5fed44ae653992cec854c0e06de744b8a8d8"
+    },
+    "megapark/textures/2c70170a002f1117.png": {
+      "bytes": 37342,
+      "sha256": "96178a85be20cc2c0a45dd99cff5cc5ea0d474d16741edf8adf046e232f051b5"
+    },
+    "megapark/textures/2c70170a002f111c.png": {
+      "bytes": 7977,
+      "sha256": "dcda51720573566b2a1513f43fcec148438cace3c975d0f8e549d0a3faf41500"
+    },
+    "megapark/textures/2c70170a002f111d.png": {
+      "bytes": 140196,
+      "sha256": "c8b0e29b2a18b82471bc092041f6f270f9eb3e088d8bf5226306cdd25a57722f"
+    },
+    "megapark/textures/2ce9fd30303cf182.png": {
+      "bytes": 118141,
+      "sha256": "171086ac29ec2b7961b5eeec7bf9c69947b5e311079238f6df3424195369600d"
+    },
+    "megapark/textures/2d149b037c7ec5c7.png": {
+      "bytes": 25624,
+      "sha256": "02d43f9f4350b7f26ef3f4298830f751849d193580f95e417572c61e114c027c"
+    },
+    "megapark/textures/2d4594c99543ae68.png": {
+      "bytes": 57589,
+      "sha256": "8b7dec590d47ac42387a969a93c5c309618e1f72b55c1905c0e00d678da79503"
+    },
+    "megapark/textures/2fb6cd8b4f278fb0.png": {
+      "bytes": 234,
+      "sha256": "f9664ebaa2d0cbd57c33a762e508ec225e95819257185f712ea043a438b94946"
+    },
+    "megapark/textures/30c8028ea34b6e50.png": {
+      "bytes": 82887,
+      "sha256": "7afec67395d181e14a2d9c96cc4d3da288335a4d4063c94a9124077b56ca08c5"
+    },
+    "megapark/textures/30f8846bfabae8f4.png": {
+      "bytes": 644,
+      "sha256": "c25c9bb8032908c23ba75b9d5e96826d64a9e9e67647c8a407c6c64cf8750a1f"
+    },
+    "megapark/textures/31c3bb99699b6980.png": {
+      "bytes": 42452,
+      "sha256": "bca299ee267d0de5c7149d184146c87b963d9a698b380aa87b7870a700869b67"
+    },
+    "megapark/textures/340e5a8e4a3e63a5.png": {
+      "bytes": 41880,
+      "sha256": "128d8c52f81cf9daec2519015349db27cac92cb20e5e51aa3ddd5d9d8c162640"
+    },
+    "megapark/textures/3466729db424d329.png": {
+      "bytes": 17011,
+      "sha256": "576fd89cdba076fa2fc6878df8c2e627f2959f6965c7fe6e647873b2b04c7ecf"
+    },
+    "megapark/textures/348db4cf24739f34.png": {
+      "bytes": 33151,
+      "sha256": "3b433aca2b934fb3c29a25c217eb356d622134d14a94864f790e49c08c13ec99"
+    },
+    "megapark/textures/351592fc45550fe1.png": {
+      "bytes": 258,
+      "sha256": "b6b16f3e3810ffb90b211db00267656470019998451fa85eec2832086c39a5e3"
+    },
+    "megapark/textures/353ff632bef8ce8b.png": {
+      "bytes": 17628,
+      "sha256": "3ef88aece68d6c5706be9ecf90f409bfc532e4405b0d2947b8cc41c835710e78"
+    },
+    "megapark/textures/379a596d001d5141.png": {
+      "bytes": 530,
+      "sha256": "e60cbb379e765f5bcbf4c80e902213f0c517eaf127645c1ca7bb5856a3c4b5d4"
+    },
+    "megapark/textures/37daff0a446a1e9e.png": {
+      "bytes": 199,
+      "sha256": "32f3bebb7542261dffccd761bc6f56efb176754525270441c23a103101624de8"
+    },
+    "megapark/textures/37f2573e0144de6d.png": {
+      "bytes": 541838,
+      "sha256": "77eed48653e83ad07b086af997499b774eed8d14a108ea816b374a31776ac011"
+    },
+    "megapark/textures/384272052e183fb5.png": {
+      "bytes": 61538,
+      "sha256": "0341a7e434be52101cd7b64f17326277332502696fde8ef6ec17a2aa25c4646a"
+    },
+    "megapark/textures/39afa4f3f302293f.png": {
+      "bytes": 9788,
+      "sha256": "00fbe34aff2c6a10decbe23e9afc117e8d808810c25fd12397c0ec8c112f19ca"
+    },
+    "megapark/textures/39b7b3787cf35464.png": {
+      "bytes": 136228,
+      "sha256": "97925d62ef837a02a844a2ba3e6acb25f140acdb7eddbe89582e36c989288c97"
+    },
+    "megapark/textures/3a6f97f960a69eac.png": {
+      "bytes": 198,
+      "sha256": "b2a2c76b2530b45b5c07a8b55d4763133b0a4961f0bc81e960bcb5670cf28864"
+    },
+    "megapark/textures/3b04f17657360321.png": {
+      "bytes": 223,
+      "sha256": "567dd3f92140f9e556930d15d3f2110699307771b366f66a7fb5dadcc980034a"
+    },
+    "megapark/textures/3ce5e122c8d92e99.png": {
+      "bytes": 164,
+      "sha256": "1c174a63484ddcf3167212fbb207875e2e64708610010d7dfc74e6bb8d2bc3e3"
+    },
+    "megapark/textures/3e8c081d1b6f86ce.png": {
+      "bytes": 267,
+      "sha256": "3805b1059cbc6313e175c5cd01267a1a981fd5c59b34c94c9a63aa709e183b9c"
+    },
+    "megapark/textures/3f19aa4302e187a8.png": {
+      "bytes": 195,
+      "sha256": "65b8e27717c8ae2651bac37e8cb13178b1a7490ddacfc5d25dd4b666d2e73206"
+    },
+    "megapark/textures/811c1938d9d1640a.png": {
+      "bytes": 72851,
+      "sha256": "8ac002900ccb0ba86f9c67c5a96a9c1ee563ca55368891f3fc30bb4f1b570728"
+    },
+    "megapark/textures/8138df6e97ef3835.png": {
+      "bytes": 25211,
+      "sha256": "23158e2ca76ae8efbc39f3845e4274e3faa770e13a9dcf32917485486ebc1e37"
+    },
+    "megapark/textures/816b088e7ae71e47.png": {
+      "bytes": 16566,
+      "sha256": "b7bbd57e55dff07bd1fa85044b0837fa1788ce85e60613a8f3d1d46ccf00571b"
+    },
+    "megapark/textures/81a73999a385e4fb.png": {
+      "bytes": 241,
+      "sha256": "f7cdb2ce024ceaba2f91a89fbbd4d9641e9bdfaa89efad6a0f3c8e6819d73a0a"
+    },
+    "megapark/textures/82287efe2fbf5a5d.png": {
+      "bytes": 652809,
+      "sha256": "a3d2f957b68b5064cf84a412d65950b60f2db1069f8ea09b80cce30f165a4dca"
+    },
+    "megapark/textures/827d53c1f5b714d0.png": {
+      "bytes": 209,
+      "sha256": "f6647b1e98e8f4448873cfb688e7e43299d9bbfaa5ef26ea26fae87889e76f35"
+    },
+    "megapark/textures/82abf94d073df989.png": {
+      "bytes": 642,
+      "sha256": "7f990e2f7079fde129ca9fd60a2d1e231354f3ad1d825852c3f363f0c5bd7254"
+    },
+    "megapark/textures/83686e88db561e3b.png": {
+      "bytes": 225764,
+      "sha256": "41c7693f20729bf32901a1b28fe1bfe59c3093c250d97d21fc23ebc42831b27b"
+    },
+    "megapark/textures/839bce5edfe8ec5f.png": {
+      "bytes": 264,
+      "sha256": "cdc0e02c821ba4a84256c5745f277abf05cd9d0785c394d625bbb3a342494169"
+    },
+    "megapark/textures/83de62cf165dc46b.png": {
+      "bytes": 55597,
+      "sha256": "4bc726929adc1e67ec442e69bc0d229771fd201948336f56a94ba3ef899cda4c"
+    },
+    "megapark/textures/8449db74f309e325.png": {
+      "bytes": 738,
+      "sha256": "447c96460a94d5a703423b6ed5f2d235f102fa3b9a14328a480544e3890ac676"
+    },
+    "megapark/textures/84b85e2444f40e74.png": {
+      "bytes": 212,
+      "sha256": "f68c5cb44d0f27fa67f57d498f2d9d3f597c59e09d17d52d8dc64a76f0f358d8"
+    },
+    "megapark/textures/8885f232898f772c.png": {
+      "bytes": 660,
+      "sha256": "bd88b687c3470d68d6b6d9beec1e83b88075cedbbbeb4b47e05499869bf014be"
+    },
+    "megapark/textures/88a32f98c86c9051.png": {
+      "bytes": 698,
+      "sha256": "ba6512bbff2ef6c3298a41cef92c12ed4e7a966df19aa26b53c36d2655985a67"
+    },
+    "megapark/textures/899c6d4cd1ab275a.png": {
+      "bytes": 35650,
+      "sha256": "170b459b1e12dcb312bed79e9d9d2eb510ffd0d29f6add672a99c0d80fe39c25"
+    },
+    "megapark/textures/89a536c856bd1dbc.png": {
+      "bytes": 10652,
+      "sha256": "7249b1d69697c6b4ca37f22e884b538aa2746148fabc99c83f325b082ef103ca"
+    },
+    "megapark/textures/8b068e5c4f70dd7a.png": {
+      "bytes": 2473,
+      "sha256": "bb06a252ef4300845ce459c0924c53a94f789adc51ba319ca8ddec63693b7b16"
+    },
+    "megapark/textures/8b1fb567162f9e8c.png": {
+      "bytes": 155543,
+      "sha256": "837b5b8445e8214b253577387d88677c66e2c29b98045ae13153b271ab3d87dd"
+    },
+    "megapark/textures/8c21aeb0381e2c75.png": {
+      "bytes": 151742,
+      "sha256": "1ff169b558dd2c2ff67b9654f65637b0dacca43795af35f519efff1ed2aa3fd0"
+    },
+    "megapark/textures/8ea6cf3979a66841.png": {
+      "bytes": 18536,
+      "sha256": "c6a5d2d8d956963bbdadf7266329d04c3f7699a41c9733c6242570d867d22b19"
+    },
+    "megapark/textures/8f426b4a873045a1.png": {
+      "bytes": 116644,
+      "sha256": "972e7f7e60d772e0ac434a2e694d4476a359f4559a4a9c60c469ea21b7db2175"
+    },
+    "megapark/textures/904df673ddfd6098.png": {
+      "bytes": 673675,
+      "sha256": "b43be3c16616518a59aab374b6f351a85deda21b2020445d569cb18e7b3fd2eb"
+    },
+    "megapark/textures/9077beb454c3018d.png": {
+      "bytes": 147547,
+      "sha256": "e8f9e15815803859dcfd18a98f21761dbb3d2c7ddb371b09e39ca55f94357ae2"
+    },
+    "megapark/textures/9078b982b39b5d0f.png": {
+      "bytes": 96149,
+      "sha256": "43a7232584c1d8d476f58f633bf806b55da33aafb3043d6913786e92679cfe60"
+    },
+    "megapark/textures/90c536babe1d95b6.png": {
+      "bytes": 53823,
+      "sha256": "21d050eb1afb2170aee54ba2f3fbf22c3da79da88c6cc265ec5c7673d24244ef"
+    },
+    "megapark/textures/9201bea53424ba58.png": {
+      "bytes": 647,
+      "sha256": "c33d4d3bfaddf6ec9f32e6fc59d1e98d5b69861832a26900ed626f314316d905"
+    },
+    "megapark/textures/947c2f175392176e.png": {
+      "bytes": 157925,
+      "sha256": "07a417e3c4440588abb37a1760e0c18ff0929b864e87fe526a03b804f19259f2"
+    },
+    "megapark/textures/95547a2605a8d7dc.png": {
+      "bytes": 114951,
+      "sha256": "6da4471e68b00319cd77cdde65db25291f02386e7b8e8f066929c30df4edf0da"
+    },
+    "megapark/textures/9630bc673c05eaa5.png": {
+      "bytes": 220,
+      "sha256": "182f0b5ea87f63aeb56da1065acb796f24c4c9a7b0d554ee8bd717072500149f"
+    },
+    "megapark/textures/974d6b5ec2d8ed95.png": {
+      "bytes": 205,
+      "sha256": "671ef240aaef3f1bd1957da5d13ad3b2d842001ce7bf1b8e7ace428788f20f5b"
+    },
+    "megapark/textures/9863b5af7181224c.png": {
+      "bytes": 5064,
+      "sha256": "2074fd32cbd32c983c58b0f17e40bb6edc604ae75b872559db9d74d798e6d43b"
+    },
+    "megapark/textures/99d8fac78944fca5.png": {
+      "bytes": 203,
+      "sha256": "c69a269390aa03a53a9ebf40f542465e3a023b4d878a42cb9a424fb3f8e2c50a"
+    },
+    "megapark/textures/9a0b4689151424de.png": {
+      "bytes": 18514,
+      "sha256": "036577b2c663a79b6c78b94fd6f2a2944a052c1fd222f934eec5b3c02074110a"
+    },
+    "megapark/textures/9a28b43865f9cef5.png": {
+      "bytes": 134981,
+      "sha256": "0c0429b51811a035a6a071b3f7f54babf033c6e5cfce7b5e8e1ff06a5f0dc248"
+    },
+    "megapark/textures/9a9dc322779afe04.png": {
+      "bytes": 413768,
+      "sha256": "39c59c17e39e2c41d7b72885d50e1f1b4d1d0c0697cd4c2de8f276126b999345"
+    },
+    "megapark/textures/9b20e99f9340cc9b.png": {
+      "bytes": 6496,
+      "sha256": "a12b8cb6d9d7fc318f4d31c33f0144824ca9a37c6850706c91f215131b611fbd"
+    },
+    "megapark/textures/9c0719ed9f4cde40.png": {
+      "bytes": 113852,
+      "sha256": "0a513d7099049d79c7c38d432f4346232415f44b92da68fc5d3dc05099094c0a"
+    },
+    "megapark/textures/9c261ef719ba5b8a.png": {
+      "bytes": 515,
+      "sha256": "c37a0bfafa83a9ed341cccc4f5d7e315f306213e0b54992848b0a382c7c2cc58"
+    },
+    "megapark/textures/9e332701a27c85ba.png": {
+      "bytes": 186,
+      "sha256": "82d3dce3a0ba59066535352905303deda506140ee9a636db842f6282c7a04b45"
+    },
+    "megapark/textures/a13a0b6bac593669.png": {
+      "bytes": 156093,
+      "sha256": "38b4c0f45b8b1c69d12a06757e8eed7d0330b76cfcb627de0703c8b1b5f347fd"
+    },
+    "megapark/textures/a16c547f87915aec.png": {
+      "bytes": 223,
+      "sha256": "5a1adcd1c917f27cde30dddbd2988284de0238f8b09a24bfda4262dca384135e"
+    },
+    "megapark/textures/a203922437075989.png": {
+      "bytes": 229,
+      "sha256": "b3eac5cbe7a40383db33e2e523d0f465e0ebaa66055b0e9ce432c42d4d5dd57f"
+    },
+    "megapark/textures/a36e65f8943a61a7.png": {
+      "bytes": 49613,
+      "sha256": "46d6094b021238bdcd956eda4f2fba64b4a403f674d00696be1aefe6e5e2184e"
+    },
+    "megapark/textures/a402a42bfbf706e8.png": {
+      "bytes": 11320,
+      "sha256": "d18d5bc5cf4e4b5cf0acb461fcefe3c84352feb3c47678c333dfcadf031d8921"
+    },
+    "megapark/textures/a60755bb5ad41d02.png": {
+      "bytes": 26213,
+      "sha256": "d1f6b275be99045221f48b0c7631dc365501e93f48d338acf3b232fa8560e3e2"
+    },
+    "megapark/textures/a64add729feaee13.png": {
+      "bytes": 15853,
+      "sha256": "8b268776a0b71f7d2854269d0586f478ca4f129a89dde50b97d3cb2c228776e1"
+    },
+    "megapark/textures/a6b25b32edd4315c.png": {
+      "bytes": 386,
+      "sha256": "80e6f0ef39a89c6f2340366f8999fad1f9c06b55d2106e7cb3969e101570e567"
+    },
+    "megapark/textures/a7cb65d5b3c28176.png": {
+      "bytes": 50199,
+      "sha256": "7088702cf8879a2d8dab8cfc6046c4618900809fdcd43a366e870a59e0087a7b"
+    },
+    "megapark/textures/a80b3ed0b74203f8.png": {
+      "bytes": 183,
+      "sha256": "b9ad346f89becf8842a4d64720af5db67ef8d3a567f460bfa028e21e95068c20"
+    },
+    "megapark/textures/a9c1ee944a71883d.png": {
+      "bytes": 651,
+      "sha256": "ccf38b9cb95b5928a3a48fe712b6a5663433b516fa9465278a09cf3aee1d29b5"
+    },
+    "megapark/textures/aa8d4b67e39e63fe.png": {
+      "bytes": 82277,
+      "sha256": "2f152759e57fb622610d679281d24376c3cdc618f038e1c0210299ab9d417e56"
+    },
+    "megapark/textures/aaf72c1580e132c6.png": {
+      "bytes": 194791,
+      "sha256": "db43c45e2eda9c0d655c0ba08624e44686f8fafb9ed2106091e97a1ed043ef71"
+    },
+    "megapark/textures/ab32b598804e1a53.png": {
+      "bytes": 4765,
+      "sha256": "fbb6f25e9013cfa1e1366626195648f529912fe5b8bc2b9311cb69ba6a0a1725"
+    },
+    "megapark/textures/aca5394ca68387a4.png": {
+      "bytes": 522,
+      "sha256": "b1696e4127820d7ad3065ed09937bd502f34e264b243466d1e561dbf6f8458b7"
+    },
+    "megapark/textures/ae263779df8a3ee9.png": {
+      "bytes": 574,
+      "sha256": "c6c9cd1d5c1f08e9930fdf3f6ccccaced5ddfba695d1bc36fb8d81207c3deed2"
+    },
+    "megapark/textures/ae7e91da62d71338.png": {
+      "bytes": 258,
+      "sha256": "7033a87d457d06b474f74ac8d66d2e2325af3d18a30f2e5e3a88e79e98561cf8"
+    },
+    "megapark/textures/af6f44110d96737f.png": {
+      "bytes": 114,
+      "sha256": "e73990bc8f6b4a177d7e53bba18e8103fb9adde0d94fa10deb8e9f0ae9b644ea"
+    },
+    "megapark/textures/afcb4ee7ecae3e13.png": {
+      "bytes": 19534,
+      "sha256": "25fd89547b8d4d5b4bc5f6e86628c3af8fad8968bec524397d1779a4093e0710"
+    },
+    "megapark/textures/b2d195a329dcf8d8.png": {
+      "bytes": 12238,
+      "sha256": "7f9cb36a76ae25b24651b1cc18f7ff879d71a4c92ab4ea1dddb40c5abfaf175c"
+    },
+    "megapark/textures/b3e7cbdeda4be41a.png": {
+      "bytes": 190,
+      "sha256": "05af62b0e71d854796ca71556b82487ac5f6d7a88b99a67acbf923a34ff10398"
+    },
+    "megapark/textures/b48e66d76bac493b.png": {
+      "bytes": 47137,
+      "sha256": "2b8a51dabe0f21554953efc3d920bb6cc92f8e18f001dcd2493b1d039390fa91"
+    },
+    "megapark/textures/b4cd355d0eb25de6.png": {
+      "bytes": 60596,
+      "sha256": "ba803f2a688ab90c07ae63aafe74a18b562bdfd682e172ea1baf6aeccacf8a0e"
+    },
+    "megapark/textures/b4fe155f5dd69a30.png": {
+      "bytes": 75996,
+      "sha256": "e90752f9c56927d797028137e50e185913cf27c3a28b96b480bec10cd3a9d0ae"
+    },
+    "megapark/textures/b60327a2b92e96d2.png": {
+      "bytes": 12736,
+      "sha256": "a83318338d672d34294f4339a772f4d983d587c20be629c9339b813991b6c444"
+    },
+    "megapark/textures/b61e96edd2cf70ba.png": {
+      "bytes": 208215,
+      "sha256": "01d080c88a90870448b63fafca2f554bb9ee001d75e395e17ca01544ff3afa97"
+    },
+    "megapark/textures/b6bbcf842c83eb52.png": {
+      "bytes": 637,
+      "sha256": "8a60b01bbebff6a4e905b210abbbe9eaed8c542ef52928e1945b1d40fb523eca"
+    },
+    "megapark/textures/b6ca42a92c771737.png": {
+      "bytes": 541,
+      "sha256": "dfcdc17025dc08262eac9b56c0f2cd3295c5e22ccefdc37716ed4aae3ce3916d"
+    },
+    "megapark/textures/b6eb7ded8c45dabf.png": {
+      "bytes": 8239,
+      "sha256": "ccbadfd275450cff67d03e20e4a0a98261da8648cc9e1f26cff848a7726d89b6"
+    },
+    "megapark/textures/b7f27b9f01180829.png": {
+      "bytes": 75503,
+      "sha256": "f02de52214eb151816a792542ec8e7acb76535e42366e877e70916994d9ab5b9"
+    },
+    "megapark/textures/b8b5e0ad18a048e4.png": {
+      "bytes": 201257,
+      "sha256": "a46b9ed338069a935adce8ffd16f90e986aa8676a08bf4106cc97855506d4d6e"
+    },
+    "megapark/textures/b908ee3adf6700ed.png": {
+      "bytes": 250,
+      "sha256": "9fdce9275c8edbad370693aba17c5770c186d72edc5ada274944ed7ee04343e7"
+    },
+    "megapark/textures/b97638feabb712aa.png": {
+      "bytes": 521,
+      "sha256": "1c25fadad322834a53fe834809cb02a5916b48740e24fdc4238a1f5f6b65350f"
+    },
+    "megapark/textures/bb2a353792e40111.png": {
+      "bytes": 67141,
+      "sha256": "e30351e1fe0a80a804d34eb4a99ead6a883c766b0f1e02ca3c9b24ed3dd24b82"
+    },
+    "megapark/textures/bca5257e6dc45a4c.png": {
+      "bytes": 68254,
+      "sha256": "c5caa68de6484907d2072dc57fae74f3ad5102679f200fa0048eb3051dc9e97e"
+    },
+    "megapark/textures/bd5cf3d0fea41312.png": {
+      "bytes": 19132,
+      "sha256": "c39c450f0788facfe46952f9209d61b2aceb79b1756079b25b48214ffffce5e6"
+    },
+    "megapark/textures/bee4adce254cfefd.png": {
+      "bytes": 34889,
+      "sha256": "a68a9b482530f09ba5f8f86eb37ca7dc0c227a3f773e68955461b1d77935c21c"
+    },
+    "megapark/textures/bee8e9ba50a8ffa7.png": {
+      "bytes": 167902,
+      "sha256": "55bd3d5217d9cd9dd4c616f9450a63da608ecd7e765b20e152a154d657211559"
+    },
+    "props/stone-lantern/concept.png": {
+      "bytes": 1116491,
+      "sha256": "b761649d58cde7bcc52a048fc46d038c42b35550da35adecb61f6db78a43aa89"
+    },
+    "props/stone-lantern/stone_lantern.glb": {
+      "bytes": 4521568,
+      "sha256": "cbd234756dc1372f0dd82edcf1ba8edc49b172f7729f5c2f8b1ba4fb4aa50a69"
+    },
+    "skatepark/concepts/bowl-transitions.jpg": {
+      "bytes": 335478,
+      "sha256": "edf136622f9d377e0729e19d68c7c5b63ebd48e2921802c59f1c429dfe1340ab"
+    },
+    "skatepark/concepts/flow-overview.jpg": {
+      "bytes": 339143,
+      "sha256": "65406aad4fd82e73ce45949a4d18c38d7dadfb03de8bc300695b1d4d99be966e"
+    },
+    "skatepark/concepts/flow-street.jpg": {
+      "bytes": 314631,
+      "sha256": "0ca6407b74e72b84fa7c1f0ea643613d8a227d50549097c38ae2e21a5e1747ac"
+    },
+    "skatepark/concepts/pier-overview.jpg": {
+      "bytes": 483734,
+      "sha256": "2c90a7b00e262c7c8e60a91b0928d0b583de12dda4c4504c668c12f80ce54fd4"
+    },
+    "skatepark/concepts/street-lines.jpg": {
+      "bytes": 312315,
+      "sha256": "dcc69cba4ab469d15fdd32bf25604765916fee50712178c8b9325d54a468135e"
+    },
+    "skatepark/modules/bench.glb": {
+      "bytes": 5616,
+      "sha256": "efa0d7c99dd67476b50438c81f369e2631caa4c464b0de7c5c67f33a30d5c827"
+    },
+    "skatepark/modules/curb_rail.glb": {
+      "bytes": 30392,
+      "sha256": "9960b827b00deaa1fbc2aaef79511e2cd7ab560ae117f7c620c516f7ce6393c3"
+    },
+    "skatepark/modules/handrail_med.glb": {
+      "bytes": 3660,
+      "sha256": "5b66101704a8ad8e46a0c2463964f35a6ab9e1febae9b47b6e0dd63e2b7cd288"
+    },
+    "skatepark/modules/handrail_sml.glb": {
+      "bytes": 5732,
+      "sha256": "31a858566eb5fc332dd5b08abb18c4babaf3c9c03a12f448e4504b3241497660"
+    },
+    "skatepark/modules/jersey.glb": {
+      "bytes": 15868,
+      "sha256": "c98452f5f9d6711d3cf20ce9acf1deb0774cda5955c7bebb96bd1f2fd983c169"
+    },
+    "skatepark/modules/kink_rail.glb": {
+      "bytes": 5012,
+      "sha256": "d5263e0b969cf2cb89c83f6aa6ff2fca41ddd5d23af4e57b105494322957b739"
+    },
+    "skatepark/modules/kit_flatrail.glb": {
+      "bytes": 5308,
+      "sha256": "683ef0bd2588eb2c17ba63a089f1188bb90dd451d18e4910c1600a82f1d3a99d"
+    },
+    "skatepark/modules/kit_handrail.glb": {
+      "bytes": 9112,
+      "sha256": "5f44851b7755ba8414fd3a6f8330148ba0e7dcbe11b453b916e445bc2896dacc"
+    },
+    "skatepark/modules/kit_stairs.glb": {
+      "bytes": 6380,
+      "sha256": "6a62185063a6f134a6e9027995a8e08073980652bd6f2d8347caab8f2bf90d2d"
+    },
+    "skatepark/modules/manual_pad.glb": {
+      "bytes": 9904,
+      "sha256": "626a58411a79464cc6d0eebd41f68610fd8028a086babb364ed226935b78d346"
+    },
+    "skatepark/modules/park_flatbar.glb": {
+      "bytes": 4264,
+      "sha256": "18bed978caa576659b94718ff868761d17b9af68004b89329967256bd579818c"
+    },
+    "skatepark/modules/park_ledge.glb": {
+      "bytes": 5004,
+      "sha256": "56c5f0a88e0bc49dc90476c9787cf17dcf1199319d74c602c03d63ac785ffdaa"
+    },
+    "skatepark/modules/picnic_table.glb": {
+      "bytes": 26044,
+      "sha256": "6fc43afd6aa7ee549eaae8f4c993fb123e0ef67f1caabb9f555373dab9094b29"
+    },
+    "skatepark/modules/rainbow_low.glb": {
+      "bytes": 18396,
+      "sha256": "c7ecc1767192600d621eeb865cfb747ee0100641920d3290eda8e11313c012ce"
+    },
+    "skatepark/modules/rainbow_medium.glb": {
+      "bytes": 23976,
+      "sha256": "a336151b2866ee9a03422f81f2587c5dea25f29f376e669798e06d266a0dc159"
+    },
+    "skatepark/modules/round_rail.glb": {
+      "bytes": 4584,
+      "sha256": "9c2ae1f12e2a273cf3f7dd5fb4684d0f206c908c2f1d30cbb13242da74d5e964"
+    },
+    "skatepark/modules/stairs_med.glb": {
+      "bytes": 22748,
+      "sha256": "cb135fbd10a977742cca52dfff6dd3958aed4007ed7c1ae8d8788d7688256615"
+    },
+    "skatepark/modules/stairs_sml.glb": {
+      "bytes": 17988,
+      "sha256": "305dd9ae12872f7231d1e07ed05d2746b9d0330d1fe058eaa66c19775a561d94"
+    },
+    "skatepark/textures/ceramic.jpg": {
+      "bytes": 386820,
+      "sha256": "43ebc4153a7b083f092e9edec487535b522d0ef8750d50f3e47c62bf8cd4ad6a"
+    },
+    "skatepark/textures/concrete.jpg": {
+      "bytes": 471285,
+      "sha256": "e49a5551e16674d50e582a53bcc524d40b2273437553648f9f9eb1fdc01a88ed"
+    },
+    "skatepark/textures/mural.jpg": {
+      "bytes": 751579,
+      "sha256": "7a415dba487c17eea094b67fe9d992aa3717049132eb634522045b8262da16b5"
+    },
+    "skatepark/textures/steel.jpg": {
+      "bytes": 441965,
+      "sha256": "64c7d565abb978f26e12896858d6b52fea344a595c2d6e8c00ced31452ebc205"
+    },
+    "skatepark/textures/wood.jpg": {
+      "bytes": 472809,
+      "sha256": "db52093f987c4a56bda07cf36788b17cea86dda3cd8170ee7e4352bce02a5b07"
+    },
+    "southwest/concepts/aerial.jpg": {
+      "bytes": 334786,
+      "sha256": "d662419759c122a5ae5ff80b378be1030b2c5c8f3eb41bd88866abd2dd339b2a"
+    },
+    "southwest/concepts/boat.jpg": {
+      "bytes": 309322,
+      "sha256": "43e7bca48a298a2767d8bb0e488067d4e2370de5c41a69c1a0110ed5d6a84eb2"
+    },
+    "southwest/concepts/far.jpg": {
+      "bytes": 297403,
+      "sha256": "66b4bf6a8bba64065ba48e7ef7ba3fa1de609cf50a2d45d6c025beb8ea1a025a"
+    },
+    "treehouse/concepts/glimpse-day.jpg": {
+      "bytes": 307838,
+      "sha256": "c8701576712dc3ab25d890b8cd4cfb2c0b0cd3bfc3ff7989a580872d44ab495d"
+    },
+    "treehouse/concepts/glimpse-dusk.jpg": {
+      "bytes": 217192,
+      "sha256": "44726b890f9ac9b93390daf03a68cf6e6c267100ac051cbb97f1e567c31b9190"
+    },
+    "treehouse/concepts/lookout-day.jpg": {
+      "bytes": 386660,
+      "sha256": "76e09afeeba838a3d46cc010eddac4dcd3ec0455d205e1b286512ad836b9207d"
+    },
+    "treehouse/concepts/lookout-dusk.jpg": {
+      "bytes": 308276,
+      "sha256": "d6aa8982a886d5f1ce2c77b478b47346b1ba087ab8aad046578c064ce74205fc"
+    },
+    "treehouse/concepts/overview-day.jpg": {
+      "bytes": 547806,
+      "sha256": "934aaa350b373b2d7686e8f671f21007c6201ab6e159be35ebfc36edc0e62b45"
+    },
+    "treehouse/concepts/overview-dusk.jpg": {
+      "bytes": 404055,
+      "sha256": "20d3afe1d7f73956ec94a6a54c653224ab36a3b9c6a1c90390339b1b2e5a78dd"
+    },
+    "treehouse/concepts/reveal-day.jpg": {
+      "bytes": 390956,
+      "sha256": "2eb8d58bd4150219fe300bb04a2646569ba47fbd5e40cc3bb4e3b479211f11b1"
+    },
+    "treehouse/concepts/reveal-dusk.jpg": {
+      "bytes": 301281,
+      "sha256": "101cc5df992e41e60d4566fe56376f1fb8cbef711a451d0b0898a6afddb28148"
+    },
+    "treehouse/concepts/room-day.jpg": {
+      "bytes": 298654,
+      "sha256": "7063a67095e9e9a31df611489c3bdd735358245e739b0ebfd9c3630e01f1567a"
+    },
+    "treehouse/concepts/room-dusk.jpg": {
+      "bytes": 255479,
+      "sha256": "80bef8f76bdaea81cb41bab7353083f1addeb85f1dee4d496eff96008b9a7bf5"
+    },
+    "treehouse/props/backpack/backpack.glb": {
+      "bytes": 506528,
+      "sha256": "0e4c6423fdd67d3f6fe4f8e29044773f71081c482bc813b1ac3431725ba7e2a6"
+    },
+    "treehouse/props/backpack/concept.jpg": {
+      "bytes": 136053,
+      "sha256": "2e555720604d2bc26ea1bf9f3ba23513c32f3c544dc07be899e9d65b434eee4a"
+    },
+    "treehouse/props/barrel/barrel.glb": {
+      "bytes": 587636,
+      "sha256": "a380c63e8220d3da609c0a1c0092b2c375799c333ebaa4d55801f00550efdc7b"
+    },
+    "treehouse/props/barrel/concept.jpg": {
+      "bytes": 130420,
+      "sha256": "92fbfe89a5098f6a665332dab3e9a66a5f3dd3216bd747a9db1e1ec3013784f9"
+    },
+    "treehouse/props/basket/basket.glb": {
+      "bytes": 795896,
+      "sha256": "a01c3cbc2e18e25de093e78cc6274fa191eb10a4df64b21fd2983db43d72a1de"
+    },
+    "treehouse/props/basket/concept.jpg": {
+      "bytes": 113178,
+      "sha256": "18d60a8388273113f70ad4c8ae79ef60e67314f7591d63f42ec1efc51c323dad"
+    },
+    "treehouse/props/bell/bell.glb": {
+      "bytes": 583032,
+      "sha256": "8cb32d10a28420a7aa42e838787997d1ab8b5d6542e117f95ff4ced3461d867b"
+    },
+    "treehouse/props/bell/concept.jpg": {
+      "bytes": 89292,
+      "sha256": "3ee47c89fc9fb018f89888d12a2e0977f685ee4986a98547da29e14b9c2d5262"
+    },
+    "treehouse/props/bookshelf/bookshelf.glb": {
+      "bytes": 658348,
+      "sha256": "079a948b2cc7562c7fd1ea5edcf9d91bee34914f58d92184ef66ed9914085ccf"
+    },
+    "treehouse/props/bookshelf/concept.jpg": {
+      "bytes": 130252,
+      "sha256": "27ca62e0fcca7e8afecb97740d054c0cae3733c18e3da2d0b7ad1d55312a522a"
+    },
+    "treehouse/props/crate_desk/concept.jpg": {
+      "bytes": 126714,
+      "sha256": "3cf02f531ea91b33216e2f865a5a3ad3dca1bd459592adcaade6182f05d3f29d"
+    },
+    "treehouse/props/crate_desk/crate_desk.glb": {
+      "bytes": 678664,
+      "sha256": "7d18db3aa8b57e6b13d2ea3ef6def75b4990053828a639b2114a678daa767583"
+    },
+    "treehouse/props/futon/concept.jpg": {
+      "bytes": 131352,
+      "sha256": "8f457e9fc21860b27b8a52c9d9e1546f2e7304c6c323f6e9eff7485226ea0d45"
+    },
+    "treehouse/props/futon/futon.glb": {
+      "bytes": 471864,
+      "sha256": "d49d5fbd2248cb2903cffd813accda0ea931fa600a547e4740dd6f98c548f06c"
+    },
+    "treehouse/props/globe/concept.jpg": {
+      "bytes": 119563,
+      "sha256": "7e1cf58cc9fd9d4ecb98166aeb366b0ccb029c30a6acd98fbc53f9f2760195a9"
+    },
+    "treehouse/props/globe/globe.glb": {
+      "bytes": 529296,
+      "sha256": "a1a8cb52d8b150695b7d4efc4089a79ffa560e3c4f98d8c0122ef23e619abb31"
+    },
+    "treehouse/props/kamado/concept.jpg": {
+      "bytes": 160503,
+      "sha256": "41288ac055292f5631c617ecf136bda7f543245473d5a2975c0080d044b9321b"
+    },
+    "treehouse/props/kamado/kamado.glb": {
+      "bytes": 579984,
+      "sha256": "9ff3ceefa7ce977097b985bad56f96a84323d33bd2d361fce29439e0fac6f409"
+    },
+    "treehouse/props/log_table/concept.jpg": {
+      "bytes": 142010,
+      "sha256": "b200f7fc00fd702541d7148955f0601440e84ea12db9332fb83a5fae9ebc7cd9"
+    },
+    "treehouse/props/log_table/log_table.glb": {
+      "bytes": 620300,
+      "sha256": "5ddbc061fb7d2dec5808e298a65fa2e9b95497fa9c50e2406070d664cc6492e7"
+    },
+    "treehouse/props/planter/concept.jpg": {
+      "bytes": 146445,
+      "sha256": "e90e09246577c8be027bcdc5090a4a0c097ee297a6bac4f9d20e7c115bf759ab"
+    },
+    "treehouse/props/planter/planter.glb": {
+      "bytes": 475964,
+      "sha256": "c9c773a9581cb2d27ed391f7ca5606c720c034cb96216411f66e3b31008041d3"
+    },
+    "treehouse/props/stump_kettle/concept.jpg": {
+      "bytes": 125508,
+      "sha256": "be5700f1d1adc2e733333b080b3df0b53eb56ec4ec9e4871c62639e2be8ab811"
+    },
+    "treehouse/props/stump_kettle/stump_kettle.glb": {
+      "bytes": 568368,
+      "sha256": "7b0c8c5d27486486cd4b93871d32dde373cc189bb6fe80a442cda64088739d5c"
+    },
+    "treehouse/props/telescope/concept.jpg": {
+      "bytes": 84429,
+      "sha256": "f9691bf52e3e5c753bb90bf695d7a751ea4ef46857602b2a536feaf5b61afe03"
+    },
+    "treehouse/props/telescope/telescope.glb": {
+      "bytes": 575016,
+      "sha256": "385edbbe2502d0135e29bf691598374fb30240bd152e352dadcaf70b325c8a4d"
+    },
+    "treehouse/refs/boat-approach.jpg": {
+      "bytes": 431075,
+      "sha256": "256b8f987bb59a58cf45a257f9747012598d6681106f08a1cc10b6090e8a2f47"
+    },
+    "treehouse/refs/boat-inside.jpg": {
+      "bytes": 359281,
+      "sha256": "823a507b4cebdafb94b00eae7d52ac73289dd77eabbf9e7ace899fe0d88f99bb"
+    },
+    "treehouse/refs/chimes-approach.jpg": {
+      "bytes": 447667,
+      "sha256": "35bffe3e656bd374a5d6a20cd58a0ba6b53f645803f63e88728ee029c22d9b41"
+    },
+    "treehouse/refs/crow-back.jpg": {
+      "bytes": 438891,
+      "sha256": "bf8499284b4f8a063f87dbb8217500169c939505f522e41c64f1d1e488265df5"
+    },
+    "treehouse/refs/crow-sea.jpg": {
+      "bytes": 442533,
+      "sha256": "daff976e0d335317e8f332b4e35d2b509687ec1d6c445b15ec3b24f11ce0d0f2"
+    },
+    "treehouse/refs/entry-glimpse.jpg": {
+      "bytes": 393184,
+      "sha256": "d1e29daea937a1cb005a8ac79c4848ca889adef5c1ff2599ae1a7a5994a393d6"
+    },
+    "treehouse/refs/entry-inside.jpg": {
+      "bytes": 294366,
+      "sha256": "70fbbf6c177decefc53c4845a5ac6f1450b3966c959fcdeacef4c8b8df11207d"
+    },
+    "treehouse/refs/entry-reveal.jpg": {
+      "bytes": 419654,
+      "sha256": "9e6f5f42fa802dfef100c5b673faaabf77697cdcd492558fe697f6a9bc1d945c"
+    },
+    "treehouse/refs/heart-approach.jpg": {
+      "bytes": 457043,
+      "sha256": "851e12d437dc2fd2035375fc83aa8bc21fe2d26726c4e59e84bc54e478457eb6"
+    },
+    "treehouse/refs/heart-inside.jpg": {
+      "bytes": 311558,
+      "sha256": "f5df33d776ebd2d32d16d08b0844030e4ef6717b710cb6de351c76f0f4dd7002"
+    },
+    "treehouse/refs/kitchen-approach.jpg": {
+      "bytes": 383898,
+      "sha256": "6a418950e5f605b3c6241a98b6c193e81d2543eed164d0745ff1c99104b3ce6e"
+    },
+    "treehouse/refs/kitchen-inside.jpg": {
+      "bytes": 306443,
+      "sha256": "e4d6faa35a6b462bc0ba9239c27a037c2e6d93984facdf014fb50464ea195973"
+    },
+    "treehouse/refs/library-approach.jpg": {
+      "bytes": 437285,
+      "sha256": "f689c4ebc2f1530d56ad0d231a2d790314aa046db692c1bfb69702367ba6fa58"
+    },
+    "treehouse/refs/library-inside.jpg": {
+      "bytes": 284157,
+      "sha256": "958bb6a71d5487e00ac762a831b62440d2218f97fd34901316346a3c47480861"
+    },
+    "treehouse/refs/lookout-approach.jpg": {
+      "bytes": 374822,
+      "sha256": "545db06a6ea1bb2b072eb153149f10c1620932ceaa4f32039bf9a47271f61df5"
+    },
+    "treehouse/refs/master.jpg": {
+      "bytes": 585739,
+      "sha256": "0b140d2687ffdb685eecabb98ea6a4fb15cbd4ba52644c71888de404b4ef21e2"
+    },
+    "treehouse/refs/overview-east.jpg": {
+      "bytes": 588296,
+      "sha256": "a1d39a7ed4f07640625b849e2909b798ac5051c5db05214c70cbc8a7068dd444"
+    },
+    "treehouse/refs/overview-south.jpg": {
+      "bytes": 582038,
+      "sha256": "d2b96d676ed4edf59ac42cbf29b6bc69ae99854fd40b317ed2b30d350ea7d433"
+    },
+    "treehouse/refs/pulley-approach.jpg": {
+      "bytes": 417648,
+      "sha256": "8de45505dffda4d3079fdda66dd2887faedcb5e72a973c5c3d120c5d5ca54005"
+    },
+    "treehouse/refs/sleep-approach.jpg": {
+      "bytes": 439822,
+      "sha256": "c57623ab7f02aaaa3b6c3a6c72bacbcf9811044bea502ab26a662138c9fb5e3d"
+    },
+    "treehouse/refs/sleep-inside.jpg": {
+      "bytes": 277372,
+      "sha256": "ab7722371e5b68e9cb9ed44a6ea5d33fb35dfa30b2357e36f5dd8a0b395de54c"
+    },
+    "treehouse/refs/slide-approach.jpg": {
+      "bytes": 480651,
+      "sha256": "de0647d711dec11c0566dc6a7b31135ff19f3fd744a1555f594ab012e03b557c"
+    },
+    "treehouse/refs/slide-foot.jpg": {
+      "bytes": 436523,
+      "sha256": "915f302287c16cc66825bf316c72ae306074b7884fbc6d9d4af9977c756ff5a9"
+    },
+    "treehouse/textures/bark.jpg": {
+      "bytes": 592267,
+      "sha256": "fb18246bc21f92e08cdf0d7af98da4642a2a7aec3c6f2bb21be8b44825b567cd"
+    },
+    "treehouse/textures/books.jpg": {
+      "bytes": 429172,
+      "sha256": "a739aa8d58365b5e751aac9cc81a4387687031523235ea63d55bf8b41b44b562"
+    },
+    "treehouse/textures/canvas.jpg": {
+      "bytes": 403401,
+      "sha256": "cfe699f6b3c14148ebf2754cdc66872d2443bb5a7729008964ef1931fb1a1974"
+    },
+    "treehouse/textures/cushion.jpg": {
+      "bytes": 346733,
+      "sha256": "6e1703131c16e36ae3a894f44c028249ee619efcbe5024b280451bfbdbebc8c3"
+    },
+    "treehouse/textures/flag.jpg": {
+      "bytes": 346914,
+      "sha256": "bfa5324c9d22e3cff4b8cd25ff043d29c5ee48e7064c770198ab34adea77ba25"
+    },
+    "treehouse/textures/hull.jpg": {
+      "bytes": 510752,
+      "sha256": "c31151e6cac0521d1e234a5e1da5ae1db5c67d912f897e3deb9b902dd0e2b663"
+    },
+    "treehouse/textures/indigo.jpg": {
+      "bytes": 507404,
+      "sha256": "1aa0e97feb3611787701982fd7e4b171b461a166f82558cf12998cf46c6a35cf"
+    },
+    "treehouse/textures/iron.jpg": {
+      "bytes": 551838,
+      "sha256": "e317b7f28d7e4688c19cb7510ceffd79d61bc6c0fe6e4b43d4fdb839cf682370"
+    },
+    "treehouse/textures/kite.jpg": {
+      "bytes": 204212,
+      "sha256": "4a8f74ea878e4e2c13fc731ed53cc48a00b36db9505c36caa2a7bbdab1bc84a2"
+    },
+    "treehouse/textures/map.jpg": {
+      "bytes": 563142,
+      "sha256": "310061be0c0291c9c7cd974ee0aca09f066c441d095dca09c8f871b70482d691"
+    },
+    "treehouse/textures/moss.jpg": {
+      "bytes": 630642,
+      "sha256": "67bfc44b106f4d366703ce8be6546838b973d5ea3be82c08819b501ff86bda5a"
+    },
+    "treehouse/textures/noren_cream.jpg": {
+      "bytes": 246857,
+      "sha256": "9526d1c31d3ad462f2151ad2b1abce3cfc833f0620acd7af397ab8a7ee7954db"
+    },
+    "treehouse/textures/noren_indigo.jpg": {
+      "bytes": 285992,
+      "sha256": "37fc2367433e904cb6ceb9d4c20a45a6ffb7fbcc204119b1a9296d0cd49eb914"
+    },
+    "treehouse/textures/paper.jpg": {
+      "bytes": 358380,
+      "sha256": "038d5a88400a9394bb00391540c99cce99a68946485bfc7f564f23c728001cd9"
+    },
+    "treehouse/textures/pictures.jpg": {
+      "bytes": 681771,
+      "sha256": "2723e6d28888f4f1326b93de687fa931caaf6d0cf84a240317ae6e4e175f1667"
+    },
+    "treehouse/textures/plaster.jpg": {
+      "bytes": 408629,
+      "sha256": "0a693aa10992c93f9a43f89f3fe92dc53cc5a7a368c7910c807119c4ffd0c28a"
+    },
+    "treehouse/textures/quilt.jpg": {
+      "bytes": 435061,
+      "sha256": "e96b85bf8d1d1a5cd363df07194535e1c365cfc09de7b1b636989c6feb795101"
+    },
+    "treehouse/textures/rug.jpg": {
+      "bytes": 502471,
+      "sha256": "10b07b6b4f9851e0a59aa33abfc061fc70f562afc1829b290854ad7ec775a9a2"
+    },
+    "treehouse/textures/rug_blue.jpg": {
+      "bytes": 497733,
+      "sha256": "f73637febb12391de4a3c556106204810a607d2f9c15b2d91d9f4d3c4a7b7b9e"
+    },
+    "treehouse/textures/shingle.jpg": {
+      "bytes": 470414,
+      "sha256": "9f6421fae5d4b529e4b25b891686c260587018e0e2ddf3dba2580131c0799c05"
+    },
+    "treehouse/textures/stone.jpg": {
+      "bytes": 576906,
+      "sha256": "967551a7364cdda29a9e60aaac496361c7d544be737f76dcc73b00a6d9670009"
+    },
+    "treehouse/textures/straw.jpg": {
+      "bytes": 396537,
+      "sha256": "d7c200a74fc0bd3028df4e24c9fdd502134ededa84517364bf5babad5b08e8f6"
+    },
+    "treehouse/textures/tile.jpg": {
+      "bytes": 412662,
+      "sha256": "fd5619d419b36859839c580dced9611cebd639b47b9ee2e69f3f71ead482a3db"
+    },
+    "treehouse/textures/wood_pale.jpg": {
+      "bytes": 198001,
+      "sha256": "17a6a9b7871cc1fc9968e62b947000bbc5fc667a8cfb75d53ccca337ecddb3b2"
+    },
+    "treehouse/textures/wood_plank.jpg": {
+      "bytes": 425308,
+      "sha256": "100dc08feef14eb44e4dd3676df88a85f430d67fdd24960dcd1cafe000cd0360"
+    },
+    "treehouse/textures/wood_timber.jpg": {
+      "bytes": 385333,
+      "sha256": "8de60cf7892e108b9815e6954d8e157100c3929b25a4b2b88c44457746b41ec3"
+    }
+  },
+  "native_skating": {
+    "directory": "unreal/Content/Data/SkateNative",
+    "manifest": "package-manifest.json",
+    "sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d"
+  }
+}

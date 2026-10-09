@@ -20,7 +20,7 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 (`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating data check (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
-reuse completed steps. The optional community park is included only when its source is present. Build stamps,
+reuse completed steps. The community park and skate pier use committed GLBs from our asset library. Build stamps,
 generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download

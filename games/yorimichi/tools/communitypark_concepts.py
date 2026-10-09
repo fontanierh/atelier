@@ -2,8 +2,8 @@
 
 uv run python games/yorimichi/tools/communitypark_concepts.py [--only ID,ID]
 References are game-review captures cropped to 3:2 under build/yorimichi/communitypark/concepts, plus the Mega Park
-restyle concept as the shared art direction. The captures show recovered park surfaces, so the paintings, their
-full PNGs and provenance stay in the ignored build folder; only the prompts are tracked.
+restyle concept as the shared art direction. The full paintings and provenance stay in the ignored build folder;
+only the prompts are tracked.
 """
 import argparse
 import json

@@ -1,6 +1,6 @@
 """Decode the pinned scene for mesh building, terrain support and geometry audits.
 
-Only standard glTF arrays are read. No game binaries or native extraction tools run.
+The committed Atelier library scene uses standard glTF arrays.
 The complete hierarchy is flattened once into park-local Blender metres, preserving
 each placement, render triangle, normal and both UV channels.
 """
@@ -13,7 +13,7 @@ import numpy as np
 import yori
 
 SPEC = yori.ASSETS / 'communitypark' / 'source.json'
-FILE = yori.OUT / 'communitypark' / 'source' / 'megapark-textured.glb'
+FILE = SPEC.with_name('megapark-textured.glb')
 FRAME = np.array([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
 TYPES = {5120: 'i1', 5121: 'u1', 5122: '<i2', 5123: '<u2', 5125: '<u4', 5126: '<f4'}
 WIDTH = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
@@ -103,7 +103,7 @@ class Scene:
 
 
 def available():
-    """Whether atelier fetch could get the private source; without it the island has no community park."""
+    """Whether the committed library scene is present."""
     return FILE.is_file()
 
 
@@ -111,9 +111,9 @@ def available():
 def scene():
     spec = json.loads(SPEC.read_text())
     if not FILE.is_file():
-        raise FileNotFoundError('Community park source is missing; run atelier fetch yorimichi')
+        raise FileNotFoundError('Committed community park source is missing: ' + str(FILE))
     data = FILE.read_bytes()
-    if hashlib.sha256(data).hexdigest() != spec['sha256']:
+    if len(data) != spec['bytes'] or hashlib.sha256(data).hexdigest() != spec['sha256']:
         raise ValueError('Community park source checksum mismatch')
     value = Scene(data)
     counts = (len(value.instances), len(value.gltf['meshes']), len(value.triangles()), len(value.gltf['materials']))

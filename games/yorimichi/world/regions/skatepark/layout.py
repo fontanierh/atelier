@@ -32,7 +32,7 @@ QUARTERS = [dict(id='mini_west', lip=-36., sign=-1, y0=-23., y1=-13., radius=2.5
             dict(id='east_return', lip=70., sign=1, y0=18., y1=34., radius=2., vert=.15, deck=3.),
             dict(id='mellow_return', lip=68., sign=1, y0=-54., y1=-34., radius=1.5, vert=.1, deck=3.)]
 BOWL = dict(x=29., y=-10., core_x=7., core_y=5., floor_radius=3., radius=3., vert=.2, deck=1.5, skirt=7.)
-# Each terrace's stairs and handrails are extracted modules (modules.py): the kit's eight-stair (two sets side by side,
+# Each terrace's stairs and handrails are library modules (modules.py): the kit's eight-stair (two sets side by side,
 # 0.1875 m risers on 0.375 m treads) with its sloped rails on the big terrace, the park's two-step 0.75 m set with its
 # handrails on the other two, sunk 40 cm into the ground: 55 cm over the top nosing like the kit's, 22 cm over the last.
 # A set's top tread continues the deck: its risers stand at x1 + tread * (k + 1).
@@ -52,7 +52,7 @@ PADS = [dict(id='manny_low',x0=-40.,x1=-26.,y0=53.,y1=56.,height=.22),
 BAR_R=.025
 
 
-# Extracted obstacles (modules.py): a part, its centre (x, y, deck height) and yaw (its local +y turned anticlockwise
+# Library obstacles (modules.py): a part, its centre (x, y, deck height) and yaw (its local +y turned anticlockwise
 # from north: -90 lays a bar east-west), its paint, and how it is ground: along its measured top line (a bar, a
 # handrail) or along its two top edges (a ledge, a bench). Bars in a row share one grind line (GRIND_LINES).
 def _row(prefix, name, xs, y, colour):

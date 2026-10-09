@@ -55,7 +55,7 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 
 A geometry or texture pool does not certify an Unreal import, shader profile or compiled ABI. Main
 must still rebuild/import each affected step and pass its validators after feature integration.
-Optional community-source presence changes terrain, vegetation and map inputs as well as park assets;
+Community-park source changes affect terrain, vegetation and map inputs as well as park assets;
 copying the park alone is insufficient. Do not blanket-touch stamps or clear generated assets/DDC.
 
 Next candidates are isolated Blender outputs with verified Blender/runtime context and full consumed

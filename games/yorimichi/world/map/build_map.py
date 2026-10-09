@@ -243,7 +243,7 @@ if os.path.exists(PARK):
 # ---------- buildings, landmarks, props
 from communitypark import layout as communitypark
 from communitypark.plan import draw as draw_communitypark
-if communitypark.available():   # the community park, where its private source was fetched (docs/COMMUNITY_PARK.md)
+if communitypark.available():   # the community park, from the committed library scene (docs/COMMUNITY_PARK.md)
     draw_communitypark(d, wp, PX)
     LINES.append(communitypark.access()[:, :2].round(2).tolist())
 NAVY, NAVY_OUT = (52, 58, 92), (20, 22, 36)

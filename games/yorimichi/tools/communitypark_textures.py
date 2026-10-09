@@ -4,12 +4,11 @@
     uv run python games/yorimichi/tools/communitypark_textures.py finish
 
 paint: gpt-image-2.5-sunburst, quality high, once per recorded prompt (atelier.ai.ledger). Every painting is made from
-text alone, in the art direction of the community park concepts (tools/communitypark_concepts.py), so no recovered
-source pixel reaches it. The compact copy and provenance go to assets/communitypark/restyle/<slug>.jpg|json; the full
-PNG stays in build/yorimichi/communitypark/restyle.
+text alone, in the art direction of the community park concepts (tools/communitypark_concepts.py). The compact
+copy and provenance go to assets/communitypark/restyle/<slug>.jpg|json; the full PNG stays in build/yorimichi/communitypark/restyle.
 
 finish: offline. Writes build/yorimichi/communitypark/restyle/<material>.png for each source material and
-textures.json ({material: {png, sha256}}), which world/regions/communitypark/build.py uses in place of the recovered
+textures.json ({material: {png, sha256}}), which world/regions/communitypark/build.py uses in place of the library
 maps. Surfaces are made seamless and brought to a palette colour; concrete gets its 2 m expansion joints on the tile
 edge (UV1 repeats every 2 m). The wave and maple panels are made seamless; all three paint the wall murals
 (world/regions/communitypark/murals.py).

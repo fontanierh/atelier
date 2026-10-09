@@ -233,8 +233,8 @@ def _finish(item, n):
 
 
 def module(m, item):
-    """An extracted obstacle (modules.py) in the pier's own surfaces: painted bars and handrails, two-tone stairs, steel
-    angles on ledge lips. Without the fetched meshes, a stand-in on the same lines and footprint."""
+    """A library obstacle (modules.py) in the pier's own surfaces: painted bars and handrails, two-tone stairs, steel
+    angles on ledge lips. Without the library meshes, a stand-in on the same lines and footprint."""
     if not MOD.available():
         return stand_in(m, item)
     index = {}
@@ -270,7 +270,7 @@ def _under(line, r):
 
 
 def stand_in(m, item):
-    """A procedural obstacle where the extracted mesh is missing: bars and handrails as a tube on their line with posts
+    """A procedural obstacle where the library mesh is missing: bars and handrails as a tube on their line with posts
     at the ends, solids as concrete boxes on their footprint."""
     if item['finish'] in ('painted', 'steel') and 'line' in MOD.part(item['part']):
         width = MOD.part(item['part'])['bounds'][1][0] - MOD.part(item['part'])['bounds'][0][0]

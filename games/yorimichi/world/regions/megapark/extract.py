@@ -1,8 +1,7 @@
-"""One-time conversion of an owned disc to project-native map source assets.
+"""Convert an Atelier library map cache to project-native source arrays and PNGs.
 
-The prepared cache comes from SK8-ENGINE/skate-3-rust-engine tools at the pinned
-revision below. The normal game build only reads the converted arrays and PNGs;
-it does not need the disc, RX2 readers, or this extraction tool.
+The optional converter uses pinned format tools. Normal builds read only the
+committed library arrays and textures.
 """
 from pathlib import Path
 import argparse

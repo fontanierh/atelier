@@ -4,7 +4,7 @@
   "data_directory": "unreal/Content/Data/SkateNative",
   "manifest": "package-manifest.json",
   "manifest_sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d",
-  "source": "Project-native conversion of Skate 3 animation, graph, input, camera and physics records",
+  "source": "Atelier library animation, graph, input, camera and physics records",
   "source_identity": "30aa324d6d7c51c325d53e9268c1ad91783b0154d21bbef5dc5a61eae8333bd7",
   "formats": [
     "ATATTR01",

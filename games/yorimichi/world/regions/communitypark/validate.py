@@ -1,9 +1,8 @@
-"""Audit the private source, ground support, riding collision and imported Unreal triangles.
+"""Audit the committed library source, ground support, riding collision and imported Unreal triangles.
 
     uv run python games/yorimichi/world/regions/communitypark/validate.py [--imported]
 
-Writes evidence under build/yorimichi/communitypark; never embeds recovered data
-in the repository. Import comparison tolerates 0.01 cm FBX float conversion only.
+Writes evidence under build/yorimichi/communitypark. Import comparison tolerates 0.01 cm FBX float conversion only.
 """
 import argparse
 from collections import defaultdict
