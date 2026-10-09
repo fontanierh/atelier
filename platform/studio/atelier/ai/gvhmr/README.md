@@ -66,8 +66,8 @@ estimated.
 ## Performance
 
 Measured on an M1 Max (32-core GPU, 32 GB) with PyTorch 2.5.1 on a 10-second, 300-frame 1600×1000 clip. The
-neural stages run one after another; peak memory was 8.4 GB. GVHMR on MPS matches the same inputs on the CPU within
-1 mm of translation and 0.05° of orientation.
+neural stages run one after another; peak memory was 8.4 GB. GVHMR on MPS matches the same inputs on the CPU to about
+1.1 mm of translation and 0.05° of orientation.
 
 | Stage | Time |
 | --- | --- |
