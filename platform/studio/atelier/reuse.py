@@ -2,9 +2,10 @@
 
 The source and target must be clean at the same revision, with matching inputs and installed engine. Before copying,
 each step's source fingerprint must match: its inputs outside the folders being copied (a step may also hash generated
-Content, such as a multiplayer identity, which a fresh checkout cannot have yet). After copying, every full fingerprint
-must match. APFS clones copy on write; ordinary copies are used elsewhere. Only successful, current source
-stamps are carried over.
+Content, such as a multiplayer identity, which a fresh checkout cannot have yet). Tracked files in those folders are
+covered by the clean same-revision checks, and the target must have no untracked or ignored files there, so nothing of
+its own is overwritten. After copying, every full fingerprint must match. APFS clones copy on write; ordinary copies are
+used elsewhere. Only successful, current source stamps are carried over.
 """
 import ctypes
 import json
@@ -85,6 +86,15 @@ def differing_sources(source, target):
     return names + sorted(theirs)
 
 
+def occupied(repo, folders):
+    """Untracked or ignored files under the given repo-relative folders, which copying would overwrite unchecked."""
+    if not folders:
+        return []
+    out = subprocess.check_output(['git', '-C', str(repo), 'status', '--porcelain', '--ignored', '--untracked-files=all',
+                                   '--', *map(str, folders)], text=True)
+    return [line[3:] for line in out.splitlines() if line[:2] in ('??', '!!')]
+
+
 def main(game, source, target=None):
     source, target = Path(source).resolve(), Path(target or paths.REPO).resolve()
     if source == target:
@@ -126,15 +136,14 @@ def main(game, source, target=None):
             raise ValueError('Source and target must use the same installed engine')
         if differ := differing_sources(before, dest_before):
             raise ValueError('Source inputs differ, including untracked inputs; artifacts cannot be reused: ' + ', '.join(differ))
-        build = source / 'build' / game
-        for item in build.iterdir():
-            if item.name not in ('logs', 'stamps', 'remote-proof'):
-                copy_tree(item, target / 'build' / game / item.name, source, target, clone)
-        for name in ('Content', 'Binaries'):
-            copy_tree(game_root / name, target / 'games' / game / 'unreal' / name, source, target, clone)
-        for binaries in (source / 'platform/engine/Plugins').rglob('Binaries'):
-            if binaries.is_dir() and 'Intermediate' not in binaries.parts:
-                copy_tree(binaries, target / binaries.relative_to(source), source, target, clone)
+        copies = [item for item in (source / 'build' / game).iterdir() if item.name not in ('logs', 'stamps', 'remote-proof')]
+        copies += [game_root / 'Content', game_root / 'Binaries']
+        copies += [b for b in (source / 'platform/engine/Plugins').rglob('Binaries') if b.is_dir() and 'Intermediate' not in b.parts]
+        if found := occupied(target, [item.relative_to(source) for item in copies]):
+            raise ValueError('Target already has its own files where artifacts would be copied; use a fresh worktree: '
+                             + ', '.join(found[:5]) + (f' and {len(found) - 5} more' if len(found) > 5 else ''))
+        for item in copies:
+            copy_tree(item, target / item.relative_to(source), source, target, clone)
         after = inspect(target, game)
         if _inputs(before) != _inputs(after) or _inputs(before) != _inputs(inspect(source, game)):
             raise ValueError('Inputs changed during copying; target stamps have not been created')
