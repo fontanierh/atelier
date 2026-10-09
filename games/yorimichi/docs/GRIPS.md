@@ -13,6 +13,70 @@ For Modori it covers four grips:
 Measured in game over 49 shots of every sword and glide clip, each hand stays within 0.0 mm and 0.003 degrees of its
 place on the prop.
 
+## Why a bespoke tool
+
+The character and its animation gave us a first version; procedural finger wrapping still left the grip inconsistent
+between clips. An AI agent built this editor so a person could show the intended contact directly on the real hand
+and prop. Those saved placements and finger rotations became the targets for the runtime solver described below.
+They are calibration data: changing a grip changes the targets, without training a model or rewriting every clip.
+
+## Fix a grip on Modori
+
+Run these commands from the repository root after `uv sync`. Existing game builds already include the calibrated
+grips; this workflow is for editing them.
+
+1. **Prepare the editing copy once.** Copy the committed hand, scenes and poses into the ignored workspace. If you
+   already have edits there, skip the copy so you keep them. The adventure export supplies the poser's sword and
+   paraglider meshes; it is incremental and uses the committed library.
+
+   ```sh
+   mkdir -p build/yorimichi/grips/modori
+   cp -R games/yorimichi/assets/characters/grips/modori/. build/yorimichi/grips/modori/
+   nice -n 10 uv run atelier build yorimichi characters.adventure
+   ```
+
+2. **Open the poser.** Keep the server running while editing, then visit http://127.0.0.1:8897/grips/.
+
+   ```sh
+   uv run python games/yorimichi/assets/characters/grips/serve.py --character modori --port 8897
+   ```
+
+3. **Correct the contact.** Pick `sword_R`, `sword_L`, `glider_R` or `glider_L`. Drag a fingertip to bend the finger,
+   use **Move** and **Turn** for the whole hand, and fine-tune bend, spread and twist with the sliders. Aim for green
+   contact on the finger pads and no red penetration, checking several angles. **Mirror other hand** supplies a
+   starting pose for the opposite side. **Z** undoes an edit; **Shift+Z** redoes it. Edits save automatically;
+   **Mark this grip done** records its status and view snapshots.
+
+4. **Export and try it.** In another terminal, convert your editing copy into the game's ignored grip file, then
+   restart the game as Modori. The game loads grips at startup; no C++ compile is needed for a pose change.
+   Use your own free live port if another agent has a game running.
+
+   ```sh
+   uv run python games/yorimichi/assets/characters/grips/game.py --character modori
+   nice -n 10 uv run atelier play yorimichi -- -rider=Modori -liveport=8847
+   ```
+
+5. **Check it in motion.** While the game runs, collect samples in another terminal as you exercise sword attacks,
+   two-handed guards, glider opening, banking and braking. Look from several angles, then quit the test game promptly.
+   The report measures fully blended grips; missing grip rows mean that action still needs coverage.
+
+   ```sh
+   uv run python games/yorimichi/assets/characters/grips/sample.py 8847 build/yorimichi/grips/modori/held.jsonl 90 --held
+   uv run python games/yorimichi/assets/characters/grips/check.py build/yorimichi/grips/modori/held.jsonl --character modori
+   ```
+
+6. **Keep an accepted correction.** Copy the current `poses.json` back into
+   `games/yorimichi/assets/characters/grips/modori/` after replacing visitor identities in `by` with `operator`.
+   Re-export from that committed source and copy the generated `unreal/Content/Data/modori/grips.json` into the same
+   source folder. The build's `characters.modori_grips` step will then reproduce the correction for every clone.
+   Keep superseded saves, edit logs and review captures in the archive. Check the diff and run the repository's
+   required lint and Python checks before committing.
+
+   ```sh
+   uv run python games/yorimichi/assets/characters/grips/game.py --character modori --source games/yorimichi/assets/characters/grips/modori
+   cp games/yorimichi/unreal/Content/Data/modori/grips.json games/yorimichi/assets/characters/grips/modori/grips.json
+   ```
+
 ## The pipeline
 
 Everything lives in `games/yorimichi/assets/characters/grips/` and writes under `build/yorimichi/grips/<character>/`.
@@ -26,9 +90,8 @@ Modori's posed grips are committed in `grips/modori/`, every file the poser made
 
 The build's `characters.modori_grips` step runs `game.py --source games/yorimichi/assets/characters/grips/modori`, so a
 fresh clone or package gets the game's file from them; `tests/test_grips.py` checks it rebuilds the committed
-`grips.json` exactly. Without the file, Modori logs a warning and his hands keep the clips' grips. To pose further, copy
-the folder to `build/yorimichi/grips/modori/`, run `serve.py`, then copy `poses.json`, `poses/` and the new `grips.json`
-back. The props' meshes
+`grips.json` exactly. Without the file, Modori logs a warning and his hands keep the clips' grips. To pose further,
+follow [the editing workflow above](#fix-a-grip-on-modori). The props' meshes
 (`ReferenceSword.glb`, `ReferenceGlider.glb`) are not in it: `moments.py` and `serve.py` read them from the adventure library
 ([adventure/README.md](../assets/characters/adventure/README.md)).
 

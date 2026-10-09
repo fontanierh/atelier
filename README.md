@@ -375,6 +375,26 @@ nice -n 10 uv run atelier play yorimichi -- -rider=Modori
 His [character README](games/yorimichi/assets/characters/modori/README.md) describes the source, body and coat
 pipeline, imports and merged moves. Cairo remains the default character and the example in the walkthrough above.
 
+### Fixing a grip with human input
+
+Generating a character and retargeting its animation does not settle every detail. Modori's fingers could close
+around a sword handle, yet the hand sat differently on it from one clip to another. An AI agent built a bespoke
+[browser grip poser](games/yorimichi/docs/GRIPS.md) to collect the correction that was hard to describe in words.
+It shows his actual rigged hand against the actual sword or paraglider. A person drags fingertips, moves and turns
+the wrist, and checks the contact colours: green touches the handle; red goes through it.
+
+The saved pose supplies concrete targets: where each hand belongs on the prop, its orientation and the bend of
+each finger joint. The agent used those targets to build the runtime solver. The sword follows the carrying
+hand at the calibrated offset; two-bone arm IK keeps the other sword hand and both glider hands on their handles,
+while the fingers take their saved rotations. The constraints blend in with the animation and are checked across
+swings, guards and glider banks.
+
+That is a useful part of the process: AI makes the first version, a person spots a visual problem, the agent builds
+a small tool to capture their intent, and code applies that correction consistently. To fix another bad grip,
+edit the saved pose, export it and restart the game; the solver can use the new targets without recompiling.
+The [grip guide](games/yorimichi/docs/GRIPS.md#fix-a-grip-on-modori) gives the commands and checks. Modori's four
+calibrated sword and paraglider grips are committed, so a normal build already uses them.
+
 ## Text-driven motion
 
 The [Fox motion lab](games/yorimichi/animation_lab/README.md) runs [UniMate](https://github.com/Friedrich-M/UniMate)
