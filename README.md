@@ -179,6 +179,7 @@ Where to go next, in the order most games grow:
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
 | Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera; tracked native data and its checks |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
+| Ski lab | [platform/web/ski-lab](platform/web/ski-lab/README.md) | experimental freestyle-skiing physics (carving, pops, spins, hockey stops) and a speed-designed terrain park, playable in a browser |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Fox motion lab | [games/yorimichi/animation_lab](games/yorimichi/animation_lab/README.md) | local UniMate and Kimodo text-to-motion on the fox hunter's rig, with comparisons, custom prompts and GLB/GIF export |
 | Games | [games/yorimichi](games/yorimichi/README.md), [games/sandbox](games/sandbox/README.md) | a full game, and the smallest one (the template for `atelier new`) |

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ski Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap">
+<style>
+  :root {
+    --ink: #f6f8fb;
+    --ink-dim: #c9d3df;
+    --panel: rgba(20, 26, 34, 0.62);
+    --line: rgba(255, 255, 255, 0.16);
+    --accent: #ff6a3d;
+    --cool: #6fc3ff;
+    --bg: #9fb4c8;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.4 Barlow, system-ui, sans-serif; overflow: hidden; }
+  #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  .hud { position: fixed; pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+  .gauge { top: calc(14px + env(safe-area-inset-top, 0px)); left: 16px; display: grid; gap: 2px; }
+  #speed { font: 700 40px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+  #state { font: 500 13px 'Barlow Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; letter-spacing: 0.14em; color: var(--cool); }
+  #edge { font-size: 12px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+  #score { top: calc(14px + env(safe-area-inset-top, 0px)); right: 16px; font: 700 32px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; font-variant-numeric: tabular-nums; }
+  #trick { left: 50%; top: 70%; transform: translateX(-50%); font: 700 clamp(26px, 5vw, 48px)/1.1 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    text-transform: uppercase; letter-spacing: 0.03em; text-align: center; transition: opacity 0.2s; opacity: 0; max-width: calc(100vw - 32px); }
+  #trick[data-kind="bail"] { color: var(--accent); }
+  #feed { position: fixed; right: 16px; top: calc(60px + env(safe-area-inset-top, 0px)); margin: 0; padding: 0; list-style: none;
+    text-align: right; font: 500 14px 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 0.04em; pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); display: grid; gap: 2px; }
+  #feed li[data-kind="bail"] { color: var(--accent); }
+  #feed li:not(:first-child) { opacity: 0.6; }
+  .panel { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: min(360px, calc(100vw - 32px));
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(6px); }
+  details summary { cursor: pointer; padding: 8px 12px; font: 600 12px Barlow, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-dim); }
+  .body { padding: 0 12px 12px; display: grid; gap: 10px; }
+  table { border-collapse: collapse; font-size: 13px; }
+  td { padding: 1px 0; vertical-align: top; }
+  td:first-child { padding-right: 14px; white-space: nowrap; color: var(--ink-dim); }
+  kbd { font: 600 11px ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+  label input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+  output { font-variant-numeric: tabular-nums; color: var(--ink-dim); }
+  button { justify-self: start; font: 600 12px Barlow, system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink);
+    background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .note { font-size: 12px; color: var(--ink-dim); margin: 0; }
+</style>
+</head>
+<body>
+<canvas id="view" tabindex="0" aria-label="Ski lab: ride the park with the keyboard or a gamepad"></canvas>
+<div class="hud gauge"><div id="speed">0 km/h</div><div id="state">gliding</div><div id="edge"></div></div>
+<div class="hud" id="score"></div>
+<ol id="feed" aria-live="polite"></ol>
+<div class="hud" id="trick"></div>
+<div class="panel">
+  <details open>
+    <summary>Controls and assists</summary>
+    <div class="body">
+      <table>
+        <tr><td>Steer (lean)</td><td><kbd>A</kbd> <kbd>D</kbd> or arrows · left stick</td></tr>
+        <tr><td>Weight fore / aft</td><td><kbd>W</kbd> <kbd>S</kbd> · left stick up / down</td></tr>
+        <tr><td>Crouch, release to pop</td><td><kbd>Space</kbd> · A / Cross</td></tr>
+        <tr><td>Wind up a spin</td><td><kbd>J</kbd> <kbd>L</kbd> · right stick, then pop</td></tr>
+        <tr><td>Grab mute / safety</td><td><kbd>Q</kbd> <kbd>E</kbd> · L2 / R2</td></tr>
+        <tr><td>Hockey stop</td><td><kbd>Shift</kbd> · B / Circle</td></tr>
+        <tr><td>Back to the top</td><td><kbd>R</kbd> · Y / Triangle</td></tr>
+      </table>
+      <label>Balance assist <output></output><input type="range" min="0" max="1" step="0.05" data-setting="balanceAssist"></label>
+      <label>Air levelling <output></output><input type="range" min="0" max="1" step="0.05" data-setting="airAssist"></label>
+      <label>Air spin control <output></output><input type="range" min="0" max="1" step="0.05" data-setting="spinAssist"></label>
+      <button id="respawn" type="button">Back to the top</button>
+      <p class="note">0 on every slider is plain physics. Tricks come from the body: wind up before the lip, tuck to spin faster.</p>
+    </div>
+  </details>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

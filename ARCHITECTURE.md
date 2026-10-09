@@ -29,6 +29,7 @@ build/            ignored: everything a build generates, per game
 | LiveBridge | `engine/Plugins/Dev/LiveBridge` | the loopback live bridge: Python in the running game, runtime GLB props, overlays |
 | Stream pages | `platform/web/stream` | stream server, browser connection, page lifecycle, touch primitives, the plain player, smoke-test helpers |
 | Motion helpers | `platform/web/motion` | Three.js helpers that capture a rig's rest pose, apply generated motion to an existing skin and close authored loops |
+| Ski lab | `platform/web/ski-lab` | experimental skiing physics on a heightfield and a browser viewer, prototyped before a native plugin |
 
 Systems that only one game uses stay in that game. In Yorimichi these are the player character (on-foot movement,
 actions, camera), sword combat and the fox hunter, the sailboat, the zeppelin, the mini-mega ramp, footsteps, the
