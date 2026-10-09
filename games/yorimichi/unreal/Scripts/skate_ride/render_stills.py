@@ -21,7 +21,7 @@ import native as N  # noqa: E402
 import rider_mesh as M  # noqa: E402
 import yori  # noqa: E402
 
-BUNDLE = HERE.parents[1] / 'Content' / 'Data' / 'SkateNative'
+BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
 OUT = yori.OUT / 'skate-ride'
 POSES = OUT / 'still-poses'
 STILLS = OUT / 'clip-stills'

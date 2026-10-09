@@ -68,6 +68,9 @@ the adapter converts with `FVector(V.Z, -V.X, V.Y) * 100` and reverses triangle 
 
 The game tracks the bundle in `unreal/Content/Data/SkateNative/`. The adapter reads it from
 `FPaths::ProjectContentDir()/Data/SkateNative` and refuses to start when `package-manifest.json` is missing.
+With typed motion ([MOTION_DATA.md](MOTION_DATA.md)) the rig, clips and metadata come from the assets instead, and the
+game ships without `animation/` and `metadata/`. A game can commit those three as JSON (`Tools/motion_text.py`), and its
+build writes the complete package to `build/<game>/skate-native/package/` for the offline tools.
 `LoadGameplayResources` reads the files in this order and checks each one's magic tag:
 
 | File | Magic | Content |
@@ -95,7 +98,8 @@ The tracked bundle has 3,334 payloads totalling 70,695,340 bytes: 3,324 clips (2
 ### Bundle check
 
 The game's `skate.runtime` build step runs its `tools/verify_skate_native.py` against the descriptor in
-`assets/skate/runtime.json`, and `unreal.compile` depends on it. It checks:
+`assets/skate/runtime.json`, and `unreal.compile` depends on it. It assembles the package (runtime payloads plus the
+files `Tools/motion_text.py` builds from the JSON motion source) and checks:
 
 - the descriptor's version and backend, the manifest's SHA-256, version, formats, source identity and counts;
 - that the file set matches the manifest exactly, with safe relative paths and no symlinks;
@@ -110,8 +114,8 @@ cover behaviour.
 ### Rebuilding the bundle
 
 The tools in `Tools/` turn the original data into the bundle. Normal builds never run them. Rerun them only to change
-a native format or to add an optional `custom/` file, then copy the result over the bundle and update the descriptor's
-`manifest_sha256` and counts.
+a native format or to add an optional `custom/` file, then copy the runtime payloads over the bundle, export the
+animation with `Tools/motion_text.py export`, and update the descriptor's `manifest_sha256` and counts.
 
 | Tool | Input | Output |
 | --- | --- | --- |
@@ -149,7 +153,7 @@ python3 $P/Tests/historical_oracle.py --game <game> --check-history --output $O/
 python3 $P/Tests/historical_oracle.py --game <game> --output $O/assets                   # restore the original assets
 uv run python -m atelier.safety.guarded --report $O/guard --kind compile --purpose "skate session parity" -- \
   python3 $P/Tests/check_gameplay_session_parity.py --assets $O/assets \
-    --native-package games/<game>/unreal/Content/Data/SkateNative --output $O/session --target-dir $O/cargo
+    --native-package build/<game>/skate-native/package --output $O/session --target-dir $O/cargo
 ```
 
 `historical_oracle.py` reads only Git objects already in the clone and never fetches; output must stay under

@@ -8,11 +8,11 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
 import yori
 
-CONTENT = HERE.parents[1] / 'Content'
+PACKAGE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
 OUT = yori.OUT / 'skate-motion'
 OUT.mkdir(parents=True, exist_ok=True)
 # Verifies the asset the game is configured with (USkateSettings::MotionData), through the game's loader.
-result = unreal.SkateMotionLibrary.verify_motion(str(CONTENT / 'Data/SkateNative'), str(OUT / 'verify.json'))
+result = unreal.SkateMotionLibrary.verify_motion(str(PACKAGE), str(OUT / 'verify.json'))
 if result is None:
     raise RuntimeError('Motion verification failed; inspect the commandlet log')
 if result:

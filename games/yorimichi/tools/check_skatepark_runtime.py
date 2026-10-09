@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
 BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 OUT = ROOT / 'build/yorimichi/skatepark'
 
@@ -31,7 +31,7 @@ def main():
     if not args.binary.is_file():
         parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
     if not (args.native_package / 'package-manifest.json').is_file():
-        parser.error('Native bundle manifest is missing: ' + str(args.native_package))
+        parser.error('Native bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.native_package))
     output = OUT / 'physics'; output.mkdir(parents=True, exist_ok=True)
     with (output / 'native-session.log').open('w') as log:
         proc = subprocess.Popen([str(args.binary), str(args.native_package), str(OUT/'collision.json')],

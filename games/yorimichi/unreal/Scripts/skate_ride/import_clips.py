@@ -1,4 +1,4 @@
-"""Import the native skating animation (SkateNative/animation, SkateNative/metadata) into /Game/SkateRide.
+"""Import the native skating animation (the assembled package's animation and metadata) into /Game/SkateRide.
 
 * SK_SkateRider and SKEL_SkateRider: the native rig (36 bones, same names and hierarchy, TRAJECTORY at the root) in
   its RIG_TPOSE reference pose, with a plain box body and board (rider_mesh.py), imported from a GLB by Interchange.
@@ -37,7 +37,7 @@ import rider_mesh  # noqa: E402
 import unreal as U  # noqa: E402
 
 CONTENT = HERE.parents[1] / 'Content'
-BUNDLE = CONTENT / 'Data' / 'SkateNative'
+BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
 DATA = CONTENT / 'Data' / 'SkateRide'
 OUT = yori.OUT / 'skate-ride'
 DEST = '/Game/SkateRide'

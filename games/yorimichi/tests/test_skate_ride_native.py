@@ -1,4 +1,4 @@
-"""The Ride clip decoder (unreal/Scripts/skate_ride/native.py) against the tracked native bundle and the C++ reader."""
+"""The Ride clip decoder (unreal/Scripts/skate_ride/native.py) against the assembled native package and the C++ reader."""
 import importlib.util
 import math
 import shutil
@@ -12,10 +12,12 @@ import pytest
 GAME = Path(__file__).resolve().parents[1]
 REPO = GAME.parents[1]
 SCRIPTS = GAME / 'unreal' / 'Scripts' / 'skate_ride'
-BUNDLE = GAME / 'unreal' / 'Content' / 'Data' / 'SkateNative'
 NATIVE_CODE = REPO / 'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/Native'
 PROBE = REPO / 'platform/engine/Plugins/Activities/Skate/Tests/Native/animation_samples_probe.cpp'
 
+_verifier = importlib.util.spec_from_file_location('verify_skate_native', GAME / 'tools' / 'verify_skate_native.py')
+V = importlib.util.module_from_spec(_verifier)
+_verifier.loader.exec_module(V)
 spec = importlib.util.spec_from_file_location('skate_ride_native', SCRIPTS / 'native.py')
 N = importlib.util.module_from_spec(spec)
 sys.modules['skate_ride_native'] = N
@@ -26,8 +28,9 @@ BOARD = ('SKATEBOARD_ROOT', 'TRUCK_FRONT', 'TRUCK_BACK', 'LEFT_WHEELFRONT', 'RIG
 
 
 @pytest.fixture(scope='module')
-def bundle():
-    return N.Bundle(BUNDLE)
+def bundle(tmp_path_factory):
+    # The package the skate.runtime build step assembles from the committed motion text.
+    return N.Bundle(V.assemble(tmp_path_factory.mktemp('skate-native') / 'package'))
 
 
 @pytest.fixture(scope='module')
@@ -262,7 +265,7 @@ def probe(tmp_path_factory):
 def test_agrees_with_cpp_reader(bundle, rig, probe, tmp_path):
     """The C++ reader (AnimationSamples.cpp, through its parity probe) and this decoder give the same words for every
     frame and bone of a spread of clips, and the same rig."""
-    dump = subprocess.run([str(probe), 'rig', str(BUNDLE / 'animation' / 'rig.skate'), str(tmp_path)],
+    dump = subprocess.run([str(probe), 'rig', str(bundle.root / 'animation' / 'rig.skate'), str(tmp_path)],
                           capture_output=True, check=True).stdout
     assert dump == rig_dump(rig)
     for path in bundle.clip_paths()[::97] + [bundle.clip_paths()[-1]]:

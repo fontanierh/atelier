@@ -5,7 +5,7 @@ Each case rides the same inputs with stock feel and with one value changed, and 
 menu says: the defaults are bit-exact with no feel at all, gravity keeps jump heights but stretches air time, a gentler
 flick pops higher with a lower flick pace, the 120 Hz flick reading reads the same flicks with the same window and pace
 and keeps a fast hardflip's bottom point that 60 Hz misses, rolling resistance and braking change the coast, and rail magnetism catches
-a rail from farther. Requires SkateNative and the explicitly built test-only gameplay-session-cli
+a rail from farther. Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli
 (Tests/build_native_session_cli.py --compile, under the render lock and memory guard). Results go to
 build/yorimichi/skate-native/feel.
 """
@@ -18,7 +18,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
 BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 OUTPUT = ROOT / 'build/yorimichi/skate-native/feel'
 FLAT = [[[-200, 0, -200], [-200, 0, 200], [200, 0, 200]], [[-200, 0, -200], [200, 0, 200], [200, 0, -200]]]

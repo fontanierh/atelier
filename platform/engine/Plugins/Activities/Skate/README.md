@@ -15,7 +15,8 @@ systems, the data bundle and how both are verified.
 1. Enable `Skate` in the `.uproject`, with `platform/engine/Plugins` in its `AdditionalPluginDirectories`. The plugin
    depends on AtelierCore and AtelierFX.
 2. Track the native data bundle in the game's `unreal/Content/Data/SkateNative` and stage it as loose files. The
-   loader reads it with standard file reads, so a pak alone is not enough:
+   loader reads it with standard file reads, so a pak alone is not enough. With typed motion assets
+   ([MOTION_DATA.md](MOTION_DATA.md)) the animation, rig and metadata files stay out of this folder:
 
    ```ini
    [/Script/UnrealEd.ProjectPackagingSettings]
@@ -307,9 +308,10 @@ The wire format, timing and interest are the game's.
 
 ## Data and limits
 
-The session reads the game's tracked `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets,
-physical skeletons, the animation rig, clips, metadata banks and camera shots, listed with their sizes and SHA-256 in
-`package-manifest.json`. The game's `skate.runtime` build step checks every file against that manifest before Unreal
-compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
+The session reads the game's `unreal/Content/Data/SkateNative` bundle: settings, graphs, gesture sets, physical
+skeletons and camera shots, plus the animation rig, clips and metadata banks, which come from
+[typed motion assets](MOTION_DATA.md) when `USkateSettings::MotionData` names one. `package-manifest.json` lists every
+payload with its size and SHA-256. A game may keep the animation as JSON (`Tools/motion_text.py`); its build then writes the complete package from both
+and checks every file against that manifest before Unreal compiles. [RUNTIME.md](RUNTIME.md#data-bundle) describes the formats and the
 [verification](RUNTIME.md#verification), and lists the [limits](RUNTIME.md#limits): collision is a static snapshot
 whose triangles carry the [surface](#surfaces) they were classified as, and editor builds are the checked path.

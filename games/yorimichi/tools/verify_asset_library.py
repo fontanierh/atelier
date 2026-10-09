@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import runpy
+import tempfile
 
 GAME = Path(__file__).resolve().parents[1]
 ASSETS = GAME / 'assets'
@@ -25,11 +26,13 @@ def verify(assets=ASSETS):
         if len(raw) != entry['bytes'] or hashlib.sha256(raw).hexdigest() != entry['sha256']:
             raise ValueError('Library source size or checksum mismatch: ' + name)
     native = contract['native_skating']
-    bundle = assets.parent / native['directory']
-    if hashlib.sha256((bundle / native['manifest']).read_bytes()).hexdigest() != native['sha256']:
+    runtime = assets.parent / native['directory']
+    if hashlib.sha256((runtime / native['manifest']).read_bytes()).hexdigest() != native['sha256']:
         raise ValueError('Library native skating manifest checksum mismatch')
     verifier = runpy.run_path(str(GAME / 'tools/verify_skate_native.py'))
-    skating = verifier['verify_bundle'](bundle, assets / 'skate/runtime.json')
+    with tempfile.TemporaryDirectory() as folder:
+        package = verifier['assemble'](Path(folder) / 'package', runtime, assets / native['motion'])
+        skating = verifier['verify_bundle'](package, assets / 'skate/runtime.json')
     return {'files': files, 'formats': dict(Counter(Path(name).suffix for name in files)),
             'source_bytes': sum(entry['bytes'] for entry in files.values()), 'native_skating': skating}
 

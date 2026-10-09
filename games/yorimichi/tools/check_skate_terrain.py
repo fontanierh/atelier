@@ -6,7 +6,7 @@ between bevelled boards (the footbridge into the Mega Park), and seams and trim 
 mini-mega). Pushing across the planks must not catch a foot in a gap, and a curb must still stop the board. Each kind
 of ground (ESkateSurface, packed per triangle as the plugin's snapshot does) rides as Skate 3's surface profiles do:
 concrete and wood smooth, asphalt and stone rough, dirt slow and grass very slow, and the session reports the surface
-under the wheels. Requires SkateNative and the explicitly built test-only gameplay-session-cli
+under the wheels. Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli
 (Tests/build_native_session_cli.py --compile, under the render lock and memory guard).
 Results go to build/yorimichi/skate-native/terrain.
 """

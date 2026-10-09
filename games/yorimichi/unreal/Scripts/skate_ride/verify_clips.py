@@ -31,7 +31,7 @@ import native as N  # noqa: E402
 import unreal as U  # noqa: E402
 
 CONTENT = HERE.parents[1] / 'Content'
-BUNDLE = CONTENT / 'Data' / 'SkateNative'
+BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
 MANIFEST = CONTENT / 'Data' / 'SkateRide' / 'clips.json'
 OUT = yori.OUT / 'skate-ride'
 STATE = OUT / 'verify-state.json'

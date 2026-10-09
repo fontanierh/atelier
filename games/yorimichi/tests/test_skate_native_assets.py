@@ -3,12 +3,15 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import struct
 import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 import tempfile
 import unittest
+
+import numpy
 
 GAME = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('verify_skate_native', GAME / 'tools/verify_skate_native.py')
@@ -66,6 +69,49 @@ def fixture(folder):
     return bundle, descriptor
 
 
+class CommittedPackageTests(unittest.TestCase):
+    """The committed runtime payloads plus the motion text rebuild the manifest's package byte for byte."""
+    @classmethod
+    def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.package = native.assemble(Path(cls.temporary.name) / 'package')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
+
+    def test_committed_sources_match_native_manifest(self):
+        result = native.verify_bundle(self.package)
+        self.assertEqual((result['payloads'], result['clips'], result['animation_frames'],
+                          result['patterns'], result['metadata_banks'], result['bytes']),
+                         (3334, 3324, 131642, 285, 2, 70695340))
+
+    def test_motion_text_is_exact_binary32(self):
+        motion_text = sys.modules['motion_text']
+        names = [bone['name'] for bone in json.loads((native.MOTION / 'rig.json').read_text())['bones']]
+        source = native.MOTION / 'clips/0/1FT_AIR_GRAB_N_BSL_0_CYC.json'
+        clip = json.loads(source.read_text())
+        target = 'animation/clips/0/1FT_AIR_GRAB_N_BSL_0_CYC.skate'
+        self.assertEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
+        value = clip['bones']['TRAJECTORY']['translation_x'][0]
+        # Another decimal of the same binary32 builds the same bytes; the next binary32 does not.
+        clip['bones']['TRAJECTORY']['translation_x'][0] = float(f'{value:.12e}')
+        self.assertEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
+        clip['bones']['TRAJECTORY']['translation_x'][0] = float(numpy.nextafter(numpy.float32(value), numpy.float32(1)))
+        self.assertNotEqual(motion_text.clip_native(clip, names), (self.package / target).read_bytes())
+
+    def test_runtime_folder_ships_no_motion_payloads(self):
+        runtime = Path(self.temporary.name) / 'runtime'
+        shutil.copytree(native.RUNTIME, runtime)
+        for name in ('animation', 'metadata'):
+            self.assertFalse((native.RUNTIME / name).exists())
+        (runtime / 'animation').mkdir()
+        (runtime / 'animation/rig.skate').write_bytes((self.package / 'animation/rig.skate').read_bytes())
+        with self.assertRaisesRegex(ValueError, 'not the runtime folder'):
+            native.assemble(Path(self.temporary.name) / 'other', runtime=runtime)
+        self.assertFalse((Path(self.temporary.name) / 'other').exists())
+
+
 class NativeDataTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -74,12 +120,6 @@ class NativeDataTests(unittest.TestCase):
 
     def verify(self):
         return native.verify_bundle(self.bundle, self.descriptor)
-
-    def test_committed_bundle_matches_native_manifest(self):
-        result = native.verify_bundle()
-        self.assertEqual((result['payloads'], result['clips'], result['animation_frames'],
-                          result['patterns'], result['metadata_banks'], result['bytes']),
-                         (3334, 3324, 131642, 285, 2, 70695340))
 
     def test_small_native_bundle_counts(self):
         result = self.verify()
@@ -175,15 +215,19 @@ class NativeDataTests(unittest.TestCase):
         descriptor = json.loads((GAME / 'assets/skate/runtime.json').read_text())
         self.assertEqual(descriptor['backend'], 'in-process-cpp')
         bundle = GAME / descriptor['data_directory']
-        self.assertEqual(bundle, GAME / 'unreal/Content/Data/SkateNative')
-        report = output / 'skate-native/verification.json'
+        self.assertEqual((bundle, GAME / descriptor['motion_directory']), (native.RUNTIME, native.MOTION))
+        report, package = output / 'skate-native/verification.json', output / 'skate-native/package'
         self.assertEqual(len(runtime.commands), 1)
         self.assertIsInstance(runtime.commands[0], build.Python)
         self.assertEqual(runtime.commands[0].script, GAME / 'tools/verify_skate_native.py')
-        self.assertEqual(tuple(runtime.commands[0].args), ('--output', report))
+        self.assertEqual(tuple(runtime.commands[0].args), ('--assemble', package, '--output', report))
         self.assertEqual(set(runtime.inputs), {GAME / 'tools/verify_skate_native.py',
-                         GAME / 'assets/skate/runtime.json', data / bundle.name})
-        self.assertEqual(runtime.outputs, [report])
+                         GAME / 'assets/skate/runtime.json', GAME / 'assets/skate/motion',
+                         native.MOTION_TOOLS / 'motion_text.py', data / bundle.name})
+        self.assertEqual(runtime.outputs, [report, package / native.MANIFEST])
+        for name in ('unreal.skate_clips', 'unreal.skate_motion'):
+            self.assertIn(runtime.name, steps[name].needs)
+            self.assertIn(GAME / 'assets/skate/motion', steps[name].inputs)
         self.assertEqual(runtime.needs, [])
         self.assertFalse(runtime.heavy)
         self.assertIn(runtime.name, compile_step.needs)

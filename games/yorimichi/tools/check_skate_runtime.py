@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the native offline QA session: support, push, ollie, landing and reset.
 
-Requires SkateNative and the explicitly built test-only gameplay-session-cli.
+Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli.
 This check does not select a shipping backend. Results go to build/yorimichi.
 """
 import argparse
@@ -14,7 +14,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'games/yorimichi/unreal/Content/Data/SkateNative'
+NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
 BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 # AirSpinScale in unreal/Config/DefaultGame.ini.
 SPIN = 1.6
@@ -28,7 +28,7 @@ def main():
     if not args.binary.is_file():
         parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
     if not (args.native_package / 'package-manifest.json').is_file():
-        parser.error('Native bundle manifest is missing: ' + str(args.native_package))
+        parser.error('Native bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.native_package))
     output = ROOT / 'build/yorimichi/skate-native/check'
     output.mkdir(parents=True, exist_ok=True)
     world = output / 'world.json'

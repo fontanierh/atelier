@@ -103,7 +103,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `assets/characters/` | the default player (`cairo`), playable rival (`modori`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`) and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
 | `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating data in `Content/Data/SkateNative` |
+| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating runtime data in `Content/Data/SkateNative` |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
 | `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |

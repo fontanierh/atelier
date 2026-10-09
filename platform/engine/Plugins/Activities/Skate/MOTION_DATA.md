@@ -41,7 +41,10 @@ tracks. There are no changes to the runtime's loop or mirror rules.
 
 ## Building and verifying
 
-The game recipe's `unreal.skate_motion` step runs two separate NullRHI editor
+The game recipe's `unreal.skate_motion` step reads the complete native package that
+`skate.runtime` assembles from the committed sources (the game's runtime payloads plus
+the rig, clips and metadata built from its JSON motion source with `Tools/motion_text.py`,
+every file checked against the committed manifest). It runs two separate NullRHI editor
 processes. The first imports and saves typed packages, and deletes banks left by an
 earlier, larger import. The second loads the asset named by `USkateSettings::MotionData`
 through the game's own asynchronous loader and invokes `USkateMotionLibrary::VerifyMotion`:
@@ -62,7 +65,7 @@ through the game's own asynchronous loader and invokes `USkateMotionLibrary::Ver
 6. Require every package in the bank folder to be referenced, since the whole folder
    is cooked.
 
-The step reruns when the reference bundle, the AtelierSkate module, the game config or
+The step reruns when the motion source, the runtime payloads, the AtelierSkate module, the game config or
 the installed engine version changes. The assets are read-only in the editor:
 details-panel edits would pass floats through text, and the next import overwrites
 them. `SchemaVersion` is written by the importer and defaults to 0, so assets from an
@@ -78,15 +81,18 @@ it does not claim to exercise every possible game interaction.
 
 This first migration covers animation data. Settings, physical skeletons, action/
 motion graphs, gestures and camera data still use their existing native loaders.
-An empty `USkateSettings::MotionData` preserves that reference path for games that
-have not migrated; a configured missing/invalid asset fails rather than silently
+An empty `USkateSettings::MotionData` keeps the file path: the loader then reads
+`animation/` and `metadata/` from the runtime folder, so a game that has not migrated
+must ship them there. A configured missing/invalid asset fails rather than silently
 falling back. Asset references are cooked with the game.
 
-The committed native bundle remains the migration input and independent reference.
+A game can commit its animation as readable JSON (`Tools/motion_text.py`, one file per
+clip) and ship no `.skate` animation files: its runtime folder then holds only the other
+payloads, and its verifier should refuse `animation/` or `metadata/` there. The JSON writes
+each binary32 value as its shortest round-trip decimal, so the build regenerates the
+native files byte for byte, and those native files remain the independent reference.
 Typed packages are generated under ignored Content, like the existing sequences;
-rebuilding the motion step overwrites edits to these generated packages. Moving
-source authoring to committed typed assets and retiring the animation reference
-bundle is a separate follow-up once this conversion has been reviewed. No raw
+rebuilding the motion step overwrites edits to these generated packages. No raw
 byte array is embedded in the new motion assets. The importer currently supports
 the scalar and bone-contact attribute types present throughout the reference
 bundle and explicitly rejects an unsupported kind or nonzero alignment padding.

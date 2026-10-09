@@ -111,7 +111,7 @@ uv run atelier play yorimichi --profile fullscreen
 
 `atelier build yorimichi --list` shows every step; name one to run just it (and what it needs). Generated files go
 to `build/yorimichi/` and the game's ignored `unreal/Content/`. When clearing `Content/`, keep the tracked
-`Content/Data/SkateNative` bundle: it is source data for the skating module. The [Yorimichi README](games/yorimichi/README.md)
+`Content/Data/SkateNative` runtime data: it is source data for the skating module. The [Yorimichi README](games/yorimichi/README.md)
 lists the play profiles, the QA scenarios and the game's docs.
 
 Keep a completed build and Unreal's shared derived-data cache for subsequent work. A new agent worktree at the
@@ -220,11 +220,12 @@ skeleton and proportions: the retargeter fits the solved animation to him, follo
 his skinned surface above the ground during bails. Running onto the board keeps position and speed; vert assistance
 sends straight airs back into the transition, with a separate input for transferring over the coping.
 
-All the [skating data](games/yorimichi/assets/skate/README.md) is tracked in
-[`Content/Data/SkateNative`](games/yorimichi/unreal/Content/Data/SkateNative): 3,334 native payloads, including
+All the [skating data](games/yorimichi/assets/skate/README.md) is tracked: 3,334 native payloads, including
 3,324 animation clips, 131,642 frames and 285 gesture patterns, plus settings, skeletons, graphs and camera data.
-The build checks the bundle's manifest and hashes before compiling the C++ module; it needs no Rust toolchain,
-extracted game, conversion step or separate worker process.
+The animation is readable JSON in [`assets/skate/motion`](games/yorimichi/assets/skate/motion); the rest is in
+[`Content/Data/SkateNative`](games/yorimichi/unreal/Content/Data/SkateNative). Before compiling the C++ module, the
+build writes the native files from the JSON and checks every payload against the committed manifest; it needs no
+Rust toolchain, extracted game or separate worker process.
 
 In Yorimichi, **Triangle / Y** (keyboard **B**) gets on or off the board, and **D-pad Down** interacts on foot. Flick
 the right stick, or hold the left mouse button and flick, for tricks; **C** holds a powerslide. To pump, hold a
