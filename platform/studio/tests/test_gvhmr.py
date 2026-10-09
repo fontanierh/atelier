@@ -120,6 +120,95 @@ class BodyMotionTests(unittest.TestCase):
             body_motion(self.params(), self.model)
 
 
+@unittest.skipUnless(importlib.util.find_spec('scipy'), 'requires scipy from the isolated GVHMR environment')
+class CameraAnchoredHeightTests(unittest.TestCase):
+    """A synthetic take seen by a tilted, locked-off camera: GVHMR's world output is turned, moved and flattened."""
+
+    def setUp(self):
+        from scipy.spatial.transform import Rotation
+
+        BodyMotionTests.setUp(self)
+        self.rest_root = self.joints[0]  # nonzero: SMPL-X rotates the body about this pelvis pivot
+        self.R = Rotation
+        rng = np.random.default_rng(11)
+        self.frames = 12
+        self.orient = Rotation.from_rotvec(rng.normal(scale=0.4, size=(self.frames, 3)))
+        self.body_pose = rng.normal(scale=0.3, size=(self.frames, 63))
+        self.cam_to_world = Rotation.from_euler('YX', [35, -20], degrees=True)  # turned and tilted down
+        self.cam_position = np.array([1.5, 1.6, 6.0])
+        self.gvhmr_world = Rotation.from_euler('Y', 70, degrees=True)  # GVHMR's heading is arbitrary
+        self.gvhmr_offset = np.array([-2.0, 0.3, 4.0])
+
+    def take(self, pelvis_world, flatten):
+        """GVHMR-like (global, incam) parameters for a true pelvis path in the world."""
+        world_to_cam = self.cam_to_world.inv()
+        pelvis_cam = world_to_cam.apply(pelvis_world - self.cam_position)
+        pelvis_global = self.gvhmr_world.apply(pelvis_world) + self.gvhmr_offset
+        if flatten:
+            pelvis_global[:, 1] = pelvis_global[0, 1]
+        shared = {'body_pose': self.body_pose, 'betas': np.zeros((self.frames, 10))}
+        incam = shared | {'global_orient': (world_to_cam * self.orient).as_rotvec(), 'transl': pelvis_cam - self.rest_root}
+        world = shared | {'global_orient': (self.gvhmr_world * self.orient).as_rotvec(),
+                          'transl': pelvis_global - self.rest_root}
+        return world, incam, pelvis_world, pelvis_global
+
+    def path(self, jump):
+        t = np.linspace(0, 1, self.frames)
+        return np.stack([0.8 * t, 0.95 + jump * np.sin(np.pi * t), -0.5 * t], 1)
+
+    def test_the_height_comes_from_the_camera_and_everything_else_stays(self):
+        from atelier.ai.gvhmr.motion import camera_anchored_transl
+
+        world, incam, pelvis_world, pelvis_global = self.take(self.path(jump=0.35), flatten=True)
+        transl, anchor = camera_anchored_transl(world, incam, self.model)
+        expected = pelvis_world[:, 1] - pelvis_world[0, 1] + pelvis_global[0, 1] - self.rest_root[1]
+        np.testing.assert_allclose(transl[:, 1], expected, atol=1e-12)
+        np.testing.assert_allclose(transl[:, [0, 2]], world['transl'][:, [0, 2]], atol=0)
+        np.testing.assert_allclose(transl[0], world['transl'][0], atol=1e-12)
+        self.assertEqual(anchor['root_height'], 'camera')
+        np.testing.assert_allclose(anchor['camera_to_world'], (self.gvhmr_world * self.cam_to_world).as_matrix(),
+                                   atol=1e-12)
+
+    def test_flat_travel_stays_at_one_height(self):
+        from atelier.ai.gvhmr.motion import camera_anchored_transl
+
+        world, incam, _, _ = self.take(self.path(jump=0), flatten=False)
+        transl, _ = camera_anchored_transl(world, incam, self.model)
+        np.testing.assert_allclose(transl, world['transl'], atol=1e-12)
+
+    def test_an_agreeing_world_output_is_unchanged(self):
+        from atelier.ai.gvhmr.motion import camera_anchored_transl
+
+        world, incam, _, _ = self.take(self.path(jump=0.35), flatten=False)
+        transl, _ = camera_anchored_transl(world, incam, self.model)
+        np.testing.assert_allclose(transl, world['transl'], atol=1e-12)
+
+    def test_every_joint_moves_by_the_root_height_change(self):
+        from atelier.ai.gvhmr.motion import body_motion, camera_anchored_transl
+
+        world, incam, _, _ = self.take(self.path(jump=0.35), flatten=True)
+        transl, _ = camera_anchored_transl(world, incam, self.model)
+        before = np.array(body_motion(world, self.model)['joint_positions'])
+        after = np.array(body_motion(world | {'transl': transl}, self.model)['joint_positions'])
+        shift = np.zeros((self.frames, 1, 3))
+        shift[:, 0, 1] = transl[:, 1] - world['transl'][:, 1]
+        np.testing.assert_allclose(after, before + shift, atol=1e-12)
+        self.assertGreater(shift[:, 0, 1].max(), 0.3)
+
+    def test_a_moving_camera_is_refused(self):
+        from contextlib import redirect_stderr
+        from unittest import mock
+        import io
+        from atelier.ai.gvhmr import __main__ as cli
+
+        argv = ['gvhmr', 'clip.mp4', '--root', 'r', '--out', 'o', '--moving-cam', '--root-height', 'camera']
+        with mock.patch('sys.argv', argv), mock.patch.object(cli, 'Engine') as engine, \
+                redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit) as stop:
+            cli.main()
+        self.assertEqual(stop.exception.code, 2)
+        self.assertIn('needs --static-cam', err.getvalue())
+        engine.assert_not_called()
+
 @unittest.skipUnless(importlib.util.find_spec('torch'), 'requires torch from the isolated GVHMR environment')
 class FusedAttentionTests(unittest.TestCase):
     def test_matches_upstream_vit_attention(self):
