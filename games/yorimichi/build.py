@@ -220,9 +220,12 @@ def modori_steps(out):
     return [
         Step('characters.modori', [Blender(modori / 'export_unreal.py', threads=4)], inputs=[modori, NAMES],
              outputs=[out / 'modori' / 'export.json'], about="Modori's body, coat (its cloth mask in the vertex colours) and textures, to FBX"),
+        # Imported with the compiled editor, but only the cloth and definition code it calls changes what it makes.
         Step('unreal.modori', [UnrealScript(SCRIPTS / 'import_modori.py', 'MODORI IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_modori.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
-             needs=['characters.modori', 'unreal.compile'], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
+             inputs=[SCRIPTS / 'import_modori.py', SCRIPTS / 'animation_compression.py',
+                     *[SOURCE / 'Yorimichi' / n for n in ('YorimichiCloth.h', 'YorimichiCloth.cpp', 'WandererDefinition.h', 'WandererDefinition.cpp')]],
+             after=['unreal.world', 'unreal.compile'],
+             needs=['characters.modori'], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
         Step('characters.modori_adventure', [retarget], inputs=retarget_inputs, needs=['characters.adventure', 'characters.cairo_adventure'],
              outputs=[out / 'modori' / 'adventure' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
@@ -478,9 +481,11 @@ def unreal_steps(ctx):
         # Do not build distance fields or cards while replacing the seed mesh's material sections: UE 5.8 can read
         # that map concurrently. The final meshes already disable distance fields; normal runtime settings build
         # their cards once the imported meshes and material slots are stable.
+        # Places the park's own actors: reruns when their code changes, not on every compile.
         Step('unreal.megapark', [UnrealScript(SCRIPTS / 'import_megapark.py', 'MEGAPARK IMPORT COMPLETE', null_rhi=True,
                                             args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
-             inputs=[SCRIPTS / 'import_megapark.py'], needs=['unreal.compile', 'world.megapark', 'world.megapark_restyle'],
+             inputs=[SCRIPTS / 'import_megapark.py', SOURCE / 'Yorimichi' / 'SuperUltraMegaPark.h', SOURCE / 'Yorimichi' / 'SuperUltraMegaPark.cpp'],
+             needs=['world.megapark', 'world.megapark_restyle'], after=['unreal.compile'],
              outputs=[GAME / 'unreal' / 'Content' / 'MegaPark' / 'Maps' / 'SuperUltraMegaPark.umap'],
              heavy=True, about='editable standalone Super Ultra Mega Park level (/Game/MegaPark)'),
         Step('unreal.houses', [UnrealScript(SCRIPTS / 'import_houses.py', 'HOUSES IMPORT COMPLETE')],

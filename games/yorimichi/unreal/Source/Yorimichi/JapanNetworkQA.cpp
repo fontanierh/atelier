@@ -1,4 +1,5 @@
 #include "JapanSession.h"
+#include "YorimichiBuildIdentity.h"
 #include "AtelierExit.h"
 #include "JapanNetwork.h"
 #include "JapanGameplayQA.h"
