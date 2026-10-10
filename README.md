@@ -295,6 +295,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--dry-run`, `--touch` |
 | `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
+| `atelier playtest <game> [--tag T] [--download-only]` | play the game's latest GitHub release, downloading, checking and unpacking it the first time; its `game.toml` `[release]` section names the tags and launcher |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |
 | `atelier qa <game> <scenario>` | run `games/<game>/scenarios/<scenario>.py` against the running game |
 | `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/play/` is the plain player, `/` the game's touch page when it has one |

@@ -16,6 +16,7 @@ uv run atelier fetch yorimichi      # the sound masters, once per machine
 uv run python games/yorimichi/tools/verify_asset_library.py  # checks the committed sources against their manifest
 nice -n 10 uv run atelier build yorimichi  # development steps; only changed steps rerun
 nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferences honored
+uv run atelier playtest yorimichi          # the latest GitHub release instead, downloaded the first time
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
