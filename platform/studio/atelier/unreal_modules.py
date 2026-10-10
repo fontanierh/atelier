@@ -11,7 +11,8 @@ A module has two digests, read from what the compile left in the project's Inter
   and struct's defaults: the text of its header and of its constructor and PostInitProperties, and its ancestors' in
   the game's other modules. An asset keeps only the values that differ from its class's defaults, so a changed
   default changes what it holds. Comments and other function bodies are not part of it, so editing them leaves it
-  unchanged. Defaults read from config files are not part of it.
+  unchanged. Defaults read from config files, or set by a helper the constructor calls or a constant defined in
+  another file, are not part of it: a step that depends on them declares the module's code.
 
 `steps()` makes a cutoff step per digest: it reruns after every compile, and its dependents rerun only when the
 digest changes. A script that uses game modules lists them in `UnrealScript(modules=...)` and needs their steps;
@@ -111,7 +112,8 @@ def code(project, module, repo=None, unreal_root=None):
     return dict(sorted(files.items()))
 
 
-COMMENT = re.compile(r'//[^\n]*|/\*.*?\*/', re.S)
+# Comments, and string literals so that a '//' inside one is not taken for a comment.
+COMMENT = re.compile(r'"(?:\\.|[^"\\\n])*"|//[^\n]*|/\*.*?\*/', re.S)
 DECLARED = re.compile(r'\*{5,} Begin (?:Class|ScriptStruct) (\w+) ')
 
 
@@ -175,14 +177,16 @@ class Types:
 
     def text(self, path):
         if path not in self.texts:
-            text = COMMENT.sub(' ', path.read_text(errors='ignore')) if path.is_file() else 'missing'
+            text = COMMENT.sub(lambda m: m.group(0) if m.group(0)[0] == '"' else ' ',
+                               path.read_text(errors='ignore')) if path.is_file() else 'missing'
             self.texts[path] = re.sub(r'\s+', ' ', text).strip()   # comments and layout do not change a default
         return self.texts[path]
 
     def defaults(self, name):
         """{key: sha256} of the sources that set the type's defaults, and its ancestors' in the game."""
-        found = {}
-        while name in self.owner:
+        found, seen = {}, set()
+        while name in self.owner and name not in seen:
+            seen.add(name)
             module, header = self.owner[name]
             text = self.text(header)
             found[header.resolve().relative_to(self.repo).as_posix()] = _text_hash(text)

@@ -158,6 +158,12 @@ class ModuleDigestTests(unittest.TestCase):
             self.write(path, text)
         self.assertEqual(self.interface(), before)
 
+    def test_a_double_slash_in_a_string_is_not_a_comment(self):
+        self.write(self.header, self.header.read_text().replace('Speed = 1.f;', 'Speed = 1.f; FString Url = TEXT("https://a");'))
+        before = self.interface()
+        self.write(self.header, self.header.read_text().replace('"https://a"', '"https://b"'))
+        self.assertNotEqual(self.interface(), before)
+
     def test_record_writes_a_stable_digest(self):
         output = Path(self.temp.name) / 'digest.json'
         with patch.object(paths, 'REPO', self.repo):
