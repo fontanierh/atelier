@@ -13,7 +13,8 @@ SHA256SUMS is downloaded and checked against it and against GitHub's own digest;
 The archive is unpacked with `ditto` under the render lock (as the release check does) into
 ~/.cache/atelier/playtests/<game>/<tag>, and the download is then deleted. Later runs reuse that folder. Installing the
 latest release removes those published before it; `--tag` keeps every other release. One run at a time fetches into the
-cache (a file lock). The launcher runs under the render lock and memory guard as a game.
+cache (a file lock); the lock does not cover play, so a game still running from an older `--tag` release can lose its
+files when another run installs the latest. The launcher runs under the render lock and memory guard as a game.
 """
 import datetime, fcntl, hashlib, json, plistlib, re, shutil, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
