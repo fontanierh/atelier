@@ -19,13 +19,14 @@ nice -n 10 uv run atelier play yorimichi   # native 1440 window, saved preferenc
 ```
 
 `uv run atelier build yorimichi --list` shows every step: world data and meshes (`world.*`), characters
-(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the native skating package, built from the JSON motion source and checked (`skate.runtime`), the C++
+(`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the Skate plugin's skating package, assembled, checked and staged (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
 [the asset library](assets/README.md): the model GLBs, including the community park and the skate pier's obstacle
-modules, the Mega Park's geometry, collision and textures, the packed character sources and merged moves, and the
-native skating data (the animation as JSON in `assets/skate/motion`). The [source manifest](assets/source-library.json) records their paths and checksums. The sound
+modules, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The
+skating data is shared: it lives in the [Skate plugin](../../platform/engine/Plugins/Activities/Skate/Data/README.md)
+and `unreal.skate_data` imports it into typed assets under `Content/SkateRuntime` and `Content/SkateMotion`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
 masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
 
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
@@ -77,7 +78,7 @@ the chase camera and its see-through in [docs/CAMERA.md](docs/CAMERA.md).
 
 **Modori, the playable rival** ([assets/characters/modori](assets/characters/modori/README.md)): a tall, dark-haired
 young man in a long coat with a Chaos Cloth skirt. His own rig carries the retargeted merged move set, sword and
-paraglider, and the native skating runtime fits its rider pose to his body. After building the game, launch him with
+paraglider, and the skating runtime fits its rider pose to his body. After building the game, launch him with
 `nice -n 10 uv run atelier play yorimichi -- -rider=Modori`.
 
 **Sword** ([docs/SWORD_COMBAT.md](docs/SWORD_COMBAT.md)): draw and sheathe, a four-cut combo, a charged spin, guard and parry,
@@ -88,7 +89,7 @@ health and knock-downs. Hits carry trails, sparks, hit-stop, slow motion on parr
 [docs/FOX_HUNTER_ANIMATION.md](docs/FOX_HUNTER_ANIMATION.md)) waits up the road from the start and fights with claws
 and a kick, parries included.
 
-**Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's native
+**Skateboarding** ([docs/SKATE.md](docs/SKATE.md)) runs on the platform's
 [Skate plugin](../../platform/engine/Plugins/Activities/Skate/README.md): Flick-It tricks, grabs, manuals, grinds,
 powerslides, pumping, vert and bails, with the solved rider retargeted onto Cairo every frame.
 
@@ -107,8 +108,8 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `world/` | the island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` one folder per region; `world/map/` the map tools and painted sheet |
 | `assets/characters/` | the default player (`cairo`), playable rival (`modori`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`) and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
-| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park, and the skating runtime pins (`skate`) |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output except the tracked native skating runtime data in `Content/Data/SkateNative` |
+| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park |
+| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
 | `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |

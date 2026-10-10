@@ -17,7 +17,7 @@ struct FJapanSkateChunk
     float Shown = 0.f;
     uint8 Mode = 0, Surface = 0, AudioFlags = 0;
     FVector Velocity = FVector::ZeroVector;
-    // Component-space transforms captured after animation and physics blending, never RetailPose.
+    // Component-space transforms captured after animation and physics blending, never RiderPose.
     TArray<FTransform> Bones;
     bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bSuccess);
 };

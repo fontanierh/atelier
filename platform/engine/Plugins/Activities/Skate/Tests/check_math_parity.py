@@ -231,22 +231,22 @@ def build_probes(output):
     subprocess.run(['rustc', '+1.97.1', '--edition=2024', '-O', '-A', 'dead_code', str(main), '-o', str(reference)], check=True)
     if any(digest(source / name) != expected for name, expected in originals.items()):
         raise AssertionError('A frozen reference module changed during the build')
-    code = PLUGIN / 'Source/AtelierSkate/Private/Native'
-    snapshot = output / 'native-source'
+    code = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
+    snapshot = output / 'simulation-source'
     snapshot.mkdir(parents=True, exist_ok=True)
-    for name in ('NativeMath.h', 'NativeMath.cpp', 'Geometry.h', 'Geometry.cpp'):
+    for name in ('SimulationMath.h', 'SimulationMath.cpp', 'Geometry.h', 'Geometry.cpp'):
         shutil.copy2(code / name, snapshot / name)
-    shutil.copy2(PLUGIN / 'Tests/Native/math_probe.cpp', snapshot / 'math_probe.cpp')
+    shutil.copy2(PLUGIN / 'Tests/Simulation/math_probe.cpp', snapshot / 'math_probe.cpp')
     cpp = output / 'math-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math',
                     '-Wall', '-Wextra', '-Werror', '-I', str(snapshot),
-                    str(snapshot / 'NativeMath.cpp'), str(snapshot / 'Geometry.cpp'),
+                    str(snapshot / 'SimulationMath.cpp'), str(snapshot / 'Geometry.cpp'),
                     str(snapshot / 'math_probe.cpp'), '-o', str(cpp)], check=True)
     provenance = dict(reference_revision=revision, source_archive_sha256=hashlib.sha256(archive).hexdigest(),
                       original_source_sha256=originals, probe_sha256=digest(PLUGIN / 'Tests/Reference/math_probe.rs'),
                       shell_sha256={name: digest(path) for name, path in shell_paths.items()},
                       reference_binary_sha256=digest(reference), cpp_binary_sha256=digest(cpp),
-                      native_source_sha256={path.name: digest(path) for path in sorted(snapshot.iterdir())},
+                      simulation_source_sha256={path.name: digest(path) for path in sorted(snapshot.iterdir())},
                       rust_compiler=subprocess.check_output(['rustc', '+1.97.1', '-vV'], text=True).strip(),
                       cpp_compiler=subprocess.check_output(['clang++', '--version'], text=True).strip())
     (output / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')

@@ -23,8 +23,8 @@ from check_animation_trees_parity import converter as metadata_converter, name
 from check_motion_animation_parity import validate_fixture_attributes
 from session_parity import REFERENCE_REVISION, digest
 
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
-UNITS = ('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','StockSettingsReader',
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
+UNITS = ('SimulationMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','StockSettingsReader',
     'Graph','CompiledGraph','GraphController','GraphConditions','GraphGestureOperations','GraphIntentOperations',
     'GraphMotionSliding','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters',
     'AnimationTrees','AnimationChannels','MotionAnimation','MotionAnimationOperations','MotionFrame','GraphMotionName',
@@ -111,7 +111,7 @@ def fixture(kind):
 def factory_fixtures():
     # Raw-only families precede the trimmed source switch. A single spelling
     # graph compares every resulting original registration without guessing a
-    # catalog from the generic native diagnostics.
+    # catalog from the generic simulation diagnostics.
     variants=[]
     for n in NEW_NAMES:
         # The frozen source dispatch panics for these trimmed/raw mismatches;
@@ -441,16 +441,16 @@ def build_probes(output,target):
         assert digest(staged)==row['generated_sha256']and staged.read_bytes()[:original.stat().st_size]==original.read_bytes(),rel
     shutil.copy2(target.resolve()/'release/motion-graph-continuation-reference',binary);provenance.update(binary_sha256=digest(binary),cargo_lock_sha256=digest(crate/'Cargo.lock'),compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip())
     (output/'reference-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
-    snap=output/'native-source'
+    snap=output/'simulation-source'
     if snap.exists():shutil.rmtree(snap)
     snap.mkdir();hashes={}
-    for p in [*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Native/motion_graph_continuation_probe.cpp']:
+    for p in [*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Simulation/motion_graph_continuation_probe.cpp']:
         shutil.copy2(p,snap/p.name);hashes[p.name]=digest(snap/p.name)
-    native=output/'motion-graph-continuation-native'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(u+'.cpp'))for u in UNITS],str(snap/'motion_graph_continuation_probe.cpp'),'-o',str(native)],check=True)
+    simulation=output/'motion-graph-continuation-simulation'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(u+'.cpp'))for u in UNITS],str(snap/'motion_graph_continuation_probe.cpp'),'-o',str(simulation)],check=True)
     for name,sha in hashes.items():assert digest(snap/name)==sha,name
-    (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,units=UNITS,binary_sha256=digest(native)),indent=2)+'\n')
-    return native,binary
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,units=UNITS,binary_sha256=digest(simulation)),indent=2)+'\n')
+    return simulation,binary
 
 
 def stage_assets(assets,output,collections):
@@ -508,9 +508,9 @@ def loader_fixtures(collections):
 
 
 def compare(expected,actual,output,label):
-    (output/(label+'-reference.bin')).write_bytes(expected);(output/(label+'-native.bin')).write_bytes(actual)
+    (output/(label+'-reference.bin')).write_bytes(expected);(output/(label+'-simulation.bin')).write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(label=label,byte=at,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+48].hex(),native_hex=actual[max(0,at-16):at+48].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+        at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(label=label,byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+48].hex(),simulation_hex=actual[max(0,at-16):at+48].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
 
 
 def stock_registration_audit(data,source):
@@ -518,7 +518,7 @@ def stock_registration_audit(data,source):
     assert audit['status']==(1,'') and r.at==len(data)
     # Binding::from_graph appends operations while walking the source's
     # preorder arena. Recover that same order, including kind and byte offset,
-    # independently from the original graph rather than native diagnostics.
+    # independently from the original graph rather than the simulation diagnostics.
     operations=[]
     for element,node in enumerate(converter.read_graph(source)):
         if node['tag']in ('behaviour','condition','hook'):
@@ -548,8 +548,8 @@ def prepare(output,assets):
     md=fixture_metadata();mp=output/'fixture.json';mp.write_text(json.dumps(md));mn=output/'fixture.skate';mn.write_bytes(metadata_converter.pack_metadata(md));cases=[]
     for kind in ('direct','controller'):
         g,configs=fixture(kind);gp=output/(kind+'.reference-graph');gp.write_bytes(original_graph(g));gn=output/(kind+'.graph');gn.write_bytes(converter.encode_graph(converter.read_graph(gp)));raw,rows=corpus(kind,configs);validate_input(raw,rows);preserved_direct_input(raw,rows)if kind=='direct'else None;(output/(kind+'-input.bin')).write_bytes(raw);(output/(kind+'-commands.json')).write_text(json.dumps(rows,indent=2)+'\n');cases.append((kind,gp,gn,raw,rows))
-    stock=assets/'private/stock/data/state/MotionGraph_OnBoard.stategraph';native=output/'stock.graph';native.write_bytes(converter.encode_graph(converter.read_graph(stock)))
-    return mp,mn,cases,stock,native
+    stock=assets/'private/stock/data/state/MotionGraph_OnBoard.stategraph';simulation=output/'stock.graph';simulation.write_bytes(converter.encode_graph(converter.read_graph(stock)))
+    return mp,mn,cases,stock,simulation
 
 
 def main():
@@ -561,14 +561,14 @@ def main():
     loaders_to_run=loader_fixtures(collections);factories_to_run=factory_fixtures()
     if args.preflight_only:
         _,_,provenance=stage_reference(output);(output/'preflight-reference.json').write_text(json.dumps(provenance,indent=2)+'\n')
-        paths=[CODE/(n+ext)for n in ('MotionGraphContinuationOperations','MotionGraphContinuationSettings','MotionGraphContinuationHost')for ext in('.h','.cpp')]+[PLUGIN/'Tests/check_motion_graph_continuation_parity.py',PLUGIN/'Tests/Native/motion_graph_continuation_probe.cpp',PLUGIN/'Tests/Reference/motion_graph_continuation_probe.rs',PLUGIN/'Tests/Reference/motion_graph_continuation_observer.rs']
+        paths=[CODE/(n+ext)for n in ('MotionGraphContinuationOperations','MotionGraphContinuationSettings','MotionGraphContinuationHost')for ext in('.h','.cpp')]+[PLUGIN/'Tests/check_motion_graph_continuation_parity.py',PLUGIN/'Tests/Simulation/motion_graph_continuation_probe.cpp',PLUGIN/'Tests/Reference/motion_graph_continuation_probe.rs',PLUGIN/'Tests/Reference/motion_graph_continuation_observer.rs']
         for u in UNITS:assert (CODE/(u+'.cpp')).is_file(),u
         report=dict(preflight=True,units=len(UNITS),loader_fixtures=len(loaders_to_run),factory_fixtures=len(factories_to_run),cases=[dict(kind=k,commands=len(rows),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),preserved_original_direct=preserved_direct_input(raw,rows)if k=='direct'else None)for k,_,_,raw,rows in cases],frozen_files={p.relative_to(PLUGIN).as_posix():digest(p)for p in paths});(output/'preflight.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2));return
     for marker in ('result.json','first-divergence.json'):(output/marker).unlink(missing_ok=True)
-    native,rust=build_probes(output,args.target_dir);reports=[];total=0;sha=hashlib.sha256()
+    simulation,rust=build_probes(output,args.target_dir);reports=[];total=0;sha=hashlib.sha256()
     def run(assets,gp,gn,mode,raw=b'',settings_path=settings):
         expected=subprocess.check_output([str(rust),str(assets),str(gp),str(mp),mode],input=raw)
-        actual=subprocess.check_output([str(native),str(args.metadata/'bank-0.skate'),str(args.metadata/'bank-1.skate'),str(mn),str(gn),str(settings_path),mode],input=raw)
+        actual=subprocess.check_output([str(simulation),str(args.metadata/'bank-0.skate'),str(args.metadata/'bank-1.skate'),str(mn),str(gn),str(settings_path),mode],input=raw)
         return expected,actual
     expected,actual=run(args.assets,stock,stockn,'construct');compare(expected,actual,output,'stock-registration');audit=stock_registration_audit(expected,stock);reports.append(dict(stock_audit=audit));total+=len(expected);sha.update(expected)
     for kind,gp,gn,raw,rows in cases:
@@ -579,8 +579,8 @@ def main():
         expected,actual=run(args.assets,gp,gn,'construct');compare(expected,actual,output,label);r=Reader(expected);record=r.construction();assert bool(record['status'][0])==success,(label,record);assert r.at==len(expected);factories.append(dict(label=label,**record));total+=len(expected);sha.update(expected)
     loaders=[]
     for label,data,success in loaders_to_run:
-        directory=output/label;directory.mkdir(exist_ok=True);fixture_assets,path=stage_assets(args.assets.resolve(),directory,data);native_settings=directory/'settings.skate';native_settings.write_bytes(converter.encode_settings(path));expected,actual=run(fixture_assets,cases[0][1],cases[0][2],'construct',settings_path=native_settings);compare(expected,actual,output,label);r=Reader(expected);record=r.construction();assert bool(record['status'][0])==success,(label,record);assert r.at==len(expected);loaders.append(dict(label=label,status=record['status']));total+=len(expected);sha.update(expected)
-    report=dict(passed=True,output_bytes=total,output_sha256=sha.hexdigest(),coverage=reports,factory_fixtures=factories,loader_fixtures=loaders,reference_provenance='reference-provenance.json',native_provenance='native-provenance.json',comparison='Whole unchanged original MotionHost constructor, all stock operation registrations, one actual Controller/allocation stream through old and newly registered leaf owners, retained shared records, packet/cache/property/channel/pose-command order and source missing-producer errors.',limitations='Completed physical records remain explicit caller publications. Individual numeric leaf proofs remain separate. No full physical/frame/gameplay session or unsupported original producers are claimed. Only the eight original panic-only trimmed/raw mismatches for MatchAirTime, FingerFlipOut, HippyJumpAntic, SetManualAngle, LandOnBoard, CreateGrindAttributes, ControlGrindCrouch and GrindControlFade are excluded from returned-error constructor fixtures. The first newly reached panic was padded CreateGrindAttributes at fixture source byte1315: motion_nodes.rs trimmed stock dispatch calls motion_stock_gameplay.rs raw parse, which reaches its unrecognized-operation unreachable at line232. FootPlantAbsorb and SetHandPlantAnticLength retain their nonpanic Unsupported spelling cases.')
+        directory=output/label;directory.mkdir(exist_ok=True);fixture_assets,path=stage_assets(args.assets.resolve(),directory,data);simulation_settings=directory/'settings.skate';simulation_settings.write_bytes(converter.encode_settings(path));expected,actual=run(fixture_assets,cases[0][1],cases[0][2],'construct',settings_path=simulation_settings);compare(expected,actual,output,label);r=Reader(expected);record=r.construction();assert bool(record['status'][0])==success,(label,record);assert r.at==len(expected);loaders.append(dict(label=label,status=record['status']));total+=len(expected);sha.update(expected)
+    report=dict(passed=True,output_bytes=total,output_sha256=sha.hexdigest(),coverage=reports,factory_fixtures=factories,loader_fixtures=loaders,reference_provenance='reference-provenance.json',simulation_provenance='simulation-provenance.json',comparison='Whole unchanged original MotionHost constructor, all stock operation registrations, one actual Controller/allocation stream through old and newly registered leaf owners, retained shared records, packet/cache/property/channel/pose-command order and source missing-producer errors.',limitations='Completed physical records remain explicit caller publications. Individual numeric leaf proofs remain separate. No full physical/frame/gameplay session or unsupported original producers are claimed. Only the eight original panic-only trimmed/raw mismatches for MatchAirTime, FingerFlipOut, HippyJumpAntic, SetManualAngle, LandOnBoard, CreateGrindAttributes, ControlGrindCrouch and GrindControlFade are excluded from returned-error constructor fixtures. The first newly reached panic was padded CreateGrindAttributes at fixture source byte1315: motion_nodes.rs trimmed stock dispatch calls motion_stock_gameplay.rs raw parse, which reaches its unrecognized-operation unreachable at line232. FootPlantAbsorb and SetHandPlantAnticLength retain their nonpanic Unsupported spelling cases.')
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 

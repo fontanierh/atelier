@@ -21,7 +21,7 @@ from check_skeleton_input_runtime_parity import source
 from check_gesture_parity import converter
 from check_offboard_contact_parity import PLUGIN,make_world,encode_world,quad,fs,bits,Reader
 HOST='crates/skate-host/src/physics/offboard/'
-UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','NameId','Settings','StockSettingsReader','OffboardGroundQuery','OffboardGroundConsume','OffboardGroundScene','OffboardGroundGeometry')
+UNITS=('SimulationMath','Geometry','GeometrySweep','WorldGeometry','NameId','Settings','StockSettingsReader','OffboardGroundQuery','OffboardGroundConsume','OffboardGroundScene','OffboardGroundGeometry')
 IDENTITY=[1.,0.,0.,0.,1.,0.,0.,0.,1.,0.,0.,0.]
 def frame(position=(0,0,0),angle=0):
  c,s=math.cos(angle),math.sin(angle);return [c,0,-s,0,1,0,s,0,c]+list(position)
@@ -78,15 +78,15 @@ def aliases():
  v={f'atelier-host/src/offboard/{n}.rs':HOST+n+'.rs'for n in('ground_query','ground_sync')}
  v.update({f'atelier-host/src/offboard/ground_query/{n}.rs':HOST+'ground_query/'+n+'.rs'for n in('edges','lines','transform','world')});return v
 def prepare(output):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for unit in UNITS:shutil.copy2(native/f'{unit}.cpp',snapshot/f'{unit}.cpp')
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0];state=source(HOST+'ground_geometry.rs')
- probe=snapshot/'offboard_ground_geometry_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/offboard_ground_geometry_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));generated=output/'offboard-ground-geometry-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/offboard_ground_geometry_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_STATE',state))
- report=dict(native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_state_body_sha256=hashlib.sha256(state.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()})
- (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for unit in UNITS:shutil.copy2(simulation/f'{unit}.cpp',snapshot/f'{unit}.cpp')
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0];state=source(HOST+'ground_geometry.rs')
+ probe=snapshot/'offboard_ground_geometry_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/offboard_ground_geometry_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));generated=output/'offboard-ground-geometry-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/offboard_ground_geometry_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_STATE',state))
+ report=dict(simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_state_body_sha256=hashlib.sha256(state.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()})
+ (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
 def audit_input(raw,cases):
  r=Reader(raw);assert r.word()==len(cases)
  def world():r.skip(18*r.word());r.skip(1);r.skip(r.word());r.skip(36*r.word());r.skip(12*r.word());r.skip(1)
@@ -134,7 +134,7 @@ def variants(output,assets):
    elif label=='width':f[n]['data']+='CAFEBABE'
    elif label=='nonfinite':f[n]['data']='7FC12345'
    else:f[n]['data']='BE4CCCCD'
-  folder=output/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.native';bank.write_bytes(converter.encode_settings(path));fixtures.append(dict(label=label,bank=bank,assets=folder.parents[1],success=label=='negative-valid'))
+  folder=output/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.simulation';bank.write_bytes(converter.encode_settings(path));fixtures.append(dict(label=label,bank=bank,assets=folder.parents[1],success=label=='negative-valid'))
  return fixtures
 def inspect(raw,cases):
  r=Reader(raw);operations=Counter();adjustments=Counter();pending=Counter();providers=Counter();errors=Counter()
@@ -166,15 +166,15 @@ def inspect(raw,cases):
  return dict(operations=dict(operations),adjustments={str(k):v for k,v in adjustments.items()},pending_observations=dict(pending),provider_observations=dict(providers),errors=dict(errors))
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
- blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);fixtures=variants(output,a.assets.resolve());bank=output/'settings.native';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
+ blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);fixtures=variants(output,a.assets.resolve());bank=output/'settings.simulation';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=output/'offboard-ground-geometry-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(output,'offboard-ground-geometry-reference',generated,a.target_dir,extra_sources=aliases())
- expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(native),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+ simulation=output/'offboard-ground-geometry-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(output,'offboard-ground-geometry-reference',generated,a.target_dir,extra_sources=aliases())
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(simulation),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;divergence=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
  coverage=inspect(expected,cases);reports=[]
  for fixture in fixtures:
-  ref=subprocess.check_output([str(reference),str(fixture['assets']),'--load-only']);cpp=subprocess.check_output([str(native),str(fixture['bank']),'--load-only']);assert ref==cpp,fixture['label'];assert bool(struct.unpack_from('<I',ref)[0])==fixture['success'],fixture['label'];reports.append(dict(label=fixture['label'],success=fixture['success'],exact_words=len(ref)//4))
+  ref=subprocess.check_output([str(reference),str(fixture['assets']),'--load-only']);cpp=subprocess.check_output([str(simulation),str(fixture['bank']),'--load-only']);assert ref==cpp,fixture['label'];assert bool(struct.unpack_from('<I',ref)[0])==fixture['success'],fixture['label'];reports.append(dict(label=fixture['label'],success=fixture['success'],exact_words=len(ref)//4))
  result=dict(passed=True,**summary,exact_words=len(expected)//4+sum(r['exact_words']for r in reports),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=reports,comparison='Complete original ground_geometry State and SceneService, real authored edge + seven-line query, consume/reset/retention, every provider traversal and helper boundary exactly.',limitations='Scene engine-edge records are explicit fixture inputs; this leaf does not establish Biped Ground/Air scheduling, grab, feet or world provider loading.')
  (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

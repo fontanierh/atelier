@@ -130,21 +130,21 @@ def main():
     for name in ('result.json', 'first-divergence.json'):
         (output/name).unlink(missing_ok=True)
     reference = build_probe(output, 'constraint-build-reference', PLUGIN/'Tests/Reference/constraint_build_probe.rs', args.target_dir)
-    code = output/'native-source'
+    code = output/'simulation-source'
     if code.exists():
         shutil.rmtree(code)
     code.mkdir()
-    for name in ('NativeMath.h', 'NativeMath.cpp', 'RigidBody.h', 'GeometryTypes.h', 'DriveFrames.h',
+    for name in ('SimulationMath.h', 'SimulationMath.cpp', 'RigidBody.h', 'GeometryTypes.h', 'DriveFrames.h',
                  'ConstraintFrames.h', 'ConstraintFrames.cpp', 'ConstraintSolver.h', 'JointBuild.h',
                  'JointBuild.cpp', 'DriveBuild.h', 'DriveBuild.cpp', 'BoardTypes.h', 'JointRecords.h', 'JointRecords.cpp',
                  'DriveFrames.cpp', 'BodyMass.h', 'BodyMass.cpp', 'AggregateMass.h', 'AggregateMass.cpp', 'DeckGeometry.h', 'DeckGeometry.cpp'):
-        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, code/name)
+        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name, code/name)
     candidate = output/'constraint-build-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(code),
-                    *[str(code/name) for name in ('NativeMath.cpp', 'ConstraintFrames.cpp', 'JointBuild.cpp', 'DriveBuild.cpp',
+                    *[str(code/name) for name in ('SimulationMath.cpp', 'ConstraintFrames.cpp', 'JointBuild.cpp', 'DriveBuild.cpp',
                                                 'JointRecords.cpp', 'DriveFrames.cpp', 'BodyMass.cpp', 'AggregateMass.cpp', 'DeckGeometry.cpp')],
-                    str(PLUGIN/'Tests/Native/constraint_build_probe.cpp'), '-o', str(candidate)], check=True)
+                    str(PLUGIN/'Tests/Simulation/constraint_build_probe.cpp'), '-o', str(candidate)], check=True)
     source, labels, output_words = corpus()
     (output/'inputs.bin').write_bytes(source)
     (output/'cases.json').write_text(json.dumps(labels, indent=2)+'\n')

@@ -131,7 +131,7 @@ void URidePhysicalRider::ReleaseLooseBoard(const FVector& Velocity, const FVecto
     if (!LooseBoard || LooseBoard->IsSimulatingPhysics()) return;
     // The box's centre is below the deck it was placed by: it moves with the deck's velocity and the turn about it.
     const FVector Arm = LooseBoard->GetComponentLocation() - GetLooseBoardDeck().GetLocation();
-    // Native's board (a deck, trucks and wheels) fits where the box may not: lifted out of what it would start inside,
+    // The simulation's board (a deck, trucks and wheels) fits where the box may not: lifted out of what it would start inside,
     // which the guard (GuardBoard) would otherwise hold it in.
     if (UWorld* World = LooseBoard->GetWorld())
     {

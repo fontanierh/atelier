@@ -3,7 +3,7 @@
 #include "Engine/NetSerialization.h"
 #include "JapanAvatarState.generated.h"
 
-/** Presentation for a simulated pawn. No replay clocks, damage decisions, or Native skate physics run on this copy. */
+/** Presentation for a simulated pawn. No replay clocks, damage decisions, or skating simulation run on this copy. */
 USTRUCT()
 struct FJapanAvatarState
 {

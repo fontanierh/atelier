@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify every native metadata word and original duplicate/merge lookup rule.
+"""Verify every simulation metadata word and original duplicate/merge lookup rule.
 
 Run through the shared render lock and memory guard: this compiles both probes.
 Original Rust source is extracted from frozen Git and remains byte-identical.
@@ -32,14 +32,14 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--assets',required=True,type=Path);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--target-dir',required=True,type=Path)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     reference=build_probe(output,'animation-metadata-reference',PLUGIN/'Tests/Reference/animation_metadata_export.rs',args.target_dir)
-    decoded=output/'decoded';native=output/'native';subprocess.run([str(reference),'export',str(args.assets.resolve()),str(decoded)],check=True)
-    report=converter.convert_animation_metadata(decoded,native)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'animation-metadata-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationMetadata.cpp'),str(PLUGIN/'Tests/Native/animation_metadata_probe.cpp'),'-o',str(binary)],check=True)
+    decoded=output/'decoded';simulation=output/'simulation';subprocess.run([str(reference),'export',str(args.assets.resolve()),str(decoded)],check=True)
+    report=converter.convert_animation_metadata(decoded,simulation)
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'animation-metadata-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationMetadata.cpp'),str(PLUGIN/'Tests/Simulation/animation_metadata_probe.cpp'),'-o',str(binary)],check=True)
     for bank in report['banks']:
-        actual=subprocess.check_output([str(binary),'dump',str(native/bank['file'])]);expected=(decoded/Path(bank['file']).with_suffix('.raw')).read_bytes()
+        actual=subprocess.check_output([str(binary),'dump',str(simulation/bank['file'])]);expected=(decoded/Path(bank['file']).with_suffix('.raw')).read_bytes()
         if actual!=expected:raise AssertionError(f'Original metadata word/order differs: {bank["file"]}')
-    actual=subprocess.check_output([str(binary),'merge',str(native/'bank-0.skate'),str(native/'bank-1.skate'),str(decoded/'queries.txt')])
+    actual=subprocess.check_output([str(binary),'merge',str(simulation/'bank-0.skate'),str(simulation/'bank-1.skate'),str(decoded/'queries.txt')])
     if actual!=(decoded/'queries.raw').read_bytes():raise AssertionError('Original bank identity or authored lookup differs')
     fixtures=[fixture()]
     rng=random.Random(0x46513a6)
@@ -65,9 +65,9 @@ def main():
         expected=subprocess.check_output([str(reference),'merge',str(paths[0][0]),str(paths[1][0]),str(queries)])
         actual=subprocess.check_output([str(binary),'merge',str(paths[0][1]),str(paths[1][1]),str(queries)])
         if actual!=expected:raise AssertionError('Merge namespace/source identity differs')
-    # Native bounds checks, huge allocation counts, invalid dimensions and
+    # The simulation bounds checks, huge allocation counts, invalid dimensions and
     # header rejection are tested independently of reference JSON formatting.
-    valid=(native/'bank-0.skate').read_bytes();malformed=[b'',valid[:8],valid[:40],valid[:-1],valid+b'\0',b'INVALID!'+valid[8:]]
+    valid=(simulation/'bank-0.skate').read_bytes();malformed=[b'',valid[:8],valid[:40],valid[:-1],valid+b'\0',b'INVALID!'+valid[8:]]
     invalid=fixture();invalid['clips'][0]['fps_bits']=0x7fc01234;malformed.append(converter.pack_metadata(invalid))
     invalid=fixture();invalid['phase_blends'][0]['children']=[];malformed.append(converter.pack_metadata(invalid))
     invalid=fixture();invalid['selectors'][0]['values']=[];malformed.append(converter.pack_metadata(invalid))

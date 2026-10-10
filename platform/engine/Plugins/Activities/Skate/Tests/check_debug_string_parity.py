@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rust 1.97.1 actual std string Debug versus the isolated native helper.
+"""Rust 1.97.1 actual std string Debug versus the isolated simulation helper.
 
 Root alone compiles/runs under atelier.safety. --preflight only stages sources,
 audits the exact official table transport, and generates the bounded corpus.
@@ -22,7 +22,7 @@ import urllib.request
 
 PLUGIN = Path(__file__).resolve().parents[1]
 ROOT = PLUGIN.parents[4]
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
 ARCHIVE_URL = 'https://static.rust-lang.org/dist/2026-07-16/rust-src-1.97.1.tar.xz'
 ARCHIVE_SHA = 'e9a1e616d04c6845895c827a178b9227f7c7199f3f4a80af81ab3aff7b80156b'
 SOURCE_HASHES = {
@@ -67,32 +67,32 @@ def original_sources(path):
 def audit_tables(original, candidate):
     printable = (original / 'library/core/src/unicode/printable.rs').read_text()
     unicode = (original / 'library/core/src/unicode/unicode_data.rs').read_text()
-    native = candidate.read_text()
+    simulation = candidate.read_text()
     report = {}
     numbers = lambda value: [int(v, 0) for v in re.findall(r'0x[0-9a-f]+|\d+', value)]
     for name in ('SINGLETONS0U', 'SINGLETONS0L', 'SINGLETONS1U', 'SINGLETONS1L', 'NORMAL0', 'NORMAL1'):
         rust = re.search(r'const ' + name + r':[^=]+= &\[(.*?)\];', printable, re.S).group(1)
-        cpp = re.search(r'constexpr [^;]+ ' + name + r'\[\] = \{(.*?)\};', native, re.S).group(1)
+        cpp = re.search(r'constexpr [^;]+ ' + name + r'\[\] = \{(.*?)\};', simulation, re.S).group(1)
         assert numbers(rust) == numbers(cpp), name
         report[name] = dict(ordered_words=len(numbers(rust)),
             ordered_word_sha256=hashlib.sha256(b''.join(word(n) for n in numbers(rust))).hexdigest())
     grapheme = re.search(r'pub mod grapheme_extend \{(.*?)\n\}', unicode, re.S).group(1)
     headers = re.findall(r'ShortOffsetRunHeader::new\((\d+), (\d+)\)', grapheme)
     expected = [int(v) for row in headers for v in row]
-    cpp = re.search(r'constexpr OffsetRun GRAPHEME_RUNS\[\] = \{(.*?)\};', native, re.S).group(1)
+    cpp = re.search(r'constexpr OffsetRun GRAPHEME_RUNS\[\] = \{(.*?)\};', simulation, re.S).group(1)
     assert expected == numbers(cpp) and len(headers) == 33
     rust = re.search(r'static OFFSETS:.*?= \[(.*?)\];', grapheme, re.S).group(1)
-    cpp = re.search(r'constexpr std::uint8_t GRAPHEME_OFFSETS\[\] = \{(.*?)\};', native, re.S).group(1)
+    cpp = re.search(r'constexpr std::uint8_t GRAPHEME_OFFSETS\[\] = \{(.*?)\};', simulation, re.S).group(1)
     assert numbers(rust) == numbers(cpp) and len(numbers(rust)) == 767
     report['GRAPHEME_RUNS'] = dict(ordered_pairs=33,
         ordered_word_sha256=hashlib.sha256(b''.join(word(n) for n in expected)).hexdigest())
     report['GRAPHEME_OFFSETS'] = dict(ordered_words=767,
         ordered_byte_sha256=hashlib.sha256(bytes(numbers(rust))).hexdigest())
     bounds = re.findall(r'if (0x[0-9a-f]+) <= x && x < (0x[0-9a-f]+)', printable)
-    cpp_bounds = re.findall(r'if \(value >= (0x[0-9a-f]+) && value < (0x[0-9a-f]+)\)', native)
+    cpp_bounds = re.findall(r'if \(value >= (0x[0-9a-f]+) && value < (0x[0-9a-f]+)\)', simulation)
     assert bounds == cpp_bounds and len(bounds) == 9
     assert '(17, 0, 0)' in unicode
-    assert (original / 'LICENSE-MIT').read_text().strip() in native
+    assert (original / 'LICENSE-MIT').read_text().strip() in simulation
     return report
 
 def corpus():
@@ -201,15 +201,15 @@ def coverage(raw, rows):
     return dict(all_valid_scalars=scalars, scalar_utf8_widths=dict(widths),
         multiscalar_commands=counts[1], distinct_formatted_contexts=len(distinct_contexts),
         source_escape_witnesses=witnesses,
-        separate_native_invalid_utf8_retention_checks=failed_retention)
+        separate_simulation_invalid_utf8_retention_checks=failed_retention)
 
 def prepare(output, source, rows):
     source = original_sources(source)
-    snapshot = output / 'native-source'
+    snapshot = output / 'simulation-source'
     snapshot.mkdir(parents=True, exist_ok=True)
     for name in ('DebugString.h', 'DebugString.cpp'):
         shutil.copy2(CODE / name, snapshot / name)
-    shutil.copy2(PLUGIN / 'Tests/Native/debug_string_probe.cpp', snapshot / 'debug_string_probe.cpp')
+    shutil.copy2(PLUGIN / 'Tests/Simulation/debug_string_probe.cpp', snapshot / 'debug_string_probe.cpp')
     reference = output / 'debug_string_probe.rs'
     shutil.copy2(PLUGIN / 'Tests/Reference/debug_string_probe.rs', reference)
     tables = audit_tables(source, snapshot / 'DebugString.cpp')
@@ -220,11 +220,11 @@ def prepare(output, source, rows):
         official_source_archive=ARCHIVE_URL, archive_sha256=ARCHIVE_SHA,
         complete_original_std_sources=SOURCE_HASHES, rust_license_sha256=LICENSE_SHA,
         exact_source_table_transport=tables,
-        immutable_native_sources={p.name: digest(p) for p in sorted(snapshot.iterdir())},
+        immutable_simulation_sources={p.name: digest(p) for p in sorted(snapshot.iterdir())},
         reference_probe_sha256=digest(reference), checker_sha256=digest(Path(__file__)),
         commands=len(rows), valid_scalars=1112064, input_bytes=len(raw),
         input_sha256=hashlib.sha256(raw).hexdigest(),
-        boundary='Actual pinned std format!("{text:?}") is the independent oracle. No standard-library implementation is copied into its executable. Native invalid-UTF8 rejection/retention has no original str domain equivalent and is reported separately.')
+        boundary='Actual pinned std format!("{text:?}") is the independent oracle. No standard-library implementation is copied into its executable. Simulation invalid-UTF8 rejection/retention has no original str domain equivalent and is reported separately.')
     (output / 'provenance.json').write_text(json.dumps(report, indent=2) + '\n')
     (output / 'owner-freeze.json').write_text(json.dumps(report, indent=2) + '\n')
     return snapshot, reference, report
@@ -250,16 +250,16 @@ def main():
     version = subprocess.check_output(['rustc', '+1.97.1', '--version', '--verbose'], text=True)
     assert 'release: 1.97.1' in version and 'commit-hash: 8bab26f4f' in version
     (output / 'reference-toolchain.txt').write_text(version)
-    reference, candidate = output / 'debug-string-reference', output / 'debug-string-native'
+    reference, candidate = output / 'debug-string-reference', output / 'debug-string-simulation'
     subprocess.run(['rustc', '+1.97.1', '--edition=2024', '-O', str(source), '-o', str(reference)], check=True)
     subprocess.run(['clang++', '-std=c++17', '-O2', '-fno-exceptions', '-fno-rtti',
         '-Wall', '-Wextra', '-Werror', '-I', str(snapshot), str(snapshot / 'DebugString.cpp'),
         str(snapshot / 'debug_string_probe.cpp'), '-o', str(candidate)], check=True)
-    for name, expected in report['immutable_native_sources'].items():
+    for name, expected in report['immutable_simulation_sources'].items():
         assert digest(snapshot / name) == expected
     assert digest(source) == report['reference_probe_sha256']
     results = []
-    for binary, label in ((reference, 'reference'), (candidate, 'native')):
+    for binary, label in ((reference, 'reference'), (candidate, 'simulation')):
         run = subprocess.run([str(binary)], input=(output / 'input.bin').read_bytes(),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         (output / (label + '.bin')).write_bytes(run.stdout)
@@ -268,7 +268,7 @@ def main():
     if results[0] != results[1]:
         offset = next((n for n, (a, b) in enumerate(zip(*results)) if a != b), min(map(len, results)))
         (output / 'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,
-            reference_bytes=len(results[0]), native_bytes=len(results[1])), indent=2) + '\n')
+            reference_bytes=len(results[0]), simulation_bytes=len(results[1])), indent=2) + '\n')
         raise AssertionError('DebugString first mismatch at byte ' + str(offset))
     proof = coverage(results[0], rows)
     result = dict(result='PASS', valid_scalar_formatter_records=1112064,

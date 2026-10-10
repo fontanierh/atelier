@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""A dry run of a Ride playtest on the island, with the player's own pad inputs (atelier play yorimichi; the game
-rides on Ride by default).
+"""A dry run of a Ride playtest on the island, with the player's own pad inputs (atelier play yorimichi).
 
 Run against the running game:  atelier qa yorimichi ride_e2e        (after quitting:  ... ride_e2e --post)
 The game starts on foot at the island's start. Every input goes through the pad keys a player presses (InputKey on the
 player controller: the face buttons, the D-pad, the sticks, the triggers); on foot the stick is mirrored through the
 bridge's stick verb (live.drive), as the game's own move action does. Nothing is placed, launched or scripted on the
-board. The only console command is the backend switch the playtest asks for (skate.Backend Native, then Ride); the
-character switch calls the Esc menu's own function (live.L.switch_character). A "travel cut" (a teleport on foot) takes
+board. No console command is used; the character switch calls the Esc menu's own function (live.L.switch_character). A "travel cut" (a teleport on foot) takes
 the rider to the sailboat's beach, and recovers a ride that got stuck; the report lists every one.
 
 The run, in order: the first mounts at the start (stand, run, sprint) and a dismount; the road (a carve, a brake, a push
@@ -16,7 +14,7 @@ a manual, a grab, a grind on the red flatbar and two powerslides (the pad's down
 the east return quarter; a stand dismount, the board carried past its hold time, recalled, put away for the sword and
 an interaction; a slam at speed; dismounts into a run, fast, from a grab in the air and a kick-out, each followed by a
 mount from the run; a caveman; a bail off a grind on the long flatbar; Modori's mount, ride, bail and dismount; the
-Native backend; the sailboat from the beach. Every frame records the skate state, the camera, the frame time and the
+sailboat from the beach. Every frame records the skate state, the camera, the frame time and the
 board's sound loops; the sound log records the one-shots.
 
 Writes build/yorimichi/skateqa/ride_e2e.json and ride_e2e.md (the step table, the numbers, the screenshots in
@@ -483,15 +481,14 @@ def mount(name, expect, gait=None, seconds=1.8):
     rows = seg(n0)
     clip = clip_of(rows, 'mount')
     i = next((k for k, x in enumerate(rows) if mode(x) == '1'), None)
-    backend = f(rows[i], 'backend', '-') if i is not None else '-'
     near = rows[max(0, i - 6):i + 10] if i is not None else []
     worst_dt = max((x['dt'] for x in near), default=0) * 1000
     frozen = sum(1 for a, b in zip(near, near[1:]) if speed(b) > 100 and math.dist(a['at'], b['at']) < .2)
     j, b = jumps(rows), board_line(rows)
     ok = r is not None and clip.startswith(expect) and b['pops'] == 0 and b['hidden'] == 0 and smooth(j) and frozen == 0
     check(name, ok, f"{clip} from {entry:.0f} cm/s, riding {(rows[i]['T'] - rows[0]['T']) if i is not None else -1:.2f} s after "
-          f"the start (backend {backend}); ride start: worst frame {worst_dt:.0f} ms, {frozen} frozen frames; "
-          f"{speed(rows[-1]):.0f} cm/s after; jumps {j}; board {b}", clip=clip, entry_cm_s=round(entry), backend=backend,
+          f"the start; ride start: worst frame {worst_dt:.0f} ms, {frozen} frozen frames; "
+          f"{speed(rows[-1]):.0f} cm/s after; jumps {j}; board {b}", clip=clip, entry_cm_s=round(entry),
           start_worst_ms=round(worst_dt, 1), frozen_frames=frozen, jumps=j, board=b)
     return r is not None
 
@@ -705,9 +702,8 @@ def run():
     wait(.8)
     first = mount('mount_stand_first', 'BR_STAND_0_INTO_MOUNT')
     first_ride = next((r for r in ROWS if riding(r)), None)
-    check('first_mount_on_ride', first_ride is not None and f(first_ride, 'backend') == 'Ride',
-          f"the first riding frame's backend: {f(first_ride, 'backend', '-') if first_ride else 'never rode'} (no console "
-          f"command in the run; the game's settings default to Ride)",
+    check('first_mount_rides', first_ride is not None,
+          f"first riding frame at {first_ride['T']:.2f} s" if first_ride else 'never rode',
           shots=[shot('first_mount')])
     if first:
         pilot('ride', *road, name='road', v=380)
@@ -1066,37 +1062,6 @@ def run():
         back = g("print(live.L.switch_character('Cairo'))").strip().splitlines()[-1]
         wait(3.0)
         check('switch_back_to_cairo', back == 'Cairo', f'the switch returned {back!r}')
-
-    # 9. The Native backend (the one console command allowed): mount, ride briefly, then back to Ride.
-    step('9_backend')
-    ensure_on_foot()
-    g("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
-    wait(1.0)
-    n0 = mark()
-    tap('Y')
-    r = wait(until=lambda r: mode(r) == '1' and f(r, 'backend') == 'Native', timeout=20)
-    if r:
-        pilot('ride', *w3, name='native', v=600)
-        wait(3.0)
-        shot('native_riding')
-        trick('native_ollie', 'ollie', 'Ollie')
-        rows = seg(n0)
-        snd = sounds(rows, [])
-        check('native_rides', any(f(x, 'backend') == 'Native' for x in rows) and max(map(speed, rows)) > 400,
-              f"backend {f(rows[-1], 'backend')}, mounted {r['T'] - rows[0]['T']:.2f} s after the button, top "
-              f"{max(map(speed, rows)):.0f} cm/s, loops {snd['loop_top_volume']}")
-        brake_to_stop(timeout=5, keep=True)
-        stop_pilot()
-        dismount('native_dismount', None)
-    else:
-        check('native_rides', False, f"Native never rode (mode {mode(last())}, backend {f(last(), 'backend', '-')})")
-    ensure_on_foot()
-    g("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Ride')")
-    wait(1.0)
-    tap('Y')
-    r = wait(until=lambda r: mode(r) == '1', timeout=6)
-    check('back_to_ride', r is not None and f(r, 'backend') == 'Ride', f"the next mount's backend: {f(r, 'backend') if r else 'no mount'}")
-    ensure_on_foot()
 
     # 6c. The sailboat (D-pad Up) needs open water: from the mainland beach (a travel cut, as the sailboat QA does).
     step('6_hands')

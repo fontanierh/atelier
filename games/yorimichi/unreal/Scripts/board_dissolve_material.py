@@ -1,6 +1,6 @@
 """The skateboard's dissolve material, /Game/SkatePark/Board/M_BoardDissolve (USkateSettings::BoardDissolveMaterial).
 
-The board wears it only while it dissolves in or out (the Ride backend's transitions,
+The board wears it only while it dissolves in or out (Ride's transitions,
 platform/engine/Plugins/Activities/Skate/RIDE.md): M_Village's vertex-colour look, masked by a noise in the part's own
 space against the scalar parameter Dissolve (0 whole, 1 gone), with a warm glow along the edge that eats it.
 """

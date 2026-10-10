@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare native animation clocks/attributes/fades/pose kernels bit for bit.
+"""Compare simulation animation clocks/attributes/fades/pose kernels bit for bit.
 
 Both probes consume the same generated command stream. Expected values execute
 the unmodified frozen Rust core. Authored sampling uses every independently
@@ -63,7 +63,7 @@ def corpus(samples):
     def new(kind):
         stream=Stream();stream.word(kind);cases.append((kind,stream));counts[kind]+=1;return stream
     # Timing updates intentionally retain/overwrite AdvanceResult sentinel
-    # fields in the same branches as the native clock. Wrap counters include
+    # fields in the same branches as the simulation clock. Wrap counters include
     # u32 overflow; equality with end and phase rollback are separate cases.
     for flags in (0,0x10000000,0x40000000,0x50000000):
         for frames,fps,base in ((61,30,1),(47,29.97,0.731),(3,60,1.77),(1001,24,0.3333)):
@@ -84,7 +84,7 @@ def corpus(samples):
                 s.word(1);s.float(7);s.float(9);s.word(op)
                 if op==0:s.float(dt);s.float(1)
     # Invalid elapsed looping clocks preserve the same mutations as Rust's
-    # panic, while the exceptions-disabled native module returns an error.
+    # panic, while the exceptions-disabled simulation module returns an error.
     for length,time,dt in ((0,0,1),(-1,0,1),(1,0,math.inf),(1e-20,1e20,1),(1,1e30,1),(0,-1,0)):
         s=new(13);s.clip(flags=0x10000000,time=time,previous=0.731,loops=7);s.float(length);s.word(True);s.float(17);s.float(19);s.float(dt);s.float(0)
     # Curve searches keep crossed binary bounds, exact-match endpoints and
@@ -182,7 +182,7 @@ def corpus(samples):
         for i in range(n):
             s.float(math.nan if variant=='nanweight' else 0 if variant=='zeroquat' else 1);bones=i+1 if variant=='shape' else 1;s.word(bones)
             for _ in range(bones):s.sqt([1,1,1,1,0,0,0,1,0,0,0,1])
-    manifest=json.loads((samples/'native/samples-manifest.json').read_text())
+    manifest=json.loads((samples/'simulation/samples-manifest.json').read_text())
     for clip in manifest['clips']:
         raw=Path(clip['name']);name=clip['name']
         # Converter reports names as bank/name paths, as clips.txt does.
@@ -202,16 +202,16 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--target-dir',required=True,type=Path);parser.add_argument('--samples',required=True,type=Path)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True);samples=args.samples.resolve()
     reference=build_probe(output,'animation-playback-reference',PLUGIN/'Tests/Reference/animation_playback_probe.rs',args.target_dir)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'animation-playback-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'NativeMath.cpp'),str(PLUGIN/'Tests/Native/animation_playback_probe.cpp'),'-o',str(binary)],check=True)
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'animation-playback-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'SimulationMath.cpp'),str(PLUGIN/'Tests/Simulation/animation_playback_probe.cpp'),'-o',str(binary)],check=True)
     cases,counts=corpus(samples);commands=encoded(cases);(output/'input.bin').write_bytes(commands)
-    expected=subprocess.check_output([str(reference),str(samples/'decoded')],input=commands);actual=subprocess.check_output([str(binary),str(samples/'native')],input=commands)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=subprocess.check_output([str(reference),str(samples/'decoded')],input=commands);actual=subprocess.check_output([str(binary),str(samples/'simulation')],input=commands)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         # Isolate the first failing case without deriving expected data from C++.
         lo=0;hi=len(cases)
         while hi-lo>1:
-            middle=(lo+hi)//2;data=encoded(cases[lo:middle]);e=subprocess.check_output([str(reference),str(samples/'decoded')],input=data);a=subprocess.check_output([str(binary),str(samples/'native')],input=data)
+            middle=(lo+hi)//2;data=encoded(cases[lo:middle]);e=subprocess.check_output([str(reference),str(samples/'decoded')],input=data);a=subprocess.check_output([str(binary),str(samples/'simulation')],input=data)
             if a==e:lo=middle
             else:hi=middle
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[lo:hi]))

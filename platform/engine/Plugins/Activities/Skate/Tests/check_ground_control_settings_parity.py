@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare standalone ground settings against verbatim frozen host bindings.
 
-All stock mode/surface combinations and representable native-data failure paths
+All stock mode/surface combinations and representable simulation-data failure paths
 run original Collections readers. Compile/run only under the parent's guard.
 """
 import argparse
@@ -150,7 +150,7 @@ def prepare_fixtures(output,fixtures,source):
     if root.exists():shutil.rmtree(root)
     root.mkdir();records={}
     for index,data in enumerate(fixtures):
-        path=root/str(index)/'private/stock/skater-collections.json';path.parent.mkdir(parents=True);path.write_text(json.dumps(data,separators=(',',':'))+'\n');native=path.parents[2]/'settings.native';native.write_bytes(converter.encode_settings(path));records[index]=dict(collections_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),native_sha256=hashlib.sha256(native.read_bytes()).hexdigest(),collections=len(data['collections']))
+        path=root/str(index)/'private/stock/skater-collections.json';path.parent.mkdir(parents=True);path.write_text(json.dumps(data,separators=(',',':'))+'\n');simulation=path.parents[2]/'settings.simulation';simulation.write_bytes(converter.encode_settings(path));records[index]=dict(collections_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),simulation_sha256=hashlib.sha256(simulation.read_bytes()).hexdigest(),collections=len(data['collections']))
     (output/'fixture-provenance.json').write_text(json.dumps(dict(source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),fixtures=records),indent=2)+'\n');return root
 
 
@@ -190,13 +190,13 @@ def prepare_source(output):
     (output/'extraction-provenance.json').write_text(json.dumps(dict(settings_source_sha256=hashlib.sha256(source.encode()).hexdigest(),runtime_source_sha256=hashlib.sha256(runtime.encode()).hexdigest(),surface_source_sha256=hashlib.sha256(surface.encode()).hexdigest(),verbatim_extractions=records,probe_sha256=hashlib.sha256(probe.read_bytes()).hexdigest(),boundary='Declaration-only wrappers around unchanged original manual_settings, curve helpers, leaf struct initializers, threshold constant and surface selector. All lookups/errors are original Collections methods; no original source file is edited.'),indent=2)+'\n');return probe
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir();files=('NameId','Settings','GroundControlSettings')
     for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in files]:shutil.copyfile(p,code/p.name)
-    probe=code/'ground_control_settings_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/ground_control_settings_probe.cpp',probe);(output/'native-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
-    native=output/'ground-control-settings-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(native)],check=True);return native
+    probe=code/'ground_control_settings_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/ground_control_settings_probe.cpp',probe);(output/'simulation-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
+    simulation=output/'ground-control-settings-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(simulation)],check=True);return simulation
 
 
 def decode(data,rows):
@@ -239,17 +239,17 @@ def coverage(frames,rows):
     assert by_tag['direct-name-priority'][0][0]['words']==stock[(0,'normal','smooth')]
     assert any(frame['ok'] for frame,_ in by_tag['curve-text']) and any(not frame['ok'] for frame,_ in by_tag['curve-text'])
     assert any(frame['ok'] for frame,_ in by_tag['boolean-first-byte']) and any(not frame['ok'] for frame,_ in by_tag['boolean-first-byte'])
-    return dict(load_status_by_operation={f'{op}:{ok}':n for (op,ok),n in sorted(statuses.items())},tags=dict(tags),first_failed_field_by_operation=dict(read_order),error_classes=dict(errors),stock_combinations=25,stock_leaf_loads=150,native_threshold='Every successful speed model preserves four 0x358637bd lanes and four zero override-direction lanes',aliases_and_inheritance='Numeric class/key/field, mode inheritance and readable-name priority matched actual stock words')
+    return dict(load_status_by_operation={f'{op}:{ok}':n for (op,ok),n in sorted(statuses.items())},tags=dict(tags),first_failed_field_by_operation=dict(read_order),error_classes=dict(errors),stock_combinations=25,stock_leaf_loads=150,simulation_threshold='Every successful speed model preserves four 0x358637bd lanes and four zero override-direction lanes',aliases_and_inheritance='Numeric class/key/field, mode inheritance and readable-name priority matched actual stock words')
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
     source=args.assets/'private/stock/skater-collections.json';fixtures,rows=corpus(json.loads(source.read_text()));fixture_root=prepare_fixtures(output,fixtures,source);commands=encode(rows);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(rows,indent=2)+'\n')
-    reference=build_probe(output,'ground-control-settings-reference',prepare_source(output),args.target_dir);native=build_native(output)
+    reference=build_probe(output,'ground-control-settings-reference',prepare_source(output),args.target_dir);simulation=build_simulation(output)
     def expected(data):return subprocess.check_output([str(reference),str(fixture_root)],input=data)
-    def actual(data):return subprocess.check_output([str(native),str(fixture_root)],input=data)
-    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'native.bin').write_bytes(candidate);frames=decode(oracle,rows);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+    def actual(data):return subprocess.check_output([str(simulation),str(fixture_root)],input=data)
+    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'simulation.bin').write_bytes(candidate);frames=decode(oracle,rows);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
     if oracle!=candidate:
         lo=0;hi=len(rows)
         while hi-lo>1:
@@ -257,7 +257,7 @@ def main():
             if expected(part)==actual(part):lo=mid
             else:hi=mid
         (output/'first-divergence-input.bin').write_bytes(encode(rows[lo:hi]));first=next((i for i,(a,b) in enumerate(zip(candidate,oracle)) if a!=b),min(len(candidate),len(oracle)));(output/'first-divergence.json').write_text(json.dumps(dict(case=lo,record=rows[lo],byte=first),indent=2)+'\n');raise AssertionError(f'Ground control settings differ at byte {first}, case {lo}')
-    result=dict(passed=True,cases=len(rows),fixtures=len(fixtures),coverage=coverage(frames,rows),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='All six ground setting leaves, exact constants, 25 stock mode/surface selections, every first failed read, missing/type/nonfinite/size/bool/curve/inheritance errors and exact surface mapping.',limitations='Native decoded-data boundary; text fixtures preserve malformed hex/Unicode whitespace. Invalid raw JSON/numeric hex rejected during conversion remains a converter boundary. Full Ground profile order, tuning and gameplay scheduling remain separate owners.',extraction_provenance_sha256=hashlib.sha256((output/'extraction-provenance.json').read_bytes()).hexdigest(),fixture_provenance_sha256=hashlib.sha256((output/'fixture-provenance.json').read_bytes()).hexdigest(),native_source_provenance_sha256=hashlib.sha256((output/'native-source-provenance.json').read_bytes()).hexdigest())
+    result=dict(passed=True,cases=len(rows),fixtures=len(fixtures),coverage=coverage(frames,rows),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='All six ground setting leaves, exact constants, 25 stock mode/surface selections, every first failed read, missing/type/nonfinite/size/bool/curve/inheritance errors and exact surface mapping.',limitations='Simulation decoded-data boundary; text fixtures preserve malformed hex/Unicode whitespace. Invalid raw JSON/numeric hex rejected during conversion remains a converter boundary. Full Ground profile order, tuning and gameplay scheduling remain separate owners.',extraction_provenance_sha256=hashlib.sha256((output/'extraction-provenance.json').read_bytes()).hexdigest(),fixture_provenance_sha256=hashlib.sha256((output/'fixture-provenance.json').read_bytes()).hexdigest(),simulation_source_provenance_sha256=hashlib.sha256((output/'simulation-source-provenance.json').read_bytes()).hexdigest())
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

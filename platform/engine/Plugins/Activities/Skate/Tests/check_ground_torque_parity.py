@@ -100,14 +100,14 @@ let c16=|class,field|curve16(data,class,"default",field);
     (output/'stock-bindings-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();units=('NativeMath','NameId','Settings','GroundForce','SlideFriction','Straighten','Heading','AntiFlip','GroundTorqueSettings')
+    snapshot.mkdir();units=('SimulationMath','NameId','Settings','GroundForce','SlideFriction','Straighten','Heading','AntiFlip','GroundTorqueSettings')
     for unit in units:
         for ext in ('h','cpp'):shutil.copy2(live/f'{unit}.{ext}',snapshot/f'{unit}.{ext}')
-    shutil.copy2(live/'DataReader.h',snapshot/'DataReader.h');shutil.copy2(PLUGIN/'Tests/Native/ground_torque_probe.cpp',snapshot/'ground_torque_probe.cpp')
-    (output/'native-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(snapshot.iterdir())},indent=2)+'\n');binary=output/'ground-torque-cpp'
+    shutil.copy2(live/'DataReader.h',snapshot/'DataReader.h');shutil.copy2(PLUGIN/'Tests/Simulation/ground_torque_probe.cpp',snapshot/'ground_torque_probe.cpp')
+    (output/'simulation-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(snapshot.iterdir())},indent=2)+'\n');binary=output/'ground-torque-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{unit}.cpp') for unit in units],str(snapshot/'ground_torque_probe.cpp'),'-o',str(binary)],check=True);return binary
 
 
@@ -145,15 +145,15 @@ def main():
     args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
     commands,rows=corpus();validate_input(commands,rows);(output/'input.bin').write_bytes(commands);stock_bindings(output)
-    reference=build_probe(output,'ground-torque-reference',PLUGIN/'Tests/Reference/ground_torque_probe.rs',args.target_dir);native=build_native(output)
+    reference=build_probe(output,'ground-torque-reference',PLUGIN/'Tests/Reference/ground_torque_probe.rs',args.target_dir);simulation=build_simulation(output)
     settings=output/'settings.skate';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
-    expected=subprocess.check_output([str(reference),str(args.assets.resolve())],input=commands);actual=subprocess.check_output([str(native),str(settings)],input=commands)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=subprocess.check_output([str(reference),str(args.assets.resolve())],input=commands);actual=subprocess.check_output([str(simulation),str(settings)],input=commands)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         first=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)))
         (output/'first-divergence.json').write_text(json.dumps(dict(byte=first,expected_bytes=len(expected),actual_bytes=len(actual)),indent=2)+'\n');raise AssertionError(f'Ground torque differs at byte {first}')
     proof,trace=coverage(expected,rows);(output/'original-trace.json').write_text(json.dumps(trace,indent=2)+'\n')
-    result=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Exact unchanged original SlideFriction/Straighten/Heading/AntiFlip calls, retained actual heading history, four lanes and all five actual surface profiles. Settings helper/initializer extractions are hash-verified.',limitations='Valid stock-setting values; malformed-loader diagnostics are not compared. Actual ground force ordering/queue ownership, board-state scheduling, and whole-session parity remain separate.',stock_data_format='Project-native ATATTR01; original collection reader exists only in tooling/oracle.',reference_provenance_sha256=digest(output/'ground-torque-reference-provenance.json'),stock_bindings_provenance_sha256=digest(output/'stock-bindings-provenance.json'),native_source_provenance_sha256=digest(output/'native-source-provenance.json'))
+    result=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='Exact unchanged original SlideFriction/Straighten/Heading/AntiFlip calls, retained actual heading history, four lanes and all five actual surface profiles. Settings helper/initializer extractions are hash-verified.',limitations='Valid stock-setting values; malformed-loader diagnostics are not compared. Actual ground force ordering/queue ownership, board-state scheduling, and whole-session parity remain separate.',stock_data_format='Project ATATTR01; original collection reader exists only in tooling/oracle.',reference_provenance_sha256=digest(output/'ground-torque-reference-provenance.json'),stock_bindings_provenance_sha256=digest(output/'stock-bindings-provenance.json'),simulation_source_provenance_sha256=digest(output/'simulation-source-provenance.json'))
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

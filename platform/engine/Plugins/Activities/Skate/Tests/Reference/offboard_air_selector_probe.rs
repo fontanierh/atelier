@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 mod math{pub use skate_core::math::*;}
 mod physics{pub use skate_core::physics::*;}
 // WORLD_PROTOCOL

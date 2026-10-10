@@ -25,8 +25,8 @@ from check_gesture_parity import PLUGIN,converter
 from reference_build import build_probe
 CORE='crates/skate-core/src/player/offboard/'
 HOST='crates/skate-host/src/physics/offboard/'
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=('NativeMath','RigidBody','BoardGroundAngle','SkeletonPoseFrames','SkeletonRoot','NameId','Settings','StockSettingsReader','AnimationMetadata','OffboardSettings','OffboardMovementIntent','OffboardMovementVelocity','OffboardSurface','OffboardCadence','OffboardGroundMotion','OffboardController')
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=('SimulationMath','RigidBody','BoardGroundAngle','SkeletonPoseFrames','SkeletonRoot','NameId','Settings','StockSettingsReader','AnimationMetadata','OffboardSettings','OffboardMovementIntent','OffboardMovementVelocity','OffboardSurface','OffboardCadence','OffboardGroundMotion','OffboardController')
 STRUCTS=OrderedDict([
  ('BipedIntentState',('movement_intent.rs','State','movement_intent::State')),
  ('BipedSurfaceState',('surface_frame.rs','State','surface_frame::State')),
@@ -105,15 +105,15 @@ def aliases():
   dest='mod.rs'if name=='settings.rs'else name.split('/')[-1];result['atelier-host/src/offboard_settings/'+dest]=HOST+name
  result['atelier-host/src/output_bridge/original.rs']=CORE+'controller/output.rs';return result
 def prepare(out,defs):
- cpp,rust=helpers(defs);snapshot=out/'native-source'
+ cpp,rust=helpers(defs);snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in [*CODE.glob('*.h'),*[CODE/(u+'.cpp')for u in UNITS]]:shutil.copy2(p,snapshot/p.name)
- cp=(PLUGIN/'Tests/Native/offboard_controller_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp);(snapshot/'offboard_controller_probe.cpp').write_text(cp)
+ cp=(PLUGIN/'Tests/Simulation/offboard_controller_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp);(snapshot/'offboard_controller_probe.cpp').write_text(cp)
  constants=original.source(CORE+'controller/state.rs');constants=constants[constants.index('pub(super) const ZERO:'):constants.index('#[derive(Clone, Copy, Debug)]')]
  bridge='mod output_bridge {use super::controller::{Frame,State,Vector};mod state{use super::{Frame,Vector};'+constants+'}\npub(super) mod original;pub(super) fn export(s:&State)->original::GroundResult{original::export(s)}}'
  rp=(PLUGIN/'Tests/Reference/offboard_controller_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust).replace('// ORIGINAL_OUTPUT_FORWARDING',bridge);path=out/'offboard-controller-reference.rs';path.write_text(rp)
- (out/'native-provenance.json').write_text(json.dumps({p.name:digest(p)for p in sorted(snapshot.iterdir())},indent=2)+'\n')
+ (out/'simulation-provenance.json').write_text(json.dumps({p.name:digest(p)for p in sorted(snapshot.iterdir())},indent=2)+'\n')
  (out/'protocol-provenance.json').write_text(json.dumps(dict(types=defs,original_source_sha256={CORE+p:hashlib.sha256(original.source(CORE+p).encode()).hexdigest()for p,_,_ in STRUCTS.values()},settings_aliases=aliases(),boundary='Complete unmodified original core controller and full unmodified host Offboard settings loader. Actual frozen ABIN bank metadata; ground jobs and placement remain explicit consumed producer inputs.'),indent=2)+'\n')
  return snapshot,path
 def inspect(raw,cases):
@@ -171,19 +171,19 @@ def main():
  defs=schema();raw,cases=corpus(defs);(out/'input.bin').write_bytes(raw);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');snapshot,rust=prepare(out,defs)
  fixtures=loader_fixtures(a.assets);report=dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),units=len(UNITS),loader_fixtures=len(fixtures))
  if a.preflight:print(json.dumps(report,indent=2));return
- reference=build_probe(out,'offboard-controller-reference',rust,a.target_dir,extra_sources=aliases());native=out/'offboard-controller-cpp'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'offboard_controller_probe.cpp'),'-o',str(native)],check=True)
- bank=out/'settings.native';bank.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+ reference=build_probe(out,'offboard-controller-reference',rust,a.target_dir,extra_sources=aliases());simulation=out/'offboard-controller-cpp'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'offboard_controller_probe.cpp'),'-o',str(simulation)],check=True)
+ bank=out/'settings.simulation';bank.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
  metadata=a.metadata.resolve();assert (metadata/'bank-0.skate').is_file()
- expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=raw);actual=subprocess.check_output([str(native),str(bank),str(metadata/'bank-0.skate'),str(metadata/'bank-1.skate')],input=raw);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=raw);actual=subprocess.check_output([str(simulation),str(bank),str(metadata/'bank-0.skate'),str(metadata/'bank-1.skate')],input=raw);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4
-  (out/'first-divergence.json').write_text(json.dumps(dict(first_word=first,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Complete controller output differs')
+  (out/'first-divergence.json').write_text(json.dumps(dict(first_word=first,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Complete controller output differs')
  coverage=inspect(expected,cases);loader_results=[]
  for k,(label,data,success)in enumerate(fixtures):
-  folder=out/'loader-fixtures'/str(k);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));converted=folder/'settings.native';converted.write_bytes(converter.encode_settings(path))
-  e=subprocess.check_output([str(reference),str(a.assets.resolve()),str(folder)]);v=subprocess.check_output([str(native),str(bank),str(metadata/'bank-0.skate'),str(metadata/'bank-1.skate'),str(converted)]);(folder/'reference.bin').write_bytes(e);(folder/'cpp.bin').write_bytes(v)
-  if e!=v:raise AssertionError(dict(loader=label,reference_bytes=len(e),native_bytes=len(v)))
+  folder=out/'loader-fixtures'/str(k);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));converted=folder/'settings.simulation';converted.write_bytes(converter.encode_settings(path))
+  e=subprocess.check_output([str(reference),str(a.assets.resolve()),str(folder)]);v=subprocess.check_output([str(simulation),str(bank),str(metadata/'bank-0.skate'),str(metadata/'bank-1.skate'),str(converted)]);(folder/'reference.bin').write_bytes(e);(folder/'cpp.bin').write_bytes(v)
+  if e!=v:raise AssertionError(dict(loader=label,reference_bytes=len(e),simulation_bytes=len(v)))
   status=2+32+8+32+1+6*16
   ew=struct.unpack('<'+'I'*(len(e)//4),e)
   for _ in range(3):status+=1+2*ew[status]

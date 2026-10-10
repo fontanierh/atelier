@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Compare native graph values, lookup and binding with the unmodified Rust reader.
+"""Compare simulation graph values, lookup and binding with the unmodified Rust reader.
 
-Compiles both probes: run through atelier.safety. Original input and native data
+Compiles both probes: run through atelier.safety. Original input and simulation data
 are read independently. Whole-graph execution is checked separately after porting.
 """
 import argparse
@@ -83,10 +83,10 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     output=args.output.resolve(); output.mkdir(parents=True,exist_ok=True)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native'
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation'
     cpp,rust=output/'graph-cpp',output/'graph-reference'
     subprocess.run(['clang++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(code),str(code/'Graph.cpp'),
-                    str(PLUGIN/'Tests/Native/graph_probe.cpp'),'-o',str(cpp)],check=True)
+                    str(PLUGIN/'Tests/Simulation/graph_probe.cpp'),'-o',str(cpp)],check=True)
     # Preserve Rust's module-directory layout; all source files are copied verbatim.
     oracle=output/'oracle'; (oracle/'state_graph').mkdir(parents=True,exist_ok=True)
     original=historical.stage_source_files(output, (
@@ -130,11 +130,11 @@ def main():
     results=[]
     for name,source in sources:
         elements=converter.read_graph(source)
-        native=output/f'{name}.graph'; native.write_bytes(converter.encode_graph(elements))
+        simulation=output/f'{name}.graph'; simulation.write_bytes(converter.encode_graph(elements))
         result=dict(name=name,elements=len(elements),attributes=sum(len(e['attributes']) for e in elements))
         for mode in ('dump','bind'):
             expected=subprocess.run([str(rust),str(source),mode],capture_output=True)
-            actual=subprocess.run([str(cpp),str(native),mode],capture_output=True)
+            actual=subprocess.run([str(cpp),str(simulation),mode],capture_output=True)
             if (actual.returncode,actual.stdout,actual.stderr)!=(expected.returncode,expected.stdout,expected.stderr):
                 for label,run in (('reference',expected),('cpp',actual)):
                     (output/f'{name}-{mode}-{label}.bin').write_bytes(run.stdout)
@@ -149,7 +149,7 @@ def main():
     for i,data in enumerate((b'',good[:15],good[:-1],good+b'\0',good[:12]+b'\xff'*4+good[16:])):
         bad=output/f'invalid-data-{i}.graph'; bad.write_bytes(data)
         if subprocess.run([str(cpp),str(bad),'dump'],capture_output=True).returncode!=2:
-            raise AssertionError('Native decoder accepted invalid data')
+            raise AssertionError('Simulation decoder accepted invalid data')
     report=dict(passed=True,comparison='exact attributes, lookup values, binding and state search outputs',
                 hash_inputs=len(names),collision=collision,graphs=results)
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n')

@@ -170,17 +170,17 @@ path="src/migration_probe.rs"
         probe_sha256=digest(template),binary_sha256=digest(binary),scope='Whole unchanged original host and core. Only wire/explicit upstream caller input, read-only owner observations and original private-method accessibility wrappers append. No numerical method is replaced or stubbed.')
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
-def build_native(output):
-    snapshot=output/'native-source'
+def build_simulation(output):
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();hashes={}
     for p in [*sorted(CODE.glob('*.h')),*[CODE/(u+'.cpp')for u in UNITS]]:shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
     for name in ('handplant_probe.cpp','footplant_probe.cpp'):
-        p=PLUGIN/'Tests/Native'/name;shutil.copy2(p,snapshot/name);hashes[name]=digest(snapshot/name)
-    prefix,meta=extraction(PLUGIN/'Tests/Native/handplant_lifecycle_probe.cpp','int main(')
+        p=PLUGIN/'Tests/Simulation'/name;shutil.copy2(p,snapshot/name);hashes[name]=digest(snapshot/name)
+    prefix,meta=extraction(PLUGIN/'Tests/Simulation/handplant_lifecycle_probe.cpp','int main(')
     (snapshot/'handplant_lifecycle_helpers.inc').write_bytes(prefix)
-    binary=output/'footplant-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'footplant_probe.cpp'),'-o',str(binary)],check=True)
-    (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,extracted_helper_prefix=meta,units=UNITS),indent=2)+'\n');return binary
+    binary=output/'footplant-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'footplant_probe.cpp'),'-o',str(binary)],check=True)
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,extracted_helper_prefix=meta,units=UNITS),indent=2)+'\n');return binary
 
 class Reader(lifecycle.Reader):
     def foot(self):
@@ -284,7 +284,7 @@ def preflight(raw,cases):
         ranges.append((start,at*4))
     assert at==len(words)
     for u in UNITS:assert (CODE/(u+'.cpp')).is_file(),u
-    for p,boundary in (('Tests/Reference/handplant_observer.rs','pub(super) fn run('),('Tests/Reference/handplant_lifecycle_observer.rs','pub(super) fn run('),('Tests/Reference/air_reckoning_observer.rs','fn core_input('),('Tests/Native/handplant_lifecycle_probe.cpp','int main(')):extraction(PLUGIN/p,boundary)
+    for p,boundary in (('Tests/Reference/handplant_observer.rs','pub(super) fn run('),('Tests/Reference/handplant_lifecycle_observer.rs','pub(super) fn run('),('Tests/Reference/air_reckoning_observer.rs','fn core_input('),('Tests/Simulation/handplant_lifecycle_probe.cpp','int main(')):extraction(PLUGIN/p,boundary)
     return ranges
 
 def main():
@@ -299,9 +299,9 @@ def main():
     (out/'input.bin').write_bytes(inputs);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if a.preflight:print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(inputs),units=len(UNITS)),indent=2));return
     fixtures=out/'fixtures';fixtures.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock'
-    (fixtures/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (fixtures/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for k in ('action','motion'):(fixtures/f'actor.{k}.reference').write_bytes(original_graph(element('state','idle')))
-    identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);native=build_native(out)
+    identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(out/'reference',a.target_dir);simulation=build_simulation(out)
     if a.reference_case_runner:
         from copy import deepcopy
         from reference_case_runner import run_reference_cases
@@ -309,14 +309,14 @@ def main():
             out/'reference-cases',workers=a.reference_workers,
             validate_output=lambda index,raw:decode(raw,[deepcopy(cases[index])]))
     else:expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=inputs)
-    actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4
         case=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None)
         section=next(((n,word-span[0])for n,span in(row['spans'].items()if row else[])if span[0]<=word<span[1]),None)
-        failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
-    result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=coverage(frames,cases),scope='Complete Footplant stock settings/retained reset/publication, actual candidate/launch/real world-query prediction, nearby-edge filter, lock/IK/collision, ground Enter/Update/PostPhysics and concrete PlantSkeleton→air launch/update with source errors/partial writes.',boundaries='KnownAir trajectory/player packets, authored primitive endpoints and selected-toe caller helper cases are explicit upstream inputs. Queries, hits, curves, release velocities, IK, plant pose, and selector Launch/Update are actual original/native producers. Ground trajectory admission uses a genuinely empty StaticProvider domain on both sides; full stock grind admission and global frame scheduling remain separate. No completed hit/trajectory/up or callback is substituted. Info logging is not asserted.')
+        failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',section=section,reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+    result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=coverage(frames,cases),scope='Complete Footplant stock settings/retained reset/publication, actual candidate/launch/real world-query prediction, nearby-edge filter, lock/IK/collision, ground Enter/Update/PostPhysics and concrete PlantSkeleton→air launch/update with source errors/partial writes.',boundaries='KnownAir trajectory/player packets, authored primitive endpoints and selected-toe caller helper cases are explicit upstream inputs. Queries, hits, curves, release velocities, IK, plant pose, and selector Launch/Update are actual original/simulation producers. Ground trajectory admission uses a genuinely empty StaticProvider domain on both sides; full stock grind admission and global frame scheduling remain separate. No completed hit/trajectory/up or callback is substituted. Info logging is not asserted.')
     if a.reference_case_runner:result['reference_execution']=dict(strategy='exact independent outer cases, original constructors per case',workers=a.reference_workers,worker_limit_bytes=2*1024**3,report='reference-cases/result.json')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

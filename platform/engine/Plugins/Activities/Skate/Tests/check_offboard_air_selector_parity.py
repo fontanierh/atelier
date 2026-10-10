@@ -3,7 +3,7 @@
 
 Only the root coordinator builds/runs. World metadata and launch-controller
 observations are explicit upstream inputs. Every trajectory/line/edge result is
-produced by the actual original/native scene, never supplied as a completed hit.
+produced by the actual original/simulation scene, never supplied as a completed hit.
 """
 import argparse
 from collections import Counter
@@ -105,15 +105,15 @@ def aliases():
  result.update({d:s for d,s in ground.aliases().items()if 'ground_sync'not in d});return result
 
 def prepare(output):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for unit in UNITS:shutil.copy2(native/f'{unit}.cpp',snapshot/f'{unit}.cpp')
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0];host=source(HOST+'air_selector.rs')
- probe=snapshot/'offboard_air_selector_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/offboard_air_selector_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));generated=output/'offboard-air-selector-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/offboard_air_selector_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_HOST',host))
- report=dict(native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256=hashlib.sha256(host.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Complete original host AirSelector and original public core launch/candidate/sampling/ledge functions. Actual unchanged StaticScene + GroundQueryScene compute every result; launch controller observations are explicit upstream producer inputs.')
- (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for unit in UNITS:shutil.copy2(simulation/f'{unit}.cpp',snapshot/f'{unit}.cpp')
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0];host=source(HOST+'air_selector.rs')
+ probe=snapshot/'offboard_air_selector_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/offboard_air_selector_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));generated=output/'offboard-air-selector-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/offboard_air_selector_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_HOST',host))
+ report=dict(simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256=hashlib.sha256(host.encode()).hexdigest(),original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Complete original host AirSelector and original public core launch/candidate/sampling/ledge functions. Actual unchanged StaticScene + GroundQueryScene compute every result; launch controller observations are explicit upstream producer inputs.')
+ (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
 
 def audit_input(raw,cases):
  r=Reader(raw);assert r.word()==len(cases)
@@ -255,15 +255,15 @@ def inspect(raw,cases):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
- blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);fixtures=loader_fixtures(a.assets.resolve());bank=output/'settings.native';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
+ blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);fixtures=loader_fixtures(a.assets.resolve());bank=output/'settings.simulation';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=output/'offboard-air-selector-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(output,'offboard-air-selector-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
- expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(native),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+ simulation=output/'offboard-air-selector-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(output,'offboard-air-selector-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(simulation),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;divergence=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
  coverage=inspect(expected,cases);reports=[]
  for k,(label,data,success)in enumerate(fixtures):
-  folder=output/'loader-fixtures'/str(k);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));invalid=folder/'settings.native';invalid.write_bytes(fixture_bank(data));ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(folder)]);cpp=subprocess.check_output([str(native),str(bank),str(invalid)]);(folder/'reference.bin').write_bytes(ref);(folder/'cpp.bin').write_bytes(cpp);assert ref==cpp,dict(label=label,reference_bytes=len(ref),native_bytes=len(cpp));r=Reader(ref);assert r.word();r.skip(r.word()+20);assert bool(r.word())==success,label;reports.append(dict(label=label,success=success,exact_words=len(ref)//4))
+  folder=output/'loader-fixtures'/str(k);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));invalid=folder/'settings.simulation';invalid.write_bytes(fixture_bank(data));ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(folder)]);cpp=subprocess.check_output([str(simulation),str(bank),str(invalid)]);(folder/'reference.bin').write_bytes(ref);(folder/'cpp.bin').write_bytes(cpp);assert ref==cpp,dict(label=label,reference_bytes=len(ref),simulation_bytes=len(cpp));r=Reader(ref);assert r.word();r.skip(r.word()+20);assert bool(r.word())==success,label;reports.append(dict(label=label,success=success,exact_words=len(ref)//4))
  result=dict(passed=True,**summary,exact_words=len(expected)//4+sum(r['exact_words']for r in reports),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=reports,comparison='Complete unchanged original AirSelector host, launch producer, candidate/commit/ledge/sampling helpers and actual StaticScene/GroundQueryScene world work exactly.',limitations='This leaf receives launch/controller packet inputs and authored world metadata; complete Biped Ground/Air physical, feet, grab, landing and global phase scheduling remain separate owner proofs.')
  (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

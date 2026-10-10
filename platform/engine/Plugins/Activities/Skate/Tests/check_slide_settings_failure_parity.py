@@ -82,13 +82,13 @@ def prepare_source(output):
     (output/'extraction-provenance.json').write_text(json.dumps(dict(original_path=relative,whole_verbatim_module_sha256=hashlib.sha256(source.encode()).hexdigest(),probe_sha256=hashlib.sha256(probe.read_bytes()).hexdigest(),boundary='Entire original host settings module and original Collections readers; only owner declaration exposes immutable successful results.'),indent=2)+'\n');return probe
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
     code.mkdir();files=('NameId','Settings','StockSettingsReader','SlideStateSettings')
     for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in files]:shutil.copyfile(p,code/p.name)
-    probe=code/'slide_settings_failure_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/slide_settings_failure_probe.cpp',probe);(output/'native-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
-    native=output/'slide-settings-failure-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(native)],check=True);return native
+    probe=code/'slide_settings_failure_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/slide_settings_failure_probe.cpp',probe);(output/'simulation-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
+    simulation=output/'slide-settings-failure-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(simulation)],check=True);return simulation
 
 
 def decode(data,rows):
@@ -122,10 +122,10 @@ def coverage(frames,rows):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
-    source=args.assets/'private/stock/skater-collections.json';fixtures,rows=corpus(json.loads(source.read_text()));root=ground.prepare_fixtures(output,fixtures,source);commands=encode(rows);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(rows,indent=2)+'\n');reference=build_probe(output,'slide-settings-failure-reference',prepare_source(output),args.target_dir);native=build_native(output)
+    source=args.assets/'private/stock/skater-collections.json';fixtures,rows=corpus(json.loads(source.read_text()));root=ground.prepare_fixtures(output,fixtures,source);commands=encode(rows);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(rows,indent=2)+'\n');reference=build_probe(output,'slide-settings-failure-reference',prepare_source(output),args.target_dir);simulation=build_simulation(output)
     def expected(data):return subprocess.check_output([str(reference),str(root)],input=data)
-    def actual(data):return subprocess.check_output([str(native),str(root)],input=data)
-    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'native.bin').write_bytes(candidate);frames=decode(oracle,rows);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+    def actual(data):return subprocess.check_output([str(simulation),str(root)],input=data)
+    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'simulation.bin').write_bytes(candidate);frames=decode(oracle,rows);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
     if oracle!=candidate:
         lo=0;hi=len(rows)
         while hi-lo>1:
@@ -133,7 +133,7 @@ def main():
             if expected(encode(rows[lo:mid]))==actual(encode(rows[lo:mid])):lo=mid
             else:hi=mid
         (output/'first-divergence-input.bin').write_bytes(encode(rows[lo:hi]));(output/'first-divergence.json').write_text(json.dumps(dict(case=lo,record=rows[lo]),indent=2)+'\n');raise AssertionError(f'Slide settings failure differs in case {lo}')
-    result=dict(passed=True,cases=len(rows),fixtures=len(fixtures),coverage=coverage(frames,rows),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='Whole original Slide constructor: all surface/material/core reads, first-failed field ordering, scalar/curve/raw Text errors, aliases/inheritance and immutable output on failure.',limitations='Decoded native settings boundary; malformed raw JSON and invalid numeric hex rejected by converter are outside this reader comparison.')
+    result=dict(passed=True,cases=len(rows),fixtures=len(fixtures),coverage=coverage(frames,rows),output_bytes=len(oracle),output_sha256=hashlib.sha256(oracle).hexdigest(),comparison='Whole original Slide constructor: all surface/material/core reads, first-failed field ordering, scalar/curve/raw Text errors, aliases/inheritance and immutable output on failure.',limitations='Decoded simulation settings boundary; malformed raw JSON and invalid numeric hex rejected by converter are outside this reader comparison.')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

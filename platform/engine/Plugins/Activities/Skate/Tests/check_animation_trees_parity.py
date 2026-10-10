@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check authored tree construction and persistent native tree state exactly.
+"""Check authored tree construction and persistent simulation tree state exactly.
 
 The Rust oracle includes the untouched frozen core and host builder/selection
 modules. Private owner methods and channel-container declarations are extracted
@@ -242,17 +242,17 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--metadata',required=True,type=Path);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--target-dir',required=True,type=Path)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True);metadata=args.metadata.resolve()
     source=oracle_source(output);reference=build_probe(output,'animation-trees-reference',source,args.target_dir)
-    fixture=fixture_metadata();fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_native=output/'fixture.skate';fixture_native.write_bytes(converter.pack_metadata(fixture))
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'animation-trees-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationTrees.cpp'),str(code/'AnimationMetadata.cpp'),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'NativeMath.cpp'),str(PLUGIN/'Tests/Native/animation_trees_probe.cpp'),'-o',str(binary)],check=True)
+    fixture=fixture_metadata();fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_simulation=output/'fixture.skate';fixture_simulation.write_bytes(converter.pack_metadata(fixture))
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'animation-trees-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationTrees.cpp'),str(code/'AnimationMetadata.cpp'),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'SimulationMath.cpp'),str(PLUGIN/'Tests/Simulation/animation_trees_probe.cpp'),'-o',str(binary)],check=True)
     cases,counts=corpus(metadata);commands=encoded(cases);(output/'input.bin').write_bytes(commands)
     def run(exe,paths,data):return subprocess.check_output([str(exe)]+[str(p) for p in paths],input=data)
-    originals=[metadata/'decoded/bank-0.json',metadata/'decoded/bank-1.json',fixture_json];natives=[metadata/'native/bank-0.skate',metadata/'native/bank-1.skate',fixture_native]
-    expected=run(reference,originals,commands);actual=run(binary,natives,commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    originals=[metadata/'decoded/bank-0.json',metadata/'decoded/bank-1.json',fixture_json];binaries=[metadata/'simulation/bank-0.skate',metadata/'simulation/bank-1.skate',fixture_simulation]
+    expected=run(reference,originals,commands);actual=run(binary,binaries,commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
-            middle=(lo+hi)//2;data=encoded(cases[lo:middle]);e=run(reference,originals,data);a=run(binary,natives,data)
+            middle=(lo+hi)//2;data=encoded(cases[lo:middle]);e=run(reference,originals,data);a=run(binary,binaries,data)
             if a==e:lo=middle
             else:hi=middle
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[lo:hi]));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)))

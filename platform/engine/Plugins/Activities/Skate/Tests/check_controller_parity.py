@@ -92,9 +92,9 @@ def trace_coverage(data):
 
 def build_probes(output):
     output.mkdir(parents=True,exist_ok=True)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native'; cpp=output/'controller-cpp'; rust=output/'controller-reference'
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation'; cpp=output/'controller-cpp'; rust=output/'controller-reference'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror',
-                    '-I',str(code),str(code/'GraphController.cpp'),str(PLUGIN/'Tests/Native/controller_probe.cpp'),'-o',str(cpp)],check=True)
+                    '-I',str(code),str(code/'GraphController.cpp'),str(PLUGIN/'Tests/Simulation/controller_probe.cpp'),'-o',str(cpp)],check=True)
     oracle=output/'oracle'; (oracle/'graph').mkdir(parents=True,exist_ok=True)
     modules=('activation','controller','expression','selection')
     source=historical.stage_source_files(output, (

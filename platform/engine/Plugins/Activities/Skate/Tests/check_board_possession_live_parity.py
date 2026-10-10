@@ -23,7 +23,7 @@ REFERENCE_REVISION='46513a6'
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
 def f(v):return list(map(bits,v))
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
-UNITS=('NativeMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','SkeletonPoseFrames','SkeletonAnimationRecord','SkeletonPhysicalRecord','SkeletonBodyDefinition','SkeletonBody','BoardGroundAngle','SkeletonCollisionMode','SkeletonCollisionFeedback','SkeletonPoseErrors','SkeletonDriveFrames','Settings','NameId','BoardPossession','BoardPossessionManager','BoardPossessionDrives','BoardPossessionRuntime','BoardPossessionSettings')
+UNITS=('SimulationMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','SkeletonPoseFrames','SkeletonAnimationRecord','SkeletonPhysicalRecord','SkeletonBodyDefinition','SkeletonBody','BoardGroundAngle','SkeletonCollisionMode','SkeletonCollisionFeedback','SkeletonPoseErrors','SkeletonDriveFrames','Settings','NameId','BoardPossession','BoardPossessionManager','BoardPossessionDrives','BoardPossessionRuntime','BoardPossessionSettings')
 HEADERS=('GeometryTypes.h','BoardTypes.h','ContactRetention.h','DataReader.h','BoardPhysicsSettings.h','BoardGround.h','SkeletonTargets.h')
 def corpus():
     rng=random.Random(0x82db6150);records=[];cases=[]
@@ -79,11 +79,11 @@ def corpus():
     return struct.pack('<I',len(records))+b''.join(records),cases
 
 def build(output,target_dir):
-    native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    for name in [f'{n}.{e}' for n in UNITS for e in ('h','cpp')]+list(HEADERS):shutil.copy2(native/name,snapshot/name)
-    cpp_prefix=PLUGIN/'Tests/Native/board_possession_probe.cpp';cpp_probe=PLUGIN/'Tests/Native/board_possession_live_probe.cpp';combined=snapshot/cpp_probe.name
+    for name in [f'{n}.{e}' for n in UNITS for e in ('h','cpp')]+list(HEADERS):shutil.copy2(simulation/name,snapshot/name)
+    cpp_prefix=PLUGIN/'Tests/Simulation/board_possession_probe.cpp';cpp_probe=PLUGIN/'Tests/Simulation/board_possession_live_probe.cpp';combined=snapshot/cpp_probe.name
     combined.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+cpp_prefix.read_text().split('int main()',1)[0]+'\n#pragma clang diagnostic pop\n'+cpp_probe.read_text())
     cpp=output/'board-possession-live-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{n}.cpp') for n in UNITS],str(combined),'-o',str(cpp)],check=True)
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip());revision=subprocess.check_output(['git','rev-parse',REFERENCE_REVISION],cwd=root,text=True).strip();host=(PLUGIN/'ThirdParty/skate-runtime/crates/skate-host/src/physics').relative_to(root).as_posix()
@@ -91,7 +91,7 @@ def build(output,target_dir):
     rust_prefix=PLUGIN/'Tests/Reference/board_possession_probe.rs';rust_probe=PLUGIN/'Tests/Reference/board_possession_live_probe.rs';text=rust_prefix.read_text().split('fn main(){',1)[0].replace('crate::','skate_core::')+rust_probe.read_text();assert text.count('__DECK_FRAME__')==1;text=text.replace('__DECK_FRAME__',deck.decode());generated=output/'board-possession-live-combined.rs';generated.write_text(text)
     aliases={f'atelier-host/src/physics/offboard/{name[:-3]+"/mod.rs" if name in ("board_possession.rs","board_manager.rs") else name}':f'crates/skate-host/src/physics/offboard/{name}' for name in ('board_possession.rs','board_possession/drives.rs','board_possession/settings.rs','board_manager.rs','board_manager/runtime.rs')}
     reference=build_probe(output,'board-possession-live-reference',generated,target_dir,extra_sources=aliases)
-    (output/'native-provenance.json').write_text(json.dumps(dict(native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (cpp_prefix,cpp_probe,rust_prefix,rust_probe)},verbatim_deck_frame_sha256=hashlib.sha256(deck).hexdigest(),original_solve_sha256=hashlib.sha256(solve).hexdigest(),cpp_binary_sha256=digest(cpp)),indent=2)+'\n');return cpp,reference
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (cpp_prefix,cpp_probe,rust_prefix,rust_probe)},verbatim_deck_frame_sha256=hashlib.sha256(deck).hexdigest(),original_solve_sha256=hashlib.sha256(solve).hexdigest(),cpp_binary_sha256=digest(cpp)),indent=2)+'\n');return cpp,reference
 
 def parse_snapshot(row,at,coverage):
     start=at;fields=row[at:at+3];coverage[f'state_{fields[1]}']+=1;at+=136+2+392+24+96+1
@@ -123,7 +123,7 @@ def decode(data,cases):
     assert at==len(w);return dict(coverage)
 
 def compare(output,label,cpp,reference,assets,inputs,cases):
-    bank=output/f'{label}-settings.native';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));expected=subprocess.check_output([str(reference),str(assets)],input=inputs);actual=subprocess.check_output([str(cpp),str(bank)],input=inputs)
+    bank=output/f'{label}-settings.simulation';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));expected=subprocess.check_output([str(reference),str(assets)],input=inputs);actual=subprocess.check_output([str(cpp),str(bank)],input=inputs)
     for name,data in (('input',inputs),('reference',expected),('cpp',actual)):(output/f'{label}-{name}.bin').write_bytes(data)
     coverage=decode(expected,cases);(output/f'{label}-cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if expected!=actual:
@@ -171,12 +171,12 @@ def rejection_fixtures(inputs,cases):
     yield 'disable_hand3_contract',struct.pack('<'+'I'*(len(invalid)+1),1,*invalid)
 
 def verify_rejections(output,cpp,reference,assets,inputs,cases):
-    bank=output/'stock-settings.native';reports=[]
+    bank=output/'stock-settings.simulation';reports=[]
     def disable_core_dump():resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     for label,data in rejection_fixtures(inputs,cases):
         (output/f'{label}-input.bin').write_bytes(data);a=subprocess.run([str(reference),str(assets)],input=data,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=output,preexec_fn=disable_core_dump);b=subprocess.run([str(cpp),str(bank)],input=data,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=output,preexec_fn=disable_core_dump)
         if a.returncode!=101 or b'panicked at' not in a.stderr:raise AssertionError(f'{label}: original did not panic at the invalid contract')
-        if b.returncode!=-signal.SIGABRT:raise AssertionError(f'{label}: native did not explicitly abort at the invalid contract')
+        if b.returncode!=-signal.SIGABRT:raise AssertionError(f'{label}: the simulation did not explicitly abort at the invalid contract')
         (output/f'{label}-reference.stderr').write_bytes(a.stderr);(output/f'{label}-cpp.stderr').write_bytes(b.stderr);reports.append(dict(fixture=label,reference_exit=a.returncode,cpp_exit=b.returncode,input_sha256=hashlib.sha256(data).hexdigest()))
     return reports
 

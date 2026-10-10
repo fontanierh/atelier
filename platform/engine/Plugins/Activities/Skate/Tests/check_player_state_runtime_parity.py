@@ -24,7 +24,7 @@ from camera_reference_build import frozen_sources
 from check_gesture_parity import PLUGIN, converter
 from session_parity import digest
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 HOST='crates/skate-host/src/'
 GROUND='crates/skate-core/src/riding/grounded/state/output.rs'
 UNITS=('NameId','Settings','StockSettingsReader','AnimationName','FilteredState','PhysicalPhase','PlayerStateRegistry','PlayerStateRuntime')
@@ -60,8 +60,8 @@ def helpers():
     return cpp,rust
 
 def verified_wire():
-    native=PLUGIN/'Tests/Native/state_conditioning_probe.cpp';reference=PLUGIN/'Tests/Reference/state_conditioning_probe.rs'
-    cn=native.read_text();begin=cn.index('struct Input\n');end=cn.index('\nint main(');cpp=cn[begin:end]
+    simulation=PLUGIN/'Tests/Simulation/state_conditioning_probe.cpp';reference=PLUGIN/'Tests/Reference/state_conditioning_probe.rs'
+    cn=simulation.read_text();begin=cn.index('struct Input\n');end=cn.index('\nint main(');cpp=cn[begin:end]
     cr=reference.read_text();rb=cr.index('struct Input{');re_=cr.index('\nfn main()');rust=cr[rb:re_]
     assert hashlib.sha256(cpp.encode()).hexdigest()=='d875806492650932b21d7e80754d07043ba50a1961ef5a6148aed898d26479a7'
     assert hashlib.sha256(rust.encode()).hexdigest()=='918d928842db7debaf3a7f31837fde0e9548dc5975827b7aaa7a2d7eaec4be70'
@@ -72,10 +72,10 @@ def verified_wire():
     std::string String(){const auto n=Word();auto s=r.RawString(n);r.RawString((4-n%4)%4);return s;}
     detail::DataReader r;''')
     rust+='\nimpl Input{fn string(&mut self)->String{let n=self.word()as usize;let s=String::from_utf8(self.bytes[self.at..self.at+n].to_vec()).unwrap();self.at+=((n+3)/4)*4;s}}\n'
-    return cpp,rust,dict(native=dict(path=native.relative_to(PLUGIN).as_posix(),file_sha256=digest(native),begin_byte=begin,end_byte=end,block_sha256=hashlib.sha256(cn[begin:end].encode()).hexdigest()),reference=dict(path=reference.relative_to(PLUGIN).as_posix(),file_sha256=digest(reference),begin_byte=rb,end_byte=re_,block_sha256=hashlib.sha256(cr[rb:re_].encode()).hexdigest()))
+    return cpp,rust,dict(simulation=dict(path=simulation.relative_to(PLUGIN).as_posix(),file_sha256=digest(simulation),begin_byte=begin,end_byte=end,block_sha256=hashlib.sha256(cn[begin:end].encode()).hexdigest()),reference=dict(path=reference.relative_to(PLUGIN).as_posix(),file_sha256=digest(reference),begin_byte=rb,end_byte=re_,block_sha256=hashlib.sha256(cr[rb:re_].encode()).hexdigest()))
 
 def header_closure():
-    pending=[CODE/(u+'.cpp')for u in UNITS]+[PLUGIN/'Tests/Native/player_state_runtime_probe.cpp'];result={}
+    pending=[CODE/(u+'.cpp')for u in UNITS]+[PLUGIN/'Tests/Simulation/player_state_runtime_probe.cpp'];result={}
     while pending:
         p=pending.pop()
         for name in re.findall(r'^#include\s+"([^"]+)"',p.read_text(),re.M):
@@ -121,15 +121,15 @@ bevy={version="0.19",default-features=false,features=["std","multi_threaded","be
 name="player-state-runtime-reference"
 path="src/migration_probe.rs"
 ''')
-    snapshot=output/'native-source';snapshot.mkdir(exist_ok=True)
+    snapshot=output/'simulation-source';snapshot.mkdir(exist_ok=True)
     headers=header_closure()
     for p in list(headers.values())+[CODE/(u+'.cpp')for u in UNITS]:shutil.copy2(p,snapshot/p.name)
-    np=PLUGIN/'Tests/Native/player_state_runtime_probe.cpp';generated=np.read_text().replace('// GENERATED_VERIFIED_FILTERED_WIRE',cp).replace('// GENERATED_DECLARATION_PROTOCOL',cpp);(snapshot/np.name).write_text(generated)
+    np=PLUGIN/'Tests/Simulation/player_state_runtime_probe.cpp';generated=np.read_text().replace('// GENERATED_VERIFIED_FILTERED_WIRE',cp).replace('// GENERATED_DECLARATION_PROTOCOL',cpp);(snapshot/np.name).write_text(generated)
     # Snapshot status is reported, never silently equated with tracked closure.
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip())
     tracked=set(subprocess.check_output(['git','ls-files','--',CODE.relative_to(root).as_posix()],cwd=root,text=True).splitlines())
     untracked=[p.name for p in headers.values()if p.relative_to(root).as_posix()not in tracked]
-    report.update(staged_host_original_prefixes=staged,whole_host_module_declarations_sha256=digest(host/'lib.rs'),core_append_sha256=hashlib.sha256(extension.encode()).hexdigest(),verified_filtered_wire=wire_meta,native_units=UNITS,required_untracked_headers=sorted(untracked),immutable_native_source_sha256={p.name:digest(p)for p in sorted(snapshot.iterdir())},generated_reference_probe_sha256=digest(probe),proof_files={p.name:digest(p)for p in (Path(__file__),np,template,PLUGIN/'Tests/Reference/player_state_runtime_observer.rs')},boundary='Whole original host source retained. Only actual PlayerState Load/Current/Reset and registry observations execute; no frame dispatch, conditioning publication, physical Grind or landing stage. Separate native landing retention invariant has no claimed original stage.')
+    report.update(staged_host_original_prefixes=staged,whole_host_module_declarations_sha256=digest(host/'lib.rs'),core_append_sha256=hashlib.sha256(extension.encode()).hexdigest(),verified_filtered_wire=wire_meta,simulation_units=UNITS,required_untracked_headers=sorted(untracked),immutable_simulation_source_sha256={p.name:digest(p)for p in sorted(snapshot.iterdir())},generated_reference_probe_sha256=digest(probe),proof_files={p.name:digest(p)for p in (Path(__file__),np,template,PLUGIN/'Tests/Reference/player_state_runtime_observer.rs')},boundary='Whole original host source retained. Only actual PlayerState Load/Current/Reset and registry observations execute; no frame dispatch, conditioning publication, physical Grind or landing stage. Separate simulation landing retention invariant has no claimed original stage.')
     audit(source,report);(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     return source,snapshot,cargo,report
 
@@ -276,19 +276,19 @@ def main():
     for n in('result.json','first-divergence.json'):(out/n).unlink(missing_ok=True)
     cases=corpus();blob=encode(cases);(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');(out/'settings-specs.json').write_text(json.dumps(settings_specs(),indent=2)+'\n')
     source,snapshot,cargo,report=prepare(out);report.update(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest());(out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n')
-    if a.preflight:print(json.dumps(dict(preflight=True,histories=report['histories'],commands=report['commands'],input_sha256=report['input_sha256'],native_units=UNITS,native_headers=len(header_closure()),original_modules=len(report['original_source_sha256']),host_modules=len(report['staged_host_original_prefixes']),required_untracked_headers=report['required_untracked_headers']),indent=2));return
+    if a.preflight:print(json.dumps(dict(preflight=True,histories=report['histories'],commands=report['commands'],input_sha256=report['input_sha256'],simulation_units=UNITS,simulation_headers=len(header_closure()),original_modules=len(report['original_source_sha256']),host_modules=len(report['staged_host_original_prefixes']),required_untracked_headers=report['required_untracked_headers']),indent=2));return
     assert a.assets and a.target_dir,'guarded run requires --assets and --target-dir'
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(a.target_dir.resolve()),'--bin','player-state-runtime-reference'],check=True);audit(source,report)
     reference=out/'player-state-runtime-reference';shutil.copy2(a.target_dir.resolve()/'release/player-state-runtime-reference',reference)
-    native=out/'player-state-runtime-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_state_runtime_probe.cpp'),'-o',str(native)],check=True)
-    base=minimal(json.loads((a.assets/'private/stock/skater-collections.json').read_text()));live=out/'fixture/private/stock/skater-collections.json';live.parent.mkdir(parents=True,exist_ok=True);stock_path=out/'stock/private/stock/skater-collections.json';stock_path.parent.mkdir(parents=True,exist_ok=True);stock_path.write_text(json.dumps(base));stock_native=out/'stock.native';stock_native.write_bytes(converter.encode_settings(stock_path));results=[];total=0
+    simulation=out/'player-state-runtime-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_state_runtime_probe.cpp'),'-o',str(simulation)],check=True)
+    base=minimal(json.loads((a.assets/'private/stock/skater-collections.json').read_text()));live=out/'fixture/private/stock/skater-collections.json';live.parent.mkdir(parents=True,exist_ok=True);stock_path=out/'stock/private/stock/skater-collections.json';stock_path.parent.mkdir(parents=True,exist_ok=True);stock_path.write_text(json.dumps(base));stock_simulation=out/'stock.simulation';stock_simulation.write_bytes(converter.encode_settings(stock_path));results=[];total=0
     for n,spec in enumerate(settings_specs()):
-        data=fixture(base,spec);live.write_text(json.dumps(data));bank=out/'fixture.native';bank.write_bytes(converter.encode_settings(live));expected=subprocess.check_output([str(reference),str(stock_path.parents[2]),str(live.parents[2])],input=blob);actual=subprocess.check_output([str(native),str(stock_native),str(bank)],input=blob);folder=out/f'result-{n}';folder.mkdir(exist_ok=True);(folder/'reference.bin').write_bytes(expected);(folder/'native.bin').write_bytes(actual);total+=len(expected)
+        data=fixture(base,spec);live.write_text(json.dumps(data));bank=out/'fixture.simulation';bank.write_bytes(converter.encode_settings(live));expected=subprocess.check_output([str(reference),str(stock_path.parents[2]),str(live.parents[2])],input=blob);actual=subprocess.check_output([str(simulation),str(stock_simulation),str(bank)],input=blob);folder=out/f'result-{n}';folder.mkdir(exist_ok=True);(folder/'reference.bin').write_bytes(expected);(folder/'simulation.bin').write_bytes(actual);total+=len(expected)
         if expected!=actual:
-            at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(fixture=n,label=spec['label'],byte=at,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('PlayerState Load/reset differs')
+            at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(fixture=n,label=spec['label'],byte=at,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('PlayerState Load/reset differs')
         histories=decode(expected,cases);proof=coverage(histories,cases,spec['error']);results.append(dict(label=spec['label'],error=spec['error'],fixture_sha256=hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest(),output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=proof))
     audit(source,report)
-    final=dict(passed=True,histories=len(cases),commands=report['commands'],settings_fixtures=results,exact_output_bytes=total,provenance_sha256=digest(out/'provenance.json'),native_binary_sha256=digest(native),reference_binary_sha256=digest(reference),scope=report['boundary'],native_only_invariant='ResetForTeleport leaves separately seeded landing_settings and landing_quality byte-identical; no original landing-stage equivalence claimed.')
+    final=dict(passed=True,histories=len(cases),commands=report['commands'],settings_fixtures=results,exact_output_bytes=total,provenance_sha256=digest(out/'provenance.json'),simulation_binary_sha256=digest(simulation),reference_binary_sha256=digest(reference),scope=report['boundary'],simulation_only_invariant='ResetForTeleport leaves separately seeded landing_settings and landing_quality byte-identical; no original landing-stage equivalence claimed.')
     (out/'result.json').write_text(json.dumps(final,indent=2)+'\n');print(json.dumps(final,indent=2))
 
 if __name__=='__main__':main()

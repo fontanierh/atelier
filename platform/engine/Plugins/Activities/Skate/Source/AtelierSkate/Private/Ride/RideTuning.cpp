@@ -4,7 +4,7 @@
 namespace
 {
     TAutoConsoleVariable<FString> CVarRideTune(TEXT("skate.RideTune"), TEXT(""),
-        TEXT("Ride backend tuning overrides: Name=Value words (names as in RideTuning.h)"));
+        TEXT("Ride tuning overrides: Name=Value words (names as in RideTuning.h)"));
 
 #define RIDE_FIELD(Name) { TEXT(#Name), STRUCT_OFFSET(FRideTuning, Name) }
     struct FTuningField { const TCHAR* Name; SIZE_T Offset; };

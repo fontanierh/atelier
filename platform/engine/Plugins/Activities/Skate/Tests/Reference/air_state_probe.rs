@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use skate_core::air::{state::*, trajectory::LaunchInfo};
 use skate_core::point_graph::PointGraph;
 use skate_data::collections::Collections;

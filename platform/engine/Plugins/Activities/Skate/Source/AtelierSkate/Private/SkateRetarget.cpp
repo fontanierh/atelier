@@ -1,10 +1,10 @@
-// USkateComponent's pose retargeter (SkateRuntime.cpp): fits the native rider's pose onto the character, keeping
+// USkateComponent's pose retargeter (SkateRuntime.cpp): fits the simulation rider's pose onto the character, keeping
 // the hands and feet out of the body and the ground.
 #include "SkateComponent.h"
 #include "SkateRuntimeDetail.h"
-#include "Native/GameplaySession.h"
-#include "Native/GroundSurfaceRuntime.h"
-#include "Native/HostScalar.h"
+#include "Simulation/GameplaySession.h"
+#include "Simulation/GroundSurfaceRuntime.h"
+#include "Simulation/HostScalar.h"
 #include "SkatePad.h"
 #include <deque>
 #include <limits>
@@ -47,14 +47,12 @@
 #include "UObject/ObjectKey.h"
 #include "Async/Async.h"
 #include "Async/ParallelFor.h"
-#include "Ride/RideClipPlayer.h"
 #include "Ride/RidePoseMeasure.h"
-#include "Ride/RideTuning.h"
 #include "Ride/RidePhysicalRider.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
 
-// The skin of the limbs RetargetRetailPose keeps out of the body and the ground: the vertices skinned (most) to each
+// The skin of the limbs RetargetRiderPose keeps out of the body and the ground: the vertices skinned (most) to each
 // hand or the hand's half of its forearm, and to each foot or toe, 48 farthest-point picks per limb (its extremes first:
 // finger and toe tips, heels, then filling between).
 static void SampleLimbSkin(FSkateRuntime& Runtime,USkeletalMesh* Asset,const FReferenceSkeleton& Ref,const TArray<FTransform>& Bind,
@@ -330,7 +328,7 @@ static void ClearArms(FSkateRuntime& Runtime,const FReferenceSkeleton& Ref,TArra
     Runtime.bArmsValid=true;
 }
 
-void USkateComponent::RetargetRetailPose()
+void USkateComponent::RetargetRiderPose()
 {
     USkeletalMeshComponent* Mesh=Rider->GetMesh();
     if (!Mesh || !Mesh->GetSkeletalMeshAsset()) return;
@@ -353,26 +351,26 @@ void USkateComponent::RetargetRetailPose()
     auto Index=[&](const FString& Contract){ const FName Bone=RiderApi?RiderApi->GetSkateBone(FName(*Contract)):FName(*Contract); return Bone.IsNone()?INDEX_NONE:Ref.FindBoneIndex(Bone); };
     TArray<const Mapping*> Matches; Matches.Init(nullptr,Ref.GetNum());
     for (const Mapping& M : Map) if (const int32 Bone=Index(M.Target); Bone>=0) Matches[Bone]=&M;
-    TArray<FTransform> Bind,Output; Bind.SetNum(Ref.GetNum()); Output.SetNum(Ref.GetNum()); RetailPose.SetNum(Ref.GetNum());
+    TArray<FTransform> Bind,Output; Bind.SetNum(Ref.GetNum()); Output.SetNum(Ref.GetNum()); RiderPose.SetNum(Ref.GetNum());
     for (int32 I=0;I<Ref.GetNum();++I) { int32 P=Ref.GetParentIndex(I); Bind[I]=P>=0?Ref.GetRefBonePose()[I]*Bind[P]:Ref.GetRefBonePose()[I]; }
-    auto Source=[&](const TCHAR* N){return RetailRuntime->Names.IndexOfByKey(FName(N));};
+    auto Source=[&](const TCHAR* N){return ShownRuntime->Names.IndexOfByKey(FName(N));};
     const int32 Hip=Index(TEXT("pelvis")),Foot=Index(TEXT("foot_L")),SHip=Source(TEXT("HIPS")),SFoot=Source(TEXT("LEFTFOOT"));
-    if (Hip<0 || Foot<0 || SHip<0 || SFoot<0) { RetailPose.Reset(); return; }
+    if (Hip<0 || Foot<0 || SHip<0 || SFoot<0) { RiderPose.Reset(); return; }
     const float Ratio=(Bind[Hip].GetLocation().Z-Bind[Foot].GetLocation().Z)*Mesh->GetComponentScale().Z /
-        FMath::Max(1.,RetailRuntime->Reference[SHip].GetLocation().Z-RetailRuntime->Reference[SFoot].GetLocation().Z);
+        FMath::Max(1.,ShownRuntime->Reference[SHip].GetLocation().Z-ShownRuntime->Reference[SFoot].GetLocation().Z);
     // PhysCustom runs inside CharacterMovement's scoped move. The capsule already has the new pose, but its
     // children's cached world transforms are not propagated until the scope closes. Using that stale mesh world
     // transform adds the frame's travel to the bones a second time: at uneven frame rates the rider flickers
     // back and forth over the board. Compose from the current parent and the authored mesh-local transform.
     const FTransform MeshWorld=Mesh->GetRelativeTransform()*Rider->GetActorTransform();
-    const FTransform RootToMesh=RetailRuntime->Root.GetRelativeTransform(MeshWorld);
+    const FTransform RootToMesh=ShownRuntime->Root.GetRelativeTransform(MeshWorld);
     // Preserve sole height: the source ankle is much farther above its sole than this character's ankle. A bigger
     // board's deck is higher by its extra deck height (9.05 cm at the source's size).
     // Off the board the clips' root is on the ground: standing on the deck (OffBoardLift 1) the body rises onto the
     // visible deck, which is not scaled with the body.
     const float DeckLift=bOffBoardPose?OffBoardLift*((BoardScale()-1.f)*9.05f+(1.f-Ratio)*8.9f):(BoardScale()-1.f)*9.05f;
     const float SoleOffset=(Bind[Foot].GetLocation().Z-Bind[0].GetLocation().Z)*Mesh->GetComponentScale().Z -
-        (RetailRuntime->Reference[SFoot].GetLocation().Z-RetailRuntime->Reference[0].GetLocation().Z)*Ratio+DeckLift;
+        (ShownRuntime->Reference[SFoot].GetLocation().Z-ShownRuntime->Reference[0].GetLocation().Z)*Ratio+DeckLift;
     auto InMesh=[&](FTransform T){ T.ScaleTranslation(Ratio); T.AddToTranslation(FVector(0,0,SoleOffset)); return T*RootToMesh; };
     // The visible deck off the board: on the ground it is where the clip has it, grown about its contact like a
     // ridden board; held, it goes with the body's hands (scaled with the body). Between the two by its height.
@@ -382,24 +380,24 @@ void USkateComponent::RetargetRetailPose()
         const float S=BoardScale();
         if (SD>=0)
         {
-            const FTransform Clip=RetailRuntime->Bones[SD]*RetailRuntime->Root;
+            const FTransform Clip=ShownRuntime->Bones[SD]*ShownRuntime->Root;
             const FVector Contact=Clip.GetLocation()-Clip.GetRotation().GetUpVector()*9.05;
             const FTransform Ground=Clip*FTransform(FQuat::Identity,Contact*(1.-S),FVector(S));
-            FTransform Held=InMesh(RetailRuntime->Bones[SD])*MeshWorld; Held.SetScale3D(FVector(S));
-            OffBoardDeck.Blend(Ground,Held,FMath::SmoothStep(15.f,45.f,float(RetailRuntime->Bones[SD].GetLocation().Z)));
+            FTransform Held=InMesh(ShownRuntime->Bones[SD])*MeshWorld; Held.SetScale3D(FVector(S));
+            OffBoardDeck.Blend(Ground,Held,FMath::SmoothStep(15.f,45.f,float(ShownRuntime->Bones[SD].GetLocation().Z)));
         }
-        else OffBoardDeck=FTransform(RetailRuntime->Root.GetRotation(),RetailRuntime->Root.GetLocation(),FVector(S));
+        else OffBoardDeck=FTransform(ShownRuntime->Root.GetRotation(),ShownRuntime->Root.GetLocation(),FVector(S));
         // A board just taken off a hand of the character's own pose eases from there (RideTransition.cpp).
         if (OffBoardDeckBlend<1.f) { const FTransform To=OffBoardDeck; OffBoardDeck.Blend(OffBoardDeckFrom,To,FMath::SmoothStep(0.f,1.f,OffBoardDeckBlend)); }
     }
     auto Frame=[](FVector Left,FVector Right,FVector Head,FVector HipP) { FVector Up=(Head-HipP).GetSafeNormal(); return FRotationMatrix::MakeFromXZ(FVector::CrossProduct(Right-Left,Up).GetSafeNormal(),Up).ToQuat(); };
     const int32 TL=Index(TEXT("thigh_L")),TR=Index(TEXT("thigh_R")),TH=Index(TEXT("head"));
     if (TL<0 || TR<0 || TH<0 || Source(TEXT("LEFTUPLEG"))<0 || Source(TEXT("RIGHTUPLEG"))<0 || Source(TEXT("HEAD"))<0)
-    { RetailPose.Reset(); return; }
+    { RiderPose.Reset(); return; }
     // Imported meshes can carry a 180-degree facing correction. Joint names alone cannot recover it.
     const FQuat TargetFrame=FRotationMatrix::MakeFromXZ(SavedMeshRotation.UnrotateVector(FVector::ForwardVector),
         (Bind[TH].GetLocation()-Bind[Hip].GetLocation()).GetSafeNormal()).ToQuat();
-    const FQuat Base=Frame(InMesh(RetailRuntime->Reference[Source(TEXT("LEFTUPLEG"))]).GetLocation(),InMesh(RetailRuntime->Reference[Source(TEXT("RIGHTUPLEG"))]).GetLocation(),InMesh(RetailRuntime->Reference[Source(TEXT("HEAD"))]).GetLocation(),InMesh(RetailRuntime->Reference[SHip]).GetLocation()) * TargetFrame.Inverse();
+    const FQuat Base=Frame(InMesh(ShownRuntime->Reference[Source(TEXT("LEFTUPLEG"))]).GetLocation(),InMesh(ShownRuntime->Reference[Source(TEXT("RIGHTUPLEG"))]).GetLocation(),InMesh(ShownRuntime->Reference[Source(TEXT("HEAD"))]).GetLocation(),InMesh(ShownRuntime->Reference[SHip]).GetLocation()) * TargetFrame.Inverse();
     TArray<FQuat> Fits; Fits.Init(Base,Ref.GetNum());
     TArray<FVector> Targets; Targets.SetNum(Ref.GetNum());
     for (int32 I=0;I<Ref.GetNum();++I)
@@ -407,7 +405,7 @@ void USkateComponent::RetargetRetailPose()
         const int32 Parent=Ref.GetParentIndex(I); const Mapping* Match=Matches[I];
         if (Match && Source(Match->Source)>=0)
         {
-            const int32 S=Source(Match->Source); const FTransform SB=InMesh(RetailRuntime->Reference[S]),SP=InMesh(RetailRuntime->Bones[S]);
+            const int32 S=Source(Match->Source); const FTransform SB=InMesh(ShownRuntime->Reference[S]),SP=InMesh(ShownRuntime->Bones[S]);
             FQuat FitRotation=Base;
             // Hands and toes inherit the limb's reference alignment; a body-facing frame would twist them.
             if (!Match->Child && Parent>=0 && FCString::Strcmp(Match->Target,TEXT("head"))!=0) FitRotation=Fits[Parent];
@@ -426,7 +424,7 @@ void USkateComponent::RetargetRetailPose()
                 if (Child>=0 && Source(ChildSource)>=0)
                 {
                     FVector A=Base.RotateVector(Bind[Child].GetLocation()-Bind[I].GetLocation());
-                    FVector B=InMesh(RetailRuntime->Reference[Source(ChildSource)]).GetLocation()-SB.GetLocation();
+                    FVector B=InMesh(ShownRuntime->Reference[Source(ChildSource)]).GetLocation()-SB.GetLocation();
                     // The source ankle/toe height difference is anatomical, not a toe-down foot rotation.
                     if (FCString::Strncmp(Match->Target,TEXT("foot_"),5)==0)
                     {
@@ -468,7 +466,7 @@ void USkateComponent::RetargetRetailPose()
         const int32 Roots[4]={Index(TEXT("forearm_L")),Index(TEXT("forearm_R")),Index(TEXT("foot_L")),Index(TEXT("foot_R"))};
         const int32 Hands[2]={Index(TEXT("hand_L")),Index(TEXT("hand_R"))},Uppers[2]={Index(TEXT("upperarm_L")),Index(TEXT("upperarm_R"))};
         USkeletalMesh* Asset=Mesh->GetSkeletalMeshAsset();
-        if (RetailRuntime->LimbMesh.Get()!=Asset) SampleLimbSkin(*RetailRuntime,Asset,Ref,Bind,Roots,Hands);
+        if (ShownRuntime->LimbMesh.Get()!=Asset) SampleLimbSkin(*ShownRuntime,Asset,Ref,Bind,Roots,Hands);
         // A source foot steps on the source's ground plane (pushing, braking), which on this rider's proportions can be
         // under the real ground: each foot whose sole goes under the ground below it lifts out, the leg solved to it.
         if (const float Above=CVarSkateFootGround.GetValueOnGameThread(); Above>=0.f && !bOffBoardPose)
@@ -476,7 +474,7 @@ void USkateComponent::RetargetRetailPose()
             FCollisionQueryParams Query(SCENE_QUERY_STAT(SkateFootGround),false,Rider);
             for (int32 S=0;S<2;++S)
             {
-                const TArray<FSkateRuntime::FSkinPoint>& Sole=RetailRuntime->LimbSkin[2+S];
+                const TArray<FSkateRuntime::FSkinPoint>& Sole=ShownRuntime->LimbSkin[2+S];
                 const int32 A=Index(S?TEXT("thigh_R"):TEXT("thigh_L")),B=Index(S?TEXT("shin_R"):TEXT("shin_L")),C=Roots[2+S];
                 if (Sole.IsEmpty() || A<0 || B<0 || C<0) continue;
                 const FVector Ankle=MeshWorld.TransformPosition(Output[C].GetLocation());
@@ -504,19 +502,19 @@ void USkateComponent::RetargetRetailPose()
         // The source's arms hang beside an adult's hips; beside wider hips and thighs the hands sink into them. Each arm
         // swings out until its hand and forearm clear the rider's own body by skate.ArmClear (ClearArms), smoothed over
         // the frames (the world's clock). A grab solves after this, so it still reaches its board.
-        const double Now=GetWorld()?GetWorld()->GetTimeSeconds():0.,ArmDt=RetailRuntime->ArmTime>=0?Now-RetailRuntime->ArmTime:-1.;
-        RetailRuntime->ArmTime=Now;
+        const double Now=GetWorld()?GetWorld()->GetTimeSeconds():0.,ArmDt=ShownRuntime->ArmTime>=0?Now-ShownRuntime->ArmTime:-1.;
+        ShownRuntime->ArmTime=Now;
         if (const float Clear=CVarSkateArmClear.GetValueOnGameThread(); Clear>=0.f)
         {
             UPhysicsAsset* Physics=Mesh->GetPhysicsAsset();
-            if (Physics && (RetailRuntime->BodiesFor.Get()!=Physics || RetailRuntime->BodiesMesh.Get()!=Asset || (!RetailRuntime->bBodiesComplete && RetailRuntime->BodiesTries<120))) GatherBodies(*RetailRuntime,Asset,Physics,Ref,Index);
-            if (Physics && !RetailRuntime->Bodies.IsEmpty())
-                ClearArms(*RetailRuntime,Ref,Output,Uppers,Index(TEXT("pelvis")),Index(TEXT("chest")),Clear/FMath::Max(Mesh->GetComponentScale().GetMax(),1e-4),ArmDt);
-            else RetailRuntime->bArmsValid=false;
+            if (Physics && (ShownRuntime->BodiesFor.Get()!=Physics || ShownRuntime->BodiesMesh.Get()!=Asset || (!ShownRuntime->bBodiesComplete && ShownRuntime->BodiesTries<120))) GatherBodies(*ShownRuntime,Asset,Physics,Ref,Index);
+            if (Physics && !ShownRuntime->Bodies.IsEmpty())
+                ClearArms(*ShownRuntime,Ref,Output,Uppers,Index(TEXT("pelvis")),Index(TEXT("chest")),Clear/FMath::Max(Mesh->GetComponentScale().GetMax(),1e-4),ArmDt);
+            else ShownRuntime->bArmsValid=false;
         }
-        else RetailRuntime->bArmsValid=false;
+        else ShownRuntime->bArmsValid=false;
     }
-    else RetailRuntime->bArmsValid=false;
+    else ShownRuntime->bArmsValid=false;
     // A grab closes the source hand on its own deck, but this arm only follows the source arm's directions at this
     // character's scale, so the hand stops short of the board with straight fingers. Where the source hand reaches
     // its deck, hold the nearest edge of the board instead (knuckles just outside it, fingers hooked under, thumb
@@ -537,7 +535,7 @@ void USkateComponent::RetargetRetailPose()
         // Top of the deck's rail: the concave lifts the sides, and the kicks rise to the ends.
         auto RailTop=[&](double X){ const double T=FMath::Clamp((FMath::Abs(X)-KickStart)/(HalfLength-KickStart),0.,1.); return Concave+T*T*(Box.Max.Z-Concave); };
         // The visible deck: a bigger board's outline scales with it, the grip offsets stay at the hand's size.
-        const FTransform DeckToMesh=(bOffBoardPose?OffBoardDeck:RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
+        const FTransform DeckToMesh=(bOffBoardPose?OffBoardDeck:ShownRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
         for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
         {
             auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };
@@ -546,10 +544,10 @@ void USkateComponent::RetargetRetailPose()
             const int32 SHand=Source(*(SourceSide+TEXT("HAND"))),SFore=Source(*(SourceSide+TEXT("FOREARM")));
             if (Upper<0 || Fore<0 || Hand<0 || SHand<0 || SFore<0) continue;
             // The source hand and its length axis in its deck's frame; its knuckles are about 9 cm down that axis.
-            const FTransform SourceHand=RetailRuntime->Bones[SHand].GetRelativeTransform(RetailRuntime->Bones[SDeck]);
-            const FTransform& SourceRef=RetailRuntime->Reference[SHand];
+            const FTransform SourceHand=ShownRuntime->Bones[SHand].GetRelativeTransform(ShownRuntime->Bones[SDeck]);
+            const FTransform& SourceRef=ShownRuntime->Reference[SHand];
             const FVector Axis=SourceHand.GetRotation().RotateVector(SourceRef.GetRotation().UnrotateVector(
-                (SourceRef.GetLocation()-RetailRuntime->Reference[SFore].GetLocation()).GetSafeNormal()));
+                (SourceRef.GetLocation()-ShownRuntime->Reference[SFore].GetLocation()).GetSafeNormal()));
             const FVector Knuckle=SourceHand.GetLocation()+Axis*SourceKnuckle;
             // The nearest point of the deck's outline (straight rails, round ends) and its outward normal.
             const double Along=FMath::Clamp(Knuckle.X,-Flat,Flat);
@@ -638,14 +636,14 @@ void USkateComponent::RetargetRetailPose()
     }
     // The source physical rider has adult proportions; the character's head and clothing can extend beyond it.
     // During a bail, keep the retargeted skin above the supporting surface without changing bone lengths
-    // or feeding visual corrections back into the recovered rigid-body solver.
-    RetailFloorClearance=0.f;
+    // or feeding visual corrections back into the session's rigid-body solver.
+    ShownFloorClearance=0.f;
     if (Mode==ESkateMode::Bail)
     {
         USkeletalMesh* Asset=Mesh->GetSkeletalMeshAsset();
-        if (RetailRuntime->ContactMesh.Get()!=Asset)
+        if (ShownRuntime->ContactMesh.Get()!=Asset)
         {
-            RetailRuntime->ContactMesh=Asset; RetailRuntime->ContactVertices.Reset();
+            ShownRuntime->ContactMesh=Asset; ShownRuntime->ContactVertices.Reset();
             const FSkeletalMeshRenderData* Data=Asset->GetResourceForRendering();
             if (Data && !Data->LODRenderData.IsEmpty())
             {
@@ -671,7 +669,7 @@ void USkateComponent::RetargetRetailPose()
                             if (Sum>0)
                             {
                                 for (auto& Influence : Vertex.Influences) Influence.Weight/=Sum;
-                                RetailRuntime->ContactVertices.Add(MoveTemp(Vertex));
+                                ShownRuntime->ContactVertices.Add(MoveTemp(Vertex));
                             }
                         }
                     }
@@ -680,7 +678,7 @@ void USkateComponent::RetargetRetailPose()
         // Keep the lowest skinned vertex in each 12cm footprint cell. This includes shoes, hands, hair
         // and the enlarged head, and bounds the scene-query count without a coarse whole-body hover box.
         TMap<FIntPoint,FVector> Support;
-        for (const auto& Vertex : RetailRuntime->ContactVertices)
+        for (const auto& Vertex : ShownRuntime->ContactVertices)
         {
             FVector Point=FVector::ZeroVector;
             for (const auto& I : Vertex.Influences) Point+=Output[I.Bone].TransformPosition(I.Position)*I.Weight;
@@ -702,7 +700,7 @@ void USkateComponent::RetargetRetailPose()
         {
             const float Required=FMath::Max(0.,.5-Clearance);
             BailVisualLift=FMath::Max(Required,FMath::FInterpTo(BailVisualLift,Required,GetWorld()->GetDeltaSeconds(),14.f));
-            RetailFloorClearance=Clearance+BailVisualLift;
+            ShownFloorClearance=Clearance+BailVisualLift;
         }
         const FVector Lift=MeshWorld.InverseTransformVector(FVector(0,0,BailVisualLift));
         for (FTransform& Bone : Output) Bone.AddToTranslation(Lift);
@@ -711,8 +709,8 @@ void USkateComponent::RetargetRetailPose()
     for (int32 I=0;I<Ref.GetNum();++I)
     {
         const int32 Parent=Ref.GetParentIndex(I);
-        RetailPose[I]=Parent>=0?Output[I].GetRelativeTransform(Output[Parent]):Output[I];
-        RetailPose[I].NormalizeRotation();
+        RiderPose[I]=Parent>=0?Output[I].GetRelativeTransform(Output[Parent]):Output[I];
+        RiderPose[I].NormalizeRotation();
     }
     // A blend asked for this pose (the ride's first after a mount) goes with it (RequestPoseBlendWithNextPose).
     if (PendingPoseBlend>0.f) RequestPoseBlend(PendingPoseBlend);

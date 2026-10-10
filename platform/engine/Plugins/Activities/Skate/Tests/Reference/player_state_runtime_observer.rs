@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Appended to the complete original physics/player_state.rs. Only fixture
 // initialization and read-only observation are authored; load/reset unchanged.
 mod migration_player_state {

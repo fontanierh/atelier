@@ -94,7 +94,7 @@ def protocol():
 def owner_helpers():
  cpp=[];rust=[];appends={}
  def functions(file,markers,lang):
-  text='\n'.join(block(('Native/'if lang=='cpp'else'Reference/')+file,m)for m in markers)
+  text='\n'.join(block(('Simulation/'if lang=='cpp'else'Reference/')+file,m)for m in markers)
   if lang=='cpp':return re.sub(r'\bWriter\b','BipedOutput',re.sub(r'\bReader\b','BipedInput',text))
   return text.replace('Writer','Output').replace('Reader','Input').replace('.scalar(','.float(').replace('.words','.0')
  cm=('void V(','void M(','void LineOut(','void DescriptorOut(','void DescriptorsOut(','void LayoutOut(','void RequestOut(','void BatchOut(','void QueryOut(','void HitOut(','void LinesOut(','void ResultsOut(','void PrefixOut(','void OwnerOut(')
@@ -156,7 +156,7 @@ def prepare(output):
   dest=crate/'src'/rel.removeprefix('crates/skate-host/src/')if rel.startswith('crates/skate-host/src/')else observed/rel
   dest.write_bytes(dest.read_bytes()+extra.encode());raw=(original/rel).read_bytes();assert dest.read_bytes()[:len(raw)]==raw,rel
   report.setdefault('biped_appended_observers',{})[rel]=dict(original_prefix_bytes=len(raw),original_prefix_sha256=digest(original/rel),append_sha256=hashlib.sha256(extra.encode()).hexdigest(),generated_sha256=digest(dest))
- worldcpp=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main(')[0]
+ worldcpp=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main(')[0]
  worldrust=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('fn main(')[0]
  worldcpp=worldcpp[worldcpp.index('namespace\n{'):];worldrust=worldrust.replace('use math::','use skate_core::math::').replace('use physics::','use skate_core::physics::')
  # This is the established full triangle/query-metadata wire, wrapped in a
@@ -165,8 +165,8 @@ def prepare(output):
  # Read only world transport helpers; neither standalone world main is run.
  cpworld=worldcpp
  rpworld=worldrust
- # Native factory below uses an independent adapter around the wire Reader.
- cpworld += '\n'+(PLUGIN/'Tests/Native/biped_runtime_world.inc').read_text()
+ # The simulation factory below uses an independent adapter around the wire Reader.
+ cpworld += '\n'+(PLUGIN/'Tests/Simulation/biped_runtime_world.inc').read_text()
  rpworld=(PLUGIN/'Tests/Reference/biped_runtime_world.inc').read_text().replace('// GENERATED_WORLD',worldrust)
  rs=(PLUGIN/'Tests/Reference/biped_runtime_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust+'\n'+rh).replace('// GENERATED_WORLD',rpworld)
  # Keep phase's original wrapper consumers declared: they are unused by this
@@ -174,20 +174,20 @@ def prepare(output):
  pc,pr=phase.providers();rs=rs.replace('// GENERATED_PROVIDER',pr+'\n'+phase.extract(PLUGIN/'Tests/Reference/player_grind_input_probe.rs','fn fixture_world(kind:u32)'))
  (crate/'src/migration_probe.rs').write_text(rs)
  cargo=crate/'Cargo.toml';cargo.write_text(cargo.read_text().replace('name="air-phase-runtime-reference"','name="biped-runtime-reference"'))
- for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snapshot/(u+'.cpp'));report['native_source_sha256'][u+'.cpp']=digest(CODE/(u+'.cpp'))
- # phase.prepare snapshots every Native header already, including the new
+ for u in UNITS:shutil.copy2(CODE/(u+'.cpp'),snapshot/(u+'.cpp'));report['simulation_source_sha256'][u+'.cpp']=digest(CODE/(u+'.cpp'))
+ # phase.prepare snapshots every simulation header already, including the new
  # Biped declarations; the immutable stock helper prefix remains unchanged.
- prefix,_=phase.foot.extraction(PLUGIN/'Tests/Native/footplant_probe.cpp','int main(')
+ prefix,_=phase.foot.extraction(PLUGIN/'Tests/Simulation/footplant_probe.cpp','int main(')
  pc,_=phase.providers();pc=re.sub(r'\bInput\b','BipedInput',pc)
- body=(PLUGIN/'Tests/Native/biped_runtime_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp+'\n'+ch).replace('// GENERATED_WORLD',cpworld).replace('// GENERATED_PROVIDER',pc)
+ body=(PLUGIN/'Tests/Simulation/biped_runtime_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp+'\n'+ch).replace('// GENERATED_WORLD',cpworld).replace('// GENERATED_PROVIDER',pc)
  (snapshot/'biped_runtime_probe.cpp').write_bytes(b'#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+prefix+b'\n#pragma clang diagnostic pop\n'+body.encode())
- report.update(generated_native_probe_sha256=digest(snapshot/'biped_runtime_probe.cpp'),generated_reference_probe_sha256=digest(crate/'src/migration_probe.rs'),probe_sha256={p.name:digest(p)for p in OWNED_TESTS})
+ report.update(generated_simulation_probe_sha256=digest(snapshot/'biped_runtime_probe.cpp'),generated_reference_probe_sha256=digest(crate/'src/migration_probe.rs'),probe_sha256={p.name:digest(p)for p in OWNED_TESTS})
  # Final hashes cover all appended records and observers, without loosening
  # the frozen source hash checks performed by phase.prepare.
  for rel,row in report['staged_host_original_prefixes'].items():row['generated_sha256']=digest(crate/'src'/rel)
  (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,observed,snapshot,report
 
-OWNED_TESTS=tuple(PLUGIN/'Tests'/p for p in('Native/biped_runtime_probe.cpp','Native/biped_runtime_world.inc','Reference/biped_runtime_probe.rs','Reference/biped_runtime_observer.rs','Reference/biped_runtime_ground_observer.rs','Reference/biped_runtime_air_observer.rs','Reference/biped_runtime_world.inc'))
+OWNED_TESTS=tuple(PLUGIN/'Tests'/p for p in('Simulation/biped_runtime_probe.cpp','Simulation/biped_runtime_world.inc','Reference/biped_runtime_probe.rs','Reference/biped_runtime_observer.rs','Reference/biped_runtime_ground_observer.rs','Reference/biped_runtime_air_observer.rs','Reference/biped_runtime_world.inc'))
 OWNED_PRODUCTION=tuple(dict.fromkeys([CODE/(u+'.cpp')for u in FAMILY]+[CODE/(n+'.h')for n in('BipedGroundLifecycle','BipedAirState','BipedAirMath','BipedRuntimeOwners','BipedGroundRuntime','BipedAirRuntime')]))
 
 def loader_fixtures(assets):
@@ -354,11 +354,11 @@ def preflight(raw,cases,ranges):
 def build(output,target):
  original,observed,snapshot,report=prepare(output);crate=observed/'atelier-host'
  subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','biped-runtime-reference'],check=True)
- reference=output/'biped-runtime-reference';shutil.copy2(target.resolve()/'release/biped-runtime-reference',reference);native=output/'biped-runtime-native'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'biped_runtime_probe.cpp'),'-o',str(native)],check=True)
+ reference=output/'biped-runtime-reference';shutil.copy2(target.resolve()/'release/biped-runtime-reference',reference);simulation=output/'biped-runtime-simulation'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'biped_runtime_probe.cpp'),'-o',str(simulation)],check=True)
  for rel,sha in report['original_source_sha256'].items():assert digest(original/rel)==sha;assert (observed/rel).read_bytes()[:(original/rel).stat().st_size]==(original/rel).read_bytes(),rel
  for rel,row in report['staged_host_original_prefixes'].items():assert digest(crate/'src'/rel)==row['generated_sha256'],rel
- report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,reference
+ report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,reference
 
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
@@ -367,19 +367,19 @@ def main():
  raw,cases,ranges=corpus();fixtures=loader_fixtures(a.assets.resolve());summary=preflight(raw,cases,ranges);summary.update(loader_fixture_count=len(fixtures),invalid_loader_fixture_count=sum(not s for _,_,s in fixtures));(output/'input.bin').write_bytes(raw);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if a.preflight:
   prepare(output);(output/'owner-freeze.json').write_text(json.dumps(dict(**summary,production={p.name:digest(p)for p in OWNED_PRODUCTION},proof={p.name:digest(p)for p in OWNED_TESTS},checker_sha256=digest(Path(__file__))),indent=2)+'\n');print(json.dumps(summary,indent=2));return
- bank=output/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(bank/'settings.native').write_bytes(phase.converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.native').write_bytes(phase.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+ bank=output/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';(bank/'settings.simulation').write_bytes(phase.converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.simulation').write_bytes(phase.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
  for n in('action','motion'):(bank/f'actor.{n}.reference').write_bytes(phase.original_graph(phase.element('state','idle')))
- identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];native,reference=build(output,a.target_dir)
- expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(native),str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
- (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+ identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];simulation,reference=build(output,a.target_dir)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(simulation),str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
+ (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
  if expected!=actual:
   byte=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=byte//4;case=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None);section=next(((n,word-s[0])for n,s in(row['spans'].items()if row else[])if s[0]<=word<s[1]),None)
-  divergence=dict(first_byte=byte,first_word=word,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=OPS[row['operation']]if row else'initial',section=section,reference_hex=expected[max(0,byte-16):byte+32].hex(),native_hex=actual[max(0,byte-16):byte+32].hex());(output/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
+  divergence=dict(first_byte=byte,first_word=word,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=OPS[row['operation']]if row else'initial',section=section,reference_hex=expected[max(0,byte-16):byte+32].hex(),simulation_hex=actual[max(0,byte-16):byte+32].hex());(output/'first-divergence.json').write_text(json.dumps(divergence,indent=2)+'\n');raise AssertionError(divergence)
  covered=coverage(frames,cases);loader_reports=[]
  for index,(label,data,success)in enumerate(fixtures):
-  folder=output/'loader-fixtures'/str(index);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));converted=folder/'settings.native';converted.write_bytes(phase.converter.encode_settings(path))
-  ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)]);cpp=subprocess.check_output([str(native),str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve()),str(converted)]);(folder/'reference.bin').write_bytes(ref);(folder/'native.bin').write_bytes(cpp)
-  assert ref==cpp,dict(loader=label,reference_bytes=len(ref),native_bytes=len(cpp));loader_reports.append(decode_loader(ref,success,label))
+  folder=output/'loader-fixtures'/str(index);path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data));converted=folder/'settings.simulation';converted.write_bytes(phase.converter.encode_settings(path))
+  ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)]);cpp=subprocess.check_output([str(simulation),str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve()),str(converted)]);(folder/'reference.bin').write_bytes(ref);(folder/'simulation.bin').write_bytes(cpp)
+  assert ref==cpp,dict(loader=label,reference_bytes=len(ref),simulation_bytes=len(cpp));loader_reports.append(decode_loader(ref,success,label))
  result=dict(**summary,passed=True,reference_revision=REFERENCE_REVISION,bytes=len(expected),exact_words=len(expected)//4+sum(r['exact_words']for r in loader_reports),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=covered,loader_fixtures=loader_reports,scope='Whole unchanged active Ground/Air Biped core+host, actual shared controller, corrected pose/body/IK/drives, retained world queries/grab/landing and shared solve feedback.',boundaries='Completed canonical processed and animation-attribute packets, authored pose selection, engine triangle/query metadata and registry objects are explicit upstream inputs. This proof schedules concrete source callbacks individually; whole global state selection, mounting503 host, animation graph and source-hang/unsupported provider domains are separate. The loader fixture retains both prior owners until both fresh constructors succeed. No pose, hit, prediction or callback success is seeded.')
  (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

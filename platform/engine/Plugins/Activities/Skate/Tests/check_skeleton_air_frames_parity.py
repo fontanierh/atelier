@@ -20,7 +20,7 @@ import tarfile
 import check_skeleton_root_frames_parity as roots
 
 PLUGIN=roots.PLUGIN
-UNITS=('NativeMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','SkeletonPoseFrames','BoardGroundAngle','SkeletonRoot','SkeletonBoardFrames','BoardAnimation','SkeletonAirFrames')
+UNITS=('SimulationMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','SkeletonPoseFrames','BoardGroundAngle','SkeletonRoot','SkeletonBoardFrames','BoardAnimation','SkeletonAirFrames')
 OPERATIONS=('reset','capture','apply','velocity','prepare_animated','known_roots','prepare_known','finish_known','plant_roots','seed_error')
 STATE_WORDS=roots.STATE_WORDS+5
 def bits(v):return struct.unpack('<I',struct.pack('<f',v))[0]
@@ -72,15 +72,15 @@ def build(out):
  main.write_text((source/'lib.rs').read_text()+rust_prefix.read_text().split('fn main(){',1)[0]+rust_probe.read_text());reference=out/'air-frames-reference'
  subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
  assert all(roots.digest(source/p)==sha for p,sha in original.items())
- live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+ live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in list(live.glob('*.h'))+[live/(n+'.cpp')for n in UNITS]:shutil.copy2(p,snapshot/p.name)
- cpp_prefix=PLUGIN/'Tests/Native/skeleton_root_frames_probe.cpp';cpp_probe=PLUGIN/'Tests/Native/skeleton_air_frames_probe.cpp';combined=snapshot/cpp_probe.name
- combined.write_text(cpp_prefix.read_text().split('int main()',1)[0]+cpp_probe.read_text());native=out/'air-frames-native'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(n+'.cpp'))for n in UNITS],str(combined),'-o',str(native)],check=True)
- (out/'provenance.json').write_text(json.dumps(dict(reference_revision=roots.REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=original,native_source_sha256={p.name:roots.digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:roots.digest(p)for p in (rust_prefix,rust_probe,cpp_prefix,cpp_probe)}),indent=2)+'\n')
- return native,reference
+ cpp_prefix=PLUGIN/'Tests/Simulation/skeleton_root_frames_probe.cpp';cpp_probe=PLUGIN/'Tests/Simulation/skeleton_air_frames_probe.cpp';combined=snapshot/cpp_probe.name
+ combined.write_text(cpp_prefix.read_text().split('int main()',1)[0]+cpp_probe.read_text());simulation=out/'air-frames-simulation'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(n+'.cpp'))for n in UNITS],str(combined),'-o',str(simulation)],check=True)
+ (out/'provenance.json').write_text(json.dumps(dict(reference_revision=roots.REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=original,simulation_source_sha256={p.name:roots.digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:roots.digest(p)for p in (rust_prefix,rust_probe,cpp_prefix,cpp_probe)}),indent=2)+'\n')
+ return simulation,reference
 def inspect(raw,cases):
  words=struct.unpack('<'+'I'*(len(raw)//4),raw);at=0;coverage=Counter();errors=set();roots_seen=set()
  for case in cases:
@@ -106,9 +106,9 @@ def main():
  data,cases=corpus();(out/'input.bin').write_bytes(data);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if a.preflight:print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(data)),indent=2));return
  for name in ('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
- native,reference=build(out);expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(native)],input=data);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+ simulation,reference=build(out);expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(simulation)],input=data);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
  if expected!=actual:
-  byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=byte,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Board animation/air frames differ')
+  byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=byte,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Board animation/air frames differ')
  result=dict(passed=True,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases),boundary='Whole unchanged original board_animation and skeleton_air_frames including all reset/capture/apply/target velocity and animated/known/plant root producers. Configured curves and input transforms are explicit. Complete host SkeletonAir/GeneralUpdate/physical producer scheduling remains separate.')
  (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

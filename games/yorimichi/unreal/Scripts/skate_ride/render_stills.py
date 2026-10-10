@@ -3,7 +3,7 @@
 verify_clips.py writes, for a few clips (an ollie, a kickflip, a push, a 50-50 grind), the component-space pose
 Unreal samples from the compressed asset at every frame. This draws SK_SkateRider's box body and board skinned to
 those poses (six frames per clip, side by side, a three-quarter view framed tight on the rider, the ground at the
-clip's lowest board point with the rider's shadow), with the native pose's joints as dots on top (the native decode
+clip's lowest board point with the rider's shadow), with the simulation pose's joints as dots on top (the simulation decode
 converted to Unreal space and composed through the hierarchy): a dot off its joint would be a mismatch.
 Runs under `uv run` (Pillow); not part of the editor.
 """
@@ -17,11 +17,11 @@ from PIL import Image, ImageDraw
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
-import native as N  # noqa: E402
+import simulation as N  # noqa: E402
 import rider_mesh as M  # noqa: E402
 import yori  # noqa: E402
 
-BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
+BUNDLE = yori.OUT / 'skate-simulation' / 'package'  # the skate.runtime build step assembles it
 OUT = yori.OUT / 'skate-ride'
 POSES = OUT / 'still-poses'
 STILLS = OUT / 'clip-stills'
@@ -60,8 +60,8 @@ def skinned(mesh, locals_ue, pose):
     return out
 
 
-def native_joints(clip, frame, rig, reference):
-    """The native local poses (clip added onto RIG_TPOSE) converted to Unreal and composed through the hierarchy
+def simulation_joints(clip, frame, rig, reference):
+    """The simulation local poses (clip added onto RIG_TPOSE) converted to Unreal and composed through the hierarchy
     (TRAJECTORY included, as Unreal's component space with the root motion kept in the root)."""
     globals_ = []
     for b, bone in enumerate(rig.bones):
@@ -132,7 +132,7 @@ def main():
         worst = 0.0
         for k, f in enumerate(picks):
             world = {b: frames[f]['bones'][b] for b in (bone.name for bone in rig.bones)}
-            joints = native_joints(clip, f, rig, pose)
+            joints = simulation_joints(clip, f, rig, pose)
             worst = max(worst, max(math.dist(j, world[b.name]['t']) for j, b in zip(joints, rig.bones)))
             panel = Image.new('RGB', (W, H), (246, 244, 239))      # one image per panel: the ground line is clipped
             draw_panel(panel, 0, mesh, triangles, world, joints, ground,
@@ -141,8 +141,8 @@ def main():
             image.paste(panel, (k * W, 0))
         out = STILLS / f'{name}.png'
         image.save(out)
-        index.append(dict(clip=name, image=out.name, frames=picks, native_joint_max_cm=worst))
-        print(f'{out}: frames {picks}, native joints within {worst:.5f} cm')
+        index.append(dict(clip=name, image=out.name, frames=picks, simulation_joint_max_cm=worst))
+        print(f'{out}: frames {picks}, the simulation joints within {worst:.5f} cm')
     (STILLS / 'index.json').write_text(json.dumps(index, indent=1) + '\n')
 
 

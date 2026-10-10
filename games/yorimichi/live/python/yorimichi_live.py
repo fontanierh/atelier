@@ -83,7 +83,7 @@ def skate_park():
     return L.skate_place(t.translation, t.rotation.rotator().yaw)
 
 
-# Retail skater.pat paths; input API uses Y up, PAT uses Y down.
+# The gesture patterns' paths; the input API uses Y up, the patterns Y down.
 # Basic flips start at a full crouch inside the tolerance circle, outside the manual band.
 FLICKS = {
     'ollie': [(0.0, -1.0), (0.0, 1.0)],   # canonical straight flick works in both stances

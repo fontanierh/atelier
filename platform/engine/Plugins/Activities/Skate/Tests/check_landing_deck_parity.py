@@ -3,7 +3,7 @@
 
 Only the root coordinator builds or executes. Canonical processed/toolkit and
 animation root/COM observations are explicit upstream transport in this leaf;
-every obstruction result is produced by the real original/native static scene.
+every obstruction result is produced by the real original/simulation static scene.
 The complete mounting/biped scheduling proof follows with the physical owners.
 """
 import argparse
@@ -108,18 +108,18 @@ def aliases():
  for name in('input','query','output'):out[f'atelier-host/src/physics/offboard/landing_deck/{name}.rs']=HOST+f'offboard/landing_deck/{name}.rs'
  return out
 def prepare(output):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for u in UNITS:shutil.copy2(native/f'{u}.cpp',snapshot/f'{u}.cpp')
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for u in UNITS:shutil.copy2(simulation/f'{u}.cpp',snapshot/f'{u}.cpp')
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
  host=source(HOST+'offboard/landing_deck.rs');mount=source(HOST+'landing_on_deck.rs');begin=mount.index('pub(crate) struct Runtime {');end=mount.index('\nfn clear_ik(',begin);configuration=mount[begin:end]
  assert configuration.endswith('\n}')and configuration in mount
- probe=snapshot/'landing_deck_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/landing_deck_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world))
+ probe=snapshot/'landing_deck_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/landing_deck_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world))
  generated=output/'landing-deck-reference.rs';generated.write_text((PLUGIN/'Tests/Reference/landing_deck_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// ORIGINAL_MANAGER_HOST',host).replace('// ORIGINAL_MOUNTING_CONFIGURATION',configuration))
- report=dict(native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256=hashlib.sha256(host.encode()).hexdigest(),mounting_whole_source_sha256=hashlib.sha256(mount.encode()).hexdigest(),mounting_configuration_exact_slice_sha256=hashlib.sha256(configuration.encode()).hexdigest(),mounting_configuration_bytes=[len(mount[:begin].encode()),len(mount[:end].encode())],original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Whole original LandingDeck host plus unchanged public core manager/state/root functions. Processed fields/toolkit/animation root/COM are explicit upstream producer transports; no scene result is provided by transport. Mounting loader is an exact contiguous original full Runtime+Load declaration, with whole-source and slice hashes.')
- (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
+ report=dict(simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256=hashlib.sha256(host.encode()).hexdigest(),mounting_whole_source_sha256=hashlib.sha256(mount.encode()).hexdigest(),mounting_configuration_exact_slice_sha256=hashlib.sha256(configuration.encode()).hexdigest(),mounting_configuration_bytes=[len(mount[:begin].encode()),len(mount[:end].encode())],original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Whole original LandingDeck host plus unchanged public core manager/state/root functions. Processed fields/toolkit/animation root/COM are explicit upstream producer transports; no scene result is provided by transport. Mounting loader is an exact contiguous original full Runtime+Load declaration, with whole-source and slice hashes.')
+ (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
 def audit_input(blob,cases):
  r=Reader(blob);assert r.word()==len(cases)
  def world():r.skip(18*r.word());r.skip(1);r.skip(r.word());r.skip(36*r.word());r.skip(12*r.word());r.skip(1)
@@ -204,10 +204,10 @@ def inspect(blob,cases):
  return dict(operations=dict(ops),query_results=dict(qcount),state_observations=dict(states),publication=dict(publication),errors=dict(errors))
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
- blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);assets=a.assets.resolve();fixtures=loader_fixtures(assets);bank=output/'settings.native';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
+ blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);assets=a.assets.resolve();fixtures=loader_fixtures(assets);bank=output/'settings.simulation';bank.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'));summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),loader_fixture_count=len(fixtures),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=output/'landing-deck-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(output,'landing-deck-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
- expected=subprocess.check_output([str(reference),str(assets)],input=blob);actual=subprocess.check_output([str(native),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+ simulation=output/'landing-deck-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(output,'landing-deck-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
+ expected=subprocess.check_output([str(reference),str(assets)],input=blob);actual=subprocess.check_output([str(simulation),str(bank)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;words=struct.unpack('<'+'I'*(len(expected)//4),expected);at=2+words[1]+11+1
   for c in cases:
@@ -217,7 +217,7 @@ def main():
   report=dict(first_word=first,case=c,case_first_word=at,reference_bytes=len(expected),cpp_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  coverage=inspect(expected,cases);reports=[];fixture_root=output/'loader-fixtures';fixture_root.mkdir(exist_ok=True)
  for i,f in enumerate(fixtures):
-  dest=fixture_root/str(i)/'private/stock';dest.mkdir(parents=True,exist_ok=True);src=dest/'skater-collections.json';src.write_text(json.dumps(f['data']));encoded=fixture_root/str(i)/'settings.native';encoded.write_bytes(converter.encode_settings(src));ref=subprocess.check_output([str(reference),str(assets),str(fixture_root/str(i))]);cpp=subprocess.check_output([str(native),str(bank),str(encoded)])
+  dest=fixture_root/str(i)/'private/stock';dest.mkdir(parents=True,exist_ok=True);src=dest/'skater-collections.json';src.write_text(json.dumps(f['data']));encoded=fixture_root/str(i)/'settings.simulation';encoded.write_bytes(converter.encode_settings(src));ref=subprocess.check_output([str(reference),str(assets),str(fixture_root/str(i))]);cpp=subprocess.check_output([str(simulation),str(bank),str(encoded)])
   assert ref==cpp,(i,f['label'],ref,cpp);rd=Reader(ref);assert rd.word();rd.skip(rd.word()+11);okay=bool(rd.word());assert okay==f['success'],(i,f['label'],okay);reports.append(dict(index=i,label=f['label'],success=okay,output_sha256=hashlib.sha256(ref).hexdigest()))
  result=dict(passed=True,**summary,exact_words=len(expected)//4,output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=reports,comparison='Whole unchanged original LandingDeck host and actual static world queries, all manager/completion/publication/state/root observations exact; full original mounting loader body and unchanged core numerical leaves.',limitations='This leaf observes explicit completed upstream player/toolkit and animation root/COM transport. Full Biped/mounting ownership/skeleton general update/reckoning/feet/possession/Wipeout scheduling is not established by this leaf; those use the same manager in the following connected composition.')
  (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

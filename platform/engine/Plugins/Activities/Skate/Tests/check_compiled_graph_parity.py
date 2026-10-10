@@ -45,9 +45,9 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--target-dir',type=Path,required=True)
     args=parser.parse_args(); output=args.output.resolve(); output.mkdir(parents=True,exist_ok=True)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native'; cpp=output/'compiled-graph-cpp'
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation'; cpp=output/'compiled-graph-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(code),
-                    str(code/'Graph.cpp'),str(code/'CompiledGraph.cpp'),str(PLUGIN/'Tests/Native/compiled_graph_probe.cpp'),'-o',str(cpp)],check=True)
+                    str(code/'Graph.cpp'),str(code/'CompiledGraph.cpp'),str(PLUGIN/'Tests/Simulation/compiled_graph_probe.cpp'),'-o',str(cpp)],check=True)
     rust=build_probe(output,'compiled-graph-reference',PLUGIN/'Tests/Reference/compiled_graph_probe.rs',args.target_dir,bevy=True)
     controller_cpp,controller_rust=build_probes(output/'controller')
     sources=[(name,args.assets/'private/stock'/relative) for name,relative in converter.GRAPH_FILES]
@@ -57,11 +57,11 @@ def main():
     sources.append(('unresolved',invalid))
     results=[]
     for name,source in sources:
-        native=output/f'{name}.graph';native.write_bytes(converter.encode_graph(converter.read_graph(source)))
+        simulation=output/f'{name}.graph';simulation.write_bytes(converter.encode_graph(converter.read_graph(source)))
         result=dict(name=name)
         for mode in ('program','operations'):
             expected=subprocess.run([str(rust),str(source),mode],capture_output=True)
-            actual=subprocess.run([str(cpp),str(native),mode],capture_output=True)
+            actual=subprocess.run([str(cpp),str(simulation),mode],capture_output=True)
             if (actual.returncode,actual.stdout,actual.stderr)!=(expected.returncode,expected.stdout,expected.stderr):
                 (output/f'{name}-{mode}-reference.bin').write_bytes(expected.stdout)
                 (output/f'{name}-{mode}-cpp.bin').write_bytes(actual.stdout)

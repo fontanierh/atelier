@@ -93,7 +93,6 @@ def test_texture_geometry_collision_and_animation_sources_are_complete():
     spec.loader.exec_module(verifier)
     report = verifier.verify()
     assert report['formats']['.blend'] == 4
-    assert report['native_skating']['clips'] == 3324
     for path in (ASSETS / 'characters').glob('*/character.toml'):
         character = tomllib.loads(path.read_text())
         if character.get('source'):

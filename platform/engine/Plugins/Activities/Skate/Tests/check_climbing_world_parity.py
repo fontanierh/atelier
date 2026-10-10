@@ -21,7 +21,7 @@ import check_climbing_core_parity as core
 import check_world_geometry_parity as world
 from session_parity import PLUGIN, REFERENCE_REVISION, digest
 CODE=core.CODE
-UNITS=('NativeMath','Geometry','GeometrySweep','WorldGeometry','ClimbingMath','ClimbingLedge')
+UNITS=('SimulationMath','Geometry','GeometrySweep','WorldGeometry','ClimbingMath','ClimbingLedge')
 def triangle(a,b,c,tag):return core.floats([*a,*b,*c,0,1,1,1])+[0]+core.floats([.8,.6,.1])+[tag]
 def quad(a,b,c,d,tag):return [triangle(a,b,c,tag),triangle(b,d,c,tag+1)]
 def block(height=2,width=2,depth=3,slope=0,wall_tilt=0,obstacle=0):
@@ -100,7 +100,7 @@ def coverage(raw,cases):
     return dict(operations=dict(counts),find={str(k):v for k,v in found.items()},clear=dict(clear),actual_swept_hits=dict(hits),source_query_errors=dict(errors),distinct_real_ledges=len(ledges),invalid_metadata_constructors=failed_build,legacy_missing_metadata_is_intentional_miss=legacy)
 def prepare(output,cases):
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip());relative=(PLUGIN/'ThirdParty/skate-runtime').relative_to(root).as_posix();archive=subprocess.check_output(['git','archive',f'{REFERENCE_REVISION}:{relative}'],cwd=root)
-    original=output/'reference-source';snapshot=output/'native-source'
+    original=output/'reference-source';snapshot=output/'simulation-source'
     for path in(original,snapshot):
         if path.exists():shutil.rmtree(path)
         path.mkdir()
@@ -108,14 +108,14 @@ def prepare(output,cases):
     originals={p.relative_to(original).as_posix():digest(p)for p in sorted(original.rglob('*.rs'))};crate=original/'climbing-world';(crate/'src/climbing').mkdir(parents=True)
     (crate/'Cargo.toml').write_text('[package]\nname="climbing-world-reference"\nversion="0.1.0"\nedition="2024"\n[workspace]\n[dependencies]\nskate-core={path="../crates/skate-core"}\nbevy={version="=0.19.1",default-features=false,features=["std"]}\n')
     shutil.copy2(original/'atelier-host/Cargo.lock',crate/'Cargo.lock');shutil.copy2(original/'crates/skate-host/src/physics/climbing/ledge.rs',crate/'src/climbing/ledge.rs')
-    cpp=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text();cpp_prefix=cpp[:cpp.index('int main()')]
+    cpp=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text();cpp_prefix=cpp[:cpp.index('int main()')]
     rust=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text();rust_prefix=rust[:rust.index('struct Query')].replace('//!','//')
     (crate/'src/main.rs').write_text((PLUGIN/'Tests/Reference/climbing_world_probe.rs').read_text().replace('// GENERATED_WORLD_HELPERS','use skate_core::{math,physics};\n'+rust_prefix))
-    headers=('NativeMath.h','Geometry.h','GeometrySweep.h','GeometryTypes.h','WorldGeometry.h','ClimbingMath.h','ClimbingTypes.h','ClimbingLedge.h')
+    headers=('SimulationMath.h','Geometry.h','GeometrySweep.h','GeometryTypes.h','WorldGeometry.h','ClimbingMath.h','ClimbingTypes.h','ClimbingLedge.h')
     for p in [CODE/h for h in headers]+[CODE/(u+'.cpp')for u in UNITS]:shutil.copy2(p,snapshot/p.name)
-    (snapshot/'climbing_world_probe.cpp').write_text((PLUGIN/'Tests/Native/climbing_world_probe.cpp').read_text().replace('// GENERATED_WORLD_HELPERS',cpp_prefix))
+    (snapshot/'climbing_world_probe.cpp').write_text((PLUGIN/'Tests/Simulation/climbing_world_probe.cpp').read_text().replace('// GENERATED_WORLD_HELPERS',cpp_prefix))
     (output/'input.bin').write_bytes(encode(cases));(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
-    report=dict(reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,complete_ledge_module_sha256=digest(crate/'src/climbing/ledge.rs'),immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},native_world_transport_prefix_sha256=hashlib.sha256(cpp_prefix.encode()).hexdigest(),original_world_transport_prefix_sha256=hashlib.sha256(rust_prefix.encode()).hexdigest(),probe_sha256=digest(crate/'src/main.rs'),input_sha256=digest(output/'input.bin'),cases=len(cases),queries=sum(len(c['queries'])for c in cases),scope='Complete original ledge.rs plus canonical unchanged BoardWorld execute. Test adapters supply authored triangle/mesh/pool/metadata inputs; no completed line-hit values are supplied. Original query diagnostics are observed independently; source .ok()?? intentionally converts those errors to ledge misses. This is a real world leaf proof; no physical/player/global manager is substituted.')
+    report=dict(reference_revision=REFERENCE_REVISION,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,complete_ledge_module_sha256=digest(crate/'src/climbing/ledge.rs'),immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.iterdir())},simulation_world_transport_prefix_sha256=hashlib.sha256(cpp_prefix.encode()).hexdigest(),original_world_transport_prefix_sha256=hashlib.sha256(rust_prefix.encode()).hexdigest(),probe_sha256=digest(crate/'src/main.rs'),input_sha256=digest(output/'input.bin'),cases=len(cases),queries=sum(len(c['queries'])for c in cases),scope='Complete original ledge.rs plus canonical unchanged BoardWorld execute. Test adapters supply authored triangle/mesh/pool/metadata inputs; no completed line-hit values are supplied. Original query diagnostics are observed independently; source .ok()?? intentionally converts those errors to ledge misses. This is a real world leaf proof; no physical/player/global manager is substituted.')
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,crate,snapshot,report
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
@@ -123,12 +123,12 @@ def main():
     cases=corpus();original,crate,snapshot,report=prepare(output,cases)
     if a.preflight:print(json.dumps(dict(preflight='PASS',cases=len(cases),queries=report['queries'],input_bytes=len(encode(cases)),input_sha256=report['input_sha256'])));return
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(a.target_dir.resolve()),'--bin','climbing-world-reference'],check=True);reference=output/'climbing-world-reference';shutil.copy2(a.target_dir.resolve()/'release/climbing-world-reference',reference)
-    candidate=output/'climbing-world-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_world_probe.cpp'),'-o',str(candidate)],check=True)
+    candidate=output/'climbing-world-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'climbing_world_probe.cpp'),'-o',str(candidate)],check=True)
     for relative,expected in report['original_source_sha256'].items():assert digest(original/relative)==expected
     raw=(output/'input.bin').read_bytes();values=[]
-    for binary,label in((reference,'reference'),(candidate,'native')):
+    for binary,label in((reference,'reference'),(candidate,'simulation')):
         run=subprocess.run([str(binary)],input=raw,stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=True);(output/(label+'.bin')).write_bytes(run.stdout);(output/(label+'.stderr')).write_bytes(run.stderr);values.append(run.stdout)
     if values[0]!=values[1]:
-        offset=next((i for i,(x,y)in enumerate(zip(*values))if x!=y),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),native_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('Climbing world first mismatch at '+str(offset))
+        offset=next((i for i,(x,y)in enumerate(zip(*values))if x!=y),min(map(len,values)));(output/'first-divergence.json').write_text(json.dumps(dict(byte_offset=offset,reference_bytes=len(values[0]),simulation_bytes=len(values[1])),indent=2)+'\n');raise AssertionError('Climbing world first mismatch at '+str(offset))
     proof=coverage(values[0],cases);result=dict(result='PASS',histories=len(cases),queries=report['queries'],exact_bytes=len(values[0]),sha256=hashlib.sha256(values[0]).hexdigest(),coverage=proof);(output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 if __name__=='__main__':main()

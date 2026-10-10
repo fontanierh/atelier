@@ -1,12 +1,12 @@
-"""SK_SkateRider's source: a GLB of the native rig in its reference pose with a plain box body and board.
+"""SK_SkateRider's source: a GLB of the simulation rig in its reference pose with a plain box body and board.
 
-The mesh only exists so Unreal has a skeleton with the native bone names and hierarchy; every bone of every clip is
+The mesh only exists so Unreal has a skeleton with the simulation bone names and hierarchy; every bone of every clip is
 keyed, so the clips never fall back to this pose. Each limb is a box from its parent joint to its own, rigidly skinned
 to the parent; the board is a deck on SKATEBOARD_ROOT, a block per truck and per wheel. The *_REPARENTED bones are
 targets (where the hands and toes go on the board) and carry no geometry.
 
 glTF is right-handed, Y up, metres; Interchange maps a glTF vector to Unreal (x, z, y) * 100. The file is written in a
-glTF frame rotated so that this lands exactly on the Skate adapter's convention (native (x, y, z) -> (z, -x, y) * 100):
+glTF frame rotated so that this lands exactly on the Skate adapter's convention (simulation (x, y, z) -> (z, -x, y) * 100):
 glTF g = (n.z, n.y, -n.x), a proper rotation, so rotations conjugate without a reflection.
 Standard library only: it runs inside Unreal's Python.
 """
@@ -113,7 +113,7 @@ class Mesh:
 
 def bind_globals(bones, locals_gltf):
     """Global bind matrices in glTF space (the reference pose's trajectory is the identity, so composing through it
-    matches the native hierarchy, which never composes children of the trajectory with it)."""
+    matches the simulation hierarchy, which never composes children of the trajectory with it)."""
     out = []
     for i, bone in enumerate(bones):
         local = affine(*locals_gltf[i])
@@ -161,7 +161,7 @@ def build(rig, pose, split_sample):
         tip(side + 'HAND', 0.12, 0.035)
         tip(side + 'TOEBASE', 0.08, 0.035)
     local_box('body', 'HIPS', (0.0, 0.0, 0.0), (0.06, 0.08, 0.12))
-    # The deck lies in SKATEBOARD_ROOT's frame: native x left, y up, z forward -> glTF (z, y, -x).
+    # The deck lies in SKATEBOARD_ROOT's frame: the simulation x left, y up, z forward -> glTF (z, y, -x).
     local_box('board', 'SKATEBOARD_ROOT', (0.0, 0.0, 0.0), (0.40, 0.007, 0.105))
     for truck in ('TRUCK_FRONT', 'TRUCK_BACK'):
         local_box('board', truck, (0.0, 0.0, 0.0), (0.03, 0.03, 0.03))

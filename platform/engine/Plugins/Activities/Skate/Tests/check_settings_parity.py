@@ -102,31 +102,31 @@ def main():
     output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     source=args.assets/'private/stock/skater-collections.json'
     records=json.loads(source.read_text())['collections']
-    native=output/'settings.skate';native.write_bytes(converter.encode_settings(source))
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'settings-cpp'
+    simulation=output/'settings.skate';simulation.write_bytes(converter.encode_settings(source))
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'settings-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),
-                    str(code/'Settings.cpp'),str(code/'NameId.cpp'),str(PLUGIN/'Tests/Native/settings_probe.cpp'),
+                    str(code/'Settings.cpp'),str(code/'NameId.cpp'),str(PLUGIN/'Tests/Simulation/settings_probe.cpp'),
                     '-o',str(binary)],check=True)
-    actual=subprocess.check_output([str(binary),str(native),'dump'])
+    actual=subprocess.check_output([str(binary),str(simulation),'dump'])
     expected=expected_dump(records)
     if actual!=expected:
         (output/'expected-fields.bin').write_bytes(expected);(output/'actual-fields.bin').write_bytes(actual)
         raise AssertionError('C++ settings values differ from the original dataset')
     commands,expected,counts=queries(records)
     (output/'queries.bin').write_bytes(commands)
-    actual=subprocess.check_output([str(binary),str(native),'query'],input=commands)
+    actual=subprocess.check_output([str(binary),str(simulation),'query'],input=commands)
     if actual!=expected:
         (output/'expected-queries.bin').write_bytes(expected);(output/'actual-queries.bin').write_bytes(actual)
         first=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)))
         raise AssertionError(f'C++ settings lookup differs at byte {first}')
-    for i,raw in enumerate((b'',native.read_bytes()[:-1],native.read_bytes()+b'\0')):
+    for i,raw in enumerate((b'',simulation.read_bytes()[:-1],simulation.read_bytes()+b'\0')):
         bad=output/f'invalid-{i}.skate';bad.write_bytes(raw)
         result=subprocess.run([str(binary),str(bad),'dump'],capture_output=True)
         if result.returncode!=2:raise AssertionError('Malformed settings data was accepted')
     report=dict(passed=True,records=len(records),fields=sum(len(r['fields']) for r in records),**counts,
                 comparison='exact source fields, inherited/alias lookups and typed numeric bits',
                 source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                native_sha256=hashlib.sha256(native.read_bytes()).hexdigest(),
+                simulation_sha256=hashlib.sha256(simulation.read_bytes()).hexdigest(),
                 query_output_sha256=hashlib.sha256(expected).hexdigest())
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2),flush=True)

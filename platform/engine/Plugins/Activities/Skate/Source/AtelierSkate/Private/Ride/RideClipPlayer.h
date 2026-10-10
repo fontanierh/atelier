@@ -9,9 +9,9 @@ struct FHitResult;
 
 /**
  * The transitions' clips (RIDE.md, "Transitions"): the mount, dismount, carry, run-out, kick-out and get-up clips play
- * through FRideAnimator on the hidden native rig, and Step publishes their pose like a riding frame (a root,
- * root-space bones on the native rig's names), which RetargetRetailPose puts on the character. Riding, the pose is
- * Native's session's.
+ * through FRideAnimator on the hidden simulation rig, and Step publishes their pose like a riding frame (a root,
+ * root-space bones on the simulation rig's names), which RetargetRiderPose puts on the character. Riding, the pose is
+ * the simulation session's.
  */
 class FRideClipPlayer
 {

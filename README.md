@@ -24,7 +24,7 @@ including the game itself while it plays.
 - **[Put a prop in the running game from a sentence](#a-prop-from-a-sentence)**, with no editor and no rebuild.
 - **[Get motion from text, video or motion capture](#motion-from-text-video-or-capture)**: local text-to-motion
   models, AI video references, body capture from footage, retargeted mocap.
-- **[Switch on ready-made mechanics](#building-blocks)**: native skateboarding, effects and streaming, as Unreal
+- **[Switch on ready-made mechanics](#building-blocks)**: skateboarding, effects and streaming, as Unreal
   plugins any game can enable.
 - **[Let agents drive the game](#agents-in-the-loop)**: run Python inside it, script QA checks, take screenshots and
   review sheets.
@@ -242,13 +242,13 @@ Tailscale. `/play/` is the plain player, and `/` serves the game's own touch pag
 | The `atelier` command | [platform/studio](platform/studio/atelier) | new, setup, doctor, fetch, build, reuse, pool, play, stream, live, qa, lint, board; review sheets; machine safety |
 | AI runners | [platform/studio/atelier/ai](platform/studio/atelier/ai) | Tripo and image generation, UniMate, Kimodo and GVHMR, and the ledger every paid call goes through |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
-| Native skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
+| Skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Motion helpers | [platform/web/motion](platform/web/motion/README.md) | retargeting generated motion onto a game's rig |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Games | [games/sandbox](games/sandbox/README.md), [games/yorimichi](games/yorimichi/README.md) | the smallest game (the template for `atelier new`), and a full one |
 
-**Native skating.** The [Skate plugin](platform/engine/Plugins/Activities/Skate/README.md) runs one C++ session
+**Skating.** The [Skate plugin](platform/engine/Plugins/Activities/Skate/README.md) runs one C++ session
 inside Unreal that simulates the deck, trucks, wheels and a physical rider together: Flick-It gestures, manuals and
 powerslides, grinds, pumping, airs, landings and bails, plus the animation graphs, trick scoring and skating camera.
 A game supplies the static collision, rails, controls, meshes, sounds and HUD, and gives its character

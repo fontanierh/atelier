@@ -405,7 +405,7 @@ def main():
     rails = L.rails()
     report['rails'] = check_rails(rails, [feats])
     report['bar_clearance'] = check_bar_clearance(rails, [pier,feats])
-    # Same triangulated riding geometry for repeatable native trajectory/pumping checks.
+    # Same triangulated riding geometry for repeatable simulation trajectory/pumping checks.
     triangles=[]
     for m in (pier,feats):
         for f in m.faces:

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 // Appended to the full frozen core and its root/board value transport.
 use crate::physics::{board_animation::{BoardAnimation,BoardAnimationSettings,target_velocity},skeleton_air_frames::{self,AirDismountRevert}};
 fn air_settings(i:&mut ProbeInput)->BoardAnimationSettings{

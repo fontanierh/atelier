@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Measure how the board rides different ground on the native offline QA session.
+"""Measure how the board rides different ground on the simulation offline QA session.
 
 Imported worlds are game meshes, so the board must roll over what a real board rolls over: plank decks with gaps
 between bevelled boards (the footbridge into the Mega Park), and seams and trim a few millimetres proud (the
 mini-mega). Pushing across the planks must not catch a foot in a gap, and a curb must still stop the board. Each kind
-of ground (ESkateSurface, packed per triangle as the plugin's snapshot does) rides as Skate 3's surface profiles do:
+of ground (ESkateSurface, packed per triangle as the plugin's snapshot does) rides as the session's surface profiles do:
 concrete and wood smooth, asphalt and stone rough, dirt slow and grass very slow, and the session reports the surface
-under the wheels. Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli
-(Tests/build_native_session_cli.py --compile, under the render lock and memory guard).
-Results go to build/yorimichi/skate-native/terrain.
+under the wheels. Requires the assembled simulation package (skate.runtime) and the explicitly built test-only gameplay-session-cli
+(Tests/build_simulation_session_cli.py --compile, under the render lock and memory guard).
+Results go to build/yorimichi/skate-simulation/terrain.
 """
 import argparse
 import json
@@ -18,7 +18,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_skate_feel as feel  # noqa: E402
 
-OUTPUT = feel.ROOT / 'build/yorimichi/skate-native/terrain'
+OUTPUT = feel.ROOT / 'build/yorimichi/skate-simulation/terrain'
 DIFFICULTIES = ('easy', 'normal', 'hardcore')
 # Packed as the plugin packs ESkateSurface: physics << 7 | surface. Physics 1 smooth, 2 rough, 3 slow, 5 very slow.
 SURFACES = {'concrete': (1, 1), 'wood': (1, 2), 'asphalt': (2, 4), 'stone': (2, 5), 'dirt': (3, 6), 'grass': (5, 7)}
@@ -29,7 +29,7 @@ def quad(a, b, c, d):
 
 
 def box(cx, cy, cz, w, h, d, bevel=0.):
-    """A box in native coordinates (x across, y up, z along the ride): w across, h high, d along. A bevel chamfers its
+    """A box in simulation coordinates (x across, y up, z along the ride): w across, h high, d along. A bevel chamfers its
     vertical edges and top and bottom rims, as the game's Mesh.box(..., bevel) does."""
     if not bevel:
         x0, x1, y0, y1, z0, z1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2, cz - d / 2, cz + d / 2
@@ -110,10 +110,10 @@ def roll(binary, package, triangles, name, speed, frames=240, controls=None, sur
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--binary', type=Path, default=feel.BINARY)
-    parser.add_argument('--native-package', type=Path, default=feel.NATIVE_PACKAGE)
+    parser.add_argument('--simulation-package', type=Path, default=feel.SIMULATION_PACKAGE)
     args = parser.parse_args()
     if not args.binary.exists():
-        sys.exit(f'{args.binary} is missing: build it with Tests/build_native_session_cli.py --compile')
+        sys.exit(f'{args.binary} is missing: build it with Tests/build_simulation_session_cli.py --compile')
     OUTPUT.mkdir(parents=True, exist_ok=True)
     feel.OUTPUT = OUTPUT
     report, failures = {}, []
@@ -127,7 +127,7 @@ def main():
     # coast keeps (it loses a little to the bumps) and never bails. A 3 cm curb, taller than an edge a wheel rolls over,
     # still stops the board.
     worlds = {'flat': feel.FLAT, 'planks': planks(), 'lip4mm': lips(.004), 'lip8mm': lips(.008), 'curb30mm': lips(.03, 40)}
-    report['edges'] = {name: {str(v): roll(args.binary, args.native_package, tris, f'{name}_{v}', v) for v in (3, 5, 7)}
+    report['edges'] = {name: {str(v): roll(args.binary, args.simulation_package, tris, f'{name}_{v}', v) for v in (3, 5, 7)}
                        for name, tris in worlds.items()}
     edges = report['edges']
     for name in ('planks', 'lip4mm', 'lip8mm'):
@@ -138,12 +138,12 @@ def main():
     # Pushing across the planks from a standstill: the pushing foot slides over the gaps rather than catching in one, so
     # once moving the board never falls back to a crawl (a caught foot stopped it dead, from 7 m/s to under 1).
     pushing = lambda f: (feel.PUSH, [0, 0], [0, 0])
-    report['pushing'] = {d: {name: roll(args.binary, args.native_package, worlds[name], f'push_{name}_{d}', 0, 300, pushing, difficulty=d)
+    report['pushing'] = {d: {name: roll(args.binary, args.simulation_package, worlds[name], f'push_{name}_{d}', 0, 300, pushing, difficulty=d)
                              for name in ('flat', 'planks')} for d in DIFFICULTIES}
     # A ramp is not a small edge: going straight up a quarter pipe fast enough to air out of it, with no input, the
     # board comes back down into the transition and rides away. (Taking the transition's faces for small edges made
     # these landings bail.) Both on every difficulty the game offers.
-    report['quarter'] = {d: {str(v): roll(args.binary, args.native_package, quarter(), f'quarter_{v}_{d}', v, 600, start=0, difficulty=d)
+    report['quarter'] = {d: {str(v): roll(args.binary, args.simulation_package, quarter(), f'quarter_{v}_{d}', v, 600, start=0, difficulty=d)
                              for v in (9, 10, 11)} for d in DIFFICULTIES}
     check('lands_back_in_transition', all(not r['bailed'] and r['peak_m'] > 3.6 for q in report['quarter'].values() for r in q.values()),
           report['quarter'])
@@ -155,8 +155,8 @@ def main():
     for name, (physics, sound) in SURFACES.items():
         packed = [physics << 7 | sound] * len(feel.FLAT)
         report['surfaces'][name] = {
-            'coast': roll(args.binary, args.native_package, feel.FLAT, f'coast_{name}', 6, surfaces=packed),
-            'push': roll(args.binary, args.native_package, feel.FLAT, f'push_{name}', 0, 360, lambda f: (feel.PUSH, [0, 0], [0, 0]), packed),
+            'coast': roll(args.binary, args.simulation_package, feel.FLAT, f'coast_{name}', 6, surfaces=packed),
+            'push': roll(args.binary, args.simulation_package, feel.FLAT, f'push_{name}', 0, 360, lambda f: (feel.PUSH, [0, 0], [0, 0]), packed),
         }
     s = report['surfaces']
     check('reports_surface', all(s[n]['coast']['surface'][:2] == list(SURFACES[n]) for n in s), {n: s[n]['coast']['surface'] for n in s})

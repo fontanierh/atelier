@@ -29,7 +29,7 @@ enum class ERideFoot : uint8
 };
 
 /**
- * USkateComponent's state between riding and on foot with the Ride backend (RideTransition.cpp): the board's place
+ * USkateComponent's state between riding and on foot (RideTransition.cpp): the board's place
  * and dissolve, the mesh's offset from its on-foot place, the speed carried off the board, and the clips that play
  * off the board (carry, mount, dismount).
  */
@@ -105,7 +105,7 @@ struct FRideTransition
      *  clip's end, eased from the clip time AnchorBlendFrom (below 0: the trajectory pulls the capsule instead). */
     FVector AnchorFrom = FVector::ZeroVector;
     float AnchorBlendFrom = -1.f;
-    /** The body standing on the deck (1) or on the ground (0): RetargetRetailPose's OffBoardLift. */
+    /** The body standing on the deck (1) or on the ground (0): RetargetRiderPose's OffBoardLift. */
     float Lift = 0.f;
     uint16 DriveId = 0;
     FVector DriveVelocity = FVector::ZeroVector;
@@ -150,12 +150,8 @@ struct FRideTransition
     /** The physical rider handed over a run-out (OnBailStart): it starts after the ride's frame (TickTransition). */
     bool bRunOutPending = false;
     UAnimSequence* PendingClip = nullptr;
-    /** A settled body gets up on foot: where it lies, the way it faces (head from hips) and how it lies. Away: the body
-     *  went through a wall or a floor the ride's root never followed it through, and gets up on the root's side, the
-     *  recovery not matched to where it lies. */
-    bool bRecoverPending = false, bRecoverFaceUp = false, bRecoverAway = false;
-    FVector RecoverGround = FVector::ZeroVector;
-    float RecoverYaw = 0.f;
+    /** A settled body gets up on foot, with the recovery that fits how it lies (face up or down). */
+    bool bRecoverPending = false, bRecoverFaceUp = false;
     /** A get-up's first frame held while the physical rider hands its bodies over to the animation (s). */
     float WaitTime = 0.f;
     /** A board kicked away (a kick-out) flies as a small sphere moved by a projectile movement (LooseBoard), turning

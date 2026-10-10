@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare actual original stock physical skeleton loaders with native settings bindings.
+"""Compare actual original stock physical skeleton loaders with simulation settings bindings.
 
 Run through the render lock/memory guard. Original JSON is oracle/conversion
 input only; C++ consumes verified ATATTR01/ATPHYS01 banks and typed hierarchy.
@@ -31,7 +31,7 @@ def corpus(collections,small=False):
     def sim():return f([1/60,60.])+[30]+f([.001,0.,-9.81,0.])
     hats=[r['key'] for r in collections['collections'] if converter.name_id(r['class'])==converter.name_id('physics_hat')]
     if small:hats=[]
-    for seed in range(2 if small else 64):add(0,[0]+text('')+matrices(24,seed*.03)+matrix(seed*.01,(seed*.01,.4,0.))+sim(),'stock native body and all cached mass/physical histories',hat=False)
+    for seed in range(2 if small else 64):add(0,[0]+text('')+matrices(24,seed*.03)+matrix(seed*.01,(seed*.01,.4,0.))+sim(),'stock simulation body and all cached mass/physical histories',hat=False)
     for key in hats:add(0,[1]+text(key)+matrices(24,.2)+matrix(.3)+sim(),'every authored hat geometry and head compound mass',hat=True,hat_key=key)
     if not small:add(0,[1]+text('absent_harness_hat')+matrices(24)+matrix()+sim(),'missing hat collection diagnostic',hat=True,hat_key='absent_harness_hat',valid=False)
     for all_pairs in (0,1):add(1,[all_pairs],'stock per-bone collision priorities/compliance and feedback configuration',cull_all=bool(all_pairs))
@@ -68,21 +68,21 @@ def corpus(collections,small=False):
     return struct.pack('<I',len(records))+b''.join(records),cases
 
 def build(output,target_dir):
-    native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    units=('NativeMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords',
+    units=('SimulationMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords',
         'TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime',
         'SkeletonPoseFrames','SkeletonAnimationRecord','SkeletonPhysicalRecord','SkeletonBodyDefinition','SkeletonBody','SkeletonJoints','SkeletonDriveDynamics','SkeletonDriveFrames','SkeletonTargets','SkeletonDrives',
         'BoardGroundAngle','SkeletonCollisionMode','SkeletonCollisionFeedback','SkeletonPoseErrors','Settings','NameId','PhysicsSkeleton','SkeletonPhysicsSettings')
-    for name in [f'{n}.{e}' for n in units for e in ('h','cpp')]+['GeometryTypes.h','BoardTypes.h','ContactRetention.h','DataReader.h']:shutil.copy2(native/name,snapshot/name)
-    prefixes=[PLUGIN/f'Tests/Native/skeleton_{name}_probe.cpp' for name in ('body','collision','constraint')];probe=PLUGIN/'Tests/Native/skeleton_physics_settings_probe.cpp';combined=snapshot/probe.name
+    for name in [f'{n}.{e}' for n in units for e in ('h','cpp')]+['GeometryTypes.h','BoardTypes.h','ContactRetention.h','DataReader.h']:shutil.copy2(simulation/name,snapshot/name)
+    prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{name}_probe.cpp' for name in ('body','collision','constraint')];probe=PLUGIN/'Tests/Simulation/skeleton_physics_settings_probe.cpp';combined=snapshot/probe.name
     combined.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+''.join(p.read_text().split('int main()',1)[0] for p in prefixes)+'\n#pragma clang diagnostic pop\n'+probe.read_text())
     cpp=output/'skeleton-physics-settings-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{n}.cpp') for n in units],str(combined),'-o',str(cpp)],check=True)
     shared=PLUGIN/'Tests/Reference/skeleton_body_probe.rs';rust_probe=PLUGIN/'Tests/Reference/skeleton_physics_settings_probe.rs';generated=output/'skeleton-physics-settings-combined.rs'
     generated.write_text(shared.read_text().split('fn main(){',1)[0].replace('use crate::{','use skate_core::{').replace('skeleton_root::inverse_rigid,','')+rust_probe.read_text())
     reference=build_probe(output,'skeleton-physics-settings-reference',generated,target_dir)
-    (output/'native-provenance.json').write_text(json.dumps(dict(native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (*prefixes,probe,shared,rust_probe)},cpp_binary_sha256=digest(cpp)),indent=2)+'\n')
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (*prefixes,probe,shared,rust_probe)},cpp_binary_sha256=digest(cpp)),indent=2)+'\n')
     return cpp,reference
 
 def decode(data,cases):
@@ -95,7 +95,7 @@ def decode(data,cases):
     return rows
 
 def compare(output,label,cpp,reference,assets,collections,cases_input,cases,identity):
-    source=assets/'private/stock';settings=output/f'{label}-settings.native';physical=output/f'{label}-physics.native';settings.write_bytes(converter.encode_settings(source/'skater-collections.json'));physical.write_bytes(converter.encode_physics_skeletons(source/'physics-skeletons.json'))
+    source=assets/'private/stock';settings=output/f'{label}-settings.simulation';physical=output/f'{label}-physics.simulation';settings.write_bytes(converter.encode_settings(source/'skater-collections.json'));physical.write_bytes(converter.encode_physics_skeletons(source/'physics-skeletons.json'))
     expected=subprocess.check_output([str(reference),str(assets),identity],input=cases_input);actual=subprocess.check_output([str(cpp),str(settings),str(physical),identity],input=cases_input);(output/f'{label}-input.bin').write_bytes(cases_input);(output/f'{label}-reference.bin').write_bytes(expected);(output/f'{label}-cpp.bin').write_bytes(actual)
     rows=decode(expected,cases);(output/f'{label}-cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if expected!=actual:
@@ -142,6 +142,6 @@ def main():
     for label,fixture,data in fixtures(output,assets,collections,physical):
         inputs,cases=corpus(data,small=True);reports.append(compare(output,label,cpp,reference,fixture,data,inputs,cases,identity))
     if not reports[0]['coverage'].get('drive_owners') or not reports[0]['coverage'].get('errors'):raise AssertionError('Missing stock hierarchy success/error coverage')
-    result=dict(passed=True,cases=sum(r['cases'] for r in reports),exact_words=sum(r['exact_words'] for r in reports),fixtures=reports,settings_source_sha256=digest(assets/'private/stock/skater-collections.json'),physics_source_sha256=digest(assets/'private/stock/physics-skeletons.json'),comparison='All original stock body/hat/mass/history, joint ancestors/frames, drive owners, collision/feedback and tested hierarchy/setting diagnostics exact; C++ native banks only',limitations='Initial hierarchy/pose matrices are explicit caller fixtures; animation hierarchy evaluation has its own comparator. Native bank loading/identity diagnostics are covered separately.')
+    result=dict(passed=True,cases=sum(r['cases'] for r in reports),exact_words=sum(r['exact_words'] for r in reports),fixtures=reports,settings_source_sha256=digest(assets/'private/stock/skater-collections.json'),physics_source_sha256=digest(assets/'private/stock/physics-skeletons.json'),comparison='All original stock body/hat/mass/history, joint ancestors/frames, drive owners, collision/feedback and tested hierarchy/setting diagnostics exact; C++ simulation banks only',limitations='Initial hierarchy/pose matrices are explicit caller fixtures; animation hierarchy evaluation has its own comparator. Simulation bank loading/identity diagnostics are covered separately.')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

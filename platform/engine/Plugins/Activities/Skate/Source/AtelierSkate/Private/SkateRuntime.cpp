@@ -1,8 +1,8 @@
 #include "SkateComponent.h"
 #include "SkateRuntimeDetail.h"
-#include "Native/GameplaySession.h"
-#include "Native/GroundSurfaceRuntime.h"
-#include "Native/HostScalar.h"
+#include "Simulation/GameplaySession.h"
+#include "Simulation/GroundSurfaceRuntime.h"
+#include "Simulation/HostScalar.h"
 #include "SkatePad.h"
 #include "SkatePadReader.h"
 #include <deque>
@@ -48,7 +48,6 @@
 #include "Async/ParallelFor.h"
 #include "Ride/RideClipPlayer.h"
 #include "Ride/RidePoseMeasure.h"
-#include "Ride/RideTuning.h"
 #include "Ride/RidePhysicalRider.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
@@ -62,15 +61,15 @@ namespace SkateRuntimeDetail
     TAutoConsoleVariable<float> CVarSkateFootGround(TEXT("skate.FootGround"),.5f,
         TEXT("cm each riding foot's sole stays above the ground under it; below 0 off"));
     TAutoConsoleVariable<int32> CVarSkateLockstep(TEXT("skate.Lockstep"),-1,
-        TEXT("Native skating waits for each step of its thread, so a replay repeats: 1 always, 0 never, -1 under a fixed step or frame rate"));
+        TEXT("Skating waits for each step of its thread, so a replay repeats: 1 always, 0 never, -1 under a fixed step or frame rate"));
     TAutoConsoleVariable<int32> CVarSkateSurfaceDebug(TEXT("skate.SurfaceDebug"),0,
         TEXT("1 logs every colliding mesh's surface per material slot at the next collision gather (USkateSettings surfaces)."));
     TAutoConsoleVariable<int32> CVarSkateCookedSurface(TEXT("skate.CookedSurface"),0,
         TEXT("QA: 1 makes complex-as-simple meshes not yet gathered read their cooked collision triangles, as a cooked build without CPU render copies does."));
     TAutoConsoleVariable<float> CVarSkatePumpTrick(TEXT("skate.PumpTrick"),.5f,
-        TEXT("m/s one intentional pump must add to show as Pump in the hybrid's trick line, from the next ride"));
-    TAutoConsoleVariable<int32> CVarSkateFailNative(TEXT("skate.FailNative"),0,
-        TEXT("1: the Native session under the Ride body fails on its next step (QA of the failure path); clears itself"));
+        TEXT("m/s one intentional pump must add to show as Pump in the trick line, from the next ride"));
+    TAutoConsoleVariable<int32> CVarSkateFailSimulation(TEXT("skate.FailSimulation"),0,
+        TEXT("1: the simulation session under the Ride body fails on its next step (QA of the failure path); clears itself"));
 }
 
 ESkateSurface USkateSettings::SurfaceAt(const FHitResult& Hit)
@@ -87,79 +86,59 @@ ESkateSurface USkateSettings::SurfaceAt(const FHitResult& Hit)
     return Settings.DefaultSurface;
 }
 
-bool USkateComponent::LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into,const FVector& Where,float Yaw,FString& Failure)
+bool USkateComponent::LaunchSimulationSession(TSharedPtr<FSkateRuntime>& Into,const FVector& Where,float Yaw,FString& Failure)
 {
-    if(!FPaths::FileExists(RuntimeFolder()/TEXT("package-manifest.json")))
-    {Failure=TEXT("Native skating data is missing from this build.");return false;}
-    // Typed motion loads asynchronously, once per process; the worker waits for it off the game thread.
-    FSkateMotionFuture Motion;
-    const auto& MotionPath=GetDefault<USkateSettings>()->MotionData;
-    if(!MotionPath.IsNull())Motion=RequestSkateMotion(MotionPath);
+    const auto* Settings=GetDefault<USkateSettings>();
+    if(Settings->MotionData.IsNull()||Settings->RuntimeData.IsNull())
+    {Failure=TEXT("Skating data is missing from this build.");return false;}
+    // The typed data loads asynchronously, once per process; the worker waits for it off the game thread.
+    FSkateMotionFuture Motion=RequestSkateMotion(Settings->MotionData);
+    FSkateRuntimeFuture Runtime=RequestSkateRuntime(Settings->RuntimeData);
     FSnapshot Snapshot;double Reach=0;const FVector Centre=SnapshotCentre(GetWorld(),Where);
     if(!GatherWorld(GetWorld(),Rider,Centre,Where,Yaw,RailSystem,Snapshot,Reach))
     {Failure=TEXT("Skating could not load nearby collision.");return false;}
     Into=MakeShared<FSkateRuntime>();Into->Feel=Feel;Into->CollisionCentre=Into->WantCentre=Centre;Into->CollisionReach=Reach;
     Into->Worlds=1;Into->WorldTriangles=Snapshot.Num();
-    Into->Worker=MakeUnique<FNativeSkateWorker>(RuntimeFolder(),NativeSnapshot(Snapshot),
-        SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading),std::move(Motion));
-    if(!Into->Worker->Start()){Into.Reset();Failure=TEXT("Native skating thread could not start.");return false;}
+    Into->Worker=MakeUnique<FSkateSimulationWorker>(SimulationSnapshot(Snapshot),
+        SnapshotPoint(Snapshot.Spawn),SnapshotScalar(Snapshot.Heading),std::move(Motion),std::move(Runtime));
+    if(!Into->Worker->Start()){Into.Reset();Failure=TEXT("Skating thread could not start.");return false;}
     return true;
 }
-void USkateComponent::PreloadRetailRuntime()
+void USkateComponent::PreloadSimulation()
 {
     // Decoding the animation banks takes seconds; do it while the player walks, so the first mount is immediate.
-    bRetailPreloaded=true;
-    const bool bRide=USkateSettings::ActiveBackend()==ESkateBackend::Ride;
-    if (bRide) PreloadRide();
+    bSimulationPreloaded=true;
+    PreloadRide();
     FString Failure;
-    if (!LaunchNativeSession(bRide?RideNative:RetailRuntime,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
+    if (!LaunchSimulationSession(RideSimulation,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,Failure))
     { UE_LOG(LogTemp,Display,TEXT("SKATE preload skipped: %s"),*Failure); }
     else { UE_LOG(LogTemp,Display,TEXT("SKATE preload started")); }
 }
-void USkateComponent::PollIdleRetail()
+void USkateComponent::PollIdleSimulation()
 {
-    // The Ride backend's Native session between rides (and loading while the player walks).
-    if (RideNative && RideNative->Worker && !(bRetailActive && bRideNative))
+    // The simulation session between rides (and loading while the player walks).
+    if (RideSimulation && RideSimulation->Worker && !bSimulationActive)
     {
-        RideNative->Poll();
-        if (!RideNative->Error.IsEmpty())
-        { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded Native ride session failed: %s"),*RideNative->Error); RideNative.Reset(); }
+        RideSimulation->Poll();
+        if (!RideSimulation->Error.IsEmpty())
+        { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded simulation ride session failed: %s"),*RideSimulation->Error); RideSimulation.Reset(); }
         // The world follows the rider on foot, built off the game thread, so a mount does not build it (H34: 190 ms
         // where the ride started out of the last one's reach). Once loaded: the build takes the session's floor.
-        else if (Rider && RideNative->Ready) RefreshNativeCollision(*RideNative,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,true);
+        else if (Rider && RideSimulation->Ready) RefreshSimulationCollision(*RideSimulation,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,true);
     }
-    if (!RetailRuntime || bRetailActive || !RetailRuntime->Worker) return;
-    RetailRuntime->Poll();
-    if (!RetailRuntime->Error.IsEmpty())
-    { UE_LOG(LogTemp,Warning,TEXT("SKATE preloaded session failed: %s"),*RetailRuntime->Error); RetailRuntime.Reset(); }
-    // The Native backend's world follows the rider on foot the same way.
-    else if (Rider && RetailRuntime->Ready) RefreshNativeCollision(*RetailRuntime,Rider->GetActorLocation(),Rider->GetActorRotation().Yaw,true);
 }
-bool USkateComponent::StartRetailRuntime()
+bool USkateComponent::StartSimulation()
 {
-    // The backend is chosen at each mount (skate.Backend, USkateSettings::Backend): a session of the other kind is
-    // dropped. The Ride backend publishes through an FSkateRuntime without a native worker.
-    const bool bRide=USkateSettings::ActiveBackend()==ESkateBackend::Ride;
-    if (RetailRuntime && RetailRuntime->Worker.IsValid()==bRide) RetailRuntime.Reset();
-    if (bRide)
-    {
-        if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
-        bRideNative=true; EndNativeBoardInBail(); bNativeBail=false;
-        if (!StartRide()) { RuntimeFailure(TEXT("Ride skating could not start.")); return false; }
-        RetailRuntime->HasPose=false;
-        if (!StartNativeRide()) { RuntimeFailure(TEXT("Native skating could not start under the Ride body.")); return false; }
-        bRetailActive=true; RetailPose.Reset();
-        return true;
-    }
-    StopRide();
-    FString Failure;
-    bRideNative=false; EndNativeBoardInBail(); bNativeBail=false;
-    if (!RetailRuntime && !LaunchNativeSession(RetailRuntime,Pos,Rot.Rotator().Yaw,Failure)) { RuntimeFailure(Failure); return false; }
-    if (!ActivateNative(*RetailRuntime)) return false;
-    bRetailActive=true; RetailPose.Reset();
+    // ShownRuntime publishes what the rider shows; RideSimulation is the session (StartSimulationRide).
+    if (!ShownRuntime) { ShownRuntime=MakeShared<FSkateRuntime>(); ShownRuntime->Ready=true; ShownRuntime->State=TEXT("PhysicsGround"); }
+    EndSimulationBoardInBail(); bSimulationBail=false;
+    if (!StartRide()) { RuntimeFailure(TEXT("Ride skating could not start.")); return false; }
+    ShownRuntime->HasPose=false;
+    if (!StartSimulationRide()) { RuntimeFailure(TEXT("Skating could not start under the Ride body.")); return false; }
+    bSimulationActive=true; RiderPose.Reset();
     return true;
 }
-bool USkateComponent::ActivateNative(FSkateRuntime& R)
+bool USkateComponent::ActivateSimulation(FSkateRuntime& R)
 {
     // A world built meanwhile goes in first. The player's mount never waits for one still building (H34): the ride
     // installs it between ticks. In lockstep (QA, replays) it is waited for.
@@ -182,22 +161,22 @@ bool USkateComponent::ActivateNative(FSkateRuntime& R)
     R.Activate(bGoofy);
     return true;
 }
-bool USkateComponent::StartNativeRide()
+bool USkateComponent::StartSimulationRide()
 {
-    // Native's session rides from here: placed where the ride starts (Pos, Rot) with its speed (Vel). The Ride backend
+    // The simulation's session rides from here: placed where the ride starts (Pos, Rot) with its speed (Vel). Ride
     // places the rider on the session's first pose in this same frame (GetOnBoard measures the body's lift over its
     // root), so this waits for it: a few ticks for a session preloaded while the player walked, longer on the first
     // mount of a game whose session is still loading.
-    if (RideNative && (!RideNative->Error.IsEmpty() || !RideNative->Worker || RideNative->Worker->Finished())) RideNative.Reset();
+    if (RideSimulation && (!RideSimulation->Error.IsEmpty() || !RideSimulation->Worker || RideSimulation->Worker->Finished())) RideSimulation.Reset();
     FString Failure;
-    if (!RideNative && !LaunchNativeSession(RideNative,Pos,Rot.Rotator().Yaw,Failure))
-    { UE_LOG(LogTemp,Warning,TEXT("SKATE Native ride: %s"),*Failure); return false; }
-    FSkateRuntime& N=*RideNative;
-    if (!ActivateNative(N)) return false;
-    // The wait below does not tick, so typed motion still loading finishes its package load here; its decode then
+    if (!RideSimulation && !LaunchSimulationSession(RideSimulation,Pos,Rot.Rotator().Yaw,Failure))
+    { UE_LOG(LogTemp,Warning,TEXT("SKATE simulation ride: %s"),*Failure); return false; }
+    FSkateRuntime& N=*RideSimulation;
+    if (!ActivateSimulation(N)) return false;
+    // The wait below does not tick, so typed data still loading finishes its package loads here; its decode then
     // completes on a task thread.
-    const auto& MotionPath=GetDefault<USkateSettings>()->MotionData;
-    if (!MotionPath.IsNull()) CompleteSkateMotion(MotionPath);
+    CompleteSkateMotion(GetDefault<USkateSettings>()->MotionData);
+    CompleteSkateRuntime(GetDefault<USkateSettings>()->RuntimeData);
     const double Started=FPlatformTime::Seconds();
     while (!N.HasPose && N.Error.IsEmpty() && !N.Worker->Finished() && FPlatformTime::Seconds()<Started+30.)
     {
@@ -206,99 +185,99 @@ bool USkateComponent::StartNativeRide()
     }
     if (!N.HasPose)
     {
-        UE_LOG(LogTemp,Warning,TEXT("SKATE Native ride did not start: %s"),N.Error.IsEmpty()?TEXT("no pose in 30 s"):*N.Error);
-        RideNative.Reset(); return false;
+        UE_LOG(LogTemp,Warning,TEXT("SKATE simulation ride did not start: %s"),N.Error.IsEmpty()?TEXT("no pose in 30 s"):*N.Error);
+        RideSimulation.Reset(); return false;
     }
-    RetailRuntime->Present(N); N.Prime=true;
-    RetailRuntime->PumpsSeen=N.Pumps; RetailRuntime->PumpCount=0;
-    UE_LOG(LogTemp,Display,TEXT("SKATE Native ride at (%.0f, %.0f, %.0f) speed %.0f, first pose in %.1f ms"),Pos.X,Pos.Y,Pos.Z,Vel.Size(),
+    ShownRuntime->Present(N); N.Prime=true;
+    ShownRuntime->PumpsSeen=N.Pumps; ShownRuntime->PumpCount=0;
+    UE_LOG(LogTemp,Display,TEXT("SKATE simulation ride at (%.0f, %.0f, %.0f) speed %.0f, first pose in %.1f ms"),Pos.X,Pos.Y,Pos.Z,Vel.Size(),
         (FPlatformTime::Seconds()-Started)*1000.);
     return true;
 }
-void USkateComponent::SuspendNativeRide()
+void USkateComponent::SuspendSimulationRide()
 {
-    if (!RideNative || !RideNative->Worker) return;
-    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RideNative->Worker->Enqueue(MoveTemp(C));
-    RideNative->PendingActivation=false; RideNative->PendingLaunch.Reset(); RideNative->FrameTime=0; RideNative->HasPose=false; RideNative->Prime=false;
+    if (!RideSimulation || !RideSimulation->Worker) return;
+    FSkateSimulationWorker::FCommand C;C.Kind=FSkateSimulationWorker::ECommand::Suspend;RideSimulation->Worker->Enqueue(MoveTemp(C));
+    RideSimulation->PendingActivation=false; RideSimulation->PendingLaunch.Reset(); RideSimulation->FrameTime=0; RideSimulation->HasPose=false; RideSimulation->Prime=false;
 }
-void USkateComponent::RelaunchNativeRide()
+void USkateComponent::RelaunchSimulationRide()
 {
     // A failed session is logged and dropped; a fresh one loads off the game thread while the body falls, for the get-up
     // to take the ride back on (H10: loaded at the get-up, it held the game thread 0.7-1 s).
-    RuntimeFailure(RideNative ? RideNative->Error : FString());
-    RideNative.Reset();
+    RuntimeFailure(RideSimulation ? RideSimulation->Error : FString());
+    RideSimulation.Reset();
     FString Failure;
-    if (!LaunchNativeSession(RideNative,Pos,Rot.Rotator().Yaw,Failure)) { UE_LOG(LogTemp,Warning,TEXT("SKATE Native relaunch: %s"),*Failure); }
-    else { UE_LOG(LogTemp,Display,TEXT("SKATE Native session relaunched after a failure")); }
+    if (!LaunchSimulationSession(RideSimulation,Pos,Rot.Rotator().Yaw,Failure)) { UE_LOG(LogTemp,Warning,TEXT("SKATE simulation relaunch: %s"),*Failure); }
+    else { UE_LOG(LogTemp,Display,TEXT("SKATE simulation session relaunched after a failure")); }
 }
-void USkateComponent::BeginNativeBoardInBail()
+void USkateComponent::BeginSimulationBoardInBail()
 {
-    bNativeBoardInBail = RideNative && RideNative->Worker && RideNative->Error.IsEmpty()
+    bSimulationBoardInBail = RideSimulation && RideSimulation->Worker && RideSimulation->Error.IsEmpty()
         && PhysicalRider && PhysicalRider->GetLooseBoard();
-    if (!bNativeBoardInBail) { SuspendNativeRide(); return; }
-    NativeBoardLast=URidePhysicalRider::ShownTransform(BoardRoot); NativeBoardVelocity=Vel; NativeBoardSpin=RideSpin; NativeBoardSince=0;
-    PhysicalRider->PlaceLooseBoard(NativeBoardLast);
+    if (!bSimulationBoardInBail) { SuspendSimulationRide(); return; }
+    SimulationBoardLast=URidePhysicalRider::ShownTransform(BoardRoot); SimulationBoardVelocity=Vel; SimulationBoardSpin=RideSpin; SimulationBoardSince=0;
+    PhysicalRider->PlaceLooseBoard(SimulationBoardLast);
 }
-void USkateComponent::FollowNativeBoardInBail(float Dt)
+void USkateComponent::FollowSimulationBoardInBail(float Dt)
 {
-    if (!bNativeBoardInBail) return;
-    if (!RideNative || !RideNative->Worker || !PhysicalRider || !PhysicalRider->IsBailing() || !PhysicalRider->GetLooseBoard())
-    { EndNativeBoardInBail(); return; }
-    NativeBoardSince+=Dt;
+    if (!bSimulationBoardInBail) return;
+    if (!RideSimulation || !RideSimulation->Worker || !PhysicalRider || !PhysicalRider->IsBailing() || !PhysicalRider->GetLooseBoard())
+    { EndSimulationBoardInBail(); return; }
+    SimulationBoardSince+=Dt;
     bool bFailed=false;
-    const bool Changed=StepNative(*RideNative,Dt,true,bFailed);
-    if (bFailed) { EndNativeBoardInBail(); RelaunchNativeRide(); return; }
+    const bool Changed=StepSimulation(*RideSimulation,Dt,true,bFailed);
+    if (bFailed) { EndSimulationBoardInBail(); RelaunchSimulationRide(); return; }
     if (!Changed) return;
-    // The wipeout over (Native's recovery teleports its rider: Teleporting, then riding), or the board further than its
+    // The wipeout over (the simulation's recovery teleports its rider: Teleporting, then riding), or the board further than its
     // speed takes it (a teleport all the same): the board goes on with the motion it had, on its own.
-    const FTransform NativeDeck=RideNative->Bone(TEXT("SKATEBOARD_ROOT"));
+    const FTransform SimulationDeck=RideSimulation->Bone(TEXT("SKATEBOARD_ROOT"));
     const float S=BoardScale();
-    const FVector Ground=NativeDeck.GetLocation()-NativeDeck.GetRotation().GetUpVector()*9.05;
-    const FTransform Shown=NativeDeck*FTransform(FQuat::Identity,Ground*(1.-S),FVector(S));
-    const float Reach=50.f+2.f*NativeBoardVelocity.Size()*FMath::Max(NativeBoardSince,.1f);
-    if (!RideNative->State.Contains(TEXT("Wipeout")) || FVector::Dist(Shown.GetLocation(),NativeBoardLast.GetLocation())>Reach)
-    { EndNativeBoardInBail(); return; }
-    NativeBoardLast=Shown; NativeBoardVelocity=RideNative->Velocity; NativeBoardSpin=RideNative->Spin; NativeBoardSince=0;
+    const FVector Ground=SimulationDeck.GetLocation()-SimulationDeck.GetRotation().GetUpVector()*9.05;
+    const FTransform Shown=SimulationDeck*FTransform(FQuat::Identity,Ground*(1.-S),FVector(S));
+    const float Reach=50.f+2.f*SimulationBoardVelocity.Size()*FMath::Max(SimulationBoardSince,.1f);
+    if (!RideSimulation->State.Contains(TEXT("Wipeout")) || FVector::Dist(Shown.GetLocation(),SimulationBoardLast.GetLocation())>Reach)
+    { EndSimulationBoardInBail(); return; }
+    SimulationBoardLast=Shown; SimulationBoardVelocity=RideSimulation->Velocity; SimulationBoardSpin=RideSimulation->Spin; SimulationBoardSince=0;
     PhysicalRider->PlaceLooseBoard(Shown);
-    // Its trucks and wheels as Native's board has them (the wheels roll on).
-    PlaceBoardParts(Shown,RideNative.Get());
+    // Its trucks and wheels as the simulation's board has them (the wheels roll on).
+    PlaceBoardParts(Shown,RideSimulation.Get());
 }
-void USkateComponent::EndNativeBoardInBail()
+void USkateComponent::EndSimulationBoardInBail()
 {
-    if (!bNativeBoardInBail) return;
-    bNativeBoardInBail=false;
-    if (PhysicalRider) PhysicalRider->ReleaseLooseBoard(NativeBoardVelocity,NativeBoardSpin);
-    UE_LOG(LogTemp,Display,TEXT("SKATE bail board let go of Native's at %.0f cm/s (session %s)"),NativeBoardVelocity.Size(),
-        RideNative ? *RideNative->State : TEXT("gone"));
-    // A failed session is dropped where it failed (RelaunchNativeRide).
-    if (RideNative && RideNative->Error.IsEmpty()) SuspendNativeRide();
+    if (!bSimulationBoardInBail) return;
+    bSimulationBoardInBail=false;
+    if (PhysicalRider) PhysicalRider->ReleaseLooseBoard(SimulationBoardVelocity,SimulationBoardSpin);
+    UE_LOG(LogTemp,Display,TEXT("SKATE bail board let go of the simulation's at %.0f cm/s (session %s)"),SimulationBoardVelocity.Size(),
+        RideSimulation ? *RideSimulation->State : TEXT("gone"));
+    // A failed session is dropped where it failed (RelaunchSimulationRide).
+    if (RideSimulation && RideSimulation->Error.IsEmpty()) SuspendSimulationRide();
 }
-bool USkateComponent::NativeStateStarts(const TCHAR* Prefix) const
+bool USkateComponent::SimulationStateStarts(const TCHAR* Prefix) const
 {
-    return RetailRuntime && RetailRuntime->State.StartsWith(Prefix);
+    return ShownRuntime && ShownRuntime->State.StartsWith(Prefix);
 }
 FTransform USkateComponent::RideRoot() const
 {
-    return RetailRuntime ? RetailRuntime->Root : FTransform::Identity;
+    return ShownRuntime ? ShownRuntime->Root : FTransform::Identity;
 }
 FVector USkateComponent::BailVelocity() const { return Vel; }
 FVector USkateComponent::BailSpin() const { return RideSpin; }
-// Native's stance, under either backend (a transition clip between rides shows none: the last ride's).
-bool USkateComponent::ShownFakie() const { return RetailRuntime ? RetailRuntime->Fakie : bFakie; }
-bool USkateComponent::ShownSwitch() const { return RetailRuntime && RetailRuntime->Switch; }
+// The simulation's stance (a transition clip between rides shows none: the last ride's).
+bool USkateComponent::ShownFakie() const { return ShownRuntime ? ShownRuntime->Fakie : bFakie; }
+bool USkateComponent::ShownSwitch() const { return ShownRuntime && ShownRuntime->Switch; }
 bool USkateComponent::ShownCrouch() const
 {
-    // Native's rider rides with 80-90 cm of hips over the deck and crouches to 30-50 (measured across the QA rows).
+    // The simulation's rider rides with 80-90 cm of hips over the deck and crouches to 30-50 (measured across the QA rows).
     constexpr float CrouchedHips=60.f;
-    const float Hips=RetailRuntime ? RetailRuntime->PoseMeasure.HipBoard : 0.f;
+    const float Hips=ShownRuntime ? ShownRuntime->PoseMeasure.HipBoard : 0.f;
     return Hips>0.f && Hips<CrouchedHips;
 }
 ERideGrab USkateComponent::RideGrab() const
 {
-    if (Mode != ESkateMode::Air || !RetailRuntime) return ERideGrab::None;
+    if (Mode != ESkateMode::Air || !ShownRuntime) return ERideGrab::None;
     const FSkateHostPad Pad = ReadHostPad();
     if (!Pad.bGrabLeft && !Pad.bGrabRight) return ERideGrab::None;
-    // The grab named last in the trick line is the one held. Native names the plain grabs by edge: the right trigger's
+    // The grab named last in the trick line is the one held. The simulation names the plain grabs by edge: the right trigger's
     // toe-side grab is Ride's Indy, the left's heel-side its Melon; until the line names one (a grab held only a moment,
     // H6), or for a grab Ride has no step-off for, the trigger held says which edge.
     ERideGrab Held = Pad.bGrabRight ? ERideGrab::Indy : ERideGrab::Melon; int32 Latest = INDEX_NONE;
@@ -306,31 +285,29 @@ ERideGrab USkateComponent::RideGrab() const
         {TEXT("FS Grab"), ERideGrab::Indy}, {TEXT("BS Grab"), ERideGrab::Melon},
         {TEXT("Christ"), ERideGrab::ChristAir}, {TEXT("Tuck"), ERideGrab::TuckKnee}})
     {
-        const int32 At = RetailRuntime->Trick.Find(Name.Key, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+        const int32 At = ShownRuntime->Trick.Find(Name.Key, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
         if (At > Latest) { Latest = At; Held = Name.Value; }
     }
     return Held;
 }
-void USkateComponent::SuspendRetailRuntime()
+void USkateComponent::SuspendSimulation()
 {
     StopRide();
-    EndNativeBoardInBail(); SuspendNativeRide(); bNativeBail=false;
-    if (RetailRuntime && RetailRuntime->Worker) { FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Suspend;RetailRuntime->Worker->Enqueue(MoveTemp(C)); RetailRuntime->PendingActivation=false; RetailRuntime->PendingLaunch.Reset(); RetailRuntime->FrameTime=0; RetailRuntime->HasPose=false; }
-    bRetailActive=false; RetailPose.Reset(); PadReader.Reset();
+    EndSimulationBoardInBail(); SuspendSimulationRide(); bSimulationBail=false;
+    bSimulationActive=false; RiderPose.Reset(); PadReader.Reset();
 }
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (PhysicalRider) PhysicalRider->End();
     ReleaseRootMotion();
-    RetailRuntime.Reset(); RideNative.Reset(); PadReader.Reset(); Super::EndPlay(Reason);
+    ShownRuntime.Reset(); RideSimulation.Reset(); PadReader.Reset(); Super::EndPlay(Reason);
 }
-void USkateComponent::LaunchRetail(const FVector& V)
+void USkateComponent::LaunchSimulation(const FVector& V)
 {
-    if (!bRetailActive || !RetailRuntime) return;
-    if (!RetailRuntime->Worker && !(bRideNative && RideNative)) return;
-    FSkateRuntime& R=RetailRuntime->Worker?*RetailRuntime:*RideNative;
+    if (!bSimulationActive || !ShownRuntime || !RideSimulation) return;
+    FSkateRuntime& R=*RideSimulation;
     if (!R.Ready || R.PendingActivation) { R.PendingLaunch=V; return; }
-    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Launch;C.Velocity=NativeVector(V);R.Worker->Enqueue(MoveTemp(C));
+    FSkateSimulationWorker::FCommand C;C.Kind=FSkateSimulationWorker::ECommand::Launch;C.Velocity=SimulationVector(V);R.Worker->Enqueue(MoveTemp(C));
 }
 bool USkateComponent::SetFeel(const FSkateFeel& NewFeel, FString& Error)
 {
@@ -338,67 +315,45 @@ bool USkateComponent::SetFeel(const FSkateFeel& NewFeel, FString& Error)
     if(bFeelSet&&NewFeel==Feel)return true;
     // Every session the rider has keeps the feel (a preloaded one activates with it); a live ride takes it at once.
     Feel=NewFeel;bFeelSet=true;
-    if(RetailRuntime)RetailRuntime->Feel=Feel;
-    if(RideNative)RideNative->Feel=Feel;
-    if(bRetailActive)ConfigureRetail();
+    if(ShownRuntime)ShownRuntime->Feel=Feel;
+    if(RideSimulation)RideSimulation->Feel=Feel;
+    if(bSimulationActive)ConfigureSimulation();
     return true;
 }
-void USkateComponent::ConfigureRetail()
+void USkateComponent::ConfigureSimulation()
 {
-    if(!RetailRuntime)return;
-    if(!RetailRuntime->Worker)
-    {
-        if(RideNative&&RideNative->Worker)
-        {
-            FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
-            C.Preferences=RideNative->Preferences(bGoofy);RideNative->Worker->Enqueue(MoveTemp(C));
-        }
-        return;
-    }
-    FNativeSkateWorker::FCommand C;C.Kind=FNativeSkateWorker::ECommand::Configure;
-    C.Preferences=RetailRuntime->Preferences(bGoofy);RetailRuntime->Worker->Enqueue(MoveTemp(C));
+    if(!ShownRuntime||!RideSimulation||!RideSimulation->Worker)return;
+    FSkateSimulationWorker::FCommand C;C.Kind=FSkateSimulationWorker::ECommand::Configure;
+    C.Preferences=RideSimulation->Preferences(bGoofy);RideSimulation->Worker->Enqueue(MoveTemp(C));
 }
 
-bool USkateComponent::GetRidePoseBone(FName Bone, FTransform& World) const
-{
-    if (!bRideNative || !RetailRuntime || !RetailRuntime->HasPose || !RetailRuntime->Names.Contains(Bone)) return false;
-    World=RetailRuntime->Bone(Bone); return true;
-}
-bool USkateComponent::GetRetailCamera(FTransform& Out, float& FOV) const
+bool USkateComponent::GetSimulationCamera(FTransform& Out, float& FOV) const
 {
     // A bail handed to the body has no session camera (the session waits): the character's own camera follows the body.
-    if (!bRetailActive || !RetailRuntime || !RetailRuntime->HasPose || RetailRuntime->CameraFOV<=0 || bNativeBail) return false;
-    Out=RetailRuntime->Camera; FOV=RetailRuntime->CameraFOV;
+    if (!bSimulationActive || !ShownRuntime || !ShownRuntime->HasPose || ShownRuntime->CameraFOV<=0 || bSimulationBail) return false;
+    Out=ShownRuntime->Camera; FOV=ShownRuntime->CameraFOV;
     // The player's camera (FSkateFeel): nearer or farther along the line to the rider, a wider or narrower view.
     if(Feel.CameraDistance!=1.f)
     {
-        const FVector Pivot=RetailRuntime->Root.GetLocation()+FVector(0,0,90);
+        const FVector Pivot=ShownRuntime->Root.GetLocation()+FVector(0,0,90);
         Out.SetLocation(Pivot+(Out.GetLocation()-Pivot)*Feel.CameraDistance);
     }
     if(Feel.CameraFOV!=0.f)FOV=FMath::Clamp(FOV+Feel.CameraFOV,20.f,140.f);
     return true;
 }
-FString USkateComponent::GetRetailState() const
+FString USkateComponent::GetSimulationState() const
 {
-    if (!bRetailActive || !RetailRuntime) return FString();
-    if (!RetailRuntime->Worker && bRideNative)
-    {
-        // A session that failed is gone until the body gets up (StepRetailRuntime); the rider still rides Native.
-        // cost= is Native's step on its own thread (mean and worst over the last second, ms), not the game thread's.
-        static const skate_native::XboxState Idle{};
-        const skate_native::XboxState& I=RideNative?RideNative->Sent:Idle;
-        return FString::Printf(TEXT("%s tick=%llu backend=Ride surface=%s:%d turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),
-            *RetailRuntime->State,RetailRuntime->Tick,*SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,RetailRuntime->Turns,Lockstep()?1:0,bNativeBail?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],
-            RideNative?RideNative->Worlds:0,RideNative?RideNative->WorldTriangles:0,RideNative?RideNative->CostMean:0.f,RideNative?RideNative->CostWorst:0.f,
-            RideNative?RideNative->Pumps:0u,RideNative?RideNative->PumpGain:0.f,RetailRuntime->AirSpin,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
-            FMath::RadiansToDegrees(RetailRuntime->ArmSwing[0]),FMath::RadiansToDegrees(RetailRuntime->ArmSwing[1]),
-            FMath::RadiansToDegrees(RetailRuntime->ArmNeed[0]),FMath::RadiansToDegrees(RetailRuntime->ArmNeed[1]));
-    }
-    const skate_native::XboxState& I=RetailRuntime->Sent;
-    return FString::Printf(TEXT("%s tick=%llu backend=Native surface=%s:%d lock=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d turns=%u wheel=%.1f %s"),*RetailRuntime->State,RetailRuntime->Tick,
-        *SurfaceName(RetailRuntime->Surface),RetailRuntime->Wheels,
-        Lockstep()?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],RetailRuntime->Worlds,RetailRuntime->WorldTriangles,
-        RetailRuntime->Turns,RetailRuntime->WheelTurn(),*RetailRuntime->PoseMeasure.Describe());
+    if (!bSimulationActive || !ShownRuntime) return FString();
+    // A session that failed is gone until the body gets up (TickSimulation); the rider still shows the last simulation state.
+    // cost= is the simulation's step on its own thread (mean and worst over the last second, ms), not the game thread's.
+    static const skate_simulation::XboxState Idle{};
+    const skate_simulation::XboxState& I=RideSimulation?RideSimulation->Sent:Idle;
+    return FString::Printf(TEXT("%s tick=%llu surface=%s:%d turns=%u lock=%d bail=%d pad=%x,%d,%d,%d,%d,%d,%d world=%d:%d cost=%.3f/%.3f pump=%u,%.2f spin=%.0f wheel=%.1f %s %s arm_swing=%.1f,%.1f arm_need=%.1f,%.1f"),
+        *ShownRuntime->State,ShownRuntime->Tick,*SurfaceName(ShownRuntime->Surface),ShownRuntime->Wheels,ShownRuntime->Turns,Lockstep()?1:0,bSimulationBail?1:0,I.buttons,I.triggers[0],I.triggers[1],I.left[0],I.left[1],I.right[0],I.right[1],
+        RideSimulation?RideSimulation->Worlds:0,RideSimulation?RideSimulation->WorldTriangles:0,RideSimulation?RideSimulation->CostMean:0.f,RideSimulation?RideSimulation->CostWorst:0.f,
+        RideSimulation?RideSimulation->Pumps:0u,RideSimulation?RideSimulation->PumpGain:0.f,ShownRuntime->AirSpin,ShownRuntime->WheelTurn(),*ShownRuntime->PoseMeasure.Describe(),PhysicalRider?*PhysicalRider->Describe():TEXT("phys=off"),
+        FMath::RadiansToDegrees(ShownRuntime->ArmSwing[0]),FMath::RadiansToDegrees(ShownRuntime->ArmSwing[1]),
+        FMath::RadiansToDegrees(ShownRuntime->ArmNeed[0]),FMath::RadiansToDegrees(ShownRuntime->ArmNeed[1]));
 }
 
 FSkateHostPad USkateComponent::ReadHostPad() const
@@ -426,55 +381,44 @@ FSkateHostPad USkateComponent::ReadHostPad() const
     return Out;
 }
 
-void USkateComponent::StepRetailRuntime(float Dt)
+void USkateComponent::TickSimulation(float Dt)
 {
     ReadInput(Dt);
     ComboFade=FMath::Max(0.f,ComboFade-Dt);
-    if (!bRetailActive || !RetailRuntime) return;
-    if (!RetailRuntime->Worker && bRideNative)
+    if (!bSimulationActive || !ShownRuntime) return;
+    // Simulation rides under Ride's body. A bail handed to the body waits for it to settle (AfterSimulationRideFrame), the
+    // board going on with the session's wipeout; a get-up holds the session's controls neutral until the rider is up.
+    if (CVarSkateFailSimulation.GetValueOnGameThread()>0 && RideSimulation && (!bSimulationBail || bSimulationBoardInBail))
+    { CVarSkateFailSimulation->Set(0,ECVF_SetByConsole); RideSimulation->Error=TEXT("Failed on request (skate.FailSimulation)"); }
+    if (bSimulationBail) { FollowSimulationBoardInBail(Dt); AfterSimulationRideFrame(Dt); return; }
+    if (!RideSimulation) { RuntimeFailure(TEXT("The simulation ride session is gone.")); StowImmediately(); return; }
+    bool bFailed=false;
+    const bool Changed=StepSimulation(*RideSimulation,Dt,PhysicalRider && PhysicalRider->IsGettingUp(),bFailed);
+    if (bFailed)
     {
-        // Native rides under Ride's body. A bail handed to the body waits for it to settle (AfterNativeRideFrame), the
-        // board going on with the session's wipeout; a get-up holds the session's controls neutral until the rider is up.
-        if (CVarSkateFailNative.GetValueOnGameThread()>0 && RideNative && (!bNativeBail || bNativeBoardInBail))
-        { CVarSkateFailNative->Set(0,ECVF_SetByConsole); RideNative->Error=TEXT("Failed on request (skate.FailNative)"); }
-        if (bNativeBail) { FollowNativeBoardInBail(Dt); AfterNativeRideFrame(Dt); return; }
-        if (!RideNative) { RuntimeFailure(TEXT("The Native ride session is gone.")); StowImmediately(); return; }
-        bool bFailed=false;
-        const bool Changed=StepNative(*RideNative,Dt,PhysicalRider && PhysicalRider->IsGettingUp(),bFailed);
-        if (bFailed)
+        // A failed session never stows the board under a moving rider: the body falls with the momentum shown, as
+        // in a wipeout, and the get-up takes the ride back on a fresh session, loaded off the game thread while the
+        // body falls (H10: loaded at the get-up, it held the game thread 0.7-1 s). The failure is still logged.
+        RelaunchSimulationRide();
+        if (PhysicalRider && PhysicalRider->IsActive() && !PhysicalRider->IsBailing() && !PhysicalRider->IsGettingUp()
+            && PhysicalRider->StartBail(Vel, RideSpin, URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
         {
-            // A failed session never stows the board under a moving rider: the body falls with the momentum shown, as
-            // in a wipeout, and the get-up takes the ride back on a fresh session, loaded off the game thread while the
-            // body falls (H10: loaded at the get-up, it held the game thread 0.7-1 s). The failure is still logged.
-            RelaunchNativeRide();
-            if (PhysicalRider && PhysicalRider->IsActive() && !PhysicalRider->IsBailing() && !PhysicalRider->IsGettingUp()
-                && PhysicalRider->StartBail(Vel, RideSpin, URidePhysicalRider::ShownTransform(BoardRoot), BoardScale()))
-            {
-                bNativeBail = true;
-                ++Bails; ++Serial; Mode = ESkateMode::Bail; PlayCue(TEXT("clatter"), 1, 1);
-                return;
-            }
-            StowImmediately();
+            bSimulationBail = true;
+            ++Bails; ++Serial; Mode = ESkateMode::Bail; PlayCue(TEXT("clatter"), 1, 1);
             return;
         }
-        if (!Changed) { AfterNativeRideFrame(Dt); return; }
-        RetailRuntime->Present(*RideNative);
+        StowImmediately();
+        return;
     }
-    else if (!RetailRuntime->Worker) return;
-    else
-    {
-        bool bFailed=false;
-        const bool Changed=StepNative(*RetailRuntime,Dt,false,bFailed);
-        if (bFailed) { RuntimeFailure(RetailRuntime->Error); StowImmediately(); RetailRuntime.Reset(); return; }
-        if (!Changed) return;
-    }
-    const FString& S=RetailRuntime->State;
-    // Under the hybrid a fallen rider getting up onto the board is still in the bail.
-    const bool bRisingOntoBoard=bRideNative && PhysicalRider && PhysicalRider->IsGettingUp() && PhysicalRider->GetGetUpExit()==ERideGetUpExit::Board;
+    if (!Changed) { AfterSimulationRideFrame(Dt); return; }
+    ShownRuntime->Present(*RideSimulation);
+    const FString& S=ShownRuntime->State;
+    // A fallen rider getting up onto the board is still in the bail.
+    const bool bRisingOntoBoard=PhysicalRider && PhysicalRider->IsGettingUp() && PhysicalRider->GetGetUpExit()==ERideGetUpExit::Board;
     const ESkateMode NewMode=bRisingOntoBoard||S.Contains(TEXT("Wipeout"))?ESkateMode::Bail:S.Contains(TEXT("Grind"))?ESkateMode::Grind:
         S.Contains(TEXT("Air"))?ESkateMode::Air:ESkateMode::Ground;
     const ESkateMode Was=Mode;
-    Surface=RetailRuntime->Surface;
+    Surface=ShownRuntime->Surface;
     if (NewMode!=Mode)
     {
         if (NewMode==ESkateMode::Bail) { ++Bails; PlayCue(TEXT("clatter"),1,1); }
@@ -483,55 +427,50 @@ void USkateComponent::StepRetailRuntime(float Dt)
         if (NewMode==ESkateMode::Grind) ++Grinds;
         ++Serial; Mode=NewMode;
     }
-    if (bRideNative && RideNative) { NameNativeSpin(Was); NameNativePump(); }
-    const FTransform DeckWorld=RetailRuntime->Bone(TEXT("SKATEBOARD_ROOT"));
-    Rot=DeckWorld.GetRotation(); Pos=DeckWorld.GetLocation()-Rot.GetUpVector()*9.05; Vel=RetailRuntime->Velocity;
+    if (RideSimulation) { NameSimulationSpin(Was); NameSimulationPump(); }
+    const FTransform DeckWorld=ShownRuntime->Bone(TEXT("SKATEBOARD_ROOT"));
+    Rot=DeckWorld.GetRotation(); Pos=DeckWorld.GetLocation()-Rot.GetUpVector()*9.05; Vel=ShownRuntime->Velocity;
     // Contact jitter at rest must not alternate the stance or the HUD every frame.
     const float Along=FVector::DotProduct(Vel,Rot.GetForwardVector());
     if (FMath::Abs(Along)>15.f) bFakie=Along<0;
     RailSpeed=Vel.Size();
-    bManual=Mode==ESkateMode::Ground && FMath::Abs(RetailRuntime->ManualBalance)>.0001f;
-    bNoseManual=bManual && RetailRuntime->Trick.Contains(TEXT("Nose"));
+    bManual=Mode==ESkateMode::Ground && FMath::Abs(ShownRuntime->ManualBalance)>.0001f;
+    bNoseManual=bManual && ShownRuntime->Trick.Contains(TEXT("Nose"));
     bPushing=In.bPush; bBraking=In.bBrake; bPowerslide=S==TEXT("SlideGround");
     const FVector Travel=FVector(Vel.X,Vel.Y,0).GetSafeNormal();
     SlideAngle=bPowerslide ? FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(FMath::Abs(FVector::DotProduct(Travel,Rot.GetForwardVector()))),0.f,1.f))) : 0.f;
     bSlide=S==TEXT("GrindBoardslide") || S==TEXT("GrindTipslide") || S==TEXT("GrindDarkslide") || S==TEXT("GrindLipslide");
-    if (ShownCombo!=RetailRuntime->Trick || Score!=FMath::RoundToInt(RetailRuntime->Score) ||
+    if (ShownCombo!=ShownRuntime->Trick || Score!=FMath::RoundToInt(ShownRuntime->Score) ||
         Mode==ESkateMode::Air || Mode==ESkateMode::Grind || bManual) ComboFade=1.5f;
-    ShownCombo=RetailRuntime->Trick; Score=FMath::RoundToInt(RetailRuntime->Score); LastTrickName=FName(*ShownCombo);
+    ShownCombo=ShownRuntime->Trick; Score=FMath::RoundToInt(ShownRuntime->Score); LastTrickName=FName(*ShownCombo);
     // No physics teleport: the Ride rider's simulated bodies (RidePhysicalRider) keep their own motion.
-    Rider->SetActorLocationAndRotation(RetailRuntime->Root.GetLocation()+FVector(0,0,BodyLift),RetailRuntime->Root.GetRotation(),false,nullptr,ETeleportType::None);
+    Rider->SetActorLocationAndRotation(ShownRuntime->Root.GetLocation()+FVector(0,0,BodyLift),ShownRuntime->Root.GetRotation(),false,nullptr,ETeleportType::None);
     Movement()->Velocity=Vel;
     // A bigger board grows about the ground contact, so its wheels stay on the ground (ISkateRider::GetSkateBoardScale).
     PlaceBoardParts(DeckWorld*BoardGrowth());
-    RetargetRetailPose();
+    RetargetRiderPose();
     {
-        // The pose Native shows, measured alike on the hybrid and the Native backend (the reference it is compared to).
-        // Native's root need not point along the travel (a shove-it turns the board and the root with it, the rider
+        // The pose the simulation shows, measured for QA.
+        // The simulation's root need not point along the travel (a shove-it turns the board and the root with it, the rider
         // stays regular), so the measure takes the travel from the velocity in the root's frame, held while slow, and
         // the deck reversed when its nose points back along the root.
-        FSkateRuntime& O=*RetailRuntime;
+        FSkateRuntime& O=*ShownRuntime;
         const float RootAlong=FVector::DotProduct(O.Velocity,O.Root.GetRotation().GetForwardVector());
         if (FMath::Abs(RootAlong)>15.f) O.PoseTravel=RootAlong<0?-1.f:1.f;
         const int32 DeckBone=O.PoseMeasure.DeckBone;
         const bool bDeckBack=O.Bones.IsValidIndex(DeckBone) && O.Bones[DeckBone].GetRotation().GetForwardVector().X<0;
         O.PoseMeasure.Measure(O.Names,O.Reference,O.Bones,Dt,O.PoseTravel,bDeckBack);
     }
-    if (!RetailRuntime->Worker)
-    {
-        RideSpin=RetailRuntime->Spin;
-        if (bRideNative && TakeNativeOnFoot(Dt)) return;
-        AfterNativeRideFrame(Dt);
-        if (RideNative && !bNativeBail) RefreshNativeCollision(*RideNative,Pos,Rot.Rotator().Yaw,false);
-        return;
-    }
-    RefreshNativeCollision(*RetailRuntime,Pos,Rot.Rotator().Yaw,false);
+    RideSpin=ShownRuntime->Spin;
+    if (TakeSimulationOnFoot(Dt)) return;
+    AfterSimulationRideFrame(Dt);
+    if (RideSimulation && !bSimulationBail) RefreshSimulationCollision(*RideSimulation,Pos,Rot.Rotator().Yaw,false);
 }
 
-void USkateComponent::NameNativeSpin(ESkateMode Was)
+void USkateComponent::NameSimulationSpin(ESkateMode Was)
 {
     // The rider's turn about its own up (the pose root's; a shove-it turns only the board) between shown frames.
-    FSkateRuntime& O=*RetailRuntime;
+    FSkateRuntime& O=*ShownRuntime;
     const FQuat Frame=O.Root.GetRotation();const FVector Up=Frame.GetUpVector();
     const FVector Forward=FVector::VectorPlaneProject(Frame.GetForwardVector(),Up).GetSafeNormal();
     if (Mode==ESkateMode::Air)
@@ -552,38 +491,38 @@ void USkateComponent::NameNativeSpin(ESkateMode Was)
         {
             const int32 Half=FMath::Max(1,FMath::RoundToInt((Spun-30.f)/180.f+.0001f));
             const float Stance=(bGoofy!=O.Switch)?-1.f:1.f, Travel=O.Fakie?-1.f:1.f;
-            O.SpinLabel=FString::Printf(TEXT("%s %d"),O.AirSpin*Stance*Travel<0?TEXT("FS"):TEXT("BS"),Half*180);O.SpinOf=RideNative->Trick;
+            O.SpinLabel=FString::Printf(TEXT("%s %d"),O.AirSpin*Stance*Travel<0?TEXT("FS"):TEXT("BS"),Half*180);O.SpinOf=RideSimulation->Trick;
         }
         O.AirSpin=0;
     }
     O.SpinForward=Forward;
-    // The spin is shown after the trick it came with, until Native shows another.
+    // The spin is shown after the trick it came with, until the simulation shows another.
     if (!O.SpinLabel.IsEmpty())
     {
-        if (RideNative->Trick!=O.SpinOf) O.SpinLabel.Reset();
+        if (RideSimulation->Trick!=O.SpinOf) O.SpinLabel.Reset();
         else O.Trick=O.SpinOf.IsEmpty()?O.SpinLabel:O.SpinOf+TEXT(" / ")+O.SpinLabel;
     }
 }
 
-void USkateComponent::NameNativePump()
+void USkateComponent::NameSimulationPump()
 {
-    // Each successful pump the session counted (GameplayPumps) joins the line after the Native trick shown, "Pump x2"
-    // when repeated, until Native shows another; once the line has faded, a pump starts one of its own.
-    FSkateRuntime& O=*RetailRuntime;const uint32 Pumps=RideNative->Pumps;
+    // Each successful pump the session counted (GameplayPumps) joins the line after the simulation trick shown, "Pump x2"
+    // when repeated, until the simulation shows another; once the line has faded, a pump starts one of its own.
+    FSkateRuntime& O=*ShownRuntime;const uint32 Pumps=RideSimulation->Pumps;
     if (Pumps<O.PumpsSeen) O.PumpsSeen=Pumps;
     if (Pumps>O.PumpsSeen)
     {
         const bool bFaded=ComboFade<=0.f;
-        if (bFaded || O.PumpCount==0 || RideNative->Trick!=O.PumpOf) { O.PumpCount=0; O.PumpOf=RideNative->Trick; O.PumpAlone=bFaded; }
+        if (bFaded || O.PumpCount==0 || RideSimulation->Trick!=O.PumpOf) { O.PumpCount=0; O.PumpOf=RideSimulation->Trick; O.PumpAlone=bFaded; }
         O.PumpCount+=int32(Pumps-O.PumpsSeen); O.PumpsSeen=Pumps;
     }
     if (O.PumpCount==0) return;
-    if (RideNative->Trick!=O.PumpOf) { O.PumpCount=0; return; }
+    if (RideSimulation->Trick!=O.PumpOf) { O.PumpCount=0; return; }
     const FString Label=O.PumpCount>1?FString::Printf(TEXT("Pump x%d"),O.PumpCount):FString(TEXT("Pump"));
     O.Trick=O.PumpAlone||O.Trick.IsEmpty()?Label:O.Trick+TEXT(" + ")+Label;
 }
 
-bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool& bFailed)
+bool USkateComponent::StepSimulation(FSkateRuntime& R, float Dt, bool bNeutral, bool& bFailed)
 {
     bool Changed=Lockstep() && R.AwaitingPose && R.AwaitPose();
     Changed|=R.Poll();
@@ -594,10 +533,10 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
     if (R.AwaitingPose) return Changed;
     // The canonical pad (SkatePad.h); GameplaySession takes the host transfer bit off before Xbox sampling.
     const FSkateHostPad Pad=ReadHostPad();
-    const skate_native::XboxState Input=bNeutral?skate_native::XboxState{}:atelier::skate_pad::Pack(Pad);
+    const skate_simulation::XboxState Input=bNeutral?skate_simulation::XboxState{}:atelier::skate_pad::Pack(Pad);
     auto Send=[this,&R,&Input,&Pad,bNeutral]()
     {
-        FNativeSkateWorker::FCommand Command;Command.Kind=FNativeSkateWorker::ECommand::Step;Command.Dt=R.FrameTime;
+        FSkateSimulationWorker::FCommand Command;Command.Kind=FSkateSimulationWorker::ECommand::Step;Command.Dt=R.FrameTime;
         R.Readings.clear();
         if (!bNeutral) ReadFineSticks(R,R.FrameTime,Pad);
         Command.Readings=std::move(R.Readings);R.Readings.clear();R.LastSend=FPlatformTime::Seconds();
@@ -605,7 +544,7 @@ bool USkateComponent::StepNative(FSkateRuntime& R, float Dt, bool bNeutral, bool
         R.AwaitingPose=true; R.FrameTime=0;
     };
     Send();
-    // A session that has just shown its start (StartNativeRide) has no step in flight, so this frame would show the
+    // A session that has just shown its start (StartSimulationRide) has no step in flight, so this frame would show the
     // start again. Its first step is waited for and shown now, and the next is sent at once: the first frame moves on
     // by its time as every later frame does, and the pose shown keeps up with real time rather than a frame behind.
     if (R.Prime)
@@ -678,14 +617,14 @@ void USkateComponent::ReadFineSticks(FSkateRuntime& R, float Dt, const FSkateHos
         if (F.Mouse.Size()>Right.Size()) Right=F.Mouse;
         if (F.Keys.Size()>Right.Size()) Right=F.Keys;
         FSkateHostPad P=Pad;P.LeftX=LX;P.LeftY=LY;P.RightX=Right.X;P.RightY=Right.Y;
-        const skate_native::XboxState Packed=atelier::skate_pad::Pack(P);
-        skate_native::StickReading Reading;Reading.age=float(FMath::Max(0.,(Now-G.Time)*Scale));
+        const skate_simulation::XboxState Packed=atelier::skate_pad::Pack(P);
+        skate_simulation::StickReading Reading;Reading.age=float(FMath::Max(0.,(Now-G.Time)*Scale));
         Reading.left=Packed.left;Reading.right=Packed.right;
         R.Readings.push_back(Reading);
     }
 }
 
-void USkateComponent::RefreshNativeCollision(FSkateRuntime& R, const FVector& At, float Yaw, bool bIdle)
+void USkateComponent::RefreshSimulationCollision(FSkateRuntime& R, const FVector& At, float Yaw, bool bIdle)
 {
     // Rebuild before leaving the snapshot's inner cube (60% of its half size); the rest is query margin. The ride
     // lists the meshes here, makes their triangles and builds on a background thread, and installs the completed world
@@ -719,24 +658,24 @@ void USkateComponent::RefreshNativeCollision(FSkateRuntime& R, const FVector& At
             FSnapshot Snapshot;
             if (!FillWorld(*Job,Snapshot,Result->Reach)) { Result->Empty=true; return Result; }
             Result->Triangles=Snapshot.Num();
-            FScopedNativeFloatEnvironment FloatEnvironment;
+            FScopedSimulationFloatEnvironment FloatEnvironment;
             if(!FloatEnvironment.IsReady())
-            {Result->Error="Native world floating-point environment setup failed";return Result;}
-            skate_native::BuildGameplayWorld(NativeSnapshot(Snapshot),Material,Result->World,Result->Error);return Result;
+            {Result->Error="Simulation world floating-point environment setup failed";return Result;}
+            skate_simulation::BuildGameplayWorld(SimulationSnapshot(Snapshot),Material,Result->World,Result->Error);return Result;
         },32*1024*1024);
     }
 }
 
 void USkateComponent::PlaceBoardParts(const FTransform& DeckWorldScaled, const FSkateRuntime* Source)
 {
-    const FSkateRuntime& From=Source?*Source:*RetailRuntime;
+    const FSkateRuntime& From=Source?*Source:*ShownRuntime;
     // The parts keep their place relative to the source deck, wherever the visible deck is (under the rider, or in a
     // hand off the board). The deck's scale is uniform, so this is the riding placement composed in another order.
     const FTransform SourceDeck=From.Bone(TEXT("SKATEBOARD_ROOT"));
     BoardRoot->SetWorldTransform(DeckWorldScaled); Deck->SetRelativeTransform(FTransform::Identity);
     const TCHAR* TruckNames[]={TEXT("TRUCK_FRONT"),TEXT("TRUCK_BACK")};
     const TCHAR* WheelNames[]={TEXT("RIGHT_WHEELFRONT"),TEXT("LEFT_WHEELFRONT"),TEXT("RIGHT_WHEELBACK"),TEXT("LEFT_WHEELBACK")};
-    // Fit the host board's mesh pivots to the source rig; preserve the native truck lean and wheel spin.
+    // Fit the host board's mesh pivots to the source rig; preserve the simulation truck lean and wheel spin.
     const FTransform DeckBind=From.Bind(TEXT("SKATEBOARD_ROOT"));
     for (int32 I=0;I<Trucks.Num() && I<2;++I)
     {
@@ -763,16 +702,15 @@ bool USkateComponent::PublishOffBoardPose(float Lift, bool bPlaceBoard)
     // ride: its root is the clips' trajectory on the floor, and the board goes where the clip has it (unless it lies
     // elsewhere or flies on its own).
     if (!Clips || !Rider) return false;
-    if (RetailRuntime && RetailRuntime->Worker) RetailRuntime.Reset();
-    if (!RetailRuntime) { RetailRuntime=MakeShared<FSkateRuntime>(); RetailRuntime->Ready=true; RetailRuntime->State=TEXT("PhysicsGround"); }
-    FSkateRuntime& O=*RetailRuntime; const FRideClipPlayer& R=*Clips;
+    if (!ShownRuntime) { ShownRuntime=MakeShared<FSkateRuntime>(); ShownRuntime->Ready=true; ShownRuntime->State=TEXT("PhysicsGround"); }
+    FSkateRuntime& O=*ShownRuntime; const FRideClipPlayer& R=*Clips;
     O.Root=R.Root; O.Bones=R.Bones; O.HasPose=true;
     if (O.Names!=R.Names) { O.Names=R.Names; O.Reference=R.Reference; }
-    if (O.Bones.Num()!=O.Names.Num()) { RetailPose.Reset(); return false; }
+    if (O.Bones.Num()!=O.Names.Num()) { RiderPose.Reset(); return false; }
     bOffBoardPose=true; OffBoardLift=FMath::Clamp(Lift,0.f,1.f);
-    RetargetRetailPose();
+    RetargetRiderPose();
     bOffBoardPose=false;
-    if (RetailPose.IsEmpty()) return false;
+    if (RiderPose.IsEmpty()) return false;
     if (bPlaceBoard) PlaceBoardParts(OffBoardDeck);
     return true;
 }

@@ -12,7 +12,7 @@ namespace
     // A stance change (a regular rider switching to goofy) cross-fades over this long.
     constexpr float MirrorBlend = .2f;
     // A cross-fade never sweeps the body (HIPS and the bones under it) faster than this (cm/s), a little under the
-    // native clips' own fastest limbs (1100 to 1300 cm/s, the trick clips').
+    // simulation clips' own fastest limbs (1100 to 1300 cm/s, the trick clips').
     constexpr float CrossFadeSpeed = 1000.f;
     const FName BodyRoot(TEXT("HIPS"));
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""In-game checks for the complete recovered skating session (requires the normal game build).
+"""In-game checks for the complete skating session (requires the normal game build).
 
 atelier qa yorimichi skate_runtime --port 8830
 """
@@ -19,14 +19,12 @@ def main():
     args = parser.parse_args()
     qa.bridge.URL = f'http://127.0.0.1:{args.port}'
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
-    # The native runtime's checks: the game rides on Ride by default.
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
     qa.py('live.L.skate_goofy(False); live.skate_park(); live.skate_input()')
     for _ in range(60):
         state = qa.py('print(live.skate_state())')
-        if 'retail=' not in state:
+        if 'simulation=' not in state:
             raise RuntimeError('Complete runtime is not installed/enabled')
-        if 'retail=PhysicsGround' in state:
+        if 'simulation=PhysicsGround' in state:
             break
         time.sleep(1)
     else:
@@ -97,17 +95,17 @@ print(json.dumps({'head_forward':look.x*forward.x+look.y*forward.y+look.z*forwar
     qa.py('live.skate(); live.skate_release()')
     time.sleep(.3)
     walking=qa.parse(qa.py('print(live.skate_state())').strip())
-    record('stow', [], walking.get('mode')=='0' and 'retail' not in walking, 'mode '+walking.get('mode','?'))
+    record('stow', [], walking.get('mode')=='0' and 'simulation' not in walking, 'mode '+walking.get('mode','?'))
     qa.py('live.skate_park(); live.skate_release()')
     time.sleep(.5)
     remount=qa.py('print(live.skate_state())')
-    record('remount', [], 'retail=PhysicsGround' in remount, remount.strip())
+    record('remount', [], 'simulation=PhysicsGround' in remount, remount.strip())
     qa.py('live.L.skate_goofy(True)')
     rows = qa.run_scenario("-28,38,0,0,[(0,{'push':True}),(1.5,{}),(1.8,('flick','ollie'))],duration=4",4)
     record('goofy_push_ollie',rows,max(float(r['speed']) for r in rows)>300 and 'Ollie' in qa.combos(rows) and '2' in qa.modes(rows) and rows[-1]['mode']=='1' and not qa.count(rows,'bails'),qa.combos(rows))
     qa.py('live.L.skate_goofy(False)')
     for direction in (-1,1):
-        # Match the native regression: load for .3s, adding the turn .133s before the pop.
+        # Match the simulation regression: load for .3s, adding the turn .133s before the pop.
         # Steering throughout the whole crouch changes the takeoff and measures a different input.
         turn=(direction,0)
         events=[(2.5,{'right':(0,-1)}),(2.666667,{'right':(0,-1),'left':turn}),

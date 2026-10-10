@@ -24,7 +24,7 @@ from check_animation_playback_parity import Stream
 from reference_build import build_probe
 CORE='crates/skate-core/src/player/wipeout/'
 HOST='crates/skate-host/src/physics/wipeout/'
-UNITS=('NativeMath','NameId','Settings','StockSettingsReader','WipeoutRequests','WipeoutSettings','WipeoutObservations','WipeoutRuntime')
+UNITS=('SimulationMath','NameId','Settings','StockSettingsReader','WipeoutRequests','WipeoutSettings','WipeoutObservations','WipeoutRuntime')
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def schema():
  s=dispatcher.source(CORE+'data.rs');defs={}
@@ -65,17 +65,17 @@ def corpus(defs):
  assert at==len(words),(at,len(words))
  return blob,programs
 def prepare(out):
- defs=schema();cpp,rust=helpers(defs);native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+ defs=schema();cpp,rust=helpers(defs);simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for unit in UNITS:shutil.copy2(native/f'{unit}.cpp',snapshot/f'{unit}.cpp')
- probe=snapshot/'wipeout_runtime_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/wipeout_runtime_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp))
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for unit in UNITS:shutil.copy2(simulation/f'{unit}.cpp',snapshot/f'{unit}.cpp')
+ probe=snapshot/'wipeout_runtime_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/wipeout_runtime_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp))
  settings=dispatcher.source(HOST+'settings.rs');generated=out/'wipeout-runtime-reference.rs'
  source=(PLUGIN/'Tests/Reference/wipeout_runtime_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust).replace('// ORIGINAL_SETTINGS','mod original_settings{\n'+settings+'\n}')
  generated.write_text(source)
- provenance=dict(native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_settings_sha256=hashlib.sha256(settings.encode()).hexdigest(),original_core_sha256={n:hashlib.sha256(dispatcher.source(CORE+n+'.rs').encode()).hexdigest()for n in('data','common','ground','air','requests','mod')})
- (out/'native-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return probe,generated
+ provenance=dict(simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_settings_sha256=hashlib.sha256(settings.encode()).hexdigest(),original_core_sha256={n:hashlib.sha256(dispatcher.source(CORE+n+'.rs').encode()).hexdigest()for n in('data','common','ground','air','requests','mod')})
+ (out/'simulation-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return probe,generated
 def variants(out,assets):
  data=json.loads((assets/'private/stock/skater-collections.json').read_text());source=dispatcher.source(HOST+'settings.rs');ordered=[('physics_wipeout','default','Hash_4F08D9BAE6831524','graph')]
  for key in('easy','normal','hardcore','motorized','test'):
@@ -105,12 +105,12 @@ def variants(out,assets):
    elif failure=='empty':f[actual]['data']=''
    elif failure=='nan':f[actual]['data']='7FC12345'
    elif failure=='nonfinite':f[actual]['data']=f[actual]['data'][:32]+'7FC12345'+f[actual]['data'][40:]
-   label=f'{category}-{key}-{name}-{failure}';folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.native';bank.write_bytes(converter.encode_settings(path));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=(kind=='graph'and failure in('type','nonfinite'))or(kind=='boolean'and failure in('width','short'))))
+   label=f'{category}-{key}-{name}-{failure}';folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.simulation';bank.write_bytes(converter.encode_settings(path));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=(kind=='graph'and failure in('type','nonfinite'))or(kind=='boolean'and failure in('width','short'))))
  # A compound error proves graph-before-modes and modes-before-scalar order.
  for first,second in((ordered[0],ordered[1]),(ordered[1],ordered[21])):
   d=copy.deepcopy(data)
   for category,key,name,kind in(first,second):f,actual=resolve(d,category,key,name);f[actual]['data']='DEADBEEFCAFEBABE'
-  label='compound-'+first[2]+'-'+second[2];folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.native';bank.write_bytes(converter.encode_settings(path));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=False))
+  label='compound-'+first[2]+'-'+second[2];folder=out/'asset-fixtures'/label/'private/stock';folder.mkdir(parents=True,exist_ok=True);path=folder/'skater-collections.json';path.write_text(json.dumps(d));bank=folder.parents[1]/'settings.simulation';bank.write_bytes(converter.encode_settings(path));result.append(dict(label=label,bank=bank,assets=folder.parents[1],success=False))
  return result
 def inspect(raw,programs,defs):
  words=struct.unpack('<'+'I'*(len(raw)//4),raw);at=0;assert words[at]==1;at+=1;at+=1+words[at]
@@ -126,16 +126,16 @@ def inspect(raw,programs,defs):
  assert at==len(words);assert set(coverage)==set(range(10));assert any(reason_counts[n]for n in(0,1,2,3,5,6,7,11,16,18,19,20,21))
  return dict(operations=dict(coverage),retained_reason_observations=dict(reason_counts),request_queries={str(k):v for k,v in query_counts.items()})
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);defs=schema();inputs,programs=corpus(defs);(out/'input.bin').write_bytes(inputs);probe,generated=prepare(out);fixtures=variants(out,a.assets.resolve());bank=out/'settings.native';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);defs=schema();inputs,programs=corpus(defs);(out/'input.bin').write_bytes(inputs);probe,generated=prepare(out);fixtures=variants(out,a.assets.resolve());bank=out/'settings.simulation';bank.write_bytes(converter.encode_settings(a.assets.resolve()/'private/stock/skater-collections.json'))
  summary=dict(programs=len(programs),commands=sum(len(x['commands'])for x in programs),input_bytes=len(inputs),frame_words=protocol.word_count('WipeoutFrame',defs),loader_fixture_count=len(fixtures),units=UNITS,input_sha256=hashlib.sha256(inputs).hexdigest())
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=out/'wipeout-runtime-cpp';snapshot=out/'native-source';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True)
+ simulation=out/'wipeout-runtime-cpp';snapshot=out/'simulation-source';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True)
  reference=build_probe(out,'wipeout-runtime-reference',generated,a.target_dir)
- expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=inputs);actual=subprocess.check_output([str(native),str(bank)],input=inputs);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
+ expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=inputs);actual=subprocess.check_output([str(simulation),str(bank)],input=inputs);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;raise AssertionError(dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual)))
  coverage=inspect(expected,programs,defs);reports=[]
  for fixture in fixtures:
-  ref=subprocess.check_output([str(reference),str(fixture['assets']),'--load-only']);cpp=subprocess.check_output([str(native),str(fixture['bank']),'--load-only']);assert ref==cpp,fixture['label'];assert bool(struct.unpack_from('<I',ref)[0])==fixture['success'],fixture['label'];reports.append(dict(label=fixture['label'],success=fixture['success'],exact_words=len(ref)//4))
+  ref=subprocess.check_output([str(reference),str(fixture['assets']),'--load-only']);cpp=subprocess.check_output([str(simulation),str(fixture['bank']),'--load-only']);assert ref==cpp,fixture['label'];assert bool(struct.unpack_from('<I',ref)[0])==fixture['success'],fixture['label'];reports.append(dict(label=fixture['label'],success=fixture['success'],exact_words=len(ref)//4))
  result=dict(passed=True,**summary,exact_words=len(expected)//4+sum(r['exact_words']for r in reports),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage,loader_fixtures=reports,comparison='Complete original shared wipeout checks and retained request histories, every mode/setting, source exact loader errors and read order; no tolerance or numerical source edits.',limitations='Completed frame observations are explicit leaf inputs. Actual body/pose/collision observation production is covered by a separate Air/KnownAir composition check; not established by this leaf. Physical ragdoll wipeout states and global session coordinator are separate owners.');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

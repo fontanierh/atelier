@@ -36,7 +36,7 @@ UNITS=tuple(dict.fromkeys((*landing.UNITS,*grind.UNITS,*wipeout.UNITS,*continuat
     'SlideState','SlideStateSettings','SlideStateRuntime','SlidePhaseRuntime','SlidePhaseBindings',
     'GraphActionPhysicalConditions','GraphMotionPhysicalConditions',*FAMILY)))
 PRODUCTION=(CODE/'PlayerStatePublication.h',CODE/'PlayerStatePublication.cpp')
-OWNED=(PLUGIN/'Tests/Native/player_state_publication_probe.cpp',PLUGIN/'Tests/Reference/player_state_publication_observer.rs',Path(__file__))
+OWNED=(PLUGIN/'Tests/Simulation/player_state_publication_probe.cpp',PLUGIN/'Tests/Reference/player_state_publication_observer.rs',Path(__file__))
 SECTIONS=('state','air','grind','wipeout','other_phases')
 OPS={**dict(enumerate(landing.OPS)),40:'selected_state_boundary',41:'common_publication',42:'initial_physical_packet',
     43:'upstream_common_inputs',44:'invalid_completed_grind_name',45:'clear_manager',46:'clear_grind_names',
@@ -52,8 +52,8 @@ def replace_once(text,old,new):
 def ground_observers():
     _,defs=state.declarations();cpp=[];rust=[]
     for name,fields in defs.items():
-        native=state.RENAMES.get(name,name)
-        cp='void GroundObserve(BipedOutput& o,const '+native+'& s){'+''.join(wire.observe_expr(k,'s.'+f,'cpp')for f,k in fields)+'}'
+        simulation=state.RENAMES.get(name,name)
+        cp='void GroundObserve(BipedOutput& o,const '+simulation+'& s){'+''.join(wire.observe_expr(k,'s.'+f,'cpp')for f,k in fields)+'}'
         rp='fn common_ground_observe_'+name+'(o:&mut Output,s:&skate_core::riding::grounded::state::output::'+name+'){'+''.join(wire.observe_expr(k,'s.'+f,'rust')for f,k in fields)+'}'
         # Nested record observation must call these separate observer names.
         cp=re.sub(r'\bObserve\(', 'GroundObserve(',cp)
@@ -77,7 +77,7 @@ pub(crate)fn migration_common_observe(o:&mut crate::Output,s:&SkaterRuntime){
 }
 '''
 
-NATIVE_CONSTRUCTION='''
+SIMULATION_CONSTRUCTION='''
         auto player_owner=PlayerInputRuntime::Load(data,error);auto state_owner=PlayerStateRuntime::Load(data,"normal",error);
         GroundRuntime ground_runtime;GroundSettings gs;TrainerTuning trainer;GrindRuntime grind;WipeoutPhysicalRuntime wphysical;
         KnownAirRuntime known;AirPhaseRuntime air_phase;RevertRuntime revert;GroundAnimationRuntime ground_animation;SlidePhaseRuntime slide;
@@ -89,7 +89,7 @@ NATIVE_CONSTRUCTION='''
         auto& toolkit=player_owner->toolkit;PhysicsPosePacket pose;pose.bone_count=std::uint32_t(evaluator.frames.rig.bones.size());pose.hierarchy.assign(pose.bone_count,AnimationResetPose);pose.local.assign(pose.bone_count,AnimationResetPose);pose.timestep=landing_host_detail::PhysicalStep();
         TeleportStateRuntime teleport({p.DeckFrame(),true});std::optional<OffboardToolkitInput> last;BipedStatePublication returned{};
 '''
-NATIVE_VIEWS='''
+SIMULATION_VIEWS='''
         const PlayerStateCoordinatorOwners shared{p,*player_owner,*state_owner,life,*input,anim,*ik,wipeout.state,grab_runtime,exchange};
         const AirPhaseOwners air_owners{p,processed,toolkit,ground,ground_runtime,life,animated,*ik,anim,*input,*sair,reckoning,f,wipeout,*provider,trajectory,air_settings,{state_owner->post.jump_reference,state_owner->post.jump_fix_frames},pose};
         const GrindRuntimeOwners grind_owners{p,*player_owner,ground,ground_runtime,life,animated,*ik,anim,*input,*sair,reckoning,wipeout.state,trajectory,gs,air_settings,trainer,pose.hierarchy};
@@ -99,7 +99,7 @@ NATIVE_VIEWS='''
         const SlidePhaseOwners slide_owners{p,processed,toolkit,ground,ground_runtime,life,animated,*ik,anim,*input,*sair,reckoning,wipeout,trajectory,air_settings,gs,pose,state_owner->post.jump_fix_frames};
         const PlayerStatePublicationOwners common{shared,air_owners,owners,landing_owners,grind_owners,wipeout_owners,air_phase,known,*bground,bair,landed,grind,wphysical,revert,slide.state,h,ground_animation,teleport};
 '''
-NATIVE_CASES='''
+SIMULATION_CASES='''
             case 40:{const auto id=ParsePhysicalStateId(i.Word());if(!id)return 2;state_owner->lifecycle=PhysicalPlayerStateLifecycle(*id);break;}
             case 41:okay=PublishPlayerPhysicalState(common,error);break;
             case 42:publication=ReadPhysicalPlayerInput(i);break;
@@ -144,7 +144,7 @@ _=>panic!("Biped owner operation")
 def prepare(output):
     original,observed,snapshot,report=landing.prepare(output);crate=observed/'atelier-host'
     cpp=(snapshot/'landing_on_deck_runtime_probe.cpp').read_text();cpground,rpground=ground_observers()
-    helpers=grind.PLUGIN/'Tests/Native/grind_runtime_probe.cpp';raw=helpers.read_text()
+    helpers=grind.PLUGIN/'Tests/Simulation/grind_runtime_probe.cpp';raw=helpers.read_text()
     names=('void JumperOut(','void ManagerOut(','void PoseOut(','void ComponentsOut(','void GrindOwnerOut(')
     cgrind='\n'.join(grind.block(raw,name)for name in names)
     cwipe,rwipe=wipeout.observers();cwipe=re.sub(r'\bOutput&','BipedOutput&',cwipe);cwipe=re.sub(r'\bInput&','BipedInput&',cwipe)
@@ -178,12 +178,12 @@ def prepare(output):
     assert 'state.post.jump_fix_frames' in cpp
     cpp=cpp.replace('Observations(owners,trajectory,*player_state)','Observations(owners,trajectory,*state_owner)')
     old='ProcessedPhysicsInput processed{};ResetProcessedPhysicsInput(processed);PhysicalPlayerInput publication{};ResetPhysicalPlayerOutputs(publication);PlayerInputState line_state{};if(!LoadPlayerInputState(data,line_state,error))Fail(error.c_str());'
-    begin=cpp.index(old);end=cpp.index('\n        const BipedRuntimeOwners owners',begin);cpp=cpp[:begin]+NATIVE_CONSTRUCTION+cpp[end:]
-    cpp=replace_once(cpp,'const auto snapshot=[&]{landing_host_detail::Snapshot',NATIVE_VIEWS+'const auto snapshot=[&]{common_publication::Snapshot(o,common);landing_host_detail::Snapshot')
+    begin=cpp.index(old);end=cpp.index('\n        const BipedRuntimeOwners owners',begin);cpp=cpp[:begin]+SIMULATION_CONSTRUCTION+cpp[end:]
+    cpp=replace_once(cpp,'const auto snapshot=[&]{landing_host_detail::Snapshot',SIMULATION_VIEWS+'const auto snapshot=[&]{common_publication::Snapshot(o,common);landing_host_detail::Snapshot')
     cpp=replace_once(cpp,'owners,trajectory,grab,last,returned,line_state,*player_state);','owners,trajectory,grab,last,returned,line_state,*state_owner);')
     cpp=replace_once(cpp,'auto world=ReadBipedWorld(i);','auto world=ReadBipedWorld(i);auto provider=std::make_shared<PlayerGrindStaticProvider>(ReadProvider(i));')
     cpp=replace_once(cpp,'OffboardContactToolkit contact;OffboardAirSelector selector(selected);','trajectory.BindGrindWorld(provider);OffboardContactToolkit contact;OffboardAirSelector selector(selected);')
-    cpp=replace_once(cpp,'            default:return 2;',NATIVE_CASES)
+    cpp=replace_once(cpp,'            default:return 2;',SIMULATION_CASES)
     # Always use the shared canonical Slide owner, even when its initial state
     # supplies a source zero. No local wall-riding output packet is invented.
     (snapshot/'player_state_publication_probe.cpp').write_text(cpp)
@@ -230,8 +230,8 @@ def prepare(output):
     for rel,sha in report['original_source_sha256'].items():
         assert digest(original/rel)==sha;raw=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(raw)]==raw,rel;originals[rel]=sha
     report.update(units=UNITS,common_original_prefixes=prefixes,common_core_observers={rel:hashlib.sha256(v.encode()).hexdigest()for rel,v in core.items()},common_core_original_prefixes=core_prefixes,
-        immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},
-        native_generated_sha256=digest(snapshot/'player_state_publication_probe.cpp'),reference_generated_sha256=digest(main),
+        immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},
+        simulation_generated_sha256=digest(snapshot/'player_state_publication_probe.cpp'),reference_generated_sha256=digest(main),
         common_production={p.name:digest(p)for p in PRODUCTION},common_proof={p.name:digest(p)for p in OWNED},boundary=__doc__,
         borrowed_grind_observer_file_sha256=digest(helpers),borrowed_grind_observer_block_sha256=hashlib.sha256(cgrind.encode()).hexdigest())
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return original,observed,snapshot,report
@@ -443,21 +443,21 @@ def main():
         (out/'owner-freeze.json').write_text(json.dumps(dict(**summary,production={p.name:digest(p)for p in PRODUCTION},proof={p.name:digest(p)for p in OWNED}),indent=2)+'\n');print(json.dumps(summary,indent=2));return
     crate=observed/'atelier-host';subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(a.target_dir.resolve()),'--bin','player-state-publication-reference'],check=True)
     reference=out/'player-state-publication-reference';shutil.copy2(a.target_dir.resolve()/'release/player-state-publication-reference',reference)
-    native=out/'player-state-publication-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_state_publication_probe.cpp'),'-o',str(native)],check=True)
+    simulation=out/'player-state-publication-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'player_state_publication_probe.cpp'),'-o',str(simulation)],check=True)
     bank=out/'fixtures';bank.mkdir(exist_ok=True);stock=a.assets.resolve()/'private/stock';converter=landing.biped.phase.converter
-    (bank/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (bank/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'));(bank/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for name in('action','motion'):(bank/f'actor.{name}.reference').write_bytes(landing.biped.phase.original_graph(landing.biped.phase.element('state','idle')))
     identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256']
     expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw)
-    actual=subprocess.check_output([str(native),str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(a.metadata.resolve())],input=raw)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         byte=next((n for n,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=byte//4
         c=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);r=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None)
-        div=dict(first_byte=byte,first_word=word,case=c['index']if c else None,operation=OPS[r['operation']]if r else'initial',section=next(((n,word-b)for n,(b,e)in(r['spans'].items()if r else[])if b<=word<e),None),reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,byte-16):byte+32].hex(),native_hex=actual[max(0,byte-16):byte+32].hex())
+        div=dict(first_byte=byte,first_word=word,case=c['index']if c else None,operation=OPS[r['operation']]if r else'initial',section=next(((n,word-b)for n,(b,e)in(r['spans'].items()if r else[])if b<=word<e),None),reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,byte-16):byte+32].hex(),simulation_hex=actual[max(0,byte-16):byte+32].hex())
         (out/'first-divergence.json').write_text(json.dumps(div,indent=2)+'\n');raise AssertionError(div)
     covered=coverage(frames,cases)
     result=dict(**summary,passed=True,reference_revision=REFERENCE_REVISION,exact_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=covered,limitations=__doc__)
-    report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');print(json.dumps(result,indent=2))
+    report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(out/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 if __name__=='__main__':main()

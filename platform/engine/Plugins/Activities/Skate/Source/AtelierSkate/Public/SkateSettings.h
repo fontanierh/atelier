@@ -4,17 +4,7 @@
 #include "SkateSettings.generated.h"
 struct FHitResult;
 
-/** Which simulation rides the board. */
-UENUM()
-enum class ESkateBackend : uint8
-{
-    /** The recovered native session alone (RUNTIME.md): its own physical rider and board. The reference for tests. */
-    Native,
-    /** Ride (RIDE.md): Native's session rides the board under Ride's physical body, transitions and bails. */
-    Ride
-};
-
-/** What the board rolls on. Each surface picks one of the native session's authored ground profiles (how fast it
+/** What the board rolls on. Each surface picks one of the simulation session's authored ground profiles (how fast it
  *  coasts, brakes, grips and wobbles) and its own roll sound (roll_<surface>_01 in SoundFolder, else roll_01). */
 UENUM(BlueprintType)
 enum class ESkateSurface : uint8
@@ -44,21 +34,18 @@ class ATELIERSKATE_API USkateSettings : public UDeveloperSettings
     GENERATED_BODY()
 public:
     USkateSettings();
-    /** Typed motion bank. Empty keeps the native reference loader for other games; a configured missing asset fails. */
+    /** Typed motion (USkateMotionData) and runtime data (USkateRuntimeData) the session loads; skating needs both. */
     UPROPERTY(Config, EditAnywhere, Category="Skate") FSoftObjectPath MotionData;
-    /** The simulation that rides the board; the console variable skate.Backend overrides it on the next mount. */
-    UPROPERTY(Config, EditAnywhere, Category = "Skate") ESkateBackend Backend = ESkateBackend::Ride;
-    /** The backend the next mount uses: skate.Backend when it names one, else Backend. */
-    static ESkateBackend ActiveBackend();
-    /** Original controller preset: easy, normal or hardcore. */
+    UPROPERTY(Config, EditAnywhere, Category="Skate") FSoftObjectPath RuntimeData;
+    /** Controller preset: easy, normal or hardcore. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FString Difficulty = TEXT("normal");
-    /** 0 loose / 1 tight; feeds the original steering scalar. */
+    /** 0 loose / 1 tight; feeds the steering scalar. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1")) float TruckTightness = .5f;
-    /** Multiplier on the recovered jump-height presets (1 is stock). */
+    /** Multiplier on the jump-height presets (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PopHeightScale = 1.f;
-    /** Multiplier on the recovered air-spin target (1 is stock). */
+    /** Multiplier on the air-spin target (1 is stock). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float AirSpinScale = 1.f;
-    /** Multipliers on the native animation-timed push target and planted-foot propulsion. */
+    /** Multipliers on the simulation animation-timed push target and planted-foot propulsion. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="2")) float PushSpeedScale = 1.f;
     UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.5", ClampMax="3")) float PushPowerScale = 1.f;
     /** How far short of vertical a quarter pipe still sends a straight air back down into it: 0 is stock (vertical
@@ -74,7 +61,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath WheelMesh;
-    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): the Ride backend
+    /** A masked material for the board's parts with a scalar parameter Dissolve (0 whole, 1 gone): Ride
      *  dissolves the board in and out with it (RIDE.md, "Transitions"). Without one the board shows and hides. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath BoardDissolveMaterial;
     /** Content folder of the board sounds: loops roll_01, grind_01, slide_01, skid_01, scrape_01 and one-shot banks

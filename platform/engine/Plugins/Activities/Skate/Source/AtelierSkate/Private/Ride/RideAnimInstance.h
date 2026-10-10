@@ -50,7 +50,7 @@ struct FRideAnimFrame
  * The Ride transitions' animation graph, built in C++ like the game's own anim instances: four explicit-time sequence
  * evaluators blended by weight (FAnimNode_MultiWayBlend), the stance mirror (FAnimNode_Mirror with the rig's mirror
  * table: a regular rider plays the clips mirrored) and inertialization for the cross-fades between clips. It runs on a
- * hidden mesh of the native rig that FRideAnimator ticks once per drawn frame; the transitions choose the clips and
+ * hidden mesh of the simulation rig that FRideAnimator ticks once per drawn frame; the transitions choose the clips and
  * their times.
  */
 UCLASS(Transient)

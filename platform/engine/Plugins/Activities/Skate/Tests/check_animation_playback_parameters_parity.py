@@ -2,7 +2,7 @@
 """Compare parameter refresh and PlayAnimation lifecycle with the frozen host.
 
 Read/write callbacks are compared in original order, including consumed graph
-overrides, missing context producers, native play refusal and explicit failures.
+overrides, missing context producers, the simulation play refusal and explicit failures.
 Run both probe compiles through atelier.safety's render lock and memory guard.
 """
 import argparse
@@ -87,7 +87,7 @@ def corpus():
             s.word(step)
             if step==3:s.values([('A',bits(0.731)),('B',bits(1.234))])
     # Parameter failure precedes construction values/override consumption, and
-    # failed Begin still marks the first-update skip in native instance state.
+    # failed Begin still marks the first-update skip in the simulation instance state.
     for missing in ('uninitialized','error'):
         s=new(2);a=attribute(kind=0);a['name']=A;a['payload'][0]=None;s.host(last=[a],last_error='Missing last-animation producer' if missing=='error' else None)
         s.operation(1,7,[parameter(2)]);s.context((2,2,1),transition(3));s.word(5)
@@ -102,11 +102,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--target-dir',required=True,type=Path)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     reference=build_probe(output,'animation-playback-parameters-reference',PLUGIN/'Tests/Reference/animation_playback_parameters_probe.rs',args.target_dir)
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'animation-playback-parameters-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'NativeMath.cpp'),str(PLUGIN/'Tests/Native/animation_playback_parameters_probe.cpp'),'-o',str(binary)],check=True)
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'animation-playback-parameters-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'SimulationMath.cpp'),str(PLUGIN/'Tests/Simulation/animation_playback_parameters_probe.cpp'),'-o',str(binary)],check=True)
     cases,counts=corpus();commands=encoded(cases);(output/'input.bin').write_bytes(commands)
     expected=subprocess.check_output([str(reference)],input=commands);actual=subprocess.check_output([str(binary)],input=commands)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:

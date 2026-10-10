@@ -2,7 +2,7 @@
 """Pack frozen-reader camera exports as ATCAM001, preserving every float bit.
 
 Original collections, shot references and shake files are conversion inputs only.
-The shipping runtime loads the project-native package produced here.
+The shipping runtime loads the project package produced here.
 """
 import argparse
 import hashlib

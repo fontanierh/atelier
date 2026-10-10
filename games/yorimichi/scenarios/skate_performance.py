@@ -18,8 +18,8 @@ def summarize(rows):
     return dict(frames=len(intervals),fps=1000/(sum(intervals)/len(intervals)),
                 p95_ms=percentile(.95),p99_ms=percentile(.99),worst_ms=max(intervals),
                 over_33ms=sum(t>33.34 for t in intervals),over_50ms=sum(t>50 for t in intervals),
-                repeated_native_frames=sum(a[1]==b[1] for a,b in zip(rows,rows[1:])),
-                longest_repeated_native_run=longest,
+                repeated_simulation_frames=sum(a[1]==b[1] for a,b in zip(rows,rows[1:])),
+                longest_repeated_simulation_run=longest,
                 modes=sorted({r[2] for r in rows}))
 
 
@@ -28,11 +28,9 @@ def main():
     parser.add_argument('--port',type=int,default=8830);args=parser.parse_args()
     qa.bridge.URL=f'http://127.0.0.1:{args.port}'
     qa.py((qa.GAME/'scenarios/skate_live_skate.py').read_text())
-    # The native runtime's pacing: the game rides on Ride by default.
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
     qa.py('live.L.fixed_step(0); live.skate_park(); live.skate_input()')
     for _ in range(60):
-        if 'retail=PhysicsGround' in qa.py('print(live.skate_state())'): break
+        if 'simulation=PhysicsGround' in qa.py('print(live.skate_state())'): break
         time.sleep(1)
     else: raise RuntimeError('Runtime did not become ready')
     qa.settle(minimum=58,seconds=3,limit=60)
@@ -79,7 +77,7 @@ def performance_pump(dt):
     output=qa.yori.OUT/'skateqa/performance.json';output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(report,indent=2)+'\n')
     return 0 if all(r['activity_observed'] and r['fps']>=58.5 and r['p95_ms']<20 and r['p99_ms']<33.34
-                    and not r['over_50ms'] and r['longest_repeated_native_run']<3 for r in report.values()) else 1
+                    and not r['over_50ms'] and r['longest_repeated_simulation_run']<3 for r in report.values()) else 1
 
 
 if __name__=='__main__':

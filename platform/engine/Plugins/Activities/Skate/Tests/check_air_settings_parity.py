@@ -17,14 +17,14 @@ from check_gesture_parity import PLUGIN,converter
 from check_air_state_parity import Reader
 from reference_build import build_probe
 from session_parity import REFERENCE_REVISION,digest
-UNITS=('NativeMath','NameId','Settings','StockSettingsReader','AirMath','AirState','AirStateSettings')
+UNITS=('SimulationMath','NameId','Settings','StockSettingsReader','AirMath','AirState','AirStateSettings')
 ALIASES={'atelier-host/src/bindings/input.rs':'crates/skate-host/src/physics/air_phase/input.rs'}
 
 def prepare(out,assets):
- out.mkdir(parents=True,exist_ok=True);native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+ out.mkdir(parents=True,exist_ok=True);simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in [*sorted(native.glob('*.h')),*[native/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Native/air_settings_probe.cpp']:shutil.copy2(p,snapshot/p.name)
+ for p in [*sorted(simulation.glob('*.h')),*[simulation/(u+'.cpp')for u in UNITS],PLUGIN/'Tests/Simulation/air_settings_probe.cpp']:shutil.copy2(p,snapshot/p.name)
  # Reuse only the declaration portion of the existing independent binding
  # transport. This binds the complete unmodified input module without calling
  # or providing any implementation of the unrelated runtime functions.
@@ -32,10 +32,10 @@ def prepare(out,assets):
  template=PLUGIN/'Tests/Reference/air_settings_probe.rs';reference=out/'air-settings-reference.rs';reference.write_text(template.read_text().replace('// GENERATED_OWNER_TYPES',types))
  source=dispatcher.source(ALIASES['atelier-host/src/bindings/input.rs']);root_original=out/'air-settings-original-input.rs';root_original.write_text(source)
  fixtures=loader_fixtures(assets.resolve());records=[]
- stock=out/'stock.native';stock.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'))
+ stock=out/'stock.simulation';stock.write_bytes(converter.encode_settings(assets/'private/stock/skater-collections.json'))
  for index,fixture in enumerate(fixtures):
-  folder=out/'fixtures'/f'{index:03d}-{fixture["label"]}';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'])+'\n');bank=folder/'settings.native';bank.write_bytes(converter.encode_settings(path));records.append(dict(index=index,label=fixture['label'],assets=str(folder),bank=str(bank),success=fixture['success'],first_position=fixture['first_position'],second_position=fixture.get('second_position'),native_sha256=digest(bank),json_sha256=digest(path)))
- provenance=dict(reference_revision=REFERENCE_REVISION,original_input_sha256=hashlib.sha256(source.encode()).hexdigest(),binding_declarations_sha256=hashlib.sha256(types.encode()).hexdigest(),native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},reference_probe_sha256=digest(reference),probe_templates_sha256={p.name:digest(p)for p in(template,PLUGIN/'Tests/Native/air_settings_probe.cpp')},fixture_generator_sha256=digest(PLUGIN/'Tests/air_settings_fixtures.py'),units=UNITS)
+  folder=out/'fixtures'/f'{index:03d}-{fixture["label"]}';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data'])+'\n');bank=folder/'settings.simulation';bank.write_bytes(converter.encode_settings(path));records.append(dict(index=index,label=fixture['label'],assets=str(folder),bank=str(bank),success=fixture['success'],first_position=fixture['first_position'],second_position=fixture.get('second_position'),simulation_sha256=digest(bank),json_sha256=digest(path)))
+ provenance=dict(reference_revision=REFERENCE_REVISION,original_input_sha256=hashlib.sha256(source.encode()).hexdigest(),binding_declarations_sha256=hashlib.sha256(types.encode()).hexdigest(),simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},reference_probe_sha256=digest(reference),probe_templates_sha256={p.name:digest(p)for p in(template,PLUGIN/'Tests/Simulation/air_settings_probe.cpp')},fixture_generator_sha256=digest(PLUGIN/'Tests/air_settings_fixtures.py'),units=UNITS)
  (out/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');(out/'fixtures.json').write_text(json.dumps(records,indent=2)+'\n');return snapshot,reference,records,provenance
 
 def decode(raw):
@@ -51,12 +51,12 @@ def main():
  for key in('assets','output','target-dir'):parser.add_argument('--'+key,type=Path,required=True)
  parser.add_argument('--preflight',action='store_true');args=parser.parse_args();out=args.output.resolve();assets=args.assets.resolve();snapshot,probe,fixtures,provenance=prepare(out,assets)
  if args.preflight:print(json.dumps(dict(fixtures=len(fixtures),invalid=sum(not f['success']for f in fixtures),raw_graph_success=sum(f['success']for f in fixtures),compound_failures=sum(f['second_position']is not None for f in fixtures),units=len(UNITS),provenance_sha256=digest(out/'provenance.json')),indent=2));return
- reference=build_probe(out,'air-settings-reference',probe,args.target_dir,extra_sources=ALIASES);native=out/'air-settings-native'
- subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'air_settings_probe.cpp'),'-o',str(native)],check=True)
+ reference=build_probe(out,'air-settings-reference',probe,args.target_dir,extra_sources=ALIASES);simulation=out/'air-settings-simulation'
+ subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'air_settings_probe.cpp'),'-o',str(simulation)],check=True)
  assert digest(out/'reference-source'/next(iter(ALIASES)))==provenance['original_input_sha256']
  results=[];width_errors={};combined=hashlib.sha256()
  for fixture in fixtures:
-  folder=Path(fixture['assets']);expected=subprocess.check_output([str(reference),str(assets),str(folder)]);actual=subprocess.check_output([str(native),str(out/'stock.native'),fixture['bank']]);(folder/'reference.bin').write_bytes(expected);(folder/'native.bin').write_bytes(actual)
+  folder=Path(fixture['assets']);expected=subprocess.check_output([str(reference),str(assets),str(folder)]);actual=subprocess.check_output([str(simulation),str(out/'stock.simulation'),fixture['bank']]);(folder/'reference.bin').write_bytes(expected);(folder/'simulation.bin').write_bytes(actual)
   assert expected==actual,(fixture['label'],expected.hex(),actual.hex());record=decode(expected);error=record['attempts'][0]['error'];assert (error is None)==fixture['success'],fixture['label']
   if fixture['second_position']is None and fixture['label'].endswith('-width'):width_errors[fixture['first_position']]=error
   if fixture['second_position']is not None:assert error==width_errors[fixture['first_position']],(fixture['label'],error,width_errors)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare native actor stance state and selective evaluated-pose publication.
+"""Compare simulation actor stance state and selective evaluated-pose publication.
 
 Original actor state is included unchanged; the two actor stance getter bodies
 are extracted verbatim with byte boundaries. Core packet reset/publication use
@@ -65,7 +65,7 @@ def corpus():
     for count,h,l,source_h,source_l in ((3,2,3,3,3),(3,3,2,3,3),(3,3,3,2,3),(3,3,3,3,2),(0xffffffff,2,2,2,2),(0x80000000,2,2,2,2)):
         s=new(1);s.publication([1,1,1,1,1,0,1,1,1,-1,1,0xdeadbeef,255]);s.packet(packet(count,h,l));s.matrices([matrix() for _ in range(source_h)]);s.matrices([matrix() for _ in range(source_l)]);s.data.extend(struct.pack('<d',.731));s.raw(b'signup')
     for raw in [b'',b'signup',b'signup\0tail',bytes(range(1,256)),bytes(range(255,0,-1))]+[bytes(rng.getrandbits(8) for _ in range(i)) for i in range(128)]:new(2).raw(raw)
-    # Native stance events test presence only. Duplicated names toggle once,
+    # Simulation stance events test presence only. Duplicated names toggle once,
     # ordering is retained, and request fields survive until packet publication.
     for natural,relative,local_player in itertools.product((-1,0,1,2),(0,1,2,-1),(False,True)):
         for flag in (0,0xffffffff,0x00318000,0xf8000000):
@@ -89,14 +89,14 @@ def encoded(cases):return b'ATAPUBL1'+len(cases).to_bytes(4,'little')+b''.join(s
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     reference=build_probe(output,'animation-publication-reference',prepare_source(output),args.target_dir)
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source';code.mkdir(exist_ok=True);files=['AnimationPublication.cpp','AnimationName.cpp']
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source';code.mkdir(exist_ok=True);files=['AnimationPublication.cpp','AnimationName.cpp']
     for path in list(live.glob('*.h'))+[live/f for f in files]:shutil.copyfile(path,code/path.name)
-    probe=code/'animation_publication_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/animation_publication_probe.cpp',probe)
-    snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()};(output/'native-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
+    probe=code/'animation_publication_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/animation_publication_probe.cpp',probe)
+    snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir()) if p.is_file()};(output/'simulation-source-provenance.json').write_text(json.dumps(snapshot,indent=2)+'\n')
     binary=output/'animation-publication-cpp';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/f) for f in files],str(probe),'-o',str(binary)],check=True)
     cases,counts=corpus();commands=encoded(cases);(output/'input.bin').write_bytes(commands)
     def run(exe,data):return subprocess.check_output([str(exe)],input=data)
-    expected=run(reference,commands);actual=run(binary,commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=run(reference,commands);actual=run(binary,commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
@@ -105,7 +105,7 @@ def main():
             else:hi=m
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[lo:hi]));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)))
         raise AssertionError(f'Animation publication differs at byte {first}, case {lo}; isolated command saved')
-    result=dict(passed=True,cases=len(cases),counts=counts,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='complete selective packet reset/publication, retained matrix tails and opaque flags, signed/unsigned extents, stance/event/cull state, checkpoint requests and signed-byte signal hashing',extraction_provenance_sha256=hashlib.sha256((output/'actor-extraction-provenance.json').read_bytes()).hexdigest(),native_source_provenance_sha256=hashlib.sha256((output/'native-source-provenance.json').read_bytes()).hexdigest())
+    result=dict(passed=True,cases=len(cases),counts=counts,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),comparison='complete selective packet reset/publication, retained matrix tails and opaque flags, signed/unsigned extents, stance/event/cull state, checkpoint requests and signed-byte signal hashing',extraction_provenance_sha256=hashlib.sha256((output/'actor-extraction-provenance.json').read_bytes()).hexdigest(),simulation_source_provenance_sha256=hashlib.sha256((output/'simulation-source-provenance.json').read_bytes()).hexdigest())
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

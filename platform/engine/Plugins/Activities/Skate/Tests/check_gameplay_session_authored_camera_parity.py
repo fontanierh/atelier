@@ -3,7 +3,7 @@
 
 This is separate from stock Session coverage. The active stock host always
 publishes camera type 1, whose stock graph has no SlowMotionController. Here only
-the original camera graph resource and its lossless native conversion change.
+the original camera graph resource and its lossless simulation conversion change.
 All settings, shots, physics, input, animation, world, clock, Session methods and
 observers remain the existing complete owners. Raw launch/tick/landing histories
 produce the camera condition and real Begin/Update/End requests. No completed
@@ -35,7 +35,7 @@ from session_parity import REFERENCE_REVISION, digest
 
 PLUGIN, CODE, TESTS = session.PLUGIN, session.CODE, session.TESTS
 SOURCE_GRAPH = Path('private/stock/data/script/camera/Default_cameragraph.stategraph')
-NATIVE_GRAPH = Path('camera.graph')
+SIMULATION_GRAPH = Path('camera.graph')
 NORMAL_TIMESTEP = 0x3c888889
 NORMAL_PERIOD_NS = 16666600
 DEPENDENCIES = (Path(session.__file__), Path(session.frame.__file__),
@@ -118,16 +118,16 @@ def verify_session_build(build):
     pinned = historical_oracle.REFERENCE_COMMIT
     assert pinned.startswith(REFERENCE_REVISION)
     assert result['reference_revision'] in (REFERENCE_REVISION, pinned)
-    native_path, reference_path = build / 'native-provenance.json', build / 'reference-provenance.json'
-    native, reference = json.loads(native_path.read_text()), json.loads(reference_path.read_text())
+    simulation_path, reference_path = build / 'simulation-provenance.json', build / 'reference-provenance.json'
+    simulation, reference = json.loads(simulation_path.read_text()), json.loads(reference_path.read_text())
     assert reference['reference_revision'] == pinned
-    snapshot = build / 'native-source'
-    for name, expected in native['session_snapshot_sources'].items():
-        assert digest(snapshot / name) == expected, ('changed native build snapshot', name)
-    for name, expected in native['immutable_native_sources'].items():
-        current = CODE / name if (CODE / name).is_file() else TESTS / 'Native' / name
+    snapshot = build / 'simulation-source'
+    for name, expected in simulation['session_snapshot_sources'].items():
+        assert digest(snapshot / name) == expected, ('changed simulation build snapshot', name)
+    for name, expected in simulation['immutable_simulation_sources'].items():
+        current = CODE / name if (CODE / name).is_file() else TESTS / 'Simulation' / name
         assert digest(current) == expected, ('source changed since accepted build', name)
-    for name, expected in native['session_production'].items():
+    for name, expected in simulation['session_production'].items():
         assert digest(CODE / name) == expected, ('Session production changed', name)
     for relative, row in reference['session_original_prefixes'].items():
         original = build / 'reference-source' / relative
@@ -139,16 +139,16 @@ def verify_session_build(build):
         assert digest(path) == reference['session_proof'][path.name], ('changed Session proof', path.name)
     assert digest(build / 'observed-source/atelier-host/src/migration_probe.rs') == reference['session_generated_sha256']
     binaries = {name: dict(path=str(build / name), sha256=digest(build / name))
-                for name in ('gameplay-session-reference', 'gameplay-session-native')}
+                for name in ('gameplay-session-reference', 'gameplay-session-simulation')}
     return dict(stock_result_sha256=digest(result_path),
                 stock_exact_bytes=result['exact_bytes'], stock_output_sha256=result['output_sha256'],
-                native_provenance_sha256=digest(native_path),
+                simulation_provenance_sha256=digest(simulation_path),
                 reference_provenance_sha256=digest(reference_path), binaries=binaries,
-                production_sha256=native['immutable_native_sources'],
-                session_production_sha256=native['session_production'],
+                production_sha256=simulation['immutable_simulation_sources'],
+                session_production_sha256=simulation['session_production'],
                 reference_prefixes=len(reference['session_original_prefixes']),
-                snapshot_files=len(native['session_snapshot_sources']),
-                units=len(native['units']),
+                snapshot_files=len(simulation['session_snapshot_sources']),
+                units=len(simulation['units']),
                 schema_root=str(build / 'reference-source'))
 
 
@@ -156,19 +156,19 @@ def prepare(args):
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     integration = verify_session_build(args.session_build.resolve())
-    stock_assets, stock_native = tree_hashes(args.assets.resolve()), tree_hashes(args.native_package.resolve())
-    assets, package = output / 'authored-assets', output / 'authored-native-package'
+    stock_assets, stock_simulation = tree_hashes(args.assets.resolve()), tree_hashes(args.simulation_package.resolve())
+    assets, package = output / 'authored-assets', output / 'authored-simulation-package'
     clone_tree(args.assets.resolve(), assets)
-    clone_tree(args.native_package.resolve(), package)
+    clone_tree(args.simulation_package.resolve(), package)
     graph = authored_graph()
     replace_file(assets / SOURCE_GRAPH, original_graph(graph))
     arena = converter.read_graph(assets / SOURCE_GRAPH)
-    replace_file(package / NATIVE_GRAPH, converter.encode_graph(arena))
-    authored_assets, authored_native = tree_hashes(assets), tree_hashes(package)
+    replace_file(package / SIMULATION_GRAPH, converter.encode_graph(arena))
+    authored_assets, authored_simulation = tree_hashes(assets), tree_hashes(package)
     changed_assets = sorted(k for k in stock_assets if stock_assets[k] != authored_assets[k])
-    changed_native = sorted(k for k in stock_native if stock_native[k] != authored_native[k])
+    changed_simulation = sorted(k for k in stock_simulation if stock_simulation[k] != authored_simulation[k])
     assert stock_assets.keys() == authored_assets.keys() and changed_assets == [SOURCE_GRAPH.as_posix()]
-    assert stock_native.keys() == authored_native.keys() and changed_native == [NATIVE_GRAPH.as_posix()]
+    assert stock_simulation.keys() == authored_simulation.keys() and changed_simulation == [SIMULATION_GRAPH.as_posix()]
     cases = corpus()
     raw, ranges = session.encode(cases)
     protocol = session.protocol_audit(raw, cases, ranges)
@@ -178,11 +178,11 @@ def prepare(args):
     freeze = dict(scope=__doc__, reference_revision=REFERENCE_REVISION,
                   helper_sha256=digest(Path(__file__)), integration=integration,
                   borrowed_proof_sources={p.relative_to(PLUGIN).as_posix(): digest(p) for p in DEPENDENCIES},
-                  source_assets=str(args.assets.resolve()), source_native_package=str(args.native_package.resolve()),
+                  source_assets=str(args.assets.resolve()), source_simulation_package=str(args.simulation_package.resolve()),
                   session_build=str(args.session_build.resolve()),
-                  stock_assets_sha256=stock_assets, stock_native_sha256=stock_native,
-                  authored_assets_sha256=authored_assets, authored_native_sha256=authored_native,
-                  changes=dict(original_camera_graph=SOURCE_GRAPH.as_posix(), native_camera_graph=NATIVE_GRAPH.as_posix()),
+                  stock_assets_sha256=stock_assets, stock_simulation_sha256=stock_simulation,
+                  authored_assets_sha256=authored_assets, authored_simulation_sha256=authored_simulation,
+                  changes=dict(original_camera_graph=SOURCE_GRAPH.as_posix(), simulation_camera_graph=SIMULATION_GRAPH.as_posix()),
                   graph_elements=len(arena), histories=len(cases), commands=sum(len(c['rows']) for c in cases),
                   input_bytes=len(raw), input_sha256=hashlib.sha256(raw).hexdigest(),
                   cases_sha256=digest(output / 'cases.json'), protocol=protocol, ranges=ranges)
@@ -343,28 +343,28 @@ def execute(args):
     assert {p.relative_to(PLUGIN).as_posix(): digest(p) for p in DEPENDENCIES} == frozen['borrowed_proof_sources']
     assert verify_session_build(args.session_build.resolve()) == frozen['integration']
     assert tree_hashes(args.assets.resolve()) == frozen['stock_assets_sha256']
-    assert tree_hashes(args.native_package.resolve()) == frozen['stock_native_sha256']
+    assert tree_hashes(args.simulation_package.resolve()) == frozen['stock_simulation_sha256']
     assert tree_hashes(output / 'authored-assets') == frozen['authored_assets_sha256']
-    assert tree_hashes(output / 'authored-native-package') == frozen['authored_native_sha256']
+    assert tree_hashes(output / 'authored-simulation-package') == frozen['authored_simulation_sha256']
     assert digest(output / 'input.bin') == frozen['input_sha256']
     assert digest(output / 'cases.json') == frozen['cases_sha256']
     cases = json.loads((output / 'cases.json').read_text())
     binaries = frozen['integration']['binaries']
     for side, binary, resource in (
             ('reference', 'gameplay-session-reference', 'authored-assets'),
-            ('native', 'gameplay-session-native', 'authored-native-package')):
+            ('simulation', 'gameplay-session-simulation', 'authored-simulation-package')):
         with (output / 'input.bin').open('rb') as stdin, (output / (side + '.bin')).open('wb') as stdout, (output / (side + '.stderr')).open('wb') as stderr:
             subprocess.run([binaries[binary]['path'], str(output / resource)], stdin=stdin, stdout=stdout, stderr=stderr, check=True)
         assert digest(Path(binaries[binary]['path'])) == binaries[binary]['sha256']
-    expected, actual = output / 'reference.bin', output / 'native.bin'
-    with expected.open('rb') as reference_file, actual.open('rb') as native_file:
+    expected, actual = output / 'reference.bin', output / 'simulation.bin'
+    with expected.open('rb') as reference_file, actual.open('rb') as simulation_file:
         at = 0
         while True:
-            a, b = reference_file.read(1024 * 1024), native_file.read(1024 * 1024)
+            a, b = reference_file.read(1024 * 1024), simulation_file.read(1024 * 1024)
             if a != b:
                 first = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
                 failure = dict(first_byte=at + first, first_word=(at + first) // 4,
-                               reference_bytes=expected.stat().st_size, native_bytes=actual.stat().st_size)
+                               reference_bytes=expected.stat().st_size, simulation_bytes=actual.stat().st_size)
                 (output / 'first-divergence.json').write_text(json.dumps(failure, indent=2) + '\n')
                 raise AssertionError(failure)
             if not a: break
@@ -385,15 +385,15 @@ def execute(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('session-build', 'assets', 'native-package', 'output'):
+    for name in ('session-build', 'assets', 'simulation-package', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--preflight', action='store_true')
     args = parser.parse_args()
     result = prepare(args) if args.preflight else execute(args)
     # The full file manifest is recorded under build; keep terminal output small.
     print(json.dumps({key: value for key, value in result.items()
-                      if key not in ('stock_assets_sha256', 'stock_native_sha256',
-                                     'authored_assets_sha256', 'authored_native_sha256')}, indent=2))
+                      if key not in ('stock_assets_sha256', 'stock_simulation_sha256',
+                                     'authored_assets_sha256', 'authored_simulation_sha256')}, indent=2))
 
 
 if __name__ == '__main__':

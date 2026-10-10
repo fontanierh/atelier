@@ -131,20 +131,20 @@ path="src/migration_probe.rs"
     (output / 'reference-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
     return binary
 
-def build_native(output,*,compile=True):
-    snapshot=output/'native-source'
+def build_simulation(output,*,compile=True):
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();hashes={}
     for p in [*sorted(CODE.glob('*.h')),*[CODE/(unit+'.cpp')for unit in UNITS]]:
         shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
     for name in('handplant_probe.cpp','plant_air_owner_probe.cpp'):
-        p=PLUGIN/'Tests/Native'/name;shutil.copy2(p,snapshot/name);hashes[name]=digest(snapshot/name)
-    prefix,proof=extraction(PLUGIN/'Tests/Native/handplant_lifecycle_probe.cpp','int main(')
+        p=PLUGIN/'Tests/Simulation'/name;shutil.copy2(p,snapshot/name);hashes[name]=digest(snapshot/name)
+    prefix,proof=extraction(PLUGIN/'Tests/Simulation/handplant_lifecycle_probe.cpp','int main(')
     (snapshot/'plant_air_owner_helpers.inc').write_bytes(prefix)
-    binary=output/'plant-air-owner-native'
+    binary=output/'plant-air-owner-simulation'
     if compile:subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(unit+'.cpp'))for unit in UNITS],str(snapshot/'plant_air_owner_probe.cpp'),'-o',str(binary)],check=True)
     for name,sha in hashes.items():assert digest(snapshot/name)==sha
-    (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,reused_helper_prefix=proof,units=UNITS),indent=2)+'\n');return binary
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,reused_helper_prefix=proof,units=UNITS),indent=2)+'\n');return binary
 
 class Reader(lifecycle.Reader):pass
 
@@ -247,7 +247,7 @@ def coverage(frames,cases):
 
 def prepare(assets,output):
     fixtures=output/'fixtures';fixtures.mkdir(exist_ok=True);source=assets/'private/stock/skater-collections.json';stock=json.loads(source.read_text())
-    (fixtures/'settings.native').write_bytes(converter.encode_settings(source));skeletons=assets/'private/stock/physics-skeletons.json';(fixtures/'physics.native').write_bytes(converter.encode_physics_skeletons(skeletons));records=[]
+    (fixtures/'settings.simulation').write_bytes(converter.encode_settings(source));skeletons=assets/'private/stock/physics-skeletons.json';(fixtures/'physics.simulation').write_bytes(converter.encode_physics_skeletons(skeletons));records=[]
     for index,label in enumerate(loader_fixtures()):
         data=copy.deepcopy(stock);record=next(r for r in data['collections']if r['class']=='physics_airstates'and r['key']=='default');fields=record['fields']
         if label in('missing_slow','missing_both'):fields.pop('PhysToAnimSlow')
@@ -261,7 +261,7 @@ def prepare(assets,output):
         if label=='custom_curves':
             for name,scale in(('PhysToAnimSlow',.1731),('PhysToAnimFast',.317)):
                 words=[int(fields[name]['data'][k:k+8],16)for k in range(0,160,8)];words[12:20]=[bits(.137+scale*k)for k in range(8)];fields[name]['data']=''.join(f'{v:08X}'for v in words)
-        folder=fixtures/f'case-{index}';original=folder/'private/stock/skater-collections.json';original.parent.mkdir(parents=True,exist_ok=True);original.write_text(json.dumps(data));(folder/'settings.native').write_bytes(converter.encode_settings(original));records.append(dict(index=index,label=label,original_sha256=digest(original),native_sha256=digest(folder/'settings.native')))
+        folder=fixtures/f'case-{index}';original=folder/'private/stock/skater-collections.json';original.parent.mkdir(parents=True,exist_ok=True);original.write_text(json.dumps(data));(folder/'settings.simulation').write_bytes(converter.encode_settings(original));records.append(dict(index=index,label=label,original_sha256=digest(original),simulation_sha256=digest(folder/'settings.simulation')))
     for kind in('action','motion'):(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
     (fixtures/'loader-provenance.json').write_text(json.dumps(records,indent=2)+'\n');return fixtures,json.loads(skeletons.read_text())['source_sha256']
 
@@ -283,16 +283,16 @@ def main():
     p.add_argument('--preflight',action='store_true');p.add_argument('--reference-case-runner',action='store_true');p.add_argument('--reference-workers',type=int,choices=(1,2,3,4),default=1);a=p.parse_args()
     if not a.reference_case_runner and a.reference_workers!=1:p.error('--reference-workers requires --reference-case-runner')
     output=a.output.resolve();output.mkdir(parents=True,exist_ok=True);raw,cases=corpus();ranges=preflight(raw,cases);(output/'input.bin').write_bytes(raw);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');fixtures,identity=prepare(a.assets.resolve(),output)
-    if a.preflight:build_reference(output/'reference',a.target_dir,compile=False);build_native(output,compile=False);print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(raw),units=len(UNITS),input_sha256=hashlib.sha256(raw).hexdigest()),indent=2));return
-    reference=build_reference(output/'reference',a.target_dir);native=build_native(output)
+    if a.preflight:build_reference(output/'reference',a.target_dir,compile=False);build_simulation(output,compile=False);print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(raw),units=len(UNITS),input_sha256=hashlib.sha256(raw).hexdigest()),indent=2));return
+    reference=build_reference(output/'reference',a.target_dir);simulation=build_simulation(output)
     if a.reference_case_runner:
         from reference_case_runner import run_reference_cases
         expected=run_reference_cases(reference,[a.assets.resolve(),fixtures],raw,ranges,output/'reference-cases',workers=a.reference_workers,validate_output=lambda index,data:decode(data,[cases[index]]))
     else:expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=raw)
-    actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve()),str(fixtures)],input=raw)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve()),str(fixtures)],input=raw)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
-        at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));row=next((row for rows in frames for row in rows if row['first_word']<=at//4<row['last_word']),None);section=next(((name,at//4-span[0])for name,span in(row['spans'].items()if row else[])if span[0]<=at//4<span[1]),None);failure=dict(byte=at,operation=row['operation']if row else'initial',section=section,reference_bytes=len(expected),native_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));row=next((row for rows in frames for row in rows if row['first_word']<=at//4<row['last_word']),None);section=next(((name,at//4-span[0])for name,span in(row['spans'].items()if row else[])if span[0]<=at//4<span[1]),None);failure=dict(byte=at,operation=row['operation']if row else'initial',section=section,reference_bytes=len(expected),simulation_bytes=len(actual));(output/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands'])for c in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),coverage=coverage(frames,cases),scope='Complete unchanged PlantSkeleton advance/hold_foot and SkeletonAir load/capture/reset/apply/update_animated/update_known_air using real shared physical board/skeleton, AnimatedSkeleton, FootIK and GeneralUpdate owners. Actual authored world metadata and primitive order generate Handplant contacts. Settings failures/read order, every valid anchor index, four lanes, fast/slow history/hook versus dynamic-body writes and partial hierarchy failures observed. No callback or completed numeric result substituted; whole game coordinator remains separate.')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

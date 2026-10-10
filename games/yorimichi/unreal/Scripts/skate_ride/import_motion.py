@@ -1,4 +1,4 @@
-"""Bake the reference motion bank into typed Unreal properties (no opaque payloads)."""
+"""Bake the package's motion into typed Unreal properties (no opaque payloads)."""
 from pathlib import Path
 import sys
 import unreal
@@ -7,8 +7,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
 import yori  # noqa: E402
 
-PACKAGE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
-result = unreal.SkateMotionLibrary.import_motion(str(PACKAGE), '/Game/SkateMotion')
+PACKAGE = yori.OUT / 'skate-simulation' / 'package'  # the skate.runtime build step assembles it
+result = unreal.SkateDataLibrary.import_motion(str(PACKAGE), '/Game/SkateMotion')
 # Unreal Python suppresses a bool return when out parameters are present:
 # success returns the Error string (empty); failure returns None.
 if result is None:

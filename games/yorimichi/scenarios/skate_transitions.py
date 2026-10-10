@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""In-game checks for getting on and off the board with the Ride backend (Skate plugin, RIDE.md "Transitions").
+"""In-game checks for getting on and off the board with Ride (Skate plugin, RIDE.md "Transitions").
 
 Run against a running game (atelier play yorimichi):  atelier qa yorimichi skate_transitions [--only name,name] [--film]
-On the skate pier's long flat, with skate.Backend Ride and the player's own buttons (the top face button gets on and
+On the skate pier's long flat, with the player's own buttons (the top face button gets on and
 off, D-pad Right brings the board to the hand or puts it away): mounts from standing, walking, running and sprinting
 (each its own BR_*_INTO_MOUNT clip), a mount from the board carry, dismounts to a stand, a run and a fast run (the
 BR_DISMOUNT_* clips, into the carry), the carry put away after its hold time, the board button with no board and
@@ -197,7 +197,7 @@ def continuity(rows, tumbling=lambda row: False):
         if not bail:
             note('move_cm', math.dist(vec(a['pos']), vec(b['pos'])) - travel, i, b)
             # A landing stops the fall in a frame, and a jump starts one, on foot (falling) or on the board (the air
-            # mode): only the horizontal velocity carries on. Native's wheels touch a frame before its state lands.
+            # mode): only the horizontal velocity carries on. The simulation's wheels touch a frame before its state lands.
             touching = i + 1 < len(rows) and airborne(b) != airborne(rows[i + 1])
             if airborne(a) != airborne(b) or touching:
                 va, vb = (va[0], va[1], 0.0), (vb[0], vb[1], 0.0)
@@ -312,7 +312,6 @@ def main():
     only = [o for o in args.only.split(',') if o]
     wanted = lambda name: not only or any(name.startswith(o) for o in only)
     qa.py((qa.GAME / 'scenarios/skate_live_skate.py').read_text())
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Ride')")
     qa.py('live.L.skate_goofy(False)')
     results, frames = {}, []
     # Every check's frames, for a closer look at a failure.
@@ -703,7 +702,7 @@ live.behave('bail', _bail)
 
     def wheels_roll(rows):
         # The share of rolling frames whose wheels (wheel=, degrees) turned the board's way along its nose (yaw=, the
-        # deck's heading): Native's wheels turn under half a turn a frame, more slowly than the travel at speed (70,
+        # deck's heading): the simulation's wheels turn under half a turn a frame, more slowly than the travel at speed (70,
         # 113, 138 degrees a frame at 261, 561, 958 cm/s), so their way is what is judged. A frame now and then holds
         # no step (left out, up to a tenth of the frames). The travel is the speed along the board (on a slope too),
         # frames sliding across it left out.
@@ -733,7 +732,7 @@ live.behave('bail', _bail)
                     f'wheels rolling its way on {wheels:.0%} of the frames')
 
     def switch_round(name, speed, events, seconds):
-        # Rolling fakie the rider turns round on the board by himself (Native's motion graph: its stance flag turns):
+        # Rolling fakie the rider turns round on the board by himself (the simulation's motion graph: its stance flag turns):
         # one continuous body, the board not turning, its wheels rolling on.
         riding(0)
         # Filmed, from farther and lower than the other close-ups: the board and the feet turning on it are the shot.
@@ -749,10 +748,10 @@ live.behave('bail', _bail)
                f'{note}; {describe(worst)}')
 
     def switch_push(name):
-        # Native has no fakie from a board launched backward at rest (it brakes and pushes the other way), so the push
+        # The simulation has no fakie from a board launched backward at rest (it brakes and pushes the other way), so the push
         # comes from a real fakie, the quarter's straight air landed (as switch_landing): pushing .5 s after the
         # touch-down (on the flat, past the face's foot) turns the rider round at once, then pushes riding switch.
-        # The same launch does not always fly the same air (Native's too: now and then the board yaws on the face and
+        # The same launch does not always fly the same air (the simulation's too: now and then the board yaws on the face and
         # flies longer, H37): up to three tries for the straight one, 35 to 50 frames up.
         for _ in range(3):
             rows = record("live.FILM_DIST=420.0; live.FILM_DROP=10.0\n"

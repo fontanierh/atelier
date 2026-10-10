@@ -70,10 +70,10 @@ def convert_animation_metadata(source,destination):
         value=json.loads(path.read_text()); data=pack_metadata(value)
         expected=path.with_suffix('.raw')
         if expected.exists() and data!=expected.read_bytes(): raise AssertionError(f'Original metadata export differs: {path.name}')
-        native=destination/(path.stem+'.skate'); native.write_bytes(data)
-        banks.append(dict(file=native.name,source_bank=value['source_bank'],source_sha256=value['source_sha256'],source_bytes=value['source_bytes'],
+        simulation=destination/(path.stem+'.skate'); simulation.write_bytes(data)
+        banks.append(dict(file=simulation.name,source_bank=value['source_bank'],source_sha256=value['source_sha256'],source_bytes=value['source_bytes'],
                           records={key:len(value.get(key,[])) for key in ('clips','phase_blends','blend_spaces','selectors','selection_spaces','unsupported_trees')},
-                          attributes=sum(len(c['attributes']) for c in value['clips']),native_bytes=len(data),sha256=hashlib.sha256(data).hexdigest()))
+                          attributes=sum(len(c['attributes']) for c in value['clips']),simulation_bytes=len(data),sha256=hashlib.sha256(data).hexdigest()))
     if not banks: raise ValueError('No original animation metadata exports')
     report=dict(format='ATMETA01',banks=banks)
     (destination/'metadata-manifest.json').write_text(json.dumps(report,indent=2)+'\n')

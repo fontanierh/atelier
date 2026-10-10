@@ -19,7 +19,7 @@ from reference_build import build_probe
 from session_parity import PLUGIN,REFERENCE_REVISION,digest
 
 STATES=(100,101,102,103,104,105,200,201,202,300,400,401,402,403,404,405,500,501,502,503,600,601,602,700,701,702)
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 class Writer:
     def __init__(self):self.data=bytearray()
     def word(self,v):self.data.extend(struct.pack('<I',int(v)&0xffffffff))
@@ -141,18 +141,18 @@ def build_reference(output,target):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
-    reference=build_reference(output,args.target_dir);snapshot=output/'native-source';snapshot.mkdir(exist_ok=True)
-    files=('NativeMath.h','NativeMath.cpp','PhysicalPhase.h','PhysicalPhase.cpp','CentreOfMassFilter.h','CentreOfMassFilter.cpp')
+    reference=build_reference(output,args.target_dir);snapshot=output/'simulation-source';snapshot.mkdir(exist_ok=True)
+    files=('SimulationMath.h','SimulationMath.cpp','PhysicalPhase.h','PhysicalPhase.cpp','CentreOfMassFilter.h','CentreOfMassFilter.cpp')
     hashes={}
     for name in files:shutil.copy2(CODE/name,snapshot/name);hashes[name]=digest(snapshot/name)
-    probe=PLUGIN/'Tests/Native/physical_phase_probe.cpp';shutil.copy2(probe,snapshot/probe.name);hashes[probe.name]=digest(probe)
-    native=output/'physical-phase-native';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/name) for name in ('NativeMath.cpp','PhysicalPhase.cpp','CentreOfMassFilter.cpp','physical_phase_probe.cpp')],'-o',str(native)],check=True)
-    data,cases=corpus();(output/'input.bin').write_bytes(data);expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(native)],input=data)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    probe=PLUGIN/'Tests/Simulation/physical_phase_probe.cpp';shutil.copy2(probe,snapshot/probe.name);hashes[probe.name]=digest(probe)
+    simulation=output/'physical-phase-simulation';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/name) for name in ('SimulationMath.cpp','PhysicalPhase.cpp','CentreOfMassFilter.cpp','physical_phase_probe.cpp')],'-o',str(simulation)],check=True)
+    data,cases=corpus();(output/'input.bin').write_bytes(data);expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(simulation)],input=data)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b),min(len(expected),len(actual)));failure=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(output/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        at=next((i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b),min(len(expected),len(actual)));failure=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(output/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     proof=coverage(expected,cases)
     for name,sha in hashes.items():assert digest(snapshot/name)==sha
-    report=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),operations=sum(len(rows) for _,rows in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(data).hexdigest(),immutable_native_sha256=hashes,coverage=proof,boundary='Whole original phase buffers and host exchange, all four command/event variants, complete output snapshots, all26 state identities/helpers and full COM retained-state lifecycle. Coordinator, player state selection and physical-output production remain their own concrete owners.')
+    report=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),operations=sum(len(rows) for _,rows in cases),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(data).hexdigest(),immutable_simulation_sha256=hashes,coverage=proof,boundary='Whole original phase buffers and host exchange, all four command/event variants, complete output snapshots, all26 state identities/helpers and full COM retained-state lifecycle. Coordinator, player state selection and physical-output production remain their own concrete owners.')
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 if __name__=='__main__':main()

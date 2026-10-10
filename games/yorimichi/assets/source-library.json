@@ -3173,11 +3173,5 @@
       "bytes": 385333,
       "sha256": "8de60cf7892e108b9815e6954d8e157100c3929b25a4b2b88c44457746b41ec3"
     }
-  },
-  "native_skating": {
-    "directory": "unreal/Content/Data/SkateNative",
-    "motion": "skate/motion",
-    "manifest": "package-manifest.json",
-    "sha256": "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d"
   }
 }

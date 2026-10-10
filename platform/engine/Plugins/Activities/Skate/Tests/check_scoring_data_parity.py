@@ -19,8 +19,8 @@ from check_skeleton_input_runtime_parity import source
 from reference_build import build_probe
 from session_parity import REFERENCE_REVISION, digest
 
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
-UNITS=('NativeMath','NameId','Settings','StockSettingsReader','AnimationName','ScoringCatalog','ScoringData')
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
+UNITS=('SimulationMath','NameId','Settings','StockSettingsReader','AnimationName','ScoringCatalog','ScoringData')
 SCORABLE='Hash_6918469984A8C596'
 COLLECTOR='Hash_546C36B656038E04'
 TUNING='Hash_349215E2E817703C'
@@ -116,7 +116,7 @@ def fixtures(assets):
             if typ in('float','integer','word'):
                 word=struct.unpack('>I',struct.pack('>f',rng.uniform(-1e4,1e4)))[0]if typ=='float'else rng.getrandbits(32)
                 value['data']=f'{word:08x}'
-        row(data,SCORABLE,identifiers[0][0])['fields']['Hash_843613E915014627']['data']=f'Native ローカル trick {n}\x00 ✓'
+        row(data,SCORABLE,identifiers[0][0])['fields']['Hash_843613E915014627']['data']=f'Simulation ローカル trick {n}\x00 ✓'
         add(f'varied-raw-words-label-{n:02d}',data,True)
     return result,order
 
@@ -141,17 +141,17 @@ def decode(raw):
     return attempts[0]['error']
 
 def prepare(output,assets):
-    output.mkdir(parents=True,exist_ok=True);snapshot=output/'native-source'
+    output.mkdir(parents=True,exist_ok=True);snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    for p in[*sorted(CODE.glob('*.h')),*[CODE/(unit+'.cpp')for unit in UNITS],PLUGIN/'Tests/Native/scoring_data_probe.cpp']:shutil.copy2(p,snapshot/p.name)
+    for p in[*sorted(CODE.glob('*.h')),*[CODE/(unit+'.cpp')for unit in UNITS],PLUGIN/'Tests/Simulation/scoring_data_probe.cpp']:shutil.copy2(p,snapshot/p.name)
     original=source('crates/skate-data/src/scoring.rs');template=PLUGIN/'Tests/Reference/scoring_data_probe.rs';text=template.read_text();assert text.count('// ORIGINAL_SCORING_DATA')==1
     generated=output/'scoring-data-reference.rs';generated.write_text(text.replace('// ORIGINAL_SCORING_DATA',original));assert original.encode()in generated.read_bytes()
-    provenance=dict(reference_revision=REFERENCE_REVISION,original_scoring_data_sha256=hashlib.sha256(original.encode()).hexdigest(),probe_template_sha256=digest(template),native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},units=UNITS)
+    provenance=dict(reference_revision=REFERENCE_REVISION,original_scoring_data_sha256=hashlib.sha256(original.encode()).hexdigest(),probe_template_sha256=digest(template),simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},units=UNITS)
     # Keep every scoring definition, parent and tuning record unchanged. The
     # unrelated 6,533 stock records otherwise dominate repeated pure-loader
     # execution. --baseline-output asserts byte identity with the complete
-    # bank for every already recorded original/native fixture.
+    # bank for every already recorded original/simulation fixture.
     complete=assets/'private/stock/skater-collections.json';data=json.loads(complete.read_text())
     categories={converter.name_id(c)for c in(SCORABLE,COLLECTOR,TUNING)}
     retained=[r for r in data['collections']if converter.name_id(r['class'])in categories]
@@ -160,10 +160,10 @@ def prepare(output,assets):
         if r['parent']:assert(converter.name_id(r['class']),converter.name_id(r['parent']))in identities
     scoring_assets=output/'stock-assets';path=scoring_assets/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(dict(version=data['version'],collections=retained))+'\n')
     provenance.update(complete_stock_json_sha256=digest(complete),scoring_stock_json_sha256=digest(path),complete_stock_records=len(data['collections']),retained_scoring_records=len(retained),stock_filter='Only unrelated categories removed; every scoring record/field/parent remains unchanged in original order. Entire full-bank output is independently compared where baseline evidence exists.')
-    stock=output/'stock.native';stock.write_bytes(converter.encode_settings(path))
+    stock=output/'stock.simulation';stock.write_bytes(converter.encode_settings(path))
     cases,order=fixtures(assets);records=[]
     for index,case in enumerate(cases):
-        folder=output/'fixtures'/f'{index:03d}-{case["label"]}';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(case['data'])+'\n');bank=folder/'settings.native';bank.write_bytes(converter.encode_settings(path));records.append({k:v for k,v in case.items()if k!='data'}|dict(folder=str(folder),bank=str(bank),json_sha256=digest(path),native_sha256=digest(bank)))
+        folder=output/'fixtures'/f'{index:03d}-{case["label"]}';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(case['data'])+'\n');bank=folder/'settings.simulation';bank.write_bytes(converter.encode_settings(path));records.append({k:v for k,v in case.items()if k!='data'}|dict(folder=str(folder),bank=str(bank),json_sha256=digest(path),simulation_sha256=digest(bank)))
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');(output/'fixtures.json').write_text(json.dumps(records,indent=2)+'\n')
     return snapshot,generated,records,order
 
@@ -172,19 +172,19 @@ def main():
     for key in('assets','output','target-dir'):parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--preflight',action='store_true');parser.add_argument('--baseline-output',type=Path);a=parser.parse_args();out=a.output.resolve();assets=a.assets.resolve();snapshot,generated,fixtures,order=prepare(out,assets)
     if a.preflight:print(json.dumps(dict(fixtures=len(fixtures),success=sum(f['success']for f in fixtures),read_positions=len(order),units=len(UNITS)),indent=2));return
-    reference=build_probe(out,'scoring-data-reference',generated,a.target_dir,extra_sources=ALIASES);native=out/'scoring-data-native'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'scoring_data_probe.cpp'),'-o',str(native)],check=True)
+    reference=build_probe(out,'scoring-data-reference',generated,a.target_dir,extra_sources=ALIASES);simulation=out/'scoring-data-simulation'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'scoring_data_probe.cpp'),'-o',str(simulation)],check=True)
     total=0;combined=hashlib.sha256();results=[];first_errors={};baseline_cases=0
     for fixture in fixtures:
-        folder=Path(fixture['folder']);expected=subprocess.check_output([str(reference),str(out/'stock-assets'),str(folder)]);actual=subprocess.check_output([str(native),str(out/'stock.native'),fixture['bank']]);(folder/'reference.bin').write_bytes(expected);(folder/'native.bin').write_bytes(actual)
+        folder=Path(fixture['folder']);expected=subprocess.check_output([str(reference),str(out/'stock-assets'),str(folder)]);actual=subprocess.check_output([str(simulation),str(out/'stock.simulation'),fixture['bank']]);(folder/'reference.bin').write_bytes(expected);(folder/'simulation.bin').write_bytes(actual)
         if a.baseline_output:
             previous=a.baseline_output.resolve()/'fixtures'/folder.name
-            if(previous/'reference.bin').exists()and(previous/'native.bin').exists():
+            if(previous/'reference.bin').exists()and(previous/'simulation.bin').exists():
                 assert(previous/'reference.bin').read_bytes()==expected,(fixture['label'],'full-bank original baseline changed')
-                assert(previous/'native.bin').read_bytes()==actual,(fixture['label'],'full-bank native baseline changed')
+                assert(previous/'simulation.bin').read_bytes()==actual,(fixture['label'],'full-bank simulation baseline changed')
                 baseline_cases+=1
         if expected!=actual:
-            byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));failure=dict(fixture=fixture['label'],byte=byte,word=byte//4,reference_bytes=len(expected),native_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+            byte=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));failure=dict(fixture=fixture['label'],byte=byte,word=byte//4,reference_bytes=len(expected),simulation_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
         error=decode(expected);assert(error is None)==fixture['success'],(fixture['label'],error,fixture['success'])
         if (fixture['label'].endswith('-width')and error is not None)or fixture['label']=='01-type':first_errors[fixture['first_position']]=error
         if fixture['second_position']is not None:assert error==first_errors[fixture['first_position']],(fixture['label'],error,first_errors)

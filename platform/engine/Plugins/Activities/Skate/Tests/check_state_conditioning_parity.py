@@ -165,19 +165,19 @@ def prepare_reference(output):
     path=output/'state-conditioning-reference.rs';path.write_text(source);report['probe_sha256']=digest(path)
     (output/'source-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return path
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();units=('NativeMath','NameId','Settings','StockSettingsReader','AnimationName','FilteredState','LandingQuality')
+    snapshot.mkdir();units=('SimulationMath','NameId','Settings','StockSettingsReader','AnimationName','FilteredState','LandingQuality')
     for p in list(live.glob('*.h'))+[live/(u+'.cpp') for u in units]:shutil.copy2(p,snapshot/p.name)
-    probe=snapshot/'state_conditioning_probe.cpp';shutil.copy2(PLUGIN/'Tests/Native/state_conditioning_probe.cpp',probe)
+    probe=snapshot/'state_conditioning_probe.cpp';shutil.copy2(PLUGIN/'Tests/Simulation/state_conditioning_probe.cpp',probe)
     transport=(snapshot/'GrindFilteredOutput.h').read_text();start=transport.index('struct GrindFilteredOutput\n{');end=transport.index('\n};',start)+3;declaration=transport[start:end]
     assert hashlib.sha256(declaration.encode()).hexdigest()=='0a4bdb6d4792e87633638ce03405c10e018edd3fe0b30b2b8307041fe3c0c78c'
     reconstructed=(snapshot/'FilteredState.h').read_text().replace('#include "GrindFilteredOutput.h"','#include "GrindRuntime.h"')
-    assert hashlib.sha256(reconstructed.encode()).hexdigest()=='d4411dbb4b4357a212230e3498b74f828947b6defb57b0922d8c9e6a75f2a12a'
+    assert hashlib.sha256(reconstructed.encode()).hexdigest()=='f743fa1cc68c38edc801aa27cda4676fdaa4290a363a12b4fcf183df53864cac'
     report=dict(immutable_sources={p.name:digest(p) for p in sorted(snapshot.iterdir())},grind_transport_extraction=dict(header_sha256=digest(snapshot/'GrindFilteredOutput.h'),declaration_sha256=hashlib.sha256(declaration.encode()).hexdigest(),previous_filtered_header_sha256=hashlib.sha256(reconstructed.encode()).hexdigest(),scope='Existing exact transport reused after declaration-only extraction; no duplicate storage/layout/numerical change.'))
-    (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
-    binary=output/'state-conditioning-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp')) for u in units],str(probe),'-o',str(binary)],check=True);return binary
+    (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+    binary=output/'state-conditioning-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp')) for u in units],str(probe),'-o',str(binary)],check=True);return binary
 
 def settings_fixtures(original):
     fixtures=[dict(label='stock',data=original,error='')];queries=[('physics_animation','default',name,'words') for name in ('LandingSketchyTwistSpin','LandingSketchySideSpeed')]
@@ -206,18 +206,18 @@ def main():
     prefix_audit=dict(histories=28,commands=4056,input_bytes=len(prefix),input_sha256=prefix_sha,scope='All previously frozen commands remain byte-identical; one reachable named-grind history is appended.')
     (output/'corpus-prefix-preservation.json').write_text(json.dumps(prefix_audit,indent=2)+'\n')
     blob=encode(programs);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(programs,indent=2)+'\n')
-    reference=build_probe(output,'state-conditioning-reference',prepare_reference(output),args.target_dir);native=build_native(output)
-    original=json.loads((args.assets/'private/stock/skater-collections.json').read_text());settings=output/'settings.native';results=[];proof=None;total=0
+    reference=build_probe(output,'state-conditioning-reference',prepare_reference(output),args.target_dir);simulation=build_simulation(output)
+    original=json.loads((args.assets/'private/stock/skater-collections.json').read_text());settings=output/'settings.simulation';results=[];proof=None;total=0
     for n,fixture in enumerate(settings_fixtures(original)):
         folder=output/f'settings-{n}';path=folder/'private/stock/skater-collections.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(fixture['data']));settings.write_bytes(converter.encode_settings(path));commands=blob if n==0 else encode([])
-        expected=subprocess.check_output([str(reference),str(folder)],input=commands);actual=subprocess.check_output([str(native),str(settings)],input=commands);(folder/'reference.bin').write_bytes(expected);(folder/'native.bin').write_bytes(actual);total+=len(expected)
+        expected=subprocess.check_output([str(reference),str(folder)],input=commands);actual=subprocess.check_output([str(simulation),str(settings)],input=commands);(folder/'reference.bin').write_bytes(expected);(folder/'simulation.bin').write_bytes(actual);total+=len(expected)
         if expected!=actual:
             byte=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)));(output/'first-divergence.json').write_text(json.dumps(dict(fixture=n,label=fixture['label'],byte=byte,expected_bytes=len(expected),actual_bytes=len(actual)),indent=2)+'\n');raise AssertionError(f'State conditioning differs at fixture {n} byte {byte}')
         decoded=decode(expected,programs if n==0 else []);assert decoded['error']==fixture['error'] and decoded['loaded']==(not fixture['error']),(fixture['label'],decoded)
         if fixture['error']:assert decoded['settings']==floats([-.731,-.317,.137,.731,.517,.113,-.137,.317]*2),'failed loader mutated output'
         if n==0:proof=coverage(decoded,programs);(output/'reference-trace.json').write_text(json.dumps(decoded,indent=2)+'\n')
         results.append(dict(label=fixture['label'],error=decoded['error'],output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest()))
-    report=dict(passed=True,histories=len(programs),commands=sum(len(p['commands']) for p in programs),exact_output_bytes=total,coverage=proof,settings_fixtures=results,corpus_prefix_preservation=prefix_audit,comparison='Entire byte-identical core FilteredState and LandingQuality modules plus complete unchanged actual host landing-quality loader; every retained field, cached grind and curve word observed.',limitations='Explicit core completed-input boundary. Actual physical state Fill/chromosome/animation publication and overall frame scheduling are separate comparisons. Current source last-grind distance is preserved as supplied by the core, with actual host constant-zero producer tested in the subsequent adapter proof.',native_provenance_sha256=digest(output/'native-provenance.json'),source_provenance_sha256=digest(output/'source-provenance.json'))
+    report=dict(passed=True,histories=len(programs),commands=sum(len(p['commands']) for p in programs),exact_output_bytes=total,coverage=proof,settings_fixtures=results,corpus_prefix_preservation=prefix_audit,comparison='Entire byte-identical core FilteredState and LandingQuality modules plus complete unchanged actual host landing-quality loader; every retained field, cached grind and curve word observed.',limitations='Explicit core completed-input boundary. Actual physical state Fill/chromosome/animation publication and overall frame scheduling are separate comparisons. Current source last-grind distance is preserved as supplied by the core, with actual host constant-zero producer tested in the subsequent adapter proof.',simulation_provenance_sha256=digest(output/'simulation-provenance.json'),source_provenance_sha256=digest(output/'source-provenance.json'))
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 if __name__=='__main__':main()

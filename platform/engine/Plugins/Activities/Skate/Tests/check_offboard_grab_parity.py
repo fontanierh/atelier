@@ -96,7 +96,7 @@ def corpus():
   elif domain=='maximum-point-count':g['points']=[[-1+i/127,.3,1,0]for i in range(255)]
   else:g['approach']=[[0,0,-1,0]]*255
   commands=[[10,s['kind'],100],[1,s['kind'],100],query(),[3],sync(),sync(),[5],qualify((s['kind'],100)),[16]+fs([0,.3,0,.17,0,.3,1,0,0,.3,1,0]),[7],[5]]
-  programs.append(dict(label='original-valid native byte point/approach-count and zero-straight-length record domain/'+domain,world=worlds[0],registry=r,commands=commands))
+  programs.append(dict(label='original-valid simulation byte point/approach-count and zero-straight-length record domain/'+domain,world=worlds[0],registry=r,commands=commands))
  failures=('object-id','variant','descriptor','geometry-id','empty-points','point-count','approach-count','nonfinite-point','nonfinite-approach','nonfinite-frame','nonfinite-vector','assembly-id','part-id','rates-id','duplicate-object','binding-zero','binding-missing','binding-duplicate')
  for failure in failures:
   r=copy.deepcopy(one);o=r['objects'][0];g=o['splines'][0]['geometry']
@@ -138,16 +138,16 @@ def corpus():
  return struct.pack('<I',len(records))+b''.join(records),cases
 def aliases():return {'atelier-host/src/physics/offboard/grab_scene/collision.rs':HOST+'offboard/grab_scene/collision.rs','atelier-host/src/physics/biped_ground/grab_runtime/selection.rs':HOST+'biped_ground/grab_runtime/selection.rs'}
 def prepare(output):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in native.glob('*.h'):shutil.copy2(p,snapshot/p.name)
- for u in UNITS:shutil.copy2(native/f'{u}.cpp',snapshot/f'{u}.cpp')
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
- bodies={name:source(HOST+path)for name,path in(('SCENE','offboard/grab_scene.rs'),('OWNER','biped_ground/grab_runtime.rs'))};probe=snapshot/'offboard_grab_probe.cpp';probe.write_text((PLUGIN/'Tests/Native/offboard_grab_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));text=(PLUGIN/'Tests/Reference/offboard_grab_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world)
+ for p in simulation.glob('*.h'):shutil.copy2(p,snapshot/p.name)
+ for u in UNITS:shutil.copy2(simulation/f'{u}.cpp',snapshot/f'{u}.cpp')
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
+ bodies={name:source(HOST+path)for name,path in(('SCENE','offboard/grab_scene.rs'),('OWNER','biped_ground/grab_runtime.rs'))};probe=snapshot/'offboard_grab_probe.cpp';probe.write_text((PLUGIN/'Tests/Simulation/offboard_grab_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world));text=(PLUGIN/'Tests/Reference/offboard_grab_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world)
  for name,body in bodies.items():text=text.replace('// ORIGINAL_'+name,body)
- generated=output/'offboard-grab-reference.rs';generated.write_text(text);report=dict(native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256={n:hashlib.sha256(b.encode()).hexdigest()for n,b in bodies.items()},original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Whole unchanged host authored Registry/Scene and retained PlayerGrabSpline Owner, complete unchanged core record/registry/query/qualify/polyline/best modules. Geometry/provider/assembly data are explicit actual producer transports; all numeric records and collision/validation results are computed by original/native owners.')
- (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
+ generated=output/'offboard-grab-reference.rs';generated.write_text(text);report=dict(simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in snapshot.iterdir()},original_host_body_sha256={n:hashlib.sha256(b.encode()).hexdigest()for n,b in bodies.items()},original_alias_sha256={d:hashlib.sha256(source(s).encode()).hexdigest()for d,s in aliases().items()},boundary='Whole unchanged host authored Registry/Scene and retained PlayerGrabSpline Owner, complete unchanged core record/registry/query/qualify/polyline/best modules. Geometry/provider/assembly data are explicit actual producer transports; all numeric records and collision/validation results are computed by original/simulation owners.')
+ (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return probe,snapshot,generated
 def audit_input(blob,cases):
  r=Reader(blob);assert r.word()==len(cases)
  def world():r.skip(18*r.word());r.skip(1);r.skip(r.word());r.skip(36*r.word());r.skip(12*r.word());r.skip(1)
@@ -226,8 +226,8 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
  blob,cases=corpus();audit_input(blob,cases);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(output);summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=output/'offboard-grab-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(output,'offboard-grab-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
- expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(native)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+ simulation=output/'offboard-grab-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(output,'offboard-grab-reference',generated,a.target_dir,extra_sources=aliases(),bevy=True)
+ expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(simulation)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;words=struct.unpack('<'+'I'*(len(expected)//4),expected);at=1
   for c in cases:

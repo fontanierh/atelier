@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Measure the skate feel (FSkateFeel / FeelTuning) on the native offline QA session.
+"""Measure the skate feel (FSkateFeel / FeelTuning) on the simulation offline QA session.
 
 Each case rides the same inputs with stock feel and with one value changed, and checks that the change does what the
 menu says: the defaults are bit-exact with no feel at all, gravity keeps jump heights but stretches air time, a gentler
 flick pops higher with a lower flick pace, the 120 Hz flick reading reads the same flicks with the same window and pace
 and keeps a fast hardflip's bottom point that 60 Hz misses, rolling resistance and braking change the coast, and rail magnetism catches
-a rail from farther. Requires the assembled native package (skate.runtime) and the explicitly built test-only gameplay-session-cli
-(Tests/build_native_session_cli.py --compile, under the render lock and memory guard). Results go to
-build/yorimichi/skate-native/feel.
+a rail from farther. Requires the assembled simulation package (skate.runtime) and the explicitly built test-only gameplay-session-cli
+(Tests/build_simulation_session_cli.py --compile, under the render lock and memory guard). Results go to
+build/yorimichi/skate-simulation/feel.
 """
 import argparse
 import json
@@ -18,9 +18,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
-BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
-OUTPUT = ROOT / 'build/yorimichi/skate-native/feel'
+SIMULATION_PACKAGE = ROOT / 'build/yorimichi/skate-simulation/package'  # atelier build yorimichi skate.runtime
+BINARY = ROOT / 'build/skate-simulation-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
+OUTPUT = ROOT / 'build/yorimichi/skate-simulation/feel'
 FLAT = [[[-200, 0, -200], [-200, 0, 200], [200, 0, 200]], [[-200, 0, -200], [200, 0, 200], [200, 0, -200]]]
 FLAT_WORLD = {'triangles': FLAT, 'rails': [], 'spawn': [0, 0, 0], 'heading': 0}
 PUSH, BRAKE = 0x1000, 0x2000
@@ -58,10 +58,10 @@ class Session:
 
     def read(self):
         if not self.selector.select(60):
-            raise TimeoutError('No native QA response within 60 seconds')
+            raise TimeoutError('No simulation QA response within 60 seconds')
         line = self.proc.stdout.readline()
         if not line:
-            raise RuntimeError('Native QA exited; see its log in ' + str(OUTPUT))
+            raise RuntimeError('Simulation QA exited; see its log in ' + str(OUTPUT))
         result = json.loads(line)
         if result['type'] == 'error':
             raise RuntimeError(result['message'])
@@ -206,11 +206,11 @@ def coast(session, feel, buttons=0, seconds=3, start=6):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--native-package', type=Path, default=NATIVE_PACKAGE)
-    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline native QA executable')
+    parser.add_argument('--simulation-package', type=Path, default=SIMULATION_PACKAGE)
+    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline simulation QA executable')
     args = parser.parse_args()
     if not args.binary.is_file():
-        parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
+        parser.error('Simulation QA executable is missing; build Tests/build_simulation_session_cli.py --compile under the render lock and memory guard first')
     OUTPUT.mkdir(parents=True, exist_ok=True)
     report, failures = {}, []
 
@@ -219,7 +219,7 @@ def main():
         if not ok:
             failures.append(name)
 
-    flat = Session(args.binary, args.native_package, FLAT_WORLD, 'flat')
+    flat = Session(args.binary, args.simulation_package, FLAT_WORLD, 'flat')
     try:
         # Stock feel, spelled out, is the session with no feel at all, bit for bit.
         ones = {k: 1 for k in ('flick_radius', 'flick_window', 'flick_pace', 'gravity', 'boneless', 'hippy',
@@ -345,7 +345,7 @@ def main():
     report['rail'] = {}
     for offset in (1.5, 2, 2.5, 3, 3.5):
         rail = [[offset, .4, -20], [offset, .4, 60]]
-        session = Session(args.binary, args.native_package,
+        session = Session(args.binary, args.simulation_package,
                           {'triangles': FLAT, 'rails': [rail], 'spawn': [0, 0, 0], 'heading': 0}, f'rail_{offset}')
         try:
             row = {}

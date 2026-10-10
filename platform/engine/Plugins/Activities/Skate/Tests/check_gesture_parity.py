@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Compare original Rust/PAT input with the C++ recognizer and native data, bit for bit.
+"""Compare original Rust/PAT input with the C++ recognizer and simulation data, bit for bit.
 
 Run under atelier.safety: this command compiles and executes both probes.
-All generated binaries, native data, replay inputs, outputs and reports go to --output.
+All generated binaries, simulation data, replay inputs, outputs and reports go to --output.
 """
 import argparse
 import bisect
@@ -16,7 +16,7 @@ import struct
 import subprocess
 
 PLUGIN = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('convert_native_data', PLUGIN/'Tools/convert_native_data.py')
+spec = importlib.util.spec_from_file_location('convert_simulation_data', PLUGIN/'Tools/convert_simulation_data.py')
 converter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(converter)
 
@@ -92,13 +92,13 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     source = args.assets.resolve()/'private/stock/data/joystick'
     sets = converter.gesture_sets(source)
-    native = output/'gestures.skate'
-    native.write_bytes(converter.encode_gestures(sets))
+    simulation = output/'gestures.skate'
+    simulation.write_bytes(converter.encode_gestures(sets))
     cpp = output/'gesture-cpp'
     rust = output/'gesture-reference'
-    code = PLUGIN/'Source/AtelierSkate/Private/Native'
+    code = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror',
-                    '-I', str(code), str(code/'Gestures.cpp'), str(PLUGIN/'Tests/Native/gesture_probe.cpp'),
+                    '-I', str(code), str(code/'Gestures.cpp'), str(PLUGIN/'Tests/Simulation/gesture_probe.cpp'),
                     '-o', str(cpp)], check=True)
     rust_source = historical.stage_path_probe(PLUGIN/'Tests/Reference/gesture_probe.rs', output, {
         '../../ThirdParty/skate-runtime/crates/skate-core/src/input/gesture.rs': 'crates/skate-core/src/input/gesture.rs',
@@ -106,15 +106,15 @@ def main():
     subprocess.run(['rustc', '+1.97.1', '--edition=2024', '-O', str(rust_source),
                     '-o', str(rust)], check=True)
     reference_data = execute([str(rust), str(source), 'dump'], output/'reference-data.bin')
-    cpp_data = execute([str(cpp), str(native), 'dump'], output/'cpp-data.bin')
-    if reference_data != native.read_bytes() or cpp_data != reference_data:
-        raise AssertionError('Native conversion or C++ loading changed the source patterns')
+    cpp_data = execute([str(cpp), str(simulation), 'dump'], output/'cpp-data.bin')
+    if reference_data != simulation.read_bytes() or cpp_data != reference_data:
+        raise AssertionError('The simulation conversion or C++ loading changed the source patterns')
     stream, spans = corpus(sets)
     replay = output/'input.bin'
     replay.write_bytes(stream)
     (output/'cases.json').write_text(json.dumps(spans, indent=2)+'\n')
     reference = execute([str(rust), str(source), 'replay'], output/'reference.bin', replay)
-    actual = execute([str(cpp), str(native), 'replay'], output/'cpp.bin', replay)
+    actual = execute([str(cpp), str(simulation), 'replay'], output/'cpp.bin', replay)
     count = len(stream)//24
     if len(reference) != count*20 or len(actual) != len(reference):
         raise AssertionError(f'Output count mismatch: {count=}, {len(reference)=}, {len(actual)=}')
@@ -128,18 +128,18 @@ def main():
         (output/'first-divergence.json').write_text(json.dumps(details, indent=2)+'\n')
         raise AssertionError(details)
     # A decoder must reject truncated/extended data instead of partially installing it.
-    for index, malformed in enumerate((b'', native.read_bytes()[:11], native.read_bytes()[:-1], native.read_bytes()+b'\0')):
+    for index, malformed in enumerate((b'', simulation.read_bytes()[:11], simulation.read_bytes()[:-1], simulation.read_bytes()+b'\0')):
         bad = output/f'invalid-{index}.skate'
         bad.write_bytes(malformed)
         result = subprocess.run([str(cpp), str(bad), 'dump'], capture_output=True)
         if result.returncode != 2:
-            raise AssertionError('C++ loader accepted malformed native data')
+            raise AssertionError('C++ loader accepted malformed simulation data')
     matches = sum(struct.unpack_from('<I', reference, i*20+4)[0] != 0xffffffff for i in range(count))
     if matches == 0:
         raise AssertionError('Replay did not exercise recognition')
     report = dict(passed=True, comparison='exact output bytes; no floating-point tolerance',
                   patterns=sum(len(group['patterns']) for group in sets), cases=len(spans), records=count, matches=matches,
-                  native_data_sha256=hashlib.sha256(reference_data).hexdigest(),
+                  simulation_data_sha256=hashlib.sha256(reference_data).hexdigest(),
                   inputs_sha256=hashlib.sha256(stream).hexdigest(), outputs_sha256=hashlib.sha256(reference).hexdigest(),
                   reference_sources={'ThirdParty/skate-runtime/'+relative: hashlib.sha256(historical.source_bytes(relative)).hexdigest() for relative in (
                       'crates/skate-core/src/input/gesture.rs',

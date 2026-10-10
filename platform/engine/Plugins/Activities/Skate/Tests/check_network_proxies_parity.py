@@ -87,12 +87,12 @@ def corpus():
 
 def original(root,revision,relative):return subprocess.check_output(['git','show',f'{revision}:{relative}'],cwd=root)
 def build(output,target_dir):
-    native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    units=('NativeMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','SkeletonPoseFrames','SkeletonAnimationRecord','SkeletonPhysicalRecord','SkeletonBodyDefinition','SkeletonBody','BoardGroundAngle','SkeletonCollisionMode','SkeletonCollisionFeedback','SkeletonPoseErrors','Geometry','GeometrySweep','WorldGeometry','GeometryFeatures','GeometryPrism','GeometryTriangleFixup','WorldPrimitiveContact','GeometryPrimitivePair','ContactRetention','WorldContactProducer','SkeletonColliders','AssemblyContacts','SkeletonContactReports','NetworkProxies')
-    for name in [f'{n}.{e}' for n in units for e in ('h','cpp')]+['GeometryTypes.h','BoardTypes.h','SkeletonTargets.h','SkeletonDriveFrames.h','PrimitiveGeometry.h']:shutil.copy2(native/name,snapshot/name)
-    cpp_prefixes=[PLUGIN/f'Tests/Native/skeleton_{n}_probe.cpp' for n in ('body','collision','contact_provider')];cpp_probe=PLUGIN/'Tests/Native/network_proxies_probe.cpp';combined=snapshot/cpp_probe.name
+    units=('SimulationMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','SkeletonPoseFrames','SkeletonAnimationRecord','SkeletonPhysicalRecord','SkeletonBodyDefinition','SkeletonBody','BoardGroundAngle','SkeletonCollisionMode','SkeletonCollisionFeedback','SkeletonPoseErrors','Geometry','GeometrySweep','WorldGeometry','GeometryFeatures','GeometryPrism','GeometryTriangleFixup','WorldPrimitiveContact','GeometryPrimitivePair','ContactRetention','WorldContactProducer','SkeletonColliders','AssemblyContacts','SkeletonContactReports','NetworkProxies')
+    for name in [f'{n}.{e}' for n in units for e in ('h','cpp')]+['GeometryTypes.h','BoardTypes.h','SkeletonTargets.h','SkeletonDriveFrames.h','PrimitiveGeometry.h']:shutil.copy2(simulation/name,snapshot/name)
+    cpp_prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{n}_probe.cpp' for n in ('body','collision','contact_provider')];cpp_probe=PLUGIN/'Tests/Simulation/network_proxies_probe.cpp';combined=snapshot/cpp_probe.name
     combined.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+''.join(p.read_text().split('int main()',1)[0] for p in cpp_prefixes)+'\n#pragma clang diagnostic pop\n'+cpp_probe.read_text());cpp=output/'network-proxies-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{n}.cpp') for n in units],str(combined),'-o',str(cpp)],check=True)
     root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],cwd=PLUGIN,text=True).strip());revision=subprocess.check_output(['git','rev-parse',REFERENCE_REVISION],cwd=root,text=True).strip();relative=(PLUGIN/'ThirdParty/skate-runtime/crates/skate-host/src/physics').relative_to(root).as_posix()
@@ -110,8 +110,8 @@ def build(output,target_dir):
     if text.count(network)!=1 or text.count(loop)!=2:raise AssertionError('Original producer or remote loop was modified while forwarding')
     generated=output/'network-proxies-combined.rs';generated.write_bytes(prefix.encode()+text)
     reference=build_probe(output,'network-proxies-reference',generated,target_dir,bevy=True,extra_sources={'atelier-host/src/proxy_oracle/assembly_contacts.rs':'crates/skate-host/src/physics/solve/assembly_contacts.rs'})
-    report=dict(native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (*cpp_prefixes,cpp_probe,*rust_prefixes,rust_probe)},original_network_sha256=hashlib.sha256(network).hexdigest(),original_solve_sha256=hashlib.sha256(solve).hexdigest(),original_assembly_sha256=hashlib.sha256(assembly).hexdigest(),verbatim_remote_loop_sha256=hashlib.sha256(loop).hexdigest(),network_forward_adapter_sha256=hashlib.sha256(adapter).hexdigest(),cpp_binary_sha256=digest(cpp))
-    (output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return cpp,reference
+    report=dict(simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},probe_sha256={p.name:digest(p) for p in (*cpp_prefixes,cpp_probe,*rust_prefixes,rust_probe)},original_network_sha256=hashlib.sha256(network).hexdigest(),original_solve_sha256=hashlib.sha256(solve).hexdigest(),original_assembly_sha256=hashlib.sha256(assembly).hexdigest(),verbatim_remote_loop_sha256=hashlib.sha256(loop).hexdigest(),network_forward_adapter_sha256=hashlib.sha256(adapter).hexdigest(),cpp_binary_sha256=digest(cpp))
+    (output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return cpp,reference
 
 def decode(data,cases):
     words=struct.unpack('<'+'I'*(len(data)//4),data);at=0;rows=[]
@@ -179,7 +179,7 @@ def coverage(rows,cases):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
-    for name in ('result.json','first-divergence.json','native-provenance.json'):(output/name).unlink(missing_ok=True)
+    for name in ('result.json','first-divergence.json','simulation-provenance.json'):(output/name).unlink(missing_ok=True)
     inputs,cases=corpus();(output/'input.bin').write_bytes(inputs);cpp,reference=build(output,args.target_dir);expected=subprocess.check_output([str(reference)],input=inputs);actual=subprocess.check_output([str(cpp)],input=inputs);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual);rows=decode(expected,cases);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if expected!=actual:
         first=next((i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b),min(len(expected),len(actual)));aligned=first//4*4;case=next((c for c in cases if c['first_output_word']*4<=first<(c['first_output_word']+c['output_words'])*4),None)

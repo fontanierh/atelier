@@ -1,22 +1,22 @@
-"""Import the native skating animation (the assembled package's animation and metadata) into /Game/SkateRide.
+"""Import the skating animation (the assembled package's animation and metadata) into /Game/SkateRide.
 
-* SK_SkateRider and SKEL_SkateRider: the native rig (36 bones, same names and hierarchy, TRAJECTORY at the root) in
+* SK_SkateRider and SKEL_SkateRider: the simulation rig (36 bones, same names and hierarchy, TRAJECTORY at the root) in
   its RIG_TPOSE reference pose, with a plain box body and board (rider_mesh.py), imported from a GLB by Interchange.
-* /Game/SkateRide/Clips/B<bank>/<CLIP>: one UAnimSequence per native clip, keyed one for one at the clip's own frame
-  rate (every frame, every bone, converted to Unreal space by native.py), root motion from TRAJECTORY with the root
-  locked to zero (the native runtime never composes the trajectory into its children either). The native clips are
-  deltas on RIG_TPOSE (the runtime's BindPose tree adds every clip onto it); the keys are that sum, the native local
-  pose (native.local_pose), so the sequences play as ordinary full-body animation on SK_SkateRider.
+* /Game/SkateRide/Clips/B<bank>/<CLIP>: one UAnimSequence per simulation clip, keyed one for one at the clip's own frame
+  rate (every frame, every bone, converted to Unreal space by simulation.py), root motion from TRAJECTORY with the root
+  locked to zero (the simulation runtime never composes the trajectory into its children either). The simulation clips are
+  deltas on RIG_TPOSE (the runtime's BindPose tree adds every clip onto it); the keys are that sum, the simulation local
+  pose (simulation.local_pose), so the sequences play as ordinary full-body animation on SK_SkateRider.
 * A float curve per metadata attribute, named after it (see README.md for the encoding; the manifest has the exact
   windows and payloads).
-* MDT_SkateRider: the native mirror partners as a mirror data table.
+* MDT_SkateRider: the simulation mirror partners as a mirror data table.
 * Content/Data/SkateRide/clips.json: the manifest the Ride runtime reads (rig, reference pose, per clip the asset,
   timing, root and loop motion, channel weights, events and mirror information).
 
 Compression is ACL Safe (full-precision rotations, translations and scales held to a 0.00001 cm error), so the
 compressed pose is the keyed pose; verify_clips.py measures it. A key the sequence's control rig would read as the
 reference pose (within its 1e-4 equality test, but not on it) carries a 0.0003 cm X offset so that it is kept
-(native.snap_guard). SKATE_RIDE_LIMIT=<n> or SKATE_RIDE_CLIPS=<a,b,...>
+(simulation.snap_guard). SKATE_RIDE_LIMIT=<n> or SKATE_RIDE_CLIPS=<a,b,...>
 import a subset (the manifest then says `partial`); SKATE_RIDE_BATCH=<i>/<n> runs one share of the clips per editor
 start (the build step runs several, as a heavy step must fit between other jobs' turns on the render lock).
 """
@@ -32,12 +32,12 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world'))
 sys.path.insert(0, str(HERE))
 import yori  # noqa: E402  (build/yorimichi = yori.OUT)
-import native as N  # noqa: E402
+import simulation as N  # noqa: E402
 import rider_mesh  # noqa: E402
 import unreal as U  # noqa: E402
 
 CONTENT = HERE.parents[1] / 'Content'
-BUNDLE = yori.OUT / 'skate-native' / 'package'  # the skate.runtime build step assembles it
+BUNDLE = yori.OUT / 'skate-simulation' / 'package'  # the skate.runtime build step assembles it
 DATA = CONTENT / 'Data' / 'SkateRide'
 OUT = yori.OUT / 'skate-ride'
 DEST = '/Game/SkateRide'
@@ -137,7 +137,7 @@ def import_rider(rig, pose):
 
 
 def check_rider(rig, pose, mesh, skeleton):
-    """The imported skeleton has the native names and parents, and its reference pose is RIG_TPOSE in Unreal space."""
+    """The imported skeleton has the simulation names and parents, and its reference pose is RIG_TPOSE in Unreal space."""
     ref = U.AnimPoseExtensions.get_reference_pose(skeleton)
     names = [str(n) for n in U.AnimPoseExtensions.get_bone_names(ref)]
     assert sorted(names) == sorted(b.name for b in rig.bones), names
@@ -335,7 +335,7 @@ def curve_identifier_maker():
 
 
 def motion_record(clip, rig, reference):
-    """Root (TRAJECTORY) motion and the native loop transform, in Unreal space, and where the board root and the hips
+    """Root (TRAJECTORY) motion and the simulation loop transform, in Unreal space, and where the board root and the hips
     sit relative to the root (their parent) at the first frame."""
     board, hips = (N.sample_to_unreal(N.local_pose(clip, 0, rig.index(b), reference))[0]
                    for b in ('SKATEBOARD_ROOT', 'HIPS'))
@@ -363,7 +363,7 @@ def channel_record(clip, rig):
 
 
 def mirror_rows(rig):
-    """Every bone the native rig mirrors, the centre bones onto themselves: Unreal leaves a bone without a row
+    """Every bone the simulation rig mirrors, the centre bones onto themselves: Unreal leaves a bone without a row
     unmirrored (UMirrorDataTable::FillMirrorBoneIndexes), as the engine's own table factory does for unmatched names."""
     return [dict(Name=b.name, MirroredName=rig.bones[b.mirror].name, MirrorEntryType='Bone', bEnabled=True)
             for b in rig.bones if b.mirror >= 0]
@@ -412,9 +412,9 @@ STATE = OUT / 'import-state.json'
 
 def fingerprint():
     """What the imported assets depend on: the code of these scripts (not their comments or docstrings, see
-    `native.source_digest`) and the native animation files."""
+    `simulation.source_digest`) and the simulation animation files."""
     digest = hashlib.sha256()
-    for path in [HERE / 'import_clips.py', HERE / 'native.py', HERE / 'rider_mesh.py']:
+    for path in [HERE / 'import_clips.py', HERE / 'simulation.py', HERE / 'rider_mesh.py']:
         digest.update(path.name.encode())
         digest.update(N.source_digest(path).encode())
     for path in [*sorted((BUNDLE / 'animation').rglob('*.skate')), *sorted((BUNDLE / 'metadata').glob('*.skate'))]:
@@ -456,12 +456,12 @@ def setup(rig, pose, key):
         mirror_table=mirror_path, mirror_table_rows=mirror_ok, mirror_axis=mirror_axis,
         compression=dict(bone=bone_settings.get_path_name().split('.')[0], codec='ACL safe: full-precision rotations, variable-rate vectors',
                          error_threshold_cm=ACL_ERROR_CM, curves=curve_settings.get_path_name().split('.')[0]),
-        space='Unreal: cm, X forward, Y right, Z up; native (x, y, z) m -> (z, -x, y) * 100, rotation (-z, x, -y, w)',
-        keys='every frame and bone: the native local pose, the clip sample (rotation normalised) added onto RIG_TPOSE '
+        space='Unreal: cm, X forward, Y right, Z up; simulation (x, y, z) m -> (z, -x, y) * 100, rotation (-z, x, -y, w)',
+        keys='every frame and bone: the simulation local pose, the clip sample (rotation normalised) added onto RIG_TPOSE '
              '(AddAnimationPose motion_is_a: scale ref.s*s, rotation ref.q*q, translation ref.q(t)+ref.t), rotation '
-             'normalised; no posture pose (POSTURE_*) and no BOARD_BACKWARDS layer, which the native runtime adds '
+             'normalised; no posture pose (POSTURE_*) and no BOARD_BACKWARDS layer, which the simulation runtime adds '
              'only when asked; a key within the control rig\'s 1e-4 equality of the reference pose but not on it is '
-             f'moved {N.SNAP_GUARD_CM} cm along X so the sequence keeps it (native.snap_guard; per clip '
+             f'moved {N.SNAP_GUARD_CM} cm along X so the sequence keeps it (simulation.snap_guard; per clip '
              'snap_guarded_keys)',
         rig=dict(bones=[b.name for b in rig.bones], parents=[b.parent for b in rig.bones],
                  parent_names=[rig.bones[b.parent].name if b.parent >= 0 else None for b in rig.bones],
@@ -524,7 +524,7 @@ def main():
     names = [p.stem for p in paths]
     if all(n in state['clips'] for n in names):
         clips = {n: state['clips'][n] for n in names}
-        manifest = dict(about='Native skating clips as Unreal assets (unreal/Scripts/skate_ride/README.md)',
+        manifest = dict(about='Skating clips as Unreal assets (unreal/Scripts/skate_ride/README.md)',
                         partial=partial, clip_count=len(clips), **head, clips=clips)
         (DATA / 'clips.json').write_text(json.dumps(manifest, indent=1) + '\n')
         log(f'manifest written: {len(clips)} clips')

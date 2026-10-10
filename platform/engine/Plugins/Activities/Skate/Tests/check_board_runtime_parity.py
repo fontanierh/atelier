@@ -160,27 +160,27 @@ def main():
     for name in ('result.json', 'first-divergence.json'):
         (output/name).unlink(missing_ok=True)
     reference = build_probe(output, 'board-runtime-reference', PLUGIN/'Tests/Reference/board_runtime_probe.rs', args.target_dir)
-    source = output/'native-source'
+    source = output/'simulation-source'
     if source.exists():
         shutil.rmtree(source)
     source.mkdir()
-    units = ('NativeMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
+    units = ('SimulationMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
              'ConstraintFrames', 'ConstraintSolver', 'JointBuild', 'DriveBuild', 'JointRecords',
              'TruckDriveFrames', 'DrivePreparation', 'HookDrive', 'BoardAssembly', 'ContactBuild',
              'ContactGeneration', 'BoardPose', 'ForceQueue', 'CollisionBody', 'BoardContactFeedback',
              'BoardStep', 'BoardRuntime')
     names = [f'{unit}.{ext}' for unit in units for ext in ('h', 'cpp')] + ['GeometryTypes.h', 'BoardTypes.h', 'ContactRetention.h']
     for name in names:
-        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, source/name)
-    shutil.copy2(PLUGIN/'Tests/Native/board_runtime_probe.cpp', source/'board_runtime_probe.cpp')
+        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name, source/name)
+    shutil.copy2(PLUGIN/'Tests/Simulation/board_runtime_probe.cpp', source/'board_runtime_probe.cpp')
     candidate = output/'board-runtime-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(source), *[str(source/f'{unit}.cpp') for unit in units],
                     str(source/'board_runtime_probe.cpp'), '-o', str(candidate)], check=True)
-    provenance = dict(native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(source.iterdir())},
+    provenance = dict(simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(source.iterdir())},
                       binary_sha256=hashlib.sha256(candidate.read_bytes()).hexdigest(),
                       compiler=subprocess.check_output(['clang++', '--version'], text=True).strip())
-    (output/'native-provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
+    (output/'simulation-provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
     inputs, labels = corpus()
     (output/'inputs.bin').write_bytes(inputs)
     expected = subprocess.check_output([str(reference)], input=inputs)
@@ -199,7 +199,7 @@ def main():
         raise AssertionError(report)
     result = dict(passed=True, streams=96, snapshots=len(labels), output_words=len(actual)//4, output_bytes=len(actual),
                   observed=dict(counts), sha256=hashlib.sha256(actual).hexdigest(),
-                  comparison='exact persistent board, attached shared constraints and integrated bodies, force queue, contacts, reports, pose/reset lifecycle; diagnostic cadence/presence only, native diagnostic representation differs; not gameplay skeleton producers')
+                  comparison='exact persistent board, attached shared constraints and integrated bodies, force queue, contacts, reports, pose/reset lifecycle; diagnostic cadence/presence only, simulation diagnostic representation differs; not gameplay skeleton producers')
     (output/'result.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2), flush=True)
 

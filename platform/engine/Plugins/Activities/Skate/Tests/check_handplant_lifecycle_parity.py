@@ -23,9 +23,9 @@ from check_gesture_parity import PLUGIN, converter
 from check_graph_parity import element, original_graph
 from session_parity import REFERENCE_REVISION, digest
 
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
 UNITS = tuple(dict.fromkeys((*skeleton.UNITS, *air.UNITS, *query.UNITS,
-    'NameId','Settings','StockSettingsReader','NativeMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase',
+    'NameId','Settings','StockSettingsReader','SimulationMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase',
     'PlayerGrindSurface', 'PlayerGrindInputWorld', 'BoardAnimation',
     'SkeletonAirFrames', 'SkeletonAirRuntime', 'HandplantSettings',
     'HandplantContact', 'HandplantRotation', 'HandplantTrajectory',
@@ -201,21 +201,21 @@ path="src/migration_probe.rs"
     (output / 'reference-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
     return binary
 
-def build_native(output, *, compile=True):
-    snapshot = output / 'native-source'
+def build_simulation(output, *, compile=True):
+    snapshot = output / 'simulation-source'
     if snapshot.exists(): shutil.rmtree(snapshot)
     snapshot.mkdir(); hashes = {}
     for p in [*sorted(CODE.glob('*.h')), *[CODE / (u + '.cpp') for u in UNITS]]:
         shutil.copy2(p, snapshot / p.name); hashes[p.name] = digest(snapshot / p.name)
     for name in ('handplant_probe.cpp', 'handplant_lifecycle_probe.cpp'):
-        p = PLUGIN / 'Tests/Native' / name; shutil.copy2(p, snapshot / name); hashes[name] = digest(snapshot / name)
-    binary = output / 'handplant-lifecycle-native'
+        p = PLUGIN / 'Tests/Simulation' / name; shutil.copy2(p, snapshot / name); hashes[name] = digest(snapshot / name)
+    binary = output / 'handplant-lifecycle-simulation'
     if compile:
         subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math',
             '-fno-exceptions', '-fno-rtti', '-Wall', '-Wextra', '-Werror', '-I', str(snapshot),
             *[str(snapshot / (u + '.cpp')) for u in UNITS],
             str(snapshot / 'handplant_lifecycle_probe.cpp'), '-o', str(binary)], check=True)
-    (output / 'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,
+    (output / 'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,
         units=UNITS, reused_probe='The complete unchanged numeric probe is included with its entry renamed solely to reuse wire/observation helpers. Its entry is never invoked.'), indent=2) + '\n')
     return binary
 
@@ -356,20 +356,20 @@ def coverage(frames, cases):
 def validate_probe_extensions():
     # Reconstruct the exact old lifecycle adapters by removing only the
     # additive sentinel dispatch; old bodies, opcodes and observations persist.
-    native=PLUGIN/'Tests/Native/handplant_lifecycle_probe.cpp'
-    first=native.read_text().index('    // Additive metadata-world sentinel.')
-    last=native.read_text().index('    std::vector<PlayerGrindPrimitive> edges;',first)
-    segment=native.read_text()[first:last]
-    restored=native.read_text()[:first]+'    auto world = World(i);\n'+native.read_text()[last:]
-    assert hashlib.sha256(restored.encode()).hexdigest()=='c56a3d6701b482a247f4763cc3483f2a6b45fca701fe0e3a7f83dbc16cbc65a8'
+    simulation=PLUGIN/'Tests/Simulation/handplant_lifecycle_probe.cpp'
+    first=simulation.read_text().index('    // Additive metadata-world sentinel.')
+    last=simulation.read_text().index('    std::vector<PlayerGrindPrimitive> edges;',first)
+    segment=simulation.read_text()[first:last]
+    restored=simulation.read_text()[:first]+'    auto world = World(i);\n'+simulation.read_text()[last:]
+    assert hashlib.sha256(restored.encode()).hexdigest()=='63475da2b21d70b071f5ed889dbd5ef7c209e9607fac6c09c1b73be6851b5cbe'
     reference=PLUGIN/'Tests/Reference/handplant_lifecycle_observer.rs'
     branch='let world_header=i.word();i.at-=4;physics.world=if world_header==u32::MAX{i.word();authored_query_world(i)}else{world(i)};'
     assert reference.read_text().count(branch)==1
     restored=reference.read_text().replace(branch,'physics.world=world(i);')
     assert hashlib.sha256(restored.encode()).hexdigest()=='6de4471fb51a44a39f88749074eba0000b1b5314aaa47e4c63506f0e652df9cf'
-    return dict(old_native_sha256='c56a3d6701b482a247f4763cc3483f2a6b45fca701fe0e3a7f83dbc16cbc65a8',
+    return dict(old_simulation_sha256='63475da2b21d70b071f5ed889dbd5ef7c209e9607fac6c09c1b73be6851b5cbe',
         old_reference_helper_sha256='6de4471fb51a44a39f88749074eba0000b1b5314aaa47e4c63506f0e652df9cf',
-        native_append_sha256=hashlib.sha256(segment.encode()).hexdigest(),reference_append_sha256=hashlib.sha256(branch.encode()).hexdigest(),
+        simulation_append_sha256=hashlib.sha256(segment.encode()).hexdigest(),reference_append_sha256=hashlib.sha256(branch.encode()).hexdigest(),
         reused_metadata_transport=numeric.validate_probe_extensions())
 
 def preflight(raw, cases):
@@ -408,16 +408,16 @@ def main():
     out = a.output.resolve(); out.mkdir(parents=True, exist_ok=True); inputs, cases = corpus(); ranges = preflight(inputs, cases); wire_audit=validate_probe_extensions()
     (out / 'input.bin').write_bytes(inputs); (out / 'cases.json').write_text(json.dumps(cases, indent=2) + '\n')
     if a.preflight:
-        build_reference(out/'reference',a.target_dir,compile=False);build_native(out,compile=False)
-        paths=[PLUGIN/'Tests/check_handplant_lifecycle_parity.py',PLUGIN/'Tests/Native/handplant_lifecycle_probe.cpp',PLUGIN/'Tests/Reference/handplant_lifecycle_probe.rs',PLUGIN/'Tests/Reference/handplant_lifecycle_observer.rs']
+        build_reference(out/'reference',a.target_dir,compile=False);build_simulation(out,compile=False)
+        paths=[PLUGIN/'Tests/check_handplant_lifecycle_parity.py',PLUGIN/'Tests/Simulation/handplant_lifecycle_probe.cpp',PLUGIN/'Tests/Reference/handplant_lifecycle_probe.rs',PLUGIN/'Tests/Reference/handplant_lifecycle_observer.rs']
         report=dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(inputs),units=len(UNITS),input_sha256=hashlib.sha256(inputs).hexdigest(),preserved_baseline_sha256=BASELINE_INPUT_SHA256,preserved_baseline_streams=25,preserved_baseline_commands=4132,authored_metadata_worlds=sum(bool(c.get('metadata'))for c in cases),wire_audit=wire_audit,frozen_proof={p.relative_to(PLUGIN).as_posix():digest(p)for p in paths})
         (out/'frozen-proof.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2));return
     fixtures = out / 'fixtures'; fixtures.mkdir(exist_ok=True); stock = a.assets.resolve() / 'private/stock'
-    (fixtures / 'settings.native').write_bytes(converter.encode_settings(stock / 'skater-collections.json'))
-    (fixtures / 'physics.native').write_bytes(converter.encode_physics_skeletons(stock / 'physics-skeletons.json'))
+    (fixtures / 'settings.simulation').write_bytes(converter.encode_settings(stock / 'skater-collections.json'))
+    (fixtures / 'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock / 'physics-skeletons.json'))
     for kind in ('action', 'motion'): (fixtures / f'actor.{kind}.reference').write_bytes(original_graph(element('state', 'idle')))
     identity = json.loads((stock / 'physics-skeletons.json').read_text())['source_sha256']
-    reference = build_reference(out / 'reference', a.target_dir); native = build_native(out)
+    reference = build_reference(out / 'reference', a.target_dir); simulation = build_simulation(out)
     if a.reference_case_runner:
         from copy import deepcopy
         from reference_case_runner import run_reference_cases
@@ -426,8 +426,8 @@ def main():
             validate_output=lambda index, raw: decode(raw, [deepcopy(cases[index])]))
     else:
         expected = subprocess.check_output([str(reference),str(a.assets.resolve()),str(fixtures)],input=inputs)
-    actual = subprocess.check_output([str(native),str(fixtures / 'settings.native'),str(fixtures / 'physics.native'),str(a.samples.resolve() / 'native/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
-    (out / 'reference.bin').write_bytes(expected); (out / 'native.bin').write_bytes(actual)
+    actual = subprocess.check_output([str(simulation),str(fixtures / 'settings.simulation'),str(fixtures / 'physics.simulation'),str(a.samples.resolve() / 'simulation/rig.skate'),identity,str(a.assets.resolve())],input=inputs)
+    (out / 'reference.bin').write_bytes(expected); (out / 'simulation.bin').write_bytes(actual)
     frames = decode(expected,cases)
     if expected != actual:
         at = next((i for i,(x,y) in enumerate(zip(expected,actual)) if x != y),min(len(expected),len(actual)))
@@ -437,14 +437,14 @@ def main():
         spans = row['spans'] if row else (case['initial_spans'] if case else {})
         section = next(((name, word - span[0]) for name,span in spans.items() if span[0] <= word < span[1]),None)
         owner = dict(case=case['index'] if case else None,operation=row['operation'] if row else 'initial',section=section)
-        failure = dict(byte=at,word=at//4,reference_bytes=len(expected),native_bytes=len(actual),nearby_row=owner,
-            reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex())
+        failure = dict(byte=at,word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual),nearby_row=owner,
+            reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex())
         (out / 'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n'); raise AssertionError(failure)
     result = dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(cases),commands=sum(len(c['commands']) for c in cases),
         bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=coverage(frames,cases),
         scope='Complete Handplant Enter/Update and PlantSkeleton scheduling with actual outgoing WorldGeometry/SAT trajectory query, AirReckoning, adjusted stock hierarchy, FootIK, GeneralUpdate, board/skeleton/hook/drive owners and full SkeletonAir capture/reset/animated/known methods. Exact retained fields, flags, order and partial-write failures.',
         preserved_baseline=dict(streams=25,commands=4132,input_sha256=BASELINE_INPUT_SHA256),wire_audit=wire_audit,
-        boundaries='Authored primitive transport fills the actual StaticProvider primitive vector in source order; Handplant does not read its octree or metadata. Processed physical/player state fields, pending trajectory requests, world triangles and explicit caller coping cases are upstream inputs. Pose hierarchy, surface investigations, trajectory hits, reckoning, skeleton/IK and board effects are live original/native producers. The global frame/state selector, actual trajectory admission batch and shared solve scheduling remain separate. Info-only filtered logging is not asserted.')
+        boundaries='Authored primitive transport fills the actual StaticProvider primitive vector in source order; Handplant does not read its octree or metadata. Processed physical/player state fields, pending trajectory requests, world triangles and explicit caller coping cases are upstream inputs. Pose hierarchy, surface investigations, trajectory hits, reckoning, skeleton/IK and board effects are live original/simulation producers. The global frame/state selector, actual trajectory admission batch and shared solve scheduling remain separate. Info-only filtered logging is not asserted.')
     if a.reference_case_runner:
         result['reference_execution'] = dict(strategy='exact independent outer cases, original constructors per case',
             workers=a.reference_workers,worker_limit_bytes=2*1024**3,report='reference-cases/result.json')

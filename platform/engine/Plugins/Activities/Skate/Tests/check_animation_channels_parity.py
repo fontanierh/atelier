@@ -43,13 +43,13 @@ def prepare_sources(output):
     if base.count(module)!=1:raise AssertionError('Shared oracle channel boundary changed')
     base=base.replace(module,'mod motion_channels {\n'+prefix+'\n'+CHANNEL_SNAPSHOT+'\n}\n')
     reference=output/'animation-channels-oracle.rs';reference.write_text(base+'\n'+(PLUGIN/'Tests/Reference/animation_channels_probe.rs').read_text())
-    native=(PLUGIN/'Tests/Native/animation_trees_probe.cpp').read_text()
-    native=strip_functions(native,('static bool Operations(','static void OwnerSnapshot(','int main('))
-    cpp=output/'animation-channels-probe.cpp';cpp.write_text(native+'\n'+(PLUGIN/'Tests/Native/animation_channels_probe.cpp').read_text())
+    simulation=(PLUGIN/'Tests/Simulation/animation_trees_probe.cpp').read_text()
+    simulation=strip_functions(simulation,('static bool Operations(','static void OwnerSnapshot(','int main('))
+    cpp=output/'animation-channels-probe.cpp';cpp.write_text(simulation+'\n'+(PLUGIN/'Tests/Simulation/animation_channels_probe.cpp').read_text())
     report=dict(channel_implementation_sha256=hashlib.sha256(prefix.encode()).hexdigest(),channel_implementation_begin=0,channel_implementation_end=len(prefix.encode()),
                 frozen_extractions=json.loads((output/'host-extraction-provenance.json').read_text()),
                 callbacks='Preparation invokes the actual frozen MotionAnimation::prepare_selection_spaces, in original channel order; ParameterInputs trap if invoked; owner channels probe exercises all actual container callbacks',
-                reference_probe_sha256=hashlib.sha256(reference.read_bytes()).hexdigest(),native_probe_sha256=hashlib.sha256(cpp.read_bytes()).hexdigest())
+                reference_probe_sha256=hashlib.sha256(reference.read_bytes()).hexdigest(),simulation_probe_sha256=hashlib.sha256(cpp.read_bytes()).hexdigest())
     (output/'channel-extraction-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return reference,cpp
 
 
@@ -125,16 +125,16 @@ def encoded(cases):return b'ATCCHAN1'+len(cases).to_bytes(4,'little')+b''.join(s
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',required=True,type=Path);parser.add_argument('--target-dir',required=True,type=Path);args=parser.parse_args()
     output=args.output.resolve();output.mkdir(parents=True,exist_ok=True);reference_source,cpp=prepare_sources(output);reference=build_probe(output,'animation-channels-reference',reference_source,args.target_dir)
-    fixture=trees.fixture_metadata();fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_native=output/'fixture.skate';fixture_native.write_bytes(trees.converter.pack_metadata(fixture))
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';binary=output/'animation-channels-cpp';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationChannels.cpp'),str(code/'AnimationTrees.cpp'),str(code/'AnimationMetadata.cpp'),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'NativeMath.cpp'),str(cpp),'-o',str(binary)],check=True)
+    fixture=trees.fixture_metadata();fixture_json=output/'fixture.json';fixture_json.write_text(json.dumps(fixture));fixture_simulation=output/'fixture.skate';fixture_simulation.write_bytes(trees.converter.pack_metadata(fixture))
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';binary=output/'animation-channels-cpp';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-Wall','-Wextra','-Werror','-I',str(code),str(code/'AnimationChannels.cpp'),str(code/'AnimationTrees.cpp'),str(code/'AnimationMetadata.cpp'),str(code/'AnimationPlaybackParameters.cpp'),str(code/'AnimationPlayback.cpp'),str(code/'AnimationName.cpp'),str(code/'AnimationSamples.cpp'),str(code/'SimulationMath.cpp'),str(cpp),'-o',str(binary)],check=True)
     cases=corpus();commands=encoded(cases);(output/'input.bin').write_bytes(commands)
     def run(exe,path,data):return subprocess.check_output([str(exe),str(path)],input=data)
-    expected=run(reference,fixture_json,commands);actual=run(binary,fixture_native,commands);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    expected=run(reference,fixture_json,commands);actual=run(binary,fixture_simulation,commands);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if actual!=expected:
         lo=0;hi=len(cases)
         while hi-lo>1:
             middle=(lo+hi)//2;data=encoded(cases[lo:middle])
-            if run(reference,fixture_json,data)==run(binary,fixture_native,data):lo=middle
+            if run(reference,fixture_json,data)==run(binary,fixture_simulation,data):lo=middle
             else:hi=middle
         (output/'first-divergence-input.bin').write_bytes(encoded(cases[lo:hi]));first=next((i for i,(a,e) in enumerate(zip(actual,expected)) if a!=e),min(len(actual),len(expected)))
         raise AssertionError(f'Animation channels differ at byte {first}, case {lo}; isolated command saved')

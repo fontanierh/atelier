@@ -2,7 +2,7 @@
 """Whole unchanged camera publication/output on the actual completed owners.
 
 Only the parent may compile/run under the guard. Preflight is lightweight. The
-native runtime reads converted data and borrows canonical live owners. The
+simulation runtime reads converted data and borrows canonical live owners. The
 oracle constructs full original GamePhysics/SkaterRuntime, fills corresponding
 completed records, and invokes unchanged publication and camera advance. This
 is a producer/order/failure proof, not preceding whole-game physics scheduling.
@@ -28,7 +28,7 @@ import check_physical_simulation_runtime_parity as physics
 from check_graph_parity import attribute,element,original_graph
 from check_gesture_parity import converter,PLUGIN
 from session_parity import REFERENCE_REVISION,digest
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 STATES=(100,101,102,103,104,105,200,201,202,300,400,401,402,403,404,405,500,501,502,503,600,601,602,700,701,702)
 
 def source_units(file,function):
@@ -38,8 +38,8 @@ def source_units(file,function):
     raise AssertionError('Missing exact unit list')
 
 UNITS=tuple(dict.fromkeys((*physics.UNITS,*camera.UNITS,
-    *source_units(PLUGIN/'Tests/check_skater_animation_parity.py','build_native'),
-    *source_units(PLUGIN/'Tests/check_ground_board_parity.py','build_native'),
+    *source_units(PLUGIN/'Tests/check_skater_animation_parity.py','build_simulation'),
+    *source_units(PLUGIN/'Tests/check_ground_board_parity.py','build_simulation'),
     'GroundRuntime','GroundInput','GroundPumpingRuntime','GroundStateRuntime','GroundOutput','GroundLaunchInfo',
     'PhysicsAnimationInput','SkeletonAttributeDispatch','PlayerInputTypes',
     'AirMath','CentreOfMassFilter','PhysicalPhase','CameraPublication','CameraOutputRuntime')))
@@ -146,29 +146,29 @@ def cpp_protocol(defs):
             declarations.append(f'template<> {name} ReadValue<{name}>(Input& input);');body=''.join(f'value.{field}=ReadValue<{schema.cpp_type(kind)}>(input);' for field,kind in item['fields']);reads.append(f'template<> {name} ReadValue<{name}>(Input& input){{{name} value;{body}return value;}}')
     return declaration,'\n'.join(declarations)+'\n'+schema.CPP_GENERIC_WRITERS+'\n'+'\n'.join(bodies+reads)
 
-def native_probe(output,defs):
-    snapshot=output/'native-source';snapshot.mkdir(exist_ok=True);hashes={}
+def simulation_probe(output,defs):
+    snapshot=output/'simulation-source';snapshot.mkdir(exist_ok=True);hashes={}
     for p in sorted(CODE.glob('*.h')):shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
     for unit in UNITS:p=CODE/(unit+'.cpp');shutil.copy2(p,snapshot/p.name);hashes[p.name]=digest(snapshot/p.name)
-    template=PLUGIN/'Tests/Native/camera_output_probe.cpp';fixture,observers=cpp_protocol(defs);text=template.read_text();assert text.count('// @OWNER_FIXTURE_CPP@')==text.count('// @CPP_OBSERVERS@')==1
+    template=PLUGIN/'Tests/Simulation/camera_output_probe.cpp';fixture,observers=cpp_protocol(defs);text=template.read_text();assert text.count('// @OWNER_FIXTURE_CPP@')==text.count('// @CPP_OBSERVERS@')==1
     generated=snapshot/template.name;generated.write_text(text.replace('// @OWNER_FIXTURE_CPP@',fixture).replace('// @CPP_OBSERVERS@',observers));hashes[generated.name]=digest(generated)
-    binary=output/'camera-output-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(generated),'-o',str(binary)],check=True)
-    (output/'native-provenance.json').write_text(json.dumps(dict(immutable_native_sources=hashes,template_sha256=digest(template),units=UNITS),indent=2)+'\n');return binary
+    binary=output/'camera-output-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(generated),'-o',str(binary)],check=True)
+    (output/'simulation-provenance.json').write_text(json.dumps(dict(immutable_simulation_sources=hashes,template_sha256=digest(template),units=UNITS),indent=2)+'\n');return binary
 
 def fixtures(assets,output,package):
     out=output/'fixtures';out.mkdir(exist_ok=True);stock=assets/'private/stock'
-    (out/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'))
-    (out/'physics.native').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (out/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'))
+    (out/'physics.simulation').write_bytes(converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for kind in ('action','motion'):
-        graph=element('state','idle');original=out/f'actor.{kind}.reference';original.write_bytes(original_graph(graph));(out/f'actor.{kind}.native').write_bytes(converter.encode_graph(converter.read_graph(original)))
+        graph=element('state','idle');original=out/f'actor.{kind}.reference';original.write_bytes(original_graph(graph));(out/f'actor.{kind}.simulation').write_bytes(converter.encode_graph(converter.read_graph(original)))
     for i in range(2):
         folder=out/f'camera-{i}'
         for relative in (camera.COLLECTION,camera.GRAPH,*camera.SHAKES):
             path=folder/relative;path.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(assets/relative,path)
         graph_path=folder/camera.GRAPH
         if i==1:graph_path.write_bytes(original_graph(camera.transition_graph()))
-        (folder/'graph.native').write_bytes(converter.encode_graph(converter.read_graph(graph_path)))
-        (folder/'camera.native').write_bytes(package)
+        (folder/'graph.simulation').write_bytes(converter.encode_graph(converter.read_graph(graph_path)))
+        (folder/'camera.simulation').write_bytes(package)
     return out
 
 def decode(data,cases,defs,label_at=None):
@@ -245,16 +245,16 @@ def main():
     rust,defs=reference.build_output_probe(out/'reference',args.target_dir)
     data_probe=camera_reference.build_data_probe(out/'data',args.target_dir);base=out/'stock-camera';subprocess.run([str(data_probe),str(args.assets.resolve()),str(base),'camera-output-stock:'+digest(args.assets/camera.COLLECTION)],check=True)
     module_spec=importlib.util.spec_from_file_location('camera_conversion',PLUGIN/'Tools/convert_camera_data.py');module=importlib.util.module_from_spec(module_spec);module_spec.loader.exec_module(module);package=module.pack_camera(json.loads(base.with_suffix('.json').read_text()));assert package==base.with_suffix('.raw').read_bytes()
-    folder=fixtures(args.assets.resolve(),out,package);native=native_probe(out,defs);identity=json.loads((args.assets/'private/stock/physics-skeletons.json').read_text())['source_sha256']
+    folder=fixtures(args.assets.resolve(),out,package);simulation=simulation_probe(out,defs);identity=json.loads((args.assets/'private/stock/physics-skeletons.json').read_text())['source_sha256']
     expected=subprocess.check_output([str(rust),str(args.assets.resolve()),str(folder)],input=inputs)
-    actual=subprocess.check_output([str(native),str(folder),str(args.samples.resolve()/'native'),str(args.metadata.resolve()),str(args.assets.resolve()),identity],input=inputs)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    actual=subprocess.check_output([str(simulation),str(folder),str(args.samples.resolve()/'simulation'),str(args.metadata.resolve()),str(args.assets.resolve()),identity],input=inputs)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
         at=next((i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b),min(len(expected),len(actual)));labels=[]
         try:_,labels=decode(expected,spec,defs,at)
         except Exception:pass
-        failure=dict(byte=at,labels=labels,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        failure=dict(byte=at,labels=labels,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     frames,_=decode(expected,spec,defs);proof=coverage(frames,spec)
-    result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(spec),rows=sum(len(c['rows']) for c in spec),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=proof,boundary='Entire actual publication/output producers on canonical completed owners, full original constructors, original Ground output, complete CameraRuntime histories/controller/output/ordered requests, actual geometry and source StaticWorld=0/region type1. Runtime native settings/graphs/camera/rig/metadata/physical skeleton only. Actual preceding physics/input/scoring production and global state/session scheduling are separate owners; no producer is replaced by a camera snapshot. Custom preference intermediate records exercise publication; Advance always uses original fixed preferences and ordering.')
+    result=dict(passed=True,reference_revision=REFERENCE_REVISION,cases=len(spec),rows=sum(len(c['rows']) for c in spec),bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),input_sha256=hashlib.sha256(inputs).hexdigest(),coverage=proof,boundary='Entire actual publication/output producers on canonical completed owners, full original constructors, original Ground output, complete CameraRuntime histories/controller/output/ordered requests, actual geometry and source StaticWorld=0/region type1. Runtime simulation settings/graphs/camera/rig/metadata/physical skeleton only. Actual preceding physics/input/scoring production and global state/session scheduling are separate owners; no producer is replaced by a camera snapshot. Custom preference intermediate records exercise publication; Advance always uses original fixed preferences and ordering.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':historical.run_cli(main)

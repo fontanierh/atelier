@@ -1,10 +1,10 @@
-// USkateComponent getting on and off the board with the Ride backend (RIDE.md, "Transitions"): one continuous
+// USkateComponent getting on and off the board (RIDE.md, "Transitions"): one continuous
 // character. The actor is never moved to a new place: the capsule changes about its centre and settles onto the floor,
 // the mesh keeps its world place across each switch and eases back onto the capsule, the pose switch is a standard
 // inertialization (FAnimNode_SkateRider), the speed carries over both ways, and the board is always a real object
 // that dissolves in and out rather than popping.
 //
-// Off the board the native clips play through the clip player's animator (FRideClipPlayer::Step) and are
+// Off the board the simulation clips play through the clip player's animator (FRideClipPlayer::Step) and are
 // retargeted like a ride (PublishOffBoardPose): the board-carry locomotion on the character's own movement, and the
 // mount and dismount clips, whose root motion moves the capsule through a root motion source. In the air no clip moves
 // the capsule: CharacterMovement keeps the fall, and the clip's trajectory follows the capsule (a jump with the board in
@@ -60,14 +60,12 @@ FRideTransition& USkateComponent::Transit()
 
 bool USkateComponent::WantsGetUpOnFoot() const { return Transition && Transition->bGetUpOnFoot; }
 
-bool USkateComponent::IsBoardInHand() const { return Transition && Transition->Foot == ERideFoot::Carry; }
-
 // ---------------------------------------------------------------------------------------------------------------
 // The clips.
 
 bool USkateComponent::PrepareRideClips()
 {
-    if (!Rider || USkateSettings::ActiveBackend() != ESkateBackend::Ride) return false;
+    if (!Rider) return false;
     FRideTransition& T = Transit();
     if (!Clips) PreloadRide();
     FRideAnimator& Animator = Clips->GetAnimator();
@@ -175,9 +173,9 @@ void USkateComponent::TickTransition(float Dt)
     FRideTransition& T = Transit();
     // Off the board last frame: the stick is in for the next move.
     if (T.bReleasePending) ReleaseDrive();
-    // The transition clips load on foot once the Ride backend is chosen (PreloadRetailRuntime preloads the session 2 s
-    // after play; a backend chosen later loads it here), not at the first mount.
-    if (bRetailPreloaded && Mode == ESkateMode::Off && !T.bClipsTried && USkateSettings::ActiveBackend() == ESkateBackend::Ride)
+    // The transition clips load on foot once the session is preloaded (PreloadSimulation, 2 s after play), not at the
+    // first mount.
+    if (bSimulationPreloaded && Mode == ESkateMode::Off && !T.bClipsTried)
     {
         T.ClipsRetry -= Dt;
         if (T.ClipsRetry <= 0.f) { T.ClipsRetry = 5.f; PrepareRideClips(); }
@@ -197,8 +195,8 @@ void USkateComponent::TickTransition(float Dt)
         if (Mode == ESkateMode::Off) T.bGetUpOnFoot = false;
         else
         {
-            if (PhysicalRider && PhysicalRider->IsGettingUp() && PhysicalRider->GetGetUpExit() == ERideGetUpExit::OnFoot && !RetailPose.IsEmpty())
-                PhysicalRider->BlendFromSnapshot(RetailPose, PhysicalRider->GetGetUpAlpha());
+            if (PhysicalRider && PhysicalRider->IsGettingUp() && PhysicalRider->GetGetUpExit() == ERideGetUpExit::OnFoot && !RiderPose.IsEmpty())
+                PhysicalRider->BlendFromSnapshot(RiderPose, PhysicalRider->GetGetUpAlpha());
             const bool bUp = Mode == ESkateMode::Ground && !(PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
             if (bUp) RideDismount();
         }
@@ -282,7 +280,7 @@ void USkateComponent::TraceTransition()
     const int32 Frames = CVarRideTrace.GetValueOnGameThread();
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     if (Frames <= 0 || !Mesh) { T.TraceLeft = 0; T.TraceLast.Reset(); return; }
-    const bool bPose = !RetailPose.IsEmpty();
+    const bool bPose = !RiderPose.IsEmpty();
     const bool bSwitch = PoseBlendSerial != T.TraceSerial || uint8(Mode) != T.TraceMode || uint8(T.Foot) != T.TraceFoot || bPose != T.bTracePose ||
         T.Clip != T.TraceClip;
     T.TraceSerial = PoseBlendSerial; T.TraceMode = uint8(Mode); T.TraceFoot = uint8(T.Foot); T.bTracePose = bPose; T.TraceClip = T.Clip;
@@ -290,8 +288,8 @@ void USkateComponent::TraceTransition()
     const FTransform MeshWorld = Mesh->GetRelativeTransform() * Actor;
     const FName Pelvis = RiderApi->GetSkateBone(TEXT("pelvis")), Left = RiderApi->GetSkateBone(TEXT("thigh_L")), Right = RiderApi->GetSkateBone(TEXT("thigh_R"));
     FVector PubHip = FVector::ZeroVector, PubL = FVector::ZeroVector, PubR = FVector::ZeroVector;
-    const bool bPub = PoseBoneWorld(Mesh, MeshWorld, RetailPose, Pelvis, PubHip) && PoseBoneWorld(Mesh, MeshWorld, RetailPose, Left, PubL) &&
-        PoseBoneWorld(Mesh, MeshWorld, RetailPose, Right, PubR);
+    const bool bPub = PoseBoneWorld(Mesh, MeshWorld, RiderPose, Pelvis, PubHip) && PoseBoneWorld(Mesh, MeshWorld, RiderPose, Left, PubL) &&
+        PoseBoneWorld(Mesh, MeshWorld, RiderPose, Right, PubR);
     const bool bShown = !Pelvis.IsNone() && !Left.IsNone() && !Right.IsNone() && Mesh->GetBoneIndex(Pelvis) != INDEX_NONE &&
         Mesh->GetBoneIndex(Left) != INDEX_NONE && Mesh->GetBoneIndex(Right) != INDEX_NONE;
     const FVector ShownHip = bShown ? Mesh->GetBoneLocation(Pelvis) : FVector::ZeroVector;
@@ -300,7 +298,7 @@ void USkateComponent::TraceTransition()
     FString Line = FString::Printf(TEXT("SKATE trace f%llu t%.3f serial %u/%.2f mode %d foot %d %s@%.3f pose %d actor (%.1f %.1f %.1f) yaw %.1f ")
         TEXT("mesh yaw %.1f (cached %.1f) turn %.1f saved %.1f offset (%.1f %.1f %.1f) pub hip (%.1f %.1f %.1f) face %.1f shown hip (%.1f %.1f %.1f) face %.1f"),
         GFrameCounter, GetWorld()->GetTimeSeconds(), PoseBlendSerial, PoseBlendTime, int32(Mode), int32(T.Foot),
-        T.Clip ? *T.Clip->GetName() : TEXT("-"), T.ClipTime, RetailPose.Num(), Loc.X, Loc.Y, Loc.Z, Actor.Rotator().Yaw,
+        T.Clip ? *T.Clip->GetName() : TEXT("-"), T.ClipTime, RiderPose.Num(), Loc.X, Loc.Y, Loc.Z, Actor.Rotator().Yaw,
         MeshWorld.Rotator().Yaw, Mesh->GetComponentTransform().Rotator().Yaw, T.MeshTurn.Rotator().Yaw, SavedMeshRotation.Rotator().Yaw,
         T.MeshOffset.X, T.MeshOffset.Y, T.MeshOffset.Z, PubHip.X, PubHip.Y, PubHip.Z, bPub ? FacingYaw(PubL, PubR) : 0.f,
         ShownHip.X, ShownHip.Y, ShownHip.Z, ShownFacing);
@@ -338,7 +336,7 @@ void USkateComponent::ResetTransition()
     if (Clips && T.Foot != ERideFoot::Off) Clips->GetAnimator().ClearOverride();
     T.Foot = ERideFoot::Off; T.Clip = nullptr; T.bCarryShown = false; T.bRecall = false;
     T.bRunOutPending = T.bRecoverPending = T.bKickOut = false; T.PendingClip = nullptr;
-    if (Mode == ESkateMode::Off && !RetailPose.IsEmpty()) RetailPose.Reset();
+    if (Mode == ESkateMode::Off && !RiderPose.IsEmpty()) RiderPose.Reset();
     ReleaseBoardFromHand();
     T.Board = ERideBoard::Away; T.bGetUpOnFoot = false;
     T.Shown = T.ShownTarget = 0.f; ApplyBoardShown();
@@ -353,7 +351,7 @@ void USkateComponent::SyncRootMotion()
     // graph updates in the mesh's own tick, after this component.
     USkeletalMeshComponent* Mesh = Rider ? Rider->GetMesh() : nullptr;
     UAnimInstance* Anim = Mesh ? Mesh->GetAnimInstance() : nullptr;
-    const bool bHold = Anim && !RetailPose.IsEmpty();
+    const bool bHold = Anim && !RiderPose.IsEmpty();
     if (bRootMotionHeld && (!bHold || RootMotionAnim.Get() != Anim)) ReleaseRootMotion();
     if (bHold && !bRootMotionHeld)
     {

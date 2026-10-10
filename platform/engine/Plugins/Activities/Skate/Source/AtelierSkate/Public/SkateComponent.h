@@ -54,7 +54,7 @@ public:
     static constexpr uint8 MovementMode = 2;
     /** Character must implement ISkateRider. */
     void Initialize(ACharacter* Character);
-    /** Visual-only peer: no Native preload, input, physics bodies or local rider simulation. */
+    /** Visual-only peer: no simulation preload, input, physics bodies or local rider simulation. */
     void InitializeNetworkProxy(ACharacter* Character);
     bool ApplyNetworkPose(const TArray<FTransform>& ComponentPose, const FTransform& MeshWorld);
     void ClearNetworkPose();
@@ -67,19 +67,17 @@ public:
     bool IsNetworkProxy() const { return bNetworkProxy; }
     bool IsAvailable() const { return bAvailable; }
     /** On the board, including a bail (the component drives the character until they are back on it), or getting on
-     *  or off it with the Ride backend (a mount or dismount clip drives the character). */
+     *  or off it (a mount or dismount clip drives the character). */
     bool IsRiding() const { return Mode != ESkateMode::Off || bRideClip; }
     ESkateMode GetMode() const { return Mode; }
     /** Get on (from standing or running) or off. */
     bool Toggle();
-    /** The board button on foot with the Ride backend (RIDE.md, "Transitions"): a board dissolves into the hand, a
+    /** The board button on foot (RIDE.md, "Transitions"): a board dissolves into the hand, a
      *  held one is put away, a lying one dissolves and a fresh one comes to the hand. Not while the hands are busy
      *  (ISkateRider::CanCarrySkateBoard). Callable from scripts (Python: recall_board()). */
     UFUNCTION(BlueprintCallable, Category="Skate")
     void RecallBoard();
-    /** On foot with the board in hand (the board-carry locomotion). */
-    bool IsBoardInHand() const;
-    /** On foot with the Ride backend: whether the character's own move (a sprint, a dash, a double jump...) may take
+    /** On foot: whether the character's own move (a sprint, a dash, a double jump...) may take
      *  over from the board now. Not riding or getting on; a clip on foot once the stick may end it (a jump with the
      *  board in hand at once). Without a board or a clip, always. */
     bool CanYieldToCharacter() const;
@@ -95,14 +93,12 @@ public:
     /** The player's skating feel (SkateFeel.h): applied at once while riding, and to every later ride. False (with the
      *  reason) when a value is out of its range; the feel then stays as it was. */
     bool SetFeel(const FSkateFeel& NewFeel, FString& Error);
-    const FSkateFeel& GetFeel() const { return Feel; }
     /** QA / live bridge: replace the player's controls; nullptr gives them back. */
     void SetScriptedInput(const FSkateInput* Input) { bScripted = Input != nullptr; if (Input) Scripted = *Input; }
-    const FSkateInput& GetInput() const { return In; }
     /** The whole ride, called from the movement component's PhysCustom in the game's skate mode. */
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
-    const TArray<FTransform>& GetRetailPose() const { return RetailPose; }
+    const TArray<FTransform>& GetRiderPose() const { return RiderPose; }
     /** The switches between the skate pose and the character's own that should be blended (FAnimNode_SkateRider):
      *  the count changes at each one, and the blend takes GetPoseBlendTime seconds (0: cut). */
     uint32 GetPoseBlendSerial() const { return PoseBlendSerial; }
@@ -110,14 +106,10 @@ public:
     /** A bail the player asked to leave on foot (the skate button during the bail): the settled body gets up with
      *  BeginGetUpOnFoot rather than back onto the board. */
     bool WantsGetUpOnFoot() const;
-    /** The physical rider's get-up on foot, where the body lies (Ground, facing Yaw) with the board left lying. */
-    void BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp);
-    FString GetRetailState() const;
-    /** QA: a bone of the shown ride pose in the world under the Ride backend (Native's skeleton names, as
-     *  SKATEBOARD_ROOT or HIPS). False without one. */
-    UFUNCTION(BlueprintCallable, Category="Skate")
-    bool GetRidePoseBone(FName Bone, FTransform& World) const;
-    bool GetRetailCamera(FTransform& Out, float& FOV) const;
+    /** The physical rider's get-up on foot, where the body lies, with the board left lying. */
+    void BeginGetUpOnFoot(bool bFaceUp);
+    FString GetSimulationState() const;
+    bool GetSimulationCamera(FTransform& Out, float& FOV) const;
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
     /** Teleport the rider (and board) to a spot, stopped, on the board. */
     bool PlaceAt(const FVector& GroundPoint, float Yaw);
@@ -140,8 +132,6 @@ public:
     /** "volume pitch" pairs for the roll, grind, slide, skid and scrape loops, then the surfaces' own rolls (wood, metal,
      *  asphalt, stone, dirt, grass, sand; see ESkateSurface) (films mix them offline). */
     FString GetLoopState() const;
-    /** What the wheels are rolling on (None in the air, or on collision the surface tables don't reach). */
-    ESkateSurface GetSurface() const { return Surface; }
 
     // QA
     FName GetLastTrick() const { return LastTrickName; }
@@ -149,8 +139,6 @@ public:
     int32 GetBailCount() const { return Bails; }
     int32 GetGrindCount() const { return Grinds; }
     FVector GetBoardVelocity() const { return Vel; }
-    bool IsFakie() const { return bFakie; }
-    bool IsManual() const { return bManual; }
 
 private:
     UPROPERTY() TObjectPtr<ACharacter> Rider;
@@ -181,30 +169,30 @@ private:
     bool bFeelSet=false;
     ESkateMode Mode=ESkateMode::Off;
     FSkateInput In,Scripted;
-    TSharedPtr<FSkateRuntime> RetailRuntime;
-    bool bRetailActive=false;
-    TArray<FTransform> RetailPose;
-    float BailVisualLift=0.f,RetailFloorClearance=0.f;
-    bool bRetailPreloaded=false;
-    bool LaunchNativeSession(TSharedPtr<FSkateRuntime>& Into, const FVector& Where, float Yaw, FString& Failure);
-    /** Place a Native session at the ride's start (Pos, Rot, Vel), refreshing its collision first if needed. */
-    bool ActivateNative(FSkateRuntime& Runtime);
-    /** Step a Native session one frame (neutral controls if bNeutral): whether a new pose arrived. */
-    bool StepNative(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
-    /** Under the hybrid: count the air's spin from the shown pose and name it at the landing (Native names none). */
-    void NameNativeSpin(ESkateMode Was);
-    /** Under the hybrid: show each successful pump Native's session counted in the trick line (Native names none). */
-    void NameNativePump();
-    /** Keep a Native session's world around At (the ride's position, or the rider's on foot when bIdle). */
-    void RefreshNativeCollision(FSkateRuntime& Runtime, const FVector& At, float Yaw, bool bIdle);
-    void PreloadRetailRuntime();
-    void PollIdleRetail();
-    bool StartRetailRuntime();
-    void SuspendRetailRuntime();
-    void StepRetailRuntime(float Dt);
-    void LaunchRetail(const FVector& V);
-    void ConfigureRetail();
-    void RetargetRetailPose();
+    TSharedPtr<FSkateRuntime> ShownRuntime;
+    bool bSimulationActive=false;
+    TArray<FTransform> RiderPose;
+    float BailVisualLift=0.f,ShownFloorClearance=0.f;
+    bool bSimulationPreloaded=false;
+    bool LaunchSimulationSession(TSharedPtr<FSkateRuntime>& Into, const FVector& Where, float Yaw, FString& Failure);
+    /** Place a simulation session at the ride's start (Pos, Rot, Vel), refreshing its collision first if needed. */
+    bool ActivateSimulation(FSkateRuntime& Runtime);
+    /** Step a simulation session one frame (neutral controls if bNeutral): whether a new pose arrived. */
+    bool StepSimulation(FSkateRuntime& Runtime, float Dt, bool bNeutral, bool& bFailed);
+    /** Count the air's spin from the shown pose and name it at the landing (the simulation names none). */
+    void NameSimulationSpin(ESkateMode Was);
+    /** Show each successful pump the simulation's session counted in the trick line (the simulation names none). */
+    void NameSimulationPump();
+    /** Keep a simulation session's world around At (the ride's position, or the rider's on foot when bIdle). */
+    void RefreshSimulationCollision(FSkateRuntime& Runtime, const FVector& At, float Yaw, bool bIdle);
+    void PreloadSimulation();
+    void PollIdleSimulation();
+    bool StartSimulation();
+    void SuspendSimulation();
+    void TickSimulation(float Dt);
+    void LaunchSimulation(const FVector& V);
+    void ConfigureSimulation();
+    void RetargetRiderPose();
     /** The visible board's growth about the ground contact Pos (ISkateRider::GetSkateBoardScale). */
     float BoardScale() const;
     FTransform BoardGrowth() const;
@@ -233,74 +221,72 @@ private:
     FVector Up() const { return Rot.GetUpVector(); }
     FVector Forward() const { return Rot.GetForwardVector(); }
     void ReadInput(float Dt);
-    /** The host's half of the canonical pad (Private/SkatePad.h) that both backends sample: In, whether the board is
+    /** The host's half of the canonical pad (Private/SkatePad.h) that the session samples: In, whether the board is
      *  rolling, and the buttons and analog triggers of the player's controller when it drives the ride. */
     FSkateHostPad ReadHostPad() const;
-    void SetMeshForRiding(bool bRiding);
+    void SetMeshForRiding();
     FQuat AlignUp(const FQuat& Q,const FVector& NewUp,float Alpha) const;
 
-    // The Ride backend (USkateSettings::Backend; Private/Ride, RIDE.md): Native's session rides (the board, its
+    // Ride (Private/Ride, RIDE.md): the simulation's session rides (the board, its
     // controls, tricks, airs, grinds, bail rules and pose) and Ride keeps the rest: the body (the physical rider follows
-    // the retargeted pose), the transitions, the bails (a Native wipeout hands the rider to the Chaos body) and the
-    // get-up where the body lies. RideNative is that session, kept apart from RetailRuntime (what the rider shows), so a
-    // transition clip published between rides never ends it. Clips plays the transitions' clips on the native rig.
+    // the retargeted pose), the transitions, the bails (a simulation wipeout hands the rider to the Chaos body) and the
+    // get-up where the body lies. RideSimulation is that session, kept apart from ShownRuntime (what the rider shows), so a
+    // transition clip published between rides never ends it. Clips plays the transitions' clips on the simulation rig.
     TSharedPtr<FRideClipPlayer> Clips;
     // The rider's bodies: an active ragdoll while riding (skate.RidePhysical), the bail's ragdoll and loose board, and
     // the get-up from where the body lies.
     UPROPERTY() TObjectPtr<URidePhysicalRider> PhysicalRider;
     bool StartRide();
-    /** Pos onto the floor under the board (or out of one it starts a little inside) for Native's session to start on. */
+    /** Pos onto the floor under the board (or out of one it starts a little inside) for the simulation's session to start on. */
     void SettleRideStart();
     void StopRide();
     void PreloadRide();
-    TSharedPtr<FSkateRuntime> RideNative;
-    bool bRideNative = false;                  // the current ride is Native's session under Ride's body
-    bool bNativeBail = false;                  // a Native wipeout handed to the body: the body falls
-    FVector RideSpin = FVector::ZeroVector;    // the Native deck's angular velocity (rad/s, world)
+    TSharedPtr<FSkateRuntime> RideSimulation;
+    bool bSimulationBail = false;                  // a simulation wipeout handed to the body: the body falls
+    FVector RideSpin = FVector::ZeroVector;    // the simulation deck's angular velocity (rad/s, world)
     // Through the body's bail the session goes on with its wipeout (controls neutral) and the loose board is placed on
-    // Native's board: it rolls on and catches on edges as on the Native backend.
-    bool bNativeBoardInBail = false;
-    FTransform NativeBoardLast = FTransform::Identity;   // the board placed last, and its motion (cm/s, rad/s)
-    FVector NativeBoardVelocity = FVector::ZeroVector, NativeBoardSpin = FVector::ZeroVector;
-    float NativeBoardSince = 0.f;                       // seconds since it was placed
-    bool StartNativeRide();
-    void SuspendNativeRide();
-    void RelaunchNativeRide();
-    void BeginNativeBoardInBail();
-    void FollowNativeBoardInBail(float Dt);
-    void EndNativeBoardInBail();
-    void AfterNativeRideFrame(float Dt);
-    void GetUpFromNativeBail();
-    // Native's rider off the board on foot (its Biped states) becomes the character once that outlasts the frames a
+    // the simulation's board, so it rolls on and catches on edges.
+    bool bSimulationBoardInBail = false;
+    FTransform SimulationBoardLast = FTransform::Identity;   // the board placed last, and its motion (cm/s, rad/s)
+    FVector SimulationBoardVelocity = FVector::ZeroVector, SimulationBoardSpin = FVector::ZeroVector;
+    float SimulationBoardSince = 0.f;                       // seconds since it was placed
+    bool StartSimulationRide();
+    void SuspendSimulationRide();
+    void RelaunchSimulationRide();
+    void BeginSimulationBoardInBail();
+    void FollowSimulationBoardInBail(float Dt);
+    void EndSimulationBoardInBail();
+    void AfterSimulationRideFrame(float Dt);
+    void GetUpFromSimulationBail();
+    // The simulation's rider off the board on foot (its Biped states) becomes the character once that outlasts the frames a
     // wipeout passes through it: the session ends, the board rolls on by itself.
-    float NativeOnFootTime = 0.f;                        // seconds in BipedGround, and the rider's root and motion there
-    FVector NativeOnFootRoot = FVector::ZeroVector, NativeOnFootVelocity = FVector::ZeroVector;
-    bool IsNativeOnFoot() const;
-    bool TakeNativeOnFoot(float Dt);
-    // Native's session state under the hybrid starts with Prefix (FSkateRuntime lives in SkateRuntime.cpp).
-    bool NativeStateStarts(const TCHAR* Prefix) const;
-    /** The ride's root: Native's. */
+    float SimulationOnFootTime = 0.f;                        // seconds in BipedGround, and the rider's root and motion there
+    FVector SimulationOnFootRoot = FVector::ZeroVector, SimulationOnFootVelocity = FVector::ZeroVector;
+    bool IsSimulationOnFoot() const;
+    bool TakeSimulationOnFoot(float Dt);
+    // The simulation's session state starts with Prefix (FSkateRuntime lives in SkateRuntime.cpp).
+    bool SimulationStateStarts(const TCHAR* Prefix) const;
+    /** The ride's root: the simulation's. */
     FTransform RideRoot() const;
-    // The bail's velocity and spin: Native's board's.
+    // The bail's velocity and spin: the simulation's board's.
     FVector BailVelocity() const;
     FVector BailSpin() const;
-    // The grab held in the air (an air dismount steps off from it): Native's, from the trick line and the triggers.
+    // The grab held in the air (an air dismount steps off from it): the simulation's, from the trick line and the triggers.
     ERideGrab RideGrab() const;
-    // The stance the state reports: Native's own.
+    // The stance the state reports: the simulation's own.
     bool ShownFakie() const;
     bool ShownSwitch() const;
-    // The rider crouched on the board (Native's hips low over the deck): the dismount, run-out and kick-out clips' LO.
+    // The rider crouched on the board (the simulation's hips low over the deck): the dismount, run-out and kick-out clips' LO.
     bool ShownCrouch() const;
 
-    // Getting on and off with the Ride backend (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
+    // Getting on and off (Private/Ride/RideTransition.cpp, RIDE.md "Transitions"): one
     // continuous character. The actor never jumps, the capsule changes about its centre, the mesh keeps its world
     // place across each switch and eases back to its on-foot offset, the pose switch is inertialized and the speed
     // carries over both ways; the board dissolves in and out rather than popping.
     TSharedPtr<FRideTransition> Transition;
-    bool bRideBody=false;                                      // the current or last ride used the Ride backend
     bool bRideClip=false;                                      // a mount or dismount clip drives the character (IsRiding)
     // The off-board pose (carry, mount, dismount clips through FRideClipPlayer::Step) published by
-    // PublishOffBoardPose through RetargetRetailPose: the visible deck follows the clip's board, on the ground or in
+    // PublishOffBoardPose through RetargetRiderPose: the visible deck follows the clip's board, on the ground or in
     // the hand (OffBoardDeck, scaled), and the body rises onto a bigger deck by OffBoardLift.
     bool bOffBoardPose=false;
     float OffBoardLift=0.f;
@@ -310,7 +296,7 @@ private:
     float OffBoardDeckBlend=1.f;
     /** bPlaceBoard: the visible board goes where the clip has it (false: it stays where it is, lying or kicked away). */
     bool PublishOffBoardPose(float Lift, bool bPlaceBoard = true);
-    /** Place the visible board's parts from a source board (the published one, RetailRuntime's, by default), its deck
+    /** Place the visible board's parts from a source board (the published one, ShownRuntime's, by default), its deck
      *  at DeckWorldScaled. */
     void PlaceBoardParts(const FTransform& DeckWorldScaled, const FSkateRuntime* Source = nullptr);
     uint32 PoseBlendSerial=0;
@@ -321,7 +307,7 @@ private:
     FRideTransition& Transit();
     void RequestPoseBlend(float Seconds) { ++PoseBlendSerial; PoseBlendTime=Seconds; PendingPoseBlend=0.f; }
     /** The blend for a pose not published yet (the ride's first, after the pose shown is held a frame): asked where
-     *  RetargetRetailPose writes it, so the character's graph reads the request and the pose together. */
+     *  RetargetRiderPose writes it, so the character's graph reads the request and the pose together. */
     void RequestPoseBlendWithNextPose(float Seconds) { PendingPoseBlend=Seconds; }
     bool RideMount(bool bInstant);
     bool RideDismount();

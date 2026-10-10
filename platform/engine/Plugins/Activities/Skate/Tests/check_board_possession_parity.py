@@ -88,14 +88,14 @@ def build_probes(output):
     subprocess.run(['rustc','+1.97.1','--edition=2024','-O','-A','dead_code',str(main),'-o',str(reference)],check=True)
     for name,expected in originals.items():
         if digest(source/name)!=expected:raise AssertionError(f'Frozen reference producer changed: {name}')
-    snapshot=output/'native-source'
+    snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
-    snapshot.mkdir();native=PLUGIN/'Source/AtelierSkate/Private/Native';units=('NativeMath','RigidBody','SkeletonPoseFrames','BoardPossession','BoardPossessionManager')
-    for name in [f'{unit}.{ext}' for unit in units for ext in ('h','cpp')]:shutil.copy2(native/name,snapshot/name)
-    cpp_probe=PLUGIN/'Tests/Native/board_possession_probe.cpp';shutil.copy2(cpp_probe,snapshot/cpp_probe.name);cpp=output/'board-possession-cpp'
+    snapshot.mkdir();simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';units=('SimulationMath','RigidBody','SkeletonPoseFrames','BoardPossession','BoardPossessionManager')
+    for name in [f'{unit}.{ext}' for unit in units for ext in ('h','cpp')]:shutil.copy2(simulation/name,snapshot/name)
+    cpp_probe=PLUGIN/'Tests/Simulation/board_possession_probe.cpp';shutil.copy2(cpp_probe,snapshot/cpp_probe.name);cpp=output/'board-possession-cpp'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{unit}.cpp') for unit in units],str(snapshot/cpp_probe.name),'-o',str(cpp)],check=True)
     provenance=dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,
-        probe_sha256={p.name:digest(p) for p in (probe,cpp_probe)},reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),native_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
+        probe_sha256={p.name:digest(p) for p in (probe,cpp_probe)},reference_binary_sha256=digest(reference),cpp_binary_sha256=digest(cpp),simulation_source_sha256={p.name:digest(p) for p in sorted(snapshot.iterdir())},
         rust_compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip(),cpp_compiler=subprocess.check_output(['clang++','--version'],text=True).strip())
     (output/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n');return cpp,reference
 
@@ -134,9 +134,9 @@ def main():
             run=subprocess.run([str(binary)],input=fixture['input'],capture_output=True);checks[label]=dict(returncode=run.returncode,stderr=run.stderr.decode(errors='replace'))
             if run.returncode==0:raise AssertionError(f'{label} accepted invalid held hand {fixture["selected_hand"]}')
         if 'index out of bounds' not in checks['original']['stderr']:raise AssertionError(checks)
-        if checks['candidate']['returncode']!=-signal.SIGABRT:raise AssertionError('Native invalid-hand contract did not abort: '+str(checks))
+        if checks['candidate']['returncode']!=-signal.SIGABRT:raise AssertionError('The simulation invalid-hand contract did not abort: '+str(checks))
         rejection_results.append(dict(selected_hand=fixture['selected_hand'],**checks))
     (output/'rejections.json').write_text(json.dumps(rejection_results,indent=2)+'\n')
-    result=dict(passed=True,cases=len(cases),exact_words=len(words),contract_rejections=len(rejection_results),groups=dict(Counter(c['label'] for c in cases)),coverage=coverage,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='All retained retrieval/hand records, controller fields, numerical outputs, fill bytes and ordered effect publications exact; no tolerance; original modules unchanged',limitations='Explicit completed physical/animation observations and settings; actual active host Owner/live body/material/volume bindings are a separate comparator. Numerical requests use finite nonsingular inertia; Invalid held selected-hand indices 2, 3 and UINT_MAX are checked separately as original panics and native contract aborts.')
+    result=dict(passed=True,cases=len(cases),exact_words=len(words),contract_rejections=len(rejection_results),groups=dict(Counter(c['label'] for c in cases)),coverage=coverage,input_sha256=hashlib.sha256(inputs).hexdigest(),output_sha256=hashlib.sha256(expected).hexdigest(),comparison='All retained retrieval/hand records, controller fields, numerical outputs, fill bytes and ordered effect publications exact; no tolerance; original modules unchanged',limitations='Explicit completed physical/animation observations and settings; actual active host Owner/live body/material/volume bindings are a separate comparator. Numerical requests use finite nonsingular inertia; Invalid held selected-hand indices 2, 3 and UINT_MAX are checked separately as original panics and simulation contract aborts.')
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

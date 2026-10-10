@@ -28,6 +28,8 @@ AUDIO = ASSETS / 'audio'
 SCRIPTS = GAME / 'unreal' / 'Scripts'
 TOOLS = GAME / 'tools'
 SKATE_RIDE = SCRIPTS / 'skate_ride'
+SKATE_TOOLS = paths.ENGINE_PLUGINS / 'Activities/Skate/Tools'
+SKATE_DATA = paths.ENGINE_PLUGINS / 'Activities/Skate/Data'
 RIDE_IMPORT_BATCHES, RIDE_VERIFY_BATCHES = 4, 2   # editor runs of the clip import and its verification
 TREEHOUSE = REGIONS / 'treehouse'
 SOURCE = GAME / 'unreal' / 'Source'
@@ -64,14 +66,15 @@ class PackageArchive(Python):
     progress: float = 25.
 
 
-def skate_motion_present(out):
-    """Every referenced generated bank must exist, not just the previous verification report."""
+def skate_data_present(out):
+    """The runtime asset and every referenced generated bank must exist, not just the previous verification report."""
     try:
-        report = json.loads((out / 'skate-motion' / 'verify.json').read_text())
+        report = json.loads((out / 'skate-data' / 'verify.json').read_text())
         content = GAME / 'unreal' / 'Content'
-        return report['exact'] and report['negative_control'] and bool(report['banks']) and all(
-            (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
-            for path in report['banks'])
+        return (report['exact'] and report['negative_control'] and report['runtime_exact']
+                and report['runtime_negative_control'] and bool(report['banks']) and all(
+                    (content / (path.removeprefix('/Game/').split('.')[0] + '.uasset')).is_file()
+                    for path in [*report['banks'], report['runtime_asset']]))
     except (OSError, ValueError, KeyError, TypeError):
         return False
 
@@ -444,17 +447,16 @@ def unreal_steps(ctx):
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes; the later
         # imports run after the world (materials and folders it creates) without rerunning when it is reimported.
-        # The complete native package: the committed runtime payloads plus the rig, clips and metadata banks built from
-        # the committed motion text, every payload checked against the committed manifest. The game ships only the
-        # runtime payloads and reads motion from the typed assets (unreal.skate_motion); tools read the whole package.
-        Step('skate.runtime', [Python(TOOLS / 'verify_skate_native.py',
-                                     ('--assemble', out / 'skate-native/package',
-                                      '--output', out / 'skate-native/verification.json'))],
-             inputs=[TOOLS / 'verify_skate_native.py', ASSETS / 'skate/runtime.json', ASSETS / 'skate/motion',
-                     paths.ENGINE_PLUGINS / 'Activities/Skate/Tools/motion_text.py',
-                     paths.content_data(ctx.game) / 'SkateNative'],
-             outputs=[out / 'skate-native/verification.json', out / 'skate-native/package' / 'package-manifest.json'],
-             about='assemble the native skating package from runtime data and motion text; verify every payload'),
+        # The Skate plugin's simulation package: the runtime payloads, rig, clips and metadata banks built from its runtime
+        # and motion text, every payload checked against its manifest. The game reads them from typed assets
+        # (unreal.skate_data); tools read the package.
+        Step('skate.runtime', [Python(SKATE_TOOLS / 'simulation_package.py',
+                                     ('--assemble', out / 'skate-simulation/package',
+                                      '--output', out / 'skate-simulation/verification.json'))],
+             inputs=[SKATE_TOOLS / 'simulation_package.py', SKATE_TOOLS / 'motion_text.py', SKATE_TOOLS / 'runtime_text.py',
+                     SKATE_DATA],
+             outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
+             about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ module (editor target)'),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
@@ -540,33 +542,35 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
              needs=['unreal.city_tree_cpu_access', 'world.city_tiles', 'world.city_trees'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
-        # The Ride skating clips: the native rig and every native clip as Unreal assets (/Game/SkateRide), the manifest
-        # the Ride runtime reads, and the measurement of the compressed poses against the native data. Both scripts
+        # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
+        # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
         # run in batches that resume where a failed run stopped (unreal/Scripts/skate_ride/README.md).
         Step('unreal.skate_clips', [
                 *[UnrealScript(SKATE_RIDE / 'import_clips.py', 'SKATE RIDE CLIPS BATCH COMPLETE', null_rhi=True,
                                env=(('SKATE_RIDE_BATCH', f'{i}/{RIDE_IMPORT_BATCHES}'),)) for i in range(1, RIDE_IMPORT_BATCHES + 1)],
                 *[UnrealScript(SKATE_RIDE / 'verify_clips.py', 'SKATE RIDE CLIPS VERIFY COMPLETE', null_rhi=True,
                                env=(('SKATE_RIDE_VERIFY_BATCH', f'{i}/{RIDE_VERIFY_BATCHES}'),)) for i in range(1, RIDE_VERIFY_BATCHES + 1)]],
-             inputs=[SKATE_RIDE / n for n in ('import_clips.py', 'verify_clips.py', 'native.py', 'rider_mesh.py')] +
-                    [ASSETS / 'skate/motion'],
+             inputs=[SKATE_RIDE / n for n in ('import_clips.py', 'verify_clips.py', 'simulation.py', 'rider_mesh.py')] +
+                    [SKATE_DATA / 'motion'],
              needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'SkateRide' / 'clips.json', out / 'skate-ride' / 'clips-verify.json'],
-             about='native skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
+             about='skating rig and clips as Unreal assets (/Game/SkateRide), their manifest and verification'),
         # Independent NullRHI processes: write typed packages, then reload and verify production resource decoding.
-        Step('unreal.skate_motion', [
+        Step('unreal.skate_data', [
+                UnrealScript(SKATE_RIDE / 'import_runtime.py', 'SKATE RUNTIME IMPORT COMPLETE', null_rhi=True),
                 UnrealScript(SKATE_RIDE / 'import_motion.py', 'SKATE MOTION IMPORT COMPLETE', null_rhi=True),
-                UnrealScript(SKATE_RIDE / 'verify_motion.py', 'SKATE MOTION VERIFY COMPLETE', null_rhi=True)],
-             inputs=[SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_motion.py',
+                UnrealScript(SKATE_RIDE / 'verify_data.py', 'SKATE DATA VERIFY COMPLETE', null_rhi=True)],
+             inputs=[SKATE_RIDE / 'import_runtime.py', SKATE_RIDE / 'import_motion.py', SKATE_RIDE / 'verify_data.py',
                      paths.ENGINE_PLUGINS / 'Activities/Skate/Source/AtelierSkate',
-                     ASSETS / 'skate/motion', paths.content_data(ctx.game) / 'SkateNative', GAME / 'unreal/Config/DefaultGame.ini',
+                     SKATE_DATA, GAME / 'unreal/Config/DefaultGame.ini',
                      *engine_version(ctx)],
              needs=['skate.runtime'], after=['unreal.compile'], heavy=True,
-             outputs=[GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-motion/verify.json'],
-             verify=lambda: skate_motion_present(out),
-             about='typed native motion records; exact serialized reload and offline gameplay replays'),
+             outputs=[GAME / 'unreal/Content/SkateRuntime/RuntimeData.uasset',
+                      GAME / 'unreal/Content/SkateMotion/MotionData.uasset', out / 'skate-data/verify.json'],
+             verify=lambda: skate_data_present(out),
+             about='typed simulation runtime and motion records; exact serialized reload and offline gameplay replays'),
         Step('skate.ride_stills', [Python(SKATE_RIDE / 'render_stills.py')],
-             inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'native.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
+             inputs=[SKATE_RIDE / n for n in ('render_stills.py', 'simulation.py', 'rider_mesh.py')], needs=['unreal.skate_clips'],
              outputs=[out / 'skate-ride' / 'clip-stills' / 'index.json'], about='stills of a few Ride clips sampled in Unreal'),
     ] + communitypark_steps(out)
 

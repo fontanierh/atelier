@@ -144,26 +144,26 @@ def coverage(frames,cases):
 
 
 def prepare_sources(output,defs,sources):
-    cpp,rust=protocol.helpers(defs);c=output/'player-input-phase-native.cpp';r=output/'player-input-phase-reference.rs';c.write_text((PLUGIN/'Tests/Native/player_input_phase_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp));body=(PLUGIN/'Tests/Reference/player_input_phase_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust);records={}
+    cpp,rust=protocol.helpers(defs);c=output/'player-input-phase-simulation.cpp';r=output/'player-input-phase-reference.rs';c.write_text((PLUGIN/'Tests/Simulation/player_input_phase_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp));body=(PLUGIN/'Tests/Reference/player_input_phase_probe.rs').read_text().replace('// GENERATED_PROTOCOL',rust);records={}
     for marker,path in [('ORIGINAL_INITIAL','initial.rs'),('ORIGINAL_RESET','reset.rs'),('ORIGINAL_OUTPUT_RESET','output_reset.rs')]:
         source=trees.source_at_reference(HOST+path);body=body.replace('// '+marker,source);records[HOST+path]=hashlib.sha256(source.encode()).hexdigest()
     r.write_text(body);(output/'source-provenance.json').write_text(json.dumps(dict(host_modules=records,declaration_modules={p:hashlib.sha256(s.encode()).hexdigest() for p,s in sources.items()},expected_methods='Full unchanged original player::input_phase runtime/publication/motion_math and pose/grind output methods; callback data and mutations are explicit supplied subsystem boundaries.'),indent=2)+'\n');return c,r
 
 
-def build_native(output,probe):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';n=output/'native-source';binary=output/'player-input-phase-native';sources=['NameId','Settings','StockSettingsReader','NativeMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase']
+def build_simulation(output,probe):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';n=output/'simulation-source';binary=output/'player-input-phase-simulation';sources=['NameId','Settings','StockSettingsReader','SimulationMath','AnimationName','Input','InputIntentions','WipeoutOrientation','SkeletonPhysicalRecord','PlayerInputTypes','PlayerInputPhase']
     if n.exists():shutil.rmtree(n)
     n.mkdir()
     for path in list(live.glob('*.h'))+[live/(s+'.cpp') for s in sources]:shutil.copy2(path,n/path.name)
     copied_probe=n/probe.name;shutil.copy2(probe,copied_probe)
-    (output/'native-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(n.iterdir())},indent=2)+'\n')
+    (output/'simulation-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(n.iterdir())},indent=2)+'\n')
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(n),*[str(n/(s+'.cpp')) for s in sources],str(copied_probe),'-o',str(binary)],check=True);return binary
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
-    defs,sources=protocol.declarations();cases=corpus(defs);blob=encode(cases,defs);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');cpp,rust=prepare_sources(output,defs,sources);reference=build_probe(output,'player-input-phase-reference',rust,a.target_dir);native=build_native(output,cpp);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'));expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(native),str(settings)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual);frames=decode(expected,cases,defs);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+    defs,sources=protocol.declarations();cases=corpus(defs);blob=encode(cases,defs);(output/'input.bin').write_bytes(blob);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');cpp,rust=prepare_sources(output,defs,sources);reference=build_probe(output,'player-input-phase-reference',rust,a.target_dir);simulation=build_simulation(output,cpp);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'));expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(simulation),str(settings)],input=blob);(output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual);frames=decode(expected,cases,defs);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
     if expected!=actual:
         at=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)));(output/'first-divergence.json').write_text(json.dumps(dict(byte=at),indent=2)+'\n');raise AssertionError(f'Complete canonical input phase differs at byte {at}')
     result=dict(passed=True,histories=len(cases),commands=sum(len(c['commands']) for c in cases),output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames,cases),comparison='Entire unchanged canonical core input phase, actual host stock initialization/selective reset/output reset, completed snapshot copies and pose/grind output leaves.',limitations='Mandatory world/toolkit/skeleton/grind services use explicit supplied observations/mutations; this proves their original ordering and arguments, not the separate concrete physical producers. Overall Skeleton::ProcessData/FootIK/GroundInput bindings remain other owner comparisons.');(output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)

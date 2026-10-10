@@ -1,4 +1,4 @@
-# Preserve native data bytes: the Skate manifest verifies SHA-256 hashes.
-games/yorimichi/unreal/Content/Data/SkateNative/** -text -whitespace
+# Preserve the skating data bytes: the Skate manifest verifies SHA-256 hashes.
+platform/engine/Plugins/Activities/Skate/Data/runtime/** -text -whitespace
 # Model manifests verify exact source bytes on every platform.
 *.glb -text -whitespace

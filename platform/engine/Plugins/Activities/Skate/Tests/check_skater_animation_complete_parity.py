@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Whole original SkaterAnimation facade with complete native MotionHost dispatch.
+"""Whole original SkaterAnimation facade with complete simulation MotionHost dispatch.
 
 Root alone builds/runs under the render lock. All production Rust files are
 unchanged prefixes. Inputs are actual completed caller-publication records;
@@ -23,7 +23,7 @@ from check_graph_parity import attribute, element, original_graph
 from check_gesture_parity import converter, PLUGIN
 from session_parity import REFERENCE_REVISION, digest
 
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
 TESTS = PLUGIN / 'Tests'
 UNITS = tuple(dict.fromkeys((*continuation.UNITS, 'ActionGraphFrame', 'AnimationPose',
     'AnimationPoseAuthored', 'AnimationPoseJson', 'AnimationPublication', 'SkaterAnimation')))
@@ -438,37 +438,37 @@ path="src/migration_probe.rs"
     return source,crate,dict(reference_revision=revision,source_archive_sha256=hashlib.sha256(archive).hexdigest(),original_source_sha256=originals,staged_host_prefixes=staged,helper_extractions=[base,publication],probe_sha256=digest(probe),observer_sha256=digest(observer),generated_probe_sha256=digest(generated))
 
 
-def stage_native(output):
-    snap=output/'native-source'
+def stage_simulation(output):
+    snap=output/'simulation-source'
     if snap.exists():shutil.rmtree(snap)
     snap.mkdir()
     for p in[*sorted(CODE.glob('*.h')),*[CODE/(n+'.cpp')for n in UNITS]]:shutil.copy2(p,snap/p.name)
-    prefix,base=extract(TESTS/'Native/skater_animation_probe.cpp',b'// SPDX-License-Identifier: Apache-2.0',b'int main(int argc,char** argv)')
-    physical,publication=extract(TESTS/'Native/motion_graph_continuation_probe.cpp',b'void Physical(Input &r, MotionGraphContinuationHost &h)',b'void Snapshot(Output &o, MotionGraphContinuationHost &h,')
+    prefix,base=extract(TESTS/'Simulation/skater_animation_probe.cpp',b'#include "SkaterAnimation.h"',b'int main(int argc,char** argv)')
+    physical,publication=extract(TESTS/'Simulation/motion_graph_continuation_probe.cpp',b'void Physical(Input &r, MotionGraphContinuationHost &h)',b'void Snapshot(Output &o, MotionGraphContinuationHost &h,')
     (snap/'skater_animation_facade_helpers.h').write_bytes(prefix);(snap/'motion_graph_complete_publication.h').write_bytes(physical)
-    probe=TESTS/'Native/skater_animation_complete_probe.cpp';shutil.copy2(probe,snap/probe.name)
-    return snap,dict(immutable_native_sources={p.name:digest(p)for p in sorted(snap.iterdir())},units=UNITS,helper_extractions=[base,publication],probe_sha256=digest(probe))
+    probe=TESTS/'Simulation/skater_animation_complete_probe.cpp';shutil.copy2(probe,snap/probe.name)
+    return snap,dict(immutable_simulation_sources={p.name:digest(p)for p in sorted(snap.iterdir())},units=UNITS,helper_extractions=[base,publication],probe_sha256=digest(probe))
 
 
 def build_probes(output,target):
-    source,crate,reference=stage_reference(output);snap,native=stage_native(output)
+    source,crate,reference=stage_reference(output);snap,simulation=stage_simulation(output)
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','skater-animation-complete-reference'],check=True)
     for path,sha in reference['original_source_sha256'].items():assert digest(source/path)==sha,path
     for path,row in reference['staged_host_prefixes'].items():
         dest=crate/'src'/path;original=source/'crates/skate-host/src'/path;assert digest(dest)==row['generated_sha256']and dest.read_bytes()[:original.stat().st_size]==original.read_bytes(),path
     rust=output/'skater-animation-complete-reference';shutil.copy2(target.resolve()/'release/skater-animation-complete-reference',rust);reference.update(binary_sha256=digest(rust),cargo_lock_sha256=digest(crate/'Cargo.lock'),compiler=subprocess.check_output(['rustc','+1.97.1','-vV'],text=True).strip())
-    binary=output/'skater-animation-complete-native';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(n+'.cpp'))for n in UNITS],str(snap/'skater_animation_complete_probe.cpp'),'-o',str(binary)],check=True)
-    for path,sha in native['immutable_native_sources'].items():assert digest(snap/path)==sha,path
-    native['binary_sha256']=digest(binary)
-    (output/'reference-provenance.json').write_text(json.dumps(reference,indent=2)+'\n');(output/'native-provenance.json').write_text(json.dumps(native,indent=2)+'\n');return binary,rust
+    binary=output/'skater-animation-complete-simulation';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snap),*[str(snap/(n+'.cpp'))for n in UNITS],str(snap/'skater_animation_complete_probe.cpp'),'-o',str(binary)],check=True)
+    for path,sha in simulation['immutable_simulation_sources'].items():assert digest(snap/path)==sha,path
+    simulation['binary_sha256']=digest(binary)
+    (output/'reference-provenance.json').write_text(json.dumps(reference,indent=2)+'\n');(output/'simulation-provenance.json').write_text(json.dumps(simulation,indent=2)+'\n');return binary,rust
 
 
 def prepare(output,assets,samples):
     stock=assets/'private/stock';collections=json.loads((stock/'skater-collections.json').read_text());loaders=continuation.loader_fixtures(collections)
-    (output/'settings.native').write_bytes(converter.encode_settings(stock/'skater-collections.json'))
+    (output/'settings.simulation').write_bytes(converter.encode_settings(stock/'skater-collections.json'))
     for i,(label,data,success)in enumerate(loaders):
         directory=output/f'settings-{i}';directory.mkdir(exist_ok=True);_,path=continuation.stage_assets(assets,directory,data)
-        (output/f'settings-{i}.native').write_bytes(converter.encode_settings(path))
+        (output/f'settings-{i}.simulation').write_bytes(converter.encode_settings(path))
     graphs={i:fixtures(i)for i in range(12)}
     graphs[7]=(stock/'data/state/ActionGraph_OnBoard.stategraph',stock/'data/state/MotionGraph_OnBoard.stategraph')
     bad=extra_operation('GrindControlFade');bad['attributes']=[a for a in bad['attributes']if a['name']!='twistAnimAttribute']
@@ -482,7 +482,7 @@ def prepare(output,assets,samples):
     for i,pair in graphs.items():
         for kind,g in zip(('action','motion'),pair):
             reference=output/f'actor-{i}.{kind}.reference';reference.write_bytes(g.read_bytes()if isinstance(g,Path)else original_graph(g))
-            (output/f'actor-{i}.{kind}.native').write_bytes(converter.encode_graph(converter.read_graph(reference)))
+            (output/f'actor-{i}.{kind}.simulation').write_bytes(converter.encode_graph(converter.read_graph(reference)))
     prefix,cases,streams=corpus(samples,loaders,factory_rows);raw=encode(prefix,cases);preserved_input(raw,streams)
     (output/'input.bin').write_bytes(raw);(output/'commands.json').write_text(json.dumps(streams,indent=2)+'\n')
     return prefix,cases,streams,loaders
@@ -494,18 +494,18 @@ def main():
     p.add_argument('--preflight-only',action='store_true');args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     prefix,cases,streams,loaders=prepare(output,args.assets.resolve(),args.samples.resolve());raw=encode(prefix,cases)
     if args.preflight_only:
-        _,_,reference=stage_reference(output);_,native=stage_native(output)
-        files=[CODE/('SkaterAnimation'+ext)for ext in('.h','.cpp')]+[CODE/'GraphIntentOperations.cpp',TESTS/'check_skater_animation_complete_parity.py',TESTS/'Native/skater_animation_complete_probe.cpp',TESTS/'Reference/skater_animation_complete_probe.rs',TESTS/'Reference/skater_animation_complete_observer.rs']
-        report=dict(preflight=True,streams=len(streams),commands=sum(len(s['rows'])for s in streams),units=len(UNITS),loader_fixtures=len(loaders),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),preserved_original_input=preserved_input(raw,streams),additive_absence_commands=280,frozen_files={p.relative_to(PLUGIN).as_posix():digest(p)for p in files},reference=reference,native=native)
-        (output/'preflight.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k not in('reference','native')},indent=2));return
+        _,_,reference=stage_reference(output);_,simulation=stage_simulation(output)
+        files=[CODE/('SkaterAnimation'+ext)for ext in('.h','.cpp')]+[CODE/'GraphIntentOperations.cpp',TESTS/'check_skater_animation_complete_parity.py',TESTS/'Simulation/skater_animation_complete_probe.cpp',TESTS/'Reference/skater_animation_complete_probe.rs',TESTS/'Reference/skater_animation_complete_observer.rs']
+        report=dict(preflight=True,streams=len(streams),commands=sum(len(s['rows'])for s in streams),units=len(UNITS),loader_fixtures=len(loaders),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),preserved_original_input=preserved_input(raw,streams),additive_absence_commands=280,frozen_files={p.relative_to(PLUGIN).as_posix():digest(p)for p in files},reference=reference,simulation=simulation)
+        (output/'preflight.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k not in('reference','simulation')},indent=2));return
     for marker in('result.json','first-divergence.json'):(output/marker).unlink(missing_ok=True)
-    native,rust=build_probes(output,args.target_dir)
+    simulation,rust=build_probes(output,args.target_dir)
     expected=subprocess.check_output([str(rust),str(args.assets.resolve()),str(output)],input=raw)
-    actual=subprocess.check_output([str(native),str(args.samples.resolve()),str(args.metadata.resolve()),str(output),str(output/'settings.native'),str(args.assets.resolve())],input=raw)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual)
+    actual=subprocess.check_output([str(simulation),str(args.samples.resolve()),str(args.metadata.resolve()),str(output),str(output/'settings.simulation'),str(args.assets.resolve())],input=raw)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(byte=at,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+48].hex(),native_hex=actual[max(0,at-16):at+48].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
-    report=dict(passed=True,coverage=coverage(expected,streams,args.assets/'private/stock/data/state/MotionGraph_OnBoard.stategraph'),streams=len(streams),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),preserved_original_input=preserved_input(raw,streams),additive_absence_commands=280,loader_fixtures=len(loaders),comparison='Direct whole unchanged SkaterAnimation::from_source/advance, complete MotionHost constructor and sole original AG/MG controllers, all stock registrations, full sampled stock pose/hierarchy/local matrices/packet, same shared animation/hands/RNG/conditions/allocation identity and retained continuation owners.',physical_boundary='New producer fields are published explicitly before Advance at the original physics/animation_phase boundary; SkaterAnimation PublishPhysical remains unchanged. Absent records remain absent.',limitations='The graph/actor schedule is proved with completed canonical caller-publication records. Their upstream physical producer/global frame and complete gameplay session remain outside this bounded check. The four original missing producers preserve actual failures.',reference_provenance='reference-provenance.json',native_provenance='native-provenance.json')
+        at=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));report=dict(byte=at,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+48].hex(),simulation_hex=actual[max(0,at-16):at+48].hex());(output/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+    report=dict(passed=True,coverage=coverage(expected,streams,args.assets/'private/stock/data/state/MotionGraph_OnBoard.stategraph'),streams=len(streams),output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),input_sha256=hashlib.sha256(raw).hexdigest(),preserved_original_input=preserved_input(raw,streams),additive_absence_commands=280,loader_fixtures=len(loaders),comparison='Direct whole unchanged SkaterAnimation::from_source/advance, complete MotionHost constructor and sole original AG/MG controllers, all stock registrations, full sampled stock pose/hierarchy/local matrices/packet, same shared animation/hands/RNG/conditions/allocation identity and retained continuation owners.',physical_boundary='New producer fields are published explicitly before Advance at the original physics/animation_phase boundary; SkaterAnimation PublishPhysical remains unchanged. Absent records remain absent.',limitations='The graph/actor schedule is proved with completed canonical caller-publication records. Their upstream physical producer/global frame and complete gameplay session remain outside this bounded check. The four original missing producers preserve actual failures.',reference_provenance='reference-provenance.json',simulation_provenance='simulation-provenance.json')
     (output/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
 
 

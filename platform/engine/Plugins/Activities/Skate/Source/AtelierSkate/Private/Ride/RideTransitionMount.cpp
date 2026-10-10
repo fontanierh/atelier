@@ -212,7 +212,6 @@ bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, co
     T.MeshSettleTime = -1.f;
     Pos = Ground; Rot = Rotation; Vel = Velocity;
     const FTransform MeshWorld = Mesh->GetRelativeTransform() * Rider->GetActorTransform();
-    bRideBody = true;
     ResetInput(); ShownCombo.Reset(); ComboFade = 0;
     Mode = ESkateMode::Ground;
     // A board left lying elsewhere goes; the board is placed in the world from now on, so it can stay behind when the
@@ -221,9 +220,9 @@ bool USkateComponent::GetOnBoard(const FVector& Where, const FQuat& Rotation, co
     T.Board = ERideBoard::Ride; T.bGetUpOnFoot = false; T.Foot = ERideFoot::Off; T.bRecall = false; T.bCarryShown = false;
     UseWorldBoard();
     // The pose shown this frame stays until the ride publishes its first (starting the ride clears it).
-    const TArray<FTransform> Shown = RetailPose;
-    if (!StartRetailRuntime()) { StowImmediately(); return false; }
-    if (!Shown.IsEmpty()) RetailPose = Shown;
+    const TArray<FTransform> Shown = RiderPose;
+    if (!StartSimulation()) { StowImmediately(); return false; }
+    if (!Shown.IsEmpty()) RiderPose = Shown;
     // A slow, upright bail is offered to the transition first: it runs out on foot.
     if (PhysicalRider && !PhysicalRider->OnBailStart.IsBound()) PhysicalRider->OnBailStart.BindUObject(this, &USkateComponent::TakeRunOut);
     // The ride's own clips take over from a transition clip; the character's blend hides the switch.
@@ -254,9 +253,9 @@ bool USkateComponent::RideDismount()
     // During a bail the button asks to get up on foot: the physical rider reads WantsGetUpOnFoot when the body settles.
     const bool bDown = Mode == ESkateMode::Bail || (PhysicalRider && (PhysicalRider->IsBailing() || PhysicalRider->IsGettingUp()));
     if (bDown) { T.bGetUpOnFoot = true; return true; }
-    // Native's rider already off the board on foot becomes the character in a moment (TakeNativeOnFoot): no dismount
+    // The simulation's rider already off the board on foot becomes the character in a moment (TakeSimulationOnFoot): no dismount
     // starts on the board it left.
-    if (IsNativeOnFoot()) return true;
+    if (IsSimulationOnFoot()) return true;
     // In the air the rider lets go of the board from the grab and comes down on foot holding it.
     if (Mode == ESkateMode::Air) return T.Board == ERideBoard::Ride && PrepareRideClips() && BeginAirDismountClip();
     if (Mode != ESkateMode::Ground) return false;           // not from a grind
@@ -268,7 +267,7 @@ bool USkateComponent::RideDismount()
     UCharacterMovementComponent* M = Movement();
     const FRideTuning& Tune = FRideTuning::Get();
     const FVector Carried = Vel;
-    SuspendRetailRuntime();
+    SuspendSimulation();
     RequestPoseBlend(Tune.DismountBlend);
     LeaveBoard();
     const bool bFloor = StandUpOffBoard(Rider->GetActorRotation().Yaw);
@@ -378,7 +377,7 @@ bool USkateComponent::BeginDismountClip()
     T.BoardContact = BoardCrossing(Clip, true, .3f);
     T.Lift = 1.f;
     T.bEndsStanding = !bEndsRunning;
-    SuspendRetailRuntime();
+    SuspendSimulation();
     RequestPoseBlend(Tune.ClipBlend);
     LeaveBoard();
     // The deck it leaves, before the capsule changes.
@@ -398,7 +397,7 @@ bool USkateComponent::BeginDismountClip()
     return true;
 }
 
-void USkateComponent::BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bFaceUp)
+void USkateComponent::BeginGetUpOnFoot(bool bFaceUp)
 {
     FRideTransition& T = Transit();
     T.bGetUpOnFoot = true;
@@ -412,7 +411,7 @@ void USkateComponent::BeginGetUpOnFoot(const FVector& Ground, float Yaw, bool bF
         }
     // The body gets up where it lies with the recovery that fits how it lies (BeginRecover, after the ride's frame,
     // blended out of the fallen pose's snapshot).
-    if (PrepareRideClips()) { T.bRecoverPending = true; T.RecoverGround = Ground; T.RecoverYaw = Yaw; T.bRecoverFaceUp = bFaceUp; }
+    if (PrepareRideClips()) { T.bRecoverPending = true; T.bRecoverFaceUp = bFaceUp; }
 }
 
 bool USkateComponent::BeginRecover()
@@ -420,8 +419,6 @@ bool USkateComponent::BeginRecover()
     // The recovery whose first frame lies most like the fallen body: its head-from-hips way turned onto the body's,
     // then the hands, feet and the way the front faces compared about the hips (scaled to the character).
     FRideTransition& T = Transit();
-    const bool bAway = T.bRecoverAway;
-    T.bRecoverAway = false;
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
     if (!Clips || !Mesh) return false;
     struct FPart { const TCHAR* Own; const TCHAR* Clip; };
@@ -461,15 +458,15 @@ bool USkateComponent::BeginRecover()
     }
     if (!Best) return false;
     const FRideTuning& Tune = FRideTuning::Get();
-    SuspendRetailRuntime();
+    SuspendSimulation();
     LeaveBoard();
     StandUpOffBoard(BestYaw);
     StartClip(Best, ERideFoot::Recover, false, BestYaw, 0.f);
     // No travel: the clip's trajectory is held where its pelvis lies on the body's (MatchPelvis), and the capsule
-    // moves under it; a body away through a wall gets up over the capsule, unmatched.
+    // moves under it.
     T.SpeedStart = T.SpeedEnd = 0.f;
     T.bAnchored = true; T.Anchor = OffBoardGround();
-    T.bMatchPelvis = !bAway; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
+    T.bMatchPelvis = true; T.OffsetTime = FMath::Max(.3f, T.ClipLength * .8f);
     T.bEndsStanding = true;
     T.bGetUpOnFoot = false;
     if (T.Board == ERideBoard::Ride) { T.Board = ERideBoard::World; T.BoardTime = 0.f; }
@@ -487,7 +484,7 @@ bool USkateComponent::TakeRunOut(ERideBailKind Kind)
     FRideTransition& T = Transit();
     if (Kind != ERideBailKind::RunOut || !Clips || !BoardRoot || T.Board != ERideBoard::Ride || !PrepareRideClips()) return false;
     const FVector Bail = BailVelocity();
-    // The way is the shown deck's: Native's pose carries its stance, so the rider never counts as switch.
+    // The way is the shown deck's: the simulation's pose carries its stance, so the rider never counts as switch.
     const FQuat DeckRotation = BoardRoot->GetComponentQuat();
     float Along = FVector::DotProduct(Bail, DeckRotation.GetForwardVector());
     float Across = FVector::DotProduct(Bail, DeckRotation.GetRightVector());
@@ -538,7 +535,7 @@ bool USkateComponent::BeginRunOut()
     const float Yaw = DeckYaw - ClipYawToWorld(ClipDeckYaw(Clip, 0.f), bMirror, 0.f);
     const FVector Carried = BailVelocity();
     const FVector Flat(Carried.X, Carried.Y, 0.f);
-    SuspendRetailRuntime();
+    SuspendSimulation();
     RequestPoseBlend(Tune.DismountBlend);
     LeaveBoard();
     const bool bFloor = StandUpOffBoard(Yaw);
@@ -748,7 +745,7 @@ void USkateComponent::EndOnFoot(float Blend)
     FRideTransition& T = Transit();
     T.Foot = ERideFoot::Off; T.bCarryShown = false;
     if (Clips) Clips->GetAnimator().ClearOverride();
-    if (!RetailPose.IsEmpty()) { RetailPose.Reset(); RequestPoseBlend(Blend); }
+    if (!RiderPose.IsEmpty()) { RiderPose.Reset(); RequestPoseBlend(Blend); }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -878,8 +875,8 @@ void USkateComponent::StepRideClip(float Dt)
         }
     }
     // Getting up: the pose rises out of the fallen body (the physical rider's snapshot of it).
-    if (T.Foot == ERideFoot::Recover && PhysicalRider && !RetailPose.IsEmpty())
-        PhysicalRider->BlendFromSnapshot(RetailPose, T.ClipTime / FMath::Max(.05f, Tune.RecoverBlend));
+    if (T.Foot == ERideFoot::Recover && PhysicalRider && !RiderPose.IsEmpty())
+        PhysicalRider->BlendFromSnapshot(RiderPose, T.ClipTime / FMath::Max(.05f, Tune.RecoverBlend));
     // A kick-out's or run-out's board: its motion over the frames shown, for its flight once the clip lets it go.
     if ((T.bKickOut || T.Foot == ERideFoot::RunOut) && BoardRoot && Dt > 0.f)
     {
@@ -945,7 +942,7 @@ void USkateComponent::StepRideClip(float Dt)
         }
     }
     if (!T.bDrive) return;
-    // The capsule follows the clip's travel (its velocity about the time shown, so the uneven native steps do not
+    // The capsule follows the clip's travel (its velocity about the time shown, so the uneven simulation steps do not
     // shake it): at the clip's own speed scaled from ScaleStart to ScaleEnd, or along it at a speed going from
     // SpeedStart to SpeedEnd.
     const float A = FMath::SmoothStep(0.f, 1.f, T.ClipTime / FMath::Max(.01f, T.ClipLength));

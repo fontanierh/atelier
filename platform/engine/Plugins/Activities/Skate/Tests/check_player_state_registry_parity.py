@@ -37,14 +37,14 @@ def main():
     for name in ('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
     original=source_at_reference(SOURCE);template=PLUGIN/'Tests/Reference/player_state_registry_probe.rs';generated=out/'player-state-registry-reference.rs';generated.write_text(template.read_text().replace('// ORIGINAL_HOST',original));assert original in generated.read_text()
     reference=build_probe(out,'player-state-registry-reference',generated,a.target_dir)
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    for path in (live/'NativeMath.h',live/'PhysicalPhase.h',live/'PhysicalPhase.cpp',live/'PlayerStateRegistry.h',live/'PlayerStateRegistry.cpp',PLUGIN/'Tests/Native/player_state_registry_probe.cpp'):shutil.copy2(path,snapshot/path.name)
-    native=out/'player-state-registry-native';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'PhysicalPhase.cpp'),str(snapshot/'PlayerStateRegistry.cpp'),str(snapshot/'player_state_registry_probe.cpp'),'-o',str(native)],check=True)
-    expected=subprocess.check_output([str(reference)]);actual=subprocess.check_output([str(native)]);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    for path in (live/'SimulationMath.h',live/'PhysicalPhase.h',live/'PhysicalPhase.cpp',live/'PlayerStateRegistry.h',live/'PlayerStateRegistry.cpp',PLUGIN/'Tests/Simulation/player_state_registry_probe.cpp'):shutil.copy2(path,snapshot/path.name)
+    simulation=out/'player-state-registry-simulation';subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'PhysicalPhase.cpp'),str(snapshot/'PlayerStateRegistry.cpp'),str(snapshot/'player_state_registry_probe.cpp'),'-o',str(simulation)],check=True)
+    expected=subprocess.check_output([str(reference)]);actual=subprocess.check_output([str(simulation)]);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        index=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=index,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Host state support table differs')
-    report=dict(passed=True,exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected),original=dict(path=SOURCE,sha256=hashlib.sha256(original.encode()).hexdigest()),native_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in snapshot.iterdir()},boundary='Whole unchanged original host registry; all 26 capabilities and 676 transition pairs. Actual lifecycle effects and global player-frame publication remain separate concrete-owner integration checks.')
+        index=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=index,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Host state support table differs')
+    report=dict(passed=True,exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected),original=dict(path=SOURCE,sha256=hashlib.sha256(original.encode()).hexdigest()),simulation_source_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in snapshot.iterdir()},boundary='Whole unchanged original host registry; all 26 capabilities and 676 transition pairs. Actual lifecycle effects and global player-frame publication remain separate concrete-owner integration checks.')
     (out/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

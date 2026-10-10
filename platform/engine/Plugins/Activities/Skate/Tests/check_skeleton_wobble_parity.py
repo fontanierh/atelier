@@ -21,7 +21,7 @@ from check_gesture_parity import PLUGIN,converter
 from reference_build import build_probe
 
 SOURCE='crates/skate-core/src/physics/skeleton_output/wobble.rs'
-UNITS=('NativeMath','RigidBody','SkeletonPoseFrames','SkeletonWobble','Settings','NameId','StockSettingsReader')
+UNITS=('SimulationMath','RigidBody','SkeletonPoseFrames','SkeletonWobble','Settings','NameId','StockSettingsReader')
 def bits(f):return struct.unpack('<I',struct.pack('<f',f))[0]
 def floats(values):return [bits(v) for v in values]
 def matrix(n):
@@ -75,17 +75,17 @@ def main():
     for name in ('result.json','first-divergence.json'):(out/name).unlink(missing_ok=True)
     source=source_at_reference(SOURCE);reference_source=out/'skeleton-wobble-reference.rs';prefix=source;reference_source.write_text((PLUGIN/'Tests/Reference/skeleton_wobble_probe.rs').read_text().replace('// ORIGINAL_CORE',prefix));assert prefix in reference_source.read_text()
     reference=build_probe(out,'skeleton-wobble-reference',reference_source,a.target_dir)
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=out/'native-source'
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=out/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
     for path in list(live.glob('*.h'))+[live/(n+'.cpp') for n in UNITS]:shutil.copy2(path,snapshot/path.name)
-    probe=snapshot/'skeleton_wobble_probe.cpp';shutil.copy2(PLUGIN/'Tests/Native/skeleton_wobble_probe.cpp',probe)
-    (out/'native-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in snapshot.iterdir()},indent=2)+'\n');(out/'source-provenance.json').write_text(json.dumps(dict(path=SOURCE,sha256=hashlib.sha256(source.encode()).hexdigest()),indent=2)+'\n')
-    native=out/'skeleton-wobble-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(n+'.cpp')) for n in UNITS],str(probe),'-o',str(native)],check=True)
-    settings=out/'settings.native';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
-    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=commands);actual=subprocess.check_output([str(native),str(settings)],input=commands);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    probe=snapshot/'skeleton_wobble_probe.cpp';shutil.copy2(PLUGIN/'Tests/Simulation/skeleton_wobble_probe.cpp',probe)
+    (out/'simulation-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in snapshot.iterdir()},indent=2)+'\n');(out/'source-provenance.json').write_text(json.dumps(dict(path=SOURCE,sha256=hashlib.sha256(source.encode()).hexdigest()),indent=2)+'\n')
+    simulation=out/'skeleton-wobble-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(n+'.cpp')) for n in UNITS],str(probe),'-o',str(simulation)],check=True)
+    settings=out/'settings.simulation';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=commands);actual=subprocess.check_output([str(simulation),str(settings)],input=commands);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)));report=dict(passed=False,word=at//4,reference_bytes=len(expected),native_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
-    result=dict(passed=True,programs=len(programs),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,programs),boundary='Real observed board records and transition calls are explicit. Native load uses exact consumed stock curve words; all core state, update and packed affine output execute complete unchanged original implementation. Complete physical output scheduling remains unverified.')
+        at=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)));report=dict(passed=False,word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
+    result=dict(passed=True,programs=len(programs),exact_words=len(expected)//4,sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,programs),boundary='Real observed board records and transition calls are explicit. Simulation load uses exact consumed stock curve words; all core state, update and packed affine output execute complete unchanged original implementation. Complete physical output scheduling remains unverified.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

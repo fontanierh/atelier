@@ -1,6 +1,6 @@
 # megapark_ride_film.py: runs inside the game (atelier live py - < this file). This line keeps the bridge from taking
 # the code for a file name: Unreal's Python reads any text whose first .py is followed by a space as a script path.
-"""Mega Park Ride film: the Ride skating backend (skate.Backend Ride) through the Mega Park. A push-off and hard carves
+"""Mega Park Ride film: Ride skating through the Mega Park. A push-off and hard carves
 on the park road, flat-ground flips (kickflip, heelflip, pop shove-it, 360 flip, varial kickflip, hardflip) and a
 sketchy catch, a powerslide down the ramp, manuals on the plaza, a long 50-50, a boardslide and a 5-0 down the plaza
 parapet, the drop-in off the upper deck into a big Indy over the pool's west wall, quarter-pipe airs that come back down
@@ -71,7 +71,6 @@ CLOSE = float(globals().get('CLOSE', 4.3))       # m across at the rider: Cairo 
 MIN_FOV = 8.
 RECALL = bool(globals().get('RECALL', True))     # the road bail ends on foot with the board recalled to the hand
 PHYSICAL = bool(globals().get('PHYSICAL', True))
-BACKEND = globals().get('BACKEND', 'Ride')         # Native: the same shots on the original, to compare
 OUT = globals().get('OUTDIR') or os.path.join(os.environ.get('ATELIER_BUILD_ROOT') or os.path.join(live.ROOT, 'build'),
                                               'yorimichi/megapark/ride-film', TAKE)
 os.makedirs(OUT, exist_ok=True)
@@ -221,7 +220,7 @@ def observe(s):
     text = L.skate_state(); d = parse(text); c = Ctx()
     c.text, c.d = text, d
     c.t = s['t']
-    c.mode = int(d.get('mode', 0)); c.retail = d.get('retail', ''); c.backend = d.get('backend', '')
+    c.mode = int(d.get('mode', 0)); c.simulation = d.get('simulation', '')
     c.zb = float(d.get('z', 0.)) / 100.
     c.manual, c.slide, c.fakie, c.switch = d.get('manual') == '1', d.get('slide') == '1', d.get('fakie') == '1', d.get('switch') == '1'
     c.combo, c.last = d.get('combo', ''), d.get('last', '')
@@ -288,7 +287,7 @@ def flick(name, load=.2, **kw):
     return dict(kind='flick', name=name, load=load, **kw)
 
 
-# Native's nollie gestures (gestures.skate, "main": N_*) in live.FLICKS' frame (x right, y up, regular stance): the
+# The simulation's nollie gestures (gestures.skate, "main": N_*) in live.FLICKS' frame (x right, y up, regular stance): the
 # stick up first, onto the nose. Some wind up only part-way out (N_Kickflip at 0.69).
 NOLLIES = {
     'nollie_kickflip': [(0.02, 0.69), (-0.71, -0.67)],
@@ -339,7 +338,7 @@ def apply_effect(s, c, e, inp):
         else:
             j = 1 + int((u - e['load']) * 30. + 1e-6)
             if j > len(pts):
-                # Then the left stick stays neutral until the air it pops is over: native reads it through the pop's
+                # Then the left stick stays neutral until the air it pops is over: the simulation reads it through the pop's
                 # wind-up (GroundAnimation) into the air's spin, so steering there turns the board in the air.
                 if c.mode == 2: e['popped'] = True
                 elif e.get('popped') or u > e['load'] + len(pts) / 30. + .8: return False
@@ -368,7 +367,7 @@ def apply_effect(s, c, e, inp):
         if e['until'] is not None: go = abs(a['spin']) < e['until']
         else:
             # The turn so far, and what Ride's controller still turns by the landing should the stick go now. Once let
-            # go, a lip air comes down on the nearer of forward and fakie by itself (Ride's landing alignment, native's
+            # go, a lip air comes down on the nearer of forward and fakie by itself (Ride's landing alignment, the simulation's
             # known air), so the stick goes back only for a turn more than SPIN_SLACK short.
             if a['lip'] and a.get('dprev') is not None: done = a['dturn']     # the deck's own turn
             else: done = a['turned'] if a.get('yaw') is not None else a['spin']
@@ -386,7 +385,7 @@ def apply_effect(s, c, e, inp):
 
 SPIN_SCALE = 1.6           # the game's AirSpinScale (Config/DefaultGame.ini): the spin preference
 TICK = 1. / 60.            # the session's step
-# The spin controller (native's PhysicalBodySpin in its normal mode, the hybrid's spin), by
+# The spin controller (the simulation's PhysicalBodySpin in its normal mode, the ride's spin), by
 # the time in the air (s): the rate at full stick (rad/s, before the preference) and the most it changes in a tick
 # (rad/s); and the snap's weight by the age of the stick's push (s, negative before the take-off), over the last
 # SPIN_TICKS ticks.
@@ -413,7 +412,7 @@ def curve(pts, x):
 
 
 def spin_stick(left):
-    """The stick's x as the spin reads it (native's ConditionStick): its length less a quarter over three quarters (at
+    """The stick's x as the spin reads it (the simulation's ConditionStick): its length less a quarter over three quarters (at
     most 1) along its direction, so a stick within a quarter of the centre spins nothing, a half-pushed one a third."""
     n = math.hypot(left[0], left[1])
     return 0. if n < .001 else left[0] * max(0., min(1., (n - .25) / .75)) / n
@@ -452,7 +451,7 @@ def spin_tick(k, x, air):
     else: k['smooth'] = .8 * k['smooth'] + .2 * k['in']
     prop = curve(SPIN_PROP, k['clock']) * SPIN_SCALE * k['in']
     if prop * k['peak'] < 0.: k['peak'] = 0.
-    target = (abs(k['peak']) * .6 + .4) * prop          # rad/s, the stick's way (native turns against it)
+    target = (abs(k['peak']) * .6 + .4) * prop          # rad/s, the stick's way (the simulation turns against it)
     old = math.radians(k['rate'])
     lim = min(.2 * SPIN_SCALE, accel)
     lo, hi = (-accel, lim) if old < 0. else (-lim, accel)
@@ -801,7 +800,7 @@ SHOTS = [
          trig=[{'when': lambda s, c: s.get('jumped') is not None and c.mode == 0 and c.t > s['jumped'] + .08 and (c.vz > .3 or c.t > s['jumped'] + .35), 'act': 'toggle'},
                {'when': lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.t > s['mounted'] + .5, 'do': [hold(secs=1.2, push=True)]}],
          cams=[(0., chase(back=2.2, side=2.0, up=.7))],
-         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.backend == 'Ride' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
+         keep=lambda s, c: s.get('mounted') is not None and c.mode == 1 and c.simulation != '' and s['max_spd_after_mount'] > 2.5 and s['d_bails'] == 0),
     # The opener: a wide view down the park road as he pushes off.
     dict(name='open_wide', unless='open_caveman', road=(0., 8.5), speed=3.,
          secs=6.5, cams=[(0., WIDE_ROAD)], expect=[]),
@@ -835,18 +834,18 @@ SHOTS = [
          events=[(.8, flick('nollie_kickflip')), (2.6, flick('nollie_heelflip')), (4.4, flick('nollie_360_flip'))],
          cams=[(0., chase(back=2.3, side=2.4, up=.8))], expect=['Nollie Kickflip', 'Nollie Heelflip', 'Nollie 360 Flip']),
     # A FS 180 to fakie, then a fakie kickflip and a fakie 360 flip, unsteered on the flat (the steering reads the
-    # board's heading, backwards rolling fakie). Launched backwards instead, native takes him for switch, not fakie.
+    # board's heading, backwards rolling fakie). Launched backwards instead, the simulation takes him for switch, not fakie.
     dict(name='plaza_fakie', steer=False, start=(-28., 1389., 125., 180.), speed=7., secs=6.4,
          events=[(.6, flick('ollie', .16)), (.6, spin(to=180., dir=1.)), (2.6, flick('kickflip')), (4.4, flick('360_flip'))],
          cams=[(0., chase(back=2.3, side=2.4, up=.8))], expect=['180', 'Fakie Kickflip', 'Fakie 360 Flip']),
-    # Switch: launched backwards from a standstill native puts him in his other stance, rolling forward; the gestures
+    # Switch: launched backwards from a standstill the simulation puts him in his other stance, rolling forward; the gestures
     # mirrored (his other foot forward): a switch kickflip, a switch heelflip and a switch 360 flip.
     dict(name='plaza_switch', back=True, steer=False, start=(-28., 1389., 125., 180.), speed=7., secs=6.2,
          events=[(.8, flick('kickflip', mirror=True)), (2.6, flick('heelflip', mirror=True)), (4.4, flick('360_flip', mirror=True))],
          cams=[(0., chase(back=2.3, side=-2.4, up=.8))], expect=['Switch Kickflip', 'Switch Heelflip', 'Switch 360 Flip']),
     # The long 50-50: along the parapet's inside, an ollie onto its edge 22 m from the end and down it to the end. The
     # line closes on the parapet steeply enough (b_d) for the air to come down through the grind edge's height near it,
-    # which is where native's grind assist looks. The parapet curves into the line there, so the pop is timed from the
+    # which is where the simulation's grind assist looks. The parapet curves into the line there, so the pop is timed from the
     # peak's own point (rail_path) rather than the closing speed at the trigger; the retries cover a missed assist.
     dict(name='rail_5050', rail=True, lock_s=22., start=(-75.9, 1422., 128., 90.), speed=7.6, rail_load=.34, secs=11.,
          gain=12., b_d=-1.9, keep=grind_held, retry=2, rail_path=True,
@@ -862,7 +861,7 @@ SHOTS = [
          gain=12., b_d=-1.6, keep=grind_held, retry=2,
          rail_do=[stick(0., -.55)],
          cams=[(0., chase(back=3.0, side=-1.6, up=1.0)), (mode_is(3), fixed((-71.2, 1389.5, 125., 1.0)))],
-         expect=['5 0']),          # native names it FS 5 0
+         expect=['5 0']),          # The simulation names it FS 5 0
     # The drop-in off the upper deck: down the roll-in, along the pool and up the west wall into a big Indy.
     dict(name='megadrop', start=(-47.7, 1301.9, 112., 135.), speed=3., gain=26., land_dz=0.,
          way=[(-47.7, 1301.9, None), (-54.4, 1295.2, None), (-63.6, 1286.4, -15.), (-75., 1279.5, -15.), (-90., 1274., -15.),
@@ -875,7 +874,7 @@ SHOTS = [
          # floor camera at 21 m/s).
          cams=[(0., chase(back=4.2, side=.8, up=1.8, frame=6.5)), (lambda s, c: c.zb < 108., fixed((-67., 1282.5, 80., 1.4), aim_k=8.)),
                (lambda s, c: c.x < -65. and c.zb < 77., fixed((-104.5, 1261.5, POOL_PROBE, 1.3), aim_k=8.))],
-         expect=['FS Grab']),        # native names the toe-side grab (Ride's Indy) FS Grab, the heel-side (Melon) BS Grab
+         expect=['FS Grab']),        # The simulation names the toe-side grab (Ride's Indy) FS Grab, the heel-side (Melon) BS Grab
     # Quarter-pipe airs on the pool's north wall, straight at it where its lip faces due south (x -105: further west
     # the lip turns, and a climb there carves along it): each comes back down onto the wall and rides out across the
     # pool, the camera holding the lip, the top of the air and the wall below the lip.
@@ -1004,8 +1003,7 @@ def ready(feature):
 
 
 # ------------------------------------------------------------------------------------------------ the run
-st = {'i': -1, 'shot': None, 'k': 0, 'kept': {}, 'done': [], 'errors': 0, 'finishing': 0, 'film': 0, 'backend': None,
-      'hz': 60}
+st = {'i': -1, 'shot': None, 'k': 0, 'kept': {}, 'done': [], 'errors': 0, 'finishing': 0, 'film': 0, 'hz': 60}
 
 
 def say(*a):
@@ -1055,7 +1053,7 @@ def next_shot():
     k = st['k']; st['k'] += 1
     s.update(k=k, dir='%02d_%s' % (k, s['name']), ph='place', pt=0., t=0., f=0, hz=90 if s.get('slow') else 60,
              rec=False, lv=0., loop_n=0, frames=0, rep_n=0, cams_rows=[], loops=[], slowbuf=[], effects=[], fired=None,
-             air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], body=[], combos=[], lasts=[], retail=[], first=None,
+             air=None, airs=[], prev_mode=None, steer_on=True, wk=0, log=[], body=[], combos=[], lasts=[], simulation=[], first=None,
              bail_t=None, up_t=None, grind_seen=False, land_after_grind=None, stall_t=None, mounted=None, dismounted=None, jumped=None, foot_gait=None, max_spd=0., min_spd=1e9,
              max_spd_after_mount=0., bail_kind=None, d_bails=0, d_grinds=0, d_landed=0, error=None, placed=0, ground_wait=0)
     if s.get('steer') is False: s['steer_on'] = False
@@ -1141,14 +1139,14 @@ BODY_AFTER = 3.     # s after the get-up that a bail's body log goes on (it take
 
 
 def body_row(c):
-    """A tick of a bail's body log: [t, pelvis x, y, z (m), its source, lie (cm), deck x, y, z (m), board, mode, retail,
+    """A tick of a bail's body log: [t, pelvis x, y, z (m), its source, lie (cm), deck x, y, z (m), board, mode, simulation,
     shown (the board's dissolve, 1 solid), vis (the board's component visible)]."""
     try: deck = [round(float(n) / 100. * sg, 3) for n, sg in zip(c.d['deck'].split(','), (1., -1., 1.))]
     except (KeyError, ValueError): deck = [None] * 3
     try: shown = float(c.d['shown'])
     except (KeyError, ValueError): shown = None
     return [round(c.t, 4), round(c.hx, 3), round(c.hy, 3), round(c.hz, 3), c.hsrc, c.d.get('lie')] + deck + \
-           [c.d.get('board'), c.mode, c.retail, shown, c.d.get('vis')]
+           [c.d.get('board'), c.mode, c.simulation, shown, c.d.get('vis')]
 
 
 def board_seen(r):
@@ -1252,12 +1250,12 @@ def track(s, c):
         if c.t <= s['bail_t'] + 1.: b['travel_1s'], b['lie_1s'] = b['travel'], b['lie_min']
         if c.mode in (0, 1): s['up_t'] = c.t; b['down_secs'] = round(c.t - s['bail_t'], 2)
     if c.mode != 4: s['ride_spd'] = c.spd
-    for key, val in (('combos', c.combo), ('lasts', c.last), ('retail', c.retail)):
+    for key, val in (('combos', c.combo), ('lasts', c.last), ('simulation', c.simulation)):
         if key in s['stale']:
             if val == s['stale'][key]: continue
             del s['stale'][key]
         if val and (not s[key] or s[key][-1] != val): s[key].append(val)
-    if c.mode != 2 and c.retail != 'GroundAnimation': s['last_pre'] = c.last    # the name before a pop's wind-up
+    if c.mode != 2 and c.simulation != 'GroundAnimation': s['last_pre'] = c.last    # the name before a pop's wind-up
     if c.mode == 1:
         s['max_spd'] = max(s['max_spd'], c.spd); s['min_spd'] = min(s['min_spd'], c.spd)
         if s['mounted'] is not None: s['max_spd_after_mount'] = max(s['max_spd_after_mount'], c.spd)
@@ -1308,11 +1306,10 @@ def step_shot(s, dt):
         if not s.get('foot'): live.skate_input()
         camera(s, c, dt)
         if s['pt'] >= s.get('settle', 1.0):
-            if not s.get('foot') and c.backend != BACKEND:
+            if not s.get('foot') and not c.simulation:
                 if s['placed'] < 3:
-                    say(f'not {BACKEND} yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
-                s['error'] = f'{BACKEND} did not mount: ' + c.text.split(' | ')[0]; return 'done'
-            st['backend'] = c.backend or st['backend']
+                    say('not riding yet:', c.text.split(' | ')[0]); s['ph'] = 'place'; return
+                s['error'] = 'Ride did not mount: ' + c.text.split(' | ')[0]; return 'done'
             if s.get('foot'):
                 s['ph'] = 'ride'; s['t'] = 0.
             else:
@@ -1331,7 +1328,7 @@ def step_shot(s, dt):
     r = ride(s, c, dt)
     camera(s, c, dt)
     if s['f'] % 6 == 0:
-        s['log'].append([round(c.t, 3), round(c.x, 2), round(c.y, 2), round(c.zb, 2), round(c.spd, 2), c.mode, c.retail, c.combo,
+        s['log'].append([round(c.t, 3), round(c.x, 2), round(c.y, 2), round(c.zb, 2), round(c.spd, 2), c.mode, c.simulation, c.combo,
                          ('fakie' if c.fakie else '') + ('switch' if c.switch else '')])
     if s['bail_t'] is not None and (s['up_t'] is None or c.t <= s['up_t'] + BODY_AFTER):
         s['body'].append(body_row(c))
@@ -1406,7 +1403,7 @@ def end_shot():
             'grinds': s['d_grinds'], 'speed_max': round(s['max_spd'], 2), 'speed_min': round(s['min_spd'], 2) if s['min_spd'] < 1e8 else None,
             'airs': [air_info(a) for a in s['airs']], 'try': s.get('try', 1), 'full': st['kept'].get(s['name'] + ':full'),
             'stall_wall_t': s.get('stall_wall_t'),
-            'retail': s['retail'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
+            'simulation': s['simulation'][:40], 'launched': s.get('launched'), 'fakie_at_launch': s.get('launch_fakie'),
             'bail_kind': s['bail_kind'], 'bail': s.get('bail'), 'ride_physical': physical_cvar(), 'error': s['error'], 'end_state': c.text if c else None}
     part = dict(info, cams=s['cams_rows'], loops=s['loops'], slowbuf=s['slowbuf'], log=s['log'], body=s['body'])
     json.dump(part, open(os.path.join(OUT, 'parts', s['dir'], 'shot.json'), 'w'))
@@ -1446,7 +1443,7 @@ def finish():
     live.skate_input(); live.skate_release(); live.drive(0)
     MV.restore_player_camera(); L.film_hud(False); L.fixed_step(0)
     n = L.audio_log('stop', os.path.join(OUT, 'audio.json'))
-    json.dump({'take': TAKE, 'backend': st['backend'], 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'extras': EXTRAS, 'moves': st.get('moves'), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
+    json.dump({'take': TAKE, 'physical': PHYSICAL, 'ride_physical': physical_cvar(), 'extras': EXTRAS, 'moves': st.get('moves'), 'fps_film': 30, 'sim_clock': 60, 'audio_base': AUDIO_BASE,
                'unrecorded': UNRECORDED, 'sounds': n, 'rehearse': REHEARSE, 'film_frames': st['film'], 'errors': st['errors'],
                'shots': st['done'], 'state': L.skate_state()}, open(os.path.join(OUT, 'done.json'), 'w'), indent=1)
     say('finished', OUT, st['film'], 'frames')
@@ -1502,7 +1499,6 @@ def run(dt):
         except Exception: live.stop('ride_film')
 
 
-unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.Backend ' + BACKEND); st['backend'] = 'asked'   # at each mount
 unreal.SystemLibrary.execute_console_command(L.game_world(), 'skate.RidePhysical %d' % PHYSICAL)
 L.film_hud(True); L.fixed_step(60); L.audio_log('start')
 st['probe'] = {'f': 0} if probe_moves() else None

@@ -206,18 +206,18 @@ namespace RidePhysicalRiderDetail
     // Chaos's swing limit stays under a half turn (4 atan2(.., 1 + w) reaches 360 at the far pole).
     constexpr float MaxLimit = 179.f;
 
-    // Native's bail envelope on the contract's joints. In a bail (wipeout ragdoll modes 7 to 9, WipeoutRagdollSetup::Request)
-    // Native holds each of its joints within a circular cone of max(0.01, skel x bail mult x 0.5) about its parent
+    // The simulation's bail envelope on the contract's joints. In a bail (wipeout ragdoll modes 7 to 9, WipeoutRagdollSetup::Request)
+    // The simulation holds each of its joints within a circular cone of max(0.01, skel x bail mult x 0.5) about its parent
     // frame's X and a twist of +-max(0.01, skel x bail mult x 0.6), centred where its two frames meet; mode 10 and a
     // restored joint take max(0.01, skel x mult), the riding range, which here stays the asset's. Centre is the child's
     // anatomical frame (BuildPhysicsAsset's: X along the body, Y its flexion axis, both from the bind pose) in its
-    // parent's at Native's centres, worked out on Native's RIG_TPOSE with the same rule; the limits are the largest twist,
-    // Swing1 and Swing2 Chaos measures over Native's envelope, the parent's frame to the child's (the box that holds it,
-    // Chaos's limits being a pyramid). A contract joint that spans several of Native's sums them: the spine is
+    // parent's at the simulation's centres, worked out on the simulation's RIG_TPOSE with the same rule; the limits are the largest twist,
+    // Swing1 and Swing2 Chaos measures over the simulation's envelope, the parent's frame to the child's (the box that holds it,
+    // Chaos's limits being a pyramid). A contract joint that spans several of the simulation's sums them: the spine is
     // HIPS-SPINE, the chest SPINE-SPINE1 to SPINE2-SPINE3, the head SPINE3-NECK and NECK-NECK1, an upper arm the
-    // clavicle's and the shoulder's. Each side keeps Native's own values: its left and right differ (the left ankle's
+    // clavicle's and the shoulder's. Each side keeps the simulation's own values: its left and right differ (the left ankle's
     // cone is 9.4 degrees, the right's 13.5), so a side's centre is up to 20 degrees from the mirror of the other's. From
-    // Native's physics_skeleton_joints records.
+    // the simulation's physics_skeleton_joints records.
     struct FBailJoint { const TCHAR* Contract; FQuat Centre; float Twist, Swing1, Swing2; };
     const FBailJoint BailJoints[] = {
         {TEXT("spine"), FQuat(0.0495f, 0.1839f, 0.0005f, 0.9817f), 16.0f, 12.8f, 14.0f},

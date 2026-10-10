@@ -18,7 +18,7 @@ from check_animation_trees_parity import source_at_reference
 from check_gesture_parity import PLUGIN
 from reference_build import build_probe
 
-UNITS=('NativeMath','ScoringCore','ScoringTimer','ScoringCarrier','ScoringSession')
+UNITS=('SimulationMath','ScoringCore','ScoringTimer','ScoringCarrier','ScoringSession')
 CORE='crates/skate-core/src/scoring'
 SNAPSHOT_WORDS=720
 
@@ -78,15 +78,15 @@ def corpus():
     return pack(records),cases
 
 def prepare(output):
-    code=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    code=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir()
-    for filename in ('NativeMath.h','DataReader.h',*[f'{u}.h'for u in UNITS[1:]],*[f'{u}.cpp'for u in UNITS]):
+    for filename in ('SimulationMath.h','DataReader.h',*[f'{u}.h'for u in UNITS[1:]],*[f'{u}.cpp'for u in UNITS]):
         shutil.copy2(code/filename,snapshot/filename)
-    probe=PLUGIN/'Tests/Native/scoring_core_probe.cpp';shutil.copy2(probe,snapshot/probe.name)
+    probe=PLUGIN/'Tests/Simulation/scoring_core_probe.cpp';shutil.copy2(probe,snapshot/probe.name)
     source=source_at_reference(CORE+'.rs');template=PLUGIN/'Tests/Reference/scoring_core_probe.rs';generated=output/'scoring-core-reference.rs'
     raw=template.read_text().replace('// ORIGINAL_SCORING_OWNER',source);assert source in raw;generated.write_text(raw)
-    report=dict(original_scoring_owner_sha256=digest(source.encode()),original_child_sha256={n:digest(source_at_reference(CORE+'/'+n+'.rs').encode())for n in('carrier','catalog','conversions','session','timer')},native_snapshot_sha256={p.name:digest(p.read_bytes())for p in snapshot.iterdir()},reference_probe_sha256=digest(template.read_bytes()),observer='Read-only appended original-module observer reads all private retained arrays/flags; complete original source is an unchanged substring.')
+    report=dict(original_scoring_owner_sha256=digest(source.encode()),original_child_sha256={n:digest(source_at_reference(CORE+'/'+n+'.rs').encode())for n in('carrier','catalog','conversions','session','timer')},simulation_snapshot_sha256={p.name:digest(p.read_bytes())for p in snapshot.iterdir()},reference_probe_sha256=digest(template.read_bytes()),observer='Read-only appended original-module observer reads all private retained arrays/flags; complete original source is an unchanged substring.')
     (output/'prepared-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     return generated,snapshot
 
@@ -125,10 +125,10 @@ def main():
     inputs,cases=corpus();(output/'input.bin').write_bytes(inputs);generated,snapshot=prepare(output)
     summary=dict(cases=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(inputs),input_sha256=digest(inputs),snapshot_words=SNAPSHOT_WORDS,units=UNITS)
     if args.preflight:print(json.dumps(summary,indent=2));return
-    native=output/'scoring-core-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'scoring_core_probe.cpp'),'-o',str(native)],check=True)
+    simulation=output/'scoring-core-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'scoring_core_probe.cpp'),'-o',str(simulation)],check=True)
     aliases={f'atelier-host/src/original_score/{n}.rs':CORE+'/'+n+'.rs'for n in('carrier','catalog','conversions','session','timer')}
     reference=build_probe(output,'scoring-core-reference',generated,args.target_dir,extra_sources=aliases)
-    expected=subprocess.check_output([str(reference)],input=inputs);actual=subprocess.check_output([str(native)],input=inputs);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
+    expected=subprocess.check_output([str(reference)],input=inputs);actual=subprocess.check_output([str(simulation)],input=inputs);(output/'reference.bin').write_bytes(expected);(output/'cpp.bin').write_bytes(actual)
     if expected!=actual:
         first=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)))//4
         failure=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual),reference=expected[first*4:first*4+4].hex(),cpp=actual[first*4:first*4+4].hex())

@@ -125,19 +125,19 @@ def prepare_oracle(probe):
  return original+probe.read_text()
 
 def build(output,target_dir):
- native=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+ simulation=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
- for p in sorted(native.glob('*.h')):shutil.copy2(p,snapshot/p.name)
- for n in UNITS:shutil.copy2(native/f'{n}.cpp',snapshot/f'{n}.cpp')
- names=('body','collision','constraint');cpp_prefixes=[PLUGIN/f'Tests/Native/skeleton_{n}_probe.cpp'for n in names]
- cpp_probe=PLUGIN/'Tests/Native/adjusted_skeleton_probe.cpp';physical_cpp=PLUGIN/'Tests/Native/physical_simulation_runtime_probe.cpp';combined=snapshot/cpp_probe.name
+ for p in sorted(simulation.glob('*.h')):shutil.copy2(p,snapshot/p.name)
+ for n in UNITS:shutil.copy2(simulation/f'{n}.cpp',snapshot/f'{n}.cpp')
+ names=('body','collision','constraint');cpp_prefixes=[PLUGIN/f'Tests/Simulation/skeleton_{n}_probe.cpp'for n in names]
+ cpp_probe=PLUGIN/'Tests/Simulation/adjusted_skeleton_probe.cpp';physical_cpp=PLUGIN/'Tests/Simulation/physical_simulation_runtime_probe.cpp';combined=snapshot/cpp_probe.name
  combined.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+''.join(p.read_text().split('int main()',1)[0]for p in cpp_prefixes)+physical_cpp.read_text().split('int main(',1)[0]+'\n#pragma clang diagnostic pop\n'+cpp_probe.read_text())
  cpp=output/'adjusted-skeleton-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{n}.cpp')for n in UNITS],str(combined),'-o',str(cpp)],check=True)
  rust_prefixes=[PLUGIN/f'Tests/Reference/skeleton_{n}_probe.rs'for n in names];rust_probe=PLUGIN/'Tests/Reference/adjusted_skeleton_probe.rs'
  prefix=''.join(p.read_text().split('fn main(){',1)[0]for p in rust_prefixes).replace('use crate::{','use skate_core::{').replace('skeleton_root::inverse_rigid,','').replace('solver::{packed,JointConstraint}','solver::{JointConstraint}').replace('#[path="physics/solver/packing.rs"] mod skeleton_constraint_packing;','mod skeleton_constraint_packing{use skate_core::physics::solver::{packed,JointConstraint};use crate::{RetailDriveRows,RetailContactJacobian};use skate_core::physics::rigid_body::RetailReactionCorrections;#[path="packing.rs"]mod original;pub fn drive(r:&RetailDriveRows)->packed::Drive{original::drive(r)}}')
  generated=output/'adjusted-skeleton-combined.rs';generated.write_text(prefix+prepare_oracle(rust_probe));reference=build_probe(output,'adjusted-skeleton-reference',generated,target_dir,bevy=True,extra_sources=aliases())
- (output/'native-provenance.json').write_text(json.dumps(dict(source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in (*cpp_prefixes,cpp_probe,physical_cpp,*rust_prefixes,rust_probe)}),indent=2)+'\n');return cpp,reference
+ (output/'simulation-provenance.json').write_text(json.dumps(dict(source_sha256={p.name:digest(p)for p in snapshot.iterdir()},probe_sha256={p.name:digest(p)for p in (*cpp_prefixes,cpp_probe,physical_cpp,*rust_prefixes,rust_probe)}),indent=2)+'\n');return cpp,reference
 
 def preflight():
  data,cases=corpus();w=struct.unpack('<'+'I'*(len(data)//4),data);at=1
@@ -151,7 +151,7 @@ def preflight():
    if op==9:world()
    else:at+={0:23,1:1,2:0,3:16,4:2,5:0,6:0,7:10,8:28,10:4,11:24,12:408,13:1}[op]
  assert at==len(w),(at,len(w))
- for n in UNITS:assert (PLUGIN/f'Source/AtelierSkate/Private/Native/{n}.cpp').is_file(),n
+ for n in UNITS:assert (PLUGIN/f'Source/AtelierSkate/Private/Simulation/{n}.cpp').is_file(),n
  for n in aliases().values():historical.source_bytes(n)
  return data,cases
 
@@ -168,8 +168,8 @@ def decode(raw,cases):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--samples',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);p.add_argument('--preflight',action='store_true');a=p.parse_args();o=a.output.resolve();o.mkdir(parents=True,exist_ok=True);inputs,cases=preflight();(o/'input.bin').write_bytes(inputs)
  if a.preflight:print(json.dumps(dict(streams=len(cases),commands=sum(len(c['commands'])for c in cases),ticks=sum(c['commands'].count(0)for c in cases),input_bytes=len(inputs),units=len(UNITS),aliases=len(aliases())),indent=2));return
- stock=a.assets.resolve()/'private/stock';settings=o/'settings.native';physical_file=o/'physics.native';settings.write_bytes(physical.converter.encode_settings(stock/'skater-collections.json'));physical_file.write_bytes(physical.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256']
- cpp,reference=build(o,a.target_dir);expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=inputs);actual=subprocess.check_output([str(cpp),str(settings),str(physical_file),str(a.samples.resolve()/'native/rig.skate'),identity],input=inputs)
+ stock=a.assets.resolve()/'private/stock';settings=o/'settings.simulation';physical_file=o/'physics.simulation';settings.write_bytes(physical.converter.encode_settings(stock/'skater-collections.json'));physical_file.write_bytes(physical.converter.encode_physics_skeletons(stock/'physics-skeletons.json'));identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256']
+ cpp,reference=build(o,a.target_dir);expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=inputs);actual=subprocess.check_output([str(cpp),str(settings),str(physical_file),str(a.samples.resolve()/'simulation/rig.skate'),identity],input=inputs)
  (o/'reference.bin').write_bytes(expected);(o/'cpp.bin').write_bytes(actual);coverage=decode(expected,cases);(o/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;c=next((c for c in cases if c['first_output_word']<=first<c['first_output_word']+c['output_words']),None);command=next((x for x in c['outputs']if x['first_output_word']<=first<x['first_output_word']+x['output_words']),None)if c else None

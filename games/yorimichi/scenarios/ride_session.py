@@ -1,6 +1,6 @@
 # ride_session.py: runs inside the game (atelier live py - < this file). This line keeps the bridge from taking the code
 # for a file name: Unreal's Python reads any text whose first .py is followed by a space as a script path.
-"""Ride session: the player records a skating session that replays exactly, then it replays through either backend.
+"""Ride session: the player records a skating session that replays exactly, then it replays.
 
     atelier live py "TAKE='carpark-1'" && atelier live py - < games/yorimichi/scenarios/ride_session.py
     ... the player skates from GO, then:
@@ -8,10 +8,9 @@
     atelier live py "TAKE='carpark-1'; MODE='replay'" && atelier live py - < games/yorimichi/scenarios/ride_session.py
 
 Both modes start the same way, so a replay starts where the recording did. The rider gets off and rides Ride a moment at
-the start, AT, so that the next mount opens a new session. Then he gets on the board with BACKEND, stopped at AT, and
-stands with every control released. Under Native he stands SETTLE frames from the frame his skater rides; under Ride,
-SETTLE frames. From the start the game runs at a fixed 60 Hz frame rate in real time: the engine waits out each frame
-and counts it as 1/60 s, and Native steps in lockstep with its thread (skate.Lockstep), so the same controls ride the
+the start, AT, so that the next mount opens a new session. Then he gets on the board, stopped at AT, and
+stands with every control released for SETTLE frames. From the start the game runs at a fixed 60 Hz frame rate in real time: the engine waits out each frame
+and counts it as 1/60 s, and the simulation steps in lockstep with its thread (skate.Lockstep), so the same controls ride the
 same way.
 
 record: from GO the player's pad drives, and each frame writes one row, flushed at once: quitting the game ends it.
@@ -35,16 +34,15 @@ A row has:
 Writes build/yorimichi/ride-record/<TAKE>/:
 - record: meta.json and frames.jsonl.
 - replay: <OUT>/ beside them, with frames.jsonl, report.json (the board's error, and the first frames where the board or
-  the pad sent to Native differ) and shots/.
+  the pad sent to the simulation differ) and shots/.
 - done.json when it ends, and error.txt on a failure.
 
 Globals:
 - TAKE
 - MODE: 'record' or 'replay'
-- BACKEND: 'Native' by default; a replay takes the recording's
 - AT: (x, y, z, yaw), the start in UE cm and degrees (the ground is found under x, y near z); the car park by default
 - SETTLE: frames, 30 by default
-- OUT: the replay folder, replay-<BACKEND> by default
+- OUT: the replay folder, replay by default
 - GHOST: True by default
 - SHOTS: False by default
 - FRAMES: replay at most this many frames
@@ -57,13 +55,12 @@ TAKE = globals().get('TAKE', 'session')
 MODE = globals().get('MODE', 'record')
 DIR = os.path.join(live.ROOT, 'build/yorimichi/ride-record', TAKE)
 META = json.load(open(os.path.join(DIR, 'meta.json'))) if MODE == 'replay' else {}
-BACKEND = globals().get('BACKEND') or META.get('backend') or 'Native'
 AT = tuple(globals().get('AT') or META.get('at') or (-2775.7, -139302.1, 11803., 103.6))
 SETTLE = int(globals().get('SETTLE') or META.get('settle') or 30)
 GHOST = bool(globals().get('GHOST', True))
 SHOTS = bool(globals().get('SHOTS', False))
 FRAMES = globals().get('FRAMES')
-OUT = os.path.join(DIR, globals().get('OUT') or 'replay-' + BACKEND) if MODE == 'replay' else DIR
+OUT = os.path.join(DIR, globals().get('OUT') or 'replay') if MODE == 'replay' else DIR
 AXES = ['Gamepad_LeftX', 'Gamepad_LeftY', 'Gamepad_RightX', 'Gamepad_RightY', 'Gamepad_LeftTriggerAxis', 'Gamepad_RightTriggerAxis']
 BUTTONS = ['Gamepad_FaceButton_Bottom', 'Gamepad_FaceButton_Right', 'Gamepad_FaceButton_Left', 'Gamepad_FaceButton_Top',
            'Gamepad_LeftShoulder', 'Gamepad_RightShoulder', 'Gamepad_LeftThumbstick', 'Gamepad_RightThumbstick',
@@ -215,7 +212,7 @@ def write(r):
 
 
 def write_meta(extra=None):
-    meta = {'backend': BACKEND, 'at': list(AT), 'settle': SETTLE, 'axes': AXES, 'buttons': BUTTONS, 'fps': 60,
+    meta = {'at': list(AT), 'settle': SETTLE, 'axes': AXES, 'buttons': BUTTONS, 'fps': 60,
             'bones': S['bones'], 'started': S.get('started'), 'frames': S['k'] + 1, 'state0': S.get('state0')}
     meta.update(extra or {})
     json.dump(meta, open(os.path.join(OUT, 'meta.json' if MODE == 'record' else 'run.json'), 'w'), indent=1)
@@ -230,7 +227,7 @@ def finish(error=None):
     if MODE == 'record': write_meta()
     else:
         e = S['err']
-        report = {'take': TAKE, 'backend': BACKEND, 'frames': len(e), 'recorded': len(ROWS),
+        report = {'take': TAKE, 'frames': len(e), 'recorded': len(ROWS),
                   'board_error_cm': {'max': round(max(e), 3) if e else None, 'mean': round(sum(e) / len(e), 4) if e else None},
                   'first_board_difference': S['deck_at'], 'first_pad_difference': S['pad_at'],
                   'seconds': round(time.time() - S['t'], 1)}
@@ -283,7 +280,6 @@ def tick(dt):
             if S['n'] % 30 == 0: L.teleport_player(unreal.Vector(AT[0], AT[1], AT[2] + 100.), AT[3])
             hold(False, 1, 60.); return
         if not S.get('placed'):
-            unreal.SystemLibrary.execute_console_command(None, 'skate.Backend Ride')
             if not live.skate_place(g, AT[3]): raise RuntimeError('could not get on Ride at the start')
             S['placed'] = True; return
         if hold(mode() != 0, 90): L.skate_toggle(); phase('down')
@@ -292,19 +288,16 @@ def tick(dt):
         if hold(mode() == 0, 60): phase('place')
         return
     if ph == 'place':
-        unreal.SystemLibrary.execute_console_command(None, 'skate.Backend ' + BACKEND)
         L.skate_input(unreal.Vector2D(0., 0.), unreal.Vector2D(0., 0.), False, False, False, 0., 0.)
         if not live.skate_place(at_ground(), AT[3]): raise RuntimeError('could not get on the board')
         if MODE == 'record': live.say('Hands off the pad: recording starts at GO', 30.)
         phase('settle'); return
     if ph == 'settle':
         state = L.skate_state()
-        riding = field(state, 'retail') == 'PhysicsGround' if BACKEND == 'Native' else mode() == 1
+        riding = mode() == 1
         hold(riding, SETTLE, 60.)
-        # The Native session, the Native backend's or the one under Ride's body, goes at its SETTLE + 3rd step (where
-        # the Native backend's SETTLE frames end), so it has stepped as often at GO on either backend: under Ride's body
-        # it rides two steps before the body has mounted, and two more steps at rest put the board centimetres off by
-        # the pier's end.
+        # The simulation session goes at its SETTLE + 3rd step: it rides two steps before the body has mounted, and two
+        # more steps at rest put the board centimetres off by the pier's end.
         step = field(state, 'tick')
         ready = riding and S['ok'] >= SETTLE // 2 and step is not None and int(step) >= SETTLE + 3
         if MODE == 'record' and not ready and S['ok'] and (SETTLE - S['ok']) % 60 == 0:
@@ -340,10 +333,10 @@ def compare(r):
     if e > .01 and S['deck_at'] is None: S['deck_at'] = {'k': S['k'], 'cm': round(e, 3)}
     pad, rpad = field(r['s'], 'pad'), field(ref['s'], 'pad')
     if pad != rpad and S['pad_at'] is None: S['pad_at'] = {'k': S['k'], 'replay': pad, 'recorded': rpad}
-    live.say('Replay of %s through %s   frame %d / %d   board error %.2f cm%s' % (
-        TAKE, BACKEND, S['k'], len(ROWS) - 1, e, '' if pad == rpad else '   controls differ'), .5)
+    live.say('Replay of %s   frame %d / %d   board error %.2f cm%s' % (
+        TAKE, S['k'], len(ROWS) - 1, e, '' if pad == rpad else '   controls differ'), .5)
 
 
 live.stop('ride_session'); live.stop('ride_rec'); live.stop('ride_replay')
 live.behave('ride_session', step)
-print(f'{MODE} {TAKE} through {BACKEND} at {AT} -> {OUT}')
+print(f'{MODE} {TAKE} at {AT} -> {OUT}')

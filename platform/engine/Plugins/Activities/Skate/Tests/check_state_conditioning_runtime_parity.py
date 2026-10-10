@@ -23,8 +23,8 @@ BLOCKS=('shared','grind','conditioning')
 
 def append(path,text):path.write_bytes(path.read_bytes()+text.encode())
 
-def native_plan(output):
-    snapshot,report=grind.native_plan(output)
+def simulation_plan(output):
+    snapshot,report=grind.simulation_plan(output)
     for unit in UNITS:shutil.copy2(CODE/(unit+'.cpp'),snapshot/(unit+'.cpp'))
     generated=(snapshot/'grind_runtime_probe.cpp').read_text();prefix=generated[:generated.index('int main(')]
     initialization=generated[generated.index(' if(argc!=6)'):generated.index(' Input i{{')]
@@ -32,10 +32,10 @@ def native_plan(output):
     cases=generated[generated.index(' case 0:'):generated.index(' case 6:')]
     # The inherited stream uses actual reset only in initialization, before any
     # conditioner history. All retained conditioning resets use source Reset.
-    source=(PLUGIN/'Tests/Native/state_conditioning_runtime_probe.cpp').read_text().replace('// GENERATED_NATIVE_OWNER_PREFIX',prefix).replace('// GENERATED_NATIVE_OWNER_INITIALIZATION',initialization).replace('// GENERATED_NATIVE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_NATIVE_PACKET_RESET_CASES',cases)
+    source=(PLUGIN/'Tests/Simulation/state_conditioning_runtime_probe.cpp').read_text().replace('// GENERATED_SIMULATION_OWNER_PREFIX',prefix).replace('// GENERATED_SIMULATION_OWNER_INITIALIZATION',initialization).replace('// GENERATED_SIMULATION_OWNER_CONSTRUCTION',construction).replace('// GENERATED_SIMULATION_PACKET_RESET_CASES',cases)
     assert source.count('GroundPhaseLifecycle life;')==1
     probe=snapshot/'state_conditioning_runtime_probe.cpp';probe.write_text(source)
-    report.update(units=UNITS,immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_probe_sha256=digest(probe))
+    report.update(units=UNITS,immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_probe_sha256=digest(probe))
     return snapshot,report
 
 def reference_plan(output):
@@ -79,10 +79,10 @@ pub(crate) fn migration_conditioning_observe(o:&mut crate::Output,s:&SkaterRunti
     report.update(conditioning_extensions={rel:dict(append_sha256=hashlib.sha256(text.encode()).hexdigest(),generated_sha256=digest(crate/'src'/rel))for rel,text in extensions.items()},private_cache_observer_sha256=hashlib.sha256(cache.encode()).hexdigest(),source_fragments=[dict(source=HOST+'player_state/publication.rs',start_byte=start,end_byte=end,fragment_sha256=hashlib.sha256(tail.encode()).hexdigest()),dict(source=HOST+'animation_phase.rs',start_byte=begin,end_byte=finish,fragment_sha256=hashlib.sha256(landing.encode()).hexdigest())],scope='Original completed-publication tail and landing prefix extracted byte-identically; full original constructors, grind/chromosome/board/contact/shared physical owner methods unchanged. Entire animation_grind observations/name adapter executes original source.')
     return original,observed,crate,cargo,report
 
-def build_native(output):
-    snapshot,report=native_plan(output);binary=output/'state-conditioning-runtime-native'
+def build_simulation(output):
+    snapshot,report=simulation_plan(output);binary=output/'state-conditioning-runtime-simulation'
     subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'state_conditioning_runtime_probe.cpp'),'-o',str(binary)],check=True)
-    report['binary_sha256']=digest(binary);(output/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
+    report['binary_sha256']=digest(binary);(output/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 def build_reference(output,target):
     original,observed,crate,cargo,report=reference_plan(output);subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(cargo),'--target-dir',str(target.resolve()),'--bin','state-conditioning-runtime-reference'],check=True)
@@ -219,19 +219,19 @@ def main():
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
     cases=corpus();raw=encode(cases);(output/'input.bin').write_bytes(raw);(output/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
     if args.preflight:
-        snapshot,native=native_plan(output);original,observed,crate,cargo,reference=reference_plan(output/'reference')
+        snapshot,simulation=simulation_plan(output);original,observed,crate,cargo,reference=reference_plan(output/'reference')
         for path in (snapshot/'state_conditioning_runtime_probe.cpp',crate/'src/migration_probe.rs',crate/'src/physics/input_phase.rs'):assert 'GENERATED_'not in path.read_text(),path
         for rel,sha in reference['original_source_sha256'].items():assert digest(original/rel)==sha;body=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(body)]==body
-        (output/'native-preflight.json').write_text(json.dumps(native,indent=2)+'\n');(output/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
+        (output/'simulation-preflight.json').write_text(json.dumps(simulation,indent=2)+'\n');(output/'reference-preflight.json').write_text(json.dumps(reference,indent=2)+'\n');print(json.dumps(dict(histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),input_bytes=len(raw),units=len(UNITS)),indent=2));return
     fixtures=output/'fixtures';fixtures.mkdir(exist_ok=True);stock=args.assets.resolve()/'private/stock'
-    (fixtures/'settings.native').write_bytes(grind.reset.foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.native').write_bytes(grind.reset.foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
+    (fixtures/'settings.simulation').write_bytes(grind.reset.foot.converter.encode_settings(stock/'skater-collections.json'));(fixtures/'physics.simulation').write_bytes(grind.reset.foot.converter.encode_physics_skeletons(stock/'physics-skeletons.json'))
     for kind in ('action','motion'):(fixtures/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
-    identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(output/'reference',args.target_dir);native=build_native(output)
-    expected=subprocess.check_output([str(reference),str(args.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(native),str(fixtures/'settings.native'),str(fixtures/'physics.native'),str(args.samples.resolve()/'native/rig.skate'),identity,str(args.assets.resolve())],input=raw)
-    (output/'reference.bin').write_bytes(expected);(output/'native.bin').write_bytes(actual);frames=decode(expected,cases);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+    identity=json.loads((stock/'physics-skeletons.json').read_text())['source_sha256'];reference=build_reference(output/'reference',args.target_dir);simulation=build_simulation(output)
+    expected=subprocess.check_output([str(reference),str(args.assets.resolve()),str(fixtures)],input=raw);actual=subprocess.check_output([str(simulation),str(fixtures/'settings.simulation'),str(fixtures/'physics.simulation'),str(args.samples.resolve()/'simulation/rig.skate'),identity,str(args.assets.resolve())],input=raw)
+    (output/'reference.bin').write_bytes(expected);(output/'simulation.bin').write_bytes(actual);frames=decode(expected,cases);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
     if expected!=actual:
         byte=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)));(output/'first-divergence.json').write_text(json.dumps(dict(byte=byte,expected_bytes=len(expected),actual_bytes=len(actual)),indent=2)+'\n');raise AssertionError('Actual host state conditioning differs')
-    result=dict(passed=True,histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),exact_output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames,cases),comparison='Actual shared GamePhysics/SkaterRuntime construction, solve/contact/board motion/stock pose/grind Fill/chromosome producers and exact original filtered publication tail/landing prefix/animation_grind adapter.',boundaries='Selected lifecycle ID, completed input packets, KnownAir targeting field, source Ground output from actual owner, focused grind-manager observations and previously completed animation stance/height are explicit caller boundaries. Entire global frame/selected-state Fill dispatch and complete animation feedback remain separate. Current empirical last-grind distance is original constant zero; RespawnRuntime retains the sole empirical sample counter unchanged.',native_provenance_sha256=digest(output/'native-provenance.json'),reference_provenance_sha256=digest(output/'reference/reference-provenance.json'))
+    result=dict(passed=True,histories=len(cases),callbacks=sum(len(c['commands'])for c in cases),exact_output_bytes=len(expected),output_sha256=hashlib.sha256(expected).hexdigest(),coverage=coverage(frames,cases),comparison='Actual shared GamePhysics/SkaterRuntime construction, solve/contact/board motion/stock pose/grind Fill/chromosome producers and exact original filtered publication tail/landing prefix/animation_grind adapter.',boundaries='Selected lifecycle ID, completed input packets, KnownAir targeting field, source Ground output from actual owner, focused grind-manager observations and previously completed animation stance/height are explicit caller boundaries. Entire global frame/selected-state Fill dispatch and complete animation feedback remain separate. Current empirical last-grind distance is original constant zero; RespawnRuntime retains the sole empirical sample counter unchanged.',simulation_provenance_sha256=digest(output/'simulation-provenance.json'),reference_provenance_sha256=digest(output/'reference/reference-provenance.json'))
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 if __name__=='__main__':main()

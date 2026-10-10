@@ -12,11 +12,9 @@ def main():
     parser.add_argument('--port',type=int,default=8830);args=parser.parse_args()
     qa.bridge.URL=f'http://127.0.0.1:{args.port}'
     qa.py((qa.GAME/'scenarios/skate_live_skate.py').read_text())
-    # The native runtime's park checks: the game rides on Ride by default.
-    qa.py("unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.Backend Native')")
     qa.py('live.skate_park(); live.skate_input()')
     for _ in range(60):
-        if 'retail=PhysicsGround' in qa.py('print(live.skate_state())'):break
+        if 'simulation=PhysicsGround' in qa.py('print(live.skate_state())'):break
         time.sleep(1)
     else:raise RuntimeError('Skater failed to become ready')
     report={}

@@ -112,7 +112,7 @@ float AWandererCharacter::GetRoadSteering()
 // The skate ground check (packaged QA, no Python): on the authored road at two samples, and on the grass 20 or 30 m beside
 // each, the rider is put on the board and launched, then thrown off it. A ride whose height over the ground drops more than
 // 50 cm below where it started has gone through it; a bail or get-up whose deepest skin is over 2 cm under the ground has
-// sunk into it (skate.RideSkinCheck, Ride backend). Readings of 20 cm and more are counted apart: the measure's probe
+// sunk into it (skate.RideSkinCheck). Readings of 20 cm and more are counted apart: the measure's probe
 // starts 30 cm above each vertex, so the board or a body part above it reads that deep. A check that cannot measure fails:
 // a road index without both its street and grass spot, a ride frame with no ground under it, a bail with no lying or no
 // get-up reading. One SKATE GROUND line per spot, then the summary line, which is the result; `quit` then exits and
@@ -326,11 +326,10 @@ static FAutoConsoleCommandWithWorldAndArgs SkatePierCheckCommand(TEXT("japan.Ska
                 if (!Rail || Rail->Points.Num()<2)
                 { ++Failed; UE_LOG(LogTemp,Display,TEXT("SKATE PIER %s %s: not registered FAIL"),*Id,*Kind); continue; }
                 FVector Tangent; const FVector Mid=Registry->Sample(int32(Rail-Registry->Rails.GetData()),Rail->Length()*.5f,Tangent);
-                // A line without a side is tried on it (a thin round rail) and 3 cm to either side (a curved ledge's
+                // Each line is tried on it (a thin round rail) and 3 cm to either side (a ledge's or curved ledge's
                 // lip); the nearest surface counts.
                 const FVector Across=FVector(-Tangent.Y,Tangent.X,0).GetSafeNormal();
-                TArray<FVector,TInlineAllocator<3>> Tries;
-                if (Rail->Side.IsNearlyZero()) Tries={Mid,Mid+Across*3.f,Mid-Across*3.f}; else Tries={Mid-Rail->Side*3.f};
+                const TArray<FVector,TInlineAllocator<3>> Tries={Mid,Mid+Across*3.f,Mid-Across*3.f};
                 FHitResult Hit; FCollisionQueryParams Params(TEXT("SkatePierCheck"),true);
                 bool bHit=false; float Off=NAN;
                 for (const FVector& At : Tries)

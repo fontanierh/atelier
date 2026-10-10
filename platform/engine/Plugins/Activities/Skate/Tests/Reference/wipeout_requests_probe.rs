@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::{Read,Write};
 use skate_core::player::wipeout::{Requests,RequestInput};
 struct Input {words:Vec<u32>,at:usize}

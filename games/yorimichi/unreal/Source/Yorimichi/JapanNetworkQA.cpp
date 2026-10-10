@@ -142,8 +142,7 @@ bool UJapanGameInstance::WriteNetworkQA(const TCHAR* Stage, const FString& Error
             TArray<FString> Records;
             if (Rails) for (const FSkateRail& Rail : Rails->Rails)
             {
-                FString Record = Rail.Id.ToString() + FString::Printf(TEXT(":%d:%.3f:"), int32(Rail.Kind), Rail.Radius);
-                Record += FString::Printf(TEXT("side=%.3f,%.3f,%.3f:"), Rail.Side.X, Rail.Side.Y, Rail.Side.Z);
+                FString Record = Rail.Id.ToString() + TEXT(":");
                 for (const FVector& Point : Rail.Points) Record += FString::Printf(TEXT("%.3f,%.3f,%.3f;"), Point.X, Point.Y, Point.Z);
                 Records.Add(Record);
             }

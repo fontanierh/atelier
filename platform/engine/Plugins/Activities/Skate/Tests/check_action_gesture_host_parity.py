@@ -98,14 +98,14 @@ def main():
     parser.add_argument('--target-dir',type=Path,required=True)
     args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     cpp,rust=build_probes(output,args.target_dir)
-    settings=output/'settings.native';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
+    settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     names=query_names();results=[]
     for case in range(21):
         reference=output/f'host-{case}.reference-graph';reference.write_bytes(original_graph(fixture(GROUPS[case//3],(None,'Shared','')[case%3])))
-        native=output/f'host-{case}.graph';native.write_bytes(converter.encode_graph(converter.read_graph(reference)))
+        simulation=output/f'host-{case}.graph';simulation.write_bytes(converter.encode_graph(converter.read_graph(reference)))
         data=inputs(case,names);(output/f'host-{case}-input.bin').write_bytes(data)
         expected=subprocess.check_output([str(rust),'stream',str(settings),str(args.assets),str(reference)],input=data)
-        actual=subprocess.check_output([str(cpp),'stream',str(settings),str(args.assets),str(native)],input=data)
+        actual=subprocess.check_output([str(cpp),'stream',str(settings),str(args.assets),str(simulation)],input=data)
         if actual!=expected:
             (output/f'host-{case}-reference.bin').write_bytes(expected);(output/f'host-{case}-cpp.bin').write_bytes(actual)
             first=next((i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b),min(len(actual),len(expected)))

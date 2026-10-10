@@ -102,13 +102,13 @@ def prepare_source(output):
     (output/'extraction-provenance.json').write_text(json.dumps(dict(verbatim_functions=records,whole_module_sha256={board_path:hashlib.sha256(board.encode()).hexdigest(),settings_path:hashlib.sha256(settings.encode()).hexdigest()},source_sha256={lifecycle_path:hashlib.sha256(life.encode()).hexdigest(),runtime_path:hashlib.sha256(runtime.encode()).hexdigest()},probe_sha256=hashlib.sha256(probe.read_bytes()).hexdigest(),boundary='Actual Slide enter/exit/update and whole board update module, whole constructor, exact GroundRuntime contact/animated velocity/deck correction/retained collision methods, all unchanged core leaves. Completed Ground inputs and skeleton/world/trajectory calls are explicit producer shells with recorded order/results; concrete producers are not replaced in production and are outside this composition proof.'),indent=2)+'\n');return probe
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','DeckAngularCorrections','NameId','Settings','GroundControlSettings','Steering','SteeringWobbleSettings','SpeedWobble','GroundForce','Manual','BoardGroundAngle','RidingAngles','RidingCollisionResponse','GroundContactResponse','StockSettingsReader','SlideState','SlideStateSettings','SlideStateRuntime')
+    code.mkdir();files=('SimulationMath','RigidBody','BodyMass','AggregateMass','DeckGeometry','DriveFrames','ConstraintFrames','ConstraintSolver','JointBuild','DriveBuild','JointRecords','TruckDriveFrames','DrivePreparation','HookDrive','BoardAssembly','ContactBuild','ContactGeneration','BoardPose','ForceQueue','CollisionBody','BoardContactFeedback','BoardStep','BoardRuntime','DeckAngularCorrections','NameId','Settings','GroundControlSettings','Steering','SteeringWobbleSettings','SpeedWobble','GroundForce','Manual','BoardGroundAngle','RidingAngles','RidingCollisionResponse','GroundContactResponse','StockSettingsReader','SlideState','SlideStateSettings','SlideStateRuntime')
     for p in list(live.glob('*.h'))+[live/(name+'.cpp') for name in files]:shutil.copyfile(p,code/p.name)
-    probe=code/'slide_state_runtime_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Native/slide_state_runtime_probe.cpp',probe);(output/'native-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
-    native=output/'slide-state-runtime-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(native)],check=True);return native
+    probe=code/'slide_state_runtime_probe.cpp';shutil.copyfile(PLUGIN/'Tests/Simulation/slide_state_runtime_probe.cpp',probe);(output/'simulation-source-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(code.iterdir())},indent=2)+'\n')
+    simulation=output/'slide-state-runtime-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(name+'.cpp')) for name in files],str(probe),'-o',str(simulation)],check=True);return simulation
 
 
 def decode(data,records):
@@ -164,10 +164,10 @@ def coverage(cases,records):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);args=p.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
     for name in ('result.json','first-divergence.json'):(output/name).unlink(missing_ok=True)
-    cases,records=corpus();validate_corpus(cases,records);commands=encode(cases);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(records,indent=2)+'\n');reference=build_probe(output,'slide-state-runtime-reference',prepare_source(output),args.target_dir);native=build_native(output);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
+    cases,records=corpus();validate_corpus(cases,records);commands=encode(cases);(output/'input.bin').write_bytes(commands);(output/'cases.json').write_text(json.dumps(records,indent=2)+'\n');reference=build_probe(output,'slide-state-runtime-reference',prepare_source(output),args.target_dir);simulation=build_simulation(output);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     def expected(data):return subprocess.check_output([str(reference),str(args.assets.resolve())],input=data)
-    def actual(data):return subprocess.check_output([str(native),str(settings)],input=data)
-    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'native.bin').write_bytes(candidate);frames=decode(oracle,records);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
+    def actual(data):return subprocess.check_output([str(simulation),str(settings)],input=data)
+    oracle=expected(commands);candidate=actual(commands);(output/'reference.bin').write_bytes(oracle);(output/'simulation.bin').write_bytes(candidate);frames=decode(oracle,records);(output/'reference-trace.json').write_text(json.dumps(frames,indent=2)+'\n')
     if oracle!=candidate:
         lo=0;hi=len(cases)
         while hi-lo>1:

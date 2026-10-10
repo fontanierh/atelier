@@ -37,7 +37,7 @@ void FAnimNode_SkateRider::PreUpdate(const UAnimInstance* InAnimInstance)
     if (!Skate.IsValid())
         if (const AActor* Owner = InAnimInstance ? InAnimInstance->GetOwningActor() : nullptr) Skate = Owner->FindComponentByClass<USkateComponent>();
     const USkateComponent* Component = Skate.Get();
-    if (Component && !Component->GetRetailPose().IsEmpty()) Pose = Component->GetRetailPose();
+    if (Component && !Component->GetRiderPose().IsEmpty()) Pose = Component->GetRiderPose();
     else Pose.Reset();
     if (Component) { BlendSerial = Component->GetPoseBlendSerial(); BlendTime = Component->GetPoseBlendTime(); }
     static const IConsoleVariable* Trace = IConsoleManager::Get().FindConsoleVariable(TEXT("skate.RideTrace"));
@@ -48,7 +48,7 @@ void FAnimNode_SkateRider::Update_AnyThread(const FAnimationUpdateContext& Conte
 {
     bSkate = !Pose.IsEmpty();
     // The component counts the switches it wants concealed (the first update only learns the count), and a switch
-    // between the poses a frame after the count changed is blended too. Native rides never ask for a blend.
+    // between the poses a frame after the count changed is blended too. Simulation rides never ask for a blend.
     const bool bSwitch = bSkate != bShowedSkate;
     const bool bAsked = bSerialKnown && BlendSerial != AppliedSerial;
     UE::Anim::IInertializationRequester* Requester = nullptr;

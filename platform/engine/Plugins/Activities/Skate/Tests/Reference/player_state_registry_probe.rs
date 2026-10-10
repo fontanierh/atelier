@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
 use std::io::Write;
 use skate_core::player::state::PhysicalStateId;
 mod original_host {

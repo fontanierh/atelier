@@ -17,7 +17,7 @@ import check_offboard_ground_geometry_parity as geometry
 from check_offboard_contact_parity import PLUGIN,make_world,encode_world,quad
 CORE='crates/skate-core/src/player/offboard/'
 HOST='crates/skate-host/src/physics/'
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 UNITS=tuple(dict.fromkeys(controller.UNITS+geometry.UNITS+('BipedGroundState','BipedGroundInput','BipedGroundJob')))
 TYPES=OrderedDict([
  ('BipedContactPrefix',('contact_toolkit/prefix.rs','ContactPrefix','contact_toolkit::ContactPrefix')),
@@ -104,20 +104,20 @@ def corpus(d):
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def aliases():return geometry.aliases()
 def prepare(out,d):
- snapshot=out/'native-source'
+ snapshot=out/'simulation-source'
  if snapshot.exists():shutil.rmtree(snapshot)
  snapshot.mkdir()
  for p in CODE.glob('*.h'):shutil.copy2(p,snapshot/p.name)
  for n in UNITS:shutil.copy2(CODE/(n+'.cpp'),snapshot/(n+'.cpp'))
- cpp_world=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
- cpp_geometry=(PLUGIN/'Tests/Native/offboard_ground_geometry_probe.cpp').read_text().split('// WORLD_PROTOCOL')[1].split('struct Registry')[0]+'\n}\n'
+ cpp_world=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()')[0];rust_world=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('struct Query {')[0]
+ cpp_geometry=(PLUGIN/'Tests/Simulation/offboard_ground_geometry_probe.cpp').read_text().split('// WORLD_PROTOCOL')[1].split('struct Registry')[0]+'\n}\n'
  rust_geometry=(PLUGIN/'Tests/Reference/offboard_ground_geometry_probe.rs').read_text().split('// WORLD_PROTOCOL')[1].split('struct BodyData')[0].replace('// ORIGINAL_STATE',source(HOST+'offboard/ground_geometry.rs')+'\npub fn migration_new(offset:f32)->State{State{pending:None,collision_offset:offset}}\n')
- cpp,rust=helpers(d);native=snapshot/'biped_ground_state_probe.cpp';native.write_text((PLUGIN/'Tests/Native/biped_ground_state_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world).replace('// GEOMETRY_PROTOCOL',cpp_geometry).replace('// GENERATED_PROTOCOL',cpp))
+ cpp,rust=helpers(d);simulation=snapshot/'biped_ground_state_probe.cpp';simulation.write_text((PLUGIN/'Tests/Simulation/biped_ground_state_probe.cpp').read_text().replace('// WORLD_PROTOCOL',cpp_world).replace('// GEOMETRY_PROTOCOL',cpp_geometry).replace('// GENERATED_PROTOCOL',cpp))
  bridge=source(HOST+'biped_ground/entry.rs')+'\npub fn migration_effective(frame:Frame,flags:u32)->Frame{effective_root(frame,flags)}\n'
  reference=out/'biped-ground-state-reference.rs';reference.write_text((PLUGIN/'Tests/Reference/biped_ground_state_probe.rs').read_text().replace('// WORLD_PROTOCOL',rust_world).replace('// GEOMETRY_PROTOCOL',rust_geometry).replace('// GENERATED_PROTOCOL',rust).replace('mod ground_entry_bridge;','mod ground_entry_bridge{\n'+bridge+'\n}'))
  sources={CORE+p for p,_,_ in TYPES.values()}|{CORE+'ground_input/math.rs',CORE+'ground_entry/math.rs',HOST+'biped_ground/entry.rs',HOST+'offboard/ground_geometry.rs',*aliases().values()}
- report=dict(native_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_sources={p:hashlib.sha256(source(p).encode()).hexdigest()for p in sorted(sources)},protocol=d,boundary='Full actual original entry/input/job/sync and retained geometry; consumed controller result, input and source engine-authored world are explicit boundaries. No fabricated queries.')
- (out/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,snapshot,reference
+ report=dict(simulation_source_sha256={p.name:digest(p)for p in snapshot.iterdir()},original_sources={p:hashlib.sha256(source(p).encode()).hexdigest()for p in sorted(sources)},protocol=d,boundary='Full actual original entry/input/job/sync and retained geometry; consumed controller result, input and source engine-authored world are explicit boundaries. No fabricated queries.')
+ (out/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,snapshot,reference
 
 def audit(raw,cases,d):
  r=wire.Reader(raw);assert r.word()==len(cases)
@@ -160,7 +160,7 @@ def inspect(raw,cases,d):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);p.add_argument('--preflight',action='store_true');a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True);d=definitions();blob,cases=corpus(d);audit(blob,cases,d);(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n');probe,snapshot,generated=prepare(out,d);summary=dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(blob),input_sha256=hashlib.sha256(blob).hexdigest(),units=UNITS)
  if a.preflight:print(json.dumps(summary,indent=2));return
- native=out/'biped-ground-state-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(native)],check=True);reference=build_probe(out,'biped-ground-state-reference',generated,a.target_dir,extra_sources=aliases());expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(native)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
+ simulation=out/'biped-ground-state-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(probe),'-o',str(simulation)],check=True);reference=build_probe(out,'biped-ground-state-reference',generated,a.target_dir,extra_sources=aliases());expected=subprocess.check_output([str(reference)],input=blob);actual=subprocess.check_output([str(simulation)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'cpp.bin').write_bytes(actual)
  if expected!=actual:
   first=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)))//4;report=dict(first_word=first,reference_bytes=len(expected),cpp_bytes=len(actual));(out/'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n');raise AssertionError(report)
  result=dict(passed=True,**summary,exact_words=len(expected)//4,output_sha256=hashlib.sha256(expected).hexdigest(),coverage=inspect(expected,cases,d),limitations=__doc__);(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

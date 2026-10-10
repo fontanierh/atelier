@@ -186,8 +186,6 @@ private:
 
 /** Asks the transition code whether it takes a bail of this kind (a run-out on foot); false makes it a ragdoll. */
 DECLARE_DELEGATE_RetVal_OneParam(bool, FRideBailHandler, ERideBailKind);
-/** Asks the transition code where a settled body gets up; unbound means back onto the board. */
-DECLARE_DELEGATE_RetVal(ERideGetUpExit, FRideGetUpChooser);
 
 UCLASS(Transient)
 class URidePhysicalRider : public UObject, public FTickableGameObject
@@ -208,7 +206,6 @@ public:
     /** End after the physics weight has faded over Seconds (at once when nothing is simulating). */
     void Release(float Seconds);
     bool IsActive() const { return Control != nullptr; }
-    ACharacter* GetRider() const { return Rider; }
 
     /** Mount: the bodies start simulating where the animation is, moving with it, and their physics weight rises
      *  over Seconds. */
@@ -216,12 +213,10 @@ public:
     /** Dismount: the weight falls over Seconds, then the bodies follow the animation kinematically again. */
     void BlendOut(float Seconds);
     bool IsSimulating() const { return bSimulating; }
-    float GetWeight() const { return Weight; }
 
     /** Each frame of the ride, after the step and before the mesh animates. Without it (no ride) the rider ticks
      *  itself in the OnFoot phase, so mount and dismount blends run while the character is on foot. */
     void Update(float Dt, ERidePhysicalPhase Phase);
-    ERidePhysicalPhase GetPhase() const { return Phase; }
 
     // Bails.
     /** From the board's motion at the bail and the body's posture: upright, feet below the hips, slow, no big drop
@@ -229,13 +224,9 @@ public:
     ERideBailKind ClassifyBail(const FVector& BoardVelocity, const FVector& BoardSpin) const;
     /** Bound by the transition code: return true to take the bail as a run-out on foot (no ragdoll). */
     FRideBailHandler OnBailStart;
-    /** Bound by the transition code: which way a settled body gets up. */
-    FRideGetUpChooser ChooseGetUp;
     /** The bail's first frame: classify it and offer it to OnBailStart. True when the transition took it. */
     bool OfferBail(const FVector& BoardVelocity, const FVector& BoardSpin);
-    bool IsBailOffered() const { return bBailOffered; }
     void ClearBailOffer() { bBailOffered = false; }
-    ERideBailKind GetLastBailKind() const { return LastBailKind; }
     /** Go limp at once with the momentum the bodies have (or Velocity when they were not simulating): the Bail
      *  profile lets go of every anchor, leaves the joints a tone toward the clip and turns gravity on, and the bodies
      *  slide with BailFriction. The board becomes a tumbling box at BoardTransform. */
@@ -244,7 +235,6 @@ public:
     /** A body that met something it could not resolve: back to animation at once, the loose board removed. */
     void Abort();
     bool IsBailing() const { return bBail; }
-    float GetBailTime() const { return BailTime; }
     /** The ground under the body, the way it faces (head from hips, degrees) and whether it lies on its back. */
     FVector GetBodyGround() const { return BodyGround; }
     float GetBodyYaw() const;
@@ -271,8 +261,8 @@ public:
     UBoxComponent* TakeLooseBoard();
     /** Destroy the loose board if it is still ours (the ride's board is back under the rider). */
     void DropLooseBoard();
-    /** Put the loose board's deck at Deck (scaled, as GetLooseBoardDeck) and hold it there, out of physics: another
-     *  simulation (the hybrid's Native session) moves the board. ReleaseLooseBoard gives it back to physics, moving
+    /** Put the loose board's deck at Deck (scaled, as GetLooseBoardDeck) and hold it there, out of physics: the
+     *  simulation session moves the board. ReleaseLooseBoard gives it back to physics, moving
      *  with Velocity (cm/s) and Spin (rad/s). */
     void PlaceLooseBoard(const FTransform& Deck);
     void ReleaseLooseBoard(const FVector& Velocity, const FVector& Spin);
@@ -284,7 +274,7 @@ public:
 
     /** The physics asset built from the bone contract: a body per part (fitted to the skin, or a capsule), wide joint
      *  limits that every riding pose fits, no collision between the rider's own bodies. Fitted: how many bodies were
-     *  fitted to the skin. BailEnvelopes, when given, gets each joint's bail envelope (Native's, by joint name): the
+     *  fitted to the skin. BailEnvelopes, when given, gets each joint's bail envelope (the simulation's, by joint name): the
      *  asset keeps the riding one. */
     static UPhysicsAsset* BuildPhysicsAsset(USkeletalMesh* Mesh, const ISkateRider* Api, UObject* Outer, bool bFitToSkin,
         int32* Fitted = nullptr, TMap<FName, FRideJointEnvelope>* BailEnvelopes = nullptr);
@@ -298,11 +288,6 @@ public:
     // Logs every body (skate.RidePhysicalDump).
     void Dump() const;
 
-    /** Telemetry: the bodies' distance from the animated pose (cm). In a bail the pose is carried as far as the
-     *  ground under the pelvis has gone since the bail began, as a root that follows the body would carry it. */
-    float GetPelvisError() const { return PelvisError; }
-    float GetWorstError() const { return WorstError; }
-    float GetFootError() const { return FootError; }
     /** How far the skin goes under the ground (cm along the ground's normal; below 0 it stays above): the deepest of
      *  a sample of the mesh's vertices, skinned on the CPU as the mesh shows them, each traced against the ground's
      *  complex collision. Bone is the body that carries the deepest; Groups, when given, gets the deepest of each of
@@ -345,7 +330,7 @@ private:
     UPROPERTY() TObjectPtr<USkeletalMesh> BuiltFor;
     bool bBuiltFit = false;
     int32 BuiltFitted = 0;
-    // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (Native's, made
+    // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (the simulation's, made
     // with the built asset). In a bail, RampLimits holds each joint's limits now (twist, Swing1, Swing2): they start
     // open to the pose the bail began in and close to the envelope at skate.RideBailTightenRate.
     TMap<FName, FRideJointEnvelope> RidingEnvelopes, BailEnvelopes;
@@ -431,6 +416,8 @@ private:
     // The frame Begin ran: Physics Control has no copy of the pose before its first update.
     uint64 BeganFrame = 0;
 
+    /** The bodies' distance from the animated pose (cm). In a bail the pose is carried as far as the ground under the
+     *  pelvis has gone since the bail began, as a root that follows the body would carry it. */
     float PelvisError = 0, WorstError = 0, FootError = 0;
     // The vertices the skin depth samples (LOD0) and the body bone that carries each, for this mesh with these bodies.
     mutable TArray<int32> SkinSamples;

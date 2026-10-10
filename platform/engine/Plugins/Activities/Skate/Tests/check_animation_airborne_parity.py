@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare ControlAirLegExtension/BodySpin to the full frozen MotionHost.
 
-Stock native metadata/settings are the candidate boundary. Original host modules
+Stock simulation metadata/settings are the candidate boundary. Original host modules
 and arithmetic run unchanged; fixture records and parameter observers expose
 consumed values, retained behavior instances and actual stock spin channels.
 Compile and execute only under atelier.safety.
@@ -156,12 +156,12 @@ def build_reference(output,target):
     (output/'reference-provenance.json').write_text(json.dumps(report,indent=2)+'\n');return binary
 
 
-def build_native(output):
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';code=output/'native-source'
+def build_simulation(output):
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';code=output/'simulation-source'
     if code.exists():shutil.rmtree(code)
-    code.mkdir();files=('NativeMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','GraphConditions','GraphGestureOperations','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','GraphMotionName','GraphMotionSpecialConditions','AnimationAirborne','AnimationAirborneSettings')
+    code.mkdir();files=('SimulationMath','AnimationName','Intents','Input','InputIntentions','NameId','Settings','Graph','GraphConditions','GraphGestureOperations','AnimationSamples','AnimationMetadata','AnimationPlayback','AnimationPlaybackParameters','AnimationTrees','AnimationChannels','MotionAnimation','GraphMotionName','GraphMotionSpecialConditions','AnimationAirborne','AnimationAirborneSettings')
     for path in list(live.glob('*.h'))+[live/(f+'.cpp') for f in files]:shutil.copy2(path,code/path.name)
-    probe=code/'animation_airborne_probe.cpp';shutil.copy2(PLUGIN/'Tests/Native/animation_airborne_probe.cpp',probe);(output/'native-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(code.iterdir())},indent=2)+'\n')
+    probe=code/'animation_airborne_probe.cpp';shutil.copy2(PLUGIN/'Tests/Simulation/animation_airborne_probe.cpp',probe);(output/'simulation-source-provenance.json').write_text(json.dumps({p.name:digest(p) for p in sorted(code.iterdir())},indent=2)+'\n')
     binary=output/'animation-airborne-cpp';subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(code),*[str(code/(f+'.cpp')) for f in files],str(probe),'-o',str(binary)],check=True);return binary
 
 
@@ -195,16 +195,16 @@ def coverage(data,rows):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',required=True,type=Path);p.add_argument('--metadata',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--target-dir',required=True,type=Path);a=p.parse_args();output=a.output.resolve();output.mkdir(parents=True,exist_ok=True)
-    rows=corpus();commands=encoded(rows);validate_input(commands,rows);graph=fixture();original=output/'airborne.reference';original.write_bytes(original_graph(graph));native_graph=output/'airborne.native';native_graph.write_bytes(converter.encode_graph(converter.read_graph(original)))
-    metadata=fixture_metadata();fixture_json=output/'observers.json';fixture_json.write_text(json.dumps(metadata));fixture_native=output/'observers.skate';fixture_native.write_bytes(feedback.trees.converter.pack_metadata(metadata));(output/'input.bin').write_bytes(commands)
-    reference=build_reference(output,a.target_dir);native=build_native(output);settings=output/'settings.native';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+    rows=corpus();commands=encoded(rows);validate_input(commands,rows);graph=fixture();original=output/'airborne.reference';original.write_bytes(original_graph(graph));simulation_graph=output/'airborne.simulation';simulation_graph.write_bytes(converter.encode_graph(converter.read_graph(original)))
+    metadata=fixture_metadata();fixture_json=output/'observers.json';fixture_json.write_text(json.dumps(metadata));fixture_simulation=output/'observers.skate';fixture_simulation.write_bytes(feedback.trees.converter.pack_metadata(metadata));(output/'input.bin').write_bytes(commands)
+    reference=build_reference(output,a.target_dir);simulation=build_simulation(output);settings=output/'settings.simulation';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
     oracle=subprocess.check_output([str(reference),str(a.assets.resolve()),str(original),str(fixture_json)],input=commands)
-    candidate=subprocess.check_output([str(native),str(a.metadata.resolve()/'bank-0.skate'),str(a.metadata.resolve()/'bank-1.skate'),str(fixture_native),str(native_graph),str(settings)],input=commands)
-    (output/'reference.bin').write_bytes(oracle);(output/'native.bin').write_bytes(candidate)
+    candidate=subprocess.check_output([str(simulation),str(a.metadata.resolve()/'bank-0.skate'),str(a.metadata.resolve()/'bank-1.skate'),str(fixture_simulation),str(simulation_graph),str(settings)],input=commands)
+    (output/'reference.bin').write_bytes(oracle);(output/'simulation.bin').write_bytes(candidate)
     if candidate!=oracle:
         first=next((i for i,(x,y) in enumerate(zip(candidate,oracle)) if x!=y),min(len(candidate),len(oracle)));raise AssertionError(f'Airborne differs at byte {first}; all inputs and output streams saved')
     counts=Counter((r['id'],r['phase']) for r in rows)
-    result=dict(passed=True,configurations=len(KINDS),callbacks=len(rows),calls_by_operation={f'{KINDS[id]}/{phase}':n for (id,phase),n in counts.items()},coverage=coverage(oracle,rows),output_bytes=len(candidate),output_sha256=hashlib.sha256(candidate).hexdigest(),comparison='Unchanged full original MotionHost factory/allocation/Begin/Update/End, cached absent/scalar/vector seeding, board/left/right/fallback bones, ascending/descending/preland toe multiplier and consumed height/extension, BodySpin persistent five-mode transitions, influence clamps and actual front/back stock channel timing/pose commands.',limitations='Finite stock settings and supplied completed airborne records. No physical producer or live scheduler registration comparison in this isolated slice; complete authored gameplay/session parity remains pending.',fixture_boundary='GameplayConditions state is consumed by BodySpin; all other complete-record fields are explicit unused sentinels. Parameter observer and initial-cache clips are synthetic fixture metadata; spin channels use real stock metadata.',data_boundary='Candidate reads project-native metadata/settings; original fixture JSON exists only in the independent Rust oracle.',reference_provenance_sha256=digest(output/'reference-provenance.json'),native_source_provenance_sha256=digest(output/'native-source-provenance.json'))
+    result=dict(passed=True,configurations=len(KINDS),callbacks=len(rows),calls_by_operation={f'{KINDS[id]}/{phase}':n for (id,phase),n in counts.items()},coverage=coverage(oracle,rows),output_bytes=len(candidate),output_sha256=hashlib.sha256(candidate).hexdigest(),comparison='Unchanged full original MotionHost factory/allocation/Begin/Update/End, cached absent/scalar/vector seeding, board/left/right/fallback bones, ascending/descending/preland toe multiplier and consumed height/extension, BodySpin persistent five-mode transitions, influence clamps and actual front/back stock channel timing/pose commands.',limitations='Finite stock settings and supplied completed airborne records. No physical producer or live scheduler registration comparison in this isolated slice; complete authored gameplay/session parity remains pending.',fixture_boundary='GameplayConditions state is consumed by BodySpin; all other complete-record fields are explicit unused sentinels. Parameter observer and initial-cache clips are synthetic fixture metadata; spin channels use real stock metadata.',data_boundary='Candidate reads project metadata/settings; original fixture JSON exists only in the independent Rust oracle.',reference_provenance_sha256=digest(output/'reference-provenance.json'),simulation_source_provenance_sha256=digest(output/'simulation-source-provenance.json'))
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2),flush=True)
 
 

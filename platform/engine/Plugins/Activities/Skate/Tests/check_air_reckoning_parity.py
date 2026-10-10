@@ -3,7 +3,7 @@
 
 Only the root render guard compiles/executes. Original host/core prefixes remain
 byte-for-byte intact; explicit fixture inputs and private field observers append.
-Runtime consumes native settings and borrows the canonical physical/input owners.
+Runtime consumes simulation settings and borrows the canonical physical/input owners.
 """
 import argparse
 from collections import Counter
@@ -20,7 +20,7 @@ from camera_reference_build import frozen_sources
 from check_gesture_parity import PLUGIN, converter
 from session_parity import REFERENCE_REVISION, digest
 
-CODE = PLUGIN / 'Source/AtelierSkate/Private/Native'
+CODE = PLUGIN / 'Source/AtelierSkate/Private/Simulation'
 UNITS = tuple(dict.fromkeys((*physics.UNITS, 'StockSettingsReader',
                             'PlayerInputTypes', 'WipeoutOrientation',
                             'BodySpin', 'BodyFlip', 'AirReckoning')))
@@ -108,7 +108,7 @@ def corpus():
             commands += [[8] + fs([angle, speed, .317]) + fs(flat(matrix(k))) + fs(flat(matrix(k + 3))) + flip_settings(n)
                          + fs([0 if k % 7 == 0 else (-7.31 if k % 2 else 7.31), .1731 * k, .137, .983, .071, .317, 1, .071, .137, .731,
                                (.00831, .016666668, .0317)[k % 3]]) + [k % 2]]
-        add('all optional flip attribute branches, perfect-turn clamp, native W columns and untouched zero-angle matrix', commands)
+        add('all optional flip attribute branches, perfect-turn clamp, the simulation W columns and untouched zero-angle matrix', commands)
     for n in range(4):
         commands = []
         for k in range(128):
@@ -117,7 +117,7 @@ def corpus():
             if k % 5 == 0: a, b = [0, 2, 0, .317], [0, -3, 0, .137]
             if k % 7 == 0: a, b = [0, 0, 0, .317], [0, 0, 0, -.137]
             commands += [[9] + fs(a + b + [(-.137, 0, .0317, .317, .731, 3.17)[(k + n) % 6]])]
-        add('full native limiter endpoint magnitude, parallel/zero gates and fourth-lane rotation', commands)
+        add('full simulation limiter endpoint magnitude, parallel/zero gates and fourth-lane rotation', commands)
     for category, key, name, replacement in (
             ('physics_reckoning', 'default', 'GroundNormalSmoothing', ''),
             ('physics_mode', 'easy', 'EasyBodySpins', 'missing'),
@@ -192,15 +192,15 @@ path="src/migration_probe.rs"
     report.update(staged_host_prefixes=staged, appended_core_observer=dict(source=core_path.as_posix(), original_prefix_sha256=digest(original), generated_sha256=digest(extended), observer_sha256=hashlib.sha256(CORE_OBSERVER.encode()).hexdigest()), probe_sha256=digest(template), helper_sha256=digest(helper), binary_sha256=digest(binary), cargo_lock_sha256=digest(crate / 'Cargo.lock'), boundary='Whole original host/core production prefixes remain unchanged. Appended fixture setters target actual shared state; observers read private filter/control/history words. All loaded host settings/update/plant/scale/fields and complete original core spin/flip/limiter/update/reset bodies execute. No numerical body or callback is replaced. Invalid BodySpin from_words panic is caught solely to compare rejection and retained existing-owner semantics.')
     (output / 'reference-provenance.json').write_text(json.dumps(report, indent=2) + '\n'); return binary
 
-def build_native(output):
-    snapshot = output / 'native-source'; snapshot.mkdir(exist_ok=True); hashes = {}
+def build_simulation(output):
+    snapshot = output / 'simulation-source'; snapshot.mkdir(exist_ok=True); hashes = {}
     for path in sorted(CODE.glob('*.h')): shutil.copy2(path, snapshot / path.name); hashes[path.name] = digest(snapshot / path.name)
     for unit in UNITS:
         path = CODE / (unit + '.cpp'); shutil.copy2(path, snapshot / path.name); hashes[path.name] = digest(snapshot / path.name)
-    probe = PLUGIN / 'Tests/Native/air_reckoning_probe.cpp'; shutil.copy2(probe, snapshot / probe.name); hashes[probe.name] = digest(snapshot / probe.name)
-    binary = output / 'air-reckoning-native'
+    probe = PLUGIN / 'Tests/Simulation/air_reckoning_probe.cpp'; shutil.copy2(probe, snapshot / probe.name); hashes[probe.name] = digest(snapshot / probe.name)
+    binary = output / 'air-reckoning-simulation'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions', '-fno-rtti', '-Wall', '-Wextra', '-Werror', '-I', str(snapshot), *[str(snapshot / (u + '.cpp')) for u in UNITS], str(snapshot / probe.name), '-o', str(binary)], check=True)
-    (output / 'native-provenance.json').write_text(json.dumps(dict(immutable_sources=hashes, units=UNITS), indent=2) + '\n'); return binary
+    (output / 'simulation-provenance.json').write_text(json.dumps(dict(immutable_sources=hashes, units=UNITS), indent=2) + '\n'); return binary
 
 class Reader:
     def __init__(self, data): self.words = struct.unpack('<' + 'I' * (len(data) // 4), data); self.at = 0
@@ -307,7 +307,7 @@ def prepare(assets, output, cases):
     fixtures = output / 'fixtures'; fixtures.mkdir(exist_ok=True)
     source = assets / 'private/stock/skater-collections.json'; stock = json.loads(source.read_text())
     (fixtures / 'stock.settings').write_bytes(converter.encode_settings(source))
-    skeletons = assets / 'private/stock/physics-skeletons.json'; (fixtures / 'physics.native').write_bytes(converter.encode_physics_skeletons(skeletons))
+    skeletons = assets / 'private/stock/physics-skeletons.json'; (fixtures / 'physics.simulation').write_bytes(converter.encode_physics_skeletons(skeletons))
     for index, case in enumerate(cases):
         data = copy.deepcopy(stock)
         if case['mutation']:
@@ -327,7 +327,7 @@ def prepare(assets, output, cases):
             elif replacement == 'type': record['fields'][target]['type'] = 'EA::Reflection::String'
             elif replacement == 'nan': record['fields'][target]['data'] = '7fc00000'
             else: record['fields'][target]['data'] = replacement
-        folder = fixtures / f'case-{index}'; original = folder / 'private/stock/skater-collections.json'; original.parent.mkdir(parents=True, exist_ok=True); original.write_text(json.dumps(data)); (folder / 'settings.native').write_bytes(converter.encode_settings(original))
+        folder = fixtures / f'case-{index}'; original = folder / 'private/stock/skater-collections.json'; original.parent.mkdir(parents=True, exist_ok=True); original.write_text(json.dumps(data)); (folder / 'settings.simulation').write_bytes(converter.encode_settings(original))
     return fixtures, json.loads(skeletons.read_text())['source_sha256']
 def main():
     p = argparse.ArgumentParser(description=__doc__); p.add_argument('--assets', type=Path, required=True); p.add_argument('--samples', type=Path, required=True); p.add_argument('--output', type=Path, required=True); p.add_argument('--target-dir', type=Path, required=True); p.add_argument('--preflight', action='store_true'); a = p.parse_args()
@@ -336,14 +336,14 @@ def main():
     for unit in UNITS: assert (CODE / (unit + '.cpp')).is_file(), unit
     if a.preflight:
         print(json.dumps(dict(cases=len(cases),commands=sum(len(c['commands']) for c in cases),input_bytes=len(corpus_bytes),units=len(UNITS)), indent=2)); return
-    reference = build_reference(output / 'reference', a.target_dir); native = build_native(output)
+    reference = build_reference(output / 'reference', a.target_dir); simulation = build_simulation(output)
     expected = subprocess.check_output([str(reference), str(a.assets.resolve()), str(fixtures)], input=corpus_bytes)
-    actual = subprocess.check_output([str(native), str(fixtures), str(fixtures / 'stock.settings'), str(fixtures / 'physics.native'), str(a.samples.resolve() / 'native/rig.skate'), identity, str(a.assets.resolve())], input=corpus_bytes)
-    (output / 'reference.bin').write_bytes(expected); (output / 'native.bin').write_bytes(actual)
+    actual = subprocess.check_output([str(simulation), str(fixtures), str(fixtures / 'stock.settings'), str(fixtures / 'physics.simulation'), str(a.samples.resolve() / 'simulation/rig.skate'), identity, str(a.assets.resolve())], input=corpus_bytes)
+    (output / 'reference.bin').write_bytes(expected); (output / 'simulation.bin').write_bytes(actual)
     if actual != expected:
         at = next((i for i, (a,b) in enumerate(zip(expected,actual)) if a != b), min(len(expected),len(actual)))
-        report = dict(byte=at,word=at//4,reference_bytes=len(expected),native_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex()); (output / 'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n'); raise AssertionError(report)
+        report = dict(byte=at,word=at//4,reference_bytes=len(expected),simulation_bytes=len(actual),reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex()); (output / 'first-divergence.json').write_text(json.dumps(report,indent=2)+'\n'); raise AssertionError(report)
     proof = coverage(decode(expected,cases),cases)
-    result = dict(passed=True, reference_revision=REFERENCE_REVISION, cases=len(cases), commands=sum(len(c['commands']) for c in cases), bytes=len(expected), sha256=hashlib.sha256(expected).hexdigest(), input_sha256=hashlib.sha256(corpus_bytes).hexdigest(), coverage=proof, boundary='Complete unchanged original core air/reckoning/{mod,data,math}, physical body_spin/body_flip and host air_reckoning/settings bodies; actual canonical RidingOutputs/filter/frame/body-spin owners. Runtime native settings only. Explicit completed processed/trajectory/animation fields remain upstream producer inputs. Root frame/state/air scheduling and trajectory producers are not claimed. Optional BodyFlip fallbacks are covered directly as core call inputs; production host loader requires all three attributes. Invalid BodySpin from_words panics are caught in oracle and explicitly rejected in C++; other invalid-owner mutation/panic domains are excluded. No neutral callback or replacement numeric method executes.')
+    result = dict(passed=True, reference_revision=REFERENCE_REVISION, cases=len(cases), commands=sum(len(c['commands']) for c in cases), bytes=len(expected), sha256=hashlib.sha256(expected).hexdigest(), input_sha256=hashlib.sha256(corpus_bytes).hexdigest(), coverage=proof, boundary='Complete unchanged original core air/reckoning/{mod,data,math}, physical body_spin/body_flip and host air_reckoning/settings bodies; actual canonical RidingOutputs/filter/frame/body-spin owners. Runtime simulation settings only. Explicit completed processed/trajectory/animation fields remain upstream producer inputs. Root frame/state/air scheduling and trajectory producers are not claimed. Optional BodyFlip fallbacks are covered directly as core call inputs; production host loader requires all three attributes. Invalid BodySpin from_words panics are caught in oracle and explicitly rejected in C++; other invalid-owner mutation/panic domains are excluded. No neutral callback or replacement numeric method executes.')
     (output / 'result.json').write_text(json.dumps(result,indent=2)+'\n'); print(json.dumps(result,indent=2))
 if __name__ == '__main__': main()

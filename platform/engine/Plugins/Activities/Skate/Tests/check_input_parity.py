@@ -129,7 +129,7 @@ def corpus():
             w.word(160)
             for tick in range(160):
                 # Three-call suppression, 24/12 repeat, resize growth/reset and
-                # shorter polls with retained native initialized storage.
+                # shorter polls with retained simulation initialized storage.
                 size = 24 if tick < 90 else (0, 4, 24, 8, 24, 1)[tick % 6]
                 w.word(size)
                 w.scalars([pad_levels[((tick//(4+slot%5))+slot+case) % len(pad_levels)] for slot in range(size)])
@@ -349,11 +349,11 @@ def corpus():
 
 
 def build_probes(output, target_dir):
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     cpp = output/'input-cpp'
-    sources = [native/f'{name}.cpp' for name in ('NativeMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions')]
+    sources = [simulation/f'{name}.cpp' for name in ('SimulationMath', 'AnimationName', 'Intents', 'Input', 'InputIntentions')]
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror',
-                    '-I', str(native), *(str(source) for source in sources), str(PLUGIN/'Tests/Native/input_probe.cpp'), '-o', str(cpp)], check=True)
+                    '-I', str(simulation), *(str(source) for source in sources), str(PLUGIN/'Tests/Simulation/input_probe.cpp'), '-o', str(cpp)], check=True)
     rust = build_probe(output, 'input-reference', PLUGIN/'Tests/Reference/input_probe.rs', target_dir)
     return cpp, rust
 

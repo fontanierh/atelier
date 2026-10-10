@@ -26,7 +26,7 @@
 namespace
 {
     constexpr float DeckHeight=9.05f, WheelX=18.f, WheelY=9.3f, WheelRadius=2.65f, DeckThickness=1.2f;
-    constexpr float Radius=22.f, Half=55.f, Clearance=22.f, MouseScale=1.f/40.f;
+    constexpr float MouseScale=1.f/40.f;
 }
 
 USkateComponent::USkateComponent()
@@ -193,84 +193,29 @@ void USkateComponent::SetGoofy(bool bNewGoofy)
 {
     if (bGoofy == bNewGoofy) return;
     bGoofy = bNewGoofy;
-    if (bRetailActive) ConfigureRetail();
-    if (Mode != ESkateMode::Off && Mode != ESkateMode::Bail) { SetMeshForRiding(true); ++Serial; }
+    if (bSimulationActive) ConfigureSimulation();
+    if (Mode != ESkateMode::Off && Mode != ESkateMode::Bail) { SetMeshForRiding(); ++Serial; }
 }
 
-void USkateComponent::SetMeshForRiding(bool bRiding)
+void USkateComponent::SetMeshForRiding()
 {
+    // The on-foot mesh placement (the pose is anchored on the board) plus the transition's offset and turn that keep
+    // the body where it was (RideTransition.cpp).
     USkeletalMeshComponent* Mesh = Rider->GetMesh();
-    // The Ride backend keeps the on-foot mesh placement (its pose is anchored on the board) plus the transition's
-    // offset and turn that keep the body where it was (RideTransition.cpp).
-    if (bRideBody) { Mesh->SetRelativeLocationAndRotation(SavedMeshLocation + Transit().MeshOffset, Transit().MeshTurn * SavedMeshRotation); return; }
-    if (bRiding)
-    {
-        // The rider stands across the board: regular faces the toe side (+Y), goofy -Y. The clips put the nose on the
-        // rider's left (regular) or right (goofy), so this turn puts it on the actor's +X.
-        // The clips stand the Root bone on the board's ground point; the Root is not the mesh's origin, so place by it.
-        FVector RootRef = FVector::ZeroVector;
-        if (const USkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset())
-        {
-            const FReferenceSkeleton& Ref = Asset->GetRefSkeleton();
-            const FName RootBone = RiderApi->GetSkateBone(TEXT("root"));
-            const int32 Root = RootBone.IsNone() ? INDEX_NONE : Ref.FindBoneIndex(RootBone);
-            if (Root != INDEX_NONE) RootRef = Ref.GetRefBonePose()[Root].GetLocation();
-        }
-        const FQuat Turn = FQuat(FVector::UpVector, FMath::DegreesToRadians(bGoofy ? -90.f : 90.f)) * SavedMeshRotation;
-        Mesh->SetRelativeLocationAndRotation(FVector(0, 0, -BodyLift) - Turn.RotateVector(RootRef), Turn);
-    }
-    else Mesh->SetRelativeLocationAndRotation(SavedMeshLocation, SavedMeshRotation);
+    Mesh->SetRelativeLocationAndRotation(SavedMeshLocation + Transit().MeshOffset, Transit().MeshTurn * SavedMeshRotation);
 }
 
 bool USkateComponent::Toggle()
 {
     if (bNetworkProxy) return false;
     if (!Rider || !bAvailable) return false;
-    // The Ride backend gets on and off as one continuous character (RideTransition.cpp); a ride keeps the backend it
-    // started with until it ends.
-    if (Mode == ESkateMode::Off ? USkateSettings::ActiveBackend() == ESkateBackend::Ride : bRideBody)
-        return Mode == ESkateMode::Off ? RideMount(false) : RideDismount();
-    UCharacterMovementComponent* M = Movement();
-    UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
-    if (Mode == ESkateMode::Off)
-    {
-        if (!M->IsMovingOnGround() || Rider->bIsCrouched) return false;
-        // The native ride switches at once, with the board carried by the actor.
-        ResetTransition(); bRideBody = false; RequestPoseBlend(0.f);
-        if (BoardRoot->IsUsingAbsoluteLocation()) { BoardRoot->SetAbsolute(false, false, false); BoardRoot->SetRelativeTransform(FTransform::Identity); }
-        RiderApi->PrepareToSkate();
-        SavedRadius = Capsule->GetUnscaledCapsuleRadius(); SavedHalf = Capsule->GetUnscaledCapsuleHalfHeight();
-        SavedMeshLocation = Rider->GetMesh()->GetRelativeLocation(); SavedMeshRotation = Rider->GetMesh()->GetRelativeRotation().Quaternion();
-        SavedStep = M->MaxStepHeight;
-        Pos = Rider->GetActorLocation() - FVector(0, 0, Capsule->GetScaledCapsuleHalfHeight() + M->CurrentFloor.FloorDist);
-        const FVector Normal = M->CurrentFloor.HitResult.bBlockingHit ? FVector(M->CurrentFloor.HitResult.ImpactNormal) : FVector::UpVector;
-        Rot = AlignUp(FRotator(0, Rider->GetActorRotation().Yaw, 0).Quaternion(), Normal, 1.f);
-        // Mount along the actual running direction, including while the character is still turning.
-        Vel = FVector::VectorPlaneProject(M->Velocity, Normal);
-        if (Vel.SizeSquared()>FMath::Square(30.f)) Rot=FRotationMatrix::MakeFromXZ(Vel.GetSafeNormal(),Normal).ToQuat();
-        Capsule->SetCapsuleSize(Radius, Half);
-        BodyLift = Clearance + Half;
-        SetMeshForRiding(true);
-        M->SetMovementMode(MOVE_Custom, MovementMode);
-        ResetInput(); ShownCombo.Reset(); ComboFade=0;
-        Mode=ESkateMode::Ground;
-        Rider->SetActorLocationAndRotation(Pos + Up()*BodyLift,Rot,false,nullptr,ETeleportType::TeleportPhysics);
-        BoardRoot->SetVisibility(true, true);
-        if (!StartRetailRuntime()) { StowImmediately(); return false; }
-        return true;
-    }
-    if (Mode != ESkateMode::Ground) return false;    // step off from the ground only
-    StowImmediately();
-    // Step off moving on: face the way the board was going, keep a jog's worth of the speed.
-    const FVector Flat = FVector(Vel.X, Vel.Y, 0.f);
-    if (Flat.Size() > 30.f) Rider->SetActorRotation(Flat.Rotation());
-    M->Velocity = Flat.GetClampedToMaxSize(420.f);
-    return true;
+    // Getting on and off is one continuous character (RideTransition.cpp).
+    return Mode == ESkateMode::Off ? RideMount(false) : RideDismount();
 }
 
 void USkateComponent::StowImmediately()
 {
-    SuspendRetailRuntime();
+    SuspendSimulation();
     // A cut: no board left lying, no carried speed, the body back on its capsule.
     ResetTransition(); RequestPoseBlend(0.f);
     if (Mode == ESkateMode::Off || !Rider) return;
@@ -283,7 +228,7 @@ void USkateComponent::StowImmediately()
     {
         UCapsuleComponent* Capsule = Rider->GetCapsuleComponent();
         Capsule->SetCapsuleSize(SavedRadius, SavedHalf);
-        SetMeshForRiding(false);
+        SetMeshForRiding();
         const FVector Stand = Pos + FVector(0, 0, SavedHalf + 2.f);
         Rider->SetActorLocationAndRotation(Stand, FRotator(0, Forward().Rotation().Yaw, 0), false, nullptr, ETeleportType::TeleportPhysics);
         M->SetMovementMode(MOVE_Falling);
@@ -309,8 +254,8 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
         Movement()->SetMovementMode(MOVE_Walking);
         Movement()->Velocity = FVector::ZeroVector;
         Movement()->FindFloor(Movement()->UpdatedComponent->GetComponentLocation(), Movement()->CurrentFloor, false);
-        // A placement is a cut: the Ride backend gets on at once, without the mount clip.
-        if (!(USkateSettings::ActiveBackend() == ESkateBackend::Ride ? RideMount(true) : Toggle())) return false;
+        // A placement is a cut: the rider gets on at once, without the mount clip.
+        if (!RideMount(true)) return false;
     }
     ResetInput();
     // A placement is a cut for the body too: a bail or a get-up still under way ends at once, so the new ride starts
@@ -319,9 +264,9 @@ bool USkateComponent::PlaceAt(const FVector& GroundPoint, float Yaw)
     Pos = GroundPoint; Rot = FRotator(0, Yaw, 0).Quaternion(); Vel = FVector::ZeroVector; bFakie = false;
     Mode=ESkateMode::Ground;
     Rider->SetActorLocationAndRotation(Pos + Up() * BodyLift, Rot, false, nullptr, ETeleportType::TeleportPhysics);
-    if (!StartRetailRuntime()) { StowImmediately(); return false; }
+    if (!StartSimulation()) { StowImmediately(); return false; }
     // A placement is a cut: the board is there at once.
-    if (bRideBody) { Transit().Board = ERideBoard::Ride; ShowBoard(1.f, true); RequestPoseBlend(0.f); }
+    Transit().Board = ERideBoard::Ride; ShowBoard(1.f, true); RequestPoseBlend(0.f);
     return true;
 }
 
@@ -353,7 +298,7 @@ void USkateComponent::ReadInput(float Dt)
     using atelier::skate_pad::Unsqueeze;
     I.Left.X=Unsqueeze(I.Left.X); I.Left.Y=Unsqueeze(I.Left.Y);
     FVector2D Pad(Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightX)), -Unsqueeze(PC->GetInputAnalogKeyState(EKeys::Gamepad_RightY)));
-    // The player's stick travel (FSkateFeel): the native pad reads 0.25..0.95 of a stick's reach as its whole range.
+    // The player's stick travel (FSkateFeel): the simulation pad reads 0.25..0.95 of a stick's reach as its whole range.
     if (Feel.StickDeadZone != .25f || Feel.StickReach != .95f)
     {
         using atelier::skate_pad::Retravel;
@@ -404,7 +349,7 @@ void USkateComponent::ReadInput(float Dt)
     I.bPush = Down(EKeys::W) || Down(EKeys::Up) || Down(EKeys::Gamepad_FaceButton_Bottom) || Down(EKeys::Gamepad_FaceButton_Left);
     I.bBrake = Down(EKeys::S) || Down(EKeys::Down) || Down(EKeys::Gamepad_FaceButton_Right);
     I.bPowerslide = Down(EKeys::C);
-    // The triggers in the pad's 255 steps, as the native backend reads them (SkateRuntime): any press grabs.
+    // The triggers in the pad's 255 steps, as the simulation reads them (SkateRuntime): any press grabs.
     auto Trigger = [&](const FKey& Key, const FKey& Axis) { return Down(Key) ? 1.f : FMath::Clamp(FMath::RoundToFloat(255.f * PC->GetInputAnalogKeyState(Axis)), 0.f, 255.f) / 255.f; };
     I.TriggerLeft = Trigger(EKeys::Q, EKeys::Gamepad_LeftTriggerAxis);
     I.TriggerRight = Trigger(EKeys::E, EKeys::Gamepad_RightTriggerAxis);
@@ -416,7 +361,7 @@ void USkateComponent::ReadInput(float Dt)
 
 FString USkateComponent::GetStatus() const
 {
-    if (bRetailActive && RetailPose.IsEmpty()) return TEXT("Loading skater");
+    if (bSimulationActive && RiderPose.IsEmpty()) return TEXT("Loading skater");
     switch (Mode)
     {
     case ESkateMode::Air: return TEXT("Airborne");
@@ -456,16 +401,16 @@ void USkateComponent::ResetInput()
     In={}; MouseStick=FVector2D::ZeroVector; MouseQuiet=0; bMouseSwiped=false;
     SpaceHeld=SpaceRelease=-1.f;
 }
-void USkateComponent::PhysSkate(float Dt) { if (!bNetworkProxy) StepRetailRuntime(Dt); }
-void USkateComponent::Launch(const FVector& Velocity) { LaunchRetail(Velocity); }
+void USkateComponent::PhysSkate(float Dt) { if (!bNetworkProxy) TickSimulation(Dt); }
+void USkateComponent::Launch(const FVector& Velocity) { LaunchSimulation(Velocity); }
 void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTickFunction* Tick)
 {
     if (bNetworkProxy) return;
     Super::TickComponent(Dt,Type,Tick);
     if (Mode != ESkateMode::Off) UpdateAudio(Dt);
-    // Preload the native skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
-    if (bAvailable && Rider && !RetailRuntime && !bRetailPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadRetailRuntime();
-    PollIdleRetail();
+    // Preload the skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
+    if (bAvailable && Rider && !ShownRuntime && !bSimulationPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadSimulation();
+    PollIdleSimulation();
     // After the ride's step (in CharacterMovement's tick) and before the mesh animates.
     if (bAvailable && Rider) { TickTransition(Dt); SyncRootMotion(); }
 }
@@ -478,5 +423,5 @@ FString USkateComponent::GetDebug() const
     const UCharacterMovementComponent* M=Movement();
     return FString::Printf(TEXT("mm=%d/%d mode=%d speed=%.0f fakie=%d switch=%d manual=%d slide=%d push=%d ps=%d yaw=%.1f z=%.1f skin_clearance=%.2f skin_lift=%.2f"),
         M?int32(M->MovementMode):-1,M?int32(M->CustomMovementMode):-1,int32(Mode),Vel.Size(),ShownFakie(),ShownSwitch(),bManual,bPowerslide,bPushing,
-        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,RetailFloorClearance,BailVisualLift)+DescribeTransition()+(bRetailActive?TEXT(" retail=")+GetRetailState():FString());
+        In.bPowerslide,Rot.Rotator().Yaw,Pos.Z,ShownFloorClearance,BailVisualLift)+DescribeTransition()+(bSimulationActive?TEXT(" simulation=")+GetSimulationState():FString());
 }

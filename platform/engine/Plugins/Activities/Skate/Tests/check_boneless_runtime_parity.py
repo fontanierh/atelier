@@ -24,12 +24,12 @@ FIELDS=('Hash_6D781EFAF01E707D','Hash_C9112CCD0BCB1850','Hash_88D0CDEFA38A36D6',
 def prepare(output):
     original,observed,snapshot,report=air.prepare(output)
     crate=observed/'atelier-host'
-    native=(snapshot/'air_phase_runtime_probe.cpp').read_text()
-    prefix=native[:native.index('int main(')]
-    construction=native[native.index('    const auto* definition='):native.index('        const auto snapshot=')]
-    first=native[native.index('            case 0:'):native.index('            case 3:')]
-    rest=native[native.index('            case 13:'):native.index('            case 20:')]
-    source=(PLUGIN/'Tests/Native/boneless_runtime_probe.cpp').read_text().replace('// GENERATED_COMPLETE_OWNER_HELPERS',prefix).replace('// GENERATED_COMPLETE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_ORIGINAL_CALLER_CASES',first+rest)
+    simulation=(snapshot/'air_phase_runtime_probe.cpp').read_text()
+    prefix=simulation[:simulation.index('int main(')]
+    construction=simulation[simulation.index('    const auto* definition='):simulation.index('        const auto snapshot=')]
+    first=simulation[simulation.index('            case 0:'):simulation.index('            case 3:')]
+    rest=simulation[simulation.index('            case 13:'):simulation.index('            case 20:')]
+    source=(PLUGIN/'Tests/Simulation/boneless_runtime_probe.cpp').read_text().replace('// GENERATED_COMPLETE_OWNER_HELPERS',prefix).replace('// GENERATED_COMPLETE_OWNER_CONSTRUCTION',construction).replace('// GENERATED_ORIGINAL_CALLER_CASES',first+rest)
     shutil.copy2(CODE/'BonelessRuntime.cpp',snapshot/'BonelessRuntime.cpp')
     probe=snapshot/'boneless_runtime_probe.cpp';probe.write_text(source)
     observer=(PLUGIN/'Tests/Reference/air_phase_runtime_observer.rs').read_text()
@@ -48,7 +48,7 @@ def prepare(output):
     path=crate/'src/migration_probe.rs'
     path.write_text(path.read_text().replace('physics::migration_air_load','physics::migration_boneless_load').replace('physics::migration_air_run','physics::migration_boneless_run'))
     cargo=crate/'Cargo.toml';cargo.write_text(cargo.read_text().replace('name="air-phase-runtime-reference"','name="boneless-runtime-reference"'))
-    report.update(units=UNITS,derived_original_observer_prefix_sha256=hashlib.sha256(prefix.encode()).hexdigest(),owner_observer_derivation=dict(native_source=digest(PLUGIN/'Tests/Native/air_phase_runtime_probe.cpp'),original_source=digest(PLUGIN/'Tests/Reference/air_phase_runtime_observer.rs')),immutable_native_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_native_probe_sha256=digest(probe),generated_reference_probe_sha256=digest(path),boneless_original_sha256=digest(original/'crates/skate-host/src/physics/boneless.rs'),proof_files={p.name:digest(p)for p in [Path(__file__),PLUGIN/'Tests/Native/boneless_runtime_probe.cpp',PLUGIN/'Tests/Reference/boneless_runtime_probe.rs',PLUGIN/'Tests/Reference/boneless_runtime_observer.rs']},scope='Complete unchanged Boneless and host/core producers. Actual stock constructors, plant roots/general update/hold IK, shared solve, real world/provider queries and trajectory Launch/Update execute unchanged. Only explicit canonical upstream packet/pose selection and read-only/accessibility observers are authored.')
+    report.update(units=UNITS,derived_original_observer_prefix_sha256=hashlib.sha256(prefix.encode()).hexdigest(),owner_observer_derivation=dict(simulation_source=digest(PLUGIN/'Tests/Simulation/air_phase_runtime_probe.cpp'),original_source=digest(PLUGIN/'Tests/Reference/air_phase_runtime_observer.rs')),immutable_simulation_sources={p.name:digest(p)for p in sorted(snapshot.glob('*.h'))+sorted(snapshot.glob('*.cpp'))},generated_simulation_probe_sha256=digest(probe),generated_reference_probe_sha256=digest(path),boneless_original_sha256=digest(original/'crates/skate-host/src/physics/boneless.rs'),proof_files={p.name:digest(p)for p in [Path(__file__),PLUGIN/'Tests/Simulation/boneless_runtime_probe.cpp',PLUGIN/'Tests/Reference/boneless_runtime_probe.rs',PLUGIN/'Tests/Reference/boneless_runtime_observer.rs']},scope='Complete unchanged Boneless and host/core producers. Actual stock constructors, plant roots/general update/hold IK, shared solve, real world/provider queries and trajectory Launch/Update execute unchanged. Only explicit canonical upstream packet/pose selection and read-only/accessibility observers are authored.')
     (output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     return original,observed,snapshot,report
 
@@ -165,12 +165,12 @@ def loader_fixtures(assets):
 def build(output,target):
     original,observed,snapshot,report=prepare(output);crate=observed/'atelier-host'
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target.resolve()),'--bin','boneless-runtime-reference'],check=True)
-    reference=output/'boneless-runtime-reference';shutil.copy2(target.resolve()/'release/boneless-runtime-reference',reference);native=output/'boneless-runtime-native'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'boneless_runtime_probe.cpp'),'-o',str(native)],check=True)
+    reference=output/'boneless-runtime-reference';shutil.copy2(target.resolve()/'release/boneless-runtime-reference',reference);simulation=output/'boneless-runtime-simulation'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/(u+'.cpp'))for u in UNITS],str(snapshot/'boneless_runtime_probe.cpp'),'-o',str(simulation)],check=True)
     for rel,sha in report['original_source_sha256'].items():
         assert digest(original/rel)==sha;raw=(original/rel).read_bytes();assert(observed/rel).read_bytes()[:len(raw)]==raw
     for rel,row in report['staged_host_original_prefixes'].items():assert digest(crate/'src'/rel)==row['generated_sha256']
-    report.update(reference_binary_sha256=digest(reference),native_binary_sha256=digest(native));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return native,reference
+    report.update(reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation));(output/'provenance.json').write_text(json.dumps(report,indent=2)+'\n');return simulation,reference
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -182,24 +182,24 @@ def main():
     if a.preflight:
         prepare(out);print(json.dumps(dict(histories=len(cases),commands=sum(len(c['commands'])for c in cases),input_bytes=len(raw),input_sha256=hashlib.sha256(raw).hexdigest(),loader_fixtures=len(fixtures),units=len(UNITS)),indent=2));return
     bank=out/'fixtures';bank.mkdir(exist_ok=True);path=a.assets.resolve()/'private/stock'
-    (bank/'settings.native').write_bytes(air.converter.encode_settings(path/'skater-collections.json'));(bank/'physics.native').write_bytes(air.converter.encode_physics_skeletons(path/'physics-skeletons.json'))
+    (bank/'settings.simulation').write_bytes(air.converter.encode_settings(path/'skater-collections.json'));(bank/'physics.simulation').write_bytes(air.converter.encode_physics_skeletons(path/'physics-skeletons.json'))
     for kind in('action','motion'):(bank/f'actor.{kind}.reference').write_bytes(original_graph(element('state','idle')))
-    identity=json.loads((path/'physics-skeletons.json').read_text())['source_sha256'];native,reference=build(out,a.target_dir)
-    args=[str(bank/'settings.native'),str(bank/'physics.native'),str(a.samples.resolve()/'native/rig.skate'),identity,str(a.assets.resolve())]
-    expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(native),*args],input=raw)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual);frames=decode(expected,cases)
+    identity=json.loads((path/'physics-skeletons.json').read_text())['source_sha256'];simulation,reference=build(out,a.target_dir)
+    args=[str(bank/'settings.simulation'),str(bank/'physics.simulation'),str(a.samples.resolve()/'simulation/rig.skate'),identity,str(a.assets.resolve())]
+    expected=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank)],input=raw);actual=subprocess.check_output([str(simulation),*args],input=raw)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual);frames=decode(expected,cases)
     if expected!=actual:
         at=next((k for k,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));word=at//4;case=next((c for c in cases if c['first_output_word']<=word<c['last_output_word']),None);row=next((r for rows in frames for r in rows if r['first_word']<=word<r['last_word']),None)
-        failure=dict(byte=at,word=word,reference_bytes=len(expected),native_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',reference_hex=expected[max(0,at-16):at+32].hex(),native_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
+        failure=dict(byte=at,word=word,reference_bytes=len(expected),simulation_bytes=len(actual),case=case['index']if case else None,operation=row['operation']if row else'initial',reference_hex=expected[max(0,at-16):at+32].hex(),simulation_hex=actual[max(0,at-16):at+32].hex());(out/'first-divergence.json').write_text(json.dumps(failure,indent=2)+'\n');raise AssertionError(failure)
     covered=coverage(frames,cases);old=None;loaders=[];total=len(expected)
     for n,f in enumerate(fixtures):
-        folder=out/'loader-fixtures'/f'{n:03d}-{f["label"]}';j=folder/'private/stock/skater-collections.json';j.parent.mkdir(parents=True,exist_ok=True);j.write_text(json.dumps(f['data'])+'\n');transport=folder/'settings.native';transport.write_bytes(air.converter.encode_settings(j))
-        ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)],input=b'');cpp=subprocess.check_output([str(native),*args,str(transport)],input=b'');(folder/'reference.bin').write_bytes(ref);(folder/'native.bin').write_bytes(cpp);assert ref==cpp,f['label'];total+=len(ref)
+        folder=out/'loader-fixtures'/f'{n:03d}-{f["label"]}';j=folder/'private/stock/skater-collections.json';j.parent.mkdir(parents=True,exist_ok=True);j.write_text(json.dumps(f['data'])+'\n');transport=folder/'settings.simulation';transport.write_bytes(air.converter.encode_settings(j))
+        ref=subprocess.check_output([str(reference),str(a.assets.resolve()),str(bank),str(folder)],input=b'');cpp=subprocess.check_output([str(simulation),*args,str(transport)],input=b'');(folder/'reference.bin').write_bytes(ref);(folder/'simulation.bin').write_bytes(cpp);assert ref==cpp,f['label'];total+=len(ref)
         r=Reader(ref);error=r.status();owner=list(r.take(70));assert r.at==len(r.words)and(error is None)==f['success'];assert owner[:6]==[15,0,0,0,0,0]
         if error:
             if old is None:old=owner
             assert owner==old,'failed load must preserve every previously loaded owner/curve field'
         loaders.append(dict(label=f['label'],error=error,bytes=len(ref),sha256=hashlib.sha256(ref).hexdigest()))
-    result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_output_bytes=total,sha256=hashlib.sha256(expected).hexdigest(),coverage=covered,loader_fixtures=loaders,input_sha256=hashlib.sha256(raw).hexdigest(),scope='Complete original Boneless load/enter/update/private launch and actual canonical plant/pose/IK/board/trajectory/query producers, complete retained observations and ordered loader failures.',boundaries='Explicit source upstream Processed/post packets, authored pose selection and raw world/provider transport. Direct private Launch wrapper additionally explores arithmetic/control boundaries; successful Update always executes actual PlantSkeleton/HoldFoot/Launch order. No complete global frame, retail-behavior invention or seeded accepted trajectory is claimed.')
+    result=dict(passed=True,reference_revision=REFERENCE_REVISION,histories=len(cases),commands=sum(len(c['commands'])for c in cases),exact_output_bytes=total,sha256=hashlib.sha256(expected).hexdigest(),coverage=covered,loader_fixtures=loaders,input_sha256=hashlib.sha256(raw).hexdigest(),scope='Complete original Boneless load/enter/update/private launch and actual canonical plant/pose/IK/board/trajectory/query producers, complete retained observations and ordered loader failures.',boundaries='Explicit source upstream Processed/post packets, authored pose selection and raw world/provider transport. Direct private Launch wrapper additionally explores arithmetic/control boundaries; successful Update always executes actual PlantSkeleton/HoldFoot/Launch order. No complete global frame, simulation-behavior invention or seeded accepted trajectory is claimed.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({k:v for k,v in result.items()if k!='loader_fixtures'},indent=2))
 if __name__=='__main__':main()

@@ -95,26 +95,26 @@ def main():
     for name in ('result.json', 'first-divergence.json'):
         (output/name).unlink(missing_ok=True)
     reference = build_probe(output, 'board-assembly-reference', PLUGIN/'Tests/Reference/board_assembly_probe.rs', args.target_dir)
-    source = output/'native-source'
+    source = output/'simulation-source'
     if source.exists():
         shutil.rmtree(source)
     source.mkdir()
-    units = ('NativeMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
+    units = ('SimulationMath', 'RigidBody', 'BodyMass', 'AggregateMass', 'DeckGeometry', 'DriveFrames',
              'ConstraintFrames', 'ConstraintSolver', 'JointBuild', 'DriveBuild', 'JointRecords',
              'TruckDriveFrames', 'DrivePreparation', 'HookDrive', 'BoardAssembly')
     names = [f'{unit}.{ext}' for unit in units for ext in ('h', 'cpp')] + ['GeometryTypes.h', 'BoardTypes.h']
     for name in names:
-        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Native'/name, source/name)
-    shutil.copy2(PLUGIN/'Tests/Native/board_assembly_probe.cpp', source/'board_assembly_probe.cpp')
+        shutil.copy2(PLUGIN/'Source/AtelierSkate/Private/Simulation'/name, source/name)
+    shutil.copy2(PLUGIN/'Tests/Simulation/board_assembly_probe.cpp', source/'board_assembly_probe.cpp')
     candidate = output/'board-assembly-cpp'
     subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-fno-exceptions',
                     '-Wall', '-Wextra', '-Werror', '-I', str(source),
                     *[str(source/f'{unit}.cpp') for unit in units], str(source/'board_assembly_probe.cpp'),
                     '-o', str(candidate)], check=True)
-    provenance = dict(native_source_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(source.iterdir())},
+    provenance = dict(simulation_source_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(source.iterdir())},
                       candidate_sha256=hashlib.sha256(candidate.read_bytes()).hexdigest(),
                       compiler=subprocess.check_output(['clang++', '--version'], text=True).strip())
-    (output/'native-provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
+    (output/'simulation-provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
     inputs, labels = corpus()
     (output/'inputs.bin').write_bytes(inputs)
     expected = subprocess.check_output([str(reference)], input=inputs)

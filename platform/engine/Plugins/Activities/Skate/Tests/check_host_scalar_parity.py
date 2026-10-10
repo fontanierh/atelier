@@ -23,9 +23,9 @@ import tomllib
 from session_parity import PLUGIN,REFERENCE_REVISION,digest
 
 ROOT=PLUGIN.parents[4]
-CODE=PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE=PLUGIN/'Source/AtelierSkate/Private/Simulation'
 TESTS=PLUGIN/'Tests'
-OWNED=(CODE/'HostScalar.h',CODE/'HostScalar.cpp',TESTS/'Native/host_scalar_probe.cpp',
+OWNED=(CODE/'HostScalar.h',CODE/'HostScalar.cpp',TESTS/'Simulation/host_scalar_probe.cpp',
        TESTS/'Reference/host_scalar_probe.rs',Path(__file__))
 SERDE_VERSION='1.0.151'
 SERDE_CHECKSUM='c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14'
@@ -80,7 +80,7 @@ def corpus():
     float_words += [rng.randrange(0x7f800000)|(rng.randrange(2)<<31)for _ in range(2048)]
     for word in float_words:number(float(f32(word)),'already_f32',expected_bits=word)
     # Genuine adjacent-f32 ties, both double neighbours, and the original UE
-    # ToNative(double cm)*.01 operation before its command serialization.
+    # ToSimulation(double cm)*.01 operation before its command serialization.
     mids=[0x3f800000+i for i in range(1024)]
     mids += [rng.randrange(0x7f7fffff)for _ in range(1024)]
     for word in mids:
@@ -146,9 +146,9 @@ def dependency_provenance(lock):
         methods[anchor]=[method(source,anchor,i)for i in begins]
     start=source.index('static POW10: [f64; 309] = [');end=source.index('];',start)+2
     body=source[source.index('[\n',start)+2:end-2]
-    native=(CODE/'HostScalar.cpp').read_text();a=native.index('static const double Pow10[309] = {\n')
-    a=native.index('\n',a)+1;b=native.index('};',a)
-    assert native[a:b]==body,'Original POW10 literal table changed'
+    simulation=(CODE/'HostScalar.cpp').read_text();a=simulation.index('static const double Pow10[309] = {\n')
+    a=simulation.index('\n',a)+1;b=simulation.index('};',a)
+    assert simulation[a:b]==body,'Original POW10 literal table changed'
     serde=next(p for p in packages if p['name']=='serde');serde_source=next((cargo_home/'registry/src').glob(f"*/serde-{serde['version']}/src/core/de/impls.rs"))
     return dict(package=package,serde_version=serde['version'],files={p.relative_to(dependency).as_posix():digest(p)for p in(dependency/'src/de.rs',dependency/'src/read.rs',dependency/'src/error.rs',dependency/'Cargo.toml')},numeric_method_boundaries=methods,pow10=dict(start_byte=start,end_byte=end,body_sha256=hashlib.sha256(body.encode()).hexdigest(),literal_count=309),f32_visitor_source_sha256=digest(serde_source),expected_features=['default','std'],scope='Source-ordered numeric token parser and printf spellings only; no object/string/asset/command JSON reader. Actual oracle owns all parsing, range rejection, integer visitors and error messages.')
 
@@ -183,13 +183,13 @@ def stage_reference(out,target):
     return crate,originals
 
 
-def stage_native(out):
-    source=out/'native-source'
+def stage_simulation(out):
+    source=out/'simulation-source'
     if source.exists():shutil.rmtree(source)
     source.mkdir()
     for path in OWNED[:3]:shutil.copy2(path,source/path.name)
     report={p.name:digest(p)for p in sorted(source.iterdir())}
-    (out/'native-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+    (out/'simulation-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     return source
 
 
@@ -233,24 +233,24 @@ def main():
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=True);target=args.target_dir.resolve()
     data,rows=corpus();validate_input(data,rows);(out/'input.bin').write_bytes(data)
     (out/'cases.json').write_text(json.dumps(rows,indent=2)+'\n')
-    crate,originals=stage_reference(out,target);snapshot=stage_native(out)
-    freeze=dict(owned={p.relative_to(ROOT).as_posix():digest(p)for p in OWNED},corpus_rows=len(rows),corpus_sha256=hashlib.sha256(data).hexdigest(),native_units=['HostScalar'],reference_provenance_sha256=digest(out/'reference-provenance.json'),native_provenance_sha256=digest(out/'native-provenance.json'))
+    crate,originals=stage_reference(out,target);snapshot=stage_simulation(out)
+    freeze=dict(owned={p.relative_to(ROOT).as_posix():digest(p)for p in OWNED},corpus_rows=len(rows),corpus_sha256=hashlib.sha256(data).hexdigest(),simulation_units=['HostScalar'],reference_provenance_sha256=digest(out/'reference-provenance.json'),simulation_provenance_sha256=digest(out/'simulation-provenance.json'))
     (out/'freeze.json').write_text(json.dumps(freeze,indent=2)+'\n')
     if args.preflight:print(json.dumps(dict(preflight=True,**freeze),indent=2));return
-    reference=out/'host-scalar-reference';native=out/'host-scalar-native'
+    reference=out/'host-scalar-reference';simulation=out/'host-scalar-simulation'
     subprocess.run(['cargo','+1.97.1','build','--release','--offline','--locked','--jobs','2','--manifest-path',str(crate/'Cargo.toml'),'--target-dir',str(target),'--bin','host-scalar-reference'],check=True)
     shutil.copy2(target/'release/host-scalar-reference',reference)
     feature_audit(target)
     assert all(digest(out/'reference-source'/rel)==sha for rel,sha in originals.items())
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'HostScalar.cpp'),str(snapshot/'host_scalar_probe.cpp'),'-o',str(native)],check=True)
-    expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(native)],input=data)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),str(snapshot/'HostScalar.cpp'),str(snapshot/'host_scalar_probe.cpp'),'-o',str(simulation)],check=True)
+    expected=subprocess.check_output([str(reference)],input=data);actual=subprocess.check_output([str(simulation)],input=data)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
         first=next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b),min(len(expected),len(actual)))
-        (out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),native_bytes=len(actual)),indent=2)+'\n')
+        (out/'first-divergence.json').write_text(json.dumps(dict(byte=first,reference_bytes=len(expected),simulation_bytes=len(actual)),indent=2)+'\n')
         raise AssertionError(f'Host scalar differs at byte {first}')
     proof=coverage(expected,rows)
-    result=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),freeze_sha256=digest(out/'freeze.json'),reference_binary_sha256=digest(reference),native_binary_sha256=digest(native),comparison='Exact actual pinned serde_json::from_str::<f32> bits and errors, libc %.17g text, direct integer visitors, signed zero, u64/exponent overflow, and unchanged destination on failure.',limitations='Focused numeric command conversion only. General strings/objects/assets are outside this helper. Unreal FString formatting is source-audited to the same libc conversion, not executed in this standalone proof. Candidate command integration and complete live Unreal output remain separately verified.')
+    result=dict(passed=True,coverage=proof,output_bytes=len(actual),output_sha256=hashlib.sha256(actual).hexdigest(),freeze_sha256=digest(out/'freeze.json'),reference_binary_sha256=digest(reference),simulation_binary_sha256=digest(simulation),comparison='Exact actual pinned serde_json::from_str::<f32> bits and errors, libc %.17g text, direct integer visitors, signed zero, u64/exponent overflow, and unchanged destination on failure.',limitations='Focused numeric command conversion only. General strings/objects/assets are outside this helper. Unreal FString formatting is source-audited to the same libc conversion, not executed in this standalone proof. Candidate command integration and complete live Unreal output remain separately verified.')
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 

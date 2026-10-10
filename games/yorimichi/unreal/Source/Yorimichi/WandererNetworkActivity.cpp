@@ -186,7 +186,7 @@ void AWandererCharacter::OnRep_NetworkActivity()
         }
         else
         {
-            // A remote rider is presentation only. It never creates Native or Chaos rider bodies.
+            // A remote rider is presentation only. It never creates the simulation or Chaos rider bodies.
             Movement->DisableMovement();
             GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         }
@@ -281,7 +281,7 @@ void AWandererCharacter::TickNetworkActivity()
     if (SkateRide->IsRiding()) bNetworkSkateObserved = true;
     else if (bNetworkSkateObserved || GetWorld()->GetTimeSeconds() - NetworkActivityRequestTime > .5)
     {
-        // All exits converge here: dismount, bail/get-up, and Native BipedGround takeover.
+        // All exits converge here: dismount, bail/get-up, and the simulation BipedGround takeover.
         bNetworkActivityPending = true;
         NetworkActivityRequestTime = GetWorld()->GetTimeSeconds();
         auto* Movement = GetCharacterMovement();

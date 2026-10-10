@@ -2,7 +2,7 @@
 """Whole frozen physics/controls.rs owner/sampling/camera-remap parity.
 
 Root must run compilation/execution through atelier.safety. --preflight only
-generates input, audits original/native source identities and checks protocol.
+generates input, audits original/simulation source identities and checks protocol.
 Physical/camera observations are explicit caller records; no world or complete
 frame producer is claimed by this focused controls proof.
 """
@@ -23,7 +23,7 @@ from check_input_parity import Record, from_bits
 from reference_build import build_probe
 from session_parity import REFERENCE_REVISION
 
-CODE = PLUGIN/'Source/AtelierSkate/Private/Native'
+CODE = PLUGIN/'Source/AtelierSkate/Private/Simulation'
 UNITS = tuple(dict.fromkeys((*CAMERA_UNITS, 'BodyMass', 'AggregateMass', 'DeckGeometry', 'Input', 'InputIntentions',
                             'Gestures', 'GestureInputPublication', 'PlayerControls')))
 ALIASES = {'atelier-host/src/physics/controls.rs': 'crates/skate-host/src/physics/controls.rs',
@@ -217,15 +217,15 @@ def coverage(data,cases,names):
     return dict(counts=counts,distinct_directions=len(directions),distinct_replays=len(replays),ordered_intention_names=sorted(intent_names))
 
 
-def stage_native(output):
-    source=output/'native-source';source.mkdir(exist_ok=True)
+def stage_simulation(output):
+    source=output/'simulation-source';source.mkdir(exist_ok=True)
     files=sorted(CODE.glob('*.h'))+[CODE/(n+'.cpp') for n in UNITS]
     provenance=[]
     for p in files:
         raw=p.read_bytes();(source/p.name).write_bytes(raw)
         provenance.append(dict(path=p.relative_to(PLUGIN).as_posix(),sha256=hashlib.sha256(raw).hexdigest()))
-    probe=PLUGIN/'Tests/Native/player_controls_probe.cpp';raw=probe.read_bytes();target=source/probe.name;target.write_bytes(raw)
-    (output/'native-source-provenance.json').write_text(json.dumps(dict(files=provenance,probe_sha256=hashlib.sha256(raw).hexdigest()),indent=2)+'\n')
+    probe=PLUGIN/'Tests/Simulation/player_controls_probe.cpp';raw=probe.read_bytes();target=source/probe.name;target.write_bytes(raw)
+    (output/'simulation-source-provenance.json').write_text(json.dumps(dict(files=provenance,probe_sha256=hashlib.sha256(raw).hexdigest()),indent=2)+'\n')
     return source,target
 
 
@@ -244,25 +244,25 @@ def main():
     sets=converter.gesture_sets(a.assets/'private/stock/data/joystick');inputs,cases,names,authored=corpus(sets)
     protocol=audit_input(inputs,cases,names)
     (out/'input.bin').write_bytes(inputs);(out/'cases.json').write_text(json.dumps(cases,indent=2)+'\n')
-    (out/'settings.native').write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
-    (out/'gestures.native').write_bytes(converter.encode_gestures(sets))
-    source,probe=stage_native(out)
+    (out/'settings.simulation').write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+    (out/'gestures.simulation').write_bytes(converter.encode_gestures(sets))
+    source,probe=stage_simulation(out)
     originals=audit_originals()
-    owned=['Source/AtelierSkate/Private/Native/PlayerControls.h','Source/AtelierSkate/Private/Native/PlayerControls.cpp','Tests/Native/player_controls_probe.cpp','Tests/Reference/player_controls_probe.rs','Tests/check_player_controls_parity.py']
+    owned=['Source/AtelierSkate/Private/Simulation/PlayerControls.h','Source/AtelierSkate/Private/Simulation/PlayerControls.cpp','Tests/Simulation/player_controls_probe.cpp','Tests/Reference/player_controls_probe.rs','Tests/check_player_controls_parity.py']
     owned_hashes={relative:hashlib.sha256((PLUGIN/relative).read_bytes()).hexdigest() for relative in owned}
-    report=dict(preflight_only=a.preflight,commands=len(cases),authored_sequences=authored,input_bytes=len(inputs),input_sha256=hashlib.sha256(inputs).hexdigest(),original_sources=originals,owned_file_sha256=owned_hashes,native_TUs=len(UNITS),input_protocol=protocol,observations='All26controllerwords,public direction/tick/metadata,ordered intents,every catalog AG value and exact underlying action callback order; hidden gesture/cached-axis lifetime exercised through authored continuation and lazy replay.',boundary='Completed physical/camera values are explicit canonical caller records. This proves controls live methods, stock construction and original sample system, not upstream physical/camera/frame production. Malformed original JSON/PAT construction versus converted-native constructor error/read ordering remains outside this proof; accepted GestureInputPublication loader is unchanged.')
+    report=dict(preflight_only=a.preflight,commands=len(cases),authored_sequences=authored,input_bytes=len(inputs),input_sha256=hashlib.sha256(inputs).hexdigest(),original_sources=originals,owned_file_sha256=owned_hashes,simulation_TUs=len(UNITS),input_protocol=protocol,observations='All26controllerwords,public direction/tick/metadata,ordered intents,every catalog AG value and exact underlying action callback order; hidden gesture/cached-axis lifetime exercised through authored continuation and lazy replay.',boundary='Completed physical/camera values are explicit canonical caller records. This proves controls live methods, stock construction and original sample system, not upstream physical/camera/frame production. Malformed original JSON/PAT construction versus converted simulation constructor error/read ordering remains outside this proof; accepted GestureInputPublication loader is unchanged.')
     (out/'freeze.json').write_text(json.dumps(report,indent=2)+'\n')
     if a.preflight:print(json.dumps(report,indent=2));return
     if a.target_dir is None:p.error('--target-dir required outside --preflight')
     reference=build_probe(out,'player-controls-reference',PLUGIN/'Tests/Reference/player_controls_probe.rs',a.target_dir,bevy=True,extra_sources=ALIASES)
-    native=out/'player-controls-native'
-    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror','-I',str(source),*(str(source/(n+'.cpp')) for n in UNITS),str(probe),'-o',str(native)],check=True)
-    expected=subprocess.check_output([str(reference),str(a.assets)],input=inputs);actual=subprocess.check_output([str(native),str(out/'settings.native'),str(out/'gestures.native')],input=inputs)
-    (out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    simulation=out/'player-controls-simulation'
+    subprocess.run(['clang++','-std=c++17','-O2','-fno-exceptions','-fno-rtti','-ffp-contract=off','-fno-fast-math','-Wall','-Wextra','-Werror','-I',str(source),*(str(source/(n+'.cpp')) for n in UNITS),str(probe),'-o',str(simulation)],check=True)
+    expected=subprocess.check_output([str(reference),str(a.assets)],input=inputs);actual=subprocess.check_output([str(simulation),str(out/'settings.simulation'),str(out/'gestures.simulation')],input=inputs)
+    (out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
         first=next((i for i,(x,y) in enumerate(zip(expected,actual)) if x!=y),min(len(expected),len(actual)))
-        mismatch=dict(passed=False,first_byte=first,reference_length=len(expected),native_length=len(actual),reference_hex=expected[max(0,first-20):first+40].hex(),native_hex=actual[max(0,first-20):first+40].hex());(out/'first-divergence.json').write_text(json.dumps(mismatch,indent=2)+'\n');raise AssertionError(mismatch)
-    result=dict(passed=True,commands=len(cases),authored_sequences=authored,exact_bytes=len(actual),sha256=hashlib.sha256(actual).hexdigest(),coverage=coverage(expected,cases,names),reference_provenance='player-controls-reference-provenance.json',native_provenance='native-source-provenance.json',limitations=report['boundary'])
+        mismatch=dict(passed=False,first_byte=first,reference_length=len(expected),simulation_length=len(actual),reference_hex=expected[max(0,first-20):first+40].hex(),simulation_hex=actual[max(0,first-20):first+40].hex());(out/'first-divergence.json').write_text(json.dumps(mismatch,indent=2)+'\n');raise AssertionError(mismatch)
+    result=dict(passed=True,commands=len(cases),authored_sequences=authored,exact_bytes=len(actual),sha256=hashlib.sha256(actual).hexdigest(),coverage=coverage(expected,cases,names),reference_provenance='player-controls-reference-provenance.json',simulation_provenance='simulation-source-provenance.json',limitations=report['boundary'])
     (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 

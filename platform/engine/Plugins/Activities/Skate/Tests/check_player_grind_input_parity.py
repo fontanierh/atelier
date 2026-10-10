@@ -90,9 +90,9 @@ def aliases():
 
 def prepare(output):
     defs,state=declarations();base,_=protocol.declarations();cpp0,rust0=protocol.helpers(base);cpp,rust,private=helpers(defs,state)
-    native_prefix=(PLUGIN/'Tests/Native/world_geometry_probe.cpp').read_text().split('int main()',1)[0]
+    simulation_prefix=(PLUGIN/'Tests/Simulation/world_geometry_probe.cpp').read_text().split('int main()',1)[0]
     rust_prefix=(PLUGIN/'Tests/Reference/world_geometry_probe.rs').read_text().split('fn main()',1)[0].replace('use math::','use skate_core::math::').replace('use physics::','use skate_core::physics::')
-    generated=output/'player-grind-input-native.cpp';generated.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+native_prefix+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Native/player_grind_input_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp0+'\n'+cpp))
+    generated=output/'player-grind-input-simulation.cpp';generated.write_text('#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wunused-function"\n'+simulation_prefix+'\n#pragma clang diagnostic pop\n'+(PLUGIN/'Tests/Simulation/player_grind_input_probe.cpp').read_text().replace('// GENERATED_PROTOCOL',cpp0+'\n'+cpp))
     family,_=trees.extract_block(source(HOST+'physics/grind.rs'),'pub(crate) enum Family {')
     ground=source(HOST+'physics/ground.rs');constants='\n'.join(line for line in ground.splitlines()if re.match(r'pub\(crate\) const (HEIGHT|FLOOR_HEIGHT):',line))
     materials='pub mod settings{use skate_core::physics::contact::RetailContactMaterial;pub struct PhysicsSettings{pub standard_wheel_material:RetailContactMaterial,pub wheel_material:RetailContactMaterial,pub truck_material:RetailContactMaterial,pub deck_material:RetailContactMaterial}}pub mod grind_materials{'+source(HOST+'physics/grind_materials.rs')+'}'
@@ -111,7 +111,7 @@ def encode_provider(w,provider):
         w.text_words(rail['name']);w.word(rail['closed']);w.word(len(rail['points']))
         for point in rail['points']:
             for v in point:w.float(v)
-        raw=rail.get('native');w.word(raw is not None)
+        raw=rail.get('simulation');w.word(raw is not None)
         if raw is not None:w.word(len(raw));[w.word(v)for v in raw]
     w.text_words(json.dumps(provider.get('manifest',{})))
     segments=provider['segments'];w.word(len(segments))
@@ -144,7 +144,7 @@ def stock_provider():
         for j in range(count):
             x=f((j%4-1.5)*.16);z=f((j//4-2.5)*.18);a=[f(.011*(rail_index+1)),0.,f(-.013),0.];b=[f(-.021),0.,f(.027),0.];c=[f(.04),0.,f(.12),0.];d=[x,f(-.06-.002*rail_index),z,1.];end=[f(f(a[i]+b[i])+f(c[i]+d[i]))for i in range(4)];bounds=[f(min(d[i],end[i])-.037)for i in range(3)]+[f(max(d[i],end[i])+.043)for i in range(3)];words=[world.bits(v)for v in a+b+c+d+[0.]*4+bounds[:3]+[0.]+bounds[3:]+[0.]]+[0xabcdef00+j,rail_index];assert len(words)==30;raw+=words
             asset_indices[asset].append(len(segments));segments.append(dict(start=d,end=end,owner=rail_index+1,guids=ids,segment=j,flags=0,bounds=bounds,rail_index=source_rail))
-        rails.append(dict(name=name,closed=False,points=[],native=raw));records.append(dict(stream_file=identity[0],asset_id=identity[1],section_index=identity[2],section_offset=identity[3],rail_index=source_rail,spline_id=f'{ids[0]:016x}',type_signature=f'{ids[1]:016x}',segment_count=count,flags=header[4],trailing_word=header[5],closed=False))
+        rails.append(dict(name=name,closed=False,points=[],simulation=raw));records.append(dict(stream_file=identity[0],asset_id=identity[1],section_index=identity[2],section_offset=identity[3],rail_index=source_rail,spline_id=f'{ids[0]:016x}',type_signature=f'{ids[1]:016x}',segment_count=count,flags=header[4],trailing_word=header[5],closed=False))
     return dict(rails=rails,segments=segments,guids=guids,assets=[(('fixture-stream.pkg',f'fixture-section-{a}',a+7,256+a*4096),indices,True)for a,indices in enumerate(asset_indices)],manifest=dict(grind_coordinate_policy=dict(mode='world_space'),grind_splines=records))
 
 def corpus():
@@ -220,7 +220,7 @@ def encode(programs,defs,state):
 def preflight():
     programs,defs,state=corpus();blob=encode(programs,defs,state)
     cpp,rust,private=helpers(declarations()[0],state)
-    assert all((PLUGIN/f'Source/AtelierSkate/Private/Native/{unit}.cpp').is_file()for unit in UNITS)
+    assert all((PLUGIN/f'Source/AtelierSkate/Private/Simulation/{unit}.cpp').is_file()for unit in UNITS)
     return blob,programs
 
 def decode(data,programs):
@@ -287,14 +287,14 @@ def coverage(data,programs):
 
 def build(output,target):
     cpp,rust=prepare(output);reference=build_probe(output,'player-grind-input-reference',rust,target,bevy=True,extra_sources=aliases())
-    live=PLUGIN/'Source/AtelierSkate/Private/Native';snapshot=output/'native-source'
+    live=PLUGIN/'Source/AtelierSkate/Private/Simulation';snapshot=output/'simulation-source'
     if snapshot.exists():shutil.rmtree(snapshot)
     snapshot.mkdir();units=tuple(dict.fromkeys(physical.UNITS+UNITS))
     for p in live.glob('*.h'):shutil.copy2(p,snapshot/p.name)
     for u in units:shutil.copy2(live/f'{u}.cpp',snapshot/f'{u}.cpp')
-    copied=snapshot/cpp.name;shutil.copy2(cpp,copied);native=output/'player-grind-input-cpp'
-    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in units],str(copied),'-o',str(native)],check=True)
-    (output/'native-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in sorted(snapshot.iterdir())},indent=2)+'\n');return native,reference
+    copied=snapshot/cpp.name;shutil.copy2(cpp,copied);simulation=output/'player-grind-input-cpp'
+    subprocess.run(['clang++','-std=c++17','-O2','-ffp-contract=off','-fno-fast-math','-fno-exceptions','-fno-rtti','-Wall','-Wextra','-Werror','-I',str(snapshot),*[str(snapshot/f'{u}.cpp')for u in units],str(copied),'-o',str(simulation)],check=True)
+    (output/'simulation-provenance.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in sorted(snapshot.iterdir())},indent=2)+'\n');return simulation,reference
 
 def settings_failures(original):
     import copy
@@ -307,15 +307,15 @@ def settings_failures(original):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--target-dir',type=Path,required=True);a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
     for n in('result.json','first-divergence.json'):(out/n).unlink(missing_ok=True)
-    blob,programs=preflight();(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(programs,indent=2)+'\n');native,reference=build(out,a.target_dir)
-    settings=out/'settings.native';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
-    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(native),str(settings)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'native.bin').write_bytes(actual)
+    blob,programs=preflight();(out/'input.bin').write_bytes(blob);(out/'cases.json').write_text(json.dumps(programs,indent=2)+'\n');simulation,reference=build(out,a.target_dir)
+    settings=out/'settings.simulation';settings.write_bytes(converter.encode_settings(a.assets/'private/stock/skater-collections.json'))
+    expected=subprocess.check_output([str(reference),str(a.assets.resolve())],input=blob);actual=subprocess.check_output([str(simulation),str(settings)],input=blob);(out/'reference.bin').write_bytes(expected);(out/'simulation.bin').write_bytes(actual)
     if expected!=actual:
-        at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=at,reference_length=len(expected),native_length=len(actual)),indent=2)+'\n');raise AssertionError('Player grind input differs')
+        at=next((i for i,(x,y)in enumerate(zip(expected,actual))if x!=y),min(len(expected),len(actual)));(out/'first-divergence.json').write_text(json.dumps(dict(byte=at,reference_length=len(expected),simulation_length=len(actual)),indent=2)+'\n');raise AssertionError('Player grind input differs')
     proof=coverage(expected,programs);negative=[];original=json.loads((a.assets/'private/stock/skater-collections.json').read_text())
     for n,(query,fixture)in enumerate(settings_failures(original)):
         root=out/f'settings-failure-{n}';json_path=root/'private/stock/skater-collections.json';json_path.parent.mkdir(parents=True,exist_ok=True);json_path.write_text(json.dumps(fixture));settings.write_bytes(converter.encode_settings(json_path))
-        x=subprocess.check_output([str(reference),str(root),'--settings-only']);y=subprocess.check_output([str(native),str(settings),'--settings-only']);assert x==y,(query,x,y);r=protocol.Reader(x);assert r.word()==0;error=bytes(r.word()for _ in range(r.word())).decode();assert error and r.at==len(x);negative.append(dict(query=query,error=error))
-    result=dict(passed=True,programs=len(programs),commands=sum(len(p['commands'])for p in programs),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,settings_failures=negative,boundary='Complete original grind pre/post manager and real world queries. Global player scheduling, moving grind providers and native converter parser are separate boundaries.');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
+        x=subprocess.check_output([str(reference),str(root),'--settings-only']);y=subprocess.check_output([str(simulation),str(settings),'--settings-only']);assert x==y,(query,x,y);r=protocol.Reader(x);assert r.word()==0;error=bytes(r.word()for _ in range(r.word())).decode();assert error and r.at==len(x);negative.append(dict(query=query,error=error))
+    result=dict(passed=True,programs=len(programs),commands=sum(len(p['commands'])for p in programs),exact_bytes=len(expected),sha256=hashlib.sha256(expected).hexdigest(),coverage=proof,settings_failures=negative,boundary='Complete original grind pre/post manager and real world queries. Global player scheduling, moving grind providers and the simulation-side converter parser are separate boundaries.');(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
 
 if __name__=='__main__':historical.run_cli(main)

@@ -12,13 +12,13 @@ class USkeletalMeshComponent;
 class USkateRideAnimInstance;
 
 /**
- * The transitions' clip player for the Ride backend (RIDE.md, "Transitions"). The mount, dismount, carry, run-out, kick-out,
- * recover and get-up clips play through Unreal's animation system on a hidden mesh of the native rig (SK_SkateRider
+ * The transitions' clip player for Ride (RIDE.md, "Transitions"). The mount, dismount, carry, run-out, kick-out,
+ * recover and get-up clips play through Unreal's animation system on a hidden mesh of the simulation rig (SK_SkateRider
  * with USkateRideAnimInstance), which this class ticks once per drawn frame: the caller (RideTransition.cpp) picks the
  * clips and their times as override layers, and the graph blends, mirrors and cross-fades them. The evaluated
  * component-space pose (the clips' root space: TRAJECTORY at the origin, the board's bones where the clip has them)
- * is published as root-space bones on the native rig's names (the same contract as FSkateRuntime's native output).
- * The riding pose is never this class's: Native's session poses the rider on the board.
+ * is published as root-space bones on the simulation rig's names (the same contract as FSkateRuntime's simulation output).
+ * The riding pose is never this class's: the simulation's session poses the rider on the board.
  *
  * Without the rig (no clips in the build) it publishes no bones.
  */
@@ -47,7 +47,7 @@ public:
     void EvaluateFree(float Dt, TArray<FTransform>& Bones);
 
     // The clips the caller plays (mount, dismount, carry, run-out, kick-out, recover, get-up).
-    /** A clip of the native library by name (loaded on first use, then kept). */
+    /** A clip of the simulation library by name (loaded on first use, then kept). */
     UAnimSequence* Clip(FName Name);
     /** Play these layers, cross-fading in over BlendIn (call every frame with the layers' new times; BlendIn only
      *  counts on the first call, and a change of the main clip cross-fades over BlendIn again). Layers.bMirror applies

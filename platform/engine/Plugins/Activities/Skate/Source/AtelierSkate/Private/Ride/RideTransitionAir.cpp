@@ -71,7 +71,7 @@ bool USkateComponent::MatchPelvis()
     const FName Pelvis = RiderApi->GetSkateBone(TEXT("pelvis"));
     if (!Mesh || Pelvis.IsNone() || Mesh->GetBoneIndex(Pelvis) == INDEX_NONE) return false;
     FVector Shown;
-    if (!PoseBoneWorld(Mesh, Mesh->GetRelativeTransform() * Rider->GetActorTransform(), RetailPose, Pelvis, Shown)) return false;
+    if (!PoseBoneWorld(Mesh, Mesh->GetRelativeTransform() * Rider->GetActorTransform(), RiderPose, Pelvis, Shown)) return false;
     const FVector Delta = Mesh->GetBoneLocation(Pelvis) - Shown;
     // A trajectory held in the world moves there; otherwise the offset from the capsule's floor (easing away) does.
     if (T.bAnchored) { T.Anchor += FVector(Delta.X, Delta.Y, 0.); T.TrajOffset.Z += Delta.Z; }
@@ -243,7 +243,7 @@ bool USkateComponent::BeginAirDismountClip()
     const float Yaw = (bBackward ? -DeckForward : DeckForward).Rotation().Yaw;
     // The deck it leaves, before the capsule changes.
     const FVector DeckNow = Pos + Up() * DeckPivot;
-    SuspendRetailRuntime();
+    SuspendSimulation();
     RequestPoseBlend(Tune.ClipBlend);
     LeaveBoard();
     // Rising, or with more than a moment of the fall ahead, the rider falls on with the board's velocity: a floor found
@@ -275,7 +275,6 @@ bool USkateComponent::BeginAirDismountClip()
 void USkateComponent::RecallBoard()
 {
     if (!Rider || !bAvailable || Mode != ESkateMode::Off || bRideClip) return;
-    if (USkateSettings::ActiveBackend() != ESkateBackend::Ride) return;
     FRideTransition& T = Transit();
     if (T.Foot == ERideFoot::Carry) { PutBoardAway(); return; }
     if (!RiderApi->CanCarrySkateBoard() || !PrepareRideClips()) return;
@@ -307,11 +306,11 @@ void USkateComponent::StepCarry(float Dt)
         // A jump: the jump with the board in hand, from where the stride is.
         if (T.bCarryShown && M->Velocity.Z > JumpSpeed && BeginCarryJump(M->Velocity.Size2D())) return;
         // Off a ledge the character's own pose plays, the board in the hand that held it.
-        if (!RetailPose.IsEmpty()) { HoldBoardAtHand(); RetailPose.Reset(); RequestPoseBlend(Tune.CarryBlend); }
+        if (!RiderPose.IsEmpty()) { HoldBoardAtHand(); RiderPose.Reset(); RequestPoseBlend(Tune.CarryBlend); }
         T.bCarryShown = false;
         return;
     }
-    const bool bOwnPose = RetailPose.IsEmpty();
+    const bool bOwnPose = RiderPose.IsEmpty();
     ReleaseBoardFromHand();
     // The four cycles blended by speed between their own speeds; walk, run and sprint share one phase that advances
     // by the distance covered over the blended stride, so the feet keep to the ground.
@@ -346,7 +345,7 @@ void USkateComponent::PutBoardAway()
     FRideTransition& T = Transit();
     if (T.Foot == ERideFoot::Carry) T.Foot = ERideFoot::Off;
     if (Clips) Clips->GetAnimator().ClearOverride();
-    if (!RetailPose.IsEmpty()) { HoldBoardAtHand(); RetailPose.Reset(); RequestPoseBlend(FRideTuning::Get().CarryBlend); }
+    if (!RiderPose.IsEmpty()) { HoldBoardAtHand(); RiderPose.Reset(); RequestPoseBlend(FRideTuning::Get().CarryBlend); }
     T.bCarryShown = false;
     if (T.Board == ERideBoard::Hand) ShowBoard(0.f, false);
 }
@@ -431,7 +430,7 @@ void USkateComponent::ReleaseBoardFromHand()
 
 void USkateComponent::UseWorldBoard()
 {
-    // The Ride backend places the board in the world (it can stay behind when the rider leaves it).
+    // Ride places the board in the world (it can stay behind when the rider leaves it).
     ReleaseBoardFromHand();
     if (BoardRoot && !BoardRoot->IsUsingAbsoluteLocation())
     {

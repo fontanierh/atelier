@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Whole original fixed gameplay frame versus the sole native owning runtime.
+"""Whole original fixed gameplay frame versus the simulation's owning runtime.
 
 Only the root coordinator compiles or executes through the render guard.
 --preflight stages immutable sources, read-only observers and fixed inputs.
@@ -279,27 +279,27 @@ impl FilteredStateOutput{pub fn migration_gameplay_observe(&self,o:&mut Vec<u32>
     return binary
 
 
-def build_native(output, *, compile=True):
-    snapshot = output / 'native-source'
+def build_simulation(output, *, compile=True):
+    snapshot = output / 'simulation-source'
     if snapshot.exists():
         shutil.rmtree(snapshot)
     snapshot.mkdir(parents=True)
     hashes = {}
     files = [*sorted(CODE.glob('*.h')), *[CODE / (n + '.cpp') for n in UNITS],
-             TESTS / 'Native/handplant_probe.cpp', TESTS / 'Native/gameplay_runtime_probe.cpp']
+             TESTS / 'Simulation/handplant_probe.cpp', TESTS / 'Simulation/gameplay_runtime_probe.cpp']
     for path in files:
         shutil.copy2(path, snapshot / path.name)
         hashes[path.name] = digest(snapshot / path.name)
     extracts = []
-    prefix, item = extraction(TESTS / 'Native/handplant_lifecycle_probe.cpp', 'int main(')
+    prefix, item = extraction(TESTS / 'Simulation/handplant_lifecycle_probe.cpp', 'int main(')
     (snapshot / 'render_pose_owner_helpers.inc').write_bytes(prefix)
     extracts.append(item)
-    prefix, item = extraction(TESTS / 'Native/render_pose_runtime_probe.cpp', 'int main(')
+    prefix, item = extraction(TESTS / 'Simulation/render_pose_runtime_probe.cpp', 'int main(')
     (snapshot / 'gameplay_render_helpers.inc').write_bytes(prefix)
     extracts.append(item)
     cpp, _, player_report = player_observers()
     (snapshot / 'gameplay_player_observers.inc').write_text(cpp)
-    camera_prefix, item = extraction(TESTS / 'Native/camera_runtime_probe.cpp', 'struct MovingPublication')
+    camera_prefix, item = extraction(TESTS / 'Simulation/camera_runtime_probe.cpp', 'struct MovingPublication')
     extracts.append(item)
     values = camera_schema.schemas(source_at_reference)
     raw = camera_prefix.decode()
@@ -312,12 +312,12 @@ def build_native(output, *, compile=True):
     assert '// @CPP_GENERIC_WRITERS@' not in camera_observers
     body = body.replace('// @CPP_OBSERVERS@', camera_observers)
     (snapshot / 'gameplay_camera_helpers.inc').write_text(includes + '\nnamespace gameplay_camera_wire {\n' + body + '\n}\n')
-    score_path = TESTS / 'Native/scoring_runtime_probe.cpp'
+    score_path = TESTS / 'Simulation/scoring_runtime_probe.cpp'
     score_body = function(score_path.read_text(), 'struct Output {') + ';'
     (snapshot / 'gameplay_scoring_helpers.inc').write_text('namespace gameplay_score_wire {\n' + score_body + '\n}\n')
     extracts.append(dict(file=score_path.relative_to(PLUGIN).as_posix(),full_sha256=digest(score_path),
         method_sha256=hashlib.sha256(score_body.encode()).hexdigest(),exact_boundary='balanced complete observation-only Output struct'))
-    binary = output / 'gameplay-runtime-native'
+    binary = output / 'gameplay-runtime-simulation'
     if compile:
         subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math',
             '-fno-exceptions', '-fno-rtti', '-Wall', '-Wextra', '-Werror', '-I', str(snapshot),
@@ -325,10 +325,10 @@ def build_native(output, *, compile=True):
             str(snapshot / 'gameplay_runtime_probe.cpp'), '-o', str(binary)], check=True)
     for name, sha in hashes.items():
         assert digest(snapshot / name) == sha, name
-    report = dict(immutable_native_sources=hashes, reused_observer_extractions=extracts,
+    report = dict(immutable_simulation_sources=hashes, reused_observer_extractions=extracts,
                   player_protocol=player_report, units=UNITS,
                   binary_sha256=digest(binary) if compile else None)
-    (output / 'native-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
+    (output / 'simulation-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
     return binary
 
 
@@ -341,7 +341,7 @@ def packet(tick, **values):
 
 def travel(x=0., y=1., z=0., heading=0.):
     c, s = math.cos(heading), math.sin(heading)
-    # Native affine column lanes, same explicit valid TravelTo caller domain.
+    # The simulation affine column lanes, same explicit valid TravelTo caller domain.
     return [1, *fs([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, x, y, z, 0])]
 
 
@@ -507,7 +507,7 @@ def coverage(decoded, cases):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--assets', type=Path, required=True)
-    parser.add_argument('--native-package', type=Path, required=True)
+    parser.add_argument('--simulation-package', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--target-dir', type=Path, required=True)
     parser.add_argument('--preflight', action='store_true')
@@ -518,14 +518,14 @@ def main():
         frames=sum(row[0] == 0 for case in cases for row in case['rows']), input_bytes=len(raw),
         input_sha256=hashlib.sha256(raw).hexdigest(), units=len(UNITS), input_ranges=ranges,
         assets_sha256={p.relative_to(args.assets).as_posix():digest(p)for p in sorted(args.assets.rglob('*'))if p.is_file()},
-        native_package_sha256={p.relative_to(args.native_package).as_posix():digest(p)for p in sorted(args.native_package.rglob('*'))if p.is_file()})
+        simulation_package_sha256={p.relative_to(args.simulation_package).as_posix():digest(p)for p in sorted(args.simulation_package.rglob('*'))if p.is_file()})
     reference = build_reference(out / 'reference', args.target_dir, compile=not args.preflight)
-    native = build_native(out, compile=not args.preflight)
+    simulation = build_simulation(out, compile=not args.preflight)
     if args.preflight:
         (out / 'preflight.json').write_text(json.dumps(manifest,indent=2)+'\n'); print(json.dumps({k:v for k,v in manifest.items()if not k.endswith('_sha256')},indent=2)); return
     expected = subprocess.run([str(reference),str(args.assets.resolve())],input=raw,stdout=subprocess.PIPE,check=True).stdout
-    actual = subprocess.run([str(native),str(args.native_package.resolve())],input=raw,stdout=subprocess.PIPE,check=True).stdout
-    (out / 'reference.bin').write_bytes(expected); (out / 'native.bin').write_bytes(actual)
+    actual = subprocess.run([str(simulation),str(args.simulation_package.resolve())],input=raw,stdout=subprocess.PIPE,check=True).stdout
+    (out / 'reference.bin').write_bytes(expected); (out / 'simulation.bin').write_bytes(actual)
     if expected != actual:
         index = next((i for i,(a,b)in enumerate(zip(expected,actual))if a!=b), min(len(expected),len(actual)))
         report = dict(first_byte=index, first_word=index//4, expected_bytes=len(expected), actual_bytes=len(actual))

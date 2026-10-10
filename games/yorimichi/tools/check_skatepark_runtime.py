@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise Sunset Pier's exported collision with the native offline QA session.
+"""Exercise Sunset Pier's exported collision with the simulation offline QA session.
 
 Build world.skatepark and verify skate.runtime first, then explicitly build the
-test-only gameplay-session-cli under the render guard. This does not select a
-shipping backend. Results: build/yorimichi/skatepark/physics/.
+test-only gameplay-session-cli under the render guard. Results: build/yorimichi/skatepark/physics/.
 """
 import argparse
 import json
@@ -14,8 +13,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-NATIVE_PACKAGE = ROOT / 'build/yorimichi/skate-native/package'  # atelier build yorimichi skate.runtime
-BINARY = ROOT / 'build/skate-native-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
+SIMULATION_PACKAGE = ROOT / 'build/yorimichi/skate-simulation/package'  # atelier build yorimichi skate.runtime
+BINARY = ROOT / 'build/skate-simulation-session-cli' / ('gameplay-session-cli.exe' if sys.platform == 'win32' else 'gameplay-session-cli')
 OUT = ROOT / 'build/yorimichi/skatepark'
 
 
@@ -25,20 +24,20 @@ def product(a, b):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--native-package', type=Path, default=NATIVE_PACKAGE)
-    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline native QA executable')
+    parser.add_argument('--simulation-package', type=Path, default=SIMULATION_PACKAGE)
+    parser.add_argument('--binary', type=Path, default=BINARY, help='Already built offline simulation QA executable')
     args = parser.parse_args()
     if not args.binary.is_file():
-        parser.error('Native QA executable is missing; build Tests/build_native_session_cli.py --compile under the render lock and memory guard first')
-    if not (args.native_package / 'package-manifest.json').is_file():
-        parser.error('Native bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.native_package))
+        parser.error('Simulation QA executable is missing; build Tests/build_simulation_session_cli.py --compile under the render lock and memory guard first')
+    if not (args.simulation_package / 'package-manifest.json').is_file():
+        parser.error('Simulation bundle manifest is missing (atelier build yorimichi skate.runtime): ' + str(args.simulation_package))
     output = OUT / 'physics'; output.mkdir(parents=True, exist_ok=True)
-    with (output / 'native-session.log').open('w') as log:
-        proc = subprocess.Popen([str(args.binary), str(args.native_package), str(OUT/'collision.json')],
+    with (output / 'simulation-session.log').open('w') as log:
+        proc = subprocess.Popen([str(args.binary), str(args.simulation_package), str(OUT/'collision.json')],
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
         selector = selectors.DefaultSelector(); selector.register(proc.stdout, selectors.EVENT_READ)
         def read():
-            if not selector.select(60): raise TimeoutError('Native QA session timed out')
+            if not selector.select(60): raise TimeoutError('Simulation QA session timed out')
             row = json.loads(proc.stdout.readline())
             if row['type'] == 'error': raise RuntimeError(row['message'])
             return row

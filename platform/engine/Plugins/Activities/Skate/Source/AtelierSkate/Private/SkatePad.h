@@ -1,8 +1,8 @@
 #pragma once
-// The canonical pad: the packet the host gives either skate backend each tick, Native's Xbox state (Native/Input.h).
+// The canonical pad: the packet the host gives the session each tick, the simulation's Xbox state (Simulation/Input.h).
 // USkateComponent reads the player's controls (FSkateInput, plus the raw controller keys the legacy button adapter
-// forwards) and packs them here, so both backends' sessions sample the same bytes. Plain C++, no engine types.
-#include "Native/Input.h"
+// forwards) and packs them here, so every session samples the same bytes. Plain C++, no engine types.
+#include "Simulation/Input.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -33,7 +33,7 @@ namespace atelier::skate_pad
         return std::fabs(A) > 1e-4f ? (A > 0.f ? 1.f : -1.f) * (.25f + .75f * std::fabs(A)) : 0.f;
     }
 
-    /** A stick (real positions) remapped so DeadZone..Reach of its travel spans the native pad's live range, 0.25..0.95
+    /** A stick (real positions) remapped so DeadZone..Reach of its travel spans the simulation pad's live range, 0.25..0.95
      *  (Input.cpp's ConditionStick): less than DeadZone reads as centred, Reach and past it as full. Identity at
      *  0.25 and 0.95. */
     inline void Retravel(float& X, float& Y, float DeadZone, float Reach)
@@ -49,7 +49,7 @@ namespace atelier::skate_pad
     inline std::int32_t RoundToInt(float F) { return static_cast<std::int32_t>(std::floor(F + .5f)); }
     inline std::int64_t RoundToInt(double F) { return static_cast<std::int64_t>(std::floor(F + .5)); }
 
-    // Native's Xbox buttons (the bits ConvertXbox reads) and the host's transfer bit, which GameplaySession takes off
+    // The simulation's Xbox buttons (the bits ConvertXbox reads) and the host's transfer bit, which GameplaySession takes off
     // before sampling.
     inline constexpr std::uint16_t ButtonLeftThumb = 0x0040, ButtonRightThumb = 0x0080, ButtonLeftShoulder = 0x0100,
         ButtonRightShoulder = 0x0200, ButtonTransfer = 0x0800, ButtonA = 0x1000, ButtonB = 0x2000, ButtonX = 0x4000;

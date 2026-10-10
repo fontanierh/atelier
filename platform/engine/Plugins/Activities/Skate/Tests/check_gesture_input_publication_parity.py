@@ -144,16 +144,16 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     sets = converter.gesture_sets(args.assets/'private/stock/data/joystick')
-    settings = output/'settings.native'
-    gestures = output/'gestures.native'
+    settings = output/'settings.simulation'
+    gestures = output/'gestures.simulation'
     settings.write_bytes(converter.encode_settings(args.assets/'private/stock/skater-collections.json'))
     gestures.write_bytes(converter.encode_gestures(sets))
     reference = build_probe(output, 'gesture-input-reference', PLUGIN/'Tests/Reference/gesture_input_publication_probe.rs', args.target_dir)
-    native = PLUGIN/'Source/AtelierSkate/Private/Native'
+    simulation = PLUGIN/'Source/AtelierSkate/Private/Simulation'
     candidate = output/'gesture-input-cpp'
-    subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror', '-I', str(native),
-                    *(str(native/f'{name}.cpp') for name in ('NameId', 'Settings', 'AnimationName', 'Intents', 'Gestures', 'GestureInputPublication')),
-                    str(PLUGIN/'Tests/Native/gesture_input_publication_probe.cpp'), '-o', str(candidate)], check=True)
+    subprocess.run(['clang++', '-std=c++17', '-O2', '-ffp-contract=off', '-fno-fast-math', '-Wall', '-Wextra', '-Werror', '-I', str(simulation),
+                    *(str(simulation/f'{name}.cpp') for name in ('NameId', 'Settings', 'AnimationName', 'Intents', 'Gestures', 'GestureInputPublication')),
+                    str(PLUGIN/'Tests/Simulation/gesture_input_publication_probe.cpp'), '-o', str(candidate)], check=True)
     inputs, cases, queries, authored_cases = corpus(sets)
     (output/'input.bin').write_bytes(inputs)
     (output/'cases.json').write_text(json.dumps(cases, indent=2)+'\n')

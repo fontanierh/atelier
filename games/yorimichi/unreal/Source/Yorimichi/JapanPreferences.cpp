@@ -210,8 +210,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
     for (FJapanPreference& V : Values)
         if (V.Key==TEXT("tree_lod_mode") || V.Key==TEXT("tree_lod_distance"))
             V.Value=FMath::Clamp(V.Minimum+FMath::RoundToFloat((V.Value-V.Minimum)/V.Step)*V.Step,V.Minimum,V.Maximum);
-    // The skating engine is the game's config (Ride); Native is a console-only reference (skate.Backend), so an engine
-    // saved by an older menu no longer applies.
+    // A skating engine saved by an older menu no longer applies.
     SavedValues.Remove(TEXT("skate_engine"));
     for (TActorIterator<APostProcessVolume> It(Owner->GetWorld()); It; ++It)
         for (FWeightedBlendable& Blend : It->Settings.WeightedBlendables.Array)
