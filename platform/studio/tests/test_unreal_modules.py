@@ -76,14 +76,26 @@ class ModuleDigestTests(unittest.TestCase):
         binaries.mkdir(parents=True)
         (binaries / 'UnrealEditor.modules').write_text(json.dumps({'BuildId': '1', 'Modules': {
             'Tools': 'libUnrealEditor-Tools.dylib', 'Game': 'libUnrealEditor-Game.dylib', 'Kit': 'libUnrealEditor-Kit.dylib'}}))
-        self.files = {}
-        for name in ('game/Source/Tools/Tool.cpp', 'game/Source/Tools/Tool.h', 'game/Source/Game/Game.cpp', 'plugins/Kit/Kit.h'):
+        for name in ('game/Source/Game/Game.cpp', 'plugins/Kit/Kit.h'):
             self.write(self.repo / name, f'// {name}\n')
+        self.header, self.source = self.repo / 'game/Source/Tools/Tool.h', self.repo / 'game/Source/Tools/Tool.cpp'
+        self.write(self.header, 'UCLASS()\nclass TOOLS_API UTool : public UKitBase\n{\n    UPROPERTY() float Speed = 1.f;\n};\n')
+        self.write(self.source, 'UTool::UTool()\n    : Reach{2}\n{\n    Speed = 3.f;\n}\n\nvoid UTool::Run() { Speed = 4.f; }\n')
+        self.kit = self.repo / 'plugins/Kit/Public/KitBase.h'
+        self.write(self.kit, 'UCLASS()\nclass KIT_API UKitBase : public UObject\n{\n    UPROPERTY() int32 Size = 1;\n};\n')
         self.write(self.engine / 'Engine.h', 'engine\n')
         uht = self.project / 'Intermediate' / 'Build' / 'Mac' / 'UnrealEditor' / 'Inc' / 'Tools' / 'UHT'
         self.generated = uht / 'Tool.generated.h'
-        self.write(self.generated, '#define FID_repo_game_Source_Tools_Tool_h_12_GENERATED_BODY\nUPROPERTY Speed\n')
+        self.write(self.generated, '// ********** Begin Class UTool *****\n#define FID_repo_game_Source_Tools_Tool_h_12_GENERATED_BODY\nUPROPERTY Speed\n')
         self.write(uht / 'Tool.gen.cpp', 'CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UTool), 123U)\n')
+        kit_uht = self.repo / 'plugins/Kit/Intermediate/Build/Mac/UnrealEditor/Inc/Kit/UHT'
+        self.write(kit_uht / 'KitBase.generated.h', '// ********** Begin Class UKitBase *****\n')
+        module = lambda name, base, output, headers: {'Name': name, 'BaseDirectory': str(base), 'OutputDirectory': str(output),
+                                                      'ClassesHeaders': [], 'PublicHeaders': [str(h) for h in headers],
+                                                      'InternalHeaders': [], 'PrivateHeaders': []}
+        self.write(self.project / 'Intermediate/Build/Mac/GameEditor/GameEditor.uhtmanifest', json.dumps({'Modules': [
+            module('Tools', self.header.parent, uht, [self.header]), module('Kit', self.kit.parent.parent, kit_uht, [self.kit]),
+            module('Engine', self.engine, self.engine / 'Inc', [])]}))
         tools = self.objects('Build', 'Tools')
         escaped = str(self.engine).replace(' ', '\\ ')
         self.write(tools / 'Tool.cpp.d', f'{tools}/Tool.cpp.o: \\\n  {self.repo}/game/Source/Tools/Tool.cpp \\\n'
@@ -108,6 +120,11 @@ class ModuleDigestTests(unittest.TestCase):
         self.assertEqual(sorted(self.code()), ['<Tools>/Definitions.Tools.h', 'game/Source/Tools/Tool.cpp',
                                                'game/Source/Tools/Tool.h', 'plugins/Kit/Kit.h'])
 
+    def test_code_leaves_out_objects_whose_source_is_gone(self):
+        tools = self.objects('Build', 'Tools')
+        self.write(tools / 'Moved.cpp.d', f'{tools}/Moved.cpp.o: {self.repo}/game/Source/Tools/Moved.cpp {self.repo}/game/Moved.h\n')
+        self.assertNotIn('game/Moved.h', self.code())
+
     def test_code_changes_with_its_sources_only(self):
         before = self.code()
         self.write(self.repo / 'game/Source/Game/Game.cpp', '// another edit\n')
@@ -116,13 +133,30 @@ class ModuleDigestTests(unittest.TestCase):
         self.write(self.repo / 'plugins/Kit/Kit.h', '// changed\n')
         self.assertNotEqual(self.code(), before)
 
+    def interface(self):
+        return unreal_modules.interface(self.project, 'Tools', repo=self.repo)
+
     def test_interface_ignores_paths_lines_and_reload_checksums(self):
-        before = unreal_modules.interface(self.project, 'Tools')
-        self.write(self.generated, '#define FID_other_checkout_Source_Tools_Tool_h_40_GENERATED_BODY\nUPROPERTY Speed\n')
+        before = self.interface()
+        self.write(self.generated, '// ********** Begin Class UTool *****\n#define FID_other_checkout_Source_Tools_Tool_h_40_GENERATED_BODY\nUPROPERTY Speed\n')
         self.write(self.generated.with_name('Tool.gen.cpp'), 'CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UTool), 987U)\n')
-        self.assertEqual(unreal_modules.interface(self.project, 'Tools'), before)
-        self.write(self.generated, '#define FID_other_checkout_Source_Tools_Tool_h_40_GENERATED_BODY\nUPROPERTY TopSpeed\n')
-        self.assertNotEqual(unreal_modules.interface(self.project, 'Tools'), before)
+        self.assertEqual(self.interface(), before)
+        self.write(self.generated, '// ********** Begin Class UTool *****\nUPROPERTY TopSpeed\n')
+        self.assertNotEqual(self.interface(), before)
+
+    def test_interface_covers_defaults_but_not_comments_or_other_functions(self):
+        before = self.interface()
+        self.assertIn('UTool::UTool', before)
+        self.write(self.source, self.source.read_text().replace('Run() { Speed = 4.f; }', 'Run() { Speed = 5.f; }'))
+        self.write(self.header, '// a comment\n' + self.header.read_text())
+        self.assertEqual(self.interface(), before)
+        for path, old, new in ((self.header, 'Speed = 1.f', 'Speed = 2.f'), (self.source, 'Speed = 3.f', 'Speed = 6.f'),
+                               (self.source, 'Reach{2}', 'Reach{3}'), (self.kit, 'Size = 1', 'Size = 2')):
+            text = path.read_text()
+            self.write(path, text.replace(old, new))
+            self.assertNotEqual(self.interface(), before, (path.name, new))
+            self.write(path, text)
+        self.assertEqual(self.interface(), before)
 
     def test_record_writes_a_stable_digest(self):
         output = Path(self.temp.name) / 'digest.json'
@@ -135,6 +169,8 @@ class ModuleDigestTests(unittest.TestCase):
     def test_a_module_that_was_not_compiled_is_an_error(self):
         with self.assertRaises(SystemExit):
             unreal_modules.code(self.project, 'Missing', repo=self.repo, unreal_root=self.engine)
+        with self.assertRaises(SystemExit):
+            unreal_modules.interface(self.project, 'Missing', repo=self.repo)
 
 
 class Package:
