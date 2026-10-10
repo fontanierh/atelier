@@ -11,10 +11,11 @@ The game's `game.toml` names its releases:
 Releases come from the repository's GitHub `origin`, read without credentials. Every file listed in the release's
 SHA256SUMS is downloaded and checked against it and against GitHub's own digest; a split archive's parts are joined.
 The archive is unpacked with `ditto` under the render lock (as the release check does) into
-~/.cache/atelier/playtests/<game>/<tag>, and the download is then deleted. Later runs reuse that folder. Once a newer
-release is unpacked, older ones are removed. The launcher runs under the render lock and memory guard as a game.
+~/.cache/atelier/playtests/<game>/<tag>, and the download is then deleted. Later runs reuse that folder. Installing the
+latest release removes those published before it; `--tag` keeps every other release. One run at a time fetches into the
+cache (a file lock). The launcher runs under the render lock and memory guard as a game.
 """
-import datetime, hashlib, json, plistlib, re, shutil, subprocess, sys, time, urllib.request
+import datetime, fcntl, hashlib, json, plistlib, re, shutil, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 from . import manifest, paths
@@ -44,17 +45,24 @@ def _open(url, accept='application/vnd.github+json'):
 
 
 def releases(repo):
+    """The 100 most recent releases (enough to find the latest; `named` looks up older ones)."""
     with _open(f'{API}/repos/{repo}/releases?per_page=100') as response:
         return json.load(response)
 
 
-def choose(found, prefix, tag=None):
-    """The release called `tag`, or the newest published release whose tag starts with `prefix`."""
-    if tag:
-        named = [r for r in found if r['tag_name'] == tag and not r.get('draft')]
-        if not named:
+def named(repo, tag):
+    """The published release called `tag`."""
+    try:
+        with _open(f'{API}/repos/{repo}/releases/tags/{urllib.parse.quote(tag)}') as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
             raise SystemExit(f'no published release {tag!r}')
-        return named[0]
+        raise
+
+
+def latest(found, prefix):
+    """The newest published release whose tag starts with `prefix`."""
     published = [r for r in found if r['tag_name'].startswith(prefix) and not r.get('draft') and not r.get('prerelease')]
     if not published:
         raise SystemExit(f'no published release whose tag starts with {prefix!r}')
@@ -110,9 +118,37 @@ def unpack(archive, destination, game, tag):
         raise SystemExit(f'ditto could not unpack {archive.name} (exit {code})')
 
 
-def ensure(game, release, launcher, say=say):
-    """The folder holding `release` unpacked, downloading, verifying and unpacking it first if needed."""
+def ensure(game, release, launcher, prune=True, say=say):
+    """The folder holding `release` unpacked, downloading, verifying and unpacking it first if needed. `prune` removes
+    the releases published before it once it is ready."""
     root = paths.cache_dir('playtests', game)
+    with open(root / '.lock', 'w') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            say(f'waiting for another atelier playtest fetching into {root}')
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        folder = _ensure(root, game, release, launcher, say)
+        if prune:
+            _prune(root, folder, release['published_at'])
+        return folder
+
+
+def _published(folder):
+    try:
+        return json.loads((folder / READY).read_text())['published_at']
+    except (OSError, KeyError, ValueError):
+        return ''   # unfinished, or from before published_at was recorded
+
+
+def _prune(root, keep, published):
+    """Remove the cached releases published before `published`, and leftovers of unfinished downloads."""
+    for old in root.iterdir():
+        if old != keep and old.name != '.lock' and old.is_dir() and _published(old) < published:
+            shutil.rmtree(old, ignore_errors=True)
+
+
+def _ensure(root, game, release, launcher, say):
     tag = release['tag_name']
     folder = root / tag
     if (folder / READY).exists():
@@ -142,12 +178,9 @@ def ensure(game, release, launcher, say=say):
         raise SystemExit(f'{archive.name} has no {launcher}')
     shutil.rmtree(folder, ignore_errors=True)
     (staging / 'unpacked').rename(folder)
-    (folder / READY).write_text(json.dumps({'tag': tag, 'url': release['html_url'], 'archive': archive.name,
-                                            'files': sums}, indent=1) + '\n')
+    (folder / READY).write_text(json.dumps({'tag': tag, 'published_at': release['published_at'], 'url': release['html_url'],
+                                            'archive': archive.name, 'files': sums}, indent=1) + '\n')
     shutil.rmtree(staging)
-    for old in root.iterdir():   # older releases, and partial downloads they left
-        if old != folder:
-            shutil.rmtree(old, ignore_errors=True) if old.is_dir() else old.unlink()
     say(f'ready: {folder}')
     return folder
 
@@ -155,8 +188,11 @@ def ensure(game, release, launcher, say=say):
 def container_log(launcher, log):
     """The game's log in its app's sandbox container (the app sits next to the launcher)."""
     for app in sorted(launcher.parent.glob('*.app')):
-        with open(app / 'Contents' / 'Info.plist', 'rb') as plist:
-            bundle = plistlib.load(plist)['CFBundleIdentifier']
+        try:
+            with open(app / 'Contents' / 'Info.plist', 'rb') as plist:
+                bundle = plistlib.load(plist)['CFBundleIdentifier']
+        except (OSError, KeyError, plistlib.InvalidFileException):
+            return None
         return Path.home() / 'Library' / 'Containers' / bundle / 'Data' / log
     return None
 
@@ -167,8 +203,9 @@ def main(game, tag=None, download_only=False, extra=(), limit_gib=10.):
         raise SystemExit(f'{game} has no [release] section in game.toml')
     if sys.platform != 'darwin':
         raise SystemExit('the playtest releases are macOS builds')
-    release = choose(releases(repository()), spec['tag'], tag)
-    folder = ensure(game, release, spec['launcher'])
+    repo = repository()
+    release = named(repo, tag) if tag else latest(releases(repo), spec['tag'])
+    folder = ensure(game, release, spec['launcher'], prune=not tag)
     if download_only:
         print(f'{release["tag_name"]}: {folder}')
         return 0
@@ -182,7 +219,10 @@ def main(game, tag=None, download_only=False, extra=(), limit_gib=10.):
     code = guarded.run(['/bin/bash', str(launcher), *extra], logs, purpose=f'atelier playtest {game} {release["tag_name"]}',
                        kind='game', watch=tuple(spec.get('watch', ())), limit_gib=limit_gib)
     log = container_log(launcher, spec['log']) if spec.get('log') else None
-    if log and log.exists() and log.stat().st_mtime >= started:   # this run's log, not an earlier one
-        shutil.copy2(log, logs / 'game.log')
-        print(f'game log: {logs / "game.log"}')
+    try:
+        if log and log.exists() and log.stat().st_mtime >= started:   # this run's log, not an earlier one
+            shutil.copy2(log, logs / 'game.log')
+            print(f'game log: {logs / "game.log"}')
+    except OSError as error:
+        print(f'game log not copied: {error}')
     return code

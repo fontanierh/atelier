@@ -105,10 +105,11 @@ uv run atelier playtest yorimichi --tag yorimichi-macos-2026-10-09-r3   # an ear
 ```
 
 It reads the newest published release whose tag starts with `yorimichi-macos-` (the `[release]` section of
-[game.toml](../game.toml)), downloads every file in its `SHA256SUMS`, checks each against it and against GitHub's digest,
-joins split parts, and unpacks with `ditto` into `~/.cache/atelier/playtests/yorimichi/<tag>`. Later runs start from that
-folder; a newer release replaces it. `Play Yorimichi.command` runs under the render lock and memory guard, arguments after
-`--` are passed to it, and the game's log is copied into `build/yorimichi/logs/playtest-<tag>-<time>/`.
+[game.toml](../game.toml)), downloads every file in its `SHA256SUMS`, checks each against it and against GitHub's
+digest, joins split parts, and unpacks with `ditto` into `~/.cache/atelier/playtests/yorimichi/<tag>`. Later runs start
+from that folder; installing the latest release removes those published before it, and `--tag` keeps the others. The
+launcher runs under the render lock and memory guard, arguments after `--` are passed to it, and the game's log is
+copied into `build/yorimichi/logs/playtest-<tag>-<time>/`.
 
 Without a checkout:
 

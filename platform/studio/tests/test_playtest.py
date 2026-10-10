@@ -4,7 +4,7 @@
 
 GitHub is replaced by in-memory assets and `ditto` by zipfile; nothing is launched and no lock is taken.
 """
-import hashlib, io, zipfile
+import hashlib, io, json, urllib.error, zipfile
 
 import pytest
 
@@ -30,16 +30,24 @@ def test_repository_refuses_other_hosts():
         playtest.repository('https://example.invalid/owner/repo.git')
 
 
-def test_choose_takes_the_newest_published_release_with_the_prefix():
+def test_latest_is_the_newest_published_release_with_the_prefix():
     found = [release('game-macos-1', '2026-10-01T00:00:00Z'), release('game-macos-3', '2026-10-03T00:00:00Z'),
              release('game-macos-4', '2026-10-04T00:00:00Z', prerelease=True),
              release('game-macos-5', '2026-10-05T00:00:00Z', draft=True), release('other-9', '2026-10-09T00:00:00Z')]
-    assert playtest.choose(found, 'game-macos-')['tag_name'] == 'game-macos-3'
-    assert playtest.choose(found, 'game-macos-', 'game-macos-1')['tag_name'] == 'game-macos-1'
+    assert playtest.latest(found, 'game-macos-')['tag_name'] == 'game-macos-3'
     with pytest.raises(SystemExit, match='no published release'):
-        playtest.choose(found, 'game-macos-', 'game-macos-5')
-    with pytest.raises(SystemExit, match='no published release'):
-        playtest.choose(found, 'missing-')
+        playtest.latest(found, 'missing-')
+
+
+def test_named_looks_the_tag_up(monkeypatch):
+    def open_(url, accept=None):
+        if url.endswith('/releases/tags/t1'):
+            return io.BytesIO(json.dumps(release('t1', '1')).encode())
+        raise urllib.error.HTTPError(url, 404, 'Not Found', {}, None)
+    monkeypatch.setattr(playtest, '_open', open_)
+    assert playtest.named('owner/repo', 't1')['tag_name'] == 't1'
+    with pytest.raises(SystemExit, match="no published release 't9'"):
+        playtest.named('owner/repo', 't9')
 
 
 def test_checksums_reads_both_shasum_forms():
@@ -104,12 +112,17 @@ def test_ensure_joins_numbered_parts(cache, monkeypatch):
     assert (folder / LAUNCHER).is_file()
 
 
-def test_a_newer_release_replaces_the_older_one(cache, monkeypatch):
+def test_the_latest_release_replaces_older_ones_only(cache, monkeypatch):
     github = GitHub(monkeypatch, {'Game-1.zip': archive()})
-    old = playtest.ensure('sandbox', release('t1', '1', assets=github.assets), LAUNCHER, say=lambda *_: None)
-    new = playtest.ensure('sandbox', release('t2', '2', assets=github.assets), LAUNCHER, say=lambda *_: None)
-    assert new.is_dir() and not old.exists()
-    assert sorted(p.name for p in cache.iterdir()) == ['t2']
+    quiet = dict(say=lambda *_: None)
+    playtest.ensure('sandbox', release('t1', '1', assets=github.assets), LAUNCHER, **quiet)
+    playtest.ensure('sandbox', release('t3', '3', assets=github.assets), LAUNCHER, prune=False, **quiet)   # --tag
+    assert sorted(p.name for p in cache.iterdir() if p.name != '.lock') == ['t1', 't3']
+    playtest.ensure('sandbox', release('t2', '2', assets=github.assets), LAUNCHER, **quiet)
+    assert sorted(p.name for p in cache.iterdir() if p.name != '.lock') == ['t2', 't3'], 'newer releases stay'
+    (cache / '.t9.partial').mkdir()   # an interrupted download
+    playtest.ensure('sandbox', release('t3', '3', assets=github.assets), LAUNCHER, **quiet)
+    assert sorted(p.name for p in cache.iterdir() if p.name != '.lock') == ['t3']
 
 
 @pytest.mark.parametrize('digests', [True, False])
