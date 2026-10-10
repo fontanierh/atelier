@@ -163,6 +163,12 @@ def steps(ctx):
     ]
 ```
 
+An import that calls the game's C++, or saves its classes in assets, declares those modules:
+`UnrealScript(importer, 'GARDEN IMPORTED', modules=(('GardenTools', 'code'), ('Garden', 'interface')))`, needing their
+steps from [atelier.unreal_modules](platform/studio/atelier/unreal_modules.py). It reruns when that code or those
+classes' declarations change, not on every compile. It stops if the script uses a game module it does not declare, or
+calls functions of one it declares only by interface.
+
 `atelier build <game> --list` shows every step; name one to run just it and what it needs. Yorimichi's
 [build.py](games/yorimichi/build.py) has examples from textures to a whole city, a harbour and three skate parks.
 

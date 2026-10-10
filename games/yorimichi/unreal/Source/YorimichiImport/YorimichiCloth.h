@@ -8,7 +8,7 @@ class USkeletalMeshComponent;
 
 /** Editor scripting for character cloth (import scripts run it; Python cannot create or bind clothing data itself). */
 UCLASS()
-class YORIMICHI_API UYorimichiClothLibrary : public UBlueprintFunctionLibrary
+class YORIMICHIIMPORT_API UYorimichiClothLibrary : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:

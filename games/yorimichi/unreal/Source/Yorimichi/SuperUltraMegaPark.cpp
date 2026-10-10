@@ -7,7 +7,6 @@
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
-#include "StaticMeshResources.h"
 #include "Misc/FileHelper.h"
 #include "LiveLibrary.h"
 #include "Camera/CameraActor.h"
@@ -205,23 +204,6 @@ void AMegaParkWorld::BeginPlay()
     AActor::BeginPlay();
     PlayerStart = FTransform(FRotator(0.f, SpawnYaw, 0.f), SpawnGround);
     bLoaded = true;
-}
-
-bool UMegaParkValidation::DumpMeshTriangles(UStaticMesh* Mesh, FVector Origin, const FString& Path)
-{
-    if (!Mesh || !Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return false;
-    const FStaticMeshLODResources& LOD = Mesh->GetRenderData()->LODResources[0];
-    const FIndexArrayView Indices = LOD.IndexBuffer.GetArrayView();
-    const FPositionVertexBuffer& Positions = LOD.VertexBuffers.PositionVertexBuffer;
-    TArray<uint8> Bytes;
-    Bytes.Reserve(Indices.Num() * 3 * sizeof(double));
-    for (int32 Index = 0; Index < Indices.Num(); ++Index)
-    {
-        const FVector P = Origin + FVector(Positions.VertexPosition(Indices[Index]));
-        for (double Value : {P.X, P.Y, P.Z})
-            Bytes.Append(reinterpret_cast<const uint8*>(&Value), sizeof(double));
-    }
-    return FFileHelper::SaveArrayToFile(Bytes, *Path);
 }
 
 bool UMegaParkValidation::ReviewCamera(FVector Location, FVector Target, float Fov)

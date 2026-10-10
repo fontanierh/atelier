@@ -3,6 +3,8 @@
 A game describes its build in `games/<game>/build.py`, a module with `steps()` returning a list of `Step`s. A step's
 fingerprint is the hash of its inputs (files or folders, by content), its commands, and the fingerprints of the steps
 it needs; `build/<game>/stamps/<step>.json` remembers the last good one. Logs go to `build/<game>/logs/<step>.log`.
+A `cutoff` step gives its dependents the hash of its outputs instead of its fingerprint: when it reruns and makes the
+same outputs, they stay current.
 
 Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `UnrealPackage`, `Call`), so the fingerprint changes
 when a command does.
@@ -56,11 +58,22 @@ class UnrealScript:
     null_rhi: bool = False
     env: tuple = ()          # (("NAME", "value"), ...)
     args: tuple = ()         # additional editor arguments for this import
+    # ((module, 'code' | 'interface'), ...): the game's compiled modules the script uses (atelier.unreal_modules). The
+    # step needs their module steps; unreal_script_guard stops the script if it uses any other game module.
+    modules: tuple = field(default=(), repr=False)
 
     def argv(self, ctx):
-        command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={self.script}',
+        script = Path(__file__).with_name('unreal_script_guard.py') if self.modules else self.script
+        command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={script}',
                    '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
         return command + (['-NullRHI'] if self.null_rhi else []) + list(self.args)
+
+    def environment(self, ctx):
+        if not self.modules:
+            return self.env
+        from .unreal_modules import project_modules
+        return (*self.env, ('ATELIER_SCRIPT', str(self.script)), ('ATELIER_SCRIPT_MODULES', json.dumps(dict(self.modules))),
+                ('ATELIER_PROJECT_MODULES', json.dumps(sorted(project_modules(ctx.uproject.parent)))))
 
 
 @dataclass
@@ -123,10 +136,25 @@ class Step:
     explicit: bool = False                         # only when named exactly (a release package): never in a plain
                                                    # or prefix build
     verify: object = field(default=None, compare=False, repr=False)  # () -> bool: outputs whose names vary are present
+    cutoff: bool = False                           # dependents see the hash of its outputs, not its fingerprint
 
 
 def outputs_present(step):
     return all(Path(o).exists() for o in step.outputs) and (step.verify is None or bool(step.verify()))
+
+
+def module_step(module, kind):
+    """The step that records a compiled Unreal module's `code` or `interface` digest (atelier.unreal_modules)."""
+    return f'unreal.module.{module}.{kind}'
+
+
+def check_modules(steps):
+    """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
+    for step in steps:
+        for command in step.commands:
+            missing = [module_step(*m) for m in getattr(command, 'modules', ()) if module_step(*m) not in step.needs]
+            if missing:
+                raise SystemExit(f'{step.name}: its script uses {missing} but the step does not need them')
 
 
 # ---------------------------------------------------------------- context
@@ -193,6 +221,20 @@ def fingerprint(step, done):
     return digest.hexdigest()
 
 
+def outputs_digest(step):
+    digest = hashlib.sha256()
+    for output in step.outputs:
+        _hash_path(digest, output)
+    return 'outputs:' + digest.hexdigest()
+
+
+def result(step, current, stamp):
+    """What a step's dependents see: its fingerprint, or for a current cutoff step the outputs digest it recorded."""
+    if step.cutoff and stamp.get('fingerprint') == current and stamp.get('result'):
+        return stamp['result']
+    return current
+
+
 # ---------------------------------------------------------------- running
 def order(steps, wanted):
     """Wanted steps plus everything they need, in declaration order."""
@@ -245,7 +287,7 @@ def run_command(ctx, step, command, log, request=None, slots=None):
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
-    env = ctx.env(getattr(command, 'env', ()))
+    env = ctx.env(command.environment(ctx) if isinstance(command, UnrealScript) else getattr(command, 'env', ()))
     argv = command.argv(ctx)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
@@ -298,6 +340,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
     ctx = Context(game)
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
+    check_modules(steps)
     plan = order(steps, list(wanted))
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
@@ -305,7 +348,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
     for s in steps:   # fingerprints of steps not in the plan still feed their dependents
         stamp = ctx.stamps / f'{s.name}.json'
         if stamp.exists() and s not in plan:
-            done[s.name] = json.loads(stamp.read_text())['fingerprint']
+            previous = json.loads(stamp.read_text())
+            done[s.name] = previous.get('result', previous['fingerprint'])
     started = time.monotonic()
     for step in plan:
         print_ = f'{step.name:34s}'
@@ -314,7 +358,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         previous = json.loads(stamp.read_text()) if stamp.exists() else {}
         outputs_ok = outputs_present(step)
         if not force and previous.get('fingerprint') == current and outputs_ok:
-            done[step.name] = current
+            done[step.name] = result(step, current, previous)
             echo(f'{print_} up to date')
             continue
         if dry:
@@ -325,8 +369,11 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
             if not outputs_ok:
                 echo(f'{print_} not touched: outputs missing')
                 continue
-            stamp.write_text(json.dumps({'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}) + '\n')
-            done[step.name] = current
+            touched = {'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}
+            if step.cutoff:
+                touched['result'] = outputs_digest(step)
+            stamp.write_text(json.dumps(touched) + '\n')
+            done[step.name] = result(step, current, touched)
             echo(f'{print_} touched')
             continue
         pool_key = None
@@ -358,14 +405,16 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        result = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        if step.cutoff:
+            record['result'] = outputs_digest(step)
         if pool_key is not None:
             if fingerprint(step, done) != current or artifact_pool.key(ctx, step, current) != pool_key:
                 stamp.unlink(missing_ok=True)
                 raise RuntimeError('Pool tool context changed during build; outputs not certified')
-            result['pool_key'] = pool_key
-        stamp.write_text(json.dumps(result) + '\n')
-        done[step.name] = current
+            record['pool_key'] = pool_key
+        stamp.write_text(json.dumps(record) + '\n')
+        done[step.name] = result(step, current, record)
         ran += 1
         echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
     echo(f'{len(plan)} steps, {ran} ran, {time.monotonic() - started:.0f} s')

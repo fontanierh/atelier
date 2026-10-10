@@ -7,8 +7,6 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SuperUltraMegaPark.generated.h"
 
-class UStaticMesh;
-
 /** Original rail identity and curve data, with contact points in Unreal centimetres. */
 USTRUCT(BlueprintType)
 struct FMegaParkRail
@@ -71,13 +69,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite) float SpawnYaw = 0.f;
 };
 
-/** Import audit: exports the actual built LOD triangles for source comparison. */
+/** Review cameras for scenarios: frame a view of the park, then give the player back their camera. */
 UCLASS()
 class YORIMICHI_API UMegaParkValidation : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
-    UFUNCTION(BlueprintCallable) static bool DumpMeshTriangles(UStaticMesh* Mesh, FVector Origin, const FString& Path);
     UFUNCTION(BlueprintCallable) static bool ReviewCamera(FVector Location, FVector Target, float Fov = 65.f);
     UFUNCTION(BlueprintCallable) static void RestorePlayerCamera();
 };

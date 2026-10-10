@@ -281,7 +281,7 @@ def mesh_actor(entry, collision, mis, actors, editor, results, place=True):
         mesh.set_editor_property('static_materials', slots)
     E.save_loaded_asset(mesh)
     audit = OUT/'imported-geometry'; audit.mkdir(exist_ok=True)
-    assert unreal.MegaParkValidation.dump_mesh_triangles(mesh, ue(entry['native_origin']), str(audit/(entry['name']+'.bin')))
+    assert unreal.MeshImportAudit.dump_mesh_triangles(mesh, ue(entry['native_origin']), str(audit/(entry['name']+'.bin')))
     actual = mesh.get_bounding_box()
     expected_lo = ue(entry['bounds']['minimum']) - ue(entry['native_origin'])
     expected_hi = ue(entry['bounds']['maximum']) - ue(entry['native_origin'])

@@ -14,7 +14,7 @@ import sys
 import tempfile
 
 from . import paths
-from .build import Context, Python, fingerprint, load_recipe, order
+from .build import Context, Python, fingerprint, load_recipe, order, result
 from .reuse import copy_tree
 from .safety.render_lock import render_lock
 
@@ -137,10 +137,15 @@ def transfer(action, ctx, step, current, pool):
     return identity
 
 
+def stamp_of(ctx, step):
+    path = ctx.stamps / (step.name + '.json')
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
 def main(action, game, name):
     ctx = Context(game);done = {};target = None
     for step in order(load_recipe(game).steps(ctx), []):
-        current = fingerprint(step, done);done[step.name] = current
+        current = fingerprint(step, done);done[step.name] = result(step, current, stamp_of(ctx, step))
         if step.name == name:
             target = (step, current)
     if target is None:
@@ -154,13 +159,13 @@ def main(action, game, name):
     # File replacement is bounded actual work and cannot overlap a builder in this checkout.
     with render_lock(f'artifact pool {action} {name}'):
         before = key(ctx, step, current)
-        result = transfer(action, ctx, step, current, pool)
+        copied = transfer(action, ctx, step, current, pool)
         fresh = {};now = None
         for item in order(load_recipe(game).steps(ctx), []):
-            value = fingerprint(item, fresh);fresh[item.name] = value
+            value = fingerprint(item, fresh);fresh[item.name] = result(item, value, stamp_of(ctx, item))
             if item.name == name:now = key(ctx, item, value)
         if now != before:
             if action == 'restore': (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
             raise ValueError('Source context changed during transfer')
-    print(f'{action} {name}: {result}; independent copies, full file hashes verified')
+    print(f'{action} {name}: {copied}; independent copies, full file hashes verified')
     return 0

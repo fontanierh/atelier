@@ -22,6 +22,8 @@ INSPECT = '''import json
 from pathlib import Path
 from dataclasses import replace
 from atelier.build import Context,load_recipe,order,fingerprint
+try: from atelier.build import result as published
+except ImportError: published=lambda step,value,stamp: value   # a donor from before cutoff steps
 from atelier import manifest
 ctx=Context(GAME)
 # A step's source fingerprint leaves out its inputs inside the copied folders; kept here, not in atelier.build, so a
@@ -30,10 +32,11 @@ artifacts=[p.resolve() for p in [ctx.out]+([ctx.uproject.parent/'Content'] if ct
 def own(step): return replace(step,inputs=[i for i in step.inputs if not any(Path(i).resolve().is_relative_to(a) for a in artifacts)])
 done={}; sources={}; result=[]
 for step in order(load_recipe(GAME).steps(ctx),[]):
- value=fingerprint(step,done); done[step.name]=value
+ value=fingerprint(step,done)
  source=fingerprint(own(step),sources); sources[step.name]=source
  path=ctx.stamps/(step.name+'.json')
  stamp=json.loads(path.read_text()) if path.exists() else {}
+ done[step.name]=published(step,value,stamp)
  result.append(dict(name=step.name,fingerprint=value,source=source,stamp=stamp,outputs_ok=all(Path(p).exists() for p in step.outputs)))
 print(json.dumps(dict(steps=result,engine=str(ctx.unreal_root.resolve()),project=ctx.uproject.stem,
  editor_target=manifest.game(GAME)['editor_target'],
