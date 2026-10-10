@@ -8,6 +8,7 @@
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
     atelier play <game> [--profile P] [--memory-gib N] [-- unreal args]   launch the game under the render lock and memory guard
+    atelier playtest <game> [--tag T] [--download-only] [-- launcher args]   play the latest GitHub release, downloading it if needed
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
@@ -67,10 +68,15 @@ GAME_GIB = 10.        # the memory guard's limit for a game
 GAME_MAX_GIB = 14.    # the most a session may ask for (--memory-gib): a 32 GiB machine keeps room for a small-slot job
 
 
-def play(game, profile, settings, extra, memory_gib=None):
+def game_limit(memory_gib=None):
     limit = GAME_GIB if memory_gib is None else memory_gib
     if not GAME_GIB <= limit <= GAME_MAX_GIB:
         raise SystemExit(f'--memory-gib must be {GAME_GIB:g} to {GAME_MAX_GIB:g}')
+    return limit
+
+
+def play(game, profile, settings, extra, memory_gib=None):
+    limit = game_limit(memory_gib)
     ctx = Context(game)
     data = manifest.game(game)
     profiles = data.get('play', {})
@@ -168,6 +174,11 @@ def make_parser():
     p.add_argument('--memory-gib', type=float, default=None,
                    help='memory guard limit for this session, 10 (the default) to 14 GiB: say so on the render board')
     p.add_argument('extra', nargs='*', help='Unreal arguments, after --')
+    p = sub.add_parser('playtest'); p.add_argument('game')
+    p.add_argument('--tag', help='this release instead of the latest')
+    p.add_argument('--download-only', action='store_true', help='download and unpack it, without playing')
+    p.add_argument('--memory-gib', type=float, default=None, help='memory guard limit, as for play')
+    p.add_argument('extra', nargs='*', help='launcher arguments, after --')
     p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
     p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
@@ -178,11 +189,11 @@ def make_parser():
 
 
 def parse_args(argv=None):
-    """For `play`, everything after the first `--` goes to Unreal as is, wherever the options sit. argparse alone
-    rejects it when an option follows the game (`play <game> --profile P -- -RenderOffscreen`): `extra` has already
-    been matched, empty, right after the game."""
+    """For `play` and `playtest`, everything after the first `--` goes to the game as is, wherever the options sit.
+    argparse alone rejects it when an option follows the game (`play <game> --profile P -- -RenderOffscreen`): `extra`
+    has already been matched, empty, right after the game."""
     argv = sys.argv[1:] if argv is None else list(argv)
-    if argv[:1] == ['play'] and '--' in argv:
+    if argv[:1] in (['play'], ['playtest']) and '--' in argv:
         cut = argv.index('--')
         args = make_parser().parse_args(argv[:cut])
         args.extra += argv[cut + 1:]
@@ -218,6 +229,9 @@ def main(argv=None):
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
+    if args.command == 'playtest':
+        from . import playtest
+        return playtest.main(args.game, args.tag, args.download_only, args.extra, game_limit(args.memory_gib))
     if args.command == 'stream':
         from . import stream
         return stream.main(args.game, args.action, local=args.local, install=args.install)

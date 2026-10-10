@@ -38,6 +38,13 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-Forc
 script = "tools/desktop_preview.py"
 args = ["--shared-settings", "--memory-gib={memory_gib}"]
 
+[release]
+# `atelier playtest yorimichi`: the newest published GitHub release whose tag starts with `tag`, downloaded once.
+tag = "yorimichi-macos-"
+launcher = "Yorimichi/Play Yorimichi.command"
+watch = ["Yorimichi"]
+log = "Library/Logs/Yorimichi/game.log"
+
 [stream]
 # `atelier stream yorimichi start`: the phone page (touch controls, map, settings) at /, the platform's plain player
 # (keyboard, mouse or controller on the far device) at /play/. Messages use the "yorimichi" protocol key.
