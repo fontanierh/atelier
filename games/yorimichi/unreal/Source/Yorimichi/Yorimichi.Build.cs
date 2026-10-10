@@ -32,12 +32,20 @@ public class Yorimichi : ModuleRules
         string Code;
         using (SHA1 Hash = SHA1.Create())
             Code = Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Records.ToString()))).ToLowerInvariant();
-        PublicDefinitions.Add("YORIMICHI_NETWORK_BUILD_ID=\"" + Code + "\"");
+        // The digest changes with every source edit: as a module definition it would recompile every file, so it goes to
+        // a generated header that only the network files include, rewritten only when it changes.
         string BuildTarget = Target.Platform + "/" + Target.Type + "/" + Target.Configuration;
-        PublicDefinitions.Add("YORIMICHI_COMPILED_TARGET=\"" + BuildTarget + "\"");
+        string InputDigest;
         using (SHA256 Hash = SHA256.Create())
-            PublicDefinitions.Add("YORIMICHI_COMPILED_INPUT_DIGEST=\"" +
-                Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Code + "\n" + BuildTarget + "\n"))).ToLowerInvariant() + "\"");
+            InputDigest = Convert.ToHexString(Hash.ComputeHash(Encoding.UTF8.GetBytes(Code + "\n" + BuildTarget + "\n"))).ToLowerInvariant();
+        string Generated = Path.Combine(ModuleDirectory, "../../Intermediate/BuildIdentity", BuildTarget.Replace('/', '_'));
+        Directory.CreateDirectory(Generated);
+        string Header = Path.Combine(Generated, "YorimichiBuildIdentity.h");
+        string Contents = "#pragma once\n#define YORIMICHI_NETWORK_BUILD_ID \"" + Code + "\"\n#define YORIMICHI_COMPILED_TARGET \"" +
+            BuildTarget + "\"\n#define YORIMICHI_COMPILED_INPUT_DIGEST \"" + InputDigest + "\"\n";
+        if (!System.IO.File.Exists(Header) || System.IO.File.ReadAllText(Header) != Contents)
+            System.IO.File.WriteAllText(Header, Contents);
+        PrivateIncludePaths.Add(Generated);
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         // Dev/ holds the opt-in review, benchmark and film code; it includes the game headers beside this file.
         PrivateIncludePaths.Add(ModuleDirectory);
