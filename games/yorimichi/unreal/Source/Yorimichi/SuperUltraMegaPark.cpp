@@ -3,11 +3,11 @@
 #include "WandererCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
-#include "StaticMeshResources.h"
 #include "Misc/FileHelper.h"
 #include "LiveLibrary.h"
 #include "Camera/CameraActor.h"
@@ -31,7 +31,7 @@ void ASuperUltraMegaPark::BeginPlay()
 {
     Super::BeginPlay();
     // Spawned in the island, the rails arrive with the manifest after BeginPlay.
-    if (!Rails.IsEmpty()) RegisterRails();
+    if (!Layout.Rails.IsEmpty()) RegisterRails();
 }
 
 static FVector JsonVector(const TArray<TSharedPtr<FJsonValue>>& A)
@@ -52,7 +52,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     const FTransform Placement(FRotator(0., Root->GetNumberField(TEXT("yaw_deg")), 0.), JsonVector(Root->GetArrayField(TEXT("location_cm"))));
     ASuperUltraMegaPark* Park = World->SpawnActor<ASuperUltraMegaPark>(StaticClass(), Placement);
     if (!Park) return nullptr;
-    Park->SourceManifestHash = Root->GetStringField(TEXT("source_sha256"));
+    Park->Layout.SourceManifestHash = Root->GetStringField(TEXT("source_sha256"));
     int32 Meshes = 0, Missing = 0;
     for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
     {
@@ -80,7 +80,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     for (const TSharedPtr<FJsonValue>& Value : Root->GetArrayField(TEXT("rails")))
     {
         const TSharedPtr<FJsonObject> Entry = Value->AsObject();
-        FMegaParkRail& Rail = Park->Rails.AddDefaulted_GetRef();
+        FMegaParkRail& Rail = Park->Layout.Rails.AddDefaulted_GetRef();
         Rail.SourceId = Entry->GetStringField(TEXT("id")); Rail.Closed = Entry->GetBoolField(TEXT("closed"));
         for (const TSharedPtr<FJsonValue>& Point : Entry->GetArrayField(TEXT("points_cm"))) Rail.Points.Add(JsonVector(Point->AsArray()));
     }
@@ -137,11 +137,11 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
             C->RegisterComponent(); ++Props;
         }
     const TSharedPtr<FJsonObject> Start = Root->GetObjectField(TEXT("spawn"));
-    Park->SpawnLocation = JsonVector(Start->GetArrayField(TEXT("location_cm")));
-    Park->SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
+    Park->Layout.SpawnGround = JsonVector(Start->GetArrayField(TEXT("location_cm")));
+    Park->Layout.SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
     UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees, %d props"),
-        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Rails.Num(), Trees, Props);
-    Park->bGameplayReady = Missing == 0 && Meshes > 0 && !Park->Rails.IsEmpty() && Park->RegisteredRailCount == Park->Rails.Num();
+        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Layout.Rails.Num(), Trees, Props);
+    Park->bGameplayReady = Missing == 0 && Meshes > 0 && !Park->Layout.Rails.IsEmpty() && Park->RegisteredRailCount == Park->Layout.Rails.Num();
     return Park;
 }
 
@@ -150,10 +150,10 @@ void ASuperUltraMegaPark::RegisterRails()
     USkateRailSubsystem* Registry = GetWorld()->GetSubsystem<USkateRailSubsystem>();
     // Runtime-spawned client worlds can BeginPlay before Spawn has filled the manifest.
     // Do not mark an empty list registered and permanently lose its grind paths.
-    if (!Registry || bRailsRegistered || Rails.IsEmpty()) return;
+    if (!Registry || bRailsRegistered || Layout.Rails.IsEmpty()) return;
     bRailsRegistered = true;
     int32 Count = 0;
-    for (const FMegaParkRail& Source : Rails)
+    for (const FMegaParkRail& Source : Layout.Rails)
     {
         if (Source.Points.Num() < 2) continue;
         FSkateRail Rail;
@@ -180,6 +180,27 @@ AMegaParkGameMode::AMegaParkGameMode()
     HUDClass = AJapanHUD::StaticClass();
 }
 
+void AMegaParkGameMode::StartPlay()
+{
+    // Before Super::StartPlay begins play, so the spawned actors begin it with the level's.
+    TActorIterator<AMegaParkLayout> Source(GetWorld());
+    if (!Source)
+    {
+        const FString Message = FString::Printf(TEXT("MEGAPARK: %s was saved before its layout (AMegaParkLayout) and has "
+            "no grind paths or player services; run atelier build yorimichi"), *GetWorld()->GetMapName());
+        UE_LOG(LogTemp, Error, TEXT("%s"), *Message);
+        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 600.f, FColor::Red, Message);
+    }
+    else
+    {
+        if (auto* Park = GetWorld()->SpawnActor<ASuperUltraMegaPark>(ASuperUltraMegaPark::StaticClass(), Source->GetActorTransform()))
+            Park->Layout = Source->Layout;
+        if (auto* Services = GetWorld()->SpawnActor<AMegaParkWorld>())
+            Services->PlayerStart = FTransform(FRotator(0.f, Source->Layout.SpawnYaw, 0.f), Source->Layout.SpawnGround);
+    }
+    Super::StartPlay();
+}
+
 void AMegaParkGameMode::BeginPlay()
 {
     Super::BeginPlay();
@@ -187,7 +208,6 @@ void AMegaParkGameMode::BeginPlay()
         if (AWandererCharacter* Player = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
         {
             // GameMode BeginPlay can precede level actor BeginPlay.
-            It->PlayerStart = FTransform(FRotator(0.f, It->SpawnYaw, 0.f), It->SpawnGround);
             It->bLoaded = true;
             Player->EnterWorld(*It);
             break;
@@ -201,27 +221,9 @@ AMegaParkWorld::AMegaParkWorld()
 
 void AMegaParkWorld::BeginPlay()
 {
-    // AJapanWorld::BeginPlay generates the island. This level already owns its geometry.
+    // AJapanWorld::BeginPlay generates the island. This level already owns its geometry; the game mode set PlayerStart.
     AActor::BeginPlay();
-    PlayerStart = FTransform(FRotator(0.f, SpawnYaw, 0.f), SpawnGround);
     bLoaded = true;
-}
-
-bool UMegaParkValidation::DumpMeshTriangles(UStaticMesh* Mesh, FVector Origin, const FString& Path)
-{
-    if (!Mesh || !Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return false;
-    const FStaticMeshLODResources& LOD = Mesh->GetRenderData()->LODResources[0];
-    const FIndexArrayView Indices = LOD.IndexBuffer.GetArrayView();
-    const FPositionVertexBuffer& Positions = LOD.VertexBuffers.PositionVertexBuffer;
-    TArray<uint8> Bytes;
-    Bytes.Reserve(Indices.Num() * 3 * sizeof(double));
-    for (int32 Index = 0; Index < Indices.Num(); ++Index)
-    {
-        const FVector P = Origin + FVector(Positions.VertexPosition(Indices[Index]));
-        for (double Value : {P.X, P.Y, P.Z})
-            Bytes.Append(reinterpret_cast<const uint8*>(&Value), sizeof(double));
-    }
-    return FFileHelper::SaveArrayToFile(Bytes, *Path);
 }
 
 bool UMegaParkValidation::ReviewCamera(FVector Location, FVector Target, float Fov)

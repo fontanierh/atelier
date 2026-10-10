@@ -1,4 +1,5 @@
 """Portable pools cannot certify legacy output, share mutable files or restore corrupted entries."""
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -6,7 +7,7 @@ import json
 import pytest
 
 from atelier import artifact_pool as pool
-from atelier.build import Python, Step
+from atelier.build import Python, Step, fingerprint
 
 
 @pytest.fixture
@@ -90,3 +91,17 @@ def test_key_changes_with_real_inputs_tools_and_ownership_but_not_git_head(tmp_p
     assert pool.key(ctx,step,'source')==first
     support.write_text('version=2')
     assert pool.key(ctx,step,'source')!=first
+
+
+def test_status_keys_a_step_on_the_result_its_cutoff_need_recorded(sample, monkeypatch, capsys):
+    ctx,step,cache=sample
+    digest=Step('digest',[Python(Path('digest.py'))],outputs=[ctx.out/'digest.json'],cutoff=True)
+    (ctx.out/'digest.json').write_text('digest')
+    textures=replace(step,needs=['digest']);seen=[]
+    (ctx.stamps/'digest.json').write_text(json.dumps(dict(fingerprint=fingerprint(digest,{}),result='outputs:recorded')))
+    monkeypatch.setattr(pool,'Context',lambda game:ctx)
+    monkeypatch.setattr(pool,'load_recipe',lambda game:SimpleNamespace(steps=lambda c:[digest,textures]))
+    monkeypatch.setattr(pool,'key',lambda ctx,step,current:seen.append(current) or 'identity')
+    monkeypatch.setattr(pool.paths,'cache_dir',lambda *names:cache)
+    assert pool.main('status','sandbox','world.textures')==0
+    assert seen==[fingerprint(textures,{'digest':'outputs:recorded'})]

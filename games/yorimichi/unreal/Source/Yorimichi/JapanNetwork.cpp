@@ -18,10 +18,6 @@
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
 
-#ifndef YORIMICHI_NETWORK_BUILD_ID
-#define YORIMICHI_NETWORK_BUILD_ID "unprepared"
-#endif
-
 namespace JapanNetwork
 {
 void RequestFailureExit()

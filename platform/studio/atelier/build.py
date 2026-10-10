@@ -3,6 +3,8 @@
 A game describes its build in `games/<game>/build.py`, a module with `steps()` returning a list of `Step`s. A step's
 fingerprint is the hash of its inputs (files or folders, by content), its commands, and the fingerprints of the steps
 it needs; `build/<game>/stamps/<step>.json` remembers the last good one. Logs go to `build/<game>/logs/<step>.log`.
+A `cutoff` step gives its dependents the hash of its outputs instead of its fingerprint: when it reruns and makes the
+same outputs, they stay current.
 
 Commands are plain data (`Python`, `Blender`, `UnrealScript`, `UnrealCompile`, `UnrealPackage`, `Call`), so the fingerprint changes
 when a command does.
@@ -13,7 +15,8 @@ guard reports peaked at 3 GiB or less asks for the small slot; a compile, or a s
 one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
 import hashlib, importlib.util, json, os, subprocess, sys, time
-from dataclasses import dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from . import engine, paths
@@ -48,6 +51,11 @@ class Blender:
                 '--python', str(self.script), *extra]
 
 
+GUARD = Path(__file__).with_name('unreal_script_guard.py')
+# What decides an isolated script's editor (the descriptor, the closure) and checks it: inputs of every step it runs in
+ISOLATION = (GUARD, Path(__file__).with_name('unreal_modules.py'))
+
+
 @dataclass
 class UnrealScript:
     """An editor Python script run by UnrealEditor-Cmd on the game's project; `marker` must appear in the log."""
@@ -56,9 +64,34 @@ class UnrealScript:
     null_rhi: bool = False
     env: tuple = ()          # (("NAME", "value"), ...)
     args: tuple = ()         # additional editor arguments for this import
+    # (module, ...): the game's compiled modules the script uses (atelier.unreal_modules). The step needs their module
+    # steps, and the editor loads only those modules and what they need; unreal_script_guard stops it if any other
+    # game or plugin library is loaded when the script ends.
+    modules: tuple = ()
 
-    def argv(self, ctx):
-        command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={self.script}',
+    def __repr__(self):
+        # The fingerprint's view: declared modules count, and a script without them reads as before they existed.
+        shown = [f for f in fields(self) if f.name != 'modules' or self.modules]
+        return f'UnrealScript({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
+
+    def runs(self):
+        """Files the command runs besides the step's inputs: the isolation code, when it has modules."""
+        return list(ISOLATION) if self.modules else []
+
+    @contextmanager
+    def prepared(self, ctx):
+        """(argv, environment) for one run. With modules, the guard runs the script in an editor started on a
+        descriptor that exists until the run ends (atelier.unreal_modules.descriptor)."""
+        if not self.modules:
+            yield self._argv(ctx, ctx.uproject, self.script), self.env
+            return
+        from .unreal_modules import descriptor
+        with descriptor(ctx.uproject, self.modules) as (project, left_out):
+            yield self._argv(ctx, project, GUARD), (*self.env, ('ATELIER_SCRIPT', str(self.script)),
+                                                    ('ATELIER_LEFT_OUT', json.dumps(left_out)))
+
+    def _argv(self, ctx, project, script):
+        command = [str(ctx.unreal_cmd), str(project), '-run=pythonscript', f'-script={script}',
                    '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
         return command + (['-NullRHI'] if self.null_rhi else []) + list(self.args)
 
@@ -123,10 +156,25 @@ class Step:
     explicit: bool = False                         # only when named exactly (a release package): never in a plain
                                                    # or prefix build
     verify: object = field(default=None, compare=False, repr=False)  # () -> bool: outputs whose names vary are present
+    cutoff: bool = False                           # dependents see the hash of its outputs, not its fingerprint
 
 
 def outputs_present(step):
     return all(Path(o).exists() for o in step.outputs) and (step.verify is None or bool(step.verify()))
+
+
+def module_step(module):
+    """The step that records a compiled Unreal module's code digest (atelier.unreal_modules)."""
+    return f'unreal.module.{module}'
+
+
+def check_modules(steps):
+    """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
+    for step in steps:
+        for command in step.commands:
+            missing = [module_step(m) for m in getattr(command, 'modules', ()) if module_step(m) not in step.needs]
+            if missing:
+                raise SystemExit(f'{step.name}: its script uses {missing} but the step does not need them')
 
 
 # ---------------------------------------------------------------- context
@@ -163,7 +211,8 @@ def load_recipe(game):
 
 
 # ---------------------------------------------------------------- fingerprints
-def _hash_path(digest, path):
+def _hash_path(digest, path, skip=True):
+    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS)."""
     path = Path(path)
     if path.is_file():
         digest.update(str(path.name).encode())
@@ -172,9 +221,9 @@ def _hash_path(digest, path):
                 digest.update(chunk)
     elif path.is_dir():
         for child in sorted(path.rglob('*')):
-            if child.is_file() and not SKIP_PARTS & set(child.parts) and child.suffix not in SKIP_SUFFIXES:
+            if child.is_file() and not (skip and (SKIP_PARTS & set(child.parts) or child.suffix in SKIP_SUFFIXES)):
                 digest.update(str(child.relative_to(path)).encode())
-                _hash_path(digest, child)
+                _hash_path(digest, child, skip)
     else:
         digest.update(b'missing:' + str(path).encode())
 
@@ -186,11 +235,26 @@ def fingerprint(step, done):
     commands = repr([c for c in step.commands])
     commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
     digest.update(commands.encode())
-    for item in step.inputs:
+    for item in [*step.inputs, *(f for c in step.commands for f in getattr(c, 'runs', list)())]:
         _hash_path(digest, item)
     for need in step.needs:
         digest.update(done.get(need, 'unbuilt').encode())
     return digest.hexdigest()
+
+
+def outputs_digest(step):
+    """Every file a step made, whatever its folder or suffix."""
+    digest = hashlib.sha256()
+    for output in step.outputs:
+        _hash_path(digest, output, skip=False)
+    return 'outputs:' + digest.hexdigest()
+
+
+def result(step, current, stamp):
+    """What a step's dependents see: its fingerprint, or for a current cutoff step the outputs digest it recorded."""
+    if step.cutoff and stamp.get('fingerprint') == current and stamp.get('result'):
+        return stamp['result']
+    return current
 
 
 # ---------------------------------------------------------------- running
@@ -245,8 +309,14 @@ def run_command(ctx, step, command, log, request=None, slots=None):
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
-    env = ctx.env(getattr(command, 'env', ()))
-    argv = command.argv(ctx)
+    if isinstance(command, UnrealScript):
+        with command.prepared(ctx) as (argv, env):
+            return run_argv(ctx, step, command, argv, env, log, request, slots)
+    return run_argv(ctx, step, command, command.argv(ctx), getattr(command, 'env', ()), log, request, slots)
+
+
+def run_argv(ctx, step, command, argv, env, log, request, slots):
+    env = ctx.env(env)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'
@@ -298,6 +368,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
     ctx = Context(game)
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
+    check_modules(steps)
     plan = order(steps, list(wanted))
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
@@ -305,7 +376,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
     for s in steps:   # fingerprints of steps not in the plan still feed their dependents
         stamp = ctx.stamps / f'{s.name}.json'
         if stamp.exists() and s not in plan:
-            done[s.name] = json.loads(stamp.read_text())['fingerprint']
+            previous = json.loads(stamp.read_text())
+            done[s.name] = previous.get('result', previous['fingerprint'])
     started = time.monotonic()
     for step in plan:
         print_ = f'{step.name:34s}'
@@ -314,7 +386,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         previous = json.loads(stamp.read_text()) if stamp.exists() else {}
         outputs_ok = outputs_present(step)
         if not force and previous.get('fingerprint') == current and outputs_ok:
-            done[step.name] = current
+            done[step.name] = result(step, current, previous)
             echo(f'{print_} up to date')
             continue
         if dry:
@@ -325,8 +397,11 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
             if not outputs_ok:
                 echo(f'{print_} not touched: outputs missing')
                 continue
-            stamp.write_text(json.dumps({'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}) + '\n')
-            done[step.name] = current
+            touched = {'fingerprint': current, 'seconds': previous.get('seconds'), 'time': time.time(), 'touched': True}
+            if step.cutoff:
+                touched['result'] = outputs_digest(step)
+            stamp.write_text(json.dumps(touched) + '\n')
+            done[step.name] = result(step, current, touched)
             echo(f'{print_} touched')
             continue
         pool_key = None
@@ -358,14 +433,16 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        result = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        if step.cutoff:
+            record['result'] = outputs_digest(step)
         if pool_key is not None:
             if fingerprint(step, done) != current or artifact_pool.key(ctx, step, current) != pool_key:
                 stamp.unlink(missing_ok=True)
                 raise RuntimeError('Pool tool context changed during build; outputs not certified')
-            result['pool_key'] = pool_key
-        stamp.write_text(json.dumps(result) + '\n')
-        done[step.name] = current
+            record['pool_key'] = pool_key
+        stamp.write_text(json.dumps(record) + '\n')
+        done[step.name] = result(step, current, record)
         ran += 1
         echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
     echo(f'{len(plan)} steps, {ran} ran, {time.monotonic() - started:.0f} s')

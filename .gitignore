@@ -12,6 +12,8 @@ games/*/unreal/Binaries/
 games/*/unreal/Intermediate/
 games/*/unreal/Saved/
 games/*/unreal/DerivedDataCache/
+# exist only while a guarded editor script runs (atelier.unreal_modules.descriptor); kept out of commits if one is killed
+games/*/unreal/*_????????.uproject
 # Files BuildCookRun writes into the project on every Mac package run (counters, cook logs, templates it copies in when
 # missing, PixelStreaming helper scripts). Listed one by one so authored build resources are never hidden.
 games/*/unreal/Build/Mac/unreal.PackageVersionCounter

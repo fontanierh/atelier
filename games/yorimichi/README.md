@@ -110,7 +110,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `assets/characters/` | the default player (`cairo`), playable rival (`modori`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`) and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
 | `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park |
-| `unreal/` | the Unreal project: `Source/Yorimichi` (C++), `Config`, `Scripts` (editor import scripts); `Content` is build output |
+| `unreal/` | the Unreal project: `Source` (C++: the game in `Yorimichi`, the types imports save in `YorimichiAssets`, the import tools in `YorimichiImport`), `Config`, `Scripts` (editor import scripts); `Content` is build output |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
 | `tests/` | Python and C++ tests for the skating data, the Mega Park and sprint stamina |

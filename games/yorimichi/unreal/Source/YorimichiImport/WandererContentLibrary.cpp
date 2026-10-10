@@ -1,23 +1,11 @@
-#include "WandererDefinition.h"
+#include "WandererContentLibrary.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/BlendSpace.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/SkinnedAssetCommon.h"
 
-UAnimSequence* UWandererDefinition::FindAction(FName Name) const
-{
-    const TObjectPtr<UAnimSequence>* Entry = Actions.Find(Name);
-    return Entry ? Entry->Get() : nullptr;
-}
-
-const FWandererSwordClip* UWandererDefinition::FindSwordClip(FName Role) const
-{
-    return SwordClips.FindByPredicate([Role](const FWandererSwordClip& C) { return C.Role == Role; });
-}
-
 bool UWandererContentLibrary::ConfigureMeshLODs(USkeletalMesh* Asset)
 {
-#if WITH_EDITOR
     if (!Asset || Asset->GetLODNum() == 0) return false;
     Asset->Modify();
     Asset->SetNumSourceModels(3);
@@ -34,27 +22,19 @@ bool UWandererContentLibrary::ConfigureMeshLODs(USkeletalMesh* Asset)
     }
     Asset->MarkPackageDirty();
     return true;
-#else
-    return false;
-#endif
 }
 
 bool UWandererContentLibrary::ConfigureBlendSpaceWithRates(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds, const TArray<float>& Rates)
 {
-#if WITH_EDITOR
     if (Rates.Num() != Clips.Num() || !ConfigureBlendSpace(Asset, Clips, Speeds)) return false;
     for (int32 I = 0; I < Rates.Num(); ++I) const_cast<FBlendSample&>(Asset->GetBlendSample(I)).RateScale = Rates[I];
     Asset->PostEditChange();
     Asset->MarkPackageDirty();
     return true;
-#else
-    return false;
-#endif
 }
 
 bool UWandererContentLibrary::ConfigureBlendSpace(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds)
 {
-#if WITH_EDITOR
     if (!Asset || Clips.IsEmpty() || Clips.Num() != Speeds.Num()) return false;
     for (UAnimSequence* Clip : Clips) if (!Clip) return false;
     Asset->Modify();
@@ -67,7 +47,4 @@ bool UWandererContentLibrary::ConfigureBlendSpace(UBlendSpace* Asset, const TArr
     Asset->PostEditChange();
     Asset->MarkPackageDirty();
     return true;
-#else
-    return false;
-#endif
 }

@@ -12,6 +12,16 @@
         "Engine",
         "EnhancedInput"
       ]
+    },
+    {
+      "Name": "YorimichiAssets",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "YorimichiImport",
+      "Type": "UncookedOnly",
+      "LoadingPhase": "Default"
     }
   ],
   "AdditionalPluginDirectories": [

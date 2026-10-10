@@ -9,5 +9,6 @@ public class YorimichiEditorTarget : TargetRules
         DefaultBuildSettings = BuildSettingsVersion.Latest;
         IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
         ExtraModuleNames.Add("Yorimichi");
+        ExtraModuleNames.Add("YorimichiImport");
     }
 }

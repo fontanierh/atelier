@@ -75,3 +75,66 @@ def test_target_files_in_copied_folders_are_found_tracked_ones_are_not(tmp_path)
     (tmp_path / 'build/game/logs/step.log').write_text('not copied')
     assert sorted(reuse.occupied(tmp_path, ['Content', 'build/game/data', 'Binaries'])) == [
         'Binaries/new.dylib', 'Content/Mesh.uasset', 'build/game/data/identity.json']
+
+
+
+def test_a_fresh_target_reuses_a_cutoff_step_and_its_dependents(tmp_path):
+    """Copied cutoff outputs, with no stamps yet, give their dependents the fingerprints the source's stamps give: reuse
+    copies, verifies and only then writes stamps. A copied output that differs is not certified."""
+    import contextlib, io, json
+    from types import SimpleNamespace
+    from unittest.mock import patch
+    from atelier import build, manifest, paths
+
+    def write(path, content):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+    source, target, engine = [tmp_path / x for x in ('source', 'target', 'engine')]
+    write(engine / 'Engine/Build/Build.version', '{}')
+    write(engine / 'Engine/Binaries/Mac/UnrealEditor.modules', '{"BuildId":"1"}')
+    for repo in (source, target):
+        write(repo / 'source.txt', 'same source')
+        write(repo / 'games/standin/unreal/Standin.uproject', '{}')
+    project = source / 'games/standin/unreal'
+    write(project / 'Binaries/Mac/libUnrealEditor-Standin.dylib', 'compiled module')
+    write(project / 'Binaries/Mac/StandinEditor.target', '{"Version":{}}')
+    write(project / 'Binaries/Mac/UnrealEditor.modules', '{"BuildId":"1"}')
+    write(project / 'Content/Result.uasset', 'saved import')
+    write(source / 'build/standin/digest.txt', 'module digest')
+    current = source
+
+    def context(game):
+        out = current / 'build/standin'
+        return SimpleNamespace(out=out, stamps=out / 'stamps', unreal_root=engine,
+                               uproject=current / 'games/standin/unreal/Standin.uproject')
+
+    def steps(ctx):
+        return [build.Step('digest', [], inputs=[ctx.out.parents[1] / 'source.txt'], outputs=[ctx.out / 'digest.txt'], cutoff=True),
+                build.Step('import', [], needs=['digest'], outputs=[ctx.uproject.parent / 'Content/Result.uasset'])]
+
+    def inspect(repo, game):
+        nonlocal current
+        current = repo
+        out = io.StringIO()
+        with patch.object(paths, 'REPO', current), contextlib.redirect_stdout(out):
+            exec("GAME='standin'\n" + reuse.INSPECT, {})
+        return json.loads(out.getvalue())
+
+    with patch.object(build, 'Context', context), patch.object(build, 'load_recipe', lambda game: SimpleNamespace(steps=steps)), \
+            patch.object(manifest, 'game', lambda game: {'editor_target': 'StandinEditor'}), \
+            patch.object(reuse, 'inspect', inspect), patch.object(reuse, 'occupied', lambda *args: []), \
+            patch.object(reuse, 'git', lambda repo, *args: 'revision' if args[0] == 'rev-parse' else ''), \
+            patch.object(reuse, 'render_lock', lambda *args: contextlib.nullcontext()):
+        producer, consumer = steps(context('standin'))
+        published = build.outputs_digest(producer)
+        write(source / 'build/standin/stamps/digest.json', json.dumps({'fingerprint': build.fingerprint(producer, {}), 'result': published}))
+        write(source / 'build/standin/stamps/import.json', json.dumps({'fingerprint': build.fingerprint(consumer, {'digest': published})}))
+        assert reuse.main('standin', source, target) == 0
+        verified = inspect(target, 'standin')
+        assert all(step['stamp']['fingerprint'] == step['fingerprint'] for step in verified['steps'])
+        assert verified['steps'][0]['stamp']['result'] == published
+        (target / 'build/standin/digest.txt').write_text('another digest')
+        assert reuse._inputs(inspect(target, 'standin')) != reuse._inputs(verified)
+    (target / 'games/standin/unreal/Content/Result.uasset').write_text('changed target asset')
+    assert (project / 'Content/Result.uasset').read_text() == 'saved import'

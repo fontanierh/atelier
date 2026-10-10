@@ -94,7 +94,7 @@ for entry in park['meshes']:
     assert max(abs(a-b) for a,b in zip(lo+hi, want_lo+want_hi)) < .5, (name, 'unit/axis conversion', lo, hi)
     triangles = OUT / 'import-audit' / (name+'.triangles.f64')
     triangles.parent.mkdir(exist_ok=True)
-    assert unreal.MegaParkValidation.dump_mesh_triangles(mesh, unreal.Vector(), str(triangles))
+    assert unreal.MeshImportAudit.dump_mesh_triangles(mesh, unreal.Vector(), str(triangles))
     report['meshes'][name] = {'bounds_min_cm': lo, 'bounds_max_cm': hi, 'material': key,
                             'uv_channels': subsystem.get_num_uv_channels(mesh, 0)}
 (OUT / 'import-report.json').write_text(json.dumps(report, indent=2)+'\n')

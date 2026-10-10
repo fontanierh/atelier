@@ -84,7 +84,7 @@ try:
   except OSError:time.sleep(1)
  else:raise RuntimeError('Bridge startup timed out')
  (out/'initial-state.json').write_text(json.dumps(state,indent=2))
- run("import unreal, json, math\nw=unreal.LiveLibrary.game_world()\np=unreal.LiveLibrary.player()\nprint(w.get_name(),p.get_name(),unreal.YorimichiLive.skate_state())\nassert len(unreal.GameplayStatics.get_all_actors_of_class(w,unreal.SuperUltraMegaPark))==1\nprint('one park')"+("" if args.island else "\nassert len(unreal.GameplayStatics.get_all_actors_of_class(w,unreal.MegaParkWorld))==1\nassert len(unreal.GameplayStatics.get_all_actors_of_class(w,unreal.LeafStorm))==0\nprint('level services and no leaf storm passed')"))
+ run("import unreal, json, math\nw=unreal.LiveLibrary.game_world()\np=unreal.LiveLibrary.player()\nprint(w.get_name(),p.get_name(),unreal.YorimichiLive.skate_state())\nparks=unreal.GameplayStatics.get_all_actors_of_class(w,unreal.SuperUltraMegaPark)\nassert len(parks)==1\nrails=len(parks[0].get_editor_property('layout').get_editor_property('rails'))\nassert rails>0,'the park has no grind paths'\nprint('one park,',rails,'rails')"+("" if args.island else "\nassert len(unreal.GameplayStatics.get_all_actors_of_class(w,unreal.MegaParkWorld))==1\nassert len(unreal.GameplayStatics.get_all_actors_of_class(w,unreal.LeafStorm))==0\nprint('level services and no leaf storm passed')"))
  source=json.loads((yori.ASSETS/'megapark/map.json').read_text())
  triangles=np.concatenate([np.load(yori.ASSETS/'megapark'/m['npz'],allow_pickle=False)['triangles'] for m in source['collision']]).astype('f8')
  a,b,c=triangles[:,0],triangles[:,1],triangles[:,2]

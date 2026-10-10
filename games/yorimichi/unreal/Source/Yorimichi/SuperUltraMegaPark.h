@@ -5,25 +5,12 @@
 #include "GameFramework/GameModeBase.h"
 #include "JapanWorld.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "MegaParkLayout.h"
 #include "SuperUltraMegaPark.generated.h"
 
-class UStaticMesh;
-
-/** Original rail identity and curve data, with contact points in Unreal centimetres. */
-USTRUCT(BlueprintType)
-struct FMegaParkRail
-{
-    GENERATED_BODY()
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) FString SourceId;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) bool Closed = false;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FVector> Points;
-    /** Untouched big-endian 120-byte cubic segment payloads; retained for native curve consumers. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FString> OriginalSegments;
-};
-
-/** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors; in the
- *  island, Spawn places the park from its manifest and owns the meshes as components (docs/MEGAPARK.md). */
+/** The park's grind paths. In the standalone level, render and collision geometry are ordinary StaticMeshActors and
+ *  the game mode spawns this actor from the level's AMegaParkLayout; in the island, Spawn places the park from its
+ *  manifest and owns the meshes as components (docs/MEGAPARK.md). */
 UCLASS()
 class YORIMICHI_API ASuperUltraMegaPark : public AActor
 {
@@ -36,11 +23,7 @@ public:
      *  replace the original plants and the kei cars that replace its traffic cars. Null if the file is missing. */
     static ASuperUltraMegaPark* Spawn(UWorld* World, const FString& Path);
     bool bGameplayReady = false;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") FString SourceManifestHash;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Source") TArray<FMegaParkRail> Rails;
-    /** The upper deck start, in Unreal world space. */
-    FVector SpawnLocation = FVector::ZeroVector;
-    float SpawnYaw = 0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Source") FMegaParkLayoutData Layout;
 private:
     void RegisterRails();
     bool bRailsRegistered = false;
@@ -56,6 +39,9 @@ public:
     AMegaParkGameMode();
     /** -rider=<Name> plays as an adventure character (PlayableCharacter.h). */
     virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
+    /** Spawns the park's grind paths and player services from the level's AMegaParkLayout. A level saved before it had
+     *  one (an old import) has neither: the error says to rebuild it. */
+    virtual void StartPlay() override;
     virtual void BeginPlay() override;
 };
 
@@ -67,17 +53,14 @@ class YORIMICHI_API AMegaParkWorld : public AJapanWorld
 public:
     AMegaParkWorld();
     virtual void BeginPlay() override;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) FVector SpawnGround;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite) float SpawnYaw = 0.f;
 };
 
-/** Import audit: exports the actual built LOD triangles for source comparison. */
+/** Review cameras for scenarios: frame a view of the park, then give the player back their camera. */
 UCLASS()
 class YORIMICHI_API UMegaParkValidation : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
-    UFUNCTION(BlueprintCallable) static bool DumpMeshTriangles(UStaticMesh* Mesh, FVector Origin, const FString& Path);
     UFUNCTION(BlueprintCallable) static bool ReviewCamera(FVector Location, FVector Target, float Fov = 65.f);
     UFUNCTION(BlueprintCallable) static void RestorePlayerCamera();
 };
