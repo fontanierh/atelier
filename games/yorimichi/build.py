@@ -33,10 +33,10 @@ SKATE_DATA = paths.ENGINE_PLUGINS / 'Activities/Skate/Data'
 RIDE_IMPORT_BATCHES, RIDE_VERIFY_BATCHES = 4, 2   # editor runs of the clip import and its verification
 TREEHOUSE = REGIONS / 'treehouse'
 SOURCE = GAME / 'unreal' / 'Source'
-# The compiled modules imports depend on (atelier.unreal_modules): the import tools' code (Source/YorimichiImport),
-# and the classes of the game module that imports save in assets. Other C++ edits leave the imports current.
-IMPORT_CODE = (('YorimichiImport', 'code'),)
-GAME_CLASSES = (('Yorimichi', 'interface'),)
+# The compiled modules imports use (atelier.unreal_modules): the import tools (Source/YorimichiImport) and the types
+# imports save in assets (Source/YorimichiAssets). Gameplay edits leave the imports current.
+IMPORT_CODE = ('YorimichiImport',)
+SAVED_TYPES = ('YorimichiAssets',)
 NAMES = paths.STUDIO / 'atelier' / 'character'
 YORI = WORLD / 'yori.py'
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
@@ -226,9 +226,9 @@ def modori_steps(out):
              outputs=[out / 'modori' / 'export.json'], about="Modori's body, coat (its cloth mask in the vertex colours) and textures, to FBX"),
         # Builds his cloth with the import tools and saves his definition, a game class.
         Step('unreal.modori', [UnrealScript(SCRIPTS / 'import_modori.py', 'MODORI IMPORT COMPLETE', null_rhi=True,
-                                            modules=IMPORT_CODE + GAME_CLASSES)],
+                                            modules=IMPORT_CODE + SAVED_TYPES)],
              inputs=[SCRIPTS / 'import_modori.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
-             needs=['characters.modori', *unreal_modules.needs(IMPORT_CODE + GAME_CLASSES)], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
+             needs=['characters.modori', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
         Step('characters.modori_adventure', [retarget], inputs=retarget_inputs, needs=['characters.adventure', 'characters.cairo_adventure'],
              outputs=[out / 'modori' / 'adventure' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
@@ -453,7 +453,7 @@ def unreal_steps(ctx):
     return [
         # ------------------------------------------------------------ Unreal
         # Imports run `after` the compile (the editor must load the module) but do not rerun when C++ changes, except
-        # those that declare the modules they use (IMPORT_CODE, GAME_CLASSES); the later imports run after the world
+        # those that declare the modules they use (IMPORT_CODE, SAVED_TYPES); the later imports run after the world
         # (materials and folders it creates) without rerunning when it is reimported.
         # The Skate plugin's simulation package: the runtime payloads, rig, clips and metadata banks built from its runtime
         # and motion text, every payload checked against its manifest. The game reads them from typed assets
@@ -467,7 +467,7 @@ def unreal_steps(ctx):
              about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + GAME_CLASSES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              inputs=[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
@@ -490,9 +490,9 @@ def unreal_steps(ctx):
         # Audits its meshes with the import tools and places the park's actors, game classes.
         Step('unreal.megapark', [UnrealScript(SCRIPTS / 'import_megapark.py', 'MEGAPARK IMPORT COMPLETE', null_rhi=True,
                                             args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',),
-                                            modules=IMPORT_CODE + GAME_CLASSES)],
+                                            modules=IMPORT_CODE + SAVED_TYPES)],
              inputs=[SCRIPTS / 'import_megapark.py'],
-             needs=['world.megapark', 'world.megapark_restyle', *unreal_modules.needs(IMPORT_CODE + GAME_CLASSES)],
+             needs=['world.megapark', 'world.megapark_restyle', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)],
              outputs=[GAME / 'unreal' / 'Content' / 'MegaPark' / 'Maps' / 'SuperUltraMegaPark.umap'],
              heavy=True, about='editable standalone Super Ultra Mega Park level (/Game/MegaPark)'),
         Step('unreal.houses', [UnrealScript(SCRIPTS / 'import_houses.py', 'HOUSES IMPORT COMPLETE')],

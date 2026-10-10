@@ -1,4 +1,4 @@
-import contextlib, io, json, os, tempfile, types, unittest
+import contextlib, io, json, os, sys, tempfile, types, unittest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -53,189 +53,211 @@ class CutoffTests(unittest.TestCase):
         self.assertEqual(self.run_build('import'), ['import'])
 
 
+    def test_outputs_count_in_any_folder(self):
+        binaries = Path(self.temp.name) / 'out' / 'Binaries' / 'module.dylib'
+        binaries.parent.mkdir(parents=True); binaries.write_bytes(b'1')
+        step = Step('compile', [], outputs=[binaries.parent.parent], cutoff=True)
+        before = builder.outputs_digest(step)
+        binaries.write_bytes(b'2')
+        self.assertNotEqual(builder.outputs_digest(step), before)
+
+
 class DeclaredModuleTests(unittest.TestCase):
     def test_a_script_must_need_the_module_steps_it_declares(self):
-        script = UnrealScript(Path('import.py'), 'DONE', modules=(('Tools', 'code'), ('Game', 'interface')))
+        script = UnrealScript(Path('import.py'), 'DONE', modules=('Tools', 'Assets'))
         check_modules([Step('unreal.import', [script], needs=unreal_modules.needs(script.modules))])
         with self.assertRaises(SystemExit):
-            check_modules([Step('unreal.import', [script], needs=['unreal.module.Tools.code'])])
+            check_modules([Step('unreal.import', [script], needs=['unreal.module.Tools'])])
 
-    def test_declared_modules_do_not_change_a_command_fingerprint(self):
-        plain = UnrealScript(Path('import.py'), 'DONE')
-        declared = UnrealScript(Path('import.py'), 'DONE', modules=(('Tools', 'code'),))
-        self.assertEqual(repr(plain), repr(declared))
+    def test_a_plain_script_keeps_its_fingerprint(self):
+        self.assertEqual(repr(UnrealScript(Path('import.py'), 'DONE')),
+                         "UnrealScript(script=PosixPath('import.py'), marker='DONE', null_rhi=False, env=(), args=())")
+
+    def test_changing_the_declared_modules_reruns_the_import(self):
+        """Even when the step still needs both digests (another command uses them): the new boundary must run."""
+        def step(modules):
+            return Step('import', [UnrealScript(Path('import.py'), 'DONE', modules=modules)],
+                        needs=['unreal.module.Tools', 'unreal.module.Assets'])
+        done = {'unreal.module.Tools': 'outputs:tools', 'unreal.module.Assets': 'outputs:assets'}
+        check_modules([step(('Tools', 'Assets')), step(('Tools',))])
+        self.assertNotEqual(builder.fingerprint(step(('Tools', 'Assets')), done), builder.fingerprint(step(('Tools',)), done))
+
+    def test_the_isolation_code_is_part_of_a_guarded_step_fingerprint(self):
+        """The guard and the code that decides the descriptor: a revised isolation rule reruns the imports."""
+        for index, original in enumerate(builder.ISOLATION):
+            with tempfile.TemporaryDirectory() as temp:
+                copy = Path(temp) / original.name
+                copy.write_text(original.read_text())
+                isolation = tuple(copy if i == index else path for i, path in enumerate(builder.ISOLATION))
+                with patch.object(builder, 'ISOLATION', isolation):
+                    guarded = Step('unreal.import', [UnrealScript(Path('import.py'), 'DONE', modules=('Tools',))])
+                    plain = Step('unreal.import', [UnrealScript(Path('import.py'), 'DONE')])
+                    before = builder.fingerprint(guarded, {}), builder.fingerprint(plain, {})
+                    copy.write_text(copy.read_text() + '\n# changed\n')
+                    self.assertNotEqual(builder.fingerprint(guarded, {}), before[0], original.name)
+                    self.assertEqual(builder.fingerprint(plain, {}), before[1], original.name)
+
+    def test_the_digest_implementation_is_part_of_its_step_fingerprint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            copy = Path(temp) / 'unreal_modules.py'
+            copy.write_text(Path(unreal_modules.__file__).read_text())
+            ctx = types.SimpleNamespace(out=Path(temp) / 'out')
+            with patch.object(unreal_modules, '__file__', str(copy)):
+                fingerprint = lambda: builder.fingerprint(unreal_modules.steps(ctx, ['Tools'])[0], {'unreal.compile': 'same'})
+                before = fingerprint()
+                copy.write_text(copy.read_text().replace('hashlib.sha256', 'hashlib.sha512'))
+                self.assertNotEqual(fingerprint(), before)
 
 
 class ModuleDigestTests(unittest.TestCase):
-    """A stand-in project: Tools links the Kit plugin module; Game is unrelated; the engine is outside the repository."""
+    """A stand-in compiled project: Tools links the Kit plugin's module, whose plugin needs the Base plugin and has a
+    second module (KitEditor) that nothing links, and a third that the editor target does not build; Game is unrelated;
+    the engine's libraries are not the project's."""
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.repo = Path(self.temp.name) / 'repo'; self.engine = Path(self.temp.name) / 'Epic Games' / 'engine'   # .d files escape the space
-        self.project = self.repo / 'game'
-        binaries = self.project / 'Binaries' / 'Mac'
-        binaries.mkdir(parents=True)
-        (binaries / 'UnrealEditor.modules').write_text(json.dumps({'BuildId': '1', 'Modules': {
-            'Tools': 'libUnrealEditor-Tools.dylib', 'Game': 'libUnrealEditor-Game.dylib', 'Kit': 'libUnrealEditor-Kit.dylib'}}))
-        for name in ('game/Source/Game/Game.cpp', 'plugins/Kit/Kit.h'):
-            self.write(self.repo / name, f'// {name}\n')
-        self.header, self.source = self.repo / 'game/Source/Tools/Tool.h', self.repo / 'game/Source/Tools/Tool.cpp'
-        self.write(self.header, 'UCLASS()\nclass TOOLS_API UTool : public UKitBase\n{\n    UPROPERTY() float Speed = 1.f;\n};\n')
-        self.write(self.source, 'UTool::UTool()\n    : Reach{2}\n{\n    Speed = 3.f;\n}\n\nvoid UTool::Run() { Speed = 4.f; }\n')
-        self.kit = self.repo / 'plugins/Kit/Public/KitBase.h'
-        self.write(self.kit, 'UCLASS()\nclass KIT_API UKitBase : public UObject\n{\n    UPROPERTY() int32 Size = 1;\n};\n')
-        self.write(self.engine / 'Engine.h', 'engine\n')
-        uht = self.project / 'Intermediate' / 'Build' / 'Mac' / 'UnrealEditor' / 'Inc' / 'Tools' / 'UHT'
-        self.generated = uht / 'Tool.generated.h'
-        self.write(self.generated, '// ********** Begin Class UTool *****\n#define FID_repo_game_Source_Tools_Tool_h_12_GENERATED_BODY\nUPROPERTY Speed\n')
-        self.write(uht / 'Tool.gen.cpp', 'CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UTool), 123U)\n')
-        kit_uht = self.repo / 'plugins/Kit/Intermediate/Build/Mac/UnrealEditor/Inc/Kit/UHT'
-        self.write(kit_uht / 'KitBase.generated.h', '// ********** Begin Class UKitBase *****\n')
-        module = lambda name, base, output, headers: {'Name': name, 'BaseDirectory': str(base), 'OutputDirectory': str(output),
-                                                      'ClassesHeaders': [], 'PublicHeaders': [str(h) for h in headers],
-                                                      'InternalHeaders': [], 'PrivateHeaders': []}
-        self.write(self.project / 'Intermediate/Build/Mac/GameEditor/GameEditor.uhtmanifest', json.dumps({'Modules': [
-            module('Tools', self.header.parent, uht, [self.header]), module('Kit', self.kit.parent.parent, kit_uht, [self.kit]),
-            module('Engine', self.engine, self.engine / 'Inc', [])]}))
-        tools = self.objects('Build', 'Tools')
-        escaped = str(self.engine).replace(' ', '\\ ')
-        self.write(tools / 'Tool.cpp.d', f'{tools}/Tool.cpp.o: \\\n  {self.repo}/game/Source/Tools/Tool.cpp \\\n'
-                   f'  {self.repo}/game/Source/Tools/Tool.h {escaped}/Engine.h Runtime/Core.h \\\n  {self.generated} {uht}/Tool.gen.cpp\n')
-        self.write(tools / 'Definitions.Tools.h', '#define TOOLS_API\n')
-        self.write(tools / 'libUnrealEditor-Tools.dylib.rsp', f'"{binaries}/libUnrealEditor-Kit.dylib"\n"../Binaries/Mac/libUnrealEditor-Engine.dylib"\n')
-        kit = self.objects('External/Build', 'Kit')
-        self.write(kit / 'Kit.cpp.d', f'{kit}/Kit.cpp.o: {self.repo}/plugins/Kit/Kit.h\n')
-        game = self.objects('Build', 'Game')
-        self.write(game / 'Game.cpp.d', f'{game}/Game.cpp.o: {self.repo}/game/Source/Game/Game.cpp\n')
+        self.project = Path(self.temp.name) / 'Epic Games' / 'game'
+        self.uproject = self.project / 'Game.uproject'
+        self.write(self.uproject, json.dumps({'Modules': [{'Name': 'Game', 'Type': 'Runtime'}, {'Name': 'Tools', 'Type': 'Editor'}],
+                                              'Plugins': [{'Name': 'Kit', 'Enabled': True}],
+                                              'AdditionalPluginDirectories': ['../plugins']}))
+        self.write(self.project.parent / 'plugins/Kit/Kit.uplugin', json.dumps({'Modules': [{'Name': 'Kit'}, {'Name': 'KitEditor'}, {'Name': 'KitProgram'}],
+                                                                                'Plugins': [{'Name': 'Base', 'Enabled': True}]}))
+        self.write(self.project.parent / 'plugins/Base/Base.uplugin', json.dumps({'Modules': [{'Name': 'Base'}]}))
+        self.write(self.project.parent / 'plugins/Other/Other.uplugin', json.dumps({'Modules': [{'Name': 'Other'}]}))
+        self.binaries = self.project / 'Binaries' / 'Mac'
+        names = ('Tools', 'Game', 'Kit', 'KitEditor', 'Base', 'Other')
+        self.write(self.binaries / 'UnrealEditor.modules', json.dumps({'BuildId': '1', 'Modules': {
+            name: f'libUnrealEditor-{name}.dylib' for name in names}}))
+        for name in names:
+            self.write(self.library(name), f'{name} 1')
+        self.config = self.project / 'Config' / 'DefaultGame.ini'
+        self.write(self.config, '[/Script/Tools.Tool]\nSpeed=1\n')
+        self.plugin_config = self.project.parent / 'plugins/Kit/Config/DefaultKit.ini'
+        self.write(self.plugin_config, '[/Script/Kit.Kit]\nSize=1\n')
+        self.write(self.project.parent / 'plugins/Other/Config/DefaultOther.ini', '[/Script/Other.Other]\nSize=1\n')
+        self.loads = {'libUnrealEditor-Tools.dylib': ['libUnrealEditor-Kit.dylib', 'libUnrealEditor-Engine.dylib']}
+        links = patch.object(unreal_modules, 'links', lambda library: self.loads.get(Path(library).name, []))
+        links.start(); self.addCleanup(links.stop)
 
-    def objects(self, folder, module):
-        return self.project / 'Intermediate' / folder / 'Mac' / 'arm64' / 'UnrealEditor' / 'Development' / module
+    def library(self, name):
+        return self.binaries / f'libUnrealEditor-{name}.dylib'
 
     def write(self, path, text):
         path.parent.mkdir(parents=True, exist_ok=True); path.write_text(text)
 
     def code(self):
-        return unreal_modules.code(self.project, 'Tools', repo=self.repo, unreal_root=self.engine)
+        return unreal_modules.code(self.uproject, 'Tools')
 
-    def test_code_covers_the_module_and_the_modules_it_links_but_not_the_engine(self):
-        self.assertEqual(sorted(self.code()), ['<Tools>/Definitions.Tools.h', 'game/Source/Tools/Tool.cpp',
-                                               'game/Source/Tools/Tool.h', 'plugins/Kit/Kit.h'])
+    def test_closure_follows_links_and_whole_plugins(self):
+        self.assertEqual(unreal_modules.closure(self.uproject, ['Tools']), {'Tools', 'Kit', 'KitEditor', 'Base'})
+        self.assertEqual(unreal_modules.closure(self.uproject, ['Game']), {'Game'})
 
-    def test_code_leaves_out_objects_whose_source_is_gone(self):
-        tools = self.objects('Build', 'Tools')
-        self.write(tools / 'Moved.cpp.d', f'{tools}/Moved.cpp.o: {self.repo}/game/Source/Tools/Moved.cpp {self.repo}/game/Moved.h\n')
-        self.assertNotIn('game/Moved.h', self.code())
+    def test_code_covers_the_closure_its_descriptors_and_config(self):
+        self.assertEqual(sorted(self.code()), ['<Kit>/Config/DefaultKit.ini', '<config>/Config/DefaultGame.ini', 'Base.uplugin', 'Game.uproject',
+                                               'Kit.uplugin', 'libUnrealEditor-Base.dylib', 'libUnrealEditor-Kit.dylib',
+                                               'libUnrealEditor-KitEditor.dylib', 'libUnrealEditor-Tools.dylib'])
 
-    def test_code_changes_with_its_sources_only(self):
+    def test_code_changes_with_what_was_compiled_and_config_only(self):
+        """A rebuilt library counts whatever changed it: sources, generated code, compiler options or build rules."""
         before = self.code()
-        self.write(self.repo / 'game/Source/Game/Game.cpp', '// another edit\n')
-        self.write(self.engine / 'Engine.h', 'engine 2\n')
+        self.write(self.library('Game'), 'Game 2')
+        self.write(self.library('Other'), 'Other 2')
+        self.write(self.project.parent / 'plugins/Other/Config/DefaultOther.ini', 'Size=2\n')
         self.assertEqual(self.code(), before)
-        self.write(self.repo / 'plugins/Kit/Kit.h', '// changed\n')
-        self.assertNotEqual(self.code(), before)
-
-    def interface(self):
-        return unreal_modules.interface(self.project, 'Tools', repo=self.repo)
-
-    def test_interface_ignores_paths_lines_and_reload_checksums(self):
-        before = self.interface()
-        self.write(self.generated, '// ********** Begin Class UTool *****\n#define FID_other_checkout_Source_Tools_Tool_h_40_GENERATED_BODY\nUPROPERTY Speed\n')
-        self.write(self.generated.with_name('Tool.gen.cpp'), 'CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UTool), 987U)\n')
-        self.assertEqual(self.interface(), before)
-        self.write(self.generated, '// ********** Begin Class UTool *****\nUPROPERTY TopSpeed\n')
-        self.assertNotEqual(self.interface(), before)
-
-    def test_interface_covers_defaults_but_not_comments_or_other_functions(self):
-        before = self.interface()
-        self.assertIn('UTool::UTool', before)
-        self.write(self.source, self.source.read_text().replace('Run() { Speed = 4.f; }', 'Run() { Speed = 5.f; }'))
-        self.write(self.header, '// a comment\n' + self.header.read_text())
-        self.assertEqual(self.interface(), before)
-        for path, old, new in ((self.header, 'Speed = 1.f', 'Speed = 2.f'), (self.source, 'Speed = 3.f', 'Speed = 6.f'),
-                               (self.source, 'Reach{2}', 'Reach{3}'), (self.kit, 'Size = 1', 'Size = 2')):
+        for path in (self.library('Tools'), self.library('Kit'), self.library('KitEditor'), self.library('Base'),
+                     self.config, self.plugin_config, self.uproject):
             text = path.read_text()
-            self.write(path, text.replace(old, new))
-            self.assertNotEqual(self.interface(), before, (path.name, new))
+            self.write(path, text + ' ')
+            self.assertNotEqual(self.code(), before, path.name)
             self.write(path, text)
-        self.assertEqual(self.interface(), before)
-
-    def test_a_double_slash_in_a_string_is_not_a_comment(self):
-        self.write(self.header, self.header.read_text().replace('Speed = 1.f;', 'Speed = 1.f; FString Url = TEXT("https://a");'))
-        before = self.interface()
-        self.write(self.header, self.header.read_text().replace('"https://a"', '"https://b"'))
-        self.assertNotEqual(self.interface(), before)
+        self.assertEqual(self.code(), before)
 
     def test_record_writes_a_stable_digest(self):
         output = Path(self.temp.name) / 'digest.json'
-        with patch.object(paths, 'REPO', self.repo):
-            first = unreal_modules.record(self.project, 'Tools', 'code', output)
-            text = output.read_text()
-            self.assertEqual(unreal_modules.record(self.project, 'Tools', 'code', output), first)
+        first = unreal_modules.record(self.uproject, 'Tools', output)
+        text = output.read_text()
+        self.assertEqual(unreal_modules.record(self.uproject, 'Tools', output), first)
         self.assertEqual(output.read_text(), text)
 
     def test_a_module_that_was_not_compiled_is_an_error(self):
         with self.assertRaises(SystemExit):
-            unreal_modules.code(self.project, 'Missing', repo=self.repo, unreal_root=self.engine)
+            unreal_modules.code(self.uproject, 'Missing')
+        self.library('Kit').unlink()
         with self.assertRaises(SystemExit):
-            unreal_modules.interface(self.project, 'Missing', repo=self.repo)
+            self.code()
 
+    def test_the_descriptor_loads_only_the_closure(self):
+        with unreal_modules.descriptor(self.uproject, ['Tools']) as (path, left_out):
+            self.assertEqual(path.parent, self.project)
+            contents = json.loads(path.read_text())
+            self.assertEqual([m['Name'] for m in contents['Modules']], ['Tools'])
+            self.assertEqual(contents['Plugins'], [{'Name': 'Kit', 'Enabled': True}, {'Name': 'Other', 'Enabled': False}])
+            self.assertEqual([Path(p).name for p in left_out], ['libUnrealEditor-Game.dylib', 'libUnrealEditor-Other.dylib'])
+        with unreal_modules.descriptor(self.uproject, ['Tools']) as (again, _):
+            self.assertEqual(again, path)        # the same project name on every run
+        with unreal_modules.descriptor(self.uproject, ['Game']) as (other, _):
+            self.assertNotEqual(other, path)
 
-class Package:
-    def __init__(self, path): self.path = path
-    def get_path_name(self): return self.path
+    def test_the_descriptor_exists_only_for_its_run(self):
+        with unreal_modules.descriptor(self.uproject, ['Tools']) as (path, _):
+            self.assertTrue(path.is_file())
+        self.assertFalse(path.exists())
+        with self.assertRaises(RuntimeError), unreal_modules.descriptor(self.uproject, ['Tools']):
+            raise RuntimeError('the editor failed')
+        self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject'])
 
+    def test_a_guarded_run_removes_its_descriptor_whatever_the_outcome(self):
+        """Success, a failed editor and a refused render slot all end with the project folder as it was."""
+        ctx = types.SimpleNamespace(uproject=self.uproject, unreal_cmd='UnrealEditor-Cmd', logs=Path(self.temp.name) / 'logs',
+                                    game='game', env=lambda extra: dict(extra))
+        command = UnrealScript(Path(self.temp.name) / 'import.py', 'IMPORTED', modules=('Tools',))
+        step = Step('import', [command], heavy=True)
+        seen = []
 
-def unreal_type(name, package):
-    """A stand-in for a generated unreal type."""
-    cls = type(name, (), {'__module__': 'unreal'})
-    cls.static_class = classmethod(lambda c: types.SimpleNamespace(get_outer=lambda: Package(package)))
-    return cls
+        def editor(code):
+            def run(argv, folder, **kwargs):
+                seen.append(Path(argv[1]).is_file())
+                folder.mkdir(parents=True, exist_ok=True)
+                (folder / 'stdout.log').write_text('IMPORTED')
+                if code is None:
+                    raise RuntimeError('render slot refused')
+                return code
+            return run
+        for code, error in ((0, None), (1, 'exited 1'), (None, 'refused')):
+            with patch.object(builder.guarded, 'run', editor(code)), patch.object(builder, 'slot_request', lambda ctx, step: ('job', None)):
+                if error:
+                    with self.assertRaisesRegex(RuntimeError, error):
+                        builder.run_command(ctx, step, command, io.StringIO())
+                else:
+                    builder.run_command(ctx, step, command, io.StringIO())
+            self.assertEqual(sorted(p.name for p in self.project.iterdir()), ['Binaries', 'Config', 'Game.uproject'])
+        self.assertEqual(seen, [True, True, True])
 
 
 class GuardTests(unittest.TestCase):
-    def setUp(self):
-        self.Mesh = unreal_type('StaticMesh', '/Script/Engine')
-        self.Tool = unreal_type('ToolLibrary', '/Script/Tools')
-        self.Actor = unreal_type('ParkActor', '/Script/Game')
-        self.Other = unreal_type('OtherThing', '/Script/Other')
-        self.unreal = types.SimpleNamespace(StaticMesh=self.Mesh, ToolLibrary=self.Tool, ParkActor=self.Actor, OtherThing=self.Other,
-                                            log=print)
-        self.stops = []
-        self.guard = guard.Guard(self.unreal, 'import.py', {'Tools': 'code', 'Game': 'interface'}, ['Tools', 'Game', 'Other'],
-                                 self.stops.append)
+    def test_only_left_out_libraries_count(self):
+        with tempfile.TemporaryDirectory() as temp:
+            game, tools = Path(temp) / 'libUnrealEditor-Game.dylib', Path(temp) / 'libUnrealEditor-Tools.dylib'
+            game.write_text(''); tools.write_text('')
+            alias = Path(temp) / 'alias.dylib'; alias.symlink_to(game)
+            self.assertEqual(guard.undeclared([str(tools), '/engine/libUnrealEditor-Engine.dylib'], [str(game)]), [])
+            self.assertEqual(guard.undeclared([str(alias)], [str(game)]), [os.path.realpath(game)])
 
-    def test_names_from_undeclared_game_modules_stop_the_script(self):
-        for name in ('StaticMesh', 'ToolLibrary', 'ParkActor', 'log'):
-            self.guard.name(name)
-        self.assertEqual(self.stops, [])
-        self.guard.name('OtherThing')
-        self.assertEqual(len(self.stops), 1)
-        self.assertIn('Other', self.stops[0])
+    def test_this_process_libraries_are_listed(self):
+        self.assertTrue(any('python' in path.lower() or 'libsystem' in path.lower() for path in guard.loaded_libraries()))
 
-    def test_only_functions_of_modules_declared_by_code_run(self):
-        self.Tool.run = classmethod(lambda cls: 'ran')
-        self.Actor.place = lambda self: 'placed'
-        self.Actor.speed = property(lambda self: 3)
-        self.Mesh.build = lambda self: 'built'
-        self.Other.helper = staticmethod(lambda: 'helped')
-        restore = self.guard.seal()
-        self.assertEqual((self.Tool.run(), self.Mesh().build(), self.Actor().speed), ('ran', 'built', 3))
-        self.assertEqual(self.stops, [])
-        self.Actor().place()
-        self.Other.helper()
-        self.assertEqual(len(self.stops), 2)
-        self.assertIn('ParkActor.place from the game module Game, which its build step declares only by interface', self.stops[0])
-        self.assertIn('not at all', self.stops[1])
-        restore()
-        self.assertEqual((self.Actor().place(), self.Other.helper()), ('placed', 'helped'))
-
-    def test_functions_engine_types_define_stay_free_on_game_types(self):
-        self.Mesh.set_editor_property = lambda self, name, value: 'set'
-        World = type('ParkWorld', (self.Mesh,), {'__module__': 'unreal'})
-        World.static_class = classmethod(lambda c: types.SimpleNamespace(get_outer=lambda: Package('/Script/Game')))
-        self.unreal.ParkWorld = World
-        self.guard.seal()
-        self.assertEqual(World().set_editor_property('speed', 1), 'set')
-        self.assertEqual(self.stops, [])
+    def test_the_check_runs_even_when_the_script_exits(self):
+        with tempfile.TemporaryDirectory() as temp:
+            script = Path(temp) / 'import.py'
+            script.write_text('import sys\nsys.exit(0)\n')
+            stops, checks = [], iter([[], ['/game/libUnrealEditor-Game.dylib']])
+            with patch.object(guard, 'loaded_libraries', lambda: next(checks)), patch.object(guard, 'stop', stops.append), \
+                    patch.dict(os.environ, ATELIER_SCRIPT=str(script), ATELIER_LEFT_OUT=json.dumps(['/game/libUnrealEditor-Game.dylib'])), \
+                    patch.object(sys, 'argv', list(sys.argv)), patch.object(sys, 'path', list(sys.path)):
+                with self.assertRaises(SystemExit):
+                    guard.main()
+        self.assertEqual(len(stops), 1)
+        self.assertIn('libUnrealEditor-Game.dylib', stops[0])
 
 
 if __name__ == '__main__':

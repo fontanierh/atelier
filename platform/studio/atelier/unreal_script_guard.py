@@ -1,95 +1,32 @@
-"""Runs an editor script (ATELIER_SCRIPT) so it can use only the game modules its build step declares.
+"""Runs an editor script (ATELIER_SCRIPT) in an editor started on a descriptor that loads only the game modules its
+build step declares (atelier.unreal_modules.descriptor), then checks that it stayed that way.
 
-ATELIER_SCRIPT_MODULES maps each declared module to 'code' or 'interface'; ATELIER_PROJECT_MODULES lists every game
-and plugin module. Engine types are free. A script may name a declared module's classes, structs and enums, create
-them and set their properties; it may call their functions only when the step depends on the module's code. Naming a
-type of another game module, or calling a function of a type whose code the step does not depend on (however the
-script came by the type or object), ends the editor with an error, so a script cannot come to depend on game code its
-step does not track (atelier.unreal_modules). Runs inside the editor's Python: standard library only.
-
-Unreal's function wrappers are not Python functions (no profiling events) and its types are immutable, so the guard
-replaces the functions in those types' own namespaces for the length of the script.
+The other game and plugin modules are not loaded, so their classes, defaults and assets are not there to use. A script
+can still load one (unreal.load_module, a console command), so when it ends, the guard lists the libraries the process
+has loaded; if any is one the descriptor left out (ATELIER_LEFT_OUT), it ends the editor with an error and the step
+fails. Runs inside the editor's Python: standard library only.
 """
-import ctypes, gc, json, os, runpy, sys, types
+import ctypes, json, os, runpy, sys
 
 
-def module_of(value):
-    """'/Script/<Module>' types' module name, or None."""
-    for accessor in ('static_class', 'static_struct', 'static_enum'):
-        get = getattr(value, accessor, None)
-        if get is not None:
-            try:
-                path = get().get_outer().get_path_name()
-            except Exception:
-                return None
-            return path[len('/Script/'):] if path.startswith('/Script/') else None
-    return None
+def loaded_libraries():
+    """The paths of the libraries this process has loaded (macOS dyld)."""
+    dyld = ctypes.CDLL(None)
+    dyld._dyld_get_image_name.restype = ctypes.c_char_p
+    return [dyld._dyld_get_image_name(index).decode() for index in range(dyld._dyld_image_count())]
 
 
-def functions(cls):
-    """The functions a type itself defines: public non-data descriptors (properties are data descriptors)."""
-    return {name: value for name, value in vars(cls).items() if not name.startswith('_')
-            and hasattr(type(value), '__get__') and not hasattr(type(value), '__set__')}
+def undeclared(loaded, left_out):
+    """The left-out libraries among those loaded."""
+    left_out = {os.path.realpath(path) for path in left_out}
+    return sorted({os.path.realpath(path) for path in loaded} & left_out)
 
 
-def seal(cls, refuse):
-    """Replace the functions `cls` defines with calls to refuse(name); returns what restores them."""
-    namespace = gc.get_referents(cls.__dict__)[0]   # the dict behind the read-only mapping
-    originals = functions(cls)
-    for name in originals:
-        namespace[name] = staticmethod(lambda *args, name=name, **kwargs: refuse(name))
-    ctypes.pythonapi.PyType_Modified(ctypes.py_object(cls))   # drop cached lookups
-
-    def restore():
-        namespace.update(originals)
-        ctypes.pythonapi.PyType_Modified(ctypes.py_object(cls))
-    return restore
-
-
-class Guard:
-    def __init__(self, unreal, script, declared, project, stop):
-        self.unreal, self.script, self.declared, self.project, self.stop = unreal, script, declared, set(project), stop
-        self.modules = {}
-
-    def module(self, value):
-        key = id(value)
-        if key not in self.modules:
-            self.modules[key] = module_of(value)
-        return self.modules[key]
-
-    def name(self, attribute):
-        """unreal.<attribute>, refused when it belongs to an undeclared game module."""
-        value = getattr(self.unreal, attribute)
-        if isinstance(value, type):
-            module = self.module(value)
-            if module in self.project and module not in self.declared:
-                self.stop(f'{self.script} uses unreal.{attribute} from the game module {module}, which its build step '
-                          f'does not declare (UnrealScript modules)')
-        return value
-
-    def seal(self):
-        """Seal the functions of every game type whose code the step does not depend on; returns what restores them."""
-        restores = []
-        for attribute in dir(self.unreal):
-            value = getattr(self.unreal, attribute, None)
-            if not isinstance(value, type):
-                continue
-            module = self.module(value)
-            if module in self.project and self.declared.get(module) != 'code' and functions(value):
-                how = 'only by interface' if module in self.declared else 'not at all'
-                restores.append(seal(value, lambda function, owner=value.__name__, module=module, how=how: self.stop(
-                    f'{self.script} calls {owner}.{function} from the game module {module}, which its build step '
-                    f'declares {how}: depend on its code')))
-        return lambda: [restore() for restore in restores]
-
-
-def install(unreal, script, declared, project, stop):
-    """Replace the unreal module with a guarded view and seal game functions; returns what restores them."""
-    guard = Guard(unreal, script, declared, project, stop)
-    view = types.ModuleType('unreal', unreal.__doc__)
-    view.__getattr__ = guard.name
-    sys.modules['unreal'] = view
-    return guard.seal()
+def check(script, left_out, stop):
+    found = undeclared(loaded_libraries(), left_out)
+    if found:
+        stop(f'{script} loaded {", ".join(os.path.basename(p) for p in found)}, from game or plugin modules its build step '
+             f'does not declare (UnrealScript modules)')
 
 
 def stop(message):
@@ -99,17 +36,14 @@ def stop(message):
 
 
 def main():
-    import unreal
-    script = os.environ['ATELIER_SCRIPT']
-    restore = install(unreal, script, json.loads(os.environ['ATELIER_SCRIPT_MODULES']),
-                      json.loads(os.environ['ATELIER_PROJECT_MODULES']), stop)
+    script, left_out = os.environ['ATELIER_SCRIPT'], json.loads(os.environ['ATELIER_LEFT_OUT'])
+    check(script, left_out, lambda message: stop('before the script ran, ' + message))
     sys.argv = [script]
     sys.path.insert(0, os.path.dirname(script))
     try:
         runpy.run_path(script, run_name='__main__')
     finally:
-        restore()
-        sys.modules['unreal'] = unreal
+        check(script, left_out, stop)
 
 
 if __name__ == '__main__':

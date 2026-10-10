@@ -21,9 +21,8 @@ from .safety.render_lock import render_lock
 INSPECT = '''import json
 from pathlib import Path
 from dataclasses import replace
+from atelier import build
 from atelier.build import Context,load_recipe,order,fingerprint
-try: from atelier.build import result as published
-except ImportError: published=lambda step,value,stamp: value   # a donor from before cutoff steps
 from atelier import manifest
 ctx=Context(GAME)
 # A step's source fingerprint leaves out its inputs inside the copied folders; kept here, not in atelier.build, so a
@@ -36,8 +35,12 @@ for step in order(load_recipe(GAME).steps(ctx),[]):
  source=fingerprint(own(step),sources); sources[step.name]=source
  path=ctx.stamps/(step.name+'.json')
  stamp=json.loads(path.read_text()) if path.exists() else {}
- done[step.name]=published(step,value,stamp)
- result.append(dict(name=step.name,fingerprint=value,source=source,stamp=stamp,outputs_ok=all(Path(p).exists() for p in step.outputs)))
+ outputs_ok=all(Path(p).exists() for p in step.outputs)
+ # A cutoff step's dependents see the digest of its outputs: what its stamp records, read here from the files so a
+ # fresh target with copied outputs and no stamps publishes what the source does.
+ made=build.outputs_digest(step) if getattr(step,'cutoff',False) and outputs_ok else None
+ done[step.name]=made or value
+ result.append(dict(name=step.name,fingerprint=value,source=source,stamp=stamp,outputs_ok=outputs_ok,made=made))
 print(json.dumps(dict(steps=result,engine=str(ctx.unreal_root.resolve()),project=ctx.uproject.stem,
  editor_target=manifest.game(GAME)['editor_target'],
  build_version=json.loads((ctx.unreal_root/'Engine/Build/Build.version').read_text()))))
@@ -121,7 +124,8 @@ def main(game, source, target=None):
         clone.restype = ctypes.c_int
     with render_lock('reuse verified ' + game + ' artifacts'):
         before = inspect(source, game)
-        invalid = [s['name'] for s in before['steps'] if not s['outputs_ok'] or s['stamp'].get('fingerprint') != s['fingerprint']]
+        invalid = [s['name'] for s in before['steps'] if not s['outputs_ok'] or s['stamp'].get('fingerprint') != s['fingerprint']
+                   or s.get('made') and s['stamp'].get('result') != s['made']]
         game_root = source / 'games' / game / 'unreal'
         module = game_root / 'Binaries/Mac' / ('libUnrealEditor-' + before['project'] + '.dylib')
         if invalid or not module.is_file():

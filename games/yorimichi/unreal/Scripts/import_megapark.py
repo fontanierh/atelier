@@ -1,7 +1,7 @@
 """Build /Game/MegaPark/Maps/SuperUltraMegaPark from the committed native source.
 
 Only /Game/MegaPark is written. The committed library source and build exports are
-needed. The saved level owns ordinary mesh actors, Chaos collision and rails.
+needed. The saved level owns ordinary mesh actors, Chaos collision and the park's layout (rails and start).
 """
 import sys
 from pathlib import Path
@@ -313,27 +313,25 @@ def main():
     E.make_directory(ROOT+'/Maps')
     world = unreal.EditorLoadingAndSavingUtils.new_blank_map(False)
     assert world, 'Could not create park level'
-    world.get_world_settings().set_editor_property('default_game_mode', unreal.MegaParkGameMode)
     mis = materials(report); results = []
     for entry in report['render']: mesh_actor(entry, False, mis, actors, editor, results)
     for entry in report['collision']: mesh_actor(entry, True, mis, actors, editor, results)
     # The seam (docs/MEGAPARK.md, "Seam") is a piece of the source's own hills: the standalone level keeps them whole, so
     # only the island places it.
     for entry in report['seam']: mesh_actor(entry, entry['name'].startswith('UC_'), mis, actors, editor, results, place=False)
-    anchor = actors.spawn_actor_from_class(unreal.SuperUltraMegaPark, unreal.Vector())
-    anchor.set_actor_label('OriginalGrindPaths')
-    anchor.set_editor_property('source_manifest_hash', report['source_sha256'])
     rails = []
     for source in report['rails']:
         rail = unreal.MegaParkRail()
         rail.set_editor_property('source_id', source['id']); rail.set_editor_property('closed', source['closed'])
         rail.set_editor_property('points', [ue(p) for p in source['points']])
         rail.set_editor_property('original_segments', source['original_segments']); rails.append(rail)
-    anchor.set_editor_property('rails', rails)
     ground = ue(report['spawn']['position']); yaw = report['spawn']['heading_degrees']
-    services = actors.spawn_actor_from_class(unreal.MegaParkWorld, unreal.Vector())
-    services.set_actor_label('StandalonePlayerServices'); services.set_editor_property('spawn_ground', ground)
-    services.set_editor_property('spawn_yaw', yaw)
+    # The level's game mode (a map prefix in Config/DefaultEngine.ini) builds the grind paths and player services from it.
+    layout = unreal.MegaParkLayoutData()
+    for k, v in dict(source_manifest_hash=report['source_sha256'], rails=rails, spawn_ground=ground, spawn_yaw=yaw).items():
+        layout.set_editor_property(k, v)
+    park = actors.spawn_actor_from_class(unreal.MegaParkLayout, unreal.Vector())
+    park.set_actor_label('ParkLayout'); park.set_editor_property('layout', layout)
     start = actors.spawn_actor_from_class(unreal.PlayerStart, ground+unreal.Vector(0,0,80), unreal.Rotator(yaw=yaw))
     start.set_actor_label('UpperDeckStart')
     sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(33000,-71000,25000), unreal.Rotator(pitch=-35,yaw=-40))

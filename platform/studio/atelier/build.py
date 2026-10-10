@@ -15,7 +15,8 @@ guard reports peaked at 3 GiB or less asks for the small slot; a compile, or a s
 one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
 import hashlib, importlib.util, json, os, subprocess, sys, time
-from dataclasses import dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from . import engine, paths
@@ -50,6 +51,11 @@ class Blender:
                 '--python', str(self.script), *extra]
 
 
+GUARD = Path(__file__).with_name('unreal_script_guard.py')
+# What decides an isolated script's editor (the descriptor, the closure) and checks it: inputs of every step it runs in
+ISOLATION = (GUARD, Path(__file__).with_name('unreal_modules.py'))
+
+
 @dataclass
 class UnrealScript:
     """An editor Python script run by UnrealEditor-Cmd on the game's project; `marker` must appear in the log."""
@@ -58,22 +64,36 @@ class UnrealScript:
     null_rhi: bool = False
     env: tuple = ()          # (("NAME", "value"), ...)
     args: tuple = ()         # additional editor arguments for this import
-    # ((module, 'code' | 'interface'), ...): the game's compiled modules the script uses (atelier.unreal_modules). The
-    # step needs their module steps; unreal_script_guard stops the script if it uses any other game module.
-    modules: tuple = field(default=(), repr=False)
+    # (module, ...): the game's compiled modules the script uses (atelier.unreal_modules). The step needs their module
+    # steps, and the editor loads only those modules and what they need; unreal_script_guard stops it if any other
+    # game or plugin library is loaded when the script ends.
+    modules: tuple = ()
 
-    def argv(self, ctx):
-        script = Path(__file__).with_name('unreal_script_guard.py') if self.modules else self.script
-        command = [str(ctx.unreal_cmd), str(ctx.uproject), '-run=pythonscript', f'-script={script}',
+    def __repr__(self):
+        # The fingerprint's view: declared modules count, and a script without them reads as before they existed.
+        shown = [f for f in fields(self) if f.name != 'modules' or self.modules]
+        return f'UnrealScript({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
+
+    def runs(self):
+        """Files the command runs besides the step's inputs: the isolation code, when it has modules."""
+        return list(ISOLATION) if self.modules else []
+
+    @contextmanager
+    def prepared(self, ctx):
+        """(argv, environment) for one run. With modules, the guard runs the script in an editor started on a
+        descriptor that exists until the run ends (atelier.unreal_modules.descriptor)."""
+        if not self.modules:
+            yield self._argv(ctx, ctx.uproject, self.script), self.env
+            return
+        from .unreal_modules import descriptor
+        with descriptor(ctx.uproject, self.modules) as (project, left_out):
+            yield self._argv(ctx, project, GUARD), (*self.env, ('ATELIER_SCRIPT', str(self.script)),
+                                                    ('ATELIER_LEFT_OUT', json.dumps(left_out)))
+
+    def _argv(self, ctx, project, script):
+        command = [str(ctx.unreal_cmd), str(project), '-run=pythonscript', f'-script={script}',
                    '-unattended', '-nop4', '-nosplash', '-stdout', '-AllowStdOutLogVerbosity']   # unreal.log lines reach stdout
         return command + (['-NullRHI'] if self.null_rhi else []) + list(self.args)
-
-    def environment(self, ctx):
-        if not self.modules:
-            return self.env
-        from .unreal_modules import project_modules
-        return (*self.env, ('ATELIER_SCRIPT', str(self.script)), ('ATELIER_SCRIPT_MODULES', json.dumps(dict(self.modules))),
-                ('ATELIER_PROJECT_MODULES', json.dumps(sorted(project_modules(ctx.uproject.parent)))))
 
 
 @dataclass
@@ -143,16 +163,16 @@ def outputs_present(step):
     return all(Path(o).exists() for o in step.outputs) and (step.verify is None or bool(step.verify()))
 
 
-def module_step(module, kind):
-    """The step that records a compiled Unreal module's `code` or `interface` digest (atelier.unreal_modules)."""
-    return f'unreal.module.{module}.{kind}'
+def module_step(module):
+    """The step that records a compiled Unreal module's code digest (atelier.unreal_modules)."""
+    return f'unreal.module.{module}'
 
 
 def check_modules(steps):
     """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
     for step in steps:
         for command in step.commands:
-            missing = [module_step(*m) for m in getattr(command, 'modules', ()) if module_step(*m) not in step.needs]
+            missing = [module_step(m) for m in getattr(command, 'modules', ()) if module_step(m) not in step.needs]
             if missing:
                 raise SystemExit(f'{step.name}: its script uses {missing} but the step does not need them')
 
@@ -191,7 +211,8 @@ def load_recipe(game):
 
 
 # ---------------------------------------------------------------- fingerprints
-def _hash_path(digest, path):
+def _hash_path(digest, path, skip=True):
+    """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS)."""
     path = Path(path)
     if path.is_file():
         digest.update(str(path.name).encode())
@@ -200,9 +221,9 @@ def _hash_path(digest, path):
                 digest.update(chunk)
     elif path.is_dir():
         for child in sorted(path.rglob('*')):
-            if child.is_file() and not SKIP_PARTS & set(child.parts) and child.suffix not in SKIP_SUFFIXES:
+            if child.is_file() and not (skip and (SKIP_PARTS & set(child.parts) or child.suffix in SKIP_SUFFIXES)):
                 digest.update(str(child.relative_to(path)).encode())
-                _hash_path(digest, child)
+                _hash_path(digest, child, skip)
     else:
         digest.update(b'missing:' + str(path).encode())
 
@@ -214,7 +235,7 @@ def fingerprint(step, done):
     commands = repr([c for c in step.commands])
     commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
     digest.update(commands.encode())
-    for item in step.inputs:
+    for item in [*step.inputs, *(f for c in step.commands for f in getattr(c, 'runs', list)())]:
         _hash_path(digest, item)
     for need in step.needs:
         digest.update(done.get(need, 'unbuilt').encode())
@@ -222,9 +243,10 @@ def fingerprint(step, done):
 
 
 def outputs_digest(step):
+    """Every file a step made, whatever its folder or suffix."""
     digest = hashlib.sha256()
     for output in step.outputs:
-        _hash_path(digest, output)
+        _hash_path(digest, output, skip=False)
     return 'outputs:' + digest.hexdigest()
 
 
@@ -287,8 +309,14 @@ def run_command(ctx, step, command, log, request=None, slots=None):
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
-    env = ctx.env(command.environment(ctx) if isinstance(command, UnrealScript) else getattr(command, 'env', ()))
-    argv = command.argv(ctx)
+    if isinstance(command, UnrealScript):
+        with command.prepared(ctx) as (argv, env):
+            return run_argv(ctx, step, command, argv, env, log, request, slots)
+    return run_argv(ctx, step, command, command.argv(ctx), getattr(command, 'env', ()), log, request, slots)
+
+
+def run_argv(ctx, step, command, argv, env, log, request, slots):
+    env = ctx.env(env)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'

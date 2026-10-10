@@ -1,7 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
 #include "WandererDefinition.generated.h"
 
 class USkeletalMesh;
@@ -11,7 +10,7 @@ class UStaticMesh;
 
 /** Gameplay timing of one sword clip, in clip seconds at 1x (from the game-r13 manifest). */
 USTRUCT(BlueprintType)
-struct FWandererSwordClip
+struct YORIMICHIASSETS_API FWandererSwordClip
 {
     GENERATED_BODY()
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FName Role;
@@ -33,7 +32,7 @@ struct FWandererSwordClip
 
 /** Cookable character content: no loose animation files or runtime skeleton baking. */
 UCLASS(BlueprintType)
-class YORIMICHI_API UWandererDefinition : public UDataAsset
+class YORIMICHIASSETS_API UWandererDefinition : public UDataAsset
 {
     GENERATED_BODY()
 public:
@@ -78,19 +77,4 @@ public:
     UAnimSequence* FindAction(FName Name) const;
     const FWandererSwordClip* FindSwordClip(FName Role) const;
     bool HasSwordSet() const { return SwordMesh != nullptr && SwordClips.Num() > 0; }
-};
-
-/** Headless content authoring support; the resulting blend spaces are ordinary saved assets. */
-UCLASS()
-class YORIMICHI_API UWandererContentLibrary : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-public:
-    UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
-    static bool ConfigureBlendSpace(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds);
-    /** The same, each sample playing at its own rate (an adventure move set's locomotion plays one clip at several rates). */
-    UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
-    static bool ConfigureBlendSpaceWithRates(UBlendSpace* Asset, const TArray<UAnimSequence*>& Clips, const TArray<float>& Speeds, const TArray<float>& Rates);
-    UFUNCTION(BlueprintCallable, Category="Wanderer|Authoring")
-    static bool ConfigureMeshLODs(USkeletalMesh* Asset);
 };

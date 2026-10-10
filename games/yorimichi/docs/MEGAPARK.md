@@ -252,8 +252,10 @@ render mesh. CPU access is retained for the skating simulation's world queries. 
 attributes remain in the committed arrays; standard Chaos collision does not itself reproduce
 the skating simulation's feature-edge and surface-ID solver behavior.
 
-The level-owned `SuperUltraMegaPark` actor registers the original grind curves with the skating
-subsystem. Curves are sampled with at most 2 mm control-point chord deviation and 50 cm segments;
+The level saves the park's layout in an `AMegaParkLayout` actor: the grind curves, the source hash and the
+upper deck start (`FMegaParkLayoutData`, in the `YorimichiAssets` module, which holds no gameplay). When play starts,
+the level's game mode spawns a `SuperUltraMegaPark` from it, the actor the island uses, which registers the curves with
+the skating subsystem. Curves are sampled with at most 2 mm control-point chord deviation and 50 cm segments;
 the untouched original cubics are also serialized in the level. The subsystem treats these as rail
 contact paths; their original flags are kept with them.
 
@@ -264,9 +266,10 @@ normal/detail, specular and alpha into lit native materials, and the baked irrad
 at full precision. Reflection cubemaps, animated tree shaders and special shader effects remain source data.
 A texture is reimported when its source image changes (its hash is kept in the asset's metadata).
 
-`MegaParkGameMode` uses Cairo and the skating simulation. `MegaParkWorld` supplies the
-player's world services without generating the island, leaf storm, villagers or other island
-effects. The level and asset paths are independent of the skating runtime implementation.
+`MegaParkGameMode`, chosen by the level's name (`GameModeMapPrefixes` in `Config/DefaultEngine.ini`; a `?game=`
+option still wins), uses Cairo and the skating simulation. It spawns a `MegaParkWorld`, which supplies the player's
+world services without generating the island, leaf storm, villagers or other island effects. A level imported before
+the layout existed has none, and play logs an error asking for `atelier build yorimichi`. The level and asset paths are independent of the skating runtime implementation.
 
 ## Source verification
 
