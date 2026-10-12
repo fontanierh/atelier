@@ -30,6 +30,33 @@ def test_two_observers_see_same_players_health_and_replacement(receipt):
     assert all(review.feature_checks(receipt, 'switch-bike').values())
 
 
+@pytest.mark.parametrize('phase', [3, 4])
+def test_return_to_cairo_requires_original_pawn_class(receipt, phase):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][phase]['guest']['views'][1]['pawn'] = 'ModoriCharacter'
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+@pytest.mark.parametrize('phase', [1, 3, 4])
+def test_mount_return_and_dismount_require_fresh_activity_epoch(receipt, phase):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][phase]['guest']['views'][1]['epoch'] = value['stages'][phase-1]['guest']['views'][1]['epoch']
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+@pytest.mark.parametrize('pawn', [None, ''])
+def test_replacement_requires_observed_pawn_class(receipt, pawn):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][2]['guest']['views'][1]['pawn'] = pawn
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
 @pytest.fixture
 def zeppelin_receipt(receipt):
     path = receipt / 'features-result.json'

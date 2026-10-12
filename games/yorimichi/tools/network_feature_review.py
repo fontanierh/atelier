@@ -50,6 +50,7 @@ def feature_checks(folder, case):
               'feature_all_stages_observed': [s.get('phase') for s in stages] == list(range(last+1))}
     original_ids = None
     epochs = {}
+    identities = {}
     original_classes = {}
     mount_retries = {'host': 0, 'guest': 0}
     mount_epochs = {'host': [], 'guest': []}
@@ -67,6 +68,7 @@ def feature_checks(folder, case):
                                         all(isinstance(i, str) and i for i in ids) and sum(r.get('local') is True for r in rows) == 1)
             checks[prefix+'health'] = all(r.get('health') == 73 and r.get('hits') == 2 for r in rows)
             checks[prefix+'equipment_attachment'] = all(r.get('ready') is True and r.get('attachment') is True for r in rows)
+            checks[prefix+'pawn_class'] = all(isinstance(r.get('pawn'), str) and bool(r['pawn']) for r in rows)
             if case == 'equipment':
                 checks[prefix+'prediction_roles'] = all(r.get('local_role') in (1, 2, 3) and
                                                         r.get('predicts_moves') is (r.get('local_role') in (2, 3)) for r in rows)
@@ -124,6 +126,8 @@ def feature_checks(folder, case):
                             checks[prefix+'air_continuation'] = s[side].get('requested_in_air') is True and owner.get('continued_mode') == 2
                         if case == 'switch-skate-bail':
                             checks[prefix+'bail_recovered_before_swap'] = s[side].get('requested_in_bail') is True and owner.get('continued_mode') == 1
+                if phase in (3, 4) and case != 'zeppelin':
+                    checks[prefix+'returned_class'] = all(r.get('pawn') == original_classes.get(r.get('player')) for r in rows)
                 if case.startswith('switch-skate') and phase in (2, 3):
                     owner = next((r for r in rows if r.get('local') is True), {})
                     lift, root, z, half = (owner.get(k) for k in ('body_lift', 'ride_root_z', 'z', 'standing_half'))
@@ -133,8 +137,11 @@ def feature_checks(folder, case):
                     key = (side, r.get('player'))
                     old = epochs.get(key, 0)
                     epoch = r.get('epoch')
-                    checks[prefix+'epoch_'+str(r.get('player'))] = type(epoch) is int and epoch >= old and (phase != 2 or epoch > old)
+                    identity = tuple(r.get(field) for field in ('activity', 'rider', 'pawn'))
+                    changed = key in identities and identities[key] != identity
+                    checks[prefix+'epoch_'+str(r.get('player'))] = type(epoch) is int and epoch >= old and (not changed or epoch > old)
                     epochs[key] = epoch if type(epoch) is int else old
+                    identities[key] = identity
         if case == 'zeppelin' and phase in (1, 2):
             a, b = s['host'], s['guest']
             checks[f'feature_{phase}_shared_ship'] = (flying_ship(a) and flying_ship(b) and
