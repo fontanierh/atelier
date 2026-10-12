@@ -121,13 +121,15 @@ def join_parent():
     task.automated = True; task.replace_existing = True; task.save = True
     AT.import_asset_tasks([task])
     texture = E.load_asset(ROOT+'/Textures/T_TuscanGround'); assert texture
-    texture.set_editor_property('srgb',True); E.save_loaded_asset(texture)
-    forest = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Forest', texture=texture)
-    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('World', world, ''), ('Forest', forest, '')]
+    texture.set_editor_property('srgb',True)
+    texture.set_editor_property('lod_group',unreal.TextureGroup.TEXTUREGROUP_WORLD)
+    E.save_loaded_asset(texture)
+    ground = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Ground', texture=texture)
+    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('World', world, ''), ('Ground', ground, '')]
     shade = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
                  code='''float3 valley=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
-float3 grain=Texture2DSample(Forest,ForestSampler,World.xy/900.).rgb;
-float detail=clamp(dot(grain,float3(.299,.587,.114))/.19,.6,1.5);
+float3 grain=Texture2DSample(Ground,GroundSampler,World.xy/900.).rgb;
+float detail=clamp(dot(grain,float3(.299,.587,.114))/.156,.6,1.5);
 return valley*lerp(1.,detail,.7*4*Alpha*(1-Alpha));''')
     custom_inputs = []
     for key, _, _ in inputs:

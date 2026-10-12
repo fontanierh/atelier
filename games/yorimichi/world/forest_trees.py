@@ -14,17 +14,17 @@ from forest.specs import TUSCAN, FOREST
 def tree(name, kind, seed, height, spread, leaf):
     import build_assets as A
     rng = random.Random(seed)
-    mesh = A.Mesh(name); bark = A.MATS['Bark']; foliage = A.MATS[leaf]
+    mesh = A.Mesh(name); bark = A.MATS['BarkOlive' if kind=='olive' else 'Bark']; foliage = A.MATS[leaf]
     lean = Vector((rng.uniform(-.35, .35), rng.uniform(-.35, .35), 0))
     fork_height = height * (.25 if kind == 'olive' else .58 if kind == 'stone-pine' else .26 if kind == 'oak' else .44)
     fork = lean + Vector((0, 0, fork_height))
     bends = [Vector((0, 0, -.25)), lean*.4+Vector((.13, -.08, fork_height*.45)), fork]
     radius = .58 if kind == 'olive' else .48 if kind in ('oak','stone-pine') else .32
     for i, (a, b) in enumerate(zip(bends, bends[1:])):
-        mesh.tube(a, b, radius*(1-i*.24), radius*(.75-i*.25), bark, n=10, uvscale=(1, .4))
+        mesh.tube(a, b+(b-a).normalized()*.12, radius*(1-i*.24), radius*(.75-i*.25), bark, n=10, uvscale=(1, .4))
     lobes = []
     if kind in ('cypress', 'cedar'):
-        mesh.tube(fork, lean+Vector((0, 0, height*.94)), .17, .035, bark, n=8)
+        mesh.tube(fork, lean+Vector((0, 0, height*(.6 if kind=='cypress' else .94))), .17, .035, bark, n=8)
         for level in range(9):
             t = level/8
             z = height*(.12+.85*t) if kind=='cypress' else height*(.19+.74*t)
@@ -49,12 +49,16 @@ def tree(name, kind, seed, height, spread, leaf):
             bend=rng.uniform(-.35,.35)
             joint=fork+(centre-fork)*.55+Vector((-math.sin(angle)*bend,math.cos(angle)*bend,.15))
             if getattr(mesh,'branch_detail',True):
-                mesh.tube(fork,joint,.26,.19,bark,n=8)
+                mesh.tube(fork,joint+(joint-fork).normalized()*.12,.26,.19,bark,n=8)
                 mesh.tube(joint,centre,.19,.07,bark,n=7)
             lobes.append((centre,(spread*rng.uniform(.21,.25),spread*rng.uniform(.21,.25),height*rng.uniform(.19,.23))))
             for side in (-1,1):
                 offset=Vector((math.cos(angle+side*.9),math.sin(angle+side*.9),.35))*spread*.11
                 lobes.append((centre+offset,(spread*.16,spread*.16,height*.15)))
+        for side in range(3):
+            angle=(side+.5)*math.tau/3+rng.uniform(-.25,.25)
+            centre=lean+Vector((math.cos(angle)*spread*.15,math.sin(angle)*spread*.15,height*rng.uniform(.60,.69)))
+            lobes.append((centre,(spread*.13,spread*.14,height*.13)))
     else:
         umbrella = kind == 'stone-pine'
         centre_z = .85 if umbrella else .62 if kind=='oak' else .68

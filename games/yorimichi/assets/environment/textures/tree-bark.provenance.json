@@ -1,0 +1,38 @@
+{
+  "revision": "r02",
+  "use": "textures",
+  "name": "tree-bark",
+  "inputs": [],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "521d2aeb1f954123305688bbb9f16e1b9cb051ee5f662688ad834a2ec4460684",
+  "status": "done",
+  "started_at": "2026-10-12T22:53:42.693342+00:00",
+  "output": "tree-bark.png",
+  "output_sha256": "ed4f4daf16ba9dc48d9d077f9633ecb82cf577bc659a2e9daa09c3bfbe57e9f2",
+  "usage": {
+    "input_tokens": 122,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 122
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1878
+  },
+  "elapsed_seconds": 55.3,
+  "finished_at": "2026-10-12T22:54:38.199180+00:00",
+  "prompt": "Seamless tileable tree bark base-colour texture for refined\npainterly 3D foliage in Yorimichi and Tuscan Belmonte. Weathered warm brown and\ngrey bark with twisted vertical fibres, fine layered ridges, shallow fissures\nand subtle age variation. Convincing olive and oak trunk material, restrained\nearth colours with no orange cast. Orthographic flat scan, neutral diffuse\nlighting, no baked shadows or highlights, no perspective, no whole trunk,\nleaves, background or text. Seamless edge to edge in both directions.",
+  "source": {
+    "file": "tree-bark.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "a3b6a582e5ab4aec6f521475360325d9013587e62e0bcb9ec08ce104dbba3a63"
+}

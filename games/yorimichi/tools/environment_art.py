@@ -70,6 +70,13 @@ foliage, with beautiful visible branch structure. No orange Japanese autumn
 palette in these Tuscan variants, no crude conical or blob geometry, no text.''',
 }
 TEXTURES = {
+    'tree-bark': '''Seamless tileable tree bark base-colour texture for refined
+painterly 3D foliage in Yorimichi and Tuscan Belmonte. Weathered warm brown and
+grey bark with twisted vertical fibres, fine layered ridges, shallow fissures
+and subtle age variation. Convincing olive and oak trunk material, restrained
+earth colours with no orange cast. Orthographic flat scan, neutral diffuse
+lighting, no baked shadows or highlights, no perspective, no whole trunk,
+leaves, background or text. Seamless edge to edge in both directions.''',
     'leaf-olive': '''Game foliage atlas, exactly four distinct olive twig clusters in
 four equal square cells (2 by 2). Each cluster has many small narrow silver-green
 olive leaves, irregular overlapping leaves and visible fine branching. Isolated

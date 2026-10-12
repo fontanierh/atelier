@@ -2069,6 +2069,10 @@
       "bytes": 441802,
       "sha256": "d9d200908c87f1bfa043dbc59accfa996c5e70b54cafc37e3168790a8e3dc011"
     },
+    "environment/textures/tree-bark.jpg": {
+      "bytes": 729819,
+      "sha256": "a3b6a582e5ab4aec6f521475360325d9013587e62e0bcb9ec08ce104dbba3a63"
+    },
     "environment/textures/tuscan-ground.jpg": {
       "bytes": 855881,
       "sha256": "b7a9e55d50d4d20830bbcdcb416b417e02a92d84e29211ab242317bdcc71b6ea"

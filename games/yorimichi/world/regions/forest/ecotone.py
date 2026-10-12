@@ -4,6 +4,7 @@ def northern_ecotone(instances):
     import numpy as np
     from hidamari.mountains import noise, smooth
     from belmonte.layout import BOUNDS
+    from forest.specs import TUSCAN
     for name in ('Tree_Forest_Maple', 'Tree_Forest_Ginkgo', 'Tree_Forest_Oak', 'Tree_Forest_Pine'):
         rows=np.asarray(instances.get(name,[]),float).reshape(-1,5)
         if not len(rows):continue
@@ -13,4 +14,6 @@ def northern_ecotone(instances):
         moved=(x>BOUNDS[0]-180)&(x<BOUNDS[2]+180)&(patch<share)
         instances[name]=rows[~moved].tolist()
         target='Tree_Tuscan_Pine' if name.endswith('Pine') else 'Tree_Tuscan_Oak'
-        instances.setdefault(target,[]).extend(rows[moved].tolist())
+        planted=rows[moved].copy()
+        planted[:,4]*=10./TUSCAN[target][2]   # keep the incoming forest's height
+        instances.setdefault(target,[]).extend(planted.tolist())

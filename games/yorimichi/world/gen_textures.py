@@ -276,19 +276,17 @@ def grass():
     save("T_grass.png", im)
 
 
-def bark(n=512):
-    r = rng_for(31)
-    im = Image.new("RGB", (n, n), col((0.20, 0.15, 0.12)))
-    dr = ImageDraw.Draw(im)
-    for _ in range(260):
-        x = r.uniform(0, n); w = r.uniform(4, 14); h = r.uniform(40, 220); y = r.uniform(-h, n)
-        c = (0.24, 0.18, 0.14) if r.random() < 0.5 else (0.16, 0.12, 0.10)
-        dr.polygon([(x, y), (x + w, y + 4), (x + w * 0.7, y + h), (x - 2, y + h - 3)], fill=col(c, 1 + (r.random() - 0.5) * 0.2))
-    im = im.filter(ImageFilter.GaussianBlur(0.7))
-    # make it tile horizontally by blending the edge
-    a = np.asarray(im).astype(np.float32)
-    a = (a + np.roll(a, n // 2, axis=1)) / 2
-    save("T_bark.jpg", Image.fromarray(a.astype(np.uint8)))
+def bark():
+    """Sunburst weathered olive bark and the island's existing dark bark palette."""
+    with Image.open(yori.ASSETS/'environment/textures/tree-bark.jpg') as image:
+        image=image.convert('RGB');save("T_bark_olive.jpg", image)
+        rgb=np.asarray(image,dtype=float)/255.
+    linear=np.where(rgb<=.04045,rgb/12.92,((rgb+.055)/1.055)**2.4)
+    target=np.array([.20,.15,.12])
+    target=np.where(target<=.04045,target/12.92,((target+.055)/1.055)**2.4)
+    linear*=target/linear.mean(axis=(0,1))
+    rgb=np.where(linear<=.0031308,linear*12.92,1.055*linear**(1/2.4)-.055)
+    save("T_bark.jpg", Image.fromarray(np.rint(np.clip(rgb,0,1)*255).astype('uint8')))
 
 
 def road(w=256, h=1024):

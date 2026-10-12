@@ -32,15 +32,11 @@ def paint_join(path, mesh):
     colours = source.terrain_colours().colour(x, y)
     assert np.isfinite(colours).all(), 'Missing valley colour at the terrain join'
     weight = forest_weight(points[:, 0], points[:, 1])
-    from hidamari import mountains, layout as H
-    # On the southern rim this is the mountain's own linear ground palette,
-    # sampled at the identical shared surface; never a forest photograph band.
+    # All exterior edges share the forest-floor palette. The mountain material
+    # reaches this same palette along its northern edge, including the corners.
     ox = np.clip(points[:, 0], terrain.OUTER[0], terrain.OUTER[2])
     oy = np.clip(points[:, 1], terrain.OUTER[1], terrain.OUTER[3])
-    outer = mountains.colours(ox, oy, H.north_height(ox, np.minimum(oy, 3000.)))
-    far = far_palette(ox, oy)
-    south = mountains.smooth((oy-3000.)/80.)
-    outer = outer*(1.-south[:, None]) + far*south[:, None]
+    outer = far_palette(ox, oy)
     colours = colours*(1.-weight[:, None]) + outer*weight[:, None]
     if path.stem == 'SM_BM_NorthCountry':
         colours = far_palette(points[:,0],points[:,1])

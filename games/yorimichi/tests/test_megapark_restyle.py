@@ -90,7 +90,8 @@ class ForestTests(unittest.TestCase):
         # in the gaps beyond the detailed band, out to OUTER.
         kinds = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree_Forest_')}
         crowns = np.concatenate(list(kinds.values()))[:, :2]
-        kind = np.concatenate([np.full(len(v), forest.CROWNS.index(forest.KIND_BY_MODEL[k]))
+        order = {forest.MODEL_BY_KIND[name]: i for i, name in enumerate(forest.CROWNS)}
+        kind = np.concatenate([np.full(len(v), order[k])
                                for k, v in kinds.items()])
         planted = {tuple(r[:2]) for r in rows}
         original = np.array([tuple(q) in planted for q in crowns.tolist()])

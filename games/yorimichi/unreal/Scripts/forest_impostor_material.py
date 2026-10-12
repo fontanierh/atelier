@@ -40,6 +40,7 @@ def parent(default_normal):
     M.connect_material_property(node(U.MaterialExpressionConstant,r=1.),'',U.MaterialProperty.MP_ROUGHNESS)
     M.connect_material_property(node(U.MaterialExpressionConstant,r=0.),'',U.MaterialProperty.MP_SPECULAR)
     m.set_editor_property('blend_mode',U.BlendMode.BLEND_MASKED);m.set_editor_property('two_sided',True)
+    m.set_editor_property('opacity_mask_clip_value',.4)
     m.set_editor_property('shading_model',U.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
     m.set_editor_property('tangent_space_normal',False);m.set_editor_property('dithered_lod_transition',True)
     m.set_editor_property('used_with_instanced_static_meshes',True)

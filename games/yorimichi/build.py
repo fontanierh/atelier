@@ -338,7 +338,7 @@ def world_steps(ctx, park):
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
     return [
         # ------------------------------------------------------------ world
-        Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI],
+        Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI, ASSETS / 'environment/textures/tree-bark.jpg'],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
         Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'],
@@ -350,7 +350,8 @@ def world_steps(ctx, park):
                      REGIONS / 'skatepark' / 'pier_site.py',
                      REGIONS / 'forest_lake' / 'layout.py', REGIONS / 'zeppelin' / 'layout.py', TREEHOUSE / 'layout.py',
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
-                     REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py'],
+                     REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py'],
              needs=['world.treehouse_trees'],
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
                       out / 'megapark' / 'trail.json'],

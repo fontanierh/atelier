@@ -375,6 +375,9 @@ def build_materials(T):
     MI["_cloud"] = cloud_shadow_material(T["T_cloudmask"])
     MI["_painterly"] = painterly_material()
     MI["Bark"] = instance("MI_Bark", lit, T["T_bark"]); MI["Concrete"] = instance("MI_Concrete", lit, T["T_concrete"])
+    MI["BarkOlive"] = instance("MI_BarkOlive", lit, T["T_bark_olive"])
+    from foliage_material import enable_bark_lod_blend
+    enable_bark_lod_blend(MI["BarkOlive"])
     MI["Ground"] = instance("MI_Ground", lit, T["T_ground"]); MI["Road"] = instance("MI_Road", lit, T["T_road"], (0.34, 0.33, 0.33)); MI["Water"] = instance("MI_Water", lit, T["T_water"])
     MI["Sky"] = instance("MI_Sky", sky, None, (1.35, 1.35, 1.35))
     flat = {"Paint": (0.85, 0.85, 0.82), "Stone": (0.50, 0.50, 0.47), "Vermilion": (0.62, 0.12, 0.06), "Plaster": (0.80, 0.74, 0.62), "Tile": (0.16, 0.17, 0.20),
