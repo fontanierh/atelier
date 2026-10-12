@@ -22,8 +22,7 @@ FOLIAGE = {
 LINK = {'longtree': 2.6, 'poplar': 2.0, 'birch': 1.0, 'shrub': 1.2, 'shrubpot': 1.5, 'ocotillo': 1.0, 'saguaro': .8,
         'treewall': 3.0}
 
-# Island meshes (/Game/Japan/Assets): height and crown radius in metres at scale 1 (world/build_assets.py). All are the detailed leaf-card kind the island uses where the
-# player gets close; the painted-card _lo trees are for the far forest.
+# Island leaf-card meshes: height and crown radius in metres at scale 1 (world/build_assets.py).
 MESHES = {
     'Tree_Maple_A': (6.5, 3.0), 'Tree_Maple_B': (5.2, 2.3), 'Tree_Ginkgo': (9.0, 2.2), 'Tree_Broad_A': (8.5, 2.3),
     'Tree_Broad_B': (7.0, 1.9), 'Tree_Broad_C': (10., 2.7), 'Tree_Pine_A': (13.0, 2.6), 'Tree_Pine_B': (11.0, 2.4),
@@ -31,7 +30,7 @@ MESHES = {
     'Bush_Ochre_B': (1.1, 1.1), 'Bush_Green_A': (1.4, 1.4), 'Bush_Green_B': (1.0, 1.0), 'Bush_Flower_A': (1.2, 1.2),
 }
 # Original plant -> (mesh, weight) choices and the scale range. The rock rims get pines, cedars and broadleaves like the
-# forest round the park; the groves and canyons get the painted maples and ginkgos; the shrubs become ochre bushes and
+# forest round the park; the groves and canyons get maples and ginkgos; the shrubs become ochre bushes and
 # small red maples, the paintovers' undergrowth (the green bushes read pale yellow against the rock). A tree
 # TALL metres or more becomes a big conifer or broadleaf, leafy down its trunk rather than a crown on a bare pole.
 CHOICES = {

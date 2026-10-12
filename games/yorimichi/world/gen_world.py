@@ -110,8 +110,9 @@ SLOPE = np.hypot(*np.gradient(H, STEP))
 
 # ------------------------------------------------------------------ placements
 inst = {}
-def put(name, x, y, z=None, yaw=None, scale=1.0):
-    inst.setdefault(str(name), []).append([round(float(x), 2), round(float(y), 2), round(float(sample_h(x, y) if z is None else z), 2),
+def put(name, x, y, z=None, yaw=None, scale=1.0, into=None):
+    target = inst if into is None else into
+    target.setdefault(str(name), []).append([round(float(x), 2), round(float(y), 2), round(float(sample_h(x, y) if z is None else z), 2),
                                       round(float(rng.uniform(0, 360) if yaw is None else yaw), 1), round(float(scale), 3)])
 
 def road_frame(s):
@@ -293,7 +294,7 @@ shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(ma
 x, y, z, tx, ty, ux, uy = road_frame(0.2 * L)
 shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(math.atan2(uy, ux)), 1), 14.0])          # looking up the bank at the trees
 use("far")
-# far hills ring (out to 3.2 km, open sea to the south) + cheap trees on its near part for silhouettes
+# Far hills ring (out to 3.2 km, open sea to the south) and detailed trees with distant LODs.
 FN = 96; FSZ = 6400.0; FSTEP = FSZ / (FN - 1)
 fx_ = np.linspace(-FSZ / 2, FSZ / 2, FN); FX, FY = np.meshgrid(fx_, fx_)
 FH1 = fbm(FN, 3, 4, 3); FH2 = fbm(FN, 7, 3, 5)
@@ -307,6 +308,7 @@ def far_h(x, y):
     fx = (x + FSZ / 2) / FSTEP; fy = (y + FSZ / 2) / FSTEP
     i = int(np.clip(fx, 0, FN - 2)); j = int(np.clip(fy, 0, FN - 2)); u = fx - i; v = fy - j
     return FZ[j, i] * (1 - u) * (1 - v) + FZ[j, i + 1] * u * (1 - v) + FZ[j + 1, i] * (1 - u) * v + FZ[j + 1, i + 1] * u * v
+far_trees = {}
 for gy in np.arange(-1300, 2600, 11.0):
     for gx in np.arange(-2600, 2600, 11.0):
         x = gx + rng.uniform(-6, 6); y = gy + rng.uniform(-6, 6)
@@ -314,7 +316,13 @@ for gy in np.arange(-1300, 2600, 11.0):
         h = far_h(x, y)
         if h < 1 or rng.random() > 0.75: continue
         name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
-        put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75))
+        put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75), into=far_trees)
+# Clear only this producer's trees where Mega Park supplies its own canopy.
+# Detailed park, southwest and tree-house trees can share these asset names.
+from megapark.forest import clear_far_forest
+clear_far_forest({'instances': far_trees})
+for name, rows in far_trees.items():
+    inst.setdefault(name, []).extend(rows)
 
 road = [[round(float(a), 2), round(float(b), 2), round(float(c), 2)] for a, b, c in zip(RX, RY, RZ)]
 world = {"size": SIZE, "n": N, "sea_level": 0.0, "wind_dir": [0.30, 0.95], "wind_speed": 3.5, "rail_runs": rail_runs, "road": road, "road_width": 5.2, "anchors": anchors,
@@ -340,9 +348,6 @@ houses_layout.clear_and_dress(world, sample_h)
 # The Mega Park trail leaves the woodland air station's footpath north, over the far hills' shoulder to the park.
 from megapark.trail import integrate as integrate_park_trail
 integrate_park_trail(world, H)
-# The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
-from megapark.forest import clear_far_forest
-clear_far_forest(world)
 from forest.ecotone import northern_ecotone
 northern_ecotone(inst)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))

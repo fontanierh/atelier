@@ -6,7 +6,7 @@ from pathlib import Path
 from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 from communitypark import layout as community_park
-from forest.specs import MODEL_BY_KIND, KIND_BY_MODEL
+from forest.specs import MODEL_BY_KIND
 
 import numpy as np
 ROOT=yori.REGIONS
@@ -505,11 +505,11 @@ def generate():
     # Check the complete generated scatter, including street trees. Reserve
     # crown/awning clearance against each rotated shop, not only trunk centres.
     for name,placements in inst.items():
-        if not (name.startswith(('Tree')) or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
+        if not (name.startswith('Tree') or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
         kept=[]
         for item in placements:
             x,y,_,_,scale=item
-            margin=(5.5 if name.startswith(('Tree')) else 1.4)*scale+.7
+            margin=(5.5 if name.startswith('Tree') else 1.4)*scale+.7
             blocked=False
             for b in buildings:
                 a=math.radians(b['yaw']);dx=x-b['position'][0];dy=y-b['position'][1]

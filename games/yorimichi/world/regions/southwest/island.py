@@ -300,7 +300,7 @@ BROADS=(['Tree_Broad_A'],[1.0])
 CANOPY=(['Tree_Canopy_Crimson','Tree_Canopy_Maple'],['Tree_Canopy_Ginkgo','Tree_Canopy_Amber'])   # the tree house's big autumn crowns
 GROVE_R=46.0              # the dark cedar grove on the crown, behind the temple
 # Tree sizes at scale 1 for the stair clearance (trunk top, crown bottom, crown top, crown radius; metres above the
-# base): the painted trees as in treehouse/layout.py SPECIES, the big autumn crowns from the tree house build's
+# base): the detailed trees as in treehouse/layout.py SPECIES, the big autumn crowns from the tree house build's
 # trees.json (rounded up), the leaning pines measured on their own model (the radius takes in the whole lean).
 TREE_DIMS={'Tree_Maple_A':(3.6,2.3,7.1,3.6),'Tree_Broad_A':(4.7,3.1,9.1,3.1),
            'Tree_Ginkgo':(5.0,3.4,9.6,2.7),'Tree_Cedar_A':(15.2,2.1,16.6,4.0),

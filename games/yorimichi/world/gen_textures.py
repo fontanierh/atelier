@@ -256,20 +256,6 @@ def rooftile(n=512):
     save("T_rooftile.jpg", im)
 
 
-def farforest(n=1024):
-    """speckled autumn forest for the distant hills ring (one texel = one tree at 6 m)"""
-    r = rng_for(61); base = noise(n, 4, 3, 62)
-    g = np.array([0.34, 0.34, 0.16]); pal = [(0.30, 0.38, 0.18), (0.44, 0.44, 0.18), (0.66, 0.46, 0.14), (0.74, 0.30, 0.12), (0.82, 0.60, 0.16), (0.24, 0.32, 0.16), (0.80, 0.40, 0.14), (0.72, 0.52, 0.16)]
-    rgb = np.broadcast_to(g, (n, n, 3)).copy() * (0.8 + 0.4 * base[..., None])
-    im = Image.fromarray(np.clip(rgb * 255, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
-    for _ in range(6000):
-        x = r.uniform(0, n); y = r.uniform(0, n); rr = r.uniform(8, 16); c = pal[r.integers(len(pal))]
-        k = 1 + (r.random() - 0.5) * 0.3
-        d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=col(c, k))
-        d.ellipse([x - rr * 0.5, y - rr * 0.8, x + rr * 0.5, y], fill=col(c, k * 1.25))
-    save("T_farforest.jpg", im.filter(ImageFilter.GaussianBlur(0.8)))
-
-
 def grass():
     """Quiet paint for curved mesh blades; silhouette comes from real geometry.
 
@@ -420,4 +406,6 @@ def concrete(n=256):
 
 
 if __name__ == "__main__":
-    leaves(); autumn_leaves(); flower_atlas(); rooftile(); farforest(); grass(); bark(); road(); ground(); sky(); water(); concrete(); white()
+    for obsolete in yori.TEXTURES.glob("T_leaf_*_lo.png"): obsolete.unlink()
+    (yori.TEXTURES/"T_farforest.jpg").unlink(missing_ok=True)
+    leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); sky(); water(); concrete(); white()

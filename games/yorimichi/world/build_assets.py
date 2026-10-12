@@ -425,6 +425,8 @@ def export(ob, name):
 
 def main():
     a = parse()
+    # Retired sources must not be re-imported by the incremental asset glob.
+    for obsolete in _Path(OUTDIR).glob("Tree_*_lo.fbx"): obsolete.unlink()
     bpy.ops.wm.read_factory_settings(use_empty=True)
     materials()
     builders = {

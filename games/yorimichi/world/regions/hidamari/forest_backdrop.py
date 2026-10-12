@@ -1,10 +1,10 @@
 """Layered autumn/evergreen cover for the exposed eastern Hidamari hills.
 
 Only appends instances. Existing terrain, mountain, buildings and paths are
-unchanged. Dedicated opaque low-detail trees use the existing distant-tree gate.
+unchanged. Detailed forest crowns use matching distant LODs.
 """
 import math
-from forest.specs import MODEL_BY_KIND, KIND_BY_MODEL
+from forest.specs import MODEL_BY_KIND
 
 import numpy as np
 from hidamari import mountains
@@ -67,7 +67,7 @@ def append(instances,buildings,height,backdrop_grid,terrain_axes,north_height,ro
     d=np.minimum(np.where(x<1420,abs(y-(380+22*np.sin(x*.009)+15*np.sin(x*.022))),1e6),np.where(y<900,abs(x-(1345+30*np.sin(y*.011)+22*np.sin(y*.027))),1e6))
     scale*=.65+.35*mountains.smooth(d/160)
     # Leaf-based town trees form an irregular, human-scale transition. The
-    # mountain path gets the same detailed margin; opaque crowns stay behind it.
+    # mountain path gets the same detailed margin; larger crowns stay behind it.
     leafy=((d<70+20*np.sin(x*.019+y*.013))&(x<1450)&(y<700))|((mountains.trail_distance(x,y)<45)&(y<1300))
     names=np.array([MODEL_BY_KIND[k] for k in kind])
     names[leafy]=np.where(rng.random(np.count_nonzero(leafy))<.38,'Tree_Ginkgo','Tree_Maple_A')

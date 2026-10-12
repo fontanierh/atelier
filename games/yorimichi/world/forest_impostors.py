@@ -88,6 +88,7 @@ def bake(obj, output, size=256):
             if mode=='normal':pixels[pixels[:,:,3]<.005,:3]=(.5,.5,1.)
             else:
                 filled=pixels[:,:,3]>.005
+                leaf_colour=np.average(pixels[filled,:3],axis=0,weights=pixels[filled,3])
                 for _ in range(4):
                     total=np.zeros_like(pixels[:,:,:3]);weight=np.zeros_like(pixels[:,:,3])
                     for dy,dx in ((-1,0),(1,0),(0,-1),(0,1)):
@@ -99,6 +100,7 @@ def bake(obj, output, size=256):
                         total+=np.roll(pixels[:,:,:3],(dy,dx),(0,1))*valid[:,:,None];weight+=valid
                     extend=~filled&(weight>0)
                     pixels[extend,:3]=total[extend]/weight[extend,None];filled|=extend
+                pixels[~filled,:3]=leaf_colour
             tile=bpy.data.images.new('ForestTile',x1-x0,y1-y0,alpha=True)
             tile.colorspace_settings.name='Non-Color';tile.pixels[:]=pixels.ravel().tolist();tile.scale(size,size)
             cells.append(np.array(tile.pixels[:],np.float32).reshape(size,size,4));bpy.data.images.remove(tile)

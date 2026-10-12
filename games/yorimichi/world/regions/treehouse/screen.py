@@ -26,8 +26,7 @@ SCREEN = dict(
     across=(-1.5, 0., 1.5),                     # the middle and both edges of the walk
     clear=7.5,                                  # off every walk: a cedar's crown is solid down to head height
     gap=2.6, spacing=3.4,                       # from the trunks already there, and between the new trees
-    replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A',       # or in the place of one of these
-             'Tree_Maple_A', 'Tree_Ginkgo', 'Tree_Broad_A'),
+    replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A'),       # or in the place of one of these
     grid=1.5, reach=80., away=22.,              # candidate spots: within `reach` of an eye, `away` from every place
     most=36, least=.01, passes=3,               # at most this many trees; stop when the next hides less than this
                                                 # (in whole towers: 1 is everything one spot saw)
@@ -61,7 +60,7 @@ def crown_rows(instances, species, near=None, reach=None, core=None):
         if near is not None: a = a[np.hypot(a[:, 0]-near[0], a[:, 1]-near[1]) < reach]
         if not len(a): continue
         s = a[:, 4]; lo = a[:, 2]+dims[1]*s; hi = a[:, 2]+dims[2]*s
-        r = (core or CORE)*dims[3]*s*(.85 if name.endswith('_lo') else 1.)
+        r = (core or CORE)*dims[3]*s
         cone = np.full(len(a), name.startswith(('Tree_Cedar', 'Tree_Pine')))
         cols.append(np.column_stack([a[:, 0], a[:, 1], lo, hi, r, cone]))
     return np.vstack(cols) if cols else np.zeros((0, 6))

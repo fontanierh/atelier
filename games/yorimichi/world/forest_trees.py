@@ -43,14 +43,15 @@ def tree(name, kind, seed, height, spread, leaf):
                 lobes.append((centre,(radius,radius,height*.07)))
     elif kind=='olive':
         for leader in range(3):
-            angle=leader*math.tau/3+.25
-            reach=spread*.25
-            centre=Vector((math.cos(angle)*reach,math.sin(angle)*reach,height*(.63+.06*(leader%2))))
-            joint=fork+(centre-fork)*.55+Vector((.25,-.18,.15))
+            angle=leader*math.tau/3+.25+rng.uniform(-.22,.22)
+            reach=spread*rng.uniform(.22,.28)
+            centre=Vector((math.cos(angle)*reach,math.sin(angle)*reach,height*rng.uniform(.59,.71)))
+            bend=rng.uniform(-.35,.35)
+            joint=fork+(centre-fork)*.55+Vector((-math.sin(angle)*bend,math.cos(angle)*bend,.15))
             if getattr(mesh,'branch_detail',True):
                 mesh.tube(fork,joint,.26,.19,bark,n=8)
                 mesh.tube(joint,centre,.19,.07,bark,n=7)
-            lobes.append((centre,(spread*.24,spread*.24,height*.22)))
+            lobes.append((centre,(spread*rng.uniform(.21,.25),spread*rng.uniform(.21,.25),height*rng.uniform(.19,.23))))
             for side in (-1,1):
                 offset=Vector((math.cos(angle+side*.9),math.sin(angle+side*.9),.35))*spread*.11
                 lobes.append((centre+offset,(spread*.16,spread*.16,height*.15)))
@@ -66,7 +67,7 @@ def tree(name, kind, seed, height, spread, leaf):
                 centre=lean+Vector((math.cos(angle)*reach,math.sin(angle)*reach,
                                     height*(centre_z+(ring-.5)*.10)+rng.uniform(-.25,.25)))
                 lobes.append((centre,(spread*rng.uniform(.22,.27),spread*rng.uniform(.22,.27),depth)))
-    for centre, radii in (lobes if getattr(mesh,'branch_detail',True) else []):
+    for centre, radii in (lobes if getattr(mesh,'branch_detail',True) and kind!='olive' else []):
         branch_end=fork+(centre-fork)*.78
         thickness=.23 if kind in ('olive','oak','stone-pine') else .11
         mesh.tube(fork-Vector((0,0,.12)),branch_end,thickness,.045,bark,n=6,uvscale=(1,.5))

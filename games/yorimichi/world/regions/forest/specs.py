@@ -14,4 +14,3 @@ FOREST = {
 
 MODEL_BY_KIND = dict(Gold="Tree_Forest_Ginkgo", Rust="Tree_Forest_Maple",
                      Green="Tree_Forest_Oak", Pine="Tree_Forest_Pine")
-KIND_BY_MODEL = {model: kind for kind, model in MODEL_BY_KIND.items()}
