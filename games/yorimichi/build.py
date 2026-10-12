@@ -267,8 +267,10 @@ def belmonte_steps(out):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', YORI],
              needs=['world.layout'], outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
+        # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
-                                             null_rhi=True, modules=IMPORT_CODE)],
+                                             null_rhi=True, modules=IMPORT_CODE,
+                                             args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
              inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'atmosphere.py'],
              needs=['world.belmonte', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset'],
