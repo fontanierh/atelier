@@ -191,6 +191,13 @@ uv run pytest                            # studio and game Python tests
   guard report allows it, and says which slot each step used. A compile waits for a small job to finish.
 - A checkout whose code predates the slots stays safe but refuses to start while a small job runs: merge main into
   every checkout before switching to two slots.
+- A machine may reserve an additional Blender fitting lane with `fitting_checkout` in `render-slots.json`, keeping
+  `slots` at 2. Before enabling it, update every active build/play client to the guard that understands all three
+  mutexes; a fitting job refuses live holders with older guards. Only that checkout may request it, through
+  `atelier.safety.guarded --fitting GIB`, with one background Blender child expected to peak at most 3 GiB.
+  It needs at least 10 GiB available and retains the 4 GiB actual-child memory ceiling. It never falls back to BIG,
+  and compiles wait for all three lanes. Set `fitting_paused` to true for performance or filming windows and wait
+  for any admitted fitting job to exit. The reservation grants capacity only; take its lock only while working.
 - The live bridge (Unreal plugin, port 8830) stays loopback-only.
 - Every machine has its own `~/.cache/atelier/render-board.md`. Read its Holding, Waiting and latest Log entries
   before a heavy job. Post the task, checkout, requested slot and estimated duration under Waiting; while actually

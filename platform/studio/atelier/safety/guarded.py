@@ -143,10 +143,14 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0., track_tree=False):
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None):
     """Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
     when a compound worker attaches its own actual-child guards immediately at launch."""
+    if fitting_gib is not None:
+        if (not lock or kind != 'job' or not command or Path(command[0]).name.lower() != 'blender'
+                or not any(arg in ('-b', '--background') for arg in command[1:]) or watch or track_tree):
+            raise ValueError('the fitting slot requires one background Blender child under its normal lock and guard')
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     horizon = timeout if timeout > 0 else None
@@ -159,13 +163,13 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 if on_slot is not None:
                     on_slot(name, why)
             stack.enter_context(render_lock(purpose or Path(command[0]).name, small_gib=small_gib, kind=kind,
-                                            on_slot=taken))
-        if slot == 'small':
+                                            on_slot=taken, fitting_gib=fitting_gib))
+        if slot in ('small', 'fitting'):
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
         child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env)
         stack.callback(reap, child)
-        where = f', small render slot, {limit_gib:g} GiB limit' if slot == 'small' else ''
+        where = f', {slot} render slot, {limit_gib:g} GiB limit' if slot in ('small', 'fitting') else ''
         print(f'pid {child.pid}, guard report {folder/"memory-health.json"}{where}', flush=True)
         monitor = stack.enter_context(attach_memory_guard(child.pid, folder/'memory-health.json',
                                                           duration=horizon, limit_gib=limit_gib))
@@ -178,6 +182,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         deadline = started+horizon if horizon else None
         spoken = started
         while child.poll() is None:
+            if fitting_gib is not None and process_tree.name(child.pid).lower() != 'blender':
+                raise SystemExit('the fitting child is not Blender')
             if tree is not None:
                 tree.poll()
                 tree.check()
@@ -204,6 +210,8 @@ def main(argv=None):
     parser.add_argument('--no-lock', action='store_true', help='skip the render lock (the memory guard stays)')
     parser.add_argument('--small', type=float, default=None, metavar='GIB',
                         help='expected peak in GiB: the job may use the small render slot (at most 3 GiB, 4 GiB limit)')
+    parser.add_argument('--fitting', type=float, default=None, metavar='GIB',
+                        help='reserved background Blender fitting slot only (at most 3 GiB, 4 GiB limit)')
     parser.add_argument('--kind', choices=KINDS, default='job', help='recorded in the lock file; games and compiles '
                         'always use the big slot, and a compile waits for a small job to finish')
     parser.add_argument('command', nargs=argparse.REMAINDER)
@@ -212,7 +220,7 @@ def main(argv=None):
     if not command:
         raise SystemExit('nothing to run')
     return run(command, args.report, args.timeout, args.purpose, lock=not args.no_lock, small_gib=args.small,
-               kind=args.kind)
+               kind=args.kind, fitting_gib=args.fitting)
 
 
 if __name__ == '__main__':

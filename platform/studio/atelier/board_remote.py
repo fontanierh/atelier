@@ -344,7 +344,7 @@ def restart_blocker(pid, started, table=None, locks=None, start_reader=process_s
     descendants = family(pid, table)
     if locks is None:
         locks = []
-        for name in ("render.lock", "render.small.lock"):
+        for name in ("render.lock", "render.small.lock", "render.fitting.lock"):
             path = HOME / ".cache/atelier" / name
             try:
                 record = json.loads(path.read_text() or "{}")
