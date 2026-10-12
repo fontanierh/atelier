@@ -24,9 +24,9 @@ double ServerNow(const UWorld* World)
 }
 }
 
-void AZeppelinService::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+void AZeppelinService::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
- Super::GetLifetimeReplicatedProps(Out);
+ Super::GetLifetimeReplicatedProps(OutLifetimeProps);
  DOREPLIFETIME(AZeppelinService,NetworkState);
 }
 

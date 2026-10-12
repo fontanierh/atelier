@@ -56,7 +56,7 @@ struct FProbe
 {
     TWeakObjectPtr<UWorld> World;
     FString Case;
-    int32 Phase = 0, LocalPhase = -1;
+    int32 Phase = 0, LocalPhase = -1, CapturedPhase = -1;
     double Began = -1., PhaseAt = 0., LastWrite = -1.;
     bool Finished = false, DefaultVehicles = false;
     TArray<TSharedPtr<FJsonValue>> Stages;
@@ -200,7 +200,15 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         Probe.LastWrite = Now;
         if (!Save(Folder / (Server ? TEXT("features-host.json") : TEXT("features-guest.json")), Host)) { Error = TEXT("Could not save feature observation"); return false; }
     }
-    if (!Server) return Probe.Finished;
+    if (!Server)
+    {
+        if (FParse::Param(FCommandLine::Get(), TEXT("networkrender")) && Now - Probe.PhaseAt >= 2. && Probe.CapturedPhase != Probe.Phase)
+        {
+            FScreenshotRequest::RequestScreenshot(Folder / FString::Printf(TEXT("feature-%d.png"), Probe.Phase), false, false);
+            Probe.CapturedPhase = Probe.Phase;
+        }
+        return Probe.Finished;
+    }
     auto Peer = Read(Folder / TEXT("features-guest.json"));
     if (!Peer || Peer->GetNumberField(TEXT("phase")) != Probe.Phase || Now - Probe.PhaseAt < 2.) return false;
     auto Gate = [&](const FJsonObject& R)

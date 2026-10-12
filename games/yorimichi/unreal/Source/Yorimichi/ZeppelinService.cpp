@@ -30,7 +30,7 @@ static FVector Local(double X,double Y,double Z) { return AJapanWorld::ToUE(X,Y,
 AZeppelinService::AZeppelinService()
 {
  PrimaryActorTick.bCanEverTick=true;
- bReplicates=true;bAlwaysRelevant=true;NetUpdateFrequency=20.f;MinNetUpdateFrequency=20.f;
+ bReplicates=true;bAlwaysRelevant=true;SetNetUpdateFrequency(20.f);SetMinNetUpdateFrequency(20.f);
  RootComponent=CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
  ShipRoot=CreateDefaultSubobject<USceneComponent>(TEXT("Ship"));ShipRoot->SetupAttachment(RootComponent);
 }
