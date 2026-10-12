@@ -1,0 +1,33 @@
+{
+  "body_archive_sha256": "60fc40f636a49f334320e47361a9c36018253c8d380a55903a9c335c589814c4",
+  "head_revision": "clean-r03",
+  "head_blend_sha256": "a4832cafcd090456bcaaafb5406b2283e1638c0b6399b1460e6c59df2e00083c",
+  "chain_decal_sha256": "0c17570eef055bb29385997aed0233f328e2fe478c6ddd3b228cb0c06b283c7f",
+  "inputs": [
+    {
+      "path": "source/tripo_convert_4d68e977-2e7c-4327-815f-5c695208d271.fbx",
+      "size": 1929212,
+      "sha256": "cd54ca8e30b3550404414fd8df4f1caf62fbad6a58702767041bd8c87b6bcc45"
+    },
+    {
+      "path": "source/original-body.zip",
+      "size": 5288920,
+      "sha256": "60fc40f636a49f334320e47361a9c36018253c8d380a55903a9c335c589814c4"
+    },
+    {
+      "path": "source/chain-decal.png",
+      "size": 1177969,
+      "sha256": "0c17570eef055bb29385997aed0233f328e2fe478c6ddd3b228cb0c06b283c7f"
+    },
+    {
+      "path": "source/Nox-head-v2-Clean-r03.blend",
+      "size": 7007892,
+      "sha256": "a4832cafcd090456bcaaafb5406b2283e1638c0b6399b1460e6c59df2e00083c"
+    },
+    {
+      "path": "source/tripo_convert_4d68e977-2e7c-4327-815f-5c695208d271.fbm/tripo_rgb_235fe64d-4b05-406b-9dbb-2ea66c1cce26.jpg",
+      "size": 3578809,
+      "sha256": "42a4f4a139e834a73cfc1e9e2ef1cfdd4db2e13ce540e9cfa35d2fa0f40200db"
+    }
+  ]
+}

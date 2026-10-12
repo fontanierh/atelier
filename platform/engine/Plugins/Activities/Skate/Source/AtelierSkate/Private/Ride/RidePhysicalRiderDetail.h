@@ -53,15 +53,17 @@ namespace RidePhysicalRiderDetail
 
     inline TArray<TWeakObjectPtr<URidePhysicalRider>> GRiders;
 
-    // The physics assets built from the bone contract, by mesh (one map per fit), kept for the session: a character
+    inline int32 HullDirectionCount(const ISkateRider* RiderApi);
+    // The physics assets built from the bone contract, by mesh (one map per fit and hull resolution), kept for the session: a character
     // switch or a new ride takes its mesh's again rather than building it (and cooking the hulls) on that frame.
     struct FBuiltAsset { TWeakObjectPtr<UPhysicsAsset> Asset; int32 Fitted = 0; TMap<FName, FRideJointEnvelope> Bail; };
-    inline TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset> GBuiltAssets[2];
+    inline TMap<int32, TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>> GBuiltAssets[2];
 
     inline UPhysicsAsset* KeptPhysicsAsset(USkeletalMesh* Skeletal, const ISkateRider* RiderApi, UWorld* Game, bool bFitToSkin, int32& Fitted,
         TMap<FName, FRideJointEnvelope>& Bail)
     {
-        TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>& Kept = GBuiltAssets[bFitToSkin ? 1 : 0];
+        const int32 Directions = bFitToSkin ? HullDirectionCount(RiderApi) : 0;
+        TMap<TWeakObjectPtr<USkeletalMesh>, FBuiltAsset>& Kept = GBuiltAssets[bFitToSkin ? 1 : 0].FindOrAdd(Directions);
         for (auto It = Kept.CreateIterator(); It; ++It)
             if (!It->Key.IsValid() || !It->Value.Asset.IsValid())
             {
@@ -184,6 +186,10 @@ namespace RidePhysicalRiderDetail
     // its own) leaves the capsule. With 64 directions the hull cut up to 3 cm off a limb's side (none of them
     // reached the calf's widest ring); 256 leave under 1 cm, about 47 vertices a hull.
     constexpr int32 HullDirections = 256;
+    inline int32 HullDirectionCount(const ISkateRider* RiderApi)
+    {
+        return FMath::Clamp(RiderApi ? RiderApi->GetSkateCollisionHullDirections() : HullDirections, 64, 2048);
+    }
     // A vertex further than this from its body's bone (cm, for a 1.7 m rider) is not that body's skin: a part bound
     // in its bone's own space, imported at the mesh's origin, would stretch the hull to the feet.
     constexpr float SkinReach = 80.f;

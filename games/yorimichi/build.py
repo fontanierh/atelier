@@ -163,7 +163,7 @@ def moveset_import(character):
 def moveset_retarget(character, *args):
     """assets/characters/adventure/retarget.py onto one character, and its inputs."""
     retarget = CHARS / 'adventure' / 'retarget.py'
-    return Blender(retarget, ('--character', character, *args), threads=4), [CHARS / character, retarget, *sorted(CHARS.glob('*/adventure.toml')), NAMES]
+    return Blender(retarget, ('--character', character, *args), threads=3), [CHARS / character, retarget, *sorted(CHARS.glob('*/adventure.toml')), NAMES]
 
 
 def adventure_steps(out):
@@ -182,13 +182,14 @@ def adventure_steps(out):
              needs=['characters.adventure'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'adventure' / 'reference.json'],
              heavy=True, about='/Game/Adventure: motion reference, sword and paraglider'),
         Step('characters.cairo_adventure', [retarget, dump_own], inputs=retarget_inputs, needs=['characters.adventure'],
-             outputs=[out / 'cairo' / 'adventure' / 'export.json', out / 'cairo' / 'adventure' / 'own.npz'],
+             outputs=[out / 'cairo' / 'adventure' / 'export.json', out / 'cairo' / 'adventure' / 'own.npz'], heavy=True,
              about="Reference move set clips retargeted onto Cairo, to FBX, and Cairo's own clips in the set sampled for others"),
         Step('unreal.cairo_adventure', [importer], inputs=import_inputs, needs=['characters.cairo_adventure', 'unreal.cairo', 'unreal.adventure'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'cairo' / 'adventure.json'], heavy=True,
              about='/Game/CairoAdventure: Cairo with the adventure move set (-rider=CairoAdventure): his clips, definition and move record'),
         *sword_trainer_steps(out),
         *modori_steps(out),
+        *nox_steps(out),
     ]
 
 
@@ -209,7 +210,7 @@ def sword_trainer_steps(out):
              needs=['characters.sword_trainer'], outputs=[GAME / 'unreal' / 'Content' / 'SwordTrainer' / 'SK_SwordTrainer.uasset'],
              heavy=True, about='/Game/SwordTrainer: her mesh, materials, own clips and base definition'),
         Step('characters.sword_trainer_adventure', [retarget], inputs=retarget_inputs, needs=['characters.adventure', 'characters.cairo_adventure'],
-             outputs=[out / 'sword-trainer' / 'adventure' / 'export.json'], about="The merged move set retargeted onto Kaede, to FBX"),
+             outputs=[out / 'sword-trainer' / 'adventure' / 'export.json'], heavy=True, about="The merged move set retargeted onto Kaede, to FBX"),
         Step('unreal.sword_trainer_adventure', [importer], inputs=import_inputs, needs=['characters.sword_trainer_adventure', 'unreal.sword_trainer', 'unreal.adventure'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'sword-trainer' / 'adventure.json'], heavy=True,
              about='/Game/SwordTrainer/Adventure and DA_SwordTrainer: her merged move set, definition and move record'),
@@ -231,7 +232,7 @@ def modori_steps(out):
              needs=['characters.modori', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)], outputs=[GAME / 'unreal' / 'Content' / 'Modori' / 'SK_Modori.uasset'],
              heavy=True, about='/Game/Modori: his mesh, materials and base definition'),
         Step('characters.modori_adventure', [retarget], inputs=retarget_inputs, needs=['characters.adventure', 'characters.cairo_adventure'],
-             outputs=[out / 'modori' / 'adventure' / 'export.json'], about="The merged move set retargeted onto Modori, to FBX"),
+             outputs=[out / 'modori' / 'adventure' / 'export.json'], heavy=True, about="The merged move set retargeted onto Modori, to FBX"),
         Step('unreal.modori_adventure', [importer], inputs=import_inputs, needs=['characters.modori_adventure', 'unreal.modori', 'unreal.adventure'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'modori' / 'adventure.json'], heavy=True,
              about='/Game/Modori/Adventure and DA_Modori: his merged move set, definition and move record'),
@@ -239,6 +240,33 @@ def modori_steps(out):
                                                  env=(('BIKE_CHARACTER', 'modori'),))],
              inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'], needs=['characters.modori_bike', 'unreal.modori'],
              heavy=True, about="/Game/ModoriBike: his bike clips on SK_Modori"),
+    ]
+
+
+def nox_steps(out):
+    """The approved Nox source, every merged clip, and all procedural bike actions."""
+    nox = CHARS / 'nox'
+    (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('nox'), moveset_import('nox')
+    return [
+        Step('characters.nox', [Blender(nox / 'export_unreal.py', threads=3)], inputs=[nox, NAMES],
+             outputs=[out / 'nox/export.json'], heavy=True, about='Nox assembled mesh, hair rig and two 4K atlases to FBX'),
+        Step('unreal.nox', [UnrealScript(SCRIPTS / 'import_nox.py', 'NOX IMPORT COMPLETE', null_rhi=True,
+                                        modules=IMPORT_CODE + SAVED_TYPES)],
+             inputs=[SCRIPTS / 'import_nox.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             needs=['characters.nox', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)],
+             outputs=[GAME / 'unreal/Content/Nox/SK_Nox.uasset'], heavy=True,
+             about='/Game/Nox: assembled mesh, materials and base definition'),
+        Step('characters.nox_adventure', [retarget], inputs=retarget_inputs,
+             needs=['characters.adventure', 'characters.cairo_adventure'],
+             outputs=[out / 'nox/adventure/export.json'], heavy=True, about='All merged movement, actions and donor gestures on Nox'),
+        Step('unreal.nox_adventure', [importer], inputs=import_inputs,
+             needs=['characters.nox_adventure', 'unreal.nox', 'unreal.adventure'],
+             outputs=[GAME / 'unreal/Content/Data/nox/adventure.json'], heavy=True,
+             about='/Game/Nox/Adventure and DA_Nox: the playable merged set'),
+        Step('unreal.nox_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'NOX BIKE IMPORT COMPLETE', null_rhi=True,
+                                            env=(('BIKE_CHARACTER', 'nox'),))],
+             inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.nox_bike', 'unreal.nox'], heavy=True, about='/Game/NoxBike: all bike actions'),
     ]
 
 
@@ -417,6 +445,9 @@ def character_steps(ctx):
         Step('characters.modori_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', 'modori'))],
              inputs=[CHARS / 'modori', NAMES, ASSETS / 'vehicles' / 'bike'], needs=['world.bike'],
              outputs=[out / 'modori' / 'bike' / 'export.json'], about="Cairo's bike clips authored on Modori's rig, and the bike's channels"),
+        Step('characters.nox_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', 'nox'), threads=3)],
+             inputs=[ASSETS / 'vehicles' / 'bike' / 'rider.py', ASSETS / 'vehicles' / 'bike' / 'clips.toml', CHARS / 'nox', NAMES], needs=['world.bike'],
+             outputs=[out / 'nox/bike/export.json'], heavy=True, about='Every bike action authored on Nox'),
         # Likewise before data.stage, which needs it so the cook carries it; it reads only committed files.
         Step('characters.modori_grips', [Python(GRIPS / 'game.py', ('--character', 'modori', '--source', GRIPS / 'modori'))],
              inputs=[GRIPS / 'game.py', GRIPS / 'moments.py', *(GRIPS / 'modori' / f for f in ('poses.json', 'moments.json', 'body.glb'))],
@@ -594,7 +625,7 @@ def staging_steps(ctx, park):
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
              needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike', 'characters.modori_bike',
-                    'characters.modori_grips',
+                    'characters.modori_grips', 'characters.nox_bike',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
     ]

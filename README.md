@@ -142,6 +142,8 @@ problem, the agent builds a tool to capture their intent, and code applies the c
 
 **[Making a character](docs/CHARACTER_PIPELINE.md)** walks through every step with Cairo, Yorimichi's player: the
 prompts, the commands, the costs and the pitfalls.
+[Nox’s recipe](games/yorimichi/docs/NOX_CHARACTER_RECIPE.md) follows our separate head/body experiment through
+multiple Tripo models, Pixel Match texture repairs, assembly and a bespoke clipping review tool.
 
 ### Worlds from code
 
@@ -331,6 +333,8 @@ a fox-masked hunter with a sword. Its models, rigs, animation, world and code we
   swimming, sword fighting and gliding;
 - **[Modori](games/yorimichi/assets/characters/modori/README.md)**, the playable rival in a long cloth coat, with the
   same moves retargeted onto his own rig;
+- **[Nox](games/yorimichi/assets/characters/nox/README.md)**, a playable character assembled from separate head
+  and body generations, with a repaired face, rigged locs and the same movement, bike and skating systems;
 - **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
   a zeppelin line;
 - **three skate parks**: the skate pier, the community skate park and the Super Ultra Mega Park;

@@ -445,6 +445,9 @@ def bake(rig, hands, name, clip):
         c, a_b, s = channels_at(keys, t, extra, clip.get('linear', ()))
         short = solve(rig, hands, c, a_b, s, clip['space'])
         for limb, v in short.items(): worst[limb] = max(worst.get(limb, 0.), v)
+        for n in rig.order:
+            if n not in rig.pose:
+                rig.local(n)
         poses.append({n: rig.basis[n].copy() for n in rig.order})
         bike.append([round(c[k], 4) for k in ('crank', 'stand', 'lift', 'pitch', 'lean_bike', 'yaw', 'steer')])
     # Contact windows: a limb is pinned while both surrounding keys hold its grip, pedal or stand.

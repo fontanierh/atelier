@@ -291,8 +291,9 @@ public:
     /** How far the skin goes under the ground (cm along the ground's normal; below 0 it stays above): the deepest of
      *  a sample of the mesh's vertices, skinned on the CPU as the mesh shows them, each traced against the ground's
      *  complex collision. Bone is the body that carries the deepest; Groups, when given, gets the deepest of each of
-     *  SkinGroupCount groups of bodies (SkinGroupName). False without CPU vertex data. */
-    bool MeasureSkinDepth(float& Depth, FName& Bone, float* Groups = nullptr) const;
+     *  SkinGroupCount groups of bodies (SkinGroupName). Optional Vertex and Position identify the deepest sample and
+     *  its world position. False without CPU vertex data. */
+    bool MeasureSkinDepth(float& Depth, FName& Bone, float* Groups = nullptr, int32* Vertex = nullptr, FVector* Position = nullptr) const;
     static constexpr int32 SkinGroupCount = 7;
     /** torso (pelvis, spine, chest), head, upperarms, forearms, hands, legs (thighs, shins), feet. */
     static const TCHAR* SkinGroupName(int32 Group);
@@ -329,6 +330,7 @@ private:
     UPROPERTY() TObjectPtr<UPhysicsAsset> Built;
     UPROPERTY() TObjectPtr<USkeletalMesh> BuiltFor;
     bool bBuiltFit = false;
+    int32 BuiltHullDirections = 0;
     int32 BuiltFitted = 0;
     // Each joint's envelopes, by joint name: riding (the asset's, read as the rider begins) and bail (the simulation's, made
     // with the built asset). In a bail, RampLimits holds each joint's limits now (twist, Swing1, Swing2): they start

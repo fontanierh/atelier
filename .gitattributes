@@ -2,3 +2,6 @@
 platform/engine/Plugins/Activities/Skate/Data/runtime/** -text -whitespace
 # Model manifests verify exact source bytes on every platform.
 *.glb -text -whitespace
+# Keep reviewed third-party sources byte-identical to their pinned upstream checksums.
+games/yorimichi/tools/character_review_web/vendor/** -whitespace linguist-vendored
+games/yorimichi/tools/pixel_match/** -whitespace linguist-vendored

@@ -16,6 +16,10 @@ back and both sides, each view an edit of the approved front so the face and pro
 
 **3. A 3D model.** The four views go to [Tripo](https://www.tripo3d.ai) (multiview to 3D, model P2) for a textured
 mesh, about two minutes and 120 credits. Blender scripts then clean up details such as the brows, mouth and collar.
+[Charakuru's workflow](../games/yorimichi/docs/CHARAKURU_WORKFLOW.md) generates the head and the body separately
+instead, which gives the face far more of the image, mesh and texture budget.
+We tried that approach with [Nox](../games/yorimichi/docs/NOX_CHARACTER_RECIPE.md), then used Pixel Match
+projection, targeted texture repairs and a clipping review tool to finish the assembled character.
 
 <table><tr>
 <td width="70%"><img src="media/character/03-mesh.jpg" alt="Tripo's raw model and the cleaned model"></td>

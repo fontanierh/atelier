@@ -1,0 +1,49 @@
+{
+  "character": "nox",
+  "outfit": "02",
+  "part": "head",
+  "view": "right",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "background": "transparent",
+  "output_format": "png",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Correct only the facial/skull GEOMETRY and head boundary of Image 1, Nox's revised anatomical RIGHT PROFILE. Image 1 is the side EDIT TARGET. Image 2 is the checked FRONT HEAD, authority for exact vertical facial proportions and registration, neutral tired expression, material colours and design. Preserve the new darker character, not an earlier version.\n\nImage 1's face is too SHORT in height: the eye/nose/mouth/chin are higher than the corresponding front features. Keep forehead hairline around y=285, and extend the facial planes below it to match Image 2's face. Visible eye centre must be around y=493\u2013500, nose base y=628\u2013635, closed lip line y=706\u2013713, and CHIN/GOATEE END y=848\u2013855, instead of the current short chin at about y=795\u2013800. Keep face upright, gaze level, no tilt used to fake the landmarks. Preserve the adult warm-brown identity, lean defined cheek planes, broad nose and full closed lips, tiny narrow heavy-lidded eye opening with little white, dark under-eye modelling, simple moustache/goatee and low relaxed brows. Same proportions as the FRONT: do not shorten lower face or change expression. Ear/stud level, if visible, should match front at about y=608. The near RIGHT face and ear have NO tattoos or stud. All marks and silver stud belong to the far LEFT side and remain hidden. Keep the two foreground right-side locs partially obscuring the near right eye; do not open the fringe.\n\nAlso remove the small bare NECK TRIANGLE/STUMP beneath or behind the jaw in Image 1. Skin ends at the head's jaw underside and ear/skull boundary; no skin projection continues down from the nape. The long black locs remain full and are not removed with the neck. There must be absolutely NO NECK, shoulder, collar, hoodie or stand. Only head, face, ear where visible, existing left stud if visible, and ALL black hair.\n\nKeep the existing loc silhouette at the same scale and position: highest hair y=45\u201355, same irregular black rounded shoulder-length locks and longest tips around y=970\u2013980. No copper or dyed tips, new strands, wind, trimmed hair or swept-away fringe. Head-plus-hair image size does not change when the FACE geometry is corrected. True 90-degree orthographic anatomical RIGHT side closest to camera, nose SCREEN RIGHT, one near eye only, no three-quarter face or mirroring.\n\n1024x1024 PNG with real alpha outside opaque subject, all outline inside with clear margins. No background, checkerboard, cast shadow or glow. Same smooth painted stylised 3D-game finish, warm-brown skin, large quiet charcoal hair reflections, restrained silver highlight, no pores or busy details. No text, coordinate labels, guide marks, extra tattoo or second view. ONE RIGHT PROFILE HEAD. Correct the short facial landmarks to the front, remove the neck remnant, preserve all hair and actual side-specific design.\n",
+  "prompt_file": "right.prompt.txt",
+  "prompt_sha256": "f22ceeb72b90610fe8e6585729b94e09b7c13c4572bfa9104f7092d0eef65d2a",
+  "input_images": [
+    {
+      "file": "build/yorimichi/characters/nox/charakuru-r02/archive/head-right-face-registration/right.png",
+      "sha256": "2257e47254c14a12f351559b0ec3124ef40544120de412e367268b9371889614"
+    },
+    {
+      "file": "build/yorimichi/characters/nox/charakuru-r02/head/front.png",
+      "sha256": "d20b66247c7dc4bb5f8dec651e1af26dee2813a48298cea1c9f6610bdecb8483"
+    }
+  ],
+  "owner": "repo-refs-01a11d3f",
+  "execution": "repository Sunburst API client through atelier.ai.ledger",
+  "status": "done",
+  "started_at": "2026-10-11T13:36:38.442764+00:00",
+  "output": "right.png",
+  "output_sha256": "2b690951752b81e784bcc3e27e165b7f43cf081aec36177df1dcaefe559d0303",
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "genuine_alpha": true,
+  "alpha_extrema": [
+    0,
+    254
+  ],
+  "transparent_fraction": 0.4722,
+  "silhouette_bbox": [
+    135,
+    36,
+    873,
+    993
+  ],
+  "finished_at": "2026-10-11T13:37:21.825502+00:00"
+}

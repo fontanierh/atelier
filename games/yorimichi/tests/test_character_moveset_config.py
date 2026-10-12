@@ -15,7 +15,7 @@ def pascal(character):
 
 
 def test_the_playable_characters_have_one():
-    assert {'cairo', 'modori', 'sword-trainer'} <= set(SPECS)
+    assert {'cairo', 'modori', 'nox', 'sword-trainer'} <= set(SPECS)
 
 
 @pytest.mark.parametrize('character', sorted(SPECS))

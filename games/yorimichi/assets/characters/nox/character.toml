@@ -1,0 +1,9 @@
+id = "nox"
+display_name = "Nox"
+role = "player"
+rig = "mixamo"
+height_cm = 178
+revision = "assembled-r03"
+source = "Nox.glb"
+manifest = "source-manifest.json"
+licence = "own (Sunburst references, Tripo mesh and body rig, local texture repairs and hair rig)"

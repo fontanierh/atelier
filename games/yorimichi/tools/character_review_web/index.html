@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e7e9ee">
+<link rel="icon" href="data:,">
+<title>Character review</title>
+<script>if(!location.pathname.endsWith('/'))location.replace(location.pathname+'/'+location.search);</script>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+</head>
+<body data-revision="current">
+<header><div><h1>Character review</h1><p id="description">Rotate, inspect and mark issues</p></div><a id="download" href="model.glb" download>Download GLB</a></header>
+<main id="stage"><canvas id="view" aria-label="Interactive character model. Drag to rotate, pinch or scroll to zoom."></canvas><div id="loading" role="status">Loading model…</div><div id="hint">Drag to rotate · pinch or scroll to zoom · two fingers to pan</div></main>
+<footer><div id="body-tools" hidden><div class="row"><button id="mark" aria-pressed="false">Mark clipping</button><button id="undo-mark">Undo mark</button><button id="save-marks">Save marks</button><button id="motion" aria-pressed="false" disabled>Motion unavailable</button></div><p id="mark-status">Tap Mark clipping, then tap a problem spot. Drag to rotate.</p></div><div class="row views" aria-label="Camera views"><button data-view="front" class="active">Front</button><button data-view="left">Left</button><button data-view="back">Back</button><button data-view="right">Right</button><button data-view="under">Under</button><button data-view="collar">Collar</button><button id="reset">Reset</button></div><div class="row options"><label>Show <select id="material"><option value="texture">Texture</option><option value="lit">Soft lighting</option><option value="wire">Wireframe</option></select></label><button id="spin" aria-pressed="false">Turntable</button><button id="background" aria-pressed="false">Dark background</button><button id="fullscreen">Fullscreen</button></div><p class="note" id="model-note">Marking pauses the pose. Saves include the mesh, face, point, camera and bone rotations. Hair motion, when available, is a neutral-pose browser prototype.</p></footer>
+<script type="module" src="app.js"></script>
+</body></html>

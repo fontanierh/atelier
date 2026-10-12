@@ -19,7 +19,9 @@ def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
               'SwordTrainer/Adventure/A_Run.uasset', 'SwordTrainer/A_Bow.uasset', 'SwordTrainer/Textures/body.uasset',
               'Data/SkateRide/clips.json', 'Data/cairo/adventure.json', 'Data/hippodrome/hippodrome.json',
               'Audio/Skate/roll.uasset', 'SkateMotion/MotionData.uasset', 'SkateMotion/Banks/Bank_000.uasset',
-              'SkateRuntime/RuntimeData.uasset']
+              'SkateRuntime/RuntimeData.uasset', 'Nox/SK_Nox.uasset', 'Nox/Adventure/A_Run.uasset',
+              'Nox/Textures/T_Nox_Head.uasset', 'NoxBike/A_Ride.uasset',
+              'Data/nox/adventure.json', 'Data/nox/bike/export.json']
     old = ['RetiredCharacter/mesh.uasset', 'Data/retired-roster/roster.json',
            'Cairo/A_Roll.uasset', 'Cairo/A_DashGround.uasset', 'Cairo/A_SwordAttack1.uasset',
            'Cairo/BS_Locomotion.uasset', 'Cairo/DA_Cairo.uasset', 'Cairo/SM_Bokken.uasset',
