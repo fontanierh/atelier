@@ -4,6 +4,7 @@
 #include "JapanWorld.h"
 #include "JapanNetwork.h"
 #include "JapanCharacterMovement.h"
+#include "JapanSkateNetwork.h"
 #include "PlayableCharacter.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
@@ -99,6 +100,9 @@ struct FProbe
             Row->SetNumberField(TEXT("action_time"), P->GetActionTime());
             Row->SetStringField(TEXT("move_mode"), Moves->ModeName());
             Row->SetNumberField(TEXT("streamed_pose_bones"), P->GetSkate()->GetRiderPose().Num());
+            const auto* Stream = P->FindComponentByClass<UJapanSkateNetwork>();
+            Row->SetNumberField(TEXT("observed_pose_frames"), Stream ? Stream->GetObservedPoseCount() : 0);
+            Row->SetNumberField(TEXT("matching_pose_frames"), Stream ? Stream->GetMatchingPoseCount() : 0);
             Row->SetNumberField(TEXT("checkpoints"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->GetNetworkStats().Checkpoints);
             Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
             Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));
@@ -272,6 +276,11 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     {
         if (!R.GetBoolField(TEXT("ready")) || !R.GetBoolField(TEXT("attachment")) || R.GetNumberField(TEXT("health")) != 73. || R.GetNumberField(TEXT("hits")) != 2.) return false;
         const int32 Phase = Probe.Phase;
+        if (Probe.Activity() == EJapanActivity::Skate && Phase >= 1 && Phase <= 3 && !R.GetBoolField(TEXT("local")))
+        {
+            const double Observed = R.GetNumberField(TEXT("observed_pose_frames"));
+            if (Observed < 30. || R.GetNumberField(TEXT("matching_pose_frames")) < Observed * .95) return false;
+        }
         if (Probe.Case == TEXT("equipment"))
             return (Phase == 0 || Phase == 4) ? !R.GetBoolField(TEXT("armed")) :
                 R.GetBoolField(TEXT("armed")) && (Phase != 2 || (R.GetBoolField(TEXT("guard")) && R.GetNumberField(TEXT("guard_weight")) > .8));

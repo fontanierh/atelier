@@ -55,6 +55,11 @@ def feature_checks(folder, case):
                 checks[prefix+'activity'] = all(r.get('activity') == activity for r in rows)
                 expected = 'Modori' if (phase >= 2 and case == 'zeppelin') or phase == 2 else 'Cairo'
                 checks[prefix+'rider'] = all(r.get('rider') == expected for r in rows)
+                if case.startswith('switch-skate') and phase in (1, 2, 3):
+                    remote = next((r for r in rows if r.get('local') is False), {})
+                    observed, matching = (remote.get(k) for k in ('observed_pose_frames', 'matching_pose_frames'))
+                    checks[prefix+'displayed_replacement_pose'] = (type(observed) is int and type(matching) is int and
+                                                                  observed >= 30 and observed * .95 <= matching <= observed)
                 if phase == 2:
                     checks[prefix+'replacement_class'] = all(r.get('pawn') != original_classes.get(r.get('player')) for r in rows)
                     if case.startswith('switch-skate'):

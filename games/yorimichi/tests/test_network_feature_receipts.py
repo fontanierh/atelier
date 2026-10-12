@@ -53,10 +53,28 @@ def test_skate_replacement_height_uses_retained_root(receipt, height):
             for row in stage[side]['views']:
                 row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
                            simulation_tick=200, continued_at_tick=100, body_lift=88,
-                           standing_half=88, ride_root_z=10, z=98)
+                           standing_half=88, ride_root_z=10, z=98,
+                           observed_pose_frames=100, matching_pose_frames=100)
     value['stages'][2]['guest']['views'][1].update(body_lift=height)
     path.write_text(json.dumps(value))
     assert all(review.feature_checks(receipt, 'switch-skate').values()) is (height == 88)
+
+
+@pytest.mark.parametrize('observed,matching,accepted', [(100, 100, True), (100, 0, False), (None, None, False)])
+def test_skate_swap_requires_evaluated_remote_pose(receipt, observed, matching, accepted):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['case'] = 'switch-skate'
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
+                           simulation_tick=200, continued_at_tick=100, body_lift=88,
+                           standing_half=88, ride_root_z=10, z=98,
+                           observed_pose_frames=100, matching_pose_frames=100)
+    value['stages'][2]['guest']['views'][0].update(observed_pose_frames=observed, matching_pose_frames=matching)
+    path.write_text(json.dumps(value))
+    assert all(review.feature_checks(receipt, 'switch-skate').values()) is accepted
 
 
 def test_rendered_feature_requires_complete_decodable_captures(tmp_path):
