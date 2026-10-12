@@ -172,6 +172,7 @@ def main():
                 placements.append({'asset': path, 'transform': transform(t), 'materials': material_paths,
                                    'actor': actor.get_actor_label()})
     options = unreal.FbxExportOption()
+    options.set_editor_property('vertex_color', True)
     options.set_editor_property('collision', True)
     options.set_editor_property('level_of_detail', False)
     assert meshes and placements, 'No visible environmental meshes extracted'

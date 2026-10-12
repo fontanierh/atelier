@@ -61,7 +61,7 @@ def replacements(data, ground=None):
                     offset[axis] = low[axis] + (index + .5) / count * size[axis]
                 position = translation + rotate(transform['rotation_xyzw'], offset * scale)
                 height = size[2] * abs(scale[2]) / 100.
-                fitted = float(np.clip(height / model_height, .25, 1.5))
+                fitted = float(np.clip(height / model_height, .6 if kind == 'tree' else .25, 1.5))
                 result = {'translation_cm': position.tolist(), 'rotation_xyzw': transform['rotation_xyzw'],
                           'scale': [fitted, fitted, fitted]}
                 priority = hashlib.sha256(f'{name}:{position[0]:.2f}:{position[1]:.2f}'.encode()).hexdigest()
@@ -114,12 +114,12 @@ def replacements(data, ground=None):
     return selected, report
 
 
-def woodland(surface, limit=2400):
+def woodland(surface, limit=6000):
     """Detailed leaf trees in clustered woodland on the connecting collar."""
     from . import terrain
     rng = np.random.default_rng(941)
-    x, y = np.meshgrid(np.arange(terrain.OUTER[0] + 8., terrain.OUTER[2], 14.),
-                       np.arange(terrain.OUTER[1] + 8., terrain.OUTER[3], 14.))
+    x, y = np.meshgrid(np.arange(terrain.OUTER[0] + 8., terrain.OUTER[2], 10.),
+                       np.arange(terrain.OUTER[1] + 8., terrain.OUTER[3], 10.))
     x, y = x.ravel(), y.ravel()
     x += rng.uniform(-4., 4., len(x)); y += rng.uniform(-4., 4., len(y))
     on = ~L.contains(x, y, margin=8.)
@@ -139,8 +139,8 @@ def woodland(surface, limit=2400):
     rng.shuffle(indices)
     result = {}
     for index in indices[:limit]:
-        name = rng.choice(['Tree_Maple_A', 'Tree_Ginkgo', 'Tree_Broad_A', 'Tree_Cedar_B'], p=[.3, .22, .38, .1])
-        scale = float(rng.uniform(.85, 1.25)); angle = float(rng.uniform(0., math.tau))
+        name = rng.choice(['Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo'], p=[.4, .2, .2, .2])
+        scale = float(rng.uniform(1., 1.4)); angle = float(rng.uniform(0., math.tau))
         result.setdefault(str(name), []).append({'translation_cm': [(float(x[index]) - L.ORIGIN[0]) * 100.,
                                                                     -(float(y[index]) - L.ORIGIN[1]) * 100.,
                                                                     (float(z[index]) - L.ORIGIN[2] - .1) * 100.],

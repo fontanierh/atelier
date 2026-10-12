@@ -68,6 +68,7 @@ def save(objects, path):
     bpy.context.view_layer.objects.active = objects[0]
     bpy.ops.export_scene.gltf(filepath=str(path), export_format='GLB', use_selection=True,
                               export_materials='EXPORT', export_animations=False,
+                              export_vertex_color='ACTIVE', export_all_vertex_colors=False,
                               export_cameras=False, export_lights=False, export_yup=True)
     assert path.is_file() and path.stat().st_size > 0, path
 

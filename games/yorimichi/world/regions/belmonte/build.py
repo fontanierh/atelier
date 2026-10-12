@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from atelier.gltf import glb_parts
-from belmonte import layout as L, source, planting, terrain
+from belmonte import layout as L, source, planting, terrain, appearance
 
 OUT = yori.OUT / 'belmonte'
 
@@ -65,6 +65,7 @@ def surroundings():
     for name, mesh in [('SM_BM_NorthApron', collar), ('SM_BM_NorthCountry', terrain.country())]:
         path = OUT / 'glb' / (name + '.glb')
         info = mesh.save(path, 'BM_000_Ground')
+        appearance.paint_join(path, mesh)
         entries.append({'name': name, 'path': path.relative_to(OUT).as_posix(), 'sha256': source.sha(path),
                         'bounds_m': [info['min'], info['max']], 'triangles': info['triangles'], 'slots': ['Ground']})
     return entries, seam
@@ -114,7 +115,7 @@ def main():
     material_name = 'MI_BM_Ground'
     materials['Ground'] = {'name': material_name, 'colour': [.24, .30, .12, 1.], 'tint': [1., 1., 1., 1.],
                            'terrain': False, 'layers': {}, 'tile_m': 4., 'white_vertex': True,
-                           'brightness': 1., 'atlas': False, 'water': False, 'texture': None}
+                           'brightness': 1., 'atlas': False, 'water': False, 'texture': None, 'join': True}
     for entry in extra:
         name = entry['name']
         groups.append({'asset': f'/Game/Belmonte/Meshes/{name}.{name}',

@@ -9,7 +9,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 import yori  # noqa: E402,F401
 from atelier.gltf import glb_parts  # noqa: E402
-from belmonte import layout as L, source, planting, terrain  # noqa: E402
+from belmonte import layout as L, source, planting, terrain, appearance  # noqa: E402
 from hidamari import layout as H  # noqa: E402
 
 
@@ -46,6 +46,31 @@ class CurrentSource(unittest.TestCase):
 
 
 class Terrain(unittest.TestCase):
+    def test_terrain_colours_use_the_authored_layer_instead_of_fake_white(self):
+        for entry in source.manifest()['meshes']:
+            if not entry['name'].startswith('SM_BM_BT_Terrain_'):
+                continue
+            doc, binary = glb_parts((source.LIBRARY / entry['path']).read_bytes())
+            for primitive in doc['meshes'][0]['primitives']:
+                attrs = primitive['attributes']
+                self.assertIn('COLOR_0', attrs)
+                self.assertNotIn('COLOR_1', attrs)
+                accessor = doc['accessors'][attrs['COLOR_0']]
+                view = doc['bufferViews'][accessor['bufferView']]
+                colour = np.frombuffer(binary, dtype='<u2', count=accessor['count']*4,
+                                       offset=view.get('byteOffset', 0)+accessor.get('byteOffset', 0)).reshape(-1, 4)/65535.
+                rgb = np.where(colour[:, :3] <= .0031308, colour[:, :3]*12.92, 1.055*colour[:, :3]**(1/2.4)-.055)
+                np.testing.assert_allclose(np.c_[rgb, colour[:, 3]].sum(1), 1., atol=.006)
+
+    def test_join_colour_interpolation_and_rim_weights(self):
+        surface = source.Surface([[[0., 0., 0.], [10., 0., 10.], [0., 10., 20.]]],
+                                 [[[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]])
+        np.testing.assert_allclose(surface.colour(2., 3.), [.5, .2, .3])
+        x = (L.BOUNDS[0]+L.BOUNDS[2])/2
+        self.assertEqual(float(appearance.forest_weight(x, L.BOUNDS[1])), 0.)
+        self.assertEqual(float(appearance.forest_weight(x, terrain.OUTER[1])), 1.)
+        self.assertAlmostEqual(float(appearance.forest_weight(x, (L.BOUNDS[1]+terrain.OUTER[1])/2)), .5)
+
     def test_height_is_triangle_intersection_not_nearest_vertex(self):
         surface = source.Surface([[[0., 0., 0.], [10., 0., 10.], [0., 10., 20.]],
                                   [[10., 0., 10.], [10., 10., 30.], [0., 10., 20.]]])

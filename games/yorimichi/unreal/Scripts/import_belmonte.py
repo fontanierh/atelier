@@ -105,13 +105,60 @@ def textures(report):
     return result
 
 
+def join_parent():
+    name = 'M_BelmonteJoin'; folder = ROOT + '/Materials'
+    material = E.load_asset(folder+'/'+name) if E.does_asset_exist(folder+'/'+name) else AT.create_asset(name, folder, unreal.Material, unreal.MaterialFactoryNew())
+    MEL.delete_all_material_expressions(material)
+    def node(cls, **properties):
+        result = MEL.create_material_expression(material, cls)
+        for key, value in properties.items(): result.set_editor_property(key, value)
+        return result
+    vc = node(unreal.MaterialExpressionVertexColor)
+    world = node(unreal.MaterialExpressionWorldPosition)
+    texture = E.load_asset('/Game/Japan/Textures/T_farforest')
+    assert texture
+    forest = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Forest', texture=texture)
+    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('World', world, ''), ('Forest', forest, '')]
+    shade = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
+                 code='''float3 valley=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
+float3 forest=Texture2DSample(Forest,ForestSampler,World.xy/18000.).rgb*float3(.5,.4,.2);
+return lerp(valley,forest,Alpha);''')
+    custom_inputs = []
+    for key, _, _ in inputs:
+        value = unreal.CustomInput(); value.set_editor_property('input_name', key); custom_inputs.append(value)
+    shade.set_editor_property('inputs', custom_inputs)
+    for key, expression, output in inputs:
+        assert MEL.connect_material_expressions(expression, output, shade, key)
+    fill = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
+                code='return Shade*.045*(1-Alpha);')
+    values = []
+    for key in ['Shade', 'Alpha']:
+        value = unreal.CustomInput(); value.set_editor_property('input_name', key); values.append(value)
+    fill.set_editor_property('inputs', values)
+    assert MEL.connect_material_expressions(shade, '', fill, 'Shade')
+    assert MEL.connect_material_expressions(vc, 'A', fill, 'Alpha')
+    base, emission = atmosphere.apply(material, shade, fill)
+    assert MEL.connect_material_property(base, '', unreal.MaterialProperty.MP_BASE_COLOR)
+    assert MEL.connect_material_property(emission, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    assert MEL.connect_material_property(node(unreal.MaterialExpressionConstant, r=1.), '', unreal.MaterialProperty.MP_ROUGHNESS)
+    assert MEL.connect_material_property(node(unreal.MaterialExpressionConstant, r=0.), '', unreal.MaterialProperty.MP_SPECULAR)
+    material.set_editor_property('used_with_instanced_static_meshes', True)
+    MEL.recompile_material(material); E.save_loaded_asset(material)
+    return material
+
+
 def surfaces(report, master, images):
+    join = join_parent()
     for entry in report['materials'].values():
         name = entry['name']
         path = ROOT + '/Materials/' + name
         material = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset(name, ROOT + '/Materials', unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
         MEL.clear_all_material_instance_parameters(material)
-        MEL.set_material_instance_parent(material, master)
+        MEL.set_material_instance_parent(material, join if entry.get('join') else master)
+        if entry.get('join'):
+            MEL.update_material_instance(material)
+            E.save_loaded_asset(material)
+            continue
         for key, value in [('Colour', entry['colour']), ('Tint', entry['tint'])] + list(entry['layers'].items()):
             MEL.set_material_instance_vector_parameter_value(material, key, unreal.LinearColor(*value[:3], 1.))
         for key, value in [('Tile', entry['tile_m']), ('WhiteVertex', float(entry['white_vertex'])),
@@ -186,6 +233,8 @@ def main():
             mesh.set_editor_property('complex_collision_mesh', collision)
             E.save_loaded_asset(collision)
         body = mesh.get_editor_property('body_setup')
+        if name.startswith('SM_BM_BT_Terrain_'):
+            mesh.set_editor_property('allow_cpu_access', name in {'SM_BM_BT_Terrain_0_0', 'SM_BM_BT_Terrain_4_4'})
         assert body, name
         body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         body.set_editor_property('double_sided_geometry', True)

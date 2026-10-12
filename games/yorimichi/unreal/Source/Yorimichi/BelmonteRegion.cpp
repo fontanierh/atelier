@@ -8,6 +8,8 @@
 #include "Engine/World.h"
 #include "Dom/JsonObject.h"
 #include "Materials/MaterialInterface.h"
+#include "StaticMeshResources.h"
+#include "Serialization/JsonSerializer.h"
 
 namespace
 {
@@ -142,4 +144,30 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     UE_LOG(LogTemp, Display, TEXT("BELMONTE ready=%d scenery=%d plants=%d missing=%d at %s"),
            Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, *Region->GetActorLocation().ToString());
     return Region;
+}
+
+FString ABelmonteRegion::ReviewMeshColours(const FString& Name)
+{
+    auto* Mesh = LoadObject<UStaticMesh>(nullptr, *(TEXT("/Game/Belmonte/Meshes/") + Name + TEXT(".") + Name));
+    if (!Mesh || !Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty()) return TEXT("");
+    const auto& Buffers = Mesh->GetRenderData()->LODResources[0].VertexBuffers;
+    const auto& Colours = Buffers.ColorVertexBuffer;
+    if (!Colours.GetVertexData() || !Colours.GetNumVertices()) return TEXT("");
+    TArray<TSharedPtr<FJsonValue>> Rows;
+    const uint32 Stride = FMath::Max(1u, Colours.GetNumVertices() / 32u);
+    for (uint32 I = 0; I < Colours.GetNumVertices(); I += Stride)
+    {
+        const FVector3f P = Buffers.PositionVertexBuffer.VertexPosition(I);
+        const FColor C = Colours.VertexColor(I);
+        auto Row = MakeShared<FJsonObject>();
+        TArray<TSharedPtr<FJsonValue>> Position, RGBA;
+        for (float V : {P.X, P.Y, P.Z}) Position.Add(MakeShared<FJsonValueNumber>(V));
+        for (uint8 V : {C.R, C.G, C.B, C.A}) RGBA.Add(MakeShared<FJsonValueNumber>(V));
+        Row->SetArrayField(TEXT("position_cm"), Position); Row->SetArrayField(TEXT("rgba_bytes"), RGBA);
+        Rows.Add(MakeShared<FJsonValueObject>(Row));
+    }
+    auto Report = MakeShared<FJsonObject>();
+    Report->SetStringField(TEXT("mesh"), Name); Report->SetArrayField(TEXT("samples"), Rows);
+    FString Output; FJsonSerializer::Serialize(Report.ToSharedRef(), TJsonWriterFactory<>::Create(&Output));
+    return Output;
 }
