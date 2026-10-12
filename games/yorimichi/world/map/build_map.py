@@ -135,10 +135,16 @@ def tree_points(prefixes):
                 excluded=(a[:,0]>300)&(a[:,0]<2200)&(a[:,1]>-450)&(a[:,1]<1600)
                 if NORTH:excluded|=(a[:,0]>NORTH[0])&(a[:,0]<NORTH[2])&(a[:,1]>NORTH[1])&(a[:,1]<NORTH[3])
                 a=a[~excluded]
+            if BELMONTE:
+                b = BELMONTE['clearance_m']
+                a = a[~((a[:, 0] >= b[0]) & (a[:, 0] <= b[2]) & (a[:, 1] > b[1]) & (a[:, 1] <= b[3]))]
             pts.append(a)
     if C:
         for k, v in C['instances'].items():
             if k.startswith(prefixes): pts.append(np.array([p[:2] for p in v], dtype=float))
+    if BELMONTE:
+        from belmonte.plan import trees
+        pts.append(trees(BELMONTE, prefixes))
     return np.concatenate(pts) if pts else np.zeros((0, 2))
 def density(prefixes):
     cell = 4.0
@@ -259,6 +265,9 @@ if os.path.exists(PARK):
     outline=deck_polygon(pier)
     LINES.append([[round(float(x),2),round(float(y),2)] for x,y in outline+[outline[0]]])
 # ---------- buildings, landmarks, props
+if BELMONTE:
+    from belmonte.plan import draw as draw_belmonte
+    draw_belmonte(d, wp, PX)
 from communitypark import layout as communitypark
 from communitypark.plan import draw as draw_communitypark
 if communitypark.available():   # the community park, from the committed library scene (docs/COMMUNITY_PARK.md)

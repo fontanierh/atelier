@@ -1,7 +1,7 @@
 #include "BelmonteRegion.h"
 #include "AtelierData.h"
 #include "JapanWorld.h"
-#include "JapanSeeThrough.h"
+#include "SeeThrough.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
