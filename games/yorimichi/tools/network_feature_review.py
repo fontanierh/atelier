@@ -73,6 +73,11 @@ def feature_checks(folder, case):
                     observed, matching = (remote.get(k) for k in ('observed_pose_frames', 'matching_pose_frames'))
                     checks[prefix+'displayed_replacement_pose'] = (type(observed) is int and type(matching) is int and
                                                                   observed >= 30 and observed * .95 <= matching <= observed)
+                    mesh_matches, error = (remote.get(k) for k in ('matching_mesh_frames', 'mesh_world_error'))
+                    checks[prefix+'displayed_body_world_frame'] = (type(observed) is int and type(mesh_matches) is int and
+                                                                  observed >= 30 and observed * .95 <= mesh_matches <= observed and
+                                                                  type(error) in (int, float) and 0 <= error <= 1 and
+                                                                  remote.get('body_visible') is True)
                 if phase == 2:
                     checks[prefix+'replacement_class'] = all(r.get('pawn') != original_classes.get(r.get('player')) for r in rows)
                     if case.startswith('switch-skate'):

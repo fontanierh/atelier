@@ -108,6 +108,8 @@ public:
     virtual bool VerifyClientTimeStamp(float Timestamp, FNetworkPredictionData_Server_Character& Data) override;
     virtual void TickComponent(float Dt, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     virtual void TickCharacterPose(float Dt) override;
+    virtual void SmoothClientPosition(float Dt) override;
+    virtual void SimulatedTick(float Dt) override;
     float GetPresentationExtrapolation() const;
     virtual void ReplicateMoveToServer(float Dt, const FVector& NewAcceleration) override;
     virtual void SetBase(FMovementBaseInterfaceData* Base, const FName Bone = NAME_None, bool bNotifyActor = true) override;

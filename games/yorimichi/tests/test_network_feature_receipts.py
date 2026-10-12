@@ -97,7 +97,8 @@ def test_skate_replacement_height_uses_retained_root(receipt, height):
                 row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
                            simulation_tick=200, continued_at_tick=100, body_lift=88,
                            standing_half=88, ride_root_z=10, z=98,
-                           observed_pose_frames=100, matching_pose_frames=100)
+                           observed_pose_frames=100, matching_pose_frames=100,
+                           matching_mesh_frames=100, mesh_world_error=0, body_visible=True)
     value['stages'][2]['guest']['views'][1].update(body_lift=height)
     path.write_text(json.dumps(value))
     assert all(review.feature_checks(receipt, 'switch-skate').values()) is (height == 88)
@@ -114,7 +115,8 @@ def test_skate_swap_requires_evaluated_remote_pose(receipt, observed, matching, 
                 row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
                            simulation_tick=200, continued_at_tick=100, body_lift=88,
                            standing_half=88, ride_root_z=10, z=98,
-                           observed_pose_frames=100, matching_pose_frames=100)
+                           observed_pose_frames=100, matching_pose_frames=100,
+                           matching_mesh_frames=100, mesh_world_error=0, body_visible=True)
     value['stages'][2]['guest']['views'][0].update(observed_pose_frames=observed, matching_pose_frames=matching)
     path.write_text(json.dumps(value))
     assert all(review.feature_checks(receipt, 'switch-skate').values()) is accepted
@@ -143,3 +145,22 @@ def test_valid_png_checksums_do_not_establish_decodable_pixels(tmp_path):
     with Image.open(path) as capture:
         capture.verify()  # Structurally valid, including chunk checksums.
     assert not review.feature_render_checks(tmp_path, 'equipment')['feature_2_rendered_capture']
+
+
+@pytest.mark.parametrize('fields', [dict(matching_mesh_frames=0), dict(mesh_world_error=50000),
+                                    dict(mesh_world_error=None), dict(body_visible=False)])
+def test_matching_local_bones_do_not_establish_body_world_placement(receipt, fields):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['case'] = 'switch-skate'
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
+                           simulation_tick=200, continued_at_tick=100, body_lift=88,
+                           standing_half=88, ride_root_z=10, z=98,
+                           observed_pose_frames=100, matching_pose_frames=100,
+                           matching_mesh_frames=100, mesh_world_error=0, body_visible=True)
+    value['stages'][1]['guest']['views'][0].update(fields)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-skate').values())

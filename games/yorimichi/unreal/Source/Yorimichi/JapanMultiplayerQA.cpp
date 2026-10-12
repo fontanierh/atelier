@@ -14,6 +14,7 @@
 #include "SailboatComponent.h"
 #include "ZeppelinService.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
@@ -118,6 +119,21 @@ struct FProbe
             const auto* Stream = P->FindComponentByClass<UJapanSkateNetwork>();
             Row->SetNumberField(TEXT("observed_pose_frames"), Stream ? Stream->GetObservedPoseCount() : 0);
             Row->SetNumberField(TEXT("matching_pose_frames"), Stream ? Stream->GetMatchingPoseCount() : 0);
+            Row->SetNumberField(TEXT("matching_mesh_frames"), Stream ? Stream->GetMatchingMeshCount() : 0);
+            Row->SetNumberField(TEXT("mesh_world_error"), Stream ? Stream->GetMeshWorldError() : -1.);
+            const auto* Mesh = P->GetMesh();
+            Row->SetBoolField(TEXT("body_visible"), Mesh->IsVisible() && !Mesh->bHiddenInGame && !P->IsHidden());
+            Row->SetNumberField(TEXT("mesh_x"), Mesh->GetComponentLocation().X);
+            Row->SetNumberField(TEXT("mesh_y"), Mesh->GetComponentLocation().Y);
+            Row->SetNumberField(TEXT("mesh_z"), Mesh->GetComponentLocation().Z);
+            Row->SetNumberField(TEXT("bounds_x"), Mesh->Bounds.Origin.X);
+            Row->SetNumberField(TEXT("bounds_y"), Mesh->Bounds.Origin.Y);
+            Row->SetNumberField(TEXT("bounds_z"), Mesh->Bounds.Origin.Z);
+            Row->SetNumberField(TEXT("bounds_radius"), Mesh->Bounds.SphereRadius);
+            const FVector Deck = P->GetSkate()->GetDeckWorld().GetLocation();
+            Row->SetNumberField(TEXT("deck_x"), Deck.X);
+            Row->SetNumberField(TEXT("deck_y"), Deck.Y);
+            Row->SetNumberField(TEXT("deck_z"), Deck.Z);
             Row->SetNumberField(TEXT("checkpoints"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->GetNetworkStats().Checkpoints);
             Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
             Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));
@@ -321,6 +337,9 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         {
             const double Observed = R.GetNumberField(TEXT("observed_pose_frames"));
             if (Observed < 30. || R.GetNumberField(TEXT("matching_pose_frames")) < Observed * .95) return false;
+            if (R.GetNumberField(TEXT("matching_mesh_frames")) < Observed * .95 ||
+                R.GetNumberField(TEXT("mesh_world_error")) < 0. || R.GetNumberField(TEXT("mesh_world_error")) > 1. ||
+                !R.GetBoolField(TEXT("body_visible"))) return false;
         }
         if (Probe.Case == TEXT("equipment"))
         {

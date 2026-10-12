@@ -78,6 +78,7 @@ void UJapanSkateNetwork::ObserveDisplayedPose()
     const auto& Displayed = Rider->GetMesh()->GetBoneSpaceTransforms();
     if (Expected.IsEmpty() || Expected.Num() != Displayed.Num()) return;
     ++ObservedPoseCount;
+    if (AppliedMeshWorld.Equals(Rider->GetMesh()->GetComponentTransform(), .01f)) ++MatchingMeshCount;
     for (int32 I = 0; I < Expected.Num(); ++I)
         if (!Expected[I].Equals(Displayed[I], .001f))
         {
@@ -90,6 +91,11 @@ void UJapanSkateNetwork::ObserveDisplayedPose()
             return;
         }
     ++MatchingPoseCount;
+}
+
+double UJapanSkateNetwork::GetMeshWorldError() const
+{
+    return Rider && LastAppliedFrame ? FVector::Distance(AppliedMeshWorld.GetLocation(), Rider->GetMesh()->GetComponentLocation()) : -1.;
 }
 
 void UJapanSkateNetwork::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -297,6 +303,7 @@ void UJapanSkateNetwork::Show(float Dt)
     Rider->GetSkate()->ApplyNetworkBoard(Deck, Shown);
     if (Rider->GetSkate()->ApplyNetworkPose(Pose, Mesh))
     {
+        AppliedMeshWorld = Mesh;
         if (Sample.bBefore) ++BeforeBufferCount;
         if (Sample.bAfter) ++AfterBufferCount;
         if (Alpha > 0.f && Alpha < 1.f) ++InterpolatedFrameCount; else ++HeldFrameCount;

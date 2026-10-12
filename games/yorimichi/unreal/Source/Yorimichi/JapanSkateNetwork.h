@@ -26,6 +26,8 @@ public:
     uint32 GetTimestampDropCount() const { return TimestampDropCount; }
     uint32 GetObservedPoseCount() const { return ObservedPoseCount; }
     uint32 GetMatchingPoseCount() const { return MatchingPoseCount; }
+    uint32 GetMatchingMeshCount() const { return MatchingMeshCount; }
+    double GetMeshWorldError() const;
     uint8 GetHostMode() const { return HostMode; }
     uint32 GetAcceptedFrameCount() const { return AcceptedFrameCount; }
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;
@@ -44,6 +46,8 @@ private:
     FDelegateHandle FinalizedPose;
     bool bTickRoleKnown = false, bCaptureTick = false;
     uint32 ObservedPoseCount = 0, MatchingPoseCount = 0;
+    uint32 MatchingMeshCount = 0;
+    FTransform AppliedMeshWorld;
     UPROPERTY(ReplicatedUsing=OnRep_Board) FJapanBoardState Board;
     UFUNCTION() void OnRep_Board();
     TArray<FJapanBoardState> Boards;

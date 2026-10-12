@@ -73,6 +73,36 @@ bool UJapanCharacterMovement::PredictsMoves() const
         (Rider->GetNetworkActivity() == EJapanActivity::OnFoot || Rider->GetNetworkActivity() == EJapanActivity::Bike || Rider->GetNetworkActivity() == EJapanActivity::Sailboat);
 }
 
+void UJapanCharacterMovement::SmoothClientPosition(float Dt)
+{
+    const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
+    if (Rider && Rider->GetSkate()->IsNetworkProxy() && !Rider->GetSkate()->GetRiderPose().IsEmpty())
+    {
+        // The skate stream owns an absolute mesh frame. CMC's visual smoothing
+        // writes capsule-relative offsets, which would become world coordinates
+        // on that mesh. Retire the smoothing interval without moving the body.
+        SmoothClientPosition_Interpolate(Dt);
+        return;
+    }
+    Super::SmoothClientPosition(Dt);
+}
+
+void UJapanCharacterMovement::SimulatedTick(float Dt)
+{
+    const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
+    auto* Mesh = Rider ? Rider->GetMesh() : nullptr;
+    const bool StreamOwnsMesh = Rider && Rider->GetSkate()->IsNetworkProxy() &&
+        !Rider->GetSkate()->GetRiderPose().IsEmpty() && Mesh->IsUsingAbsoluteLocation() && Mesh->IsUsingAbsoluteRotation();
+    const FTransform StreamWorld = StreamOwnsMesh ? Mesh->GetComponentTransform() : FTransform::Identity;
+    Super::SimulatedTick(Dt);
+    // Linear smoothing also resets relative rotation inside SimulatedTick,
+    // outside SmoothClientPosition. Preserve the absolute streamed frame there
+    // too, including stream-owned transition clips after leaving the board.
+    if (StreamOwnsMesh && Mesh == Rider->GetMesh() && Rider->GetSkate()->IsNetworkProxy() &&
+        !Rider->GetSkate()->GetRiderPose().IsEmpty() && Mesh->IsUsingAbsoluteLocation() && Mesh->IsUsingAbsoluteRotation())
+        Mesh->SetWorldTransform(StreamWorld);
+}
+
 uint32 UJapanCharacterMovement::GetActivityEpoch() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
