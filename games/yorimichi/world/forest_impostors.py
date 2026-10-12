@@ -19,6 +19,8 @@ def bake(obj, output, size=256):
     scene.collection.objects.link(camera);scene.camera=camera;data.type='ORTHO';data.ortho_scale=scale
     for other in scene.objects:other.hide_render=other not in (obj,camera)
     originals=list(obj.data.materials)
+    slots=np.empty(len(obj.data.polygons),dtype=np.int32)
+    obj.data.polygons.foreach_get('material_index',slots)
     atlases={}
     for mode in ('colour','normal'):
         scene.view_settings.view_transform='Standard' if mode=='colour' else 'Raw'
@@ -48,6 +50,7 @@ def bake(obj, output, size=256):
             material.surface_render_method='DITHERED';replacements.append(material)
         obj.data.materials.clear()
         for material in replacements:obj.data.materials.append(material)
+        obj.data.polygons.foreach_set('material_index',slots)
         cells=[]
         for view in range(4):
             angle=view*math.tau/3
@@ -70,6 +73,7 @@ def bake(obj, output, size=256):
         for material in replacements:bpy.data.materials.remove(material)
     obj.data.materials.clear()
     for material in originals:obj.data.materials.append(material)
+    obj.data.polygons.foreach_set('material_index',slots)
     bpy.data.objects.remove(camera,do_unlink=True)
     for other in scene.objects:other.hide_render=False
     return dict(atlases=atlases,centre=list(centre),scale=scale,
