@@ -38,7 +38,7 @@ struct ATELIERSKATE_API FAnimNode_SkateRider : public FAnimNode_Base
 
 private:
     UPROPERTY() FAnimNode_RideInertialization Blend;
-    TWeakObjectPtr<const USkateComponent> Skate;
+    TWeakObjectPtr<USkateComponent> Skate;
     TArray<FTransform> Pose;             // mesh-indexed local transforms; empty: OnFoot shows
     uint32 BlendSerial = 0, AppliedSerial = 0;
     float BlendTime = 0.f;
