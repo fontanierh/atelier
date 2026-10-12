@@ -67,3 +67,18 @@ def test_rendered_feature_requires_complete_decodable_captures(tmp_path):
     assert all(review.feature_render_checks(tmp_path, 'equipment').values())
     (tmp_path / 'feature-2.png').write_bytes(b'not a complete PNG')
     assert not review.feature_render_checks(tmp_path, 'equipment')['feature_2_rendered_capture']
+
+
+def test_valid_png_checksums_do_not_establish_decodable_pixels(tmp_path):
+    import struct
+    import zlib
+    from PIL import Image
+    def chunk(kind, payload):
+        return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload))
+    damaged = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 960, 540, 8, 2, 0, 0, 0)) +
+               chunk(b'IDAT', b'invalid compressed pixels') + chunk(b'IEND', b''))
+    path = tmp_path / 'feature-2.png'
+    path.write_bytes(damaged)
+    with Image.open(path) as capture:
+        capture.verify()  # Structurally valid, including chunk checksums.
+    assert not review.feature_render_checks(tmp_path, 'equipment')['feature_2_rendered_capture']

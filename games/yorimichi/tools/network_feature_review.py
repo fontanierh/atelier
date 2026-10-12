@@ -10,6 +10,9 @@ def feature_render_checks(folder, case):
             with Image.open(folder / f'feature-{phase}.png') as capture:
                 valid = capture.format == 'PNG' and capture.size == (960, 540)
                 capture.verify()
+            if valid:
+                with Image.open(folder / f'feature-{phase}.png') as capture:
+                    capture.load()
         except (OSError, ValueError, SyntaxError):
             valid = False
         checks[f'feature_{phase}_rendered_capture'] = valid
