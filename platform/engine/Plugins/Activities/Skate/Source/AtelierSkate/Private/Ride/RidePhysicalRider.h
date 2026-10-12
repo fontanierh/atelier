@@ -8,6 +8,7 @@
 #include "PhysicsControlComponent.h"
 #include "PhysicsEngine/ConstraintInstance.h"
 #include "Tickable.h"
+#include "SkinMorphOffsets.h"
 #include "RidePhysicalRider.generated.h"
 
 class ACharacter;
@@ -292,7 +293,8 @@ public:
      *  a sample of the mesh's vertices, skinned on the CPU as the mesh shows them, each traced against the ground's
      *  complex collision. Bone is the body that carries the deepest; Groups, when given, gets the deepest of each of
      *  SkinGroupCount groups of bodies (SkinGroupName). Optional Vertex and Position identify the deepest sample and
-     *  its world position. False without CPU vertex data. */
+     *  its world position. Active morph targets move the samples as they render. False without CPU vertex data, or
+     *  when an active morph keeps no CPU deltas (GetSkinMorphError says which): the skin as shown is then unmeasured. */
     bool MeasureSkinDepth(float& Depth, FName& Bone, float* Groups = nullptr, int32* Vertex = nullptr, FVector* Position = nullptr) const;
     static constexpr int32 SkinGroupCount = 7;
     /** torso (pelvis, spine, chest), head, upperarms, forearms, hands, legs (thighs, shins), feet. */
@@ -300,8 +302,13 @@ public:
     /** How far each hand's skin (fingers included) stays from the torso's and thighs' bodies, as the mesh shows them
      *  (cm; below 0: that deep inside one): Gap[0] the left hand, Gap[1] the right, Near the body it comes closest
      *  to. Measured against the bodies' shapes, so on bodies fitted to the skin it says where the hand meets the
-     *  skin. False without CPU vertex data. */
+     *  skin. False without CPU vertex data or an active morph's CPU deltas, as MeasureSkinDepth. */
     bool MeasureHandGap(float Gap[2], FName Near[2]) const;
+    /** Why the last skin measure could not add the active morphs; empty when it could. */
+    const FString& GetSkinMorphError() const { return SkinMorphs.GetError(); }
+    /** The largest difference, at the last skin measure, between a pose-driven morph's weight as shown and as the
+     *  rider's driver gives it for the pose measured; 0 when what renders and what is measured agree. */
+    float GetSkinMorphLag() const { return SkinMorphLag; }
     /** The joint furthest past its range (Past in degrees, below 0 inside every range; Angles its twist, Swing1 and
      *  Swing2, as Chaos measures them against the live constraint's frames and limits, Limits those limits and bSoft
      *  whether they are soft), from the bodies' rotations, and the two bodies that may meet (in a bail) deepest in
@@ -323,6 +330,13 @@ public:
     virtual UWorld* GetTickableGameObjectWorld() const override;
 
 private:
+    /** The morphs the skin measures add for the mesh's current pose: the rider's pose-driven ones evaluated on that
+     *  pose (ISkateRider::GetSkatePoseMorphs, the transforms the measures skin with), the rest as the mesh shows them.
+     *  SkinMorphLag is how far the shown weights of the pose-driven ones are from that. */
+    bool UpdateSkinMorphs(const USkeletalMeshComponent* Skinned) const;
+    // The mesh's morphs as pre-skin offsets, for the skin measures.
+    mutable FSkinMorphOffsets SkinMorphs;
+    mutable float SkinMorphLag = 0.f;
     UPROPERTY() TObjectPtr<ACharacter> Rider;
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> Mesh;
     UPROPERTY() TObjectPtr<UPhysicsControlComponent> Control;
