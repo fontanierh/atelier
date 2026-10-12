@@ -28,6 +28,7 @@ public:
     uint32 GetMatchingPoseCount() const { return MatchingPoseCount; }
     uint32 GetMatchingMeshCount() const { return MatchingMeshCount; }
     double GetMeshWorldError() const;
+    void RestoreStreamedMeshFrame();
     uint8 GetHostMode() const { return HostMode; }
     uint32 GetAcceptedFrameCount() const { return AcceptedFrameCount; }
     virtual void TickComponent(float Dt, ELevelTick Type, FActorComponentTickFunction* Tick) override;

@@ -98,6 +98,13 @@ double UJapanSkateNetwork::GetMeshWorldError() const
     return Rider && LastAppliedFrame ? FVector::Distance(AppliedMeshWorld.GetLocation(), Rider->GetMesh()->GetComponentLocation()) : -1.;
 }
 
+void UJapanSkateNetwork::RestoreStreamedMeshFrame()
+{
+    if (!Rider || !LastAppliedFrame || !Rider->GetSkate()->IsNetworkProxy() || Rider->GetSkate()->GetRiderPose().IsEmpty()) return;
+    auto* Mesh = Rider->GetMesh();
+    if (Mesh->IsUsingAbsoluteLocation() && Mesh->IsUsingAbsoluteRotation()) Mesh->SetWorldTransform(AppliedMeshWorld);
+}
+
 void UJapanSkateNetwork::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);

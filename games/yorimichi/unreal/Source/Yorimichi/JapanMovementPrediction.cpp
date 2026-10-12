@@ -5,6 +5,7 @@
 #include "JapanReactionDeliveryQA.h"
 #include "JapanReactionDeliveryProbe.h"
 #include "JapanNetwork.h"
+#include "JapanSkateNetwork.h"
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -89,18 +90,12 @@ void UJapanCharacterMovement::SmoothClientPosition(float Dt)
 
 void UJapanCharacterMovement::SimulatedTick(float Dt)
 {
-    const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
-    auto* Mesh = Rider ? Rider->GetMesh() : nullptr;
-    const bool StreamOwnsMesh = Rider && Rider->GetSkate()->IsNetworkProxy() &&
-        !Rider->GetSkate()->GetRiderPose().IsEmpty() && Mesh->IsUsingAbsoluteLocation() && Mesh->IsUsingAbsoluteRotation();
-    const FTransform StreamWorld = StreamOwnsMesh ? Mesh->GetComponentTransform() : FTransform::Identity;
     Super::SimulatedTick(Dt);
     // Linear smoothing also resets relative rotation inside SimulatedTick,
-    // outside SmoothClientPosition. Preserve the absolute streamed frame there
-    // too, including stream-owned transition clips after leaving the board.
-    if (StreamOwnsMesh && Mesh == Rider->GetMesh() && Rider->GetSkate()->IsNetworkProxy() &&
-        !Rider->GetSkate()->GetRiderPose().IsEmpty() && Mesh->IsUsingAbsoluteLocation() && Mesh->IsUsingAbsoluteRotation())
-        Mesh->SetWorldTransform(StreamWorld);
+    // outside SmoothClientPosition. Restore the latest stream frame: animation
+    // PreUpdate inside Super may have advanced it, including transition clips.
+    if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner))
+        if (auto* Stream = Rider->FindComponentByClass<UJapanSkateNetwork>()) Stream->RestoreStreamedMeshFrame();
 }
 
 uint32 UJapanCharacterMovement::GetActivityEpoch() const
