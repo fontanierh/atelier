@@ -11,8 +11,8 @@ from mathutils import Vector
 from forest.specs import TUSCAN, FOREST
 
 
-def tree(name, kind, seed, height, spread, leaf):
-    import build_assets as A
+def tree(name, kind, seed, height, spread, leaf, *, library):
+    A=library
     rng = random.Random(seed)
     mesh = A.Mesh(name); bark = A.MATS['BarkOlive' if kind=='olive' else 'Bark']; foliage = A.MATS[leaf]
     lean = Vector((rng.uniform(-.35, .35), rng.uniform(-.35, .35), 0))

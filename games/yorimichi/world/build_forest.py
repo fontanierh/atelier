@@ -22,7 +22,7 @@ def main():
     output=yori.OUT/'forest';output.mkdir(parents=True,exist_ok=True)
     A.OUTDIR=str(output);original=A.Mesh;report={}
     for name,args in (TUSCAN | FOREST).items():
-        A.Mesh=original;base=tree(name,*args);A.export(base,name)
+        A.Mesh=original;base=tree(name,*args,library=A);A.export(base,name)
         minimum=Vector(tuple(min(v.co[i] for v in base.data.vertices) for i in range(3)))
         maximum=Vector(tuple(max(v.co[i] for v in base.data.vertices) for i in range(3)))
         dimensions={'height':maximum.z,'spread':max(maximum.x-minimum.x,maximum.y-minimum.y)}
@@ -51,7 +51,7 @@ def main():
                 def tube(self,*args,**kwargs):
                     kwargs['n']=min(kwargs.get('n',8),5 if level==1 else 3)
                     super().tube(*args,**kwargs)
-            A.Mesh=LodMesh;obj=tree(f'{name}_LOD{level}',*args)
+            A.Mesh=LodMesh;obj=tree(f'{name}_LOD{level}',*args,library=A)
             count=sum(len(p.vertices)-2 for p in obj.data.polygons)
             assert count<counts[-1],(name,level,count)
             counts.append(count);A.export(obj,obj.name);bpy.data.objects.remove(obj,do_unlink=True)

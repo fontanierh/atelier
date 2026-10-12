@@ -223,12 +223,12 @@ def leaf_canopy(mesh, center, radii, n, size, m, rng, normal_center=None, vertic
 
 def tree_maple(name, seed, height=6.5, spread=6.0):
     from forest_trees import tree
-    return tree(name, 'maple', seed, height, spread, 'LeafMaple')
+    return tree(name, 'maple', seed, height, spread, 'LeafMaple', library=sys.modules[__name__])
 
 
 def tree_ginkgo(name, seed, height=9.0):
     from forest_trees import tree
-    return tree(name, 'ginkgo', seed, height, 4.2, 'LeafGinkgo')
+    return tree(name, 'ginkgo', seed, height, 4.2, 'LeafGinkgo', library=sys.modules[__name__])
 
 
 def bush_flower(name, seed, r=1.1):
@@ -245,17 +245,17 @@ def rock(name, seed, size):
 
 def tree_broad(name, seed, height=8.0, spread=4.2):
     from forest_trees import tree
-    return tree(name, 'oak', seed, height, spread, 'LeafSmall')
+    return tree(name, 'oak', seed, height, spread, 'LeafSmall', library=sys.modules[__name__])
 
 
 def tree_pine(name, seed, height=14.0):
     from forest_trees import tree
-    return tree(name, 'pine', seed, height, 6., 'LeafPine')
+    return tree(name, 'pine', seed, height, 6., 'LeafPine', library=sys.modules[__name__])
 
 
 def tree_cedar(name, seed, height=16.0):
     from forest_trees import tree
-    return tree(name, 'cedar', seed, height, 5., 'LeafCedar')
+    return tree(name, 'cedar', seed, height, 5., 'LeafCedar', library=sys.modules[__name__])
 
 
 def bush(name, seed, m_name, r=1.4):
