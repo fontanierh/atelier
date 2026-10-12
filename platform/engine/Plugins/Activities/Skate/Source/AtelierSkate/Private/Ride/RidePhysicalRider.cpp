@@ -12,7 +12,6 @@
 #include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
-#include "Animation/MorphTarget.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -755,21 +754,10 @@ bool URidePhysicalRider::UpdateSkinMorphs(const USkeletalMeshComponent* Skinned)
 {
     SkinMorphLag = 0.f;
     if (!Skinned) return SkinMorphs.Update(nullptr, {});
-    // The rider's driver names every morph it drives, 0 where this pose leaves one off.
+    // The rider's driver names every morph it drives, 0 where this pose leaves one off; the others come as shown.
     TArray<TPair<FName, float>> Morphs;
     if (Api) Api->GetSkatePoseMorphs(Skinned, Skinned->GetComponentSpaceTransforms(), Morphs);
-    TArray<float> Shown;
-    Shown.Init(0.f, Morphs.Num());
-    const int32 Driven = Morphs.Num();
-    for (const TPair<const UMorphTarget*, int32>& Active : Skinned->ActiveMorphTargets)
-    {
-        if (!Active.Key || !Skinned->MorphTargetWeights.IsValidIndex(Active.Value)) continue;
-        const FName Name = Active.Key->GetFName();
-        const int32 Index = Morphs.IndexOfByPredicate([Name](const TPair<FName, float>& Morph) { return Morph.Key == Name; });
-        if (Index == INDEX_NONE) Morphs.Emplace(Name, Skinned->MorphTargetWeights[Active.Value]);
-        else if (Index < Driven) Shown[Index] = Skinned->MorphTargetWeights[Active.Value];
-    }
-    for (int32 I = 0; I < Driven; ++I) SkinMorphLag = FMath::Max(SkinMorphLag, FMath::Abs(Morphs[I].Value - Shown[I]));
+    SkinMorphLag = FSkinMorphOffsets::MergeShown(Skinned, Morphs);
     return SkinMorphs.Update(Skinned->GetSkeletalMeshAsset(), Morphs);
 }
 

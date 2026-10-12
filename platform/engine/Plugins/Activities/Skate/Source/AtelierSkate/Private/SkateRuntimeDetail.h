@@ -755,7 +755,7 @@ public:
     struct Vertex { int32 Index=INDEX_NONE; TArray<Influence,TInlineAllocator<4>> Influences; };
     TWeakObjectPtr<USkeletalMesh> ContactMesh;
     TArray<Vertex> ContactVertices;
-    // The rider's pose-driven morphs (ISkateRider::GetSkatePoseMorphs) as pre-skin offsets of those vertices.
+    // The rider's morphs (pose-driven ones for the pose, the rest as shown) as pre-skin offsets of those vertices.
     FSkinMorphOffsets ContactMorphs;
     FString ContactMorphError;
     // Skin samples (a bone and a point in its bind space) of each forearm's hand end with its hand, and of each foot,
