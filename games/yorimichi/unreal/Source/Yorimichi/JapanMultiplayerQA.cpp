@@ -65,6 +65,8 @@ struct FProbe
     double LastLongFrameAt = -1.;
     uint32 EquipmentEpoch = 0;
     int32 EquipmentRecoveryRetries = 0;
+    uint32 MountInputEpoch = 0;
+    int32 MountRecoveryRetries = 0;
     bool Finished = false, DefaultVehicles = false;
     bool CaptureApproved = false;
     bool SawAir = false, SawBail = false, CharacterSent = false;
@@ -74,6 +76,7 @@ struct FProbe
     int32 SailExitRequests = 0;
     double NextSailExit = 0.;
     TArray<TSharedPtr<FJsonValue>> Stages;
+    TArray<TSharedPtr<FJsonValue>> MountRecoveryEpochs;
     TMap<FString, uint32> OriginalEpochs;
     EJapanActivity Activity() const
     {
@@ -90,6 +93,8 @@ struct FProbe
         Data->SetBoolField(TEXT("complete"), Finished); Data->SetBoolField(TEXT("default_vehicles"), DefaultVehicles);
         Data->SetBoolField(TEXT("requested_in_air"), SawAir); Data->SetBoolField(TEXT("requested_in_bail"), SawBail);
         Data->SetNumberField(TEXT("equipment_recovery_retries"), EquipmentRecoveryRetries);
+        Data->SetNumberField(TEXT("mount_recovery_retries"), MountRecoveryRetries);
+        Data->SetArrayField(TEXT("mount_recovery_epochs"), MountRecoveryEpochs);
         Data->SetBoolField(TEXT("bike_exit_sent"), BikeExitSent);
         Data->SetBoolField(TEXT("bike_exit_grounded"), BikeExitGrounded);
         Data->SetNumberField(TEXT("bike_exit_speed"), BikeExitSpeed);
@@ -156,6 +161,25 @@ struct FProbe
     void Drive(AWandererCharacter* P)
     {
         bool Enter = Phase != LocalPhase;
+        if (Phase == 1 && Activity() != EJapanActivity::OnFoot && MountInputEpoch != P->GetActivityEpoch())
+        {
+            // Recovery invalidates old requests. Send fresh ordinary mount input
+            // only while still on foot; the accepted mount epoch must not toggle
+            // the rider back off. Keep retry evidence in this persistent probe.
+            if (P->GetNetworkActivity() == EJapanActivity::OnFoot && !P->IsNetworkActivityPending())
+            {
+                if (MountInputEpoch)
+                {
+                    ++MountRecoveryRetries;
+                    auto Recovery = MakeShared<FJsonObject>();
+                    Recovery->SetNumberField(TEXT("old_epoch"), MountInputEpoch);
+                    Recovery->SetNumberField(TEXT("new_epoch"), P->GetActivityEpoch());
+                    MountRecoveryEpochs.Add(MakeShared<FJsonValueObject>(Recovery));
+                }
+                Enter = true;
+            }
+            MountInputEpoch = P->GetActivityEpoch();
+        }
         if (Case == TEXT("equipment") && EquipmentEpoch != P->GetActivityEpoch())
         {
             if (EquipmentEpoch) ++EquipmentRecoveryRetries;

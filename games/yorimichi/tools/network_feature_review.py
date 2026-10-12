@@ -29,6 +29,8 @@ def feature_checks(folder, case):
     original_ids = None
     epochs = {}
     original_classes = {}
+    mount_retries = {'host': 0, 'guest': 0}
+    mount_epochs = {'host': [], 'guest': []}
     kind = 1 if case.startswith('switch-skate') else {'switch-bike': 2, 'switch-sail': 3, 'zeppelin': 4}.get(case, 0)
     for s in stages:
         phase = s['phase']
@@ -53,6 +55,19 @@ def feature_checks(folder, case):
                 if phase == 3:
                     checks[prefix+'owner_checkpoints'] = any(r.get('local') is True and r.get('checkpoints', 0) >= 3 for r in rows) if side == 'guest' else True
             else:
+                if kind:
+                    retries = s.get(side, {}).get('mount_recovery_retries')
+                    recovery_epochs = s.get(side, {}).get('mount_recovery_epochs')
+                    checks[prefix+'mount_recovery_receipt'] = (type(retries) is int and retries >= mount_retries[side] and
+                                                              isinstance(recovery_epochs, list) and len(recovery_epochs) == retries and
+                                                              recovery_epochs[:len(mount_epochs[side])] == mount_epochs[side] and
+                                                              all(isinstance(e, dict) and
+                                                                  all(type(e.get(k)) is int and e[k] > 0 for k in ('old_epoch', 'new_epoch')) and
+                                                                  e['old_epoch'] != e['new_epoch'] for e in recovery_epochs))
+                    if type(retries) is int:
+                        mount_retries[side] = retries
+                    if isinstance(recovery_epochs, list):
+                        mount_epochs[side] = recovery_epochs
                 if case == 'switch-bike' and phase == 4:
                     speed = s[side].get('bike_exit_speed')
                     checks[prefix+'stopped_dismount_input'] = (s[side].get('bike_exit_sent') is True and

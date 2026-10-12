@@ -18,7 +18,8 @@ def receipt(tmp_path):
         views = [dict(player=i, rider=rider, pawn=rider+'Character', ready=True, local=local,
                       health=73, hits=2, attachment=True, activity=2 if phase in (1, 2, 3) else 0,
                       epoch=phase+1) for i, local in (('host', True), ('guest', False))]
-        exit_input = dict(bike_exit_sent=True, bike_exit_grounded=True, bike_exit_speed=0)
+        exit_input = dict(bike_exit_sent=True, bike_exit_grounded=True, bike_exit_speed=0,
+                          mount_recovery_retries=0, mount_recovery_epochs=[])
         stages.append(dict(phase=phase, host=dict(views=views, **exit_input),
                            guest=dict(views=[r | dict(local=not r['local']) for r in views], **exit_input)))
     (tmp_path / 'features-result.json').write_text(json.dumps(dict(case='switch-bike', passed=True, default_vehicles=True, stages=stages)))
@@ -27,6 +28,29 @@ def receipt(tmp_path):
 
 def test_two_observers_see_same_players_health_and_replacement(receipt):
     assert all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+@pytest.mark.parametrize('counts,accepted', [([0, 1, 1, 1, 1], True), ([0, 1, 0, 0, 0], False),
+                                            ([0, None, 0, 0, 0], False), ([0, -1, 0, 0, 0], False)])
+def test_mount_recovery_count_survives_pawn_replacement(receipt, counts, accepted):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for stage, count in zip(value['stages'], counts):
+        stage['guest']['mount_recovery_retries'] = count
+        stage['guest']['mount_recovery_epochs'] = [dict(old_epoch=1, new_epoch=2)] if count == 1 else []
+    path.write_text(json.dumps(value))
+    assert all(review.feature_checks(receipt, 'switch-bike').values()) is accepted
+
+
+@pytest.mark.parametrize('epochs', [None, [dict(old_epoch=1, new_epoch=1)], [dict(old_epoch=7, new_epoch=8)]])
+def test_mount_recovery_cannot_erase_or_rewrite_epoch_evidence(receipt, epochs):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for stage in value['stages'][1:]:
+        stage['guest'].update(mount_recovery_retries=1, mount_recovery_epochs=[dict(old_epoch=1, new_epoch=2)])
+    value['stages'][3]['guest']['mount_recovery_epochs'] = epochs
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
 
 
 @pytest.mark.parametrize('edit', [dict(bike_exit_speed=41), dict(bike_exit_speed=None),
