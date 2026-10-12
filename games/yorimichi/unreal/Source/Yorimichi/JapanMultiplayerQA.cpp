@@ -10,6 +10,7 @@
 #include "WandererSword.h"
 #include "AdventureMoveSet.h"
 #include "SkateComponent.h"
+#include "BikeComponent.h"
 #include "ZeppelinService.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -65,6 +66,8 @@ struct FProbe
     bool Finished = false, DefaultVehicles = false;
     bool CaptureApproved = false;
     bool SawAir = false, SawBail = false, CharacterSent = false;
+    bool BikeExitSent = false, BikeExitGrounded = false;
+    float BikeExitSpeed = -1.f;
     TArray<TSharedPtr<FJsonValue>> Stages;
     TMap<FString, uint32> OriginalEpochs;
     EJapanActivity Activity() const
@@ -82,6 +85,9 @@ struct FProbe
         Data->SetBoolField(TEXT("complete"), Finished); Data->SetBoolField(TEXT("default_vehicles"), DefaultVehicles);
         Data->SetBoolField(TEXT("requested_in_air"), SawAir); Data->SetBoolField(TEXT("requested_in_bail"), SawBail);
         Data->SetNumberField(TEXT("equipment_recovery_retries"), EquipmentRecoveryRetries);
+        Data->SetBoolField(TEXT("bike_exit_sent"), BikeExitSent);
+        Data->SetBoolField(TEXT("bike_exit_grounded"), BikeExitGrounded);
+        Data->SetNumberField(TEXT("bike_exit_speed"), BikeExitSpeed);
         Data->SetBoolField(TEXT("rendering"), FParse::Param(FCommandLine::Get(), TEXT("networkrender")));
         TArray<TSharedPtr<FJsonValue>> Views;
         for (TActorIterator<AWandererCharacter> It(World.Get()); It; ++It)
@@ -192,11 +198,22 @@ struct FProbe
         else if (Enter && Phase == 2) CharacterSent = PC->RequestCharacter(TEXT("Modori"));
         if (Enter && Phase == 3) PC->RequestCharacter(TEXT("Cairo"));
         if (Phase >= 1 && Phase <= 3 && Activity() != EJapanActivity::OnFoot) P->Live_Drive(FVector2D(0,.4), 1);
-        if (Enter && Phase == 4)
+        if (Phase == 4)
         {
-            if (Activity() == EJapanActivity::Bike) P->Live_Press(TEXT("bike"));
-            else if (Activity() == EJapanActivity::Sailboat) P->Live_Press(TEXT("sailboat"));
-            else if (Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
+            if (Activity() == EJapanActivity::Bike && !BikeExitSent)
+            {
+                // Ordinary V rejects a moving dismount. Brake through normal input
+                // and send one request after stopping, preserving the final exit gate.
+                P->Live_Drive(FVector2D(0,-1), 1);
+                if (P->GetBike()->IsRiding() && FMath::Abs(P->GetBike()->GetSpeed()) <= 1.f &&
+                    P->GetCharacterMovement()->IsMovingOnGround() && !P->IsNetworkActivityPending())
+                {
+                    BikeExitSpeed = P->GetBike()->GetSpeed(); BikeExitGrounded = true;
+                    BikeExitSent = P->Live_Press(TEXT("bike"));
+                }
+            }
+            else if (Enter && Activity() == EJapanActivity::Sailboat) P->Live_Press(TEXT("sailboat"));
+            else if (Enter && Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
         }
     }
 };
@@ -297,6 +314,10 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
             (Phase < 2 || (Probe.OriginalEpochs.Contains(R.GetStringField(TEXT("player"))) && R.GetNumberField(TEXT("epoch")) > Probe.OriginalEpochs[R.GetStringField(TEXT("player"))]));
     };
     if (!ViewsMeet(Host, Gate) || !ViewsMeet(Peer, Gate)) return false;
+    if (Probe.Case == TEXT("switch-bike") && Probe.Phase == 4 &&
+        (!Probe.BikeExitSent || !Peer->GetBoolField(TEXT("bike_exit_sent")) ||
+         !Peer->GetBoolField(TEXT("bike_exit_grounded")) ||
+         FMath::Abs(Peer->GetNumberField(TEXT("bike_exit_speed"))) > 40.)) return false;
     if (Probe.Case == TEXT("zeppelin") && (Probe.Phase == 1 || Probe.Phase == 2) && !Local->GetLandscape()->Zeppelin->IsFlying()) return false;
     // Readback and PNG saving can stall a cold renderer. Capture a state that
     // passed both observer gates, then finish saving before the next input phase.

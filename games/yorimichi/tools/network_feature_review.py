@@ -53,6 +53,11 @@ def feature_checks(folder, case):
                 if phase == 3:
                     checks[prefix+'owner_checkpoints'] = any(r.get('local') is True and r.get('checkpoints', 0) >= 3 for r in rows) if side == 'guest' else True
             else:
+                if case == 'switch-bike' and phase == 4:
+                    speed = s[side].get('bike_exit_speed')
+                    checks[prefix+'stopped_dismount_input'] = (s[side].get('bike_exit_sent') is True and
+                                                              s[side].get('bike_exit_grounded') is True and
+                                                              type(speed) in (int, float) and abs(speed) <= 40)
                 activity = kind if phase not in (0, last) else 0
                 checks[prefix+'activity'] = all(r.get('activity') == activity for r in rows)
                 expected = 'Modori' if (phase >= 2 and case == 'zeppelin') or phase == 2 else 'Cairo'

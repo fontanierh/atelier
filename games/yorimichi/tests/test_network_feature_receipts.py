@@ -18,13 +18,25 @@ def receipt(tmp_path):
         views = [dict(player=i, rider=rider, pawn=rider+'Character', ready=True, local=local,
                       health=73, hits=2, attachment=True, activity=2 if phase in (1, 2, 3) else 0,
                       epoch=phase+1) for i, local in (('host', True), ('guest', False))]
-        stages.append(dict(phase=phase, host=dict(views=views), guest=dict(views=[r | dict(local=not r['local']) for r in views])))
+        exit_input = dict(bike_exit_sent=True, bike_exit_grounded=True, bike_exit_speed=0)
+        stages.append(dict(phase=phase, host=dict(views=views, **exit_input),
+                           guest=dict(views=[r | dict(local=not r['local']) for r in views], **exit_input)))
     (tmp_path / 'features-result.json').write_text(json.dumps(dict(case='switch-bike', passed=True, default_vehicles=True, stages=stages)))
     return tmp_path
 
 
 def test_two_observers_see_same_players_health_and_replacement(receipt):
     assert all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+@pytest.mark.parametrize('edit', [dict(bike_exit_speed=41), dict(bike_exit_speed=None),
+                                  dict(bike_exit_sent=False), dict(bike_exit_grounded=False)])
+def test_bike_swap_receipt_requires_a_supported_dismount_request(receipt, edit):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][4]['guest'].update(edit)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
 
 
 @pytest.mark.parametrize('proxy_predicts', [False, True])
