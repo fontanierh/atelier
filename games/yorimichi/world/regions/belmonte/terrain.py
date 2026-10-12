@@ -44,7 +44,7 @@ def country_grid():
 
 
 def country_height(x, y):
-    return grid_height(*country_grid(), x, y)
+    return np.where(np.asarray(y) <= 3200., old_height(x, y), grid_height(*country_grid(), x, y))
 
 
 def collar_contains(x, y):
@@ -101,6 +101,8 @@ def country():
     mesh = Mesh()
     xs, ys, z = country_grid()
     for j, (ay, by) in enumerate(zip(ys[:-1], ys[1:])):
+        if ay < 3200.:
+            continue  # Existing FarHills owns this band outside the fine collar.
         for i, (ax, bx) in enumerate(zip(xs[:-1], xs[1:])):
             if OUTER[0] <= ax and bx <= OUTER[2] and ay >= OUTER[1] and by <= OUTER[3]:
                 continue
@@ -108,4 +110,50 @@ def country():
                       np.array([bx, ay, z[j, i + 1]]) - L.ORIGIN,
                       np.array([bx, by, z[j + 1, i + 1]]) - L.ORIGIN,
                       np.array([ax, by, z[j + 1, i]]) - L.ORIGIN)
+    side_bridges(mesh)
     return mesh
+
+
+def side_bridges(mesh):
+    """Restore only the clipped coarse cells that slope under the collar rims."""
+    axis = np.linspace(-3200., 3200., 96)
+    z = H.backdrop_grid()
+    west = axis[np.searchsorted(axis, OUTER[0]) - 1]
+    east = axis[np.searchsorted(axis, OUTER[2])]
+    bottom = axis[np.searchsorted(axis, L.SOUTH_JOIN) - 1]
+
+    def clip(points, dimension, edge, greater):
+        result = []
+        for a, b in zip(points, points[1:] + points[:1]):
+            ain, bin = (a[dimension] >= edge, b[dimension] >= edge) if greater else (a[dimension] <= edge, b[dimension] <= edge)
+            if ain:
+                result.append(a)
+            if ain != bin:
+                t = (edge - a[dimension]) / (b[dimension] - a[dimension])
+                result.append(a + (b - a) * t)
+        return result
+
+    for low, high in [(west, OUTER[0]), (OUTER[2], east)]:
+        for j, (ay, by) in enumerate(zip(axis[:-1], axis[1:])):
+            if by <= bottom or ay >= 3200.:
+                continue
+            for i, (ax, bx) in enumerate(zip(axis[:-1], axis[1:])):
+                if bx <= low or ax >= high:
+                    continue
+                corners = [np.array([ax, ay, z[j, i]]), np.array([bx, ay, z[j, i + 1]]),
+                           np.array([bx, by, z[j + 1, i + 1]]), np.array([ax, by, z[j + 1, i]])]
+                for triangle in [(0, 1, 2), (0, 2, 3)]:
+                    points = [corners[k] for k in triangle]
+                    for dimension, edge, greater in [(0, low, True), (0, high, False), (1, bottom, True)]:
+                        if points:
+                            points = clip(points, dimension, edge, greater)
+                    for a, b, c in zip(points[:1] * max(0, len(points) - 2), points[1:-1], points[2:]):
+                        normal = np.cross(b - a, c - a)
+                        if np.linalg.norm(normal) < 1e-7:
+                            continue
+                        normal /= np.linalg.norm(normal)
+                        base = len(mesh.p)
+                        mesh.p.extend([a - L.ORIGIN, b - L.ORIGIN, c - L.ORIGIN])
+                        mesh.n.extend([normal] * 3)
+                        mesh.t.extend([(p[0] / 4., p[1] / 4.) for p in (a, b, c)])
+                        mesh.i.extend([base, base + 1, base + 2])

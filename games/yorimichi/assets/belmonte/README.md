@@ -8,7 +8,8 @@ The project owner authorized this integration from their brother's project.
 resolved surface colours and planting data. Every consumed GLB is committed in `meshes/`.
 The 127 `_Collision.glb` files contain the original hull geometry and are never rendered.
 
-The library contains 288 render models and 18 colour textures. No Haras tree or vegetation model,
+The library contains 288 render models and 18 current colour textures, stored as 2K JPEGs at quality 92 with full chroma.
+Full reference exports remain outside git; the game finishes these maps at 1K. No Haras tree or vegetation model,
 crowd, character, distant backdrop, level, plugin or gameplay script is consumed. Embedded foliage
 faces are removed from the architectural models. Planting is rebuilt using the existing island flora.
 Terrain consists of the 56 current static mesh tiles, rather than a copied landscape or stale authoring grid.

@@ -96,6 +96,17 @@ class Terrain(unittest.TestCase):
             b = outside.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             np.testing.assert_allclose(a, b, atol=.002)
 
+    def test_country_restores_only_the_lowered_side_columns(self):
+        path = yori.OUT / 'belmonte/glb/SM_BM_NorthCountry.glb'
+        if not path.is_file():
+            self.skipTest('Generated side bridges checked after world.belmonte')
+        mesh = source.Surface(source.triangles(path))
+        x = np.array([terrain.OUTER[0] - 10., terrain.OUTER[2] + 10.])
+        y = np.array([3100., 3100.])
+        z = mesh.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
+        np.testing.assert_allclose(z, terrain.old_height(x, y), atol=.002)
+        self.assertTrue(np.isnan(mesh.height(-1500. - L.ORIGIN[0], 3100. - L.ORIGIN[1])))
+
     def test_grid_sampler_follows_exported_triangle_diagonal(self):
         z = np.array([[0., 0.], [0., 10.]])
         self.assertEqual(float(terrain.grid_height([0., 1.], [0., 1.], z, .75, .25)), 2.5)

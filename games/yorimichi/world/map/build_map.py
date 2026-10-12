@@ -72,12 +72,13 @@ if BELMONTE:
     mask = BM.contains(GX, GY)
     Z[mask] = BM_SOURCE.terrain().height(GX[mask] - BM.ORIGIN[0], GY[mask] - BM.ORIGIN[1]) + BM.ORIGIN[2]
     assert np.isfinite(Z[mask]).all(), 'Belmonte map has uncovered terrain'
-    from belmonte import terrain as BM_TERRAIN
+    north_extension = np.zeros(GX.shape, bool)
     for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron'):
         mesh = BM_SOURCE.Surface(BM_SOURCE.triangles(yori.OUT / f'belmonte/glb/{name}.glb'))
         height = mesh.height(GX - BM.ORIGIN[0], GY - BM.ORIGIN[1]) + BM.ORIGIN[2]
         covered = (GY > BM.SOUTH_JOIN) & np.isfinite(height) & ~mask
         Z[covered] = height[covered]
+        north_extension |= covered
 
 # the island lives outside the heightmap: sample its own height function in island-local coordinates
 SW = W.get('southwest')
@@ -101,7 +102,7 @@ Z = np.where(Z < 0, np.minimum(Z, -1.5 - 30.0 * (1 - near) ** 1.6), Z).astype(np
 playable = square | (Z < 0)
 if C: playable |= (GX >= C['bounds'][0]) & (GY >= C['bounds'][1]) & (GX <= C['bounds'][2]) & (GY <= C['bounds'][3])
 if NORTH: playable |= (GX>=NORTH[0])&(GX<=NORTH[2])&(GY>=NORTH[1])&(GY<=NORTH[3])
-if BELMONTE: playable |= BM.contains(GX, GY) | approach
+if BELMONTE: playable |= BM.contains(GX, GY) | north_extension
 if SW: playable |= isl
 fade = np.array(Image.fromarray((playable * 255).astype(np.uint8), 'L').filter(ImageFilter.GaussianBlur(6 * PX))).astype(np.float32) / 255
 

@@ -1661,77 +1661,77 @@
       "bytes": 10312,
       "sha256": "b7036d22c895090d7337f11bde6208588cd1971b9aef753938ee6ba3a2e66947"
     },
-    "belmonte/textures/T_AT_CafeChair_D-9c754f82fb.png": {
-      "bytes": 368222,
-      "sha256": "15bfff5eb163a4069a3f2e069adc34e2e5037e25fdcb2540d31defa757ff5af2"
+    "belmonte/textures/T_AT_CafeChair_D-9c754f82fb.jpg": {
+      "bytes": 88036,
+      "sha256": "6a1d7178a834f1f03d2f226a1c48cf0cceb396291438b90caf09640ac02d388a"
     },
-    "belmonte/textures/T_AT_CafeParasol_D-f96ef4ce80.png": {
-      "bytes": 177069,
-      "sha256": "f98f7ba0a626e58e3ead33a3315113a4869497a7e8ee58bed05653055ce813fe"
+    "belmonte/textures/T_AT_CafeParasol_D-f96ef4ce80.jpg": {
+      "bytes": 36287,
+      "sha256": "73de9d2e88251427f38bd178985a105d47cf67d89f1d38620b9ceaa97d051510"
     },
-    "belmonte/textures/T_BSalonPosters-d82ad7c5a1.png": {
-      "bytes": 369905,
-      "sha256": "19c5d46e584b46fcf4b577d7439072a3919e255e85396564d3939cf9881371ba"
+    "belmonte/textures/T_BSalonPosters-d82ad7c5a1.jpg": {
+      "bytes": 292455,
+      "sha256": "26c6aaa4c4ab626d083977e31ddbcf4defd3ba8f92dcb6629dbe917476c53fc5"
     },
-    "belmonte/textures/T_B_clay_roof_tiles_02_D-c9e880ab3f.png": {
-      "bytes": 8343859,
-      "sha256": "0b6ce89f5659def9595e88b6faaec4fa78f263fae2262c28151fb213396caa41"
+    "belmonte/textures/T_B_clay_roof_tiles_02_D-c9e880ab3f.jpg": {
+      "bytes": 1748993,
+      "sha256": "4d8d4debec0b11c7a07f313835d2bb6f91d54d229c813b558137d176e629cdc7"
     },
-    "belmonte/textures/T_B_cobblestone_floor_08_D-3b6f631163.png": {
-      "bytes": 8092488,
-      "sha256": "a1dbe453bddf8b976a7e9a1cf54bc26b2e3e89356b2bcb0f481abeb609e1f263"
+    "belmonte/textures/T_B_cobblestone_floor_08_D-3b6f631163.jpg": {
+      "bytes": 1989111,
+      "sha256": "ed25fc481d89feb2834b784579e1f966ddacb62b08ff777140e9ace38b9e96bc"
     },
-    "belmonte/textures/T_B_cobblestone_large_01_D-45cfccc09e.png": {
-      "bytes": 8799365,
-      "sha256": "0aeb571126460f52df7be902c8dd0862aa2e7b493c32a891e6dbec5cd81918b0"
+    "belmonte/textures/T_B_cobblestone_large_01_D-45cfccc09e.jpg": {
+      "bytes": 2256858,
+      "sha256": "182be3b4068a04e3ed48888c4536078fdabb4ab784c2189b9121bbbbe253186c"
     },
-    "belmonte/textures/T_B_grass_ground_D-c17533b977.png": {
-      "bytes": 8575319,
-      "sha256": "116ae525c5234de4920971e1eb9a41e5ba04bae88885ff584ecf99e156d34691"
+    "belmonte/textures/T_B_grass_ground_D-c17533b977.jpg": {
+      "bytes": 1976630,
+      "sha256": "1388084b1ac30c57f4d18b4ffda25c883c319510064206766975a867f21ed9ab"
     },
-    "belmonte/textures/T_B_gravelly_sand_D-7c7d6294b6.png": {
-      "bytes": 8959895,
-      "sha256": "418fc3d4d45f1ea4f20bbecdaa79c3f4c389f2a0f896a7d337b5de611b949ffb"
+    "belmonte/textures/T_B_gravelly_sand_D-7c7d6294b6.jpg": {
+      "bytes": 2408675,
+      "sha256": "71aa9b3fbefcac4126d04a5b600e1c47a82751c4098e2e7fa803a9baf2c1ccf4"
     },
-    "belmonte/textures/T_B_medieval_blocks_03_D-2666290930.png": {
-      "bytes": 8401204,
-      "sha256": "5b4e051bff90088029d949510e87bd3a55219d27bfa925d490a9a3a05fde2e5b"
+    "belmonte/textures/T_B_medieval_blocks_03_D-2666290930.jpg": {
+      "bytes": 2060347,
+      "sha256": "0f6e21d0708fa51e7e51058eec690f15340d33b7572ba57f1f75d5805964acd6"
     },
-    "belmonte/textures/T_B_park_sand_D-a7ee5cb65f.png": {
-      "bytes": 7693912,
-      "sha256": "11d2567841f780324fdbfff2d89862990d78d8a40f2ba788e7b9b68fd9a4e495"
+    "belmonte/textures/T_B_park_sand_D-a7ee5cb65f.jpg": {
+      "bytes": 1541011,
+      "sha256": "f4bc84551fba17c1857d460a10ba1bd99798f8dddadc914ba7914d5ac8dc3f17"
     },
-    "belmonte/textures/T_B_rock_wall_11_D-d45075f074.png": {
-      "bytes": 7575105,
-      "sha256": "dd8099a91c126dc29447a1d07770b4005ec1a59e3c07e796a02411d65ab711d7"
+    "belmonte/textures/T_B_rock_wall_11_D-d45075f074.jpg": {
+      "bytes": 1406314,
+      "sha256": "7f9f566e2706621d9047fa85661774851129a29540f846687a234da24c2b10a9"
     },
-    "belmonte/textures/T_B_rough_plaster_broken_D-b39f163f74.png": {
-      "bytes": 9509629,
-      "sha256": "7bdb3d1cac2ffb6e8aa398926fbe21fdde6a7baf4a57c94c62b3104cd37f3724"
+    "belmonte/textures/T_B_rough_plaster_broken_D-b39f163f74.jpg": {
+      "bytes": 2429297,
+      "sha256": "f7e849b0b233e1f0613ebad8fab3737de79333ff8a0b82ed365d87fbf2566641"
     },
-    "belmonte/textures/T_B_sandstone_blocks_05_D-377f16c8af.png": {
-      "bytes": 8179016,
-      "sha256": "f00dca92ee93e09845d55c744a87c9acf2311aa0f9794f1c2eec0702dcb6201d"
+    "belmonte/textures/T_B_sandstone_blocks_05_D-377f16c8af.jpg": {
+      "bytes": 2012414,
+      "sha256": "4e9231af75b4293454f9c45d759dc768dc6919853a25440391f5b2773287d314"
     },
-    "belmonte/textures/T_B_weathered_planks_D-4cd10312e4.png": {
-      "bytes": 6599045,
-      "sha256": "72581e8e0808cebb401fa055a2eab6e1ec12df70be7e751033773e5c2e9d178b"
+    "belmonte/textures/T_B_weathered_planks_D-4cd10312e4.jpg": {
+      "bytes": 1059381,
+      "sha256": "46d6421846d45ed82e0f585503ed84a9e0a56e37a9aa5ab175c2d1a6211f3493"
     },
-    "belmonte/textures/T_B_withered_grass_D-4293e66187.png": {
-      "bytes": 9088126,
-      "sha256": "58d6a894d0febf8ec9739eff41ae18b9736406ba06e6cb329097838ae6e08465"
+    "belmonte/textures/T_B_withered_grass_D-4293e66187.jpg": {
+      "bytes": 2575824,
+      "sha256": "3c840cd66f51d0bda305bf8104281d50f1077d48e5ac903849ff6b0515d88ed2"
     },
-    "belmonte/textures/T_B_wood_planks_D-39ceb687eb.png": {
-      "bytes": 6488721,
-      "sha256": "3e9dc9575608cd415858edf1032d7bdeaa1ae98b0fbbead170930de59ab8c92c"
+    "belmonte/textures/T_B_wood_planks_D-39ceb687eb.jpg": {
+      "bytes": 1052816,
+      "sha256": "570e6354d515b7a0fcd7877845dd9feb5304879a1f3956a2ffc42ade8d5555a6"
     },
-    "belmonte/textures/T_B_worn_rock_natural_01_D-2827c5ee4d.png": {
-      "bytes": 7969998,
-      "sha256": "b74c7ffe1359628e4f42e496140b2e6c8f4186a157523a38722dc3a2454130df"
+    "belmonte/textures/T_B_worn_rock_natural_01_D-2827c5ee4d.jpg": {
+      "bytes": 1704166,
+      "sha256": "db9cbf0d54c5f730428602addc96b115624476ee806106a3f6821a789fd1cc65"
     },
-    "belmonte/textures/T_B_yellow_plaster_D-e160611677.png": {
-      "bytes": 6454427,
-      "sha256": "5e842fce8953528dc100284f60ec25ec7f9beade465522a3d4bc581e5182d4b5"
+    "belmonte/textures/T_B_yellow_plaster_D-e160611677.jpg": {
+      "bytes": 1217872,
+      "sha256": "284a3f65cc6970dd28485913bd803f403058ddee0a8332defd344755dd72082e"
     },
     "characters/adventure/source/animations.json": {
       "bytes": 8652444,
