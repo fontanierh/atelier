@@ -95,7 +95,7 @@ def render_floor():
         r'^## (Holding|Waiting|Handoffs|Log)\s*\n(.*?)(?=^## |\Z)', text, re.M | re.S)}
     # Use the owning library's PID/start validation; stale lock text is never a live owner.
     holders = {}
-    for slot, path in (('big', render_lock.lock_path()), ('small', render_lock.small_lock_path())):
+    for slot, path in render_lock.lock_paths().items():
         holder = render_lock.read_holder(path)
         if holder:
             holders[slot] = {'purpose': holder.get('purpose', 'Render job'), 'kind': holder.get('kind', 'job'),

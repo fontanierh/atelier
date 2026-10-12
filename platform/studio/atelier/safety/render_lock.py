@@ -35,10 +35,16 @@ The foreign-process scan leaves out the other slot's live holder and all its des
 pids), so the two slots do not refuse each other, and still refuses any render process nobody holds. A session on older
 code knows only the big lock: it sees a small job's Unreal as foreign and refuses, which is safe.
 
+An optional `fitting_checkout` in that same configuration reserves `render.fitting.lock` for background Blender
+model fitting in one absolute checkout, with the same 3 GiB estimate, 4 GiB guard and 10 GiB available-memory rules.
+`fitting_gib` requests this lane only, with no fallback. `fitting_paused: true` refuses new fitting jobs. Before enabling
+it, every active client must adopt protocol 2: compiles acquire all three mutexes, and fitting admission refuses live
+holders from older guards. Keep `slots` at 2 so clients can be upgraded before the reserved lane is enabled.
+
 `ATELIER_RENDER_LOCK` moves the lock files and the switch, and `ATELIER_RENDER_LOCK_SCAN=0` skips the foreign
 process scan. Both exist for the CPU tests; a real measurement uses the defaults.
 """
-import fcntl, json, os, re, subprocess, sys, time
+import fcntl, json, math, os, re, subprocess, sys, time
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -53,6 +59,7 @@ SMALL_LIMIT_GIB = 4.    # the memory guard's ceiling for a job in the small slot
 SMALL_FREE_GIB = 10.    # memory that must be available when a small job starts
 COMPILE_WAIT = 600.     # seconds a compile, holding the big slot, waits for a small job to finish
 KINDS = ('job', 'game', 'compile')
+PROTOCOL = 2           # includes the reserved fitting mutex in compile exclusion
 
 
 def lock_path():
@@ -63,6 +70,25 @@ def small_lock_path(big=None):
     """The small slot's lock file, next to the big one: render.small.lock."""
     big = big or lock_path()
     return big.with_name(f'{big.stem}.small{big.suffix}')
+
+
+def fitting_lock_path(big=None):
+    """A reserved Blender fitting lane; never used by ordinary builds or games."""
+    big = big or lock_path()
+    return big.with_name(f'{big.stem}.fitting{big.suffix}')
+
+
+def lock_paths():
+    """All records, including disabled lanes whose current job must still finish."""
+    return {'big': lock_path(), 'small': small_lock_path(), 'fitting': fitting_lock_path()}
+
+
+def slot_config():
+    try:
+        value = json.loads(slots_path().read_text())
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def slots_path():
@@ -238,11 +264,14 @@ def _admit_small(small, big, gib):
     # The small lock is held before the big holder is read, and a compile records itself before taking the small
     # lock, so either this job sees the compile or the compile finds the small lock held and waits.
     other = read_holder(big)
+    fitting = read_holder(fitting_lock_path(big))
     free = None
     if other and is_compile(other):
         why = f'a compile holds the big slot{describe(other)}'
     elif other and same_checkout(other):
         why = f'the big slot runs a job in this checkout{describe(other)}'
+    elif fitting and same_checkout(fitting):
+        why = f'the fitting slot runs a job in this checkout{describe(fitting)}'
     else:
         free = available_bytes()
         if free is None:
@@ -256,19 +285,71 @@ def _admit_small(small, big, gib):
     return None, why
 
 
+def _admit_fitting(fitting, big, small, gib):
+    """Only the configured checkout may use this lane, with no fallback to another slot."""
+    config = slot_config()
+    checkout = config.get('fitting_checkout')
+    if slot_count() != 2 or not isinstance(checkout, str) or not Path(checkout).is_absolute():
+        return None, 'the reserved fitting slot is not configured'
+    if config.get('fitting_paused'):
+        return None, 'the reserved fitting slot is paused'
+    if Path(checkout).resolve() != REPO.resolve():
+        return None, 'the fitting slot belongs to another checkout'
+    handle = fitting.open('a+')
+    if not _take(handle):
+        other = holder(handle)
+        handle.close()
+        return None, f'the fitting slot is busy{describe(other)}'
+    why = None
+    for path in (big, small):
+        other = read_holder(path)
+        if not other:
+            # An older guard does not use our admission mutex and may hold this slot before publishing
+            # a valid record. Probe the mutex, without clearing or rewriting any other owner's metadata.
+            with path.open('a+') as probe:
+                if not _take(probe):
+                    why = f'the {path.name} mutex is held without a valid holder record'
+                    break
+                fcntl.flock(probe.fileno(), fcntl.LOCK_UN)
+            continue
+        if is_compile(other):
+            why = f'a compile holds a render slot{describe(other)}'
+        elif other.get('protocol') != PROTOCOL:
+            why = f'a render holder uses an older guard{describe(other)}'
+        elif same_checkout(other):
+            why = f'another render slot runs in this checkout{describe(other)}'
+        if why:
+            break
+    if why is None:
+        free = available_bytes()
+        if free is None:
+            why = 'available memory could not be measured'
+        elif free < SMALL_FREE_GIB*GiB:
+            why = f'{free/GiB:.1f} GiB available, the fitting slot needs {SMALL_FREE_GIB:g}'
+        else:
+            return handle, f'expected {gib:.1f} GiB, {free/GiB:.1f} GiB available'
+    _release(handle)
+    handle.close()
+    return None, why
+
+
 @contextmanager
-def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='job', on_slot=None):
+def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='job', on_slot=None, fitting_gib=None):
     """Own a render slot for the duration of the block; yields the lock file taken.
 
     Without `small_gib` this is the machine's single big slot, as it always was. `small_gib`, the job's expected peak,
     lets it use the small slot when two are configured and it is admitted. `kind` ('job', 'game' or 'compile') is
-    recorded in the lock file; a compile also takes the small slot. `on_slot(slot, why)` hears which slot was taken
-    ('big' or 'small') and why, once the scan has passed."""
+    recorded in the lock file; a compile also takes the small and fitting slots. `fitting_gib` requests only the
+    configured reserved lane. `on_slot(slot, why)` hears 'big', 'small' or 'fitting' once the scan has passed."""
     kind = kind or 'job'
     if kind not in KINDS:
         raise ValueError(f'kind must be one of {KINDS}, not {kind!r}')
+    if fitting_gib is not None and (kind != 'job' or small_gib is not None
+                                   or not math.isfinite(fitting_gib) or not 0 < fitting_gib <= SMALL_PEAK_GIB):
+        raise ValueError('fitting requires a job with an expected peak above zero and at most 3 GiB, without small_gib')
     big = lock_path()
     small = small_lock_path(big)
+    fitting = fitting_lock_path(big)
     big.parent.mkdir(parents=True, exist_ok=True)
     why = ''
     if small_gib is not None:
@@ -280,52 +361,78 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
     opened, owned = [], []
     handle = big.open('a+')
     opened.append(handle)
+    admission = big.with_name(f'{big.stem}.admission{big.suffix}').open('a+')
+    opened.append(admission)
     deadline = time.monotonic()+max(wait, 0.)
     try:
         while True:
-            if eligible:
-                taken, why = _admit_small(small, big, small_gib)
-                if taken:
-                    opened.append(taken)
-                    owned.append(taken)
-                    slot = 'small'
-                    break
-            if _take(handle):
-                owned.append(handle)
-                slot = 'big'
+            slot = None
+            # Publish the chosen slot's record before another new guard checks admission. Otherwise two
+            # launches in the same checkout can both see an empty record between flock and _write.
+            if _take(admission):
+                try:
+                    if fitting_gib is not None:
+                        taken, why = _admit_fitting(fitting, big, small, fitting_gib)
+                        if taken:
+                            opened.append(taken)
+                            owned.append(taken)
+                            slot = 'fitting'
+                    else:
+                        if eligible:
+                            taken, why = _admit_small(small, big, small_gib)
+                            if taken:
+                                opened.append(taken)
+                                owned.append(taken)
+                                slot = 'small'
+                        if slot is None and _take(handle):
+                            owned.append(handle)
+                            slot = 'big'
+                            other = read_holder(fitting)
+                            if kind != 'compile' and other and same_checkout(other):
+                                raise RenderBusy(f'the fitting slot runs a job in this checkout{describe(other)}')
+                    if slot is not None:
+                        record = dict(pid=os.getpid(), started=usage(os.getpid()).started, purpose=str(purpose),
+                                      kind=kind, slot=slot, checkout=str(Path.cwd()), repo=str(REPO),
+                                      time=time.time(), protocol=PROTOCOL)
+                        if slot in ('small', 'fitting'):
+                            record['expected_gib'] = round(float(fitting_gib if slot == 'fitting' else small_gib), 2)
+                        _write(owned[0], record)
+                finally:
+                    fcntl.flock(admission.fileno(), fcntl.LOCK_UN)
+            else:
+                why = 'another render job is checking admission'
+            if slot is not None:
                 break
             if time.monotonic() >= deadline:
+                if fitting_gib is not None:
+                    raise RenderBusy(why)
                 other = holder(handle)
                 detail = f" held by pid {other['pid']} ({other.get('purpose')})" if other else ''
                 aside = f' (not the small slot: {why})' if eligible else ''
                 raise RenderBusy(f'another render job is running{detail}; '
                                  f'stop it (or the phone stream) before starting this one{aside}')
             time.sleep(.25)
-        record = dict(pid=os.getpid(), started=usage(os.getpid()).started, purpose=str(purpose), kind=kind,
-                      slot=slot, checkout=str(Path.cwd()), repo=str(REPO), time=time.time())
-        if slot == 'small':
-            record['expected_gib'] = round(float(small_gib), 2)
-        _write(owned[0], record)
         if kind == 'compile':
             # Nothing runs beside a compile. Holding the big slot, recorded as a compile, stops new small jobs;
             # one already running is waited for.
-            why = 'a compile, which also holds the small slot'
-            extra = small.open('a+')
-            opened.append(extra)
+            why = 'a compile, which also holds the small and fitting slots'
             limit = max(deadline, time.monotonic()+COMPILE_WAIT)
-            told = False
-            while not _take(extra):
-                other = holder(extra)
-                if time.monotonic() >= limit:
-                    raise RenderBusy(f'a small render job is still running{describe(other)}; '
-                                     f'a compile does not start beside it')
-                if not told:
-                    print(f'waiting for the small render job{describe(other)} to finish before compiling',
-                          file=sys.stderr, flush=True)
-                    told = True
-                time.sleep(.25)
-            owned.append(extra)
-            _write(extra, record)
+            for label, path in (('small', small), ('fitting', fitting)):
+                extra = path.open('a+')
+                opened.append(extra)
+                told = False
+                while not _take(extra):
+                    other = holder(extra)
+                    if time.monotonic() >= limit:
+                        raise RenderBusy(f'a {label} render job is still running{describe(other)}; '
+                                         f'a compile does not start beside it')
+                    if not told:
+                        print(f'waiting for the {label} render job{describe(other)} to finish before compiling',
+                              file=sys.stderr, flush=True)
+                        told = True
+                    time.sleep(.25)
+                owned.append(extra)
+                _write(extra, record)
         if scan is None:
             scan = os.environ.get('ATELIER_RENDER_LOCK_SCAN', '1') != '0'
         if scan:
@@ -333,9 +440,11 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
             table = process_table()
             skip = set(ignore)
             if kind != 'compile':
-                other = read_holder(big if slot == 'small' else small)
-                if other:
-                    skip |= family(other['pid'], table)
+                for label, path in lock_paths().items():
+                    if label != slot:
+                        other = read_holder(path)
+                        if other:
+                            skip |= family(other['pid'], table)
             foreign = render_processes(ignore=skip, table=table)
             if foreign:
                 names = ', '.join(f"{p['pid']} {Path(p['command']).name}" for p in foreign)
@@ -343,7 +452,7 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
                                  f'Stop them (the phone stream: `atelier stream stop`) first')
         if on_slot is not None:
             on_slot(slot, why)
-        yield small if slot == 'small' else big
+        yield {'big': big, 'small': small, 'fitting': fitting}[slot]
     finally:
         for taken in reversed(owned):
             _release(taken)

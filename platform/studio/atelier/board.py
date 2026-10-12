@@ -136,7 +136,7 @@ def stalled_logs(agent, checkout, seconds, now=None):
     from .safety import render_lock as locks
     from .safety.memory_guard import usage
     now = time.time() if now is None else now
-    holders = [locks.read_holder(locks.lock_path()), locks.read_holder(locks.small_lock_path())]
+    holders = [locks.read_holder(path) for path in locks.lock_paths().values()]
     holder = next((h for h in holders if h and h.get('repo', h.get('checkout')) == str(checkout)), None)
     if not holder:
         return

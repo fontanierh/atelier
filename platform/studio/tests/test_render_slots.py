@@ -383,6 +383,182 @@ class GuardedSlotTests(SlotTestCase):
                 guarded_run.main(['--report', str(self.folder), '--small', '2', '--kind', 'game', '--', *QUICK])
 
 
+class FittingSlotTests(SlotTestCase):
+    def setUp(self):
+        super().setUp()
+        self.fitting = slots.fitting_lock_path()
+        self.switch = slots.slots_path()
+        self.config = {'slots': 2, 'fitting_checkout': str(paths.REPO)}
+        self.configure()
+
+    def configure(self, **fields):
+        self.switch.write_text(json.dumps(self.config | fields))
+
+    def test_three_jobs_have_independent_locks_and_records(self):
+        with hold(self.big, protocol=slots.PROTOCOL), hold(self.small, protocol=slots.PROTOCOL):
+            with render_lock('fit model', fitting_gib=2.1, on_slot=self.note) as path:
+                self.assertEqual(path, self.fitting)
+                self.assertTrue(all(is_locked(p) for p in (self.big, self.small, self.fitting)))
+                record = json.loads(path.read_text())
+                self.assertEqual((record['slot'], record['expected_gib'], record['protocol']),
+                                 ('fitting', 2.1, slots.PROTOCOL))
+        self.assertEqual(self.fitting.read_text(), '')
+
+    def test_only_the_reserved_checkout_can_use_the_slot(self):
+        self.configure(fitting_checkout=ELSEWHERE)
+        with self.assertRaisesRegex(RenderBusy, 'another checkout'):
+            self.take(fitting_gib=1)
+        self.assertFalse(self.fitting.exists())
+
+    def test_pausing_or_disabling_never_falls_back_to_big(self):
+        for config in ({}, {'slots': 2, 'fitting_checkout': 'relative'}, self.config | {'fitting_paused': True}):
+            self.switch.write_text(json.dumps(config))
+            with self.assertRaises(RenderBusy):
+                self.take(fitting_gib=1)
+            self.assertEqual(self.big.read_text(), '')
+
+    def test_expected_peak_and_job_kind_are_required(self):
+        for options in ({'fitting_gib': 3.1}, {'fitting_gib': float('nan')}, {'fitting_gib': 0},
+                        {'fitting_gib': 1, 'kind': 'game'}, {'fitting_gib': 1, 'small_gib': 1}):
+            with self.assertRaises(ValueError):
+                self.take(**options)
+
+    def test_older_holders_compiles_and_same_checkout_refuse_fitting(self):
+        for path in (self.big, self.small):
+            for fields in ({}, {'protocol': slots.PROTOCOL, 'kind': 'compile'},
+                           {'protocol': slots.PROTOCOL, 'repo': str(paths.REPO)}):
+                with hold(path, **fields):
+                    with self.assertRaises(RenderBusy):
+                        self.take(fitting_gib=1)
+        self.assertFalse(is_locked(self.fitting))
+
+    def test_held_slots_without_valid_records_refuse_fitting_without_rewriting_them(self):
+        for path in (self.big, self.small):
+            for text in ('', '{', '{"pid":999999,"started":1}'):
+                with hold(path):
+                    path.write_text(text)
+                    with self.assertRaisesRegex(RenderBusy, 'held without a valid holder record'):
+                        self.take(fitting_gib=1)
+                    self.assertEqual(path.read_text(), text)
+                    self.assertTrue(is_locked(path))
+                    self.assertFalse(is_locked(self.fitting))
+
+    def test_low_or_unknown_memory_refuses_without_fallback(self):
+        for memory in (None, 9*GiB):
+            self.patch(slots, 'available_bytes', lambda: memory)
+            with self.assertRaises(RenderBusy):
+                self.take(fitting_gib=1)
+            self.assertFalse(is_locked(self.fitting))
+
+    def test_compile_holds_all_mutexes_even_when_fitting_is_disabled(self):
+        self.switch.unlink()
+        with render_lock('compile', kind='compile'):
+            self.assertTrue(all(is_locked(p) for p in (self.big, self.small, self.fitting)))
+        self.assertFalse(any(is_locked(p) for p in (self.big, self.small, self.fitting)))
+
+    def test_compile_waits_for_the_actual_fitting_exit(self):
+        ready = threading.Event()
+        def fitting_job():
+            with hold(self.fitting, slot='fitting', purpose='short fitting'):
+                ready.set()
+                time.sleep(.6)
+        thread = threading.Thread(target=fitting_job)
+        thread.start()
+        self.assertTrue(ready.wait(2))
+        begun = time.monotonic()
+        with contextlib.redirect_stderr(io.StringIO()) as told:
+            self.take(kind='compile')
+        thread.join(2)
+        self.assertGreater(time.monotonic()-begun, .4)
+        self.assertIn('short fitting', told.getvalue())
+
+    def test_timed_out_compile_releases_its_other_mutexes(self):
+        self.patch(slots, 'COMPILE_WAIT', .1)
+        with hold(self.fitting, slot='fitting'):
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(RenderBusy):
+                    self.take(kind='compile')
+            self.assertFalse(is_locked(self.big) or is_locked(self.small))
+            self.assertTrue(is_locked(self.fitting))
+
+    def test_fitting_and_other_work_in_one_checkout_are_mutually_exclusive(self):
+        with hold(self.fitting, slot='fitting', repo=str(paths.REPO)):
+            with self.assertRaises(RenderBusy):
+                self.take()
+            with self.assertRaises(RenderBusy):
+                self.take(small_gib=1)
+
+    def test_concurrent_admission_cannot_see_an_unpublished_slot_record(self):
+        entered, release = threading.Event(), threading.Event()
+        errors = []
+        write = slots._write
+        def paused_write(handle, record):
+            if record['purpose'] == 'first fitting':
+                entered.set()
+                if not release.wait(3):
+                    raise TimeoutError('test publication gate')
+            write(handle, record)
+        self.patch(slots, '_write', paused_write)
+        def first():
+            try:
+                with render_lock('first fitting', fitting_gib=1):
+                    pass
+            except Exception as error:
+                errors.append(error)
+        thread = threading.Thread(target=first)
+        thread.start()
+        try:
+            self.assertTrue(entered.wait(2))
+            self.assertEqual(self.fitting.read_text(), '')
+            with self.assertRaises(RenderBusy):
+                self.take()
+        finally:
+            release.set()
+            thread.join(3)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+
+    def test_owned_blender_is_ignored_but_foreign_blender_is_refused(self):
+        self.env(ATELIER_RENDER_LOCK_SCAN=None)
+        self.patch(slots, 'process_table', lambda: [(os.getpid(), 1, sys.executable),
+                   (900001, os.getpid(), '/Applications/Blender.app/Contents/MacOS/Blender')])
+        with hold(self.fitting, slot='fitting'):
+            self.assertEqual(self.take()[0], 'big')
+        self.fitting.write_text('')  # model the real release, which clears its still-live parent's record
+        with self.assertRaises(RenderBusy):
+            self.take()
+
+
+class GuardedFittingTests(GuardedSlotTests):
+    def setUp(self):
+        super().setUp()
+        slots.slots_path().write_text(json.dumps({'slots': 2, 'fitting_checkout': str(paths.REPO)}))
+
+    def test_only_background_blender_with_a_lock_is_accepted(self):
+        for command, options in ((QUICK, {}), (['Blender'], {}), (['Blender', '-b'], {'lock': False}),
+                                 (['Blender', '-b'], {'kind': 'game'}),
+                                 (['Blender', '-b'], {'watch': ['UnrealEditor']})):
+            with self.assertRaises(ValueError):
+                guarded_run.run(command, self.folder, fitting_gib=1, **options)
+
+    def test_fitting_child_has_the_four_gib_ceiling(self):
+        spawn = guarded_run.spawn
+        self.patch(guarded_run, 'spawn', lambda command, **kw: spawn(
+            [sys.executable, '-c', 'import time;time.sleep(.1)'], **kw))
+        self.patch(guarded_run.process_tree, 'name', lambda pid: 'Blender')
+        guarded_run.run(['Blender', '--background'], self.folder, fitting_gib=2, on_slot=self.note)
+        self.assertEqual((self.seen[-1][0], self.limits[-1]), ('fitting', 4.))
+
+    def test_child_that_execs_something_else_is_reaped_and_slot_released(self):
+        spawn = guarded_run.spawn
+        self.patch(guarded_run, 'spawn', lambda command, **kw: spawn(
+            [sys.executable, '-c', 'import time;time.sleep(10)'], **kw))
+        self.patch(guarded_run.process_tree, 'name', lambda pid: 'UnrealEditor')
+        with self.assertRaisesRegex(SystemExit, 'not Blender'):
+            guarded_run.run(['Blender', '--background'], self.folder, fitting_gib=2)
+        self.assertFalse(is_locked(slots.fitting_lock_path()))
+
+
 class BuildSlotTests(SlotTestCase):
     """`atelier build` on a stand-in game whose heavy steps print a marker; the memory guard reports set peaks."""
     def setUp(self):
