@@ -406,6 +406,4 @@ def concrete(n=256):
 
 
 if __name__ == "__main__":
-    for obsolete in yori.TEXTURES.glob("T_leaf_*_lo.png"): obsolete.unlink()
-    (yori.TEXTURES/"T_farforest.jpg").unlink(missing_ok=True)
     leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); sky(); water(); concrete(); white()
