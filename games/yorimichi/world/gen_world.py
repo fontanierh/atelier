@@ -235,7 +235,7 @@ def far_trees(x, y, h, d, sl):
     put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3), into=forest_scatter)
 use("far"); scatter(3.2, far_trees, jitter=0.5)
 from treehouse.layout import autumn_far
-treehouse_forest_rng = autumn_far(forest_scatter)
+treehouse_forest_rng, forest_scatter_xy = autumn_far(forest_scatter)
 for name, rows in forest_scatter.items():
     inst.setdefault(name, []).extend(rows)
 
@@ -327,6 +327,7 @@ for gy in np.arange(-1300, 2600, 11.0):
 # Detailed park, southwest and tree-house trees can share these asset names.
 from megapark.forest import clear_far_forest
 clear_far_forest({'instances': far_trees})
+forest_scatter_xy.update(tuple(row[:2]) for rows in far_trees.values() for row in rows)
 for name, rows in far_trees.items():
     inst.setdefault(name, []).extend(rows)
 
@@ -353,7 +354,7 @@ integrate_treehouse(world, H, forest_rng=treehouse_forest_rng)
 houses_layout.clear_and_dress(world, sample_h)
 # The Mega Park trail leaves the woodland air station's footpath north, over the far hills' shoulder to the park.
 from megapark.trail import integrate as integrate_park_trail
-integrate_park_trail(world, H)
+integrate_park_trail(world, H, scatter_xy=forest_scatter_xy)
 from forest.ecotone import northern_ecotone
 northern_ecotone(inst)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))

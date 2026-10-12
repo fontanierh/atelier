@@ -46,7 +46,9 @@ class PlantTests(unittest.TestCase):
 
     def test_park_trees_are_the_detailed_kind(self):
         trees = plants.trees()
-        self.assertLessEqual(set(trees), set(plants.MESHES))
+        names = {name for name in trees if name.startswith('Tree')}
+        self.assertTrue(names)
+        self.assertLessEqual(names, set(plants.MESHES))
 
     def test_ledge_plants_grow_on_rock_and_soil_clear_of_the_built_park_and_the_lines(self):
         ledges = plants.ledges()

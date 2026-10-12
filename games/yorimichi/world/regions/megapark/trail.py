@@ -115,7 +115,7 @@ def _profile(g, s):
     return g + (z - g) * smooth(end / 4)
 
 
-def integrate(world, h):
+def integrate(world, h, scatter_xy=None):
     """Work out the bed, carve the square's part, and clear the square's and the approach's trees and plants.
     `world` is gen_world.py's world.json, `h` its heightmap (rows y, columns x), changed in place."""
     from hidamari import mountains
@@ -148,6 +148,8 @@ def integrate(world, h):
     X, Y = np.meshgrid(grid, grid)
     part = points[points[:, 1] < size / 2 + 2 * STEP]
     h[:] = carve(X, Y, h, part)
+    if scatter_xy:
+        colour_scatter(world['instances'], part, scatter_xy)
     removed = {}
     for name, rows in list(world['instances'].items()):
         try:
@@ -173,6 +175,22 @@ def integrate(world, h):
                                                 'length': round(float(s[-1]), 1), 'removed': removed}) + '\n')
     bed.cache_clear()
     return removed
+
+
+def colour_scatter(instances, part, scatter_xy):
+    """Red and gold beside the trail, applied only to the originating scatter."""
+    from treehouse.layout import SCATTER_MIX
+    rng = np.random.default_rng(SEED)
+    moved = {}
+    for name in SCATTER_MIX:
+        a = np.asarray(instances.get(name, []), 'f8').reshape(-1, 5)
+        index, d, _ = _near(a[:, 0], a[:, 1], part, 35.)
+        turn = np.zeros(len(a), bool)
+        turn[index] = (d < 35.) & np.array([tuple(row[:2]) in scatter_xy for row in a[index]], bool)
+        instances[name] = a[~turn].tolist(); moved[name] = a[turn]
+    for name, kinds in SCATTER_MIX.items():
+        pick = rng.choice(len(kinds), size=len(moved[name]), p=[w for _, w in kinds])
+        for i, (key, _) in enumerate(kinds): instances.setdefault(key, []).extend(moved[name][pick == i].tolist())
 
 
 @lru_cache(maxsize=1)

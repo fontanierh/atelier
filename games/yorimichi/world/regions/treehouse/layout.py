@@ -94,6 +94,9 @@ CROWN = {'Tree_Maple_A': (6.5, 6.0), 'Tree_Broad_A': (8.5, 5.0), 'Tree_Ginkgo': 
 # New autumn trees fill the gaps without re-picking the authored detailed trees.
 FOREST = dict(radius=50., spacing=3.6, gap=2.8, turn=130.,
               mix=(('Tree_Maple_A', .30), ('Tree_Maple_B', .25), ('Tree_Ginkgo', .27), ('Tree_Cedar_B', .18)))
+SCATTER_MIX = {'Tree_Maple_A': (('Tree_Maple_A', .45), ('Tree_Maple_B', .35), ('Tree_Ginkgo', .2)),
+               'Tree_Ginkgo': (('Tree_Ginkgo', 1.),),
+               'Tree_Broad_A': (('Tree_Maple_A', .55), ('Tree_Ginkgo', .15), ('Tree_Broad_A', .3))}
 KEYS = ['TH_Structure', 'TH_Frame', 'TH_Trunks', 'TH_Dressing']
 # The tall canopy trees (treehouse/trees.py) hold red and gold crowns at deck height round every place, as in the
 # paintings: each is scaled so its crown top stands `above` metres over the nearest deck (more further out), so
@@ -567,20 +570,17 @@ def clear(instances, pl, h=None):
 
 
 def autumn_far(instances):
-    """Colour the far-scatter producer before it joins the authored forest."""
+    """Colour the scatter, returning its fill RNG and the rows left for trail art."""
     rng = np.random.default_rng(29)
     c = np.mean([p['xy'] for p in PLACES.values()], axis=0)
-    mix = {'Tree_Maple_A': (('Tree_Maple_A', .45), ('Tree_Maple_B', .35), ('Tree_Ginkgo', .2)),
-           'Tree_Ginkgo': (('Tree_Ginkgo', 1.),),
-           'Tree_Broad_A': (('Tree_Maple_A', .55), ('Tree_Ginkgo', .15), ('Tree_Broad_A', .3))}
     moved, added = {}, {}
     # Snapshot each source before adding trees: a selected maple may become a
     # ginkgo, but it must not be selected again in the following source group.
-    for name in mix:
+    for name in SCATTER_MIX:
         a = np.array(instances.get(name, []), float).reshape(-1, 5)
         near = np.hypot(a[:, 0]-c[0], a[:, 1]-c[1]) < FOREST['radius']
         instances[name] = a[~near].tolist(); moved[name] = a[near]
-    for name, kinds in mix.items():
+    for name, kinds in SCATTER_MIX.items():
         pick = rng.choice(len(kinds), size=len(moved[name]), p=[w for _, w in kinds])
         for i, (key, _) in enumerate(kinds): added.setdefault(key, []).extend(moved[name][pick == i].tolist())
     a = np.array(instances['Tree_Broad_A'], float).reshape(-1, 5)
@@ -590,7 +590,9 @@ def autumn_far(instances):
     added.setdefault('Tree_Maple_A', []).extend(a[turn][pick].tolist())
     added.setdefault('Tree_Ginkgo', []).extend(a[turn][~pick].tolist())
     for name, rows in added.items(): instances.setdefault(name, []).extend(rows)
-    return rng
+    trail_rows = {tuple(row[:2]) for rows in instances.values() for row in rows
+                  if math.hypot(row[0]-c[0], row[1]-c[1]) >= FOREST['radius']}
+    return rng, trail_rows
 
 
 def autumn(instances, pl, h, rng=None):
