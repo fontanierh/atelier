@@ -30,12 +30,17 @@ Run the final clean revision's compile and `data.network` staging, then the nati
 wire suite. All 17 named fixtures must pass; an engine exit code alone is insufficient.
 Run a listen pair at zero lag and at 60 ms delay / 15 ms variance / 2% loss. Both
 observers must receive sustained skate poses and evaluate the expected skeleton.
+Skate replacement receipts also require the finalized mesh world frame to match
+the applied stream frame. Matching local bones alone can miss a misplaced body.
 
 The session runner supports `--feature-case equipment|switch-foot|switch-bike|
 switch-sail|switch-skate|switch-skate-air|switch-skate-bail|zeppelin` and
 `--render-view host|guest`. Run both observer
-views; one process renders while its peer uses NullRHI, under the existing aggregate
-10 GiB guard. Inspect the captures as well as the receipts. Rerun bike, sail,
+views; one process renders while its peer uses NullRHI. The aggregate guard defaults
+to 10 GiB. A rendered observer can use `--aggregate-memory-gib 14` or `16` only with
+explicit authorization for that session; the individual game guards remain at
+10 GiB, and startup requires the selected aggregate ceiling plus 2 GiB available.
+Inspect the captures as well as the receipts. Rerun bike, sail,
 pending mount, parking, crash and combat routes before enabling a release build.
 Use matching packaged identities for a two-device Tailscale playtest before claiming
 that a release's multiplayer has been verified on separate machines.
