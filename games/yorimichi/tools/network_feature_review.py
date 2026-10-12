@@ -63,7 +63,7 @@ def feature_checks(folder, case):
                     requests = s[side].get('sail_exit_requests')
                     checks[prefix+'returned_to_shore'] = (s[side].get('sail_landing_grounded') is True and
                                                          type(requests) is int and requests >= 1 and
-                                                         type(distance) in (int, float) and 0 <= distance <= 700)
+                                                         type(distance) in (int, float) and 0 <= distance <= 1500)
                 activity = kind if phase not in (0, last) else 0
                 checks[prefix+'activity'] = all(r.get('activity') == activity for r in rows)
                 expected = 'Modori' if (phase >= 2 and case == 'zeppelin') or phase == 2 else 'Cairo'

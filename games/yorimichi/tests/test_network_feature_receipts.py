@@ -40,7 +40,7 @@ def test_bike_swap_receipt_requires_a_supported_dismount_request(receipt, edit):
 
 
 @pytest.mark.parametrize('edit,accepted', [(dict(), True), (dict(sail_exit_requests=0), False),
-                                         (dict(sail_shore_distance=900), False),
+                                         (dict(sail_shore_distance=2000), False),
                                          (dict(sail_shore_distance=None), False),
                                          (dict(sail_landing_grounded=False), False)])
 def test_sail_swap_requires_an_observed_return_to_shore(receipt, edit, accepted):

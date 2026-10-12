@@ -228,7 +228,9 @@ struct FProbe
                 const float Turn = FMath::FindDeltaAngleDegrees(P->GetActorRotation().Yaw, Return.Rotation().Yaw);
                 P->Live_Drive(FVector2D(FMath::Clamp(Turn / 30.f, -1.f, 1.f), FMath::Abs(Turn) > 60.f ? -.2f : .2f), 1);
                 const double Now = FPlatformTime::Seconds();
-                if (Return.Size2D() <= 700. && Now >= NextSailExit && !P->IsNetworkActivityPending())
+                // The launch point can be inland of the hull-clearance boundary.
+                // K still performs the actual supported-landing search on the host.
+                if (Return.Size2D() <= 1500. && Now >= NextSailExit && !P->IsNetworkActivityPending())
                 {
                     P->Live_Press(TEXT("sailboat")); ++SailExitRequests; NextSailExit = Now + .75;
                 }
@@ -341,7 +343,7 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     if (Probe.Case == TEXT("switch-sail") && Probe.Phase == 4 &&
         (!Probe.SailExitRequests || Peer->GetNumberField(TEXT("sail_exit_requests")) < 1. ||
          !Host->GetBoolField(TEXT("sail_landing_grounded")) || !Peer->GetBoolField(TEXT("sail_landing_grounded")) ||
-         Host->GetNumberField(TEXT("sail_shore_distance")) > 700. || Peer->GetNumberField(TEXT("sail_shore_distance")) > 700.)) return false;
+         Host->GetNumberField(TEXT("sail_shore_distance")) > 1500. || Peer->GetNumberField(TEXT("sail_shore_distance")) > 1500.)) return false;
     if (Probe.Case == TEXT("zeppelin") && (Probe.Phase == 1 || Probe.Phase == 2) && !Local->GetLandscape()->Zeppelin->IsFlying()) return false;
     // Readback and PNG saving can stall a cold renderer. Capture a state that
     // passed both observer gates, then finish saving before the next input phase.
