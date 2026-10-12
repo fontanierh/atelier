@@ -168,6 +168,6 @@ FString ABelmonteRegion::ReviewMeshColours(const FString& Name)
     }
     auto Report = MakeShared<FJsonObject>();
     Report->SetStringField(TEXT("mesh"), Name); Report->SetArrayField(TEXT("samples"), Rows);
-    FString Output; FJsonSerializer::Serialize(Report.ToSharedRef(), TJsonWriterFactory<>::Create(&Output));
+    FString Output; FJsonSerializer::Serialize(Report, TJsonWriterFactory<>::Create(&Output));
     return Output;
 }
