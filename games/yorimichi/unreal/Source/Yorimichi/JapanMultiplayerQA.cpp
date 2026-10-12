@@ -58,6 +58,9 @@ struct FProbe
     FString Case;
     int32 Phase = 0, LocalPhase = -1, CapturedPhase = -1;
     double Began = -1., PhaseAt = 0., LastWrite = -1.;
+    double LastLongFrameAt = -1.;
+    uint32 EquipmentEpoch = 0;
+    int32 EquipmentRecoveryRetries = 0;
     bool Finished = false, DefaultVehicles = false;
     bool SawAir = false, SawBail = false, CharacterSent = false;
     TArray<TSharedPtr<FJsonValue>> Stages;
@@ -76,6 +79,7 @@ struct FProbe
         Data->SetStringField(TEXT("case"), Case); Data->SetNumberField(TEXT("phase"), Phase);
         Data->SetBoolField(TEXT("complete"), Finished); Data->SetBoolField(TEXT("default_vehicles"), DefaultVehicles);
         Data->SetBoolField(TEXT("requested_in_air"), SawAir); Data->SetBoolField(TEXT("requested_in_bail"), SawBail);
+        Data->SetNumberField(TEXT("equipment_recovery_retries"), EquipmentRecoveryRetries);
         TArray<TSharedPtr<FJsonValue>> Views;
         for (TActorIterator<AWandererCharacter> It(World.Get()); It; ++It)
         {
@@ -114,13 +118,19 @@ struct FProbe
     }
     void Drive(AWandererCharacter* P)
     {
-        const bool Enter = Phase != LocalPhase;
+        bool Enter = Phase != LocalPhase;
+        if (Case == TEXT("equipment") && EquipmentEpoch != P->GetActivityEpoch())
+        {
+            if (EquipmentEpoch) ++EquipmentRecoveryRetries;
+            EquipmentEpoch = P->GetActivityEpoch();
+            Enter = true; // A clock recovery invalidates the previous epoch's input edges.
+        }
         if (Enter) { LocalPhase = Phase; CharacterSent = false; }
         P->SetMenuOpen(false); P->Live_Drive(FVector2D::ZeroVector, 1);
         auto* PC = CastChecked<AJapanPlayerController>(P->GetController());
         if (Case == TEXT("equipment"))
         {
-            if (Enter && (Phase == 1 || Phase == 4)) P->Live_Press(TEXT("weapon"));
+            if (Enter && ((Phase == 1 && !P->GetMoves()->IsArmed()) || (Phase == 4 && P->GetMoves()->IsArmed()))) P->Live_Press(TEXT("weapon"));
             if (Enter && Phase == 2) P->Live_Press(TEXT("guard"));
             if (Phase == 2) P->Live_Drive(FVector2D(0,.2), 1);
             if (Enter && Phase == 3) { P->Live_Press(TEXT("guard_release")); P->Live_Press(TEXT("attack")); P->Live_Press(TEXT("attack_release")); }
@@ -208,6 +218,13 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         if (!It->IsNpc() && It->GetPlayerState<AJapanPlayerState>() && It->IsReady()) ++Players;
     if (!Local || !Local->IsReady() || Players != 2 || !Local->GetLandscape() || !Local->GetLandscape()->bGameplayReady) return false;
     if (Probe.Case == TEXT("zeppelin") && (!Local->GetLandscape()->Zeppelin || !Local->GetLandscape()->Zeppelin->IsReady())) return false;
+    // A rendered first launch can still be finishing shader/skin setup when the
+    // world-ready flag appears. Require a settled frame window before stimulus.
+    if (Probe.Began < 0.)
+    {
+        if (Probe.LastLongFrameAt < 0. || World->GetDeltaSeconds() > .05f) Probe.LastLongFrameAt = Now;
+        if (Now - Probe.LastLongFrameAt < 2.) return false;
+    }
     const FString ControlFile = Folder / TEXT("features-control.json");
     if (Server && Probe.Began < 0.)
     {
