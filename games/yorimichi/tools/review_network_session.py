@@ -292,7 +292,7 @@ def modori_checks(folder, shield):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None, aggregate_memory_gib=10):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -303,8 +303,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
     free = available_bytes()
     # Admission budgets the pair, not one game's current usage before launching another.
     # The independent runtime ceiling below includes both complete owned process trees.
-    if free is None or free < 12 * 1024**3:
-        raise RuntimeError('The compound smoke needs at least 12 GiB available before either game starts')
+    if free is None or free < (aggregate_memory_gib + 2) * 1024**3:
+        raise RuntimeError(f'The compound smoke needs at least {aggregate_memory_gib + 2} GiB available before either game starts')
     ctx = Context('yorimichi')
     package_source = None
     if app:
@@ -326,9 +326,9 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
         host = '127.0.0.1'
     pid, started = os.getpid(), process_tree.started(os.getpid())
     aggregate_report, stop = folder / 'aggregate-memory.json', folder / 'aggregate-stop'
-    monitor = subprocess.Popen([sys.executable, '-m', 'atelier.safety.tree_guard', '--pid', str(pid),
+    monitor = subprocess.Popen([sys.executable, str(Path(__file__).with_name('network_aggregate_guard.py')), '--pid', str(pid),
                                 '--expected-start', str(started), '--report', str(aggregate_report),
-                                '--stop-file', str(stop), '--duration', '315'])
+                                '--stop-file', str(stop), '--duration', '315', '--limit-gib', str(aggregate_memory_gib)])
     games = []
     began, spoken = time.monotonic(), 0.
     try:
@@ -354,10 +354,6 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                 if render_view == ('host' if role == 'server' else 'guest'):
                     command.remove('-nullrhi')
                     command += ['-windowed', '-ResX=960', '-ResY=540', '-ForceRes', '-networkrender']
-                    # A rendered observer shares the 10 GiB aggregate ceiling
-                    # with its peer. Bound streamed texture residency for this
-                    # QA process; geometry, animation and lighting stay intact.
-                    command += ['-DPCVars=r.Streaming.PoolSize=128,r.Streaming.MipBias=2,r.Streaming.UsePerTextureBias=1']
                 if feature_case:
                     command += ['-networkfeatures', '-networkfeaturecase=' + feature_case]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
@@ -423,7 +419,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     if now - spoken >= 15:
                         spoken = now
                         print(f'{stage}: waiting for native receipt; {now - began:.1f}s elapsed; '
-                              f'aggregate {health["footprint_bytes"] / 1024**3:.2f}/10 GiB', flush=True)
+                              f'aggregate {health["footprint_bytes"] / 1024**3:.2f}/{aggregate_memory_gib} GiB', flush=True)
                     time.sleep(.25)
                 raise RuntimeError(stage + ' deadline expired')
 
@@ -477,16 +473,20 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             from network_feature_review import feature_checks
             checks.update(feature_checks(folder, feature_case))
         checks['source_unchanged'] = source_revision() == revision
+        aggregate = load(aggregate_report) or {}
+        checks['aggregate_complete_and_bounded'] = (aggregate.get('state') == 'complete' and
+            aggregate.get('limit_bytes') == aggregate_memory_gib * 1024**3 and
+            aggregate.get('peak_bytes', float('inf')) <= aggregate_memory_gib * 1024**3)
         checks['native_build_unchanged'] = (package_fingerprint(app, expected_identity) if app else current_native_build(ctx)) == binary
         if app:
             checks['package_source_unchanged'] = verify_cook_source(paths.REPO, cook) == package_source
             checks.update(package_binding)
         report = dict(passed=all(checks.values()), checks=checks, aggregate=load(aggregate_report),
-                      emulation=emulation, source=revision, native_build=binary,
+                      emulation=emulation, source=revision, native_build=binary, aggregate_limit_gib=aggregate_memory_gib,
                       scope=('Same-machine Tailscale listener; ' if tailnet else 'Loopback listener; ') +
                             'NullRHI editor smoke. Packaged, rendered and two-machine acceptance remain separate')
         if render_view:
-            report['scope'] = f'Same-machine pair; {render_view} rendered at 960x540 with a 128 MiB streamed texture pool and mip bias 2, peer NullRHI. Packaged and two-machine acceptance remain separate.'
+            report['scope'] = f'Same-machine pair; {render_view} rendered at 960x540, peer NullRHI, aggregate ceiling {aggregate_memory_gib} GiB. Packaged and two-machine acceptance remain separate.'
         if feature_case:
             report['feature_case'] = feature_case
         if app:
@@ -539,6 +539,8 @@ def main():
     parser.add_argument('--reaction-delivery-case', type=int, choices=range(10), help='Development-only ordering/death probe; intentional holds and stale deliveries are labelled')
     parser.add_argument('--feature-case', choices=('equipment', 'switch-foot', 'switch-bike', 'switch-sail', 'switch-skate', 'switch-skate-air', 'switch-skate-bail', 'zeppelin'), help='Ordinary multiplayer equipment, character swaps and shared zeppelin')
     parser.add_argument('--render-view', choices=('host', 'guest'), help='Render one observer under the existing aggregate guard')
+    parser.add_argument('--aggregate-memory-gib', type=int, choices=(10, 14, 16), default=10,
+                        help='Rendered QA session ceiling; above10 requires explicit operator authorization')
     parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash', 'clock-bike'), help='Native vehicle route; clock-bike injects one real 1050 ms owner outage at zero lag')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
@@ -571,6 +573,8 @@ def main():
         args.listen = True
     if args.render_view and not args.listen:
         parser.error('A rendered observer requires a listen pair')
+    if args.aggregate_memory_gib != 10 and not args.render_view:
+        parser.error('An authorized larger aggregate ceiling requires a rendered observer')
     if args.vehicle_case and (args.enemy or args.combat or args.gameplay):
         parser.error('--vehicle-case uses a separate native route')
     if args.enemy and (args.combat or args.gameplay):
@@ -626,7 +630,7 @@ def main():
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
         return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay, args.reaction_delivery_case, args.reaction_delivery_moving,
-                      *([args.feature_case, args.render_view] if args.feature_case or args.render_view else []))
+                      *([args.feature_case, args.render_view, args.aggregate_memory_gib] if args.aggregate_memory_gib != 10 else [args.feature_case, args.render_view] if args.feature_case or args.render_view else []))
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -636,6 +640,7 @@ def main():
                         '--lag-ms', str(args.lag_ms), '--variance-ms', str(args.variance_ms), '--loss-percent', str(args.loss_percent), '--movement-hitch-ms', str(args.movement_hitch_ms), '--skate-hitch-ms', str(args.skate_hitch_ms)] +
                        (['--feature-case', args.feature_case] if args.feature_case else []) +
                        (['--render-view', args.render_view] if args.render_view else []) +
+                       (['--aggregate-memory-gib', str(args.aggregate_memory_gib)] if args.aggregate_memory_gib != 10 else []) +
                        (['--reaction-delivery-moving'] if args.reaction_delivery_moving else []) +
                        (['--reaction-delivery-case', str(args.reaction_delivery_case)] if args.reaction_delivery_case is not None else []) +
                        (['--jump-replay', str(args.jump_replay)] if args.jump_replay is not None else []) +

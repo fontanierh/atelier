@@ -89,6 +89,9 @@ struct FProbe
             Row->SetNumberField(TEXT("hits"), P->GetSword()->HitsTaken()); Row->SetBoolField(TEXT("armed"), Moves->IsArmed());
             Row->SetBoolField(TEXT("attachment"), FJapanMultiplayerQAAccess::Attached(Moves, Moves->IsArmed()));
             Row->SetBoolField(TEXT("guard"), Moves->IsGuarding()); Row->SetNumberField(TEXT("guard_weight"), Moves->SwordGuardWeight());
+            Row->SetStringField(TEXT("action"), P->GetAnimationAction().ToString());
+            Row->SetNumberField(TEXT("action_time"), P->GetActionTime());
+            Row->SetStringField(TEXT("move_mode"), Moves->ModeName());
             Row->SetNumberField(TEXT("checkpoints"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->GetNetworkStats().Checkpoints);
             Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
             Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));

@@ -925,6 +925,14 @@ void UAdventureMoveSet::AdvanceEquipment(float Dt)
     SwordCarry = FMath::FInterpConstantTo(SwordCarry, bCarry ? 1.f : 0.f, Dt, 8.f);
     GuardCarry = FMath::FInterpConstantTo(GuardCarry, bGuardPose && HasShield() ? 1.f : 0.f, Dt, 10.f);
     SwordGuardCarry = FMath::FInterpConstantTo(SwordGuardCarry, bSwordGuard ? 1.f : 0.f, Dt, 10.f);
+#if !UE_BUILD_SHIPPING
+    if (bRemotePresentation && bGuardHeld && FParse::Param(FCommandLine::Get(), TEXT("networkfeatures")))
+    {
+        static int32 Rows = 0;
+        if (Rows++ < 24) UE_LOG(LogTemp, Display, TEXT("NETWORK guard presentation action=%s mode=%d dt=%.4f guard=%d shield=%d down=%d broken=%.3f weight=%.3f"),
+            *Name.ToString(), int32(Mode), Dt, bGuardPose, HasShield(), bDown, GuardBroken, SwordGuardCarry);
+    }
+#endif
     // Without the shield the off hand holds nothing: over sword work and the lock-on strafe its arm swings free rather
     // than holding the shield pose the adventure clips give it (not in Cairo's two-handed guard, parry and recoil, nor
     // drawing and sheathing).
