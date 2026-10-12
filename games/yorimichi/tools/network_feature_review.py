@@ -44,6 +44,8 @@ def feature_checks(folder, case):
             checks[prefix+'health'] = all(r.get('health') == 73 and r.get('hits') == 2 for r in rows)
             checks[prefix+'equipment_attachment'] = all(r.get('ready') is True and r.get('attachment') is True for r in rows)
             if case == 'equipment':
+                checks[prefix+'prediction_roles'] = all(r.get('local_role') in (1, 2, 3) and
+                                                        r.get('predicts_moves') is (r.get('local_role') in (2, 3)) for r in rows)
                 armed = phase in (1, 2, 3)
                 checks[prefix+'armed'] = all(r.get('armed') is armed for r in rows)
                 if phase == 2:

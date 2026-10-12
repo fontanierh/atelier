@@ -67,6 +67,9 @@ bool UJapanCharacterMovement::PredictsMoves() const
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     return Rider && JapanNetwork::IsOnline(GetWorld()) && !Rider->IsNpc() && Rider->GetMoves() &&
+        // Simulated root-motion copies also call PerformMovement. They consume
+        // replicated presentation, never the predictor's neutral input holds.
+        (Rider->HasAuthority() || Rider->GetLocalRole() == ROLE_AutonomousProxy) &&
         (Rider->GetNetworkActivity() == EJapanActivity::OnFoot || Rider->GetNetworkActivity() == EJapanActivity::Bike || Rider->GetNetworkActivity() == EJapanActivity::Sailboat);
 }
 

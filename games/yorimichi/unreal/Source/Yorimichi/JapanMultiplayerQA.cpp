@@ -91,6 +91,8 @@ struct FProbe
             auto Row = MakeShared<FJsonObject>();
             Row->SetStringField(TEXT("player"), State->SessionPlayerId); Row->SetStringField(TEXT("rider"), FPlayableCharacter::NameOf(P));
             Row->SetStringField(TEXT("pawn"), P->GetClass()->GetPathName()); Row->SetBoolField(TEXT("local"), P == Local);
+            Row->SetNumberField(TEXT("local_role"), int32(P->GetLocalRole()));
+            Row->SetBoolField(TEXT("predicts_moves"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->PredictsMoves());
             Row->SetBoolField(TEXT("ready"), P->IsReady()); Row->SetNumberField(TEXT("epoch"), P->GetActivityEpoch());
             Row->SetNumberField(TEXT("activity"), uint8(P->GetNetworkActivity())); Row->SetNumberField(TEXT("health"), P->GetSword()->GetHealth());
             Row->SetNumberField(TEXT("hits"), P->GetSword()->HitsTaken()); Row->SetBoolField(TEXT("armed"), Moves->IsArmed());
@@ -282,8 +284,11 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
             if (Observed < 30. || R.GetNumberField(TEXT("matching_pose_frames")) < Observed * .95) return false;
         }
         if (Probe.Case == TEXT("equipment"))
+        {
+            if (R.GetBoolField(TEXT("predicts_moves")) != (R.GetNumberField(TEXT("local_role")) >= ROLE_AutonomousProxy)) return false;
             return (Phase == 0 || Phase == 4) ? !R.GetBoolField(TEXT("armed")) :
                 R.GetBoolField(TEXT("armed")) && (Phase != 2 || (R.GetBoolField(TEXT("guard")) && R.GetNumberField(TEXT("guard_weight")) > .8));
+        }
         const auto Kind = EJapanActivity(int32(R.GetNumberField(TEXT("activity"))));
         if (Probe.Case == TEXT("zeppelin")) return Kind == ((Phase == 0 || Phase == 3) ? EJapanActivity::OnFoot : EJapanActivity::Zeppelin) &&
             (Phase < 2 || R.GetStringField(TEXT("rider")) == TEXT("Modori"));

@@ -27,6 +27,21 @@ def test_two_observers_see_same_players_health_and_replacement(receipt):
     assert all(review.feature_checks(receipt, 'switch-bike').values())
 
 
+@pytest.mark.parametrize('proxy_predicts', [False, True])
+def test_remote_equipment_does_not_run_gameplay_prediction(receipt, proxy_predicts):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text()); value['case'] = 'equipment'
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                role = 3 if side == 'host' else 2 if row['local'] else 1
+                row.update(armed=stage['phase'] in (1, 2, 3), guard=True, guard_weight=1,
+                           checkpoints=4, local_role=role, predicts_moves=role in (2, 3))
+                if role == 1: row['predicts_moves'] = proxy_predicts
+    path.write_text(json.dumps(value))
+    assert all(review.feature_checks(receipt, 'equipment').values()) is (not proxy_predicts)
+
+
 @pytest.mark.parametrize('edit', [
     lambda r: r.update(default_vehicles=False),
     lambda r: r['stages'].pop(2),
