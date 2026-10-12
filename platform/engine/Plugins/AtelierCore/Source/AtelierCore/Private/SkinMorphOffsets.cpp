@@ -17,6 +17,25 @@ bool FSkinMorphOffsets::Update(const USkeletalMeshComponent* Component)
     return Blend(Asset, Active);
 }
 
+float FSkinMorphOffsets::MergeShown(const USkeletalMeshComponent* Component, TArray<TPair<FName, float>>& Morphs)
+{
+    if (!Component) return 0.f;
+    const int32 Named = Morphs.Num();
+    TArray<float> Shown;
+    Shown.Init(0.f, Named);
+    for (const TPair<const UMorphTarget*, int32>& Active : Component->ActiveMorphTargets)
+    {
+        if (!Active.Key || !Component->MorphTargetWeights.IsValidIndex(Active.Value)) continue;
+        const FName Name = Active.Key->GetFName();
+        const int32 Index = Morphs.IndexOfByPredicate([Name](const TPair<FName, float>& Morph) { return Morph.Key == Name; });
+        if (Index == INDEX_NONE) Morphs.Emplace(Name, Component->MorphTargetWeights[Active.Value]);
+        else if (Index < Named) Shown[Index] = Component->MorphTargetWeights[Active.Value];
+    }
+    float Lag = 0.f;
+    for (int32 I = 0; I < Named; ++I) Lag = FMath::Max(Lag, FMath::Abs(Morphs[I].Value - Shown[I]));
+    return Lag;
+}
+
 bool FSkinMorphOffsets::Update(const USkeletalMesh* Asset, TConstArrayView<TPair<FName, float>> Named)
 {
     TArray<TPair<const UMorphTarget*, float>> Active;

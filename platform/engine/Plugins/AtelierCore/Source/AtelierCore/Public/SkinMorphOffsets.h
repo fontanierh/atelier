@@ -28,6 +28,11 @@ struct ATELIERCORE_API FSkinMorphOffsets
     /** Named weights on a mesh: a pose a character's own driver is about to show. False when a named morph is missing
      *  from the mesh or keeps no CPU deltas. */
     bool Update(const USkeletalMesh* Asset, TConstArrayView<TPair<FName, float>> Named);
+    /** Adds the component's morph weights as it shows them for every morph Morphs does not name yet, so a pose
+     *  provider's weights (its zeros included) take precedence over the shown ones and the rest (state-driven morphs,
+     *  such as a hair spring) come as rendered. Returns the largest difference between a weight Morphs named and the
+     *  one shown (0 where the mesh shows none). */
+    static float MergeShown(const USkeletalMeshComponent* Component, TArray<TPair<FName, float>>& Morphs);
     /** Render vertex V's offset in the bind pose (component space); null when no active morph moves it. */
     const FVector3f* Find(int32 Vertex) const { return Offsets.Find(Vertex); }
     bool IsEmpty() const { return Offsets.IsEmpty(); }

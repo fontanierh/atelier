@@ -687,10 +687,12 @@ void USkateComponent::RetargetRiderPose()
                     }
             }
         }
-        // The skin as drawn: the rider's pose-driven morphs for this pose move vertices before skinning. Without
-        // their CPU deltas the contact is measured on the base skin, and the log says so.
+        // The skin as drawn: the rider's pose-driven morphs for this pose, and its other morphs as the mesh shows
+        // them (a hair spring), move vertices before skinning. Without their CPU deltas the contact is measured on
+        // the base skin, and the log says so.
         TArray<TPair<FName,float>> Morphs;
         if (RiderApi) RiderApi->GetSkatePoseMorphs(Mesh,Output,Morphs);
+        FSkinMorphOffsets::MergeShown(Mesh,Morphs);
         FSkinMorphOffsets& Offsets=ShownRuntime->ContactMorphs;
         if (!Offsets.Update(Asset,Morphs) && Offsets.GetError()!=ShownRuntime->ContactMorphError)
             UE_LOG(LogTemp,Error,TEXT("SKATE bail skin contact: the base skin stands in for %s's morphed skin (%s)"),*Asset->GetName(),*Offsets.GetError());
