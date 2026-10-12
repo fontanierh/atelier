@@ -42,7 +42,7 @@ def parent():
     uv = node(unreal.MaterialExpressionTextureCoordinate)
     tex = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Tex',
                texture=E.load_asset('/Engine/EngineResources/WhiteSquareTexture'))
-    inputs = [('C', vc, ''), ('UV', uv, ''), ('Tex', tex, ''), ('Tile', scalar('Tile', 4.), ''),
+    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('UV', uv, ''), ('Tex', tex, ''), ('Tile', scalar('Tile', 4.), ''),
               ('Colour', colour('Colour', (.7, .6, .4)), ''), ('Tint', colour('Tint', (1., 1., 1.)), ''),
               ('WhiteVertex', scalar('WhiteVertex', 0.), ''), ('Strength', scalar('Strength', 0.), ''),
               ('Brightness', scalar('Brightness', 1.), ''), ('Atlas', scalar('Atlas', 0.), ''),
@@ -51,10 +51,11 @@ def parent():
               ('Rock', colour('Rock', (.36, .37, .35)), '')]
     base = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
                 code='''
-float3 linear = lerp(C.rgb/12.92, pow((C.rgb+.055)/1.055, 2.4), step(.04045, C.rgb));
+float3 vertexLinear = lerp(C.rgb/12.92, pow((C.rgb+.055)/1.055, 2.4), step(.04045, C.rgb));
 float white = step(.995, min(C.r, min(C.g, C.b))) * WhiteVertex;
-float3 paint = lerp(linear, Colour.rgb, white);
-float4 weights = C / max(dot(C, float4(1,1,1,1)), .001);
+float3 paint = lerp(vertexLinear, Colour.rgb, white);
+float4 weights = float4(C, Alpha);
+weights /= max(dot(weights, float4(1,1,1,1)), .001);
 float3 ground = weights.r*Dry.rgb + weights.g*Green.rgb + weights.b*Dirt.rgb + weights.a*Rock.rgb;
 paint = lerp(paint, ground, Terrain);
 float3 detail = Texture2DSample(Tex, TexSampler, UV/Tile).rgb;
