@@ -1316,7 +1316,10 @@ void AWandererCharacter::Tick(float Dt)
         if (!HasAuthority() && !IsLocallyControlled())
         {
             bReady = true;
-            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived && SkateRide->GetRiderPose().IsEmpty()) Moves->ApplyPresentation(NetworkAvatar, Dt);
+            // A full-body stream may still cover a board transition on foot.
+            // Equipment attachments and guard layers must keep consuming their
+            // presentation even while that stream supplies the skeleton.
+            if (NetworkActivity.Kind == EJapanActivity::OnFoot && Moves && bNetworkAvatarReceived) Moves->ApplyPresentation(NetworkAvatar, Dt);
             return;
         }
         if (HasAuthority())

@@ -92,6 +92,7 @@ struct FProbe
             Row->SetStringField(TEXT("action"), P->GetAnimationAction().ToString());
             Row->SetNumberField(TEXT("action_time"), P->GetActionTime());
             Row->SetStringField(TEXT("move_mode"), Moves->ModeName());
+            Row->SetNumberField(TEXT("streamed_pose_bones"), P->GetSkate()->GetRiderPose().Num());
             Row->SetNumberField(TEXT("checkpoints"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->GetNetworkStats().Checkpoints);
             Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
             Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));
