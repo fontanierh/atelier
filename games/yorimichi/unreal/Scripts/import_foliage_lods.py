@@ -46,10 +46,15 @@ def main(names=None, output=None, manifest_file='manifest.json', shared_material
         target=editor.load_asset('/Game/Japan/Assets/'+name)
         if not target: raise RuntimeError('Missing detailed foliage: '+name)
         original_vertices=meshes.get_number_verts(target,0)
+        bounds=target.get_bounding_box()
+        original_size=sum((getattr(bounds.max,axis)-getattr(bounds.min,axis))**2 for axis in ('x','y','z'))**.5
         lod_count=len(data['screen_sizes'])
         for level in range(1,lod_count):
             lod_name=f'{name}_LOD{level}'
             source=import_mesh(output/(lod_name+'.fbx'),'/Game/Japan/FoliageLODs',lod_name,fresh_slots=True)
+            bounds=source.get_bounding_box()
+            size=sum((getattr(bounds.max,axis)-getattr(bounds.min,axis))**2 for axis in ('x','y','z'))**.5
+            assert original_size>0 and .8<=size/original_size<=1.15,(lod_name,'LOD bounds differ from LOD0',size,original_size)
             for index,slot in enumerate(source.get_editor_property('static_materials')):
                 key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
                 material=editor.load_asset('/Game/Japan/Materials/MI_'+key)

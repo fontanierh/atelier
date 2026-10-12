@@ -202,6 +202,7 @@ def scatter(spacing, fn, jitter=0.45):
             if h < 1.2: continue
             fn(x, y, h, dist_road(x, y), slope(x, y))
 
+forest_scatter = {}
 def trees(x, y, h, d, sl):
     if d < 8.5 or sl > 1.6: return
     if any(math.hypot(x - hx, y - hy) < 12 for hx, hy in LEGACY_SPOTS): return
@@ -216,9 +217,10 @@ def trees(x, y, h, d, sl):
     else:
         if r > 0.85: return
         name = rng.choice(["Tree_Broad_A", "Tree_Broad_B", "Tree_Maple_A", "Tree_Maple_B", "Tree_Ginkgo", "Tree_Pine_A", "Tree_Cedar_B"], p=[0.12, 0.08, 0.28, 0.14, 0.14, 0.2, 0.04])
-    if d > 90 and name.startswith(("Tree_Maple", "Tree_Ginkgo", "Tree_Broad")):
+    scattered = d > 90 and name.startswith(("Tree_Maple", "Tree_Ginkgo", "Tree_Broad"))
+    if scattered:
         name = {"Tree_Maple": "Tree_Maple_A", "Tree_Ginkgo": "Tree_Ginkgo", "Tree_Broad": "Tree_Broad_A"}[name[:name.index("_", 5)] if name.count("_") > 1 else name]
-    put(name, x, y, h - 0.15, scale=rng.uniform(0.85, 1.25) * (1.25 if d > 26 else 1.0))     # bigger crowns away from the road: the canopy closes
+    put(name, x, y, h - 0.15, scale=rng.uniform(0.85, 1.25) * (1.25 if d > 26 else 1.0), into=forest_scatter if scattered else inst)     # bigger crowns away from the road: the canopy closes
     if name.startswith("Tree_Maple") or name.startswith("Tree_Ginkgo"):
         for _ in range(4):
             a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(0.5, 3.2)
@@ -230,8 +232,12 @@ def far_trees(x, y, h, d, sl):
     if d < 95 or sl > 1.6 or rng.random() > 0.6: return
     if math.hypot(x - SHRINE[0], y - SHRINE[1]) < 18: return
     name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Ginkgo", "Tree_Cedar_B", "Tree_Pine_B"], p=[0.48, 0.18, 0.12, 0.08, 0.14])
-    put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3))
+    put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3), into=forest_scatter)
 use("far"); scatter(3.2, far_trees, jitter=0.5)
+from treehouse.layout import autumn_far
+treehouse_forest_rng = autumn_far(forest_scatter)
+for name, rows in forest_scatter.items():
+    inst.setdefault(name, []).extend(rows)
 
 def bushes(x, y, h, d, sl):
     if d < 4.3 or sl > 1.8: return
@@ -343,7 +349,7 @@ clear_torii_vegetation(world)
 # The tree house plans its canopy trees and clearings on the finished forest, so it goes last but for the house
 # lots, which are cleared and planted after it: its canopy draws run over the whole map's tree lists in order.
 from treehouse.layout import integrate as integrate_treehouse
-integrate_treehouse(world, H)
+integrate_treehouse(world, H, forest_rng=treehouse_forest_rng)
 houses_layout.clear_and_dress(world, sample_h)
 # The Mega Park trail leaves the woodland air station's footpath north, over the far hills' shoulder to the park.
 from megapark.trail import integrate as integrate_park_trail
