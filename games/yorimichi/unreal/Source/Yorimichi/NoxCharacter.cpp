@@ -98,12 +98,11 @@ void ANoxCharacter::ResolveSeat()
         for (int32 R = 0; R < NoxSeat::Size; ++R)
         {
             const FString Wanted = FString::Printf(TEXT("NoxSeat_L%s_R%s"), ANSI_TO_TCHAR(NoxSeat::Labels[L]), ANSI_TO_TCHAR(NoxSeat::Labels[R]));
-            // The exact name, or else the one name the FBX importer prefixed with its mesh's.
+            // The exact name or the name the FBX importer prefixed with its mesh's: exactly one of them, once.
             const UMorphTarget* Match = Asset->FindMorphTarget(FName(*Wanted));
             int32 Matches = Match ? 1 : 0;
-            if (!Match)
-                for (const UMorphTarget* Target : Asset->GetMorphTargets())
-                    if (Target && Target->GetName().EndsWith(TEXT("_") + Wanted)) { Match = Target; ++Matches; }
+            for (const UMorphTarget* Target : Asset->GetMorphTargets())
+                if (Target && Target->GetName().EndsWith(TEXT("_") + Wanted)) { Match = Target; ++Matches; }
             bCarries |= Matches > 0;
             if (Matches > 1) { Failed.Add(Wanted + TEXT(" (ambiguous)")); continue; }
             if (!Match)

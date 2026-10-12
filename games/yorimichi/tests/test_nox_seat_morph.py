@@ -92,6 +92,16 @@ def test_skin_gate_fails_on_a_frame_not_measured_as_rendered():
     assert skate_ride.skin_groups(rows[:1]) == {'torso': 1.0, 'feet': 0.5}
 
 
-def test_morph_lag_reports_render_against_contact_parity():
+def test_skin_gate_fails_when_render_and_contact_morphs_differ():
+    agree = {'skin': '1.0', 'skin_bone': 'pelvis', 'skin_groups': 'torso:1.0,feet:0.5', 'morph_lag': '0.0000'}
+    assert skate_ride.skin([agree])[:3] == (1.0, 'pelvis', 1) and skate_ride.skin_groups([agree]) == {'torso': 1.0, 'feet': 0.5}
+    # A shallow, otherwise passing frame whose drawn seat weights differ from those its contact was measured with.
+    lagging = dict(agree, morph_lag='0.0125')
+    depth, bone, measured, failed = skate_ride.skin([agree, lagging])
+    assert np.isnan(depth) and measured == 0 and failed == 1 and bone == 'skin_error:morph_lag_0.0125'
+    assert not (depth <= skate_ride.SKIN_DEPTH)
+    assert max(skate_ride.skin_groups([agree, lagging]).values()) > skate_ride.SKIN_DEPTH
+    # At the tolerance it still counts as agreeing.
+    assert skate_ride.skin([dict(agree, morph_lag='0.0001')])[:3] == (1.0, 'pelvis', 1)
     assert skate_ride.morph_lag([{'skin': '1.0'}]) == ''
-    assert skate_ride.morph_lag([{'morph_lag': '0.0000'}, {'morph_lag': '0.0125'}]) == '; morph lag 0.0125'
+    assert skate_ride.morph_lag([agree, lagging]) == '; morph lag 0.0125'
