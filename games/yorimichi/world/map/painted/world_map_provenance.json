@@ -1,169 +1,194 @@
 {
-  "model": "mixed; Sunset Pier and offshore island by gpt-image-2.5-sunburst",
+  "model": "gpt-image-2.5-sunburst",
   "quality": "high",
-  "parent": {
-    "model": "mixed; south-west island by gpt-image-2.5-sunburst",
-    "quality": "high",
-    "parent": {
-      "model": "mixed; local woodland lake by gpt-image-2.5-sunburst",
-      "quality": "high",
-      "parent": {
-        "generator": "GPT Image 2.5 Sunburst API via imagegen skill CLI; local registered patch",
-        "model": "gpt-image-2.5-sunburst",
-        "quality": "high",
-        "size": "1536x1024",
-        "date": "2026-09-09T15:10:39.308212+00:00",
-        "scope": "Mini-mega landmark only. Rest of the previous mixed-provenance painting preserved.",
-        "parent_provenance": "japan/docs/map/mini-mega-fix/previous-provenance.json",
-        "parent_art_sha256": "7cb4e04d6020df71abebb5fc3239f057a2e28f8b5286f46e51a5003fc845d3ae",
-        "prompt_file": "output/imagegen/mini-mega-map/prompt.txt",
-        "generated_crop_sha256": "f14f27cd8e657c824480f3df8e02fc3e60e76924e2abe43f4aa17fefda14de45",
-        "art_sha256": "8eb093b74608fb351dd531a8dc9432f74d6d84a34539aefc09edacf50a95bb2e",
-        "registration_check": "output/imagegen/mini-mega-map/registration-check.json",
-        "registration": "japan/docs/map/world_map_registration.json",
-        "calibration": "japan/docs/map/world_map_calibration.json",
-        "inputs": [
-          {
-            "path": "tmp/imagegen/mini-mega-map/current-crop.png",
-            "sha256": "aefe1d5381dfd3a9322378e636558c5981e5c2f738b3c5589aed19608a417070"
-          },
-          {
-            "path": "japan/docs/map/mini-mega-fix/previous-map.png",
-            "sha256": "7cb4e04d6020df71abebb5fc3239f057a2e28f8b5286f46e51a5003fc845d3ae"
-          },
-          {
-            "path": "japan/docs/mini_mega_entry/phone-deck.png",
-            "sha256": "b19f97907bd6b575c428091443c2d54948e5678be1ccd97548ea34f8383dc01c"
-          },
-          {
-            "path": "japan/out/mega/final-grab-cape_boy-0/mega_0700.png",
-            "sha256": "1c4625d6a71d333a3568343efa2dfab9b508d7d2264a1088af64a1b43b077230"
-          },
-          {
-            "path": "tmp/imagegen/mini-mega-map/mask.png",
-            "sha256": "fdfb4d0ff151eb584ffff837bccf3288da77a9bc8687b96577bb604842eeece7"
-          }
-        ],
-        "candidate_file_sha256": "e843e9bd833c51b01c1d1665b0b347af566231c893c3a9b1bd79db673f03c3d8"
-      },
-      "local_edit": {
-        "model": "gpt-image-2.5-sunburst",
-        "quality": "high",
-        "crop_box": [
-          175,
-          322,
-          343,
-          434
-        ],
-        "changed_bbox": [
-          203,
-          349,
-          343,
-          409
-        ],
-        "unchanged_percent": 99.69126383463541,
-        "parent_sha256": "e843e9bd833c51b01c1d1665b0b347af566231c893c3a9b1bd79db673f03c3d8"
-      },
-      "prompt": "output/imagegen/forest-lake/map/prompt.txt"
-    },
-    "local_edit": {
-      "scope": "The south-west island only (redesigned island.py); the rest of the sheet, its bounds, projection and zones are the parent's.",
-      "model": "gpt-image-2.5-sunburst",
-      "quality": "high",
-      "size": "1536x1024",
-      "call": "games/yorimichi/world/map/painted/island_repaint.provenance.json",
-      "execution": "games/yorimichi/world/map/repaint_island.py",
-      "crop_box": [
-        0,
-        707,
-        476,
-        1024
-      ],
-      "changed_bbox": [
-        36,
-        735,
-        376,
-        1024
-      ],
-      "unchanged_percent": 94.7001,
-      "outside_edit_identical": true,
-      "fit": {
-        "scale": [
-          0.934,
-          0.949
-        ],
-        "offset_px": [
-          -8.2,
-          28.18
-        ],
-        "iou_main_island": 0.9369
-      },
-      "sea_shift_rgb": [
-        -1.2,
-        -2.7,
-        -2.9
-      ],
-      "generated_sha256": "600e16cba8d49afda44db29e538f467a136bde9b284bfa152ac9fb6691c6c243",
-      "parent_sha256": "944a082b7faa2302b55d86ba16cd4c1fbb2b799cc81e842a1baddb64495732ec",
-      "parent_pixels_sha256": "1945b5301213440a5c69eca370513ac2eef26aa64fa297391adcb9bd08e8adfa",
-      "art_pixels_sha256": "0698e36ed6ec19f75332625bc54dd660ba1bfb1795586963feabeb37b23bf023"
-    },
-    "prompt": "games/yorimichi/world/map/painted/island_repaint.provenance.json"
+  "purpose": "Connected northern map for Belmonte and the volcanic foothills",
+  "prompt": "Edit image 1 as a coherent painted, north-up world map. Keep the existing Belmonte course, town, river and outlying estates in the upper half EXACTLY at their current positions, sizes and orientations. Keep the beautiful warm Yorimichi gouache palette and small detailed leafy forest crowns. Image 2 is the precise top-down terrain and scenery plan for the SAME frame; it supplies the correct geographical position and shape of the volcano and adjoining foothills. The snowcapped volcano is around x47%, y73% of this frame, below the river, with its broad wooded slopes joining directly to the Belmonte countryside above. Repair one specific defect: image 1 has a horizontal blue SKY/CLOUD band across the middle at y57%-74%, making the new countryside seem to float above a skyline. REMOVE that entire sky band: this is land on a map, not a horizon. Replace it with connected northern mountain slopes, gullies, meadows and dense autumn woodland going up behind and around the volcano; the terrain must join continuously to the farmland above. Show the volcano from a high bird's-eye map view like the topology in image 2, with snow radiating down its slopes and a recognizable rounded summit, NOT a triangular side-on peak with a skyline or a vertical cliff. Keep the lower forest paths and shore at their existing plan positions. No blue sky anywhere in the land interior. No hard horizontal border, no floating strip, no double volcano, no extra river or town. No text, labels, legend, watermark, border or UI. Preserve the exact framing. This is an illustrative game map; no gameplay camera or landscape panorama.\n",
+  "parent_sha256": "9ed379279a4d92bff6f3534b6c45a9905de5687c7bf47b0cdb3cbdcbb38bc159",
+  "raw_output_sha256": "70729b11a993aa6e1ede8e535bef2310a8b9bac4cf39459918f0442fc8556aa5",
+  "output_sha256": "9bc010d51b3f9c21fb950b395561d83c49cf4c78e140bff5a540a6f838d884d3",
+  "registration": {
+    "volcano_world_m": [
+      550.0,
+      1930.0
+    ],
+    "raw_paint_peak_px": [
+      749,
+      655
+    ],
+    "registered_peak_px": [
+      717.1481625580374,
+      750.4809751273951
+    ],
+    "crop_size": [
+      2085,
+      720
+    ]
   },
-  "local_edit": {
-    "scope": "Enlarged170x132m Sunset Pier and island moved50m offshore. Southern map projection extends to world y=-730; other projection controls and bounds stay fixed.",
-    "model": "gpt-image-2.5-sunburst",
-    "quality": "high",
-    "size": "1536x1024",
-    "call": "games/yorimichi/world/map/painted/sunset_pier_repaint.provenance.json",
-    "execution": "games/yorimichi/world/map/repaint_island.py",
-    "crop_box": [
+  "bounds": [
+    -400.0,
+    -650.0,
+    1685.0,
+    1120.0
+  ],
+  "projection_x": [
+    [
+      -700.0,
+      -390.0
+    ],
+    [
+      -330.0,
+      -330.0
+    ],
+    [
+      -256.11328125,
+      -256.11328125
+    ],
+    [
+      -155.6640625,
+      -139.375
+    ],
+    [
+      58.80859375,
+      58.80859375
+    ],
+    [
+      197.265625,
+      197.265625
+    ],
+    [
+      409.0234375,
+      418.52539062
+    ],
+    [
+      559.69726562,
+      584.13085938
+    ],
+    [
+      729.375,
+      767.3828125
+    ],
+    [
+      918.05664062,
+      968.28125
+    ],
+    [
+      1118.95507812,
+      1192.25585938
+    ],
+    [
+      1239.765625,
+      1323.92578125
+    ],
+    [
+      1330.0,
+      1397.10365854
+    ],
+    [
+      2400.0,
+      1478.20121951
+    ],
+    [
+      2800.0,
+      1540.0
+    ]
+  ],
+  "projection_y": [
+    [
+      -730.0,
+      -650.0
+    ],
+    [
+      -461.31835938,
+      -470.8203125
+    ],
+    [
+      -375.80078125,
+      -375.80078125
+    ],
+    [
+      -291.640625,
+      -291.640625
+    ],
+    [
+      -176.25976562,
+      -200.69335938
+    ],
+    [
+      -115.17578125,
+      -147.75390625
+    ],
+    [
+      -90.7421875,
+      -123.3203125
+    ],
+    [
+      13.77929688,
+      -9.296875
+    ],
+    [
+      76.22070312,
+      58.57421875
+    ],
+    [
+      138.66210938,
+      126.4453125
+    ],
+    [
+      229.609375,
+      221.46484375
+    ],
+    [
+      334.13085938,
+      334.13085938
+    ],
+    [
+      450.0,
+      438.28289589
+    ],
+    [
+      499.03395433,
+      442.72460938
+    ],
+    [
+      647.20177284,
+      454.94140625
+    ],
+    [
+      862.71859976,
+      476.66015625
+    ],
+    [
+      983.9468149,
+      497.02148438
+    ],
+    [
+      1105.17503005,
+      505.16601562
+    ],
+    [
+      3030.0,
+      708.54545455
+    ],
+    [
+      3300.0,
+      740.0
+    ],
+    [
+      3900.0,
+      850.0
+    ],
+    [
+      5300.0,
+      1090.0
+    ]
+  ],
+  "edit_mask": {
+    "northern_rows": [
       0,
-      611,
-      620,
-      1024
+      680
     ],
-    "changed_bbox": [
-      30,
-      661,
-      362,
-      1024
-    ],
-    "unchanged_percent": 94.2071,
-    "outside_edit_identical": true,
-    "fit": {
-      "island": {
-        "scale": [
-          0.9615,
-          0.8652
-        ],
-        "offset_px": [
-          6.3,
-          39.91
-        ],
-        "iou": 0.9209
-      },
-      "pier": {
-        "scale": [
-          0.9617,
-          0.8579
-        ],
-        "offset_px": [
-          9.53,
-          20.8
-        ],
-        "iou": 0.9463
-      }
-    },
-    "sea_shift_rgb": [
-      16.5,
-      13.9,
-      -7.4
-    ],
-    "generated_sha256": "5ad3e65a31f9624ddd9ee64d22f02dfde82513e29a3db62d386f5b58d662aace",
-    "parent_sha256": "e2ca3f679c30f3039579ef79d8f7dd752902f776c2e836661b1e640490dc5e67",
-    "parent_pixels_sha256": "0698e36ed6ec19f75332625bc54dd660ba1bfb1795586963feabeb37b23bf023",
-    "art_pixels_sha256": "11c857a3c2f96a6aa63234bbca5f60bb28451698825a728a9a98b00e6fb122cf"
+    "fade_rows": 40,
+    "southern_pixels_unchanged": true
   },
-  "prompt": "games/yorimichi/world/map/painted/sunset_pier_repaint.provenance.json"
+  "ledger_receipt": "build/yorimichi/belmonte-concepts/map/north-join.provenance.json"
 }
