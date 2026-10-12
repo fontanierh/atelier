@@ -126,6 +126,19 @@ USkinMorphContactData* USkinMorphContactLibrary::CaptureSkinMorphContacts(USkele
 #endif
 }
 
+bool USkinMorphContactLibrary::ClearSkinMorphContacts(USkeletalMesh* Mesh)
+{
+#if WITH_EDITOR
+    if (!USkinMorphContactData::Find(Mesh)) return false;
+    Mesh->Modify();
+    Mesh->RemoveUserDataOfClass(USkinMorphContactData::StaticClass());
+    Mesh->MarkPackageDirty();
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool USkinMorphContactLibrary::ValidateSkinMorphContacts(USkeletalMesh* Mesh, const TArray<FName>& Required, FString& Receipt)
 {
     const USkinMorphContactData* Data = USkinMorphContactData::Find(Mesh);
