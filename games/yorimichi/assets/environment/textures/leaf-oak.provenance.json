@@ -1,0 +1,38 @@
+{
+  "revision": "r01",
+  "use": "textures",
+  "name": "leaf-oak",
+  "inputs": [],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "690569ba160c64b5965e0bf5e16c49bd9e3590fffafe8912116c034126a7a74a",
+  "status": "done",
+  "started_at": "2026-10-12T22:03:48.794402+00:00",
+  "output": "leaf-oak.png",
+  "output_sha256": "d9c29bf98cbfa8e363cf46fb6714ea3486f6b2e8027dc80006db42a560d63944",
+  "usage": {
+    "input_tokens": 84,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 84
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 1840
+  },
+  "elapsed_seconds": 35.7,
+  "finished_at": "2026-10-12T22:04:24.524875+00:00",
+  "prompt": "Game foliage atlas, four distinct Mediterranean holm oak leafy\ntwigs in four equal square cells (2 by 2). Dense overlapping small leathery\noval leaves in deep muted green with lighter undersides, irregular cluster\nedges and fine branching. Isolated on pure black with black gaps and generous\ncell margins. Flat neutral diffuse colour, no shadow, text, trunk or ground.",
+  "source": {
+    "file": "leaf-oak.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "2fd9a26fc4ebbc6263dd48c90fce5c116d60c6c6f92ef26d52ee217387835f93"
+}
