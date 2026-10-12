@@ -10,6 +10,7 @@ import bpy
 from mathutils import Vector, Euler
 import build_assets as A
 from forest_trees import TUSCAN, FOREST, tree
+import forest_impostors
 
 
 def main():
@@ -26,7 +27,7 @@ def main():
         maximum=Vector(tuple(max(v.co[i] for v in base.data.vertices) for i in range(3)))
         dimensions={'height':maximum.z,'spread':max(maximum.x-minimum.x,maximum.y-minimum.y)}
         counts=[sum(len(p.vertices)-2 for p in base.data.polygons)]
-        for level,stride in enumerate((4,16,64),1):
+        for level,stride in enumerate((4,16),1):
             class LodMesh(original):
                 def __init__(self,*args):super().__init__(*args);self.cards=0;self.branch_detail=level<2
                 def begin_canopy(self,count):
@@ -54,7 +55,12 @@ def main():
             count=sum(len(p.vertices)-2 for p in obj.data.polygons)
             assert count<counts[-1],(name,level,count)
             counts.append(count);A.export(obj,obj.name);bpy.data.objects.remove(obj,do_unlink=True)
-        report[name]={**dimensions,'leaf':args[-1],'triangles':counts,'screen_sizes':[1.,.24,.075,.018]}
+        proxy=forest_impostors.bake(base,output)
+        A.Mesh=original;obj=forest_impostors.mesh(name,proxy,A.MATS['Bark'])
+        counts.append(sum(len(p.vertices)-2 for p in obj.data.polygons));A.export(obj,obj.name)
+        bpy.data.objects.remove(obj,do_unlink=True)
+        report[name]={**dimensions,'leaf':args[-1],'triangles':counts,'screen_sizes':[1.,.24,.075,.018],
+                      'impostor':proxy,'impostor_slot':name+'_Impostor'}
         bpy.data.objects.remove(base,do_unlink=True)
         print('FOREST CROWN COMPLETE',name,counts,flush=True)
     A.Mesh=original

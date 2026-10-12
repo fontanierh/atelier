@@ -414,7 +414,7 @@ def export(ob, name):
         bpy.ops.mesh.primitive_cube_add(size=1,location=(a+b)*.5)
         hull=bpy.context.object;hull.name='UCX_'+name+'_00';hull.scale=(radius*2,radius*2,(b-a).length+.2)
         hull.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
-        bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+        bpy.ops.object.transform_apply(location=False,rotation=True,scale=True)
         ob.select_set(True);bpy.context.view_layer.objects.active=ob
     path = os.path.join(OUTDIR, f"{name}.fbx")
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL",

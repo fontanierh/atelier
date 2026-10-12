@@ -11,4 +11,3 @@ FOREST = {
     'Tree_Forest_Oak': ('oak', 283, 10., 11., 'LeafSmall'),
     'Tree_Forest_Pine': ('pine', 284, 10., 10., 'LeafPine'),
 }
-

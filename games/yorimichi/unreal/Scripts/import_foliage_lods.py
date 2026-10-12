@@ -10,7 +10,7 @@ sys.path.insert(0,str(HERE))
 from foliage_material import enable_distance_fade, enable_bark_lod_blend, supports_lod_blend
 
 
-def verify_lods(target,screen_sizes,meshes):
+def verify_lods(target,screen_sizes,meshes,impostor=None):
     name=target.get_name()
     count=target.get_num_lods()
     assert count==len(screen_sizes),(name,'missing LOD')
@@ -22,7 +22,12 @@ def verify_lods(target,screen_sizes,meshes):
     for level in range(count):
         palettes.append(sorted({target.get_material(meshes.get_lod_material_slot(target,level,section)).get_path_name()
                                 for section in range(target.get_num_sections(level))}))
-    assert all(p==palettes[0] for p in palettes),(name,'LOD changes the source palette',palettes)
+    if impostor:
+        assert all(p==palettes[0] for p in palettes[:-1]),(name,'leaf LOD changes palette',palettes)
+        expected=sorted(['/Game/Japan/Materials/MI_Bark.MI_Bark',
+                         '/Game/Japan/Materials/MI_'+impostor+'.MI_'+impostor])
+        assert palettes[-1]==expected,(name,'impostor material contract',palettes[-1],expected)
+    else:assert all(p==palettes[0] for p in palettes),(name,'LOD changes the source palette',palettes)
     return {'vertices':[meshes.get_number_verts(target,i) for i in range(count)],
             'screen_sizes':actual,'materials_by_lod':palettes,'all_slots_blend':True}
 
@@ -86,7 +91,7 @@ def main(names=None, output=None, manifest_file='manifest.json', shared_material
         enable_bark_lod_blend(bark)
         editor.save_loaded_asset(bark)
     for name,data in manifest.items():
-        report[name]=verify_lods(editor.load_asset('/Game/Japan/Assets/'+name),data['screen_sizes'],meshes)
+        report[name]=verify_lods(editor.load_asset('/Game/Japan/Assets/'+name),data['screen_sizes'],meshes,data.get('impostor_slot'))
     (output/'import.json').write_text(json.dumps(report,indent=2)+'\n')
     U.log('FOLIAGE LOD IMPORT COMPLETE: '+json.dumps(report))
 

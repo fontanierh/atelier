@@ -7,6 +7,7 @@ import json
 import unreal as U
 from import_village import import_mesh
 from import_foliage_lods import main as import_lods
+import forest_impostor_material
 
 
 def main():
@@ -28,7 +29,18 @@ def main():
         M.set_material_instance_parent(mi,foliage);M.set_material_instance_texture_parameter_value(mi,'Tex',texture)
         M.update_material_instance(mi);E.save_loaded_asset(mi)
     report={}
-    for name,entry in json.loads((output/'trees.json').read_text()).items():
+    trees=json.loads((output/'trees.json').read_text())
+    first=next(iter(trees.values()))
+    task=U.AssetImportTask();task.filename=str(output/first['impostor']['atlases']['normal'])
+    task.destination_path='/Game/Japan/Textures';task.destination_name='T_ForestNormalDefault'
+    task.automated=True;task.replace_existing=True;task.save=True;AT.import_asset_tasks([task])
+    normal=E.load_asset('/Game/Japan/Textures/T_ForestNormalDefault');assert normal
+    normal.set_editor_property('srgb',False)
+    normal.set_editor_property('compression_settings',U.TextureCompressionSettings.TC_VECTOR_DISPLACEMENTMAP)
+    E.save_loaded_asset(normal)
+    proxy_master=forest_impostor_material.parent(normal)
+    for name,entry in trees.items():
+        forest_impostor_material.instance(name,entry['impostor'],output,proxy_master)
         mesh=import_mesh(output/(name+'.fbx'),'/Game/Japan/Assets',name,fresh_slots=True)
         for i,slot in enumerate(mesh.get_editor_property('static_materials')):
             key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
