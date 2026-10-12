@@ -130,7 +130,7 @@ chin. Its source checksum is recorded in `source-manifest.json`; the library ver
 
 ## 6. Assemble onto the supplied body rig
 
-Keep the rigged body's UVs and weights. Fit the head uniformly to the neck plug and check both profile and front;
+Start from the rigged body's UVs and weights. Fit the head uniformly to the neck plug and check both profile and front;
 image framing is not a physical scale. Our source fit used a head scale of approximately `0.2545664` and a
 `0.02`-unit neck overlap, before the whole character was scaled to 1.78 m for the game.
 
@@ -189,7 +189,8 @@ hood as well as the marked pair, preserve the silhouette and validate the whole 
 The first motion attempt moved only tips; another moved the avatar but produced no visible hair deformation.
 The accepted rig covers **all 66 locks**: 48 longer chains with three joints and 18 shorter chains with two,
 180 hair bones total. Roots blend to the head and proximal joints, with normalized weights along each strand.
-The body's original UVs and weights stay intact. Dense geometry alone does not make secondary motion work.
+This hair pass keeps the body's original UVs and weights; the later garment deformation pass is separate.
+Dense geometry alone does not make secondary motion work.
 
 The optional browser demo uses restrained, damped quaternion springs at proximal and middle joints, root-acceleration
 lag and a measured garment envelope. It checks skinned surface probes and body triangles and reduces lag toward the
@@ -222,8 +223,81 @@ The four street/grass ride-and-recovery checks kept their 2 cm limit; Nox's wors
 Report results by their actual scope. Nox passed all 39 merged-move checks and all four skating ride/bail sites.
 The aligned bike circuit passed 25 of 27 checks; Cairo reproduced the remaining sprint-speed and ramp-wheel
 failures. Those remain shared physics issues, not a passing bike suite. Hair springs are still a browser prototype.
+These initial playability receipts did not establish close-up garment quality: later screenshots found underarm,
+torso and seat deformation, which required the additional pass below.
 
 Run the source-library verifier, repository lint and the full Python suite. Record native validation and screenshots
 in the review workspace, then request another agent's PR review. Generated Unreal Content, exported FBXs and captures
 stay ignored. The committed GLB with embedded textures is sufficient to regenerate the game imports; paid generation
 is an optional authoring step, never a build dependency.
+
+## 11. Repair pose deformation while preserving the garment design
+
+The original jacket's large folds are intentional. Preserve its neutral positions, normals, UVs, topology,
+atlases, head and skeleton. Compare every candidate with that neutral source and reject a change that merely
+smooths the jacket. Sunburst can illustrate plausible cloth motion, but a new reference does not authorize
+reshaping approved folds.
+
+The generated skin weights assigned parts of the torso to the upper arms and thighs. With the arms lowered,
+the torso/sleeve junction could collapse; walking pulled side panels with the legs. Reweight by anatomical
+region before trying pose corrections:
+
+1. Establish an armhole plane along each upper-arm axis and a seat plane along each thigh axis. Feather the
+   chain ownership across a band; transfer removed influences to existing torso/pelvis bones.
+2. Diffuse the weights on welded geometry, then normalize the four strongest influences. UV seam copies must
+   agree. When expanding four influences into dense weights, **accumulate** repeated joint indices: padding
+   can repeat joint zero, and assignment would silently erase a valid pelvis weight.
+3. Treat pockets, drawstrings, plackets and shoulder tabs as overlays. Couple their weights to the nearby
+   garment surface; reweighting those loose shells independently makes them drift.
+4. Keep some thigh influence in the jacket's bottom band. Full thigh-to-pelvis transfer lifted the crouched
+   hem; the selected test retained 30% in the bottom 8 cm while removing thigh ownership farther up the torso.
+
+Evaluate the actual skinning, not an animation playing on an undeformed mesh. Our model bundle includes idle,
+two walking samples, running, gliding, crouching and crouch-walking, plus all 54 frames of the real push clip
+retargeted offline. These model-space poses are diagnostic: they omit the game's physical rider, root placement
+and final contact solve. Keep push frames outside the fitting set for a comparison that can expose overfitting.
+
+An armpit-only fit then minimizes excessive edge collapse/stretch over several poses, keeping the existing
+four-bone supports. Penalize changes in local motion detail, weight-delta gradients and pose displacement
+gradients, and protect triangle orientation. The neutral mesh remains exact. Whole-mesh Delta Mush, dual
+quaternion targets, mirrored weights and a lower-spine weight cap each caused other regressions here; they
+are useful diagnostics, not accepted replacements. A low strain score alone does not prove natural clothing.
+
+Inspect both joins from front, rear and quarter views with matched cameras. Use the genuine armature modifier:
+assigning already-posed vertex positions while leaving imported custom normals undeformed gives misleading
+shading. Assert that the evaluated mesh reproduces the expected skinning arrays. Include raised-arm poses,
+because our first candidates improved idle while introducing a sharp glider underarm crease.
+
+The fitted candidate widened a slit below the front lapel. Camera rays identified an existing outer panel
+crossing its rear-facing inner layer; the neutral topology had not changed. A feathered local weight guard and
+a small transfer of arm influence to the panel's existing torso bone cleared the crossing in model renders.
+Check that local fix across the full motion set, rather than classifying every dark crease as a topology tear.
+
+### Seat corrections need a native runtime and contact contract
+
+Weight changes alone did not solve the crotch seam during the real skateboard push. The candidate adds sparse
+pose corrections on the trousers and jacket hem, leaving the feet, hands and neutral geometry unchanged.
+The target grid samples each hip at `[-25, 0, 35, 70, 105]` degrees. Use the four bilinear neighbours, clamped
+to the grid, multiplied by `smoothstep(35, 60, max(left_flexion, right_flexion))`. Coefficients remain
+nonnegative and sum to the gate; neutral and ordinary walking receive zero displacement.
+
+Do not clamp inverse Gaussian coefficients independently: that broke their sum and produced a visible temporal
+pop in our push test. Compare the corrected full cycle and silhouettes, not just seam measurements. The model
+tests favored bilinear interpolation over that first radial-basis prototype and a half-strength fallback.
+
+Measure flexion from finalized component-space skin rotations relative to the bind pose, then relative to the
+pelvis. Use the skeletal mesh's actual forward/up basis after interchange. Bone local Euler angles and an assumed
+component +X direction can give different answers after FBX conversion. Resolve native morph names uniquely,
+require all sixteen nonzero grid targets and verify the shapes through GLB import and FBX export/reimport.
+The nine zero grid cells may be omitted by a native importer.
+
+Contact readers must sample the corrected surface. Apply the active pre-skin morph delta using the same vertex's
+skin weights and native section/bone mapping as its base position. UE 5.8 desktop cooking strips the CPU morph
+deltas even when base-mesh CPU access is enabled; retain the exact imported LOD0 indices/deltas in serialized
+contact data. Validate the mesh, LOD, vertex count and required targets, and clear cached offsets on replacement.
+Missing data is a failed check, not a zero-depth result. The original **2 cm** clearance gate still applies.
+
+Keep numerical fit reports, failed candidates and matched captures in the ignored review workspace/archive.
+Only replace the committed source after the model review; then compile/import and verify textured idle, walking,
+raised arms, the complete skateboard push, movement bindings and all ride/bail contacts in Unreal. Final native
+garment acceptance is still pending for this repair; the earlier playability receipts retain their original scope.

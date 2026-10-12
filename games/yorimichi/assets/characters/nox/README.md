@@ -7,6 +7,12 @@ repaired painted face, earring, 66 rigged locs and a chain painted onto the garm
 asset-library manifest check its hash. The original 65-bone body rig and 180 hair bones remain in the source.
 `export_unreal.py` adds the game's root, scale and humanoid names to a fresh imported copy.
 
+The garment repair retains the original neutral geometry and painted folds, with corrected body weights and
+25 sparse seat targets (16 nonzero). The importer requires those targets and captures their native LOD0 deltas
+as serialized mesh user data, so contact readers can account for the same pose correction in desktop builds.
+The runtime uses hip flexion and bounded bilinear interpolation; neutral and ordinary walking remain unchanged
+by the seat targets. Final native garment appearance and contact acceptance are pending for this revision.
+
 Build with `uv run atelier build yorimichi unreal.nox_adventure unreal.nox_bike data.network`, then select Nox in the
 character menu or run `uv run atelier play yorimichi -- -rider=Nox`. Every merged and donor action is retargeted;
 bike actions are authored on his rig and skating uses the shared runtime retargeter.

@@ -73,6 +73,7 @@ def fbx(filename, name, skeleton=None, fps=30):
         data = options.get_editor_property('skeletal_mesh_import_data')
         for k, v in dict(normal_import_method=U.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS, use_t0_as_ref_pose=False,
                          update_skeleton_reference_pose=True, import_meshes_in_bone_hierarchy=True,
+                         import_morph_targets=bool(CONFIG.get('seat_corrective')),
                          vertex_color_import_option=U.VertexColorImportOption.REPLACE).items():
             data.set_editor_property(k, v)
     data.set_editor_property('convert_scene', True)
@@ -87,6 +88,25 @@ def fbx(filename, name, skeleton=None, fps=30):
 mesh = fbx('Nox.fbx', 'SK_Nox')
 # The skating retargeter samples the rider skin for bail contact clearance.
 U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
+native_morphs = {}
+contact_data = None
+contact_receipt = None
+corrective = CONFIG.get('seat_corrective')
+if corrective:
+    names = [str(name) for name in mesh.get_all_morph_target_names()]
+    for name, target in corrective['targets'].items():
+        matches = [native for native in names if native == name or native.endswith('_' + name)]
+        assert len(matches) <= 1, ('Ambiguous Nox morph target', name, matches)
+        assert matches or not target['nonzero_vertices'], ('Missing nonzero Nox morph target', name, names)
+        if matches:
+            native_morphs[name] = matches[0]
+    required = [native_morphs[name] for name, target in corrective['targets'].items() if target['nonzero_vertices']]
+    # Desktop cooks strip CPU morph deltas. Capture the exact imported native
+    # LOD0 render indices in serialized mesh user data for the contact readers.
+    contact_data, contact_receipt = U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh, required)
+    assert contact_data is not None, ('Nox contact morph capture failed', contact_receipt)
+    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
+    assert valid, ('Nox contact morph data invalid', contact_receipt)
 skeleton = mesh.skeleton
 slots = list(mesh.materials)
 for slot in slots:
@@ -119,6 +139,9 @@ for k, v in dict(mesh=mesh, actions=clips, use_authored_movement=True,
 E.save_loaded_asset(definition)
 E.save_loaded_asset(skeleton)
 report = {'mesh': mesh.get_path_name(), 'bones': len(bones), 'materials': [str(s.material_slot_name) for s in slots],
-          'vertices': editor.get_num_verts(mesh, 0), 'clips': {n: c.get_path_name() for n, c in clips.items()}, 'source': CONFIG['source_sha256']}
+          'vertices': editor.get_num_verts(mesh, 0), 'clips': {n: c.get_path_name() for n, c in clips.items()},
+          'source': CONFIG['source_sha256'], 'seat_morphs': native_morphs,
+          'seat_contact_data': contact_data.get_path_name() if contact_data else None,
+          'seat_contact_validation': contact_receipt}
 (OUT / 'unreal_import.json').write_text(json.dumps(report, indent=2) + '\n')
 U.log('NOX IMPORT COMPLETE')
