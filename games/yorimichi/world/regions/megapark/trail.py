@@ -39,7 +39,6 @@ CARVE = (5.3, 3.4)              # 2 m grounds: the bed within 1.9 m of the path,
 CARVE_COARSE = (11., 7.)        # the foothills' 10 m grid
 APPROACH = (-300., 300., -36., 500.)   # x0, y0, x1, y1: on the square's 2 m grid, by far-hill columns -303 and -34
 CLEAR = dict(tree=6.5, plant=2.2)      # metres kept clear of the path's centre line in the square
-DETAIL = 35.                    # metres: the square's painted cards this near the path become detailed trees
 TRUNK = 3.                      # metres from the path's centre line to the approach's nearest trunks
 UNDER = (('Grass_A', .3), ('Grass_B', .28), ('Bush_Green_A', .12), ('Bush_Ochre_A', .12), ('Bush_Flower_A', .05),
          ('Rock_B', .06), ('Litter', .07))
@@ -150,7 +149,6 @@ def integrate(world, h):
     X, Y = np.meshgrid(grid, grid)
     part = points[points[:, 1] < size / 2 + 2 * STEP]
     h[:] = carve(X, Y, h, part)
-    _cards(world, part)
     removed = {}
     for name, rows in list(world['instances'].items()):
         try:
@@ -176,23 +174,6 @@ def integrate(world, h):
                                                 'length': round(float(s[-1]), 1), 'removed': removed}) + '\n')
     bed.cache_clear()
     return removed
-
-
-def _cards(world, part):
-    """The far forest's painted cards near the square's part of the path become the island's detailed trees, as round
-    the tree house (treehouse/layout.py DETAILED)."""
-    from treehouse.layout import DETAILED as CARDS
-    rng = np.random.default_rng(SEED)
-    for card, kinds in CARDS.items():
-        a = np.asarray(world['instances'].get(card, []), 'f8').reshape(-1, 5)
-        index, d, _ = _near(a[:, 0], a[:, 1], part, DETAIL)
-        turn = np.zeros(len(a), bool)
-        turn[index] = d < DETAIL
-        world['instances'][card] = a[~turn].tolist()
-        moved = a[turn]
-        pick = rng.choice(len(kinds), size=len(moved), p=[w for _, w in kinds])
-        for k, (name, _) in enumerate(kinds):
-            world['instances'].setdefault(name, []).extend(moved[pick == k].tolist())
 
 
 @lru_cache(maxsize=1)
