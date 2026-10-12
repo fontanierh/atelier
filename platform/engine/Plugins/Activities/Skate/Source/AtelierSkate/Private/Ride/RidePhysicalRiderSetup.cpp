@@ -141,7 +141,8 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     USkeletalMeshComponent* NewMesh = InRider ? InRider->GetMesh() : nullptr;
     if (!NewMesh || !NewMesh->GetSkeletalMeshAsset()) return false;
     const URidePhysicalSettings* S = GetDefault<URidePhysicalSettings>();
-    if (Control && Rider == InRider && Mesh == NewMesh && (bBuiltAsset ? Mesh->GetPhysicsAsset() == Built && bBuiltFit == S->bFitBodiesToSkin : true))
+    const int32 HullCount = S->bFitBodiesToSkin ? HullDirectionCount(InApi) : 0;
+    if (Control && Rider == InRider && Mesh == NewMesh && (bBuiltAsset ? Mesh->GetPhysicsAsset() == Built && bBuiltFit == S->bFitBodiesToSkin && BuiltHullDirections == HullCount : true))
     {
         // A dismount still fading out (or a placement): the new ride keeps the body, unless the fit was switched.
         bEndWhenOut = false;
@@ -158,10 +159,10 @@ bool URidePhysicalRider::Begin(ACharacter* InRider, const ISkateRider* InApi)
     bBuiltAsset = !(Own && Own->SkeletalBodySetups.Num() >= MinBodies);
     if (bBuiltAsset)
     {
-        if (!Built || BuiltFor != Skeletal || bBuiltFit != S->bFitBodiesToSkin)
+        if (!Built || BuiltFor != Skeletal || bBuiltFit != S->bFitBodiesToSkin || BuiltHullDirections != HullCount)
         {
             Built = KeptPhysicsAsset(Skeletal, Api, Rider->GetWorld(), S->bFitBodiesToSkin, BuiltFitted, BailEnvelopes);
-            BuiltFor = Skeletal; bBuiltFit = S->bFitBodiesToSkin;
+            BuiltFor = Skeletal; bBuiltFit = S->bFitBodiesToSkin; BuiltHullDirections = HullCount;
         }
         if (!Built) { Mesh = nullptr; Rider = nullptr; return false; }
         Mesh->SetPhysicsAsset(Built, true);
@@ -394,7 +395,7 @@ UPhysicsAsset* URidePhysicalRider::BuildPhysicsAsset(USkeletalMesh* Skeletal, co
         else UE_LOG(LogTemp, Warning, TEXT("SKATE ride physical rider: %s keeps no CPU copy of its vertices, so its bodies are the contract's capsules"),
             *Skeletal->GetName());
     }
-    const TArray<FVector> Directions = SphereDirections(HullDirections);
+    const TArray<FVector> Directions = SphereDirections(HullDirectionCount(RiderApi));
     const float MassPower = GEngine && GEngine->DefaultPhysMaterial ? GEngine->DefaultPhysMaterial->RaiseMassToPower : .75f;
     UPhysicsAsset* Physics = NewObject<UPhysicsAsset>(Outer, NAME_None, RF_Transient);
     auto NewBody = [&](int32 B)

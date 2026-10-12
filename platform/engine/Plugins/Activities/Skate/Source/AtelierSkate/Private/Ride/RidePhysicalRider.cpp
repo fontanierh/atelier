@@ -750,9 +750,11 @@ const TCHAR* URidePhysicalRider::SkinGroupName(int32 Group)
     return Group >= 0 && Group < SkinGroupCount ? SkinGroupNames[Group] : TEXT("-");
 }
 
-bool URidePhysicalRider::MeasureSkinDepth(float& Depth, FName& Bone, float* Groups) const
+bool URidePhysicalRider::MeasureSkinDepth(float& Depth, FName& Bone, float* Groups, int32* Vertex, FVector* Position) const
 {
     Depth = -SkinProbe; Bone = NAME_None;
+    if (Vertex) *Vertex = INDEX_NONE;
+    if (Position) *Position = FVector::ZeroVector;
     if (Groups) for (int32 G = 0; G < SkinGroupCount; ++G) Groups[G] = -SkinProbe;
     USkeletalMeshComponent* Skinned = Mesh.Get();
     const USkeletalMesh* Skeletal = Skinned ? Skinned->GetSkeletalMeshAsset() : nullptr;
@@ -812,7 +814,12 @@ bool URidePhysicalRider::MeasureSkinDepth(float& Depth, FName& Bone, float* Grou
         if (!World->LineTraceSingleByChannel(Hit, P + FVector(0, 0, SkinProbe), P - FVector(0, 0, SkinProbe), ECC_Pawn, Params) || Hit.bStartPenetrating)
             continue;
         const float Below = float((FVector(Hit.ImpactPoint) - P) | Hit.ImpactNormal);
-        if (Below > Depth) { Depth = Below; Bone = SkinSampleBones[I]; }
+        if (Below > Depth)
+        {
+            Depth = Below; Bone = SkinSampleBones[I];
+            if (Vertex) *Vertex = SkinSamples[I];
+            if (Position) *Position = P;
+        }
         if (Groups && SkinSampleGroups.IsValidIndex(I)) Groups[SkinSampleGroups[I]] = FMath::Max(Groups[SkinSampleGroups[I]], Below);
     }
     return true;
@@ -905,11 +912,24 @@ FString URidePhysicalRider::Describe() const
     FString Skin;
     if (CVarRideSkinCheck.GetValueOnGameThread() != 0)
     {
-        float Depth, Groups[SkinGroupCount]; FName Bone;
-        if (MeasureSkinDepth(Depth, Bone, Groups))
+        float Depth, Groups[SkinGroupCount]; FName Bone; int32 Vertex; FVector Point;
+        if (MeasureSkinDepth(Depth, Bone, Groups, &Vertex, &Point))
         {
             Skin = FString::Printf(TEXT(" skin=%.1f skin_bone=%s skin_groups="), Depth, Bone.IsNone() ? TEXT("-") : *Bone.ToString());
             for (int32 G = 0; G < SkinGroupCount; ++G) Skin += FString::Printf(TEXT("%s%s:%.1f"), G ? TEXT(",") : TEXT(""), SkinGroupNames[G], Groups[G]);
+            Skin += FString::Printf(TEXT(" skin_vertex=%d skin_point=%.1f,%.1f,%.1f"), Vertex, Point.X, Point.Y, Point.Z);
+            if (USkeletalMeshComponent* Skinned = Mesh.Get(); Skinned && Vertex != INDEX_NONE)
+                if (const USkeletalMesh* Skeletal = Skinned->GetSkeletalMeshAsset(); Skeletal && Skeletal->GetResourceForRendering())
+                    if (const FSkinWeightVertexBuffer* Weights = Skinned->GetSkinWeightBuffer(0))
+                        for (const FSkelMeshRenderSection& Section : Skeletal->GetResourceForRendering()->LODRenderData[0].RenderSections)
+                            if (Vertex >= int32(Section.BaseVertexIndex) && Vertex < int32(Section.BaseVertexIndex + Section.NumVertices))
+                            {
+                                Skin += TEXT(" skin_weights=");
+                                for (uint32 I = 0; I < Weights->GetMaxBoneInfluences(); ++I)
+                                    if (const uint16 Weight = Weights->GetBoneWeight(Vertex, I); Weight && Section.BoneMap.IsValidIndex(Weights->GetBoneIndex(Vertex, I)))
+                                        Skin += FString::Printf(TEXT("%s:%u,"), *Skeletal->GetRefSkeleton().GetBoneName(Section.BoneMap[Weights->GetBoneIndex(Vertex, I)]).ToString(), uint32(Weight));
+                                break;
+                            }
         }
         float Gap[2]; FName Near[2];
         if (MeasureHandGap(Gap, Near))

@@ -250,6 +250,7 @@ class Retarget:
     def __init__(self, glb, arm, bone_map):
         self.glb, self.arm = glb, arm
         self.map = {bone: source for bone, source in bone_map.items() if source}
+        self.secondary = set(bone_map) - set(self.map) - {'root', 'spine_mid'}
         self.order = glb.chain(self.map.values())
         A = np.array(arm.matrix_world)
         self.arm_scale = float(np.linalg.norm(A[:3, 0]))
@@ -321,6 +322,13 @@ class Retarget:
         turn = lambda bone: rot[bone] @ self.rest_rot[bone].T
         rot['spine_mid'] = slerp_half(turn('spine'), turn('chest')) @ self.rest_rot['spine_mid']
         rot['root'] = np.repeat(self.rest_rot['root'][None], n, 0)
+        # Declared auxiliary bones follow their parent, without a reference motion track.
+        def follow_secondary():
+            for bone in self.bones:
+                if bone in self.secondary:
+                    p = self.parent[bone]
+                    rot[bone] = rot[p] @ (self.rest_rot[p].T @ self.rest_rot[bone])
+        follow_secondary()
         # Forward kinematics (heads in metres), the hips first.
         pos = {'root': np.repeat(self.rest_pos['root'][None], n, 0)}
         pelvis = self.map['pelvis']
@@ -359,6 +367,7 @@ class Retarget:
             pos[f'toe_{side}'] = ankle + rot[foot] @ (self.rest_rot[foot].T @ (self.rest_pos[f'toe_{side}'] - self.rest_pos[foot]))
             checks[f'ankle_{side}_cm'] = round(float(np.max(np.linalg.norm(ankle - goal, axis=1))) * 100, 2)
             checks[f'ground_{side}'] = round(float(np.mean(w)), 3)
+        follow_secondary()   # leg IK may have changed the parent of an endpoint
         # Pose (basis) rotations: (parent rest^-1 bone rest)^-1 (parent pose^-1 bone pose).
         basis = {}
         for bone in self.bones:
@@ -433,6 +442,8 @@ def main(args):
         pb.matrix_basis.identity()
     # Reference's contract map, with the hips from Waist (the legs' parent) and spine_mid made from spine and chest.
     bone_map = {**reference['skate'], 'root': '', 'spine_mid': '', 'pelvis': 'Waist'}
+    secondary = getattr(prepared, 'secondary_bones', set())
+    bone_map.update({b: '' for b in secondary})
     missing = sorted(b.name for b in arm.data.bones if b.name not in bone_map)
     assert not missing, (f'{args.character} bones without a Reference bone', missing)
     retarget = Retarget(glb, arm, bone_map)
@@ -450,7 +461,8 @@ def main(args):
         # The donor's own clips in the merged set, the donor in Reference's place: bone for bone, the hips at the two hip heights' ratio.
         assert OWN.exists(), f'{OWN} is missing: run retarget.py -- --dump-own first'
         source = Own(OWN)
-        own_retarget = Retarget(source, arm, {**{b.name: b.name for b in arm.data.bones}, 'root': '', 'spine_mid': ''})
+        own_retarget = Retarget(source, arm, {**{b.name: b.name for b in arm.data.bones if b.name not in secondary},
+                                           **{b: '' for b in secondary}, 'root': '', 'spine_mid': ''})
         for name, world in source.clips.items():
             frames = len(world) - 1
             checks = export_clip(scene, arm, out, name, frames, own_retarget, module, OWN_FPS)

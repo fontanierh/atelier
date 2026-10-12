@@ -29,6 +29,9 @@ public:
     virtual FName GetSkateBone(FName Contract) const { return Contract; }
     /** Preferred extra arm clearance in cm for clothing outside the body; falls back to body clearance if infeasible. */
     virtual float GetSkateClothingClearance() const { return 0.f; }
+    /** Directions used to fit collision hulls to this rider's skin. More samples retain small shoe or garment details;
+     *  clamped to 64..2048, and only used when building a fitted physics asset. */
+    virtual int32 GetSkateCollisionHullDirections() const { return 256; }
     /** The visible board's size relative to the source rider's: a short character with big feet rides a bigger one.
      *  It grows about its ground contact and the pose rises onto its deck; the ride's physics keep the source board. */
     virtual float GetSkateBoardScale() const { return 1.f; }

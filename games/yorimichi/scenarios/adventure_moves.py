@@ -32,6 +32,7 @@ for f in os.listdir(OUT):
 pc = unreal.GameplayStatics.get_player_controller(L.game_world(), 0)
 LAKE = (-90., 235., 75.)      # world.json forest_lake: its centre (island metres) and water height
 SHORE = (-54., 223.)          # the lake's safe shore, beside the cabin
+SHORE_APPROACH = (-61., 232.) # open water east of the rowboat and jetty
 CABIN = (-56., 215.)
 RUN = ((-30., 215.), (-35., 206.34))   # 30 m of clear, nearly flat ground south-east of the cabin, and its heading
 OFFSHORE = (-72., 229.)       # open water, 19 m out from the shore
@@ -289,10 +290,10 @@ def glide():
 
 
 def swim():
-    s = state()
-    if s['mode'] != 'swim':
-        place(OFFSHORE, LAKE)
-        s, _ = yield from until(lambda s: s['mode'] == 'swim', 3.)
+    # The glider can land beside the bank. Start every body in open water so
+    # a faster rider cannot reach the shallows during the swim assertions.
+    place(OFFSHORE, LAKE)
+    s, _ = yield from until(lambda s: s['mode'] == 'swim', 3.)
     check('swim', s is not None and s['mode'] == 'swim')
     yaw = L.player_transform().rotation.rotator().yaw
     pc.set_control_rotation(unreal.Rotator(0, -12, yaw))
@@ -307,11 +308,22 @@ def swim():
     seen = yield from watch(1.)
     check('swim dash', 'SwimDash' in actions(seen) and max(s['speed'] for s in seen) > cruise + 60.,
           top=round(max(s['speed'] for s in seen)), actions=actions(seen))
+    # The direct line to the cabin crosses its moored rowboat. A taller swimmer
+    # catches its hull; approach the clear bank from open water instead.
+    here = L.player_transform().translation
+    home = yaw_to((here.x / 100., -here.y / 100.), SHORE_APPROACH)
+    pc.set_control_rotation(unreal.Rotator(0, -12, home))
+
+    def near_approach(s):
+        p = L.player_transform().translation
+        return math.hypot(p.x - SHORE_APPROACH[0] * 100., p.y + SHORE_APPROACH[1] * 100.) < 150. or s['mode'] == 'ground'
+
+    _, approach_time = yield from until(near_approach, 20.)
     here = L.player_transform().translation
     home = yaw_to((here.x / 100., -here.y / 100.), SHORE)
     pc.set_control_rotation(unreal.Rotator(0, -12, home))
-    s, t = yield from until(lambda s: s['mode'] == 'ground' or s['action'] in ('SwimOut', 'SwimOutHigh', 'ClimbGrab'), 40.)
-    check('swim back to the shore', s is not None, action=s and s['action'], seconds=round(t, 1))
+    s, t = yield from until(lambda s: s['mode'] == 'ground' or s['action'] in ('SwimOut', 'SwimOutHigh', 'ClimbGrab'), max(0., 40. - approach_time))
+    check('swim back to the shore', s is not None, action=s and s['action'], seconds=round(t + approach_time, 1))
     yield from until(grounded, 4.)
     live.drive(0)
 

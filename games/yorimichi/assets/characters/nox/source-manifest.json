@@ -1,0 +1,29 @@
+{
+  "native": "Nox.glb",
+  "native_sha256": "f3a8e91b4d081f50fe812c40861105b0c2ac96644a7c4408a78ae14876643606",
+  "height_cm": 178,
+  "revision": "assembled-r03",
+  "rig": {
+    "body_bones": 65,
+    "hair_bones": 180,
+    "hair_chains": 66
+  },
+  "geometry": {
+    "body_vertices": 26939,
+    "head_vertices": 12003,
+    "triangles": 76268
+  },
+  "textures": {
+    "body": [
+      4096,
+      4096
+    ],
+    "head": [
+      4096,
+      4096
+    ]
+  },
+  "watch": false,
+  "head_weighting": "Rigid face/skull/earring to head; all 66 hair chains have proximal deformation weights",
+  "history": "See docs/NOX_CHARACTER_RECIPE.md; earlier candidates and evidence remain archived outside git."
+}

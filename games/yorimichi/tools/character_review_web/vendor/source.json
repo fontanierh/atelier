@@ -1,0 +1,18 @@
+{
+  "name": "three",
+  "version": "0.183.2",
+  "url": "https://registry.npmjs.org/three/-/three-0.183.2.tgz",
+  "tarball_sha256": "435d785005cec60a2e9dcca23b69c6a4c048278098f2669d3d879881dff9ce4d",
+  "files": {
+    "three.module.js": "e8ac51bc2f6b7eb17bc88c6540eb0a1fee872f848949373de39d55f34b5c5a8f",
+    "three.core.js": "6a7fc83437818534d5e30ce8c8e0ce76230ca2245446ea24744bb3d88c436583",
+    "addons/loaders/GLTFLoader.js": "e4e692923224a10bbc00be04365d6356b5e8c48b2bbd1f22a7fe929591646fb8",
+    "addons/controls/OrbitControls.js": "09673b997864b8091943d2673637c0f31f7cf67daeddd0902fce9bf098a8d093",
+    "addons/utils/BufferGeometryUtils.js": "fda7e946b8e0b5ab39b779206589e7a1079a22eb24efb89d7223e03fdfb1f751",
+    "LICENSE": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+    "addons/utils/SkeletonUtils.js": "0761b1e003917b215d25dd81439d854b36034b5a57ce84c2cfe3b02428d7b253"
+  },
+  "supplemental_sources": {
+    "addons/utils/SkeletonUtils.js": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/utils/SkeletonUtils.js"
+  }
+}

@@ -1937,6 +1937,58 @@
       "bytes": 10602509,
       "sha256": "d455d593f413af9cc026a2bbf6aa77f5a2419220b505d215f05ac54ee9279be1"
     },
+    "characters/nox/Nox.glb": {
+      "bytes": 22266896,
+      "sha256": "f3a8e91b4d081f50fe812c40861105b0c2ac96644a7c4408a78ae14876643606"
+    },
+    "characters/nox/references/body/back.png": {
+      "bytes": 1000145,
+      "sha256": "26304181c64ee34a101eebf4ff3ad879c18705ae0e363aad500e6fe92aceb3cf"
+    },
+    "characters/nox/references/body/front.png": {
+      "bytes": 1010000,
+      "sha256": "ce7f3f623e662cc01e8e07166ebc8df8c11bbd3778077f50c81d0d965ddcb225"
+    },
+    "characters/nox/references/body/left.png": {
+      "bytes": 766067,
+      "sha256": "5147032b4e4afb7f25b828636378dce6269067f3cdc42de9c11ad9aea76ea1c0"
+    },
+    "characters/nox/references/body/right.png": {
+      "bytes": 769565,
+      "sha256": "00b1a338f9533d26007a38383c2e55b8932820480665395d77cf471427e5c8cb"
+    },
+    "characters/nox/references/chain.png": {
+      "bytes": 1177969,
+      "sha256": "0c17570eef055bb29385997aed0233f328e2fe478c6ddd3b228cb0c06b283c7f"
+    },
+    "characters/nox/references/ears/left.png": {
+      "bytes": 967869,
+      "sha256": "028d4d7dffd2b97959ff81a5d11f6b8c8de2d8b7a82e94ed642da96542c3c255"
+    },
+    "characters/nox/references/ears/right.png": {
+      "bytes": 948972,
+      "sha256": "fb37cbe1f654c1906026406a263353df96d623a0a1cf40e020ef028afc7f5325"
+    },
+    "characters/nox/references/face-unobstructed.png": {
+      "bytes": 833869,
+      "sha256": "8d8ab5410add51b0dc746c8f3bfd344722c432cc94d228165350a1ddc9e1e6b7"
+    },
+    "characters/nox/references/head/back.png": {
+      "bytes": 1010261,
+      "sha256": "e7a8f2a22b66aeadd67f87e0ffeea6c21d8582c0486ab29b92eaa5853a9603a8"
+    },
+    "characters/nox/references/head/front.png": {
+      "bytes": 1044933,
+      "sha256": "d20b66247c7dc4bb5f8dec651e1af26dee2813a48298cea1c9f6610bdecb8483"
+    },
+    "characters/nox/references/head/left.png": {
+      "bytes": 1050909,
+      "sha256": "eba2ef6c184097b1c55210ef8b048d695e843b59c97e08e13bea056713c1043c"
+    },
+    "characters/nox/references/head/right.png": {
+      "bytes": 1001796,
+      "sha256": "2b690951752b81e784bcc3e27e165b7f43cf081aec36177df1dcaefe559d0303"
+    },
     "characters/sword-trainer/SwordTrainer-Rig-r03.blend": {
       "bytes": 21263282,
       "sha256": "c83abba40d047f34852108485645b8e35a3207edb1159432dfe49c796313e0c6"
