@@ -256,6 +256,7 @@ void AJapanPlayerController::OpenFriends()
 void AJapanPlayerController::Tick(float Dt)
 {
     Super::Tick(Dt);
+    if (HasAuthority() && !PendingCharacter.IsEmpty()) FinishCharacterSwitch();
     DrainCombatResults();
     if (IsLocalController()) if (auto* Session = GetGameInstance<UJapanGameInstance>()) Session->ShowPendingStatus();
     if (!JapanNetwork::IsOnline(GetWorld())) return;

@@ -13,7 +13,12 @@ bool AWandererCharacter::RequestNetworkSail()
 {
     const bool Exiting=NetworkActivity.Kind==EJapanActivity::Sailboat;
     const auto* Rules=GetWorld()->GetGameState<AJapanGameState>();
-    if((!Rules||!Rules->bPredictedVehicles)&&!Exiting)return false;
+    if((!Rules||!Rules->bPredictedVehicles)&&!Exiting)
+    {
+        if(auto* Session=GetWorld()->GetGameInstance<UJapanGameInstance>())
+            Session->SetSessionStatus(TEXT("The host has disabled vehicles."));
+        return false;
+    }
     if(!Sailboat||!Sailboat->IsAvailable())
     {
         if(auto* Session=GetWorld()->GetGameInstance<UJapanGameInstance>())

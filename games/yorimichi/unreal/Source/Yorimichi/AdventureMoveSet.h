@@ -211,6 +211,8 @@ public:
 
 private:
     friend class FJapanCheckpointTest;
+    friend class AJapanPlayerController;
+    friend struct FJapanMultiplayerQAAccess;
     friend class FJapanReactionTransportTest;
     friend class FJapanReactionPayloadTest;
     void SubmitMovementReaction(const FAdventureMovementReaction& Reaction);

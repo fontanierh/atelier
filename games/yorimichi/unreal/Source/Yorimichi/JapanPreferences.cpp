@@ -1043,7 +1043,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
         for (const FString& Name : Names)
         {
             const FPlayableCharacter* Character = FPlayableCharacter::Find(Name);
-            Characters->AddSlot()[Page->Add(SNew(SButton).IsEnabled(!JapanNetwork::IsOnline(Owner->GetWorld()) && Name != Playing && Character && Character->Built())
+            Characters->AddSlot()[Page->Add(SNew(SButton).IsEnabled(Name != Playing && Character && Character->Built())
                 .Text(FText::FromString(FPlayableCharacter::Label(Name)))
                 .OnClicked_Lambda([Switch,Name] { Switch(Name); return FReply::Handled(); }),TEXT("character:")+Name,
                 FString::Printf(TEXT("Play as %s."),*FPlayableCharacter::Label(Name)))];
@@ -1053,7 +1053,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     }
     if (JapanNetwork::IsOnline(Owner->GetWorld()))
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
-            .Text(FText::FromString(TEXT("Choose your character before joining. Shared games use the merged move set, two stamina rings and default skate physics.")))];
+            .Text(FText::FromString(TEXT("You can change characters during the session. Shared games use two stamina rings and default skate physics.")))];
     TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
     Page->Section();
     for (const FString& Key : Toggles)

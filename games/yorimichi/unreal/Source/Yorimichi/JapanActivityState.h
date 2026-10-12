@@ -5,6 +5,8 @@
 #include "JapanSailState.h"
 #include "JapanActivityState.generated.h"
 
+class AZeppelinService;
+
 UENUM()
 enum class EJapanActivity : uint8 { OnFoot, Skate, Bike, Sailboat, Zeppelin };
 
@@ -23,6 +25,12 @@ struct FJapanActivityState
     UPROPERTY() uint8 ClockCorrection = 0;
     UPROPERTY() FJapanBikeState Bike;
     UPROPERTY() FJapanSailState Sail;
+    UPROPERTY() TObjectPtr<AZeppelinService> Zeppelin;
+    /** A replacement character resumes this activity with the preceding pawn's foot/vital state. */
+    UPROPERTY() bool bCharacterReplacement = false;
+    UPROPERTY() uint8 ReplacementMovementMode = 0;
+    UPROPERTY() bool bReplacementCrouched = false;
+    UPROPERTY() FTransform SkateDeck;
     /** Optional post-exit reaction, using the existing bounded foot checkpoint.
      * Published with the epoch so prediction cannot start from the pre-hit state. */
     UPROPERTY() bool bFootReaction = false;

@@ -52,6 +52,7 @@ public:
     static FVector ToUE(double X, double Y, double Z) { return FVector(X * 100.0, -Y * 100.0, Z * 100.0); }
 
     UPROPERTY() TObjectPtr<class AZeppelinService> Zeppelin;
+    TSharedPtr<FJsonObject> ZeppelinRecord;
     FTransform PlayerStart;
     /** Named player locations loaded from the save, shared across character switches. */
     FJapanMarkers Markers;

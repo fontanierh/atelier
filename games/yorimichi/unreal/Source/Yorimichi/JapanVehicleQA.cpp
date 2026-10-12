@@ -334,10 +334,11 @@ struct FVehicleProbe
         }
         P->Live_Drive(FVector2D::ZeroVector,1);
         if(Phase!=6)P->SetMenuOpen(false);
-        if(Phase==0&&Enter)
+        if(Phase==0&&!DefaultAttempt)
         {
             const auto* Rules=World->GetGameState<AJapanGameState>();
             DefaultDisabled=Rules&&!Rules->bPredictedVehicles;
+            if(!DefaultDisabled)return; // Wait for the explicit disabled-host fixture to replicate.
             DefaultAttempt=DefaultDisabled&&!Request(P);
             // Also exercise the host gate through the ordinary owner RPC.
             FJapanVehicleQAAccess::SendRequest(P,Sail());
@@ -709,6 +710,13 @@ bool JapanVehicleQA::Tick(UWorld* World,bool Server,const FString& Folder,FStrin
     if(Probe.World.Get()!=World)
     {
         Probe=FVehicleProbe();Probe.World=World;
+        if(Server)
+        {
+            // The production default is enabled. This route explicitly tests the
+            // host opt-out first, then restores ordinary vehicle availability.
+            auto* Rules=World->GetGameState<AJapanGameState>();
+            Rules->bPredictedVehicles=false;Rules->ForceNetUpdate();
+        }
         FParse::Value(FCommandLine::Get(),TEXT("networkvehiclecase="),Probe.Case);
         JapanVehicleTelemetry::Reset(World);
         const auto* Combat=World->GetSubsystem<UJapanCombatResolver>();

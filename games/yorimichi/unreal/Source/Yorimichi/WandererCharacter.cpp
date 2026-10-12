@@ -180,6 +180,7 @@ void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkRiderName, COND_InitialOnly);
+    DOREPLIFETIME_CONDITION(AWandererCharacter, bSwitchedIn, COND_InitialOnly);
     DOREPLIFETIME(AWandererCharacter, bNetworkShield);
     DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkAvatar, COND_SimulatedOnly);
     DOREPLIFETIME(AWandererCharacter, NetworkHealth);
@@ -207,11 +208,19 @@ void AWandererCharacter::PawnClientRestart()
 {
     Super::PawnClientRestart();
     InitializeLocalPlayer();
+    if (NetworkActivity.bCharacterReplacement)
+    {
+        // Replicated activity can arrive while the new pawn still has proxy roles.
+        // Apply it again once possession and local readiness have completed.
+        AppliedActivityEpoch = 0;
+        ReadyTime = 2.f;
+    }
 }
 void AWandererCharacter::InitializeLocalPlayer()
 {
     if (bLocalPlayerInitialized || IsNpc() || !Definition || !IsLocallyControlled() || GetNetMode() == NM_DedicatedServer) return;
     bLocalPlayerInitialized = true;
+    if (auto* PC = Cast<APlayerController>(Controller)) InputOwner = PC->GetLocalPlayer();
     // A replicated pawn can tick as a presentation proxy before possession arrives.
     // Its proxy-ready flag must not bypass the owner's prediction startup gate.
     if (JapanNetwork::IsOnline(GetWorld())) bReady = false;
@@ -289,8 +298,7 @@ void AWandererCharacter::EndPlay(const EEndPlayReason::Type Reason)
     UGameViewportClient::OnScreenshotCaptured().RemoveAll(this);   // review and trailer frame capture
     if (Preferences) Preferences->CloseMenu();
     if (Map) Map->Close();
-    if (APlayerController* PC = Cast<APlayerController>(Controller))
-        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+    if (ULocalPlayer* LP = InputOwner.Get())
             if (auto* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
                 Subsystem->RemoveMappingContext(Mapping);
     Super::EndPlay(Reason);
@@ -720,6 +728,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("menu")) { if (!Preferences) return false; ToggleMenu(FInputActionValue(true)); }   // the settings menu (closing the map first)
     else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
+    else if (Button == TEXT("skateboard")) ToggleSkateboard(FInputActionValue(true));
     else if (Button == TEXT("sailboat")) ToggleSailboat(FInputActionValue(true));
     else if (Button == TEXT("sprint")) { Sprint(FInputActionValue(true)); Sprint(FInputActionValue(false)); }   // a tap (the bike's toggle)
     else if (Button == TEXT("wave")) Wave(FInputActionValue(true));
@@ -903,11 +912,12 @@ void AWandererCharacter::FlightFaster(const FInputActionValue&) { ZeppelinStep(1
 // Aboard, the two flight buttons change the ride's speed; at a docked ship they choose its next stop.
 void AWandererCharacter::ZeppelinStep(int32 Direction)
 {
+    if (JapanNetwork::IsOnline(GetWorld())) { if (IsLocallyControlled()) ServerZeppelinInput(NetworkActivity.Epoch,Direction); return; }
     if(!GetZeppelin())return;
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) return; // Shared interaction routing follows the activity layer.
+void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) { if (IsLocallyControlled()) ServerZeppelinInput(NetworkActivity.Epoch,0); return; }
  if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {
@@ -1298,7 +1308,11 @@ void AWandererCharacter::Tick(float Dt)
     if (JapanNetwork::IsOnline(GetWorld()))
     {
         TickNetworkActivity();
-        if (NetworkActivity.Kind == EJapanActivity::Skate && !IsLocallyControlled()) return;
+        if (NetworkActivity.Kind == EJapanActivity::Skate && !IsLocallyControlled())
+        {
+            bReady = Moves && Landscape && Landscape->bGameplayReady;
+            return;
+        }
         if (!HasAuthority() && !IsLocallyControlled())
         {
             bReady = true;
@@ -1552,5 +1566,5 @@ void AWandererCharacter::AdvanceMapReview(float Dt)
     }
 }
 
-AZeppelinService* AWandererCharacter::GetZeppelin() const { return Landscape?Landscape->Zeppelin.Get():nullptr; }
+AZeppelinService* AWandererCharacter::GetZeppelin() const { return NetworkActivity.Zeppelin?NetworkActivity.Zeppelin.Get():Landscape?Landscape->Zeppelin.Get():nullptr; }
 bool AWandererCharacter::IsZeppelinPassenger() const { return GetZeppelin()&&GetZeppelin()->IsPassenger(this); }

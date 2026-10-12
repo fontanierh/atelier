@@ -537,7 +537,11 @@ void AJapanWorld::Load()
     }
     const TSharedPtr<FJsonObject>* ZeppelinData=nullptr;
     if(Root->TryGetObjectField(TEXT("zeppelin"),ZeppelinData))
-    { Zeppelin=GetWorld()->SpawnActor<AZeppelinService>();if(Zeppelin)Zeppelin->Initialize(*ZeppelinData); }
+    {
+        ZeppelinRecord = *ZeppelinData;
+        if (GetNetMode() != NM_Client)
+        { Zeppelin=GetWorld()->SpawnActor<AZeppelinService>();if(Zeppelin)Zeppelin->Initialize(ZeppelinRecord); }
+    }
     const TSharedPtr<FJsonObject>* Mega=nullptr;
     if(Root->TryGetObjectField(TEXT("mega"),Mega))
     {

@@ -10,22 +10,32 @@ two-machine or packaged release certification.
 
 - Ordinary Solo play retains its immediate combat path. A remote autonomous
   player's on-foot reaction uses the scheduled path described below.
-- Online bike and sail support is implemented behind
-  `AJapanGameState::bPredictedVehicles`, which remains **false by default**.
-  The development vehicle fixture enables it explicitly. Do not mistake those
-  fixture results for vehicles being enabled in ordinary online play.
-- Online zeppelin integration is unfinished. World
-  editing are unavailable online.
-- Rendered multiplayer, packaged sessions, real Tailscale connections between
-  machines and Windows native acceptance remain unverified. Source work for
-  Windows portability and tunnel binding remains in PRs #175 and #173.
+- Bike and sail support uses `AJapanGameState::bPredictedVehicles`, enabled by
+  default. A host can still disable vehicles; the vehicle regression explicitly
+  tests that opt-out before restoring normal availability.
+- The zeppelin is one replicated host-owned service with separate passenger
+  seats. Boarding, destination and speed controls use the owning player's RPCs.
+- Character selection is available during a session. The persistent controller
+  replaces its pawn, preserving health, player identity and activity, and advances
+  the activity epoch. Pending combat resolves before replacement. Bike and sail
+  checkpoints resume; skating restarts at the current deck position and velocity.
+- Source changes require native and rendered checks at the final revision.
+  Same-machine tests do not establish packaged or two-machine acceptance.
 
-The October 8 wrap-up integrates current main, including the character registry
-and Modori changes. The operator requested no further Unreal sessions: the
-integrated revision has source review and Python validation, but **has not been
-natively compiled or run**. Earlier native receipts do not transfer to it.
-Native rebuilding and real-machine testing are deferred to the joint session on
-Sunday, October 11, 2026.
+## Required multiplayer checks before release
+
+Run the final clean revision's compile and `data.network` staging, then the native
+wire suite. All 17 named fixtures must pass; an engine exit code alone is insufficient.
+Run a listen pair at zero lag and at 60 ms delay / 15 ms variance / 2% loss. Both
+observers must receive sustained skate poses and evaluate the expected skeleton.
+
+The session runner supports `--feature-case equipment|switch-foot|switch-bike|
+switch-sail|switch-skate|zeppelin` and `--render-view host|guest`. Run both observer
+views; one process renders while its peer uses NullRHI, under the existing aggregate
+10 GiB guard. Inspect the captures as well as the receipts. Rerun bike, sail,
+pending mount, parking, crash and combat routes before enabling a release build.
+Use matching packaged identities for a two-device Tailscale playtest before claiming
+that a release's multiplayer has been verified on separate machines.
 
 ## Scheduled combat reactions
 
@@ -115,17 +125,12 @@ with `--lag-ms 60 --variance-ms 15 --loss-percent 2`. The deliberate holds and
 stale deliveries are Development-only and labelled in the receipts. Case 2
 holds CMC responses; it does not hold the reliable reaction RPC.
 
-## Sunday real-machine session
+## Two-device playtest
 
-1. Build the same reviewed revision and matching network identity on both
-   machines; resolve the pending Windows portability/tunnel work if using
-   Windows. Run the integrated native compile and wire17 first.
-2. Verify ordinary Solo startup and controls, then host/join over the private
-   Tailscale connection. Confirm the listener address, identity check and clean
-   return to Solo after disconnect.
-3. Exercise walking, jumping, skating, ordinary hits, guard/parry/dodge,
-   knockdown/death and recovery. Observe both the local player and the remote
-   rendered player, including Modori equipment and animation.
-4. Record failures with both logs and build identities. Keep online vehicles
-   disabled until their final-head pending-mount and rendered checks pass.
-   Packaged acceptance and online zeppelin work remain separate follow-ups.
+Use the same reviewed revision and network identity on both machines. Verify Solo
+startup first, then host and join over Tailscale. Check sword draw, attack, held
+guard and sheath; observe both players' skating, walking and jumps. Ride bikes,
+sailboats and the shared zeppelin, and change character during each activity.
+Exercise hits, guard/parry/dodge, knockdown/death and recovery, then verify that a
+guest disconnect returns to Solo and that leaving as host ends the shared session.
+Record both logs and build identities with any failure.

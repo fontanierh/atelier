@@ -6,6 +6,7 @@
 #include "JapanCombatQA.h"
 #include "JapanEnemyQA.h"
 #include "JapanVehicleQA.h"
+#include "JapanMultiplayerQA.h"
 #include "JapanReactionDeliveryProbe.h"
 #include "JapanGameplayCollisionQA.h"
 #include "JapanWorld.h"
@@ -241,7 +242,13 @@ bool UJapanGameInstance::TickNetworkQA(float)
     const auto* State = World->GetGameState<AJapanGameState>();
     const bool Listen = FParse::Param(FCommandLine::Get(), TEXT("networklisten"));
     bool GameplayDone = true;
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkreactiondelivery")) && World->GetNetMode() != NM_Standalone)
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkfeatures")) && World->GetNetMode() != NM_Standalone)
+    {
+        FString Error;
+        GameplayDone = JapanMultiplayerQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);
+        if (!Error.IsEmpty()) return Fail(Error);
+    }
+    else if (FParse::Param(FCommandLine::Get(), TEXT("networkreactiondelivery")) && World->GetNetMode() != NM_Standalone)
     {
         FString Error;
         GameplayDone = JapanReactionDeliveryQA::Tick(World, NetworkQARole == TEXT("server"), NetworkQADirectory, Error);

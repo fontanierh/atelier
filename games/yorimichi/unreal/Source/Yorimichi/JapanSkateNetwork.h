@@ -15,6 +15,7 @@ class YORIMICHI_API UJapanSkateNetwork : public UActorComponent
 public:
     UJapanSkateNetwork();
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     bool AcceptsRoot(const FVector& Location) const;
     uint32 GetReceivedFrameCount() const { return ReceivedFrameCount; }
     uint32 GetAppliedFrameCount() const { return AppliedFrameCount; }
@@ -38,6 +39,7 @@ private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
     void ConfigureTickOrder();
     void ObserveDisplayedPose();
+    FDelegateHandle FinalizedPose;
     bool bTickRoleKnown = false, bCaptureTick = false;
     uint32 ObservedPoseCount = 0, MatchingPoseCount = 0;
     UPROPERTY(ReplicatedUsing=OnRep_Board) FJapanBoardState Board;

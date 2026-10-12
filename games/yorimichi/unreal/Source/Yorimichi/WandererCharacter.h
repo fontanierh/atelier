@@ -70,7 +70,7 @@ public:
     AJapanWorld* GetLandscape() const { return Landscape; }
     /** The character switch (FPlayableCharacter::SwitchPlayer) sets this on the new character before it finishes spawning: it
      *  starts where the old one stood (EnterWorld leaves it in place), with no second ambience and no settling wait. */
-    bool bSwitchedIn = false;
+    UPROPERTY(Replicated) bool bSwitchedIn = false;
     /** The character switch, before the player moves to another character: closes the menus, stows the board and the
      *  sailboat, and gives up the input mapping. */
     void Leave();
@@ -137,6 +137,7 @@ public:
     bool ExitNetworkVehicle(uint8 ClockCorrection = 0, TFunction<void()> FootReaction = {});
     UFUNCTION(Server, Reliable) void ServerTravelTo(FVector_NetQuantize100 Location, float Yaw, uint32 Epoch);
     UFUNCTION(Server, Reliable) void ServerRequestSkate(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerZeppelinInput(uint32 Epoch, int32 Direction);
     UFUNCTION(Server, Reliable) void ServerFinishSkate(uint32 Epoch, FVector_NetQuantize100 Location,
         FRotator Rotation, FVector_NetQuantize100 Velocity, bool bFalling);
     UFUNCTION(Client, Reliable) void ClientActivityRejected(const FString& Reason);
@@ -188,6 +189,7 @@ protected:
 
 private:
     void InitializeLocalPlayer();
+    TWeakObjectPtr<ULocalPlayer> InputOwner;
     bool RequestNetworkBike();
     bool RequestNetworkSail();
     void TickNetworkSail();
@@ -223,6 +225,7 @@ private:
     float LastAvatarPublication = -1.f;
     friend class FJapanReactionTransportTest;
     friend class FJapanCheckpointTest;
+    friend class AJapanPlayerController;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
     friend class AZeppelinService;

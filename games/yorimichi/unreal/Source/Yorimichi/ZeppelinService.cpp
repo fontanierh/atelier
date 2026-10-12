@@ -1,4 +1,6 @@
 #include "ZeppelinService.h"
+#include "JapanNetwork.h"
+#include "JapanSession.h"
 #include "JapanWorld.h"
 #include "WandererCharacter.h"
 #include "SkateComponent.h"
@@ -28,6 +30,7 @@ static FVector Local(double X,double Y,double Z) { return AJapanWorld::ToUE(X,Y,
 AZeppelinService::AZeppelinService()
 {
  PrimaryActorTick.bCanEverTick=true;
+ bReplicates=true;bAlwaysRelevant=true;NetUpdateFrequency=20.f;MinNetUpdateFrequency=20.f;
  RootComponent=CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
  ShipRoot=CreateDefaultSubobject<USceneComponent>(TEXT("Ship"));ShipRoot->SetupAttachment(RootComponent);
 }
@@ -78,9 +81,16 @@ void AZeppelinService::Initialize(const TSharedPtr<FJsonObject>& Data)
  }
  Ready=Hull->GetStaticMesh()&&Motors->GetStaticMesh()&&Gate->GetStaticMesh()&&Gangways[0]->GetStaticMesh()&&Propellers[0]->GetStaticMesh();
  int32 InitialDock=0;FParse::Value(FCommandLine::Get(),TEXT("zeppelindock="),InitialDock);
- DockAt(FMath::Clamp(InitialDock,0,N-1));UE_LOG(LogTemp,Display,TEXT("ZEPPELIN ready=%d, %d stations"),Ready,N);
+ if (GetNetMode() == NM_Client) OnRep_NetworkState();
+ else { DockAt(FMath::Clamp(InitialDock,0,N-1)); if (JapanNetwork::IsOnline(GetWorld())) PublishNetworkState(); }
+ UE_LOG(LogTemp,Display,TEXT("ZEPPELIN ready=%d, %d stations"),Ready,N);
 }
-bool AZeppelinService::IsPassenger(const AWandererCharacter* C) const { return Passenger && Passenger==C; }
+bool AZeppelinService::IsPassenger(const AWandererCharacter* C) const
+{
+ if (!C) return false;
+ if (JapanNetwork::IsOnline(GetWorld())) return NetworkState.Passengers.ContainsByPredicate([C](const auto& P){return P.Rider==C;});
+ return Passenger && Passenger==C;
+}
 FVector AZeppelinService::ShipPosition() const { return ShipRoot->GetComponentLocation(); }
 int32 AZeppelinService::Nearby(const AWandererCharacter* C,float Radius) const
 {
@@ -112,10 +122,10 @@ bool AZeppelinService::CanChooseStop(const AWandererCharacter* C) const
 }
 bool AZeppelinService::ChooseDestination(const AWandererCharacter* C,int32 Direction)
 {
- if(Direction==0||!CanChooseStop(C))return false;
+ if(Direction==0||!CanChooseStop(C)||(JapanNetwork::IsOnline(GetWorld())&&!HasAuthority()))return false;
  const int32 N=Stations.Num();int32 Next=Destination;
  do Next=(Next+(Direction<0?N-1:1))%N; while(Next==Dock);
- Destination=Next;UE_LOG(LogTemp,Display,TEXT("ZEPPELIN destination=%d"),Destination);return true;
+ Destination=Next;if(JapanNetwork::IsOnline(GetWorld()))PublishNetworkState();UE_LOG(LogTemp,Display,TEXT("ZEPPELIN destination=%d"),Destination);return true;
 }
 int32 AZeppelinService::NextStop(int32 At) const
 {
@@ -130,12 +140,13 @@ float AZeppelinService::ClimbSeconds() const { return FMath::Max(5.f,float(FMath
 float AZeppelinService::LandSeconds() const { return FMath::Max(4.f,float(FMath::Abs(Leg().X-Stations[Destination].Ship.Z))/3000.f); }
 void AZeppelinService::AdjustFlightSpeed(int32 Direction)
 {
- if(Direction==0)return;
+ if(Direction==0||(JapanNetwork::IsOnline(GetWorld())&&!HasAuthority()))return;
  int32 Index=0;float Best=BIG_NUMBER;
  for(int32 I=0;I<FlightSpeeds.Num();++I){const float D=FMath::Abs(FlightSpeeds[I]-FlightSpeed);if(D<Best){Best=D;Index=I;}}
  const int32 Next=FMath::Clamp(Index+FMath::Clamp(Direction,-1,1),0,FlightSpeeds.Num()-1);
  if(Next==Index)return;
  FlightSpeed=FlightSpeeds[Next];
+ if(JapanNetwork::IsOnline(GetWorld()))PublishNetworkState();
  UE_LOG(LogTemp,Display,TEXT("ZEPPELIN flight speed %s"),*SpeedLabel(FlightSpeed));
 }
 void AZeppelinService::SetPhase(int32 P)
@@ -153,6 +164,7 @@ void AZeppelinService::DockAt(int32 I)
 bool AZeppelinService::TryInteract(AWandererCharacter* C)
 {
  if(!Ready)return false;
+ if(JapanNetwork::IsOnline(GetWorld()))return InteractNetwork(C);
  if(IsPassenger(C))
  {
   // Skipping still performs docking and disembarkation; never drops the rider in mid-air.
@@ -190,10 +202,15 @@ void AZeppelinService::RestorePassenger()
 }
 void AZeppelinService::Cancel(AWandererCharacter* C)
 {
+ if(JapanNetwork::IsOnline(GetWorld())){CancelNetwork(C);return;}
  if(!IsPassenger(C))return;RestorePassenger();DockAt(Dock);
 }
 void AZeppelinService::EndPlay(const EEndPlayReason::Type Reason)
-{RestorePassenger();Super::EndPlay(Reason);}
+{
+ TArray<TWeakObjectPtr<AWandererCharacter>> Cameras;PassengerCameras.GetKeys(Cameras);
+ for(const auto& C:Cameras)if(C.IsValid())RestoreNetworkCamera(C.Get());
+ RestorePassenger();Super::EndPlay(Reason);
+}
 void AZeppelinService::WalkPassenger(float Dt)
 {
  if(!Passenger||!WalkPoints.IsValidIndex(WalkIndex))return;
@@ -222,7 +239,9 @@ void AZeppelinService::PlacePassenger(bool Walking,float Dt)
 }
 void AZeppelinService::Tick(float Dt)
 {
- Super::Tick(Dt);if(!Ready)return;
+ Super::Tick(Dt);
+ if(JapanNetwork::IsOnline(GetWorld())){TickNetwork(Dt);return;}
+ if(!Ready)return;
  if(Fabric&&Sun.IsValid())
  {
   const FVector Direction=-Sun->GetActorForwardVector();
@@ -268,6 +287,11 @@ void AZeppelinService::Tick(float Dt)
  {
   PlacePassenger(true,Dt);if(WalkIndex>=WalkPoints.Num()){RestorePassenger();DockAt(Dock);}
  }
+ AdvanceParts(Dt);
+}
+
+void AZeppelinService::AdvanceParts(float Dt)
+{
  Hull->SetCollisionEnabled(Phase==0?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
  const bool Landed=Phase==5&&PhaseTime>=LandSeconds();
  const bool Open=Phase==2||Phase==6||Landed;

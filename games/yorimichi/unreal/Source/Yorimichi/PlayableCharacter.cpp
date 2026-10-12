@@ -1,5 +1,6 @@
 #include "PlayableCharacter.h"
 #include "JapanNetwork.h"
+#include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
@@ -69,7 +70,11 @@ FString FPlayableCharacter::NameOf(const AWandererCharacter* Character)
 
 AWandererCharacter* FPlayableCharacter::SwitchPlayer(AWandererCharacter* From, const FString& Name)
 {
-    if (From && JapanNetwork::IsOnline(From->GetWorld())) return nullptr;
+    if (From && JapanNetwork::IsOnline(From->GetWorld()))
+    {
+        if (auto* Controller = Cast<AJapanPlayerController>(From->GetController())) Controller->RequestCharacter(Name);
+        return From; // The persistent controller commits the host-approved replacement asynchronously.
+    }
     APlayerController* PC = From ? Cast<APlayerController>(From->GetController()) : nullptr;
     UWorld* World = From ? From->GetWorld() : nullptr;
     const FPlayableCharacter* Character = Find(Name);

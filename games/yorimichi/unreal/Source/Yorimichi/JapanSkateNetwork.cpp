@@ -37,6 +37,14 @@ void UJapanSkateNetwork::BeginPlay()
     if (!Rider || Rider->IsNpc() || !JapanNetwork::IsOnline(GetWorld())) { SetComponentTickEnabled(false); return; }
     AddTickPrerequisiteComponent(Rider->GetCharacterMovement());
     ConfigureTickOrder();
+    FinalizedPose = Rider->GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(
+        FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this, &UJapanSkateNetwork::ObserveDisplayedPose));
+}
+
+void UJapanSkateNetwork::EndPlay(const EEndPlayReason::Type Reason)
+{
+    if (Rider && FinalizedPose.IsValid()) Rider->GetMesh()->UnregisterOnBoneTransformsFinalizedDelegate(FinalizedPose);
+    Super::EndPlay(Reason);
 }
 
 void UJapanSkateNetwork::ConfigureTickOrder()
@@ -69,7 +77,16 @@ void UJapanSkateNetwork::ObserveDisplayedPose()
     if (Expected.IsEmpty() || Expected.Num() != Displayed.Num()) return;
     ++ObservedPoseCount;
     for (int32 I = 0; I < Expected.Num(); ++I)
-        if (!Expected[I].Equals(Displayed[I], .001f)) return;
+        if (!Expected[I].Equals(Displayed[I], .001f))
+        {
+#if !UE_BUILD_SHIPPING
+            if (ObservedPoseCount - MatchingPoseCount <= 3)
+                UE_LOG(LogTemp, Display, TEXT("NETWORK displayed pose mismatch role=%d bone=%s expected=%s displayed=%s autonomous_only=%d"),
+                    int32(Rider->GetLocalRole()), *Rider->GetMesh()->GetBoneName(I).ToString(),
+                    *Expected[I].ToString(), *Displayed[I].ToString(), Rider->GetMesh()->bOnlyAllowAutonomousTickPose);
+#endif
+            return;
+        }
     ++MatchingPoseCount;
 }
 
@@ -84,7 +101,6 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
     Super::TickComponent(Dt, Type, Tick);
     if (!Rider) return;
     ConfigureTickOrder();
-    ObserveDisplayedPose();
     if (!Rider->IsLocallyControlled() && !Rider->GetSkate()->IsNetworkProxy() &&
         (Rider->GetLocalRole() == ROLE_SimulatedProxy || Rider->GetController()))
         Rider->GetSkate()->InitializeNetworkProxy(Rider);

@@ -13,6 +13,7 @@
 #include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "HAL/FileManager.h"
+#include "UnrealClient.h"
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
 
@@ -34,6 +35,7 @@ struct FScript
     uint32 HighestEpoch = 1, AcceptedFrames = 0, MaximumSavedMoves = 0, PeerFrames = 0, ReceivedPeerFrames = 0;
     bool SawPlayer = false, SawSkate = false, Finished = false, JumpReleased = false;
     bool SawHostTakeoff = false;
+    bool CapturedRide = false;
     bool PreparedTimeoutGuard = false, GuardBeforeTimeout = false, ClearedTimeoutHolds = false;
     double MovementHitchSeconds = 0., SkateHitchSeconds = 0., MovementHitchAt = 0., GuardEstablishedAt = -1.;
     double TimeoutDriveSeconds = 0.;
@@ -280,6 +282,11 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
     case 4:
         if (Player->GetNetworkActivity() != EJapanActivity::Skate) { Error = TEXT("Skate epoch ended unexpectedly during sustained ride"); break; }
         Script.SkateSeconds = Elapsed;
+        if (!Script.CapturedRide && Elapsed > 3. && FParse::Param(FCommandLine::Get(), TEXT("networkrender")))
+        {
+            FScreenshotRequest::RequestScreenshot(Folder / TEXT("skating.png"), false, false);
+            Script.CapturedRide = true;
+        }
         if (SkateHitchMs && Elapsed > 2. && Script.SkateHitchSeconds == 0.)
         {
             const double Began = FPlatformTime::Seconds();
