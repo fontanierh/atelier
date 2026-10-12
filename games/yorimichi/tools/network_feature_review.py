@@ -57,6 +57,9 @@ def feature_checks(folder, case):
     kind = 1 if case.startswith('switch-skate') else {'switch-bike': 2, 'switch-sail': 3, 'zeppelin': 4}.get(case, 0)
     for s in stages:
         phase = s['phase']
+        expected = 'Modori' if (case == 'zeppelin' and phase >= 2) or (case != 'equipment' and phase == 2) else 'Cairo'
+        expected_class = '/Script/Yorimichi.' + expected + 'Character'
+        host_identities = {r.get('player'): (r.get('rider'), r.get('pawn')) for r in s.get('host', {}).get('views', [])}
         for side in ('host', 'guest'):
             rows = s.get(side, {}).get('views', [])
             prefix = f'feature_{phase}_{side}_'
@@ -69,6 +72,9 @@ def feature_checks(folder, case):
             checks[prefix+'health'] = all(r.get('health') == 73 and r.get('hits') == 2 for r in rows)
             checks[prefix+'equipment_attachment'] = all(r.get('ready') is True and r.get('attachment') is True for r in rows)
             checks[prefix+'pawn_class'] = all(isinstance(r.get('pawn'), str) and bool(r['pawn']) for r in rows)
+            checks[prefix+'rider'] = all(r.get('rider') == expected for r in rows)
+            checks[prefix+'rider_class'] = all(r.get('pawn') == expected_class for r in rows)
+            checks[prefix+'observer_identity'] = all((r.get('rider'), r.get('pawn')) == host_identities.get(r.get('player')) for r in rows)
             if case == 'equipment':
                 checks[prefix+'prediction_roles'] = all(r.get('local_role') in (1, 2, 3) and
                                                         r.get('predicts_moves') is (r.get('local_role') in (2, 3)) for r in rows)
@@ -105,8 +111,6 @@ def feature_checks(folder, case):
                                                          type(distance) in (int, float) and 0 <= distance <= 1500)
                 activity = kind if phase not in (0, last) else 0
                 checks[prefix+'activity'] = all(r.get('activity') == activity for r in rows)
-                expected = 'Modori' if (phase >= 2 and case == 'zeppelin') or phase == 2 else 'Cairo'
-                checks[prefix+'rider'] = all(r.get('rider') == expected for r in rows)
                 if case.startswith('switch-skate') and phase in (1, 2, 3):
                     remote = next((r for r in rows if r.get('local') is False), {})
                     observed, matching = (remote.get(k) for k in ('observed_pose_frames', 'matching_pose_frames'))

@@ -15,7 +15,7 @@ def receipt(tmp_path):
     stages = []
     for phase in range(5):
         rider = 'Modori' if phase == 2 else 'Cairo'
-        views = [dict(player=i, rider=rider, pawn=rider+'Character', ready=True, local=local,
+        views = [dict(player=i, rider=rider, pawn='/Script/Yorimichi.'+rider+'Character', ready=True, local=local,
                       health=73, hits=2, attachment=True, activity=2 if phase in (1, 2, 3) else 0,
                       epoch=phase+1) for i, local in (('host', True), ('guest', False))]
         exit_input = dict(bike_exit_sent=True, bike_exit_grounded=True, bike_exit_speed=0,
@@ -34,7 +34,7 @@ def test_two_observers_see_same_players_health_and_replacement(receipt):
 def test_return_to_cairo_requires_original_pawn_class(receipt, phase):
     path = receipt / 'features-result.json'
     value = json.loads(path.read_text())
-    value['stages'][phase]['guest']['views'][1]['pawn'] = 'ModoriCharacter'
+    value['stages'][phase]['guest']['views'][1]['pawn'] = '/Script/Yorimichi.ModoriCharacter'
     path.write_text(json.dumps(value))
     assert not all(review.feature_checks(receipt, 'switch-bike').values())
 
@@ -57,6 +57,30 @@ def test_replacement_requires_observed_pawn_class(receipt, pawn):
     assert not all(review.feature_checks(receipt, 'switch-bike').values())
 
 
+@pytest.mark.parametrize('sides', [('host', 'guest'), ('host',), ('guest',)])
+def test_replacement_class_matches_expected_rider_on_both_observers(receipt, sides):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for side in sides:
+        rows = value['stages'][2][side]['views']
+        for row in rows if len(sides) == 2 else rows[:1]:
+            row['pawn'] = '/Script/Yorimichi.NoxCharacter'
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+def test_agreed_wrong_cairo_class_cannot_define_the_expected_return(receipt):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                if row['rider'] == 'Cairo':
+                    row['pawn'] = '/Script/Yorimichi.NoxCharacter'
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
 @pytest.fixture
 def zeppelin_receipt(receipt):
     path = receipt / 'features-result.json'
@@ -68,7 +92,7 @@ def zeppelin_receipt(receipt):
             stage[side].update(ship_stage=3 if mounted else 0, dock=0, destination=1, ship_z=1000)
             for index, row in enumerate(stage[side]['views']):
                 rider = 'Modori' if stage['phase'] >= 2 else 'Cairo'
-                row.update(rider=rider, pawn=rider+'Character', activity=4 if mounted else 0,
+                row.update(rider=rider, pawn='/Script/Yorimichi.'+rider+'Character', activity=4 if mounted else 0,
                            x=0, y=-55 if index == 0 else 55, z=1090)
     path.write_text(json.dumps(value))
     return receipt
@@ -174,7 +198,8 @@ def test_remote_equipment_does_not_run_gameplay_prediction(receipt, proxy_predic
         for side in ('host', 'guest'):
             for row in stage[side]['views']:
                 role = 3 if side == 'host' else 2 if row['local'] else 1
-                row.update(armed=stage['phase'] in (1, 2, 3), guard=True, guard_weight=1,
+                row.update(rider='Cairo', pawn='/Script/Yorimichi.CairoCharacter',
+                           armed=stage['phase'] in (1, 2, 3), guard=True, guard_weight=1,
                            checkpoints=4, local_role=role, predicts_moves=role in (2, 3))
                 if role == 1: row['predicts_moves'] = proxy_predicts
     path.write_text(json.dumps(value))
@@ -186,7 +211,7 @@ def test_remote_equipment_does_not_run_gameplay_prediction(receipt, proxy_predic
     lambda r: r['stages'].pop(2),
     lambda r: r['stages'][2]['guest']['views'][1].update(health=100),
     lambda r: r['stages'][2]['guest']['views'][1].update(player='fresh-id'),
-    lambda r: r['stages'][2]['guest']['views'][1].update(pawn='CairoCharacter'),
+    lambda r: r['stages'][2]['guest']['views'][1].update(pawn='/Script/Yorimichi.CairoCharacter'),
     lambda r: r['stages'][2]['guest']['views'][1].update(epoch=2),
     lambda r: r['stages'][2]['guest']['views'][1].update(activity=0),
     lambda r: r['stages'][2]['guest']['views'][1].update(attachment=False),
