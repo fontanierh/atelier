@@ -11,6 +11,7 @@
 #include <cfenv>
 #include "Engine/Engine.h"
 #include "SkateRider.h"
+#include "SkinMorphOffsets.h"
 #include "SkateSettings.h"
 #include "SkateMotionAdapter.h"
 #include "SkateRuntimeAdapter.h"
@@ -751,9 +752,12 @@ class FSkateRuntime
 public:
     // Bind-space samples from the actual rendered rider. Kept only while this mesh is in use.
     struct Influence { int32 Bone; FVector Position; float Weight; };
-    struct Vertex { TArray<Influence,TInlineAllocator<4>> Influences; };
+    struct Vertex { int32 Index=INDEX_NONE; TArray<Influence,TInlineAllocator<4>> Influences; };
     TWeakObjectPtr<USkeletalMesh> ContactMesh;
     TArray<Vertex> ContactVertices;
+    // The rider's pose-driven morphs (ISkateRider::GetSkatePoseMorphs) as pre-skin offsets of those vertices.
+    FSkinMorphOffsets ContactMorphs;
+    FString ContactMorphError;
     // Skin samples (a bone and a point in its bind space) of each forearm's hand end with its hand, and of each foot,
     // and the bodies of this rider's pelvis, spine, chest and thighs (from its physics asset), for RetargetRiderPose.
     struct FSkinPoint { int32 Bone; FVector Local; };
