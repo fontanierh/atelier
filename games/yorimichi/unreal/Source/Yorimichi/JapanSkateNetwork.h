@@ -39,6 +39,8 @@ private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
     void ConfigureTickOrder();
     void ObserveDisplayedPose();
+    void PreparePose();
+    uint64 PreparedFrame = MAX_uint64;
     FDelegateHandle FinalizedPose;
     bool bTickRoleKnown = false, bCaptureTick = false;
     uint32 ObservedPoseCount = 0, MatchingPoseCount = 0;

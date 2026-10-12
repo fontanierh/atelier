@@ -36,7 +36,8 @@ void FAnimNode_SkateRider::PreUpdate(const UAnimInstance* InAnimInstance)
 {
     if (!Skate.IsValid())
         if (const AActor* Owner = InAnimInstance ? InAnimInstance->GetOwningActor() : nullptr) Skate = Owner->FindComponentByClass<USkateComponent>();
-    const USkateComponent* Component = Skate.Get();
+    USkateComponent* Component = Skate.Get();
+    if (Component && Component->IsNetworkProxy()) Component->PrepareNetworkPose.ExecuteIfBound();
     if (Component && !Component->GetRiderPose().IsEmpty()) Pose = Component->GetRiderPose();
     else Pose.Reset();
     if (Component) { BlendSerial = Component->GetPoseBlendSerial(); BlendTime = Component->GetPoseBlendTime(); }

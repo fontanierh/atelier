@@ -32,6 +32,7 @@ struct FSkateContinuation
 #include "SkateRails.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/HitResult.h"
@@ -362,6 +363,14 @@ TSharedPtr<FSkateContinuation> USkateComponent::DetachRide()
 bool USkateComponent::ContinueRide(TSharedPtr<FSkateContinuation> State)
 {
     if (!State || !State->Simulation || !State->Shown || !Rider || !bAvailable || bNetworkProxy) return false;
+    // A riding capsule is shorter than the standing body. Anchor the new body
+    // directly to the retained ride root before GetOnBoard measures its lift,
+    // rather than deriving feet from the old shortened capsule.
+    const float StandingHalf = State->Source.Get() == this ?
+        State->SavedHalf * Rider->GetActorScale3D().Z : Rider->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    const FTransform Root = State->Shown->Root;
+    Rider->SetActorLocationAndRotation(Root.GetLocation() + FVector(0, 0, StandingHalf), Root.GetRotation(),
+        false, nullptr, ETeleportType::TeleportPhysics);
     PendingContinuation = State;
     if (!GetOnBoard(State->Position, State->Rotation, State->Velocity, 0.f)) { PendingContinuation.Reset(); return false; }
     if (State->Source.Get() == this)

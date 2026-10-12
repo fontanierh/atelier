@@ -37,12 +37,14 @@ void UJapanSkateNetwork::BeginPlay()
     if (!Rider || Rider->IsNpc() || !JapanNetwork::IsOnline(GetWorld())) { SetComponentTickEnabled(false); return; }
     AddTickPrerequisiteComponent(Rider->GetCharacterMovement());
     ConfigureTickOrder();
+    Rider->GetSkate()->PrepareNetworkPose.BindUObject(this, &UJapanSkateNetwork::PreparePose);
     FinalizedPose = Rider->GetMesh()->RegisterOnBoneTransformsFinalizedDelegate(
         FOnBoneTransformsFinalizedMultiCast::FDelegate::CreateUObject(this, &UJapanSkateNetwork::ObserveDisplayedPose));
 }
 
 void UJapanSkateNetwork::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (Rider) Rider->GetSkate()->PrepareNetworkPose.Unbind();
     if (Rider && FinalizedPose.IsValid()) Rider->GetMesh()->UnregisterOnBoneTransformsFinalizedDelegate(FinalizedPose);
     Super::EndPlay(Reason);
 }
@@ -132,7 +134,14 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
         return;
     }
     if (Rider->IsLocallyControlled()) Capture();
-    else Show(Dt);
+    else PreparePose();
+}
+
+void UJapanSkateNetwork::PreparePose()
+{
+    if (!Rider || Rider->IsLocallyControlled() || !Rider->GetSkate()->IsNetworkProxy() || PreparedFrame == GFrameCounter) return;
+    PreparedFrame = GFrameCounter;
+    Show(GetWorld()->GetDeltaSeconds());
 }
 
 void UJapanSkateNetwork::Capture()

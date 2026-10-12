@@ -41,3 +41,19 @@ def test_false_success_receipt_is_rejected(receipt, edit):
     path = receipt / 'features-result.json'
     value = json.loads(path.read_text()); edit(value); path.write_text(json.dumps(value))
     assert not all(review.feature_checks(receipt, 'switch-bike').values())
+
+
+@pytest.mark.parametrize('height', [88, 140, None])
+def test_skate_replacement_height_uses_retained_root(receipt, height):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['case'] = 'switch-skate'
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                row.update(activity=1 if stage['phase'] in (1, 2, 3) else 0,
+                           simulation_tick=200, continued_at_tick=100, body_lift=88,
+                           standing_half=88, ride_root_z=10, z=98)
+    value['stages'][2]['guest']['views'][1].update(body_lift=height)
+    path.write_text(json.dumps(value))
+    assert all(review.feature_checks(receipt, 'switch-skate').values()) is (height == 88)

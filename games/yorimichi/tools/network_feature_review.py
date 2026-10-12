@@ -47,6 +47,11 @@ def feature_checks(folder, case):
                             checks[prefix+'air_continuation'] = s[side].get('requested_in_air') is True and owner.get('continued_mode') == 2
                         if case == 'switch-skate-bail':
                             checks[prefix+'bail_recovered_before_swap'] = s[side].get('requested_in_bail') is True and owner.get('continued_mode') == 1
+                if case.startswith('switch-skate') and phase in (2, 3):
+                    owner = next((r for r in rows if r.get('local') is True), {})
+                    lift, root, z, half = (owner.get(k) for k in ('body_lift', 'ride_root_z', 'z', 'standing_half'))
+                    checks[prefix+'replacement_height'] = (all(isinstance(v, (int, float)) for v in (lift, root, z, half)) and
+                                                            abs(lift-half) < 1 and abs(z-root-lift) < 1)
                 for r in rows:
                     key = (side, r.get('player'))
                     old = epochs.get(key, 0)

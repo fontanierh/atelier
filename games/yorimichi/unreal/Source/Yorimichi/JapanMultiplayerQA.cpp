@@ -93,6 +93,9 @@ struct FProbe
             Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
             Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));
             Row->SetNumberField(TEXT("continued_mode"), uint8(P->GetSkate()->GetContinuedMode()));
+            Row->SetNumberField(TEXT("ride_root_z"), P->GetSkate()->GetRideRoot().GetLocation().Z);
+            Row->SetNumberField(TEXT("body_lift"), P->GetSkate()->GetBodyLift());
+            Row->SetNumberField(TEXT("standing_half"), P->GetClass()->GetDefaultObject<AWandererCharacter>()->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
             Row->SetNumberField(TEXT("x"), P->GetActorLocation().X); Row->SetNumberField(TEXT("y"), P->GetActorLocation().Y); Row->SetNumberField(TEXT("z"), P->GetActorLocation().Z);
             Views.Add(MakeShared<FJsonValueObject>(Row));
         }

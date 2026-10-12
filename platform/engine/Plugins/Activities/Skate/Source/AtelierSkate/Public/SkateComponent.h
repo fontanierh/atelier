@@ -100,6 +100,9 @@ public:
     void PhysSkate(float Dt);
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     const TArray<FTransform>& GetRiderPose() const { return RiderPose; }
+    /** Prepare a remote pose on the game thread immediately before the animation
+     * node copies it. Component ticks alone can follow the character's pose tick. */
+    FSimpleDelegate PrepareNetworkPose;
     /** The switches between the skate pose and the character's own that should be blended (FAnimNode_SkateRider):
      *  the count changes at each one, and the blend takes GetPoseBlendTime seconds (0: cut). */
     uint32 GetPoseBlendSerial() const { return PoseBlendSerial; }
@@ -124,6 +127,8 @@ public:
     uint64 GetSimulationTick() const;
     uint64 GetContinuedAtTick() const { return ContinuedAtTick; }
     ESkateMode GetContinuedMode() const { return ContinuedMode; }
+    float GetBodyLift() const { return BodyLift; }
+    FTransform GetRideRoot() const { return RideRoot(); }
 
     uint32 GetSerial() const { return Serial; }
     FTransform GetDeckWorld() const;
