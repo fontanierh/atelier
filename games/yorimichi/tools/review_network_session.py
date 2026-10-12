@@ -354,6 +354,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                 if render_view == ('host' if role == 'server' else 'guest'):
                     command.remove('-nullrhi')
                     command += ['-windowed', '-ResX=960', '-ResY=540', '-ForceRes', '-networkrender']
+                    # A rendered observer shares the 10 GiB aggregate ceiling
+                    # with its peer. Bound streamed texture residency for this
+                    # QA process; geometry, animation and lighting stay intact.
+                    command += ['-DPCVars=r.Streaming.PoolSize=128,r.Streaming.MipBias=2,r.Streaming.UsePerTextureBias=1']
                 if feature_case:
                     command += ['-networkfeatures', '-networkfeaturecase=' + feature_case]
                 command.extend([f'-PktLag={lag_ms}', f'-PktLagVariance={variance_ms}', f'-PktLoss={loss_percent}'])
@@ -482,7 +486,7 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                       scope=('Same-machine Tailscale listener; ' if tailnet else 'Loopback listener; ') +
                             'NullRHI editor smoke. Packaged, rendered and two-machine acceptance remain separate')
         if render_view:
-            report['scope'] = f'Same-machine pair; {render_view} rendered at 960x540, peer NullRHI. Packaged and two-machine acceptance remain separate.'
+            report['scope'] = f'Same-machine pair; {render_view} rendered at 960x540 with a 128 MiB streamed texture pool and mip bias 2, peer NullRHI. Packaged and two-machine acceptance remain separate.'
         if feature_case:
             report['feature_case'] = feature_case
         if app:
