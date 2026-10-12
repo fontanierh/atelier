@@ -310,7 +310,7 @@ void AJapanWorld::Load()
             if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
             const bool bGrass = Key.StartsWith(TEXT("Grass"));
             const bool bBush = Key.StartsWith(TEXT("Bush"));
-            const bool bTree = Key.StartsWith(TEXT("Tree")) || Key.StartsWith(TEXT("HD_NorthTree"));
+            const bool bTree = Key.StartsWith(TEXT("Tree"));
             const bool bLitter = Key == TEXT("Litter");
             TArray<FTransform> Near, Distant;
             Near.Reserve(Pair.Value->AsArray().Num());

@@ -39,7 +39,7 @@ namespace JapanSeeThrough
             return Mesh && Mesh->GetNumTexCoords(0) >= 5 ? FadePieces : FadeNearOnly;
         // Thin things, one instance each: the tree house's and the city's props, trees and bushes, poles, stone
         // lanterns, the torii.
-        if (Key.StartsWith(TEXT("TH_P_")) || Key.StartsWith(TEXT("HD_P_")) || Key.StartsWith(TEXT("Tree")) || Key.StartsWith(TEXT("HD_NorthTree"))
+        if (Key.StartsWith(TEXT("TH_P_")) || Key.StartsWith(TEXT("HD_P_")) || Key.StartsWith(TEXT("Tree"))
             || Key == TEXT("HD_ArcadeTree") || Key.StartsWith(TEXT("HD_PlazaTree")) || Key.StartsWith(TEXT("Bush"))
             || Key == TEXT("Pole") || Key == TEXT("Pole_Lamp") || Key == TEXT("Lantern") || Key == TEXT("Torii"))
             return FadeInstances;

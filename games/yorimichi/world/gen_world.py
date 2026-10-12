@@ -343,8 +343,7 @@ integrate_park_trail(world, H)
 # The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
 from megapark.forest import clear_far_forest
 clear_far_forest(world)
-from forest_names import replace_legacy, northern_ecotone
-replace_legacy(inst)
+from forest.ecotone import northern_ecotone
 northern_ecotone(inst)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling

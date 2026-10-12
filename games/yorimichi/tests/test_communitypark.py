@@ -154,7 +154,7 @@ class PlacementTests(unittest.TestCase):
 class OptionalSourceTests(unittest.TestCase):
     def test_without_the_private_source_hidamari_is_unchanged(self):
         def base(x, y): return np.full(np.broadcast(x, y).shape, 40.)
-        trees = {'Tree_Maple_A': [[1280., 560., 40., 0., 1.]], 'HD_NorthTreeGold': [[1300., 450., 41., 0., 1.]]}
+        trees = {'Tree_Maple_A': [[1280., 560., 40., 0., 1.]], 'Tree_Forest_Ginkgo': [[1300., 450., 41., 0., 1.]]}
         before = {name: [list(row) for row in rows] for name, rows in trees.items()}
         with patch('communitypark.layout.available', return_value=False):
             x, y = np.array([1240., 1280., 1300.]), np.array([380., 450., 560.])

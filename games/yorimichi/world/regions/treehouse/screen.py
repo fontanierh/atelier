@@ -27,7 +27,7 @@ SCREEN = dict(
     clear=7.5,                                  # off every walk: a cedar's crown is solid down to head height
     gap=2.6, spacing=3.4,                       # from the trunks already there, and between the new trees
     replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A',       # or in the place of one of these
-             'Tree_Maple_lo', 'Tree_Ginkgo_lo', 'Tree_Broad_lo'),
+             'Tree_Maple_A', 'Tree_Ginkgo', 'Tree_Broad_A'),
     grid=1.5, reach=80., away=22.,              # candidate spots: within `reach` of an eye, `away` from every place
     most=36, least=.01, passes=3,               # at most this many trees; stop when the next hides less than this
                                                 # (in whole towers: 1 is everything one spot saw)

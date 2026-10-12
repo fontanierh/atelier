@@ -42,7 +42,7 @@ void ABelmonteRegion::Clear(const TSharedPtr<FJsonObject>& WorldData, const FStr
     for (auto& Pair : (*Instances)->Values)
     {
         const FString Key(Pair.Key);
-        if (!Key.StartsWith(TEXT("Tree")) && !Key.StartsWith(TEXT("HD_NorthTree"))
+        if (!Key.StartsWith(TEXT("Tree"))
             && !Key.StartsWith(TEXT("Bush")) && !Key.StartsWith(TEXT("Grass"))) continue;
         TArray<TSharedPtr<FJsonValue>> Kept;
         for (const auto& Item : Pair.Value->AsArray())

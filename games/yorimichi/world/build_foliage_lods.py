@@ -48,7 +48,7 @@ def main():
         # 35% screen size. Keep their seed, atlas and crown proportions at every
         # level, with an extra intermediate step before the cheapest far mesh.
         roadside = generate in (A.tree_broad,A.tree_maple,A.tree_ginkgo)
-        sizes = [1.,.22,.09,.035] if roadside else ([1.,.07,.025] if name.endswith('_lo') else [1.,.08,.025])
+        sizes = [1.,.22,.09,.035] if roadside else [1.,.08,.025]
         strides = (3,9,27) if roadside else (3,8)
         report[name] = {'triangles':[sum(len(p.vertices)-2 for p in base.data.polygons)],
                         'screen_sizes':sizes}

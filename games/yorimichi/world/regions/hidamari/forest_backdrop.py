@@ -4,6 +4,8 @@ Only appends instances. Existing terrain, mountain, buildings and paths are
 unchanged. Dedicated opaque low-detail trees use the existing distant-tree gate.
 """
 import math
+from forest.specs import MODEL_BY_KIND, KIND_BY_MODEL
+
 import numpy as np
 from hidamari import mountains
 from megapark import trail as park_trail
@@ -67,14 +69,14 @@ def append(instances,buildings,height,backdrop_grid,terrain_axes,north_height,ro
     # Leaf-based town trees form an irregular, human-scale transition. The
     # mountain path gets the same detailed margin; opaque crowns stay behind it.
     leafy=((d<70+20*np.sin(x*.019+y*.013))&(x<1450)&(y<700))|((mountains.trail_distance(x,y)<45)&(y<1300))
-    names=np.char.add('HD_NorthTreeBackdrop',kind)
+    names=np.array([MODEL_BY_KIND[k] for k in kind])
     names[leafy]=np.where(rng.random(np.count_nonzero(leafy))<.38,'Tree_Ginkgo','Tree_Maple_A')
     scale[leafy]=rng.uniform(.70,1.30,np.count_nonzero(leafy))
     # Preserve the existing forest and skip new crowns already covered by it.
     # This saves overdraw at the join without thinning the newly covered hills.
     bins={}
     for old_name,points in instances.items():
-        if not old_name.startswith('HD_NorthTree'):continue
+        if not old_name.startswith('Tree_Forest_'):continue
         for ox,oy,_,_,os in points:
             bins.setdefault((math.floor(ox/12),math.floor(oy/12)),[]).append((ox,oy,os))
     unique=np.ones(len(x),dtype=bool)

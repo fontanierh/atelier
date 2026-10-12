@@ -58,7 +58,6 @@ def materials():
     mat("Litter", texture="T_litter.png", alpha=True)
     mat("Flower", texture="T_flower.png", alpha=True)
     mat("LeafOchreSmall", texture="T_leaf_ochre_small.png", alpha=True)
-    mat("LeafMapleLo", texture="T_leaf_maple_lo.png", alpha=True); mat("LeafGinkgoLo", texture="T_leaf_ginkgo_lo.png", alpha=True); mat("LeafBroadLo", texture="T_leaf_broad_lo.png", alpha=True)
     mat("RoofTile", (0.32, 0.34, 0.38), texture="T_rooftile.jpg"); mat("FarForest", (0.35, 0.45, 0.22), texture="T_farforest.jpg")
     mat("Rock", (0.48, 0.45, 0.40)); mat("Lattice", (0.16, 0.12, 0.09)); mat("Moss", (0.36, 0.44, 0.20))
     mat("Grass", texture="T_grass.png", alpha=True)

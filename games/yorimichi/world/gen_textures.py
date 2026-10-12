@@ -191,17 +191,7 @@ def small_leaf_atlas(name, kind, palette, seed, per_cell=(3, 6), size=(110, 175)
     save(name, Image.fromarray(np.dstack([np.clip(rgb, 0, 255).astype(np.uint8), (a[..., 0] * 255).astype(np.uint8)]), "RGBA"))
 
 
-def autumn_lo():
-    maple = [((0.82, 0.26, 0.10), (0.96, 0.52, 0.18), (0.50, 0.10, 0.06)), ((0.88, 0.40, 0.12), (0.98, 0.64, 0.22), (0.56, 0.18, 0.07)), ((0.80, 0.34, 0.10), (0.94, 0.56, 0.20), (0.48, 0.14, 0.06))]
-    atlas("T_leaf_maple_lo.png", maple, 71, stamps=300, size=(28, 58), blob_r=0.40)
-    ginkgo = [((0.90, 0.76, 0.22), (0.98, 0.90, 0.45), (0.62, 0.48, 0.12))]
-    atlas("T_leaf_ginkgo_lo.png", ginkgo, 72, stamps=300, size=(26, 54), blob_r=0.40)
-    broad = [((0.50, 0.58, 0.24), (0.76, 0.74, 0.36), (0.26, 0.34, 0.14)), ((0.62, 0.56, 0.22), (0.86, 0.78, 0.36), (0.32, 0.30, 0.12))]
-    atlas("T_leaf_broad_lo.png", broad, 73, stamps=300, size=(28, 58), blob_r=0.40)
-
-
 def autumn_leaves():
-    autumn_lo()
     small_leaf_atlas("T_leaf_maple.png", "maple", [(0.82, 0.26, 0.12), (0.88, 0.45, 0.12), (0.72, 0.16, 0.10), (0.92, 0.60, 0.16), (0.86, 0.34, 0.10)], 41, per_cell=(7, 12), size=(70, 120))
     small_leaf_atlas("T_leaf_ginkgo.png", "ginkgo", [(0.90, 0.78, 0.30), (0.84, 0.70, 0.24), (0.94, 0.86, 0.44), (0.78, 0.64, 0.22)], 42, per_cell=(7, 12), size=(65, 105))
     small_leaf_atlas("T_leaf_ochre_small.png", "oval", [(0.72, 0.60, 0.26), (0.80, 0.70, 0.34), (0.62, 0.50, 0.20), (0.86, 0.76, 0.40), (0.70, 0.56, 0.22)], 46, per_cell=(9, 14), size=(60, 100))

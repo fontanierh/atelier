@@ -6,6 +6,8 @@ from pathlib import Path
 from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 from communitypark import layout as community_park
+from forest.specs import MODEL_BY_KIND, KIND_BY_MODEL
+
 import numpy as np
 ROOT=yori.REGIONS
 OUT=yori.OUT/'hidamari'
@@ -384,14 +386,14 @@ def generate():
         patch=math.sin(x*.009+math.sin(y*.006)*1.8)+.7*math.cos(y*.014-x*.003)
         kind=('Pine' if patch<-.5 else 'Rust' if patch<.45 else 'Gold')
         if z>160 and mountains.noise(x,y,180.,76)<.25:kind='Pine'
-        name='HD_NorthTree'+kind
+        name=MODEL_BY_KIND[kind]
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
         put(name,x,y,z-.3,yaw=r.uniform(0,360),scale=r.uniform(.70,1.15))
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
-    for name in ('HD_NorthTreeGold','HD_NorthTreeRust','HD_NorthTreePine'):
+    for name in ('Tree_Forest_Ginkgo','Tree_Forest_Maple','Tree_Forest_Pine'):
         points=np.asarray(inst.get(name,[]),float)
         if not len(points):continue
         distance=trail_distance(points[:,0],points[:,1])
@@ -503,11 +505,11 @@ def generate():
     # Check the complete generated scatter, including street trees. Reserve
     # crown/awning clearance against each rotated shop, not only trunk centres.
     for name,placements in inst.items():
-        if not (name.startswith(('Tree','HD_NorthTree')) or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
+        if not (name.startswith(('Tree')) or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
         kept=[]
         for item in placements:
             x,y,_,_,scale=item
-            margin=(5.5 if name.startswith(('Tree','HD_NorthTree')) else 1.4)*scale+.7
+            margin=(5.5 if name.startswith(('Tree')) else 1.4)*scale+.7
             blocked=False
             for b in buildings:
                 a=math.radians(b['yaw']);dx=x-b['position'][0];dy=y-b['position'][1]
@@ -541,8 +543,7 @@ def generate():
     station_yard.place(put,inst,height,buildings)
     community_park.clear(inst)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
-    from forest_names import replace_legacy, northern_ecotone
-    replace_legacy(inst)
+    from forest.ecotone import northern_ecotone
     northern_ecotone(inst)
     return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 

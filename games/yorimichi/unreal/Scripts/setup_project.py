@@ -369,7 +369,6 @@ def build_materials(T):
     MI["LeafMaple"] = instance("MI_LeafMaple", fol, T["T_leaf_maple"]); MI["LeafGinkgo"] = instance("MI_LeafGinkgo", fol, T["T_leaf_ginkgo"])
     MI["LeafSmall"] = instance("MI_LeafSmall", fol, T["T_leaf_small"]); MI["Litter"] = instance("MI_Litter", fol, T["T_litter"])
     MI["Flower"] = instance("MI_Flower", fol, T["T_flower"]); MI["LeafOchreSmall"] = instance("MI_LeafOchreSmall", fol, T["T_leaf_ochre_small"])
-    MI["LeafMapleLo"] = instance("MI_LeafMapleLo", fol, T["T_leaf_maple_lo"]); MI["LeafGinkgoLo"] = instance("MI_LeafGinkgoLo", fol, T["T_leaf_ginkgo_lo"]); MI["LeafBroadLo"] = instance("MI_LeafBroadLo", fol, T["T_leaf_broad_lo"])
     MI["RoofTile"] = instance("MI_RoofTile", lit, T["T_rooftile"], (0.40, 0.42, 0.48))
     from forest_ground import material as forest_ground_material
     MI["FarForest"] = instance("MI_FarForest", forest_ground_material())

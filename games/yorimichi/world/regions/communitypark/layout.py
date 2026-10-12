@@ -172,13 +172,11 @@ def near_boxes():
 def clear(instances):
     """Clear the new destination and approach, and use detailed trees at its edge."""
     if not available(): return
-    families = {'HD_NorthTreeGold': 'Tree_Ginkgo', 'HD_NorthTreeRust': 'Tree_Maple_A',
-                'HD_NorthTreeGreen': 'Tree_Maple_B', 'HD_NorthTreePine': 'Tree_Pine_B',
-                'HD_NorthTreeBackdropGold': 'Tree_Ginkgo', 'HD_NorthTreeBackdropRust': 'Tree_Maple_A',
-                'HD_NorthTreeBackdropGreen': 'Tree_Maple_B', 'HD_NorthTreeBackdropPine': 'Tree_Pine_B'}
+    families = {'Tree_Forest_Ginkgo': 'Tree_Ginkgo', 'Tree_Forest_Maple': 'Tree_Maple_A',
+                'Tree_Forest_Oak': 'Tree_Maple_B', 'Tree_Forest_Pine': 'Tree_Pine_B'}
     moved = {}
     for name, rows in list(instances.items()):
-        if not rows or not name.startswith(('Tree', 'HD_NorthTree', 'Bush', 'Grass', 'Rock', 'Litter')):
+        if not rows or not name.startswith(('Tree', 'Bush', 'Grass', 'Rock', 'Litter')):
             continue
         a = np.asarray(rows, float); x, y = a[:, 0], a[:, 1]
         distance = np.full(x.shape, np.inf)

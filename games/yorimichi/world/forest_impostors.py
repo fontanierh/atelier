@@ -21,7 +21,7 @@ def bake(obj, output, size=256):
     originals=list(obj.data.materials)
     slots=np.empty(len(obj.data.polygons),dtype=np.int32)
     obj.data.polygons.foreach_get('material_index',slots)
-    atlases={}
+    atlases={};views=[];crops=[]
     for mode in ('colour','normal'):
         scene.view_settings.view_transform='Standard' if mode=='colour' else 'Raw'
         replacements=[]
@@ -42,7 +42,16 @@ def bake(obj, output, size=256):
                 add=nodes.new('ShaderNodeVectorMath');add.operation='ADD';add.inputs[1].default_value=(.5,.5,.5)
                 links.new(geometry.outputs['Normal'],transform.inputs[0]);links.new(transform.outputs[0],multiply.inputs[0])
                 links.new(multiply.outputs[0],add.inputs[0]);links.new(add.outputs[0],emit.inputs['Color'])
-            elif texture:links.new(tex.outputs['Color'],emit.inputs['Color'])
+            elif texture:
+                attribute=nodes.new('ShaderNodeAttribute');attribute.attribute_name='Col'
+                channels=nodes.new('ShaderNodeSeparateColor');links.new(attribute.outputs['Color'],channels.inputs[0])
+                power=nodes.new('ShaderNodeMath');power.operation='POWER';power.inputs[1].default_value=1/2.4
+                gamma=nodes.new('ShaderNodeMath');gamma.operation='MULTIPLY_ADD';gamma.inputs[1].default_value=1.055;gamma.inputs[2].default_value=-.055
+                shade=nodes.new('ShaderNodeMath');shade.operation='MULTIPLY_ADD';shade.inputs[1].default_value=.5;shade.inputs[2].default_value=.5
+                multiply=nodes.new('ShaderNodeMixRGB');multiply.blend_type='MULTIPLY';multiply.inputs[0].default_value=1
+                links.new(channels.outputs['Green'],power.inputs[0]);links.new(power.outputs[0],gamma.inputs[0])
+                links.new(gamma.outputs[0],shade.inputs[0]);links.new(tex.outputs['Color'],multiply.inputs[1])
+                links.new(shade.outputs[0],multiply.inputs[2]);links.new(multiply.outputs[0],emit.inputs['Color'])
             else:
                 principled=next(n for n in original.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
                 emit.inputs['Color'].default_value=principled.inputs['Base Color'].default_value
@@ -61,7 +70,38 @@ def bake(obj, output, size=256):
             image=bpy.data.images.load(str(path))
             if mode=='normal':image.colorspace_settings.name='Non-Color'
             pixels=np.array(image.pixels[:],np.float32).reshape(size,size,4)
-            cells.append(pixels);bpy.data.images.remove(image)
+            bpy.data.images.remove(image)
+            if mode=='colour':
+                yy,xx=np.nonzero(pixels[:,:,3]>.005)
+                assert len(xx),(obj.name,view,'empty crown bake')
+                crop=(max(0,int(yy.min())-2),min(size,int(yy.max())+3),
+                      max(0,int(xx.min())-2),min(size,int(xx.max())+3))
+                crops.append(crop)
+                y0,y1,x0,x1=crop
+                rotation=camera.rotation_euler.to_matrix()
+                offset=rotation@Vector((((x0+x1)/2/size-.5)*scale,((y0+y1)/2/size-.5)*scale,0))
+                views.append(dict(centre=list(centre+offset),width=(x1-x0)/size*scale,height=(y1-y0)/size*scale))
+            y0,y1,x0,x1=crops[view]
+            pixels=pixels[y0:y1,x0:x1].copy()
+            # Extend edge colour into transparent texels before filtering; mask
+            # coverage remains untouched. Normal backgrounds remain neutral.
+            if mode=='normal':pixels[pixels[:,:,3]<.005,:3]=(.5,.5,1.)
+            else:
+                filled=pixels[:,:,3]>.005
+                for _ in range(4):
+                    total=np.zeros_like(pixels[:,:,:3]);weight=np.zeros_like(pixels[:,:,3])
+                    for dy,dx in ((-1,0),(1,0),(0,-1),(0,1)):
+                        valid=np.roll(filled,(dy,dx),(0,1))
+                        if dy>0:valid[:dy,:]=False
+                        if dy<0:valid[dy:,:]=False
+                        if dx>0:valid[:,:dx]=False
+                        if dx<0:valid[:,dx:]=False
+                        total+=np.roll(pixels[:,:,:3],(dy,dx),(0,1))*valid[:,:,None];weight+=valid
+                    extend=~filled&(weight>0)
+                    pixels[extend,:3]=total[extend]/weight[extend,None];filled|=extend
+            tile=bpy.data.images.new('ForestTile',x1-x0,y1-y0,alpha=True)
+            tile.colorspace_settings.name='Non-Color';tile.pixels[:]=pixels.ravel().tolist();tile.scale(size,size)
+            cells.append(np.array(tile.pixels[:],np.float32).reshape(size,size,4));bpy.data.images.remove(tile)
             print('FOREST BAKE',obj.name,mode,view+1,'/4',flush=True)
         # Blender's pixels are bottom-up; cell0 is the atlas's top-left.
         pixels=np.concatenate([np.concatenate(cells[2:4],1),np.concatenate(cells[:2],1)],0)
@@ -76,20 +116,22 @@ def bake(obj, output, size=256):
     obj.data.polygons.foreach_set('material_index',slots)
     bpy.data.objects.remove(camera,do_unlink=True)
     for other in scene.objects:other.hide_render=False
-    return dict(atlases=atlases,centre=list(centre),scale=scale,
+    return dict(atlases=atlases,centre=list(centre),scale=scale,views=views,
                 coverage=[float((cell[:,:,3]>.4).mean()) for cell in cells])
 
 
 def mesh(name, record, bark):
     import build_assets as A
     material=A.mat(name+'_Impostor')
-    result=A.Mesh(name+'_LOD3');centre=Vector(record['centre']);scale=record['scale']
+    result=A.Mesh(name+'_LOD3')
     for view in range(3):
         angle=view*math.tau/3
         normal=Vector((math.sin(angle),-math.cos(angle),0))
-        result.card(centre,(scale,scale),angle,0,material,view,[normal]*4,col=(0.,1.))
+        v=record['views'][view]
+        result.card(v['centre'],(v['width'],v['height']),angle,0,material,view,[normal]*4,col=(0.,1.))
     normal=Vector((0,0,1))
-    result.card(centre,(scale,scale),0,-90,material,3,[normal]*4,col=(0.,1.))
+    v=record['views'][3]
+    result.card(v['centre'],(v['width'],v['height']),0,-90,material,3,[normal]*4,col=(0.,1.))
     # A tiny real stem keeps the authored bark section and material contract.
     result.tube((0,0,0),(0,0,.25),.02,.02,bark,n=3)
     return result.build()
