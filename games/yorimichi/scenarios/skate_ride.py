@@ -1299,11 +1299,25 @@ def skin_check(on):
     qa.py(f"unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck {int(on)}')")
 
 
+MORPH_LAG = 1e-4  # the largest difference between a pose-driven morph's weight as rendered and as the skin measure saw it
+
+
+def unmeasured(row):
+    """Why a frame's skin was not measured as it renders, or None: an active morph without CPU deltas (skin_error=),
+    or pose-driven morphs rendered with weights other than those the measure evaluated (morph_lag= over MORPH_LAG),
+    so the contact would be measured on a different surface from the one drawn."""
+    if 'skin_error' in row:
+        return row['skin_error']
+    if float(row.get('morph_lag', 0)) > MORPH_LAG:
+        return f"morph_lag_{float(row['morph_lag']):.4f}"
+    return None
+
+
 def skin(rows):
     """The deepest the skin goes under the ground over rows (cm, skin=), the body carrying it, and how many frames
-    were measured and went deeper than SKIN_DEPTH. A frame whose skin could not be measured as it renders
-    (skin_error=: an active morph keeps no CPU deltas) fails the whole measure rather than drop out of it."""
-    errors = [r['skin_error'] for r in rows if 'skin_error' in r]
+    were measured and went deeper than SKIN_DEPTH. A frame whose skin was not measured as it renders (unmeasured)
+    fails the whole measure rather than drop out of it."""
+    errors = [e for e in map(unmeasured, rows) if e]
     if errors:
         return float('nan'), 'skin_error:' + errors[0], 0, len(errors)
     seen = [(float(r['skin']), r.get('skin_bone', '-')) for r in rows if 'skin' in r]
@@ -1313,8 +1327,8 @@ def skin(rows):
 
 def skin_groups(rows):
     """The deepest each group of bodies (SKIN_GROUPS) goes under the ground over rows (cm, skin_groups=); only
-    {'skin_error': inf} when a frame's skin could not be measured as it renders (skin=)."""
-    if any('skin_error' in r for r in rows):
+    {'skin_error': inf} when a frame's skin was not measured as it renders (unmeasured)."""
+    if any(map(unmeasured, rows)):
         return {'skin_error': float('inf')}
     worst = {}
     for r in rows:
