@@ -30,6 +30,7 @@
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
 #include "Hippodrome.h"
+#include "BelmonteRegion.h"
 #include "ZeppelinService.h"
 #include "SeeThrough.h"
 
@@ -298,6 +299,7 @@ void AJapanWorld::Load()
             const FVector A = ToUE(B[0]->AsNumber(), B[1]->AsNumber(), 0), C = ToUE(B[2]->AsNumber(), B[3]->AsNumber(), 0);
             NearTrees.Add(FBox2D(FVector2D(FMath::Min(A.X, C.X), FMath::Min(A.Y, C.Y)), FVector2D(FMath::Max(A.X, C.X), FMath::Max(A.Y, C.Y))));
         }
+    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("belmonte/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
@@ -558,6 +560,8 @@ void AJapanWorld::Load()
     InstallPark(CommunityParkPath, TEXT("community park"));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
+    const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
+    if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())

@@ -1,6 +1,1738 @@
 {
   "ownership": "Atelier's own asset library.",
   "files": {
+    "belmonte/meshes/SM_BM_AT_CafeChair.glb": {
+      "bytes": 42820,
+      "sha256": "457a4fd039ad6ab023401da464d8e1cfe680ce78f9dccc4ccbfdb09b7384c082"
+    },
+    "belmonte/meshes/SM_BM_AT_CafeChair_Collision.glb": {
+      "bytes": 2040,
+      "sha256": "7aad63497c57b319e9573208280e7a81e8803615baf5d6f3367e657ef15e7e02"
+    },
+    "belmonte/meshes/SM_BM_AT_CafeParasol.glb": {
+      "bytes": 32320,
+      "sha256": "44463e3a38cd2ba77e8f96f055023079bb749d8aec173558cc53ec060c0535d5"
+    },
+    "belmonte/meshes/SM_BM_AT_CafeParasol_Collision.glb": {
+      "bytes": 2644,
+      "sha256": "66fca11ad612e5a9edf0955de08940c8e63e1210e449728b63c240fb575f741c"
+    },
+    "belmonte/meshes/SM_BM_BC_GorgeStrata_0.glb": {
+      "bytes": 1074616,
+      "sha256": "cec469cd7ee6d8e867a79ef9832b125df97bb7f06c4705909054ceb9b5c42052"
+    },
+    "belmonte/meshes/SM_BM_BC_GorgeStrata_1.glb": {
+      "bytes": 703396,
+      "sha256": "56902e879675a6dad876eab87f7db27c55ae4014c7e42239b74e468b9e395135"
+    },
+    "belmonte/meshes/SM_BM_BC_GorgeStrata_2.glb": {
+      "bytes": 1026640,
+      "sha256": "32d38600251c276d04b2ddf2b284424f1dd2947a957e859404ce403af3bf4b10"
+    },
+    "belmonte/meshes/SM_BM_BC_Lake.glb": {
+      "bytes": 158876,
+      "sha256": "0a3a29d11877b5876c0e4c8ba67de135f4753a11f24b26205a788e7a42b7fbed"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_0.glb": {
+      "bytes": 188540,
+      "sha256": "957954087ffc6e4da6a614fd5998174ee574c1a81f734acffd43e04b63842daf"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_0_Collision.glb": {
+      "bytes": 4364,
+      "sha256": "ac5e99f86204089f48c2cf8ced6537b3c5277a6d4739696a1dd3addd0d881723"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_1.glb": {
+      "bytes": 162516,
+      "sha256": "34246ef30f4e7cd6a88d91ec50b3031ecba972da37bc4c450e440c6b7d85f85b"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_1_Collision.glb": {
+      "bytes": 4336,
+      "sha256": "8097785e5d648861bc7f1ad386856d147baab5d9476178d10537216d2127c52a"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_2.glb": {
+      "bytes": 226472,
+      "sha256": "62f6cf3a41a5adfd33bb5278f5c280b08968f956db90a736264cccaafe19af00"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_2_Collision.glb": {
+      "bytes": 5112,
+      "sha256": "bee15f948765682b66d72e208179dfef03941004723de7aeeaebcb01534259c3"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_3.glb": {
+      "bytes": 147800,
+      "sha256": "2e30d250077c239be2b64a28f6903cae17f38a39fa93cfafc7b11f5aa5ccc168"
+    },
+    "belmonte/meshes/SM_BM_BC_Mura_3_Collision.glb": {
+      "bytes": 3856,
+      "sha256": "0e89409143d6cc21f54c472d5fab69f4626aa44d9122e907c8be4859780f96dc"
+    },
+    "belmonte/meshes/SM_BM_BC_Passerella.glb": {
+      "bytes": 77764,
+      "sha256": "c351c7747a624521fd1f7f7cb8e7845cc270470d18f0e6c2a867c01f8883e289"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_0_2.glb": {
+      "bytes": 187104,
+      "sha256": "20442623ce5eef73598779226699b8839d0353de31846c75be7b4780a0204a69"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_0_3.glb": {
+      "bytes": 248364,
+      "sha256": "69a43867a1975edabb269f864fc01e8f77b7b4506eced25992b3464e055229af"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_0_4.glb": {
+      "bytes": 8256,
+      "sha256": "c530a47968f054a054f1b86995108d01963435c31a3ffcca290a71f2c9569892"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_1_1.glb": {
+      "bytes": 626516,
+      "sha256": "7b979c0e88de1eb11756b0bb0ba98f69a7d8130ce5711d16a216057f28a72dc9"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_1_2.glb": {
+      "bytes": 916588,
+      "sha256": "16b6084a6c4d2e755a87ff7afe42f84fa3260eba849236882c65c258df53371e"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_1_3.glb": {
+      "bytes": 960528,
+      "sha256": "c16a70cdfdc4662012de7f044276360ba34f2834b2d925c8cb398b2228c338dd"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_1_4.glb": {
+      "bytes": 77020,
+      "sha256": "8012e60bc39e2908fb06be0c31f3a04c1a9689e914af82c24b27a608ee5b38a5"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_2_0.glb": {
+      "bytes": 28388,
+      "sha256": "133525fcc4f8a0f1e19ef40417fc0639b048b493315f3d26bee84d9309c3e28a"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_2_1.glb": {
+      "bytes": 357668,
+      "sha256": "3ab574128189629e9a128693034676bfb2fcc6f043e1925375ed7d1bb3ef7cf6"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_2_2.glb": {
+      "bytes": 659144,
+      "sha256": "82e537db97962bbf9d6af914a39d124cdd2a9da1afc44078095ba2f849d40093"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_2_3.glb": {
+      "bytes": 834864,
+      "sha256": "77f0215545b287c1a3e749fbd96cf894fa9b1d352a9df3de89cd9e18fd4a10fe"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_2_4.glb": {
+      "bytes": 218564,
+      "sha256": "935614884a0e5bf629d0e503a0b30e2d013763ca3b79e07184cffb855fa1dfc9"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_3_2.glb": {
+      "bytes": 181688,
+      "sha256": "add9129765029194922d92f50585320b092122b6e32f6925926f07eb45505dd6"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_3_3.glb": {
+      "bytes": 260148,
+      "sha256": "2b3f23f2e5c08ba4dc5cf6697b25c85a9e0b9c0a2787dcbadb66027c302c0204"
+    },
+    "belmonte/meshes/SM_BM_BC_Pave_3_4.glb": {
+      "bytes": 48164,
+      "sha256": "706baac8d2e43cccc1ff488ffd157b9c0439fb054f24dcdc3f9251aed3372919"
+    },
+    "belmonte/meshes/SM_BM_BC_Piazza.glb": {
+      "bytes": 737836,
+      "sha256": "62d4ab5c60bf7dd4908f19fd7b7548f95624a80c4ec2bd08a6c3d8e8a2367624"
+    },
+    "belmonte/meshes/SM_BM_BC_Ponte.glb": {
+      "bytes": 167156,
+      "sha256": "65ad4cfbb3b53f420f4de503ff86e1873c50b718c9fcad3c6612ada5d0a202b1"
+    },
+    "belmonte/meshes/SM_BM_BC_QuayWall.glb": {
+      "bytes": 352244,
+      "sha256": "054fe448bc3dc494d6f72993a648d1b0630f7977e919b8ad652153d39e6092ab"
+    },
+    "belmonte/meshes/SM_BM_BC_Rock_A.glb": {
+      "bytes": 31620,
+      "sha256": "8d2a11efcc795666d5349ae6cff785dc6be464396482305318e4dc240b173daa"
+    },
+    "belmonte/meshes/SM_BM_BC_Rock_B.glb": {
+      "bytes": 35100,
+      "sha256": "3c8bafa4a635adba43f0f92b02965e4ed567ee7dec3d1218b4ac1d5f375ff972"
+    },
+    "belmonte/meshes/SM_BM_BC_Rock_C.glb": {
+      "bytes": 31492,
+      "sha256": "4cbb86cca49e127c2700ddbcbb9e097f16f7c8545c63991b35a224f95f57071e"
+    },
+    "belmonte/meshes/SM_BM_BC_WaterFoam.glb": {
+      "bytes": 77836,
+      "sha256": "2b805f90566530c003919ddb461f0529b7be2e08e1a1603eb4484efdc670a446"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_0.glb": {
+      "bytes": 34704,
+      "sha256": "69df1766d8a880c3de73bc83e9e46ce55083dfc5b568cccc888b5e69071aa16b"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_1.glb": {
+      "bytes": 28436,
+      "sha256": "e41af54bf083f7c6bdfe33f1ff005e5e37379c5abaf531e2dc0b96370ccd3374"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_2.glb": {
+      "bytes": 41024,
+      "sha256": "02d3b5da1d761edc54b03c938f91de0c29ce6ba26fe8cee9477ac30a91792a6e"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_3.glb": {
+      "bytes": 43432,
+      "sha256": "f8f5e5b95d07c78b50bc372195226aeae73dbe8dad4c8b086435a2ab49d216d5"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_4.glb": {
+      "bytes": 44224,
+      "sha256": "317fc1fad24b7fab235776ec460f1179737f2a7234b13afbef900b00ba64f890"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_5.glb": {
+      "bytes": 45376,
+      "sha256": "de542e279f36e9b865e486b2d1d6ae7c50ad770cd00eab242875eec28ff3212f"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_6.glb": {
+      "bytes": 46260,
+      "sha256": "3c135429cf3e2e7ee356dc5bcf62e89ecce6f9c48a9d5e4e512fd270b51b3a81"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_7.glb": {
+      "bytes": 11940,
+      "sha256": "bf7f595e12cfdc65ff2cd306c0ddce121f2187aed83851c1074e60d8b89bab39"
+    },
+    "belmonte/meshes/SM_BM_BC_Water_Ponte.glb": {
+      "bytes": 249800,
+      "sha256": "52bb8add8f375ede9b526024b4ec3ab0feebffaa10bd7d9bb4ff0572bed7b5e5"
+    },
+    "belmonte/meshes/SM_BM_BC_Waterfall.glb": {
+      "bytes": 9608,
+      "sha256": "7c6aabd38a8efe684936a3096469e8224b146b0fc4667f688985eac83bb74c34"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_0_2.glb": {
+      "bytes": 15808,
+      "sha256": "dc14a9e3ce7b3553afb7ba29667340d91e2b2fe94edd364e0926269a52f7ec7e"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_0_3.glb": {
+      "bytes": 55632,
+      "sha256": "6e230f8622fb07b0aedba62e78b962f8887035d5dbc68db428a4686a747dbf07"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_1_1.glb": {
+      "bytes": 252240,
+      "sha256": "5d00ed2da7270d47b4e4b81273dd32c36ba0cc0e978ddb358df10522739b619b"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_1_2.glb": {
+      "bytes": 331736,
+      "sha256": "2e4b3426791e4793127da7d0e5120576787ac1579537d41556383cad8f7efdef"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_1_3.glb": {
+      "bytes": 374664,
+      "sha256": "5dc02e796ead0aed1671a52337457c6f1619f5818bbcb94f8900b8df33446a86"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_1_4.glb": {
+      "bytes": 21532,
+      "sha256": "d403047f2a1d841a3f5ad7437b60289acdc7fe8b0cbf38fc722c5a79e2ead28a"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_2_1.glb": {
+      "bytes": 96796,
+      "sha256": "fceefb9c872350785be11c14698cb9e7496840953d397c0b68bb2ea49aa94f21"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_2_2.glb": {
+      "bytes": 78984,
+      "sha256": "7883623895753f11b93e5397287c58713f173d5d30cd1fd83391854cc5af1d93"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_2_3.glb": {
+      "bytes": 218460,
+      "sha256": "76cefd9feda7bcd17fc41e95abda775de8f53da3ab716c5ca3bd92ece3cc2b65"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_2_4.glb": {
+      "bytes": 80400,
+      "sha256": "6fb2f0cbb128926f008b073a3e257b9ffd45e32a73717616c8f877af8ea42632"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_3_2.glb": {
+      "bytes": 102584,
+      "sha256": "9864293c133ae91c793be8a73ff8c2056a1fb71b7dd0a8072ad5704811c187ce"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_3_3.glb": {
+      "bytes": 47992,
+      "sha256": "5891a34bc11c558c92e1226763ac08678db18cf831795acc3fe58e87e657c715"
+    },
+    "belmonte/meshes/SM_BM_BC_Works_3_4.glb": {
+      "bytes": 23460,
+      "sha256": "dc5cb6fe4f7f0d28f174835f6af97798cb34d9a3a0cc36753ba6b3a70ce5a6e1"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Accent.glb": {
+      "bytes": 336576,
+      "sha256": "aaf31c146521bf415761249c58fc083049d45f952ae9b3daac9f834d6e3fa533"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Grounds.glb": {
+      "bytes": 1158576,
+      "sha256": "a93de88ecf9cea3ce7282e13edb154e3f993db7fe67dd043782869e559891f15"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Stables.glb": {
+      "bytes": 946468,
+      "sha256": "f473b6fdce84b376b47b481eb1fa2fa1c5ab09b634c8934ff858c929f1579176"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Stables_Collision.glb": {
+      "bytes": 8880,
+      "sha256": "fce66689a4aaee0de5c648f1669760628e6ecbf141bfa5e3f60b5a42b46546f0"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Villa.glb": {
+      "bytes": 513532,
+      "sha256": "15871c495b31688610a961d128a57b9fa3a97f73abafd2b7ba4de08a2f38dca6"
+    },
+    "belmonte/meshes/SM_BM_BE_0_Villa_Collision.glb": {
+      "bytes": 3016,
+      "sha256": "538395957dbcd6591b660d40ed008db25c2246958f212a761290d8631f022702"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Accent.glb": {
+      "bytes": 327028,
+      "sha256": "beb4bac81647629cf8b226bfa1d9ce19947725313491ecd7d4d56b7f27299cbb"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Grounds.glb": {
+      "bytes": 855164,
+      "sha256": "2b6175552cca4beb94cbd1e187dc055660448dc47bdc77036ad08d604d644519"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Stables.glb": {
+      "bytes": 795308,
+      "sha256": "7011aee9bfe32ef3cb5611f8c8dd530d6d61f795126a0c3e01268a44ad0a7dc0"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Stables_Collision.glb": {
+      "bytes": 3984,
+      "sha256": "fcd5fcd7e6714869dbf5c80daa082a75fb698b4753f5c76f2963e9fa9242b873"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Villa.glb": {
+      "bytes": 360912,
+      "sha256": "c3e86afeb5772c718f1f3cea44c347186b5190ab3e805c3985e224c208aa4a99"
+    },
+    "belmonte/meshes/SM_BM_BE_1_Villa_Collision.glb": {
+      "bytes": 2776,
+      "sha256": "3e76b89cb9830239d7e942e658a4a050834ecfc7c7d12265b25f3067f7e9209e"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Accent.glb": {
+      "bytes": 270676,
+      "sha256": "ca3fb6d975e05d299d32afd49059f54114e749dc375fba2cc30837fae1c5d802"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Grounds.glb": {
+      "bytes": 639004,
+      "sha256": "0a1bc4743925285f08dc3beafea49500402302f20e16b192a7501acee745344e"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Stables.glb": {
+      "bytes": 543888,
+      "sha256": "4987b76f8d8e8e4bc9737f43a8a76548189136bebe54c6e765a21f322a268bb2"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Stables_Collision.glb": {
+      "bytes": 10708,
+      "sha256": "0fdc0f5b7e97faa91fb16f4e5f9bae025219d504fdf9eec71af573afee140bee"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Villa.glb": {
+      "bytes": 527932,
+      "sha256": "ac8f1de898f91bb34d2e24aadb38921064f26626c0461ee5a87595cd6c7f7f97"
+    },
+    "belmonte/meshes/SM_BM_BE_2_Villa_Collision.glb": {
+      "bytes": 5912,
+      "sha256": "dfce0de51143c01f8218ee24a50711cce87eebbc1edc128e68085f1615720095"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Accent.glb": {
+      "bytes": 307420,
+      "sha256": "a5f3030476a146e54c56d1c7cc58c81502fb3d9b1eef0d3d2dfbc570b50226dd"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Grounds.glb": {
+      "bytes": 881796,
+      "sha256": "eaa32f2359ba5dfc09ad62e38eb7894a931527e70431c7a986c4c76d78de48a2"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Stables.glb": {
+      "bytes": 878392,
+      "sha256": "3112199e72f4c1abefdadbcfcd45b561c3b63ba7aa8e38ed2feadbce867f07c7"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Stables_Collision.glb": {
+      "bytes": 12100,
+      "sha256": "d36967973cd783e1ab5672f09d4690f78611967dcb91d219d1e086e566cc1323"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Villa.glb": {
+      "bytes": 315220,
+      "sha256": "0679721eb7eef479184723885b722fdc10f25ace2c1e0c7ffe30841a33f749c4"
+    },
+    "belmonte/meshes/SM_BM_BE_3_Villa_Collision.glb": {
+      "bytes": 2992,
+      "sha256": "7c7ddb0d32827a8f4a73fbd00d57cf528e4090ccaa76a07f40e91f11d09aa8f7"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Accent.glb": {
+      "bytes": 752080,
+      "sha256": "c16863076f5a41828fea7d61f6fc8c53f6bbcadc055c58d93dc9021f92215199"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Grounds.glb": {
+      "bytes": 766632,
+      "sha256": "780a146f44b6ddcce69ee8b590fcd8e33d45d846f6b69449f6aa098790f95af7"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Stables.glb": {
+      "bytes": 1731368,
+      "sha256": "2610f298389c80d02ac264294747404818ed9bc8af04b6d1fa67d179c8593ba2"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Stables_Collision.glb": {
+      "bytes": 3476,
+      "sha256": "f501da7bcca3188b4fde97d591fc8e2a4954c703c2897d8d2440347597fa84a3"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Villa.glb": {
+      "bytes": 394728,
+      "sha256": "caae5f6ee626ab9bb6fc07fec756d5d3094f37f74d212caa8ccf654afa5b2a32"
+    },
+    "belmonte/meshes/SM_BM_BE_4_Villa_Collision.glb": {
+      "bytes": 2992,
+      "sha256": "2f33f1bf205a09fe48c855d8eace9df5223108760d96b0d12ecdc14cf1e4e419"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Accent.glb": {
+      "bytes": 485508,
+      "sha256": "994db78557fb4cf10b3f94fa10f920ee12cdd35e788732250cd9a2f40759d359"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Grounds.glb": {
+      "bytes": 812048,
+      "sha256": "24c4b66ea909a1992bb006c0084e71162d4fbca7342eb231133bad4d549cc3e8"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Stables.glb": {
+      "bytes": 473600,
+      "sha256": "9d9abf91b54bbcd714314879c64f48726b00489df19ebc0f2547a9200d70fb8e"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Stables_Collision.glb": {
+      "bytes": 9552,
+      "sha256": "82fe996674273be8da0d47130fb2f8b788cfd9c7f9256aa5eba1192fabdf3fd3"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Villa.glb": {
+      "bytes": 890424,
+      "sha256": "9901474ae7e2d83cbebe329517c7a6c4f739e5ca50a1bd22af431714d5706c56"
+    },
+    "belmonte/meshes/SM_BM_BE_5_Villa_Collision.glb": {
+      "bytes": 3016,
+      "sha256": "a9d98d14c932b046e204144fcf78407d8f06d7ba7fba1f2983e29f6aadd05500"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Accent.glb": {
+      "bytes": 485032,
+      "sha256": "8f46d3c0f0479e2bb169997d3394e726470d8686e8107647a7d453876374e2a8"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Grounds.glb": {
+      "bytes": 797520,
+      "sha256": "1b86e4532ed176f02c4676d1ad4776d7573f4d44468e74b9e671a9e41286770d"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Stables.glb": {
+      "bytes": 623972,
+      "sha256": "40815e7757d125852e83a373c8474bac74e917e6dec68e107a75885efa014a43"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Stables_Collision.glb": {
+      "bytes": 7800,
+      "sha256": "ec96ef4c0fa6aff9d10715620c612196fd7973bb05f6f0cdb39eb2c65da6e9fd"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Villa.glb": {
+      "bytes": 665240,
+      "sha256": "f0ae3d58539429d292c460f19fcd3116727c3f5ef2cc5239eedcbcbecc60cc5c"
+    },
+    "belmonte/meshes/SM_BM_BE_6_Villa_Collision.glb": {
+      "bytes": 5492,
+      "sha256": "a4327d796b739d9ccc31b2869d27b9ed7622358a858681e810bc5bae2f519677"
+    },
+    "belmonte/meshes/SM_BM_BE_BaleStack.glb": {
+      "bytes": 23552,
+      "sha256": "c1b78f619be5f27ef40057d416c337fa2127147898da517262eab41feef6004a"
+    },
+    "belmonte/meshes/SM_BM_BE_BaleStack_Collision.glb": {
+      "bytes": 1984,
+      "sha256": "e008094b0b9c20b6960c6248d65c5ec31696b9638a2d4ce312b23f91aa6c8243"
+    },
+    "belmonte/meshes/SM_BM_BE_HayCart.glb": {
+      "bytes": 34392,
+      "sha256": "b15e65c832421b3da78d7941ffe83c04b2678088f1a94161f5a4b1b5aecd74ee"
+    },
+    "belmonte/meshes/SM_BM_BE_HayCart_Collision.glb": {
+      "bytes": 1536,
+      "sha256": "2001bb9920b40f82135da38e16f2f1a69807de33a8d35c01df40df94f5c0c279"
+    },
+    "belmonte/meshes/SM_BM_BE_MountingBlock.glb": {
+      "bytes": 6376,
+      "sha256": "9ffc0d02099a80b836064cc04ad72ce08eb07087df4d4341f413b359e28d6158"
+    },
+    "belmonte/meshes/SM_BM_BE_MountingBlock_Collision.glb": {
+      "bytes": 1660,
+      "sha256": "2b2545b2e5a6f6e5812ece1f46e7116c732da78fe852d5640bd5568bdbe1b4d1"
+    },
+    "belmonte/meshes/SM_BM_BE_SaddleRack.glb": {
+      "bytes": 29028,
+      "sha256": "64640981d5a3ed8f280c218fe1cef77853bc18412459127508b57420bd06d202"
+    },
+    "belmonte/meshes/SM_BM_BE_TieRail.glb": {
+      "bytes": 8452,
+      "sha256": "70e30d27c9b25029e137a3da6271734d459ca97f693c5f5d018a4a841957e608"
+    },
+    "belmonte/meshes/SM_BM_BE_TieRail_Collision.glb": {
+      "bytes": 1524,
+      "sha256": "880f66082ee3ae5d626d084381fe1792c9913c62f4388b8760c3e3a91f992d7b"
+    },
+    "belmonte/meshes/SM_BM_BE_Trough.glb": {
+      "bytes": 12960,
+      "sha256": "fb55b5c9ac46a280a9783c4189d99562943e744baa7d607ff6382efa545ee697"
+    },
+    "belmonte/meshes/SM_BM_BE_Trough_Collision.glb": {
+      "bytes": 1516,
+      "sha256": "92460b82b84d7f969981e64bf81bbe2c5e5ab7240acd562c6500a97577ae8ded"
+    },
+    "belmonte/meshes/SM_BM_BE_Wheelbarrow.glb": {
+      "bytes": 14560,
+      "sha256": "5fa30080368c611266162a9e698b75423645050076f2187a73e07fe9bf9cf34e"
+    },
+    "belmonte/meshes/SM_BM_BH_BellTower.glb": {
+      "bytes": 251312,
+      "sha256": "3bd965f6075d3d3d92f814e70c4d0f6adf730a7031a91c761a67f5200428f7de"
+    },
+    "belmonte/meshes/SM_BM_BH_BellTower_Collision.glb": {
+      "bytes": 1892,
+      "sha256": "89957d303ec76c0c96b1f2ac1fa523ae6c30add10c93f3b1d5eb2ac4d018588d"
+    },
+    "belmonte/meshes/SM_BM_BH_Chiostro.glb": {
+      "bytes": 47408,
+      "sha256": "f1276ab6063c97adf5c11dc18aa770d43fdb2c9f8d01c9eabeb415a9d1b83b6f"
+    },
+    "belmonte/meshes/SM_BM_BH_Chiostro_Collision.glb": {
+      "bytes": 5208,
+      "sha256": "e20527cd36ed45c9a372da28e424dadfefd80e893171ae83fdf83c9aa2b81a93"
+    },
+    "belmonte/meshes/SM_BM_BH_Church.glb": {
+      "bytes": 257552,
+      "sha256": "a2b75c75b4b6d477c3a8ee279c32a17dd0230a37808285d31f0086c27de395fa"
+    },
+    "belmonte/meshes/SM_BM_BH_Church_Collision.glb": {
+      "bytes": 5600,
+      "sha256": "8853018e1b412dc0b15ffc1b9ace0ddd248e00d726583f225df7f48ae4d890ea"
+    },
+    "belmonte/meshes/SM_BM_BH_Fontanella.glb": {
+      "bytes": 46472,
+      "sha256": "2a9c1aebd6bf0e8ac287e2c47f91130fc95c103cbe554963b17289fe657d8431"
+    },
+    "belmonte/meshes/SM_BM_BH_Fontanella_Collision.glb": {
+      "bytes": 2544,
+      "sha256": "33bca2819aa34b0331eb448ad2f6e2d8e46b7fd4e849f1ec24e31275cede5228"
+    },
+    "belmonte/meshes/SM_BM_BH_Forno.glb": {
+      "bytes": 66620,
+      "sha256": "310a289f408e4485da134260b95659dab71ee974beea57a82d637f3634292fb8"
+    },
+    "belmonte/meshes/SM_BM_BH_Forno_Collision.glb": {
+      "bytes": 2988,
+      "sha256": "ea1413089b0148281979ac3a5863c041e11bbc5b78f197e95cc7499b70313458"
+    },
+    "belmonte/meshes/SM_BM_BH_FountainPiazza.glb": {
+      "bytes": 289348,
+      "sha256": "c438abffeec1c61f26ce10cd8823f84eb24bc498ee5bc943717af703437d2a80"
+    },
+    "belmonte/meshes/SM_BM_BH_FountainPiazza_Collision.glb": {
+      "bytes": 5824,
+      "sha256": "fec63f8b2e9d7d23cebcb997c71d602dcf8e010203fe5a50a72f7450ca91f74b"
+    },
+    "belmonte/meshes/SM_BM_BH_Osteria.glb": {
+      "bytes": 589464,
+      "sha256": "96a2bc2f5efad829b7b1c9f8bc2a3897df922a5b4ab4e80b0e50a130a0b50156"
+    },
+    "belmonte/meshes/SM_BM_BH_OsteriaPergola.glb": {
+      "bytes": 67568,
+      "sha256": "5d6829020c92241c99f4e7a7d8e86e39f45f0a72e13aaddcfe3545d041adbfa7"
+    },
+    "belmonte/meshes/SM_BM_BH_OsteriaPergola_Collision.glb": {
+      "bytes": 4092,
+      "sha256": "7886e10dd0f21a5f4f00bfae8ab3384471b3b47cebd94abb5ad0f377774fe320"
+    },
+    "belmonte/meshes/SM_BM_BH_Osteria_Collision.glb": {
+      "bytes": 6472,
+      "sha256": "c737c1d5262456d6ebc4f89a445ef6b28e86f99ca29bea5356fab057909da224"
+    },
+    "belmonte/meshes/SM_BM_BH_Osteria_Taproom.glb": {
+      "bytes": 893532,
+      "sha256": "9b74b308b70fdd85e1251b37b2ba694a0f2b16fc3667e22e7388fbbfa7f3147a"
+    },
+    "belmonte/meshes/SM_BM_BH_PalazzoComunale.glb": {
+      "bytes": 1479988,
+      "sha256": "8cd9d422a28596c38c57227ef7faa7badafbdd537f823445199de97c20c2df2e"
+    },
+    "belmonte/meshes/SM_BM_BH_PalazzoComunale_Collision.glb": {
+      "bytes": 12360,
+      "sha256": "b658e371d4aa05d65ccd8aa15276c47a8644e9405c5a1bfa93dddb160429b9e0"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_NW.glb": {
+      "bytes": 119188,
+      "sha256": "35f03cc0fcad2d73ddbc3c3c4e31c12cb2ef6277ee78f77c3c163307f3f8fce4"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_NW_Collision.glb": {
+      "bytes": 2648,
+      "sha256": "5491de14e2edad6f4a97dfa04d1ddf6b5261c944204bb3a3a2e177bb2690f04b"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_Nord.glb": {
+      "bytes": 106060,
+      "sha256": "65d16ccb52587f98f50011ad29fd01e2fac14d8d159f24e6f1e942652c398a5e"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_Nord_Collision.glb": {
+      "bytes": 3332,
+      "sha256": "d78b2beb52bd36af66c445d44c45a6d90dfd31cbdd79bc945ccc0ad5ec1a3f88"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_SE.glb": {
+      "bytes": 119200,
+      "sha256": "b17f7902906bffb15f541c6846e7a8dcc5a12719e7635db879332a5a776c5004"
+    },
+    "belmonte/meshes/SM_BM_BH_Porta_SE_Collision.glb": {
+      "bytes": 2648,
+      "sha256": "0e8b3898da607c744f761f1af34ac59024e15a29d70dcd316fdf6fe3e752a3b7"
+    },
+    "belmonte/meshes/SM_BM_BH_Pozzo.glb": {
+      "bytes": 28572,
+      "sha256": "9e63839a1143264e1740b44d8151997dcd909550df2a8c8b5ae0d5464a354cdc"
+    },
+    "belmonte/meshes/SM_BM_BH_Pozzo_Collision.glb": {
+      "bytes": 2192,
+      "sha256": "8fc1a4e45f8e2ccc8da09311f69c40d5fc6bcd1e2eeca8c30b275bf0c9f4af6c"
+    },
+    "belmonte/meshes/SM_BM_BHip_Arenas.glb": {
+      "bytes": 1058108,
+      "sha256": "fc04ec14ace29a33d8cbd4d3af8af828a4c2a645f21a86a319a61fce176a9cb4"
+    },
+    "belmonte/meshes/SM_BM_BHip_Course.glb": {
+      "bytes": 728616,
+      "sha256": "20d4a3ea39b9b792a6e21a3fce0f26066c24751153cc3f7f3abcd8fd41e1817c"
+    },
+    "belmonte/meshes/SM_BM_BHip_DistMarker.glb": {
+      "bytes": 3568,
+      "sha256": "cddf05d8ba2eaaf7e6344fc9dd1d3a465703c02829de0395e2e0257b0b3bc594"
+    },
+    "belmonte/meshes/SM_BM_BHip_DistPole.glb": {
+      "bytes": 14012,
+      "sha256": "2f77aac0f53d0092d9b69fcf943b4059e9df7b1686abe0413f550ac34c7db7a0"
+    },
+    "belmonte/meshes/SM_BM_BHip_FinishPost.glb": {
+      "bytes": 18496,
+      "sha256": "8777cbdd72160d8ac953751d5b70176f943101ce2c5cc814edc1c9f95ca53d23"
+    },
+    "belmonte/meshes/SM_BM_BHip_GatePier.glb": {
+      "bytes": 23596,
+      "sha256": "effbde7f92eb9dd3a555bd881656f8663d80346be98a2732873400682220c223"
+    },
+    "belmonte/meshes/SM_BM_BHip_GatePier_Collision.glb": {
+      "bytes": 1644,
+      "sha256": "88c90b1d8d09d9fbc730a1aa894d6a20abe4797d896f7406bf647bba6e8c9d20"
+    },
+    "belmonte/meshes/SM_BM_BHip_HayBale.glb": {
+      "bytes": 4108,
+      "sha256": "147a087ef352dfe00dc94f9f07f4354cf9fd1c4bd9c5e6124bb8bab181f0a49f"
+    },
+    "belmonte/meshes/SM_BM_BHip_HayBale_Collision.glb": {
+      "bytes": 1516,
+      "sha256": "9ae58e088f7c4c80f64ef9033cb51c8b1a608fd9a7e585798b4297fb9791a32d"
+    },
+    "belmonte/meshes/SM_BM_BHip_Infield.glb": {
+      "bytes": 328360,
+      "sha256": "ef6af9c9ba1835e5467ffe5033d7081667404390d621223c39e61c8548306554"
+    },
+    "belmonte/meshes/SM_BM_BHip_Jump.glb": {
+      "bytes": 14616,
+      "sha256": "9a49aabc0a342c93d87b58798ad4b10a571ea6d8c7453d7b9193617090ef30cf"
+    },
+    "belmonte/meshes/SM_BM_BHip_Kiosk.glb": {
+      "bytes": 23164,
+      "sha256": "99c52aa2ef270d966b8d810378e631739cc0614ef55feb00c35ddaadbf811a70"
+    },
+    "belmonte/meshes/SM_BM_BHip_Kiosk_Collision.glb": {
+      "bytes": 1648,
+      "sha256": "8882a94c4603e665be1128497b048e01b4c272a8a48567656c4ec811b153dd50"
+    },
+    "belmonte/meshes/SM_BM_BHip_MembersBar.glb": {
+      "bytes": 723608,
+      "sha256": "9240c221993a050b47ca272fb42ddbe0357a7ea31f3d0bbced77434f7794c4da"
+    },
+    "belmonte/meshes/SM_BM_BHip_MembersBar_Collision.glb": {
+      "bytes": 2328,
+      "sha256": "465081d43b91b2632658f43195826f957abcc4fbeed950d03fae4da6736896c7"
+    },
+    "belmonte/meshes/SM_BM_BHip_Pond.glb": {
+      "bytes": 291856,
+      "sha256": "1db05481b42373e93c7001ae24ad3ce7a174c3468864e1ef97b60911c97cdc5f"
+    },
+    "belmonte/meshes/SM_BM_BHip_RailSeg.glb": {
+      "bytes": 4880,
+      "sha256": "3e11c04680f8d7a86dafc91dad821e79e7605d4a2d61f123aefaef4aa5cd77b0"
+    },
+    "belmonte/meshes/SM_BM_BHip_RailSeg_Collision.glb": {
+      "bytes": 1524,
+      "sha256": "2ea90f811ca47d626797ce0f244a28b4e1e15680ed73885f690af49c1aadc5ed"
+    },
+    "belmonte/meshes/SM_BM_BHip_Salon.glb": {
+      "bytes": 1710400,
+      "sha256": "7c07906e0597c9a18974b9e8c385d5ab25bc77054187261138e0d7662a5115d2"
+    },
+    "belmonte/meshes/SM_BM_BHip_SalonGrounds.glb": {
+      "bytes": 33832,
+      "sha256": "14754e76c8bf8123f8bda4379d9f8d7b78dc8d47cc6140cf59976c76149e5f0c"
+    },
+    "belmonte/meshes/SM_BM_BHip_SalonHall.glb": {
+      "bytes": 2504236,
+      "sha256": "1c630c63d1964995b65144ea2dd78c54feb924b79579617bfc713ed4a151acf3"
+    },
+    "belmonte/meshes/SM_BM_BHip_Salon_Collision.glb": {
+      "bytes": 16764,
+      "sha256": "0140a412d9ac0fae4081b8a7c1d0d0d0f09da343ded216c3b4642fbc70523187"
+    },
+    "belmonte/meshes/SM_BM_BHip_SecondStand.glb": {
+      "bytes": 760100,
+      "sha256": "c634ffe78e663f9fbcf1a354a88ce41943d277e709258f817d9f791b7988a248"
+    },
+    "belmonte/meshes/SM_BM_BHip_SecondStand_Collision.glb": {
+      "bytes": 7508,
+      "sha256": "c0e142e8f1272415d726855a078a43b932937fed8878f7e2056093b411c71bed"
+    },
+    "belmonte/meshes/SM_BM_BHip_StableYard.glb": {
+      "bytes": 149540,
+      "sha256": "6435c2d0dfe62dfb3fafd2943da09814e794c3639f55436ccae90883781b0174"
+    },
+    "belmonte/meshes/SM_BM_BHip_Stables.glb": {
+      "bytes": 1685184,
+      "sha256": "feeddf4e46636bb006470217cccac4b6762a9009e12e9650eda6be9eaaa822bd"
+    },
+    "belmonte/meshes/SM_BM_BHip_Stables_Collision.glb": {
+      "bytes": 32624,
+      "sha256": "47192d1fefe30a47571952a8de054c1e02c0895a0c9882ed0595149433c146e9"
+    },
+    "belmonte/meshes/SM_BM_BHip_Stand.glb": {
+      "bytes": 6735328,
+      "sha256": "c6f67086aaf57960b47cc9658783ca19256da8e3bebf2df6cf763682f738589b"
+    },
+    "belmonte/meshes/SM_BM_BHip_StandGardens.glb": {
+      "bytes": 56716,
+      "sha256": "cd2ff7b2a145e50666342090777ebe949de3a9a0304e3ca131d81c3e9f9e2217"
+    },
+    "belmonte/meshes/SM_BM_BHip_StandGardens_Collision.glb": {
+      "bytes": 5936,
+      "sha256": "cb71718670c531f564be249fa65c8f1d8b7e30516ed66c386289a1f63c5b73d4"
+    },
+    "belmonte/meshes/SM_BM_BHip_StandShell.glb": {
+      "bytes": 2736268,
+      "sha256": "7de0e032e754ca56ad728a05f99420f2d2c66786e8b8d0d5ebfa2eca1a20847f"
+    },
+    "belmonte/meshes/SM_BM_BHip_StandShell_Collision.glb": {
+      "bytes": 37524,
+      "sha256": "29db9e93944d51f90d1e5cff5547e9477581830d00307c548396c25629f20cc0"
+    },
+    "belmonte/meshes/SM_BM_BHip_StandTerrace.glb": {
+      "bytes": 1100648,
+      "sha256": "00d20362b7746e4cbd42e86a5d0c7e4d92249917759e915a2f279946e7da835a"
+    },
+    "belmonte/meshes/SM_BM_BHip_StartingStalls.glb": {
+      "bytes": 44452,
+      "sha256": "dbc6fcb1c8404ee2886a37baae23d89e9564f3c682e5cff26663a212c59d276f"
+    },
+    "belmonte/meshes/SM_BM_BHip_TieRail.glb": {
+      "bytes": 8456,
+      "sha256": "068a5c20e70fde7bb9bfee36f0c9a4798442feb73fe787ab20555bdf6610e202"
+    },
+    "belmonte/meshes/SM_BM_BHip_TieRail_Collision.glb": {
+      "bytes": 1528,
+      "sha256": "995088a0142756a54cc367bbe9be124073567f89d9194231164d99e6e1a00c10"
+    },
+    "belmonte/meshes/SM_BM_BP_Amphora.glb": {
+      "bytes": 30420,
+      "sha256": "5a074568e6f8f58301dbc317e8a0b76ec4232be637d65dcc79a096fa89a28802"
+    },
+    "belmonte/meshes/SM_BM_BP_Amphora_Collision.glb": {
+      "bytes": 2112,
+      "sha256": "2e348b97550cbb2b2f8d39497693e7ee7e9645487f268ffe0f4fa6ace13ce730"
+    },
+    "belmonte/meshes/SM_BM_BP_Barrel.glb": {
+      "bytes": 45076,
+      "sha256": "cfa9042709d75ab8ba1018a6f95e125cca83ff2b541db2f46be1b3dab4e51150"
+    },
+    "belmonte/meshes/SM_BM_BP_BarrelPlanter.glb": {
+      "bytes": 56268,
+      "sha256": "06dabd05d9bdc69c37c8ca7f3cf061ac3ee978108dd1680331ba08b551adb65d"
+    },
+    "belmonte/meshes/SM_BM_BP_BarrelPlanter_Collision.glb": {
+      "bytes": 2292,
+      "sha256": "8aa8d7735fae2ba6c3a710d99be317423c4d9668021597d34524f151fb7a6e1f"
+    },
+    "belmonte/meshes/SM_BM_BP_Barrel_Collision.glb": {
+      "bytes": 2204,
+      "sha256": "f25b7fc7cf38286d4b7bc002be4397e2f5db11701025e7f292464ba3771784b1"
+    },
+    "belmonte/meshes/SM_BM_BP_Basket.glb": {
+      "bytes": 26968,
+      "sha256": "50f49a88cadc4170ca8e5074d5c00675265d636228b0f93c92d4b6e3e580a1d3"
+    },
+    "belmonte/meshes/SM_BM_BP_Basket_Collision.glb": {
+      "bytes": 2156,
+      "sha256": "c28e546aca0b7e12c68c80f4a11877e596d3310f55c2c92f38cd7df6d363ae43"
+    },
+    "belmonte/meshes/SM_BM_BP_Bench.glb": {
+      "bytes": 19972,
+      "sha256": "b1676d269440eabb520667caa6a05ac873c1fb7fce321b1317533b29314f237e"
+    },
+    "belmonte/meshes/SM_BM_BP_Bench_Collision.glb": {
+      "bytes": 1548,
+      "sha256": "ddb005d1a43222d116416c74d660f8f3032615ae0b08973bb46f4969f16db44e"
+    },
+    "belmonte/meshes/SM_BM_BP_Bucket.glb": {
+      "bytes": 26920,
+      "sha256": "892b0312a959d39b7e8b7f1880ef682f87e53bddb71622df2f4c77a6f6937331"
+    },
+    "belmonte/meshes/SM_BM_BP_Bucket_Collision.glb": {
+      "bytes": 2160,
+      "sha256": "70884dfaf2f421152ea5d27c081bf3a27413e4ff5ba13e06c4dfaf387f813fbb"
+    },
+    "belmonte/meshes/SM_BM_BP_CafeTable.glb": {
+      "bytes": 13008,
+      "sha256": "f0f0c6a8ee9bee7cf9741403c727afbf0450d85c44263784e988e5fd9817766c"
+    },
+    "belmonte/meshes/SM_BM_BP_CafeTable_Collision.glb": {
+      "bytes": 2188,
+      "sha256": "149e9f2d429bf095a030f72d5d2b2b4ba17a2350e5903411bdaabc9ff14034a3"
+    },
+    "belmonte/meshes/SM_BM_BP_Chalkboard.glb": {
+      "bytes": 14336,
+      "sha256": "02e818b2e7f9de2bb4e41a0c7e661de7cb3f3f1b7ee1fe70e7433498f8794408"
+    },
+    "belmonte/meshes/SM_BM_BP_Chalkboard_Collision.glb": {
+      "bytes": 1632,
+      "sha256": "f93073ab0a29e5b5ea80da3dcef69f5565b35f6cf47a698afec9d62a68b3bac6"
+    },
+    "belmonte/meshes/SM_BM_BP_Crate.glb": {
+      "bytes": 11460,
+      "sha256": "c0f374f0729558cd9f1dc674ff1d02ad9f8b36f7021a153cdc7d8b4f1bc0b69a"
+    },
+    "belmonte/meshes/SM_BM_BP_CrateProduce_A.glb": {
+      "bytes": 24364,
+      "sha256": "1c2c0a0f59eff51a1848f5144e63eb6668529dc183da9960e84b9ca7aa42d8e8"
+    },
+    "belmonte/meshes/SM_BM_BP_CrateProduce_A_Collision.glb": {
+      "bytes": 1640,
+      "sha256": "85c0545fac8521f5a37388349ca2263950a45ef52205347c179e02e358a7404a"
+    },
+    "belmonte/meshes/SM_BM_BP_CrateProduce_B.glb": {
+      "bytes": 24320,
+      "sha256": "343a8a4e14cf31daaa5076eb560987b1712b1e7f23b020cd070b310918c8c706"
+    },
+    "belmonte/meshes/SM_BM_BP_CrateProduce_B_Collision.glb": {
+      "bytes": 1640,
+      "sha256": "1622c581699c4448452e4264ba20edba76fc72d06b8c09f1dc6678a7d3370053"
+    },
+    "belmonte/meshes/SM_BM_BP_CrateStack.glb": {
+      "bytes": 34600,
+      "sha256": "ec2bca859082939aea6d0259969ca1a0dcd35acb2e1e98374ce7565b785cbf40"
+    },
+    "belmonte/meshes/SM_BM_BP_Crate_Collision.glb": {
+      "bytes": 1620,
+      "sha256": "0ca2dd52476adb121a158a8da2ecc276dcc12501eda8e1e2a655bddc8f6a40a0"
+    },
+    "belmonte/meshes/SM_BM_BP_FlowerBucket.glb": {
+      "bytes": 62068,
+      "sha256": "42d30d65392c22433258c9521b3936b2b27987dbdb554340c3fc1cf45de1ce71"
+    },
+    "belmonte/meshes/SM_BM_BP_FlowerBucket_Collision.glb": {
+      "bytes": 2240,
+      "sha256": "1345a240b6fee3ca3b120c9d466ca22c8d4253954fd0295cb5306e44be0c9767"
+    },
+    "belmonte/meshes/SM_BM_BP_FlowerStand.glb": {
+      "bytes": 68404,
+      "sha256": "0b0b8168796ad50ac132065fd90382fcec0e74d2e12eccae312cf163e793ca1c"
+    },
+    "belmonte/meshes/SM_BM_BP_GardenPergola.glb": {
+      "bytes": 30904,
+      "sha256": "a7ed00472a67f99c5c12f669bf772ae589b4ff8a9465c94b58ee4ef1f710e11b"
+    },
+    "belmonte/meshes/SM_BM_BP_GardenPergola_Collision.glb": {
+      "bytes": 4092,
+      "sha256": "4b0dea4f4736e319be07c11db48720b5c545a16dc236fa7a1bd4be34bd53d8c6"
+    },
+    "belmonte/meshes/SM_BM_BP_Handcart.glb": {
+      "bytes": 109028,
+      "sha256": "510fb4b56793d1bf319bbaafe59759291d722e139e85903c2827929ffb79d3d1"
+    },
+    "belmonte/meshes/SM_BM_BP_Handcart_Collision.glb": {
+      "bytes": 1964,
+      "sha256": "5060ec60c7d1a4af916c5f1ea4730145a5ea3ee63222aca38467a86b81e3a3b4"
+    },
+    "belmonte/meshes/SM_BM_BP_Kiosk.glb": {
+      "bytes": 63552,
+      "sha256": "aeb6da0ca1060469e58b38db268f5b2d4e2aa0b044011cc7ef156f751209b8ee"
+    },
+    "belmonte/meshes/SM_BM_BP_Kiosk_Collision.glb": {
+      "bytes": 2224,
+      "sha256": "f44d057adde36349bced1726b16bb8b9fa3dbc41bb30d5372ef76574b0eeed32"
+    },
+    "belmonte/meshes/SM_BM_BP_LanternPost.glb": {
+      "bytes": 20904,
+      "sha256": "cac299a4b8b2364b44f60418557c4e25d4f781e4dee411477ff22d0828297f0f"
+    },
+    "belmonte/meshes/SM_BM_BP_LanternPost_Collision.glb": {
+      "bytes": 1876,
+      "sha256": "e082185fb729f3888d08f7bce18e14e8d73434acb8b057431dc8e118e493e3a7"
+    },
+    "belmonte/meshes/SM_BM_BP_LaundryBasket.glb": {
+      "bytes": 31372,
+      "sha256": "602f84e2e126c1ae4a808f1adafab9baa0f3ce9fbb65daa8a855a94cf7e35091"
+    },
+    "belmonte/meshes/SM_BM_BP_LaundryBasket_Collision.glb": {
+      "bytes": 2192,
+      "sha256": "3162f62ec434633ceabfbb0475b69ddbebb8abdce5fb741b97d84bb52a07b92e"
+    },
+    "belmonte/meshes/SM_BM_BP_Orcio.glb": {
+      "bytes": 38444,
+      "sha256": "7df23d5fb83c4410cfd9bfa05b00965f147ba2f803772d0a60f9a4dcac225829"
+    },
+    "belmonte/meshes/SM_BM_BP_Orcio_Collision.glb": {
+      "bytes": 2184,
+      "sha256": "5e111b8846609aeb0eedfe29b62b6419da332b11c87a76771e086cf21ef2020f"
+    },
+    "belmonte/meshes/SM_BM_BP_PotGeranium.glb": {
+      "bytes": 17488,
+      "sha256": "fb83422bb5c63a63ed2e491d74b0646d5087521459f4ffc9bc73b36a2a63b328"
+    },
+    "belmonte/meshes/SM_BM_BP_PotGeranium_Collision.glb": {
+      "bytes": 2188,
+      "sha256": "d588551cde9593302bb55e018db053024bc9990d49333d42777370ae1d9e07fb"
+    },
+    "belmonte/meshes/SM_BM_BP_PotHerb.glb": {
+      "bytes": 15644,
+      "sha256": "6a1a7b376893384b720f017667029dfe79cfff6ef7178b8a7fb454efd24e8e7b"
+    },
+    "belmonte/meshes/SM_BM_BP_PotHerb_Collision.glb": {
+      "bytes": 2184,
+      "sha256": "334643b10acf3bbcca42f3fb072c181790ebd832a67c051ac746c5dc4084b388"
+    },
+    "belmonte/meshes/SM_BM_BP_PotLarge.glb": {
+      "bytes": 19028,
+      "sha256": "c41df5990e03391d0d3aea3cbb9c2425f54a943f4de1b8c49ae4ee9239e785ed"
+    },
+    "belmonte/meshes/SM_BM_BP_PotLarge_Collision.glb": {
+      "bytes": 2184,
+      "sha256": "8cc7695f764f1b92ef243005dec6d2eadccfeedd1fc89ed117fd9684b808a97b"
+    },
+    "belmonte/meshes/SM_BM_BP_PotLavender.glb": {
+      "bytes": 16268,
+      "sha256": "63b7eb8f7e75eaced24c5195163cb00639cac6417864c8a317b210d495e677cb"
+    },
+    "belmonte/meshes/SM_BM_BP_PotLavender_Collision.glb": {
+      "bytes": 2168,
+      "sha256": "0cc80449ec035e29676b56dce29a16bb362f70dcffc1d3cf912d8ca52d0ab8c8"
+    },
+    "belmonte/meshes/SM_BM_BP_PotShrub.glb": {
+      "bytes": 19116,
+      "sha256": "2fceadba94174a5ffd354446ffdc2dac08677b389b473a8b80f34a0cdd8c6906"
+    },
+    "belmonte/meshes/SM_BM_BP_PotShrub_Collision.glb": {
+      "bytes": 2096,
+      "sha256": "bf180d6a71142051bd7f05932bd6144ad45583db0ce89438250cb52566aef467"
+    },
+    "belmonte/meshes/SM_BM_BP_Sack.glb": {
+      "bytes": 16888,
+      "sha256": "5f1305af275de725407085bb11d1a8c1370f2a79133581b742576e450f5c898b"
+    },
+    "belmonte/meshes/SM_BM_BP_Sack_Collision.glb": {
+      "bytes": 2152,
+      "sha256": "76c273f2d644689ac48e121f553158c1506c9c8f78f9e8601189a650c4a95163"
+    },
+    "belmonte/meshes/SM_BM_BP_Saucer.glb": {
+      "bytes": 7684,
+      "sha256": "6eebe5fa6874a4bfff9029004a5ea9b392cd89e740c04dfe63d87edd3e4f6173"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_A.glb": {
+      "bytes": 85332,
+      "sha256": "2f0cbc60ac8d2caebd4c5ee62962ab0a2731ffd40e7827772237077442778a75"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_B.glb": {
+      "bytes": 85200,
+      "sha256": "d7dc4f5d945cd87b48774f63f9691608de501b421cf9d89d4f23851835c9eee0"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_C.glb": {
+      "bytes": 85508,
+      "sha256": "ed12c2e371591ed7b7b87405676e94031dc0050581fa5eddd1864a5f2af913d0"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_D.glb": {
+      "bytes": 85244,
+      "sha256": "4c15250e7d0060d1ea4965bf9df3e5a137a03112b953550c819e9c1cca25f507"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_E.glb": {
+      "bytes": 85468,
+      "sha256": "ba4e4f33e6383873e44da6ccbf81150ffb17141a8ed6545bdb1b2f7da4e9eba1"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_F.glb": {
+      "bytes": 86128,
+      "sha256": "b5ca140f6bb55ecb69ee0dcba7c53955ee3a563b3b1559d9f4077f312fda1d1a"
+    },
+    "belmonte/meshes/SM_BM_BP_StallGoods_G.glb": {
+      "bytes": 85776,
+      "sha256": "0bfe6db3540952074b7fb206b53b2e72a256aec571579f168d262740c4cafeef"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_A.glb": {
+      "bytes": 28948,
+      "sha256": "b18a594a361740823abd461e84eaa8e01ab6ab69952a27ed3959566a621862e2"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_A_Collision.glb": {
+      "bytes": 1508,
+      "sha256": "469aee7332b60dabc81dd1bdd88d45d3819cbb6b45c28ab4d79284757757b802"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_B.glb": {
+      "bytes": 28948,
+      "sha256": "2bcdd5149341e0d3788dede276684b8fa830f8dfc4c96c81e9060c55365a94b4"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_B_Collision.glb": {
+      "bytes": 1508,
+      "sha256": "2e7afda5015366fb5d8af0c758ebba5659aa05c40ee4763d804cfbef60b7a014"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_C.glb": {
+      "bytes": 28948,
+      "sha256": "eb95855493cccbd8be45a09e25781ae35c5ec0f47a53151425174d45e9b9d003"
+    },
+    "belmonte/meshes/SM_BM_BP_Stall_C_Collision.glb": {
+      "bytes": 1508,
+      "sha256": "ca03dae95156402588f7683ee3df89b162cc3225ec1ca8d05eb39488d6266beb"
+    },
+    "belmonte/meshes/SM_BM_BP_StoneBench.glb": {
+      "bytes": 5332,
+      "sha256": "d5b495d6840c83a46d0ddd5b1358ce881304bc597c0e808181de153bd663ea67"
+    },
+    "belmonte/meshes/SM_BM_BP_StoneBench_Collision.glb": {
+      "bytes": 1632,
+      "sha256": "07142f6b6a3eaeea69a2889b9e1a1ca05d1f79c369117f2960e1223b4ed0f027"
+    },
+    "belmonte/meshes/SM_BM_BP_StonePlanter_A.glb": {
+      "bytes": 26804,
+      "sha256": "d52728c69e90bf42f978988c38d23e1c952b370154a3a3dd3ebce873c36afecb"
+    },
+    "belmonte/meshes/SM_BM_BP_StonePlanter_A_Collision.glb": {
+      "bytes": 1600,
+      "sha256": "f2b7f14c02fc82c885ae4ccaee1de4438d818c55ac7dc4c9662a7a3ae48623c2"
+    },
+    "belmonte/meshes/SM_BM_BP_StonePlanter_B.glb": {
+      "bytes": 17764,
+      "sha256": "b1737225ace5bda69bee754a314ec2a8c7037cd23e04eb7d8890336762727b19"
+    },
+    "belmonte/meshes/SM_BM_BP_StonePlanter_B_Collision.glb": {
+      "bytes": 1600,
+      "sha256": "ec728c0ad47bb704a3fa4ed8a5563d0a2d2c687baaac3bc2df094bdabea5aa5e"
+    },
+    "belmonte/meshes/SM_BM_BP_Stool.glb": {
+      "bytes": 9396,
+      "sha256": "7116b9f55ce02f5bfc0d312b7ac4674cec6868c85e8a9e6c0ba65f7602f1379b"
+    },
+    "belmonte/meshes/SM_BM_BP_Stool_Collision.glb": {
+      "bytes": 1652,
+      "sha256": "1aa33bb20a1536e34d41e7204a7e4a9166062c786ab6a99c34ce26a17d6466bd"
+    },
+    "belmonte/meshes/SM_BM_BP_WallLantern.glb": {
+      "bytes": 12848,
+      "sha256": "e021f51a5102caedf6fe6c8da814e49c5107e4ddd8f9d37b8ae847af33e84a89"
+    },
+    "belmonte/meshes/SM_BM_BP_WateringCan.glb": {
+      "bytes": 21580,
+      "sha256": "abd38282c3b86d6d42310d8e2de8207ddec0cdaab7366057edddc43a01a96bef"
+    },
+    "belmonte/meshes/SM_BM_BP_WateringCan_Collision.glb": {
+      "bytes": 1564,
+      "sha256": "c5ff44a0cdeea2321a4f9f0e6ca0e0f9915615eb8594ad2c9016ed68c5a8c9f2"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_0.glb": {
+      "bytes": 30908,
+      "sha256": "6f507a0f95242b22ca70bc125b0180faed9ca8fce2b6800e4cfd6fe921ae67e0"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_1.glb": {
+      "bytes": 37684,
+      "sha256": "50ba2e06fdd118103892d7ddfa92b2ef1923c86e1d02bae772bebcc43ac871ee"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_2.glb": {
+      "bytes": 87316,
+      "sha256": "4a7a265c6c45ab9a706ed55f6a7e03af4034d794ad22dce58b557cb851a6fe1b"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_3.glb": {
+      "bytes": 124872,
+      "sha256": "9fa710e829e6a5fea9cd433dc2d861b569bb1fedd0527602b8b3c9507377290a"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_4.glb": {
+      "bytes": 33544,
+      "sha256": "6b9d8e6dd8044675bd0bfbd5049a7925e99b2a763c351a0c96e7354b531ba165"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_5.glb": {
+      "bytes": 33548,
+      "sha256": "5aae07ce5ca4916221778fdd00ac8446bbb9b46ec05cadd3362f26430f955800"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_0_6.glb": {
+      "bytes": 22944,
+      "sha256": "293befa12fcb3b4ed10cee19e07b359566ef7534925559d48b58a508d802efaa"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_0.glb": {
+      "bytes": 63060,
+      "sha256": "3e80ae443b2bcc2fca44f71b109fd3ab25a994e66dcb8d893d92ed3f53b24cb7"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_1.glb": {
+      "bytes": 103628,
+      "sha256": "f23ae8c9c0443c5fd89b8c041e5f5ba67c931e8edc86cc1116cfe867cb8fe593"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_2.glb": {
+      "bytes": 224344,
+      "sha256": "c6a8026c9b78499e4d371c4ef67dd32f0913b8ca7bf44bc8f7bb35f20f839a44"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_3.glb": {
+      "bytes": 123200,
+      "sha256": "98c506bae672efe61fe1a5fba112bef1b8f11ada661efe8b48443990a1cc31d6"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_4.glb": {
+      "bytes": 260296,
+      "sha256": "fca751c5e67568c661bd95a684ab38eee22ec0c39dd8d30d06b5e7d1cb1c4c2e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_5.glb": {
+      "bytes": 61672,
+      "sha256": "05c894d9f2555ac25dc75e0e88dc0eab01c9f65cdf96e7b409d30424b9ab0323"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_1_6.glb": {
+      "bytes": 29872,
+      "sha256": "2967300b3c25e1e14c14a0b73a1e512cfd0b75e2131fe15637fa9f170a25008a"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_0.glb": {
+      "bytes": 92308,
+      "sha256": "4d93aacf8bc5e74ef8188120b1aa25d8bd2e1464d2b33ecfab6fa26fb4ae512f"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_1.glb": {
+      "bytes": 229432,
+      "sha256": "f3c7bf1f9ab0a5591113035d80cb9be913ac02c89aca18e2d07dd431c3b519bd"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_2.glb": {
+      "bytes": 310516,
+      "sha256": "b3a9342ac9b8bc1e7c43c33697a669c8af6d8672b06e3155806c87db5ec30df7"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_3.glb": {
+      "bytes": 193640,
+      "sha256": "441b38661b85f43fc9efcd3be7fe5e680cc23e92a2a6754507cafc1c158a1f2e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_4.glb": {
+      "bytes": 125516,
+      "sha256": "4b812a7f602df76b10e1abf9bd70cc0480db66ef69cde0367b498b1aaaa395ab"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_5.glb": {
+      "bytes": 144612,
+      "sha256": "5b453c710f85ba3afa3eda7679e17a1fbbb55e61cf4740b64c5fec08102921fd"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_2_6.glb": {
+      "bytes": 36916,
+      "sha256": "64bebc74beaaf8237fdb22a2a64fe2acbbf5791cd7f16863043ecabc574e053c"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_0.glb": {
+      "bytes": 54740,
+      "sha256": "da8b719994abc04545054f75b894848c18852dd49b33806e4137ed6fa6132831"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_1.glb": {
+      "bytes": 538664,
+      "sha256": "0974c113c0f5224f04ebcba42c3bb3487e815a73e37631da747f3b37e52beb93"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_2.glb": {
+      "bytes": 632996,
+      "sha256": "7dc9bd26b0cc62f3182e5b78bb700ed32b672da1f848b3c5afd90410b21c9d10"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_3.glb": {
+      "bytes": 97396,
+      "sha256": "1853a2fdaebbae0e4d0367e1333562bfd85d3f01a397895f45f10246a29632ed"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_4.glb": {
+      "bytes": 99744,
+      "sha256": "8bbff0f46ee68800ab3aca784f4a7a7c05261c39492adf2a244d09db511331e1"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_5.glb": {
+      "bytes": 103836,
+      "sha256": "aa3aa1783e99fc3a30749a469992abc79efc8002a554fbf20d998163092c9f36"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_3_6.glb": {
+      "bytes": 30976,
+      "sha256": "61a4817939c2ed44ea22e8b6ee3fce4788a34578c4ceb3d4b7d1f4e24f7496c6"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_0.glb": {
+      "bytes": 56648,
+      "sha256": "7afcd2a81105d0efc9574eb1588a2bf0311b6fc664e9ad29c80cfd9c0be51cb8"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_1.glb": {
+      "bytes": 457316,
+      "sha256": "197638a02b9f0bb72fe684fcb16d51d7f7b1e2a366424f33f86fcf91e64f8422"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_2.glb": {
+      "bytes": 631144,
+      "sha256": "c4e58880b392c463428dd3400a41a96bf1c9045e2f8bcea8806aab2c199d4a21"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_3.glb": {
+      "bytes": 208960,
+      "sha256": "4639cacadea3ba25fdebaae0d923de09cb6001c1c7613ff89ea1a18e269b8d0b"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_4.glb": {
+      "bytes": 260580,
+      "sha256": "d0ff5bf79ac5da6c9365c51e1948f182eeb9974338bce81ad2ad622bba7ca176"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_5.glb": {
+      "bytes": 174860,
+      "sha256": "93b04cc07a370f3d261e5d1eac8cb3ddf71d84468f2ba21cae978183c6f9915c"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_4_6.glb": {
+      "bytes": 30476,
+      "sha256": "fb53729d1fc24c53b02232fe9a17cfe48e4b6aa4b95bb865c35db3a0c47d3d0e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_0.glb": {
+      "bytes": 121736,
+      "sha256": "ef8bf899a8c3f52328e8532604fab1faf7f97fe02c4fa2db43060ebdd30c65e3"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_1.glb": {
+      "bytes": 235312,
+      "sha256": "67fc393399ae48b3c01c12bcaef0bc43b29f54e7699189815768bbcfe15416c3"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_2.glb": {
+      "bytes": 128452,
+      "sha256": "4f5f73df634e0c48efc42076ce4a410912005692a1932be7bf7506e5ee999af4"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_3.glb": {
+      "bytes": 126620,
+      "sha256": "8d6961c499863df5e5787c297859496dd5a539ea133bb451393fb1a8504440ed"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_4.glb": {
+      "bytes": 124596,
+      "sha256": "cd09f59546df25014ca4ad30c9f2d9cdc420c6f232e763040b947ee205ea2906"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_5.glb": {
+      "bytes": 101504,
+      "sha256": "7d8c12a9e37aeb049b14588f70178268bdefdc005e84689427149b5c3db19e0e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_5_6.glb": {
+      "bytes": 30532,
+      "sha256": "94d306f99287a5dbb48eb7cd6818901952798987d0a8ccf451eee7b1ddcf97b3"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_0.glb": {
+      "bytes": 54464,
+      "sha256": "7169d73d49d19e0d0055ad3df60f4f303b7e846c789601903a64e8fe143dd7b9"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_1.glb": {
+      "bytes": 203360,
+      "sha256": "60d1ec1f5c4722f639c42ff8f58bd1ceeb7a73565404629ec141955aa1e5f688"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_2.glb": {
+      "bytes": 175204,
+      "sha256": "a50494586a4c2810473e5f178493af8bcbbffae4976392316d58989ea02a3f44"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_3.glb": {
+      "bytes": 64344,
+      "sha256": "cd89bb60a1df8d2b3d1e67fda584985fd12a90e5ca8d557eb459fdcada106f21"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_4.glb": {
+      "bytes": 179832,
+      "sha256": "a610739c5ec2c6d3f795d86a7ecf99d7e8411795a2f0b16d49a4b4fb1a67a782"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_5.glb": {
+      "bytes": 61672,
+      "sha256": "0b68108ae123b756c7f8f0eec665c397a83ee3a6c15fb4d899809bdf83184aec"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_6_6.glb": {
+      "bytes": 29872,
+      "sha256": "280f159e371f76fe909338f742aab248294041396d1d38ca3e74a2b610ae1fd6"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_0.glb": {
+      "bytes": 28620,
+      "sha256": "7bddee77901170de8f6f4f7b99518c0d67a1486192c8eebbd7ce13fa01dd3106"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_1.glb": {
+      "bytes": 132008,
+      "sha256": "fe154b0bffb35e04b3b134952c48f9620d55b57fd537deabab0f98b105de018e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_2.glb": {
+      "bytes": 30812,
+      "sha256": "620fd37fdf453457dba6863887f80ef0ea367f1cc4592e476ed246eeca32cd11"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_3.glb": {
+      "bytes": 30868,
+      "sha256": "5c6738e3eca4e9485570b00f518a67cd304b33e78a97f58fc0da2485a7f5358d"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_4.glb": {
+      "bytes": 30812,
+      "sha256": "70900f22abb6368278dfdb292be0e67dc0c35f65600f4f59bc31fbf61640915e"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_5.glb": {
+      "bytes": 30812,
+      "sha256": "f0a3c9b5bbce65fe44afff84a1fcd5b5add1a2e17ea6c4efc2626626bc47c915"
+    },
+    "belmonte/meshes/SM_BM_BT_Terrain_7_6.glb": {
+      "bytes": 21116,
+      "sha256": "07e6004f5c4138c3200cd9ead44c3554a56d098eee707ba27ebea59ead6ceac0"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_01.glb": {
+      "bytes": 994280,
+      "sha256": "b5cba817facf287d0912ba7fd24a6c6c8f682d7c9e8b88a77de978c41870f650"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_01_Collision.glb": {
+      "bytes": 4768,
+      "sha256": "44985ca35332e7c7ac014d1264b63cde667264473a6d9d4482fc3ca202cbfaf1"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_02.glb": {
+      "bytes": 1586800,
+      "sha256": "6ade3cab5d3e706cdb8be98257f51ef5fc83280335b86b0b9ecf47700476cb09"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_02_Collision.glb": {
+      "bytes": 9772,
+      "sha256": "67e6ad1656f0df8a52d5d1daf780fb08444c529f3a7550bdcd4756c8f11859e3"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_03.glb": {
+      "bytes": 1810428,
+      "sha256": "6ced5f1737eab32575cdeeeecdb620618ecf29a699b2ffe654d48ab6490dae14"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_03_Collision.glb": {
+      "bytes": 8420,
+      "sha256": "8e0e2fe40f54f8433ff4e0ac9893fd2d7393eb8fd3fc14df28574cb3158c731a"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_04.glb": {
+      "bytes": 1869760,
+      "sha256": "1ecfdb5df03aea3a27ac9064f7d4ac289beb49cbb1777c90a51aa0c7db54c811"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_04_Collision.glb": {
+      "bytes": 10120,
+      "sha256": "4df9dc1b1d8bfc36f85ac4c8ca304242a49c19872deac79837d12ca0484c413a"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_05.glb": {
+      "bytes": 1533780,
+      "sha256": "395d3e22f8d28c80abf30f1e0a3941d8c14c7f9a472fa725d2ac691668192e87"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_05_Collision.glb": {
+      "bytes": 6760,
+      "sha256": "c83f20323804290eb07f4f1fbe962005c8d330580dd4640942da5fc5f6d8d1f9"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_06.glb": {
+      "bytes": 2071140,
+      "sha256": "b278057713969d4e72b7214ad14bb6173c96e618a7c30c94039891efcdc73ace"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_06_Collision.glb": {
+      "bytes": 10772,
+      "sha256": "6ed282a32ae38f3c199b4456b47a8bc5c255da500cab7137add7e0e6475bca5d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_07.glb": {
+      "bytes": 2369924,
+      "sha256": "eb7a9775cbf4d2cf4c209ca54a727ff62772f40728e66f71910f42a46e2ed5d9"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_07_Collision.glb": {
+      "bytes": 12608,
+      "sha256": "ae6f324f91eb60a0b3073e6b4987c2b6b6082a8c1da3115bba57e23ce8caad14"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_08.glb": {
+      "bytes": 2077244,
+      "sha256": "3a97a8d220219153f2ec415566d2751e234a73b7d78d467e421bacc4b5c8359f"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_08_Collision.glb": {
+      "bytes": 10388,
+      "sha256": "bc9768cb7a0b4530ba333a9e61285787ed9600ecf5770235700df5650390b7e8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_09.glb": {
+      "bytes": 2865636,
+      "sha256": "813f3fa5fbd7e803d38b3cd78872cbc6f4b2928d1611bdb9c25013af01918c57"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_09_Collision.glb": {
+      "bytes": 15896,
+      "sha256": "1f6369a4ba52f44bce96aa69a774c67952958809bfa4a0724833e28f2785b86e"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_10.glb": {
+      "bytes": 3337316,
+      "sha256": "ac996580ff676c0798412bd8c9a22fdadc2d540e3e13d4565fe29a04899302e6"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_10_Collision.glb": {
+      "bytes": 22492,
+      "sha256": "4555d767bc65dc24ce269662327a71e3a3b2af8e0111c667b81357fc1fc64459"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_11.glb": {
+      "bytes": 3780940,
+      "sha256": "71b84fb24f916b541a430339037903469afae0ec640460fa3ad330b5f9b97de2"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_11_Collision.glb": {
+      "bytes": 18836,
+      "sha256": "a2d11185aaaa6a10a37d56275bc1336ef22475a07bdc595fe63275094f999bd2"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_12.glb": {
+      "bytes": 1860808,
+      "sha256": "19856b23ee9d7f5ed435046d05aa00d1dcb2048aa194d71617c015e175a9a23b"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_12_Collision.glb": {
+      "bytes": 12344,
+      "sha256": "21275fec3368c1598e5db1931afa37a19bd118d7a5266383a8761f2f61f69f27"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_13.glb": {
+      "bytes": 1781924,
+      "sha256": "de5351ffe75993b5f1f530994ee4aaa20421ad516bd75fc29bad2fd0f9b219b5"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_13_Collision.glb": {
+      "bytes": 11324,
+      "sha256": "2d7b00976165f42bd48391236f4d67cfbf9cc9d3307020f8b2436627dc09b6d7"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_14.glb": {
+      "bytes": 813996,
+      "sha256": "d75d8bb55c65a9893a595550b3fbc69606153b32129141fda51dedc48edfc7e0"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_14_Collision.glb": {
+      "bytes": 7508,
+      "sha256": "619de8c58faeb98e835ff287b2aa343646d0bafa43b697cfc4f26f3bf7051053"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_15.glb": {
+      "bytes": 2952048,
+      "sha256": "fcf2d43281c3e9fe0fe973f534077acf9a536200a5b4f1c49a758ead6cf800a6"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_15_Collision.glb": {
+      "bytes": 18392,
+      "sha256": "b248bc9663c57f14d8a37cd062f19ca45cf7df56e6efd5d6630f5a5aca3e85b3"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_16.glb": {
+      "bytes": 950444,
+      "sha256": "faa9db3fd092570397a872163ba4621387803bdfaf3c5b2fb21be0f62417c4e3"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_16_Collision.glb": {
+      "bytes": 8180,
+      "sha256": "1f0c8e8bd18a66b9be68c8f503c43398b54df484a3ce7cde2aa3495fd90aee58"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_17.glb": {
+      "bytes": 3460340,
+      "sha256": "2d315e3067ccf568421a6246ec0014a02b9c85879ce806e6b5292f75ad4e05af"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_17_Collision.glb": {
+      "bytes": 20048,
+      "sha256": "6374a7ccfd7b1c85821804a1374b0f0113d851b7a9d898c3327d35f8ee36b77c"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_18.glb": {
+      "bytes": 1770948,
+      "sha256": "bc7bdff6e29ef8eb1874372410b6f8fcb96ed2766f52101f726fdb6c18481ad1"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_18_Collision.glb": {
+      "bytes": 15012,
+      "sha256": "916a4011cf20b2665cfa316d43d3179a597b3859ef70ac8acdfdc3bc65525de2"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_19.glb": {
+      "bytes": 2299964,
+      "sha256": "ef0e1376fcb41f98ff94a25ffad7b64384d69a6465dd42dba7ed69f33c1efc9e"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_19_Collision.glb": {
+      "bytes": 13868,
+      "sha256": "897ad345c2bbcff51216878a96de7af54df71ec1dd4ae324a1859d92cad41a8d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_20.glb": {
+      "bytes": 1351016,
+      "sha256": "20e2e8c086ee43cf7ec43282431f9d2748e9fc7c9bf4267c276725e5dbc81d34"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_20_Collision.glb": {
+      "bytes": 12696,
+      "sha256": "874933515e55021b9e7a358bf5c159f06c484f17bfc0aff0f32f757cd02853ac"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_21.glb": {
+      "bytes": 1466596,
+      "sha256": "94b850fbc78c0f1e1691a67ab66a90a2c83ae706b1ead44886ee36b712aca750"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_21_Collision.glb": {
+      "bytes": 11600,
+      "sha256": "7fec2f7c95338ce21dd027db6adb505ae37e835591b3e62f5cc190b5fe1f2d86"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_22.glb": {
+      "bytes": 1592512,
+      "sha256": "2ff98d7afd026439f0f3664e88da94f4f7443f24a05c75a532cd6a5445baa4ef"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_22_Collision.glb": {
+      "bytes": 13860,
+      "sha256": "9d6aae8e5cc7c861e454669648957f97c3a381a301fdd4adce88820a97fc61d8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_23.glb": {
+      "bytes": 1623836,
+      "sha256": "c9baf109638a37474148db4ad0030c0dbd2bb17540cc492aab202dc58bfe27e7"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_23_Collision.glb": {
+      "bytes": 10664,
+      "sha256": "23ecb5808f9836b1283e3416a4355b8b72e2cf163301ec7c477e980c39874084"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_24.glb": {
+      "bytes": 1337724,
+      "sha256": "1267b62b3f1b3d6831a94ec1140b687b28c5dc882fd547f3cb706e155d2f1f42"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_24_Collision.glb": {
+      "bytes": 7144,
+      "sha256": "9c2eace45d5bf8471e0706a8dadffec3eac1c06604635ca8542e1c3f74606d8d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_25.glb": {
+      "bytes": 1465132,
+      "sha256": "9e4f9529ae0ee48135504adc148490cd1040d2abfa7172c9e78fe57cc00c7c6a"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_25_Collision.glb": {
+      "bytes": 11420,
+      "sha256": "84f1cad6548b0d06f5b22c0ba2f32406e5bd758a4923f65e6668dbef4a35d6f8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_26.glb": {
+      "bytes": 509892,
+      "sha256": "74162d906a071f84350fcf529f209740b1e1f260670a9215a918d59801f1d48f"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_26_Collision.glb": {
+      "bytes": 3960,
+      "sha256": "8fff6865ee65ebac5541251487dcca32c13d57ebddba41f3ecb103091d73a05c"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_27.glb": {
+      "bytes": 1821364,
+      "sha256": "0840c97c89245beb9c64e8afd90ee9ea81d9538d352f507d35234cdd46813ec8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_27_Collision.glb": {
+      "bytes": 9800,
+      "sha256": "0b5b2297d84f4b81da6a137738ec1bd1a4963efd02d4811254c8b26f3a7d0f7a"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_28.glb": {
+      "bytes": 1796952,
+      "sha256": "d53a156b6e77f8d3dddd866e282bf8e8901b36367a6dbe65c8b396a230e90b9c"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_28_Collision.glb": {
+      "bytes": 16016,
+      "sha256": "8e75306ffae0ce25a292aeb15cd2658c19becffbc556ea0deac37a2499c6b929"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_29.glb": {
+      "bytes": 1751348,
+      "sha256": "74b3cdb9736c6196b9da839f9d406b091c3e52ef36933db833ba85b46b69b23d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_29_Collision.glb": {
+      "bytes": 11760,
+      "sha256": "503df00f65231593e36867d8794b104c1ab1fef8633ff29b6910592f110e77ad"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_30.glb": {
+      "bytes": 1117180,
+      "sha256": "bf78f8ca78587616f1ef910540d9b0c05e98e0db62ae4489192f8b1db0f9cfaf"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_30_Collision.glb": {
+      "bytes": 7700,
+      "sha256": "b8b5016d5e0f2e36ac356913bbd5c256a48a00f93c76e0245016ceaf933aa21d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_31.glb": {
+      "bytes": 1823232,
+      "sha256": "25435c6790b266803c5fd355e45972aceaad4bc69b30431ee530e0971e19df22"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_31_Collision.glb": {
+      "bytes": 12968,
+      "sha256": "214f348aab068e53f0b48b9eb0c646b6c101eada01e61d817a88f8ac26457345"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_32.glb": {
+      "bytes": 789000,
+      "sha256": "8487b216cd70a9fafa54c632434b76f65de22de116b9ab0c79419a1a984b6f1d"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_32_Collision.glb": {
+      "bytes": 6356,
+      "sha256": "88e2b38c99e7983597a078b872b8d996c3e269a0ebe9a1ffd74a4ca05db97dd9"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_33.glb": {
+      "bytes": 1155880,
+      "sha256": "3f887345e4e420f36958182fb534a17ea55e5e96340314eaddb2e9b71bb2a65c"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_33_Collision.glb": {
+      "bytes": 10136,
+      "sha256": "017e4bc73201e3cb138b23b5bc1ace5f23c0cf28c4a9f546012dc9cebf8c1c37"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_34.glb": {
+      "bytes": 768080,
+      "sha256": "3e33dc81290dd0aff18007fcc9727102fcc0b6adf1d963e7427ed035f6d50fe8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_34_Collision.glb": {
+      "bytes": 3884,
+      "sha256": "c6efa7b8471891c33b76de06e6e06108219c270a5444f12ee890316d31d64da8"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_35.glb": {
+      "bytes": 1103072,
+      "sha256": "ea9ab23fe81f2b57d71b8c3aafd886f1fe74dfff782fb280ddc562e5305a8e34"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_35_Collision.glb": {
+      "bytes": 8308,
+      "sha256": "2d91c9d0bb9a3bd59949055853e152cbf7c70506b262eb84ee00d9f132118484"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_36.glb": {
+      "bytes": 1406908,
+      "sha256": "3c5791d9671030b6a8bd9f569bcda30619c0e3668cd4e91cf3f62788f9bd642c"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_36_Collision.glb": {
+      "bytes": 8540,
+      "sha256": "c1e48bdd36f6a66b0581d43427cc77e9ebe558cd080124dbe59b23532259dd3e"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_37.glb": {
+      "bytes": 526364,
+      "sha256": "5247ab76b5d7f35e2e515a4ca754c1aa39532aa17880fde01709ec838932b089"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_37_Collision.glb": {
+      "bytes": 5924,
+      "sha256": "bdb557d94e4b282b470deca15afe75025a179a9a0c63987cd7fbbe5c821b7d52"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_38.glb": {
+      "bytes": 1079752,
+      "sha256": "694d6c51c91b95240f2d5a24db430e11466813fe1b2aa92afc6ddad9812a3afb"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_38_Collision.glb": {
+      "bytes": 6320,
+      "sha256": "1698d3efec8ed66a675e0e0aafac2f984293bc12db4a4ed83bf4a4a856dcbff7"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_39.glb": {
+      "bytes": 2761796,
+      "sha256": "aa625e7658c52c22bb120670f7b222658760bf16490bc1f14349c604375efe64"
+    },
+    "belmonte/meshes/SM_BM_BT_blk_39_Collision.glb": {
+      "bytes": 17040,
+      "sha256": "4f94bc4a1c56f821c092a88a17146bfd4675787880007a3cbaec7e33fddc1391"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Cascine.glb": {
+      "bytes": 392460,
+      "sha256": "4b8be2321b5966d170b80a8eb2b311264026e3681e82fa2638dd488b2c829097"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Cascine_Collision.glb": {
+      "bytes": 2976,
+      "sha256": "95169c727755637eb54b7f1bbad67b01d5e937da60a355d52cc1fa6cb4aecfae"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Levante.glb": {
+      "bytes": 393136,
+      "sha256": "cab2178e9bf9a92cb7e665e886cf55254c103b509a05ee8cbb5a515fd248303c"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Levante_Collision.glb": {
+      "bytes": 4924,
+      "sha256": "718efd4960e20ca25a61b972e6727a6ab059b09143a8a461b02a24762150aece"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Poggio.glb": {
+      "bytes": 353100,
+      "sha256": "8e8351516dbedfb749537d4cdae9e40e3cecda377ba858c60269bdd2f228423f"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Poggio_Collision.glb": {
+      "bytes": 5192,
+      "sha256": "75f241cd192065017415bbcf417695d9ab0fa99258f55b19bbcf630dd5e0e220"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Ulivi.glb": {
+      "bytes": 301660,
+      "sha256": "f4607c6009c3e0bde8a27eee79ea5a2d8cf0e789498d4b5bd757a65a139b9e66"
+    },
+    "belmonte/meshes/SM_BM_BVV_Farm_Ulivi_Collision.glb": {
+      "bytes": 5452,
+      "sha256": "626086c91a437fbdd43ab192f8f42cc795700a978df1f748544e5132293d9bb4"
+    },
+    "belmonte/meshes/SM_BM_BVV_HayRoll.glb": {
+      "bytes": 18524,
+      "sha256": "c8432b144b9c9e208d631abc10000ff3c25e3f1da47d496cec94e9f4007740ae"
+    },
+    "belmonte/meshes/SM_BM_BVV_HayRoll_Collision.glb": {
+      "bytes": 2204,
+      "sha256": "6eacbe4bd2bbc69bc9de22d8555e78a207da1017feeffbc0bf9d538885d61b63"
+    },
+    "belmonte/meshes/SM_BM_BVV_HayStack.glb": {
+      "bytes": 15892,
+      "sha256": "0019aaba10e3ff97ff25ec305218ab9b421826c6efde1372ade75c1cc3d3361c"
+    },
+    "belmonte/meshes/SM_BM_BVV_HayStack_Collision.glb": {
+      "bytes": 2672,
+      "sha256": "1268f8af9862dc7b947456444fe5a6b66d0b6629a82198373fa215fd83104fc9"
+    },
+    "belmonte/meshes/SM_BM_BVV_StoneWall.glb": {
+      "bytes": 15192,
+      "sha256": "85d3baa1f7606fd33cdd87762aafd6682eb199bb4d02f865bb737e3a5bd80a37"
+    },
+    "belmonte/meshes/SM_BM_BVV_StoneWall_Collision.glb": {
+      "bytes": 1596,
+      "sha256": "b6e7b048f2f304da7c2f4afcfc2cc1c4ccfd196e07e5cac8c7e0d257e12035aa"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_1.glb": {
+      "bytes": 31216,
+      "sha256": "bf91356fa71b54cfebae1432a1ee2b44f2cc9ed7186e4a93c8d6c84c63825c1f"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_2.glb": {
+      "bytes": 40256,
+      "sha256": "ebd3dc15297e51a411af3ed7faa1a7b91c351be331cb96c459f7cb6a1025cbfd"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_3.glb": {
+      "bytes": 38644,
+      "sha256": "53f05e775da3c2fb528436780e8fd44d08477704a7a5b79fec4b292dd022db43"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_4.glb": {
+      "bytes": 40256,
+      "sha256": "64b573ede026fed26e2a6ed7dfac5d6ca202f3925c521e1d48d0691f410bce61"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_5.glb": {
+      "bytes": 31212,
+      "sha256": "229d33fe56b8feef87b74c8aaa5986bfe665ab64f51db7744ab97e8a7092ef81"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_6.glb": {
+      "bytes": 38748,
+      "sha256": "99a0a3450d56cbc7e1351cfec84362d17347bd4ebf049c47702008cc370ec33b"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_7.glb": {
+      "bytes": 40152,
+      "sha256": "53ddc42ec006ee8d742fd9a79e8bccc8b37a9f65409560a30836356e205a59c5"
+    },
+    "belmonte/meshes/SM_BM_BVV_Village_8.glb": {
+      "bytes": 31216,
+      "sha256": "d611648264310f3110019b0472028de9d7f973d467e717b5d6636638b8612d6b"
+    },
+    "belmonte/meshes/SM_BM_HV_Emblem_Crown.glb": {
+      "bytes": 11264,
+      "sha256": "2afcd57a9ccec784171a455990daa65024df201cbc50523bf86abb8b6ad9b115"
+    },
+    "belmonte/meshes/SM_BM_HV_Emblem_Diamond.glb": {
+      "bytes": 8588,
+      "sha256": "55dabaff04d069e00b866e1f4f061ffec96284308f8be7687c6449c1eab8e7cc"
+    },
+    "belmonte/meshes/SM_BM_HV_Emblem_Laurel.glb": {
+      "bytes": 22228,
+      "sha256": "c65d7bc9c9c7653ccd4d2466192e9224e952bf7f9f0ed984d5437e4e410d9fca"
+    },
+    "belmonte/meshes/SM_BM_HV_Emblem_Moon.glb": {
+      "bytes": 19932,
+      "sha256": "4c59f3f0bd975b5b9bd7a75fcd84586a8378bf1c29e974c21a169aa5575d9f01"
+    },
+    "belmonte/meshes/SM_BM_HV_Emblem_Star.glb": {
+      "bytes": 10312,
+      "sha256": "b7036d22c895090d7337f11bde6208588cd1971b9aef753938ee6ba3a2e66947"
+    },
+    "belmonte/textures/T_AT_CafeChair_D-9c754f82fb.png": {
+      "bytes": 368222,
+      "sha256": "15bfff5eb163a4069a3f2e069adc34e2e5037e25fdcb2540d31defa757ff5af2"
+    },
+    "belmonte/textures/T_AT_CafeParasol_D-f96ef4ce80.png": {
+      "bytes": 177069,
+      "sha256": "f98f7ba0a626e58e3ead33a3315113a4869497a7e8ee58bed05653055ce813fe"
+    },
+    "belmonte/textures/T_BSalonPosters-d82ad7c5a1.png": {
+      "bytes": 369905,
+      "sha256": "19c5d46e584b46fcf4b577d7439072a3919e255e85396564d3939cf9881371ba"
+    },
+    "belmonte/textures/T_B_clay_roof_tiles_02_D-c9e880ab3f.png": {
+      "bytes": 8343859,
+      "sha256": "0b6ce89f5659def9595e88b6faaec4fa78f263fae2262c28151fb213396caa41"
+    },
+    "belmonte/textures/T_B_cobblestone_floor_08_D-3b6f631163.png": {
+      "bytes": 8092488,
+      "sha256": "a1dbe453bddf8b976a7e9a1cf54bc26b2e3e89356b2bcb0f481abeb609e1f263"
+    },
+    "belmonte/textures/T_B_cobblestone_large_01_D-45cfccc09e.png": {
+      "bytes": 8799365,
+      "sha256": "0aeb571126460f52df7be902c8dd0862aa2e7b493c32a891e6dbec5cd81918b0"
+    },
+    "belmonte/textures/T_B_grass_ground_D-c17533b977.png": {
+      "bytes": 8575319,
+      "sha256": "116ae525c5234de4920971e1eb9a41e5ba04bae88885ff584ecf99e156d34691"
+    },
+    "belmonte/textures/T_B_gravelly_sand_D-7c7d6294b6.png": {
+      "bytes": 8959895,
+      "sha256": "418fc3d4d45f1ea4f20bbecdaa79c3f4c389f2a0f896a7d337b5de611b949ffb"
+    },
+    "belmonte/textures/T_B_medieval_blocks_03_D-2666290930.png": {
+      "bytes": 8401204,
+      "sha256": "5b4e051bff90088029d949510e87bd3a55219d27bfa925d490a9a3a05fde2e5b"
+    },
+    "belmonte/textures/T_B_park_sand_D-a7ee5cb65f.png": {
+      "bytes": 7693912,
+      "sha256": "11d2567841f780324fdbfff2d89862990d78d8a40f2ba788e7b9b68fd9a4e495"
+    },
+    "belmonte/textures/T_B_rock_wall_11_D-d45075f074.png": {
+      "bytes": 7575105,
+      "sha256": "dd8099a91c126dc29447a1d07770b4005ec1a59e3c07e796a02411d65ab711d7"
+    },
+    "belmonte/textures/T_B_rough_plaster_broken_D-b39f163f74.png": {
+      "bytes": 9509629,
+      "sha256": "7bdb3d1cac2ffb6e8aa398926fbe21fdde6a7baf4a57c94c62b3104cd37f3724"
+    },
+    "belmonte/textures/T_B_sandstone_blocks_05_D-377f16c8af.png": {
+      "bytes": 8179016,
+      "sha256": "f00dca92ee93e09845d55c744a87c9acf2311aa0f9794f1c2eec0702dcb6201d"
+    },
+    "belmonte/textures/T_B_weathered_planks_D-4cd10312e4.png": {
+      "bytes": 6599045,
+      "sha256": "72581e8e0808cebb401fa055a2eab6e1ec12df70be7e751033773e5c2e9d178b"
+    },
+    "belmonte/textures/T_B_withered_grass_D-4293e66187.png": {
+      "bytes": 9088126,
+      "sha256": "58d6a894d0febf8ec9739eff41ae18b9736406ba06e6cb329097838ae6e08465"
+    },
+    "belmonte/textures/T_B_wood_planks_D-39ceb687eb.png": {
+      "bytes": 6488721,
+      "sha256": "3e9dc9575608cd415858edf1032d7bdeaa1ae98b0fbbead170930de59ab8c92c"
+    },
+    "belmonte/textures/T_B_worn_rock_natural_01_D-2827c5ee4d.png": {
+      "bytes": 7969998,
+      "sha256": "b74c7ffe1359628e4f42e496140b2e6c8f4186a157523a38722dc3a2454130df"
+    },
+    "belmonte/textures/T_B_yellow_plaster_D-e160611677.png": {
+      "bytes": 6454427,
+      "sha256": "5e842fce8953528dc100284f60ec25ec7f9beade465522a3d4bc581e5182d4b5"
+    },
     "characters/adventure/source/animations.json": {
       "bytes": 8652444,
       "sha256": "56ab2d1a6bb953ceca654c0ba7ce3b45e59467eb9a62168729200a5b482bb9f0"

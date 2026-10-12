@@ -258,6 +258,24 @@ def hippodrome_steps(out):
     ]
 
 
+def belmonte_steps(out):
+    """The current town and countryside library, with island planting and a northern apron."""
+    region = REGIONS / 'belmonte'
+    return [
+        Step('world.belmonte', [Python(region / 'build.py')],
+             inputs=[region, ASSETS / 'belmonte', REGIONS / 'hippodrome' / 'build.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', YORI],
+             needs=['world.layout'], outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json'],
+             about='Belmonte environment: committed models, northern terrain join and island flora'),
+        Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
+                                             null_rhi=True, modules=IMPORT_CODE)],
+             inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'atmosphere.py'],
+             needs=['world.belmonte', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
+             outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset'],
+             about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
+    ]
+
+
 def communitypark_steps(out):
     """The community park built from its committed library scene (docs/COMMUNITY_PARK.md)."""
     if not communitypark(out):
@@ -318,6 +336,7 @@ def world_steps(ctx, park):
                      REGIONS / 'megapark' / 'gate.py', ASSETS / 'hidamari' / 'props', *park_inputs],
              needs=['world.layout'], outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json'],
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains'),
+        *belmonte_steps(out)[:1],
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
              inputs=[REGIONS / 'zeppelin', REGIONS / 'village' / 'build.py', REGIONS / 'hidamari' / 'mountains.py',
                      REGIONS / 'megapark' / 'gate.py'],
@@ -344,9 +363,10 @@ def world_steps(ctx, park):
              about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams'),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
              inputs=[WORLD / 'build_terrain.py', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
+                     REGIONS / 'belmonte', ASSETS / 'belmonte',
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py',
                      *park_inputs],
-             needs=['world.layout', 'world.hidamari', 'world.textures'],
+             needs=['world.layout', 'world.hidamari', 'world.textures', 'world.belmonte'],
              outputs=[out / 'terrain.fbx', out / 'assets' / 'Sea.fbx'], about='terrain, road, wires, far hills, sea'),
         Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village'], needs=['world.layout'],
              outputs=[out / 'village' / 'manifest.json'], about='Momiji Hamlet'),
@@ -390,7 +410,7 @@ def world_steps(ctx, park):
         Step('world.map', [Python(WORLD / 'map' / 'build_map.py')],
              inputs=[WORLD / 'map', REGIONS / 'mega' / 'ramp.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py', *park_inputs,
                      *([REGIONS / 'communitypark' / 'plan.py'] if park else [])],
-             needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin'],
+             needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin', 'world.belmonte'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png'], about='map zones and the painted sheet'),
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'))],
              inputs=[WORLD / 'city_surface_tiles.py'], needs=['world.hidamari'],
@@ -593,7 +613,7 @@ def staging_steps(ctx, park):
     return [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.bike', 'characters.cairo_bike', 'characters.modori_bike',
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.belmonte', 'world.bike', 'characters.cairo_bike', 'characters.modori_bike',
                     'characters.modori_grips',
                     *(['world.communitypark'] if park else [])],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
@@ -604,7 +624,7 @@ def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     park = communitypark(ctx.out)
     result = (world_steps(ctx, park) + character_steps(ctx) + sound_effect_steps(ctx)
-              + unreal_steps(ctx) + staging_steps(ctx, park) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out))
+              + unreal_steps(ctx) + staging_steps(ctx, park) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[1:])
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)

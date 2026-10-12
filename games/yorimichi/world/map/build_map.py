@@ -23,6 +23,8 @@ S = A.data
 W = json.load(open(f'{S}/world.json'))
 CITY_PATH = f'{S}/hidamari/city.json'
 C = json.load(open(CITY_PATH)) if os.path.exists(CITY_PATH) else None
+BELMONTE_PATH = f'{S}/belmonte/runtime.json'
+BELMONTE = json.load(open(BELMONTE_PATH)) if os.path.exists(BELMONTE_PATH) else None
 H = np.load(f'{S}/heightmap.npy').astype(np.float32)
 SIZE = W['size']
 NORTH = C.get('north_bounds') if C else None
@@ -65,6 +67,18 @@ if C and CITY:
 if NORTH and CITY:
     mask=(GX>=NORTH[0])&(GX<=NORTH[2])&(GY>=NORTH[1])&(GY<=NORTH[3])
     Z[mask]=CITY.north_height(GX[mask],GY[mask])
+if BELMONTE:
+    from belmonte import layout as BM, source as BM_SOURCE
+    mask = BM.contains(GX, GY)
+    Z[mask] = BM_SOURCE.terrain().height(GX[mask] - BM.ORIGIN[0], GY[mask] - BM.ORIGIN[1]) + BM.ORIGIN[2]
+    assert np.isfinite(Z[mask]).all(), 'Belmonte map has uncovered terrain'
+    from belmonte import terrain as BM_TERRAIN
+    for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron'):
+        mesh = BM_SOURCE.Surface(BM_SOURCE.triangles(yori.OUT / f'belmonte/glb/{name}.glb'))
+        height = mesh.height(GX - BM.ORIGIN[0], GY - BM.ORIGIN[1]) + BM.ORIGIN[2]
+        covered = (GY > BM.SOUTH_JOIN) & np.isfinite(height) & ~mask
+        Z[covered] = height[covered]
+
 # the island lives outside the heightmap: sample its own height function in island-local coordinates
 SW = W.get('southwest')
 if SW:
@@ -87,6 +101,7 @@ Z = np.where(Z < 0, np.minimum(Z, -1.5 - 30.0 * (1 - near) ** 1.6), Z).astype(np
 playable = square | (Z < 0)
 if C: playable |= (GX >= C['bounds'][0]) & (GY >= C['bounds'][1]) & (GX <= C['bounds'][2]) & (GY <= C['bounds'][3])
 if NORTH: playable |= (GX>=NORTH[0])&(GX<=NORTH[2])&(GY>=NORTH[1])&(GY<=NORTH[3])
+if BELMONTE: playable |= BM.contains(GX, GY) | approach
 if SW: playable |= isl
 fade = np.array(Image.fromarray((playable * 255).astype(np.uint8), 'L').filter(ImageFilter.GaussianBlur(6 * PX))).astype(np.float32) / 255
 
@@ -183,6 +198,8 @@ if W.get('forest_lake'):
     d.polygon(shore,fill=(79,145,153),outline=(170,185,130))
 # ---------- roads, streets, lanes, trails
 for run in W['rail_runs']: line(run, (255, 255, 255, 220), 1.0)
+if BELMONTE:
+    line(BELMONTE['railway_corridor'], (112, 96, 82), 2.)
 ROAD_W = W['road_width']
 line(W['road'], (58, 54, 52), ROAD_W + 2.4); line(W['road'], (150, 148, 150), ROAD_W); line(W['road'], (232, 228, 220), .6)
 if C:
@@ -285,6 +302,7 @@ def zone(key, name, polyline, near, face=None, hint=''):
     else: yaw = facing(face[0], face[1], x, y)
     return dict(key=key, name=name, x=round(float(x), 2), y=round(float(y), 2), z=round(float(z), 2), yaw=round(yaw, 1), hint=hint)
 zones = []
+if BELMONTE: zones.extend(BELMONTE['zones'])
 ps = W['player_start']
 zones.append(dict(key='spawn', name='Coastal road (spawn)', x=ps[0], y=ps[1], z=ps[2], yaw=ps[3], hint='Where the walk begins'))
 centre = np.mean([b['position'][:2] for b in V['buildings']], axis=0)
@@ -365,6 +383,20 @@ if os.path.exists(registration):
     registered=json.load(open(registration))
     matched=matched and registered.get('projection_x',[])==(X_KNOTS if NORTH else []) and registered.get('projection_y',[])==(Y_KNOTS if NORTH else [])
 sheet = Image.open(committed).convert('RGB') if os.path.exists(committed) and matched else img
+if not matched and BELMONTE and os.path.exists(committed) and os.path.exists(registration):
+    registered = json.load(open(registration))
+    old_x, old_y = registered.get('projection_x', []), registered.get('projection_y', [])
+    if old_x == X_KNOTS[:len(old_x)] and old_y == Y_KNOTS[:len(old_y)] and old_x and old_y:
+        # Extend the registered current artwork without stretching its geography.
+        # The generated northern strip replaces the former empty top margin.
+        sheet = img.copy()
+        painting = Image.open(committed).convert('RGB')
+        old_width = round((paint_bounds[2] - paint_bounds[0]) * PX)
+        old_height = round((paint_bounds[3] - paint_bounds[1]) * PX)
+        painting = painting.resize((old_width, old_height), Image.Resampling.LANCZOS)
+        trim = round((paint_bounds[3] - project(3000., Y_KNOTS)) * PX)
+        painting = painting.crop((0, max(0, trim), old_width, old_height))
+        sheet.paste(painting, (round((paint_bounds[0] - X0) * PX), round((Y1 - paint_bounds[3]) * PX) + max(0, trim)))
 if sheet is not img and communitypark.available():
     def painted_point(x, y):
         px, py = wp(x, y)
@@ -377,6 +409,7 @@ meta = dict(frame='blender_metres_north_up', bounds=[X0, Y0, X1, Y1], px_per_m=P
             sea_level=W.get('sea_level', 0), zones=zones, sources=['world.json', 'heightmap.npy', 'farhills.npy'] + (['hidamari/city.json'] if C else []))
 if NORTH:meta.update(projection_x=X_KNOTS,projection_y=Y_KNOTS,
                      world_bounds=[X_KNOTS[0][0],Y_KNOTS[0][0],X_KNOTS[-1][0],Y_KNOTS[-1][0]])
+if BELMONTE: meta['sources'].append('belmonte/runtime.json')
 json.dump(meta, open(os.path.join(A.out, 'map.json'), 'w'), indent=1)
 json.dump(LINES, open(os.path.join(A.out, 'map_lines.json'), 'w'))
 print('map', MW, 'x', MH, 'px,', len(zones), 'zones ->', A.out)
