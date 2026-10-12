@@ -30,6 +30,66 @@ def test_two_observers_see_same_players_health_and_replacement(receipt):
     assert all(review.feature_checks(receipt, 'switch-bike').values())
 
 
+@pytest.fixture
+def zeppelin_receipt(receipt):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value.update(case='zeppelin', stages=value['stages'][:4])
+    for stage in value['stages']:
+        mounted = stage['phase'] in (1, 2)
+        for side in ('host', 'guest'):
+            stage[side].update(ship_stage=3 if mounted else 0, dock=0, destination=1, ship_z=1000)
+            for index, row in enumerate(stage[side]['views']):
+                rider = 'Modori' if stage['phase'] >= 2 else 'Cairo'
+                row.update(rider=rider, pawn=rider+'Character', activity=4 if mounted else 0,
+                           x=0, y=-55 if index == 0 else 55, z=1090)
+    path.write_text(json.dumps(value))
+    return receipt
+
+
+def test_both_observers_see_shared_flying_zeppelin_and_separate_seats(zeppelin_receipt):
+    assert all(review.feature_checks(zeppelin_receipt, 'zeppelin').values())
+
+
+@pytest.mark.parametrize('field', ['dock', 'destination', 'ship_z', 'ship_stage'])
+def test_zeppelin_requires_ship_state_from_both_observers(zeppelin_receipt, field):
+    path = zeppelin_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for side in ('host', 'guest'):
+        value['stages'][1][side].pop(field)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(zeppelin_receipt, 'zeppelin').values())
+
+
+@pytest.mark.parametrize('side', ['host', 'guest'])
+def test_zeppelin_rejects_overlapping_seats_on_either_observer(zeppelin_receipt, side):
+    path = zeppelin_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    rows = value['stages'][2][side]['views']
+    rows[1].update({key: rows[0][key] for key in ('x', 'y', 'z')})
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(zeppelin_receipt, 'zeppelin').values())
+
+
+@pytest.mark.parametrize('edit', [dict(ship_stage=0), dict(dock=-1), dict(destination=True),
+                                  dict(ship_z=float('inf'))])
+def test_zeppelin_rejects_invalid_or_nonflying_ship_state(zeppelin_receipt, edit):
+    path = zeppelin_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][1]['guest'].update(edit)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(zeppelin_receipt, 'zeppelin').values())
+
+
+@pytest.mark.parametrize('edit', [dict(x=None), dict(y=True), dict(z=float('nan'))])
+def test_zeppelin_requires_finite_seat_positions(zeppelin_receipt, edit):
+    path = zeppelin_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][1]['guest']['views'][0].update(edit)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(zeppelin_receipt, 'zeppelin').values())
+
+
 @pytest.mark.parametrize('counts,accepted', [([0, 1, 1, 1, 1], True), ([0, 1, 0, 0, 0], False),
                                             ([0, None, 0, 0, 0], False), ([0, -1, 0, 0, 0], False)])
 def test_mount_recovery_count_survives_pawn_replacement(receipt, counts, accepted):

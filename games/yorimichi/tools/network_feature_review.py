@@ -1,5 +1,27 @@
 """Check both players and both observers, using only native feature receipts."""
 import json
+import math
+
+
+def finite_number(value):
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def flying_ship(receipt):
+    return (type(receipt.get('ship_stage')) is int and receipt['ship_stage'] in (3, 4, 5) and
+            all(type(receipt.get(key)) is int and receipt[key] >= 0 for key in ('dock', 'destination')) and
+            receipt['dock'] != receipt['destination'] and finite_number(receipt.get('ship_z')))
+
+
+def separate_seats(receipt):
+    rows = receipt.get('views', [])
+    return (len(rows) == 2 and all(finite_number(row.get(key)) for row in rows for key in ('x', 'y', 'z')) and
+            sum((rows[0][key] - rows[1][key])**2 for key in ('x', 'y')) > 2500)
 
 
 def feature_render_checks(folder, case):
@@ -115,8 +137,8 @@ def feature_checks(folder, case):
                     epochs[key] = epoch if type(epoch) is int else old
         if case == 'zeppelin' and phase in (1, 2):
             a, b = s['host'], s['guest']
-            checks[f'feature_{phase}_shared_ship'] = (a.get('dock') == b.get('dock') and a.get('destination') == b.get('destination') and
-                                                      abs(a.get('ship_z', 0)-b.get('ship_z', 0)) < 250)
-            rows = a.get('views', [])
-            checks[f'feature_{phase}_separate_seats'] = len(rows) == 2 and sum((rows[0].get(k, 0)-rows[1].get(k, 0))**2 for k in ('x', 'y')) > 2500
+            checks[f'feature_{phase}_shared_ship'] = (flying_ship(a) and flying_ship(b) and
+                                                      a['dock'] == b['dock'] and a['destination'] == b['destination'] and
+                                                      abs(a['ship_z']-b['ship_z']) < 250)
+            checks[f'feature_{phase}_separate_seats'] = separate_seats(a) and separate_seats(b)
     return checks
