@@ -470,8 +470,10 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                 load(folder / 'reaction-client.json') or {}, reaction_delivery_case, reaction_delivery_moving)
             checks.update(reaction_checks)
         if feature_case:
-            from network_feature_review import feature_checks
+            from network_feature_review import feature_checks, feature_render_checks
             checks.update(feature_checks(folder, feature_case))
+            if render_view:
+                checks.update(feature_render_checks(folder, feature_case))
         checks['source_unchanged'] = source_revision() == revision
         aggregate = load(aggregate_report) or {}
         checks['aggregate_complete_and_bounded'] = (aggregate.get('state') == 'complete' and

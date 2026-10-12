@@ -57,3 +57,13 @@ def test_skate_replacement_height_uses_retained_root(receipt, height):
     value['stages'][2]['guest']['views'][1].update(body_lift=height)
     path.write_text(json.dumps(value))
     assert all(review.feature_checks(receipt, 'switch-skate').values()) is (height == 88)
+
+
+def test_rendered_feature_requires_complete_decodable_captures(tmp_path):
+    from PIL import Image
+    assert not any(review.feature_render_checks(tmp_path, 'equipment').values())
+    for phase in range(5):
+        Image.new('RGB', (960, 540)).save(tmp_path / f'feature-{phase}.png')
+    assert all(review.feature_render_checks(tmp_path, 'equipment').values())
+    (tmp_path / 'feature-2.png').write_bytes(b'not a complete PNG')
+    assert not review.feature_render_checks(tmp_path, 'equipment')['feature_2_rendered_capture']

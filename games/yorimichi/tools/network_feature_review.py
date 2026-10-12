@@ -2,6 +2,20 @@
 import json
 
 
+def feature_render_checks(folder, case):
+    from PIL import Image
+    checks = {}
+    for phase in range(4 if case == 'zeppelin' else 5):
+        try:
+            with Image.open(folder / f'feature-{phase}.png') as capture:
+                valid = capture.format == 'PNG' and capture.size == (960, 540)
+                capture.verify()
+        except (OSError, ValueError, SyntaxError):
+            valid = False
+        checks[f'feature_{phase}_rendered_capture'] = valid
+    return checks
+
+
 def feature_checks(folder, case):
     result = json.loads((folder / 'features-result.json').read_text())
     stages = result.get('stages', [])

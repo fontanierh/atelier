@@ -62,6 +62,7 @@ struct FProbe
     uint32 EquipmentEpoch = 0;
     int32 EquipmentRecoveryRetries = 0;
     bool Finished = false, DefaultVehicles = false;
+    bool CaptureApproved = false;
     bool SawAir = false, SawBail = false, CharacterSent = false;
     TArray<TSharedPtr<FJsonValue>> Stages;
     TMap<FString, uint32> OriginalEpochs;
@@ -80,6 +81,7 @@ struct FProbe
         Data->SetBoolField(TEXT("complete"), Finished); Data->SetBoolField(TEXT("default_vehicles"), DefaultVehicles);
         Data->SetBoolField(TEXT("requested_in_air"), SawAir); Data->SetBoolField(TEXT("requested_in_bail"), SawBail);
         Data->SetNumberField(TEXT("equipment_recovery_retries"), EquipmentRecoveryRetries);
+        Data->SetBoolField(TEXT("rendering"), FParse::Param(FCommandLine::Get(), TEXT("networkrender")));
         TArray<TSharedPtr<FJsonValue>> Views;
         for (TActorIterator<AWandererCharacter> It(World.Get()); It; ++It)
         {
@@ -222,7 +224,7 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     // world-ready flag appears. Require a settled frame window before stimulus.
     if (Probe.Began < 0.)
     {
-        if (Probe.LastLongFrameAt < 0. || World->GetDeltaSeconds() > .05f) Probe.LastLongFrameAt = Now;
+        if (Probe.LastLongFrameAt < 0. || World->GetDeltaSeconds() > .125f) Probe.LastLongFrameAt = Now;
         if (Now - Probe.LastLongFrameAt < 2.) return false;
     }
     const FString ControlFile = Folder / TEXT("features-control.json");
@@ -241,6 +243,8 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         auto Control = Read(ControlFile); if (!Control) return false;
         const int32 Phase = int32(Control->GetNumberField(TEXT("phase")));
         if (Phase != Probe.Phase) { Probe.Phase = Phase; Probe.PhaseAt = Now; }
+        double CapturePhase = -1.;
+        Probe.CaptureApproved = Control->TryGetNumberField(TEXT("capture_phase"), CapturePhase) && int32(CapturePhase) == Phase;
         if (Control->GetBoolField(TEXT("complete"))) Probe.Finished = true;
         if (Probe.Began < 0.) Probe.Began = Probe.PhaseAt = Now;
     }
@@ -253,7 +257,8 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     }
     if (!Server)
     {
-        if (FParse::Param(FCommandLine::Get(), TEXT("networkrender")) && Now - Probe.PhaseAt >= 2. && Probe.CapturedPhase != Probe.Phase)
+        if (FParse::Param(FCommandLine::Get(), TEXT("networkrender")) && Probe.CaptureApproved &&
+            Now - Probe.PhaseAt >= 2. && Probe.CapturedPhase != Probe.Phase)
         {
             FScreenshotRequest::RequestScreenshot(Folder / FString::Printf(TEXT("feature-%d.png"), Probe.Phase), false, false);
             Probe.CapturedPhase = Probe.Phase;
@@ -262,6 +267,7 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     }
     auto Peer = Read(Folder / TEXT("features-guest.json"));
     if (!Peer || Peer->GetNumberField(TEXT("phase")) != Probe.Phase || Now - Probe.PhaseAt < 2.) return false;
+    const FString CaptureFile = Folder / FString::Printf(TEXT("feature-%d.png"), Probe.Phase);
     auto Gate = [&](const FJsonObject& R)
     {
         if (!R.GetBoolField(TEXT("ready")) || !R.GetBoolField(TEXT("attachment")) || R.GetNumberField(TEXT("health")) != 73. || R.GetNumberField(TEXT("hits")) != 2.) return false;
@@ -278,10 +284,23 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     };
     if (!ViewsMeet(Host, Gate) || !ViewsMeet(Peer, Gate)) return false;
     if (Probe.Case == TEXT("zeppelin") && (Probe.Phase == 1 || Probe.Phase == 2) && !Local->GetLandscape()->Zeppelin->IsFlying()) return false;
+    // Readback and PNG saving can stall a cold renderer. Capture a state that
+    // passed both observer gates, then finish saving before the next input phase.
+    if (FParse::Param(FCommandLine::Get(), TEXT("networkrender")) && Probe.CapturedPhase != Probe.Phase)
+    {
+        FScreenshotRequest::RequestScreenshot(CaptureFile, false, false);
+        Probe.CapturedPhase = Probe.Phase;
+    }
+    if ((FParse::Param(FCommandLine::Get(), TEXT("networkrender")) || Peer->GetBoolField(TEXT("rendering"))) &&
+        !IFileManager::Get().FileExists(*CaptureFile))
+    {
+        auto Control = MakeShared<FJsonObject>(); Control->SetNumberField(TEXT("phase"), Probe.Phase);
+        Control->SetBoolField(TEXT("complete"), false); Control->SetNumberField(TEXT("capture_phase"), Probe.Phase);
+        Save(ControlFile, Control);
+        return false;
+    }
     auto Stage = MakeShared<FJsonObject>(); Stage->SetNumberField(TEXT("phase"), Probe.Phase);
     Stage->SetObjectField(TEXT("host"), Host); Stage->SetObjectField(TEXT("guest"), Peer); Probe.Stages.Add(MakeShared<FJsonValueObject>(Stage));
-    if (FParse::Param(FCommandLine::Get(), TEXT("networkrender")))
-        FScreenshotRequest::RequestScreenshot(Folder / FString::Printf(TEXT("feature-%d.png"), Probe.Phase), false, false);
     const int32 Last = Probe.Case == TEXT("zeppelin") ? 3 : 4;
     if (Probe.Phase == Last)
     {
