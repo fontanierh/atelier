@@ -533,7 +533,7 @@ def clear(instances, pl, h=None):
         x, y, z, s = x[near], y[near], z[near], s[near]
         drop = np.zeros(len(near), bool)
         if tree:
-            dims = SPECIES.get(name, (5., 2., 9., 3.))
+            dims = SPECIES[name]
             t_top = z+dims[0]*s; c_lo = z+dims[1]*s; c_hi = z+dims[2]*s
             reach = dims[3]*s*(.85 if name.endswith('_lo') else 1.)
             trunk_r = .35*s

@@ -14,7 +14,7 @@ MESHES=['ZP_Woodland','ZP_City','ZP_MegaPark']
 # Every pair of stops is a leg. Its cruise height (metres) clears the ground and trees under a 40 m corridor with room
 # for the trailing camera: the Mega Park legs cross the western foothills (116 m) and the volcano's flank (163 m).
 # All legs keep the first leg's speed, 1480 m in 28 s.
-LEG_HEIGHTS={(0,1):155.,(0,2):185.,(1,2):225.}
+LEG_HEIGHTS={(0,1):155.,(0,2):185.,(1,2):240.}
 CRUISE_SPEED=1480/28
 # The Mega Park stop stands on the crest west of the park's top road, on the gate's ground (megapark/gate.py): level
 # under the station and the docked ship, and along its footpath east to x -170. From there a level footbridge crosses

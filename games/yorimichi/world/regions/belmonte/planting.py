@@ -9,16 +9,20 @@ import math
 import numpy as np
 from . import layout as L
 
-BUDGETS = {'tree': 4000, 'bush': 7500, 'grass': 2500}
+BUDGETS = {'tree': 26000, 'bush': 18000, 'grass': 2500}
 
 
 def species(name):
     if 'Potted' in name or 'Topiary' in name:
-        return 'HD_ArcadeTree', 'tree', 8.5
+        return 'Tree_Tuscan_Olive', 'tree', 7.5
     if 'Cypress' in name:
-        return 'Tree_Cedar_B', 'tree', 13.
+        return 'Tree_Tuscan_Cypress', 'tree', 15.
+    if 'Olive' in name:
+        return 'Tree_Tuscan_Olive', 'tree', 7.5
+    if 'Pine' in name:
+        return 'Tree_Tuscan_Pine', 'tree', 16.
     if any(word in name for word in ('Oak', 'Olive', 'Tree')):
-        return 'Tree_Broad_A', 'tree', 8.5
+        return 'Tree_Tuscan_Oak', 'tree', 13.
     if any(word in name for word in ('Lawn', 'VegRow', 'GorgeGreen')):
         return 'Grass_A', 'grass', .8
     if any(word in name for word in ('Flower', 'Lavender')):
@@ -61,7 +65,8 @@ def replacements(data, ground=None):
                     offset[axis] = low[axis] + (index + .5) / count * size[axis]
                 position = translation + rotate(transform['rotation_xyzw'], offset * scale)
                 height = size[2] * abs(scale[2]) / 100.
-                fitted = float(np.clip(height / model_height, .6 if kind == 'tree' else .25, 1.5))
+                small = 'Potted' in name or 'Topiary' in name
+                fitted = float(np.clip(height / model_height, .20 if small else .6 if kind == 'tree' else .25, 1.5))
                 result = {'translation_cm': position.tolist(), 'rotation_xyzw': transform['rotation_xyzw'],
                           'scale': [fitted, fitted, fitted]}
                 priority = hashlib.sha256(f'{name}:{position[0]:.2f}:{position[1]:.2f}'.encode()).hexdigest()
@@ -97,7 +102,9 @@ def replacements(data, ground=None):
         # Deterministic spatial thinning keeps the authored distribution, including
         # small courtyards; a hard cap prevents an accidental vegetation explosion.
         cells = set()
-        cell_size = {'tree': 850., 'bush': 220., 'grass': 250.}[kind]
+        # Preserve the actual avenues and olive rows. Only exact duplicate tree
+        # roots are collapsed; authored spacing is never replaced by a grid.
+        cell_size = {'tree': 10., 'bush': 150., 'grass': 250.}[kind]
         count = 0
         for _, mesh, transform in sorted(rows, key=lambda row: (row[0], row[1])):
             x, y, _ = transform['translation_cm']
@@ -114,14 +121,14 @@ def replacements(data, ground=None):
     return selected, report
 
 
-def woodland(surface, limit=6000):
+def woodland(surface, limit=17000):
     """Detailed leaf trees in clustered woodland on the connecting collar."""
     from . import terrain
     rng = np.random.default_rng(941)
-    x, y = np.meshgrid(np.arange(terrain.OUTER[0] + 8., terrain.OUTER[2], 10.),
-                       np.arange(terrain.OUTER[1] + 8., terrain.OUTER[3], 10.))
+    x, y = np.meshgrid(np.arange(terrain.OUTER[0] + 8., terrain.OUTER[2], 6.),
+                       np.arange(terrain.OUTER[1] + 8., terrain.OUTER[3], 6.))
     x, y = x.ravel(), y.ravel()
-    x += rng.uniform(-4., 4., len(x)); y += rng.uniform(-4., 4., len(y))
+    x += rng.uniform(-2.5, 2.5, len(x)); y += rng.uniform(-2.5, 2.5, len(y))
     on = ~L.contains(x, y, margin=8.)
     x, y = x[on], y[on]
     z = surface.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
@@ -139,8 +146,10 @@ def woodland(surface, limit=6000):
     rng.shuffle(indices)
     result = {}
     for index in indices[:limit]:
-        name = rng.choice(['Tree_Canopy_Maple', 'Tree_Canopy_Crimson', 'Tree_Canopy_Amber', 'Tree_Canopy_Ginkgo'], p=[.4, .2, .2, .2])
-        scale = float(rng.uniform(1., 1.4)); angle = float(rng.uniform(0., math.tau))
+        from hidamari.mountains import noise
+        patch = float(noise(x[index], y[index], 180., 72))
+        name = ('Tree_Tuscan_Pine' if patch < -.35 else 'Tree_Tuscan_Olive' if patch > .5 else 'Tree_Tuscan_Oak')
+        scale = float(rng.uniform(.85, 1.2)); angle = float(rng.uniform(0., math.tau))
         result.setdefault(str(name), []).append({'translation_cm': [(float(x[index]) - L.ORIGIN[0]) * 100.,
                                                                     -(float(y[index]) - L.ORIGIN[1]) * 100.,
                                                                     (float(z[index]) - L.ORIGIN[2] - .1) * 100.],

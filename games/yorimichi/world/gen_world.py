@@ -216,7 +216,7 @@ def trees(x, y, h, d, sl):
         if r > 0.85: return
         name = rng.choice(["Tree_Broad_A", "Tree_Broad_B", "Tree_Maple_A", "Tree_Maple_B", "Tree_Ginkgo", "Tree_Pine_A", "Tree_Cedar_B"], p=[0.12, 0.08, 0.28, 0.14, 0.14, 0.2, 0.04])
     if d > 90 and name.startswith(("Tree_Maple", "Tree_Ginkgo", "Tree_Broad")):
-        name = {"Tree_Maple": "Tree_Maple_lo", "Tree_Ginkgo": "Tree_Ginkgo_lo", "Tree_Broad": "Tree_Broad_lo"}[name[:name.index("_", 5)] if name.count("_") > 1 else name]
+        name = {"Tree_Maple": "Tree_Maple_A", "Tree_Ginkgo": "Tree_Ginkgo", "Tree_Broad": "Tree_Broad_A"}[name[:name.index("_", 5)] if name.count("_") > 1 else name]
     put(name, x, y, h - 0.15, scale=rng.uniform(0.85, 1.25) * (1.25 if d > 26 else 1.0))     # bigger crowns away from the road: the canopy closes
     if name.startswith("Tree_Maple") or name.startswith("Tree_Ginkgo"):
         for _ in range(4):
@@ -228,7 +228,7 @@ use("trees"); scatter(5.0, trees)
 def far_trees(x, y, h, d, sl):
     if d < 95 or sl > 1.6 or rng.random() > 0.6: return
     if math.hypot(x - SHRINE[0], y - SHRINE[1]) < 18: return
-    name = rng.choice(["Tree_Maple_lo", "Tree_Broad_lo", "Tree_Ginkgo_lo", "Tree_Cedar_B", "Tree_Pine_B"], p=[0.48, 0.18, 0.12, 0.08, 0.14])
+    name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Ginkgo", "Tree_Cedar_B", "Tree_Pine_B"], p=[0.48, 0.18, 0.12, 0.08, 0.14])
     put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3))
 use("far"); scatter(3.2, far_trees, jitter=0.5)
 
@@ -313,7 +313,7 @@ for gy in np.arange(-1300, 2600, 11.0):
         if max(abs(x), abs(y)) < 300: continue
         h = far_h(x, y)
         if h < 1 or rng.random() > 0.75: continue
-        name = rng.choice(["Tree_Maple_lo", "Tree_Broad_lo", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo_lo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
+        name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
         put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75))
 
 road = [[round(float(a), 2), round(float(b), 2), round(float(c), 2)] for a, b, c in zip(RX, RY, RZ)]
@@ -343,6 +343,9 @@ integrate_park_trail(world, H)
 # The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
 from megapark.forest import clear_far_forest
 clear_far_forest(world)
+from forest_names import replace_legacy, northern_ecotone
+replace_legacy(inst)
+northern_ecotone(inst)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

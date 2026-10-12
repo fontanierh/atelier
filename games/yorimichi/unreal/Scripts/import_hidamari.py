@@ -100,13 +100,7 @@ for name,entry in manifest.items():
         assert selected,(name,'missing material')
         mesh.set_material(0,selected)
     lod_report=None
-    if name=='HD_NorthTreeBackdropPine':
-        # The simple pine reaches the reduction floor in its second LOD.
-        lod_report=distance_lods(mesh,name,[(1.,1.),(.25,.06)])
-    elif name.startswith('HD_NorthTree'):
-        # Keep close silhouettes; simplify sub-pixel distant crowns instead of culling them.
-        lod_report=distance_lods(mesh,name,[(1.,1.),(.25,.06),(.08,.03)])
-    elif (name.startswith('HD_Shop_') and name[8:].isdigit()) or name in ('HD_Station','HD_Shrine'):
+    if (name.startswith('HD_Shop_') and name[8:].isdigit()) or name in ('HD_Station','HD_Shrine'):
         # Full detail close up, progressively lighter street and distant skyline geometry.
         lod_report=distance_lods(mesh,name,[(1.,1.),(.5,.28),(.15,.12),(.04,.05)])
     elif name.startswith('HD_House_'):

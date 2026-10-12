@@ -57,10 +57,11 @@ class Terrain(unittest.TestCase):
                 self.assertNotIn('COLOR_1', attrs)
                 accessor = doc['accessors'][attrs['COLOR_0']]
                 view = doc['bufferViews'][accessor['bufferView']]
+                self.assertEqual(doc['extras']['atelier_vertex_colours'], 'native-byte-rgb-linear-alpha')
                 colour = np.frombuffer(binary, dtype='<u2', count=accessor['count']*4,
-                                       offset=view.get('byteOffset', 0)+accessor.get('byteOffset', 0)).reshape(-1, 4)/65535.
-                rgb = np.where(colour[:, :3] <= .0031308, colour[:, :3]*12.92, 1.055*colour[:, :3]**(1/2.4)-.055)
-                np.testing.assert_allclose(np.c_[rgb, colour[:, 3]].sum(1), 1., atol=.006)
+                                       offset=view.get('byteOffset', 0)+accessor.get('byteOffset', 0)).reshape(-1, 4)
+                self.assertTrue(np.all(colour[:, :3] % 257 == 0))
+                np.testing.assert_allclose((colour/65535.).sum(1), 1., atol=.006)
 
     def test_join_colour_interpolation_and_rim_weights(self):
         surface = source.Surface([[[0., 0., 0.], [10., 0., 10.], [0., 10., 20.]]],
@@ -69,7 +70,7 @@ class Terrain(unittest.TestCase):
         x = (L.BOUNDS[0]+L.BOUNDS[2])/2
         self.assertEqual(float(appearance.forest_weight(x, L.BOUNDS[1])), 0.)
         self.assertEqual(float(appearance.forest_weight(x, terrain.OUTER[1])), 1.)
-        self.assertAlmostEqual(float(appearance.forest_weight(x, (L.BOUNDS[1]+terrain.OUTER[1])/2)), .5)
+        self.assertTrue(.25 < float(appearance.forest_weight(x, (L.BOUNDS[1]+terrain.OUTER[1])/2)) < .75)
 
     def test_height_is_triangle_intersection_not_nearest_vertex(self):
         surface = source.Surface([[[0., 0., 0.], [10., 0., 10.], [0., 10., 20.]],
@@ -149,8 +150,8 @@ class Flora(unittest.TestCase):
                  {'translation_cm': [2000., 1000., 0.], 'rotation_xyzw': [0., 0., 0., 1.], 'scale': [1., 1., 1.]}]}]}
         first, report = planting.replacements(data)
         self.assertEqual((first, report), planting.replacements(data))
-        self.assertEqual(set(first), {'Tree_Broad_A'})
-        self.assertEqual(len(first['Tree_Broad_A']), 2)
+        self.assertEqual(set(first), {'Tree_Tuscan_Oak'})
+        self.assertEqual(len(first['Tree_Tuscan_Oak']), 2)
         self.assertLessEqual(report['kinds']['tree']['selected'], planting.BUDGETS['tree'])
 
 

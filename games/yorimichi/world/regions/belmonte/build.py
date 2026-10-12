@@ -132,7 +132,7 @@ def main():
         tree = name.startswith(('Tree_', 'HD_'))
         grass = name.startswith('Grass_')
         groups.append({'asset': f'/Game/Japan/Assets/{name}.{name}', 'materials': [], 'plant': True,
-                       'collision': tree, 'shadow': not grass, 'cull_cm': 8000 if grass else 36000 if not tree else 100000,
+                       'collision': tree, 'shadow': not grass, 'cull_cm': 8000 if grass else 36000 if not tree else 400000,
                        'transforms': transforms})
     signs = data['signs']
     for sign in signs:

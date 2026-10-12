@@ -59,7 +59,7 @@ def append(instances,buildings,height,backdrop_grid,terrain_axes,north_height,ro
     valid=(z>4)&((x>2320)|(z<215+20*np.sin(x*.009)))
     x=x[valid];y=y[valid];z=z[valid]
     patch=np.sin(x*.013+np.sin(y*.008)*2)+.6*np.cos(y*.017)
-    choices=rng.random(len(x));kind=np.where(choices<.40,'Green',np.where(choices<.68,'Pine',np.where(patch>0,'Gold','Rust')))
+    kind=np.where(patch<-.55,'Pine',np.where(patch>.75,'Gold',np.where(patch>0,'Green','Rust')))
     scale=rng.uniform(1.25,1.85,len(x));yaw=rng.uniform(0,360,len(x))
     # Front clusters taper in height instead of making a uniform high hedge.
     d=np.minimum(np.where(x<1420,abs(y-(380+22*np.sin(x*.009)+15*np.sin(x*.022))),1e6),np.where(y<900,abs(x-(1345+30*np.sin(y*.011)+22*np.sin(y*.027))),1e6))

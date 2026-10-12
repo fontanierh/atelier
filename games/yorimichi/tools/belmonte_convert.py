@@ -14,6 +14,10 @@ import bmesh
 import bpy
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
+import yori  # noqa: E402,F401
+from belmonte.source import native_colours  # noqa: E402
+
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -71,6 +75,7 @@ def save(objects, path):
                               export_vertex_color='ACTIVE', export_all_vertex_colors=False,
                               export_cameras=False, export_lights=False, export_yup=True)
     assert path.is_file() and path.stat().st_size > 0, path
+    native_colours(path)
 
 
 def main():

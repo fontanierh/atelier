@@ -5,12 +5,22 @@ from atelier.gltf import glb_pack, glb_parts
 from . import layout as L, source, terrain
 
 
+def far_palette(x, y):
+    from hidamari.mountains import smooth
+    north = smooth((np.asarray(y)-3000.)/300.)[..., None]
+    return np.array([.055,.11,.035])*(1.-north)+np.array([.105,.145,.055])*north
+
+
 def forest_weight(x, y):
     low = np.array(L.BOUNDS[:2]); high = np.array(L.BOUNDS[2:])
     outer_low = np.array(terrain.OUTER[:2]); outer_high = np.array(terrain.OUTER[2:])
     p = np.stack(np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float)), -1)
     outside = np.maximum((low-p)/(low-outer_low), (p-high)/(outer_high-high)).max(-1)
     t = np.clip(outside, 0., 1.)
+    # Broad irregular ecotones soften the rectangular acquisition footprint.
+    # Both exact rims still retain their prescribed palette.
+    from hidamari.mountains import noise
+    t = np.clip(t + t*(1.-t)*noise(p[..., 0], p[..., 1], 140., 82)*.7, 0., 1.)
     return t*t*(3.-2.*t)
 
 
@@ -21,7 +31,20 @@ def paint_join(path, mesh):
     y = np.clip(points[:, 1], L.BOUNDS[1], L.BOUNDS[3]) - L.ORIGIN[1]
     colours = source.terrain_colours().colour(x, y)
     assert np.isfinite(colours).all(), 'Missing valley colour at the terrain join'
-    rgba = np.c_[colours, forest_weight(points[:, 0], points[:, 1])].astype('<f4')
+    weight = forest_weight(points[:, 0], points[:, 1])
+    from hidamari import mountains, layout as H
+    # On the southern rim this is the mountain's own linear ground palette,
+    # sampled at the identical shared surface; never a forest photograph band.
+    ox = np.clip(points[:, 0], terrain.OUTER[0], terrain.OUTER[2])
+    oy = np.clip(points[:, 1], terrain.OUTER[1], terrain.OUTER[3])
+    outer = mountains.colours(ox, oy, H.north_height(ox, np.minimum(oy, 3000.)))
+    far = far_palette(ox, oy)
+    south = mountains.smooth((oy-3000.)/80.)
+    outer = outer*(1.-south[:, None]) + far*south[:, None]
+    colours = colours*(1.-weight[:, None]) + outer*weight[:, None]
+    if path.stem == 'SM_BM_NorthCountry':
+        colours = far_palette(points[:,0],points[:,1])
+    rgba = np.c_[source.srgb(colours), weight].astype('<f4')
     doc, binary = glb_parts(path.read_bytes())
     assert doc['accessors'][doc['meshes'][0]['primitives'][0]['attributes']['POSITION']]['count'] == len(rgba)
     doc['bufferViews'].append({'buffer': 0, 'byteOffset': len(binary), 'byteLength': rgba.nbytes, 'target': 34962})

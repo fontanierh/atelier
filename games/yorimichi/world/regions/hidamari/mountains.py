@@ -93,11 +93,22 @@ def natural_height(x,y):
     # It joins the existing flank with matching height and slope.
     summit_radius=np.where(r<110,35+r*r/220,np.maximum(r-20,0))
     cone=510*np.maximum(0,1-summit_radius/1170)**1.55
+    angle=np.arctan2(dy,dx)
+    ridge=(.5+.5*np.cos(angle*8+.45*np.sin(angle*3)+r*.0008))**2
+    ridge_band=smooth((r-140)/140)*smooth((1170-r)/280)
+    # Long arêtes read from the flight above the summit as well as from town.
+    # A small broken crater rim replaces the featureless tangent dome.
+    breach=1.-.8*smooth((np.cos(angle-.5)-.7)/.25)
+    rim=18*np.exp(-((r-100)/45)**2)*(1+.28*np.sin(angle*5))*breach
+    crater=-25*np.exp(-(r/55)**2)
+    shoulders=(72*np.exp(-((dx-290)/130)**2-((dy-90)/160)**2)
+               +48*np.exp(-((dx+220)/120)**2-((dy+140)/150)**2))
     _,cuts=drainage_field(x,y)
-    relief=(-cuts*8+noise(x,y,70,2)*12+noise(x,y,180,17)*9)
-    relief*=smooth((r-35)/170)*smooth((1220-r)/230)
-    # Small irregular facets subdivide the broad faces without changing the skyline.
-    relief+=noise(x,y,24,3)*9*smooth((r-35)/110)*smooth((1100-r)/250)
+    relief=((ridge*np.minimum(38.,cone*.12)-cuts*np.minimum(22.,cone*.1))*ridge_band+rim+crater+shoulders
+            +noise(x,y,70,2)*9+noise(x,y,180,17)*13)
+    relief*=smooth((1220-r)/230)
+    # Small weathering rides the macro ridges; material grain supplies close detail.
+    relief+=noise(x,y,32,3)*4*smooth((r-35)/110)*smooth((1100-r)/250)
     trail_quiet=smooth((trail_distance(x,y)-15)/100)
     relief*=trail_quiet
     foothills+=noise(x,y,130,4)*15*smooth(north/240)*trail_quiet
@@ -163,7 +174,7 @@ def colours(x,y,z):
     rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
     forest=smooth((z-140+noise(x,y,125,27)*28)/75)
     # Muted warm/slate rock planes sit behind the warm tree canopy.
-    rock=np.stack([.145+.043*rock_noise,.137+.025*rock_noise,.185+.015*rock_noise],axis=-1)
+    rock=np.stack([.19+.035*rock_noise,.173+.030*rock_noise,.145+.026*rock_noise],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
@@ -176,11 +187,8 @@ def colours(x,y,z):
     return colors*(1-under[...,None])+floor*under[...,None]
 
 def mesh(base_sampler):
-    from village.build import Mesh
-    m=Mesh('HD_NorthMountains')
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
     x,y,z=surface_grid(base_sampler)
-    rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
     colors=colours(x,y,z)
     radius=np.hypot(x-550,y-1930)
     # Snow collects in broken, tapering gullies instead of long uniform ribbons.
@@ -192,26 +200,27 @@ def mesh(base_sampler):
     signed+=breakup*exposure
     signed=np.maximum(signed,170+noise(x,y,65,33)*14-radius)
     signed=np.minimum(signed,z-235)
+    dy,dx=np.gradient(z,STEP,STEP)
+    normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
+    normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
+    # Soft continuous snow masks replace hard clipped lavender polygons.
+    snow=smooth((signed+10)/22)*smooth((normals[:,:,2]-.42)/.30)
+    snow*=smooth((z-230)/90)
     # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
     from megapark import gate
     from communitypark import layout as community_park
+    faces=[]
+    width=len(xs)
     for j in range(len(ys)-1):
         for i in range(len(xs)-1):
             if gate.cell_inside(x[j,i],y[j,i]) or community_park.cell_inside(x[j,i],y[j,i]):continue
-            for offsets in [((0,0),(1,0),(1,1)),((0,0),(1,1),(0,1))]:
-                p=[(x[j+b,i+a],y[j+b,i+a],z[j+b,i+a]) for a,b in offsets]
-                color=np.mean([colors[j+b,i+a] for a,b in offsets],axis=0)
-                values=[signed[j+b,i+a] for a,b in offsets]
-                variation=1+.10*float(rock_noise[j,i])
-                for snow in (False,True):
-                    clipped=[]
-                    for k in range(3):
-                        a=np.array(p[k]);b=np.array(p[(k+1)%3]);da=values[k];db=values[(k+1)%3]
-                        inside=da>=0 if snow else da<0
-                        if inside:clipped.append(tuple(a))
-                        if (da>=0)!=(db>=0):clipped.append(tuple(a+(b-a)*(da/(da-db))))
-                    if len(clipped)>=3:m.poly(clipped,tuple(c*variation for c in ((.72,.76,.81) if snow else color)))
-    return m
+            a=j*width+i;b=a+1;c=a+width+1;d=a+width
+            faces.extend([(a,b,c),(a,c,d)])
+    faces=np.asarray(faces,dtype=np.int32)
+    used=np.unique(faces);remap=np.full(x.size,-1,dtype=np.int32);remap[used]=np.arange(len(used))
+    return dict(vertices=np.stack([x,y,z],-1).reshape(-1,3)[used],faces=remap[faces],
+                colours=np.dstack([colors,snow]).reshape(-1,4)[used],normals=normals.reshape(-1,3)[used])
+
 
 def trail_mesh(surface):
     from village.build import Mesh
@@ -245,60 +254,3 @@ def trail_points(surface):
             points.append([x,y,float(surface(x,y))])
     x,y=TRAIL[-1];points.append([x,y,float(surface(x,y))])
     return points
-
-
-def forest_tree(kind,backdrop=False):
-    """The forest's opaque crowns, made to be seen from afar: a cauliflower of small noisy lobes over an ellipsoid core,
-    shaded smooth with normals mostly out from the whole crown, and coloured per vertex by height and noise, so a
-    hillside reads as soft clumps of leaves rather than faceted balls (the pines: tiers, likewise smooth)."""
-    import bpy,random
-    from mathutils import Vector,noise
-    from village.build import Mesh
-    r=random.Random({'Gold':81,'Rust':123,'Pine':206,'Green':279}[kind])
-    class Smooth(Mesh):
-        def object(self,material):
-            # Smooth shading with the crown's own normals (the trunk's point straight out from the axis).
-            ob=super().object(material);me=ob.data
-            out=[tuple(self.normals[i]) if i in self.normals else tuple(Vector((p[0],p[1],0)).normalized() or (0,0,1))
-                 for i,p in enumerate(self.vertices)]
-            me.polygons.foreach_set('use_smooth',[True]*len(me.polygons))
-            me.normals_split_custom_set_from_vertices(out)
-            return ob
-    m=Smooth('HD_NorthTree'+('Backdrop' if backdrop else '')+kind);m.normals={}
-    bark=(.055,.027,.012)
-    m.lathe((0,0,0),[(0,.26),(3.6,.17),(6,.06)],bark,n=7)
-    m.collider((0,0,2.5),(.48,.48,5.))
-    def shade(pts,colour,normal,lift):
-        i=len(m.vertices);m.poly(pts,colour)
-        if len(m.vertices)!=i+len(pts):return
-        for j,p in enumerate(pts):
-            v=(.62+.30*min(1.,max(0.,(p.z-lift)/7.))+.18*noise.noise(p*.55))
-            m.colors[i+j]=(*(c*v for c in colour),0);m.normals[i+j]=normal(p)
-    if kind=='Pine':
-        green=(.021,.049,.025)   # a shade warmer than the old blue-green
-        for z,radius in [(2.8,2.8),(4.1,2.5),(5.8,1.9),(7.3,1.3)]:
-            c=Vector((r.uniform(-.35,.35),r.uniform(-.35,.35),z));profile=[(0,radius*.48),(.28,radius),(2.5,.05)]
-            for k in range(9):
-                a0,a1=k*math.tau/9,(k+1)*math.tau/9
-                for (h0,r0),(h1,r1) in zip(profile,profile[1:]):
-                    pts=[c+Vector((rr*math.cos(a),rr*math.sin(a),h)) for h,rr,a in ((h0,r0,a0),(h0,r0,a1),(h1,r1,a1),(h1,r1,a0))]
-                    shade(pts,green,lambda p,c=c:Vector((p.x-c.x,p.y-c.y,.9)).normalized(),1.5)
-        return m
-    palette={'Gold':(.49,.27,.035),'Rust':(.45,.12,.023),'Green':(.042,.08,.026)}[kind]   # Green: a warm olive, not teal
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1)
-    ob=bpy.context.object;base=[v.co.copy() for v in ob.data.vertices]
-    lobes=[]
-    for k in range(10):
-        u=r.uniform(0,math.tau);h=r.uniform(-.75,1.);rr=math.sqrt(max(0.,1-h*h));q=r.uniform(1.45,2.15)
-        lobes.append((Vector((3.4*rr*math.cos(u),3.4*rr*math.sin(u),6.4+2.4*h)),Vector((q,q,q*r.uniform(.8,1.))),r.uniform(.88,1.1)))
-    lobes.append((Vector((0,0,6.3)),Vector((3.2,3.2,2.8)),1.))   # the core closes the gaps between the lobes
-    centre=Vector((0,0,5.3))
-    for c,s,tint in lobes:
-        for f in ob.data.polygons:
-            pts=[]
-            for i in f.vertices:
-                b=base[i];d=1+.16*noise.noise(b*2.3+c)+.08*noise.noise(b*5.1-c)
-                pts.append(c+Vector((b.x*s.x,b.y*s.y,b.z*s.z))*d)
-            shade(pts,tuple(v*tint for v in palette),lambda p,c=c:((p-centre).normalized()*.75+(p-c).normalized()*.25).normalized(),3.)
-    bpy.data.objects.remove(ob,do_unlink=True)
-    return m

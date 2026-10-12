@@ -86,6 +86,9 @@ class Mesh:
         if m not in self.mats: self.mats.append(m)
         return self.mats.index(m)
 
+    def begin_canopy(self,count):
+        """LOD subclasses allocate cards independently in every crown lobe."""
+
     def quad(self, pts, m, uvs=None, normal=None, smooth=False, col=None):
         i0 = len(self.v); self.v += [Vector(p) for p in pts]
         self.f.append([i0 + k for k in range(len(pts))]); self.fm.append(self.mi(m)); self.smooth.append(smooth)
@@ -219,39 +222,13 @@ def leaf_canopy(mesh, center, radii, n, size, m, rng, normal_center=None, vertic
 
 
 def tree_maple(name, seed, height=6.5, spread=6.0):
-    """momiji: short trunk, wide layered canopy of small red leaves"""
-    rng = random.Random(seed); M = Mesh(name); bark = MATS["Bark"]; leaf = MATS["LeafMaple"]
-    top = Vector((rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2), height * 0.42))
-    M.tube((0, 0, -0.2), top, 0.22, 0.13, bark, n=8, uvscale=(1, 0.5))
-    for i in range(5):
-        a = 2 * math.pi * i / 5 + rng.uniform(-0.3, 0.3)
-        end = top + Vector((math.cos(a) * spread * 0.42, math.sin(a) * spread * 0.42, height * 0.35))
-        M.tube(top - Vector((0, 0, 0.2)), end, 0.10, 0.03, bark, n=6, uvscale=(1, 0.5))
-        mid = top + (end - top) * 0.55
-        M.tube(mid, mid + Vector((math.cos(a + 0.9) * 1.2, math.sin(a + 0.9) * 1.2, 0.6)), 0.05, 0.02, bark, n=5)
-    leaf_canopy(M, (0, 0, height * 0.74), (spread * 0.5, spread * 0.5, height * 0.28), 420, 0.70, leaf, rng, normal_center=(0, 0, height * 0.5), vertical_bias=0.4)
-    return M.build()
+    from forest_trees import tree
+    return tree(name, 'maple', seed, height, spread, 'LeafMaple')
 
 
 def tree_ginkgo(name, seed, height=9.0):
-    rng = random.Random(seed); M = Mesh(name); bark = MATS["Bark"]; leaf = MATS["LeafGinkgo"]
-    top = Vector((0, 0, height * 0.55))
-    M.tube((0, 0, -0.2), Vector((0, 0, height * 0.9)), 0.24, 0.06, bark, n=8, uvscale=(1, 0.5))
-    for i in range(6):
-        a = 2 * math.pi * i / 6 + rng.uniform(-0.3, 0.3); z = height * rng.uniform(0.35, 0.75)
-        M.tube(Vector((0, 0, z)), Vector((math.cos(a) * 1.4, math.sin(a) * 1.4, z + 1.2)), 0.07, 0.02, bark, n=5)
-    leaf_canopy(M, (0, 0, height * 0.66), (2.1, 2.1, height * 0.34), 380, 0.72, leaf, rng, normal_center=(0, 0, height * 0.45), vertical_bias=0.3)
-    return M.build()
-
-
-def tree_lo(name, seed, kind, height, spread):
-    """distant version: a few dozen big painted-cluster cards (used beyond 90 m from the road)"""
-    rng = random.Random(seed); M = Mesh(name); bark = MATS["Bark"]
-    leaf = MATS[{"maple": "LeafMapleLo", "ginkgo": "LeafGinkgoLo", "broad": "LeafBroadLo"}[kind]]
-    M.tube((0, 0, -0.2), (0, 0, height * 0.55), 0.22, 0.10, bark, n=6, uvscale=(1, 0.5))
-    # a few dozen mid-size cards of the soft painted-cluster atlases: smooth crowns from a distance
-    leaf_canopy(M, (0, 0, height * 0.72), (spread * 0.5, spread * 0.5, height * 0.28), 40, 1.2, leaf, rng, normal_center=(0, 0, height * 0.45), vertical_bias=0.3)
-    return M.build()
+    from forest_trees import tree
+    return tree(name, 'ginkgo', seed, height, 4.2, 'LeafGinkgo')
 
 
 def bush_flower(name, seed, r=1.1):
@@ -267,63 +244,18 @@ def rock(name, seed, size):
 
 
 def tree_broad(name, seed, height=8.0, spread=4.2):
-    rng = random.Random(seed); M = Mesh(name)
-    bark = MATS["Bark"]; leaf = MATS["LeafBroad"]
-    top = Vector((rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3), height * 0.55))
-    M.tube((0, 0, -0.2), top, 0.28, 0.16, bark, n=8, uvscale=(1, 0.5))
-    for i in range(4):
-        a = 2 * math.pi * i / 4 + rng.uniform(-0.4, 0.4)
-        end = top + Vector((math.cos(a) * spread * 0.4, math.sin(a) * spread * 0.4, height * 0.28))
-        M.tube(top - Vector((0, 0, 0.3)), end, 0.14, 0.05, bark, n=6, uvscale=(1, 0.5))
-    leaf_canopy(M, (0, 0, height * 0.72), (spread * 0.55, spread * 0.55, height * 0.32), 440, 0.75, MATS["LeafSmall"], rng,
-                normal_center=(0, 0, height * 0.55), vertical_bias=0.35)
-    return M.build()
+    from forest_trees import tree
+    return tree(name, 'oak', seed, height, spread, 'LeafSmall')
 
 
 def tree_pine(name, seed, height=14.0):
-    """akamatsu: tall bare trunk with a slight lean, a few horizontal branches, feathery needle pads on each"""
-    rng = random.Random(seed); M = Mesh(name)
-    bark = MATS["Bark"]; leaf = MATS["LeafPine"]
-    lean = Vector((rng.uniform(-0.9, 0.9), rng.uniform(-0.9, 0.9), 0))
-    pts = [Vector((0, 0, -0.2)), Vector((0, 0, height * 0.5)) + lean * 0.4, Vector((0, 0, height)) + lean]
-    M.tube(pts[0], pts[1], 0.26, 0.17, bark, n=8, uvscale=(1, 0.4)); M.tube(pts[1], pts[2], 0.17, 0.05, bark, n=8, uvscale=(1, 0.4))
-    tiers = 6
-    for i in range(tiers):
-        t = i / (tiers - 1)
-        z = height * (0.5 + 0.48 * t); r = 2.6 * (1 - t) ** 0.8 + 0.6
-        c = Vector((0, 0, z)) + lean * (z / height)
-        a0 = rng.uniform(0, math.pi)
-        for k in range(2 if i < tiers - 1 else 1):
-            a = a0 + k * 2.6 + rng.uniform(-0.4, 0.4)
-            end = c + Vector((math.cos(a) * r * 0.85, math.sin(a) * r * 0.85, 0.15))
-            M.tube(c, end, 0.07, 0.02, bark, n=5)
-            # a feathery pad at the branch tip: several small horizontal cards
-            for j in range(16):
-                q = end + Vector((rng.uniform(-0.5, 0.5) * r, rng.uniform(-0.5, 0.5) * r, rng.uniform(-0.25, 0.45)))
-                w = r * rng.uniform(0.3, 0.5)
-                yaw = rng.uniform(0, math.pi); tilt = rng.uniform(38, 82)
-                Rm = Euler((math.radians(tilt), 0, yaw), "XYZ").to_matrix()
-                corners = []
-                for (ux, uz) in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                    qq = q + Rm @ Vector((ux * w / 2, 0, uz * w / 2)); nrm = qq - (c - Vector((0, 0, r * 0.9))); corners.append(nrm.normalized())
-                M.card(q, (w, w), yaw, tilt, leaf, rng.randrange(4), corners, col=(0.6, 0.6 + 0.4 * rng.random()))
-        # a few vertical cards so the pad is not paper-thin from the side
-        canopy(M, tuple(c), (r * 0.5, r * 0.5, height * 0.035), 2, r * 0.8, leaf, rng, normal_center=(c.x, c.y, c.z - r), tilt_range=(-15, 15), vertical_bias=0.4)
-    return M.build()
+    from forest_trees import tree
+    return tree(name, 'pine', seed, height, 6., 'LeafPine')
 
 
 def tree_cedar(name, seed, height=16.0):
-    rng = random.Random(seed); M = Mesh(name)
-    bark = MATS["Bark"]; leaf = MATS["LeafCedar"]
-    M.tube((0, 0, -0.2), (0, 0, height * 0.95), 0.32, 0.05, bark, n=8, uvscale=(1, 0.4))
-    levels = 8
-    for i in range(levels):
-        t = i / (levels - 1)
-        z = height * (0.22 + 0.76 * t)
-        r = 2.6 * (1 - t) + 0.45
-        canopy(M, (0, 0, z), (r * 0.75, r * 0.75, height * 0.07), 10 if i < levels - 1 else 3, r * 1.5, leaf, rng,
-               normal_center=(0, 0, z - r * 0.9), tilt_range=(-25, 25), vertical_bias=0.35)
-    return M.build()
+    from forest_trees import tree
+    return tree(name, 'cedar', seed, height, 5., 'LeafCedar')
 
 
 def bush(name, seed, m_name, r=1.4):
@@ -476,10 +408,19 @@ def bird_parts():
 # ------------------------------------------------------------------ export + check
 def export(ob, name):
     bpy.ops.object.select_all(action="DESELECT"); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    hull=None
+    if 'trunk_collision' in ob:
+        values=ob['trunk_collision'];radius=values[0];a=Vector(values[1:4]);b=Vector(values[4:7])
+        bpy.ops.mesh.primitive_cube_add(size=1,location=(a+b)*.5)
+        hull=bpy.context.object;hull.name='UCX_'+name+'_00';hull.scale=(radius*2,radius*2,(b-a).length+.2)
+        hull.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
+        bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+        ob.select_set(True);bpy.context.view_layer.objects.active=ob
     path = os.path.join(OUTDIR, f"{name}.fbx")
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL",
                              axis_forward="-Y", axis_up="Z", object_types={"MESH"}, mesh_smooth_type="FACE", bake_anim=False,
                              path_mode="COPY", embed_textures=False, use_tspace=False, colors_type="SRGB")
+    if hull:bpy.data.objects.remove(hull,do_unlink=True)
     print(f"exported {name}: {len(ob.data.polygons)} faces")
 
 
@@ -492,8 +433,6 @@ def main():
         "Tree_Broad_C": lambda: tree_broad("Tree_Broad_C", 3, 10.0, 5.4),
         "Tree_Maple_A": lambda: tree_maple("Tree_Maple_A", 21, 6.5, 6.0), "Tree_Maple_B": lambda: tree_maple("Tree_Maple_B", 22, 5.2, 4.6),
         "Tree_Ginkgo": lambda: tree_ginkgo("Tree_Ginkgo", 23, 9.0), "Leaf": lambda: leaf_mesh("Leaf"), "Litter": lambda: litter("Litter"),
-        "Tree_Maple_lo": lambda: tree_lo("Tree_Maple_lo", 31, "maple", 6.5, 6.0), "Tree_Ginkgo_lo": lambda: tree_lo("Tree_Ginkgo_lo", 32, "ginkgo", 9.0, 4.2),
-        "Tree_Broad_lo": lambda: tree_lo("Tree_Broad_lo", 33, "broad", 8.5, 5.0),
         "Bush_Flower_A": lambda: bush_flower("Bush_Flower_A", 34, 1.2), "Bush_Flower_B": lambda: bush_flower("Bush_Flower_B", 35, 0.9),
         "Rock_A": lambda: rock("Rock_A", 36, (1.8, 1.4, 1.0)), "Rock_B": lambda: rock("Rock_B", 37, (1.1, 0.9, 0.7)), "Rock_C": lambda: rock("Rock_C", 38, (2.6, 2.0, 1.3)),
         "Tree_Pine_A": lambda: tree_pine("Tree_Pine_A", 4, 13.0), "Tree_Pine_B": lambda: tree_pine("Tree_Pine_B", 5, 11.0),

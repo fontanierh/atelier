@@ -27,9 +27,9 @@ def verify_lods(target,screen_sizes,meshes):
             'screen_sizes':actual,'materials_by_lod':palettes,'all_slots_blend':True}
 
 
-def main(names=None):
-    output=yori.OUT/'foliage_lods'
-    manifest=json.loads((output/'manifest.json').read_text())
+def main(names=None, output=None, manifest_file='manifest.json', shared_materials=True):
+    output=output or yori.OUT/'foliage_lods'
+    manifest=json.loads((output/manifest_file).read_text())
     if names is not None: manifest={name:manifest[name] for name in names}
     assets=U.AssetToolsHelpers.get_asset_tools()
     editor=U.EditorAssetLibrary
@@ -76,14 +76,15 @@ def main(names=None):
         assert meshes.get_number_verts(target,0)==original_vertices,'LOD0 changed'
         assert target.get_num_lods()==lod_count
         editor.save_loaded_asset(target)
-    foliage=editor.load_asset('/Game/Japan/Materials/M_Foliage')
-    enable_distance_fade(foliage)
-    U.MaterialEditingLibrary.recompile_material(foliage)
-    editor.save_loaded_asset(foliage)
-    bark=editor.load_asset('/Game/Japan/Materials/MI_Bark')
-    if not bark: raise RuntimeError('Bark material is missing')
-    enable_bark_lod_blend(bark)
-    editor.save_loaded_asset(bark)
+    if shared_materials:
+        foliage=editor.load_asset('/Game/Japan/Materials/M_Foliage')
+        enable_distance_fade(foliage)
+        U.MaterialEditingLibrary.recompile_material(foliage)
+        editor.save_loaded_asset(foliage)
+        bark=editor.load_asset('/Game/Japan/Materials/MI_Bark')
+        if not bark: raise RuntimeError('Bark material is missing')
+        enable_bark_lod_blend(bark)
+        editor.save_loaded_asset(bark)
     for name,data in manifest.items():
         report[name]=verify_lods(editor.load_asset('/Game/Japan/Assets/'+name),data['screen_sizes'],meshes)
     (output/'import.json').write_text(json.dumps(report,indent=2)+'\n')

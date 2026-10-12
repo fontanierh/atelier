@@ -1,22 +1,54 @@
 """Opaque vertex-colour landscape, with the shared aerial perspective (atmosphere.py)."""
 import unreal
 import atmosphere
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'world'))
+import yori  # noqa: E402
 
 def material():
     e=unreal.EditorAssetLibrary;l=unreal.MaterialEditingLibrary
     path='/Game/Japan/Materials';name='M_NorthMountains'
     m=e.load_asset(path+'/'+name) if e.does_asset_exist(path+'/'+name) else unreal.AssetToolsHelpers.get_asset_tools().create_asset(name,path,unreal.Material,unreal.MaterialFactoryNew())
     l.delete_all_material_expressions(m)
+    # Sunburst's generated rock texture is colour only; actual light and relief come from
+    # the surface normals. World-space projection works on cliffs and gullies.
+    task=unreal.AssetImportTask();task.filename=str(yori.ASSETS/'environment/textures/volcanic-rock.jpg')
+    task.destination_path='/Game/Japan/Textures';task.destination_name='T_VolcanicRock'
+    task.automated=True;task.replace_existing=True;task.save=True
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    rock=e.load_asset('/Game/Japan/Textures/T_VolcanicRock');assert rock
+    rock.set_editor_property('srgb',True);rock.set_editor_property('max_texture_size',1024);e.save_loaded_asset(rock)
     vc=l.create_material_expression(m,unreal.MaterialExpressionVertexColor,-500,0)
     depth=l.create_material_expression(m,unreal.MaterialExpressionPixelDepth,-500,200)
     c=l.create_material_expression(m,unreal.MaterialExpressionCustom,-100,0)
-    c.set_editor_property('code','float3 base=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C)); return base*(1-'+atmosphere.SHARE+');')
+    c.set_editor_property('code','''float3 base=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
+float3 w=pow(abs(N),4);w/=max(w.x+w.y+w.z,.001);
+float3 p=P/950.;
+float3 rock=Texture2DSample(Tex,TexSampler,p.yz).rgb*w.x
+          +Texture2DSample(Tex,TexSampler,p.xz).rgb*w.y
+          +Texture2DSample(Tex,TexSampler,p.xy).rgb*w.z;
+float3 macro=Texture2DSample(Tex,TexSampler,p.yz*.137+.23).rgb*w.x
+           +Texture2DSample(Tex,TexSampler,p.xz*.137+.23).rgb*w.y
+           +Texture2DSample(Tex,TexSampler,p.xy*.137+.23).rgb*w.z;
+rock=lerp(rock,macro,smoothstep(12000.,90000.,D)*.45);
+float grain=clamp(dot(rock,float3(.299,.587,.114))/.092,.45,1.6);
+float high=smoothstep(16000.,26000.,P.z);
+float3 ground=base*lerp(1.,grain,high*.85);
+float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D));
+float3 snow=float3(.86,.85,.81)*(1.+(grain-1.)*.06);
+return lerp(ground*strata,snow,saturate(A))*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
-    for key in ('C','D'):
+    for key in ('C','D','A','P','N','Tex'):
         a=unreal.CustomInput();a.set_editor_property('input_name',key);args.append(a)
     c.set_editor_property('inputs',args)
     l.connect_material_expressions(vc,'',c,'C');l.connect_material_expressions(depth,'',c,'D')
+    l.connect_material_expressions(vc,'A',c,'A')
+    p=l.create_material_expression(m,unreal.MaterialExpressionWorldPosition,-600,400)
+    n=l.create_material_expression(m,unreal.MaterialExpressionVertexNormalWS,-600,500)
+    tex=l.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,600);tex.set_editor_property('texture',rock)
+    l.connect_material_expressions(p,'',c,'P');l.connect_material_expressions(n,'',c,'N');l.connect_material_expressions(tex,'',c,'Tex')
     l.connect_material_property(c,'',unreal.MaterialProperty.MP_BASE_COLOR)
     l.connect_material_property(atmosphere.glow(m),'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:

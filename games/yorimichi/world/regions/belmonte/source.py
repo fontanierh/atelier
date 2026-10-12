@@ -5,7 +5,7 @@ from functools import lru_cache
 
 import numpy as np
 import yori
-from atelier.gltf import glb_parts
+from atelier.gltf import glb_pack, glb_parts
 
 LIBRARY = yori.ASSETS / 'belmonte'
 MANIFEST = LIBRARY / 'source.json'
@@ -19,6 +19,49 @@ def manifest():
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def srgb(value):
+    value = np.asarray(value)
+    return np.where(value <= .0031308, value * 12.92, 1.055 * value ** (1 / 2.4) - .055)
+
+
+def native_colours(path):
+    """Encode source RGB once for Interchange's direct linear-to-byte packing.
+
+    The FBX source palette was byte colour, and Blender exports linear glTF RGB.
+    Interchange packs those values directly into FColor instead of re-encoding
+    them. Keep original byte precision and the linear alpha mask by preparing
+    COLOR_0 explicitly. Geometry and all other buffer views remain unchanged.
+    """
+    doc, binary = glb_parts(path.read_bytes())
+    extras = doc.setdefault('extras', {})
+    if extras.get('atelier_vertex_colours') == 'native-byte-rgb-linear-alpha':
+        return False
+    binary = bytearray(binary)
+    converted = set()
+    for mesh in doc['meshes']:
+        for primitive in mesh['primitives']:
+            attributes = primitive['attributes']
+            if 'COLOR_0' not in attributes:
+                continue
+            index = attributes['COLOR_0']
+            if index in converted:
+                continue
+            accessor = doc['accessors'][index]
+            view = doc['bufferViews'][accessor['bufferView']]
+            assert accessor['componentType'] == 5123 and accessor['normalized'], (path, accessor)
+            width = {'VEC3': 3, 'VEC4': 4}[accessor['type']]
+            colours = np.ndarray((accessor['count'], width), dtype='<u2', buffer=binary,
+                                 offset=view.get('byteOffset', 0) + accessor.get('byteOffset', 0),
+                                 strides=(view.get('byteStride', width*2), 2))
+            rgb = colours[:, :3].astype(float) / 65535.
+            colours[:, :3] = np.rint(srgb(rgb) * 255).astype('uint16') * 257
+            converted.add(index)
+    extras['atelier_vertex_colours'] = 'native-byte-rgb-linear-alpha'
+    doc['buffers'][0]['byteLength'] = len(binary)
+    path.write_bytes(glb_pack(doc, bytes(binary)))
+    return True
 
 
 def triangles(path, palettes=None):
@@ -45,15 +88,13 @@ def triangles(path, palettes=None):
             faces = read(primitive['indices']).reshape(-1, 3)
             result.append(vertices[faces])
             if palettes is not None:
+                assert doc.get('extras', {}).get('atelier_vertex_colours') == 'native-byte-rgb-linear-alpha', path
                 index = primitive['attributes']['COLOR_0']
                 weights = read(index).astype(float)
                 component = doc['accessors'][index]['componentType']
                 if component != 5126:
                     weights /= 255. if component == 5121 else 65535.
-                # glTF stores linear colours; Interchange restores RGB to the
-                # byte-colour buffer. Alpha is a linear terrain weight.
-                weights[:, :3] = np.where(weights[:, :3] <= .0031308, weights[:, :3] * 12.92,
-                                         1.055 * weights[:, :3] ** (1 / 2.4) - .055)
+                # The committed COLOR_0 already holds the native byte palette.
                 if weights.shape[1] == 3:
                     weights = np.c_[weights, np.ones(len(weights))]
                 slot = int(doc['materials'][primitive['material']]['name'].split('_')[1])
