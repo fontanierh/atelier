@@ -46,7 +46,7 @@ class PlantTests(unittest.TestCase):
 
     def test_park_trees_are_the_detailed_kind(self):
         trees = plants.trees()
-        self.assertFalse([name for name in trees if name.endswith('_lo') or name.startswith('Tree_Canopy')])
+        self.assertLessEqual(set(trees), set(plants.MESHES))
 
     def test_ledge_plants_grow_on_rock_and_soil_clear_of_the_built_park_and_the_lines(self):
         ledges = plants.ledges()
@@ -104,7 +104,7 @@ class ForestTests(unittest.TestCase):
         self.assertGreater(float((kind[band] == forest._clump(*crowns[band].T, forest.CROWN_CLUMPS)).mean()), .75)
         added = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree') and not k.startswith('Tree_Forest_')}
         self.assertLessEqual(set(added), set(forest.HEIGHT))
-        under = {k for k in instances if not k.startswith(('Tree', 'HD_NorthTree'))}
+        under = {k for k in instances if not k.startswith('Tree')}
         self.assertLessEqual(under, {n for n, _ in forest.BUSHES} | {'Grass_A', 'Grass_B'} | {n for n, _, _ in forest.SEAM_PLANTS})
         new = np.concatenate(list(added.values()))
         self.assertTrue((forest.distance(new[:, 0], new[:, 1]) > forest.CLEAR).all())

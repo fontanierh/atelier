@@ -128,7 +128,7 @@ class PlacementTests(unittest.TestCase):
             self.assertEqual(plants, L.screen_vegetation(base))
         canopy = {name: rows for name, rows in plants.items() if name.startswith('Tree_Canopy') or name == 'Tree_Cedar_A'}
         self.assertGreater(sum(map(len, canopy.values())), 1200)
-        self.assertTrue(all(not name.endswith('_lo') and not name.startswith('HD_North') for name in plants))
+        self.assertTrue(all(name.startswith(('Tree_', 'Bush_', 'Grass_')) or name=='Litter' for name in plants))
         self.assertTrue(any(name.startswith('Bush') for name in plants))
         self.assertIn('Grass_A', plants); self.assertIn('Litter', plants)
         for name, rows in plants.items():

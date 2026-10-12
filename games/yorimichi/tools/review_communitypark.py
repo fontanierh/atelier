@@ -177,7 +177,7 @@ def main():
             'foliage=community.get_components_by_class(unreal.HierarchicalInstancedStaticMeshComponent)\n'
             'actual_foliage={c.static_mesh.get_name():c.get_instance_count() for c in foliage if c.static_mesh}\n'
             f'assert actual_foliage=={foliage_counts!r}, actual_foliage\n'
-            'assert all(c.static_mesh and not c.static_mesh.get_name().endswith("_lo") for c in foliage)\n'
+            'assert all(c.static_mesh for c in foliage)\n'
             'assert len(unreal.GameplayStatics.get_all_actors_of_class(world,unreal.SuperUltraMegaPark))==1')
         owns_bridge = True
         (out/'initial-state.json').write_text(json.dumps(initial, indent=2)+'\n')

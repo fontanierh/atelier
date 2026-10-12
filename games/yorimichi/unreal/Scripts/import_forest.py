@@ -52,18 +52,6 @@ def main():
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',U.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
         E.save_loaded_asset(mesh);report[name]={'height_m':height,'triangles':mesh.get_num_triangles(0)}
     import_lods(output=output,manifest_file='trees.json',shared_materials=False)
-    retired=[]
-    registry=U.AssetRegistryHelpers.get_asset_registry()
-    for folder in ('/Game/Japan/Assets','/Game/Japan/FoliageLODs'):
-        for asset in registry.get_assets_by_path(folder,recursive=False):
-            name=str(asset.asset_name)
-            if name.startswith('HD_NorthTree') or name.split('_LOD')[0].endswith('_lo'):
-                path=str(asset.package_name)
-                references=E.find_package_referencers_for_asset(path,load_assets_to_confirm=True)
-                assert not references,('Obsolete forest mesh remains referenced',path,references)
-                assert E.delete_asset(path),('Could not retire obsolete forest mesh',path)
-                retired.append(path)
-    report['retired']=retired
     (output/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
     U.log('FOREST IMPORT COMPLETE: '+json.dumps(report))
 

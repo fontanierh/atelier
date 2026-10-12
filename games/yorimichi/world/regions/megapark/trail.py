@@ -4,8 +4,7 @@ west deck (docs/MEGAPARK.md, "Getting there").
 Pure NumPy. The path crosses three grounds, all carved to one bed:
 - the island's square heightmap, carved by integrate() (gen_world.py);
 - APPROACH, a 2 m patch of ground north of the square (HD_NorthApproach, hidamari/build.py). The far hills' 67 m grid
-  was too coarse to walk through a forest on; the patch replaces them there, and the far forest's painted cards with
-  a forest of the island's detailed trees (forest());
+  was too coarse to walk through a forest on; the patch replaces them there, with the island's detailed trees (forest());
 - the north foothills (hidamari/mountains.py surface_grid).
 integrate() works the bed out once, from the uncarved ground along the path smoothed to walking grades, and writes it
 to build/yorimichi/megapark/trail.json, which every later step reads.
