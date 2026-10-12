@@ -68,6 +68,11 @@ public:
      *  validate. Receipt is the validation receipt, or why nothing was stored. */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Skin")
     static USkinMorphContactData* CaptureSkinMorphContacts(USkeletalMesh* Mesh, const TArray<FName>& Targets, FString& Receipt);
+    /** Editor: removes Mesh's contact data, marking its package dirty when it had some. For an importer whose source no
+     *  longer carries the captured morphs: a reimport in place keeps the mesh's user data, which would then no longer
+     *  match it. False when there was none. */
+    UFUNCTION(BlueprintCallable, Category = "Atelier|Skin")
+    static bool ClearSkinMorphContacts(USkeletalMesh* Mesh);
     /** Whether Mesh carries valid contact data holding every Required target (USkinMorphContactData::Validate). */
     UFUNCTION(BlueprintCallable, Category = "Atelier|Skin")
     static bool ValidateSkinMorphContacts(USkeletalMesh* Mesh, const TArray<FName>& Required, FString& Receipt);
