@@ -23,8 +23,37 @@ bool AJapanPlayerController::RequestCharacter(const FString& Name)
     auto* From = Cast<AWandererCharacter>(GetPawn());
     if (!From || !JapanNetwork::IsPlayableRider(Name))
     { ClientCharacterResult_Implementation(TEXT("This character is unavailable in this build.")); return false; }
-    ServerRequestCharacter(Name, From);
+    if (FPlayableCharacter::NameOf(From) == Name) return true;
+    if (CharacterRide) return false;
+    LocalCharacter = Name; LocalCharacterSource = From;
+    DispatchCharacterRequest();
     return true;
+}
+
+void AJapanPlayerController::DispatchCharacterRequest()
+{
+    auto* From = LocalCharacterSource.Get();
+    if (!From || GetPawn() != From) { LocalCharacter.Reset(); return; }
+    if (From->GetNetworkActivity() == EJapanActivity::Skate)
+    {
+        if (!From->SkateRide->CanContinueRide())
+        {
+            if (auto* Session = GetGameInstance<UJapanGameInstance>())
+                Session->SetSessionStatus(TEXT("Character change queued until the skate recovery finishes."));
+            return;
+        }
+        CharacterRide = From->SkateRide->DetachRide(); SkateCharacterSource = From;
+        if (!CharacterRide) return;
+    }
+    const FString Name = MoveTemp(LocalCharacter); LocalCharacter.Reset();
+    ServerRequestCharacter(Name, From);
+}
+
+bool AJapanPlayerController::ResumeCharacterRide(AWandererCharacter* Replacement)
+{
+    if (!IsLocalController() || !CharacterRide || !Replacement || GetPawn() != Replacement) return false;
+    auto State = MoveTemp(CharacterRide); SkateCharacterSource.Reset();
+    return Replacement->GetSkate()->ContinueRide(MoveTemp(State));
 }
 
 void AJapanPlayerController::ServerRequestCharacter_Implementation(const FString& Name, AWandererCharacter* ExpectedPawn)
@@ -37,6 +66,12 @@ void AJapanPlayerController::ServerRequestCharacter_Implementation(const FString
 
 void AJapanPlayerController::ClientCharacterResult_Implementation(const FString& Error)
 {
+    if (!Error.IsEmpty() && CharacterRide)
+    {
+        auto* Source = SkateCharacterSource.Get();
+        if (Source && GetPawn() == Source) Source->GetSkate()->ContinueRide(MoveTemp(CharacterRide));
+        CharacterRide.Reset(); SkateCharacterSource.Reset();
+    }
     if (auto* Session = GetGameInstance<UJapanGameInstance>())
         Session->SetSessionStatus(Error.IsEmpty() ? TEXT("Character changed.") : Error);
 }
@@ -96,7 +131,6 @@ void AJapanPlayerController::FinishCharacterSwitch()
     To->NetworkActivity.bFootReaction = false; To->NetworkActivity.bCharacterReplacement = true;
     To->NetworkActivity.ReplacementMovementMode = Movement->PackNetworkMovementMode();
     To->NetworkActivity.bReplacementCrouched = From->bIsCrouched;
-    To->NetworkActivity.SkateDeck = From->SkateRide->GetDeckWorld();
     if (Activity == EJapanActivity::Skate) To->NetworkActivity.Velocity = From->SkateRide->IsOnBoard()
         ? From->SkateRide->GetBoardVelocity() : Velocity;
     To->NetworkActivity.FootBytes = MoveTemp(Bytes); To->NetworkActivity.FootAction = Action;

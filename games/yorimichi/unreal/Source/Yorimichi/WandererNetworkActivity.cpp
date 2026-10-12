@@ -124,6 +124,8 @@ void AWandererCharacter::OnRep_NetworkActivity()
         return; // Assets may still be loading before world readiness.
     }
     AppliedActivityEpoch = NetworkActivity.Epoch;
+    if (NetworkActivity.bCharacterReplacement && IsLocallyControlled() && NetworkActivity.Kind != EJapanActivity::Skate)
+        if (auto* Player = Cast<AJapanPlayerController>(GetController())) Player->DiscardCharacterRide();
     bNetworkActivityPending = false; bNetworkSkateObserved = false;
     auto* Movement = CastChecked<UJapanCharacterMovement>(GetCharacterMovement());
     Movement->ResetActivityPrediction();
@@ -209,10 +211,12 @@ void AWandererCharacter::OnRep_NetworkActivity()
             TGuardValue<bool> Applying(bApplyingNetworkActivity, true);
             if (NetworkActivity.bCharacterReplacement)
             {
-                const FTransform& Deck = NetworkActivity.SkateDeck;
-                if (SkateRide->PlaceAt(Deck.GetLocation() - Deck.GetRotation().GetUpVector()*9.05f, Deck.Rotator().Yaw))
-                    SkateRide->Launch(NetworkActivity.Velocity);
-                else ServerFinishSkate(NetworkActivity.Epoch, GetActorLocation(), GetActorRotation(), NetworkActivity.Velocity, true);
+                auto* Player = Cast<AJapanPlayerController>(GetController());
+                if (!Player || !Player->ResumeCharacterRide(this))
+                {
+                    ClientActivityRejected(TEXT("The skate ride could not be transferred."));
+                    ServerFinishSkate(NetworkActivity.Epoch, GetActorLocation(), GetActorRotation(), NetworkActivity.Velocity, true);
+                }
             }
             else ToggleSkateboard(FInputActionValue(true));
             NetworkActivityRequestTime = GetWorld()->GetTimeSeconds();

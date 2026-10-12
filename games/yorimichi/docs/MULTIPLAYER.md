@@ -18,7 +18,9 @@ two-machine or packaged release certification.
 - Character selection is available during a session. The persistent controller
   replaces its pawn, preserving health, player identity and activity, and advances
   the activity epoch. Pending combat resolves before replacement. Bike and sail
-  checkpoints resume; skating restarts at the current deck position and velocity.
+  checkpoints resume; skating carries the existing simulation, stance and trick
+  state into the replacement rig. Requests during physical bail/get-up or a
+  transition clip stay queued until that recovery finishes.
 - Source changes require native and rendered checks at the final revision.
   Same-machine tests do not establish packaged or two-machine acceptance.
 
@@ -30,7 +32,8 @@ Run a listen pair at zero lag and at 60 ms delay / 15 ms variance / 2% loss. Bot
 observers must receive sustained skate poses and evaluate the expected skeleton.
 
 The session runner supports `--feature-case equipment|switch-foot|switch-bike|
-switch-sail|switch-skate|zeppelin` and `--render-view host|guest`. Run both observer
+switch-sail|switch-skate|switch-skate-air|switch-skate-bail|zeppelin` and
+`--render-view host|guest`. Run both observer
 views; one process renders while its peer uses NullRHI, under the existing aggregate
 10 GiB guard. Inspect the captures as well as the receipts. Rerun bike, sail,
 pending mount, parking, crash and combat routes before enabling a release build.

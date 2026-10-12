@@ -12,7 +12,7 @@ def feature_checks(folder, case):
     original_ids = None
     epochs = {}
     original_classes = {}
-    kind = {'switch-bike': 2, 'switch-sail': 3, 'switch-skate': 1, 'zeppelin': 4}.get(case, 0)
+    kind = 1 if case.startswith('switch-skate') else {'switch-bike': 2, 'switch-sail': 3, 'zeppelin': 4}.get(case, 0)
     for s in stages:
         phase = s['phase']
         for side in ('host', 'guest'):
@@ -40,6 +40,13 @@ def feature_checks(folder, case):
                 checks[prefix+'rider'] = all(r.get('rider') == expected for r in rows)
                 if phase == 2:
                     checks[prefix+'replacement_class'] = all(r.get('pawn') != original_classes.get(r.get('player')) for r in rows)
+                    if case.startswith('switch-skate'):
+                        owner = next((r for r in rows if r.get('local') is True), {})
+                        checks[prefix+'continued_simulation'] = owner.get('continued_at_tick', 0) > 30 and owner.get('simulation_tick', 0) >= owner.get('continued_at_tick', 0)
+                        if case == 'switch-skate-air':
+                            checks[prefix+'air_continuation'] = s[side].get('requested_in_air') is True and owner.get('continued_mode') == 2
+                        if case == 'switch-skate-bail':
+                            checks[prefix+'bail_recovered_before_swap'] = s[side].get('requested_in_bail') is True and owner.get('continued_mode') == 1
                 for r in rows:
                     key = (side, r.get('player'))
                     old = epochs.get(key, 0)

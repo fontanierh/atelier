@@ -59,13 +59,14 @@ struct FProbe
     int32 Phase = 0, LocalPhase = -1, CapturedPhase = -1;
     double Began = -1., PhaseAt = 0., LastWrite = -1.;
     bool Finished = false, DefaultVehicles = false;
+    bool SawAir = false, SawBail = false, CharacterSent = false;
     TArray<TSharedPtr<FJsonValue>> Stages;
     TMap<FString, uint32> OriginalEpochs;
     EJapanActivity Activity() const
     {
         if (Case == TEXT("switch-bike")) return EJapanActivity::Bike;
         if (Case == TEXT("switch-sail")) return EJapanActivity::Sailboat;
-        if (Case == TEXT("switch-skate")) return EJapanActivity::Skate;
+        if (Case.StartsWith(TEXT("switch-skate"))) return EJapanActivity::Skate;
         if (Case == TEXT("zeppelin")) return EJapanActivity::Zeppelin;
         return EJapanActivity::OnFoot;
     }
@@ -74,6 +75,7 @@ struct FProbe
         auto Data = MakeShared<FJsonObject>();
         Data->SetStringField(TEXT("case"), Case); Data->SetNumberField(TEXT("phase"), Phase);
         Data->SetBoolField(TEXT("complete"), Finished); Data->SetBoolField(TEXT("default_vehicles"), DefaultVehicles);
+        Data->SetBoolField(TEXT("requested_in_air"), SawAir); Data->SetBoolField(TEXT("requested_in_bail"), SawBail);
         TArray<TSharedPtr<FJsonValue>> Views;
         for (TActorIterator<AWandererCharacter> It(World.Get()); It; ++It)
         {
@@ -88,6 +90,9 @@ struct FProbe
             Row->SetBoolField(TEXT("attachment"), FJapanMultiplayerQAAccess::Attached(Moves, Moves->IsArmed()));
             Row->SetBoolField(TEXT("guard"), Moves->IsGuarding()); Row->SetNumberField(TEXT("guard_weight"), Moves->SwordGuardWeight());
             Row->SetNumberField(TEXT("checkpoints"), CastChecked<UJapanCharacterMovement>(P->GetCharacterMovement())->GetNetworkStats().Checkpoints);
+            Row->SetNumberField(TEXT("simulation_tick"), double(P->GetSkate()->GetSimulationTick()));
+            Row->SetNumberField(TEXT("continued_at_tick"), double(P->GetSkate()->GetContinuedAtTick()));
+            Row->SetNumberField(TEXT("continued_mode"), uint8(P->GetSkate()->GetContinuedMode()));
             Row->SetNumberField(TEXT("x"), P->GetActorLocation().X); Row->SetNumberField(TEXT("y"), P->GetActorLocation().Y); Row->SetNumberField(TEXT("z"), P->GetActorLocation().Z);
             Views.Add(MakeShared<FJsonValueObject>(Row));
         }
@@ -103,7 +108,7 @@ struct FProbe
     void Drive(AWandererCharacter* P)
     {
         const bool Enter = Phase != LocalPhase;
-        if (Enter) LocalPhase = Phase;
+        if (Enter) { LocalPhase = Phase; CharacterSent = false; }
         P->SetMenuOpen(false); P->Live_Drive(FVector2D::ZeroVector, 1);
         auto* PC = CastChecked<AJapanPlayerController>(P->GetController());
         if (Case == TEXT("equipment"))
@@ -137,7 +142,29 @@ struct FProbe
             else if (Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
             else P->Live_Press(TEXT("weapon"));
         }
-        if (Enter && Phase == 2) PC->RequestCharacter(TEXT("Modori"));
+        if (Phase == 2 && Case == TEXT("switch-skate-air") && !CharacterSent)
+        {
+            FSkateInput Input;
+            const double Elapsed = FPlatformTime::Seconds() - PhaseAt;
+            Input.Right = Elapsed < .35 ? FVector2D(0,-1) : Elapsed < .5 ? FVector2D(0,1) : FVector2D::ZeroVector;
+            P->GetSkate()->SetScriptedInput(&Input);
+            if (P->GetSkate()->GetMode() == ESkateMode::Air)
+            {
+                SawAir = true; CharacterSent = PC->RequestCharacter(TEXT("Modori"));
+                P->GetSkate()->SetScriptedInput(nullptr);
+            }
+        }
+        else if (Phase == 2 && Case == TEXT("switch-skate-bail") && !CharacterSent)
+        {
+            FSkateInput Input; Input.bBail = Enter;
+            P->GetSkate()->SetScriptedInput(&Input);
+            if (P->GetSkate()->GetMode() == ESkateMode::Bail)
+            {
+                SawBail = true; CharacterSent = PC->RequestCharacter(TEXT("Modori"));
+                P->GetSkate()->SetScriptedInput(nullptr);
+            }
+        }
+        else if (Enter && Phase == 2) CharacterSent = PC->RequestCharacter(TEXT("Modori"));
         if (Enter && Phase == 3) PC->RequestCharacter(TEXT("Cairo"));
         if (Phase >= 1 && Phase <= 3 && Activity() != EJapanActivity::OnFoot) P->Live_Drive(FVector2D(0,.4), 1);
         if (Enter && Phase == 4)

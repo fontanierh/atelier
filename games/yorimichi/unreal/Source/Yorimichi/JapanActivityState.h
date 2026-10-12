@@ -30,7 +30,6 @@ struct FJapanActivityState
     UPROPERTY() bool bCharacterReplacement = false;
     UPROPERTY() uint8 ReplacementMovementMode = 0;
     UPROPERTY() bool bReplacementCrouched = false;
-    UPROPERTY() FTransform SkateDeck;
     /** Optional post-exit reaction, using the existing bounded foot checkpoint.
      * Published with the epoch so prediction cannot start from the pre-hit state. */
     UPROPERTY() bool bFootReaction = false;

@@ -5,6 +5,23 @@
 #include "Simulation/HostScalar.h"
 #include "SkatePad.h"
 #include "SkatePadReader.h"
+
+struct FSkateContinuation
+{
+    TWeakObjectPtr<USkateComponent> Source;
+    float SavedRadius, SavedHalf, SavedStep;
+    FVector SavedMeshLocation;
+    FQuat SavedMeshRotation;
+    TSharedPtr<FSkateRuntime> Simulation, Shown;
+    FVector Position, Velocity, Spin;
+    FQuat Rotation;
+    ESkateMode Mode;
+    bool Goofy, Fakie, Manual, NoseManual, Powerslide, Braking, Pushing, Slide;
+    float RailSpeed, SlideAngle, ComboFade;
+    int32 Score, Landed, Bails, Grinds;
+    FString Combo;
+    FName Trick;
+};
 #include <deque>
 #include <limits>
 #include <cfenv>
@@ -129,6 +146,24 @@ void USkateComponent::PollIdleSimulation()
 }
 bool USkateComponent::StartSimulation()
 {
+    if (PendingContinuation)
+    {
+        auto State = MoveTemp(PendingContinuation);
+        if (!StartRide()) return false;
+        RideSimulation = MoveTemp(State->Simulation); ShownRuntime = MoveTemp(State->Shown);
+        Pos = State->Position; Rot = State->Rotation; Vel = State->Velocity; RideSpin = State->Spin; Mode = State->Mode;
+        bGoofy = State->Goofy; bFakie = State->Fakie; bManual = State->Manual; bNoseManual = State->NoseManual;
+        bPowerslide = State->Powerslide; bBraking = State->Braking; bPushing = State->Pushing; bSlide = State->Slide;
+        RailSpeed = State->RailSpeed; SlideAngle = State->SlideAngle; ComboFade = State->ComboFade;
+        Score = State->Score; Landed = State->Landed; Bails = State->Bails; Grinds = State->Grinds;
+        ShownCombo = State->Combo; LastTrickName = State->Trick;
+        ShownRuntime->bArmsValid = false; ShownRuntime->ArmTime = -1.;
+        bSimulationActive = true; bSimulationBail = false;
+        ContinuedAtTick = RideSimulation->Tick; ContinuedMode = Mode;
+        RetargetRiderPose();
+        UE_LOG(LogTemp, Display, TEXT("SKATE continued existing session tick=%llu mode=%d speed=%.1f"), RideSimulation->Tick, int32(Mode), Vel.Size());
+        return true;
+    }
     // ShownRuntime publishes what the rider shows; RideSimulation is the session (StartSimulationRide).
     if (!ShownRuntime) { ShownRuntime=MakeShared<FSkateRuntime>(); ShownRuntime->Ready=true; ShownRuntime->State=TEXT("PhysicsGround"); }
     EndSimulationBoardInBail(); bSimulationBail=false;
@@ -296,6 +331,48 @@ void USkateComponent::SuspendSimulation()
     EndSimulationBoardInBail(); SuspendSimulationRide(); bSimulationBail=false;
     bSimulationActive=false; RiderPose.Reset(); PadReader.Reset();
 }
+
+bool USkateComponent::CanContinueRide() const
+{
+    return !bNetworkProxy && bSimulationActive && RideSimulation && ShownRuntime && IsOnBoard() && !bRideClip && !bSimulationBail &&
+        (!PhysicalRider || (!PhysicalRider->IsBailing() && !PhysicalRider->IsGettingUp()));
+}
+
+TSharedPtr<FSkateContinuation> USkateComponent::DetachRide()
+{
+    if (!CanContinueRide()) return nullptr;
+    auto State = MakeShared<FSkateContinuation>();
+    State->Source = this; State->SavedRadius = SavedRadius; State->SavedHalf = SavedHalf; State->SavedStep = SavedStep;
+    State->SavedMeshLocation = SavedMeshLocation; State->SavedMeshRotation = SavedMeshRotation;
+    State->Simulation = MoveTemp(RideSimulation); State->Shown = MoveTemp(ShownRuntime);
+    State->Position = Pos; State->Rotation = Rot; State->Velocity = Vel; State->Spin = RideSpin; State->Mode = Mode;
+    State->Goofy = bGoofy; State->Fakie = bFakie; State->Manual = bManual; State->NoseManual = bNoseManual;
+    State->Powerslide = bPowerslide; State->Braking = bBraking; State->Pushing = bPushing; State->Slide = bSlide;
+    State->RailSpeed = RailSpeed; State->SlideAngle = SlideAngle; State->ComboFade = ComboFade;
+    State->Score = Score; State->Landed = Landed; State->Bails = Bails; State->Grinds = Grinds;
+    State->Combo = ShownCombo; State->Trick = LastTrickName;
+    // Stop only this rider. The detached worker and its in-flight pose survive
+    // the old actor's destruction; no Activate/Launch/Suspend command is sent.
+    bSimulationActive = false; SetComponentTickEnabled(false); PadReader.Reset();
+    if (PhysicalRider) PhysicalRider->Abort();
+    Movement()->DisableMovement(); Movement()->Velocity = State->Velocity;
+    return State;
+}
+
+bool USkateComponent::ContinueRide(TSharedPtr<FSkateContinuation> State)
+{
+    if (!State || !State->Simulation || !State->Shown || !Rider || !bAvailable || bNetworkProxy) return false;
+    PendingContinuation = State;
+    if (!GetOnBoard(State->Position, State->Rotation, State->Velocity, 0.f)) { PendingContinuation.Reset(); return false; }
+    if (State->Source.Get() == this)
+    {
+        SavedRadius = State->SavedRadius; SavedHalf = State->SavedHalf; SavedStep = State->SavedStep;
+        SavedMeshLocation = State->SavedMeshLocation; SavedMeshRotation = State->SavedMeshRotation;
+    }
+    SetComponentTickEnabled(true);
+    RequestPoseBlend(0.f); ShowBoard(1.f, true);
+    return true;
+}
 void USkateComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (PhysicalRider) PhysicalRider->End();
@@ -355,6 +432,7 @@ FString USkateComponent::GetSimulationState() const
         FMath::RadiansToDegrees(ShownRuntime->ArmSwing[0]),FMath::RadiansToDegrees(ShownRuntime->ArmSwing[1]),
         FMath::RadiansToDegrees(ShownRuntime->ArmNeed[0]),FMath::RadiansToDegrees(ShownRuntime->ArmNeed[1]));
 }
+uint64 USkateComponent::GetSimulationTick() const { return RideSimulation ? RideSimulation->Tick : 0; }
 
 FSkateHostPad USkateComponent::ReadHostPad() const
 {

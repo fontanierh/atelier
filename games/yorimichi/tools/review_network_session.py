@@ -533,7 +533,7 @@ def main():
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
     parser.add_argument('--reaction-delivery-moving', action='store_true', help='Keep forward drive through reaction case 0, 5, 8 or 9; report measured pre-hit motion')
     parser.add_argument('--reaction-delivery-case', type=int, choices=range(10), help='Development-only ordering/death probe; intentional holds and stale deliveries are labelled')
-    parser.add_argument('--feature-case', choices=('equipment', 'switch-foot', 'switch-bike', 'switch-sail', 'switch-skate', 'zeppelin'), help='Ordinary multiplayer equipment, character swaps and shared zeppelin')
+    parser.add_argument('--feature-case', choices=('equipment', 'switch-foot', 'switch-bike', 'switch-sail', 'switch-skate', 'switch-skate-air', 'switch-skate-bail', 'zeppelin'), help='Ordinary multiplayer equipment, character swaps and shared zeppelin')
     parser.add_argument('--render-view', choices=('host', 'guest'), help='Render one observer under the existing aggregate guard')
     parser.add_argument('--vehicle-case', choices=('bike', 'sail', 'mount-bike', 'mount-sail', 'park', 'crash', 'clock-bike'), help='Native vehicle route; clock-bike injects one real 1050 ms owner outage at zero lag')
     parser.add_argument('--enemy', action='store_true', help='Real shared-hunter attacks, AI claw and replicated death')
@@ -621,7 +621,8 @@ def main():
         folder = args.output or ctx.out / 'network' / time.strftime('%Y%m%d-%H%M%S')
         folder.mkdir(parents=True, exist_ok=True)
     if args.worker:
-        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay, args.reaction_delivery_case, args.reaction_delivery_moving, args.feature_case, args.render_view)
+        return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay, args.reaction_delivery_case, args.reaction_delivery_moving,
+                      *([args.feature_case, args.render_view] if args.feature_case or args.render_view else []))
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
