@@ -8,6 +8,7 @@ import unreal as U
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE))
 from foliage_material import enable_distance_fade, enable_bark_lod_blend, supports_lod_blend
+from import_village import import_mesh
 
 
 def verify_lods(target,screen_sizes,meshes,impostor=None):
@@ -36,7 +37,6 @@ def main(names=None, output=None, manifest_file='manifest.json', shared_material
     output=output or yori.OUT/'foliage_lods'
     manifest=json.loads((output/manifest_file).read_text())
     if names is not None: manifest={name:manifest[name] for name in names}
-    assets=U.AssetToolsHelpers.get_asset_tools()
     editor=U.EditorAssetLibrary
     U.load_module('StaticMeshEditor')
     meshes=U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
@@ -49,27 +49,7 @@ def main(names=None, output=None, manifest_file='manifest.json', shared_material
         lod_count=len(data['screen_sizes'])
         for level in range(1,lod_count):
             lod_name=f'{name}_LOD{level}'
-            task=U.AssetImportTask()
-            task.set_editor_property('filename',str(output/(lod_name+'.fbx')))
-            task.set_editor_property('destination_path','/Game/Japan/FoliageLODs')
-            task.set_editor_property('destination_name',lod_name)
-            task.set_editor_property('automated',True)
-            task.set_editor_property('replace_existing',True)
-            task.set_editor_property('save',True)
-            options=U.FbxImportUI()
-            options.set_editor_property('automated_import_should_detect_type',False)
-            options.set_editor_property('mesh_type_to_import',U.FBXImportType.FBXIT_STATIC_MESH)
-            options.set_editor_property('import_materials',False)
-            options.set_editor_property('import_textures',False)
-            info=options.get_editor_property('static_mesh_import_data')
-            info.set_editor_property('combine_meshes',True)
-            info.set_editor_property('auto_generate_collision',False)
-            info.set_editor_property('normal_import_method',U.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS)
-            info.set_editor_property('vertex_color_import_option',U.VertexColorImportOption.REPLACE)
-            task.set_editor_property('options',options)
-            assets.import_asset_tasks([task])
-            source=editor.load_asset('/Game/Japan/FoliageLODs/'+lod_name)
-            if not source: raise RuntimeError('LOD import failed: '+lod_name)
+            source=import_mesh(output/(lod_name+'.fbx'),'/Game/Japan/FoliageLODs',lod_name,fresh_slots=True)
             for index,slot in enumerate(source.get_editor_property('static_materials')):
                 key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
                 material=editor.load_asset('/Game/Japan/Materials/MI_'+key)
