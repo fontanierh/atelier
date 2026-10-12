@@ -35,11 +35,13 @@ void ABelmonteRegion::Clear(const TSharedPtr<FJsonObject>& WorldData, const FStr
     const auto Data = AtelierReadJson(Path);
     if (!WorldData || !Data) return;
     const auto& B = Data->GetArrayField(TEXT("clearance_m"));
-    const auto Instances = WorldData->GetObjectField(TEXT("instances"));
-    for (auto& Pair : Instances->Values)
+    const TSharedPtr<FJsonObject>* Instances = nullptr;
+    if (!WorldData->TryGetObjectField(TEXT("instances"), Instances)) return;
+    for (auto& Pair : (*Instances)->Values)
     {
-        if (!Pair.Key.StartsWith(TEXT("Tree")) && !Pair.Key.StartsWith(TEXT("HD_NorthTree"))
-            && !Pair.Key.StartsWith(TEXT("Bush")) && !Pair.Key.StartsWith(TEXT("Grass"))) continue;
+        const FString Key(Pair.Key);
+        if (!Key.StartsWith(TEXT("Tree")) && !Key.StartsWith(TEXT("HD_NorthTree"))
+            && !Key.StartsWith(TEXT("Bush")) && !Key.StartsWith(TEXT("Grass"))) continue;
         TArray<TSharedPtr<FJsonValue>> Kept;
         for (const auto& Item : Pair.Value->AsArray())
         {
