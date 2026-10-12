@@ -39,6 +39,22 @@ def test_bike_swap_receipt_requires_a_supported_dismount_request(receipt, edit):
     assert not all(review.feature_checks(receipt, 'switch-bike').values())
 
 
+@pytest.mark.parametrize('edit,accepted', [(dict(), True), (dict(sail_exit_requests=0), False),
+                                         (dict(sail_shore_distance=900), False),
+                                         (dict(sail_shore_distance=None), False),
+                                         (dict(sail_landing_grounded=False), False)])
+def test_sail_swap_requires_an_observed_return_to_shore(receipt, edit, accepted):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text()); value['case'] = 'switch-sail'
+    for stage in value['stages']:
+        for side in ('host', 'guest'):
+            stage[side].update(sail_exit_requests=1, sail_shore_distance=300, sail_landing_grounded=True)
+            for row in stage[side]['views']: row['activity'] = 3 if stage['phase'] in (1, 2, 3) else 0
+    value['stages'][4]['guest'].update(edit)
+    path.write_text(json.dumps(value))
+    assert all(review.feature_checks(receipt, 'switch-sail').values()) is accepted
+
+
 @pytest.mark.parametrize('proxy_predicts', [False, True])
 def test_remote_equipment_does_not_run_gameplay_prediction(receipt, proxy_predicts):
     path = receipt / 'features-result.json'

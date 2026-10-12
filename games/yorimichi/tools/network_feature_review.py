@@ -58,6 +58,12 @@ def feature_checks(folder, case):
                     checks[prefix+'stopped_dismount_input'] = (s[side].get('bike_exit_sent') is True and
                                                               s[side].get('bike_exit_grounded') is True and
                                                               type(speed) in (int, float) and abs(speed) <= 40)
+                if case == 'switch-sail' and phase == 4:
+                    distance = s[side].get('sail_shore_distance')
+                    requests = s[side].get('sail_exit_requests')
+                    checks[prefix+'returned_to_shore'] = (s[side].get('sail_landing_grounded') is True and
+                                                         type(requests) is int and requests >= 1 and
+                                                         type(distance) in (int, float) and 0 <= distance <= 700)
                 activity = kind if phase not in (0, last) else 0
                 checks[prefix+'activity'] = all(r.get('activity') == activity for r in rows)
                 expected = 'Modori' if (phase >= 2 and case == 'zeppelin') or phase == 2 else 'Cairo'

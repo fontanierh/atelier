@@ -11,6 +11,7 @@
 #include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "SailboatComponent.h"
 #include "ZeppelinService.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -68,6 +69,9 @@ struct FProbe
     bool SawAir = false, SawBail = false, CharacterSent = false;
     bool BikeExitSent = false, BikeExitGrounded = false;
     float BikeExitSpeed = -1.f;
+    FVector SailLaunch = FVector::ZeroVector;
+    int32 SailExitRequests = 0;
+    double NextSailExit = 0.;
     TArray<TSharedPtr<FJsonValue>> Stages;
     TMap<FString, uint32> OriginalEpochs;
     EJapanActivity Activity() const
@@ -88,6 +92,9 @@ struct FProbe
         Data->SetBoolField(TEXT("bike_exit_sent"), BikeExitSent);
         Data->SetBoolField(TEXT("bike_exit_grounded"), BikeExitGrounded);
         Data->SetNumberField(TEXT("bike_exit_speed"), BikeExitSpeed);
+        Data->SetNumberField(TEXT("sail_exit_requests"), SailExitRequests);
+        Data->SetNumberField(TEXT("sail_shore_distance"), FVector::Dist2D(Local->GetActorLocation(), SailLaunch));
+        Data->SetBoolField(TEXT("sail_landing_grounded"), Local->GetCharacterMovement()->IsMovingOnGround());
         Data->SetBoolField(TEXT("rendering"), FParse::Param(FCommandLine::Get(), TEXT("networkrender")));
         TArray<TSharedPtr<FJsonValue>> Views;
         for (TActorIterator<AWandererCharacter> It(World.Get()); It; ++It)
@@ -169,7 +176,8 @@ struct FProbe
         if (Enter && Phase == 1)
         {
             if (Activity() == EJapanActivity::Bike) P->Live_Press(TEXT("bike"));
-            else if (Activity() == EJapanActivity::Sailboat) P->Live_Press(TEXT("sailboat"));
+            else if (Activity() == EJapanActivity::Sailboat)
+            { SailLaunch = P->GetActorLocation(); P->Live_Press(TEXT("sailboat")); }
             else if (Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
             else P->Live_Press(TEXT("weapon"));
         }
@@ -212,7 +220,19 @@ struct FProbe
                     BikeExitSent = P->Live_Press(TEXT("bike"));
                 }
             }
-            else if (Enter && Activity() == EJapanActivity::Sailboat) P->Live_Press(TEXT("sailboat"));
+            else if (Activity() == EJapanActivity::Sailboat && P->GetNetworkActivity() == EJapanActivity::Sailboat)
+            {
+                // A sailing replacement must return to a real shore before K can
+                // land. Steer and lower/raise the sail through ordinary move input.
+                const FVector Return = SailLaunch - P->GetActorLocation();
+                const float Turn = FMath::FindDeltaAngleDegrees(P->GetActorRotation().Yaw, Return.Rotation().Yaw);
+                P->Live_Drive(FVector2D(FMath::Clamp(Turn / 30.f, -1.f, 1.f), FMath::Abs(Turn) > 60.f ? -.2f : .2f), 1);
+                const double Now = FPlatformTime::Seconds();
+                if (Return.Size2D() <= 700. && Now >= NextSailExit && !P->IsNetworkActivityPending())
+                {
+                    P->Live_Press(TEXT("sailboat")); ++SailExitRequests; NextSailExit = Now + .75;
+                }
+            }
             else if (Enter && Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
         }
     }
@@ -318,6 +338,10 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         (!Probe.BikeExitSent || !Peer->GetBoolField(TEXT("bike_exit_sent")) ||
          !Peer->GetBoolField(TEXT("bike_exit_grounded")) ||
          FMath::Abs(Peer->GetNumberField(TEXT("bike_exit_speed"))) > 40.)) return false;
+    if (Probe.Case == TEXT("switch-sail") && Probe.Phase == 4 &&
+        (!Probe.SailExitRequests || Peer->GetNumberField(TEXT("sail_exit_requests")) < 1. ||
+         !Host->GetBoolField(TEXT("sail_landing_grounded")) || !Peer->GetBoolField(TEXT("sail_landing_grounded")) ||
+         Host->GetNumberField(TEXT("sail_shore_distance")) > 700. || Peer->GetNumberField(TEXT("sail_shore_distance")) > 700.)) return false;
     if (Probe.Case == TEXT("zeppelin") && (Probe.Phase == 1 || Probe.Phase == 2) && !Local->GetLandscape()->Zeppelin->IsFlying()) return false;
     // Readback and PNG saving can stall a cold renderer. Capture a state that
     // passed both observer gates, then finish saving before the next input phase.
