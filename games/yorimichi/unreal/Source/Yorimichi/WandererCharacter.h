@@ -286,9 +286,11 @@ private:
     FString BenchmarkView, BenchmarkDirectory;
     FString BenchmarkCompareBefore, BenchmarkCompareAfter;
     int32 BenchmarkComparePhase=0, BenchmarkCompareScreenshot=-1;
-    float BenchmarkTime = 0.f, BenchmarkSeconds = 25.f;
-    bool bBenchmarkCapturing = false, bBenchmarkFinished = false;
+    float BenchmarkTime = 0.f, BenchmarkSeconds = 25.f, BenchmarkCaptureStart = 8.f;
+    bool bBenchmarkCapturing = false, bBenchmarkFinished = false, bBenchmarkBoarding = false;
+    FVector BenchmarkLastPosition = FVector::ZeroVector;
     void AdvanceBenchmark(float Dt);
+    bool AdvanceZeppelinBenchmark();
     void AdvanceSailboatReview(float Dt);
     bool bCinematic=false;
 public:

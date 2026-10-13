@@ -2,6 +2,7 @@
 #include "AtelierExit.h"
 #include "SkateComponent.h"
 #include "JapanWorld.h"
+#include "ZeppelinService.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
@@ -33,8 +34,38 @@ static void LogBenchmarkSceneFormat(int32 Phase)
     });
 }
 
+// The zeppelin view: walk onto the Woodland platform by the lake, board, and ride to Hidamari looking back at the
+// lake over the forest. Timing covers the cruise, from the top of the climb to the start of the landing; the climb
+// and the landing are mostly vertical, which the harness's route check would read as standing still.
+bool AWandererCharacter::AdvanceZeppelinBenchmark()
+{
+    AZeppelinService* Ship = GetZeppelin();
+    if (!Ship || !Ship->IsReady() || Ship->GetStations().Num() < 2) return false;
+    if (!IsZeppelinPassenger())
+    {
+        const FVector Entry = Ship->GetStations()[0].Entry;
+        if (!bBenchmarkBoarding) { bBenchmarkBoarding = TravelTo(Entry, 0.f, TEXT("zeppelin benchmark")); return false; }
+        // Calls the ship to Woodland if it is docked elsewhere, then boards it once it is in.
+        if (GetCharacterMovement()->IsMovingOnGround()) Ship->TryInteract(this);
+        return false;
+    }
+    if (Ship->GetDock() != 0 || Ship->GetDestination() != 1)
+    {
+        UE_LOG(LogTemp,Error,TEXT("Zeppelin benchmark boarded at stop %d for stop %d, not Woodland for Hidamari"),Ship->GetDock(),Ship->GetDestination());
+        AtelierRequestExit(2); bBenchmarkFinished = true; return false;
+    }
+    if (Ship->IsFlying() && Controller)
+    {
+        // Look back at the woodland lake, past the deck, over the forest the ship has crossed.
+        FRotator Look = (AJapanWorld::ToUE(-80,232,72)-GetActorLocation()).Rotation();
+        Look.Pitch = FMath::Clamp(Look.Pitch,-30.,-8.); Look.Roll = 0.;
+        Controller->SetControlRotation(Look);
+    }
+    return Ship->GetStage() == 4;
+}
+
 // A real-time capture, with no screenshots or file writes inside the measured
-// interval. It runs only with -benchmarkview=spawn|forest|coast|traverse.
+// interval. It runs only with -benchmarkview=spawn|forest|coast|traverse|zeppelin.
 void AWandererCharacter::AdvanceBenchmark(float Dt)
 {
     if (bBenchmarkFinished) return;
@@ -164,13 +195,23 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
     const float Previous = BenchmarkTime;
     BenchmarkTime += Dt;
     constexpr float Warmup = 8.f;
-    if (Previous < 6.f && BenchmarkTime >= 6.f && !BenchmarkDirectory.IsEmpty())
+    const bool bZeppelin = BenchmarkView == TEXT("zeppelin");
+    const bool bCruising = bZeppelin && AdvanceZeppelinBenchmark();
+    if (bBenchmarkFinished) return;
+    if (bZeppelin && !bBenchmarkCapturing && BenchmarkTime > 180.f)
+    {
+        UE_LOG(LogTemp,Error,TEXT("Zeppelin benchmark: the ship was not cruising from Woodland after 180 s"));
+        AtelierRequestExit(2); bBenchmarkFinished = true; return;
+    }
+    if (!bZeppelin && Previous < 6.f && BenchmarkTime >= 6.f && !BenchmarkDirectory.IsEmpty())
     {
         FScreenshotRequest::RequestScreenshot(BenchmarkDirectory/TEXT("view.png"),false,false);
         LogBenchmarkSceneFormat(0);
     }
-    if (!bBenchmarkCapturing && BenchmarkTime >= Warmup)
+    if (!bBenchmarkCapturing && (bZeppelin ? bCruising : BenchmarkTime >= Warmup))
     {
+        BenchmarkCaptureStart = BenchmarkTime;
+        BenchmarkLastPosition = GetActorLocation();
         for (const TCHAR* Name : {TEXT("r.ScreenPercentage"),TEXT("r.VelocityOutputPass"),TEXT("r.EarlyZPass"),
              TEXT("r.EarlyZPassOnlyMaterialMasking"),TEXT("r.StencilForLODDither"),TEXT("r.InstanceCulling.OcclusionCull"),
              TEXT("sg.GlobalIlluminationQuality"),TEXT("r.Lumen.FinalGatherMethod"),TEXT("r.Shadow.CSM.MaxCascades"),
@@ -186,7 +227,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         SkateReviewStuckSince=-1.; // Warmup was intentionally stationary, not a route stall.
     }
     if (!bBenchmarkCapturing) return;
-    const float T = BenchmarkTime-Warmup;
+    const float T = BenchmarkTime-BenchmarkCaptureStart;
     const bool bCompare=!BenchmarkCompareAfter.IsEmpty();
     constexpr float CompareSettle=8.f;
     const int32 ComparePhase=bCompare?FMath::Min(5,FMath::FloorToInt((T+CompareSettle)/(BenchmarkSeconds+CompareSettle))):0;
@@ -233,7 +274,10 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
     const FVector C = FollowCamera->GetComponentLocation();
     const FRotator R = FollowCamera->GetComponentRotation();
     CSV_CUSTOM_STAT(JapanBenchmark,Seconds,T,ECsvCustomStatOp::Set);
-    CSV_CUSTOM_STAT(JapanBenchmark,Speed,GetVelocity().Size2D(),ECsvCustomStatOp::Set);
+    // A passenger rides with the ship and has no velocity of its own: report how fast it is carried.
+    const float Speed = IsZeppelinPassenger() && Dt > 0.f ? FVector::Dist2D(P,BenchmarkLastPosition)/Dt : GetVelocity().Size2D();
+    BenchmarkLastPosition = P;
+    CSV_CUSTOM_STAT(JapanBenchmark,Speed,Speed,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,Skating,SkateRide->IsRiding()?1:0,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,Falling,GetCharacterMovement()->IsFalling()?1:0,ECsvCustomStatOp::Set);
     // Route progress, so a traversal claim can be checked against waypoints rather than a timer.
@@ -258,11 +302,14 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         : IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))->GetFloat();
     CSV_CUSTOM_STAT(JapanBenchmark,DynamicResolution,bDynamic?1:0,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,ScreenPercentageApprox,ScreenPercentage,ECsvCustomStatOp::Set);
-    if (T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds))
+    if (T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds) || (bZeppelin && !bCruising))
     {
         MoveIntent = FVector2D::ZeroVector;
         FCsvProfiler::Get()->EndCapture();
         bBenchmarkFinished = true;
+        // The zeppelin's still is the end of the cruise, after timing: looking back over the forest to the lake.
+        if (bZeppelin && !BenchmarkDirectory.IsEmpty())
+            FScreenshotRequest::RequestScreenshot(BenchmarkDirectory/TEXT("view.png"),false,false);
         UE_LOG(LogTemp,Display,TEXT("BENCHMARK COMPLETE"));
     }
 }
