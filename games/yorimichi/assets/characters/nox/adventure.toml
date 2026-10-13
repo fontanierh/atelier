@@ -24,3 +24,8 @@ pivot = 0.0
 yaw = -25.0
 pitch = -25.0
 out = 12.0
+
+# The operator's final pose-lab TXT, including exact sampled transforms and unit conversion.
+# Only the idle loop uses this stance; walking, running, combat and skating keep their motion.
+[stance.Nml_Wait]
+choice = "provenance/idle-pose-choice.json"

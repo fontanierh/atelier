@@ -165,7 +165,8 @@ def moveset_import(character):
 def moveset_retarget(character, *args):
     """assets/characters/adventure/retarget.py onto one character, and its inputs."""
     retarget = CHARS / 'adventure' / 'retarget.py'
-    return Blender(retarget, ('--character', character, *args), threads=3), [CHARS / character, retarget, *sorted(CHARS.glob('*/adventure.toml')), NAMES]
+    return Blender(retarget, ('--character', character, *args), threads=3), [CHARS / character, retarget,
+            retarget.parent / 'stance.py', *sorted(CHARS.glob('*/adventure.toml')), NAMES]
 
 
 def adventure_steps(out):
