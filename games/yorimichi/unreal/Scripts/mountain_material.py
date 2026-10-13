@@ -1,6 +1,7 @@
 """Opaque vertex-colour landscape, with the shared aerial perspective (atmosphere.py)."""
 import unreal
 import atmosphere
+import ground_grain
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'world'))
@@ -31,17 +32,29 @@ float3 rock=Texture2DSample(Tex,TexSampler,p.yz).rgb*w.x
 float3 macro=Texture2DSample(Tex,TexSampler,p.yz*.137+.23).rgb*w.x
            +Texture2DSample(Tex,TexSampler,p.xz*.137+.23).rgb*w.y
            +Texture2DSample(Tex,TexSampler,p.xy*.137+.23).rgb*w.z;
-rock=lerp(rock,macro,smoothstep(12000.,90000.,D)*.45);
-float grain=clamp(dot(rock,float3(.299,.587,.114))/.092,.45,1.6);
+float3 q=P/2310.+.37;
+float3 mid=Texture2DSample(Tex,TexSampler,q.yz).rgb*w.x
+         +Texture2DSample(Tex,TexSampler,q.xz).rgb*w.y
+         +Texture2DSample(Tex,TexSampler,q.xy).rgb*w.z;
+float3 lum=float3(.299,.587,.114);
+float g1=max(dot(rock,lum)/.092,.05),g2=max(dot(mid,lum)/.092,.05),g3=max(dot(macro,lum)/.092,.05);
+float distanceBlend=smoothstep(12000.,90000.,D);
+float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBlend),.45,1.6);
 float join=smoothstep(258000.,300000.,-P.y);
-float high=smoothstep(16000.,26000.,P.z)*(1-join);
-float3 ground=base*lerp(1.,grain,high*.85);
+float prominence=P.z-(4700.+max(-P.y-50000.,0)*.020);
+float radius=length(P.xy-float2(55000.,-193000.));
+float high=smoothstep(13000.,25000.,prominence)*(1-smoothstep(94000.,112000.,radius))*(1-join);
+'''+ground_grain.code('Ground','GroundSampler','P')+'''
+float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 float3 snow=float3(.78,.81,.86)*(1.+(grain-1.)*.06);
-return lerp(ground*strata,snow,saturate(A))*(1-'''+atmosphere.SHARE+');')
+float edgeNoise=clamp(dot(Texture2DSample(Tex,TexSampler,P.xy/700.+.61).rgb,lum)/.092-1.,-1.,1.);
+float edge=lerp(5.,1.5,smoothstep(50000.,200000.,D));
+float snowMask=saturate((A-.5+edgeNoise*.12)*edge+.5);
+return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
-    for key in ('C','D','A','P','N','Tex'):
+    for key in ('C','D','A','P','N','Tex','Ground'):
         a=unreal.CustomInput();a.set_editor_property('input_name',key);args.append(a)
     c.set_editor_property('inputs',args)
     l.connect_material_expressions(vc,'',c,'C');l.connect_material_expressions(depth,'',c,'D')
@@ -49,7 +62,10 @@ return lerp(ground*strata,snow,saturate(A))*(1-'''+atmosphere.SHARE+');')
     p=l.create_material_expression(m,unreal.MaterialExpressionWorldPosition,-600,400)
     n=l.create_material_expression(m,unreal.MaterialExpressionVertexNormalWS,-600,500)
     tex=l.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,600);tex.set_editor_property('texture',rock)
+    detail=e.load_asset('/Game/Japan/Textures/T_ground_detail');assert detail
+    ground=l.create_material_expression(m,unreal.MaterialExpressionTextureObject,-600,700);ground.set_editor_property('texture',detail)
     l.connect_material_expressions(p,'',c,'P');l.connect_material_expressions(n,'',c,'N');l.connect_material_expressions(tex,'',c,'Tex')
+    l.connect_material_expressions(ground,'',c,'Ground')
     l.connect_material_property(c,'',unreal.MaterialProperty.MP_BASE_COLOR)
     l.connect_material_property(atmosphere.glow(m),'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:

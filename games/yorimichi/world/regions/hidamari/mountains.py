@@ -97,13 +97,17 @@ def natural_height(x,y):
     ridge_band=smooth((r-140)/140)*smooth((1170-r)/280)
     # Long arêtes read from the flight above the summit as well as from town.
     # A small broken crater rim replaces the featureless tangent dome.
-    breach=1.-.8*smooth((np.cos(angle-.5)-.7)/.25)
-    rim=18*np.exp(-((r-100)/45)**2)*(1+.28*np.sin(angle*5))*breach
-    crater=-25*np.exp(-(r/55)**2)
+    rim_radius=95+10*np.cos(angle-2.3)
+    lift=1+.40*np.cos(angle-2.6)+.12*np.cos(2*angle+.7)+.25*noise(np.cos(angle)*300,np.sin(angle)*300,40.,91)
+    breach=1.-.9*smooth((np.cos(angle-.5)-.82)/.15)
+    rim=12*np.exp(-((r-rim_radius)/np.where(r<rim_radius,17.,48.))**2)*lift*breach
+    crater=-50*smooth((rim_radius-r)/60)**.85
+    peaks=sum(h*np.exp(-((dx-rr*math.cos(a))**2+(dy-rr*math.sin(a))**2)/s**2)
+              for a,rr,h,s in ((2.6,96,20,28),(-.35,104,9,20),(4.2,110,6,16)))
     shoulders=(72*np.exp(-((dx-290)/130)**2-((dy-90)/160)**2)
                +48*np.exp(-((dx+220)/120)**2-((dy+140)/150)**2))
     _,cuts=drainage_field(x,y)
-    relief=((ridge*np.minimum(38.,cone*.12)-cuts*np.minimum(22.,cone*.1))*ridge_band+rim+crater+shoulders
+    relief=((ridge*np.minimum(38.,cone*.12)-cuts*np.minimum(22.,cone*.1))*ridge_band+rim+crater+peaks+shoulders
             +noise(x,y,70,2)*9+noise(x,y,180,17)*13)
     relief*=smooth((1220-r)/230)
     # Small weathering rides the macro ridges; material grain supplies close detail.
@@ -189,9 +193,17 @@ def colours(x,y,z):
     colors=colors*(1-under[...,None])+floor*under[...,None]
     t=smooth((y-2580)/420)
     join=smooth(np.clip(t+t*(1-t)*noise(x,y,140,82)*.7,0,1))
-    north=smooth((y-3000)/300)[...,None]
-    palette=np.array([.055,.11,.035])*(1-north)+np.array([.105,.145,.055])*north
+    palette=np.array([.055,.11,.035])
     return colors*(1-join[...,None])+palette*join[...,None]
+
+def relief_curvature(z):
+    dy,dx=np.gradient(z,STEP,STEP)
+    lap=np.gradient(dx,STEP,axis=1)+np.gradient(dy,STEP,axis=0)
+    for _ in range(round(3*(10/STEP)**2)):
+        padded=np.pad(lap,1,mode='edge')
+        lap=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
+    return smooth((-lap-.002)/.006),smooth((lap-.001)/.005)
+
 
 def snow_cover(x,y,z):
     """Snow in drainage hollows and the crater bowl, with bare convex crests."""
@@ -210,14 +222,11 @@ def snow_cover(x,y,z):
     ribbons=smooth((signed+4)/9)*smooth((520+noise(x,y,220,51)*180-radius)/120)
     dy,dx=np.gradient(z,STEP,STEP)
     nz=1/np.sqrt(1+dx*dx+dy*dy)
-    lap=np.gradient(dx,STEP,axis=1)+np.gradient(dy,STEP,axis=0)
-    for _ in range(round(3*(10/STEP)**2)):
-        padded=np.pad(lap,1,mode='edge')
-        lap=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
-    crest=smooth((-lap-.002)/.006);gully=smooth((lap-.001)/.005)
+    crest,gully=relief_curvature(z)
     faces=smooth((z-400)/90)*smooth((nz-.80)/.10)*smooth((noise(x,y,90,41)+noise(x,y,140,42)*.6+.15)/.5)*(1-crest)
-    bowl=smooth((62-radius)/22)
-    rim=np.exp(-((radius-100)/24)**2)
+    angle=np.arctan2(y-1930,x-550)
+    bowl=smooth((70-radius)/25)
+    rim=np.exp(-((radius-(95+10*np.cos(angle-2.3)))/24)**2)
     snow=np.maximum.reduce([ribbons*(1-.75*crest)+.35*gully*smooth((z-300)/120),faces,bowl])
     snow=np.clip(snow,0,1)*(1-.92*rim*(1-bowl))
     line=230+noise(x,y,180,83)*40
@@ -235,6 +244,14 @@ def mesh(base_sampler):
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
     x,y,z=surface_grid(base_sampler)
     colors=colours(x,y,z)
+    crest,gully=relief_curvature(z)
+    radius=np.hypot(x-550,y-1930)
+    prominence=z-(47+np.maximum(y-500,0)*.020)
+    exposed=smooth((prominence-135)/120)*smooth((1120-radius)/180)
+    cavity=(1-.45*gully)*(1+.15*crest)
+    angle=np.arctan2(y-1930,x-550)
+    rim=np.exp(-((radius-(95+10*np.cos(angle-2.3)))/24)**2)
+    colors*=((1-exposed)+exposed*cavity*(1-.35*rim))[...,None]
     dy,dx=np.gradient(z,STEP,STEP)
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)

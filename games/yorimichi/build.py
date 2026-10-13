@@ -291,7 +291,7 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[region, ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             inputs=[region, WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', YORI],
@@ -301,7 +301,7 @@ def belmonte_steps(out):
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
                                              args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
-             inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'atmosphere.py', ASSETS / 'environment/textures/tuscan-ground.jpg'],
+             inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'atmosphere.py', SCRIPTS / 'ground_grain.py', ASSETS / 'environment/textures/tuscan-ground.jpg'],
              needs=['world.belmonte', 'unreal.forest', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset'],
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
@@ -340,7 +340,9 @@ def world_steps(ctx, park):
     park_inputs = [REGIONS / 'communitypark' / 'layout.py', REGIONS / 'communitypark' / 'source.py', park] if park else []
     return [
         # ------------------------------------------------------------ world
-        Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', YORI, ASSETS / 'environment/textures/tree-bark.jpg'],
+        Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', WORLD / 'surface_textures.py', YORI,
+             ASSETS / 'environment/textures/tree-bark.jpg', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             ASSETS / 'environment/textures/tuscan-ground.provenance.json'],
              outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
         Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'],
@@ -544,7 +546,7 @@ def unreal_steps(ctx):
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
                                           'harbor_material.py', 'sea_look.py', 'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py',
-                                          'import_zeppelin.py', 'forest_ground.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
+                                          'import_zeppelin.py', 'forest_ground.py', 'ground_grain.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
              after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari', 'world.hidamari_textures', 'world.hidamari_props',
                     'world.zeppelin', 'world.terrain', 'world.village', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='world assets, materials, the villager and the level (/Game/Japan)'),

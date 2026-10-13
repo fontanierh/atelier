@@ -51,11 +51,8 @@ def finish_surfaces(data):
             image = Image.open(image_path).convert('RGB')
             image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
             if not atlas:
-                srgb = np.asarray(image, float) / 255.
-                linear = np.where(srgb <= .04045, srgb / 12.92, ((srgb + .055) / 1.055) ** 2.4)
-                neutral = np.clip(linear / np.maximum(linear.mean((0, 1)), .001) / 2., 0, 1)
-                srgb = np.where(neutral <= .0031308, neutral * 12.92, 1.055 * neutral ** (1 / 2.4) - .055)
-                image = Image.fromarray(np.uint8(np.clip(srgb * 255, 0, 255)))
+                from surface_textures import neutral_detail
+                image = neutral_detail(image)
             file = 'T_BM_' + hashlib.sha256(key.encode()).hexdigest()[:12] + '.png'
             image.save(OUT / 'textures' / file)
             images[key] = file

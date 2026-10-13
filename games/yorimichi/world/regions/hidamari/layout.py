@@ -375,7 +375,7 @@ def generate():
     from forest.ecotone import kinds
     forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
-    forest_clumps=.55+.55*mountains.smooth((clump+.55)/.7)
+    forest_clumps=.70+.35*mountains.smooth((clump+.55)/.7)
     ceilings=330+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60
     forest_altitude=mountains.smooth((ceilings-forest_z)/100)
     for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
@@ -385,7 +385,7 @@ def generate():
             if any(abs(x-b['position'][0])<b['width']/2+10 and abs(y-b['position'][1])<b['depth']/2+10 for b in buildings):continue
         z=float(sample_z)
         if z<2 or z>400 or cover>.3 or distance<7:continue
-        density=.82+.16*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
+        density=.90+.08*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
         density*=float(clump*altitude)
@@ -393,7 +393,23 @@ def generate():
         name=MODEL_BY_KIND[kind]
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
-        put(name,x,y,z-.3,yaw=r.uniform(0,360),scale=r.uniform(.70,1.15))
+        yaw=r.uniform(0,360);scale=r.uniform(.70,1.15)
+        if name.startswith('Tree_Forest_'):
+            scale*=1.35 if name.endswith('Pine') else 1.18
+        put(name,x,y,z-.3,yaw=yaw,scale=scale)
+    # Outcrop groups and scree give the high flank real relief at walking scale.
+    # An independent stream keeps all existing tree/path authoring draws intact.
+    rock_rng=np.random.default_rng(746)
+    rock_xy=rock_rng.uniform([-100,1300],[1250,2500],size=(4000,2))
+    rx,ry=rock_xy[:,0],rock_xy[:,1]
+    rz=north_height(rx,ry);cover=mountains.snow(rx,ry,north_base_height)
+    slope=np.hypot(north_height(rx+1,ry)-rz,north_height(rx,ry+1)-rz)
+    radius=np.hypot(rx-550,ry-1930)
+    keep=(radius>100)&(radius<650)&(rz>250)&(cover<.25)&(slope<2.)&(mountains.noise(rx,ry,55,98)>.05)
+    for x,y,z in zip(rx[keep],ry[keep],rz[keep]):
+        scale=float(rock_rng.uniform(.65,2.8))
+        put('Rock_C' if scale>1.7 else 'Rock_B',float(x),float(y),float(z)-.15*scale,
+            yaw=float(rock_rng.uniform(0,360)),scale=scale)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
@@ -402,7 +418,7 @@ def generate():
         if not len(points):continue
         distance=trail_distance(points[:,0],points[:,1])
         far=mountains.smooth((distance-80)/120)*mountains.smooth((points[:,1]-650)/250)
-        keep=thin_rng.random(len(points))>=.15*far
+        keep=thin_rng.random(len(points))>=.06*far
         points[:,4]*=1+.08*far
         inst[name]=points[keep].tolist()
     # Small rooted plants and stones dress the trail, leaving its riding corridor open.

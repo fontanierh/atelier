@@ -166,6 +166,30 @@ void AJapanWorld::Load()
         GlideGrade->Settings.bOverride_ColorOffset=true;
         GlideGrade->Settings.ColorOffset=FVector4(-.03,-.03,-.03,0);
         GlideGrade->RegisterComponent();
+        // Northern aerial views face the same strong sky light. Bring down the
+        // black point according to clearance, leaving ground-level views alone.
+        NorthAerialGrade=NewObject<UPostProcessComponent>(this);
+        NorthAerialGrade->SetupAttachment(RootComponent);
+        NorthAerialGrade->bUnbound=true;NorthAerialGrade->BlendWeight=0;NorthAerialGrade->Priority=2;
+        NorthAerialGrade->Settings.bOverride_ColorContrast=true;
+        NorthAerialGrade->Settings.ColorContrast=FVector4(1.06,1.06,1.06,1);
+        NorthAerialGrade->Settings.bOverride_ColorSaturation=true;
+        NorthAerialGrade->Settings.ColorSaturation=FVector4(1,1,1,1);
+        NorthAerialGrade->Settings.bOverride_ColorOffset=true;
+        NorthAerialGrade->Settings.ColorOffset=FVector4(-.015,-.015,-.015,0);
+        NorthAerialGrade->RegisterComponent();
+        NorthHighGrade=NewObject<UPostProcessComponent>(this);
+        NorthHighGrade->SetupAttachment(RootComponent);
+        NorthHighGrade->bUnbound=true;NorthHighGrade->BlendWeight=0;NorthHighGrade->Priority=3;
+        NorthHighGrade->Settings.bOverride_ColorContrast=true;
+        NorthHighGrade->Settings.ColorContrast=FVector4(1.12,1.12,1.12,1);
+        NorthHighGrade->Settings.bOverride_ColorSaturation=true;
+        NorthHighGrade->Settings.ColorSaturation=FVector4(1.05,1.05,1.05,1);
+        NorthHighGrade->Settings.bOverride_ColorGammaShadows=true;
+        NorthHighGrade->Settings.ColorGammaShadows=FVector4(.85,.85,.85,1);
+        NorthHighGrade->Settings.bOverride_ColorOffsetShadows=true;
+        NorthHighGrade->Settings.ColorOffsetShadows=FVector4(-.03,-.03,-.03,0);
+        NorthHighGrade->RegisterComponent();
         float GlideGradeDistance=0.f;
         UE_LOG(LogTemp,Display,TEXT("Glide grade bounds: aerial=%d street=%d"),GlideGrade->EncompassesPoint(ToUE(800,40,650),0.f,&GlideGradeDistance),
             GlideGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&GlideGradeDistance));
@@ -781,6 +805,37 @@ void AJapanWorld::UpdateFogDensity(float Dt)
     AppliedFogDensity = Density;
 }
 
+void AJapanWorld::UpdateNorthAerialGrade(float Dt)
+{
+    if (!NorthAerialGrade || !NorthHighGrade) return;
+    const APlayerCameraManager* Camera=UGameplayStatics::GetPlayerCameraManager(this,0);
+    if (!Camera) return;
+    const FVector C=Camera->GetCameraLocation();
+    const bool Jump=!bNorthGradeHasCamera || FVector::DistSquared(C,NorthGradeCamera)>FMath::Square(5000.f);
+    NorthGradeCamera=C;bNorthGradeHasCamera=true;
+    const float Y=-C.Y;
+    const float Region=FMath::SmoothStep(-90000.f,-70000.f,C.X)*(1-FMath::SmoothStep(240000.f,260000.f,C.X))
+        *FMath::SmoothStep(35000.f,65000.f,Y)*(1-FMath::SmoothStep(540000.f,560000.f,Y));
+    NorthGradeTraceElapsed+=Dt;
+    if (Region>0 && (Jump || NorthGradeTraceElapsed>=.25f))
+    {
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(NorthAerialGrade),true);
+        if (const APawn* Pawn=UGameplayStatics::GetPlayerPawn(this,0)) Params.AddIgnoredActor(Pawn);
+        FHitResult Hit;
+        const bool Found=GetWorld()->LineTraceSingleByChannel(Hit,C,C-FVector(0,0,150000),ECC_Visibility,Params);
+        NorthGradeClearance=FMath::Max(0.f,C.Z-(Found ? FMath::Max(0.f,Hit.ImpactPoint.Z) : 0.f));
+        NorthGradeTraceElapsed=0;
+    }
+    const float Low=Region*FMath::SmoothStep(6000.f,9000.f,NorthGradeClearance);
+    const float High=Region*FMath::SmoothStep(20000.f,45000.f,NorthGradeClearance);
+    auto Apply=[Dt,Jump](UPostProcessComponent* Grade,float Target)
+    {
+        const float Weight=Jump ? Target : FMath::FInterpTo(Grade->BlendWeight,Target,Dt,1.5f);
+        Grade->BlendWeight=FMath::Abs(Weight-Target)<.001f ? Target : Weight;
+    };
+    Apply(NorthAerialGrade,Low);Apply(NorthHighGrade,High);
+}
+
 float AJapanWorld::WindStrength(const FVector& P, float T) const
 {
     return FMath::Max(0.15f, 1.f + 0.45f * FMath::Sin(T * 0.37f + P.X * 0.0004f) + 0.3f * FMath::Sin(T * 1.1f + P.Y * 0.0007f) + 0.15f * FMath::Sin(T * 2.9f));
@@ -792,6 +847,7 @@ void AJapanWorld::Tick(float Dt)
     if (GetNetMode()==NM_DedicatedServer) return;
     UpdateHarborLook(this);
     UpdateFogDensity(Dt);
+    UpdateNorthAerialGrade(Dt);
     ApplyGroupDiagnostics();
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);

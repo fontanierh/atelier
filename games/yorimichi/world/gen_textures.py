@@ -16,8 +16,10 @@ Every texture is a set of flat, soft-edged brush stamps: nothing photographic.
   T_concrete.jpg     256   pole concrete
 """
 import os, math
+import hashlib, json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
+from surface_textures import neutral_detail
 
 OUT = str(yori.TEXTURES)
 os.makedirs(OUT, exist_ok=True)
@@ -289,6 +291,15 @@ def bark():
     save("T_bark.jpg", Image.fromarray(np.rint(np.clip(rgb,0,1)*255).astype('uint8')))
 
 
+def ground_detail():
+    path=yori.ASSETS/'environment/textures/tuscan-ground.jpg'
+    provenance=json.loads(path.with_suffix('.provenance.json').read_text())
+    assert hashlib.sha256(path.read_bytes()).hexdigest()==provenance['source_sha256']
+    with Image.open(path) as image:
+        image=image.convert('RGB');image.thumbnail((1024,1024),Image.Resampling.LANCZOS)
+        save('T_ground_detail.png',neutral_detail(image))
+
+
 def road(w=256, h=1024):
     base = noise(h, 6, 3, 41, m=w); fine = noise(h, 40, 2, 42, m=w)
     xs = np.linspace(0, 1, w)[None, :]
@@ -404,4 +415,4 @@ def concrete(n=256):
 
 
 if __name__ == "__main__":
-    leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); sky(); water(); concrete(); white()
+    leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); ground_detail(); sky(); water(); concrete(); white()

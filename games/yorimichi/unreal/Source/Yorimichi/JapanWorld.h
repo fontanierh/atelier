@@ -126,6 +126,12 @@ private:
     float AppliedFogDensity = -1.f, TownView = 0.f;
     FBox2D TownBounds = FBox2D(ForceInit);
     void UpdateFogDensity(float Dt);
+    UPROPERTY() class UPostProcessComponent* NorthAerialGrade = nullptr;
+    UPROPERTY() class UPostProcessComponent* NorthHighGrade = nullptr;
+    FVector NorthGradeCamera = FVector::ZeroVector;
+    float NorthGradeTraceElapsed = 0.f, NorthGradeClearance = 0.f;
+    bool bNorthGradeHasCamera = false;
+    void UpdateNorthAerialGrade(float Dt);
     bool bSeeThroughProbeIgnored = false;
     void Load();
 };

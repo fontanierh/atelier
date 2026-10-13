@@ -35,5 +35,16 @@ class NorthernLandscape(unittest.TestCase):
             self.assertTrue(inside(x1-M.STEP,y1-M.STEP,M.STEP))
             self.assertFalse(inside(x1,y1,M.STEP))
 
+    def test_asymmetric_crater_has_a_bowl_inside_a_broken_rim(self):
+        x,y=np.meshgrid(np.arange(350.,755.,5.),np.arange(1730.,2135.,5.))
+        z=M.natural_height(x,y);radius=np.hypot(x-550,y-1930)
+        angles=np.arange(64)*np.pi/32
+        radii=np.arange(60.,150.,5.)
+        crest=M.natural_height(550+np.cos(angles[:,None])*radii,1930+np.sin(angles[:,None])*radii)
+        floor=np.median(z[radius<25]);rim=np.median(crest.max(axis=1))
+        self.assertGreater(rim-floor,40.)
+        self.assertLess(rim-floor,70.)
+        self.assertLess(float(z.max()),590.)
+
 
 if __name__=='__main__':unittest.main()

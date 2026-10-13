@@ -5,6 +5,7 @@ never a flat image of tree tops.
 """
 import unreal as U
 import atmosphere
+import ground_grain
 
 
 def material():
@@ -17,12 +18,18 @@ def material():
         for k,v in props.items():n.set_editor_property(k,v)
         return n
     p=node(U.MaterialExpressionWorldPosition)
+    detail=E.load_asset('/Game/Japan/Textures/T_ground_detail');assert detail
+    tex=node(U.MaterialExpressionTextureObject,texture=detail)
     base=node(U.MaterialExpressionCustom,output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
               code='''float n=smoothstep(300000.,330000.,-P.y);
 float3 colour=lerp(float3(.055,.11,.035),float3(.105,.145,.055),n);
-return colour;''')
-    a=U.CustomInput();a.set_editor_property('input_name','P');base.set_editor_property('inputs',[a])
+'''+ground_grain.code('Tex','TexSampler','P')+'\nreturn colour*groundDetail;')
+    args=[]
+    for key in ['P','Tex']:
+        a=U.CustomInput();a.set_editor_property('input_name',key);args.append(a)
+    base.set_editor_property('inputs',args)
     assert M.connect_material_expressions(p,'',base,'P')
+    assert M.connect_material_expressions(tex,'',base,'Tex')
     fill=node(U.MaterialExpressionConstant,r=0.)
     shaded,emission=atmosphere.apply(m,base,fill)
     M.connect_material_property(shaded,'',U.MaterialProperty.MP_BASE_COLOR)

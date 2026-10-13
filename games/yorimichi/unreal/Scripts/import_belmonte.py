@@ -11,6 +11,7 @@ import yori  # noqa: E402
 import json
 import unreal
 import atmosphere
+import ground_grain
 
 OUT = yori.OUT / 'belmonte'
 ROOT = '/Game/Belmonte'
@@ -62,6 +63,10 @@ paint = lerp(paint, ground, Terrain);
 float2 coord=lerp(UV/Tile,World.xy/(Tile*100),Terrain);
 float3 detail = Texture2DSample(Tex, TexSampler, coord).rgb;
 float3 surface = lerp(1, detail*lerp(2,1,Atlas), Strength);
+if(Terrain>.5){
+'''+ground_grain.code('Tex','TexSampler','World')+'''
+surface=groundDetail;
+}
 return paint * Tint.rgb * surface * Brightness;
 ''')
     custom_inputs = []
@@ -122,8 +127,7 @@ def join_parent(texture):
     inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('World', world, ''), ('Ground', ground, '')]
     shade = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
                  code='''float3 valley=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
-float3 grain=Texture2DSample(Ground,GroundSampler,World.xy/900.).rgb;
-return valley*lerp(float3(1,1,1),grain*2,1-Alpha);''')
+'''+ground_grain.code('Ground','GroundSampler','World')+'\nreturn valley*groundDetail;')
     custom_inputs = []
     for key, _, _ in inputs:
         value = unreal.CustomInput(); value.set_editor_property('input_name', key); custom_inputs.append(value)
