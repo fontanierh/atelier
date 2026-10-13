@@ -186,8 +186,10 @@ def parse_ready(log, baseline=False, windowed=False, tile_manifest=None, tree_op
     if not re.search(r'r\.ForwardShading = "' + ('0' if baseline else '1') + '"', log):
         raise ValueError('requested renderer not verified')
     originals, tiles = tile_counts(tile_manifest or PROJECT / 'Content' / 'Data' / 'city_surface_tiles' / TILE_TAG / 'manifest.json')
-    markers = [f'CITY TILES tag={TILE_TAG} enabled=1 originals={originals} tiles={tiles}',
-               f'CITY TREE LODS tag={TREE_TAG} enabled={int(tree_optimization)} forced={tree_lod_mode} groups=3']
+    markers = [f'CITY TILES tag={TILE_TAG} enabled=1 originals={originals} tiles={tiles}']
+    trees = re.findall(re.escape(f'CITY TREE LODS tag={TREE_TAG} enabled={int(tree_optimization)} forced={tree_lod_mode} groups=') + r'(\d+)(?=\s|$)', log)
+    if not trees or int(trees[-1]) < 3:
+        raise ValueError('desktop profile did not load: CITY TREE LODS requires at least the three city tree groups')
     if not baseline:
         markers.append('FORWARD FILL nominal_lux=3.000 lights=1')
     missing = [marker for marker in markers if not re.search(re.escape(marker) + r'(?=\s|$)', log)]

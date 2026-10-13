@@ -110,8 +110,9 @@ SLOPE = np.hypot(*np.gradient(H, STEP))
 
 # ------------------------------------------------------------------ placements
 inst = {}
-def put(name, x, y, z=None, yaw=None, scale=1.0):
-    inst.setdefault(str(name), []).append([round(float(x), 2), round(float(y), 2), round(float(sample_h(x, y) if z is None else z), 2),
+def put(name, x, y, z=None, yaw=None, scale=1.0, into=None):
+    target = inst if into is None else into
+    target.setdefault(str(name), []).append([round(float(x), 2), round(float(y), 2), round(float(sample_h(x, y) if z is None else z), 2),
                                       round(float(rng.uniform(0, 360) if yaw is None else yaw), 1), round(float(scale), 3)])
 
 def road_frame(s):
@@ -201,6 +202,7 @@ def scatter(spacing, fn, jitter=0.45):
             if h < 1.2: continue
             fn(x, y, h, dist_road(x, y), slope(x, y))
 
+forest_scatter = {}
 def trees(x, y, h, d, sl):
     if d < 8.5 or sl > 1.6: return
     if any(math.hypot(x - hx, y - hy) < 12 for hx, hy in LEGACY_SPOTS): return
@@ -215,9 +217,10 @@ def trees(x, y, h, d, sl):
     else:
         if r > 0.85: return
         name = rng.choice(["Tree_Broad_A", "Tree_Broad_B", "Tree_Maple_A", "Tree_Maple_B", "Tree_Ginkgo", "Tree_Pine_A", "Tree_Cedar_B"], p=[0.12, 0.08, 0.28, 0.14, 0.14, 0.2, 0.04])
-    if d > 90 and name.startswith(("Tree_Maple", "Tree_Ginkgo", "Tree_Broad")):
-        name = {"Tree_Maple": "Tree_Maple_lo", "Tree_Ginkgo": "Tree_Ginkgo_lo", "Tree_Broad": "Tree_Broad_lo"}[name[:name.index("_", 5)] if name.count("_") > 1 else name]
-    put(name, x, y, h - 0.15, scale=rng.uniform(0.85, 1.25) * (1.25 if d > 26 else 1.0))     # bigger crowns away from the road: the canopy closes
+    scattered = d > 90 and name.startswith(("Tree_Maple", "Tree_Ginkgo", "Tree_Broad"))
+    if scattered:
+        name = {"Tree_Maple": "Tree_Maple_A", "Tree_Ginkgo": "Tree_Ginkgo", "Tree_Broad": "Tree_Broad_A"}[name[:name.index("_", 5)] if name.count("_") > 1 else name]
+    put(name, x, y, h - 0.15, scale=rng.uniform(0.85, 1.25) * (1.25 if d > 26 else 1.0), into=forest_scatter if scattered else inst)     # bigger crowns away from the road: the canopy closes
     if name.startswith("Tree_Maple") or name.startswith("Tree_Ginkgo"):
         for _ in range(4):
             a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(0.5, 3.2)
@@ -228,9 +231,13 @@ use("trees"); scatter(5.0, trees)
 def far_trees(x, y, h, d, sl):
     if d < 95 or sl > 1.6 or rng.random() > 0.6: return
     if math.hypot(x - SHRINE[0], y - SHRINE[1]) < 18: return
-    name = rng.choice(["Tree_Maple_lo", "Tree_Broad_lo", "Tree_Ginkgo_lo", "Tree_Cedar_B", "Tree_Pine_B"], p=[0.48, 0.18, 0.12, 0.08, 0.14])
-    put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3))
+    name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Ginkgo", "Tree_Cedar_B", "Tree_Pine_B"], p=[0.48, 0.18, 0.12, 0.08, 0.14])
+    put(name, x, y, h - 0.15, scale=rng.uniform(0.9, 1.3), into=forest_scatter)
 use("far"); scatter(3.2, far_trees, jitter=0.5)
+from treehouse.layout import autumn_far
+treehouse_forest_rng, forest_scatter_xy = autumn_far(forest_scatter)
+for name, rows in forest_scatter.items():
+    inst.setdefault(name, []).extend(rows)
 
 def bushes(x, y, h, d, sl):
     if d < 4.3 or sl > 1.8: return
@@ -293,7 +300,7 @@ shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(ma
 x, y, z, tx, ty, ux, uy = road_frame(0.2 * L)
 shots.append([round(x, 2), round(y, 2), round(z + 1.7, 2), round(math.degrees(math.atan2(uy, ux)), 1), 14.0])          # looking up the bank at the trees
 use("far")
-# far hills ring (out to 3.2 km, open sea to the south) + cheap trees on its near part for silhouettes
+# Far hills ring (out to 3.2 km, open sea to the south) and detailed trees with distant LODs.
 FN = 96; FSZ = 6400.0; FSTEP = FSZ / (FN - 1)
 fx_ = np.linspace(-FSZ / 2, FSZ / 2, FN); FX, FY = np.meshgrid(fx_, fx_)
 FH1 = fbm(FN, 3, 4, 3); FH2 = fbm(FN, 7, 3, 5)
@@ -307,14 +314,22 @@ def far_h(x, y):
     fx = (x + FSZ / 2) / FSTEP; fy = (y + FSZ / 2) / FSTEP
     i = int(np.clip(fx, 0, FN - 2)); j = int(np.clip(fy, 0, FN - 2)); u = fx - i; v = fy - j
     return FZ[j, i] * (1 - u) * (1 - v) + FZ[j, i + 1] * u * (1 - v) + FZ[j + 1, i] * (1 - u) * v + FZ[j + 1, i + 1] * u * v
+far_trees = {}
 for gy in np.arange(-1300, 2600, 11.0):
     for gx in np.arange(-2600, 2600, 11.0):
         x = gx + rng.uniform(-6, 6); y = gy + rng.uniform(-6, 6)
         if max(abs(x), abs(y)) < 300: continue
         h = far_h(x, y)
         if h < 1 or rng.random() > 0.75: continue
-        name = rng.choice(["Tree_Maple_lo", "Tree_Broad_lo", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo_lo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
-        put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75))
+        name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
+        put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75), into=far_trees)
+# Clear only this producer's trees where Mega Park supplies its own canopy.
+# Detailed park, southwest and tree-house trees can share these asset names.
+from megapark.forest import clear_far_forest
+clear_far_forest({'instances': far_trees})
+forest_scatter_xy.update(tuple(row[:2]) for rows in far_trees.values() for row in rows)
+for name, rows in far_trees.items():
+    inst.setdefault(name, []).extend(rows)
 
 road = [[round(float(a), 2), round(float(b), 2), round(float(c), 2)] for a, b, c in zip(RX, RY, RZ)]
 world = {"size": SIZE, "n": N, "sea_level": 0.0, "wind_dir": [0.30, 0.95], "wind_speed": 3.5, "rail_runs": rail_runs, "road": road, "road_width": 5.2, "anchors": anchors,
@@ -335,14 +350,13 @@ clear_torii_vegetation(world)
 # The tree house plans its canopy trees and clearings on the finished forest, so it goes last but for the house
 # lots, which are cleared and planted after it: its canopy draws run over the whole map's tree lists in order.
 from treehouse.layout import integrate as integrate_treehouse
-integrate_treehouse(world, H)
+integrate_treehouse(world, H, forest_rng=treehouse_forest_rng)
 houses_layout.clear_and_dress(world, sample_h)
 # The Mega Park trail leaves the woodland air station's footpath north, over the far hills' shoulder to the park.
 from megapark.trail import integrate as integrate_park_trail
-integrate_park_trail(world, H)
-# The Mega Park's crowns replace the far forest's painted cards on the hills west of it (after the tree house's draws).
-from megapark.forest import clear_far_forest
-clear_far_forest(world)
+integrate_park_trail(world, H, scatter_xy=forest_scatter_xy)
+from forest.ecotone import northern_ecotone
+northern_ecotone(inst)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

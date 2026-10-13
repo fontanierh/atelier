@@ -16,8 +16,10 @@ Every texture is a set of flat, soft-edged brush stamps: nothing photographic.
   T_concrete.jpg     256   pole concrete
 """
 import os, math
+import hashlib, json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
+from surface_textures import neutral_detail
 
 OUT = str(yori.TEXTURES)
 os.makedirs(OUT, exist_ok=True)
@@ -191,17 +193,7 @@ def small_leaf_atlas(name, kind, palette, seed, per_cell=(3, 6), size=(110, 175)
     save(name, Image.fromarray(np.dstack([np.clip(rgb, 0, 255).astype(np.uint8), (a[..., 0] * 255).astype(np.uint8)]), "RGBA"))
 
 
-def autumn_lo():
-    maple = [((0.82, 0.26, 0.10), (0.96, 0.52, 0.18), (0.50, 0.10, 0.06)), ((0.88, 0.40, 0.12), (0.98, 0.64, 0.22), (0.56, 0.18, 0.07)), ((0.80, 0.34, 0.10), (0.94, 0.56, 0.20), (0.48, 0.14, 0.06))]
-    atlas("T_leaf_maple_lo.png", maple, 71, stamps=300, size=(28, 58), blob_r=0.40)
-    ginkgo = [((0.90, 0.76, 0.22), (0.98, 0.90, 0.45), (0.62, 0.48, 0.12))]
-    atlas("T_leaf_ginkgo_lo.png", ginkgo, 72, stamps=300, size=(26, 54), blob_r=0.40)
-    broad = [((0.50, 0.58, 0.24), (0.76, 0.74, 0.36), (0.26, 0.34, 0.14)), ((0.62, 0.56, 0.22), (0.86, 0.78, 0.36), (0.32, 0.30, 0.12))]
-    atlas("T_leaf_broad_lo.png", broad, 73, stamps=300, size=(28, 58), blob_r=0.40)
-
-
 def autumn_leaves():
-    autumn_lo()
     small_leaf_atlas("T_leaf_maple.png", "maple", [(0.82, 0.26, 0.12), (0.88, 0.45, 0.12), (0.72, 0.16, 0.10), (0.92, 0.60, 0.16), (0.86, 0.34, 0.10)], 41, per_cell=(7, 12), size=(70, 120))
     small_leaf_atlas("T_leaf_ginkgo.png", "ginkgo", [(0.90, 0.78, 0.30), (0.84, 0.70, 0.24), (0.94, 0.86, 0.44), (0.78, 0.64, 0.22)], 42, per_cell=(7, 12), size=(65, 105))
     small_leaf_atlas("T_leaf_ochre_small.png", "oval", [(0.72, 0.60, 0.26), (0.80, 0.70, 0.34), (0.62, 0.50, 0.20), (0.86, 0.76, 0.40), (0.70, 0.56, 0.22)], 46, per_cell=(9, 14), size=(60, 100))
@@ -266,20 +258,6 @@ def rooftile(n=512):
     save("T_rooftile.jpg", im)
 
 
-def farforest(n=1024):
-    """speckled autumn forest for the distant hills ring (one texel = one tree at 6 m)"""
-    r = rng_for(61); base = noise(n, 4, 3, 62)
-    g = np.array([0.34, 0.34, 0.16]); pal = [(0.30, 0.38, 0.18), (0.44, 0.44, 0.18), (0.66, 0.46, 0.14), (0.74, 0.30, 0.12), (0.82, 0.60, 0.16), (0.24, 0.32, 0.16), (0.80, 0.40, 0.14), (0.72, 0.52, 0.16)]
-    rgb = np.broadcast_to(g, (n, n, 3)).copy() * (0.8 + 0.4 * base[..., None])
-    im = Image.fromarray(np.clip(rgb * 255, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
-    for _ in range(6000):
-        x = r.uniform(0, n); y = r.uniform(0, n); rr = r.uniform(8, 16); c = pal[r.integers(len(pal))]
-        k = 1 + (r.random() - 0.5) * 0.3
-        d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=col(c, k))
-        d.ellipse([x - rr * 0.5, y - rr * 0.8, x + rr * 0.5, y], fill=col(c, k * 1.25))
-    save("T_farforest.jpg", im.filter(ImageFilter.GaussianBlur(0.8)))
-
-
 def grass():
     """Quiet paint for curved mesh blades; silhouette comes from real geometry.
 
@@ -300,19 +278,26 @@ def grass():
     save("T_grass.png", im)
 
 
-def bark(n=512):
-    r = rng_for(31)
-    im = Image.new("RGB", (n, n), col((0.20, 0.15, 0.12)))
-    dr = ImageDraw.Draw(im)
-    for _ in range(260):
-        x = r.uniform(0, n); w = r.uniform(4, 14); h = r.uniform(40, 220); y = r.uniform(-h, n)
-        c = (0.24, 0.18, 0.14) if r.random() < 0.5 else (0.16, 0.12, 0.10)
-        dr.polygon([(x, y), (x + w, y + 4), (x + w * 0.7, y + h), (x - 2, y + h - 3)], fill=col(c, 1 + (r.random() - 0.5) * 0.2))
-    im = im.filter(ImageFilter.GaussianBlur(0.7))
-    # make it tile horizontally by blending the edge
-    a = np.asarray(im).astype(np.float32)
-    a = (a + np.roll(a, n // 2, axis=1)) / 2
-    save("T_bark.jpg", Image.fromarray(a.astype(np.uint8)))
+def bark():
+    """Sunburst weathered olive bark and the island's existing dark bark palette."""
+    with Image.open(yori.ASSETS/'environment/textures/tree-bark.jpg') as image:
+        image=image.convert('RGB');save("T_bark_olive.jpg", image)
+        rgb=np.asarray(image,dtype=float)/255.
+    linear=np.where(rgb<=.04045,rgb/12.92,((rgb+.055)/1.055)**2.4)
+    target=np.array([.20,.15,.12])
+    target=np.where(target<=.04045,target/12.92,((target+.055)/1.055)**2.4)
+    linear*=target/linear.mean(axis=(0,1))
+    rgb=np.where(linear<=.0031308,linear*12.92,1.055*linear**(1/2.4)-.055)
+    save("T_bark.jpg", Image.fromarray(np.rint(np.clip(rgb,0,1)*255).astype('uint8')))
+
+
+def ground_detail():
+    path=yori.ASSETS/'environment/textures/tuscan-ground.jpg'
+    provenance=json.loads(path.with_suffix('.provenance.json').read_text())
+    assert hashlib.sha256(path.read_bytes()).hexdigest()==provenance['source_sha256']
+    with Image.open(path) as image:
+        image=image.convert('RGB');image.thumbnail((1024,1024),Image.Resampling.LANCZOS)
+        save('T_ground_detail.png',neutral_detail(image))
 
 
 def road(w=256, h=1024):
@@ -430,4 +415,4 @@ def concrete(n=256):
 
 
 if __name__ == "__main__":
-    leaves(); autumn_leaves(); flower_atlas(); rooftile(); farforest(); grass(); bark(); road(); ground(); sky(); water(); concrete(); white()
+    leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); ground_detail(); sky(); water(); concrete(); white()

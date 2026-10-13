@@ -9,7 +9,9 @@ import numpy as np
 from megapark import placement as megapark
 
 BOUNDS = (-700., 500., 2400., 3000.)
-STEP = 10.
+STEP = 5.
+SNOW_STEP = 2.
+SNOW_BOUNDS = (-473., 907., 1573., 2953.)
 TRAIL = [(1120,335),(1120,440),(1120,500),(1100,555),(1040,620),
          (1030,680),(1090,735),(1170,780),(1200,850),(1160,915),
          (1080,960),(1000,1020),(1010,1090),(1060,1130)]
@@ -64,8 +66,7 @@ def drainage():
 
 def drainage_field(x,y):
     x,y=np.broadcast_arrays(x,y)
-    # Positive inside snow ribbons; the cap connects all gullies near the summit.
-    snow=190+noise(x,y,95,28)*24-np.hypot(x-550,y-1930)
+    snow=np.full(x.shape,-1e9)
     cut=np.zeros_like(x,dtype=float)
     for a,b in drainage():
         dx=b[0]-a[0];dy=b[1]-a[1]
@@ -93,11 +94,26 @@ def natural_height(x,y):
     # It joins the existing flank with matching height and slope.
     summit_radius=np.where(r<110,35+r*r/220,np.maximum(r-20,0))
     cone=510*np.maximum(0,1-summit_radius/1170)**1.55
+    angle=np.arctan2(dy,dx)
+    ridge=(.5+.5*np.cos(angle*8+.45*np.sin(angle*3)+r*.0008))**2
+    ridge_band=smooth((r-140)/140)*smooth((1170-r)/280)
+    # Long arêtes read from the flight above the summit as well as from town.
+    # A small broken crater rim replaces the featureless tangent dome.
+    rim_radius=95+10*np.cos(angle-2.3)
+    lift=1+.40*np.cos(angle-2.6)+.12*np.cos(2*angle+.7)+.25*noise(np.cos(angle)*300,np.sin(angle)*300,40.,91)
+    breach=1.-.9*smooth((np.cos(angle-.5)-.82)/.15)
+    rim=12*np.exp(-((r-rim_radius)/np.where(r<rim_radius,17.,48.))**2)*lift*breach
+    crater=-50*smooth((rim_radius-r)/60)**.85
+    peaks=sum(h*np.exp(-((dx-rr*math.cos(a))**2+(dy-rr*math.sin(a))**2)/s**2)
+              for a,rr,h,s in ((2.6,96,20,28),(-.35,104,9,20),(4.2,110,6,16)))
+    shoulders=(72*np.exp(-((dx-290)/130)**2-((dy-90)/160)**2)
+               +48*np.exp(-((dx+220)/120)**2-((dy+140)/150)**2))
     _,cuts=drainage_field(x,y)
-    relief=(-cuts*8+noise(x,y,70,2)*12+noise(x,y,180,17)*9)
-    relief*=smooth((r-35)/170)*smooth((1220-r)/230)
-    # Small irregular facets subdivide the broad faces without changing the skyline.
-    relief+=noise(x,y,24,3)*9*smooth((r-35)/110)*smooth((1100-r)/250)
+    relief=((ridge*np.minimum(38.,cone*.12)-cuts*np.minimum(22.,cone*.1))*ridge_band+rim+crater+peaks+shoulders
+            +noise(x,y,70,2)*9+noise(x,y,180,17)*13)
+    relief*=smooth((1220-r)/230)
+    # Small weathering rides the macro ridges; material grain supplies close detail.
+    relief+=noise(x,y,32,3)*4*smooth((r-35)/110)*smooth((1100-r)/250)
     trail_quiet=smooth((trail_distance(x,y)-15)/100)
     relief*=trail_quiet
     foothills+=noise(x,y,130,4)*15*smooth(north/240)*trail_quiet
@@ -161,9 +177,14 @@ def on_grid(x,y,field):
 def colours(x,y,z):
     """The ground's vertex colours: grass on the apron, forest green, and rock high up."""
     rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
-    forest=smooth((z-140+noise(x,y,125,27)*28)/75)
-    # Muted warm/slate rock planes sit behind the warm tree canopy.
-    rock=np.stack([.145+.043*rock_noise,.137+.025*rock_noise,.185+.015*rock_noise],axis=-1)
+    radius=np.hypot(x-550,y-1930)
+    floor=47+np.maximum(y-500,0)*.020
+    # Rising backdrop ground is still woodland. Exposed rock belongs to the
+    # actual volcanic relief above its local apron, not an absolute elevation.
+    forest=smooth((z-floor-135+noise(x,y,125,27)*28)/160)*smooth((1120-radius)/180)
+    rock=np.stack([.125+.022*rock_noise,.108+.024*rock_noise,.090+.026*rock_noise],axis=-1)
+    lichen=smooth((noise(x,y,12,99)-.45)/.20)
+    rock*=np.stack([1+.05*lichen,1+.08*lichen,1-.15*lichen],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
@@ -173,45 +194,131 @@ def colours(x,y,z):
     under=megapark_forest.floor(x,y)*(1-smooth((z-205)/30))
     litter=noise(x,y,40,41)
     floor=np.stack([.066+.018*litter,.062+.014*litter,np.full_like(x,.026)],axis=-1)
-    return colors*(1-under[...,None])+floor*under[...,None]
+    colors=colors*(1-under[...,None])+floor*under[...,None]
+    t=smooth((y-2580)/420)
+    join=smooth(np.clip(t+t*(1-t)*noise(x,y,140,82)*.7,0,1))
+    palette=np.array([.055,.11,.035])
+    return colors*(1-join[...,None])+palette*join[...,None]
+
+def shade_height(z,step):
+    shade_z=z.copy()
+    for _ in range(max(1,round(16/(step*step)))):
+        padded=np.pad(shade_z,1,mode='edge')
+        shade_z=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
+    return shade_z
+
+def relief_curvature(z,step=STEP):
+    dy,dx=np.gradient(shade_height(z,step),step,step)
+    lap=np.gradient(dx,step,axis=1)+np.gradient(dy,step,axis=0)
+    for _ in range(round(3*(10/step)**2)):
+        padded=np.pad(lap,1,mode='edge')
+        lap=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
+    return smooth((-lap-.002)/.006),smooth((lap-.001)/.005)
+
+
+def snow_cover(x,y,z,step=STEP):
+    """Snow in drainage hollows and the crater bowl, with bare convex crests."""
+    radius=np.hypot(x-550,y-1930)
+    signed=np.full(x.shape,-1e9)
+    pinch=.65+.35*smooth((noise(x,y,55,52)+.4)/.8)
+    for a,b in drainage():
+        dx,dy=b[0]-a[0],b[1]-a[1]
+        t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
+        distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
+        width=(a[2]*(1-t)+b[2]*t)*pinch
+        signed=np.maximum(signed,np.where(width>0,np.maximum(width,3),0)-distance)
+    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
+    signed+=noise(x,y,25,19)*3+breakup*smooth((radius-170)/180)
+    # Each seeded ribbon already has a different reach; this broad weather
+    # field breaks the snowline without a concentric cut across every gully.
+    ribbons=smooth((signed+4)/9)*smooth((520+noise(x,y,220,51)*180-radius)/120)
+    dy,dx=np.gradient(shade_height(z,step),step,step)
+    nz=1/np.sqrt(1+dx*dx+dy*dy)
+    crest,gully=relief_curvature(z,step)
+    faces=smooth((z-400)/90)*smooth((nz-.80)/.10)*smooth((noise(x,y,90,41)+noise(x,y,140,42)*.6+.15)/.5)*(1-crest)
+    angle=np.arctan2(y-1930,x-550)
+    ring=lambda r,s,seed:noise(np.cos(angle)*r,np.sin(angle)*r,s,seed)
+    floor_r=40+12*ring(80.,30.,95)
+    bowl=smooth((floor_r-radius)/8)*(1-.85*smooth((noise(x,y,16,96)-.2)/.2))
+    rim_r=95+10*np.cos(angle-2.3)
+    chutes=(smooth((np.sin(angle*9+1.5*ring(150.,60.,97))-.25)/.3)
+            *smooth((rim_r-8-radius)/14)*smooth((radius-floor_r+5)/10))
+    bowl=np.maximum(bowl,chutes)
+    rim=np.exp(-((radius-(95+10*np.cos(angle-2.3)))/24)**2)
+    inside=smooth((rim_r-12-radius)/10)
+    snow=np.maximum.reduce([(ribbons*(1-.75*crest)+.35*gully*smooth((z-300)/120))*(1-inside),faces*(1-inside),bowl])
+    snow=np.clip(snow,0,1)*(1-.92*rim*(1-bowl))
+    line=230+noise(x,y,180,83)*40
+    return np.clip(snow,0,1)*smooth((z-line)/90)*smooth((nz-.42)/.30)
+
+@lru_cache(maxsize=4)
+def snow_grid(base_sampler):
+    xs=np.arange(SNOW_BOUNDS[0],SNOW_BOUNDS[2]+1,SNOW_STEP)
+    ys=np.arange(SNOW_BOUNDS[1],SNOW_BOUNDS[3]+1,SNOW_STEP)
+    x,y=np.meshgrid(xs,ys)
+    cover=snow_cover(x,y,height(x,y,base_sampler),SNOW_STEP)
+    # The same bytes drive the material and planting; filtering is bilinear.
+    return np.rint(np.clip(cover,0,1)*255).astype(np.uint8)
+
+def snow(x,y,base_sampler):
+    x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
+    field=snow_grid(base_sampler)
+    px=np.clip((x-SNOW_BOUNDS[0])/SNOW_STEP,0,field.shape[1]-1.001)
+    py=np.clip((y-SNOW_BOUNDS[1])/SNOW_STEP,0,field.shape[0]-1.001)
+    ix=px.astype(int);iy=py.astype(int);u=px-ix;v=py-iy
+    value=((field[iy,ix].astype(float)*(1-u)+field[iy,ix+1]*u)*(1-v)
+           +(field[iy+1,ix]*(1-u)+field[iy+1,ix+1]*u)*v)/255.
+    inside=(x>=SNOW_BOUNDS[0])&(x<=SNOW_BOUNDS[2])&(y>=SNOW_BOUNDS[1])&(y<=SNOW_BOUNDS[3])
+    return np.where(inside,value,0.)
+
+def export_snow_mask(output,base_sampler):
+    """Linear R8 PNG, row zero at minimum world y, sampled at texel centres."""
+    import json,struct,zlib
+    field=snow_grid(base_sampler)
+    assert not any(np.any(edge) for edge in (field[0],field[-1],field[:,0],field[:,-1])),'Snow mask clips its footprint'
+    def chunk(kind,data):
+        return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
+    rows=b''.join(b'\0'+row.tobytes() for row in field)
+    png=(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',field.shape[1],field.shape[0],8,0,0,0,0))
+         +chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b''))
+    (output/'north_snow.png').write_bytes(png)
+    meta={'bounds':SNOW_BOUNDS,'step_m':SNOW_STEP,'size':[field.shape[1],field.shape[0]],
+          'linear':True,'row_zero_world_y':SNOW_BOUNDS[1],'filter':'bilinear, clamp, texel-centred'}
+    (output/'north_snow.json').write_text(json.dumps(meta,indent=2)+'\n')
+    print('NORTH SNOW MASK',field.shape,len(png),'bytes',flush=True)
 
 def mesh(base_sampler):
-    from village.build import Mesh
-    m=Mesh('HD_NorthMountains')
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
     x,y,z=surface_grid(base_sampler)
-    rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
     colors=colours(x,y,z)
+    crest,gully=relief_curvature(z)
     radius=np.hypot(x-550,y-1930)
-    # Snow collects in broken, tapering gullies instead of long uniform ribbons.
-    # Preserve a continuous crown, then expose irregular rock islands downslope.
-    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
-    exposure=smooth((radius-170)/180)
-    signed=drainage_field(x,y)[0]+noise(x,y,25,19)*3
-    signed-=smooth((radius-150)/130)*2+smooth((radius-420)/300)*3
-    signed+=breakup*exposure
-    signed=np.maximum(signed,170+noise(x,y,65,33)*14-radius)
-    signed=np.minimum(signed,z-235)
+    prominence=z-(47+np.maximum(y-500,0)*.020)
+    exposed=smooth((prominence-135)/120)*smooth((1120-radius)/180)
+    cavity=(1-.45*gully)*(1+.15*crest)
+    angle=np.arctan2(y-1930,x-550)
+    rim=np.exp(-((radius-(95+10*np.cos(angle-2.3)))/24)**2)
+    colors*=((1-exposed)+exposed*cavity*(1-.35*rim))[...,None]
+    dy,dx=np.gradient(z,STEP,STEP)
+    normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
+    normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
+    # Soft continuous snow masks replace hard clipped lavender polygons.
+    mask=snow(x,y,base_sampler)
     # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
     from megapark import gate
     from communitypark import layout as community_park
+    faces=[]
+    width=len(xs)
     for j in range(len(ys)-1):
         for i in range(len(xs)-1):
-            if gate.cell_inside(x[j,i],y[j,i]) or community_park.cell_inside(x[j,i],y[j,i]):continue
-            for offsets in [((0,0),(1,0),(1,1)),((0,0),(1,1),(0,1))]:
-                p=[(x[j+b,i+a],y[j+b,i+a],z[j+b,i+a]) for a,b in offsets]
-                color=np.mean([colors[j+b,i+a] for a,b in offsets],axis=0)
-                values=[signed[j+b,i+a] for a,b in offsets]
-                variation=1+.10*float(rock_noise[j,i])
-                for snow in (False,True):
-                    clipped=[]
-                    for k in range(3):
-                        a=np.array(p[k]);b=np.array(p[(k+1)%3]);da=values[k];db=values[(k+1)%3]
-                        inside=da>=0 if snow else da<0
-                        if inside:clipped.append(tuple(a))
-                        if (da>=0)!=(db>=0):clipped.append(tuple(a+(b-a)*(da/(da-db))))
-                    if len(clipped)>=3:m.poly(clipped,tuple(c*variation for c in ((.72,.76,.81) if snow else color)))
-    return m
+            if gate.cell_inside(x[j,i],y[j,i],STEP) or community_park.cell_inside(x[j,i],y[j,i],STEP):continue
+            a=j*width+i;b=a+1;c=a+width+1;d=a+width
+            faces.extend([(a,b,c),(a,c,d)])
+    faces=np.asarray(faces,dtype=np.int32)
+    used=np.unique(faces);remap=np.full(x.size,-1,dtype=np.int32);remap[used]=np.arange(len(used))
+    return dict(vertices=np.stack([x,y,z],-1).reshape(-1,3)[used],faces=remap[faces],
+                colours=np.dstack([colors,mask]).reshape(-1,4)[used],normals=normals.reshape(-1,3)[used])
+
 
 def trail_mesh(surface):
     from village.build import Mesh
@@ -245,60 +352,3 @@ def trail_points(surface):
             points.append([x,y,float(surface(x,y))])
     x,y=TRAIL[-1];points.append([x,y,float(surface(x,y))])
     return points
-
-
-def forest_tree(kind,backdrop=False):
-    """The forest's opaque crowns, made to be seen from afar: a cauliflower of small noisy lobes over an ellipsoid core,
-    shaded smooth with normals mostly out from the whole crown, and coloured per vertex by height and noise, so a
-    hillside reads as soft clumps of leaves rather than faceted balls (the pines: tiers, likewise smooth)."""
-    import bpy,random
-    from mathutils import Vector,noise
-    from village.build import Mesh
-    r=random.Random({'Gold':81,'Rust':123,'Pine':206,'Green':279}[kind])
-    class Smooth(Mesh):
-        def object(self,material):
-            # Smooth shading with the crown's own normals (the trunk's point straight out from the axis).
-            ob=super().object(material);me=ob.data
-            out=[tuple(self.normals[i]) if i in self.normals else tuple(Vector((p[0],p[1],0)).normalized() or (0,0,1))
-                 for i,p in enumerate(self.vertices)]
-            me.polygons.foreach_set('use_smooth',[True]*len(me.polygons))
-            me.normals_split_custom_set_from_vertices(out)
-            return ob
-    m=Smooth('HD_NorthTree'+('Backdrop' if backdrop else '')+kind);m.normals={}
-    bark=(.055,.027,.012)
-    m.lathe((0,0,0),[(0,.26),(3.6,.17),(6,.06)],bark,n=7)
-    m.collider((0,0,2.5),(.48,.48,5.))
-    def shade(pts,colour,normal,lift):
-        i=len(m.vertices);m.poly(pts,colour)
-        if len(m.vertices)!=i+len(pts):return
-        for j,p in enumerate(pts):
-            v=(.62+.30*min(1.,max(0.,(p.z-lift)/7.))+.18*noise.noise(p*.55))
-            m.colors[i+j]=(*(c*v for c in colour),0);m.normals[i+j]=normal(p)
-    if kind=='Pine':
-        green=(.021,.049,.025)   # a shade warmer than the old blue-green
-        for z,radius in [(2.8,2.8),(4.1,2.5),(5.8,1.9),(7.3,1.3)]:
-            c=Vector((r.uniform(-.35,.35),r.uniform(-.35,.35),z));profile=[(0,radius*.48),(.28,radius),(2.5,.05)]
-            for k in range(9):
-                a0,a1=k*math.tau/9,(k+1)*math.tau/9
-                for (h0,r0),(h1,r1) in zip(profile,profile[1:]):
-                    pts=[c+Vector((rr*math.cos(a),rr*math.sin(a),h)) for h,rr,a in ((h0,r0,a0),(h0,r0,a1),(h1,r1,a1),(h1,r1,a0))]
-                    shade(pts,green,lambda p,c=c:Vector((p.x-c.x,p.y-c.y,.9)).normalized(),1.5)
-        return m
-    palette={'Gold':(.49,.27,.035),'Rust':(.45,.12,.023),'Green':(.042,.08,.026)}[kind]   # Green: a warm olive, not teal
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1)
-    ob=bpy.context.object;base=[v.co.copy() for v in ob.data.vertices]
-    lobes=[]
-    for k in range(10):
-        u=r.uniform(0,math.tau);h=r.uniform(-.75,1.);rr=math.sqrt(max(0.,1-h*h));q=r.uniform(1.45,2.15)
-        lobes.append((Vector((3.4*rr*math.cos(u),3.4*rr*math.sin(u),6.4+2.4*h)),Vector((q,q,q*r.uniform(.8,1.))),r.uniform(.88,1.1)))
-    lobes.append((Vector((0,0,6.3)),Vector((3.2,3.2,2.8)),1.))   # the core closes the gaps between the lobes
-    centre=Vector((0,0,5.3))
-    for c,s,tint in lobes:
-        for f in ob.data.polygons:
-            pts=[]
-            for i in f.vertices:
-                b=base[i];d=1+.16*noise.noise(b*2.3+c)+.08*noise.noise(b*5.1-c)
-                pts.append(c+Vector((b.x*s.x,b.y*s.y,b.z*s.z))*d)
-            shade(pts,tuple(v*tint for v in palette),lambda p,c=c:((p-centre).normalized()*.75+(p-c).normalized()*.25).normalized(),3.)
-    bpy.data.objects.remove(ob,do_unlink=True)
-    return m

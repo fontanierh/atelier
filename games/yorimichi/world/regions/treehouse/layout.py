@@ -17,7 +17,7 @@ from treehouse.screen import screen, sightlines, summary
 
 # deck: floor height (absolute m). trunk: anchor trunk radius at the deck. R: octagon circumradius of the landings
 # (slide, pulley, chimes, lookout). The rooms stand beside their trunk, never round it (room()), on a deck that is a
-# chamfered rectangle round both. crown: an existing painted-card tree (no collision) seated over the trunk.
+# chamfered rectangle round both. crown: an existing tree seated over the trunk.
 PLACES = {
     'entry':   dict(xy=(-135.0, 198.5), deck=76.7, trunk=.72, kind='entry', crown=('Tree_Maple_A', 1.6),
                     label='Little hut', role='the only part seen from the trail; its south porch is the reveal'),
@@ -83,30 +83,27 @@ SLIDE = dict(width=1.0, slope=30.)      # the chute runs 0.95 m outside the slid
 CROW = dict(ri=.72, ro=1.85, R=2.7)
 ROOF_TOP = {'heart': 6.8, 'hut': 5.6, 'entry': 5.2, 'boat': 3.8}   # highest roof above the deck
 # Existing trees in metres at scale 1: trunk top, crown bottom, crown top, crown radius. Cedars and pines have
-# complex collision on their leaves, so they keep their full crown; the painted-card trees are not solid.
+# their full crown for clearance.
 SPECIES = {
-    'Tree_Maple_lo': (3.6, 2.3, 7.1, 3.6), 'Tree_Broad_lo': (4.7, 3.1, 9.1, 3.1), 'Tree_Ginkgo_lo': (5.0, 3.4, 9.6, 2.7),
     'Tree_Cedar_A': (15.2, 2.1, 16.6, 4.0), 'Tree_Cedar_B': (12.4, 1.7, 13.6, 3.6),
     'Tree_Pine_A': (13.0, 6.0, 13.6, 4.4), 'Tree_Pine_B': (11.0, 5.0, 11.6, 4.0),
-    # the detailed trees (build_assets.py) have the same shapes as their painted-card versions
     'Tree_Maple_A': (3.6, 2.3, 7.1, 3.6), 'Tree_Maple_B': (2.9, 1.8, 5.7, 2.9), 'Tree_Ginkgo': (5.0, 3.4, 9.6, 2.7),
     'Tree_Broad_A': (4.7, 3.1, 9.1, 3.1),
 }
-CROWN = {'Tree_Maple_lo': (6.5, 6.0), 'Tree_Broad_lo': (8.5, 5.0), 'Tree_Ginkgo_lo': (9.0, 4.2),   # height, spread
-         'Tree_Maple_A': (6.5, 6.0), 'Tree_Broad_A': (8.5, 5.0), 'Tree_Ginkgo': (9.0, 4.2)}
-# Near the build the forest is the detailed autumn kind, and denser (autumn()): each painted-card tree becomes a
-# detailed one (most green broadleaves turn to maples) and new trees fill the gaps, clear of everything built.
-DETAILED = {'Tree_Maple_lo': (('Tree_Maple_A', .45), ('Tree_Maple_B', .35), ('Tree_Ginkgo', .2)), 'Tree_Ginkgo_lo': (('Tree_Ginkgo', 1.),),
-            'Tree_Broad_lo': (('Tree_Maple_A', .55), ('Tree_Ginkgo', .15), ('Tree_Broad_A', .3))}
+CROWN = {'Tree_Maple_A': (6.5, 6.0), 'Tree_Broad_A': (8.5, 5.0), 'Tree_Ginkgo': (9.0, 4.2)}  # height, spread
+# New autumn trees fill the gaps without re-picking the authored detailed trees.
 FOREST = dict(radius=50., spacing=3.6, gap=2.8, turn=130.,
               mix=(('Tree_Maple_A', .30), ('Tree_Maple_B', .25), ('Tree_Ginkgo', .27), ('Tree_Cedar_B', .18)))
+SCATTER_MIX = {'Tree_Maple_A': (('Tree_Maple_A', .45), ('Tree_Maple_B', .35), ('Tree_Ginkgo', .2)),
+               'Tree_Ginkgo': (('Tree_Ginkgo', 1.),),
+               'Tree_Broad_A': (('Tree_Maple_A', .55), ('Tree_Ginkgo', .15), ('Tree_Broad_A', .3))}
 KEYS = ['TH_Structure', 'TH_Frame', 'TH_Trunks', 'TH_Dressing']
 # The tall canopy trees (treehouse/trees.py) hold red and gold crowns at deck height round every place, as in the
 # paintings: each is scaled so its crown top stands `above` metres over the nearest deck (more further out), so
 # the houses stand just over a carpet of crowns seen from above and the crowns frame the walks at railing height.
 TREES = yori.OUT/'treehouse'/'trees'/'trees.json'
 CANOPY = dict(reach=26., share=.85, gap=4.2, headroom=2.5, above=(-1.0, 3.5), scale=(.72, 1.5),
-              replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A', 'Tree_Maple_lo', 'Tree_Ginkgo_lo', 'Tree_Broad_lo'),
+              replace=('Tree_Maple_A', 'Tree_Maple_B', 'Tree_Ginkgo', 'Tree_Broad_A'),
               mix=(('Tree_Canopy_Maple', .28), ('Tree_Canopy_Crimson', .27), ('Tree_Canopy_Amber', .2), ('Tree_Canopy_Ginkgo', .25)))
 if TREES.exists():
     for _k, _d in json.loads(TREES.read_text()).items():
@@ -533,9 +530,9 @@ def clear(instances, pl, h=None):
         x, y, z, s = x[near], y[near], z[near], s[near]
         drop = np.zeros(len(near), bool)
         if tree:
-            dims = SPECIES.get(name, (5., 2., 9., 3.))
+            dims = SPECIES[name]
             t_top = z+dims[0]*s; c_lo = z+dims[1]*s; c_hi = z+dims[2]*s
-            reach = dims[3]*s*(.85 if name.endswith('_lo') else 1.)
+            reach = dims[3]*s
             trunk_r = .35*s
             # a tall canopy crown hangs at head height along the walks: keep it clear of the player and the camera
             # that follows (a little behind and above), not only of the floors
@@ -572,23 +569,37 @@ def clear(instances, pl, h=None):
     return removed, gone
 
 
-def autumn(instances, pl, h):
-    """The detailed autumn forest round the build (DETAILED, FOREST). Returns the added trees, before clearing."""
-    rng = np.random.default_rng(29); R = FOREST['radius']
+def autumn_far(instances):
+    """Colour the scatter, returning its fill RNG and the rows left for trail art."""
+    rng = np.random.default_rng(29)
+    c = np.mean([p['xy'] for p in PLACES.values()], axis=0)
+    moved, added = {}, {}
+    # Snapshot each source before adding trees: a selected maple may become a
+    # ginkgo, but it must not be selected again in the following source group.
+    for name in SCATTER_MIX:
+        a = np.array(instances.get(name, []), float).reshape(-1, 5)
+        near = np.hypot(a[:, 0]-c[0], a[:, 1]-c[1]) < FOREST['radius']
+        instances[name] = a[~near].tolist(); moved[name] = a[near]
+    for name, kinds in SCATTER_MIX.items():
+        pick = rng.choice(len(kinds), size=len(moved[name]), p=[w for _, w in kinds])
+        for i, (key, _) in enumerate(kinds): added.setdefault(key, []).extend(moved[name][pick == i].tolist())
+    a = np.array(instances['Tree_Broad_A'], float).reshape(-1, 5)
+    turn = np.hypot(a[:, 0]-c[0], a[:, 1]-c[1]) < FOREST['turn']
+    instances['Tree_Broad_A'] = a[~turn].tolist()
+    pick = rng.random(int(turn.sum())) < .6
+    added.setdefault('Tree_Maple_A', []).extend(a[turn][pick].tolist())
+    added.setdefault('Tree_Ginkgo', []).extend(a[turn][~pick].tolist())
+    for name, rows in added.items(): instances.setdefault(name, []).extend(rows)
+    trail_rows = {tuple(row[:2]) for rows in instances.values() for row in rows
+                  if math.hypot(row[0]-c[0], row[1]-c[1]) >= FOREST['radius']}
+    return rng, trail_rows
+
+
+def autumn(instances, pl, h, rng=None):
+    """Fill the autumn forest round the build (FOREST). Returns the added trees, before clearing."""
+    rng = np.random.default_rng(29) if rng is None else rng
+    R = FOREST['radius']
     c = np.mean([p['xy'] for p in pl['places'].values()], axis=0)
-    for lo, kinds in DETAILED.items():
-        a = np.array(instances.get(lo, []), float)
-        if not len(a): continue
-        near = np.hypot(a[:, 0]-c[0], a[:, 1]-c[1]) < R
-        instances[lo] = a[~near].tolist(); moved = a[near]
-        pick = rng.choice(len(kinds), size=len(moved), p=[w for _, w in kinds])
-        for i, (k, _) in enumerate(kinds): instances.setdefault(k, []).extend(moved[pick == i].tolist())
-    a = np.array(instances.get('Tree_Broad_lo', []), float)      # further out the green broadleaf cards turn too
-    if len(a):
-        far = np.hypot(a[:, 0]-c[0], a[:, 1]-c[1]) < FOREST['turn']
-        instances['Tree_Broad_lo'] = a[~far].tolist(); moved = a[far]; pick = rng.random(len(moved)) < .6
-        instances.setdefault('Tree_Maple_lo', []).extend(moved[pick].tolist())
-        instances.setdefault('Tree_Ginkgo_lo', []).extend(moved[~pick].tolist())
     have = np.array([q[:2] for k, v in instances.items() if k.startswith('Tree') for q in v
                      if abs(q[0]-c[0]) < R+6 and abs(q[1]-c[1]) < R+6], float).reshape(-1, 2)
     kinds, weights = zip(*FOREST['mix']); added = {}; s = FOREST['spacing']
@@ -646,11 +657,11 @@ def canopy(instances, pl, h, rng, added):
     for name, row in swapped.values(): instances[name].append(row)
 
 
-def integrate(world, h):
+def integrate(world, h, forest_rng=None):
     if 'treehouse' in world:
         raise ValueError('Tree house already integrated: world.json must come fresh from gen_world.py')
     pl = plan(h)
-    added = autumn(world['instances'], pl, h)
+    added = autumn(world['instances'], pl, h, forest_rng)
     removed, gone = clear(world['instances'], pl, h)
     clear(added, pl, h)
     # the added forest keeps off the air-station trail and the station as the zeppelin region cleared them (7.5 m):

@@ -132,8 +132,8 @@ def main():
                         a, b = ring_prev + q, ring_prev + (q + 1) % 4; wf.append((a, b, base + (q + 1) % 4, base + q))
                 ring_prev = base
     wires = obj("Wires", wv, wf, metal, smooth=True)
-    # far hills: a ring of rolling forested hills out to 3 km, textured with the speckled forest
-    far = mat("FarForest", (0.35, 0.45, 0.22), "T_farforest.jpg")
+    # A rolling forest-floor backdrop under the detailed distant canopy.
+    far = mat("FarForest", (.055, .11, .035))
     fn = 96; fsz = 6400.0; fstep = fsz / (fn - 1)
     FZ = np.load(os.path.join(OUT, "farhills.npy"))
     fx_ = np.linspace(-fsz / 2, fsz / 2, fn); FX, FY = np.meshgrid(fx_, fx_)
@@ -148,6 +148,9 @@ def main():
         # So does the Mega Park trail's approach ground north of the square (megapark/trail.py).
         mask=contains(FX,FY)|in_approach(FX,FY)
         FZ[mask]=np.minimum(FZ[mask],north_height(FX,FY)[mask]-25)
+        from belmonte import terrain as belmonte_terrain
+        FZ=belmonte_terrain.old_backdrop(FZ,FX,FY)
+
     fverts = [(float(FX[j, i]), float(FY[j, i]), float(FZ[j, i])) for j in range(fn) for i in range(fn)]
     ffaces = [(j * fn + i, j * fn + i + 1, (j + 1) * fn + i + 1, (j + 1) * fn + i) for j in range(fn - 1) for i in range(fn - 1)]
     hills = obj("FarHills", fverts, ffaces, far, uvs=lambda co: (co.x / 180.0, co.y / 180.0))

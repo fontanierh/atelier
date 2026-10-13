@@ -60,7 +60,7 @@ def crowns():
     city = json.loads((yori.OUT/'hidamari'/'city.json').read_text())['instances']
     rows = []
     for name, items in city.items():
-        if not name.startswith(('Tree', 'HD_NorthTree')): continue
+        if not name.startswith('Tree'): continue
         size = plants.MESHES.get(name, (13., 3.))
         for x, y, z, _, s in items:
             if -1000 < x < 400 and 800 < y < 1800: rows.append((x, y, z+.25*size[0]*s, z+size[0]*s, size[1]*s))

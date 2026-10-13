@@ -10,12 +10,12 @@ import tomllib
 from pathlib import Path
 
 ASSET_ROOTS = frozenset({
-    'Adventure', 'AtelierValidation', 'Audio', 'Cairo', 'CairoAdventure', 'CairoBike', 'Collections', 'CommunityPark',
+    'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Cairo', 'CairoAdventure', 'CairoBike', 'Collections', 'CommunityPark',
     'Data', 'Developers', 'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Japan', 'MegaPark', 'Modori', 'ModoriBike',
     'Nox', 'NoxBike', 'SeeThrough', 'SkateMotion', 'SkatePark', 'SkateRide', 'SkateRuntime', 'SwordTrainer', 'Wanderer',
 })
 DATA_ROOTS = frozenset({
-    'Network', 'SkateRide', 'adventure', 'bike', 'cairo', 'city_surface_tiles', 'communitypark',
+    'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'cairo', 'city_surface_tiles', 'communitypark',
     'heightmap.bin', 'hidamari', 'hippodrome', 'map', 'megapark', 'modori', 'skatepark', 'sword-trainer', 'treehouse',
     'world.json', 'nox',
 })

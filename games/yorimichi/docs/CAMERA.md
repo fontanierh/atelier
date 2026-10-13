@@ -93,7 +93,7 @@ work.
 | Mode | Groups | Camera | Fade |
 | --- | --- | --- | --- |
 | 0, solid | everything else: the terrain (with the guardrail), rocks, houses, `TH_Structure`, `TH_Trunks` | stops it | lens only, 5 to 15 cm |
-| 1, instances | `Tree*`, `HD_NorthTree*`, `HD_ArcadeTree`, `HD_PlazaTree*`, `Bush*`, `Pole`, `Pole_Lamp`, `Lantern`, `Torii`, `TH_P_*` (the tree house props) | passes | each instance whole, from its own position and mesh bounds |
+| 1, instances | `Tree*`, `HD_ArcadeTree`, `HD_PlazaTree*`, `Bush*`, `Pole`, `Pole_Lamp`, `Lantern`, `Torii`, `TH_P_*` (the tree house props) | passes | each instance whole, from its own position and mesh bounds |
 | 2, pieces | `TH_Frame`, `TH_Dressing` with the piece bake (5 UV channels or more) | passes | each piece whole, from the bake in UV channels 1 to 4 |
 | 3, near only | `Grass*`, `Litter`, `Lake_Plants`; `TH_Frame`, `TH_Dressing` without the bake | passes | lens only, 10 to 40 cm |
 

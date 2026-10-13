@@ -1,0 +1,43 @@
+{
+  "revision": "r01",
+  "use": "concepts",
+  "name": "volcano-near",
+  "inputs": [
+    {
+      "file": "volcano-far.jpg",
+      "sha256": "14f09c9675a49534c7cf1794555b3bcfa82764b5fb745e614ebc5be512efd47b"
+    }
+  ],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "8764b0b2c8df9fc44eec427c08b3aee1b8ab6fd5a68ea99f1403b5f542bb6d14",
+  "status": "done",
+  "started_at": "2026-10-12T21:52:41.149601+00:00",
+  "output": "volcano-near.png",
+  "output_sha256": "ab24478c0b0e11e8c360dec82bb9cb9ea4128667db5117704b5eaf64a5e41d35",
+  "usage": {
+    "input_tokens": 1348,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 268
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2720
+  },
+  "elapsed_seconds": 38.5,
+  "finished_at": "2026-10-12T21:53:19.637977+00:00",
+  "prompt": "Production concept for Yorimichi, a beautiful stylized exploration game.\nUse rich painterly materials, organic modeled forms, convincing soft afternoon\nlighting and full detailed foliage. This is an achievable polished real-time 3D\nscene. Preserve the geography and architecture in the layout references, while\nreplacing coarse terrain and crude trees. No faceted toy mountain, polygon cone\ntrees, balloon crowns, bare saplings, confetti canopy or flat forest photograph.\nTrees have trunks and branches, overlapping textured leaf masses, depth and\nnatural varied silhouettes. No HUD, text, labels, border or watermark.\n\nA close ground-level reference on the same snow-capped\nvolcanic mountain. Human-scale rock detail: layered fractured basalt, rounded\nweathering, scree, cracks, moss in sheltered seams, small alpine plants and\npatches of dirty compacted snow. The summit's eroded ridges are visible behind\nthe foreground surface. Show a coherent natural transition from solid cliff\nfaces to gravel and vegetation, with readable macro and micro texture. Refined\npainterly realism appropriate to Yorimichi; organically smooth terrain geometry,\nnot a photoreal photograph and not visible triangulated planes. No architecture,\ncharacters or new landmarks.",
+  "source": {
+    "file": "volcano-near.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "3737994f2b4d170246619f657ae9528d16d7383d7bb55bcf3ad7fd6d22c335be"
+}

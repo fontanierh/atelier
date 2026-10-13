@@ -294,16 +294,16 @@ def pine_lean_b():return _pine_lean('Tree_PineLean_B',43,11.0,3.2)   # taller, l
 # ---- placements for the layout (island-local metres; the layout applies the island origin and yaw)
 PINES=(['Tree_Pine_B','Tree_Pine_A'],[.65,.35])
 CEDARS=(['Tree_Cedar_B','Tree_Cedar_A'],[.6,.4])
-MAPLES=(['Tree_Maple_lo','Tree_Maple_A'],[.75,.25])
-GINKGOS=(['Tree_Ginkgo_lo','Tree_Ginkgo'],[.8,.2])
-BROADS=(['Tree_Broad_lo'],[1.0])
+MAPLES=(['Tree_Maple_A'],[1.0])
+GINKGOS=(['Tree_Ginkgo'],[1.0])
+BROADS=(['Tree_Broad_A'],[1.0])
 CANOPY=(['Tree_Canopy_Crimson','Tree_Canopy_Maple'],['Tree_Canopy_Ginkgo','Tree_Canopy_Amber'])   # the tree house's big autumn crowns
 GROVE_R=46.0              # the dark cedar grove on the crown, behind the temple
 # Tree sizes at scale 1 for the stair clearance (trunk top, crown bottom, crown top, crown radius; metres above the
-# base): the painted trees as in treehouse/layout.py SPECIES, the big autumn crowns from the tree house build's
+# base): the detailed trees as in treehouse/layout.py SPECIES, the big autumn crowns from the tree house build's
 # trees.json (rounded up), the leaning pines measured on their own model (the radius takes in the whole lean).
-TREE_DIMS={'Tree_Maple_lo':(3.6,2.3,7.1,3.6),'Tree_Maple_A':(3.6,2.3,7.1,3.6),'Tree_Broad_lo':(4.7,3.1,9.1,3.1),
-           'Tree_Ginkgo_lo':(5.0,3.4,9.6,2.7),'Tree_Ginkgo':(5.0,3.4,9.6,2.7),'Tree_Cedar_A':(15.2,2.1,16.6,4.0),
+TREE_DIMS={'Tree_Maple_A':(3.6,2.3,7.1,3.6),'Tree_Broad_A':(4.7,3.1,9.1,3.1),
+           'Tree_Ginkgo':(5.0,3.4,9.6,2.7),'Tree_Cedar_A':(15.2,2.1,16.6,4.0),
            'Tree_Cedar_B':(12.4,1.7,13.6,3.6),'Tree_Pine_A':(13.0,6.0,13.6,4.4),'Tree_Pine_B':(11.0,5.0,11.6,4.0),
            'Tree_Canopy':(10.5,8.9,19.0,4.5),'Tree_PineLean_A':(9.0,3.5,10.0,11.4),'Tree_PineLean_B':(11.0,4.3,12.0,9.1)}
 STAIR_HW=2.7              # the stair's walkable half-width: the lanterns 2.2 m out, and the player's own radius

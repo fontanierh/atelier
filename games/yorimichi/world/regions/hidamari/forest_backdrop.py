@@ -1,9 +1,11 @@
 """Layered autumn/evergreen cover for the exposed eastern Hidamari hills.
 
 Only appends instances. Existing terrain, mountain, buildings and paths are
-unchanged. Dedicated opaque low-detail trees use the existing distant-tree gate.
+unchanged. Detailed forest crowns use matching distant LODs.
 """
 import math
+from forest.specs import MODEL_BY_KIND
+
 import numpy as np
 from hidamari import mountains
 from megapark import trail as park_trail
@@ -58,23 +60,25 @@ def append(instances,buildings,height,backdrop_grid,terrain_axes,north_height,ro
     x=x[keep];y=y[keep];z=ground(x,y,height,backdrop_grid,terrain_axes,north_height)
     valid=(z>4)&((x>2320)|(z<215+20*np.sin(x*.009)))
     x=x[valid];y=y[valid];z=z[valid]
-    patch=np.sin(x*.013+np.sin(y*.008)*2)+.6*np.cos(y*.017)
-    choices=rng.random(len(x));kind=np.where(choices<.40,'Green',np.where(choices<.68,'Pine',np.where(patch>0,'Gold','Rust')))
+    ever=mountains.noise(x,y,95.,85)+.5*mountains.noise(x,y,38.,86)+.2*mountains.noise(x,y,2.3,87)
+    hue=mountains.noise(x,y,90.,88)+.5*mountains.noise(x,y,35.,89)+.2*mountains.noise(x,y,2.3,90)
+    green=mountains.noise(x,y,95.,92)+.5*mountains.noise(x,y,35.,93)+.2*mountains.noise(x,y,2.3,94)
+    kind=np.where(ever<-.345,'Pine',np.where(green<-.17,'Green',np.where(hue<0.,'Rust','Gold')))
     scale=rng.uniform(1.25,1.85,len(x));yaw=rng.uniform(0,360,len(x))
     # Front clusters taper in height instead of making a uniform high hedge.
     d=np.minimum(np.where(x<1420,abs(y-(380+22*np.sin(x*.009)+15*np.sin(x*.022))),1e6),np.where(y<900,abs(x-(1345+30*np.sin(y*.011)+22*np.sin(y*.027))),1e6))
     scale*=.65+.35*mountains.smooth(d/160)
     # Leaf-based town trees form an irregular, human-scale transition. The
-    # mountain path gets the same detailed margin; opaque crowns stay behind it.
+    # mountain path gets the same detailed margin; larger crowns stay behind it.
     leafy=((d<70+20*np.sin(x*.019+y*.013))&(x<1450)&(y<700))|((mountains.trail_distance(x,y)<45)&(y<1300))
-    names=np.char.add('HD_NorthTreeBackdrop',kind)
+    names=np.array([MODEL_BY_KIND[k] for k in kind])
     names[leafy]=np.where(rng.random(np.count_nonzero(leafy))<.38,'Tree_Ginkgo','Tree_Maple_A')
     scale[leafy]=rng.uniform(.70,1.30,np.count_nonzero(leafy))
     # Preserve the existing forest and skip new crowns already covered by it.
     # This saves overdraw at the join without thinning the newly covered hills.
     bins={}
     for old_name,points in instances.items():
-        if not old_name.startswith('HD_NorthTree'):continue
+        if not old_name.startswith('Tree_Forest_'):continue
         for ox,oy,_,_,os in points:
             bins.setdefault((math.floor(ox/12),math.floor(oy/12)),[]).append((ox,oy,os))
     unique=np.ones(len(x),dtype=bool)
