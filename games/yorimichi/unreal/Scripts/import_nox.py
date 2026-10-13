@@ -25,6 +25,7 @@ for name, cfg in CONFIG['materials'].items():
     mat.set_editor_property('blend_mode', U.BlendMode.BLEND_OPAQUE)
     mat.set_editor_property('two_sided', cfg['two_sided'])
     mat.set_editor_property('used_with_skeletal_mesh', True)
+    mat.set_editor_property('used_with_morph_targets', bool(CONFIG.get('seat_corrective')))
     # Nox's garment follows the approved body weights.
     if cfg['texture']:
         task = U.AssetImportTask()
@@ -101,12 +102,6 @@ if corrective:
         if matches:
             native_morphs[name] = matches[0]
     required = [native_morphs[name] for name, target in corrective['targets'].items() if target['nonzero_vertices']]
-    # Desktop cooks strip CPU morph deltas. Capture the exact imported native
-    # LOD0 render indices in serialized mesh user data for the contact readers.
-    contact_data, contact_receipt = U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh, required)
-    assert contact_data is not None, ('Nox contact morph capture failed', contact_receipt)
-    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
-    assert valid, ('Nox contact morph data invalid', contact_receipt)
 skeleton = mesh.skeleton
 slots = list(mesh.materials)
 for slot in slots:
@@ -114,7 +109,19 @@ for slot in slots:
     assert name in materials, ('unknown material', name, list(materials))
     slot.set_editor_property('material_interface', materials[name])
 mesh.set_editor_property('materials', slots)
+if corrective:
+    # Finish the native mesh build after material/CPU-access setup, then retain
+    # exact LOD0 deltas that desktop cooking otherwise removes from the CPU.
+    contact_data, contact_receipt = U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh, required)
+    assert contact_data is not None, ('Nox contact morph capture failed', contact_receipt)
+    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
+    assert valid, ('Nox contact morph data invalid', contact_receipt)
+else:
+    U.SkinMorphContactLibrary.clear_skin_morph_contacts(mesh)
 E.save_loaded_asset(mesh)
+if corrective:
+    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
+    assert valid, ('Saved Nox contact morph data invalid', contact_receipt)
 editor = U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending, bones = ['root'], []
 while pending:

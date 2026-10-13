@@ -101,10 +101,6 @@ U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
 # The shared morph-aware skin readers also see Cairo's existing signed hair
 # springs. Retain their exact native deltas for desktop cooking, as for Nox.
 hair_targets=['head_Hair_fore','head_Hair_side']
-contact_data,contact_receipt=U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh,hair_targets)
-assert contact_data is not None,('Cairo contact morph capture failed',contact_receipt)
-valid,contact_receipt=U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh,hair_targets)
-assert valid,('Cairo contact morph data invalid',contact_receipt)
 skeleton=mesh.skeleton
 slots=list(mesh.materials)
 for slot in slots:
@@ -112,7 +108,13 @@ for slot in slots:
     assert name in materials,('Unknown material',name,list(materials))
     slot.set_editor_property('material_interface',materials[name])
 mesh.set_editor_property('materials',slots)
+contact_data,contact_receipt=U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh,hair_targets)
+assert contact_data is not None,('Cairo contact morph capture failed',contact_receipt)
+valid,contact_receipt=U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh,hair_targets)
+assert valid,('Cairo contact morph data invalid',contact_receipt)
 E.save_loaded_asset(mesh)
+valid,contact_receipt=U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh,hair_targets)
+assert valid,('Saved Cairo contact morph data invalid',contact_receipt)
 editor=U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending=['root'];bones=[]
 while pending:
