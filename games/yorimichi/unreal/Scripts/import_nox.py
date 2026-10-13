@@ -5,6 +5,7 @@ from pathlib import Path
 import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
+from skin_morph_contacts import validate_contact_data
 
 OUT = yori.OUT / 'nox'
 CONFIG = json.loads((OUT / 'export.json').read_text())
@@ -114,14 +115,12 @@ if corrective:
     # exact LOD0 deltas that desktop cooking otherwise removes from the CPU.
     contact_data, contact_receipt = U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh, required)
     assert contact_data is not None, ('Nox contact morph capture failed', contact_receipt)
-    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
-    assert valid, ('Nox contact morph data invalid', contact_receipt)
+    contact_receipt = validate_contact_data(U.SkinMorphContactLibrary, mesh, required, 'Nox contact morph data')
 else:
     U.SkinMorphContactLibrary.clear_skin_morph_contacts(mesh)
 E.save_loaded_asset(mesh)
 if corrective:
-    valid, contact_receipt = U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh, required)
-    assert valid, ('Saved Nox contact morph data invalid', contact_receipt)
+    contact_receipt = validate_contact_data(U.SkinMorphContactLibrary, mesh, required, 'Saved Nox contact morph data')
 editor = U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending, bones = ['root'], []
 while pending:

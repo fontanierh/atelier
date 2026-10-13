@@ -6,6 +6,7 @@ from pathlib import Path
 import unreal as U
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import animation_compression
+from skin_morph_contacts import validate_contact_data
 ROOT = yori.OUT
 OUT=ROOT/'cairo'
 CONFIG=json.loads((OUT/'export.json').read_text())
@@ -110,11 +111,9 @@ for slot in slots:
 mesh.set_editor_property('materials',slots)
 contact_data,contact_receipt=U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh,hair_targets)
 assert contact_data is not None,('Cairo contact morph capture failed',contact_receipt)
-valid,contact_receipt=U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh,hair_targets)
-assert valid,('Cairo contact morph data invalid',contact_receipt)
+contact_receipt=validate_contact_data(U.SkinMorphContactLibrary,mesh,hair_targets,'Cairo contact morph data')
 E.save_loaded_asset(mesh)
-valid,contact_receipt=U.SkinMorphContactLibrary.validate_skin_morph_contacts(mesh,hair_targets)
-assert valid,('Saved Cairo contact morph data invalid',contact_receipt)
+contact_receipt=validate_contact_data(U.SkinMorphContactLibrary,mesh,hair_targets,'Saved Cairo contact morph data')
 editor=U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending=['root'];bones=[]
 while pending:
