@@ -17,6 +17,7 @@ public:
     ABelmonteRegion();
     static void Clear(const TSharedPtr<FJsonObject>& WorldData, const FString& Path);
     static ABelmonteRegion* Spawn(AJapanWorld* Landscape, const FString& Path);
+    UFUNCTION(BlueprintCallable, Category = "Review") static int32 ReviewPendingShaderJobs();
     UFUNCTION(BlueprintCallable, Category = "Review") static FString ReviewMeshColours(const FString& Name);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Environment") bool bGameplayReady = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Environment") int32 SceneryInstances = 0;

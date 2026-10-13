@@ -24,10 +24,52 @@ class NorthernLandscape(unittest.TestCase):
     def test_snow_keeps_crater_rim_exposed_and_collects_in_bowl(self):
         x,y,z=M.surface_grid(H.north_base_height)
         radius=np.hypot(x-550,y-1930)
-        snow=M.snow_grid(H.north_base_height)
-        self.assertLess(float(snow[(radius>85)&(radius<115)].mean()),.25)
-        self.assertGreater(float(snow[radius<35].mean()),.7)
+        snow=M.snow(x,y,H.north_base_height)
+        self.assertLess(float(snow[(radius>85)&(radius<115)].mean()),.15)
+        floor_white=float((snow[radius<35]>.5).mean())
+        self.assertGreater(floor_white,.6)
+        self.assertLess(floor_white,.9)
+        self.assertLess(float((snow[(radius>50)&(radius<85)]>.5).mean()),.4)
         self.assertTrue(np.all((snow>=0)&(snow<=1)))
+
+    def test_snow_texture_preserves_linear_bytes_and_world_orientation(self):
+        import json
+        import tempfile
+        from PIL import Image
+        field=M.snow_grid(H.north_base_height)
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)
+            M.export_snow_mask(path,H.north_base_height)
+            image=Image.open(path/'north_snow.png')
+            self.assertEqual(image.mode,'L')
+            self.assertEqual(image.size,(1024,1024))
+            np.testing.assert_array_equal(np.asarray(image),field)
+            meta=json.loads((path/'north_snow.json').read_text())
+            self.assertTrue(meta['linear'])
+        # Asymmetric points detect a flipped PNG or swapped world axes.
+        for iy,ix in ((310,417),(541,526),(690,488)):
+            x=M.SNOW_BOUNDS[0]+ix*M.SNOW_STEP
+            y=M.SNOW_BOUNDS[1]+iy*M.SNOW_STEP
+            self.assertAlmostEqual(float(M.snow(x,y,H.north_base_height)),int(field[iy,ix])/255.,places=12)
+        x,y,z=M.surface_grid(H.north_base_height)
+        outside=(x<M.SNOW_BOUNDS[0])|(x>M.SNOW_BOUNDS[2])|(y<M.SNOW_BOUNDS[1])|(y>M.SNOW_BOUNDS[3])
+        authored=M.snow_cover(x,y,z)
+        self.assertEqual(float(authored[outside].max()),0.,'Snow would be lost beyond the texture footprint')
+
+    def test_species_transition_is_shared_continuous_and_preserves_roots(self):
+        from forest.ecotone import tuscan_mask,northern_ecotone
+        x=np.linspace(-400,1500,1901)
+        south=tuscan_mask(x,np.full_like(x,2999.75))
+        north=tuscan_mask(x,np.full_like(x,3000.25))
+        self.assertLess(float(np.mean(south!=north)),.015)
+        self.assertFalse(tuscan_mask(x,np.full_like(x,2500.)).any())
+        self.assertTrue(tuscan_mask(x,np.full_like(x,3500.)).all())
+        rows=[[float(xx),3000.,100.,37.,1.] for xx in x[::50]]
+        instances={'Tree_Forest_Maple':rows.copy()}
+        northern_ecotone(instances)
+        actual=[row for group in instances.values() for row in group]
+        self.assertEqual(len(actual),len(rows))
+        self.assertEqual(sorted(tuple(row[:4]) for row in actual),sorted(tuple(row[:4]) for row in rows))
 
     def test_fine_cells_are_excluded_at_both_patch_edges(self):
         for bounds,inside in [(gate.GATE,gate.cell_inside),(community.PATCH,community.cell_inside)]:

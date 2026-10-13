@@ -109,7 +109,7 @@ def link(a, ao, b, bi):
 def make_mpc():
     mpc = create("MPC_Wind", unreal.MaterialParameterCollection, unreal.MaterialParameterCollectionFactoryNew())
     ps = []
-    for name, val in (("Wind", unreal.LinearColor(0.3, -0.95, 0.0, 0.0)), ("PlayerPos", unreal.LinearColor(0.0, 0.0, -100000.0, 0.0))):
+    for name, val in (("Wind", unreal.LinearColor(0.3, -0.95, 0.0, 0.0)), ("PlayerPos", unreal.LinearColor(0.0, 0.0, -100000.0, 0.0)), ("SunDirection", unreal.LinearColor(-.778, .449, .438, 1.0))):
         q = unreal.CollectionVectorParameter(); q.set_editor_property("parameter_name", name); q.set_editor_property("default_value", val); ps.append(q)
     mpc.set_editor_property("vector_parameters", ps)
     EAL.save_loaded_asset(mpc)
@@ -287,11 +287,8 @@ def master(name, masked=False, unlit=False, white=None, fixed_tex=None, mpc=None
         U = unreal
         vc = node(m, U.MaterialExpressionVertexColor, -350, -150)
         gg = node(m, U.MaterialExpressionComponentMask, -200, -150, r=False, g=True, b=False, a=False); link(vc, "", gg, "")
-        floor = node(m, U.MaterialExpressionScalarParameter, -350, -300,
-                     parameter_name="InteriorFloor", default_value=0.5)
-        span = node(m, U.MaterialExpressionSubtract, -200, -300, const_a=1.0); link(floor, "", span, "B")
-        sh = node(m, U.MaterialExpressionMultiply, -50, -150); link(gg, "", sh, "A"); link(span, "", sh, "B")
-        sh2 = node(m, U.MaterialExpressionAdd, 80, -150); link(sh, "", sh2, "A"); link(floor, "", sh2, "B")
+        sh = node(m, U.MaterialExpressionMultiply, -50, -150, const_b=0.5); link(gg, "", sh, "A")
+        sh2 = node(m, U.MaterialExpressionAdd, 80, -150, const_b=0.5); link(sh, "", sh2, "A")
         dark = node(m, U.MaterialExpressionMultiply, 200, 0); link(mul, "", dark, "A"); link(sh2, "", dark, "B")
         MEL.connect_material_property(dark, "", U.MaterialProperty.MP_BASE_COLOR)
         # leaves let light through: two-sided foliage with a subsurface colour, so undersides glow instead of going black
@@ -379,9 +376,10 @@ def build_materials(T):
     MI["_painterly"] = painterly_material()
     MI["Bark"] = instance("MI_Bark", lit, T["T_bark"]); MI["Concrete"] = instance("MI_Concrete", lit, T["T_concrete"])
     MI["BarkOlive"] = instance("MI_BarkOlive", lit, T["T_bark_olive"])
+    MI["BarkTuscan"] = instance("MI_BarkTuscan", lit, T["T_bark_olive"], (.65, .55, .4))
     from foliage_material import enable_bark_lod_blend
-    enable_bark_lod_blend(MI["BarkOlive"])
-    EAL.save_loaded_asset(MI["BarkOlive"])
+    for key in ("BarkOlive", "BarkTuscan"):
+        enable_bark_lod_blend(MI[key]); EAL.save_loaded_asset(MI[key])
     MI["Ground"] = instance("MI_Ground", lit, T["T_ground"]); MI["Road"] = instance("MI_Road", lit, T["T_road"], (0.34, 0.33, 0.33)); MI["Water"] = instance("MI_Water", lit, T["T_water"])
     MI["Sky"] = instance("MI_Sky", sky, None, (1.35, 1.35, 1.35))
     flat = {"Paint": (0.85, 0.85, 0.82), "Stone": (0.50, 0.50, 0.47), "Vermilion": (0.62, 0.12, 0.06), "Plaster": (0.80, 0.74, 0.62), "Tile": (0.16, 0.17, 0.20),

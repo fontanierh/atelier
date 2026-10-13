@@ -456,6 +456,8 @@ def main():
         mesh=build()
         ob,entry=(surfaces.export(mesh) if surfaces.textured(mesh.name) else v.export(mesh,mat));manifest[mesh.name]=entry
         bpy.data.objects.remove(ob,do_unlink=True)
+    if not only or 'HD_NorthMountains' in only:
+        mountains.export_snow_mask(OUT,north_base_height)
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print('HIDAMARI BUILD COMPLETE',len(city['buildings']),'buildings;',len(manifest),'assets;',sum(v['triangles'] for v in manifest.values()),'unique triangles',flush=True)
 if __name__=='__main__':main()

@@ -398,18 +398,40 @@ def generate():
     # Outcrop groups and scree give the high flank real relief at walking scale.
     # An independent stream keeps all existing tree/path authoring draws intact.
     rock_rng=np.random.default_rng(746)
-    rock_xy=rock_rng.uniform([-100,1300],[1250,2500],size=(4000,2))
+    # Clustered stone outcrops, with scree between them. Their independent
+    # stream leaves all authored tree and trail draws unchanged.
+    angles=rock_rng.uniform(0,math.tau,1800)
+    radii=np.concatenate((rock_rng.uniform(110,300,400),rock_rng.uniform(300,650,1400)))
+    centres=np.stack((550+radii*np.cos(angles),1930+radii*np.sin(angles)),axis=-1)
+    rock_xy=(np.repeat(centres,6,axis=0)+rock_rng.normal(0,5.,size=(len(centres)*6,2)))
     rx,ry=rock_xy[:,0],rock_xy[:,1]
     rz=north_height(rx,ry);cover=mountains.snow(rx,ry,north_base_height)
     slope=np.hypot(north_height(rx+1,ry)-rz,north_height(rx,ry+1)-rz)
     radius=np.hypot(rx-550,ry-1930)
-    keep=(radius>100)&(radius<650)&(rz>250)&(cover<.25)&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05)
+    keep=(radius>100)&(radius<650)&(rz>250)&(cover<np.where(radius<300,.4,.25))&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05)
+    keep&=mountains.trail_distance(rx,ry)>8
     for x,y,z,gradient in zip(rx[keep],ry[keep],rz[keep],slope[keep]):
-        scale=float(rock_rng.uniform(.65,2.8))
-        large=scale>1.7 and gradient<.6
-        sink=(.15+.5*gradient*(1.3 if large else .55))*scale
-        put('Rock_C' if large else 'Rock_B',float(x),float(y),float(z)-sink,
+        scale=float(rock_rng.uniform(.35,1.45))
+        large=scale>1.1 and gradient<.55
+        # Embed the downhill edge of a flat-bottom stone in steep ground.
+        sink=(.06+.5*gradient*(.9 if large else .55))*scale
+        put('HD_NorthRockA' if large else 'HD_NorthRockB',float(x),float(y),float(z)-sink,
             yaw=float(rock_rng.uniform(0,360)),scale=scale)
+    anchors=keep&(np.arange(len(rx))%6==0)&(slope<.6)
+    for x,y,z,gradient in zip(rx[anchors],ry[anchors],rz[anchors],slope[anchors]):
+        scale=float(rock_rng.uniform(1.2,1.8))
+        put('HD_NorthRockC',float(x),float(y),float(z)-(.08+.5*gradient*1.3)*scale,
+            yaw=float(rock_rng.uniform(0,360)),scale=scale)
+    shrubs=keep&(radius>300)&(rz<370)&(slope<.55)&(rock_rng.random(len(rx))<.65)
+    for x,y,z in zip(rx[shrubs],ry[shrubs],rz[shrubs]):
+        for _ in range(3):
+            px=float(x+rock_rng.uniform(-2.5,2.5));py=float(y+rock_rng.uniform(-2.5,2.5))
+            pz=float(north_height(px,py))
+            if float(mountains.snow(px,py,north_base_height))>.25:continue
+            put('Bush_Ochre_A' if rock_rng.random()<.6 else 'Grass_B',px,py,pz-.08,
+                yaw=float(rock_rng.uniform(0,360)),scale=float(rock_rng.uniform(.35,.65)))
+    print('VOLCANIC DRESSING',int(keep.sum()),'scree',int(anchors.sum()),'anchors',
+          int(shrubs.sum())*3,'shrub candidates',flush=True)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)

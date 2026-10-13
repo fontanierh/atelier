@@ -2,8 +2,14 @@
 def tuscan_mask(x,y):
     from hidamari.mountains import noise,smooth
     from belmonte.layout import BOUNDS
-    share=smooth((y-2850.)/300.)
-    return (x>BOUNDS[0]-180)&(x<BOUNDS[2]+180)&((noise(x,y,100.,84)+1)*.5<share)
+    # A broad, warped interleave continues across both terrain producers.
+    # Fade the lateral footprint too, so no rectangular species wall appears.
+    warp=90*noise(x,y,180.,91)+35*noise(x,y,65.,92)
+    share=smooth((y+warp-2760.)/560.)
+    lateral=smooth((x-(BOUNDS[0]-300))/180)*smooth(((BOUNDS[2]+300)-x)/180)
+    threshold=(noise(x,y,75.,84)+1)*.5
+    return threshold<share*lateral
+
 
 
 def kinds(x,y,z):

@@ -10,6 +10,7 @@
 #include "Materials/MaterialInterface.h"
 #include "StaticMeshResources.h"
 #include "Serialization/JsonSerializer.h"
+#include "ShaderCompiler.h"
 
 namespace
 {
@@ -144,6 +145,13 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     UE_LOG(LogTemp, Display, TEXT("BELMONTE ready=%d scenery=%d plants=%d missing=%d at %s"),
            Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, *Region->GetActorLocation().ToString());
     return Region;
+}
+
+int32 ABelmonteRegion::ReviewPendingShaderJobs()
+{
+    if (!GShaderCompilingManager) return 0;
+    // Pending shader-map finalization can still draw fallback materials.
+    return FMath::Max(GShaderCompilingManager->GetNumRemainingJobs(), GShaderCompilingManager->HasShaderJobs() ? 1 : 0);
 }
 
 FString ABelmonteRegion::ReviewMeshColours(const FString& Name)

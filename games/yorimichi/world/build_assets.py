@@ -63,6 +63,7 @@ def materials():
     mat("Grass", texture="T_grass.png", alpha=True)
     mat("Bark", (0.20, 0.15, 0.12), texture="T_bark.jpg")
     mat("BarkOlive", texture="T_bark_olive.jpg")
+    mat("BarkTuscan", (.65, .55, .4), texture="T_bark_olive.jpg")
     mat("Concrete", (0.62, 0.61, 0.59), texture="T_concrete.jpg")
     mat("Paint", (0.90, 0.90, 0.88))
     mat("Stone", (0.55, 0.55, 0.52))

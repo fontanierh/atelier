@@ -11,7 +11,7 @@ ROOT = GAME.parents[1]
 SOURCE = GAME / 'assets/environment/textures'
 OUT = ROOT / 'build/yorimichi/forest/textures'
 NAMES = {'olive': 'LeafOlive', 'oak': 'LeafOak', 'cypress': 'LeafCypress', 'pine': 'LeafStonePine'}
-GAIN = {'olive': 1.35, 'oak': 1.05, 'cypress': 1.2, 'pine': 1.12}
+GAIN = {'olive': 1.35, 'oak': (1.32, 1.58, 1.21), 'cypress': 1.2, 'pine': 1.12}
 
 
 def extend_colour(rgb, alpha):

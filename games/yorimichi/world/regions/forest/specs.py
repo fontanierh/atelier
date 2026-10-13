@@ -6,10 +6,10 @@ TUSCAN = {
     'Tree_Tuscan_Pine': ('stone-pine', 274, 16., 18., 'LeafStonePine'),
 }
 FOREST = {
-    'Tree_Forest_Maple': ('maple', 281, 10., 12., 'LeafMaple'),
-    'Tree_Forest_Ginkgo': ('ginkgo', 282, 10., 10., 'LeafGinkgo'),
-    'Tree_Forest_Oak': ('oak', 283, 10., 11., 'LeafSmall'),
-    'Tree_Forest_Pine': ('pine', 284, 10., 6., 'LeafPine'),
+    'Tree_Forest_Maple': ('maple', 281, 10., 14., 'LeafMaple'),
+    'Tree_Forest_Ginkgo': ('ginkgo', 282, 10., 12., 'LeafGinkgo'),
+    'Tree_Forest_Oak': ('oak', 283, 10., 13., 'LeafSmall'),
+    'Tree_Forest_Pine': ('pine', 284, 10., 6.8, 'LeafPine'),
 }
 
 MODEL_BY_KIND = dict(Gold="Tree_Forest_Ginkgo", Rust="Tree_Forest_Maple",

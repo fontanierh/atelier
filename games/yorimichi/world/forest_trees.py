@@ -14,11 +14,13 @@ from forest.specs import TUSCAN, FOREST
 def tree(name, kind, seed, height, spread, leaf, *, library):
     A=library
     rng = random.Random(seed)
-    mesh = A.Mesh(name); bark = A.MATS['BarkOlive' if kind=='olive' else 'Bark']; foliage = A.MATS[leaf]
+    mesh = A.Mesh(name); bark = A.MATS['BarkOlive' if kind=='olive' else 'BarkTuscan' if name.startswith('Tree_Tuscan_') else 'Bark']; foliage = A.MATS[leaf]
     lean = Vector((rng.uniform(-.35, .35), rng.uniform(-.35, .35), 0))
+    if name.startswith('Tree_Tuscan_') and kind in ('olive','oak'):
+        lean*=2.
     fork_height = height * (.25 if kind == 'olive' else .58 if kind == 'stone-pine' else .26 if kind == 'oak' else .44)
     fork = lean + Vector((0, 0, fork_height))
-    bends = [Vector((0, 0, -.25)), lean*.4+Vector((.13, -.08, fork_height*.45)), fork]
+    bends = [Vector((0, 0, -.25)), lean*.4+Vector((.32 if kind=='olive' else .13, -.18 if kind=='olive' else -.08, fork_height*.45)), fork]
     radius = .58 if kind == 'olive' else .48 if kind in ('oak','stone-pine') else .32
     for i, (a, b) in enumerate(zip(bends, bends[1:])):
         mesh.tube(a, b+(b-a).normalized()*.12, radius*(1-i*.24), radius*(.75-i*.25), bark, n=10, uvscale=(1, .4))
@@ -58,7 +60,7 @@ def tree(name, kind, seed, height, spread, leaf, *, library):
         for side in range(3):
             angle=(side+.5)*math.tau/3+rng.uniform(-.25,.25)
             centre=lean+Vector((math.cos(angle)*spread*.15,math.sin(angle)*spread*.15,height*rng.uniform(.60,.69)))
-            lobes.append((centre,(spread*.13,spread*.14,height*.13)))
+            lobes.append((centre,(spread*.18,spread*.18,height*.15)))
     else:
         umbrella = kind == 'stone-pine'
         centre_z = .85 if umbrella else .62 if kind=='oak' else .68
@@ -71,16 +73,28 @@ def tree(name, kind, seed, height, spread, leaf, *, library):
                 centre=lean+Vector((math.cos(angle)*reach,math.sin(angle)*reach,
                                     height*(centre_z+(ring-.5)*.10)+rng.uniform(-.25,.25)))
                 lobes.append((centre,(spread*rng.uniform(.22,.27),spread*rng.uniform(.22,.27),depth)))
+    leaders=[]
+    if name.startswith('Tree_Tuscan_') and kind=='oak' and getattr(mesh,'branch_detail',True):
+        for i in range(3):
+            angle=i*math.tau/3+.3
+            end=fork+Vector((math.cos(angle)*spread*.16,math.sin(angle)*spread*.16,height*.23))
+            joint=fork+(end-fork)*.45+Vector((math.sin(angle)*.4,-math.cos(angle)*.4,.35))
+            mesh.tube(fork-Vector((0,0,.12)),joint,.19,.14,bark,n=8)
+            mesh.tube(joint,end,.14,.09,bark,n=7)
+            leaders.append(end)
     for centre, radii in (lobes if getattr(mesh,'branch_detail',True) and kind!='olive' else []):
-        branch_end=fork+(centre-fork)*.78
-        thickness=.23 if kind in ('olive','oak','stone-pine') else .11
-        mesh.tube(fork-Vector((0,0,.12)),branch_end,thickness,.045,bark,n=6,uvscale=(1,.5))
-        middle=fork+(centre-fork)*.55
+        root=min(leaders,key=lambda end:(centre-end).length) if leaders else fork
+        branch_end=root+(centre-root)*.78
+        thickness=.085 if leaders else .23 if kind in ('olive','oak','stone-pine') else .11
+        mesh.tube(root-Vector((0,0,.12)),branch_end,thickness,.045,bark,n=6,uvscale=(1,.5))
+        middle=root+(centre-root)*.55
         twig=middle+Vector((rng.uniform(-.7,.7),rng.uniform(-.7,.7),.5))
         mesh.tube(middle,twig,.035,.009,bark,n=5)
     volumes=[r[0]*r[1]*r[2] for _,r in lobes]
     cards=2100 if kind in ('oak','stone-pine','cypress') else 1700
-    card_size=.58 if kind == 'cypress' else .82 if kind == 'olive' else .95
+    card_size=.58 if kind == 'cypress' else .96 if kind == 'olive' else 1.20 if kind=='oak' else 1.06 if kind=='pine' else 1.10 if kind in ('maple','ginkgo') else .95
+    if not name.startswith(('Tree_Forest_','Tree_Tuscan_')):
+        card_size=.58 if kind=='cypress' else .82 if kind=='olive' else .95
     normal_centre=lean+Vector((0,0,height*.53))
     for (centre,radii), volume in zip(lobes,volumes):
         count=max(1,round(cards*volume/sum(volumes)))

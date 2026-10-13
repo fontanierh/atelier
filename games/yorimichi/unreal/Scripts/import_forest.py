@@ -16,7 +16,7 @@ def main():
     U.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
     output=yori.OUT/'forest'
     foliage=E.load_asset('/Game/Japan/Materials/M_Foliage');assert foliage
-    for slot in ['Bark','BarkOlive']:
+    for slot in ['Bark','BarkOlive','BarkTuscan']:
         bark=E.load_asset('/Game/Japan/Materials/MI_'+slot);assert bark,slot
         enable_bark_lod_blend(bark);E.save_loaded_asset(bark)
     for slot,entry in json.loads((output/'textures/textures.json').read_text()).items():

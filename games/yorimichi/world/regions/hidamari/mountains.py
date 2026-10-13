@@ -10,6 +10,8 @@ from megapark import placement as megapark
 
 BOUNDS = (-700., 500., 2400., 3000.)
 STEP = 5.
+SNOW_STEP = 2.
+SNOW_BOUNDS = (-473., 907., 1573., 2953.)
 TRAIL = [(1120,335),(1120,440),(1120,500),(1100,555),(1040,620),
          (1030,680),(1090,735),(1170,780),(1200,850),(1160,915),
          (1080,960),(1000,1020),(1010,1090),(1060,1130)]
@@ -180,7 +182,9 @@ def colours(x,y,z):
     # Rising backdrop ground is still woodland. Exposed rock belongs to the
     # actual volcanic relief above its local apron, not an absolute elevation.
     forest=smooth((z-floor-135+noise(x,y,125,27)*28)/160)*smooth((1120-radius)/180)
-    rock=np.stack([.105+.022*rock_noise,.112+.024*rock_noise,.125+.026*rock_noise],axis=-1)
+    rock=np.stack([.125+.022*rock_noise,.108+.024*rock_noise,.090+.026*rock_noise],axis=-1)
+    lichen=smooth((noise(x,y,12,99)-.45)/.20)
+    rock*=np.stack([1+.05*lichen,1+.08*lichen,1-.15*lichen],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
@@ -196,49 +200,92 @@ def colours(x,y,z):
     palette=np.array([.055,.11,.035])
     return colors*(1-join[...,None])+palette*join[...,None]
 
-def relief_curvature(z):
-    dy,dx=np.gradient(z,STEP,STEP)
-    lap=np.gradient(dx,STEP,axis=1)+np.gradient(dy,STEP,axis=0)
-    for _ in range(round(3*(10/STEP)**2)):
+def shade_height(z,step):
+    shade_z=z.copy()
+    for _ in range(max(1,round(16/(step*step)))):
+        padded=np.pad(shade_z,1,mode='edge')
+        shade_z=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
+    return shade_z
+
+def relief_curvature(z,step=STEP):
+    dy,dx=np.gradient(shade_height(z,step),step,step)
+    lap=np.gradient(dx,step,axis=1)+np.gradient(dy,step,axis=0)
+    for _ in range(round(3*(10/step)**2)):
         padded=np.pad(lap,1,mode='edge')
         lap=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
     return smooth((-lap-.002)/.006),smooth((lap-.001)/.005)
 
 
-def snow_cover(x,y,z):
+def snow_cover(x,y,z,step=STEP):
     """Snow in drainage hollows and the crater bowl, with bare convex crests."""
     radius=np.hypot(x-550,y-1930)
     signed=np.full(x.shape,-1e9)
+    pinch=.65+.35*smooth((noise(x,y,55,52)+.4)/.8)
     for a,b in drainage():
         dx,dy=b[0]-a[0],b[1]-a[1]
         t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
-        width=a[2]*(1-t)+b[2]*t
-        signed=np.maximum(signed,np.where(width>0,np.maximum(width,10),0)-distance)
+        width=(a[2]*(1-t)+b[2]*t)*pinch
+        signed=np.maximum(signed,np.where(width>0,np.maximum(width,3),0)-distance)
     breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
     signed+=noise(x,y,25,19)*3+breakup*smooth((radius-170)/180)
     # Each seeded ribbon already has a different reach; this broad weather
     # field breaks the snowline without a concentric cut across every gully.
     ribbons=smooth((signed+4)/9)*smooth((520+noise(x,y,220,51)*180-radius)/120)
-    dy,dx=np.gradient(z,STEP,STEP)
+    dy,dx=np.gradient(shade_height(z,step),step,step)
     nz=1/np.sqrt(1+dx*dx+dy*dy)
-    crest,gully=relief_curvature(z)
+    crest,gully=relief_curvature(z,step)
     faces=smooth((z-400)/90)*smooth((nz-.80)/.10)*smooth((noise(x,y,90,41)+noise(x,y,140,42)*.6+.15)/.5)*(1-crest)
     angle=np.arctan2(y-1930,x-550)
-    bowl=smooth((70-radius)/25)
+    ring=lambda r,s,seed:noise(np.cos(angle)*r,np.sin(angle)*r,s,seed)
+    floor_r=40+12*ring(80.,30.,95)
+    bowl=smooth((floor_r-radius)/8)*(1-.85*smooth((noise(x,y,16,96)-.2)/.2))
+    rim_r=95+10*np.cos(angle-2.3)
+    chutes=(smooth((np.sin(angle*9+1.5*ring(150.,60.,97))-.25)/.3)
+            *smooth((rim_r-8-radius)/14)*smooth((radius-floor_r+5)/10))
+    bowl=np.maximum(bowl,chutes)
     rim=np.exp(-((radius-(95+10*np.cos(angle-2.3)))/24)**2)
-    snow=np.maximum.reduce([ribbons*(1-.75*crest)+.35*gully*smooth((z-300)/120),faces,bowl])
+    inside=smooth((rim_r-12-radius)/10)
+    snow=np.maximum.reduce([(ribbons*(1-.75*crest)+.35*gully*smooth((z-300)/120))*(1-inside),faces*(1-inside),bowl])
     snow=np.clip(snow,0,1)*(1-.92*rim*(1-bowl))
     line=230+noise(x,y,180,83)*40
     return np.clip(snow,0,1)*smooth((z-line)/90)*smooth((nz-.42)/.30)
 
 @lru_cache(maxsize=4)
 def snow_grid(base_sampler):
-    return snow_cover(*surface_grid(base_sampler))
+    xs=np.arange(SNOW_BOUNDS[0],SNOW_BOUNDS[2]+1,SNOW_STEP)
+    ys=np.arange(SNOW_BOUNDS[1],SNOW_BOUNDS[3]+1,SNOW_STEP)
+    x,y=np.meshgrid(xs,ys)
+    cover=snow_cover(x,y,height(x,y,base_sampler),SNOW_STEP)
+    # The same bytes drive the material and planting; filtering is bilinear.
+    return np.rint(np.clip(cover,0,1)*255).astype(np.uint8)
 
 def snow(x,y,base_sampler):
-    ix,iy,u,v=_cell(x,y);field=snow_grid(base_sampler)
-    return _barycentric(field[iy,ix],field[iy,ix+1],field[iy+1,ix],field[iy+1,ix+1],u,v)
+    x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
+    field=snow_grid(base_sampler)
+    px=np.clip((x-SNOW_BOUNDS[0])/SNOW_STEP,0,field.shape[1]-1.001)
+    py=np.clip((y-SNOW_BOUNDS[1])/SNOW_STEP,0,field.shape[0]-1.001)
+    ix=px.astype(int);iy=py.astype(int);u=px-ix;v=py-iy
+    value=((field[iy,ix].astype(float)*(1-u)+field[iy,ix+1]*u)*(1-v)
+           +(field[iy+1,ix]*(1-u)+field[iy+1,ix+1]*u)*v)/255.
+    inside=(x>=SNOW_BOUNDS[0])&(x<=SNOW_BOUNDS[2])&(y>=SNOW_BOUNDS[1])&(y<=SNOW_BOUNDS[3])
+    return np.where(inside,value,0.)
+
+def export_snow_mask(output,base_sampler):
+    """Linear R8 PNG, row zero at minimum world y, sampled at texel centres."""
+    import json,struct,zlib
+    field=snow_grid(base_sampler)
+    assert not any(np.any(edge) for edge in (field[0],field[-1],field[:,0],field[:,-1])),'Snow mask clips its footprint'
+    def chunk(kind,data):
+        return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
+    rows=b''.join(b'\0'+row.tobytes() for row in field)
+    png=(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',field.shape[1],field.shape[0],8,0,0,0,0))
+         +chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b''))
+    (output/'north_snow.png').write_bytes(png)
+    meta={'bounds':SNOW_BOUNDS,'step_m':SNOW_STEP,'size':[field.shape[1],field.shape[0]],
+          'linear':True,'row_zero_world_y':SNOW_BOUNDS[1],'filter':'bilinear, clamp, texel-centred'}
+    (output/'north_snow.json').write_text(json.dumps(meta,indent=2)+'\n')
+    print('NORTH SNOW MASK',field.shape,len(png),'bytes',flush=True)
 
 def mesh(base_sampler):
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
@@ -256,7 +303,7 @@ def mesh(base_sampler):
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
     # Soft continuous snow masks replace hard clipped lavender polygons.
-    mask=snow_grid(base_sampler)
+    mask=snow(x,y,base_sampler)
     # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
     from megapark import gate
     from communitypark import layout as community_park

@@ -51,7 +51,12 @@ def bake(obj, output, size=256):
                 multiply=nodes.new('ShaderNodeMixRGB');multiply.blend_type='MULTIPLY';multiply.inputs[0].default_value=1
                 links.new(channels.outputs['Green'],power.inputs[0]);links.new(power.outputs[0],gamma.inputs[0])
                 links.new(gamma.outputs[0],shade.inputs[0]);links.new(tex.outputs['Color'],multiply.inputs[1])
-                links.new(shade.outputs[0],multiply.inputs[2]);links.new(multiply.outputs[0],emit.inputs['Color'])
+                links.new(shade.outputs[0],multiply.inputs[2])
+                if original.name=='BarkTuscan':
+                    tint=nodes.new('ShaderNodeMixRGB');tint.blend_type='MULTIPLY';tint.inputs[0].default_value=1
+                    tint.inputs[2].default_value=(.65,.55,.4,1)
+                    links.new(multiply.outputs[0],tint.inputs[1]);links.new(tint.outputs[0],emit.inputs['Color'])
+                else:links.new(multiply.outputs[0],emit.inputs['Color'])
             else:
                 principled=next(n for n in original.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
                 emit.inputs['Color'].default_value=principled.inputs['Base Color'].default_value

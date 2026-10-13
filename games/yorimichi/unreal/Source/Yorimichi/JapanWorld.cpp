@@ -860,6 +860,16 @@ void AJapanWorld::Tick(float Dt)
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);
     if (!I) return;
+    // The volcanic shadow floor follows the player's current sun settings.
+    TActorIterator<ADirectionalLight> SunIt(GetWorld());
+    if (SunIt)
+    {
+        const FVector Direction = -SunIt->GetActorForwardVector();
+        const auto* Light = SunIt->GetLightComponent();
+        const float Strength = Light ? FMath::Clamp(Light->Intensity / 11.f, 0.f, 2.f)
+                                     * FMath::SmoothStep(-.1f, .1f, float(Direction.Z)) : 0.f;
+        I->SetVectorParameterValue(TEXT("SunDirection"), FLinearColor(Direction.X, Direction.Y, Direction.Z, Strength));
+    }
     const float T = GetWorld()->GetTimeSeconds();
     if (APawn* P = UGameplayStatics::GetPlayerPawn(this, 0))
     {
