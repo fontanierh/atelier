@@ -38,9 +38,12 @@ The session runner supports `--feature-case equipment|switch-foot|switch-bike|
 switch-sail|switch-skate|switch-skate-air|switch-skate-bail|zeppelin` and
 `--render-view host|guest`. Run both observer
 views; one process renders while its peer uses NullRHI. The aggregate guard defaults
-to 10 GiB. A rendered observer can use `--aggregate-memory-gib 14` or `16` only with
-explicit authorization for that session; the individual game guards remain at
-10 GiB, and startup requires the selected aggregate ceiling plus 2 GiB available.
+to 10 GiB. A rendered observer can use `--aggregate-memory-gib 14`, `16` or `18`
+only with explicit authorization for that session. Individual guards default to
+10 GiB; `--rendered-memory-gib 12` also requires explicit session authorization
+and applies only to the process that renders. Its NullRHI peer stays at 10 GiB.
+Startup requires the selected aggregate ceiling plus 2 GiB available, and receipts
+check and record the actual individual and aggregate ceilings and peaks.
 Inspect the captures as well as the receipts. Rerun bike, sail,
 pending mount, parking, crash and combat routes before enabling a release build.
 Use matching packaged identities for a two-device Tailscale playtest before claiming
