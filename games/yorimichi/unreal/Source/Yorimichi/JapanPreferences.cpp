@@ -158,6 +158,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
         {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
         {TEXT("leaf_motion"),TEXT("Swaying leaves"),0.f,0.f,1.f},
+        {TEXT("laptop"),TEXT("Laptop mode"),0.f,0.f,1.f},
         // The fog's look (AJapanWorld::ApplyVolumetricFog, docs/VOLUMETRIC_FOG.md); the defaults are FVolumetricFogLook's.
         {TEXT("fog_density"),TEXT("Fog density"),.07f,0.f,.2f,.005f},
         {TEXT("fog_reach"),TEXT("Fog reach (m)"),30.f,10.f,120.f,5.f},
@@ -259,7 +260,7 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
     return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
-        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("leaf_motion") || Key == TEXT("goofy");
+        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("leaf_motion") || Key == TEXT("laptop") || Key == TEXT("goofy");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -373,8 +374,11 @@ void UJapanPreferences::Apply()
         FString Error;
         if (!Skate->SetFeel(JapanNetwork::IsOnline(Owner->GetWorld()) ? FSkateFeel::Defaults() : GetSkateFeel(), Error)) UE_LOG(LogTemp, Warning, TEXT("PREFERENCES skate feel refused: %s"), *Error);
     }
-    const int32 PerformanceMode = Get(TEXT("performance")) > .5f ? 1 : 0;
+    // Laptop mode (a MacBook Air) implies the Performance profile and caps the forest's costliest settings below.
+    const bool Laptop = Get(TEXT("laptop")) > .5f;
+    const int32 PerformanceMode = Laptop || Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
+    const bool Light = Laptop || (Desktop && PerformanceMode);
     const auto Set = [](const TCHAR* Name, float Value)
     {
         if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
@@ -405,25 +409,26 @@ void UJapanPreferences::Apply()
     // R11G11B10 retains HDR at half the scene-color bandwidth. Paired native
     // 1440p tests save ~1 ms in forest/harbor, with original resolution and TAA.
     // Keep FloatRGBA for the phone and full-quality mode; no saved setting changes.
-    Set(TEXT("r.SceneColorFormat"),Desktop && PerformanceMode ? 2.f : 4.f);
+    Set(TEXT("r.SceneColorFormat"),Light ? 2.f : 4.f);
     // UE 5.8's lighter input filter retains anti-ghosting. Native 1440p paired
     // captures save ~0.3 ms; sprint/double-jump frames retain character edges.
-    Set(TEXT("r.TemporalAA.Quality"),Desktop && PerformanceMode ? 3.f : 2.f);
-    if (AppliedPerformanceMode != PerformanceMode)
+    Set(TEXT("r.TemporalAA.Quality"),Light ? 3.f : 2.f);
+    const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0);
+    if (AppliedPerformanceMode != ShadowProfile)
     {
         // Use the engine's original medium irradiance-volume lighting in the
         // performance profile. The user reverted the screen-probe lighting change.
         Set(TEXT("sg.GlobalIlluminationQuality"),PerformanceMode ? 1.f : 3.f);
-        Set(TEXT("r.Shadow.CSM.MaxCascades"),PerformanceMode ? 2.f : 10.f);
+        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop ? 1.f : PerformanceMode ? 2.f : 10.f);
         Set(TEXT("r.Shadow.MaxCSMResolution"),PerformanceMode ? 1024.f : 2048.f);
         Set(TEXT("r.Shadow.DistanceScale"),PerformanceMode ? .5f : 1.5f);
         Set(TEXT("r.DistanceFieldShadowing"),PerformanceMode ? 0.f : 1.f);
         Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
-        AppliedPerformanceMode = PerformanceMode;
+        AppliedPerformanceMode = ShadowProfile;
     }
     // Keep character edges near native resolution. The cheaper grass LODs leave
     // room for a higher floor; still respect a manually chosen lower ceiling.
-    Set(TEXT("r.DynamicRes.MinScreenPercentage"),FMath::Min(85.f,Get(TEXT("render_scale"))));
+    Set(TEXT("r.DynamicRes.MinScreenPercentage"),FMath::Min(Laptop ? 50.f : 85.f,Get(TEXT("render_scale"))));
     Set(TEXT("r.DynamicRes.MaxScreenPercentage"),Get(TEXT("render_scale")));
     Set(TEXT("r.DynamicRes.FrameTimeBudget"),1000.f/60.f);
     Set(TEXT("r.DynamicRes.TargetedGPUHeadRoomPercentage"),10.f);
@@ -460,7 +465,10 @@ void UJapanPreferences::Apply()
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
-        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")),Get(TEXT("forest_detail")),Get(TEXT("tree_shadow")));
+        It->ApplyPerformanceSettings(PerformanceMode != 0,
+            Laptop ? FMath::Min(Get(TEXT("tree_sway")),20.f) : Get(TEXT("tree_sway")),
+            Laptop ? FMath::Min(Get(TEXT("forest_detail")),.25f) : Get(TEXT("forest_detail")),
+            Laptop ? FMath::Min(Get(TEXT("tree_shadow")),40.f) : Get(TEXT("tree_shadow")));
         if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
             FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
@@ -654,6 +662,7 @@ FString MainHint(const FString& Key)
     static const TMap<FString,FString> Hints = {
         {TEXT("performance"),TEXT("Performance keeps shadows light for a steady 60 fps. Quality draws sharper, farther shadows: in the forest they take about 21 ms instead of 6.5, roughly doubling the frame time (1080p, M1 Max, moving through the forest).")},
         {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
+        {TEXT("laptop"),TEXT("For a MacBook Air or another light GPU: forest detail at most 0.25x, tree shadows at most 40 m, tree sway at most 20 m, one shadow cascade, the lighter scene format and anti-aliasing, and a resolution that may drop to 50% to hold 60 fps. Your sliders keep their own values for when it is off.")},
         {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},
         {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
         {TEXT("tree_shadow"),TEXT("How far from the camera trees cast shadows; beyond it they cast none. Looking across the forest, tree shadows are the largest cost in the game: shorter is faster, longer darkens far forest floors. Shadows of everything else keep their own range.")},
@@ -1075,7 +1084,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     if (JapanNetwork::IsOnline(Owner->GetWorld()))
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
             .Text(FText::FromString(TEXT("You can change characters during the session. Shared games use two stamina rings and default skate physics.")))];
-    TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("leaf_motion"),TEXT("show_fps"),TEXT("goofy")};
+    TArray<FString> Toggles = {TEXT("performance"),TEXT("laptop"),TEXT("fog"),TEXT("leaf_motion"),TEXT("show_fps"),TEXT("goofy")};
     Page->Section();
     for (const FString& Key : Toggles)
     {
@@ -1089,6 +1098,9 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
                 if (Key == TEXT("fog")) return FText::FromString(Enabled
                     ? TEXT("Volumetric fog: on · valley mist and light shafts")
                     : TEXT("Volumetric fog: off"));
+                if (Key == TEXT("laptop")) return FText::FromString(Enabled
+                    ? TEXT("Laptop mode: on · lighter forest, shadows and resolution for a MacBook Air")
+                    : TEXT("Laptop mode: off"));
                 if (Key == TEXT("leaf_motion")) return FText::FromString(Enabled
                     ? TEXT("Swaying leaves: Precise · motion-matched edges")
                     : TEXT("Swaying leaves: Fast"));
