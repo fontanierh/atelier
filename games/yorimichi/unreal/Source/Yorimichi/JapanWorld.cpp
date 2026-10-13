@@ -389,6 +389,8 @@ void AJapanWorld::Load()
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);
+                // Walkers meet a tree's leaves; the skateboard meets only its trunk (SkateRuntimeDetail CollectWorld).
+                if (bTree) H->ComponentTags.Add(TEXT("SkateSimpleCollision"));
                 // The tree house: the camera arm keeps above the floor Cairo stands on there, and in hole mode its probe
                 // passes the house (SetSeeThroughProbe). Its door curtains swing up to 60 cm out of their rest pose.
                 if (Key.StartsWith(TEXT("TH_")))

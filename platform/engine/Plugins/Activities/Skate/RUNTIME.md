@@ -197,6 +197,9 @@ to check that it is deterministic.
   rejects. The C++ keeps the indexed behaviour.
 - Collision is a static snapshot: moving objects, skeletal meshes, procedural meshes and streamed-out terrain are
   not seen.
+- A component tagged `SkateSimpleCollision` contributes its simple shapes (a tree's trunk hull) even when its mesh is
+  complex-as-simple for walkers. A component of an actor tagged `SkatePark` keeps all its surface within the largest
+  snapshot radius, while a dense surround shrinks the radius for everything else.
 - Every surface gets one collision material (friction and restitution). Ground kinds differ only by the
   surface profile that the wheels' vote selects (smooth, rough, slow, very slow), and by their sounds.
 - Rails reach the session as polylines.
