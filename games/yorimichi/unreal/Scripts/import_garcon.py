@@ -94,11 +94,15 @@ mesh.set_editor_property('materials', slots)
 E.save_loaded_asset(mesh)
 editor = U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending, bones = ['root'], []
+parents = {'root': None}
 while pending:
     bone = pending.pop()
     bones.append(bone)
-    pending.extend(str(b) for b in editor.get_bone_children(mesh, bone))
+    children = [str(b) for b in editor.get_bone_children(mesh, bone)]
+    parents.update({child: bone for child in children})
+    pending.extend(children)
 assert set(bones) == set(CONFIG['bones'].values()), ('imported skeleton mismatch', sorted(set(bones) ^ set(CONFIG['bones'].values())))
+assert parents == CONFIG['parents'], ('imported skeleton parent mismatch', parents, CONFIG['parents'])
 clips = {}
 for name, cfg in CONFIG['clips'].items():
     clip = fbx('A_' + name + '.fbx', 'A_' + name, skeleton, cfg['fps'])
@@ -115,7 +119,7 @@ for k, v in dict(mesh=mesh, actions=clips, use_authored_movement=True,
     definition.set_editor_property(k, v)
 E.save_loaded_asset(definition)
 E.save_loaded_asset(skeleton)
-report = {'mesh': mesh.get_path_name(), 'bones': len(bones), 'materials': [str(s.material_slot_name) for s in slots],
+report = {'mesh': mesh.get_path_name(), 'bones': len(bones), 'parents': parents, 'materials': [str(s.material_slot_name) for s in slots],
           'vertices': editor.get_num_verts(mesh, 0), 'clips': {n: c.get_path_name() for n, c in clips.items()}, 'source': CONFIG['source_sha256']}
 (OUT / 'unreal_import.json').write_text(json.dumps(report, indent=2) + '\n')
 U.log('GARCON IMPORT COMPLETE')

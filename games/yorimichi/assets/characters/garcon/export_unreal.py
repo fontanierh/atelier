@@ -72,6 +72,7 @@ def prepare(source):
     bpy.ops.object.mode_set(mode='OBJECT')
     assert all(max(abs(v) for row in (b.matrix_local - rest[b.name]) for v in row) < 1e-6
                for b in arm.data.bones), 'Reparenting changed a rest bone'
+    assert all(not arm.data.bones[name].children for name in secondary), 'Followers must be leaf branches'
     arm.name = 'Armature'
     arm.data.pose_position = 'POSE'
     for i, mesh in enumerate(meshes):
@@ -108,7 +109,8 @@ def main():
     report = dict(source=rig.native.name, source_sha256=rig.record['native_sha256'], height_cm=165, sole_cm=.65,
                   model_scale=rig.scale, source_floor=rig.floor, facing='+X',
                   rest_ankles_cm={s:p.z*100 for s,p in feet.items()}, bones=rig.original_names,
-                  secondary_bones=sorted(rig.secondary_bones), materials=materials, clips={})
+                  secondary_bones=sorted(rig.secondary_bones), materials=materials, clips={},
+                  parents={b.name: b.parent.name if b.parent else None for b in rig.arm.data.bones})
     (OUT/'export.json').write_text(json.dumps(report,indent=2)+'\n')
     print('GARCON EXPORT READY', flush=True)
 
