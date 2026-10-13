@@ -124,14 +124,15 @@ class Mesh:
         for f in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]:
             self.quad([v[i] for i in f], m, [(0, 0), (1, 0), (1, 1), (0, 1)])
 
-    def card(self, center, size, yaw, tilt, m, cell, normal, roll=0.0, col=1.0, col_bottom=None):
-        """vertical-ish quad centred at `center`, width/height size, rotated yaw about Z then tilted (pitch)"""
-        w, h = size
+    def card(self, center, size, yaw, tilt, m, cell, normal, roll=0.0, col=1.0, col_bottom=None, crop=(0.0, 0.0, 1.0, 1.0)):
+        """vertical-ish quad centred at `center`, width/height size, rotated yaw about Z then tilted (pitch); crop
+        (left, bottom, right, top, as fractions of the card and its atlas cell) keeps part of it at the same texel size"""
+        w, h = size; s0, t0, s1, t1 = crop
         R = Euler((math.radians(tilt), math.radians(roll), yaw), "XYZ").to_matrix()
-        pts = [Vector(center) + R @ Vector((-w / 2, 0, -h / 2)), Vector(center) + R @ Vector((w / 2, 0, -h / 2)),
-               Vector(center) + R @ Vector((w / 2, 0, h / 2)), Vector(center) + R @ Vector((-w / 2, 0, h / 2))]
+        corners = ((s0, t0), (s1, t0), (s1, t1), (s0, t1))
+        pts = [Vector(center) + R @ Vector(((s - 0.5) * w, 0, (t - 0.5) * h)) for s, t in corners]
         u0, v0 = (cell % 2) * 0.5, 0.5 - (cell // 2) * 0.5
-        uvs = [(u0, v0), (u0 + 0.5, v0), (u0 + 0.5, v0 + 0.5), (u0, v0 + 0.5)]
+        uvs = [(u0 + 0.5 * s, v0 + 0.5 * t) for s, t in corners]
         cb = col if col_bottom is None else col_bottom
         self.quad(pts, m, uvs, normal=normal, col=[cb, cb, col, col])
 
@@ -202,6 +203,46 @@ def canopy(mesh, center, radii, n_clusters, card_size, m, rng, normal_center=Non
             mesh.card(pos, (w, w), yaw, tilt, m, cell, corners, col=(0.6, 0.55 + 0.45 * min(1.0, p.length)))
 
 
+LEAF_CROPS = {}
+
+
+def leaf_crop(m, cell):
+    """The part of a leaf atlas cell any mip can draw: (left, bottom, right, top) as fractions of the cell. Each mip
+    is a simple average with its alpha scaled to keep the full texture's coverage at the 0.4 clip (setup_project's
+    leaf import); a texel past the clip there reaches one texel further by bilinear filtering. Mips down to 8 texels
+    a cell count, so a card trimmed to this box clips the same pixels as the whole card."""
+    if m.name not in LEAF_CROPS:
+        nodes = [n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image] if m.use_nodes else []
+        crops = [(0.0, 0.0, 1.0, 1.0)] * 4
+        if nodes:
+            image = nodes[0].image; W, H = image.size
+            pixels = np.empty(W * H * 4, np.float32); image.pixels.foreach_get(pixels)
+            mips = [pixels.reshape(H, W, 4)[..., 3].astype(np.float64)]      # rows bottom-up, as UV v
+            while mips[-1].shape[0] > 16:
+                a = mips[-1]; mips.append(a.reshape(a.shape[0] // 2, 2, a.shape[1] // 2, 2).mean((1, 3)))
+            covered = (mips[0] >= 0.4).mean(); scales = [1.0]
+            for a in mips[1:]:
+                low, high = 0.01, 100.0
+                for _ in range(40):
+                    k = (low * high) ** 0.5
+                    if (a * k >= 0.4).mean() < covered: low = k
+                    else: high = k
+                scales.append(high)
+            crops = []
+            for c in range(4):
+                lo, hi = np.ones(2), np.zeros(2)
+                for a, k in zip(mips, scales):
+                    n = a.shape[0] // 2; row = (1 - c // 2) * n
+                    ys, xs = np.nonzero(a[row:row + n, (c % 2) * n:(c % 2 + 1) * n] * k >= 0.4)
+                    if not len(xs): continue
+                    lo = np.minimum(lo, (np.array([xs.min(), ys.min()]) - 0.5) / n)
+                    hi = np.maximum(hi, (np.array([xs.max(), ys.max()]) + 1.5) / n)
+                lo, hi = np.clip(lo, 0, 1), np.clip(hi, 0, 1)
+                crops.append((float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])) if (hi > lo).all() else (0.0, 0.0, 1.0, 1.0))
+        LEAF_CROPS[m.name] = crops
+    return LEAF_CROPS[m.name][cell]
+
+
 def leaf_canopy(mesh, center, radii, n, size, m, rng, normal_center=None, vertical_bias=0.3, shell=0.35):
     """many small leaf cards filling an ellipsoid, denser on the shell; normals from the canopy centre"""
     cx, cy, cz = center; rx, ry, rz = radii; nc = Vector(normal_center or center)
@@ -214,12 +255,15 @@ def leaf_canopy(mesh, center, radii, n, size, m, rng, normal_center=None, vertic
         w = size * rng.uniform(0.8, 1.2)
         yaw = rng.uniform(0, 2 * math.pi); tilt = rng.uniform(-70, 70); roll = rng.uniform(-40, 40)
         R = Euler((math.radians(tilt), math.radians(roll), yaw), "XYZ").to_matrix()
+        # The card keeps only the part of its cell the leaves can cover: the depth and shadow passes skip the
+        # clipped-away margin, and every pixel that shows is the one the whole card drew.
+        cell = rng.randrange(4); crop = leaf_crop(m, cell); s0, t0, s1, t1 = crop
         corners = []
-        for (ux, uz) in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-            q = pos + R @ Vector((ux * w / 2, 0, uz * w / 2))
+        for (ux, uz) in ((s0, t0), (s1, t0), (s1, t1), (s0, t1)):
+            q = pos + R @ Vector(((ux - 0.5) * w, 0, (uz - 0.5) * w))
             nrm = (q - nc); nrm.z += vertical_bias * max(rx, rz); corners.append(nrm.normalized())
         shell = 0.22 + 0.78 * min(1.0, p.length)          # interior leaves get darkened by the material
-        mesh.card(pos, (w, w), yaw, tilt, m, rng.randrange(4), corners, roll=roll, col=(1.0, shell))
+        mesh.card(pos, (w, w), yaw, tilt, m, cell, corners, roll=roll, col=(1.0, shell), crop=crop)
 
 
 def tree_maple(name, seed, height=6.5, spread=6.0):

@@ -58,13 +58,13 @@ def main():
                     super().__init__(*args)
                     self.card_number = 0
 
-                def card(self,center,size,yaw,tilt,m,cell,normal,roll=0.,col=1.,col_bottom=None):
+                def card(self,center,size,yaw,tilt,m,cell,normal,roll=0.,col=1.,col_bottom=None,crop=(0.,0.,1.,1.)):
                     self.card_number += 1
                     # Caller-side RNG still advances for every source card. Every
                     # retained card therefore uses the original position and UV cell.
                     if (self.card_number-1)%stride: return
                     scale = min(math.sqrt(stride),3.0 if roadside else 2.2)
-                    super().card(center,(size[0]*scale,size[1]*scale),yaw,tilt,m,cell,normal,roll,col,col_bottom)
+                    super().card(center,(size[0]*scale,size[1]*scale),yaw,tilt,m,cell,normal,roll,col,col_bottom,crop)
 
                 def quad(self,points,*args,**kwargs):
                     # Expanded clusters stay inside the source mesh bounds.
