@@ -15,7 +15,6 @@
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
-#include "StaticMeshResources.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -338,16 +337,6 @@ void AJapanWorld::Load()
             const bool bBush = Key.StartsWith(TEXT("Bush"));
             const bool bTree = Key.StartsWith(TEXT("Tree"));
             const bool bLitter = Key == TEXT("Litter");
-            // These three species also fill the scattered and far-hill forest, tens of
-            // thousands of trees. Close up they keep their detail; beyond a few tens of
-            // metres they step down to the far crown, which keeps that forest cheap.
-            if (Key == TEXT("Tree_Maple_A") || Key == TEXT("Tree_Ginkgo") || Key == TEXT("Tree_Broad_A"))
-                if (FStaticMeshRenderData* Data = Mesh->GetRenderData())
-                {
-                    static const float Sizes[] = {1.f, .45f, .22f, .1f};
-                    for (int32 L = 1; L < Data->LODResources.Num() && L < UE_ARRAY_COUNT(Sizes); ++L)
-                        Data->ScreenSize[L].Default = FMath::Max(Data->ScreenSize[L].Default, Sizes[L]);
-                }
             TArray<FTransform> Near, Distant;
             Near.Reserve(Pair.Value->AsArray().Num());
             for (const TSharedPtr<FJsonValue>& V : Pair.Value->AsArray())
