@@ -19,8 +19,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
-namespace
-{
+namespace JapanCombatQA
+{ namespace {
 struct FProbe
 {
     TWeakObjectPtr<UWorld> World;
@@ -30,8 +30,8 @@ struct FProbe
 };
 FProbe Driver;
 int32 HostSent[2] = {-1, -1};
-struct FFrame { double At, Dt; };
-TArray<FFrame> FrameHistory;
+struct FCombatFrame { double At, Dt; };
+TArray<FCombatFrame> FrameHistory;
 TWeakObjectPtr<UWorld> FrameWorld;
 struct FCounters
 {
@@ -52,7 +52,7 @@ void FrameStats(const TSharedPtr<FJsonObject>& Data, double From, double Through
     double Minimum = 100., Maximum = 0.; int32 Count = 0;
     for (int32 I = 0; I < FrameHistory.Num(); ++I)
     {
-        const FFrame& F = FrameHistory[I];
+        const FCombatFrame& F = FrameHistory[I];
         // Include the frame in which the press occurred, even when Drive ran a
         // fraction of a millisecond after this world's tick was recorded.
         if (F.At <= Through && (F.At >= From || I + 1 == FrameHistory.Num() || FrameHistory[I + 1].At > From))
@@ -285,7 +285,7 @@ void Contact(AWandererCharacter* Victim, int32 Person, int32 Phase, const TShare
     }
     Reports.Add({Path(Folder, Person, Phase, TEXT("result")), Report, Now, false, Victim});
 }
-}
+} }
 
 void JapanCombatQA::ReactionApplied(const UJapanCharacterMovement* Movement, uint32 Epoch, uint32 Sequence)
 {

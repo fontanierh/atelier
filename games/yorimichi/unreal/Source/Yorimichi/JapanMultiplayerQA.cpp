@@ -43,8 +43,8 @@ struct FJapanMultiplayerQAAccess
         return Weapons > 0;
     }
 };
-namespace
-{
+namespace JapanMultiplayerQA
+{ namespace {
 bool Save(const FString& File, const TSharedPtr<FJsonObject>& Data)
 {
     FString Text; FJsonSerializer::Serialize(Data.ToSharedRef(), TJsonWriterFactory<>::Create(&Text));
@@ -286,7 +286,7 @@ bool ViewsMeet(const TSharedPtr<FJsonObject>& Data, TFunctionRef<bool(const FJso
     const auto& Views = Data->GetArrayField(TEXT("views"));
     return Views.Num() == 2 && Algo::AllOf(Views, [&](const auto& Row){ return Gate(*Row->AsObject()); });
 }
-}
+} }
 bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder, FString& Error)
 {
     if (Probe.World.Get() != World)

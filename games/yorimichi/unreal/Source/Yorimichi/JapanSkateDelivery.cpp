@@ -31,8 +31,8 @@ double AJapanPlayerController::SkateInterest(AWandererCharacter* Subject, bool b
 {
     TotalWeight = 0.;
     const APawn* Viewer = GetPawn();
-    const auto* Player = GetPlayerState<AJapanPlayerState>();
-    if (!HasAuthority() || IsLocalController() || !Viewer || !Subject || Subject == Viewer || !Player || !Player->bWorldReady) return 0.;
+    const auto* ViewerState = GetPlayerState<AJapanPlayerState>();
+    if (!HasAuthority() || IsLocalController() || !Viewer || !Subject || Subject == Viewer || !ViewerState || !ViewerState->bWorldReady) return 0.;
     const auto* Channel = GetNetConnection() ? GetNetConnection()->FindActorChannelRef(Subject) : nullptr;
     if (!Channel || !Channel->SpawnAcked) return 0.;
     if (!Subject->IsNetRelevantFor(this, GetViewTarget(), Viewer->GetActorLocation())) return 0.;

@@ -14,7 +14,7 @@ static TSharedPtr<FJsonObject> ReadHippodromeJson(const FString& Path)
     return AtelierReadJson(Path);
 }
 
-static FVector JsonVector(const TArray<TSharedPtr<FJsonValue>>& A)
+static FVector HorseJsonVector(const TArray<TSharedPtr<FJsonValue>>& A)
 {
     return FVector(A.Num() > 0 ? A[0]->AsNumber() : 0., A.Num() > 1 ? A[1]->AsNumber() : 0., A.Num() > 2 ? A[2]->AsNumber() : 0.);
 }
@@ -77,7 +77,7 @@ bool AHippodrome::Initialize(const FString& Path)
     if (!Root_) { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: cannot read %s"), *Path); return false; }
     FString AssetRoot(TEXT("/Game/Hippodrome"));
     Root_->TryGetStringField(TEXT("asset_root"), AssetRoot);
-    const FVector O = JsonVector(Root_->GetArrayField(TEXT("origin")));
+    const FVector O = HorseJsonVector(Root_->GetArrayField(TEXT("origin")));
     const TSharedPtr<FJsonObject> C = Root_->GetObjectField(TEXT("course"));
     Course.Origin = FVector2D(O.X, O.Y); Course.Z = O.Z;
     Course.Half = C->GetNumberField(TEXT("half")); Course.Radius = C->GetNumberField(TEXT("radius"));
@@ -92,7 +92,7 @@ bool AHippodrome::Initialize(const FString& Path)
         const FString Name = M->GetStringField(TEXT("name"));
         UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Hippodrome: mesh %s is not imported"), *Name); continue; }
-        const FVector At = JsonVector(M->GetArrayField(TEXT("at")));
+        const FVector At = HorseJsonVector(M->GetArrayField(TEXT("at")));
         bool bBlocks = true; M->TryGetBoolField(TEXT("blocks"), bBlocks);
         auto* Component = NewObject<UStaticMeshComponent>(this, *Name);
         Component->SetStaticMesh(Mesh); Component->SetupAttachment(RootComponent);
@@ -108,7 +108,7 @@ bool AHippodrome::Initialize(const FString& Path)
     auto Spot = [&](const TCHAR* Key, FVector& Out, float& Yaw)
     {
         const TSharedPtr<FJsonObject> S = Root_->GetObjectField(Key);
-        const FVector L = JsonVector(S->GetArrayField(TEXT("at")));
+        const FVector L = HorseJsonVector(S->GetArrayField(TEXT("at")));
         Out = Course.World(O.X + L.X, O.Y + L.Y, L.Z); Yaw = -float(S->GetNumberField(TEXT("yaw")));
     };
     Spot(TEXT("return"), ReturnGround, ReturnYaw);

@@ -10,6 +10,7 @@ class UAnimSequence;
 class UBlendSpace;
 class AWandererCharacter;
 class UMaterialInstanceDynamic;
+namespace JapanEnemyQA { struct FJapanEnemyProbe; }
 
 /** Gameplay data of one fox clip, in clip seconds at 1x (from the animation-r04 manifest through the export). */
 USTRUCT(BlueprintType)
@@ -115,7 +116,7 @@ public:
     /** Harness: fix the random stream so attack choices repeat. */
     void SetSeed(int32 Seed) { Rand.Initialize(Seed); }
     /** Harness: the next attack uses this clip (None = the weighted choice). */
-    void ForceNextAttack(FName Role) { ForcedAttack = Role; }
+    void ForceNextAttack(FName RoleName) { ForcedAttack = RoleName; }
     /** Harness: never attack or lunge (approach and stalk only). */
     void SetPassive(bool bValue) { bPassive = bValue; }
     int32 StrikesLanded = 0, StrikesParried = 0, StrikesDodged = 0, StrikesMissed = 0, HitsTaken = 0, Deaths = 0, Attacks = 0;
@@ -142,7 +143,7 @@ private:
     void FaceYaw(float TargetYaw, float RateDegPerSec, float Dt);
     void MoveToward(const FVector& Target, float Speed);
     void Note(const FString& Text);
-    const FFoxHunterClip* Clip(FName Role) const;
+    const FFoxHunterClip* Clip(FName RoleName) const;
     void Die();
     void Respawn();
     void SetCollisionAlive(bool bAlive);
@@ -162,5 +163,5 @@ private:
     FString Event;
     TArray<FVector> PreviousStrike;
     FRandomStream Rand;
-    friend struct FJapanEnemyProbe;
+    friend struct JapanEnemyQA::FJapanEnemyProbe;
 };

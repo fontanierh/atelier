@@ -58,10 +58,10 @@ namespace
     const TCHAR* HousePackage = TEXT("/Game/Japan/Treehouse/Materials/M_TreeHouse");
     const TCHAR* HousePath = TEXT("/Game/Japan/Treehouse/Materials/M_TreeHouse.M_TreeHouse");
     // The whole fades (Fade), all in cm:
-    // - BodyClearance: the sight lines to Cairo widen toward him by his body's width;
+    // - SightBodyClearance: the sight lines to Cairo widen toward him by his body's width;
     // - LensRange: a thin thing whose surface comes within this of the camera fades whole (fully at half of it);
     // - BigReach: a big thing (a tree, the torii) fades only this near the camera (none from 1 m further).
-    constexpr float BodyClearance = 30.f, LensRange = 60.f, BigReach = 250.f;
+    constexpr float SightBodyClearance = 30.f, LensRange = 60.f, BigReach = 250.f;
     // The eye the sight lines start from is the camera, followed at EyeSpeed per second. A thing swept across the view
     // then fades over about a quarter of a second rather than in the frames it takes to cross. A jump of more than 3 m
     // (a camera cut, a travel) is taken at once.
@@ -167,7 +167,7 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     // Fade: the whole fades' strength (they give way to the hole in hole mode), the body clearance, the lens range and
     // the big things' reach.
     const float Whole = bCamera ? Strength * (1.f - HoleBlend) : 0.f;
-    Values->SetVectorParameterValue(TEXT("Fade"), FLinearColor(Whole, BodyClearance, LensRange, BigReach));
+    Values->SetVectorParameterValue(TEXT("Fade"), FLinearColor(Whole, SightBodyClearance, LensRange, BigReach));
 
     // Hole mode: the tree house room he is in, if any, whose near walls and roof open while the camera is outside it.
     // A change of room first closes the old one, then opens the new one, so the walls never jump from one room to the

@@ -27,7 +27,7 @@ namespace
     // A gap of more frames than this in the arm's updates (a camera cut, the zeppelin's free camera) starts it afresh.
     constexpr uint64 GapFrames = 2;
     // The camera itself stays at least this far off anything solid (cm); the probe keeps it ProbeRadius off at rest.
-    constexpr float BodyClearance = 14.f;
+    constexpr float ArmBodyClearance = 14.f;
     // The thin sweep used when Cairo's head is already within ProbeRadius of something (cm).
     constexpr float ThinRadius = 4.f;
     // How fast the squeezed camera rises over him and settles back (1/s).
@@ -120,7 +120,7 @@ void UJapanCameraArm::UpdateDesiredArmLocation(bool bDoTrace, bool bDoLocationLa
     if (Length < 0.f || Frame > LastFrame + GapFrames) { Length = Hard; Speed = 0.f; }
     else Length = SmoothDamp(Length, Hard, Speed, Hard < Length ? PullInTime : EaseOutTime, DeltaTime);
     LastFrame = Frame;
-    const float Limit = Hard + FMath::Max(ProbeRadius - BodyClearance, 0.f);
+    const float Limit = Hard + FMath::Max(ProbeRadius - ArmBodyClearance, 0.f);
     if (Length > Limit) { Length = Limit; Speed = FMath::Min(Speed, 0.f); }
     Length = FMath::Clamp(Length, 0.f, Full);
 

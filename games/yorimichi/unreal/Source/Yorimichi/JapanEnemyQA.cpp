@@ -20,8 +20,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
-namespace
-{
+namespace JapanEnemyQA
+{ namespace {
 bool Enabled()
 {
     static const bool Value = FParse::Param(FCommandLine::Get(), TEXT("networkenemy"));
@@ -174,7 +174,8 @@ struct FJapanEnemyProbe
         return Data;
     }
 };
-static FJapanEnemyProbe Probe;
+namespace { FJapanEnemyProbe Probe; }
+}
 
 void JapanEnemyQA::QueuedAttack(AWandererCharacter* Player, uint32 Epoch, uint16 Edge)
 {
@@ -283,7 +284,7 @@ void JapanEnemyQA::Resolved(uint32 Contact, int32 Outcome)
     if (Calls != 1) Probe.Fail(TEXT("A hunter contact resolved more than once"));
 }
 
-void FJapanEnemyProbe::Initialize(AFoxHunter* Fox)
+void JapanEnemyQA::FJapanEnemyProbe::Initialize(AFoxHunter* Fox)
 {
     Began = PhaseBegan = FPlatformTime::Seconds();
     Home = Fox->GetActorLocation(); Axis = Fox->GetActorForwardVector();
@@ -298,7 +299,7 @@ void FJapanEnemyProbe::Initialize(AFoxHunter* Fox)
     Setup->SetBoolField(TEXT("movement_tick_was_enabled"), MovementTickWasEnabled);
 }
 
-void FJapanEnemyProbe::Notice()
+void JapanEnemyQA::FJapanEnemyProbe::Notice()
 {
     if (NoticeSeen) return;
     auto* Fox = Hunter.Get();
@@ -319,7 +320,7 @@ void FJapanEnemyProbe::Notice()
 }
 void JapanEnemyQA::Noticed(AFoxHunter* Fox) { if (Probe.Owns(Fox)) Probe.Notice(); }
 
-void FJapanEnemyProbe::Observe(AFoxHunter* Fox)
+void JapanEnemyQA::FJapanEnemyProbe::Observe(AFoxHunter* Fox)
 {
     if (PreviousHealth >= 0 && PreviousHealth != Fox->Health) ++HealthChanges;
     if (PreviousState != EFoxState::Dead && Fox->State == EFoxState::Dead) ++DeathChanges;
@@ -337,7 +338,7 @@ void FJapanEnemyProbe::Observe(AFoxHunter* Fox)
     if (Phase > 0 && Fox->EncounterHealth != 9) Fail(TEXT("Encounter difficulty changed after engagement"));
 }
 
-void FJapanEnemyProbe::SetPhase(int32 Next)
+void JapanEnemyQA::FJapanEnemyProbe::SetPhase(int32 Next)
 {
     Baseline();
     Phase = Next; PhaseBegan = FPlatformTime::Seconds(); PhaseHitStart = Hits.Num();
@@ -349,7 +350,7 @@ void FJapanEnemyProbe::SetPhase(int32 Next)
     }
 }
 
-void FJapanEnemyProbe::Drive(AWandererCharacter* Player)
+void JapanEnemyQA::FJapanEnemyProbe::Drive(AWandererCharacter* Player)
 {
     auto* Fox = Hunter.Get();
     auto* Moves = Player ? Player->GetMoves() : nullptr;
@@ -400,7 +401,7 @@ void FJapanEnemyProbe::Drive(AWandererCharacter* Player)
     if ((Phase == 1 || Phase == 2) && PhaseHealth >= 0 && Fox->Health < PhaseHealth) StopAttacks = true;
 }
 
-bool FJapanEnemyProbe::PeerMatches(const TSharedPtr<FJsonObject>& Other) const
+bool JapanEnemyQA::FJapanEnemyProbe::PeerMatches(const TSharedPtr<FJsonObject>& Other) const
 {
     if (!Other || !Other->GetStringField(TEXT("error")).IsEmpty()) return false;
     const auto* Fox = Hunter.Get();
@@ -412,7 +413,7 @@ bool FJapanEnemyProbe::PeerMatches(const TSharedPtr<FJsonObject>& Other) const
         FPlatformTime::Seconds() - Other->GetNumberField(TEXT("at")) < 1.;
 }
 
-bool FJapanEnemyProbe::Tick(const FString& Folder)
+bool JapanEnemyQA::FJapanEnemyProbe::Tick(const FString& Folder)
 {
     auto* Fox = Hunter.Get();
     if (!Fox || !Fox->IsReady()) return false;
