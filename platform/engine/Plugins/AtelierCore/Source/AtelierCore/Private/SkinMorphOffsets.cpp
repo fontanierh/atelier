@@ -32,7 +32,12 @@ float FSkinMorphOffsets::MergeShown(const USkeletalMeshComponent* Component, TAr
         else if (Index < Named) Shown[Index] = Component->MorphTargetWeights[Active.Value];
     }
     float Lag = 0.f;
-    for (int32 I = 0; I < Named; ++I) Lag = FMath::Max(Lag, FMath::Abs(Morphs[I].Value - Shown[I]));
+    for (int32 I = 0; I < Named; ++I)
+    {
+        const float Difference = FMath::Abs(Morphs[I].Value - Shown[I]);
+        if (!FMath::IsFinite(Difference)) return TNumericLimits<float>::Max();
+        Lag = FMath::Max(Lag, Difference);
+    }
     return Lag;
 }
 
@@ -65,6 +70,13 @@ bool FSkinMorphOffsets::Blend(const USkeletalMesh* Asset, TArray<TPair<const UMo
         FString Receipt;
         if (Contact.IsValid() && !Contact->Validate(Asset, {}, Receipt)) ContactError = Receipt;
     }
+    for (const TPair<const UMorphTarget*, float>& Morph : Active)
+        if (!FMath::IsFinite(Morph.Value))
+        {
+            Applied.Reset(); Offsets.Reset();
+            Error = FString::Printf(TEXT("morph %s has a non-finite weight"), *Morph.Key->GetName());
+            return false;
+        }
     // The renderer skips weights this small (SkeletalRender.cpp's MinMorphTargetBlendWeight).
     Active.RemoveAll([](const TPair<const UMorphTarget*, float>& Morph) { return FMath::Abs(Morph.Value) <= UE_SMALL_NUMBER; });
     Active.Sort([](const TPair<const UMorphTarget*, float>& A, const TPair<const UMorphTarget*, float>& B) { return A.Key < B.Key; });

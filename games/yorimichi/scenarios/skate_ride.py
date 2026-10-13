@@ -1308,7 +1308,8 @@ def unmeasured(row):
     so the contact would be measured on a different surface from the one drawn."""
     if 'skin_error' in row:
         return row['skin_error']
-    if float(row.get('morph_lag', 0)) > MORPH_LAG:
+    lag = float(row.get('morph_lag', 0))
+    if not math.isfinite(lag) or lag > MORPH_LAG:
         return f"morph_lag_{float(row['morph_lag']):.9g}"
     return None
 

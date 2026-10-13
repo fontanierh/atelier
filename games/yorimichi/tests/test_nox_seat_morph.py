@@ -124,13 +124,15 @@ def test_native_lag_receipt_preserves_the_gate_boundary(tmp_path):
                    check=True)
     limit = np.float32(skate_ride.MORPH_LAG)
     above = np.nextafter(limit, np.float32(float('inf')))
-    values = [0., np.nextafter(limit, np.float32(0)), limit, above, .00014, .0125]
+    values = [0., np.nextafter(limit, np.float32(0)), limit, above, .00014, .0125,
+              float('nan'), float('inf'), -float('inf')]
     receipts = subprocess.run([str(executable)], input='\n'.join(str(v) for v in values), capture_output=True, text=True,
                              check=True).stdout.splitlines()
     assert skate_ride.MORPH_LAG == 1e-4 and skate_ride.SKIN_DEPTH == 2
     for value, receipt in zip(values, receipts, strict=True):
         row = dict(skin='1.0', skin_bone='pelvis', skin_groups='torso:1.0,feet:0.5', **dict([receipt.split('=', 1)]))
-        fails = float(np.float32(value)) > skate_ride.MORPH_LAG
+        native_value = float(np.float32(value))
+        fails = not np.isfinite(native_value) or native_value > skate_ride.MORPH_LAG
         assert bool(skate_ride.unmeasured(row)) == fails
         depth, _, measured, _ = skate_ride.skin([row])
         assert (np.isnan(depth) and measured == 0) if fails else (depth == 1 and measured == 1)
