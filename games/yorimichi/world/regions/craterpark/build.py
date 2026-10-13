@@ -2,8 +2,9 @@
 
 Run with Blender. Every mesh except the helpers is kept, with no simplification:
 - render: one mesh per source mesh, without the faces its `render_skip` hides (coplanar flicker), smoothed only
-  across edges under SMOOTH degrees;
-- collision: every face of each role, the hidden ones included, in sections of at most SECTION triangles.
+  across edges under SMOOTH degrees; the PLAIN roles, drawn with world-aligned materials, are simplified (simplify);
+- collision: every face of each role, the hidden ones included, simplified, from sections of at most SECTION source
+  triangles.
 park.json places them on the caldera floor for ASuperUltraMegaPark::Spawn (placement.py).
 """
 import sys
@@ -14,6 +15,7 @@ import yori
 from craterpark import placement
 
 import bpy
+import bmesh
 import hashlib
 import json
 import math
@@ -24,6 +26,9 @@ OUT = yori.OUT / 'craterpark'
 MESH_ROOT = '/Game/CraterPark/Meshes'
 SMOOTH = 35.0           # degrees: sharper edges keep their crease
 SECTION = 200000        # collision triangles per mesh
+# Roles drawn with world-aligned materials (import_craterpark.py): their UVs are unused, so their flat faces are merged.
+PLAIN = {'foundation', 'mountain', 'access_bridge', 'bridge_support', 'boundary'}
+FLAT = .5              # degrees: faces this close to coplanar are merged (a shape-preserving simplification)
 
 
 def sha(path):
@@ -40,7 +45,7 @@ def ue(point):
     return [point[0] * 100., point[2] * 100., point[1] * 100.]
 
 
-def export_mesh(name, vertices, faces, materials, face_materials, uvs=None):
+def export_mesh(name, vertices, faces, materials, face_materials, uvs=None, smooth=None):
     """As megapark/build.py export_mesh: an FBX about a local origin on a 32 m grid, native units, Y up. Its smoothing
     groups go with the normals: without them the FBX import warns, which crashes a windowless (null RHI) editor."""
     bpy.ops.object.select_all(action='SELECT')
@@ -57,6 +62,7 @@ def export_mesh(name, vertices, faces, materials, face_materials, uvs=None):
         data.loops.foreach_get('vertex_index', loops)
         uv = uvs.copy(); uv[:, 1] = 1 - uv[:, 1]
         data.uv_layers.new(name='UVMap').data.foreach_set('uv', uv[loops].ravel())
+    if (uvs is not None) if smooth is None else smooth:
         data.shade_smooth()
         data.set_sharp_from_angle(angle=math.radians(SMOOTH))
     obj = bpy.data.objects.new(name, data)
@@ -74,6 +80,22 @@ def export_mesh(name, vertices, faces, materials, face_materials, uvs=None):
               'materials': materials}
     bpy.data.meshes.remove(data, do_unlink=True)
     return result
+
+
+def simplify(vertices, faces):
+    """The same surface with fewer triangles: shared corners welded and nearly coplanar faces (FLAT) merged, then
+    triangulated again. Returns (vertices, faces)."""
+    data = bpy.data.meshes.new('simplify')
+    data.from_pydata(vertices.astype('f8').tolist(), [], np.asarray(faces).tolist())
+    bm = bmesh.new(); bm.from_mesh(data); bpy.data.meshes.remove(data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(FLAT), verts=bm.verts, edges=bm.edges)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.verts.ensure_lookup_table(); bm.verts.index_update()
+    v = np.array([p.co[:] for p in bm.verts], 'f4')
+    f = np.array([[p.index for p in face.verts] for face in bm.faces], 'i8').reshape(-1, 3)
+    bm.free()
+    return v, f[valid(v, f)]
 
 
 def valid(positions, triangles):
@@ -94,8 +116,11 @@ def main():
         keep[a['render_skip']] = False
         used = np.unique(a['triangles'][keep])
         remap = np.full(len(a['positions']), -1, 'i8'); remap[used] = np.arange(len(used))
-        mesh = export_mesh('SM_CP_' + entry['id'].replace('-', '_'), a['positions'][used], remap[a['triangles'][keep]],
-                           [entry['material']], np.zeros(int(keep.sum()), 'i4'), a['uvs'][used])
+        vertices, faces, uvs = a['positions'][used], remap[a['triangles'][keep]], a['uvs'][used]
+        if entry['role'] in PLAIN:
+            vertices, faces = simplify(vertices, faces); uvs = None
+        mesh = export_mesh('SM_CP_' + entry['id'].replace('-', '_'), vertices, faces, [entry['material']],
+                           np.zeros(len(faces), 'i4'), uvs, smooth=True)
         mesh.update(source_id=entry['id'], role=entry['role'], skipped=int(len(keep) - keep.sum()))
         report['render'].append(mesh)
         print('Exported', mesh['name'], flush=True)
@@ -103,9 +128,9 @@ def main():
         triangles = np.concatenate(parts)
         for k in range(0, len(triangles), SECTION):
             chunk = triangles[k:k + SECTION]
-            vertices = chunk.reshape(-1, 3)
-            entry = export_mesh(f'UC_CP_{role}_{k // SECTION}', vertices, np.arange(len(vertices)).reshape(-1, 3),
-                                ['M_Collision'], np.zeros(len(chunk), 'i4'))
+            vertices, faces = simplify(chunk.reshape(-1, 3), np.arange(len(chunk) * 3).reshape(-1, 3))
+            entry = export_mesh(f'UC_CP_{role}_{k // SECTION}', vertices, faces, ['M_Collision'], np.zeros(len(faces), 'i4'))
+            entry['source_triangles'] = len(chunk)
             entry.update(role=role, one_sided=False)
             report['collision'].append(entry)
     # Seed the FBX factory's safe reimport route with a clean triangle (import_craterpark.py).

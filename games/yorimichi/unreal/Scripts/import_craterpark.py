@@ -127,6 +127,10 @@ def main():
     for entry in report['render'] + report['collision']:
         collision = entry['name'].startswith('UC_')
         megapark.mesh_actor(entry, collision, mis, None, editor, results, place=False)
+        if not collision:
+            # Only the riding collision is read on the CPU (the skating snapshot); the drawn meshes keep no CPU copy.
+            mesh = E.load_asset(ROOT + '/Meshes/' + entry['name'])
+            mesh.set_editor_property('allow_cpu_access', False); E.save_loaded_asset(mesh)
     E.save_directory(ROOT, only_if_is_dirty=True, recursive=True)
     result = {'root': ROOT, 'source_sha256': report['scene_sha256'], 'meshes': results, 'materials': len(mis),
               'render_triangles': sum(e['triangles'] for e in results if not e['collision']),
