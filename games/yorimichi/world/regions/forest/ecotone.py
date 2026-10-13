@@ -11,9 +11,9 @@ def kinds(x,y,z):
     from hidamari.mountains import noise,smooth
     # Independent evergreen and autumn fields avoid contour rings. Fine
     # position noise interleaves crowns without changing either caller's RNG.
-    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.45*noise(x,y,2.3,83)
-    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.45*noise(x,y,2.3,84)
-    kind=np.where(ever<-.34,'Pine',np.where(hue<.11,'Rust','Gold'))
+    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.2*noise(x,y,2.3,83)
+    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.2*noise(x,y,2.3,84)
+    kind=np.where(ever<-.33,'Pine',np.where(hue<.11,'Rust','Gold'))
     altitude=smooth((z-170)/90)*smooth((900-np.hypot(x-550,y-1930))/150)
     return np.where((noise(x,y,60.,79)+1)*.5<altitude,'Pine',kind)
 

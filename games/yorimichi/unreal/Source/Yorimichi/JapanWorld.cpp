@@ -23,6 +23,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 #include "LeafStorm.h"
 #include "GullFlock.h"
 #include "VillageLife.h"
@@ -813,14 +814,19 @@ void AJapanWorld::UpdateNorthAerialGrade(float Dt)
     const FVector C=Camera->GetCameraLocation();
     const bool Jump=!bNorthGradeHasCamera || FVector::DistSquared(C,NorthGradeCamera)>FMath::Square(5000.f);
     NorthGradeCamera=C;bNorthGradeHasCamera=true;
-    const float Y=-C.Y;
-    const float Region=FMath::SmoothStep(-90000.f,-70000.f,C.X)*(1-FMath::SmoothStep(240000.f,260000.f,C.X))
+    const float X=C.X,Y=-C.Y;
+    const float Region=FMath::SmoothStep(-90000.f,-70000.f,X)*(1-FMath::SmoothStep(240000.f,260000.f,X))
         *FMath::SmoothStep(35000.f,65000.f,Y)*(1-FMath::SmoothStep(540000.f,560000.f,Y));
     NorthGradeTraceElapsed+=Dt;
     if (Region>0 && (Jump || NorthGradeTraceElapsed>=.25f))
     {
         FCollisionQueryParams Params(SCENE_QUERY_STAT(NorthAerialGrade),true);
-        if (const APawn* Pawn=UGameplayStatics::GetPlayerPawn(this,0)) Params.AddIgnoredActor(Pawn);
+        auto IgnoreMount=[&Params](const AActor* Actor)
+        {
+            for (;Actor;Actor=Actor->GetAttachParentActor()) Params.AddIgnoredActor(Actor);
+        };
+        IgnoreMount(UGameplayStatics::GetPlayerPawn(this,0));
+        if (const APlayerController* Controller=UGameplayStatics::GetPlayerController(this,0)) IgnoreMount(Controller->GetViewTarget());
         FHitResult Hit;
         const bool Found=GetWorld()->LineTraceSingleByChannel(Hit,C,C-FVector(0,0,150000),ECC_Visibility,Params);
         NorthGradeClearance=FMath::Max(0.f,C.Z-(Found ? FMath::Max(0.f,Hit.ImpactPoint.Z) : 0.f));

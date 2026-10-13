@@ -375,7 +375,7 @@ def generate():
     from forest.ecotone import kinds
     forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
-    forest_clumps=.70+.35*mountains.smooth((clump+.55)/.7)
+    forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
     ceilings=330+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60
     forest_altitude=mountains.smooth((ceilings-forest_z)/100)
     for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
@@ -394,8 +394,6 @@ def generate():
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
         yaw=r.uniform(0,360);scale=r.uniform(.70,1.15)
-        if name.startswith('Tree_Forest_'):
-            scale*=1.35 if name.endswith('Pine') else 1.18
         put(name,x,y,z-.3,yaw=yaw,scale=scale)
     # Outcrop groups and scree give the high flank real relief at walking scale.
     # An independent stream keeps all existing tree/path authoring draws intact.
@@ -405,14 +403,18 @@ def generate():
     rz=north_height(rx,ry);cover=mountains.snow(rx,ry,north_base_height)
     slope=np.hypot(north_height(rx+1,ry)-rz,north_height(rx,ry+1)-rz)
     radius=np.hypot(rx-550,ry-1930)
-    keep=(radius>100)&(radius<650)&(rz>250)&(cover<.25)&(slope<2.)&(mountains.noise(rx,ry,55,98)>.05)
-    for x,y,z in zip(rx[keep],ry[keep],rz[keep]):
+    keep=(radius>100)&(radius<650)&(rz>250)&(cover<.25)&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05)
+    for x,y,z,gradient in zip(rx[keep],ry[keep],rz[keep],slope[keep]):
         scale=float(rock_rng.uniform(.65,2.8))
-        put('Rock_C' if scale>1.7 else 'Rock_B',float(x),float(y),float(z)-.15*scale,
+        large=scale>1.7 and gradient<.6
+        sink=(.15+.5*gradient*(1.3 if large else .55))*scale
+        put('Rock_C' if large else 'Rock_B',float(x),float(y),float(z)-sink,
             yaw=float(rock_rng.uniform(0,360)),scale=scale)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
+    from megapark import forest as megapark_forest
+    protected_boxes=[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()]
     for name in ('Tree_Forest_Ginkgo','Tree_Forest_Maple','Tree_Forest_Pine'):
         points=np.asarray(inst.get(name,[]),float)
         if not len(points):continue
@@ -420,6 +422,10 @@ def generate():
         far=mountains.smooth((distance-80)/120)*mountains.smooth((points[:,1]-650)/250)
         keep=thin_rng.random(len(points))>=.06*far
         points[:,4]*=1+.08*far
+        gain=far.copy()
+        for x0,y0,x1,y1 in protected_boxes:
+            gain[(points[:,0]>x0)&(points[:,0]<x1)&(points[:,1]>y0)&(points[:,1]<y1)]=0
+        points[:,4]*=1+(.35 if name.endswith('Pine') else .18)*gain
         inst[name]=points[keep].tolist()
     # Small rooted plants and stones dress the trail, leaving its riding corridor open.
     for index,(x,y,z) in enumerate(mountains.trail_points(north_height)):
