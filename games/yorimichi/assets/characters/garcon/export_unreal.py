@@ -54,6 +54,24 @@ def prepare(source):
     assert set(names) == set(record['bones'].values()), 'Vendored Garcon rig changed'
     assert arm.data.bones['pelvis'].parent.name == 'root'
     assert all(arm.data.bones[f'toe_{s}'].head_local.x > arm.data.bones[f'foot_{s}'].head_local.x for s in 'LR')
+    # The bike author poses the contract bones in order. Make neutral followers
+    # branches, so an intermediate spine/neck follower cannot hide its parent.
+    # Absolute rest matrices stay exact; neutral followers give the same FK.
+    secondary = set(record['secondary_bones'])
+    rest = {b.name: b.matrix_local.copy() for b in arm.data.bones}
+    bpy.ops.object.mode_set(mode='EDIT')
+    for bone in arm.data.edit_bones:
+        if bone.name in secondary:
+            continue
+        parent = bone.parent
+        while parent is not None and parent.name in secondary:
+            parent = parent.parent
+        if parent != bone.parent:
+            bone.use_connect = False
+            bone.parent = parent
+    bpy.ops.object.mode_set(mode='OBJECT')
+    assert all(max(abs(v) for row in (b.matrix_local - rest[b.name]) for v in row) < 1e-6
+               for b in arm.data.bones), 'Reparenting changed a rest bone'
     arm.name = 'Armature'
     arm.data.pose_position = 'POSE'
     for i, mesh in enumerate(meshes):
@@ -61,7 +79,7 @@ def prepare(source):
     bpy.context.view_layer.update()
     return SimpleNamespace(record=record, native=native, scene=scene, arm=arm, meshes=meshes,
                            transform=transform, scale=scale, floor=floor, original_names=names,
-                           secondary_bones=set(record['secondary_bones']))
+                           secondary_bones=secondary)
 
 
 def main():
