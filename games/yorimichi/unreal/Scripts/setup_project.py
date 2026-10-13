@@ -287,8 +287,11 @@ def master(name, masked=False, unlit=False, white=None, fixed_tex=None, mpc=None
         U = unreal
         vc = node(m, U.MaterialExpressionVertexColor, -350, -150)
         gg = node(m, U.MaterialExpressionComponentMask, -200, -150, r=False, g=True, b=False, a=False); link(vc, "", gg, "")
-        sh = node(m, U.MaterialExpressionMultiply, -50, -150, const_b=0.5); link(gg, "", sh, "A")
-        sh2 = node(m, U.MaterialExpressionAdd, 80, -150, const_b=0.5); link(sh, "", sh2, "A")
+        floor = node(m, U.MaterialExpressionScalarParameter, -350, -300,
+                     parameter_name="InteriorFloor", default_value=0.5)
+        span = node(m, U.MaterialExpressionSubtract, -200, -300, const_a=1.0); link(floor, "", span, "B")
+        sh = node(m, U.MaterialExpressionMultiply, -50, -150); link(gg, "", sh, "A"); link(span, "", sh, "B")
+        sh2 = node(m, U.MaterialExpressionAdd, 80, -150); link(sh, "", sh2, "A"); link(floor, "", sh2, "B")
         dark = node(m, U.MaterialExpressionMultiply, 200, 0); link(mul, "", dark, "A"); link(sh2, "", dark, "B")
         MEL.connect_material_property(dark, "", U.MaterialProperty.MP_BASE_COLOR)
         # leaves let light through: two-sided foliage with a subsurface colour, so undersides glow instead of going black
