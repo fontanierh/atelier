@@ -379,7 +379,7 @@ def generate():
     forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
     forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
-    # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera is left open for its park.
+    # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera has its own dressing below.
     ceilings=mountains.lifted(330)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
     forest_altitude=mountains.smooth((ceilings-forest_z)/(100*mountains.LIFT))
     _,_,forest_radius,forest_angle=mountains.polar(forest_xy[:,0],forest_xy[:,1])
@@ -442,6 +442,34 @@ def generate():
                 yaw=float(rock_rng.uniform(0,360)),scale=float(rock_rng.uniform(.35,.65)))
     print('VOLCANIC DRESSING',int(keep.sum()),'scree',int(anchors.sum()),'anchors',
           int(shrubs.sum())*3,'shrub candidates',flush=True)
+    # The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"): stunted pines with a few maples and ginkgos in
+    # clumps, big boulders with scree, and ochre shrubs, on the floor and the lower wall, never on the park's block.
+    # Their own stream leaves every draw above unchanged.
+    from craterpark import placement as craterpark
+    cal_rng=np.random.default_rng(748)
+    cx,cy=(np.asarray(v,float) for v in zip(*cal_rng.uniform(-520,520,size=(26000,2))))
+    cx=cx+mountains.VOLCANO[0];cy=cy+mountains.VOLCANO[1]
+    _,_,cr,ca=mountains.polar(cx,cy)
+    cz=north_height(cx,cy);cs=np.hypot(north_height(cx+1,cy)-cz,north_height(cx,cy+1)-cz)
+    inside=(cr<mountains.rim_radius(ca)-6)&~craterpark.contains(cx,cy,margin=7.)
+    clumps=mountains.smooth((mountains.noise(cx,cy,70,749)+.15)/.5)
+    trees=inside&(cs<.75)&(cal_rng.random(len(cx))<.11*clumps)
+    for x,y,z in zip(cx[trees],cy[trees],cz[trees]):
+        kind=cal_rng.random()
+        name='Tree_Forest_Pine' if kind<.62 else 'Tree_Forest_Maple' if kind<.86 else 'Tree_Forest_Ginkgo'
+        put(name,float(x),float(y),float(z)-.3,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.55,.95)))
+    boulders=inside&(cs<1.1)&~trees&(cal_rng.random(len(cx))<.018*(1.3-clumps))
+    for x,y,z,gradient in zip(cx[boulders],cy[boulders],cz[boulders],cs[boulders]):
+        scale=float(cal_rng.uniform(1.6,3.2))
+        put('HD_NorthRockC',float(x),float(y),float(z)-(.1+.5*gradient)*scale,yaw=float(cal_rng.uniform(0,360)),scale=scale)
+        for _ in range(4):
+            px=float(x+cal_rng.uniform(-6,6));py=float(y+cal_rng.uniform(-6,6))
+            if craterpark.contains(px,py,margin=7.):continue
+            put('HD_NorthRockB',px,py,float(north_height(px,py))-.15,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.4,1.1)))
+    bushes=inside&(cs<.6)&~trees&~boulders&(cal_rng.random(len(cx))<.05*clumps)
+    for x,y,z in zip(cx[bushes],cy[bushes],cz[bushes]):
+        put('Bush_Ochre_A',float(x),float(y),float(z)-.08,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.45,.8)))
+    print('CALDERA DRESSING',int(trees.sum()),'trees',int(boulders.sum()),'boulders',int(bushes.sum()),'bushes',flush=True)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
@@ -593,6 +621,11 @@ def generate():
         if not placements:continue
         a=np.asarray(placements,float)
         inst[name]=a[~megapark.contains(a[:,0],a[:,1],margin=4.)|megapark_forest.seam_undergrowth(name,a[:,0],a[:,1])].tolist()
+    # Crater Park's block carries no planting (craterpark/placement.py).
+    for name,placements in list(inst.items()):
+        if not placements:continue
+        a=np.asarray(placements,float)
+        inst[name]=a[~craterpark.contains(a[:,0],a[:,1],margin=3.)].tolist()
     # By the air station the gate's ground has its own grass, verges, bushes and rocks (megapark/gate.py).
     from megapark import gate
     gate.dress(inst,north_base_height)
