@@ -442,34 +442,6 @@ def generate():
                 yaw=float(rock_rng.uniform(0,360)),scale=float(rock_rng.uniform(.35,.65)))
     print('VOLCANIC DRESSING',int(keep.sum()),'scree',int(anchors.sum()),'anchors',
           int(shrubs.sum())*3,'shrub candidates',flush=True)
-    # The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"): stunted pines with a few maples and ginkgos in
-    # clumps, big boulders with scree, and ochre shrubs, on the floor and the lower wall, never on the park's block.
-    # Their own stream leaves every draw above unchanged.
-    from craterpark import placement as craterpark
-    cal_rng=np.random.default_rng(748)
-    cx,cy=(np.asarray(v,float) for v in zip(*cal_rng.uniform(-520,520,size=(26000,2))))
-    cx=cx+mountains.VOLCANO[0];cy=cy+mountains.VOLCANO[1]
-    _,_,cr,ca=mountains.polar(cx,cy)
-    cz=north_height(cx,cy);cs=np.hypot(north_height(cx+1,cy)-cz,north_height(cx,cy+1)-cz)
-    inside=(cr<mountains.rim_radius(ca)-6)&~craterpark.contains(cx,cy,margin=7.)
-    clumps=mountains.smooth((mountains.noise(cx,cy,70,749)+.15)/.5)
-    trees=inside&(cs<.75)&(cal_rng.random(len(cx))<.11*clumps)
-    for x,y,z in zip(cx[trees],cy[trees],cz[trees]):
-        kind=cal_rng.random()
-        name='Tree_Forest_Pine' if kind<.62 else 'Tree_Forest_Maple' if kind<.86 else 'Tree_Forest_Ginkgo'
-        put(name,float(x),float(y),float(z)-.3,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.55,.95)))
-    boulders=inside&(cs<1.1)&~trees&(cal_rng.random(len(cx))<.018*(1.3-clumps))
-    for x,y,z,gradient in zip(cx[boulders],cy[boulders],cz[boulders],cs[boulders]):
-        scale=float(cal_rng.uniform(1.6,3.2))
-        put('HD_NorthRockC',float(x),float(y),float(z)-(.1+.5*gradient)*scale,yaw=float(cal_rng.uniform(0,360)),scale=scale)
-        for _ in range(4):
-            px=float(x+cal_rng.uniform(-6,6));py=float(y+cal_rng.uniform(-6,6))
-            if craterpark.contains(px,py,margin=7.):continue
-            put('HD_NorthRockB',px,py,float(north_height(px,py))-.15,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.4,1.1)))
-    bushes=inside&(cs<.6)&~trees&~boulders&(cal_rng.random(len(cx))<.05*clumps)
-    for x,y,z in zip(cx[bushes],cy[bushes],cz[bushes]):
-        put('Bush_Ochre_A',float(x),float(y),float(z)-.08,yaw=float(cal_rng.uniform(0,360)),scale=float(cal_rng.uniform(.45,.8)))
-    print('CALDERA DRESSING',int(trees.sum()),'trees',int(boulders.sum()),'boulders',int(bushes.sum()),'bushes',flush=True)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
@@ -487,6 +459,10 @@ def generate():
             gain[(points[:,0]>x0)&(points[:,0]<x1)&(points[:,1]>y0)&(points[:,1]<y1)]=0
         points[:,4]*=1+(.35 if name.endswith('Pine') else .18)*gain
         inst[name]=points[keep].tolist()
+    # The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"), after the thinning so its trees keep their sizes;
+    # its own stream leaves every draw above unchanged.
+    from craterpark import placement as craterpark
+    print('CALDERA DRESSING',dress_caldera(put),flush=True)
     # Small rooted plants and stones dress the trail, leaving its riding corridor open.
     for index,(x,y,z) in enumerate(mountains.trail_points(north_height)):
         if y<460 or index%2:continue
@@ -635,7 +611,7 @@ def generate():
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
     from forest.ecotone import northern_ecotone
     northern_ecotone(inst)
-    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
+    return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),caldera_box()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
 # Broad scenery transition around the new city. Both far terrain and its trees
 # use this same grid, so lowering a hill cannot leave its tree line floating.
@@ -695,6 +671,118 @@ def north_height(x,y):
 def trail_distance(x,y):
     """Metres to the nearer of the north trail and the Mega Park trail."""
     return np.minimum(mountains.trail_distance(x,y),park_trail.distance(x,y))
+
+def caldera_box():
+    """[x0, y0, x1, y1] in island metres: the caldera inside its crest, where trees are near ones in Unreal (city.json
+    near_trees). A backdrop tree is dropped at load unless a ground trace finds terrain under it (JapanWorld.cpp), and
+    that trace drops every tree standing on the volcano's own mesh; near trees are kept, with shadows and collision."""
+    reach=float(mountains.rim_radius(np.linspace(-math.pi,math.pi,721)).max())+5
+    cx,cy=mountains.VOLCANO
+    return [round(cx-reach,1),round(cy-reach,1),round(cx+reach,1),round(cy+reach,1)]
+
+# Grey boulders that take no snow (southwest/island.py, the village material): (name, footprint radius and height per
+# unit of scale, scale range), so each stands 5-10 m across.
+CALDERA_BOULDERS=(('SW_Boulder_A',1.0,.75,(2.6,4.8)),('SW_Boulder_B',1.4,.6,(1.9,3.5)),('SW_Boulder_C',.7,1.25,(3.,4.6)))
+
+def dress_caldera(put):
+    """The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"): groves of pines, a few of maples and ginkgos,
+    on the floor and the wall's lower slope; big grey boulders in groups of two to five with scree where the ground is
+    bare; low ochre shrubs at the groves' edges and among the stones. Nothing within 7 m of the park's block. Returns the
+    counts placed."""
+    from craterpark import placement as craterpark
+    rng=np.random.default_rng(748)
+    vx,vy=mountains.VOLCANO;floor=mountains.caldera_floor()
+    def ground(x,y):
+        x=np.atleast_1d(np.asarray(x,float));y=np.atleast_1d(np.asarray(y,float))
+        z=north_height(x,y);slope=np.hypot(north_height(x+1,y)-z,north_height(x,y+1)-z)
+        _,_,radius,angle=mountains.polar(x,y)
+        return z,slope,radius<mountains.rim_radius(angle)-8
+    def candidates(n,reach):
+        a=rng.uniform(-math.pi,math.pi,n);d=reach*np.sqrt(rng.random(n))
+        return vx+d*np.cos(a),vy+d*np.sin(a)
+    # Stands gather where a slow noise field is high, so the groves come in drifts with open cinder between them.
+    def stand(x,y):return mountains.smooth((mountains.noise(x,y,110,749)+.35)/.7)
+    counts=dict(trees=0,boulders=0,groups=0,scree=0,shrubs=0)
+    stones=[]
+    # Boulder groups first, so the groves stand clear of them: on gentle ground up to 40 m up the wall.
+    cx,cy=candidates(900,mountains.RIM_RADIUS+40)
+    z,slope,inside=ground(cx,cy)
+    ok=inside&(slope<.8)&(z<floor+40)&~craterpark.contains(cx,cy,margin=16.)&(rng.random(len(cx))<.3+.7*(1-stand(cx,cy)))
+    centres=[]
+    for x,y in zip(cx[ok],cy[ok]):
+        if len(centres)>=30:break
+        if all(math.hypot(x-px,y-py)>45 for px,py in centres):centres.append((float(x),float(y)))
+    for gx,gy in centres:
+        group=[]
+        for _ in range(int(rng.integers(2,6))):
+            name,radius,tall,(s0,s1)=CALDERA_BOULDERS[int(rng.choice(3,p=[.45,.35,.2]))]
+            scale=float(rng.uniform(s0,s1));reach=radius*scale
+            for _ in range(8):
+                a=rng.uniform(0,math.tau);d=0 if not group else rng.uniform(reach+1,reach+7)
+                bx,by=(gx,gy) if not group else group[int(rng.integers(len(group)))][:2]
+                x,y=bx+d*math.cos(a),by+d*math.sin(a)
+                if any(math.hypot(x-px,y-py)<reach+pr-.5*min(reach,pr) for px,py,pr in group):continue
+                z,slope,inside=ground(x,y)
+                if not inside[0] or slope[0]>.9 or bool(craterpark.contains(x,y,margin=7.+reach)):continue
+                # Bed the stone so its downhill edge does not float.
+                put(name,x,y,float(z[0])-(.12*tall+.6*radius*float(slope[0]))*scale,yaw=float(rng.uniform(0,360)),scale=scale)
+                group.append((x,y,reach));break
+        if not group:continue
+        stones+=group;counts['groups']+=1;counts['boulders']+=len(group)
+        # Scree only on bare ground: the volcano's rock takes the snow mask, and on snow it reads as white pebbles.
+        for _ in range(int(rng.integers(3,8))):
+            x0,y0,r0=group[int(rng.integers(len(group)))]
+            a=rng.uniform(0,math.tau);d=r0+rng.uniform(1,6)
+            x,y=x0+d*math.cos(a),y0+d*math.sin(a)
+            if bool(craterpark.contains(x,y,margin=7.)) or float(mountains.snow(x,y,north_base_height))>.2:continue
+            put('HD_NorthRockB',x,y,float(north_height(x,y))-.12,yaw=float(rng.uniform(0,360)),scale=float(rng.uniform(.5,1.2)))
+            counts['scree']+=1
+        for _ in range(int(rng.integers(1,4))):
+            x0,y0,r0=group[int(rng.integers(len(group)))]
+            a=rng.uniform(0,math.tau);d=r0+rng.uniform(.5,3)
+            x,y=x0+d*math.cos(a),y0+d*math.sin(a)
+            z,slope,inside=ground(x,y)
+            if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)):continue
+            put('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B',x,y,float(z[0])-.08,yaw=float(rng.uniform(0,360)),
+                scale=float(rng.uniform(.55,.95)))
+            counts['shrubs']+=1
+    stone_xy=np.array([(x,y) for x,y,_ in stones]).reshape(-1,2);stone_r=np.array([r for *_,r in stones])
+    def clear_of_stones(x,y):
+        return not len(stones) or bool((np.hypot(stone_xy[:,0]-x,stone_xy[:,1]-y)>stone_r+2.5).all())
+    # Groves: mostly pines, some mixed, a few of autumn maples and ginkgos, on the floor and up to 30 m up the wall.
+    gx,gy=candidates(1600,mountains.RIM_RADIUS+20)
+    z,slope,inside=ground(gx,gy)
+    ok=inside&(slope<.6)&(z<floor+30)&~craterpark.contains(gx,gy,margin=12.)&(rng.random(len(gx))<stand(gx,gy))
+    groves=[]
+    for x,y in zip(gx[ok],gy[ok]):
+        if len(groves)>=48:break
+        if all(math.hypot(x-px,y-py)>26 for px,py in groves):groves.append((float(x),float(y)))
+    trees=[]
+    for x0,y0 in groves:
+        kind=rng.random()
+        mix=(.94,.98) if kind<.55 else (.6,.85) if kind<.82 else (.12,.62)     # pine, then maple, below these
+        spread=float(rng.uniform(6,13));members=int(rng.integers(3,12))
+        for _ in range(members):
+            for _ in range(4):
+                x=x0+rng.normal(0,spread);y=y0+rng.normal(0,spread)
+                z,slope,inside=ground(x,y)
+                if (not inside[0] or slope[0]>.75 or float(z[0])>floor+35 or bool(craterpark.contains(x,y,margin=7.))
+                        or not clear_of_stones(x,y) or any(math.hypot(x-px,y-py)<3.2 for px,py in trees[-40:])):continue
+                u=rng.random();name='Tree_Forest_Pine' if u<mix[0] else 'Tree_Forest_Maple' if u<mix[1] else 'Tree_Forest_Ginkgo'
+                scale=float(rng.uniform(.8,1.3) if name=='Tree_Forest_Pine' else rng.uniform(.7,1.05))
+                put(name,x,y,float(z[0])-.3-.5*float(slope[0]),yaw=float(rng.uniform(0,360)),scale=scale)
+                trees.append((x,y));break
+        # A few shrubs round the grove's edge.
+        for _ in range(int(rng.integers(1,4))):
+            a=rng.uniform(0,math.tau);d=spread*rng.uniform(1.1,1.8)
+            x,y=x0+d*math.cos(a),y0+d*math.sin(a)
+            z,slope,inside=ground(x,y)
+            if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
+            put('Bush_Ochre_A' if rng.random()<.7 else 'Bush_Ochre_B',x,y,float(z[0])-.08,yaw=float(rng.uniform(0,360)),
+                scale=float(rng.uniform(.5,.9)))
+            counts['shrubs']+=1
+    counts['trees']=len(trees);counts['groves']=len(groves)
+    return counts
 
 if __name__=='__main__':
     OUT.mkdir(parents=True,exist_ok=True);w=generate();(OUT/'city.json').write_text(json.dumps(w,indent=2)+'\n');print(len(w['buildings']),'city buildings')

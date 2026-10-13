@@ -15,6 +15,9 @@
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
+#if WITH_EDITOR
+#include "StaticMeshCompiler.h"
+#endif
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -624,6 +627,11 @@ void AJapanWorld::Load()
     // The far hills' trees stand on the hills' original heights, but the northern
     // surface and the Mega Park approach lowered that ground. Once every region's
     // ground is in place, drop each backdrop tree with no ground under its base.
+#if WITH_EDITOR
+    // An editor build compiles spawned meshes asynchronously, and a mesh still compiling has no collision yet: the
+    // volcano's ground was still building here, and the trace dropped about half its forest.
+    FStaticMeshCompilingManager::Get().FinishAllCompilation();
+#endif
     int32 Floating = 0, Grounded = 0;
     const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BackdropGround), true);
     for (auto* Group : BackdropGroups)

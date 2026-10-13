@@ -301,9 +301,10 @@ def colours(x,y,z):
     # Rising backdrop ground is still woodland. Exposed rock belongs to the
     # actual volcanic relief above its local apron, not an absolute elevation.
     forest=smooth((z-floor-135*LIFT+noise(x,y,125,27)*28)/(160*LIFT))*smooth((stretch(1120)-radius)/180)
-    rock=np.stack([.125+.022*rock_noise,.108+.024*rock_noise,.090+.026*rock_noise],axis=-1)
-    lichen=smooth((noise(x,y,12,99)-.45)/.20)
-    rock*=np.stack([1+.05*lichen,1+.08*lichen,1-.15*lichen],axis=-1)
+    # Cool lavender-grey volcanic rock (the Sunburst art direction), with sparse olive lichen.
+    rock=np.stack([.106+.022*rock_noise,.100+.022*rock_noise,.120+.026*rock_noise],axis=-1)
+    lichen=smooth((noise(x,y,12,99)-.5)/.20)
+    rock*=np.stack([1+.04*lichen,1+.07*lichen,1-.12*lichen],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
@@ -340,38 +341,58 @@ def snow_cover(x,y,z,step=STEP):
     _,_,radius,angle=polar(x,y)
     signed=np.full(x.shape,-1e9)
     pinch=.65+.35*smooth((noise(x,y,55,52)+.4)/.8)
-    for a,b in drainage():
+    # Each gully holds its own share of snow, and about a third hold none, so the flanks never read as a sunburst.
+    segments=drainage();per=len(segments)//40
+    rng=np.random.default_rng(413)
+    share=rng.uniform(.35,1.,40)*(rng.random(40)>.3)
+    for k,(a,b) in enumerate(segments):
+        if not share[k//per]:
+            continue
         dx,dy=b[0]-a[0],b[1]-a[1]
         t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT
-        signed=np.maximum(signed,np.where(width>0,np.maximum(width,3),0)-distance)
-    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
-    signed+=noise(x,y,25,19)*3+breakup*smooth((radius-stretch(170))/180)
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.9*share[k//per]
+        signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.5),0)-distance)
+    # Rock breaks each streak into fragments and ragged edges further down.
+    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4+noise(x,y,14,33)*2.5
+    signed+=noise(x,y,25,19)*3+breakup*smooth((radius-stretch(150))/160)
     # Each seeded ribbon already has a different reach; this broad weather
     # field breaks the snowline without a concentric cut across every gully.
-    ribbons=smooth((signed+4)/9)*smooth((stretch(520)+noise(x,y,220,51)*180-radius)/120)
+    ribbons=smooth((signed+3)/7)*smooth((stretch(500)+noise(x,y,220,51)*180-radius)/120)
     dy,dx=np.gradient(shade_height(z,step),step,step)
     nz=1/np.sqrt(1+dx*dx+dy*dy)
     crest,gully=relief_curvature(z,step)
-    faces=smooth((z-lifted(400))/(90*LIFT))*smooth((nz-.80)/.10)*smooth((noise(x,y,90,41)+noise(x,y,140,42)*.6+.15)/.5)*(1-crest)
+    # Small sheltered patches on the high benches, broken by fine noise rather than broad blobs.
+    patches=noise(x,y,32,41)+noise(x,y,13,42)*.45+noise(x,y,90,43)*.4
+    faces=smooth((z-lifted(400))/(90*LIFT))*smooth((nz-.80)/.10)*smooth((patches-.35)/.25)*(1-crest)
     ring=lambda r,s,seed:noise(np.cos(angle)*r,np.sin(angle)*r,s,seed)
-    # The caldera floor is patchy snow over cinders; drifts gather at the wall's foot and chutes run down the wall.
     foot=wall_foot(angle);rim_r=rim_radius(angle)
+    # The caldera floor is grey cinder with snow lying in patches and in drifts along the wall's foot.
     floor_r=foot-10+25*ring(240.,60.,95)
-    bowl=smooth((floor_r-radius)/12)*(1-.85*smooth((noise(x,y,34,96)-.2)/.2))
-    drifts=smooth((radius-foot+30)/20)*smooth((foot+25-radius)/15)
-    chutes=(smooth((np.sin(angle*21+1.5*ring(400.,60.,97))-.25)/.3)
-            *smooth((rim_r-14-radius)/18)*smooth((radius-foot+5)/12))
-    bowl=np.maximum.reduce([bowl,drifts,chutes])
+    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.12)/.22)
+    drifts=(smooth((radius-foot+30)/20)*smooth((foot+25-radius)/15)
+            *smooth((noise(x,y,22,94)+ring(300.,45.,92)*.5+.15)/.35))
+    # Chutes on the inner wall: irregular spacing, widths and reach, wandering off the radial line and
+    # following its hollows; some stop short of the foot.
+    wander=angle+noise(x,y,45,99)*.05
+    lane=noise(np.cos(wander)*470,np.sin(wander)*470,34.,97)+.35*gully
+    stop=foot+5+70*smooth((ring(470.,70.,93)+.2)/.8)
+    chutes=(smooth((lane-.08)/.2)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
+            *smooth((noise(x,y,16,91)+.75)/.4))
+    bowl=np.maximum.reduce([floor,drifts,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
     snow=np.maximum.reduce([(ribbons*(1-.75*crest)+.35*gully*smooth((z-lifted(300))/(120*LIFT)))*(1-inside),
                             faces*(1-inside),bowl])
     snow=np.clip(snow,0,1)*(1-.92*rim*(1-bowl))
-    line=lifted(230)+noise(x,y,180,83)*40*LIFT
-    return np.clip(snow,0,1)*smooth((z-line)/(90*LIFT))*smooth((nz-.42)/.30)
+    # Outside, snow lies heaviest in a broken collar just under the crest, gathering in its hollows.
+    collar=(smooth((radius-rim_r-14)/16)*smooth((rim_r+95+45*ring(470.,80.,45)-radius)/45)
+            *smooth((noise(x,y,26,44)+noise(x,y,11,46)*.3+.6*gully+.1)/.3)*(1-.5*crest))
+    line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
+    # Chutes and the collar hold snow on steeper ground than the open slopes do.
+    steep=np.maximum(collar,chutes)*smooth((nz-.30)/.22)
+    return np.clip(np.maximum(snow*smooth((nz-.42)/.30),steep),0,1)*line
 
 @lru_cache(maxsize=4)
 def snow_grid(base_sampler):

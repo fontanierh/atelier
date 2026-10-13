@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import yori
 import json
+import re
 import unreal
 import import_megapark as megapark
 
@@ -19,12 +20,15 @@ RESTYLE = OUT / 'textures'
 E = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
-ROUGHNESS = .8
+# Matte like the terrain and the Mega Park: the engine's default specular put a pale sky sheen on every surface.
+ROUGHNESS = 1.
+# Light painted concretes are lowered a little so the snow beside them still reads brighter.
+LIGHT = .85
 
 
-# The park's own hillside and edge guard carry snow like the caldera round them (docs/CRATERPARK.md, "Snow"): the block
-# and the boundary; the skating surfaces, foundations and bridges stay clear.
-SNOWY = {'material_024', 'material_027'}
+# The park's own hillside carries snow like the caldera round it (docs/CRATERPARK.md, "Snow"); the skating surfaces,
+# the edge guard and its coping, foundations and bridges stay clear.
+SNOWY = {'material_024'}
 
 
 def parent(kind):
@@ -73,10 +77,11 @@ def parent(kind):
              'float b=sin(W.x*.011+sin(W.y*.009)*1.7)*sin(W.y*.012+sin(W.x*.008)*1.4);'
              'float m=S*up*saturate((.62+.45*a+.18*b)*2.5);')
     base = custom(cover + 'return lerp(B,float3(.80,.83,.88),m);', inputs)
-    rough = custom(cover + 'return lerp(%.2f,.55,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    specular = custom(cover + 'return lerp(0.,.35,m);', inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     dark = node(unreal.MaterialExpressionConstant3Vector, constant=unreal.LinearColor(0., 0., 0., 1.))
     for n, prop in ((base, unreal.MaterialProperty.MP_BASE_COLOR), (rough, unreal.MaterialProperty.MP_ROUGHNESS),
-                    (dark, unreal.MaterialProperty.MP_EMISSIVE_COLOR)):
+                    (specular, unreal.MaterialProperty.MP_SPECULAR), (dark, unreal.MaterialProperty.MP_EMISSIVE_COLOR)):
         assert MEL.connect_material_property(n, '', prop)
     MEL.layout_material_expressions(m); MEL.recompile_material(m); E.save_loaded_asset(m)
     return m
@@ -105,6 +110,9 @@ def materials():
         # The restyled images carry their colour; a flat material keeps the source's sRGB base colour.
         colour = [1., 1., 1.] if entry else spec['baseColor']
         tint = [c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in colour]
+        mean = re.search(r'mean \[(\d+), (\d+), (\d+)\]', (entry or {}).get('how', ''))
+        if mean and min(int(v) for v in mean.groups()) > 150:
+            tint = [c * LIGHT for c in tint]
         MEL.set_material_instance_vector_parameter_value(mi, 'Tint', unreal.LinearColor(*tint, 1.))
         MEL.set_material_instance_scalar_parameter_value(mi, 'Snow', float(spec['id'] in SNOWY))
         overrides = mi.get_editor_property('base_property_overrides')

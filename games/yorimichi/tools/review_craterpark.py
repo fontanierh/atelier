@@ -26,9 +26,10 @@ SHOTS = {
     'dropin': ((985, 2505, 719.4), (820, 2380, 690), 75.),
     'bowls': ((790, 2335, 692), (700, 2445, 676), 72.),
     # The volcano from far away, from the ground (docs/VOLCANO.md).
-    'hidamari': ((730, 167, 40), (850, 2400, 560), 50.),
+    'hidamari': ((760, 260, 33), (850, 2400, 560), 50.),
+    'hidamari_east': ((1000, 300, 34), (850, 2400, 560), 50.),
     'belmonte': ((550, 4500, 215), (850, 2400, 560), 50.),
-    'road': ((-149, 1474, 132), (850, 2400, 600), 55.),
+    'trail': ((1060, 1130, 146), (850, 2400, 640), 60.),
 }
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)

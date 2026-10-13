@@ -63,15 +63,17 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
 
 ## Dressing
 
-The caldera round the park has its own planting (`hidamari/layout.py`, "CALDERA DRESSING"), from its own random
-stream: stunted pines with a few maples and ginkgos in clumps, big boulders with scree, and ochre shrubs, on the floor
-and the lower wall. Nothing is planted on the park's block, and the clearing after planting removes anything within 3 m
-of it.
+The caldera round the park has its own planting (`hidamari/layout.py` `dress_caldera`), from its own random stream:
+about 48 groves of pines, some mixed, a few of autumn maples and ginkgos, on the floor and the wall's lower slope; about
+30 groups of two to five grey boulders 5-10 m across (`SW_Boulder_*`, which take no snow) with scree on bare ground; and
+ochre shrubs. Nothing stands within 7 m of the park's block. The caldera is a `near_trees` box, so its trees cast
+shadows and keep trunk collision.
 
 ## Snow
 
-The block's hillside (`material_024`) and the edge guard (`material_027`) carry snow where they face up, in
-world-space patches (`import_craterpark.py` `SNOWY`). The skating surfaces, foundations and bridges stay clear.
+The block's hillside (`material_024`) carries snow where it faces up, in world-space patches (`import_craterpark.py`
+`SNOWY`). The skating surfaces, the edge guard and its coping, foundations and bridges stay clear. The park's materials
+are matte, like the terrain's.
 
 ## Restyle
 
