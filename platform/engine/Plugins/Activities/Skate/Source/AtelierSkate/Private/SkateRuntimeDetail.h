@@ -399,7 +399,8 @@ namespace SkateRuntimeDetail
         // A part's bounds and its instances' (an instanced mesh's, else one), for each smaller snapshot to skip what
         // lies outside it as the single-pass gather did.
         struct FPart { FMeshSurfaceRef Surface; const UBodySetup* Body=nullptr; FBox Bounds; TArray<FTransform> Instances; TArray<FBox> InstanceBounds;
-                       TArray<uint16> SlotSurfaces; };   // packed, per material slot (a body's shapes ride slot 0's)
+                       TArray<uint16> SlotSurfaces;      // packed, per material slot (a body's shapes ride slot 0's)
+                       bool bPark=false; };               // a skate park's own surface, kept whole at every radius
         TArray<FPart> Parts;
         TArray<TPair<FBox,TArray<FVector>>> Rails;
         TArray<TStrongObjectPtr<UObject>> Keep;
@@ -424,7 +425,11 @@ namespace SkateRuntimeDetail
             UBodySetup* Body=Mesh ? Mesh->GetBodySetup() : nullptr;
             if (!Body) continue;
             FGatherJob::FPart Part; Part.Bounds=C->Bounds.GetBox();
-            if (Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple) { Part.Surface=MeshSurface(Mesh); if (!Part.Surface) continue; }
+            Part.bPark=C->GetOwner() && C->GetOwner()->ActorHasTag(TEXT("SkatePark"));
+            // A component tagged SkateSimpleCollision (a tree whose leaves stop walkers) rides its simple shapes, its
+            // trunk, so a forest's leaf cards neither fill the budget nor catch the board.
+            const bool bSimple=C->ComponentHasTag(TEXT("SkateSimpleCollision")) && Body->AggGeom.GetElementCount()>0;
+            if (!bSimple && Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple) { Part.Surface=MeshSurface(Mesh); if (!Part.Surface) continue; }
             else { Part.Body=Body; if (bKeep) Job.Keep.Emplace(Body); }
             const ESkateSurface Override=ComponentSurface(C,Mesh,Settings);
             for (int32 Slot=0; Slot<FMath::Max(1,C->GetNumMaterials()); ++Slot) Part.SlotSurfaces.Add(SlotSurface(C,Slot,Override,Settings));
@@ -457,6 +462,7 @@ namespace SkateRuntimeDetail
     inline bool FillWorld(const FGatherJob& Job, FSnapshot& Snapshot, double& Reach)
     {
         double Radius=0; const double Began=FPlatformTime::Seconds();
+        const FBox Whole(Job.Centre-FVector(GatherRadii[0]),Job.Centre+FVector(GatherRadii[0]));
         for (const double Try : GatherRadii)
         {
             Radius=Try; Snapshot.Region=FBox(Job.Centre-FVector(Radius),Job.Centre+FVector(Radius)); Snapshot.Points.Reset(); Snapshot.Surfaces.Reset();
@@ -464,11 +470,14 @@ namespace SkateRuntimeDetail
             // makes (over budget the same way: a snapshot over it is dropped for the next radius either way).
             TArray<TArray<FVector3f>> PartPoints; PartPoints.SetNum(Job.Parts.Num());
             TArray<TArray<uint16>> PartSurfaces; PartSurfaces.SetNum(Job.Parts.Num());
-            ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints,&PartSurfaces](int32 P)
+            ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints,&PartSurfaces,&Whole](int32 P)
             {
                 const FGatherJob::FPart& Part=Job.Parts[P];
-                if (!Part.Bounds.Intersect(Snapshot.Region)) return;
-                FSnapshot Local; Local.Region=Snapshot.Region; Local.Budget=MAX_int32/4;
+                // A park's snapshot stays centred on the park, so a dense surround (a forest) that shrinks the radius
+                // must shrink only the surround: the park's far ramps and deck keep their collision.
+                const FBox& Region=Part.bPark ? Whole : Snapshot.Region;
+                if (!Part.Bounds.Intersect(Region)) return;
+                FSnapshot Local; Local.Region=Region; Local.Budget=MAX_int32/4;
                 for (int32 I=0; I<Part.Instances.Num(); ++I)
                 {
                     const FTransform& T=Part.Instances[I];
