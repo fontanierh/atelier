@@ -9,7 +9,7 @@ import numpy as np
 from megapark import placement as megapark
 
 BOUNDS = (-700., 500., 2400., 3000.)
-STEP = 10.
+STEP = 5.
 TRAIL = [(1120,335),(1120,440),(1120,500),(1100,555),(1040,620),
          (1030,680),(1090,735),(1170,780),(1200,850),(1160,915),
          (1080,960),(1000,1020),(1010,1090),(1060,1130)]
@@ -64,8 +64,7 @@ def drainage():
 
 def drainage_field(x,y):
     x,y=np.broadcast_arrays(x,y)
-    # Positive inside snow ribbons; the cap connects all gullies near the summit.
-    snow=190+noise(x,y,95,28)*24-np.hypot(x-550,y-1930)
+    snow=np.full(x.shape,-1e9)
     cut=np.zeros_like(x,dtype=float)
     for a,b in drainage():
         dx=b[0]-a[0];dy=b[1]-a[1]
@@ -172,9 +171,12 @@ def on_grid(x,y,field):
 def colours(x,y,z):
     """The ground's vertex colours: grass on the apron, forest green, and rock high up."""
     rock_noise=noise(x,y,26,9)*.65+noise(x,y,85,20)*.35
-    forest=smooth((z-140+noise(x,y,125,27)*28)/75)
-    # Muted warm/slate rock planes sit behind the warm tree canopy.
-    rock=np.stack([.19+.035*rock_noise,.173+.030*rock_noise,.145+.026*rock_noise],axis=-1)
+    radius=np.hypot(x-550,y-1930)
+    floor=47+np.maximum(y-500,0)*.020
+    # Rising backdrop ground is still woodland. Exposed rock belongs to the
+    # actual volcanic relief above its local apron, not an absolute elevation.
+    forest=smooth((z-floor-135+noise(x,y,125,27)*28)/160)*smooth((1120-radius)/180)
+    rock=np.stack([.105+.022*rock_noise,.112+.024*rock_noise,.125+.026*rock_noise],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
     apron=smooth((y-500)/190)
@@ -184,28 +186,60 @@ def colours(x,y,z):
     under=megapark_forest.floor(x,y)*(1-smooth((z-205)/30))
     litter=noise(x,y,40,41)
     floor=np.stack([.066+.018*litter,.062+.014*litter,np.full_like(x,.026)],axis=-1)
-    return colors*(1-under[...,None])+floor*under[...,None]
+    colors=colors*(1-under[...,None])+floor*under[...,None]
+    t=smooth((y-2580)/420)
+    join=smooth(np.clip(t+t*(1-t)*noise(x,y,140,82)*.7,0,1))
+    north=smooth((y-3000)/300)[...,None]
+    palette=np.array([.055,.11,.035])*(1-north)+np.array([.105,.145,.055])*north
+    return colors*(1-join[...,None])+palette*join[...,None]
+
+def snow_cover(x,y,z):
+    """Snow in drainage hollows and the crater bowl, with bare convex crests."""
+    radius=np.hypot(x-550,y-1930)
+    signed=np.full(x.shape,-1e9)
+    for a,b in drainage():
+        dx,dy=b[0]-a[0],b[1]-a[1]
+        t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
+        distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
+        width=a[2]*(1-t)+b[2]*t
+        signed=np.maximum(signed,np.where(width>0,np.maximum(width,10),0)-distance)
+    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
+    signed+=noise(x,y,25,19)*3+breakup*smooth((radius-170)/180)
+    # Each seeded ribbon already has a different reach; this broad weather
+    # field breaks the snowline without a concentric cut across every gully.
+    ribbons=smooth((signed+4)/9)*smooth((520+noise(x,y,220,51)*180-radius)/120)
+    dy,dx=np.gradient(z,STEP,STEP)
+    nz=1/np.sqrt(1+dx*dx+dy*dy)
+    lap=np.gradient(dx,STEP,axis=1)+np.gradient(dy,STEP,axis=0)
+    for _ in range(round(3*(10/STEP)**2)):
+        padded=np.pad(lap,1,mode='edge')
+        lap=(padded[1:-1,1:-1]+padded[:-2,1:-1]+padded[2:,1:-1]+padded[1:-1,:-2]+padded[1:-1,2:])/5
+    crest=smooth((-lap-.002)/.006);gully=smooth((lap-.001)/.005)
+    faces=smooth((z-400)/90)*smooth((nz-.80)/.10)*smooth((noise(x,y,90,41)+noise(x,y,140,42)*.6+.15)/.5)*(1-crest)
+    bowl=smooth((62-radius)/22)
+    rim=np.exp(-((radius-100)/24)**2)
+    snow=np.maximum.reduce([ribbons*(1-.75*crest)+.35*gully*smooth((z-300)/120),faces,bowl])
+    snow=np.clip(snow,0,1)*(1-.92*rim*(1-bowl))
+    line=230+noise(x,y,180,83)*40
+    return np.clip(snow,0,1)*smooth((z-line)/90)*smooth((nz-.42)/.30)
+
+@lru_cache(maxsize=4)
+def snow_grid(base_sampler):
+    return snow_cover(*surface_grid(base_sampler))
+
+def snow(x,y,base_sampler):
+    ix,iy,u,v=_cell(x,y);field=snow_grid(base_sampler)
+    return _barycentric(field[iy,ix],field[iy,ix+1],field[iy+1,ix],field[iy+1,ix+1],u,v)
 
 def mesh(base_sampler):
     xs=np.arange(BOUNDS[0],BOUNDS[2]+1,STEP);ys=np.arange(BOUNDS[1],BOUNDS[3]+1,STEP)
     x,y,z=surface_grid(base_sampler)
     colors=colours(x,y,z)
-    radius=np.hypot(x-550,y-1930)
-    # Snow collects in broken, tapering gullies instead of long uniform ribbons.
-    # Preserve a continuous crown, then expose irregular rock islands downslope.
-    breakup=noise(x,y,38,31)*6+noise(x,y,83,32)*4
-    exposure=smooth((radius-170)/180)
-    signed=drainage_field(x,y)[0]+noise(x,y,25,19)*3
-    signed-=smooth((radius-150)/130)*2+smooth((radius-420)/300)*3
-    signed+=breakup*exposure
-    signed=np.maximum(signed,170+noise(x,y,65,33)*14-radius)
-    signed=np.minimum(signed,z-235)
     dy,dx=np.gradient(z,STEP,STEP)
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
     # Soft continuous snow masks replace hard clipped lavender polygons.
-    snow=smooth((signed+10)/22)*smooth((normals[:,:,2]-.42)/.30)
-    snow*=smooth((z-230)/90)
+    mask=snow_grid(base_sampler)
     # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
     from megapark import gate
     from communitypark import layout as community_park
@@ -213,13 +247,13 @@ def mesh(base_sampler):
     width=len(xs)
     for j in range(len(ys)-1):
         for i in range(len(xs)-1):
-            if gate.cell_inside(x[j,i],y[j,i]) or community_park.cell_inside(x[j,i],y[j,i]):continue
+            if gate.cell_inside(x[j,i],y[j,i],STEP) or community_park.cell_inside(x[j,i],y[j,i],STEP):continue
             a=j*width+i;b=a+1;c=a+width+1;d=a+width
             faces.extend([(a,b,c),(a,c,d)])
     faces=np.asarray(faces,dtype=np.int32)
     used=np.unique(faces);remap=np.full(x.size,-1,dtype=np.int32);remap[used]=np.arange(len(used))
     return dict(vertices=np.stack([x,y,z],-1).reshape(-1,3)[used],faces=remap[faces],
-                colours=np.dstack([colors,snow]).reshape(-1,4)[used],normals=normals.reshape(-1,3)[used])
+                colours=np.dstack([colors,mask]).reshape(-1,4)[used],normals=normals.reshape(-1,3)[used])
 
 
 def trail_mesh(surface):

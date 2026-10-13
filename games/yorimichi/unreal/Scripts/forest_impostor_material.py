@@ -19,7 +19,7 @@ def parent(default_normal):
     uv=node(U.MaterialExpressionTextureCoordinate)
     tangent=node(U.MaterialExpressionVertexTangentWS);vertex=node(U.MaterialExpressionVertexNormalWS)
     mapped=node(U.MaterialExpressionCustom,output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
-                code='float3 n=Texture2DSample(Tex,TexSampler,UV).rgb*2-1; return normalize(T*n.x+cross(N,T)*n.y+N*n.z);')
+                code='float3 n=Texture2DSample(Tex,TexSampler,UV).rgb*2-1; return normalize(T*n.x-cross(N,T)*n.y+N*n.z);')
     values=[('Tex',normal,''),('UV',uv,''),('T',tangent,''),('N',vertex,'')]
     args=[]
     for name,expression,output in values:
@@ -49,6 +49,7 @@ def parent(default_normal):
 
 
 def instance(name,record,output,master):
+    assert record['normal_space']=='camera-right-up-outward',name
     E=U.EditorAssetLibrary;M=U.MaterialEditingLibrary;AT=U.AssetToolsHelpers.get_asset_tools();textures={}
     for kind,file in record['atlases'].items():
         task=U.AssetImportTask();task.filename=str(output/file);task.destination_path='/Game/Japan/Textures'

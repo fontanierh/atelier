@@ -16,7 +16,7 @@ OUT = yori.OUT / 'belmonte'
 
 
 def finish_surfaces(data):
-    """Authored colours with the same neutral detail treatment as Hidamari."""
+    """Current scenery and a Tuscan ground palette with neutral texture grain."""
     materials, images = {}, {}
     for path, entry in data['materials'].items():
         if path.endswith('MI_B_foliage'):
@@ -30,20 +30,24 @@ def finish_surfaces(data):
         tint = np.array(vectors.get('Tint', [1., 1., 1., 1.])) * vectors.get('StableColor', [1., 1., 1., 1.])
         layers = {}
         if terrain:
-            for layer in ('Dry', 'Green', 'Dirt', 'Rock'):
-                layers[layer] = (np.array(vectors[layer + 'Mean'][:3]) * vectors[layer + 'Tint'][:3]).tolist()
+            layers={layer:list(colour) for layer,colour in source.TERRAIN_LAYERS.items()}
         materials[path] = {'name': name, 'colour': colour, 'tint': tint.tolist(), 'terrain': terrain,
-                           'layers': layers, 'tile_m': 1. if atlas else 1. / max(scalars.get('Scale', .25), .001),
+                           'layers': layers, 'tile_m': 9. if terrain else 1. if atlas else 1. / max(scalars.get('Scale', .25), .001),
                            'white_vertex': 'Target' in vectors or 'Color' in vectors,
                            'brightness': scalars.get('Brightness', 1.), 'atlas': atlas,
                            'water': 'water' in path.lower(), 'texture': None}
         if not texture:
             continue
-        key = texture + (':atlas' if atlas else ':detail')
+        key = ('tuscan-ground' if terrain else texture) + (':atlas' if atlas else ':detail')
         if key not in images:
-            image_info = data['textures'][texture]
-            image_path = source.LIBRARY / image_info['file']
-            assert source.sha(image_path) == image_info['sha256'], image_path
+            if terrain:
+                image_path=yori.ASSETS/'environment/textures/tuscan-ground.jpg'
+                provenance=json.loads(image_path.with_suffix('.provenance.json').read_text())
+                assert source.sha(image_path)==provenance['source_sha256'],image_path
+            else:
+                image_info = data['textures'][texture]
+                image_path = source.LIBRARY / image_info['file']
+                assert source.sha(image_path) == image_info['sha256'], image_path
             image = Image.open(image_path).convert('RGB')
             image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
             if not atlas:

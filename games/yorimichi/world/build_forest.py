@@ -56,11 +56,12 @@ def main():
             assert count<counts[-1],(name,level,count)
             counts.append(count);A.export(obj,obj.name);bpy.data.objects.remove(obj,do_unlink=True)
         proxy=forest_impostors.bake(base,output)
-        A.Mesh=original;obj=forest_impostors.mesh(name,proxy,A.MATS['Bark'])
+        bark='BarkOlive' if args[0]=='olive' else 'Bark'
+        A.Mesh=original;obj=forest_impostors.mesh(name,proxy,A.MATS[bark])
         counts.append(sum(len(p.vertices)-2 for p in obj.data.polygons));A.export(obj,obj.name)
         bpy.data.objects.remove(obj,do_unlink=True)
         report[name]={**dimensions,'leaf':args[-1],'triangles':counts,'screen_sizes':[1.,.24,.075,.018],
-                      'impostor':proxy,'impostor_slot':name+'_Impostor'}
+                      'impostor':proxy,'impostor_slot':name+'_Impostor','impostor_bark':bark}
         bpy.data.objects.remove(base,do_unlink=True)
         print('FOREST CROWN COMPLETE',name,counts,flush=True)
     A.Mesh=original

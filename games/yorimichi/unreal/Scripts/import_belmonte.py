@@ -40,9 +40,10 @@ def parent():
 
     vc = node(unreal.MaterialExpressionVertexColor)
     uv = node(unreal.MaterialExpressionTextureCoordinate)
+    world = node(unreal.MaterialExpressionWorldPosition)
     tex = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Tex',
                texture=E.load_asset('/Engine/EngineResources/WhiteSquareTexture'))
-    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('UV', uv, ''), ('Tex', tex, ''), ('Tile', scalar('Tile', 4.), ''),
+    inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('UV', uv, ''), ('World', world, ''), ('Tex', tex, ''), ('Tile', scalar('Tile', 4.), ''),
               ('Colour', colour('Colour', (.7, .6, .4)), ''), ('Tint', colour('Tint', (1., 1., 1.)), ''),
               ('WhiteVertex', scalar('WhiteVertex', 0.), ''), ('Strength', scalar('Strength', 0.), ''),
               ('Brightness', scalar('Brightness', 1.), ''), ('Atlas', scalar('Atlas', 0.), ''),
@@ -58,7 +59,8 @@ float4 weights = float4(C, Alpha);
 weights /= max(dot(weights, float4(1,1,1,1)), .001);
 float3 ground = weights.r*Dry.rgb + weights.g*Green.rgb + weights.b*Dirt.rgb + weights.a*Rock.rgb;
 paint = lerp(paint, ground, Terrain);
-float3 detail = Texture2DSample(Tex, TexSampler, UV/Tile).rgb;
+float2 coord=lerp(UV/Tile,World.xy/(Tile*100),Terrain);
+float3 detail = Texture2DSample(Tex, TexSampler, coord).rgb;
 float3 surface = lerp(1, detail*lerp(2,1,Atlas), Strength);
 return paint * Tint.rgb * surface * Brightness;
 ''')
@@ -105,7 +107,7 @@ def textures(report):
     return result
 
 
-def join_parent():
+def join_parent(texture):
     name = 'M_BelmonteJoin'; folder = ROOT + '/Materials'
     material = E.load_asset(folder+'/'+name) if E.does_asset_exist(folder+'/'+name) else AT.create_asset(name, folder, unreal.Material, unreal.MaterialFactoryNew())
     MEL.delete_all_material_expressions(material)
@@ -115,22 +117,13 @@ def join_parent():
         return result
     vc = node(unreal.MaterialExpressionVertexColor)
     world = node(unreal.MaterialExpressionWorldPosition)
-    task = unreal.AssetImportTask()
-    task.filename = str(yori.ASSETS/'environment/textures/tuscan-ground.jpg')
-    task.destination_path = ROOT+'/Textures'; task.destination_name = 'T_TuscanGround'
-    task.automated = True; task.replace_existing = True; task.save = True
-    AT.import_asset_tasks([task])
-    texture = E.load_asset(ROOT+'/Textures/T_TuscanGround'); assert texture
-    texture.set_editor_property('srgb',True)
-    texture.set_editor_property('lod_group',unreal.TextureGroup.TEXTUREGROUP_WORLD)
-    E.save_loaded_asset(texture)
+    assert texture
     ground = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Ground', texture=texture)
     inputs = [('C', vc, ''), ('Alpha', vc, 'A'), ('World', world, ''), ('Ground', ground, '')]
     shade = node(unreal.MaterialExpressionCustom, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3,
                  code='''float3 valley=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
 float3 grain=Texture2DSample(Ground,GroundSampler,World.xy/900.).rgb;
-float detail=clamp(dot(grain,float3(.299,.587,.114))/.156,.6,1.5);
-return valley*lerp(1.,detail,.7*4*Alpha*(1-Alpha));''')
+return valley*lerp(float3(1,1,1),grain*2,1-Alpha);''')
     custom_inputs = []
     for key, _, _ in inputs:
         value = unreal.CustomInput(); value.set_editor_property('input_name', key); custom_inputs.append(value)
@@ -148,15 +141,21 @@ return valley*lerp(1.,detail,.7*4*Alpha*(1-Alpha));''')
     base, emission = atmosphere.apply(material, shade, fill)
     assert MEL.connect_material_property(base, '', unreal.MaterialProperty.MP_BASE_COLOR)
     assert MEL.connect_material_property(emission, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-    assert MEL.connect_material_property(node(unreal.MaterialExpressionConstant, r=1.), '', unreal.MaterialProperty.MP_ROUGHNESS)
-    assert MEL.connect_material_property(node(unreal.MaterialExpressionConstant, r=0.), '', unreal.MaterialProperty.MP_SPECULAR)
+    for prop,code in [(unreal.MaterialProperty.MP_ROUGHNESS,'return lerp(.87,1.,A);'),
+                      (unreal.MaterialProperty.MP_SPECULAR,'return lerp(.12,0.,A);')]:
+        value=node(unreal.MaterialExpressionCustom,output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT1,code=code)
+        alpha=unreal.CustomInput();alpha.set_editor_property('input_name','A');value.set_editor_property('inputs',[alpha])
+        assert MEL.connect_material_expressions(vc,'A',value,'A')
+        assert MEL.connect_material_property(value,'',prop)
     material.set_editor_property('used_with_instanced_static_meshes', True)
     MEL.recompile_material(material); E.save_loaded_asset(material)
     return material
 
 
 def surfaces(report, master, images):
-    join = join_parent()
+    ground={entry['texture'] for entry in report['materials'].values() if entry.get('terrain')}
+    assert len(ground)==1,ground
+    join = join_parent(images[ground.pop()])
     for entry in report['materials'].values():
         name = entry['name']
         path = ROOT + '/Materials/' + name

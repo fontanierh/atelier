@@ -18,7 +18,7 @@ def material():
     task.automated=True;task.replace_existing=True;task.save=True
     unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
     rock=e.load_asset('/Game/Japan/Textures/T_VolcanicRock');assert rock
-    rock.set_editor_property('srgb',True);rock.set_editor_property('max_texture_size',1024);e.save_loaded_asset(rock)
+    rock.set_editor_property('srgb',True);rock.set_editor_property('max_texture_size',2048);e.save_loaded_asset(rock)
     vc=l.create_material_expression(m,unreal.MaterialExpressionVertexColor,-500,0)
     depth=l.create_material_expression(m,unreal.MaterialExpressionPixelDepth,-500,200)
     c=l.create_material_expression(m,unreal.MaterialExpressionCustom,-100,0)
@@ -33,13 +33,12 @@ float3 macro=Texture2DSample(Tex,TexSampler,p.yz*.137+.23).rgb*w.x
            +Texture2DSample(Tex,TexSampler,p.xy*.137+.23).rgb*w.z;
 rock=lerp(rock,macro,smoothstep(12000.,90000.,D)*.45);
 float grain=clamp(dot(rock,float3(.299,.587,.114))/.092,.45,1.6);
-float join=smoothstep(295000.,300000.,-P.y);
+float join=smoothstep(258000.,300000.,-P.y);
 float high=smoothstep(16000.,26000.,P.z)*(1-join);
 float3 ground=base*lerp(1.,grain,high*.85);
-float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D));
-float3 snow=float3(.86,.85,.81)*(1.+(grain-1.)*.06);
-float3 forest=lerp(float3(.055,.11,.035),float3(.105,.145,.055),smoothstep(300000.,330000.,-P.y));
-return lerp(lerp(ground*strata,snow,saturate(A)),forest,join)*(1-'''+atmosphere.SHARE+');')
+float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
+float3 snow=float3(.78,.81,.86)*(1.+(grain-1.)*.06);
+return lerp(ground*strata,snow,saturate(A))*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
     for key in ('C','D','A','P','N','Tex'):

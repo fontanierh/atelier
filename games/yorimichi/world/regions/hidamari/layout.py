@@ -367,25 +367,29 @@ def generate():
     # Batch heightfield evaluation keeps the denser forest cheap to regenerate.
     forest_rng=np.random.default_rng(743)
     forest_xy=forest_rng.uniform([-680,370],[2380,2940],size=(155000,2))
+    seam_rng=np.random.default_rng(745)
+    forest_xy=np.concatenate([forest_xy,seam_rng.uniform([-650,2940],[1750,3000],size=(2840,2))])
     forest_z=north_height(forest_xy[:,0],forest_xy[:,1])
+    forest_snow=mountains.snow(forest_xy[:,0],forest_xy[:,1],north_base_height)
     forest_distance=trail_distance(forest_xy[:,0],forest_xy[:,1])
-    for (x,y),sample_z,distance in zip(forest_xy,forest_z,forest_distance):
+    from forest.ecotone import kinds
+    forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
+    clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
+    forest_clumps=.55+.55*mountains.smooth((clump+.55)/.7)
+    ceilings=330+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60
+    forest_altitude=mountains.smooth((ceilings-forest_z)/100)
+    for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
             if min(abs(x-c) for c in ROAD_X)<10:continue
             if any(abs(x-b['position'][0])<b['width']/2+10 and abs(y-b['position'][1])<b['depth']/2+10 for b in buildings):continue
         z=float(sample_z)
-        if z<2 or z>360 or distance<7:continue
+        if z<2 or z>400 or cover>.3 or distance<7:continue
         density=.82+.16*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
-        clump=math.sin(x*.021+math.sin(y*.017)*2.1)*math.cos(y*.019-x*.006)
-        density*=.25+.85*float(mountains.smooth((clump+.55)/.5))
-        density*=float(mountains.smooth((330+35*math.sin(x*.006)-z)/150))
+        density*=float(clump*altitude)
         if r.random()>density:continue
-        patch=math.sin(x*.009+math.sin(y*.006)*1.8)+.7*math.cos(y*.014-x*.003)
-        kind=('Pine' if patch<-.5 else 'Rust' if patch<.45 else 'Gold')
-        if z>160 and mountains.noise(x,y,180.,76)<.25:kind='Pine'
         name=MODEL_BY_KIND[kind]
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
@@ -398,7 +402,7 @@ def generate():
         if not len(points):continue
         distance=trail_distance(points[:,0],points[:,1])
         far=mountains.smooth((distance-80)/120)*mountains.smooth((points[:,1]-650)/250)
-        keep=thin_rng.random(len(points))>=.40*far
+        keep=thin_rng.random(len(points))>=.15*far
         points[:,4]*=1+.08*far
         inst[name]=points[keep].tolist()
     # Small rooted plants and stones dress the trail, leaving its riding corridor open.

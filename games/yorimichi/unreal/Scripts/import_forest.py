@@ -26,7 +26,7 @@ def main():
         texture=E.load_asset('/Game/Japan/Textures/T_'+slot);assert texture
         texture.set_editor_property('srgb',True);texture.set_editor_property('max_texture_size',1024)
         texture.set_editor_property('do_scale_mips_for_alpha_coverage',True)
-        texture.set_editor_property('alpha_coverage_thresholds',U.Vector4(0,0,0,.333))
+        texture.set_editor_property('alpha_coverage_thresholds',U.Vector4(0,0,0,.4))
         E.save_loaded_asset(texture)
         path='/Game/Japan/Materials/MI_'+slot
         mi=E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset('MI_'+slot,'/Game/Japan/Materials',U.MaterialInstanceConstant,U.MaterialInstanceConstantFactoryNew())

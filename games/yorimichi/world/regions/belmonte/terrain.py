@@ -76,7 +76,7 @@ def collar():
         boundary = points[np.isclose(points[:, across], edge, atol=.002), along]
         knots = xs if along == 0 else ys
         if across == 1 and edge == inner[1]:
-            knots = np.r_[knots, np.arange(H.mountains.BOUNDS[0], H.mountains.BOUNDS[2] + 10., 10.)]
+            knots = np.r_[knots, np.arange(H.mountains.BOUNDS[0], H.mountains.BOUNDS[2] + H.mountains.STEP, H.mountains.STEP)]
         u = np.unique(np.clip(np.r_[(boundary - lo) / (hi - lo),
                                    (knots - olo) / (ohi - olo), np.linspace(0., 1., int(abs(hi - lo) / 10.) + 2)], 0., 1.))
         ix, iy = (lo + u * (hi - lo), np.full_like(u, edge)) if along == 0 else (np.full_like(u, edge), lo + u * (hi - lo))

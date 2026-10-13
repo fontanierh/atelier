@@ -10,6 +10,8 @@ from atelier.gltf import glb_pack, glb_parts
 LIBRARY = yori.ASSETS / 'belmonte'
 MANIFEST = LIBRARY / 'source.json'
 FRAME = np.array([[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]])
+TERRAIN_LAYERS = {'Dry': (.24,.265,.095), 'Green': (.105,.205,.055),
+                  'Dirt': (.36,.26,.125), 'Rock': (.25,.265,.24)}
 
 
 @lru_cache(maxsize=1)
@@ -181,8 +183,7 @@ def terrain_colours():
         for path in placed[entry['source_asset']]:
             material = data['materials'][path]
             vectors = material['vectors']
-            layers = np.array([np.array(vectors[layer+'Mean'][:3]) * vectors[layer+'Tint'][:3]
-                               for layer in ('Dry', 'Green', 'Dirt', 'Rock')])
+            layers = np.array(list(TERRAIN_LAYERS.values()))
             tint = np.array(vectors.get('Tint', [1., 1., 1.])[:3]) * vectors.get('StableColor', [1., 1., 1.])[:3]
             palettes.append((layers, tint * material['scalars'].get('Brightness', 1.)))
         f, c = triangles(LIBRARY / entry['path'], palettes)

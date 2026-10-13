@@ -145,10 +145,14 @@ def woodland(surface, limit=17000):
     indices = np.flatnonzero(keep & (distance > 24.))
     rng.shuffle(indices)
     result = {}
+    from forest.ecotone import kinds, tuscan_mask
+    from forest.specs import MODEL_BY_KIND
+    forest_kind=kinds(x,y,z);tuscan=tuscan_mask(x,y)
     for index in indices[:limit]:
-        from hidamari.mountains import noise
-        patch = float(noise(x[index], y[index], 180., 72))
-        name = ('Tree_Tuscan_Pine' if patch < -.35 else 'Tree_Tuscan_Olive' if patch > .5 else 'Tree_Tuscan_Oak')
+        kind=forest_kind[index]
+        name=MODEL_BY_KIND[kind]
+        if tuscan[index]:
+            name='Tree_Tuscan_Pine' if kind=='Pine' else 'Tree_Tuscan_Olive' if kind=='Gold' else 'Tree_Tuscan_Oak'
         scale = float(rng.uniform(.85, 1.2)); angle = float(rng.uniform(0., math.tau))
         result.setdefault(str(name), []).append({'translation_cm': [(float(x[index]) - L.ORIGIN[0]) * 100.,
                                                                     -(float(y[index]) - L.ORIGIN[1]) * 100.,

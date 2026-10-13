@@ -44,10 +44,10 @@ def inside(x, y):
     return (x >= x0) & (x <= x1) & (y >= y0) & (y <= y1)
 
 
-def cell_inside(x, y):
-    """Whether the foothills' 10 m cell with its south-west corner at (x, y) lies on the patch."""
+def cell_inside(x, y, size=10.):
+    """Whether a foothill cell lies wholly on the finer ground patch."""
     x0, y0, x1, y1 = GATE
-    return (x >= x0 - 1e-6) & (x + 10. <= x1 + 1e-6) & (y >= y0 - 1e-6) & (y + 10. <= y1 + 1e-6)
+    return (x >= x0 - 1e-6) & (x + size <= x1 + 1e-6) & (y >= y0 - 1e-6) & (y + size <= y1 + 1e-6)
 
 
 def _smooth(t):

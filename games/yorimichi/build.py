@@ -291,7 +291,9 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[region, ASSETS / 'belmonte', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
+             inputs=[region, ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+                     ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
+                     REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', YORI],
              needs=['world.layout'], outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),

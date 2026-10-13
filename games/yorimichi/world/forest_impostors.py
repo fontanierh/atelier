@@ -71,6 +71,12 @@ def bake(obj, output, size=256):
             if mode=='normal':image.colorspace_settings.name='Non-Color'
             pixels=np.array(image.pixels[:],np.float32).reshape(size,size,4)
             bpy.data.images.remove(image)
+            if mode=='normal':
+                normals=pixels[:,:,:3]*2-1
+                normals*=np.where(normals[:,:,2]>0,-1.,1.)[:,:,None]
+                normals[:,:,2]*=-1
+                normals/=np.maximum(np.linalg.norm(normals,axis=2,keepdims=True),1e-6)
+                pixels[:,:,:3]=normals*.5+.5
             if mode=='colour':
                 yy,xx=np.nonzero(pixels[:,:,3]>.005)
                 assert len(xx),(obj.name,view,'empty crown bake')
@@ -103,7 +109,14 @@ def bake(obj, output, size=256):
                 pixels[~filled,:3]=leaf_colour
             tile=bpy.data.images.new('ForestTile',x1-x0,y1-y0,alpha=True)
             tile.colorspace_settings.name='Non-Color';tile.pixels[:]=pixels.ravel().tolist();tile.scale(size,size)
-            cells.append(np.array(tile.pixels[:],np.float32).reshape(size,size,4));bpy.data.images.remove(tile)
+            pixels=np.array(tile.pixels[:],np.float32).reshape(size,size,4)
+            bpy.data.images.remove(tile)
+            if mode=='normal':
+                normals=pixels[:,:,:3]*2-1
+                normals/=np.maximum(np.linalg.norm(normals,axis=2,keepdims=True),1e-6)
+                pixels[:,:,:3]=normals*.5+.5
+                pixels[pixels[:,:,3]<.005,:3]=(.5,.5,1.)
+            cells.append(pixels)
             print('FOREST BAKE',obj.name,mode,view+1,'/4',flush=True)
         # Blender's pixels are bottom-up; cell0 is the atlas's top-left.
         pixels=np.concatenate([np.concatenate(cells[2:4],1),np.concatenate(cells[:2],1)],0)
@@ -119,6 +132,7 @@ def bake(obj, output, size=256):
     bpy.data.objects.remove(camera,do_unlink=True)
     for other in scene.objects:other.hide_render=False
     return dict(atlases=atlases,centre=list(centre),scale=scale,views=views,
+                normal_space='camera-right-up-outward',
                 coverage=[float((cell[:,:,3]>.4).mean()) for cell in cells])
 
 
