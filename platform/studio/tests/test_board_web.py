@@ -308,6 +308,15 @@ def test_agents_see_every_recipient_and_direct_views_exclude_broadcast_copies(ht
     assert agents['one']['last_to_me'] == reply and agents['two']['last_to_me'] == 0
 
 
+def test_notification_footer_is_short_with_no_numeric_message_cap():
+    item = {'id': 7, 'sender': 'two', 'recipient': 'one', 'topic': 'request', 'body': 'Please review.'}
+    footer = board.notification([item]).splitlines()[-1]
+    assert len(footer) < 320 and 'characters' not in footer and ' lines' not in footer
+    for essential in ('atelier board read', '--topic ack --reply-to ID', 'render-board.md and live locks',
+                      'first-ready age', 'never signal other owners or bypass safety', 'operator-task open'):
+        assert essential in footer
+
+
 def test_uploads_keep_media_size_so_the_feed_can_reserve_space(http_server):
     status, image = upload(http_server, b'\x89PNG' + b'\0' * 64, 'shot.png', 'image/png',
                            {'X-Media-Width': '1320', 'X-Media-Height': '2868'})

@@ -34,11 +34,10 @@ def notification(batch):
             thread += f" on your operator task {item['operator_task']}; dismiss it once it no longer applies"
         lines.append(f"#{item['id']} {item['sender']} -> {item['recipient']} ({audience_text(item)}{thread}) "
                      f"[{item['topic']}]: {item['body'][:600]}")
-    lines.append('Read full messages with atelier board read; check render-board.md and live locks. '
-                 'Acknowledge actionable handoffs through atelier board post --topic ack --reply-to ID. '
-                 'Write clear, well-formatted posts in plain words, point first; there is no length cap. Blocked on the '
-                 'operator\'s guidance or confirmation? Open one operator task (board operator-task open), sparingly, '
-                 'and dismiss it when unblocked. Preserve first-ready age; never signal other owners or bypass safety.')
+    lines.append('Full text and threads: atelier board read. Ack actionable requests: board post --topic ack '
+                 '--reply-to ID. Heavy work: check render-board.md and live locks; keep first-ready age; never signal '
+                 'other owners or bypass safety. Truly blocked on the operator? board operator-task open; dismiss when '
+                 'unblocked.')
     return '\n'.join(lines)
 
 

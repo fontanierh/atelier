@@ -35,6 +35,7 @@ from .process import spawn
 
 # Engine services a cook may start and other work then shares: recorded, never guarded or signalled.
 SHARED_SERVICES = frozenset({'zenserver', 'UnrealTraceServer'})
+FITTING_STARTUP_SECONDS = 2.
 
 
 class Descendants:
@@ -168,6 +169,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
         child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env)
+        fitting_ready_by = time.monotonic()+FITTING_STARTUP_SECONDS
+        fitting_started = False
         stack.callback(reap, child)
         where = f', {slot} render slot, {limit_gib:g} GiB limit' if slot in ('small', 'fitting') else ''
         print(f'pid {child.pid}, guard report {folder/"memory-health.json"}{where}', flush=True)
@@ -182,8 +185,18 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         deadline = started+horizon if horizon else None
         spoken = started
         while child.poll() is None:
-            if fitting_gib is not None and process_tree.name(child.pid).lower() != 'blender':
-                raise SystemExit('the fitting child is not Blender')
+            if fitting_gib is not None:
+                executable = process_tree.name(child.pid).lower()
+                # It can finish between poll and proc_name; a completed child is not a foreign executable.
+                if child.poll() is not None:
+                    break
+                if executable == 'blender':
+                    fitting_started = True
+                elif not fitting_started and executable in ('taskpolicy', 'nice', ''):
+                    if time.monotonic() >= fitting_ready_by:
+                        raise SystemExit('the fitting launcher did not reach Blender within its startup deadline')
+                else:
+                    raise SystemExit(f'the fitting child is not Blender: {executable!r}')
             if tree is not None:
                 tree.poll()
                 tree.check()
@@ -196,7 +209,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             if deadline is not None and time.monotonic() > deadline:
                 raise SystemExit(f'child exceeded {timeout} s')
             try:
-                child.wait(timeout=1)
+                child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
                 pass
         return child.returncode or 0
