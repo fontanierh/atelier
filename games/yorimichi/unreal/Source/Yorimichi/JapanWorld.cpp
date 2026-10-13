@@ -186,6 +186,8 @@ void AJapanWorld::Load()
         NorthHighGrade->Settings.ColorContrast=FVector4(1.12,1.12,1.12,1);
         NorthHighGrade->Settings.bOverride_ColorSaturation=true;
         NorthHighGrade->Settings.ColorSaturation=FVector4(1.05,1.05,1.05,1);
+        NorthHighGrade->Settings.bOverride_ColorOffset=true;
+        NorthHighGrade->Settings.ColorOffset=FVector4(-.04,-.04,-.04,0);
         NorthHighGrade->Settings.bOverride_ColorGammaShadows=true;
         NorthHighGrade->Settings.ColorGammaShadows=FVector4(.85,.85,.85,1);
         NorthHighGrade->Settings.bOverride_ColorOffsetShadows=true;

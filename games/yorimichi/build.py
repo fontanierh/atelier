@@ -343,7 +343,7 @@ def world_steps(ctx, park):
         Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', WORLD / 'surface_textures.py', YORI,
              ASSETS / 'environment/textures/tree-bark.jpg', ASSETS / 'environment/textures/tuscan-ground.jpg',
              ASSETS / 'environment/textures/tuscan-ground.provenance.json'],
-             outputs=[out / 'textures' / 'T_sky.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
+             outputs=[out / 'textures' / 'T_sky.png', out / 'textures' / 'T_ground_detail.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
         Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'],
              needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
