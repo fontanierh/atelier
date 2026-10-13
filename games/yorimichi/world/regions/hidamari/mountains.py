@@ -24,7 +24,8 @@ RIM_RADIUS = 470.           # mean radius of the crest; it wanders by about 35 m
 # corner radius 256 m) then keeps at least 62 m to the wall's foot at any heading, room for the slopes round its edges.
 FLOOR_RADIUS = 330.
 CREST = 600.                # the cone's height over its apron at the crest
-DEPTH = 200.                # the floor lies this far below the crest
+DEPTH = 45.                 # the floor lies this far below the crest: Crater Park stands high in it, its tallest
+                            # ramps just over the rim (craterpark/placement.py LIFT)
 # The former, smaller summit stands on as the western shoulder, so the ground round the Mega Park keeps its shape.
 FORMER = (550., 1930.)
 MEGAPARK_SHOULDER = (-150., 1300., 1150., 450.)    # x, y, radius where the former cone is kept in full, fade

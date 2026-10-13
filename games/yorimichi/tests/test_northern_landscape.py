@@ -87,7 +87,7 @@ class NorthernLandscape(unittest.TestCase):
             self.assertTrue(inside(x1-M.STEP,y1-M.STEP,M.STEP))
             self.assertFalse(inside(x1,y1,M.STEP))
 
-    def test_caldera_floor_holds_a_340_by_390_m_park_under_a_160_m_wall(self):
+    def test_caldera_floor_holds_a_340_by_390_m_park_under_a_low_rim(self):
         cx,cy=M.VOLCANO
         # A 340 x 390 m footprint at any heading lies on the level floor.
         u,v=np.meshgrid(np.linspace(-170,170,35),np.linspace(-195,195,40))
@@ -95,11 +95,11 @@ class NorthernLandscape(unittest.TestCase):
             z=M.natural_height(cx+u*np.cos(heading)-v*np.sin(heading),cy+u*np.sin(heading)+v*np.cos(heading))
             self.assertLess(float(np.ptp(z)),3.)
             self.assertLess(float(np.abs(z-M.caldera_floor()).max()),2.)
-        # The crest stands at least 160 m over the floor all the way round.
+        # The crest stands at least 40 m over the floor all the way round: Crater Park stands high in it.
         angles=np.arange(128)*np.pi/64
         radii=np.arange(300.,600.,2.5)
         crest=M.natural_height(cx+np.cos(angles[:,None])*radii,cy+np.sin(angles[:,None])*radii).max(axis=1)
-        self.assertGreater(float(crest.min()-M.caldera_floor()),160.)
+        self.assertGreater(float(crest.min()-M.caldera_floor()),40.)
         self.assertGreater(float(np.ptp(crest)),40.)     # broken, not a drawn circle
         # Crater Park (a 337.95 x 384.51 m block, corner radius 256 m) keeps 60 m to the wall's foot at any heading.
         self.assertGreater(float(M.wall_foot(np.linspace(0,2*np.pi,1440)).min())-256.,60.)

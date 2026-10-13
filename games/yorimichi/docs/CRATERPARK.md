@@ -43,10 +43,13 @@ The meshes have these roles:
 
 - Native points (x, y up, z) become Blender metres (x, −z, y).
 - They turn by `HEADING` (185°) about the block's centre, which lands on the caldera's centre (850, 2400).
-- They rise by `LIFT` (518 m), so the block's low east edge meets the 485 m caldera floor.
+- They rise by `LIFT` (680 m), so the block's low east edge meets the 640 m caldera floor.
 
-The block's high side faces the tallest part of the crest. It keeps at least 60 m to the wall's foot, and its top
-stays more than 120 m under the lowest crest.
+The block's high side faces the tallest part of the crest. It keeps at least 60 m to the wall's foot. The main deck
+stands about level with the crest's lowest stretch (687 m) and the roll-in ramp's top (720 m) just over most of it
+(median 723 m). From the top of the roll-in a rider sees over the rim in about half of all directions: the far
+horizon, not the land below. No part of the park can be seen from the city, Belmonte, the Mega Park, the foothill
+trail or the volcano's flanks.
 
 ## Ground
 
@@ -59,6 +62,11 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
   which widens with the height it makes up (up to about 57 m on the high side).
 
 Trees and rocks already stay out of the caldera (`hidamari/layout.py`).
+
+## Snow
+
+The block's hillside (`material_024`) and the edge guard (`material_027`) carry snow where they face up, in
+world-space patches (`import_craterpark.py` `SNOWY`). The skating surfaces, foundations and bridges stay clear.
 
 ## Build and game
 

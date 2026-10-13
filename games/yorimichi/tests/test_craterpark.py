@@ -48,13 +48,22 @@ class PlacementTests(unittest.TestCase):
         np.testing.assert_allclose(before, after, atol=1e-6)
 
     def test_the_block_sits_inside_the_caldera_wall(self):
-        """Every corner of the block keeps at least 60 m to the wall's foot, and its top 120 m under the lowest crest."""
+        """Every corner of the block keeps at least 60 m to the wall's foot."""
         t = placement.ground_triangles().reshape(-1, 3)
         _, _, r, angle = mountains.polar(t[:, 0], t[:, 1])
         self.assertGreater(float((mountains.wall_foot(angle) - r).min()), 60.)
+
+    def test_the_tallest_ramps_rise_just_over_the_rim(self):
+        """The main deck stands about level with the rim's lowest stretch and the tallest ramp over most of the rim, but
+        no part of the park stands over the rim's high stretches."""
         a = np.linspace(0, 2 * np.pi, 720, endpoint=False); rim = mountains.rim_radius(a)
         crest = mountains.natural_height(mountains.VOLCANO[0] + rim * np.cos(a), mountains.VOLCANO[1] + rim * np.sin(a))
-        self.assertGreater(float(np.min(crest)) - float(t[:, 2].max()), 120.)
+        deck = float(placement.native_to_island(np.array([[1300., 5., 1008.6]]))[0, 2])
+        top = max(float(placement.native_to_island(placement.arrays(e)['positions'].astype('f8'))[:, 2].max())
+                  for e in placement.meshes())
+        self.assertLess(abs(deck - float(crest.min())), 10.)
+        self.assertGreater(top, float(np.median(crest)) - 10.)
+        self.assertLess(top, float(np.percentile(crest, 90)))
 
     def test_the_low_edge_meets_the_floor(self):
         self.assertLess(abs(float(np.nanmin(placement.footprint()[3])) - mountains.caldera_floor()), 10.)

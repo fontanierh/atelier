@@ -18,7 +18,10 @@ SOURCE = Path(__file__).resolve().parents[3] / 'assets' / 'craterpark'
 
 CENTRE = (850.0, 2400.0)    # Blender metres: the caldera's centre (hidamari/mountains.py VOLCANO)
 HEADING = 185.0             # degrees, counter-clockwise from above: the block's high west side faces the tallest crest
-LIFT = 518.0                # metres added to the native height: the block's low east edge meets the 485 m caldera floor
+# Metres added to the native height. The block's low east edge meets the caldera floor (640 m); the main deck (native
+# y 0-8) stands about level with the rim's lowest stretch (687 m), and the tallest ramps (y 28-40) just over most of it
+# (median 723 m), so airs off them catch the world beyond while the cities below never see the park.
+LIFT = 680.0
 GROUND = 'mountain'         # the closed block of hillside the park stands on
 
 

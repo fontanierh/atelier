@@ -15,17 +15,19 @@ All values are Blender metres (x east, y north).
 | Base radius (where the cone meets the foothills) | 1480 m | `BASE_RADIUS` |
 | Crest radius (it wanders by about 35 m) | 470 m | `RIM_RADIUS` |
 | Crest height | 690–720 m; three spires reach 790 m | `CREST` |
-| Caldera floor | level at 485 m (±1 m), 660 m across | `FLOOR_RADIUS`, `caldera_floor()` |
-| Floor to crest | 200 m (at least 200 m all round) | `DEPTH` |
+| Caldera floor | level at 640 m (±1 m), 660 m across | `FLOOR_RADIUS`, `caldera_floor()` |
+| Floor to crest | 45 m nominal; 47–145 m round the broken crest | `DEPTH` |
 
-The floor holds a 340 × 390 m footprint at any heading, and the crest stands more than 160 m above it all the way
+The floor holds a 340 × 390 m footprint at any heading, and the crest stands more than 40 m above it all the way
 round. `test_northern_landscape.py` checks both.
 
 The floor is sized for [Crater Park](https://github.com/fontanierh/crater-skate-park):
 - **Fit:** a 337.95 × 384.51 m block with a corner radius of 256 m. It keeps at least 62 m to the wall's foot at any
   heading, room for the earth slopes round its edges. Heading 185° turns its high west side toward the tallest part of
   the crest.
-- **Height:** it rises 80 m above its own lowest ground, so its top stays about 130 m below the lowest crest.
+- **Height:** it stands high in the crater. Its main deck is about level with the crest's lowest stretch (687 m), and
+  its tallest ramp (720 m) rises just over most of the crest. Riders on it see the far horizon over the rim; nothing
+  of the park can be seen from the city, Belmonte, the Mega Park or the volcano's flanks.
 - **Ground:** it is a cut block of hillside whose west side stands up to 60 m above the floor. Like the Mega Park, it
   has a terrain stamp: the floor lowered under it and slopes up its high sides ([CRATERPARK.md](CRATERPARK.md)).
 
