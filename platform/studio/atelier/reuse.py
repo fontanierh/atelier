@@ -31,10 +31,12 @@ raw_hash_path=build._hash_path
 def portable_hash_path(digest,path,skip=True):
  path=Path(path)
  if path.is_file() or path.is_dir(): return raw_hash_path(digest,path,skip)
- name=str(path)
+ identity=path.resolve()
+ name=str(identity)
  for root,label in ((ctx.out,'<build>'),(build.paths.REPO,'<repo>')):
-  if path.is_relative_to(root):
-   name=label+'/'+str(path.relative_to(root)); break
+  root=root.resolve()
+  if identity.is_relative_to(root):
+   name=label+'/'+str(identity.relative_to(root)); break
  digest.update(b'missing:'+name.encode())
 def portable(step,done):
  build._hash_path=portable_hash_path

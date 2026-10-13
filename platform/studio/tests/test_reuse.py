@@ -78,7 +78,7 @@ def test_target_files_in_copied_folders_are_found_tracked_ones_are_not(tmp_path)
 
 
 
-@pytest.mark.parametrize('missing_input', [None, 'source', 'generated'])
+@pytest.mark.parametrize('missing_input', [None, 'source', 'generated', 'escaped'])
 def test_a_fresh_target_reuses_a_cutoff_step_and_its_dependents(tmp_path, missing_input):
     """Copied cutoff outputs, with no stamps yet, give their dependents the fingerprints the source's stamps give: reuse
     copies, verifies and only then writes stamps. A copied output that differs is not certified."""
@@ -92,6 +92,8 @@ def test_a_fresh_target_reuses_a_cutoff_step_and_its_dependents(tmp_path, missin
         path.write_text(content)
 
     source, target, engine = [tmp_path / x for x in ('source', 'target', 'engine')]
+    if missing_input == 'escaped':
+        source=source/'repo'; target=target/'repo'
     write(engine / 'Engine/Build/Build.version', '{}')
     write(engine / 'Engine/Binaries/Mac/UnrealEditor.modules', '{"BuildId":"1"}')
     for repo in (source, target):
@@ -114,6 +116,7 @@ def test_a_fresh_target_reuses_a_cutoff_step_and_its_dependents(tmp_path, missin
         inputs=[ctx.out.parents[1] / 'source.txt']
         if missing_input == 'source': inputs.append(ctx.out.parents[1] / 'optional.toml')
         if missing_input == 'generated': inputs.append(ctx.out / 'optional.toml')
+        if missing_input == 'escaped': inputs.append(ctx.out.parents[1] / '../optional.toml')
         return [build.Step('digest', [], inputs=inputs, outputs=[ctx.out / 'digest.txt'], cutoff=True),
                 build.Step('import', [], needs=['digest'], outputs=[ctx.uproject.parent / 'Content/Result.uasset'])]
 
@@ -137,6 +140,12 @@ def test_a_fresh_target_reuses_a_cutoff_step_and_its_dependents(tmp_path, missin
         original=inspect(source,'standin')
         if missing_input:
             assert original['steps'][0]['fingerprint'] != inspect(target,'standin')['steps'][0]['fingerprint']
+        if missing_input == 'escaped':
+            with pytest.raises(ValueError,match='Source inputs differ'):
+                reuse.main('standin',source,target)
+            assert not (target/'build/standin/stamps').exists()
+            assert not (target/'games/standin/unreal/Content').exists()
+            return
         assert reuse.main('standin', source, target) == 0
         verified = inspect(target, 'standin')
         assert all(step['stamp']['fingerprint'] == step['fingerprint'] for step in verified['steps'])
