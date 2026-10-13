@@ -124,9 +124,13 @@ def main():
     megapark.OUT = OUT; megapark.ROOT = ROOT; megapark.SEED = 'SM_CP_ImportSeed'
     E.make_directory(ROOT + '/Meshes')
     mis = materials(); results = []
+    # The riding collision is placed in a throwaway level, so the editor cooks it here into the shared cache instead of
+    # the game cooking about 600k triangles as the island loads (over the memory guard).
+    actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    assert unreal.EditorLoadingAndSavingUtils.new_blank_map(False), 'Could not open a scratch level'
     for entry in report['render'] + report['collision']:
         collision = entry['name'].startswith('UC_')
-        megapark.mesh_actor(entry, collision, mis, None, editor, results, place=False)
+        megapark.mesh_actor(entry, collision, mis, actors, editor, results, place=collision)
         if not collision:
             # Only the riding collision is read on the CPU (the skating snapshot); the drawn meshes keep no CPU copy.
             mesh = E.load_asset(ROOT + '/Meshes/' + entry['name'])

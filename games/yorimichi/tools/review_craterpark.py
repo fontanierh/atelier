@@ -32,16 +32,20 @@ parser.add_argument('--port', type=int, default=8841)
 parser.add_argument('--shots', default='', help='comma-separated shot names (default: all)')
 parser.add_argument('--out', default='', help='folder for the shots (default: build output craterpark/review)')
 parser.add_argument('--settle', type=float, default=6., help='seconds to wait at each camera before the shot')
+parser.add_argument('--memory-gib', type=float, default=10., help='memory guard limit, 10 (the default) to 14 GiB, as atelier play')
 parser.add_argument('--startup', type=float, default=780., help='seconds to wait for the game (a first run builds shaders)')
 args = parser.parse_args()
+if not 10. <= args.memory_gib <= 14.:
+    sys.exit('--memory-gib must be 10 to 14')
 live.URL = f'http://127.0.0.1:{args.port}'
 ctx = Context('yorimichi')
 out = Path(args.out) if args.out else yori.OUT / 'craterpark' / 'review'
 out.mkdir(parents=True, exist_ok=True)
 if not args.worker:
     sys.exit(guarded.run([sys.executable, str(Path(__file__).resolve()), '--worker', '--port', str(args.port), '--out', str(out),
-                          '--settle', str(args.settle), '--startup', str(args.startup)] + (['--shots', args.shots] if args.shots else []),
-                         out / 'guard', timeout=args.startup + 420, purpose='Crater Park review', kind='game'))
+                          '--settle', str(args.settle), '--startup', str(args.startup), '--memory-gib', str(args.memory_gib)] + (['--shots', args.shots] if args.shots else []),
+                         out / 'guard', timeout=args.startup + 420, purpose='Crater Park review', kind='game',
+                         limit_gib=args.memory_gib))
 
 
 def ue(p):
@@ -80,7 +84,8 @@ def shot(name):
 
 
 try:
-    monitor = guards.enter_context(attach_memory_guard(p.pid, out / 'memory-health.json', duration=args.startup + 360))
+    monitor = guards.enter_context(attach_memory_guard(p.pid, out / 'memory-health.json', duration=args.startup + 360,
+                                                        limit_gib=args.memory_gib))
     deadline = time.monotonic() + args.startup
     while time.monotonic() < deadline:
         if p.poll() is not None:
