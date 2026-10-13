@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: two long smooth cast-concrete ledge blocks in pale warm sandstone beige with a thin joint between them and softly rounded top and bottom edges.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/ledge-source.png": "cfbd63ecc11a8ca4f383d47db55d06cb8c294d0fc6e5c6af205556045860c75d",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0051.png": "9998ced022cbfd86c99db2afec9b35502e34f0572d4ca386126bf2ba1a66fb5e"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "16549f8a59281d4521b3f0e83b78b9d62836f90f39282461454c335c5ff64acd",
+  "status": "done",
+  "started_at": "2026-10-13T21:47:18.307301+00:00",
+  "output": "ledge.png",
+  "output_sha256": "d112699d9eb76dbca0f3b69423273dc0299772cf998fc4c617f4400fc1a42126",
+  "usage": {
+    "input_tokens": 1910,
+    "input_tokens_details": {
+      "image_tokens": 1640,
+      "text_tokens": 270
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3282
+  },
+  "elapsed_seconds": 36.4,
+  "finished_at": "2026-10-13T21:47:54.689027+00:00",
+  "compact": {
+    "file": "ledge.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

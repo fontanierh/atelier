@@ -1,0 +1,41 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 shows the art direction of a stylised game: soft painterly shapes, flat matte colour. Paint a seamless tileable texture in that style, seen from directly above, perfectly flat and straight-on, filling the square edge to edge: no perspective, no horizon, no object outline, no shadows or lighting gradient, even brightness everywhere, no text, repeating seamlessly on all four sides. Hand-painted like the background art of a Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no photographic grime or noise. The surface: the bare ground of a volcanic crater: lavender-grey volcanic gravel and scree with scattered small and medium grey rocks, a little fine dark ash soil, a few tufts of dry golden grass and small yellow-green moss patches; no snow, no leaves.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/style-rock.png": "9c250cfa274b52c72dc8e5f8466f9db06b84ebf4bdf0898d46b19721e10b048e"
+  },
+  "materials": [
+    "material_024"
+  ],
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "6745002589ceca3a6ecb1ba455b4a867cc42c652e1f502a6791213380b785bf9",
+  "status": "done",
+  "started_at": "2026-10-13T21:51:49.270196+00:00",
+  "output": "ground.png",
+  "output_sha256": "5188cf6aa8267b1b440f15722e8efa9628bb22b52965a718ce0fae1dce3ae763",
+  "usage": {
+    "input_tokens": 1079,
+    "input_tokens_details": {
+      "image_tokens": 896,
+      "text_tokens": 183
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2835
+  },
+  "elapsed_seconds": 60.1,
+  "finished_at": "2026-10-13T21:52:49.360914+00:00",
+  "compact": {
+    "file": "ground.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

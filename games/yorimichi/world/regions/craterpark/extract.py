@@ -59,10 +59,10 @@ def main():
     scene = json.loads((root / 'scene.json').read_text())
     if scene['schema'] != 'crater-park-readable-scene/1':
         raise SystemExit('Unknown scene schema ' + scene['schema'])
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    (OUT / 'geometry').mkdir(parents=True)
-    (OUT / 'textures').mkdir()
+    # The converted source is replaced whole; the restyle and concepts made from it stay.
+    for folder in ('geometry', 'textures'):
+        shutil.rmtree(OUT / folder, ignore_errors=True)
+        (OUT / folder).mkdir(parents=True)
     meshes = [convert(item, root) for item in scene['meshes']]
     materials = json.loads((root / 'materials.json').read_text())
     textures = {}
@@ -88,7 +88,7 @@ def main():
     contract = json.loads((LIBRARY / 'source-library.json').read_text())
     files = {name: entry for name, entry in contract['files'].items() if not name.startswith('craterpark/')}
     for path in sorted(OUT.rglob('*')):
-        if path.is_file() and path.suffix in {'.npz', '.png'}:
+        if path.is_file() and path.suffix in {'.npz', '.png', '.jpg'}:
             files[path.relative_to(LIBRARY).as_posix()] = {'bytes': path.stat().st_size, 'sha256': sha(path)}
     contract['files'] = dict(sorted(files.items()))
     (LIBRARY / 'source-library.json').write_text(json.dumps(contract, indent=2) + '\n')

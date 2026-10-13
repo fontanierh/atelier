@@ -15,6 +15,7 @@ import import_megapark as megapark
 OUT = yori.OUT / 'craterpark'
 SOURCE = yori.ASSETS / 'craterpark'
 ROOT = '/Game/CraterPark'
+RESTYLE = OUT / 'textures'
 E = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
@@ -26,10 +27,11 @@ ROUGHNESS = .8
 SNOWY = {'material_024', 'material_027'}
 
 
-def parent(textured):
-    """A lit opaque parent: base colour from a texture on UV0 times Tint, or Tint alone; where Snow is 1, snow lies on
-    the faces that look up, in world-space patches that follow the placed park."""
-    name = 'M_CP_Textured' if textured else 'M_CP_Flat'; path = ROOT + '/Materials/' + name
+def parent(kind):
+    """A lit opaque parent, kind 'Textured' (Base on UV0), 'World' (Base world-aligned on three axes, Metres per tile)
+    or 'Flat'; its colour times Tint. Where Snow is 1, snow lies on the faces that look up, in world-space patches that
+    follow the placed park."""
+    name = 'M_CP_' + kind; path = ROOT + '/Materials/' + name
     if E.does_asset_exist(path):
         m = E.load_asset(path); MEL.delete_all_material_expressions(m)
     else:
@@ -49,16 +51,23 @@ def parent(textured):
         for key, (source, output) in inputs.items(): assert MEL.connect_material_expressions(source, output, n, key)
         return n
 
+    white = unreal.load_asset('/Engine/EngineResources/WhiteSquareTexture')
     tint = node(unreal.MaterialExpressionVectorParameter, parameter_name='Tint', default_value=unreal.LinearColor(1, 1, 1, 1))
     snow = node(unreal.MaterialExpressionScalarParameter, parameter_name='Snow', default_value=0.)
+    normal = node(unreal.MaterialExpressionVertexNormalWS); world = node(unreal.MaterialExpressionWorldPosition)
     colour = tint
-    if textured:
-        sample = node(unreal.MaterialExpressionTextureSampleParameter2D, parameter_name='Base',
-                      texture=unreal.load_asset('/Engine/EngineResources/WhiteSquareTexture'))
+    if kind == 'Textured':
+        sample = node(unreal.MaterialExpressionTextureSampleParameter2D, parameter_name='Base', texture=white)
         colour = node(unreal.MaterialExpressionMultiply)
         MEL.connect_material_expressions(sample, 'RGB', colour, 'A'); MEL.connect_material_expressions(tint, '', colour, 'B')
-    inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (node(unreal.MaterialExpressionVertexNormalWS), ''),
-              'W': (node(unreal.MaterialExpressionWorldPosition), '')}
+    elif kind == 'World':
+        texture = node(unreal.MaterialExpressionTextureObjectParameter, parameter_name='Base', texture=white)
+        metres = node(unreal.MaterialExpressionScalarParameter, parameter_name='Metres', default_value=8.)
+        colour = custom('float3 w=pow(abs(N),4.);w/=w.x+w.y+w.z;float3 p=W/(M*100.);'
+                        'float3 c=Texture2DSample(Tex,TexSampler,p.yz).rgb*w.x+Texture2DSample(Tex,TexSampler,p.xz).rgb*w.y'
+                        '+Texture2DSample(Tex,TexSampler,p.xy).rgb*w.z;return c*T;',
+                        {'Tex': (texture, ''), 'M': (metres, ''), 'N': (normal, ''), 'W': (world, ''), 'T': (tint, '')})
+    inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (normal, ''), 'W': (world, '')}
     cover = ('float up=saturate((N.z-.55)/.3);'
              'float a=sin(W.x*.0021+sin(W.y*.0017)*2.3)*sin(W.y*.0019+sin(W.x*.0013)*1.9);'
              'float b=sin(W.x*.011+sin(W.y*.009)*1.7)*sin(W.y*.012+sin(W.x*.008)*1.4);'
@@ -74,19 +83,28 @@ def parent(textured):
 
 
 def materials():
-    parents = {True: parent(True), False: parent(False)}
+    """One instance per source material, with the restyled textures (tools/craterpark_textures.py finish): a painted
+    texture on its own UVs, or a world-aligned one for the untextured hillside, foundations, bridges and edge guard."""
+    restyle = json.loads((RESTYLE / 'textures.json').read_text())
+    parents = {kind: parent(kind) for kind in ('Textured', 'World', 'Flat')}
     result = {}
     for spec in json.loads((SOURCE / 'materials.json').read_text()):
         name = 'MI_CP_' + spec['id']; dest = ROOT + '/Materials'; path = dest + '/' + name
         mi = E.load_asset(path) if E.does_asset_exist(path) else AT.create_asset(name, dest, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
-        textured = bool(spec['texture'])
-        MEL.set_material_instance_parent(mi, parents[textured])
-        if textured:
-            texture = megapark.texture(SOURCE / spec['texture'], 'T_CP_' + Path(spec['texture']).stem.replace('-', '_'),
-                                       dest=ROOT + '/Textures', wrap=True)
+        painted = restyle['textures'].get(spec['texture']) if spec['texture'] else None
+        aligned = restyle.get('world_aligned', {}).get(spec['id'])
+        kind = 'Textured' if painted else 'World' if aligned else 'Flat'
+        MEL.set_material_instance_parent(mi, parents[kind])
+        entry = painted or aligned
+        if entry:
+            assert megapark.sha(RESTYLE / entry['png']) == entry['sha256'], entry['png']
+            texture = megapark.texture(RESTYLE / entry['png'], 'T_CP_' + Path(entry['png']).stem, dest=ROOT + '/Textures', wrap=True)
             MEL.set_material_instance_texture_parameter_value(mi, 'Base', texture)
-        # The source's base colours are sRGB.
-        tint = [c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in spec['baseColor']]
+        if aligned:
+            MEL.set_material_instance_scalar_parameter_value(mi, 'Metres', float(aligned['metres']))
+        # The restyled images carry their colour; a flat material keeps the source's sRGB base colour.
+        colour = [1., 1., 1.] if entry else spec['baseColor']
+        tint = [c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in colour]
         MEL.set_material_instance_vector_parameter_value(mi, 'Tint', unreal.LinearColor(*tint, 1.))
         MEL.set_material_instance_scalar_parameter_value(mi, 'Snow', float(spec['id'] in SNOWY))
         overrides = mi.get_editor_property('base_property_overrides')

@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: a smooth painted swimming-pool floor in clear bright sky blue with very soft lighter brush strokes.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/pool-source.png": "2a2211c4ef72d622e17fa1eae59661ffc7b4fcd0055d7048751f4c0afb4eac6a",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0016.png": "589e1b39cc05e01649398c26c2b21206a8b5f5caab75967548f53d77e35bc5af"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "5bf3bd4e1b105239841ff6cc2072dcfe58a0b2dd83654f32fd7b7fd464c564d3",
+  "status": "done",
+  "started_at": "2026-10-13T21:50:45.698553+00:00",
+  "output": "pool.png",
+  "output_sha256": "fc03d974678c03e07b3662fbf3892a5f2d49919adb39d043f9c817dfb9745313",
+  "usage": {
+    "input_tokens": 1845,
+    "input_tokens_details": {
+      "image_tokens": 1584,
+      "text_tokens": 261
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3601
+  },
+  "elapsed_seconds": 42.1,
+  "finished_at": "2026-10-13T21:51:27.752065+00:00",
+  "compact": {
+    "file": "pool.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

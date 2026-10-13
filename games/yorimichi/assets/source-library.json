@@ -2009,6 +2009,14 @@
       "bytes": 1894799,
       "sha256": "f52e9bb716abc139f16e58f911d3c7882a9a369c143559391071f029c51f3190"
     },
+    "craterpark/concepts/paintover-bowls.jpg": {
+      "bytes": 321012,
+      "sha256": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+    },
+    "craterpark/concepts/paintover-dropin.jpg": {
+      "bytes": 352683,
+      "sha256": "63b2a908efe04a1b2d201076d2618b6778aea445fcbd363d75b9b74dccb755a7"
+    },
     "craterpark/geometry/mesh-0000-000.npz": {
       "bytes": 29742,
       "sha256": "86ad08bc96660f3a58c8c257d44c1eda939869d9333806847bf40df3179cc92d"
@@ -2800,6 +2808,98 @@
     "craterpark/preview.png": {
       "bytes": 760141,
       "sha256": "3d860c34840f20d7d2244a100657bf7faba683ec40048c29e77c4fdb8b162047"
+    },
+    "craterpark/restyle/aggregate.jpg": {
+      "bytes": 408341,
+      "sha256": "248c15c2976c3e2390b8872fc055cbcbb8696c49721b77ac1139d9df0f519964"
+    },
+    "craterpark/restyle/bowl.jpg": {
+      "bytes": 233623,
+      "sha256": "03e7aec97b095f46c82f8076579ebe8c5869b3ab276dc896c4294234f3196e92"
+    },
+    "craterpark/restyle/cast_concrete.jpg": {
+      "bytes": 225845,
+      "sha256": "523f72b14fbd25abee7270e410a971ef492a97b69ed02b8fbed3d9ec49b06763"
+    },
+    "craterpark/restyle/concrete.jpg": {
+      "bytes": 305845,
+      "sha256": "460442211c4c28281f0d5bff87f49315bdcd4fcad818ccf24a9c2bfafaa8701d"
+    },
+    "craterpark/restyle/concrete_deck.jpg": {
+      "bytes": 177562,
+      "sha256": "82bb41a28bd06a6bf31a8b502a2979329fd31e65d1078f2d53b86bf31d9902cf"
+    },
+    "craterpark/restyle/concrete_edge.jpg": {
+      "bytes": 237317,
+      "sha256": "030c3aa2d24b357f7b083b00610ebc6436a9023ef295c6394c1855efb78e04f2"
+    },
+    "craterpark/restyle/coping_frieze.jpg": {
+      "bytes": 169494,
+      "sha256": "2ef3bc61fb62ec5f258bab5ec301ab60815819c68c295942be41e4fccee21699"
+    },
+    "craterpark/restyle/coping_tile.jpg": {
+      "bytes": 156443,
+      "sha256": "62ff9cc5acee0876a1a52a3efcd7df5668131fcb0dcbef9cb4c96ec9466a849c"
+    },
+    "craterpark/restyle/flagstone.jpg": {
+      "bytes": 372833,
+      "sha256": "77d69cb25958a522fe8634212f50a4914423ee47dba228230947be75375a50f1"
+    },
+    "craterpark/restyle/ground.jpg": {
+      "bytes": 546936,
+      "sha256": "7fd516f7427f22b6881908df74c23f7ed7068eee3851872efd4557ab0112e1ad"
+    },
+    "craterpark/restyle/herringbone.jpg": {
+      "bytes": 305950,
+      "sha256": "bf93e86192436f9b00578d671347d5c85d5a06fbe2b63e069a04c40197db1cb5"
+    },
+    "craterpark/restyle/ledge.jpg": {
+      "bytes": 138565,
+      "sha256": "c0032910434090670a88e40d24936d7a6b58a6f52f986d1beb1254b10d767087"
+    },
+    "craterpark/restyle/masonite.jpg": {
+      "bytes": 287904,
+      "sha256": "f8e603fed325f7c95408bd751987a3c396e62e49bf0d99871190896692272194"
+    },
+    "craterpark/restyle/paving.jpg": {
+      "bytes": 223045,
+      "sha256": "eb44cb3a4d62b60c9dfcea8452bb45e8878150ae9557c3847a1c454e10fdfe50"
+    },
+    "craterpark/restyle/planter.jpg": {
+      "bytes": 254651,
+      "sha256": "2aba61ea81e43744069b5db94557395d4a0e99a9a2e68ca74386a6937da087d8"
+    },
+    "craterpark/restyle/pool.jpg": {
+      "bytes": 264038,
+      "sha256": "3ac0ce1f60677d72dd332ed41247f2bffb46cddb9ed95091bb18bc900c9e4f82"
+    },
+    "craterpark/restyle/ramp_boards.jpg": {
+      "bytes": 258572,
+      "sha256": "39724567401c22dee17d1bd9d37923536c14819bc29a67ddf7d98e5661174853"
+    },
+    "craterpark/restyle/retaining_wall.jpg": {
+      "bytes": 490019,
+      "sha256": "b0a04021b57ba8ee6b7d0c65155a5bb9a3e4c2290dfd6a442bf24a60d3a236dc"
+    },
+    "craterpark/restyle/side_bank.jpg": {
+      "bytes": 276627,
+      "sha256": "4a369cbfb9c8b9959ca747c1480f9e3b8626cafdb5734a9bd5fabb2deb26cb39"
+    },
+    "craterpark/restyle/stair_brick.jpg": {
+      "bytes": 284411,
+      "sha256": "0434d7fb5eb043bf5cb64ad6999321b44e3618ffda694d13f8c14cbb1c2d16b7"
+    },
+    "craterpark/restyle/stamped.jpg": {
+      "bytes": 203373,
+      "sha256": "ed512f39e40303cbe95963bd343b88b1f35b3cb0cb1a8beff4016baa8cb6d81d"
+    },
+    "craterpark/restyle/tile_edge.jpg": {
+      "bytes": 154280,
+      "sha256": "b11919140e3d8441f5a34ddf31f18dbb8c36661d2214babe878326995dca942e"
+    },
+    "craterpark/restyle/turtle.jpg": {
+      "bytes": 381456,
+      "sha256": "511a371ca08c0c9d9cda4f0f70e5adb360cd7d5c8fcb8899e9d7cddc85c22e28"
     },
     "craterpark/textures/tex-0001.png": {
       "bytes": 147980,

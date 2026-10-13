@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: a pale warm grey concrete coping band with a rounded edge above a band of carved pale stone ornament, as in Image 1.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/coping_frieze-source.png": "4c43ac966b0a46c3d2a15838c7b21fb80cfd1c7aa52eb3ece29951cbc2e94dfa",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0001.png": "26d9f2db90188b5fdd85ac4c8cad0921953ca8bd16f67224bd812dc2e0347c5f"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "c2d793674362855bc019bcd65b2ae4a1bdbba7d219c5331f1872eeae89f146e4",
+  "status": "done",
+  "started_at": "2026-10-13T21:49:28.873257+00:00",
+  "output": "coping_frieze.png",
+  "output_sha256": "652a66ac359bc358b8e7dc5d9ae8f9ccebd88e05899a15e86c7a63f1df4cb696",
+  "usage": {
+    "input_tokens": 1908,
+    "input_tokens_details": {
+      "image_tokens": 1640,
+      "text_tokens": 268
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3280
+  },
+  "elapsed_seconds": 38.0,
+  "finished_at": "2026-10-13T21:50:06.908728+00:00",
+  "compact": {
+    "file": "coping_frieze.jpg",
+    "size": "1024x683",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

@@ -61,12 +61,33 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
 - **Round it:** the floor is offset to the block's top edge, less 0.3 m. It eases back over a skirt 30–120 m wide,
   which widens with the height it makes up (up to about 57 m on the high side).
 
-Trees and rocks already stay out of the caldera (`hidamari/layout.py`).
+## Dressing
+
+The caldera round the park has its own planting (`hidamari/layout.py`, "CALDERA DRESSING"), from its own random
+stream: stunted pines with a few maples and ginkgos in clumps, big boulders with scree, and ochre shrubs, on the floor
+and the lower wall. Nothing is planted on the park's block, and the clearing after planting removes anything within 3 m
+of it.
 
 ## Snow
 
 The block's hillside (`material_024`) and the edge guard (`material_027`) carry snow where they face up, in
 world-space patches (`import_craterpark.py` `SNOWY`). The skating surfaces, foundations and bridges stay clear.
+
+## Restyle
+
+[`tools/craterpark_textures.py`](../tools/craterpark_textures.py) repaints the park's realistic textures in the
+island's style, after the art-direction paintovers in `assets/craterpark/concepts/`: pale warm concrete, dark grey bowl
+concrete, warm wooden ramps, terracotta tiles and a blue pool, in soft flat painterly strokes.
+
+- **paint** makes one ledgered Sunburst edit of each original texture, keeping its layout on the park's UVs. The
+  compact copies and their provenance are in `assets/craterpark/restyle/`.
+- **paint** also makes the world textures for the materials whose meshes have no UVs: volcanic ground for the block's
+  hillside (`material_024`) and cast concrete for the foundations and bridges (`023`, `025`, `026`). The edge guard
+  (`027`) reuses the Mega Park's restyled rock.
+- **finish** (offline) writes `build/yorimichi/craterpark/textures/` and `textures.json`. `textures` maps each original
+  texture path to its restyled PNG. `world_aligned` maps a material to its PNG and a suggested tile size in metres
+  for a world-aligned (triplanar) projection; that PNG carries the material's colour, so its Tint becomes white.
+  The `world.craterpark_restyle` step runs it, and `import_craterpark.py` uses a `World` parent material for them.
 
 ## Build and game
 

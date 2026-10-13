@@ -1,0 +1,38 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt": "Use case: precise art-direction paintover of an exact 3D layout render of a game location. Image 1 is a rough untextured render from the game's real terrain and the park's real meshes: keep its camera, horizon, field of view and every shape exactly where it is - the crater rim's silhouette, the park's ramps, bowls, decks, plaza, pool and paths, the slopes and the far land and sea. Do not move, add or remove any landform or park structure. Image 2 shows the game's art direction: soft painterly low-poly shapes, flat matte shading, pale lavender-grey volcanic rock, soft greens, a clean blue sky. Image 3 is the park's own model, for its materials: pale concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles, a blue pool. Paint image 1 as a finished in-game frame: the crater walls are grey volcanic rock with snow gullies and patches; inside the crater there are no trees; snow lies in soft patches on the grey earth banks and hillside of the park and along its edges, never on the concrete, wooden or tiled skating surfaces, which are clean and dry; the outer slopes below the rim are rocky, then forested lower down in autumn colours. Low ground-level view inside the park beside the dark concrete snake-run bowls on its west side, looking north-west across them toward the low crater rim close behind.",
+  "references": {
+    "cpview/g_bowls.jpg": "596e1b8e2e41fee577a7c6f28aca5f1cab9de21da7e3b8be3008784fe5947ced",
+    "ref_style.jpg": "6c1e206c08e0ad27dc944baa96f4553e7aafb8bceb0074109a55194743c4a2ed",
+    "ref_park_model.png": "3d860c34840f20d7d2244a100657bf7faba683ec40048c29e77c4fdb8b162047"
+  },
+  "reference_notes": "Image 1: an untextured render of the placed park in the caldera from the game terrain; image 2: the game style frame; image 3: a render of the park model with its own textures.",
+  "purpose": "Crater Park art-direction paintover (the restyle textures are styled on it)",
+  "status": "done",
+  "started_at": "2026-10-13T21:30:16.824166+00:00",
+  "finished_at": "2026-10-13T21:30:54.490813+00:00",
+  "usage": {
+    "input_tokens": 3988,
+    "input_tokens_details": {
+      "image_tokens": 3660,
+      "text_tokens": 328
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5360
+  },
+  "elapsed_seconds": 37.6,
+  "png_sha256": "5335e14d3ec97c6a3965cdf7331ca71d46abeda7c4a83cb62f8ac1338cfd3f35",
+  "output": {
+    "file": "paintover-bowls.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: a warm honey-brown masonite skate ramp surface, two smooth panels with a joint between them, soft wood-fibre grain.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/masonite-source.png": "4f984f55a50d718679a2beac35c9d0a7d73c5c8efaf3f0a53a754580a753be98",
+    "build/yorimichi/craterpark/restyle/style-bowls.png": "c6c8ebc978425e8fa6cb992fa8637388eb5a1655e03f0b84971db31e9f1e307c"
+  },
+  "original": {
+    "textures/tex-0060.png": "16023a25e80cb7eb793f235f020f8bd8f19e3ee41bb54441556f24ba8d9be4c0"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "20cfcfb745e1fb7f372227711fe27bd052f735a88babce537ca44409f4d6c5cb",
+  "status": "done",
+  "started_at": "2026-10-13T21:48:55.946335+00:00",
+  "output": "masonite.png",
+  "output_sha256": "e3972be3f55ec70715f6f920540acd6dd0804b543ab19d2a5db3e7a96b06d2dc",
+  "usage": {
+    "input_tokens": 1996,
+    "input_tokens_details": {
+      "image_tokens": 1728,
+      "text_tokens": 268
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3752
+  },
+  "elapsed_seconds": 54.9,
+  "finished_at": "2026-10-13T21:49:50.799699+00:00",
+  "compact": {
+    "file": "masonite.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}

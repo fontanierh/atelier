@@ -1,0 +1,42 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "Image 1 is a tileable texture from a skate park in a stylised game, stretched to fill this frame. Image 2 shows the art direction of the game: soft painterly shapes, flat matte colour, clean well-kept surfaces, pale warm concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles. Repaint Image 1 as a tileable texture in that style, keeping exactly the layout, scale, proportions and direction of its features (bands, edges, joints, tiles, boards, stones, cracks) so it fits the same 3D surfaces: every feature stays where it is and meets the frame edges where it did. Seen perfectly flat and straight-on, filling the frame edge to edge: no perspective, no object outline, no shadows or lighting gradient, even brightness everywhere, no text. Hand-painted like the background art of a Japanese animated film: soft broad strokes and gentle colour variation that still read as the real material, medium detail that holds up when repeated, no photographic grime, stains, dirt or noise. The surface: stamped concrete paving in pale warm sand beige with a soft network of shallow irregular flagstone-like grooves.",
+  "references": {
+    "build/yorimichi/craterpark/restyle/stamped-source.png": "3b48e4d8b761738c341292a841c5dffccb68eaf14ef991305db5f4c24b2b0fab",
+    "build/yorimichi/craterpark/restyle/style-plaza.png": "3070efa80d769928edb516ac8d9eff7d8642fbc4965dd19a2022cf53e19fc54b"
+  },
+  "original": {
+    "textures/tex-0059.png": "09bd90706676eebec622a0080c2c7eb9e89e74b0548786f4497ea9d72e78b742"
+  },
+  "purpose": "Crater Park restyle texture",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "8244637107c7cbf0f386d60013bc446da704ea5fd0909beb9174788d4c66f617",
+  "status": "done",
+  "started_at": "2026-10-13T21:47:54.809143+00:00",
+  "output": "stamped.png",
+  "output_sha256": "c0b7d521919f39a291525a0fef3e0856e13158b624aaced91b7b905d9106d8e9",
+  "usage": {
+    "input_tokens": 1846,
+    "input_tokens_details": {
+      "image_tokens": 1584,
+      "text_tokens": 262
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3602
+  },
+  "elapsed_seconds": 39.4,
+  "finished_at": "2026-10-13T21:48:34.229791+00:00",
+  "compact": {
+    "file": "stamped.jpg",
+    "size": "1024x1024",
+    "jpeg_quality": 92,
+    "chroma": "4:4:4"
+  }
+}
