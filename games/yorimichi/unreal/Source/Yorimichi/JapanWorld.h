@@ -84,8 +84,9 @@ public:
     virtual void Tick(float Dt) override;
     // Cosmetic particles sample the generated ground directly; gameplay still uses collision.
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
-    /** The menu's Graphics mode (grass reach) and tree sway distance in metres: trees and bushes beyond it stand still. */
-    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres);
+    /** The menu's Graphics mode (grass reach), tree sway distance in metres (trees and bushes beyond it stand still) and
+     *  forest detail, the forest trees' LOD distance scale (below 1 their simpler models come nearer). */
+    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail);
     /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
     bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
@@ -115,6 +116,7 @@ private:
     float AppliedBackdropCull = 0.f;
     int32 AppliedPerformanceMode = -1;
     float AppliedTreeSway = -1.f;
+    float AppliedForestDetail = -1.f;
     int32 AppliedTreeOptimization = -1;
     int32 AppliedTreeLODMode = -1;
     float AppliedTreeDistanceScale = -1.f;
