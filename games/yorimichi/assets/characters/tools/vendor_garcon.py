@@ -83,16 +83,19 @@ def main(args):
     arm.name = 'Armature'
     mesh.name = 'Garcon_Body'
     assert len(mesh.data.materials) == 2
+    parts = set()
     for i, material in enumerate(mesh.data.materials):
         material.name = f'M_Garcon_{i}'
         shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
         link = shader.inputs['Base Color'].links[0]
         assert link.from_node.type == 'TEX_IMAGE'
         part = 'Head' if 'Bust' in link.from_node.image.name or 'Head' in link.from_node.image.name else 'Body'
+        parts.add(part)
         image = bpy.data.images.load(str(source / f'T_Garcon_{part}.png'), check_existing=False)
         image.colorspace_settings.name = 'sRGB'
         image.pack()
         link.from_node.image = image
+    assert parts == {'Head', 'Body'}, 'Both original atlases are required'
     scene = bpy.context.scene
     scene.unit_settings.system, scene.unit_settings.scale_length = 'METRIC', 1
     assert all(arm.data.bones[f'toe_{s}'].head_local.x > arm.data.bones[f'foot_{s}'].head_local.x for s in 'LR')
