@@ -37,6 +37,8 @@ SOURCE = GAME / 'unreal' / 'Source'
 # imports save in assets (Source/YorimichiAssets). Gameplay edits leave the imports current.
 IMPORT_CODE = ('YorimichiImport',)
 SAVED_TYPES = ('YorimichiAssets',)
+# Nox captures USkinMorphContactData on its mesh; its helper and saved type live in this plugin.
+CONTACT_TYPES = ('AtelierCore',)
 NAMES = paths.STUDIO / 'atelier' / 'character'
 YORI = WORLD / 'yori.py'
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
@@ -251,9 +253,9 @@ def nox_steps(out):
         Step('characters.nox', [Blender(nox / 'export_unreal.py', threads=3)], inputs=[nox, NAMES],
              outputs=[out / 'nox/export.json'], heavy=True, about='Nox assembled mesh, hair rig and two 4K atlases to FBX'),
         Step('unreal.nox', [UnrealScript(SCRIPTS / 'import_nox.py', 'NOX IMPORT COMPLETE', null_rhi=True,
-                                        modules=IMPORT_CODE + SAVED_TYPES)],
+                                        modules=IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES)],
              inputs=[SCRIPTS / 'import_nox.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
-             needs=['characters.nox', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)],
+             needs=['characters.nox', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES)],
              outputs=[GAME / 'unreal/Content/Nox/SK_Nox.uasset'], heavy=True,
              about='/Game/Nox: assembled mesh, materials and base definition'),
         Step('characters.nox_adventure', [retarget], inputs=retarget_inputs,
@@ -498,7 +500,7 @@ def unreal_steps(ctx):
              about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              inputs=[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
