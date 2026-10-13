@@ -133,7 +133,7 @@ void UJapanSkateNetwork::TickComponent(float Dt, ELevelTick Type, FActorComponen
             // The retained board is a visible snapshot, not a newly arrived clock
             // sample. Its stamp may precede this rider epoch by several seconds.
             FJapanBoardState Snapshot = Board;
-            Snapshot.Time = GetWorld()->GetTimeSeconds() - .5;
+            Snapshot.Time = GetWorld()->GetRealTimeSeconds() - .5;
             Boards.Add(MoveTemp(Snapshot));
         }
         LastHostRoot = Rider->GetActorLocation(); LastHostRootTime = GetWorld()->GetTimeSeconds();
@@ -161,9 +161,11 @@ void UJapanSkateNetwork::Capture()
 {
     const double Now = GetWorld()->GetTimeSeconds();
     auto* Skate = Rider->GetSkate();
-    // Sender-local time is monotonic; the host maps its offset on arrival.
+    // Sender-local real time is monotonic; the host maps its offset on arrival.
     // GameState clock synchronization must never retime captures mid-stream.
-    const double CaptureTime = Now;
+    // World time loses everything past MaxUndilatedFrameTime in a hitch, which
+    // would map every later frame behind the observer's playout for seconds.
+    const double CaptureTime = GetWorld()->GetRealTimeSeconds();
     const FTransform Deck = Skate->GetDeckWorld();
     const float Shown = Skate->GetBoardShown();
     const bool bBoardChanged = Shown != LastCapturedBoard.Shown || !Deck.Equals(LastCapturedBoard.Deck, .01);
@@ -245,8 +247,7 @@ void UJapanSkateNetwork::ServerPose_Implementation(const FJapanSkateChunk& Chunk
         Rider->SetActorTransform(Complete.Root, false, nullptr, ETeleportType::TeleportPhysics);
         Rider->GetCharacterMovement()->Velocity = Complete.Velocity;
     }
-    const double ServerTime = Rules->GetServerWorldTimeSeconds();
-    Complete.Time = ArrivalClock.Map(Complete.Time, ServerTime);
+    Complete.Time = ArrivalClock.Map(Complete.Time, GetWorld()->GetRealTimeSeconds());
     HostMode = Complete.Mode;
     // Listen-host visuals consume the validated frame locally, with no network echo to its owner.
     if (!Rider->IsLocallyControlled() && GetWorld()->GetNetMode() != NM_DedicatedServer) Accept(Complete);
@@ -264,7 +265,7 @@ void UJapanSkateNetwork::ReceivePose(const FJapanSkateChunk& Chunk)
 void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
 {
     ReceivedFrame = Frame.Frame;
-    const double Arrival = GetWorld()->GetTimeSeconds();
+    const double Arrival = GetWorld()->GetRealTimeSeconds();
     FJapanSkateFrame Local = Frame;
     // A newly joined client's replicated GameState clock can lag or lead while
     // loading. Presentation needs capture spacing on this observer's clock,
@@ -281,7 +282,8 @@ void UJapanSkateNetwork::Accept(const FJapanSkateFrame& Frame)
 
 void UJapanSkateNetwork::Show(float Dt)
 {
-    const double Now = GetWorld()->GetTimeSeconds();
+    // Presentation runs on real time, the clock that stamps and maps every stream.
+    const double Now = GetWorld()->GetRealTimeSeconds();
     const double RequestedTime = Playout.Advance(Now);
     if (Frames.IsEmpty()) { ShowBoard(RequestedTime); Rider->GetSkate()->ApplyNetworkAudio(0,0,0,FVector::ZeroVector,Dt); return; }
     const auto Sample = FJapanSkatePlayout::Sample(Frames, RequestedTime, [](const auto& Frame) { return double(Frame.Time); });
@@ -332,7 +334,7 @@ void UJapanSkateNetwork::ServerBoard_Implementation(const FJapanBoardState& Stat
     if (Now - RateWindow >= 1.) { RateWindow = Now; ReceivedChunks = ReceivedBoards = ReceivedBodyPackets = 0; }
     if (++ReceivedBoards > 90) return;
     Board = State;
-    Board.Time = ArrivalClock.Map(State.Time, Now);
+    Board.Time = ArrivalClock.Map(State.Time, GetWorld()->GetRealTimeSeconds());
     OnRep_Board();
 }
 
@@ -350,7 +352,7 @@ void UJapanSkateNetwork::CaptureBodies(double Now)
     }
     const auto& ComponentPose = Mesh->GetComponentSpaceTransforms();
     FJapanSkateBodies State;
-    State.Pose.Epoch = Epoch; State.Pose.Frame = ++SentBodies; State.Pose.Time = Now;
+    State.Pose.Epoch = Epoch; State.Pose.Frame = ++SentBodies; State.Pose.Time = GetWorld()->GetRealTimeSeconds();
     State.Pose.Root = Rider->GetActorTransform(); State.Pose.Mesh = Mesh->GetComponentTransform();
     State.Pose.Velocity = Rider->GetCharacterMovement()->Velocity;
     State.Pose.Deck = Skate->GetDeckWorld(); State.Pose.Shown = Skate->GetBoardShown();
@@ -390,7 +392,7 @@ void UJapanSkateNetwork::ServerBodies_Implementation(const FJapanSkateBodies& St
     if (++ReceivedBodyPackets > 90) return;
     HostBodies = State.Pose.Frame;
     FJapanSkateBodies Relay = State;
-    Relay.Pose.Time = ArrivalClock.Map(State.Pose.Time, Now);
+    Relay.Pose.Time = ArrivalClock.Map(State.Pose.Time, GetWorld()->GetRealTimeSeconds());
     if (GetWorld()->GetNetMode() != NM_DedicatedServer) ReceiveBodies(Relay);
     for (auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
         if (auto* Player = Cast<AJapanPlayerController>(It->Get())) Player->SendSkateBodies(Rider, Relay);
@@ -401,7 +403,7 @@ void UJapanSkateNetwork::ReceiveBodies(const FJapanSkateBodies& State)
     if (!Rider || Rider->IsLocallyControlled() || !Newer(State.Pose.Frame, ReceivedBodies) || !ValidBodies(State)) return;
     ReceivedBodies = State.Pose.Frame;
     FJapanSkateBodies Local = State;
-    Local.Pose.Time = Playout.Map(State.Pose.Time, GetWorld()->GetTimeSeconds());
+    Local.Pose.Time = Playout.Map(State.Pose.Time, GetWorld()->GetRealTimeSeconds());
     if (!Bodies.IsEmpty() && Local.Pose.Time <= Bodies.Last().Pose.Time) { ++TimestampDropCount; return; }
     Bodies.Add(MoveTemp(Local));
     while (Bodies.Num() > 64) Bodies.RemoveAt(0, 1, EAllowShrinking::No);
@@ -437,7 +439,7 @@ void UJapanSkateNetwork::OnRep_Board()
 {
     if (!Boards.IsEmpty() && !Newer(Board.Sequence, Boards.Last().Sequence)) return;
     FJapanBoardState Local = Board;
-    Local.Time = Playout.Map(Board.Time, GetWorld()->GetTimeSeconds());
+    Local.Time = Playout.Map(Board.Time, GetWorld()->GetRealTimeSeconds());
     if (!Boards.IsEmpty() && Local.Time <= Boards.Last().Time) { ++TimestampDropCount; return; }
     Boards.Add(MoveTemp(Local));
     while (Boards.Num() > 64) Boards.RemoveAt(0, 1, EAllowShrinking::No);

@@ -18,7 +18,7 @@ struct FJapanSkateClock
         double Offset = Delta;
         for (const auto& Sample : Samples) Offset = FMath::Min(Offset, Sample.Offset);
         // Changing routes or expiring a minimum cannot jump one new frame across
-        // already buffered frames. Sender clocks are monotonic local world time.
+        // already buffered frames. Sender clocks are monotonic local real time.
         if (LastArrival < 0.) SmoothedOffset = Offset;
         else
         {
