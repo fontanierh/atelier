@@ -41,7 +41,8 @@ def ue(point):
 
 
 def export_mesh(name, vertices, faces, materials, face_materials, uvs=None):
-    """As megapark/build.py export_mesh: an FBX about a local origin on a 32 m grid, native units, Y up."""
+    """As megapark/build.py export_mesh: an FBX about a local origin on a 32 m grid, native units, Y up. Its smoothing
+    groups go with the normals: without them the FBX import warns, which crashes a windowless (null RHI) editor."""
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     origin = np.round((vertices.min(axis=0).astype('f8') + vertices.max(axis=0)) / 2 / 32) * 32
@@ -65,7 +66,7 @@ def export_mesh(name, vertices, faces, materials, face_materials, uvs=None):
     path = OUT / 'fbx' / f'{name}.fbx'
     bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, object_types={'MESH'},
         apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', global_scale=1.,
-        axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='OFF' if uvs is not None else 'FACE',
+        axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False, mesh_smooth_type='FACE',
         use_tspace=uvs is not None, bake_anim=False, add_leaf_bones=False, path_mode='STRIP')
     lo, hi = vertices.min(axis=0), vertices.max(axis=0)
     result = {'name': name, 'fbx': f'fbx/{name}.fbx', 'sha256': sha(path), 'native_origin': origin.tolist(),
