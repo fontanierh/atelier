@@ -31,6 +31,7 @@
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SWrapBox.h"
 #include "TimerManager.h"
+#include "ComponentRecreateRenderStateContext.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SSlider.h"
 #include "Widgets/Input/SButton.h"
@@ -156,6 +157,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("desktop"),TEXT("Desktop profile"),0.f,0.f,1.f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
         {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
+        {TEXT("leaf_motion"),TEXT("Swaying leaves"),0.f,0.f,1.f},
         // The fog's look (AJapanWorld::ApplyVolumetricFog, docs/VOLUMETRIC_FOG.md); the defaults are FVolumetricFogLook's.
         {TEXT("fog_density"),TEXT("Fog density"),.07f,0.f,.2f,.005f},
         {TEXT("fog_reach"),TEXT("Fog reach (m)"),30.f,10.f,120.f,5.f},
@@ -177,6 +179,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("toon_soft"),TEXT("Toon softness"),.45f,0.f,1.f},
         {TEXT("outline"),TEXT("Outlines"),0.f,0.f,1.f},
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
+        {TEXT("tree_sway"),TEXT("Tree sway distance (m)"),60.f,0.f,180.f,5.f},
         // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
         // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
         // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1). Its
@@ -254,7 +257,7 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
     return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
-        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("goofy");
+        Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("leaf_motion") || Key == TEXT("goofy");
 }
 float UJapanPreferences::Get(const TCHAR* Key) const
 {
@@ -375,6 +378,18 @@ void UJapanPreferences::Apply()
         if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
             CVar->Set(Value,ECVF_SetByCode);
     };
+    // Static trees and bushes sway through world position offset. With motion vectors for that sway, forward
+    // shading draws each of them again in a separate velocity pass (2.3-2.8 ms of a 16 ms forest frame on an
+    // M1 Max). Proxies read the setting when created, so a change rebuilds them.
+    if (auto* LeafMotion = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Velocity.EnableVertexDeformation")))
+    {
+        const int32 Wanted = Get(TEXT("leaf_motion")) > .5f ? 1 : 0;
+        if (LeafMotion->GetInt() != Wanted)
+        {
+            LeafMotion->Set(Wanted,ECVF_SetByCode);
+            if (LeafMotion->GetInt() == Wanted) { FGlobalComponentRecreateRenderStateContext Recreate; }
+        }
+    }
     // Saved Unreal GameUserSettings can override the ini cap with zero.
     // Explicit console overrides still allow the benchmark to run uncapped.
     Set(TEXT("t.MaxFPS"),60.f);
@@ -443,7 +458,7 @@ void UJapanPreferences::Apply()
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
-        It->ApplyPerformanceSettings(PerformanceMode != 0);
+        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")));
         if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
             FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
@@ -637,7 +652,9 @@ FString MainHint(const FString& Key)
     static const TMap<FString,FString> Hints = {
         {TEXT("performance"),TEXT("Performance keeps movement smooth with lighter shadows and distant detail; Quality sharpens shadows.")},
         {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. Off saves GPU time.")},
+        {TEXT("leaf_motion"),TEXT("Precise draws every swaying tree again so anti-aliasing follows its leaves exactly. Fast saves about 2.5 ms a frame in the forest; leaf edges soften slightly in wind.")},
         {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
+        {TEXT("tree_sway"),TEXT("How far from the camera trees and bushes sway in the wind; beyond it they stand still. Farther costs GPU time.")},
         {TEXT("goofy"),TEXT("Which foot leads on the skateboard: Regular is the left foot, Goofy the right.")},
         {TEXT("tree_lod_distance"),TEXT("How far detailed trees reach, with Automatic tree detail. Farther costs more GPU time.")},
         {TEXT("fog_density"),TEXT("How thick the volumetric fog is.")},
@@ -1054,7 +1071,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     if (JapanNetwork::IsOnline(Owner->GetWorld()))
         Rows->AddSlot().AutoHeight().Padding(0,0,0,12)[SNew(STextBlock).AutoWrapText(true).ColorAndOpacity(FLinearColor::White)
             .Text(FText::FromString(TEXT("You can change characters during the session. Shared games use two stamina rings and default skate physics.")))];
-    TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("show_fps"),TEXT("goofy")};
+    TArray<FString> Toggles = {TEXT("performance"),TEXT("fog"),TEXT("leaf_motion"),TEXT("show_fps"),TEXT("goofy")};
     Page->Section();
     for (const FString& Key : Toggles)
     {
@@ -1068,6 +1085,9 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
                 if (Key == TEXT("fog")) return FText::FromString(Enabled
                     ? TEXT("Volumetric fog: on · valley mist and light shafts")
                     : TEXT("Volumetric fog: off"));
+                if (Key == TEXT("leaf_motion")) return FText::FromString(Enabled
+                    ? TEXT("Swaying leaves: Precise · motion-matched edges")
+                    : TEXT("Swaying leaves: Fast"));
                 return FText::FromString(Key == TEXT("performance")
                     ? (Enabled ? TEXT("Graphics: Performance · 60 fps target") : TEXT("Graphics: Quality"))
                     : (Enabled ? TEXT("Frame rate: shown") : TEXT("Frame rate: hidden")));

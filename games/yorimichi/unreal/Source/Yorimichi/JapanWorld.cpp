@@ -745,18 +745,21 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
-void AJapanWorld::ApplyPerformanceSettings(bool bPerformance)
+void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres)
 {
-    if (!bLoaded || AppliedPerformanceMode == int32(bPerformance)) return;
+    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres)) return;
     for (auto* Group : Groups)
     {
         const FString Name = Group->GetStaticMesh()->GetName();
         if (Name.StartsWith(TEXT("Grass")))
             Group->SetCullDistances(bPerformance ? 3500 : 6000,bPerformance ? 5000 : 8000);
+        // A swaying tree is drawn again into the velocity pass and with its full vertex work into the
+        // depth and shadow passes; past this distance its sway is under a pixel or two.
         if (Name.StartsWith(TEXT("Tree")) || Name.StartsWith(TEXT("Bush")))
-            Group->SetWorldPositionOffsetDisableDistance(bPerformance ? 6000 : 18000);
+            Group->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(TreeSwayMetres*100.f));
     }
     AppliedPerformanceMode = int32(bPerformance);
+    AppliedTreeSway = TreeSwayMetres;
 }
 
 void AJapanWorld::ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look)
