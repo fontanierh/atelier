@@ -558,7 +558,7 @@ void UJapanCharacterMovement::TickCharacterPose(float Dt)
     // The displayed graph follows the frame clock, not bursts of movement packets.
     // Root-motion montages and dedicated-server pose sampling retain UE's path.
     if (CharacterOwner && GetNetMode() == NM_ListenServer && !CharacterOwner->IsLocallyControlled() &&
-        !CharacterOwner->IsPlayingRootMotion()) return;
+        !CharacterOwner->IsPlayingNetworkedRootMotionMontage()) return;
     Super::TickCharacterPose(Dt);
 }
 

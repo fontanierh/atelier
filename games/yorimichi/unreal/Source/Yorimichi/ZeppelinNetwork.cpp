@@ -75,7 +75,7 @@ bool AZeppelinService::InteractNetwork(AWandererCharacter* C)
  if(!HasAuthority()||!C||!C->HasAuthority()||!C->IsReady())return false;
  if(IsPassenger(C))
  {
-  if(IsFlying()){SetPhase(5);PhaseTime=LandSeconds();PublishNetworkState();}
+  if(IsFlying()&&Phase<5){SetPhase(5);PhaseTime=LandSeconds();PublishNetworkState();}
   return true;
  }
  const int32 At=Nearby(C,260.f);
@@ -244,7 +244,13 @@ void AZeppelinService::TickNetwork(float Dt)
  if(HasAuthority())
  {
   for(int32 I=NetworkState.Passengers.Num()-1;I>=0;--I)
-   if(!IsValid(NetworkState.Passengers[I].Rider)||!NetworkState.Passengers[I].Rider->GetController())NetworkState.Passengers.RemoveAt(I);
+   if(!IsValid(NetworkState.Passengers[I].Rider)||!NetworkState.Passengers[I].Rider->GetController())
+   {
+    if(auto* C=NetworkState.Passengers[I].Rider.Get())
+    {RemoveTickPrerequisiteActor(C);C->GetMesh()->RemoveTickPrerequisiteActor(this);RestoreNetworkCamera(C);}
+    NetworkState.Passengers.RemoveAt(I);
+   }
+  if(Phase==2&&NetworkState.Passengers.IsEmpty())DockAt(Dock);
   PhaseTime+=Dt*(IsFlying()?FlightSpeed:1.f);
  }
  else

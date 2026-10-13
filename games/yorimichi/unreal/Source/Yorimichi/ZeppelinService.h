@@ -69,6 +69,7 @@ public:
  void AdjustFlightSpeed(int32 Direction);
  float GetFlightSpeed() const { return FlightSpeed; }
  bool IsFlying() const { return Phase>=3&&Phase<=5; }
+ bool CanReach(const AWandererCharacter* C) const { return Nearby(C,260.f)!=INDEX_NONE; }
  float GetWalkSpeed(const AWandererCharacter* Character = nullptr) const;
  float GetPropellerAngle() const { return PropAngle; }
  int32 GetDock() const { return Dock; }

@@ -253,6 +253,7 @@ void AWandererCharacter::ServerZeppelinInput_Implementation(uint32 Epoch, int32 
     }
     if (!Ship->IsPassenger(this) &&
         (NetworkActivity.Kind != EJapanActivity::OnFoot || MovementLocked() ||
+         GetWorld()->GetSubsystem<UJapanEncounters>()->HoldsPlayer(this) ||
          GetWorld()->GetSubsystem<UJapanCombatResolver>()->HasPending(this)))
     { ClientActivityRejected(TEXT("Finish the current action before boarding.")); return; }
     if (!Ship->TryInteract(this)) ClientActivityRejected(TEXT("Use the zeppelin beside its platform when it is ready to board."));

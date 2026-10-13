@@ -164,4 +164,6 @@ private:
     TArray<FVector> PreviousStrike;
     FRandomStream Rand;
     friend struct JapanEnemyQA::FJapanEnemyProbe;
+    friend class UJapanEncounters;
+    friend class FJapanEncounterReplacementTest;
 };

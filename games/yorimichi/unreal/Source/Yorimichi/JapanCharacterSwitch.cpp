@@ -2,6 +2,7 @@
 #include "JapanNetwork.h"
 #include "JapanCharacterMovement.h"
 #include "JapanCombatResolver.h"
+#include "JapanEncounters.h"
 #include "PlayableCharacter.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
@@ -146,6 +147,7 @@ void AJapanPlayerController::FinishCharacterSwitch()
     From->SetActorEnableCollision(false);
     UnPossess(); Possess(To); SetControlRotation(View);
     To->AppliedActivityEpoch = 0; To->bReady = true; To->OnRep_NetworkActivity();
+    GetWorld()->GetSubsystem<UJapanEncounters>()->ReplacePlayer(From, To);
     // The host's remote pawn also needs the simulation snapshot; ordinary foot
     // reaction handoffs only restore on the owner because proxies use presentation.
     To->NetworkAvatar = To->Moves->CapturePresentation();

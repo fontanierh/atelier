@@ -912,12 +912,23 @@ void AWandererCharacter::FlightFaster(const FInputActionValue&) { ZeppelinStep(1
 // Aboard, the two flight buttons change the ride's speed; at a docked ship they choose its next stop.
 void AWandererCharacter::ZeppelinStep(int32 Direction)
 {
-    if (JapanNetwork::IsOnline(GetWorld())) { if (IsLocallyControlled()) ServerZeppelinInput(NetworkActivity.Epoch,Direction); return; }
+    if (JapanNetwork::IsOnline(GetWorld()))
+    {
+        auto* Ship = GetZeppelin();
+        if (IsLocallyControlled() && bReady && !bMenuOpen && Ship &&
+            (Ship->IsPassenger(this) || Ship->CanChooseStop(this))) ServerZeppelinInput(NetworkActivity.Epoch,Direction);
+        return;
+    }
     if(!GetZeppelin())return;
     if(IsZeppelinPassenger())GetZeppelin()->AdjustFlightSpeed(Direction);
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
-void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld())) { if (IsLocallyControlled()) ServerZeppelinInput(NetworkActivity.Epoch,0); return; }
+void AWandererCharacter::Interact(const FInputActionValue&) { if (JapanNetwork::IsOnline(GetWorld()))
+ {
+  auto* Ship=GetZeppelin();
+  if(IsLocallyControlled()&&bReady&&!bMenuOpen&&Ship&&(Ship->IsPassenger(this)||Ship->CanReach(this)))ServerZeppelinInput(NetworkActivity.Epoch,0);
+  return;
+ }
  if(SkateRide->IsRiding())return; if(bReady&&!bMenuOpen&&Sword&&!Sword->CancelForInterrupt(true))return; if(bReady&&!bMenuOpen&&GetZeppelin()&&GetZeppelin()->TryInteract(this))return; if(bReady&&!bMenuOpen&&ASwordTrainer::TryInteract(this))return; if (CanAct() && StandForAction()) SetAction(TEXT("Interact")); }
 void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 {

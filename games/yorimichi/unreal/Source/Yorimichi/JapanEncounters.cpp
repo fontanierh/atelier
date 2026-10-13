@@ -2,6 +2,7 @@
 #include "JapanSession.h"
 #include "WandererCharacter.h"
 #include "WandererSword.h"
+#include "FoxHunter.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 
@@ -106,6 +107,19 @@ void UJapanEncounters::ReleaseAttack(AActor* Enemy)
 {
     if (auto* Entry = Encounters.Find(Enemy)) { Entry->Attacking.Reset(); Entry->AttackUntil = 0.; }
 }
+void UJapanEncounters::ReplacePlayer(AWandererCharacter* From, AWandererCharacter* To)
+{
+    if (!IsValid(From) || !IsValid(To) || From == To || !From->HasAuthority() || !To->HasAuthority()) return;
+    for (auto& Pair : Encounters)
+    {
+        auto& Entry = Pair.Value;
+        FMember Member;
+        if (Entry.Members.RemoveAndCopyValue(From, Member)) Entry.Members.Add(To, Member);
+        if (Entry.Attacking == From) Entry.Attacking = To;
+        if (auto* Hunter = Cast<AFoxHunter>(Pair.Key.Get()); Hunter && Hunter->Target == From) Hunter->Target = To;
+    }
+}
+
 bool UJapanEncounters::HoldsPlayer(AWandererCharacter* Player) const
 {
     if (!Eligible(Player)) return false;

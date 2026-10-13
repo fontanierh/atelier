@@ -20,9 +20,12 @@ public:
     bool ReserveAttack(AActor* Enemy, AWandererCharacter* Player, float Seconds);
     void ReleaseAttack(AActor* Enemy);
     bool HoldsPlayer(AWandererCharacter* Player) const;
+    /** Keep a character replacement in the same encounter, with its threat and active attack lease. */
+    void ReplacePlayer(AWandererCharacter* From, AWandererCharacter* To);
     uint32 Identity(AActor* Enemy) const;
     int32 FrozenHealth(AActor* Enemy, int32 Fallback) const;
 private:
+    friend class FJapanEncounterReplacementTest;
     struct FMember
     {
         float Threat = 0.f;
