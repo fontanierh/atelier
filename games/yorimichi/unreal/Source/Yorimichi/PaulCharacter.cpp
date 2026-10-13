@@ -9,7 +9,7 @@
 
 namespace
 {
-    const TCHAR* Definition = TEXT("/Game/Paul/DA_Paul.DA_Paul");
+    const TCHAR* PaulDefinition = TEXT("/Game/Paul/DA_Paul.DA_Paul");
     TSharedPtr<FJsonObject> Record()
     {
         static const TSharedPtr<FJsonObject> Value = AtelierReadJson(AtelierDataPath(TEXT("paul/adventure.json")));
@@ -22,7 +22,7 @@ static const FPlayableCharacter::FRegister RegisterPaul({APaulCharacter::Name(),
 
 APaulCharacter::APaulCharacter()
 {
-    DefinitionAssetPath = Definition;
+    DefinitionAssetPath = PaulDefinition;
     SprintSpeedMultiplier = 1.f;
     GetCapsuleComponent()->InitCapsuleSize(24.f, 83.f);
     GetCharacterMovement()->SetCrouchedHalfHeight(73.f);
@@ -32,7 +32,7 @@ APaulCharacter::APaulCharacter()
 
 bool APaulCharacter::IsBuilt()
 {
-    return Record().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(Definition)));
+    return Record().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(PaulDefinition)));
 }
 
 void APaulCharacter::BeginPlay()
