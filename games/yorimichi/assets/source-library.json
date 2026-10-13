@@ -1833,14 +1833,6 @@
       "bytes": 15201536,
       "sha256": "8103d0bf2c970d4adcd6d9af32f109e376b29433b3cc3597387efd75a3a6219c"
     },
-    "characters/garcon/Garcon.glb": {
-      "bytes": 40989080,
-      "sha256": "08569580d93df54fb8356fff476e3fba24532d19298dbe760be32509dba62f8a"
-    },
-    "characters/garcon/portrait.png": {
-      "bytes": 68772,
-      "sha256": "0bfaf3c3514568aa45354ae2f68a2c99c2dac53a5d0bb473dd51e3cb5534f1a5"
-    },
     "characters/grips/modori/body.glb": {
       "bytes": 4812204,
       "sha256": "772f4fa222dcde46bae1b6a4e64c36704b5a1420cc0699b2404aaaf1ba21ac5a"
@@ -1996,6 +1988,14 @@
     "characters/nox/references/head/right.png": {
       "bytes": 1001796,
       "sha256": "2b690951752b81e784bcc3e27e165b7f43cf081aec36177df1dcaefe559d0303"
+    },
+    "characters/paul/Paul.glb": {
+      "bytes": 40989068,
+      "sha256": "640719953e502ac660f07989d92afcc4fe7929918f956430906541fbd0517310"
+    },
+    "characters/paul/portrait.png": {
+      "bytes": 68772,
+      "sha256": "0bfaf3c3514568aa45354ae2f68a2c99c2dac53a5d0bb473dd51e3cb5534f1a5"
     },
     "characters/sword-trainer/SwordTrainer-Rig-r03.blend": {
       "bytes": 21263282,

@@ -1,5 +1,5 @@
-mesh = "/Game/Garcon/SK_Garcon"
-base = "/Game/Garcon/DA_GarconBase"
-dest = "/Game/Garcon/Adventure"
-definition = "/Game/Garcon/DA_Garcon"
+mesh = "/Game/Paul/SK_Paul"
+base = "/Game/Paul/DA_PaulBase"
+dest = "/Game/Paul/Adventure"
+definition = "/Game/Paul/DA_Paul"
 keep_base_actions = false

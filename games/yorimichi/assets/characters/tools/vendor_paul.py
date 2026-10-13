@@ -1,4 +1,4 @@
-"""Convert the pinned HarasValley Garçon rig into a self-contained source GLB.
+"""Convert the pinned HarasValley boy rig into a self-contained source GLB.
 
 Run under atelier.safety.guarded with Blender. --source is the acquired folder
 containing garcon_rig.blend and T_Garcon_{Body,Head}.png; --output is build output.
@@ -81,11 +81,11 @@ def main(args):
     for old, new in names.items():
         arm.data.bones[old].name = new
     arm.name = 'Armature'
-    mesh.name = 'Garcon_Body'
+    mesh.name = 'Paul_Body'
     assert len(mesh.data.materials) == 2
     parts = set()
     for i, material in enumerate(mesh.data.materials):
-        material.name = f'M_Garcon_{i}'
+        material.name = f'M_Paul_{i}'
         shader = next(n for n in material.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
         link = shader.inputs['Base Color'].links[0]
         assert link.from_node.type == 'TEX_IMAGE'
@@ -107,7 +107,7 @@ def main(args):
                   geometry=dict(vertices=len(mesh.data.vertices), triangles=sum(len(p.vertices)-2 for p in mesh.data.polygons)),
                   source_scale=scale, materials=[m.name for m in mesh.data.materials])
     output.with_suffix('.json').write_text(json.dumps(report, indent=2)+'\n')
-    print('GARCON VENDOR COMPLETE', json.dumps(report), flush=True)
+    print('PAUL VENDOR COMPLETE', json.dumps(report), flush=True)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 {
-  "native": "Garcon.glb",
-  "native_sha256": "08569580d93df54fb8356fff476e3fba24532d19298dbe760be32509dba62f8a",
+  "native": "Paul.glb",
+  "native_sha256": "640719953e502ac660f07989d92afcc4fe7929918f956430906541fbd0517310",
   "height_cm": 165,
   "facing": "+X",
   "floor_m": 0,
@@ -73,8 +73,8 @@
   },
   "source_scale": 0.812614367093705,
   "materials": [
-    "M_Garcon_0",
-    "M_Garcon_1"
+    "M_Paul_0",
+    "M_Paul_1"
   ],
   "revision": "haras-r01",
   "origin": {
@@ -114,5 +114,7 @@
       }
     ]
   },
-  "authorization": "Project owner requested vendoring the brother character as a playable Yorimichi character."
+  "authorization": "Project owner requested vendoring the brother character as a playable Yorimichi character.",
+  "display_name": "Paul",
+  "renaming": "Names only; binary geometry, UVs, skin weights, skeleton matrices and texture bytes unchanged."
 }

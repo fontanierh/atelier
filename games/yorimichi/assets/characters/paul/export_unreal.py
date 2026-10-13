@@ -1,28 +1,53 @@
-"""Prepare the vendored Garçon for the shared move-set and bike retargeters."""
+"""Prepare the vendored Paul for the shared move-set and bike retargeters."""
 import hashlib
 import json
+import math
 from pathlib import Path
 import sys
 from types import SimpleNamespace
 
 import bpy
+import numpy as np
 from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world'))
 import yori  # noqa: E402
 
 SOURCE = Path(__file__).resolve().parent
-OUT = yori.OUT / 'garcon'
+OUT = yori.OUT / 'paul'
 HEIGHT, FPS = 1.65, 30
 FBX = dict(use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
            add_leaf_bones=False, use_armature_deform_only=False, bake_anim_use_nla_strips=False, bake_anim_use_all_actions=False,
            bake_anim_simplify_factor=0, bake_anim_step=1, mesh_smooth_type='FACE', use_mesh_modifiers=False, path_mode='ABSOLUTE')
 
 
+def measure_rest(before, bones):
+    rows = []
+    for bone in bones:
+        a, b = np.array(before[bone.name], dtype=np.float64), np.array(bone.matrix_local, dtype=np.float64)
+        rotations = []
+        for matrix in (a, b):
+            u, _, vt = np.linalg.svd(matrix[:3, :3])
+            rotation = u @ vt
+            assert np.linalg.det(rotation) > 0, 'Reflected rest bone: ' + bone.name
+            rotations.append(rotation)
+        relative = rotations[1] @ rotations[0].T
+        sine = np.linalg.norm([relative[2, 1]-relative[1, 2], relative[0, 2]-relative[2, 0],
+                               relative[1, 0]-relative[0, 1]]) / 2
+        angle = math.degrees(math.atan2(sine, (np.trace(relative)-1)/2))
+        head = float(np.linalg.norm(a[:3, 3]-b[:3, 3]))
+        matrix_error = float(np.max(np.abs(a-b)))
+        assert head <= 1e-5 and angle <= .01 and matrix_error <= 1e-4, (bone.name, head, angle, matrix_error)
+        rows.append(dict(bone=bone.name, head_m=head, degrees=angle, matrix_error=matrix_error))
+    return dict(max_head_m=max(row['head_m'] for row in rows), max_deg=max(row['degrees'] for row in rows),
+                max_matrix=max(row['matrix_error'] for row in rows),
+                worst_rotation_bone=max(rows, key=lambda row: row['degrees'])['bone'])
+
+
 def prepare(source):
     record = json.loads((source / 'source-manifest.json').read_text())
     native = source / record['native']
-    assert hashlib.sha256(native.read_bytes()).hexdigest() == record['native_sha256'], 'Garcon source checksum mismatch'
+    assert hashlib.sha256(native.read_bytes()).hexdigest() == record['native_sha256'], 'Paul source checksum mismatch'
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(native))
     scene = bpy.context.scene
@@ -32,7 +57,7 @@ def prepare(source):
     assert len(arms) == 1
     arm = arms[0]
     meshes = [o for o in scene.objects if o.type == 'MESH' and any(m.type == 'ARMATURE' for m in o.modifiers)]
-    assert meshes and sum(len(o.data.materials) for o in meshes) == 2, 'Missing Garcon body/head materials'
+    assert meshes and sum(len(o.data.materials) for o in meshes) == 2, 'Missing Paul body/head materials'
     world = {o: o.matrix_world.copy() for o in (arm, *meshes)}
     for obj in (arm, *meshes):
         obj.parent = None
@@ -51,12 +76,13 @@ def prepare(source):
     bpy.context.view_layer.objects.active = arm
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     names = {b.name: b.name for b in arm.data.bones}
-    assert set(names) == set(record['bones'].values()), 'Vendored Garcon rig changed'
+    assert set(names) == set(record['bones'].values()), 'Vendored Paul rig changed'
     assert arm.data.bones['pelvis'].parent.name == 'root'
     assert all(arm.data.bones[f'toe_{s}'].head_local.x > arm.data.bones[f'foot_{s}'].head_local.x for s in 'LR')
     # The bike author poses the contract bones in order. Make neutral followers
     # branches, so an intermediate spine/neck follower cannot hide its parent.
-    # Absolute rest matrices stay exact; neutral followers give the same FK.
+    # Neutral followers keep the same FK. EDIT canonicalizes head/tail/roll
+    # in float32; measure that round trip separately from the topology.
     secondary = set(record['secondary_bones'])
     rest = {b.name: b.matrix_local.copy() for b in arm.data.bones}
     bpy.ops.object.mode_set(mode='EDIT')
@@ -70,17 +96,16 @@ def prepare(source):
             bone.use_connect = False
             bone.parent = parent
     bpy.ops.object.mode_set(mode='OBJECT')
-    assert all(max(abs(v) for row in (b.matrix_local - rest[b.name]) for v in row) < 1e-6
-               for b in arm.data.bones), 'Reparenting changed a rest bone'
+    rest_roundtrip = measure_rest(rest, arm.data.bones)
     assert all(not arm.data.bones[name].children for name in secondary), 'Followers must be leaf branches'
     arm.name = 'Armature'
     arm.data.pose_position = 'POSE'
     for i, mesh in enumerate(meshes):
-        mesh.name = f'Garcon_Part{i}'
+        mesh.name = f'Paul_Part{i}'
     bpy.context.view_layer.update()
     return SimpleNamespace(record=record, native=native, scene=scene, arm=arm, meshes=meshes,
                            transform=transform, scale=scale, floor=floor, original_names=names,
-                           secondary_bones=secondary)
+                           secondary_bones=secondary, rest_roundtrip=rest_roundtrip)
 
 
 def main():
@@ -104,15 +129,15 @@ def main():
             materials[material.name] = dict(base_color=list(color.default_value), texture=str(target.relative_to(OUT)),
                                            two_sided=False, roughness=.8, metallic=0., specular=.2)
     rig.arm.data.pose_position = 'REST'
-    bpy.ops.export_scene.fbx(filepath=str(OUT/'fbx/Garcon.fbx'), object_types={'ARMATURE','MESH'}, bake_anim=False, **FBX)
+    bpy.ops.export_scene.fbx(filepath=str(OUT/'fbx/Paul.fbx'), object_types={'ARMATURE','MESH'}, bake_anim=False, **FBX)
     feet = {s: rig.arm.matrix_world @ rig.arm.data.bones[f'foot_{s}'].head_local for s in 'LR'}
     report = dict(source=rig.native.name, source_sha256=rig.record['native_sha256'], height_cm=165, sole_cm=.65,
                   model_scale=rig.scale, source_floor=rig.floor, facing='+X',
                   rest_ankles_cm={s:p.z*100 for s,p in feet.items()}, bones=rig.original_names,
-                  secondary_bones=sorted(rig.secondary_bones), materials=materials, clips={},
+                  secondary_bones=sorted(rig.secondary_bones), rest_roundtrip=rig.rest_roundtrip, materials=materials, clips={},
                   parents={b.name: b.parent.name if b.parent else None for b in rig.arm.data.bones})
     (OUT/'export.json').write_text(json.dumps(report,indent=2)+'\n')
-    print('GARCON EXPORT READY', flush=True)
+    print('PAUL EXPORT READY', flush=True)
 
 
 if __name__ == '__main__':

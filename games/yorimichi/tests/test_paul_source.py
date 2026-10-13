@@ -11,7 +11,7 @@ from atelier.gltf import glb_parts
 
 GAME = Path(__file__).resolve().parents[1]
 ASSETS = GAME / 'assets'
-SOURCE = ASSETS / 'characters/garcon'
+SOURCE = ASSETS / 'characters/paul'
 
 
 def read(doc, binary, index):
@@ -28,7 +28,7 @@ def test_self_contained_source_and_manifest():
     data = (SOURCE / record['native']).read_bytes()
     assert hashlib.sha256(data).hexdigest() == record['native_sha256']
     library = json.loads((ASSETS / 'source-library.json').read_text())['files']
-    assert library['characters/garcon/Garcon.glb'] == {'bytes': len(data), 'sha256': record['native_sha256']}
+    assert library['characters/paul/Paul.glb'] == {'bytes': len(data), 'sha256': record['native_sha256']}
     doc, binary = glb_parts(data)
     assert not doc.get('animations')
     assert len(doc['skins']) == 1 and len(doc['materials']) == 2
@@ -41,7 +41,7 @@ def test_self_contained_source_and_manifest():
 
 
 def test_contract_fingers_and_skinned_geometry():
-    doc, binary = glb_parts((SOURCE / 'Garcon.glb').read_bytes())
+    doc, binary = glb_parts((SOURCE / 'Paul.glb').read_bytes())
     contract = tomllib.loads((GAME.parents[1] / 'platform/conventions/rigs/humanoid.toml').read_text())
     joints = doc['skins'][0]['joints']
     names = {doc['nodes'][j]['name'] for j in joints}
@@ -60,3 +60,36 @@ def test_contract_fingers_and_skinned_geometry():
             assert indices.max() < len(joints)
             triangles += doc['accessors'][p['indices']]['count']//3
     assert triangles == 32024
+
+
+def test_rest_guard_accepts_precision_noise_and_refuses_moved_or_turned_bones():
+    # Exercise the exporter guard without importing Blender in the studio runner.
+    import ast
+    import math
+    from types import SimpleNamespace
+    import pytest
+    tree = ast.parse((SOURCE / 'export_unreal.py').read_text())
+    node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'measure_rest')
+    scope = {'np': np, 'math': math}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), 'rest_guard', 'exec'), scope)
+    check = scope['measure_rest']
+    before = {'spine': np.eye(4)}
+    def measure(matrix):
+        return check(before, [SimpleNamespace(name='spine', matrix_local=matrix)])
+    noisy = np.eye(4)
+    noisy[0, 0] += 6e-6
+    noisy[0, 3] = 2e-7
+    assert measure(noisy)['max_head_m'] == 2e-7
+    moved = np.eye(4)
+    moved[0, 3] = .001
+    with pytest.raises(AssertionError):
+        measure(moved)
+    turned = np.eye(4)
+    angle = math.radians(.1)
+    turned[:2, :2] = [[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]]
+    with pytest.raises(AssertionError):
+        measure(turned)
+    invalid = np.eye(4)
+    invalid[0, 0] = 1.01
+    with pytest.raises(AssertionError):
+        measure(invalid)

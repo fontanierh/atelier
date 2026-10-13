@@ -11,26 +11,26 @@ from pathlib import Path
 
 ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Cairo', 'CairoAdventure', 'CairoBike', 'Collections', 'CommunityPark',
-    'Data', 'Developers', 'Experiments', 'FX', 'FoxHunter', 'Garcon', 'GarconBike', 'Hippodrome', 'Japan', 'MegaPark', 'Modori', 'ModoriBike',
+    'Data', 'Developers', 'Experiments', 'FX', 'FoxHunter', 'Paul', 'PaulBike', 'Hippodrome', 'Japan', 'MegaPark', 'Modori', 'ModoriBike',
     'Nox', 'NoxBike', 'SeeThrough', 'SkateMotion', 'SkatePark', 'SkateRide', 'SkateRuntime', 'SwordTrainer', 'Wanderer',
 })
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'cairo', 'city_surface_tiles', 'communitypark',
     'heightmap.bin', 'hidamari', 'hippodrome', 'map', 'megapark', 'modori', 'skatepark', 'sword-trainer', 'treehouse',
-    'world.json', 'nox', 'garcon',
+    'world.json', 'nox', 'paul',
 })
 CHARACTER_DATA = {
     'cairo': {'adventure.json', 'bike'},
     'modori': {'adventure.json', 'bike', 'grips.json'},
     'nox': {'adventure.json', 'bike'},
-    'garcon': {'adventure.json', 'bike'},
+    'paul': {'adventure.json', 'bike'},
     'sword-trainer': {'adventure.json'},
     'hippodrome': {'hippodrome.json'},
 }
 CHARACTER_ASSET_DIRECTORIES = {
     'Modori': {'Adventure', 'Textures'},
     'Nox': {'Adventure', 'Textures'},
-    'Garcon': {'Adventure', 'Textures'},
+    'Paul': {'Adventure', 'Textures'},
     'SwordTrainer': {'Adventure', 'Textures'},
 }
 

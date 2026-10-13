@@ -1,4 +1,4 @@
-"""Import the vendored Garcon mesh, textures and base definition."""
+"""Import the vendored Paul mesh, textures and base definition."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402
 import json, sys
 from pathlib import Path
@@ -6,9 +6,9 @@ import unreal as U
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import animation_compression
 
-OUT = yori.OUT / 'garcon'
+OUT = yori.OUT / 'paul'
 CONFIG = json.loads((OUT / 'export.json').read_text())
-DEST = '/Game/Garcon'
+DEST = '/Game/Paul'
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools(); M = U.MaterialEditingLibrary
 E.make_directory(DEST)
 
@@ -82,7 +82,7 @@ def fbx(filename, name, skeleton=None, fps=30):
     return result
 
 
-mesh = fbx('Garcon.fbx', 'SK_Garcon')
+mesh = fbx('Paul.fbx', 'SK_Paul')
 U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
 skeleton = mesh.skeleton
 slots = list(mesh.materials)
@@ -112,7 +112,7 @@ for name, cfg in CONFIG['clips'].items():
     E.save_loaded_asset(clip)
     clips[name] = clip
 factory = U.DataAssetFactory(); factory.set_editor_property('data_asset_class', U.WandererDefinition)
-definition = asset('DA_GarconBase', U.WandererDefinition, factory)
+definition = asset('DA_PaulBase', U.WandererDefinition, factory)
 for k, v in dict(mesh=mesh, actions=clips, use_authored_movement=True,
                  rest_ankle_heights=U.Vector2D(CONFIG['rest_ankles_cm']['L'], CONFIG['rest_ankles_cm']['R']),
                  sole_height=CONFIG['sole_cm'], camera_height=40.).items():
@@ -122,4 +122,4 @@ E.save_loaded_asset(skeleton)
 report = {'mesh': mesh.get_path_name(), 'bones': len(bones), 'parents': parents, 'materials': [str(s.material_slot_name) for s in slots],
           'vertices': editor.get_num_verts(mesh, 0), 'clips': {n: c.get_path_name() for n, c in clips.items()}, 'source': CONFIG['source_sha256']}
 (OUT / 'unreal_import.json').write_text(json.dumps(report, indent=2) + '\n')
-U.log('GARCON IMPORT COMPLETE')
+U.log('PAUL IMPORT COMPLETE')

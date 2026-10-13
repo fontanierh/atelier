@@ -1,4 +1,4 @@
-#include "GarconCharacter.h"
+#include "PaulCharacter.h"
 #include "AtelierData.h"
 #include "AdventureMoveSet.h"
 #include "PlayableCharacter.h"
@@ -9,18 +9,18 @@
 
 namespace
 {
-    const TCHAR* Definition = TEXT("/Game/Garcon/DA_Garcon.DA_Garcon");
+    const TCHAR* Definition = TEXT("/Game/Paul/DA_Paul.DA_Paul");
     TSharedPtr<FJsonObject> Record()
     {
-        static const TSharedPtr<FJsonObject> Value = AtelierReadJson(AtelierDataPath(TEXT("garcon/adventure.json")));
+        static const TSharedPtr<FJsonObject> Value = AtelierReadJson(AtelierDataPath(TEXT("paul/adventure.json")));
         return Value;
     }
 }
 
-static const FPlayableCharacter::FRegister RegisterGarcon({AGarconCharacter::Name(), &AGarconCharacter::StaticClass,
-                                                          &AGarconCharacter::IsBuilt, TEXT("unreal.garcon_adventure")});
+static const FPlayableCharacter::FRegister RegisterPaul({APaulCharacter::Name(), &APaulCharacter::StaticClass,
+                                                          &APaulCharacter::IsBuilt, TEXT("unreal.paul_adventure")});
 
-AGarconCharacter::AGarconCharacter()
+APaulCharacter::APaulCharacter()
 {
     DefinitionAssetPath = Definition;
     SprintSpeedMultiplier = 1.f;
@@ -30,12 +30,12 @@ AGarconCharacter::AGarconCharacter()
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
 }
 
-bool AGarconCharacter::IsBuilt()
+bool APaulCharacter::IsBuilt()
 {
     return Record().IsValid() && FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(FString(Definition)));
 }
 
-void AGarconCharacter::BeginPlay()
+void APaulCharacter::BeginPlay()
 {
     Super::BeginPlay();
     UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("AdventureMoves"));
@@ -43,6 +43,6 @@ void AGarconCharacter::BeginPlay()
     else
     {
         DisablePlayerMovement();
-        UE_LOG(LogTemp, Error, TEXT("Garcon: missing move set (build unreal.garcon_adventure)"));
+        UE_LOG(LogTemp, Error, TEXT("Paul: missing move set (build unreal.paul_adventure)"));
     }
 }

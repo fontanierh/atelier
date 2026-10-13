@@ -4,7 +4,7 @@ from atelier import paths
 
 
 def stage(ctx, log):
-    rel = 'garcon/bike/export.json'
+    rel = 'paul/bike/export.json'
     dst = paths.content_data(ctx.game) / rel
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ctx.out / rel, dst)
