@@ -13,14 +13,23 @@ All values are Blender metres (x east, y north).
 |---|---|---|
 | Centre | (850, 2400) | `VOLCANO` |
 | Base radius (where the cone meets the foothills) | 1480 m | `BASE_RADIUS` |
-| Crest radius (it wanders by about 35 m) | 425 m | `RIM_RADIUS` |
-| Crest height | 690–720 m; three spires reach 810 m | `CREST` |
-| Caldera floor | level at 485 m (±1 m), 570 m across | `FLOOR_RADIUS`, `caldera_floor()` |
-| Floor to crest | 200 m (at least 202 m all round) | `DEPTH` |
+| Crest radius (it wanders by about 35 m) | 470 m | `RIM_RADIUS` |
+| Crest height | 690–720 m; three spires reach 790 m | `CREST` |
+| Caldera floor | level at 485 m (±1 m), 660 m across | `FLOOR_RADIUS`, `caldera_floor()` |
+| Floor to crest | 200 m (at least 200 m all round) | `DEPTH` |
 
 The floor holds a 340 × 390 m footprint at any heading, and the crest stands more than 160 m above it all the way
-round. `test_northern_landscape.py` checks both. The wall steepens toward the crest. Its foot moves in and out by up to
-12 m in collapse scallops.
+round. `test_northern_landscape.py` checks both.
+
+The floor is sized for [Crater Park](https://github.com/fontanierh/crater-skate-park):
+- **Fit:** a 337.95 × 384.51 m block with a corner radius of 256 m. It keeps at least 62 m to the wall's foot at any
+  heading, room for the earth slopes round its edges. Heading 185° turns its high west side toward the tallest part of
+  the crest.
+- **Height:** it rises 80 m above its own lowest ground, so its top stays about 130 m below the lowest crest.
+- **Ground:** it is a cut block of hillside whose west side stands up to 60 m above the floor. Like the Mega Park, it
+  needs a terrain stamp: the floor lowered under it and slopes up its high sides.
+
+The wall steepens toward the crest. Its foot moves in and out by up to 12 m in collapse scallops.
 
 The former, smaller summit at (550, 1930) stands on as the volcano's western shoulder. Within 1150 m of the Mega Park,
 the ground is whichever is higher, the former cone or the new one. So the ground round the park (and its terrain
@@ -47,5 +56,8 @@ The valley moved 600 m north to keep its distance from the volcano's northern fo
 volcano's foot runs on into the collar rather than easing back to the far hills.
 
 The country north of the far hills sinks under the foothills, as the far hills do. The country runs out to sea 600 m
-further north too. The world map's Belmonte knots moved with it (`map/map_projection.py`), so the map uses the
-generated sheet until the painted one is redone.
+further north too. The world map's Belmonte knots moved with it (`map/map_projection.py`), so Belmonte keeps its
+painted pixels.
+
+The painted sheet's middle band was repainted once for the new volcano by
+[`map/repaint_volcano.py`](../world/map/repaint_volcano.py). Its ledger is `painted/volcano_repaint.provenance.json`.

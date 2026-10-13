@@ -18,8 +18,10 @@ STEP = 5.
 # FLOOR_RADIUS across its foot and DEPTH below the crest.
 VOLCANO = (850., 2400.)     # centre, Blender metres (x east, y north)
 BASE_RADIUS = 1480.         # where the cone meets the foothills
-RIM_RADIUS = 425.           # mean radius of the crest; it wanders by about 35 m
-FLOOR_RADIUS = 285.         # the level floor reaches this far; the wall's foot moves in and out by up to 12 m
+RIM_RADIUS = 470.           # mean radius of the crest; it wanders by about 35 m
+# The level floor reaches this far; the wall's foot moves in and out by up to 12 m. Crater Park (a 338 x 385 m block,
+# corner radius 256 m) then keeps at least 62 m to the wall's foot at any heading, room for the slopes round its edges.
+FLOOR_RADIUS = 330.
 CREST = 600.                # the cone's height over its apron at the crest
 DEPTH = 200.                # the floor lies this far below the crest
 # The former, smaller summit stands on as the western shoulder, so the ground round the Mega Park keeps its shape.

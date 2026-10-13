@@ -101,12 +101,15 @@ class NorthernLandscape(unittest.TestCase):
         crest=M.natural_height(cx+np.cos(angles[:,None])*radii,cy+np.sin(angles[:,None])*radii).max(axis=1)
         self.assertGreater(float(crest.min()-M.caldera_floor()),160.)
         self.assertGreater(float(np.ptp(crest)),40.)     # broken, not a drawn circle
+        # Crater Park (a 337.95 x 384.51 m block, corner radius 256 m) keeps 60 m to the wall's foot at any heading.
+        self.assertGreater(float(M.wall_foot(np.linspace(0,2*np.pi,1440)).min())-256.,60.)
         self.assertLess(float(crest.max()),850.)
 
     def test_the_former_summit_keeps_the_ground_round_the_mega_park(self):
         import math
         a=np.linspace(0,2*math.pi,72,endpoint=False)
-        for reach in (350.,550.):
+        # Within 450 m of its centre (the park and its terrain stamp) the ground is the former summit's own.
+        for reach in (350.,450.):
             x=-150+reach*np.cos(a);y=1300+reach*np.sin(a)
             trail_quiet=M.smooth((M.trail_distance(x,y)-15)/100)
             former=M._foothills(x,y,trail_quiet)+M._former_cone(x,y,trail_quiet)
