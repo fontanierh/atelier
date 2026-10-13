@@ -12,8 +12,13 @@ from belmonte.appearance import far_palette  # noqa: E402
 from megapark import gate  # noqa: E402
 from communitypark import layout as community  # noqa: E402
 
+# The terrain and trail samplers read world.layout's generated outputs.
+BUILT=all((yori.OUT/name).is_file() for name in
+          ('farhills.npy','heightmap.npy','world.json','megapark/trail.json'))
+
 
 class NorthernLandscape(unittest.TestCase):
+    @unittest.skipUnless(BUILT,'needs world.layout')
     def test_raised_northern_ground_has_no_absolute_height_rock_band(self):
         x=np.array([0.,550.,1200.]);y=np.full_like(x,2950.)
         colours=M.colours(x,y,H.north_height(x,y))
@@ -21,6 +26,7 @@ class NorthernLandscape(unittest.TestCase):
         y[:]=3000.
         np.testing.assert_allclose(M.colours(x,y,H.north_height(x,y)),far_palette(x,y),atol=1e-12)
 
+    @unittest.skipUnless(BUILT,'needs world.layout')
     def test_snow_keeps_crater_rim_exposed_and_collects_in_bowl(self):
         x,y,z=M.surface_grid(H.north_base_height)
         radius=np.hypot(x-550,y-1930)
@@ -32,6 +38,7 @@ class NorthernLandscape(unittest.TestCase):
         self.assertLess(float((snow[(radius>50)&(radius<85)]>.5).mean()),.4)
         self.assertTrue(np.all((snow>=0)&(snow<=1)))
 
+    @unittest.skipUnless(BUILT,'needs world.layout')
     def test_snow_texture_preserves_linear_bytes_and_world_orientation(self):
         import json
         import tempfile
