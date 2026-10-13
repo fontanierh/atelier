@@ -7,6 +7,7 @@ import json
 import unreal as U
 from import_village import import_mesh
 from import_foliage_lods import main as import_lods
+from foliage_material import enable_bark_lod_blend
 import forest_impostor_material
 
 
@@ -15,6 +16,9 @@ def main():
     U.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
     output=yori.OUT/'forest'
     foliage=E.load_asset('/Game/Japan/Materials/M_Foliage');assert foliage
+    for slot in ['Bark','BarkOlive']:
+        bark=E.load_asset('/Game/Japan/Materials/MI_'+slot);assert bark,slot
+        enable_bark_lod_blend(bark);E.save_loaded_asset(bark)
     for slot,entry in json.loads((output/'textures/textures.json').read_text()).items():
         task=U.AssetImportTask();task.filename=str(output/'textures'/entry['file'])
         task.destination_path='/Game/Japan/Textures';task.destination_name='T_'+slot
