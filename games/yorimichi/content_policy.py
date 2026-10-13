@@ -24,12 +24,12 @@ def folder(path):
 CHARACTER_ROOTS = ({folder(p) for c in MOVERS for p in (c.unreal_path, c.adventure['dest'])}
                    | {folder(c.unreal_path) + 'Bike' for c in MOVERS if c.playable})
 ASSET_ROOTS = frozenset({
-    'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Collections', 'CommunityPark', 'Data', 'Developers',
+    'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Collections', 'Data', 'Developers',
     'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
     'SkateRide', 'SkateRuntime', 'Wanderer',
 } | CHARACTER_ROOTS)
 DATA_ROOTS = frozenset({
-    'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'communitypark', 'heightmap.bin',
+    'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'heightmap.bin',
     'hidamari', 'hippodrome', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
 } | {c.id for c in MOVERS})
 # Each mover's runtime data: its move record, its readiness record and bike report if playable and its posed grips if

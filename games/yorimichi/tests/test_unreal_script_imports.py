@@ -60,15 +60,8 @@ class UnrealScriptImportTests(unittest.TestCase):
         self.assertEqual(problems, [])
 
     def test_scanner_follows_local_modules(self):
-        self.assertIn('communitypark/source.py', local_file('communitypark.source').as_posix())
-        self.assertTrue(any(p.endswith('-> numpy') for p in missing_imports(local_file('communitypark.source'))))
-
-    def test_communitypark_importer_reads_the_library_scene(self):
-        import yori
-        from communitypark.source import FILE
-        tree = ast.parse((SCRIPTS / 'import_communitypark.py').read_text())
-        value = next(n.value for n in tree.body if isinstance(n, ast.Assign) and ast.unparse(n.targets[0]) == 'SOURCE')
-        self.assertEqual(eval(compile(ast.Expression(value), 'SOURCE', 'eval'), {'yori': yori}), FILE)
+        self.assertIn('megapark/gate.py', local_file('megapark.gate').as_posix())
+        self.assertTrue(any(p.endswith('-> numpy') for p in missing_imports(local_file('megapark.gate'))))
 
 
 if __name__ == '__main__':

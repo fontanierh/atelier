@@ -22,14 +22,8 @@ STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.j
           *(f'{c.id}/bike/export.json' for c in definition.movers() if c.playable))
 
 
-def communitypark(out):
-    """The committed community park library scene (docs/COMMUNITY_PARK.md)."""
-    source = ASSETS / 'communitypark' / 'megapark-textured.glb'
-    return source if source.is_file() else None
-
-
 def staged(out):
-    return STAGED + (('communitypark/park.json',) if communitypark(out) else ())
+    return STAGED
 
 
 def staged_source(out, rel):
@@ -46,6 +40,4 @@ def stage_data(ctx, log):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(staged_source(ctx.out, rel), dst)
         log.write(f'staged {rel}\n')
-    if not communitypark(ctx.out):
-        (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
 

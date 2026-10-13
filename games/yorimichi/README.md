@@ -24,7 +24,7 @@ uv run atelier playtest yorimichi          # the latest GitHub release instead, 
 module (`unreal.compile`), the Unreal imports (`unreal.*`) and the runtime data (`data.stage`). Name a step to build
 just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
-[the asset library](assets/README.md): the model GLBs, including the community park and the skate pier's obstacle
+[the asset library](assets/README.md): the model GLBs, including the skate pier's obstacle
 modules, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The
 skating data is shared: it lives in the [Skate plugin](../../platform/engine/Plugins/Activities/Skate/Data/README.md)
 and `unreal.skate_data` imports it into typed assets under `Content/SkateRuntime` and `Content/SkateMotion`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
@@ -65,8 +65,7 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 - the [south-west](world/regions/southwest/README.md): fishing village, beach and island temple;
 - the hidden [tree house](world/regions/treehouse/README.md) in the west hillside canopy
   ([docs/TREEHOUSE_PLAN.md](docs/TREEHOUSE_PLAN.md));
-- the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin;
-- the [community skate park](docs/COMMUNITY_PARK.md), with bowls, full pipes and tall vert above Hidamari station.
+- the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin.
 
 You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), on the
 [zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and

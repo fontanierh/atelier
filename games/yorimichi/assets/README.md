@@ -12,8 +12,6 @@ and merged motion data. It also pins the skating bundle's manifest.
 payloads without existing build output. The library tests check the GLBs' embedded
 geometry and images and confirm that a fresh checkout includes every park step.
 
-- `communitypark/source.json` records the scene GLB's filename, size, SHA-256 and
-  inventory. Its five texture maps are embedded in the GLB.
 - `skatepark/modules.json` records each module GLB's filename, size, SHA-256,
   dimensions and grind lines.
 - `megapark/map.json` references Super Ultra Mega Park's committed geometry and

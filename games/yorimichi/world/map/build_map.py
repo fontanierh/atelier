@@ -268,11 +268,6 @@ if os.path.exists(PARK):
 if BELMONTE:
     from belmonte.plan import draw as draw_belmonte
     draw_belmonte(d, wp, PX)
-from communitypark import layout as communitypark
-from communitypark.plan import draw as draw_communitypark
-if communitypark.available():   # the community park, from the committed library scene (docs/COMMUNITY_PARK.md)
-    draw_communitypark(d, wp, PX)
-    LINES.append(communitypark.access()[:, :2].round(2).tolist())
 NAVY, NAVY_OUT = (52, 58, 92), (20, 22, 36)
 for b in V['buildings']: rect(b['position'][0], b['position'][1], b['width'], b['depth'], b['yaw'], NAVY, NAVY_OUT)
 for lot in W.get('houses', {}).get('lots', []):   # the houses on the main road: the lot (hedge outline), then the roof
@@ -373,10 +368,6 @@ if W.get('zeppelin'):
     for station in W['zeppelin']['stations']:
         p=station['safe']
         zones.append(dict(key=station['key'],name=station['name'],x=p[0],y=p[1],z=p[2],yaw=90.,hint='Climb the short steps and use the zeppelin to travel'))
-if communitypark.available():
-    zones.append(dict(key='communitypark', name='Hidamari · community skate park',
-                      x=float(communitypark.SPAWN[0]), y=float(communitypark.SPAWN[1]), z=float(communitypark.SPAWN[2]), yaw=communitypark.HEADING,
-                      hint='Bowls, full pipes, street rails and the tall vert ramp above the station. Triangle / Y or B for the board'))
 
 os.makedirs(A.out, exist_ok=True)
 img.save(os.path.join(A.out, 'rough.png'), optimize=True)
@@ -407,11 +398,6 @@ if not matched and BELMONTE and os.path.exists(committed) and os.path.exists(reg
         trim = round((paint_bounds[3] - project(3000., Y_KNOTS)) * PX)
         painting = painting.crop((0, max(0, trim), old_width, old_height))
         sheet.paste(painting, (round((paint_bounds[0] - X0) * PX), round((Y1 - paint_bounds[3]) * PX) + max(0, trim)))
-if sheet is not img and communitypark.available():
-    def painted_point(x, y):
-        px, py = wp(x, y)
-        return px*sheet.width/MW, py*sheet.height/MH
-    draw_communitypark(ImageDraw.Draw(sheet), painted_point, PX*sheet.width/MW)
 sheet.save(os.path.join(A.out, 'map.png'), optimize=True)
 sheet.convert('RGB').save(os.path.join(A.out, 'map.jpg'), quality=88, progressive=True)
 print('map sheet:', 'registered painted sheet' if sheet is not img else 'accurate generated layout')

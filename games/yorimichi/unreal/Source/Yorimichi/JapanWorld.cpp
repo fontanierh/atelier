@@ -308,8 +308,6 @@ void AJapanWorld::Load()
     // The skate pier clears its own ground of trees, bushes, grass and litter (world/regions/skatepark/park.json).
     const FString ParkPath = AtelierDataPath(TEXT("skatepark/park.json"));
     TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
-    const FString CommunityParkPath = AtelierDataPath(TEXT("communitypark/park.json"));
-    ParkClearance.Append(ASkatePark::LoadClearance(CommunityParkPath));
     // The hippodrome on the slope north of Hidamari (docs/HIPPODROME.md) keeps its oval and stands clear too.
     const FString HippodromePath = AtelierDataPath(TEXT("hippodrome/hippodrome.json"));
     ParkClearance.Append(ASkatePark::LoadClearance(HippodromePath));
@@ -588,7 +586,6 @@ void AJapanWorld::Load()
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
     const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
     if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
-    InstallPark(CommunityParkPath, TEXT("community park"));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
     const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));

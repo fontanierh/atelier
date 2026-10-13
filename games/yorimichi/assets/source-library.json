@@ -2009,42 +2009,6 @@
       "bytes": 1894799,
       "sha256": "f52e9bb716abc139f16e58f911d3c7882a9a369c143559391071f029c51f3190"
     },
-    "communitypark/megapark-textured.glb": {
-      "bytes": 2951252,
-      "sha256": "1c7ad62a132f1bf0a544ae6d9f44482b2e701aeb821d884271f64e1c5b918d02"
-    },
-    "communitypark/restyle/granite.jpg": {
-      "bytes": 613665,
-      "sha256": "f9d4b860e8f22084ec6a3940c368d83efb2fb153857e0b0151ffec335492ddc8"
-    },
-    "communitypark/restyle/maples.jpg": {
-      "bytes": 401556,
-      "sha256": "8c4ff7cdace04ca4ca2ee54573475ee577b66dfe9f31b70789339239da11e85b"
-    },
-    "communitypark/restyle/poured_concrete.jpg": {
-      "bytes": 469603,
-      "sha256": "5f6ef2cdcb00f7eb4e45d6f5d4bb98bc194422a5c10357efac13447037e77503"
-    },
-    "communitypark/restyle/skatelite.jpg": {
-      "bytes": 395064,
-      "sha256": "89f5088cdbb65363c75749db5b303c99732303f9e7c12197477e0de6929f0c20"
-    },
-    "communitypark/restyle/smooth_concrete.jpg": {
-      "bytes": 285244,
-      "sha256": "ef0b4823e6a17b36ed3f4489292ceb20dc6acebc097a78a5297e591926f5b641"
-    },
-    "communitypark/restyle/steel.jpg": {
-      "bytes": 482169,
-      "sha256": "f98bf7808d45f3405fdd60e71a9450b0f7a5dcfe8f48dc2682ad48f0a15eeef0"
-    },
-    "communitypark/restyle/sunburst.jpg": {
-      "bytes": 329542,
-      "sha256": "e190eade31f4e38d526c1c16193f3207dbb2e82aab69cadeb80c94a2a1957e5c"
-    },
-    "communitypark/restyle/waves.jpg": {
-      "bytes": 417077,
-      "sha256": "d6edc9f51b8a28e42fbc5db395b029d13bae308f34cf8c274fa51592c4030c7f"
-    },
     "environment/concepts/transition.jpg": {
       "bytes": 1167905,
       "sha256": "4da961112dbcb3f2ea02940abd8ab93554400e1ecdd220d42856b7b07c07df10"

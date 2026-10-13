@@ -1,27 +1,19 @@
-"""The staged runtime files retain their source bytes and optional-content cleanup."""
+"""The staged runtime files retain their source bytes."""
 from dataclasses import replace
 import io
 import os
 from types import SimpleNamespace
 
-import pytest
-
 from atelier import build
 
 
-@pytest.mark.parametrize('optional_park', [False, True])
-def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, monkeypatch, optional_park):
+def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, monkeypatch):
     recipe = build.load_recipe('yorimichi')
     data = recipe.runtime_data
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path / 'build')
     destination = tmp_path / 'Content' / 'Data'
     monkeypatch.setattr(data, 'REGIONS', tmp_path / 'regions')
-    monkeypatch.setattr(data, 'ASSETS', tmp_path / 'assets')
     monkeypatch.setattr(data.paths, 'content_data', lambda game: destination)
-    if optional_park:
-        source = data.ASSETS / 'communitypark/megapark-textured.glb'
-        source.parent.mkdir(parents=True)
-        source.write_bytes(b'library source')
     expected = {}
     for rel in data.staged(ctx.out):
         source = data.staged_source(ctx.out, rel)
@@ -35,9 +27,6 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
     retained = destination / 'SkateRide/clips.json'
     retained.parent.mkdir(parents=True)
     retained.write_bytes(b'keep source data')
-    stale = destination / 'communitypark/park.json'
-    stale.parent.mkdir(parents=True, exist_ok=True)
-    stale.write_bytes(b'previous park')
 
     log = io.StringIO()
     recipe.stage_data(ctx, log)
@@ -47,7 +36,6 @@ def test_staging_copies_required_sources_and_preserves_unrelated_data(tmp_path, 
         assert target.read_bytes() == content
         assert target.stat().st_mtime_ns == 2_000_000_000
     assert retained.read_bytes() == b'keep source data'
-    assert stale.exists() == optional_park
     assert log.getvalue().splitlines() == [f'staged {rel}' for rel in data.staged(ctx.out)]
 
 

@@ -306,12 +306,11 @@ def mesh(base_sampler):
     mask=snow(x,y,base_sampler)
     # The gate's finer patch replaces these cells by the Mega Park's air station (megapark/gate.py, HD_NorthGate).
     from megapark import gate
-    from communitypark import layout as community_park
     faces=[]
     width=len(xs)
     for j in range(len(ys)-1):
         for i in range(len(xs)-1):
-            if gate.cell_inside(x[j,i],y[j,i],STEP) or community_park.cell_inside(x[j,i],y[j,i],STEP):continue
+            if gate.cell_inside(x[j,i],y[j,i],STEP):continue
             a=j*width+i;b=a+1;c=a+width+1;d=a+width
             faces.extend([(a,b,c),(a,c,d)])
     faces=np.asarray(faces,dtype=np.int32)

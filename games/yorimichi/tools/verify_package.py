@@ -116,7 +116,7 @@ def native_dependencies(app, executable):
     return dict(binaries=binaries, resolved=result, optional_weak_links=weak)
 
 
-def app_checks(folder, manifest, communitypark=False):
+def app_checks(folder, manifest):
     app, launcher = folder / manifest['app'], folder / manifest['launcher']
     require(app.is_dir() and launcher.is_file() and os.access(launcher, os.X_OK), 'app or executable launcher missing')
     metadata = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
@@ -133,7 +133,7 @@ def app_checks(folder, manifest, communitypark=False):
         require(AUDIO_SERVICE in entitlements.get(MACH_LOOKUP, []), 'sandbox lacks its CoreAudio lookup allowance')
     roots = list(app.glob('Contents/UE/*/Content/Data'))
     require(len(roots) == 1, 'expected one staged Content/Data root')
-    required = [*STAGED_DATA, 'hidamari/city.json'] + (['communitypark/park.json'] if communitypark else [])
+    required = [*STAGED_DATA, 'hidamari/city.json']
     for relative in required:
         require((roots[0] / relative).is_file(), f'missing staged data: {relative}')
     for path in app.rglob('*'):
@@ -143,7 +143,7 @@ def app_checks(folder, manifest, communitypark=False):
                 bundle=metadata, entitlements=entitlements, launcher_sha256=checksum(launcher))
 
 
-def verify(root, destination, report, *, expected_revision=None, communitypark=False):
+def verify(root, destination, report, *, expected_revision=None):
     root, destination, report = root.resolve(), destination.resolve(), report.resolve()
     require(not destination.exists(), 'choose a new extraction directory; old extracted apps are never reused')
     require(not report.exists(), 'choose a new report path; previous proofs are never reused')
@@ -162,7 +162,7 @@ def verify(root, destination, report, *, expected_revision=None, communitypark=F
     code = guarded.run(['ditto', '-x', '-k', str(archive), str(destination)], report.parent / (report.stem + '.guard'),
                        timeout=900, kind='job', small_gib=3, watch=('ditto',), purpose='independent release extraction')
     require(code == 0, 'guarded archive extraction failed')
-    proof = dict(revision=revision, files=manifest['files'], **app_checks(destination / 'Yorimichi', manifest, communitypark))
+    proof = dict(revision=revision, files=manifest['files'], **app_checks(destination / 'Yorimichi', manifest))
     report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text(json.dumps(proof, indent=2) + '\n')
     print(f'PASS independent release verification: {report}', flush=True)
@@ -175,9 +175,8 @@ def main(argv=None):
     parser.add_argument('--extract', type=Path, required=True, help='new independent extraction directory')
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--expected-revision', help='exact full cook revision, or short revision for an older manifest')
-    parser.add_argument('--require-communitypark', action='store_true')
     args = parser.parse_args(argv)
-    verify(args.package, args.extract, args.report, expected_revision=args.expected_revision, communitypark=args.require_communitypark)
+    verify(args.package, args.extract, args.report, expected_revision=args.expected_revision)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 using UnrealBuildTool;
 
-// The editor code that content imports run (Scripts/import_character.py, import_megapark.py, import_communitypark.py).
+// The editor code that content imports run (Scripts/import_character.py, import_megapark.py).
 // Apart from the game module so their build steps depend on exactly this code (games/yorimichi/build.py, IMPORT_CODE).
 public class YorimichiImport : ModuleRules
 {

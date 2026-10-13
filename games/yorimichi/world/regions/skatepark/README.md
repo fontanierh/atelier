@@ -72,7 +72,7 @@ The capture deadline defaults to 300 seconds, including final image saving. The 
 ## Library modules
 
 The bars, stair sets, handrails and plaza pieces are part of Atelier's own asset
-library, alongside the community park (`docs/COMMUNITY_PARK.md`). All 18 GLBs are
+library. All 18 GLBs are
 committed in `assets/skatepark/modules/`. `assets/skatepark/modules.json` records
 each local filename, size, SHA-256, measured dimensions and grind lines.
 `modules.py` reads and verifies these files directly; no model fetch or login is

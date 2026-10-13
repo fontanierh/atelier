@@ -10,7 +10,6 @@ import yori  # noqa: E402,F401
 from hidamari import mountains as M, layout as H  # noqa: E402
 from belmonte.appearance import far_palette  # noqa: E402
 from megapark import gate  # noqa: E402
-from communitypark import layout as community  # noqa: E402
 
 # The terrain and trail samplers read world.layout's generated outputs.
 BUILT=all((yori.OUT/name).is_file() for name in
@@ -79,7 +78,7 @@ class NorthernLandscape(unittest.TestCase):
         self.assertEqual(sorted(tuple(row[:4]) for row in actual),sorted(tuple(row[:4]) for row in rows))
 
     def test_fine_cells_are_excluded_at_both_patch_edges(self):
-        for bounds,inside in [(gate.GATE,gate.cell_inside),(community.PATCH,community.cell_inside)]:
+        for bounds,inside in [(gate.GATE,gate.cell_inside)]:
             x0,y0,x1,y1=bounds
             self.assertTrue(inside(x1-M.STEP,y1-M.STEP,M.STEP))
             self.assertFalse(inside(x1,y1,M.STEP))

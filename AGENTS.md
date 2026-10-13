@@ -224,7 +224,7 @@ uv run pytest                            # studio and game Python tests
   required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
   to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
 - Fetch sound masters in the fresh worktree before reuse (`uv run atelier fetch <game>` from that worktree).
-  Yorimichi's model GLB sources are committed in the asset library, including the community park and skate pier
+  Yorimichi's model GLB sources are committed in the asset library, including the skate pier
   modules; Super Ultra Mega Park's source arrays and textures are committed too. If any consumed input differs
   from the donor, resolve the mismatch before reuse. Never bypass verification or manufacture stamps.
 - Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as

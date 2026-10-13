@@ -337,7 +337,7 @@ a fox-masked hunter with a sword. Its models, rigs, animation, world and code we
   and body generations, with a repaired face, rigged locs and the same movement, bike and skating systems;
 - **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
   a zeppelin line;
-- **three skate parks**: the skate pier, the community skate park and the Super Ultra Mega Park;
+- **two skate parks**: the skate pier and the Super Ultra Mega Park;
 - **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
 - **phone play** through the streaming plugin.
 
