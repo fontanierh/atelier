@@ -1,0 +1,9 @@
+id = "garcon"
+display_name = "Garçon"
+role = "player"
+rig = "humanoid"
+height_cm = 165
+revision = "haras-r01"
+source = "Garcon.glb"
+manifest = "source-manifest.json"
+licence = "own; HarasValley character vendored with the project owner's authorization"

@@ -1,0 +1,5 @@
+mesh = "/Game/Garcon/SK_Garcon"
+base = "/Game/Garcon/DA_GarconBase"
+dest = "/Game/Garcon/Adventure"
+definition = "/Game/Garcon/DA_Garcon"
+keep_base_actions = false

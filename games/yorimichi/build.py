@@ -60,6 +60,7 @@ communitypark = runtime_data.communitypark
 staged = runtime_data.staged
 staged_source = runtime_data.staged_source
 stage_data = runtime_data.stage_data
+stage_garcon_bike = runtime_data.stage_garcon_bike
 
 
 @dataclass
@@ -193,6 +194,7 @@ def adventure_steps(out):
         *sword_trainer_steps(out),
         *modori_steps(out),
         *nox_steps(out),
+        *garcon_steps(out),
     ]
 
 
@@ -270,6 +272,37 @@ def nox_steps(out):
                                             env=(('BIKE_CHARACTER', 'nox'),))],
              inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'],
              needs=['characters.nox_bike', 'unreal.nox'], heavy=True, about='/Game/NoxBike: all bike actions'),
+    ]
+
+
+def garcon_steps(out):
+    """The vendored HarasValley boy, with all merged actions and fitted bike clips."""
+    garcon = CHARS / 'garcon'
+    (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('garcon'), moveset_import('garcon')
+    return [
+        Step('characters.garcon', [Blender(garcon / 'export_unreal.py', threads=3)], inputs=[garcon, NAMES],
+             outputs=[out / 'garcon/export.json'], heavy=True, about='Garcon mesh and embedded body/head atlases to FBX'),
+        Step('unreal.garcon', [UnrealScript(SCRIPTS / 'import_garcon.py', 'GARCON IMPORT COMPLETE', null_rhi=True,
+                                          modules=IMPORT_CODE + SAVED_TYPES)],
+             inputs=[SCRIPTS / 'import_garcon.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             needs=['characters.garcon', *unreal_modules.needs(IMPORT_CODE + SAVED_TYPES)],
+             outputs=[GAME / 'unreal/Content/Garcon/SK_Garcon.uasset'], heavy=True, about='Garcon mesh and base definition'),
+        Step('characters.garcon_adventure', [retarget], inputs=retarget_inputs,
+             needs=['characters.adventure', 'characters.cairo_adventure'], outputs=[out / 'garcon/adventure/export.json'],
+             heavy=True, about='All movement, actions and donor gestures retargeted onto Garcon'),
+        Step('unreal.garcon_adventure', [importer], inputs=import_inputs,
+             needs=['characters.garcon_adventure', 'unreal.garcon', 'unreal.adventure'],
+             outputs=[GAME / 'unreal/Content/Data/garcon/adventure.json'], heavy=True, about='Garcon playable move set'),
+        Step('characters.garcon_bike', [Blender(ASSETS / 'vehicles/bike/rider.py', ('--character', 'garcon'), threads=3)],
+             inputs=[garcon, NAMES, ASSETS / 'vehicles/bike/rider.py'], needs=['world.bike'],
+             outputs=[out / 'garcon/bike/export.json'], heavy=True, about='All bike actions fitted to Garcon'),
+        Step('data.garcon', [Call('stage_garcon_bike', stage_garcon_bike)], inputs=[GAME / 'runtime_data.py'],
+             needs=['characters.garcon_bike'], outputs=[GAME / 'unreal/Content/Data/garcon/bike/export.json'],
+             about='Garcon bike contact data staged independently'),
+        Step('unreal.garcon_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'GARCON BIKE IMPORT COMPLETE', null_rhi=True,
+                                               env=(('BIKE_CHARACTER', 'garcon'),))],
+             inputs=[SCRIPTS / 'import_bike_clips.py', SCRIPTS / 'animation_compression.py'],
+             needs=['characters.garcon_bike', 'unreal.garcon', 'data.garcon'], heavy=True, about='Garcon bike animations'),
     ]
 
 
