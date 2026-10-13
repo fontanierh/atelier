@@ -1,8 +1,8 @@
 {
   "native": "Nox.glb",
-  "native_sha256": "3214547413be9f1f6f2816e7ac356c6e0b1307acc64a97becd8f4c6528f4d924",
+  "native_sha256": "2ddb3b873d51b3971ff881c57e92957ae84c53a720576255209c4a0b00bfa412",
   "height_cm": 178,
-  "revision": "garment-deformation-r04",
+  "revision": "garment-deformation-r05",
   "rig": {
     "body_bones": 65,
     "hair_bones": 180,

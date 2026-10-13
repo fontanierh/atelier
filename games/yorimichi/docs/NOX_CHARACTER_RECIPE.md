@@ -273,6 +273,14 @@ crossing its rear-facing inner layer; the neutral topology had not changed. A fe
 a small transfer of arm influence to the panel's existing torso bone cleared the crossing in model renders.
 Check that local fix across the full motion set, rather than classifying every dark crease as a topology tear.
 
+Review the complete push cycle as well as selected poses. Our 54-frame comparison exposed a crumpled front
+band end and intermittent speckles along the lower hem that the earlier stills missed. Both remained with
+the seat targets disabled. The thin inner, rim and outer hem layers carried different residual leg/torso
+weights, so they crossed during the push. A shared weight field across the lower band and local weight
+regularization at the band end repaired those crossings without changing neutral geometry or seat targets.
+The final local pass changes 245 lower-band and 222 band-end vertices. Preserve small front-facing cloth
+folds: face and ray checks distinguished one remaining dark fold from a crossed or flipped surface.
+
 ### Seat corrections need a native runtime and contact contract
 
 Weight changes alone did not solve the crotch seam during the real skateboard push. The candidate adds sparse
@@ -296,6 +304,10 @@ skin weights and native section/bone mapping as its base position. UE 5.8 deskto
 deltas even when base-mesh CPU access is enabled; retain the exact imported LOD0 indices/deltas in serialized
 contact data. Validate the mesh, LOD, vertex count and required targets, and clear cached offsets on replacement.
 Missing data is a failed check, not a zero-depth result. The original **2 cm** clearance gate still applies.
+Report render/contact coefficient lag with enough precision to preserve the `1e-4` limit. Four decimal places
+rounded a failing `0.00014` to an apparently passing `0.0001`; nine significant digits preserve the native
+float, including the next representable value above the limit. Check the serialized receipt through the
+actual acceptance reader, not only the unrounded value inside the engine.
 
 Keep numerical fit reports, failed candidates and matched captures in the ignored review workspace/archive.
 Only replace the committed source after the model review; then compile/import and verify textured idle, walking,
