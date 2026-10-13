@@ -60,7 +60,6 @@ communitypark = runtime_data.communitypark
 staged = runtime_data.staged
 staged_source = runtime_data.staged_source
 stage_data = runtime_data.stage_data
-stage_garcon_bike = runtime_data.stage_garcon_bike
 
 
 @dataclass
@@ -278,6 +277,9 @@ def nox_steps(out):
 def garcon_steps(out):
     """The vendored HarasValley boy, with all merged actions and fitted bike clips."""
     garcon = CHARS / 'garcon'
+    spec = importlib.util.spec_from_file_location('garcon_staging', garcon / 'stage.py')
+    staging = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(staging)
     (retarget, retarget_inputs), (importer, import_inputs) = moveset_retarget('garcon'), moveset_import('garcon')
     return [
         Step('characters.garcon', [Blender(garcon / 'export_unreal.py', threads=3)], inputs=[garcon, NAMES],
@@ -296,7 +298,7 @@ def garcon_steps(out):
         Step('characters.garcon_bike', [Blender(ASSETS / 'vehicles/bike/rider.py', ('--character', 'garcon'), threads=3)],
              inputs=[garcon, NAMES, ASSETS / 'vehicles/bike/rider.py'], needs=['world.bike'],
              outputs=[out / 'garcon/bike/export.json'], heavy=True, about='All bike actions fitted to Garcon'),
-        Step('data.garcon', [Call('stage_garcon_bike', stage_garcon_bike)], inputs=[GAME / 'runtime_data.py'],
+        Step('data.garcon', [Call('stage_garcon_bike', staging.stage)], inputs=[garcon / 'stage.py'],
              needs=['characters.garcon_bike'], outputs=[GAME / 'unreal/Content/Data/garcon/bike/export.json'],
              about='Garcon bike contact data staged independently'),
         Step('unreal.garcon_bike', [UnrealScript(SCRIPTS / 'import_bike_clips.py', 'GARCON BIKE IMPORT COMPLETE', null_rhi=True,

@@ -1837,6 +1837,10 @@
       "bytes": 40989080,
       "sha256": "08569580d93df54fb8356fff476e3fba24532d19298dbe760be32509dba62f8a"
     },
+    "characters/garcon/portrait.png": {
+      "bytes": 68772,
+      "sha256": "0bfaf3c3514568aa45354ae2f68a2c99c2dac53a5d0bb473dd51e3cb5534f1a5"
+    },
     "characters/grips/modori/body.glb": {
       "bytes": 4812204,
       "sha256": "772f4fa222dcde46bae1b6a4e64c36704b5a1420cc0699b2404aaaf1ba21ac5a"

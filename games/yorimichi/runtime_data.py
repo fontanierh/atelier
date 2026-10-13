@@ -43,12 +43,3 @@ def stage_data(ctx, log):
     if not communitypark(ctx.out):
         (data / 'communitypark' / 'park.json').unlink(missing_ok=True)
 
-
-def stage_garcon_bike(ctx, log):
-    """Stage the new rider independently of the island's existing data producers."""
-    rel = 'garcon/bike/export.json'
-    dst = paths.content_data(ctx.game) / rel
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(ctx.out / rel, dst)
-    log.write(f'staged {rel}\n')
-
