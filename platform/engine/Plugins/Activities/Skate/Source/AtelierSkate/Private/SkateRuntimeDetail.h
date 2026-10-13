@@ -473,8 +473,8 @@ namespace SkateRuntimeDetail
             ParallelFor(Job.Parts.Num(), [&Job,&Snapshot,&PartPoints,&PartSurfaces,&Whole](int32 P)
             {
                 const FGatherJob::FPart& Part=Job.Parts[P];
-                // A park's snapshot stays centred on the park, so a dense surround (a forest) that shrinks the radius
-                // must shrink only the surround: the park's far ramps and deck keep their collision.
+                // A dense surround (a forest) that shrinks the radius shrinks only the surround: a park's surfaces
+                // stay within the largest radius, so its far ramps and deck keep their collision.
                 const FBox& Region=Part.bPark ? Whole : Snapshot.Region;
                 if (!Part.Bounds.Intersect(Region)) return;
                 FSnapshot Local; Local.Region=Region; Local.Budget=MAX_int32/4;
@@ -501,7 +501,10 @@ namespace SkateRuntimeDetail
         }
         if (Snapshot.Num()==0 || Snapshot.Full()) return false;
         Reach=Radius*.6;
-        for (const auto& Rail : Job.Rails) if (Rail.Key.Intersect(Snapshot.Region))
+        // A park's rails stay with its surfaces (the job holds the rails within the largest radius).
+        TArray<FBox> Parks;
+        for (const FGatherJob::FPart& Part : Job.Parts) if (Part.bPark) Parks.Add(Part.Bounds);
+        for (const auto& Rail : Job.Rails) if (Rail.Key.Intersect(Snapshot.Region) || Parks.ContainsByPredicate([&Rail](const FBox& B) { return B.Intersect(Rail.Key); }))
         {
             TArray<FVector3f>& Line=Snapshot.Rails.AddDefaulted_GetRef();
             for (const FVector& P : Rail.Value) Line.Add(FVector3f(ToSimulation(P)));
