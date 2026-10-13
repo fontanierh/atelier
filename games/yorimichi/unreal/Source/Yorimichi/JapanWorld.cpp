@@ -747,9 +747,9 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
-void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres)
+void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail)
 {
-    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres)) return;
+    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail)) return;
     for (auto* Group : Groups)
     {
         const FString Name = Group->GetStaticMesh()->GetName();
@@ -759,9 +759,14 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
         // depth and shadow passes; past this distance its sway is under a pixel or two.
         if (Name.StartsWith(TEXT("Tree")) || Name.StartsWith(TEXT("Bush")))
             Group->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(TreeSwayMetres*100.f));
+        // The forest's trees (the city's HD_ trees have their own optimization): each crown step comes at this
+        // multiple of its authored distance. Their depth, shadow and base passes scale with the detail in view.
+        if (Name.StartsWith(TEXT("Tree")))
+            Group->SetLODDistanceScale(ForestDetail);
     }
     AppliedPerformanceMode = int32(bPerformance);
     AppliedTreeSway = TreeSwayMetres;
+    AppliedForestDetail = ForestDetail;
 }
 
 void AJapanWorld::ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look)

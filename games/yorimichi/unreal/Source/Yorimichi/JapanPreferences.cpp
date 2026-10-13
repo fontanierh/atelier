@@ -180,6 +180,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("outline"),TEXT("Outlines"),0.f,0.f,1.f},
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("tree_sway"),TEXT("Tree sway distance (m)"),60.f,0.f,180.f,5.f},
+        {TEXT("forest_detail"),TEXT("Forest detail distance (x)"),.6f,.25f,2.f,.05f},
         // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
         // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
         // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1). Its
@@ -458,7 +459,7 @@ void UJapanPreferences::Apply()
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
-        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")));
+        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")),Get(TEXT("forest_detail")));
         if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
             FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
@@ -650,13 +651,14 @@ public:
 FString MainHint(const FString& Key)
 {
     static const TMap<FString,FString> Hints = {
-        {TEXT("performance"),TEXT("Performance keeps movement smooth with lighter shadows and distant detail; Quality sharpens shadows.")},
-        {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. Off saves GPU time.")},
-        {TEXT("leaf_motion"),TEXT("Precise draws every swaying tree again so anti-aliasing follows its leaves exactly. Fast saves about 2.5 ms a frame in the forest; leaf edges soften slightly in wind.")},
+        {TEXT("performance"),TEXT("Performance keeps shadows light for a steady 60 fps. Quality draws sharper, farther shadows: in the forest they take about 21 ms instead of 6.5, roughly doubling the frame time (1080p, M1 Max, moving through the forest).")},
+        {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
+        {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},
         {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
-        {TEXT("tree_sway"),TEXT("How far from the camera trees and bushes sway in the wind; beyond it they stand still. Farther costs GPU time.")},
+        {TEXT("forest_detail"),TEXT("How far forest trees keep their full leaf detail before their simpler models take over, as a multiple of their own distances. The forest is the biggest cost in the game: its trees and their shadows take about 7 ms of a frame at 1. Lower is faster, higher sharper far away.")},
+        {TEXT("tree_sway"),TEXT("How far from the camera trees and bushes sway in the wind; beyond it they stand still. Cheap: 0 m and 180 m differ by about 0.5 ms a frame.")},
         {TEXT("goofy"),TEXT("Which foot leads on the skateboard: Regular is the left foot, Goofy the right.")},
-        {TEXT("tree_lod_distance"),TEXT("How far detailed trees reach, with Automatic tree detail. Farther costs more GPU time.")},
+        {TEXT("tree_lod_distance"),TEXT("How far detailed city trees reach, with Automatic tree detail. Farther costs more GPU time in Hidamari's streets.")},
         {TEXT("fog_density"),TEXT("How thick the volumetric fog is.")},
         {TEXT("fog_reach"),TEXT("How far the volumetric fog reaches from the camera, in metres.")},
         {TEXT("fog_falloff"),TEXT("How quickly the fog thins with height. Higher keeps it low in the valleys.")},
@@ -668,13 +670,13 @@ FString MainHint(const FString& Key)
         {TEXT("mouse"),TEXT("How fast the mouse turns the camera.")},
         {TEXT("cam_dist"),TEXT("How far the camera follows behind you.")},
         {TEXT("fov"),TEXT("The camera's field of view, in degrees.")},
-        {TEXT("render_scale"),TEXT("The highest resolution the game renders at, as a percentage of the screen. Lower is faster and softer.")},
-        {TEXT("painterly"),TEXT("How strongly the painted look brushes over the image. 0 turns it off.")},
+        {TEXT("render_scale"),TEXT("The highest resolution the game renders at, as a percentage of the screen. Lower is softer. In the forest the GPU is busy with trees, not pixels: 50% saved almost nothing there.")},
+        {TEXT("painterly"),TEXT("How strongly the painted look brushes over the image. It shares one pass with toon shading and outlines, about 0.5 ms a frame; with all three at 0 the pass is skipped.")},
         {TEXT("paint_radius"),TEXT("The size of the painted look's brush strokes.")},
-        {TEXT("toon"),TEXT("How strongly the shading is drawn in flat bands. 0 turns it off.")},
+        {TEXT("toon"),TEXT("How strongly the shading is drawn in flat bands. Shares the painted look's pass (about 0.5 ms, skipped when paint, toon and outlines are all 0).")},
         {TEXT("toon_bands"),TEXT("How many bands the toon shading uses.")},
         {TEXT("toon_soft"),TEXT("How softly the toon bands blend into each other.")},
-        {TEXT("outline"),TEXT("Ink outlines around shapes. 0 turns them off.")},
+        {TEXT("outline"),TEXT("Ink outlines around shapes. Shares the painted look's pass (about 0.5 ms, skipped when paint, toon and outlines are all 0).")},
         {TEXT("wind"),TEXT("The wind in the trees and grass, in metres per second.")},
         {TEXT("exposure"),TEXT("The overall brightness of the image.")},
         {TEXT("saturation"),TEXT("How rich the colours are.")},
