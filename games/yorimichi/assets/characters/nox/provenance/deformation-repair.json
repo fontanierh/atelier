@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "input_sha256": "f3a8e91b4d081f50fe812c40861105b0c2ac96644a7c4408a78ae14876643606",
+  "output_sha256": "2ddb3b873d51b3971ff881c57e92957ae84c53a720576255209c4a0b00bfa412",
+  "neutral_contract": {
+    "accessors": 13,
+    "buffer_views": 15,
+    "buffer_bytes": 22199620
+  },
+  "neutral_sha256": "96631cc498f7ba9a4e6d362d0be72d703fa3c3945d8a4b7de24012c68fa9b794",
+  "scope": "Body weights and appended sparse seat targets; original neutral garment detail, head, rig and atlases retained",
+  "weights": "Anatomical chain segmentation, welded diffusion, overlay correspondence, retained hem thigh share, regularized multipose armpit edge-strain fit, local front-layer correction, coherent inner/rim/outer lower-band field and local band-end weight regularization",
+  "seat": {
+    "grid_degrees": [
+      -25,
+      0,
+      35,
+      70,
+      105
+    ],
+    "gate_degrees": [
+      35,
+      60
+    ],
+    "interpolation": "bilinear",
+    "nonzero_targets": 16,
+    "changed_vertices_per_target": 1474
+  },
+  "acceptance": "Model lapel/underarm/full push-cycle comparisons and source invariants reviewed; final native textured movement/push/contact validation pending",
+  "hem_cycle_refinement": {
+    "changed_vertices": 467,
+    "lower_band_vertices": 245,
+    "band_end_vertices": 222,
+    "neutral_geometry_unchanged": true,
+    "seat_targets_unchanged": true,
+    "pose_frames_reviewed": 54,
+    "scope": "Crossing and collapsed facing layers repaired; original folds preserved"
+  }
+}

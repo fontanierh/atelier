@@ -93,11 +93,41 @@ def prepare(source):
                            scale=scale, floor=floor, original_names=names, secondary_bones=secondary)
 
 
+def seat_corrective(nox):
+    """Verify the committed corrective targets before exporting their native names."""
+    contract = nox.record.get('seat_corrective')
+    if contract is None:
+        return None
+    grid = contract['grid_degrees']
+    assert grid == [-25, 0, 35, 70, 105], 'Unexpected Nox hip-flexion grid'
+    assert contract['gate_degrees'] == [35, 60], 'Unexpected Nox corrective gate'
+    assert contract['interpolation'] == 'bilinear', 'Nox requires bounded bilinear interpolation'
+    body = next(o for o in nox.meshes if o.name == 'Nox_Body')
+    head = next(o for o in nox.meshes if o.name == 'Nox_Head')
+    assert not head.data.shape_keys, 'The seat correction must not change the head'
+    assert body.data.shape_keys, 'Missing Nox seat targets'
+    keys = body.data.shape_keys.key_blocks
+    basis = keys['Basis']
+    angle = lambda value: 'm' + str(-value) if value < 0 else str(value)
+    names = [f'NoxSeat_L{angle(left)}_R{angle(right)}' for left in grid for right in grid]
+    assert set(keys.keys()) == {'Basis', *names}, 'Unexpected Nox body shape targets'
+    targets = {}
+    for name, (left, right) in zip(names, ((left, right) for left in grid for right in grid)):
+        key = keys[name]
+        assert key.value == 0, ('Nonzero neutral shape value', name)
+        changed = sum((vertex.co - base.co).length_squared > 1e-16 for vertex, base in zip(key.data, basis.data))
+        required = max(left, right) > 35
+        assert changed == (contract['changed_vertices_per_target'] if required else 0), ('Nox shape footprint changed', name, changed)
+        targets[name] = dict(left_degrees=left, right_degrees=right, nonzero_vertices=changed)
+    return dict(grid_degrees=grid, gate_degrees=contract['gate_degrees'], interpolation='bilinear', targets=targets)
+
+
 def main():
     (OUT / 'fbx').mkdir(parents=True, exist_ok=True)
     (OUT / 'textures').mkdir(exist_ok=True)
     nox = prepare(SOURCE)
     arm, meshes = nox.arm, nox.meshes
+    corrective = seat_corrective(nox)
     feet = {s: list(arm.matrix_world @ arm.data.bones['foot_' + s].head_local) for s in 'LR'}
     assert all((arm.matrix_world @ arm.data.bones['toe_' + s].head_local).x > feet[s][0] for s in 'LR'), 'Nox must face +X'
     materials = {}
@@ -123,7 +153,7 @@ def main():
                   height_cm=HEIGHT * 100, sole_cm=.65, source_floor=nox.floor, facing='+X',
                   rest_ankles_cm={s: p[2] * 100 for s, p in feet.items()}, bones=nox.original_names,
                   secondary_bones=sorted(nox.secondary_bones), meshes={o.name: len(o.data.vertices) for o in meshes},
-                  materials=materials, clips={})
+                  materials=materials, clips={}, seat_corrective=corrective)
     (OUT / 'export.json').write_text(json.dumps(report, indent=2) + '\n')
     print('NOX EXPORT READY', json.dumps({k: report[k] for k in ('height_cm', 'rest_ankles_cm', 'meshes')}), flush=True)
 

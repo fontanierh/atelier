@@ -23,6 +23,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 #include "LeafStorm.h"
 #include "GullFlock.h"
 #include "VillageLife.h"
@@ -30,6 +31,7 @@
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
 #include "Hippodrome.h"
+#include "BelmonteRegion.h"
 #include "ZeppelinService.h"
 #include "SeeThrough.h"
 
@@ -165,6 +167,32 @@ void AJapanWorld::Load()
         GlideGrade->Settings.bOverride_ColorOffset=true;
         GlideGrade->Settings.ColorOffset=FVector4(-.03,-.03,-.03,0);
         GlideGrade->RegisterComponent();
+        // Northern aerial views face the same strong sky light. Bring down the
+        // black point according to clearance, leaving ground-level views alone.
+        NorthAerialGrade=NewObject<UPostProcessComponent>(this);
+        NorthAerialGrade->SetupAttachment(RootComponent);
+        NorthAerialGrade->bUnbound=true;NorthAerialGrade->BlendWeight=0;NorthAerialGrade->Priority=2;
+        NorthAerialGrade->Settings.bOverride_ColorContrast=true;
+        NorthAerialGrade->Settings.ColorContrast=FVector4(1.06,1.06,1.06,1);
+        NorthAerialGrade->Settings.bOverride_ColorSaturation=true;
+        NorthAerialGrade->Settings.ColorSaturation=FVector4(1,1,1,1);
+        NorthAerialGrade->Settings.bOverride_ColorOffset=true;
+        NorthAerialGrade->Settings.ColorOffset=FVector4(-.015,-.015,-.015,0);
+        NorthAerialGrade->RegisterComponent();
+        NorthHighGrade=NewObject<UPostProcessComponent>(this);
+        NorthHighGrade->SetupAttachment(RootComponent);
+        NorthHighGrade->bUnbound=true;NorthHighGrade->BlendWeight=0;NorthHighGrade->Priority=3;
+        NorthHighGrade->Settings.bOverride_ColorContrast=true;
+        NorthHighGrade->Settings.ColorContrast=FVector4(1.12,1.12,1.12,1);
+        NorthHighGrade->Settings.bOverride_ColorSaturation=true;
+        NorthHighGrade->Settings.ColorSaturation=FVector4(1.05,1.05,1.05,1);
+        NorthHighGrade->Settings.bOverride_ColorOffset=true;
+        NorthHighGrade->Settings.ColorOffset=FVector4(-.04,-.04,-.04,0);
+        NorthHighGrade->Settings.bOverride_ColorGammaShadows=true;
+        NorthHighGrade->Settings.ColorGammaShadows=FVector4(.85,.85,.85,1);
+        NorthHighGrade->Settings.bOverride_ColorOffsetShadows=true;
+        NorthHighGrade->Settings.ColorOffsetShadows=FVector4(-.03,-.03,-.03,0);
+        NorthHighGrade->RegisterComponent();
         float GlideGradeDistance=0.f;
         UE_LOG(LogTemp,Display,TEXT("Glide grade bounds: aerial=%d street=%d"),GlideGrade->EncompassesPoint(ToUE(800,40,650),0.f,&GlideGradeDistance),
             GlideGrade->EncompassesPoint(ToUE(1100,-46,30),0.f,&GlideGradeDistance));
@@ -298,6 +326,7 @@ void AJapanWorld::Load()
             const FVector A = ToUE(B[0]->AsNumber(), B[1]->AsNumber(), 0), C = ToUE(B[2]->AsNumber(), B[3]->AsNumber(), 0);
             NearTrees.Add(FBox2D(FVector2D(FMath::Min(A.X, C.X), FMath::Min(A.Y, C.Y)), FVector2D(FMath::Max(A.X, C.X), FMath::Max(A.Y, C.Y))));
         }
+    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("belmonte/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
@@ -308,7 +337,7 @@ void AJapanWorld::Load()
             if (!Mesh) { Incomplete.Add(TEXT("mesh ") + Key); UE_LOG(LogTemp, Warning, TEXT("missing mesh asset %s"), *Key); continue; }
             const bool bGrass = Key.StartsWith(TEXT("Grass"));
             const bool bBush = Key.StartsWith(TEXT("Bush"));
-            const bool bTree = Key.StartsWith(TEXT("Tree")) || Key.StartsWith(TEXT("HD_NorthTree"));
+            const bool bTree = Key.StartsWith(TEXT("Tree"));
             const bool bLitter = Key == TEXT("Litter");
             TArray<FTransform> Near, Distant;
             Near.Reserve(Pair.Value->AsArray().Num());
@@ -562,6 +591,8 @@ void AJapanWorld::Load()
     InstallPark(CommunityParkPath, TEXT("community park"));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
+    const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
+    if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())
@@ -781,6 +812,42 @@ void AJapanWorld::UpdateFogDensity(float Dt)
     AppliedFogDensity = Density;
 }
 
+void AJapanWorld::UpdateNorthAerialGrade(float Dt)
+{
+    if (!NorthAerialGrade || !NorthHighGrade) return;
+    const APlayerCameraManager* Camera=UGameplayStatics::GetPlayerCameraManager(this,0);
+    if (!Camera) return;
+    const FVector C=Camera->GetCameraLocation();
+    const bool Jump=!bNorthGradeHasCamera || FVector::DistSquared(C,NorthGradeCamera)>FMath::Square(5000.f);
+    NorthGradeCamera=C;bNorthGradeHasCamera=true;
+    const float X=C.X,Y=-C.Y;
+    const float Region=FMath::SmoothStep(-90000.f,-70000.f,X)*(1-FMath::SmoothStep(240000.f,260000.f,X))
+        *FMath::SmoothStep(35000.f,65000.f,Y)*(1-FMath::SmoothStep(540000.f,560000.f,Y));
+    NorthGradeTraceElapsed+=Dt;
+    if (Region>0 && (Jump || NorthGradeTraceElapsed>=.25f))
+    {
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(NorthAerialGrade),true);
+        auto IgnoreMount=[&Params](const AActor* Actor)
+        {
+            for (;Actor;Actor=Actor->GetAttachParentActor()) Params.AddIgnoredActor(Actor);
+        };
+        IgnoreMount(UGameplayStatics::GetPlayerPawn(this,0));
+        if (const APlayerController* Controller=UGameplayStatics::GetPlayerController(this,0)) IgnoreMount(Controller->GetViewTarget());
+        FHitResult Hit;
+        const bool Found=GetWorld()->LineTraceSingleByChannel(Hit,C,C-FVector(0,0,150000),ECC_Visibility,Params);
+        NorthGradeClearance=FMath::Max(0.f,C.Z-(Found ? FMath::Max(0.f,Hit.ImpactPoint.Z) : 0.f));
+        NorthGradeTraceElapsed=0;
+    }
+    const float Low=Region*FMath::SmoothStep(6000.f,9000.f,NorthGradeClearance);
+    const float High=Region*FMath::SmoothStep(20000.f,45000.f,NorthGradeClearance);
+    auto Apply=[Dt,Jump](UPostProcessComponent* Grade,float Target)
+    {
+        const float Weight=Jump ? Target : FMath::FInterpTo(Grade->BlendWeight,Target,Dt,1.5f);
+        Grade->BlendWeight=FMath::Abs(Weight-Target)<.001f ? Target : Weight;
+    };
+    Apply(NorthAerialGrade,Low);Apply(NorthHighGrade,High);
+}
+
 float AJapanWorld::WindStrength(const FVector& P, float T) const
 {
     return FMath::Max(0.15f, 1.f + 0.45f * FMath::Sin(T * 0.37f + P.X * 0.0004f) + 0.3f * FMath::Sin(T * 1.1f + P.Y * 0.0007f) + 0.15f * FMath::Sin(T * 2.9f));
@@ -792,10 +859,21 @@ void AJapanWorld::Tick(float Dt)
     if (GetNetMode()==NM_DedicatedServer) return;
     UpdateHarborLook(this);
     UpdateFogDensity(Dt);
+    UpdateNorthAerialGrade(Dt);
     ApplyGroupDiagnostics();
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);
     if (!I) return;
+    // The volcanic shadow floor follows the player's current sun settings.
+    TActorIterator<ADirectionalLight> SunIt(GetWorld());
+    if (SunIt)
+    {
+        const FVector Direction = -SunIt->GetActorForwardVector();
+        const auto* Light = SunIt->GetLightComponent();
+        const float Strength = Light ? FMath::Clamp(Light->Intensity / 11.f, 0.f, 2.f)
+                                     * FMath::SmoothStep(-.1f, .1f, float(Direction.Z)) : 0.f;
+        I->SetVectorParameterValue(TEXT("SunDirection"), FLinearColor(Direction.X, Direction.Y, Direction.Z, Strength));
+    }
     const float T = GetWorld()->GetTimeSeconds();
     if (APawn* P = UGameplayStatics::GetPlayerPawn(this, 0))
     {

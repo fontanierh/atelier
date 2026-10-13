@@ -558,6 +558,56 @@ class GuardedFittingTests(GuardedSlotTests):
             guarded_run.run(['Blender', '--background'], self.folder, fitting_gib=2)
         self.assertFalse(is_locked(slots.fitting_lock_path()))
 
+    def fitting_child(self, seconds=.1):
+        spawn = guarded_run.spawn
+        self.patch(guarded_run, 'spawn', lambda command, **kw: spawn(
+            [sys.executable, '-c', f'import time;time.sleep({seconds})'], **kw))
+
+    def test_known_launch_wrappers_reach_blender_under_the_same_guard(self):
+        self.fitting_child(.15)
+        names = iter(('taskpolicy','nice','','Blender'))
+        self.patch(guarded_run.process_tree, 'name', lambda pid: next(names,'Blender'))
+        self.assertEqual(guarded_run.run(['Blender','-b'],self.folder,fitting_gib=1),0)
+        self.assertEqual(self.limits,[4.])
+        self.assertFalse(is_locked(slots.fitting_lock_path()))
+
+    def test_launch_wrapper_cannot_renew_its_startup_deadline(self):
+        self.fitting_child(10)
+        self.patch(guarded_run,'FITTING_STARTUP_SECONDS',.05)
+        names = iter(('taskpolicy','nice',''))
+        self.patch(guarded_run.process_tree,'name',lambda pid: next(names,'nice'))
+        with self.assertRaisesRegex(SystemExit,'startup deadline'):
+            guarded_run.run(['Blender','-b'],self.folder,fitting_gib=1)
+        self.assertEqual(self.limits,[4.])
+        self.assertFalse(is_locked(slots.fitting_lock_path()))
+
+    def test_an_established_blender_cannot_exec_another_program_or_wrapper(self):
+        for changed in ('UnrealEditor','nice'):
+            with self.subTest(changed=changed):
+                self.fitting_child(10)
+                names = iter(('Blender',changed))
+                self.patch(guarded_run.process_tree,'name',lambda pid: next(names,changed))
+                with self.assertRaisesRegex(SystemExit,'not Blender'):
+                    guarded_run.run(['Blender','-b'],self.folder,fitting_gib=1)
+                self.assertFalse(is_locked(slots.fitting_lock_path()))
+
+    def test_clean_exit_between_liveness_and_name_sample_is_not_refused(self):
+        self.fitting_child(.1)
+        spawn = guarded_run.spawn
+        children = []
+        def remember(command,**kw):
+            child = spawn(command,**kw)
+            children.append(child)
+            return child
+        self.patch(guarded_run,'spawn',remember)
+        def after_exit(pid):
+            children[0].wait(timeout=2)
+            return ''
+        self.patch(guarded_run.process_tree,'name',after_exit)
+        self.assertEqual(guarded_run.run(['Blender','-b'],self.folder,fitting_gib=1),0)
+        self.assertEqual(self.limits,[4.])
+        self.assertFalse(is_locked(slots.fitting_lock_path()))
+
 
 class BuildSlotTests(SlotTestCase):
     """`atelier build` on a stand-in game whose heavy steps print a marker; the memory guard reports set peaks."""

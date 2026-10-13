@@ -3,6 +3,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Rendering/SkeletalMeshRenderData.h"
+#include "SkinMorphOffsets.h"
 #include "ClothingSystemRuntimeTypes.h"
 #include "StaticMeshResources.h"
 #include "Engine/Engine.h"
@@ -319,6 +320,14 @@ TArray<FVector> ULiveLibrary::SkinnedVertices(USkeletalMeshComponent* Mesh, cons
     TArray<FVector3f> Positions;
     Mesh->CacheRefToLocalMatrices(RefToLocals);
     USkinnedMeshComponent::ComputeSkinnedPositions(Mesh, Positions, RefToLocals, LOD, Weights);
+    // Active morph targets move the skin before skinning: the vertices as they render, or none.
+    FSkinMorphOffsets Morphs;
+    if (!Morphs.Update(Mesh))
+    {
+        UE_LOG(LogTemp, Error, TEXT("LIVE skinned vertices of %s: not as rendered (%s)"), *Mesh->GetName(), *Morphs.GetError());
+        return Out;
+    }
+    Morphs.AddTo(Positions, LOD, Weights, RefToLocals);
     TSet<int32> Wanted;
     for (const FName& Bone : Bones) if (const int32 I = Mesh->GetBoneIndex(Bone); I != INDEX_NONE) Wanted.Add(I);
     const TMap<int32, FClothSimulData>& Cloth = Mesh->GetCurrentClothingData_GameThread();

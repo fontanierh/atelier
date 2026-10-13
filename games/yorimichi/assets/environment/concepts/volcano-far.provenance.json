@@ -1,0 +1,43 @@
+{
+  "revision": "r01",
+  "use": "concepts",
+  "name": "volcano-far",
+  "inputs": [
+    {
+      "file": "frame_00000.jpg",
+      "sha256": "ebd4dc6035aa0debc856b48286aa80bb41e56643e8dff3885464eec72d87f8d1"
+    }
+  ],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "f1954bb33d80d26b880a21087e3cbb702c6b741e2fefd3c530d241899e79d1d9",
+  "status": "done",
+  "started_at": "2026-10-12T21:50:18.793407+00:00",
+  "output": "volcano-far.png",
+  "output_sha256": "fc7444ad0c3af3993e5c0fdea1bc49bdd852efa23419fba3a01eb083c4afd4d8",
+  "usage": {
+    "input_tokens": 1236,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 316
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2608
+  },
+  "elapsed_seconds": 33.5,
+  "finished_at": "2026-10-12T21:50:52.359895+00:00",
+  "prompt": "Production concept for Yorimichi, a beautiful stylized exploration game.\nUse rich painterly materials, organic modeled forms, convincing soft afternoon\nlighting and full detailed foliage. This is an achievable polished real-time 3D\nscene. Preserve the geography and architecture in the layout references, while\nreplacing coarse terrain and crude trees. No faceted toy mountain, polygon cone\ntrees, balloon crowns, bare saplings, confetti canopy or flat forest photograph.\nTrees have trunks and branches, overlapping textured leaf masses, depth and\nnatural varied silhouettes. No HUD, text, labels, border or watermark.\n\nUse the first image as the exact existing Hidamari-to-volcano\nlayout: retain the harbour, streets, buildings and mountain location/scale.\nUpgrade the distant volcanic mountain into a memorable organically modeled\nsnow-capped summit with eroded radial ridges, gullies, cliffs, rock strata and\nlarge readable snow channels. It must read beautifully at one kilometre and\nremain plausible up close. Preserve broad landmark silhouette but remove visible\ngrid triangles and the smooth toy-cone look. Rich dark rock, weathered grey scree,\noff-white snow and mossy lower shelves. The forest climbs naturally in mixed full\ncanopies toward the treeline. No uniform speckle carpet or artificial straight\nforest boundary. Keep Japanese autumn colour near Hidamari; the far northern\nvalley belongs to Tuscan Belmonte, with evergreen olive/oak/cypress character.",
+  "source": {
+    "file": "volcano-far.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "14f09c9675a49534c7cf1794555b3bcfa82764b5fb745e614ebc5be512efd47b"
+}

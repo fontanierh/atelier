@@ -37,6 +37,13 @@ def ready_log(lumen=False, trees=True, tiles=83):
             'FORWARD FILL nominal_lux=3.000 lights=1\n')
 
 
+def test_region_tree_groups_preserve_city_readiness(desktop):
+    manifest(desktop)
+    assert desktop.parse_ready(ready_log().replace('groups=3', 'groups=4'))
+    with pytest.raises(ValueError, match='CITY TREE LODS'):
+        desktop.parse_ready(ready_log().replace('groups=3', 'groups=2'))
+
+
 def test_default_forward_and_saved_lumen_keep_distinct_mesh_generation(desktop, tmp_path):
     ctx = SimpleNamespace(unreal_app=Path('Editor'), uproject=Path('Game.uproject'))
     forward = desktop.command(ctx, tmp_path, shared_settings=True)

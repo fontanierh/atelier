@@ -12,7 +12,8 @@ spec.loader.exec_module(policy)
 def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
     ctx = SimpleNamespace(game_dir=tmp_path / 'game', out=tmp_path / 'build')
     content = ctx.game_dir / 'unreal/Content'
-    active = ['Adventure/Reference/A_Idle.uasset', 'CairoAdventure/DA_CairoAdventure.uasset',
+    active = ['Adventure/Reference/A_Idle.uasset', 'Belmonte/Meshes/SM_BM_NorthApron.uasset',
+              'Data/belmonte/runtime.json', 'CairoAdventure/DA_CairoAdventure.uasset',
               'Cairo/SK_Cairo.uasset', 'Cairo/DA_CairoBase.uasset', 'Cairo/A_DoubleJump.uasset', 'Cairo/A_Wave.uasset',
               'Cairo/A_SwordParry.uasset', 'Cairo/M_CairoOutfit.uasset', 'Cairo/Textures/T_M_Cairo.uasset',
               'Modori/Adventure/A_Run.uasset', 'Modori/Textures/coat.uasset', 'Modori/PA_Modori_Cloth.uasset',

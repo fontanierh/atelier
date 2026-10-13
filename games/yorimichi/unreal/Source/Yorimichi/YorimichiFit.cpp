@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "Rendering/SkeletalMeshLODRenderData.h"
+#include "SkinMorphOffsets.h"
 
 FString UYorimichiFitLibrary::PropClearance(USkeletalMeshComponent* Body, UStaticMeshComponent* Prop, float MarginCm)
 {
@@ -18,6 +19,10 @@ FString UYorimichiFitLibrary::PropClearance(USkeletalMeshComponent* Body, UStati
     TArray<FVector3f> Skinned;
     USkinnedMeshComponent::ComputeSkinnedPositions(Body, Skinned, RefToLocals, Lod, *Body->GetSkinWeightBuffer(0));
     if (!Skinned.Num()) return TEXT("no skinned positions (CPU access?)");
+    // Active morph targets move the skin before skinning: measure it as it renders.
+    FSkinMorphOffsets Morphs;
+    if (!Morphs.Update(Body)) return TEXT("skin not measurable as rendered: ") + Morphs.GetError();
+    Morphs.AddTo(Skinned, Lod, *Body->GetSkinWeightBuffer(0), RefToLocals);
 
     // The piece's shape in its own axes, in world centimetres: half sizes, the long (rod) or thin (disc) axis.
     const FBox Bounds = Prop->GetStaticMesh()->GetBoundingBox();

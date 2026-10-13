@@ -6,6 +6,7 @@ from pathlib import Path
 import unreal as U
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import animation_compression
+from skin_morph_contacts import validate_contact_data
 ROOT = yori.OUT
 OUT=ROOT/'cairo'
 CONFIG=json.loads((OUT/'export.json').read_text())
@@ -98,6 +99,9 @@ def fbx(filename,name,skeleton=None,sample_rate=60):
 mesh=fbx('Cairo.fbx','SK_Cairo')
 # The skating retargeter samples the rider skin for bail contact clearance.
 U.SkeletalMeshEditorSubsystem.set_allow_cpu_access(mesh, True)
+# The shared morph-aware skin readers also see Cairo's existing signed hair
+# springs. Retain their exact native deltas for desktop cooking, as for Nox.
+hair_targets=['head_Hair_fore','head_Hair_side']
 skeleton=mesh.skeleton
 slots=list(mesh.materials)
 for slot in slots:
@@ -105,7 +109,11 @@ for slot in slots:
     assert name in materials,('Unknown material',name,list(materials))
     slot.set_editor_property('material_interface',materials[name])
 mesh.set_editor_property('materials',slots)
+contact_data,contact_receipt=U.SkinMorphContactLibrary.capture_skin_morph_contacts(mesh,hair_targets)
+assert contact_data is not None,('Cairo contact morph capture failed',contact_receipt)
+contact_receipt=validate_contact_data(U.SkinMorphContactLibrary,mesh,hair_targets,'Cairo contact morph data')
 E.save_loaded_asset(mesh)
+contact_receipt=validate_contact_data(U.SkinMorphContactLibrary,mesh,hair_targets,'Saved Cairo contact morph data')
 editor=U.get_editor_subsystem(U.SkeletalMeshEditorSubsystem)
 pending=['root'];bones=[]
 while pending:
@@ -138,7 +146,8 @@ E.save_loaded_asset(definition)
 E.save_loaded_asset(skeleton)
 report={'mesh':mesh.get_path_name(),'bones':bones,'materials':[str(s.material_slot_name) for s in slots],
     'lod_vertices':[editor.get_num_verts(mesh,i) for i in range(editor.get_lod_count(mesh))],'morphs':[m.get_name() for m in mesh.get_editor_property('morph_targets')],
-    'clips':report_clips,'source':CONFIG['source_sha256']}
+    'clips':report_clips,'source':CONFIG['source_sha256'],'contact_morph_data':contact_data.get_path_name(),
+    'contact_morph_validation':contact_receipt}
 (OUT/'unreal_import.json').write_text(json.dumps(report,indent=2)+'\n')
 U.log('CAIRO IMPORT COMPLETE')
 

@@ -20,6 +20,7 @@ ROOT=yori.GAME
 PROJECT=ROOT/'unreal'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from benchmark import other_render_processes
+from desktop_preview import renderer_arguments
 from contextlib import ExitStack
 from atelier.engine import unreal_root
 from atelier.provenance import head
@@ -104,7 +105,7 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
          '-ExecCmds='+spec.get('commands','r.DynamicRes.OperationMode 0,r.ScreenPercentage 100'),
          '-abslog='+str(folder/'game.log')]
     if spec.get('study_renderer'):
-        cmd.append('-ini:Engine:[/Script/Engine.RendererSettings]:r.ForwardShading='+('True' if spec['study_renderer']=='forward' else 'False'))
+        cmd += renderer_arguments(spec['study_renderer'] != 'forward')
     if spec.get('route'): cmd += ['-reviewroute='+spec['route']]
     if spec.get('rider'): cmd += ['-rider='+spec['rider']]
     saved=(PROJECT/'Saved/settings.txt').read_bytes()

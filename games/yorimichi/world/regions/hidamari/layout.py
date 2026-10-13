@@ -6,6 +6,8 @@ from pathlib import Path
 from hidamari import arrival as arrival_road, house_gardens, mountains, park_grounds, station_yard, temple_precinct
 from megapark import trail as park_trail
 from communitypark import layout as community_park
+from forest.specs import MODEL_BY_KIND
+
 import numpy as np
 ROOT=yori.REGIONS
 OUT=yori.OUT/'hidamari'
@@ -365,38 +367,87 @@ def generate():
     # Batch heightfield evaluation keeps the denser forest cheap to regenerate.
     forest_rng=np.random.default_rng(743)
     forest_xy=forest_rng.uniform([-680,370],[2380,2940],size=(155000,2))
+    seam_rng=np.random.default_rng(745)
+    forest_xy=np.concatenate([forest_xy,seam_rng.uniform([-650,2940],[1750,3000],size=(2840,2))])
     forest_z=north_height(forest_xy[:,0],forest_xy[:,1])
+    forest_snow=mountains.snow(forest_xy[:,0],forest_xy[:,1],north_base_height)
     forest_distance=trail_distance(forest_xy[:,0],forest_xy[:,1])
-    for (x,y),sample_z,distance in zip(forest_xy,forest_z,forest_distance):
+    from forest.ecotone import kinds
+    forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
+    clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
+    forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
+    ceilings=330+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60
+    forest_altitude=mountains.smooth((ceilings-forest_z)/100)
+    for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
             if min(abs(x-c) for c in ROAD_X)<10:continue
             if any(abs(x-b['position'][0])<b['width']/2+10 and abs(y-b['position'][1])<b['depth']/2+10 for b in buildings):continue
         z=float(sample_z)
-        if z<2 or z>210+30*math.sin(x*.008) or distance<7:continue
-        density=.82+.16*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
+        if z<2 or z>400 or cover>.3 or distance<7:continue
+        density=.90+.08*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
-        clump=math.sin(x*.021+math.sin(y*.017)*2.1)*math.cos(y*.019-x*.006)
-        density*=.25+.85*float(mountains.smooth((clump+.55)/.5))
+        density*=float(clump*altitude)
         if r.random()>density:continue
-        patch=math.sin(x*.009+math.sin(y*.006)*1.8)+.7*math.cos(y*.014-x*.003)
-        kind=('Pine' if patch<-.5 else 'Rust' if patch<.45 else 'Gold')
-        if r.random()<.35:kind=r.choice(['Pine','Rust','Gold'])
-        name='HD_NorthTree'+kind
+        name=MODEL_BY_KIND[kind]
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
-        put(name,x,y,z-.3,yaw=r.uniform(0,360),scale=r.uniform(.70,1.15))
+        yaw=r.uniform(0,360);scale=r.uniform(.70,1.15)
+        put(name,x,y,z-.3,yaw=yaw,scale=scale)
+    # Outcrop groups and scree give the high flank real relief at walking scale.
+    # An independent stream keeps all existing tree/path authoring draws intact.
+    rock_rng=np.random.default_rng(746)
+    # Clustered stone outcrops, with scree between them. Their independent
+    # stream leaves all authored tree and trail draws unchanged.
+    angles=rock_rng.uniform(0,math.tau,1800)
+    radii=np.concatenate((rock_rng.uniform(110,300,400),rock_rng.uniform(300,650,1400)))
+    centres=np.stack((550+radii*np.cos(angles),1930+radii*np.sin(angles)),axis=-1)
+    rock_xy=(np.repeat(centres,6,axis=0)+rock_rng.normal(0,5.,size=(len(centres)*6,2)))
+    rx,ry=rock_xy[:,0],rock_xy[:,1]
+    rz=north_height(rx,ry);cover=mountains.snow(rx,ry,north_base_height)
+    slope=np.hypot(north_height(rx+1,ry)-rz,north_height(rx,ry+1)-rz)
+    radius=np.hypot(rx-550,ry-1930)
+    keep=(radius>100)&(radius<650)&(rz>250)&(cover<np.where(radius<300,.4,.25))&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05)
+    keep&=mountains.trail_distance(rx,ry)>8
+    for x,y,z,gradient in zip(rx[keep],ry[keep],rz[keep],slope[keep]):
+        scale=float(rock_rng.uniform(.35,1.45))
+        large=scale>1.1 and gradient<.55
+        # Embed the downhill edge of a flat-bottom stone in steep ground.
+        sink=(.06+.5*gradient*(.9 if large else .55))*scale
+        put('HD_NorthRockA' if large else 'HD_NorthRockB',float(x),float(y),float(z)-sink,
+            yaw=float(rock_rng.uniform(0,360)),scale=scale)
+    anchors=keep&(np.arange(len(rx))%6==0)&(slope<.6)
+    for x,y,z,gradient in zip(rx[anchors],ry[anchors],rz[anchors],slope[anchors]):
+        scale=float(rock_rng.uniform(1.2,1.8))
+        put('HD_NorthRockC',float(x),float(y),float(z)-(.08+.5*gradient*1.3)*scale,
+            yaw=float(rock_rng.uniform(0,360)),scale=scale)
+    shrubs=keep&(radius>300)&(rz<370)&(slope<.55)&(rock_rng.random(len(rx))<.65)
+    for x,y,z in zip(rx[shrubs],ry[shrubs],rz[shrubs]):
+        for _ in range(3):
+            px=float(x+rock_rng.uniform(-2.5,2.5));py=float(y+rock_rng.uniform(-2.5,2.5))
+            pz=float(north_height(px,py))
+            if float(mountains.snow(px,py,north_base_height))>.25:continue
+            put('Bush_Ochre_A' if rock_rng.random()<.6 else 'Grass_B',px,py,pz-.08,
+                yaw=float(rock_rng.uniform(0,360)),scale=float(rock_rng.uniform(.35,.65)))
+    print('VOLCANIC DRESSING',int(keep.sum()),'scree',int(anchors.sum()),'anchors',
+          int(shrubs.sum())*3,'shrub candidates',flush=True)
     # Distant overlapping crowns add geometry without a readable silhouette.
     # Thin them gradually, retaining the detailed city/trail belt and its layout.
     thin_rng=np.random.default_rng(744)
-    for name in ('HD_NorthTreeGold','HD_NorthTreeRust','HD_NorthTreePine'):
+    from megapark import forest as megapark_forest
+    protected_boxes=[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()]
+    for name in ('Tree_Forest_Ginkgo','Tree_Forest_Maple','Tree_Forest_Pine'):
         points=np.asarray(inst.get(name,[]),float)
         if not len(points):continue
         distance=trail_distance(points[:,0],points[:,1])
         far=mountains.smooth((distance-80)/120)*mountains.smooth((points[:,1]-650)/250)
-        keep=thin_rng.random(len(points))>=.40*far
+        keep=thin_rng.random(len(points))>=.06*far
         points[:,4]*=1+.08*far
+        gain=far.copy()
+        for x0,y0,x1,y1 in protected_boxes:
+            gain[(points[:,0]>x0)&(points[:,0]<x1)&(points[:,1]>y0)&(points[:,1]<y1)]=0
+        points[:,4]*=1+(.35 if name.endswith('Pine') else .18)*gain
         inst[name]=points[keep].tolist()
     # Small rooted plants and stones dress the trail, leaving its riding corridor open.
     for index,(x,y,z) in enumerate(mountains.trail_points(north_height)):
@@ -502,11 +553,11 @@ def generate():
     # Check the complete generated scatter, including street trees. Reserve
     # crown/awning clearance against each rotated shop, not only trunk centres.
     for name,placements in inst.items():
-        if not (name.startswith(('Tree','HD_NorthTree')) or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
+        if not (name.startswith('Tree') or name in ('HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange')):continue
         kept=[]
         for item in placements:
             x,y,_,_,scale=item
-            margin=(5.5 if name.startswith(('Tree','HD_NorthTree')) else 1.4)*scale+.7
+            margin=(5.5 if name.startswith('Tree') else 1.4)*scale+.7
             blocked=False
             for b in buildings:
                 a=math.radians(b['yaw']);dx=x-b['position'][0];dy=y-b['position'][1]
@@ -540,6 +591,8 @@ def generate():
     station_yard.place(put,inst,height,buildings)
     community_park.clear(inst)
     inst['ZP_City']=[[0,0,0,0,1]];inst['ZP_MegaPark']=[[0,0,0,0,1]]
+    from forest.ecotone import northern_ecotone
+    northern_ecotone(inst)
     return {'forest_backdrop':forest_backdrop,'near_trees':[megapark_forest.near_box(),*park_trail.near_boxes(),*community_park.near_boxes()],'name':'Hidamari','terrain_pads':list(terrain_pads()),'north_bounds':list(mountains.BOUNDS),'north_trail':mountains.trail_points(north_height),'park_trail':park_trail.bed().tolist(),'bounds':[300,-260,1320,430],'instances':inst,'buildings':buildings,'resident_groups':residents,'roads':roads,'road_widths':road_widths,'poles':poles,'arrival':path,'plaza_lights':[[x,y,float(height(x,y))+2.6] for x,y in [(669,150),(669,171),(790,157),(790,185),(730,167)]],'plaza_steps':[[730.,float(y),float(height(730,y))] for y in np.arange(163.5,169,.25)],'plaza_route':[[float(x),150.,float(height(x,150))] for x in range(712,786)],'arcade_lights':[[x,y,float(height(x,y))+2.5] for x in [607.5,614.5,628.5,656.5,684.5] for y in [67.2,82.8]],'arcade_route':[[float(x),75.,float(height(x,75))] for x in range(599,726)],'park_route':[[float(x),284.,30.925+1.5*math.sin(math.pi*(x-984)/92) if x<=1076 else float(height(x,284))] for x in range(984,1093)],'harbor_route':[[float(x),-116.,float(height(x,-116))] for x in range(570,701)],'harbor_pier_route':[[600.,float(y),2.55] for y in range(-126,-170,-1)],'review_route':path+[point for point in roads[2] if point[0]>=650],'districts':json.loads((ROOT/'hidamari/location.json').read_text())['districts'],'water_probes':[[1030,294,28.8],[848,-40,float(height(848,-40))-1.8],[500,-190,0]],'shots':[]}
 
 # Broad scenery transition around the new city. Both far terrain and its trees

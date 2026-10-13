@@ -109,7 +109,7 @@ def link(a, ao, b, bi):
 def make_mpc():
     mpc = create("MPC_Wind", unreal.MaterialParameterCollection, unreal.MaterialParameterCollectionFactoryNew())
     ps = []
-    for name, val in (("Wind", unreal.LinearColor(0.3, -0.95, 0.0, 0.0)), ("PlayerPos", unreal.LinearColor(0.0, 0.0, -100000.0, 0.0))):
+    for name, val in (("Wind", unreal.LinearColor(0.3, -0.95, 0.0, 0.0)), ("PlayerPos", unreal.LinearColor(0.0, 0.0, -100000.0, 0.0)), ("SunDirection", unreal.LinearColor(-.778, .449, .438, 1.0))):
         q = unreal.CollectionVectorParameter(); q.set_editor_property("parameter_name", name); q.set_editor_property("default_value", val); ps.append(q)
     mpc.set_editor_property("vector_parameters", ps)
     EAL.save_loaded_asset(mpc)
@@ -369,11 +369,17 @@ def build_materials(T):
     MI["LeafMaple"] = instance("MI_LeafMaple", fol, T["T_leaf_maple"]); MI["LeafGinkgo"] = instance("MI_LeafGinkgo", fol, T["T_leaf_ginkgo"])
     MI["LeafSmall"] = instance("MI_LeafSmall", fol, T["T_leaf_small"]); MI["Litter"] = instance("MI_Litter", fol, T["T_litter"])
     MI["Flower"] = instance("MI_Flower", fol, T["T_flower"]); MI["LeafOchreSmall"] = instance("MI_LeafOchreSmall", fol, T["T_leaf_ochre_small"])
-    MI["LeafMapleLo"] = instance("MI_LeafMapleLo", fol, T["T_leaf_maple_lo"]); MI["LeafGinkgoLo"] = instance("MI_LeafGinkgoLo", fol, T["T_leaf_ginkgo_lo"]); MI["LeafBroadLo"] = instance("MI_LeafBroadLo", fol, T["T_leaf_broad_lo"])
-    MI["RoofTile"] = instance("MI_RoofTile", lit, T["T_rooftile"], (0.40, 0.42, 0.48)); MI["FarForest"] = instance("MI_FarForest", lit, T["T_farforest"], (0.50, 0.40, 0.20))
+    MI["RoofTile"] = instance("MI_RoofTile", lit, T["T_rooftile"], (0.40, 0.42, 0.48))
+    from forest_ground import material as forest_ground_material
+    MI["FarForest"] = instance("MI_FarForest", forest_ground_material())
     MI["_cloud"] = cloud_shadow_material(T["T_cloudmask"])
     MI["_painterly"] = painterly_material()
     MI["Bark"] = instance("MI_Bark", lit, T["T_bark"]); MI["Concrete"] = instance("MI_Concrete", lit, T["T_concrete"])
+    MI["BarkOlive"] = instance("MI_BarkOlive", lit, T["T_bark_olive"])
+    MI["BarkTuscan"] = instance("MI_BarkTuscan", lit, T["T_bark_olive"], (.65, .55, .4))
+    from foliage_material import enable_bark_lod_blend
+    for key in ("BarkOlive", "BarkTuscan"):
+        enable_bark_lod_blend(MI[key]); EAL.save_loaded_asset(MI[key])
     MI["Ground"] = instance("MI_Ground", lit, T["T_ground"]); MI["Road"] = instance("MI_Road", lit, T["T_road"], (0.34, 0.33, 0.33)); MI["Water"] = instance("MI_Water", lit, T["T_water"])
     MI["Sky"] = instance("MI_Sky", sky, None, (1.35, 1.35, 1.35))
     flat = {"Paint": (0.85, 0.85, 0.82), "Stone": (0.50, 0.50, 0.47), "Vermilion": (0.62, 0.12, 0.06), "Plaster": (0.80, 0.74, 0.62), "Tile": (0.16, 0.17, 0.20),

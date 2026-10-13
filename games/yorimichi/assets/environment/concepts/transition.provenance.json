@@ -1,0 +1,43 @@
+{
+  "revision": "r01",
+  "use": "concepts",
+  "name": "transition",
+  "inputs": [
+    {
+      "file": "rejected-transition.png",
+      "sha256": "1000718b4b3d802b6266eec9f4b107bb6040c88e5e019a58ccab6e48416b547d"
+    }
+  ],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "9b455f139559f71ae90e77b4e1c6f1a05bb0ff71b52f0de85a2f1382c53a8b9c",
+  "status": "done",
+  "started_at": "2026-10-12T21:50:17.751457+00:00",
+  "output": "transition.png",
+  "output_sha256": "00abeb337bc17c77f4369728dd3079d2de3e7f0a881205a04c2fecd5a2b9268a",
+  "usage": {
+    "input_tokens": 1232,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 312
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2604
+  },
+  "elapsed_seconds": 42.1,
+  "finished_at": "2026-10-12T21:50:59.841406+00:00",
+  "prompt": "Production concept for Yorimichi, a beautiful stylized exploration game.\nUse rich painterly materials, organic modeled forms, convincing soft afternoon\nlighting and full detailed foliage. This is an achievable polished real-time 3D\nscene. Preserve the geography and architecture in the layout references, while\nreplacing coarse terrain and crude trees. No faceted toy mountain, polygon cone\ntrees, balloon crowns, bare saplings, confetti canopy or flat forest photograph.\nTrees have trunks and branches, overlapping textured leaf masses, depth and\nnatural varied silhouettes. No HUD, text, labels, border or watermark.\n\nThe first image is the rejected in-game crossing, viewed from\nabove the north side of the volcano toward Belmonte. Keep this camera, the\nmountain position, the valley footprint and the distant Tuscan buildings/courses.\nReplace the visible three straight bands with one continuous, naturally shaped\nlandscape. Detailed weathered volcanic rock and snow remnants lead into wooded\nfoothills with full interlocking Japanese autumn canopies. Those woods gradually\nbecome green Mediterranean oak and olive groves, cypress avenues, meadow, shrubs\nand cultivated Tuscan fields. Use organic clusters, glades, contour-following\npaths and rock outcrops. The ground material, relief and planting blend together;\nno rectangular edge, blank strip, abrupt species wall or repeated flat texture.\nShow both existing Yorimichi and Tuscan Belmonte as geographic context.",
+  "source": {
+    "file": "transition.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "4da961112dbcb3f2ea02940abd8ab93554400e1ecdd220d42856b7b07c07df10"
+}

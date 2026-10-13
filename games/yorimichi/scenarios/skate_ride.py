@@ -205,8 +205,7 @@ def hand_rows(record):
                     (rest if clock < 1 else moving).append(
                         (gaps[side], f"{'LR'[side]} hand, {near[min(side, len(near) - 1)]}, {clock:.2f} s, {r.get('simulation', '-')}"))
                 clock += float(r.get('dt', 16.7)) / 1000
-            feet = max((float(part.partition(':')[2]) for r in rows for part in r.get('skin_groups', '').split(',')
-                        if part.startswith('feet:')), default=float('nan'))
+            feet = skin_groups(rows).get('feet', float('nan'))
             qa.run_scenario(f"{FLAT[0]},{FLAT[1]},0,0,[],duration=1.5", 1.5)
             shot = qa.yori.OUT / 'skateqa' / f'ride-hands-{tag}.png'
             qa.py(REST_AIM)
@@ -1300,16 +1299,38 @@ def skin_check(on):
     qa.py(f"unreal.SystemLibrary.execute_console_command(live.L.game_world(), 'skate.RideSkinCheck {int(on)}')")
 
 
+MORPH_LAG = 1e-4  # the largest difference between a pose-driven morph's weight as rendered and as the skin measure saw it
+
+
+def unmeasured(row):
+    """Why a frame's skin was not measured as it renders, or None: an active morph without CPU deltas (skin_error=),
+    or pose-driven morphs rendered with weights other than those the measure evaluated (morph_lag= over MORPH_LAG),
+    so the contact would be measured on a different surface from the one drawn."""
+    if 'skin_error' in row:
+        return row['skin_error']
+    lag = float(row.get('morph_lag', 0))
+    if not math.isfinite(lag) or lag > MORPH_LAG:
+        return f"morph_lag_{float(row['morph_lag']):.9g}"
+    return None
+
+
 def skin(rows):
     """The deepest the skin goes under the ground over rows (cm, skin=), the body carrying it, and how many frames
-    were measured and went deeper than SKIN_DEPTH."""
+    were measured and went deeper than SKIN_DEPTH. A frame whose skin was not measured as it renders (unmeasured)
+    fails the whole measure rather than drop out of it."""
+    errors = [e for e in map(unmeasured, rows) if e]
+    if errors:
+        return float('nan'), 'skin_error:' + errors[0], 0, len(errors)
     seen = [(float(r['skin']), r.get('skin_bone', '-')) for r in rows if 'skin' in r]
     worst = max(seen, default=(float('nan'), '-'))
     return worst[0], worst[1], len(seen), sum(d > SKIN_DEPTH for d, _ in seen)
 
 
 def skin_groups(rows):
-    """The deepest each group of bodies (SKIN_GROUPS) goes under the ground over rows (cm, skin_groups=)."""
+    """The deepest each group of bodies (SKIN_GROUPS) goes under the ground over rows (cm, skin_groups=); only
+    {'skin_error': inf} when a frame's skin was not measured as it renders (unmeasured)."""
+    if any(map(unmeasured, rows)):
+        return {'skin_error': float('inf')}
     worst = {}
     for r in rows:
         for part in r.get('skin_groups', '').split(','):
@@ -1319,7 +1340,16 @@ def skin_groups(rows):
     return worst
 
 
+def morph_lag(rows):
+    """How far the pose-driven morphs as rendered were from those the skin measure evaluated on its own pose, at worst
+    over rows (morph_lag=; 0 when render and contact agree), as text; empty when no frame reports it."""
+    lags = [float(r['morph_lag']) for r in rows if 'morph_lag' in r]
+    return f'; morph lag {max(lags):.9g}' if lags else ''
+
+
 def skin_text(worst):
+    if 'skin_error' in worst:
+        return 'not measured as rendered (skin_error)'
     return ' '.join(f'{g} {worst[g]:.1f}' for g in SKIN_GROUPS if g in worst) or 'not measured'
 
 
@@ -1367,7 +1397,7 @@ def physical_riding(record):
     record('physical_riding', rows, ok,
            f'{len(held)}/{len(rows)} frames driven; pelvis {pelvis:.1f} cm, feet {feet:.1f} cm p95 '
            f'(reference: upper body 0.5 cm, feet 6-8 cm); skin {depth:.1f} cm under the ground at worst ({bone}, '
-           f'{measured} frames measured; by group {skin_text(skin_groups(rows))}); pa={rows[-1].get("pa", "?")}, '
+           f'{measured} frames measured; by group {skin_text(skin_groups(rows))}{morph_lag(rows)}); pa={rows[-1].get("pa", "?")}, '
            f'{rows[-1].get("bodies", "?")} bodies')
 
 
@@ -1696,7 +1726,8 @@ def judge_bail(record, name, rows, kind):
     deepest = max((d for worst in stages.values() for d in worst.values()), default=float('nan'))
     ok = ok and measured > 0 and deepest <= SKIN_DEPTH
     note += (f'; skin {depth:.1f} cm under the ground at worst in the bail ({bone}; {deep} of {measured} frames over '
-             f'{SKIN_DEPTH:g} cm); by group (cm) ' + '; '.join(f'{k}: {skin_text(v)}' for k, v in stages.items()))
+             f'{SKIN_DEPTH:g} cm); by group (cm) ' + '; '.join(f'{k}: {skin_text(v)}' for k, v in stages.items())
+             + morph_lag(rows[start:risen + 30]))
     step, lay, hidden, back = getup_board(rows[start + lying - 1:end + 30]) if lying < len(bail) else (99., 0., False, False)
     ok = ok and step < GETUP_BOARD_STEP and back
     note += (f'; get-up board lay {lay:.0f} cm from its end, {"dissolved out and in" if hidden else "stepped onto"}, '

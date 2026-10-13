@@ -24,9 +24,6 @@ SPECS = {
     'Tree_Ginkgo': (A.tree_ginkgo,(23,9.0)),
     'Tree_Pine_A': (A.tree_pine,(4,13.0)), 'Tree_Pine_B': (A.tree_pine,(5,11.0)),
     'Tree_Cedar_A': (A.tree_cedar,(6,16.0)), 'Tree_Cedar_B': (A.tree_cedar,(7,13.0)),
-    'Tree_Maple_lo': (A.tree_lo,(31,'maple',6.5,6.0)),
-    'Tree_Ginkgo_lo': (A.tree_lo,(32,'ginkgo',9.0,4.2)),
-    'Tree_Broad_lo': (A.tree_lo,(33,'broad',8.5,5.0)),
     'Bush_Green_A': (A.bush,(8,'LeafBroad',1.4)), 'Bush_Green_B': (A.bush,(9,'LeafBroad',1.0)),
     'Bush_Ochre_A': (A.bush,(10,'LeafOchre',1.5)), 'Bush_Ochre_B': (A.bush,(11,'LeafOchre',1.1)),
     'Bush_Flower_A': (A.bush_flower,(34,1.2)), 'Bush_Flower_B': (A.bush_flower,(35,.9)),
@@ -51,7 +48,7 @@ def main():
         # 35% screen size. Keep their seed, atlas and crown proportions at every
         # level, with an extra intermediate step before the cheapest far mesh.
         roadside = generate in (A.tree_broad,A.tree_maple,A.tree_ginkgo)
-        sizes = [1.,.22,.09,.035] if roadside else ([1.,.07,.025] if name.endswith('_lo') else [1.,.08,.025])
+        sizes = [1.,.22,.09,.035] if roadside else [1.,.08,.025]
         strides = (3,9,27) if roadside else (3,8)
         report[name] = {'triangles':[sum(len(p.vertices)-2 for p in base.data.polygons)],
                         'screen_sizes':sizes}

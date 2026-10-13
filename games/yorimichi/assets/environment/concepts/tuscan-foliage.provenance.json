@@ -1,0 +1,38 @@
+{
+  "revision": "r01",
+  "use": "concepts",
+  "name": "tuscan-foliage",
+  "inputs": [],
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "b642fc4bdf4b11b3ac2399cb0fbdbb97a539062d037d190b1c037365c84b7bfc",
+  "status": "done",
+  "started_at": "2026-10-12T21:50:19.986841+00:00",
+  "output": "tuscan-foliage.png",
+  "output_sha256": "ef79e5606eb42024812568688a18d578a0544cea04ac4373386275b8820a4e69",
+  "usage": {
+    "input_tokens": 296,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 296
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1668
+  },
+  "elapsed_seconds": 31.7,
+  "finished_at": "2026-10-12T21:50:51.684231+00:00",
+  "prompt": "Production concept for Yorimichi, a beautiful stylized exploration game.\nUse rich painterly materials, organic modeled forms, convincing soft afternoon\nlighting and full detailed foliage. This is an achievable polished real-time 3D\nscene. Preserve the geography and architecture in the layout references, while\nreplacing coarse terrain and crude trees. No faceted toy mountain, polygon cone\ntrees, balloon crowns, bare saplings, confetti canopy or flat forest photograph.\nTrees have trunks and branches, overlapping textured leaf masses, depth and\nnatural varied silhouettes. No HUD, text, labels, border or watermark.\n\nA production reference sheet of four beautiful Tuscan\ntree forms for adapting Yorimichi's detailed leaf-card trees: Italian cypress,\ngnarled olive, Mediterranean holm oak and umbrella stone pine. Show each whole\ntree and one close crown/leaf detail, naturally arranged on a pale neutral\nground. Cypress has narrow dark green irregular columnar foliage; olive has a\ntwisted branching trunk and airy but full silver-green small-leaf clusters;\nholm oak has broad dense evergreen crowns; pine has an organic umbrella canopy.\nGround companions are rosemary, lavender, low meadow grasses and small shrubs.\nThe leaf structures must be modeled and textured with real depth and overlapping\nfoliage, with beautiful visible branch structure. No orange Japanese autumn\npalette in these Tuscan variants, no crude conical or blob geometry, no text.",
+  "source": {
+    "file": "tuscan-foliage.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 94,
+    "chroma": "4:4:4"
+  },
+  "source_sha256": "94d3d7fc6b9c8185779895e7da3e03575ad7830f7a8761d62566c7dca4edde6a"
+}

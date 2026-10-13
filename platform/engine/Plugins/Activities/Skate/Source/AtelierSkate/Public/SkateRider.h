@@ -3,6 +3,8 @@
 #include "UObject/Interface.h"
 #include "SkateRider.generated.h"
 
+class USkeletalMeshComponent;
+
 /**
  * What USkateComponent needs from the character that rides. The game's player (an ACharacter) implements it; the
  * component drives that character's capsule, mesh and movement directly.
@@ -32,6 +34,12 @@ public:
     /** Directions used to fit collision hulls to this rider's skin. More samples retain small shoe or garment details;
      *  clamped to 64..2048, and only used when building a fitted physics asset. */
     virtual int32 GetSkateCollisionHullDirections() const { return 256; }
+    /** The morph target weights the character's own driver shows for a component-space pose of its mesh (bone indices of
+     *  its reference skeleton): pose-driven correctives, so the skin measures (the bail's contact, the physical rider's
+     *  depth and hand gap) sample the skin as it is drawn in exactly the pose they skin. Names every morph it drives,
+     *  0 where that pose leaves one off. A pure function of the pose: no state of the mesh's last frame. Fills nothing
+     *  by default (no pose-driven morphs). */
+    virtual void GetSkatePoseMorphs(const USkeletalMeshComponent* Mesh, TConstArrayView<FTransform> Pose, TArray<TPair<FName, float>>& Morphs) const {}
     /** The visible board's size relative to the source rider's: a short character with big feet rides a bigger one.
      *  It grows about its ground contact and the pose rises onto its deck; the ride's physics keep the source board. */
     virtual float GetSkateBoardScale() const { return 1.f; }

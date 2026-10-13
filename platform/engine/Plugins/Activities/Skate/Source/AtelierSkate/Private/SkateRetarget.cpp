@@ -668,7 +668,7 @@ void USkateComponent::RetargetRiderPose()
                         const TConstArrayView<FBoneIndexType> Bones=Section.HasUnifiedBoneMap()?LOD.GetUnifiedBoneMap():MakeArrayView(Section.BoneMap);
                         for (uint32 V=Section.BaseVertexIndex;V<Section.BaseVertexIndex+Section.NumVertices;++V)
                         {
-                            FSkateRuntime::Vertex Vertex; float Sum=0;
+                            FSkateRuntime::Vertex Vertex; Vertex.Index=int32(V); float Sum=0;
                             for (uint32 K=0;K<Weights->GetMaxBoneInfluences();++K)
                             {
                                 const float Weight=Weights->GetBoneWeight(V,K)/65535.f;
@@ -687,13 +687,25 @@ void USkateComponent::RetargetRiderPose()
                     }
             }
         }
+        // The skin as drawn: the rider's pose-driven morphs for this pose, and its other morphs as the mesh shows
+        // them (a hair spring), move vertices before skinning. Without their CPU deltas the contact is measured on
+        // the base skin, and the log says so.
+        TArray<TPair<FName,float>> Morphs;
+        if (RiderApi) RiderApi->GetSkatePoseMorphs(Mesh,Output,Morphs);
+        FSkinMorphOffsets::MergeShown(Mesh,Morphs);
+        FSkinMorphOffsets& Offsets=ShownRuntime->ContactMorphs;
+        if (!Offsets.Update(Asset,Morphs) && Offsets.GetError()!=ShownRuntime->ContactMorphError)
+            UE_LOG(LogTemp,Error,TEXT("SKATE bail skin contact: the base skin stands in for %s's morphed skin (%s)"),*Asset->GetName(),*Offsets.GetError());
+        ShownRuntime->ContactMorphError=Offsets.GetError();
         // Keep the lowest skinned vertex in each 12cm footprint cell. This includes shoes, hands, hair
         // and the enlarged head, and bounds the scene-query count without a coarse whole-body hover box.
         TMap<FIntPoint,FVector> Support;
         for (const auto& Vertex : ShownRuntime->ContactVertices)
         {
             FVector Point=FVector::ZeroVector;
-            for (const auto& I : Vertex.Influences) Point+=Output[I.Bone].TransformPosition(I.Position)*I.Weight;
+            const FVector3f* Offset=Offsets.Find(Vertex.Index);
+            for (const auto& I : Vertex.Influences)
+                Point+=Output[I.Bone].TransformPosition(Offset?I.Position+Bind[I.Bone].InverseTransformVector(FVector(*Offset)):I.Position)*I.Weight;
             Point=MeshWorld.TransformPosition(Point);
             const FIntPoint Cell(FMath::FloorToInt(Point.X/12.),FMath::FloorToInt(Point.Y/12.));
             FVector* Existing=Support.Find(Cell);

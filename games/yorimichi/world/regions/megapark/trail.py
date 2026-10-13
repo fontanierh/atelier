@@ -4,8 +4,7 @@ west deck (docs/MEGAPARK.md, "Getting there").
 Pure NumPy. The path crosses three grounds, all carved to one bed:
 - the island's square heightmap, carved by integrate() (gen_world.py);
 - APPROACH, a 2 m patch of ground north of the square (HD_NorthApproach, hidamari/build.py). The far hills' 67 m grid
-  was too coarse to walk through a forest on; the patch replaces them there, and the far forest's painted cards with
-  a forest of the island's detailed trees (forest());
+  was too coarse to walk through a forest on; the patch replaces them there, with the island's detailed trees (forest());
 - the north foothills (hidamari/mountains.py surface_grid).
 integrate() works the bed out once, from the uncarved ground along the path smoothed to walking grades, and writes it
 to build/yorimichi/megapark/trail.json, which every later step reads.
@@ -39,7 +38,6 @@ CARVE = (5.3, 3.4)              # 2 m grounds: the bed within 1.9 m of the path,
 CARVE_COARSE = (11., 7.)        # the foothills' 10 m grid
 APPROACH = (-300., 300., -36., 500.)   # x0, y0, x1, y1: on the square's 2 m grid, by far-hill columns -303 and -34
 CLEAR = dict(tree=6.5, plant=2.2)      # metres kept clear of the path's centre line in the square
-DETAIL = 35.                    # metres: the square's painted cards this near the path become detailed trees
 TRUNK = 3.                      # metres from the path's centre line to the approach's nearest trunks
 UNDER = (('Grass_A', .3), ('Grass_B', .28), ('Bush_Green_A', .12), ('Bush_Ochre_A', .12), ('Bush_Flower_A', .05),
          ('Rock_B', .06), ('Litter', .07))
@@ -117,7 +115,7 @@ def _profile(g, s):
     return g + (z - g) * smooth(end / 4)
 
 
-def integrate(world, h):
+def integrate(world, h, scatter_xy=None):
     """Work out the bed, carve the square's part, and clear the square's and the approach's trees and plants.
     `world` is gen_world.py's world.json, `h` its heightmap (rows y, columns x), changed in place."""
     from hidamari import mountains
@@ -150,7 +148,8 @@ def integrate(world, h):
     X, Y = np.meshgrid(grid, grid)
     part = points[points[:, 1] < size / 2 + 2 * STEP]
     h[:] = carve(X, Y, h, part)
-    _cards(world, part)
+    if scatter_xy:
+        colour_scatter(world['instances'], part, scatter_xy)
     removed = {}
     for name, rows in list(world['instances'].items()):
         try:
@@ -178,21 +177,20 @@ def integrate(world, h):
     return removed
 
 
-def _cards(world, part):
-    """The far forest's painted cards near the square's part of the path become the island's detailed trees, as round
-    the tree house (treehouse/layout.py DETAILED)."""
-    from treehouse.layout import DETAILED as CARDS
+def colour_scatter(instances, part, scatter_xy):
+    """Red and gold beside the trail, applied only to the originating scatter."""
+    from treehouse.layout import SCATTER_MIX
     rng = np.random.default_rng(SEED)
-    for card, kinds in CARDS.items():
-        a = np.asarray(world['instances'].get(card, []), 'f8').reshape(-1, 5)
-        index, d, _ = _near(a[:, 0], a[:, 1], part, DETAIL)
+    moved = {}
+    for name in SCATTER_MIX:
+        a = np.asarray(instances.get(name, []), 'f8').reshape(-1, 5)
+        index, d, _ = _near(a[:, 0], a[:, 1], part, 35.)
         turn = np.zeros(len(a), bool)
-        turn[index] = d < DETAIL
-        world['instances'][card] = a[~turn].tolist()
-        moved = a[turn]
-        pick = rng.choice(len(kinds), size=len(moved), p=[w for _, w in kinds])
-        for k, (name, _) in enumerate(kinds):
-            world['instances'].setdefault(name, []).extend(moved[pick == k].tolist())
+        turn[index] = (d < 35.) & np.array([tuple(row[:2]) in scatter_xy for row in a[index]], bool)
+        instances[name] = a[~turn].tolist(); moved[name] = a[turn]
+    for name, kinds in SCATTER_MIX.items():
+        pick = rng.choice(len(kinds), size=len(moved[name]), p=[w for _, w in kinds])
+        for i, (key, _) in enumerate(kinds): instances.setdefault(key, []).extend(moved[name][pick == i].tolist())
 
 
 @lru_cache(maxsize=1)

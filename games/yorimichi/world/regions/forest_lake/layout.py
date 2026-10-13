@@ -45,7 +45,7 @@ def integrate(world,h):
         world['instances'][name]=a[keep].tolist();removed[name]=int(remove.sum())
     for name in ['Lake_Cabin','Lake_Shore','Lake_Trail','Lake_Water','Lake_Plants']:
         world['instances'][name]=[[0,0,0,0,1]]
-    world['instances'].setdefault('Tree_Maple_lo',[]).append([-109.,246.,76.35,25.,.23])
+    world['instances'].setdefault('Tree_Maple_A',[]).append([-109.,246.,76.35,25.,.23])
     world['forest_lake']={'center':CENTER,'radii':RADII,'water_height':WATER,'cabin':CABIN,'trail':path.tolist(),'safe_shore':[-54,223,75.65],'removed':removed}
     world['shots'] += [[-116,195,87,43,-16],[-75,202,79,43,-4],[-87,235,130,0,-80]]
 
