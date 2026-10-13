@@ -15,6 +15,7 @@
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -339,6 +340,16 @@ void AJapanWorld::Load()
             const bool bBush = Key.StartsWith(TEXT("Bush"));
             const bool bTree = Key.StartsWith(TEXT("Tree"));
             const bool bLitter = Key == TEXT("Litter");
+            // These three species also fill the scattered and far-hill forest, tens of
+            // thousands of trees. Close up they keep their detail; beyond a few tens of
+            // metres they step down to the far crown, which keeps that forest cheap.
+            if (Key == TEXT("Tree_Maple_A") || Key == TEXT("Tree_Ginkgo") || Key == TEXT("Tree_Broad_A"))
+                if (FStaticMeshRenderData* Data = Mesh->GetRenderData())
+                {
+                    static const float Sizes[] = {1.f, .45f, .22f, .1f};
+                    for (int32 L = 1; L < Data->LODResources.Num() && L < UE_ARRAY_COUNT(Sizes); ++L)
+                        Data->ScreenSize[L].Default = FMath::Max(Data->ScreenSize[L].Default, Sizes[L]);
+                }
             TArray<FTransform> Near, Distant;
             Near.Reserve(Pair.Value->AsArray().Num());
             for (const TSharedPtr<FJsonValue>& V : Pair.Value->AsArray())
@@ -593,6 +604,28 @@ void AJapanWorld::Load()
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
     const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
     if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
+    // The far hills' trees stand on the hills' original heights, but the northern
+    // surface and the Mega Park approach lowered that ground. Once every region's
+    // ground is in place, drop each backdrop tree with no ground under its base.
+    int32 Floating = 0, Grounded = 0;
+    const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BackdropGround), true);
+    for (auto* Group : BackdropGroups)
+    {
+        if (!Group || !Group->GetStaticMesh() || !Group->GetStaticMesh()->GetName().StartsWith(TEXT("Tree"))) continue;
+        TArray<int32> Remove;
+        for (int32 I = 0; I < Group->GetInstanceCount(); ++I)
+        {
+            FTransform Instance;
+            Group->GetInstanceTransform(I, Instance, true);
+            const FVector Base = Instance.GetLocation();
+            FHitResult Hit;
+            if (GetWorld()->LineTraceSingleByChannel(Hit, Base + FVector(0, 0, 300), Base - FVector(0, 0, 400), ECC_Visibility, GroundQuery)) ++Grounded;
+            else Remove.Add(I);
+        }
+        if (!Remove.IsEmpty()) Group->RemoveInstances(Remove);
+        Floating += Remove.Num();
+    }
+    UE_LOG(LogTemp, Display, TEXT("BACKDROP TREES kept %d on the ground, removed %d with none under them"), Grounded, Floating);
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())
