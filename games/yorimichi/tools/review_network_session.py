@@ -292,7 +292,25 @@ def modori_checks(folder, shield):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None, aggregate_memory_gib=10, rendered_memory_gib=10):
+def mixed_character_checks(folder):
+    receipts = {role: load(folder / (role + '-connected.json')) or {} for role in ('server', 'client')}
+    host, guest = (receipts[role].get('local_player_id') for role in ('server', 'client'))
+    mapped = isinstance(host, str) and bool(host) and isinstance(guest, str) and bool(guest) and host != guest
+    expected = {host: 'Cairo', guest: 'Modori'} if mapped else {}
+    checks = {'mixed_character_player_mapping': mapped}
+    for role, receipt in receipts.items():
+        people = receipt.get('people', [])
+        checks[role + '_independent_character_choices'] = (mapped and len(people) == 2 and
+            {p.get('id') for p in people} == set(expected) and all(
+                p.get('rider') == expected[p['id']] and
+                p.get('pawn_class') == '/Script/Yorimichi.' + expected[p['id']] + 'Character' and
+                p.get('ready') is True and p.get('moves_ready') is True and
+                type(p.get('pawn_shield')) is bool and p.get('applied_shield') is p['pawn_shield']
+                for p in people))
+    return checks
+
+
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None, aggregate_memory_gib=10, rendered_memory_gib=10, mixed_characters=False):
     from atelier.build import Context
     from atelier.safety import process_tree
     from atelier.safety.guard import attach, reap
@@ -361,6 +379,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                     command.append('-networkjumpreplay=' + str(jump_replay))
                 if modori_shield is not None:
                     command += ['-rider=Modori', '-set=shield=' + str(modori_shield if role == 'server' else 1-modori_shield)]
+                if mixed_characters:
+                    command.append('-rider=' + ('Cairo' if role == 'server' else 'Modori'))
                 if not tailnet:
                     command.append('-MULTIHOME=127.0.0.1')
                 if combat:
@@ -464,6 +484,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             checks.update(jump_replay_checks(load(folder / 'server-gameplay.json') or {}, load(folder / 'client-gameplay.json') or {}, jump_replay))
         if modori_shield is not None:
             checks.update(modori_checks(folder, modori_shield))
+        if mixed_characters:
+            checks.update(mixed_character_checks(folder))
         reaction_delivery = None
         if reaction_delivery_case is not None:
             from network_scheduled_reaction_review import scheduled_reaction_checks
@@ -507,6 +529,8 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                                'Same-machine packaged listen/client; cooked collision and compiled identity; ') + 'NullRHI. Rendered and two-machine acceptance remain separate.'
         if modori_shield is not None:
             report['modori_shield'] = dict(host=modori_shield, guest=1-modori_shield)
+        if mixed_characters:
+            report['mixed_characters'] = dict(host='Cairo', guest='Modori')
         if jump_replay is not None:
             report['jump_replay_case'] = jump_replay
         if reaction_delivery_case is not None:
@@ -559,10 +583,16 @@ def main():
     parser.add_argument('--combat', action='store_true', help='Native listen-host 20fps and remote combat probes; same-machine stimulus files, real network inputs')
     parser.add_argument('--gameplay', action='store_true', help='Also exercise predicted walking/jump, five seconds of skating and dismount')
     parser.add_argument('--listen', action='store_true', help='Two local players across listen-host/client processes; validates the observer relay within the same aggregate guard')
+    parser.add_argument('--mixed-characters', action='store_true', help='Host chooses Cairo and guest chooses Modori through ordinary per-player startup selection')
     parser.add_argument('--lag-ms', type=int, default=0, help='Emulated one-way packet delay on both processes (0..200 ms)')
     parser.add_argument('--variance-ms', type=int, default=0, help='Packet delay variance (0..50 ms)')
     parser.add_argument('--loss-percent', type=int, default=0, help='Emulated packet loss on both processes (0..10 percent)')
     args = parser.parse_args()
+    if args.mixed_characters:
+        if (args.app or args.feature_case or args.vehicle_case or args.enemy or args.combat or
+                args.modori_shield is not None or args.jump_replay is not None or args.reaction_delivery_case is not None):
+            parser.error('Mixed characters use the ordinary editor listen/gameplay route')
+        args.listen = True
     if not (0 <= args.lag_ms <= 200 and 0 <= args.variance_ms <= 50 and 0 <= args.loss_percent <= 10):
         parser.error('Emulation must stay within the bounded lag/variance/loss ranges')
     if args.reaction_delivery_moving and args.reaction_delivery_case not in (0, 5, 8, 9):
@@ -647,7 +677,8 @@ def main():
         return worker(folder, args.port, args.gameplay, args.listen, args.lag_ms, args.variance_ms, args.loss_percent, args.tailnet, args.combat, args.combat_host_fps, args.enemy, args.app, args.cook_receipt, args.expected_identity, args.plain_package, args.movement_hitch_ms, args.skate_hitch_ms, args.modori_shield, args.vehicle_case, args.jump_replay, args.reaction_delivery_case, args.reaction_delivery_moving,
                       *([args.feature_case, args.render_view, args.aggregate_memory_gib, args.rendered_memory_gib]
                         if args.rendered_memory_gib != 10 else [args.feature_case, args.render_view, args.aggregate_memory_gib]
-                        if args.aggregate_memory_gib != 10 else [args.feature_case, args.render_view] if args.feature_case or args.render_view else []))
+                        if args.aggregate_memory_gib != 10 else [args.feature_case, args.render_view] if args.feature_case or args.render_view else []),
+                      **({'mixed_characters': True} if args.mixed_characters else {}))
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -659,6 +690,7 @@ def main():
                        (['--render-view', args.render_view] if args.render_view else []) +
                        (['--aggregate-memory-gib', str(args.aggregate_memory_gib)] if args.aggregate_memory_gib != 10 else []) +
                        (['--rendered-memory-gib', str(args.rendered_memory_gib)] if args.rendered_memory_gib != 10 else []) +
+                       (['--mixed-characters'] if args.mixed_characters else []) +
                        (['--reaction-delivery-moving'] if args.reaction_delivery_moving else []) +
                        (['--reaction-delivery-case', str(args.reaction_delivery_case)] if args.reaction_delivery_case is not None else []) +
                        (['--jump-replay', str(args.jump_replay)] if args.jump_replay is not None else []) +

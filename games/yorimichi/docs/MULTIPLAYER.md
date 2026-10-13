@@ -15,6 +15,10 @@ two-machine or packaged release certification.
   tests that opt-out before restoring normal availability.
 - The zeppelin is one replicated host-owned service with separate passenger
   seats. Boarding, destination and speed controls use the owning player's RPCs.
+- Every player chooses their own character independently. `--mixed-characters`
+  runs the ordinary listen/gameplay probe with a Cairo host and Modori guest;
+  both observers must bind each player's identity to the exact native class and
+  applied equipment. It can share the private-address 60/15/2 session check.
 - Character selection is available during a session. The persistent controller
   replaces its pawn, preserving health, player identity and activity, and advances
   the activity epoch. Pending combat resolves before replacement. Bike and sail
@@ -48,6 +52,13 @@ Inspect the captures as well as the receipts. Rerun bike, sail,
 pending mount, parking, crash and combat routes before enabling a release build.
 Use matching packaged identities for a two-device Tailscale playtest before claiming
 that a release's multiplayer has been verified on separate machines.
+
+The `switch-skate-bail` QA stimulus currently sets an unread scripted-input
+field, so its phase-2 timeout does not exercise a bail or character request.
+Its failed receipt is retained; bail replacement has source review only, while
+mid-trick continuation is covered by the air case. The QA follow-up must press
+and release the existing controller bail chord before accepting native bail
+coverage. This limitation does not establish a gameplay failure.
 
 ## Scheduled combat reactions
 
