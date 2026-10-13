@@ -1309,7 +1309,7 @@ def unmeasured(row):
     if 'skin_error' in row:
         return row['skin_error']
     if float(row.get('morph_lag', 0)) > MORPH_LAG:
-        return f"morph_lag_{float(row['morph_lag']):.4f}"
+        return f"morph_lag_{float(row['morph_lag']):.9g}"
     return None
 
 
@@ -1343,7 +1343,7 @@ def morph_lag(rows):
     """How far the pose-driven morphs as rendered were from those the skin measure evaluated on its own pose, at worst
     over rows (morph_lag=; 0 when render and contact agree), as text; empty when no frame reports it."""
     lags = [float(r['morph_lag']) for r in rows if 'morph_lag' in r]
-    return f'; morph lag {max(lags):.4f}' if lags else ''
+    return f'; morph lag {max(lags):.9g}' if lags else ''
 
 
 def skin_text(worst):

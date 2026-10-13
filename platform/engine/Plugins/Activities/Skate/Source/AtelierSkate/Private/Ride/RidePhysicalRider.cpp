@@ -934,7 +934,7 @@ FString URidePhysicalRider::Describe() const
         {
             Skin = FString::Printf(TEXT(" skin=%.1f skin_bone=%s skin_groups="), Depth, Bone.IsNone() ? TEXT("-") : *Bone.ToString());
             for (int32 G = 0; G < SkinGroupCount; ++G) Skin += FString::Printf(TEXT("%s%s:%.1f"), G ? TEXT(",") : TEXT(""), SkinGroupNames[G], Groups[G]);
-            Skin += FString::Printf(TEXT(" skin_vertex=%d skin_point=%.1f,%.1f,%.1f morph_lag=%.4f"), Vertex, Point.X, Point.Y, Point.Z, SkinMorphLag);
+            Skin += FString::Printf(TEXT(" skin_vertex=%d skin_point=%.1f,%.1f,%.1f morph_lag=%.9g"), Vertex, Point.X, Point.Y, Point.Z, SkinMorphLag);
             if (USkeletalMeshComponent* Skinned = Mesh.Get(); Skinned && Vertex != INDEX_NONE)
                 if (const USkeletalMesh* Skeletal = Skinned->GetSkeletalMeshAsset(); Skeletal && Skeletal->GetResourceForRendering())
                     if (const FSkinWeightVertexBuffer* Weights = Skinned->GetSkinWeightBuffer(0))

@@ -1,6 +1,7 @@
 """Nox's seat correctives (NoxSeatMorph.h) against the garment candidate's CPU interpolation, and the ride's skin gate
 refusing frames whose skin could not be measured as it renders."""
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -105,3 +106,32 @@ def test_skin_gate_fails_when_render_and_contact_morphs_differ():
     assert skate_ride.skin([dict(agree, morph_lag='0.0001')])[:3] == (1.0, 'pelvis', 1)
     assert skate_ride.morph_lag([{'skin': '1.0'}]) == ''
     assert skate_ride.morph_lag([agree, lagging]) == '; morph lag 0.0125'
+
+
+def test_native_lag_receipt_preserves_the_gate_boundary(tmp_path):
+    compiler = shutil.which('clang++')
+    if not compiler:
+        pytest.skip('clang++ is needed to check the native receipt formatting')
+    source = GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/Ride/RidePhysicalRider.cpp'
+    # Use the actual native printf field so low-precision serialization cannot
+    # turn a failing rendered/contact comparison into a passing receipt.
+    field = re.search(r'morph_lag=(%[^"\s]+)', source.read_text()).group(0)
+    (tmp_path / 'receipt.cpp').write_text(
+        '#include <cstdio>\nint main(){float lag;while(scanf("%f",&lag)==1)'
+        '{printf("' + field + '\\n",lag);}}\n')
+    executable = tmp_path / 'receipt'
+    subprocess.run([compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(tmp_path / 'receipt.cpp'), '-o', str(executable)],
+                   check=True)
+    limit = np.float32(skate_ride.MORPH_LAG)
+    above = np.nextafter(limit, np.float32(float('inf')))
+    values = [0., np.nextafter(limit, np.float32(0)), limit, above, .00014, .0125]
+    receipts = subprocess.run([str(executable)], input='\n'.join(str(v) for v in values), capture_output=True, text=True,
+                             check=True).stdout.splitlines()
+    assert skate_ride.MORPH_LAG == 1e-4 and skate_ride.SKIN_DEPTH == 2
+    for value, receipt in zip(values, receipts, strict=True):
+        row = dict(skin='1.0', skin_bone='pelvis', skin_groups='torso:1.0,feet:0.5', **dict([receipt.split('=', 1)]))
+        fails = float(np.float32(value)) > skate_ride.MORPH_LAG
+        assert bool(skate_ride.unmeasured(row)) == fails
+        depth, _, measured, _ = skate_ride.skin([row])
+        assert (np.isnan(depth) and measured == 0) if fails else (depth == 1 and measured == 1)
+        assert ('skin_error' in skate_ride.skin_groups([row])) == fails
