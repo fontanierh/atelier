@@ -18,9 +18,19 @@ def parent(default_normal):
                 texture=default_normal,sampler_type=U.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
     uv=node(U.MaterialExpressionTextureCoordinate)
     tangent=node(U.MaterialExpressionVertexTangentWS);vertex=node(U.MaterialExpressionVertexNormalWS)
+    # Runtime instances can compare the baked basis with card/up normals.
+    # These defaults retain the authored crown normals and their current basis.
+    card=node(U.MaterialExpressionScalarParameter,parameter_name='CardNormal',default_value=0.)
+    up=node(U.MaterialExpressionScalarParameter,parameter_name='UpNormal',default_value=0.)
+    sign_x=node(U.MaterialExpressionScalarParameter,parameter_name='NormalSignX',default_value=1.)
+    sign_y=node(U.MaterialExpressionScalarParameter,parameter_name='NormalSignY',default_value=1.)
     mapped=node(U.MaterialExpressionCustom,output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
-                code='float3 n=Texture2DSample(Tex,TexSampler,UV).rgb*2-1; return normalize(T*n.x-cross(N,T)*n.y+N*n.z);')
-    values=[('Tex',normal,''),('UV',uv,''),('T',tangent,''),('N',vertex,'')]
+                code='float3 n=Texture2DSample(Tex,TexSampler,UV).rgb*2-1; n.xy*=float2(SignX,SignY);'
+                     'float3 crown=normalize(T*n.x-cross(N,T)*n.y+N*n.z);'
+                     'crown=normalize(lerp(crown,N,saturate(Card)));'
+                     'return normalize(lerp(crown,float3(0,0,1),saturate(Up)));')
+    values=[('Tex',normal,''),('UV',uv,''),('T',tangent,''),('N',vertex,''),
+            ('Card',card,''),('Up',up,''),('SignX',sign_x,''),('SignY',sign_y,'')]
     args=[]
     for name,expression,output in values:
         a=U.CustomInput();a.set_editor_property('input_name',name);args.append(a)
