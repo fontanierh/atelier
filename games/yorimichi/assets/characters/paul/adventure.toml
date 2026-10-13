@@ -3,3 +3,7 @@ base = "/Game/Paul/DA_PaulBase"
 dest = "/Game/Paul/Adventure"
 definition = "/Game/Paul/DA_Paul"
 keep_base_actions = false
+
+[fit.glider]
+# Paul has narrower palms and a shorter grip span than the reference's height-scaled bar.
+fit_grip_span = true

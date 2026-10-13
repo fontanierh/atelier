@@ -7,7 +7,7 @@ import pytest
 
 CHARS = Path(__file__).resolve().parents[1] / 'assets' / 'characters'
 SPECS = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(CHARS.glob('*/adventure.toml'))}
-FIT = {'carry', 'push', 'tilt', 'yaw', 'mount', 'crouch'}
+FIT = {'carry', 'push', 'tilt', 'yaw', 'mount', 'crouch', 'glider'}
 
 
 def pascal(character):
@@ -37,6 +37,9 @@ def test_fit(character):
     for piece in fit.get('carry', {}).values():
         assert len(piece['offset']) == 3 and isinstance(piece['pitch'], (int, float))
     assert 0. <= fit.get('mount', 0.) <= 1.
+    if 'glider' in fit:
+        assert set(fit['glider']) == {'fit_grip_span'}
+        assert isinstance(fit['glider']['fit_grip_span'], bool)
     if 'crouch' in fit:
         assert set(fit['crouch']) == {'pivot', 'yaw', 'pitch', 'out'}
         assert fit.get('yaw'), 'the crouched carry turns the pieces that `yaw` turns'

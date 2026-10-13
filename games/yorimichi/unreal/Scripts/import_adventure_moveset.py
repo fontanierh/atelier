@@ -219,7 +219,16 @@ def glider(reference, wearer, item, scale):
         grips.append((weapon, add(wearer.at(role), apply(Ft, mul(apply_t(Fs, sub(weapon, reference.at(role))), lt / ls)))))
     middle_s = mul(add(grips[0][0], grips[1][0]), .5)
     middle_t = mul(add(grips[0][1], grips[1][1]), .5)
-    to_wearer = lambda v: mul(apply(Bt, apply_t(Bs, v)), BODY)   # a length in Reference's body frame, in the wearer's
+    grip_scale = BODY
+    if FIT.get('glider', {}).get('fit_grip_span', False):
+        # Keep the canopy's body-relative angle; fit its rigid bar to this body's palm spacing.
+        span = apply(Bt, apply_t(Bs, sub(grips[0][0], grips[1][0])))
+        desired = sub(grips[0][1], grips[1][1])
+        assert dot(span, span) > 1e-9, 'the reference glider grip span is empty'
+        grip_scale = dot(span, desired) / dot(span, span)
+        assert math.isfinite(grip_scale) and grip_scale > 0., ('invalid glider grip scale', grip_scale)
+        scale *= grip_scale / BODY
+    to_wearer = lambda v: mul(apply(Bt, apply_t(Bs, v)), grip_scale)   # a length in Reference's body frame, in the wearer's
     R = compose(Bt, compose_t(Bs, reference.rotation(item['hand'])))
     p = add(middle_t, to_wearer(sub(reference.at(item['hand']), middle_s)))
     held = U.MathLibrary.make_relative_transform(transform(R, p, scale), wearer.transform('hand_R'))
