@@ -1,0 +1,5387 @@
+{
+ "schema": "crater-park-readable-scene/1",
+ "layout": "mountain",
+ "units": "metres",
+ "axes": {
+  "up": "+Y",
+  "horizontal": [
+   "X",
+   "Z"
+  ]
+ },
+ "uvConvention": "v increases down the unflipped image. OBJ uses 1-v for conventional image orientation.",
+ "source": {
+  "mod": "fontanierh-yorimichi",
+  "version": "1.0.7",
+  "map": "Crater Park"
+ },
+ "counts": {
+  "sourceSections": 197,
+  "sourceNames": 105,
+  "jsonMeshes": 197,
+  "vertices": 959583,
+  "triangles": 1033180,
+  "textures": 21
+ },
+ "bounds": [
+  [
+   1131.25048828125,
+   -110.0,
+   816.3687744140625
+  ],
+  [
+   1469.1973876953125,
+   40.05107879638672,
+   1200.876708984375
+  ]
+ ],
+ "horizontalFootprintMetres": [
+  337.9468994140625,
+  384.5079345703125
+ ],
+ "materials": "materials.json",
+ "textures": {
+  "textures/tex-0073.png": "2ec90c07464554aa5691b1ee23cb0a32b30f7bdac837c8ba26cd2493a511c9c3",
+  "textures/tex-0051.png": "9998ced022cbfd86c99db2afec9b35502e34f0572d4ca386126bf2ba1a66fb5e",
+  "textures/tex-0004.png": "d3d9fae2597ed9c45a0d9bd062d257a3945d8c7c32c022f58a5cc3732d90e4dd",
+  "textures/tex-0024.png": "ea303f3234f9203d371007e44c5f5ab5f5faf2f113d6b389fc87131bdebc94e2",
+  "textures/tex-0059.png": "09bd90706676eebec622a0080c2c7eb9e89e74b0548786f4497ea9d72e78b742",
+  "textures/tex-0029.png": "d0a58a89d0b959b95ecb893f812daaf71309f86f94c98723b317ea1b6b7c4425",
+  "textures/tex-0006.png": "e070c34b1f8c823ed5710c34e98b0ca84f16ed9ede4cd57d6ed64a1a5f4cef81",
+  "textures/tex-0064.png": "3d619e2d91a3f85305e63b0a0a8afbd63d9fa5b3c68798e68e70a85c3ee6ba97",
+  "textures/tex-0043.png": "68bd37a451b95caa33e6f2716fb450346706797f24c46ba698c733cca1cdc0d4",
+  "textures/tex-0060.png": "16023a25e80cb7eb793f235f020f8bd8f19e3ee41bb54441556f24ba8d9be4c0",
+  "textures/tex-0030.png": "ffd7de742ea0b1a5c3be765489a5898401b62aeb0c37e35a08d493deb1b742f0",
+  "textures/tex-0001.png": "26d9f2db90188b5fdd85ac4c8cad0921953ca8bd16f67224bd812dc2e0347c5f",
+  "textures/tex-0058.png": "487eee16442607713cdebc01280be8d749523abfb8c0a324119378bf5cf5b1ab",
+  "textures/tex-0074.png": "b1855d13f9b71b28bbfd2264fe0dbf91b4bce6e95879d2d3c68784cfa7846785",
+  "textures/tex-0032.png": "02929a47edf9c0c6807269bc38c23ceb5875b08d4cfd52a454ffcbaf8da8fda5",
+  "textures/tex-0031.png": "4836ac390a6a610da73893a325357c2d01706c7fbef7b8b03f824c6d168f80c4",
+  "textures/tex-0036.png": "630e0c303264768145fd208f60bb288011fde8d3567e6cf76d21686380383449",
+  "textures/tex-0016.png": "589e1b39cc05e01649398c26c2b21206a8b5f5caab75967548f53d77e35bc5af",
+  "textures/tex-0067.png": "8076683a90e6598be181cc802326281363c861c0b3fa88feea0852c1dd6b4dc2",
+  "textures/tex-0021.png": "971b2e9111d636b22e2c6177c69d425232b3eccdcac1fd36163ab7c9ae8d89b9",
+  "textures/tex-0025.png": "140143c75e2c2f98b6aa0951494c7cc29c6590d803139887a7c1334739a9a9c8"
+ },
+ "meshes": [
+  {
+   "id": "mesh-0000-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__2_2644_0",
+   "section": 0,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 5025,
+   "triangleCount": 1675,
+   "bounds": [
+    [
+     1398.6424560546875,
+     -3.9779224395751953,
+     910.7568359375
+    ],
+    [
+     1419.8433837890625,
+     13.485077857971191,
+     944.142822265625
+    ]
+   ],
+   "arraysSha256": "b8d98baee98bdfd50e4d0482957a8ba6ef41fb39f9f7369fd5466d910fe336e2",
+   "npz": "geometry/mesh-0000-000.npz",
+   "render_skip": 0,
+   "sha256": "86ad08bc96660f3a58c8c257d44c1eda939869d9333806847bf40df3179cc92d"
+  },
+  {
+   "id": "mesh-0001-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__2_2644_0",
+   "section": 1,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 917,
+   "triangleCount": 1675,
+   "bounds": [
+    [
+     1398.6424560546875,
+     -3.9779224395751953,
+     910.7568359375
+    ],
+    [
+     1419.8433837890625,
+     13.485077857971191,
+     944.142822265625
+    ]
+   ],
+   "arraysSha256": "e062008d748e03c878b88d4e97a58833acee978c17ebb8607119d7199980180e",
+   "npz": "geometry/mesh-0001-000.npz",
+   "render_skip": 0,
+   "sha256": "33ca4618d5ea0f16d36f2b7fd057cabd0a060ee69926c0ad915adfe211187e49"
+  },
+  {
+   "id": "mesh-0002-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19334_0",
+   "section": 2,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 927,
+   "triangleCount": 309,
+   "bounds": [
+    [
+     1397.83740234375,
+     -1.1709225177764893,
+     945.02685546875
+    ],
+    [
+     1449.4984130859375,
+     1.313077449798584,
+     1001.0428466796875
+    ]
+   ],
+   "arraysSha256": "5bc8e9c2599f3060b67f925856edebf3d3e58d67a74e83f430b98d4b0dd1cdba",
+   "npz": "geometry/mesh-0002-000.npz",
+   "render_skip": 0,
+   "sha256": "63108fff8e9d5de1e98b0bf4b1842272f1c705b7b9312a2b9db067a64d858373"
+  },
+  {
+   "id": "mesh-0003-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19334_0",
+   "section": 3,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 283,
+   "triangleCount": 309,
+   "bounds": [
+    [
+     1397.83740234375,
+     -1.1709225177764893,
+     945.02685546875
+    ],
+    [
+     1449.4984130859375,
+     1.313077449798584,
+     1001.0428466796875
+    ]
+   ],
+   "arraysSha256": "ca51ef45166658bded517069fc4e533fb27365c19f4f19cbdeefdd4306fa7a23",
+   "npz": "geometry/mesh-0003-000.npz",
+   "render_skip": 0,
+   "sha256": "6565be1e9c3bc4010121afc9bb989b7c9d9298c57b5859ef62b16ec9a32a6f7f"
+  },
+  {
+   "id": "mesh-0004-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19240_0",
+   "section": 4,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 171,
+   "triangleCount": 57,
+   "bounds": [
+    [
+     1410.636474609375,
+     0.6400774717330933,
+     979.4918212890625
+    ],
+    [
+     1447.8714599609375,
+     1.313077449798584,
+     1004.310791015625
+    ]
+   ],
+   "arraysSha256": "6ecc5baabe9bd341f040208105c1d54cf201eb7235ddfaa8eca5191b73fbcb04",
+   "npz": "geometry/mesh-0004-000.npz",
+   "render_skip": 0,
+   "sha256": "1dad121f4b33d479966084c3fd466a3114f643ae49307a856a820e1fdd642f1c"
+  },
+  {
+   "id": "mesh-0005-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19240_0",
+   "section": 5,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 62,
+   "triangleCount": 57,
+   "bounds": [
+    [
+     1410.636474609375,
+     0.6400774717330933,
+     979.4918212890625
+    ],
+    [
+     1447.8714599609375,
+     1.313077449798584,
+     1004.310791015625
+    ]
+   ],
+   "arraysSha256": "2cd4ab9dc144cb29e3217d6be4dc65b1fa00cba12dce8e244366af39fb9d8317",
+   "npz": "geometry/mesh-0005-000.npz",
+   "render_skip": 0,
+   "sha256": "33b4315abbfd16bdaf99b028f7515dc74c1a9a44cb96546aa8cad3c0d7a8054d"
+  },
+  {
+   "id": "mesh-0006-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19338_0",
+   "section": 6,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 663,
+   "triangleCount": 221,
+   "bounds": [
+    [
+     1399.199462890625,
+     -0.902922511100769,
+     964.4948120117188
+    ],
+    [
+     1464.71337890625,
+     2.556077480316162,
+     1007.23583984375
+    ]
+   ],
+   "arraysSha256": "d70650acf97c4fea941b4736cbb5eff5a3432bea4c6997c1a6c983b7e17c6f1c",
+   "npz": "geometry/mesh-0006-000.npz",
+   "render_skip": 0,
+   "sha256": "7aae209f200492d28312c59474f68896fa637844a6ad454997bef1d5cf6ce613"
+  },
+  {
+   "id": "mesh-0007-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19338_0",
+   "section": 7,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 172,
+   "triangleCount": 221,
+   "bounds": [
+    [
+     1399.199462890625,
+     -0.902922511100769,
+     964.4948120117188
+    ],
+    [
+     1464.71337890625,
+     2.556077480316162,
+     1007.23583984375
+    ]
+   ],
+   "arraysSha256": "d876a7e21b9156366f6d3a16e96b011cdd9bda56c760613ab0e34c6704b74ddb",
+   "npz": "geometry/mesh-0007-000.npz",
+   "render_skip": 0,
+   "sha256": "534101dfc9ad9b4b0ae5c84ba5320b78f930a27ac655661424a12f10c5fb8c3b"
+  },
+  {
+   "id": "mesh-0008-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_4_19244_0",
+   "section": 8,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 132,
+   "triangleCount": 44,
+   "bounds": [
+    [
+     1456.6064453125,
+     -0.9029226303100586,
+     963.6517944335938
+    ],
+    [
+     1467.8953857421875,
+     2.556077480316162,
+     1001.2247924804688
+    ]
+   ],
+   "arraysSha256": "6e45f4830e4341e81ba7d6377e2001813cbac229a737705e98affc6877bf5b2b",
+   "npz": "geometry/mesh-0008-000.npz",
+   "render_skip": 0,
+   "sha256": "70772b026e50aefd3f1cb790dcbe66ffa5444e53efc6876d3a0dcaad0fbd362e"
+  },
+  {
+   "id": "mesh-0009-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_4_19244_0",
+   "section": 9,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 46,
+   "triangleCount": 44,
+   "bounds": [
+    [
+     1456.6064453125,
+     -0.9029226303100586,
+     963.6517944335938
+    ],
+    [
+     1467.8953857421875,
+     2.556077480316162,
+     1001.2247924804688
+    ]
+   ],
+   "arraysSha256": "166ffba56dc907e140da2b3da8ef7ee118be205ebcc0d299111e2d685d636bf4",
+   "npz": "geometry/mesh-0009-000.npz",
+   "render_skip": 0,
+   "sha256": "7e42816531ec6e22b1181d998c26e9d08977da25489b91890e98f403d4811654"
+  },
+  {
+   "id": "mesh-0010-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19652_0",
+   "section": 10,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 48,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1456.7584228515625,
+     -1.7729225158691406,
+     956.1978149414062
+    ],
+    [
+     1459.741455078125,
+     -0.8739225268363953,
+     999.94677734375
+    ]
+   ],
+   "arraysSha256": "78af856b1031a85c5266dce57e261272f0c4e8cb4a27f01065ac552f8fc03dd6",
+   "npz": "geometry/mesh-0010-000.npz",
+   "render_skip": 0,
+   "sha256": "34e421d84a1206265702f6aeb5f45bd1061a9de9b410b7eb32d1f28c4416f829"
+  },
+  {
+   "id": "mesh-0011-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19652_0",
+   "section": 11,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 20,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1456.7584228515625,
+     -1.7729225158691406,
+     956.1978149414062
+    ],
+    [
+     1459.741455078125,
+     -0.8739225268363953,
+     999.94677734375
+    ]
+   ],
+   "arraysSha256": "e735f5c5a38bdde046adec55f1dfc52c6d410a26059426464941bac173a8d817",
+   "npz": "geometry/mesh-0011-000.npz",
+   "render_skip": 0,
+   "sha256": "2c77a19e653e1759a1df6f22df5373a8e11339475e4d75cee0675965eb44408a"
+  },
+  {
+   "id": "mesh-0012-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19658_0",
+   "section": 12,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 957,
+   "triangleCount": 319,
+   "bounds": [
+    [
+     1397.284423828125,
+     -4.20692253112793,
+     940.0787963867188
+    ],
+    [
+     1456.7584228515625,
+     -0.87392258644104,
+     1001.2518310546875
+    ]
+   ],
+   "arraysSha256": "b1787ca9358734707367d064e2dccd9849cea90c7001611048ee2a257091f093",
+   "npz": "geometry/mesh-0012-000.npz",
+   "render_skip": 0,
+   "sha256": "ca11e13adbfd95ce48b2d2186211349986a9ed48aeeb0cc7fa9ab06ba0025fd1"
+  },
+  {
+   "id": "mesh-0013-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19658_0",
+   "section": 13,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 316,
+   "triangleCount": 319,
+   "bounds": [
+    [
+     1397.284423828125,
+     -4.20692253112793,
+     940.0787963867188
+    ],
+    [
+     1456.7584228515625,
+     -0.87392258644104,
+     1001.2518310546875
+    ]
+   ],
+   "arraysSha256": "a25ec171c4fb3df6f472717572080632262a54348d913f111bcfa13cce87e1a0",
+   "npz": "geometry/mesh-0013-000.npz",
+   "render_skip": 0,
+   "sha256": "cebcae6a5047680efa141e97fd9eb035869fc20c031c646f9269528fe663ee80"
+  },
+  {
+   "id": "mesh-0014-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2698_0",
+   "section": 14,
+   "role": "original",
+   "helper": false,
+   "material": "material_005",
+   "doubleSided": true,
+   "vertexCount": 138,
+   "triangleCount": 46,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     1001.1058349609375
+    ],
+    [
+     1236.2183837890625,
+     7.4690775871276855,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "24f1b4b760456617fdf76eea3f09d5f8a41528538d7e10c2d9b7395cee62d9c2",
+   "npz": "geometry/mesh-0014-000.npz",
+   "render_skip": 0,
+   "sha256": "710b9ff4038d79d627f61d66b901e24cf4a6a64e43f8be3941d823177e5b7da8"
+  },
+  {
+   "id": "mesh-0015-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2698_0",
+   "section": 15,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 63,
+   "triangleCount": 46,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     1001.1058349609375
+    ],
+    [
+     1236.2183837890625,
+     7.4690775871276855,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "4154a9d199dae6f5d70e07e8d2941e323ae438fe3cea3feda80bd1975c7b8755",
+   "npz": "geometry/mesh-0015-000.npz",
+   "render_skip": 0,
+   "sha256": "3061d0c0de081488d013496ab6a114b6cf2c018c2275b432ab2c69bb13a248fc"
+  },
+  {
+   "id": "mesh-0016-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2657_0",
+   "section": 16,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 2745,
+   "triangleCount": 915,
+   "bounds": [
+    [
+     1141.740478515625,
+     1.8050765991210938,
+     1000.7158203125
+    ],
+    [
+     1204.2254638671875,
+     40.05107879638672,
+     1200.349853515625
+    ]
+   ],
+   "arraysSha256": "cdc8f3c5aabb97cd3a7a17ada8ec2f14b602ce4c58bfdcd515337980146712f3",
+   "npz": "geometry/mesh-0016-000.npz",
+   "render_skip": 0,
+   "sha256": "f2f17a02ba63b96a17b454e773cc08713ee996585fde51177f7f6ea002cf6de1"
+  },
+  {
+   "id": "mesh-0017-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2657_0",
+   "section": 17,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 683,
+   "triangleCount": 915,
+   "bounds": [
+    [
+     1141.740478515625,
+     1.8050765991210938,
+     1000.7158203125
+    ],
+    [
+     1204.2254638671875,
+     40.05107879638672,
+     1200.349853515625
+    ]
+   ],
+   "arraysSha256": "aaff3d2abe3ccd286a1f4806e416a4b0ff17c5527e959ccf9dbf65525fe700f3",
+   "npz": "geometry/mesh-0017-000.npz",
+   "render_skip": 0,
+   "sha256": "4974dc399fb591e22e52bb37a0c0d4b137ed460135677a83674060e5cd2fdbd0"
+  },
+  {
+   "id": "mesh-0018-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2684_0",
+   "section": 18,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 1491,
+   "triangleCount": 497,
+   "bounds": [
+    [
+     1180.0184326171875,
+     7.818077564239502,
+     984.7518310546875
+    ],
+    [
+     1198.553466796875,
+     12.07807731628418,
+     1043.341796875
+    ]
+   ],
+   "arraysSha256": "eac185237f8ca12e251da397990bf261259a7217d8bdee8191f60d9031eb7070",
+   "npz": "geometry/mesh-0018-000.npz",
+   "render_skip": 0,
+   "sha256": "2a15b4b90de4cde4cf5d4366ba26b929ef956251868cb631b10b923c50fe3361"
+  },
+  {
+   "id": "mesh-0019-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2684_0",
+   "section": 19,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 355,
+   "triangleCount": 497,
+   "bounds": [
+    [
+     1180.0184326171875,
+     7.818077564239502,
+     984.7518310546875
+    ],
+    [
+     1198.553466796875,
+     12.07807731628418,
+     1043.341796875
+    ]
+   ],
+   "arraysSha256": "f27cfe93f45e5537d46608a0e1786f9d90dae5cb6903490a07819e26de3752eb",
+   "npz": "geometry/mesh-0019-000.npz",
+   "render_skip": 0,
+   "sha256": "f4c5ffea3587027daf1179c570a56e37f558eaeccb6212212daa8ab418d1cf73"
+  },
+  {
+   "id": "mesh-0020-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__5_2649_0",
+   "section": 20,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 19158,
+   "triangleCount": 6386,
+   "bounds": [
+    [
+     1140.9024658203125,
+     9.312077522277832,
+     999.7537841796875
+    ],
+    [
+     1156.8114013671875,
+     26.399078369140625,
+     1065.57177734375
+    ]
+   ],
+   "arraysSha256": "4f985d1d7c955e55dac2120afa8a4252ef5e8ae8472b9c526ceda0f801c61e16",
+   "npz": "geometry/mesh-0020-000.npz",
+   "render_skip": 0,
+   "sha256": "b22672d114982d18c5e1187c3ab4c8b2cf696c5096f1eb1186f318f0a70cee77"
+  },
+  {
+   "id": "mesh-0021-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__5_2649_0",
+   "section": 21,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 3450,
+   "triangleCount": 6386,
+   "bounds": [
+    [
+     1140.9024658203125,
+     9.312077522277832,
+     999.7537841796875
+    ],
+    [
+     1156.8114013671875,
+     26.399078369140625,
+     1065.57177734375
+    ]
+   ],
+   "arraysSha256": "a625a14d67201db9404d8fab434a4e75b875e2da053db3ad9cdb980cf31e38ad",
+   "npz": "geometry/mesh-0021-000.npz",
+   "render_skip": 0,
+   "sha256": "c27db2822cbc5459ac4a6d7f0493583416192e7bc0dfe5fe718e39f87b5916e5"
+  },
+  {
+   "id": "mesh-0022-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2688_0",
+   "section": 22,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 1203,
+   "triangleCount": 401,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     997.77978515625
+    ],
+    [
+     1205.7874755859375,
+     10.327077865600586,
+     1103.0218505859375
+    ]
+   ],
+   "arraysSha256": "c396420f58a55a86a9bd96051a83399ee631bf821c31d6e0398c463ed1b2a78e",
+   "npz": "geometry/mesh-0022-000.npz",
+   "render_skip": 0,
+   "sha256": "ab081c93e0f52d30310be45e45c9f2ad81057fab12c4ac373dd716dd49860aec"
+  },
+  {
+   "id": "mesh-0023-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2688_0",
+   "section": 23,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 373,
+   "triangleCount": 401,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     997.77978515625
+    ],
+    [
+     1205.7874755859375,
+     10.327077865600586,
+     1103.0218505859375
+    ]
+   ],
+   "arraysSha256": "e8b74a7c846503f6b4261359e1cca93455ff45c5d9c68ca303150c6442109ea8",
+   "npz": "geometry/mesh-0023-000.npz",
+   "render_skip": 0,
+   "sha256": "1755f12f111f1132fbd3730983f179a0c0af67f1257d7ea6c1c3215dde486e00"
+  },
+  {
+   "id": "mesh-0024-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2712_0",
+   "section": 24,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 84,
+   "triangleCount": 28,
+   "bounds": [
+    [
+     1191.08447265625,
+     5.04307746887207,
+     1000.6608276367188
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     1068.1597900390625
+    ]
+   ],
+   "arraysSha256": "bb5cf22b67ace20d99ec8c6b27e827b2e9dae53d86172dcd095bcffdbe7a6cb9",
+   "npz": "geometry/mesh-0024-000.npz",
+   "render_skip": 0,
+   "sha256": "2de7f3b798f0c0a45fffdd7e82c177beca7c69c2e5697d7c41d35849afdb18f6"
+  },
+  {
+   "id": "mesh-0025-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2712_0",
+   "section": 25,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 31,
+   "triangleCount": 28,
+   "bounds": [
+    [
+     1191.08447265625,
+     5.04307746887207,
+     1000.6608276367188
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     1068.1597900390625
+    ]
+   ],
+   "arraysSha256": "97ddcb9f4ad36b750a6b7a5d0a4e116812349772695c5431f4a68ffe069886f7",
+   "npz": "geometry/mesh-0025-000.npz",
+   "render_skip": 0,
+   "sha256": "c3e259a1f9ed7eebd03e628f51cd1260fcad2f586e23d83d4681a56680245e36"
+  },
+  {
+   "id": "mesh-0026-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_0x00014b4e03e38717_0x2c70170500110003_0x2c7017_2_3560_0",
+   "section": 26,
+   "role": "original",
+   "helper": false,
+   "material": "material_010",
+   "doubleSided": true,
+   "vertexCount": 6,
+   "triangleCount": 2,
+   "bounds": [
+    [
+     1190.657470703125,
+     1.779077410697937,
+     1083.23486328125
+    ],
+    [
+     1191.7584228515625,
+     5.045077323913574,
+     1083.247802734375
+    ]
+   ],
+   "arraysSha256": "4991e9855bad0f28b752dc03ed361702876df5aea9a1f2af19664e3921f57704",
+   "npz": "geometry/mesh-0026-000.npz",
+   "render_skip": 0,
+   "sha256": "d7d5df65935e971500d07261addac69828e4cc4907fe25033b0852a5c926227d"
+  },
+  {
+   "id": "mesh-0027-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_0x00014b4e03e38717_0x2c70170500110003_0x2c7017_2_3560_0",
+   "section": 27,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 4,
+   "triangleCount": 2,
+   "bounds": [
+    [
+     1190.657470703125,
+     1.779077410697937,
+     1083.23486328125
+    ],
+    [
+     1191.7584228515625,
+     5.045077323913574,
+     1083.247802734375
+    ]
+   ],
+   "arraysSha256": "60cf5956d6d94bd7c9cd4d778bcffa35301e81a8e4a74116973a2bd4c0b85b36",
+   "npz": "geometry/mesh-0027-000.npz",
+   "render_skip": 0,
+   "sha256": "889b20415737d6471d6b8ace44fd442437d15d2511b767f06e4cf37a04736628"
+  },
+  {
+   "id": "mesh-0028-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2687_0",
+   "section": 28,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 120,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1184.6553955078125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1198.37548828125,
+     8.318077087402344,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "c30c0842715123de620dc99265166be0994be8d92786003273182c6304e4270b",
+   "npz": "geometry/mesh-0028-000.npz",
+   "render_skip": 0,
+   "sha256": "4b2c1fa32c169672287c12ed29e89bc9ee0008a6a2a052e5f08b57a117a79642"
+  },
+  {
+   "id": "mesh-0029-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2687_0",
+   "section": 29,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 44,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1184.6553955078125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1198.37548828125,
+     8.318077087402344,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "8c85ff23bcd21f4ce42ea5e15bc846e8a89cda8beac97cc543f384e501cfdeed",
+   "npz": "geometry/mesh-0029-000.npz",
+   "render_skip": 0,
+   "sha256": "732139e30100671f281a8219369b814274a67a71b447276058871d6b3acf3734"
+  },
+  {
+   "id": "mesh-0030-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_3_2662_0",
+   "section": 30,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 15222,
+   "triangleCount": 5074,
+   "bounds": [
+    [
+     1131.450439453125,
+     -18.928922653198242,
+     827.73583984375
+    ],
+    [
+     1208.762451171875,
+     12.913078308105469,
+     998.476806640625
+    ]
+   ],
+   "arraysSha256": "bc94edd37bd1b88142051c924eea3162db0ee183e400bba1a84e0d70a707082d",
+   "npz": "geometry/mesh-0030-000.npz",
+   "render_skip": 0,
+   "sha256": "36211df73b472af5a0b3245537be53b21647f066f618e963d6d42c52dfbdc457"
+  },
+  {
+   "id": "mesh-0031-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_3_2662_0",
+   "section": 31,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 2938,
+   "triangleCount": 5074,
+   "bounds": [
+    [
+     1131.450439453125,
+     -18.928922653198242,
+     827.73583984375
+    ],
+    [
+     1208.762451171875,
+     12.913078308105469,
+     998.476806640625
+    ]
+   ],
+   "arraysSha256": "7d44511a5d9e336333e841cfdfadd41595beb9205fd6cb75916481051f1d73ec",
+   "npz": "geometry/mesh-0031-000.npz",
+   "render_skip": 0,
+   "sha256": "6add9b68337ac34e2c9f087dbfee18aa39eb4d9fb54b02c1d6598d40c49bf501"
+  },
+  {
+   "id": "mesh-0032-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6_0x_2641_0",
+   "section": 32,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 37959,
+   "triangleCount": 12653,
+   "bounds": [
+    [
+     1137.265380859375,
+     -18.928922653198242,
+     816.5687866210938
+    ],
+    [
+     1208.762451171875,
+     12.459077835083008,
+     998.476806640625
+    ]
+   ],
+   "arraysSha256": "e00ec2a3ec3959f1624726d8514407ae70bf2780947786f1a3590735318f6ffd",
+   "npz": "geometry/mesh-0032-000.npz",
+   "render_skip": 0,
+   "sha256": "53acc0a55f3f097ec6b980c7a249f6280c1c5608187d4465a1a022a12f815a2f"
+  },
+  {
+   "id": "mesh-0033-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6_0x_2641_0",
+   "section": 33,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 6676,
+   "triangleCount": 12653,
+   "bounds": [
+    [
+     1137.265380859375,
+     -18.928922653198242,
+     816.5687866210938
+    ],
+    [
+     1208.762451171875,
+     12.459077835083008,
+     998.476806640625
+    ]
+   ],
+   "arraysSha256": "6207c759e60b894ff58f22be51a24439800d8657f9d31bb3d86632719aca8069",
+   "npz": "geometry/mesh-0033-000.npz",
+   "render_skip": 0,
+   "sha256": "0741352ab0d9e44bb39c082588962dd08a3b878a1000ce01a10656aa099e1742"
+  },
+  {
+   "id": "mesh-0034-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__5_2648_0",
+   "section": 34,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 168,
+   "triangleCount": 56,
+   "bounds": [
+    [
+     1140.9024658203125,
+     8.45407772064209,
+     997.5048217773438
+    ],
+    [
+     1156.8114013671875,
+     11.850077629089355,
+     1000.7158203125
+    ]
+   ],
+   "arraysSha256": "5b44f1d6abf4a60cb36c7500bbea96113284ac9cd6fcb8cbd10d9a2079dd18bf",
+   "npz": "geometry/mesh-0034-000.npz",
+   "render_skip": 0,
+   "sha256": "6c5ac6ebc0b4616b5ff6d237484a91abaf6926a6c72902def77b8588295ca0cb"
+  },
+  {
+   "id": "mesh-0035-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__5_2648_0",
+   "section": 35,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 60,
+   "triangleCount": 56,
+   "bounds": [
+    [
+     1140.9024658203125,
+     8.45407772064209,
+     997.5048217773438
+    ],
+    [
+     1156.8114013671875,
+     11.850077629089355,
+     1000.7158203125
+    ]
+   ],
+   "arraysSha256": "263ef0c48c23c46e64d5269f8f41b3dc90bf7ac1ca672fa08c4493fec71f9ad8",
+   "npz": "geometry/mesh-0035-000.npz",
+   "render_skip": 0,
+   "sha256": "27b5074ee78e954937cd624a124b7a114b343b3083a1e351a84b8ece3cc6336a"
+  },
+  {
+   "id": "mesh-0036-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2656_0",
+   "section": 36,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 12,
+   "triangleCount": 4,
+   "bounds": [
+    [
+     1143.616455078125,
+     8.45407772064209,
+     998.476806640625
+    ],
+    [
+     1154.0924072265625,
+     9.312077522277832,
+     1000.7158203125
+    ]
+   ],
+   "arraysSha256": "5a9635b3b60fb506ad7fe785b0dc9dc7102a71ebb7302df298b399be9ef3b406",
+   "npz": "geometry/mesh-0036-000.npz",
+   "render_skip": 0,
+   "sha256": "ad88f59b6c129853616fddb4fec0c035288c008a47a2294e5d1796f080988929"
+  },
+  {
+   "id": "mesh-0037-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2656_0",
+   "section": 37,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 6,
+   "triangleCount": 4,
+   "bounds": [
+    [
+     1143.616455078125,
+     8.45407772064209,
+     998.476806640625
+    ],
+    [
+     1154.0924072265625,
+     9.312077522277832,
+     1000.7158203125
+    ]
+   ],
+   "arraysSha256": "a88603697a154e53b2b7e3a14300d16c4f6705b87164c59f8d8f248996a49bbe",
+   "npz": "geometry/mesh-0037-000.npz",
+   "render_skip": 0,
+   "sha256": "17ed1904bafda8047a3be1eae16a6e05f305f49887d20a81b352bf697e681702"
+  },
+  {
+   "id": "mesh-0038-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2667_0",
+   "section": 38,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 636,
+   "triangleCount": 212,
+   "bounds": [
+    [
+     1156.7374267578125,
+     -18.928922653198242,
+     827.73583984375
+    ],
+    [
+     1208.323486328125,
+     12.459077835083008,
+     964.7427978515625
+    ]
+   ],
+   "arraysSha256": "ef21670c05e45948191b3b3cc5a6217cf0a9f643e4a62845105e54aa5ba32f99",
+   "npz": "geometry/mesh-0038-000.npz",
+   "render_skip": 0,
+   "sha256": "50de703bac70f81f7342a88b39b43e80fc7bd46f3cd499ba438610966baaa3c2"
+  },
+  {
+   "id": "mesh-0039-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2667_0",
+   "section": 39,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 220,
+   "triangleCount": 212,
+   "bounds": [
+    [
+     1156.7374267578125,
+     -18.928922653198242,
+     827.73583984375
+    ],
+    [
+     1208.323486328125,
+     12.459077835083008,
+     964.7427978515625
+    ]
+   ],
+   "arraysSha256": "19e0a13aa45b202616e5b917b2be819bdefad15e538f9b5c7578574f396264dd",
+   "npz": "geometry/mesh-0039-000.npz",
+   "render_skip": 0,
+   "sha256": "98f4b2823b14536eb908826daf8b1d19c13700ad6c090a53a4d35358e65d3d83"
+  },
+  {
+   "id": "mesh-0040-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_2_2682_0",
+   "section": 40,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 42,
+   "triangleCount": 14,
+   "bounds": [
+    [
+     1198.54736328125,
+     7.893077373504639,
+     984.7518310546875
+    ],
+    [
+     1199.262451171875,
+     10.327077865600586,
+     987.7328491210938
+    ]
+   ],
+   "arraysSha256": "b99504378bff4f9f83c940005c3834a5e981455a560fa83d0446d9cba1ee6369",
+   "npz": "geometry/mesh-0040-000.npz",
+   "render_skip": 0,
+   "sha256": "ad30655365ca99b2d7cf64e175b553696f2274d7897ea691fc3b8420ff48a8e0"
+  },
+  {
+   "id": "mesh-0041-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_2_2682_0",
+   "section": 41,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 20,
+   "triangleCount": 14,
+   "bounds": [
+    [
+     1198.54736328125,
+     7.893077373504639,
+     984.7518310546875
+    ],
+    [
+     1199.262451171875,
+     10.327077865600586,
+     987.7328491210938
+    ]
+   ],
+   "arraysSha256": "ff019008eedaabd3f90c81751a595574968c04dbaebc42a733f7a7638f432402",
+   "npz": "geometry/mesh-0041-000.npz",
+   "render_skip": 0,
+   "sha256": "6c3c34f1ca30f848d284c271d778bc87aa78ae5e2eacc4456da1e4f3e8f5fc61"
+  },
+  {
+   "id": "mesh-0042-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2683_0",
+   "section": 42,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 1128,
+   "triangleCount": 376,
+   "bounds": [
+    [
+     1180.0184326171875,
+     7.849077224731445,
+     984.7518310546875
+    ],
+    [
+     1199.262451171875,
+     12.07807731628418,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "d2f18d0b52281cc1c28e6b5916db78d071ab0c29ca9e19ea16eb3407b44c2745",
+   "npz": "geometry/mesh-0042-000.npz",
+   "render_skip": 0,
+   "sha256": "5ed7ef734250101f489e25ac9e282851c8ca2d1dfd074df06b54a7a8f6ad447a"
+  },
+  {
+   "id": "mesh-0043-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2683_0",
+   "section": 43,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 261,
+   "triangleCount": 376,
+   "bounds": [
+    [
+     1180.0184326171875,
+     7.849077224731445,
+     984.7518310546875
+    ],
+    [
+     1199.262451171875,
+     12.07807731628418,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "c325ed20c7a5990a0d2ac3fc86fa94585a55f555e3397ab072b0eef1e9f6635e",
+   "npz": "geometry/mesh-0043-000.npz",
+   "render_skip": 0,
+   "sha256": "eb7fa76b89e32ed7532f75c4efb93dba79aca5187a6e1966eb10b2f3a016be62"
+  },
+  {
+   "id": "mesh-0044-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2697_0",
+   "section": 44,
+   "role": "original",
+   "helper": false,
+   "material": "material_005",
+   "doubleSided": true,
+   "vertexCount": 48,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1185.83447265625,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     990.8978271484375
+    ]
+   ],
+   "arraysSha256": "6827873e798ea05e0ab1789b4343f45e17a510fadee8d38d73e0db73618a9789",
+   "npz": "geometry/mesh-0044-000.npz",
+   "render_skip": 0,
+   "sha256": "a74420066517eb915175f957e8816412b9f2a04c5ecccbcde3afe61ec7b0ca72"
+  },
+  {
+   "id": "mesh-0045-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2697_0",
+   "section": 45,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 18,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1185.83447265625,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     990.8978271484375
+    ]
+   ],
+   "arraysSha256": "aeae088307f7be9bd81b03ad8bdda5dce0cc53950efacb0caaab4f12fe3d6690",
+   "npz": "geometry/mesh-0045-000.npz",
+   "render_skip": 0,
+   "sha256": "684e5ea83a160b6e97d138701ab622bf2220e7152358ebd16c86a514d0ce8e19"
+  },
+  {
+   "id": "mesh-0046-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2711_0",
+   "section": 46,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 30,
+   "triangleCount": 10,
+   "bounds": [
+    [
+     1185.83447265625,
+     7.4690775871276855,
+     991.2427978515625
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "60997313598328b25bb1ee5384da6e5828a58fc2fe8666b869cd9e48ab307314",
+   "npz": "geometry/mesh-0046-000.npz",
+   "render_skip": 0,
+   "sha256": "75b345c777f9d2e5397e203c18f00363e5c49ef8060b84c8f4324c609a912559"
+  },
+  {
+   "id": "mesh-0047-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2711_0",
+   "section": 47,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 12,
+   "triangleCount": 10,
+   "bounds": [
+    [
+     1185.83447265625,
+     7.4690775871276855,
+     991.2427978515625
+    ],
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "41e6241f1b227b4ca64e8bb21098fe646e102487636b112a68e8fde67a772b77",
+   "npz": "geometry/mesh-0047-000.npz",
+   "render_skip": 0,
+   "sha256": "08c31e80dbd38ed71f4926aa2db37aac7670114eae4fcde2eed18f03e46465c8"
+  },
+  {
+   "id": "mesh-0048-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2715_0",
+   "section": 48,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 6,
+   "triangleCount": 2,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     983.5318603515625
+    ],
+    [
+     1197.617431640625,
+     12.431077003479004,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "4b79fc03066acf691463e5146a91f8a2af560525a1964cf6e65bffeff7fc45fe",
+   "npz": "geometry/mesh-0048-000.npz",
+   "render_skip": 0,
+   "sha256": "be55de21f40d304d8be3965c865764a98cbb8c306acc064667fd6952849513e4"
+  },
+  {
+   "id": "mesh-0049-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2715_0",
+   "section": 49,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 4,
+   "triangleCount": 2,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     983.5318603515625
+    ],
+    [
+     1197.617431640625,
+     12.431077003479004,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "96d5d4dae505334a575260ab9edc6f03eb5e26b8a6607d6bafa93630f0112d5a",
+   "npz": "geometry/mesh-0049-000.npz",
+   "render_skip": 0,
+   "sha256": "9fb23cd090e3f841efc50a60770c844ec6686fc4b830be41f6b1b5d27fc4da4b"
+  },
+  {
+   "id": "mesh-0050-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/sur_wood_gl_sk_bbmasonite_01_d_0x2c701717002f341d_0x2c70170500110003_0x2c70170_2_18324_0",
+   "section": 50,
+   "role": "original",
+   "helper": false,
+   "material": "material_011",
+   "doubleSided": true,
+   "vertexCount": 138,
+   "triangleCount": 46,
+   "bounds": [
+    [
+     1148.4364013671875,
+     4.462077617645264,
+     966.3038330078125
+    ],
+    [
+     1156.4063720703125,
+     4.914077281951904,
+     980.1718139648438
+    ]
+   ],
+   "arraysSha256": "2ebc25d8d99bdd10bc5fa50158a87587f98c2d7e5898849765c7566e07fd00bc",
+   "npz": "geometry/mesh-0050-000.npz",
+   "render_skip": 0,
+   "sha256": "ebb54cdf15901718e9b0d9ef8e0ef90f1c84e35bbf56b1079534f697c503c333"
+  },
+  {
+   "id": "mesh-0051-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/sur_wood_gl_sk_bbmasonite_01_d_0x2c701717002f341d_0x2c70170500110003_0x2c70170_2_18324_0",
+   "section": 51,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 48,
+   "triangleCount": 46,
+   "bounds": [
+    [
+     1148.4364013671875,
+     4.462077617645264,
+     966.3038330078125
+    ],
+    [
+     1156.4063720703125,
+     4.914077281951904,
+     980.1718139648438
+    ]
+   ],
+   "arraysSha256": "d9ab217e50cc1bd9626a70bef591b62d223f6497983f820172fa3ef9ff50144d",
+   "npz": "geometry/mesh-0051-000.npz",
+   "render_skip": 0,
+   "sha256": "d79b273a765c1fcb38cecf6c4063bb4b5585f8b9ef78ad8199d48e72dda6c83c"
+  },
+  {
+   "id": "mesh-0052-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_01_d1_0x2c701717000702dc_0x2c70170500110003_0x_19176_0",
+   "section": 52,
+   "role": "original",
+   "helper": false,
+   "material": "material_012",
+   "doubleSided": true,
+   "vertexCount": 99,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1289.889404296875,
+     -22.007923126220703,
+     971.091796875
+    ],
+    [
+     1327.00537109375,
+     -19.78592300415039,
+     999.684814453125
+    ]
+   ],
+   "arraysSha256": "9404f39c9ba8826fa6f4ea016764eeafdf4f72e27d672c3c08b192ef7fca879c",
+   "npz": "geometry/mesh-0052-000.npz",
+   "render_skip": 0,
+   "sha256": "40fdcf4e66211b422ebc17e7f11f80b52d933aa80b53b23a9a4c595451e69056"
+  },
+  {
+   "id": "mesh-0053-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_01_d1_0x2c701717000702dc_0x2c70170500110003_0x_19176_0",
+   "section": 53,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 33,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1289.889404296875,
+     -22.007923126220703,
+     971.091796875
+    ],
+    [
+     1327.00537109375,
+     -19.78592300415039,
+     999.684814453125
+    ]
+   ],
+   "arraysSha256": "e997cc6484b9a4aa878db2005383084a35bf8c265d4ef9412d9567869e21c988",
+   "npz": "geometry/mesh-0053-000.npz",
+   "render_skip": 0,
+   "sha256": "45cb6e474c01743cab41e2ced8f4b0b1ae7e0f43d65d325d744fbb9c80c90d5c"
+  },
+  {
+   "id": "mesh-0054-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_0_2680_0",
+   "section": 54,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 432,
+   "triangleCount": 144,
+   "bounds": [
+    [
+     1248.5404052734375,
+     -14.117921829223633,
+     950.1707763671875
+    ],
+    [
+     1280.50439453125,
+     10.327077865600586,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "3cfc05386af816a7209c7c2610392423f3cd24f2c22f48709d13030aa0e57c3c",
+   "npz": "geometry/mesh-0054-000.npz",
+   "render_skip": 0,
+   "sha256": "1580b642411314fbbc7caa507ff7d367a19742d4d07f60e68c69b2f6f580dc8e"
+  },
+  {
+   "id": "mesh-0055-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_0_2680_0",
+   "section": 55,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 135,
+   "triangleCount": 144,
+   "bounds": [
+    [
+     1248.5404052734375,
+     -14.117921829223633,
+     950.1707763671875
+    ],
+    [
+     1280.50439453125,
+     10.327077865600586,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "21d93b3c5aaafc0d7e4e82c90eadeb7caaaf6a10915614e8cf5a97cd36fa2a90",
+   "npz": "geometry/mesh-0055-000.npz",
+   "render_skip": 0,
+   "sha256": "a2d2609a12d9d68bfbff597eb108afdb51341b7755eaf6d852c3df78a037f53a"
+  },
+  {
+   "id": "mesh-0056-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__7_2655_0",
+   "section": 56,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 150,
+   "triangleCount": 50,
+   "bounds": [
+    [
+     1239.594482421875,
+     -22.179922103881836,
+     837.9898071289062
+    ],
+    [
+     1270.6553955078125,
+     -2.535922050476074,
+     916.810791015625
+    ]
+   ],
+   "arraysSha256": "f6c5f5d28de29e5869342df74777171961900ce2fff0c0130a13cb712db55def",
+   "npz": "geometry/mesh-0056-000.npz",
+   "render_skip": 0,
+   "sha256": "135d5a4079625061198f431a0057c33468e941a14eea71760b59e8bb7a20f495"
+  },
+  {
+   "id": "mesh-0057-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__7_2655_0",
+   "section": 57,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 42,
+   "triangleCount": 50,
+   "bounds": [
+    [
+     1239.594482421875,
+     -22.179922103881836,
+     837.9898071289062
+    ],
+    [
+     1270.6553955078125,
+     -2.535922050476074,
+     916.810791015625
+    ]
+   ],
+   "arraysSha256": "44eb84759dc74102fa78456e137c200d700513d151c121a73724d41e15c2f81f",
+   "npz": "geometry/mesh-0057-000.npz",
+   "render_skip": 0,
+   "sha256": "20b98e252df2deaee8cb2f09a7f581316ce8602bafe3bd26da5e151bf2206fe0"
+  },
+  {
+   "id": "mesh-0058-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2713_0",
+   "section": 58,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 120,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1255.2294921875,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "bc5e37d90e8068d6035b65ee58af3270d3735a28fad0735656b2853fdf74339b",
+   "npz": "geometry/mesh-0058-000.npz",
+   "render_skip": 0,
+   "sha256": "5a31391ad6f2ddf2c6def729e96197b26762ea556d5895b08e55568fd8a0970d"
+  },
+  {
+   "id": "mesh-0059-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2713_0",
+   "section": 59,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 42,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1255.2294921875,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "aacb3b609c32b4009087535b2a56f43facfec82a33e23e20ac1e6dfb125104a3",
+   "npz": "geometry/mesh-0059-000.npz",
+   "render_skip": 0,
+   "sha256": "d6dcad5c06166e56cd9ee99e6d12055eb332a3cd522d07b54c30e50658fee959"
+  },
+  {
+   "id": "mesh-0060-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2668_0",
+   "section": 60,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 65535,
+   "triangleCount": 21845,
+   "bounds": [
+    [
+     1208.29638671875,
+     -24.6959228515625,
+     816.5687866210938
+    ],
+    [
+     1356.8094482421875,
+     8.533077239990234,
+     921.455810546875
+    ]
+   ],
+   "arraysSha256": "9809ec7ae3b334b0c8016e43f7ee1a7f2511b4214218f1a44b0ce124634fe147",
+   "npz": "geometry/mesh-0060-000.npz",
+   "render_skip": 0,
+   "sha256": "cbfd739c914ea672f31e3889c5df6beeafdbd2e04f404051e6b46b7095e6bb59"
+  },
+  {
+   "id": "mesh-0061-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2668_0",
+   "section": 61,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 32520,
+   "triangleCount": 10840,
+   "bounds": [
+    [
+     1200.015380859375,
+     -24.872922897338867,
+     839.7017822265625
+    ],
+    [
+     1398.5084228515625,
+     5.057077407836914,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "038c7dbe6587fd4d302606b5d9d6126b1f5d489c0fa206d131206657705200d5",
+   "npz": "geometry/mesh-0061-000.npz",
+   "render_skip": 0,
+   "sha256": "ddec148d4fa179d762557bdc4f23095f5661eba0d9aae158f7c72f1df15c34c5"
+  },
+  {
+   "id": "mesh-0062-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2668_0",
+   "section": 62,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 11552,
+   "triangleCount": 21845,
+   "bounds": [
+    [
+     1208.29638671875,
+     -24.6959228515625,
+     816.5687866210938
+    ],
+    [
+     1356.8094482421875,
+     8.533077239990234,
+     921.455810546875
+    ]
+   ],
+   "arraysSha256": "056fe1dc0876ddeef34191c21a011e1260f519ba9d0f91337851ef354525471d",
+   "npz": "geometry/mesh-0062-000.npz",
+   "render_skip": 0,
+   "sha256": "570442a779d7f45f591737de799974ececeb7b19a897d14a46b1db5a5c182bf5"
+  },
+  {
+   "id": "mesh-0063-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_8_2668_0",
+   "section": 63,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 5839,
+   "triangleCount": 10840,
+   "bounds": [
+    [
+     1200.015380859375,
+     -24.872922897338867,
+     839.7017822265625
+    ],
+    [
+     1398.5084228515625,
+     5.057077407836914,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "2498487d257274cc14c1595b942efc204a1295bbcee0c6d7c11bfd9e0540cd3d",
+   "npz": "geometry/mesh-0063-000.npz",
+   "render_skip": 0,
+   "sha256": "52c1356dbc051685d1007e29cc916dbc77eab0c977973e63273489770fcc4d0f"
+  },
+  {
+   "id": "mesh-0064-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_bluepooltrim_0x2c701717001d02ba_0x2c70170500110003_0x2c70170600113ae6_0x2_2640_0",
+   "section": 64,
+   "role": "original",
+   "helper": false,
+   "material": "material_013",
+   "doubleSided": true,
+   "vertexCount": 4860,
+   "triangleCount": 1620,
+   "bounds": [
+    [
+     1274.7784423828125,
+     -22.455923080444336,
+     898.6798095703125
+    ],
+    [
+     1323.79248046875,
+     -7.43392276763916,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "d8839c32ad581e0d856d9fa6314aaf59fd6c96327d0b2fe372f649c3338ac209",
+   "npz": "geometry/mesh-0064-000.npz",
+   "render_skip": 0,
+   "sha256": "f43057b4727ef04f679d54d8483a290bc22e73a5e10dbad24d4754fc33353d41"
+  },
+  {
+   "id": "mesh-0065-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_bluepooltrim_0x2c701717001d02ba_0x2c70170500110003_0x2c70170600113ae6_0x2_2640_0",
+   "section": 65,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 1212,
+   "triangleCount": 1620,
+   "bounds": [
+    [
+     1274.7784423828125,
+     -22.455923080444336,
+     898.6798095703125
+    ],
+    [
+     1323.79248046875,
+     -7.43392276763916,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "6293cea5be69c73413cff3420b3bd2a075b488ac22cb9c4483b31f5ed66c0610",
+   "npz": "geometry/mesh-0065-000.npz",
+   "render_skip": 0,
+   "sha256": "0174b3eff2539ca591c8dff3d8fddd7177f8e6847b72b77659b34f1c8b8a8c1e"
+  },
+  {
+   "id": "mesh-0066-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6_0x_2642_0",
+   "section": 66,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 3,
+   "triangleCount": 1,
+   "bounds": [
+    [
+     1193.5694580078125,
+     -18.756921768188477,
+     839.373779296875
+    ],
+    [
+     1208.4134521484375,
+     -18.659921646118164,
+     839.73583984375
+    ]
+   ],
+   "arraysSha256": "0f5972acc7349e9dc4df0a5cf5f56ca73f36be6638262b6bc6f09e793a829e8a",
+   "npz": "geometry/mesh-0066-000.npz",
+   "render_skip": 0,
+   "sha256": "4623d685384065183a19e1bf72d036e6315e751a181bc23c464797fe8d5bcbdd"
+  },
+  {
+   "id": "mesh-0067-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6_0x_2642_0",
+   "section": 67,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 3,
+   "triangleCount": 1,
+   "bounds": [
+    [
+     1193.5694580078125,
+     -18.756921768188477,
+     839.373779296875
+    ],
+    [
+     1208.4134521484375,
+     -18.659921646118164,
+     839.73583984375
+    ]
+   ],
+   "arraysSha256": "c817460a1ab4f5f5a41f1184983b1959e81ec9a79c712f687d115886ac4762f0",
+   "npz": "geometry/mesh-0067-000.npz",
+   "render_skip": 0,
+   "sha256": "902e0c245c5e789cf3e1f2cc56e9f478186d487e14802c1d3ab3f38d49faa061"
+  },
+  {
+   "id": "mesh-0068-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__2_2643_0",
+   "section": 68,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 1890,
+   "triangleCount": 630,
+   "bounds": [
+    [
+     1387.4224853515625,
+     -3.9829225540161133,
+     907.2918090820312
+    ],
+    [
+     1401.5174560546875,
+     10.274077415466309,
+     930.6058349609375
+    ]
+   ],
+   "arraysSha256": "537106361c6dcb1fc41b0b973b8b71c9e2416ebf85411dde89efc5ee165a7fb1",
+   "npz": "geometry/mesh-0068-000.npz",
+   "render_skip": 0,
+   "sha256": "5793ed7ca2737ed78c9fb9bad2b825180faa82a45d45951389e94d535e65c6ac"
+  },
+  {
+   "id": "mesh-0069-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__2_2643_0",
+   "section": 69,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 402,
+   "triangleCount": 630,
+   "bounds": [
+    [
+     1387.4224853515625,
+     -3.9829225540161133,
+     907.2918090820312
+    ],
+    [
+     1401.5174560546875,
+     10.274077415466309,
+     930.6058349609375
+    ]
+   ],
+   "arraysSha256": "e2c5a6a3dd7f124aec697547b5d7a0dd030c333b040adde36c9b0a7bf9f984c8",
+   "npz": "geometry/mesh-0069-000.npz",
+   "render_skip": 0,
+   "sha256": "11b85d0ff470eca162f5dfacdcc2c773dc603b47f41ee26ef4187155e294c205"
+  },
+  {
+   "id": "mesh-0070-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_3_2663_0",
+   "section": 70,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 153,
+   "triangleCount": 51,
+   "bounds": [
+    [
+     1226.302490234375,
+     -25.189922332763672,
+     915.1207885742188
+    ],
+    [
+     1256.7584228515625,
+     -24.314922332763672,
+     939.73583984375
+    ]
+   ],
+   "arraysSha256": "1036599d6e5a862cd6c14cf5c944b56c4bfcff000aa1c3a313e9b3ebde23cf60",
+   "npz": "geometry/mesh-0070-000.npz",
+   "render_skip": 0,
+   "sha256": "fce26cb98f79c0f1c4d0ab4e2ac95e1ac0dff592a4a723de5443c90c78b34561"
+  },
+  {
+   "id": "mesh-0071-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0_3_2663_0",
+   "section": 71,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 41,
+   "triangleCount": 51,
+   "bounds": [
+    [
+     1226.302490234375,
+     -25.189922332763672,
+     915.1207885742188
+    ],
+    [
+     1256.7584228515625,
+     -24.314922332763672,
+     939.73583984375
+    ]
+   ],
+   "arraysSha256": "3a8812ea3d38f5389d125da13eacf4e22eb86acbde962d1d0a37c65c94103d82",
+   "npz": "geometry/mesh-0071-000.npz",
+   "render_skip": 0,
+   "sha256": "e5387010db80895d72cf7de4176f0af215e6bdea72577320c747852f5e408ec2"
+  },
+  {
+   "id": "mesh-0072-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_guitartrim_0x2c701717001d02b8_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2669_0",
+   "section": 72,
+   "role": "original",
+   "helper": false,
+   "material": "material_014",
+   "doubleSided": true,
+   "vertexCount": 2097,
+   "triangleCount": 699,
+   "bounds": [
+    [
+     1235.115478515625,
+     -14.568922996520996,
+     950.7908325195312
+    ],
+    [
+     1275.2884521484375,
+     -14.116922378540039,
+     966.9298095703125
+    ]
+   ],
+   "arraysSha256": "d413efc015de6da424bcf7603e2777597ac46bee3025efe36ec659c56ae27262",
+   "npz": "geometry/mesh-0072-000.npz",
+   "render_skip": 0,
+   "sha256": "f1f18b0bfd012409312c810341ddaad6d1f916bc2ff7b58095944977b03f61ea"
+  },
+  {
+   "id": "mesh-0073-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_guitartrim_0x2c701717001d02b8_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2669_0",
+   "section": 73,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 520,
+   "triangleCount": 699,
+   "bounds": [
+    [
+     1235.115478515625,
+     -14.568922996520996,
+     950.7908325195312
+    ],
+    [
+     1275.2884521484375,
+     -14.116922378540039,
+     966.9298095703125
+    ]
+   ],
+   "arraysSha256": "6ef91ade2547457f554ab96904f6b169120752996642e6ad31a227c98c86ebbd",
+   "npz": "geometry/mesh-0073-000.npz",
+   "render_skip": 0,
+   "sha256": "fa3da38c3a0b1e8483918aece30ef57888027cfd53115f34f0dd7e0e34871c7d"
+  },
+  {
+   "id": "mesh-0074-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_guitarwall_0x2c701717001d02b9_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2670_0",
+   "section": 74,
+   "role": "original",
+   "helper": false,
+   "material": "material_015",
+   "doubleSided": true,
+   "vertexCount": 14802,
+   "triangleCount": 4934,
+   "bounds": [
+    [
+     1235.8984375,
+     -17.20492172241211,
+     951.5657958984375
+    ],
+    [
+     1271.44140625,
+     -14.289922714233398,
+     966.15478515625
+    ]
+   ],
+   "arraysSha256": "a5f75daef80a76f38ccc935e025a5edeeb4462e9916a2d32bbe3dd23f6b59d6b",
+   "npz": "geometry/mesh-0074-000.npz",
+   "render_skip": 0,
+   "sha256": "b33ef54772c091b92134d6fc0a030173c48a30d032f9a88ac9df1852ee408c20"
+  },
+  {
+   "id": "mesh-0075-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_guitarwall_0x2c701717001d02b9_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2670_0",
+   "section": 75,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 2638,
+   "triangleCount": 4934,
+   "bounds": [
+    [
+     1235.8984375,
+     -17.20492172241211,
+     951.5657958984375
+    ],
+    [
+     1271.44140625,
+     -14.289922714233398,
+     966.15478515625
+    ]
+   ],
+   "arraysSha256": "c3c29948bf3f59573947c2a4b887b395a5e617ef50d1f19aed1748baf82e8970",
+   "npz": "geometry/mesh-0075-000.npz",
+   "render_skip": 0,
+   "sha256": "4469c71bfcbbd66e7b85a5d47369b8af6bc109eb5d0a8ca60ad94dc55126b393"
+  },
+  {
+   "id": "mesh-0076-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2685_0",
+   "section": 76,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 60,
+   "triangleCount": 20,
+   "bounds": [
+    [
+     1248.5404052734375,
+     7.702077388763428,
+     984.7518310546875
+    ],
+    [
+     1250.682373046875,
+     10.327077865600586,
+     998.122802734375
+    ]
+   ],
+   "arraysSha256": "3256ed46b3585c8c293eaae3caf7ebe744019df1745907a573889af2e8984627",
+   "npz": "geometry/mesh-0076-000.npz",
+   "render_skip": 0,
+   "sha256": "ae9c8040f521db53fc963c3896755eafe79e498c612bea9a51447aa6a459acae"
+  },
+  {
+   "id": "mesh-0077-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2685_0",
+   "section": 77,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 28,
+   "triangleCount": 20,
+   "bounds": [
+    [
+     1248.5404052734375,
+     7.702077388763428,
+     984.7518310546875
+    ],
+    [
+     1250.682373046875,
+     10.327077865600586,
+     998.122802734375
+    ]
+   ],
+   "arraysSha256": "966d9a6756a202ab7fb56898eae1b699a89630a531f2e6d87e3bbb360ba67057",
+   "npz": "geometry/mesh-0077-000.npz",
+   "render_skip": 0,
+   "sha256": "e9c70bd36fcdbee4ff7cf3423805498d6e0c486c64b7e93fbc766472d123116b"
+  },
+  {
+   "id": "mesh-0078-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2689_0",
+   "section": 78,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 1287,
+   "triangleCount": 429,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     984.7518310546875
+    ],
+    [
+     1266.865478515625,
+     12.07807731628418,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "4ce5f6bd8fe08c355a43140680ddd5d75679a081bbb659c8ca3c3170e7c0fc20",
+   "npz": "geometry/mesh-0078-000.npz",
+   "render_skip": 0,
+   "sha256": "fdd95bcbfd8678bb1b07b304fe77abfdd1b3dcfc57b9c99a42da01751db5aee7"
+  },
+  {
+   "id": "mesh-0079-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2689_0",
+   "section": 79,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 317,
+   "triangleCount": 429,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     984.7518310546875
+    ],
+    [
+     1266.865478515625,
+     12.07807731628418,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "d38c4733ec19e1816e418d06d0d51f9bb2cbe618fb206438fff7c16862c66af0",
+   "npz": "geometry/mesh-0079-000.npz",
+   "render_skip": 0,
+   "sha256": "5482d827676fd6024f4aadd8763351951c518050665f11393aa16222b62e400c"
+  },
+  {
+   "id": "mesh-0080-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_0x2c70171700440010_0x2c70170500110003_0x2c70170600113ae_2_2696_0",
+   "section": 80,
+   "role": "original",
+   "helper": false,
+   "material": "material_005",
+   "doubleSided": true,
+   "vertexCount": 3834,
+   "triangleCount": 1278,
+   "bounds": [
+    [
+     1238.1544189453125,
+     -17.20492172241211,
+     953.7667846679688
+    ],
+    [
+     1271.44140625,
+     -14.478922843933105,
+     963.9528198242188
+    ]
+   ],
+   "arraysSha256": "59914f756f14a9f85cd192a08fc139e7be5d3bc5ee255c61d21b3c8ccbce692d",
+   "npz": "geometry/mesh-0080-000.npz",
+   "render_skip": 0,
+   "sha256": "5bd554a9843a2d3b92b75d9a4978804e5962ba09303a0ed0ab979db10b81f134"
+  },
+  {
+   "id": "mesh-0081-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_0x2c70171700440010_0x2c70170500110003_0x2c70170600113ae_2_2696_0",
+   "section": 81,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 728,
+   "triangleCount": 1278,
+   "bounds": [
+    [
+     1238.1544189453125,
+     -17.20492172241211,
+     953.7667846679688
+    ],
+    [
+     1271.44140625,
+     -14.478922843933105,
+     963.9528198242188
+    ]
+   ],
+   "arraysSha256": "8caa52c5bb2e3f3fa6b71bdefe81536086ebdf4e4f4b540fae8041eb869c2464",
+   "npz": "geometry/mesh-0081-000.npz",
+   "render_skip": 0,
+   "sha256": "e28e700c520d0cf6fd39eff9c540832312a51ede3fff4ad83782c2c52f617968"
+  },
+  {
+   "id": "mesh-0082-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2699_0",
+   "section": 82,
+   "role": "original",
+   "helper": false,
+   "material": "material_005",
+   "doubleSided": true,
+   "vertexCount": 249,
+   "triangleCount": 83,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1261.573486328125,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "73bda24b43b1e224dcefcd9adb128422f15b91cf561714379488e8baf8683a25",
+   "npz": "geometry/mesh-0082-000.npz",
+   "render_skip": 0,
+   "sha256": "9b270dc6e4b45cf26fa2d3584eba5fb0a2ae65ea6c0717f2ef63845cbc70c4c7"
+  },
+  {
+   "id": "mesh-0083-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2699_0",
+   "section": 83,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 73,
+   "triangleCount": 83,
+   "bounds": [
+    [
+     1198.37548828125,
+     7.4690775871276855,
+     985.331787109375
+    ],
+    [
+     1261.573486328125,
+     7.4690775871276855,
+     1000.6608276367188
+    ]
+   ],
+   "arraysSha256": "5b379fc8667bf927143565782a625f6bf6f3b11595afafa76089ff4b2fa0ac93",
+   "npz": "geometry/mesh-0083-000.npz",
+   "render_skip": 0,
+   "sha256": "c44fe78723964b495f07c1b9707c548afd23a0223eb653d85deebc01cc3573ee"
+  },
+  {
+   "id": "mesh-0084-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_woodramp_0x2c701717001d02b5_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2_2708_0",
+   "section": 84,
+   "role": "original",
+   "helper": false,
+   "material": "material_016",
+   "doubleSided": true,
+   "vertexCount": 1185,
+   "triangleCount": 395,
+   "bounds": [
+    [
+     1276.6724853515625,
+     -22.007923126220703,
+     947.1337890625
+    ],
+    [
+     1363.909423828125,
+     -10.145922660827637,
+     971.091796875
+    ]
+   ],
+   "arraysSha256": "adc2108de503cfacfa31209083953e7f660b2e34d463d2339654ca5cffd9e391",
+   "npz": "geometry/mesh-0084-000.npz",
+   "render_skip": 0,
+   "sha256": "26551448a552492dca8b4b280fb5a38d03704c4156f1a05020d3dd461da48f3b"
+  },
+  {
+   "id": "mesh-0085-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_woodramp_0x2c701717001d02b5_0x2c70170500110003_0x2c70170600113ae6_0x2c7_2_2708_0",
+   "section": 85,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 306,
+   "triangleCount": 395,
+   "bounds": [
+    [
+     1276.6724853515625,
+     -22.007923126220703,
+     947.1337890625
+    ],
+    [
+     1363.909423828125,
+     -10.145922660827637,
+     971.091796875
+    ]
+   ],
+   "arraysSha256": "3153554f4e7ee8a2e578d27a9ad3d7f46f3acfe7839196e174dea29b54f75397",
+   "npz": "geometry/mesh-0085-000.npz",
+   "render_skip": 0,
+   "sha256": "31b4951a5e4e10be78866d8a112082d4eb79414fc1d23edd9ab6098f3d2dde4e"
+  },
+  {
+   "id": "mesh-0086-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2716_0",
+   "section": 86,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 27,
+   "triangleCount": 9,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     977.6728515625
+    ],
+    [
+     1254.06640625,
+     12.431077003479004,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "c2d2b973434af81323c1248735d30e8b74cf5f3b8a6cf4eaaf3795db9fadb075",
+   "npz": "geometry/mesh-0086-000.npz",
+   "render_skip": 0,
+   "sha256": "ca249455645f1641ae1645eadadebaeddf387b9e3b70eda4633656c2d3fdc058"
+  },
+  {
+   "id": "mesh-0087-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2716_0",
+   "section": 87,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 11,
+   "triangleCount": 9,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     977.6728515625
+    ],
+    [
+     1254.06640625,
+     12.431077003479004,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "450f6055e36356cbb1d714a88ee5c9685facc601e991756f913521f0c5e0997c",
+   "npz": "geometry/mesh-0087-000.npz",
+   "render_skip": 0,
+   "sha256": "7973da7f4fc61751074020f63d5c108151fa8111796795be1bafd5ea0647a2eb"
+  },
+  {
+   "id": "mesh-0088-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_1_0x2c7017170011039b_0x2c70170500110003_0x2c7017_3561_0",
+   "section": 88,
+   "role": "original",
+   "helper": false,
+   "material": "material_010",
+   "doubleSided": true,
+   "vertexCount": 9,
+   "triangleCount": 3,
+   "bounds": [
+    [
+     1263.3214111328125,
+     -14.203922271728516,
+     956.1228637695312
+    ],
+    [
+     1274.431396484375,
+     -14.116922378540039,
+     961.642822265625
+    ]
+   ],
+   "arraysSha256": "fa2e1e22f66d0f3c899b30ab334fe7e02a74224dc0930b35dc04338bb0eeec3c",
+   "npz": "geometry/mesh-0088-000.npz",
+   "render_skip": 0,
+   "sha256": "c7c2dce863e381388ce3069018bbec747197d14ab8fceb7ce519fe20bae90e83"
+  },
+  {
+   "id": "mesh-0089-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_1_0x2c7017170011039b_0x2c70170500110003_0x2c7017_3561_0",
+   "section": 89,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 7,
+   "triangleCount": 3,
+   "bounds": [
+    [
+     1263.3214111328125,
+     -14.203922271728516,
+     956.1228637695312
+    ],
+    [
+     1274.431396484375,
+     -14.116922378540039,
+     961.642822265625
+    ]
+   ],
+   "arraysSha256": "15f6480d4d362754d67cb51863e19d80efd228f53cff2b975eeee5d879e2b214",
+   "npz": "geometry/mesh-0089-000.npz",
+   "render_skip": 0,
+   "sha256": "e1f299f786ca7c8a108d15d22f27eb15a0e9af0f432c7589a9092b8e030aae34"
+  },
+  {
+   "id": "mesh-0090-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_decal_0x2c701717000702ed_0x2c70170500110003_0x_2_3566_0",
+   "section": 90,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 1356,
+   "triangleCount": 452,
+   "bounds": [
+    [
+     1209.5604248046875,
+     5.368077278137207,
+     884.6498413085938
+    ],
+    [
+     1219.9993896484375,
+     5.368077278137207,
+     918.19287109375
+    ]
+   ],
+   "arraysSha256": "ea533d091991a7f25ed7129026ac1eac1fe4e42ec54b41f6cc1c0a115052060b",
+   "npz": "geometry/mesh-0090-000.npz",
+   "render_skip": 0,
+   "sha256": "1683339ff290c3e8a7eb11bec423457dd978f142fcf7a53ae7dcbc55e9ce2727"
+  },
+  {
+   "id": "mesh-0091-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_decal_0x2c701717000702ed_0x2c70170500110003_0x_2_3566_0",
+   "section": 91,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 310,
+   "triangleCount": 452,
+   "bounds": [
+    [
+     1209.5604248046875,
+     5.368077278137207,
+     884.6498413085938
+    ],
+    [
+     1219.9993896484375,
+     5.368077278137207,
+     918.19287109375
+    ]
+   ],
+   "arraysSha256": "dc239f2da284c8c337bae8064191b2a351fa3c46c6e112a8c104e5cc9182b958",
+   "npz": "geometry/mesh-0091-000.npz",
+   "render_skip": 0,
+   "sha256": "6aebf1e408688474cfb2f6d51488887aab90efcf4065c598cd8925f03e245815"
+  },
+  {
+   "id": "mesh-0092-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19252_0",
+   "section": 92,
+   "role": "original",
+   "helper": false,
+   "material": "material_017",
+   "doubleSided": true,
+   "vertexCount": 438,
+   "triangleCount": 146,
+   "bounds": [
+    [
+     1391.16748046875,
+     -0.875922441482544,
+     975.7028198242188
+    ],
+    [
+     1397.29638671875,
+     4.107077598571777,
+     998.4308471679688
+    ]
+   ],
+   "arraysSha256": "6c5108f22aab09089918a5566b1ba9ef149f640cf211b82c5a1768c8ca086cbb",
+   "npz": "geometry/mesh-0092-000.npz",
+   "render_skip": 0,
+   "sha256": "d7b127c33863be6f8679bf2364898f5fabd0a021ac901731f66cc4c977e676b9"
+  },
+  {
+   "id": "mesh-0093-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19252_0",
+   "section": 93,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 76,
+   "triangleCount": 146,
+   "bounds": [
+    [
+     1391.16748046875,
+     -0.875922441482544,
+     975.7028198242188
+    ],
+    [
+     1397.29638671875,
+     4.107077598571777,
+     998.4308471679688
+    ]
+   ],
+   "arraysSha256": "e837786f76d2e3d68a42e3ff2e1e6257298abfeb466d1116766a5c594f966a35",
+   "npz": "geometry/mesh-0093-000.npz",
+   "render_skip": 0,
+   "sha256": "7b41f4582318baa09bb951c304657d983067d99c5f56006940f9d5ebe27d806a"
+  },
+  {
+   "id": "mesh-0094-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_obj_stairs_sp_dlc_colorbrick_01_d1_0x2c701717000702dd_0x2c70170500110003_0_2_18940_0",
+   "section": 94,
+   "role": "original",
+   "helper": false,
+   "material": "material_018",
+   "doubleSided": true,
+   "vertexCount": 30,
+   "triangleCount": 10,
+   "bounds": [
+    [
+     1294.3494873046875,
+     -21.690921783447266,
+     981.8648071289062
+    ],
+    [
+     1327.00537109375,
+     -19.786922454833984,
+     999.9248046875
+    ]
+   ],
+   "arraysSha256": "424bf7a49dede5b3bd353d3d8831e9892ccf6ee9b4e556ed8c5676ba51fc31e7",
+   "npz": "geometry/mesh-0094-000.npz",
+   "render_skip": 0,
+   "sha256": "64a47f62f7f6c465a5cb99edc2b1e4162f345b71106611125d6defd1bd9a978c"
+  },
+  {
+   "id": "mesh-0095-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_obj_stairs_sp_dlc_colorbrick_01_d1_0x2c701717000702dd_0x2c70170500110003_0_2_18940_0",
+   "section": 95,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 16,
+   "triangleCount": 10,
+   "bounds": [
+    [
+     1294.3494873046875,
+     -21.690921783447266,
+     981.8648071289062
+    ],
+    [
+     1327.00537109375,
+     -19.786922454833984,
+     999.9248046875
+    ]
+   ],
+   "arraysSha256": "366b99d5151c84ee95d4600c6eff675629825476ba741feb24c2a7b1c32c6df4",
+   "npz": "geometry/mesh-0095-000.npz",
+   "render_skip": 0,
+   "sha256": "1986cfc48c00d7644112357be9263440c92c7df772e1e58d2b402a89cc630c84"
+  },
+  {
+   "id": "mesh-0096-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19238_0",
+   "section": 96,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 99,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1392.8624267578125,
+     -0.8759225606918335,
+     980.5897827148438
+    ],
+    [
+     1399.6024169921875,
+     1.313077449798584,
+     1007.8128051757812
+    ]
+   ],
+   "arraysSha256": "5c8d8c428ece760fa8b4476081ed5627a42670d0307e8d0ec7b27f4a495b0ee2",
+   "npz": "geometry/mesh-0096-000.npz",
+   "render_skip": 0,
+   "sha256": "8feee00eeee7ccd9019ae0ecd30570f8cae4d3667f33539506079117095ec653"
+  },
+  {
+   "id": "mesh-0097-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19238_0",
+   "section": 97,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 35,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1392.8624267578125,
+     -0.8759225606918335,
+     980.5897827148438
+    ],
+    [
+     1399.6024169921875,
+     1.313077449798584,
+     1007.8128051757812
+    ]
+   ],
+   "arraysSha256": "2afe4a70a7a386f4188a5aae518fc9c5cc663fd2f3ff5f02b5cd22dfa8bc311b",
+   "npz": "geometry/mesh-0097-000.npz",
+   "render_skip": 0,
+   "sha256": "857e64ea04b56a07e9ff6cbb0daf49e3dfdc8c0bd14e39ca5e18ad7eac62272e"
+  },
+  {
+   "id": "mesh-0098-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_biggrunge_0x2c701717001d02bb_0x2c70170500110003_0x2_19269_0",
+   "section": 98,
+   "role": "original",
+   "helper": false,
+   "material": "material_019",
+   "doubleSided": true,
+   "vertexCount": 35391,
+   "triangleCount": 11797,
+   "bounds": [
+    [
+     1275.6314697265625,
+     -26.361923217773438,
+     899.52783203125
+    ],
+    [
+     1322.9334716796875,
+     -22.28392219543457,
+     924.69287109375
+    ]
+   ],
+   "arraysSha256": "2f713ee02a3caabe6d17abcc52cd0c4427d9030211a38bb414f5cbbdbc66de7f",
+   "npz": "geometry/mesh-0098-000.npz",
+   "render_skip": 0,
+   "sha256": "987b54ea897052e887e8c75f230194724873003e9582820fc6d870566055d154"
+  },
+  {
+   "id": "mesh-0099-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_biggrunge_0x2c701717001d02bb_0x2c70170500110003_0x2_19269_0",
+   "section": 99,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 6081,
+   "triangleCount": 11797,
+   "bounds": [
+    [
+     1275.6314697265625,
+     -26.361923217773438,
+     899.52783203125
+    ],
+    [
+     1322.9334716796875,
+     -22.28392219543457,
+     924.69287109375
+    ]
+   ],
+   "arraysSha256": "8e2df4ea8085c3ba2d1fc2cd964d9b9f7e7dd84441563ac7d0a90d02417c6acc",
+   "npz": "geometry/mesh-0099-000.npz",
+   "render_skip": 0,
+   "sha256": "27cf61042ab63dff085f53825d99ca31780af6f20b6352a4066ed7e1083eb04e"
+  },
+  {
+   "id": "mesh-0100-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19333_0",
+   "section": 100,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 243,
+   "triangleCount": 81,
+   "bounds": [
+    [
+     1380.2874755859375,
+     -1.1709225177764893,
+     943.476806640625
+    ],
+    [
+     1402.721435546875,
+     1.4720776081085205,
+     976.4688720703125
+    ]
+   ],
+   "arraysSha256": "815add8e1e49126ea7418a91f0f2fda0f09d13e9ec04d5db28c56e0052217fb3",
+   "npz": "geometry/mesh-0100-000.npz",
+   "render_skip": 0,
+   "sha256": "6f913149ab235c038a846fe68da558235a5fd6f3ed516a26e876590d5adcc0f4"
+  },
+  {
+   "id": "mesh-0101-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19333_0",
+   "section": 101,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 85,
+   "triangleCount": 81,
+   "bounds": [
+    [
+     1380.2874755859375,
+     -1.1709225177764893,
+     943.476806640625
+    ],
+    [
+     1402.721435546875,
+     1.4720776081085205,
+     976.4688720703125
+    ]
+   ],
+   "arraysSha256": "d8bb279871fc0a912183eb092c6d63f93211f2d4906454b252cfe5c948447450",
+   "npz": "geometry/mesh-0101-000.npz",
+   "render_skip": 0,
+   "sha256": "1c3970a07b47b6fbc5e163ce357e9a371c891ac8c498987d0cea97aa9a3fa1b2"
+  },
+  {
+   "id": "mesh-0102-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19336_0",
+   "section": 102,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 177,
+   "triangleCount": 59,
+   "bounds": [
+    [
+     1396.3314208984375,
+     -0.8759225606918335,
+     980.2847900390625
+    ],
+    [
+     1400.411376953125,
+     1.313077449798584,
+     991.2918090820312
+    ]
+   ],
+   "arraysSha256": "4f6605846308090168bde10fa1f1ca7b5c9696bd17cc0e56892ff131732dfda5",
+   "npz": "geometry/mesh-0102-000.npz",
+   "render_skip": 0,
+   "sha256": "76c61eb9263db656f593f75f70d38b2b84f49c14d74ae100de36f0f4c70d621b"
+  },
+  {
+   "id": "mesh-0103-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19336_0",
+   "section": 103,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 48,
+   "triangleCount": 59,
+   "bounds": [
+    [
+     1396.3314208984375,
+     -0.8759225606918335,
+     980.2847900390625
+    ],
+    [
+     1400.411376953125,
+     1.313077449798584,
+     991.2918090820312
+    ]
+   ],
+   "arraysSha256": "000f6ea6e3de0b22e6bccd5835963ded393c9a6c9cabe63d319b0902ef48b71e",
+   "npz": "geometry/mesh-0103-000.npz",
+   "render_skip": 0,
+   "sha256": "68875752a2037674b2b2b35252d2c5b95e039cc1701f4a87cacde929b55f6dab"
+  },
+  {
+   "id": "mesh-0104-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_sp_craterpartplanter_01_d1_0x2c701717000702e0_0x2c70170500110003_0x_19342_0",
+   "section": 104,
+   "role": "original",
+   "helper": false,
+   "material": "material_020",
+   "doubleSided": true,
+   "vertexCount": 18,
+   "triangleCount": 6,
+   "bounds": [
+    [
+     1294.3494873046875,
+     -21.060922622680664,
+     985.0498046875
+    ],
+    [
+     1298.9373779296875,
+     -19.78592300415039,
+     999.6818237304688
+    ]
+   ],
+   "arraysSha256": "a8d6b79ad92bb97495da8b5790e2f4afdf6257268756cee431df882591eca3ec",
+   "npz": "geometry/mesh-0104-000.npz",
+   "render_skip": 0,
+   "sha256": "1c7cb96bc464b5a81a99335161bcbb74999d515d2bb6fa1a3a2e9ae7e60a1e41"
+  },
+  {
+   "id": "mesh-0105-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_sp_craterpartplanter_01_d1_0x2c701717000702e0_0x2c70170500110003_0x_19342_0",
+   "section": 105,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 8,
+   "triangleCount": 6,
+   "bounds": [
+    [
+     1294.3494873046875,
+     -21.060922622680664,
+     985.0498046875
+    ],
+    [
+     1298.9373779296875,
+     -19.78592300415039,
+     999.6818237304688
+    ]
+   ],
+   "arraysSha256": "02dc2e9b12dd3bd7a2ce14df3c1c896ca3b0de55c1887502aa4df708ec81f5bc",
+   "npz": "geometry/mesh-0105-000.npz",
+   "render_skip": 0,
+   "sha256": "b8d5f3fe5841c0e38b81b059b35ee56a8a02e4563c8201a5293baec28b46b98a"
+  },
+  {
+   "id": "mesh-0106-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19657_0",
+   "section": 106,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 216,
+   "triangleCount": 72,
+   "bounds": [
+    [
+     1377.9263916015625,
+     -4.20692253112793,
+     947.0928344726562
+    ],
+    [
+     1403.6634521484375,
+     -0.25792253017425537,
+     981.3577880859375
+    ]
+   ],
+   "arraysSha256": "dcac92de9f0e7d3f3a9edb4215a6990a45945b6ff54a580b35c67a359e812c69",
+   "npz": "geometry/mesh-0106-000.npz",
+   "render_skip": 0,
+   "sha256": "29e73d9b1fecdfa4a9df2d75f9d9eb6fef8a60efa635af068b468296502d9587"
+  },
+  {
+   "id": "mesh-0107-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19657_0",
+   "section": 107,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 77,
+   "triangleCount": 72,
+   "bounds": [
+    [
+     1377.9263916015625,
+     -4.20692253112793,
+     947.0928344726562
+    ],
+    [
+     1403.6634521484375,
+     -0.25792253017425537,
+     981.3577880859375
+    ]
+   ],
+   "arraysSha256": "607cda64285258ca086e48ebe88e46e6afb787df6eeb8ed2249a46076458a9dd",
+   "npz": "geometry/mesh-0107-000.npz",
+   "render_skip": 0,
+   "sha256": "ff1588da13ee6bb789edd3a5ab11f0a782e860a67a7af46cc33eea1e08fde32e"
+  },
+  {
+   "id": "mesh-0108-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_6_19249_0",
+   "section": 108,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 48,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1397.87841796875,
+     2.883077383041382,
+     1139.73583984375
+    ],
+    [
+     1424.4163818359375,
+     2.883077383041382,
+     1149.432861328125
+    ]
+   ],
+   "arraysSha256": "dbad611a2b0785ffa5993c8144dd87e6f9f1f516070833cd3023cacac488b042",
+   "npz": "geometry/mesh-0108-000.npz",
+   "render_skip": 0,
+   "sha256": "a78b87b9958f5ffc29ecf7d9f104f908624f564f15877a17a1b6a1479e42e0a6"
+  },
+  {
+   "id": "mesh-0109-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_6_19249_0",
+   "section": 109,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 17,
+   "triangleCount": 16,
+   "bounds": [
+    [
+     1397.87841796875,
+     2.883077383041382,
+     1139.73583984375
+    ],
+    [
+     1424.4163818359375,
+     2.883077383041382,
+     1149.432861328125
+    ]
+   ],
+   "arraysSha256": "a908a02ef047dae460f6b80fa3ec5778c97801fb20b2c63f56fd37989ff96547",
+   "npz": "geometry/mesh-0109-000.npz",
+   "render_skip": 0,
+   "sha256": "f7fe3d18b2ec47c7b5199bcbdf1fba7d538bba131321cb31dbe37e295be1dc68"
+  },
+  {
+   "id": "mesh-0110-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0x2_19251_0",
+   "section": 110,
+   "role": "original",
+   "helper": false,
+   "material": "material_017",
+   "doubleSided": true,
+   "vertexCount": 168,
+   "triangleCount": 56,
+   "bounds": [
+    [
+     1399.890380859375,
+     0.8870774507522583,
+     1039.73583984375
+    ],
+    [
+     1400.646484375,
+     3.738077402114868,
+     1060.307861328125
+    ]
+   ],
+   "arraysSha256": "1f02b35e984155d9dd62cb8f93030784bee7851c7ad63a61e0d50cf9731767bb",
+   "npz": "geometry/mesh-0110-000.npz",
+   "render_skip": 0,
+   "sha256": "7f57e507ac6bdee4437bcd4bc7fff1cc19d0821ca34319b563dccd17ea74f5b7"
+  },
+  {
+   "id": "mesh-0111-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0x2_19251_0",
+   "section": 111,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 36,
+   "triangleCount": 56,
+   "bounds": [
+    [
+     1399.890380859375,
+     0.8870774507522583,
+     1039.73583984375
+    ],
+    [
+     1400.646484375,
+     3.738077402114868,
+     1060.307861328125
+    ]
+   ],
+   "arraysSha256": "236453e24866a6b16abc91fa62a1503d6614acf1e4fa9bfb32161360ffc9421f",
+   "npz": "geometry/mesh-0111-000.npz",
+   "render_skip": 0,
+   "sha256": "1c90cd298d908615bf72e7637f0af49b266a87d1c564153bbbe3f4508ab47cd5"
+  },
+  {
+   "id": "mesh-0112-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19335_0",
+   "section": 112,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 480,
+   "triangleCount": 160,
+   "bounds": [
+    [
+     1438.04541015625,
+     -0.24492254853248596,
+     999.1038208007812
+    ],
+    [
+     1449.54541015625,
+     1.0890774726867676,
+     1021.286865234375
+    ]
+   ],
+   "arraysSha256": "60f808e1528160cb62eb7765ea7296c0df52b964ba675a619f6a2d8118f0c64f",
+   "npz": "geometry/mesh-0112-000.npz",
+   "render_skip": 0,
+   "sha256": "b07632c3a9325da000601a1b1e95cfc44feb5e290ce44012a0472d135f47d22e"
+  },
+  {
+   "id": "mesh-0113-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c70_19335_0",
+   "section": 113,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 126,
+   "triangleCount": 160,
+   "bounds": [
+    [
+     1438.04541015625,
+     -0.24492254853248596,
+     999.1038208007812
+    ],
+    [
+     1449.54541015625,
+     1.0890774726867676,
+     1021.286865234375
+    ]
+   ],
+   "arraysSha256": "1f0bce7dddaeef705e3be56bc86901fe805188d645e96dbe10cbfd622bd8916f",
+   "npz": "geometry/mesh-0113-000.npz",
+   "render_skip": 0,
+   "sha256": "5dab5927543f97ba4f0cc4c851d761d97d55137a81c1432f4554860c71301b0f"
+  },
+  {
+   "id": "mesh-0114-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19339_0",
+   "section": 114,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 7284,
+   "triangleCount": 2428,
+   "bounds": [
+    [
+     1397.87841796875,
+     -0.3019225597381592,
+     991.0238037109375
+    ],
+    [
+     1465.8314208984375,
+     2.883077383041382,
+     1128.810791015625
+    ]
+   ],
+   "arraysSha256": "622bf43bd7b5432866dd568782be9a7c79c59e7ab74adfe2d2b2f3a986a5a59b",
+   "npz": "geometry/mesh-0114-000.npz",
+   "render_skip": 0,
+   "sha256": "dbee5d1fed4601eaa79c0494638b5df9a64d15dfb888ff6821456b6e77b3b3f8"
+  },
+  {
+   "id": "mesh-0115-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19339_0",
+   "section": 115,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 1825,
+   "triangleCount": 2428,
+   "bounds": [
+    [
+     1397.87841796875,
+     -0.3019225597381592,
+     991.0238037109375
+    ],
+    [
+     1465.8314208984375,
+     2.883077383041382,
+     1128.810791015625
+    ]
+   ],
+   "arraysSha256": "c6880a431ca8c75675d2a2e55f6a59ed6895fce0f229e6948b5ea9563cdcd196",
+   "npz": "geometry/mesh-0115-000.npz",
+   "render_skip": 0,
+   "sha256": "b4d562fd015608c4ea8e6c2c135a5c77dde15f806e58c8866adf0cd02cd76fd9"
+  },
+  {
+   "id": "mesh-0116-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19659_0",
+   "section": 116,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 450,
+   "triangleCount": 150,
+   "bounds": [
+    [
+     1425.8184814453125,
+     -2.2219226360321045,
+     999.4407958984375
+    ],
+    [
+     1456.7584228515625,
+     -0.87392258644104,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "9d44b52193a86a016c18dd1702970e43b9a6ec178897237dee90c74387dfd6ad",
+   "npz": "geometry/mesh-0116-000.npz",
+   "render_skip": 0,
+   "sha256": "a084f5f71db465aa3c7e7071f34a3ac199c0fd1720df88bc58e80f874fd3790c"
+  },
+  {
+   "id": "mesh-0117-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003__3_19659_0",
+   "section": 117,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 140,
+   "triangleCount": 150,
+   "bounds": [
+    [
+     1425.8184814453125,
+     -2.2219226360321045,
+     999.4407958984375
+    ],
+    [
+     1456.7584228515625,
+     -0.87392258644104,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "947f9d82fd7f3b4f1b34c1115801e0f15dda40e63392b8942a1f52e7eebe3f79",
+   "npz": "geometry/mesh-0117-000.npz",
+   "render_skip": 0,
+   "sha256": "19bc178089bf2d50a6fa4230a8122d16d51642f6f384349f7aed194f7c5f0147"
+  },
+  {
+   "id": "mesh-0118-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19254_0",
+   "section": 118,
+   "role": "original",
+   "helper": false,
+   "material": "material_017",
+   "doubleSided": true,
+   "vertexCount": 267,
+   "triangleCount": 89,
+   "bounds": [
+    [
+     1399.891357421875,
+     0.0820775032043457,
+     1008.8038330078125
+    ],
+    [
+     1401.2333984375,
+     4.016077518463135,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "6a9126f1249e69628fea5494d41778f93838c3f85d63baa0f41f91b15a271a06",
+   "npz": "geometry/mesh-0118-000.npz",
+   "render_skip": 0,
+   "sha256": "0b3fcafa3c65251385502557d3c085179c2dcdc9060813900f3277f0ceda2dbc"
+  },
+  {
+   "id": "mesh-0119-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19254_0",
+   "section": 119,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 53,
+   "triangleCount": 89,
+   "bounds": [
+    [
+     1399.891357421875,
+     0.0820775032043457,
+     1008.8038330078125
+    ],
+    [
+     1401.2333984375,
+     4.016077518463135,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "923f7fcbc217bd2042718a27c02c0011073bc735035f5dc2947b0f124d59be50",
+   "npz": "geometry/mesh-0119-000.npz",
+   "render_skip": 0,
+   "sha256": "a95b832f26d99c28cdebcbf436f47b772513d9a0634968255b699e0e9bb5fc3f"
+  },
+  {
+   "id": "mesh-0120-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19241_0",
+   "section": 120,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 3282,
+   "triangleCount": 1094,
+   "bounds": [
+    [
+     1397.4564208984375,
+     -0.16392254829406738,
+     991.2918090820312
+    ],
+    [
+     1468.9974365234375,
+     2.883077383041382,
+     1139.73583984375
+    ]
+   ],
+   "arraysSha256": "e6508066d62babdf0b09a27b39bc8657dc39742875f37992a7aefd7e37328a14",
+   "npz": "geometry/mesh-0120-000.npz",
+   "render_skip": 0,
+   "sha256": "e00188bf23dc5894fbe756ca4286f4f92450986125e7ff90d2ec4e4a1ff16522"
+  },
+  {
+   "id": "mesh-0121-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19241_0",
+   "section": 121,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 974,
+   "triangleCount": 1094,
+   "bounds": [
+    [
+     1397.4564208984375,
+     -0.16392254829406738,
+     991.2918090820312
+    ],
+    [
+     1468.9974365234375,
+     2.883077383041382,
+     1139.73583984375
+    ]
+   ],
+   "arraysSha256": "59675eec05df69d2774bdeafd9e1e4c5c3db1e5fbb3e0203ace98a79137e0742",
+   "npz": "geometry/mesh-0121-000.npz",
+   "render_skip": 0,
+   "sha256": "d70bf1a1f12046459cb5f9a331894b80181f547b51b12c623c825bf501c6816f"
+  },
+  {
+   "id": "mesh-0122-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_4_19245_0",
+   "section": 122,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 81,
+   "triangleCount": 27,
+   "bounds": [
+    [
+     1460.4554443359375,
+     -0.033922553062438965,
+     999.2758178710938
+    ],
+    [
+     1467.9354248046875,
+     0.7300774455070496,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "4f5a08b618d64a11bae96ed65f1dfb98ba6df7e7e0c91fc5de09fb9e700ed7ed",
+   "npz": "geometry/mesh-0122-000.npz",
+   "render_skip": 0,
+   "sha256": "c555b3fdc63bb67cb1e798edeebb03c19f20e8e6ab764f15b860ec616ae18b6e"
+  },
+  {
+   "id": "mesh-0123-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_4_19245_0",
+   "section": 123,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 29,
+   "triangleCount": 27,
+   "bounds": [
+    [
+     1460.4554443359375,
+     -0.033922553062438965,
+     999.2758178710938
+    ],
+    [
+     1467.9354248046875,
+     0.7300774455070496,
+     1039.73583984375
+    ]
+   ],
+   "arraysSha256": "97ff8842eda43e8c61d5331c419cd271433bdd6767f639dfeeca24c931cbf45d",
+   "npz": "geometry/mesh-0123-000.npz",
+   "render_skip": 0,
+   "sha256": "be20e25f02f3feb7031a8c0a101cee5355a033de5e1fe355c6eb1376ea74d801"
+  },
+  {
+   "id": "mesh-0124-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19653_0",
+   "section": 124,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 1899,
+   "triangleCount": 633,
+   "bounds": [
+    [
+     1397.87841796875,
+     -2.2219226360321045,
+     999.7318115234375
+    ],
+    [
+     1459.275390625,
+     -0.8739225268363953,
+     1120.7218017578125
+    ]
+   ],
+   "arraysSha256": "7dd5f77eeaa73c8b39dae4e2153c58f6d17b5c450f303844b26f2cfdd89c1687",
+   "npz": "geometry/mesh-0124-000.npz",
+   "render_skip": 0,
+   "sha256": "ae2e6a5b6c951210397f639c0dfc9babd65b0e0db384bba37c14fd3982ecdf62"
+  },
+  {
+   "id": "mesh-0125-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19653_0",
+   "section": 125,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 622,
+   "triangleCount": 633,
+   "bounds": [
+    [
+     1397.87841796875,
+     -2.2219226360321045,
+     999.7318115234375
+    ],
+    [
+     1459.275390625,
+     -0.8739225268363953,
+     1120.7218017578125
+    ]
+   ],
+   "arraysSha256": "067761a364d649a195e3bce5ad70ab7cae7ec4c5ece722d3918a5e05dfa9fbe5",
+   "npz": "geometry/mesh-0125-000.npz",
+   "render_skip": 0,
+   "sha256": "398ada75b6ae587c6050e2b79bb18b9bfe282dd2ccc4d72dd4afa2faa3d944cc"
+  },
+  {
+   "id": "mesh-0126-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2686_0",
+   "section": 126,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 276,
+   "triangleCount": 92,
+   "bounds": [
+    [
+     1197.7073974609375,
+     7.702077388763428,
+     997.77978515625
+    ],
+    [
+     1250.682373046875,
+     8.306077003479004,
+     1023.0718383789062
+    ]
+   ],
+   "arraysSha256": "f3797b3288483a12304a119a9aed5fa313e537b53ef02cdc9a383749a8cdc1dd",
+   "npz": "geometry/mesh-0126-000.npz",
+   "render_skip": 0,
+   "sha256": "3b6f03ee62a18a87efffdfc45f77725c64a6876b2d3992809924ec3f456b67b5"
+  },
+  {
+   "id": "mesh-0127-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_3_2686_0",
+   "section": 127,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 68,
+   "triangleCount": 92,
+   "bounds": [
+    [
+     1197.7073974609375,
+     7.702077388763428,
+     997.77978515625
+    ],
+    [
+     1250.682373046875,
+     8.306077003479004,
+     1023.0718383789062
+    ]
+   ],
+   "arraysSha256": "d15c1058f7d4ceb97ad3a37ff03e064467fab19fb61d86f6409e695985633255",
+   "npz": "geometry/mesh-0127-000.npz",
+   "render_skip": 0,
+   "sha256": "595c86ff6547a2f0378e6e757f7accbb4d2ed87ec8858b5d4c6d6d96a43e4c2b"
+  },
+  {
+   "id": "mesh-0128-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_sp_craterpartplanter_01_d1_0x2c701717000702e0_0x2c70170500110003_0x_19343_0",
+   "section": 128,
+   "role": "original",
+   "helper": false,
+   "material": "material_020",
+   "doubleSided": true,
+   "vertexCount": 657,
+   "triangleCount": 219,
+   "bounds": [
+    [
+     1289.889404296875,
+     -24.437923431396484,
+     1009.8798217773438
+    ],
+    [
+     1361.9974365234375,
+     -19.721921920776367,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "b8645b44b3a659b219d4ce59ff814f43288911176075d4eea8c64e4c9625c9c3",
+   "npz": "geometry/mesh-0128-000.npz",
+   "render_skip": 0,
+   "sha256": "1d7364337e774829eda930eaa6fc4a6d4a1d5ae9a9743a6df7164acdff8e7247"
+  },
+  {
+   "id": "mesh-0129-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_sp_craterpartplanter_01_d1_0x2c701717000702e0_0x2c70170500110003_0x_19343_0",
+   "section": 129,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 248,
+   "triangleCount": 219,
+   "bounds": [
+    [
+     1289.889404296875,
+     -24.437923431396484,
+     1009.8798217773438
+    ],
+    [
+     1361.9974365234375,
+     -19.721921920776367,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "adc3c27d3544996de76cf224b12278f098dbf6d14339849e04aedea3e8d77666",
+   "npz": "geometry/mesh-0129-000.npz",
+   "render_skip": 0,
+   "sha256": "68db2c0ea6a3d511f8a0e3136df0e6f85a5f3f2cfb7ffb7b72d33c092f9fb2e3"
+  },
+  {
+   "id": "mesh-0130-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2700_0",
+   "section": 130,
+   "role": "original",
+   "helper": false,
+   "material": "material_005",
+   "doubleSided": true,
+   "vertexCount": 1620,
+   "triangleCount": 540,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     1001.0908203125
+    ],
+    [
+     1289.889404296875,
+     7.855077266693115,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "624c0959ea254db175eb3b9d9166fb454b48afecbab29bc9f52de963c9410eaf",
+   "npz": "geometry/mesh-0130-000.npz",
+   "render_skip": 84,
+   "sha256": "aaf06d481770b182c192efcfa2d0cbfbc4c247e706db815838926a7994990805"
+  },
+  {
+   "id": "mesh-0131-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_upperplazagrond_decaltile_0x2c70171700070310_0x2c70170500110003_0x2c70170_2700_0",
+   "section": 131,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 407,
+   "triangleCount": 540,
+   "bounds": [
+    [
+     1180.0184326171875,
+     1.7790775299072266,
+     1001.0908203125
+    ],
+    [
+     1289.889404296875,
+     7.855077266693115,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "d0c19d83c91da39d0f71771560d5c2a124f12c88c5cd355b3587c02dc75c6d8a",
+   "npz": "geometry/mesh-0131-000.npz",
+   "render_skip": 0,
+   "sha256": "de4234af6eb4d9680525161982ae7e504cbafd5a28d095a6d460f37ee7efbaae"
+  },
+  {
+   "id": "mesh-0132-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2659_0",
+   "section": 132,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 120,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1197.1563720703125,
+     1.7790775299072266,
+     1162.091796875
+    ],
+    [
+     1205.9664306640625,
+     3.1280784606933594,
+     1183.4708251953125
+    ]
+   ],
+   "arraysSha256": "11a384eefe37296f02458e5c9bb0c31fe2743a58e2127242e7fd840070325961",
+   "npz": "geometry/mesh-0132-000.npz",
+   "render_skip": 0,
+   "sha256": "e05cf8168a87fce7c5814c1d7086c4e828647bdb0853406a6f98972bafa07a91"
+  },
+  {
+   "id": "mesh-0133-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2659_0",
+   "section": 133,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 30,
+   "triangleCount": 40,
+   "bounds": [
+    [
+     1197.1563720703125,
+     1.7790775299072266,
+     1162.091796875
+    ],
+    [
+     1205.9664306640625,
+     3.1280784606933594,
+     1183.4708251953125
+    ]
+   ],
+   "arraysSha256": "e35010767994a1a1cdf38a7830dc60607b17bf3b6de2f0d27b8fc44e08af7252",
+   "npz": "geometry/mesh-0133-000.npz",
+   "render_skip": 0,
+   "sha256": "8e9f22bfdd104ccd91bfee8ec68b8138796edee6610e6f6767db1e00e6eea335"
+  },
+  {
+   "id": "mesh-0134-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__4_2647_0",
+   "section": 134,
+   "role": "original",
+   "helper": false,
+   "material": "material_000",
+   "doubleSided": true,
+   "vertexCount": 51,
+   "triangleCount": 17,
+   "bounds": [
+    [
+     1267.2724609375,
+     -24.190921783447266,
+     1133.456787109375
+    ],
+    [
+     1379.9373779296875,
+     1.7790775299072266,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "6db0b9de8abd7e40ca3e3a3d32ba2af9c4f52748610e75c89ec36dcd6ee7e7eb",
+   "npz": "geometry/mesh-0134-000.npz",
+   "render_skip": 0,
+   "sha256": "6c6761881e01b413679c509be44ce91185b9f830da7c4890ef7d381e1ba917f4"
+  },
+  {
+   "id": "mesh-0135-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpanel_0x2c701717001d02a6_0x2c70170500110003_0x2c70170600113ae6__4_2647_0",
+   "section": 135,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 18,
+   "triangleCount": 17,
+   "bounds": [
+    [
+     1267.2724609375,
+     -24.190921783447266,
+     1133.456787109375
+    ],
+    [
+     1379.9373779296875,
+     1.7790775299072266,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "34889becae8ce30ade8cea33a3d80a5c358e8e711a472bfe5ccd1139d6fead16",
+   "npz": "geometry/mesh-0135-000.npz",
+   "render_skip": 0,
+   "sha256": "f9e8e39c4f7a38fc403a8d8ff59bac1ed274f56aeb6adfddfd3648d10557ce74"
+  },
+  {
+   "id": "mesh-0136-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_mosaic_turtle_0x2c7017170044000d_0x2c70170500110003_0x2c70170600113ae6_0x_2679_0",
+   "section": 136,
+   "role": "original",
+   "helper": false,
+   "material": "material_021",
+   "doubleSided": true,
+   "vertexCount": 486,
+   "triangleCount": 162,
+   "bounds": [
+    [
+     1218.745361328125,
+     5.045077323913574,
+     1086.3138427734375
+    ],
+    [
+     1228.23046875,
+     5.045077323913574,
+     1095.82177734375
+    ]
+   ],
+   "arraysSha256": "2ec724d78fa7ee8e35b9900c31981f94cded7c19ea42095970625a04540171ce",
+   "npz": "geometry/mesh-0136-000.npz",
+   "render_skip": 0,
+   "sha256": "9a7cff988afcc6e010be03e0026ed34b841734aaaa4c5632febcd2de17830697"
+  },
+  {
+   "id": "mesh-0137-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_mosaic_turtle_0x2c7017170044000d_0x2c70170500110003_0x2c70170600113ae6_0x_2679_0",
+   "section": 137,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 109,
+   "triangleCount": 162,
+   "bounds": [
+    [
+     1218.745361328125,
+     5.045077323913574,
+     1086.3138427734375
+    ],
+    [
+     1228.23046875,
+     5.045077323913574,
+     1095.82177734375
+    ]
+   ],
+   "arraysSha256": "a07196fbb797e4c77c25602451448cc382f7f8fedc0f78c1f9579b828b4e7674",
+   "npz": "geometry/mesh-0137-000.npz",
+   "render_skip": 0,
+   "sha256": "3d6ba90090899af56f59f98c3dc3b4ab5987e331506292b605a20b03a3cdb95d"
+  },
+  {
+   "id": "mesh-0138-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_0_2681_0",
+   "section": 138,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 60,
+   "triangleCount": 20,
+   "bounds": [
+    [
+     1256.7584228515625,
+     7.4690775871276855,
+     1000.57177734375
+    ],
+    [
+     1262.232421875,
+     8.318077087402344,
+     1033.9188232421875
+    ]
+   ],
+   "arraysSha256": "c563e4f7ab82d6163a0a0e9222199919f99b3ff5d662de4b9746c459b70256a8",
+   "npz": "geometry/mesh-0138-000.npz",
+   "render_skip": 0,
+   "sha256": "af911eee3311db1bc4715aea5182528f32a7ae0bb313e30fef4a1057ca744934"
+  },
+  {
+   "id": "mesh-0139-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_0_2681_0",
+   "section": 139,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 24,
+   "triangleCount": 20,
+   "bounds": [
+    [
+     1256.7584228515625,
+     7.4690775871276855,
+     1000.57177734375
+    ],
+    [
+     1262.232421875,
+     8.318077087402344,
+     1033.9188232421875
+    ]
+   ],
+   "arraysSha256": "7b3c3442ba8ebf1a137ff4bee037cda40028516e8d7503c3569706e33b06756e",
+   "npz": "geometry/mesh-0139-000.npz",
+   "render_skip": 0,
+   "sha256": "fef7442c6364219d11b152d13ae217f398d6af264865366f9457b0303e2ff162"
+  },
+  {
+   "id": "mesh-0140-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2690_0",
+   "section": 140,
+   "role": "original",
+   "helper": false,
+   "material": "material_007",
+   "doubleSided": false,
+   "vertexCount": 9222,
+   "triangleCount": 3074,
+   "bounds": [
+    [
+     1196.240478515625,
+     1.7790775299072266,
+     984.7518310546875
+    ],
+    [
+     1289.889404296875,
+     12.07807731628418,
+     1153.4508056640625
+    ]
+   ],
+   "arraysSha256": "6d5bfdbff226ee2faea94628fd9ddd43a0d6a1de53266218074071006596402a",
+   "npz": "geometry/mesh-0140-000.npz",
+   "render_skip": 40,
+   "sha256": "9aa93322d9db9d0dad67578b0c805416b5de62b8ca7752353f237cc8518c1dd7"
+  },
+  {
+   "id": "mesh-0141-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_redceramictrim_0x2c7017170044000e_0x2c70170500110003_0x2c70170600113ae6_4_2690_0",
+   "section": 141,
+   "role": "original",
+   "helper": true,
+   "material": "material_008",
+   "doubleSided": false,
+   "vertexCount": 2169,
+   "triangleCount": 3074,
+   "bounds": [
+    [
+     1196.240478515625,
+     1.7790775299072266,
+     984.7518310546875
+    ],
+    [
+     1289.889404296875,
+     12.07807731628418,
+     1153.4508056640625
+    ]
+   ],
+   "arraysSha256": "b9ceb5de5792e473845797dde1cb37b725b48eafd1fda4ab75471c23f169dec1",
+   "npz": "geometry/mesh-0141-000.npz",
+   "render_skip": 0,
+   "sha256": "1cb2770a4585fa41d4a59c8b786ac60b432138b770fa947a318277323c54c00f"
+  },
+  {
+   "id": "mesh-0142-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_woodramp_0x2c701717001d02b5_0x2c70170500110003_0x2c70170600113ae6_0x2c7_4_2710_0",
+   "section": 142,
+   "role": "original",
+   "helper": false,
+   "material": "material_016",
+   "doubleSided": true,
+   "vertexCount": 4266,
+   "triangleCount": 1422,
+   "bounds": [
+    [
+     1237.00537109375,
+     -24.197921752929688,
+     1131.4527587890625
+    ],
+    [
+     1365.4454345703125,
+     1.7790775299072266,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "4344267927e83384c7f17065ac7fc0fcad781ffdeb7892331b6c7b6851883c58",
+   "npz": "geometry/mesh-0142-000.npz",
+   "render_skip": 0,
+   "sha256": "6e18b1e3ba46a4c4c0e411a9ce3e177cb0a130f2355cd389996e98ad6ed22809"
+  },
+  {
+   "id": "mesh-0143-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_woodramp_0x2c701717001d02b5_0x2c70170500110003_0x2c70170600113ae6_0x2c7_4_2710_0",
+   "section": 143,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 898,
+   "triangleCount": 1422,
+   "bounds": [
+    [
+     1237.00537109375,
+     -24.197921752929688,
+     1131.4527587890625
+    ],
+    [
+     1365.4454345703125,
+     1.7790775299072266,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "31c32201f17c41ff7120db119ab20c5829bfccdece6a55c94cbd4586a0ef6098",
+   "npz": "geometry/mesh-0143-000.npz",
+   "render_skip": 0,
+   "sha256": "286acb9d31aad3c7c068e65bcdfb64a5f035255620c70ef7e1f9fa3049f7f0e7"
+  },
+  {
+   "id": "mesh-0144-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2714_0",
+   "section": 144,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 246,
+   "triangleCount": 82,
+   "bounds": [
+    [
+     1198.37548828125,
+     5.045077323913574,
+     1000.6608276367188
+    ],
+    [
+     1255.2294921875,
+     7.855077266693115,
+     1082.2718505859375
+    ]
+   ],
+   "arraysSha256": "4edf8c2da518c54696c220a7289a1427d78e2a21ca8c9ccb1f48d434c424634d",
+   "npz": "geometry/mesh-0144-000.npz",
+   "render_skip": 0,
+   "sha256": "133d767406c287a3e6a391376270a4b4a4eb41b8683399de8940e4ddd482db8f"
+  },
+  {
+   "id": "mesh-0145-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0x2_2714_0",
+   "section": 145,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 89,
+   "triangleCount": 82,
+   "bounds": [
+    [
+     1198.37548828125,
+     5.045077323913574,
+     1000.6608276367188
+    ],
+    [
+     1255.2294921875,
+     7.855077266693115,
+     1082.2718505859375
+    ]
+   ],
+   "arraysSha256": "fae2b34a16aed391832e224b0c2c7432074f2f87bd447c64337ed8e3eba16f05",
+   "npz": "geometry/mesh-0145-000.npz",
+   "render_skip": 0,
+   "sha256": "c43239a93adf408ab6581eddb7396d50e299f5576f5fd8a987bd1afce89a3125"
+  },
+  {
+   "id": "mesh-0146-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2717_0",
+   "section": 146,
+   "role": "original",
+   "helper": false,
+   "material": "material_009",
+   "doubleSided": true,
+   "vertexCount": 27,
+   "triangleCount": 9,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     987.7328491210938
+    ],
+    [
+     1254.06640625,
+     12.431077003479004,
+     1015.434814453125
+    ]
+   ],
+   "arraysSha256": "f33e9c46b9c05e4b825eb4f77147b1cabf2fd9af355b46f11af7d45dd9682cbe",
+   "npz": "geometry/mesh-0146-000.npz",
+   "render_skip": 0,
+   "sha256": "016ec8e73432f83ead4f04f17adba9fa6ddc547552c19d03bc3280788c18c8eb"
+  },
+  {
+   "id": "mesh-0147-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpartpathwaybricks_0x2c7017170044000f_0x2c70170500110003_0x2c70170600113ae6_0_2_2717_0",
+   "section": 147,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 11,
+   "triangleCount": 9,
+   "bounds": [
+    [
+     1192.92041015625,
+     12.431077003479004,
+     987.7328491210938
+    ],
+    [
+     1254.06640625,
+     12.431077003479004,
+     1015.434814453125
+    ]
+   ],
+   "arraysSha256": "c7000bb252304b0f0ccdf329e813dc25a8f99b763d9d7c82acd86864a0c327b5",
+   "npz": "geometry/mesh-0147-000.npz",
+   "render_skip": 0,
+   "sha256": "52d0200a98b10cd919aef99ff8c2bb527ba95b86335fd5d329a2d15ebbb3b211"
+  },
+  {
+   "id": "mesh-0148-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_1_0x2c7017170011039b_0x2c70170500110003_0x2c70_2_3562_0",
+   "section": 148,
+   "role": "original",
+   "helper": false,
+   "material": "material_010",
+   "doubleSided": true,
+   "vertexCount": 72,
+   "triangleCount": 24,
+   "bounds": [
+    [
+     1214.9454345703125,
+     -22.3889217376709,
+     1009.8917846679688
+    ],
+    [
+     1361.036376953125,
+     5.894077301025391,
+     1083.23486328125
+    ]
+   ],
+   "arraysSha256": "b8e9154944c4985953e4be1eacdd5f35e2169eb440b84a666d8f63166441d859",
+   "npz": "geometry/mesh-0148-000.npz",
+   "render_skip": 0,
+   "sha256": "3788f356221413d8b4bab1eda4387478a3d50bb852aa206a71f1330d0d24d0f2"
+  },
+  {
+   "id": "mesh-0149-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/global_concrete_dt_basecncrt_01_1_0x2c7017170011039b_0x2c70170500110003_0x2c70_2_3562_0",
+   "section": 149,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 38,
+   "triangleCount": 24,
+   "bounds": [
+    [
+     1214.9454345703125,
+     -22.3889217376709,
+     1009.8917846679688
+    ],
+    [
+     1361.036376953125,
+     5.894077301025391,
+     1083.23486328125
+    ]
+   ],
+   "arraysSha256": "2303122ab1fc47eb6dd49b18b76d873260c95009644d859c4767b56d9d88e399",
+   "npz": "geometry/mesh-0149-000.npz",
+   "render_skip": 0,
+   "sha256": "36ddc8a66c41f63377f13066be238817f39b6543f557f2413d5bec313fe53207"
+  },
+  {
+   "id": "mesh-0150-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_01_d1_0x2c701717000702dc_0x2c70170500110003_0x_19177_0",
+   "section": 150,
+   "role": "original",
+   "helper": false,
+   "material": "material_012",
+   "doubleSided": true,
+   "vertexCount": 387,
+   "triangleCount": 129,
+   "bounds": [
+    [
+     1289.889404296875,
+     -23.39992332458496,
+     999.6807861328125
+    ],
+    [
+     1361.036376953125,
+     -19.78592300415039,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "65101f12bcfa78e8f7a80a5d84a42e98e88e2251e553aa48c31caaae2f3389f6",
+   "npz": "geometry/mesh-0150-000.npz",
+   "render_skip": 0,
+   "sha256": "0253433c0aceeea1e20f03dcc3d84ca83ad1cd5962fcefc7170636a521d5184b"
+  },
+  {
+   "id": "mesh-0151-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_01_d1_0x2c701717000702dc_0x2c70170500110003_0x_19177_0",
+   "section": 151,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 118,
+   "triangleCount": 129,
+   "bounds": [
+    [
+     1289.889404296875,
+     -23.39992332458496,
+     999.6807861328125
+    ],
+    [
+     1361.036376953125,
+     -19.78592300415039,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "e616e9b7d27b855bf6f176b29c8b3064f9e4b9c8e88c2a681b29354db2a14730",
+   "npz": "geometry/mesh-0151-000.npz",
+   "render_skip": 0,
+   "sha256": "0ccc157f417eb0fb070809e45081ea29fc9e839fb6fa8f5d0a26b6de054d1b9d"
+  },
+  {
+   "id": "mesh-0152-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_02_d1_0x2c701717000702df_0x2c70170500110003_0x_19178_0",
+   "section": 152,
+   "role": "original",
+   "helper": false,
+   "material": "material_022",
+   "doubleSided": true,
+   "vertexCount": 273,
+   "triangleCount": 91,
+   "bounds": [
+    [
+     1316.8924560546875,
+     -24.437923431396484,
+     989.8228149414062
+    ],
+    [
+     1336.9373779296875,
+     -21.992921829223633,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "ac12288daa1be6d5303b1a2d4134182fda2f9ac5ef23581f414261a6e8e6e225",
+   "npz": "geometry/mesh-0152-000.npz",
+   "render_skip": 0,
+   "sha256": "cc8f435fa0ddf8faa3abe777db3aa5d7b0cdb00cec2410c57cd9c37e98a58628"
+  },
+  {
+   "id": "mesh-0153-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_brick_gl_craterpartgroundtile_02_d1_0x2c701717000702df_0x2c70170500110003_0x_19178_0",
+   "section": 153,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 97,
+   "triangleCount": 91,
+   "bounds": [
+    [
+     1316.8924560546875,
+     -24.437923431396484,
+     989.8228149414062
+    ],
+    [
+     1336.9373779296875,
+     -21.992921829223633,
+     1134.7337646484375
+    ]
+   ],
+   "arraysSha256": "f347dcdbb78ca7fca9beac9b19d89d27305418be0309881eb43592c2ff74f24a",
+   "npz": "geometry/mesh-0153-000.npz",
+   "render_skip": 0,
+   "sha256": "6dd4942b95bcccb7128b3ba161abca5aa279fb5d3408e283d6a3c70d3eb033ad"
+  },
+  {
+   "id": "mesh-0154-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_obj_stairs_sp_dlc_colorbrick_01_d1_0x2c701717000702dd_0x2c70170500110003_0_2_18941_0",
+   "section": 154,
+   "role": "original",
+   "helper": false,
+   "material": "material_018",
+   "doubleSided": true,
+   "vertexCount": 4470,
+   "triangleCount": 1490,
+   "bounds": [
+    [
+     1289.889404296875,
+     -24.203922271728516,
+     999.6818237304688
+    ],
+    [
+     1362.25341796875,
+     -19.582921981811523,
+     1124.9827880859375
+    ]
+   ],
+   "arraysSha256": "a630a6b0a465381efa054661f245d10aa6af4833a889c61c644aa7256bc56d57",
+   "npz": "geometry/mesh-0154-000.npz",
+   "render_skip": 0,
+   "sha256": "55b99364ebddc28674cf2028e6345f748736cb833b8c50da31e99598daf81fc9"
+  },
+  {
+   "id": "mesh-0155-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_obj_stairs_sp_dlc_colorbrick_01_d1_0x2c701717000702dd_0x2c70170500110003_0_2_18941_0",
+   "section": 155,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 1119,
+   "triangleCount": 1490,
+   "bounds": [
+    [
+     1289.889404296875,
+     -24.203922271728516,
+     999.6818237304688
+    ],
+    [
+     1362.25341796875,
+     -19.582921981811523,
+     1124.9827880859375
+    ]
+   ],
+   "arraysSha256": "2bca751a14e31b13822fcd34106903a34db5dce0e877be388cdb3155c781b4bb",
+   "npz": "geometry/mesh-0155-000.npz",
+   "render_skip": 0,
+   "sha256": "4f1fc055de4b95b565ced4f44aee5297a5c954d073cbc104aa12c351be8fe89d"
+  },
+  {
+   "id": "mesh-0156-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19239_0",
+   "section": 156,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 261,
+   "triangleCount": 87,
+   "bounds": [
+    [
+     1356.7584228515625,
+     0.313077449798584,
+     1065.7227783203125
+    ],
+    [
+     1403.3994140625,
+     2.883077383041382,
+     1139.73583984375
+    ]
+   ],
+   "arraysSha256": "80615b50497ac3e3e07663f2b58efba3416dab3fb0adb8460d8b4095195c3d38",
+   "npz": "geometry/mesh-0156-000.npz",
+   "render_skip": 0,
+   "sha256": "8c8211f7594900d61a8759c441ad3ff1d97aae0a198105762e40a0600628dd91"
+  },
+  {
+   "id": "mesh-0157-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_2_19239_0",
+   "section": 157,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 91,
+   "triangleCount": 87,
+   "bounds": [
+    [
+     1356.7584228515625,
+     0.313077449798584,
+     1065.7227783203125
+    ],
+    [
+     1403.3994140625,
+     2.883077383041382,
+     1139.73583984375
+    ]
+   ],
+   "arraysSha256": "f0a28a3791800a8927ae9adc2c0cba908b7876dc01ff8e648ddb1d702a8f2b78",
+   "npz": "geometry/mesh-0157-000.npz",
+   "render_skip": 0,
+   "sha256": "54675caebcb62e8538386ee2627f0faaa7d9f253888df9af4253ad211a753f70"
+  },
+  {
+   "id": "mesh-0158-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_6_19248_0",
+   "section": 158,
+   "role": "original",
+   "helper": false,
+   "material": "material_003",
+   "doubleSided": true,
+   "vertexCount": 99,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1349.994384765625,
+     0.9650774598121643,
+     1134.7337646484375
+    ],
+    [
+     1397.87841796875,
+     2.883077383041382,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "20f7a7bb8cea185a637baff468e59fbd9106ea04ad7d89a45d8a7b6c8445cca7",
+   "npz": "geometry/mesh-0158-000.npz",
+   "render_skip": 0,
+   "sha256": "b2cc7dbccd4f4124bca75451cde2ca880def8e5ffee151c2512701d2150ce4ef"
+  },
+  {
+   "id": "mesh-0159-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_0x2c7017170007027d_0x2c70170500110003_0x2_6_19248_0",
+   "section": 159,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 27,
+   "triangleCount": 33,
+   "bounds": [
+    [
+     1349.994384765625,
+     0.9650774598121643,
+     1134.7337646484375
+    ],
+    [
+     1397.87841796875,
+     2.883077383041382,
+     1162.1507568359375
+    ]
+   ],
+   "arraysSha256": "572155d58a4f15cf019e02308c3e26b28c1ade9c7bbd5ef716dc519fb0206bbe",
+   "npz": "geometry/mesh-0159-000.npz",
+   "render_skip": 0,
+   "sha256": "48c10ea18d453a9028ef7aa11511426ac4ab90ee720f52a3dea6abc98e70f131"
+  },
+  {
+   "id": "mesh-0160-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0x2_19250_0",
+   "section": 160,
+   "role": "original",
+   "helper": false,
+   "material": "material_017",
+   "doubleSided": true,
+   "vertexCount": 657,
+   "triangleCount": 219,
+   "bounds": [
+    [
+     1387.2274169921875,
+     0.313077449798584,
+     1058.808837890625
+    ],
+    [
+     1400.0804443359375,
+     4.858077526092529,
+     1134.7928466796875
+    ]
+   ],
+   "arraysSha256": "f52b9b4fe543040ac7cd1a5a930737c2f792e8d8b3a1a14f6631f058b85e2630",
+   "npz": "geometry/mesh-0160-000.npz",
+   "render_skip": 0,
+   "sha256": "db4c168a0a05bf524f9460cf0b54d2042c99e6db98190fd9c75b4356c9221894"
+  },
+  {
+   "id": "mesh-0161-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0x2_19250_0",
+   "section": 161,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 114,
+   "triangleCount": 219,
+   "bounds": [
+    [
+     1387.2274169921875,
+     0.313077449798584,
+     1058.808837890625
+    ],
+    [
+     1400.0804443359375,
+     4.858077526092529,
+     1134.7928466796875
+    ]
+   ],
+   "arraysSha256": "41c35e42a10a2d8a0793de9d255ebb8a27848cd456b0526859e10c6fd086d7cd",
+   "npz": "geometry/mesh-0161-000.npz",
+   "render_skip": 0,
+   "sha256": "46b7d8690217b55eec67a39d40891ea6a3d0f9ae3aeb54f655d47791f023caa5"
+  },
+  {
+   "id": "mesh-0162-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19253_0",
+   "section": 162,
+   "role": "original",
+   "helper": false,
+   "material": "material_017",
+   "doubleSided": true,
+   "vertexCount": 66,
+   "triangleCount": 22,
+   "bounds": [
+    [
+     1397.1064453125,
+     0.9940774440765381,
+     998.4308471679688
+    ],
+    [
+     1400.2044677734375,
+     4.107077598571777,
+     1009.7808227539062
+    ]
+   ],
+   "arraysSha256": "e98b5276de2911d93076bedc941616eac1d28a150f5d5ef37709df30d61e4237",
+   "npz": "geometry/mesh-0162-000.npz",
+   "render_skip": 0,
+   "sha256": "4b229429e6487028f1fe6ecdcfb55cbf2a7dc8361714f68e6620e3d7a17e5dad"
+  },
+  {
+   "id": "mesh-0163-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_bluepool_01_d1_1_1_0x2c701717000702a0_0x2c70170500110003_0_2_19253_0",
+   "section": 163,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 16,
+   "triangleCount": 22,
+   "bounds": [
+    [
+     1397.1064453125,
+     0.9940774440765381,
+     998.4308471679688
+    ],
+    [
+     1400.2044677734375,
+     4.107077598571777,
+     1009.7808227539062
+    ]
+   ],
+   "arraysSha256": "97de5f078b55db2f44090f3e730a40140d6fbeb6869ecc37549bebd69adb4386",
+   "npz": "geometry/mesh-0163-000.npz",
+   "render_skip": 0,
+   "sha256": "49bf0db5232fe8684de5543483cbf3ddccb840cfaff5ae340a0476ed40901c2f"
+  },
+  {
+   "id": "mesh-0164-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19337_0",
+   "section": 164,
+   "role": "original",
+   "helper": false,
+   "material": "material_002",
+   "doubleSided": true,
+   "vertexCount": 591,
+   "triangleCount": 197,
+   "bounds": [
+    [
+     1390.0164794921875,
+     1.1030774116516113,
+     1074.663818359375
+    ],
+    [
+     1403.222412109375,
+     2.883077383041382,
+     1128.7608642578125
+    ]
+   ],
+   "arraysSha256": "d934154c4500545da769f162007e2fd06054bebb8291e31b881647b721f919fc",
+   "npz": "geometry/mesh-0164-000.npz",
+   "render_skip": 0,
+   "sha256": "b458f3d0d3118d5296e46188b8aa61502316e901e3aa1640ffd3831398cd4a8b"
+  },
+  {
+   "id": "mesh-0165-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_concrete_gl_sandledge_01_d1_0x2c701717000702ab_0x2c70170500110003_0x2c_2_19337_0",
+   "section": 165,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 154,
+   "triangleCount": 197,
+   "bounds": [
+    [
+     1390.0164794921875,
+     1.1030774116516113,
+     1074.663818359375
+    ],
+    [
+     1403.222412109375,
+     2.883077383041382,
+     1128.7608642578125
+    ]
+   ],
+   "arraysSha256": "741bbd4b9231a9a21401f650f62486e429e65fb4c45827f8e476bfa0e268253d",
+   "npz": "geometry/mesh-0165-000.npz",
+   "render_skip": 0,
+   "sha256": "eabfbdcea3009faaf3b383901f89ba74e33722fe471ce936d7a9d6da1ea810eb"
+  },
+  {
+   "id": "mesh-0166-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19651_0",
+   "section": 166,
+   "role": "original",
+   "helper": false,
+   "material": "material_004",
+   "doubleSided": true,
+   "vertexCount": 3,
+   "triangleCount": 1,
+   "bounds": [
+    [
+     1397.87841796875,
+     -0.8739225268363953,
+     1104.94580078125
+    ],
+    [
+     1403.222412109375,
+     -0.8739225268363953,
+     1105.9317626953125
+    ]
+   ],
+   "arraysSha256": "851bcf4bbce6a945c4983aded0568e4fe493b88c7c18a309562053f744825e3b",
+   "npz": "geometry/mesh-0166-000.npz",
+   "render_skip": 0,
+   "sha256": "62201b578f3292277c24af44791c9a833aa6ac6907de8759c64f838dbc2d777e"
+  },
+  {
+   "id": "mesh-0167-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/tex_sur_stone_gl_craterpartpoolbottom_01_d1_0x2c701717000702ea_0x2c70170500110003_0x_19651_0",
+   "section": 167,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 3,
+   "triangleCount": 1,
+   "bounds": [
+    [
+     1397.87841796875,
+     -0.8739225268363953,
+     1104.94580078125
+    ],
+    [
+     1403.222412109375,
+     -0.8739225268363953,
+     1105.9317626953125
+    ]
+   ],
+   "arraysSha256": "3814c6696e95547c174e336417721fc2d68419b456582cca0e655c47fd260838",
+   "npz": "geometry/mesh-0167-000.npz",
+   "render_skip": 0,
+   "sha256": "84a76c3406f603e0517b55e4fc0ffcdf7258696c9fa9a3e0ab811f0ceaccfcf0"
+  },
+  {
+   "id": "mesh-0168-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2658_0",
+   "section": 168,
+   "role": "original",
+   "helper": false,
+   "material": "material_006",
+   "doubleSided": true,
+   "vertexCount": 21,
+   "triangleCount": 7,
+   "bounds": [
+    [
+     1175.7364501953125,
+     6.666077613830566,
+     1199.6917724609375
+    ],
+    [
+     1183.6044921875,
+     8.437077522277832,
+     1200.6767578125
+    ]
+   ],
+   "arraysSha256": "d3670dcfa3b40960333f2da133e61ce9a0e27ea85026086d44a6d02e942ee5b0",
+   "npz": "geometry/mesh-0168-000.npz",
+   "render_skip": 0,
+   "sha256": "891ee6940005bec5dc30ecd4608daa527debec2d4b0b103228726e577cb125c7"
+  },
+  {
+   "id": "mesh-0169-000",
+   "name": "world/custom/fontanierh_crater_park/meshes/craterpart_funtrackpath_0x2c701717001d02a5_0x2c70170500110003_0x2c70170600113ae6_0x2_2658_0",
+   "section": 169,
+   "role": "original",
+   "helper": true,
+   "material": "material_001",
+   "doubleSided": true,
+   "vertexCount": 8,
+   "triangleCount": 7,
+   "bounds": [
+    [
+     1175.7364501953125,
+     6.666077613830566,
+     1199.6917724609375
+    ],
+    [
+     1183.6044921875,
+     8.437077522277832,
+     1200.6767578125
+    ]
+   ],
+   "arraysSha256": "fbecdbe516b2843431335eba5793423626f8c117c861cdfefa08ff7de9216d41",
+   "npz": "geometry/mesh-0169-000.npz",
+   "render_skip": 0,
+   "sha256": "d5d2774b0cf82e74c63021c79a8d7afd609f9c79f85c10300f5d275605ef50a5"
+  },
+  {
+   "id": "mesh-0170-000",
+   "name": "Stone foundations 01 \u2014 closed support prisms",
+   "section": 184,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1140.9024658203125,
+     -35.060237884521484,
+     910.7568359375
+    ],
+    [
+     1467.8953857421875,
+     40.021080017089844,
+     1200.349853515625
+    ]
+   ],
+   "arraysSha256": "c9e9f7dc70c73eb5463e22f1baaa0a2eb5023b5ef9bb720e297723ba24c14804",
+   "npz": "geometry/mesh-0170-000.npz",
+   "render_skip": 0,
+   "sha256": "951938576d69976612f46a88ecb888b1610efe3680fc77ace7c9656cd6555a4a"
+  },
+  {
+   "id": "mesh-0171-000",
+   "name": "Stone foundations 01 \u2014 closed support prisms",
+   "section": 184,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1131.450439453125,
+     -19.15892219543457,
+     816.5687866210938
+    ],
+    [
+     1208.762451171875,
+     26.369077682495117,
+     1103.0218505859375
+    ]
+   ],
+   "arraysSha256": "719a1addc3b3a76bcd40c552c7c7d367784c43741ba375965b0e6c97b1d4da65",
+   "npz": "geometry/mesh-0171-000.npz",
+   "render_skip": 0,
+   "sha256": "20e974ed7b56fafbb4e61e98d9ba3821ab241aa8c5b95d4669cc1e5f4c993f3e"
+  },
+  {
+   "id": "mesh-0172-000",
+   "name": "Stone foundations 01 \u2014 closed support prisms",
+   "section": 184,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 54996,
+   "triangleCount": 73328,
+   "bounds": [
+    [
+     1137.265380859375,
+     -25.64092254638672,
+     823.98681640625
+    ],
+    [
+     1327.00537109375,
+     12.429078102111816,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "b71376492d376075d8b7d0758e647735a6bceebab1553bdedf733dc92b4c6e99",
+   "npz": "geometry/mesh-0172-000.npz",
+   "render_skip": 0,
+   "sha256": "e89235b0dcf9d0f37896d2f5a419fb749a4ef47fe762dbba5968e8bd9e49849a"
+  },
+  {
+   "id": "mesh-0173-000",
+   "name": "Stone foundations 02 \u2014 closed support prisms",
+   "section": 185,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1208.29638671875,
+     -19.15892219543457,
+     816.5687866210938
+    ],
+    [
+     1315.5814208984375,
+     5.0270771980285645,
+     839.7858276367188
+    ]
+   ],
+   "arraysSha256": "67338c68360afdd2e11d24add741dee57136e8d2df6f63455f2e4eb7b0828354",
+   "npz": "geometry/mesh-0173-000.npz",
+   "render_skip": 0,
+   "sha256": "15bc05c118d625cbad6abfd518e78b11419a2e2f5504212e0936bafc63f85e96"
+  },
+  {
+   "id": "mesh-0174-000",
+   "name": "Stone foundations 02 \u2014 closed support prisms",
+   "section": 185,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1208.4134521484375,
+     -25.419921875,
+     818.9277954101562
+    ],
+    [
+     1356.8094482421875,
+     8.503077507019043,
+     921.455810546875
+    ]
+   ],
+   "arraysSha256": "c3a6506f5b8ed5254a1f583943e154cf61cf4692b63e6b879416ebb837aa3dd6",
+   "npz": "geometry/mesh-0174-000.npz",
+   "render_skip": 0,
+   "sha256": "86b867ebdd0c121ab368c0e3360f272282e3ae276a71f778ab97561fd0762991"
+  },
+  {
+   "id": "mesh-0175-000",
+   "name": "Stone foundations 02 \u2014 closed support prisms",
+   "section": 185,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 54996,
+   "triangleCount": 73328,
+   "bounds": [
+    [
+     1200.015380859375,
+     -25.419921875,
+     839.7017822265625
+    ],
+    [
+     1380.910400390625,
+     5.0270771980285645,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "f67ae489b00b854507c781c24dedfdd0ccd0d961db5365811cf9b0bae5da7407",
+   "npz": "geometry/mesh-0175-000.npz",
+   "render_skip": 0,
+   "sha256": "64e8d957fde110c743315f25e1fa8549efd702d51b00ba169fbd406f9e847ee1"
+  },
+  {
+   "id": "mesh-0176-000",
+   "name": "Stone foundations 03 \u2014 closed support prisms",
+   "section": 186,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1193.5694580078125,
+     -26.591922760009766,
+     839.373779296875
+    ],
+    [
+     1401.5174560546875,
+     10.244077682495117,
+     973.5108032226562
+    ]
+   ],
+   "arraysSha256": "7e39f845a7d5f76cbb62b2a005c61f6ca934120334029649192101c07beb9592",
+   "npz": "geometry/mesh-0176-000.npz",
+   "render_skip": 0,
+   "sha256": "ce2276b06940e7f64c7ff32aa27b4edae3ca60edea8f7126a8595f73defd7f8c"
+  },
+  {
+   "id": "mesh-0177-000",
+   "name": "Stone foundations 03 \u2014 closed support prisms",
+   "section": 186,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 60000,
+   "triangleCount": 80000,
+   "bounds": [
+    [
+     1192.92041015625,
+     -26.591922760009766,
+     884.6498413085938
+    ],
+    [
+     1399.6024169921875,
+     12.401077270507812,
+     1009.5428466796875
+    ]
+   ],
+   "arraysSha256": "0adefcbe272c7e4637b421deb652d4d3588f8ddf146d6f78c495b36ea8d41caf",
+   "npz": "geometry/mesh-0177-000.npz",
+   "render_skip": 0,
+   "sha256": "9134c2c6ae1735e47a920201084636e4caeadd6826dea274750155b31783bdf4"
+  },
+  {
+   "id": "mesh-0178-000",
+   "name": "Stone foundations 03 \u2014 closed support prisms",
+   "section": 186,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 54996,
+   "triangleCount": 73328,
+   "bounds": [
+    [
+     1277.328369140625,
+     -34.03434753417969,
+     899.52783203125
+    ],
+    [
+     1465.8314208984375,
+     3.761077404022217,
+     1149.432861328125
+    ]
+   ],
+   "arraysSha256": "0e13a1bf7d46602222872e013df2694ec7524740c736705d64bcbe61f36e1205",
+   "npz": "geometry/mesh-0178-000.npz",
+   "render_skip": 0,
+   "sha256": "d9bf06aea166c2b929aba362985975cfed8e66d8645611ed82169565ea48de73"
+  },
+  {
+   "id": "mesh-0179-000",
+   "name": "Stone foundations 04 \u2014 closed support prisms",
+   "section": 187,
+   "role": "foundation",
+   "helper": false,
+   "material": "material_023",
+   "doubleSided": false,
+   "vertexCount": 40290,
+   "triangleCount": 53720,
+   "bounds": [
+    [
+     1175.7364501953125,
+     -34.54927444458008,
+     984.7518310546875
+    ],
+    [
+     1468.9974365234375,
+     12.401077270507812,
+     1200.6767578125
+    ]
+   ],
+   "arraysSha256": "17a3af411230bb5d12d718d65dca256f4e145c65fd25e0570dd6355c88a22c3c",
+   "npz": "geometry/mesh-0179-000.npz",
+   "render_skip": 0,
+   "sha256": "dd8b3a9841658d402fd9b9996bb8789f1601d264fbceb84eb3fe2300ff94fae0"
+  },
+  {
+   "id": "mesh-0180-000",
+   "name": "Compact mountain \u2014 closed terrain",
+   "section": 0,
+   "role": "mountain",
+   "helper": false,
+   "material": "material_024",
+   "doubleSided": false,
+   "vertexCount": 35349,
+   "triangleCount": 70694,
+   "bounds": [
+    [
+     1131.25048828125,
+     -110.0,
+     816.3687744140625
+    ],
+    [
+     1469.1973876953125,
+     24.379892349243164,
+     1200.876708984375
+    ]
+   ],
+   "arraysSha256": "c6da3ce0616fe770a466fb95a745f644e9a69467244b2c980f8df8d482e9026b",
+   "npz": "geometry/mesh-0180-000.npz",
+   "render_skip": 0,
+   "sha256": "f6587d53f24df488e0156ac0f80732a13efe0b5c5c8fe9811afd640cc41e1bbb"
+  },
+  {
+   "id": "mesh-0181-000",
+   "name": "Access connector 01",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 68,
+   "triangleCount": 132,
+   "bounds": [
+    [
+     1433.9146728515625,
+     -2.1413393020629883,
+     1015.5736083984375
+    ],
+    [
+     1438.4871826171875,
+     0.18171745538711548,
+     1023.0377197265625
+    ]
+   ],
+   "arraysSha256": "f95d1f9d5db88a9559fb7b6ed53ba0b33ad76db157fba1699fdcfd4cd45c7c75",
+   "npz": "geometry/mesh-0181-000.npz",
+   "render_skip": 0,
+   "sha256": "3ada06a3e151fa8a3df0301312e5c209b47c46d6ad6936b5215c1c8ecb5ee67f"
+  },
+  {
+   "id": "mesh-0182-000",
+   "name": "Lip connector 02",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1184.9542236328125,
+     7.244077682495117,
+     1033.8348388671875
+    ],
+    [
+     1186.1097412109375,
+     7.83407735824585,
+     1033.849609375
+    ]
+   ],
+   "arraysSha256": "f0be0f9222aca6ed59b3d69e21e10aa517688c5853d0220ab405724e3f05c310",
+   "npz": "geometry/mesh-0182-000.npz",
+   "render_skip": 0,
+   "sha256": "18d8ce96225aeef8bc96c918fc1b1138cc0eee28d2991ac26066cdfcaad7fdc1"
+  },
+  {
+   "id": "mesh-0183-000",
+   "name": "Lip connector 03",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1254.06640625,
+     10.10207748413086,
+     984.9346313476562
+    ],
+    [
+     1254.1019287109375,
+     12.41607666015625,
+     989.18408203125
+    ]
+   ],
+   "arraysSha256": "a428a3340349f5a19cd1e11d3f9610c41a5b83d0bf3468ba73b9308a29f239c9",
+   "npz": "geometry/mesh-0183-000.npz",
+   "render_skip": 0,
+   "sha256": "486ff42261e623db0f6bb4665a3d67c70050ec769744b19415b2e1893c4a5705"
+  },
+  {
+   "id": "mesh-0184-000",
+   "name": "Access trail 05",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 628,
+   "triangleCount": 1252,
+   "bounds": [
+    [
+     1246.7393798828125,
+     -20.71786117553711,
+     898.8472290039062
+    ],
+    [
+     1324.888916015625,
+     -7.827922344207764,
+     900.0471801757812
+    ]
+   ],
+   "arraysSha256": "c2f804757aa0562e3fec1d1d2a4c628040303fb7ca481b8e9d697f2130e25e10",
+   "npz": "geometry/mesh-0184-000.npz",
+   "render_skip": 0,
+   "sha256": "89de6fde1941ad04738c17850be220aec8388ec744a4a8aad8b877347e01bda5"
+  },
+  {
+   "id": "mesh-0185-000",
+   "name": "Access trail 06",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 68,
+   "triangleCount": 132,
+   "bounds": [
+    [
+     1305.9678955078125,
+     -25.172452926635742,
+     910.1221313476562
+    ],
+    [
+     1307.3668212890625,
+     -24.881921768188477,
+     911.6234741210938
+    ]
+   ],
+   "arraysSha256": "3118a681ba8cfbba896c6011335033f6529417a53100ac1ed28c9bc42e7d40c5",
+   "npz": "geometry/mesh-0185-000.npz",
+   "render_skip": 0,
+   "sha256": "c33f285a6a787eb6b236e6bad7e9e0d394b2ac613600c52e8d395df224851f32"
+  },
+  {
+   "id": "mesh-0186-000",
+   "name": "Lip connector 07",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1274.719482421875,
+     -14.381922721862793,
+     956.4467163085938
+    ],
+    [
+     1276.81005859375,
+     -14.091922760009766,
+     957.3036499023438
+    ]
+   ],
+   "arraysSha256": "a7af6c6a6147b55bb487cb2025e7b274eb93c6a95371ed0f1e883effa42bf1b1",
+   "npz": "geometry/mesh-0186-000.npz",
+   "render_skip": 0,
+   "sha256": "c835c18b1a195b37bdb59216f2032f7e17e27144ddf4a99aa7b3d63abff77b2d"
+  },
+  {
+   "id": "mesh-0187-000",
+   "name": "Lip connector 08",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1311.660400390625,
+     -21.28592300415039,
+     1000.923828125
+    ],
+    [
+     1312.345458984375,
+     -20.708921432495117,
+     1002.511474609375
+    ]
+   ],
+   "arraysSha256": "861cf3db34107f81884dbca4bb84b5f3a0f8451b788c94970daf3bdc4fc4e184",
+   "npz": "geometry/mesh-0187-000.npz",
+   "render_skip": 0,
+   "sha256": "bc582b6b599f83ce7f50c6ef841a28b9e75ef3cf4d906274d501bf091280a606"
+  },
+  {
+   "id": "mesh-0188-000",
+   "name": "Access connector 09",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 100,
+   "triangleCount": 196,
+   "bounds": [
+    [
+     1428.5382080078125,
+     0.9860774278640747,
+     1084.295166015625
+    ],
+    [
+     1436.7071533203125,
+     2.4760775566101074,
+     1093.6435546875
+    ]
+   ],
+   "arraysSha256": "ab04c913036458b3ecd951a58d20d71181cf018b53744039955109057454fc6e",
+   "npz": "geometry/mesh-0188-000.npz",
+   "render_skip": 0,
+   "sha256": "b12aa21c86f849f0fed7a3c6c6787eaeff6c4064a4ba0b73d24b0384fb39f805"
+  },
+  {
+   "id": "mesh-0189-000",
+   "name": "Lip connector 10",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1295.4893798828125,
+     -9.701923370361328,
+     1150.49462890625
+    ],
+    [
+     1295.9954833984375,
+     -9.140922546386719,
+     1151.3946533203125
+    ]
+   ],
+   "arraysSha256": "67a2963f6e66636ba41a7ba766794a00159000ebea958cb7177bcec5627c63ad",
+   "npz": "geometry/mesh-0189-000.npz",
+   "render_skip": 0,
+   "sha256": "c146ef855681aa6d731c43a14fc1bc444839fa5de5b89e911c69d87fc03feb3b"
+  },
+  {
+   "id": "mesh-0190-000",
+   "name": "Lip connector 11",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1338.203125,
+     -12.778923034667969,
+     1159.82958984375
+    ],
+    [
+     1338.9293212890625,
+     -12.212923049926758,
+     1160.7296142578125
+    ]
+   ],
+   "arraysSha256": "94bc7fa7381847eed72f589f4439a22ed6aef7f70ed7e3a6e5135d0e66554ab8",
+   "npz": "geometry/mesh-0190-000.npz",
+   "render_skip": 0,
+   "sha256": "1ac961a9f46cbca9c51c0fad1ef8ddc0af3b66a5c3594833eb3445eb4d9b6e20"
+  },
+  {
+   "id": "mesh-0191-000",
+   "name": "Lip connector 01",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 8,
+   "triangleCount": 12,
+   "bounds": [
+    [
+     1192.89990234375,
+     10.10207748413086,
+     984.9166259765625
+    ],
+    [
+     1192.92041015625,
+     12.41607666015625,
+     989.18408203125
+    ]
+   ],
+   "arraysSha256": "167ba74c83ed1ed290ee412b1eee74a83661857ffbc7866d14d5b3ce267229fa",
+   "npz": "geometry/mesh-0191-000.npz",
+   "render_skip": 0,
+   "sha256": "a6e6578d96eb61877c99568f8f46577e8dd998da76ee17c9ffc0370a90d1e4cf"
+  },
+  {
+   "id": "mesh-0192-000",
+   "name": "Access trail 02",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 452,
+   "triangleCount": 900,
+   "bounds": [
+    [
+     1213.7554931640625,
+     -3.614043951034546,
+     847.3930053710938
+    ],
+    [
+     1256.524658203125,
+     5.353077411651611,
+     884.7128295898438
+    ]
+   ],
+   "arraysSha256": "59c6d10a98b5bc4c0b1fb23eb0b49bc7a7f81958c74a48e5b51d602ca4571032",
+   "npz": "geometry/mesh-0192-000.npz",
+   "render_skip": 0,
+   "sha256": "034fae4f23df2868ce370218de67ec12c8384006484704afcf9e05f663cf1214"
+  },
+  {
+   "id": "mesh-0193-000",
+   "name": "Access trail 03",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 656,
+   "triangleCount": 1308,
+   "bounds": [
+    [
+     1246.7393798828125,
+     -19.661407470703125,
+     900.8218383789062
+    ],
+    [
+     1328.2996826171875,
+     -7.827922344207764,
+     902.0217895507812
+    ]
+   ],
+   "arraysSha256": "23d050b07d5e72112033c050078e5e3cac78fa42f57624f6421b95c013b9ddaa",
+   "npz": "geometry/mesh-0193-000.npz",
+   "render_skip": 0,
+   "sha256": "1e24cf27a0c35a840b7003357004ddd75ef57dee45b96f9fcd330958ac1456df"
+  },
+  {
+   "id": "mesh-0194-000",
+   "name": "Access connector 04",
+   "section": 0,
+   "role": "access_bridge",
+   "helper": false,
+   "material": "material_025",
+   "doubleSided": false,
+   "vertexCount": 100,
+   "triangleCount": 196,
+   "bounds": [
+    [
+     1314.115234375,
+     -22.297433853149414,
+     899.9313354492188
+    ],
+    [
+     1315.777587890625,
+     -18.89656639099121,
+     912.1168212890625
+    ]
+   ],
+   "arraysSha256": "84e6b6eed1fb5192bea2edca0e15db5025423a752815d154cbfe9b38bdff4e39",
+   "npz": "geometry/mesh-0194-000.npz",
+   "render_skip": 0,
+   "sha256": "4b74fac516ed6e1990eb4a38993e71654056104fde158ae4de9deceea94d1315"
+  },
+  {
+   "id": "mesh-0195-000",
+   "name": "Bridge ground bearings",
+   "section": 0,
+   "role": "bridge_support",
+   "helper": false,
+   "material": "material_026",
+   "doubleSided": false,
+   "vertexCount": 184,
+   "triangleCount": 276,
+   "bounds": [
+    [
+     1222.5499267578125,
+     -24.27092170715332,
+     849.707275390625
+    ],
+    [
+     1323.485107421875,
+     3.2851226329803467,
+     902.0217895507812
+    ]
+   ],
+   "arraysSha256": "94abadf285cb9df181d44e200ef5cacfc86ce6c3d98031ba6fb40f5c95be31d6",
+   "npz": "geometry/mesh-0195-000.npz",
+   "render_skip": 0,
+   "sha256": "ec818971559ac8b8f7b7709c37c76bebee3aaea3ba7d5ca72383d520b3b89e42"
+  },
+  {
+   "id": "mesh-0196-000",
+   "name": "Compact park perimeter",
+   "section": 0,
+   "role": "boundary",
+   "helper": false,
+   "material": "material_027",
+   "doubleSided": false,
+   "vertexCount": 5792,
+   "triangleCount": 8688,
+   "bounds": [
+    [
+     1131.25048828125,
+     -41.17997360229492,
+     816.3687744140625
+    ],
+    [
+     1469.1973876953125,
+     27.325254440307617,
+     1200.876708984375
+    ]
+   ],
+   "arraysSha256": "186c1502322df039b32acd217efe724948a029e2fb69ee288b44f52a3b41dfc2",
+   "npz": "geometry/mesh-0196-000.npz",
+   "render_skip": 0,
+   "sha256": "e464d4775e2f0fcca348e0d3d67b18856eb7c4672cc23b82a28f834e07935bee"
+  }
+ ]
+}

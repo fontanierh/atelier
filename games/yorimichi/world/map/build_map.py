@@ -252,6 +252,14 @@ for j, i in zip(*np.nonzero(mask)):
     shade = int(70 * ((top[j, i] if np.isfinite(top[j, i]) else low) - low) / (high - low))
     x, y = fx0 + i * cell, fy0 + j * cell
     d.polygon([wp(x, y), wp(x + cell, y), wp(x + cell, y + cell), wp(x, y + cell)], fill=(150 + shade, 146 + shade, 140 + shade))
+# Crater Park on the caldera floor: its block's top, shaded by height the same way (craterpark/placement.py).
+from craterpark import placement as craterpark  # noqa: E402
+fx0, fy0, cell, top, mask = craterpark.footprint()
+low, high = np.nanmin(top[mask]), np.nanmax(top[mask])
+for j, i in zip(*np.nonzero(mask)):
+    shade = int(70 * (top[j, i] - low) / (high - low))
+    x, y = fx0 + i * cell, fy0 + j * cell
+    d.polygon([wp(x, y), wp(x + cell, y), wp(x + cell, y + cell), wp(x, y + cell)], fill=(150 + shade, 146 + shade, 140 + shade))
 if SW:
     line(SW['lane'], (120, 96, 60), 3.2); line(SW['lane'], (206, 178, 128), 2.2)
     stair = [island_world(p[0], p[1]) for p in ISL.path_points()]
@@ -357,6 +365,11 @@ hit = np.isfinite(den) & (u >= 0) & (v >= 0) & (u + v <= 1)
 sz = float((u * a[:, 2] + v * b[:, 2] + (1 - u - v) * c[:, 2])[hit].max())   # the road under the spot
 zones.append(dict(key='megapark', name='Mega Park', x=sx, y=sy, z=round(sz, 2), yaw=round(facing(-110.0, 1469.0, sx, sy), 1),
                   hint='The canyon skate park in the western foothills. Triangle / Y or B for the board'))
+# Crater Park: the ramp drop-in its author marked, looking across the park.
+(cx, cy, cz), _ = craterpark.drop_in()
+zones.append(dict(key='craterpark', name='Crater Park', x=round(float(cx), 2), y=round(float(cy), 2), z=round(float(cz), 2),
+                  yaw=round(facing(*craterpark.CENTRE, cx, cy), 1),
+                  hint="The skate park in the volcano's caldera. Triangle / Y or B for the board"))
 # Sunset Pier: its current entrance plaza, shared with the park contract.
 PARK = str(yori.REGIONS / 'skatepark' / 'park.json')
 if os.path.exists(PARK):

@@ -53,6 +53,12 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     ASuperUltraMegaPark* Park = World->SpawnActor<ASuperUltraMegaPark>(StaticClass(), Placement);
     if (!Park) return nullptr;
     Park->Layout.SourceManifestHash = Root->GetStringField(TEXT("source_sha256"));
+    // Another park (Crater Park, docs/CRATERPARK.md) names its own mesh folder and log tag, and may have no grind paths.
+    FString MeshRoot = TEXT("/Game/MegaPark/Meshes"), Tag = TEXT("MEGAPARK");
+    bool bRailsRequired = true;
+    Root->TryGetStringField(TEXT("mesh_root"), MeshRoot);
+    Root->TryGetStringField(TEXT("name"), Tag);
+    Root->TryGetBoolField(TEXT("rails_required"), bRailsRequired);
     int32 Meshes = 0, Missing = 0;
     for (const TCHAR* Kind : {TEXT("render"), TEXT("collision")})
     {
@@ -61,7 +67,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         {
             const TSharedPtr<FJsonObject> Entry = Value->AsObject();
             const FString Name = Entry->GetStringField(TEXT("name"));
-            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/MegaPark/Meshes/%s.%s"), *Name, *Name));
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *MeshRoot, *Name, *Name));
             if (!Mesh) { ++Missing; continue; }
             auto* C = NewObject<UStaticMeshComponent>(Park, *Name);
             C->SetStaticMesh(Mesh); C->SetMobility(EComponentMobility::Static); C->SetupAttachment(Park->GetRootComponent());
@@ -139,9 +145,10 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
     const TSharedPtr<FJsonObject> Start = Root->GetObjectField(TEXT("spawn"));
     Park->Layout.SpawnGround = JsonVector(Start->GetArrayField(TEXT("location_cm")));
     Park->Layout.SpawnYaw = Start->GetNumberField(TEXT("yaw_deg"));
-    UE_LOG(LogTemp, Display, TEXT("MEGAPARK placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees, %d props"),
-        *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Layout.Rails.Num(), Trees, Props);
-    Park->bGameplayReady = Missing == 0 && Meshes > 0 && !Park->Layout.Rails.IsEmpty() && Park->RegisteredRailCount == Park->Layout.Rails.Num();
+    UE_LOG(LogTemp, Display, TEXT("%s placed at %s yaw %.1f: %d meshes (%d not imported), %d rails, %d trees, %d props"),
+        *Tag, *Placement.GetLocation().ToString(), Placement.Rotator().Yaw, Meshes, Missing, Park->Layout.Rails.Num(), Trees, Props);
+    Park->bGameplayReady = Missing == 0 && Meshes > 0 && (!bRailsRequired || !Park->Layout.Rails.IsEmpty())
+        && Park->RegisteredRailCount == Park->Layout.Rails.Num();
     return Park;
 }
 

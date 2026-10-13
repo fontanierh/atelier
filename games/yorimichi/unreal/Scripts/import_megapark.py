@@ -23,6 +23,7 @@ MOSSY = {'0x2c70170a001d0133', '0x2c70170a001d0135', '0x2c70170a001d014f'}
 # Drawn from both sides they read as the hill there instead of a window into the park (docs/MEGAPARK.md, "Seam").
 NATURAL = MOSSY | {'0x2c70170a001d00aa', '0x2c70170a00040094'}
 LEVEL = ROOT + '/Maps/SuperUltraMegaPark'
+SEED = 'SM_MP_ImportSeed'   # the FBX in OUT/fbx that seeds new mesh assets (import_mesh)
 E = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
@@ -218,7 +219,7 @@ def materials(report):
 
 def import_mesh(path, name, dest=None, seed=None, vertex_colors=False):
     """Faithful FBX import; another park may supply its own destination and seed."""
-    dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx/SM_MP_ImportSeed.fbx'
+    dest = dest or ROOT+'/Meshes'; seed = seed or OUT/'fbx'/(SEED+'.fbx')
     asset = dest+'/'+name
     if not E.does_asset_exist(asset) and path.resolve() != seed.resolve():
         import_mesh(seed, name, dest, seed, vertex_colors)

@@ -66,7 +66,7 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 - the hidden [tree house](world/regions/treehouse/README.md) in the west hillside canopy
   ([docs/TREEHOUSE_PLAN.md](docs/TREEHOUSE_PLAN.md));
 - the [Super Ultra Mega Park](docs/MEGAPARK.md) in the western foothills, reached by a forest trail or the zeppelin.
-- the [volcano](docs/VOLCANO.md) north of the city, whose level caldera is kept open for a future park.
+- the [volcano](docs/VOLCANO.md) north of the city, with [Crater Park](docs/CRATERPARK.md) on its caldera floor.
 
 You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), on the
 [zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and
@@ -123,7 +123,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 
 | Area | Docs |
 |---|---|
-| World | [WORLD_MAP](docs/WORLD_MAP.md), [VOLCANO](docs/VOLCANO.md), [TREEHOUSE_PLAN](docs/TREEHOUSE_PLAN.md), [MEGAPARK](docs/MEGAPARK.md), [CAMERA](docs/CAMERA.md), [DESKTOP_PERFORMANCE](docs/DESKTOP_PERFORMANCE.md) |
+| World | [WORLD_MAP](docs/WORLD_MAP.md), [VOLCANO](docs/VOLCANO.md), [CRATERPARK](docs/CRATERPARK.md), [TREEHOUSE_PLAN](docs/TREEHOUSE_PLAN.md), [MEGAPARK](docs/MEGAPARK.md), [CAMERA](docs/CAMERA.md), [DESKTOP_PERFORMANCE](docs/DESKTOP_PERFORMANCE.md) |
 | Play | [CONTROLLER_CONTROLS](docs/CONTROLLER_CONTROLS.md), [SKATE](docs/SKATE.md), [FOOTSTEPS](docs/FOOTSTEPS.md), [LIVE_WORKSHOP](docs/LIVE_WORKSHOP.md) |
 | Combat | [SWORD_COMBAT](docs/SWORD_COMBAT.md), [FOX_HUNTER_COMBAT](docs/FOX_HUNTER_COMBAT.md), [COMBAT_FEEDBACK](docs/COMBAT_FEEDBACK.md) |
 | Multiplayer | [Implementation, verified scope and test handoff](docs/MULTIPLAYER.md) |

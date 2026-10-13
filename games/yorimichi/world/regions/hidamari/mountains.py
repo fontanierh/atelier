@@ -7,6 +7,7 @@ import math
 from functools import lru_cache
 import numpy as np
 from megapark import placement as megapark
+from craterpark import placement as craterpark
 
 from belmonte import layout as belmonte
 from belmonte.layout import SOUTH_JOIN
@@ -235,8 +236,10 @@ def natural_height(x,y):
 def raw_height(x,y,base,shoulder=None):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
     north=np.maximum(y-500,0)
-    # The Mega Park sits in the western foothills; the relief around it is eased to meet its edges.
+    # The Mega Park sits in the western foothills and Crater Park on the caldera floor; the relief around each is eased
+    # to meet its edges.
     target=megapark.terrain(x,y,natural_height(x,y),natural_height)
+    target=craterpark.terrain(x,y,target,natural_height)
     leave=smooth(north/180)
     if shoulder is not None:
         # West of the city the far hills' shoulder (`shoulder`, the base at y=500) stood 40-60 m over the apron, a trough

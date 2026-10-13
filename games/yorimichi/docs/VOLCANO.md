@@ -27,7 +27,7 @@ The floor is sized for [Crater Park](https://github.com/fontanierh/crater-skate-
   the crest.
 - **Height:** it rises 80 m above its own lowest ground, so its top stays about 130 m below the lowest crest.
 - **Ground:** it is a cut block of hillside whose west side stands up to 60 m above the floor. Like the Mega Park, it
-  needs a terrain stamp: the floor lowered under it and slopes up its high sides.
+  has a terrain stamp: the floor lowered under it and slopes up its high sides ([CRATERPARK.md](CRATERPARK.md)).
 
 The wall steepens toward the crest. Its foot moves in and out by up to 12 m in collapse scallops.
 

@@ -614,6 +614,9 @@ void AJapanWorld::Load()
     // The Mega Park in the western foothills: the original meshes, riding collision and grind paths, placed (docs/MEGAPARK.md).
     const auto* MegaPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("megapark/park.json")));
     if (!MegaPark || !MegaPark->bGameplayReady) Incomplete.Add(TEXT("mega park"));
+    // Crater Park on the volcano's caldera floor, placed by the same actor (docs/CRATERPARK.md).
+    const auto* CraterPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/park.json")));
+    if (!CraterPark || !CraterPark->bGameplayReady) Incomplete.Add(TEXT("crater park"));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
     const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
