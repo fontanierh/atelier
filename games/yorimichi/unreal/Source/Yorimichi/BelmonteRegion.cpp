@@ -65,7 +65,11 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     Region->SetActorLocation(Vector(Data->GetArrayField(TEXT("origin_cm"))));
     Region->GetRootComponent()->SetMobility(EComponentMobility::Static);
     Region->Tags.Add(TEXT("belmonte"));
-    int32 Missing = 0;
+    int32 Missing = 0, Outside = 0;
+    // The district's extent in metres (world X, north Y), with a 100 m margin.
+    const auto& B = Data->GetArrayField(TEXT("bounds_m"));
+    const FBox2D Bounds(FVector2D(B[0]->AsNumber() - 100., B[1]->AsNumber() - 100.), FVector2D(B[2]->AsNumber() + 100., B[3]->AsNumber() + 100.));
+    auto Inside = [&Bounds](const FVector& P) { return Bounds.IsInside(FVector2D(P.X / 100., -P.Y / 100.)); };
     for (const auto& Value : Data->GetArrayField(TEXT("groups")))
     {
         const auto Entry = Value->AsObject();
@@ -112,6 +116,9 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
         for (const auto& Item : Entry->GetArrayField(TEXT("transforms")))
         {
             FTransform Placement = Transform(Item->AsObject());
+            // The source scene's distant hill villages lie kilometres outside the district,
+            // where no ground carries them: they would hang in the sky over the whole map.
+            if (!Plant && !Inside(Region->GetActorLocation() + Placement.GetLocation())) { ++Outside; continue; }
             // Plant components belong to JapanWorld, so the normal tree settings
             // and LOD swaps apply to this district too.
             if (Plant) Placement.AddToTranslation(Region->GetActorLocation());
@@ -142,8 +149,8 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
         Sign->RegisterComponent();
     }
     Region->bGameplayReady = Missing == 0 && Region->SceneryInstances > 0;
-    UE_LOG(LogTemp, Display, TEXT("BELMONTE ready=%d scenery=%d plants=%d missing=%d at %s"),
-           Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, *Region->GetActorLocation().ToString());
+    UE_LOG(LogTemp, Display, TEXT("BELMONTE ready=%d scenery=%d plants=%d missing=%d outside=%d at %s"),
+           Region->bGameplayReady, Region->SceneryInstances, Region->PlantInstances, Missing, Outside, *Region->GetActorLocation().ToString());
     return Region;
 }
 
