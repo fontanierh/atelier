@@ -406,6 +406,29 @@ void AJapanWorld::Load()
                 H->bAutoRebuildTreeOnInstanceChanges = true;
                 TotalInstances += Xs.Num(); Groups.Add(H);
                 if (bBackdrop) BackdropGroups.Add(H);
+                // Every in-map tree is one instanced group per species across the whole map, so the engine cannot leave
+                // distant trees out of the shadow pass on its own: they made the forest's shadows its largest cost. A
+                // hidden twin casts the group's shadow instead, and its per-instance cull distance (measured from the
+                // camera in shadow passes too) ends tree shadows at the menu's tree shadow distance.
+                if (bTree && !bBackdrop)
+                {
+                    UHierarchicalInstancedStaticMeshComponent* S = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+                    S->SetStaticMesh(Mesh); S->SetupAttachment(RootComponent);
+                    S->SetMobility(EComponentMobility::Static);
+                    S->SetCanEverAffectNavigation(false);
+                    S->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                    S->SetHiddenInGame(true); S->bCastHiddenShadow = true; S->SetCastShadow(true);
+                    S->bAffectDistanceFieldLighting = false;
+                    if (Fade != JapanSeeThrough::FadeSolid) S->SetCustomPrimitiveDataFloat(0, float(Fade));
+                    S->SetWorldPositionOffsetDisableDistance(18000);
+                    S->bAutoRebuildTreeOnInstanceChanges = false;
+                    S->RegisterComponent();
+                    S->AddInstances(Xs, false, false, false);
+                    S->BuildTreeIfOutdated(true, true);
+                    S->bAutoRebuildTreeOnInstanceChanges = true;
+                    H->SetCastShadow(false);
+                    ShadowTwins.Add(S);
+                }
             };
             AddGroup(Near, false); AddGroup(Distant, true);
         }
@@ -744,9 +767,10 @@ void AJapanWorld::ApplyGroupDiagnostics()
            *Wanted,Hidden,Groups.Num());
 }
 
-void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail)
+void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres)
 {
-    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail)) return;
+    if (!bLoaded || (AppliedPerformanceMode == int32(bPerformance) && AppliedTreeSway == TreeSwayMetres && AppliedForestDetail == ForestDetail &&
+        AppliedTreeShadow == TreeShadowMetres)) return;
     for (auto* Group : Groups)
     {
         const FString Name = Group->GetStaticMesh()->GetName();
@@ -763,7 +787,15 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
     }
     AppliedPerformanceMode = int32(bPerformance);
     AppliedTreeSway = TreeSwayMetres;
+    // The shadow twins follow their visible groups' sway and detail, and end at the tree shadow distance.
+    for (auto* Twin : ShadowTwins)
+    {
+        Twin->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(TreeSwayMetres*100.f));
+        Twin->SetLODDistanceScale(ForestDetail);
+        Twin->SetCullDistances(FMath::RoundToInt(TreeShadowMetres*90.f),FMath::RoundToInt(TreeShadowMetres*100.f));
+    }
     AppliedForestDetail = ForestDetail;
+    AppliedTreeShadow = TreeShadowMetres;
 }
 
 void AJapanWorld::ApplyVolumetricFog(bool bOn, const FVolumetricFogLook& Look)

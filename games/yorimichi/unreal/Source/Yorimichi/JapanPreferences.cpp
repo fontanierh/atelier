@@ -181,6 +181,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("tree_sway"),TEXT("Tree sway distance (m)"),60.f,0.f,180.f,5.f},
         {TEXT("forest_detail"),TEXT("Forest detail distance (x)"),.4f,.25f,2.f,.05f},
+        {TEXT("tree_shadow"),TEXT("Tree shadow distance (m)"),80.f,20.f,300.f,5.f},
         // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
         // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
         // with long shadows, chosen in a live trial of five looks (build/yorimichi/scout/hidamari-light1). Its
@@ -459,7 +460,7 @@ void UJapanPreferences::Apply()
     for (TActorIterator<AJapanWorld> It(Owner->GetWorld()); It; ++It)
     {
         It->WindSpeed = Get(TEXT("wind"))*100.f;
-        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")),Get(TEXT("forest_detail")));
+        It->ApplyPerformanceSettings(PerformanceMode != 0,Get(TEXT("tree_sway")),Get(TEXT("forest_detail")),Get(TEXT("tree_shadow")));
         if (!It->ApplyTreeOptimization(Get(TEXT("tree_optimization")) > .5f,
             FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),Get(TEXT("tree_lod_distance"))) && It->bLoaded)
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
@@ -655,6 +656,7 @@ FString MainHint(const FString& Key)
         {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
         {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},
         {TEXT("show_fps"),TEXT("The frame rate in a corner of the screen.")},
+        {TEXT("tree_shadow"),TEXT("How far from the camera trees cast shadows; beyond it they cast none. Looking across the forest, tree shadows are the largest cost in the game: shorter is faster, longer darkens far forest floors. Shadows of everything else keep their own range.")},
         {TEXT("forest_detail"),TEXT("How far forest trees keep their full leaf detail before their simpler crowns take over, as a multiple of their own distances. The forest is the biggest cost in the game: against 1x, 0.6x saves about 3 ms a frame and 0.4x about 4.5 ms (1080p, M1 Max, spawn view). Trees near the road look the same; higher sharpens distant crowns.")},
         {TEXT("tree_sway"),TEXT("How far from the camera trees and bushes sway in the wind; beyond it they stand still. Cheap: 0 m and 180 m differ by about 0.5 ms a frame.")},
         {TEXT("goofy"),TEXT("Which foot leads on the skateboard: Regular is the left foot, Goofy the right.")},
