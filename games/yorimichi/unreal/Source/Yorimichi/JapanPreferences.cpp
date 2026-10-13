@@ -378,7 +378,7 @@ void UJapanPreferences::Apply()
     const bool Laptop = Get(TEXT("laptop")) > .5f;
     const int32 PerformanceMode = Laptop || Get(TEXT("performance")) > .5f ? 1 : 0;
     const bool Desktop = Get(TEXT("desktop")) > .5f;
-    const bool Light = Laptop || (Desktop && PerformanceMode);
+    const bool LightFrame = Laptop || (Desktop && PerformanceMode);
     const auto Set = [](const TCHAR* Name, float Value)
     {
         if (auto* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
@@ -409,10 +409,10 @@ void UJapanPreferences::Apply()
     // R11G11B10 retains HDR at half the scene-color bandwidth. Paired native
     // 1440p tests save ~1 ms in forest/harbor, with original resolution and TAA.
     // Keep FloatRGBA for the phone and full-quality mode; no saved setting changes.
-    Set(TEXT("r.SceneColorFormat"),Light ? 2.f : 4.f);
+    Set(TEXT("r.SceneColorFormat"),LightFrame ? 2.f : 4.f);
     // UE 5.8's lighter input filter retains anti-ghosting. Native 1440p paired
     // captures save ~0.3 ms; sprint/double-jump frames retain character edges.
-    Set(TEXT("r.TemporalAA.Quality"),Light ? 3.f : 2.f);
+    Set(TEXT("r.TemporalAA.Quality"),LightFrame ? 3.f : 2.f);
     const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0);
     if (AppliedPerformanceMode != ShadowProfile)
     {
