@@ -1,0 +1,41 @@
+{
+  "stage": "world-map-volcano-repaint",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/map/repaint_volcano.py",
+  "prompt": "Use case: precise-object-edit. This is a local correction to Yorimichi's hand-painted watercolour world map. Image1 is the edit target: the existing map, with the town and racecourse of Belmonte and its river at the top, the autumn foothills in the middle and the grid city by the sea below. Image2 is the same frame and scale with the middle band redrawn as an exact plan from the game: the volcano is now far larger and stands farther north-east. Repaint only that band, following Image2 for every position, outline and size. Paint one huge volcano whose summit is a wide caldera: a broad, nearly circular crater with a flat floor dusted with patchy snow, ringed by steep grey rock walls and a broken crest with three small spires. Long white snow gullies radiate down its flanks from the crest; between them grey volcanic rock gives way lower down to the same autumn forest (orange, gold and dark green) as the rest of the map. The map is seen from high above and its north is compressed, so the volcano reads as a wide, low bird's-eye shape, exactly as wide and as tall as in Image2. Remove the old small snow-capped volcano west of it: that ground is now a forested, rocky shoulder of the big volcano. Keep Image1's framing, watercolour style, colours and paper texture. Keep Belmonte, its river, racecourse and town, the city grid, the coast, the sea, the lake and the canyon park in the western foothills exactly as they are. Top-down map view, same scale, no text, pins, labels, frame or legend. No second volcano.",
+  "prompt_sha256": "1fe1642270fc432bb92959fc74d4223ff9f42a68839cc55f7dc144fc5ede2d65",
+  "reference_files": {
+    "build/yorimichi/map/volcano_repaint/current-crop.png": "3b85b71b7769f207366cc3ce4e04e6ef081cdac1bcb21b012981fd7db85badde",
+    "build/yorimichi/map/volcano_repaint/layout-crop.png": "b97c53d54477be565b3e00cd2f87a2a7cda132afa7055f1f78900b6f91a94d03"
+  },
+  "crop_box": [
+    0,
+    180,
+    2085,
+    1570
+  ],
+  "started_at": "2026-10-13T20:16:01.688959+00:00",
+  "status": "done",
+  "usage": {
+    "input_tokens": 2537,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 377
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3909
+  },
+  "output": {
+    "build/yorimichi/map/volcano_repaint/generated.png": "5667b83793e82682d15c7ac6b1f54c5a3dd3b24098a949f6abba2208e311a9c8"
+  },
+  "elapsed_seconds": 41.8,
+  "hashes": "Input file hashes; output is the returned PNG. The registered crop is the committed sheet.",
+  "finished_at": "2026-10-13T20:16:43.490361+00:00"
+}

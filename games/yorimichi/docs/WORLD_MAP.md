@@ -112,6 +112,7 @@ from data:
 | `world_map_provenance.json` | Model, prompt and inputs, with each earlier version's record nested under `parent` |
 | `island_repaint.provenance.json` | The ledger of the south-west island repaint call |
 | `sunset_pier_repaint.provenance.json` | The shared paid-call ledger for the enlarged pier and moved island |
+| `volcano_repaint.provenance.json` | The ledger of the enlarged volcano's repaint ([`repaint_volcano.py`](../world/map/repaint_volcano.py)) |
 
 `build_map.py` uses the painted sheet only while its bounds and knots match the current ones exactly; otherwise it
 falls back to the generated sheet. Never stretch old artwork over a changed world: every pin would move off its
