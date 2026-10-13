@@ -45,3 +45,42 @@ def test_explicit_rendered_limits_reach_only_the_guarded_worker(tmp_path, monkey
     assert observed['options']['kind'] == 'game'
     assert observed['options']['track_tree'] is True
     assert observed['options']['timeout'] == 330
+
+
+def test_every_session_aggregate_limit_is_accepted_by_the_monitor(tmp_path, monkeypatch):
+    from atelier.safety import guarded
+    session = session_module()
+    choices = []
+    parse = session.argparse.ArgumentParser.parse_args
+
+    def record_choices(parser, *args, **kwargs):
+        for action in parser._actions:
+            if '--aggregate-memory-gib' in action.option_strings:
+                choices.extend(action.choices)
+        return parse(parser, *args, **kwargs)
+
+    monkeypatch.setattr(session.argparse.ArgumentParser, 'parse_args', record_choices)
+    monkeypatch.setattr(guarded, 'run', lambda *args, **kwargs: 0)
+    monkeypatch.setattr(sys, 'argv', ['review_network_session.py', '--listen', '--render-view', 'guest',
+                                    '--output', str(tmp_path / 'run')])
+    assert session.main() == 0
+    assert choices
+
+    path = Path(__file__).resolve().parents[1] / 'tools/network_aggregate_guard.py'
+    spec = importlib.util.spec_from_file_location('network_aggregate_limit_review', path)
+    monitor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(monitor)
+    accepted = []
+
+    def record_limit(pid, started, report, duration, stop, limit):
+        accepted.append(limit)
+        return 0
+
+    monkeypatch.setattr(monitor, 'run', record_limit)
+    for limit in choices:
+        monkeypatch.setattr(sys, 'argv', ['network_aggregate_guard.py', '--pid', '1', '--expected-start', '1',
+                                        '--report', str(tmp_path / 'health.json'),
+                                        '--stop-file', str(tmp_path / 'stop'), '--duration', '1',
+                                        '--limit-gib', str(limit)])
+        assert monitor.main() == 0
+    assert accepted == choices

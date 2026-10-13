@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--stop-file', type=Path, required=True)
     parser.add_argument('--duration', type=float, required=True)
-    parser.add_argument('--limit-gib', type=int, choices=(10, 14, 16), default=10)
+    parser.add_argument('--limit-gib', type=int, choices=(10, 14, 16, 18), default=10)
     args = parser.parse_args()
     return run(args.pid, args.expected_start, args.report, args.duration, args.stop_file, args.limit_gib)
 
