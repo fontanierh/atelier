@@ -12,7 +12,8 @@ Y_KNOTS=[[np.float64(-730.0), -650.0], [-461.31835938, -470.8203125], [-375.8007
 # The old knots remain exact: only the new northern district and eastern railway
 # corridor extend the projection. Existing city and island markers do not move.
 X_KNOTS += [[2800., 1540.]]
-Y_KNOTS += [[3300., 740.], [3900., 850.], [5300., 1090.]]
+# Belmonte's knots follow its move north (belmonte/layout.py NORTH_SHIFT, 600 m).
+Y_KNOTS += [[3900., 740.], [4500., 850.], [5900., 1090.]]
 BOUNDS=[-400.,-650.,1685.,1120.]
 def project(value,knots):
     k=np.asarray(knots,float);return np.interp(value,k[:,0],k[:,1])

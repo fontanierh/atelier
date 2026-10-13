@@ -366,8 +366,12 @@ def generate():
     # Batch heightfield evaluation keeps the denser forest cheap to regenerate.
     forest_rng=np.random.default_rng(743)
     forest_xy=forest_rng.uniform([-680,370],[2380,2940],size=(155000,2))
+    # The foothills reach on to Belmonte's join (mountains.BOUNDS); their own stream plants them at the same density.
+    join=mountains.BOUNDS[3]
+    north_rng=np.random.default_rng(747)
+    north_xy=north_rng.uniform([-680,2940],[2380,join-60],size=(round(155000*(join-60-2940)/2570),2))
     seam_rng=np.random.default_rng(745)
-    forest_xy=np.concatenate([forest_xy,seam_rng.uniform([-650,2940],[1750,3000],size=(2840,2))])
+    forest_xy=np.concatenate([forest_xy,north_xy,seam_rng.uniform([-650,join-60],[1750,join],size=(2840,2))])
     forest_z=north_height(forest_xy[:,0],forest_xy[:,1])
     forest_snow=mountains.snow(forest_xy[:,0],forest_xy[:,1],north_base_height)
     forest_distance=trail_distance(forest_xy[:,0],forest_xy[:,1])
@@ -375,15 +379,19 @@ def generate():
     forest_kinds=kinds(forest_xy[:,0],forest_xy[:,1],forest_z)
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
     forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
-    ceilings=330+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60
-    forest_altitude=mountains.smooth((ceilings-forest_z)/100)
+    # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera is left open for its park.
+    ceilings=mountains.lifted(330)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
+    forest_altitude=mountains.smooth((ceilings-forest_z)/(100*mountains.LIFT))
+    _,_,forest_radius,forest_angle=mountains.polar(forest_xy[:,0],forest_xy[:,1])
+    forest_altitude*=forest_radius>mountains.rim_radius(forest_angle)
+    tree_top=float(mountains.lifted(400))
     for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
             if min(abs(x-c) for c in ROAD_X)<10:continue
             if any(abs(x-b['position'][0])<b['width']/2+10 and abs(y-b['position'][1])<b['depth']/2+10 for b in buildings):continue
         z=float(sample_z)
-        if z<2 or z>400 or cover>.3 or distance<7:continue
+        if z<2 or z>tree_top or cover>.3 or distance<7:continue
         density=.90+.08*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
@@ -399,15 +407,18 @@ def generate():
     rock_rng=np.random.default_rng(746)
     # Clustered stone outcrops, with scree between them. Their independent
     # stream leaves all authored tree and trail draws unchanged.
-    angles=rock_rng.uniform(0,math.tau,1800)
-    radii=np.concatenate((rock_rng.uniform(110,300,400),rock_rng.uniform(300,650,1400)))
-    centres=np.stack((550+radii*np.cos(angles),1930+radii*np.sin(angles)),axis=-1)
+    # Outcrops cover the flank from the crest down at the same density on the larger cone; the caldera stays clear.
+    inner,middle,outer=(float(mountains.stretch(r)) for r in (110,300,650))
+    angles=rock_rng.uniform(0,math.tau,3330)
+    radii=np.concatenate((rock_rng.uniform(inner,middle,1020),rock_rng.uniform(middle,outer,2310)))
+    centres=np.stack((mountains.VOLCANO[0]+radii*np.cos(angles),mountains.VOLCANO[1]+radii*np.sin(angles)),axis=-1)
     rock_xy=(np.repeat(centres,6,axis=0)+rock_rng.normal(0,5.,size=(len(centres)*6,2)))
     rx,ry=rock_xy[:,0],rock_xy[:,1]
     rz=north_height(rx,ry);cover=mountains.snow(rx,ry,north_base_height)
     slope=np.hypot(north_height(rx+1,ry)-rz,north_height(rx,ry+1)-rz)
-    radius=np.hypot(rx-550,ry-1930)
-    keep=(radius>100)&(radius<650)&(rz>250)&(cover<np.where(radius<300,.4,.25))&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05)
+    _,_,radius,angle=mountains.polar(rx,ry)
+    keep=((radius>mountains.rim_radius(angle)+5)&(radius<outer)&(rz>mountains.lifted(250))
+          &(cover<np.where(radius<middle,.4,.25))&(slope<1.)&(mountains.noise(rx,ry,55,98)>.05))
     keep&=mountains.trail_distance(rx,ry)>8
     for x,y,z,gradient in zip(rx[keep],ry[keep],rz[keep],slope[keep]):
         scale=float(rock_rng.uniform(.35,1.45))
@@ -421,7 +432,7 @@ def generate():
         scale=float(rock_rng.uniform(1.2,1.8))
         put('HD_NorthRockC',float(x),float(y),float(z)-(.08+.5*gradient*1.3)*scale,
             yaw=float(rock_rng.uniform(0,360)),scale=scale)
-    shrubs=keep&(radius>300)&(rz<370)&(slope<.55)&(rock_rng.random(len(rx))<.65)
+    shrubs=keep&(radius>middle)&(rz<mountains.lifted(370))&(slope<.55)&(rock_rng.random(len(rx))<.65)
     for x,y,z in zip(rx[shrubs],ry[shrubs],rz[shrubs]):
         for _ in range(3):
             px=float(x+rock_rng.uniform(-2.5,2.5));py=float(y+rock_rng.uniform(-2.5,2.5))
@@ -613,15 +624,25 @@ def backdrop_height(x,y):
     i=fx.astype(int);j=fy.astype(int);u=fx-i;v=fy-j
     return (h[j,i]*(1-u)+h[j,i+1]*u)*(1-v)+(h[j+1,i]*(1-u)+h[j+1,i+1]*u)*v
 
+def far_height(x,y):
+    """The far hills up to y=3200, where their grid ends, and Belmonte's country (belmonte/terrain.py) beyond."""
+    x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
+    base=np.array(backdrop_height(x,y),dtype=float)
+    beyond=y>3200
+    if beyond.any():
+        from belmonte.terrain import country_height
+        base[beyond]=country_height(x[beyond],y[beyond])
+    return base
+
 def north_base_height(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
-    base=backdrop_height(x,y)
+    base=far_height(x,y)
     city_edge=mountains.smooth((x-280)/60)*mountains.smooth((1440-x)/60)
     return base+(height(x,500)-backdrop_height(x,500))*city_edge*mountains.smooth((800-y)/300)
 
 def north_surface(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,float),np.asarray(y,float))
-    base=backdrop_height(x,y)
+    base=far_height(x,y)
     z=mountains.height(x,y,north_base_height)
     # Existing city terrain extends through y=500.
     city=(x>=300)&(x<=1420)&(y<=500)&(y>=-300)

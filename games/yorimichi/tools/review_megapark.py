@@ -38,7 +38,7 @@ SHOTS=[('overview',(62000,-37000,39000),(32500,-65500,10500),65.),('upper',(3300
 if args.island:
  # Island metres. A camera given as ('ground', x, y, h) sits h metres above the highest surface under it.
  top=placement.native_to_island([330,132.006,-710]); deck=island(top[0],top[1],top[2]+1.7)
- park=island(-150,1300,110); summit=island(550,1930,480)
+ park=island(-150,1300,110); summit=island(850,2400,650)
  zone={z['key']:z for z in json.loads((yori.OUT/'map'/'map.json').read_text())['zones']}
  def eye(key):return island(zone[key]['x'],zone[key]['y'],zone[key]['z']+1.7)
  SHOTS=[('overview',island(-560,1120,280),island(-130,1320,105),65.),

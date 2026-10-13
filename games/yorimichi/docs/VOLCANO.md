@@ -1,0 +1,51 @@
+# The volcano
+
+The volcano north of Hidamari is a broad cone with a level caldera at its top, built to hold a park. Its shape,
+snow, rock and ground colours come from [`hidamari/mountains.py`](../world/regions/hidamari/mountains.py). Trees
+and rocks are planted by [`hidamari/layout.py`](../world/regions/hidamari/layout.py), and pine bands by
+[`forest/ecotone.py`](../world/regions/forest/ecotone.py).
+
+## Shape
+
+All values are Blender metres (x east, y north).
+
+| | Value | Constant |
+|---|---|---|
+| Centre | (850, 2400) | `VOLCANO` |
+| Base radius (where the cone meets the foothills) | 1480 m | `BASE_RADIUS` |
+| Crest radius (it wanders by about 35 m) | 425 m | `RIM_RADIUS` |
+| Crest height | 690–720 m; three spires reach 810 m | `CREST` |
+| Caldera floor | level at 485 m (±1 m), 570 m across | `FLOOR_RADIUS`, `caldera_floor()` |
+| Floor to crest | 200 m (at least 202 m all round) | `DEPTH` |
+
+The floor holds a 340 × 390 m footprint at any heading, and the crest stands more than 160 m above it all the way
+round. `test_northern_landscape.py` checks both. The wall steepens toward the crest. Its foot moves in and out by up to
+12 m in collapse scallops.
+
+The former, smaller summit at (550, 1930) stands on as the volcano's western shoulder. Within 1150 m of the Mega Park,
+the ground is whichever is higher, the former cone or the new one. So the ground round the park (and its terrain
+stamp, `megapark/placement.py`) is unchanged.
+
+## Snow, rock and trees
+
+The larger cone keeps the old one's look at the same share of its slope:
+- `stretch(r)` maps a radius on the old cone (rim 95 m, base 1170 m) to the same place on this one.
+- `lifted(z)` scales a height above the apron by `LIFT` (1.35).
+
+The tree line, pine band, exposed rock, snow line and outcrop band all use these two helpers.
+
+- **Snow** runs down 40 seeded gullies from the crest and lies in patches on the caldera floor, with drifts at the
+  wall's foot. The crest stays bare. The mask (`north_snow.png`, 1024² at 2.5 m) also records the rock band and the
+  Belmonte join for the ground material (`unreal/Scripts/mountain_material.py`).
+- **Trees** stop at the lifted tree line and stay out of the caldera, which is left open for its park.
+- **Outcrops** and scree cover the flank from the crest down to about 970 m out.
+
+## Belmonte
+
+The valley moved 600 m north to keep its distance from the volcano's northern foot (`belmonte/layout.py`
+`NORTH_SHIFT`). The foothills now reach its southern join at `SOUTH_JOIN` (y = 3600). Along Belmonte's apron, the
+volcano's foot runs on into the collar rather than easing back to the far hills.
+
+The country north of the far hills sinks under the foothills, as the far hills do. The country runs out to sea 600 m
+further north too. The world map's Belmonte knots moved with it (`map/map_projection.py`), so the map uses the
+generated sheet until the painted one is redone.

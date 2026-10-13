@@ -32,7 +32,7 @@ TRACE = [(-56.0, 1325.4), (-68.7, 1327.3), (-78.3, 1324.0), (-91.3, 1316.5), (-1
 SAMURAI = (np.array([4.3, 1262.9, 124.6]), np.array([-.91, .41]))       # the billboard's centre and facing
 ONI = (np.array([-189.2, 1390.7, 69.3]), np.array([-154., 1411.1, 69.3]), np.array([.5, -.87]))
 SIGN = np.array([14.7, 1333.5, 145.7])                                  # 寄り道, facing west over the deck
-SUMMIT = np.array([550., 1930., 480.])
+SUMMIT = np.array([850., 2400., 650.])  # the caldera's crest (hidamari/mountains.py VOLCANO)
 
 
 @lru_cache(maxsize=1)

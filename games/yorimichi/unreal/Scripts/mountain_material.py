@@ -22,7 +22,8 @@ def material():
     rock=e.load_asset('/Game/Japan/Textures/T_VolcanicRock');assert rock
     rock.set_editor_property('srgb',True);rock.set_editor_property('max_texture_size',2048);e.save_loaded_asset(rock)
     snow_meta=json.loads((yori.OUT/'hidamari/north_snow.json').read_text())
-    assert snow_meta['linear'] and snow_meta['size']==[1024,1024] and snow_meta['step_m']==2.
+    assert snow_meta['linear'] and snow_meta['size']==[1024,1024]
+    step=snow_meta['step_m']
     task=unreal.AssetImportTask();task.filename=str(yori.OUT/'hidamari/north_snow.png')
     task.destination_path='/Game/Japan/Textures';task.destination_name='T_NorthSnowMask'
     task.automated=True;task.replace_existing=True;task.save=True
@@ -35,7 +36,7 @@ def material():
     snow_texture.set_editor_property('address_y',unreal.TextureAddress.TA_CLAMP)
     snow_texture.set_editor_property('never_stream',True);e.save_loaded_asset(snow_texture)
     x0,y0,_,_=snow_meta['bounds']
-    snow_code=(f'float2 snowUV=(float2(P.x,-P.y)/100.-float2({x0},{y0}))/2.;'
+    snow_code=(f'float2 snowUV=(float2(P.x,-P.y)/100.-float2({x0},{y0}))/{step};'
                'snowUV=(snowUV+.5)/1024.;'
                'float mip=clamp(log2(max(1e-6,max(max(abs(ddx(snowUV)).x,abs(ddy(snowUV)).x),'
                'max(abs(ddx(snowUV)).y,abs(ddy(snowUV)).y)))*1024.),0.,3.);'
@@ -44,6 +45,12 @@ def material():
                 'float edgeNoise=clamp(dot(Texture2DSampleLevel(Tex,TexSampler,P.xy/2600.+.61,6.5).rgb,snowLum)/.092-1.,-1.,1.);'
                 'float edge=lerp(5.,1.5,smoothstep(50000.,200000.,D));'
                 'float snowMask=saturate((snowAlpha-.5+edgeNoise*.15)*edge+.5);')
+    # The volcano's exposed-rock band and the join to Belmonte's palette, in centimetres (hidamari/mountains.py).
+    (vx,vy),(r0,r1),(p0,p1),join=snow_meta['volcano_m'],snow_meta['rock_radius_m'],snow_meta['rock_prominence_m'],snow_meta['south_join_m']
+    rock_band=(f'float join=smoothstep({(join-420)*100:.0f}.,{join*100:.0f}.,-P.y);'
+               'float prominence=P.z-(4700.+max(-P.y-50000.,0)*.020);'
+               f'float radius=length(P.xy-float2({vx*100:.0f}.,{-vy*100:.0f}.));'
+               f'float high=smoothstep({p0*100:.0f}.,{p1*100:.0f}.,prominence)*(1-smoothstep({r0*100:.0f}.,{r1*100:.0f}.,radius))*(1-join);')
     vc=l.create_material_expression(m,unreal.MaterialExpressionVertexColor,-500,0)
     depth=l.create_material_expression(m,unreal.MaterialExpressionPixelDepth,-500,200)
     c=l.create_material_expression(m,unreal.MaterialExpressionCustom,-100,0)
@@ -69,10 +76,7 @@ float3 fine=Texture2DSample(Tex,TexSampler,fineP.yz).rgb*w.x
 float gFine=clamp(dot(fine,lum)/.092,.35,1.8);
 float distanceBlend=smoothstep(12000.,90000.,D);
 float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBlend),.45,1.6);
-float join=smoothstep(258000.,300000.,-P.y);
-float prominence=P.z-(4700.+max(-P.y-50000.,0)*.020);
-float radius=length(P.xy-float2(55000.,-193000.));
-float high=smoothstep(13000.,25000.,prominence)*(1-smoothstep(94000.,112000.,radius))*(1-join);
+'''+rock_band+'''
 '''+ground_grain.code('Ground','GroundSampler','P')+'''
 float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
@@ -103,11 +107,7 @@ return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     # woodland/collar joins, and snow retains its existing physical lighting.
     ambient=l.create_material_expression(m,unreal.MaterialExpressionCustom,200,150)
     ambient.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    ambient.set_editor_property('code',snow_code+'''
-float join=smoothstep(258000.,300000.,-P.y);
-float prominence=P.z-(4700.+max(-P.y-50000.,0)*.020);
-float radius=length(P.xy-float2(55000.,-193000.));
-float high=smoothstep(13000.,25000.,prominence)*(1-smoothstep(94000.,112000.,radius))*(1-join);
+    ambient.set_editor_property('code',snow_code+rock_band+'''
 float bounce=dot(Base,float3(.299,.587,.114))*.25*high*(1-snowMask)*(1-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
 return float3(bounce,bounce,bounce);''')
     inputs=[]

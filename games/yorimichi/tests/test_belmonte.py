@@ -115,23 +115,31 @@ class Terrain(unittest.TestCase):
             expected = source.terrain().height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             np.testing.assert_allclose(actual, expected, atol=.002)
         outside = source.Surface(source.triangles(yori.OUT / 'belmonte/glb/SM_BM_NorthCountry.glb'))
-        for x, y in [(np.full(61, terrain.OUTER[0]), np.linspace(3200., terrain.OUTER[3], 61)),
-                     (np.full(61, terrain.OUTER[2]), np.linspace(3200., terrain.OUTER[3], 61)),
+        for x, y in [(np.full(61, terrain.OUTER[0]), np.linspace(terrain.OUTER[1], terrain.OUTER[3], 61)),
+                     (np.full(61, terrain.OUTER[2]), np.linspace(terrain.OUTER[1], terrain.OUTER[3], 61)),
                      (np.linspace(terrain.OUTER[0], terrain.OUTER[2], 61), np.full(61, terrain.OUTER[3]))]:
             a = mesh.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             b = outside.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
             np.testing.assert_allclose(a, b, atol=.002)
 
-    def test_country_restores_only_the_lowered_side_columns(self):
+    def test_country_sinks_under_the_foothills_north_of_the_far_hills(self):
         path = yori.OUT / 'belmonte/glb/SM_BM_NorthCountry.glb'
         if not path.is_file():
-            self.skipTest('Generated side bridges checked after world.belmonte')
+            self.skipTest('Generated country checked after world.belmonte')
         mesh = source.Surface(source.triangles(path))
-        x = np.array([terrain.OUTER[0] - 10., terrain.OUTER[2] + 10.])
-        y = np.array([3100., 3100.])
-        z = mesh.height(x - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
-        np.testing.assert_allclose(z, terrain.old_height(x, y), atol=.002)
+        y = (3200. + L.SOUTH_JOIN) / 2
+        beside = mesh.height(-1500. - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
+        np.testing.assert_allclose(beside, terrain.country_height(-1500., y), atol=.002)
+        under = mesh.height(1000. - L.ORIGIN[0], y - L.ORIGIN[1]) + L.ORIGIN[2]
+        self.assertLess(float(under), float(H.north_height(1000., y)) - 20.)
+        # South of the far hills' last row the far hills own the ground, as before.
         self.assertTrue(np.isnan(mesh.height(-1500. - L.ORIGIN[0], 3100. - L.ORIGIN[1])))
+
+    def test_the_valley_keeps_clear_of_the_volcano(self):
+        from hidamari import mountains as M
+        corners = np.array([(L.BOUNDS[0], L.BOUNDS[1]), (L.BOUNDS[2], L.BOUNDS[1])])
+        self.assertGreater(float(np.hypot(*(corners - M.VOLCANO).T).min()), M.BASE_RADIUS)
+        self.assertEqual(M.BOUNDS[3], L.SOUTH_JOIN)
 
     def test_grid_sampler_follows_exported_triangle_diagonal(self):
         z = np.array([[0., 0.], [0., 10.]])

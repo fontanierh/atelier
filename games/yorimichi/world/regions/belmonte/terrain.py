@@ -7,7 +7,9 @@ from hidamari import layout as H
 from hippodrome.build import Mesh
 
 OUTER = (L.BOUNDS[0] - L.APRON, L.SOUTH_JOIN, L.BOUNDS[2] + L.APRON, L.BOUNDS[3] + L.APRON)
-COUNTRY = (-3200., L.SOUTH_JOIN, 3200., 6500.)
+# The country runs out to sea NORTH_SHIFT metres further north than it first did, keeping its distance from the valley.
+SEA = 6500. + L.NORTH_SHIFT
+COUNTRY = (-3200., L.SOUTH_JOIN, 3200., SEA)
 
 
 def grid_height(xs, ys, heights, x, y):
@@ -30,14 +32,14 @@ def old_height(x, y):
 def country_grid():
     xs = np.unique(np.r_[np.linspace(-3200., 3200., 96), OUTER[0], OUTER[2]])
     ys = np.unique(np.r_[L.SOUTH_JOIN, np.linspace(-3200., 3200., 96)[-3:],
-                         np.arange(3200., 6500., 50.), OUTER[3], 6500.])
+                         np.arange(3200., SEA, 50.), OUTER[3], SEA])
     x, y = np.meshgrid(xs, ys)
     edge = old_height(x, np.minimum(y, 3200.))
     # The authored valley keeps its relief. Its surroundings use the island's
     # own deterministic rolling hills and taper to sea beyond the visible zone.
     inland = H.mountains.smooth((x + 3000.) / 750.) * H.mountains.smooth((3000. - x) / 750.)
     land = (225. + 26. * H.mountains.noise(x, y, 550., 27)) * inland
-    land *= H.mountains.smooth((6500. - y) / 1000.)
+    land *= H.mountains.smooth((SEA - y) / 1000.)
     blend = H.mountains.smooth((y - 3200.) / 500.)
     z = edge * (1. - blend) + land * blend
     return xs, ys, z
@@ -100,6 +102,13 @@ def collar():
 def country():
     mesh = Mesh()
     xs, ys, z = country_grid()
+    # North of the far hills the foothills (hidamari/mountains.py) reach on to SOUTH_JOIN; as the far hills do, the
+    # country sinks under them so that their eased edges cover it.
+    x, y = np.meshgrid(xs, ys)
+    under = H.mountains.contains(x, y) & (y < L.SOUTH_JOIN)
+    if under.any():
+        z = z.copy()
+        z[under] = np.minimum(z[under], H.north_height(x[under], y[under]) - 25.)
     for j, (ay, by) in enumerate(zip(ys[:-1], ys[1:])):
         if ay < 3200.:
             continue  # Existing FarHills owns this band outside the fine collar.
@@ -110,50 +119,4 @@ def country():
                       np.array([bx, ay, z[j, i + 1]]) - L.ORIGIN,
                       np.array([bx, by, z[j + 1, i + 1]]) - L.ORIGIN,
                       np.array([ax, by, z[j + 1, i]]) - L.ORIGIN)
-    side_bridges(mesh)
     return mesh
-
-
-def side_bridges(mesh):
-    """Restore only the clipped coarse cells that slope under the collar rims."""
-    axis = np.linspace(-3200., 3200., 96)
-    z = H.backdrop_grid()
-    west = axis[np.searchsorted(axis, OUTER[0]) - 1]
-    east = axis[np.searchsorted(axis, OUTER[2])]
-    bottom = axis[np.searchsorted(axis, L.SOUTH_JOIN) - 1]
-
-    def clip(points, dimension, edge, greater):
-        result = []
-        for a, b in zip(points, points[1:] + points[:1]):
-            ain, bin = (a[dimension] >= edge, b[dimension] >= edge) if greater else (a[dimension] <= edge, b[dimension] <= edge)
-            if ain:
-                result.append(a)
-            if ain != bin:
-                t = (edge - a[dimension]) / (b[dimension] - a[dimension])
-                result.append(a + (b - a) * t)
-        return result
-
-    for low, high in [(west, OUTER[0]), (OUTER[2], east)]:
-        for j, (ay, by) in enumerate(zip(axis[:-1], axis[1:])):
-            if by <= bottom or ay >= 3200.:
-                continue
-            for i, (ax, bx) in enumerate(zip(axis[:-1], axis[1:])):
-                if bx <= low or ax >= high:
-                    continue
-                corners = [np.array([ax, ay, z[j, i]]), np.array([bx, ay, z[j, i + 1]]),
-                           np.array([bx, by, z[j + 1, i + 1]]), np.array([ax, by, z[j + 1, i]])]
-                for triangle in [(0, 1, 2), (0, 2, 3)]:
-                    points = [corners[k] for k in triangle]
-                    for dimension, edge, greater in [(0, low, True), (0, high, False), (1, bottom, True)]:
-                        if points:
-                            points = clip(points, dimension, edge, greater)
-                    for a, b, c in zip(points[:1] * max(0, len(points) - 2), points[1:-1], points[2:]):
-                        normal = np.cross(b - a, c - a)
-                        if np.linalg.norm(normal) < 1e-7:
-                            continue
-                        normal /= np.linalg.norm(normal)
-                        base = len(mesh.p)
-                        mesh.p.extend([a - L.ORIGIN, b - L.ORIGIN, c - L.ORIGIN])
-                        mesh.n.extend([normal] * 3)
-                        mesh.t.extend([(p[0] / 4., p[1] / 4.) for p in (a, b, c)])
-                        mesh.i.extend([base, base + 1, base + 2])

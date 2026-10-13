@@ -341,7 +341,7 @@ if C:
     stz = zone('station', f'{city} · station', roads, st[:2], hint='The far end of town'); stz['yaw'] = 180.0   # looking back down the street into town
     zones.append(stz)
     if NORTH:
-        zones.append(zone('foothills',f'{city} · northern foothills',C['north_trail'],C['north_trail'][-1][:2],face=(720,1930),hint='Wooded trail with a view of the snowcapped summit'))
+        zones.append(zone('foothills',f'{city} · northern foothills',C['north_trail'],C['north_trail'][-1][:2],face=CITY.mountains.VOLCANO,hint='Wooded trail with a view of the snowcapped summit'))
 
 if W.get('forest_lake'):
     lake=W['forest_lake'];safe=lake['safe_shore']

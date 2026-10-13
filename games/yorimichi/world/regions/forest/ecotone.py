@@ -1,11 +1,11 @@
 """Patchwise species blending across the northern foothills."""
 def tuscan_mask(x,y):
     from hidamari.mountains import noise,smooth
-    from belmonte.layout import BOUNDS
+    from belmonte.layout import BOUNDS,SOUTH_JOIN
     # A broad, warped interleave continues across both terrain producers.
     # Fade the lateral footprint too, so no rectangular species wall appears.
     warp=90*noise(x,y,180.,91)+35*noise(x,y,65.,92)
-    share=smooth((y+warp-2760.)/560.)
+    share=smooth((y+warp-(SOUTH_JOIN-240.))/560.)
     lateral=smooth((x-(BOUNDS[0]-300))/180)*smooth(((BOUNDS[2]+300)-x)/180)
     threshold=(noise(x,y,75.,84)+1)*.5
     return threshold<share*lateral
@@ -14,13 +14,14 @@ def tuscan_mask(x,y):
 
 def kinds(x,y,z):
     import numpy as np
-    from hidamari.mountains import noise,smooth
+    from hidamari.mountains import noise,smooth,polar,stretch,lifted,LIFT
     # Independent evergreen and autumn fields avoid contour rings. Fine
     # position noise interleaves crowns without changing either caller's RNG.
     ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.2*noise(x,y,2.3,83)
     hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.2*noise(x,y,2.3,84)
     kind=np.where(ever<-.33,'Pine',np.where(hue<.11,'Rust','Gold'))
-    altitude=smooth((z-170)/90)*smooth((900-np.hypot(x-550,y-1930))/150)
+    # Pines take over high on the volcano, at the same share of its slope (hidamari/mountains.py LIFT).
+    altitude=smooth((z-lifted(170))/(90*LIFT))*smooth((stretch(900)-polar(x,y)[2])/150)
     return np.where((noise(x,y,60.,79)+1)*.5<altitude,'Pine',kind)
 
 

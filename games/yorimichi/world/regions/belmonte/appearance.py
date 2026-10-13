@@ -7,7 +7,7 @@ from . import layout as L, source, terrain
 
 def far_palette(x, y):
     from hidamari.mountains import smooth
-    north = smooth((np.asarray(y)-3000.)/300.)[..., None]
+    north = smooth((np.asarray(y)-L.SOUTH_JOIN)/300.)[..., None]
     return np.array([.055,.11,.035])*(1.-north)+np.array([.105,.145,.055])*north
 
 

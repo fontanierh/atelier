@@ -886,7 +886,7 @@ void AJapanWorld::UpdateNorthAerialGrade(float Dt)
     NorthGradeCamera=C;bNorthGradeHasCamera=true;
     const float X=C.X,Y=-C.Y;
     const float Region=FMath::SmoothStep(-90000.f,-70000.f,X)*(1-FMath::SmoothStep(240000.f,260000.f,X))
-        *FMath::SmoothStep(35000.f,65000.f,Y)*(1-FMath::SmoothStep(540000.f,560000.f,Y));
+        *FMath::SmoothStep(35000.f,65000.f,Y)*(1-FMath::SmoothStep(600000.f,620000.f,Y));  // through Belmonte (belmonte/layout.py)
     NorthGradeTraceElapsed+=Dt;
     if (Region>0 && (Jump || NorthGradeTraceElapsed>=.25f))
     {

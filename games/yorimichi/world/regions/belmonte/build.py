@@ -146,10 +146,10 @@ def main():
                           'y': L.ORIGIN[1] - 18., 'z': town_z, 'yaw': 90.,
                           'hint': 'Town, estates and countryside racecourses north of the volcano'},
                          {'key': 'belmonte_course', 'name': 'Belmonte · racecourse',
-                          'x': 385., 'y': 4255., 'z': float(L.ORIGIN[2] + 30.2), 'yaw': 90.,
+                          'x': 385., 'y': 4255. + L.NORTH_SHIFT, 'z': float(L.ORIGIN[2] + 30.2), 'yaw': 90.,
                           'hint': 'Explore the turf and sand course and its grandstands'},
                          {'key': 'belmonte_training', 'name': 'Belmonte · training grounds',
-                          'x': 230., 'y': 4560., 'z': float(L.ORIGIN[2] + 30.2), 'yaw': 0.,
+                          'x': 230., 'y': 4560. + L.NORTH_SHIFT, 'z': float(L.ORIGIN[2] + 30.2), 'yaw': 0.,
                           'hint': 'Countryside arenas and practice grounds'}]}
     (OUT / 'runtime.json').write_text(json.dumps(runtime, separators=(',', ':')) + '\n')
     (OUT / 'build-report.json').write_text(json.dumps({'meshes': meshes, 'materials': materials,
