@@ -25,14 +25,30 @@ from atelier import build
 from atelier.build import Context,load_recipe,order,fingerprint
 from atelier import manifest
 ctx=Context(GAME)
+# Old build clients include an absolute checkout path when an input is missing. Keep their exact fingerprints for
+# validating source stamps and writing current target stamps; compare a portable view of the same inputs for copying.
+raw_hash_path=build._hash_path
+def portable_hash_path(digest,path,skip=True):
+ path=Path(path)
+ if path.is_file() or path.is_dir(): return raw_hash_path(digest,path,skip)
+ name=str(path)
+ for root,label in ((ctx.out,'<build>'),(build.paths.REPO,'<repo>')):
+  if path.is_relative_to(root):
+   name=label+'/'+str(path.relative_to(root)); break
+ digest.update(b'missing:'+name.encode())
+def portable(step,done):
+ build._hash_path=portable_hash_path
+ try: return fingerprint(step,done)
+ finally: build._hash_path=raw_hash_path
 # A step's source fingerprint leaves out its inputs inside the copied folders; kept here, not in atelier.build, so a
 # donor checkout of an older revision can be inspected too.
 artifacts=[p.resolve() for p in [ctx.out]+([ctx.uproject.parent/'Content'] if ctx.uproject else [])]
 def own(step): return replace(step,inputs=[i for i in step.inputs if not any(Path(i).resolve().is_relative_to(a) for a in artifacts)])
-done={}; sources={}; result=[]
+done={}; compared={}; sources={}; result=[]
 for step in order(load_recipe(GAME).steps(ctx),[]):
  value=fingerprint(step,done)
- source=fingerprint(own(step),sources); sources[step.name]=source
+ verified=portable(step,compared)
+ source=portable(own(step),sources); sources[step.name]=source
  path=ctx.stamps/(step.name+'.json')
  stamp=json.loads(path.read_text()) if path.exists() else {}
  outputs_ok=all(Path(p).exists() for p in step.outputs)
@@ -40,7 +56,8 @@ for step in order(load_recipe(GAME).steps(ctx),[]):
  # fresh target with copied outputs and no stamps publishes what the source does.
  made=build.outputs_digest(step) if getattr(step,'cutoff',False) and outputs_ok else None
  done[step.name]=made or value
- result.append(dict(name=step.name,fingerprint=value,source=source,stamp=stamp,outputs_ok=outputs_ok,made=made))
+ compared[step.name]=made or verified
+ result.append(dict(name=step.name,fingerprint=value,verified_fingerprint=verified,source=source,stamp=stamp,outputs_ok=outputs_ok,made=made))
 print(json.dumps(dict(steps=result,engine=str(ctx.unreal_root.resolve()),project=ctx.uproject.stem,
  editor_target=manifest.game(GAME)['editor_target'],
  build_version=json.loads((ctx.unreal_root/'Engine/Build/Build.version').read_text()))))
@@ -82,7 +99,7 @@ def copy_tree(source, target, source_repo, target_repo, clone):
 
 
 def _inputs(snapshot):
-    return [(s['name'], s['fingerprint']) for s in snapshot['steps']]
+    return [(s['name'], s.get('verified_fingerprint', s['fingerprint'])) for s in snapshot['steps']]
 
 
 def differing_sources(source, target):
@@ -161,8 +178,9 @@ def main(game, source, target=None):
             raise ValueError('Required outputs are missing; target stamps have not been created')
         stamps = target / 'build' / game / 'stamps'
         stamps.mkdir(parents=True, exist_ok=True)
+        target_steps = {step['name']: step for step in after['steps']}
         for step in before['steps']:
-            stamp = dict(step['stamp'], fingerprint=step['fingerprint'], reused_from=str(source))
+            stamp = dict(step['stamp'], fingerprint=target_steps[step['name']]['fingerprint'], reused_from=str(source))
             (stamps / (step['name'] + '.json')).write_text(json.dumps(stamp) + '\n')
             peak = source / 'build' / game / 'logs' / (step['name'] + '.guard') / 'step-peak.json'
             if peak.exists():
