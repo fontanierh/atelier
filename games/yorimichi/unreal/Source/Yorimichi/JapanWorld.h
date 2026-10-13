@@ -73,6 +73,9 @@ public:
     UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> Groups;
     // The far-hill backdrop subset, kept separately so its cull distance can be set on its own.
     UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> BackdropGroups;
+    /** Each in-map tree group's shadow: the same instances, hidden, casting the shadow the visible group no longer casts,
+     *  culled per instance at the menu's tree shadow distance from the camera. */
+    UPROPERTY() TArray<UHierarchicalInstancedStaticMeshComponent*> ShadowTwins;
     UPROPERTY() UStaticMeshComponent* SkyDome = nullptr;
     UPROPERTY() UStaticMeshComponent* Sea = nullptr;
     UPROPERTY() class UMaterialParameterCollection* WindMPC = nullptr;
@@ -86,7 +89,7 @@ public:
     bool SampleGroundHeight(const FVector& Position, float& Height) const;
     /** The menu's Graphics mode (grass reach), tree sway distance in metres (trees and bushes beyond it stand still) and
      *  forest detail, the forest trees' LOD distance scale (below 1 their simpler models come nearer). */
-    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail);
+    void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres);
     /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
     bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
@@ -117,6 +120,7 @@ private:
     int32 AppliedPerformanceMode = -1;
     float AppliedTreeSway = -1.f;
     float AppliedForestDetail = -1.f;
+    float AppliedTreeShadow = -1.f;
     int32 AppliedTreeOptimization = -1;
     int32 AppliedTreeLODMode = -1;
     float AppliedTreeDistanceScale = -1.f;
