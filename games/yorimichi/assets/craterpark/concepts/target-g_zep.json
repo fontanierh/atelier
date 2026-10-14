@@ -1,0 +1,29 @@
+{
+  "stage": "crater-park-paintover",
+  "shot": "g_zep",
+  "prompt": "Use case: precise art-direction paintover of an exact 3D layout render of a game location. Image 1 is a rough untextured render from the game's real terrain and the park's real meshes: keep its camera, horizon, field of view and every shape exactly where it is - the crater rim's silhouette, the park's ramps, bowls, decks, plaza, pool and paths, the slopes and the far land and sea. Do not move, add or remove any landform or park structure. Image 2 shows the game's art direction: soft painterly low-poly shapes, flat matte shading, pale lavender-grey volcanic rock, soft greens, a clean blue sky. Image 3 is the park's own model, for its materials: pale concrete, dark grey bowl concrete, warm wooden ramps, terracotta tiles, a blue pool. Paint image 1 as a finished in-game frame: the crater walls are grey volcanic rock with snow gullies and patches; inside the crater there are no trees; snow lies in soft patches on the grey earth banks and hillside of the park and along its edges, never on the concrete, wooden or tiled skating surfaces, which are clean and dry; the outer slopes below the rim are rocky, then forested lower down in autumn colours. A high aerial view from the zeppelin, south-west of the volcano: the whole caldera with the park in the middle, the snow-gullied walls, the green country and the sea beyond.",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "138c4008ff6209b6c1b73a089c6b630ba3dd65e1423d4aa963b081222cabb509",
+  "status": "done",
+  "started_at": "2026-10-13T21:29:36.169243+00:00",
+  "output": "target-g_zep.jpg",
+  "output_sha256": "1773fd4d22b98bcbaff2408e7cb5d9b82e9acf45037fe39ddfc3a7937a6ee8d7",
+  "usage": {
+    "input_tokens": 3997,
+    "input_tokens_details": {
+      "image_tokens": 3660,
+      "text_tokens": 337
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5369
+  },
+  "elapsed_seconds": 39.7,
+  "finished_at": "2026-10-13T21:30:15.890995+00:00"
+}

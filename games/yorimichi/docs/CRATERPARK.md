@@ -123,6 +123,17 @@ concrete, warm wooden ramps, terracotta tiles and a blue pool, in soft flat pain
 - The snake run's box tops (`material_003`, an irregular-stone texture) are finished from the masonite painting, as
   wooden decks like the paintovers'.
 
+## Review
+
+`tools/review_craterpark.py` takes the park in the game from fixed cameras under the render guard, after the build:
+`air`, `rim`, `zeppelin`, `city`, `dropin` and `bowls` round the caldera, and `hidamari`, `hidamari_east`,
+`belmonte` and `trail` for the volcano from far away; then it places the rider at the marked drop-in, facing into the
+park with the brake held. The target views it is judged against are in `assets/craterpark/concepts`: the grounded
+paintovers `paintover-dropin.jpg` and `paintover-bowls.jpg`, and `target-g_air`, `target-g_rim`, `target-g_zep`,
+`target-f_city2` (the city's north edge) and `target-f_belmonte`, each with its generation record. The game now
+peaks at about 11.5 GiB, over the default 10 GiB game limit, so the review runs with `--memory-gib 14`, the project's
+ceiling.
+
 ## Build and game
 
 | Step | Does |

@@ -72,8 +72,8 @@ WORLD = ('Image 1 shows the art direction of a stylised game: soft painterly sha
 
 # The palette means are albedos, not the colours the paintovers show: the island's sun, blue sky fill and grade
 # (setup_project.py: film toe .3, slope .7, cool shadow gain) show a sunlit flat surface at about albedo^0.5 per channel
-# in linear terms, which halves value contrast and saturation. Each mean is the target colour (assets/craterpark/concepts
-# g_*) taken back through that response, measured on the review shots (docs/CRATERPARK.md, "Restyle").
+# in linear terms, which halves value contrast and saturation. Each mean is the target colour (assets/craterpark/concepts,
+# target-* and paintover-*) taken back through that response, measured on the review shots (docs/CRATERPARK.md, "Restyle").
 PALE = (168, 164, 152)          # the targets' pale near-neutral concrete
 WOOD = (170, 124, 84)
 # slug: (original texture, style, the axes it wraps on, how it is made to wrap, description, palette mean sRGB or None)

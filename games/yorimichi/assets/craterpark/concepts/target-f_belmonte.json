@@ -1,0 +1,29 @@
+{
+  "stage": "volcano-far-redesign",
+  "shot": "f_belmonte",
+  "prompt": "Use case: art-direction redesign of a real in-game frame. Image 1 is the game today: keep its camera, horizon, field of view, the volcano's exact silhouette and outline, its ridges and gullies, and everything in the foreground (houses, roofs, hills, woods, clouds) exactly where they are. Image 2 shows the game's art direction: soft painterly low-poly shapes, flat matte shading, a clean blue sky. Repaint only the volcano's surface so it looks beautiful and natural from afar: faceted cool lavender-grey volcanic rock with visible crags, cliff bands and outcrops; snow lying in the gullies as thin, irregular, branching streaks that taper downhill and break up among the rocks, heavier just under the rim and fading out lower down - no evenly spaced stripes, no blobs, no shapes that read as letters; below the rock, scree and alpine scrub, then autumn forest (orange, gold and dark green pines) climbing the lower flanks with soft natural edges. The crater's rim stays a gentle notched crest; nothing of the park inside can be seen. Gentle aerial perspective on the distant mountain. The view south from the stone village of Belmonte: its houses and terracotta roofs in the foreground, the volcano 2 km behind them.",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "23e570b69e5f2707300134a0a9d1f596b7aac60f91771efd3f2d9258d3b58c96",
+  "status": "done",
+  "started_at": "2026-10-13T23:01:25.957041+00:00",
+  "output": "target-f_belmonte.jpg",
+  "output_sha256": "7454b774ff20c7e545429682270a36e1bfca3aad449d2e4d9fddca571f19fa01",
+  "usage": {
+    "input_tokens": 2454,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 294
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3826
+  },
+  "elapsed_seconds": 28.5,
+  "finished_at": "2026-10-13T23:01:54.494527+00:00"
+}

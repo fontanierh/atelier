@@ -366,7 +366,9 @@ def build_materials(T):
     MI["LeafBroad"] = instance("MI_LeafBroad", fol, T["T_leaf_broad"]); MI["LeafCedar"] = instance("MI_LeafCedar", fol, T["T_leaf_cedar"])
     MI["LeafPine"] = instance("MI_LeafPine", fol, T["T_leaf_pine"]); MI["LeafOchre"] = instance("MI_LeafOchre", fol, T["T_leaf_ochre"])
     MI["Grass"] = instance("MI_Grass", grass_material(white, mpc), T["T_grass"])
-    MI["LeafMaple"] = instance("MI_LeafMaple", fol, T["T_leaf_maple"]); MI["LeafGinkgo"] = instance("MI_LeafGinkgo", fol, T["T_leaf_ginkgo"])
+    # Ginkgo crowns read gold, not cream (assets/craterpark/concepts/target-f_*.jpg): screen colour about
+    # (224, 164, 85) where the plain leaf texture showed (222, 202, 145); the tint is that ratio squared (screen ~ albedo^0.5).
+    MI["LeafMaple"] = instance("MI_LeafMaple", fol, T["T_leaf_maple"]); MI["LeafGinkgo"] = instance("MI_LeafGinkgo", fol, T["T_leaf_ginkgo"], tint=(1., .72, .42))
     MI["LeafSmall"] = instance("MI_LeafSmall", fol, T["T_leaf_small"]); MI["Litter"] = instance("MI_Litter", fol, T["T_litter"])
     MI["Flower"] = instance("MI_Flower", fol, T["T_flower"]); MI["LeafOchreSmall"] = instance("MI_LeafOchreSmall", fol, T["T_leaf_ochre_small"])
     MI["RoofTile"] = instance("MI_RoofTile", lit, T["T_rooftile"], (0.40, 0.42, 0.48))
