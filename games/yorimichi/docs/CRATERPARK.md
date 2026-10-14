@@ -81,15 +81,16 @@ caldera is a `near_trees` box, so its trees cast shadows and keep trunk collisio
 
 The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor about half white, half dark
 cinder. Broad couloirs, tens of metres wide, run down the inner wall from just under the crest to its foot, between
-rock ribs, each stopping at its own height, breaking on the steepest cliff risers, so a little over a third of the
-wall is white (the zeppelin target). On the outer flank snow lies in snowfields between bare rock ribs for about 110 m
-below the crest, and about half the gullies carry a long couloir, wandering and unbroken, from the crest towards the
-tree line (the city target). Away from the chutes and the collar, snow slides off rock steeper than about 55 degrees,
-and fine rock noise breaks every patch into many small pieces, so it reads as snow among broken granite rather than
-cut-out blobs or strips. The mountain material shades the exposed rock in faceted planes about 22 m across (on steep
-faces, columns about 15 m wide and 60 m tall, so walls read as jointed cliffs), each broken into faces about 7 m
-across (5 m cells alone read as cobbles), each tilted at random against the sun, warm where lit and cool where turned
-away, so the walls read as granite rather than clay; bright olive moss patches its gentler upward faces.
+rock ribs, each narrowing upward to a point at its own height, breaking on the steepest cliff risers, so a little over
+a third of the wall is white (the zeppelin target). On the outer flank snow lies in snowfields between bare rock ribs
+for about 110 m below the crest, and about half the gullies carry a long couloir, wandering and unbroken, from the
+crest towards the tree line (the city target). Away from the chutes and the collar, snow slides off rock steeper than
+about 55 degrees, and fine rock noise breaks every patch into many small pieces, so it reads as snow among broken
+granite rather than cut-out blobs or strips. The mountain material shades the exposed rock in faceted planes about 22
+m across (on steep faces, columns about 15 m wide and 60 m tall, so walls read as jointed cliffs), each broken into
+faces about 7 m across (5 m cells alone read as cobbles), each tilted at random against the sun, warm where lit and
+cool where turned away, so the walls read as granite rather than clay; bright olive moss patches its gentler upward
+faces.
 
 ## Snow
 

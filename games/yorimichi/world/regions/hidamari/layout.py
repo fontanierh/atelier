@@ -874,7 +874,7 @@ def dress_caldera(put):
         return not any((i+di,j+dj) in taken for di in range(-k,k+1) for dj in range(-k,k+1))
     counts['outcrops']=0;outcrops=[]
     # Gentle ground only: the rocks are open underneath, and on a steep slope their downhill side would float.
-    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.93)],2.5)
+    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.96)],2.5)
     centres=seats[(rng.random(len(seats))<.025)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.2)]
     for x0,y0,_ in centres:
         members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]

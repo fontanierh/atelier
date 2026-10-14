@@ -423,9 +423,10 @@ def snow_cover(x,y,z,step=STEP):
     # stood up behind the park as white blades from the rim.
     wander=angle+noise(x,y,70,99)*.06
     lane=noise(np.cos(wander)*470,np.sin(wander)*470,30.,97)+.5*gully+.3*downslope_noise(radius,wander,35,91)
-    # Each stops at its own height under the crest, so their tops never line up into a row of slabs.
+    # Each narrows upward to a point at its own height under the crest: a flat top stood up as a slab from the rim.
     top=rim_r-12-20*smooth((noise(np.cos(wander)*470,np.sin(wander)*470,25.,93)+.4)/.8)
-    chutes=smooth((lane-.42)/.14)*smooth((radius-foot+15)/12)*smooth((top-radius)/14)
+    up=np.clip((radius-foot)/np.maximum(rim_r-foot,1.),0,1)
+    chutes=smooth((lane-.38-.35*up*up)/.14)*smooth((radius-foot+15)/12)*smooth((top-radius)/8)
     bowl=np.maximum.reduce([floor,drifts,ledges,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
