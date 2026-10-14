@@ -283,7 +283,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   ```
 
 - **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
-- **One heavy job at a time.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
+- **Guarded heavy work.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
   optionally a small one beside it) and run Unreal and Blender under a memory guard that stops a job before it
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
 - **A message board between agents.** `atelier board` delivers addressed handoffs and lack-of-progress notices to

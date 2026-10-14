@@ -1,0 +1,196 @@
+# Capacity admission proposal
+
+Atelier should admit work against available memory and CPU capacity, with additional constraints for GPU use,
+temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
+admits it when all requirements fit. A small job need not wait for a particular lane to become free.
+
+**Status: proposed, not an admission mechanism today.** The current render slots, live locks, memory guards and
+machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
+small products reduce the work, and capacity admission schedules the remaining work safely.
+
+## What replaces a slot
+
+A request describes one runnable phase, its owner and checkout, expected duration, resource requirements and
+exclusive resources. Recipes supply defaults; measured history refines them. An agent may request a budget,
+but cannot obtain admission by understating a known workload or exceeding machine/session policy.
+
+| Requirement | Meaning |
+| --- | --- |
+| Memory reservation | A conservative ceiling for the owned process tree during this phase, including a margin |
+| CPU budget | A configured amount of sustained worker capacity, translated to supported tool worker limits |
+| GPU requirement | A compatibility class or exclusive graphics reservation until concurrent use is characterized |
+| Temporary disk | Expected additional unique bytes on each affected filesystem, with recovery headroom |
+| Named locks | Exclusive or shared access to a checkout, compiler mutex, output inventory or other real resource |
+| Profile identity | Tool, phase, input scale, renderer and worker settings used to interpret past measurements |
+
+Memory and CPU are separate dimensions. They are never added into one score for admission. For illustration,
+suppose the configured build pool has 16 GiB and six CPU worker units after headroom is deducted:
+
+| Ready phase | Memory | CPU units | Can coexist if named/GPU constraints also allow it? |
+| --- | --- | --- | --- |
+| Import batch | 8 GiB | 3 | Yes, with the two jobs below |
+| Mesh generation | 3 GiB | 1 | Yes |
+| Artifact compression | 4 GiB | 2 | Yes; combined total is 15 GiB and 6 units |
+| Additional mesh generation | 3 GiB | 1 | Waits: both budgets would be exceeded |
+
+These are illustrative requests, not calibrated settings for this machine. CPU units are a scheduling convention,
+not a promise of dedicated physical cores; performance and efficiency cores have different throughput. Memory
+reservation is admission accounting, not physical preallocation or an OS-enforced partition.
+
+## One authority and an atomic grant
+
+Use a machine-local capacity service shared by all checkouts. Durable state and a single writer transaction
+cover the entire request: memory, CPU, disk and named locks are granted together or none are. Two agents cannot
+both observe the same free memory and launch. The advisory board displays the result; it does not grant capacity.
+
+The service issues an unforgeable local lease tied to the request, launcher identity and process start identity.
+The existing guarded launcher registers the actual child and descendants before useful work begins. It keeps
+its independent guard and resource-policy setup. CLI, build, play and custom guarded harnesses use this one
+admission API. Expensive Python generation and archive/restore jobs also declare resources; cheap metadata
+lookups should not require an Unreal-sized reservation.
+
+Separate two safeguards:
+
+1. **Accounting:** total reservations cannot exceed configured budgets, including phase headroom.
+2. **Live pressure:** current available memory, compression/swap pressure, CPU load and disk availability must
+   also permit admission. Unmanaged applications and shared services can consume capacity outside the ledger.
+
+Do not subtract an active job's whole reservation from an available-memory reading that already includes its
+current usage. The extra risk is its remaining growth: a candidate needs its reservation plus the sum of existing
+reservations' unconsumed headroom, and host safety headroom. Reconcile this conservative check with the total
+reservation limit. If sampling is stale, missing or contradictory, refuse new heavy work rather than guess.
+
+Disk reservations are conservative estimates, not exact predictions of APFS copy-on-write allocation. Check the
+live filesystem free-space floor at admission, every phase boundary and during large transfers/cooks. Charge
+remaining expected growth without double-counting bytes already allocated, and preserve completion/recovery
+headroom. Do not credit another job's planned deletion or assume a clone will remain cheap after modification.
+
+Count shared Zen/Trace services once in host/service accounting, not once per job. Track their observed growth
+and reserve service headroom. On unified-memory hardware, GPU allocation also competes for memory; do not count
+it as a separate physical pool. Use measured physical-footprint accounting and host pressure together, acknowledging
+sampling delay and shared-page accounting limits. Swap space is not extra build capacity.
+
+## Reservation, enforcement and estimates
+
+Use separate fields for expected peak and reserved ceiling. Admission charges the ceiling, and the aggregate
+owned-tree guard enforces it; never reserve 3 GiB while allowing an unaccounted 10 GiB peak. Leave burst margin
+inside the reservation and machine headroom for sampling delay. A lower existing per-process or game limit still
+applies. Capacity admission must not silently raise the current game limits or authorize new memory exceptions.
+
+Reuse the existing pinned PID/start-time ownership tracking and aggregate tree guard. Account for compiler and
+shader workers, SDK helpers and subprocesses that outlive their immediate parent. Shared engine services remain
+excluded from job-owned termination. Stopping or releasing an agent session does not prove that its job exited.
+
+CPU requests must produce real settings for Blender threads, compiler/shader workers and numerical thread pools
+where supported. Include editor and parent-process overhead in profiles. On macOS these controls and measured
+utilization are best-effort bounds, not kernel CPU quotas. A tool that cannot honor a narrower budget needs a
+conservative profile. Preserve the existing worker tuning until concurrency measurements support a change;
+do not multiply three workers by every admitted job and call that a three-worker machine budget.
+
+Learn profiles by tool/context, phase and input scale, including mesh counts, triangle counts or texture sizes
+where they predict cost. Keep peak, duration and uncertainty, not just the last successful sample. Start unknown
+or substantially changed workloads with a conservative reservation and restricted coexistence. Underestimation
+raises the next estimate and records a failed admission model; it must not trigger an automatic retry loop.
+
+If a job approaches its ceiling, it may request an atomic increase before consuming it, subject to policy and
+available capacity. If no increase is available, finish a safe small unit and checkpoint/exit where possible;
+otherwise the existing guard ends that owned job at its limit. The scheduler cannot rely on cooperative progress
+inside a blocked engine allocation, so it must preserve an independent enforcement path. Never take another
+owner's capacity or signal its process to make a request fit.
+Keep increase requests cheap and record refused increases as profile evidence, alongside observed peaks, so
+spiky workloads can improve their estimates without permanently reserving an unnecessarily large budget.
+
+## Phases, locks and fairness
+
+Reserve only the current phase when there is a safe transition. A build might perform a small cache transfer,
+a memory-heavy import, a CPU-heavy compile and a disk-heavy package. It should not hold its worst-case request
+for all four. A cache hit may avoid the import reservation entirely.
+
+Do not infer a phase change from a quiet log. Transition at an explicit recipe boundary, and lower a memory
+reservation only after observed usage has fallen and the next phase's ceiling is sufficient. If Unreal retains
+allocations, that memory remains reserved until it is released or the process ends.
+
+Avoid upgrade deadlocks across the entire resource vector, including named locks. An upgrade atomically requests
+all additions and never blocks while retaining a partial grant. On refusal, the job can continue only within its
+existing grant; it must finish or checkpoint/exit and release **all** reservations and named locks before queueing
+again. A queued phase holds neither memory/CPU/disk reservations nor a checkout lock. This prevents a checkout
+owner waiting for memory while that memory's owner waits for the checkout.
+
+A job that cannot release a checkout between phases declares all locks it must retain and its maximum resource
+budget together at first admission, with a deadline. It executes within that grant instead of queueing while
+holding it; only proven reductions are possible without a fresh admission. Queueing has a deadline, cancellation
+and a visible reason. Phase transitions and cleanup must test for leaked locks as well as leaked memory charges.
+
+Named locks describe actual incompatibilities:
+
+- A checkout's Content/Binaries mutation lease conflicts with its editor/game readers. A restore cannot run
+  behind a live editor's back just because memory is available. Compatibility may become finer only with proof.
+- Native builds respect the real UBT mutex scope. Retain the current conservative compile exclusion initially;
+  permit compile plus unrelated work only after measuring both safety and throughput.
+- Any play or playtest judging FPS or feel defaults to an exclusive performance window. It excludes competing
+  CPU-heavy, GPU-heavy, substantial disk and memory-pressure work, including encodes and compiles; spare CPU
+  units or background QoS do not make those safe companions. The window starts after incompatible work drains,
+  never by interrupting another owner. Other GPU-heavy jobs still need measured compatibility rules.
+- Output installation and cache garbage collection respect artifact ownership, snapshot leases and pins.
+
+Use a durable ready queue with first-ready time preserved across refusals and retries. Allow bounded short-job
+backfill, then protect the oldest compatible large request by stopping admissions that would postpone it. Keep
+the current short-job preference and two-bypass limit as the initial fairness policy; use per-owner fairness so
+splitting one build into hundreds of requests does not monopolize the queue. Distinguish a ready job from one
+waiting for inputs. A request that exceeds all allowed machine configurations fails with a useful explanation.
+
+Duration estimates inform backfill but are not reliable promises. Aging must eventually reserve enough capacity
+for large requests without forcibly preempting other owners. Approved interactive/performance windows have
+explicit scope and expiry; agents cannot assign themselves a priority that defeats fairness.
+
+## Failure and recovery
+
+Heartbeat expiry alone never releases a live job's reservation. Pin process identities and retain ownership of
+surviving descendants. On launcher/service failure, preserve guards, stop new admission, reconstruct live leases
+and reconcile named locks before resuming. A restarted service fences stale clients from making new grants;
+it does not assume their running children vanished. Unknown heavy processes remain a reason to refuse until
+their ownership and resource use are understood, following the current foreign-process safety rule.
+
+If the service is unavailable, no new heavy work starts. The machine's configured service supervisor owns normal
+restart and recovery; the operator can request a restart through supported administration. Agents may report the
+failure but may not create a second scheduler or bypass it. Recovery reconciles live jobs before accepting grants.
+
+Release accounting only after the tracked job tree exits or after a verified phase downgrade. Report orphaned
+helpers and use the existing owner-aware reaper. Retain evidence for an overrun, guard exit, cancellation and
+incomplete artifact transaction. A resource failure never certifies an output or publishes a success receipt.
+
+If external activity creates memory pressure, freeze new admissions and use only supported worker reductions or
+cooperative checkpoints for existing jobs. Preserve independent job limits and their stop authority. Do not promise
+that reservations can prevent every system-wide OOM caused by unmanaged applications.
+
+## Observable behavior
+
+The board should display requested, reserved and measured resources, active phase, estimate confidence, queue
+age, wait reason, named locks and next safe boundary. Example explanations are "needs 6 GiB; 4 GiB unreserved"
+or "capacity fits; checkout is in use." Report queue time separately from execution and wasted/retried work.
+
+Operators configure machine headroom and allowed policies once. Recipes and measured profiles handle routine
+requests. Agents retain the familiar `atelier build`, `play` and guarded entry points; no manual slot negotiation
+should be needed for ordinary eligible jobs. The board still carries task coordination and performance windows.
+
+## Migration and acceptance
+
+1. Collect per-phase owned-tree memory, CPU and disk measurements under today's slots. Establish machine
+   headroom and supported worker controls. Add pure scheduler tests with fake processes and clocks.
+2. Run the capacity service in shadow mode: explain hypothetical grants while current locks remain the sole
+   admission authority. Compare decisions against pressure and observed peaks without adding concurrency.
+3. Install a common compatibility gate in every active launcher, including build/play, package, guarded harnesses,
+   streams, fitting and custom tooling. Verify client protocol versions; drain legacy holders and use a controlled
+   cutover. Two independent schedulers must never grant the same machine capacity. Unknown legacy clients fail
+   closed. Document and test rollback to slots only after capacity-held jobs drain.
+4. Enable conservative capacity admission with current exclusions, guards and worker limits. Validate leases,
+   process ownership and crash recovery first. Allow new coexistence combinations one at a time on measurements.
+5. Adopt phase requests and bounded memory-sized import batches. Replace slot-specific board UI, command help,
+   setup examples, agent instructions and obsolete lane configuration together. Remove the old admission path
+   once migration support ends; leave one documented authority.
+
+Acceptance covers simultaneous requests, stale telemetry, service restart, PID reuse, detached children,
+shared-service growth, underestimated memory, locks held across refused phase upgrades, phase-upgrade deadlock,
+disk-floor changes during a cook/clone, service outage and restart, performance-window contention and starvation. Native
+concurrency trials use ordinary guarded admission and include negative controls. Measure useful throughput,
+interactive responsiveness, p50/p95 queue delay and peak pressure. More concurrent processes is not itself success.

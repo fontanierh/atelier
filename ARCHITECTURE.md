@@ -61,6 +61,15 @@ world map, preferences and the HUD.
 - Coordinates: sources are in metres with Z up; Unreal is in centimetres with Y flipped
   ([platform/conventions/units.md](platform/conventions/units.md)). One converter: `atelier.conventions.to_unreal`.
 
+## Build products
+
+The [incremental build proposal](docs/INCREMENTAL_BUILDS.md) describes the next build architecture: explicit
+product ownership, small dependency boundaries and automatic artifact reuse. [World build practices](docs/WORLD_BUILD_PRACTICES.md)
+explain how to structure asset libraries, terrain and regions for small rebuilds. Proposed executor features are
+marked in those documents; the current [artifact pool](docs/ARTIFACT_POOL.md) remains the implemented reuse guide.
+The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
+measured resource reservations while preserving memory guards and exclusive-resource locks.
+
 ## Why the studio is Python
 
 Blender's only scripting language is Python, and Unreal's editor scripting is Python too, so one language covers the

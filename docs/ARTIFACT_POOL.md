@@ -9,7 +9,7 @@ not hide missing inputs or failed builds.
 
 `atelier pool` is an initial, opt-in pool for independently generated Python outputs. The recipe
 must declare exclusively owned `pool_roots`, no dependencies, and only Python commands. Yorimichi
-currently opts in the Hidamari, tree-house and community-park texture finishing steps. All other
+currently opts in the Hidamari and tree-house texture finishing steps. All other
 steps refuse pooling. Pool entries stay in the machine-local ignored cache; licensed/private output
 must never be added to Git or uploaded to a public artifact store.
 
@@ -55,8 +55,8 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 
 A geometry or texture pool does not certify an Unreal import, shader profile or compiled ABI. Main
 must still rebuild/import each affected step and pass its validators after feature integration.
-Community-park source changes affect terrain, vegetation and map inputs as well as park assets;
-copying the park alone is insufficient. Do not blanket-touch stamps or clear generated assets/DDC.
+Region source changes can affect terrain, vegetation and map inputs as well as park assets;
+copying a region alone is insufficient. Do not blanket-touch stamps or clear generated assets/DDC.
 
 Next candidates are isolated Blender outputs with verified Blender/runtime context and full consumed
 dependency output manifests. Region-owned Unreal imports and a cheap map assembly step would address
