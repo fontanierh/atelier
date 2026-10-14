@@ -63,7 +63,7 @@ class SnakeTests(unittest.TestCase):
         self.solid = np.asarray(floor(-10, -10, 40, 35, -20.), 'f8')
 
     def test_a_slot_holds_a_channel_meeting_the_floor_level(self):
-        v, f, uv = additions.snake_channels(self.riding, self.solid, (-2, -2, 32, 27), 0.)
+        v, f, uv = additions.snake_channels(self.riding, self.solid, (-2, -2, 32, 27), 0.)['channels']
         self.assertEqual(len(uv), len(v))
         mid = (v[:, 2] > 12.4) & (v[:, 2] < 12.6) & (v[:, 0] > 8) & (v[:, 0] < 22)
         self.assertAlmostEqual(float(v[mid, 1].min()), -min(additions.CHANNEL, additions.STEEPEST * 2.5), delta=.05)
@@ -75,11 +75,26 @@ class SnakeTests(unittest.TestCase):
 
     def test_a_bridge_over_the_slot_stays_and_the_channel_rises_to_it(self):
         bridge = np.asarray(box(14.5, -.3, 9.5, 15.5, 0, 15.5), 'f8')
-        v, f, uv = additions.snake_channels(self.riding, np.concatenate([self.solid, bridge]), (-2, -2, 32, 27), 0.)
+        v, f, uv = additions.snake_channels(self.riding, np.concatenate([self.solid, bridge]), (-2, -2, 32, 27), 0.)['channels']
         under = (np.abs(v[:, 0] - 15) < .2) & (v[:, 2] > 11) & (v[:, 2] < 14)
         self.assertLess(float(np.abs(v[under, 1]).max()), .02)      # flush with the bridge's top
         far = (np.abs(v[:, 0] - 6) < .2) & (np.abs(v[:, 2] - 12.5) < .2)
         self.assertLess(float(v[far, 1].min()), -1.)                # deep again away from it
+
+
+    def test_a_deck_wall_gets_a_transition_at_its_foot_up_to_its_edge(self):
+        # A deck 2.5 m up beside the floor (a vertical wall at x 10), no slot.
+        riding = np.asarray(floor(0, 0, 10, 10) + floor(10, 0, 20, 10, 2.5), 'f8')
+        solid = np.asarray(floor(-10, -10, 30, 30, -20.), 'f8')
+        made = additions.snake_channels(riding, solid, (-2, -2, 22, 12), 0., feet=True)
+        self.assertNotIn('channels', made)
+        v, f, uv = made['feet']
+        used = v[np.unique(f)]
+        self.assertAlmostEqual(float(used[:, 1].max()), 2.5, delta=.01)          # reaches the deck's edge
+        foot = used[(np.abs(used[:, 2] - 5) < .2) & (used[:, 0] < 10)]
+        self.assertLess(float(foot[:, 0].min()), 10 - 2.)                       # starts about its radius out
+        n = grind.unit_normals(v[f].astype('f8'))
+        self.assertTrue((n[:, 1] > 0).all())
 
 
 class SolidifyTests(unittest.TestCase):

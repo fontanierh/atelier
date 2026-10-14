@@ -156,9 +156,15 @@ surfaces; none moves, cuts or covers what is ridden:
 
 - **Snake channels.** The slots in the east bowls' floor fell 20-31 m to the hillside. Each holds a concrete channel
   1.5 m deep at its middle (less where it is narrow), its sides a sine curve meeting the floor flush at both edges.
-  Under each bridge across a slot the channel rises into a roller over 4 m and meets the bridge's top.
+  Under each bridge across a slot the channel rises into a roller over 4 m and meets the bridge's top. At the foot of a
+  riding deck 0.9-5 m over the bowls' floor (and nearer than any slot), the floor rises in a transition of 2.5-3.5 m
+  radius up to the deck's edge: a long bank joins the east rim's deck to the bowls.
+- **Pockets.** The plaza's stage pit and the holes in its terrace row are dishes of the same shape, flush with the
+  plaza round them.
 - **Banks.** A smooth surface spans the hillside between two pieces, flush with both: a hip from the tower's channel
   down to the plaza terrace.
+- **Steel coping.** A 7 cm steel tube is drawn along every grind line, its top 12 mm over the deck (render only; a
+  metallic `Steel` parent in `import_craterpark.py`).
 - **Solid edges.** A riding sheet's free edge that ends in the air, a knife edge (a half-pipe's flank, the back of its
   wall), gets a level cap 35 cm wide on the side away from the piece, a grindable lip, and a wall from it down to
   the ground, so the piece reads as solid concrete.

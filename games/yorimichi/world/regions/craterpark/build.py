@@ -440,11 +440,12 @@ def main():
     solid_now = np.concatenate([a['positions'][a['triangles'][keep]] for entry, a, keep in loaded
                                 if entry['role'] != 'original']).astype('f8')
     added = []
-    for name, (box, floor, deep, depth) in additions.SNAKES.items():
-        made = additions.snake_channels(riding_now, solid_now, box, floor, deep, depth)
-        if made is not None:
-            added.append(({'id': f'add-snake-{name}', 'role': 'original', 'material': additions.SNAKE_MATERIAL,
-                           'doubleSided': False, 'added': True}, made))
+    for name, (box, floor, deep, depth, feet) in additions.SNAKES.items():
+        made = additions.snake_channels(riding_now, solid_now, box, floor, deep, depth, feet) or {}
+        for part, mesh in made.items():
+            material = additions.SNAKE_MATERIAL if part == 'channels' else additions.FEET_MATERIAL
+            added.append(({'id': f'add-{part}-{name}', 'role': 'original', 'material': material,
+                           'doubleSided': False, 'added': True}, mesh))
     around = np.concatenate([riding_now, solid_now]); heights = grind.heights(around)
     for name, box in additions.BANKS.items():
         made = additions.bank(riding_now, solid_now, box)
