@@ -364,7 +364,7 @@ def snow_cover(x,y,z,step=STEP):
         t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.45*share[k//per]
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.35*share[k//per]
         signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.),0)-distance)
     # Rock breaks each streak into fragments and ragged edges further down.
     breakup=downslope_noise(radius,angle,38,31,.4)*6+noise(x,y,83,32)*4+downslope_noise(radius,angle,14,33,.4)*2.5
@@ -386,7 +386,7 @@ def snow_cover(x,y,z,step=STEP):
     foot=wall_foot(angle);rim_r=rim_radius(angle)
     # The caldera floor is grey cinder with snow lying in patches and in drifts along the wall's foot.
     floor_r=foot-10+25*ring(240.,60.,95)
-    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.42)/.22)
+    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.18)/.22)
     drifts=(smooth((radius-foot+30)/20)*smooth((foot+25-radius)/15)
             *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Chutes on the inner wall: irregular spacing, widths and reach, wandering off the radial line and
@@ -395,9 +395,11 @@ def snow_cover(x,y,z,step=STEP):
     lane=noise(np.cos(wander)*470,np.sin(wander)*470,22.,97)+.35*gully
     stop=foot+5+70*smooth((ring(470.,70.,93)+.2)/.8)
     # Narrow couloirs between rock ribs, not broad bars: a high lane threshold, broken along their length.
-    chutes=(smooth((lane-.42)/.12)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
-            *smooth((downslope_noise(radius,wander,16,91)+downslope_noise(radius,wander,7,90)*.4+.45)/.3))
-    bowl=np.maximum.reduce([floor,drifts,chutes])
+    chutes=(smooth((lane-.55)/.12)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
+            *smooth((downslope_noise(radius,wander,16,91)+downslope_noise(radius,wander,7,90)*.4+.2)/.3))
+    # Snow on the inner wall's flatter ledges and benches, broken by fine noise (the targets' snow between crags).
+    ledges=(smooth((nz-.80)/.06)*smooth((patches-.35)/.2)*smooth((radius-foot-5)/10)*smooth((rim_r-12-radius)/10))
+    bowl=np.maximum.reduce([floor,drifts,chutes,ledges])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
     # Many short streaks follow the relief's own hollows high on the cone, broken by rock.
@@ -412,7 +414,7 @@ def snow_cover(x,y,z,step=STEP):
     # Snowfields just under the crest between bare rock ribs, stretched downslope; lower down only thin couloirs
     # (the ribbons) hold snow, so the far views read rock with a few streaks (f_belmonte, f_city2).
     flank=(smooth((radius-rim_r-10)/20)*smooth((rim_r+110+40*ring(470.,90.,57)-radius)/50)
-           *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest-.2)/.2))
+           *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest-.35)/.2))
     snow=np.maximum(snow,flank)
     line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
     # Chutes and the collar hold snow on steeper ground than the open slopes do.

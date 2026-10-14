@@ -809,9 +809,9 @@ def dress_caldera(put):
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
-    # Small stones, 1-3 m, strewn in clusters over the floor's snow (the zeppelin target's hundreds of boulders).
+    # Stones, 2-5 m, strewn in clusters over the floor (the zeppelin target's hundreds of boulders).
     counts['stones']=0
-    sx,sy=candidates(700,mountains.FLOOR_RADIUS)
+    sx,sy=candidates(900,mountains.FLOOR_RADIUS)
     for x0,y0 in zip(sx,sy):
         if bool(craterpark.contains(x0,y0,margin=12.)) or rng.random()<.45:continue
         for _ in range(int(rng.integers(3,9))):
@@ -819,7 +819,7 @@ def dress_caldera(put):
             z,slope,inside=ground(x,y)
             if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
             name,radius,tall,_=CALDERA_BOULDERS[int(rng.choice(3,p=[.45,.35,.2]))]
-            scale=float(rng.uniform(.5,1.5))
+            scale=float(rng.uniform(1.,2.6))
             put(name,x,y,float(z[0])-.15*tall*scale,yaw=float(rng.uniform(0,360)),scale=scale)
             counts['stones']+=1
     counts['trees']=len(trees);counts['groves']=len(groves)

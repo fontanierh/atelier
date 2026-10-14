@@ -95,7 +95,7 @@ float litFacet=saturate(dot(normalize(N+h*float3(1.4,1.4,.7)),sunDir)),litSmooth
 float3 facet=(.55+.75*litFacet)/(.55+.75*litSmooth)*lerp(float3(.93,.96,1.06),float3(1.05,1.,.93),saturate(litFacet*1.4-.2));
 ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
-float3 snow=float3(.84,.87,.92)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
+float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
 '''+snow_code+'''
 return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
