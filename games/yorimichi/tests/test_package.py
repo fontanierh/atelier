@@ -199,14 +199,14 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     (tmp_path/'package'/'SHA256SUMS').write_text('')
     (tmp_path/'package'/'manifest.json').write_text(json.dumps({'files': [{'file': 'Yorimichi-macOS-x.zip', 'bytes': 3}]}))
     stamp_all()
-    monkeypatch.setattr(build, 'Context', lambda game: ctx)
+    monkeypatch.setattr(build, 'Context', lambda game, **kwargs: ctx)
     monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda context: steps))
 
     def plan():
         lines = []
         assert build.build('yorimichi', ['unreal.package'], dry=True, echo=lines.append) == 0
         return {line.split()[0]: ' '.join(line.split()[1:]) for line in lines if line.split()[0] in {s.name for s in steps}}
-    current = {'unreal.world': 'up to date', 'data.stage': 'up to date', 'unreal.cook': 'up to date', 'unreal.package': 'up to date'}
+    current = {'unreal.world': 'current', 'data.stage': 'current', 'unreal.cook': 'current', 'unreal.package': 'current'}
     assert plan() == current
 
     # The world is reimported elsewhere: it stays current; the cook and its download must be renewed.
@@ -215,21 +215,21 @@ def test_content_changes_rerun_the_package_while_current_prerequisites_stay_curr
     for step in steps[:2]:
         done[step.name] = build.fingerprint(step, done)
         (ctx.stamps/f'{step.name}.json').write_text(json.dumps({'fingerprint': done[step.name]}))
-    assert plan() == {**current, 'unreal.cook': 'would run', 'unreal.package': 'would run'}
+    assert plan() == {**current, 'unreal.cook': 'run', 'unreal.package': 'run'}
 
     # A launcher or profile edit reruns only the package.
     stamp_all()
     source.write_text('profile v2')
-    assert plan() == {**current, 'unreal.package': 'would run'}
+    assert plan() == {**current, 'unreal.package': 'run'}
 
     stamp_all()
     cpp.write_text('v2')
-    assert plan() == {**current, 'unreal.cook': 'would run', 'unreal.package': 'would run'}
+    assert plan() == {**current, 'unreal.cook': 'run', 'unreal.package': 'run'}
 
     # A missing part makes the package stale even with a current stamp.
     stamp_all()
     (tmp_path/'package'/'Yorimichi-macOS-x.zip').unlink()
-    assert plan()['unreal.package'] == 'would run'
+    assert plan()['unreal.package'] == 'run'
 
 
 def test_uat_gets_the_headless_user_directory_build_sh_would_export(tmp_path, monkeypatch):

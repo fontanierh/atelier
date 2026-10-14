@@ -49,9 +49,15 @@ def test_differing_sources_names_each_step():
     assert reuse.differing_sources(snapshot(a='1', b='2'), snapshot(a='1', b='3', c='4')) == ['b', 'c']
 
 
-def test_inspect_reports_a_source_fingerprint_for_every_step():
+def test_inspect_reports_a_source_fingerprint_for_every_step(tmp_path, monkeypatch):
     from atelier import paths
+    # Inspection needs version metadata, not an installed Unreal editor.
+    version = tmp_path / 'engine/Engine/Build/Build.version'
+    version.parent.mkdir(parents=True)
+    version.write_text('{}')
+    monkeypatch.setenv('UE_ROOT', str(tmp_path / 'engine'))
     snapshot = reuse.inspect(paths.REPO, 'sandbox')
+    assert snapshot['build_version'] == {}
     assert snapshot['steps'] and all(len(s['source']) == 64 for s in snapshot['steps'])
 
 
