@@ -55,10 +55,11 @@ uv run atelier build sandbox --plan --explain
 uv run atelier build sandbox --json
 uv run atelier build sandbox world --timings --json
 uv run atelier build sandbox world --changes --json
+uv run atelier build sandbox --ddc --json
 ```
 
-`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning unless `--timings` or `--changes` selects historical
-receipts. These reports do not create build folders,
+`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning unless `--timings`, `--changes` or
+`--ddc` selects historical observations. These reports do not create build folders,
 write stamps, run commands or take render capacity. Recipes and verification callbacks must themselves be read-only
 during inspection. Changed input names are available after a new successful build stores input detail; older stamps
 get a general reason. A consumer of a dirty product is `check-after-build` when its outcome is still unknown.
@@ -137,6 +138,35 @@ an ordinary declared code dependency. This build-engine update itself changes th
 actions once; it does not weaken cache keys to avoid that initial rebuild. Native phase measurements still require
 the normal guarded execution and admission. Command time outside measured phases includes waiting and launch/
 shutdown overhead; do not label it all as editor startup.
+
+## Inspect derived-data-cache observations
+
+`atelier build <game> [step ...] --ddc [--json]` reads retained logs for selected Unreal script/package steps and
+their dependencies. It starts no tools and does not read DDC directories, contact Zen, inspect artifacts, hash
+inputs, write stamps or acquire capacity. Other commands such as Python generators and native compilation have
+no DDC report. Combine `--ddc` only with step selection and optional `--json`.
+
+The report recognizes explicit cache-node availability and disabled states, plus Unreal's `DDC Summary Stats`
+fields for get/put counts, reported hit fractions and local/shared/Zen/cloud presence. An import log can describe
+its cache configuration without recording any hit counts. Missing, malformed or conflicting values are **unknown**,
+not zero. Contradictory count totals are unusable. Repeated summaries remain separate; local and ZenLocal counters
+can overlap and must not be summed. Configuration that changes within a log is labelled **mixed**.
+
+These are **historical, unverified log observations**. A retained log can describe a failed attempt, an older
+revision or a reused donor; it does not prove the current configuration, a successful build, or sharing with
+another checkout. `LogZenStore` cook-storage messages and isolated shader-cache misses do not establish DDC totals.
+DDC reuse does not eliminate package imports, loading or saving.
+
+For each step, the reader prefers `logs/<step>.guard/stdout.log`, covering the last guarded command, and falls
+back to `logs/<step>.log` only when guard stdout is absent. It never counts both as separate executions. Reads are
+capped at 4 MiB per file and 32 MiB per invocation, with 100,000 lines, 8,192 characters per line and 16 summaries
+per file. Limits and logs changed during reading are labelled **partial**. Cut records are discarded; unsupported
+formats remain unknown. Missing logs after reuse are normal. Symlinks and special files are not read.
+
+Reports contain only allowlisted node/state labels and typed numerical fields. Paths, URLs, namespaces, command
+lines and unknown raw log messages are omitted; the report identifies its source by a build-relative label.
+The sandbox uses the same inspection path and reports unknown values until native logs exist. Parser fixtures
+exercise the supported log formats without requiring a native build.
 
 ## Audit a Python generator's accesses
 

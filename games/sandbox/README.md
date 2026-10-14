@@ -32,6 +32,9 @@ guide describes the Python-only scope and the remaining metadata, environment an
 `atelier build sandbox world --timings` reads the last successful receipts. The block generator emits separate
 read/validation and output-writing phases. Cache restoration shows its own duration and preserves a known local
 producer receipt; a fresh checkout restore reports producer timing as unknown. Add `--json` for structured output.
+`atelier build sandbox --ddc` reads retained Unreal logs for DDC configuration and recorded counts. Until those
+native logs exist it reports unknowns; inspecting them never starts Unreal or modifies caches.
+
 After changing `world/block.json` and building again, `atelier build sandbox world --changes` lists the changed shape
 and bounds members. Placement stays current. Restoring a missing block output from the cache reports no content
 change when it matches the previous certified inventory. The first build reports an unknown baseline.

@@ -11,6 +11,8 @@ Instrumented scripts can emit bounded phase records; `--timings` displays histor
 separately from restoration time. The sandbox demonstrates the protocol; native phase baselines remain to be measured.
 `--changes` lists added, changed and retired members between certified named-product inventories, with unchanged
 member counts. It reuses existing inventories, preserves unknown baselines and makes no extra product-byte reads.
+`--ddc` reads bounded retained-log observations of cache configuration and explicit cook hit/miss statistics.
+Those historical logs do not prove current settings or measured warm/cold improvements; native baselines remain open.
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
 environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
@@ -181,7 +183,7 @@ render lock, memory guard, worker limits and handoff rules until the separately 
 validated. A batch does not authorize parallel Unreal processes or an idle editor holding capacity. Use an empty
 import world where possible and measure startup, import, derived-data work, validation and save separately.
 
-Stage 1 should also report DDC configuration and hits. The two inspected worktrees already use the same per-user
+Stage 1 now reports DDC configuration and explicit hit counts from retained logs. The two inspected worktrees use the same per-user
 ZenLocal service and filesystem DDC, while ZenShared is disabled. Preserve that reuse and measure its effectiveness;
 evaluate a remote/shared DDC for additional machines only on demonstrated benefit. DDC and Zen cook storage have
 different responsibilities even when served by related infrastructure. Sharing DDC does not eliminate the import
