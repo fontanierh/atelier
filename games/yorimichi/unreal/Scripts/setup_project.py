@@ -555,7 +555,8 @@ def main():
         import import_village
         import_village.main(terrain=False)
     if os.path.exists(os.path.join(OUT,"hidamari","manifest.json")):
-        runpy.run_path(os.path.join(os.path.dirname(__file__),"import_hidamari.py"),run_name="__main__")
+        # The volcano (HD_North*) is unreal.north's: a snow or rock change reimports only it.
+        runpy.run_path(os.path.join(os.path.dirname(__file__),"import_hidamari.py"),init_globals={"NORTH":False},run_name="__main__")
     if os.path.exists(os.path.join(OUT,"sailboat","manifest.json")):
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_sailboat.py"),run_name="__main__")
     if W.get("zeppelin"):

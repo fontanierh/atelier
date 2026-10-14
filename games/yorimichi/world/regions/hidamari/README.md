@@ -18,7 +18,11 @@ uv run atelier build yorimichi world.city_tiles world.city_trees unreal.desktop 
   `build/yorimichi/hidamari/city.json`; then it builds the modular meshes, their collision and `manifest.json`. Streets
   and the terrain under them share one height profile, intersections included, and the far terrain is lowered
   smoothly round the city.
-- `unreal.world` imports them with `unreal/Scripts/import_hidamari.py`, keeping the authored collision.
+- `unreal.world` imports them with `unreal/Scripts/import_hidamari.py`, keeping the authored collision, all but the
+  volcano: `unreal.north` imports `HD_North*` after it, with `M_NorthMountains`, the rock texture and the snow mask
+  (`HIDAMARI_ASSETS=HD_North*`; a name ending in `*` selects the meshes it begins). Each needs a digest of the meshes
+  it reads (`world.hidamari.city`, `world.hidamari.north`, `export_digest.py`) rather than `world.hidamari`, so a
+  layout-only change (`city.json`) or a volcano change reimports nothing else.
 - `data.stage` stages `city.json`; the game merges it into the world when it builds the instanced meshes.
 - `world.city_tiles` and `world.city_trees` build the desktop profile's 128 m city surface tiles and city tree LODs,
   and `unreal.desktop` imports them into `/Game/Experiments`.

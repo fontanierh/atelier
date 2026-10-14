@@ -6,7 +6,6 @@ import unreal
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from import_village import import_mesh,material
 from mesh_materials import assign_materials
-from mountain_material import material as mountain_material,gate_material
 from harbor_material import material as harbor_material
 from arcade_material import material as arcade_material
 from plaza_material import water_material,paving_material
@@ -14,7 +13,12 @@ import city_material
 ROOT = yori.OUT;OUT=ROOT/'hidamari'
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
-manifest=json.loads((OUT/'manifest.json').read_text());only=set(filter(None,os.environ.get('HIDAMARI_ASSETS','').split(',')))
+manifest=json.loads((OUT/'manifest.json').read_text());asked=set(filter(None,os.environ.get('HIDAMARI_ASSETS','').split(',')))
+# A name ending in * asks for every manifest asset it begins: unreal.north imports HD_North* (the volcano, its
+# materials and textures). The world import (setup_project.py) runs this with NORTH=False and leaves those out.
+only={a for a in asked if not a.endswith('*')}|{n for n in manifest for a in asked if a.endswith('*') and n.startswith(a[:-1])}
+assert only or not asked,('no Hidamari assets match',sorted(asked))
+north=globals().get('NORTH',True)
 arcade_mat=arcade_material() if not only or any(n.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or n in ['HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'] for n in only) else None
 paving_mat=arcade_material(paving=True) if not only or only & {'HD_ArcadeFloor','HD_PlazaFloor'} else None
 plaza_paving=paving_material() if not only or 'HD_PlazaFloor' in only else None
@@ -25,8 +29,11 @@ water_mat=harbor_material(water=True) if not only or 'HD_Sea' in only else None
 report=json.loads((OUT/'import-report.json').read_text()) if only and (OUT/'import-report.json').exists() else {}
 # The textured city (world/regions/hidamari/surfaces.py): a manifest entry with slots has one per surface.
 city_mis=city_material.materials() if any('slots' in e for n,e in manifest.items() if not only or n in only) else {}
-mountain_mat=mountain_material() if not only or any(n.startswith('HD_North') for n in only) else None
-gate_mat=gate_material() if not only or 'HD_NorthGate' in only else None
+mountain_mat=gate_mat=None
+if north:
+    from mountain_material import material as mountain_material,gate_material
+    mountain_mat=mountain_material() if not only or any(n.startswith('HD_North') for n in only) else None
+    gate_mat=gate_material() if not only or 'HD_NorthGate' in only else None
 def distance_lods(mesh,name,levels):
     """Reduce render geometry only; retain authored UCX and LOD0 complex collision."""
     unreal.load_module('StaticMeshEditor')
@@ -69,7 +76,7 @@ def distance_lods(mesh,name,levels):
 
 
 for name,entry in manifest.items():
-    if only and name not in only:continue
+    if (only and name not in only) or (not north and name.startswith('HD_North')):continue
     mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
     elif name.startswith('HD_North'): selected=mountain_mat

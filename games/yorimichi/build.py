@@ -9,7 +9,10 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
 /Game/Japan (textures, props, terrain, foliage, the villager, Momiji Hamlet, Hidamari, the sailboat, the zeppelin and
 the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
-after it. Cairo's base import supplies his body and the nine authored clips used by the merged move set.
+after it. The volcano (HD_North*, its materials and snow mask) is its own import after it (unreal.north). An import
+needs a digest step (`digest_step`) instead of an export it reads, so an export that reruns and writes the same meshes
+(a city layout change, say) leaves it current. Cairo's base import supplies his body and the nine authored clips used by
+the merged move set.
 """
 import importlib.util, json, os, tomllib
 from dataclasses import dataclass
@@ -49,6 +52,14 @@ _definition.loader.exec_module(definition)
 YORI = WORLD / 'yori.py'
 # Crater Park on the caldera floor: its block shapes the ground there (craterpark/placement.py terrain).
 CRATERPARK = (REGIONS / 'craterpark' / 'placement.py', ASSETS / 'craterpark' / 'scene.json', ASSETS / 'craterpark' / 'geometry')
+# world.layout is a cutoff step: its dependents see its outputs, not its fingerprint, so each lists the layout sources
+# its own scripts import. VILLAGE_LAYOUT: village/layout.py (sample, integrate), imported by every Blender region.
+VILLAGE_LAYOUT = (REGIONS / 'village' / 'layout.py', YORI)
+# What importing treehouse/layout.py reads (its sizes come from world.treehouse_trees' trees.json, which steps that
+# import it also need), and the layout modules hidamari/layout.py brings in.
+TREEHOUSE_LAYOUT = (TREEHOUSE / 'layout.py', TREEHOUSE / 'screen.py', REGIONS / 'zeppelin' / 'layout.py', REGIONS / 'megapark' / 'placement.py')
+NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'gate.py',
+                REGIONS / 'megapark' / 'trail.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT)
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
                     'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
 
@@ -98,6 +109,24 @@ def city_tree_cpu_access_present(ctx):
                    for name in names)
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return False
+
+
+_digest_spec = importlib.util.spec_from_file_location('yorimichi_export_digest', GAME / 'export_digest.py')
+export_digest = importlib.util.module_from_spec(_digest_spec)
+_digest_spec.loader.exec_module(export_digest)
+
+
+def digest_step(out, export, part, about, root=None, names=(), north=None):
+    """`<export>.<part>`: a cutoff step recording the digests of what an import reads from `export` (export_digest.py):
+    files or folders under `root`, or the Hidamari meshes (`north`: the volcano's or the rest)."""
+    name = f'{export}.{part}'
+    output = out / 'digests' / f'{name}.json'
+    if north is None:
+        made, spec = (lambda: export_digest.files(root, names)), f'{root}: {", ".join(names)}'
+    else:
+        made, spec = (lambda: export_digest.hidamari(out, north)), f'hidamari north={north}'
+    return Step(name, [Call(f'export digest {spec}', lambda ctx, log: export_digest.record(output, made(), log))],
+                inputs=[GAME / 'export_digest.py'], needs=[export], outputs=[output], cutoff=True, about=about)
 
 
 def package_present(out):
@@ -315,11 +344,13 @@ def hippodrome_steps(out):
     region = REGIONS / 'hippodrome'
     return [
         Step('world.hippodrome', [Python(region / 'build.py')],
-             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py'],
-             needs=['world.layout'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
+             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
+                     *NORTH_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
              about='hippodrome course meshes (platform, skirt, track, rails, lane), its Tripo structures and venue data'),
+        digest_step(out, 'world.hippodrome', 'meshes', 'what unreal.hippodrome reads of the course', out / 'hippodrome', ['region']),
         Step('unreal.hippodrome', [UnrealScript(SCRIPTS / 'import_hippodrome.py', 'HIPPODROME IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['world.hippodrome', 'unreal.world'], heavy=True,
+             inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['world.hippodrome.meshes', 'unreal.world'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'hippodrome.json'],
              about='/Game/Hippodrome: the course meshes with collision, and the data AHippodrome places them from'),
 
@@ -334,15 +365,16 @@ def belmonte_steps(out):
              inputs=[region, WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI],
-             needs=['world.layout'], outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json'],
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
+        digest_step(out, 'world.belmonte', 'meshes', 'what unreal.belmonte reads of the environment', out, ['belmonte']),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
                                              args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
              inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'atmosphere.py', SCRIPTS / 'ground_grain.py', ASSETS / 'environment/textures/tuscan-ground.jpg'],
-             needs=['world.belmonte', 'unreal.forest', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
+             needs=['world.belmonte.meshes', 'unreal.forest', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset'],
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
     ]
@@ -369,12 +401,13 @@ def world_steps(ctx):
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py'],
-             needs=['world.treehouse_trees'],
+             needs=['world.treehouse_trees'], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
                       out / 'megapark' / 'trail.json'],
-             about='terrain heightfield, road, scatter and every region layout -> world.json'),
+             about='terrain heightfield, road, scatter and every region layout -> world.json (dependents see these files)'),
         Step('world.forest_textures', [Python(TOOLS / 'forest_textures.py')],
-             inputs=[TOOLS / 'forest_textures.py', ASSETS / 'environment/textures'],
+             # Only the twig atlases it reads: a new rock or ground painting leaves the forest current.
+             inputs=[TOOLS / 'forest_textures.py', *sorted((ASSETS / 'environment/textures').glob('leaf-*'))],
              outputs=[out / 'forest/textures/textures.json'], about='Sunburst Mediterranean twig atlases with coverage masks'),
         Step('world.forest', [Blender(WORLD / 'build_forest.py')],
              inputs=[WORLD / 'build_forest.py', WORLD / 'forest_impostors.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py', WORLD / 'build_assets.py'],
@@ -388,16 +421,20 @@ def world_steps(ctx):
         Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
              inputs=[REGIONS / 'hidamari', *CRATERPARK, REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'trail.py',
-                     REGIONS / 'megapark' / 'gate.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', ASSETS / 'hidamari' / 'props'],
-             needs=['world.layout'], outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json',
+                     REGIONS / 'megapark' / 'gate.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', ASSETS / 'hidamari' / 'props',
+                     *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'hidamari' / 'city.json', out / 'hidamari' / 'manifest.json',
                                              out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json'],
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains', heavy=True),
-        *belmonte_steps(out)[:1],
+        digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
+        digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
+        *belmonte_steps(out)[:2],
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
              inputs=[REGIONS / 'zeppelin', REGIONS / 'village' / 'build.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      REGIONS / 'megapark' / 'gate.py'],
              needs=['world.layout', 'world.hidamari'],
              outputs=[out / 'zeppelin' / 'manifest.json'], about='airship and its three stations', heavy=True),
+        digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
              inputs=[TOOLS / 'hidamari_textures.py', TOOLS / 'treehouse_textures.py', ASSETS / 'hidamari' / 'textures'],
              outputs=[out / 'hidamari' / 'textures' / 'textures.json'], pool_roots=[out / 'hidamari' / 'textures'],
@@ -414,8 +451,8 @@ def world_steps(ctx):
              inputs=[TREEHOUSE / 'props.py', TOOLS / 'treehouse_props.py', ASSETS / 'treehouse' / 'props'],
              outputs=[out / 'treehouse' / 'props' / 'props.json'], about='the 13 Tripo props fitted to their sizes', heavy=True),
         Step('world.treehouse', [Blender(TREEHOUSE / 'build.py', threads=4)],
-             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', TREEHOUSE / 'layout.py', REGIONS / 'village' / 'build.py'],
-             needs=['world.layout'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
+             inputs=[TREEHOUSE / 'build.py', TREEHOUSE / 'tmesh.py', REGIONS / 'village' / 'build.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT],
+             needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'treehouse' / 'manifest.json', out / 'treehouse' / 'runtime.json'],
              about='the tree house: ten places, bridges, rooms and their dressing, lights, sunbeams', heavy=True),
         Step('world.terrain', [Blender(WORLD / 'build_terrain.py')],
              inputs=[WORLD / 'build_terrain.py', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
@@ -425,15 +462,17 @@ def world_steps(ctx):
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py'],
              needs=['world.layout', 'world.hidamari', 'world.textures'],
              outputs=[out / 'terrain.fbx', out / 'assets' / 'Sea.fbx'], about='terrain, road, wires, far hills, sea', heavy=True),
-        Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village'], needs=['world.layout'],
+        digest_step(out, 'world.terrain', 'meshes', 'the terrain and sea meshes the imports read', out, ['terrain.fbx', 'assets/Sea.fbx']),
+        Step('world.village', [Blender(REGIONS / 'village' / 'build.py')], inputs=[REGIONS / 'village', YORI], needs=['world.layout'],
              outputs=[out / 'village' / 'manifest.json'], about='Momiji Hamlet', heavy=True),
-        Step('world.houses', [Blender(REGIONS / 'houses' / 'build.py')], inputs=[REGIONS / 'houses', REGIONS / 'village' / 'build.py'],
-             needs=['world.layout'], outputs=[out / 'houses' / 'manifest.json'],
+        Step('world.houses', [Blender(REGIONS / 'houses' / 'build.py')],
+             inputs=[REGIONS / 'houses', REGIONS / 'village' / 'build.py', WORLD / 'torii_clearance.py', *VILLAGE_LAYOUT],
+             needs=['world.layout', 'world.textures'], outputs=[out / 'houses' / 'manifest.json'],
              about='the five houses on the main road: three house models and their lots (terrace, hedge, gate, ishigaki)', heavy=True),
         Step('world.southwest', [Blender(REGIONS / 'southwest' / 'build.py', ('--models', SOUTHWEST_MODELS, '--export', '--no-render'))],
-             inputs=[REGIONS / 'southwest', REGIONS / 'village' / 'build.py'], needs=['world.layout'],
+             inputs=[REGIONS / 'southwest', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT], needs=['world.layout'],
              outputs=[out / 'southwest' / 'fbx' / 'SW_Temple.fbx'], about='fishing village, cove, island temple', heavy=True),
-        Step('world.mega', [Blender(REGIONS / 'mega' / 'build.py')], inputs=[REGIONS / 'mega', REGIONS / 'village' / 'build.py'],
+        Step('world.mega', [Blender(REGIONS / 'mega' / 'build.py')], inputs=[REGIONS / 'mega', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT],
              needs=['world.layout'], outputs=[out / 'mega' / 'manifest.json'], about='the mini-mega ramp and its trail', heavy=True),
         Step('world.megapark_restyle', [Python(TOOLS / 'megapark_textures.py', ('finish',))],
              inputs=[TOOLS / 'megapark_textures.py', ASSETS / 'megapark' / 'restyle', ASSETS / 'megapark' / 'map.json',
@@ -454,14 +493,14 @@ def world_steps(ctx):
              inputs=[REGIONS / 'craterpark', ASSETS / 'craterpark', REGIONS / 'megapark' / 'placement.py', YORI],
              outputs=[out / 'craterpark' / 'build.json', out / 'craterpark' / 'park.json', out / 'craterpark' / 'fbx' / 'SM_CP_ImportSeed.fbx'],
              about='Crater Park geometry and riding collision on the caldera floor -> FBX', heavy=True),
-        Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py'],
+        Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT],
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin', heavy=True),
         Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
              inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
              outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
         Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
              inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
-                     ASSETS / 'skatepark' / 'modules'],
+                     ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
              needs=['world.layout', 'world.skatepark_textures'],
              outputs=[out / 'skatepark' / 'build-report.json'], heavy=True, about='the skate pier, its rails and the trick board (park.json)'),
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
@@ -474,7 +513,7 @@ def world_steps(ctx):
              inputs=[ASSETS / 'vehicles' / 'kei', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'kei' / 'manifest.json'], about='the four kei cars in the Mega Park car park', heavy=True),
         Step('world.map', [Python(WORLD / 'map' / 'build_map.py')],
-             inputs=[WORLD / 'map', *CRATERPARK, REGIONS / 'mega' / 'ramp.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py',
+             inputs=[WORLD / 'map', *CRATERPARK, REGIONS / 'southwest', REGIONS / 'mega' / 'ramp.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'gate.py',
                      *[REGIONS / 'belmonte' / (name + '.py') for name in ('plan', 'planting', 'source', 'layout')],
                      ASSETS / 'belmonte' / 'source.json',
                      *(ASSETS / 'belmonte' / entry['path']
@@ -486,9 +525,11 @@ def world_steps(ctx):
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'))],
              inputs=[WORLD / 'city_surface_tiles.py'], needs=['world.hidamari'],
              outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
+        digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
         Step('world.city_trees', [Blender(WORLD / 'city_tree_lods.py', ('--tag', 'v4'))],
              inputs=[WORLD / 'city_tree_lods.py', REGIONS / 'hidamari' / 'arcade.py', REGIONS / 'hidamari' / 'plaza.py'],
              needs=['world.hidamari'], outputs=[out / 'city_tree_lods' / 'v4' / 'manifest.json'], about='desktop profile: city tree LODs', heavy=True),
+        digest_step(out, 'world.city_trees', 'meshes', 'the city tree LODs unreal.desktop reads', out / 'city_tree_lods', ['v4']),
     ]
 
 
@@ -548,19 +589,27 @@ def unreal_steps(ctx):
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
-             inputs=[ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
+             # The city's arcade and harbor materials read the region's committed paintings.
+             inputs=[REGIONS / 'hidamari' / 'textures',
                      *[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
-                                          'harbor_material.py', 'sea_look.py', 'mountain_material.py', 'import_sailboat.py', 'sailboat_material.py',
+                                          'harbor_material.py', 'sea_look.py', 'import_sailboat.py', 'sailboat_material.py',
                                           'import_zeppelin.py', 'forest_ground.py', 'ground_grain.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
-             after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari', 'world.hidamari_textures', 'world.hidamari_props',
-                    'world.zeppelin', 'world.terrain', 'world.village', 'world.sailboat', 'characters.wanderer'],
-             heavy=True, about='world assets, materials, the villager and the level (/Game/Japan)'),
+             after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props',
+                    'world.zeppelin.meshes', 'world.terrain.meshes', 'world.village', 'world.sailboat', 'characters.wanderer'],
+             heavy=True, about='world assets, materials, the villager and the level (/Game/Japan), all but the volcano'),
+        # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
+        # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
+        Step('unreal.north', [UnrealScript(SCRIPTS / 'import_hidamari.py', 'HIDAMARI IMPORT COMPLETE', env=(('HIDAMARI_ASSETS', 'HD_North*'),))],
+             inputs=[ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
+                     *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
+             needs=['unreal.world', 'world.hidamari.north'], heavy=True,
+             about='/Game/Japan: the volcano (HD_North*), M_NorthMountains and its rock and snow mask textures'),
         # The regions below layer onto the world (the south-west import replaces the terrain's and the sea's materials),
         # so they rerun when it is reimported.
         Step('unreal.southwest', [UnrealScript(SCRIPTS / 'import_southwest.py', 'SOUTHWEST IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py'], needs=['unreal.world', 'world.southwest', 'world.terrain'], heavy=True,
+             inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py'], needs=['unreal.world', 'world.southwest', 'world.terrain.meshes'], heavy=True,
              about='south-west props, the terrain and the sea'),
         Step('unreal.mega', [UnrealScript(SCRIPTS / 'import_mega.py', 'MEGA IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_mega.py'], needs=['unreal.world', 'world.mega'], heavy=True, about='the mini-mega ramp'),
@@ -640,7 +689,7 @@ def unreal_steps(ctx):
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
              inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
-             needs=['unreal.city_tree_cpu_access', 'world.city_tiles', 'world.city_trees'], heavy=True,
+             needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest
         # the Ride runtime reads, and the measurement of the compressed poses against the simulation data. Both scripts
@@ -691,9 +740,13 @@ def staging_steps(ctx):
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[1:])
+              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:])
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
+    # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
+    for step in result:
+        if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':
+            step.after.append('unreal.north')
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)
