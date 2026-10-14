@@ -143,7 +143,7 @@ WORLD_ALIGNED = {
     'material_024': ('ground', 8, (116, 112, 116)),             # the block's hillside (snow on top in the material)
     'material_025': ('cast_concrete', 4, (170, 165, 153)),      # access bridges
     'material_026': ('cast_concrete', 4, (148, 142, 132)),      # bridge supports
-    'material_027': ('megapark:rock', 10, (117, 114, 120)),     # the edge guard
+    'material_027': ('megapark:rock', 10, (150, 146, 152)),     # the edge guard (darker read as black shards in shade)
 }
 # Surfaces finished from another surface's painting: slug: (painting, palette mean sRGB). The snake run's box tops carry
 # the irregular-stone texture (material_003), but the paintovers make them wooden decks.
