@@ -1,9 +1,34 @@
 # Paul
 
-The HarasValley playable boy: moss-green T-shirt, beige cargo trousers and green sneakers. Vendored from the brother's project with the operator's authorization, at the source revision recorded in `source-manifest.json`.
+The project owner's playable boy: moss-green T-shirt, beige cargo trousers and green sneakers, 1.65 m.
 
-`Paul.glb` contains the existing fitted mesh, skin weights, UVs, embedded textures and skeleton at 1.65 m. Acquisition adds a floor root and maps the bones to Yorimichi's humanoid contract; the three extra torso/neck bones follow their parents. The source files and their checksums are recorded in the manifest. Normal builds need no HarasValley checkout, private download or MetaHuman plugin.
+`Paul.glb` (revision `tripo-body-r01`) is one skinned mesh with two 4K materials: `M_Paul_0`, the body, and `M_Paul_1`,
+the head. Its rig is Tripo's auto-rig with Mixamo names, the fingers included. The export drops the 13 unweighted end
+bones and renames the rest to the humanoid contract.
 
-His body goes through the shared character pipeline: `character.toml` sets its export and import, `adventure.toml` its move-set fit (the sword carry pushed 5.5 cm back, the glider bar fitted to his grip span). Build `unreal.paul_pawn` with `atelier build yorimichi`, then select Paul in the character menu or pass `-rider=Paul`. The full adventure move set and Cairo's donor actions are baked onto his skeleton. All ten bike actions are fitted to his reach; skating uses the shared runtime retargeter.
+## How it was made
 
-Open: skin shows at the back of his armpits when his arms are lowered (the shirt underarm and the arm shells beneath it deform apart); the bike pose fit; the native movement and bike checks.
+1. **References.** Four headless T-pose views of the body (`references/body/`), drawn by hand in ChatGPT from the
+   boy's standing concept and turnaround. The body follows the standing concept's proportions. `references/README.md`
+   gives the prompts.
+2. **Body.** Tripo Studio, P2 multiview, made from the four views. It came back as one textured mesh with five
+   separate fingers and a bare neck plug.
+3. **Head.** The head is kept as it was: the `M_Paul_1` section of the previous `Paul.glb` (`haras-r01`). That is the
+   HarasValley boy's face-sheet Tripo bust, vendored with the owner's authorization.
+4. **Graft** (`../tools/paul_body_graft.py`, record in `provenance/graft.json`):
+   - the body is welded, turned to face +X and scaled so the head (chin to the top of the hair) is 18% of his height;
+   - the body's neck skin goes, and the head's own neck runs down under the collar, held 3 mm inside the shirt;
+   - the arms' skin is brought to the face's colour.
+5. **Rig** (`../tools/paul_rig.py`, record in `provenance/rig.json`). Tripo Studio rigged a single-texture export of the
+   graft. Its file is fitted back onto the graft, because Tripo had re-centred it and turned it by 4 degrees. Each graft
+   vertex then takes the weights of the rigged vertex at the same place, within 0.9 mm. The graft's own UVs and both
+   textures stay.
+
+Rebuilding from the sources needs the Tripo body and rigged GLBs, which are kept outside the repository. The committed
+`Paul.glb` and its manifest are all a build needs.
+
+## In the game
+
+`character.toml` sets his export and import. `adventure.toml` sets his move-set fit: the sword carry is pushed
+5.5 cm back and the glider bar is fitted to his grip span. Build `unreal.paul_pawn` with `atelier build yorimichi`,
+then pick Paul in the character menu or pass `-rider=Paul`.
