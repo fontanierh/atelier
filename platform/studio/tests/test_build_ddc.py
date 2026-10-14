@@ -147,6 +147,43 @@ def test_known_opposite_count_can_refute_reported_fraction_without_inventing_cou
     assert report['metrics']['GetMissPct'] is None and report['metrics']['TotalGetMisses'] is None
 
 
+@pytest.mark.parametrize('hits,misses,total,fractions', [
+    (*ddc.GET_TOTALS, ('TotalGetHitPct', 'GetMissPct')),
+    ('TotalPutHits', 'TotalPutMisses', 'TotalPuts', ('TotalPutHitPct', 'PutMissPct')),
+    ('LocalGetHits', 'LocalGetMisses', 'LocalGetTotal', ('LocalGetHitPct',)),
+])
+@pytest.mark.parametrize('counts,reported,known', [
+    ((9, 1), (.8, .2), False), ((9, 1), (.9, .1), True),
+    ((0, 0), (.5, .5), False), ((0, 0), (0., 0.), True),
+])
+def test_missing_total_stays_unknown_while_counts_validate_fractions(hits, misses, total, fractions, counts, reported, known):
+    values = {hits: counts[0], misses: counts[1], **dict(zip(fractions, reported))}
+    result = parse(summary(values))['summaries'][0]
+    assert result['metrics'][total] is None
+    assert [result['metrics'][key] for key in (hits, misses)] == list(counts)
+    assert [result['metrics'][key] for key in fractions] == (list(reported[:len(fractions)]) if known else [None] * len(fractions))
+    assert bool(result['diagnostics']) is not known
+
+
+@pytest.mark.parametrize('count,fraction', [
+    ('TotalGetHits', 'TotalGetHitPct'), ('TotalGetMisses', 'GetMissPct'),
+    ('TotalPutHits', 'TotalPutHitPct'), ('TotalPutMisses', 'PutMissPct'),
+    *((f'{prefix}GetHits', f'{prefix}GetHitPct') for prefix in ('Local', 'Shared', 'ZenLocal', 'ZenRemote', 'Cloud')),
+])
+def test_zero_count_refutes_nonzero_fraction_without_other_counts(count, fraction):
+    result = parse(summary({count: 0, fraction: .8}))['summaries'][0]
+    assert result['metrics'][count] == 0 and result['metrics'][fraction] is None
+    assert result['diagnostics']
+
+
+@pytest.mark.parametrize('reported,expected', [((.8, .2), (None, None)), ((0, .2), (None, None)),
+                                               ((0, 1), (0, 1)), ((0, 0), (0, 0))])
+def test_zero_opposite_count_allows_only_zero_or_all_requests(reported, expected):
+    result = parse(summary({'TotalGetHits': 0, 'TotalGetHitPct': reported[0], 'GetMissPct': reported[1]}))['summaries'][0]
+    assert [result['metrics'][key] for key in ('TotalGetHitPct', 'GetMissPct')] == list(expected)
+    assert result['metrics']['TotalGets'] is None and result['metrics']['TotalGetMisses'] is None
+
+
 def test_blocks_end_at_boundaries_and_never_absorb_other_stats():
     prefix = '[2026.01.01-12.00.00:000][  0]'
     text = summary(prefix=prefix) + 'LogCookStats: Display: TotalGets = 999\n'

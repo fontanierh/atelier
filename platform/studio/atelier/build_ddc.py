@@ -74,18 +74,28 @@ def finish(summary, *, closed):
                 if key:
                     metrics[key] = None
             continue
+        # Counts can validate fractions even when the total was not logged. Keep the
+        # missing metric unknown; this denominator is only a consistency check.
+        denominator = t if t is not None else h + m if h is not None and m is not None else None
         reported = [metrics[field] for field in fractions]
         for field, fraction, count, other in zip(fractions, reported, (h, m), (m, h)):
             # UE's SafeDivide emits zero for a zero denominator. A known opposite count can
             # validate a reported fraction without filling in the missing count itself.
-            expected = 0 if t == 0 else None
-            if t:
-                expected = count / t if count is not None else 1 - other / t if other is not None else None
-            if fraction is not None and expected is not None and abs(fraction - expected) > 0.000001:
+            expected = ()
+            if denominator == 0 or count == 0:
+                expected = (0,)
+            elif denominator is not None:
+                if count is not None:
+                    expected = (count / denominator,)
+                elif other is not None:
+                    expected = (1 - other / denominator,)
+            elif other == 0:
+                expected = (0, 1)  # No requests, or every request belongs to this category.
+            if fraction is not None and expected and all(abs(fraction - value) > 0.000001 for value in expected):
                 diagnostics.append(f'inconsistent {field}')
                 metrics[field] = None
         if len(reported) == 2 and all(value is not None for value in reported):
-            possible = (0,) if t == 0 else (1,) if t or h or m else (0, 1)
+            possible = (0,) if denominator == 0 else (1,) if denominator or h or m else (0, 1)
             if all(abs(sum(reported) - value) > 0.000001 for value in possible):
                 diagnostics.append(f'conflicting fractions for {total}')
                 for field in fractions:
