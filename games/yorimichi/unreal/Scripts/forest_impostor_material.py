@@ -29,11 +29,15 @@ def parent(default_normal):
     # Connect again after publishing the named inputs.
     for name,expression,output in values:assert M.connect_material_expressions(expression,output,mapped,name)
     assert M.connect_material_property(mapped,'',U.MaterialProperty.MP_NORMAL)
-    fill=node(U.MaterialExpressionMultiply,const_b=.015);M.connect_material_expressions(colour,'RGB',fill,'A')
-    base,emit=atmosphere.apply(m,colour,fill)
+    # Per-species tint (TINTS): a baked atlas keeps the leaf texture's own colour, which reads pale from afar.
+    tint=node(U.MaterialExpressionVectorParameter,parameter_name='Tint',default_value=U.LinearColor(1,1,1,1))
+    tinted=node(U.MaterialExpressionMultiply)
+    M.connect_material_expressions(colour,'RGB',tinted,'A');M.connect_material_expressions(tint,'',tinted,'B')
+    fill=node(U.MaterialExpressionMultiply,const_b=.015);M.connect_material_expressions(tinted,'',fill,'A')
+    base,emit=atmosphere.apply(m,tinted,fill)
     M.connect_material_property(base,'',U.MaterialProperty.MP_BASE_COLOR);M.connect_material_property(emit,'',U.MaterialProperty.MP_EMISSIVE_COLOR)
     subsurface=node(U.MaterialExpressionMultiply,const_b=.22)
-    M.connect_material_expressions(colour,'RGB',subsurface,'A')
+    M.connect_material_expressions(tinted,'',subsurface,'A')
     M.connect_material_property(subsurface,'',U.MaterialProperty.MP_SUBSURFACE_COLOR)
     fade=node(U.MaterialExpressionPerInstanceFadeAmount);mask=node(U.MaterialExpressionMultiply)
     M.connect_material_expressions(colour,'A',mask,'A');M.connect_material_expressions(fade,'',mask,'B')
@@ -47,6 +51,10 @@ def parent(default_normal):
     m.set_editor_property('used_with_instanced_static_meshes',True)
     M.recompile_material(m);E.save_loaded_asset(m)
     return m
+
+
+# The ginkgo's leaf texture is a pale cream: the targets' far forest shows it gold (assets/craterpark/concepts f_city2).
+TINTS={'Tree_Forest_Ginkgo':(1.,.85,.5)}
 
 
 def instance(name,record,output,master):
@@ -67,5 +75,6 @@ def instance(name,record,output,master):
     M.set_material_instance_parent(mi,master)
     M.set_material_instance_texture_parameter_value(mi,'Tex',textures['colour'])
     M.set_material_instance_texture_parameter_value(mi,'NormalTex',textures['normal'])
+    M.set_material_instance_vector_parameter_value(mi,'Tint',U.LinearColor(*TINTS.get(name,(1.,1.,1.)),1.))
     M.update_material_instance(mi);E.save_loaded_asset(mi)
     return mi
