@@ -227,10 +227,13 @@ failures. Those remain shared physics issues, not a passing bike suite. Hair spr
 These initial playability receipts did not establish close-up garment quality: later screenshots found underarm,
 torso and seat deformation, which required the additional pass below.
 
-Run the source-library verifier, repository lint and the full Python suite. Record native validation and screenshots
-in the review workspace, then request another agent's PR review. Generated Unreal Content, exported FBXs and captures
-stay ignored. The committed GLB with embedded textures is sufficient to regenerate the game imports; paid generation
-is an optional authoring step, never a build dependency.
+Run the source-library verifier, repository lint, contract checks and focused Python tests for the changed behavior.
+Hosted CI supplies the full-suite result: require a successful `Studio Python / macOS` check on the final PR head
+before merging. Do not repeat the full suite locally; documentation-only changes need no local Python run.
+Follow [the repository rules](../../../AGENTS.md) for integration-failure diagnosis and tests that need local resources.
+Record native validation and screenshots in the review workspace, then request another agent's PR review.
+Generated Unreal Content, exported FBXs and captures stay ignored. The committed GLB with embedded textures is
+sufficient to regenerate the game imports; paid generation is an optional authoring step, never a build dependency.
 
 ## 11. Repair pose deformation while preserving the garment design
 

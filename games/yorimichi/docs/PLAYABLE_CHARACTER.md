@@ -199,8 +199,12 @@ Commit:
 - the fit baseline;
 - committed grips.
 
-Build outputs, Unreal Content, FBXs and captures stay ignored. Run `uv run atelier lint` and `uv run pytest -q`, read
-`git diff`, and ask another agent for review on the board.
+Build outputs, Unreal Content, FBXs and captures stay ignored. Run `uv run atelier lint`,
+`uv run atelier contracts check` and focused Python tests for the changed behavior, then read `git diff` and ask
+another agent for review on the board. Hosted CI supplies the full-suite result: require a successful
+`Studio Python / macOS` check on the final PR head before merging. Do not repeat the full suite locally;
+documentation-only changes need no local Python run. Follow [the repository rules](../../../AGENTS.md) for
+integration-failure diagnosis and tests that need local resources.
 
 ## Changing the pipeline
 
