@@ -78,11 +78,12 @@ def parent(kind):
     occlusion = node(unreal.MaterialExpressionScalarParameter, parameter_name='Occlusion', default_value=OCCLUSION)
     cavity = node(unreal.MaterialExpressionScalarParameter, parameter_name='Cavity', default_value=CAVITY)
     inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (normal, ''), 'W': (world, ''), 'A': (ao, ''), 'C': (cavity, '')}
-    # Broad patches (a, about 30 m) with a little edge wobble (b); a narrow smoothstep keeps their edges crisp. The
-    # earlier soft ramp (x2.5) left a third of the snow part-covered, the dark ground showing through in blurred smears.
+    # Snow lies over the whole face that looks up, opened only where the broad field a (about 30 m) is lowest, so bare
+    # ground shows in rare patches rather than a field of spots; a narrow smoothstep keeps the edges crisp. The earlier
+    # soft ramp (x2.5) left a third of the snow part-covered, the dark ground showing through in blurred smears.
     cover = ('float up=saturate((N.z-.55)/.3);'
              'float a=sin(W.x*.0021+sin(W.y*.0017)*2.3)*sin(W.y*.0019+sin(W.x*.0013)*1.9);'
-             'float m=S*up*smoothstep(.30,.38,.62+.45*a);')
+             'float m=S*up*smoothstep(.21,.27,.62+.45*a);')
     base = custom(cover + 'return lerp(B*lerp(1.,A,C),float3(.80,.83,.88),m);', inputs)
     shade = custom('return lerp(1.,A,K);', {'A': (ao, ''), 'K': (occlusion, '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
