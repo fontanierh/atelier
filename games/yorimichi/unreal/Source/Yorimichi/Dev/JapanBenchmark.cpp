@@ -248,7 +248,15 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         LogBenchmarkSceneFormat(ComparePhase);
     }
     CSV_CUSTOM_STAT(JapanBenchmark,Phase,ComparePhase,ECsvCustomStatOp::Set);
-    CSV_CUSTOM_STAT(JapanBenchmark,Measured,!bCompare || PhaseSeconds>=CompareSettle+.2f ? 1:0,ECsvCustomStatOp::Set);
+    // The zeppelin's still is the first frame after the cruise: requested there, left out of the summaries, and the
+    // capture ends on the next frame, so the game cannot exit before the screenshot is written.
+    const bool bZeppelinStill = bZeppelin && !bCruising && !bBenchmarkStillTaken && !BenchmarkDirectory.IsEmpty();
+    if (bZeppelinStill)
+    {
+        FScreenshotRequest::RequestScreenshot(BenchmarkDirectory/TEXT("view.png"),false,false);
+        bBenchmarkStillTaken = true;
+    }
+    CSV_CUSTOM_STAT(JapanBenchmark,Measured,!bZeppelinStill && (!bCompare || PhaseSeconds>=CompareSettle+.2f) ? 1:0,ECsvCustomStatOp::Set);
     if (BenchmarkView == TEXT("road_walk"))
     {
         // Real character movement and collision, at a steady run. No fixed timestep,
@@ -302,14 +310,11 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         : IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))->GetFloat();
     CSV_CUSTOM_STAT(JapanBenchmark,DynamicResolution,bDynamic?1:0,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,ScreenPercentageApprox,ScreenPercentage,ECsvCustomStatOp::Set);
-    if (T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds) || (bZeppelin && !bCruising))
+    if (T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds) || (bZeppelin && !bCruising && !bZeppelinStill))
     {
         MoveIntent = FVector2D::ZeroVector;
         FCsvProfiler::Get()->EndCapture();
         bBenchmarkFinished = true;
-        // The zeppelin's still is the end of the cruise, after timing: looking back over the forest to the lake.
-        if (bZeppelin && !BenchmarkDirectory.IsEmpty())
-            FScreenshotRequest::RequestScreenshot(BenchmarkDirectory/TEXT("view.png"),false,false);
         UE_LOG(LogTemp,Display,TEXT("BENCHMARK COMPLETE"));
     }
 }
