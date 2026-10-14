@@ -48,7 +48,7 @@ including the game itself while it plays.
 | macOS on Apple silicon | 15+ | the only platform tested |
 | Unreal Engine | 5.8 (`/Users/Shared/Epic Games/UE_5.8`, or set `UE_ROOT`) | the games |
 | Full Xcode | licence accepted, selected with `xcode-select`, macOS SDK and Metal toolchain installed | C++ and shaders; CLI tools alone are insufficient |
-| Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
+| Blender | 5.2.1 LTS at `/Applications/Blender.app`, via a `PATH` symlink, or set `BLENDER` to the app executable | meshes, rigs, clips |
 | Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node / npm | 24.16+ / 11.11+ for contracts | contract checks; Node also serves streaming pages and AI scripts |
@@ -57,6 +57,9 @@ including the game itself while it plays.
 
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
 preparation a Mac reached over SSH needs (`atelier setup --headless`).
+
+If `blender` on `PATH` is a wrapper script, set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`.
+Product fingerprints include its complete app bundle; a wrapper script alone cannot identify the installed tool.
 
 ```sh
 git clone https://github.com/fontanierh/atelier && cd atelier

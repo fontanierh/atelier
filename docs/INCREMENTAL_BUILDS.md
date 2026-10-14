@@ -10,8 +10,9 @@ automatic portable-product restoration with retention are available. Whole-build
 products and uses an interruption journal; bounded tool batches keep per-action results. [The recipe guide](BUILD_RECIPES.md)
 describes these APIs; the sandbox exercises independent geometry and placement products without native tools.
 The [Yorimichi foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) separates 18 asset owners and shared materials.
-Its source cache remains disabled pending deterministic export proof. Automatic per-package Unreal restoration,
-runtime dependency audits, spatial queries, compiler/cook caching and remote storage below remain proposed.
+Deterministic source export proof has passed; the source cache remains disabled pending recipe/restore validation.
+Automatic per-package Unreal restoration, runtime dependency audits, spatial queries, compiler/cook caching and
+remote storage below remain proposed.
 Legacy cutoffs, module isolation and the [explicit portable pool](ARTIFACT_POOL.md) remain supported. Capacity is
 shadow-only; current locks, guards and scheduling rules remain authoritative.
 

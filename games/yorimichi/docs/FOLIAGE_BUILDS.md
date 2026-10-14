@@ -4,9 +4,15 @@ The foliage pilot separates the shared library from world placement. A tree, bus
 export and imported LOD chain. Shared textures, material graphs, instances and parameter collections have a separate
 owner. Existing `/Game/Japan/Assets/<name>` paths remain stable, so placement data can keep referring to them.
 
-**Validation status:** recipe edit-boundary and protocol tests run without native tools. Cold/warm Blender exports,
-Unreal import equivalence, package loading and measured speed are native acceptance gates; no speedup is claimed
-until those checks pass. Source `cache=True` and automatic native package caching are disabled.
+**Validation status:** recipe edit-boundary and protocol tests run without native tools. The October 14 native
+source proof passed on Blender 5.2.1 LTS: all 64 legacy mesh records and serialized geometry matched. The serialized
+comparison ignores Blender's auto-numbered collision data-block names in nine trunk FBXs, while preserving their
+UCX model names and all geometry. All 100 split output files were byte-identical across repeated exports, another
+directory and reversed asset order in a fresh process. A byte-pattern scan found no common local-path prefixes in
+those files. The read-only Unreal 5.8.2 baseline covers all 18 assets and leaves their package bytes unchanged.
+Split-import equivalence, incremental repair, package
+loading and cooking remain acceptance gates. No end-to-end speedup is claimed; source `cache=True` and automatic
+native package caching stay disabled until their remaining gates pass.
 
 ## Edit one asset
 
