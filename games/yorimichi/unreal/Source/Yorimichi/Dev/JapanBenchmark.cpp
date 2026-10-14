@@ -248,9 +248,10 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         LogBenchmarkSceneFormat(ComparePhase);
     }
     CSV_CUSTOM_STAT(JapanBenchmark,Phase,ComparePhase,ECsvCustomStatOp::Set);
-    // The zeppelin's still is the first frame after the cruise: requested there, left out of the summaries, and the
-    // capture ends on the next frame, so the game cannot exit before the screenshot is written.
-    const bool bZeppelinStill = bZeppelin && !bCruising && !bBenchmarkStillTaken && !BenchmarkDirectory.IsEmpty();
+    // The zeppelin's still is the first frame after the cruise (or after --seconds): requested there, left out of the
+    // summaries, and the capture ends on the next frame, so the game cannot exit before the screenshot is written.
+    const bool bTimeUp = T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds);
+    const bool bZeppelinStill = bZeppelin && (!bCruising || bTimeUp) && !bBenchmarkStillTaken && !BenchmarkDirectory.IsEmpty();
     if (bZeppelinStill)
     {
         FScreenshotRequest::RequestScreenshot(BenchmarkDirectory/TEXT("view.png"),false,false);
@@ -310,7 +311,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         : IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenPercentage"))->GetFloat();
     CSV_CUSTOM_STAT(JapanBenchmark,DynamicResolution,bDynamic?1:0,ECsvCustomStatOp::Set);
     CSV_CUSTOM_STAT(JapanBenchmark,ScreenPercentageApprox,ScreenPercentage,ECsvCustomStatOp::Set);
-    if (T >= (bCompare?6.f*BenchmarkSeconds+5.f*CompareSettle:BenchmarkSeconds) || (bZeppelin && !bCruising && !bZeppelinStill))
+    if ((bTimeUp || (bZeppelin && !bCruising)) && !bZeppelinStill)
     {
         MoveIntent = FVector2D::ZeroVector;
         FCsvProfiler::Get()->EndCapture();
