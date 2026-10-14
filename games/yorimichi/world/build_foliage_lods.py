@@ -48,8 +48,11 @@ def main():
         # 35% screen size. Keep their seed, atlas and crown proportions at every
         # level, with an extra intermediate step before the cheapest far mesh.
         roadside = generate in (A.tree_broad,A.tree_maple,A.tree_ginkgo)
-        sizes = [1.,.22,.09,.035] if roadside else [1.,.08,.025]
-        strides = (3,9,27) if roadside else (3,8)
+        # Pines and cedars carry the most triangles of any far tree. Past about 500 m they take one more step,
+        # built the same way; nearer, their levels are unchanged.
+        conifer = generate in (A.tree_pine,A.tree_cedar)
+        sizes = [1.,.22,.09,.035] if roadside else [1.,.08,.025,.015] if conifer else [1.,.08,.025]
+        strides = (3,9,27) if roadside else (3,8,16) if conifer else (3,8)
         report[name] = {'triangles':[sum(len(p.vertices)-2 for p in base.data.polygons)],
                         'screen_sizes':sizes}
         for level,stride in enumerate(strides,1):
@@ -63,7 +66,9 @@ def main():
                     # Caller-side RNG still advances for every source card. Every
                     # retained card therefore uses the original position and UV cell.
                     if (self.card_number-1)%stride: return
-                    scale = min(math.sqrt(stride),3.0 if roadside else 2.2)
+                    # The kept cards grow to cover what the dropped ones did; the conifers' added far step may grow
+                    # as far as the roadside crowns', or its crown would thin out.
+                    scale = min(math.sqrt(stride),3.0 if roadside or (conifer and level == 3) else 2.2)
                     super().card(center,(size[0]*scale,size[1]*scale),yaw,tilt,m,cell,normal,roll,col,col_bottom,crop)
 
                 def quad(self,points,*args,**kwargs):
@@ -72,6 +77,10 @@ def main():
                     super().quad(points,*args,**kwargs)
 
                 def tube(self,*args,**kwargs):
+                    # A tree's cheapest level keeps its trunk and leader but not the branches and twigs in its crown
+                    # (forest_trees draws them with 6 and 5 sides): under a pixel wide there, they were half of its
+                    # triangles. The caller still draws the twigs' random offsets, so every leaf stays where it was.
+                    if level == len(strides) and kwargs.get('n',8) in (5,6) and generate is not A.bush: return
                     kwargs['n'] = min(kwargs.get('n',8),5 if level == 1 else 3)
                     super().tube(*args,**kwargs)
 
