@@ -392,8 +392,9 @@ def snow_cover(x,y,z,step=STEP):
     wander=angle+noise(x,y,45,99)*.05
     lane=noise(np.cos(wander)*470,np.sin(wander)*470,22.,97)+.35*gully
     stop=foot+5+70*smooth((ring(470.,70.,93)+.2)/.8)
-    chutes=(smooth((lane-.3)/.15)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
-            *smooth((downslope_noise(radius,wander,16,91)+.75)/.4))
+    # Narrow couloirs between rock ribs, not broad bars: a high lane threshold, broken along their length.
+    chutes=(smooth((lane-.42)/.12)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
+            *smooth((downslope_noise(radius,wander,16,91)+downslope_noise(radius,wander,7,90)*.4+.45)/.3))
     bowl=np.maximum.reduce([floor,drifts,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
