@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
-from craterpark import grind, placement
+from craterpark import additions, grind, placement, tunnel
 
 import bpy
 import bmesh
@@ -33,7 +33,7 @@ SECTION = 200000        # collision triangles per mesh
 # Roles drawn with world-aligned materials (import_craterpark.py): their UVs are unused, so their flat faces are merged.
 PLAIN = {'foundation', 'mountain', 'access_bridge', 'bridge_support', 'boundary'}
 # Where two meshes' faces lie on each other, the earlier role's is drawn: the riding pieces, then the built walls and
-# blocks, the hillside last (its dark rock showed in patches on the perimeter walls).
+# blocks, the added pieces (after the bridges), the hillside last (its dark rock showed in patches on the perimeter walls).
 ROLES = ('original', 'boundary', 'foundation', 'access_bridge', 'bridge_support', 'mountain')
 FLAT = .5              # degrees: faces this close to coplanar are merged (a shape-preserving simplification)
 COVER = .05             # metres: foundation faces this close to a drawn riding surface, and parallel to it, are not drawn
@@ -421,9 +421,59 @@ def main():
             twin = covered(t[down], riding[up], np.ones(int(up.sum()), bool), eps=TWIN)
             keep[index[np.flatnonzero(down)[twin]]] = False
             print('Riding', entry['id'], 'downward twins left out:', int(twin.sum()), flush=True)
+    # The solid filling a tunnel's bore is left out of the render and the collision.
+    pieces = tunnel.tunnels([a['positions'][a['triangles'][keep]].astype('f8') for entry, a, keep in loaded
+                             if entry['role'] == 'original'])
+    print('Pieces closing round a tunnel:', len(pieces), flush=True)
+    for entry, a, keep in loaded:
+        if entry['role'] in ('original', 'mountain'):
+            continue
+        index = np.flatnonzero(keep)
+        bore = tunnel.inside_tubes(a['positions'][a['triangles'][index]], pieces)
+        keep[index[bore]] = False
+        if bore.any():
+            print('Mesh', entry['id'], entry['role'], 'faces in a tunnel left out:', int(bore.sum()), flush=True)
+    # The added riding pieces (additions.py): snake channels in the east bowls' slots, and caps and walls closing the
+    # sheets that ended in the air. They come after the park's own pieces: where one lies on a piece, the piece is drawn.
+    riding_now = np.concatenate([a['positions'][a['triangles'][keep]] for entry, a, keep in loaded
+                                 if entry['role'] == 'original']).astype('f8')
+    solid_now = np.concatenate([a['positions'][a['triangles'][keep]] for entry, a, keep in loaded
+                                if entry['role'] != 'original']).astype('f8')
+    added = []
+    for name, (box, floor, deep, depth) in additions.SNAKES.items():
+        made = additions.snake_channels(riding_now, solid_now, box, floor, deep, depth)
+        if made is not None:
+            added.append(({'id': f'add-snake-{name}', 'role': 'original', 'material': additions.SNAKE_MATERIAL,
+                           'doubleSided': False, 'added': True}, made))
+    around = np.concatenate([riding_now, solid_now]); heights = grind.heights(around)
+    for name, box in additions.BANKS.items():
+        made = additions.bank(riding_now, solid_now, box)
+        if made is None:
+            continue
+        added.append(({'id': f'add-bank-{name}', 'role': 'original', 'material': additions.SNAKE_MATERIAL,
+                       'doubleSided': False, 'added': True}, made))
+        sides = additions.solidify(made[0][made[1]].astype('f8'), heights, around)
+        if sides is not None:
+            added.append(({'id': f'add-bank-{name}-sides', 'role': 'original', 'material': additions.SNAKE_MATERIAL,
+                           'doubleSided': False, 'added': True}, sides))
+    for entry, a, keep in loaded:
+        if entry['role'] != 'original':
+            continue
+        made = additions.solidify(a['positions'][a['triangles'][keep]], heights, around,
+                                  additions.tile_metres(a['positions'], a['uvs'], a['triangles'][keep]))
+        if made is not None:
+            added.append(({'id': 'add-solid-' + entry['id'][5:9], 'role': 'original', 'material': entry['material'],
+                           'doubleSided': False, 'added': True}, made))
+    del riding_now, solid_now, heights, around
+    for entry, (vertices, faces, uvs) in added:
+        loaded.append((entry, {'positions': vertices.astype('f4'), 'triangles': faces.astype('i8'),
+                               'uvs': uvs.astype('f4'), 'render_skip': np.zeros(0, 'i8')}, np.ones(len(faces), bool)))
+        print('Added', entry['id'], 'faces:', len(faces), flush=True)
     # Faces of different meshes lying on each other z-fight (the foundations' shared walls and tops, a riding piece on the
     # block): each face lying on one of an earlier mesh, in ROLES order, is left out of the render and collision.
-    order = sorted(range(len(loaded)), key=lambda i: (ROLES.index(loaded[i][0]['role']), i))
+    # The added pieces rank after the bridges: a bridge over a snake channel is drawn where the channel meets it.
+    order = sorted(range(len(loaded)), key=lambda i: (ROLES.index('bridge_support') + .5 if loaded[i][0].get('added')
+                                                    else ROLES.index(loaded[i][0]['role']), i))
     rank = np.empty(len(loaded), 'i8'); rank[order] = np.arange(len(loaded))
     shown = [a['positions'][a['triangles'][keep]] for _, a, keep in loaded]
     everything = np.concatenate(shown)
@@ -458,14 +508,6 @@ def main():
     for (entry, *_), (_, count) in zip(drawn, moved):
         if count:
             print('Mesh', entry['id'], entry['role'], 'faces partly on a higher-ranked mesh moved back:', count, flush=True)
-    occlusion = ambient_occlusion([(v, f) for _, v, f, _, _, _ in drawn])
-    for (entry, vertices, faces, uvs, skipped, covered_faces), ao in zip(drawn, occlusion):
-        mesh = export_mesh('SM_CP_' + entry['id'].replace('-', '_'), vertices, faces, [entry['material']],
-                           np.zeros(len(faces), 'i4'), uvs, smooth=True, ao=ao)
-        mesh.update(source_id=entry['id'], role=entry['role'], skipped=skipped,
-                    covered=covered_faces, occlusion_mean=round(float(ao.mean()), 4))
-        report['render'].append(mesh)
-        print('Exported', mesh['name'], flush=True)
     ride = np.concatenate(sections['original']); above = riding_above(ride[unit_normals(ride.astype('f8'))[:, 1] > .2])
     final = {}
     for role, parts in sections.items():
@@ -477,6 +519,22 @@ def main():
             triangles, sunk = sink_inside(triangles, above)
         final[role] = triangles
         print('Collision', role, 'faces inside the solid left out:', int(hidden.sum()), 'corners inside sunk:', sunk, flush=True)
+    # Grind lines along the lips (grind.py), on the collision the board rides, each drawn as a steel coping tube.
+    lines = grind.grind_lines(final['original'].astype('f8'),
+                              np.concatenate([x for role, x in final.items() if role != 'original']).astype('f8'))
+    print('Grind lines along the lips:', len(lines), 'of', round(sum(np.linalg.norm(np.diff(l, axis=0), axis=1).sum() for l in lines)), 'm', flush=True)
+    tube = additions.coping(lines)
+    if tube is not None:
+        drawn.append(({'id': 'add-coping', 'role': 'coping', 'material': additions.COPING_MATERIAL}, *tube, 0, 0))
+    occlusion = ambient_occlusion([(v, f) for _, v, f, _, _, _ in drawn])
+    for (entry, vertices, faces, uvs, skipped, covered_faces), ao in zip(drawn, occlusion):
+        mesh = export_mesh('SM_CP_' + entry['id'].replace('-', '_'), vertices, faces, [entry['material']],
+                           np.zeros(len(faces), 'i4'), uvs, smooth=True, ao=ao)
+        mesh.update(source_id=entry['id'], role=entry['role'], skipped=skipped,
+                    covered=covered_faces, occlusion_mean=round(float(ao.mean()), 4))
+        report['render'].append(mesh)
+        print('Exported', mesh['name'], flush=True)
+    for role, triangles in final.items():
         triangles = triangles[spatial_order(triangles)]     # sections of neighbouring faces
         for k in range(0, len(triangles), SECTION):
             chunk = triangles[k:k + SECTION]
@@ -495,15 +553,11 @@ def main():
     t = placement.unreal_transform()
     # The marked ramp drop-in; the rider starts there facing the park's native +x.
     ground = json.loads((SOURCE / 'drop-in.json').read_text())['groundPosition']
-    # Grind lines along the lips already there (grind.py), on the collision the board rides.
-    lines = grind.grind_lines(final['original'].astype('f8'),
-                              np.concatenate([x for role, x in final.items() if role != 'original']).astype('f8'))
     rails = []
     for i, line in enumerate(lines):
         closed = len(line) > 3 and np.linalg.norm(line[0] - line[-1]) < .01
         rails.append({'id': f'cp_lip_{i:03d}', 'closed': bool(closed),
                       'points_cm': [ue(p) for p in (line[:-1] if closed else line).tolist()]})
-    print('Grind lines along the lips:', len(rails), 'of', round(sum(np.linalg.norm(np.diff(l, axis=0), axis=1).sum() for l in lines)), 'm', flush=True)
     park = {'source_sha256': report['scene_sha256'], 'name': 'CRATERPARK', 'mesh_root': MESH_ROOT, 'rails_required': True,
             'location_cm': t['location_cm'], 'yaw_deg': t['yaw_deg'], 'placement': placement.summary(),
             'render': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['render']],

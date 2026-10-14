@@ -132,6 +132,40 @@ query met nearly all of them: by the east wooden ramps a simulation step took up
 walking stayed smooth. Each collision mesh is now stored along a Z-order curve of its faces' centres, the faces over
 8 m across in groups of their own: a group spans a median 9-16 m (52 m on the hillside's large faces).
 
+## Riding
+
+Faces of two meshes lying partly on each other (a foundation's wall behind a ramp's side, the hillside against a
+block's wall) were drawn at the same depth and flickered, worst far away, where the depth buffer resolves about 15 µm
+at 250 m. Each such face of the later mesh in role order (riding pieces, built walls and blocks, added pieces,
+hillside) moves 5 mm back along its normal in the render; its corners stay shared, so nothing cracks. The collision
+keeps them where they are.
+
+[`craterpark/grind.py`](../world/regions/craterpark/grind.py) finds the grind lines along the lips already in the
+park, on the collision the board rides: the edge of a level deck where the ground falls away, with nothing over it,
+as the runtime's grind probes accept (the deck within 4 cm on one side 9 cm out, nothing at deck height on the
+other). A stair's nosing, a path's edge over the hillside and anything under a roof are left out. `park.json` lists
+them as `rails` and sets `rails_required`.
+
+The foundation blocks were made solid up to the top of the pieces over them, so they filled the round tunnel: the
+rider met its flat end. [`craterpark/tunnel.py`](../world/regions/craterpark/tunnel.py) finds the pieces that close
+round an open bore (a riding face over and under a point, and round it on most sides, within 12 m) and leaves out of
+the render and the collision every block face that reaches into one.
+
+[`craterpark/additions.py`](../world/regions/craterpark/additions.py) adds riding pieces, shaped on the park's own
+surfaces; none moves, cuts or covers what is ridden:
+
+- **Snake channels.** The slots in the east bowls' floor fell 20-31 m to the hillside. Each holds a concrete channel
+  1.5 m deep at its middle (less where it is narrow), its sides a sine curve meeting the floor flush at both edges.
+  Under each bridge across a slot the channel rises into a roller over 4 m and meets the bridge's top.
+- **Banks.** A smooth surface spans the hillside between two pieces, flush with both: a hip from the tower's channel
+  down to the plaza terrace.
+- **Solid edges.** A riding sheet's free edge that ends in the air, a knife edge (a half-pipe's flank, the back of its
+  wall), gets a level cap 35 cm wide on the side away from the piece, a grindable lip, and a wall from it down to
+  the ground, so the piece reads as solid concrete.
+
+The added pieces take the riding concrete's materials with world-planar UVs at the piece's own texture scale, and
+rank after the bridges: where an added piece meets a bridge or a riding piece, theirs is drawn.
+
 ## Restyle
 
 [`tools/craterpark_textures.py`](../tools/craterpark_textures.py) repaints the park's realistic textures in the
@@ -172,16 +206,15 @@ ceiling.
 
 | Step | Does |
 |---|---|
-| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, from the drawn faces, without the faces inside the solid; only the riding surfaces stay unsimplified. It writes `park.json`. |
+| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh and per added piece ("Riding"), without its `render_skip` faces, the foundation faces on a riding surface or the block's faces in the tunnel, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, from the drawn faces, without the faces inside the solid; only the riding surfaces stay unsimplified. It writes `park.json`. |
 | `unreal.craterpark` | [`import_craterpark.py`](../unreal/Scripts/import_craterpark.py) imports them into `/Game/CraterPark`, with their vertex colours. Each material is a texture times its base colour, or the colour alone, darkened by the baked occlusion, and is two-sided where the source says so. |
 | `data.stage` | Copies `craterpark/park.json` to `Content/Data`. |
 
 In the game, `JapanWorld` spawns the park with `ASuperUltraMegaPark::Spawn`, the Mega Park's actor. `park.json` names
-its own `mesh_root` and sets `rails_required: false`. The collision is invisible and blocking, and counts as a skate
+its own `mesh_root`, its grind lines and `rails_required: true`. The collision is invisible and blocking, and counts as a skate
 surface like the Mega Park's. The world map has a **Crater Park** travel point at the marked drop-in.
 
 ## Later
 
-- Grind paths: the source has none.
 - A way up: a zeppelin stop or a trail over the crest.
 - A ground material for the block that matches the volcano.
