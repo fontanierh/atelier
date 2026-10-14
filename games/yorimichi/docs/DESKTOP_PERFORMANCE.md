@@ -137,7 +137,7 @@ uv run python games/yorimichi/tools/benchmark.py village-walk-01 --view road_wal
 
 | Option | Meaning |
 |---|---|
-| `--view` | static cameras: `spawn` (default), `portrait`, `forest`, `coast`, `village`, `north_overview`, `park`, `station`, `lake`, `harbor`, `arcade`, `plaza`, `city`, `custom` (with `--camera X Y Z PITCH YAW FOV`, player hidden); moving: `traverse` (walk, jog, run and a jump), `road_walk` (runs a scripted route) |
+| `--view` | static cameras: `spawn` (default), `portrait`, `forest`, `coast`, `village`, `north_overview`, `park`, `station`, `lake`, `harbor`, `arcade`, `plaza`, `city`, `custom` (with `--camera X Y Z PITCH YAW FOV`, player hidden); moving: `traverse` (walk, jog, run and a jump), `road_walk` (runs a scripted route), `zeppelin` (boards at the Woodland station and times the cruise to Hidamari, looking back at the lake over the forest; the capture ends where the landing begins, so `--seconds` is only a ceiling: the 28 s cruise fits in `--seconds 60`) |
 | `--route` | with `road_walk`: `village` (default), `village_loop`, `mega`, `hidamari`, `arcade`, `plaza`, `harbor`, `harbor_pier`, `north`; `--road-index N` starts at route sample N |
 | `--desktop-fullscreen` | the visible fullscreen game with the desktop viewport client and session-only `desktop=1`; needs `--height 1440` and a `--width` matching the display's aspect. An explicit `--settings 'desktop=0'` retains a baseline experiment. Without it the capture renders offscreen at `--width` × `--height` (default 1920×1080) |
 | `--capped` | `t.MaxFPS 60` instead of uncapped; VSync stays off unless `--commands` adds `r.VSync 1` |

@@ -92,7 +92,7 @@ def summarize(path, warmup=300, phase=None):
 # traversal is only allowed for the second group, and only if the telemetry shows it happened.
 STATIC_VIEWS = ('spawn', 'portrait', 'forest', 'coast', 'village', 'north_overview', 'park',
                 'station', 'lake', 'harbor', 'arcade', 'plaza', 'city', 'custom')
-MOVING_VIEWS = ('traverse', 'road_walk')
+MOVING_VIEWS = ('traverse', 'road_walk', 'zeppelin')
 # 0.3 m/s. The scripted traverse deliberately stages walk, jog and run, and its walk is 85 cm/s, so
 # a 1 m/s threshold failed a view that was moving exactly as intended. The idle soak that prompted
 # all of this drifted below 1 cm/s, so this still separates travel from standing still.
