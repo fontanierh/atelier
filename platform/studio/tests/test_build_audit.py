@@ -299,6 +299,20 @@ output.write_text('otherwise successful')
     assert not list((a.store.root / 'actions').glob('*.json'))
 
 
+def test_imported_module_cannot_reuse_an_outer_imports_directory_exemption(action):
+    a = action
+    helper = a.root / 'helper.py'
+    helper.write_text('''from importlib.machinery import PathFinder
+from pathlib import Path
+FOUND = PathFinder._get_spec('absent_secret', [str(Path(__file__).parent)], None)
+''')
+    a.step.inputs.append(helper)
+    a.code("import helper\noutput.write_text(str(helper.FOUND is not None))")
+    assert a.run() == 1
+    assert any(r['operation'] == 'module lookup' for r in a.report()['violations'])
+    assert not (a.ctx.stamps / 'generate.json').exists()
+
+
 @pytest.mark.parametrize('declared', [False, True])
 def test_extension_module_bytes_require_an_input_or_tool_runtime(action, declared):
     from websockets import speedups

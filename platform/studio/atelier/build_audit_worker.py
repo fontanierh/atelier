@@ -106,15 +106,6 @@ class Observer:
         finally:
             self.local.busy = False
 
-    @staticmethod
-    def loading_module():
-        frame = sys._getframe(1)
-        while frame is not None:
-            if frame.f_code is bootstrap._find_and_load_unlocked.__code__:
-                return True
-            frame = frame.f_back
-        return False
-
     def observe(self, event, args):
         if event == 'import' and args[1] is not None:
             # ExtensionFileLoader does not open a shared library through Python's open event.
@@ -135,7 +126,7 @@ class Observer:
             frame = sys._getframe(2)
             importing = (frame.f_code is external.FileFinder._fill_cache.__code__
                          and frame.f_back is not None and frame.f_back.f_code is self.file_finder.__code__
-                         and self.loading_module() and path in self.import_roots)
+                         and getattr(self.local, 'resolving', False) and path in self.import_roots)
             if importing:
                 self.record('import search', path)
             else:
@@ -182,7 +173,14 @@ class Observer:
         if (caller.f_code is not bootstrap._find_spec.__code__ or caller.f_back is None
                 or caller.f_back.f_code is not bootstrap._find_and_load_unlocked.__code__):
             self.record('module lookup', reason='resolver-only queries are unsupported by this audit')
-        spec = function(fullname, path, target)
+        # Only this verified lookup may use FileFinder's directory probes. An outer import frame
+        # is insufficient: the imported module's body can itself issue a resolver-only query.
+        previous = getattr(self.local, 'resolving', False)
+        self.local.resolving = True
+        try:
+            spec = function(fullname, path, target)
+        finally:
+            self.local.resolving = previous
         if spec is not None and spec.origin is None:
             for folder in spec.submodule_search_locations or ():
                 self.read(self.path(folder), directory=True)
@@ -192,7 +190,7 @@ class Observer:
         @functools.wraps(self.file_finder)
         def find_spec(finder, *args, **kwargs):
             if (sys._getframe(1).f_code is not external.PathFinder._get_spec.__code__
-                    or not self.loading_module()):
+                    or not getattr(self.local, 'resolving', False)):
                 self.record('module lookup', reason='resolver-only queries are unsupported by this audit')
             return self.file_finder(finder, *args, **kwargs)
 
