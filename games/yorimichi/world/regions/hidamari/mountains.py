@@ -23,6 +23,7 @@ RIM_RADIUS = 470.           # mean radius of the crest; it wanders by about 35 m
 # The level floor reaches this far; the wall's foot moves in and out by up to 12 m. Crater Park (a 338 x 385 m block,
 # corner radius 256 m) then keeps at least 62 m to the wall's foot at any heading, room for the slopes round its edges.
 FLOOR_RADIUS = 330.
+CRAG_STEP = 16.                 # metres between the inner wall's ledges
 CREST = 600.                # the cone's height over its apron at the crest
 DEPTH = 45.                 # the floor lies this far below the crest: Crater Park stands high in it, its tallest
                             # ramps just over the rim (craterpark/placement.py LIFT)
@@ -230,6 +231,12 @@ def natural_height(x,y):
     t=np.clip((r-foot)/np.maximum(crest-12-foot,1),0,1)
     floor=caldera_floor()+.8*noise(x,y,60,95)+.5*noise(x,y,23,96)
     target=np.where(r<crest,floor+(target-floor)*t*t*(2.2-1.2*t),target)
+    # Crags: the inner wall steps down in cliff bands and ledges (the targets' broken granite), the bands warped and
+    # tilted by noise so none reads as a ring. Each band is a ledge for 60 per cent of its height, then a steep riser.
+    wall=smooth((r-foot-8)/15)*smooth((crest-6-r)/12)*(r<crest)
+    warped=target+noise(x,y,90,66)*9+noise(x,y,30,67)*3
+    band=CRAG_STEP;k=np.floor(warped/band);f=warped/band-k
+    target=target+(k+smooth((f-.6)/.4))*band*wall-warped*wall
     # Round the Mega Park the former summit's flank stands wherever it is the higher.
     sx,sy,reach,fade=MEGAPARK_SHOULDER
     keep=smooth((reach-np.hypot(x-sx,y-sy))/fade)
