@@ -171,7 +171,10 @@ def rock_material(parent):
         'MI_NorthRockCaps','/Game/Japan/Materials',unreal.MaterialInstanceConstant,unreal.MaterialInstanceConstantFactoryNew())
     l=unreal.MaterialEditingLibrary
     l.set_material_instance_parent(mi,parent)
-    assert l.set_material_instance_scalar_parameter_value(mi,'Caps',1.)
+    # The setter's return value is not a reliable success flag; read the value back instead.
+    l.set_material_instance_scalar_parameter_value(mi,'Caps',1.)
+    l.update_material_instance(mi)
+    assert l.get_material_instance_scalar_parameter_value(mi,'Caps')==1.,'MI_NorthRockCaps: Caps not set'
     e.save_loaded_asset(mi)
     return mi
 
