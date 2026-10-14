@@ -93,10 +93,11 @@ SURFACES = {
                 'a soft network of shallow irregular flagstone-like grooves', (170, 160, 138)),
     'concrete_edge': ('textures/tex-0029.png', 'plaza', 'xy', 'edges', 'smooth pale warm grey poured concrete with the '
                       'slightly darker trowelled strips along its left and right edges, clean, no moss', PALE),
+    # Rust-brown frames round the plaza (g_air); a saturated orange mean read as drawn lines.
     'tile_edge': ('textures/tex-0006.png', 'plaza', 'x', 'edges', 'glazed terracotta tiles in warm orange-brown with '
-                  'thin cream grout lines and a rounded terracotta bullnose band, as in Image 1', (184, 114, 82)),
+                  'thin cream grout lines and a rounded terracotta bullnose band, as in Image 1', (138, 92, 70)),
     'paving': ('textures/tex-0064.png', 'plaza', 'xy', 'edges', 'large irregular cut-stone paving slabs in pale warm '
-               'grey and soft beige with narrow joints', (160, 148, 128)),
+               'grey and soft beige with narrow joints', (168, 150, 122)),
     'concrete': ('textures/tex-0043.png', 'plaza', 'xy', 'blend', 'smooth pale warm grey concrete with a very fine '
                  'soft speckle', (168, 164, 152)),
     'masonite': ('textures/tex-0060.png', 'bowls', 'xy', 'edges', 'a warm honey-brown masonite skate ramp surface, two '

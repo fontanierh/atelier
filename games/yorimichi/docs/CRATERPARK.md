@@ -73,9 +73,10 @@ block's own exposed hillside carries about 160 low granite domes 4-10 m across i
 (`HD_NorthRock*`, snow-capped, sunk so their open undersides never show), and about 9,900 more bushes in clumps,
 packed thicker round the domes; all stand clear of every riding piece and bridge (`placement.piece_triangles`). The
 autumn bush has a warm core: the garden shrubs' near-black one, sunk in a slope or seen from afar, read as black
-shards on the snow. Bushes have no collision and are culled beyond 300 m. Some 900 granite stones
-(`HD_NorthRockA`/`C`, as on the north slopes) lie in clusters over the floor. No tree or stone stands within 7 m of
-the park's block. The caldera is a `near_trees` box, so its trees cast shadows and keep trunk collision.
+shards on the snow. Bushes have no collision and are culled beyond 300 m, the autumn bush beyond 550 m (the rim and
+air views look across the caldera; `JapanWorld.cpp`). Some 900 granite stones (`HD_NorthRockA`/`C`, as on the north
+slopes) lie in clusters over the floor. No tree or stone stands within 7 m of the park's block. The caldera is a
+`near_trees` box, so its trees cast shadows and keep trunk collision.
 
 The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor about half white, half dark
 cinder. Broad chutes, tens of metres wide, run down the inner wall from just under the crest and fan out at its foot,
@@ -91,9 +92,10 @@ clay; bright olive moss patches its gentler upward faces.
 
 The block's hillside (`material_024`) carries snow on its flatter tops and benches, with a crisp edge
 (`import_craterpark.py` `SNOWY`); its sides steeper than about 33 degrees show the volcanic ground in bands, like the
-targets' outcrops. World-space patterns of holes read as spots and dashes, and a soft edge left the dark ground smeared
-through the snow. The skating surfaces, the edge guard and its
-coping, foundations and bridges stay clear. The park's materials are matte, like the terrain's.
+targets' outcrops. Smooth value noise (about 26 m and 9 m) leaves about a third of the flat ground bare in broad
+patches, so the block never reads as a white sheet; sine patterns of holes read as spots and dashes, and a soft edge
+left the dark ground smeared through the snow. The skating surfaces, the edge guard and its coping, foundations and
+bridges stay clear. The park's materials are matte, like the terrain's.
 
 ## Shading
 

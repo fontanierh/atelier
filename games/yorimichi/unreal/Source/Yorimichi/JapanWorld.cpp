@@ -421,6 +421,8 @@ void AJapanWorld::Load()
                 H->SetCastShadow(!bGrass && !bLitter && !bBackdrop && !bWater && !bWires && Key!=TEXT("HD_ArcadeRoof") && Key!=TEXT("HD_ArcadeLanterns") && Key!=TEXT("HD_PlazaWater"));
                 if (bGrass || bLitter || bBackdrop) H->bAffectDistanceFieldLighting = false;
                 if (bGrass) H->SetCullDistances(6000, 8000);
+                // The caldera's wild thicket (Bush_HD_Autumn, only there) is what the rim and air views look across.
+                else if (Key == TEXT("Bush_HD_Autumn")) H->SetCullDistances(55000, 60000);
                 else if (bBush) H->SetCullDistances(30000, 36000);
                 else if (bLitter) H->SetCullDistances(7000, 9000);
                 if (bTree || bBush) H->SetWorldPositionOffsetDisableDistance(18000);

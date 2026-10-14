@@ -324,8 +324,9 @@ def colours(x,y,z):
     # Rising backdrop ground is still woodland. Exposed rock belongs to the
     # actual volcanic relief above its local apron, not an absolute elevation.
     forest=smooth((z-floor-135*LIFT+noise(x,y,125,27)*28)/(160*LIFT))*smooth((stretch(1120)-radius)/180)
-    # Light lavender-grey granite (the Sunburst targets: lit faces about sRGB 165, 160, 170), with sparse olive lichen.
-    rock=np.stack([.145+.028*rock_noise,.138+.028*rock_noise,.162+.032*rock_noise],axis=-1)
+    # Light grey granite with a trace of lavender (the Sunburst targets: lit faces about sRGB 165, 162, 168); a bluer mix
+    # read purple under the sky light. Sparse olive lichen.
+    rock=np.stack([.150+.028*rock_noise,.145+.028*rock_noise,.155+.030*rock_noise],axis=-1)
     lichen=smooth((noise(x,y,12,99)-.5)/.20)
     rock*=np.stack([1+.04*lichen,1+.07*lichen,1-.12*lichen],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
