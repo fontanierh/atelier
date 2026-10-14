@@ -80,13 +80,27 @@ float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBle
 '''+ground_grain.code('Ground','GroundSampler','P')+'''
 float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
+float3 an=abs(N);
+float2 fp=(an.z>max(an.x,an.y)?P.xy:(an.x>an.y?P.yz:P.xz))/520.;
+float2 fc=floor(fp);float best=9.;float2 id=fc;
+for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
+  float2 cell=fc+float2(i,j);
+  float2 o=frac(sin(float2(dot(cell,float2(127.1,311.7)),dot(cell,float2(269.5,183.3))))*43758.5453);
+  float2 d=cell+o-fp;float dd=dot(d,d);
+  if(dd<best){best=dd;id=cell;}
+}
+float3 h=frac(sin(float3(dot(id,float2(12.9898,78.233)),dot(id,float2(39.346,11.135)),dot(id,float2(73.156,52.235))))*43758.5453)-.5;
+float3 sunDir=normalize(Sun.xyz);
+float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.6)),sunDir)),litSmooth=saturate(dot(N,sunDir));
+float3 facet=(.55+.75*litFacet)/(.55+.75*litSmooth)*lerp(float3(.93,.96,1.06),float3(1.05,1.,.93),saturate(litFacet*1.4-.2));
+ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 float3 snow=float3(.84,.87,.92)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
 '''+snow_code+'''
 return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
-    for key in ('C','D','A','P','N','Tex','Ground','Snow'):
+    for key in ('C','D','A','P','N','Tex','Ground','Snow','Sun'):
         a=unreal.CustomInput();a.set_editor_property('input_name',key);args.append(a)
     c.set_editor_property('inputs',args)
     l.connect_material_expressions(vc,'',c,'C');l.connect_material_expressions(depth,'',c,'D')
@@ -121,7 +135,7 @@ return float3(bounce,bounce,bounce);''')
     wind=e.load_asset('/Game/Japan/Materials/MPC_Wind');assert wind
     sun=l.create_material_expression(m,unreal.MaterialExpressionCollectionParameter,-600,900)
     sun.set_editor_property('collection',wind);sun.set_editor_property('parameter_name','SunDirection')
-    l.connect_material_expressions(sun,'',ambient,'Sun')
+    l.connect_material_expressions(sun,'',ambient,'Sun');l.connect_material_expressions(sun,'',c,'Sun')
     emission=l.create_material_expression(m,unreal.MaterialExpressionAdd,400,150)
     l.connect_material_expressions(atmosphere.glow(m),'',emission,'A')
     l.connect_material_expressions(ambient,'',emission,'B')

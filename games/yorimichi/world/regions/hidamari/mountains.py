@@ -350,7 +350,7 @@ def snow_cover(x,y,z,step=STEP):
     # Each gully holds its own share of snow, and about a third hold none, so the flanks never read as a sunburst.
     segments=drainage();per=len(segments)//40
     rng=np.random.default_rng(413)
-    share=rng.uniform(.35,1.,40)*(rng.random(40)>.3)
+    share=rng.uniform(.5,1.,40)*(rng.random(40)>.2)
     for k,(a,b) in enumerate(segments):
         if not share[k//per]:
             continue
@@ -358,7 +358,7 @@ def snow_cover(x,y,z,step=STEP):
         t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.5*share[k//per]
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.95*share[k//per]
         signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.),0)-distance)
     # Rock breaks each streak into fragments and ragged edges further down.
     breakup=downslope_noise(radius,angle,38,31,.4)*6+noise(x,y,83,32)*4+downslope_noise(radius,angle,14,33,.4)*2.5
@@ -366,7 +366,7 @@ def snow_cover(x,y,z,step=STEP):
     # Noise stretched downslope (the cone's radius), so rock breaks a streak into lengths, not round holes.
     streak=lambda s,seed:downslope_noise(radius,angle,s,seed)
     # Gaps along each streak below the rim, where ribs of rock cross it.
-    signed-=12*smooth((streak(30,34)+streak(12,35)*.4-.1)/.3)*smooth((radius-rim_radius(angle)-20)/40)
+    signed-=8*smooth((streak(30,34)+streak(12,35)*.4-.1)/.3)*smooth((radius-rim_radius(angle)-20)/40)
     # Each seeded ribbon already has a different reach; this broad weather
     # field breaks the snowline without a concentric cut across every gully.
     ribbons=smooth((signed+3)/7)*smooth((stretch(500)+noise(x,y,220,51)*180-radius)/120)
@@ -380,7 +380,7 @@ def snow_cover(x,y,z,step=STEP):
     foot=wall_foot(angle);rim_r=rim_radius(angle)
     # The caldera floor is grey cinder with snow lying in patches and in drifts along the wall's foot.
     floor_r=foot-10+25*ring(240.,60.,95)
-    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.0)/.22)
+    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.42)/.22)
     drifts=(smooth((radius-foot+30)/20)*smooth((foot+25-radius)/15)
             *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Chutes on the inner wall: irregular spacing, widths and reach, wandering off the radial line and
@@ -402,6 +402,10 @@ def snow_cover(x,y,z,step=STEP):
     # Outside, snow lies heaviest in a broken collar just under the crest, gathering in its hollows.
     collar=(smooth((radius-rim_r-14)/16)*smooth((rim_r+60+35*ring(470.,80.,45)-radius)/35)
             *smooth((noise(x,y,17,44)+noise(x,y,8,46)*.3+.6*gully-.15)/.25)*(1-.5*crest))
+    # Broad snowfields on the outer flank between bare rock ribs, stretched downslope and thinning with height lost.
+    flank=(smooth((radius-rim_r-10)/20)*smooth((rim_r+220+60*ring(470.,90.,57)-radius)/80)
+           *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest+.05)/.2))
+    snow=np.maximum(snow,flank)
     line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
     # Chutes and the collar hold snow on steeper ground than the open slopes do.
     steep=np.maximum(collar,chutes)*smooth((nz-.30)/.22)
@@ -463,6 +467,9 @@ def mesh(base_sampler):
     cliff=smooth((.8-nz)/.22)*exposed
     strata=.5+.5*np.sin(z*.6+noise(x,y,40,61)*3.)
     colors*=(1-cliff*(.22+.14*strata))[...,None]
+    # Olive lichen and moss on the rock's gentler, upward faces (the targets' granite), never on the cliffs.
+    moss=smooth((noise(x,y,18,99)+noise(x,y,6,98)*.3-.45)/.18)*smooth((nz-.72)/.15)*exposed
+    colors=colors*(1-.55*moss[...,None])+np.array([.120,.118,.050])*.55*moss[...,None]
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
     # Soft continuous snow masks replace hard clipped lavender polygons.

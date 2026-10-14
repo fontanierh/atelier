@@ -74,7 +74,7 @@ WORLD = ('Image 1 shows the art direction of a stylised game: soft painterly sha
 # (setup_project.py: film toe .3, slope .7, cool shadow gain) show a sunlit flat surface at about albedo^0.5 per channel
 # in linear terms, which halves value contrast and saturation. Each mean is the target colour (assets/craterpark/concepts
 # g_*) taken back through that response, measured on the review shots (docs/CRATERPARK.md, "Restyle").
-PALE = (172, 162, 139)          # the paintovers' pale warm concrete
+PALE = (168, 164, 152)          # the targets' pale near-neutral concrete
 WOOD = (170, 124, 84)
 # slug: (original texture, style, the axes it wraps on, how it is made to wrap, description, palette mean sRGB or None)
 # 'blend' wraps a stochastic surface with a half-tile offset copy; 'edges' keeps a laid-out one in place and only evens
@@ -84,11 +84,11 @@ SURFACES = {
                       'cream-grey, its slightly darker margins kept, a few soft trowel sweeps and one or two fine hairline '
                       'cracks', PALE),
     'ledge': ('textures/tex-0051.png', 'plaza', 'x', 'edges', 'two long smooth cast-concrete ledge blocks in pale warm '
-              'sandstone beige with a thin joint between them and softly rounded top and bottom edges', (176, 160, 134)),
+              'sandstone beige with a thin joint between them and softly rounded top and bottom edges', (172, 165, 150)),
     'flagstone': ('textures/tex-0004.png', 'rock', 'xy', 'edges', 'irregular flagstone paving of pale lavender-grey and '
                   'warm grey volcanic stones with a few ochre-tinted stones and pale cream mortar joints', (150, 144, 146)),
     'bowl': ('textures/tex-0024.png', 'bowls', 'xy', 'blend', 'smooth dark slate-grey skate-bowl concrete with a faint '
-             'cool blue cast, soft broad trowel strokes and very subtle mottling', (50, 54, 62)),
+             'cool blue cast, soft broad trowel strokes and very subtle mottling', (38, 40, 46)),
     'stamped': ('textures/tex-0059.png', 'plaza', 'xy', 'edges', 'stamped concrete paving in pale warm sand beige with '
                 'a soft network of shallow irregular flagstone-like grooves', (172, 152, 120)),
     'concrete_edge': ('textures/tex-0029.png', 'plaza', 'xy', 'edges', 'smooth pale warm grey poured concrete with the '
@@ -98,7 +98,7 @@ SURFACES = {
     'paving': ('textures/tex-0064.png', 'plaza', 'xy', 'edges', 'large irregular cut-stone paving slabs in pale warm '
                'grey and soft beige with narrow joints', (156, 135, 108)),
     'concrete': ('textures/tex-0043.png', 'plaza', 'xy', 'blend', 'smooth pale warm grey concrete with a very fine '
-                 'soft speckle', (172, 160, 138)),
+                 'soft speckle', (168, 164, 152)),
     'masonite': ('textures/tex-0060.png', 'bowls', 'xy', 'edges', 'a warm honey-brown masonite skate ramp surface, two '
                  'smooth panels with a joint between them, soft wood-fibre grain', WOOD),
     'herringbone': ('textures/tex-0030.png', 'plaza', 'xy', 'edges', 'herringbone terracotta brick paving in warm '
@@ -124,7 +124,7 @@ SURFACES = {
                None),
     'side_bank': ('textures/tex-0025.png', 'plaza', 'xy', 'edges', 'a pale warm grey concrete bank panel with a smooth '
                   'raised border frame around a finely textured inner field, and the thin dark tile strip down its left '
-                  'side, as in Image 1', (168, 156, 136)),
+                  'side, as in Image 1', (166, 161, 150)),
 }
 # slug: (style, how it is made to wrap, description) of the world textures painted from nothing; the formwork grid is
 # laid out, so it keeps its joints in place
@@ -139,10 +139,10 @@ WORLD_PAINTINGS = {
 # bridges get world-aligned textures. 'megapark:rock' is the Mega Park's restyled rock, reused for the edge guard's
 # steep walls.
 WORLD_ALIGNED = {
-    'material_023': ('cast_concrete', 4, (178, 160, 134)),      # foundations
+    'material_023': ('cast_concrete', 4, (172, 166, 152)),      # foundations
     'material_024': ('ground', 8, (116, 112, 116)),             # the block's hillside (snow on top in the material)
-    'material_025': ('cast_concrete', 4, (174, 160, 136)),      # access bridges
-    'material_026': ('cast_concrete', 4, (150, 138, 118)),      # bridge supports
+    'material_025': ('cast_concrete', 4, (170, 165, 153)),      # access bridges
+    'material_026': ('cast_concrete', 4, (148, 142, 132)),      # bridge supports
     'material_027': ('megapark:rock', 10, (117, 114, 120)),     # the edge guard
 }
 # Surfaces finished from another surface's painting: slug: (painting, palette mean sRGB). The snake run's box tops carry

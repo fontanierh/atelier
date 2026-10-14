@@ -785,6 +785,28 @@ def dress_caldera(put):
             put('Bush_Ochre_A' if rng.random()<.7 else 'Bush_Ochre_B',x,y,float(z[0])-.08,yaw=float(rng.uniform(0,360)),
                 scale=float(rng.uniform(.5,.9)))
             counts['shrubs']+=1
+    # Autumn thickets (the rim and bowls targets): red shrub maples, golden ginkgo shrubs and ochre bushes in clumps along
+    # the crest, and ochre bushes round the park's banks, on snow too, clear of the riding.
+    counts['thicket']=0
+    ta=rng.uniform(-math.pi,math.pi,16000);band=mountains.rim_radius(ta)+rng.uniform(-35,65,16000)
+    fx,fy=candidates(4000,mountains.RIM_RADIUS)
+    tx=np.concatenate([vx+band*np.cos(ta),fx]);ty=np.concatenate([vy+band*np.sin(ta),fy])
+    tz=north_height(tx,ty);_,_,tr,ta=mountains.polar(tx,ty);rim_r=mountains.rim_radius(ta)
+    tslope=np.hypot(north_height(tx+1,ty)-tz,north_height(tx,ty+1)-tz)
+    clump=mountains.smooth((mountains.noise(tx,ty,34,761)+mountains.noise(tx,ty,11,762)*.4-.05)/.2)
+    # Thinner on snow: the shrubs stand out of the drifts, as in the rim target.
+    open_ground=np.where(mountains.snow(tx,ty,north_base_height)<.4,1.,.35)
+    crest=(np.abs(tr-rim_r-15)<50)&(tslope<.75)&(rng.random(len(tx))<clump*open_ground)
+    banks=(craterpark.contains(tx,ty,margin=40.)&~craterpark.contains(tx,ty,margin=9.)&(tslope<.6)
+           &(rng.random(len(tx))<.8*clump))
+    for x,y,z,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],crest[crest|banks]):
+        if not clear_of_stones(x,y):continue
+        u=rng.random()
+        if on_crest and u<.3:name,scale='Tree_Maple_B',float(rng.uniform(.28,.5))
+        elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.16,.26))
+        else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(.7,1.3))
+        put(name,float(x),float(y),float(z)-.1,yaw=float(rng.uniform(0,360)),scale=scale)
+        counts['thicket']+=1
     counts['trees']=len(trees);counts['groves']=len(groves)
     return counts
 
