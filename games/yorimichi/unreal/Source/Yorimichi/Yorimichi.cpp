@@ -8,10 +8,13 @@
 
 class FYorimichiModule : public FDefaultGameModuleImpl
 {
+#if WITH_EDITOR
     FDelegateHandle CookedWithoutNavigation;
+#endif
 
     virtual void StartupModule() override
     {
+#if WITH_EDITOR
         // Yorimichi has no navigation: no navmesh, and nothing finds paths (the village and the sword trainer steer
         // themselves). The engine would still cook each static mesh with a copy of its collision triangles for a navmesh
         // builder, half a GiB the packaged game loads for nothing (the Crater Park memory report, NavCollision). The cook
@@ -20,6 +23,7 @@ class FYorimichiModule : public FDefaultGameModuleImpl
         {
             if (UStaticMesh* Mesh = Cast<UStaticMesh>(Object); Mesh && Context.IsCooking()) Mesh->MarkAsNotHavingNavigationData();
         });
+#endif
 
         // An offscreen run (-RenderOffscreen: the captures, films and QA runs driven over the live bridge) has no window to
         // play in, so it never takes the mouse: no capture at launch and no lock to the hidden viewport, and the cursor stays
@@ -33,7 +37,9 @@ class FYorimichiModule : public FDefaultGameModuleImpl
 
     virtual void ShutdownModule() override
     {
+#if WITH_EDITOR
         FCoreUObjectDelegates::OnObjectPreSave.Remove(CookedWithoutNavigation);
+#endif
     }
 };
 
