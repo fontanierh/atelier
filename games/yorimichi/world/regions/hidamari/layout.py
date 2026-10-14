@@ -690,6 +690,7 @@ def dress_caldera(put):
     bare; low ochre shrubs at the groves' edges and among the stones. Nothing within 7 m of the park's block. Returns the
     counts placed."""
     from craterpark import placement as craterpark
+    from megapark import forest as megapark_forest
     rng=np.random.default_rng(748)
     vx,vy=mountains.VOLCANO;floor=mountains.caldera_floor()
     def ground(x,y):
@@ -710,8 +711,8 @@ def dress_caldera(put):
     ok=inside&(slope<.8)&(z<floor+40)&~craterpark.contains(cx,cy,margin=16.)&(rng.random(len(cx))<.3+.7*(1-stand(cx,cy)))
     centres=[]
     for x,y in zip(cx[ok],cy[ok]):
-        if len(centres)>=30:break
-        if all(math.hypot(x-px,y-py)>45 for px,py in centres):centres.append((float(x),float(y)))
+        if len(centres)>=50:break
+        if all(math.hypot(x-px,y-py)>34 for px,py in centres):centres.append((float(x),float(y)))
     for gx,gy in centres:
         group=[]
         for _ in range(int(rng.integers(2,6))):
@@ -755,21 +756,24 @@ def dress_caldera(put):
     ok=inside&(slope<.6)&(z<floor+30)&~craterpark.contains(gx,gy,margin=12.)&(rng.random(len(gx))<stand(gx,gy))
     groves=[]
     for x,y in zip(gx[ok],gy[ok]):
-        if len(groves)>=48:break
+        if len(groves)>=72:break
         if all(math.hypot(x-px,y-py)>26 for px,py in groves):groves.append((float(x),float(y)))
     trees=[]
     for x0,y0 in groves:
         kind=rng.random()
-        mix=(.94,.98) if kind<.55 else (.6,.85) if kind<.82 else (.12,.62)     # pine, then maple, below these
-        spread=float(rng.uniform(6,13));members=int(rng.integers(3,12))
+        mix=(.85,.95) if kind<.4 else (.45,.8) if kind<.75 else (.1,.6)     # pine, then maple, below these
+        spread=float(rng.uniform(6,14));members=int(rng.integers(5,15))
         for _ in range(members):
             for _ in range(4):
                 x=x0+rng.normal(0,spread);y=y0+rng.normal(0,spread)
                 z,slope,inside=ground(x,y)
                 if (not inside[0] or slope[0]>.75 or float(z[0])>floor+35 or bool(craterpark.contains(x,y,margin=7.))
                         or not clear_of_stones(x,y) or any(math.hypot(x-px,y-py)<3.2 for px,py in trees[-40:])):continue
-                u=rng.random();name='Tree_Forest_Pine' if u<mix[0] else 'Tree_Forest_Maple' if u<mix[1] else 'Tree_Forest_Ginkgo'
-                scale=float(rng.uniform(.8,1.3) if name=='Tree_Forest_Pine' else rng.uniform(.7,1.05))
+                u=rng.random();kind='Tree_Forest_Pine' if u<mix[0] else 'Tree_Forest_Maple' if u<mix[1] else 'Tree_Forest_Ginkgo'
+                # The detailed species the Mega Park uses close up (megapark/forest.py DETAILED), at the forest's height.
+                models,weights=zip(*megapark_forest.DETAILED[kind]);name=models[int(rng.choice(len(models),p=weights))]
+                height=float(rng.uniform(8,13) if kind=='Tree_Forest_Pine' else rng.uniform(6,9.5))
+                scale=height/megapark_forest.HEIGHT[name]
                 put(name,x,y,float(z[0])-.3-.5*float(slope[0]),yaw=float(rng.uniform(0,360)),scale=scale)
                 trees.append((x,y));break
         # A few shrubs round the grove's edge.
