@@ -173,6 +173,10 @@ def _cone(x,y,trail_quiet):
     lift=1+.40*np.cos(angle-2.6)+.12*np.cos(2*angle+.7)+.25*noise(np.cos(angle)*300,np.sin(angle)*300,40.,91)
     breach=1.-.6*smooth((np.cos(angle-.5)-.82)/.15)
     lip=26*np.exp(-((r-crest)/np.where(r<crest,30.,80.))**2)*lift*breach
+    # The crest breaks into teeth and notches (the targets' jagged rim): ridged noise round the ring, about zero mean.
+    around=lambda s,seed:noise(np.cos(angle)*RIM_RADIUS,np.sin(angle)*RIM_RADIUS,s,seed)
+    teeth=(1-np.abs(around(28.,63)))**2*48+(1-np.abs(around(11.,64)))**2*10-24
+    lip=lip+teeth*np.exp(-((r-crest)/np.where(r<crest,22.,45.))**2)*breach
     peaks=sum(h*np.exp(-((dx-rr*math.cos(a))**2+(dy-rr*math.sin(a))**2)/s**2)
               for a,rr,h,s in ((2.6,RIM_RADIUS+5,42,50),(-.35,RIM_RADIUS+10,20,36),(4.2,RIM_RADIUS+12,14,30)))
     shoulders=(100*np.exp(-((dx-400*k)/(130*k))**2-((dy-90*k)/(160*k))**2)
