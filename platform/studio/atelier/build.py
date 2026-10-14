@@ -47,9 +47,10 @@ class Blender:
     args: tuple = ()
     threads: int = 6
     factory_startup: bool = False
+    env: tuple = ()
 
     def __repr__(self):
-        shown = [f for f in fields(self) if f.name != 'factory_startup' or self.factory_startup]
+        shown = [f for f in fields(self) if f.name not in ('factory_startup', 'env') or getattr(self, f.name)]
         return f'Blender({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
 
     def argv(self, ctx):
@@ -149,6 +150,14 @@ class Call:
     fn: object = field(compare=False, repr=False)
 
 
+@dataclass(frozen=True)
+class Batch:
+    """Independent actions that may share a guarded process; yield at action boundaries."""
+    group: str
+    runtime_env: tuple[str, ...] = ()
+    max_seconds: float = 240.
+
+
 @dataclass
 class Step:
     name: str
@@ -168,6 +177,8 @@ class Step:
     reads: list[str] = field(default_factory=list)         # product contents feed this step's fingerprint
     references: list[str] = field(default_factory=list)    # include products, without deriving data from them
     cache: bool = False                                   # explicitly portable products; automatic local reuse
+    toolchain: bool = False                               # installed Python/Blender identity, without cache publication
+    batch: Batch | None = None                            # opt-in scripts that reset their own transient process state
 
 
 def outputs_present(step):
@@ -253,7 +264,8 @@ def _hash_path(digest, path, skip=True):
 
 def declared_inputs(step):
     named = step.products or step.reads or step.references
-    return [*step.inputs, *(c.script for c in step.commands if named and hasattr(c, 'script')),
+    batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
+    return [*step.inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)())]
 
 
@@ -315,10 +327,13 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
-    if step.cache:
+    if step.cache or step.toolchain:
         from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
         digest.update(state['tools'].encode())
+    if step.batch:
+        state['batch'] = repr(step.batch)
+        digest.update(state['batch'].encode())
     return digest.hexdigest(), state
 
 
@@ -398,7 +413,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
                            small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
-                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.))
+                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.),
+                           **({'on_poll': command.on_poll} if hasattr(command, 'on_poll') else {}))
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
@@ -432,6 +448,8 @@ def slot_summary(slots):
 
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False):
+    from .build_snapshot import require_complete
+    require_complete(paths.build_root() / game)
     if dry:
         from .build_plan import show
         return show(game, wanted, force=force, echo=echo, verify=verify)
@@ -442,13 +460,19 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
 
 
 def _build(ctx, wanted, *, force, touch, echo, index):
-    from . import build_cache
+    from . import build_batches, build_cache
     game = ctx.game
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
     for step in plan:
+        if step.toolchain and not step.products:
+            raise SystemExit(f'{step.name}: an explicit toolchain identity requires named products')
+        try:
+            build_batches.validate(step)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
         if step.cache:
             try:
                 build_cache.roots(ctx, step)
@@ -462,7 +486,10 @@ def _build(ctx, wanted, *, force, touch, echo, index):
     tool_cache = {}
     # The graph includes every prerequisite. Unrelated stamps cannot affect this selected build.
     started = time.monotonic()
-    for step in plan:
+    completed_batches = set()
+    for position, step in enumerate(plan):
+        if step.name in completed_batches:
+            continue
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
         journal = ctx.stamps / f'{step.name}.restore.json'
@@ -500,6 +527,19 @@ def _build(ctx, wanted, *, force, touch, echo, index):
             stamp.write_text(json.dumps(touched) + '\n')
             done[step.name] = result(step, current, touched)
             echo(f'{print_} touched')
+            continue
+        try:
+            batch = build_batches.select(ctx, plan, position, done, force=force, index=index, tool_cache=tool_cache)
+        except (OSError, ValueError, SyntaxError) as error:
+            echo(f'{print_} FAILED: {error}')
+            return 1
+        if batch:
+            completed, code = build_batches.run(ctx, batch, done, index=index, tool_cache=tool_cache,
+                                                echo=echo, wanted=wanted)
+            completed_batches.update(completed)
+            ran += len(completed)
+            if code:
+                return code
             continue
         pool_key = None
         if step.pool_roots:
@@ -578,6 +618,18 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         restored += int(from_cache)
         ran += int(not from_cache)
         echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+    # Later legacy writers must not silently resave an earlier product owner. This also catches
+    # a batch that touched an already-current neighbour which was not run in that session.
+    invalid = []
+    for step in plan:
+        if step.products:
+            stamp = ctx.stamps / (step.name + '.json')
+            if not build_products.valid_records(step, read_stamp(stamp).get('products', {}), hasher=index.digest):
+                stamp.unlink(missing_ok=True)
+                invalid.append(step.name)
+    if invalid:
+        echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
+        return 1
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {time.monotonic() - started:.0f} s')
     return 0
 

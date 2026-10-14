@@ -4,13 +4,16 @@ Atelier should build a small edit by generating, importing and cooking only the 
 changed. Every certified product should be reusable across compatible worktrees and revisions. The normal `atelier build`
 command should handle this automatically, with a local store that works offline and an optional remote store.
 
-**Status: foundations and local portable caching implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
-product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
-timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
-[The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
-Unreal restoration, import transactions, spatial dependencies and remote storage below still require implementation and native proof.
-Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
-The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
+**Status: foundations and portable caching implemented; foliage ownership pilot awaits native proof.** Named
+products, read/reference edges, complete inventories, read-only plans, command timings, a file-hash index and
+automatic portable-product restoration with retention are available. Whole-build reuse now verifies named
+products and uses an interruption journal; bounded tool batches keep per-action results. [The recipe guide](BUILD_RECIPES.md)
+describes these APIs; the sandbox exercises independent geometry and placement products without native tools.
+The [Yorimichi foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) separates 18 asset owners and shared materials.
+Its source cache remains disabled pending deterministic export proof. Automatic per-package Unreal restoration,
+runtime dependency audits, spatial queries, compiler/cook caching and remote storage below remain proposed.
+Legacy cutoffs, module isolation and the [explicit portable pool](ARTIFACT_POOL.md) remain supported. Capacity is
+shadow-only; current locks, guards and scheduling rules remain authoritative.
 
 The central contract is: **incremental build and clean build produce equivalent playable content, while unchanged
 products stay unchanged.** Broad work remains appropriate for genuinely broad changes, such as an engine upgrade
@@ -34,10 +37,11 @@ interval comes from `unreal.world.guard/stdout.log`. These are observations of e
 speedups. Fourteen short import steps in the tree build alone totalled 256.6 s. Their costs are consistent with
 substantial repeated editor startup, although a phase trace is needed to separate startup from useful work.
 
-The implementation explains the first two causes. [The world importer](../games/yorimichi/unreal/Scripts/setup_project.py)
-purges `/Game/Japan` to avoid stale material slots. [The recipe](../games/yorimichi/build.py) consequently makes
-many region and sound imports depend on `unreal.world`. Its newer export digests stop some unchanged exports
-from reaching Unreal, but a real change to one consumed asset still reruns the whole importer.
+At the time of the audit, [the world importer](../games/yorimichi/unreal/Scripts/setup_project.py) purged all of
+`/Game/Japan` to avoid stale material slots. The foliage pilot now preserves its independently owned material and
+foliage packages, and foliage edits no longer select `unreal.world`. Legacy region and sound imports still depend
+on the broad world import. Export digests stop unchanged exports from reaching Unreal, but a real change to one
+asset inside an unmigrated legacy unit still reruns that unit's importer.
 
 Much of the island is already placed at runtime from JSON by
 [JapanWorld](../games/yorimichi/unreal/Source/Yorimichi/JapanWorld.cpp). Splitting the `.umap` alone would leave
@@ -166,6 +170,11 @@ separately sized batch. Validate that previous imports cannot leak state into th
 render lock, memory guard, worker limits and handoff rules until the separately proposed capacity scheduler is
 validated. A batch does not authorize parallel Unreal processes or an idle editor holding capacity. Use an empty
 import world where possible and measure startup, import, derived-data work, validation and save separately.
+
+The implemented opt-in `Batch` protocol saves and acknowledges each action before starting the next. It uses a
+separate session guard report, per-action observed memory growth and a budget of at most 240 seconds checked
+between actions. It yields with exit 75 instead of immediately reacquiring capacity; see [the operational contract](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions).
+Cold/warm and reversed-order native equivalence remain acceptance gates for every batch-enabled recipe.
 
 Stage 1 should also report DDC configuration and hits. The two inspected worktrees already use the same per-user
 ZenLocal service and filesystem DDC, while ZenShared is disabled. Preserve that reuse and measure its effectiveness;
@@ -323,11 +332,11 @@ Python audit bootstraps for Blender/Unreal and the ownership checker. Later stag
 recovery, two neighbouring terrain tiles, native/cook invalidation and remote fallback using sandbox fixtures.
 `atelier new` inherits these templates and examples. Yorimichi supplies the demanding case, not platform special cases.
 
-Stage 2 should start with the observed five-tree edit. The current foliage importer already accepts a subset of
-names, which offers a concrete migration seam. Remove its shared material writes into the material owner and
-make the final foliage package account for LOD0, authored LODs, slots, collision and required runtime flags. Once
-the owner is complete, changing a LOD must not request `unreal.world` at all. Batching follows ownership so it
-does not merely combine large unnecessary imports into one long editor run.
+Stage 2 starts with the observed five-tree edit. The pilot moves shared material writes to `unreal.materials` and
+gives each foliage owner its LOD0, authored LODs, material slots, collision and runtime flags. A small material
+interface product carries the paths and LOD-blend settings the importer actually reads; shader-only changes can
+stop there. Recipe-level edit tests establish the intended dependency boundary. Native clean/incremental output
+equivalence, unrelated-package hashes and measured latency must still pass before this stage is accepted.
 
 Keep a compatibility adapter for unmigrated `Step` recipes, with conservative dependencies and limited cache
 eligibility. Migrate one package family at a time, record package ownership changes, and keep canonical generated

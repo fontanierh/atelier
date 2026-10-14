@@ -16,56 +16,11 @@ import subprocess
 import sys
 
 from . import paths
+from . import build_snapshot
 from .safety.render_lock import render_lock
 
-INSPECT = '''import json
-from pathlib import Path
-from dataclasses import replace
-from atelier import build
-from atelier.build import Context,load_recipe,order,fingerprint
-from atelier import manifest
-ctx=Context(GAME)
-# Old build clients include an absolute checkout path when an input is missing. Keep their exact fingerprints for
-# validating source stamps and writing current target stamps; compare a portable view of the same inputs for copying.
-raw_hash_path=build._hash_path
-def portable_hash_path(digest,path,skip=True):
- path=Path(path)
- if path.is_file() or path.is_dir(): return raw_hash_path(digest,path,skip)
- identity=path.resolve()
- name=str(identity)
- for root,label in ((ctx.out,'<build>'),(build.paths.REPO,'<repo>')):
-  root=root.resolve()
-  if identity.is_relative_to(root):
-   name=label+'/'+str(identity.relative_to(root)); break
- digest.update(b'missing:'+name.encode())
-def portable(step,done):
- build._hash_path=portable_hash_path
- try: return fingerprint(step,done)
- finally: build._hash_path=raw_hash_path
-# A step's source fingerprint leaves out its inputs inside the copied folders; kept here, not in atelier.build, so a
-# donor checkout of an older revision can be inspected too.
-artifacts=[p.resolve() for p in [ctx.out]+([ctx.uproject.parent/'Content'] if ctx.uproject else [])]
-def own(step): return replace(step,inputs=[i for i in step.inputs if not any(Path(i).resolve().is_relative_to(a) for a in artifacts)])
-done={}; compared={}; sources={}; result=[]
-for step in order(load_recipe(GAME).steps(ctx),[]):
- if getattr(step,'products',()) or getattr(step,'reads',()) or getattr(step,'references',()):
-  raise ValueError('Whole-build reuse does not yet certify named products; use an incremental build')
- value=fingerprint(step,done)
- verified=portable(step,compared)
- source=portable(own(step),sources); sources[step.name]=source
- path=ctx.stamps/(step.name+'.json')
- stamp=json.loads(path.read_text()) if path.exists() else {}
- outputs_ok=all(Path(p).exists() for p in step.outputs)
- # A cutoff step's dependents see the digest of its outputs: what its stamp records, read here from the files so a
- # fresh target with copied outputs and no stamps publishes what the source does.
- made=build.outputs_digest(step) if getattr(step,'cutoff',False) and outputs_ok else None
- done[step.name]=made or value
- compared[step.name]=made or verified
- result.append(dict(name=step.name,fingerprint=value,verified_fingerprint=verified,source=source,stamp=stamp,outputs_ok=outputs_ok,made=made))
-print(json.dumps(dict(steps=result,engine=str(ctx.unreal_root.resolve()),project=ctx.uproject.stem,
- editor_target=manifest.game(GAME)['editor_target'],
- build_version=json.loads((ctx.unreal_root/'Engine/Build/Build.version').read_text()))))
-'''
+# Send our inspector to the receiving checkout's interpreter; its imports resolve there.
+INSPECT = Path(__file__).with_name('reuse_inspect.py').read_text()
 
 
 def git(repo, *args):
@@ -73,9 +28,9 @@ def git(repo, *args):
 
 
 def inspect(repo, game):
-    env = dict(os.environ, PYTHONPATH=str(repo / 'platform/studio'))
+    env = dict(os.environ)
     env.pop('ATELIER_BUILD_ROOT', None)
-    script = 'GAME=' + repr(game) + '\n' + INSPECT
+    script = 'import sys\nsys.path.insert(0, ' + repr(str(repo / 'platform/studio')) + ')\nGAME=' + repr(game) + '\n' + INSPECT
     return json.loads(subprocess.check_output([sys.executable, '-c', script], cwd=repo, env=env, text=True))
 
 
@@ -106,6 +61,11 @@ def _inputs(snapshot):
     return [(s['name'], s.get('verified_fingerprint', s['fingerprint'])) for s in snapshot['steps']]
 
 
+def _products(snapshot):
+    """Include leaves: their bytes need not appear in any consumer's fingerprint."""
+    return [(s['name'], s.get('products', {})) for s in snapshot['steps']]
+
+
 def differing_sources(source, target):
     """Steps whose source fingerprints differ between two snapshots, or that only one of them has."""
     theirs = {s['name']: s['source'] for s in target['steps']}
@@ -123,6 +83,11 @@ def occupied(repo, folders):
 
 
 def main(game, source, target=None):
+    """@cc [owner:fontanierh,label:correctness] verified-snapshot-reuse
+    Named products MUST match the donor stamps and the independently copied target byte for byte.
+    A journal MUST block build/play/package until all checks and stamp installation complete.
+    Registry caches MUST NOT be carried over or left stale in the receiving checkout.
+    """
     source, target = Path(source).resolve(), Path(target or paths.REPO).resolve()
     if source == target:
         raise ValueError('Use a separate fresh worktree as the target')
@@ -132,6 +97,7 @@ def main(game, source, target=None):
     if revision != git(target, 'rev-parse', 'HEAD'):
         raise ValueError('Source and target must have exactly the same source revision before reusing artifacts')
     for repo in (source, target):
+        build_snapshot.require_complete(repo / 'build' / game)
         if git(repo, 'status', '--porcelain', '--untracked-files=no'):
             raise ValueError(f'Tracked files must be clean before reusing artifacts: {repo}')
     if os.environ.get('ATELIER_BUILD_ROOT'):
@@ -146,7 +112,8 @@ def main(game, source, target=None):
     with render_lock('reuse verified ' + game + ' artifacts'):
         before = inspect(source, game)
         invalid = [s['name'] for s in before['steps'] if not s['outputs_ok'] or s['stamp'].get('fingerprint') != s['fingerprint']
-                   or s.get('made') and s['stamp'].get('result') != s['made']]
+                   or s.get('made') and s['stamp'].get('result') != s['made']
+                   or 'products' in s and s['stamp'].get('products', {}) != s['products']]
         game_root = source / 'games' / game / 'unreal'
         module = game_root / 'Binaries/Mac' / ('libUnrealEditor-' + before['project'] + '.dylib')
         if invalid or not module.is_file():
@@ -164,17 +131,34 @@ def main(game, source, target=None):
             raise ValueError('Source and target must use the same installed engine')
         if differ := differing_sources(before, dest_before):
             raise ValueError('Source inputs differ, including untracked inputs; artifacts cannot be reused: ' + ', '.join(differ))
-        copies = [item for item in (source / 'build' / game).iterdir() if item.name not in ('logs', 'stamps', 'remote-proof')]
+        from .reuse_inspect import excluded
+        copies = [item for item in (source / 'build' / game).iterdir() if not excluded(item.name)]
         copies += [game_root / 'Content', game_root / 'Binaries']
         copies += [b for b in (source / 'platform/engine/Plugins').rglob('Binaries') if b.is_dir() and 'Intermediate' not in b.parts]
         if found := occupied(target, [item.relative_to(source) for item in copies]):
             raise ValueError('Target already has its own files where artifacts would be copied; use a fresh worktree: '
                              + ', '.join(found[:5]) + (f' and {len(found) - 5} more' if len(found) > 5 else ''))
+        # A fresh editor/cooker discovers copied packages from disk. Refuse a target with local
+        # discovery caches rather than transplanting the donor's Intermediate/Saved registry.
+        target_project = target / game_root.relative_to(source)
+        if any((target_project / name).exists() for name in ('Intermediate', 'Saved')):
+            raise ValueError('Target has Unreal Intermediate/Saved state; use a fresh worktree for registry discovery')
+        out = target / 'build' / game
+        out.mkdir(parents=True, exist_ok=True)
+        journal = out / build_snapshot.JOURNAL
+        with journal.open('x') as handle:
+            json.dump({'schema': 1, 'revision': revision, 'source': str(source),
+                       'copies': [item.relative_to(source).as_posix() for item in copies]}, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
         for item in copies:
             copy_tree(item, target / item.relative_to(source), source, target, clone)
         after = inspect(target, game)
-        if _inputs(before) != _inputs(after) or _inputs(before) != _inputs(inspect(source, game)):
+        donor_after = inspect(source, game)
+        if _inputs(before) != _inputs(after) or _inputs(before) != _inputs(donor_after):
             raise ValueError('Inputs changed during copying; target stamps have not been created')
+        if _products(before) != _products(after) or _products(before) != _products(donor_after):
+            raise ValueError('Products changed during copying; target stamps have not been created')
         for repo in (source, target):
             if git(repo, 'rev-parse', 'HEAD') != revision or git(repo, 'status', '--porcelain', '--untracked-files=no'):
                 raise ValueError('Source revision changed during copying; target stamps have not been created')
@@ -189,5 +173,59 @@ def main(game, source, target=None):
             peak = source / 'build' / game / 'logs' / (step['name'] + '.guard') / 'step-peak.json'
             if peak.exists():
                 copy_tree(peak, target / 'build' / game / 'logs' / (step['name'] + '.guard') / 'step-peak.json', source, target, clone)
+        completion = out / build_snapshot.COMPLETE
+        temporary = completion.with_suffix('.tmp')
+        temporary.write_text(json.dumps({'schema': 1, 'revision': revision, 'steps': _inputs(after)}) + '\n')
+        temporary.replace(completion)
+        journal.unlink()
     print(f'Reused {len(before["steps"])} verified steps in {target}; run uv sync there, then atelier build/play.')
+    return 0
+
+
+def abandon(game, target=None):
+    """Remove only the recorded generated copy, preserving tracked sources and diagnostic logs."""
+    target = Path(target or paths.REPO).resolve()
+    if '/' in game or game in ('.', '..'):
+        raise ValueError('Invalid game ID')
+    out = target / 'build' / game
+    journal = out / build_snapshot.JOURNAL
+    with render_lock('abandon interrupted ' + game + ' reuse'):
+        if not journal.exists():
+            raise SystemExit('No interrupted reuse to abandon')
+        record = json.loads(journal.read_text())
+        if record.get('schema') != 1 or not isinstance(record.get('copies'), list):
+            raise SystemExit('Unrecognised reuse journal; preserve it and use a fresh worktree')
+        roots = []
+        from .reuse_inspect import excluded
+        for relative in record['copies']:
+            path = Path(relative)
+            parts = path.parts
+            in_build = parts[:2] == ('build', game) and len(parts) >= 3 and not excluded(parts[2])
+            in_game = parts in (('games', game, 'unreal', 'Content'), ('games', game, 'unreal', 'Binaries'))
+            in_plugin = parts[:3] == ('platform', 'engine', 'Plugins') and len(parts) >= 5 and parts[-1] == 'Binaries'
+            if path.is_absolute() or '..' in parts or not (in_build or in_game or in_plugin):
+                raise SystemExit('Unsafe path in reuse journal; no files removed')
+            absolute = target / path
+            roots.append(absolute)
+        roots += [out / 'stamps', out / build_snapshot.COMPLETE]
+        for absolute in [*roots, journal]:
+            if any(p.is_symlink() for p in absolute.parents if p != target and p.is_relative_to(target)):
+                raise SystemExit('Linked ancestor of a copied path; no files removed')
+        tracked = set(subprocess.check_output(['git', '-C', str(target), 'ls-files', '-z']).decode().split('\0'))
+
+        def remove(path):
+            if path.relative_to(target).as_posix() in tracked:
+                return
+            if path.is_symlink() or path.is_file():
+                path.unlink()
+            elif path.is_dir():
+                for child in path.iterdir():
+                    remove(child)
+                if not any(path.iterdir()):
+                    path.rmdir()
+
+        for root in roots:
+            remove(root)
+        journal.unlink()
+    print('Partial generated copy removed; tracked sources and logs preserved. Reuse again or build normally.')
     return 0

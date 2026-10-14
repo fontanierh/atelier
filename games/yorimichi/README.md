@@ -31,6 +31,13 @@ skating data is shared: it lives in the [Skate plugin](../../platform/engine/Plu
 and `unreal.skate_data` imports it into typed assets under `Content/SkateRuntime` and `Content/SkateMotion`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
 masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
 
+Foliage has one export and one import owner per asset. For example,
+`atelier build yorimichi unreal.foliage.Tree_Maple_A` builds that tree and its prerequisites;
+`world.foliage_lods` remains an aggregate selector. Shared textures and materials belong to `unreal.materials`.
+The [foliage guide](docs/FOLIAGE_BUILDS.md) describes the source specifications, dependency boundaries and remaining
+native proof. Compatible actions share a bounded process; exit 75 means yielded with results saved. Recheck the
+render board before resuming the printed command without `--force`.
+
 Packaging is explicit: `nice -n 10 uv run atelier build yorimichi unreal.package` plans a certified `unreal.cook` and download
 assembly, and neither runs in an ordinary development build. Launcher edits and failed ZIP retries reuse the completed
 cook. See [PACKAGING.md](docs/PACKAGING.md) for the guards, release files and independent download verification.

@@ -6,20 +6,18 @@ optional character and region steps are appended when their source is available.
 certified cook and independently stamped download assembly. Generated outputs go to build/yorimichi (or
 $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build yorimichi --list` prints the steps.
 
-The Unreal imports run in the order the prototype established: `setup_project.py` rebuilds everything under
-/Game/Japan (textures, props, terrain, foliage, the villager, Momiji Hamlet, Hidamari, the sailboat, the zeppelin and
-the level), so every later import that writes under /Game/Japan, or uses its animation compression settings, reruns
-after it. The volcano (HD_North*, its materials and snow mask) is its own import after it (unreal.north). An import
-needs a digest step (`digest_step`) instead of an export it reads, so an export that reruns and writes the same meshes
-(a city layout change, say) leaves it current. Cairo's base import supplies his body and the nine authored clips used by
+Foliage and shared materials have independent owners. The legacy world importer preserves those packages,
+binds them by stable path and rebuilds the remaining /Game/Japan content. The volcano follows it (unreal.north).
+An import of a legacy region needs a digest step (`digest_step`) instead of an export it reads, so identical
+re-exports leave the import current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
-import ast, importlib.util, json, os, tomllib
+import importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
 from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
-from atelier import paths, unreal_modules
+from atelier import build_inputs, paths, unreal_modules
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
@@ -50,6 +48,10 @@ _definition = importlib.util.spec_from_file_location('character_definition', PIP
 definition = importlib.util.module_from_spec(_definition)
 _definition.loader.exec_module(definition)
 YORI = WORLD / 'yori.py'
+_foliage_spec = importlib.util.spec_from_file_location('yorimichi_foliage_build', GAME / 'foliage_build.py')
+foliage_build = importlib.util.module_from_spec(_foliage_spec)
+_foliage_spec.loader.exec_module(foliage_build)
+
 # Crater Park on the caldera floor: its block shapes the ground there (craterpark/placement.py terrain).
 CRATERPARK = (REGIONS / 'craterpark' / 'placement.py', ASSETS / 'craterpark' / 'scene.json', ASSETS / 'craterpark' / 'geometry')
 # world.layout is a cutoff step: its dependents see its outputs, not its fingerprint, so each lists the layout sources
@@ -65,34 +67,8 @@ SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,b
 
 
 def local_imports(script, roots=(WORLD, REGIONS)):
-    """Every module of this game a world script imports, directly or through others, found by reading the source
-    (imports inside functions too): world/ and world/regions/ are the scripts' import roots, and a package brings its
-    __init__.py. A cutoff dependent hashes these, since it no longer sees world.layout's sources through its
-    fingerprint."""
-    seen, todo = set(), [Path(script)]
-    while todo:
-        path = todo.pop()
-        if path in seen:
-            continue
-        seen.add(path)
-        for node in ast.walk(ast.parse(path.read_text(), str(path))):
-            if isinstance(node, ast.Import):
-                names = [alias.name for alias in node.names]
-            elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
-                names = [node.module, *(f'{node.module}.{alias.name}' for alias in node.names)]
-            else:
-                continue
-            for name in names:
-                parts = name.split('.')
-                for root in (path.parent, *roots):
-                    found = [f for f in (root.joinpath(*parts).with_suffix('.py'), root.joinpath(*parts, '__init__.py'))
-                             if f.is_file()]
-                    if found:
-                        todo += found
-                        todo += [root.joinpath(*parts[:k], '__init__.py') for k in range(1, len(parts))
-                                 if root.joinpath(*parts[:k], '__init__.py').is_file()]
-                        break
-    return sorted(seen)
+    """Hash the static local import closure; the platform memoizes parsing between steps."""
+    return build_inputs.local_imports(script, roots)
 
 
 # Keep the recipe's helpers available while the staging implementation has its own narrow input.
@@ -421,7 +397,7 @@ def world_steps(ctx):
              ASSETS / 'environment/textures/tuscan-ground.provenance.json'],
              outputs=[out / 'textures' / 'T_sky.png', out / 'textures' / 'T_ground_detail.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
-        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'],
+        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
              needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
              about='tree house canopy trees (four autumn crowns) and their recoloured leaf atlases', heavy=True),
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
@@ -441,14 +417,12 @@ def world_steps(ctx):
              inputs=[TOOLS / 'forest_textures.py', *sorted((ASSETS / 'environment/textures').glob('leaf-*'))],
              outputs=[out / 'forest/textures/textures.json'], about='Sunburst Mediterranean twig atlases with coverage masks'),
         Step('world.forest', [Blender(WORLD / 'build_forest.py')],
-             inputs=[WORLD / 'build_forest.py', WORLD / 'forest_impostors.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py', WORLD / 'build_assets.py'],
+             inputs=[WORLD / 'build_forest.py', WORLD / 'forest_impostors.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py', WORLD / 'asset_mesh.py'],
              needs=['world.textures', 'world.forest_textures'], heavy=True,
              outputs=[out / 'forest/trees.json'], about='Tuscan branching crowns and authored HISM detail levels'),
-        Step('world.props', [Blender(WORLD / 'build_assets.py')], inputs=[WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'], needs=['world.textures'],
-             outputs=[out / 'assets' / 'Torii.fbx'], about='trees, bushes, grass, rocks, torii, lanterns, birds, sky dome', heavy=True),
-        Step('world.foliage_lods', [Blender(WORLD / 'build_foliage_lods.py')],
-             inputs=[WORLD / 'build_foliage_lods.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'], needs=['world.textures'],
-             outputs=[out / 'foliage_lods' / 'manifest.json'], about='seeded LOD chains for trees, bushes and grass', heavy=True),
+        Step('world.props', [Blender(WORLD / 'build_assets.py')], inputs=local_imports(WORLD / 'build_assets.py'), needs=['world.textures'],
+             outputs=[out / 'assets' / 'Torii.fbx'], about='rocks, torii, lanterns, poles, birds and sky dome', heavy=True),
+        *foliage_build.world_steps(ctx),
         Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
              inputs=[REGIONS / 'hidamari', *CRATERPARK, REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'trail.py',
@@ -619,17 +593,20 @@ def unreal_steps(ctx):
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
+        *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              # The city's arcade and harbor materials read the region's committed paintings.
-             inputs=[REGIONS / 'hidamari' / 'textures',
-                     *[SCRIPTS / n for n in ('setup_project.py', 'painterly_kernel.py', 'foliage_material.py', 'import_foliage_lods.py',
+             inputs=[WORLD / 'asset_catalog.py', REGIONS / 'hidamari' / 'textures',
+                     *[SCRIPTS / n for n in ('setup_project.py', 'material_assets.py', 'mesh_import.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
                                           'harbor_material.py', 'sea_look.py', 'import_sailboat.py', 'sailboat_material.py',
                                           'import_zeppelin.py', 'forest_ground.py', 'ground_grain.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
-             after=['unreal.compile'], needs=['world.textures', 'world.layout', 'world.props', 'world.foliage_lods', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props',
+             after=['unreal.compile', 'unreal.materials'],
+             references=['materials.shared', *['foliage.' + name + '.native' for name in foliage_build.catalog.FOLIAGE]],
+             needs=['world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props',
                     'world.zeppelin.meshes', 'world.terrain.meshes', 'world.village', 'world.sailboat', 'characters.wanderer'],
-             heavy=True, about='world assets, materials, the villager and the level (/Game/Japan), all but the volcano'),
+             heavy=True, about='legacy world assets and level; preserves independent materials and foliage'),
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
         # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
         Step('unreal.north', [UnrealScript(SCRIPTS / 'import_hidamari.py', 'HIDAMARI IMPORT COMPLETE', env=(('HIDAMARI_ASSETS', 'HD_North*'),))],
@@ -704,12 +681,11 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_fox_hunter.py', SCRIPTS / 'animation_compression.py'],
              after=['unreal.world'], needs=['characters.fox_hunter'], heavy=True, about='/Game/FoxHunter'),
         *[step for character in definition.movers() for step in mover_import_steps(character)],
-        # The camera see-through (docs/CAMERA.md) patches materials the world and the see-through characters' imports make, so it reruns after
-        # either; the tree house builds its own with it (unreal.treehouse).
-        Step('unreal.see_through', [UnrealScript(SCRIPTS / 'see_through.py', 'SEE-THROUGH COMPLETE')],
-             inputs=[SCRIPTS / 'see_through.py', PIPELINE / 'definition.py', *sorted(CHARS.glob('*/character.toml'))],
+        # Character material overlays; shared world graphs belong to unreal.materials and the treehouse owns its graph.
+        Step('unreal.see_through', [UnrealScript(SCRIPTS / 'import_see_through.py', 'SEE-THROUGH COMPLETE')],
+             inputs=[SCRIPTS / 'import_see_through.py', SCRIPTS / 'see_through.py', PIPELINE / 'definition.py', *sorted(CHARS.glob('*/character.toml'))],
              needs=['unreal.world', *[f'unreal.{key(c)}' for c in definition.movers() if 'see_through' in c.toml]], heavy=True,
-             about='camera see-through on leaves, grass, trunks, the guardrail, poles, torii and Cairo (/Game/SeeThrough)'),
+             about='camera see-through on playable character materials'),
         # Runtime metadata is a separate overlay: changing it must not clear/reimport /Game/Japan.
         Step('unreal.city_tree_cpu_access', [UnrealScript(SCRIPTS / 'city_tree_cpu_access.py', 'CITY TREE CPU ACCESS COMPLETE')],
              inputs=[SCRIPTS / 'city_tree_cpu_access.py'], needs=['unreal.world'], heavy=True,
@@ -780,11 +756,15 @@ def steps(ctx):
             step.after.append('unreal.north')
     # world.layout is a cutoff step, and the scripts behind it and its dependents import across regions (the volcano
     # reads Belmonte's terrain): each such step also hashes every module its scripts import.
+    scanner = build_inputs.ImportScanner()
     for step in result:
-        if step.name == 'world.layout' or 'world.layout' in step.needs:
-            for command in step.commands:
-                if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
-                    step.inputs += [f for f in local_imports(command.script) if f not in step.inputs]
+        for command in step.commands:
+            if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
+                step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
+        if SCRIPTS / 'import_village.py' in step.inputs and SCRIPTS / 'mesh_import.py' not in step.inputs:
+            step.inputs.append(SCRIPTS / 'mesh_import.py')
+        if step.name in ('unreal.forest', 'unreal.treehouse', 'unreal.see_through'):
+            step.reads.append('materials.shared')
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)

@@ -198,8 +198,10 @@ Commit:
 - the fit baseline;
 - committed grips.
 
-Build outputs, Unreal Content, FBXs and captures stay ignored. Run `uv run atelier lint` and `uv run pytest -q`, read
-`git diff`, and ask another agent for review on the board.
+Build outputs, Unreal Content, FBXs and captures stay ignored. Run `uv run atelier lint`,
+`uv run atelier contracts check` and focused tests for changed Python behavior, then read `git diff` and ask another
+agent for review on the board. The complete Python suite runs on hosted CI; require a green run on the final PR head
+instead of repeatedly running it locally. Native character validation above still applies.
 
 ## Changing the pipeline
 

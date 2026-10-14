@@ -79,6 +79,8 @@ def game_limit(memory_gib=None):
 def play(game, profile, settings, extra, memory_gib=None):
     limit = game_limit(memory_gib)
     ctx = Context(game)
+    from .build_snapshot import require_complete
+    require_complete(ctx.out)
     data = manifest.game(game)
     profiles = data.get('play', {})
     if profile not in profiles:
@@ -164,7 +166,10 @@ def make_parser():
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
     p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
-    p = sub.add_parser('reuse'); p.add_argument('game'); p.add_argument('--from', dest='source', required=True)
+    p = sub.add_parser('reuse'); p.add_argument('game')
+    mode = p.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--from', dest='source')
+    mode.add_argument('--abandon', action='store_true', help='remove an interrupted generated copy; keep tracked sources/logs')
     p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
     p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
     p.add_argument('game'); p.add_argument('step')
@@ -228,6 +233,8 @@ def main(argv=None):
         return setup.main(args.headless, args.workers)
     if args.command == 'reuse':
         from . import reuse
+        if args.abandon:
+            return reuse.abandon(args.game, args.target)
         return reuse.main(args.game, args.source, args.target)
     if args.command == 'pool':
         from . import artifact_pool
@@ -264,6 +271,8 @@ def main(argv=None):
         from . import contracts
         return contracts.check()
     if args.command == 'qa':
+        from .build_snapshot import require_complete
+        require_complete(paths.build_root() / args.game)
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
         if not script.exists():
             raise SystemExit(f'no scenario {script}')

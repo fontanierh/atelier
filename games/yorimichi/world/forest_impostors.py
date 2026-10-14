@@ -142,7 +142,7 @@ def bake(obj, output, size=256):
 
 
 def mesh(name, record, bark):
-    import build_assets as A
+    import asset_mesh as A
     material=A.mat(name+'_Impostor')
     result=A.Mesh(name+'_LOD3')
     for view in range(3):

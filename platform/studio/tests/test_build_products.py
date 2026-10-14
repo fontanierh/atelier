@@ -10,6 +10,26 @@ from atelier.build import Call, Product, Step
 from atelier.build_products import Graph, inventory
 
 
+def test_package_sidecars_track_presence_bytes_and_exclusive_ownership(tmp_path):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    package.write_bytes(b'package')
+    product = Product('mesh', (package,), optional_paths=(sidecar,))
+    absent = inventory(product)
+    assert absent['files']['1/.'] == {'kind': 'absent'}
+    sidecar.write_bytes(b'bulk')
+    present = inventory(product)
+    assert present != absent
+    sidecar.write_bytes(b'edit')
+    assert inventory(product) != present
+    owner = Step('mesh', [], products=[product])
+    other = Step('bulk', [], products=[Product('other', (sidecar,))])
+    with pytest.raises(ValueError, match='Overlapping product ownership'):
+        Graph([owner, other])
+    package.unlink()
+    with pytest.raises(OSError):
+        inventory(product)
+
+
 @pytest.fixture
 def project(tmp_path, monkeypatch):
     root = tmp_path.resolve()

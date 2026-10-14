@@ -1,0 +1,21 @@
+{
+  "generator": "bush",
+  "arguments": [
+    9,
+    "LeafBroad",
+    1.0
+  ],
+  "screen_sizes": [
+    1.0,
+    0.08,
+    0.025
+  ],
+  "strides": [
+    3,
+    8
+  ],
+  "collision": "default",
+  "materials": [
+    "LeafSmall"
+  ]
+}

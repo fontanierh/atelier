@@ -144,10 +144,12 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None):
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, on_poll=None):
     """Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
-    when a compound worker attaches its own actual-child guards immediately at launch."""
+    when a compound worker attaches its own actual-child guards immediately at launch.
+    `on_poll(pid)` observes an owned child between waits and once on exit. Exceptions unwind
+    through the existing guard/child cleanup; the callback never replaces either protection."""
     if fitting_gib is not None:
         if (not lock or kind != 'job' or not command or Path(command[0]).name.lower() != 'blender'
                 or not any(arg in ('-b', '--background') for arg in command[1:]) or watch or track_tree):
@@ -185,6 +187,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         deadline = started+horizon if horizon else None
         spoken = started
         while child.poll() is None:
+            if on_poll is not None:
+                on_poll(child.pid)
             if fitting_gib is not None:
                 executable = process_tree.name(child.pid).lower()
                 # It can finish between poll and proc_name; a completed child is not a foreign executable.
@@ -212,6 +216,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
                 pass
+        if on_poll is not None:
+            on_poll(child.pid)
         return child.returncode or 0
 
 

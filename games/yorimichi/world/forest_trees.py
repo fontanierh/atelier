@@ -8,7 +8,6 @@ import random
 
 from mathutils import Vector
 
-from forest.specs import TUSCAN, FOREST
 
 
 def tree(name, kind, seed, height, spread, leaf, *, library):

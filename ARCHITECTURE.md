@@ -65,11 +65,14 @@ world map, preferences and the HUD.
 ## Build products
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
-plans, file-hash memoization and automatic local caching of portable products. The
+plans, file-hash memoization, bounded Blender/editor batches and automatic local caching of portable products.
+Whole-build reuse certifies named output inventories and blocks launch while its copy journal is incomplete. The
 [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
-documents automatic cache maintenance alongside the older explicit reuse commands.
+documents cache maintenance and snapshot recovery alongside the older explicit pool commands. Yorimichi's
+[foliage pilot](games/yorimichi/docs/FOLIAGE_BUILDS.md) separates shared materials from individual mesh owners;
+automatic cross-revision Unreal package caching remains disabled.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks.
 

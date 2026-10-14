@@ -227,8 +227,9 @@ failures. Those remain shared physics issues, not a passing bike suite. Hair spr
 These initial playability receipts did not establish close-up garment quality: later screenshots found underarm,
 torso and seat deformation, which required the additional pass below.
 
-Run the source-library verifier, repository lint and the full Python suite. Record native validation and screenshots
-in the review workspace, then request another agent's PR review. Generated Unreal Content, exported FBXs and captures
+Run the source-library verifier, repository lint, contract checks and focused Python tests for changed behavior.
+Use hosted CI for the full Python suite and require a green run on the final PR head. Record native validation and
+screenshots in the review workspace, then request another agent's PR review. Generated Unreal Content, exported FBXs and captures
 stay ignored. The committed GLB with embedded textures is sufficient to regenerate the game imports; paid generation
 is an optional authoring step, never a build dependency.
 

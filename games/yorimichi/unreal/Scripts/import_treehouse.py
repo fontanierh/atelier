@@ -199,21 +199,21 @@ def trees(report):
         MEL.set_material_instance_parent(mi, foliage); MEL.set_material_instance_texture_parameter_value(mi, 'Tex', t)
         MEL.update_material_instance(mi); E.save_loaded_asset(mi)
     for name, d in info.items():
-        # The first import of a new mesh crashes the commandlet, so a missing (or wrongly slotted) tree starts as a copy
-        # of the island tree with the same slots and the new FBX is reimported over it.
+        # Seed a new tree with the engine cube, then reimport its own geometry and slots. Borrowing
+        # Tree_Maple_A here made treehouse packages secretly depend on the island foliage's bytes.
         path = f'/Game/Japan/Assets/{name}'; want = sorted(['Bark', d['slot']])
         slots = lambda m: sorted(str(s.get_editor_property('imported_material_slot_name')) for s in m.get_editor_property('static_materials'))
         top = lambda m: m.get_bounding_box().max.z / 100          # metres; the tree's crown top from trees.json
         if E.does_asset_exist(path) and (slots(E.load_asset(path)) != want or E.load_asset(path).get_num_lods() != 1): E.delete_asset(path)
         if not E.does_asset_exist(path):
-            assert E.duplicate_asset('/Game/Japan/Assets/Tree_Maple_A', path), name
-            # The copy keeps the template's far models: drop them (the reimport rebuilds with one).
+            assert E.duplicate_asset('/Engine/BasicShapes/Cube', path), name
+            # Start with exactly one source model before importing the authored tree.
             E.load_asset(path).set_num_source_models(1)
-        mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name)
+        mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
         if abs(top(mesh)-d['crown_hi']) > .5:
-            # The copy carries the template's Interchange import data, so its first FBX reimport skips the unit
+            # A seed without FBX import data can skip the first unit
             # conversion (a tree 100 times too small); the second one finds FBX data to update and imports in metres.
-            mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name)
+            mesh = helper['import_mesh'](src/f'{name}.fbx', '/Game/Japan/Assets', name, fresh_slots=True)
         assert abs(top(mesh)-d['crown_hi']) < .5 and mesh.get_num_lods() == 1, (name, top(mesh), mesh.get_num_lods())
         assert slots(mesh) == want, (name, slots(mesh))
         for i, s in enumerate(mesh.get_editor_property('static_materials')):

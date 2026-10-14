@@ -45,6 +45,10 @@ consume its own output. Declare every required file and sidecar, or a wholly own
 every member, empty directory and file hash. Missing, altered, unexpected or linked output invalidates the product.
 Symlinked ancestors such as a system temporary directory are supported; product roots and members cannot be links.
 Input changes during generation prevent certification, and the final stamp is replaced atomically after validation.
+The build also rechecks owned products after all selected steps, catching later importers that resave another
+owner's package. Use `Product(name, required_paths, optional_paths=(...))` for format sidecars that may be absent:
+their absence, appearance, removal or byte change is part of the product identity. Required roots still must exist.
+Optional roots have the same exclusive ownership rules and are not eligible for the portable source cache.
 
 ## Inspect a build without running it
 
@@ -62,6 +66,41 @@ get a general reason. A consumer of a dirty product is `check-after-build` when 
 Builds store per-command durations alongside total step time. Step/prefix selection remains supported; a prefix
 matching only explicit steps reports an unknown selection rather than silently doing nothing. `--touch` cannot
 certify named products.
+
+## Reuse a tool process without merging actions
+
+Opt in only scripts that reset their own transient state and can safely follow another script in the same process:
+
+```python
+from atelier.build import Batch, Blender, Product, Step
+
+Step('library.oak', [Blender(script, ('oak',), threads=3, factory_startup=True)],
+     inputs=[script, oak_spec], products=[Product('oak.mesh', (out / 'oak',))],
+     heavy=True, toolchain=True, batch=Batch('tree exports', max_seconds=240))
+```
+
+Consecutive, ready misses with the same batch policy, command type, startup environment, module closure and tool
+settings can share one guarded process. Arguments and script paths remain per action. `runtime_env=('ASSET_ID',)`
+allows explicitly named environment values to vary between scripts; process-start settings such as `PYTHONHASHSEED`
+cannot vary. Never rely on `runpy` to clear imported module globals, Blender data or Unreal editor state. The recipe
+must reset its own state, and native equivalence checks must cover cold and warm execution in different orders.
+
+The host validates each action's marker, inputs and complete output inventory, saves its individual stamp, and
+acknowledges it before the next action starts. A crash on action four preserves valid results from actions one to
+three. The host checks completed results again after exit. No-op and already-current actions never enter the batch.
+Cache-enabled actions currently execute individually, retaining their normal restore-before-execute behavior.
+
+A batch uses BIG and the normal 10 GiB actual-child guard. Before each further action, its memory predictor reserves
+headroom using the next action's measured batch growth and the current session's growth. Without batch history it
+falls back to the standalone peak or conservative unknown headroom. Session reports stay separate from standalone
+action peaks. Missing fresh telemetry ends the batch.
+The wall budget is at most 240 seconds, including startup, and is checked **between actions**; one long action can
+exceed it. This is a cooperative boundary, not a deadline that interrupts an import or a replacement for the guard.
+
+Budget exhaustion saves completed results, exits **75 (yielded)**, and prints `BATCH YIELDED` with counts and a resume
+command. It does not reacquire capacity automatically. `atelier build ... && atelier play ...` intentionally stops
+there. Remaining actions stay `run` in `--plan`; rerun the printed command without `--force` after checking Waiting
+and handing off to other ready work. Retain the original first-ready time in the render board's Waiting entry.
 
 ## Migration boundary
 
@@ -82,7 +121,11 @@ Blender application, dependency lock and build adapters. Python path/interpreter
 Cached Blender commands must use `factory_startup=True`. Keep installed tools fixed during one build invocation;
 the next invocation rediscovers their identities. A static import check rejects undeclared local helpers, including
 package initializers and relative imports. Use `atelier.build_inputs.local_imports(script, roots)` when declaring
-their closure. Dynamic imports, runtime data reads and relevant settings still need explicit inputs; this is not a
+their closure. A recipe with many scripts can share an `ImportScanner()` and call `scanner.local_imports(script, roots)`
+within that recipe evaluation; create a new scanner on every evaluation so added or removed helpers are discovered.
+`toolchain=True` includes the same
+installed tool identity for a named action without enabling storage or restoration. Dynamic imports, runtime data
+reads and relevant settings still need explicit inputs; this is not a
 filesystem sandbox or a complete runtime read auditor. Scripts must not depend on undeclared environment values.
 
 Portable output must be byte-deterministic, contain no checkout-specific paths and run without its donor checkout.
@@ -91,8 +134,11 @@ verifies every installed output again. Missing/corrupt blobs fall back to genera
 same action key disable that key's reuse. [Cache maintenance](ARTIFACT_POOL.md#automatic-product-cache) covers
 accounting, pins, LRU pruning and discarding conflicts. Plans remain read-only and never fetch or restore a hit.
 
-`atelier reuse` and the portable pool reject recipes that try to certify named products through their older protocols.
-Existing recipes remain supported. Unreal packages, native binaries, Content and Intermediate directories are
-ineligible for this cache. Transactional Unreal restoration, import ownership, registry refresh, relocation and remote
-storage remain described in [the architecture](INCREMENTAL_BUILDS.md). Keep native imports conservative until their clean/incremental equivalence checks
-pass, following [world build practices](WORLD_BUILD_PRACTICES.md).
+`atelier reuse` supports named products as part of a verified whole build at the same clean revision. It compares
+producer source identities before copying and full fingerprints and inventories afterward, including unconsumed
+leaves and optional sidecars. Its journal blocks build and launch after an interrupted copy; see
+[snapshot recovery](ARTIFACT_POOL.md#verified-whole-build-reuse). The older explicit `atelier pool` still rejects named
+products. Unreal packages, native binaries, Content and Intermediate directories remain ineligible for the automatic
+portable source cache. Per-package cross-revision restoration, relocation and remote storage remain described in
+[the architecture](INCREMENTAL_BUILDS.md). Keep native imports conservative until their clean/incremental equivalence
+checks pass, following [world build practices](WORLD_BUILD_PRACTICES.md).

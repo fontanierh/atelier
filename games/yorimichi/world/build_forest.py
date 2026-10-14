@@ -8,13 +8,16 @@ import math
 
 import bpy
 from mathutils import Vector, Euler
-import build_assets as A
-from forest_trees import TUSCAN, FOREST, tree
+import asset_mesh as A
+from forest_trees import tree
+from forest.specs import TUSCAN, FOREST
+from asset_catalog import check_material_namespace
 import forest_impostors
 
 
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    check_material_namespace([args[-1] for args in TUSCAN.values()], 'forest')
     A.materials()
     old_tex=A.TEX;A.TEX=str(yori.OUT/'forest/textures')
     for _,_,_,_,slot in TUSCAN.values():A.mat(slot,texture='T_'+slot+'.png',alpha=True)

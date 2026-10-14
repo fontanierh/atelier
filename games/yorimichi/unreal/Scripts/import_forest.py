@@ -7,8 +7,8 @@ import json
 import unreal as U
 from import_village import import_mesh
 from import_foliage_lods import main as import_lods
-from foliage_material import enable_bark_lod_blend
 import forest_impostor_material
+from asset_catalog import check_material_namespace
 
 
 def main():
@@ -16,10 +16,9 @@ def main():
     U.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
     output=yori.OUT/'forest'
     foliage=E.load_asset('/Game/Japan/Materials/M_Foliage');assert foliage
-    for slot in ['Bark','BarkOlive','BarkTuscan']:
-        bark=E.load_asset('/Game/Japan/Materials/MI_'+slot);assert bark,slot
-        enable_bark_lod_blend(bark);E.save_loaded_asset(bark)
-    for slot,entry in json.loads((output/'textures/textures.json').read_text()).items():
+    textures = json.loads((output/'textures/textures.json').read_text())
+    check_material_namespace(textures, 'forest')
+    for slot,entry in textures.items():
         task=U.AssetImportTask();task.filename=str(output/'textures'/entry['file'])
         task.destination_path='/Game/Japan/Textures';task.destination_name='T_'+slot
         task.automated=True;task.replace_existing=True;task.save=True;AT.import_asset_tasks([task])
@@ -55,7 +54,7 @@ def main():
         mesh.set_editor_property('allow_cpu_access',False)
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',U.CollisionTraceFlag.CTF_USE_SIMPLE_AS_COMPLEX)
         E.save_loaded_asset(mesh);report[name]={'height_m':height,'triangles':mesh.get_num_triangles(0)}
-    import_lods(output=output,manifest_file='trees.json',shared_materials=False)
+    import_lods(output=output,manifest_file='trees.json')
     (output/'import-report.json').write_text(json.dumps(report,indent=2)+'\n')
     U.log('FOREST IMPORT COMPLETE: '+json.dumps(report))
 

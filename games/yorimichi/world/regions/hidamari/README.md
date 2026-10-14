@@ -28,11 +28,12 @@ uv run atelier build yorimichi world.city_tiles world.city_trees unreal.desktop 
   and `unreal.desktop` imports them into `/Game/Experiments`.
 
 For an art iteration on a few meshes, set `HIDAMARI_ASSETS` to comma-separated mesh names for both the Blender build
-and the importer, and `HIDAMARI_TERRAIN=1` on the importer to replace the base terrain too. Run the importer on its own
-(`kit/lab.py`, or `import_hidamari.py` through `-run=pythonscript`), never through `atelier build`: `unreal.world`
-purges `/Game/Japan` first, so a filtered import there leaves only the named meshes. A layout or height
-change can need `HD_Terrain`, `HD_Streets` and the ground-anchored public spaces rebuilt; rerun the collision audit
-after it.
+and the importer, and `HIDAMARI_TERRAIN=1` on the importer to replace the base terrain too. This is an isolated art
+experiment: use the guarded `kit/lab.py` workflow, or run `import_hidamari.py` under `atelier.safety.guarded` after
+normal board admission. Never certify this filtered output through an ordinary `atelier build`: `unreal.world`
+still purges legacy regional packages under `/Game/Japan`, preserving only the independently owned shared-material
+and foliage catalogues. A filtered run would remove the other legacy meshes. A layout or height change can need
+`HD_Terrain`, `HD_Streets` and the ground-anchored public spaces rebuilt; rerun the collision audit afterward.
 
 A capture shot spec with `"validate_hidamari": true` (`tools/capture.py SESSION --file SHOTS.json`) makes the game
 audit the city's live collision before filming and write `hidamari-physics.json` (`HidamariReview.cpp`): ground

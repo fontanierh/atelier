@@ -90,42 +90,10 @@ def resident_material():
 PLACEHOLDER=yori.OUT/'village'/'assets'/'Village_Sign.fbx'   # small, and builds without warnings
 
 
-def import_mesh(path,dest,name,fresh_slots=False):
-    """fresh_slots: take the material slots from the FBX instead of conserving the asset's old ones (meshes whose
-    slots name their surfaces; legacy reimport otherwise keeps the placeholder's or a previous build's slot)."""
-    if not EAL.does_asset_exist(dest+'/'+name) and Path(path).resolve()!=PLACEHOLDER.resolve():
-        _import_mesh(PLACEHOLDER,dest,name)
-    return _import_mesh(path,dest,name,fresh_slots)
-
-
-def _import_mesh(path,dest,name,fresh_slots=False):
-    task=unreal.AssetImportTask()
-    task.filename=str(path);task.destination_path=dest;task.destination_name=name
-    task.automated=True;task.replace_existing=True;task.replace_existing_settings=True;task.save=True
-    ui=unreal.FbxImportUI()
-    ui.automated_import_should_detect_type=False
-    ui.import_mesh=True;ui.import_materials=False;ui.import_textures=False;ui.import_animations=False
-    ui.import_as_skeletal=False;ui.mesh_type_to_import=unreal.FBXImportType.FBXIT_STATIC_MESH
-    d=ui.static_mesh_import_data
-    for k,v in dict(combine_meshes=True,generate_lightmap_u_vs=False,auto_generate_collision=False,
-        convert_scene=True,convert_scene_unit=True,import_uniform_scale=1.0,build_nanite=False,one_convex_hull_per_ucx=True,
-        vertex_color_import_option=unreal.VertexColorImportOption.REPLACE,
-        normal_import_method=unreal.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS).items():d.set_editor_property(k,v)
-    # Legacy reimport reads the stored import-data object before task options.
-    # Keep these in sync so unit scale and vertex colours update on every rebuild.
-    existing=EAL.load_asset(dest+'/'+name) if EAL.does_asset_exist(dest+'/'+name) else None
-    if existing:
-        prior=existing.get_editor_property('asset_import_data')
-        if isinstance(prior,unreal.FbxStaticMeshImportData):
-            for key in ('combine_meshes','generate_lightmap_u_vs','auto_generate_collision','convert_scene',
-                        'convert_scene_unit','import_uniform_scale','one_convex_hull_per_ucx',
-                        'vertex_color_import_option','normal_import_method'):
-                prior.set_editor_property(key,d.get_editor_property(key))
-        if fresh_slots: existing.set_editor_property('static_materials',[])
-    task.options=ui;AT.import_asset_tasks([task])
-    mesh=EAL.load_asset(dest+'/'+name)
-    assert mesh and task.imported_object_paths,'FBX import failed: '+name
-    return mesh
+def import_mesh(path, dest, name, fresh_slots=False):
+    """Village and legacy callers use the village's small import seed."""
+    from mesh_import import import_mesh as import_fbx
+    return import_fbx(path, dest, name, seed=PLACEHOLDER, fresh_slots=fresh_slots)
 
 
 def main(terrain=True,assets=None):

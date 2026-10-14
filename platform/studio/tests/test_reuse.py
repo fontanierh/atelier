@@ -50,12 +50,11 @@ def test_differing_sources_names_each_step():
 
 
 @pytest.mark.parametrize('named_products', [False, True])
-def test_inspect_legacy_fingerprints_and_refuse_named_products(tmp_path, monkeypatch, capfd, named_products):
+def test_inspect_legacy_and_named_products(tmp_path, monkeypatch, named_products):
     import shutil
-    import subprocess
     from atelier import paths
     # Keep a legacy recipe independent of the evolving sandbox template. Exercise the real child
-    # interpreter and inspector, including its refusal to certify named products as a whole build.
+    # interpreter and inspector, including missing products in a fresh checkout.
     repo = tmp_path / 'repo'
     shutil.copytree(paths.STUDIO / 'atelier', repo / 'platform/studio/atelier',
                     ignore=shutil.ignore_patterns('__pycache__'))
@@ -75,14 +74,12 @@ def test_inspect_legacy_fingerprints_and_refuse_named_products(tmp_path, monkeyp
     version.parent.mkdir(parents=True)
     version.write_text('{}')
     monkeypatch.setenv('UE_ROOT', str(tmp_path / 'engine'))
-    if named_products:
-        with pytest.raises(subprocess.CalledProcessError):
-            reuse.inspect(repo, 'standin')
-        assert 'Whole-build reuse does not yet certify named products' in capfd.readouterr().err
-        return
     snapshot = reuse.inspect(repo, 'standin')
     assert snapshot['build_version'] == {}
     assert snapshot['steps'] and all(len(s['source']) == 64 for s in snapshot['steps'])
+    if named_products:
+        assert not snapshot['steps'][0]['outputs_ok']
+        assert snapshot['steps'][0]['products'] == {}
 
 
 def test_target_files_in_copied_folders_are_found_tracked_ones_are_not(tmp_path):

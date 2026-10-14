@@ -36,35 +36,24 @@ Graphs made here:
   he walked through is dragged his way, swings back and settles within a second).
 - character(material): Cairo's and the bokken's materials dither out within 60 cm of the camera (gone at 22 cm).
 
-Run as a script (`atelier build yorimichi unreal.see_through`), it patches what other imports build without it:
-- M_Foliage (leaves, bushes, flowers, litter);
-- M_Grass (the grass tufts: lens fade only);
-- M_Painted's mask pin, with the instances in PAINTED switched to masked (tree trunks, the road's guardrail, poles,
-  stone lanterns, the torii);
-- the playable characters' materials: those in a character.toml's unreal_path named after its `see_through` prefixes.
-It also upgrades an M_TreeHouse carrying the first version. import_treehouse.py builds M_TreeHouse with
-add_mask(pieces=True). A material carrying the first version (OLD, the hole round Cairo) is upgraded in place. Every
-patch is idempotent.
+``unreal.materials`` builds the shared world graphs with ``world_materials``. Character
+imports are patched by ``unreal.see_through``; the treehouse importer owns its graph.
+The shared collection is written only by the material owner. Other callers read it and
+fail if it needs rebuilding, preserving one writer for every shared package.
 """
-import sys
-from pathlib import Path
 import unreal
 
 E = unreal.EditorAssetLibrary; MEL = unreal.MaterialEditingLibrary
 FOLDER = '/Game/SeeThrough'; MPC = FOLDER+'/MPC_SeeThrough'
 TAG = 'Japan see-through 2'
 OLD = 'Japan see-through'          # the first version: a round hole round Cairo, cut per pixel
-# The characters the camera fades near the lens: (unreal_path, material name prefixes) from their character.toml.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'assets' / 'characters' / 'pipeline'))
-import definition  # noqa: E402
-CHARACTERS = [(c.unreal_path, tuple(c.toml['see_through'])) for c in map(definition.load, definition.ids()) if 'see_through' in c.toml]
 TRAIL = ('Trail0', 'Trail1', 'Trail2', 'Trail3')
 VECTORS = (('Focus', (0., 0., -100000., 90.)), ('Cut', (55., 35., 0., 0.)), ('Room', (0., 0., -100000., 0.)),
            ('RoomSize', (100., 100., 100., 0.)), ('RoomShape', (0., 60., 90., 0.)),
            *((name, (0., 0., -100000., 10.)) for name in TRAIL),
            ('Fade', (0., 30., 60., 250.)), ('Eye', (0., 0., -100000., 0.)))
 OPACITY = unreal.MaterialProperty.MP_OPACITY_MASK
-# The instances of M_Painted (setup_project.py) that may stand between the camera and Cairo:
+# The instances of M_Painted (shared_materials.py) that may stand between the camera and Cairo:
 # - tree trunks (Bark);
 # - the road's guardrail (Paint, a slot of the terrain mesh);
 # - poles (Concrete, Metal, Wood, Paint);
@@ -251,19 +240,22 @@ CLOTH = ('if (W <= 0.001) return float3(0.0, 0.0, 0.0);'
          ' return o;')
 
 
-def collection():
-    """The parameter collection. Missing parameters are appended, and the existing ones are kept as they are (with
-    their ids), so the materials that read them stay valid."""
+def collection(*, create=False):
+    """Read the collection; only its owner may create it or append parameters, preserving GUIDs."""
     if E.does_asset_exist(MPC):
         mpc = E.load_asset(MPC)
-    else:
+    elif create:
         E.make_directory(FOLDER)
         mpc = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
             'MPC_SeeThrough', FOLDER, unreal.MaterialParameterCollection, unreal.MaterialParameterCollectionFactoryNew())
+    else:
+        raise RuntimeError('Build unreal.materials: missing ' + MPC)
     ps = list(mpc.get_editor_property('vector_parameters'))
     have = {str(p.get_editor_property('parameter_name')) for p in ps}
     missing = [(name, value) for name, value in VECTORS if name not in have]
     if not missing: return mpc
+    if not create:
+        raise RuntimeError('Build unreal.materials: incomplete ' + MPC)
     for name, value in missing:
         q = unreal.CollectionVectorParameter(); q.set_editor_property('parameter_name', name)
         q.set_editor_property('default_value', unreal.LinearColor(*value)); ps.append(q)
@@ -483,8 +475,7 @@ def save(m):
     """Recompile and save m; the translator's errors go to the log (the shader compiler's come later, as usual)."""
     errors = MEL.recompile_material(m)
     if errors: unreal.log_error(f'SEE-THROUGH {m.get_name()} does not compile: {"; ".join(str(e) for e in errors)}')
-    E.save_loaded_asset(m)
-    return not errors
+    return bool(E.save_loaded_asset(m)) and not errors
 
 
 def cut_scale(mi, value):
@@ -512,21 +503,22 @@ def material(name):
     return E.load_asset(path) if E.does_asset_exist(path) else None
 
 
-TREE = '/Game/Japan/Treehouse/Materials/M_TreeHouse'
-
-
-def main():
-    collection()
+def world_materials():
+    """Apply shared graph overlays exactly once, after rebuilding their base graphs."""
+    collection(create=True)
     changed = []
     foliage = material('M_Foliage')
     if foliage and add_mask(foliage, blend=False, scale=SCALES['M_Foliage']):    # masked already, with its own clip
-        save(foliage); changed.append('M_Foliage')
+        if not save(foliage): raise RuntimeError('Could not compile/save M_Foliage')
+        changed.append('M_Foliage')
     grass = material('M_Grass')
     if grass and add_mask(grass, scale=SCALES['M_Grass'], whole_fade=False):     # masked already (its instance fade)
-        save(grass); changed.append('M_Grass')
+        if not save(grass): raise RuntimeError('Could not compile/save M_Grass')
+        changed.append('M_Grass')
     painted = material('M_Painted')
     if painted and add_mask(painted, blend=False, scale=SCALES['M_Painted']):   # opaque: only masked instances use it
-        save(painted); changed.append('M_Painted')
+        if not save(painted): raise RuntimeError('Could not compile/save M_Painted')
+        changed.append('M_Painted')
     for name in PAINTED:
         mi = material(f'MI_{name}')
         if mi and painted and mask_instance(mi):
@@ -535,21 +527,4 @@ def main():
         mi = material(name) if name.startswith('MI_') else None
         if mi and cut_scale(mi, value):
             E.save_loaded_asset(mi); changed.append(f'{name} CutScale')
-    for folder, prefixes in CHARACTERS:
-        for path in sorted(E.list_assets(folder, recursive=False)):
-            name = path.rsplit('/', 1)[-1].split('.')[0]
-            if not name.startswith(prefixes): continue
-            m = E.load_asset(path)
-            if isinstance(m, unreal.Material) and character(m):
-                save(m); changed.append(name)
-    # The tree house: import_treehouse.py builds it; an earlier import carries the first version, upgraded here.
-    tree = E.load_asset(TREE) if E.does_asset_exist(TREE) else None
-    if tree and tag(tree) == OLD and not stale(tree) and add_mask(tree, room=True, pieces=True):
-        save(tree); changed.append('M_TreeHouse')
-    ready = tree is not None and tag(tree) == TAG and not stale(tree)
-    unreal.log(f'SEE-THROUGH COMPLETE patched {len(changed)}: {", ".join(changed) or "nothing new"}; '
-               f'M_TreeHouse {"has it" if ready else "needs unreal.treehouse"}')
-
-
-if __name__ == '__main__':
-    main()
+    unreal.log(f'SHARED SEE-THROUGH COMPLETE: {len(changed)} changes')

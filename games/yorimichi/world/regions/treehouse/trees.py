@@ -4,7 +4,7 @@
 
 The houses stand 3 to 16 m up the hillside, above the tops of the island's maples and ginkgos, so from a deck the eye
 met sky and sea where the paintings have a wall of red and gold crowns. These trees hold their crowns at deck height.
-They are made like the rest of the forest (build_assets.py): card canopies with normals from the crown centre, the
+They are made like the rest of the forest (asset_mesh.py): card canopies with normals from the crown centre, the
 same atlases and material slots, so they shade and sway alike. They have a taller trunk and a crown of clumped
 lobes. Two recoloured maple atlases (crimson, amber) widen the palette toward the paintings.
 Writes build/yorimichi/treehouse/trees/<name>.fbx, T_leaf_crimson.png, T_leaf_amber.png and trees.json (dimensions for
@@ -17,7 +17,7 @@ import bpy
 import numpy as np
 from mathutils import Vector
 
-import build_assets as A
+import asset_mesh as A
 
 OUT = yori.OUT/'treehouse'/'trees'
 # name: seed, leaf material, height, spread, side lobes, leaf cards
@@ -27,9 +27,7 @@ SPECS = {
     'Tree_Canopy_Amber':   (53, 'LeafAmber', 18., 8.4, 4, 1200),
     'Tree_Canopy_Ginkgo':  (54, 'LeafGinkgo', 19., 6.6, 4, 1100),
 }
-# Every tree exports its leaves under the maple slot. The first import of a new mesh crashes Unreal's commandlet, so the
-# import copies the island's Tree_Maple_A (slots Bark, LeafMaple) and reimports over it, then gives the leaf slot the
-# tree's own material instance.
+# Every tree exports a stable maple leaf slot; the importer binds its own recoloured instance.
 SLOT = {'LeafMaple': 'LeafMaple', 'LeafCrimson': 'LeafMaple', 'LeafAmber': 'LeafMaple', 'LeafGinkgo': 'LeafMaple'}
 # New atlases: hue (degrees) of the maple atlas mapped to a*h+b, saturation and value scaled.
 RECOLOUR = {'crimson': (.35, -8., 1.06, .9), 'amber': (.45, 28., 1.0, 1.06)}

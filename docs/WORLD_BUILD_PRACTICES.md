@@ -7,7 +7,8 @@ inputs and references. It should own its outputs and preserve the outputs of oth
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
 with today's `Step` recipes. Named products and read-only inspection are implemented in the
 [recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
-restoration and tracked spatial queries remain proposed.
+restoration across revisions and tracked spatial queries remain proposed. Verified whole-build reuse at the same
+clean revision supports named products, including native packages.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 ## Separate assets from their placement
@@ -62,6 +63,16 @@ Small cache units do not require one Blender or Unreal process per unit. The exe
 units into one guarded process while keeping their manifests independent. Avoid thousands of tiny Unreal
 packages where a bounded spatial/material group is a better runtime unit. Measure memory, package overhead,
 draw calls and rebuild scope together.
+
+The [foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) provides a concrete example: one small JSON specification
+per asset, an export product for its complete LOD chain, and one final native package owner. Shared materials publish
+a separate, small interface product for the paths and LOD-blend flags imports consume. A shader implementation edit
+therefore need not reimport a mesh if that interface stays identical. This separation is valid only when the consumer
+does not inspect other shader state; declare those reads if it starts to do so.
+
+Opt-in [batches](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions) preserve these independent keys and
+receipts. Reset per-asset module caches and tool state explicitly; test a cold asset, a warm asset and reversed asset
+order. A bounded session yields capacity with completed results saved, so an agent must coordinate before resuming.
 
 ## Give every generated package one owner
 

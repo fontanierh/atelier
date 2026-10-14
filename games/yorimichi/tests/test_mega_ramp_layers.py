@@ -2,30 +2,46 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from atelier import build
+from atelier import build, build_cache, build_inputs, build_products
 
 MEGA = Path(__file__).resolve().parents[1] / 'world' / 'regions' / 'mega'
 
 
-def changed_by(edited, tmp_path, monkeypatch):
+def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     """Steps whose fingerprint changes when `edited` changes. Inputs hash by name, and an input that is or contains
     `edited` hashes differently afterwards, so the test reads the recipe's dependencies and needs no built files."""
+    editing = False
+
     def stand_in(digest, path):
         inside = str(path) == str(edited) or str(edited).startswith(f'{path}/')
-        digest.update(str(path).encode() + (b'edited' if inside else b''))
+        digest.update(str(path).encode() + (b'edited' if editing and inside else b''))
+
+    def inventory(path, **kwargs):
+        import hashlib
+        digest = hashlib.sha256()
+        stand_in(digest, path)
+        return {'source': digest.hexdigest()}
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps', uproject=None)
-    steps = build.load_recipe('yorimichi').steps(ctx)
+    recipe = build.load_recipe('yorimichi').steps(ctx)
+    steps = build.order(recipe, [step.name for step in recipe])
 
     def prints():
         done = {}
         for step in steps:
             done[step.name] = build.fingerprint(step, done)
+            for product in step.products:
+                # Model changed output bytes, unless this test intentionally keeps a product
+                # identical after its producer changes (the consumer's cutoff boundary).
+                done['product:' + product.name] = build_products.identity(product.name if product.name in stable_products
+                                                                         else (product.name, done[step.name]))
         return done
-    monkeypatch.setattr(build, '_hash_path', lambda digest, path: digest.update(str(path).encode()))
-    before = prints()
     monkeypatch.setattr(build, '_hash_path', stand_in)
+    monkeypatch.setattr(build_inputs, 'inventory', inventory)
+    monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'fixture': 'unchanged tools'})
+    before = prints()
+    editing = True
     after = prints()
-    return {name for name in before if before[name] != after[name]}
+    return {name for name in before if not name.startswith('product:') and before[name] != after[name]}
 
 
 def test_ramp_shape_rebuilds_only_the_ramp_and_the_map(tmp_path, monkeypatch):

@@ -1,4 +1,4 @@
-# Independent artifact pooling
+# Build caches and independent reuse
 
 Keep a complete playable canonical checkout warm. Feature worktrees keep independent generated
 files; all share the installed engine and its local derived-data cache. Never share mutable Unreal
@@ -33,6 +33,36 @@ A conflicting action key remains disabled until investigated. `forget` discards 
 it does not choose either result as valid. Fix nondeterminism or missing inputs before publishing again. Deleting
 an entry does not change successful local stamps; use a deliberate `--force` on that action to generate new evidence.
 Corrupt action manifests must be explicitly forgotten before GC can safely determine blob reachability.
+
+## Verified whole-build reuse
+
+```sh
+uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>
+```
+
+Donor and receiver must be clean at the same source revision and engine build. Legacy steps retain their existing
+checks. Named products additionally require current producer inputs, complete byte inventories and matching
+fingerprints in both checkouts after copying. This includes leaf products that no other step reads and optional
+native sidecars. Every product must lie within the supported copy scope: generated game output, game Content and
+game/plugin Binaries. Copies are independent; Intermediate, Saved, build logs and local hash indexes are not copied.
+
+The target must have no build stamps, occupied destination outputs, or game Intermediate/Saved caches. Starting
+from a fresh target ensures that the receiving editor/cooker discovers its own asset registry instead of loading a
+donor's stale discovery cache. Reuse does not merge a partial build or certify different source revisions.
+
+Before the first replacement, reuse writes and fsyncs a journal under the target's build directory. A completion
+receipt follows the final source, engine and output checks; the journal is removed last. While it exists, builds,
+play, package, stream, QA and shared native launch paths refuse the incomplete snapshot. Do not delete the journal
+or create stamps by hand. After coordinating a short render-lock turn, discard an interrupted generated copy with:
+
+```sh
+uv run atelier reuse <game> --abandon --to <interrupted-worktree>
+```
+
+Recovery removes only the journal's allowlisted generated copy scope, plus its stamps and completion receipt. It
+preserves tracked files, logs and unrelated paths, and never follows links. An interrupted recovery can be repeated.
+Then reuse into the fresh target again or build it normally. This protocol supports whole-build native copies;
+it does not enable automatic per-package Unreal caching across revisions.
 
 ## Portable output pool
 
@@ -79,7 +109,7 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 | Named portable products with `cache=True` | Automatic verified restoration during build; inspect/prune with `atelier cache` |
 | Opted-in portable texture folders | Publish/restore matching pool key with full output hashes; independent copies |
 | Other generated Blender/character/audio outputs | Keep them warm; extend recipe ownership and tool/dependency manifests before enabling cross-branch pooling |
-| Unreal imported assets | Keep complete source/output proof; normal incremental import unless a targeted delta proves the full changed-content allowlist, collision/material contracts and unaffected asset hashes |
+| Unreal imported assets | Owned package inventories support incremental imports and verified whole-build reuse; automatic cross-revision native caching is not enabled |
 | C++ and PCH | Compile incrementally per worktree; no shared mutable Intermediate or cross-branch Binaries certification |
 | Shaders/derived data | Reuse the engine's existing local per-user DDC; prewarm only the actual renderer/profile needed |
 
@@ -88,8 +118,8 @@ must still rebuild/import each affected step and pass its validators after featu
 Region source changes can affect terrain, vegetation and map inputs as well as park assets;
 copying a region alone is insufficient. Do not blanket-touch stamps or clear generated assets/DDC.
 
-Next candidates are isolated Blender outputs with verified Blender/runtime context and full consumed
-dependency output manifests. Region-owned Unreal imports and a cheap map assembly step would address
-the large broad-world import cost. Those require ownership and collision/layout proofs before reuse.
+The [Yorimichi foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) separates source assets, shared materials and
+native package owners. Its source cache stays disabled until deterministic export and relocation checks pass.
+Region-owned imports and cheap map assembly remain further work; they require collision/layout and ownership proofs.
 A future shared DDC or compiler cache is separate from portable asset pooling and must retain local
 fallback and real toolchain/header/flag keys; it never means sharing mutable intermediate directories.

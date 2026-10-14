@@ -1,0 +1,23 @@
+{
+  "generator": "tree_cedar",
+  "arguments": [
+    6,
+    16.0
+  ],
+  "screen_sizes": [
+    1.0,
+    0.08,
+    0.025,
+    0.015
+  ],
+  "strides": [
+    3,
+    8,
+    16
+  ],
+  "collision": "complex",
+  "materials": [
+    "Bark",
+    "LeafCedar"
+  ]
+}

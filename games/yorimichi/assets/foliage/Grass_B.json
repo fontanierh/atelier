@@ -1,0 +1,15 @@
+{
+  "generator": "grass_tuft",
+  "arguments": [
+    13
+  ],
+  "screen_sizes": [
+    1.0,
+    0.1,
+    0.035
+  ],
+  "collision": "default",
+  "materials": [
+    "Grass"
+  ]
+}

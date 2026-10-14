@@ -179,6 +179,10 @@ For small rebuilds, name independently consumed products and declare which ones 
 references. Opted-in portable products are restored automatically from the local cache across worktrees; the
 [sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
 [Build recipes](docs/BUILD_RECIPES.md) cover the API, input checks and read-only plans.
+Yorimichi's [foliage recipe](games/yorimichi/docs/FOLIAGE_BUILDS.md) gives each tree, bush and grass asset its own
+export and final Unreal package owner, with shared materials built separately. Compatible misses can share a
+guarded process while retaining individual results. If a batch exits 75 (`BATCH YIELDED`), coordinate the next
+render turn and resume the printed command; completed actions stay current.
 
 ### A prop from a sentence
 
@@ -289,7 +293,12 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   cd ../fresh-worktree && uv sync && uv run atelier build yorimichi   # confirms the carried-over steps
   ```
 
-- **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
+  Named products include full byte inventories. A copy journal blocks launch after interruption;
+  [recovery](docs/ARTIFACT_POOL.md#verified-whole-build-reuse) removes only recorded generated files.
+
+- **Reuse portable products automatically** across feature revisions when their recipe enables `cache=True`.
+  `atelier cache` maintains the store; the older `atelier pool` remains for its explicit texture recipes
+  ([cache and reuse guide](docs/ARTIFACT_POOL.md)).
 - **Guarded heavy work.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
   an optional small slot and a reserved fitting lane) and run Unreal and Blender under a memory guard that stops a job before it
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
