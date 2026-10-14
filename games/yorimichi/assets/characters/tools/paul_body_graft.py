@@ -1,6 +1,9 @@
 """Put Paul's current head on a new Tripo body (the head stays exactly as in Paul.glb; only the body is new).
 
-/Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 --python \
+Run it only under the guard, after a render-board turn:
+
+nice -n 10 uv run python -m atelier.safety.guarded --report build/yorimichi/paul-graft.guard --timeout 900 -- \
+    /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --threads 3 --python-exit-code 1 --python \
     games/yorimichi/assets/characters/tools/paul_body_graft.py -- \
     --body <tripo body>.glb --head <previous Paul.glb, haras-r01> --output <dir> \
     [--head-fraction 0.18] [--renders]

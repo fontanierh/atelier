@@ -1,6 +1,9 @@
 """Paul's game source: Tripo's auto-rig (skeleton and skin weights) on the textured graft.
 
-/Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 --python \
+Run it only under the guard, after a render-board turn:
+
+nice -n 10 uv run python -m atelier.safety.guarded --report build/yorimichi/paul-rig.guard --timeout 600 -- \
+    /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup --threads 3 --python-exit-code 1 --python \
     games/yorimichi/assets/characters/tools/paul_rig.py -- \
     --graft <dir>/Paul-graft.blend --rigged <tripo rigged>.glb --output <dir> [--poses]
 
