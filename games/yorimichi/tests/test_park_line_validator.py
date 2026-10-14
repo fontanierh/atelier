@@ -9,6 +9,7 @@ from park_line_geometry import LineWorld, Path2D
 from park_line_metrics import analyze
 from validate_park_lines import validate_speeds
 from park_line_controller import LineFollower
+from park_line_gaps import validate_gap_specs
 
 
 def test_profile_lane_keeps_endpoints_and_gap(tmp_path):
@@ -151,3 +152,73 @@ def test_follower_input_is_bounded_and_invalid_settings_rejected():
     for config in ({'gain':0},{'max_stick':2},{'lookahead_m':float('nan')},{'mode':'teleport'},{'unknown':1}):
         with pytest.raises(ValueError):
             LineFollower(path,config)
+
+
+def paired_flights():
+    world=FixtureWorld()
+    world.path=Path2D([[0,0],[0,200]])
+    world.finish_m=95
+    world.sections={name:dict(role=role) for name,role in
+                    [('launch1','takeoff'),('land1','landing'),('launch2','takeoff'),('land2','landing')]}
+    world.spec['required_airs']=[
+        dict(id='hero',takeoff='launch1',landing='land1',knuckle_s_m=36,knuckle_y_m=-2,
+             landing_end_s_m=60,min_knuckle_margin_m=3,min_air_m=25),
+        dict(id='secondary',takeoff='launch2',landing='land2',knuckle_s_m=86,
+             landing_end_s_m=100,min_knuckle_margin_m=3)]
+    def support(p):
+        name='launch1' if p[2]<10 else 'land1' if p[2]<65 else 'launch2' if p[2]<77 else 'land2'
+        return dict(surface=name,role=world.sections[name]['role'],
+                    normal=[0,float(np.cos(np.radians(20))),float(np.sin(np.radians(20)))])
+    world.support=support
+    rows=flight_rows()
+    for row in flight_rows():
+        rows.append({**row,'time_s':row['time_s']+80/60,
+                     'position':[0,1,70+row['position'][2]/2]})
+    return rows,world
+
+
+def test_secondary_gap_can_be_shorter_while_hero_remains_required():
+    rows,world=paired_flights()
+    report=analyze(rows,world)
+    assert report['passed'],report['failures']
+    assert [a['huge_air_pass'] for a in report['airs']]==[True,False]
+    assert all(g['passed'] for g in report['gap_checks'])
+    assert report['gap_checks'][0]['vertical_clearance_at_knuckle_m']==pytest.approx(3)
+    assert report['gap_checks'][1]['touchdown_margin_m']==pytest.approx(4)
+    world.spec.pop('required_airs')
+    assert not analyze(rows,world)['passed']  # legacy required_takeoffs still demand huge airs
+    rows,world=paired_flights()
+    world.spec['required_airs']=world.spec['required_airs'][1:]
+    world.spec['required_takeoffs']=['launch2']
+    for row in rows[:80]:row['state']='PhysicsGround'
+    assert 'no completed qualifying huge air' in analyze(rows,world)['failures']
+
+
+@pytest.mark.parametrize('change,expected',[
+    ('wrong_receiver','named receiver'),('close_knuckle','too close'),
+    ('overshoot','beyond the intended'),('speed','takeoff speed'),
+    ('missing','no observed flight'),('order','declaration order'),
+    ('bail','safety checks')])
+def test_gap_gate_does_not_hide_bad_secondary_with_successful_hero(change,expected):
+    rows,world=paired_flights()
+    spec=world.spec['required_airs'][1]
+    if change=='wrong_receiver':spec['landing']='land1'
+    elif change=='close_knuckle':spec['knuckle_s_m']=88
+    elif change=='overshoot':spec['landing_end_s_m']=89
+    elif change=='speed':spec['min_takeoff_speed_mps']=100
+    elif change=='missing':
+        for row in rows[80:]:row['state']='PhysicsGround'
+    elif change=='order':world.spec['required_airs'].reverse()
+    elif change=='bail':rows[135]['state']='WipeoutGround'
+    report=analyze(rows,world)
+    assert not report['passed']
+    assert report['airs'][0]['huge_air_pass']
+    assert any(expected in f for g in report['gap_checks'] for f in g['failures'])
+
+
+@pytest.mark.parametrize('key,value',[
+    ('knuckle_s_m',float('nan')),('landing_end_s_m',201),('min_air_m',-1),
+    ('knuckle_y_m',float('inf')),('takeoff','missing'),('landing','launch1'),('typo',3)])
+def test_invalid_gap_requirement_fails_closed(key,value):
+    _,world=paired_flights();world.spec['required_airs'][0][key]=value
+    with pytest.raises(ValueError):validate_gap_specs(world)

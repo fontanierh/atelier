@@ -13,6 +13,7 @@ import check_skate_feel as feel
 from park_line_geometry import LineWorld
 from park_line_metrics import analyze, is_ground, DEFAULTS
 from park_line_controller import LineFollower
+from park_line_gaps import validate_gap_specs
 
 
 def sha(path):
@@ -81,6 +82,7 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     Frames MUST come from check_skate_feel.Session's configured CLI transport, never a ballistic substitute.
     Each speed trial MUST use a fresh session and preserve its controls and compact observations.
     """
+    validate_gap_specs(world)
     spawn, heading, direction = world.spawn()
     collision = dict(triangles=world.triangles.tolist(), rails=world.spec.get('rails', []),
                      spawn=spawn.tolist(), heading=heading)

@@ -1,6 +1,7 @@
 """Measurements from actual Session frames; inferred geometry is labelled separately."""
 import math
 import numpy as np
+from park_line_gaps import check_required_airs
 
 DEFAULTS = dict(huge_air_m=25., min_landing_slope_deg=5., max_landing_mismatch_deg=20.,
                 max_takeoff_angle_deg=80., max_ground_slope_deg=85., bump_loss_mps=2.,
@@ -30,6 +31,8 @@ def analyze(rows, world):
     A huge-air pass MUST require a completed flight, an identified intended transition landing,
     recovery observations, no bailout during flight/recovery, and the configured distance and alignment thresholds.
     Unknown support and unfinished flights MUST NOT count as successful landings.
+    Explicit required_airs MAY complete shorter secondary gaps only through the named-gap safety verdict;
+    the route MUST still contain a qualifying huge air and pass all existing global safety checks.
     """
     rules = {**DEFAULTS, **world.spec.get('acceptance', {})}
     if not rows:
@@ -77,12 +80,15 @@ def analyze(rows, world):
             fail.append('insufficient observations after landing')
         if any(before <= i and times[i] <= recovery_end for i in bail):
             fail.append('bail/slam state during flight or recovery')
+        safe_landing = not fail
         if min(horizontal, forward) < rules['huge_air_m']:
             fail.append('air is shorter than the required forward distance')
         airs.append(dict(takeoff_frame=int(begin), landing_frame=int(end) if landed else None,
                          termination_frame=int(end) if end < len(rows) else None,
                          termination_state=states[end] if end < len(rows) else 'frame_budget',
                          takeoff_position=p[before].tolist(), end_position=p[last].tolist(),
+                         takeoff_station_m=float(progress[before]),
+                         landing_station_m=float(progress[end]) if landed else None,
                          completed=bool(landed), duration_s=float(times[last]-times[before]),
                          takeoff_speed_mps=float(speed[begin]), takeoff_angle_deg=angle,
                          takeoff_surface=departure['surface'] if departure else None,
@@ -93,7 +99,8 @@ def analyze(rows, world):
                          landing_speed_mps=float(speed[end]) if landed else None,
                          landing_support=support, landing_slope_deg=landing_slope,
                          landing_normal_speed_mps=abs(float(np.dot(incoming,support['normal']))) if support else None,
-                         landing_mismatch_deg=mismatch, huge_air_pass=not fail, failures=fail))
+                         landing_mismatch_deg=mismatch, safe_landing_pass=safe_landing,
+                         huge_air_pass=not fail, failures=fail))
     # Potential bump losses: gravity-corrected speed over uninterrupted, unbraked ground windows.
     # This does not distinguish friction from collisions and is not a contact impulse measurement.
     losses = []
@@ -116,10 +123,15 @@ def analyze(rows, world):
                 losses.append(event)
     failures = []
     successful = [a for a in airs if a['huge_air_pass']]
+    gap_checks = check_required_airs(airs, p, progress, world)
+    for gap in gap_checks:
+        if not gap['passed']:
+            failures.append('required gap '+gap['id']+': '+'; '.join(gap['failures']))
     if not successful:
         failures.append('no completed qualifying huge air')
     required = world.spec.get('required_takeoffs', [name for name, s in world.sections.items() if s.get('role') == 'takeoff'])
-    missing = sorted(set(required)-{a['takeoff_surface'] for a in successful})
+    completed_takeoffs = {a['takeoff_surface'] for a in successful} | {g['takeoff'] for g in gap_checks if g['passed']}
+    missing = sorted(set(required)-completed_takeoffs)
     if missing:
         failures.append('required takeoffs not completed: '+', '.join(missing))
     if bail:
@@ -152,7 +164,7 @@ def analyze(rows, world):
                 duration_s=float(times[-1]), speed_mps=dict(min=float(speed.min()), max=float(speed.max()),
                 final=float(speed[-1])), path_progress_m=float(progress.max()), finish_s_m=finish,
                 max_lateral_error_m=float(lateral.max()), rideable_width_m=world.design_width,
-                diagnostic_lane_width_m=world.width, airs=airs, bump_candidates=losses,
+                diagnostic_lane_width_m=world.width, airs=airs, gap_checks=gap_checks, bump_candidates=losses,
                 speed_along_line=[dict(time_s=float(times[i]),path_s_m=float(progress[i]),
                                       speed_mps=float(speed[i]),height_m=float(p[i,1]),state=states[i])
                                   for i in range(0,len(rows),15)],

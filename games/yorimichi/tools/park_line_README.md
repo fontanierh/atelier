@@ -126,6 +126,36 @@ Meaningful flights of at least 0.1 s must also have verified safe takeoff/landin
 already qualifies. Incomplete flights never pass. `intended_vert` exempts the takeoff/ground steepness limits,
 not the landing or survival checks.
 
+For a line with several gaps, optional `required_airs` declares the takeoff/receiver pairs **in riding order**:
+
+```json
+"required_airs": [
+  {"id":"hero", "takeoff":"kicker1", "landing":"receiver1",
+   "knuckle_s_m":80, "knuckle_y_m":-6, "landing_end_s_m":115,
+   "min_air_m":25, "min_knuckle_margin_m":3},
+  {"id":"secondary", "takeoff":"kicker2", "landing":"receiver2",
+   "knuckle_s_m":160, "knuckle_y_m":-12, "landing_end_s_m":185,
+   "min_knuckle_margin_m":3}
+]
+```
+
+Each pair needs its own completed safe flight, the exact named receiver, and a touchdown between the knuckle
+plus the required margin and `landing_end_s_m` (the intended slope's end, excluding later runout). IDs and takeoff
+names must be unique. Section/region names must exist with the appropriate roles. `min_air_m`,
+`min_knuckle_margin_m`, and optional `min_takeoff_speed_mps` default to zero and must be finite and nonnegative.
+The explicit pair can satisfy its `required_takeoffs` entry with a shorter secondary air, but the whole route
+still needs at least one huge air and all previous safety checks. Use `min_air_m: 25` on the designated hero.
+Unpaired required takeoffs retain the original huge-air rule. A wrong receiver, missing gap, repeated departure
+from a declared takeoff, or gaps ridden out of order fails even if another air succeeds.
+
+`gap_checks` reports each pair's verdict, linked air index and along-route touchdown margin. Air records include
+takeoff/landing stations and `safe_landing_pass` (all flight safety checks, excluding the global huge-air distance).
+When `knuckle_y_m` is supplied, vertical clearance is interpolated from observed root positions crossing that
+station during the flight. It is informational, not wheel clearance or an exact contact measurement; absent
+height or no observed crossing returns null. All thresholds apply to every speed in that line spec. For a margin
+required only at 1 m/s, use separate copies of the same full-route spec for that speed and for the 4/8 m/s cases,
+with explicit margins. Each trial still runs the complete route continuously, without resetting at gaps.
+
 The CLI does not expose contact normals or slam impulses. Supporting triangles are **inferred** by a vertical
 query from the animated root (up to 0.35 m above, 2 m below); this can be ambiguous at stacked surfaces and seams.
 Landing angle compares the last airborne velocity with that inferred plane. Bails/slams are reported through
