@@ -86,6 +86,8 @@ def plan(total, reserve, holders, waiting, *, now):
     """@cc [owner:fontanierh,label:safety] shadow-only-capacity
     This planner MUST remain side-effect free. Advice MUST NOT be accepted as admission. Queued
     requests MUST hold no resources or locks, and a long waiter's first-ready time MUST be preserved.
+    Ready requests that cannot fit the empty-holder capacity envelope MUST NOT protect the queue
+    or receive virtual grants. Their cannot-fit result MUST remain specific to the supplied snapshot.
     """
     if type(now) is not int or now < 0:
         raise ValueError('now must be a nonnegative integer timestamp')
@@ -99,13 +101,24 @@ def plan(total, reserve, holders, waiting, *, now):
     if len(held_locks) != len(set(held_locks)):
         raise ValueError('The snapshot has conflicting live named locks')
     ready = sorted((r for r in waiting if r.ready_at <= now), key=lambda r: (r.ready_at, r.id))
+    decisions, feasible = {}, []
+    for request in ready:
+        exceeded = (reserve + request.resources).excess(total)
+        if exceeded:
+            decisions[request.id] = {
+                'id': request.id, 'recommendation': 'cannot-fit', 'exceeded_dimensions': exceeded,
+                'reasons': [f'capacity:{name}' for name in exceeded] +
+                           ['request plus host reserve exceeds this snapshot capacity even with no holders'],
+                'ready_at': request.ready_at, 'resources': asdict(request.resources), 'locks': list(request.locks)}
+        else:
+            feasible.append(request)
+    ready = feasible
     protected = next((r for r in ready if r.bypasses >= 2), None)
     # Up to two short jobs can pass the oldest long job. A protected waiter then gets priority,
     # including a drain window when it cannot fit yet. This is conservative shadow policy.
     ranked = sorted(ready, key=lambda r: (r.id != protected.id if protected else False,
                                          r.seconds > 300, r.ready_at, r.id))
     virtual = list(holders)
-    decisions = {}
     protected_blocked = False
     for request in ranked:
         reasons = conflicts(request, virtual, total, reserve)

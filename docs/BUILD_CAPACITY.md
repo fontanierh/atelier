@@ -25,6 +25,12 @@ excludes overlapping performance windows, and protects waiters after two short b
 `would-admit`, but always carries `admission: false`. It does not observe processes, maintain leases, update queue
 ages or enforce worker limits. Those belong to the proposed supervised service and its rollout tests below.
 
+A ready request whose resources plus the host reserve exceed total capacity even with no holders receives
+`cannot-fit`, with the exceeded dimensions named. This is terminal advice for the supplied snapshot, not a claim
+about future machine configurations. Such requests neither protect the queue nor consume virtual capacity;
+the next feasible waiter keeps its original age and fairness protection. A request that fits an empty snapshot
+can still `wait` for active holders, named locks or a performance window to drain.
+
 ## Inspect retained resource history
 
 ```sh
