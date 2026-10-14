@@ -191,6 +191,10 @@ def _cone(x,y,trail_quiet):
     relief=((ridge*np.minimum(52.,cone*.12)-cuts*np.minimum(30.,cone*.1))*ridge_band+lip+peaks+shoulders
             +noise(x,y,70,2)*9+noise(x,y,180,17)*13)
     relief*=smooth((BASE_RADIUS+50-r)/300)
+    # Granite ribs down the upper flank (g_zep, f_city2): ridged noise long downslope and about 20 m across, so snow
+    # gathers in the gullies between them. Faded in below the crest, which keeps its height.
+    rib=(1-np.abs(downslope_noise(r,angle,22.,68,.15)))**2+.5*(1-np.abs(downslope_noise(r,angle,9.,69,.2)))**2-.62
+    relief+=rib*16*smooth((r-crest-12)/25)*smooth((crest+260-r)/120)
     # Small weathering rides the macro ridges; material grain supplies close detail.
     relief+=noise(x,y,32,3)*4*smooth((BASE_RADIUS-70-r)/330)
     return np.maximum(cone+relief*trail_quiet,0)

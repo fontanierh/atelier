@@ -16,6 +16,7 @@ All values are Blender metres (x east, y north).
 | Crest radius (it wanders by about 35 m) | 470 m | `RIM_RADIUS` |
 | Crest height | 690–720 m, broken into crags and notches, up to about 20 m, gathered in groups; three spires reach 790–800 m | `CREST` |
 | Inner wall | steps down in warped cliff bands and ledges every 16 m | `CRAG_STEP` |
+| Upper flank | granite ribs about 20 m across run downslope for 260 m below the crest; snow gathers between them | `_cone` |
 | Caldera floor | level at 640 m (±1 m), 660 m across | `FLOOR_RADIUS`, `caldera_floor()` |
 | Floor to crest | 45 m nominal; 47–145 m round the broken crest | `DEPTH` |
 
