@@ -38,6 +38,7 @@ TWIN = .01              # metres: a riding face this close to another facing the
 FLICKER = .03           # metres: drawn faces of two meshes this close and parallel z-fight; one of them is drawn
 CHUNK = 20000           # points or vertices per vectorised batch (covered, ambient_occlusion): bounds the memory
 PAIRS = 2_000_000       # point-face candidate pairs per batch at most (covered): about 0.6 GB
+CELLS = 4_000_000       # surface cell entries indexed at once at most (covered): about 0.7 GB while indexing
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
 AO_REACH = 12.
@@ -140,36 +141,39 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
     triangles', the surfaces'), only a surface of a lower rank counts."""
     s = surfaces.astype('f8'); ns = unit_normals(s)
     lo = np.floor((s.min(1) - eps) / cell).astype('i8'); hi = np.floor((s.max(1) + eps) / cell).astype('i8')
-    size = hi - lo + 1; count = size.prod(1)
-    owner = np.repeat(np.arange(len(s)), count)
-    local = np.arange(count.sum()) - np.repeat(np.cumsum(count) - count, count)
-    sx, sy = size[owner, 0], size[owner, 1]
-    keys = cell_keys(lo[owner] + np.stack([local % sx, (local // sx) % sy, local // (sx * sy)], -1))
-    order = np.argsort(keys, kind='stable'); keys, owner = keys[order], owner[order]
+    size = hi - lo + 1; count = size.prod(1); total = np.cumsum(count)
     t = triangles.astype('f8'); nt = unit_normals(t)
     points = np.concatenate([t.mean(1, keepdims=True), t], 1).reshape(-1, 3)
-    pn = np.repeat(nt, 4, 0)
+    pn = np.repeat(nt, 4, 0); k = cell_keys(np.floor(points / cell))
     on = np.zeros(len(points), bool)
-    k = cell_keys(np.floor(points / cell))
-    first = np.searchsorted(keys, k, 'left'); pairs = np.cumsum(np.searchsorted(keys, k, 'right') - first)
-    # Batches of points bounded by their candidate pairs, not their count: a dense cell holds thousands of faces.
-    cuts = np.unique(np.concatenate([np.arange(0, len(points), CHUNK), np.searchsorted(pairs, np.arange(PAIRS, pairs[-1] if len(pairs) else 0, PAIRS)), [len(points)]]))
-    for start, end in zip(cuts[:-1], cuts[1:]):
-        p = points[start:end]; n = pn[start:end]
-        a = first[start:end]; reps = np.diff(pairs[start:end], prepend=pairs[start - 1] if start else 0)
-        which = np.repeat(np.arange(len(p)), reps)
-        cand = owner[np.repeat(a, reps) + np.arange(reps.sum()) - np.repeat(np.cumsum(reps) - reps, reps)]
-        q = p[which]; v = s[cand]; m = ns[cand]
-        facing = (n[which] * m).sum(1)
-        ok = (np.abs(((q - v[:, 0]) * m).sum(1)) < eps) & ((facing > .98) | (two_sided[cand] & (facing < -.98)))
-        for i in range(3):
-            e = v[:, (i + 1) % 3] - v[:, i]
-            inward = (np.cross(e, q - v[:, i]) * m).sum(1) / np.maximum(np.linalg.norm(e, axis=1), 1e-12)
-            ok &= inward > -eps
-        if ranks is not None:
-            ok &= ranks[1][cand] < ranks[0][(start + which) // 4]
-        hit = np.zeros(len(p), bool); hit[which[ok]] = True
-        on[start:end] = hit
+    # The surfaces are indexed in batches of at most CELLS cell entries: a large face spans thousands of cells.
+    bounds = np.unique(np.concatenate([[0], np.searchsorted(total, np.arange(CELLS, total[-1] if len(s) else 0, CELLS)), [len(s)]]))
+    for s0, s1 in zip(bounds[:-1], bounds[1:]):
+        c = count[s0:s1]
+        owner = s0 + np.repeat(np.arange(s1 - s0), c)
+        local = np.arange(c.sum()) - np.repeat(np.cumsum(c) - c, c)
+        sx, sy = size[owner, 0], size[owner, 1]
+        keys = cell_keys(lo[owner] + np.stack([local % sx, (local // sx) % sy, local // (sx * sy)], -1))
+        del local, sx, sy
+        order = np.argsort(keys, kind='stable'); keys, owner = keys[order], owner[order]
+        first = np.searchsorted(keys, k, 'left'); pairs = np.cumsum(np.searchsorted(keys, k, 'right') - first)
+        # Batches of points bounded by their candidate pairs, not their count: a dense cell holds thousands of faces.
+        cuts = np.unique(np.concatenate([np.arange(0, len(points), CHUNK), np.searchsorted(pairs, np.arange(PAIRS, pairs[-1] if len(pairs) else 0, PAIRS)), [len(points)]]))
+        for start, end in zip(cuts[:-1], cuts[1:]):
+            p = points[start:end]; n = pn[start:end]
+            a = first[start:end]; reps = np.diff(pairs[start:end], prepend=pairs[start - 1] if start else 0)
+            which = np.repeat(np.arange(len(p)), reps)
+            cand = owner[np.repeat(a, reps) + np.arange(reps.sum()) - np.repeat(np.cumsum(reps) - reps, reps)]
+            q = p[which]; v = s[cand]; m = ns[cand]
+            facing = (n[which] * m).sum(1)
+            ok = (np.abs(((q - v[:, 0]) * m).sum(1)) < eps) & ((facing > .98) | (two_sided[cand] & (facing < -.98)))
+            for i in range(3):
+                e = v[:, (i + 1) % 3] - v[:, i]
+                inward = (np.cross(e, q - v[:, i]) * m).sum(1) / np.maximum(np.linalg.norm(e, axis=1), 1e-12)
+                ok &= inward > -eps
+            if ranks is not None:
+                ok &= ranks[1][cand] < ranks[0][(start + which) // 4]
+            on[start + which[ok]] = True
     return on.reshape(-1, 4).all(1)
 
 
