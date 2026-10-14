@@ -1,4 +1,5 @@
 #include "JapanPreferences.h"
+#include "DevNotes.h"
 #include "AtelierSettings.h"
 #include "JapanHUD.h"
 #include "JapanNetwork.h"
@@ -1056,6 +1057,14 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Page->Add(SNew(SButton).Text(FText::FromString(TEXT("Play with friends")))
         .OnClicked_Lambda([this] { CloseMenu(); if (Owner) if (auto* Session=Owner->GetGameInstance<UJapanGameInstance>()) Session->Friends(); return FReply::Handled(); }),
         TEXT("friends"),TEXT("Host a shared game or join one."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(SNew(SButton)
+        .Text_Lambda([] { return FText::FromString(DevNotes::IsOn() ? TEXT("Dev mode: on · leave it") : TEXT("Dev mode: fly and take notes")); })
+        .OnClicked_Lambda([this] { CloseMenu(); DevNotes::Toggle(Owner ? Owner->GetWorld() : nullptr, this); return FReply::Handled(); }),
+        TEXT("dev_mode"),TEXT("Fly anywhere without gravity. N or Y: a note with a screenshot and the camera's position. X or View: export every note as a zip (Finder opens it)."))];
+    Rows->AddSlot().AutoHeight().Padding(0,0,0,18)[Page->Add(SNew(SButton).IsEnabled_Lambda([] { return DevNotes::Count() > 0; })
+        .Text_Lambda([] { return FText::FromString(FString::Printf(TEXT("Export dev notes (%d) as a zip"), DevNotes::Count())); })
+        .OnClicked_Lambda([this] { CloseMenu(); DevNotes::Export(); return FReply::Handled(); }),
+        TEXT("dev_export"),TEXT("Every note, its screenshot and camera as one zip, shown in Finder; the notes are also copied as text."))];
     // The character switch waits for the next tick, out of the menu's click. Each character uses its merged move set.
     const auto Switch = [this](const FString& Name)
     {
