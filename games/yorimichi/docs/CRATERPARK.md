@@ -112,7 +112,11 @@ sky fill no longer lights every face evenly. It costs 4 bytes per drawn vertex: 
 of GPU memory with Unreal's vertex splits.
 
 Foundation faces that lie on a drawn riding surface (within 5 cm, facing the same way; the foundations sit up to 3 cm
-off the surfaces) are left out of the render, so they no longer flicker through it; the collision keeps every face.
+off the surfaces) are left out of the render, so they no longer flicker through it, and out of the collision. Every
+riding surface had a foundation face within 6 cm of it, and the board met the two as rival contacts: the ride stuttered
+on every ramp and bailed on the snake run's joins. A downward face lying on an upward one (a double-sided piece modelled
+with both windings) is left out too. The collision is what is drawn, as Mega Park's: the riding surfaces exactly, never
+simplified (a simplified ramp strayed up to 2.3 cm off its curve), the other roles simplified.
 
 ## Restyle
 
@@ -154,7 +158,7 @@ ceiling.
 
 | Step | Does |
 |---|---|
-| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, with every face. It writes `park.json`. |
+| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, from the drawn faces; only the riding surfaces stay unsimplified. It writes `park.json`. |
 | `unreal.craterpark` | [`import_craterpark.py`](../unreal/Scripts/import_craterpark.py) imports them into `/Game/CraterPark`, with their vertex colours. Each material is a texture times its base colour, or the colour alone, darkened by the baked occlusion, and is two-sided where the source says so. |
 | `data.stage` | Copies `craterpark/park.json` to `Content/Data`. |
 

@@ -5,8 +5,10 @@ Run with Blender. Every mesh except the helpers is kept, with no simplification:
   across edges under SMOOTH degrees; the PLAIN roles, drawn with world-aligned materials, are simplified (simplify);
   foundation faces lying on a drawn riding surface are left out (covered); every drawn vertex carries its baked
   ambient occlusion in its vertex colour (ambient_occlusion);
-- collision: every face of each role, the hidden ones included, simplified, from sections of at most SECTION source
-  triangles.
+- collision: what is drawn, as Mega Park's riding collision (megapark/build.py): the riding surfaces exactly, never
+  simplified, and the other roles simplified; no face lying on a riding surface (a foundation's top, a coincident
+  duplicate facing the other way), which the board met as a second contact millimetres off the ramp and bailed on;
+  sections of at most SECTION triangles.
 park.json places them on the caldera floor for ASuperUltraMegaPark::Spawn (placement.py).
 """
 import sys
@@ -32,6 +34,7 @@ SECTION = 200000        # collision triangles per mesh
 PLAIN = {'foundation', 'mountain', 'access_bridge', 'bridge_support', 'boundary'}
 FLAT = .5              # degrees: faces this close to coplanar are merged (a shape-preserving simplification)
 COVER = .05             # metres: foundation faces this close to a drawn riding surface, and parallel to it, are not drawn
+TWIN = .01              # metres: a riding face this close to another facing the opposite way is its double-sided twin
 CHUNK = 20000           # points or vertices per vectorised batch (covered, ambient_occlusion): bounds the memory
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
@@ -240,7 +243,6 @@ def main():
         assert sha(SOURCE / entry['npz']) == entry['sha256'], entry['npz']
         a = placement.arrays(entry)
         keep = valid(a['positions'], a['triangles'])
-        sections.setdefault(entry['role'], []).append(a['positions'][a['triangles'][keep]])
         keep[a['render_skip']] = False
         loaded.append((entry, a, keep))
     # The riding surfaces as drawn; foundation faces lying on them are left out of the render (collision keeps them).
@@ -248,6 +250,18 @@ def main():
                 if entry['role'] == 'original']
     riding = np.concatenate([t for t, _ in surfaces])
     two_sided = np.concatenate([np.full(len(t), d) for t, d in surfaces])
+    # A double-sided piece modelled with both windings: drop the face turned down where an upward one lies on it. Its
+    # material draws both sides, so the pair only flickered, and the board met the downward one as a ceiling.
+    up = unit_normals(riding)[:, 1] > .5        # native frame: y up
+    for entry, a, keep in loaded:
+        if entry['role'] != 'original':
+            continue
+        index = np.flatnonzero(keep); t = a['positions'][a['triangles'][index]]
+        down = unit_normals(t.astype('f8'))[:, 1] < -.5
+        if down.any():
+            twin = covered(t[down], riding[up], np.ones(int(up.sum()), bool), eps=TWIN)
+            keep[index[np.flatnonzero(down)[twin]]] = False
+            print('Riding', entry['id'], 'downward twins left out:', int(twin.sum()), flush=True)
     drawn = []
     for entry, a, keep in loaded:
         skipped = int(len(keep) - keep.sum())
@@ -256,6 +270,7 @@ def main():
             hidden = covered(a['positions'][a['triangles'][index]], riding, two_sided)
             keep[index[hidden]] = False
             print('Foundation', entry['id'], 'faces on a riding surface left out:', int(hidden.sum()), flush=True)
+        sections.setdefault(entry['role'], []).append(a['positions'][a['triangles'][keep]])
         used = np.unique(a['triangles'][keep])
         remap = np.full(len(a['positions']), -1, 'i8'); remap[used] = np.arange(len(used))
         vertices, faces, uvs = a['positions'][used], remap[a['triangles'][keep]], a['uvs'][used]
@@ -274,7 +289,9 @@ def main():
         triangles = np.concatenate(parts)
         for k in range(0, len(triangles), SECTION):
             chunk = triangles[k:k + SECTION]
-            vertices, faces = simplify(chunk.reshape(-1, 3), np.arange(len(chunk) * 3).reshape(-1, 3))
+            vertices, faces = chunk.reshape(-1, 3), np.arange(len(chunk) * 3).reshape(-1, 3)
+            if role in PLAIN:
+                vertices, faces = simplify(vertices, faces)
             entry = export_mesh(f'UC_CP_{role}_{k // SECTION}', vertices, faces, ['M_Collision'], np.zeros(len(faces), 'i4'))
             entry['source_triangles'] = len(chunk)
             entry.update(role=role, one_sided=False)
