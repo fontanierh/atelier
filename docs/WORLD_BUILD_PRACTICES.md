@@ -167,3 +167,9 @@ With today's build engine, use explicit `inputs`, `products` and content-depende
 for products whose contents the consumer does not inspect. Legacy `needs`, order-only `after` and cutoff steps
 remain supported. Keep unsupported cases conservative. Adopt the recipe examples and edit-boundary tests as
 games migrate, then add dependency tracing and native cache proofs before enabling automatic import restoration.
+
+For a generator with one Python command, `audit=True` checks observed file reads and writes before certification.
+It catches a placement generator accidentally reading a reference-only mesh or reusing old output bytes. Declare
+whole directories only when their complete membership is an input, and use owned outputs or private scratch for
+temporary files. The [recipe guide](BUILD_RECIPES.md#audit-a-python-generators-accesses) explains the enforced checks
+and the metadata, environment and native-I/O limits. This audit complements clean-versus-incremental comparisons.

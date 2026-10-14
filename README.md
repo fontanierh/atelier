@@ -178,7 +178,8 @@ gameplay, so gameplay edits rebuild only the code.
 For small rebuilds, name independently consumed products and declare which ones each step reads or merely
 references. Opted-in portable products are restored automatically from the local cache across worktrees; the
 [sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
-[Build recipes](docs/BUILD_RECIPES.md) cover the API, input checks and read-only plans.
+Python generators can opt into an input audit that catches undeclared reads and writes outside their products.
+[Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only plans.
 
 ### A prop from a sentence
 

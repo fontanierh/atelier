@@ -47,6 +47,9 @@ def _inspect(ctx, steps, wanted, *, force, index):
         stamp = read_stamp(ctx.stamps / f'{step.name}.json')
         reasons = []
         try:
+            if step.cache or step.audit:
+                from .build_cache import roots
+                roots(ctx, step)
             current, state = engine.fingerprint_state(step, done, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
             current, state = f'invalid:{step.name}', {}

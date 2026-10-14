@@ -168,6 +168,7 @@ class Step:
     reads: list[str] = field(default_factory=list)         # product contents feed this step's fingerprint
     references: list[str] = field(default_factory=list)    # include products, without deriving data from them
     cache: bool = False                                   # explicitly portable products; automatic local reuse
+    audit: bool = False                                   # observe one Python action's inputs and owned writes
 
 
 def outputs_present(step):
@@ -253,8 +254,10 @@ def _hash_path(digest, path, skip=True):
 
 def declared_inputs(step):
     named = step.products or step.reads or step.references
+    from .build_audit import SUPPORT
     return [*step.inputs, *(c.script for c in step.commands if named and hasattr(c, 'script')),
-            *(p for c in step.commands for p in getattr(c, 'runs', list)())]
+            *(p for c in step.commands for p in getattr(c, 'runs', list)()),
+            *(SUPPORT if step.audit else ())]
 
 
 def missing_product_inputs(step):
@@ -287,13 +290,14 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
     inputs = declared_inputs(step)
-    if step.cache:
+    if step.cache or step.audit:
         build_inputs.validate_imports(step, inputs)
     for item in inputs:
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
-            manifest = build_inputs.inventory(item, hasher=hasher) if Path(item).exists() else None
+            options = {'complete': True} if step.audit else {}
+            manifest = build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None
             value = build_products.identity(manifest)
             label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
             digest.update(json.dumps([label, value]).encode())
@@ -315,7 +319,10 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
-    if step.cache:
+    if step.audit:
+        state['audit'] = 1
+        digest.update(b'python-input-audit-v1\0')
+    if step.cache or step.audit:
         from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
         digest.update(state['tools'].encode())
@@ -371,18 +378,22 @@ def slot_request(ctx, step):
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 
 
-def run_command(ctx, step, command, log, request=None, slots=None):
+def run_command(ctx, step, command, log, request=None, slots=None, *, products=None):
     """Run one command of a step. A heavy step's command runs under guarded.run, in a render slot asked for with
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
+    if step.audit:
+        from . import build_audit
+        with build_audit.prepared(ctx, step, products) as (argv, env, descriptors):
+            return run_argv(ctx, step, command, argv, env, log, request, slots, pass_fds=descriptors)
     if isinstance(command, UnrealScript):
         with command.prepared(ctx) as (argv, env):
             return run_argv(ctx, step, command, argv, env, log, request, slots)
     return run_argv(ctx, step, command, command.argv(ctx), getattr(command, 'env', ()), log, request, slots)
 
 
-def run_argv(ctx, step, command, argv, env, log, request, slots):
+def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=()):
     env = ctx.env(env)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
@@ -396,9 +407,10 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
                 slots.append(slot)
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
+        inherited = {'pass_fds': pass_fds} if pass_fds else {}
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
                            small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
-                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.))
+                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.), **inherited)
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
@@ -412,7 +424,7 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
     else:
         from .safety.process import policy_command
         result = subprocess.run(policy_command(argv), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
-                                text=True, errors='ignore')
+                                text=True, errors='ignore', **({'pass_fds': pass_fds, 'stdin': subprocess.DEVNULL} if pass_fds else {}))
         code, text = result.returncode, result.stdout
         log.write(text)
     if code:
@@ -448,8 +460,9 @@ def _build(ctx, wanted, *, force, touch, echo, index):
     steps = recipe.steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    declared_products = {p.name: p for s in steps for p in s.products}
     for step in plan:
-        if step.cache:
+        if step.cache or step.audit:
             try:
                 build_cache.roots(ctx, step)
             except ValueError as error:
@@ -528,7 +541,8 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
-                    run_command(ctx, step, command, log, request, slots)
+                    audited = {'products': declared_products} if step.audit else {}
+                    run_command(ctx, step, command, log, request, slots, **audited)
                     command_times.append({'kind': type(command).__name__,
                                           'seconds': round(time.monotonic() - command_started, 3)})
                     if step.heavy and not isinstance(command, Call):

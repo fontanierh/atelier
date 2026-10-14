@@ -41,7 +41,8 @@ placement and its actual consumers. Reference cycles are permitted; read/order c
 must not conceal a read of bounds, collision, material state or any other derived data.
 
 Each output has exactly one owner. Product roots cannot overlap, including case-insensitive aliases; a step cannot
-consume its own output. Declare every required file and sidecar, or a wholly owned directory. Inventories include
+consume its own output. A product also cannot overlap another step's legacy `outputs` or `pool_roots`, because
+restoration and audited generation replace entire owned roots. Declare every required file and sidecar, or a wholly owned directory. Inventories include
 every member, empty directory and file hash. Missing, altered, unexpected or linked output invalidates the product.
 Symlinked ancestors such as a system temporary directory are supported; product roots and members cannot be links.
 Input changes during generation prevent certification, and the final stamp is replaced atomically after validation.
@@ -63,13 +64,58 @@ Builds store per-command durations alongside total step time. Step/prefix select
 matching only explicit steps reports an unknown selection rather than silently doing nothing. `--touch` cannot
 certify named products.
 
+## Audit a Python generator's accesses
+
+Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. It works with
+or without `cache=True`. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
+running the script and writes `logs/<step>.audit.json` separately from its products. No extra command is required.
+
+The audit checks file reads against declared source inputs and `reads` products. A `references` edge grants no
+read access. Directory listings require a declared directory with a complete inventory; listing the parent of
+several declared files is insufficient. Audited source directories include every member, including Markdown and
+bytecode, so adding a file cannot evade the key. Finder-created `.DS_Store` files and ambient `__pycache__` contents
+also change these directory keys; prefer small source directories or explicit files. CPython's import finder may
+search startup paths and declared module parents while loading modules; the bytes it opens still require declared
+inputs or tool runtime. Resolver-only queries such as `importlib.util.find_spec` are refused, including after a
+finder has cached its directory listing. Namespace packages require a fully inventoried directory or tool runtime.
+
+Writes, removals and renames must stay within owned products or private scratch space. After a cache miss, Atelier
+drops the stamp and removes the action's old product paths before launching it. It unlinks file leaves, preserving
+any other hard-link names; old bytes, metadata and leftover files cannot become inputs. A failed action leaves no
+certified outputs, and a retry starts empty again. Reading back new writes is allowed. Atomic output replacement
+works by writing in the action's private temporary directory and then using `os.replace`. Use an owned directory
+product when a generator needs temporary siblings.
+
+Atelier gives the action private `HOME`, temporary/cache directories and a bytecode prefix. Ambient source bytecode
+is not used, and the action does not write bytecode. Declared inputs, arguments, the audit adapters and managed tool
+context enter its fingerprint. Installed Python libraries remain part of that tool context and must stay fixed.
+Audited actions inherit the ordinary launcher; `heavy=True` still takes its normal lock and memory guard.
+
+A caught access violation remains a failure. Missing, malformed or unsuccessful completion records prevent stamps
+and cache publication, including an `os._exit(0)` that bypasses normal cleanup. Reports travel through a separate
+inherited pipe, not a recipe-owned output. Cache hits verify the audited action key and complete output inventory;
+they do not rerun the generator merely to produce another trace. The stamp records restoration separately.
+
+This is a diagnostic for trusted recipes, **not a security sandbox or a proof of complete input closure**. It observes
+Python `open`, directory and mutation events, and validates paths passed through `os.stat`, `os.lstat` and `os.access`
+without changing their return values. Metadata values (timestamps, permissions and inode numbers), environment
+reads, direct native I/O and unobserved low-level APIs are outside its guarantee. Recipes must not derive portable
+output from those values. Observed subprocess, network, ctypes, mmap, sqlite3 and opaque descriptor operations,
+and unhandled `os.*` events, are refused;
+an uninstrumented child must not silently supply a supposedly audited result. Blender and Unreal bootstraps are not
+enabled by this option. Their imports still need their own dependency and native equivalence proofs.
+Libraries that use a refused mechanism during initialization also cannot pass, even if they catch its exception;
+the installed NumPy uses `ctypes` this way. Such recipes must keep `audit=False` until a specific adapter proves the
+required native behavior. Do not add a blanket exemption for the library.
+
 ## Migration boundary
 
 Named actions use a persistent file-hash index in `build/<game>/.state/`. It checks file identity, size and nanosecond
 mtime/ctime before reusing a hash; directory membership is always rediscovered. Missing or corrupt indexes fall back
 to reading files. `--verify` bypasses hash hints. Publication and restoration always verify full output bytes.
-Source directories retain the legacy exclusions for bytecode, build-tool caches and Markdown; an explicitly named
-file is always included. Named source inputs cannot contain symlinks: declare the real source instead.
+Unaudited source directories retain the legacy exclusions for bytecode, build-tool caches and Markdown; an explicitly
+named file is always included. Audited directories use complete inventories. Named source inputs cannot contain
+symlinks: declare the real source instead.
 
 Add `cache=True` only to a deterministic, portable Python/Blender action with complete product ownership under
 `ctx.out`. Successful actions publish automatically to the local content store; a compatible action in another
@@ -82,8 +128,9 @@ Blender application, dependency lock and build adapters. Python path/interpreter
 Cached Blender commands must use `factory_startup=True`. Keep installed tools fixed during one build invocation;
 the next invocation rediscovers their identities. A static import check rejects undeclared local helpers, including
 package initializers and relative imports. Use `atelier.build_inputs.local_imports(script, roots)` when declaring
-their closure. Dynamic imports, runtime data reads and relevant settings still need explicit inputs; this is not a
-filesystem sandbox or a complete runtime read auditor. Scripts must not depend on undeclared environment values.
+their closure. Dynamic imports, runtime data reads and relevant settings still need explicit inputs. The optional
+Python access audit catches many missing declarations during execution; it does not replace the closure contract.
+Scripts must not depend on undeclared environment values.
 
 Portable output must be byte-deterministic, contain no checkout-specific paths and run without its donor checkout.
 An interrupted restore leaves no successful stamp; the next build discards that action's abandoned staging and

@@ -26,14 +26,15 @@ def import_names(source, change_token):
     return imports
 
 
-def inventory(path, *, hasher):
-    """Match legacy directory exclusions. Explicit files are always read; links are refused.
+def inventory(path, *, hasher, complete=False):
+    """Inventory inputs, including every directory member for audited actions.
 
+    Otherwise match legacy directory exclusions. Explicit files are always read; links are refused.
     Generated output inventories deliberately have no exclusions. A source symlink requires an
     explicit declaration of its real target instead, so cache keys cannot hide an external read.
     """
-    return build_products._inventory(build_products.Product('input', (Path(path),)), hasher=hasher,
-                                     ignore=lambda p: p.name in SKIP_PARTS or p.suffix in SKIP_SUFFIXES)
+    ignore = None if complete else lambda p: p.name in SKIP_PARTS or p.suffix in SKIP_SUFFIXES
+    return build_products._inventory(build_products.Product('input', (Path(path),)), hasher=hasher, ignore=ignore)
 
 
 def local_imports(script, roots=()):

@@ -7,6 +7,9 @@ command should handle this automatically, with a local store that works offline 
 **Status: foundations and local portable caching implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
 product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
 timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
+Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
+source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
+environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
 [The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
 Unreal restoration, import transactions, spatial dependencies and remote storage below still require implementation and native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
@@ -109,6 +112,13 @@ These hooks audit Python-level reads only: native FBX texture reads, native pack
 accesses still need explicit declarations and importer-specific dependency enumeration. This is not a complete
 macOS process-access tracer. Controlled input workspaces and clean-versus-incremental checks test the declared
 closure; until it is proven, keep conservative dependencies and restrict shared publication.
+
+The implemented `Step.audit=True` starts with one Python command per owned-product action. Its access hook, private
+scratch/bytecode paths and completion pipe catch undeclared reads, reference misuse, writes outside ownership and
+reuse of stale output bytes. Each executed action starts with empty owned outputs; cache hits restore without running
+it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
+metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
+the tracked context API and native bootstraps are still separate work.
 
 The planner should reject cycles, duplicate package ownership, missing products and writes outside owned paths.
 Every output, including leaf assets and bulk-data sidecars, belongs in a verified manifest. A sentinel such as
