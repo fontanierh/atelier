@@ -7,11 +7,12 @@ import shutil
 import struct
 import sys
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import tempfile
 import unittest
 
 import numpy
+import pytest
 
 GAME = Path(__file__).resolve().parents[1]
 TOOLS = GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Tools'
@@ -72,14 +73,9 @@ def fixture(folder):
 
 class CommittedPackageTests(unittest.TestCase):
     """The committed runtime payloads plus the motion text rebuild the manifest's package byte for byte."""
-    @classmethod
-    def setUpClass(cls):
-        cls.temporary = tempfile.TemporaryDirectory()
-        cls.package = simulation.assemble(Path(cls.temporary.name) / 'package')
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.temporary.cleanup()
+    @pytest.fixture(autouse=True)
+    def package_fixture(self, skating_package):
+        self.package = skating_package
 
     def test_committed_sources_match_simulation_manifest(self):
         result = simulation.verify_bundle(self.package)
@@ -117,13 +113,30 @@ class CommittedPackageTests(unittest.TestCase):
         camera['shots'][0]['distance'] = float(numpy.nextafter(numpy.float32(value), numpy.float32(1e9)))
         self.assertNotEqual(runtime_text.camera_binary(camera), (self.package / 'camera.skate').read_bytes())
 
-    def test_runtime_source_holds_only_the_runtime_text(self):
-        runtime = Path(self.temporary.name) / 'runtime'
-        shutil.copytree(simulation.RUNTIME, runtime)
-        (runtime / 'rig.json').write_text('{}')
-        with self.assertRaisesRegex(ValueError, 'runtime source holds exactly'):
-            simulation.assemble(Path(self.temporary.name) / 'other', runtime=runtime)
-        self.assertFalse((Path(self.temporary.name) / 'other').exists())
+
+def test_runtime_source_holds_only_the_runtime_text(tmp_path, monkeypatch):
+    runtime = tmp_path / 'runtime'
+    shutil.copytree(simulation.RUNTIME, runtime)
+    (runtime / 'rig.json').write_text('{}')
+    monkeypatch.syspath_prepend(str(TOOLS))
+    import motion_text
+    motion_build = Mock(side_effect=AssertionError('Invalid runtime must fail before motion assembly'))
+    monkeypatch.setattr(motion_text, 'build', motion_build)
+    with pytest.raises(ValueError, match='runtime source holds exactly'):
+        simulation.assemble(tmp_path / 'package', runtime=runtime)
+    motion_build.assert_not_called()
+    assert not (tmp_path / 'package').exists()
+
+
+def test_shared_package_rejects_writes(skating_package):
+    # Guard the fixture's isolation: overwrites, unlinks and new files must all be refused.
+    manifest = skating_package / simulation.MANIFEST
+    with pytest.raises(PermissionError):
+        manifest.write_bytes(b'changed')
+    with pytest.raises(PermissionError):
+        manifest.unlink()
+    with pytest.raises(PermissionError):
+        (skating_package / 'extra').write_bytes(b'changed')
 
 
 class SimulationDataTests(unittest.TestCase):

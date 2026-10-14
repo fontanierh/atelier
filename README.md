@@ -323,10 +323,14 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier contracts check` | contract syntax and owner policy; semantic review is separate and advisory |
 | `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |
 
-**Tests.** Hosted CI runs all studio and game Python tests on each PR head. Locally, run the tests affected by
-your change, for example `uv run pytest platform/studio/tests/test_build.py -q`; avoid repeating the full suite
-when CI already covers it. In-game
-checks use QA scenarios through the live bridge; with a local stream, the phone smoke tests in
+**Tests.** Hosted CI runs all Python tests on each PR head in three isolated macOS jobs: board, other studio,
+and games. Each uses normal pytest collection; new tests automatically belong to one group. All three must
+pass for the `Studio Python / macOS` merge check. Rust dependencies are cached from successful main builds;
+PRs only restore them, and the board server must compile successfully before its tests run. Each job retains
+its collected test list, JUnit results and slowest-test timings for diagnosis. Superseded PR runs are cancelled.
+Locally, run the tests affected by your change, for example `uv run pytest platform/studio/tests/test_build.py -q`;
+avoid repeating the full suite when CI already covers it. In-game checks use QA scenarios through the live bridge;
+with a local stream, the phone smoke tests in
 `games/yorimichi/phone/` and `platform/web/stream/player-smoke.mjs` run in a browser.
 
 ## Made with Atelier: Yorimichi

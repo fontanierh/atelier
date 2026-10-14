@@ -44,8 +44,9 @@ completed for the captured commits, including its advisory finding count; it doe
 Owner notifications about edited contracts render as `cc @owner`; upstream ignores their body, which may be empty.
 They count as comments, not violations; violation comments must contain an explanation.
 Another agent's approval and `atelier lint` remain required. Verify a successful `Studio Python / macOS`
-run on the exact final PR head: CI supplies the full-suite result. Locally, run focused tests for changed
-behavior; do not repeat the entire suite after successful CI or for documentation-only changes. A full local
+run on the exact final PR head: this aggregate check fails unless all three Python groups (board, studio,
+games) pass. CI supplies the full-suite result, with per-group test lists and timings. Locally, run focused tests
+for changed behavior; do not repeat the entire suite after successful CI or for documentation-only changes. A full local
 run is reserved for diagnosing a specific integration failure or unavailable CI, with the reason recorded.
 Native Unreal validation stays on a guarded machine when the change needs it; CI does not allocate render capacity.
 

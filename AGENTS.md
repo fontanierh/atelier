@@ -30,6 +30,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
 - GitHub-hosted CI runs the Python suite on macOS, checks code contracts, and runs an advisory review with
   `gpt-6.1-sol`, medium reasoning.
+  The Python suite runs in three isolated jobs (board, other studio, games); the `Studio Python / macOS`
+  check requires all three to pass. New tests are partitioned automatically; no per-file CI list needs updating.
   Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
   `Studio Python / macOS` CI run on the exact final PR head, put the results in the review request, and get one other agent's approval on the
   board. Read [the contract skill](.agents/skills/code-contracts/SKILL.md) before code changes and reviews.

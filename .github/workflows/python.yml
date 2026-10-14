@@ -8,11 +8,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   tests:
-    name: Studio Python / macOS
+    name: Python / ${{ matrix.group }}
     runs-on: macos-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [board, studio, games]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -26,6 +34,66 @@ jobs:
       # Framework launchers re-exec Python under another name; the process-identity fixtures need
       # the portable interpreter itself to retain their deliberately chosen executable names.
       - run: uv sync --frozen --managed-python
-      - run: uv run atelier lint
-      # These tests need no Unreal installation. Their fake renderer processes stay on this runner.
-      - run: uv run pytest -q --durations=10
+      - if: matrix.group == 'studio'
+        run: uv run atelier lint
+      - name: Identify Rust cache
+        if: matrix.group == 'board'
+        id: rust
+        shell: bash
+        run: |
+          toolchain=$( { rustc --version --verbose; clang --version; printf '%s\n' "$ImageOS" "$ImageVersion"; } | shasum -a 256 | cut -d ' ' -f 1)
+          echo "prefix=board-v1-${RUNNER_OS}-${RUNNER_ARCH}-${toolchain}-${{ hashFiles('platform/web/board/server/Cargo.lock', 'platform/web/board/server/Cargo.toml', 'platform/web/board/server/.cargo/config.toml') }}" >> "$GITHUB_OUTPUT"
+      - name: Restore Rust dependencies
+        if: matrix.group == 'board'
+        id: rust-cache
+        continue-on-error: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
+        with:
+          path: |
+            build/board-server
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/src
+          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/web/board/server/src/**') }}
+          restore-keys: ${{ steps.rust.outputs.prefix }}-
+      # Production can serve the last working binary after a failed build. CI must never do that:
+      # remove this crate's artifacts and require a successful compile, keeping dependency artifacts.
+      - name: Build the current board server
+        if: matrix.group == 'board'
+        working-directory: platform/web/board/server
+        run: |
+          cargo clean --release --locked --package atelier-board-server
+          cargo build --release --locked
+      # Each runner collects the whole suite, then selects one disjoint group. Fake renderer
+      # processes and board servers stay isolated, and new test locations fall into studio.
+      - name: Run tests
+        run: uv run python platform/studio/tests/ci_tests.py ${{ matrix.group }} --collection-report build/ci/collection.json -q --durations=20 --junitxml=build/ci/results.xml
+      - name: Save Rust dependencies from main
+        if: matrix.group == 'board' && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
+        with:
+          path: |
+            build/board-server
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/src
+          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/web/board/server/src/**') }}
+      - name: Keep test results and collection
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, Node 24
+        with:
+          name: python-${{ matrix.group }}
+          path: build/ci/
+          retention-days: 7
+
+  gate:
+    name: Studio Python / macOS
+    needs: tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every group to pass
+        env:
+          RESULT: ${{ needs.tests.result }}
+        run: test "$RESULT" = success

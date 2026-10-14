@@ -15,10 +15,6 @@ SCRIPTS = GAME / 'unreal' / 'Scripts' / 'skate_ride'
 SIMULATION_CODE = REPO / 'platform/engine/Plugins/Activities/Skate/Source/AtelierSkate/Private/Simulation'
 PROBE = REPO / 'platform/engine/Plugins/Activities/Skate/Tests/Simulation/animation_samples_probe.cpp'
 
-_verifier = importlib.util.spec_from_file_location(
-    'simulation_package', GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate/Tools/simulation_package.py')
-V = importlib.util.module_from_spec(_verifier)
-_verifier.loader.exec_module(V)
 spec = importlib.util.spec_from_file_location('skate_ride_simulation', SCRIPTS / 'simulation.py')
 N = importlib.util.module_from_spec(spec)
 sys.modules['skate_ride_simulation'] = N
@@ -29,9 +25,8 @@ BOARD = ('SKATEBOARD_ROOT', 'TRUCK_FRONT', 'TRUCK_BACK', 'LEFT_WHEELFRONT', 'RIG
 
 
 @pytest.fixture(scope='module')
-def bundle(tmp_path_factory):
-    # The package the skate.runtime build step assembles from the committed motion text.
-    return N.Bundle(V.assemble(tmp_path_factory.mktemp('skate-simulation') / 'package'))
+def bundle(skating_package):
+    return N.Bundle(skating_package)
 
 
 @pytest.fixture(scope='module')
