@@ -170,6 +170,33 @@ void AJapanWorld::Load()
         GlideGrade->Settings.bOverride_ColorOffset=true;
         GlideGrade->Settings.ColorOffset=FVector4(-.03,-.03,-.03,0);
         GlideGrade->RegisterComponent();
+        // Crater Park's caldera (docs/CRATERPARK.md, "Look"): at 700 m every face sees the open sky, so the park and the
+        // snow read milky and lavender against the grounded paintovers. Inside the crest (and 80 m over it) the black
+        // point comes down with more contrast and colour, a little warmer.
+        UBoxComponent* CalderaBounds=NewObject<UBoxComponent>(this);
+        CalderaBounds->SetupAttachment(RootComponent);
+        CalderaBounds->SetRelativeLocation(ToUE(850,2400,700));
+        CalderaBounds->SetBoxExtent(FVector(50000,50000,16000));
+        CalderaBounds->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        CalderaBounds->SetCollisionResponseToAllChannels(ECR_Ignore);
+        CalderaBounds->SetGenerateOverlapEvents(false);
+        CalderaBounds->SetCanEverAffectNavigation(false);
+        CalderaBounds->RegisterComponent();
+        UPostProcessComponent* CalderaGrade=NewObject<UPostProcessComponent>(this);
+        CalderaGrade->SetupAttachment(CalderaBounds);
+        CalderaGrade->bUnbound=false;CalderaGrade->BlendRadius=6000;CalderaGrade->Priority=3;
+        CalderaGrade->Settings.bOverride_ColorContrast=true;
+        CalderaGrade->Settings.ColorContrast=FVector4(1.12,1.12,1.12,1);
+        CalderaGrade->Settings.bOverride_ColorSaturation=true;
+        CalderaGrade->Settings.ColorSaturation=FVector4(1.15,1.15,1.15,1);
+        CalderaGrade->Settings.bOverride_ColorOffset=true;
+        CalderaGrade->Settings.ColorOffset=FVector4(-.035,-.035,-.035,0);
+        CalderaGrade->Settings.bOverride_WhiteTemp=true;
+        CalderaGrade->Settings.WhiteTemp=7000;
+        CalderaGrade->RegisterComponent();
+        float CalderaDistance=0.f;
+        UE_LOG(LogTemp,Display,TEXT("Caldera grade bounds: dropin=%d rim=%d city=%d"),CalderaGrade->EncompassesPoint(ToUE(985,2505,719),0.f,&CalderaDistance),
+            CalderaGrade->EncompassesPoint(ToUE(1180,2080,735),0.f,&CalderaDistance),CalderaGrade->EncompassesPoint(ToUE(720,430,82),0.f,&CalderaDistance));
         // Northern aerial views face the same strong sky light. Bring down the
         // black point according to clearance, leaving ground-level views alone.
         NorthAerialGrade=NewObject<UPostProcessComponent>(this);

@@ -90,7 +90,7 @@ SURFACES = {
     'bowl': ('textures/tex-0024.png', 'bowls', 'xy', 'blend', 'smooth dark slate-grey skate-bowl concrete with a faint '
              'cool blue cast, soft broad trowel strokes and very subtle mottling', (50, 54, 62)),
     'stamped': ('textures/tex-0059.png', 'plaza', 'xy', 'edges', 'stamped concrete paving in pale warm sand beige with '
-                'a soft network of shallow irregular flagstone-like grooves', (166, 138, 108)),
+                'a soft network of shallow irregular flagstone-like grooves', (172, 152, 120)),
     'concrete_edge': ('textures/tex-0029.png', 'plaza', 'xy', 'edges', 'smooth pale warm grey poured concrete with the '
                       'slightly darker trowelled strips along its left and right edges, clean, no moss', PALE),
     'tile_edge': ('textures/tex-0006.png', 'plaza', 'x', 'edges', 'glazed terracotta tiles in warm orange-brown with '

@@ -29,7 +29,7 @@ SHOTS = {
     'hidamari': ((760, 260, 33), (850, 2400, 560), 50.),
     'hidamari_east': ((1000, 300, 34), (850, 2400, 560), 50.),
     'belmonte': ((550, 4500, 215), (850, 2400, 560), 50.),
-    'trail': ((1060, 1130, 146), (850, 2400, 640), 60.),
+    'trail': ((1060, 1130, 175), (850, 2400, 700), 55.),
 }
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)

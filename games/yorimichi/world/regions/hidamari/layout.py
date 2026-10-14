@@ -681,8 +681,8 @@ def caldera_box():
     return [round(cx-reach,1),round(cy-reach,1),round(cx+reach,1),round(cy+reach,1)]
 
 # Grey boulders that take no snow (southwest/island.py, the village material): (name, footprint radius and height per
-# unit of scale, scale range), so each stands 5-10 m across.
-CALDERA_BOULDERS=(('SW_Boulder_A',1.0,.75,(2.6,4.8)),('SW_Boulder_B',1.4,.6,(1.9,3.5)),('SW_Boulder_C',.7,1.25,(3.,4.6)))
+# unit of scale, scale range), so each stands 9-16 m across.
+CALDERA_BOULDERS=(('SW_Boulder_A',1.0,.75,(4.5,8.)),('SW_Boulder_B',1.4,.6,(3.5,6.)),('SW_Boulder_C',.7,1.25,(5.,8.)))
 
 def dress_caldera(put):
     """The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"): groves of pines, a few of maples and ginkgos,
@@ -756,13 +756,13 @@ def dress_caldera(put):
     ok=inside&(slope<.6)&(z<floor+30)&~craterpark.contains(gx,gy,margin=12.)&(rng.random(len(gx))<stand(gx,gy))
     groves=[]
     for x,y in zip(gx[ok],gy[ok]):
-        if len(groves)>=72:break
-        if all(math.hypot(x-px,y-py)>26 for px,py in groves):groves.append((float(x),float(y)))
+        if len(groves)>=26:break
+        if all(math.hypot(x-px,y-py)>48 for px,py in groves):groves.append((float(x),float(y)))
     trees=[]
     for x0,y0 in groves:
         kind=rng.random()
         mix=(.85,.95) if kind<.4 else (.45,.8) if kind<.75 else (.1,.6)     # pine, then maple, below these
-        spread=float(rng.uniform(6,14));members=int(rng.integers(5,15))
+        spread=float(rng.uniform(10,18));members=int(rng.integers(16,36))
         for _ in range(members):
             for _ in range(4):
                 x=x0+rng.normal(0,spread);y=y0+rng.normal(0,spread)

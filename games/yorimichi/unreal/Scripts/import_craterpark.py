@@ -82,8 +82,7 @@ def parent(kind):
     # earlier soft ramp (x2.5) left a third of the snow part-covered, the dark ground showing through in blurred smears.
     cover = ('float up=saturate((N.z-.55)/.3);'
              'float a=sin(W.x*.0021+sin(W.y*.0017)*2.3)*sin(W.y*.0019+sin(W.x*.0013)*1.9);'
-             'float b=sin(W.x*.011+sin(W.y*.009)*1.7)*sin(W.y*.012+sin(W.x*.008)*1.4);'
-             'float m=S*up*smoothstep(.36,.44,.62+.45*a+.08*b);')
+             'float m=S*up*smoothstep(.30,.38,.62+.45*a);')
     base = custom(cover + 'return lerp(B*lerp(1.,A,C),float3(.80,.83,.88),m);', inputs)
     shade = custom('return lerp(1.,A,K);', {'A': (ao, ''), 'K': (occlusion, '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)

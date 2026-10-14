@@ -64,8 +64,8 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
 ## Dressing
 
 The caldera round the park has its own planting (`hidamari/layout.py` `dress_caldera`), from its own random stream:
-about 48 groves of pines, some mixed, a few of autumn maples and ginkgos, on the floor and the wall's lower slope; about
-30 groups of two to five grey boulders 5-10 m across (`SW_Boulder_*`, which take no snow) with scree on bare ground; and
+about 26 stands of 16-35 trees (the Mega Park's detailed pines, cedars, maples and ginkgos), on the floor and the wall's
+lower slope; about 50 groups of two to five grey boulders 9-16 m across (`SW_Boulder_*`, which take no snow) with scree on bare ground; and
 ochre shrubs. Nothing stands within 7 m of the park's block. The caldera is a `near_trees` box, so its trees cast
 shadows and keep trunk collision.
 
