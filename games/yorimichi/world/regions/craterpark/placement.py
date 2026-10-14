@@ -96,6 +96,20 @@ def ground_triangles():
     return np.concatenate(out)
 
 
+@lru_cache(maxsize=1)
+def piece_triangles():
+    """Every drawn piece but the block (riding surfaces, bridges, foundations, the edge guard), placed in the island,
+    float64 (n, 3, 3)."""
+    out = []
+    for entry in meshes():
+        if entry['role'] == GROUND:
+            continue
+        a = arrays(entry)
+        p = a['positions'].astype('f8')[a['triangles']]
+        out.append(place(np.stack([p[..., 0], -p[..., 2], p[..., 1]], -1)))
+    return np.concatenate(out)
+
+
 @lru_cache(maxsize=2)
 def footprint(cell=5.0):
     """The block's top on a Blender-frame grid: (x0, y0, cell, top, mask). top is its highest point in each cell (NaN

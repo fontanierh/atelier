@@ -788,7 +788,7 @@ def dress_caldera(put):
     # Autumn thickets (the rim and bowls targets): red shrub maples, golden ginkgo shrubs and ochre bushes in clumps along
     # the crest, and ochre bushes round the park's banks, on snow too, clear of the riding.
     counts['thicket']=0
-    ta=rng.uniform(-math.pi,math.pi,48000);band=mountains.rim_radius(ta)+rng.uniform(-35,65,48000)
+    ta=rng.uniform(-math.pi,math.pi,30000);band=mountains.rim_radius(ta)+rng.uniform(-35,65,30000)
     fx,fy=candidates(12000,mountains.RIM_RADIUS)
     tx=np.concatenate([vx+band*np.cos(ta),fx]);ty=np.concatenate([vy+band*np.sin(ta),fy])
     tz=north_height(tx,ty);_,_,tr,ta=mountains.polar(tx,ty);rim_r=mountains.rim_radius(ta)
@@ -803,9 +803,9 @@ def dress_caldera(put):
         if not clear_of_stones(x,y):continue
         u=rng.random()
         # Leafy amber clumps lead; shrub maples and ginkgos are few, so the crest reads as thicket, not small trees.
-        if on_crest and u<.35:name,scale='Bush_HD_Amber',float(rng.uniform(.9,1.6))
-        elif on_crest and u<.47:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
-        elif on_crest and u<.55:name,scale='Tree_Ginkgo',float(rng.uniform(.14,.22))
+        if on_crest and u<.25:name,scale='Bush_HD_Amber',float(rng.uniform(.9,1.6))
+        elif on_crest and u<.37:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
+        elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.14,.22))
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
@@ -822,6 +822,29 @@ def dress_caldera(put):
             scale=float(rng.uniform(1.,2.6))
             put(name,x,y,float(z[0])-.15*tall*scale,yaw=float(rng.uniform(0,360)),scale=scale)
             counts['stones']+=1
+    # The park's own hillside (craterpark `GROUND`) is a separate mesh above the terrain: its exposed, upward slopes get
+    # leafy clumps too (the rim target's foreground), on its triangles, 4 m clear of every riding piece and bridge.
+    from megapark.placement import surface_samples
+    hill=craterpark.ground_triangles()
+    normal=np.cross(hill[:,1]-hill[:,0],hill[:,2]-hill[:,0]);area=np.linalg.norm(normal,axis=1)/2
+    up=normal[:,2]/np.maximum(2*area,1e-9)
+    hill=hill[(up>.55)&(up<.97)]
+    cover=surface_samples(craterpark.piece_triangles(),1.5)[:,:2];cell=2.
+    taken=set(map(tuple,np.floor(cover/cell).astype(int)))
+    def clear_of_riding(x,y):
+        i,j=int(math.floor(x/cell)),int(math.floor(y/cell))
+        return not any((i+di,j+dj) in taken for di in (-2,-1,0,1,2) for dj in (-2,-1,0,1,2))
+    points=surface_samples(hill,3.)
+    keep=rng.random(len(points))<.25*mountains.smooth((mountains.noise(points[:,0],points[:,1],26,763)
+                                                     +mountains.noise(points[:,0],points[:,1],9,764)*.4-.1)/.25)
+    counts['hillside']=0
+    for x,y,z in points[keep]:
+        if not clear_of_riding(x,y):continue
+        u=rng.random()
+        name,scale=(('Bush_HD_Amber',float(rng.uniform(.8,1.5))) if u<.3 else
+                    (('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))))
+        put(name,float(x),float(y),float(z)-.15,yaw=float(rng.uniform(0,360)),scale=scale)
+        counts['hillside']+=1
     counts['trees']=len(trees);counts['groves']=len(groves)
     return counts
 

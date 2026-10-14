@@ -120,10 +120,22 @@ try:
         # The island streams textures and builds distance fields for a while after loading.
         time.sleep(25 if i == 0 else args.settle)
         shot(name)
-    # Face the way the drop-in view looks, into the park, and hold the brake as the Mega Park's review does: left free
-    # at the park's own yaw the rider rolled off the deck's edge and wiped out against the wall.
-    (cx, cy, _), (tx, ty, _), _ = SHOTS['dropin']
-    yaw = math.degrees(math.atan2(-(ty - cy), tx - cx))
+    # Face down the roll-in and hold the brake as the Mega Park's review does. The marked point is the deck's lip: at
+    # the park's own yaw, or facing the drop-in view, the rider went over a side edge and wiped out in a gap below.
+    # Trace the ground 1-6 m out in 16 directions and take the one that keeps solid ground under it, descending most.
+    probe = ('import math\nrows=[]\nfor k in range(16):\n a=k*math.pi/8\n row=[]\n for d in (100,200,300,400,500,600):\n'
+             f'  h=unreal.LiveLibrary.ground_at(unreal.Vector({g[0]}+d*math.cos(a),{g[1]}+d*math.sin(a),{hit[2]}+300))\n'
+             '  row.append(round(h.z,1))\n rows.append(row)\nprint(json.dumps(rows))')
+    rows = json.loads(run(probe)['output'].strip().split('\n')[-1])
+    (out / 'dropin-probe.json').write_text(json.dumps(rows))
+    def score(row):
+        steps = [hit[2]] + row
+        if any(b - a > 30 or a - b > 160 for a, b in zip(steps, steps[1:])):
+            return -1e9                    # a step up, or a drop of more than 1.6 m in a metre: an edge
+        return hit[2] - row[-1]
+    best = max(range(16), key=lambda k: score(rows[k]))
+    yaw = math.degrees(best * math.pi / 8)
+    print('drop-in yaw', yaw, 'descent cm', score(rows[best]), flush=True)
     run('unreal.MegaParkValidation.restore_player_camera()\nunreal.YorimichiLive.film_hud(False)\n'
         f'assert unreal.YorimichiLive.skate_place(unreal.Vector({g[0]},{g[1]},{g[2]}),{yaw})\n'
         'unreal.YorimichiLive.skate_input(unreal.Vector2D(),unreal.Vector2D(),True)')
