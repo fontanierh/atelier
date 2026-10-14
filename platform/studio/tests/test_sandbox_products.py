@@ -19,10 +19,10 @@ def test_small_edits_and_another_checkout_reuse_independent_products(tmp_path, m
         monkeypatch.delenv(name, raising=False)
     calls, messages = [], []
     real_run = build.run_command
-    def run(ctx, step, *args):
+    def run(ctx, step, *args, **kwargs):
         assert not step.heavy
         calls.append(step.name)
-        return real_run(ctx, step, *args)
+        return real_run(ctx, step, *args, **kwargs)
     monkeypatch.setattr(build, 'run_command', run)
 
     assert build.build('sandbox', ['world'], echo=messages.append) == 0
