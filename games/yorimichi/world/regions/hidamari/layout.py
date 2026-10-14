@@ -821,6 +821,25 @@ def dress_caldera(put):
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
+    # Crags, 10-20 m, low and deeply bedded, mostly where the floor is bare: from the zeppelin they read as the target's
+    # field of dark rock among the snow, where the stones below are only specks.
+    counts['crags']=0
+    crags=[]
+    kx,ky=candidates(8000,mountains.FLOOR_RADIUS+20)
+    for x,y in zip(kx,ky):
+        if counts['crags']>=240:break
+        if bool(craterpark.contains(x,y,margin=14.)) or rng.random()<.25+.6*float(mountains.snow(x,y,north_base_height)):
+            continue
+        scale=float(rng.uniform(3.5,7.));reach=2.3*scale
+        z,slope,inside=ground(x,y)
+        if (not inside[0] or slope[0]>.35 or bool(craterpark.contains(x,y,margin=7.+reach)) or not clear_of_stones(x,y)
+                or any(math.hypot(x-px,y-py)<reach+pr for px,py,pr in crags)
+                or any(math.hypot(x-px,y-py)<reach for px,py in trees)):continue
+        put('HD_NorthRockC' if rng.random()<.7 else 'HD_NorthRockA',float(x),float(y),
+            float(z[0])-(.35+1.2*float(slope[0]))*scale,yaw=float(rng.uniform(0,360)),scale=scale)
+        crags.append((float(x),float(y),reach));counts['crags']+=1
+    stones+=crags
+    stone_xy=np.array([(x,y) for x,y,_ in stones]).reshape(-1,2);stone_r=np.array([r for *_,r in stones])
     # Stones, 2-5 m, strewn in clusters over the floor (the zeppelin target's hundreds of boulders).
     counts['stones']=0
     sx,sy=candidates(900,mountains.FLOOR_RADIUS)
@@ -856,10 +875,10 @@ def dress_caldera(put):
     counts['outcrops']=0;outcrops=[]
     # Gentle ground only: the rocks are open underneath, and on a steep slope their downhill side would float.
     seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.93)],2.5)
-    centres=seats[(rng.random(len(seats))<.012)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.1)]
+    centres=seats[(rng.random(len(seats))<.025)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.2)]
     for x0,y0,_ in centres:
         members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]
-        for x,y,z in members[rng.permutation(len(members))[:int(rng.integers(1,4))]]:
+        for x,y,z in members[rng.permutation(len(members))[:int(rng.integers(2,5))]]:
             x,y=float(x),float(y);scale=float(rng.uniform(1.3,2.8));reach=1.9*scale+2.
             if not clear_by(x,y,reach) or any(math.hypot(x-px,y-py)<.6*(reach+r) for px,py,r in outcrops[-30:]):continue
             outcrops.append((x,y,reach))

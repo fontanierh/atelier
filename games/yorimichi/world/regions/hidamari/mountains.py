@@ -376,29 +376,33 @@ def snow_cover(x,y,z,step=STEP):
     _,_,radius,angle=polar(x,y)
     signed=np.full(x.shape,-1e9)
     pinch=.65+.35*smooth((noise(x,y,55,52)+.4)/.8)
-    # Each gully holds its own share of snow, and about a third hold none, so the flanks never read as a sunburst.
+    # Each gully holds its own share of snow, and about half hold none, so the flanks never read as a sunburst; those
+    # that hold it run long and unbroken from the crest (the city target's few couloirs, not many short dashes).
     segments=drainage();per=len(segments)//40
     rng=np.random.default_rng(413)
-    share=rng.uniform(.5,1.,40)*(rng.random(40)>.2)
+    share=rng.uniform(.6,1.,40)*(rng.random(40)>.5)
+    # Most tributaries stay bare, and every ribbon wanders, so the flank never shows ruled lines.
+    branch=rng.random(40)<.3
+    wx,wy=x+noise(x,y,60,58)*10,y+noise(x,y,60,59)*10
     for k,(a,b) in enumerate(segments):
-        if not share[k//per]:
+        if not share[k//per] or (k%per>=5 and not branch[k//per]):
             continue
         dx,dy=b[0]-a[0],b[1]-a[1]
-        t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
-        distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
+        t=np.clip(((wx-a[0])*dx+(wy-a[1])*dy)/(dx*dx+dy*dy),0,1)
+        distance=np.hypot(wx-a[0]-t*dx,wy-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.35*share[k//per]
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*1.1*share[k//per]
         signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.),0)-distance)
-    # Rock breaks each streak into fragments and ragged edges further down.
+    # Rock frays each streak's edges further down.
     breakup=downslope_noise(radius,angle,38,31,.4)*6+noise(x,y,83,32)*4+downslope_noise(radius,angle,14,33,.4)*2.5
-    signed+=noise(x,y,25,19)*3+breakup*smooth((radius-stretch(150))/160)
+    signed+=noise(x,y,25,19)*2+.3*breakup*smooth((radius-stretch(150))/160)
     # Noise stretched downslope (the cone's radius), so rock breaks a streak into lengths, not round holes.
     streak=lambda s,seed:downslope_noise(radius,angle,s,seed)
     # Gaps along each streak below the rim, where ribs of rock cross it.
-    signed-=8*smooth((streak(30,34)+streak(12,35)*.4-.1)/.3)*smooth((radius-rim_radius(angle)-20)/40)
+    signed-=3*smooth((streak(30,34)+streak(12,35)*.4-.45)/.3)*smooth((radius-rim_radius(angle)-20)/40)
     # Each seeded ribbon already has a different reach; this broad weather
     # field breaks the snowline without a concentric cut across every gully.
-    ribbons=smooth((signed+3)/7)*smooth((stretch(500)+noise(x,y,220,51)*180-radius)/120)
+    ribbons=smooth(signed/6)*smooth((stretch(640)+noise(x,y,220,51)*120-radius)/120)
     dy,dx=np.gradient(shade_height(z,step),step,step)
     nz=1/np.sqrt(1+dx*dx+dy*dy)
     crest,gully=relief_curvature(z,step)
@@ -426,7 +430,7 @@ def snow_cover(x,y,z,step=STEP):
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
     # Many short streaks follow the relief's own hollows high on the cone, broken by rock.
-    hollows=(smooth((gully-.15)/.3)*smooth((z-lifted(320))/(110*LIFT))
+    hollows=(smooth((gully-.35)/.3)*smooth((z-lifted(320))/(110*LIFT))
              *smooth((downslope_noise(radius,angle,30,36)+downslope_noise(radius,angle,12,37)*.5+.3)/.3))
     snow=np.maximum.reduce([np.maximum(ribbons*(1-.75*crest),hollows)*(1-inside),
                             faces*(1-inside),bowl])

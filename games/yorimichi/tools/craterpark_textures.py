@@ -96,8 +96,9 @@ SURFACES = {
     # Rust-brown frames round the plaza (g_air); a saturated orange mean read as drawn lines.
     'tile_edge': ('textures/tex-0006.png', 'plaza', 'x', 'edges', 'glazed terracotta tiles in warm orange-brown with '
                   'thin cream grout lines and a rounded terracotta bullnose band, as in Image 1', (138, 92, 70)),
+    # The plaza deck: warm tan, as the g_air target's timber-toned decks; pale beige washed out from above.
     'paving': ('textures/tex-0064.png', 'plaza', 'xy', 'edges', 'large irregular cut-stone paving slabs in pale warm '
-               'grey and soft beige with narrow joints', (168, 150, 122)),
+               'grey and soft beige with narrow joints', (160, 128, 92)),
     'concrete': ('textures/tex-0043.png', 'plaza', 'xy', 'blend', 'smooth pale warm grey concrete with a very fine '
                  'soft speckle', (168, 164, 152)),
     'masonite': ('textures/tex-0060.png', 'bowls', 'xy', 'edges', 'a warm honey-brown masonite skate ramp surface, two '

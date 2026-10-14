@@ -85,7 +85,7 @@ float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBle
 float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
 float3 an=abs(N);
-float2 fp=(an.z>max(an.x,an.y)?P.xy:(an.x>an.y?P.yz:P.xz))/2200.;
+float2 fp=an.z>max(an.x,an.y)?P.xy/2200.:(an.x>an.y?P.yz:P.xz)/float2(1500.,6000.);
 float2 fc=floor(fp);float best=9.;float2 id=fc;
 for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
   float2 cell=fc+float2(i,j);
