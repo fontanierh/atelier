@@ -380,11 +380,11 @@ def generate():
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
     forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
     # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera has its own dressing below.
-    ceilings=mountains.lifted(360)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
+    ceilings=mountains.lifted(400)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
     forest_altitude=mountains.smooth((ceilings-forest_z)/(100*mountains.LIFT))
     _,_,forest_radius,forest_angle=mountains.polar(forest_xy[:,0],forest_xy[:,1])
     forest_altitude*=forest_radius>mountains.rim_radius(forest_angle)
-    tree_top=float(mountains.lifted(420))
+    tree_top=float(mountains.lifted(450))
     for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
@@ -802,9 +802,11 @@ def dress_caldera(put):
     for x,y,z,gradient,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],tslope[crest|banks],crest[crest|banks]):
         if not clear_of_stones(x,y):continue
         u=rng.random()
-        if on_crest and u<.3:name,scale='Tree_Maple_B',float(rng.uniform(.28,.5))
-        elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.16,.26))
-        else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(.7,1.3))
+        # Leafy amber clumps lead; shrub maples and ginkgos are few, so the crest reads as thicket, not small trees.
+        if on_crest and u<.35:name,scale='Bush_HD_Amber',float(rng.uniform(.9,1.6))
+        elif on_crest and u<.47:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
+        elif on_crest and u<.55:name,scale='Tree_Ginkgo',float(rng.uniform(.14,.22))
+        else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
     # Small stones, 1-3 m, strewn in clusters over the floor's snow (the zeppelin target's hundreds of boulders).

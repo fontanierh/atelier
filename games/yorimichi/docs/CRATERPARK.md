@@ -67,7 +67,7 @@ The caldera round the park has its own planting (`hidamari/layout.py` `dress_cal
 about 26 stands of 16-35 trees (the Mega Park's detailed pines, cedars, maples and ginkgos), on the floor and the wall's
 lower slope; about 50 groups of two to five grey boulders 9-16 m across (`SW_Boulder_*`, which take no snow) with scree on bare ground; and
 ochre shrubs. About 8,700 autumn thicket plants clump along the crest, on rock as steep as 55 degrees and more thinly on
-snow (red shrub maples, golden ginkgo shrubs and ochre bushes), and ochre bushes ring the park's block 9-40 m out, snow
+snow (leafy amber bushes, ochre bushes and a few red shrub maples and golden ginkgo shrubs), and ochre bushes ring the park's block 9-40 m out, snow
 or not. Some 900 small stones, 1-3 m, lie in clusters over the floor's snow. Nothing stands within 7 m of the park's block. The
 caldera is a `near_trees` box, so its trees cast shadows and keep trunk collision.
 
@@ -80,9 +80,10 @@ gentler upward faces.
 
 ## Snow
 
-The block's hillside (`material_024`) carries snow where it faces up, in broad world-space patches with crisp edges
-(`import_craterpark.py` `SNOWY`); between them the volcanic ground shows. A soft edge left a third of the snow
-part-covered, with the dark ground smeared through it in diagonal streaks. The skating surfaces, the edge guard and its
+The block's hillside (`material_024`) carries snow on its flatter tops and benches, with a crisp edge
+(`import_craterpark.py` `SNOWY`); its sides steeper than about 40 degrees show the volcanic ground in bands, like the
+targets' outcrops. World-space patterns of holes read as spots and dashes, and a soft edge left the dark ground smeared
+through the snow. The skating surfaces, the edge guard and its
 coping, foundations and bridges stay clear. The park's materials are matte, like the terrain's.
 
 ## Shading

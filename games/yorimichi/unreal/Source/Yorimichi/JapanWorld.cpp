@@ -193,6 +193,11 @@ void AJapanWorld::Load()
         CalderaGrade->Settings.ColorOffset=FVector4(-.035,-.035,-.035,0);
         CalderaGrade->Settings.bOverride_WhiteTemp=true;
         CalderaGrade->Settings.WhiteTemp=7000;
+        // Split toning as the targets paint it: sunlit faces warm, shade on snow and rock blue.
+        CalderaGrade->Settings.bOverride_ColorGainShadows=true;
+        CalderaGrade->Settings.ColorGainShadows=FVector4(.94,.98,1.10,1);
+        CalderaGrade->Settings.bOverride_ColorGainHighlights=true;
+        CalderaGrade->Settings.ColorGainHighlights=FVector4(1.05,1.01,.95,1);
         CalderaGrade->RegisterComponent();
         float CalderaDistance=0.f;
         UE_LOG(LogTemp,Display,TEXT("Caldera grade bounds: dropin=%d rim=%d city=%d"),CalderaGrade->EncompassesPoint(ToUE(985,2505,719),0.f,&CalderaDistance),

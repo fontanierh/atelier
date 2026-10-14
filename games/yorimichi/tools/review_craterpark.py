@@ -6,7 +6,7 @@ marked drop-in, takes every shot in the game's own look and quits only the game 
 """
 from pathlib import Path
 from contextlib import ExitStack
-import argparse, json, subprocess, sys, time
+import argparse, json, math, subprocess, sys, time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
 import yori
@@ -120,8 +120,13 @@ try:
         # The island streams textures and builds distance fields for a while after loading.
         time.sleep(25 if i == 0 else args.settle)
         shot(name)
+    # Face the way the drop-in view looks, into the park, and hold the brake as the Mega Park's review does: left free
+    # at the park's own yaw the rider rolled off the deck's edge and wiped out against the wall.
+    (cx, cy, _), (tx, ty, _), _ = SHOTS['dropin']
+    yaw = math.degrees(math.atan2(-(ty - cy), tx - cx))
     run('unreal.MegaParkValidation.restore_player_camera()\nunreal.YorimichiLive.film_hud(False)\n'
-        f'assert unreal.YorimichiLive.skate_place(unreal.Vector({g[0]},{g[1]},{g[2]}),{placement.unreal_transform()["yaw_deg"]})')
+        f'assert unreal.YorimichiLive.skate_place(unreal.Vector({g[0]},{g[1]},{g[2]}),{yaw})\n'
+        'unreal.YorimichiLive.skate_input(unreal.Vector2D(),unreal.Vector2D(),True)')
     time.sleep(4)
     state = run('print(unreal.YorimichiLive.skate_state())')['output']
     (out / 'ride.txt').write_text(state)

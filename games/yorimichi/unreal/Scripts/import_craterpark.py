@@ -78,9 +78,10 @@ def parent(kind):
     occlusion = node(unreal.MaterialExpressionScalarParameter, parameter_name='Occlusion', default_value=OCCLUSION)
     cavity = node(unreal.MaterialExpressionScalarParameter, parameter_name='Cavity', default_value=CAVITY)
     inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (normal, ''), 'W': (world, ''), 'A': (ao, ''), 'C': (cavity, '')}
-    # Snow lies over the whole hillside except its steepest faces. Patterned holes (world-space sines, then a slope
-    # threshold at 57 degrees) read as spots and dashes across the banks; a soft ramp left the dark ground smeared through.
-    cover = 'float m=S*saturate((N.z-.30)/.15);'
+    # Snow lies on the hillside's flatter tops and benches; its steeper sides (over about 40 degrees) show the volcanic
+    # ground in bands, as the targets' outcrops. Patterned holes (world-space sines) read as spots and dashes across the
+    # banks; a soft ramp left the dark ground smeared through.
+    cover = 'float m=S*saturate((N.z-.72)/.08);'
     base = custom(cover + 'return lerp(B*lerp(1.,A,C),float3(.80,.83,.88),m);', inputs)
     shade = custom('return lerp(1.,A,K);', {'A': (ao, ''), 'K': (occlusion, '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
