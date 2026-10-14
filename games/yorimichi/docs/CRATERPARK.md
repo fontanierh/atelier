@@ -124,8 +124,13 @@ about 7 m/s) the board's trucks met their top edges head-on: a single contact cl
 wooden ramps. The collision leaves out every steep face whose top edge lies inside the solid (a riding face over it,
 and 2 cm to either side, up to 1 m above), and sinks every other collision corner inside the solid 25 cm, so a wall
 with an outer corner showing keeps its outside. A riser of 3 cm or more keeps its face. About 260,000 hidden faces
-leave the collision; by the east wooden ramps they filled the board's collision snapshot (196,608 triangles), where a
-simulation step took up to 186 ms.
+leave the collision; by the east wooden ramps they filled the board's collision snapshot (196,608 triangles).
+
+The skate simulation tests a snapshot's triangles 64 at a time, in their stored order, against each group's box. The
+simplified foundations came out of Blender in scattered order, so each group of 64 spanned a median 433 m and every
+query met nearly all of them: by the east wooden ramps a simulation step took up to 186 ms, and the ride stuttered while
+walking stayed smooth. Each collision mesh is now stored along a Z-order curve of its faces' centres, the faces over
+8 m across in groups of their own: a group spans a median 9-16 m (52 m on the hillside's large faces).
 
 ## Restyle
 

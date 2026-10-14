@@ -43,6 +43,7 @@ HIDE = 1.              # metres: a steep face's top edge this far under riding f
 WALL_SIDE = .02         # metres either side of a steep face's top edge that hidden_walls probes for a riding face
 WALL_STEP = .03         # metres: a riding face this far below the top edge at a probe still covers it (a slope, not a riser)
 WALL_FLUSH = .005       # metres a riding face lies above a steep face's top edge at least, for the edge to be inside the solid
+LARGE = 8.              # metres across: a collision face this large is stored with the other large ones (spatial_order)
 SINK = .25              # metres the collision's corners inside the solid move down, out of the board's reach
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
@@ -121,6 +122,22 @@ def simplify(vertices, faces):
     f = np.array([[p.index for p in face.verts] for face in bm.faces], 'i8').reshape(-1, 3)
     bm.free()
     return v, f[valid(v, f)]
+
+
+def spatial_order(triangles, cell=1.):
+    """The order of the `triangles` (n, 3, 3) along a Z-order curve of their centres over CELL-metre cells, those over
+    LARGE metres across last. The skate simulation groups a snapshot's triangles 64 at a time in their stored order and
+    tests each group's box: stored in this order, a group is a few metres across instead of the whole park (the
+    simplified foundations' groups spanned 433 m, so every query met all of them and a step took up to 186 ms), and the
+    few large faces share their own groups."""
+    t = triangles.astype('f8'); centres = t.mean(1)
+    large = np.linalg.norm(t.max(1) - t.min(1), axis=1) > LARGE
+    q = np.floor((centres - centres.min(0)) / cell).astype('u8') & 0x1fffff
+    code = np.zeros(len(q), 'u8')
+    for bit in range(21):
+        for axis in range(3):
+            code |= ((q[:, axis] >> np.uint64(bit)) & np.uint64(1)) << np.uint64(3 * bit + axis)
+    return np.lexsort((code, large))
 
 
 def valid(positions, triangles):
@@ -398,11 +415,13 @@ def main():
         if role != 'original':
             triangles, sunk = sink_inside(triangles, above)
         print('Collision', role, 'faces inside the solid left out:', int(hidden.sum()), 'corners inside sunk:', sunk, flush=True)
+        triangles = triangles[spatial_order(triangles)]     # sections of neighbouring faces
         for k in range(0, len(triangles), SECTION):
             chunk = triangles[k:k + SECTION]
             vertices, faces = chunk.reshape(-1, 3), np.arange(len(chunk) * 3).reshape(-1, 3)
             if role in PLAIN:
                 vertices, faces = simplify(vertices, faces)
+            faces = faces[spatial_order(vertices[faces])]
             entry = export_mesh(f'UC_CP_{role}_{k // SECTION}', vertices, faces, ['M_Collision'], np.zeros(len(faces), 'i4'))
             entry['source_triangles'] = len(chunk)
             entry.update(role=role, one_sided=False)
