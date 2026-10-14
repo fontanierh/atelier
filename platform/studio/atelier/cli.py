@@ -176,7 +176,8 @@ def make_parser():
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
     p.add_argument('--dry-run', '--plan', action='store_true', help='read-only build decisions')
     p.add_argument('--explain', action='store_true', help='plan with the reason for each rebuild')
-    p.add_argument('--json', action='store_true', help='print the read-only plan as JSON')
+    p.add_argument('--json', action='store_true', help='print the read-only plan or timings as JSON')
+    p.add_argument('--timings', action='store_true', help='read historical execution and phase timings without checking inputs')
     p.add_argument('--verify', action='store_true', help='read all named-product bytes instead of using the local hash index')
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
@@ -241,6 +242,11 @@ def main(argv=None):
         from . import capacity
         return capacity.main(args.snapshot, as_json=args.json)
     if args.command == 'build':
+        if args.timings:
+            if args.list or args.dry_run or args.explain or args.force or args.touch or args.verify:
+                raise SystemExit('--timings combines only with step selection and --json')
+            from .build_timings import show
+            return show(args.game, args.steps, as_json=args.json)
         if args.list:
             list_steps(args.game)
             return 0

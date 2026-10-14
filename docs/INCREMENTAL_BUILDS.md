@@ -7,6 +7,8 @@ command should handle this automatically, with a local store that works offline 
 **Status: foundations and local portable caching implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
 product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
 timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
+Instrumented scripts can emit bounded phase records; `--timings` displays historical command/phase measurements
+separately from restoration time. The sandbox demonstrates the protocol; native phase baselines remain to be measured.
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
 environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.

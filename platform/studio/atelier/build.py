@@ -432,6 +432,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
     marker = getattr(command, 'marker', None)
     if marker and marker not in text:
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
+    from .build_timings import parse_phases
+    return parse_phases(text, allow_echo=isinstance(command, UnrealScript))
 
 
 def slot_summary(slots):
@@ -542,9 +544,11 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
                     audited = {'products': declared_products} if step.audit else {}
-                    run_command(ctx, step, command, log, request, slots, **audited)
-                    command_times.append({'kind': type(command).__name__,
-                                          'seconds': round(time.monotonic() - command_started, 3)})
+                    phases = run_command(ctx, step, command, log, request, slots, **audited)
+                    timing = {'kind': type(command).__name__, 'seconds': round(time.monotonic() - command_started, 3)}
+                    if not isinstance(command, Call) and phases is not None:
+                        timing['phases'] = phases
+                    command_times.append(timing)
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
@@ -565,12 +569,17 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time(),
+        record = {'fingerprint': current, 'seconds': round(seconds, 3), 'time': time.time(),
                   'input_state': input_state, 'commands': command_times}
         if step.products:
             record['products'] = products
         if from_cache:
             record['restored_from'] = current
+            if previous.get('fingerprint') == current:
+                from .build_timings import producer_receipt
+                producer = producer_receipt(previous)
+                if producer is not None:
+                    record['producer_receipt'] = producer
         if step.cutoff:
             record['result'] = outputs_digest(step)
         if pool_key is not None:

@@ -10,6 +10,12 @@ with today's `Step` recipes. Named products and read-only inspection are impleme
 restoration and tracked spatial queries remain proposed.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
+Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
+queries, simplification, AO, collision and export, then inspect `atelier build <game> <step> --timings`.
+The [phase protocol](BUILD_RECIPES.md#measure-work-inside-a-command) works through stdout without a shared helper
+dependency. Keep measurements outside content products. Nested phases include their children; unmeasured command
+time can include admission, interpreter startup and shutdown, so it is not evidence of editor startup alone.
+
 ## Separate assets from their placement
 
 Keep a reusable library for trees, rocks, street furniture, building kits, vehicles, character parts, materials

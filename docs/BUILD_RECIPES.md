@@ -53,9 +53,11 @@ Input changes during generation prevent certification, and the final stamp is re
 uv run atelier build sandbox --list
 uv run atelier build sandbox --plan --explain
 uv run atelier build sandbox --json
+uv run atelier build sandbox world --timings --json
 ```
 
-`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning. They do not create build folders,
+`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning unless `--timings` selects historical
+receipts. These reports do not create build folders,
 write stamps, run commands or take render capacity. Recipes and verification callbacks must themselves be read-only
 during inspection. Changed input names are available after a new successful build stores input detail; older stamps
 get a general reason. A consumer of a dirty product is `check-after-build` when its outcome is still unknown.
@@ -63,6 +65,55 @@ get a general reason. A consumer of a dirty product is `check-after-build` when 
 Builds store per-command durations alongside total step time. Step/prefix selection remains supported; a prefix
 matching only explicit steps reports an unknown selection rather than silently doing nothing. `--touch` cannot
 certify named products.
+
+## Measure work inside a command
+
+`atelier build <game> [step ...] --timings` reads the last successful step and command receipts. Add `--json` for
+machine-readable output. It loads the recipe and selects its dependency closure, but does not hash inputs, verify
+outputs, contact the store, launch tools or acquire capacity. Recipes must remain read-only when declaring steps.
+These are historical measurements, not a statement that the outputs are current. A no-op build leaves the previous
+receipt intact. Failed commands retain their raw log; they have no successful stamp for this view to display.
+
+Execution and cache-restore durations are separate. A restore with the same key preserves an existing local
+producer receipt, including across repeated restores. A fresh checkout restore, or a restore after a different
+key, has no producer timing unless it already carries that receipt. It is reported as **not recorded**, never zero.
+Explicit worktree reuse and the legacy pool copy producer stamps; their restore duration is unknown. Touched,
+old stamps without command details and interrupted restores also remain clearly labelled.
+
+To time a generator or importer, emit one flushed stdout line per phase boundary. The version 1 protocol is the
+literal prefix `ATELIER_PHASE ` followed by a JSON object:
+
+```python
+import json
+import time
+
+print('ATELIER_PHASE ' + json.dumps({
+    'event': 'begin', 'id': 'mesh-export', 'name': 'export meshes', 'at': time.monotonic(),
+}), flush=True)
+export_meshes()
+print('ATELIER_PHASE ' + json.dumps({
+    'event': 'end', 'id': 'mesh-export', 'at': time.monotonic(), 'ok': True,
+}), flush=True)
+```
+
+Use one monotonic clock and emitter per command. IDs are unique within the command; IDs and names are printable
+strings of at most 128 characters. A nested begin adds `parent` equal to the current open phase's ID; end records
+close the most recently opened phase. Nested durations include child time and must not be summed. Independent
+concurrent emitters are not supported. `ok: false` describes a measured phase failure; the command's exit code and
+normal success marker still decide whether the build succeeds.
+
+The parser accepts Unreal log prefixes. Only for `UnrealScript`, adjacent identical JSON records are treated as
+echoes; any intervening ordinary output ends that allowance. Traces are limited to 1,000 records, 8,192 characters
+per payload and 32 nested phases. At the first malformed, duplicate, out-of-order or oversized record, parsing
+stops and the trace is marked incomplete. Earlier completed intervals remain; open intervals have no duration.
+Bad timing data never substitutes for output verification or fails an otherwise successful build.
+
+Timings live in logs and stamps, outside product payloads and store entries. Scripts need no shared timing import;
+the sandbox block generator demonstrates direct emission. Adding a shared helper later would make that helper
+an ordinary declared code dependency. This build-engine update itself changes the tool identity of portable
+actions once; it does not weaken cache keys to avoid that initial rebuild. Native phase measurements still require
+the normal guarded execution and admission. Command time outside measured phases includes waiting and launch/
+shutdown overhead; do not label it all as editor startup.
 
 ## Audit a Python generator's accesses
 
