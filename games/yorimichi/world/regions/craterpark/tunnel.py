@@ -70,26 +70,32 @@ def in_bore(points, pieces):
     return mask
 
 
+def cell_keys(points, size):
+    c = np.floor(points / size).astype('i8') + (1 << 20)
+    return (c[:, 0] << 42) | (c[:, 1] << 21) | c[:, 2]
+
+
 def tunnels(pieces, step=PROBE):
-    """The `pieces` [(m, 3, 3)] that close round a bore somewhere: one of the points of a `step`-metre grid over the
-    piece is in its bore (in_bore)."""
+    """The `pieces` [(m, 3, 3)] that close round a bore somewhere, each with the points of a `step`-metre grid over it
+    that lie in its bore (in_bore): [(piece, points)]."""
     found = []
     for piece in pieces:
         lo, hi = piece.min((0, 1)), piece.max((0, 1))
         axes = [np.arange(lo[k] + step / 2, hi[k], step) for k in range(3)]
         grid = np.stack(np.meshgrid(*axes, indexing='ij'), -1).reshape(-1, 3)
-        if len(grid) and in_bore(grid, [piece]).any():
-            found.append(piece)
+        inside = grid[in_bore(grid, [piece])] if len(grid) else grid
+        if len(inside):
+            found.append((piece, inside))
     return found
 
 
-def inside_tubes(triangles, pieces):
-    """Mask of the `triangles` (n, 3, 3) reaching into a tunnel's bore (in_bore) of one of the `pieces` (tunnels):
-    the centre, or for a face over LARGE across, any of SAMPLES points spread over it. The foundation blocks were made
-    solid up to the top of the pieces over them: they filled the tunnel, and the rider met its solid end; long faces
-    inside the block crossed it too."""
+def inside_tubes(triangles, bores):
+    """Mask of the `triangles` (n, 3, 3) reaching into a tunnel's bore (in_bore), `bores` as tunnels gives them: the
+    centre, or for a face over LARGE across, any of SAMPLES points spread over it. Only the points within a grid step
+    or so of the bore's own grid points are tested. The foundation blocks were made solid up to the top of the pieces
+    over them: they filled the tunnel, and the rider met its solid end; long faces inside the block crossed it too."""
     mask = np.zeros(len(triangles), bool)
-    for piece in pieces:
+    for piece, inside in bores:
         lo, hi = piece.min((0, 1)), piece.max((0, 1))
         near = np.flatnonzero(((triangles.max(1) > lo) & (triangles.min(1) < hi)).all(1))
         if not len(near):
@@ -98,5 +104,9 @@ def inside_tubes(triangles, pieces):
         large = np.flatnonzero(np.linalg.norm(t.max(1) - t.min(1), axis=1) > LARGE)
         points = np.concatenate([t.mean(1), np.einsum('sk,nkd->nsd', SAMPLES, t[large]).reshape(-1, 3)])
         owner = np.concatenate([np.arange(len(t)), np.repeat(large, len(SAMPLES))])
-        mask[near[owner[in_bore(points, [piece])]]] = True
+        offsets = np.stack(np.meshgrid(*[[-PROBE, 0., PROBE]] * 3, indexing='ij'), -1).reshape(-1, 3)
+        around = np.unique(cell_keys((inside[:, None] + offsets).reshape(-1, 3), PROBE))
+        close = np.isin(cell_keys(points, PROBE), around)
+        hit = np.zeros(len(points), bool); hit[close] = in_bore(points[close], [piece])
+        mask[near[owner[hit]]] = True
     return mask

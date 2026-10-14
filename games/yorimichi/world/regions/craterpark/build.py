@@ -422,14 +422,14 @@ def main():
             keep[index[np.flatnonzero(down)[twin]]] = False
             print('Riding', entry['id'], 'downward twins left out:', int(twin.sum()), flush=True)
     # The solid filling a tunnel's bore is left out of the render and the collision.
-    pieces = tunnel.tunnels([a['positions'][a['triangles'][keep]].astype('f8') for entry, a, keep in loaded
+    bores = tunnel.tunnels([a['positions'][a['triangles'][keep]].astype('f8') for entry, a, keep in loaded
                              if entry['role'] == 'original'])
-    print('Pieces closing round a tunnel:', len(pieces), flush=True)
+    print('Pieces closing round a tunnel:', len(bores), flush=True)
     for entry, a, keep in loaded:
         if entry['role'] in ('original', 'mountain'):
             continue
         index = np.flatnonzero(keep)
-        bore = tunnel.inside_tubes(a['positions'][a['triangles'][index]], pieces)
+        bore = tunnel.inside_tubes(a['positions'][a['triangles'][index]], bores)
         keep[index[bore]] = False
         if bore.any():
             print('Mesh', entry['id'], entry['role'], 'faces in a tunnel left out:', int(bore.sum()), flush=True)

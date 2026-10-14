@@ -41,19 +41,20 @@ class TunnelTests(unittest.TestCase):
         bore = tube(3., 20.)
         inside = np.asarray(box(2, .5, -1, 18, 4, 1), 'f8')              # solid filling the bore
         outside = np.asarray(box(2, 7, -1, 18, 9, 1) + box(-10, 0, -10, -5, 5, 10), 'f8')  # over the roof, beside it
-        mask = tunnel.inside_tubes(np.concatenate([inside, outside]), [bore])
+        mask = tunnel.inside_tubes(np.concatenate([inside, outside]), tunnel.tunnels([bore]))
         self.assertTrue(mask[:len(inside)].all())
         self.assertFalse(mask[len(inside):].any())
 
     def test_a_long_face_crossing_the_bore_is_found(self):
         bore = tube(3., 20.)
         sliver = np.asarray([[(10, -8, -.2), (10, 5, -.2), (10.3, -8, .2)]], 'f8')    # its centre under the floor
-        self.assertTrue(tunnel.inside_tubes(sliver, [bore])[0])
+        self.assertTrue(tunnel.inside_tubes(sliver, tunnel.tunnels([bore]))[0])
 
     def test_under_a_deck_is_no_tunnel(self):
         deck = np.asarray(floor(-5, -5, 5, 5, 4.) + floor(-5, -5, 5, 5, 0.), 'f8')    # open on every side
         block = np.asarray(box(-1, 1, -1, 1, 3, 1), 'f8')
-        self.assertFalse(tunnel.inside_tubes(block, [deck]).any())
+        self.assertEqual(tunnel.tunnels([deck]), [])
+        self.assertFalse(tunnel.inside_tubes(block, [(deck, np.zeros((1, 3)))]).any())
 
 
 class SnakeTests(unittest.TestCase):
