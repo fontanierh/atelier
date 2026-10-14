@@ -18,8 +18,8 @@ def kinds(x,y,z):
     # Independent evergreen and autumn fields avoid contour rings. Strong fine
     # position noise mixes the crowns tree by tree within each drift, so the
     # forest never reads as single-colour blotches, without changing either caller's RNG.
-    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.65*noise(x,y,2.3,83)
-    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.75*noise(x,y,2.3,84)
+    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+1.6*noise(x,y,2.3,83)
+    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+1.8*noise(x,y,2.3,84)
     kind=np.where(ever<-.33,'Pine',np.where(hue<.11,'Rust','Gold'))
     # Pines take over high on the volcano, above its autumn lower half, at the same share of its slope
     # (hidamari/mountains.py LIFT).

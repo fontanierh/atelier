@@ -14,7 +14,7 @@ All values are Blender metres (x east, y north).
 | Centre | (850, 2400) | `VOLCANO` |
 | Base radius (where the cone meets the foothills) | 1480 m | `BASE_RADIUS` |
 | Crest radius (it wanders by about 35 m) | 470 m | `RIM_RADIUS` |
-| Crest height | 690–720 m, broken into teeth and notches about ±20 m; three spires reach 790–800 m | `CREST` |
+| Crest height | 690–720 m, broken into crags and notches, up to about 20 m, gathered in groups; three spires reach 790–800 m | `CREST` |
 | Caldera floor | level at 640 m (±1 m), 660 m across | `FLOOR_RADIUS`, `caldera_floor()` |
 | Floor to crest | 45 m nominal; 47–145 m round the broken crest | `DEPTH` |
 
