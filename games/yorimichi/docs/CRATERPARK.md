@@ -8,7 +8,8 @@ paths yet.
 ## Source
 
 `assets/craterpark/` holds everything from the repository's `readable/mountain/`, converted once by
-[`craterpark/extract.py`](../world/regions/craterpark/extract.py):
+[`craterpark/extract.py`](../world/regions/craterpark/extract.py). The build reads only these committed files; a
+checkout of the park's repository is needed only to rerun `extract.py` and refresh them.
 
 | File | What |
 |---|---|
