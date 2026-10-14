@@ -11,8 +11,12 @@ python audit_craterpark.py reference/npz candidate/npz --out report.json \
 Accepts a directory containing `NAME.npz`, or a parent containing `npz/`. Each mesh has finite `positions (V,3)` and
 integer `triangles (F,3)`, in **absolute native metres, y up**. `UC_CP_*` are collision; `SM_CP_*` are render. Both sets
 must contain both domains. Import seeds are omitted. Optional `corner_ao (F,3)` is linear; `corner_normal (F,3,3)` is
-in the same native frame. No pickle/object arrays are loaded. The accompanying `build.json` and FBXs are not needed:
-this tool measures the exported NPZ geometry, so extraction must already have applied each mesh's origin and frame.
+in the same native frame. No pickle/object arrays are loaded. An optional `build.json` beside the NPZs or in their
+parent contributes roles, declared triangle counts and its SHA-256. Per-mesh `manifest_minus_npz` and missing mesh
+names reveal extraction discrepancies. Counts alone do not identify why faces disappeared. In the r4 extraction,
+the producing agent identified Blender dropping exact duplicate faces: 5,750 render and 6,711 collision faces.
+Those defects are absent from the NPZ topology scan and must remain in the baseline defect ledger. FBXs are not read;
+extraction must already have applied each mesh's origin and frame.
 
 The JSON records every input's SHA-256, settings, per-piece triangle counts, elapsed time and incremental results.
 It is atomically replaced after each completed stage. `complete: false` means the process has not finished all stages.
@@ -39,6 +43,14 @@ candidate/reference tessellation, independent riding traces and visual inspectio
 continuous identity shortcut requires equal mesh names and bit-for-bit equal triangle arrays: then each sampled
 point provably belongs to the identical target face and geometric deviation is exactly zero. It does not zero any
 topology defects or ignore attribute differences.
+
+For an independent denser riding check, use `--spacing .05`: each source triangle receives a barycentric lattice
+whose subedges are at most 5 cm long. `--max-samples` still limits the number of points **before exposure filtering**.
+If that budget thins the lattice, `full_spacing_coverage` is false and `sampling_fraction` reports the fraction
+actually tested; the result does not claim uniform 5 cm coverage. Use smaller regions or raise the budget. A complete
+unbounded lattice above ten million points is refused with instructions to narrow the region or set a finite budget.
+Dense mode applies to riding checks; appearance uses the seven-point render stencil. Dense sampling still does not
+prove continuous deviation on a changed mesh or resolve every exposure boundary.
 
 ## Overlaps and topology
 

@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from park_audit_geometry import BVH, closest, pairs, projected_overlap
-from audit_craterpark import MeshSet, distance_report, overlap_report, topology_report, look_report, main
+from audit_craterpark import MeshSet, distance_report, overlap_report, topology_report, look_report, sample_faces, main
 
 
 def options(**kwargs):
@@ -150,6 +150,7 @@ def test_cli_self_check_preserves_absolute_defects(tmp_path):
     root = tmp_path/'input'
     for name in ('SM_CP_a','UC_CP_a'):
         write_mesh(root,name,[UP,UP])
+    (root/'build.json').write_text(json.dumps({'collision':[{'name':'UC_CP_a','triangles':3,'role':'original'}]}))
     output = tmp_path/'report.json'
     main([str(root),str(root),'--out',str(output),'--max-samples','0'])
     data = json.loads(output.read_text())
@@ -159,3 +160,43 @@ def test_cli_self_check_preserves_absolute_defects(tmp_path):
     assert collision['candidate_to_reference']['max'] == pytest.approx(0)
     assert collision['reference_overlaps']['overlapping_pairs'] == 1
     assert collision['candidate_overlaps']['overlapping_pairs'] == 1
+    assert collision['reference_counts']['UC_CP_a']['manifest_minus_npz'] == 1
+    assert collision['reference_counts']['UC_CP_a']['role'] == 'original'
+
+
+def test_dense_lattice_contains_corners_and_obeys_spacing(tmp_path):
+    write_mesh(tmp_path,'UC_CP_a',[UP,UP*2])
+    mesh = MeshSet(tmp_path,'collision')
+    points, faces, bary, total = sample_faces(mesh,np.ones(2,bool),0,spacing=.5)
+    assert total == 10+28  # ceil(sqrt(2)/.5)=3 and ceil(2sqrt(2)/.5)=6
+    assert len(points) == total
+    assert (bary >= 0).all()
+    np.testing.assert_allclose(bary.sum(axis=1),1)
+    for face in range(2):
+        ps = points[faces==face]
+        for corner in mesh.tri[face]:
+            assert np.any(np.linalg.norm(ps-corner,axis=1) < 1e-12)
+        assert len(np.unique(ps,axis=0)) == len(ps)
+    result = distance_report(mesh,mesh,options(spacing=.5))
+    assert result['full_spacing_coverage']
+    assert result['sampling_fraction'] == 1
+
+
+def test_dense_budget_never_claims_full_spacing(tmp_path):
+    write_mesh(tmp_path,'UC_CP_a',[UP])
+    mesh = MeshSet(tmp_path,'collision')
+    result = distance_report(mesh,mesh,options(spacing=.05,max_samples=17))
+    assert result['points_tested_for_exposure'] == 17
+    assert not result['full_spacing_coverage']
+    assert not result['stencil_complete']
+    assert result['sampling_fraction'] < .1
+
+
+def test_self_look_with_corner_discontinuities_is_exact_zero(tmp_path):
+    t = np.array([UP,UP+[1,0,0]])
+    write_mesh(tmp_path,'SM_CP_a',t,corner_ao=np.array([[0,.2,.4],[.8,.3,.1]]),
+               corner_normal=np.array([[[.2,.9,.4]]*3,[[.4,.8,.3]]*3]))
+    mesh = MeshSet(tmp_path,'render')
+    result = look_report(mesh,mesh,options())['by_mesh']['SM_CP_a']
+    assert result['corner_ao']['max'] == 0
+    assert result['corner_normal']['max'] == 0

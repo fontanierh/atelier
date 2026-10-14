@@ -6,6 +6,7 @@ See park_audit_README.md for measured quantities, tolerances and limitations.
 import argparse
 from collections import Counter
 import hashlib
+import io
 import json
 from pathlib import Path
 import time
@@ -17,13 +18,22 @@ class MeshSet:
     def __init__(self, path, domain):
         self.path = Path(path)
         root = self.path/'npz' if (self.path/'npz').is_dir() else self.path
+        manifest = root/'build.json'
+        if not manifest.exists():
+            manifest = root.parent/'build.json'
+        self.metadata, self.manifest_hash = {}, None
+        if manifest.exists():
+            raw = manifest.read_bytes()
+            self.manifest_hash = hashlib.sha256(raw).hexdigest()
+            self.metadata = {entry['name']: entry for entry in json.loads(raw).get(domain, [])}
         prefix = 'UC_CP_' if domain == 'collision' else 'SM_CP_'
         self.names, self.ranges, tris, owners, self.attrs, self.hashes = [], [], [], [], [], {}
         count = 0
         for file in sorted(root.glob(prefix+'*.npz')):
             if 'ImportSeed' in file.name:
                 continue
-            with np.load(file, allow_pickle=False) as data:
+            raw = file.read_bytes()
+            with np.load(io.BytesIO(raw), allow_pickle=False) as data:
                 p, f = np.asarray(data['positions'], 'f8'), np.asarray(data['triangles'])
                 if p.ndim != 2 or p.shape[1:] != (3,) or f.ndim != 2 or f.shape[1:] != (3,):
                     raise ValueError(f'{file.name}: expected positions (V,3), triangles (F,3)')
@@ -42,7 +52,7 @@ class MeshSet:
                         if attrs[name].shape != shape or not np.isfinite(attrs[name]).all():
                             raise ValueError(f'{file.name}: invalid {name}')
                 self.attrs.append(attrs)
-                self.hashes[file.name] = hashlib.sha256(file.read_bytes()).hexdigest()
+                self.hashes[file.name] = hashlib.sha256(raw).hexdigest()
             progress(f'loaded {domain}: {len(self.names)} meshes, {count} triangles')
         self.tri = np.concatenate(tris) if tris else np.empty((0, 3, 3))
         self.owner = np.concatenate(owners) if owners else np.zeros(0, 'i4')
@@ -74,9 +84,30 @@ def distribution(values):
                 p99_9=float(np.percentile(values, 99.9)), max=float(np.max(values)))
 
 
-def sample_faces(mesh, selected, maximum):
-    """Seven deterministic points per face: corners, edge midpoints, centroid; bounded budget."""
+def sample_faces(mesh, selected, maximum, spacing=None):
+    """Deterministic seven-point stencil or regular barycentric lattice, with explicit thinning."""
     ids = np.flatnonzero(selected)
+    if spacing is not None:
+        lengths = np.linalg.norm(mesh.tri[ids][:, [1,2,0]]-mesh.tri[ids], axis=2).max(axis=1)
+        divisions = np.maximum(1, np.ceil(lengths/spacing)).astype('i8')
+        counts = (divisions+1)*(divisions+2)//2
+        cumulative = np.cumsum(counts)
+        total = int(cumulative[-1]) if len(cumulative) else 0
+        if maximum == 0 and total > 10_000_000:
+            raise ValueError(f'dense lattice has {total} points; use a smaller --box or a finite --max-samples budget')
+        ranks = np.arange(total) if maximum == 0 or total <= maximum else np.linspace(0,total-1,maximum,dtype='i8')
+        chosen = np.searchsorted(cumulative, ranks, side='right')
+        start = np.r_[0, cumulative[:-1]]
+        local, n = ranks-start[chosen], divisions[chosen]
+        # Row r contains n+1-r points; invert its triangular cumulative count.
+        row = np.floor((2*n+3-np.sqrt((2*n+3).astype('f8')**2-8*local))*.5).astype('i8')
+        prefix = lambda r: r*(2*n+3-r)//2
+        row = np.where(prefix(row) > local, row-1, row)
+        row = np.where(prefix(row+1) <= local, row+1, row)
+        col = local-prefix(row)
+        bary = np.column_stack((1-(row+col)/n, row/n, col/n))
+        face = ids[chosen]
+        return np.sum(mesh.tri[face]*bary[:, :, None], axis=1), face, bary, total
     total = len(ids)*7
     ranks = np.arange(total) if maximum == 0 or total <= maximum else np.linspace(0, total-1, maximum, dtype='i8')
     weights = np.array([[1,0,0], [0,1,0], [0,0,1], [.5,.5,0], [0,.5,.5], [.5,0,.5], [1/3]*3])
@@ -92,7 +123,8 @@ def distance_report(source, target, args):
     A sampled pass MUST NOT claim continuous surface certification without verified identical triangle arrays.
     """
     chosen = source.selected(args.box) & (source.normal[:, 1] > .2) & (source.area > 1e-12)
-    p, face, _, total = sample_faces(source, chosen, args.max_samples)
+    spacing = getattr(args, 'spacing', None)
+    p, face, _, total = sample_faces(source, chosen, args.max_samples, spacing=spacing)
     visible = source.bvh.exposed(p)
     p, face = p[visible], face[visible]
     identical = source.names == target.names and np.array_equal(source.tri, target.tri)
@@ -114,6 +146,10 @@ def distance_report(source, target, args):
                   points_tested_for_exposure=len(visible), buried_samples=int((~visible).sum()),
                   unmatched_samples=int((~finite).sum()), worst=worst,
                   stencil_complete=(len(visible) == total),
+                  sampling='barycentric lattice' if spacing else 'seven points per triangle',
+                  requested_spacing_m=spacing,
+                  sampling_fraction=(len(visible)/total if total else 0.),
+                  full_spacing_coverage=bool(spacing and len(visible) == total),
                   tolerance_m=args.tolerance,
                   sampled_within_tolerance=bool(len(ds) and finite.all() and np.max(ds) <= args.tolerance),
                   identical_triangle_arrays=identical,
@@ -251,7 +287,9 @@ def look_report(source, target, args):
                     y = np.sum(dst*weights[use, :, None], axis=1)
                     denom = np.linalg.norm(x, axis=1)*np.linalg.norm(y, axis=1)
                     valid = denom > 1e-12
-                    values.extend(np.rad2deg(np.arccos(np.clip(np.sum(x[valid]*y[valid], axis=1)/denom[valid], -1, 1))).tolist())
+                    # atan2 is stable for identical normals and reports exactly zero for the self-check.
+                    values.extend(np.rad2deg(np.arctan2(np.linalg.norm(np.cross(x[valid],y[valid]),axis=1),
+                                                       np.sum(x[valid]*y[valid],axis=1))).tolist())
             summary[attr] = distribution(np.asarray(values))
         report['by_mesh'][name] = summary
     return report
@@ -264,6 +302,7 @@ def main(argv=None):
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--box', nargs=4, type=float, metavar=('X0','Z0','X1','Z1'))
     parser.add_argument('--max-samples', type=int, default=30000, help='per direction/domain; 0 = complete seven-point stencil')
+    parser.add_argument('--spacing', type=float, help='riding barycentric lattice spacing in metres before budget thinning')
     parser.add_argument('--max-pairs', type=int, default=5000000, help='per scan; 0 = unbounded; incomplete scans are explicit')
     parser.add_argument('--tolerance', type=float, default=.01)
     parser.add_argument('--plane-tolerance', type=float, default=.005)
@@ -276,6 +315,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if min(args.weld, args.tolerance, args.plane_tolerance) <= 0 or min(args.max_samples, args.max_pairs) < 0:
         parser.error('tolerances must be positive and budgets nonnegative')
+    if args.spacing is not None and (not np.isfinite(args.spacing) or args.spacing <= 0):
+        parser.error('spacing must be finite and positive')
     if args.box and (args.box[0] >= args.box[2] or args.box[1] >= args.box[3]):
         parser.error('box must satisfy x0 < x1 and z0 < z1')
     started = time.monotonic()
@@ -300,8 +341,16 @@ def main(argv=None):
         for label, mesh in (('reference',reference), ('candidate',candidate)):
             chosen = mesh.selected(args.box)
             data[label+'_counts'] = {name: dict(total_triangles=end-start,
-                                                selected_triangles=int(chosen[start:end].sum()))
+                                                selected_triangles=int(chosen[start:end].sum()),
+                                                manifest_triangles=mesh.metadata.get(name,{}).get('triangles'),
+                                                manifest_minus_npz=(int(mesh.metadata[name]['triangles'])-(end-start)
+                                                                    if 'triangles' in mesh.metadata.get(name,{}) else None),
+                                                role=mesh.metadata.get(name,{}).get('role'))
                                      for name,(start,end) in zip(mesh.names, mesh.ranges)}
+            data[label+'_extraction'] = dict(manifest_sha256=mesh.manifest_hash,
+                                              manifest_meshes_missing_npz=sorted(set(mesh.metadata)-set(mesh.names)),
+                                              note='Count differences are extraction discrepancies, not inferred duplicate counts. '
+                                                   'Structural scans describe NPZ faces only; omitted faces are not tested.')
         save()
         if domain == 'collision' and 'distance' in args.checks:
             for label, a, b in (('reference_to_candidate', reference,candidate), ('candidate_to_reference',candidate,reference)):
