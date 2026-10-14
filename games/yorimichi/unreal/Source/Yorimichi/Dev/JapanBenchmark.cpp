@@ -46,7 +46,7 @@ bool AWandererCharacter::AdvanceZeppelinBenchmark()
         const FVector Entry = Ship->GetStations()[0].Entry;
         if (!bBenchmarkBoarding) { bBenchmarkBoarding = TravelTo(Entry, 0.f, TEXT("zeppelin benchmark")); return false; }
         // Calls the ship to Woodland if it is docked elsewhere, then boards it once it is in.
-        if (GetCharacterMovement()->IsMovingOnGround()) Ship->TryInteract(this);
+        if (GetCharacterMovement()->IsMovingOnGround() && Ship->CanReach(this)) Ship->TryInteract(this);
         return false;
     }
     if (Ship->GetDock() != 0 || Ship->GetDestination() != 1)
@@ -276,7 +276,7 @@ void AWandererCharacter::AdvanceBenchmark(float Dt)
         bJog = T >= 5.f && T < 10.f;
         const float Orbit = T < 10.f ? 110.f*FMath::Sin(T*PI/10.f) : 0.f;
         Controller->SetControlRotation(FRotator(-8.f,ReviewForward.Rotation().Yaw+Orbit,0.f));
-        if (Previous-Warmup < 16.f && T >= 16.f) RequestJump(FInputActionValue());
+        if (Previous-BenchmarkCaptureStart < 16.f && T >= 16.f) RequestJump(FInputActionValue());
     }
     const FVector P = GetActorLocation();
     const FVector C = FollowCamera->GetComponentLocation();
