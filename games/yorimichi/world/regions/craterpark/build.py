@@ -253,12 +253,15 @@ def hidden_walls(triangles, above):
     mask = np.zeros(len(t), bool)
     if not len(steep):
         return mask
-    # The top edge: the edge with the highest corners, level or slanting along a slope.
+    # The top edge: the edge with the highest corners, level or slanting along a slope; or, for a wall's lower half
+    # (one corner at the top, a diagonal down), that top corner alone.
     w = t[steep]; rows = np.arange(len(w))
     first = np.argmax(np.stack([w[:, i, 1] + w[:, (i + 1) % 3, 1] for i in range(3)], 1), 1)
     a = w[rows, first]; b = w[rows, (first + 1) % 3]
     along = np.stack([a + (b - a) * f for f in (.1, .5, .9)], 1).reshape(-1, 3)
-    mask[steep] = inside(along, above).reshape(-1, 3).all(1)
+    corner = w[rows, np.argmax(w[:, :, 1], 1)]
+    probes = inside(np.concatenate([along, corner]), above)
+    mask[steep] = probes[:len(along)].reshape(-1, 3).all(1) | probes[len(along):]
     return mask
 
 
