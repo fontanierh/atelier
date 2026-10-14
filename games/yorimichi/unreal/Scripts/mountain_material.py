@@ -48,7 +48,10 @@ def material():
                 # A rock (Caps 1, rock_material) wears snow on its upward faces wherever snow lies round it, not the
                 # ground's mask cut across it: white blocks on snow and bare grey ones beside it read as no rock at all.
                 'float around=Texture2DSampleLevel(Snow,SnowSampler,snowUV,4.).r;'
-                'snowMask=lerp(snowMask,saturate((N.z-.88)/.07)*saturate((around-.3)*2.5)*saturate(edgeNoise*2.+1.2),Caps);')
+                'snowMask=lerp(snowMask,saturate((N.z-.88)/.07)*saturate((around-.3)*2.5)*saturate(edgeNoise*2.+1.2),Caps);'
+                # The mask's 3 m texels cannot follow a cliff: a snowy ledge or floor bled up the face above it as a
+                # white curtain (the rim target keeps snow to ledges and gullies). Cut it on the pixel's own slope.
+                'snowMask*=lerp(smoothstep(.38,.58,N.z),1.,Caps);')
     # The volcano's exposed-rock band and the join to Belmonte's palette, in centimetres (hidamari/mountains.py).
     (vx,vy),(r0,r1),(p0,p1),join=snow_meta['volcano_m'],snow_meta['rock_radius_m'],snow_meta['rock_prominence_m'],snow_meta['south_join_m']
     rock_band=(f'float join=smoothstep({(join-420)*100:.0f}.,{join*100:.0f}.,-P.y);'
@@ -85,7 +88,7 @@ float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBle
 float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
 float3 an=abs(N);
-float2 fp=an.z>max(an.x,an.y)?P.xy/2200.:(an.x>an.y?P.yz:P.xz)/float2(1500.,6000.);
+float2 fp=an.z>max(an.x,an.y)?P.xy/800.:(an.x>an.y?P.yz:P.xz)/float2(550.,1800.);
 float2 fc=floor(fp);float best=9.;float2 id=fc;
 for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
   float2 cell=fc+float2(i,j);
@@ -105,7 +108,7 @@ float3 h2=frac(sin(float3(dot(id2,float2(12.9898,78.233)),dot(id2,float2(39.346,
 float3 sunDir=normalize(Sun.xyz);
 float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.55)+h2*float3(.8,.8,.4)),sunDir)),litSmooth=saturate(dot(N,sunDir));
 float3 facet=(.28+1.15*litFacet)/(.28+1.15*litSmooth)*lerp(float3(.92,.94,1.06),float3(1.08,1.02,.92),saturate(litFacet*1.4-.2));
-ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
+ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(40000.,160000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
 '''+snow_code+'''
@@ -131,11 +134,13 @@ return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     l.connect_material_property(c,'',unreal.MaterialProperty.MP_BASE_COLOR)
     # Exposed volcanic rock has a neutral sky-bounce floor. It is zero at the
     # woodland/collar joins, and snow retains its existing physical lighting.
+    # Loose rocks (Caps) take a stronger, cooler bounce from the snow round them,
+    # so their shaded sides read violet rather than black.
     ambient=l.create_material_expression(m,unreal.MaterialExpressionCustom,200,150)
     ambient.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     ambient.set_editor_property('code',snow_code+rock_band+'''
-float bounce=dot(Base,float3(.299,.587,.114))*.25*high*(1-snowMask)*(1-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
-return float3(bounce,bounce,bounce);''')
+float bounce=dot(Base,float3(.299,.587,.114))*(.25+.45*Caps)*high*(1-snowMask)*(1-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
+return bounce*lerp(float3(1.,1.,1.),float3(.92,.93,1.15),Caps);''')
     inputs=[]
     for key in ('Base','P','N','D','Snow','Tex','Sun','Caps'):
         value=unreal.CustomInput();value.set_editor_property('input_name',key);inputs.append(value)

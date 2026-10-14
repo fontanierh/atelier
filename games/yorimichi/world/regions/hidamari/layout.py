@@ -693,9 +693,9 @@ CALDERA_BOULDERS=(('SW_Boulder_A',1.0,.75,(4.5,8.)),('SW_Boulder_B',1.4,.6,(3.5,
 
 def dress_caldera(put):
     """The caldera round Crater Park (docs/CRATERPARK.md, "Dressing"): groves of pines, a few of maples and ginkgos,
-    on the floor and the wall's lower slope; big grey boulders in groups of two to five with scree where the ground is
-    bare; low ochre shrubs at the groves' edges and among the stones. Nothing within 7 m of the park's block. Returns the
-    counts placed."""
+    on the wall's lower slope (the floor stays open); big grey boulders in groups of two to five with scree where the
+    ground is bare; autumn and ochre shrubs packed round the park and among the stones. Nothing within 7 m of the park's
+    block. Returns the counts placed."""
     from craterpark import placement as craterpark
     from megapark import forest as megapark_forest
     rng=np.random.default_rng(748)
@@ -761,10 +761,11 @@ def dress_caldera(put):
     stone_xy=np.array([(x,y) for x,y,_ in stones]).reshape(-1,2);stone_r=np.array([r for *_,r in stones])
     def clear_of_stones(x,y):
         return not len(stones) or bool((np.hypot(stone_xy[:,0]-x,stone_xy[:,1]-y)>stone_r+2.5).all())
-    # Groves: mostly pines, some mixed, a few of autumn maples and ginkgos, on the floor and up to 30 m up the wall.
+    # Groves: mostly pines, some mixed, a few of autumn maples and ginkgos, on the wall's lower slope only. The floor
+    # stays open snow, cinder and rock (the zeppelin target), and round the park shrubs and boulders take their place.
     gx,gy=candidates(1600,mountains.RIM_RADIUS+20)
     z,slope,inside=ground(gx,gy)
-    ok=inside&(slope<.6)&(z<floor+30)&~craterpark.contains(gx,gy,margin=12.)&(rng.random(len(gx))<stand(gx,gy))
+    ok=inside&(slope<.6)&(z>floor+6)&(z<floor+30)&~craterpark.contains(gx,gy,margin=60.)&~craterpark.contains(gx,gy,margin=12.)&(rng.random(len(gx))<stand(gx,gy))
     groves=[]
     for x,y in zip(gx[ok],gy[ok]):
         if len(groves)>=26:break
@@ -779,7 +780,7 @@ def dress_caldera(put):
             for _ in range(4):
                 x=x0+rng.normal(0,spread);y=y0+rng.normal(0,spread)
                 z,slope,inside=ground(x,y)
-                if (not inside[0] or slope[0]>.75 or float(z[0])>floor+35 or bool(craterpark.contains(x,y,margin=7.))
+                if (not inside[0] or slope[0]>.75 or not floor+3<float(z[0])<floor+35 or bool(craterpark.contains(x,y,margin=40.))
                         or not clear_of_stones(x,y) or any(math.hypot(x-px,y-py)<3.2 for px,py in trees[-40:])):continue
                 u=rng.random();kind='Tree_Forest_Pine' if u<mix[0] else 'Tree_Forest_Maple' if u<mix[1] else 'Tree_Forest_Ginkgo'
                 # The detailed species the Mega Park uses close up (megapark/forest.py DETAILED), at the forest's height.
@@ -809,8 +810,8 @@ def dress_caldera(put):
     # Thinner on snow: the shrubs stand out of the drifts, as in the rim target.
     open_ground=np.where(mountains.snow(tx,ty,north_base_height)<.4,1.,.35)
     crest=(np.abs(tr-rim_r-15)<50)&(tslope<1.4)&(rng.random(len(tx))<np.minimum(1.,1.8*clump)*open_ground)
-    banks=(craterpark.contains(tx,ty,margin=40.)&~craterpark.contains(tx,ty,margin=9.)&(tslope<.6)
-           &(rng.random(len(tx))<.8*clump))
+    banks=(craterpark.contains(tx,ty,margin=60.)&~craterpark.contains(tx,ty,margin=9.)&(tslope<.6)
+           &(rng.random(len(tx))<np.minimum(1.,1.6*clump)))
     for x,y,z,gradient,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],tslope[crest|banks],crest[crest|banks]):
         if not clear_of_stones(x,y):continue
         u=rng.random()
@@ -818,6 +819,8 @@ def dress_caldera(put):
         if on_crest and u<.33:name,scale='Bush_HD_Autumn',float(rng.uniform(.8,1.5))
         elif on_crest and u<.39:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
         elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.14,.22))
+        # Round the park, red and gold among the ochre (the rim and bowls targets).
+        elif not on_crest and u<.45:name,scale='Bush_HD_Autumn',float(rng.uniform(.8,1.5))
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
@@ -876,7 +879,7 @@ def dress_caldera(put):
     # Gentle ground only, and bedded to about 60% of their height: the rocks are open underneath, and on a slope
     # their downhill side would float.
     seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.93)],2.5)
-    centres=seats[(rng.random(len(seats))<.025)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.2)]
+    centres=seats[(rng.random(len(seats))<.045)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.2)]
     for x0,y0,_ in centres:
         members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]
         for x,y,z in members[rng.permutation(len(members))[:int(rng.integers(2,5))]]:
@@ -887,7 +890,7 @@ def dress_caldera(put):
                 yaw=float(rng.uniform(0,360)),scale=scale)
             counts['outcrops']+=1
     points=surface_samples(hill,3.)
-    keep=rng.random(len(points))<.25*mountains.smooth((mountains.noise(points[:,0],points[:,1],26,763)
+    keep=rng.random(len(points))<.45*mountains.smooth((mountains.noise(points[:,0],points[:,1],26,763)
                                                      +mountains.noise(points[:,0],points[:,1],9,764)*.4-.1)/.25)
     # and thicker round the outcrops, packed between the rocks as in the target
     near=np.zeros(len(points),bool)

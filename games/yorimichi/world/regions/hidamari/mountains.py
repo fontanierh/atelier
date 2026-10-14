@@ -380,10 +380,13 @@ def snow_cover(x,y,z,step=STEP):
     # that hold it run long and unbroken from the crest (the city target's few couloirs, not many short dashes).
     segments=drainage();per=len(segments)//40
     rng=np.random.default_rng(413)
-    share=rng.uniform(.6,1.,40)*(rng.random(40)>.5)
-    # Most tributaries stay bare, and every ribbon wanders, so the flank never shows ruled lines.
-    branch=rng.random(40)<.3
+    # About a third hold it, so a far view sees three or four couloirs, not a comb of parallel streaks (f_city2).
+    share=rng.uniform(.6,1.,40)*(rng.random(40)>.7)
+    # Half of those branch; every ribbon wanders, so the flank never shows ruled lines.
+    branch=rng.random(40)<.55
     wx,wy=x+noise(x,y,60,58)*10,y+noise(x,y,60,59)*10
+    # Widest under the rim, tapering downslope, so a couloir thins out rather than ending square.
+    taper=1.3-.7*smooth((radius-rim_radius(angle)-30)/350)
     for k,(a,b) in enumerate(segments):
         if not share[k//per] or (k%per>=5 and not branch[k//per]):
             continue
@@ -391,7 +394,7 @@ def snow_cover(x,y,z,step=STEP):
         t=np.clip(((wx-a[0])*dx+(wy-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(wx-a[0]-t*dx,wy-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*1.1*share[k//per]
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*1.1*share[k//per]*taper
         signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.),0)-distance)
     # Rock frays each streak's edges further down.
     breakup=downslope_noise(radius,angle,38,31,.4)*6+noise(x,y,83,32)*4+downslope_noise(radius,angle,14,33,.4)*2.5
@@ -447,7 +450,7 @@ def snow_cover(x,y,z,step=STEP):
     line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
     # The collar and the chutes hold snow on steeper ground than the open slopes do; nothing else lies on rock past
     # about 55 degrees.
-    steep=np.maximum(collar*smooth((nz-.45)/.15),chutes*smooth((nz-.40)/.12))
+    steep=np.maximum(collar*smooth((nz-.45)/.15),chutes*smooth((nz-.53)/.10))
     cover=np.clip(np.maximum(snow*smooth((nz-.55)/.10),steep),0,1)
     # Rock breaks every patch into many small pieces (the targets' snow among broken granite, not cut-out blobs).
     rock=noise(x,y,7,120)+noise(x,y,3,121)*.5+noise(x,y,16,122)*.4
