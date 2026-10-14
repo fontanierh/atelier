@@ -26,6 +26,7 @@ class Observer:
         self.outputs = [Path(p) for p in spec['outputs']]
         self.runtime = [Path(p) for p in spec['runtime']]
         self.scratch = Path(spec['scratch'])
+        self.file_finder = external.FileFinder.find_spec
         self.import_roots = {Path(p or '.').resolve() for p in sys.path}
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
         self.seen = set()
@@ -105,8 +106,21 @@ class Observer:
         finally:
             self.local.busy = False
 
+    @staticmethod
+    def loading_module():
+        frame = sys._getframe(1)
+        while frame is not None:
+            if frame.f_code is bootstrap._find_and_load_unlocked.__code__:
+                return True
+            frame = frame.f_back
+        return False
+
     def observe(self, event, args):
-        if event == 'open':
+        if event == 'import' and args[1] is not None:
+            # ExtensionFileLoader does not open a shared library through Python's open event.
+            # CPython reports its filename here before loading it, so its bytes still need a key.
+            self.read(self.path(args[1]))
+        elif event == 'open':
             value, _, flags = args
             path = self.path(value)
             writing = flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND)
@@ -120,7 +134,8 @@ class Observer:
             # resolver probes, not recipe directory queries; actual module reads are still checked.
             frame = sys._getframe(2)
             importing = (frame.f_code is external.FileFinder._fill_cache.__code__
-                         and path in self.import_roots)
+                         and frame.f_back is not None and frame.f_back.f_code is self.file_finder.__code__
+                         and self.loading_module() and path in self.import_roots)
             if importing:
                 self.record('import search', path)
             else:
@@ -174,11 +189,19 @@ class Observer:
         return spec
 
     def install(self):
+        @functools.wraps(self.file_finder)
+        def find_spec(finder, *args, **kwargs):
+            if (sys._getframe(1).f_code is not external.PathFinder._get_spec.__code__
+                    or not self.loading_module()):
+                self.record('module lookup', reason='resolver-only queries are unsupported by this audit')
+            return self.file_finder(finder, *args, **kwargs)
+
         sys.addaudithook(self.hook)
         for name in ('stat', 'lstat', 'access'):
             setattr(os, name, functools.partial(self.checked_metadata, getattr(os, name)))
         os.open = functools.partial(self.checked_open, os.open)
         external.PathFinder.find_spec = functools.partial(self.checked_find_spec, external.PathFinder.find_spec)
+        external.FileFinder.find_spec = find_spec
 
 
 def main(config):

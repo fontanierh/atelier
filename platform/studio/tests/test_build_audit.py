@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import threading
 from types import SimpleNamespace
@@ -278,6 +279,48 @@ output.write_text(str(namespace['_fill_cache'](source.parent)))
 ''')
     assert a.run() == 1
     assert any(r['operation'] == 'list' for r in a.report()['violations'])
+
+
+@pytest.mark.parametrize('query', ["finder.find_spec('absent_secret')", 'finder._fill_cache()'],
+                         ids=['file-finder', 'fill-cache'])
+def test_direct_file_finder_cannot_certify_undeclared_directory_membership(action, query):
+    a = action
+    a.code(f'''from importlib.machinery import FileFinder, SourceFileLoader
+finder = FileFinder(str(source.parent), (SourceFileLoader, ['.py']))
+try:
+    {query}
+except PermissionError:
+    pass
+output.write_text('otherwise successful')
+''')
+    assert a.run() == 1
+    assert not a.report()['passed'] and a.report()['violations']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+    assert not list((a.store.root / 'actions').glob('*.json'))
+
+
+@pytest.mark.parametrize('declared', [False, True])
+def test_extension_module_bytes_require_an_input_or_tool_runtime(action, declared):
+    from websockets import speedups
+    a = action
+    library = a.root / Path(speedups.__file__).name
+    shutil.copyfile(speedups.__file__, library)
+    if declared:
+        a.step.inputs.append(library)
+    a.code(f'''import importlib.util
+spec = importlib.util.spec_from_file_location('speedups', {str(library)!r})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+output.write_text(repr(module.apply_mask(b'1234', b'abcd')))
+''')
+    assert a.run() == (0 if declared else 1), a.messages
+    assert a.report()['passed'] == declared
+    if declared:
+        assert a.output.read_text() == "b'PPPP'"
+    else:
+        assert any(r['path'].endswith(library.name) for r in a.report()['violations'])
+        assert not (a.ctx.stamps / 'generate.json').exists()
+        assert not list((a.store.root / 'actions').glob('*.json'))
 
 
 @pytest.mark.parametrize('declared', [False, True])

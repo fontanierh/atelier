@@ -76,8 +76,10 @@ several declared files is insufficient. Audited source directories include every
 bytecode, so adding a file cannot evade the key. Finder-created `.DS_Store` files and ambient `__pycache__` contents
 also change these directory keys; prefer small source directories or explicit files. CPython's import finder may
 search startup paths and declared module parents while loading modules; the bytes it opens still require declared
-inputs or tool runtime. Resolver-only queries such as `importlib.util.find_spec` are refused, including after a
-finder has cached its directory listing. Namespace packages require a fully inventoried directory or tool runtime.
+inputs or tool runtime. Resolver-only queries such as `importlib.util.find_spec` and direct `FileFinder` queries
+are refused, including after a finder has cached its directory listing. Native extension filenames reported by
+Python's import event also require declared inputs or tool runtime. Namespace packages require a fully inventoried
+directory or tool runtime.
 
 Writes, removals and renames must stay within owned products or private scratch space. After a cache miss, Atelier
 drops the stamp and removes the action's old product paths before launching it. It unlinks file leaves, preserving
