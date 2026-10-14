@@ -20,7 +20,8 @@ original texture and <material>.png for the world textures, and textures.json:
      "world_aligned": {"material_024": {"png", "sha256", "slug", "metres", "how"}}}
 
 A surface keeps the original's aspect at 1024 pixels on its long side; it is made to wrap on the axes the original wraps
-on and brought to its palette colour. A world texture is 1024x1024, wraps both ways and carries the material's colour
+on and brought to its palette colour (an albedo), its variation stretched (DETAIL); a REPAINTED surface is finished from
+another surface's painting. A world texture is 1024x1024, wraps both ways and carries the material's colour
 itself, so its material's Tint becomes white; `metres` is the suggested world size of one tile for a world-aligned
 (triplanar) projection. The skating geometry and its UVs are never touched.
 """
@@ -69,8 +70,12 @@ WORLD = ('Image 1 shows the art direction of a stylised game: soft painterly sha
          'Japanese animated film, soft strokes, medium detail that holds up when repeated over a large area, no '
          'photographic grime or noise. The surface: ')
 
-PALE = (190, 180, 164)          # the paintovers' pale warm concrete
-WOOD = (182, 142, 104)
+# The palette means are albedos, not the colours the paintovers show: the island's sun, blue sky fill and grade
+# (setup_project.py: film toe .3, slope .7, cool shadow gain) show a sunlit flat surface at about albedo^0.5 per channel
+# in linear terms, which halves value contrast and saturation. Each mean is the target colour (assets/craterpark/concepts
+# g_*) taken back through that response, measured on the review shots (docs/CRATERPARK.md, "Restyle").
+PALE = (172, 162, 139)          # the paintovers' pale warm concrete
+WOOD = (170, 124, 84)
 # slug: (original texture, style, the axes it wraps on, how it is made to wrap, description, palette mean sRGB or None)
 # 'blend' wraps a stochastic surface with a half-tile offset copy; 'edges' keeps a laid-out one in place and only evens
 # out the colour where its opposite edges meet.
@@ -79,21 +84,21 @@ SURFACES = {
                       'cream-grey, its slightly darker margins kept, a few soft trowel sweeps and one or two fine hairline '
                       'cracks', PALE),
     'ledge': ('textures/tex-0051.png', 'plaza', 'x', 'edges', 'two long smooth cast-concrete ledge blocks in pale warm '
-              'sandstone beige with a thin joint between them and softly rounded top and bottom edges', (200, 186, 162)),
+              'sandstone beige with a thin joint between them and softly rounded top and bottom edges', (176, 160, 134)),
     'flagstone': ('textures/tex-0004.png', 'rock', 'xy', 'edges', 'irregular flagstone paving of pale lavender-grey and '
                   'warm grey volcanic stones with a few ochre-tinted stones and pale cream mortar joints', (150, 144, 146)),
     'bowl': ('textures/tex-0024.png', 'bowls', 'xy', 'blend', 'smooth dark slate-grey skate-bowl concrete with a faint '
-             'cool blue cast, soft broad trowel strokes and very subtle mottling', (80, 82, 92)),
+             'cool blue cast, soft broad trowel strokes and very subtle mottling', (50, 54, 62)),
     'stamped': ('textures/tex-0059.png', 'plaza', 'xy', 'edges', 'stamped concrete paving in pale warm sand beige with '
-                'a soft network of shallow irregular flagstone-like grooves', (200, 186, 164)),
+                'a soft network of shallow irregular flagstone-like grooves', (166, 138, 108)),
     'concrete_edge': ('textures/tex-0029.png', 'plaza', 'xy', 'edges', 'smooth pale warm grey poured concrete with the '
                       'slightly darker trowelled strips along its left and right edges, clean, no moss', PALE),
     'tile_edge': ('textures/tex-0006.png', 'plaza', 'x', 'edges', 'glazed terracotta tiles in warm orange-brown with '
                   'thin cream grout lines and a rounded terracotta bullnose band, as in Image 1', (184, 114, 82)),
     'paving': ('textures/tex-0064.png', 'plaza', 'xy', 'edges', 'large irregular cut-stone paving slabs in pale warm '
-               'grey and soft beige with narrow joints', (188, 180, 168)),
+               'grey and soft beige with narrow joints', (156, 135, 108)),
     'concrete': ('textures/tex-0043.png', 'plaza', 'xy', 'blend', 'smooth pale warm grey concrete with a very fine '
-                 'soft speckle', (196, 188, 174)),
+                 'soft speckle', (172, 160, 138)),
     'masonite': ('textures/tex-0060.png', 'bowls', 'xy', 'edges', 'a warm honey-brown masonite skate ramp surface, two '
                  'smooth panels with a joint between them, soft wood-fibre grain', WOOD),
     'herringbone': ('textures/tex-0030.png', 'plaza', 'xy', 'edges', 'herringbone terracotta brick paving in warm '
@@ -107,19 +112,19 @@ SURFACES = {
     'ramp_boards': ('textures/tex-0032.png', 'bowls', 'xy', 'edges', 'warm honey-brown plywood skate ramp boards with '
                     'thin seams and smooth soft grain', WOOD),
     'retaining_wall': ('textures/tex-0031.png', 'rock', 'xy', 'edges', 'an irregular dry-stone retaining wall of '
-                       'lavender-grey volcanic stones with small yellow-green moss in a few joints', (124, 120, 124)),
+                       'lavender-grey volcanic stones with small yellow-green moss in a few joints', (88, 84, 82)),
     'stair_brick': ('textures/tex-0036.png', 'plaza', 'xy', 'edges', 'rows of long glazed bricks for stair treads in '
                     'alternating bands of warm terracotta orange and dark umber brown, as in Image 1', None),
     'pool': ('textures/tex-0016.png', 'plaza', 'xy', 'blend', 'a smooth painted swimming-pool floor in clear bright '
              'sky blue with very soft lighter brush strokes', (82, 158, 212)),
     'planter': ('textures/tex-0067.png', 'plaza', 'xy', 'edges', 'a board-formed concrete planter wall in soft warm '
-                'mid-grey with faint vertical form-board lines, clean, no writing', (160, 152, 140)),
+                'mid-grey with faint vertical form-board lines, clean, no writing', (146, 134, 114)),
     'turtle': ('textures/tex-0021.png', 'plaza', 'xy', 'edges', 'a Portuguese cobble mosaic of small square setts: a '
                'big cream sea-turtle figure on charcoal-grey setts exactly as in Image 1, with its dark border strip',
                None),
     'side_bank': ('textures/tex-0025.png', 'plaza', 'xy', 'edges', 'a pale warm grey concrete bank panel with a smooth '
                   'raised border frame around a finely textured inner field, and the thin dark tile strip down its left '
-                  'side, as in Image 1', (188, 180, 166)),
+                  'side, as in Image 1', (168, 156, 136)),
 }
 # slug: (style, how it is made to wrap, description) of the world textures painted from nothing; the formwork grid is
 # laid out, so it keeps its joints in place
@@ -134,12 +139,21 @@ WORLD_PAINTINGS = {
 # bridges get world-aligned textures. 'megapark:rock' is the Mega Park's restyled rock, reused for the edge guard's
 # steep walls.
 WORLD_ALIGNED = {
-    'material_023': ('cast_concrete', 4, (182, 174, 158)),      # foundations
+    'material_023': ('cast_concrete', 4, (178, 160, 134)),      # foundations
     'material_024': ('ground', 8, (116, 112, 116)),             # the block's hillside (snow on top in the material)
-    'material_025': ('cast_concrete', 4, (196, 188, 170)),      # access bridges
-    'material_026': ('cast_concrete', 4, (168, 161, 146)),      # bridge supports
+    'material_025': ('cast_concrete', 4, (174, 160, 136)),      # access bridges
+    'material_026': ('cast_concrete', 4, (150, 138, 118)),      # bridge supports
     'material_027': ('megapark:rock', 10, (117, 114, 120)),     # the edge guard
 }
+# Surfaces finished from another surface's painting: slug: (painting, palette mean sRGB). The snake run's box tops carry
+# the irregular-stone texture (material_003), but the paintovers make them wooden decks.
+REPAINTED = {'flagstone': ('masonite', (160, 122, 86))}
+# The paintings are smooth (about 5-10 grey levels of spread against 17-36 in the originals and the Mega Park's): their
+# variation is stretched about the mean up to DETAIL of the mean luminance (at least DETAIL_MIN, at most DETAIL_GAIN times),
+# so the concrete reads as a material under the island's flattening light (palette means above).
+DETAIL = .14
+DETAIL_MIN = 8.
+DETAIL_GAIN = 2.5
 
 
 def sha(data):
@@ -350,6 +364,17 @@ def to_mean(rgb, target):
     return srgb(a * want / np.maximum(a.reshape(-1, 3).mean(0), 1e-4))
 
 
+def detail(rgb, target):
+    """rgb (sRGB 0-1) brought to the palette mean `target` with its variation stretched (DETAIL). Returns (rgb, gain)."""
+    import numpy as np
+    a = to_mean(rgb, target)
+    luma = a @ np.array([.2126, .7152, .0722])
+    want = max(DETAIL_MIN / 255, DETAIL * float(luma.mean()))
+    gain = float(np.clip(want / max(float(luma.std()), 1e-4), 1., DETAIL_GAIN))
+    mean = a.reshape(-1, 3).mean(0)
+    return to_mean(np.clip(mean + (a - mean) * gain, 0, 1), target), gain
+
+
 def load(path, size):
     import numpy as np
     from PIL import Image
@@ -370,23 +395,29 @@ def finish():
         return {'png': path.name, 'sha256': sha(path.read_bytes())}
 
     for slug, (texture, _, axes, how, _, mean) in SURFACES.items():
-        src = PAINTED / f'{slug}.jpg'
+        painting, mean = REPAINTED.get(slug, (slug, mean))
+        src = PAINTED / f'{painting}.jpg'
         if not src.exists():
-            print('not painted yet:', slug); continue
+            print('not painted yet:', painting); continue
+        if painting != slug:
+            axes, how = SURFACES[painting][2:4]
         w, h = Image.open(SOURCE / texture).size
         s = 1024 / max(w, h)
         a = srgb(tile(lin(load(src, (round(w * s), round(h * s)))), axes, how))
-        if mean: a = to_mean(a, mean)
-        report['textures'][texture] = {**save(slug, a), 'slug': slug,
-                                       'how': f'painted, wraps {axes} ({how})' + (f', mean {list(mean)}' if mean else '')}
+        note = f'painted{"" if painting == slug else " " + painting}, wraps {axes} ({how})'
+        if mean:
+            a, gain = detail(a, mean)
+            note += f', mean {list(mean)}, detail x{gain:.2f}'
+        report['textures'][texture] = {**save(slug, a), 'slug': slug, 'how': note}
     for material, (slug, metres, mean) in WORLD_ALIGNED.items():
         src = (MEGAPARK / 'restyle' / f'{slug.split(":")[1]}.jpg') if slug.startswith('megapark:') else PAINTED / f'{slug}.jpg'
         if not src.exists():
             print('not painted yet:', slug, 'for', material); continue
         how = WORLD_PAINTINGS[slug][1] if slug in WORLD_PAINTINGS else 'blend'
-        a = to_mean(srgb(tile(lin(load(src, (1024, 1024))), 'xy', how)), mean)
+        a, gain = detail(srgb(tile(lin(load(src, (1024, 1024))), 'xy', how)), mean)
         report['world_aligned'][material] = {**save(material, a), 'slug': slug, 'metres': metres,
-                                             'how': f'world-aligned {rel(src)}, wraps xy ({how}), mean {list(mean)}; Tint white'}
+                                             'how': f'world-aligned {rel(src)}, wraps xy ({how}), mean {list(mean)}, '
+                                                    f'detail x{gain:.2f}; Tint white'}
     (OUT / 'textures.json').write_text(json.dumps(report, indent=1, sort_keys=True) + '\n')
     print('CRATERPARK TEXTURES', len(report['textures']), 'restyled,', len(report['world_aligned']), 'world-aligned',
           flush=True)

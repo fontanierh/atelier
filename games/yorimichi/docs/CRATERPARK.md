@@ -71,9 +71,22 @@ shadows and keep trunk collision.
 
 ## Snow
 
-The block's hillside (`material_024`) carries snow where it faces up, in world-space patches (`import_craterpark.py`
-`SNOWY`). The skating surfaces, the edge guard and its coping, foundations and bridges stay clear. The park's materials
-are matte, like the terrain's.
+The block's hillside (`material_024`) carries snow where it faces up, in broad world-space patches with crisp edges
+(`import_craterpark.py` `SNOWY`); between them the volcanic ground shows. A soft edge left a third of the snow
+part-covered, with the dark ground smeared through it in diagonal streaks. The skating surfaces, the edge guard and its
+coping, foundations and bridges stay clear. The park's materials are matte, like the terrain's.
+
+## Shading
+
+The park has no lightmap to take occlusion from, as the Mega Park does, so `craterpark/build.py` bakes it: the drawn
+triangles fill a 0.5 m voxel grid, and from every drawn vertex 16 cosine-weighted rays march out to 12 m. The result
+(1 open, 0 closed) is the vertex colour, sRGB-encoded. The parent materials take `Occlusion` (0.6) of it from the sky's
+fill and `Cavity` (0.3) from the albedo, so bowl floors, wall feet and the gaps between boxes darken and the blue
+sky fill no longer lights every face evenly. It costs 4 bytes per drawn vertex: about 0.43 million vertices, 2-3 MB
+of GPU memory with Unreal's vertex splits.
+
+Foundation faces that lie on a drawn riding surface (within 5 cm, facing the same way; the foundations sit up to 3 cm
+off the surfaces) are left out of the render, so they no longer flicker through it; the collision keeps every face.
 
 ## Restyle
 
@@ -90,13 +103,22 @@ concrete, warm wooden ramps, terracotta tiles and a blue pool, in soft flat pain
   texture path to its restyled PNG. `world_aligned` maps a material to its PNG and a suggested tile size in metres
   for a world-aligned (triplanar) projection; that PNG carries the material's colour, so its Tint becomes white.
   The `world.craterpark_restyle` step runs it, and `import_craterpark.py` uses a `World` parent material for them.
+- The palette means are **albedos**. The island's light and grade show a sunlit flat surface at about albedo^0.5 per
+  channel (linear), measured on the review shots, which halves value contrast and saturation. So each mean is the
+  paintover's colour taken back through that response: pale concrete (172, 162, 139), the plaza (166, 138, 108), the
+  bowls (50, 54, 62), as dark as the original's. Taking the paintovers' screen colours as albedos made the park pale,
+  pink and lavender.
+- The paintings are smooth, so finish stretches each one's variation about its mean, up to 14% of its luminance (at
+  most 2.5 times), so the concrete still reads as a material.
+- The snake run's box tops (`material_003`, an irregular-stone texture) are finished from the masonite painting, as
+  wooden decks like the paintovers'.
 
 ## Build and game
 
 | Step | Does |
 |---|---|
-| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces and with creases over 35°. Collision FBX are built per role, at most 200,000 triangles each, with every face. It writes `park.json`. |
-| `unreal.craterpark` | [`import_craterpark.py`](../unreal/Scripts/import_craterpark.py) imports them into `/Game/CraterPark`. Each material is a texture times its base colour, or the colour alone, and is two-sided where the source says so. |
+| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, with every face. It writes `park.json`. |
+| `unreal.craterpark` | [`import_craterpark.py`](../unreal/Scripts/import_craterpark.py) imports them into `/Game/CraterPark`, with their vertex colours. Each material is a texture times its base colour, or the colour alone, darkened by the baked occlusion, and is two-sided where the source says so. |
 | `data.stage` | Copies `craterpark/park.json` to `Content/Data`. |
 
 In the game, `JapanWorld` spawns the park with `ASuperUltraMegaPark::Spawn`, the Mega Park's actor. `park.json` names

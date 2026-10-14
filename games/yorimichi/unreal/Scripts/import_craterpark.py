@@ -9,7 +9,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import yori
 import json
-import re
 import unreal
 import import_megapark as megapark
 
@@ -22,8 +21,10 @@ MEL = unreal.MaterialEditingLibrary
 AT = unreal.AssetToolsHelpers.get_asset_tools()
 # Matte like the terrain and the Mega Park: the engine's default specular put a pale sky sheen on every surface.
 ROUGHNESS = 1.
-# Light painted concretes are lowered a little so the snow beside them still reads brighter.
-LIGHT = .85
+# The baked occlusion (build.py ao, vertex colour R): how much it takes from the sky's fill (Ambient Occlusion, as the
+# Mega Park's lightmap occlusion) and from the albedo itself (a cavity darkening the sun sees too).
+OCCLUSION = .6
+CAVITY = .3
 
 
 # The park's own hillside carries snow like the caldera round it (docs/CRATERPARK.md, "Snow"); the skating surfaces,
@@ -33,8 +34,8 @@ SNOWY = {'material_024'}
 
 def parent(kind):
     """A lit opaque parent, kind 'Textured' (Base on UV0), 'World' (Base world-aligned on three axes, Metres per tile)
-    or 'Flat'; its colour times Tint. Where Snow is 1, snow lies on the faces that look up, in world-space patches that
-    follow the placed park."""
+    or 'Flat'; its colour times Tint, darkened by the mesh's baked occlusion (Occlusion, Cavity). Where Snow is 1, snow
+    lies on the faces that look up, in world-space patches with crisp edges that follow the placed park."""
     name = 'M_CP_' + kind; path = ROOT + '/Materials/' + name
     if E.does_asset_exist(path):
         m = E.load_asset(path); MEL.delete_all_material_expressions(m)
@@ -71,17 +72,26 @@ def parent(kind):
                         'float3 c=Texture2DSample(Tex,TexSampler,p.yz).rgb*w.x+Texture2DSample(Tex,TexSampler,p.xz).rgb*w.y'
                         '+Texture2DSample(Tex,TexSampler,p.xy).rgb*w.z;return c*T;',
                         {'Tex': (texture, ''), 'M': (metres, ''), 'N': (normal, ''), 'W': (world, ''), 'T': (tint, '')})
-    inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (normal, ''), 'W': (world, '')}
+    # The occlusion is stored sRGB-encoded (FBX colors_type SRGB, as the skate park's vertex colours).
+    ao = custom('return V<=.04045?V/12.92:pow((V+.055)/1.055,2.4);', {'V': (node(unreal.MaterialExpressionVertexColor), 'R')},
+                unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    occlusion = node(unreal.MaterialExpressionScalarParameter, parameter_name='Occlusion', default_value=OCCLUSION)
+    cavity = node(unreal.MaterialExpressionScalarParameter, parameter_name='Cavity', default_value=CAVITY)
+    inputs = {'B': (colour, ''), 'S': (snow, ''), 'N': (normal, ''), 'W': (world, ''), 'A': (ao, ''), 'C': (cavity, '')}
+    # Broad patches (a, about 30 m) with a little edge wobble (b); a narrow smoothstep keeps their edges crisp. The
+    # earlier soft ramp (x2.5) left a third of the snow part-covered, the dark ground showing through in blurred smears.
     cover = ('float up=saturate((N.z-.55)/.3);'
              'float a=sin(W.x*.0021+sin(W.y*.0017)*2.3)*sin(W.y*.0019+sin(W.x*.0013)*1.9);'
              'float b=sin(W.x*.011+sin(W.y*.009)*1.7)*sin(W.y*.012+sin(W.x*.008)*1.4);'
-             'float m=S*up*saturate((.62+.45*a+.18*b)*2.5);')
-    base = custom(cover + 'return lerp(B,float3(.80,.83,.88),m);', inputs)
+             'float m=S*up*smoothstep(.36,.44,.62+.45*a+.08*b);')
+    base = custom(cover + 'return lerp(B*lerp(1.,A,C),float3(.80,.83,.88),m);', inputs)
+    shade = custom('return lerp(1.,A,K);', {'A': (ao, ''), 'K': (occlusion, '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     specular = custom(cover + 'return lerp(0.,.35,m);', inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     dark = node(unreal.MaterialExpressionConstant3Vector, constant=unreal.LinearColor(0., 0., 0., 1.))
     for n, prop in ((base, unreal.MaterialProperty.MP_BASE_COLOR), (rough, unreal.MaterialProperty.MP_ROUGHNESS),
-                    (specular, unreal.MaterialProperty.MP_SPECULAR), (dark, unreal.MaterialProperty.MP_EMISSIVE_COLOR)):
+                    (specular, unreal.MaterialProperty.MP_SPECULAR), (dark, unreal.MaterialProperty.MP_EMISSIVE_COLOR),
+                    (shade, unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)):
         assert MEL.connect_material_property(n, '', prop)
     MEL.layout_material_expressions(m); MEL.recompile_material(m); E.save_loaded_asset(m)
     return m
@@ -107,12 +117,10 @@ def materials():
             MEL.set_material_instance_texture_parameter_value(mi, 'Base', texture)
         if aligned:
             MEL.set_material_instance_scalar_parameter_value(mi, 'Metres', float(aligned['metres']))
-        # The restyled images carry their colour; a flat material keeps the source's sRGB base colour.
+        # The restyled images carry their colour, already an albedo for the island's light (craterpark_textures.py
+        # palette means); a flat material keeps the source's sRGB base colour.
         colour = [1., 1., 1.] if entry else spec['baseColor']
         tint = [c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in colour]
-        mean = re.search(r'mean \[(\d+), (\d+), (\d+)\]', (entry or {}).get('how', ''))
-        if mean and min(int(v) for v in mean.groups()) > 150:
-            tint = [c * LIGHT for c in tint]
         MEL.set_material_instance_vector_parameter_value(mi, 'Tint', unreal.LinearColor(*tint, 1.))
         MEL.set_material_instance_scalar_parameter_value(mi, 'Snow', float(spec['id'] in SNOWY))
         overrides = mi.get_editor_property('base_property_overrides')
@@ -130,6 +138,10 @@ def main():
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
     # import_megapark's mesh helpers write to the Crater Park's own folder and seed.
     megapark.OUT = OUT; megapark.ROOT = ROOT; megapark.SEED = 'SM_CP_ImportSeed'
+    # The drawn meshes carry their baked occlusion as vertex colour (build.py ao); the collision needs none.
+    plain = megapark.import_mesh
+    megapark.import_mesh = lambda path, name, dest=None, seed=None, vertex_colors=False: plain(
+        path, name, dest, seed, vertex_colors or name.startswith('SM_CP_'))
     E.make_directory(ROOT + '/Meshes')
     mis = materials(); results = []
     # The riding collision is placed in a throwaway level, so the editor cooks it here into the shared cache instead of
