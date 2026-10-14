@@ -49,14 +49,38 @@ def test_differing_sources_names_each_step():
     assert reuse.differing_sources(snapshot(a='1', b='2'), snapshot(a='1', b='3', c='4')) == ['b', 'c']
 
 
-def test_inspect_reports_a_source_fingerprint_for_every_step(tmp_path, monkeypatch):
+@pytest.mark.parametrize('named_products', [False, True])
+def test_inspect_legacy_fingerprints_and_refuse_named_products(tmp_path, monkeypatch, capfd, named_products):
+    import shutil
+    import subprocess
     from atelier import paths
+    # Keep a legacy recipe independent of the evolving sandbox template. Exercise the real child
+    # interpreter and inspector, including its refusal to certify named products as a whole build.
+    repo = tmp_path / 'repo'
+    shutil.copytree(paths.STUDIO / 'atelier', repo / 'platform/studio/atelier',
+                    ignore=shutil.ignore_patterns('__pycache__'))
+    game = repo / 'games/standin'
+    (game / 'unreal').mkdir(parents=True)
+    (game / 'unreal/Standin.uproject').write_text('{}')
+    (game / 'game.toml').write_text('editor_target = "StandinEditor"\n')
+    (game / 'source.txt').write_text('source input')
+    products = "[Product('mesh', (ctx.out / 'mesh.json',))]" if named_products else '[]'
+    (game / 'build.py').write_text(
+        'from pathlib import Path\nfrom atelier.build import Product, Step\n'
+        'def steps(ctx):\n'
+        "    return [Step('mesh', [], inputs=[Path(__file__).with_name('source.txt')], "
+        f'products={products})]\n')
     # Inspection needs version metadata, not an installed Unreal editor.
     version = tmp_path / 'engine/Engine/Build/Build.version'
     version.parent.mkdir(parents=True)
     version.write_text('{}')
     monkeypatch.setenv('UE_ROOT', str(tmp_path / 'engine'))
-    snapshot = reuse.inspect(paths.REPO, 'sandbox')
+    if named_products:
+        with pytest.raises(subprocess.CalledProcessError):
+            reuse.inspect(repo, 'standin')
+        assert 'Whole-build reuse does not yet certify named products' in capfd.readouterr().err
+        return
+    snapshot = reuse.inspect(repo, 'standin')
     assert snapshot['build_version'] == {}
     assert snapshot['steps'] and all(len(s['source']) == 64 for s in snapshot['steps'])
 
