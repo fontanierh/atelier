@@ -65,8 +65,9 @@ world map, preferences and the HUD.
 ## Build products
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
-plans, file-hash memoization, bounded Blender/editor batches and automatic local caching of portable products.
-Whole-build reuse certifies named output inventories and blocks launch while its copy journal is incomplete. The
+plans, historical phase timings, certified-output differences and retained-log DDC diagnostics, file-hash
+memoization, bounded Blender/editor batches, automatic portable-product caching and opt-in Python input/write
+auditing. Whole-build reuse certifies named inventories and blocks launch while its copy journal is incomplete. The
 [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)

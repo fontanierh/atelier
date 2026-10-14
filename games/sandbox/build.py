@@ -10,14 +10,15 @@ SCRIPTS = GAME / 'unreal' / 'Scripts'
 def steps(ctx):
     from atelier import paths
     return [
-        Step('world.block', [Python(GAME / 'world/build_block.py', (GAME / 'world/block.json', ctx.out / 'block'))],
-             inputs=[GAME / 'world/block.json'], cache=True,
+        Step('world.block', [Python(GAME / 'world/build_block.py',
+                                   (GAME / 'world/block.json', ctx.out / 'block', GAME / 'world/block.override.json'))],
+             inputs=[GAME / 'world/block.json'], optional_inputs=[GAME / 'world/block.override.json'], cache=True, audit=True,
              products=[Product('block.shape', (ctx.out / 'block/shape.json',)),
                        Product('block.bounds', (ctx.out / 'block/bounds.json',))],
              about='portable block dimensions and independently consumed bounds'),
         Step('world.placements', [Python(GAME / 'world/build_placements.py',
                                         (GAME / 'world/placements.json', ctx.out / 'placements.json'))],
-             inputs=[GAME / 'world/placements.json'], references=['block.shape'], cache=True,
+             inputs=[GAME / 'world/placements.json'], references=['block.shape'], cache=True, audit=True,
              products=[Product('world.placements', (ctx.out / 'placements.json',))],
              about='positions reference asset IDs without deriving their geometry'),
         Step('unreal.compile', [UnrealCompile('SandboxEditor')],

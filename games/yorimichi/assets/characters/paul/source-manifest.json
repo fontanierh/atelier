@@ -1,120 +1,41 @@
 {
   "native": "Paul.glb",
-  "native_sha256": "640719953e502ac660f07989d92afcc4fe7929918f956430906541fbd0517310",
+  "native_sha256": "780923acd5d68883d3527c2443106c04aee2330f19dc923e2b54f94aef553f07",
   "height_cm": 165,
   "facing": "+X",
   "floor_m": 0,
-  "bones": {
-    "root": "root",
-    "pelvis": "pelvis",
-    "spine_01": "spine",
-    "spine_03": "spine_mid",
-    "spine_05": "chest",
-    "neck_01": "neck",
-    "head": "head",
-    "clavicle_l": "clavicle_L",
-    "upperarm_l": "upperarm_L",
-    "lowerarm_l": "forearm_L",
-    "hand_l": "hand_L",
-    "thigh_l": "thigh_L",
-    "calf_l": "shin_L",
-    "foot_l": "foot_L",
-    "ball_l": "toe_L",
-    "index_01_l": "finger_0_L",
-    "index_02_l": "finger_tip_0_L",
-    "index_03_l": "finger_end_0_L",
-    "middle_01_l": "finger_1_L",
-    "middle_02_l": "finger_tip_1_L",
-    "middle_03_l": "finger_end_1_L",
-    "ring_01_l": "finger_2_L",
-    "ring_02_l": "finger_tip_2_L",
-    "ring_03_l": "finger_end_2_L",
-    "pinky_01_l": "finger_3_L",
-    "pinky_02_l": "finger_tip_3_L",
-    "pinky_03_l": "finger_end_3_L",
-    "thumb_01_l": "thumb_L",
-    "thumb_02_l": "thumb_tip_L",
-    "thumb_03_l": "thumb_end_L",
-    "clavicle_r": "clavicle_R",
-    "upperarm_r": "upperarm_R",
-    "lowerarm_r": "forearm_R",
-    "hand_r": "hand_R",
-    "thigh_r": "thigh_R",
-    "calf_r": "shin_R",
-    "foot_r": "foot_R",
-    "ball_r": "toe_R",
-    "index_01_r": "finger_0_R",
-    "index_02_r": "finger_tip_0_R",
-    "index_03_r": "finger_end_0_R",
-    "middle_01_r": "finger_1_R",
-    "middle_02_r": "finger_tip_1_R",
-    "middle_03_r": "finger_end_1_R",
-    "ring_01_r": "finger_2_R",
-    "ring_02_r": "finger_tip_2_R",
-    "ring_03_r": "finger_end_2_R",
-    "pinky_01_r": "finger_3_R",
-    "pinky_02_r": "finger_tip_3_R",
-    "pinky_03_r": "finger_end_3_R",
-    "thumb_01_r": "thumb_R",
-    "thumb_02_r": "thumb_tip_R",
-    "thumb_03_r": "thumb_end_R",
-    "spine_04": "spine_04",
-    "spine_02": "spine_02",
-    "neck_02": "neck_02"
+  "revision": "tripo-body-r01",
+  "rig": {
+    "spec": "Tripo Studio auto-rig, Mixamo names",
+    "bones": 65,
+    "fingers": "4 bones per digit (the fourth an unweighted end)"
   },
-  "secondary_bones": [
-    "neck_02",
-    "spine_02",
-    "spine_04"
-  ],
   "geometry": {
-    "vertices": 16693,
-    "triangles": 32024
+    "vertices": 45372,
+    "triangles": 72116
   },
-  "source_scale": 0.812614367093705,
   "materials": [
     "M_Paul_0",
     "M_Paul_1"
   ],
-  "revision": "haras-r01",
-  "origin": {
-    "repository": "Polozer/HarasValley",
-    "revision": "71e4e4614a05e98d7e83bfadc8dc290c1db5ed5f",
-    "source_asset": "/Game/Haras/Characters/Community/SKM_Garcon",
-    "files": [
-      {
-        "path": "SourceArt/character/garcon/garcon_rig.blend",
-        "file": "garcon_rig.blend",
-        "sha256": "6bc9f2ee1fc2d4ab59c6e9ef09ea8acb534c8448c625f138b3eb0e41d1bab089",
-        "bytes": 27433668
-      },
-      {
-        "path": "SourceArt/character/community_out/SKM_Garcon/SKM_Garcon.fbx",
-        "file": "SKM_Garcon.fbx",
-        "sha256": "cff0ff6a0f678334a895bfa7c70adebaf6f929150ee2832d537e37208558c196",
-        "bytes": 1309916
-      },
-      {
-        "path": "SourceArt/character/community_out/SKM_Garcon/T_Garcon_Body.png",
-        "file": "T_Garcon_Body.png",
-        "sha256": "e320f54ccbf989dd490e56b22622375cb815e918bac84088adc3b5cfad1aca80",
-        "bytes": 10301687
-      },
-      {
-        "path": "SourceArt/character/community_out/SKM_Garcon/T_Garcon_Head.png",
-        "file": "T_Garcon_Head.png",
-        "sha256": "60584683e8b430a526f25c3313e6078afdde029bd99d4e37524b9cfdb44b26cc",
-        "bytes": 8150757
-      },
-      {
-        "path": "SourceArt/character/community_out/portrait_garcon.png",
-        "file": "portrait_garcon.png",
-        "sha256": "0bfaf3c3514568aa45354ae2f68a2c99c2dac53a5d0bb473dd51e3cb5534f1a5",
-        "bytes": 68772
-      }
+  "textures": {
+    "body": [
+      4096,
+      4096
+    ],
+    "head": [
+      4096,
+      4096
     ]
   },
-  "authorization": "Project owner requested vendoring the brother character as a playable Yorimichi character.",
-  "display_name": "Paul",
-  "renaming": "Names only; binary geometry, UVs, skin weights, skeleton matrices and texture bytes unchanged."
+  "body": {
+    "made_by": "Tripo Studio P2 multiview from references/body (front, left, right, back), drawn by hand in ChatGPT from the boy's concept and turnaround",
+    "graft": "tools/paul_body_graft.py, head fraction 0.18 (provenance/graft.json)",
+    "rig": "tools/paul_rig.py: Tripo's skeleton and weights on the graft's textured mesh (provenance/rig.json)"
+  },
+  "head": {
+    "source": "the head section (M_Paul_1) of the previous Paul.glb, revision haras-r01, sha256 640719953e502ac660f07989d92afcc4fe7929918f956430906541fbd0517310",
+    "origin": "Polozer/HarasValley SKM_Garcon (the boy's face-sheet Tripo bust), vendored with the project owner's authorization"
+  },
+  "display_name": "Paul"
 }

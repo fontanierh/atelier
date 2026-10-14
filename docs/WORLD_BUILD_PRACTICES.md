@@ -11,6 +11,15 @@ restoration across revisions and tracked spatial queries remain proposed. Verifi
 clean revision supports named products, including native packages.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
+Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
+queries, simplification, AO, collision and export, then inspect `atelier build <game> <step> --timings`.
+The [phase protocol](BUILD_RECIPES.md#measure-work-inside-a-command) works through stdout without a shared helper
+dependency. Keep measurements outside content products. Nested phases include their children; unmeasured command
+time can include admission, interpreter startup and shutdown, so it is not evidence of editor startup alone.
+After a representative small edit, inspect `--changes` to see which named-product members changed and which
+stayed identical. Unknown baselines need another comparable successful build before drawing conclusions. Use
+these measured boundaries to choose smaller owners; a report of retired content is not a deletion command.
+
 ## Separate assets from their placement
 
 Keep a reusable library for trees, rocks, street furniture, building kits, vehicles, character parts, materials
@@ -178,3 +187,11 @@ With today's build engine, use explicit `inputs`, `products` and content-depende
 for products whose contents the consumer does not inspect. Legacy `needs`, order-only `after` and cutoff steps
 remain supported. Keep unsupported cases conservative. Adopt the recipe examples and edit-boundary tests as
 games migrate, then add dependency tracing and native cache proofs before enabling automatic import restoration.
+
+For a generator with one Python command, `audit=True` checks observed file reads and writes before certification.
+It catches a placement generator accidentally reading a reference-only mesh or reusing old output bytes. Declare
+whole directories only when their complete membership is an input, and use owned outputs or private scratch for
+temporary files. For a conditional read of one known source, declare `optional_inputs=[path]` instead of its parent
+directory. Its absence and content are tracked without making sibling files dependencies; it grants no listing
+or source-write access. The [recipe guide](BUILD_RECIPES.md#audit-a-python-generators-accesses) explains the enforced checks
+and the metadata, environment and native-I/O limits. This audit complements clean-versus-incremental comparisons.

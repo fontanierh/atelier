@@ -32,7 +32,8 @@ def steps(ctx):
                  products=[Product('mesh', (ctx.out / 'mesh.json',))]),
             Step('import', [], inputs=[ctx.out / 'mesh.json'], reads=['mesh'],
                  products=[Product('native', (native,), optional_paths=(native.with_suffix('.ubulk'),))]),
-            Step('map', [], references=['native'], products=[Product('map', (ctx.out / 'map.json',))]),
+            Step('map', [], references=['native'], products=[Product('map', (ctx.out / 'map.json',))],
+                 optional_inputs=[ctx.out / 'optional.json', Path(__file__).with_name('optional-source.json')]),
             Step('plugin', [], inputs=[paths.REPO / 'platform/engine/Plugins/Fixture/Source'],
                  products=[Product('plugin', (paths.REPO / 'platform/engine/Plugins/Fixture/Binaries',))])]
 ''')
@@ -51,6 +52,7 @@ def steps(ctx):
     write(game / 'unreal/Content/Leaf.uasset', 'native leaf')
     write(source / 'build/standin/mesh.json', 'exported geometry')
     write(source / 'build/standin/map.json', 'path-only reference')
+    write(source / 'build/standin/optional.json', 'copied optional input')
     write(source / 'platform/engine/Plugins/Fixture/Binaries/Mac/library.dylib', 'compiled plugin')
     for step in reuse.inspect(source, 'standin')['steps']:
         write(source / 'build/standin/stamps' / (step['name'] + '.json'),
@@ -74,6 +76,19 @@ def test_named_snapshot_clones_reads_references_and_optional_sidecars(snapshot):
     leaf = Path('games/standin/unreal/Content/Leaf.uasset')
     (target / leaf).write_text('changed copy')
     assert (source / leaf).read_text() == 'native leaf'
+
+
+def test_reuse_source_identity_filters_only_copied_optional_inputs(snapshot):
+    source, target = snapshot
+    before, empty = reuse.inspect(source, 'standin'), reuse.inspect(target, 'standin')
+    assert reuse.differing_sources(before, empty) == []
+    source_map = next(step for step in before['steps'] if step['name'] == 'map')
+    target_map = next(step for step in empty['steps'] if step['name'] == 'map')
+    assert source_map['fingerprint'] != target_map['fingerprint']
+    write(target / 'games/standin/optional-source.json', 'different source outside the copy')
+    assert reuse.differing_sources(before, reuse.inspect(target, 'standin')) == ['map']
+    with pytest.raises(ValueError, match='Source inputs differ'):
+        reuse.main('standin', source, target)
 
 
 @pytest.mark.parametrize('changed', ['leaf', 'sidecar', 'missing_source', 'source_difference'])

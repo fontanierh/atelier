@@ -177,6 +177,8 @@ class Step:
     reads: list[str] = field(default_factory=list)         # product contents feed this step's fingerprint
     references: list[str] = field(default_factory=list)    # include products, without deriving data from them
     cache: bool = False                                   # explicitly portable products; automatic local reuse
+    audit: bool = False                                   # observe one Python action's inputs and owned writes
+    optional_inputs: list[Path] = field(default_factory=list)  # exact source files: absence is an input identity
     toolchain: bool = False                               # installed Python/Blender identity, without cache publication
     batch: Batch | None = None                            # opt-in scripts that reset their own transient process state
 
@@ -262,18 +264,24 @@ def _hash_path(digest, path, skip=True):
         digest.update(b'missing:' + str(path).encode())
 
 
-def declared_inputs(step):
+def required_inputs(step):
     named = step.products or step.reads or step.references
+    from .build_audit import SUPPORT
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
     return [*step.inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
-            *(p for c in step.commands for p in getattr(c, 'runs', list)())]
+            *(p for c in step.commands for p in getattr(c, 'runs', list)()),
+            *(SUPPORT if step.audit else ())]
+
+
+def declared_inputs(step):
+    return [*required_inputs(step), *step.optional_inputs]
 
 
 def missing_product_inputs(step):
     """Named-product actions require all declared sources; legacy optional inputs stay compatible."""
     if not (step.products or step.reads or step.references):
         return []
-    return [str(path) for path in declared_inputs(step) if not Path(path).exists()]
+    return [str(path) for path in required_inputs(step) if not Path(path).exists()]
 
 
 def fingerprint(step, done, *, index=None, tool_cache=None):
@@ -298,14 +306,15 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     digest.update(commands.encode())
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
-    inputs = declared_inputs(step)
-    if step.cache:
-        build_inputs.validate_imports(step, inputs)
+    inputs = required_inputs(step)
+    if step.cache or step.audit:
+        build_inputs.validate_imports(step, declared_inputs(step))
     for item in inputs:
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
-            manifest = build_inputs.inventory(item, hasher=hasher) if Path(item).exists() else None
+            options = {'complete': True} if step.audit else {}
+            manifest = build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None
             value = build_products.identity(manifest)
             label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
             digest.update(json.dumps([label, value]).encode())
@@ -318,6 +327,14 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
             state['inputs'][label] = recording.local.hexdigest()
         else:
             _hash_path(digest, item)
+    if step.optional_inputs:
+        state['optional_inputs'] = {}
+        for item in step.optional_inputs:
+            manifest = build_inputs.optional_file(item, hasher=hasher)
+            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            value = {'present': manifest['kind'] == 'file', 'identity': build_products.identity(manifest)}
+            digest.update(b'optional-file-v1\0' + json.dumps([label, value], sort_keys=True).encode())
+            state['optional_inputs'][label] = value
     for need in step.needs:
         digest.update(done.get(need, 'unbuilt').encode())
     if step.products or step.reads or step.references:
@@ -327,7 +344,10 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
-    if step.cache or step.toolchain:
+    if step.audit:
+        state['audit'] = 1
+        digest.update(b'python-input-audit-v1\0')
+    if step.cache or step.audit or step.toolchain:
         from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
         digest.update(state['tools'].encode())
@@ -386,18 +406,22 @@ def slot_request(ctx, step):
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 
 
-def run_command(ctx, step, command, log, request=None, slots=None):
+def run_command(ctx, step, command, log, request=None, slots=None, *, products=None):
     """Run one command of a step. A heavy step's command runs under guarded.run, in a render slot asked for with
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
+    if step.audit:
+        from . import build_audit
+        with build_audit.prepared(ctx, step, products) as (argv, env, descriptors):
+            return run_argv(ctx, step, command, argv, env, log, request, slots, pass_fds=descriptors)
     if isinstance(command, UnrealScript):
         with command.prepared(ctx) as (argv, env):
             return run_argv(ctx, step, command, argv, env, log, request, slots)
     return run_argv(ctx, step, command, command.argv(ctx), getattr(command, 'env', ()), log, request, slots)
 
 
-def run_argv(ctx, step, command, argv, env, log, request, slots):
+def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=()):
     env = ctx.env(env)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
@@ -411,10 +435,11 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
                 slots.append(slot)
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
+        inherited = {'pass_fds': pass_fds} if pass_fds else {}
         code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
                            small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
                            watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.),
-                           **({'on_poll': command.on_poll} if hasattr(command, 'on_poll') else {}))
+                           **inherited, **({'on_poll': command.on_poll} if hasattr(command, 'on_poll') else {}))
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
@@ -428,7 +453,7 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
     else:
         from .safety.process import policy_command
         result = subprocess.run(policy_command(argv), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env,
-                                text=True, errors='ignore')
+                                text=True, errors='ignore', **({'pass_fds': pass_fds, 'stdin': subprocess.DEVNULL} if pass_fds else {}))
         code, text = result.returncode, result.stdout
         log.write(text)
     if code:
@@ -436,6 +461,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots):
     marker = getattr(command, 'marker', None)
     if marker and marker not in text:
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
+    from .build_timings import parse_phases
+    return parse_phases(text, allow_echo=isinstance(command, UnrealScript))
 
 
 def slot_summary(slots):
@@ -466,6 +493,7 @@ def _build(ctx, wanted, *, force, touch, echo, index):
     steps = recipe.steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    declared_products = {p.name: p for s in steps for p in s.products}
     for step in plan:
         if step.toolchain and not step.products:
             raise SystemExit(f'{step.name}: an explicit toolchain identity requires named products')
@@ -473,7 +501,7 @@ def _build(ctx, wanted, *, force, touch, echo, index):
             build_batches.validate(step)
         except ValueError as error:
             raise SystemExit(str(error)) from error
-        if step.cache:
+        if step.cache or step.audit:
             try:
                 build_cache.roots(ctx, step)
             except ValueError as error:
@@ -568,9 +596,13 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
-                    run_command(ctx, step, command, log, request, slots)
-                    command_times.append({'kind': type(command).__name__,
-                                          'seconds': round(time.monotonic() - command_started, 3)})
+                    audited = {'products': declared_products} if step.audit else {}
+                    phases = run_command(ctx, step, command, log, request, slots, **audited)
+                    timing = {'kind': type(command).__name__, 'seconds': round(time.monotonic() - command_started, 3),
+                              'scope': 'command invocation'}
+                    if not isinstance(command, Call) and phases is not None:
+                        timing['phases'] = phases
+                    command_times.append(timing)
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
@@ -591,12 +623,24 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time(),
+        record = {'fingerprint': current, 'seconds': round(seconds, 3), 'time': time.time(),
                   'input_state': input_state, 'commands': command_times}
-        if step.products:
+        if step.products or 'product_roots' in previous:
+            from . import build_changes
             record['products'] = products
+            record['product_roots'] = build_changes.root_labels(ctx, step)
+            optional = build_changes.optional_roots(step)
+            if optional:
+                record['product_optional_roots'] = optional
+            record['output_changes'] = build_changes.compare(previous, products, record['product_roots'],
+                                                             restored=from_cache, optional=optional)
         if from_cache:
             record['restored_from'] = current
+            if previous.get('fingerprint') == current:
+                from .build_timings import producer_receipt
+                producer = producer_receipt(previous)
+                if producer is not None:
+                    record['producer_receipt'] = producer
         if step.cutoff:
             record['result'] = outputs_digest(step)
         if pool_key is not None:

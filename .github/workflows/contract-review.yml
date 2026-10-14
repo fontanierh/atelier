@@ -29,7 +29,7 @@ jobs:
     steps:
       - name: Validate request without executing PR code
         id: request
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const pull_number = context.payload.pull_request?.number ?? context.payload.issue?.number;
@@ -83,6 +83,11 @@ jobs:
           PYTHONPATH: .ci-controller/platform/studio
         run: python3 -m atelier.contract_review_tools .review-tool/.github/actions/contract-review/action.yml
 
+      - name: Keep nested Node setup uncached
+        # The pinned codex-action has its own setup-node. Its automatic cache detection
+        # stays off because all checkouts live in subdirectories, leaving no root manifest.
+        run: test ! -e "$GITHUB_WORKSPACE/package.json"
+
       - name: Record paid operation before submission
         id: ledger
         if: steps.request.outputs.request != ''
@@ -93,7 +98,7 @@ jobs:
 
       - name: Persist submission intent before calling the provider
         if: steps.ledger.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: contract-review-submitted-${{ github.run_id }}
           path: ${{ runner.temp }}/paid-review/ledger.json
@@ -123,7 +128,7 @@ jobs:
 
       - name: Persist final paid-operation receipt
         if: always() && steps.ledger.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: contract-review-final-${{ github.run_id }}
           path: ${{ runner.temp }}/paid-review/ledger.json
@@ -132,7 +137,7 @@ jobs:
 
       - name: Publish advisory review status for the captured commits
         if: always() && steps.request.outputs.request != ''
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           REVIEW_REQUEST: ${{ steps.request.outputs.request }}
           REVIEW_COMPLETED: ${{ steps.result.outputs.completed }}

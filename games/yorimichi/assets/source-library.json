@@ -1990,12 +1990,28 @@
       "sha256": "2b690951752b81e784bcc3e27e165b7f43cf081aec36177df1dcaefe559d0303"
     },
     "characters/paul/Paul.glb": {
-      "bytes": 40989068,
-      "sha256": "640719953e502ac660f07989d92afcc4fe7929918f956430906541fbd0517310"
+      "bytes": 30216520,
+      "sha256": "780923acd5d68883d3527c2443106c04aee2330f19dc923e2b54f94aef553f07"
     },
     "characters/paul/portrait.png": {
       "bytes": 68772,
       "sha256": "0bfaf3c3514568aa45354ae2f68a2c99c2dac53a5d0bb473dd51e3cb5534f1a5"
+    },
+    "characters/paul/references/body/back.png": {
+      "bytes": 1617804,
+      "sha256": "754571584d6a23bf55e0367c53b7cdef8c1043e4a58e75c58ecf39463685eee7"
+    },
+    "characters/paul/references/body/front.png": {
+      "bytes": 1181232,
+      "sha256": "d7dbd5b3f9f40b93f309a8e3dbf10b78dbccf683d7833bd49aa59c14513d79cf"
+    },
+    "characters/paul/references/body/left.png": {
+      "bytes": 1565818,
+      "sha256": "c477a6a5384960feb807e02822e6cedac9cc8afeb6f6bc2c6c2db5301adda8b2"
+    },
+    "characters/paul/references/body/right.png": {
+      "bytes": 1568269,
+      "sha256": "008526075455369f8831c4355e8a4e1e5addad5914d3e4397c3d458130def430"
     },
     "characters/sword-trainer/SwordTrainer-Rig-r03.blend": {
       "bytes": 21263282,

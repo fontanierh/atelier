@@ -135,18 +135,28 @@ class Graph:
     """
 
     def __init__(self, steps):
+        from . import build_audit
+        from .build import declared_inputs, required_inputs
         self.steps = list(steps)
         self.by_name = {}
         self.owners = {}
         owned_paths = []
         for step in self.steps:
+            build_audit.validate(step)
+            if step.optional_inputs:
+                if not step.products:
+                    raise ValueError(f'{step.name}: optional inputs require named products')
+                required = {str(Path(p).resolve()).casefold() for p in required_inputs(step)}
+                optional = [str(Path(p).resolve()).casefold() for p in step.optional_inputs]
+                if len(set(optional)) != len(optional) or required.intersection(optional):
+                    raise ValueError(f'{step.name}: duplicate or required optional input')
             if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', step.name):
                 raise ValueError(f'Invalid step name: {step.name!r}')
             if step.name in self.by_name:
                 raise ValueError(f'Duplicate step: {step.name}')
             self.by_name[step.name] = step
             sources = [tuple(p.casefold() for p in Path(source).resolve().parts)
-                       for source in step.inputs] if step.products else []
+                       for source in declared_inputs(step)] if step.products else []
             for product in step.products:
                 if not product.name or product.name in self.owners:
                     raise ValueError(f'Duplicate or empty product name: {product.name!r}')
@@ -170,6 +180,15 @@ class Graph:
                 if path[:len(other)] == other:
                     raise ValueError(f'Overlapping product ownership: {owner} and {other_owner}')
             previous = path, owner
+        # Legacy declarations still reserve their paths. Product restoration and audited rebuilds
+        # replace whole roots, so those roots cannot contain (or sit inside) another step's outputs.
+        legacy_paths = [(step.name, tuple(p.casefold() for p in Path(path).resolve().parts))
+                        for step in self.steps for path in (*step.outputs, *step.pool_roots)]
+        for path, product in owned_paths:
+            parts = tuple(p.casefold() for p in path.parts)
+            for step_name, other in legacy_paths:
+                if self.owners[product] != step_name and (parts[:len(other)] == other or other[:len(parts)] == parts):
+                    raise ValueError(f'Product {product} overlaps legacy outputs of {step_name}')
         for step in self.steps:
             for dependency in (*step.needs, *step.after):
                 if dependency not in self.by_name:

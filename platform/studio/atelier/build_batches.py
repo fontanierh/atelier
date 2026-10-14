@@ -109,6 +109,10 @@ class Session:
         self.memory, self.last_memory, self.action_peak, self.growth = None, None, 0, 0
         self.log = ''
         self.log_offset = 0
+        # write_plan invalidates old certificates before execution. Retain their historical
+        # inventories now so each new receipt can describe a real before/after comparison.
+        self.previous = {step.name: read_stamp(ctx.stamps / (step.name + '.json'))
+                         for step, _, _ in candidates}
 
     def write_plan(self):
         actions = []
@@ -184,9 +188,20 @@ class Session:
             raise RuntimeError(f'{step.name}: inputs changed or required outputs missing during batch')
         products = build_products.records(step)
         seconds = round(receipt['seconds'], 3)
+        command = step.commands[0]
+        timing = {'kind': type(command).__name__, 'seconds': seconds, 'scope': 'batch action'}
+        from . import build_changes
+        from .build_timings import parse_phases
+        phases = parse_phases(log, allow_echo=isinstance(command, build.UnrealScript))
+        if phases is not None:
+            timing['phases'] = phases
+        roots, optional = build_changes.root_labels(self.ctx, step), build_changes.optional_roots(step)
         record = {'fingerprint': key, 'products': products, 'input_state': inputs, 'time': time.time(),
-                  'seconds': seconds, 'commands': [{'kind': type(step.commands[0]).__name__, 'seconds': seconds}],
+                  'seconds': seconds, 'commands': [timing], 'product_roots': roots,
+                  'output_changes': build_changes.compare(self.previous[step.name], products, roots, optional=optional),
                   'batch': self.nonce}
+        if optional:
+            record['product_optional_roots'] = optional
         atomic_json(self.ctx.stamps / (step.name + '.json'), record)
         (self.ctx.stamps / (step.name + '.restore.json')).unlink(missing_ok=True)
         # The first action has no measured pre-action baseline. Do not invent a growth estimate.

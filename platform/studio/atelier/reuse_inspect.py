@@ -88,7 +88,10 @@ def inspect_game(game):
                 problem = str(error)
         value = fingerprint(step, done)
         verified = portable(step, compared)
-        own = replace(step, inputs=[p for p in step.inputs if not copied(p)])
+        own_inputs = {'inputs': [p for p in step.inputs if not copied(p)]}
+        if hasattr(step, 'optional_inputs'):
+            own_inputs['optional_inputs'] = [p for p in step.optional_inputs if not copied(p)]
+        own = replace(step, **own_inputs)
         source = portable(own, sources)
         sources[step.name] = source
         # A fresh checkout lacks products. Compare the source identity of each producer here;

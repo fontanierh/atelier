@@ -25,6 +25,15 @@ def changed_inputs(previous, current):
         for name in sorted(before.keys() | after.keys()):
             if before.get(name) != after.get(name):
                 reasons.append(f'{label} changed: {name}')
+    before, after = previous.get('optional_inputs', {}), current.get('optional_inputs', {})
+    for name in sorted(before.keys() | after.keys()):
+        old, new = before.get(name), after.get(name)
+        if old == new:
+            continue
+        change = 'declared' if old is None else 'declaration removed' if new is None else 'changed'
+        if isinstance(old, dict) and isinstance(new, dict) and old.get('present') != new.get('present'):
+            change = 'appeared' if new.get('present') else 'removed'
+        reasons.append(f'optional input {change}: {name}')
     return reasons or ['fingerprint changed']
 
 
@@ -47,6 +56,9 @@ def _inspect(ctx, steps, wanted, *, force, index):
         stamp = read_stamp(ctx.stamps / f'{step.name}.json')
         reasons = []
         try:
+            if step.cache or step.audit:
+                from .build_cache import roots
+                roots(ctx, step)
             current, state = engine.fingerprint_state(step, done, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
             current, state = f'invalid:{step.name}', {}

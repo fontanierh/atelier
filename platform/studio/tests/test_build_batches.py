@@ -76,6 +76,60 @@ def test_one_warm_process_keeps_individual_results_and_skips_current_actions(pro
         assert ((p.ctx.stamps / (step.name + '.json')).read_bytes() == before[step.name]) == (step.name != 'action3')
 
 
+def test_batch_phase_ids_are_per_action_and_previous_inventory_survives_invalidation(project):
+    p = project
+    p.steps[:] = p.steps[:2]
+    for seconds, step in enumerate(p.steps, 1):
+        script = step.commands[0].script
+        begin = 'ATELIER_PHASE ' + json.dumps({'event': 'begin', 'id': 'work', 'name': 'work', 'at': 0.})
+        end = 'ATELIER_PHASE ' + json.dumps({'event': 'end', 'id': 'work', 'at': float(seconds), 'ok': True})
+        script.write_text(f'print({begin!r}, flush=True)\n' + script.read_text() + f'print({end!r}, flush=True)\n')
+    assert p.run() == 0
+    original = [(p.ctx.stamps / (step.name + '.json')).read_bytes() for step in p.steps]
+    for seconds, data in enumerate(original, 1):
+        record = json.loads(data)
+        assert record['commands'][0]['scope'] == 'batch action'
+        trace = record['commands'][0]['phases']
+        assert trace['status'] == 'complete' and trace['phases'][0]['seconds'] == seconds
+        assert record['output_changes']['baseline'] == 'unknown'
+    script = p.steps[0].commands[0].script
+    script.write_text(script.read_text().replace("'made'", "'changed'"))
+    assert p.run() == 0
+    record = json.loads((p.ctx.stamps / 'action1.json').read_text())
+    assert record['output_changes']['baseline'] == 'known'
+    assert record['output_changes']['products'][0]['changed'] == ['<build>/1.txt']
+    assert (p.ctx.stamps / 'action2.json').read_bytes() == original[1]
+
+
+def test_bad_batch_phase_trace_does_not_certify_a_later_failed_action(project):
+    p = project
+    p.steps[:] = p.steps[:2]
+    script = p.steps[0].commands[0].script
+    script.write_text(script.read_text() + "print('ATELIER_PHASE {invalid', flush=True)\n")
+    p.steps[1].commands[0].script.write_text("raise RuntimeError('later action failed')\n")
+    assert p.run() == 1
+    record = json.loads((p.ctx.stamps / 'action1.json').read_text())
+    assert record['commands'][0]['phases']['status'] == 'incomplete'
+    assert not (p.ctx.stamps / 'action2.json').exists()
+
+
+def test_batch_optional_source_is_not_required_and_still_invalidates(project):
+    p = project
+    p.steps[:] = p.steps[:2]
+    optional = p.steps[0].commands[0].script.with_name('optional.json')
+    p.steps[0].optional_inputs = [optional]
+    required = build.required_inputs(p.steps[0])
+    assert optional not in required and optional in build.declared_inputs(p.steps[0])
+    assert {path.name for path in required} >= {'build_batches.py', 'build_batch_worker.py'}
+    assert p.run() == 0
+    first = json.loads((p.ctx.stamps / 'action1.json').read_text())
+    second = (p.ctx.stamps / 'action2.json').read_bytes()
+    optional.write_text('present')
+    assert p.run() == 0
+    assert json.loads((p.ctx.stamps / 'action1.json').read_text())['fingerprint'] != first['fingerprint']
+    assert (p.ctx.stamps / 'action2.json').read_bytes() == second
+
+
 def test_interrupted_fourth_action_preserves_first_three_and_resume_runs_only_remaining(project):
     p = project
     script = p.steps[3].commands[0].script

@@ -31,7 +31,37 @@ def test_violation_is_reported_without_blocking_a_completed_review():
                            'body': 'This operation bypasses the required guard.', 'recipients': []}]
     assert contract_review.validate(REQUEST, REQUEST, review) == {'completed': True, 'violations': 1, 'comments': 1}
     review['comments'][0]['kind'] = 'contract-change'
+    review['comments'][0]['body'] = ''
     assert contract_review.validate(REQUEST, REQUEST, review)['violations'] == 0
+
+
+@pytest.mark.parametrize('body', ['', '  '])
+def test_violation_requires_an_explanation(body):
+    review = {'summary': 'cc-verify: LGTM', 'comments': [
+        {'kind': 'violation', 'path': 'example.py', 'line': 1, 'side': 'RIGHT', 'body': body, 'recipients': ['fontanierh']},
+    ]}
+    with pytest.raises(ValueError):
+        contract_review.validate(REQUEST, REQUEST, review)
+
+
+@pytest.mark.parametrize('body', ['', 'Notification text ignored by upstream'])
+def test_owner_notification_completes_paid_receipt(tmp_path, monkeypatch, body):
+    path = tmp_path / 'receipt.json'
+    ledger.begin(path, REQUEST)
+    review = {'summary': 'cc-verify: LGTM', 'comments': [
+        {'kind': 'contract-change', 'path': 'example.py', 'line': 1, 'side': 'RIGHT',
+         'body': body, 'recipients': ['fontanierh']},
+    ]}
+    monkeypatch.setenv('REVIEW_REQUEST', json.dumps(REQUEST))
+    monkeypatch.setenv('ACTUAL_REQUEST', json.dumps({**REQUEST, 'head_ref': 'feature'}))
+    monkeypatch.setenv('REVIEW_RESULT', json.dumps(review))
+    monkeypatch.setenv('REVIEW_OUTCOME', 'success')
+    monkeypatch.setenv('GITHUB_OUTPUT', str(tmp_path / 'outputs'))
+    assert contract_review.main(['finish', str(path)]) == 0
+    record = json.loads(path.read_text())
+    assert record['status'] == 'done' and record['completed'] is True
+    assert record['comments'] == 1 and record['violations'] == 0
+    assert (tmp_path / 'outputs').read_text() == 'completed=true\nviolations=0\n'
 
 
 def test_ci_receipt_precedes_submission_and_prevents_retry(tmp_path, monkeypatch):

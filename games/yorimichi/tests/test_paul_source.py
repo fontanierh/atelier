@@ -41,14 +41,14 @@ def test_self_contained_source_and_manifest():
 
 
 def test_contract_fingers_and_skinned_geometry():
+    from atelier.character.names import mixamo_aliases
     doc, binary = glb_parts((SOURCE / 'Paul.glb').read_bytes())
-    contract = tomllib.loads((GAME.parents[1] / 'platform/conventions/rigs/humanoid.toml').read_text())
     joints = doc['skins'][0]['joints']
     names = {doc['nodes'][j]['name'] for j in joints}
-    required = {n for group in contract['required'].values() for n in group}
-    fingers = {n+s for n in contract['optional']['fingers']['per_hand'] for s in ('_L', '_R')}
-    assert required | fingers <= names
-    assert names - required - fingers == {'spine_02', 'spine_04', 'neck_02'}
+    aliases = mixamo_aliases()
+    assert set(aliases) - {'Root'} <= names            # Tripo's auto-rig: the contract's bones and fingers, Mixamo names
+    ends = {n for n in names - set(aliases) if n.endswith(('4', '_End'))}
+    assert names - set(aliases) == ends and len(ends) == 13    # head top, toe ends and fingertips (dropped on export)
     triangles = 0
     for mesh in doc['meshes']:
         for p in mesh['primitives']:
@@ -58,8 +58,11 @@ def test_contract_fingers_and_skinned_geometry():
             assert np.isfinite(weights).all() and (weights >= 0).all()
             assert np.allclose(weights.sum(axis=1), 1, atol=1e-6)
             assert indices.max() < len(joints)
+            used = {joints[i] for i in np.unique(indices[weights > 0])}
+            assert not {doc['nodes'][j]['name'] for j in used} & ends   # the end bones carry no weight
             triangles += doc['accessors'][p['indices']]['count']//3
-    assert triangles == 32024
+    record = json.loads((SOURCE / 'source-manifest.json').read_text())
+    assert triangles == record['geometry']['triangles']
 
 
 def test_rest_guard_accepts_precision_noise_and_refuses_moved_or_turned_bones():

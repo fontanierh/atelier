@@ -14,7 +14,6 @@ CHARS = Path(__file__).resolve().parents[1]
 
 # [export]: how the source becomes the game's body. The defaults are a Tripo model (Mixamo names, no authored clips).
 EXPORT = {
-    'names': 'mixamo',              # 'mixamo' (Tripo's auto-rig) or 'contract' (already the humanoid contract's names)
     'extra_bones': 'none',          # bones the contract has no name for: 'none', 'drop' (unweighted) or 'follow'
     'followers': {},                # {name prefix: count} the 'follow' bones must include (a hair rig, say)
     'meshes': None,                 # 'skinned', 'armature' or 'outfit'; default by source: .blend skinned, .glb armature

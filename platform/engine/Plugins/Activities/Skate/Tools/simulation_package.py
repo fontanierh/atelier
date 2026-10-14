@@ -163,8 +163,10 @@ def assemble(bundle, runtime=RUNTIME, motion=MOTION, manifest=DATA / MANIFEST):
         sys.path.insert(0, str(TOOLS))
     import motion_text
     import runtime_text
+    # Validate the small runtime source before assembling thousands of motion clips.
+    runtime_payloads = runtime_text.build(Path(runtime))
     built = motion_text.build(Path(motion))
-    built.update(runtime_text.build(Path(runtime)))
+    built.update(runtime_payloads)
     built[MANIFEST] = Path(manifest).read_bytes()
     if bundle.exists():
         shutil.rmtree(bundle)

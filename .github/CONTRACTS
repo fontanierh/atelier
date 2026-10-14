@@ -7,3 +7,9 @@ write-capable GitHub token. The model runs read-only as an unprivileged user.
 Review status MUST identify the exact reviewed head and base. Missing, malformed, stale or
 incomplete output MUST NOT be reported as a completed review. Findings MUST remain advisory;
 agents MAY resolve false positives with an explanation. A completed review is not semantic approval.
+
+@cc [owner:fontanierh,label:correctness] complete-python-ci
+Python CI groups MUST cover normal pytest collection exactly once. The aggregate merge check MUST
+fail when any group fails, is cancelled or is skipped. Cached Rust artifacts MUST NOT hide a failed
+compile: CI MUST remove the board crate's artifacts and successfully rebuild it before testing.
+Only successful board jobs on main MAY publish the shared Rust cache; PRs only restore it.

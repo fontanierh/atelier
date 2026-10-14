@@ -49,6 +49,14 @@ collisions with the shared catalogue.
 
 ## Bounded process reuse
 
+Each completed action keeps its own historical `atelier build yorimichi <step> --timings` and `--changes` receipts,
+including when it shares a process with other actions. Phase IDs are scoped to that action; output differences
+compare its previous certified inventory. Optional sidecars appear as added or retired members, while an absent
+sidecar is not a retained output member. These diagnostics do not enter product identity, grant admission or
+establish native equivalence; the native proof and remaining acceptance gates below still apply.
+Batch action timings exclude shared startup/shutdown and host validation/acknowledgement; `--timings` labels
+that scope instead of allocating the shared overhead to an asset.
+
 Independent export/import misses can share a guarded process. Blender resets its scene and foliage caches between
 assets; Unreal scripts read their per-action environment inside `main()`. Every asset keeps its own key, validation
 and success stamp. A failed later action leaves earlier verified work available for the next invocation.

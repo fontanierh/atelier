@@ -5,14 +5,21 @@ changed. Every certified product should be reusable across compatible worktrees 
 command should handle this automatically, with a local store that works offline and an optional remote store.
 
 **Status: foundations and portable caching implemented; foliage ownership pilot awaits native proof.** Named
-products, read/reference edges, complete inventories, read-only plans, command timings, a file-hash index and
-automatic portable-product restoration with retention are available. Whole-build reuse now verifies named
-products and uses an interruption journal; bounded tool batches keep per-action results. [The recipe guide](BUILD_RECIPES.md)
-describes these APIs; the sandbox exercises independent geometry and placement products without native tools.
+products, read/reference edges, complete inventories, read-only plans, command/phase timings, output-change reports,
+DDC log diagnostics, a file-hash index and automatic portable-product restoration with retention are available.
+Whole-build reuse verifies named products and uses an interruption journal; bounded tool batches keep per-action
+results. [The recipe guide](BUILD_RECIPES.md) describes these APIs. The sandbox exercises independent geometry and
+placement products without native tools, including exact optional source files and absent/present identities.
+
+Opt-in Python input/write auditing checks observed reads and owned writes before certification, using complete
+source inventories and a separate completion report. It does not prove metadata, environment or native-I/O
+closure; Blender/Unreal audit bootstraps and runtime query/context APIs remain proposed. Historical phase and DDC
+reports do not establish current settings, native baselines or measured warm/cold improvements.
+
 The [Yorimichi foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) separates 18 asset owners and shared materials.
-Deterministic source export proof has passed; the source cache remains disabled pending recipe/restore validation.
-Automatic per-package Unreal restoration, runtime dependency audits, spatial queries, compiler/cook caching and
-remote storage below remain proposed.
+Deterministic source export proof has passed; source caching stays disabled pending recipe/restore validation.
+Split-import equivalence, incremental repair, package loading and cooking remain native acceptance gates.
+Automatic per-package Unreal restoration, spatial queries, compiler/cook caching and remote storage remain proposed.
 Legacy cutoffs, module isolation and the [explicit portable pool](ARTIFACT_POOL.md) remain supported. Capacity is
 shadow-only; current locks, guards and scheduling rules remain authoritative.
 
@@ -115,6 +122,13 @@ accesses still need explicit declarations and importer-specific dependency enume
 macOS process-access tracer. Controlled input workspaces and clean-versus-incremental checks test the declared
 closure; until it is proven, keep conservative dependencies and restrict shared publication.
 
+The implemented `Step.audit=True` starts with one Python command per owned-product action. Its access hook, private
+scratch/bytecode paths and completion pipe catch undeclared reads, reference misuse, writes outside ownership and
+reuse of stale output bytes. Each executed action starts with empty owned outputs; cache hits restore without running
+it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
+metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
+the tracked context API and native bootstraps are still separate work.
+
 The planner should reject cycles, duplicate package ownership, missing products and writes outside owned paths.
 Every output, including leaf assets and bulk-data sidecars, belongs in a verified manifest. A sentinel such as
 `Torii.fbx` or `manifest.json` existing is insufficient evidence that the rest of a step's outputs survive.
@@ -177,7 +191,7 @@ separate session guard report, per-action observed memory growth and a budget of
 between actions. It yields with exit 75 instead of immediately reacquiring capacity; see [the operational contract](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions).
 Cold/warm and reversed-order native equivalence remain acceptance gates for every batch-enabled recipe.
 
-Stage 1 should also report DDC configuration and hits. The two inspected worktrees already use the same per-user
+Stage 1 now reports DDC configuration and explicit hit counts from retained logs. The two inspected worktrees use the same per-user
 ZenLocal service and filesystem DDC, while ZenShared is disabled. Preserve that reuse and measure its effectiveness;
 evaluate a remote/shared DDC for additional machines only on demonstrated benefit. DDC and Zen cook storage have
 different responsibilities even when served by related infrastructure. Sharing DDC does not eliminate the import

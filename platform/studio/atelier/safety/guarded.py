@@ -144,7 +144,7 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, on_poll=None):
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), on_poll=None):
     """Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
     when a compound worker attaches its own actual-child guards immediately at launch.
@@ -170,7 +170,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         if slot in ('small', 'fitting'):
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
-        child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env)
+        inherited = {'pass_fds': pass_fds, 'stdin': subprocess.DEVNULL} if pass_fds else {}
+        child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env, **inherited)
         fitting_ready_by = time.monotonic()+FITTING_STARTUP_SECONDS
         fitting_started = False
         stack.callback(reap, child)

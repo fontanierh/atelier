@@ -11,8 +11,8 @@ Kaede also uses the shared asset pipeline, with the game-specific `ASwordTrainer
 ## What you need
 
 - **A rigged humanoid source** in `assets/characters/<id>/`: a `.glb` or a `.blend` with textures packed. Its skeleton
-  follows the [humanoid contract](../../../platform/conventions/rigs/humanoid.toml) by name. It can use the contract's
-  own names or Mixamo's, as Tripo's auto-rig produces. Fingers are optional but needed for grips. Extra bones (hair,
+  follows the [humanoid contract](../../../platform/conventions/rigs/humanoid.toml) by name, using Mixamo's names as
+  Tripo's auto-rig produces them. Fingers are optional but needed for grips. Extra bones (hair,
   extra spine joints) are allowed; you tell the export what to do with them.
 - **A `source-manifest.json`** with the source's SHA-256 (`native`, `native_sha256`). The export refuses a source that
   does not match it.
@@ -39,15 +39,16 @@ only what differs. Unknown keys are refused, so a typo fails at once.
 | Table | What it sets | Examples |
 |---|---|---|
 | top level | names | `asset_name` (default: the id in PascalCase), `unreal_path` (`/Game/<Name>`), `output` (the build folder) |
-| `[export]` | how the source becomes the game's body | `names = "contract"`, `extra_bones = "follow"` (or `"drop"`), `mesh_names`, `actions = "authored"` to keep the source's own clips |
+| `[export]` | how the source becomes the game's body | `extra_bones = "drop"` (or `"follow"`), `mesh_names`, `actions = "authored"` to keep the source's own clips |
 | `[export.materials]` | its materials | name and texture templates, `two_sided`, roughness, metallic and specular (a number or `"shader"`), `atlas` |
 | `[unreal]` | the Unreal import | `camera_height`, `cpu_access`, `physics_asset`, `vertex_colors`, `morph_targets`, `contact_morphs`, `modules` |
 | `[blender]` | how its Blender steps run | `threads` (3 for a heavy source) |
 | `[game]` | its pawn (step 6) | `capsule_radius`, `cloth_teleport`, `hair_spring_morphs` |
 | `[[fit]]` | fit waivers (step 4) | `report`, `clip`, `metric`, `bound`, `reason` |
 
-Paul is a complete example: a vendored GLB already on the contract's names, with three extra torso and neck bones
-that follow their parents ([paul/character.toml](../assets/characters/paul/character.toml)).
+Paul is a complete example: Tripo's auto-rig with Mixamo names, whose unweighted end bones are dropped
+([paul/character.toml](../assets/characters/paul/character.toml)). Nox keeps a hair rig as bones that follow their
+parents ([nox/character.toml](../assets/characters/nox/character.toml)).
 
 Some geometry needs code. A body-specific step goes in an optional `<id>/export_hooks.py` with
 `body(prepared, report)`. It runs after the rig is prepared and before the FBX is written. Modori's hook gives his coat
@@ -199,9 +200,11 @@ Commit:
 - committed grips.
 
 Build outputs, Unreal Content, FBXs and captures stay ignored. Run `uv run atelier lint`,
-`uv run atelier contracts check` and focused tests for changed Python behavior, then read `git diff` and ask another
-agent for review on the board. The complete Python suite runs on hosted CI; require a green run on the final PR head
-instead of repeatedly running it locally. Native character validation above still applies.
+`uv run atelier contracts check` and focused Python tests for the changed behavior, then read `git diff` and ask
+another agent for review on the board. Hosted CI supplies the full-suite result: require a successful
+`Studio Python / macOS` check on the final PR head before merging. Do not repeat the full suite locally;
+documentation-only changes need no local Python run. Follow [the repository rules](../../../AGENTS.md) for
+integration-failure diagnosis and tests that need local resources.
 
 ## Changing the pipeline
 
