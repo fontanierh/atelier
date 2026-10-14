@@ -3,16 +3,16 @@
 /Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 --python \
     games/yorimichi/assets/characters/tools/paul_body_graft.py -- \
     --body <tripo body>.glb --head <previous Paul.glb, haras-r01> --output <dir> \
-    [--head-fraction 0.195] [--renders]
+    [--head-fraction 0.18] [--renders]
 
 The body is a headless Tripo P2 multiview body (T-pose, palms down, facing -Y, a bare neck plug). The head is the
 M_Paul_1 section of the previous Paul.glb (haras-r01: face, hair, ears and neck; facing +X, metres, his rest pose).
 
 1. The body: welded at its UV seams (1e-5), turned to face +X, scaled so the head (chin to the top of the hair)
    is `--head-fraction` of his height, its soles on z = 0 and its neck centred under the head's.
-2. The neck: the body keeps its own neck, which plugs into the head. Above the collar its rings are drawn in toward
-   the neck's axis, smoothly, so at the cut they sit 1.5 mm inside the head's neck; the head's neck is cut under the
-   chin (NECK_KEEP above the chin at the front, lower at the nape) and overlaps the body's.
+2. The neck: the body's neck skin above the collar (less NECK_DROP) goes, so the visible neck is the head's own
+   paint. The head's neck runs down to HEAD_NECK_BELOW under the collar, and any of it outside the shirt is moved
+   back inside it, SHIRT_INSET under the cloth.
 3. Skin: the arms' and hands' skin texels take the face's colour (each channel's mean and spread), blended by how
    clearly a texel is skin, so the shading stays and no texel clips.
 4. One object, two materials (body, head), one UV layer, no normal maps; GLB with packed textures, facing +X,
@@ -48,7 +48,7 @@ def args():
     p.add_argument('--body', required=True)
     p.add_argument('--head', required=True)
     p.add_argument('--output', required=True)
-    p.add_argument('--head-fraction', type=float, default=.195)
+    p.add_argument('--head-fraction', type=float, default=.18)
     p.add_argument('--renders', action='store_true')
     return p.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 
@@ -160,7 +160,7 @@ def main():
     neck_c = probe[:, :2].mean(0)
     bm.to_mesh(head.data); bm.free()
     head.data.materials.clear()
-    hm = src_mat = bpy.data.materials.get('M_Paul_1')
+    hm = bpy.data.materials.get('M_Paul_1')
     head.data.materials.append(hm)
     for p in head.data.polygons:
         p.material_index = 0
@@ -191,7 +191,7 @@ def main():
     body.data.transform(Matrix.Rotation(math.radians(90), 4, 'Z'))
     bco = np.array([v.co[:] for v in body.data.vertices])
     floor = bco[:, 2].min()
-    # scale: the head (chin to hair top) is head_fraction of the height; the chin sits CHIN_OVER_COLLAR over the collar
+    # scale: the head (chin to hair top) is head_fraction of the height; the chin sits 2.8 cm (at 1.65 m) over the collar
     head_h = HEAD_TOP - HEAD_CHIN
     total = head_h / a.head_fraction
     chin_over_collar = .028 * total / HEIGHT_M

@@ -30,11 +30,6 @@ FBX = dict(use_selection=True, apply_unit_scale=True, apply_scale_options='FBX_S
            bake_anim_simplify_factor=0, bake_anim_step=1, mesh_smooth_type='FACE', use_mesh_modifiers=False, path_mode='ABSOLUTE')
 
 
-def contract_names():
-    """{contract bone: contract bone} for the 23 core and 30 finger bones."""
-    return {name: name for name in mixamo_aliases().values()}
-
-
 def set_clip(arm, action):
     """Play `action` on the armature and on every mesh whose shape keys have a slot in it (keys['clip_slots']).
 
@@ -106,7 +101,7 @@ def pick_meshes(c, scene):
 
 def bone_names(c, arm):
     """{source bone: contract bone} for the contract's bones, the extra bones and how they are handled."""
-    aliases = mixamo_aliases() if c.export['names'] == 'mixamo' else contract_names()
+    aliases = mixamo_aliases()
     present = {b.name for b in arm.data.bones}
     missing = sorted(set(aliases) - present - {'Root', 'root'})
     assert not missing, (c.id, 'bones the humanoid contract needs', missing)

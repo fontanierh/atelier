@@ -42,7 +42,6 @@ def test_a_mover_uses_the_shared_export(character):
     c = definition.load(character)
     assert c.exporter is None and not (c.folder / 'export_unreal.py').exists()
     assert c.source.exists() and c.height
-    assert c.export['names'] in ('mixamo', 'contract')
     assert c.export['meshes'] in ('skinned', 'armature', 'outfit')
     assert c.export['measure'] in ('raw', 'evaluated', 'evaluated-faces')
     assert c.export['actions'] in ('discard', 'authored')
@@ -66,7 +65,7 @@ def test_a_new_character_needs_only_its_source_and_height(tmp_path, source, mesh
     (folder / 'character.toml').write_text(f'id = "new-one"\nsource = "{source}"\nheight_cm = 170\n')
     c = definition.load('new-one', tmp_path)
     assert (c.name, c.output, c.unreal_path, c.fps) == ('NewOne', 'new-one', '/Game/NewOne', 30)
-    assert (c.export['meshes'], c.export['measure'], c.export['names'], c.export['actions']) == (meshes, measure, 'mixamo', 'discard')
+    assert (c.export['meshes'], c.export['measure'], c.export['actions']) == (meshes, measure, 'discard')
 
 
 def test_a_new_player_imports_with_the_import_modules_and_rides(tmp_path):
