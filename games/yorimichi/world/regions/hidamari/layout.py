@@ -825,10 +825,11 @@ def dress_caldera(put):
         for _ in range(int(rng.integers(3,9))):
             x=float(x0+rng.normal(0,6));y=float(y0+rng.normal(0,6))
             z,slope,inside=ground(x,y)
-            if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
+            if not inside[0] or slope[0]>.4 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
             # The north slopes' granite, not the village boulders, which read as black shards in the caldera's shade.
             scale=float(rng.uniform(1.2,3.))
-            put('HD_NorthRockA' if rng.random()<.6 else 'HD_NorthRockC',x,y,float(z[0])-(.1+.5*float(slope[0]))*scale,
+            # Open underneath: sunk by the drop across its own width, so the downhill side never floats.
+            put('HD_NorthRockA' if rng.random()<.6 else 'HD_NorthRockC',x,y,float(z[0])-(.1+1.2*float(slope[0]))*scale,
                 yaw=float(rng.uniform(0,360)),scale=scale)
             counts['stones']+=1
     # The park's own hillside (craterpark `GROUND`) is a separate mesh above the terrain: its exposed, upward slopes get
@@ -849,7 +850,8 @@ def dress_caldera(put):
         i,j=int(math.floor(x/cell)),int(math.floor(y/cell));k=int(math.ceil(reach/cell))
         return not any((i+di,j+dj) in taken for di in range(-k,k+1) for dj in range(-k,k+1))
     counts['outcrops']=0;outcrops=[]
-    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]<.9)],2.5)
+    # Gentle ground only: the rocks are open underneath, and on a steep slope their downhill side would float.
+    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.93)],2.5)
     centres=seats[(rng.random(len(seats))<.012)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.1)]
     for x0,y0,_ in centres:
         members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]
@@ -857,7 +859,7 @@ def dress_caldera(put):
             x,y=float(x),float(y);scale=float(rng.uniform(1.3,2.8));reach=1.9*scale+2.
             if not clear_by(x,y,reach) or any(math.hypot(x-px,y-py)<.6*(reach+r) for px,py,r in outcrops[-30:]):continue
             outcrops.append((x,y,reach))
-            put('HD_NorthRockC' if rng.random()<.65 else 'HD_NorthRockA',x,y,float(z)-.45*scale,
+            put('HD_NorthRockC' if rng.random()<.65 else 'HD_NorthRockA',x,y,float(z)-.55*scale,
                 yaw=float(rng.uniform(0,360)),scale=scale)
             counts['outcrops']+=1
     points=surface_samples(hill,3.)
