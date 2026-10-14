@@ -6,10 +6,14 @@ import sys
 import time
 
 
-def main(source, output):
+def main(source, output, override):
     print('ATELIER_PHASE ' + json.dumps({'event': 'begin', 'id': 'read', 'name': 'read and validate',
                                        'at': time.monotonic()}), flush=True)
-    size = json.loads(Path(source).read_text())['size_cm']
+    config = json.loads(Path(source).read_text())
+    override = Path(override)
+    if override.exists():
+        config.update(json.loads(override.read_text()))
+    size = config['size_cm']
     if len(size) != 3 or not all(type(n) in (int, float) and math.isfinite(n) and n > 0 for n in size):
         raise ValueError('Block dimensions must be three finite positive centimetre values')
     print('ATELIER_PHASE ' + json.dumps({'event': 'end', 'id': 'read', 'at': time.monotonic(), 'ok': True}), flush=True)

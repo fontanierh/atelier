@@ -35,7 +35,13 @@ producer receipt; a fresh checkout restore reports producer timing as unknown. A
 `atelier build sandbox --ddc` reads retained Unreal logs for DDC configuration and recorded counts. Until those
 native logs exist it reports unknowns; inspecting them never starts Unreal or modifies caches.
 
-After changing `world/block.json` and building again, `atelier build sandbox world --changes` lists the changed shape
+`world.block` declares the optional source `world/block.override.json`. When present, its JSON object overrides
+fields from the required `block.json`; for example, `{"size_cm":[100,200,400]}` changes the dimensions. Creating,
+editing or removing this exact file updates the block products without rebuilding placements. Other files in
+that directory do not invalidate the block. The default is absence, which has its own reusable cache identity.
+Commit the override when it is part of the intended game; it is a source file, not a generated output.
+
+With no override, changing `world/block.json` and building again makes `atelier build sandbox world --changes` list the changed shape
 and bounds members. Placement stays current. Restoring a missing block output from the cache reports no content
 change when it matches the previous certified inventory. The first build reports an unknown baseline.
 

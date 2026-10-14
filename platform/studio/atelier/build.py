@@ -169,6 +169,7 @@ class Step:
     references: list[str] = field(default_factory=list)    # include products, without deriving data from them
     cache: bool = False                                   # explicitly portable products; automatic local reuse
     audit: bool = False                                   # observe one Python action's inputs and owned writes
+    optional_inputs: list[Path] = field(default_factory=list)  # exact source files: absence is an input identity
 
 
 def outputs_present(step):
@@ -252,7 +253,7 @@ def _hash_path(digest, path, skip=True):
         digest.update(b'missing:' + str(path).encode())
 
 
-def declared_inputs(step):
+def required_inputs(step):
     named = step.products or step.reads or step.references
     from .build_audit import SUPPORT
     return [*step.inputs, *(c.script for c in step.commands if named and hasattr(c, 'script')),
@@ -260,11 +261,15 @@ def declared_inputs(step):
             *(SUPPORT if step.audit else ())]
 
 
+def declared_inputs(step):
+    return [*required_inputs(step), *step.optional_inputs]
+
+
 def missing_product_inputs(step):
     """Named-product actions require all declared sources; legacy optional inputs stay compatible."""
     if not (step.products or step.reads or step.references):
         return []
-    return [str(path) for path in declared_inputs(step) if not Path(path).exists()]
+    return [str(path) for path in required_inputs(step) if not Path(path).exists()]
 
 
 def fingerprint(step, done, *, index=None, tool_cache=None):
@@ -289,9 +294,9 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     digest.update(commands.encode())
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
-    inputs = declared_inputs(step)
+    inputs = required_inputs(step)
     if step.cache or step.audit:
-        build_inputs.validate_imports(step, inputs)
+        build_inputs.validate_imports(step, declared_inputs(step))
     for item in inputs:
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
@@ -310,6 +315,14 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
             state['inputs'][label] = recording.local.hexdigest()
         else:
             _hash_path(digest, item)
+    if step.optional_inputs:
+        state['optional_inputs'] = {}
+        for item in step.optional_inputs:
+            manifest = build_inputs.optional_file(item, hasher=hasher)
+            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            value = {'present': manifest['kind'] == 'file', 'identity': build_products.identity(manifest)}
+            digest.update(b'optional-file-v1\0' + json.dumps([label, value], sort_keys=True).encode())
+            state['optional_inputs'][label] = value
     for need in step.needs:
         digest.update(done.get(need, 'unbuilt').encode())
     if step.products or step.reads or step.references:

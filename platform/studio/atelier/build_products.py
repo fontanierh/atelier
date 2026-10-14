@@ -119,13 +119,20 @@ class Graph:
 
     def __init__(self, steps):
         from . import build_audit
-        from .build import declared_inputs
+        from .build import declared_inputs, required_inputs
         self.steps = list(steps)
         self.by_name = {}
         self.owners = {}
         owned_paths = []
         for step in self.steps:
             build_audit.validate(step)
+            if step.optional_inputs:
+                if not step.products:
+                    raise ValueError(f'{step.name}: optional inputs require named products')
+                required = {str(Path(p).resolve()).casefold() for p in required_inputs(step)}
+                optional = [str(Path(p).resolve()).casefold() for p in step.optional_inputs]
+                if len(set(optional)) != len(optional) or required.intersection(optional):
+                    raise ValueError(f'{step.name}: duplicate or required optional input')
             if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', step.name):
                 raise ValueError(f'Invalid step name: {step.name!r}')
             if step.name in self.by_name:

@@ -1,7 +1,8 @@
 @cc [owner:fontanierh,label:correctness] complete-build-inputs
 An action's key MUST cover its code, data, declared settings and consumed product identities.
-Order-only and reference edges MUST NOT hide reads of derived data. Missing inputs and incomplete
-outputs MUST NOT be treated as a cache hit.
+Order-only and reference edges MUST NOT hide reads of derived data. Missing required inputs and
+incomplete outputs MUST NOT be treated as a cache hit. Explicit optional files MUST carry a distinct
+absent identity when missing, so their appearance, removal and content changes invalidate consumers.
 
 @cc [owner:fontanierh,label:correctness] independent-artifact-ownership
 A named product MUST have one owner and a complete byte inventory. Restored outputs MUST be

@@ -2,6 +2,7 @@
 import ast
 from functools import lru_cache
 from pathlib import Path
+import stat
 
 from . import build_products, paths
 from .build_hashes import signature
@@ -35,6 +36,24 @@ def inventory(path, *, hasher, complete=False):
     """
     ignore = None if complete else lambda p: p.name in SKIP_PARTS or p.suffix in SKIP_SUFFIXES
     return build_products._inventory(build_products.Product('input', (Path(path),)), hasher=hasher, ignore=ignore)
+
+
+def optional_file(path, *, hasher):
+    """@cc [owner:fontanierh,label:correctness] explicit-optional-file-identity
+    An optional source MUST identify either absence or a regular file's complete contents.
+    Links, directories, special files and I/O errors other than ENOENT MUST NOT become absence.
+    """
+    path = Path(path)
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        return {'schema': 1, 'kind': 'absent'}
+    if not stat.S_ISREG(info.st_mode):
+        raise ValueError(f'Optional input must be a regular file: {path}')
+    manifest = inventory(path, hasher=hasher, complete=True)
+    if set(manifest['files']) != {'0/.'} or manifest['files']['0/.']['kind'] != 'file':
+        raise ValueError(f'Optional input changed type during inventory: {path}')
+    return {'schema': 1, 'kind': 'file', 'inventory': manifest}
 
 
 def local_imports(script, roots=()):

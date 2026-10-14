@@ -182,6 +182,7 @@ Python generators can opt into an input audit that catches undeclared reads and 
 `atelier build <game> --timings` shows historical execution, restore and instrumented phase durations;
 `--changes` lists differences between certified output inventories. Both inspect receipts without running a build.
 `--ddc` reads retained Unreal logs for cache configuration and recorded hit/miss counts, preserving unknowns.
+Named actions can declare exact optional source files, tracking their appearance and removal without depending on a whole directory.
 [Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
 
 ### A prop from a sentence

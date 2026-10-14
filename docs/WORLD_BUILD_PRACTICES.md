@@ -180,5 +180,7 @@ games migrate, then add dependency tracing and native cache proofs before enabli
 For a generator with one Python command, `audit=True` checks observed file reads and writes before certification.
 It catches a placement generator accidentally reading a reference-only mesh or reusing old output bytes. Declare
 whole directories only when their complete membership is an input, and use owned outputs or private scratch for
-temporary files. The [recipe guide](BUILD_RECIPES.md#audit-a-python-generators-accesses) explains the enforced checks
+temporary files. For a conditional read of one known source, declare `optional_inputs=[path]` instead of its parent
+directory. Its absence and content are tracked without making sibling files dependencies; it grants no listing
+or source-write access. The [recipe guide](BUILD_RECIPES.md#audit-a-python-generators-accesses) explains the enforced checks
 and the metadata, environment and native-I/O limits. This audit complements clean-versus-incremental comparisons.

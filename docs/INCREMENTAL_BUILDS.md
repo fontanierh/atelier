@@ -16,6 +16,8 @@ Those historical logs do not prove current settings or measured warm/cold improv
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
 environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
+Named actions can declare exact optional source files; absent/present identities track conditional reads without
+hashing unrelated siblings. The sandbox demonstrates this with a block override. Runtime query/context APIs remain proposed.
 [The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
 Unreal restoration, import transactions, spatial dependencies and remote storage below still require implementation and native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.

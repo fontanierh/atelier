@@ -2,16 +2,21 @@
 import json
 import shutil
 
+import pytest
+
 from atelier import build, build_products, paths
 
 
-def test_small_edits_and_another_checkout_reuse_independent_products(tmp_path, monkeypatch):
+@pytest.mark.parametrize('override', [False, True], ids=['optional-absent', 'optional-present'])
+def test_small_edits_and_another_checkout_reuse_independent_products(tmp_path, monkeypatch, override):
     source = paths.GAMES / 'sandbox'
     repo = tmp_path / 'first'; repo.mkdir()
     game = repo / 'games/sandbox'; game.mkdir(parents=True)
     shutil.copytree(source / 'world', game / 'world', ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copyfile(source / 'build.py', game / 'build.py')
     shutil.copyfile(paths.REPO / 'uv.lock', repo / 'uv.lock')
+    if override:
+        (game / 'world/block.override.json').write_text('{"size_cm":[100,200,400]}')
     monkeypatch.setattr(paths, 'REPO', repo)
     monkeypatch.setattr(paths, 'GAMES', repo / 'games')
     monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))

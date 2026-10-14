@@ -26,8 +26,9 @@ def steps(ctx):
 The scripts write their declared paths. Command scripts are automatically included for named-product actions.
 They must also declare imported helpers, data, settings and tool inputs that
 affect their output. `Call` function bodies must also be covered by explicit source inputs. Declaration alone does
-not discover arbitrary reads. Every declared source of a named-product action must exist before it runs or accepts
-a cache hit; plans report missing inputs. Native commands still need `heavy=True` and the existing guards.
+not discover arbitrary reads. Every required source of a named-product action must exist before it runs or accepts
+a cache hit; plans report missing required inputs. Explicit optional files use the declaration below.
+Native commands still need `heavy=True` and the existing guards.
 
 | Relationship | Execution and invalidation |
 | --- | --- |
@@ -46,6 +47,24 @@ restoration and audited generation replace entire owned roots. Declare every req
 every member, empty directory and file hash. Missing, altered, unexpected or linked output invalidates the product.
 Symlinked ancestors such as a system temporary directory are supported; product roots and members cannot be links.
 Input changes during generation prevent certification, and the final stamp is replaced atomically after validation.
+
+## Track an optional source file
+
+A step with named products can declare `optional_inputs=[source / 'override.json']`. The exact path contributes
+either an absent identity or a complete regular-file content identity to its key. Appearance, edits, removal and
+changing between required and optional declarations all invalidate the action. An unrelated sibling file does not.
+Normal `inputs`, command scripts and audit support files remain required. Plans explain optional-file transitions.
+
+Use this for an explicitly named source whose absence has defined behavior, such as the sandbox block override.
+Do not declare a broad directory merely to support `Path.exists()` on one file. A declaration grants an audited
+action reads and ordinary metadata checks on that exact path; it grants no directory listing, descendant/sibling
+read or source write. Optional paths cannot overlap the action's outputs or duplicate a required input.
+
+Directories, symlinks (including dangling ones), special files and access/I/O errors are refused. Only a missing
+path is absence. Existing cache and post-generation fingerprint checks also cover optional files; a change while
+building prevents certification. This tracks existence and file contents, not portable timestamp, permission or
+inode dependencies. Declare imported helpers normally, and include optional source files in source control when
+they are part of the intended game. Local dirty-source caching does not make a private file available to others.
 
 ## Inspect a build without running it
 
