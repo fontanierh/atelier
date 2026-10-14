@@ -2017,6 +2017,26 @@
       "bytes": 352683,
       "sha256": "63b2a908efe04a1b2d201076d2618b6778aea445fcbd363d75b9b74dccb755a7"
     },
+    "craterpark/concepts/target-f_belmonte.jpg": {
+      "bytes": 232705,
+      "sha256": "7c848472beb9d6ac408c125b3a6d39c64bba102a374b9c10efb1967ffc3d7015"
+    },
+    "craterpark/concepts/target-f_city2.jpg": {
+      "bytes": 309765,
+      "sha256": "8d4f30495f2b9cc8ee22eca7bd4e5210fc7e57f9cc667fffaf33a6cc2fc35089"
+    },
+    "craterpark/concepts/target-g_air.jpg": {
+      "bytes": 387008,
+      "sha256": "d7d18d533de4f02ac8e25b6a13781aa3e8b2c7638b714bef95e6e809f440cd42"
+    },
+    "craterpark/concepts/target-g_rim.jpg": {
+      "bytes": 338957,
+      "sha256": "db92f989a937a7971101f7d31ca5092385aa2822a93d003807631e8e65a737c9"
+    },
+    "craterpark/concepts/target-g_zep.jpg": {
+      "bytes": 463714,
+      "sha256": "e996d1aaaa6285af7ad29c27ca3e00e9a91d8021f783a0c3e26410b96fd31326"
+    },
     "craterpark/geometry/mesh-0000-000.npz": {
       "bytes": 29742,
       "sha256": "86ad08bc96660f3a58c8c257d44c1eda939869d9333806847bf40df3179cc92d"

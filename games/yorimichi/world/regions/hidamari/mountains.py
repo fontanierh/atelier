@@ -24,6 +24,7 @@ RIM_RADIUS = 470.           # mean radius of the crest; it wanders by about 35 m
 # corner radius 256 m) then keeps at least 62 m to the wall's foot at any heading, room for the slopes round its edges.
 FLOOR_RADIUS = 330.
 CRAG_STEP = 16.                 # metres between the inner wall's ledges
+LOW_STRETCH = 245.              # degrees (from east, counter-clockwise): the crest's lowest stretch, level with the park's deck
 CREST = 600.                # the cone's height over its apron at the crest
 DEPTH = 45.                 # the floor lies this far below the crest: Crater Park stands high in it, its tallest
                             # ramps just over the rim (craterpark/placement.py LIFT)
@@ -179,6 +180,9 @@ def _cone(x,y,trail_quiet):
     around=lambda s,seed:noise(np.cos(angle)*RIM_RADIUS,np.sin(angle)*RIM_RADIUS,s,seed)
     gather=smooth((around(160.,65)+.2)/.6)
     teeth=((1-np.abs(around(55.,63)))**2*30+(1-np.abs(around(19.,64)))**2*8-15)*(.25+.75*gather)
+    # The rim's lowest stretch, which the park's deck looks out over (LOW_STRETCH), keeps notches but no crags.
+    away=np.abs(np.angle(np.exp(1j*(angle-math.radians(LOW_STRETCH)))))
+    teeth=np.where(teeth>0,teeth*smooth((away-.25)/.3),teeth)
     lip=lip+teeth*np.exp(-((r-crest)/np.where(r<crest,35.,70.))**2)*breach
     peaks=sum(h*np.exp(-((dx-rr*math.cos(a))**2+(dy-rr*math.sin(a))**2)/s**2)
               for a,rr,h,s in ((2.6,RIM_RADIUS+5,42,50),(-.35,RIM_RADIUS+10,20,36),(4.2,RIM_RADIUS+12,14,30)))

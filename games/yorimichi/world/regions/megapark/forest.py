@@ -230,6 +230,12 @@ def _box(reach, south=650.):
             fx0 + (i.max() + 1) * cell + reach, fy0 + (j.max() + 1) * cell + reach)
 
 
+def _far(d):
+    """0..1: past the park's surroundings, towards OUTER, crowns mix tree by tree rather than in clumps: seen from the
+    city the clumps read as camouflage blotches (assets/craterpark/concepts/target-f_city2.jpg)."""
+    return _smooth((d - NEAR - 200) / 300)
+
+
 def _outer(d):
     """0..1: how much of the canopy the crowns close at `d` metres from the footprint, fading out by OUTER."""
     return 1 - _smooth((d - OUTER + 250) / 250)
@@ -263,7 +269,8 @@ def _close(instances, height, trail_distance, rng, done):
         inside = (a[:, 0] > box[0]) & (a[:, 0] < box[2]) & (a[:, 1] > box[1]) & (a[:, 1] < box[3])
         turn = np.zeros(len(a), bool)
         if inside.any():
-            turn[inside] = rng.random(inside.sum()) < (1 - CROWN_MIX) * fade(distance(a[inside, 0], a[inside, 1]))
+            d = distance(a[inside, 0], a[inside, 1])
+            turn[inside] = rng.random(inside.sum()) < (1 - CROWN_MIX) * fade(d) * (1 - .7 * _far(d))
         kinds[name].append(a[~turn])
         clump = _clump(a[turn, 0], a[turn, 1], CROWN_CLUMPS)
         for k, kind in enumerate(CROWNS):
@@ -271,9 +278,9 @@ def _close(instances, height, trail_distance, rng, done):
     for name, parts in kinds.items():
         instances[name] = np.concatenate(parts).tolist()
     p = _grid(rng, box, CANOPY['spacing'])
-    kind = np.where(rng.random(len(p)) < CROWN_MIX, rng.integers(0, len(CROWNS), len(p)),
-                    _clump(p[:, 0], p[:, 1], CROWN_CLUMPS))
     d = distance(p[:, 0], p[:, 1])
+    mixed = rng.random(len(p)) < CROWN_MIX + (1 - CROWN_MIX) * .7 * _far(d)
+    kind = np.where(mixed, rng.integers(0, len(CROWNS), len(p)), _clump(p[:, 0], p[:, 1], CROWN_CLUMPS))
     share = np.where(kind == CROWNS.index('Pine'), CANOPY['pine'], CANOPY['broadleaf'])
     keep = (rng.random(len(p)) < .97 * share * fade(d)) & (trail_distance(p[:, 0], p[:, 1]) > 15)
     p, kind = p[keep], kind[keep]

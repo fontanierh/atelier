@@ -120,8 +120,7 @@ try:
         # The island streams textures and builds distance fields for a while after loading.
         time.sleep(25 if i == 0 else args.settle)
         shot(name)
-    # Face down the roll-in and hold the brake as the Mega Park's review does. The marked point is the deck's lip: at
-    # the park's own yaw, or facing the drop-in view, the rider went over a side edge and wiped out in a gap below.
+    # Face down the roll-in and hold the brake as the Mega Park's review does.
     # Trace the ground 1-6 m out in 16 directions and take the one that keeps solid ground under it, descending most.
     probe = ('import math\nrows=[]\nfor k in range(16):\n a=k*math.pi/8\n row=[]\n for d in (100,200,300,400,500,600):\n'
              f'  h=unreal.LiveLibrary.ground_at(unreal.Vector({g[0]}+d*math.cos(a),{g[1]}+d*math.sin(a),{hit[2]}+300))\n'
@@ -135,9 +134,15 @@ try:
         return hit[2] - row[-1]
     best = max(range(16), key=lambda k: score(rows[k]))
     yaw = math.degrees(best * math.pi / 8)
-    print('drop-in yaw', yaw, 'descent cm', score(rows[best]), flush=True)
+    # The mark is the lip itself, where the board straddles the edge and the rider bails whichever way it faces: start
+    # 2.5 m back on the flat deck behind it (its trace stays level), facing the roll-in.
+    back = (best + 8) % 16
+    assert all(abs(h - hit[2]) < 30 for h in rows[back][:3]), ('no flat deck behind the drop-in', rows[back])
+    a = back * math.pi / 8
+    start = (g[0] + 250 * math.cos(a), g[1] + 250 * math.sin(a), hit[2])
+    print('drop-in yaw', yaw, 'descent cm', score(rows[best]), 'start', start, flush=True)
     run('unreal.MegaParkValidation.restore_player_camera()\nunreal.YorimichiLive.film_hud(False)\n'
-        f'assert unreal.YorimichiLive.skate_place(unreal.Vector({g[0]},{g[1]},{g[2]}),{yaw})\n'
+        f'assert unreal.YorimichiLive.skate_place(unreal.Vector({start[0]},{start[1]},{start[2]}),{yaw})\n'
         'unreal.YorimichiLive.skate_input(unreal.Vector2D(),unreal.Vector2D(),True)')
     time.sleep(4)
     state = run('print(unreal.YorimichiLive.skate_state())')['output']

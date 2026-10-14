@@ -102,8 +102,11 @@ class ForestTests(unittest.TestCase):
         self.assertEqual(int((d[original] >= forest.FAR).sum()), int((self.d[off] >= forest.FAR).sum()))
         self.assertGreater(int((~original).sum()), 0)
         self.assertTrue(((d[~original] > forest.NEAR + 30) & (d[~original] < forest.OUTER)).all())
-        band = d > forest.NEAR + 90
-        self.assertGreater(float((kind[band] == forest._clump(*crowns[band].T, forest.CROWN_CLUMPS)).mean()), .75)
+        # Round the park the crowns keep their clumps; out towards OUTER they mix tree by tree (forest._far).
+        match = kind == forest._clump(*crowns.T, forest.CROWN_CLUMPS)
+        band = (d > forest.NEAR + 90) & (d < forest.NEAR + 200)
+        self.assertGreater(float(match[band].mean()), .75)
+        self.assertLess(float(match[d > forest.NEAR + 500].mean()), .6)
         added = {k: np.array(v) for k, v in instances.items() if k.startswith('Tree') and not k.startswith('Tree_Forest_')}
         self.assertLessEqual(set(added), set(forest.HEIGHT))
         under = {k for k in instances if not k.startswith('Tree')}
