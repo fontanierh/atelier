@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yori
-from craterpark import placement
+from craterpark import grind, placement
 
 import bpy
 import bmesh
@@ -36,6 +36,7 @@ FLAT = .5              # degrees: faces this close to coplanar are merged (a sha
 COVER = .05             # metres: foundation faces this close to a drawn riding surface, and parallel to it, are not drawn
 TWIN = .01              # metres: a riding face this close to another facing the opposite way is its double-sided twin
 FLICKER = .03           # metres: drawn faces of two meshes this close and parallel z-fight; one of them is drawn
+RECEDE = .005           # metres a drawn face lying in part on a higher-ranked mesh's face moves back (recede)
 CHUNK = 20000           # points or vertices per vectorised batch (covered, ambient_occlusion): bounds the memory
 PAIRS = 2_000_000       # point-face candidate pairs per batch at most (covered): about 0.6 GB
 CELLS = 4_000_000       # surface cell entries indexed at once at most (covered): about 0.7 GB while indexing
@@ -162,13 +163,23 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
     are each within eps of the plane of a surface triangle facing the same way (either way where `two_sided`), and inside
     it, or within eps of its edges. Drawn under the riding surface they only flicker through it. With `ranks` (the
     triangles', the surfaces'), only a surface of a lower rank counts."""
+    t = triangles.astype('f8'); nt = unit_normals(t)
+    points = np.concatenate([t.mean(1, keepdims=True), t], 1).reshape(-1, 3)
+    on = lying_on(points, np.repeat(nt, 4, 0), surfaces, two_sided, eps, eps, cell,
+                  None if ranks is None else (np.repeat(ranks[0], 4), ranks[1]))
+    return on.reshape(-1, 4).all(1)
+
+
+def lying_on(points, normals, surfaces, two_sided, eps, margin, cell=1., ranks=None, pairs=False):
+    """Mask of the `points` (k, 3), each on a face with unit normal `normals` (k, 3), that lie within eps of the plane of
+    a surface triangle (m, 3, 3) facing the same way (either way where `two_sided`), inside it or within `margin` of its
+    edges. With `ranks` (the points', the surfaces'), only a surface of a lower rank counts. With `pairs`, the (point,
+    surface) index pairs instead."""
     s = surfaces.astype('f8'); ns = unit_normals(s)
     lo = np.floor((s.min(1) - eps) / cell).astype('i8'); hi = np.floor((s.max(1) + eps) / cell).astype('i8')
     size = hi - lo + 1; count = size.prod(1); total = np.cumsum(count)
-    t = triangles.astype('f8'); nt = unit_normals(t)
-    points = np.concatenate([t.mean(1, keepdims=True), t], 1).reshape(-1, 3)
-    pn = np.repeat(nt, 4, 0); k = cell_keys(np.floor(points / cell))
-    on = np.zeros(len(points), bool)
+    k = cell_keys(np.floor(points / cell))
+    on = np.zeros(len(points), bool); found = []
     # The surfaces are indexed in batches of at most CELLS cell entries: a large face spans thousands of cells.
     bounds = np.unique(np.concatenate([[0], np.searchsorted(total, np.arange(CELLS, total[-1] if len(s) else 0, CELLS)), [len(s)]]))
     for s0, s1 in zip(bounds[:-1], bounds[1:]):
@@ -179,12 +190,12 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
         keys = cell_keys(lo[owner] + np.stack([local % sx, (local // sx) % sy, local // (sx * sy)], -1))
         del local, sx, sy
         order = np.argsort(keys, kind='stable'); keys, owner = keys[order], owner[order]
-        first = np.searchsorted(keys, k, 'left'); pairs = np.cumsum(np.searchsorted(keys, k, 'right') - first)
+        first = np.searchsorted(keys, k, 'left'); pairs_ = np.cumsum(np.searchsorted(keys, k, 'right') - first)
         # Batches of points bounded by their candidate pairs, not their count: a dense cell holds thousands of faces.
-        cuts = np.unique(np.concatenate([np.arange(0, len(points), CHUNK), np.searchsorted(pairs, np.arange(PAIRS, pairs[-1] if len(pairs) else 0, PAIRS)), [len(points)]]))
+        cuts = np.unique(np.concatenate([np.arange(0, len(points), CHUNK), np.searchsorted(pairs_, np.arange(PAIRS, pairs_[-1] if len(pairs_) else 0, PAIRS)), [len(points)]]))
         for start, end in zip(cuts[:-1], cuts[1:]):
-            p = points[start:end]; n = pn[start:end]
-            a = first[start:end]; reps = np.diff(pairs[start:end], prepend=pairs[start - 1] if start else 0)
+            p = points[start:end]; n = normals[start:end]
+            a = first[start:end]; reps = np.diff(pairs_[start:end], prepend=pairs_[start - 1] if start else 0)
             which = np.repeat(np.arange(len(p)), reps)
             cand = owner[np.repeat(a, reps) + np.arange(reps.sum()) - np.repeat(np.cumsum(reps) - reps, reps)]
             q = p[which]; v = s[cand]; m = ns[cand]
@@ -193,11 +204,39 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
             for i in range(3):
                 e = v[:, (i + 1) % 3] - v[:, i]
                 inward = (np.cross(e, q - v[:, i]) * m).sum(1) / np.maximum(np.linalg.norm(e, axis=1), 1e-12)
-                ok &= inward > -eps
+                ok &= inward > -margin
             if ranks is not None:
-                ok &= ranks[1][cand] < ranks[0][(start + which) // 4]
+                ok &= ranks[1][cand] < ranks[0][start + which]
             on[start + which[ok]] = True
-    return on.reshape(-1, 4).all(1)
+            if pairs:
+                found.append(np.stack([start + which[ok], cand[ok]], 1))
+    if pairs:
+        return np.concatenate(found) if found else np.zeros((0, 2), 'i8')
+    return on
+
+
+def recede(meshes, ranks, two_sided, eps=FLICKER, depth=RECEDE):
+    """The drawn `meshes` [(vertices, faces)] with every face lying on a face of a lower-ranked mesh in part moved back
+    `depth` along its normal. Faces lying on one wholly are left out before (covered); a face only partly on another (a
+    foundation wall behind the side of a riding piece, the hillside against a block's wall) stays, and the two exactly
+    coplanar faces z-fight, worst far away. A few millimetres behind, the depth test always draws the higher-ranked one.
+    Its corners move, still shared with the neighbouring faces, so nothing cracks. `ranks` and `two_sided` are per mesh.
+    Returns the new vertices of each mesh and the number of faces moved."""
+    t = [v[f].astype('f8') for v, f in meshes]; owner = np.repeat(np.arange(len(t)), [len(x) for x in t])
+    every = np.concatenate(t); n = unit_normals(every); r = np.asarray(ranks)[owner]
+    points = np.concatenate([every.mean(1, keepdims=True), every], 1).reshape(-1, 3); pn = np.repeat(n, 4, 0)
+    pr = np.repeat(r, 4)
+    lies = lying_on(points, pn, every, np.asarray(two_sided)[owner], eps, eps, ranks=(pr, r)).reshape(-1, 4).any(1)
+    # A lower-ranked face inside a larger one: a corner of it lies on the larger face.
+    lies[lying_on(points, pn, every, np.ones(len(every), bool), eps, eps, ranks=(-pr, -r), pairs=True)[:, 1]] = True
+    out, start = [], 0
+    for (v, f), x in zip(meshes, t):
+        back = lies[start:start + len(x)]; start += len(x)
+        push = np.zeros((len(v), 3)); np.add.at(push, f[back].ravel(), np.repeat(n[start - len(x):start][back], 3, 0))
+        length = np.linalg.norm(push, axis=1, keepdims=True); moved = length[:, 0] > 1e-9
+        v = v.copy(); v[moved] = v[moved] - (depth * push[moved] / length[moved]).astype(v.dtype)
+        out.append((v, int(back.sum())))
+    return out
 
 
 def riding_above(riding, cell=2.):
@@ -362,7 +401,7 @@ def main():
         keep = valid(a['positions'], a['triangles'])
         keep[a['render_skip']] = False
         loaded.append((entry, a, keep))
-    # The riding surfaces as drawn; foundation faces lying on them are left out of the render (collision keeps them).
+    # The riding surfaces as drawn; foundation faces lying on them are left out of the render and the collision.
     surfaces = [(a['positions'][a['triangles'][keep]], entry['doubleSided']) for entry, a, keep in loaded
                 if entry['role'] == 'original']
     riding = np.concatenate([t for t, _ in surfaces])
@@ -409,6 +448,13 @@ def main():
         if entry['role'] in PLAIN:
             vertices, faces = simplify(vertices, faces); uvs = None
         drawn.append((entry, vertices, faces, uvs, skipped, int(len(keep) - keep.sum()) - skipped))
+    # Faces partly on a higher-ranked mesh's face move back a few millimetres in the render; collision keeps them.
+    moved = recede([(v, f) for _, v, f, _, _, _ in drawn], [rank[i] for i in range(len(loaded))],
+                   [entry['doubleSided'] for entry, _, _ in loaded])
+    drawn = [(entry, v, f, uvs, skipped, cov) for (entry, _, f, uvs, skipped, cov), (v, _) in zip(drawn, moved)]
+    for (entry, *_), (_, count) in zip(drawn, moved):
+        if count:
+            print('Mesh', entry['id'], entry['role'], 'faces partly on a higher-ranked mesh moved back:', count, flush=True)
     occlusion = ambient_occlusion([(v, f) for _, v, f, _, _, _ in drawn])
     for (entry, vertices, faces, uvs, skipped, covered_faces), ao in zip(drawn, occlusion):
         mesh = export_mesh('SM_CP_' + entry['id'].replace('-', '_'), vertices, faces, [entry['material']],
@@ -418,6 +464,7 @@ def main():
         report['render'].append(mesh)
         print('Exported', mesh['name'], flush=True)
     ride = np.concatenate(sections['original']); above = riding_above(ride[unit_normals(ride.astype('f8'))[:, 1] > .2])
+    final = {}
     for role, parts in sections.items():
         triangles = np.concatenate(parts)
         hidden = hidden_walls(triangles, above)
@@ -425,6 +472,7 @@ def main():
         sunk = 0
         if role != 'original':
             triangles, sunk = sink_inside(triangles, above)
+        final[role] = triangles
         print('Collision', role, 'faces inside the solid left out:', int(hidden.sum()), 'corners inside sunk:', sunk, flush=True)
         triangles = triangles[spatial_order(triangles)]     # sections of neighbouring faces
         for k in range(0, len(triangles), SECTION):
@@ -444,11 +492,20 @@ def main():
     t = placement.unreal_transform()
     # The marked ramp drop-in; the rider starts there facing the park's native +x.
     ground = json.loads((SOURCE / 'drop-in.json').read_text())['groundPosition']
-    park = {'source_sha256': report['scene_sha256'], 'name': 'CRATERPARK', 'mesh_root': MESH_ROOT, 'rails_required': False,
+    # Grind lines along the lips already there (grind.py), on the collision the board rides.
+    lines = grind.grind_lines(final['original'].astype('f8'),
+                              np.concatenate([x for role, x in final.items() if role != 'original']).astype('f8'))
+    rails = []
+    for i, line in enumerate(lines):
+        closed = len(line) > 3 and np.linalg.norm(line[0] - line[-1]) < .01
+        rails.append({'id': f'cp_lip_{i:03d}', 'closed': bool(closed),
+                      'points_cm': [ue(p) for p in (line[:-1] if closed else line).tolist()]})
+    print('Grind lines along the lips:', len(rails), 'of', round(sum(np.linalg.norm(np.diff(l, axis=0), axis=1).sum() for l in lines)), 'm', flush=True)
+    park = {'source_sha256': report['scene_sha256'], 'name': 'CRATERPARK', 'mesh_root': MESH_ROOT, 'rails_required': True,
             'location_cm': t['location_cm'], 'yaw_deg': t['yaw_deg'], 'placement': placement.summary(),
             'render': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['render']],
             'collision': [{'name': e['name'], 'origin_cm': ue(e['native_origin'])} for e in report['collision']],
-            'rails': [], 'spawn': {'location_cm': placement.to_unreal(ground).tolist(), 'yaw_deg': t['yaw_deg']}}
+            'rails': rails, 'spawn': {'location_cm': placement.to_unreal(ground).tolist(), 'yaw_deg': t['yaw_deg']}}
     (OUT / 'park.json').write_text(json.dumps(park) + '\n')
     print('CRATERPARK BUILD COMPLETE', len(report['render']), 'render', len(report['collision']), 'collision',
           scene['counts'], flush=True)
