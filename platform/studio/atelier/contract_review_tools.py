@@ -10,9 +10,9 @@ import sys
 SOURCE_SHA256 = '25deeb8f8b39a747e1c466721b23a4a11cee59f4fc1ff5c69701d554a018bb72'
 CODEX_VERSION = '0.162.1'
 ACTION_PINS = {
-    'actions/github-script@v7': 'actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b',
+    'actions/github-script@v7': 'actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3',  # v9.0.0, Node 24
     'actions/checkout@v5': 'actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09',
-    'actions/setup-node@v4': 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+    'actions/setup-node@v4': 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1',  # v7.1.0, Node 24
     'openai/codex-action@v1': 'openai/codex-action@1d82a3dba7c7988ec71ecae1ed5b8e8db96495c5',
 }
 
@@ -20,7 +20,8 @@ ACTION_PINS = {
 def prepare(action):
     """@cc [owner:fontanierh,label:security] immutable-review-toolchain
     Only the reviewed upstream action bytes may be adapted. Every referenced action and the Codex
-    CLI/proxy version MUST be pinned before use. Checker dependency installation MUST disable lifecycle scripts.
+    CLI/proxy version MUST be pinned before use. Checker dependency installation MUST disable lifecycle scripts
+    and automatic package-manager caching.
     """
     action = Path(action)
     original = action.read_bytes()
@@ -32,6 +33,10 @@ def prepare(action):
             raise ValueError(f'Missing expected upstream action: {before}')
         source = source.replace(before, after)
     source = source.replace('        npm ci\n', '        npm ci --ignore-scripts\n')
+    node = '        node-version: ${{ steps.node-version.outputs.version }}\n'
+    if source.count(node) != 1:
+        raise ValueError('Upstream Node setup changed')
+    source = source.replace(node, node + '        package-manager-cache: false\n')
     effort = '        effort: ${{ inputs.effort }}\n'
     if effort not in source or 'npm ci --ignore-scripts' not in source:
         raise ValueError('Upstream tool installation or model configuration changed')
