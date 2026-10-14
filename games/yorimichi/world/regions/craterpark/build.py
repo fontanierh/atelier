@@ -37,6 +37,7 @@ COVER = .05             # metres: foundation faces this close to a drawn riding 
 TWIN = .01              # metres: a riding face this close to another facing the opposite way is its double-sided twin
 FLICKER = .03           # metres: drawn faces of two meshes this close and parallel z-fight; one of them is drawn
 CHUNK = 20000           # points or vertices per vectorised batch (covered, ambient_occlusion): bounds the memory
+PAIRS = 2_000_000       # point-face candidate pairs per batch at most (covered): about 0.6 GB
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
 AO_REACH = 12.
@@ -149,11 +150,13 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
     points = np.concatenate([t.mean(1, keepdims=True), t], 1).reshape(-1, 3)
     pn = np.repeat(nt, 4, 0)
     on = np.zeros(len(points), bool)
-    for start in range(0, len(points), CHUNK):
-        p = points[start:start + CHUNK]; n = pn[start:start + CHUNK]
-        k = cell_keys(np.floor(p / cell))
-        a = np.searchsorted(keys, k, 'left'); b = np.searchsorted(keys, k, 'right')
-        reps = b - a
+    k = cell_keys(np.floor(points / cell))
+    first = np.searchsorted(keys, k, 'left'); pairs = np.cumsum(np.searchsorted(keys, k, 'right') - first)
+    # Batches of points bounded by their candidate pairs, not their count: a dense cell holds thousands of faces.
+    cuts = np.unique(np.concatenate([np.arange(0, len(points), CHUNK), np.searchsorted(pairs, np.arange(PAIRS, pairs[-1] if len(pairs) else 0, PAIRS)), [len(points)]]))
+    for start, end in zip(cuts[:-1], cuts[1:]):
+        p = points[start:end]; n = pn[start:end]
+        a = first[start:end]; reps = np.diff(pairs[start:end], prepend=pairs[start - 1] if start else 0)
         which = np.repeat(np.arange(len(p)), reps)
         cand = owner[np.repeat(a, reps) + np.arange(reps.sum()) - np.repeat(np.cumsum(reps) - reps, reps)]
         q = p[which]; v = s[cand]; m = ns[cand]
@@ -166,7 +169,7 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
         if ranks is not None:
             ok &= ranks[1][cand] < ranks[0][(start + which) // 4]
         hit = np.zeros(len(p), bool); hit[which[ok]] = True
-        on[start:start + CHUNK] = hit
+        on[start:end] = hit
     return on.reshape(-1, 4).all(1)
 
 
