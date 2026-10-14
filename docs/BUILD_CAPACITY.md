@@ -46,6 +46,8 @@ the last state as `running`; a sampled span is not the command's full duration. 
 remain separate: summing their individual peaks does not measure a simultaneous process-tree peak. Historical logs
 also cannot reliably assign measurements to instrumented phases, prove complete descendant coverage or estimate
 temporary disk demand. Calibrated resource profiles and admission still require the migration evidence below.
+This reader covers per-process `memory-health` files; compound network QA's separate aggregate tree-guard
+report format is outside its scope.
 
 ## What replaces a slot
 
@@ -116,7 +118,9 @@ owned-tree guard enforces it; never reserve 3 GiB while allowing an unaccounted 
 inside the reservation and machine headroom for sampling delay. A lower existing per-process or game limit still
 applies. Capacity admission must not silently raise the current game limits or authorize new memory exceptions.
 
-Reuse the existing pinned PID/start-time ownership tracking and aggregate tree guard. Account for compiler and
+Reuse pinned PID/start-time ownership tracking. Validate and integrate the existing aggregate tree-guard
+machinery across capacity-managed launches before cutover; ordinary guarded launches currently use separate
+per-process monitors. Account for compiler and
 shader workers, SDK helpers and subprocesses that outlive their immediate parent. Shared engine services remain
 excluded from job-owned termination. Stopping or releasing an agent session does not prove that its job exited.
 
