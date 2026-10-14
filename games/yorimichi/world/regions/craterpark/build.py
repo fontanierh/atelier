@@ -447,8 +447,8 @@ def main():
             added.append(({'id': f'add-{part}-{name}', 'role': 'original', 'material': material,
                            'doubleSided': False, 'added': True}, mesh))
     around = np.concatenate([riding_now, solid_now]); heights = grind.heights(around)
-    for name, box in additions.BANKS.items():
-        made = additions.bank(riding_now, solid_now, box)
+    for name, (box, joins) in additions.BANKS.items():
+        made = additions.bank(riding_now, solid_now, box, joins)
         if made is None:
             continue
         added.append(({'id': f'add-bank-{name}', 'role': 'original', 'material': additions.SNAKE_MATERIAL,

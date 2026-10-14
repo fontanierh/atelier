@@ -162,7 +162,9 @@ surfaces; none moves, cuts or covers what is ridden:
 - **Pockets.** The plaza's stage pit and the holes in its terrace row are dishes of the same shape, flush with the
   plaza round them.
 - **Banks.** A smooth surface spans the hillside between two pieces, flush with both: a hip from the tower's channel
-  down to the plaza terrace.
+  down to the plaza terrace, and a run from the south-west bowl's rim deck (11 m) down to the banked curve's outer
+  rim (8 m), beside the tunnel strip, the line's way back towards the drop-in. A bank meets only the pieces named
+  for it; it passes the others by.
 - **Steel coping.** A 7 cm steel tube is drawn along every grind line, its top 12 mm over the deck (render only; a
   metallic `Steel` parent in `import_craterpark.py`).
 - **Solid edges.** A riding sheet's free edge that ends in the air, a knife edge (a half-pipe's flank, the back of its

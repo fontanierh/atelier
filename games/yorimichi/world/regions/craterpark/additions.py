@@ -34,8 +34,12 @@ SNAKE_MATERIAL = 'material_006'     # the snake runs' concrete
 # transitions at their foot.
 SNAKES = {'east_bowls': ((1384., 958., 1468., 1140.), 0., OPEN, CHANNEL, True),
           'plaza_pockets': ((1186., 1002., 1262., 1158.), 6., 3., CHANNEL, False)}
-# The banks: a box (x0, z0, x1, z1) over the open ground between the pieces they join.
-BANKS = {'tower_plaza_hip': (1155., 1003., 1187., 1025.)}
+# The banks: a box (x0, z0, x1, z1) over the open ground between the pieces they join, and the joins (bank) or None.
+BANKS = {'tower_plaza_hip': ((1155., 1003., 1187., 1025.), None),
+         # From the south-west bowl's rim deck (11 m) down to the banked curve's outer rim (7.4-8.8 m), beside the
+         # tunnel strip: the line's way back towards the drop-in.
+         'bowl_rim_to_curve': ((1139., 903., 1149.5, 966.), [((1136., 897., 1151., 906.), 10., 12.),
+                                                            ((1139., 955., 1151., 969.), 7., 9.)])}
 
 
 def unit_normals(t):
@@ -272,10 +276,11 @@ def snake_channels(riding, solid, box, floor, open_=OPEN, channel=CHANNEL, feet=
 
 
 
-def bank(riding, solid, box, cell=CELL):
+def bank(riding, solid, box, joins=None, cell=CELL):
     """A bank spanning the open ground of `box` (x0, z0, x1, z1) between the riding surfaces round it: where no
-    riding face is the top, a smooth surface carries their edges' heights across (relax) and meets them flush. Its
-    sides along the box's edges hang free (solidify closes them). (vertices, faces, uvs) or None."""
+    riding face is the top, a smooth surface carries their edges' heights across (relax) and meets them flush. With
+    `joins` [((x0, z0, x1, z1), low, high)], only the riding surfaces in those boxes, between those heights, are met;
+    the bank passes the others by. Its free sides hang (solidify closes them). (vertices, faces, uvs) or None."""
     x0, z0, x1, z1 = box
     xs = np.arange(x0, x1 + cell / 2, cell); zs = np.arange(z0, z1 + cell / 2, cell)
     gx, gz = np.meshgrid(xs, zs)
@@ -284,13 +289,18 @@ def bank(riding, solid, box, cell=CELL):
     every = np.maximum(ride, top_heights(solid, points).reshape(gx.shape))
     is_ride = np.isfinite(ride) & (ride >= every - .01)
     open_ = ~is_ride
-    fixed = grow(open_, 1) & is_ride
+    meet = is_ride.copy()
+    if joins is not None:
+        meet[:] = False
+        for (a0, b0, a1, b1), low, high in joins:
+            meet |= is_ride & (gx >= a0) & (gx <= a1) & (gz >= b0) & (gz <= b1) & (ride >= low) & (ride <= high)
+    fixed = grow(open_, 1) & meet
     if not open_.any() or not fixed.any():
         return None
-    height = np.where(open_, relax(np.where(is_ride, ride, 0.), fixed, open_), ride)
+    height = np.where(open_, relax(np.where(meet, ride, 0.), fixed, open_), ride)
     near = open_.copy()
     for _ in range(OVERLAP):
-        near = grow(near, 1, True) & (open_ | is_ride)
+        near = grow(near, 1, True) & (open_ | meet)
     vertices, faces = grid_mesh(x0, z0, cell, height, near)
     return vertices.astype('f4'), faces, (vertices[:, [0, 2]] / UV_METRES).astype('f4')
 
