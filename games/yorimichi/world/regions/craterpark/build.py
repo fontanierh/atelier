@@ -32,6 +32,9 @@ SMOOTH = 35.0           # degrees: sharper edges keep their crease
 SECTION = 200000        # collision triangles per mesh
 # Roles drawn with world-aligned materials (import_craterpark.py): their UVs are unused, so their flat faces are merged.
 PLAIN = {'foundation', 'mountain', 'access_bridge', 'bridge_support', 'boundary'}
+# Where two meshes' faces lie on each other, the earlier role's is drawn: the riding pieces, then the built walls and
+# blocks, the hillside last (its dark rock showed in patches on the perimeter walls).
+ROLES = ('original', 'boundary', 'foundation', 'access_bridge', 'bridge_support', 'mountain')
 FLAT = .5              # degrees: faces this close to coplanar are merged (a shape-preserving simplification)
 COVER = .05             # metres: foundation faces this close to a drawn riding surface, and parallel to it, are not drawn
 TWIN = .01              # metres: a riding face this close to another facing the opposite way is its double-sided twin
@@ -419,8 +422,8 @@ def main():
             keep[index[np.flatnonzero(down)[twin]]] = False
             print('Riding', entry['id'], 'downward twins left out:', int(twin.sum()), flush=True)
     # Faces of different meshes lying on each other z-fight (the foundations' shared walls and tops, a riding piece on the
-    # block): each face lying on one of an earlier mesh, the riding pieces first, is left out of the render and collision.
-    order = sorted(range(len(loaded)), key=lambda i: (loaded[i][0]['role'] != 'original', i))
+    # block): each face lying on one of an earlier mesh, in ROLES order, is left out of the render and collision.
+    order = sorted(range(len(loaded)), key=lambda i: (ROLES.index(loaded[i][0]['role']), i))
     rank = np.empty(len(loaded), 'i8'); rank[order] = np.arange(len(loaded))
     shown = [a['positions'][a['triangles'][keep]] for _, a, keep in loaded]
     everything = np.concatenate(shown)
