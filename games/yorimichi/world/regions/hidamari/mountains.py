@@ -382,7 +382,7 @@ def snow_cover(x,y,z,step=STEP):
     floor_r=foot-10+25*ring(240.,60.,95)
     floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.0)/.22)
     drifts=(smooth((radius-foot+30)/20)*smooth((foot+25-radius)/15)
-            *smooth((noise(x,y,22,94)+ring(300.,45.,92)*.5+.15)/.35))
+            *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Chutes on the inner wall: irregular spacing, widths and reach, wandering off the radial line and
     # following its hollows; some stop short of the foot.
     wander=angle+noise(x,y,45,99)*.05
@@ -458,6 +458,11 @@ def mesh(base_sampler):
     rim=np.exp(-((radius-rim_radius(angle))/40)**2)
     colors*=((1-exposed)+exposed*cavity*(1-.35*rim))[...,None]
     dy,dx=np.gradient(z,STEP,STEP)
+    # Steep exposed rock reads as darker cliff bands with uneven strata, so walls are crags rather than smooth clay.
+    nz=1/np.sqrt(1+dx*dx+dy*dy)
+    cliff=smooth((.8-nz)/.22)*exposed
+    strata=.5+.5*np.sin(z*.6+noise(x,y,40,61)*3.)
+    colors*=(1-cliff*(.22+.14*strata))[...,None]
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
     # Soft continuous snow masks replace hard clipped lavender polygons.
