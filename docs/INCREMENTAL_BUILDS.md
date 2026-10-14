@@ -319,6 +319,9 @@ Small build products also allow finer scheduling. The [capacity admission propos
 fixed big/small lane categories with atomic memory/CPU reservations, measured workload profiles and named locks
 for real exclusivity. Artifact lookup and the build graph determine the work; the capacity service decides when
 it can safely execute. Existing slots remain authoritative until that scheduler passes its migration gates.
+The implemented `atelier capacity history GUARD_DIRECTORY` command inspects retained process measurements
+without running a job. It distinguishes sampling sessions and watched processes; it does not yet provide
+per-phase owned-tree profiles, calibrated reservations or disk estimates.
 
 ## Migration and acceptance gates
 
