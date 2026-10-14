@@ -414,13 +414,13 @@ def snow_cover(x,y,z,step=STEP):
             *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Snow on the inner wall's flatter ledges and benches, broken by fine noise (the targets' snow between crags).
     ledges=(smooth((nz-.80)/.06)*smooth((patches-.55)/.2)*smooth((radius-foot-5)/10)*smooth((rim_r-12-radius)/10))
-    # Broad chutes down the inner wall (the zeppelin target): snow gathered in its hollows from just under the crest to
-    # the foot, where each fans out; tens of metres wide and wandering, so they never read as thin frozen falls.
+    # Broad couloirs down the inner wall (the zeppelin target): snow gathered in its hollows from just under the crest
+    # to the foot, tens of metres wide and wandering, so they never read as thin frozen falls; no fan at the foot, which
+    # stood up behind the park as white blades from the rim.
     wander=angle+noise(x,y,70,99)*.06
-    lane=(noise(np.cos(wander)*470,np.sin(wander)*470,30.,97)+.5*gully+.2*smooth((foot+30-radius)/30)
-          +.3*downslope_noise(radius,wander,35,91))
+    lane=noise(np.cos(wander)*470,np.sin(wander)*470,30.,97)+.5*gully+.3*downslope_noise(radius,wander,35,91)
     # Each stops at its own height under the crest, so their tops never line up into a row of slabs.
-    top=rim_r-12-45*smooth((noise(np.cos(wander)*470,np.sin(wander)*470,25.,93)+.4)/.8)
+    top=rim_r-12-20*smooth((noise(np.cos(wander)*470,np.sin(wander)*470,25.,93)+.4)/.8)
     chutes=smooth((lane-.42)/.14)*smooth((radius-foot+15)/12)*smooth((top-radius)/14)
     bowl=np.maximum.reduce([floor,drifts,ledges,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)

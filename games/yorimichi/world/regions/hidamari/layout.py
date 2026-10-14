@@ -743,7 +743,11 @@ def dress_caldera(put):
             a=rng.uniform(0,math.tau);d=r0+rng.uniform(1,6)
             x,y=x0+d*math.cos(a),y0+d*math.sin(a)
             if bool(craterpark.contains(x,y,margin=7.)) or float(mountains.snow(x,y,north_base_height))>.2:continue
-            put('HD_NorthRockB',x,y,float(north_height(x,y))-.12,yaw=float(rng.uniform(0,360)),scale=float(rng.uniform(.5,1.2)))
+            z,slope,_=ground(x,y)
+            if slope[0]>.4:continue
+            # Open underneath: sunk by the drop across its own width, so the downhill side never floats.
+            scale=float(rng.uniform(.5,1.2))
+            put('HD_NorthRockB',x,y,float(z[0])-(.12+1.2*float(slope[0]))*scale,yaw=float(rng.uniform(0,360)),scale=scale)
             counts['scree']+=1
         for _ in range(int(rng.integers(1,4))):
             x0,y0,r0=group[int(rng.integers(len(group)))]
