@@ -238,9 +238,11 @@ def natural_height(x,y):
     # Crags: the inner wall steps down in cliff bands and ledges (the targets' broken granite), the bands warped and
     # tilted by noise so none reads as a ring. Each band is a ledge for 60 per cent of its height, then a steep riser.
     wall=smooth((r-foot-8)/15)*smooth((crest-6-r)/12)*(r<crest)
-    warped=target+noise(x,y,90,66)*9+noise(x,y,30,67)*3
+    # Strongly warped (half to one band over 45 m), and blended at 70 per cent, so the bands break into crags rather
+    # than reading as a quarry's even benches.
+    warped=target+noise(x,y,45,66)*16+noise(x,y,17,67)*6
     band=CRAG_STEP;k=np.floor(warped/band);f=warped/band-k
-    target=target+(k+smooth((f-.6)/.4))*band*wall-warped*wall
+    target=target+((k+smooth((f-.6)/.4))*band-warped)*wall*.7
     # Round the Mega Park the former summit's flank stands wherever it is the higher.
     sx,sy,reach,fade=MEGAPARK_SHOULDER
     keep=smooth((reach-np.hypot(x-sx,y-sy))/fade)
@@ -409,7 +411,7 @@ def snow_cover(x,y,z,step=STEP):
     chutes=(smooth((lane-.55)/.12)*smooth((rim_r-8-radius)/20)*smooth((radius-stop)/14)
             *smooth((downslope_noise(radius,wander,16,91)+downslope_noise(radius,wander,7,90)*.4+.2)/.3))
     # Snow on the inner wall's flatter ledges and benches, broken by fine noise (the targets' snow between crags).
-    ledges=(smooth((nz-.80)/.06)*smooth((patches-.35)/.2)*smooth((radius-foot-5)/10)*smooth((rim_r-12-radius)/10))
+    ledges=(smooth((nz-.80)/.06)*smooth((patches-.55)/.2)*smooth((radius-foot-5)/10)*smooth((rim_r-12-radius)/10))
     bowl=np.maximum.reduce([floor,drifts,chutes,ledges])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
