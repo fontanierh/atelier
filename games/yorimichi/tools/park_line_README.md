@@ -156,6 +156,38 @@ height or no observed crossing returns null. All thresholds apply to every speed
 required only at 1 m/s, use separate copies of the same full-route spec for that speed and for the 4/8 m/s cases,
 with explicit margins. Each trial still runs the complete route continuously, without resetting at gaps.
 
+For intentional air-outs returning to the same quarter pipe, declare that region explicitly:
+
+```json
+"required_vert_returns": [
+  {"id":"elbow-air-out", "surface":"elbow_qp", "coping_y_m":7,
+   "max_normal_speed_mps":5}
+]
+```
+
+The named surface must have role `vert` or `transition`. The requirement uses globally nearest **3D** collision
+at the last grounded departure and at return, never a nearest search restricted to the desired wall. Default
+maximum root-to-collision distances are 0.75 m at departure and 0.25 m at return; optional
+`max_departure_distance_m`/`max_contact_distance_m` may not exceed 1 m/0.5 m. It needs an apex at least 0.5 m above
+`coping_y_m` (`min_apex_above_coping_m`), the same named wall at return, and a non-flat return face under the
+existing minimum slope rule. IDs and surface names must be unique. All bounds must be positive and finite.
+
+For this declared return only, the peak absolute normal component of the last three airborne velocities replaces
+the directional slope/mismatch criterion. The `max_normal_speed_mps` bound is **required**, not calibrated
+automatically from surviving runs. It remains an estimate against an inferred face, not measured contact speed
+or impulse; nearby seams, animation offsets and early wheel contact limit its precision. The normal return speed,
+distance, face, apex and method are retained in the air's `vert_return` report. No bail and the existing recovery
+duration are still required; vert recovery must remain in riding-ground states. Missing, distant, flat-deck,
+wrong-wall and hard returns fail. Ordinary gap landings retain their original slope/mismatch checks.
+
+Only explicitly declared wall regions get the intentional-vert steepness exemption. `vert_checks` requires an
+observed successful air-out from every declared region; simply carving without an air-out fails. A vert return
+never supplies the route's required hero air, even if it travels 25 m horizontally. Default
+`validation_mode: "route"` retains that hero requirement. A **separate wall-only diagnostic** may set
+`validation_mode: "vert_return"`: it must declare a wall return and cannot declare `required_airs`; it omits only
+the hero-air requirement. Finish, corridor, unknown support, ground-loss and bailout checks remain active.
+The report records its mode: a passing wall diagnostic is not evidence that the complete park route passes.
+
 The CLI does not expose contact normals or slam impulses. Supporting triangles are **inferred** by a vertical
 query from the animated root (up to 0.35 m above, 2 m below); this can be ambiguous at stacked surfaces and seams.
 Landing angle compares the last airborne velocity with that inferred plane. Bails/slams are reported through

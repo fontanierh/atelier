@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from park_line_gaps import check_required_airs
+from park_line_vert import VertReturns
 
 DEFAULTS = dict(huge_air_m=25., min_landing_slope_deg=5., max_landing_mismatch_deg=20.,
                 max_takeoff_angle_deg=80., max_ground_slope_deg=85., bump_loss_mps=2.,
@@ -32,9 +33,11 @@ def analyze(rows, world):
     recovery observations, no bailout during flight/recovery, and the configured distance and alignment thresholds.
     Unknown support and unfinished flights MUST NOT count as successful landings.
     Explicit required_airs MAY complete shorter secondary gaps only through the named-gap safety verdict;
-    the route MUST still contain a qualifying huge air and pass all existing global safety checks.
+    Route mode MUST still contain a qualifying huge air and pass all existing global safety checks.
+    Explicit vert_return diagnostic mode MAY omit the hero air, but MUST require a declared wall air-out.
     """
     rules = {**DEFAULTS, **world.spec.get('acceptance', {})}
+    vert = VertReturns(world)
     if not rows:
         return dict(passed=False, failures=['no observations'], airs=[])
     p = np.array([r['position'] for r in rows]); v = np.array([r['velocity'] for r in rows])
@@ -45,6 +48,10 @@ def analyze(rows, world):
     airborne = np.array(['Air' in s and not is_bail(s) for s in states])
     bail = [i for i, s in enumerate(states) if is_bail(s)]
     supports = [world.support(q) if g else None for q, g in zip(p, ground)]
+    nearby = vert.nearest_ground(p, ground)
+    for i, support in enumerate(nearby):
+        if vert.on_wall(support):
+            supports[i] = support
     changes = np.flatnonzero(np.r_[True, airborne[1:] != airborne[:-1]])
     airs = []
     for begin, end in zip(changes, np.r_[changes[1:], len(rows)]):
@@ -57,6 +64,12 @@ def analyze(rows, world):
         departure_frame = next((i for i in range(before, -1, -1)
                                 if times[begin]-times[i] <= .15 and supports[i] is not None), None)
         departure = supports[departure_frame] if departure_frame is not None else None
+        vert_departure_frame = next((i for i in range(before, -1, -1)
+                                     if times[begin]-times[i] <= .15 and nearby[i] is not None), None)
+        vert_departure = nearby[vert_departure_frame] if vert_departure_frame is not None else None
+        if vert_departure is not None:
+            departure_frame, departure = vert_departure_frame, vert_departure
+            support = nearby[end] if landed else None
         takeoff = v[begin]
         angle = pitch(takeoff)
         horizontal = float(np.linalg.norm((p[last]-p[before])[[0, 2]]))
@@ -69,11 +82,16 @@ def analyze(rows, world):
             fail.append('landing support unknown')
         landing_slope = slope(support['normal'], incoming) if support else None
         mismatch = abs(pitch(incoming)-landing_slope) if support else None
-        if support and (support['role'] not in ('landing', 'transition') or abs(landing_slope) < rules['min_landing_slope_deg']):
-            fail.append('landing is not an intended sloped transition')
-        if mismatch is not None and mismatch > rules['max_landing_mismatch_deg']:
-            fail.append('incoming trajectory does not match landing slope')
-        if not world.spec.get('intended_vert', False) and abs(angle) > rules['max_takeoff_angle_deg']:
+        vert_return = None
+        if vert_departure is not None:
+            vert_return = vert.flight(departure, support, begin, end, p, v, states, times, rules)
+            fail.extend(vert_return['failures'])
+        else:
+            if support and (support['role'] not in ('landing', 'transition') or abs(landing_slope) < rules['min_landing_slope_deg']):
+                fail.append('landing is not an intended sloped transition')
+            if mismatch is not None and mismatch > rules['max_landing_mismatch_deg']:
+                fail.append('incoming trajectory does not match landing slope')
+        if vert_return is None and not world.spec.get('intended_vert', False) and abs(angle) > rules['max_takeoff_angle_deg']:
             fail.append('unintended near-vertical takeoff')
         recovery_end = times[last]+rules['landing_recovery_s']
         if landed and times[-1] < recovery_end:
@@ -100,7 +118,8 @@ def analyze(rows, world):
                          landing_support=support, landing_slope_deg=landing_slope,
                          landing_normal_speed_mps=abs(float(np.dot(incoming,support['normal']))) if support else None,
                          landing_mismatch_deg=mismatch, safe_landing_pass=safe_landing,
-                         huge_air_pass=not fail, failures=fail))
+                         huge_air_pass=not fail and vert_return is None, failures=fail,
+                         **({'vert_return': vert_return} if vert_return is not None else {})))
     # Potential bump losses: gravity-corrected speed over uninterrupted, unbraked ground windows.
     # This does not distinguish friction from collisions and is not a contact impulse measurement.
     losses = []
@@ -127,7 +146,11 @@ def analyze(rows, world):
     for gap in gap_checks:
         if not gap['passed']:
             failures.append('required gap '+gap['id']+': '+'; '.join(gap['failures']))
-    if not successful:
+    vert_checks = vert.summarize(airs)
+    for check in vert_checks:
+        if not check['passed']:
+            failures.append('required vert return '+check['id']+': '+'; '.join(check['failures']))
+    if not successful and vert.mode == 'route':
         failures.append('no completed qualifying huge air')
     required = world.spec.get('required_takeoffs', [name for name, s in world.sections.items() if s.get('role') == 'takeoff'])
     completed_takeoffs = {a['takeoff_surface'] for a in successful} | {g['takeoff'] for g in gap_checks if g['passed']}
@@ -149,7 +172,8 @@ def analyze(rows, world):
     finish = world.finish_m
     if progress.max() < finish:
         failures.append('line finish not reached')
-    steep = [i for i, s in enumerate(supports) if s and math.degrees(math.acos(np.clip(s['normal'][1], -1, 1))) > rules['max_ground_slope_deg']]
+    steep = [i for i, s in enumerate(supports) if s and s['surface'] not in vert.requirements
+             and math.degrees(math.acos(np.clip(s['normal'][1], -1, 1))) > rules['max_ground_slope_deg']]
     if steep and not world.spec.get('intended_vert', False):
         failures.append('unintended near-vertical ground surface')
     unknown_mask = np.array([g and s is None for g, s in zip(ground, supports)])
@@ -161,6 +185,7 @@ def analyze(rows, world):
     if longest/60 > .15:
         failures.append('sustained ground state with unidentified supporting collision')
     return dict(passed=not failures, failures=failures, thresholds=rules, frames=len(rows),
+                validation_mode=vert.mode, vert_checks=vert_checks,
                 duration_s=float(times[-1]), speed_mps=dict(min=float(speed.min()), max=float(speed.max()),
                 final=float(speed[-1])), path_progress_m=float(progress.max()), finish_s_m=finish,
                 max_lateral_error_m=float(lateral.max()), rideable_width_m=world.design_width,
@@ -172,6 +197,6 @@ def analyze(rows, world):
                              for i in bail if i == 0 or not is_bail(states[i-1])],
                 unknown_ground_support_frames=unknown,
                 longest_unknown_ground_support_s=longest/60,
-                support_method='Vertical triangle query under animated root; inferred, not exported simulator contacts.',
+                support_method='Vertical triangle query; declared vert walls also use nearby 3D collision. Both inferred, not exported contacts.',
                 bump_method='Gravity-corrected speed loss on uninterrupted unbraked ground; friction/collision cause is not identified.',
                 flight_method='60 Hz published animated-root positions and velocities; endpoints are frame-resolution observations.')

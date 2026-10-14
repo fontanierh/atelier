@@ -14,6 +14,7 @@ from park_line_geometry import LineWorld
 from park_line_metrics import analyze, is_ground, DEFAULTS
 from park_line_controller import LineFollower
 from park_line_gaps import validate_gap_specs
+from park_line_vert import VertReturns
 
 
 def sha(path):
@@ -83,6 +84,7 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     Each speed trial MUST use a fresh session and preserve its controls and compact observations.
     """
     validate_gap_specs(world)
+    VertReturns(world)
     spawn, heading, direction = world.spawn()
     collision = dict(triangles=world.triangles.tolist(), rails=world.spec.get('rails', []),
                      spawn=spawn.tolist(), heading=heading)
