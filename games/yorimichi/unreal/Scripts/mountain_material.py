@@ -92,7 +92,7 @@ for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
 float3 h=frac(sin(float3(dot(id,float2(12.9898,78.233)),dot(id,float2(39.346,11.135)),dot(id,float2(73.156,52.235))))*43758.5453)-.5;
 float3 sunDir=normalize(Sun.xyz);
 float litFacet=saturate(dot(normalize(N+h*float3(1.4,1.4,.7)),sunDir)),litSmooth=saturate(dot(N,sunDir));
-float3 facet=(.55+.75*litFacet)/(.55+.75*litSmooth)*lerp(float3(.93,.96,1.06),float3(1.05,1.,.93),saturate(litFacet*1.4-.2));
+float3 facet=(.4+1.*litFacet)/(.4+1.*litSmooth)*lerp(float3(.90,.95,1.10),float3(1.08,1.,.90),saturate(litFacet*1.4-.2));
 ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));

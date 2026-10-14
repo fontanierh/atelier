@@ -70,12 +70,14 @@ with scree on bare ground; and ochre shrubs. About 9,600 autumn thicket plants c
 as 55 degrees and more thinly on snow (leafy amber bushes, ochre bushes and a few red shrub maples and golden ginkgo
 shrubs), and ochre bushes ring the park's block 9-40 m out, snow or not. About 6,500 more cover the block's own
 exposed hillside in clumps, 4 m clear of every riding piece and bridge (`placement.piece_triangles`). Bushes have no
-collision and are culled beyond 300 m. Some 1,100 stones, 2-5 m, lie in clusters over the floor. No tree or stone stands
-within 7 m of the park's block. The caldera is a `near_trees` box, so its trees cast shadows and keep trunk collision.
+collision and are culled beyond 300 m. Some 1,100 granite stones (`HD_NorthRockA`/`C`, as on the north slopes) lie
+in clusters over the floor. No tree or stone stands within 7 m of the park's block. The caldera is a `near_trees` box,
+so its trees cast shadows and keep trunk collision.
 
 The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor about half white, half dark
-cinder. On the outer flank it lies in snowfields between bare rock ribs for about 110 m below the crest, and lower
-down only in thin couloirs, so the far views read rock with a few streaks. The mountain material shades the exposed
+cinder. On the outer flank it lies in snowfields between bare rock ribs for about 110 m below the crest. Snow slides off
+rock steeper than about 55 degrees, and fine rock noise breaks every patch into many small pieces, so it reads as snow
+among broken granite rather than cut-out blobs or strips. The mountain material shades the exposed
 rock in faceted planes about 22 m across (5 m cells read as cobbles), each tilted at random against the sun, warm
 where lit and cool where turned away, so the walls read as granite rather than clay; olive moss lies on its gentler
 upward faces.

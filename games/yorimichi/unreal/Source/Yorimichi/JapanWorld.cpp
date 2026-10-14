@@ -186,9 +186,9 @@ void AJapanWorld::Load()
         CalderaGrade->SetupAttachment(CalderaBounds);
         CalderaGrade->bUnbound=false;CalderaGrade->BlendRadius=6000;CalderaGrade->Priority=3;
         CalderaGrade->Settings.bOverride_ColorContrast=true;
-        CalderaGrade->Settings.ColorContrast=FVector4(1.12,1.12,1.12,1);
+        CalderaGrade->Settings.ColorContrast=FVector4(1.2,1.2,1.2,1);
         CalderaGrade->Settings.bOverride_ColorSaturation=true;
-        CalderaGrade->Settings.ColorSaturation=FVector4(1.15,1.15,1.15,1);
+        CalderaGrade->Settings.ColorSaturation=FVector4(1.3,1.3,1.3,1);
         CalderaGrade->Settings.bOverride_ColorOffset=true;
         CalderaGrade->Settings.ColorOffset=FVector4(-.035,-.035,-.035,0);
         CalderaGrade->Settings.bOverride_WhiteTemp=true;

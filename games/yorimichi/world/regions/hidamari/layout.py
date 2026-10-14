@@ -818,9 +818,10 @@ def dress_caldera(put):
             x=float(x0+rng.normal(0,6));y=float(y0+rng.normal(0,6))
             z,slope,inside=ground(x,y)
             if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
-            name,radius,tall,_=CALDERA_BOULDERS[int(rng.choice(3,p=[.45,.35,.2]))]
-            scale=float(rng.uniform(1.,2.6))
-            put(name,x,y,float(z[0])-.15*tall*scale,yaw=float(rng.uniform(0,360)),scale=scale)
+            # The north slopes' granite, not the village boulders, which read as black shards in the caldera's shade.
+            scale=float(rng.uniform(1.2,3.))
+            put('HD_NorthRockA' if rng.random()<.6 else 'HD_NorthRockC',x,y,float(z[0])-(.1+.5*float(slope[0]))*scale,
+                yaw=float(rng.uniform(0,360)),scale=scale)
             counts['stones']+=1
     # The park's own hillside (craterpark `GROUND`) is a separate mesh above the terrain: its exposed, upward slopes get
     # leafy clumps too (the rim target's foreground), on its triangles, 4 m clear of every riding piece and bridge.
