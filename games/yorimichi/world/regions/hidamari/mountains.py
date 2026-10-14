@@ -413,7 +413,7 @@ def snow_cover(x,y,z,step=STEP):
     foot=wall_foot(angle);rim_r=rim_radius(angle)
     # The caldera floor is grey cinder with snow lying in patches and in drifts along the wall's foot.
     floor_r=foot-10+25*ring(240.,60.,95)
-    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.18)/.22)
+    floor=smooth((floor_r-radius)/12)*smooth((noise(x,y,48,96)*.75+noise(x,y,19,98)*.3+.06)/.22)
     drifts=(smooth((radius-foot+30)/20)*smooth((foot+12-radius)/10)
             *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Snow on the inner wall's flatter ledges and benches, broken by fine noise (the targets' snow between crags).

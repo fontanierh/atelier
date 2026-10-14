@@ -821,7 +821,7 @@ def dress_caldera(put):
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
-    # Crags, 10-20 m, low and deeply bedded, mostly where the floor is bare: from the zeppelin they read as the target's
+    # Crags, 15-30 m, low and deeply bedded, mostly where the floor is bare: from the zeppelin they read as the target's
     # field of dark rock among the snow, where the stones below are only specks.
     counts['crags']=0
     crags=[]
@@ -830,7 +830,7 @@ def dress_caldera(put):
         if counts['crags']>=240:break
         if bool(craterpark.contains(x,y,margin=14.)) or rng.random()<.25+.6*float(mountains.snow(x,y,north_base_height)):
             continue
-        scale=float(rng.uniform(3.5,7.));reach=2.3*scale
+        scale=float(rng.uniform(5.5,10.));reach=2.3*scale
         z,slope,inside=ground(x,y)
         if (not inside[0] or slope[0]>.35 or bool(craterpark.contains(x,y,margin=7.+reach)) or not clear_of_stones(x,y)
                 or any(math.hypot(x-px,y-py)<reach+pr for px,py,pr in crags)
@@ -873,8 +873,9 @@ def dress_caldera(put):
         i,j=int(math.floor(x/cell)),int(math.floor(y/cell));k=int(math.ceil(reach/cell))
         return not any((i+di,j+dj) in taken for di in range(-k,k+1) for dj in range(-k,k+1))
     counts['outcrops']=0;outcrops=[]
-    # Gentle ground only: the rocks are open underneath, and on a steep slope their downhill side would float.
-    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.96)],2.5)
+    # Gentle ground only, and bedded to about 60% of their height: the rocks are open underneath, and on a slope
+    # their downhill side would float.
+    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]>.93)],2.5)
     centres=seats[(rng.random(len(seats))<.025)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.2)]
     for x0,y0,_ in centres:
         members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]
@@ -882,7 +883,7 @@ def dress_caldera(put):
             x,y=float(x),float(y);scale=float(rng.uniform(1.3,2.8));reach=1.9*scale+2.
             if not clear_by(x,y,reach) or any(math.hypot(x-px,y-py)<.6*(reach+r) for px,py,r in outcrops[-30:]):continue
             outcrops.append((x,y,reach))
-            put('HD_NorthRockC' if rng.random()<.65 else 'HD_NorthRockA',x,y,float(z)-.55*scale,
+            put('HD_NorthRockC' if rng.random()<.65 else 'HD_NorthRockA',x,y,float(z)-.8*scale,
                 yaw=float(rng.uniform(0,360)),scale=scale)
             counts['outcrops']+=1
     points=surface_samples(hill,3.)

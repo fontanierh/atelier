@@ -75,28 +75,28 @@ packed thicker round the domes; all stand clear of every riding piece and bridge
 autumn bush has a warm core: the garden shrubs' near-black one, sunk in a slope or seen from afar, read as black
 shards on the snow. Bushes have no collision and are culled beyond 300 m, the autumn bush beyond 550 m (the rim and
 air views look across the caldera; `JapanWorld.cpp`). Some 500 granite stones (`HD_NorthRockA`/`C`, as on the north
-slopes) lie in clusters over the floor, and about 140 low crags 10-20 m across sit deep in its bare ground, so from
+slopes) lie in clusters over the floor, and about 70 low crags 15-30 m across sit deep in its bare ground, so from
 the zeppelin the floor reads as dark rock among the snow. No tree or stone stands within 7 m of the park's block. The
 caldera is a `near_trees` box, so its trees cast shadows and keep trunk collision.
 
-The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor about half white, half dark
-cinder. Broad couloirs, tens of metres wide, run down the inner wall from just under the crest to its foot, between
-rock ribs, each narrowing upward to a point at its own height, breaking on the steepest cliff risers, so a little over
-a third of the wall is white (the zeppelin target). On the outer flank snow lies in snowfields between bare rock ribs
-for about 110 m below the crest, and about half the gullies carry a long couloir, wandering and unbroken, from the
-crest towards the tree line (the city target). Away from the chutes and the collar, snow slides off rock steeper than
-about 55 degrees, and fine rock noise breaks every patch into many small pieces, so it reads as snow among broken
-granite rather than cut-out blobs or strips. The mountain material shades the exposed rock in faceted planes about 22
-m across (on steep faces, columns about 15 m wide and 60 m tall, so walls read as jointed cliffs), each broken into
-faces about 7 m across (5 m cells alone read as cobbles), each tilted at random against the sun, warm where lit and
-cool where turned away, so the walls read as granite rather than clay; bright olive moss patches its gentler upward
-faces.
+The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves about a third of the caldera floor white, the
+rest dark cinder. Broad couloirs, tens of metres wide, run down the inner wall from just under the crest to its foot,
+between rock ribs, each narrowing upward to a point at its own height, breaking on the steepest cliff risers, so a
+little over a third of the wall is white (the zeppelin target). On the outer flank snow lies in snowfields between
+bare rock ribs for about 110 m below the crest, and about half the gullies carry a long couloir, wandering and
+unbroken, from the crest towards the tree line (the city target). Away from the chutes and the collar, snow slides off
+rock steeper than about 55 degrees, and fine rock noise breaks every patch into many small pieces, so it reads as snow
+among broken granite rather than cut-out blobs or strips. The mountain material shades the exposed rock in faceted
+planes about 22 m across (on steep faces, columns about 15 m wide and 60 m tall, so walls read as jointed cliffs),
+each broken into faces about 7 m across (5 m cells alone read as cobbles), each tilted at random against the sun, warm
+where lit and cool where turned away, so the walls read as granite rather than clay; bright olive moss patches its
+gentler upward faces.
 
 ## Snow
 
 The block's hillside (`material_024`) carries snow on its flatter tops and benches, with a crisp edge
 (`import_craterpark.py` `SNOWY`); its sides steeper than about 33 degrees show the volcanic ground in bands, like the
-targets' outcrops. Smooth value noise (about 26 m and 9 m) leaves a little under half the flat ground bare in broad
+targets' outcrops. Smooth value noise (about 26 m and 9 m) leaves about half the flat ground bare in broad
 patches, so the block never reads as a white sheet; sine patterns of holes read as spots and dashes, and a soft edge
 left the dark ground smeared through the snow. The skating surfaces, the edge guard and its coping, foundations and
 bridges stay clear. The park's materials are matte, like the terrain's.

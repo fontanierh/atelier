@@ -81,14 +81,14 @@ def parent(kind):
     # Snow lies on the hillside's flatter tops and benches; its steeper sides (over about 33 degrees) show the volcanic
     # ground in bands, as the targets' outcrops. Patterned holes (world-space sines) read as spots and dashes across the
     # banks; a soft ramp left the dark ground smeared through.
-    # Smooth value noise (about 26 m and 9 m) leaves a little under half the flat ground bare in broad patches, so the
+    # Smooth value noise (about 26 m and 9 m) leaves about half the flat ground bare in broad patches, so the
     # block never reads as a white sheet (sine patterns read as spots).
     noise = ''.join('float2 q{k}=W.xy/{s}.+{o};float2 i{k}=floor(q{k});float2 f{k}=frac(q{k});f{k}=f{k}*f{k}*(3-2*f{k});'
                     'float4 h{k}=frac(sin(float4(dot(i{k},float2(127.1,311.7)),dot(i{k}+float2(1,0),float2(127.1,311.7)),'
                     'dot(i{k}+float2(0,1),float2(127.1,311.7)),dot(i{k}+float2(1,1),float2(127.1,311.7))))*43758.5453);'
                     'float v{k}=lerp(lerp(h{k}.x,h{k}.y,f{k}.x),lerp(h{k}.z,h{k}.w,f{k}.x),f{k}.y);'.format(k=k, s=s, o=o)
                     for k, s, o in ((0, 2600, .17), (1, 900, .61)))
-    cover = noise + 'float m=S*saturate((N.z-.84)/.06)*saturate(((v0+.5*v1)/1.5-.42)/.12);'
+    cover = noise + 'float m=S*saturate((N.z-.84)/.06)*saturate(((v0+.5*v1)/1.5-.50)/.12);'
     base = custom(cover + 'return lerp(B*lerp(1.,A,C),float3(.80,.83,.88),m);', inputs)
     shade = custom('return lerp(1.,A,K);', {'A': (ao, ''), 'K': (occlusion, '')}, unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     rough = custom(cover + 'return lerp(%.2f,.6,m);' % ROUGHNESS, inputs, unreal.CustomMaterialOutputType.CMOT_FLOAT1)

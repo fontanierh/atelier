@@ -104,7 +104,7 @@ for(int j2=-1;j2<=1;j2++)for(int i2=-1;i2<=1;i2++){
 float3 h2=frac(sin(float3(dot(id2,float2(12.9898,78.233)),dot(id2,float2(39.346,11.135)),dot(id2,float2(73.156,52.235))))*43758.5453)-.5;
 float3 sunDir=normalize(Sun.xyz);
 float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.55)+h2*float3(.8,.8,.4)),sunDir)),litSmooth=saturate(dot(N,sunDir));
-float3 facet=(.4+1.*litFacet)/(.4+1.*litSmooth)*lerp(float3(.95,.97,1.03),float3(1.06,1.02,.94),saturate(litFacet*1.4-.2));
+float3 facet=(.28+1.15*litFacet)/(.28+1.15*litSmooth)*lerp(float3(.92,.94,1.06),float3(1.08,1.02,.92),saturate(litFacet*1.4-.2));
 ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
