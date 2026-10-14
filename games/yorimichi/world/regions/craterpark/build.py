@@ -35,6 +35,7 @@ PLAIN = {'foundation', 'mountain', 'access_bridge', 'bridge_support', 'boundary'
 FLAT = .5              # degrees: faces this close to coplanar are merged (a shape-preserving simplification)
 COVER = .05             # metres: foundation faces this close to a drawn riding surface, and parallel to it, are not drawn
 TWIN = .01              # metres: a riding face this close to another facing the opposite way is its double-sided twin
+FLICKER = .03           # metres: drawn faces of two meshes this close and parallel z-fight; one of them is drawn
 CHUNK = 20000           # points or vertices per vectorised batch (covered, ambient_occlusion): bounds the memory
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
@@ -131,10 +132,11 @@ def cell_keys(cells):
     return (c[..., 0] << 42) | (c[..., 1] << 21) | c[..., 2]
 
 
-def covered(triangles, surfaces, two_sided, eps=COVER, cell=1.):
+def covered(triangles, surfaces, two_sided, eps=COVER, cell=1., ranks=None):
     """Mask of `triangles` (n, 3, 3) that lie on the drawn riding `surfaces` (m, 3, 3): the centroid and the three corners
     are each within eps of the plane of a surface triangle facing the same way (either way where `two_sided`), and inside
-    it, or within eps of its edges. Drawn under the riding surface they only flicker through it."""
+    it, or within eps of its edges. Drawn under the riding surface they only flicker through it. With `ranks` (the
+    triangles', the surfaces'), only a surface of a lower rank counts."""
     s = surfaces.astype('f8'); ns = unit_normals(s)
     lo = np.floor((s.min(1) - eps) / cell).astype('i8'); hi = np.floor((s.max(1) + eps) / cell).astype('i8')
     size = hi - lo + 1; count = size.prod(1)
@@ -161,6 +163,8 @@ def covered(triangles, surfaces, two_sided, eps=COVER, cell=1.):
             e = v[:, (i + 1) % 3] - v[:, i]
             inward = (np.cross(e, q - v[:, i]) * m).sum(1) / np.maximum(np.linalg.norm(e, axis=1), 1e-12)
             ok &= inward > -eps
+        if ranks is not None:
+            ok &= ranks[1][cand] < ranks[0][(start + which) // 4]
         hit = np.zeros(len(p), bool); hit[which[ok]] = True
         on[start:start + CHUNK] = hit
     return on.reshape(-1, 4).all(1)
@@ -262,6 +266,21 @@ def main():
             twin = covered(t[down], riding[up], np.ones(int(up.sum()), bool), eps=TWIN)
             keep[index[np.flatnonzero(down)[twin]]] = False
             print('Riding', entry['id'], 'downward twins left out:', int(twin.sum()), flush=True)
+    # Faces of different meshes lying on each other z-fight (the foundations' shared walls and tops, a riding piece on the
+    # block): each face lying on one of an earlier mesh, the riding pieces first, is left out of the render and collision.
+    order = sorted(range(len(loaded)), key=lambda i: (loaded[i][0]['role'] != 'original', i))
+    rank = np.empty(len(loaded), 'i8'); rank[order] = np.arange(len(loaded))
+    shown = [a['positions'][a['triangles'][keep]] for _, a, keep in loaded]
+    everything = np.concatenate(shown)
+    ranks = np.concatenate([np.full(len(f), rank[i]) for i, f in enumerate(shown)])
+    sides = np.concatenate([np.full(len(f), entry['doubleSided']) for (entry, _, _), f in zip(loaded, shown)])
+    fighting = covered(everything, everything, sides, eps=FLICKER, ranks=(ranks, ranks))
+    start = 0
+    for (entry, a, keep), f in zip(loaded, shown):
+        index = np.flatnonzero(keep); lost = fighting[start:start + len(f)]; start += len(f)
+        keep[index[lost]] = False
+        if lost.any():
+            print('Mesh', entry['id'], entry['role'], 'faces lying on an earlier mesh left out:', int(lost.sum()), flush=True)
     drawn = []
     for entry, a, keep in loaded:
         skipped = int(len(keep) - keep.sum())
