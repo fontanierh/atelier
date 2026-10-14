@@ -36,10 +36,11 @@ def build_dir(game):
     return path
 
 
-def cache_dir(*parts):
+def cache_dir(*parts, create=True):
     """Downloads kept outside the repository, shared by every checkout on this machine."""
     path = Path(os.environ.get('ATELIER_CACHE') or Path.home() / '.cache' / 'atelier').joinpath(*parts)
-    path.mkdir(parents=True, exist_ok=True)
+    if create:
+        path.mkdir(parents=True, exist_ok=True)
     return path
 
 

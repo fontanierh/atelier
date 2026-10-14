@@ -24,7 +24,7 @@ The floor holds a 340 × 390 m footprint at any heading, and the crest stands mo
 round. `test_northern_landscape.py` checks both.
 
 The floor is sized for [Crater Park](https://github.com/fontanierh/crater-skate-park):
-- **Fit:** a 337.95 × 384.51 m block with a corner radius of 256 m. It keeps at least 62 m to the wall's foot at any
+- **Fit:** a 337.95 × 384.51 m block with a corner radius of 256 m. It keeps at least 60 m to the wall's foot at any
   heading, room for the earth slopes round its edges. Heading 185° turns its high west side toward the tallest part of
   the crest.
 - **Height:** it stands high in the crater. Its main deck is about level with the crest's lowest stretch (687 m), and

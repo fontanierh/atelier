@@ -165,8 +165,12 @@ concrete, warm wooden ramps, terracotta tiles and a blue pool, in soft flat pain
 park with the brake held. The target views it is judged against are in `assets/craterpark/concepts`: the grounded
 paintovers `paintover-dropin.jpg` and `paintover-bowls.jpg`, and `target-g_air`, `target-g_rim`, `target-g_zep`,
 `target-f_city2` (the city's north edge) and `target-f_belmonte`, each with its generation record. The game now
-peaks at about 11.5 GiB, over the default 10 GiB game limit, so the review runs with `--memory-gib 14`, the project's
-ceiling.
+peaks at about 11.5 GiB, over the default 10 GiB game limit. Pass `--memory-gib 14` explicitly for that review;
+the harness defaults to 10 GiB and never raises it automatically. After coordinating the guarded turn:
+
+```sh
+nice -n 10 uv run python games/yorimichi/tools/review_craterpark.py --memory-gib 14
+```
 
 ## Build and game
 

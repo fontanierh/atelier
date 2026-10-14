@@ -1,11 +1,11 @@
 # Sword combat
 
-Cairo, Modori and Kaede use the merged Adventure move set for sword combat. The retained sword is fitted to each
+Cairo, Modori, Nox, Paul and Kaede use the merged Adventure move set for sword combat. The retained sword is fitted to each
 character's hands and back by its `adventure.toml`. Cairo lends the set his two-handed guard stance, parry and recoil;
 the other combat motions come from the committed Adventure motion bundle.
 
 ```sh
-uv run atelier build yorimichi unreal.cairo_adventure unreal.modori_adventure unreal.sword_trainer_adventure
+uv run atelier build yorimichi unreal.cairo_adventure unreal.modori_adventure unreal.nox_adventure unreal.paul_adventure unreal.sword_trainer_adventure
 uv run atelier play yorimichi
 uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```

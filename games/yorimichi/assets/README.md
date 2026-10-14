@@ -7,9 +7,8 @@ Hidamari, hippodrome and treehouse props.
 
 `source-library.json` records the local paths, sizes and SHA-256 hashes of all
 source GLBs, texture images, geometry/collision arrays, character Blender files
-and merged motion data. It also pins the skating bundle's manifest.
-`tools/verify_asset_library.py` checks those sources and all 3,334 skating
-payloads without existing build output. The library tests check the GLBs' embedded
+and merged motion data. `tools/verify_asset_library.py` checks those sources
+without existing build output. The library tests check the GLBs' embedded
 geometry and images and confirm that a fresh checkout includes every park step.
 
 - `skatepark/modules.json` records each module GLB's filename, size, SHA-256,

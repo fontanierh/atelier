@@ -3,6 +3,9 @@
 Lets an agent or a tool change the running game without a rebuild. Loopback HTTP on port 8830 (`-liveport=N`,
 `-nolive`):
 
+The bridge is standalone-only. Packaged games require `-live`; Python execution remains available only
+in uncooked sessions. `atelier live` uses port 8830, so another `-liveport=N` needs an explicitly configured client.
+
 - `POST /python` runs Python in the game's shared namespace (uncooked editor-binary sessions only), where the game's
   helper module is imported as `live`.
 - `GET /state` returns the player and camera transforms, the aim point, the live props and the frame rate.
@@ -23,7 +26,8 @@ sets none. A game's module starts with `from atelier_live import *` and puts its
 ## What a game provides
 
 - `[HTTPServer.Listeners] +ListenerOverrides=(Port=8830,BindAddress=localhost)` in its DefaultEngine.ini. The engine's
-  default binds every interface; the bridge refuses to start (an error in the log) unless its port is on loopback.
+  default binds every interface; a loopback `DefaultBindAddress` is also accepted. The bridge refuses to start
+  (an error in the log) unless its port is on loopback.
 - `[/Script/AtelierLive.AtelierLiveSettings]` in its DefaultGame.ini: `PropMaterial` (parameters `Tint` and `Tex`),
   `OverlayFolder`, `PythonFolder`, `PythonModule` (paths relative to the repository root), `Port`.
 - A call to `AtelierLive::Start(World)` once the player is ready, and optionally `AtelierLive::SetTeleport(...)` to

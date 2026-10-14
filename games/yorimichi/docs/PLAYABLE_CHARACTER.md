@@ -5,8 +5,8 @@ move set, the bike, skating, the sword and the paraglider. Everything after the 
 rest. Making the model itself is covered in [the character pipeline](../../../docs/CHARACTER_PIPELINE.md) and, for a
 case study, [Nox](NOX_CHARACTER_RECIPE.md).
 
-Cairo, Kaede, Modori, Nox and Paul all go through the steps below. None of them has its own exporter, importer,
-build steps or game class.
+Cairo, Modori, Nox and Paul use the shared export, import, recipe and player class described below.
+Kaede also uses the shared asset pipeline, with the game-specific `ASwordTrainer` subclass for her training behavior.
 
 ## What you need
 

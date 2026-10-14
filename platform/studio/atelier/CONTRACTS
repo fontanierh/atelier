@@ -1,0 +1,13 @@
+@cc [owner:fontanierh,label:correctness] complete-build-inputs
+An action's key MUST cover its code, data, declared settings and consumed product identities.
+Order-only and reference edges MUST NOT hide reads of derived data. Missing inputs and incomplete
+outputs MUST NOT be treated as a cache hit.
+
+@cc [owner:fontanierh,label:correctness] independent-artifact-ownership
+A named product MUST have one owner and a complete byte inventory. Restored outputs MUST be
+independent copies; a failed or interrupted restoration MUST NOT leave a successful build stamp.
+Native Unreal packages MUST NOT opt into a portable cache until their relocation contract passes.
+
+@cc [owner:fontanierh,label:safety] advisory-capacity
+The capacity planner MUST NOT write scheduler state, grant leases, take locks, launch workloads or
+change the live safety system. A queued phase MUST hold no resources or named locks.

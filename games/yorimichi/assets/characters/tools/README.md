@@ -13,7 +13,7 @@ Tripo model needs fixed).
 ## Revisions and the archive
 
 The tools work on revision folders: each reads earlier ones and writes the next. Only each character's current
-revision is in this repository (`../cairo`, `../fox-hunter`); the revision folders are in the prototype archive, under
+revision is in this repository (`../cairo`, `../fox-hunter`, `../modori`, `../sword-trainer` and other character folders); the revision folders are in the prototype archive, under
 `output/imagegen/yorimichi-yellow-boy-2026-09-12/` (Cairo) and `output/imagegen/yorimichi-fox-hunter-2026-09-13/` (the
 fox hunter). `_archive.py` finds the archive through `YORIMICHI_ARCHIVE` and warns when it is not set. An approved
 revision comes into this repository with `promote.py`:
@@ -40,6 +40,8 @@ its JSON records into the character's folder, removes the previous blend, and up
 | Fox hunter | `fox_hunter_animate.py` (pose language, leg solve, contacts), `fox_hunter_clip.py` (self-intersection), `fox_hunter_clipcheck.py`, `fox_hunter_captures.py`, `fox_hunter_animref.py` (H3 references), `fox_hunter_pipeline.py` (staged concepts for Tripo), `add_fox_fingers.py`, `review_fox_rig.py` |
 | Tripo | `review_tripo_model.py`, `review_tripo_rig.py`, `add_tripo_fingers.py`, `inspect_tripo_rig.py`; the fingers fitted from the mesh (`atelier.blender.tripo_fingers`) and the texture fix (flat colour, chips, eyes and face: `atelier.blender.tripo_character_texture`, [TRIPO_CHARACTERS.md](../../../docs/TRIPO_CHARACTERS.md)) are in the platform, the API client is `atelier.ai.tripo_asset` |
 | Sword trainer (Kaede) | `sword_trainer_refs.py`, `sword_trainer_pipeline.py` (concept, views, approval, Tripo mesh and rig), `sword_trainer_cleanup.py`, `sword_trainer_rig.py` (fingers, her own clips), her face spec `../sword-trainer/face.json` for `atelier.blender.tripo_character_texture` |
+| Modori | `modori_texture.py` (paint and rasterize the repaired face), `modori_coat.py` (coat fit, weights and cloth review) |
+| Paul | `vendor_paul.py` (authorized source acquisition, skeleton mapping and provenance) |
 | Outfits | `cairo_outfit.py` runs the whole body swap from an outfit spec (resumable, paid stages behind `--spend`, Tripo behind `--approve`); its stages `cairo_body_swap_{references,sunburst,fit,assemble,capture,check,export}.py`; `cairo_body_key.py` reads the green body key; outfit specs in `../cairo/outfits/` |
 | Concepts | `cairo_back_concepts.py`, `spirit_concepts.py` (the spirit roster), `heroine_concepts.py` (eight directions for a new girl character); their Sunburst calls go through `atelier.ai.images`, and every paid call (here, in `fox_hunter_pipeline.py` and in the body swap) through `atelier.ai.ledger`, so a recorded call is never sent again by itself |
 | Captures | `capture_cairo_clip.py`, `capture_cairo_revision.py`, `compare_cairo_sprint.py` |

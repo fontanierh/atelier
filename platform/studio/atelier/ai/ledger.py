@@ -5,32 +5,59 @@ uncertain until reconciled with the provider: this module never retries a paid c
 """
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
 
 
-def run_once(path, metadata, operation):
+def begin(path, metadata):
+    """@cc [owner:fontanierh,label:correctness] exclusive-paid-submission
+    A durable submitted record MUST exist before a paid operation starts. An existing record at
+    this path, including an uncertain one, MUST prevent a second submission. Ephemeral CI runners
+    MUST additionally use persistent receipts and a cross-run submission guard.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    now = lambda: datetime.now(timezone.utc).isoformat()
-    record = {**metadata, 'status': 'submitted', 'started_at': now()}
+    record = {**metadata, 'status': 'submitted', 'started_at': datetime.now(timezone.utc).isoformat()}
     # Exclusive creation also prevents two authoring processes from paying for the same revision.
     with path.open('x') as handle:
         handle.write(json.dumps(record, indent=2) + '\n')
         handle.flush()
+        os.fsync(handle.fileno())
+    return record
+
+
+def finish(path, *, status, result=None):
+    """Complete a split-phase operation such as a CI action; keep uncertain submissions visible."""
+    if status not in ('done', 'submission_uncertain'):
+        raise ValueError('Invalid paid-operation terminal status')
+    path = Path(path)
+    record = json.loads(path.read_text())
+    if record.get('status') != 'submitted':
+        raise ValueError('Only a submitted operation can be completed')
+    record.update(result or {}, status=status, finished_at=datetime.now(timezone.utc).isoformat())
+    temporary = path.with_suffix(path.suffix + '.tmp')
+    with temporary.open('w') as handle:
+        handle.write(json.dumps(record, indent=2) + '\n')
+        handle.flush()
+        os.fsync(handle.fileno())
+    temporary.replace(path)
+    return record
+
+
+def run_once(path, metadata, operation):
+    begin(path, metadata)
     try:
-        result = operation()
-        record.update(result, status='done')
-        return record
+        details = operation()
     except BaseException as error:
         # Provider messages can contain signed URLs or credentials. Keep only the error type.
-        record.update(status='submission_uncertain', error_type=type(error).__name__)
+        try:
+            finish(path, status='submission_uncertain', result={'error_type': type(error).__name__})
+        except BaseException as receipt_error:
+            # The submitted receipt remains evidence even if the disk fails during finalization.
+            error.add_note(f'Could not finalize paid-operation receipt: {type(receipt_error).__name__}')
         raise
-    finally:
-        record['finished_at'] = now()
-        temporary = path.with_suffix(path.suffix + '.tmp')
-        temporary.write_text(json.dumps(record, indent=2) + '\n')
-        temporary.replace(path)
+    return finish(path, status='done', result=details)
 
 
 def set_aside(path):

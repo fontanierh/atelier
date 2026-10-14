@@ -4,9 +4,26 @@ Atelier should admit work against available memory and CPU capacity, with additi
 temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
 admits it when all requirements fit. A small job need not wait for a particular lane to become free.
 
-**Status: proposed, not an admission mechanism today.** The current render slots, live locks, memory guards and
-machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
+**Status: offline shadow planner implemented; admission service proposed.** `atelier capacity plan snapshot.json`
+evaluates a supplied snapshot without writing scheduler state or granting admission. The current render slots,
+live locks, memory guards and machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
 small products reduce the work, and capacity admission schedules the remaining work safely.
+
+## Try the shadow planner
+
+```sh
+uv run atelier capacity plan docs/examples/capacity.json --json
+```
+
+The example is synthetic, not a live resource snapshot. Quantities are integer MiB, thousandths of a CPU core,
+and I/O slots. On the unified-memory model, `memory_mib` includes GPU allocations; `gpu_mib` is an additional
+subset ceiling and cannot exceed it. Total capacity includes the host reserve. Existing holders and queued
+requests must have distinct IDs; queue entries carry their original `ready_at` and `bypasses` values.
+
+The implementation checks complete resource sets and named locks, models immediate atomic phase replacement,
+excludes overlapping performance windows, and protects waiters after two short bypasses. Advice can say
+`would-admit`, but always carries `admission: false`. It does not observe processes, maintain leases, update queue
+ages or enforce worker limits. Those belong to the proposed supervised service and its rollout tests below.
 
 ## What replaces a slot
 

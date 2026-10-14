@@ -1,0 +1,29 @@
+name: Studio Python
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Studio Python / macOS
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          version: '0.10.0'
+          python-version: '3.12'
+          enable-cache: false
+      - run: uv sync --frozen
+      - run: uv run atelier lint
+      # These tests need no Unreal installation. Their fake renderer processes stay on this runner.
+      - run: uv run pytest -q

@@ -53,12 +53,12 @@ The game's log `PROFILE` line reports `volumetric_fog` (the component), `volumet
 ## Review film and stills
 
 ```sh
-atelier play yorimichi -- -nofox -nosound -liveport=8863 -RenderOffscreen -ForceRes
+atelier play yorimichi -- -nofox -nosound -RenderOffscreen -ForceRes
 atelier live py "TAKE='fog1'" && atelier live py - < games/yorimichi/scenarios/fog_film.py
 python games/yorimichi/scenarios/fog_film_cut.py build/yorimichi/fog_film/fog.mp4 fog1 --stills
 ```
 
-`fog_film.py` takes fixed views with the fog on and off, with the GPU frame time of each (`YorimichiLive.GpuFrameMs`):
+`fog_film.py` takes fixed views with the fog on and off, with the GPU frame time of each (`unreal.LiveLibrary.gpu_frame_ms()`):
 the countryside and Hidamari's five review views (`hidamari_*`; `hidamari_sea` is the one most prone to a veil). It
 then films a low morning sun: the village road, light shafts in the forest by the lake, running and gliding through the
 mist, Hidamari's arrival road and the setting switched off and on; then the settings menu (`menu.png`, opened by the

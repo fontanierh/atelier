@@ -1,0 +1,22 @@
+@cc [owner:fontanierh,label:security] public-repository-credentials
+Credentials MUST stay outside tracked source and MUST NOT appear in logs, artifacts, prompts or
+exceptions. Provider credentials are loaded from the ignored environment or CI secret store.
+
+@cc [owner:fontanierh,label:safety] guarded-native-work
+Unreal and Blender work MUST use Atelier's existing lock and actual-child memory guard. No code
+may bypass admission, signal another owner's process or share mutable generated folders between
+checkouts. A capacity plan is advisory until a separately validated admission service replaces it.
+
+@cc [owner:fontanierh,label:correctness] paid-call-provenance
+Every paid operation MUST have an exclusive ledger record before submission and a terminal or
+uncertain record afterward. An uncertain operation MUST NOT be retried automatically.
+
+@cc [owner:fontanierh,label:architecture] platform-game-boundary
+Platform modules MUST NOT name a particular game. Game-specific recipes, assets and runtime
+behavior belong under games/<game>; reusable mechanisms belong under platform/.
+
+@cc [owner:fontanierh,label:correctness] contract-review-before-merge
+Every PR MUST check contract syntax/owners and review applicable contracts on its final code.
+Review findings are advisory: an agent MAY resolve a false positive with a recorded explanation.
+Contract checks MUST NOT be installed as required merge gates. Syntax checks alone MUST NOT be
+presented as proof of semantic compliance. All contract owners MUST be fontanierh.

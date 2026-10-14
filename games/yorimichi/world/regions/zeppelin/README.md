@@ -90,7 +90,7 @@ turns back at either end; whoever stands at the docked ship can choose another s
 | --- | --- | --- |
 | Woodland-Hidamari | 155 m | 28 s |
 | Woodland-Mega Park | 185 m, over the western foothills and the park | 23.7 s |
-| Hidamari-Mega Park | 225 m, past the volcano's flank (163 m) | 35.7 s |
+| Hidamari-Mega Park | 240 m, past the volcano's flank (163 m) | 35.7 s |
 
 - **Choosing the stop.** At the docked ship the hint names the next stop, and `[` / `]` (shoulder buttons on a
   gamepad, **‹ Stop** / **Stop ›** on the phone) step through the others (`zeppelinChoose` in the telemetry says when

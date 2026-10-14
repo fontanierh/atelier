@@ -1,0 +1,156 @@
+name: Contract review bot
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  # Cancelling a paid run can leave an uncertain provider request. Finish it, then review the latest head.
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: >-
+      (github.event_name == 'pull_request_target' && !github.event.pull_request.draft) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.body == 'r? cc')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
+      actions: read
+    steps:
+      - name: Validate request without executing PR code
+        id: request
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const pull_number = context.payload.pull_request?.number ?? context.payload.issue?.number;
+            const sender = context.payload.sender;
+            if (sender?.type !== 'User') return;
+            const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+              ...context.repo, username: sender.login,
+            });
+            if (!['write', 'maintain', 'admin'].includes(permission.data.permission)) return;
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number });
+            if (pr.state !== 'open' || pr.draft || pr.head.repo?.full_name !== process.env.GITHUB_REPOSITORY) return;
+            const { data: statuses } = await github.rest.repos.listCommitStatusesForRef({
+              ...context.repo, ref: pr.head.sha, per_page: 100,
+            });
+            const prior = statuses.find(s => s.context === 'Code contracts / review');
+            // This persistent status is the cross-run guard; RUNNER_TEMP receipts alone cannot
+            // deduplicate runners. A same-head or base-only review needs an explicit writer request.
+            if (prior && context.eventName !== 'issue_comment') return;
+            if (Number(process.env.GITHUB_RUN_ATTEMPT) !== 1) {
+              core.setFailed('Reconcile the previous paid run, then request a new review with r? cc.');
+              return;
+            }
+            const request = { id: String(context.runId), pull_number, base_sha: pr.base.sha, head_sha: pr.head.sha };
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: pr.head.sha, context: 'Code contracts / review', state: 'pending',
+              description: 'Reviewing applicable code contracts',
+              target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${context.runId}`,
+            });
+            core.setOutput('request', JSON.stringify(request));
+
+      - name: Check out the trusted base controller
+        if: steps.request.outputs.request != ''
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ fromJSON(steps.request.outputs.request).base_sha }}
+          path: .ci-controller
+          persist-credentials: false
+
+      - name: Check out the reviewed upstream tool revision
+        if: steps.request.outputs.request != ''
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: spolu/code-contracts
+          ref: 6d1b1a945d1fe02a43bac567341b77ccfdf3ae33
+          path: .review-tool
+          persist-credentials: false
+
+      - name: Verify upstream bytes and pin transitive review tools
+        if: steps.request.outputs.request != ''
+        env:
+          PYTHONPATH: .ci-controller/platform/studio
+        run: python3 -m atelier.contract_review_tools .review-tool/.github/actions/contract-review/action.yml
+
+      - name: Record paid operation before submission
+        id: ledger
+        if: steps.request.outputs.request != ''
+        env:
+          PYTHONPATH: .ci-controller/platform/studio
+          REVIEW_REQUEST: ${{ steps.request.outputs.request }}
+        run: python3 -m atelier.contract_review begin "$RUNNER_TEMP/paid-review/ledger.json"
+
+      - name: Persist submission intent before calling the provider
+        if: steps.ledger.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: contract-review-submitted-${{ github.run_id }}
+          path: ${{ runner.temp }}/paid-review/ledger.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Review with the pinned upstream code-contracts action
+        id: review
+        if: steps.ledger.outcome == 'success' && success()
+        uses: ./.review-tool/.github/actions/contract-review
+        with:
+          pull-request-number: ${{ fromJSON(steps.request.outputs.request).pull_number }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-6.1-sol
+          effort: medium
+
+      - name: Record completion and validate semantic result
+        id: result
+        if: always() && steps.ledger.outcome == 'success'
+        env:
+          PYTHONPATH: .ci-controller/platform/studio
+          REVIEW_REQUEST: ${{ steps.request.outputs.request }}
+          ACTUAL_REQUEST: ${{ steps.review.outputs.request }}
+          REVIEW_RESULT: ${{ steps.review.outputs.review }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+        run: python3 -m atelier.contract_review finish "$RUNNER_TEMP/paid-review/ledger.json"
+
+      - name: Persist final paid-operation receipt
+        if: always() && steps.ledger.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: contract-review-final-${{ github.run_id }}
+          path: ${{ runner.temp }}/paid-review/ledger.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish advisory review status for the captured commits
+        if: always() && steps.request.outputs.request != ''
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          REVIEW_REQUEST: ${{ steps.request.outputs.request }}
+          REVIEW_COMPLETED: ${{ steps.result.outputs.completed }}
+          REVIEW_VIOLATIONS: ${{ steps.result.outputs.violations }}
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const request = JSON.parse(process.env.REVIEW_REQUEST);
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: request.pull_number });
+            const current = pr.head.sha === request.head_sha && pr.base.sha === request.base_sha;
+            const completed = current && process.env.REVIEW_COMPLETED === 'true' && process.env.JOB_STATUS === 'success';
+            const violations = Number(process.env.REVIEW_VIOLATIONS || 0);
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: request.head_sha, context: 'Code contracts / review',
+              state: completed ? 'success' : 'failure',
+              description: completed ? `Reviewed base ${request.base_sha}; ${violations} findings (advisory)` :
+                'Review incomplete or stale; inspect the run before requesting r? cc',
+              target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${context.runId}`,
+            });
+            if (!completed) core.setFailed('The contract review did not complete for the current commits.');
+            else if (violations) core.warning(`${violations} advisory findings: fix or explain false positives in the PR.`);

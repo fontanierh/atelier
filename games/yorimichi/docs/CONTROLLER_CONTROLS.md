@@ -37,7 +37,7 @@ left button held) is Flick-It, not the camera. On the sailboat the left stick st
 On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, a press of Sprint (the left stick) pedals hard until pressed again or he stops pedalling, Jump hops, Crouch
 is a skid stop, Attack rings the bell and Wave waves.
 
-The player plays the merged move set (Cairo and Modori; see [the move set](../assets/characters/adventure/README.md)).
+The player plays the merged move set (Cairo, Modori, Nox and Paul; see [the move set](../assets/characters/adventure/README.md)).
 Jump in the air is the double jump; pressed again, it opens the paraglider. Roll is the dodge (a side hop with the
 stick left or right, otherwise a backflip). Parry held draws the sword, guards with it and locks on; Jump while
 guarding parries. Dash is the swim dash. Every playable character uses its merged move set.

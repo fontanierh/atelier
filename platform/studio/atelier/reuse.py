@@ -48,6 +48,8 @@ artifacts=[p.resolve() for p in [ctx.out]+([ctx.uproject.parent/'Content'] if ct
 def own(step): return replace(step,inputs=[i for i in step.inputs if not any(Path(i).resolve().is_relative_to(a) for a in artifacts)])
 done={}; compared={}; sources={}; result=[]
 for step in order(load_recipe(GAME).steps(ctx),[]):
+ if getattr(step,'products',()) or getattr(step,'reads',()) or getattr(step,'references',()):
+  raise ValueError('Whole-build reuse does not yet certify named products; use an incremental build')
  value=fingerprint(step,done)
  verified=portable(step,compared)
  source=portable(own(step),sources); sources[step.name]=source

@@ -100,7 +100,7 @@ charge, kill the fox.
 ### The player's side
 
 The player has 100 health, a short flinch and 0.7 s of grace after each hit, and is knocked down at zero for 4.1 s
-before standing up restored with 1.5 s of grace ([SWORD_COMBAT.md](SWORD_COMBAT.md#player-health)). The soft lock
+before standing up restored with 1.5 s of grace ([SWORD_COMBAT.md](SWORD_COMBAT.md)). The soft lock
 turns each strike and the counter toward the nearest living fox within 3 m that is roughly ahead, and steps in so the
 clip's contact point lands on it.
 

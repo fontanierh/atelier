@@ -29,8 +29,8 @@ including the game itself while it plays.
 - **[Let agents drive the game](#agents-in-the-loop)**: run Python inside it, script QA checks, take screenshots and
   review sheets.
 - **[Play anywhere](#play-anywhere)**: stream the game to a browser, a phone or a friend's laptop.
-- **[Run several agents on one Mac](#many-agents-one-machine)**: separate worktrees, reused builds, one heavy job at
-  a time under a memory guard, and a shared message board.
+- **[Run several agents on one Mac](#many-agents-one-machine)**: separate worktrees, reused builds, a guarded big
+  job with optional small and reserved fitting lanes, and a shared message board.
 
 <p align="center">
   <picture>
@@ -51,7 +51,8 @@ including the game itself while it plays.
 | Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
 | Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
-| Node | 24+ (optional) | streaming pages, H3 and Seedance scripts |
+| Node / npm | 24.16+ / 11.11+ for contracts | contract checks; Node also serves streaming pages and AI scripts |
+| Rust / Cargo | current stable (optional) | the agent board server (`atelier board serve`) |
 | coturn, Tailscale | (optional) | streaming to other devices (`brew install coturn`) |
 
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
@@ -248,12 +249,13 @@ Tailscale. `/play/` is the plain player, and `/` serves the game's own touch pag
 
 | Part | Where | What |
 |---|---|---|
-| The `atelier` command | [platform/studio](platform/studio/atelier) | new, setup, doctor, fetch, build, reuse, pool, play, stream, live, qa, lint, board; review sheets; machine safety |
+| The `atelier` command | [platform/studio](platform/studio/atelier) | new, setup, doctor, fetch, build, reuse, pool, play, playtest, stream, live, qa, lint, contracts, capacity, board; review sheets; machine safety |
 | AI runners | [platform/studio/atelier/ai](platform/studio/atelier/ai) | Tripo and image generation, UniMate, Kimodo and GVHMR, and the ledger every paid call goes through |
 | Engine plugins | [platform/engine/Plugins](platform/engine/Plugins) | core runtime data, animation nodes (foot planting, sailboat stance, bike grip), effects, skateboarding, streaming, the live bridge |
 | Skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Motion helpers | [platform/web/motion](platform/web/motion/README.md) | retargeting generated motion onto a game's rig |
+| Agent board | [platform/web/board](platform/web/board), [board-world](platform/web/board-world) | Rust server, React coordination UI and world view |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Games | [games/sandbox](games/sandbox/README.md), [games/yorimichi](games/yorimichi/README.md) | the smallest game (the template for `atelier new`), and a full one |
 
@@ -278,13 +280,14 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   they touch.
 
   ```sh
+  uv run atelier fetch yorimichi  # sound masters in the machine's shared download cache
   uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
   cd ../fresh-worktree && uv sync && uv run atelier build yorimichi   # confirms the carried-over steps
   ```
 
 - **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
 - **Guarded heavy work.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
-  optionally a small one beside it) and run Unreal and Blender under a memory guard that stops a job before it
+  an optional small slot and a reserved fitting lane) and run Unreal and Blender under a memory guard that stops a job before it
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
 - **A message board between agents.** `atelier board` delivers addressed handoffs and lack-of-progress notices to
   background subscribers across worktrees, with a web view ([agent board](docs/AGENT_BOARD.md)).
@@ -292,6 +295,8 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   already exists and never retries one, so a rerun cannot pay again for the same revision.
 - **The repository is public.** `atelier lint` and the pre-commit hook refuse secrets, personal paths and game names in
   the platform.
+- **Code contracts are checked before merging.** [Contracts and the review bot](docs/CODE_CONTRACTS.md) make invariants
+  visible. The bot uses `gpt-6.1-sol` with medium reasoning; findings are advisory and agents can explain false positives.
 
 ## Commands
 
@@ -299,17 +304,19 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 |---|---|
 | `atelier new <game>` | start a game from the sandbox |
 | `atelier doctor <game>` / `fetch <game>` | check the tools and sources; download what may not be redistributed |
-| `atelier setup [--headless]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
+| `atelier setup [--headless] [--workers N]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
 | `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
-| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--dry-run`, `--touch` |
-| `atelier play <game> [--profile P]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
-| `atelier playtest <game> [--tag T] [--download-only]` | play the game's latest GitHub release, downloading, checking and unpacking it the first time; its `game.toml` `[release]` section names the tags and launcher |
+| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`; read-only `--plan` / `--dry-run`, `--explain`, `--json` |
+| `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
+| `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |
 | `atelier qa <game> <scenario>` | run `games/<game>/scenarios/<scenario>.py` against the running game |
-| `atelier stream <game> start [--local]` / `status` / `stop` | play in a browser elsewhere: `/play/` is the plain player, `/` the game's touch page when it has one |
+| `atelier stream <game> start [--local]` / `status` / `stop` / `build-web [--install]` | play in a browser; build the web assets, optionally reinstalling their dependencies |
 | `atelier board` | messages and handoffs between agents ([guide](docs/AGENT_BOARD.md)) |
-| `atelier lint` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
+| `atelier lint [--staged]` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
+| `atelier contracts check` | contract syntax and owner policy; semantic review is separate and advisory |
+| `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |
 
 **Tests.** `uv run pytest` runs the studio tests (`platform/studio/tests`) and the games' Python tests. In-game
 checks use QA scenarios through the live bridge; with a local stream, the phone smoke tests in
@@ -337,7 +344,7 @@ a fox-masked hunter with a sword. Its models, rigs, animation, world and code we
   and body generations, with a repaired face, rigged locs and the same movement, bike and skating systems;
 - **an island built by scripts**: a coastal road, a hamlet, a city with a harbour and an arcade, a woodland lake and
   a zeppelin line;
-- **two skate parks**: the skate pier and the Super Ultra Mega Park;
+- **three skate parks**: the skate pier, Super Ultra Mega Park and Crater Park;
 - **sounds** cut and levelled automatically: footsteps by surface, combat cues with hit-stop and sparks;
 - **phone play** through the streaming plugin.
 

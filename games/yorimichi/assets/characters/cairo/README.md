@@ -9,7 +9,7 @@ body and nine authored donor clips: double jump, sword guard/parry/recoil, inter
 ## Build
 
 ```sh
-uv run atelier build yorimichi unreal.cairo_adventure
+uv run atelier build yorimichi unreal.cairo_pawn
 ```
 
 `characters.cairo` runs the shared body export ([`../pipeline/export.py`](../pipeline/export.py), as `character.toml`
@@ -19,7 +19,7 @@ clips. The export checks the blend against `native_sha256` in `source-manifest.j
 It creates no standalone movement or combat set. The content cleanup archives older movement/combat imports before cooking.
 
 Cairo has no skate clips: on the board, the skate runtime's solved pose is retargeted onto him at run time. See
-[skating](../../../docs/SKATE.md) and the [runtime assets](../../skate/README.md).
+[skating](../../../docs/SKATE.md) and the [runtime assets](../../../../../platform/engine/Plugins/Activities/Skate/Data/README.md).
 
 `characters.cairo_adventure` and `unreal.cairo_adventure` give Cairo the merged move set (the reference rig's moves with his own double jump),
 which he uses in every game session. `../adventure/retarget.py` retargets the reference rig's clips onto him, as

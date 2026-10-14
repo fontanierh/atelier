@@ -20,6 +20,8 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from . import engine, paths
+from . import build_products
+from .build_products import Product
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
@@ -157,6 +159,9 @@ class Step:
                                                    # or prefix build
     verify: object = field(default=None, compare=False, repr=False)  # () -> bool: outputs whose names vary are present
     cutoff: bool = False                           # dependents see the hash of its outputs, not its fingerprint
+    products: list[Product] = field(default_factory=list)  # independently consumed, exclusively owned outputs
+    reads: list[str] = field(default_factory=list)         # product contents feed this step's fingerprint
+    references: list[str] = field(default_factory=list)    # include products, without deriving data from them
 
 
 def outputs_present(step):
@@ -179,10 +184,10 @@ def check_modules(steps):
 
 # ---------------------------------------------------------------- context
 class Context:
-    def __init__(self, game):
+    def __init__(self, game, *, create=True):
         self.game = game
         self.game_dir = paths.game_dir(game)
-        self.out = paths.build_dir(game)
+        self.out = paths.build_dir(game) if create else paths.build_root() / game
         self.logs = self.out / 'logs'
         self.stamps = self.out / 'stamps'
         self.unreal_root = engine.unreal_root()
@@ -211,6 +216,18 @@ def load_recipe(game):
 
 
 # ---------------------------------------------------------------- fingerprints
+class RecordingDigest:
+    """Feed a legacy fingerprint and its explanatory input digest in one streaming pass."""
+
+    def __init__(self, aggregate):
+        self.aggregate = aggregate
+        self.local = hashlib.sha256()
+
+    def update(self, data):
+        self.aggregate.update(data)
+        self.local.update(data)
+
+
 def _hash_path(digest, path, skip=True):
     """Hash a file, or a folder's files; `skip` leaves out what never changes a step's source (SKIP_PARTS)."""
     path = Path(path)
@@ -228,18 +245,50 @@ def _hash_path(digest, path, skip=True):
         digest.update(b'missing:' + str(path).encode())
 
 
+def missing_product_inputs(step):
+    """Named-product actions require all declared sources; legacy optional inputs stay compatible."""
+    if not (step.products or step.reads or step.references):
+        return []
+    inputs = [*step.inputs, *(p for c in step.commands for p in getattr(c, 'runs', list)())]
+    return [str(path) for path in inputs if not Path(path).exists()]
+
+
 def fingerprint(step, done):
+    """@cc [owner:fontanierh,label:correctness] legacy-fingerprint-compatibility
+    Steps without named products MUST retain their existing fingerprint algorithm. Read edges
+    MUST include the consumed product's content identity; references and ordering MUST NOT.
+    """
+    return fingerprint_state(step, done, capture=False)[0]
+
+
+def fingerprint_state(step, done, *, capture=True):
+    """Hash once, optionally retaining per-input identities for build explanations."""
     digest = hashlib.sha256()
     # Checkout locations and generated Unreal outputs do not change a step's source. Keeping the command paths
     # relative to their roots also lets a verified build seed another checkout of the same source revision.
     commands = repr([c for c in step.commands])
     commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
     digest.update(commands.encode())
+    state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
+             'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
     for item in [*step.inputs, *(f for c in step.commands for f in getattr(c, 'runs', list)())]:
-        _hash_path(digest, item)
+        if capture:
+            recording = RecordingDigest(digest)
+            _hash_path(recording, item)
+            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            state['inputs'][label] = recording.local.hexdigest()
+        else:
+            _hash_path(digest, item)
     for need in step.needs:
         digest.update(done.get(need, 'unbuilt').encode())
-    return digest.hexdigest()
+    if step.products or step.reads or step.references:
+        declarations = repr((step.products, step.reads, step.references))
+        declarations = declarations.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+        consumed = {name: done.get(f'product:{name}', 'unbuilt') for name in step.reads}
+        digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
+        state['products'] = declarations
+        state['reads'] = consumed
+    return digest.hexdigest(), state
 
 
 def outputs_digest(step):
@@ -259,24 +308,11 @@ def result(step, current, stamp):
 
 # ---------------------------------------------------------------- running
 def order(steps, wanted):
-    """Wanted steps plus everything they need, in declaration order."""
-    by_name = {s.name: s for s in steps}
-    unknown = [w for w in wanted if w not in by_name and not any(s.name.startswith(w + '.') for s in steps)]
-    if unknown:
-        raise SystemExit(f'unknown steps: {unknown}; `atelier build <game> --list` shows them')
-    chosen = set()
-
-    def add(name):
-        if name in chosen:
-            return
-        chosen.add(name)
-        for need in by_name[name].needs + by_name[name].after:
-            add(need)
-    for w in wanted or [s.name for s in steps if not s.explicit]:
-        for s in steps:
-            if s.name == w or (s.name.startswith(w + '.') and not s.explicit):
-                add(s.name)
-    return [s for s in steps if s.name in chosen]
+    """Select a dependency-complete, stable topological plan and reject invalid declarations."""
+    try:
+        return build_products.Graph(steps).select(wanted)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
 
 def report_peak(path):
@@ -365,33 +401,38 @@ def slot_summary(slots):
 
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
+    if dry:
+        from .build_plan import show
+        return show(game, wanted, force=force, echo=echo)
     ctx = Context(game)
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    if touch and any(step.products for step in plan):
+        raise SystemExit('Named products require a successful build; --touch cannot certify them')
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     done, ran = {}, 0
-    for s in steps:   # fingerprints of steps not in the plan still feed their dependents
-        stamp = ctx.stamps / f'{s.name}.json'
-        if stamp.exists() and s not in plan:
-            previous = json.loads(stamp.read_text())
-            done[s.name] = previous.get('result', previous['fingerprint'])
+    # The graph includes every prerequisite. Unrelated stamps cannot affect this selected build.
     started = time.monotonic()
     for step in plan:
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
-        current = fingerprint(step, done)
-        previous = json.loads(stamp.read_text()) if stamp.exists() else {}
+        missing = missing_product_inputs(step)
+        if missing:
+            echo(f'{print_} FAILED: required inputs missing: {missing[:3]}')
+            return 1
+        current, input_state = fingerprint_state(step, done)
+        from .build_plan import read_stamp
+        previous = read_stamp(stamp)
         outputs_ok = outputs_present(step)
+        if step.products:
+            outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}))
         if not force and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = result(step, current, previous)
+            build_products.feed_results(done, previous.get('products', {}))
             echo(f'{print_} up to date')
-            continue
-        if dry:
-            done[step.name] = current
-            echo(f'{print_} would run')
             continue
         if touch:   # the outputs are known to be current (a refactor of the recipe): record them without running
             if not outputs_ok:
@@ -410,12 +451,15 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
             pool_key = artifact_pool.key(ctx, step, current)
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
-        slots, peaks = [], []
+        slots, peaks, command_times = [], [], []
         with open(log_path, 'w') as log:
             try:
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in step.commands:
+                    command_started = time.monotonic()
                     run_command(ctx, step, command, log, request, slots)
+                    command_times.append({'kind': type(command).__name__,
+                                          'seconds': round(time.monotonic() - command_started, 3)})
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
                 missing = [str(o) for o in step.outputs if not Path(o).exists()]
@@ -423,6 +467,9 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                     missing.append(f'{step.name} verification')
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
+                products = build_products.records(step)
+                if step.products and fingerprint(step, done) != current:
+                    raise RuntimeError(f'{step.name}: inputs changed during build; products not certified')
             except Exception as error:
                 log.flush()
                 tail = log_path.read_text(errors='ignore').splitlines()[-25:]
@@ -433,7 +480,10 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         if peaks and None not in peaks:   # a step with several commands: its report keeps only the last one's peak
             (ctx.logs / f'{step.name}.guard' / 'step-peak.json').write_text(
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
-        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time()}
+        record = {'fingerprint': current, 'seconds': round(seconds, 1), 'time': time.time(),
+                  'input_state': input_state, 'commands': command_times}
+        if step.products:
+            record['products'] = products
         if step.cutoff:
             record['result'] = outputs_digest(step)
         if pool_key is not None:
@@ -441,8 +491,11 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                 stamp.unlink(missing_ok=True)
                 raise RuntimeError('Pool tool context changed during build; outputs not certified')
             record['pool_key'] = pool_key
-        stamp.write_text(json.dumps(record) + '\n')
+        temporary = stamp.with_suffix('.tmp')
+        temporary.write_text(json.dumps(record) + '\n')
+        temporary.replace(stamp)
         done[step.name] = result(step, current, record)
+        build_products.feed_results(done, products)
         ran += 1
         echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
     echo(f'{len(plan)} steps, {ran} ran, {time.monotonic() - started:.0f} s')
@@ -450,8 +503,11 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
 
 
 def list_steps(game, echo=print):
-    ctx = Context(game)
+    ctx = Context(game, create=False)
     for s in load_recipe(game).steps(ctx):
         needs = f'  (needs {", ".join(s.needs)})' if s.needs else ''
         needs += f'  (after {", ".join(s.after)})' if s.after else ''
+        needs += f'  (products {", ".join(p.name for p in s.products)})' if s.products else ''
+        needs += f'  (reads {", ".join(s.reads)})' if s.reads else ''
+        needs += f'  (references {", ".join(s.references)})' if s.references else ''
         echo(f'{s.name:34s} {s.about}{needs}')

@@ -28,12 +28,12 @@ uv run atelier play yorimichi -- -rider=Nox
 For a checkout whose world is already built:
 
 ```sh
-uv run atelier build yorimichi unreal.nox_adventure unreal.nox_bike data.network
+uv run atelier build yorimichi unreal.nox_pawn data.network
 ```
 
 `characters.nox` exports the approved mesh. `characters.nox_adventure` retargets every merged movement,
 action and donor gesture. `characters.nox_bike` authors every bike action on his skeleton.
-The three `unreal.nox*` steps import their results. The character menu and `-rider=Nox` both select him.
+The four `unreal.nox*` steps import body, adventure and bike assets, then create the pawn and roster record. The character menu and `-rider=Nox` both select him.
 The menu refuses him until his merged definition and move record are built.
 
 Skating retargets the shared library onto the character's humanoid bones in the live animation graph.

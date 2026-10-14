@@ -9,7 +9,7 @@ detection and playback; the sounds and where they come from are in
 
 ```bash
 atelier fetch yorimichi                  # the Sonniss masters
-atelier build yorimichi unreal.sounds    # slice and import footsteps, combat and skate audio
+atelier build yorimichi unreal.sounds    # slice and import footsteps, combat, skate and bike audio
 ```
 
 `unreal.sounds` runs `audio.footsteps` (slicing into `build/yorimichi/audio/footsteps/`) and

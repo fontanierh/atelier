@@ -4,9 +4,12 @@ Atelier should build a small edit by generating, importing and cooking only the 
 changed. Every certified product should be reusable across compatible worktrees and revisions. The normal `atelier build`
 command should handle this automatically, with a local store that works offline and an optional remote store.
 
-**Status: proposed architecture.** The artifact graph, automatic restoration, import transactions and command
-extensions below require implementation. Existing `Step` fingerprints, output cutoffs, module isolation and the
-[portable artifact pool](ARTIFACT_POOL.md) are foundations. The current CLI and safety rules remain in force.
+**Status: foundations implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
+product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
+timings are available. [The recipe guide](BUILD_RECIPES.md) describes the implemented API. Automatic restoration,
+import transactions, spatial dependencies and remote storage below still require implementation and native proof.
+Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
+The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
 The central contract is: **incremental build and clean build produce equivalent playable content, while unchanged
 products stay unchanged.** Broad work remains appropriate for genuinely broad changes, such as an engine upgrade
@@ -281,15 +284,15 @@ recipes and [world authoring guidance](WORLD_BUILD_PRACTICES.md). Authors declar
 the executor chooses cache lookup and batching. The same machinery must work for the sandbox and another game
 without game names in platform code.
 
-Proposed inspection features are `build --plan`, `build --explain <product>` and a machine-readable build report.
-They should show the changed input, affected products, cache hit source, missing output, retirement, time spent
+`build <game> [step ...] --plan`, `--explain` and `--json` now show decisions, changed inputs, missing products and
+conditional consumers. Selection still uses step names or prefixes. Further reports should add cache hit source, retirement, time spent
 waiting and actual useful execution. During planning, a dirty generator's unchanged output is not yet known;
 show its consumers as conditional until that generator or a cache hit resolves them.
 
 A no-op build should inspect cached inventories without repeatedly reading every large source and generated file.
 Use a local file-hash index, with filesystem identity/change metadata as a memoization aid and full verification
 at trust boundaries. Hash memoization must never certify a remote download or a suspected corrupted output.
-Stage 1 introduces this index: file identity, size and high-resolution change metadata are hints, with invalidation
+The next part of stage 1 introduces this index: file identity, size and high-resolution change metadata are hints, with invalidation
 on replacement, uncertain filesystem events, index-version changes or lost watcher history. A full verification
 mode remains available; ordinary timestamps alone cannot certify correctness after an unobserved modification.
 

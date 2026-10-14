@@ -80,8 +80,9 @@ accepts only bounded numeric fields and known action bits, and exposes no consol
 
 ## Smoke tests
 
-With a stream running (`atelier stream yorimichi start --local`), each test drives a real Chrome at phone size over
-WebRTC and checks the game's own telemetry; reports and screenshots go to `build/yorimichi/`. Run them with
+Most tests need a stream (`atelier stream yorimichi start --local`) and drive Chrome at phone size over WebRTC,
+checking the game's telemetry. `map-scroll` and `graphics-settings` are browser-only and need no game or stream.
+Reports and screenshots go to `build/yorimichi/`. Run them with
 `node games/yorimichi/phone/<name>-smoke.mjs`; `STREAM_URL` points them at another address.
 
 | Test | Checks |
@@ -89,6 +90,7 @@ WebRTC and checks the game's own telemetry; reports and screenshots go to `build
 | `jump-smoke.mjs` | multi-touch stick and jump: a held single jump, the double jump, a third tap refused |
 | `map-smoke.mjs` | the map sheet, pins and player marker, travel from a pin and from the list, back to spawn |
 | `map-scroll-smoke.mjs` | touch gestures on the map alone, without the game |
+| `graphics-settings-smoke.mjs` | browser-only graphics controls and confirmation flows, without a stream |
 | `settings-smoke.mjs` | every setting against the game's answers and the saved file, then restored (the session-only `desktop` switch is left alone) |
 | `sailboat-smoke.mjs` | launch, steer, raise and lower the sail, step ashore |
 | `sprint-smoke.mjs` | sprint stamina and its rings |

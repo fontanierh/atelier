@@ -35,7 +35,7 @@ atelier live py "live.spawn('paper-lantern-1', 'games/yorimichi/assets/props/pap
 
 ## In the game
 
-The character starts the bridge once the world is ready, for the player only, and routes its teleports through the
+In standalone sessions, the character starts the bridge once the world is ready, for the player only, and routes its teleports through the
 game's own travel. The bridge listens on loopback only (`[HTTPServer.Listeners]` in `DefaultEngine.ini`) and refuses
 to start, with an error in the log, when its port is not bound to loopback. On start it imports the helper module and
 loads every overlay.
@@ -119,5 +119,5 @@ Everything lands in `games/yorimichi/assets/props/<slug>/`: `concept.png`, `prom
 - Live props are static meshes without Nanite, LODs or baked lighting; keep to the face budget. There is no step that
   bakes accepted overlay props into the normal pipeline.
 - Rigged and animated models (creatures, characters) do not load.
-- The bridge runs any Python the agent sends and has no authentication. It exists only in uncooked sessions and
-  listens only on loopback.
+- The bridge has no authentication and listens only on loopback. It is disabled in packaged games unless
+  launched with `-live`, and refuses networked sessions. Python execution is available only in uncooked sessions.

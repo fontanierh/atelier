@@ -166,8 +166,14 @@ def make_parser():
     p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
+    p = sub.add_parser('capacity', help='evaluate a capacity snapshot without admitting work')
+    p.add_argument('action', choices=['plan']); p.add_argument('snapshot')
+    p.add_argument('--json', action='store_true')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
-    p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true'); p.add_argument('--dry-run', action='store_true')
+    p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
+    p.add_argument('--dry-run', '--plan', action='store_true', help='read-only build decisions')
+    p.add_argument('--explain', action='store_true', help='plan with the reason for each rebuild')
+    p.add_argument('--json', action='store_true', help='print the read-only plan as JSON')
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value')
@@ -183,6 +189,8 @@ def make_parser():
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
     p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
+    p = sub.add_parser('contracts', help='check code contract syntax and owners')
+    p.add_argument('action', choices=['check'])
     p = sub.add_parser('live'); p.add_argument('rest', nargs=argparse.REMAINDER)
     p = sub.add_parser('qa'); p.add_argument('game'); p.add_argument('scenario'); p.add_argument('rest', nargs=argparse.REMAINDER)
     return parser
@@ -222,10 +230,18 @@ def main(argv=None):
         return artifact_pool.main(args.action, args.game, args.step)
     if args.command == 'fetch':
         return fetch(args.game)
+    if args.command == 'capacity':
+        from . import capacity
+        return capacity.main(args.snapshot, as_json=args.json)
     if args.command == 'build':
         if args.list:
             list_steps(args.game)
             return 0
+        if args.dry_run or args.explain or args.json:
+            if args.touch:
+                raise SystemExit('--touch cannot be combined with a read-only plan')
+            from .build_plan import show
+            return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json)
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
@@ -237,6 +253,9 @@ def main(argv=None):
         return stream.main(args.game, args.action, local=args.local, install=args.install)
     if args.command == 'lint':
         return lint(args.staged)
+    if args.command == 'contracts':
+        from . import contracts
+        return contracts.check()
     if args.command == 'qa':
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
         if not script.exists():

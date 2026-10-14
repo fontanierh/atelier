@@ -28,7 +28,8 @@ def digest(path):
 
 
 def roots(ctx, step):
-    if not step.pool_roots or step.needs or any(type(c) is not Python for c in step.commands):
+    if (not step.pool_roots or step.needs or step.products or step.reads or step.references
+            or any(type(c) is not Python for c in step.commands)):
         raise ValueError('Pool requires explicitly owned folders and independent Python commands')
     if os.environ.get('ATELIER_PYTHON') or os.environ.get('ATELIER_BUILD_ROOT'):
         raise ValueError('Pool requires the default interpreter and per-checkout build root')

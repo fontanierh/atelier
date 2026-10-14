@@ -9,7 +9,7 @@ games/            each game: world, characters, look, sounds, tuning, its own C+
 platform/
   studio/         the `atelier` command and Python package: build, play, live, QA, AI helpers, review, safety
   engine/Plugins/ Unreal plugins any game can switch on
-  web/            browser code: the stream pages and the motion helpers
+  web/            stream pages, motion helpers, the Rust/React agent board and board-world
   conventions/    units, the humanoid bone contract, clip roles, sound cue names, naming
 build/            ignored: everything a build generates, per game
 ```
@@ -18,7 +18,7 @@ build/            ignored: everything a build generates, per game
 
 | Piece | Where | What |
 |---|---|---|
-| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `setup`, `fetch`, `build` (incremental steps), `reuse`, `pool`, `play` (profiles), `stream`, `live`, `qa`, `lint`, `board` (agent messages); the render lock and memory guard around every heavy process (`atelier.safety`) |
+| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `setup`, `fetch`, `build` (incremental steps/products), `reuse`, `pool`, `play` (profiles), `playtest`, `stream`, `live`, `qa`, `lint`, `contracts`, `capacity` (shadow plans), `board`; the lock and memory guard around heavy processes (`atelier.safety`) |
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, the paid-call ledger, the UniMate and Kimodo runners, contact sheets, glTF previews |
 | Conventions | `platform/conventions` | units and axes, humanoid bones, clip roles, sound cues, naming |
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina |
@@ -29,6 +29,7 @@ build/            ignored: everything a build generates, per game
 | LiveBridge | `engine/Plugins/Dev/LiveBridge` | the loopback live bridge: Python in the running game, runtime GLB props, overlays |
 | Stream pages | `platform/web/stream` | stream server, browser connection, page lifecycle, touch primitives, the plain player, smoke-test helpers |
 | Motion helpers | `platform/web/motion` | Three.js helpers that capture a rig's rest pose, apply generated motion to an existing skin and close authored loops |
+| Agent board | `platform/web/board`, `platform/web/board-world` | Rust coordination server, React web UI and world view |
 
 Systems that only one game uses stay in that game. In Yorimichi these are the player character (on-foot movement,
 actions, camera), sword combat and the fox hunter, the sailboat, the zeppelin, the mini-mega ramp, footsteps, the
@@ -63,10 +64,11 @@ world map, preferences and the HUD.
 
 ## Build products
 
-The [incremental build proposal](docs/INCREMENTAL_BUILDS.md) describes the next build architecture: explicit
-product ownership, small dependency boundaries and automatic artifact reuse. [World build practices](docs/WORLD_BUILD_PRACTICES.md)
-explain how to structure asset libraries, terrain and regions for small rebuilds. Proposed executor features are
-marked in those documents; the current [artifact pool](docs/ARTIFACT_POOL.md) remains the implemented reuse guide.
+The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
+plans. The [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining automatic cache and
+native import migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
+terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
+remains the implemented reuse guide.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks.
 
@@ -76,4 +78,4 @@ Blender's only scripting language is Python, and Unreal's editor scripting is Py
 command line, Blender and Unreal, and the house rules exist once. The shared core (`atelier.conventions`,
 `atelier.paths`, `atelier.manifest`) uses only the standard library so it runs in all three interpreters; Blender code
 (`atelier.blender`) is only loaded inside Blender. C++ is for the games and plugins, JavaScript for browser pages, and
-Node only where a library requires it (Pixel Streaming's frontend and signalling, the AI gateway client).
+Node where libraries require it (Pixel Streaming, AI gateway and contract checking), and Rust for the board server.

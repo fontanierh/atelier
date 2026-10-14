@@ -14,7 +14,7 @@ submitted once and resumed by id; an uncertain POST is never repeated (tripo_ass
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402
 ROOT = yori.REPO
 _sys.path.insert(0, str(yori.ASSETS / 'characters' / 'tools'))
-import argparse, base64, datetime, hashlib, json, os, shutil, sys, time, urllib.error, urllib.request
+import argparse, datetime, hashlib, json, os, shutil, sys
 from pathlib import Path
 
 OUT = yori.ASSETS / 'props'
@@ -43,24 +43,19 @@ def sha(path):
 
 
 def concept(slug, description):
+    """@cc [owner:fontanierh,label:correctness] prop-concept-paid-once
+    A concept request MUST use the paid-call ledger. Existing output or provenance MUST prevent
+    resubmission; an uncertain provider result MUST be reconciled before another paid attempt.
+    """
+    from atelier.ai import images
     folder = OUT / slug; folder.mkdir(parents=True, exist_ok=True)
     prompt = STYLE + description.strip()
-    body = json.dumps({'model': MODEL, 'prompt': prompt, 'size': '1024x1024', 'quality': 'high', 'n': 1}).encode()
-    req = urllib.request.Request('https://api.openai.com/v1/images/generations', data=body, method='POST',
-                                 headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY']})
-    started = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=600) as r: js = json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        js = json.loads(e.read() or b'{}')
-    if 'data' not in js: raise SystemExit(f'Sunburst error: {js.get("error", js)}')
     image = folder / 'concept.png'
-    if image.exists(): image.rename(folder / f'concept-{int(image.stat().st_mtime)}.png')
-    image.write_bytes(base64.b64decode(js['data'][0]['b64_json']))
+    if image.exists():
+        raise SystemExit('Concept already exists; archive the reviewed revision before paying for a replacement.')
+    images.paint(image, prompt, '1024x1024', record=folder / 'provenance.json', model=MODEL, quality='high',
+                 metadata={'slug': slug, 'description': description, 'prompt': prompt, 'created_at': now()})
     (folder / 'prompt.txt').write_text(prompt + '\n')
-    (folder / 'provenance.json').write_text(json.dumps({'slug': slug, 'description': description, 'requested_model': MODEL, 'quality': 'high',
-        'size': '1024x1024', 'created_at': now(), 'seconds': round(time.time() - started, 1), 'concept_sha256': sha(image),
-        'usage': js.get('usage')}, indent=2) + '\n')
     print(image)
 
 

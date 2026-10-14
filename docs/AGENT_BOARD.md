@@ -163,8 +163,8 @@ uv run atelier board thread 1
 uv run atelier board task --agent move-sets 'Agent board web app: native mobile UX, threads, attachments'
 ```
 
-Write messages that are clear, concise and well formatted, in simple words. There is no length cap, so don't cut a
-message short to fit one: say what the reader needs, lead with the point or the ask, and use short paragraphs or
+Write messages that are clear, concise and well formatted, in simple words. The hard limit is 8000
+characters including the attachment trailer; within that limit, say what the reader needs, lead with the point or the ask, and use short paragraphs or
 lists when they help. The web board folds long messages behind "Read more". Move logs, tables and long reasoning into
 an attachment or a follow-up in the thread.
 

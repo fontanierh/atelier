@@ -5,7 +5,7 @@ reference rig, the sword and the paraglider. The reference rig is an animation i
 marker triangle; it has no character surfaces, clothing or playable definition.
 
 `library.py` reads these inputs directly. `export.py` bakes the motion curves and equipment into
-`build/yorimichi/adventure/`; `retarget.py` authors the clips on Cairo, Modori and Kaede's own skeletons.
+`build/yorimichi/adventure/`; `retarget.py` authors the clips on Cairo, Modori, Nox, Paul and Kaede's own skeletons.
 Each character's `adventure.toml` gives its paths and equipment fit. Cairo supplies the double jump,
 bokken guard, parry and everyday gestures that complete the merged set.
 
@@ -15,7 +15,7 @@ The source reference is never offered by the character menu.
 
 ```sh
 uv run atelier build yorimichi characters.adventure unreal.adventure
-uv run atelier build yorimichi unreal.cairo_adventure unreal.modori_adventure unreal.sword_trainer_adventure
+uv run atelier build yorimichi unreal.cairo_adventure unreal.modori_adventure unreal.nox_adventure unreal.paul_adventure unreal.sword_trainer_adventure
 ```
 
 The merged moves retain jumping, the double jump, sprinting, dodges, climbing, swimming, gliding,

@@ -6,7 +6,8 @@ is here and how to build it; [ARCHITECTURE.md](ARCHITECTURE.md) says how the par
 ## Layout
 
 - `platform/`: `studio/` (the `atelier` command, Python), `engine/Plugins/` (Unreal plugins), `web/` (stream pages,
-  motion helpers), `conventions/` (units, bone contract, clip roles, sound cues). Platform files never name a game.
+  motion helpers, Rust/React agent board and board-world), `conventions/` (units, bone contract, clip roles,
+  sound cues). Platform files never name a game.
 - `games/<game>/`: `game.toml` (play profiles, fetches, stream), `build.py` (build steps), `unreal/`, `world/`,
   `assets/`, `scenarios/`, `docs/`. `yorimichi` is the full game; `sandbox` is the template for `atelier new`.
 
@@ -27,9 +28,17 @@ uv run pytest                            # studio and game Python tests
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
-- There is no hosted CI. Before merging a pull request, run `uv run atelier lint` and `uv run pytest -q` (about two
+- GitHub-hosted CI runs the Python suite on macOS, checks code contracts, and runs an advisory review with
+  `gpt-6.1-sol`, medium reasoning.
+  Before merging, run `uv run atelier lint`, `uv run atelier contracts check` and `uv run pytest -q` (about two
   minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
-  board. Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
+  board. Read [the contract skill](.agents/skills/code-contracts/SKILL.md) before code changes and reviews.
+  Check applicable contracts and resolve findings: fix real issues, or explain false positives in the PR.
+  Agents may resolve false positives without owner approval. Contract CI is advisory and must not become a
+  required merge gate. Every contract owner is `fontanierh`; [the guide](docs/CODE_CONTRACTS.md) covers setup.
+  A successful hosted Python run on the exact final head satisfies the full-suite requirement when local fake
+  renderer processes would interfere with another agent's admission. Native validation still uses the machine guards.
+  Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
 - The full Python suite needs no render lock and no no-heavy window: run it whenever you need it, even while
   another agent's job runs. Its safety tests briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`;
   while they exist (about two minutes), the render admission scan may refuse a game or build step that is just being
@@ -110,8 +119,9 @@ uv run pytest                            # studio and game Python tests
   task**, before starting the work, and again when you finish or become blocked. With no current task, set it to
   exactly `idle`, nothing more. The board shows it beside your name, marks `idle` agents as free for new work,
   and treats a session idle for 10 minutes as free whatever the line says (it sends you one reminder then).
-- Write board messages that are clear, concise and well formatted, in simple words. There is no length cap: say
-  what the reader needs, lead with the point or the ask, and use short paragraphs or lists when they help. Put bulky
+- Write board messages that are clear, concise and well formatted, in simple words. The hard limit is 8000
+  characters including the attachment trailer. Say what the reader needs, lead with the point or the ask,
+  and use short paragraphs or lists when they help. Put bulky
   material (logs, tables, long reasoning) in an attachment, a linked file or a thread reply. `--notify-operator`
   also pushes a phone notification to the operator: use it sparingly, only when the operator asked to be told, or
   for something urgent that needs them now (a decision blocking you, a broken release, a safety issue). Never for
@@ -208,7 +218,8 @@ uv run pytest                            # studio and game Python tests
   `memory-health.json` before retrying or diagnosing a stall. When installed, the machine's resource log is
   `~/.cache/atelier/render-supervisor/latest.json` with history in `telemetry.jsonl`. Add the command, exit status
   and evidence paths to the board's Log when releasing a slot. Quit test games promptly and use only your own
-  live bridge port; choose another loopback port with `-liveport=N` when needed.
+  live bridge port. `atelier live` targets port 8830. A game launched with `-liveport=N` needs a client explicitly
+  configured for that loopback port; the CLI currently has no port option.
 
 ## Reusing builds
 
@@ -223,7 +234,8 @@ uv run pytest                            # studio and game Python tests
   Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
   required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
   to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
-- Fetch sound masters in the fresh worktree before reuse (`uv run atelier fetch <game>` from that worktree).
+- Make sure the machine's sound masters are fetched before reuse (`uv run atelier fetch <game>`).
+  The download cache is shared by all checkouts on the machine.
   Yorimichi's model GLB sources are committed in the asset library, including the skate pier
   modules; Super Ultra Mega Park's source arrays and textures are committed too. If any consumed input differs
   from the donor, resolve the mismatch before reuse. Never bypass verification or manufacture stamps.

@@ -34,7 +34,7 @@ Cairo's rig, and a human reviews it in motion.
 | 5. A combat set | `cairo_sword_combat_build.py`, `cairo_sword_combat_check.py`, `cairo_sword_combat_review.py` | `game-r13`: guard, strikes, charge, parry cut from the combo |
 | 6. Facing, feet, speed | `cairo_sword_combat_r02.py` | `game-r15`: strikes that end facing the target, 1.6–2× faster |
 | 7. The sword in every move | `cairo_sword_locomotion.py` | `game-r16`: walk, sprint, jumps, roll with the sword in hand |
-| 8. Into the game | `atelier build yorimichi characters.cairo unreal.cairo` | the `A_Sword*` clips, `SM_Bokken`, root motion, aim data |
+| 8. Into the game | `atelier build yorimichi unreal.cairo_adventure` | Cairo’s body, nine donor clips and merged move set |
 
 The revision folders of steps 0 to 7 are in the prototype archive (see
 [Revisions and reproducing](#revisions-and-reproducing)); the current character, `Cairo-Game-r18.blend`, carries all of

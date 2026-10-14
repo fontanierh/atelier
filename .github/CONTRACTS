@@ -1,0 +1,9 @@
+@cc [owner:fontanierh,label:security] trusted-review-controller
+Secret-bearing review jobs MUST execute only the trusted base controller and pinned review tools.
+PR source is review data: it MUST NOT be installed, tested or run with provider credentials or a
+write-capable GitHub token. The model runs read-only as an unprivileged user.
+
+@cc [owner:fontanierh,label:correctness] advisory-review-result
+Review status MUST identify the exact reviewed head and base. Missing, malformed, stale or
+incomplete output MUST NOT be reported as a completed review. Findings MUST remain advisory;
+agents MAY resolve false positives with an explanation. A completed review is not semantic approval.

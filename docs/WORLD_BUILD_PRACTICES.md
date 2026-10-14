@@ -5,9 +5,9 @@ and changing terrain updates the affected area. A region should describe the wor
 inputs and references. It should own its outputs and preserve the outputs of other regions.
 
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
-with today's `Step` recipes; automatic artifact restoration, tracked spatial queries and the proposed inspection
-commands depend on that design's implementation. The [artifact pool guide](ARTIFACT_POOL.md) describes reuse
-available today.
+with today's `Step` recipes. Named products and read-only inspection are implemented in the
+[recipe guide](BUILD_RECIPES.md); automatic artifact restoration and tracked spatial queries remain proposed.
+The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 ## Separate assets from their placement
 
@@ -162,7 +162,7 @@ Compare incremental results with a clean build, including bounds, slots, LOD cou
 and gameplay. Check that unrelated output hashes are unchanged. Test both adding and removing neighbours, an
 interrupted build, missing outputs and reuse in a different worktree. Timing alone cannot detect stale content.
 
-With today's build engine, use explicit `inputs`, accurate `needs`, order-only `after` dependencies only when
-appropriate, complete output verification and existing cutoff steps. Keep unsupported cases conservative.
-Once the proposed graph is implemented, make ownership, dependency tracing and edit-boundary checks part of the
-standard recipe template so these properties are inherited by new Atelier games.
+With today's build engine, use explicit `inputs`, `products` and content-dependent `reads`; use `references` only
+for products whose contents the consumer does not inspect. Legacy `needs`, order-only `after` and cutoff steps
+remain supported. Keep unsupported cases conservative. Adopt the recipe examples and edit-boundary tests as
+games migrate, then add dependency tracing and native cache proofs before enabling automatic import restoration.
