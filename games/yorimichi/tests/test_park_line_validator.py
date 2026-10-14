@@ -80,6 +80,22 @@ def test_unfinished_air_and_missing_recovery_fail():
     assert 'insufficient observations after landing' in result['airs'][0]['failures']
 
 
+def test_normal_speed_peak_keeps_early_contact_velocity_without_changing_gate():
+    rows=flight_rows(); world=FixtureWorld()
+    normal=np.array(world.support([0,1,40])['normal'])
+    tangent=np.array([0,-np.sin(np.radians(20)),np.cos(np.radians(20))])*20
+    # Earlier flight and grounded velocities are outside the three airborne frame window.
+    for frame,normal_speed in [(46,30),(47,12),(48,6),(49,0),(50,40)]:
+        rows[frame]['velocity']=(tangent-normal*normal_speed).tolist()
+    result=analyze(rows,world)
+    air=result['airs'][0]
+    assert air['landing_normal_speed_mps']==pytest.approx(0,abs=1e-12)
+    assert air['landing_normal_speed_peak_3frames_mps']==pytest.approx(12)
+    assert air['safe_landing_pass']  # diagnostic peak does not invent a new acceptance limit
+    world.support=lambda p:None
+    assert analyze(rows,world)['airs'][0]['landing_normal_speed_peak_3frames_mps'] is None
+
+
 def test_bail_and_diagnostic_width_do_not_pass():
     rows=flight_rows();rows[55]['state']='Wipeout'
     assert not analyze(rows,FixtureWorld())['passed']

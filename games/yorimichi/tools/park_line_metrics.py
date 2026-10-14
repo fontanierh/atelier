@@ -101,6 +101,7 @@ def analyze(rows, world):
         safe_landing = not fail
         if min(horizontal, forward) < rules['huge_air_m']:
             fail.append('air is shorter than the required forward distance')
+        normal_peak = float(np.max(np.abs(v[max(begin, end-3):end] @ support['normal']))) if support else None
         airs.append(dict(takeoff_frame=int(begin), landing_frame=int(end) if landed else None,
                          termination_frame=int(end) if end < len(rows) else None,
                          termination_state=states[end] if end < len(rows) else 'frame_budget',
@@ -117,6 +118,7 @@ def analyze(rows, world):
                          landing_speed_mps=float(speed[end]) if landed else None,
                          landing_support=support, landing_slope_deg=landing_slope,
                          landing_normal_speed_mps=abs(float(np.dot(incoming,support['normal']))) if support else None,
+                         landing_normal_speed_peak_3frames_mps=normal_peak,
                          landing_mismatch_deg=mismatch, safe_landing_pass=safe_landing,
                          huge_air_pass=not fail and vert_return is None, failures=fail,
                          **({'vert_return': vert_return} if vert_return is not None else {})))
@@ -198,5 +200,6 @@ def analyze(rows, world):
                 unknown_ground_support_frames=unknown,
                 longest_unknown_ground_support_s=longest/60,
                 support_method='Vertical triangle query; declared vert walls also use nearby 3D collision. Both inferred, not exported contacts.',
+                normal_speed_method='Last airborne velocity and peak absolute normal component of the last three airborne velocities against the inferred landing plane; not contact impulse or a universal impact limit.',
                 bump_method='Gravity-corrected speed loss on uninterrupted unbraked ground; friction/collision cause is not identified.',
                 flight_method='60 Hz published animated-root positions and velocities; endpoints are frame-resolution observations.')

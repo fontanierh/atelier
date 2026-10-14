@@ -106,6 +106,12 @@ outgoing speed; landing slope/mismatch; normal impact-speed estimate; bail/offbo
 losses. Peak height and range come from the published animated root, at frame resolution, not wheel-contact
 coordinates or exact subframe contact events.
 
+`landing_normal_speed_mps` uses the final airborne velocity. The additional
+`landing_normal_speed_peak_3frames_mps` uses the largest absolute normal component in the last three airborne
+frames against the same inferred landing plane; this helps reveal velocity already reduced before the state
+changes to ground. It is diagnostic, not a contact impulse or a universal impact limit, and does not alter the
+ordinary gap verdict. Both are unknown when landing support is unknown.
+
 Defaults can be overridden per line in `acceptance`:
 
 | Key | Default | Meaning |
