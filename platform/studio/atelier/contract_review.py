@@ -28,6 +28,7 @@ def validate(expected, actual, review):
     """@cc [owner:fontanierh,label:correctness] exact-review-result
     A completed result MUST cover the expected head and base and contain a valid, nonempty summary.
     Missing or malformed output MUST NOT become an empty successful review. Findings are advisory.
+    Owner notification bodies MAY be empty; violations MUST have an explanation.
     """
     if request(expected) != request(actual):
         raise ValueError('The reviewed commits differ from the requested commits')
@@ -45,10 +46,13 @@ def validate(expected, actual, review):
             raise ValueError('Unknown review finding')
         if (not isinstance(comment['path'], str) or not comment['path'] or
                 type(comment['line']) is not int or comment['line'] < 1 or
-                not isinstance(comment['body'], str) or not comment['body'].strip() or
+                not isinstance(comment['body'], str) or
                 not isinstance(comment['recipients'], list) or
                 any(not isinstance(item, str) for item in comment['recipients'])):
             raise ValueError('Invalid review comment location or body')
+        # Upstream ignores notification bodies and renders recipients as a cc line.
+        if comment['kind'] == 'violation' and not comment['body'].strip():
+            raise ValueError('Violations must explain the finding')
         violations += comment['kind'] == 'violation'
     return {'completed': True, 'violations': violations, 'comments': len(review['comments'])}
 

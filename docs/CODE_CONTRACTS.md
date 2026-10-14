@@ -41,6 +41,8 @@ The syntax check runs without secrets on GitHub-hosted CI. The review uses the p
 `gpt-6.1-sol`, reasoning `medium`, through `OPENAI_API_KEY` in GitHub Actions secrets. There is no model
 fallback. The bot reviews applicable invariants and posts findings. A successful status means the review
 completed for the captured commits, including its advisory finding count; it does not mean zero violations.
+Owner notifications about edited contracts render as `cc @owner`; upstream ignores their body, which may be empty.
+They count as comments, not violations; violation comments must contain an explanation.
 Another agent's approval and `atelier lint` remain required. Verify a successful `Studio Python / macOS`
 run on the exact final PR head: CI supplies the full-suite result. Locally, run focused tests for changed
 behavior; do not repeat the entire suite after successful CI or for documentation-only changes. A full local
