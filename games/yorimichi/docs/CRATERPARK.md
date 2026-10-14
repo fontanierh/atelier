@@ -118,6 +118,15 @@ on every ramp and bailed on the snake run's joins. A downward face lying on an u
 with both windings) is left out too. The collision is what is drawn, as Mega Park's: the riding surfaces exactly, never
 simplified (a simplified ramp strayed up to 2.3 cm off its curve), the other roles simplified.
 
+Inside the block, the foundations' shared walls and the pieces' sides rise to 3 cm under the ramps. At speed (above
+about 7 m/s) the board's trucks met their top edges head-on: a single contact closing faster than the simulation's
+7.1 m/s limit, which it treats as a run-out, so the rider stepped off on the snake run's joins and at the foot of the
+wooden ramps. The collision leaves out every steep face whose top edge lies inside the solid (a riding face over it,
+and 2 cm to either side, up to 1 m above), and sinks every other collision corner inside the solid 25 cm, so a wall
+with an outer corner showing keeps its outside. A riser of 3 cm or more keeps its face. About 260,000 hidden faces
+leave the collision; by the east wooden ramps they filled the board's collision snapshot (196,608 triangles), where a
+simulation step took up to 186 ms.
+
 ## Restyle
 
 [`tools/craterpark_textures.py`](../tools/craterpark_textures.py) repaints the park's realistic textures in the
@@ -158,7 +167,7 @@ ceiling.
 
 | Step | Does |
 |---|---|
-| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, from the drawn faces; only the riding surfaces stay unsimplified. It writes `park.json`. |
+| `world.craterpark` | [`craterpark/build.py`](../world/regions/craterpark/build.py) (Blender) exports one render FBX per mesh, without its `render_skip` faces or the foundation faces on a riding surface, with creases over 35° and the baked occlusion as vertex colour ("Shading"). Collision FBX are built per role, at most 200,000 triangles each, from the drawn faces, without the faces inside the solid; only the riding surfaces stay unsimplified. It writes `park.json`. |
 | `unreal.craterpark` | [`import_craterpark.py`](../unreal/Scripts/import_craterpark.py) imports them into `/Game/CraterPark`, with their vertex colours. Each material is a texture times its base colour, or the colour alone, darkened by the baked occlusion, and is two-sided where the source says so. |
 | `data.stage` | Copies `craterpark/park.json` to `Content/Data`. |
 
