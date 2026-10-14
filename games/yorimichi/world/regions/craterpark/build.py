@@ -49,6 +49,7 @@ EDGE = 1e-9             # barycentric slack: a probe on the shared edge of two r
 WALL_STEP = .03         # metres: a riding face this far below the top edge at a probe still covers it (a slope, not a riser)
 WALL_FLUSH = .005       # metres a riding face lies above a steep face's top edge at least, for the edge to be inside the solid
 LARGE = 8.              # metres across: a collision face this large is stored with the other large ones (spatial_order)
+FOLDED = 2e-7           # square metres (twice a face's area): a face flatter than this is not exported
 SINK = .25              # metres the collision's corners inside the solid move down, out of the board's reach
 # Baked ambient occlusion, per drawn vertex (ambient_occlusion): voxel size and reach in metres, rays and steps per ray.
 AO_VOXEL = .5
@@ -78,6 +79,13 @@ def export_mesh(name, vertices, faces, materials, face_materials, uvs=None, smoo
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     origin = np.round((vertices.min(axis=0).astype('f8') + vertices.max(axis=0)) / 2 / 32) * 32
+    # The recede can fold a simplified face flat (two corners on one point or on one line). Unreal's FBX import drops
+    # such faces, and its triangle check would then fail, so they are left out here.
+    t = vertices.astype('f8')[faces] - origin
+    flat = np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1) <= FOLDED
+    if flat.any():
+        print('Mesh', name, 'folded faces left out:', int(flat.sum()), flush=True)
+        faces, face_materials = faces[~flat], np.asarray(face_materials)[~flat]
     data = bpy.data.meshes.new(name)
     data.from_pydata(native_to_blender(vertices.astype('f8') - origin).tolist(), [], faces.tolist())
     data.update()
