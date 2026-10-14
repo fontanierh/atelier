@@ -318,7 +318,9 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier contracts check` | contract syntax and owner policy; semantic review is separate and advisory |
 | `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |
 
-**Tests.** `uv run pytest` runs the studio tests (`platform/studio/tests`) and the games' Python tests. In-game
+**Tests.** Hosted CI runs all studio and game Python tests on each PR head. Locally, run the tests affected by
+your change, for example `uv run pytest platform/studio/tests/test_build.py -q`; avoid repeating the full suite
+when CI already covers it. In-game
 checks use QA scenarios through the live bridge; with a local stream, the phone smoke tests in
 `games/yorimichi/phone/` and `platform/web/stream/player-smoke.mjs` run in a browser.
 

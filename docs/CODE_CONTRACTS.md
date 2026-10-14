@@ -41,10 +41,11 @@ The syntax check runs without secrets on GitHub-hosted CI. The review uses the p
 `gpt-6.1-sol`, reasoning `medium`, through `OPENAI_API_KEY` in GitHub Actions secrets. There is no model
 fallback. The bot reviews applicable invariants and posts findings. A successful status means the review
 completed for the captured commits, including its advisory finding count; it does not mean zero violations.
-Another agent's approval, `atelier lint`, and the full Python suite remain required. `Studio Python / macOS`
-runs the suite on the exact PR head in a separate hosted machine; this avoids interfering with local render admission.
-Native Unreal
-validation stays on a guarded machine when the change needs it; CI does not allocate render capacity.
+Another agent's approval and `atelier lint` remain required. Verify a successful `Studio Python / macOS`
+run on the exact final PR head: CI supplies the full-suite result. Locally, run focused tests for changed
+behavior; do not repeat the entire suite after successful CI or for documentation-only changes. A full local
+run is reserved for diagnosing a specific integration failure or unavailable CI, with the reason recorded.
+Native Unreal validation stays on a guarded machine when the change needs it; CI does not allocate render capacity.
 
 The bot starts for ready, same-repository PRs submitted by a writer, and runs again when their head changes.
 An existing status on the same head prevents another automatic paid call, including when only the base moves.

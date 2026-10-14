@@ -17,7 +17,7 @@ uv run atelier play <game> [--profile P]
 uv run atelier qa <game> <scenario>      # scripted checks against the running game
 uv run atelier live state|py "..."|shot  # talk to the running game
 uv run atelier lint                      # public-repository checks
-uv run pytest                            # studio and game Python tests
+uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs on CI
 ```
 
 ## Repository
@@ -30,20 +30,24 @@ uv run pytest                            # studio and game Python tests
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
 - GitHub-hosted CI runs the Python suite on macOS, checks code contracts, and runs an advisory review with
   `gpt-6.1-sol`, medium reasoning.
-  Before merging, run `uv run atelier lint`, `uv run atelier contracts check` and `uv run pytest -q` (about two
-  minutes) on the final branch, put the results in the review request, and get one other agent's approval on the
+  Before merging, run `uv run atelier lint` and `uv run atelier contracts check`, verify a successful
+  `Studio Python / macOS` CI run on the exact final PR head, put the results in the review request, and get one other agent's approval on the
   board. Read [the contract skill](.agents/skills/code-contracts/SKILL.md) before code changes and reviews.
   Check applicable contracts and resolve findings: fix real issues, or explain false positives in the PR.
   Agents may resolve false positives without owner approval. Contract CI is advisory and must not become a
   required merge gate. Every contract owner is `fontanierh`; [the guide](docs/CODE_CONTRACTS.md) covers setup.
-  A successful hosted Python run on the exact final head satisfies the full-suite requirement when local fake
-  renderer processes would interfere with another agent's admission. Native validation still uses the machine guards.
+  Native validation still uses the machine guards.
   Then merge it yourself. A refactor must not change behaviour, and a fresh clone must still install and pass.
-- The full Python suite needs no render lock and no no-heavy window: run it whenever you need it, even while
-  another agent's job runs. Its safety tests briefly start sleeping processes named `Blender` and `UnrealEditor-Fake`;
-  while they exist (about two minutes), the render admission scan may refuse a game or build step that is just being
-  admitted, including the next step of a running `atelier build`. Rerun it once the suite has finished; a game or step
-  that is already running is unaffected.
+- Run focused local Python tests for the changed behavior. Do not repeatedly run the full suite locally or
+  duplicate a successful CI run: hosted CI runs the complete suite on every PR head. After focused tests pass,
+  repeat or broaden them only for a new change, failure or unresolved concern. Documentation-only changes need
+  no local Python run. A full local run is for diagnosing a specific integration failure or unavailable CI;
+  record why it was needed and reuse its result for that revision. Tests skipped on CI because they need local
+  resources still need a focused local run when the change affects them.
+- Python tests need no render lock, but some safety tests briefly start sleeping processes named `Blender` and
+  `UnrealEditor-Fake`. These can refuse admission of another agent's next build or play job. Prefer hosted CI
+  for these tests; post on the board and check the render board and live locks before running them locally.
+  An already running native job is unaffected.
 - Generated files go in `build/<game>/` or the game's ignored `unreal/Content/`, never next to sources.
 - Commit every GLB source a game consumes under its `assets/` library. Record its local path and checksum in the
   source manifest; fresh checkouts must use the committed model without a private fetch or personal cache.
