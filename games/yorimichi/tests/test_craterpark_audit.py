@@ -200,3 +200,17 @@ def test_self_look_with_corner_discontinuities_is_exact_zero(tmp_path):
     result = look_report(mesh,mesh,options())['by_mesh']['SM_CP_a']
     assert result['corner_ao']['max'] == 0
     assert result['corner_normal']['max'] == 0
+
+
+def test_contact_normal_distinguishes_slope_from_winding(tmp_path):
+    write_mesh(tmp_path/'ref','UC_CP_a',[UP])
+    tilt = UP.copy(); tilt[:,1] = tilt[:,0]*np.tan(np.deg2rad(10))
+    write_mesh(tmp_path/'tilt','UC_CP_a',[tilt])
+    write_mesh(tmp_path/'flip','UC_CP_a',[UP[::-1]])
+    reference = MeshSet(tmp_path/'ref','collision')
+    r = distance_report(reference,MeshSet(tmp_path/'tilt','collision'),options())
+    assert r['contact_plane_angle_degrees']['max'] == pytest.approx(10)
+    assert r['oriented_normal_angle_degrees']['max'] == pytest.approx(10)
+    r = distance_report(reference,MeshSet(tmp_path/'flip','collision'),options())
+    assert r['contact_plane_angle_degrees']['max'] == pytest.approx(0)
+    assert r['oriented_normal_angle_degrees']['max'] == pytest.approx(180)

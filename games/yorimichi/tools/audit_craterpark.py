@@ -134,6 +134,12 @@ def distance_report(source, target, args):
     else:
         ds, target_face, _ = target.bvh.nearest(p)
     finite = np.isfinite(ds)
+    valid_normals = finite & (target_face >= 0)
+    valid_normals[valid_normals] &= target.area[target_face[valid_normals]] > 1e-12
+    source_n, target_n = source.normal[face[valid_normals]], target.normal[target_face[valid_normals]]
+    normal_angle = np.rad2deg(np.arctan2(np.linalg.norm(np.cross(source_n,target_n),axis=1),
+                                       np.sum(source_n*target_n,axis=1)))
+    slope_angle = np.minimum(normal_angle, 180-normal_angle)
     worst = []
     for i in np.argsort(ds)[-20:][::-1]:
         entry = source.location(face[i], p[i])
@@ -153,7 +159,12 @@ def distance_report(source, target, args):
                   tolerance_m=args.tolerance,
                   sampled_within_tolerance=bool(len(ds) and finite.all() and np.max(ds) <= args.tolerance),
                   identical_triangle_arrays=identical,
-                  continuous_surface_certified=identical)
+                  continuous_surface_certified=identical,
+                  contact_plane_angle_degrees=distribution(slope_angle),
+                  oriented_normal_angle_degrees=distribution(normal_angle),
+                  samples_without_valid_target_normal=int((~valid_normals).sum()),
+                  normal_comparison='Geometric face normals at closest surface points. Contact-plane angle ignores '
+                                    'winding; oriented angle preserves it. These are geometric diagnostics, not rider simulation.')
     return result
 
 

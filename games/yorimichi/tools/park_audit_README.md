@@ -52,6 +52,11 @@ unbounded lattice above ten million points is refused with instructions to narro
 Dense mode applies to riding checks; appearance uses the seven-point render stencil. Dense sampling still does not
 prove continuous deviation on a changed mesh or resolve every exposure boundary.
 
+Each riding direction also reports geometric normal differences at the closest target surface point.
+`contact_plane_angle_degrees` ignores winding (0–90 degrees), while `oriented_normal_angle_degrees` retains it
+(0–180 degrees). This separates a changed contact plane from a reversed triangle winding. Degenerate target normals
+are counted as invalid. These diagnostics do not simulate rider contacts; normals at triangle edges can be ambiguous.
+
 ## Overlaps and topology
 
 Render and collision are scanned separately; their intentional agreement is never counted as a defect.
