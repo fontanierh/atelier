@@ -498,8 +498,8 @@ def mesh(base_sampler):
     strata=.5+.5*np.sin(z*.6+noise(x,y,40,61)*3.)
     colors*=(1-cliff*(.22+.14*strata))[...,None]
     # Olive lichen and moss on the rock's gentler, upward faces (the targets' granite), never on the cliffs.
-    moss=smooth((noise(x,y,18,99)+noise(x,y,6,98)*.3-.45)/.18)*smooth((nz-.72)/.15)*exposed
-    colors=colors*(1-.55*moss[...,None])+np.array([.120,.118,.050])*.55*moss[...,None]
+    moss=smooth((noise(x,y,18,99)+noise(x,y,6,98)*.3-.25)/.18)*smooth((nz-.68)/.15)*exposed
+    colors=colors*(1-.75*moss[...,None])+np.array([.20,.21,.055])*.75*moss[...,None]
     normals=np.stack([-dx,-dy,np.ones_like(z)],-1)
     normals/=np.linalg.norm(normals,axis=-1,keepdims=True)
     # Soft continuous snow masks replace hard clipped lavender polygons.

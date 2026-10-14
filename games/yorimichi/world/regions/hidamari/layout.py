@@ -768,7 +768,8 @@ def dress_caldera(put):
     trees=[]
     for x0,y0 in groves:
         kind=rng.random()
-        mix=(.85,.95) if kind<.4 else (.45,.8) if kind<.75 else (.1,.6)     # pine, then maple, below these
+        # Mostly dark pines (the rim and air targets); round maples and ginkgos stay a minority.
+        mix=(.9,.97) if kind<.55 else (.65,.88) if kind<.85 else (.35,.75)     # pine, then maple, below these
         spread=float(rng.uniform(10,18));members=int(rng.integers(16,36))
         for _ in range(members):
             for _ in range(4):

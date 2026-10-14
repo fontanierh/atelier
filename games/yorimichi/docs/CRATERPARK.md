@@ -64,7 +64,7 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
 ## Dressing
 
 The caldera round the park has its own planting (`hidamari/layout.py` `dress_caldera`), from its own random stream:
-about 26 stands of 16-35 trees (the Mega Park's detailed pines, cedars, maples and ginkgos), on the floor and the
+about 26 stands of 16-35 trees (the Mega Park's detailed pines and cedars, with fewer maples and ginkgos), on the floor and the
 wall's lower slope; about 50 groups of two to five grey boulders 9-16 m across (`SW_Boulder_*`, which take no snow)
 with scree on bare ground; and ochre shrubs. About 9,600 autumn thicket plants clump along the crest, on rock as steep
 as 55 degrees and more thinly on snow (loose red and gold `Bush_HD_Autumn` bushes, ochre bushes and a few red shrub
@@ -85,12 +85,12 @@ off rock steeper than about 55 degrees, and fine rock noise breaks every patch i
 snow among broken granite rather than cut-out blobs or strips. The mountain material shades the exposed rock in
 faceted planes about 22 m across, each broken into faces about 7 m across (5 m cells alone read as cobbles), each
 tilted at random against the sun, warm where lit and cool where turned away, so the walls read as granite rather than
-clay; olive moss lies on its gentler upward faces.
+clay; bright olive moss patches its gentler upward faces.
 
 ## Snow
 
 The block's hillside (`material_024`) carries snow on its flatter tops and benches, with a crisp edge
-(`import_craterpark.py` `SNOWY`); its sides steeper than about 40 degrees show the volcanic ground in bands, like the
+(`import_craterpark.py` `SNOWY`); its sides steeper than about 33 degrees show the volcanic ground in bands, like the
 targets' outcrops. World-space patterns of holes read as spots and dashes, and a soft edge left the dark ground smeared
 through the snow. The skating surfaces, the edge guard and its
 coping, foundations and bridges stay clear. The park's materials are matte, like the terrain's.
