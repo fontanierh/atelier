@@ -48,7 +48,7 @@ def material():
                 # A rock (Caps 1, rock_material) wears snow on its upward faces wherever snow lies round it, not the
                 # ground's mask cut across it: white blocks on snow and bare grey ones beside it read as no rock at all.
                 'float around=Texture2DSampleLevel(Snow,SnowSampler,snowUV,4.).r;'
-                'snowMask=lerp(snowMask,saturate((N.z-.78)/.1)*saturate(around*2.5),Caps);')
+                'snowMask=lerp(snowMask,saturate((N.z-.88)/.07)*saturate((around-.3)*2.5)*saturate(edgeNoise*2.+1.2),Caps);')
     # The volcano's exposed-rock band and the join to Belmonte's palette, in centimetres (hidamari/mountains.py).
     (vx,vy),(r0,r1),(p0,p1),join=snow_meta['volcano_m'],snow_meta['rock_radius_m'],snow_meta['rock_prominence_m'],snow_meta['south_join_m']
     rock_band=(f'float join=smoothstep({(join-420)*100:.0f}.,{join*100:.0f}.,-P.y);'

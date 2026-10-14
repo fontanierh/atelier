@@ -49,11 +49,11 @@ The tree line, pine band, exposed rock, snow line and outcrop band all use these
 - **Snow** runs down 40 seeded gullies from the crest and lies in patches on the caldera floor, with drifts at the
   wall's foot. The crest stays bare. The mask (`north_snow.png`, 1024² at 2.5 m) also records the rock band and the
   Belmonte join for the ground material (`unreal/Scripts/mountain_material.py`). Loose rocks (`HD_NorthRock*`) use
-  its instance `MI_NorthRockCaps` (`Caps` 1): they wear snow on their upward faces wherever snow lies round them,
+  its instance `MI_NorthRockCaps` (`Caps` 1): they wear patchy snow on their flattest tops where snow lies thick round them,
   rather than the ground's mask cut across them.
 - **Trees** stop at the lifted tree line and stay out of the caldera, which is left open for its park. The closed
   forest ends about `lifted(330)`; above it an olive alpine meadow (`colours`) runs up to the cliffs at about
-  `lifted(360)`, and only scattered pines (about one in eleven sample points) climb it to about `lifted(425)`.
+  `lifted(360)`, and only scattered dark pines (about one in seventeen sample points) climb it to about `lifted(395)`.
 - **Outcrops** and scree cover the flank from the crest down to about 970 m out.
 
 ## Belmonte

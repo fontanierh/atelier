@@ -79,13 +79,13 @@ so its trees cast shadows and keep trunk collision.
 
 The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor about half white, half dark
 cinder. Broad chutes, tens of metres wide, run down the inner wall from just under the crest and fan out at its foot,
-so about half the wall is white (the zeppelin target). On the outer flank snow lies in snowfields between bare rock
-ribs for about 110 m below the crest. Away from the chutes and the collar, snow slides off rock steeper than about 55
-degrees, and fine rock noise breaks every patch into many small pieces, so it reads as snow among broken granite
-rather than cut-out blobs or strips. The mountain material shades the exposed rock in faceted planes about 22 m
-across, each broken into faces about 7 m across (5 m cells alone read as cobbles), each tilted at random against the
-sun, warm where lit and cool where turned away, so the walls read as granite rather than clay; olive moss lies on its
-gentler upward faces.
+between rock ribs, so a little over a third of the wall is white (the zeppelin target). On the outer flank snow lies
+in snowfields between bare rock ribs for about 110 m below the crest. Away from the chutes and the collar, snow slides
+off rock steeper than about 55 degrees, and fine rock noise breaks every patch into many small pieces, so it reads as
+snow among broken granite rather than cut-out blobs or strips. The mountain material shades the exposed rock in
+faceted planes about 22 m across, each broken into faces about 7 m across (5 m cells alone read as cobbles), each
+tilted at random against the sun, warm where lit and cool where turned away, so the walls read as granite rather than
+clay; olive moss lies on its gentler upward faces.
 
 ## Snow
 

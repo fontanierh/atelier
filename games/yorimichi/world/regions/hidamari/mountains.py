@@ -412,9 +412,9 @@ def snow_cover(x,y,z,step=STEP):
     # Broad chutes down the inner wall (the zeppelin target): snow gathered in its hollows from just under the crest to
     # the foot, where each fans out; tens of metres wide and wandering, so they never read as thin frozen falls.
     wander=angle+noise(x,y,70,99)*.06
-    lane=(noise(np.cos(wander)*470,np.sin(wander)*470,38.,97)+.5*gully+.35*smooth((foot+30-radius)/30)
+    lane=(noise(np.cos(wander)*470,np.sin(wander)*470,30.,97)+.5*gully+.2*smooth((foot+30-radius)/30)
           +.3*downslope_noise(radius,wander,35,91))
-    chutes=smooth((lane-.12)/.22)*smooth((radius-foot+15)/12)*smooth((rim_r-10-radius)/18)
+    chutes=smooth((lane-.42)/.14)*smooth((radius-foot+15)/12)*smooth((rim_r-10-radius)/18)
     bowl=np.maximum.reduce([floor,drifts,ledges,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)

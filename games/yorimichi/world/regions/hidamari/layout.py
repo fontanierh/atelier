@@ -387,7 +387,7 @@ def generate():
     forest_altitude*=forest_radius>mountains.rim_radius(forest_angle)
     tree_top=float(mountains.lifted(450))
     # Above the ceiling, a few pines climb the meadow towards the cliffs.
-    sparse=(.09*mountains.smooth((mountains.lifted(425)-forest_z)/(30*mountains.LIFT))*(1-forest_altitude)
+    sparse=(.06*mountains.smooth((mountains.lifted(395)-forest_z)/(30*mountains.LIFT))*(1-forest_altitude)
             *(forest_radius>mountains.rim_radius(forest_angle)))
     for (x,y),sample_z,cover,distance,kind,clump,altitude,few in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,
                                                                      forest_clumps,forest_altitude,sparse):
@@ -400,9 +400,11 @@ def generate():
         density=.90+.08*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
-        density=max(density*float(clump*altitude),float(few))
+        closed=density*float(clump*altitude)
+        density=max(closed,float(few))
         if r.random()>density:continue
-        name=MODEL_BY_KIND[kind]
+        # the meadow's scattered trees are dark pines (f_city2), whatever the ecotone's mix
+        name=MODEL_BY_KIND[kind] if closed>=few else 'Tree_Forest_Pine'
         if (y<620 and r.random()<.4) or distance<22:
             name=r.choice(['Tree_Ginkgo','Tree_Maple_A','Tree_Maple_A'])
         yaw=r.uniform(0,360);scale=r.uniform(.70,1.15)
