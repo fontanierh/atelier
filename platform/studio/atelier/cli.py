@@ -5,6 +5,7 @@
     atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
     atelier reuse <game> --from PATH [--to PATH]   seed a fresh worktree (this one by default) from a verified build of the same revision
     atelier pool publish|restore|status <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
+    atelier cache status|gc|pin|unpin|forget   inspect and prune automatic local product reuse
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
     atelier play <game> [--profile P] [--memory-gib N] [-- unreal args]   launch the game under the render lock and memory guard
@@ -157,6 +158,8 @@ def make_parser():
     sub = parser.add_subparsers(dest='command', required=True)
     from . import board
     board.configure(sub)
+    from . import cache_admin
+    cache_admin.configure(sub)
     p = sub.add_parser('new'); p.add_argument('game'); p.add_argument('--title')
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
@@ -174,6 +177,7 @@ def make_parser():
     p.add_argument('--dry-run', '--plan', action='store_true', help='read-only build decisions')
     p.add_argument('--explain', action='store_true', help='plan with the reason for each rebuild')
     p.add_argument('--json', action='store_true', help='print the read-only plan as JSON')
+    p.add_argument('--verify', action='store_true', help='read all named-product bytes instead of using the local hash index')
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
     p.add_argument('--set', default='', help='settings overrides, key=value;key=value')
@@ -228,6 +232,9 @@ def main(argv=None):
     if args.command == 'pool':
         from . import artifact_pool
         return artifact_pool.main(args.action, args.game, args.step)
+    if args.command == 'cache':
+        from . import cache_admin
+        return cache_admin.main(args)
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'capacity':
@@ -241,8 +248,8 @@ def main(argv=None):
             if args.touch:
                 raise SystemExit('--touch cannot be combined with a read-only plan')
             from .build_plan import show
-            return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json)
-        return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch)
+            return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json, verify=args.verify)
+        return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch, verify=args.verify)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
     if args.command == 'playtest':

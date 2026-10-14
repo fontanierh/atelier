@@ -4,7 +4,7 @@ Every script finds files through here instead of computing paths from its own lo
 breaks a build. Standard library only (imported from Blender and Unreal too).
 
     ATELIER_BUILD_ROOT   moves every game's build folder (default: <repo>/build)
-    ATELIER_CACHE        downloads that are not redistributed, such as sound masters (default: ~/.cache/atelier)
+    ATELIER_CACHE        downloads and local product storage (default: ~/.cache/atelier)
 """
 import os
 from pathlib import Path
@@ -37,7 +37,7 @@ def build_dir(game):
 
 
 def cache_dir(*parts, create=True):
-    """Downloads kept outside the repository, shared by every checkout on this machine."""
+    """Machine-local data outside the repository, shared by independent checkouts."""
     path = Path(os.environ.get('ATELIER_CACHE') or Path.home() / '.cache' / 'atelier').joinpath(*parts)
     if create:
         path.mkdir(parents=True, exist_ok=True)

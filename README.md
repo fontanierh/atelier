@@ -175,6 +175,10 @@ gameplay, so gameplay edits rebuild only the code.
 
 `atelier build <game> --list` shows every step; name one to run just it and what it needs. Yorimichi's
 [build.py](games/yorimichi/build.py) has examples from textures to a whole city, a harbour and three skate parks.
+For small rebuilds, name independently consumed products and declare which ones each step reads or merely
+references. Opted-in portable products are restored automatically from the local cache across worktrees; the
+[sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
+[Build recipes](docs/BUILD_RECIPES.md) cover the API, input checks and read-only plans.
 
 ### A prop from a sentence
 
@@ -307,7 +311,8 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier setup [--headless] [--workers N]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
 | `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
-| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`; read-only `--plan` / `--dry-run`, `--explain`, `--json` |
+| `atelier cache status/gc/pin/unpin/forget` | [inspect and prune automatic portable-product reuse](docs/ARTIFACT_POOL.md#automatic-product-cache) |
+| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`, full-byte `--verify`; read-only `--plan` / `--dry-run`, `--explain`, `--json` |
 | `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |

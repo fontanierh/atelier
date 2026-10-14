@@ -34,7 +34,7 @@ def identity(value) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def inventory(product: Product) -> dict:
+def inventory(product: Product, *, hasher=None) -> dict:
     """@cc [owner:fontanierh,label:correctness] complete-output-inventory
     Every declared root and its members MUST be inventoried. Missing, linked, special or changing
     files MUST fail verification; checking only a representative output cannot certify a product.
@@ -42,6 +42,11 @@ def inventory(product: Product) -> dict:
     Root indexes make the record independent of checkout location. Paths and their ordering are
     part of the recipe, while relative member names belong to this output identity.
     """
+    return _inventory(product, hasher=hasher)
+
+
+def _inventory(product, *, hasher=None, ignore=None):
+    """Shared traversal. Only source inventories may exclude generated/cache files."""
     entries, observed = {}, []
 
     def visit(path, root, index):
@@ -54,9 +59,10 @@ def inventory(product: Product) -> dict:
             observed.append((path, before))
             entries[name] = {'kind': 'directory'}
             for child in sorted(path.iterdir()):
-                visit(child, root, index)
+                if ignore is None or not ignore(child):
+                    visit(child, root, index)
         elif stat.S_ISREG(before.st_mode):
-            entries[name] = {'kind': 'file', 'size': before.st_size, 'sha256': file_digest(path)}
+            entries[name] = {'kind': 'file', 'size': before.st_size, 'sha256': (hasher or file_digest)(path)}
             observed.append((path, before))
         else:
             raise ValueError(f'{product.name}: non-regular output {path}')
@@ -79,18 +85,18 @@ def inventory(product: Product) -> dict:
     return {'schema': 1, 'files': entries}
 
 
-def records(step) -> dict:
+def records(step, *, hasher=None) -> dict:
     """A complete, independently verifiable record for each product a step owns."""
     result = {}
     for product in step.products:
-        manifest = inventory(product)
+        manifest = inventory(product, hasher=hasher)
         result[product.name] = {'digest': identity(manifest), 'inventory': manifest}
     return result
 
 
-def valid_records(step, previous: dict) -> bool:
+def valid_records(step, previous: dict, *, hasher=None) -> bool:
     try:
-        return records(step) == previous
+        return records(step, hasher=hasher) == previous
     except (OSError, ValueError):
         return False
 

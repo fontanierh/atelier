@@ -20,13 +20,13 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from . import engine, paths
-from . import build_products
+from . import build_inputs, build_products
 from .build_products import Product
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
-SKIP_PARTS = {'__pycache__', '.DS_Store', 'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache'}
-SKIP_SUFFIXES = {'.md'}   # documentation next to sources never changes what a step makes
+SKIP_PARTS = build_inputs.SKIP_PARTS
+SKIP_SUFFIXES = build_inputs.SKIP_SUFFIXES
 
 
 # ---------------------------------------------------------------- commands
@@ -46,10 +46,15 @@ class Blender:
     script: Path
     args: tuple = ()
     threads: int = 6
+    factory_startup: bool = False
+
+    def __repr__(self):
+        shown = [f for f in fields(self) if f.name != 'factory_startup' or self.factory_startup]
+        return f'Blender({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
 
     def argv(self, ctx):
         extra = ['--', *map(str, self.args)] if self.args else []
-        return [ctx.blender, '-b', '--threads', str(self.threads), '--python-exit-code', '1',
+        return [ctx.blender, *(['--factory-startup'] if self.factory_startup else []), '-b', '--threads', str(self.threads), '--python-exit-code', '1',
                 '--python', str(self.script), *extra]
 
 
@@ -162,6 +167,7 @@ class Step:
     products: list[Product] = field(default_factory=list)  # independently consumed, exclusively owned outputs
     reads: list[str] = field(default_factory=list)         # product contents feed this step's fingerprint
     references: list[str] = field(default_factory=list)    # include products, without deriving data from them
+    cache: bool = False                                   # explicitly portable products; automatic local reuse
 
 
 def outputs_present(step):
@@ -245,25 +251,34 @@ def _hash_path(digest, path, skip=True):
         digest.update(b'missing:' + str(path).encode())
 
 
+def declared_inputs(step):
+    named = step.products or step.reads or step.references
+    return [*step.inputs, *(c.script for c in step.commands if named and hasattr(c, 'script')),
+            *(p for c in step.commands for p in getattr(c, 'runs', list)())]
+
+
 def missing_product_inputs(step):
     """Named-product actions require all declared sources; legacy optional inputs stay compatible."""
     if not (step.products or step.reads or step.references):
         return []
-    inputs = [*step.inputs, *(p for c in step.commands for p in getattr(c, 'runs', list)())]
-    return [str(path) for path in inputs if not Path(path).exists()]
+    return [str(path) for path in declared_inputs(step) if not Path(path).exists()]
 
 
-def fingerprint(step, done):
+def fingerprint(step, done, *, index=None, tool_cache=None):
     """@cc [owner:fontanierh,label:correctness] legacy-fingerprint-compatibility
     Steps without named products MUST retain their existing fingerprint algorithm. Read edges
     MUST include the consumed product's content identity; references and ordering MUST NOT.
     """
-    return fingerprint_state(step, done, capture=False)[0]
+    return fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache)[0]
 
 
-def fingerprint_state(step, done, *, capture=True):
+def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     """Hash once, optionally retaining per-input identities for build explanations."""
     digest = hashlib.sha256()
+    named = bool(step.products or step.reads or step.references)
+    hasher = (index.digest if index is not None else build_products.file_digest) if named else None
+    if named:
+        digest.update(b'product-fingerprint-v2\0')
     # Checkout locations and generated Unreal outputs do not change a step's source. Keeping the command paths
     # relative to their roots also lets a verified build seed another checkout of the same source revision.
     commands = repr([c for c in step.commands])
@@ -271,7 +286,19 @@ def fingerprint_state(step, done, *, capture=True):
     digest.update(commands.encode())
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
-    for item in [*step.inputs, *(f for c in step.commands for f in getattr(c, 'runs', list)())]:
+    inputs = declared_inputs(step)
+    if step.cache:
+        build_inputs.validate_imports(step, inputs)
+    for item in inputs:
+        if named:
+            # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
+            # file memoization and includes directory membership and every explicitly selected input.
+            manifest = build_inputs.inventory(item, hasher=hasher) if Path(item).exists() else None
+            value = build_products.identity(manifest)
+            label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            digest.update(json.dumps([label, value]).encode())
+            state['inputs'][label] = value
+            continue
         if capture:
             recording = RecordingDigest(digest)
             _hash_path(recording, item)
@@ -288,6 +315,10 @@ def fingerprint_state(step, done, *, capture=True):
         digest.update(json.dumps({'products': declarations, 'reads': consumed}, sort_keys=True).encode())
         state['products'] = declarations
         state['reads'] = consumed
+    if step.cache:
+        from .build_cache import tool_context
+        state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
+        digest.update(state['tools'].encode())
     return digest.hexdigest(), state
 
 
@@ -400,35 +431,60 @@ def slot_summary(slots):
     return f', slots {" then ".join(slots)}'
 
 
-def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
+def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False):
     if dry:
         from .build_plan import show
-        return show(game, wanted, force=force, echo=echo)
+        return show(game, wanted, force=force, echo=echo, verify=verify)
     ctx = Context(game)
+    from .build_hashes import HashIndex
+    with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
+        return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index)
+
+
+def _build(ctx, wanted, *, force, touch, echo, index):
+    from . import build_cache
+    game = ctx.game
     recipe = load_recipe(game)
     steps = recipe.steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    for step in plan:
+        if step.cache:
+            try:
+                build_cache.roots(ctx, step)
+            except ValueError as error:
+                raise SystemExit(str(error)) from error
     if touch and any(step.products for step in plan):
         raise SystemExit('Named products require a successful build; --touch cannot certify them')
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
-    done, ran = {}, 0
+    done, ran, restored = {}, 0, 0
+    tool_cache = {}
     # The graph includes every prerequisite. Unrelated stamps cannot affect this selected build.
     started = time.monotonic()
     for step in plan:
         print_ = f'{step.name:34s}'
         stamp = ctx.stamps / f'{step.name}.json'
+        journal = ctx.stamps / f'{step.name}.restore.json'
+        if step.cache:
+            build_cache.recover(ctx, step)
+        if journal.exists():
+            # An interrupted replacement is never certified by an old stamp.
+            stamp.unlink(missing_ok=True)
         missing = missing_product_inputs(step)
         if missing:
             echo(f'{print_} FAILED: required inputs missing: {missing[:3]}')
             return 1
-        current, input_state = fingerprint_state(step, done)
+        try:
+            current, input_state = fingerprint_state(step, done, index=index, tool_cache=tool_cache)
+        except (OSError, ValueError, SyntaxError) as error:
+            echo(f'{print_} FAILED: {error}')
+            return 1
         from .build_plan import read_stamp
         previous = read_stamp(stamp)
         outputs_ok = outputs_present(step)
         if step.products:
-            outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}))
+            outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}), hasher=index.digest)
         if not force and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
@@ -452,10 +508,25 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
         slots, peaks, command_times = [], [], []
+        products = None
+        store = build_cache.Store() if step.cache else None
+        if store is not None and not force:
+            try:
+                # Source change metadata is local; all transferred output bytes are verified below.
+                if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
+                    raise RuntimeError('Inputs changed before cache lookup')
+                products = store.restore(ctx, step, current)
+                if products is not None and (fingerprint(step, done, index=index, tool_cache=tool_cache) != current or not outputs_present(step)):
+                    raise RuntimeError('Restored action inputs or required outputs differ')
+            except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
+                echo(f'{print_} cache unavailable ({error}); building')
+                products = None
+        from_cache = products is not None
         with open(log_path, 'w') as log:
             try:
+                stamp.unlink(missing_ok=True)
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
-                for command in step.commands:
+                for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
                     run_command(ctx, step, command, log, request, slots)
                     command_times.append({'kind': type(command).__name__,
@@ -468,7 +539,7 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
                 products = build_products.records(step)
-                if step.products and fingerprint(step, done) != current:
+                if step.products and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError(f'{step.name}: inputs changed during build; products not certified')
             except Exception as error:
                 log.flush()
@@ -484,6 +555,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
                   'input_state': input_state, 'commands': command_times}
         if step.products:
             record['products'] = products
+        if from_cache:
+            record['restored_from'] = current
         if step.cutoff:
             record['result'] = outputs_digest(step)
         if pool_key is not None:
@@ -494,11 +567,18 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print):
         temporary = stamp.with_suffix('.tmp')
         temporary.write_text(json.dumps(record) + '\n')
         temporary.replace(stamp)
+        journal.unlink(missing_ok=True)
+        if store is not None and not from_cache:
+            try:
+                store.publish(ctx, step, current, products)
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                echo(f'{print_} cache publication skipped ({error})')
         done[step.name] = result(step, current, record)
         build_products.feed_results(done, products)
-        ran += 1
-        echo(f'{print_} done in {seconds:.1f} s{slot_summary(slots)}')
-    echo(f'{len(plan)} steps, {ran} ran, {time.monotonic() - started:.0f} s')
+        restored += int(from_cache)
+        ran += int(not from_cache)
+        echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
+    echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {time.monotonic() - started:.0f} s')
     return 0
 
 

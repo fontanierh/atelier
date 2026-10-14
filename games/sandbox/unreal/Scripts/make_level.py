@@ -2,6 +2,9 @@
 times a Tex texture) and /Game/Sandbox/Sandbox, a 200 m floor with a few blocks, sun, sky and fog (auto exposure). Engine basic shapes
 are referenced, not copied. Run by `atelier build sandbox` (UnrealEditor-Cmd -run=pythonscript)."""
 import unreal
+import json
+import os
+from pathlib import Path
 
 EAL = unreal.EditorAssetLibrary
 MEL = unreal.MaterialEditingLibrary
@@ -64,7 +67,12 @@ def main():
 
     mesh('Ground', cube, (0, 0, -10), (200, 200, .2), material=ground)   # 200 m square, top at 0
     mesh('Step', cube, (800, 0, 25), (4, 4, .5))
-    mesh('Block', cube, (800, 600, 100), (4, 4, 2))
+    data = Path(os.environ['ATELIER_BUILD_ROOT']) / 'sandbox'
+    shape = json.loads((data / 'block/shape.json').read_text())
+    for index, placement in enumerate(json.loads((data / 'placements.json').read_text())):
+        assert placement['asset'] == shape['asset']
+        mesh('Block' if index == 0 else f'Block_{index}', cube, placement['position_cm'],
+             [n / 100 for n in shape['size_cm']])
     mesh('Ramp', cube, (1400, -600, 60), (8, 4, .3), rotation=(0, 12, 0))   # pitch 12 degrees (Rotator: roll, pitch, yaw)
     mesh('Wall', cube, (2000, 0, 200), (.5, 16, 4))
     sun = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 1000), unreal.Rotator(0, -40, -35))

@@ -5,9 +5,38 @@ files; all share the installed engine and its local derived-data cache. Never sh
 `Content`, `Binaries`, `Intermediate` or PCH trees. Cache hits must describe actual successful output,
 not hide missing inputs or failed builds.
 
+## Automatic product cache
+
+Named-product actions with `cache=True` publish verified portable outputs during `atelier build` and restore matching
+actions automatically across revisions and worktrees. [The recipe guide](BUILD_RECIPES.md) covers eligibility and the
+sandbox example. This store lives under `ATELIER_CACHE/products/v1` (by default the machine-local Atelier cache).
+It uses content-addressed blobs and complete inventories. Restores are independent APFS clones or copies, never
+links; a checkout stays usable if its cache entry is deleted. Nothing is uploaded.
+
+```sh
+uv run atelier cache status
+uv run atelier cache gc --max-gib 10 --max-age-days 30 --dry-run
+uv run atelier cache gc --max-gib 10 --max-age-days 30
+uv run atelier cache pin <action-key>
+uv run atelier cache unpin <action-key>
+uv run atelier cache forget <action-key>
+```
+
+Status reports unique blob bytes, action keys, last publication/restore time, pins, invalid manifests and conflicts.
+These are logical content bytes, **not physical APFS space or a promise of reclaimed disk space**. GC drops old and
+least recently restored/published unpinned actions, then unreferenced blobs. Pins can keep usage above the requested
+limit; the result reports remaining bytes. GC is explicit; include it in disk maintenance before enabling large
+products. It refuses concurrent transfers rather than deleting blobs in use. Ordinary publication/restoration may
+run together in different checkouts. This cache mutex protects files and grants no native execution capacity.
+
+A conflicting action key remains disabled until investigated. `forget` discards its entry and conflict record;
+it does not choose either result as valid. Fix nondeterminism or missing inputs before publishing again. Deleting
+an entry does not change successful local stamps; use a deliberate `--force` on that action to generate new evidence.
+Corrupt action manifests must be explicitly forgotten before GC can safely determine blob reachability.
+
 ## Portable output pool
 
-`atelier pool` is an initial, opt-in pool for independently generated Python outputs. The recipe
+`atelier pool` is the older explicit pool for independently generated Python outputs. The recipe
 must declare exclusively owned `pool_roots`, no dependencies, and only Python commands. Yorimichi
 currently opts in the Hidamari and tree-house texture finishing steps. All other
 steps refuse pooling. Pool entries stay in the machine-local ignored cache; licensed/private output
@@ -47,6 +76,7 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 | Artifact | Current safe workflow |
 | --- | --- |
 | Complete generated game plus compiled module | `atelier reuse` from a clean complete checkout at exactly the same revision and engine; then incremental build |
+| Named portable products with `cache=True` | Automatic verified restoration during build; inspect/prune with `atelier cache` |
 | Opted-in portable texture folders | Publish/restore matching pool key with full output hashes; independent copies |
 | Other generated Blender/character/audio outputs | Keep them warm; extend recipe ownership and tool/dependency manifests before enabling cross-branch pooling |
 | Unreal imported assets | Keep complete source/output proof; normal incremental import unless a targeted delta proves the full changed-content allowlist, collision/material contracts and unaffected asset hashes |

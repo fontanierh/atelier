@@ -4,10 +4,11 @@ Atelier should build a small edit by generating, importing and cooking only the 
 changed. Every certified product should be reusable across compatible worktrees and revisions. The normal `atelier build`
 command should handle this automatically, with a local store that works offline and an optional remote store.
 
-**Status: foundations implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
+**Status: foundations and local portable caching implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
 product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
-timings are available. [The recipe guide](BUILD_RECIPES.md) describes the implemented API. Automatic restoration,
-import transactions, spatial dependencies and remote storage below still require implementation and native proof.
+timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
+[The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
+Unreal restoration, import transactions, spatial dependencies and remote storage below still require implementation and native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
@@ -292,9 +293,9 @@ show its consumers as conditional until that generator or a cache hit resolves t
 A no-op build should inspect cached inventories without repeatedly reading every large source and generated file.
 Use a local file-hash index, with filesystem identity/change metadata as a memoization aid and full verification
 at trust boundaries. Hash memoization must never certify a remote download or a suspected corrupted output.
-The next part of stage 1 introduces this index: file identity, size and high-resolution change metadata are hints, with invalidation
-on replacement, uncertain filesystem events, index-version changes or lost watcher history. A full verification
-mode remains available; ordinary timestamps alone cannot certify correctness after an unobserved modification.
+The implemented index uses file identity, size and high-resolution modification/change metadata as hints, and
+rehashes replacements or ambiguous whole-second metadata. No watcher is required; membership is scanned on each
+check. `--verify` reads all bytes. A future watcher optimization must also invalidate on lost event history.
 
 ## Resource capacity
 

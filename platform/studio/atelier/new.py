@@ -75,4 +75,9 @@ Where to go from here: enable more platform plugins in `unreal/{module}.uproject
 and set their sections in `unreal/Config/DefaultGame.ini`; add build steps to `build.py` for your own generators and
 imports; put characters under `assets/characters/<name>/` with a `character.toml`. The repository README walks through
 each.
+
+The template's `world/block.json` is an independent asset description; `world/placements.json` references it by ID.
+`atelier build {id} world` builds and caches these portable products without Unreal. Move a block without
+regenerating its geometry, or change its dimensions without regenerating placements. See `docs/BUILD_RECIPES.md`
+in the repository for product ownership, dependency edges and automatic local reuse.
 """

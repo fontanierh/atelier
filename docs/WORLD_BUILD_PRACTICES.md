@@ -6,7 +6,8 @@ inputs and references. It should own its outputs and preserve the outputs of oth
 
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
 with today's `Step` recipes. Named products and read-only inspection are implemented in the
-[recipe guide](BUILD_RECIPES.md); automatic artifact restoration and tracked spatial queries remain proposed.
+[recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
+restoration and tracked spatial queries remain proposed.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 ## Separate assets from their placement

@@ -65,10 +65,11 @@ world map, preferences and the HUD.
 ## Build products
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
-plans. The [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining automatic cache and
-native import migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
+plans, file-hash memoization and automatic local caching of portable products. The
+[incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
+migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
-remains the implemented reuse guide.
+documents automatic cache maintenance alongside the older explicit reuse commands.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks.
 
