@@ -9,6 +9,8 @@ product inventories, content-based downstream invalidation, read-only `--plan` /
 timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
 Instrumented scripts can emit bounded phase records; `--timings` displays historical command/phase measurements
 separately from restoration time. The sandbox demonstrates the protocol; native phase baselines remain to be measured.
+`--changes` lists added, changed and retired members between certified named-product inventories, with unchanged
+member counts. It reuses existing inventories, preserves unknown baselines and makes no extra product-byte reads.
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
 environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.

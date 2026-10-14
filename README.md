@@ -179,8 +179,9 @@ For small rebuilds, name independently consumed products and declare which ones 
 references. Opted-in portable products are restored automatically from the local cache across worktrees; the
 [sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
 Python generators can opt into an input audit that catches undeclared reads and writes outside their products.
-`atelier build <game> --timings` shows historical execution, restore and instrumented phase durations without
-running a build. [Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
+`atelier build <game> --timings` shows historical execution, restore and instrumented phase durations;
+`--changes` lists differences between certified output inventories. Both inspect receipts without running a build.
+[Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
 
 ### A prop from a sentence
 
@@ -314,7 +315,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
 | `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
 | `atelier cache status/gc/pin/unpin/forget` | [inspect and prune automatic portable-product reuse](docs/ARTIFACT_POOL.md#automatic-product-cache) |
-| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`, full-byte `--verify`; read-only `--plan` / `--dry-run`, `--explain`, `--timings`, `--json` |
+| `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`, full-byte `--verify`; read-only `--plan` / `--dry-run`, `--explain`, `--timings`, `--changes`, `--json` |
 | `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |
 | `atelier live state` / `py "..."` / `shot` | work on the running game |

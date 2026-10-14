@@ -571,8 +571,11 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
         record = {'fingerprint': current, 'seconds': round(seconds, 3), 'time': time.time(),
                   'input_state': input_state, 'commands': command_times}
-        if step.products:
+        if step.products or 'product_roots' in previous:
+            from . import build_changes
             record['products'] = products
+            record['product_roots'] = build_changes.root_labels(ctx, step)
+            record['output_changes'] = build_changes.compare(previous, products, record['product_roots'], restored=from_cache)
         if from_cache:
             record['restored_from'] = current
             if previous.get('fingerprint') == current:

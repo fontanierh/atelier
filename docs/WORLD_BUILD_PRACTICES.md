@@ -15,6 +15,9 @@ queries, simplification, AO, collision and export, then inspect `atelier build <
 The [phase protocol](BUILD_RECIPES.md#measure-work-inside-a-command) works through stdout without a shared helper
 dependency. Keep measurements outside content products. Nested phases include their children; unmeasured command
 time can include admission, interpreter startup and shutdown, so it is not evidence of editor startup alone.
+After a representative small edit, inspect `--changes` to see which named-product members changed and which
+stayed identical. Unknown baselines need another comparable successful build before drawing conclusions. Use
+these measured boundaries to choose smaller owners; a report of retired content is not a deletion command.
 
 ## Separate assets from their placement
 

@@ -54,9 +54,10 @@ uv run atelier build sandbox --list
 uv run atelier build sandbox --plan --explain
 uv run atelier build sandbox --json
 uv run atelier build sandbox world --timings --json
+uv run atelier build sandbox world --changes --json
 ```
 
-`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning unless `--timings` selects historical
+`--plan` and `--dry-run` are aliases. `--explain` and `--json` also imply planning unless `--timings` or `--changes` selects historical
 receipts. These reports do not create build folders,
 write stamps, run commands or take render capacity. Recipes and verification callbacks must themselves be read-only
 during inspection. Changed input names are available after a new successful build stores input detail; older stamps
@@ -65,6 +66,28 @@ get a general reason. A consumer of a dirty product is `check-after-build` when 
 Builds store per-command durations alongside total step time. Step/prefix selection remains supported; a prefix
 matching only explicit steps reports an unknown selection rather than silently doing nothing. `--touch` cannot
 certify named products.
+
+## Compare certified outputs
+
+`atelier build <game> [step ...] --changes` reports differences between the last two certified named-product
+inventories for each selected step. `--json` exposes the complete member lists. This is historical inspection:
+it reads stamps without hashing bytes, verifying current files, running commands or contacting the cache.
+
+Reports list added, changed and retired members, and count unchanged members. Members include files, sidecars,
+empty directories and the declared roots themselves. A rename appears as retirement plus addition; replacing a
+file with a directory is a change at that path. Removing a product declaration retires it from the certified set;
+this report neither deletes its files nor claims they were removed from disk.
+
+These are **content differences between certified outputs**, not a trace of filesystem writes. Rebuilding identical
+bytes produces no changes. Restoring damaged/missing files can also produce no content delta when the last certified
+inventory already described those bytes. Execution and restoration are labelled separately. Copied stamps retain
+the donor's historical change receipt; they do not describe installation into the receiving checkout.
+
+The builder compares inventories it already computed, with no extra source or output byte reads. Successful stamps
+store portable ordered root labels and diagnostic changes outside products and cache manifests. Missing/old/malformed
+baselines, external roots and moved/reordered root declarations are **unknown** rather than falsely unchanged.
+No-op builds leave history alone. Failed builds have no successful receipt; an interrupted restore is not reported
+as a certified change. As with `--timings`, combine `--changes` only with step selection and optional `--json`.
 
 ## Measure work inside a command
 
