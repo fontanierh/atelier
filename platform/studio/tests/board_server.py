@@ -5,7 +5,10 @@ import shutil
 import subprocess
 import time
 import warnings
-from urllib.error import HTTPError, URLError
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+from http.client import HTTPConnection
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -52,13 +55,20 @@ class Server:
         environ = {**os.environ, 'HOME': str(home), 'ATELIER_BOARD_LAUNCHCTL': str(self.launchctl), **(env or {})}
         self.log = tmp_path / 'board-server.log'
         self.process = None
+        readiness = None
         started = time.monotonic()
         self.stage, self.requests = 'listening announcement', 0
         try:
             # A file preserves stderr and cannot fill an unread pipe while a test is running.
             with self.log.open('w') as output:
                 self.process = subprocess.Popen(argv, stdout=output, stderr=subprocess.STDOUT, env=environ)
-            self.ready(started + STARTUP_TIMEOUT)
+            deadline = started + STARTUP_TIMEOUT
+            readiness = ThreadPoolExecutor(max_workers=1, thread_name_prefix='board-readiness')
+            ready = readiness.submit(self.ready, deadline)
+            try:
+                ready.result(timeout=max(0., deadline - time.monotonic()))
+            except TimeoutError as error:
+                raise TimeoutError(f'Board startup deadline exceeded during {self.stage}') from error
             self.startup_seconds = time.monotonic() - started
             if self.requests > 1 or self.startup_seconds > STARTUP_REQUEST_TIMEOUT:
                 warnings.warn(f'Board startup took {self.startup_seconds:.3f}s and {self.requests} readiness requests',
@@ -73,6 +83,11 @@ class Server:
                 finally:
                     self.stop()
             raise
+        finally:
+            if readiness is not None:
+                # Failure cleanup stops the server first, closing any trickling response. Joining
+                # before stop() would let a blocked HTTP read defeat the constructor's deadline.
+                readiness.shutdown(wait=True, cancel_futures=True)
 
     def ready(self, deadline):
         """The listening socket precedes the first successful database read; wait for both."""
@@ -93,16 +108,22 @@ class Server:
             if self.stage == 'first /api/state':
                 self.requests += 1
                 try:
-                    with urlopen(f'http://127.0.0.1:{self.server_port}/api/state?limit=1',
-                                 timeout=min(STARTUP_REQUEST_TIMEOUT, remaining)) as response:
-                        self.csrf = json.loads(response.read())['csrf']
+                    # Connect directly to our child: no inherited proxy or redirect may leave the
+                    # worker waiting on another server after failure cleanup reaps this one.
+                    with closing(HTTPConnection('127.0.0.1', self.server_port,
+                                                timeout=min(STARTUP_REQUEST_TIMEOUT, remaining))) as connection:
+                        connection.request('GET', '/api/state?limit=1')
+                        with connection.getresponse() as response:
+                            if response.status != 200:
+                                raise HTTPError('/api/state', response.status, response.reason, response.headers, None)
+                            self.csrf = json.loads(response.read())['csrf']
                     return
                 except HTTPError as error:
                     error.close()
                     if error.code != 503:
                         raise  # Bad routes, permissions and malformed responses are not startup delays.
                     last_error = error
-                except (TimeoutError, URLError, ConnectionError) as error:
+                except (TimeoutError, ConnectionError) as error:
                     last_error = error
             time.sleep(min(.05, max(0., deadline - time.monotonic())))
 

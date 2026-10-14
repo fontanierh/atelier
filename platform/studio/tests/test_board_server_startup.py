@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import warnings
 from contextlib import nullcontext
 from urllib.error import HTTPError
@@ -42,6 +43,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         Handler.requests += 1
+        if mode.startswith('trickle-'):
+            prefix = b'HTTP/1.1 200 OK\\r\\n'
+            prefix += b'X-Slow: ' if mode == 'trickle-headers' else b'Content-Length: 1000\\r\\n\\r\\n'
+            self.wfile.write(prefix)
+            self.wfile.flush()
+            for _ in range(1000):
+                self.wfile.write(b' ')
+                self.wfile.flush()
+                time.sleep(.01)
+            return
         if mode == 'hang':
             time.sleep(10)
         status = 503 if mode == 'busy' and Handler.requests == 1 else 403 if mode == 'forbidden' else 200
@@ -116,10 +127,13 @@ def test_failed_construction_reaps_child_and_keeps_diagnostics(tmp_path, child, 
         assert '1 requests' in notes  # A permission error is not retried as transient readiness.
 
 
-@pytest.mark.parametrize('mode,stage', [('silent', 'listening announcement'), ('hang', 'first /api/state')])
+@pytest.mark.parametrize('mode,stage', [('silent', 'listening announcement'), ('hang', 'first /api/state'),
+                                      ('trickle-headers', 'first /api/state'), ('trickle-body', 'first /api/state')])
 def test_startup_deadline_covers_listener_and_http_without_leaking(tmp_path, child, monkeypatch, mode, stage):
-    monkeypatch.setattr(board_server, 'STARTUP_REQUEST_TIMEOUT', .05)
+    monkeypatch.setattr(board_server, 'STARTUP_REQUEST_TIMEOUT', 1. if mode.startswith('trickle-') else .05)
+    started = time.monotonic()
     with pytest.raises(TimeoutError, match=stage) as caught:
         board_server.Server(tmp_path, env={'STARTUP_CASE': mode})
+    assert time.monotonic() - started < board_server.STARTUP_TIMEOUT + 3
     assert_reaped(child)
     assert any('Board server log:' in note for note in caught.value.__notes__)
