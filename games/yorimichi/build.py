@@ -14,7 +14,7 @@ needs a digest step (`digest_step`) instead of an export it reads, so an export 
 (a city layout change, say) leaves it current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
-import importlib.util, json, os, tomllib
+import ast, importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -62,6 +62,37 @@ NORTH_LAYOUT = (REGIONS / 'hidamari' / 'forest_backdrop.py', REGIONS / 'megapark
                 REGIONS / 'megapark' / 'trail.py', *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT)
 SOUTHWEST_MODELS = ('stand,fisher_house_a,fisher_house_b,boat_shed,stairs,dock,boat,drying_rack,temple,island,'
                     'boulder_a,boulder_b,boulder_c,stone_wall,pine_lean_a,pine_lean_b')
+
+
+def local_imports(script, roots=(WORLD, REGIONS)):
+    """Every module of this game a world script imports, directly or through others, found by reading the source
+    (imports inside functions too): world/ and world/regions/ are the scripts' import roots, and a package brings its
+    __init__.py. A cutoff dependent hashes these, since it no longer sees world.layout's sources through its
+    fingerprint."""
+    seen, todo = set(), [Path(script)]
+    while todo:
+        path = todo.pop()
+        if path in seen:
+            continue
+        seen.add(path)
+        for node in ast.walk(ast.parse(path.read_text(), str(path))):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                names = [node.module, *(f'{node.module}.{alias.name}' for alias in node.names)]
+            else:
+                continue
+            for name in names:
+                parts = name.split('.')
+                for root in (path.parent, *roots):
+                    found = [f for f in (root.joinpath(*parts).with_suffix('.py'), root.joinpath(*parts, '__init__.py'))
+                             if f.is_file()]
+                    if found:
+                        todo += found
+                        todo += [root.joinpath(*parts[:k], '__init__.py') for k in range(1, len(parts))
+                                 if root.joinpath(*parts[:k], '__init__.py').is_file()]
+                        break
+    return sorted(seen)
 
 
 # Keep the recipe's helpers available while the staging implementation has its own narrow input.
@@ -747,6 +778,13 @@ def steps(ctx):
     for step in result:
         if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':
             step.after.append('unreal.north')
+    # world.layout is a cutoff step, and the scripts behind it and its dependents import across regions (the volcano
+    # reads Belmonte's terrain): each such step also hashes every module its scripts import.
+    for step in result:
+        if step.name == 'world.layout' or 'world.layout' in step.needs:
+            for command in step.commands:
+                if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
+                    step.inputs += [f for f in local_imports(command.script) if f not in step.inputs]
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)

@@ -681,8 +681,8 @@ def trail_distance(x,y):
 
 def caldera_box():
     """[x0, y0, x1, y1] in island metres: the caldera inside its crest, where trees are near ones in Unreal (city.json
-    near_trees). A backdrop tree is dropped at load unless a ground trace finds terrain under it (JapanWorld.cpp), and
-    that trace drops every tree standing on the volcano's own mesh; near trees are kept, with shadows and collision."""
+    near_trees), kept with shadows and trunk collision. The backdrop trees outside it stay too: the load-time ground
+    trace (JapanWorld.cpp) finds the volcano's own mesh once its collision is built."""
     reach=float(mountains.rim_radius(np.linspace(-math.pi,math.pi,721)).max())+5
     cx,cy=mountains.VOLCANO
     return [round(cx-reach,1),round(cy-reach,1),round(cx+reach,1),round(cy+reach,1)]

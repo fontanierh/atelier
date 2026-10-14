@@ -148,3 +148,25 @@ def test_layout_dependents_list_the_layout_sources_they_import(tmp_path):
         assert covers(steps[name], RECIPE.VILLAGE_LAYOUT), name
     for name in ('world.treehouse', 'world.hidamari', 'world.belmonte', 'world.hippodrome'):   # import treehouse/layout.py
         assert covers(steps[name], RECIPE.TREEHOUSE_LAYOUT) and 'world.treehouse_trees' in steps[name].needs, name
+
+
+def test_layout_dependents_hash_every_module_their_scripts_import(tmp_path):
+    """Each step on the cutoff hashes every module its world scripts import, read from their source: the volcano's
+    layout reads Belmonte's terrain, which reads the Hippodrome's build, so editing either reruns them."""
+    regions = RECIPE.REGIONS
+    assert {regions / 'belmonte' / 'layout.py', regions / 'belmonte' / 'terrain.py', regions / 'belmonte' / 'source.py',
+            regions / 'hippodrome' / 'build.py'} <= set(RECIPE.local_imports(regions / 'hidamari' / 'layout.py'))
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
+    steps = RECIPE.steps(ctx)
+    checked = 0
+    for step in steps:
+        if step.name != 'world.layout' and 'world.layout' not in step.needs:
+            continue
+        for command in step.commands:
+            script = getattr(command, 'script', None)
+            if script is None or RECIPE.WORLD not in Path(script).parents:
+                continue
+            missing = [f for f in RECIPE.local_imports(script) if not any(f == i or i in f.parents for i in step.inputs)]
+            assert not missing, (step.name, missing)
+            checked += 1
+    assert checked >= 12
