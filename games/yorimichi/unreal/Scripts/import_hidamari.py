@@ -29,10 +29,11 @@ water_mat=harbor_material(water=True) if not only or 'HD_Sea' in only else None
 report=json.loads((OUT/'import-report.json').read_text()) if only and (OUT/'import-report.json').exists() else {}
 # The textured city (world/regions/hidamari/surfaces.py): a manifest entry with slots has one per surface.
 city_mis=city_material.materials() if any('slots' in e for n,e in manifest.items() if not only or n in only) else {}
-mountain_mat=gate_mat=None
+mountain_mat=gate_mat=rock_mat=None
 if north:
-    from mountain_material import material as mountain_material,gate_material
+    from mountain_material import material as mountain_material,gate_material,rock_material
     mountain_mat=mountain_material() if not only or any(n.startswith('HD_North') for n in only) else None
+    rock_mat=rock_material(mountain_mat) if mountain_mat else None
     gate_mat=gate_material() if not only or 'HD_NorthGate' in only else None
 def distance_lods(mesh,name,levels):
     """Reduce render geometry only; retain authored UCX and LOD0 complex collision."""
@@ -79,6 +80,7 @@ for name,entry in manifest.items():
     if (only and name not in only) or (not north and name.startswith('HD_North')):continue
     mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
+    elif name.startswith('HD_NorthRock'): selected=rock_mat
     elif name.startswith('HD_North'): selected=mountain_mat
     elif name=='HD_Sea': selected=water_mat
     elif name in ('HD_Harbor','HD_Boat'): selected=harbor_mat

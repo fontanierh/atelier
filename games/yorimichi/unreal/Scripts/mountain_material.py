@@ -44,7 +44,11 @@ def material():
     snow_code+=('float3 snowLum=float3(.299,.587,.114);'
                 'float edgeNoise=clamp(dot(Texture2DSampleLevel(Tex,TexSampler,P.xy/2600.+.61,6.5).rgb,snowLum)/.092-1.,-1.,1.);'
                 'float edge=lerp(5.,1.5,smoothstep(50000.,200000.,D));'
-                'float snowMask=saturate((snowAlpha-.5+edgeNoise*.15)*edge+.5);')
+                'float snowMask=saturate((snowAlpha-.5+edgeNoise*.15)*edge+.5);'
+                # A rock (Caps 1, rock_material) wears snow on its upward faces wherever snow lies round it, not the
+                # ground's mask cut across it: white blocks on snow and bare grey ones beside it read as no rock at all.
+                'float around=Texture2DSampleLevel(Snow,SnowSampler,snowUV,4.).r;'
+                'snowMask=lerp(snowMask,saturate((N.z-.78)/.1)*saturate(around*2.5),Caps);')
     # The volcano's exposed-rock band and the join to Belmonte's palette, in centimetres (hidamari/mountains.py).
     (vx,vy),(r0,r1),(p0,p1),join=snow_meta['volcano_m'],snow_meta['rock_radius_m'],snow_meta['rock_prominence_m'],snow_meta['south_join_m']
     rock_band=(f'float join=smoothstep({(join-420)*100:.0f}.,{join*100:.0f}.,-P.y);'
@@ -100,7 +104,7 @@ float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,s
 return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
-    for key in ('C','D','A','P','N','Tex','Ground','Snow','Sun'):
+    for key in ('C','D','A','P','N','Tex','Ground','Snow','Sun','Caps'):
         a=unreal.CustomInput();a.set_editor_property('input_name',key);args.append(a)
     c.set_editor_property('inputs',args)
     l.connect_material_expressions(vc,'',c,'C');l.connect_material_expressions(depth,'',c,'D')
@@ -125,7 +129,7 @@ return lerp(ground*strata,snow,snowMask)*(1-'''+atmosphere.SHARE+');')
 float bounce=dot(Base,float3(.299,.587,.114))*.25*high*(1-snowMask)*(1-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
 return float3(bounce,bounce,bounce);''')
     inputs=[]
-    for key in ('Base','P','N','D','Snow','Tex','Sun'):
+    for key in ('Base','P','N','D','Snow','Tex','Sun','Caps'):
         value=unreal.CustomInput();value.set_editor_property('input_name',key);inputs.append(value)
     ambient.set_editor_property('inputs',inputs)
     l.connect_material_expressions(c,'',ambient,'Base');l.connect_material_expressions(p,'',ambient,'P')
@@ -136,6 +140,9 @@ return float3(bounce,bounce,bounce);''')
     sun=l.create_material_expression(m,unreal.MaterialExpressionCollectionParameter,-600,900)
     sun.set_editor_property('collection',wind);sun.set_editor_property('parameter_name','SunDirection')
     l.connect_material_expressions(sun,'',ambient,'Sun');l.connect_material_expressions(sun,'',c,'Sun')
+    caps=l.create_material_expression(m,unreal.MaterialExpressionScalarParameter,-600,1000)
+    caps.set_editor_property('parameter_name','Caps');caps.set_editor_property('default_value',0.)
+    l.connect_material_expressions(caps,'',ambient,'Caps');l.connect_material_expressions(caps,'',c,'Caps')
     emission=l.create_material_expression(m,unreal.MaterialExpressionAdd,400,150)
     l.connect_material_expressions(atmosphere.glow(m),'',emission,'A')
     l.connect_material_expressions(ambient,'',emission,'B')
@@ -147,6 +154,18 @@ return float3(bounce,bounce,bounce);''')
     m.set_editor_property('dithered_lod_transition',True)
     l.recompile_material(m);e.save_loaded_asset(m)
     return m
+
+
+def rock_material(parent):
+    """The volcano's loose rocks (HD_NorthRock*): the mountain material with snow caps."""
+    e=unreal.EditorAssetLibrary;path='/Game/Japan/Materials/MI_NorthRockCaps'
+    mi=e.load_asset(path) if e.does_asset_exist(path) else unreal.AssetToolsHelpers.get_asset_tools().create_asset(
+        'MI_NorthRockCaps','/Game/Japan/Materials',unreal.MaterialInstanceConstant,unreal.MaterialInstanceConstantFactoryNew())
+    l=unreal.MaterialEditingLibrary
+    l.set_material_instance_parent(mi,parent)
+    assert l.set_material_instance_scalar_parameter_value(mi,'Caps',1.)
+    e.save_loaded_asset(mi)
+    return mi
 
 
 def _seamless(p):

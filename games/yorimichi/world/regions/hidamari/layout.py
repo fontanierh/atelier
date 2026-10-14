@@ -802,9 +802,9 @@ def dress_caldera(put):
     for x,y,z,gradient,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],tslope[crest|banks],crest[crest|banks]):
         if not clear_of_stones(x,y):continue
         u=rng.random()
-        # Leafy amber clumps lead; shrub maples and ginkgos are few, so the crest reads as thicket, not small trees.
-        if on_crest and u<.25:name,scale='Bush_HD_Amber',float(rng.uniform(.9,1.6))
-        elif on_crest and u<.37:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
+        # Loose red and gold bushes lead; shrub maples and ginkgos are few, so the crest reads as thicket, not small trees.
+        if on_crest and u<.33:name,scale='Bush_HD_Autumn',float(rng.uniform(.8,1.5))
+        elif on_crest and u<.39:name,scale='Tree_Maple_B',float(rng.uniform(.25,.4))
         elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.14,.22))
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))
         put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
@@ -835,14 +835,35 @@ def dress_caldera(put):
     def clear_of_riding(x,y):
         i,j=int(math.floor(x/cell)),int(math.floor(y/cell))
         return not any((i+di,j+dj) in taken for di in (-2,-1,0,1,2) for dj in (-2,-1,0,1,2))
+    # Granite outcrops (the rim target's foreground): clusters of low faceted domes, 4-10 m across, sunk into the slope, clear of
+    # the riding by their own reach. Their material caps them with snow where snow lies round them (mountain_material.py).
+    def clear_by(x,y,reach):
+        i,j=int(math.floor(x/cell)),int(math.floor(y/cell));k=int(math.ceil(reach/cell))
+        return not any((i+di,j+dj) in taken for di in range(-k,k+1) for dj in range(-k,k+1))
+    counts['outcrops']=0;outcrops=[]
+    seats=surface_samples(hill[(up[(up>.55)&(up<.97)]<.9)],2.5)
+    centres=seats[(rng.random(len(seats))<.012)&(mountains.noise(seats[:,0],seats[:,1],40,765)>-.1)]
+    for x0,y0,_ in centres:
+        members=seats[np.hypot(seats[:,0]-x0,seats[:,1]-y0)<8.]
+        for x,y,z in members[rng.permutation(len(members))[:int(rng.integers(1,4))]]:
+            x,y=float(x),float(y);scale=float(rng.uniform(1.3,2.8));reach=1.9*scale+2.
+            if not clear_by(x,y,reach) or any(math.hypot(x-px,y-py)<.6*(reach+r) for px,py,r in outcrops[-30:]):continue
+            outcrops.append((x,y,reach))
+            put('HD_NorthRockC' if rng.random()<.65 else 'HD_NorthRockA',x,y,float(z)-.45*scale,
+                yaw=float(rng.uniform(0,360)),scale=scale)
+            counts['outcrops']+=1
     points=surface_samples(hill,3.)
     keep=rng.random(len(points))<.25*mountains.smooth((mountains.noise(points[:,0],points[:,1],26,763)
                                                      +mountains.noise(points[:,0],points[:,1],9,764)*.4-.1)/.25)
+    # and thicker round the outcrops, packed between the rocks as in the target
+    near=np.zeros(len(points),bool)
+    for x,y,reach in outcrops:near|=np.hypot(points[:,0]-x,points[:,1]-y)<reach+2.
+    keep|=near&(rng.random(len(points))<.25)
     counts['hillside']=0
     for x,y,z in points[keep]:
-        if not clear_of_riding(x,y):continue
+        if not clear_of_riding(x,y) or any(math.hypot(x-px,y-py)<reach-2.5 for px,py,reach in outcrops):continue
         u=rng.random()
-        name,scale=(('Bush_HD_Amber',float(rng.uniform(.8,1.5))) if u<.3 else
+        name,scale=(('Bush_HD_Autumn',float(rng.uniform(.8,1.5))) if u<.45 else
                     (('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(1.1,2.))))
         put(name,float(x),float(y),float(z)-.15,yaw=float(rng.uniform(0,360)),scale=scale)
         counts['hillside']+=1

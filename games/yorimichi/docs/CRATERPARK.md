@@ -67,9 +67,12 @@ The caldera round the park has its own planting (`hidamari/layout.py` `dress_cal
 about 26 stands of 16-35 trees (the Mega Park's detailed pines, cedars, maples and ginkgos), on the floor and the
 wall's lower slope; about 50 groups of two to five grey boulders 9-16 m across (`SW_Boulder_*`, which take no snow)
 with scree on bare ground; and ochre shrubs. About 9,600 autumn thicket plants clump along the crest, on rock as steep
-as 55 degrees and more thinly on snow (leafy amber bushes, ochre bushes and a few red shrub maples and golden ginkgo
-shrubs), and ochre bushes ring the park's block 9-40 m out, snow or not. About 6,500 more cover the block's own
-exposed hillside in clumps, 4 m clear of every riding piece and bridge (`placement.piece_triangles`). Bushes have no
+as 55 degrees and more thinly on snow (loose red and gold `Bush_HD_Autumn` bushes, ochre bushes and a few red shrub
+maples and golden ginkgo shrubs), and ochre bushes ring the park's block 9-40 m out, snow or not. The block's own
+exposed hillside carries clusters of low granite domes 4-10 m across (`HD_NorthRock*`, snow-capped), and about 8,800
+more bushes in clumps, packed thicker round the domes; all stand clear of every riding piece and bridge
+(`placement.piece_triangles`). The autumn bush has a warm core: the garden shrubs' near-black one, sunk in a slope or
+seen from afar, read as black shards on the snow. Bushes have no
 collision and are culled beyond 300 m. Some 1,100 granite stones (`HD_NorthRockA`/`C`, as on the north slopes) lie
 in clusters over the floor. No tree or stone stands within 7 m of the park's block. The caldera is a `near_trees` box,
 so its trees cast shadows and keep trunk collision.

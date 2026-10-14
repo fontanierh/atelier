@@ -10,6 +10,7 @@ from village import build as v
 GREEN = [(.045, .085, .018), (.06, .11, .022), (.075, .13, .03), (.10, .16, .04), (.035, .07, .016)]
 AZALEA = [(.32, .045, .02), (.42, .08, .02), (.24, .035, .018), (.06, .10, .02)]       # satsuki in autumn colour
 AMBER = [(.50, .24, .02), (.36, .12, .02), (.62, .36, .05), (.06, .11, .022)]          # nanten, turning
+AUTUMN = [(.50, .07, .02), (.62, .24, .03), (.72, .46, .05), (.34, .05, .02)]         # the crater's wild thicket
 CORE = (.022, .045, .011)
 PINE = [(.03, .07, .035), (.045, .09, .04), (.06, .11, .045)]   # black pine needles, blue-green
 BARK = (.07, .045, .03)
@@ -20,7 +21,11 @@ KINDS = {
     'Bush_HD_Azalea': ((.7, .6, .45), 2.4, 560, AZALEA, (3, 2, 2, 2)),
     'Bush_HD_Amber': ((.55, .5, .7), 2.2, 500, AMBER, (2, 2, 1, 2)),
     'Bush_HD_Hedge': ((.8, .38, .5), 4.0, 560, GREEN, (3, 3, 2, 1, 2)),
+    'Bush_HD_Autumn': ((.9, .8, .6), 2.0, 450, AUTUMN, (2, 3, 3, 1)),
 }
+# A wild bush is loose, not clipped: bigger leaves, and a warm core, so one sunk in a slope or seen from afar never reads
+# as a black shard on the snow (the clipped garden core is near black).
+LOOSE = {'Bush_HD_Autumn': (1.7, (.20, .075, .02))}
 
 
 def surface(extent, p, bumps, d):
@@ -31,7 +36,7 @@ def surface(extent, p, bumps, d):
     return Vector((d.x*s, d.y*s, d.z*s))
 
 
-def pad(m, r, centre, extent, p, leaves, colours, weights, core=CORE):
+def pad(m, r, centre, extent, p, leaves, colours, weights, core=CORE, leaf=1.):
     """One clipped mass about centre: the lumpy core, then its leaves."""
     c0 = Vector(centre)
     bumps = [(Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-.2, 1))).normalized(), r.uniform(.03, .08),
@@ -56,7 +61,7 @@ def pad(m, r, centre, extent, p, leaves, colours, weights, core=CORE):
         if d.z < -.55:continue
         s = surface(extent, p, bumps, d); normal = Vector((s.x/extent[0]**2, s.y/extent[1]**2, s.z/extent[2]**2)).normalized()
         pos = s*(1+r.uniform(-.02, .05))+c0
-        size = r.uniform(.07, .12)
+        size = r.uniform(.07, .12)*leaf
         frame = normal.to_track_quat('Z', 'Y').to_matrix().to_4x4()
         frame = frame@Matrix.Rotation(r.uniform(0, math.tau), 4, 'Z')@Matrix.Rotation(r.uniform(.5, 1.1), 4, 'X')
         light = .8+.45*max(0., normal.z)+r.uniform(-.1, .1)
@@ -71,7 +76,8 @@ def shrub(name):
     extent, p, leaves, colours, weights = KINDS[name]
     m = v.Mesh(name)
     # the centre: the shape sits on the ground, its foot just below
-    pad(m, random.Random(sum(map(ord, name))), (0, 0, extent[2]-.06), extent, p, leaves, colours, weights)
+    leaf, core = LOOSE.get(name, (1., CORE))
+    pad(m, random.Random(sum(map(ord, name))), (0, 0, extent[2]-.06), extent, p, leaves, colours, weights, core, leaf)
     return m
 
 
