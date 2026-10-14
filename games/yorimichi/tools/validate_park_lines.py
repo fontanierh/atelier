@@ -12,6 +12,7 @@ import numpy as np
 import check_skate_feel as feel
 from park_line_geometry import LineWorld
 from park_line_metrics import analyze, is_ground, DEFAULTS
+from park_line_controller import LineFollower
 
 
 def sha(path):
@@ -83,6 +84,9 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     spawn, heading, direction = world.spawn()
     collision = dict(triangles=world.triangles.tolist(), rails=world.spec.get('rails', []),
                      spawn=spawn.tolist(), heading=heading)
+    follower = LineFollower(world.path, world.spec['follower']) if 'follower' in world.spec else None
+    if follower and any(c.get('left', [0, 0])[0] != 0 for c in world.spec.get('controls', [])):
+        raise ValueError('Choose scripted steering or follower; do not combine left.x writers')
     feel.OUTPUT = output
     session = ObservedSession(binary, package, collision, run_id)
     rows = []; began = time.monotonic(); last_report = began
@@ -104,6 +108,8 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
                 if time.monotonic()-began > timeout:
                     raise TimeoutError('Trial wall-clock deadline exceeded; partial trace retained')
                 buttons, left, right = controls(world.spec, frame)
+                if follower:
+                    left = [follower.steering(rows[-1] if rows else None), left[1]]
                 session.send('step', dt=1/60, buttons=buttons, left=left, right=right, triggers=[0, 0])
                 row = session.read()
                 compact = dict(frame=frame, time_s=(frame+1)/60, tick=row['tick'],
@@ -129,7 +135,10 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     result.update(entry_speed_mps=entry_speed, wall_seconds=time.monotonic()-began,
                   trace=run_id+'.frames.jsonl', collision=run_id+'.json', log=run_id+'.log',
                   collision_sha256=sha(output/(run_id+'.json')),
-                  controls_mode='scripted' if world.spec.get('controls') else 'coast')
+                  controls_mode='path_follower' if follower else 'scripted' if world.spec.get('controls') else 'coast')
+    if follower:
+        result['controller'] = follower.report()
+        result['controller']['stayed_in_corridor'] = result['max_lateral_error_m'] <= world.design_width/2
     return result
 
 

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 from park_line_geometry import LineWorld, Path2D
 from park_line_metrics import analyze
 from validate_park_lines import validate_speeds
+from park_line_controller import LineFollower
 
 
 def test_profile_lane_keeps_endpoints_and_gap(tmp_path):
@@ -120,3 +121,33 @@ def test_empty_or_invalid_sweep_cannot_pass_without_trials():
         with pytest.raises(ValueError):
             validate_speeds(speeds)
     assert validate_speeds([0,10])==[0,10]
+
+
+def test_follower_corrects_cross_track_and_rotates_with_path():
+    first=LineFollower(Path2D([[0,0],[0,100]]),{})
+    rotated=LineFollower(Path2D([[0,0],[100,0]]),{})
+    a=dict(state='PhysicsGround',position=[2,0,10],velocity=[0,0,12])
+    b=dict(state='PhysicsGround',position=[10,0,-2],velocity=[12,0,0])
+    assert first.steering(a)>0
+    assert first.previous==pytest.approx(rotated.steering(b)/32767,abs=1/32767)
+
+
+def test_follower_never_steers_in_air_or_offboard():
+    follower=LineFollower(Path2D([[0,0],[0,100]]),{})
+    row=dict(state='PhysicsGround',position=[2,0,10],velocity=[0,0,12])
+    assert follower.steering(row)>0
+    for state in ('PhysicsAir','WipeoutAir','BipedGround','Teleporting'):
+        assert follower.steering({**row,'state':state})==0
+        assert follower.previous==0
+    assert follower.steering({**row,'velocity':[0,0,0]})==0
+
+
+def test_follower_input_is_bounded_and_invalid_settings_rejected():
+    path=Path2D([[0,0],[0,100]])
+    follower=LineFollower(path,dict(max_stick=.4,smoothing_seconds=.001))
+    value=follower.steering(dict(state='PhysicsGround',position=[30,0,10],velocity=[12,0,0]))
+    assert abs(value)<=round(.4*32767)
+    assert follower.report()['saturated_frames']==1
+    for config in ({'gain':0},{'max_stick':2},{'lookahead_m':float('nan')},{'mode':'teleport'},{'unknown':1}):
+        with pytest.raises(ValueError):
+            LineFollower(path,config)

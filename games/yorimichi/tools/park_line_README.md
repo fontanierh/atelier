@@ -69,6 +69,15 @@ are signed integers in [-32767,32767], with `[0,0]` neutral. Later entries overr
 Example push input: `{"start_frame":0,"end_frame":90,"buttons":4096}`. Every applied input is saved.
 `difficulty` defaults to `normal`; `vert_assist` to 0; optional `feel` is passed unchanged to the Session.
 
+Optional `"follower": {}` enables ground-only path tracking using ordinary left-stick input. It reads the preceding
+frame's position/velocity, aims ahead along the path and stays neutral in air/offboard states. It never moves the
+rider or alters velocity directly. Scripted buttons/right stick/left.y can accompany it; scripted left.x conflicts
+are rejected. Defaults are `lookahead_m: 5`, `lookahead_seconds: 0.45`, `gain: 4`, `max_stick: 0.85`,
+`smoothing_seconds: 0.15`, `min_speed_mps: 0.5`; all must be positive and finite, and max stick must be at most 1.
+Each report records settings, active/saturated frames and corridor tracking separately. A failed tracking trial
+does not establish a geometry defect: tight curves, intersections, sharp corners, low speed and airborne direction
+changes can defeat this simple controller. Input traces permit replay. This is not proof of human playability.
+
 ## Triangle collision
 
 Instead of `sections`, give `triangles` as `(F,3,3)` arrays, or `mesh` as a relative NPZ path containing
