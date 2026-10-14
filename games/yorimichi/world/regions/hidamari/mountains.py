@@ -362,7 +362,7 @@ def snow_cover(x,y,z,step=STEP):
         t=np.clip(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1)
         distance=np.hypot(x-a[0]-t*dx,y-a[1]-t*dy)
         # The ribbons widen with the cone, so the cap keeps its share of snow.
-        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.95*share[k//per]
+        width=(a[2]*(1-t)+b[2]*t)*pinch*LIFT*.45*share[k//per]
         signed=np.maximum(signed,np.where(width>0,np.maximum(width,2.),0)-distance)
     # Rock breaks each streak into fragments and ragged edges further down.
     breakup=downslope_noise(radius,angle,38,31,.4)*6+noise(x,y,83,32)*4+downslope_noise(radius,angle,14,33,.4)*2.5
@@ -407,9 +407,10 @@ def snow_cover(x,y,z,step=STEP):
     # Outside, snow lies heaviest in a broken collar just under the crest, gathering in its hollows.
     collar=(smooth((radius-rim_r-14)/16)*smooth((rim_r+60+35*ring(470.,80.,45)-radius)/35)
             *smooth((noise(x,y,17,44)+noise(x,y,8,46)*.3+.6*gully-.15)/.25)*(1-.5*crest))
-    # Broad snowfields on the outer flank between bare rock ribs, stretched downslope and thinning with height lost.
-    flank=(smooth((radius-rim_r-10)/20)*smooth((rim_r+220+60*ring(470.,90.,57)-radius)/80)
-           *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest+.05)/.2))
+    # Snowfields just under the crest between bare rock ribs, stretched downslope; lower down only thin couloirs
+    # (the ribbons) hold snow, so the far views read rock with a few streaks (f_belmonte, f_city2).
+    flank=(smooth((radius-rim_r-10)/20)*smooth((rim_r+110+40*ring(470.,90.,57)-radius)/50)
+           *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest-.2)/.2))
     snow=np.maximum(snow,flank)
     line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
     # Chutes and the collar hold snow on steeper ground than the open slopes do.

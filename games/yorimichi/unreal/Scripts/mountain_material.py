@@ -81,7 +81,7 @@ float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBle
 float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
 ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
 float3 an=abs(N);
-float2 fp=(an.z>max(an.x,an.y)?P.xy:(an.x>an.y?P.yz:P.xz))/520.;
+float2 fp=(an.z>max(an.x,an.y)?P.xy:(an.x>an.y?P.yz:P.xz))/2200.;
 float2 fc=floor(fp);float best=9.;float2 id=fc;
 for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
   float2 cell=fc+float2(i,j);
@@ -91,7 +91,7 @@ for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
 }
 float3 h=frac(sin(float3(dot(id,float2(12.9898,78.233)),dot(id,float2(39.346,11.135)),dot(id,float2(73.156,52.235))))*43758.5453)-.5;
 float3 sunDir=normalize(Sun.xyz);
-float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.6)),sunDir)),litSmooth=saturate(dot(N,sunDir));
+float litFacet=saturate(dot(normalize(N+h*float3(1.4,1.4,.7)),sunDir)),litSmooth=saturate(dot(N,sunDir));
 float3 facet=(.55+.75*litFacet)/(.55+.75*litSmooth)*lerp(float3(.93,.96,1.06),float3(1.05,1.,.93),saturate(litFacet*1.4-.2));
 ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);

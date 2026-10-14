@@ -66,13 +66,15 @@ The block's sides go down to 110 m below its top, so the caldera floor is shaped
 The caldera round the park has its own planting (`hidamari/layout.py` `dress_caldera`), from its own random stream:
 about 26 stands of 16-35 trees (the Mega Park's detailed pines, cedars, maples and ginkgos), on the floor and the wall's
 lower slope; about 50 groups of two to five grey boulders 9-16 m across (`SW_Boulder_*`, which take no snow) with scree on bare ground; and
-ochre shrubs. Autumn thickets clump on the crest's bare ground (red shrub maples, golden ginkgo shrubs and ochre bushes)
-and ochre bushes ring the park's block 9-40 m out, snow or not. Nothing stands within 7 m of the park's block. The
+ochre shrubs. About 8,700 autumn thicket plants clump along the crest, on rock as steep as 55 degrees and more thinly on
+snow (red shrub maples, golden ginkgo shrubs and ochre bushes), and ochre bushes ring the park's block 9-40 m out, snow
+or not. Some 900 small stones, 1-3 m, lie in clusters over the floor's snow. Nothing stands within 7 m of the park's block. The
 caldera is a `near_trees` box, so its trees cast shadows and keep trunk collision.
 
 The volcano's own snow (`hidamari/mountains.py` `snow_cover`) leaves the caldera floor mostly white with dark cinder
-patches, and lies in broad snowfields between bare rock ribs on the outer flank for about 220 m below the crest. The
-mountain material shades the exposed rock in faceted cells about 5 m across, each tilted at random against the sun,
+patches. On the outer flank it lies in snowfields between bare rock ribs for about 110 m below the crest, and lower
+down only in thin couloirs, so the far views read rock with a few streaks. The
+mountain material shades the exposed rock in faceted planes about 22 m across (5 m cells read as cobbles), each tilted at random against the sun,
 warm where lit and cool where turned away, so the walls read as granite rather than clay; olive moss lies on its
 gentler upward faces.
 

@@ -88,15 +88,15 @@ SURFACES = {
     'flagstone': ('textures/tex-0004.png', 'rock', 'xy', 'edges', 'irregular flagstone paving of pale lavender-grey and '
                   'warm grey volcanic stones with a few ochre-tinted stones and pale cream mortar joints', (150, 144, 146)),
     'bowl': ('textures/tex-0024.png', 'bowls', 'xy', 'blend', 'smooth dark slate-grey skate-bowl concrete with a faint '
-             'cool blue cast, soft broad trowel strokes and very subtle mottling', (38, 40, 46)),
+             'cool blue cast, soft broad trowel strokes and very subtle mottling', (48, 52, 60)),
     'stamped': ('textures/tex-0059.png', 'plaza', 'xy', 'edges', 'stamped concrete paving in pale warm sand beige with '
-                'a soft network of shallow irregular flagstone-like grooves', (172, 152, 120)),
+                'a soft network of shallow irregular flagstone-like grooves', (170, 160, 138)),
     'concrete_edge': ('textures/tex-0029.png', 'plaza', 'xy', 'edges', 'smooth pale warm grey poured concrete with the '
                       'slightly darker trowelled strips along its left and right edges, clean, no moss', PALE),
     'tile_edge': ('textures/tex-0006.png', 'plaza', 'x', 'edges', 'glazed terracotta tiles in warm orange-brown with '
                   'thin cream grout lines and a rounded terracotta bullnose band, as in Image 1', (184, 114, 82)),
     'paving': ('textures/tex-0064.png', 'plaza', 'xy', 'edges', 'large irregular cut-stone paving slabs in pale warm '
-               'grey and soft beige with narrow joints', (156, 135, 108)),
+               'grey and soft beige with narrow joints', (160, 148, 128)),
     'concrete': ('textures/tex-0043.png', 'plaza', 'xy', 'blend', 'smooth pale warm grey concrete with a very fine '
                  'soft speckle', (168, 164, 152)),
     'masonite': ('textures/tex-0060.png', 'bowls', 'xy', 'edges', 'a warm honey-brown masonite skate ramp surface, two '

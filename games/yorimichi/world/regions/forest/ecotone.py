@@ -21,8 +21,9 @@ def kinds(x,y,z):
     ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.65*noise(x,y,2.3,83)
     hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.75*noise(x,y,2.3,84)
     kind=np.where(ever<-.33,'Pine',np.where(hue<.11,'Rust','Gold'))
-    # Pines take over high on the volcano, at the same share of its slope (hidamari/mountains.py LIFT).
-    altitude=smooth((z-lifted(170))/(90*LIFT))*smooth((stretch(900)-polar(x,y)[2])/150)
+    # Pines take over high on the volcano, above its autumn lower half, at the same share of its slope
+    # (hidamari/mountains.py LIFT).
+    altitude=smooth((z-lifted(250))/(90*LIFT))*smooth((stretch(900)-polar(x,y)[2])/150)
     return np.where((noise(x,y,60.,79)+1)*.5<altitude,'Pine',kind)
 
 

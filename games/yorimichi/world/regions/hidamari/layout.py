@@ -380,11 +380,11 @@ def generate():
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
     forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
     # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera has its own dressing below.
-    ceilings=mountains.lifted(330)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
+    ceilings=mountains.lifted(360)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
     forest_altitude=mountains.smooth((ceilings-forest_z)/(100*mountains.LIFT))
     _,_,forest_radius,forest_angle=mountains.polar(forest_xy[:,0],forest_xy[:,1])
     forest_altitude*=forest_radius>mountains.rim_radius(forest_angle)
-    tree_top=float(mountains.lifted(400))
+    tree_top=float(mountains.lifted(420))
     for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
@@ -788,25 +788,38 @@ def dress_caldera(put):
     # Autumn thickets (the rim and bowls targets): red shrub maples, golden ginkgo shrubs and ochre bushes in clumps along
     # the crest, and ochre bushes round the park's banks, on snow too, clear of the riding.
     counts['thicket']=0
-    ta=rng.uniform(-math.pi,math.pi,16000);band=mountains.rim_radius(ta)+rng.uniform(-35,65,16000)
-    fx,fy=candidates(4000,mountains.RIM_RADIUS)
+    ta=rng.uniform(-math.pi,math.pi,48000);band=mountains.rim_radius(ta)+rng.uniform(-35,65,48000)
+    fx,fy=candidates(12000,mountains.RIM_RADIUS)
     tx=np.concatenate([vx+band*np.cos(ta),fx]);ty=np.concatenate([vy+band*np.sin(ta),fy])
     tz=north_height(tx,ty);_,_,tr,ta=mountains.polar(tx,ty);rim_r=mountains.rim_radius(ta)
     tslope=np.hypot(north_height(tx+1,ty)-tz,north_height(tx,ty+1)-tz)
     clump=mountains.smooth((mountains.noise(tx,ty,34,761)+mountains.noise(tx,ty,11,762)*.4-.05)/.2)
     # Thinner on snow: the shrubs stand out of the drifts, as in the rim target.
     open_ground=np.where(mountains.snow(tx,ty,north_base_height)<.4,1.,.35)
-    crest=(np.abs(tr-rim_r-15)<50)&(tslope<.75)&(rng.random(len(tx))<clump*open_ground)
+    crest=(np.abs(tr-rim_r-15)<50)&(tslope<1.4)&(rng.random(len(tx))<np.minimum(1.,1.8*clump)*open_ground)
     banks=(craterpark.contains(tx,ty,margin=40.)&~craterpark.contains(tx,ty,margin=9.)&(tslope<.6)
            &(rng.random(len(tx))<.8*clump))
-    for x,y,z,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],crest[crest|banks]):
+    for x,y,z,gradient,on_crest in zip(tx[crest|banks],ty[crest|banks],tz[crest|banks],tslope[crest|banks],crest[crest|banks]):
         if not clear_of_stones(x,y):continue
         u=rng.random()
         if on_crest and u<.3:name,scale='Tree_Maple_B',float(rng.uniform(.28,.5))
         elif on_crest and u<.45:name,scale='Tree_Ginkgo',float(rng.uniform(.16,.26))
         else:name,scale=('Bush_Ochre_A' if rng.random()<.6 else 'Bush_Ochre_B'),float(rng.uniform(.7,1.3))
-        put(name,float(x),float(y),float(z)-.1,yaw=float(rng.uniform(0,360)),scale=scale)
+        put(name,float(x),float(y),float(z)-.1-.35*float(gradient),yaw=float(rng.uniform(0,360)),scale=scale)
         counts['thicket']+=1
+    # Small stones, 1-3 m, strewn in clusters over the floor's snow (the zeppelin target's hundreds of boulders).
+    counts['stones']=0
+    sx,sy=candidates(700,mountains.FLOOR_RADIUS)
+    for x0,y0 in zip(sx,sy):
+        if bool(craterpark.contains(x0,y0,margin=12.)) or rng.random()<.45:continue
+        for _ in range(int(rng.integers(3,9))):
+            x=float(x0+rng.normal(0,6));y=float(y0+rng.normal(0,6))
+            z,slope,inside=ground(x,y)
+            if not inside[0] or slope[0]>.6 or bool(craterpark.contains(x,y,margin=7.)) or not clear_of_stones(x,y):continue
+            name,radius,tall,_=CALDERA_BOULDERS[int(rng.choice(3,p=[.45,.35,.2]))]
+            scale=float(rng.uniform(.5,1.5))
+            put(name,x,y,float(z[0])-.15*tall*scale,yaw=float(rng.uniform(0,360)),scale=scale)
+            counts['stones']+=1
     counts['trees']=len(trees);counts['groves']=len(groves)
     return counts
 
