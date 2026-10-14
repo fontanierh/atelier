@@ -15,10 +15,11 @@ def tuscan_mask(x,y):
 def kinds(x,y,z):
     import numpy as np
     from hidamari.mountains import noise,smooth,polar,stretch,lifted,LIFT
-    # Independent evergreen and autumn fields avoid contour rings. Fine
-    # position noise interleaves crowns without changing either caller's RNG.
-    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.2*noise(x,y,2.3,83)
-    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.2*noise(x,y,2.3,84)
+    # Independent evergreen and autumn fields avoid contour rings. Strong fine
+    # position noise mixes the crowns tree by tree within each drift, so the
+    # forest never reads as single-colour blotches, without changing either caller's RNG.
+    ever=noise(x,y,95.,80)+.5*noise(x,y,38.,81)+.65*noise(x,y,2.3,83)
+    hue=noise(x,y,75.,78)+.5*noise(x,y,30.,82)+.75*noise(x,y,2.3,84)
     kind=np.where(ever<-.33,'Pine',np.where(hue<.11,'Rust','Gold'))
     # Pines take over high on the volcano, at the same share of its slope (hidamari/mountains.py LIFT).
     altitude=smooth((z-lifted(170))/(90*LIFT))*smooth((stretch(900)-polar(x,y)[2])/150)
