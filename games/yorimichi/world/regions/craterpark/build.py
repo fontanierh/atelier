@@ -40,7 +40,8 @@ CHUNK = 20000           # points or vertices per vectorised batch (covered, ambi
 PAIRS = 2_000_000       # point-face candidate pairs per batch at most (covered): about 0.6 GB
 CELLS = 4_000_000       # surface cell entries indexed at once at most (covered): about 0.7 GB while indexing
 HIDE = 1.              # metres: a steep face's top edge this far under riding faces on both sides is inside the solid
-WALL_SIDE = .02         # metres either side of a steep face's top edge that hidden_walls probes for a riding face
+WALL_SIDE = .02         # metres either side of a steep face's top edge (across it) that hidden_walls probes for a riding face
+EDGE = 1e-9             # barycentric slack: a probe on the shared edge of two riding faces lies over them
 WALL_STEP = .03         # metres: a riding face this far below the top edge at a probe still covers it (a slope, not a riser)
 WALL_FLUSH = .005       # metres a riding face lies above a steep face's top edge at least, for the edge to be inside the solid
 LARGE = 8.              # metres across: a collision face this large is stored with the other large ones (spatial_order)
@@ -227,27 +228,32 @@ def riding_above(riding, cell=2.):
             l2 = ((v[:, 2, 2] - v[:, 0, 2]) * (p[:, 0] - v[:, 2, 0]) + (v[:, 0, 0] - v[:, 2, 0]) * (p[:, 2] - v[:, 2, 2])) / d
             l3 = 1 - l1 - l2
             y = l1 * v[:, 0, 1] + l2 * v[:, 1, 1] + l3 * v[:, 2, 1]
-            hit = ok & (l1 >= 0) & (l2 >= 0) & (l3 >= 0) & (y >= low[which]) & (y <= high[which])
+            hit = ok & (l1 >= -EDGE) & (l2 >= -EDGE) & (l3 >= -EDGE) & (y >= low[which]) & (y <= high[which])
             found[which[hit]] = True
         return found
     return above
 
 
-def inside(points, above):
+def inside(points, above, across=None):
     """Mask of the points (k, 3) inside the park's solid: a riding face lies over the point (WALL_FLUSH to HIDE above it)
-    and over its four neighbours WALL_SIDE away (from WALL_STEP below, where a slope falls away, to HIDE above)."""
-    side = WALL_SIDE * np.array([[0, 0, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]])
-    probes = (points[:, None] + side).reshape(-1, 3)
-    y = np.repeat(points[:, 1], 5)
-    low = y - np.tile([-WALL_FLUSH, WALL_STEP, WALL_STEP, WALL_STEP, WALL_STEP], len(points))
-    return above(probes, low, y + HIDE).reshape(-1, 5).all(1)
+    and over its neighbours WALL_SIDE away (from WALL_STEP below, where a slope falls away, to HIDE above): on both sides
+    along `across` (k, 3), a wall's horizontal normal, or else in all four directions."""
+    if across is None:
+        side = np.broadcast_to(WALL_SIDE * np.array([[0, 0, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]]), (len(points), 5, 3))
+    else:
+        side = WALL_SIDE * across[:, None] * np.array([0, 1, -1])[None, :, None]
+    probes = (points[:, None] + side).reshape(-1, 3); m = side.shape[1]
+    y = np.repeat(points[:, 1], m)
+    low = y - np.tile([-WALL_FLUSH] + [WALL_STEP] * (m - 1), len(points))
+    return above(probes, low, y + HIDE).reshape(-1, m).all(1)
 
 
 def hidden_walls(triangles, above):
     """Mask of the steep `triangles` (n, 3, 3) whose top edge lies inside the park's solid (inside, at three points along
     it). Inside, the foundations' shared walls and the pieces' sides run up to a few centimetres under the ramps; the
     board's contacts met them head-on there and threw the rider off at speed (a runout). A riser of WALL_STEP or more, or
-    an outer wall, with a drop on one side, keeps its face."""
+    an outer wall, with a drop on one side, keeps its face. The probes go across the wall only: a cross wall's top
+    corner at a ramp's outer edge is still inside."""
     t = triangles.astype('f8'); n = unit_normals(t)
     steep = np.flatnonzero(np.abs(n[:, 1]) < .7)
     mask = np.zeros(len(t), bool)
@@ -260,7 +266,10 @@ def hidden_walls(triangles, above):
     a = w[rows, first]; b = w[rows, (first + 1) % 3]
     along = np.stack([a + (b - a) * f for f in (.1, .5, .9)], 1).reshape(-1, 3)
     corner = w[rows, np.argmax(w[:, :, 1], 1)]
-    probes = inside(np.concatenate([along, corner]), above)
+    inward = (w.mean(1) - corner) * [1, 0, 1]                          # along the wall, off a ramp's outer corner
+    corner = corner + WALL_SIDE / 2 * inward / np.maximum(np.linalg.norm(inward, axis=1, keepdims=True), 1e-9)
+    across = n[steep] * [1, 0, 1]; across /= np.linalg.norm(across, axis=1, keepdims=True)
+    probes = inside(np.concatenate([along, corner]), above, np.concatenate([np.repeat(across, 3, 0), across]))
     mask[steep] = probes[:len(along)].reshape(-1, 3).all(1) | probes[len(along):]
     return mask
 

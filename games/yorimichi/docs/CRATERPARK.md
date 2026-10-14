@@ -122,7 +122,7 @@ Inside the block, the foundations' shared walls and the pieces' sides rise to 3 
 about 7 m/s) the board's trucks met their top edges head-on: a single contact closing faster than the simulation's
 7.1 m/s limit, which it treats as a run-out, so the rider stepped off on the snake run's joins and at the foot of the
 wooden ramps. The collision leaves out every steep face whose top edge lies inside the solid (a riding face over it,
-and 2 cm to either side, up to 1 m above), and sinks every other collision corner inside the solid 25 cm, so a wall
+and 2 cm to either side across the wall, up to 1 m above; a point on the seam of two riding faces is under both), and sinks every other collision corner inside the solid 25 cm, so a wall
 with an outer corner showing keeps its outside. A riser of 3 cm or more keeps its face. About 260,000 hidden faces
 leave the collision; by the east wooden ramps they filled the board's collision snapshot (196,608 triangles).
 
