@@ -404,8 +404,13 @@ def snow_cover(x,y,z,step=STEP):
             *smooth((downslope_noise(radius,angle,22,94)+ring(300.,45.,92)*.5-.1)/.3))
     # Snow on the inner wall's flatter ledges and benches, broken by fine noise (the targets' snow between crags).
     ledges=(smooth((nz-.80)/.06)*smooth((patches-.55)/.2)*smooth((radius-foot-5)/10)*smooth((rim_r-12-radius)/10))
-    # No couloirs: on the steep inner wall they read as frozen waterfalls. Snow lies on its ledges and at its foot.
-    bowl=np.maximum.reduce([floor,drifts,ledges])
+    # Broad chutes down the inner wall (the zeppelin target): snow gathered in its hollows from just under the crest to
+    # the foot, where each fans out; tens of metres wide and wandering, so they never read as thin frozen falls.
+    wander=angle+noise(x,y,70,99)*.06
+    lane=(noise(np.cos(wander)*470,np.sin(wander)*470,38.,97)+.5*gully+.35*smooth((foot+30-radius)/30)
+          +.3*downslope_noise(radius,wander,35,91))
+    chutes=smooth((lane-.12)/.22)*smooth((radius-foot+15)/12)*smooth((rim_r-10-radius)/18)
+    bowl=np.maximum.reduce([floor,drifts,ledges,chutes])
     rim=np.exp(-((radius-rim_r)/28)**2)
     inside=smooth((rim_r-20-radius)/14)
     # Many short streaks follow the relief's own hollows high on the cone, broken by rock.
@@ -423,8 +428,9 @@ def snow_cover(x,y,z,step=STEP):
            *smooth((downslope_noise(radius,angle,45,55,.5)+noise(x,y,18,56)*.35+.5*gully-.7*crest-.35)/.2))
     snow=np.maximum(snow,flank)
     line=smooth((z-lifted(230)-noise(x,y,180,83)*40*LIFT)/(90*LIFT))
-    # The collar holds snow on steeper ground than the open slopes do; nothing lies on rock past about 55 degrees.
-    steep=collar*smooth((nz-.45)/.15)
+    # The collar and the chutes hold snow on steeper ground than the open slopes do; nothing else lies on rock past
+    # about 55 degrees.
+    steep=np.maximum(collar*smooth((nz-.45)/.15),chutes*smooth((nz-.30)/.15))
     cover=np.clip(np.maximum(snow*smooth((nz-.55)/.10),steep),0,1)
     # Rock breaks every patch into many small pieces (the targets' snow among broken granite, not cut-out blobs).
     rock=noise(x,y,7,120)+noise(x,y,3,121)*.5+noise(x,y,16,122)*.4
