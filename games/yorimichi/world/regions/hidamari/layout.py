@@ -380,12 +380,17 @@ def generate():
     clump=mountains.noise(forest_xy[:,0],forest_xy[:,1],100,75)
     forest_clumps=.55+.50*mountains.smooth((clump+.55)/.7)
     # The tree line keeps its share of the volcano's slope (mountains.LIFT); the caldera has its own dressing below.
-    ceilings=mountains.lifted(400)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*60*mountains.LIFT
+    # The closed forest stops below an olive meadow (mountains.colours) that only scattered pines climb (f_city2).
+    ceilings=mountains.lifted(330)+mountains.noise(forest_xy[:,0],forest_xy[:,1],140,77)*45*mountains.LIFT
     forest_altitude=mountains.smooth((ceilings-forest_z)/(100*mountains.LIFT))
     _,_,forest_radius,forest_angle=mountains.polar(forest_xy[:,0],forest_xy[:,1])
     forest_altitude*=forest_radius>mountains.rim_radius(forest_angle)
     tree_top=float(mountains.lifted(450))
-    for (x,y),sample_z,cover,distance,kind,clump,altitude in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,forest_clumps,forest_altitude):
+    # Above the ceiling, a few pines climb the meadow towards the cliffs.
+    sparse=(.09*mountains.smooth((mountains.lifted(425)-forest_z)/(30*mountains.LIFT))*(1-forest_altitude)
+            *(forest_radius>mountains.rim_radius(forest_angle)))
+    for (x,y),sample_z,cover,distance,kind,clump,altitude,few in zip(forest_xy,forest_z,forest_snow,forest_distance,forest_kinds,
+                                                                     forest_clumps,forest_altitude,sparse):
         if y<500 and not (315<x<2180):continue
         if x<1420 and y<500:
             if min(abs(x-c) for c in ROAD_X)<10:continue
@@ -395,7 +400,7 @@ def generate():
         density=.90+.08*math.sin(x*.009+math.sin(y*.007)*2)*math.sin(y*.012)
         density*=float(mountains.smooth((y-380)/220)) if y<590 else 1
         # Drifts and clearings: a slow second pattern thins whole glades instead of every tree.
-        density*=float(clump*altitude)
+        density=max(density*float(clump*altitude),float(few))
         if r.random()>density:continue
         name=MODEL_BY_KIND[kind]
         if (y<620 and r.random()<.4) or distance<22:

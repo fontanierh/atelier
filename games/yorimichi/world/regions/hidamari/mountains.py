@@ -326,6 +326,11 @@ def colours(x,y,z):
     rock*=np.stack([1+.04*lichen,1+.07*lichen,1-.12*lichen],axis=-1)
     green=np.stack([.055+.015*noise(x,y,85,12),.11+.018*noise(x,y,90,14),np.full_like(x,.035)],axis=-1)
     colors=green*(1-forest[...,None])+rock*forest[...,None]
+    # An olive alpine meadow between the forest's ceiling and the cliffs (f_city2), patchy, scattered with pines.
+    meadow=(smooth((z-lifted(270)+noise(x,y,70,86)*25)/(30*LIFT))*smooth((lifted(360)-z+noise(x,y,90,87)*30)/(30*LIFT))
+            *smooth((noise(x,y,45,88)+.55)/.3)*smooth((stretch(1120)-radius)/180))
+    grass=np.stack([.15+.03*noise(x,y,30,89),.165+.02*noise(x,y,30,89),np.full_like(x,.045)],axis=-1)
+    colors=colors*(1-.85*meadow[...,None])+grass*.85*meadow[...,None]
     apron=smooth((y-500)/190)
     colors=np.array((.24,.30,.12))*(1-apron[...,None])+colors*apron[...,None]
     # Round the Mega Park the ground under the closed canopy is forest floor, leaf litter and moss (megapark/forest.py).

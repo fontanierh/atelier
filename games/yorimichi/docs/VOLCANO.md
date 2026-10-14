@@ -51,7 +51,9 @@ The tree line, pine band, exposed rock, snow line and outcrop band all use these
   Belmonte join for the ground material (`unreal/Scripts/mountain_material.py`). Loose rocks (`HD_NorthRock*`) use
   its instance `MI_NorthRockCaps` (`Caps` 1): they wear snow on their upward faces wherever snow lies round them,
   rather than the ground's mask cut across them.
-- **Trees** stop at the lifted tree line and stay out of the caldera, which is left open for its park.
+- **Trees** stop at the lifted tree line and stay out of the caldera, which is left open for its park. The closed
+  forest ends about `lifted(330)`; above it an olive alpine meadow (`colours`) runs up to the cliffs at about
+  `lifted(360)`, and only scattered pines (about one in eleven sample points) climb it to about `lifted(425)`.
 - **Outcrops** and scree cover the flank from the crest down to about 970 m out.
 
 ## Belmonte
