@@ -121,6 +121,32 @@ def test_reported_miss_fraction_is_checked_even_when_hits_are_unknown(hits, miss
     assert report['metrics'][fraction] is None and report['metrics'][misses] == 2
 
 
+@pytest.mark.parametrize('counts,fractions,known', [
+    ({'TotalGets': 10}, (.8, .8), False),
+    ({}, (.8, .8), False),
+    ({'TotalGets': 10}, (0., 0.), False),
+    ({'TotalGetHits': 2}, (0., 0.), False),
+    ({}, (0., 0.), True),
+    ({}, (.8, .2), True),
+    ({'TotalGets': 0}, (0., 0.), True),
+    ({'TotalGets': 0}, (.5, .5), False),
+])
+def test_complementary_fractions_respect_known_totals_and_zero_request_convention(counts, fractions, known):
+    report = parse(summary({**counts, 'TotalGetHitPct': fractions[0], 'GetMissPct': fractions[1]}))['summaries'][0]
+    assert [report['metrics'][key] for key in ('TotalGetHitPct', 'GetMissPct')] == (list(fractions) if known else [None, None])
+
+
+@pytest.mark.parametrize('total,fraction', [('LocalGetTotal', 'LocalGetHitPct'), ('TotalPuts', 'PutMissPct')])
+def test_explicit_zero_total_invalidates_nonzero_single_fraction(total, fraction):
+    report = parse(summary({total: 0, fraction: .2}))['summaries'][0]
+    assert report['metrics'][fraction] is None
+
+
+def test_known_opposite_count_can_refute_reported_fraction_without_inventing_counts():
+    report = parse(summary({'TotalGetHits': 9, 'TotalGets': 10, 'GetMissPct': .8}))['summaries'][0]
+    assert report['metrics']['GetMissPct'] is None and report['metrics']['TotalGetMisses'] is None
+
+
 def test_blocks_end_at_boundaries_and_never_absorb_other_stats():
     prefix = '[2026.01.01-12.00.00:000][  0]'
     text = summary(prefix=prefix) + 'LogCookStats: Display: TotalGets = 999\n'

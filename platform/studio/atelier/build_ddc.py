@@ -73,11 +73,22 @@ def finish(summary, *, closed):
             for key in (hits, misses, total, *fractions):
                 if key:
                     metrics[key] = None
-        elif t:
-            for field, count in zip(fractions, (h, m)):
-                fraction = metrics[field]
-                if fraction is not None and count is not None and abs(fraction - count / t) > 0.000001:
-                    diagnostics.append(f'inconsistent {field}')
+            continue
+        reported = [metrics[field] for field in fractions]
+        for field, fraction, count, other in zip(fractions, reported, (h, m), (m, h)):
+            # UE's SafeDivide emits zero for a zero denominator. A known opposite count can
+            # validate a reported fraction without filling in the missing count itself.
+            expected = 0 if t == 0 else None
+            if t:
+                expected = count / t if count is not None else 1 - other / t if other is not None else None
+            if fraction is not None and expected is not None and abs(fraction - expected) > 0.000001:
+                diagnostics.append(f'inconsistent {field}')
+                metrics[field] = None
+        if len(reported) == 2 and all(value is not None for value in reported):
+            possible = (0,) if t == 0 else (1,) if t or h or m else (0, 1)
+            if all(abs(sum(reported) - value) > 0.000001 for value in possible):
+                diagnostics.append(f'conflicting fractions for {total}')
+                for field in fractions:
                     metrics[field] = None
     if not closed:
         diagnostics.append('summary has no closing boundary')
