@@ -4,35 +4,20 @@ import hashlib
 import json
 
 from atelier import build
+from test_mega_ramp_layers import changed_by
 
 
 def test_cpu_metadata_edit_reruns_only_the_tree_overlay_desktop_and_package(tmp_path, monkeypatch):
     recipe = build.load_recipe('yorimichi')
-    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=tmp_path / 'Yorimichi.uproject')
-    steps = build.order(recipe.steps(ctx), ['unreal.package'])
-    versions = {}
-    # Exercise the entire real dependency graph without reading assets or executing any commands.
-    monkeypatch.setattr(build, '_hash_path', lambda digest, path:
-                        digest.update((str(path) + versions.get(path, 'v1')).encode()))
-
-    def fingerprints():
-        result = {}
-        for step in steps:
-            result[step.name] = build.fingerprint(step, result)
-        return result
-
-    before = fingerprints()
-    versions[recipe.SCRIPTS / 'city_tree_cpu_access.py'] = 'v2'
-    after = fingerprints()
+    # Exercise the real graph with source/product/tool stand-ins, without installed native tools.
+    changed = changed_by(recipe.SCRIPTS / 'city_tree_cpu_access.py', tmp_path, monkeypatch)
     # Changed imported bytes must also refresh the multiplayer compatibility manifest.
-    assert {name for name in before if before[name] != after[name]} == {
+    assert changed == {
         'unreal.city_tree_cpu_access', 'unreal.desktop', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
     # A real world importer change still invalidates the world and overlays.
-    versions[recipe.SCRIPTS / 'import_hidamari.py'] = 'v2'
-    world_changed = fingerprints()
-    assert all(world_changed[name] != after[name] for name in (
-        'unreal.world', 'unreal.city_tree_cpu_access', 'unreal.desktop', 'unreal.bike', 'unreal.package'))
+    world_changed = changed_by(recipe.SCRIPTS / 'import_hidamari.py', tmp_path, monkeypatch)
+    assert {'unreal.world', 'unreal.city_tree_cpu_access', 'unreal.desktop', 'unreal.bike', 'unreal.package'} <= world_changed
 
 
 def test_cpu_overlay_is_ordered_before_variants_and_records_a_required_output(tmp_path):
