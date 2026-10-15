@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 from benchmark import other_render_processes
 from atelier.engine import unreal_root
 from atelier.provenance import head, status
+from atelier.safety import guarded
 
 
 def main():
@@ -43,8 +44,9 @@ def main():
                     native_sha256=hashlib.sha256((PROJECT / 'Binaries/Mac/libUnrealEditor-Yorimichi.dylib').read_bytes()).hexdigest(),
                     fixed_step=True, performance_evidence=False)
     (folder / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    with (folder / 'stdout.log').open('w') as log:
-        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=900)
+    code = guarded.run(command, folder, timeout=900, purpose=f'sailboat QA {args.session}', kind='game')
+    if code:
+        raise subprocess.CalledProcessError(code, command)
     after = settings.read_bytes() if settings.exists() else None
     assert before == after, 'Native QA changed saved preferences'
     assert 'SAILBOAT QA COMPLETE' in (folder / 'game.log').read_text(), 'Native QA did not finish'

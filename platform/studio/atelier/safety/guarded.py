@@ -191,7 +191,7 @@ def check_root_guard(child, monitor, report, final=False):
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
-        on_poll=None, admission=None):
+        on_poll=None, admission=None, performance=False):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -204,6 +204,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     Capacity-managed work MUST also hold the legacy exclusion bridge and await the broker's own
     exec gate after both guards are ready. Broker failure MUST fail the run, without falling back to
     slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
+    Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
 
     Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
@@ -214,11 +215,18 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     unwind through the existing guard/child cleanup; the callback never replaces either protection.
     `admission` is an explicit capacity-client session. During migration it adds the broker gate and
     exclusive legacy bridge, retaining existing guards, resource policies and foreign-process checks.
+    `performance` asks a configured broker to drain other grants before this run and exclude new ones.
+    An explicit admission session must already carry that flag when performance exclusion is requested.
     """
+    if type(performance) is not bool:
+        raise ValueError('performance request must be a boolean')
+    if performance and admission is not None and getattr(admission, 'request', {}).get('performance') is not True:
+        raise ValueError('explicit capacity admission must request performance exclusion')
     if admission is None:
         from ..capacity_runtime import configured_session
         admission = configured_session(kind=kind, limit_gib=limit_gib, timeout=timeout, folder=folder,
-                                       purpose=purpose or (Path(command[0]).name if command else kind))
+                                       purpose=purpose or (Path(command[0]).name if command else kind),
+                                       performance=performance)
     if admission is not None and (not lock or fitting_gib is not None):
         raise ValueError('capacity admission requires the legacy bridge, without a fitting-lane request')
     aggregate_tree = aggregate_tree or kind == 'compile' or admission is not None

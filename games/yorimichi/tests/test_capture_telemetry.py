@@ -86,11 +86,10 @@ def test_capture_hashes_generated_and_game_inputs_before_render_admission(captur
     class AtAdmission(Exception):
         pass
 
-    def stop_at_admission(purpose):
-        raise AtAdmission(purpose)
+    def stop_at_admission(command, folder, **options):
+        raise AtAdmission(options['purpose'])
 
-    monkeypatch.setattr(capture, 'render_lock', stop_at_admission)
-    monkeypatch.setattr(capture, 'spawn_game', lambda *args, **kwargs: pytest.fail('Must not launch a real game'))
+    monkeypatch.setattr(capture.guarded, 'run', stop_at_admission)
     with pytest.raises(AtAdmission):
         capture.capture('manifest-test', 'pier', {'seconds': 1})
     manifest = json.loads((output / 'captures/manifest-test/pier/manifest.json').read_text())
