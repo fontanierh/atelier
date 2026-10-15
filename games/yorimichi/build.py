@@ -578,6 +578,10 @@ def world_steps(ctx):
              inputs=[REGIONS / 'craterpark', ASSETS / 'craterpark', REGIONS / 'megapark' / 'placement.py', YORI],
              outputs=[out / 'craterpark' / 'build.json', out / 'craterpark' / 'park.json', out / 'craterpark' / 'fbx' / 'SM_CP_ImportSeed.fbx'],
              about='Crater Park geometry and riding collision on the caldera floor -> FBX', heavy=True)]),
+        Step('world.crater_cloud', [Python(REGIONS / 'craterpark' / 'cloud_build.py')],
+             inputs=[REGIONS / 'craterpark' / 'cloud.py', REGIONS / 'craterpark' / 'cloud_build.py', YORI],
+             outputs=[out / 'craterpark' / 'cloud.json'],
+             about="Crater Park's lenticular cap cloud: its nested lens shells and their look (numpy)"),
         Step('world.lake', [Blender(REGIONS / 'forest_lake' / 'build.py')], inputs=[REGIONS / 'forest_lake', REGIONS / 'village' / 'build.py', *VILLAGE_LAYOUT],
              needs=['world.layout'], outputs=[out / 'forest_lake' / 'manifest.json'], about='the woodland lake and cabin', heavy=True),
         Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
@@ -744,6 +748,10 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
              outputs=[GAME / 'unreal' / 'Content' / 'SkatePark' / 'Board' / 'M_BoardDissolve.uasset'],
              heavy=True, about="the board's dissolve material for the Ride transitions (/Game/SkatePark/Board)"),
+        Step('unreal.crater_cloud', [UnrealScript(SCRIPTS / 'crater_cloud_material.py', 'CRATER CLOUD MATERIAL COMPLETE')],
+             inputs=[SCRIPTS / 'crater_cloud_material.py', SCRIPTS / 'atmosphere.py', SCRIPTS / 'sea_look.py'], after=['unreal.compile'],
+             outputs=[GAME / 'unreal' / 'Content' / 'CraterPark' / 'Cloud' / f'{name}.uasset' for name in ('M_CraterCloud', 'M_CraterCloudVeil')],
+             heavy=True, about="the cap cloud's translucent materials, plain and blurring veil (/Game/CraterPark/Cloud)"),
         Step('unreal.sounds', [
                 UnrealScript(SCRIPTS / 'import_footsteps.py', 'FOOTSTEP IMPORT COMPLETE'),
                 UnrealScript(SCRIPTS / 'import_combat_audio.py', 'COMBAT AUDIO IMPORT COMPLETE'),
@@ -815,7 +823,7 @@ def staging_steps(ctx):
     return [
         Step('data.stage', [Call('stage_data', stage_data)],
              inputs=[GAME / 'runtime_data.py', REGIONS / 'skatepark' / 'park.json'],
-             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.belmonte', 'world.bike',
+             needs=['world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.belmonte', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),

@@ -17,7 +17,7 @@ _spec.loader.exec_module(definition)
 # data.stage, so a file missing there (a renamed folder, a new entry) makes the step run.
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
           'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
-          'treehouse/runtime.json', 'megapark/park.json', 'craterpark/park.json', 'bike/manifest.json', 'belmonte/runtime.json',
+          'treehouse/runtime.json', 'megapark/park.json', 'craterpark/park.json', 'craterpark/cloud.json', 'bike/manifest.json', 'belmonte/runtime.json',
           # every playable character's bike report: its contact windows and the bike's channels
           *(f'{c.id}/bike/export.json' for c in definition.movers() if c.playable))
 

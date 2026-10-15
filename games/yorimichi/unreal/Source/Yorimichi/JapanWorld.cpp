@@ -33,6 +33,7 @@
 #include "MegaRamp.h"
 #include "SkatePark.h"
 #include "SuperUltraMegaPark.h"
+#include "CraterCloud.h"
 #include "Hippodrome.h"
 #include "BelmonteRegion.h"
 #include "ZeppelinService.h"
@@ -654,6 +655,9 @@ void AJapanWorld::Load()
     // Crater Park on the volcano's caldera floor, placed by the same actor (docs/CRATERPARK.md).
     const auto* CraterPark = ASuperUltraMegaPark::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/park.json")));
     if (!CraterPark || !CraterPark->bGameplayReady) Incomplete.Add(TEXT("crater park"));
+    // Its lenticular cap cloud (docs/CRATERPARK.md, "Cap cloud"): dense from afar so the ramps do not show from Belmonte,
+    // a thin blurring veil while riding inside. Scenery only, so it never holds the island back and no server draws it.
+    if (GetNetMode() != NM_DedicatedServer) ACraterCloud::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/cloud.json")));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
     const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));

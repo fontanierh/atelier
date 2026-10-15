@@ -362,6 +362,45 @@ tower** button per line, and **F7** returns to the line chosen last (the first b
 after the same ground trace at runtime: with no ground within 50 cm of the start, it refuses with a message. A
 `park.json` without `lines` (r4) falls back to its single marked drop-in, which is also where the map stop stays.
 
+## Cap cloud
+
+A lenticular cap cloud sits on the summit, round the ramps on and inside the crest (concepts:
+`assets/craterpark/concepts/editor/lenticular-belmonte.jpg` and `lenticular-ramp.jpg`). From Belmonte it reads as a
+pile of smooth saucers with warm, sunlit tops and cool undersides. It hides the rim ramps and leaves the slopes clear.
+From inside, where the park is ridden, it thins to a luminous veil: the ramps stay crisp and the world beyond the crest
+is softly blurred and hazed, with the lenses curving overhead.
+
+[`cloud.py`](../world/regions/craterpark/cloud.py) (NumPy) defines the shells:
+
+- **The veil:** a soft lens inside the saucers that blends a blurred copy of the scene behind it.
+- **Four saucers:** each rim is higher and narrower than the one below it, and the lowest sits on the crest.
+
+Each shell is a closed lens mesh. Its opacity depends on where the camera is: each shell has a far opacity and a near
+opacity. The camera term is q, the camera's distance from the shells' bounding ellipsoid centre, divided by its radii.
+At q ≥ 1.7 each shell uses its far opacity. At q ≤ 1 (inside) it uses its near opacity.
+
+- A surface fades out when it is less than 40 m from the camera.
+- Shells fade into the ground over 45 m.
+- Long, flat striations drift slowly.
+
+Its tests (`test_craterpark_cloud.py`) check:
+
+- the seen ramp space, from three Belmonte cameras, is at least 85 % covered (blur not counted);
+- sight lines from riders inside are at most 40 % covered;
+- the slopes facing Belmonte are under 5 % covered.
+
+| Step | Does |
+|---|---|
+| `world.crater_cloud` | `cloud_build.py` writes `craterpark/cloud.json`: each shell's mesh (Unreal cm, about 9,000 triangles each) and every look parameter. |
+| `unreal.crater_cloud` | [`crater_cloud_material.py`](../unreal/Scripts/crater_cloud_material.py) makes `/Game/CraterPark/Cloud/M_CraterCloud` and `M_CraterCloudVeil`: unlit, translucent and two-sided. The veil takes nine depth-aware SceneColor taps, so nearer things do not bleed into the blur. |
+| `data.stage` | Copies `craterpark/cloud.json` to `Content/Data`. |
+
+`JapanWorld` spawns [`ACraterCloud`](../unreal/Source/Yorimichi/CraterCloud.cpp) after the park; a dedicated server
+does not. It builds one procedural mesh per shell, with no collision, shadow or tick. It sets each shell's dynamic
+material from the record and takes its sun direction from the level's directional light. The veil sorts first. All
+look values live in `cloud.json`, so tuning them needs only `world.crater_cloud` and `data.stage`. In a packaged app
+you can also edit the loose `Data/craterpark/cloud.json` and relaunch.
+
 ## Later
 
 - A way up: a zeppelin stop or a trail over the crest.
