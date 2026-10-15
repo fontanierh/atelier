@@ -4,15 +4,21 @@ The foliage pilot separates the shared library from world placement. A tree, bus
 export and imported LOD chain. Shared textures, material graphs, instances and parameter collections have a separate
 owner. Existing `/Game/Japan/Assets/<name>` paths remain stable, so placement data can keep referring to them.
 
-**Validation status:** recipe edit-boundary and protocol tests run without native tools. The October 14 native
-source proof passed on Blender 5.2.1 LTS: all 64 legacy mesh records and serialized geometry matched. The serialized
-comparison ignores Blender's auto-numbered collision data-block names in nine trunk FBXs, while preserving their
-UCX model names and all geometry. All 100 split output files were byte-identical across repeated exports, another
-directory and reversed asset order in a fresh process. A byte-pattern scan found no common local-path prefixes in
-those files. The read-only Unreal 5.8.2 baseline covers all 18 assets and leaves their package bytes unchanged.
-Split-import equivalence, incremental repair, package
-loading and cooking remain acceptance gates. No end-to-end speedup is claimed; source `cache=True` and automatic
-native package caching stay disabled until their remaining gates pass.
+**Validation status (October 15):** at `c8e9cc4d`, all 18 split imports matched the legacy Unreal 5.8.2 baseline's
+recorded mesh properties and serialized render geometry. The builder reported 39s for three imports in one editor
+session and 46s for the other 15 in another session. These selected-build timers exclude recipe construction and
+external proof verification. An externally measured real 63-step no-op inspection launched no tools and changed
+no products or stamps, but still took 34.1s. A controlled interruption retained the first completed owner's
+certificate and left only the unfinished owner stale. Ordinary repair ran that one import in a builder-reported
+26s; only its four native packages and stamp changed. These are bounded pilot measurements, not full-build latency claims.
+
+The October 14 Blender 5.2.1 LTS source proof matched all 64 legacy mesh records and serialized geometry. It ignores
+auto-numbered collision data-block names in nine trunk FBXs while preserving UCX model names and geometry.
+All 100 split files were byte-identical across repeated exports, another directory and reversed asset order in a
+fresh process. The later explicit native-collision policy changed 18 manifests; all 82 FBXs retained those exact
+bytes. A byte-pattern scan found no common local-path prefixes. Isolated edit boundaries, reversed native action
+order, missing/corrupt output repair, world preservation, loading and cooking remain acceptance gates.
+Source `cache=True` and automatic native package caching stay disabled.
 
 ## Edit one asset
 
