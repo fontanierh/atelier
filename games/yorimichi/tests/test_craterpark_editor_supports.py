@@ -18,8 +18,8 @@ def sheet(pid, y, length=60., width=18., x0=0., z0=0.):
     return types.SimpleNamespace(mesh=types.SimpleNamespace(V=V), metadata=dict(id=pid, type='run', stations=stations))
 
 
-GRID = dict(x0=-50., z0=-50., G=2., nx=100, nz=100)
-FLAT = np.zeros(100 * 100, 'f4')
+GRID = dict(x0=-60., z0=-60., G=2., nx=150, nz=150)
+FLAT = np.zeros(150 * 150, 'f4')
 
 
 def vertices(parts, material=None):
@@ -28,7 +28,7 @@ def vertices(parts, material=None):
 
 
 def test_high_piece_stands_on_basalt_towers_under_its_underside():
-    parts, summary = es.build([sheet('p1', 30.)], FLAT, GRID)
+    parts, summary = es.build([sheet('p1', 30., length=120.)], FLAT, GRID)
     assert summary['pieces'] == {'p1': 'basalt'} and summary['towers'] >= 2 and summary['columns'] > 10
     V = vertices(parts, es.BASALT)
     assert V[:, 1].max() <= 30. + es.EMBED + 1e-6

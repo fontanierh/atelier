@@ -134,6 +134,10 @@ WORLD_PAINTINGS = {
     'ground': ('rock', 'blend', 'the bare ground of a volcanic crater: lavender-grey volcanic gravel and scree with scattered '
                'small and medium grey rocks, a little fine dark ash soil, a few tufts of dry golden grass and small '
                'yellow-green moss patches; no snow, no leaves'),
+    # the editor park's support towers (v2/editor_supports.py), after concepts/editor/supports-rock*.jpg
+    'basalt': ('rock', 'blend', 'the side of a tall columnar basalt cliff: dark blue-grey volcanic basalt columns standing '
+               'side by side in long vertical stripes with crisp narrow joints, faint horizontal cracks, soft lighter '
+               'grey edges, a few small patches of yellow-green moss and pale lichen; no snow, no sky, no ground'),
     'cast_concrete': ('bowls', 'edges', 'a large smooth cast-concrete wall in pale warm grey, faint rectangular formwork panel '
                       'joints in a regular grid of four equal panels, very subtle soft tonal variation, clean'),
 }
@@ -146,6 +150,7 @@ WORLD_ALIGNED = {
     'material_025': ('cast_concrete', 4, (170, 165, 153)),      # access bridges
     'material_026': ('cast_concrete', 4, (148, 142, 132)),      # bridge supports
     'material_027': ('megapark:rock', 10, (150, 146, 152)),     # the edge guard (darker read as black shards in shade)
+    'material_028': ('basalt', 6, (104, 106, 114)),             # editor-park basalt support towers
 }
 # Surfaces finished from another surface's painting: slug: (painting, palette mean sRGB). The snake run's box tops carry
 # the irregular-stone texture (material_003), but the paintovers make them wooden decks.

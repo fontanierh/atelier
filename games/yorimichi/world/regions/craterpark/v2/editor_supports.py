@@ -15,19 +15,22 @@ import numpy as np
 
 from . import dsl
 
-BASALT = 'material_003'       # irregular stone, tinted dark basalt on import (import_craterpark TINTS)
+BASALT = 'material_028'       # columnar basalt, a world-aligned Sunburst painting (tools/craterpark_textures.py)
 TIMBER = 'material_011'       # masonite-brown wood for the trestle posts and braces
 FOOTING = 'material_017'      # stone retaining wall for the trestle footings
 
 TIMBER_MAX = 12.      # a piece whose median clearance is under this stands on trestles, else basalt towers
 MIN_CLEAR = 1.2       # no support where the underside is this close to the ground
-TOWER_EVERY = 24.     # metres between basalt towers along a piece
+TOWER_EVERY = 45.     # metres between basalt massifs along a piece
 BENT_EVERY = 6.       # metres between timber bents
 SINK = 2.             # supports go this far into the ground (the volcano samples the cut ground every 5 m)
 EMBED = -.25          # column tops stop just under the ramp (the pieces are single sheets, no thickness)
-COLUMN = 1.45         # basalt column circumradius (m)
-PITCH = 2.6           # basalt lattice spacing (m)
-TOWER_ALONG = 7.      # basalt tower depth along the piece (m)
+COLUMN = 2.            # basalt column circumradius (m)
+PITCH = 3.5            # basalt lattice spacing (m)
+TOWER_ALONG = 9.       # depth along the piece of the columns that carry the ramp (m)
+FOOT_SLOPE = .32       # the massif widens by this much per metre of height, down to its foot
+FOOT_MAX = 22.         # metres: its foot's half width at most
+TIERS = 5              # height tiers of the outer columns
 POST = .5             # timber post section (m)
 
 
@@ -187,50 +190,57 @@ def _every(stations, step):
 
 
 def tower(b, plan, ground, piece, s):
-    """A columnar-basalt tower under station s: packed columns from the ground to the underside, outer columns
-    stepping down, plus a skirt of short columns round its foot. Returns the number of columns placed."""
+    """A columnar-basalt massif under station s, after the rock concept: packed columns on a hexagonal lattice whose
+    tops follow a stepped spire. Columns under the ramp reach its underside; round them the tops fall away in tiers to
+    a wide foot, so the mass tapers from a broad base to the ramp it carries. Returns the number of columns placed."""
+    clear = s['y'] - float(ground(s['x'], s['z']))
+    if clear < MIN_CLEAR:
+        return 0
     h = math.radians(s['h'])
     along, across = np.array([math.cos(h), math.sin(h)]), np.array([-math.sin(h), math.cos(h)])
-    half = _outer_half(s) * .78
+    half = _outer_half(s) * .8                       # the part of the ramp the columns carry
+    carry_along = TOWER_ALONG / 2
+    foot = min(FOOT_MAX, half + FOOT_SLOPE * clear)  # the massif's half width at the ground
+    foot_along = min(FOOT_MAX, carry_along + FOOT_SLOPE * clear)
+    centre = np.array([s['x'], s['z']])
     placed = 0
-    rows = int(TOWER_ALONG // (PITCH * .87)) + 1
-    for r in range(rows):
-        u = (r - (rows - 1) / 2) * PITCH * .87
-        offset = PITCH / 2 if r % 2 else 0.
-        k = math.floor((half - offset) / PITCH)
-        for c in range(-k - 1, k + 1):
-            v = c * PITCH + offset
-            if abs(v) > half:
+    n_u, n_v = int(foot_along // (PITCH * .87)) + 1, int(foot // PITCH) + 1
+    for r in range(-n_u, n_u + 1):
+        u = r * PITCH * .87
+        off = PITCH / 2 if r % 2 else 0.
+        for c in range(-n_v - 1, n_v + 1):
+            v = c * PITCH + off
+            x, z = centre + u * along + v * across
+            jit = (_rand(x, z, 4) - .5) * PITCH * .25
+            x, z = x + jit * across[0], z + jit * across[1]
+            # normalised distance out from the carried core (0 inside it, 1 at the foot)
+            ou = max(0., abs(u) - carry_along) / max(foot_along - carry_along, 1e-3)
+            ov = max(0., abs(v) - half) / max(foot - half, 1e-3)
+            out = math.hypot(ou, ov)
+            if out > 1.:
                 continue
-            x, z = np.array([s['x'], s['z']]) + u * along + v * across
-            radius = COLUMN * (.85 + .3 * _rand(z, x))
-            got = plan.span(x, z, radius + .4, piece)      # the whole column top stays under the ramp
-            if got is None:
-                continue
-            under, below = got
+            radius = COLUMN * (.85 + .35 * _rand(z, x))
             g = float(ground(x, z))
-            if below > g - SINK:      # another piece runs under this one here: leave the column out
-                continue
-            if under - g < MIN_CLEAR:
-                continue
-            edge = abs(v) / max(half, 1e-3)
-            drop = 0. if edge < .55 else (edge - .55) * 6 * (.4 + _rand(x, z))
-            top = under + EMBED - drop
+            if out == 0.:
+                got = plan.span(x, z, radius + .4, piece)      # the whole column top stays under the ramp
+                if got is None:
+                    continue
+                under, below = got
+                if below > g - SINK or under - g < MIN_CLEAR:  # another piece runs under here, or no room
+                    continue
+                top = under + EMBED
+            else:
+                # tiers: the tops fall with distance out, in steps, each column a little broken
+                level = (1 - out) ** 1.6
+                level = math.floor(level * TIERS + _rand(x, z, 5) * .7) / TIERS
+                top = g + (clear - 1.) * level - _rand(z, x, 6) * 2.
+                if top - g < 1.:
+                    continue
+                near = plan.near(x, z, radius + 1.5)
+                if len(near) and (near[:, 2] < top + 2.).any():   # never into or just under any piece
+                    continue
             b.add(BASALT, _prism(x, z, radius, g - SINK, top, turn=_rand(x, z, 1) * .5))
             placed += 1
-    if not placed:
-        return 0
-    # the skirt: short columns stepping down round the foot, wider than the tower
-    clear = s['y'] - float(ground(s['x'], s['z']))
-    for k in range(int(10 + clear / 6)):
-        a = 2 * np.pi * k / int(10 + clear / 6) + _rand(s['x'], k) * .4
-        ex, ez = (half + PITCH) * math.cos(a), (TOWER_ALONG / 2 + PITCH) * math.sin(a)
-        x, z = np.array([s['x'], s['z']]) + ez * along + ex * across
-        if (plan.near(x, z, COLUMN * 1.3 + 1)[:, 0] != piece).any():     # another piece is near: no skirt there
-            continue
-        g = float(ground(x, z))
-        tall = min(clear * (.12 + .25 * _rand(x, z, 2)), 18.)
-        b.add(BASALT, _prism(x, z, COLUMN * (.9 + .4 * _rand(z, x, 3)), g - SINK, g + tall, turn=_rand(z, k) * .5))
     return placed
 
 
