@@ -13,6 +13,14 @@ from import_foliage_lods import apply_lods
 from mesh_import import import_mesh
 
 
+def verify_bounds(mesh, authored):
+    """Compare authored metres with Unreal centimetres, independent of the Y-axis flip."""
+    bounds = mesh.get_bounding_box()
+    extents = [getattr(bounds.max, axis) - getattr(bounds.min, axis) for axis in ('x', 'y', 'z')]
+    expected = [(b - a) * 100 for a, b in zip(*authored)]
+    assert all(abs(a - b) < .1 for a, b in zip(extents, expected)), (mesh.get_name(), 'bounds', extents, expected)
+
+
 def main():
     """@cc [owner:fontanierh,label:correctness] complete-foliage-package-owner
     One action MUST import and validate its LOD0, LOD chain, slots, collision and runtime flags.
@@ -38,6 +46,7 @@ def main():
         meshes.remove_collisions(previous)
     seed = source / (name + '_Seed.fbx')
     mesh = import_mesh(source / (name + '.fbx'), '/Game/Japan/Assets', name, seed=seed, fresh_slots=True)
+    verify_bounds(mesh, data['bounds'])
     palette = []
     for index, slot in enumerate(mesh.get_editor_property('static_materials')):
         key = str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
@@ -62,11 +71,7 @@ def main():
     report = apply_lods(mesh, data, source, meshes, seed=seed, folder=folder, interface=interface)
     report['triangles'] = [mesh.get_num_triangles(i) for i in range(mesh.get_num_lods())]
     assert report['triangles'] == data['triangles'], (name, 'triangles', report['triangles'], data['triangles'])
-    bounds = mesh.get_bounding_box()
-    # FBX changes metres to centimetres and flips Y. Compare extents independently of that sign.
-    extents = [getattr(bounds.max, axis) - getattr(bounds.min, axis) for axis in ('x', 'y', 'z')]
-    expected_extents = [(b - a) * 100 for a, b in zip(*data['bounds'])]
-    assert all(abs(a - b) < .1 for a, b in zip(extents, expected_extents)), (name, 'bounds', extents, expected_extents)
+    verify_bounds(mesh, data['bounds'])
     report['collision'] = data['collision']
     report['simple_collisions'] = meshes.get_simple_collision_count(mesh)
     assert report['simple_collisions'] == (1 if data['trunk_collision'] else 0), (name, 'collision hulls', report)

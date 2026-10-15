@@ -7,12 +7,20 @@ AT = unreal.AssetToolsHelpers.get_asset_tools()
 
 
 def import_mesh(path, dest, name, *, seed, fresh_slots=False):
-    """Seed a new package before reimport so UE applies the final settings consistently.
+    """@cc [owner:fontanierh,label:correctness] legacy-fbx-migration-before-reimport
+    New and non-FBX packages MUST establish legacy FBX import data before the final source pass.
+    Existing package identity MUST stay stable, and the final pass MUST apply the declared unit settings.
 
     The caller supplies an owned seed; borrowing another region's export hides a build dependency.
+    UE converts Interchange import data to legacy FBX defaults before applying task options.
+    That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
-    if not EAL.does_asset_exist(dest + '/' + name) and Path(path).resolve() != Path(seed).resolve():
-        _import_mesh(seed, dest, name)
+    existing = EAL.load_asset(dest + '/' + name) if EAL.does_asset_exist(dest + '/' + name) else None
+    legacy = existing is not None and isinstance(existing.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData)
+    if not legacy and (existing is not None or Path(path).resolve() != Path(seed).resolve()):
+        seeded = _import_mesh(seed, dest, name)
+        if not isinstance(seeded.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData):
+            raise RuntimeError('FBX seed did not establish legacy import data: ' + name)
     return _import_mesh(path, dest, name, fresh_slots)
 
 

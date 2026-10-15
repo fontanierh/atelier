@@ -29,6 +29,10 @@ Use normal render-board admission before the second command. The selector builds
 selected tree's source/native owner. `world.foliage_lods` selects all exports; `unreal.foliage` selects all imports.
 An ordinary `atelier build yorimichi` includes the library and the final content/network data assembly.
 
+An existing Interchange-imported mesh first passes through its owned FBX seed to establish legacy import data.
+The final pass then applies the declared metre-to-centimetre settings while preserving the package object and
+path. Bounds are checked before importing LODs and again after assembly; a failed migration stays uncertified.
+
 | Owner | Reads | Writes |
 | --- | --- | --- |
 | `world.foliage.<name>` | Its specification, generator/helper closure, declared texture bytes and Blender tool context | `build/yorimichi/foliage/<name>/`: LOD0, authored LOD FBXs, private import seed and manifest |
