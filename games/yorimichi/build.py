@@ -185,6 +185,17 @@ def digest_step(out, export, part, about, root=None, names=(), north=None):
                 inputs=[GAME / 'export_digest.py'], needs=[export], outputs=[output], cutoff=True, about=about)
 
 
+def hidamari_props_import_step(out):
+    """The exact props manifest, meshes and textures import_hidamari and city_material consume."""
+    name = 'world.hidamari_props.import'
+    output = out / 'digests' / f'{name}.json'
+    return Step(name, [Call('Hidamari props import digest', lambda ctx, log:
+                           export_digest.record(output, export_digest.hidamari_props(out), log))],
+                inputs=[GAME / 'export_digest.py'], needs=['world.hidamari_props'], outputs=[output], cutoff=True,
+                verify=lambda: export_digest.hidamari_props_present(out),
+                about='Hidamari prop exports the world import consumes, without review images')
+
+
 def package_present(out):
     """The zip or every part the manifest lists, at its recorded size: names vary with the revision and the split."""
     root = out / 'package'
@@ -528,6 +539,7 @@ def world_steps(ctx):
              inputs=[REGIONS / 'hidamari' / 'props.py', TREEHOUSE / 'props.py', TOOLS / 'hidamari_props.py',
                      ASSETS / 'hidamari' / 'props'],
              outputs=[out / 'hidamari' / 'props' / 'props.json'], about='the Hidamari Tripo street props fitted to their sizes', heavy=True),
+        hidamari_props_import_step(out),
         Step('world.treehouse_textures', [Python(TOOLS / 'treehouse_textures.py', ('finish',))],
              inputs=[TOOLS / 'treehouse_textures.py', ASSETS / 'treehouse' / 'textures'],
              outputs=[out / 'treehouse' / 'textures' / 'textures.json'], pool_roots=[out / 'treehouse' / 'textures'],
@@ -690,7 +702,7 @@ def unreal_steps(ctx):
                                           'import_zeppelin.py', 'forest_ground.py', 'ground_grain.py', 'atmosphere.py', 'city_material.py', 'mesh_materials.py')]],
              after=['unreal.compile', 'unreal.materials'],
              references=['materials.shared', *['foliage.' + name + '.native' for name in foliage_build.catalog.FOLIAGE]],
-             needs=['world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props',
+             needs=['world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures', 'world.hidamari_props.import',
                     'world.zeppelin.meshes', 'world.terrain.meshes', 'world.village', 'world.sailboat', 'characters.wanderer'],
              heavy=True, about='legacy world assets and level; preserves independent materials and foliage'),
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import

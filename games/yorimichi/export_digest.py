@@ -120,6 +120,38 @@ def hidamari(out, north):
     return made
 
 
+def hidamari_props_exports(out):
+    """@cc [owner:fontanierh,label:correctness] hidamari-props-consumed-exports
+    The import identity MUST include the complete props manifest and every named FBX and PNG.
+    Missing required exports MUST fail; review images MUST NOT affect the identity.
+    """
+    folder = Path(out) / 'hidamari' / 'props'
+    manifest = json.loads((folder / 'props.json').read_text())
+    if not isinstance(manifest, dict):
+        raise ValueError('Hidamari props manifest must be an object')
+    exports = {f'{name}{suffix}': folder / f'{name}{suffix}'
+               for name in sorted(manifest) for suffix in ('.fbx', '.png')}
+    for path in exports.values():
+        if not path.is_file():
+            raise FileNotFoundError(f'{path}: the prop export did not write it')
+    return manifest, exports
+
+
+def hidamari_props_present(out):
+    """Check completeness without hashing meshes when the cutoff is otherwise current."""
+    try:
+        hidamari_props_exports(out)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def hidamari_props(out):
+    """Complete manifest and normalized export identities; never include the review images."""
+    manifest, exports = hidamari_props_exports(out)
+    return {'manifest': manifest, 'files': {name: file(path) for name, path in exports.items()}}
+
+
 def record(output, made, log=None):
     """Write a digest (sorted JSON: a cutoff step's output); unchanged content leaves the file as it was."""
     output = Path(output)
