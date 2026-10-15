@@ -9,6 +9,7 @@ import threading
 import time
 from urllib.parse import unquote, urlsplit
 import uuid
+from atelier.capacity_compat import refuse_unmanaged
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
@@ -99,6 +100,8 @@ def validate_request(data, generator='unimate'):
 
 class Lab:
     def __init__(self, root, device='mps', warm=True, generator='unimate'):
+        if warm:
+            refuse_unmanaged('Animation model loading')
         self.root = Path(root).resolve()
         self.generator = generator
         self.generator_name = 'Kimodo' if generator == 'kimodo' else 'UniMate'
@@ -153,6 +156,7 @@ class Lab:
         return None
 
     def load(self, device):
+        refuse_unmanaged('Animation model loading')
         try:
             if self.generator == 'kimodo':
                 from kimodo_engine import Engine
@@ -168,6 +172,7 @@ class Lab:
             print(f'Model load failed: {exc}', flush=True)
 
     def create(self, data):
+        refuse_unmanaged('Animation generation')
         params = validate_request(data, self.generator)
         with self.lock:
             if self.state['status'] != 'ready':
@@ -186,6 +191,7 @@ class Lab:
         return job.copy()
 
     def run(self, job):
+        refuse_unmanaged('Animation generation')
         folder = self.root / 'results' / job['id']
         try:
             folder.mkdir()
@@ -331,6 +337,7 @@ def main():
     ap.add_argument('--kimodo-root', type=Path, default=REPO / 'build/yorimichi/kimodo')
     ap.add_argument('--port-file', type=Path, help=argparse.SUPPRESS)
     args = ap.parse_args()
+    refuse_unmanaged('Animation lab server')
     args.root = args.root or REPO / 'build/yorimichi' / ('motion_lab' if args.generator == 'both' else args.generator)
     port = args.port if args.port is not None else (8842 if args.generator == 'unimate' else 8843)
     with ExitStack() as stack:

@@ -28,7 +28,7 @@ It samples the simultaneous physical footprint of the wrapper and its owned desc
 excluding shared services, under the same ceiling and admission. `memory-health-tree.json` is this aggregate
 receipt, separate from per-process reports. Lost telemetry or a missing successful terminal receipt fails the run.
 """
-import argparse, json, os, signal, subprocess, sys, time
+import argparse, json, os, signal, subprocess, sys, time, uuid
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -191,7 +191,58 @@ def check_root_guard(child, monitor, report, final=False):
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
-        on_poll=None, admission=None, performance=False):
+        on_poll=None, admission=None, performance=False, invocation_id=None):
+    """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
+    Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
+    MUST require clearing the prior report; failure to clear MUST suppress publication without
+    changing the guarded result. Reports MUST carry their invocation identity.
+
+    Run one guarded child. The optional invocation_id is a UUID hex string. Admission time ends at GO acknowledgement
+    (or spawn for an ungated child). Child lifetime includes gated startup. Execution duration
+    stays unknown without an independently pinned gate-consumption event.
+    """
+    entered = time.monotonic()
+    identifier = uuid.uuid4().hex if invocation_id is None else invocation_id
+    if type(identifier) is not str or uuid.UUID(identifier).hex != identifier:
+        raise ValueError('invocation_id must be a UUID hex string')
+    report = Path(folder) / 'execution-timings.json'
+    publish_timings = True
+    try:
+        report.unlink(missing_ok=True)
+    except OSError:
+        publish_timings = False  # A diagnostic path must not block an otherwise valid launch.
+    events = {}
+    try:
+        return _run(command, folder, timeout, purpose, lock, env, limit_gib, small_gib, kind,
+                    on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
+                    on_poll, admission, performance, _timings=events)
+    finally:
+        if publish_timings and events.get('ready'):
+            def duration(start, end):
+                return max(0., end - start) if start is not None and end is not None else None
+            value = dict(schema=1, invocation_id=identifier,
+                         admission_seconds=duration(entered, events.get('go')),
+                         child_lifetime_seconds=duration(events.get('spawned'), events.get('exited')),
+                         execution_seconds=None)
+            temporary = report.with_name(report.name + '.' + identifier + '.tmp')
+            try:
+                fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+                with os.fdopen(fd, 'w') as stream:
+                    json.dump(value, stream, allow_nan=False)
+                    stream.write('\n')
+                temporary.replace(report)
+            except OSError:
+                pass  # Diagnostic failure cannot certify or change the guarded job's result.
+            finally:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+
+def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
+        on_poll=None, admission=None, performance=False, *, _timings):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -201,8 +252,9 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     require successful launcher exit and any aggregate terminal receipt before acknowledging results.
     A clean process-monitor exit MAY precede child reaping by at most two seconds; a surviving child,
     failed monitor or matching memory/duration stop receipt MUST fail, including without a callback.
-    Capacity-managed work MUST also hold the legacy exclusion bridge and await the broker's own
-    exec gate after both guards are ready. Broker failure MUST fail the run, without falling back to
+    Capacity-managed work MUST hold either the exclusive migration bridge or all three sealed
+    shared compatibility mutexes and await the broker's own exec gate after both guards are ready.
+    Shared admission MUST verify the durable boot-bound compatibility barrier. Broker failure MUST fail the run, without falling back to
     slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
     Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
 
@@ -226,9 +278,12 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         from ..capacity_runtime import configured_session
         admission = configured_session(kind=kind, limit_gib=limit_gib, timeout=timeout, folder=folder,
                                        purpose=purpose or (Path(command[0]).name if command else kind),
-                                       performance=performance)
+                                       performance=performance, command=command)
     if admission is not None and (not lock or fitting_gib is not None):
-        raise ValueError('capacity admission requires the legacy bridge, without a fitting-lane request')
+        raise ValueError('capacity admission requires the legacy bridge or sealed shared mutexes, without a fitting-lane request')
+    if admission is not None and getattr(admission, 'mode', None) == 'capacity':
+        from ..capacity_runtime import validate_session_profile
+        validate_session_profile(admission, kind=kind, command=command, limit_gib=limit_gib)
     aggregate_tree = aggregate_tree or kind == 'compile' or admission is not None
     if fitting_gib is not None:
         if (not lock or kind != 'job' or not command or Path(command[0]).name.lower() != 'blender'
@@ -236,6 +291,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             raise ValueError('the fitting slot requires one background Blender child under its normal lock and guard')
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
+    _timings['ready'] = True
     horizon = timeout if timeout > 0 else None
     with ExitStack() as stack:
         child, root_start, tree = None, None, None
@@ -267,7 +323,11 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                     on_slot(name, why)
             options = dict(small_gib=small_gib, kind=kind, on_slot=taken, fitting_gib=fitting_gib)
             if admission is not None:
-                options.update(small_gib=None, exclusive_bridge=True)
+                options.update(small_gib=None)
+                if getattr(admission, 'mode', None) == 'capacity':
+                    options['capacity'] = admission
+                else:
+                    options['exclusive_bridge'] = True
             stack.enter_context(render_lock(purpose or Path(command[0]).name, **options))
         if slot in ('small', 'fitting'):
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
@@ -290,6 +350,13 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             command = [sys.executable, str(Path(__file__).with_name('exec_gate.py')), str(read_fd), *command]
         inherited = {'pass_fds': descriptors, 'stdin': subprocess.DEVNULL} if descriptors else {}
         child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env, **inherited)
+        _timings['spawned'] = time.monotonic()
+        if not aggregate_tree:
+            _timings['go'] = _timings['spawned']
+        def observed_exit():
+            if 'exited' not in _timings and child.poll() is not None:
+                _timings['exited'] = time.monotonic()
+        stack.callback(observed_exit)
         if aggregate_tree:
             gate_read.close()
         fitting_ready_by = time.monotonic()+FITTING_STARTUP_SECONDS
@@ -331,6 +398,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             else:
                 gate.write(b'1')
                 gate.close()
+            _timings['go'] = time.monotonic()
         started = time.monotonic()
         deadline = started+horizon if horizon else None
         spoken = started
@@ -373,6 +441,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
                 pass
+        observed_exit()
         if aggregate is not None:
             aggregate.finish()
         check_root_guard(child, monitor, folder/'memory-health.json', final=True)

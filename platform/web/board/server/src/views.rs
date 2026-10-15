@@ -10,7 +10,7 @@ use serde_json::Value;
 
 use crate::api::{Agent, Message, Resources, Row, Session, State, Thread};
 use crate::db::{self, Result, bad};
-use crate::{disk, files, floor, inbox, markdown, store};
+use crate::{capacity, disk, files, floor, inbox, markdown, store};
 
 static SESSION_URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^https://claude\.ai/code/session_[A-Za-z0-9]+$").unwrap());
 
@@ -265,6 +265,8 @@ pub fn snapshot(query: &Query, remote_status: Option<&Path>, sender: &str, csrf:
         log_total,
         inbox: summary,
         holders,
+        legacy_slots: floor::slots(),
+        capacity: capacity::snapshot(),
         sessions,
         resources: Resources {
             fresh: (0.0..120.0).contains(&(now - reported)),

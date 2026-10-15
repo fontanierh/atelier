@@ -83,6 +83,8 @@ schedule: {
 log_total: number
 inbox: InboxSummary
 holders: Holders
+legacy_slots: LegacySlots
+capacity: CapacityStatus
 sessions: Session[]
 resources: Resources
 disk: Disk
@@ -270,6 +272,7 @@ activity: number
 export interface Holders {
 big?: (Holder | null)
 small?: (Holder | null)
+fitting?: (Holder | null)
 }
 /**
  * A live render lock holder.
@@ -285,6 +288,83 @@ kind: unknown
  */
 checkout: string
 time: unknown
+capacity_bridge: boolean
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "LegacySlots".
+ */
+export interface LegacySlots {
+slots: number
+fitting_enabled: boolean
+fitting_paused: boolean
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "CapacityStatus".
+ */
+export interface CapacityStatus {
+configuration: string
+availability: string
+checked_at?: (number | null)
+fresh: boolean
+snapshot?: (CapacitySnapshot | null)
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "CapacitySnapshot".
+ */
+export interface CapacitySnapshot {
+epoch: number
+boot_id: string
+mode: string
+cutover: boolean
+observed_at: number
+recovering: boolean
+total: CapacityVector
+reserve: CapacityVector
+charged_resources: CapacityVector
+charged_count: number
+waiting_count: number
+total_records: number
+returned_records: number
+records: CapacityJob[]
+truncated: boolean
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "CapacityVector".
+ */
+export interface CapacityVector {
+memory_mib: number
+cpu_millis: number
+temp_mib: number
+io_slots: number
+gpu_mib: number
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "CapacityJob".
+ */
+export interface CapacityJob {
+id: string
+owner?: (string | null)
+checkout?: (string | null)
+purpose?: (string | null)
+phase?: (string | null)
+state: string
+charged: boolean
+resources: CapacityVector
+locks: string[]
+first_ready: number
+sequence: number
+bypasses: number
+retained: number
+witnessed: number
+wait_reason: string
+measured_memory_mib?: (number | null)
+measured_at?: (number | null)
+ancestry_unknown: boolean
 }
 /**
  * A remote agent session the watchdog reports on.

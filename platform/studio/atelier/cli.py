@@ -176,7 +176,8 @@ def make_parser():
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
-    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'supervise'])
+    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe', 'serve', 'status', 'reconcile',
+                                    'supervise', 'prepare-cutover', 'activate-cutover'])
     p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
     p.add_argument('--json', action='store_true')
@@ -263,6 +264,13 @@ def main(argv=None):
             return shadow_main(args.state, args.path)
         if args.state:
             raise SystemExit('--state is only supported by capacity shadow')
+        if args.action in ('prepare-cutover', 'activate-cutover'):
+            from . import capacity_compat
+            operation = capacity_compat.prepare if args.action == 'prepare-cutover' else capacity_compat.activate
+            operation(args.path)
+            print('Legacy lanes sealed; a verified new OS boot is required before activation.' if args.action == 'prepare-cutover'
+                  else 'Full capacity compatibility barrier activated; clients still require broker admission.')
+            return 0
         if args.action == 'serve':
             from .capacity_broker import main as serve_main
             return serve_main(args.path)

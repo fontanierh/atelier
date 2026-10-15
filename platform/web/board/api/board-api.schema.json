@@ -168,6 +168,12 @@
         "holders": {
           "$ref": "#/$defs/Holders"
         },
+        "legacy_slots": {
+          "$ref": "#/$defs/LegacySlots"
+        },
+        "capacity": {
+          "$ref": "#/$defs/CapacityStatus"
+        },
         "sessions": {
           "type": "array",
           "items": {
@@ -200,6 +206,8 @@
         "log_total",
         "inbox",
         "holders",
+        "legacy_slots",
+        "capacity",
         "sessions",
         "resources",
         "disk",
@@ -616,6 +624,16 @@
               "type": "null"
             }
           ]
+        },
+        "fitting": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Holder"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -629,13 +647,299 @@
           "description": "The folder name of the checkout running the job.",
           "type": "string"
         },
-        "time": true
+        "time": true,
+        "capacity_bridge": {
+          "type": "boolean"
+        }
       },
       "required": [
         "purpose",
         "kind",
         "checkout",
-        "time"
+        "time",
+        "capacity_bridge"
+      ]
+    },
+    "LegacySlots": {
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "fitting_enabled": {
+          "type": "boolean"
+        },
+        "fitting_paused": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "slots",
+        "fitting_enabled",
+        "fitting_paused"
+      ]
+    },
+    "CapacityStatus": {
+      "type": "object",
+      "properties": {
+        "configuration": {
+          "type": "string"
+        },
+        "availability": {
+          "type": "string"
+        },
+        "checked_at": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fresh": {
+          "type": "boolean"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CapacitySnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "configuration",
+        "availability",
+        "fresh"
+      ]
+    },
+    "CapacitySnapshot": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "boot_id": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "cutover": {
+          "type": "boolean"
+        },
+        "observed_at": {
+          "type": "number",
+          "format": "double"
+        },
+        "recovering": {
+          "type": "boolean"
+        },
+        "total": {
+          "$ref": "#/$defs/CapacityVector"
+        },
+        "reserve": {
+          "$ref": "#/$defs/CapacityVector"
+        },
+        "charged_resources": {
+          "$ref": "#/$defs/CapacityVector"
+        },
+        "charged_count": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "waiting_count": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "total_records": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "returned_records": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CapacityJob"
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "epoch",
+        "boot_id",
+        "mode",
+        "cutover",
+        "observed_at",
+        "recovering",
+        "total",
+        "reserve",
+        "charged_resources",
+        "charged_count",
+        "waiting_count",
+        "total_records",
+        "returned_records",
+        "records",
+        "truncated"
+      ]
+    },
+    "CapacityVector": {
+      "type": "object",
+      "properties": {
+        "memory_mib": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "cpu_millis": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "temp_mib": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "io_slots": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "gpu_mib": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "memory_mib",
+        "cpu_millis",
+        "temp_mib",
+        "io_slots",
+        "gpu_mib"
+      ]
+    },
+    "CapacityJob": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkout": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "purpose": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "charged": {
+          "type": "boolean"
+        },
+        "resources": {
+          "$ref": "#/$defs/CapacityVector"
+        },
+        "locks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "first_ready": {
+          "type": "number",
+          "format": "double"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "bypasses": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "retained": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "witnessed": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "wait_reason": {
+          "type": "string"
+        },
+        "measured_memory_mib": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "measured_at": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "ancestry_unknown": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "state",
+        "charged",
+        "resources",
+        "locks",
+        "first_ready",
+        "sequence",
+        "bypasses",
+        "retained",
+        "witnessed",
+        "wait_reason",
+        "ancestry_unknown"
       ]
     },
     "Session": {

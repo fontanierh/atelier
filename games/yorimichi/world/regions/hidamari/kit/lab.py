@@ -17,6 +17,7 @@ ROOT=yori.REGIONS;sys.path.insert(0,str(yori.GAME/'tools'))
 PROJECT=yori.GAME/'unreal';OUT=yori.OUT/'hidamari';DOCS=yori.OUT/'kit';LOCKS=yori.OUT/'locks'
 BRIEFS=ROOT/'hidamari/kit/briefs.json'
 from atelier.engine import unreal_root;ENGINE=unreal_root()
+from atelier.capacity_compat import refuse_unmanaged
 STYLE_STILLS=[p for p in (yori.OUT/'kit'/'style').glob('*.png')]  # put a few in-game stills here to steer the reference style
 STYLE=("The attached images are screenshots of our low-poly Unreal game (painted flat-shaded polygons with vertex colours, "
  "chunky timber, cream plaster, slate-blue tiled roofs, warm paper-lantern glow, autumn palette, soft daylight, no outlines). "
@@ -91,6 +92,7 @@ def reconcile(slug,ref_path,render_path,note=''):
     print('RECONCILED',p)
 
 def blender_build(assets):
+    refuse_unmanaged('Building kit Blender authoring')
     with lock('blender'):
         env=dict(os.environ,HIDAMARI_ASSETS=','.join(assets))
         log=yori.OUT/'logs'/f'kit-build-{assets[0]}.log';log.parent.mkdir(parents=True,exist_ok=True)
@@ -105,6 +107,7 @@ def blender_build(assets):
             if e['triangles']>60000:raise SystemExit(f'{a} exceeds the 60,000-triangle kit budget ({e["triangles"]}); simplify before importing')
 
 def unreal_import(assets):
+    refuse_unmanaged('Building kit Unreal import')
     with lock('unreal'):
         env=dict(os.environ,HIDAMARI_ASSETS=','.join(assets))
         log=yori.OUT/'logs'/f'kit-import-{assets[0]}.log';t=time.time()
@@ -127,6 +130,7 @@ def placement(asset):
     return min(lit,key=lambda b:abs(b['position'][0]-830)+abs(b['position'][1]-60))
 
 def capture_views(slug,assets):
+    refuse_unmanaged('Building kit capture')
     from capture import capture
     from hidamari.layout import height
     d=DOCS/slug;d.mkdir(parents=True,exist_ok=True)

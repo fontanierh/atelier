@@ -9,6 +9,9 @@ from pathlib import Path
 import json
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
+from atelier.capacity_compat import refuse_unmanaged
+
+refuse_unmanaged('Character sprint comparison')
 
 # ROOT (the archive) comes from _archive
 ASSET=ROOT/'output/imagegen/yorimichi-yellow-boy-2026-09-12'

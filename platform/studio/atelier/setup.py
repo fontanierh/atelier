@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 
 from . import engine, paths
+from .capacity_compat import refuse_unmanaged
 from .safety import guarded
 from .safety.render_lock import render_lock
 
@@ -199,6 +200,7 @@ def prepare_headless(root, workers=3):
     """Repair only the tested installed engine; rebuild managed tools under the render lock and memory guard."""
     if not isinstance(workers, int) or workers < 1:
         raise ValueError('workers must be a positive integer')
+    refuse_unmanaged('Headless toolchain setup')
     root = root.resolve()
     version = json.loads((root / 'Engine/Build/Build.version').read_text())
     if tuple(version[k] for k in ('MajorVersion', 'MinorVersion', 'PatchVersion', 'Changelist')) != (5, 8, 2, 56702186):
@@ -300,6 +302,8 @@ def prepare_headless(root, workers=3):
 
 
 def main(headless=False, workers=3):
+    if headless:
+        refuse_unmanaged('Headless toolchain setup')
     checks = mac_checks()
     if headless and all(ok for ok, _ in checks):
         rosetta, _ = _command(['/usr/bin/arch', '-x86_64', '/usr/bin/true'])

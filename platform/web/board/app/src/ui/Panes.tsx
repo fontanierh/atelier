@@ -13,6 +13,7 @@ import {thread} from '../store/thread';
 import {ui} from '../store/ui';
 import {Inline, Markdown, Orb, Slot} from './bits';
 import {sortedAgents} from './Chat';
+import {Capacity} from './Capacity';
 import {Icon} from './Icon';
 import {ReplyBox} from './ReplyBox';
 
@@ -442,31 +443,46 @@ export function DiskCard({disk, now}: {disk: State['disk']; now: number}) {
 
 export function RenderPane() {
   const state = useStore(board, (b) => b.state);
-  const jobs = state ? Object.entries(state.holders).filter(([, h]) => h) as [string, NonNullable<State['holders']['big']>][] : [];
+  const failed = useStore(board, (b) => b.failed);
+  const holders = state ? Object.entries(state.holders).filter(([, h]) => h) as [string, NonNullable<State['holders']['big']>][] : [];
+  // A bridge publishes one holder in all legacy lane records. Display one physical job.
+  const jobs = holders.filter(([, holder], i) => !holder.capacity_bridge || !holders.slice(0, i).some(([, earlier]) =>
+    earlier.capacity_bridge && earlier.checkout === holder.checkout && earlier.time === holder.time));
+  const bridge = holders.some(([, holder]) => holder.capacity_bridge);
+  const full = state?.capacity.snapshot?.mode === 'capacity' && state.capacity.snapshot.cutover;
   const r = state?.resources;
   return (
     <aside className="pane render-pane" id="renderPane" aria-label="Render floor">
       <header className="pane-head"><h1>Render floor</h1>
-        <p className="pane-sub" id="renderSummary">{!state ? 'Checking live jobs' : jobs.length ? `${jobs.map(([slot]) => slot).join(' + ')} slot busy` : 'Both slots free'}</p>
+        <p className="pane-sub" id="renderSummary">{!state ? 'Checking live jobs' : failed ? 'Live status unavailable'
+          : full ? state.capacity.fresh ? state.capacity.snapshot?.recovering ? 'Capacity recovery · grants paused'
+          : 'Capacity admission · broker reservations' : 'Capacity observation stale'
+          : bridge ? 'Capacity bridge · legacy lanes held' : jobs.length ? `${jobs.length} reported ${jobs.length === 1 ? 'job' : 'jobs'}`
+          : 'No live legacy holders reported'}</p>
       </header>
       <div className="pane-body">
         <section className="card" aria-labelledby="liveHeading" style={{'--i': 0} as React.CSSProperties}>
-          <h2 className="eyebrow" id="liveHeading">Running now</h2>
+          <h2 className="eyebrow" id="liveHeading">{full ? 'Compatibility locks' : 'Live legacy holders'}</h2>
           <div id="liveJobs">
-            {jobs.map(([slot, holder]) => (
+            {full && <p className="quiet">{state?.capacity.fresh && !failed
+              ? state.capacity.snapshot?.recovering ? 'Recovery is checking compatibility and ownership. New grants are paused.'
+              : 'Legacy mutexes are sealed. Broker reservations below report active work.'
+              : 'The last observation used sealed legacy mutexes. Current admission state is unknown.'}</p>}
+            {!full && jobs.map(([slot, holder]) => (
               <div key={slot} className="job">
-                <div className="job-label"><span className="dot live" /><span>{`${slot} slot`}</span>
+                <div className="job-label"><span className="dot live" /><span>{holder.capacity_bridge ? 'Capacity bridge · all legacy lanes' : `${slot} slot`}</span>
                   <span className="job-since">{typeof holder.time === 'number' ? `since ${clock(holder.time)}` : ''}</span></div>
                 <div className="job-purpose">{text(holder.purpose)}</div><div className="job-checkout">{holder.checkout}</div>
               </div>
             ))}
-            {state && !jobs.length && <p className="quiet">The render floor is clear.</p>}
+            {state && !full && !jobs.length && <p className="quiet">{state.legacy_slots.slots} legacy {state.legacy_slots.slots === 1 ? 'slot' : 'slots'} configured{state.legacy_slots.fitting_enabled ? ` · fitting lane ${state.legacy_slots.fitting_paused ? 'paused' : 'enabled'}` : ''}. Admission still checks live locks and host pressure.</p>}
           </div>
           <div className="resources" id="resourceLine">{r && <>
-            <span>{r.fresh && r.cpu != null ? `CPU ${Math.round(r.cpu)}%` : 'CPU · no telemetry'}</span>
-            <span>{r.fresh && r.available_gib != null ? `${r.available_gib.toFixed(1)} GiB free` : 'Memory · no telemetry'}</span>
+            <span>{!failed && r.fresh && r.cpu != null ? `CPU ${Math.round(r.cpu)}%` : 'CPU · no telemetry'}</span>
+            <span>{!failed && r.fresh && r.available_gib != null ? `${r.available_gib.toFixed(1)} GiB host available` : 'Memory · no telemetry'}</span>
           </>}</div>
         </section>
+        <Capacity status={state?.capacity} connected={Boolean(state && !failed)} bridge={bridge} serverTime={state?.time} />
         {state && <DiskCard disk={state.disk} now={state.time} />}
         <section className="stack" aria-labelledby="scheduleHeading">
           <h2 className="eyebrow" id="scheduleHeading" style={{'--i': 1} as React.CSSProperties}>Schedule</h2>

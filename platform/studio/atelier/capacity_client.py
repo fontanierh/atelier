@@ -72,8 +72,17 @@ class AdmissionSession:
     exit evidence for every retained identity or raise while the durable reservation stays held.
     A Popen witness proves the direct child's exit only, never an undiscovered process tree.
     """
-    def __init__(self, socket_path, request, *, timeout=2.):
+    def __init__(self, socket_path, request, *, timeout=2., cutover=None):
         self.socket_path, self.request, self.timeout = Path(socket_path), dict(request), timeout
+        self.cutover = cutover
+        self.mode = 'capacity' if cutover is not None else 'legacy-bridge'
+        self.activation_id = None
+        if cutover is not None:
+            from . import capacity_compat
+            proof = capacity_compat.verify(cutover)
+            if str(self.socket_path) != proof['socket']:
+                raise CapacityError('Capacity client endpoint differs from the compatibility barrier')
+            self.activation_id = proof['activation_id']
         if isinstance(self.request.get('resources'), Resources):
             self.request['resources'] = asdict(self.request['resources'])
         if 'locks' in self.request:
@@ -82,23 +91,46 @@ class AdmissionSession:
         self.child = None
         self.closed = False
 
+    def _fence(self):
+        return {'activation_id': self.activation_id} if self.mode == 'capacity' else {}
+
+    def _response(self, response, fd):
+        if self.mode == 'capacity' and (response.get('mode') != self.mode
+                or response.get('activation_id') != self.activation_id):
+            if fd is not None:
+                os.close(fd)
+            raise CapacityError('Capacity broker mode or compatibility epoch changed')
+        return response, fd
+
     def _call(self, action, *, descriptor=False, **fields):
         if self.closed:
             raise CapacityError('Capacity session is closed')
         if self.nonce is None:
             raise CapacityError('Capacity offer has not been obtained')
-        return _rpc(self.socket_path, {'action': action, 'id': self.request['id'],
-                                      'nonce': self.nonce, 'epoch': self.epoch, 'boot_id': self.boot, **fields},
-                    self.timeout, descriptor=descriptor)
+        return self._response(*_rpc(self.socket_path, {'action': action, 'id': self.request['id'],
+                                      'nonce': self.nonce, 'epoch': self.epoch, 'boot_id': self.boot,
+                                      **self._fence(), **fields}, self.timeout, descriptor=descriptor))
 
     def offer(self):
-        response, _ = _rpc(self.socket_path, {'action': 'offer', 'request': self.request,
-                                            **({'nonce': self.nonce} if self.nonce else {})}, self.timeout)
+        response, _ = self._response(*_rpc(self.socket_path, {'action': 'offer', 'request': self.request,
+                                            **self._fence(), **({'nonce': self.nonce} if self.nonce else {})}, self.timeout))
         self.nonce, self.epoch = response['nonce'], response['epoch']
         self.boot = response['boot_id']
         if response.get('selected') is not True:
             raise CapacityError('Capacity request remains queued without holding resources')
         return response
+
+    def owned(self, candidates):
+        response, _ = self._call('owned', candidates=[list(wire.identity(pin)) for pin in candidates])
+        if response.get('epoch') != self.epoch or response.get('boot_id') != self.boot:
+            raise CapacityError('Capacity ownership response was fenced')
+        values = response.get('owned')
+        if type(values) is not list or len(values) > wire.MAX_ROSTER:
+            raise CapacityError('Capacity ownership response is incomplete')
+        result = {wire.identity(pin) for pin in values}
+        if not result <= {wire.identity(pin) for pin in candidates}:
+            raise CapacityError('Capacity ownership response includes an unrequested identity')
+        return result
 
     def gate(self):
         response, fd = self._call('gate', descriptor=True)
