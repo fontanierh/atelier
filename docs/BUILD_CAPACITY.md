@@ -18,9 +18,14 @@ database and token below. `atelier capacity serve ABSOLUTE_CONFIG` runs it; `ate
 reads its state. `atelier capacity supervise ABSOLUTE_CONFIG` installs macOS login/crash supervision. Installing
 the service does **not** enable clients. Do not create a second broker to work around an outage or an uncertain grant.
 If a controller is interrupted, normal broker refresh automatically releases its reservation once every retained
-process has a verified exit and ancestry is known. This releases capacity only; it does not certify build outputs.
-`atelier capacity reconcile ABSOLUTE_SOCKET` releases only reservations whose retained identities have affirmative
-exit evidence; it cannot clear an unknown exit. Same-boot recovery rearms live registered identities and permits
+process has a verified exit and ancestry is known. Bridge and full performance-exclusive grants also accept a
+positively exited root plus its previously bound aggregate guard's final `child_exited` receipt: matching root
+identity and limit, invocation time, completed cleanup, no processes and zero footprint, with no retained identity
+still verifiably live. This deliberately permits historical discovery gaps under the exclusive guard policy.
+The witness is `guarded-tree-exit`, covering the **monitored owned tree**; it does not manufacture individual
+kernel exit evidence or claim universal descendant discovery. It releases capacity only, never certifies outputs.
+`atelier capacity reconcile ABSOLUTE_SOCKET` applies the same two policies. Without either witness, uncertainty
+remains charged. Same-boot recovery rearms live registered identities and permits
 the original controller's fenced session to report exit only. A verified OS boot change proves prior local jobs
 ended; ordinary daemon restart does not.
 
@@ -72,10 +77,11 @@ aggregate memory guards before asking for a grant. The broker checks fresh guard
 vector, named locks, pressure and service epoch, commits accounting, then releases the gate. An offered or queued
 request holds no resources. Its logical identity survives an uncharged retry; a separate run nonce fences old gates.
 
-Capacity release concerns the **retained registered process roster**, using pinned kernel exit events and the
-controller's actual direct-child wait. It does not turn a failed process lookup or aggregate guard report into
-proof that every possible descendant was discovered or exited. Unwitnessed exits, lost guards and crashes retain
-uncertain charges. Output certification remains the build system's separate responsibility. The legacy bridge
+Exact capacity release concerns the **retained registered process roster**, using pinned kernel exit events and the
+controller's actual direct-child wait. The exclusive terminal-cleanup policy above instead witnesses the monitored
+owned tree, with positive root exit essential. Neither policy turns a failed process lookup into exit proof or
+claims that every possible descendant was discovered. Missing, mismatched, failed or incomplete cleanup receipts
+retain uncertainty when exact exit evidence is unavailable. Output certification remains separate. The legacy bridge
 and foreign-process scan remain necessary while stronger ownership coverage and client migration are validated.
 
 The agent board rollout must show the real machine mode: legacy slots, capacity migration bridge, or full capacity.

@@ -1,8 +1,8 @@
 """Production Unix capacity broker. Native activation and supervision are separate policy.
 
 One serialized actor owns the SQLite transaction and every launch-gate writer. Restart fences
-all old sessions and retains their allocations. Release means the explicitly retained roster
-has affirmative exit evidence; it does not establish universal process-tree discovery.
+all old sessions and retains their allocations. Release uses exact retained exits or the scoped
+exclusive monitored-tree cleanup policy; neither establishes universal process-tree discovery.
 """
 from dataclasses import asdict
 import fcntl
@@ -35,8 +35,10 @@ class CapacityBroker:
     Queued offers MUST charge no resources. Final complete-vector and lock accounting MUST commit
     before this broker's sole gate writer releases a child, in one serialized actor turn. Restart,
     lost health and missing exit evidence MUST retain grants. No process MAY be signalled here.
-    Exit evidence covers the retained roster only; no process scan or aggregate report proves
-    undiscovered descendants absent. The adapter MUST retain exclusive legacy exclusion in bridge
+    Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants
+    MAY instead use a positively exited root plus its bound aggregate guard's terminal empty-tree
+    cleanup receipt; that witnesses the monitored owned tree, not every descendant's kernel exit.
+    The adapter MUST retain exclusive legacy exclusion in bridge
     mode, or verified sealed shared compatibility mutexes in full mode.
     """
     def __init__(self, state_directory, *, total, reserve=Resources(), disk_pool=None,
@@ -301,16 +303,54 @@ class CapacityBroker:
 
     def _settle_exited(self, record):
         """@cc [owner:fontanierh,label:safety] witnessed-capacity-recovery
-        An uncertain reservation MUST release automatically once every retained process has
-        affirmative exit evidence and its ancestry is known. Missing PIDs, expired heartbeats,
-        an empty roster or unknown ancestry MUST NOT establish completion or certify outputs.
+        An uncertain reservation MUST release after complete known-ancestry retained exits, or
+        the explicitly scoped terminal-tree witness below. Missing PIDs and expired heartbeats
+        alone MUST NOT release capacity. Neither release path MAY certify build outputs.
         """
-        if (record['state'] != 'uncertain' or not record.get('roster')
-                or record.get('ancestry_unknown')
-                or not all(pin in record.get('exited', []) for pin in record['roster'])):
+        if record['state'] != 'uncertain' or not record.get('roster'):
             return False
-        record.update(state='released', release_witness={'kind': 'retained-kernel-exits'})
+        if (not record.get('ancestry_unknown')
+                and all(pin in record.get('exited', []) for pin in record['roster'])):
+            witness = {'kind': 'retained-kernel-exits'}
+        else:
+            witness = self._terminal_tree_exit(record)
+            if witness is None:
+                return False
+        record.update(state='released', release_witness=witness)
         return True
+
+    def _terminal_tree_exit(self, record):
+        """@cc [owner:fontanierh,label:safety] exclusive-terminal-tree-release
+        Only bridge or full performance-exclusive grants MAY use this policy. The root MUST
+        have affirmative exit evidence and its previously bound aggregate report MUST match
+        identity, ceiling and invocation time, with child_exited, completed cleanup and zero
+        processes/footprint. Any verifiably live retained identity MUST refuse release. This
+        witnesses monitored-owned-tree cleanup, never individual historical kernel exits.
+        """
+        if (self.mode != 'legacy-bridge'
+                and not (self.mode == 'capacity' and record.get('request', {}).get('performance') is True)):
+            return None
+        if record.get('child') not in record.get('exited', []):
+            return None
+        try:
+            item = wire.fields(record.get('guards', {}).get('tree_guard'), ('pid', 'start', 'report'))
+            wire.identity((item['pid'], item['start']))  # Bound at start; terminal monitor may now have exited.
+            receipt = wire.decode(wire.private_file(wire.text(item['report'], maximum=4096),
+                                                    limit=wire.MAX_FRAME, private=False))
+            observed, ready = receipt.get('time'), record.get('first_ready')
+            if (type(observed) not in (int, float) or not math.isfinite(observed)
+                    or type(ready) not in (int, float) or not math.isfinite(ready)
+                    or not 0 < ready <= observed <= time.time()
+                    or wire.identity((receipt.get('owner'), receipt.get('owner_started'))) != tuple(record['child'])
+                    or type(receipt.get('limit_bytes')) is not int or receipt['limit_bytes'] != record['limit_bytes']
+                    or receipt.get('state') != 'child_exited' or receipt.get('cleanup_complete') is not True
+                    or receipt.get('termination_reason') is not None or receipt.get('processes') != []
+                    or type(receipt.get('footprint_bytes')) is not int or receipt['footprint_bytes'] != 0
+                    or any(self.alive(wire.identity(pin)) for pin in record['roster'])):
+                return None
+        except (OSError, ValueError, KeyError, TypeError, wire.CapacityError):
+            return None
+        return {'kind': 'guarded-tree-exit', 'coverage': 'monitored-owned-tree', 'observed_at': observed}
 
     def _request(self, value):
         wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers'))
@@ -655,12 +695,19 @@ class CapacityBroker:
                                 # This authenticated adapter reports its actual Popen wait status.
                                 record.setdefault('exited', []).append(record['child']) if record['child'] not in record.get('exited', []) else None
                             self._refresh(state, now)
-                            complete = (not record.get('ancestry_unknown') and bool(record.get('roster'))
-                                        and all(pin in record.get('exited', []) for pin in record.get('roster', [])))
-                            record['state'] = 'released' if complete else 'uncertain'
-                            if complete:
-                                self._dispose(record['nonce'])
-                            result = {'state': record['state'], 'released': complete, 'coverage': 'retained-roster-only'}
+                            if record['state'] != 'released':
+                                record['state'] = 'uncertain'
+                                self._settle_exited(record)
+                            complete = record['state'] == 'released'
+                            if not complete:
+                                print('capacity close retained: ' + json.dumps(dict(
+                                    owner=record['request'].get('owner'), purpose=record['request'].get('purpose'),
+                                    pid=record['child'][0], roster=len(record.get('roster', [])),
+                                    exited=len(record.get('exited', [])), ancestry_unknown=record.get('ancestry_unknown', False),
+                                    reason='Retained exits incomplete and no eligible terminal cleanup witness')),
+                                    file=sys.stderr, flush=True)
+                            result = {'state': record['state'], 'released': complete,
+                                      'coverage': record.get('release_witness', {}).get('coverage', 'retained-roster-only')}
                     elif action == 'replace':
                         if record['state'] != 'running':
                             raise wire.CapacityError('Only a live grant can change phase')
