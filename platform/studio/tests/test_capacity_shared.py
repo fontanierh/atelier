@@ -272,13 +272,21 @@ def test_explicit_session_cannot_bypass_actual_command_profile(tmp_path, command
 
 
 @pytest.mark.parametrize('changes', [dict(locks=[]), dict(checkout='/different'),
-    dict(resources=asdict(Resources(memory_mib=10240, cpu_millis=3000)))])
-def test_explicit_session_requires_checkout_lock_and_io(tmp_path, changes):
+    dict(resources=asdict(Resources(memory_mib=10240, cpu_millis=0)))])
+def test_explicit_session_requires_checkout_lock_and_cpu(tmp_path, changes):
     request = dict(phase='job', workers=3, checkout=str(runtime.REPO), locks=['checkout:' + str(runtime.REPO)],
                    performance=False, resources=asdict(Resources(memory_mib=10240, cpu_millis=3000, io_slots=1)))
     admission = SimpleNamespace(mode='capacity', request=request | changes)
-    with pytest.raises(ValueError, match='checkout named lock|CPU and I/O'):
+    with pytest.raises(ValueError, match='checkout named lock|CPU capacity'):
         guarded.run(['Blender', '--threads', '3'], tmp_path / 'absent', admission=admission)
+
+
+@pytest.mark.parametrize('io_slots', [0, 1])
+def test_explicit_session_accepts_optional_io(io_slots):
+    admission = SimpleNamespace(request=dict(phase='job', workers=3, checkout=str(runtime.REPO),
+        locks=['checkout:' + str(runtime.REPO)], performance=False,
+        resources=asdict(Resources(memory_mib=10240, cpu_millis=3000, io_slots=io_slots))))
+    runtime.validate_session_profile(admission, kind='job', command=['Blender', '--threads', '3'], limit_gib=10)
 
 
 def test_broker_binds_sealed_budget_and_exact_verified_ownership(barrier):
@@ -349,6 +357,84 @@ def gate_start(instance, owner, message, child):
         return response
     finally:
         os.close(fd)
+
+
+@pytest.fixture
+def optional_io_actor(short_path, monkeypatch, request):
+    """An isolated actor with mocked compatibility, identities, guards and exit watches."""
+    total = Resources(memory_mib=16384, cpu_millis=16000, temp_mib=32768,
+                      io_slots=getattr(request, 'param', 1))
+    reserve = Resources(memory_mib=4096, cpu_millis=1000)
+    proof = dict(activation_id='optional-io-fixture', socket=str(short_path / 'broker/broker.sock'),
+                 disk_pool=str(short_path), total=asdict(total), reserve=asdict(reserve))
+    monkeypatch.setattr(compat, 'verify', lambda *args, **kwargs: proof)
+    class Watch:
+        def __init__(self, pin):
+            pass
+        def poll(self):
+            return False
+        def close(self):
+            pass
+    instance = broker.CapacityBroker(short_path / 'broker', total=total, reserve=reserve,
+        disk_pool=short_path, mode='capacity', cutover=compat.DEFAULT_RECORD, policy_sha256='0' * 64,
+        started=lambda pid: pid * 100, alive=lambda pin: True, watch=Watch,
+        guards=lambda *args: wire.GuardFacts((), 0), child_of=lambda *args: True,
+        parent=lambda pin: None, boot=lambda: BOOT_B, foreign=lambda: [],
+        observe=lambda: dict(observed_monotonic=time.monotonic(), available_memory_mib=99999,
+                             available_temp_mib=99999))
+    yield instance
+    instance.close()
+
+
+@pytest.mark.parametrize('optional_io_actor', [0, 1], indirect=True)
+def test_full_actor_admits_zero_io_jobs_without_a_universal_charge(optional_io_actor):
+    instance = optional_io_actor
+    resources = asdict(Resources(memory_mib=1024, cpu_millis=3000))
+    for index in (1, 2):
+        owner = (100 + index, (100 + index) * 100)
+        message, response = offer(instance, owner, str(index), resources=resources)
+        assert response['selected']
+        assert gate_start(instance, owner, message, 200 + index)['admission']
+    status, _ = instance.handle(dict(namespace=wire.NAMESPACE, action='status'), (101, 10100))
+    assert status['charged_count'] == 2
+    assert status['charged_resources'] == asdict(Resources(memory_mib=2048, cpu_millis=6000))
+
+
+@pytest.mark.parametrize('changes', [
+    dict(resources=asdict(Resources(memory_mib=1024, cpu_millis=13000))),
+    dict(resources=asdict(Resources(memory_mib=12288, cpu_millis=3000))),
+    dict(checkout='holder'), dict(performance=True),
+])
+def test_zero_io_does_not_relax_cpu_memory_locks_or_exclusion(optional_io_actor, changes):
+    instance = optional_io_actor
+    resources = asdict(Resources(memory_mib=1024, cpu_millis=3000))
+    message, _ = offer(instance, (101, 10100), 'holder', resources=resources)
+    gate_start(instance, (101, 10100), message, 201)
+    _, response = offer(instance, (102, 10200), 'candidate', **(dict(resources=resources) | changes))
+    assert not response['selected']
+
+
+def test_explicit_io_exhaustion_still_blocks_nonzero_claims(optional_io_actor):
+    instance = optional_io_actor
+    message, _ = offer(instance, (101, 10100), 'io-holder')  # Explicitly claims the one I/O token.
+    gate_start(instance, (101, 10100), message, 201)
+    _, blocked = offer(instance, (102, 10200), 'io-waiter')
+    assert not blocked['selected']
+    _, selected = offer(instance, (103, 10300), 'zero-io',
+                        resources=asdict(Resources(memory_mib=1024, cpu_millis=3000)))
+    assert selected['selected']
+
+
+def test_zero_io_full_request_still_requires_cpu_and_checkout_lock(optional_io_actor):
+    instance = optional_io_actor
+    with pytest.raises(wire.CapacityError, match='nonzero CPU'):
+        offer(instance, (101, 10100), 'no-cpu', resources=asdict(Resources(memory_mib=1024)))
+    with pytest.raises(wire.CapacityError, match='checkout named lock'):
+        offer(instance, (101, 10100), 'no-lock', locks=[],
+              resources=asdict(Resources(memory_mib=1024, cpu_millis=3000)))
+    with pytest.raises(wire.CapacityError, match='exclusive'):
+        offer(instance, (101, 10100), 'game', phase='game',
+              resources=asdict(Resources(memory_mib=1024, cpu_millis=3000)))
 
 
 def test_full_actor_allows_only_resources_and_named_lock_compatible_overlap(actor):

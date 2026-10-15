@@ -30,7 +30,7 @@ The broker configuration is an owner-only JSON file in an owner-only directory, 
   "mode": "legacy-bridge",
   "state_directory": "/absolute/private/capacity-state",
   "disk_pool": "/absolute/build-filesystem",
-  "total": {"memory_mib": 32768, "cpu_millis": 10000, "temp_mib": 200000, "io_slots": 2, "gpu_mib": 16000},
+  "total": {"memory_mib": 32768, "cpu_millis": 10000, "temp_mib": 200000, "io_slots": 0, "gpu_mib": 16000},
   "reserve": {"memory_mib": 8192, "cpu_millis": 2000, "temp_mib": 20000, "io_slots": 0, "gpu_mib": 0}
 }
 ```
@@ -44,8 +44,15 @@ Upgraded `guarded.run` clients read the private `~/.cache/atelier/capacity/clien
 `ATELIER_CAPACITY_CLIENT` selects another absolute file. The client file contains `schema: 1`, an absolute `socket`,
 and `profiles` for `job`, `game` and `compile`. Each profile contains a complete `resources` vector and a `locks`
 list. The common launcher always adds its checkout lock. A reservation smaller than the actual guard ceiling
-is refused, including a session using a higher game limit. Missing CPU or I/O capacity is refused. Profiles do
-not alter worker settings or provide kernel CPU quotas; initial budgets must conservatively cover unchanged workers.
+is refused, including a session using a higher game limit. CPU reservations must be nonzero. I/O slots are
+optional calibrated scheduling tokens, defaulting to zero: there is no automatic universal I/O charge per job.
+Use a nonzero I/O reservation only for an identified workload whose measured contention warrants a limit.
+Existing configured nonzero I/O reservations and their limits remain enforced; this does not change machine
+settings. I/O tokens are not disk bandwidth or free-space enforcement; `temp_mib` and observed disk pressure
+still constrain temporary disk space. Profiles do not alter worker settings or provide kernel CPU quotas;
+initial budgets must conservatively cover unchanged workers. For a literal Blender job with an explicit
+thread limit, the request charges exactly that many CPU units in bridge and full mode, even when the generic
+profile reserves more; a three-thread job charges 3000 `cpu_millis`. The launch arguments remain unchanged.
 The common launcher can request a performance window with `guarded.run(..., performance=True)`; the configured
 broker requires other grants to drain before admission and excludes new grants until release. The benchmark tool requests this window
 and still rejects observed render overlap. Benchmark, cinematic capture and sailboat QA each use the common
@@ -152,7 +159,8 @@ uv run atelier capacity plan docs/examples/capacity.json --json
 ```
 
 The example is synthetic, not a live resource snapshot. Quantities are integer MiB, thousandths of a CPU core,
-and I/O slots. On the unified-memory model, `memory_mib` includes GPU allocations; `gpu_mib` is an additional
+and optional calibrated I/O tokens (`io_slots`, zero unless explicitly needed). On the unified-memory model,
+`memory_mib` includes GPU allocations; `gpu_mib` is an additional
 subset ceiling and cannot exceed it. Total capacity includes the host reserve. Existing holders and queued
 requests must have distinct IDs; queue entries carry their original `ready_at` and `bypasses` values.
 

@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "now": 100,
-  "total": {"memory_mib": 32768, "cpu_millis": 10000, "temp_mib": 200000, "io_slots": 2, "gpu_mib": 16000},
+  "total": {"memory_mib": 32768, "cpu_millis": 10000, "temp_mib": 200000, "io_slots": 0, "gpu_mib": 16000},
   "reserve": {"memory_mib": 8192, "cpu_millis": 2000, "temp_mib": 20000},
   "holders": [
     {"id": "editor", "resources": {"memory_mib": 14336, "cpu_millis": 3000, "gpu_mib": 4096}, "locks": ["checkout:editor"]}
   ],
   "waiting": [
-    {"id": "texture-finish", "ready_at": 70, "seconds": 60, "resources": {"memory_mib": 2048, "cpu_millis": 1000, "temp_mib": 1024, "io_slots": 1}, "locks": ["checkout:textures"]},
+    {"id": "texture-finish", "ready_at": 70, "seconds": 60, "resources": {"memory_mib": 2048, "cpu_millis": 1000, "temp_mib": 1024, "io_slots": 0}, "locks": ["checkout:textures"]},
     {"id": "judged-playtest", "ready_at": 80, "seconds": 600, "performance": true, "resources": {"memory_mib": 14336, "cpu_millis": 3000, "gpu_mib": 4096}, "locks": ["checkout:playtest"]}
   ]
 }

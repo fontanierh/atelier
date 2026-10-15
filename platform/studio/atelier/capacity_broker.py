@@ -311,8 +311,8 @@ class CapacityBroker:
             checkout = wire.text(value.get('checkout'), maximum=4096)
             if not Path(checkout).is_absolute() or 'checkout:' + checkout not in locks:
                 raise wire.CapacityError('Full capacity requires its declared checkout named lock')
-            if not vector.cpu_millis or not vector.io_slots:
-                raise wire.CapacityError('Full capacity requires nonzero CPU and I/O reservations')
+            if not vector.cpu_millis:
+                raise wire.CapacityError('Full capacity requires a nonzero CPU reservation')
             workers = value.get('workers')
             if workers is not None:
                 wire.integer(workers, minimum=1, maximum=1024)

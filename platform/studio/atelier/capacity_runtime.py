@@ -70,8 +70,10 @@ def _worker_profile(command):
 def validate_session_profile(admission, *, kind, command, limit_gib):
     """@cc [owner:fontanierh,label:safety] explicit-capacity-command-envelope
     Explicit full sessions MUST cover the actual unchanged command workers and guard ceiling,
-    claim the actual checkout lock, and reserve CPU and I/O. Unknown commands, games and compiles
-    MUST remain exclusive; an explicit session MUST NOT bypass configured-launch profile rules.
+    claim the actual checkout lock, and reserve CPU. I/O reservations MAY be zero unless a calibrated
+    workload needs them; explicit nonzero I/O reservations MUST still fit the configured budget.
+    Unknown commands, games and compiles MUST remain exclusive; an explicit session MUST NOT bypass
+    configured-launch profile rules.
     """
     from . import capacity_protocol as wire
     request = admission.request
@@ -79,8 +81,8 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
     resources = wire.resources(request.get('resources'))
     if (request.get('checkout') != str(REPO) or 'checkout:' + str(REPO) not in request.get('locks', [])):
         raise ValueError('Full-capacity session must hold the actual checkout named lock')
-    if not resources.cpu_millis or not resources.io_slots:
-        raise ValueError('Full-capacity session must reserve CPU and I/O capacity')
+    if not resources.cpu_millis:
+        raise ValueError('Full-capacity session must reserve CPU capacity')
     if request.get('phase') != kind:
         raise ValueError('Full-capacity session phase differs from the actual launch kind')
     if request.get('performance') is not True and (kind in ('game', 'compile') or workers is None):
@@ -107,7 +109,9 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
-    silently change worker counts. Every request MUST claim its own checkout's named lock.
+    silently change worker counts. Literal Blender jobs with explicit threads MUST reserve exactly
+    those CPU units rather than a generic profile's CPU charge. Every request MUST claim its own
+    checkout's named lock.
     Performance requests MUST preserve their explicit exclusion flag in the broker request.
     """
     if type(performance) is not bool:
@@ -152,10 +156,12 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         raise ValueError('capacity launch needs a positive finite guard ceiling and nonnegative finite timeout')
     if resources.memory_mib < math.ceil(limit_gib * 1024):
         raise ValueError('capacity profile reservation is smaller than the actual guard ceiling')
-    if resources.cpu_millis == 0 or resources.io_slots == 0:
-        raise ValueError('capacity profiles must reserve CPU and I/O capacity')
+    if resources.cpu_millis == 0:
+        raise ValueError('capacity profiles must reserve CPU capacity')
+    workers = _worker_profile(command) if full or kind == 'job' else None
+    if kind == 'job' and workers is not None:
+        resources = replace(resources, cpu_millis=workers * 1000)
     if full:
-        workers = _worker_profile(command)
         exclusive = performance or kind in ('game', 'compile') or workers is None
         budget = proof['total']['cpu_millis'] - proof['reserve']['cpu_millis']
         floor = workers * 1000 if workers is not None else budget

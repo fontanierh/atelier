@@ -21,7 +21,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.delenv('ATELIER_CAPACITY_CLIENT', raising=False)
     calls = []
 
-    def session(socket, request):
+    def session(socket, request, **kwargs):
         calls.append((socket, request))
         return request
     monkeypatch.setitem(sys.modules, 'atelier.capacity_client', SimpleNamespace(AdmissionSession=session))
@@ -84,12 +84,62 @@ def test_profile_cannot_hide_a_larger_actual_guard(client):
     assert client[3] == []
 
 
-@pytest.mark.parametrize('field', ['cpu_millis', 'io_slots'])
-def test_capacity_profile_must_reserve_cpu_and_io(client, field):
-    client[1]['profiles']['job']['resources'][field] = 0
+def test_capacity_profile_must_reserve_cpu(client):
+    client[1]['profiles']['job']['resources']['cpu_millis'] = 0
     client[2]()
-    with pytest.raises(ValueError, match='CPU and I/O'):
+    with pytest.raises(ValueError, match='CPU capacity'):
         runtime.configured_session(kind='job', limit_gib=10, timeout=0)
+
+
+def configure_schema(client, monkeypatch, schema):
+    from atelier import capacity_compat as compat
+    value = client[1]
+    monkeypatch.setattr(compat, 'read', lambda: None)
+    if schema == 2:
+        value.update(schema=2, cutover=str(compat.DEFAULT_RECORD))
+        monkeypatch.setattr(compat, 'verify', lambda path: dict(socket=value['socket'],
+            total=dict(cpu_millis=10000), reserve=dict(cpu_millis=2000)))
+
+
+@pytest.mark.parametrize('schema', [1, 2])
+@pytest.mark.parametrize('io_slots', [0, 1])
+def test_profiles_preserve_optional_io_reservations(client, monkeypatch, schema, io_slots):
+    configure_schema(client, monkeypatch, schema)
+    _, value, write, _ = client
+    value['profiles']['job']['resources']['io_slots'] = io_slots
+    write()
+    request = runtime.configured_session(kind='job', command=['Blender', '--threads', '3'],
+                                         limit_gib=10, timeout=60)
+    assert request['resources']['io_slots'] == io_slots
+    assert request['resources']['memory_mib'] == 10240
+    assert request['resources']['cpu_millis'] == 3000
+    assert 'checkout:' + str(runtime.REPO) in request['locks']
+
+
+@pytest.mark.parametrize('schema', [1, 2])
+@pytest.mark.parametrize('threads', [3, 6])
+def test_bounded_blender_job_charges_actual_unchanged_threads(client, monkeypatch, schema, threads):
+    configure_schema(client, monkeypatch, schema)
+    _, value, write, _ = client
+    value['profiles']['job']['resources']['cpu_millis'] = 6000
+    write()
+    command = ['Blender', '-b', '--threads', str(threads)]
+    request = runtime.configured_session(kind='job', command=command, limit_gib=10, timeout=60)
+    assert request['resources'] == value['profiles']['job']['resources'] | {'cpu_millis': threads * 1000}
+    assert command == ['Blender', '-b', '--threads', str(threads)]
+    assert request['performance'] is False
+
+
+@pytest.mark.parametrize('schema', [1, 2])
+@pytest.mark.parametrize('command', [['Blender', '-b'], ['sh', '-c', 'Blender --threads 3']])
+@pytest.mark.parametrize('kind', ['job', 'game', 'compile'])
+def test_unknown_or_threadless_launches_keep_conservative_cpu_policy(client, monkeypatch, schema, command, kind):
+    configure_schema(client, monkeypatch, schema)
+    client[1]['profiles'][kind]['resources']['cpu_millis'] = 6000
+    client[2]()
+    request = runtime.configured_session(kind=kind, command=command, limit_gib=10, timeout=60)
+    assert request['resources']['cpu_millis'] == (8000 if schema == 2 else 6000)
+    assert request['performance'] is (schema == 2)
 
 
 def test_client_configuration_is_not_read_through_a_symlink(client):
