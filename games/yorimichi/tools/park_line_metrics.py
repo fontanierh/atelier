@@ -6,7 +6,8 @@ from park_line_vert import VertReturns
 
 DEFAULTS = dict(huge_air_m=25., min_landing_slope_deg=5., max_landing_mismatch_deg=20.,
                 max_takeoff_angle_deg=80., max_ground_slope_deg=85., bump_loss_mps=2.,
-                bump_window_s=.25, landing_recovery_s=.5, gravity_mps2=9.81)
+                bump_window_s=.25, landing_recovery_s=.5, gravity_mps2=9.81,
+                max_landing_normal_speed_mps=7.)
 
 
 def is_ground(state):
@@ -32,11 +33,17 @@ def analyze(rows, world):
     A huge-air pass MUST require a completed flight, an identified intended transition landing,
     recovery observations, no bailout during flight/recovery, and the configured distance and alignment thresholds.
     Unknown support and unfinished flights MUST NOT count as successful landings.
+    A landing MUST also pass the normal-speed limit using the largest of its
+    last three airborne velocities, so an early contact response cannot hide
+    a hard impact. The limit MUST NOT exceed 7 m/s.
     Explicit required_airs MAY complete shorter secondary gaps only through the named-gap safety verdict;
     Route mode MUST still contain a qualifying huge air and pass all existing global safety checks.
     Explicit vert_return diagnostic mode MAY omit the hero air, but MUST require a declared wall air-out.
     """
     rules = {**DEFAULTS, **world.spec.get('acceptance', {})}
+    normal_limit = rules['max_landing_normal_speed_mps']
+    if not math.isfinite(normal_limit) or not 0 < normal_limit <= 7.:
+        raise ValueError('landing normal-speed limit must be positive and at most 7 m/s')
     vert = VertReturns(world)
     if not rows:
         return dict(passed=False, failures=['no observations'], airs=[])
@@ -98,10 +105,12 @@ def analyze(rows, world):
             fail.append('insufficient observations after landing')
         if any(before <= i and times[i] <= recovery_end for i in bail):
             fail.append('bail/slam state during flight or recovery')
+        normal_peak = float(np.max(np.abs(v[max(begin, end-3):end] @ support['normal']))) if support else None
+        if normal_peak is not None and normal_peak > normal_limit:
+            fail.append('landing normal speed exceeds the impact limit')
         safe_landing = not fail
         if min(horizontal, forward) < rules['huge_air_m']:
             fail.append('air is shorter than the required forward distance')
-        normal_peak = float(np.max(np.abs(v[max(begin, end-3):end] @ support['normal']))) if support else None
         airs.append(dict(takeoff_frame=int(begin), landing_frame=int(end) if landed else None,
                          termination_frame=int(end) if end < len(rows) else None,
                          termination_state=states[end] if end < len(rows) else 'frame_budget',

@@ -80,7 +80,7 @@ def test_unfinished_air_and_missing_recovery_fail():
     assert 'insufficient observations after landing' in result['airs'][0]['failures']
 
 
-def test_normal_speed_peak_keeps_early_contact_velocity_without_changing_gate():
+def test_normal_speed_peak_rejects_hard_impact_hidden_by_early_contact_response():
     rows=flight_rows(); world=FixtureWorld()
     normal=np.array(world.support([0,1,40])['normal'])
     tangent=np.array([0,-np.sin(np.radians(20)),np.cos(np.radians(20))])*20
@@ -91,9 +91,20 @@ def test_normal_speed_peak_keeps_early_contact_velocity_without_changing_gate():
     air=result['airs'][0]
     assert air['landing_normal_speed_mps']==pytest.approx(0,abs=1e-12)
     assert air['landing_normal_speed_peak_3frames_mps']==pytest.approx(12)
-    assert air['safe_landing_pass']  # diagnostic peak does not invent a new acceptance limit
+    assert not air['safe_landing_pass']
+    assert 'landing normal speed exceeds the impact limit' in air['failures']
+    rows[47]['velocity']=(tangent-normal*6.5).tolist()
+    assert analyze(rows,world)['airs'][0]['safe_landing_pass']
     world.support=lambda p:None
     assert analyze(rows,world)['airs'][0]['landing_normal_speed_peak_3frames_mps'] is None
+
+
+@pytest.mark.parametrize('limit', [0., -1., 7.01, float('inf'), float('nan')])
+def test_impact_limit_cannot_be_disabled_or_relaxed(limit):
+    world=FixtureWorld()
+    world.spec={**world.spec, 'acceptance': {'max_landing_normal_speed_mps':limit}}
+    with pytest.raises(ValueError,match='at most 7'):
+        analyze(flight_rows(),world)
 
 
 def test_bail_and_diagnostic_width_do_not_pass():
