@@ -80,8 +80,14 @@ def fetch(p, **kwargs):
     return remote.fetch_bundle(BASE, KEY, p.trust, store=p.store, **kwargs)
 
 
-def test_fetch_authenticates_then_uses_the_existing_importer(package, server):
+@pytest.mark.parametrize('schema', [1, 2])
+def test_fetch_authenticates_then_uses_the_existing_importer(package, server, schema):
     p = package
+    if schema == 2:
+        p.payload['schema'] = 2
+        p.payload['producer'].pop('guarded')
+        p.payload['producer'].update(execution='audited-python-v1', audit_sha256='d' * 64)
+        p.sign()
     messages = []
     receipt = fetch(p, echo=messages.append)
     assert receipt['key'] == KEY and receipt['transport'] == 'https' and receipt['imported']

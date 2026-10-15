@@ -131,8 +131,8 @@ The transport requires verified HTTPS, refuses redirects and compressed response
 netrc and certificate-path environment settings. URLs cannot contain credentials, queries or fragments. There is
 currently no authentication header or presigned-URL support; an endpoint must be reachable without these, for
 example on a private network with a publicly trusted TLS certificate. It never prints URLs, response bodies or
-foreign network exceptions. No archive extraction, automatic upload, GitHub release adapter or production signer
-is provided by this transport. A repository being public does not grant redistribution rights for its assets.
+foreign network exceptions. Archive extraction, automatic upload and a GitHub release adapter remain unimplemented.
+The trusted local exporter below supplies signed bundles; a public repository does not grant asset redistribution rights.
 
 ## Export from a trusted Python producer
 
