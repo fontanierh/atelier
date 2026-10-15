@@ -80,6 +80,8 @@ pub fn measure(root: &Path, skip: &HashSet<PathBuf>, seen: &mut HashSet<(u64, u6
         }
         if let Ok(entries) = fs::read_dir(&path) {
             for entry in entries.flatten() {
+                // Every entry, skipped or not, gives a render the chance to pause the walk.
+                tick(total);
                 // A directory entry's metadata is lstat's: a symlink is itself, never what it points to.
                 let Ok(child) = entry.metadata() else { continue };
                 let child_path = entry.path();
@@ -87,7 +89,6 @@ pub fn measure(root: &Path, skip: &HashSet<PathBuf>, seen: &mut HashSet<(u64, u6
                     continue;
                 }
                 pending.push((child_path, child));
-                tick(total);
             }
         }
         tick(total);
@@ -111,7 +112,7 @@ pub struct Plan {
 
 impl Plan {
     /// The machine's places, from the home folder, the shared engine folder and the temporary folder. `pause` runs
-    /// before each folder it lists and after each entry, so listing can wait for a render too.
+    /// before each folder it lists, after each entry and before each place's lstat, so setup can wait for a render too.
     pub fn new(home: &Path, engine: &Path, temp: Option<&Path>, pause: &mut dyn FnMut()) -> Plan {
         let (dev, cache, library) = (home.join("dev"), home.join(".cache"), home.join("Library"));
         let atelier = cache.join("atelier");
@@ -140,7 +141,10 @@ impl Plan {
         }
         // Every place is measured once: a walk never enters another place.
         skip.extend(places.iter().map(|place| place.path.clone()));
-        places.retain(|place| fs::symlink_metadata(&place.path).is_ok());
+        places.retain(|place| {
+            pause();
+            fs::symlink_metadata(&place.path).is_ok()
+        });
         Plan { places, skip }
     }
 }
@@ -468,7 +472,9 @@ mod tests {
         write(&engine.join("UE/x"), 4096);
         let mut pauses = 0;
         let plan = Plan::new(&home, &engine, Some(&temp.0.join("not-there")), &mut || pauses += 1);
-        assert_eq!(pauses, 2 + 3, "before listing ~/dev and ~/.cache/atelier, and after each of their entries");
+        // Before listing ~/dev and ~/.cache/atelier, after each of their three entries, and before checking each of the
+        // eight places exists.
+        assert_eq!(pauses, 2 + 3 + 8);
         let shown: Vec<String> = plan.places.iter().map(|p| shown_path(&p.path, &home)).collect();
         let mut expected: Vec<String> =
             ["~/dev/one", "~/dev/two", "~/.cache/atelier/products", "~/.cache", "~/Library/Caches", "~/Library"]
