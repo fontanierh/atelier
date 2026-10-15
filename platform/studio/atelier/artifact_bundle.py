@@ -28,6 +28,7 @@ class BundleError(ValueError):
 
 
 DOMAIN = b'atelier-artifact-bundle-v1\0'
+DOMAIN_V2 = b'atelier-artifact-bundle-v2\0'
 NAMESPACE = 'atelier.portable-source.v1'
 MAX_MANIFEST = 2 * 1024 * 1024
 MAX_TRUST = 64 * 1024
@@ -202,7 +203,7 @@ def _manifest(stack, payload_file, trust_file, expected_key):
     _fields(payload_file, ('payload', 'signature'))
     payload = payload_file['payload']
     _fields(payload, ('schema', 'namespace', 'publisher', 'entry', 'producer', 'redistribution', 'root_names'))
-    if type(payload['schema']) is not int or payload['schema'] != 1 or payload['namespace'] != NAMESPACE:
+    if type(payload['schema']) is not int or payload['schema'] not in (1, 2) or payload['namespace'] != NAMESPACE:
         raise BundleError('Unsupported bundle namespace')
     trust_file = Path(trust_file)
     trust = _read_json(stack, trust_file.parent.resolve() / trust_file.name, MAX_TRUST)
@@ -219,12 +220,18 @@ def _manifest(stack, payload_file, trust_file, expected_key):
     if type(publisher) is not str or publisher not in publishers:
         raise BundleError('Publisher is not pinned')
     Ed25519PublicKey.from_public_bytes(publishers[publisher]).verify(
-        _decode(payload_file['signature'], 64), DOMAIN + _canonical(payload))
+        _decode(payload_file['signature'], 64),
+        (DOMAIN if payload['schema'] == 1 else DOMAIN_V2) + _canonical(payload))
     producer = payload['producer']
-    _fields(producer, ('source_commit', 'clean', 'pushed', 'guarded', 'tool_context'))
+    common = ('source_commit', 'clean', 'pushed', 'tool_context')
+    _fields(producer, (*common, 'guarded') if payload['schema'] == 1 else
+            (*common, 'execution', 'audit_sha256'))
     if (not COMMIT.fullmatch(producer['source_commit']) or
             not build_cache.DIGEST.fullmatch(producer['tool_context']) or
-            any(producer[name] is not True for name in ('clean', 'pushed', 'guarded'))):
+            any(producer[name] is not True for name in ('clean', 'pushed')) or
+            (payload['schema'] == 1 and producer['guarded'] is not True) or
+            (payload['schema'] == 2 and (producer['execution'] != 'audited-python-v1' or
+             not build_cache.DIGEST.fullmatch(producer['audit_sha256'])))):
         raise BundleError('Required publisher attestations missing')
     decoded, blobs, logical, count = _records(payload['entry'])
     if expected_key is not None and payload['entry']['key'] != expected_key:

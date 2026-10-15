@@ -4,6 +4,7 @@ from collections import Counter
 import math
 from pathlib import Path
 import shutil
+import sys
 import time
 
 from .build_cache import DIGEST, Store, atomic_json, members
@@ -128,6 +129,11 @@ def configure(sub):
     remote.add_argument('--trust', type=Path, required=True, help='explicit allowlist of publisher public keys')
     remote.add_argument('--timeout', type=float, default=30, help='total transfer deadline in seconds (max 300)')
     remote.add_argument('--dry-run', action='store_true', help='download and verify without changing the local store')
+    export = commands.add_parser('export-bundle', help='freshly build an approved audited Python action and export a signed directory')
+    export.add_argument('game')
+    export.add_argument('step')
+    export.add_argument('directory', type=Path)
+    export.add_argument('--profile', type=Path, required=True, help='protected operator publisher profile outside the checkout')
     for name in ('pin', 'unpin', 'forget'):
         commands.add_parser(name).add_argument('key')
 
@@ -151,6 +157,10 @@ def main(args):
             from .artifact_remote import fetch_bundle, stderr_progress
             print(json.dumps(fetch_bundle(args.endpoint, args.key, args.trust, store=store, dry_run=args.dry_run,
                                           timeout=args.timeout, echo=stderr_progress), indent=2))
+        elif args.action == 'export-bundle':
+            from .artifact_publisher import publish
+            print(json.dumps(publish(args.game, args.step, args.directory, profile=args.profile,
+                                     echo=lambda message: print(message, file=sys.stderr)), indent=2))
         else:
             pin(store, args.key, args.action == 'pin')
         return 0

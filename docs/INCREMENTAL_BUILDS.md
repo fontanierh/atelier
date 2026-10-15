@@ -24,8 +24,10 @@ and restoration. Runtime-discovered query volumes and generated spatial indexes 
 [The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
 Signed source bundles can now enter the existing local store after publisher/policy checks and complete byte
 verification. Optional HTTPS lookup uses fixed object-store paths, pinned publisher keys and bounded downloads;
-ordinary builds fall back locally on a remote failure. Trusted production and upload remain to be implemented.
-Unreal restoration, import transactions and native spatial migration below still require implementation and native proof.
+ordinary builds fall back locally on a remote failure. A trusted producer can freshly execute one independent
+audited Python action and export a signed V2 directory after clean/pushed-source, grant, audit and inventory
+checks. It makes no native memory-guard assertion. Online uploading and hostile-source signer isolation remain
+unimplemented. Unreal restoration, import transactions and native spatial migration still require native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
@@ -256,7 +258,7 @@ the replacement satisfies those stronger per-product guarantees.
 
 The optional HTTPS receiver now supports frequent small artifact retrieval from fixed object-store paths, with
 explicit configuration, verified manifests, bounded downloads and local fallback; see [the cache guide](ARTIFACT_POOL.md#fetch-signed-products-over-https).
-Trusted production and uploading remain separate work. A private object store is the proposed default.
+Online uploading and hostile-source signing remain separate work. A private object store is the proposed default.
 GitHub release bundles are a plausible backend for versioned starter packs
 and larger snapshots; choose bundle sizes after checking current service constraints. GitHub Actions caches should
 remain disposable accelerators. The source of truth is the recipe and committed sources, not the availability of

@@ -188,6 +188,8 @@ Named actions can declare exact optional source files, tracking their appearance
 Signed source-product bundles can be verified and imported with an explicit publisher allowlist.
 [Optional HTTPS lookup](docs/ARTIFACT_POOL.md#fetch-signed-products-over-https) fills local cache misses and falls
 back to generation when the remote store is unavailable; the guide describes configuration and trust limits.
+An operator-controlled [Python producer](docs/ARTIFACT_POOL.md#export-from-a-trusted-python-producer) can build
+one approved audited action and export its signed bundle; this does not upload it.
 [Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
 
 ### A prop from a sentence
@@ -324,6 +326,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier cache status/gc/pin/unpin/forget` | [inspect and prune automatic portable-product reuse](docs/ARTIFACT_POOL.md#automatic-product-cache) |
 | `atelier cache import-bundle DIR --trust FILE` | [verify a signed offline source bundle](docs/ARTIFACT_POOL.md#import-a-signed-offline-bundle) and populate the local cache |
 | `atelier cache fetch-bundle URL KEY --trust FILE` | [download signed source products](docs/ARTIFACT_POOL.md#fetch-signed-products-over-https) into the local cache |
+| `atelier cache export-bundle GAME STEP DIR --profile FILE` | freshly build one approved audited Python action and export a signed local directory |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`, full-byte `--verify`; read-only `--plan` / `--dry-run`, `--explain`, `--timings`, `--changes`, `--ddc`, `--json` |
 | `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |

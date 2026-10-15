@@ -405,14 +405,14 @@ def slot_request(ctx, step):
     return 'job', expected_peak_gib(ctx.logs / f'{step.name}.guard')
 
 
-def run_command(ctx, step, command, log, request=None, slots=None, *, products=None):
+def run_command(ctx, step, command, log, request=None, slots=None, *, products=None, audit_receipt=None):
     """Run one command of a step. A heavy step's command runs under guarded.run, in a render slot asked for with
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
     if step.audit:
         from . import build_audit
-        with build_audit.prepared(ctx, step, products) as (argv, env, descriptors):
+        with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as (argv, env, descriptors):
             return run_argv(ctx, step, command, argv, env, log, request, slots, pass_fds=descriptors)
     if isinstance(command, UnrealScript):
         with command.prepared(ctx) as (argv, env):
@@ -482,11 +482,13 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
         return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index)
 
 
-def _build(ctx, wanted, *, force, touch, echo, index):
+def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None):
+    # A trusted producer can supply the exact singleton declarations it already vetted, avoiding
+    # a second recipe import that could choose a different action or introduce native prerequisites.
     from . import build_cache
     game = ctx.game
-    recipe = load_recipe(game)
-    steps = recipe.steps(ctx)
+    if steps is None:
+        steps = load_recipe(game).steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
     declared_products = {p.name: p for s in steps for p in s.products}
@@ -572,6 +574,7 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         t0 = time.monotonic()
         log_path = ctx.logs / f'{step.name}.log'
         slots, peaks, command_times = [], [], []
+        audit_receipt = {}
         products = None
         store = build_cache.Store() if step.cache else None
         try:
@@ -603,7 +606,7 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
-                    audited = {'products': declared_products} if step.audit else {}
+                    audited = {'products': declared_products, 'audit_receipt': audit_receipt} if step.audit else {}
                     phases = run_command(ctx, step, command, log, request, slots, **audited)
                     timing = {'kind': type(command).__name__, 'seconds': round(time.monotonic() - command_started, 3)}
                     if not isinstance(command, Call) and phases is not None:
@@ -632,6 +635,8 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 json.dumps({'peak_bytes': max(peaks), 'commands': peaks, 'time': time.time()}) + '\n')
         record = {'fingerprint': current, 'seconds': round(seconds, 3), 'time': time.time(),
                   'input_state': input_state, 'commands': command_times}
+        if audit_receipt and not from_cache:
+            record['audit_receipt'] = audit_receipt
         if step.products or 'product_roots' in previous:
             from . import build_changes
             record['products'] = products
@@ -664,6 +669,8 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         build_products.feed_results(done, products)
         restored += int(from_cache)
         ran += int(not from_cache)
+        if produced is not None and not from_cache:
+            produced.append((step.name, record))
         echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {time.monotonic() - started:.0f} s')
     return 0

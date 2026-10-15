@@ -99,11 +99,12 @@ class Receiver:
 
 
 @contextmanager
-def prepared(ctx, step, products):
+def prepared(ctx, step, products, *, receipt=None):
     """@cc [owner:fontanierh,label:correctness] observed-inputs-before-certification
     An audited action MUST provide a fresh, complete successful report without violations before
     certification. Reference products MUST NOT grant read access. Reports MUST stay outside products;
     failed actions and incomplete reports MUST NOT create stamps or publish cache entries.
+    An execution receipt MUST bind its fresh run nonce and exact successful report digest before certification.
     """
     from .build import required_inputs
     from .build_cache import atomic_json, roots
@@ -163,3 +164,7 @@ def prepared(ctx, step, products):
             atomic_json(report_path, report)
         if not report['passed']:
             raise RuntimeError(f'{step.name}: input audit incomplete or failed; see {report_path}')
+        if receipt is not None:
+            from .build_products import identity
+            receipt.update(schema=1, execution='audited-python-v1', run_id=nonce,
+                           report_sha256=identity(report))
