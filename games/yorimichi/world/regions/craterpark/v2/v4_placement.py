@@ -112,11 +112,47 @@ def _geometry(path, mtime_ns, size, ctime_ns, source_sha):
             triangles = mesh.triangles()
             ground.append(triangles[mesh.role == dsl.ROLE[dsl.GROUND]])
             pieces.append(triangles[np.isin(mesh.role, [dsl.ROLE[r] for r in (dsl.RIDING, dsl.SIDE, dsl.COPING, dsl.RAIL)])])
+        if index.get('ground_grid'):
+            # an editor park draws no ground of its own: its ground is the cut grid where the volcano takes it in full
+            ground.append(_grid_triangles(index['ground_grid'], data['ground_height'], data['ground_weight']))
         g = np.concatenate(ground) if ground else np.empty((0, 3, 3))
         p = np.concatenate(pieces) if pieces else np.empty((0, 3, 3))
         if not len(g) or not len(p):
             raise ValueError('v4 placement geometry requires ground and riding structure')
         return g, p, index
+
+
+def _grid_triangles(g, heights, weight):
+    """Native triangles (n, 3, 3) of the grid's cells whose four corners have weight 1."""
+    full = np.asarray(weight) >= 1
+    cell = full[:-1, :-1] & full[1:, :-1] & full[:-1, 1:] & full[1:, 1:]
+    x = g['x0'] + (np.arange(g['nx']) + .5) * g['G']
+    z = g['z0'] + (np.arange(g['nz']) + .5) * g['G']
+    X, Z = np.meshgrid(x, z)
+    V = np.c_[X.ravel(), np.asarray(heights, 'f8').ravel(), Z.ravel()]
+    jj, ii = np.nonzero(cell)
+    a = jj * g['nx'] + ii
+    b, c, d = a + 1, a + g['nx'], a + g['nx'] + 1
+    return V[np.concatenate([np.c_[a, c, b], np.c_[b, c, d]])]
+
+
+def ground_grid():
+    """The editor park's cut ground as the volcano's terrain takes it: (grid, heights, weight) on the editor's
+    cell-centred native grid (heights native y, weight 0-1), or None for a park that draws its own ground."""
+    return _ground_grid(*identity())
+
+
+@lru_cache(maxsize=2)
+def _ground_grid(path, mtime_ns, size, ctime_ns, source_sha):
+    index = _geometry(path, mtime_ns, size, ctime_ns, source_sha)[2]
+    if not index.get('ground_grid'):
+        return None
+    with np.load(path, allow_pickle=False) as data:
+        heights, weight = data['ground_height'].astype('f8'), data['ground_weight'].astype('f8')
+    g = index['ground_grid']
+    if heights.shape != (g['nz'], g['nx']) or weight.shape != heights.shape or not np.isfinite(heights).all():
+        raise ValueError('v4 editor ground grid is malformed; rebuild geometry')
+    return g, heights, weight
 
 
 def triangles(ground):

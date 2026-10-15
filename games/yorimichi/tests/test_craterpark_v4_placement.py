@@ -109,6 +109,7 @@ def test_current_geometry_required_and_cache_invalidates(selected, monkeypatch, 
 def test_terrain_stamp_receives_distinct_selected_identity(selected, monkeypatch):
     sentinel = ('new-geometry', 1, 2, 'new-source')
     monkeypatch.setattr(v4_placement, 'identity', lambda: sentinel)
+    monkeypatch.setattr(v4_placement, 'ground_grid', lambda: None)
     calls = []
     def stamp(natural, identity):
         calls.append(identity)
@@ -120,6 +121,43 @@ def test_terrain_stamp_receives_distinct_selected_identity(selected, monkeypatch
     monkeypatch.delenv(v4_config.SWITCH)
     placement.terrain(.5, .5, 99., lambda x,y: 99.)
     assert calls[-1] is None
+
+
+def test_editor_ground_grid_is_followed_by_the_terrain(selected, monkeypatch, tmp_path):
+    """An editor park draws no ground: the terrain takes its cut grid by weight, and its ground is the full-weight cells."""
+    artifact = tmp_path / 'geometry.npz'
+    monkeypatch.setattr(v4_placement, 'geometry_path', lambda: artifact)
+    monkeypatch.setattr(placement, 'native_to_island', lambda q: np.asarray(q))
+    monkeypatch.setattr(placement, 'island_to_native_xz', lambda x, y: (np.asarray(x, 'f8'), np.asarray(y, 'f8')))
+    mesh = dsl.Mesh(np.array([[0., 30, 0], [0, 30, 1], [1, 30, 0]]), np.array([[0, 1, 2]]),
+                    role=np.array([dsl.ROLE[dsl.RIDING]]))
+    grid = {'x0': 0., 'z0': 0., 'G': 2., 'nx': 4, 'nz': 3, 'reach': 60., 'fade': 40.}
+    heights = np.full((3, 4), -5., 'f4')
+    weight = np.array([[1, 1, 1, 0], [1, 1, 1, 0], [1, 1, 1, 0]], 'f4')
+    index = {'render': [{}], 'v4': v4_config.provenance(), 'editor_playtest': {'rev': 1}, 'ground_grid': grid}
+    np.savez(artifact, index=np.asarray(json.dumps(index)), ground_height=heights, ground_weight=weight,
+             **mesh.to_arrays('r0_'))
+    natural = lambda x, y: np.full(np.shape(x), 700.)
+    # the cell centres sit at 1, 3, 5, 7 (x) and 1, 3, 5 (z); weight 1 takes the cut ground (native -5 + 680)
+    assert placement.terrain(3., 3., 700., natural) == pytest.approx(675.)
+    assert placement.terrain(7., 3., 700., natural) == pytest.approx(700.)
+    assert placement.terrain(6., 3., 700., natural) == pytest.approx(687.5)
+    assert placement.terrain(-50., 3., 700., natural) == pytest.approx(700.)
+    ground = placement.ground_triangles()
+    assert ground.shape == (8, 3, 3) and (ground[..., 1] == -5.).all() and ground[..., 0].max() == 5.
+
+
+def test_editor_ground_grid_weight_and_pit_clearance(monkeypatch):
+    from types import SimpleNamespace
+    from craterpark.v2 import editor_generate
+    cut = np.zeros((40, 40)); cut[18:22, 18:22] = -10.          # a pit the bowl cut, 10 m under the layer
+    monkeypatch.setattr(editor_generate.frontend, 'read_array', lambda directory, spec, columns: cut.reshape(-1, 1))
+    scene = SimpleNamespace(metadata={'_dir': '', 'ground_grid': {'x0': 0., 'z0': 0., 'G': 2., 'nx': 40, 'nz': 40,
+                                                                  'heights': None}})
+    bowl = np.array([[40., -9.8, 40.]])                              # the bowl's floor, 0.2 m over the pit
+    heights, weight = editor_generate.ground_grid(scene, bowl, np.zeros((40, 40)))
+    assert heights[20, 20] == pytest.approx(-10.3)                  # kept PIT_CLEAR under the bowl
+    assert heights[0, 0] == 0. and weight[19, 19] == 1.             # uncut ground untouched; full weight by the piece
 
 
 def test_unsupported_depth_and_changed_frame_fail(selected):
