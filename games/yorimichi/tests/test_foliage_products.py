@@ -58,15 +58,36 @@ def test_alpha_texture_is_an_input_only_of_foliage_that_reads_it(tmp_path, monke
 
 def test_world_selector_includes_native_references_without_reading_their_bytes(tmp_path):
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
-    graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
+    recipe = build.load_recipe('yorimichi')
+    graph = build_products.Graph(recipe.steps(ctx))
     world = graph.by_name['unreal.world']
     assert not any(name.startswith('foliage.') for name in world.reads)
     names = {step.name for step in graph.select(['unreal.world'])}
     assert len([name for name in names if name.startswith('unreal.foliage.')]) == 18
     assert 'unreal.materials' in names
-    assert len(graph.owners) == 38
+    expected = {'materials.shared': 'unreal.materials', 'materials.foliage_interface': 'unreal.materials'}
+    for name in recipe.foliage_build.catalog.FOLIAGE:
+        expected['foliage.' + name + '.source'] = 'world.foliage.' + name
+        expected['foliage.' + name + '.native'] = 'unreal.foliage.' + name
+    for step in recipe.texture_steps(ctx):
+        expected.update({product.name: step.name for product in step.products})
+    assert len(expected) == 60 and graph.owners == expected
+    assert all(not graph.by_name[owner].cache for product, owner in expected.items()
+               if not product.startswith('texture.'))
     adapter = build.paths.STUDIO / 'atelier/blender/fbx.py'
     assert all(adapter in step.inputs for step in graph.by_name.values() if step.name.startswith('world.foliage.'))
+
+
+@pytest.mark.parametrize('same_bytes', [False, True])
+def test_one_texture_spec_preserves_foliage_owners_and_byte_cutoffs(tmp_path, monkeypatch, same_bytes):
+    changed = changed_by(WORLD / 'textures/white.json', tmp_path, monkeypatch,
+                         stable_products={'texture.white'} if same_bytes else ())
+    assert {name for name in changed if name.startswith('world.textures.')} == {'world.textures.white'}
+    assert not any('.foliage.' in name for name in changed)
+    if same_bytes:
+        assert changed == {'world.textures.white'}
+    else:
+        assert {'world.textures', 'unreal.world'} <= changed
 
 
 def test_catalog_preserves_only_owned_packages_and_rejects_palette_collisions():

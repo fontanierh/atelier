@@ -3,6 +3,10 @@
 This catches Python filesystem accesses, not arbitrary native I/O, metadata values or environment
 dependencies. It is a recipe diagnostic, not a security boundary against hostile Python code.
 """
+# ctypes initializes CPython's own library handle with PyDLL(None). Prepare that
+# managed stdlib state before observing an action, as we do for runpy's helpers.
+# The action's later ctypes loads and symbol lookups still emit refused events.
+import ctypes  # noqa: F401
 import functools
 import importlib._bootstrap as bootstrap
 import importlib._bootstrap_external as external

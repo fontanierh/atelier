@@ -23,7 +23,9 @@ uv run atelier playtest yorimichi          # the latest GitHub release instead, 
 (`characters.*`), sounds (`audio.*`), effects (`fx.textures`), the Skate plugin's skating package, assembled, checked and staged (`skate.runtime`), the C++
 module (`unreal.compile`), the Unreal imports (`unreal.*`, including each `unreal.<character>_pawn`),
 content validation (`data.content`), network identity (`data.network`) and runtime data (`data.stage`). Name a step to build
-just it and what it needs. A clean build exports and imports the required assets and compiles the editor; later builds
+just it and what it needs. [Source textures](docs/TEXTURE_PRODUCTS.md) have independent cached actions such as
+`world.textures.leaf_maple`; `world.textures` still builds all 22. A clean build exports and imports the required
+assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
 [the asset library](assets/README.md): the model GLBs, including the skate pier's obstacle
 modules, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The

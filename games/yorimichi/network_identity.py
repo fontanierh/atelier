@@ -46,12 +46,20 @@ def code_identity(repo):
 
 
 def content_files(content):
-    """Never include the identity's own output or generated editor/cache files."""
-    return sorted((p for p in content.rglob('*') if p.is_file()
-                   and not (set(p.relative_to(content).parts) & IGNORED)
-                   and p.name.casefold() not in DESKTOP_METADATA
-                   and not p.is_relative_to(content / 'Data/Network')),
-                  key=lambda p: p.relative_to(content).as_posix())
+    """@cc [owner:fontanierh,label:correctness] content-input-membership
+    Enumeration MUST observe current membership and preserve relative-POSIX ordering and
+    lexical exclusions. It MUST NOT resolve symlinks or add filesystem/Git ignore policies.
+    """
+    files = []
+    for path in content.rglob('*'):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(content)
+        if (IGNORED.intersection(relative.parts) or path.name.casefold() in DESKTOP_METADATA
+                or relative.is_relative_to('Data/Network')):
+            continue
+        files.append((relative.as_posix(), path))
+    return [path for _, path in sorted(files, key=lambda item: item[0])]
 
 
 def signature(code, assets, records):

@@ -4,7 +4,8 @@ Atelier should admit work against available memory and CPU capacity, with additi
 temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
 admits it when all requirements fit. A small job need not wait for a particular lane to become free.
 
-**Status: offline shadow planner and retained-history report implemented; admission service proposed.** `atelier capacity plan snapshot.json`
+**Status: offline shadow planner, durable lifecycle experiments and retained-history report implemented;
+native admission service proposed.** `atelier capacity plan snapshot.json`
 evaluates a supplied snapshot without writing scheduler state or granting admission. The current render slots,
 live locks, memory guards and machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
 small products reduce the work, and capacity admission schedules the remaining work safely.
@@ -30,6 +31,70 @@ A ready request whose resources plus the host reserve exceed total capacity even
 about future machine configurations. Such requests neither protect the queue nor consume virtual capacity;
 the next feasible waiter keeps its original age and fairness protection. A request that fits an empty snapshot
 can still `wait` for active holders, named locks or a performance window to drain.
+
+## Exercise durable shadow lifecycles
+
+```sh
+experiment=$(mktemp -d)
+uv run atelier capacity shadow docs/examples/capacity-shadow.json --state "$experiment/capacity.sqlite"
+```
+
+This applies supplied operations and synthetic observations to an explicit absolute database path. It never reads
+live processes, render locks or supervisor telemetry, and never launches or signals a workload. Every response
+says `mode: shadow` and `admission: false`. A `shadow.` token controls only a simulated lifecycle; no native
+launcher accepts it. The existing `capacity plan` command remains side-effect free.
+
+The database directory must already exist, belong to the user and have owner-only permissions, as `mktemp -d`
+provides. Database files and SQLite sidecars must be private, owned, regular and single-link; symlinks and unknown
+existing SQLite files are refused. The database has its own application identity and schema version. These checks
+protect against accidental reuse of unrelated files; this is not a boundary against a hostile process running as
+the same account. Databases larger than 64 MiB are refused before opening for mutation; an accepted transaction
+can grow the file past that threshold, so it is not a disk quota. Fixtures are limited to 4 MiB and 1000 operations.
+
+`ShadowService(database, observe=...)` exposes `apply(operation, now=...)`. The injected observation is an
+`Observation`: sample time, healthy/complete flags, available memory and disk, pinned process states and ownership
+edges, and per-request measured memory/allocated temporary disk. All facts are supplied by the experiment. A
+`complete` flag is not proof of native process coverage. Missing, stale, future-dated or unhealthy observations
+refuse new allocations. A clock regression is rejected; timestamps and stable first-ready sequences are retained.
+
+Operations carry a unique `id`, an `action` and, after initialization, the current `epoch`:
+
+| Action | Additional fields and behavior |
+| --- | --- |
+| `init` | `total`, `reserve`: initialize the full resource vector, including host headroom |
+| `submit` | `request_id`, `owner`, `checkout`, `resources`, `launcher: [pid, start]`; optional `locks`, `seconds`, `performance`, `ready` |
+| `ready`, `cancel` | `request_id`; an active holder cannot queue or cancel; requeue after release also requires a new `launcher` |
+| `schedule` | Atomically allocate complete resource vectors and exclusive named-lock sets, or retain the request in the queue |
+| `register` | `request_id`, `token`, `child: [pid, start]`; requires an observed live pinned launcher/child edge |
+| `running` | `request_id`, `token`, `guard_ready: true`; only after child registration |
+| `heartbeat` | `request_id`, `token`; cannot renew an uncertain lease |
+| `replace` | `request_id`, `token`, complete `resources` and `locks`; optional `performance`; refusal leaves the old grant intact and never queues an upgrade |
+| `release` | `request_id`, `token`; requires fresh complete observations proving the launcher and all retained descendants exited |
+| `restart`, `reconcile` | Fence old leases, retain their charges, and drain observed survivors before scheduling resumes |
+| `status` | Return a retained snapshot without lease tokens; this driver operation records its retry receipt |
+
+`BEGIN IMMEDIATE` serializes the complete state change and its idempotent result. Retrying the same operation ID
+and content returns the original receipt; changed content is rejected. First-ready time and bypass counts survive
+refusals, database reopening and requeue. At most one phase per owner may be active. Two committed short-job
+bypasses protect the oldest feasible long waiter, including inside a single scheduling batch. Impossible requests
+do not protect the queue. `ready: false` denotes a request still waiting for prerequisites.
+
+Reopening the database is a client reconnect; `restart` explicitly models service failure and advances the epoch.
+Heartbeat expiry or incomplete ownership makes a lease uncertain without freeing memory or named locks. Recorded
+descendants remain owned after their parent exits. PID reuse does not establish either ownership or exit. Recovery
+conservatively drains all old allocations; guard reattachment and continued execution across restart are outside
+this first protocol. No scheduler process or startup service is installed.
+
+The pressure check charges a candidate plus existing holders' unconsumed growth and host headroom against observed
+availability, separately from the total reservation ceiling. It does not subtract complete reservations from free
+memory that already reflects their allocations. Temporary disk is one explicitly modeled pool; multi-filesystem
+accounting, shared named locks, queue deadlines and supported worker controls remain future protocol work.
+
+Focused tests exercise concurrent SQLite clients, process death during a transaction, restart fencing, PID reuse,
+detached descendants, refused upgrades, queue age and pressure failures without native imports or render admission.
+They do not validate a native child launch barrier or a real guard-ready receipt. Native integration must block
+useful child work until registration and independent guard readiness are established; current guarded launchers
+are unchanged. The migration and native acceptance gates below still apply.
 
 ## Inspect retained resource history
 

@@ -79,7 +79,8 @@ hostile-source signer isolation remain separate work. Yorimichi's [foliage pilot
 separates shared materials from individual mesh owners; automatic cross-revision Unreal package caching stays disabled.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands
-evaluate supplied snapshots and inspect retained guard histories; measured admission remains a separate migration.
+evaluate supplied snapshots, inspect retained guard histories and exercise durable queue/lease transactions in an
+explicit simulation database. Live admission and native launcher integration remain a separate migration.
 
 ## Why the studio is Python
 
