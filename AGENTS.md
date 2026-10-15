@@ -114,6 +114,13 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
+- PR screenshots and films go to `refs/pr-media/<PR number>` (a slug before the PR exists) with
+  `atelier pr-media push <key> FILE...`; paste the Markdown lines it prints into the PR description. Never commit
+  PR media to a branch or to main: default clones and fetches skip `refs/pr-media/*` (a `git clone --mirror` takes
+  them). Keep these refs: deleting one eventually breaks its links. The repository is public and these refs are
+  permanent, and lint never sees pixels or metadata: push only game or render captures and films, never desktop,
+  terminal, browser or board screenshots (they can show home paths, hostnames, emails, notifications or tokens).
+  Look at every file before pushing.
 - When you cannot go on without the operator's guidance, help or confirmation, open **one operator task**:
   `atelier board operator-task open --agent NAME "..."` (the ask first, at most 500 characters). The operator
   answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. You hold one at a time;

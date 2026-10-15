@@ -28,7 +28,7 @@ It samples the simultaneous physical footprint of the wrapper and its owned desc
 excluding shared services, under the same ceiling and admission. `memory-health-tree.json` is this aggregate
 receipt, separate from per-process reports. Lost telemetry or a missing successful terminal receipt fails the run.
 """
-import argparse, os, signal, subprocess, sys, time
+import argparse, json, os, signal, subprocess, sys, time
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -41,6 +41,7 @@ from .process import spawn
 # Engine services a cook may start and other work then shares: recorded, never guarded or signalled.
 SHARED_SERVICES = frozenset({'zenserver', 'UnrealTraceServer'})
 FITTING_STARTUP_SECONDS = 2.
+CHILD_EXIT_SECONDS = 2.
 
 
 class Descendants:
@@ -158,6 +159,36 @@ def last_line(path):
         return ''
 
 
+def check_root_guard(child, monitor, report, final=False):
+    """Reconcile a clean monitor exit with the owned child's status, without leaving a live child unguarded."""
+    if monitor is None:
+        return
+    status = monitor.poll()
+    if status not in (None, 0):
+        suffix = ' before the final callback' if final else ''
+        raise SystemExit(f'memory guard failed{suffix}')
+    if status == 0 and child.poll() is None:
+        # proc_pid_rusage can observe exit before waitpid does. Only a clean monitor exit
+        # gets this bounded reconciliation; a surviving child still fails and is reaped.
+        try:
+            child.wait(timeout=CHILD_EXIT_SECONDS)
+        except subprocess.TimeoutExpired:
+            raise SystemExit('memory guard exited before the child') from None
+    if final or status == 0:
+        try:
+            record = json.loads(report.read_text())
+        except FileNotFoundError:
+            return  # A short-lived child may exit before the first sample.
+        except (OSError, ValueError):
+            raise SystemExit('memory guard report is unreadable') from None
+        if not isinstance(record, dict):
+            raise SystemExit('memory guard report is invalid')
+        # Build report directories are reused. An old process's receipt says nothing
+        # about a new child that exited before its first sample.
+        if record.get('pid') == child.pid and record.get('state') in ('memory_limit', 'test_duration'):
+            raise SystemExit(f'memory guard stopped the child: {record["state"]}')
+
+
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None):
@@ -168,6 +199,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     retaining one normal admission. Cleanup that cannot observe tree exit within its bound MUST fail.
     Poll callbacks MUST follow root, watched-child and aggregate health checks. The final callback MUST
     require successful launcher exit and any aggregate terminal receipt before acknowledging results.
+    A clean process-monitor exit MAY precede child reaping by at most two seconds; a surviving child,
+    failed monitor or matching memory/duration stop receipt MUST fail, including without a callback.
     Capacity-managed work MUST also hold the legacy exclusion bridge and await the broker's own
     exec gate after both guards are ready. Broker failure MUST fail the run, without falling back to
     slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
@@ -313,8 +346,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 spoken = time.monotonic()
                 watched = ', '.join(f'{label} {key[0]}' for key, (label, _) in tree.guarded.items() if tree.same(key)) if tree else ''
                 print(f'{(spoken-started)/60:.0f} min{f" [{watched}]" if watched else ""}: {last_line(folder/"stdout.log")}', flush=True)
-            if monitor is not None and monitor.poll() is not None and child.poll() is None:
-                raise SystemExit('memory guard exited before the child')
+            check_root_guard(child, monitor, folder/'memory-health.json')
             if aggregate is not None and child.poll() is None:
                 try:
                     aggregate.check()
@@ -335,11 +367,10 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 pass
         if aggregate is not None:
             aggregate.finish()
+        check_root_guard(child, monitor, folder/'memory-health.json', final=True)
         if on_poll is not None and child.returncode == 0:
             if tree is not None:
                 tree.check()
-            if monitor is not None and monitor.poll() not in (None, 0):
-                raise SystemExit('memory guard failed before the final callback')
             on_poll(child.pid)
         return child.returncode or 0
 
