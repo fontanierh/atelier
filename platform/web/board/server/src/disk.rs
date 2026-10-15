@@ -121,6 +121,10 @@ impl Plan {
         let mut places = Vec::new();
         for parent in [&dev, &atelier] {
             pause();
+            // A symlinked folder is never listed: it could lead into a folder macOS guards.
+            if !fs::symlink_metadata(parent).is_ok_and(|found| found.is_dir()) {
+                continue;
+            }
             let Ok(entries) = fs::read_dir(parent) else { continue };
             let mut found: Vec<Place> = entries
                 .flatten()
@@ -586,6 +590,16 @@ mod tests {
         let summary: Vec<(&str, Option<f64>, bool)> = places.iter().map(|p| (p.0.as_str(), p.3, p.4)).collect();
         assert_eq!(summary, [("one", Some(101.0), false), ("two", Some(102.0), false)]);
         assert!(places[0].2 >= first && places[1].2 >= second && !view.paused);
+    }
+
+    #[test]
+    fn a_symlinked_dev_folder_is_never_listed() {
+        let temp = Temp::new("linked");
+        let (home, engine) = (temp.0.join("home"), temp.0.join("Epic Games"));
+        write(&home.join("Documents/private/x"), 4096);
+        std::os::unix::fs::symlink(home.join("Documents"), home.join("dev")).unwrap();
+        let plan = Plan::new(&home, &engine, None, &mut || {});
+        assert!(plan.places.iter().all(|place| !place.path.starts_with(home.join("dev"))), "{:?}", plan.places);
     }
 
     #[test]
