@@ -7,6 +7,7 @@ from contextlib import ExitStack
 import hashlib
 import os
 from pathlib import Path
+import uuid
 
 from . import artifact_bundle as bundle, build_cache, build_products
 
@@ -20,6 +21,16 @@ def _sync(directory):
         os.fsync(fd)
     finally:
         os.close(fd)
+
+
+def _durable_directory(directory):
+    missing, parent = [], directory
+    while not parent.exists():
+        missing.append(parent)
+        parent = parent.parent
+    directory.mkdir(parents=True, exist_ok=True)
+    for child in reversed(missing):
+        _sync(child.parent)
 
 
 def _read(path):
@@ -286,18 +297,73 @@ def remove(store, key):
             _sync(marker.parent)
 
 
+def _portable_barrier(ctx, key, store, plan):
+    from . import build_snapshot, paths
+    markers = build_snapshot.portable_journals(ctx.out, game=ctx.game)
+    scope = dict(schema=1, kind='portable-snapshot', snapshot=key, game=ctx.game,
+                 repo=str(paths.REPO.resolve()), output=str(ctx.out.resolve()), store=str(store.root.resolve()),
+                 steps=[step.name for step in plan])
+    existing = []
+    for marker in markers:
+        if marker.exists() or marker.is_symlink():
+            receipt = _read(marker)
+            bundle._fields(receipt, (*scope, 'nonce'))
+            nonce = receipt['nonce']
+            if (type(nonce) is not str or uuid.UUID(nonce).hex != nonce
+                    or bundle._canonical({k: v for k, v in receipt.items() if k != 'nonce'}) != bundle._canonical(scope)):
+                raise ValueError('Conflicting portable snapshot restoration; original key and scope must be resumed')
+            existing.append(receipt)
+    receipt = existing[0] if existing else dict(**scope, nonce=uuid.uuid4().hex)
+    if any(bundle._canonical(item) != bundle._canonical(receipt) for item in existing):
+        raise ValueError('Portable snapshot restoration nonces conflict')
+    # The dedicated restorer alone may pass this validated receipt. Other journal kinds still refuse.
+    build_snapshot.require_complete(ctx.out, game=ctx.game, portable_resume=receipt)
+    data = bundle._canonical(receipt)
+    if len(data) > bundle.MAX_MANIFEST:
+        raise ValueError('Portable restoration scope exceeds journal limit')
+    for marker in markers:
+        if marker.exists() or marker.is_symlink():
+            if bundle._canonical(_read(marker)) != data:
+                raise ValueError('Portable restoration journal changed')
+            continue
+        _durable_directory(marker.parent)
+        temporary = marker.with_name(marker.name + '.' + uuid.uuid4().hex + '.tmp')
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        try:
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+            # Publish a complete durable receipt without replacing any conflicting attempt.
+            os.link(temporary, marker, follow_symlinks=False)
+        finally:
+            temporary.unlink(missing_ok=True)
+            _sync(marker.parent)
+    return markers, receipt
+
+
+def _clear_portable_barrier(markers, receipt):
+    expected = bundle._canonical(receipt)
+    if any(bundle._canonical(_read(marker)) != expected for marker in markers):
+        raise ValueError('Portable restoration journal changed before completion')
+    for marker in markers:
+        marker.unlink(missing_ok=True)  # Case aliases can name the same inode on a receiving filesystem.
+        _sync(marker.parent)
+
+
 def restore(game, key, *, store=None):
     """@cc [owner:fontanierh,label:correctness] portable-snapshot-restore
     Restore MUST validate the full selected recipe/key closure and all CAS bytes before mutation.
     Only declared portable outputs MAY be installed, as independent copies. Every selected stamp
     MUST be removed and journalled before replacement; success MUST require fresh inputs and all
-    installed inventories. No action execution or native package installation MAY occur here.
+    installed inventories. A durable default-and-selected-root launch barrier MUST remain until
+    every selected action is certified, and resume MUST retain the original nonce/key/scope.
+    No action execution or native package installation MAY occur here.
     """
-    from . import build, build_snapshot
+    from . import build
     import time
     store = store or build_cache.Store()
     ctx = build.Context(game, create=False)
-    build_snapshot.require_complete(ctx.out, game=game)
     with store.lock(exclusive=True):
         value = load(store, key)
         if value['game'] != game:
@@ -322,6 +388,7 @@ def restore(game, key, *, store=None):
                 build_products.feed_results(done, action['products'])
             return states
         check()
+        markers, receipt = _portable_barrier(ctx, key, store, plan)
         ctx.stamps.mkdir(parents=True, exist_ok=True)
         try:
             for step, action in zip(plan, value['actions'], strict=True):
@@ -338,8 +405,10 @@ def restore(game, key, *, store=None):
             check(installed=True)
             for step in plan:
                 (ctx.stamps / (step.name + '.restore.json')).unlink()
+            _sync(ctx.stamps)
         except BaseException:
             for step in plan:
                 (ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
             raise
+        _clear_portable_barrier(markers, receipt)
     return dict(snapshot=key, restored=True, actions=len(plan), executed=0)

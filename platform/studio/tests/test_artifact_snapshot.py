@@ -1,10 +1,11 @@
 """Real portable sandbox snapshots and isolated CAS retention; no native tools or network."""
 import json
+import os
 import shutil
 
 import pytest
 
-from atelier import artifact_snapshot as snapshots, build, build_cache, build_products, cache_admin, cli, paths
+from atelier import artifact_snapshot as snapshots, build, build_cache, build_products, build_snapshot, cache_admin, cli, paths
 from test_sandbox_spatial import demo  # noqa: F401 - real sandbox, real audited Python actions, isolated cache
 
 
@@ -175,10 +176,17 @@ def test_restore_rechecks_added_dependencies_and_never_executes_callbacks(packag
         snapshots.restore('sandbox', key, store=d.store)
 
 
-def test_interrupted_snapshot_restore_leaves_all_selected_actions_uncertified(package, monkeypatch):
+@pytest.mark.parametrize('override', [False, True])
+def test_interrupted_snapshot_restore_blocks_every_launch_until_same_scope_resumes(package, tmp_path, monkeypatch, override):
     d = package
     key = d.create()['snapshot']
     value = snapshots.load(d.store, key)
+    project = d.game / 'unreal/Sandbox.uproject'
+    project.parent.mkdir()
+    project.write_text('{}')
+    if override:
+        monkeypatch.setenv('ATELIER_BUILD_ROOT', str(tmp_path / 'selected-build'))
+    output = paths.build_root() / 'sandbox'
     real = d.store._restore
     count = [0]
     def interrupt(*args):
@@ -189,11 +197,85 @@ def test_interrupted_snapshot_restore_leaves_all_selected_actions_uncertified(pa
     monkeypatch.setattr(d.store, '_restore', interrupt)
     with pytest.raises(OSError, match='replacement failure'):
         snapshots.restore('sandbox', key, store=d.store)
+    markers = build_snapshot.portable_journals(output, game='sandbox')
+    receipts = [json.loads(path.read_text()) for path in markers]
+    assert len({record['nonce'] for record in receipts}) == 1
+    assert all(record == receipts[0] and record['snapshot'] == key for record in receipts)
     for action in value['actions']:
-        assert not (d.output / 'stamps' / (action['step'] + '.json')).exists()
-        assert (d.output / 'stamps' / (action['step'] + '.restore.json')).exists()
+        assert not (output / 'stamps' / (action['step'] + '.json')).exists()
+        assert (output / 'stamps' / (action['step'] + '.restore.json')).exists()
+    with pytest.raises(SystemExit, match='Portable snapshot'):
+        d.run('world.placements')
+    with pytest.raises(SystemExit, match='Portable snapshot'):
+        cli.play('sandbox', 'unused', {}, [])
+    from atelier.safety import process
+    with monkeypatch.context() as patch:
+        patch.setattr(process.subprocess, 'Popen', lambda *a, **k: pytest.fail('partial snapshot reached spawn'))
+        with pytest.raises(SystemExit, match='Portable snapshot'):
+            process.spawn(['UnrealEditor', str(project)], env=dict(os.environ,
+                ATELIER_BUILD_ROOT=str(tmp_path / 'another-build')))
+    with monkeypatch.context() as patch:
+        patch.setenv('ATELIER_BUILD_ROOT', str(tmp_path / 'another-build'))
+        with pytest.raises(SystemExit, match='Portable snapshot'):
+            d.run('world.placements')
     monkeypatch.setattr(d.store, '_restore', real)
+    def resume(*args):
+        assert all(json.loads(path.read_text()) == receipts[0] for path in markers)
+        return real(*args)
+    monkeypatch.setattr(d.store, '_restore', resume)
     assert snapshots.restore('sandbox', key, store=d.store)['restored']
+    assert all(not marker.exists() for marker in markers)
+    build_snapshot.require_complete(output, game='sandbox')
+
+
+def test_incomplete_snapshot_refuses_different_key_scope_or_nonce(package, tmp_path, monkeypatch):
+    import uuid
+    d = package
+    key = d.create()['snapshot']
+    other = d.create(public=True)['snapshot']
+    monkeypatch.setenv('ATELIER_BUILD_ROOT', str(tmp_path / 'selected-build'))
+    output = paths.build_root() / 'sandbox'
+    real = d.store._restore
+    monkeypatch.setattr(d.store, '_restore', lambda *args: (_ for _ in ()).throw(OSError('interrupted')))
+    with pytest.raises(OSError, match='interrupted'):
+        snapshots.restore('sandbox', key, store=d.store)
+    markers = build_snapshot.portable_journals(output, game='sandbox')
+    before = {path: path.read_bytes() for path in markers}
+    monkeypatch.setattr(d.store, '_restore', real)
+    with pytest.raises(ValueError, match='Conflicting'):
+        snapshots.restore('sandbox', other, store=d.store)
+    with monkeypatch.context() as patch:
+        patch.setenv('ATELIER_BUILD_ROOT', str(tmp_path / 'wrong-build'))
+        with pytest.raises(ValueError, match='Conflicting'):
+            snapshots.restore('sandbox', key, store=d.store)
+    assert all(path.read_bytes() == before[path] for path in markers)
+    changed = json.loads(markers[-1].read_bytes()) | {'nonce': uuid.uuid4().hex}
+    markers[-1].write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match='nonces conflict'):
+        snapshots.restore('sandbox', key, store=d.store)
+    assert json.loads(markers[-1].read_bytes()) == changed
+    markers[-1].write_bytes(before[markers[-1]])
+    assert snapshots.restore('sandbox', key, store=d.store)['restored']
+    assert all(not path.exists() for path in markers)
+
+
+@pytest.mark.parametrize('held', ['default', 'selected'])
+def test_default_and_selected_portable_journals_both_fence_direct_launch(tmp_path, monkeypatch, held):
+    repo = tmp_path / 'foreign-checkout'
+    project = repo / 'games/fixture/unreal/Fixture.uproject'
+    project.parent.mkdir(parents=True)
+    project.write_text('{}')
+    output = tmp_path / 'selected-build/fixture'
+    markers = build_snapshot.portable_journals(output, game='fixture', repo=repo)
+    marker = markers[0 if held == 'default' else 1]
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text('{}')  # Ordinary launchers refuse even a malformed/incomplete marker.
+    with pytest.raises(SystemExit, match='Portable snapshot'):
+        build_snapshot.require_complete(output, game='fixture', repo=repo)
+    from atelier.safety import process
+    monkeypatch.setattr(process.subprocess, 'Popen', lambda *a, **k: pytest.fail('barrier allowed native spawn'))
+    with pytest.raises(SystemExit, match='Portable snapshot'):
+        process.spawn(['UnrealEditor', str(project)], env=dict(os.environ, ATELIER_BUILD_ROOT=str(output.parent)))
 
 
 def test_complete_needs_order_and_reference_cycle_closure(package, monkeypatch):

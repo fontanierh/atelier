@@ -96,10 +96,16 @@ require complete verified members again. Removal is explicit and requires unpinn
 unpin/remove the snapshot explicitly or repair its members before retrying GC; GC never guesses a missing root.
 
 Restore requires the receiving recipe, source/tool identities, selected closure and exact action keys to agree.
+Stop that checkout's game/editor and any other build or restore writer before installation. Concurrent mutation
+of one checkout is unsupported; independent file copies are not a live-game update protocol.
 It holds the store mutex throughout verification and installation, preventing GC races. Every selected stamp
 is removed and journalled before replacement; existing portable staging verifies independent copies, then a
 fresh graph/input/output check certifies the restored actions. It executes no fallback generators. An interrupted
-restore leaves journals and uncertified actions; repeat `snapshot-restore` or let a normal build recover them.
+restore leaves a snapshot-wide `.portable-snapshot-in-progress.json` barrier in both the checkout's default
+build root and the selected output root. Build, play, package and direct native launches refuse that mixed snapshot,
+including when another output root is selected. Repeat the same `snapshot-restore` key in the original checkout,
+output root and cache to resume its recorded nonce and scope. A different key/scope or conflicting nonce is refused;
+normal builds cannot clear this barrier. Successful resume removes it last, after every selected action is certified.
 This installs portable sources only; it does not replace whole-build reuse or enable Unreal package caching.
 
 ## Verified whole-build reuse
