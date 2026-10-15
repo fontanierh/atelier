@@ -30,13 +30,6 @@ MAX_DATABASE = 32 * 1024 * 1024
 HELD = {'running', 'draining', 'uncertain'}
 
 
-class _HolderFailure(wire.CapacityError):
-    """Only nonce-bound enforcement loss survives a refused candidate transaction."""
-    def __init__(self, message, records):
-        super().__init__(message)
-        self.losses = [(record['request']['id'], record['nonce'], record['state']) for record in records]
-
-
 class CapacityBroker:
     """@cc [owner:fontanierh,label:safety] production-serialized-capacity-gate
     Queued offers MUST charge no resources. Final complete-vector and lock accounting MUST commit
@@ -382,7 +375,7 @@ class CapacityBroker:
                     measured = facts.footprint_bytes // 1024**2
                 except (OSError, ValueError, KeyError, wire.CapacityError):
                     record['state'] = 'draining' if self._root_exited(record) else 'uncertain'
-                    raise _HolderFailure('Existing holder enforcement is unavailable; reservation retained', [record]) from None
+                    raise wire.CapacityError('Existing holder enforcement is unavailable; reservation retained') from None
             growth_memory += max(0, vector.memory_mib - measured)
             growth_temp += vector.temp_mib
         if memory < required.memory_mib + growth_memory or disk < required.temp_mib + growth_temp:
@@ -416,7 +409,7 @@ class CapacityBroker:
                 record['state'] = 'uncertain'
                 failed.append(record)
         if failed:
-            raise _HolderFailure('Existing holder lost ownership or enforcement; reservation retained', failed)
+            raise wire.CapacityError('Existing holder lost ownership or enforcement; reservation retained')
 
     def _validate_compatibility(self, state):
         if self.mode != 'capacity':
@@ -431,7 +424,7 @@ class CapacityBroker:
             retained = [record for record in state['records'].values() if record['state'] in HELD]
             for record in retained:
                 record['state'] = 'uncertain'
-            raise _HolderFailure('Full-capacity compatibility changed before admission; charges retained', retained) from None
+            raise wire.CapacityError('Full-capacity compatibility changed before admission; charges retained') from None
 
     def _gate_close(self, nonce):
         fd = self._gates.pop(nonce, None)
@@ -505,7 +498,7 @@ class CapacityBroker:
             raise wire.CapacityError('Unregistered native processes refuse full-capacity admission')
 
     def handle(self, message, principal):
-        """Called only by the serialized server actor; exceptions roll back all accounting."""
+        """Serialized actor: refused accounting rolls back, observed enforcement loss remains charged."""
         with self._lock:
             state = self._load()
             fd, go = None, None
@@ -687,18 +680,24 @@ class CapacityBroker:
                         self._gate_close(go)
                 return {'namespace': wire.NAMESPACE, 'boot_id': self.boot, 'mode': self.mode,
                         **({'activation_id': self.activation_id} if self.mode == 'capacity' else {}), **result}, fd
-            except BaseException as error:
+            except BaseException:
                 self.connection.rollback()
                 if message.get('action') == 'start':
                     self._gate_close(message.get('nonce'))
                 if fd is not None:
                     os.close(fd)
-                if isinstance(error, _HolderFailure) and error.losses:
+                # Refresh can observe loss before request validation or candidate selection. Retain
+                # those observations on every refusal, not only failures at the final GO checks.
+                losses = [(item['request']['id'], item['nonce'], item['state'])
+                          for item in state['records'].values() if item['state'] in ('uncertain', 'draining')]
+                if losses:
                     retained = self._load()
-                    for identity, nonce, lost_state in error.losses:
+                    for identity, nonce, lost_state in losses:
                         other = retained['records'].get(identity)
                         if other is not None and other['nonce'] == nonce and other['state'] in HELD:
-                            other['state'] = lost_state
+                            # Never copy a refused vector/lock/roster or turn uncertainty into draining.
+                            if other['state'] != 'uncertain':
+                                other['state'] = lost_state
                     self._save(retained)
                 raise
 

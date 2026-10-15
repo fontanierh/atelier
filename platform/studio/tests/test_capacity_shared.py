@@ -443,6 +443,72 @@ def test_refused_replacement_retains_old_vector_and_other_holder_enforcement_los
         instance.connection.rollback()
 
 
+@pytest.mark.parametrize('failure', ['guard', 'owner', 'lease', 'seal'])
+def test_initial_refresh_loss_survives_early_candidate_refusal_and_transient_recovery(actor, monkeypatch, failure):
+    instance, healthy = actor
+    first, _ = offer(instance, (101, 10100), 'a')
+    gate_start(instance, (101, 10100), first, 201)
+    second, _ = offer(instance, (102, 10200), 'b')
+    _, fd = instance.handle(second | dict(action='gate'), (102, 10200))
+    original_started, original_verify = instance.started, compat.verify
+    lost = [True]
+    if failure == 'guard':
+        healthy[0] = False
+    elif failure == 'owner':
+        instance.started = lambda pid: None if pid == 101 and lost[0] else original_started(pid)
+    elif failure == 'lease':
+        state = instance._load()
+        state['records']['a']['heartbeat'] -= instance.lease_seconds + 1
+        instance._save(state)
+    else:
+        def verify(*args, **kwargs):
+            if lost[0]:
+                raise wire.CapacityError('Temporary compatibility observation failed')
+            return original_verify(*args, **kwargs)
+        monkeypatch.setattr(compat, 'verify', verify)
+    try:
+        with pytest.raises(wire.CapacityError, match='no longer selected|compatibility'):
+            instance.handle(second | dict(action='start', child=[202, 20200], process_guard={},
+                tree_guard={}, limit_bytes=1024 * 1024**2), (102, 10200))
+        assert os.read(fd, 1) == b''  # No GO; the refused gate is closed.
+    finally:
+        os.close(fd)
+    state = instance._load()
+    try:
+        assert state['records']['a']['state'] == 'uncertain'
+        assert state['records']['b']['state'] == 'queued'
+        assert state['records']['a']['request']['resources']['memory_mib'] == 1024
+    finally:
+        instance.connection.rollback()
+    lost[0], healthy[0] = False, True
+    with pytest.raises(wire.CapacityError, match='no longer selected'):
+        gate_start(instance, (102, 10200), second, 202)
+
+
+def test_observed_root_exit_survives_malformed_candidate_without_committing_its_roster(actor):
+    instance, _ = actor
+    first, _ = offer(instance, (101, 10100), 'a')
+    gate_start(instance, (101, 10100), first, 201)
+    second, _ = offer(instance, (102, 10200), 'b')
+    _, fd = instance.handle(second | dict(action='gate'), (102, 10200))
+    instance._watches[(first['nonce'], (201, 20100))].poll = lambda: True
+    try:
+        with pytest.raises(wire.CapacityError):
+            instance.handle(second | dict(action='start', child=[], process_guard={},
+                tree_guard={}, limit_bytes=1024 * 1024**2), (102, 10200))
+        assert os.read(fd, 1) == b''
+    finally:
+        os.close(fd)
+    state = instance._load()
+    try:
+        assert state['records']['a']['state'] == 'draining'
+        assert state['records']['b']['state'] == 'queued'
+        assert state['records']['b']['roster'] == []
+        assert 'child' not in state['records']['b']
+    finally:
+        instance.connection.rollback()
+
+
 def test_draining_peer_with_unwitnessed_helper_cannot_authorize_another_go(actor):
     instance, _ = actor
     first, _ = offer(instance, (101, 10100), 'a')
