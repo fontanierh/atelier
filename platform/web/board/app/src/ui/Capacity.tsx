@@ -14,7 +14,7 @@ const dimensions: {key: keyof Vector; label: string; format: (n: number) => stri
   {key: 'memory_mib', label: 'Memory', format: gib},
   {key: 'cpu_millis', label: 'CPU budget', format: cpu},
   {key: 'temp_mib', label: 'Temporary disk', format: gib},
-  {key: 'io_slots', label: 'I/O', format: (n) => `${n} slots`},
+  {key: 'io_slots', label: 'I/O contention budget', format: (n) => `${n} slots`},
   {key: 'gpu_mib', label: 'GPU memory', format: gib},
 ];
 
@@ -30,10 +30,12 @@ function Reservation({job, now, fresh}: {job: Job; now: number; fresh: boolean})
       <p>{gib(job.resources.memory_mib)} {job.charged ? 'reserved' : 'requested'} · {cpu(job.resources.cpu_millis)}
         {' · '}{!job.charged ? 'no current process observation' : job.measured_memory_mib == null ? 'memory observation unavailable'
           : `${gib(job.measured_memory_mib)} observed${measured ? '' : ' (stale)'}`}</p>
-      <p className="capacity-meta">{gib(job.resources.temp_mib)} temporary disk · {job.resources.io_slots} I/O slots · {gib(job.resources.gpu_mib)} GPU {job.charged ? 'reserved' : 'requested'}</p>
+      <p className="capacity-meta">{gib(job.resources.temp_mib)} temporary disk
+        {job.resources.io_slots > 0 && <> · {job.resources.io_slots} I/O contention budget slots</>}
+        {' · '}{gib(job.resources.gpu_mib)} GPU {job.charged ? 'reserved' : 'requested'}</p>
       {job.locks.length > 0 && <p className="capacity-locks">Locks {job.charged ? 'held' : 'required'}: {job.locks.map((lock, i) => <code key={i}>{lock}</code>)}</p>}
       {job.wait_reason && <p className="capacity-reason">{job.wait_reason}</p>}
-      {uncertain && <p className="capacity-reason">Reservation retained until ownership is resolved.</p>}
+      {uncertain && <p className="capacity-reason">Reservation retained while waiting for verified process exits.</p>}
       {job.ancestry_unknown && <p className="capacity-reason">Process ancestry is uncertain.</p>}
     </article>
   );
@@ -43,6 +45,7 @@ function Reservation({job, now, fresh}: {job: Job; now: number; fresh: boolean})
  * Stale, missing or unavailable broker observations MUST NOT be displayed as free capacity.
  * Totals MUST come from the broker, including reservations outside a truncated visible list.
  * Observed process memory MUST remain distinct from reserved capacity and host memory.
+ * Recovery MUST identify visible uncertain reservations, and bridge mode MUST remain explicit.
  */
 export function Capacity({status, connected, bridge, serverTime}: {status?: Status; connected: boolean; bridge: boolean; serverTime?: number}) {
   const [, tick] = useState(0);
@@ -57,13 +60,14 @@ export function Capacity({status, connected, bridge, serverTime}: {status?: Stat
   const legacy = status?.configuration === 'legacy';
   const full = snapshot?.mode === 'capacity' && snapshot.cutover;
   const title = legacy ? 'Legacy slots' : fresh ? full ? snapshot.recovering ? 'Capacity recovery' : 'Capacity admission'
-    : 'Capacity bridge' : 'Capacity status unavailable';
+    : snapshot?.recovering ? 'Capacity bridge recovery' : 'Capacity bridge' : 'Capacity status unavailable';
   const active = snapshot?.records.filter((job) => job.charged || job.state === 'gated') || [];
+  const uncertain = active.filter((job) => job.state === 'uncertain');
   const waiting = snapshot?.records.filter((job) => job.state === 'queued' || job.state === 'waiting') || [];
   return (
     <section className={`card capacity-card${snapshot && !fresh ? ' capacity-stale' : ''}`} aria-labelledby="capacityHeading">
       <div className="capacity-heading"><h2 className="eyebrow" id="capacityHeading">Admission</h2>
-        <span className={`capacity-tag${!legacy && !fresh ? ' warning' : ''}`}>{title}</span></div>
+        <span className={`capacity-tag${!legacy && (!fresh || snapshot?.recovering) ? ' warning' : ''}`}>{title}</span></div>
       {legacy ? <p>{bridge ? 'A capacity bridge holds all legacy lanes. Its broker is not visible to this board.'
         : 'Capacity admission is not configured for this board. Existing slot locks and guards apply.'}</p>
         : <p>{fresh ? full ? snapshot.recovering ? 'New grants are paused while compatibility or ownership is checked.'
@@ -74,9 +78,14 @@ export function Capacity({status, connected, bridge, serverTime}: {status?: Stat
           : 'No current broker observation. Capacity availability is unknown.'}</p>}
       {snapshot && <>
         {!fresh && <p className="capacity-warning">Last known state · observed {since(snapshot.observed_at, now)}. These figures are stale.</p>}
-        {snapshot.recovering && <p className="capacity-warning">Recovery is holding new grants while compatibility and uncertain ownership are checked.</p>}
+        {snapshot.recovering && <p className="capacity-warning">{uncertain.length > 0
+          ? <>New grants are paused while waiting for verified process exits: {uncertain.map((job) => `${job.purpose || job.id} (${job.owner || 'owner not reported'})`).join('; ')}.</>
+          : snapshot.truncated
+            ? 'New grants are paused. Compatibility or uncertain reservations outside this visible list still need verification.'
+            : 'New grants are paused while broker compatibility is verified.'}</p>}
         <dl className="capacity-budget">
-          {dimensions.map(({key, label, format}) => {
+          {dimensions.filter(({key}) => key !== 'io_slots' || snapshot.total.io_slots !== 0
+            || snapshot.reserve.io_slots !== 0 || snapshot.charged_resources.io_slots !== 0).map(({key, label, format}) => {
             const remaining = snapshot.total[key] - snapshot.reserve[key] - snapshot.charged_resources[key];
             return <div key={key}><dt>{label}</dt><dd><strong>{format(snapshot.charged_resources[key])}</strong> reserved
               <small>{format(Math.max(0, remaining))} unreserved · {format(snapshot.reserve[key])} held back · {format(snapshot.total[key])} total</small>

@@ -7,7 +7,7 @@
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
     "types": "node gen-types.mjs",
-    "check": "node gen-types.mjs --check && tsc --noEmit && node build.mjs --check"
+    "check": "node gen-types.mjs --check && tsc --noEmit && node --test capacity.test.mjs && node build.mjs --check"
   },
   "dependencies": {
     "react": "19.3.0",
