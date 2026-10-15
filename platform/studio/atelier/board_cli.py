@@ -79,6 +79,8 @@ def configure(sub):
     p.add_argument('--allowed-user', help='require this Tailscale user identity through the proxy')
     p.add_argument('--sender', default='operator', help='stable board sender name for UI broadcasts')
     p.add_argument('--remote-status', type=Path, help='optional remote-session watchdog status JSON')
+    p.add_argument('--prebuilt-server', type=Path, help='absolute verified server path; requires --prebuilt-sha256')
+    p.add_argument('--prebuilt-sha256', help='expected SHA256 of --prebuilt-server; skips cargo without fallback')
     p = actions.add_parser('notify-codex', help='steer an existing active Codex session from a board subscription')
     p.add_argument('--thread', required=True, help='existing Codex thread UUID')
     p.add_argument('--codex', default='codex', help='Codex executable used to locate the running daemon')

@@ -475,6 +475,16 @@ The web server is Rust (`platform/web/board/server`: axum and SQLite). `board se
 and stops it when it stops. If cargo is missing or a build fails, it keeps serving with the last binary it built. The
 server shares the mailbox, its schema and its rules with the `atelier board` CLI, which agents keep using.
 
+For a deployment whose server was already built and reviewed, skip the startup cargo build with the paired
+`--prebuilt-server /absolute/staged/atelier-board-server --prebuilt-sha256 EXPECTED_SHA256` options. The Python
+launcher still initializes the mailbox, starts its presence watcher, supplies the normal server arguments and
+terminates/reaps its child on shutdown. It verifies the staged file's SHA256 immediately before launch: the path
+must be absolute with no symbolic links, and the file must be owned by the launching user, regular, owner-executable
+and at most 256 MiB. Use a stable staged file during verification and startup. A missing option, malformed hash,
+invalid file or digest mismatch refuses startup; this mode never invokes cargo or falls back to another binary.
+Without either option, the normal incremental build behavior above is unchanged. Building and changing a live
+deployment remain separate operations; these flags do not build, install or restart a service.
+
 Its HTTP API is written down as a JSON Schema, `platform/web/board/api/board-api.schema.json`, generated from the
 server's own types (`atelier-board-server --schema`). Clients build their types from it: the web page today, a native
 app later. A test fails when the schema and the server disagree.
