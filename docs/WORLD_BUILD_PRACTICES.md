@@ -7,8 +7,9 @@ inputs and references. It should own its outputs and preserve the outputs of oth
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
 with today's `Step` recipes. Named products and read-only inspection are implemented in the
 [recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
-restoration remains proposed. Recipe-declared spatial queries are available for audited Python actions; native
-generators and runtime-derived query volumes still need migration and validation.
+restoration across revisions remains proposed. Verified whole-build reuse at the same clean revision supports
+named products, including native packages. Recipe-declared spatial queries are available for audited Python actions;
+native generators and runtime-derived query volumes still need migration and validation.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
@@ -72,6 +73,10 @@ Small cache units do not require one Blender or Unreal process per unit. The exe
 units into one guarded process while keeping their manifests independent. Avoid thousands of tiny Unreal
 packages where a bounded spatial/material group is a better runtime unit. Measure memory, package overhead,
 draw calls and rebuild scope together.
+
+Opt-in [batches](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions) preserve these independent keys and
+receipts. Reset per-asset module caches and tool state explicitly; test a cold asset, a warm asset and reversed asset
+order. A bounded session yields capacity with completed results saved, so an agent must coordinate before resuming.
 
 ## Give every generated package one owner
 

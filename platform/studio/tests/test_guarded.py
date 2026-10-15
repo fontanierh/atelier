@@ -13,6 +13,8 @@ import sys
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -103,6 +105,25 @@ class GuardedRunTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             guarded_run.run(SLEEPER, self.folder)
         self.assertTrue(gone(self.seen[0]))
+
+    def test_failed_guard_prevents_poll_acknowledgement(self):
+        self.fake_attach(monitor=FakeMonitor(dead=True))
+        acknowledged = []
+        with self.assertRaises(SystemExit):
+            guarded_run.run(SLEEPER, self.folder, on_poll=acknowledged.append)
+        self.assertEqual(acknowledged, [])
+        self.assertTrue(gone(self.seen[0]))
+
+    def test_failed_terminal_guard_prevents_final_acknowledgement(self):
+        self.fake_attach(monitor=FakeMonitor(dead=True))
+        acknowledged = []
+        # Force the final-exit branch without scheduler timing or a real process. The cleanup
+        # sees an already completed child and never signals this stand-in PID.
+        child = SimpleNamespace(pid=999999, returncode=0, poll=lambda: 0)
+        with patch.object(guarded_run, 'spawn', return_value=child):
+            with self.assertRaisesRegex(SystemExit, 'final callback'):
+                guarded_run.run(QUICK, self.folder, on_poll=acknowledged.append)
+        self.assertEqual(acknowledged, [])
 
     def test_an_interruption_kills_the_child(self):
         self.fake_attach(monitor=FakeMonitor(raises=KeyboardInterrupt()))

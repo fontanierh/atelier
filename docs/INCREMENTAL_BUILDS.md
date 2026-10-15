@@ -7,6 +7,9 @@ command should handle this automatically, with a local store that works offline 
 **Status: foundations and local portable caching implemented; native migration proposed.** `Step.products`, `reads` and `references`, complete
 product inventories, content-based downstream invalidation, read-only `--plan` / `--explain` / `--json`, and command
 timings, a file-hash index, opt-in automatic portable-product restoration, and cache accounting/pruning are available.
+Whole-build reuse also verifies named inventories and blocks incomplete copies with an interruption journal.
+Opt-in bounded tool batches retain per-action identities and receipts; native recipe migration and acceptance
+remain separate work. Optional output sidecars retain absence in their product identities and frozen query reads.
 Instrumented scripts can emit bounded phase records; `--timings` displays historical command/phase measurements
 separately from restoration time. The sandbox demonstrates the protocol; native phase baselines remain to be measured.
 `--changes` lists added, changed and retired members between certified named-product inventories, with unchanged
@@ -194,6 +197,11 @@ separately sized batch. Validate that previous imports cannot leak state into th
 render lock, memory guard, worker limits and handoff rules until the separately proposed capacity scheduler is
 validated. A batch does not authorize parallel Unreal processes or an idle editor holding capacity. Use an empty
 import world where possible and measure startup, import, derived-data work, validation and save separately.
+
+The implemented opt-in `Batch` protocol saves and acknowledges each action before starting the next. It uses a
+separate session guard report, per-action observed memory growth and a budget of at most 240 seconds checked
+between actions. It yields with exit 75 instead of immediately reacquiring capacity; see [the operational contract](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions).
+Cold/warm and reversed-order native equivalence remain acceptance gates for every batch-enabled recipe.
 
 Stage 1 now reports DDC configuration and explicit hit counts from retained logs. The two inspected worktrees use the same per-user
 ZenLocal service and filesystem DDC, while ZenShared is disabled. Preserve that reuse and measure its effectiveness;

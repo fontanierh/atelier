@@ -159,19 +159,23 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False):
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
+        on_poll=None):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
     Every exit path MUST perform owned descendant cleanup and launcher reap before detaching its monitors,
     retaining one normal admission. Cleanup that cannot observe tree exit within its bound MUST fail.
+    Poll callbacks MUST follow root, watched-child and aggregate health checks. The final callback MUST
+    require successful launcher exit and any aggregate terminal receipt before acknowledging results.
 
     Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
     when a compound worker attaches its own actual-child guards immediately at launch. `aggregate_tree`
     additionally gates execution on an independent aggregate footprint guard for the owned launcher tree.
     Compile-kind work always uses this aggregate protection, including UAT and tool bootstrap wrappers.
-
+    `on_poll(pid)` observes the owned child between waits and once after successful exit. Exceptions
+    unwind through the existing guard/child cleanup; the callback never replaces either protection.
     """
     aggregate_tree = aggregate_tree or kind == 'compile'
     if fitting_gib is not None:
@@ -271,12 +275,20 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                         raise
             if deadline is not None and time.monotonic() > deadline:
                 raise SystemExit(f'child exceeded {timeout} s')
+            if on_poll is not None and child.poll() is None:
+                on_poll(child.pid)
             try:
                 child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
                 pass
         if aggregate is not None:
             aggregate.finish()
+        if on_poll is not None and child.returncode == 0:
+            if tree is not None:
+                tree.check()
+            if monitor is not None and monitor.poll() not in (None, 0):
+                raise SystemExit('memory guard failed before the final callback')
+            on_poll(child.pid)
         return child.returncode or 0
 
 

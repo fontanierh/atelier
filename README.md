@@ -48,7 +48,7 @@ including the game itself while it plays.
 | macOS on Apple silicon | 15+ | the only platform tested |
 | Unreal Engine | 5.8 (`/Users/Shared/Epic Games/UE_5.8`, or set `UE_ROOT`) | the games |
 | Full Xcode | licence accepted, selected with `xcode-select`, macOS SDK and Metal toolchain installed | C++ and shaders; CLI tools alone are insufficient |
-| Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
+| Blender | 5.2.1 LTS at `/Applications/Blender.app`, via a `PATH` symlink, or set `BLENDER` to the app executable | meshes, rigs, clips |
 | Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node / npm | 24.16+ / 11.11+ for contracts | contract checks; Node also serves streaming pages and AI scripts |
@@ -57,6 +57,9 @@ including the game itself while it plays.
 
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
 preparation a Mac reached over SSH needs (`atelier setup --headless`).
+
+If `blender` on `PATH` is a wrapper script, set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`.
+Product fingerprints include its complete app bundle; a wrapper script alone cannot identify the installed tool.
 
 ```sh
 git clone https://github.com/fontanierh/atelier && cd atelier
@@ -193,6 +196,8 @@ one approved audited action and export its signed bundle; this does not upload i
 An explicit [upload command](docs/ARTIFACT_POOL.md#upload-an-approved-public-bundle) can publish a verified public
 V2 export to a compatible HTTPS object store, using a separate protected operator credential profile.
 [Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
+Opt-in compatible misses can share a guarded process while retaining individual results. If a batch exits 75
+(`BATCH YIELDED`), coordinate the next render turn and resume the printed command; completed actions stay current.
 
 ### A prop from a sentence
 
@@ -303,7 +308,12 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   cd ../fresh-worktree && uv sync && uv run atelier build yorimichi   # confirms the carried-over steps
   ```
 
-- **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
+  Named products include full byte inventories. A copy journal blocks launch after interruption;
+  [recovery](docs/ARTIFACT_POOL.md#verified-whole-build-reuse) removes only recorded generated files.
+
+- **Reuse portable products automatically** across feature revisions when their recipe enables `cache=True`.
+  `atelier cache` maintains the store; the older `atelier pool` remains for its explicit texture recipes
+  ([cache and reuse guide](docs/ARTIFACT_POOL.md)).
 - **Guarded heavy work.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
   an optional small slot and a reserved fitting lane) and run Unreal and Blender under a memory guard that stops a job before it
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.

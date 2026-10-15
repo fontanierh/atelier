@@ -303,3 +303,57 @@ def test_spatial_edges_participate_in_cycle_detection(recipe):
     with pytest.raises(ValueError, match='Build dependency cycle'):
         Graph([r.producer('self', r.product('self'), audit=True,
                           queries=[BBoxQuery('self', 'terrain', NEAR)])])
+
+
+def test_optional_query_roots_preserve_roles_and_verify_every_presence_state(recipe, monkeypatch):
+    r = recipe
+    required, sidecar = r.root / 'geometry.json', r.root / 'geometry.sidecar'
+    required.write_text('main')
+    product = Product('geometry', (required,), collection='terrain', bounds=NEAR, optional_paths=(sidecar,))
+    source = r.producer('source', product)
+    steps = [source, r.consumer()]
+    frozen = Graph(steps).by_name['consume']
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: steps))
+    match = frozen._query_bindings[0].matches[0]
+    assert match.paths == (required,) and match.optional_paths == (sidecar,)
+    serialized = build_spatial.manifest(frozen)['queries']['near']['matches'][0]
+    assert serialized['paths'] == [str(required)] and serialized['optional_paths'] == [str(sidecar)]
+    keys, previous = [], None
+    for contents in (None, 'first', 'changed', None):
+        if contents is None:
+            sidecar.unlink(missing_ok=True)
+        else:
+            sidecar.write_text(contents)
+        if previous is not None:
+            with pytest.raises(ValueError, match='spatial product changed'):
+                build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, previous)
+        done = {'product:geometry': build_products.identity(build_products.inventory(product))}
+        build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done)
+        keys.append(build.fingerprint(frozen, done))
+        previous = done
+    assert keys[0] == keys[-1] and len(set(keys)) == 3
+    # Reclassifying an optional root as required changes the frozen selector, even before reading bytes.
+    source.products = [Product('geometry', (required, sidecar), collection='terrain', bounds=NEAR)]
+    with pytest.raises(ValueError, match='spatial inputs changed'):
+        build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, previous)
+    assert match.paths == (required,) and match.optional_paths == (sidecar,)
+    for eligibility in ('cache', 'audit'):
+        with pytest.raises(ValueError, match='[Oo]ptional'):
+            build_cache.roots(SimpleNamespace(out=r.root), replace(steps[0], products=[product], **{eligibility: True}))
+
+
+def test_action_context_exposes_frozen_optional_roots_without_merging_roles(recipe, monkeypatch):
+    import json
+    from dataclasses import FrozenInstanceError
+    from atelier import build_context
+    r = recipe
+    required, optional = r.root / 'main', r.root / 'sidecar'
+    product = Product('geometry', (required,), collection='terrain', bounds=NEAR, optional_paths=(optional,))
+    effective = Graph([r.producer('source', product), r.consumer()]).by_name['consume']
+    path = r.root / 'action-inputs.json'
+    path.write_text(json.dumps(build_spatial.manifest(effective)))
+    monkeypatch.setenv('ATELIER_ACTION_INPUTS', str(path))
+    item, = build_context.query('near')
+    assert item.paths == (required,) and item.optional_paths == (optional,)
+    with pytest.raises(FrozenInstanceError):
+        item.optional_paths = ()

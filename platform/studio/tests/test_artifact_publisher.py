@@ -242,7 +242,7 @@ def test_profile_and_key_are_protected_and_action_is_allowlisted(profile_only, c
     refuse(p)
 
 
-@pytest.mark.parametrize('change', ['heavy', 'unaudited', 'uncached', 'native', 'custom-verify'])
+@pytest.mark.parametrize('change', ['heavy', 'unaudited', 'uncached', 'native', 'custom-verify', 'batch'])
 def test_action_eligibility_is_checked_before_any_execution(profile_only, monkeypatch, change):
     p = profile_only
     def load(game):
@@ -257,6 +257,8 @@ def test_action_eligibility_is_checked_before_any_execution(profile_only, monkey
                 step.cache = False
             elif change == 'native':
                 step.commands = [build.Blender(step.commands[0].script)]
+            elif change == 'batch':
+                step.batch = build.Batch('unsupported producer batch')
             else:
                 step.verify = lambda: pytest.fail('custom verifier executed')
             return [step]
@@ -406,3 +408,30 @@ def test_manifest_install_failure_leaves_no_importable_directory(producer, monke
         export(p)
     assert not p.destination.exists()
     assert p.reads == ['key-read']  # A fully verified run was signed, but no bundle was committed.
+
+
+def test_private_build_entrypoint_preserves_incomplete_snapshot_barrier(tmp_path, monkeypatch):
+    from atelier import build_snapshot
+    out = tmp_path / 'out'
+    out.mkdir()
+    journal = out / build_snapshot.JOURNAL
+    journal.write_text('{}')
+    monkeypatch.setattr(build, 'load_recipe', lambda _: pytest.fail('recipe loaded despite incomplete snapshot'))
+    with pytest.raises(SystemExit, match='interrupted'):
+        build._build(SimpleNamespace(game='fixture', out=out), [], force=True, touch=False,
+                     echo=lambda _: None, index=None, steps=[])
+    assert journal.read_text() == '{}'
+
+
+def test_export_blocks_incomplete_snapshot_before_clearing_receipts(profile_only, monkeypatch):
+    from atelier import build_snapshot
+    p = profile_only
+    out = p.repo / 'build/sandbox'
+    (out / 'stamps').mkdir(parents=True)
+    (out / build_snapshot.JOURNAL).write_text('{}')
+    stamp = out / 'stamps/world.block.json'
+    stamp.write_text('prior receipt must remain untouched')
+    monkeypatch.setattr(publisher, '_revision', lambda *a: 'a' * 40)
+    monkeypatch.setattr(publisher, '_eligible', lambda *a: pytest.fail('action inspected despite incomplete snapshot'))
+    refuse(p, 'build snapshot')
+    assert stamp.read_text() == 'prior receipt must remain untouched'

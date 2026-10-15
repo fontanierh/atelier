@@ -187,3 +187,32 @@ def test_json_timings_uses_noncreating_context_and_not_the_plan(tmp_path, monkey
     report = json.loads(capsys.readouterr().out)
     assert created == [False] and report['historical'] and report['steps'][0]['step'] == 'world'
     assert not ctx.stamps.exists()
+
+
+@pytest.mark.parametrize('operation', ['copied', 'restored'])
+def test_batch_action_scope_survives_copied_and_restored_producer_receipts(tmp_path, monkeypatch, operation):
+    ctx = SimpleNamespace(game='fixture', stamps=tmp_path)
+    command = {'kind': 'Blender', 'seconds': 2., 'scope': 'batch action'}
+    producer = {'time': 1., 'seconds': 2., 'commands': [command]}
+    record = {**producer, 'reused_from': 'donor'} if operation == 'copied' else {
+        'time': 3., 'seconds': .01, 'commands': [], 'restored_from': 'key', 'producer_receipt': producer}
+    (tmp_path / 'action.json').write_text(json.dumps(record))
+    monkeypatch.setattr(build, 'Context', lambda game, *, create: ctx)
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda ctx: [Step('action', [])]))
+    messages = []
+    assert build_timings.show('fixture', echo=messages.append) == 0
+    assert any('batch action; shared startup/shutdown and host verification excluded' in message for message in messages)
+    item = build_timings.inspect(ctx, [Step('action', [])])['steps'][0]
+    assert item['producer']['commands'][0] == command
+
+
+def test_missing_historical_timing_scope_stays_unknown(tmp_path, monkeypatch):
+    ctx = SimpleNamespace(game='fixture', stamps=tmp_path)
+    record = {'seconds': 2., 'batch': 'legacy-session',
+              'commands': [{'kind': 'Blender', 'seconds': 2.}], 'reused_from': 'donor'}
+    (tmp_path / 'action.json').write_text(json.dumps(record))
+    monkeypatch.setattr(build, 'Context', lambda game, *, create: ctx)
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda ctx: [Step('action', [])]))
+    messages = []
+    assert build_timings.show('fixture', echo=messages.append) == 0
+    assert any('timing scope not recorded' in message for message in messages)

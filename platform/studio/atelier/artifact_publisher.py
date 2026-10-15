@@ -266,7 +266,7 @@ def _eligible(ctx, game, step_name):
     if (step.cache is not True or step.audit is not True or step.heavy is not False or
             len(step.commands) != 1 or type(step.commands[0]) is not build.Python or
             step.needs or step.after or step.reads or step.references or step.queries or
-            step.pool_roots or step.cutoff or step.verify is not None):
+            step.pool_roots or step.cutoff or step.verify is not None or step.batch is not None):
         _fail('Publisher requires one independent audited non-heavy Python action')
     build_cache.roots(ctx, step)
     return step
@@ -364,6 +364,11 @@ def publish(game, step_name, destination: Path, *, profile: Path, echo=print):
         echo('Checking approved Git revision')
         revision = _revision(repo, remote, ref)
         ctx = build.Context(game)
+        from .build_snapshot import require_complete
+        try:
+            require_complete(ctx.out, game=game, repo=repo)
+        except SystemExit:
+            _fail('Approved action cannot run from this build snapshot')
         step = _eligible(ctx, game, step_name)
         echo('Checking committed sources and redistribution grants')
         source_state = _source_state(repo, step, policy, game, revision)
@@ -375,8 +380,12 @@ def publish(game, step_name, destination: Path, *, profile: Path, echo=print):
         (ctx.logs / f'{step.name}.audit.json').unlink(missing_ok=True)
         produced = []
         with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=True) as index:
-            if build._build(ctx, [step.name], force=True, touch=False, echo=lambda _: None,
-                            index=index, steps=[step], produced=produced) != 0:
+            try:
+                code = build._build(ctx, [step.name], force=True, touch=False, echo=lambda _: None,
+                                    index=index, steps=[step], produced=produced)
+            except SystemExit:
+                _fail('Approved action cannot run from this build snapshot')
+            if code != 0:
                 _fail('Approved Python action failed')
         if len(produced) != 1 or produced[0][0] != step.name:
             _fail('Fresh action execution receipt missing')

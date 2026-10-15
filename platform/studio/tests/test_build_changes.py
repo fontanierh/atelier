@@ -126,6 +126,51 @@ def test_native_named_outputs_use_generic_inventories(tmp_path):
     assert build_changes.compare(previous, products, roots)['products'][0]['unchanged'] == 1
 
 
+def test_optional_sidecar_appearance_removal_and_absence_are_exact_members(tmp_path):
+    output, bulk = tmp_path / 'asset.uasset', tmp_path / 'asset.ubulk'
+    output.write_bytes(b'asset')
+    ctx = SimpleNamespace(out=tmp_path)
+    step = Step('import', [], products=[Product('asset', (output,), optional_paths=(bulk,))])
+    roots, optional = build_changes.root_labels(ctx, step), build_changes.optional_roots(step)
+    assert roots == {'asset': ['<build>/asset.uasset', '<build>/asset.ubulk']}
+    assert optional == {'asset': [1]}
+    previous = {'fingerprint': 'a' * 64, 'products': build_products.records(step),
+                'product_roots': roots, 'product_optional_roots': optional}
+    for state, expected in (('present', 'added'), ('absent', 'retired'), ('absent', None)):
+        if state == 'present':
+            bulk.write_bytes(b'bulk')
+        else:
+            bulk.unlink(missing_ok=True)
+        current = build_products.records(step)
+        item = build_changes.compare(previous, current, roots, optional=optional)['products'][0]
+        assert item['status'] == 'compared' and item['unchanged'] == 1
+        for kind in ('added', 'retired', 'changed'):
+            assert item[kind] == (['<build>/asset.ubulk'] if kind == expected else [])
+        previous['products'] = current
+
+
+@pytest.mark.parametrize('change', ['missing-role', 'required-absent', 'absent-child', 'moved', 'reordered', 'invalid-role'])
+def test_optional_sidecar_metadata_cannot_hide_incomplete_or_moved_roots(tmp_path, change):
+    output, bulk = tmp_path / 'asset.uasset', tmp_path / 'asset.ubulk'
+    output.write_bytes(b'asset')
+    step = Step('import', [], products=[Product('asset', (output,), optional_paths=(bulk,))])
+    roots = {'asset': ['<build>/asset.uasset', '<build>/asset.ubulk']}
+    optional = {'asset': [1]}
+    current = build_products.records(step)
+    previous = json.loads(json.dumps({'fingerprint': 'a' * 64, 'products': current,
+                                     'product_roots': roots, 'product_optional_roots': optional}))
+    if change == 'missing-role': previous.pop('product_optional_roots')
+    if change == 'invalid-role': previous['product_optional_roots'] = {'asset': None}
+    if change in ('required-absent', 'absent-child'):
+        record = previous['products']['asset']
+        record['inventory']['files']['0/.' if change == 'required-absent' else '1/child'] = {'kind': 'absent'}
+        record['digest'] = build_products.identity(record['inventory'])
+    if change == 'moved': previous['product_roots']['asset'][1] = '<build>/other.ubulk'
+    if change == 'reordered': previous['product_roots']['asset'].reverse()
+    item = build_changes.compare(previous, current, roots, optional=optional)['products'][0]
+    assert item['status'] == 'unknown'
+
+
 def test_failed_generation_publishes_no_change_receipt(action):
     a = action
     a.code('output.write_text(source.read_text())'); assert a.run() == 0

@@ -10,6 +10,7 @@ class SpatialInput:
     name: str
     bounds: tuple[float, ...]
     paths: tuple[Path, ...]
+    optional_paths: tuple[Path, ...] = ()
 
 
 def query(name: str) -> tuple[SpatialInput, ...]:
@@ -17,5 +18,6 @@ def query(name: str) -> tuple[SpatialInput, ...]:
     manifest = json.loads(Path(os.environ['ATELIER_ACTION_INPUTS']).read_text())
     if manifest['schema'] != 1 or manifest['intersection'] != 'inclusive':
         raise ValueError('Unsupported action input manifest')
-    return tuple(SpatialInput(p['name'], tuple(p['bounds']), tuple(map(Path, p['paths'])))
+    return tuple(SpatialInput(p['name'], tuple(p['bounds']), tuple(map(Path, p['paths'])),
+                              tuple(map(Path, p.get('optional_paths', ()))))
                  for p in manifest['queries'][name]['matches'])

@@ -10,6 +10,46 @@ from atelier.build import Call, Product, Step
 from atelier.build_products import Graph, inventory
 
 
+def test_package_sidecars_track_presence_bytes_and_exclusive_ownership(tmp_path):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    package.write_bytes(b'package')
+    product = Product('mesh', (package,), optional_paths=(sidecar,))
+    absent = inventory(product)
+    assert absent['files']['1/.'] == {'kind': 'absent'}
+    sidecar.write_bytes(b'bulk')
+    present = inventory(product)
+    assert present != absent
+    sidecar.write_bytes(b'edit')
+    assert inventory(product) != present
+    owner = Step('mesh', [], products=[product])
+    other = Step('bulk', [], products=[Product('other', (sidecar,))])
+    with pytest.raises(ValueError, match='Overlapping product ownership'):
+        Graph([owner, other])
+    package.unlink()
+    with pytest.raises(OSError):
+        inventory(product)
+
+
+@pytest.mark.parametrize('declaration', ['required', 'optional', 'script'])
+def test_sidecars_cannot_overlap_any_declared_source(tmp_path, declaration):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    owner = Step('mesh', [], products=[Product('mesh', (package,), optional_paths=(sidecar,))])
+    if declaration == 'required': owner.inputs = [sidecar]
+    if declaration == 'optional': owner.optional_inputs = [sidecar]
+    if declaration == 'script': owner.commands = [build.Python(sidecar)]
+    with pytest.raises(ValueError, match='input overlaps its own product'):
+        Graph([owner])
+
+
+@pytest.mark.parametrize('declaration', ['outputs', 'pool_roots'])
+def test_sidecars_cannot_overlap_legacy_output_reservations(tmp_path, declaration):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    owner = Step('mesh', [], products=[Product('mesh', (package,), optional_paths=(sidecar,))])
+    legacy = Step('legacy', [], **{declaration: [sidecar]})
+    with pytest.raises(ValueError, match='overlaps legacy outputs'):
+        Graph([owner, legacy])
+
+
 @pytest.fixture
 def project(tmp_path, monkeypatch):
     root = tmp_path.resolve()
@@ -210,5 +250,6 @@ def test_old_stamp_is_readable_and_new_stamp_records_durations(project):
     assert p.run() == 0
     stamp = json.loads((p.ctx.stamps / 'generate.json').read_text())
     assert stamp['commands'][0]['kind'] == 'Call'
+    assert stamp['commands'][0]['scope'] == 'command invocation'
     assert stamp['commands'][0]['seconds'] >= 0
     assert stamp['products']['generate.mesh']['inventory']['schema'] == 1

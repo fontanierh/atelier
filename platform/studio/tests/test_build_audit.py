@@ -210,6 +210,8 @@ def test_guarded_python_retains_normal_admission_and_report_descriptor(action, m
     a.step.heavy = True
     a.code('output.write_text(source.read_text())')
     calls = []
+    callback = lambda pid: None
+    a.step.commands[0].on_poll = callback
 
     def guard(argv, folder, **kwargs):
         calls.append(kwargs)
@@ -222,6 +224,7 @@ def test_guarded_python_retains_normal_admission_and_report_descriptor(action, m
     assert a.run() == 0, a.messages
     assert len(calls) == 1 and calls[0]['pass_fds']
     assert calls[0]['kind'] == 'job' and 'lock' not in calls[0]
+    assert calls[0]['on_poll'] is callback and a.report()['passed']
 
 
 def test_audit_configuration_is_rejected_before_any_action(action):
@@ -487,3 +490,38 @@ def test_bad_receipt_is_rejected_and_pipe_is_drained(problem):
         os.close(read_fd)
         writer.join(timeout=2)
         receiver.thread.join(timeout=2)
+
+
+def test_read_product_grants_optional_root_presence_and_bytes_but_not_siblings(action):
+    a = action
+    mode = a.root / 'mode.txt'
+    mode.write_text('absent')
+    main, sidecar = a.ctx.out / 'inputs/main.json', a.ctx.out / 'inputs/main.sidecar'
+    product = Product('bundle', (main,), optional_paths=(sidecar,))
+    def produce(ctx, log):
+        main.parent.mkdir(parents=True, exist_ok=True)
+        main.write_text('main')
+        contents = mode.read_text()
+        if contents == 'absent':
+            sidecar.unlink(missing_ok=True)
+        else:
+            sidecar.write_text(contents)
+    owner = Step('produce', [Call('produce', produce)], inputs=[mode], products=[product])
+    a.steps.insert(0, owner)
+    a.step.inputs = []
+    a.step.reads = ['bundle']
+    a.step.commands[0].args = (main, a.output)
+    a.code(f"sidecar = Path({str(sidecar)!r})\noutput.write_text(source.read_text() + '/' + (sidecar.read_text() if sidecar.exists() else 'absent'))")
+    keys = []
+    for contents in ('absent', 'first', 'changed', 'absent'):
+        mode.write_text(contents)
+        assert a.run() == 0, a.messages
+        assert a.output.read_text() == 'main/' + contents
+        keys.append(a.stamp()['fingerprint'])
+    assert keys[0] == keys[-1] and len(set(keys)) == 3
+    sibling = main.parent / 'unowned.txt'
+    sibling.write_text('outside the named product')
+    a.script.write_text(a.script.read_text() + f'\nPath({str(sibling)!r}).read_text()\n')
+    assert a.run() == 1
+    assert a.report()['violations'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()

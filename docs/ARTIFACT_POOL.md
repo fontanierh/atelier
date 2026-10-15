@@ -1,4 +1,4 @@
-# Independent artifact pooling
+# Build caches and independent reuse
 
 Keep a complete playable canonical checkout warm. Feature worktrees keep independent generated
 files; all share the installed engine and its local derived-data cache. Never share mutable Unreal
@@ -34,6 +34,38 @@ A conflicting action key remains disabled until investigated. `forget` discards 
 it does not choose either result as valid. Fix nondeterminism or missing inputs before publishing again. Deleting
 an entry does not change successful local stamps; use a deliberate `--force` on that action to generate new evidence.
 Corrupt action manifests must be explicitly forgotten before GC can safely determine blob reachability.
+
+## Verified whole-build reuse
+
+```sh
+uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>
+```
+
+Donor and receiver must be clean at the same source revision and engine build. Legacy steps retain their existing
+checks. Named products additionally require current producer inputs, complete byte inventories and matching
+fingerprints in both checkouts after copying. This includes leaf products that no other step reads and optional
+native sidecars. Every product must lie within the supported copy scope: generated game output, game Content and
+game/plugin Binaries. Copies are independent; Intermediate, Saved, build logs and local hash indexes are not copied.
+
+The target must have no build stamps, occupied destination outputs, or game Intermediate/Saved caches. Starting
+from a fresh target ensures that the receiving editor/cooker discovers its own asset registry instead of loading a
+donor's stale discovery cache. Reuse does not merge a partial build or certify different source revisions.
+
+Before the first replacement, reuse writes and fsyncs a journal under the target's build directory. A completion
+receipt follows the final source, engine and output checks; the journal is removed last. While it exists, builds,
+play, package, stream, QA and shared native launch paths refuse the incomplete snapshot. Do not delete the journal
+or create stamps by hand. Changing `ATELIER_BUILD_ROOT` does not bypass the checkout's default journal: copied
+Content and Binaries still belong to that project. After coordinating a short render-lock turn, discard an
+interrupted generated copy with:
+
+```sh
+uv run atelier reuse <game> --abandon --to <interrupted-worktree>
+```
+
+Recovery removes only the journal's allowlisted generated copy scope, plus its stamps and completion receipt. It
+preserves tracked files, logs and unrelated paths, and never follows links. An interrupted recovery can be repeated.
+Then reuse into the fresh target again or build it normally. This protocol supports whole-build native copies;
+it does not enable automatic per-package Unreal caching across revisions.
 
 ## Import a signed offline bundle
 

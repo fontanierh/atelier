@@ -34,6 +34,7 @@ class Match:
     owner: str
     paths: tuple
     bounds: tuple
+    optional_paths: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ def bind(steps, owners, *, catalogue=None):
     Each query MUST resolve against all current declarations before scheduling. Its key MUST
     include the selector and complete sorted match set, including an empty set. Unmatched products
     MUST NOT become read dependencies. Touching boxes count as intersections.
+    Frozen matches MUST retain required and optional root roles; fresh byte checks MUST include both.
 
     Work on copies: planning the same recipe twice must not accumulate inferred read edges.
     A checkpoint may bind just its consumer, against a separately validated complete catalogue.
@@ -56,7 +58,8 @@ def bind(steps, owners, *, catalogue=None):
         for product in step.products:
             if product.collection is not None:
                 collections.setdefault(product.collection, []).append(
-                    Match(product.name, owners[product.name], tuple(product.paths), product.bounds))
+                    Match(product.name, owners[product.name], tuple(product.paths), product.bounds,
+                          tuple(product.optional_paths)))
     bound = []
     for step in steps:
         if not step.queries:
@@ -88,7 +91,9 @@ def manifest(step):
     return {'schema': 1, 'intersection': 'inclusive', 'queries': {
         binding.query.name: {'collection': binding.query.collection, 'bounds': binding.query.bounds,
                              'matches': [{'name': p.name, 'owner': p.owner, 'bounds': p.bounds,
-                                          'paths': [str(path) for path in p.paths]} for p in binding.matches]}
+                                          'paths': [str(path) for path in p.paths],
+                                          **({'optional_paths': [str(path) for path in p.optional_paths]}
+                                             if p.optional_paths else {})} for p in binding.matches]}
         for binding in step._query_bindings or ()}}
 
 
@@ -110,7 +115,7 @@ def verify_current(ctx, step, done, *, hasher=None):
             if match.name in checked:
                 continue
             checked.add(match.name)
-            product = build_products.Product(match.name, match.paths)
+            product = build_products.Product(match.name, match.paths, optional_paths=match.optional_paths)
             digest = build_products.identity(build_products.inventory(product, hasher=hasher))
             if done.get(f'product:{match.name}') != digest:
                 raise ValueError(f'{step.name}: spatial product changed: {match.name}')

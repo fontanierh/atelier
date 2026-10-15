@@ -67,6 +67,8 @@ def roots(ctx, step):
     base = ctx.out.resolve()
     result = []
     for product in step.products:
+        if product.optional_paths:
+            raise ValueError('Optional package sidecars are not eligible for the portable cache')
         for root in product.paths:
             root = Path(root)
             # Resolve only the base: a symlink inside the owned tree must never redirect installation.

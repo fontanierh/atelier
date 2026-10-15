@@ -111,7 +111,7 @@ def prepared(ctx, step, products, *, receipt=None):
     validate(step)
     roots(ctx, step)
     command = step.commands[0]
-    inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].paths)]
+    inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
     output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
     report_path = ctx.logs / f'{step.name}.audit.json'
     # These paths have one owner, and the executor has already dropped its old stamp. Unlinking

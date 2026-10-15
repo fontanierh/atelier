@@ -310,3 +310,42 @@ def test_dead_root_monitor_never_releases_actual_command(tmp_path, monkeypatch, 
                     tmp_path / 'guard', kind='compile')
     assert not marker.exists()
     assert_gone(*captured[0])
+
+
+@pytest.mark.parametrize('terminal_failure', [False, True])
+def test_poll_callbacks_follow_aggregate_health_and_terminal_receipt(tmp_path, monkeypatch, admissions,
+                                                                  terminal_failure):
+    original = guarded.attach_tree
+    events = []
+
+    @contextmanager
+    def attach(*args, **kwargs):
+        with original(*args, **kwargs) as monitor:
+            check, finish = monitor.check, monitor.finish
+
+            def checked():
+                check()
+                events.append('health')
+
+            def finished():
+                finish()
+                events.append('terminal')
+                if terminal_failure:
+                    raise RuntimeError('terminal receipt refused')
+            monitor.check, monitor.finish = checked, finished
+            yield monitor
+    monkeypatch.setattr(guarded, 'attach_tree', attach)
+
+    def run():
+        return guarded.run([sys.executable, '-c', 'pass'], tmp_path / 'guard', kind='compile',
+                           on_poll=lambda pid: events.append('ack'))
+    if terminal_failure:
+        with pytest.raises(RuntimeError, match='terminal receipt refused'):
+            run()
+        assert events[-1] == 'terminal', 'a failed terminal check must not acknowledge results'
+    else:
+        assert run() == 0
+        assert events[-2:] == ['terminal', 'ack']
+    for index, event in enumerate(events[:events.index('terminal')]):
+        if event == 'ack':
+            assert index > 0 and events[index - 1] == 'health'
