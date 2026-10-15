@@ -207,6 +207,16 @@ producer receipt, including across repeated restores. A fresh checkout restore, 
 key, has no producer timing unless it already carries that receipt. It is reported as **not recorded**, never zero.
 Explicit worktree reuse and the legacy pool copy producer stamps; their restore duration is unknown. Touched,
 old stamps without command details and interrupted restores also remain clearly labelled.
+New portable restore receipts distinguish a local-store hit from a product fetched over HTTPS during that build.
+The latter still passes through the normal verified local store before installation. A later local restore is
+labelled local even if the bytes originally arrived remotely. Older stamps without this attribution say
+**not recorded**; inspection never contacts a server to infer provenance.
+
+Guarded commands can also retain a fresh launcher timing receipt. Admission and guard setup measure from entry
+to the launch gate acknowledgement; child lifetime measures actual spawn to observed process exit and includes
+any time behind that gate. These intervals overlap and must not be added. Command execution stays **not recorded**
+unless the launcher observes its start separately. Useful phase durations still come from the instrumented script.
+Missing, stale or malformed diagnostics never change build success, product identities or cache eligibility.
 
 To time a generator or importer, emit one flushed stdout line per phase boundary. The version 1 protocol is the
 literal prefix `ATELIER_PHASE ` followed by a JSON object:
