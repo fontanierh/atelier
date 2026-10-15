@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """Run authored park lines through the existing gameplay Session CLI; never compiles a runtime."""
 import argparse
+from contextlib import ExitStack
+import errno
+import fcntl
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import resource
+import selectors
+import subprocess
 import sys
 import time
 import numpy as np
@@ -31,29 +37,119 @@ def save(path, value):
     temporary.replace(path)
 
 
+def guarded_big_holder():
+    """Require a pinned live ancestor and a currently held BIG kernel lock.
+
+    The guard launcher remains responsible for the validator Python process.
+    This check never reserves a second slot and never writes the lock record.
+    """
+    from atelier.safety.memory_guard import usage
+    from atelier.safety.render_lock import family, holder, lock_path
+    message = 'native collision requires an owned live BIG-slot guarded job'
+    try:
+        path = lock_path()
+        with path.open() as handle:
+            record = holder(handle)
+            if not record or record.get('slot') != 'big' or record.get('started') is None:
+                raise ValueError(message)
+            current = usage(record['pid'])
+            if (current.exited or current.started != record['started'] or record['pid'] == os.getpid()
+                    or os.getpid() not in family(record['pid'])):
+                raise ValueError(message)
+            before = os.fstat(handle.fileno())
+            named = path.stat()
+            if (before.st_dev, before.st_ino) != (named.st_dev, named.st_ino):
+                raise ValueError(message)
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as error:
+                if error.errno not in (errno.EAGAIN, errno.EACCES):
+                    raise
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                raise ValueError(message)
+            # Reject a release/replacement or changed identity during the check.
+            after = path.stat()
+            if ((before.st_dev, before.st_ino) != (after.st_dev, after.st_ino)
+                    or holder(handle) != record or usage(record['pid']).started != record['started']):
+                raise ValueError(message)
+            return record
+    except (OSError, ProcessLookupError) as error:
+        raise ValueError(message) from error
+
+
+def collision_capacity(full_scene=False):
+    """@cc [owner:fontanierh,label:safety] full-scene-native-admission
+    The default capacity MUST remain 100000 triangles. The 250000-triangle
+    full-scene tier MUST require a pinned live BIG-holder ancestor and a held
+    kernel lock. Neither tier MAY change gameplay verdict thresholds or acquire
+    a second slot. The caller MUST guard the Python process; ObservedSession
+    MUST separately guard and reap its actual native child before readiness.
+    """
+    if full_scene:
+        guarded_big_holder()
+        return 250000
+    return 100000
+
+
 class ObservedSession(feel.Session):
-    def __init__(self, *args):
+    def __init__(self, *args, duration=150):
+        self._owned = ExitStack()
+        self._monitors = ExitStack()
+        self._owned.callback(self._monitors.close)
+        self.guard_duration = duration
+        self.guard_report = None
+        self._started = False
+        self._stopped = False
         try:
             super().__init__(*args)
         except BaseException:
-            proc = getattr(self, 'proc', None)
-            if proc is not None and proc.poll() is None:
-                proc.terminate(); proc.wait(timeout=10)
-            if hasattr(self, 'selector'):
-                self.selector.close()
+            self._owned.close()
             if hasattr(self, 'log'):
                 self.log.close()
             raise
 
+    def start(self):
+        if self._started:
+            raise RuntimeError('ObservedSession is one-shot; create a fresh Session per trial')
+        self._started = True
+        from atelier.safety.guard import attach, reap
+        from atelier.safety.process import spawn
+        guarded_big_holder()
+        self.proc = spawn(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=self.log, text=True, bufsize=1)
+        # Register cleanup immediately, including monitor attachment failures.
+        self._owned.callback(reap, self.proc)
+        self.guard_report = Path(self.log.name).with_suffix('.memory-health.json')
+        self.monitor = self._monitors.enter_context(attach(
+            self.proc.pid, self.guard_report, duration=self.guard_duration, limit_gib=10.))
+        self.check_guard()
+        self.selector = selectors.DefaultSelector()
+        self._owned.callback(self.selector.close)
+        self.selector.register(self.proc.stdout, selectors.EVENT_READ)
+        self.ready = self.read()
+        if self.ready.get('type') != 'ready':
+            raise RuntimeError('Session did not report ready')
+        self.deck = self.ready['names'].index('SKATEBOARD_ROOT')
+        self.generation = 0
+
+    def check_guard(self):
+        if self.monitor is None or self.monitor.poll() is not None:
+            raise RuntimeError('Native Session memory monitor unavailable or exited')
+
     def read(self):
         deadline = time.monotonic()+20
         heartbeat = time.monotonic()+10
-        while not self.selector.select(1):
+        while True:
+            self.check_guard()
+            if self.selector.select(1):
+                break
             if time.monotonic() > deadline:
                 raise TimeoutError('No Session response for 20 seconds')
             if time.monotonic() > heartbeat:
                 print('Waiting for Session response; no new simulation frame yet', flush=True)
                 heartbeat = time.monotonic()+10
+        self.check_guard()
         line = self.proc.stdout.readline()
         if not line:
             raise RuntimeError('Session exited; inspect its stderr log')
@@ -61,6 +157,25 @@ class ObservedSession(feel.Session):
         if row['type'] == 'error':
             raise RuntimeError(row['message'])
         return row
+
+    def send(self, op, **values):
+        self.check_guard()
+        super().send(op, **values)
+
+    def stop(self):
+        if self._stopped:
+            return
+        self._stopped = True
+        try:
+            self.check_guard()
+            if self.proc.poll() is not None:
+                raise RuntimeError('Native Session exited before intentional shutdown')
+            self.send('quit')
+            status = self.proc.wait(timeout=10)
+            if status != 0:
+                raise RuntimeError(f'Native Session shutdown exited with status {status}')
+        finally:
+            self._owned.close()
 
 
 def controls(spec, frame):
@@ -92,15 +207,16 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     progress = RouteProgress(world.path,world.spawn_m)
     if follower and any(c.get('left', [0, 0])[0] != 0 for c in world.spec.get('controls', [])):
         raise ValueError('Choose scripted steering or follower; do not combine left.x writers')
-    feel.OUTPUT = output
-    session = ObservedSession(binary, package, collision, run_id)
-    rows = []; began = time.monotonic(); last_report = began
     frames = int(world.spec.get('frames', 1200))
-    last_air_frame = -100000
     recovery_frames = math.ceil(60*world.spec.get('acceptance', {}).get('landing_recovery_s', DEFAULTS['landing_recovery_s']))
     if not 1 <= frames <= 7200:
-        session.close()
         raise ValueError('frames must be 1..7200')
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError('Trial timeout must be finite and positive')
+    feel.OUTPUT = output
+    session = ObservedSession(binary, package, collision, run_id, duration=timeout+30)
+    rows = []; began = time.monotonic(); last_report = began
+    last_air_frame = -100000
     try:
         extra = {'feel': world.spec['feel']} if 'feel' in world.spec else {}
         session.send('activate', spawn=spawn.tolist(), heading=heading, goofy=False,
@@ -140,6 +256,7 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     result.update(entry_speed_mps=entry_speed, wall_seconds=time.monotonic()-began,
                   trace=run_id+'.frames.jsonl', collision=run_id+'.json', log=run_id+'.log',
                   collision_sha256=sha(output/(run_id+'.json')),
+                  memory_guard_report=session.guard_report.name,
                   controls_mode='path_follower' if follower else 'scripted' if world.spec.get('controls') else 'coast')
     if follower:
         result['controller'] = follower.report()
@@ -157,7 +274,10 @@ def main():
     parser.add_argument('--speeds', nargs='+', type=float)
     parser.add_argument('--frames', type=int)
     parser.add_argument('--timeout-per-run', type=float, default=120.)
+    parser.add_argument('--full-scene', action='store_true', help='250k collision tier; requires owned live BIG slot')
     args = parser.parse_args()
+    guarded_big_holder()
+    triangle_limit = collision_capacity(args.full_scene)
     raw = args.layout.read_bytes(); layout = json.loads(raw)
     args.out.mkdir(parents=True, exist_ok=True)
     binary = args.binary.resolve(); package = args.package.resolve()
@@ -172,7 +292,7 @@ def main():
                   binary_sha256=sha(binary), build_manifest_sha256=sha(manifest_path),
                   package_manifest_sha256=sha(package_manifest),
                   scope='Actual offline game Session, 60 Hz; scripted/coasting controls, not a human playtest.',
-                  lines=[])
+                  collision_triangle_limit=triangle_limit, lines=[])
     (args.out/'layout.json').write_bytes(raw)
     selected = [s for s in layout['lines'] if not args.line or s['id'] in args.line]
     if not selected or (args.line and set(args.line)-{s['id'] for s in selected}):
@@ -182,7 +302,7 @@ def main():
         spec = {**original}
         if args.frames:
             spec['frames'] = args.frames
-        world = LineWorld(spec, args.layout.resolve().parent)
+        world = LineWorld(spec, args.layout.resolve().parent, triangle_limit=triangle_limit)
         speeds = validate_speeds(args.speeds or spec.get('entry_speeds_mps', [4, 8, 12, 16]))
         line = dict(id=spec['id'], triangles=len(world.triangles), runs=[])
         report['lines'].append(line)

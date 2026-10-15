@@ -2,15 +2,28 @@
 
 `validate_park_lines.py` runs the game's existing compiled `GameplaySession` through
 `check_skate_feel.Session`. It does not compile a runtime or substitute ballistic calculations for gameplay.
-Coordinates are native metres, y up; paths are `[x,z]`. Small CPU trials can run at nice 10 when the coordinator
-permits them. Compilation and large native work still require the normal guard.
+Coordinates are native metres, y up; paths are `[x,z]`. Run every native trial at nice 10 through
+`atelier.safety.guarded`, after render-board admission. The outer guard monitors Python's collision/JSON
+allocations. Each Session attaches a separate 10 GiB actual-child monitor before waiting for readiness,
+checks it before transport operations and reaps its child before detaching, including startup failures.
+Both monitors use the same BIG-slot turn; no second render slot is acquired.
 
 ```sh
-nice -n 10 uv run python games/yorimichi/tools/validate_park_lines.py layout.json \
-  --binary build/skate-simulation-session-cli/gameplay-session-cli \
-  --package build/yorimichi/skate-simulation/package \
-  --out build/yorimichi/line-validation
+nice -n 10 uv run python -m atelier.safety.guarded \
+  --report build/yorimichi/line-validation.guard --timeout 300 \
+  --purpose 'offline park ride validation' -- \
+  uv run python games/yorimichi/tools/validate_park_lines.py layout.json \
+    --binary build/skate-simulation-session-cli/gameplay-session-cli \
+    --package build/yorimichi/skate-simulation/package \
+    --out build/yorimichi/line-validation
 ```
+
+The default collision capacity is 100,000 triangles. `--full-scene` selects a bounded 250,000-triangle
+tier for assembled-scene context, matching the park's production collision budget. Native execution
+requires a live pinned BIG-holder ancestor and a currently held kernel lock; stale or unpinned lock
+metadata is refused. A direct unguarded invocation is refused. Neither tier relaxes ride thresholds.
+The report records the selected capacity and each trial's `*.memory-health.json` actual-child guard
+report, alongside the outer guard's report. Keep both when presenting validation evidence.
 
 `--line ID` selects a line (repeatable); `--speeds 8 12 16` overrides its entry speeds;
 `--frames 900` overrides duration at 60 Hz. Every speed gets a fresh process. The binary must match its compiled
@@ -100,8 +113,8 @@ classifying triangle centroids. For example:
 ```
 
 Untagged surfaces never count as verified transition landings. Later overlapping region definitions take
-precedence. Soup must have upward winding on riding faces. This small-job tool limits each world to 100,000
-triangles; crop deliberately with sufficient flight, landing and runout context. It never silently decimates.
+precedence. Soup must have upward winding on riding faces. The default tier limits each world to 100,000
+triangles; the guarded `--full-scene` tier permits at most 250,000 triangles; crop deliberately with sufficient flight, landing and runout context. It never silently decimates.
 
 ## Results and acceptance
 

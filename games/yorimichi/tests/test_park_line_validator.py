@@ -323,3 +323,151 @@ def test_follower_zones_reject_ambiguous_or_invalid_ranges():
         with pytest.raises(ValueError):LineFollower(path,dict(zones=[zone]))
     with pytest.raises(ValueError):
         LineFollower(path,dict(zones=[dict(start_s_m=0,end_s_m=30),dict(start_s_m=20,end_s_m=40)]))
+
+
+def test_full_scene_capacity_requires_pinned_ancestor_and_held_lock(monkeypatch, tmp_path):
+    import errno
+    import json
+    import os
+    from types import SimpleNamespace
+    from atelier.safety import memory_guard, render_lock
+    import validate_park_lines as validator
+    path = tmp_path/'render.lock'
+    monkeypatch.setattr(render_lock, 'lock_path', lambda: path)
+    monkeypatch.setattr(render_lock, 'family', lambda pid: {123, os.getpid()})
+    current = SimpleNamespace(started=456, exited=False)
+    monkeypatch.setattr(memory_guard, 'usage', lambda pid: current)
+    monkeypatch.setattr(render_lock, 'usage', lambda pid: current)
+    assert validator.collision_capacity() == 100000
+    def denied(record):
+        path.write_text(json.dumps(record))
+        with pytest.raises(ValueError, match='owned live BIG'):
+            validator.collision_capacity(True)
+    denied({})
+    denied({'pid': 123, 'slot': 'big'})  # unpinned metadata is never enough
+    denied({'pid': 123, 'slot': 'small', 'started': 456})
+    denied({'pid': 123, 'slot': 'big', 'started': 455})
+    good = {'pid': 123, 'slot': 'big', 'started': 456}
+    denied(good)  # live pinned record, but the kernel lock is free
+    def held(fd, flags):
+        raise BlockingIOError(errno.EAGAIN, 'held by launcher')
+    monkeypatch.setattr(validator.fcntl, 'flock', held)
+    current.exited = True
+    denied(good)
+    current.exited = False
+    monkeypatch.setattr(render_lock, 'family', lambda pid: {123})
+    denied(good)
+    monkeypatch.setattr(render_lock, 'family', lambda pid: {123, os.getpid()})
+    denied({'pid': os.getpid(), 'slot': 'big', 'started': 456})
+    path.write_text(json.dumps(good))
+    assert validator.collision_capacity(True) == 250000
+    # A record replaced during the held-lock check cannot admit the job.
+    def replaced(fd, flags):
+        path.write_text(json.dumps({**good, 'started': 999}))
+        raise BlockingIOError(errno.EAGAIN, 'held')
+    monkeypatch.setattr(validator.fcntl, 'flock', replaced)
+    with pytest.raises(ValueError, match='owned live BIG'):
+        validator.collision_capacity(True)
+
+
+def test_native_session_guard_covers_startup_and_cleanup(monkeypatch, tmp_path):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    import io
+    from atelier.safety import guard, process
+    import validate_park_lines as validator
+    events = []
+    child = SimpleNamespace(pid=1234, stdout=io.StringIO(
+        '{"type":"ready","names":["SKATEBOARD_ROOT"]}\n'), stdin=io.StringIO(), alive=True)
+    child.poll = lambda: None if child.alive else 0
+    def wait(timeout):
+        events.append('wait'); child.alive = False; return getattr(child, 'exit_status', 0)
+    child.wait = wait
+    monitor = SimpleNamespace(poll=lambda: None)
+    def spawn(command, **options):
+        events.append('spawn'); return child
+    def reap(proc):
+        events.append('reap'); proc.alive = False
+    @contextmanager
+    def attach(pid, report, duration, limit_gib):
+        assert pid == child.pid and limit_gib == 10 and duration == 150
+        events.append('attach')
+        try: yield monitor
+        finally:
+            assert not child.alive
+            events.append('detach')
+    selector = SimpleNamespace(register=lambda *a: None, select=lambda timeout: [True], close=lambda: None)
+    monkeypatch.setattr(validator, 'guarded_big_holder', lambda: events.append('admit'))
+    monkeypatch.setattr(process, 'spawn', spawn)
+    monkeypatch.setattr(guard, 'reap', reap)
+    monkeypatch.setattr(guard, 'attach', attach)
+    monkeypatch.setattr(validator.selectors, 'DefaultSelector', lambda: selector)
+    monkeypatch.setattr(validator.feel, 'OUTPUT', tmp_path)
+    session = validator.ObservedSession('binary', 'package', {}, 'guarded')
+    assert events == ['admit', 'spawn', 'attach']
+    assert session.ready['type'] == 'ready'
+    monitor.poll = lambda: 1
+    with pytest.raises(RuntimeError, match='memory monitor'):
+        session.read()
+    with pytest.raises(RuntimeError, match='memory monitor'):
+        session.close()
+    assert events[-2:] == ['reap', 'detach']
+    assert session.log.closed
+    def fresh(name):
+        child.alive = True
+        child.stdout = io.StringIO('{"type":"ready","names":["SKATEBOARD_ROOT"]}\n')
+        monitor.poll = lambda: None
+        return validator.ObservedSession('binary', 'package', {}, name)
+    normal = fresh('normal')
+    normal.close()
+    assert events[-3:] == ['wait', 'reap', 'detach']
+    with pytest.raises(RuntimeError, match='one-shot'):
+        normal.start()
+    abnormal = fresh('abnormal')
+    child.alive = False
+    with pytest.raises(RuntimeError, match='before intentional shutdown'):
+        abnormal.close()
+    assert events[-2:] == ['reap', 'detach']
+    abnormal = fresh('nonzero')
+    child.exit_status = 7
+    with pytest.raises(RuntimeError, match='status 7'):
+        abnormal.close()
+    assert events[-2:] == ['reap', 'detach']
+    child.exit_status = 0
+    # A failure before ready still reaps the child while its guard is attached.
+    child.alive = True; child.stdout = io.StringIO('bad json\n'); monitor.poll = lambda: None
+    with pytest.raises(ValueError):
+        validator.ObservedSession('binary', 'package', {}, 'bad-ready')
+    assert not child.alive and events[-2:] == ['reap', 'detach']
+    # Attachment itself failing also unwinds ownership immediately.
+    child.alive = True
+    def fail_attach(*args, **kwargs):
+        raise RuntimeError('guard launch failed')
+    monkeypatch.setattr(guard, 'attach', fail_attach)
+    with pytest.raises(RuntimeError, match='guard launch failed'):
+        validator.ObservedSession('binary', 'package', {}, 'bad-attach')
+    assert not child.alive and events[-1] == 'reap'
+
+
+def test_collision_capacity_tiers_remain_bounded(tmp_path):
+    triangle = np.array([[[0.,0.,0.],[0.,0.,1.],[1.,0.,0.]]])
+    spec = dict(path=[[0.,0.],[0.,1.]], triangles=np.broadcast_to(triangle,(100001,3,3)))
+    with pytest.raises(ValueError, match='100,000'):
+        LineWorld(spec, tmp_path)
+    spec['triangles'] = np.broadcast_to(triangle, (250001,3,3))
+    with pytest.raises(ValueError, match='250,000'):
+        LineWorld(spec, tmp_path, triangle_limit=250000)
+    with pytest.raises(ValueError, match='capacity must'):
+        LineWorld(spec, tmp_path, triangle_limit=1000000)
+
+
+def test_exact_full_scene_capacity_is_constructed_without_a_larger_tier(monkeypatch, tmp_path):
+    import park_line_geometry as geometry
+    monkeypatch.setattr(geometry, 'normals', lambda triangles: (
+        np.tile([0., 1., 0.], (len(triangles), 1)), np.ones(len(triangles))))
+    monkeypatch.setattr(geometry, 'BVH', lambda triangles: object())
+    triangle = np.array([[[0.,0.,0.],[0.,0.,1.],[1.,0.,0.]]])
+    world = LineWorld(dict(path=[[0.,0.],[0.,1.]],
+                          triangles=np.broadcast_to(triangle,(250000,3,3))), tmp_path,
+                      triangle_limit=250000)
+    assert len(world.triangles) == 250000

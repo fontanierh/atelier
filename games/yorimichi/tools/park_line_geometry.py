@@ -92,7 +92,9 @@ class LineWorld:
     this calculation. The caller is responsible for supplying actual geometry
     widths; this metadata check does not certify the source mesh.
     """
-    def __init__(self, spec, base):
+    def __init__(self, spec, base, *, triangle_limit=100000):
+        if triangle_limit not in (100000, 250000):
+            raise ValueError('collision capacity must be the small or full-scene tier')
         self.spec = spec
         self.path = Path2D(spec['path'])
         self.labels = []
@@ -163,8 +165,8 @@ class LineWorld:
                     self.labels[int(i)] = region['id']
         if self.triangles.ndim != 3 or self.triangles.shape[1:] != (3, 3) or not len(self.triangles):
             raise ValueError('expected nonempty triangle soup (F,3,3)')
-        if len(self.triangles) > 100000 or not np.isfinite(self.triangles).all():
-            raise ValueError('nonfinite or oversized collision; small jobs are limited to 100,000 triangles')
+        if len(self.triangles) > triangle_limit or not np.isfinite(self.triangles).all():
+            raise ValueError(f'nonfinite or oversized collision; selected capacity is {triangle_limit:,} triangles')
         self.normal, self.area = normals(self.triangles)
         self.tree = BVH(self.triangles)
         self.labels = np.asarray(self.labels)
