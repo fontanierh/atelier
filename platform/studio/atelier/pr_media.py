@@ -26,11 +26,16 @@ def say(text):
     print(text, file=sys.stderr, flush=True)
 
 
+def redact(text):
+    """`text` with the user information of any URL in it (`https://user:token@host`) replaced by `***`."""
+    return re.sub(r'([A-Za-z][A-Za-z0-9+.-]*://)[^/@\s]+@', r'\1***@', str(text))
+
+
 def git(*args, repo=None, stdin=None):
     result = subprocess.run(['git', *args], cwd=repo, input=stdin, capture_output=True)
     if result.returncode:
         detail = result.stderr.decode(errors='replace').strip()
-        raise SystemExit(f'git {args[0]} failed: {detail}')
+        raise SystemExit(redact(f'git {args[0]} failed: {detail}'))
     return result.stdout.decode(errors='replace').strip()
 
 
@@ -77,7 +82,7 @@ def remote_repository(remote, repo=None):
                          text=True).stdout.strip() or remote
     found = github_repository(url)
     if not found:
-        raise SystemExit(f'remote {remote!r} is not a GitHub repository; links need github.com/<owner>/<repo>')
+        raise SystemExit(redact(f'remote {remote!r} is not a GitHub repository; links need github.com/<owner>/<repo>'))
     return found
 
 
@@ -132,7 +137,7 @@ def push(key, files, remote='origin', dry_run=False, repo=None):
                                 text=True)
         if result.returncode:
             raise SystemExit(f'push to {ref} failed (someone may have pushed it meanwhile; rerun to add on top):\n'
-                             f'{result.stderr.strip()}')
+                             + redact(result.stderr.strip()))
         git('update-ref', ref, sha, *([parent] if parent else []), repo=repo)
         say(f'pushed {ref} = {sha}' + (f' (parent {parent})' if parent else ' (new)'))
     for path in paths:

@@ -173,3 +173,13 @@ def test_cli_parses_push():
     assert (args.command, args.action, args.key, args.files, args.remote, args.dry_run) == (
         'pr-media', 'push', '276', ['a.png', 'b.mp4'], 'upstream', True)
     assert parse_args(['pr-media', 'push', '276', 'a.png']).remote == 'origin'
+
+
+def test_messages_never_show_url_credentials(repo, tmp_path):
+    secret = 'https://agent:hunter2-token@example.com/owner/repo.git'
+    with pytest.raises(SystemExit) as refused:
+        pr_media.push('1', [media(tmp_path, 'a.png', b'a')], remote=secret, repo=repo)
+    assert 'hunter2' not in str(refused.value) and 'https://***@example.com/owner/repo.git' in str(refused.value)
+    assert pr_media.redact('fatal: unable to access https://x-access-token:abc@github.com/o/r.git/') == \
+        'fatal: unable to access https://***@github.com/o/r.git/'
+    assert pr_media.redact('git@github.com:o/r.git') == 'git@github.com:o/r.git'
