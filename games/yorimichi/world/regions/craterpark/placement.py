@@ -67,6 +67,14 @@ def native_to_island(points):
     return place(np.stack([p[..., 0], -p[..., 2], p[..., 1]], -1))
 
 
+def island_to_native_xz(x, y):
+    """Island Blender metres (x, y) -> native (x, z) metres: native_to_island's inverse in plan."""
+    cx, cy = frame()
+    a = math.radians(HEADING); c, s = math.cos(a), math.sin(a)
+    dx = np.asarray(x, 'f8') - CENTRE[0]; dy = np.asarray(y, 'f8') - CENTRE[1]
+    return cx + dx * c + dy * s, -(cy - dx * s + dy * c)
+
+
 def unreal_transform():
     """The park actor's Unreal transform (location cm, yaw deg) for children authored at ue(native) = 100*(x, z, y).
 
@@ -216,6 +224,9 @@ def terrain(x, y, natural_height, natural):
     if is_v4():
         from .v2 import v4_placement
         identity = v4_placement.identity()
+        grid = v4_placement.ground_grid()
+        if grid is not None:
+            return _follow(x, y, z, *grid)
     x0, y0, cell, inside, distance, offset, ground = _stamp(natural, identity)
     ny, nx = inside.shape
     i = np.floor((x - x0) / cell).astype(int); j = np.floor((y - y0) / cell).astype(int)
@@ -228,6 +239,26 @@ def terrain(x, y, natural_height, natural):
     width = np.clip(SKIRT_MIN + SKIRT_PER_METRE * np.abs(off), SKIRT_MIN, SKIRT_MAX)
     blended = z + off * _smooth(1 - d / width) * near
     return np.where(under, ground[jc, ic], blended)
+
+
+def _follow(x, y, z, g, heights, weight):
+    """An editor park's ground: the terrain takes the editor's cut ground (heights, bilinear on its cell-centred grid) by
+    its weight, 1 round the pieces and easing to 0 beyond them. The editor's natural layer is this terrain's natural
+    height, so where nothing is cut the volcano is left exactly as it was; where it is cut (a dug floor, a bowl's pit),
+    the volcano's own surface, with its material, snow and collision, is the cut ground."""
+    nx_, nz_ = island_to_native_xz(x, y)
+    fi = (nx_ - g['x0']) / g['G'] - .5; fj = (nz_ - g['z0']) / g['G'] - .5
+    on = (fi >= 0) & (fj >= 0) & (fi <= g['nx'] - 1) & (fj <= g['nz'] - 1)
+    if not on.any():
+        return z
+    fi = np.clip(fi, 0, g['nx'] - 1); fj = np.clip(fj, 0, g['nz'] - 1)
+    i = np.minimum(fi.astype(int), g['nx'] - 2); j = np.minimum(fj.astype(int), g['nz'] - 2); u = fi - i; v = fj - j
+
+    def sample(f):
+        return (f[j, i] * (1 - u) + f[j, i + 1] * u) * (1 - v) + (f[j + 1, i] * (1 - u) + f[j + 1, i + 1] * u) * v
+
+    w = np.where(on, sample(weight), 0.)
+    return z + w * (sample(heights) + LIFT - z)
 
 
 def contains(x, y, margin=0.0):

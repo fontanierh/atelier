@@ -335,8 +335,16 @@ checks that the bridge meshes the frozen park, then runs the guarded build with 
 With `ATELIER_CRATERPARK_EDITOR_PARK` set, `world.craterpark_geometry` runs
 [`editor_generate.py`](../world/regions/craterpark/v2/editor_generate.py) instead of the v4 generator. It meshes every piece
 through the pinned pieces.js, exactly as the editor draws it. It keeps the chosen lines (by id; L1 is orange), the bowls
-they land in and the decks they start from. The ground is the editor's cut terrain within 60 m of a kept piece. Each
-line spawns at its roll-in. The rest of the chain (`world.craterpark`, `unreal.craterpark`, `data.stage`) is unchanged.
+they land in and the decks they start from. The park draws no ground of its own. The editor's cut terrain goes into
+`geometry.npz` as a grid (`ground_height`, `ground_weight`), and the volcano's terrain follows it
+([`placement.py`](../world/regions/craterpark/placement.py) terrain): in full within 60 m of a kept piece, easing back
+to the natural ground over the next 40 m. So the dug floors and bowl pits are the volcano's own surface, with its
+material, rock, snow and collision. The editor's natural layer is that terrain's natural height, so nothing changes
+where nothing is cut. The volcano samples the cut on its 5 m grid, coarser than the editor's 2 m, so in a pit a piece
+cut (a bowl's) the grid keeps the ground 0.5 m under every piece within 7.5 m: no terrain rises through the bowl, though
+its outer walls can show a few metres above the coarser pit edge. Each line spawns at its roll-in. The rest of the
+chain (`world.craterpark`, `unreal.craterpark`, `data.stage`) is unchanged; `world.hidamari` needs the geometry, so
+the volcano is rebuilt with it.
 Editor parks have no supports yet, so their geometry is marked `editor_playtest` and skips the v4 acceptance checks.
 
 ## Tower

@@ -1,9 +1,13 @@
 """Compile the owner's editor park (craterpark-editor/1 park.json) into the existing NPZ/FBX pipeline.
 
 The geometry is the editor's own: the pinned pieces.js (editor/pieces.cjs) meshes every piece through the Node bridge,
-exactly as the editor draws it, and the ground is the editor's cut terrain. `--lines` keeps only those lines (by id),
-plus the pieces they ride into and the decks they start from. Supports are not built yet (the owner's call), so the
-geometry is marked an editor playtest instead of a validated v4 park.
+exactly as the editor draws it. `--lines` keeps only those lines (by id), plus the pieces they ride into and the decks
+they start from. Supports are not built yet (the owner's call), so the geometry is marked an editor playtest instead of
+a validated v4 park.
+
+The editor's cut terrain is not a mesh of the park: it is stored as a grid (ground_height, ground_weight) that the
+volcano's own terrain follows (craterpark/placement.py terrain), so every surface round the pieces is the volcano's,
+with its material, rock and snow, and its collision.
 """
 import argparse
 import hashlib
@@ -23,7 +27,13 @@ import numpy as np  # noqa: E402
 from craterpark.v2 import dsl, generate, v4_config  # noqa: E402
 from craterpark.v2.editor import frontend  # noqa: E402
 
-GROUND_REACH = 60.     # metres of cut ground kept round every kept piece
+GROUND_REACH = 60.     # metres round every kept piece where the volcano takes the editor's cut ground in full
+GROUND_FADE = 40.      # metres beyond that over which it eases back to the natural ground
+# In a pit a piece cuts (a bowl's), the ground is kept PIT_CLEAR under every piece within PIT_REACH: the volcano samples
+# it every 5 m (hidamari/mountains.py STEP), and a 5 m cell's points are all within 7.1 m of its corners, so no
+# terrain triangle there rises through the piece.
+PIT_REACH = 7.5
+PIT_CLEAR = .5
 SIDE_COLOURS = ([0.6, 0.58, 0.54], [0.45, 0.43, 0.4])   # pieces.js COL.side, COL.bottom
 
 
@@ -83,38 +93,45 @@ def piece_mesh(piece):
     return parts
 
 
-def ground_mesh(scene, keep_xz):
-    """The editor's cut ground, full resolution, only within GROUND_REACH of the kept pieces."""
+def _shifts(n):
+    return [(dy, dx) for dy in range(-n, n + 1) for dx in range(-n, n + 1) if dy * dy + dx * dx <= n * n]
+
+
+def _shifted(a, dy, dx, fill):
+    """a moved by (dy, dx) cells: out[j, i] = a[j + dy, i + dx], `fill` off the grid."""
+    k = max(abs(dy), abs(dx))
+    p = np.pad(a, k, constant_values=fill)
+    return p[k + dy:k + dy + a.shape[0], k + dx:k + dx + a.shape[1]]
+
+
+def ground_grid(scene, points, base):
+    """The editor's cut ground on its own grid, and how much of it the volcano takes: (heights, weight), (nz, nx) float32.
+    `points` are the kept pieces' vertices (native), `base` the editor's terrain layer before the pieces cut it. The
+    weight is 1 within GROUND_REACH of the kept pieces, easing to 0 over GROUND_FADE beyond them. Where a piece cut the
+    ground below `base` (a pit), the heights stay PIT_CLEAR under the pieces within PIT_REACH."""
     g = scene.metadata['ground_grid']
-    spec = g['heights']
-    H = frontend.read_array(scene.metadata['_dir'], spec, 1).reshape(g['nz'], g['nx']).astype('f8')
-    x = g['x0'] + (np.arange(g['nx']) + .5) * g['G']
-    z = g['z0'] + (np.arange(g['nz']) + .5) * g['G']
-    # cells near any kept point, by a distance transform on the grid
-    near = np.zeros((g['nz'], g['nx']), bool)
-    r = int(np.ceil(GROUND_REACH / g['G']))
-    idx = np.unique(np.c_[np.round((keep_xz[:, 1] - g['z0']) / g['G'] - .5), np.round((keep_xz[:, 0] - g['x0']) / g['G'] - .5)].astype(int), axis=0)
-    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
-    disk = (xx * xx + yy * yy) <= r * r
-    for j, i in idx:
-        j0, j1, i0, i1 = max(0, j - r), min(g['nz'], j + r + 1), max(0, i - r), min(g['nx'], i + r + 1)
-        if j0 < j1 and i0 < i1:
-            near[j0:j1, i0:i1] |= disk[j0 - j + r:j1 - j + r, i0 - i + r:i1 - i + r]
-    cell = near[:-1, :-1] & near[1:, :-1] & near[:-1, 1:] & near[1:, 1:]
-    X, Z = np.meshgrid(x, z)
-    V = np.c_[X.ravel(), H.ravel(), Z.ravel()]
-    jj, ii = np.nonzero(cell)
-    a = jj * g['nx'] + ii
-    b, c, d = a + 1, a + g['nx'], a + g['nx'] + 1
-    F = np.concatenate([np.c_[a, c, b], np.c_[b, c, d]])
-    used = np.unique(F)
-    remap = np.full(len(V), -1)
-    remap[used] = np.arange(len(used))
-    V, F = V[used], remap[F]
-    m = dsl.Mesh.part(V, F, role=dsl.GROUND, material=dsl.GROUND_MAT, feature='ground')
-    m.F = orient(m.V, m.F, np.tile([0., 1., 0.], (len(m.V), 1)))
-    m.UV = V[:, [0, 2]] / 8.
-    return m
+    shape = (g['nz'], g['nx'])
+    H = frontend.read_array(scene.metadata['_dir'], g['heights'], 1).reshape(shape).astype('f8')
+    j = np.round((points[:, 2] - g['z0']) / g['G'] - .5).astype(int)
+    i = np.round((points[:, 0] - g['x0']) / g['G'] - .5).astype(int)
+    on = (j >= 0) & (j < g['nz']) & (i >= 0) & (i < g['nx'])
+    j, i, y = j[on], i[on], points[on, 1]
+    # metres to the nearest kept point: a chamfer distance (8 neighbours) grown from the cells holding one
+    d = np.full(shape, np.inf)
+    d[j, i] = 0.
+    for _ in range(int(np.ceil((GROUND_REACH + GROUND_FADE) / g['G'])) + 1):
+        d = np.minimum.reduce([d] + [_shifted(d, dy, dx, np.inf) + np.hypot(dy, dx) * g['G']
+                                     for dy, dx in _shifts(1) if dy or dx])
+    t = np.clip((d - GROUND_REACH) / GROUND_FADE, 0, 1)
+    weight = 1 - t * t * (3 - 2 * t)
+    # the lowest piece over each cell, then over PIT_REACH round it
+    low = np.full(shape, np.inf)
+    np.minimum.at(low, (j, i), y)
+    r = int(np.ceil(PIT_REACH / g['G']))
+    low = np.minimum.reduce([_shifted(low, dy, dx, np.inf) for dy, dx in _shifts(r)])
+    pit = H < base - PIT_CLEAR
+    H = np.where(pit, np.minimum(H, low - PIT_CLEAR), H)
+    return H.astype('f4'), weight.astype('f4')
 
 
 def main(argv=None):
@@ -148,10 +165,14 @@ def main(argv=None):
         parts, keep = [], []
         for piece in scene.pieces:
             parts += piece_mesh(piece)
-            keep.append(piece.mesh.V[:, [0, 2]])
+            keep.append(piece.mesh.V)
         keep = np.concatenate(keep)
-        ground = ground_mesh(scene, keep[::4])
-    mesh = dsl.Mesh.concat(parts + [ground])
+        # the editor's chosen terrain layer, before the pieces cut it
+        terrain = json.loads((park_path.parent / 'data' / 'terrain.json').read_text())['inner']
+        base = np.fromfile(park_path.parent / 'data' / terrain['layers'][doc['terrain']], '<f4')
+        heights, weight = ground_grid(scene, keep, base.reshape(terrain['nz'], terrain['nx']).astype('f8'))
+        grid = {k: scene.metadata['ground_grid'][k] for k in ('x0', 'z0', 'G', 'nx', 'nz')}
+    mesh = dsl.Mesh.concat(parts)
     # the riding line: its pieces in order from the roll-in, the centre line, the start on the roll-in's top
     by = {p.metadata['id']: p for p in scene.pieces}
     ride_lines, labels = [], {}
@@ -172,10 +193,13 @@ def main(argv=None):
     generate.declare_scenery(park)
     entries = spawns.entries(park.mesh, park.lines, placement, deck_y=None, labels=labels)
     print('CRATERPARK EDITOR baking occlusion', flush=True)
-    ao.bake_mesh(park.mesh, drawn=(dsl.RIDING, dsl.SIDE, dsl.GROUND, dsl.COPING, dsl.RAIL))
+    ao.bake_mesh(park.mesh, drawn=(dsl.RIDING, dsl.SIDE, dsl.COPING, dsl.RAIL))
     arrays, index = generate.bundle(park, entries, {})
+    # the cut ground the volcano's terrain follows (v4_placement.ground_grid), instead of a park mesh over it
+    arrays.update(ground_height=heights, ground_weight=weight)
     index.update(v4=provenance, editor_playtest={'rev': doc.get('rev'), 'lines': lines, 'pieces': len(chosen['pieces']),
                                                  'pieces_sha256': scene.metadata['pieces_sha256']},
+                 ground_grid=dict(grid, reach=GROUND_REACH, fade=GROUND_FADE),
                  accepted=False, validation={'ran': False, 'reason': 'editor playtest: supports not built (owner)'},
                  bounds_native=[park.mesh.V.min(0).tolist(), park.mesh.V.max(0).tolist()])
     arrays['index'] = np.asarray(json.dumps(index))
