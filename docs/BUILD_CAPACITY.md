@@ -11,6 +11,73 @@ Until clients are explicitly configured, the current render slots, live locks, m
 remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
 small products reduce the work, and capacity admission schedules the remaining work safely.
 
+## Agent workflow
+
+This is the operational runbook for agents. The machine remains in the conservative migration bridge until
+the operator announces the controlled full-mode cutover. Merging implementation PRs, installing a broker or
+seeing a quiet machine does not change its live mode. Check the actual broker status and the board's fresh
+observation: `(legacy-bridge, false)` means bridge; `(capacity, true)` means full capacity. Use the socket selected
+by the installed client when running `uv run atelier capacity status ABSOLUTE_SOCKET`. Missing or stale status
+means availability is unknown. Preserve the machine board, live locks and guard checks at every heavy boundary.
+
+Before adopting main, finish the checkout's current native child and stop its enclosing caller at an agreed
+boundary so it cannot automatically launch another child. Only then merge and run `uv sync`. Keep generated
+Content, Binaries, build stamps and caches; use the verified [reuse procedure](../AGENTS.md#reusing-builds) for a
+fresh checkout instead of rebuilding everything or sharing mutable directories. Do not change a running job's
+source, Python environment or installed engine underneath it.
+
+Inspect `uv run atelier build yorimichi --plan` before a large run. Separate genuine source changes and the first
+adoption of new product owners from repeated invalidation of unchanged work. A real ownership or input-contract
+migration may require one refresh; report repeated broad rebuilds with the plan and source revisions. Keep real
+inputs and output verification intact: do not manufacture stamps, use `--touch` to hide a required build, or
+force regeneration to make the plan look simpler. Prefer the specific required steps and retain reusable outputs.
+
+During the current bridge pilot, use your registered board owner and the explicit pilot client for ordinary jobs:
+
+```sh
+ATELIER_AGENT=YOUR_OWNER ATELIER_CAPACITY_CLIENT="$HOME/.cache/atelier/capacity/pilot-client.json" nice -n 10 uv run atelier build yorimichi
+ATELIER_AGENT=YOUR_OWNER ATELIER_CAPACITY_CLIENT="$HOME/.cache/atelier/capacity/pilot-client.json" nice -n 10 uv run atelier play yorimichi
+```
+
+Keep the existing worker counts, memory ceilings and saved play preferences. The bridge requires both a broker
+grant and all legacy lane locks; it authorizes no extra overlap. Quit test games promptly. Only after the operator's
+full-mode announcement and a fresh full-mode status, remove the explicit pilot override
+(`unset ATELIER_CAPACITY_CLIENT`) and use the installed default client. Continue identifying each ordinary command,
+for example `ATELIER_AGENT=YOUR_OWNER nice -n 10 uv run atelier build yorimichi` (or `play yorimichi`).
+Agents do not edit client profiles, broker configuration, service settings or cutover records to change modes.
+Removing the override is a rollout step, never a fallback after a refusal.
+
+If admission or a running grant is refused, retain the command, source revision, guard directory, stdout,
+`memory-health.json`, `memory-health-tree.json` and any execution timings. Report the broker's reason, owner,
+phase and the next safe boundary. A charged or uncertain reservation still holds capacity even when measured
+memory is small. Recovery accepts complete known-ancestry retained exits, or, for bridge and full
+performance-exclusive grants, a positively exited root plus its matching bound aggregate guard's successful
+terminal empty-tree cleanup receipt. The latter witnesses the monitored owned tree rather than inventing
+individual historical exits. Neither policy certifies outputs; uncertainty remains charged without its required
+evidence. PID absence or heartbeat expiry alone never establishes release. If a later invocation overwrote the
+bound report, authorized recovery can attest the preserved original with
+`atelier capacity reconcile ABSOLUTE_SOCKET --request-id REQUEST_ID --preserved-terminal ABSOLUTE_ARCHIVE`;
+the broker applies the same scoped checks and records the evidence hash and preservation provenance.
+Do not clear the database or locks, restart a live broker, drop the client environment, or launch through another
+path. Ask the operator for help when the documented recovery cannot establish a safe next step.
+
+Read board reservations as scheduling budgets, separately from measured process memory and host availability.
+Recovery pauses new grants; inspect the uncertain jobs and their owners, or the compatibility reason, rather than
+treating the warning as spare capacity. Optional I/O tokens are a contention budget, not disk-space protection;
+zero tokens do not disable temporary-disk pressure checks. An unavailable observation never means a free pool.
+
+When asked to stop or yield, let the current owned child finish normally and arrange for its caller to stop before
+another heavy admission. First check `uv run atelier build --help`: if this checkout offers
+`--max-heavy-commands`, use `--max-heavy-commands 1` for the handoff. Exit status `75` means the build yielded;
+recheck Waiting and resume from its existing stamps when your next turn is agreed. If the option is unavailable,
+choose a bounded step or another supported caller boundary before launching; do not invent a pause mechanism.
+A whole-build wrapper may continue into
+another build step, still capture or upload after a child exits. State explicitly which of those stages remain and
+wait for the agreed caller boundary before an update, service change or reboot. If the caller cannot safely stop
+there, report that limitation and keep maintenance pending. A momentarily empty native process list is not proof
+that the chain is finished. Schedule approved reboot/cutover work only after all owners confirm their complete
+chains have drained and retained reservations have resolved.
+
 ## Broker and guarded-launch migration
 
 The production broker uses its own private Unix socket and SQLite namespace. It is separate from every shadow

@@ -34,3 +34,14 @@ in-process. On .NET 10, `SpecialFolder.Personal` is `~/Documents`, and looking i
 so a headless UAT would hang at startup. The repair therefore also patches that lookup to use `UE_HEADLESS_USER_DIR`,
 and replaces UAT's shipped copies with the rebuilt ones (originals kept, restored on failure). `unreal.package`
 exports the variable for UAT and the build tool it starts.
+
+The same version-pinned repair isolates Xcode project-generation intermediates from ordinary builds. UE 5.8.2
+otherwise lets PostBuildSync rewrite normal shared-PCH response files with indexing-only include paths, causing
+the next normal build to compile them again. Setup passes the project-generation environment explicitly and
+allows its `GPF` intermediate directory in installed engines; other installed builds keep their normal paths.
+Both source identities enter the repair receipt, so an older repair is rebuilt on the next explicit setup.
+Fresh staging, source/binary backups and rollback cover both changes and UAT's shipped copies. Unknown source
+layouts are refused. Apply this shared-engine repair only after its UAT/UBT users have finished, before capacity
+cutover; setup retains the existing cutover refusal and all native guards. Verify normal PCH response hashes
+stay unchanged across project generation, then validate an unchanged normal build; prior response-file churn
+may still require one legitimate settling rebuild.

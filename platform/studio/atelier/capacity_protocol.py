@@ -286,7 +286,15 @@ class ExitWatch:
             self.handle = None
 
 
+class _ReplacedReport(CapacityError):
+    """An opened report was unlinked by its publisher's atomic replacement."""
+
+
 def private_file(path, *, limit, private=True):
+    return _read_file(path, limit=limit, private=private)
+
+
+def _read_file(path, *, limit, private, guard_report=False):
     path = Path(path)
     for ancestor in (path, *path.parents):
         if ancestor.is_symlink() and str(ancestor) not in ('/tmp', '/var', '/etc'):
@@ -295,17 +303,43 @@ def private_file(path, *, limit, private=True):
     try:
         info = os.fstat(fd)
         mask = 0o077 if private else 0o022
-        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink != 1
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
                 or info.st_mode & mask or info.st_size > limit):
+            raise CapacityError('Capacity file must be bounded, owned and regular')
+        def replaced(sample):
+            if not guard_report or sample.st_nlink != 0:
+                return False
+            current = path.lstat()
+            return (current.st_dev, current.st_ino) != (sample.st_dev, sample.st_ino)
+        if info.st_nlink != 1:
+            if replaced(info):
+                raise _ReplacedReport('Capacity guard report replaced while reading')
             raise CapacityError('Capacity file must be bounded, owned and regular')
         data = os.read(fd, limit + 1)
         after = os.fstat(fd)
         if len(data) != info.st_size or (info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns) != (
                 after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns):
+            if replaced(after):
+                raise _ReplacedReport('Capacity guard report replaced while reading')
             raise CapacityError('Capacity file changed while reading')
         return data
     finally:
         os.close(fd)
+
+
+def guard_report(path):
+    """@cc [owner:fontanierh,label:safety] bounded-guard-report-replacement
+    Only an unlinked opened report with a different current path identity MAY be retried,
+    at most three fresh reads. Every read MUST retain ownership, mode, type and size checks;
+    callers MUST still validate freshness, monitor identity and the decoded receipt.
+    Private token and configuration reads MUST NOT retry replacement races.
+    """
+    for attempt in range(3):
+        try:
+            return _read_file(path, limit=MAX_FRAME, private=False, guard_report=True)
+        except _ReplacedReport:
+            if attempt == 2:
+                raise CapacityError('Capacity guard report repeatedly replaced while reading') from None
 
 
 @dataclass(frozen=True)
@@ -325,7 +359,7 @@ def validate_guards(guards, child, owner, limit_bytes, reserved_mib, *, started=
         monitor = identity((item['pid'], item['start']))
         if started(monitor[0]) != monitor[1] or not alive(monitor) or not child_of(owner, monitor):
             raise CapacityError('Capacity guard identity is not live and owned')
-        record = decode(private_file(text(item['report'], maximum=4096), limit=MAX_FRAME, private=False))
+        record = decode(guard_report(text(item['report'], maximum=4096)))
         observed = record.get('observed_monotonic') if kind == 'tree_guard' else record.get('time')
         now = time.monotonic() if kind == 'tree_guard' else time.time()
         if (type(observed) not in (int, float) or not math.isfinite(observed) or not 0 <= now - observed <= 3

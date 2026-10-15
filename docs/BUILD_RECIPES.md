@@ -129,6 +129,16 @@ Builds store per-command durations alongside total step time. Step/prefix select
 matching only explicit steps reports an unknown selection rather than silently doing nothing. `--touch` cannot
 certify named products.
 
+To leave a scheduling boundary between imports, run `atelier build <game> --max-heavy-commands 1`.
+The positive integer limits actual heavy command invocations, including compile commands. Current actions,
+cache hits, plain prerequisites and in-process `Call` commands do not spend the budget. A warm batch counts
+as one process, regardless of its action count. After the budget is spent, the build yields with exit 75
+before preparing or admitting the next heavy command; if none remains it succeeds normally. Completed
+stamps and outputs are retained. Recheck Waiting and rerun the same command to resume from those stamps.
+For a step containing multiple heavy commands, a yield partway through leaves that step uncertified;
+resuming reruns it from its first command, so choose a budget large enough for that step. This option
+requires execution and cannot be combined with inspection or `--touch`.
+
 ## Reuse a tool process without merging actions
 
 Opt in only scripts that reset their own transient state and can safely follow another script in the same process:

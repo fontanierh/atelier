@@ -566,7 +566,10 @@ def slot_summary(slots):
     return f', slots {" then ".join(slots)}'
 
 
-def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None):
+def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
+          max_heavy_commands=None):
+    if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
+        raise ValueError('max_heavy_commands must be a positive integer')
     from .build_snapshot import require_complete
     require_complete(paths.build_root() / game, game=game)
     if dry:
@@ -576,16 +579,18 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
     from .build_hashes import HashIndex
     with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-        return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index)
+        return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                      max_heavy_commands=max_heavy_commands)
 
 
-def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None):
+def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None, max_heavy_commands=None):
     from .build_cook import validate_force
     validate_force(ctx, force)
     checkpoint = {}
     try:
         code = _execute_build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                              steps=steps, produced=produced, checkpoint=checkpoint)
+                              steps=steps, produced=produced, checkpoint=checkpoint,
+                              max_heavy_commands=max_heavy_commands)
     finally:
         # Failure and yield paths must also discard earlier certificates with changed reads.
         invalid = _discard_changed_certificates(ctx, checkpoint, index=index)
@@ -626,7 +631,14 @@ def _discard_changed_certificates(ctx, checkpoint, *, index):
     return invalid
 
 
-def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, checkpoint):
+def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, checkpoint, max_heavy_commands=None):
+    """@cc [owner:fontanierh,label:correctness] bounded-heavy-commands
+    A bounded build MUST yield with exit 75 before preparing or admitting the next heavy
+    command after its budget is spent. Calls, current actions and cache hits MUST NOT spend
+    the budget; a warm batch spends one command for its whole process. Yield MUST preserve
+    completed certificates and leave the next unstarted action's outputs and stamp intact,
+    subject to the completed-product checkpoint.
+    """
     # A trusted producer can supply the exact singleton declarations it already vetted, avoiding
     # a second recipe import that could choose a different action or introduce native prerequisites.
     from . import build_batches, build_cache
@@ -668,6 +680,14 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     done, ran, restored = {}, 0, 0
+    heavy_commands = 0
+    def budget_spent():
+        return max_heavy_commands is not None and heavy_commands >= max_heavy_commands
+
+    def yield_build(step):
+        echo(f'BUILD YIELDED: {heavy_commands} heavy commands completed; next: {step.name}. '
+             'Completed results are saved. Recheck Waiting, then resume the same build command.')
+        return 75
     checkpoint.update(plan=plan, done=done)
     tool_cache = {}
     def verify_spatial(step, expected):
@@ -737,6 +757,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} FAILED: {error}')
             return 1
         if batch:
+            if budget_spent():
+                return yield_build(step)
+            heavy_commands += 1
             completed, code = build_batches.run(ctx, batch, done, index=index, tool_cache=tool_cache,
                                                 echo=echo, products=declared_products, wanted=wanted)
             completed_batches.update(completed)
@@ -779,6 +802,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 echo(f'{print_} cache unavailable ({error}); building')
                 products = None
         from_cache = products is not None
+        if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
+            return yield_build(step)
         with open(log_path, 'w') as log:
             try:
                 stamp.unlink(missing_ok=True)
@@ -787,6 +812,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 verify_spatial(step, current)
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
+                    if step.heavy and not isinstance(command, Call):
+                        if budget_spent():
+                            return yield_build(step)
+                        heavy_commands += 1
                     from .build_timings import clear_launch_report, launch_receipt
                     launch_folder = ctx.logs / f'{step.name}.guard'
                     fresh_launch = (step.heavy and not isinstance(command, Call)
