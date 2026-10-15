@@ -207,7 +207,7 @@ def make_parser():
     p.add_argument('action', choices=['push']); p.add_argument('key', help='the PR number, or a slug before the PR exists')
     p.add_argument('files', nargs='+', metavar='FILE')
     p.add_argument('--remote', default='origin', help='GitHub remote to push to (default: origin)')
-    p.add_argument('--dry-run', action='store_true', help='build the commit and print its links without pushing')
+    p.add_argument('--dry-run', action='store_true', help='read the remote ref and build the commit locally, but print its links without pushing')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
     p = sub.add_parser('contracts', help='check code contract syntax and owners')
     p.add_argument('action', choices=['check'])

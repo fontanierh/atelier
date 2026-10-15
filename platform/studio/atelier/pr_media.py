@@ -8,13 +8,14 @@ Markdown shows images inline. The command prints one ready-to-paste Markdown lin
 Only git plumbing runs (hash-object, mktree, commit-tree, fetch, push): the worktree, index, HEAD and branches are never
 touched. When the remote already has the ref, the new commit starts from its tree (same-named files are replaced) and has
 it as parent, so links to earlier commits keep working. The push is a fast-forward, never forced. The local
-`refs/pr-media/<key>` caches the remote's ref. `--dry-run` builds the commit and prints its links without pushing.
+`refs/pr-media/<key>` caches the remote's ref. `--dry-run` still reads the remote's ref and writes the commit locally,
+but prints its links without pushing. SVG is refused: it can carry script, and PR media are captures and films.
 """
 import re, subprocess, sys, urllib.parse
 from pathlib import Path
 
 PREFIX = 'refs/pr-media/'
-IMAGES = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
+IMAGES = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
 VIDEOS = {'.mp4', '.mov', '.webm'}
 MAX_BYTES = 50 * 1024 * 1024    # refused above this
 WARN_BYTES = 10 * 1024 * 1024   # warned above this

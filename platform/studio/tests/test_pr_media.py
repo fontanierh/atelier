@@ -131,6 +131,8 @@ def test_file_validation(repo, tmp_path, monkeypatch, capsys):
         pr_media.push('1', [str(tmp_path / 'one')], repo=repo)
     with pytest.raises(SystemExit, match='not a media file'):
         pr_media.push('1', [media(tmp_path, 'notes.txt', b'x')], repo=repo)
+    with pytest.raises(SystemExit, match='not a media file'):   # an SVG can carry script
+        pr_media.push('1', [media(tmp_path, 'diagram.svg', b'<svg/>')], repo=repo)
     with pytest.raises(SystemExit, match='also named'):
         pr_media.push('1', [good, media(tmp_path / 'two', 'a.png', b'b')], repo=repo)
     monkeypatch.setattr(pr_media, 'MAX_BYTES', 4)
