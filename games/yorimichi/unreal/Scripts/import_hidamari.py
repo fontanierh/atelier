@@ -139,7 +139,9 @@ if (OUT/'props'/'props.json').exists() and (not only or any(n.startswith('HD_P_'
         unreal.EditorAssetLibrary.save_loaded_asset(mesh)
         report[key]={'imported':True,'triangles':props[key]['triangles'],'material':mi.get_path_name()}
 if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
-    mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
+    # Fresh slots: setup_project's Interchange import is migrated through the village seed, whose one slot
+    # (VillagePalette) would otherwise stay; the terrain's slots are its own (Ground, Road, Sand, ...).
+    mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain',fresh_slots=True)
     from import_southwest import sand_material
     sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
     materials=[]
