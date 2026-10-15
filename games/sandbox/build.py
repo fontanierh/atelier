@@ -1,7 +1,7 @@
 """A portable block library and independent placements, then the compiled editor and test ground."""
 from pathlib import Path
 
-from atelier.build import BBoxQuery, Product, Python, Step, UnrealScript, UnrealCompile
+from atelier.build import BBoxQuery, Call, Product, Python, Step, UnrealScript, UnrealCompile, UnrealPackage
 
 GAME = Path(__file__).resolve().parent
 SCRIPTS = GAME / 'unreal' / 'Scripts'
@@ -28,7 +28,7 @@ def steps(ctx):
              inputs=[SCRIPTS / 'make_level.py'], after=['unreal.compile'], heavy=True,
              reads=['block.shape', 'world.placements'],
              about='the prop material and the test ground (/Game/Sandbox)'),
-    ] + spatial_steps(ctx)
+    ] + spatial_steps(ctx) + cook_steps(ctx)
 
 
 def spatial_steps(ctx):
@@ -57,3 +57,29 @@ def spatial_steps(ctx):
     return [*sources, *tiles, Step('spatial.demo', [], explicit=True,
                                   after=[s.name for s in (*sources, *tiles)],
                                   about='offline spatial dependency and cache example')]
+
+
+def cook_steps(ctx):
+    """Explicit native performance experiment; ordinary sandbox/new builds do not cook."""
+    import importlib.util
+    helper = GAME / 'tools/cook_experiment.py'
+    def tool():
+        spec = importlib.util.spec_from_file_location('sandbox_cook_experiment', helper)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    def prepare(ctx, log):
+        return tool().prepare(ctx, log)
+    def finish(ctx, log):
+        return tool().finish(ctx, log)
+    root = ctx.out / 'package'
+    return [Step('unreal.cook', [Call('prepare_cook_experiment', prepare),
+                                UnrealPackage('Sandbox', root / 'archive'),
+                                Call('certify_cook_experiment', finish)],
+                 inputs=[GAME / 'build.py', helper, ctx.uproject, GAME / 'unreal/Config',
+                         GAME / 'unreal/Source', GAME / 'unreal/Content',
+                         ctx.unreal_root / 'Engine/Build/Build.version',
+                         ctx.unreal_root / 'Engine/Binaries/Mac/UnrealEditor.modules'],
+                 needs=['unreal.compile', 'unreal.level'], heavy=True, explicit=True,
+                 outputs=[root / 'cook.json'], verify=lambda: tool().present(root),
+                 about='explicit same-checkout modern-cook experiment; native parity remains unproven')]

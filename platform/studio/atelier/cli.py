@@ -189,6 +189,9 @@ def make_parser():
     p.add_argument('--timings', action='store_true', help='read historical execution and phase timings without checking inputs')
     p.add_argument('--changes', action='store_true', help='read changes between the last certified product inventories')
     p.add_argument('--ddc', action='store_true', help='read historical DDC configuration and counts from retained Unreal logs')
+    p.add_argument('--cook-mode', choices=('modern-full', 'modern-incremental'),
+                   help='experimental UE5.8 package cook; --force recooks packages only')
+    p.add_argument('--cook-reason', help='measurement reason required for experimental --force')
     p.add_argument('--verify', action='store_true', help='read all named-product bytes instead of using the local hash index')
     p.add_argument('--touch', action='store_true', help='record the steps as built without running them (after a recipe refactor)')
     p = sub.add_parser('play'); p.add_argument('game'); p.add_argument('--profile', default='play')
@@ -291,6 +294,11 @@ def main(argv=None):
         from . import capacity
         return capacity.main(args.path, as_json=args.json)
     if args.command == 'build':
+        experimental = {'cook_mode': args.cook_mode, 'cook_reason': args.cook_reason} if args.cook_mode is not None else {}
+        if args.cook_reason is not None and not experimental:
+            raise SystemExit('--cook-reason requires --cook-mode')
+        if experimental and (args.list or args.ddc or args.changes or args.timings or args.touch):
+            raise SystemExit('--cook-mode combines only with execution or an existing build plan')
         if args.ddc:
             if args.timings or args.changes or args.list or args.dry_run or args.explain or args.force or args.touch or args.verify:
                 raise SystemExit('--ddc combines only with step selection and --json')
@@ -313,8 +321,8 @@ def main(argv=None):
             if args.touch:
                 raise SystemExit('--touch cannot be combined with a read-only plan')
             from .build_plan import show
-            return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json, verify=args.verify)
-        return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch, verify=args.verify)
+            return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json, verify=args.verify, **experimental)
+        return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch, verify=args.verify, **experimental)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
     if args.command == 'playtest':

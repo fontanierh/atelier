@@ -395,6 +395,10 @@ The existing independent archive receipt is useful. Keep cook state warm and eva
 incremental cooker with the installed ZenStore/IoStore setup. An inspected cook log reports 7,694 packages cooked
 and zero incrementally skipped. The installed engine source also distinguishes modern dependency tracking from
 legacy iterative cooking; adding an `iterate` flag alone is not a correctness proof.
+The explicit `--cook-mode modern-full|modern-incremental` experiment now forwards cooker-only options,
+requires runtime modern-tracking evidence and preserves default flags/fingerprints. The sandbox has an
+explicit guarded full/warm-repeat cook and receipt barrier. [Commands and the still-unrun native acceptance
+matrix](COOK_EXPERIMENT.md) separate cook reuse from compilation/staging and keep default enablement gated.
 
 Use the build snapshot to enumerate runtime assets, including soft loads and data-driven paths. The current
 `-cookall` approach protects those paths from omission; replace it only when explicit roots and their references

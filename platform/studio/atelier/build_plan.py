@@ -50,11 +50,16 @@ def inspect(ctx, steps, wanted=(), *, force=False, verify=False):
 
 
 def _inspect(ctx, steps, wanted, *, force, index):
+    from .build_cook import validate_force
+    validate_force(ctx, force)
     engine.check_modules(steps)
     graph = build_products.Graph(steps)
     done, uncertain_steps, uncertain_products, decisions = {}, set(), set(), []
     tool_cache = {}
-    for step in graph.select(wanted):
+    selected = graph.select(wanted)
+    from .build_cook import validate_selection
+    validate_selection(ctx, selected)
+    for step in selected:
         stamp = read_stamp(ctx.stamps / f'{step.name}.json')
         reasons = []
         try:
@@ -69,7 +74,8 @@ def _inspect(ctx, steps, wanted, *, force, index):
             current, state = f'invalid:{step.name}', {}
             reasons.append(f'invalid inputs: {error}')
         reasons.extend(f'required input missing: {path}' for path in engine.missing_product_inputs(step))
-        if force:
+        from .build_cook import forced
+        if forced(ctx, step, force):
             reasons.append('forced')
         if (ctx.stamps / f'{step.name}.restore.json').exists():
             reasons.append('interrupted product restoration')
@@ -101,11 +107,14 @@ def _inspect(ctx, steps, wanted, *, force, index):
             if step.cutoff or pending:
                 uncertain_steps.add(step.name)
             uncertain_products.update(p.name for p in step.products)
-    return {'schema': 1, 'game': ctx.game, 'steps': decisions}
+    report = {'schema': 1, 'game': ctx.game, 'steps': decisions}
+    if getattr(ctx, 'cook_mode', engine.CookMode.DEFAULT) is not engine.CookMode.DEFAULT:
+        report.update(cook_mode=ctx.cook_mode.value, cook_reason=getattr(ctx, 'cook_reason', None))
+    return report
 
 
-def show(game, wanted=(), *, force=False, explain=False, as_json=False, echo=print, verify=False):
-    ctx = engine.Context(game, create=False)
+def show(game, wanted=(), *, force=False, explain=False, as_json=False, echo=print, verify=False, cook_mode=None, cook_reason=None):
+    ctx = engine.Context(game, create=False, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
     report = inspect(ctx, engine.load_recipe(game).steps(ctx), wanted, force=force, verify=verify)
     if as_json:
         echo(json.dumps(report, indent=2))

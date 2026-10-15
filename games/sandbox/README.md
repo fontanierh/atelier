@@ -70,3 +70,13 @@ its already certified tile from cache instead of executing it again.
 Normal sandbox builds exclude this example. Targeting a single tile selects only its matching source producers.
 The example validates dependency selection and cached outputs; its JSON shapes do not certify geometric bounds
 or any native world. Authors must declare conservative bounds and the full reach of their actual operation.
+
+
+## Explicit native cook experiment
+
+Normal builds do not cook. After native source review and an agreed machine turn, the explicit
+`unreal.cook` step can compare `--cook-mode modern-full` with `modern-incremental` in the same checkout.
+Experimental `--force` repeats only package steps and requires `--cook-reason`, preserving current
+compile/import prerequisites. See the [runnable experiment and native acceptance matrix](../../docs/COOK_EXPERIMENT.md).
+Modern runtime evidence and a complete app inventory are required before the experiment receipt appears;
+this has no native parity/speed acceptance or default enablement yet.

@@ -213,12 +213,25 @@ def show(game, wanted=(), *, as_json=False, echo=print):
             if not isinstance(receipt, dict) or not isinstance(receipt.get('phases'), list):
                 echo('    phases not recorded')
                 continue
+            cook = receipt.get('cook')
+            if isinstance(cook, dict):
+                decision = cook.get('decision') if isinstance(cook.get('decision'), dict) else {}
+                known = lambda value: 'unknown' if value is None else value
+                echo(f"    cook requested {cook.get('requested', 'unknown')}; effective {decision.get('mode', 'unknown')}; "
+                     f"modern dependencies {known(cook.get('modern_dependencies'))}; validation {known(cook.get('validated'))}")
+                counts = cook.get('counts') if isinstance(cook.get('counts'), dict) else {}
+                echo(f"    packages cooked {known(counts.get('cooked'))}; incrementally skipped {known(counts.get('incrementally_skipped'))}")
+                uat = cook.get('uat_seconds') if isinstance(cook.get('uat_seconds'), dict) else {}
+                echo(f"    cooker session: {duration(cook.get('cooker_seconds'))}")
+                for name, seconds in uat.items():
+                    echo(f'    UAT {name}: {duration(seconds)}')
+                echo('    UAT phase timings overlap nested subprocess metrics; do not add them twice')
             for phase in receipt['phases'][:MAX_RECORDS]:
                 if not isinstance(phase, dict):
                     continue
                 state = ' (failed phase)' if phase.get('ok') is False else ''
                 echo(f"    {phase.get('name', 'phase')}: {duration(phase.get('seconds'))}{state}")
-            if receipt.get('status') != 'complete':
+            if receipt.get('status') != 'complete' and not (isinstance(cook, dict) and receipt.get('status') == 'not-recorded'):
                 echo('    phase trace incomplete')
                 diagnostics = receipt.get('diagnostics', [])
                 if isinstance(diagnostics, list):
