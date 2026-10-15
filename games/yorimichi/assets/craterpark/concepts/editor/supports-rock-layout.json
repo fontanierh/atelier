@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is a plain 3D layout render of the new park from its editor: flat-shaded grey-brown ramps over the crater terrain, untextured, with coloured route markings that are not part of the art. Paint it as the finished in-game scene. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The ramps float in the air with nothing under them. Paint the ramps as warm wooden skate ramps, and support them so they look like they grew out of the volcano: sculpted dark volcanic-rock pillars and ridges, basalt columns, earth embankments and arches, rising from the crater floor to meet the underside of each ramp, with moss and snow patches, so the whole line reads as a natural rock formation crowned with wood. Leave the space under every jump open. Keep the crater floor natural volcanic rock and snow, not sand.",
+  "references": {
+    "build/yorimichi/craterpark/editor-views/mega_side.png": "c62f34fd40d79506b1deba0f3c7833329fa88ff4e56246237454420ffc1c2ead",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:33:29.720559+00:00",
+  "usage": {
+    "input_tokens": 2436,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 276
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3808
+  },
+  "png_sha256": "310aed69bf1abdd978174d526cdb2d06643d64bfb1fcef3c046edfc2a8abc5cc",
+  "output": {
+    "file": "supports-rock-layout.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:34:09.357599+00:00"
+}

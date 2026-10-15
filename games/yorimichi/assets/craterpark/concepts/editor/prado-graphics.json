@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The big double-pocket concrete bowl (the Prado) gets bold, cool painted graphics on its smooth concrete: a huge sun with radiating rays across the floor between the two pockets, sweeping wave and lava-flow bands along the walls, a tiled coping edge in terracotta, and the name 'PRADO' painted large in a playful hand-lettered style on the flat bottom, in the island palette (sun yellow, terracotta, teal, deep blue, cream). Keep the bowl's shape, the spine between the pockets and the raised vert wall exactly. Keep the crater floor natural volcanic rock and snow, not sand. Paint the ramps around it as warm wooden skate ramps.",
+  "references": {
+    "build/yorimichi/craterpark/shots/prado/view.png": "65e405e6de1e1345c7d25c6c89eec0fb3d1fdc8c3c87def5672448e452530bb1",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:46:30.876522+00:00",
+  "usage": {
+    "input_tokens": 2256,
+    "input_tokens_details": {
+      "image_tokens": 2000,
+      "text_tokens": 256
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3628
+  },
+  "png_sha256": "2d17103d7f95739eb0ebc64cd82a5dc77f5a111fe91aff5363f541a1486adc4a",
+  "output": {
+    "file": "prado-graphics.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:47:16.144994+00:00"
+}

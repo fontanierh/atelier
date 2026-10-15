@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The ramps float in the air with nothing under them. Paint the ramps as warm wooden skate ramps (ramp boards on top, plywood sides) and add supports that look designed and beautiful, not ugly: heavy timber trestle bents with diagonal cross bracing and visible joints, spaced rhythmically under every ramp and run, standing on squat dark volcanic-stone footings on the crater floor, tapering toward the top, and the tallest towers braced like old wooden roller-coaster trestles. Supports never cross the riding surface or the path of a jump through the air. Keep the crater floor natural volcanic rock and snow, not sand.",
+  "references": {
+    "build/yorimichi/craterpark/shots/mega_side_a/view.png": "85dfbfa7e708be51d0af77c2a8ec348938c20b554288e9f4563fbe443493a528",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:46:01.854464+00:00",
+  "usage": {
+    "input_tokens": 2252,
+    "input_tokens_details": {
+      "image_tokens": 2000,
+      "text_tokens": 252
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3624
+  },
+  "png_sha256": "c5e7162362515f179afee80e9df4dcfea56b39a49b790514339917fd8451d1db",
+  "output": {
+    "file": "supports-timber.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:46:41.523461+00:00"
+}

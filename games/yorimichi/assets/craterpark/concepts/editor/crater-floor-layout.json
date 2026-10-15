@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is a plain 3D layout render of the new park from its editor: flat-shaded grey-brown ramps over the crater terrain, untextured, with coloured route markings that are not part of the art. Paint it as the finished in-game scene. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. Redesign the ground around the park: there must be no flat sandy or orange plain. The crater floor is the volcano's own crater floor everywhere: dark grey volcanic rock and gravel, black scree, patches of white snow, tufts of yellow-green moss and hardy grass, a few boulders and lava-rock outcrops, with gentle natural undulation; where the ground is cut for a bowl, show stepped rock and stone retaining edges that blend into the crater. Paint the ramps as warm wooden skate ramps.",
+  "references": {
+    "build/yorimichi/craterpark/editor-views/overview.png": "c5a7aa28fcacc5ee946d462f9583e00ea4c4d7bb8fcfca68603db9213b70b6c1",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:33:29.726858+00:00",
+  "usage": {
+    "input_tokens": 2433,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 273
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3805
+  },
+  "png_sha256": "1035d2901916914a98747964b2d6eea2eb974f0ffbe22c2cf86a71b2cd051f93",
+  "output": {
+    "file": "crater-floor-layout.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:34:14.931821+00:00"
+}

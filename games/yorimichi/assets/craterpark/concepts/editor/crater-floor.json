@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. Redesign the ground around the park: there must be no flat sandy or orange plain. The crater floor is the volcano's own crater floor everywhere: dark grey volcanic rock and gravel, black scree, patches of white snow, tufts of yellow-green moss and hardy grass, a few boulders and lava-rock outcrops, with gentle natural undulation; where the ground is cut for a bowl, show stepped rock and stone retaining edges that blend into the crater. Paint the ramps as warm wooden skate ramps.",
+  "references": {
+    "build/yorimichi/craterpark/shots/overview/view.png": "434f93065016da4db21975408ff53b863fd26300944a7c472cd27fdead20d48d",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:46:01.858313+00:00",
+  "usage": {
+    "input_tokens": 2226,
+    "input_tokens_details": {
+      "image_tokens": 2000,
+      "text_tokens": 226
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3598
+  },
+  "png_sha256": "3d36c74d8fe3822d270c5a600527c9950a7fabb54f4be8e3a8cd2ae7483f4237",
+  "output": {
+    "file": "crater-floor.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:46:47.439970+00:00"
+}

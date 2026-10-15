@@ -1,0 +1,34 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "prompt": "Use case: art-direction paintover for a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon, field of view, terrain, buildings and every object exactly where they are. Image 2 is the game's art direction: keep its soft, painterly style, warm light and palette. This view is from the town of Belmonte looking at the big volcano. Add a beautiful lenticular cap cloud sitting on the volcano's summit: a smooth, layered, lens- or saucer-shaped cloud (two or three stacked, softly glowing discs with crisp rounded edges and gentle streaks), hugging the crater rim and the top of the mountain. It is dense enough from this distance that the skate ramps on the rim and in the crater are hidden inside it, while the volcano's lower slopes, snow gullies and forests stay clearly visible below it. Warm late-afternoon light on its top, cool blue-grey shading underneath, a faint shadow on the slopes. Make it feel magical and iconic, a landmark that invites you to go up there. No ramps visible, no text, no UI.",
+  "references": {
+    "build/yorimichi/craterpark/shots/belmonte_view/view.png": "217774ee1c9aaf1cec9920023969f88e69443d1c54556d9eb431db7fda8d8ec1",
+    "assets/craterpark/concepts/paintover-bowls.jpg": "3cdecbd276cf69ccdc7ec09816caa6917ecc108f3cf6f1be81f8145df00adabe"
+  },
+  "purpose": "Crater Park editor park art direction",
+  "status": "done",
+  "started_at": "2026-10-15T15:47:43.764549+00:00",
+  "usage": {
+    "input_tokens": 2254,
+    "input_tokens_details": {
+      "image_tokens": 2000,
+      "text_tokens": 254
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3626
+  },
+  "png_sha256": "3d7d209c6e454fc42671477b96403211c385f706be4a4df5b3fdb9b5f0b536ae",
+  "output": {
+    "file": "lenticular-belmonte.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-15T15:48:22.288922+00:00"
+}
