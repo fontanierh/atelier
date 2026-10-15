@@ -2,8 +2,9 @@
 
 The geometry is the editor's own: the pinned pieces.js (editor/pieces.cjs) meshes every piece through the Node bridge,
 exactly as the editor draws it. `--lines` keeps only those lines (by id), plus the pieces they ride into and the decks
-they start from. Supports are not built yet (the owner's call), so the geometry is marked an editor playtest instead of
-a validated v4 park.
+they start from. Supports (editor_supports: basalt towers under the high pieces, timber trestles under the low ones)
+are generated from the pieces and the cut ground; they are not the v4 validated supports, so the geometry is still
+marked an editor playtest instead of a validated v4 park.
 
 The editor's cut terrain is not a mesh of the park: it is stored as a grid (ground_height, ground_weight) that the
 volcano's own terrain follows (craterpark/placement.py terrain), so every surface round the pieces is the volcano's,
@@ -167,7 +168,7 @@ def main(argv=None):
     parser.add_argument('--out', default=str(yori.OUT / 'craterpark' / 'v2'))
     args = parser.parse_args(argv)
     from craterpark import placement
-    from craterpark.v2 import ao, export, spawns
+    from craterpark.v2 import ao, editor_supports, export, spawns
     start = time.monotonic()
     park_path = Path(args.park).expanduser().resolve()
     out = Path(args.out)
@@ -196,6 +197,10 @@ def main(argv=None):
         base = np.fromfile(park_path.parent / 'data' / terrain['layers'][doc['terrain']], '<f4')
         heights, weight = ground_grid(scene, keep, base.reshape(terrain['nz'], terrain['nx']).astype('f8'))
         grid = {k: scene.metadata['ground_grid'][k] for k in ('x0', 'z0', 'G', 'nx', 'nz')}
+        supports, support_summary = editor_supports.build(scene.pieces, heights, grid)
+        print(f"CRATERPARK EDITOR supports: {support_summary['towers']} basalt towers "
+              f"({support_summary['columns']} columns), {support_summary['bents']} timber bents", flush=True)
+        parts += supports
     mesh = dsl.Mesh.concat(parts)
     # the riding line: its pieces in order from the roll-in, the centre line, the start on the roll-in's top
     by = {p.metadata['id']: p for p in scene.pieces}
@@ -224,7 +229,8 @@ def main(argv=None):
     index.update(v4=provenance, editor_playtest={'rev': doc.get('rev'), 'lines': lines, 'pieces': len(chosen['pieces']),
                                                  'pieces_sha256': scene.metadata['pieces_sha256']},
                  ground_grid=dict(grid, reach=GROUND_REACH, fade=GROUND_FADE),
-                 accepted=False, validation={'ran': False, 'reason': 'editor playtest: supports not built (owner)'},
+                 accepted=False, validation={'ran': False, 'reason': 'editor playtest: generated supports, not v4-validated'},
+                 supports={k: v for k, v in support_summary.items() if k != 'pieces'},
                  bounds_native=[park.mesh.V.min(0).tolist(), park.mesh.V.max(0).tolist()])
     index['assist_zones_native'] = assist_zones(scene.pieces, doc)
     arrays['index'] = np.asarray(json.dumps(index))

@@ -34,7 +34,8 @@ CAVITY = .3
 # landform) is warm dry earth and autumn grass: its grey volcanic ground texture tinted warm (TINTS, sRGB multipliers
 # over the restyled texture), so no new texture or parent is needed.
 SNOWY = set()
-TINTS = {'material_024': (1.30, 1.06, .74)}
+TINTS = {'material_024': (1.30, 1.06, .74),
+         'material_003': (.46, .47, .53)}    # editor-park supports: irregular stone darkened to basalt
 
 
 def parent(kind):
