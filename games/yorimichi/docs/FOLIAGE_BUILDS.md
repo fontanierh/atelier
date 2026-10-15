@@ -33,6 +33,12 @@ An existing Interchange-imported mesh first passes through its owned FBX seed to
 The final pass then applies the declared metre-to-centimetre settings while preserving the package object and
 path. Bounds are checked before importing LODs and again after assembly; a failed migration stays uncertified.
 
+`import_trunk_collision` is an explicit native policy, separate from the FBX's authored UCX geometry and the
+`collision` trace flag. Every current specification disables it: the read-only native baseline measured zero
+primitive and convex shapes for all 18 legacy assets. Seven trees still use complex-as-simple collision.
+The new owner clears disabled shapes after reimport so the migration preserves that behavior. Enabling an
+authored trunk later is an intentional gameplay change and needs its own native validation.
+
 | Owner | Reads | Writes |
 | --- | --- | --- |
 | `world.foliage.<name>` | Its specification, generator/helper closure, declared texture bytes and Blender tool context | `build/yorimichi/foliage/<name>/`: LOD0, authored LOD FBXs, private import seed and manifest |

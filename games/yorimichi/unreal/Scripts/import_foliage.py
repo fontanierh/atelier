@@ -31,6 +31,9 @@ def main():
         raise ValueError('Unknown foliage owner: ' + name)
     source = yori.OUT / 'foliage' / name
     data = json.loads((source / 'manifest.json').read_text())
+    import_trunk = data['import_trunk_collision']
+    if type(import_trunk) is not bool or (import_trunk and not data['trunk_collision']):
+        raise ValueError('Invalid authored trunk collision policy: ' + name)
     interface = json.loads((yori.OUT / 'materials/foliage-interface.json').read_text())
     editor = U.EditorAssetLibrary
     U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
@@ -57,6 +60,10 @@ def main():
         palette.append(key)
     assert sorted(palette) == sorted(data['materials']), (name, 'material slots', palette)
     mesh.set_editor_property('allow_cpu_access', False)
+    # The legacy imported catalogue has no simple shapes, even where the FBX contains UCX.
+    # Keep that runtime policy explicit rather than adding colliders during this migration.
+    if not import_trunk and not meshes.remove_collisions(mesh):
+        raise RuntimeError('Could not clear disabled trunk collision: ' + name)
     body = mesh.get_editor_property('body_setup')
     if body is None:
         raise RuntimeError('Missing body setup: ' + name)
@@ -73,11 +80,12 @@ def main():
     assert report['triangles'] == data['triangles'], (name, 'triangles', report['triangles'], data['triangles'])
     verify_bounds(mesh, data['bounds'])
     report['collision'] = data['collision']
+    report['import_trunk_collision'] = import_trunk
     report['simple_collisions'] = meshes.get_simple_collision_count(mesh)
     report['convex_collisions'] = meshes.get_convex_collision_count(mesh)
     # UE counts boxes, spheres and capsules separately from authored UCX convex hulls.
     assert report['simple_collisions'] == 0, (name, 'unexpected collision primitives', report)
-    assert report['convex_collisions'] == (1 if data['trunk_collision'] else 0), (name, 'collision hulls', report)
+    assert report['convex_collisions'] == int(import_trunk), (name, 'collision hulls', report)
     assert meshes.get_collision_complexity(mesh) == flag[data['collision']], (name, 'collision policy', report)
     if not editor.save_loaded_asset(mesh, False):
         raise RuntimeError('Could not save foliage package: ' + path)

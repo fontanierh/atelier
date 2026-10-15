@@ -11,5 +11,6 @@
   "collision": "default",
   "materials": [
     "Grass"
-  ]
+  ],
+  "import_trunk_collision": false
 }

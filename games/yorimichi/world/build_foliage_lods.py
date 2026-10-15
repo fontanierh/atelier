@@ -60,6 +60,9 @@ def lod_mesh_type(original, generate, minimum, maximum, level, strides):
 
 def build(name):
     spec = json.loads((SPEC_ROOT / (name + '.json')).read_text())
+    import_trunk = spec['import_trunk_collision']
+    if type(import_trunk) is not bool:
+        raise ValueError(f'{name}: import_trunk_collision must be a boolean')
     sizes = spec['screen_sizes']
     grass = spec['generator'] == 'grass_tuft'
     if not (len(sizes) >= 2 and sizes[0] == 1 and all(a > b > 0 for a, b in zip(sizes, sizes[1:]))):
@@ -79,12 +82,15 @@ def build(name):
     original = A.Mesh
     generate = getattr(F, spec['generator'])
     base = generate(name, *spec['arguments'])
+    if import_trunk and 'trunk_collision' not in base:
+        raise ValueError(f'{name}: trunk collision requested without authored trunk geometry')
     minimum = Vector(tuple(min(v.co[i] for v in base.data.vertices) for i in range(3)))
     maximum = Vector(tuple(max(v.co[i] for v in base.data.vertices) for i in range(3)))
     palette = [m.name for m in base.data.materials]
     assert set(palette) == set(spec['materials']), (name, 'undeclared material', palette)
     report = {'triangles': [triangles(base)], 'screen_sizes': sizes, 'materials': palette,
               'bounds': [list(minimum), list(maximum)], 'collision': spec['collision'],
+              'import_trunk_collision': import_trunk,
               'trunk_collision': list(base['trunk_collision']) if 'trunk_collision' in base else None}
     A.export(base, name, portable=True)
     try:

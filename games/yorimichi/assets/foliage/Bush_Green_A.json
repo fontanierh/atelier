@@ -17,5 +17,6 @@
   "collision": "default",
   "materials": [
     "LeafSmall"
-  ]
+  ],
+  "import_trunk_collision": false
 }

@@ -20,5 +20,6 @@
   "materials": [
     "Bark",
     "LeafMaple"
-  ]
+  ],
+  "import_trunk_collision": false
 }

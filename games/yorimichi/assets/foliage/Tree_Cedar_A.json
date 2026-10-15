@@ -19,5 +19,6 @@
   "materials": [
     "Bark",
     "LeafCedar"
-  ]
+  ],
+  "import_trunk_collision": false
 }

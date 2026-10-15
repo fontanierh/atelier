@@ -19,5 +19,6 @@
   "materials": [
     "Bark",
     "LeafGinkgo"
-  ]
+  ],
+  "import_trunk_collision": false
 }

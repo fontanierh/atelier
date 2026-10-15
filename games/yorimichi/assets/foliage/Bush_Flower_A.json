@@ -16,5 +16,6 @@
   "collision": "default",
   "materials": [
     "Flower"
-  ]
+  ],
+  "import_trunk_collision": false
 }
