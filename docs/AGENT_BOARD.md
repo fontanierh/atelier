@@ -340,6 +340,9 @@ conversation's place, as in Slack's sidebar (choosing an agent or Everyone bring
   capacity broker when the machine's private client configuration is present. A service installed without client
   activation does not replace the legacy slots. The migration bridge still holds all legacy lanes and adds no
   native concurrency; the board does not activate clients or offer admission controls.
+  A matching full-mode configuration and broker observation instead show capacity admission and sealed
+  compatibility locks. Full recovery pauses grants without asserting a healthy seal; the legacy holder rows
+  are replaced by broker reservations. This display does not perform or authorize machine cutover.
 
   Capacity status is fetched by one background observer, separately from HTTP requests, with an 800 ms total socket
   deadline and a 64 KiB frame limit. Healthy observations poll every three seconds; failures back off to at most
@@ -471,6 +474,19 @@ The web server is Rust (`platform/web/board/server`: axum and SQLite). `board se
 `cargo build --release` (install Rust from [rustup.rs](https://rustup.rs)), runs it beside the Python presence watcher,
 and stops it when it stops. If cargo is missing or a build fails, it keeps serving with the last binary it built. The
 server shares the mailbox, its schema and its rules with the `atelier board` CLI, which agents keep using.
+
+For a deployment whose server was already built and reviewed, skip the startup cargo build with the paired
+`--prebuilt-server /absolute/staged/atelier-board-server --prebuilt-sha256 EXPECTED_SHA256` options. The Python
+launcher still initializes the mailbox, starts its presence watcher, supplies the normal server arguments and
+terminates/reaps its child on shutdown. It copies and hashes the staged file through the same open descriptor: the path
+must be absolute with no symbolic links, and the file must be owned by the launching user, regular, owner-executable
+and at most 256 MiB. It launches a private, read-only executable snapshot of those verified bytes, retains the
+snapshot through child exit/reaping and removes it afterward. Replacing the source after verification cannot
+change the launched bytes. This private snapshot is not a sandbox against hostile code running as the same user.
+A missing option, malformed hash, invalid file or digest mismatch refuses startup; this mode never invokes cargo
+or falls back to another binary.
+Without either option, the normal incremental build behavior above is unchanged. Building and changing a live
+deployment remain separate operations; these flags do not build, install or restart a service.
 
 Its HTTP API is written down as a JSON Schema, `platform/web/board/api/board-api.schema.json`, generated from the
 server's own types (`atelier-board-server --schema`). Clients build their types from it: the web page today, a native

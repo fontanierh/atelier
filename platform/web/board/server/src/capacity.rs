@@ -59,12 +59,17 @@ fn profile(value: &Value) -> bool {
 }
 
 /// Absence of the default client file means legacy operation; explicit missing/invalid files do not.
-fn configured(path: &Path, explicit: bool) -> Result<Option<PathBuf>, ()> {
+fn configured(path: &Path, explicit: bool, cutover: &Path) -> Result<Option<(PathBuf, bool)>, ()> {
     if !path.is_absolute() {
         return Err(());
     }
+    let barrier = match fs::symlink_metadata(cutover) {
+        Ok(_) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(_) => return Err(()),
+    };
     match fs::symlink_metadata(path) {
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound && !explicit => return Ok(None),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound && !explicit && !barrier => return Ok(None),
         Err(_) => return Err(()),
         Ok(_) => {}
     }
@@ -88,7 +93,11 @@ fn configured(path: &Path, explicit: bool) -> Result<Option<PathBuf>, ()> {
     }
     let value: Value = serde_json::from_slice(&data).map_err(|_| ())?;
     let object = value.as_object().ok_or(())?;
-    if object.len() != 3 || value.get("schema").and_then(Value::as_u64) != Some(1) {
+    let full = object.len() == 4
+        && value.get("schema").and_then(Value::as_u64) == Some(2)
+        && value.get("cutover").and_then(Value::as_str).map(Path::new) == Some(cutover);
+    let bridge = object.len() == 3 && value.get("schema").and_then(Value::as_u64) == Some(1) && !barrier;
+    if !bridge && !full {
         return Err(());
     }
     let profiles = value.get("profiles").and_then(Value::as_object).ok_or(())?;
@@ -103,7 +112,7 @@ fn configured(path: &Path, explicit: bool) -> Result<Option<PathBuf>, ()> {
     if !socket.is_absolute() {
         return Err(());
     }
-    Ok(Some(socket))
+    Ok(Some((socket, full)))
 }
 
 fn endpoint(path: &Path) -> Result<(), ()> {
@@ -126,6 +135,7 @@ fn endpoint(path: &Path) -> Result<(), ()> {
 struct Reply {
     ok: bool,
     namespace: String,
+    compatibility_healthy: Option<bool>,
     #[serde(flatten)]
     snapshot: CapacitySnapshot,
 }
@@ -164,8 +174,9 @@ fn decode(data: &[u8], now: f64) -> Result<CapacitySnapshot, ()> {
     let mut snapshot = reply.snapshot;
     if !reply.ok
         || reply.namespace != NAMESPACE
-        || snapshot.mode != "legacy-bridge"
-        || snapshot.cutover
+        || !matches!((snapshot.mode.as_str(), snapshot.cutover), ("legacy-bridge", false) | ("capacity", true))
+        || (snapshot.cutover && (reply.compatibility_healthy.is_none()
+            || (reply.compatibility_healthy == Some(false) && !snapshot.recovering)))
         || snapshot.boot_id.is_empty()
         || snapshot.boot_id.len() > 256
         || !(0.0..FRESH).contains(&(now - snapshot.observed_at))
@@ -246,9 +257,10 @@ pub fn start() {
             .map(PathBuf::from)
             .unwrap_or_else(|| db::home().join(".cache/atelier/capacity/client.json"));
         let mut previous = None;
+        let cutover = db::home().join(".cache/atelier/capacity/cutover.json");
         let mut delay = 3;
         loop {
-            let configuration = configured(&path, explicit.is_some());
+            let configuration = configured(&path, explicit.is_some(), &cutover);
             let mut status = snapshot();
             status.checked_at = Some(db::now());
             status.fresh = false;
@@ -267,19 +279,19 @@ pub fn start() {
                     previous = None;
                     delay = (delay * 2).min(30);
                 }
-                Ok(Some(socket)) => {
-                    if previous.as_ref() != Some(&socket) {
+                Ok(Some((socket, full))) => {
+                    if previous.as_ref() != Some(&(socket.clone(), full)) {
                         status.snapshot = None;
                     }
-                    previous = Some(socket.clone());
+                    previous = Some((socket.clone(), full));
                     status.configuration = "configured".into();
                     match request(&socket).await {
-                        Ok(value) => {
+                        Ok(value) if value.cutover == full => {
                             status.snapshot = Some(value);
                             status.availability = "available".into();
                             delay = 3;
                         }
-                        Err(()) => {
+                        Ok(_) | Err(()) => {
                             status.availability = "unavailable".into();
                             delay = (delay * 2).min(30);
                         }
@@ -437,23 +449,47 @@ mod tests {
     }
 
     #[test]
+    fn full_mode_requires_matching_cutover_and_reports_failed_barrier_as_recovery() {
+        let mut value = sample(1000.);
+        value["mode"] = json!("capacity");
+        value["cutover"] = json!(true);
+        assert!(decode(&frame(&value), 1001.).is_err());
+        value["compatibility_healthy"] = json!(true);
+        assert!(decode(&frame(&value), 1001.).unwrap().cutover);
+        value["compatibility_healthy"] = json!(false);
+        assert!(decode(&frame(&value), 1001.).unwrap().recovering);
+        value["recovering"] = json!(false);
+        assert!(decode(&frame(&value), 1001.).is_err());
+        value["mode"] = json!("legacy-bridge");
+        assert!(decode(&frame(&value), 1001.).is_err());
+    }
+
+    #[test]
     fn only_absent_default_configuration_is_legacy() {
         let folder = Folder::new();
         let path = folder.0.join("client.json");
-        assert_eq!(configured(&path, false), Ok(None));
-        assert!(configured(&path, true).is_err());
+        let cutover = folder.0.join("cutover.json");
+        assert_eq!(configured(&path, false, &cutover), Ok(None));
+        assert!(configured(&path, true, &cutover).is_err());
         let resources = sample(1000.)["total"].clone();
         let profile = json!({"resources": resources, "locks": []});
         let config = json!({"schema": 1, "socket": folder.0.join("broker.sock"),
             "profiles": {"job": profile, "game": profile, "compile": profile}});
         fs::write(&path, config.to_string()).unwrap();
         fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
-        assert_eq!(configured(&path, false), Ok(Some(folder.0.join("broker.sock"))));
+        assert_eq!(configured(&path, false, &cutover), Ok(Some((folder.0.join("broker.sock"), false))));
+        fs::write(&cutover, "preparing").unwrap();
+        assert!(configured(&path, false, &cutover).is_err());
+        let mut full = config;
+        full["schema"] = json!(2);
+        full["cutover"] = json!(cutover);
+        fs::write(&path, full.to_string()).unwrap();
+        assert_eq!(configured(&path, false, &cutover), Ok(Some((folder.0.join("broker.sock"), true))));
         fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
-        assert!(configured(&path, false).is_err());
+        assert!(configured(&path, false, &cutover).is_err());
         fs::remove_file(&path).unwrap();
         std::os::unix::fs::symlink(folder.0.join("missing"), &path).unwrap();
-        assert!(configured(&path, false).is_err());
+        assert!(configured(&path, false, &cutover).is_err());
     }
 
     #[tokio::test]

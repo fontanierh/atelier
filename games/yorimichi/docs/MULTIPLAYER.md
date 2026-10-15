@@ -10,9 +10,20 @@ two-machine or packaged release certification.
 
 - Ordinary Solo play retains its immediate combat path. A remote autonomous
   player's on-foot reaction uses the scheduled path described below.
-- Bike and sail support uses `AJapanGameState::bPredictedVehicles`, enabled by
-  default. A host can still disable vehicles; the vehicle regression explicitly
+- Bike, sail and horse support uses `AJapanGameState::bPredictedVehicles`, enabled
+  by default. A host can still disable vehicles; the vehicle regression explicitly
   tests that opt-out before restoring normal availability.
+- The horse is predicted like the bike: its simulation sets CMC velocity and yaw
+  inside each saved move, host checkpoints carry `FJapanHorseState` (36 bytes,
+  fixed role indices), and remote players show the host's 20 Hz presentation.
+  The host mounts it (standing on the ground, not crouching) and dismounts it
+  (stopped, on the ground); there is no parked horse. Getting on and off last
+  the pawn's own HorseMount and HorseDismount clips, the same content on every
+  machine. Swimming ends the ride in the simulation, and the host stows it as at
+  the end of getting off. In the saddle Crouch, Wave and Interact are refused as
+  offline. Its look is roster indices, validated and rate-limited by the host and
+  replicated outside the activity epoch; the owner does not predict it, and the
+  simulation never reads it.
 - The zeppelin is one replicated host-owned service with separate passenger
   seats. Boarding, destination and speed controls use the owning player's RPCs.
 - Every player chooses their own character independently. `--mixed-characters`
@@ -21,10 +32,12 @@ two-machine or packaged release certification.
   applied equipment. It can share the private-address 60/15/2 session check.
 - Character selection is available during a session. The persistent controller
   replaces its pawn, preserving health, player identity and activity, and advances
-  the activity epoch. Pending combat resolves before replacement. Bike and sail
-  checkpoints resume; skating carries the existing simulation, stance and trick
-  state into the replacement rig. Requests during physical bail/get-up or a
-  transition clip stay queued until that recovery finishes.
+  the activity epoch. Pending combat resolves before replacement. Bike, sail and
+  horse checkpoints resume (a mounted change to a character without horse clips
+  is refused before it spawns), and the horse keeps its look; skating carries
+  the existing simulation, stance and trick state into the replacement rig.
+  Requests during physical bail/get-up or a transition clip stay queued until
+  that recovery finishes.
 - Same-machine tests do not establish packaged or two-machine acceptance.
 
 ## Native multiplayer checks (on demand)
@@ -34,7 +47,8 @@ multiplayer change. A playtest release does not run them. Its notes name the
 revision of the latest native multiplayer evidence instead.
 
 Run the clean revision's compile and `data.network` staging, then the native
-wire suite. All 18 named fixtures must pass, including encounter replacement;
+wire suite. All 19 named fixtures must pass, including encounter replacement and
+the horse checkpoint;
 an engine exit code alone is insufficient.
 Run a listen pair at zero lag and at 60 ms delay / 15 ms variance / 2% loss. Both
 observers must receive sustained skate poses and evaluate the expected skeleton.
@@ -42,7 +56,7 @@ Skate replacement receipts also require the finalized mesh world frame to match
 the applied stream frame. Matching local bones alone can miss a misplaced body.
 
 The session runner supports `--feature-case equipment|switch-foot|switch-bike|
-switch-sail|switch-skate|switch-skate-air|switch-skate-bail|zeppelin` and
+switch-sail|switch-horse|switch-skate|switch-skate-air|switch-skate-bail|zeppelin` and
 `--render-view host|guest`. Run both observer
 views; one process renders while its peer uses NullRHI. The aggregate guard defaults
 to 10 GiB. A rendered observer can use `--aggregate-memory-gib 14`, `16` or `18`
@@ -52,7 +66,7 @@ and applies only to the process that renders. Its NullRHI peer stays at 10 GiB.
 Startup requires the selected aggregate ceiling plus 2 GiB available, and receipts
 check and record the actual individual and aggregate ceilings and peaks.
 Inspect the captures as well as the receipts. A full acceptance also covers the bike,
-sail, pending mount, parking, crash and combat routes. A two-device Tailscale playtest
+sail, horse (`switch-horse`), pending mount, parking, crash and combat routes. A two-device Tailscale playtest
 with matching packaged identities is what establishes multiplayer on separate machines.
 
 The `switch-skate-bail` QA stimulus currently sets an unread scripted-input
@@ -103,6 +117,7 @@ the ignored build archive and the corresponding agent-board review threads.
 | `39f9e8ea` | Compile and all 17 network automation fixtures; eight stationary delivery cases at zero lag, and moving cases 0/5 both at zero lag and 60 ms lag / 15 ms variance / 2% loss. All 12 pairs passed and were independently reviewed. |
 | `7e5bf9ac` | Compile and all 17 fixtures; moving lethal cases 8/9 both at zero lag and 60/15/2. All four passed independent raw-receipt review. Both orderings of old payload versus activity reset were observed. Combat with a 20 fps host and 30 fps owner at 60/15/2 passed 106 checks. |
 | Earlier vehicle revisions | Bike, sail, outage recovery, parking and crash receipts are historical only. Pending-mount bike/sail have not been rerun with the scheduled reaction fix. |
+| None yet | The horse (HorseCheckpoint fixture, `switch-horse` case) has source and Python receipt review only; it has not been compiled or run natively. |
 
 The reaction/death checker keeps zero corrections above 1 cm, maximum error
 strictly below 1 cm, and zero rejected checkpoints. The maximum in the accepted

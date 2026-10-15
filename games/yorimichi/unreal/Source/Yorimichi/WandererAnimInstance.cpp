@@ -4,6 +4,8 @@
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
 #include "BikeGripNode.h"
+#include "HorseComponent.h"
+#include "HorseRiderNode.h"
 #include "FingerWrapNode.h"
 #include "GripPoseNode.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -147,6 +149,8 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     FSailboatStanceNode Stance;
     // On the bike: the gripping hands follow bars the player steers past the clip's own steering.
     FBikeGripNode Grip;
+    // On the horse: the torso sprung to its motion, then the hands back on the reins and the feet in the stirrups.
+    FHorseRiderNode HorseRider;
     // Last, the grips posed in the grip poser (UAdventureMoveSet::GripPose): each hand exactly where it was posed on its prop.
     FGripPoseNode Pose;
     FAnimNode_ConvertComponentToLocalSpace ToLocal;
@@ -222,7 +226,9 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         Stance.Alpha = 0.f;
         Grip.ComponentPose.SetLinkNode(&Stance);
         Grip.Alpha = 0.f;
-        Pose.ComponentPose.SetLinkNode(&Grip);
+        HorseRider.ComponentPose.SetLinkNode(&Grip);
+        HorseRider.Alpha = 0.f;
+        Pose.ComponentPose.SetLinkNode(&HorseRider);
         Pose.Alpha = 1.f;
         ToLocal.ComponentPose.SetLinkNode(&Pose);
         Skate.OnFoot.SetLinkNode(&ToLocal);
@@ -235,7 +241,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
     }
     virtual FAnimNode_Base* GetCustomRootNode() override { return Skate.GetRoot(); }
     virtual void GetCustomNodes(TArray<FAnimNode_Base*>& Nodes) override
-    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &Pose, &ToLocal }; Skate.GetNodes(Nodes); }
+    { Nodes = { &Moving, &Crouching, &Ground, &Action, &State, &Carry, &ArmedMoving, &ArmedCrouching, &ArmedGround, &CarryPose, &GuardPose, &SwordGuardRight, &SwordGuardLeft, &RightArm, &LeftArm, &FreeArm, &LeftHand, &CarryLayer, &Fist, &FistLayer, &ToComponent, &GripIK, &GlideIK[0], &GlideIK[1], &GlideTurn[0], &GlideTurn[1], &Wrap, &Flinch[0], &Flinch[1], &Flinch[2], &Flinch[3], &Feet, &Stance, &Grip, &HorseRider, &Pose, &ToLocal }; Skate.GetNodes(Nodes); }
     virtual void Initialize(UAnimInstance* Instance) override
     {
         if (const AWandererCharacter* Pawn = Cast<AWandererCharacter>(Instance->TryGetPawnOwner()))
@@ -297,9 +303,11 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         const bool bRiding = Ride && Ride->IsRiding();
         const UBikeComponent* BikeC = Pawn->GetBike();
         const bool bBiking = BikeC && BikeC->IsEquipped() && BikeC->GetSequence();
-        State.bAction = bSailing || bBiking || !Pawn->GetAnimationAction().IsNone();
-        State.Serial = Pawn->GetActionSerial()+(SailboatC ? SailboatC->GetSerial()*7919 : 0)+(Ride ? Ride->GetSerial()*104729 : 0)+(BikeC ? BikeC->GetSerial()*15485863 : 0);
-        State.BlendDuration = bSailing || bBiking ? .2f : Pawn->GetActionBlendTime();
+        const UHorseComponent* HorseC = Pawn->GetHorse();
+        const bool bHorsing = HorseC && HorseC->IsEquipped() && HorseC->GetSequence();
+        State.bAction = bSailing || bBiking || bHorsing || !Pawn->GetAnimationAction().IsNone();
+        State.Serial = Pawn->GetActionSerial()+(SailboatC ? SailboatC->GetSerial()*7919 : 0)+(Ride ? Ride->GetSerial()*104729 : 0)+(BikeC ? BikeC->GetSerial()*15485863 : 0)+(HorseC ? HorseC->GetSerial()*32452843 : 0);
+        State.BlendDuration = bSailing || bBiking || bHorsing ? .2f : Pawn->GetActionBlendTime();
         // Continue the gait clock during a moving roll. Once the feet recover,
         // blend into that live stride instead of translating a planted idle pose.
         const bool MovingRoll=Pawn->GetAnimationAction()==TEXT("Roll") && Pawn->HasMovementIntent() && Speed>80.f;
@@ -310,7 +318,7 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         // up. Finish blending shortly after steering returns at source .94.
         const float Recovery=MovingRoll?FMath::Clamp((Pawn->GetActionSourceTime()-.85f)/.15f,0.f,1.f):0.f;
         State.RecoveryAlpha=Recovery*Recovery*(3.f-2.f*Recovery);
-        const bool Grounded=Pawn->PlantsFeet() && !bSailing && !bBiking &&
+        const bool Grounded=Pawn->PlantsFeet() && !bSailing && !bBiking && !bHorsing &&
             Pawn->GetCharacterMovement()->IsMovingOnGround() && Pawn->GetAnimationAction()!=TEXT("Roll");
         Feet.Alpha=Grounded?1.f:0.f;
         Feet.DeltaSeconds=Dt;
@@ -383,29 +391,33 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
             if (bBiking) BikeC->GetGrip(Side, Grip.Weight[Side], Grip.Offset[Side], Grip.Turn[Side]);
             else Grip.Weight[Side] = 0.f;
         }
+        HorseRider.Alpha = bHorsing ? 1.f : 0.f;
+        if (bHorsing) HorseC->PopulateRiderNode(HorseRider);
+        else { HorseRider.TorsoWeight = 0.f; HorseRider.IKWeight = 0.f; }
         if (State.bAction && AppliedSerial != State.Serial)
         {
-            if (UAnimSequence* Clip = bBiking ? BikeC->GetSequence() : bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
+            if (UAnimSequence* Clip = bHorsing ? HorseC->GetSequence() : bBiking ? BikeC->GetSequence() : bSailing ? SailboatC->GetSequence() : Pawn->GetDefinition()->FindAction(Pawn->GetAnimationClip()))
             {
-                Action.SetSequence(Clip); Action.SetAccumulatedTime(bSailing||bBiking?0.f:Pawn->GetActionSourceStartTime());
-                Action.SetLoopAnimation(bSailing || bBiking || Pawn->DoesActionLoop());
+                Action.SetSequence(Clip); Action.SetAccumulatedTime(bSailing||bBiking||bHorsing?0.f:Pawn->GetActionSourceStartTime());
+                Action.SetLoopAnimation(bSailing || bBiking || bHorsing || Pawn->DoesActionLoop());
             }
-            AppliedClip = bSailing || bRiding || bBiking ? NAME_None : Pawn->GetAnimationClip();
+            AppliedClip = bSailing || bRiding || bBiking || bHorsing ? NAME_None : Pawn->GetAnimationClip();
         }
         // The sword drawn or put away in the middle of an action swaps its armed copy in place, at the same time.
-        else if (State.bAction && !bSailing && !bRiding && !bBiking && Pawn->GetAnimationClip() != AppliedClip)
+        else if (State.bAction && !bSailing && !bRiding && !bBiking && !bHorsing && Pawn->GetAnimationClip() != AppliedClip)
         {
             AppliedClip = Pawn->GetAnimationClip();
             if (UAnimSequence* Clip = Pawn->GetDefinition()->FindAction(AppliedClip))
             { const float Time = Action.GetAccumulatedTime(); Action.SetSequence(Clip); Action.SetAccumulatedTime(Time); }
         }
-        Action.SetPlayRate(bRiding || bBiking ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
+        Action.SetPlayRate(bRiding || bBiking || bHorsing ? 0.f : bSailing ? 1.f : Pawn->GetActionPlayRate());
         if (bBiking) Action.SetAccumulatedTime(BikeC->GetPoseTime());
-        const bool bCarrying = !bSailing && !bRiding && !bBiking && !Pawn->IsZeppelinPassenger();
+        else if (bHorsing) Action.SetAccumulatedTime(HorseC->GetPoseTime());
+        const bool bCarrying = !bSailing && !bRiding && !bBiking && !bHorsing && !Pawn->IsZeppelinPassenger();
         // The glider on the body where the grips read it, this tick.
-        if (UAdventureMoveSet* Set = Pawn->GetMoves(); Set && !bRiding && !bSailing && !bBiking) Set->PlaceGliderForPose();
+        if (UAdventureMoveSet* Set = Pawn->GetMoves(); Set && !bRiding && !bSailing && !bBiking && !bHorsing) Set->PlaceGliderForPose();
         const UAdventureMoveSet* Moves = Pawn->GetMoves();
-        if (Moves && JapanNetwork::IsOnline(Pawn->GetWorld()) && !bSailing && !bRiding && !bBiking && State.bAction)
+        if (Moves && JapanNetwork::IsOnline(Pawn->GetWorld()) && !bSailing && !bRiding && !bBiking && !bHorsing && State.bAction)
         {
             // Both prediction corrections and late-joining proxies use the authoritative action phase.
             // A separate sequence-player clock would retain the old phase after a same-action correction.
@@ -431,20 +443,20 @@ struct FWandererAnimProxy final : public FAnimInstanceProxy
         if (Moves) GripIK.EffectorLocation = Moves->TwoHandGripOffset();
         for (int32 I = 0; I < 2; ++I)
         {
-            GlideIK[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideHandWeight() : 0.f;
+            GlideIK[I].Alpha = Moves && !bRiding && !bSailing && !bHorsing ? Moves->GlideHandWeight() : 0.f;
             if (Moves) { GlideIK[I].EffectorLocation = Moves->GlideHandLocation(I); GlideIK[I].JointTargetLocation = Moves->GlideElbowLocation(I); }
-            GlideTurn[I].Alpha = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+            GlideTurn[I].Alpha = Moves && !bRiding && !bSailing && !bHorsing ? Moves->GlideFistWeight() : 0.f;
             if (Moves) GlideTurn[I].Rotation = Moves->GlideHandRotation(I).Rotator();
         }
         // In the two-handed grip the off hand's turn is the grip's (the glide's turn is idle then).
         const float GripFist = bCarrying && Moves ? Moves->TwoHandFistWeight() : 0.f;
         if (GripFist > GlideTurn[1].Alpha) { GlideTurn[1].Alpha = GripFist; GlideTurn[1].Rotation = Moves->TwoHandRotation().Rotator(); }
-        const float GlideFist = Moves && !bRiding && !bSailing ? Moves->GlideFistWeight() : 0.f;
+        const float GlideFist = Moves && !bRiding && !bSailing && !bHorsing ? Moves->GlideFistWeight() : 0.f;
         FistLayer.BlendWeights[0] = GlideFist;
         FistLayer.BlendWeights[1] = FMath::Max(GlideFist, GripFist);   // the off hand closes round the sword's handle too
         // Each hand's fingers round the handle it holds; a sword's grip goes with the sword hand (it is the hand's child).
         const USkeletalMeshComponent* Body = Instance->GetSkelMeshComponent();
-        const bool bHands = Moves && Body && !bRiding && !bSailing && !bBiking && !Pawn->IsZeppelinPassenger();
+        const bool bHands = Moves && Body && !bRiding && !bSailing && !bBiking && !bHorsing && !Pawn->IsZeppelinPassenger();
         Wrap.Units = Body ? 1.f / FMath::Max(float(Body->GetComponentTransform().GetScale3D().GetAbsMax()), KINDA_SMALL_NUMBER) : 1.f;
         // The last evaluation's grip, for the probe, before this update's inputs replace it.
         if (UWandererAnimInstance* Owner = Cast<UWandererAnimInstance>(Instance))

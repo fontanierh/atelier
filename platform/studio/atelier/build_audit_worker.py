@@ -14,6 +14,8 @@ import json
 import os
 from pathlib import Path
 import runpy
+import shutil
+import stat
 import sys
 import threading
 
@@ -21,8 +23,8 @@ import threading
 class Observer:
     """@cc [owner:fontanierh,label:correctness] sticky-build-access-violations
     Observed undeclared reads and writes outside owned products/private scratch MUST remain failures
-    even if the recipe catches their exceptions. The launcher MUST empty owned outputs before this
-    worker runs, so previous output bytes and metadata cannot become inputs.
+    even if the recipe catches their exceptions. This worker MUST empty owned outputs before
+    installing its observer and running the action, so previous bytes and metadata cannot become inputs.
     """
     def __init__(self, spec):
         self.spec = spec
@@ -35,6 +37,7 @@ class Observer:
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
         self.seen = set()
         self.failed = False
+        self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
 
@@ -52,6 +55,8 @@ class Observer:
         return f'<external>/{path.name}'
 
     def record(self, operation, path=None, reason=None):
+        if self.sealed:
+            reason = 'Python access after action completion; host must exit before another action'
         label = self.label(path) if path is not None else None
         item = (operation, label, reason)
         with self.lock:
@@ -82,9 +87,13 @@ class Observer:
         return path.is_relative_to(self.scratch) or any(path.is_relative_to(p) for p in self.outputs)
 
     def covered(self, path, *, directory=False):
+        # Blender's managed tool identity excludes ambient __pycache__. Native hosts may ignore
+        # Python startup environment flags, so these bytes never gain a runtime exemption.
+        runtime = any(path.is_relative_to(p) and ('host' not in self.spec
+                      or '__pycache__' not in path.relative_to(p).parts) for p in self.runtime)
         return (any(path == p and (not directory or is_dir) or is_dir and path.is_relative_to(p)
                     for p, is_dir in self.inputs)
-                or any(path.is_relative_to(p) for p in self.runtime))
+                or runtime)
 
     def read(self, path, *, directory=False, metadata=False):
         operation = 'metadata' if metadata else 'list' if directory else 'read'
@@ -206,16 +215,72 @@ class Observer:
         external.FileFinder.find_spec = find_spec
 
 
-def main(config):
-    spec = json.loads(Path(config).read_text())
+def clear_outputs(outputs):
+    """@cc [owner:fontanierh,label:safety] admitted-audit-output-cleanup
+    Only the executing child MAY clear an audited action's owned outputs. Heavy actions MUST reach
+    this worker through ordinary guarded admission. Cleanup MUST refuse root/ancestor symbolic links
+    after the admission wait and MUST unlink old leaves without modifying other hard-link names.
+    Removal MUST use a held parent descriptor without following ancestor or child links.
+    Cleanup failure MUST prevent a complete audit report and certification.
+    """
+    roots = [Path(p) for p in outputs]
+
+    def checked(root):
+        if not root.is_absolute() or any(p.is_symlink() for p in (root, *root.parents)):
+            raise RuntimeError('Linked or relative audit cleanup destination')
+
+    for root in roots:
+        checked(root)
+    for root in roots:
+        checked(root)
+        parent = None
+        try:
+            try:
+                parent = os.open(root.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                for component in root.parts[1:-1]:
+                    child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                    os.close(parent)
+                    parent = child
+                mode = os.stat(root.name, dir_fd=parent, follow_symlinks=False).st_mode
+            except FileNotFoundError:
+                continue  # A missing owned root or parent is already empty.
+            if stat.S_ISLNK(mode):
+                raise RuntimeError('Linked audit cleanup destination')
+            if stat.S_ISDIR(mode):
+                if not shutil.rmtree.avoids_symlink_attacks:
+                    raise RuntimeError('Audit cleanup requires descriptor-safe directory removal')
+                shutil.rmtree(root.name, dir_fd=parent)
+            else:
+                os.unlink(root.name, dir_fd=parent)
+        finally:
+            if parent is not None:
+                os.close(parent)
+        checked(root)
+
+
+def execute(spec, *, blender=False, before=None, after=None):
+    """Execute once; the observer remains armed until this fresh process exits.
+
+    ``before``/``after`` are framework-only checks, never recipe callbacks. Native adapters use
+    them to validate preload provenance after managed imports and retain module-isolation checks.
+    """
+    clear_outputs(spec['outputs'])
     observer = Observer(spec)
+    if 'host' in spec:
+        sys._atelier_native_audit_started = observer
     script = spec['script']
-    sys.argv = [script, *spec['args']]
-    sys.path[0] = str(Path(script).parent)
+    sys.argv = [script, *(['--'] if blender else []), *spec['args']]
+    if 'host' in spec:
+        sys.path.insert(0, str(Path(script).parent))
+    else:
+        sys.path[0] = str(Path(script).parent)
     sys.dont_write_bytecode = True
+    sys.pycache_prefix = str(Path(spec['scratch']) / 'bytecode')
     # Import runpy's helper before installing the observer; its subsequent target/module reads
     # still pass through the hook. The prefix was also set before interpreter startup.
     import pkgutil  # noqa: F401
+    if before is not None:
+        before()
     observer.send('start')
     observer.install()
     succeeded = False
@@ -227,13 +292,25 @@ def main(config):
         if not succeeded:
             raise
     finally:
+        # The native module guard inspects dyld through ctypes. It is trusted framework work,
+        # not recipe I/O; its exception still prevents a successful completion report.
+        if after is not None:
+            observer.local.busy = True
+            try:
+                after()
+            except BaseException:
+                succeeded = False
+                raise
+            finally:
+                observer.local.busy = False
         if any(t is not threading.current_thread() and t.is_alive() for t in threading.enumerate()):
             observer.failed = True
             observer.send('access', operation='threads', path=None, violation='action returned with live Python threads')
         observer.send('complete', success=succeeded and not observer.failed)
+        observer.sealed = True
     if observer.failed:
         raise SystemExit('Input audit failed; see the action audit report')
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    execute(json.loads(Path(sys.argv[1]).read_text()))

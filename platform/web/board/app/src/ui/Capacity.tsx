@@ -55,7 +55,9 @@ export function Capacity({status, connected, bridge, serverTime}: {status?: Stat
   const snapshot = status?.snapshot;
   const fresh = Boolean(connected && status?.fresh && snapshot && now - snapshot.observed_at >= 0 && now - snapshot.observed_at < 10);
   const legacy = status?.configuration === 'legacy';
-  const title = legacy ? 'Legacy slots' : fresh ? 'Capacity bridge' : 'Capacity status unavailable';
+  const full = snapshot?.mode === 'capacity' && snapshot.cutover;
+  const title = legacy ? 'Legacy slots' : fresh ? full ? snapshot.recovering ? 'Capacity recovery' : 'Capacity admission'
+    : 'Capacity bridge' : 'Capacity status unavailable';
   const active = snapshot?.records.filter((job) => job.charged || job.state === 'gated') || [];
   const waiting = snapshot?.records.filter((job) => job.state === 'queued' || job.state === 'waiting') || [];
   return (
@@ -64,13 +66,15 @@ export function Capacity({status, connected, bridge, serverTime}: {status?: Stat
         <span className={`capacity-tag${!legacy && !fresh ? ' warning' : ''}`}>{title}</span></div>
       {legacy ? <p>{bridge ? 'A capacity bridge holds all legacy lanes. Its broker is not visible to this board.'
         : 'Capacity admission is not configured for this board. Existing slot locks and guards apply.'}</p>
-        : <p>{fresh ? 'Broker reservations and all legacy lane locks are required. Extra concurrency is not enabled.'
+        : <p>{fresh ? full ? snapshot.recovering ? 'New grants are paused while compatibility or ownership is checked.'
+          : 'The broker admits work within resource budgets and named locks. Legacy mutexes remain sealed.'
+          : 'Broker reservations and all legacy lane locks are required. Extra concurrency is not enabled.'
           : status?.configuration === 'invalid' ? 'The board cannot read a valid capacity configuration.'
           : status?.availability === 'checking' || !status ? 'Checking the broker.'
           : 'No current broker observation. Capacity availability is unknown.'}</p>}
       {snapshot && <>
         {!fresh && <p className="capacity-warning">Last known state · observed {since(snapshot.observed_at, now)}. These figures are stale.</p>}
-        {snapshot.recovering && <p className="capacity-warning">Recovery is holding new grants while uncertain ownership is checked.</p>}
+        {snapshot.recovering && <p className="capacity-warning">Recovery is holding new grants while compatibility and uncertain ownership are checked.</p>}
         <dl className="capacity-budget">
           {dimensions.map(({key, label, format}) => {
             const remaining = snapshot.total[key] - snapshot.reserve[key] - snapshot.charged_resources[key];

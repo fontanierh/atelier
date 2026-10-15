@@ -18,7 +18,8 @@ member counts. It reuses existing inventories, preserves unknown baselines and m
 Those historical logs do not prove current settings or measured warm/cold improvements; native baselines remain open.
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
-environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
+environment or native-I/O dependencies. Blender/Unreal Python bootstraps now have offline protocol coverage;
+native execution and equivalence evidence remain separate requirements.
 Named actions can declare exact optional source files; absent/present identities track conditional reads without
 hashing unrelated siblings. The sandbox demonstrates this with a block override. Recipe-declared spatial boxes now
 resolve into tracked product reads, including empty selections, additions, removals and movement. Audited Python
@@ -31,8 +32,9 @@ ordinary builds fall back locally on a remote failure. A trusted producer can fr
 audited Python action and export a signed V2 directory after clean/pushed-source, grant, audit and inventory
 checks. It makes no native memory-guard assertion. Explicit HTTPS upload verifies public V2 bundles before loading
 write credentials, commits immutable manifests last and checks remote bytes. Automatic publication and
-hostile-source signer isolation remain unimplemented. Unreal restoration, import transactions and native spatial
-migration still require native proof.
+hostile-source signer isolation remain unimplemented. A guarded package-install transaction foundation now
+exercises ownership, recovery and registry barriers with a closed typed JSON backend. Unreal restoration,
+native import transactions and native spatial migration still require native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
@@ -134,12 +136,40 @@ accesses still need explicit declarations and importer-specific dependency enume
 macOS process-access tracer. Controlled input workspaces and clean-versus-incremental checks test the declared
 closure; until it is proven, keep conservative dependencies and restrict shared publication.
 
-The implemented `Step.audit=True` starts with one Python command per owned-product action. Its access hook, private
+The implemented `Step.audit=True` accepts one Python, guarded Blender or guarded Unreal Python command per
+owned-product action. Its access hook, private
 scratch/bytecode paths and completion pipe catch undeclared reads, reference misuse, writes outside ownership and
-reuse of stale output bytes. Each executed action starts with empty owned outputs; cache hits restore without running
-it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
+reuse of stale output bytes. The executing child empties owned outputs immediately before observation and recipe
+execution, after ordinary guarded admission for heavy actions. A refused admission preserves prior outputs;
+cache hits restore without running the action. Native host startup and native I/O remain outside this diagnostic.
+Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
 metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
-the tracked context API and native bootstraps are still separate work.
+the tracked context API remains separate work. Native audits use the same private nonce-bound completion pipe
+and existing actual-child guard. They require `cache=False`; they grant no native cache or package-equivalence
+certification. Their runtime exemptions are restricted to Python library directories inside the fingerprinted
+host installation, never arbitrary import search paths. Blender uses factory startup; Unreal retains its module
+descriptor isolation and before/after library checks. Offline fake-host tests cover the adapter protocol, not
+successful real-host imports.
+
+The bootstrap rejects preloaded project/helper Python modules even when their source is declared: an import from
+`sys.modules` cannot establish which bytes or earlier reads produced the cached values. Preloaded module origins,
+package paths and bytecode must belong to the fingerprinted tool (or fresh private bytecode scratch); only genuine
+builtin/frozen loaders and an explicit set of native host API modules may lack file origins. Native Blender audits
+include the complete installation bytecode inventory. Native host API state remains outside this Python diagnostic.
+The UE adapter is source-verified and version-gated to 5.8. Its complete tool identity covers the exact bundled
+Python runtime and PythonScriptPlugin `Content/Python` wrapper tree, both PythonScriptPlugin native binaries and
+their module descriptor, the editor and engine version. Only the source-proven originless `unreal`, `_unreal_core`,
+`_unreal_slate`, `_unreal_engine` and `_unreal_editor` bindings are approved. Wrapper imports work through retained
+native search paths and exact tool-root read permissions; other plugin/project paths and unknown generated
+binding modules remain refused. Offline fake-host coverage does not establish actual UE execution or native
+equivalence acceptance; those proof gates remain separate.
+
+Audited native actions always use fresh processes. A `Batch` declaration falls back to ordinary execution for each
+audited action, and direct audited warm-session launches are refused. Irreversible audit hooks and warm module or
+callback state are not silently reused. The observer remains armed after completion; any further observed Python
+file access, even one previously allowed, produces a trailing failure record. The parent drains through pipe closure
+and requires exactly start/accesses/complete in order before certification. Native host startup, native callbacks,
+native I/O and environment or metadata values still require explicit dependencies and native equivalence proofs.
 
 Legacy actions can opt into deferred, explicit input membership: only selected actions enumerate their members,
 after prerequisites finish, and execution rechecks the selection before certification. This does not track arbitrary
@@ -192,6 +222,61 @@ verify that registry queries and cooking see the new inventory. Do not restore a
 Deletion is a diff between the previous and new owned inventories. Remove only retired generated outputs, after
 checking the new snapshot's references. Preserve authored content. Renames must update references explicitly;
 they must not leave old packages discoverable by cooking.
+
+The offline transaction foundation is implemented in `atelier.build_install`. Its internal
+`install(game, snapshot_path, source_root, timeout=300)` and `recover(game, timeout=300)` entry points own one
+normal guarded worker with aggregate descendant memory enforcement and the existing legacy big-slot admission.
+They do not add a second render lock. This experimental installer supports legacy admission only: any explicit/default broker
+configuration or cutover marker, including malformed or unreadable state, refuses before transaction setup.
+Bridge/full-capacity installer support needs a separate admitted-child broker observation protocol; ordinary
+build/play support for those modes is unchanged. The registry query is a concrete child of the same worker.
+No build stamp, recipe cache eligibility or native restore is enabled by this API.
+
+The worker additionally requires a bounded common-launcher binding published after GO, with the actual
+parent/child identities, request digest, both live guard receipts and a close-only duplicate of the existing
+held legacy mutex descriptor. It independently checks those facts at journal, mutation and readiness boundaries.
+A caller-created request descriptor or nonce alone cannot authorize installation. A separate nonblocking
+same-inode conflict probe verifies exclusion; the worker never flocks or unlocks the transferred description.
+The parent retains metadata/unlock ownership and closes its context after child reaping. This is a trusted
+caller lifecycle invariant, not a security sandbox against hostile code running as the same OS user.
+
+Only an explicitly eligible fixture project (`.uproject` containing exactly `schema: 1` and
+`backend: "typed-json-packages-v1"`) can use the current backend. It parses typed JSON primary packages and
+independently rebuilds and queries its own index. An ordinary Unreal project or binary package refuses. This
+proves the offline protocol, not Unreal Asset Registry behavior; a supported UE rescan/query backend, relocation
+proof and native load/cook acceptance remain required before native hydration can be enabled.
+
+A schema-1 complete snapshot contains `backend`, `packages` and `external_references`. Each package declares
+a stable `owner`, its `/Game/...` logical `name`, exact `references`, and every file's relative Content `path`,
+`size` and `sha256`. Supported leaves are `.uasset`, `.umap`, `.uexp`, `.ubulk`, `.m.ubulk` and `.uptnl`; exactly
+one primary is required per package. Case aliases, links, unsupported leaves and incomplete source inventories
+refuse. Generated references must resolve in the snapshot or be explicitly external; an external declaration
+cannot disguise a reference to a retired generated package. The closed registry backend additionally requires
+every reference to resolve in the actual installed typed package inventory.
+
+Ownership comes only from the private durable `.package-install-current.json` in the checkout's default
+`build/<game>`, never a caller-supplied prior manifest. An initial empty manifest cannot adopt existing files,
+and Git-tracked Content cannot be replaced or retired. Recovery rescans tracked ownership; every mutation
+and final readiness check requires the scanned Git index identity to remain unchanged. Unchanged owned leaves retain their inode; changed
+leaves and exact retired sidecars are handled individually. Unrelated authored files are preserved. Renames
+need a complete reference-safe snapshot; ownership transfers and case-only renames refuse.
+
+Before the first Content mutation, the worker makes independent copies of the complete new snapshot, prepares
+replacement inodes, and fsyncs `.package-install-in-progress.json` plus its durable stage. The bounded journal
+binds the nonce, checkout/project inode, exact CURRENT baseline, old/new inventories, directory inodes and
+prepared files. Descriptor-relative mutation refuses swapped parents and unrelated changes. Recovery rolls
+that same stage forward without needing the donor, accepting only the recorded old or prepared inode and
+bytes. An unexplained journal/CURRENT/inode/byte change refuses with the barrier retained. Stage directories
+are retained after completion; automatic reclamation is not part of this foundation.
+
+After installation, a registry-pending journal remains until a fresh, transaction- and process-bound query
+observes all new generated packages, complete leaves/references and retired-package absence. A callback boolean
+or stale cached index cannot complete the transaction. The worker rechecks installed and authored inputs,
+fsyncs CURRENT and a separate completion receipt, then removes the journal last and fsyncs its directory.
+Interrupted completion metadata is recoverable. `build_snapshot.require_complete` treats a package journal in
+either the default or selected build root as an absolute launch blocker, including with `ATELIER_BUILD_ROOT`.
+Recovery is an admitted Python worker and validates its exact journal before mutation; it does not bypass the
+barrier for an editor, game, packaging command or another snapshot transaction.
 
 Batch compatible misses into a bounded editor session. Compatibility includes the module closure, configuration,
 renderer requirements and input snapshot. Keep individual artifact keys and success receipts even when execution
@@ -310,6 +395,10 @@ The existing independent archive receipt is useful. Keep cook state warm and eva
 incremental cooker with the installed ZenStore/IoStore setup. An inspected cook log reports 7,694 packages cooked
 and zero incrementally skipped. The installed engine source also distinguishes modern dependency tracking from
 legacy iterative cooking; adding an `iterate` flag alone is not a correctness proof.
+The explicit `--cook-mode modern-full|modern-incremental` experiment now forwards cooker-only options,
+requires runtime modern-tracking evidence and preserves default flags/fingerprints. The sandbox has an
+explicit guarded full/warm-repeat cook and receipt barrier. [Commands and the still-unrun native acceptance
+matrix](COOK_EXPERIMENT.md) separate cook reuse from compilation/staging and keep default enablement gated.
 
 Use the build snapshot to enumerate runtime assets, including soft loads and data-driven paths. The current
 `-cookall` approach protects those paths from omission; replace it only when explicit roots and their references

@@ -575,7 +575,7 @@ def main():
     parser.add_argument('--combat-host-fps', type=int, choices=(20, 30, 60), default=20)
     parser.add_argument('--reaction-delivery-moving', action='store_true', help='Keep forward drive through reaction case 0, 5, 8 or 9; report measured pre-hit motion')
     parser.add_argument('--reaction-delivery-case', type=int, choices=range(10), help='Development-only ordering/death probe; intentional holds and stale deliveries are labelled')
-    parser.add_argument('--feature-case', choices=('equipment', 'switch-foot', 'switch-bike', 'switch-sail', 'switch-skate', 'switch-skate-air', 'switch-skate-bail', 'zeppelin'), help='Ordinary multiplayer equipment, character swaps and shared zeppelin')
+    parser.add_argument('--feature-case', choices=('equipment', 'switch-foot', 'switch-bike', 'switch-sail', 'switch-horse', 'switch-skate', 'switch-skate-air', 'switch-skate-bail', 'zeppelin'), help='Ordinary multiplayer equipment, character swaps and shared zeppelin')
     parser.add_argument('--render-view', choices=('host', 'guest'), help='Render one observer under the existing aggregate guard')
     parser.add_argument('--aggregate-memory-gib', type=int, choices=(10, 14, 16, 18), default=10,
                         help='Rendered QA session ceiling; above10 requires explicit operator authorization')

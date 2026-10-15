@@ -13,9 +13,10 @@ as serialized mesh user data, so contact readers can account for the same pose c
 The runtime uses hip flexion and bounded bilinear interpolation; neutral and ordinary walking remain unchanged
 by the seat targets. Final native garment appearance and contact acceptance are pending for this revision.
 
-Build with `uv run atelier build yorimichi unreal.nox_pawn data.network`, then select Nox in the
-character menu or run `uv run atelier play yorimichi -- -rider=Nox`. Every merged and donor action is retargeted;
-bike actions are authored on his rig and skating uses the shared runtime retargeter.
+Build with `uv run atelier build yorimichi unreal.nox_pawn unreal.horses unreal.nox_horse data.network` (the pawn
+alone leaves the horse uninstalled; see [HORSE.md](../../../docs/HORSE.md)), then select Nox in the character menu or
+run `uv run atelier play yorimichi -- -rider=Nox`. Every merged and donor action is retargeted; bike and horseback
+riding actions are authored on his rig and skating uses the shared runtime retargeter.
 
 The [full recipe](../../../docs/NOX_CHARACTER_RECIPE.md) covers the generations, Pixel Match face transfer,
 ear/scalp/chain repairs, assembly, clipping-mark tool and all-lock rig. Current refs and exact prompts are under

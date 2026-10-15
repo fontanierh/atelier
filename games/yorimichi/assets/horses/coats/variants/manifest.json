@@ -1,0 +1,20 @@
+{
+  "variants": [
+    {"id": "kestrel-bay", "name": "Bay", "swatch": "#805037", "file": "kestrel/bay.png", "sha256": "51432e6b3e102cea7610112ab4330428389ea499863f4b72786590378c2a653c", "provenance": "kestrel/bay.json"},
+    {"id": "kestrel-seal-brown", "name": "Seal brown", "swatch": "#493128", "file": "kestrel/seal-brown.png", "sha256": "fc6f22e1c27a652e9b9ba573aeed382611d110fc82ef5dff2e468b42a9eb0c75", "provenance": "kestrel/seal-brown.json"},
+    {"id": "kestrel-black", "name": "Black", "swatch": "#303036", "file": "kestrel/black.png", "sha256": "810847f744404a7807e9a66227ed1cc7a95398804eb9675cb731a59959658455", "provenance": "kestrel/black.json"},
+    {"id": "kestrel-chestnut", "name": "Chestnut", "swatch": "#a0653d", "file": "kestrel/chestnut.png", "sha256": "a678d883baf8af53071e041e7303960f6857a0c3a52bb1405d8f220389273165", "provenance": "kestrel/chestnut.json"},
+    {"id": "kestrel-sorrel", "name": "Sorrel", "swatch": "#bf7c4e", "file": "kestrel/sorrel.png", "sha256": "b1c7eff4712dbe5b6dfefd40a518b4819054b4b3d9b45fcc15caf55d7bd1f566", "provenance": "kestrel/sorrel.json"},
+    {"id": "kestrel-palomino", "name": "Palomino", "swatch": "#d2b77e", "file": "kestrel/palomino.png", "sha256": "c2a5aa36053f8627e73700d11708d439406bedae71c9be7f935ec72b034adafd", "provenance": "kestrel/palomino.json"},
+    {"id": "kestrel-buckskin", "name": "Buckskin", "swatch": "#b4a078", "file": "kestrel/buckskin.png", "sha256": "44f65913ab4f8e52e910e677efd9158c27a22f454dd5648230d1cf7c961ff715", "provenance": "kestrel/buckskin.json"},
+    {"id": "kestrel-perlino", "name": "Perlino", "swatch": "#e4d4b9", "file": "kestrel/perlino.png", "sha256": "b54710d475585ddf1cad837234c835e5b07589e5018a286e861fa72e3cf5ef7b", "provenance": "kestrel/perlino.json"},
+    {"id": "kestrel-blue-roan", "name": "Blue roan", "swatch": "#7c8591", "file": "kestrel/blue-roan.png", "sha256": "a22cdc9768cce5b776840e0b08df0c2a866966afa8b659ed3d2a520883b6d357", "provenance": "kestrel/blue-roan.json"},
+    {"id": "kestrel-red-roan", "name": "Red roan", "swatch": "#a78179", "file": "kestrel/red-roan.png", "sha256": "6f9d6767a9c764d270b2319c34a30b045ca8d1d9c9bb1639ce0b1f18d16fca66", "provenance": "kestrel/red-roan.json"},
+    {"id": "kestrel-dapple-grey", "name": "Dapple grey", "swatch": "#9da39f", "file": "kestrel/dapple-grey.png", "sha256": "f009e0390860bda39ee078c3dfbd1041c7dc657f97e46237c3fff3dba7dbd577", "provenance": "kestrel/dapple-grey.json"},
+    {"id": "kestrel-silver-dun", "name": "Silver dun", "swatch": "#9c9180", "file": "kestrel/silver-dun.png", "sha256": "421a0d8d06311a2f9d36ab3faca11cc34c73b7330ade103fdd2d50534087d711", "provenance": "kestrel/silver-dun.json"},
+    {"id": "kestrel-bay-tobiano", "name": "Bay tobiano", "swatch": "#8d5c41", "file": "kestrel/bay-tobiano.png", "sha256": "e515179f94dbeadc6025777094e460fa58ea92fe6198bbe9a618b08fd441282c", "provenance": "kestrel/bay-tobiano.json"},
+    {"id": "kestrel-chestnut-overo", "name": "Chestnut overo", "swatch": "#ac704b", "file": "kestrel/chestnut-overo.png", "sha256": "a87a956f5927bf1c0fe90718fbd0057662f32ef155d078ce077f41d08074a50a", "provenance": "kestrel/chestnut-overo.json"},
+    {"id": "kestrel-leopard", "name": "Leopard spots", "swatch": "#d9d2bd", "file": "kestrel/leopard.png", "sha256": "3d2a284d337fb39abb4af61a411b0e5a56be5bf2b60a453d10309cb7c2bd2510", "provenance": "kestrel/leopard.json"},
+    {"id": "kestrel-blanket", "name": "Blanket appaloosa", "swatch": "#967151", "file": "kestrel/blanket.png", "sha256": "348e9faf8d160e2372674116842b160a337dc5751458783a2931fc0ca5318ebf", "provenance": "kestrel/blanket.json"}
+  ]
+}

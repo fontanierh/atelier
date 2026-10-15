@@ -18,7 +18,8 @@ _spec.loader.exec_module(definition)
 STAGED = ('world.json', 'heightmap.bin', 'hidamari/city.json', 'skatepark/park.json', 'map/map.json', 'map/map_lines.json',
           'map/map.png', 'map/map.jpg', 'city_surface_tiles/v1_128m/manifest.json',
           'treehouse/runtime.json', 'megapark/park.json', 'craterpark/park.json', 'bike/manifest.json', 'belmonte/runtime.json',
-          # every playable character's bike report: its contact windows and the bike's channels
+          # every playable character's bike report: its clips' contact windows and channels (UBikeComponent). The horse
+          # reads no rider report; its runtime data, Data/horses/roster.json, is written there by unreal.horses.
           *(f'{c.id}/bike/export.json' for c in definition.movers() if c.playable))
 
 

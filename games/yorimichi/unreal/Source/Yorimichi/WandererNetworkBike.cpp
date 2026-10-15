@@ -37,7 +37,7 @@ void AWandererCharacter::ServerRequestBike_Implementation(uint32 Epoch)
 {
     auto* Combat=GetWorld()->GetSubsystem<UJapanCombatResolver>();
 #if !UE_BUILD_SHIPPING
-    JapanVehicleTelemetry::Request(this,true,Epoch,Combat->HasPending(this),MovementLocked(),
+    JapanVehicleTelemetry::Request(this,TEXT("bike"),Epoch,Combat->HasPending(this),MovementLocked(),
         GetWorld()->GetSubsystem<UJapanEncounters>()->HoldsPlayer(this));
 #endif
     const bool Exiting=NetworkActivity.Kind==EJapanActivity::Bike;

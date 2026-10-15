@@ -35,6 +35,79 @@ it does not choose either result as valid. Fix nondeterminism or missing inputs 
 an entry does not change successful local stamps; use a deliberate `--force` on that action to generate new evidence.
 Corrupt action manifests must be explicitly forgotten before GC can safely determine blob reachability.
 
+## Local portable snapshots
+
+A local snapshot selects current portable products and their complete dependency closure. It records
+`needs`, `after`, product reads and references, including reference-only cycles and leaf products nobody reads.
+Spatial reads use the recipe's complete frozen query matches, including empty results. Selection never runs
+actions or contacts a server. Every selected action must already have a current successful stamp, complete
+outputs and a matching, non-conflicting cache entry whose blob bytes pass verification. Native packages,
+non-cache owners, batching, custom verification callbacks, touched stamps and interrupted restores are refused.
+
+```sh
+uv run atelier build sandbox world.placements spatial.tile.west
+uv run atelier cache snapshot-create sandbox world.placements spatial.tile.west --grants grants.json
+uv run atelier cache status
+uv run atelier cache snapshot-show <snapshot-key>
+uv run atelier cache snapshot-restore <snapshot-key> sandbox
+uv run atelier cache snapshot-unpin <snapshot-key>
+uv run atelier cache snapshot-pin <snapshot-key>
+uv run atelier cache snapshot-remove <snapshot-key>
+```
+
+The grants file uses the same per-action/product format as the publisher policy. Include **every product** of
+every selected owner, including closure-only owners; a missing grant is an error. For the `world.placements`
+selection, for example:
+
+```json
+{
+  "schema": 1,
+  "actions": {
+    "sandbox/world.block": {
+      "block.shape": {"permission": "public", "grant": "approved-source-v1"},
+      "block.bounds": {"permission": "public", "grant": "approved-source-v1"}
+    },
+    "sandbox/world.placements": {
+      "world.placements": {"permission": "public", "grant": "approved-source-v1"}
+    }
+  }
+}
+```
+
+These example grant identifiers must be replaced by an actual approval applicable to the products.
+Private grants permit local selection and restoration. `snapshot-create --public` additionally requires a
+public grant for every product; it is a **selection check, not publication or an attestation**. The manifest
+always says `authority: local-unsigned`. A local manifest must never be accepted as a trusted remote bundle.
+Multi-action signed starter-pack export remains a separate integration with the existing pinned publisher,
+producer and redistribution verification rules; these commands neither sign nor upload anything.
+
+The immutable manifest lives at `products/v1/snapshots/<snapshot-key>.json`; its key covers canonical contents,
+all action keys, inventories, edges and grants. It contains no checkout paths or timestamps. Limits are
+256 actions, 256 MiB logical product bytes and a 2 MiB manifest; each action also obeys the signed-bundle
+inventory/path bounds. Snapshot enumeration is limited to 512 identities and 1536 directory entries.
+
+Creation pins the snapshot. Pinned snapshots retain **every member action and blob**, independently of action
+pins and GC quotas. Status reports snapshot roots and each action's `snapshot_retained` flag. GC verifies
+pinned members before deleting anything and fails closed on malformed manifests, dangling pins, missing or
+conflicting retained actions, and missing/corrupt retained bytes. `forget` cannot remove a snapshot-rooted action.
+Unpinning is explicit and makes members eligible for ordinary GC; the valid unsigned manifest remains as
+historical metadata. After eviction, use `snapshot-show --metadata-only` to inspect it; repinning and restoration
+require complete verified members again. Removal is explicit and requires unpinning first. For a damaged root,
+unpin/remove the snapshot explicitly or repair its members before retrying GC; GC never guesses a missing root.
+
+Restore requires the receiving recipe, source/tool identities, selected closure and exact action keys to agree.
+Stop that checkout's game/editor and any other build or restore writer before installation. Concurrent mutation
+of one checkout is unsupported; independent file copies are not a live-game update protocol.
+It holds the store mutex throughout verification and installation, preventing GC races. Every selected stamp
+is removed and journalled before replacement; existing portable staging verifies independent copies, then a
+fresh graph/input/output check certifies the restored actions. It executes no fallback generators. An interrupted
+restore leaves a snapshot-wide `.portable-snapshot-in-progress.json` barrier in both the checkout's default
+build root and the selected output root. Build, play, package and direct native launches refuse that mixed snapshot,
+including when another output root is selected. Repeat the same `snapshot-restore` key in the original checkout,
+output root and cache to resume its recorded nonce and scope. A different key/scope or conflicting nonce is refused;
+normal builds cannot clear this barrier. Successful resume removes it last, after every selected action is certified.
+This installs portable sources only; it does not replace whole-build reuse or enable Unreal package caching.
+
 ## Verified whole-build reuse
 
 ```sh

@@ -9,8 +9,11 @@ body and nine authored donor clips: double jump, sword guard/parry/recoil, inter
 ## Build
 
 ```sh
-uv run atelier build yorimichi unreal.cairo_pawn
+uv run atelier build yorimichi unreal.cairo_pawn unreal.horses unreal.cairo_horse
 ```
+
+The pawn does not wait for the horse imports, so without the last two the horse stays uninstalled
+([HORSE.md](../../../docs/HORSE.md)).
 
 `characters.cairo` runs the shared body export ([`../pipeline/export.py`](../pipeline/export.py), as `character.toml`
 `[export]` sets it) once into `build/yorimichi/cairo/`, exporting his body and the nine donor

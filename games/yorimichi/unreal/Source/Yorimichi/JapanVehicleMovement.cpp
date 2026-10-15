@@ -1,6 +1,7 @@
 #include "JapanCharacterMovement.h"
 #include "WandererCharacter.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "SailboatComponent.h"
 #include "AdventureMoveSet.h"
 #include "Serialization/MemoryWriter.h"
@@ -27,6 +28,13 @@ FJapanMoveCheckpoint UJapanCharacterMovement::CaptureMovementState() const
         auto State=Rider->GetSailboat()->CaptureNetworkState();Result.Action=TEXT("Sailboat");
         FMemoryWriter Writer(Result.Bytes,true);if(!State.SerializeCheckpoint(Writer))Result.Bytes.Reset();
     }
+    if (Rider->GetNetworkActivity() == EJapanActivity::Horse && Rider->GetHorse())
+    {
+        auto State = Rider->GetHorse()->CaptureNetworkState();
+        Result.Action = FJapanHorseState::RoleName(State.Role);
+        FMemoryWriter Writer(Result.Bytes, true);
+        if (!State.SerializeCheckpoint(Writer)) Result.Bytes.Reset();
+    }
     return Result;
 }
 
@@ -40,6 +48,14 @@ bool UJapanCharacterMovement::ApplyMovementState(const FJapanMoveCheckpoint& Sta
         if(State.Bytes.Num()!=FJapanSailState::CheckpointBytes||State.Action!=TEXT("Sailboat"))return false;
         FMemoryReader Reader(State.Bytes,true);FJapanSailState Sail;
         return Sail.SerializeCheckpoint(Reader)&&Reader.AtEnd()&&Rider->GetSailboat()->ApplyNetworkState(Sail);
+    }
+    if (Rider->GetNetworkActivity() == EJapanActivity::Horse)
+    {
+        if (State.Bytes.Num() != FJapanHorseState::CheckpointBytes || !Rider->GetHorse()) return false;
+        FMemoryReader Reader(State.Bytes, true);
+        FJapanHorseState Horse;
+        return Horse.SerializeCheckpoint(Reader) && Reader.AtEnd() && FJapanHorseState::RoleName(Horse.Role) == State.Action &&
+            Rider->GetHorse()->ApplyNetworkState(Horse);
     }
     if (Rider->GetNetworkActivity() != EJapanActivity::Bike || State.Bytes.Num() != FJapanBikeState::CheckpointBytes) return false;
     FMemoryReader Reader(State.Bytes, true);

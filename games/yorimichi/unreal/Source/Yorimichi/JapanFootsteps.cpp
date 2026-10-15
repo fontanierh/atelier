@@ -3,6 +3,7 @@
 #include "YorimichiCombatFX.h"
 #include "JapanWorld.h"
 #include "SailboatComponent.h"
+#include "HorseComponent.h"
 #include "WandererCharacter.h"
 #include "WandererDefinition.h"
 #include "Components/CapsuleComponent.h"
@@ -130,6 +131,14 @@ void UJapanFootstepComponent::Land(const FHitResult& Hit,float Weight)
     bPlanted[0]=bPlanted[1]=true; SincePlant[0]=SincePlant[1]=0.f;
 }
 
+void UJapanFootstepComponent::Hoof(const FHitResult& Hit,float Weight)
+{
+    if(!Set) return;
+    // A stand-in: the surface's footstep, heavier and lower, until the footstep library has hooves.
+    const FName Surface=Hit.Component.IsValid()?SurfaceAt(Hit):Set->DefaultSurface;
+    Play(Surface,Hit.ImpactPoint,FMath::Clamp(Weight,.4f,1.4f),FMath::FRandRange(.72f,.8f));
+}
+
 void UJapanFootstepComponent::TickComponent(float Dt,ELevelTick TickType,FActorComponentTickFunction* Function)
 {
     Super::TickComponent(Dt,TickType,Function);
@@ -138,7 +147,8 @@ void UJapanFootstepComponent::TickComponent(float Dt,ELevelTick TickType,FActorC
 
     const UCharacterMovementComponent* Movement=Pawn->GetCharacterMovement();
     const float Speed=Pawn->GetVelocity().Size2D();
-    const bool bRiding=(Pawn->GetSailboat() && Pawn->GetSailboat()->IsEquipped());
+    // On the boat and the horse his feet are off the ground (the horse's hooves sound in UHorseComponent).
+    const bool bRiding=(Pawn->GetSailboat() && Pawn->GetSailboat()->IsEquipped()) || Pawn->GetHorse()->IsEquipped();
     // Below a slow walk the feet shuffle in place and every crossing would be a phantom step.
     if(!Movement->IsMovingOnGround() || bRiding || Speed<40.f)
     {

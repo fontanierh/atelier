@@ -1,14 +1,15 @@
-"""How well a character's exported clips fit its body, gated: the merged move set (adventure/retarget.py) and the bike
-moves (vehicles/bike/rider.py) each end by checking their export.json here, and fail the step when a clip fits worse
-than it should.
+"""How well a character's exported clips fit its body, gated: the merged move set (adventure/retarget.py), the bike
+moves (vehicles/bike/rider.py) and the horseback moves (horses/rider.py) each have their export.json checked here by
+the character's fit step, which fails when a clip fits worse than it should.
 
     python games/yorimichi/assets/characters/pipeline/fit.py --character nox [--record] [--build DIR]
 
 Per clip, the metrics are the exported ones, measured on the solved skeleton before Unreal: `ankle_cm` (the farther of
 the two ankles from where the leg solve was asked to put it), `lowest_toe_cm` (the lowest toe, cm above the floor),
-the stance checks of a clip with an adventure.toml [stance] (stance_*_cm), and on the bike `reach_<limb>_cm` (how far
-a hand or foot fell short of its grip, pedal or the ground). Grip contacts rendered in the game (grips/check.py) and
-skin contacts in Unreal (Scripts/import_character.py) are checked where they are made, not here.
+the stance checks of a clip with an adventure.toml [stance] (stance_*_cm), and on the bike and the horse
+`reach_<limb>_cm` (how far a hand or foot fell short of its grip, pedal, stirrup, rein or the ground). Grip contacts
+rendered in the game (grips/check.py) and skin contacts in Unreal (Scripts/import_character.py) are checked where they
+are made, not here.
 
 A clip fails when:
 - a metric is missing, not finite, or the clip has no frames;
@@ -30,10 +31,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import definition  # noqa: E402
 
-REPORTS = ('adventure', 'bike')
+REPORTS = ('adventure', 'bike', 'horse')
 FIT = Path(__file__).resolve().parents[1] / 'fit'   # the baselines: outside the character's folder, an input of its exports
 BOUNDS = {'ankle_cm': 4.0, 'reach_cm': 4.0}   # cm: above every current character's grounded clips, waivers aside
-LIMBS = ('hand_L', 'hand_R', 'foot_L', 'foot_R')   # each bike clip's reaches
+LIMBS = ('hand_L', 'hand_R', 'foot_L', 'foot_R')   # each bike or horse clip's reaches
+RIDES = ('bike', 'horse')   # reports whose every clip holds both hands and both feet to a contact
 MARGIN = 0.5                                   # cm a metric may worsen against the baseline
 # Waivers every character shares, as character.toml's [[fit]]: the donor's own clips are retargeted onto everyone.
 SHARED = [
@@ -45,7 +47,7 @@ SHARED = [
 
 def metrics(report, clip):
     """{metric: (value, higher_is_worse)} of one clip's export.json entry."""
-    if report == 'bike':   # every bike move holds both hands and both feet to a grip, pedal or the ground
+    if report in RIDES:
         reach = clip.get('reach_error_cm', {})
         return {f'reach_{limb}_cm': (reach.get(limb, math.nan), True) for limb in sorted(set(LIMBS) | set(reach))}
     ankles = [clip.get('ankle_L_cm', math.nan), clip.get('ankle_R_cm', math.nan)]
@@ -58,7 +60,7 @@ def metrics(report, clip):
 
 
 def clips(character, report, build=None):
-    """{clip: export.json entry} of a character's report: the move set's clips and the donor's own, or the bike's.
+    """{clip: export.json entry} of a character's report: the move set's clips and the donor's own, or the ride's.
     `build`: the game's build folder (default: this checkout's)."""
     if build is None:
         sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world'))
@@ -76,7 +78,7 @@ def baseline(character):
 
 def expected(character, report):
     """The clips a report must hold: its baseline's, or without one the clips every other mover's baseline of that
-    report shares (the merged move set, or the bike's moves)."""
+    report shares (the merged move set, or a ride's moves)."""
     if names := set(baseline(character).get(report, {})):
         return names
     others = [set(json.loads(p.read_text()).get(report, {})) for p in sorted(FIT.glob('*.json')) if p.stem != character.id]
@@ -176,7 +178,7 @@ if __name__ == '__main__':
         print(f'{character.id} {report}: {len(found)} clips,', 'passed' if not failures else f'{len(failures)} failures')
         for line in failures:
             print('  ' + line)
-    assert receipt, f'{character.id}: no adventure or bike report'
+    assert receipt, f'{character.id}: no adventure, bike or horse report'
     passed = not any(r['failures'] for r in receipt.values())
     if args.build is None:   # the build step's receipt: build/<game>/<output>/fit.json
         sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'world'))

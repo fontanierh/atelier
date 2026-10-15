@@ -25,13 +25,20 @@ def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
               'Data/nox/adventure.json', 'Data/nox/bike/export.json',
               'Paul/SK_Paul.uasset', 'Paul/Adventure/A_Run.uasset',
               'Paul/Textures/T_M_Paul_0.uasset', 'PaulBike/A_Ride.uasset',
-              'Data/paul/adventure.json', 'Data/paul/bike/export.json']
+              'Data/paul/adventure.json', 'Data/paul/bike/export.json',
+              'Horses/M_HorseCoat.uasset', 'Horses/Arabian/SK_Horse_Arabian.uasset', 'Horses/Coats/Masks/T_Coat_Solid_Mask.uasset',
+              'CairoHorse/A_HorseIdle.uasset', 'NoxHorse/A_HorseWalk.uasset', 'PaulHorse/A_HorseMount.uasset',
+              'Data/horses/roster.json']
     old = ['RetiredCharacter/mesh.uasset', 'Data/retired-roster/roster.json',
            'Cairo/A_Roll.uasset', 'Cairo/A_DashGround.uasset', 'Cairo/A_SwordAttack1.uasset',
            'Cairo/BS_Locomotion.uasset', 'Cairo/DA_Cairo.uasset', 'Cairo/SM_Bokken.uasset',
            'Cairo/M_Bokken_Wood.uasset', 'Cairo/Textures/T_M_Bokken_Wood.uasset',
            'Modori/RetiredMoves/A_Run.uasset', 'SwordTrainer/RetiredMoves/A_Idle.uasset',
-           'Data/cairo/old-moves.json', 'Data/hippodrome/charts.json', 'Audio/RetiredActivity/song.uasset']
+           'Data/cairo/old-moves.json', 'Data/hippodrome/charts.json', 'Audio/RetiredActivity/song.uasset',
+           # world.horses' build manifest is no longer staged: the roster carries the contacts.
+           'Data/horses/manifest.json', 'Data/horses/old-roster.json',
+           # nor are the riders' horse reports: the game reads none of them.
+           'Data/cairo/horse/export.json', 'Data/nox/horse/export.json']
     for relative in active + old:
         path = content / relative
         path.parent.mkdir(parents=True, exist_ok=True)

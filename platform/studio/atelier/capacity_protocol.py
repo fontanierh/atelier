@@ -237,13 +237,13 @@ def parent_pin(pin):
 
 def boot_id():
     """An OS boot UUID is independent of daemon epoch and cannot survive a reboot."""
-    if sys.platform == 'darwin':
-        raw = subprocess.check_output(['/usr/sbin/sysctl', '-n', 'kern.bootsessionuuid'], timeout=.5).decode().strip()
-    else:
-        raw = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
     try:
+        if sys.platform == 'darwin':
+            raw = subprocess.check_output(['/usr/sbin/sysctl', '-n', 'kern.bootsessionuuid'], timeout=.5).decode().strip()
+        else:
+            raw = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         return str(uuid.UUID(raw))
-    except ValueError:
+    except (OSError, ValueError, subprocess.SubprocessError):
         raise CapacityError('Authoritative OS boot identity unavailable') from None
 
 

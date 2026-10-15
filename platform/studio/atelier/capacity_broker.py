@@ -36,12 +36,26 @@ class CapacityBroker:
     before this broker's sole gate writer releases a child, in one serialized actor turn. Restart,
     lost health and missing exit evidence MUST retain grants. No process MAY be signalled here.
     Exit evidence covers the retained roster only; no process scan or aggregate report proves
-    undiscovered descendants absent. Existing legacy exclusion remains required by the adapter.
+    undiscovered descendants absent. The adapter MUST retain exclusive legacy exclusion in bridge
+    mode, or verified sealed shared compatibility mutexes in full mode.
     """
     def __init__(self, state_directory, *, total, reserve=Resources(), disk_pool=None,
                  observe=None, lease_seconds=10., rpc_timeout=2., started=wire.process_start,
                  watch=wire.ExitWatch, guards=wire.validate_guards, child_of=wire.direct_child,
-                 parent=wire.parent_pin, boot=wire.boot_id, alive=wire.live):
+                 parent=wire.parent_pin, boot=wire.boot_id, alive=wire.live, mode='legacy-bridge',
+                 cutover=None, policy_sha256=None, foreign=None):
+        if mode not in ('legacy-bridge', 'capacity'):
+            raise wire.CapacityError('Unsupported production capacity mode')
+        self.mode, self.cutover, self.policy_sha256 = mode, cutover, policy_sha256
+        self.activation_id, self.compatible = None, True
+        if mode == 'capacity':
+            from . import capacity_compat
+            if (not isinstance(policy_sha256, str) or len(policy_sha256) != 64
+                    or Path(cutover or '') != capacity_compat.DEFAULT_RECORD):
+                raise wire.CapacityError('Full capacity requires the sealed machine policy')
+            proof = capacity_compat.verify(cutover, policy_sha256=policy_sha256)
+            self.activation_id = proof['activation_id']
+        self.foreign = foreign
         self.directory = Path(state_directory)
         if not self.directory.is_absolute() or not 1 <= lease_seconds <= 300 or not .1 <= rpc_timeout <= 5:
             raise wire.CapacityError('Invalid broker directory or deadline')
@@ -58,6 +72,10 @@ class CapacityBroker:
         self.parent, self.boot = parent, boot()
         self.alive = alive
         self.socket_path = self.directory / 'broker.sock'
+        if mode == 'capacity' and (proof['socket'] != str(self.socket_path)
+                or proof['disk_pool'] != str(self.disk_pool)
+                or proof['total'] != asdict(self.total) or proof['reserve'] != asdict(self.reserve)):
+            raise wire.CapacityError('Broker resources or endpoint differ from the sealed policy')
         if len(os.fsencode(self.socket_path)) >= (104 if sys.platform == 'darwin' else 108):
             raise wire.CapacityError('Capacity Unix socket path is too long')
         self.database_path = self.directory / 'admission.sqlite'
@@ -237,7 +255,17 @@ class CapacityBroker:
 
     def _refresh(self, state, now):
         changed = False
+        if self.mode == 'capacity':
+            from . import capacity_compat
+            try:
+                proof = capacity_compat.verify(self.cutover, policy_sha256=self.policy_sha256)
+                self.compatible = proof['activation_id'] == self.activation_id
+            except (OSError, ValueError, wire.CapacityError):
+                self.compatible = False
         for record in state['records'].values():
+            if not self.compatible and record['state'] in HELD and record['state'] != 'uncertain':
+                record['state'] = 'uncertain'
+                changed = True
             if record['state'] == 'queued' and now - record['heartbeat'] > self.lease_seconds:
                 record['state'] = 'waiting'
                 self._gate_close(record['nonce'])
@@ -268,7 +296,7 @@ class CapacityBroker:
         return changed
 
     def _request(self, value):
-        wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase'))
+        wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers'))
         wire.text(value['id'])
         vector = wire.resources(value['resources'])
         locks = value.get('locks', [])
@@ -279,6 +307,23 @@ class CapacityBroker:
         performance = value.get('performance', False)
         if type(performance) is not bool:
             raise wire.CapacityError('Invalid performance-window request')
+        if self.mode == 'capacity':
+            checkout = wire.text(value.get('checkout'), maximum=4096)
+            if not Path(checkout).is_absolute() or 'checkout:' + checkout not in locks:
+                raise wire.CapacityError('Full capacity requires its declared checkout named lock')
+            if not vector.cpu_millis or not vector.io_slots:
+                raise wire.CapacityError('Full capacity requires nonzero CPU and I/O reservations')
+            workers = value.get('workers')
+            if workers is not None:
+                wire.integer(workers, minimum=1, maximum=1024)
+                if vector.cpu_millis < workers * 1000:
+                    raise wire.CapacityError('Capacity CPU reservation does not cover declared unchanged workers')
+            if (workers is None or value.get('phase') in ('game', 'compile')) and not performance:
+                raise wire.CapacityError('Games, compiles and unbounded compound profiles require exclusive capacity')
+            if workers is None and vector.cpu_millis < self.total.cpu_millis - self.reserve.cpu_millis:
+                raise wire.CapacityError('Unknown profiles must reserve the complete managed CPU budget')
+            if value.get('phase') == 'compile' and vector.cpu_millis < 3000:
+                raise wire.CapacityError('Compile profiles must cover the existing three workers')
         for key in ('owner', 'checkout', 'purpose', 'phase'):
             if key in value:
                 wire.text(value[key], maximum=4096 if key == 'checkout' else 512)
@@ -290,7 +335,7 @@ class CapacityBroker:
                        record['sequence'], request['seconds'], record.get('bypasses', 0), request['performance'])
 
     def _selection(self, state):
-        if any(r['state'] == 'uncertain' for r in state['records'].values()):
+        if not self.compatible or any(r['state'] == 'uncertain' for r in state['records'].values()):
             return None  # Accounting alone cannot replace a lost enforcement/ownership boundary.
         holders = [self._model(r) for r in state['records'].values() if r['state'] in HELD]
         queued = sorted((r for r in state['records'].values() if r['state'] == 'queued'), key=lambda r: r['sequence'])
@@ -329,11 +374,57 @@ class CapacityBroker:
                                         record['limit_bytes'], vector.memory_mib)
                     measured = facts.footprint_bytes // 1024**2
                 except (OSError, ValueError, KeyError, wire.CapacityError):
-                    pass
+                    record['state'] = 'draining' if self._root_exited(record) else 'uncertain'
+                    raise wire.CapacityError('Existing holder enforcement is unavailable; reservation retained') from None
             growth_memory += max(0, vector.memory_mib - measured)
             growth_temp += vector.temp_mib
         if memory < required.memory_mib + growth_memory or disk < required.temp_mib + growth_temp:
             raise wire.CapacityError('Capacity pressure refuses the complete reservation')
+
+    def _validate_holders(self, state, candidate):
+        """@cc [owner:fontanierh,label:safety] final-charged-peer-enforcement
+        Before another GO, charged peer controller/guard health MUST be revalidated after slow
+        observations. Positively observed loss MUST survive candidate rollback as a nonce-bound
+        retained state transition, without committing any refused candidate vector or lock change.
+        """
+        failed = []
+        for record in state['records'].values():
+            if record is candidate or record['state'] not in HELD:
+                continue
+            try:
+                if record['state'] == 'uncertain':
+                    raise wire.CapacityError('Existing holder is uncertain')
+                if record['state'] == 'running':
+                    self.guards(record['guards'], tuple(record['child']), tuple(record['principal']),
+                                record['limit_bytes'], record['request']['resources']['memory_mib'])
+                elif (not record.get('roster') or record.get('ancestry_unknown')
+                      or any(pin not in record.get('exited', []) for pin in record['roster'])):
+                    raise wire.CapacityError('Draining holder lacks complete retained exit evidence')
+                owner = tuple(record['principal'])
+                if self.started(owner[0]) != owner[1] or not self.alive(owner):
+                    raise wire.CapacityError('Existing holder controller identity lost')
+                if self._clock() - record['heartbeat'] > self.lease_seconds:
+                    raise wire.CapacityError('Existing holder lease expired during admission')
+            except (OSError, ValueError, KeyError, wire.CapacityError):
+                record['state'] = 'uncertain'
+                failed.append(record)
+        if failed:
+            raise wire.CapacityError('Existing holder lost ownership or enforcement; reservation retained')
+
+    def _validate_compatibility(self, state):
+        if self.mode != 'capacity':
+            return
+        from . import capacity_compat
+        try:
+            proof = capacity_compat.verify(self.cutover, policy_sha256=self.policy_sha256)
+            if proof['activation_id'] != self.activation_id:
+                raise wire.CapacityError('Capacity activation changed')
+        except (OSError, ValueError, wire.CapacityError):
+            self.compatible = False
+            retained = [record for record in state['records'].values() if record['state'] in HELD]
+            for record in retained:
+                record['state'] = 'uncertain'
+            raise wire.CapacityError('Full-capacity compatibility changed before admission; charges retained') from None
 
     def _gate_close(self, nonce):
         fd = self._gates.pop(nonce, None)
@@ -351,19 +442,22 @@ class CapacityBroker:
         used = Resources()
         for record in charged:
             used += wire.resources(record['request']['resources'])
-        result = dict(epoch=state['epoch'], boot_id=self.boot, mode='legacy-bridge', cutover=False,
+        result = dict(epoch=state['epoch'], boot_id=self.boot, mode=self.mode, cutover=self.mode == 'capacity',
                       observed_at=time.time(), observed_monotonic=time.monotonic(),
-                      recovering=any(r['state'] == 'uncertain' for r in records),
+                      recovering=not self.compatible or any(r['state'] == 'uncertain' for r in records),
                       total=asdict(self.total), reserve=asdict(self.reserve), charged_resources=asdict(used),
                       charged_count=len(charged), waiting_count=sum(r['state'] in ('queued', 'waiting') for r in records),
                       total_records=len(records), records=[], truncated=False)
+        if self.mode == 'capacity':
+            result['compatibility_healthy'] = self.compatible
         selected = self._selection(state)
         for record in sorted(records, key=lambda r: (r['state'] not in HELD, r['state'] != 'queued', r['sequence'])):
             request = record['request']
             blockers = conflicts(self._model(record), [self._model(r) for r in charged], self.total, self.reserve)
             reason = ('uncertain ownership or enforcement; reservation retained' if record['state'] == 'uncertain' else
                       'capacity recovery blocks new grants' if result['recovering'] and record['state'] == 'queued' else
-                      'selected advisory offer; legacy exclusion and guarded commit still required' if record is selected else
+                      ('selected advisory offer; sealed compatibility locks and guarded commit still required'
+                       if self.mode == 'capacity' else 'selected advisory offer; legacy exclusion and guarded commit still required') if record is selected else
                       ('; '.join(blockers) or 'older ready request selected') if record['state'] == 'queued' else
                       'not currently ready; retry required' if record['state'] == 'waiting' else '')
             item = dict(id=request['id'], owner=request.get('owner'), checkout=request.get('checkout'),
@@ -382,8 +476,29 @@ class CapacityBroker:
         result['returned_records'] = len(result['records'])
         return result
 
+    def _owned(self, state, candidates):
+        """@cc [owner:fontanierh,label:safety] exact-capacity-scan-exclusions
+        Foreign-scan exclusions MUST match complete PID/start identities in positively verified,
+        still charged rosters. No descendant expansion, truncated roster or uncertain grant MAY
+        establish ownership. Unknown observations MUST refuse admission, never imply absence.
+        """
+        if (not self.compatible or any(r['state'] == 'uncertain' for r in state['records'].values())
+                or type(candidates) is not list or len(candidates) > wire.MAX_ROSTER):
+            raise wire.CapacityError('Capacity ownership observation is unavailable or incomplete')
+        pins = [wire.identity(pin) for pin in candidates]
+        known = {tuple(pin) for record in state['records'].values() if record['state'] in HELD
+                 for pin in record.get('verified_roster', []) if pin not in record.get('exited', [])}
+        return [list(pin) for pin in pins if pin in known and self.started(pin[0]) == pin[1] and self.alive(pin)]
+
+    def _foreign_check(self, state):
+        from .safety.render_lock import native_candidates
+        candidates = self.foreign() if self.foreign is not None else native_candidates()
+        owned = {tuple(pin) for pin in self._owned(state, candidates)}
+        if any(tuple(pin) not in owned for pin in candidates):
+            raise wire.CapacityError('Unregistered native processes refuse full-capacity admission')
+
     def handle(self, message, principal):
-        """Called only by the serialized server actor; exceptions roll back all accounting."""
+        """Serialized actor: refused accounting rolls back, observed enforcement loss remains charged."""
         with self._lock:
             state = self._load()
             fd, go = None, None
@@ -391,10 +506,14 @@ class CapacityBroker:
                 now = self._clock()
                 refreshed = self._refresh(state, now)
                 wire.fields(message, ('namespace', 'action'), ('request', 'id', 'nonce', 'epoch', 'boot_id', 'child',
-                            'process_guard', 'tree_guard', 'limit_bytes', 'descendants', 'witness', 'resources', 'locks'))
+                            'process_guard', 'tree_guard', 'limit_bytes', 'descendants', 'witness', 'resources', 'locks',
+                            'activation_id', 'candidates'))
                 if message['namespace'] != wire.NAMESPACE:
                     raise wire.CapacityError('Production broker namespace required')
                 action = message['action']
+                if self.mode == 'capacity' and action not in ('status', 'reconcile', 'close'):
+                    if not self.compatible or message.get('activation_id') != self.activation_id:
+                        raise wire.CapacityError('Full-capacity compatibility proof is unavailable or mismatched')
                 if action in ('status', 'reconcile'):
                     if action == 'reconcile':
                         for retained in state['records'].values():
@@ -405,6 +524,11 @@ class CapacityBroker:
                                 self._dispose(retained['nonce'])
                                 refreshed = True
                     result = self._status(state)
+                elif action == 'owned':
+                    if (self.mode != 'capacity' or message.get('boot_id') != self.boot
+                            or message.get('epoch') != state['epoch']):
+                        raise wire.CapacityError('Capacity ownership observation was fenced')
+                    result = dict(owned=self._owned(state, message.get('candidates')), epoch=state['epoch'])
                 elif action == 'offer':
                     request = self._request(message['request'])
                     record = state['records'].get(request['id'])
@@ -464,10 +588,14 @@ class CapacityBroker:
                         guards = {name: message[name] for name in ('process_guard', 'tree_guard')}
                         facts = self.guards(guards, child, principal, message['limit_bytes'],
                                              record['request']['resources']['memory_mib'])
+                        if self.mode == 'capacity':
+                            self._foreign_check(state)
                         self._pressure(state, record)
-                        # Revalidate after pressure I/O, immediately before committing GO authority.
-                        self.guards(guards, child, principal, message['limit_bytes'],
-                                    record['request']['resources']['memory_mib'])
+                        self._validate_compatibility(state)
+                        self._validate_holders(state, record)
+                        # Revalidate after all compatibility, process-scan and pressure I/O.
+                        facts = self.guards(guards, child, principal, message['limit_bytes'],
+                                            record['request']['resources']['memory_mib'])
                         if self.started(child[0]) != child[1] or self.started(principal[0]) != principal[1]:
                             raise wire.CapacityError('Launcher/controller changed before admission')
                         record['child'] = list(child)
@@ -531,6 +659,8 @@ class CapacityBroker:
                             record['request'] = old
                             raise wire.CapacityError('Atomic phase replacement refused; old grant retained')
                         self._pressure(state, record)
+                        self._validate_compatibility(state)
+                        self._validate_holders(state, record)
                         result = {'state': 'running', 'admission': True}
                     else:
                         raise wire.CapacityError('Unknown capacity action')
@@ -548,13 +678,27 @@ class CapacityBroker:
                         raise wire.CapacityError('Launch gate failed; reservation retained') from None
                     finally:
                         self._gate_close(go)
-                return {'namespace': wire.NAMESPACE, 'boot_id': self.boot, 'mode': 'legacy-bridge', **result}, fd
+                return {'namespace': wire.NAMESPACE, 'boot_id': self.boot, 'mode': self.mode,
+                        **({'activation_id': self.activation_id} if self.mode == 'capacity' else {}), **result}, fd
             except BaseException:
                 self.connection.rollback()
                 if message.get('action') == 'start':
                     self._gate_close(message.get('nonce'))
                 if fd is not None:
                     os.close(fd)
+                # Refresh can observe loss before request validation or candidate selection. Retain
+                # those observations on every refusal, not only failures at the final GO checks.
+                losses = [(item['request']['id'], item['nonce'], item['state'])
+                          for item in state['records'].values() if item['state'] in ('uncertain', 'draining')]
+                if losses:
+                    retained = self._load()
+                    for identity, nonce, lost_state in losses:
+                        other = retained['records'].get(identity)
+                        if other is not None and other['nonce'] == nonce and other['state'] in HELD:
+                            # Never copy a refused vector/lock/roster or turn uncertainty into draining.
+                            if other['state'] != 'uncertain':
+                                other['state'] = lost_state
+                    self._save(retained)
                 raise
 
     def serve_forever(self):
@@ -659,8 +803,10 @@ def load_config(configpath, *, expected_sha256=None):
                 or not hmac.compare_digest(hashlib.sha256(raw).hexdigest(), expected_sha256)):
             raise wire.CapacityError('Capacity policy changed; drain and reinstall the reviewed configuration')
     config = wire.decode(raw)
-    wire.fields(config, ('schema', 'state_directory', 'total', 'reserve', 'disk_pool', 'mode'))
-    if type(config['schema']) is not int or config['schema'] != 1 or config['mode'] != 'legacy-bridge':
+    wire.fields(config, ('schema', 'state_directory', 'total', 'reserve', 'disk_pool', 'mode'), ('cutover',))
+    bridge = type(config['schema']) is int and config['schema'] == 1 and config['mode'] == 'legacy-bridge' and 'cutover' not in config
+    full = type(config['schema']) is int and config['schema'] == 2 and config['mode'] == 'capacity' and 'cutover' in config
+    if not (bridge or full):
         raise wire.CapacityError('Unsupported capacity broker configuration')
     state, disk = Path(config['state_directory']), Path(config['disk_pool'])
     if (not state.is_absolute() or not disk.is_absolute() or not disk.is_dir()
@@ -674,7 +820,13 @@ def load_config(configpath, *, expected_sha256=None):
     total, reserve = wire.resources(config['total']), wire.resources(config['reserve'])
     if reserve.excess(total):
         raise wire.CapacityError('Capacity reserve exceeds total')
-    return dict(state_directory=state, total=total, reserve=reserve, disk_pool=disk)
+    settings = dict(state_directory=state, total=total, reserve=reserve, disk_pool=disk)
+    if full:
+        from . import capacity_compat
+        if Path(config['cutover']) != capacity_compat.DEFAULT_RECORD:
+            raise wire.CapacityError('Full capacity must use the machine default compatibility record')
+        settings.update(mode='capacity', cutover=Path(config['cutover']), policy_sha256=hashlib.sha256(raw).hexdigest())
+    return settings
 
 
 def main(configpath):

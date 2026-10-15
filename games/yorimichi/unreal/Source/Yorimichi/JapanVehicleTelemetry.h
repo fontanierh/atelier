@@ -21,6 +21,7 @@ namespace JapanVehicleTelemetry
     void Checkpoint(AWandererCharacter* Rider, bool Applied, int32 Bytes);
     void Presentation(AWandererCharacter* Rider, double Stamp);
     void Action(AWandererCharacter* Rider, FName Button, uint16 Edge, bool Accepted, bool Replay);
-    void Request(AWandererCharacter* Rider, bool Bike, uint32 Epoch, bool Pending, bool Locked, bool Encounter);
+    /** Kind: "bike", "sail" or "horse". */
+    void Request(AWandererCharacter* Rider, const TCHAR* Kind, uint32 Epoch, bool Pending, bool Locked, bool Encounter);
     TSharedPtr<FJsonObject> Snapshot(const AWandererCharacter* Rider);
 }

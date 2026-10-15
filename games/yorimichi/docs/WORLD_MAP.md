@@ -182,9 +182,9 @@ belong in the archive; an existing ledger is never removed to retry an uncertain
   (`atelier stream yorimichi start`), and [`phone/map-scroll-smoke.mjs`](../phone/map-scroll-smoke.mjs) tests the
   touch gestures offline.
 
-Travel goes through `AWandererCharacter::TravelTo`: it cancels a zeppelin ride, stows the board and the sailboat,
-clears momentum, traces the ground under the target and places the character facing the zone's yaw. The phone's
-"back to spawn" button uses the same path.
+Travel goes through `AWandererCharacter::TravelTo`: it cancels a zeppelin ride, stows the board, the sailboat, the
+bike and the horse, clears momentum, traces the ground under the target and places the character facing the zone's
+yaw. The phone's "back to spawn" button uses the same path.
 
 `uv run atelier play yorimichi -- -mapqa -reviewdir=DIR` travels to every zone in turn, screenshots each
 (`map_NN_key.png`) and the open map (`map_overlay.png`), and writes `map_qa.json` (target, landed position, drift,

@@ -284,8 +284,11 @@ exercise the supported log formats without requiring a native build.
 
 ## Audit a Python generator's accesses
 
-Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. It works with
-or without `cache=True`. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
+Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. Python actions
+work with or without `cache=True`. Guarded `Blender` and `UnrealScript` commands have offline-tested Python access
+audit adapters with `heavy=True` and `cache=False`; Blender requires `factory_startup=True`. Native products may live in owned
+generated subpaths under `ctx.out`, or the project's `Content` for Unreal. Optional product roots, linked output
+paths and legacy pool/cutoff protocols are refused. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
 running the script and writes `logs/<step>.audit.json` separately from its products. No extra command is required.
 
 The audit checks file reads against declared source inputs and `reads` products. A `references` edge grants no
@@ -300,8 +303,11 @@ Python's import event also require declared inputs or tool runtime. Namespace pa
 directory or tool runtime.
 
 Writes, removals and renames must stay within owned products or private scratch space. After a cache miss, Atelier
-drops the stamp and removes the action's old product paths before launching it. It unlinks file leaves, preserving
-any other hard-link names; old bytes, metadata and leftover files cannot become inputs. A failed action leaves no
+drops the stamp. The executing child removes old product paths before installing its observer and running the
+recipe; heavy actions reach that child only after normal guarded admission. Refused admission preserves the old
+products. Cleanup rechecks root and ancestor links and removes entries through held parent descriptors. It unlinks
+file leaves, preserving any other hard-link names;
+old bytes, metadata and leftover files cannot become inputs to the recipe. A failed action leaves no
 certified outputs, and a retry starts empty again. Reading back new writes is allowed. Atomic output replacement
 works by writing in the action's private temporary directory and then using `os.replace`. Use an owned directory
 product when a generator needs temporary siblings.
@@ -313,7 +319,9 @@ Audited actions inherit the ordinary launcher; `heavy=True` still takes its norm
 
 A caught access violation remains a failure. Missing, malformed or unsuccessful completion records prevent stamps
 and cache publication, including an `os._exit(0)` that bypasses normal cleanup. Reports travel through a separate
-inherited pipe, not a recipe-owned output. Cache hits verify the audited action key and complete output inventory;
+inherited pipe, not a recipe-owned output. A fresh nonce, ordered start/accesses/complete records and pipe closure
+are required. The hook stays armed after completion: trailing Python access fails certification, even if it repeats
+a formerly allowed read and its exception is caught. Cache hits verify the audited action key and complete output inventory;
 they do not rerun the generator merely to produce another trace. The stamp records restoration separately.
 
 This is a diagnostic for trusted recipes, **not a security sandbox or a proof of complete input closure**. It observes
@@ -322,8 +330,43 @@ without changing their return values. Metadata values (timestamps, permissions a
 reads, direct native I/O and unobserved low-level APIs are outside its guarantee. Recipes must not derive portable
 output from those values. Observed subprocess, network, ctypes, mmap, sqlite3 and opaque descriptor operations,
 and unhandled `os.*` events, are refused;
-an uninstrumented child must not silently supply a supposedly audited result. Blender and Unreal bootstraps are not
-enabled by this option. Their imports still need their own dependency and native equivalence proofs.
+an uninstrumented child must not silently supply a supposedly audited result. Blender/Unreal bootstraps observe
+action-time Python work only; host startup, native callbacks and native imports still need explicit declarations
+and native equivalence proofs. Offline fake-host tests validate this protocol without launching Blender or Unreal;
+they do not certify real-host behavior or native package portability. Tool runtime exemptions come only from
+recognized Python library directories within a fingerprinted host installation, never arbitrary `sys.path` entries.
+Native bootstrap helpers execute their fingerprinted source directly. Ambient runtime `__pycache__` bytes receive
+no runtime exemption, and action imports use a private bytecode prefix even if the host ignored startup flags.
+Before execution, the bootstrap refuses preloaded project/helper modules outside the fingerprinted installation,
+including declared sources: their loaded values may predate those source bytes or come from stale bytecode.
+Package and namespace search locations must also stay inside the tool. Installed module origins and preloaded
+bytecode must belong to the complete tool identity or fresh private bytecode directory; native Blender's audit
+identity therefore includes installed `__pycache__` bytes. Originless modules require builtin/frozen loader
+provenance or an explicit known host API name (`unreal` or the supported Blender API modules). Host API mutable
+native state remains outside Python input observation. CPython's synthetic `typing.io`/`typing.re` namespaces require
+their exact binding to the fingerprinted `typing` module. Preload rejection produces an incomplete report and no stamp.
+The source-verified UE adapter is version-gated to UE 5.8. It completely fingerprints the bundled
+`Engine/Binaries/ThirdParty/Python3/Mac` runtime and the exact
+`Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python` wrapper directory, including bytecode. That wrapper
+directory also grants tool reads during the action. The identity includes the editor, `Build.version`, both
+`libUnrealEditor-PythonScriptPlugin.dylib` and `libUnrealEditor-PythonScriptPluginPreload.dylib`, and their
+`UnrealEditor.modules` descriptor. The shipped source creates exactly `_unreal_core`, `_unreal_slate`,
+`_unreal_engine` and `_unreal_editor` at startup; those originless bindings join `unreal` as explicit native APIs.
+UE's source-proven originless `__main__` placeholder is allowed only without file/spec origins; the recipe runs
+in a fresh `runpy` main module, so startup globals in that placeholder do not become recipe globals.
+Native startup search paths are retained, but grant no additional read permission. Other plugin/project roots,
+preloaded project helpers and unknown dynamic native modules remain refused. The wrapper registry also generates
+module names from loaded engine/game modules; those require explicit provenance before approval, not a prefix
+wildcard. Fake hosts exercise the actual wrapper layout and known binding names. Actual UE execution and complete
+native dependency/equivalence acceptance remain unvalidated and separate from this offline adapter.
+Unreal keeps its descriptor isolation and native library checks before/after the observed script. These framework
+checks run outside recipe observation; recipe ctypes calls remain refused.
+
+An audited native action runs in a fresh process, including when it declares `Batch(...)`. Such declarations fall
+back to ordinary per-action execution. Warm audited batching is unsupported: hooks cannot be removed and warm
+modules/callbacks can retain earlier action state. The direct batch runner refuses audited candidates. A second
+bootstrap invocation in the same host is a sticky failure. This option never enables native cache restoration or
+publication.
 The worker initializes managed stdlib `ctypes` before installing the observer, including CPython's own
 `PyDLL(None)` handle. This lets NumPy import that existing runtime state. Action-time library loads and symbol
 lookups remain refused, even when their exceptions are caught; NumPy gets no access exemption. Array operations

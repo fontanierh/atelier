@@ -11,6 +11,7 @@
 #include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "SailboatComponent.h"
 #include "ZeppelinService.h"
 #include "Components/StaticMeshComponent.h"
@@ -56,6 +57,43 @@ TSharedPtr<FJsonObject> Read(const FString& File)
     if (FFileHelper::LoadFileToString(Text, *File)) FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Data);
     return Data;
 }
+// switch-horse: each side asks for its own fixed look (roster ids) through the ordinary owner request; both observers must
+// show it on that player's horse, through the character switch and back.
+const TCHAR* const HorseLookFields[] = { TEXT("horse_breed"), TEXT("horse_tack"), TEXT("horse_coat"), TEXT("horse_mask"),
+    TEXT("horse_hair_color"), TEXT("horse_hair_pattern"), TEXT("horse_tint") };
+const TCHAR* const HostHorseLook[] = { TEXT("friesian"), TEXT("03"), TEXT("kestrel-palomino"), TEXT("Tobiano"),
+    TEXT("flaxen-gold"), TEXT("ombre"), TEXT("warm-sun") };
+const TCHAR* const GuestHorseLook[] = { TEXT("clydesdale"), TEXT("05"), TEXT("kestrel-blue-roan"), TEXT("Spots"),
+    TEXT("silver-white"), TEXT("streaked"), TEXT("cool-slate") };
+static_assert(UE_ARRAY_COUNT(HorseLookFields) == 7 && UE_ARRAY_COUNT(HostHorseLook) == 7 && UE_ARRAY_COUNT(GuestHorseLook) == 7, "seven look fields");
+void HorseLookRow(FJsonObject& Row, const UHorseComponent* Horse)
+{
+    const FString Ids[] = { Horse->GetBreedId(), Horse->GetTackId(), Horse->GetCoatId(), Horse->GetMaskId(),
+        Horse->GetHairColorId(), Horse->GetHairPatternId(), Horse->GetTintId() };
+    for (int32 I = 0; I < UE_ARRAY_COUNT(HorseLookFields); ++I) Row.SetStringField(HorseLookFields[I], Ids[I]);
+}
+// Each observer's own player asked for a look; both observers show that look on that player's horse.
+bool HorseLooksAgree(const TSharedPtr<FJsonObject>& Host, const TSharedPtr<FJsonObject>& Peer)
+{
+    TMap<FString, TSharedPtr<FJsonObject>> Requested;
+    for (const TSharedPtr<FJsonObject>& Side : {Host, Peer})
+    {
+        const TSharedPtr<FJsonObject>* Request = nullptr; FString Player;
+        if (!Side->TryGetObjectField(TEXT("horse_request"), Request) || !Side->TryGetStringField(TEXT("local_player"), Player)) return false;
+        Requested.Add(Player, *Request);
+    }
+    if (Requested.Num() != 2) return false;
+    for (const TSharedPtr<FJsonObject>& Side : {Host, Peer})
+        for (const TSharedPtr<FJsonValue>& Value : Side->GetArrayField(TEXT("views")))
+        {
+            const TSharedPtr<FJsonObject> Row = Value->AsObject();
+            const TSharedPtr<FJsonObject>* Request = Requested.Find(Row->GetStringField(TEXT("player")));
+            if (!Request) return false;
+            for (const TCHAR* Field : HorseLookFields)
+                if (Row->GetStringField(Field).IsEmpty() || Row->GetStringField(Field) != (*Request)->GetStringField(Field)) return false;
+        }
+    return true;
+}
 struct FProbe
 {
     TWeakObjectPtr<UWorld> World;
@@ -72,6 +110,10 @@ struct FProbe
     bool SawAir = false, SawBail = false, CharacterSent = false;
     bool BikeExitSent = false, BikeExitGrounded = false;
     float BikeExitSpeed = -1.f;
+    bool HorseExitSent = false, HorseExitGrounded = false;
+    float HorseExitSpeed = -1.f;
+    int32 HorseLookRequests = 0;
+    double NextHorseLook = 0.;
     FVector SailLaunch = FVector::ZeroVector;
     int32 SailExitRequests = 0;
     double NextSailExit = 0.;
@@ -82,6 +124,7 @@ struct FProbe
     {
         if (Case == TEXT("switch-bike")) return EJapanActivity::Bike;
         if (Case == TEXT("switch-sail")) return EJapanActivity::Sailboat;
+        if (Case == TEXT("switch-horse")) return EJapanActivity::Horse;
         if (Case.StartsWith(TEXT("switch-skate"))) return EJapanActivity::Skate;
         if (Case == TEXT("zeppelin")) return EJapanActivity::Zeppelin;
         return EJapanActivity::OnFoot;
@@ -98,6 +141,15 @@ struct FProbe
         Data->SetBoolField(TEXT("bike_exit_sent"), BikeExitSent);
         Data->SetBoolField(TEXT("bike_exit_grounded"), BikeExitGrounded);
         Data->SetNumberField(TEXT("bike_exit_speed"), BikeExitSpeed);
+        Data->SetBoolField(TEXT("horse_exit_sent"), HorseExitSent);
+        Data->SetBoolField(TEXT("horse_exit_grounded"), HorseExitGrounded);
+        Data->SetNumberField(TEXT("horse_exit_speed"), HorseExitSpeed);
+        Data->SetNumberField(TEXT("horse_look_requests"), HorseLookRequests);
+        if (const auto* LocalState = Local->GetPlayerState<AJapanPlayerState>()) Data->SetStringField(TEXT("local_player"), LocalState->SessionPlayerId);
+        auto Request = MakeShared<FJsonObject>();
+        const TCHAR* const* Look = Local->HasAuthority() ? HostHorseLook : GuestHorseLook;
+        for (int32 I = 0; I < UE_ARRAY_COUNT(HorseLookFields); ++I) Request->SetStringField(HorseLookFields[I], Look[I]);
+        Data->SetObjectField(TEXT("horse_request"), Request);
         Data->SetNumberField(TEXT("sail_exit_requests"), SailExitRequests);
         Data->SetNumberField(TEXT("sail_shore_distance"), FVector::Dist2D(Local->GetActorLocation(), SailLaunch));
         Data->SetBoolField(TEXT("sail_landing_grounded"), Local->GetCharacterMovement()->IsMovingOnGround());
@@ -147,6 +199,13 @@ struct FProbe
             Row->SetNumberField(TEXT("body_lift"), P->GetSkate()->GetBodyLift());
             Row->SetNumberField(TEXT("standing_half"), P->GetClass()->GetDefaultObject<AWandererCharacter>()->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
             Row->SetNumberField(TEXT("x"), P->GetActorLocation().X); Row->SetNumberField(TEXT("y"), P->GetActorLocation().Y); Row->SetNumberField(TEXT("z"), P->GetActorLocation().Z);
+            if (const UHorseComponent* Horse = P->GetHorse())
+            {
+                Row->SetBoolField(TEXT("horse_visible"), Horse->IsHorseVisible());
+                Row->SetNumberField(TEXT("horse_role"), int32(Horse->GetRole()));
+                Row->SetNumberField(TEXT("horse_speed"), Horse->GetSpeed());
+                HorseLookRow(*Row, Horse);
+            }
             Views.Add(MakeShared<FJsonValueObject>(Row));
         }
         Data->SetArrayField(TEXT("views"), Views);
@@ -211,11 +270,21 @@ struct FProbe
             if (Enter && Phase == 3) { P->Live_Press(TEXT("stop_next")); P->Live_Press(TEXT("interact")); }
             return;
         }
+        if (Phase == 0 && Activity() == EJapanActivity::Horse && FPlatformTime::Seconds() >= NextHorseLook)
+        {
+            // Ask again only while the host's accepted look has not reached this pawn (the host limits the rate).
+            const TCHAR* const* Look = P->HasAuthority() ? HostHorseLook : GuestHorseLook;
+            FJapanHorseAppearance Wanted;
+            if (P->GetHorse()->ResolveAppearance(Look[0], Look[1], Look[2], Look[3], Look[4], Look[5], Look[6], Wanted) &&
+                !P->GetHorse()->GetAppearance().SameLook(Wanted) && P->RequestHorseAppearance(Wanted))
+            { ++HorseLookRequests; NextHorseLook = FPlatformTime::Seconds() + 1.; }
+        }
         if (Enter && Phase == 0 && Activity() == EJapanActivity::Sailboat)
             P->TravelTo(AJapanWorld::ToUE(P->HasAuthority()?-226.f:-216.f,-169.f,1.6f), 80.f, TEXT("multiplayer boat shore"));
         if (Enter && Phase == 1)
         {
             if (Activity() == EJapanActivity::Bike) P->Live_Press(TEXT("bike"));
+            else if (Activity() == EJapanActivity::Horse) P->Live_Press(TEXT("horse"));
             else if (Activity() == EJapanActivity::Sailboat)
             { SailLaunch = P->GetActorLocation(); P->Live_Press(TEXT("sailboat")); }
             else if (Activity() == EJapanActivity::Skate) P->Live_Press(TEXT("skateboard"));
@@ -258,6 +327,18 @@ struct FProbe
                 {
                     BikeExitSpeed = P->GetBike()->GetSpeed(); BikeExitGrounded = true;
                     BikeExitSent = P->Live_Press(TEXT("bike"));
+                }
+            }
+            else if (Activity() == EJapanActivity::Horse && !HorseExitSent)
+            {
+                // As the bike: rein in through ordinary input, then one request once stopped on the ground; the host's
+                // own walk-speed gate still decides.
+                P->Live_Drive(FVector2D(0,-1), 1);
+                if (P->GetHorse()->IsRiding() && P->GetHorse()->GetSpeed() <= 1.f &&
+                    P->GetCharacterMovement()->IsMovingOnGround() && !P->IsNetworkActivityPending())
+                {
+                    HorseExitSpeed = P->GetHorse()->GetSpeed(); HorseExitGrounded = true;
+                    HorseExitSent = P->Live_Press(TEXT("horse"));
                 }
             }
             else if (Activity() == EJapanActivity::Sailboat && P->GetNetworkActivity() == EJapanActivity::Sailboat)
@@ -357,6 +438,7 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
     {
         if (!R.GetBoolField(TEXT("ready")) || !R.GetBoolField(TEXT("attachment")) || R.GetNumberField(TEXT("health")) != 73. || R.GetNumberField(TEXT("hits")) != 2.) return false;
         const int32 Phase = Probe.Phase;
+        if (Probe.Activity() == EJapanActivity::Horse && R.GetBoolField(TEXT("horse_visible")) != (Phase >= 1 && Phase <= 3)) return false;
         if (Probe.Activity() == EJapanActivity::Skate && Phase >= 1 && Phase <= 3 && !R.GetBoolField(TEXT("local")))
         {
             const double Observed = R.GetNumberField(TEXT("observed_pose_frames"));
@@ -383,6 +465,11 @@ bool JapanMultiplayerQA::Tick(UWorld* World, bool Server, const FString& Folder,
         (!Probe.BikeExitSent || !Peer->GetBoolField(TEXT("bike_exit_sent")) ||
          !Peer->GetBoolField(TEXT("bike_exit_grounded")) ||
          FMath::Abs(Peer->GetNumberField(TEXT("bike_exit_speed"))) > 40.)) return false;
+    if (Probe.Case == TEXT("switch-horse") && !HorseLooksAgree(Host, Peer)) return false;
+    if (Probe.Case == TEXT("switch-horse") && Probe.Phase == 4 &&
+        (!Probe.HorseExitSent || !Peer->GetBoolField(TEXT("horse_exit_sent")) ||
+         !Peer->GetBoolField(TEXT("horse_exit_grounded")) ||
+         FMath::Abs(Peer->GetNumberField(TEXT("horse_exit_speed"))) > 40.)) return false;
     if (Probe.Case == TEXT("switch-sail") && Probe.Phase == 4 &&
         (!Probe.SailExitRequests || Peer->GetNumberField(TEXT("sail_exit_requests")) < 1. ||
          !Host->GetBoolField(TEXT("sail_landing_grounded")) || !Peer->GetBoolField(TEXT("sail_landing_grounded")) ||

@@ -56,6 +56,9 @@ and writes the playable pawn and roster record when rebuilding only this charact
   `DA_Modori` and his move record. [`adventure.toml`](adventure.toml) records his equipment fit.
 - `characters.modori_grips` exports his posed hand grips for the sword and paraglider.
 - `unreal.modori_bike` imports his bike actions; `characters.modori_fit` computes equipment fit.
+- `characters.modori_horse` authors his horseback riding actions and `unreal.modori_horse` imports them; with
+  `unreal.horses` they install the horse ([HORSE.md](../../../docs/HORSE.md)). `unreal.modori_pawn` does not wait for
+  the two imports: a rebuild of only this character names them too.
 - `unreal.modori_pawn` creates `BP_Modori` and the runtime character record after those dependencies finish.
 
 `BP_Modori` is registered as a playable character and always uses his merged move set. His coat skirt is

@@ -8,6 +8,7 @@ import subprocess
 import threading
 import urllib.error
 import urllib.request
+from atelier.capacity_compat import refuse_unmanaged
 
 from server import HERE, Lab, original_library, presets_for, validate_request
 
@@ -32,6 +33,8 @@ def public_job(job, generator):
 
 class Backend:
     def __init__(self, generator, root, runtime, start=True):
+        if start:
+            refuse_unmanaged('Animation model worker')
         self.generator, self.root = generator, Path(root).resolve()
         self.stack = ExitStack()
         self.process = self.monitor = None
@@ -56,6 +59,8 @@ class Backend:
             raise
 
     def request(self, path, data=None):
+        if path == '/api/generate':
+            refuse_unmanaged('Animation generation')
         if self.process is None or self.process.poll() is not None:
             raise RuntimeError(f'{NAMES[self.generator]} worker is unavailable; run setup')
         if self.monitor is not None and self.monitor.poll() is not None:
@@ -96,6 +101,8 @@ class Backend:
 
 class UnifiedLab:
     def __init__(self, root, roots, start=True):
+        if start:
+            refuse_unmanaged('Animation model workers')
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.roots = {key: Path(path).resolve() for key, path in roots.items()}
@@ -170,6 +177,7 @@ class UnifiedLab:
             return {'status': status, 'models': models, 'active': self.active}
 
     def create(self, data):
+        refuse_unmanaged('Animation generation')
         if not isinstance(data, dict) or data.get('generator') not in self.backends:
             raise ValueError('Choose UniMate or Kimodo to generate this motion')
         generator = data['generator']

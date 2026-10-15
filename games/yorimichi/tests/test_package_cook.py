@@ -113,3 +113,22 @@ def test_pipeline_refuses_an_uncertified_app(tmp_path):
     with pytest.raises(FileNotFoundError):
         archive_tool().package_zip(root, io.StringIO(), cook_receipt=True)
     assert not (root / 'manifest.json').exists()
+
+
+def test_source_snapshot_tracks_experimental_mode_on_every_recipe_reload(tmp_path, monkeypatch):
+    from atelier import provenance
+    from atelier.build_cook import CookMode
+    tool = build.load_recipe('yorimichi').package_cook
+    (tmp_path / 'build.py').write_text("from pathlib import Path\nfrom atelier.build import Step, UnrealPackage\ndef steps(ctx):\n return [Step('unreal.cook', [UnrealPackage('Fixture', Path('archive'))], heavy=True)]\n")
+    monkeypatch.setattr(build.paths, 'game_dir', lambda _: tmp_path)
+    monkeypatch.setattr(provenance, 'head', lambda: 'a' * 40)
+    monkeypatch.setattr(provenance, 'status', lambda **kwargs: '')
+    engine = tmp_path / 'engine'
+    (engine / 'Engine/Build').mkdir(parents=True)
+    (engine / 'Engine/Build/Build.version').write_text('{"MajorVersion":5,"MinorVersion":8}')
+    ctx = SimpleNamespace(game='fixture', unreal_root=engine, stamps=tmp_path / 'stamps', cook_mode=CookMode.FULL)
+    before = tool.source_snapshot(ctx)
+    assert before == tool.source_snapshot(ctx)
+    ctx.cook_mode = CookMode.INCREMENTAL
+    after = tool.source_snapshot(ctx)
+    assert before['fingerprint'] != after['fingerprint']

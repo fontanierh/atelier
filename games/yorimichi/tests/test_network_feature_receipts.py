@@ -300,3 +300,92 @@ def test_matching_local_bones_do_not_establish_body_world_placement(receipt, fie
     value['stages'][1]['guest']['views'][0].update(fields)
     path.write_text(json.dumps(value))
     assert not all(review.feature_checks(receipt, 'switch-skate').values())
+
+
+HOST_LOOK = dict(horse_breed='friesian', horse_tack='03', horse_coat='kestrel-palomino', horse_mask='Tobiano',
+                 horse_hair_color='flaxen-gold', horse_hair_pattern='ombre', horse_tint='warm-sun')
+GUEST_LOOK = dict(horse_breed='clydesdale', horse_tack='05', horse_coat='kestrel-blue-roan', horse_mask='Spots',
+                  horse_hair_color='silver-white', horse_hair_pattern='streaked', horse_tint='cool-slate')
+
+
+@pytest.fixture
+def horse_receipt(receipt):
+    path = receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['case'] = 'switch-horse'
+    for stage in value['stages']:
+        mounted = stage['phase'] in (1, 2, 3)
+        for side, look in (('host', HOST_LOOK), ('guest', GUEST_LOOK)):
+            stage[side].update(horse_exit_sent=True, horse_exit_grounded=True, horse_exit_speed=0,
+                               local_player=side, horse_request=dict(look))
+            for row in stage[side]['views']:
+                row.update(activity=5 if mounted else 0, horse_visible=mounted, horse_role=8 if mounted else 0,
+                           horse_speed=472.5 if mounted else 0, **(HOST_LOOK if row['player'] == 'host' else GUEST_LOOK))
+    path.write_text(json.dumps(value))
+    return receipt
+
+
+def test_both_observers_see_each_players_horse_through_the_swap(horse_receipt):
+    checks = review.feature_checks(horse_receipt, 'switch-horse')
+    assert all(checks.values())
+    assert all(checks[f'feature_{phase}_horse_appearance_agrees'] for phase in range(5))
+
+
+@pytest.mark.parametrize('phase,side,row', [(0, 'host', 1), (2, 'guest', 0), (3, 'guest', 1)])
+def test_horse_swap_rejects_an_observer_showing_another_look(horse_receipt, phase, side, row):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][phase][side]['views'][row]['horse_coat'] = 'native'
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())
+
+
+@pytest.mark.parametrize('edit', [dict(horse_request=None), dict(local_player=None), dict(local_player='host'),
+                                  dict(horse_request=dict(GUEST_LOOK, horse_tint=''))])
+def test_horse_swap_requires_each_players_own_request(horse_receipt, edit):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][1]['guest'].update(edit)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())
+
+
+@pytest.mark.parametrize('edit', [dict(horse_exit_speed=41), dict(horse_exit_speed=None),
+                                  dict(horse_exit_sent=False), dict(horse_exit_grounded=False)])
+def test_horse_swap_rejects_a_moving_or_missing_dismount(horse_receipt, edit):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][4]['guest'].update(edit)
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())
+
+
+@pytest.mark.parametrize('edit', [lambda r: r.update(horse_visible=False), lambda r: r.update(activity=0),
+                                  lambda r: r.pop('horse_visible'), lambda r: r.update(horse_role=None),
+                                  lambda r: r.update(horse_speed=float('nan'))])
+def test_horse_swap_requires_the_horse_in_the_replacement_phase(horse_receipt, edit):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    edit(value['stages'][2]['host']['views'][1])
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())
+
+
+@pytest.mark.parametrize('phase', [0, 4])
+def test_horse_must_be_gone_on_foot(horse_receipt, phase):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    value['stages'][phase]['guest']['views'][0]['horse_visible'] = True
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())
+
+
+def test_bike_activity_does_not_satisfy_the_horse_case(horse_receipt):
+    path = horse_receipt / 'features-result.json'
+    value = json.loads(path.read_text())
+    for stage in value['stages'][1:4]:
+        for side in ('host', 'guest'):
+            for row in stage[side]['views']:
+                row['activity'] = 2
+    path.write_text(json.dumps(value))
+    assert not all(review.feature_checks(horse_receipt, 'switch-horse').values())

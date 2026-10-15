@@ -27,6 +27,8 @@ def test_declared_glb_models_are_self_contained():
     declared.add(ASSETS / 'characters/grips/modori/body.glb')
     declared.update(ASSETS / 'skatepark' / entry['file']
                     for entry in json.loads((ASSETS / 'skatepark/modules.json').read_text())['parts'].values())
+    declared.update(ASSETS / 'horses' / rel
+                    for rel in json.loads((ASSETS / 'horses/manifest.json').read_text())['glbs'])
     assert declared <= recorded
     assert recorded == set(ASSETS.rglob('*.glb'))
     for name, entry in inventory.items():

@@ -32,10 +32,12 @@ import sys
 from pathlib import Path
 
 import bpy
-from mathutils import Matrix, Quaternion, Vector
+from mathutils import Matrix, Vector
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[2] / 'world')); import yori   # noqa: E402
+sys.path.insert(0, str(HERE.parent))
+from rider_common import SIDE, Hands as HandFrames, Rig, character as rider_character, ease, look, rest_world_rot, rot, smooth, studio, write_action  # noqa: E402
 
 BIKE = yori.OUT / 'bike'
 OUT = yori.OUT / 'cairo' / 'bike'   # the character's own folder (main)
@@ -56,7 +58,6 @@ STOWED = math.radians(MANIFEST['kickstand_stowed_degrees'])
 REAR_CONTACT = Vector((PIVOT['BK_WheelRear'][0], 0, 0))
 # The grips sweep back: index finger at the inner, front end. Unit vector toward that end, per side.
 GRIP_AXIS = {'L': Vector((.101, -.074, .013)).normalized(), 'R': Vector((.101, .074, .013)).normalized()}
-SIDE = {'L': 1, 'R': -1}
 
 # ---------------------------------------------------------------------------------------------------- the bike's pose
 
@@ -85,12 +86,6 @@ def stand_point(c):
     return STAND + Matrix.Rotation(STOWED * c['stand'], 3, 'Y') @ STAND_FOOT
 
 # ------------------------------------------------------------------------------------------------------------ clips
-
-def rot(pitch=0., yaw=0., roll=0.):
-    """World rotation from degrees: pitch forward about +Y, yaw left about +Z, roll left about -X."""
-    return (Matrix.Rotation(math.radians(yaw), 3, 'Z') @ Matrix.Rotation(math.radians(pitch), 3, 'Y')
-            @ Matrix.Rotation(-math.radians(roll), 3, 'X'))
-
 
 DEFAULT = dict(pelvis=(-.185, 0., .685), pelvis_rot=(8., 0., 0.), lean=24., twist=0., side=0., head=(-16., 0., 0.), shrug=0.,
                hand_L='grip', hand_R='grip', frame_L='grip', frame_R='grip', curl_L=.85, curl_R=.85, thumb_R=0., grip_slide_L=0., grip_slide_R=0.,
@@ -207,13 +202,6 @@ def resolve(keys):
     return out
 
 
-def smooth(a, b, s):
-    s = s * s * (3 - 2 * s)
-    if isinstance(a, (tuple, list)):
-        return tuple(x + (y - x) * s for x, y in zip(a, b))
-    return a + (b - a) * s
-
-
 def channels_at(keys, t, extra=None, linear=()):
     """Channels at time t: numbers and points ease between keys (`linear` ones, such as a looping crank, go at a steady
     rate); targets that change mode are blended later."""
@@ -244,83 +232,8 @@ def track_at(track, t):
 
 # ------------------------------------------------------------------------------------------------------- the rig solve
 
-class Rig:
-    """Forward kinematics on the rest skeleton in armature space; pose matrices are set bone by bone, parent first."""
-    def __init__(self, arm):
-        self.arm, self.M = arm, arm.matrix_world.copy(); self.Mi = self.M.inverted()
-        self.scale = self.M.to_scale().x
-        self.rest = {b.name: b.matrix_local.copy() for b in arm.data.bones}
-        self.parent = {b.name: (b.parent.name if b.parent else None) for b in arm.data.bones}
-        self.order = [b.name for b in arm.data.bones]   # parents come before children
-        self.rel = {n: (self.rest[p].inverted() @ self.rest[n] if p else self.rest[n]) for n, p in self.parent.items()}
-        self.length = lambda a, b: (self.rest[b].translation - self.rest[a].translation).length
-        self.hinge = {}
-        for side in 'LR':
-            for upper, lower, bend in ((f'upperarm_{side}', f'forearm_{side}', Vector((1, 0, 0))), (f'thigh_{side}', f'shin_{side}', Vector((-1, 0, 0)))):
-                for bone in (upper, lower):
-                    R = self.rest[bone].to_3x3(); y = R.col[1].normalized()
-                    n = y.cross(bend).normalized()
-                    best = max(((i, s) for i in (0, 2) for s in (1, -1)), key=lambda c: c[1] * R.col[c[0]].normalized().dot(n))
-                    self.hinge[bone] = best
-
-    def begin(self):
-        self.pose, self.basis = {}, {}
-
-    def place(self, name, matrix):
-        """Set a bone's pose matrix (armature space) and record its basis."""
-        p = self.parent[name]
-        base = (self.pose[p] @ self.rel[name]) if p else self.rel[name]
-        self.pose[name] = matrix; self.basis[name] = base.inverted() @ matrix
-
-    def local(self, name, delta=None):
-        """Pose a bone by a world-axis rotation about its own head, relative to its parent."""
-        p = self.parent[name]
-        base = (self.pose[p] @ self.rel[name]) if p else self.rel[name]
-        R = self.rest[name].to_3x3().normalized()
-        q = (R.inverted() @ delta @ R) if delta is not None else Matrix.Identity(3)
-        self.pose[name] = base @ q.to_4x4(); self.basis[name] = q.to_4x4()
-
-    def head(self, name):
-        p = self.parent[name]
-        return ((self.pose[p] @ self.rel[name]) if p else self.rel[name]).translation
-
-    def to_arm(self, world):
-        return self.Mi @ Vector(world)
-
-    def world(self, arm_point):
-        return self.M @ arm_point
-
-    def aimed(self, bone, y, n):
-        """Rotation whose Y is `y` and whose hinge axis (found from the rest pose) is `n`."""
-        axis, sign = self.hinge[bone]
-        if axis == 2:
-            z = n * sign; x = y.cross(z)
-        else:
-            x = n * sign; z = x.cross(y)
-        return Matrix((x.normalized(), y.normalized(), z.normalized())).transposed()
-
-    def two_bone(self, upper, lower, end, target_arm, pole_arm, end_rot):
-        S = self.head(upper)
-        l1, l2 = self.length(upper, lower), self.length(lower, end)
-        d = target_arm - S; D = min(max(d.length, abs(l1 - l2) + 1e-4), (l1 + l2) * .9995); u = d.normalized()
-        a = (l1 * l1 - l2 * l2 + D * D) / (2 * D); h = math.sqrt(max(l1 * l1 - a * a, 0.))
-        v = pole_arm - u * pole_arm.dot(u); v = v.normalized() if v.length > 1e-6 else u.orthogonal().normalized()
-        E = S + u * a + v * h; W = S + u * D
-        y1, y2 = (E - S).normalized(), (W - E).normalized()
-        n = y1.cross(y2)
-        n = n.normalized() if n.length > 1e-5 else u.cross(v).normalized()
-        self.place(upper, Matrix.Translation(S) @ self.aimed(upper, y1, n).to_4x4())
-        self.place(lower, Matrix.Translation(self.head(lower)) @ self.aimed(lower, y2, n).to_4x4())
-        self.place(end, Matrix.Translation(self.head(end)) @ end_rot.to_4x4())
-        return (d.length - D) * self.scale   # metres short of the target (0 when reached)
-
-
-def rest_world_rot(rig, bone):
-    return rig.rest[bone].to_3x3().normalized()
-
-
-class Hands:
-    """Hand frames: fingers direction f and palm direction p, with the knuckle line k = s (p x f) (s = +1 left)."""
+class Hands(HandFrames):
+    """The bike's hand frames (rider_common.Hands): round the handlebar grip, on the saddle, reaching, waving, relaxed."""
     def __init__(self, rig):
         self.rig = rig; self.rest = {}
         for side in 'LR':
@@ -329,11 +242,6 @@ class Hands:
             self.rest[side] = (f, p)
         h = rig.rest['finger_1_L'].translation - rig.rest['hand_L'].translation
         self.palm = h.length * rig.scale   # wrist to the knuckles, metres
-
-    @staticmethod
-    def basis(side, f, p):
-        k = SIDE[side] * p.cross(f)
-        return Matrix((k.normalized(), f.normalized(), p.normalized())).transposed()
 
     def frame(self, side, name, c, B):
         """World rotation that takes the rest hand to the named hand frame."""
@@ -351,18 +259,12 @@ class Hands:
             f, p = Vector((0, 0, 1)), Vector((1, s * .3, 0))
         else:                    # relaxed: fingers down and forward, palm in
             f, p = Vector((.35, 0, -1)), Vector((0, -s, 0))
-        f = f.normalized(); p = (p - f * p.dot(f)).normalized()
-        f0, p0 = self.rest[side]
-        return self.basis(side, f, p) @ self.basis(side, f0, p0).inverted()
+        return self.turn(side, f, p)
 
     def wrist_for_grip(self, side, centre, D):
         f0, p0 = self.rest[side]
         f, p = D @ f0, D @ p0
         return centre - f * self.palm * .80 - p * .024
-
-
-def ease(s):
-    return s * s * (3 - 2 * s)
 
 
 def solve(rig, hands, c, a_b, s, space):
@@ -470,32 +372,6 @@ def bake(rig, hands, name, clip):
                    'end_offset': end, 'reach_error_cm': {k: round(v * 100, 2) for k, v in worst.items()}}
 
 
-def write_action(rig, name, poses):
-    arm = rig.arm
-    action = bpy.data.actions.new(name); arm.animation_data_create(); arm.animation_data.action = action
-    frames = list(range(len(poses)))
-    def curve(path, index, values):
-        fc = action.fcurve_ensure_for_datablock(arm, path, index=index)
-        fc.keyframe_points.add(len(values))
-        flat = []
-        for f, v in zip(frames, values): flat += [f, v]
-        fc.keyframe_points.foreach_set('co', flat)
-        fc.keyframe_points.foreach_set('interpolation', [1] * len(values))
-        fc.update()
-    for bone in rig.order:
-        pb = arm.pose.bones[bone]; pb.rotation_mode = 'QUATERNION'
-        qs = []
-        for p in poses:
-            q = p[bone].to_quaternion()
-            if qs and q.dot(qs[-1]) < 0: q = -q
-            qs.append(q)
-        for k in range(4): curve(f'pose.bones["{bone}"].rotation_quaternion', k, [q[k] for q in qs])
-        if bone == 'pelvis':
-            for k in range(3): curve(f'pose.bones["{bone}"].location', k, [p[bone].translation[k] for p in poses])
-    if arm.animation_data.action_slot is None:
-        arm.animation_data.action_slot = action.slots[0]
-    return action
-
 # ----------------------------------------------------------------------------------------------------- review renders
 
 def load_bike():
@@ -534,29 +410,6 @@ def pose_bike(parts, base, c):
         ob.matrix_world = B @ M
 
 
-def studio(scene):
-    scene.render.engine = 'BLENDER_EEVEE'; scene.view_settings.view_transform = 'Standard'
-    scene.eevee.taa_render_samples = 32
-    world = bpy.data.worlds.new('Studio'); scene.world = world; world.use_nodes = True
-    world.node_tree.nodes['Background'].inputs[0].default_value = (.80, .80, .78, 1)
-    world.node_tree.nodes['Background'].inputs[1].default_value = .9
-    sun = bpy.data.objects.new('Key', bpy.data.lights.new('Key', 'SUN')); scene.collection.objects.link(sun)
-    sun.data.energy = 3.4; sun.data.angle = math.radians(30); sun.rotation_euler = (math.radians(48), 0, math.radians(-40))
-    floor = bpy.data.objects.new('Floor', bpy.data.meshes.new('Floor')); scene.collection.objects.link(floor)
-    floor.data.from_pydata([(-6, -6, 0), (6, -6, 0), (6, 6, 0), (-6, 6, 0)], [], [(0, 1, 2, 3)])
-    mat = bpy.data.materials.new('FloorMat'); mat.use_nodes = True
-    mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.62, .60, .56, 1)
-    floor.data.materials.append(mat)
-    cam = bpy.data.objects.new('Cam', bpy.data.cameras.new('Cam')); scene.collection.objects.link(cam); scene.camera = cam
-    for ob in scene.objects:
-        if ob.name.startswith(('Bokken', 'Review')): ob.hide_render = True
-    return cam
-
-
-def look(cam, eye, target, lens=50):
-    cam.location = Vector(eye); cam.rotation_euler = (Vector(target) - Vector(eye)).to_track_quat('-Z', 'Y').to_euler(); cam.data.lens = lens
-
-
 def render_clip(scene, cam, parts, base, rig, hands, name, clip, out, count=7):
     keys = resolve(clip['keys']); extra = {k: clip[k] for k in ('stand',) if k in clip}
     arm = rig.arm
@@ -572,17 +425,9 @@ def render_clip(scene, cam, parts, base, rig, hands, name, clip, out, count=7):
             scene.render.filepath = str(out / f'{name}_{view}_{i}.png'); bpy.ops.render.render(write_still=True)
 
 
-def character(name):
-    """The character's rig (characters/pipeline/rig.py: its prepare, SOURCE, OUT and FBX) and its bike output folder."""
-    sys.path.insert(0, str(HERE.parents[1] / 'characters' / 'pipeline'))
-    import rig
-    module = rig.load(name)
-    return module, module.OUT / 'bike'
-
-
 def main(args):
     global OUT
-    module, OUT = character(args.character)
+    module, OUT = rider_character(args.character, 'bike')
     prepared = module.prepare(module.SOURCE)
     scene, arm = prepared.scene, prepared.arm
     scene.render.fps, scene.render.fps_base = FPS, 1
@@ -594,7 +439,7 @@ def main(args):
         FOOT_OFFSET[side] = Vector((ankle.x - toe.x, 0, ankle.z))   # ankle from the sole under the ball, standing
     wanted = set(args.clips.split(',')) if args.clips else set(CLIPS)
     (OUT / 'fbx').mkdir(parents=True, exist_ok=True)
-    report = {'source_sha256': prepared.record['native_sha256'], 'fps': FPS, 'bike_manifest': str(BIKE / 'manifest.json'), 'clips': {}}
+    report = {'source_sha256': prepared.record['native_sha256'], 'fps': FPS, 'clips': {}}
     actions = {}
     for name, clip in CLIPS.items():
         if name not in wanted: continue

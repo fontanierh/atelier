@@ -37,14 +37,15 @@ export), because rigs differ by several centimetres:
 | --- | --- |
 | Swing clear (re-arm) | rest ankle + 5.8 cm |
 | Plant (fire) | rest ankle + 2.3 cm, descending, at least 0.1 s after that foot's last plant |
-| Gate | walking on the ground (not skating or sailing) at 40 cm/s or more |
+| Gate | walking on the ground at 40 cm/s or more, not skating, on the sailboat or on the horse (the bike is not part of this gate) |
 
 Below 40 cm/s the feet shuffle in place and every crossing would be a phantom step. Crouch-walking (50 cm/s) clears the
 gate.
 
 Each footfall costs one line trace (under the foot, 95 cm down from 45 cm above the capsule base), not one per frame. A landing plays
 its own heavier step from `AWandererCharacter::Landed`: the fall speed (200 to 1100 cm/s) sets its weight (0.55 to
-1.4) and its pitch is lowered to 0.82–0.9. Landings on the skateboard or the sailboat are skipped.
+1.4) and its pitch is lowered to 0.82–0.9. Landings on the skateboard, the sailboat, the bike or the horse are
+skipped.
 
 ## Choosing the surface
 
@@ -73,6 +74,16 @@ floor is leaf litter, so a default hit between 1.24 and 2.0 lake radii from the 
 
 The table lives in `import_footsteps.py` and is baked into the data asset: adding a surface is a table edit and a
 re-import, not a code change.
+
+## Hooves
+
+On the horse his own feet are silent and `UHorseComponent` plays the hooves through `UJapanFootstepComponent::Hoof`.
+There is no hoof sound yet (the [sound cues](../../../platform/conventions/sound-cues.toml) have only
+`footstep.<surface>`), so a hoof is a stand-in: the footstep of the surface under the horse, played heavier and lower.
+Strikes fall at fixed points of the gait's cycle: four a walk, two a trot, three a canter, gallop or sprint, and none
+below 15 cm/s or while getting on or off. Each is one trace straight down from the rider's capsule, which picks the
+surface as above (with no component hit, the footstep set's default surface). The volume follows the speed, 0.45 at
+80 cm/s to 1.15 at 950 cm/s (clamped to 0.4–1.4), and the pitch is 0.72–0.8. [HORSE.md](HORSE.md) covers the ride.
 
 ## Variation
 

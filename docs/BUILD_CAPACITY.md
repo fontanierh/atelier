@@ -4,8 +4,8 @@ Atelier should admit work against available memory and CPU capacity, with additi
 temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
 admits it when all requirements fit. A small job need not wait for a particular lane to become free.
 
-**Status: the supervised broker and common guarded-launch integration are being validated in a conservative
-legacy-lock bridge. Machine activation and the replacement of slots remain rollout gates.** The separate
+**Status: the supervised broker supports the conservative legacy-lock bridge and a sealed, boot-bound full
+capacity path. Actual full-mode machine activation and concurrency trials remain separate rollout gates.** The separate
 `atelier capacity plan snapshot.json` command still evaluates only supplied snapshots; it never grants admission.
 Until clients are explicitly configured, the current render slots, live locks, memory guards and machine board
 remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
@@ -73,6 +73,77 @@ The agent board rollout must show the real machine mode: legacy slots, capacity 
 It should show reserved resources separately from measured usage, ready age and wait reasons, named locks, and
 uncertain reservations that still consume capacity. An unavailable broker must be visible rather than displayed
 as an empty pool. Shadow advice below must never appear as a live grant. Slot labels disappear only at cutover.
+
+## Full capacity cutover
+
+**Current overlap eligibility is limited to literal Blender commands with explicit unchanged worker counts.**
+Editors, games, compiles, performance windows and unknown commands stay exclusive. These conservative profiles
+are not calibrated or learned by phase/input scale; richer estimation and throughput measurements remain follow-up work.
+
+Schema 1 bridge configuration remains usable without a reboot and retains exclusive legacy lanes. Full mode
+uses broker configuration `schema: 2`, `mode: "capacity"`, and one additional `cutover` field pointing to the
+machine's default `~/.cache/atelier/capacity/cutover.json`. Its remaining fields match the bridge configuration.
+The client uses `schema: 2` and the same additional `cutover` field alongside `socket` and `profiles`.
+Budgets, disk pool, endpoint and the exact broker configuration hash are bound into the cutover record.
+Changing them requires a separately reviewed transition; neither service recovery nor clients rewrite that proof.
+
+Full jobs retain one `render_lock` context. It opens the same three existing legacy lane inodes read-only and
+takes all three shared flocks nonblocking, releasing any partial acquisition on refusal. It never writes or
+truncates the legacy holder records. Resource vectors and named locks then decide compatible overlap in the
+serialized broker, while actual-child and aggregate guards remain mandatory. Games, compiles and performance
+windows remain exclusive initially. An explicit bounded Blender thread argument reserves at least that many
+CPU units: the build default remains six, and an explicit three remains three. Unknown commands and compound
+wrappers reserve the entire managed CPU budget and require exclusion; compiles also reserve at least the unchanged
+three compiler workers. These are conservative scheduling units, not kernel quotas. Every reservation covers the
+actual guard ceiling, even when a previous step measured only 3 GiB. Neither threads nor guard limits are changed.
+Explicit sessions undergo the same command, checkout-lock and resource checks as configured sessions.
+
+The compatibility proof is deliberately stronger than an agent acknowledgement or an empty process scan:
+
+1. Upgrade or explicitly refuse every known native launcher and drain live jobs. Preserve the existing three
+   mutex files, with no inode replacement, hard links or ACL write permission. Stop/reap unmanaged persistent workers.
+2. In a separately approved machine maintenance window, `atelier capacity prepare-cutover ABSOLUTE_FULL_CONFIG`
+   takes admission exclusion plus all three exclusive legacy mutexes and records `preparing` durably before sealing
+   those exact owned, single-link files to mode `0400`. It verifies same-UID write-open denial, then records `sealed`.
+   A partial failure remains a refusal state; no command automatically unseals or removes the record.
+3. A verified new OS boot **after sealing** closes preopened writable descriptors, including inherited or transferred
+   ones. Permission changes alone cannot revoke them. Neither a process/lsof scan, two stable scans, an operator
+   boolean nor immutable flags establish closure. Without a positive boot UUID change, activation refuses.
+4. `atelier capacity activate-cutover ABSOLUTE_FULL_CONFIG` verifies the new boot and all recorded inode/device,
+   change-time and permission pins under exclusive flocks, then records `active`. Install the reviewed full broker
+   and client settings through the existing explicit service procedure; do not run a second broker or interrupt one
+   that still owns charged grants. This source change does not execute any of these machine operations.
+5. Validate one guarded job and crash/recovery negatives before controlled overlap trials. Do not infer useful
+   throughput or safe new coexistence combinations merely from full-mode availability.
+
+Every full startup and GO checks the seal. A replaced inode, writable ACL, changed policy or unavailable boot
+observation refuses new work; held allocations become uncertain and stay charged. A controller/broker crash may
+drop shared descriptors but cannot remove the seal or durable charges. Restart fences clients; unknown ownership
+does not become free capacity. Foreign-scan exclusions use exact PID/start identities from verified charged
+rosters, with no family expansion or truncated public status list. Failed, partial or oversized process observations
+refuse. The broker repeats that check before final pressure, guard and child-identity validation and GO commit.
+It rechecks the seal and every charged peer's controller/guard health after slow observations. A refused candidate
+cannot erase a positively observed enforcement loss; that peer stays charged while candidate vector/lock changes roll back.
+
+Preparing, sealed and active records refuse unsupported raw launchers: stream startup, engine setup's unmanaged
+inner bootstrap, animation-lab persistent model/backend processes, and the direct character/kit laboratory helpers.
+They are **unsupported until migrated**, rather than counted as admitted jobs. Direct legacy render-lock users
+such as artifact reuse also refuse full cutover. An absent or invalid client file cannot restore legacy slots while
+any cutover marker exists. Old `a+` launchers fail their mandatory holder-record write/open against the seal after
+the boot boundary; all active agents still need reviewed migrated code or explicit refusal before activation.
+Rollback is an explicit maintenance operation after positively drained/reaped work; there is no automatic unseal.
+
+The board accepts only the bridge pair `(legacy-bridge, false)` or full pair `(capacity, true)`. In full mode it
+shows broker reservations instead of legacy holder rows. Compatibility or ownership recovery pauses grants and
+does not assert a healthy seal. Missing or stale observations retain unknown availability, never a free pool.
+
+`guarded.run` also writes bounded atomic `execution-timings.json` diagnostics with `schema: 1`, an invocation UUID,
+nullable `admission_seconds` (entry through GO acknowledgement), and nullable `child_lifetime_seconds` (spawn
+observation through observed child exit). Lifetime includes gated startup. `execution_seconds` is currently null
+without a pinned child gate-consumption event. A caller can supply `invocation_id=UUID_HEX`; the prior report is
+cleared before the attempt; inability to clear disables publication without changing the guarded result, and a
+rejected argument/profile may leave no report. These diagnostics never certify
+outputs or substitute for exit/guard receipts, and absent reports mean unknown durations.
 
 ## Try the shadow planner
 

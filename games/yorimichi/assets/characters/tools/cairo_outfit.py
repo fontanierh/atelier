@@ -38,6 +38,7 @@ REPO = TOOLS.parents[4]
 sys.path.insert(0, str(TOOLS)); sys.path.insert(0, str(REPO / 'platform/studio'))
 from _archive import ROOT  # noqa: E402
 from atelier import env  # noqa: E402
+from atelier.capacity_compat import refuse_unmanaged  # noqa: E402
 
 CHAR = ROOT / 'output/imagegen/yorimichi-yellow-boy-2026-09-12'
 BLENDER = os.environ.get('BLENDER', '/Applications/Blender.app/Contents/MacOS/Blender')
@@ -119,6 +120,7 @@ def unshare(stage, d, stem):
 
 
 def run(cmd, log, environ):
+    refuse_unmanaged('Character outfit authoring')
     log.parent.mkdir(exist_ok=True)
     with open(log, 'w') as fh:
         return subprocess.run(cmd, cwd=REPO, env=environ, stdout=fh, stderr=subprocess.STDOUT).returncode
@@ -170,6 +172,7 @@ def main():
     ap.add_argument('--until', default='sheet', choices=STAGES, help='last stage to run (default sheet)')
     ap.add_argument('--status', action='store_true', help='print the state of every stage and exit')
     a = ap.parse_args()
+    refuse_unmanaged('Character outfit authoring')
     spec_path = a.spec.resolve(); spec = tomllib.loads(spec_path.read_text())
     slug = spec_path.stem
     rel = a.dir or f'body-swap-{slug}'; d = CHAR / rel; stem = a.stem or f'Cairo-BodySwap-{slug}'

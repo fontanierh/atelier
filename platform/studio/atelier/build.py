@@ -24,6 +24,7 @@ from . import build_inputs, build_products
 from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
+from .build_cook import CookMode
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
@@ -131,8 +132,22 @@ class UnrealPackage:
     # The heavy work happens in UAT's descendants: each gets its own memory guard in the same slot turn.
     watch: tuple = ('UnrealEditor-Cmd', 'UnrealEditor', 'ShaderCompileWorker', 'dotnet')
     progress: float = 25.               # quiet UAT phases still print at least every 30 s
+    cook_mode: CookMode = CookMode.DEFAULT
+
+    def __post_init__(self):
+        self.cook_mode = CookMode(self.cook_mode)
+
+    def __repr__(self):
+        """@cc [owner:fontanierh,label:correctness] explicit-cook-mode-identity
+        Default package representation and argv MUST retain the preexisting fingerprint/state.
+        Nondefault cook mode MUST enter command identity on every recipe and receipt reload.
+        """
+        shown = [f for f in fields(self) if f.name != 'cook_mode' or self.cook_mode != CookMode.DEFAULT]
+        return f'UnrealPackage({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
 
     def argv(self, ctx):
+        from .build_cook import options
+        extra = options(self.cook_mode, ctx.unreal_root)
         # UAT reads the build tool's XML config in-process and then runs UnrealBuildTool directly, both past the
         # patched Build.sh that exports the headless user directory. Without it the tool resolves ~/Documents and a
         # headless run waits forever on the macOS privacy check (the first package stalled exactly there).
@@ -142,7 +157,7 @@ class UnrealPackage:
         return prefix + [str(ctx.unreal_root / 'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', f'-project={ctx.uproject}',
                 f'-target={self.target}', '-platform=Mac', f'-clientconfig={self.config}', '-build',
                 f'-ubtargs=-MaxParallelActions={self.workers}', '-cook', '-cookall', '-stage', '-pak', '-package', '-archive',
-                f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output']
+                f'-archivedirectory={self.archive}', '-nocompileeditor', '-noP4', '-unattended', '-utf8output', *extra]
 
 
 @dataclass
@@ -208,7 +223,10 @@ def check_modules(steps):
 
 # ---------------------------------------------------------------- context
 class Context:
-    def __init__(self, game, *, create=True):
+    def __init__(self, game, *, create=True, cook_mode=None, cook_reason=None):
+        from .build_cook import measurement_reason
+        self.cook_reason = measurement_reason(cook_reason)
+        self.cook_mode = CookMode.DEFAULT if cook_mode is None else CookMode(cook_mode)
         self.game = game
         self.game_dir = paths.game_dir(game)
         self.out = paths.build_dir(game) if create else paths.build_root() / game
@@ -236,6 +254,11 @@ def load_recipe(game):
     spec = importlib.util.spec_from_file_location(f'atelier_recipe_{game}', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    original_steps = module.steps
+    def steps(ctx):
+        from .build_cook import apply
+        return apply(ctx, original_steps(ctx))
+    module.steps = steps
     return module
 
 
@@ -386,7 +409,10 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         state['spatial_outputs'] = spatial_outputs
         digest.update(json.dumps(spatial_outputs, sort_keys=True).encode())
     if step.cache or step.audit or step.toolchain:
-        from .build_cache import tool_context
+        if step.audit:
+            from .build_audit import tool_context
+        else:
+            from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
         digest.update(state['tools'].encode())
     if step.batch:
@@ -460,6 +486,8 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
 
 
 def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=()):
+    if isinstance(command, UnrealPackage) and command.cook_mode is not CookMode.DEFAULT and not step.heavy:
+        raise ValueError('Experimental cooking requires the normal heavy compile guard lifecycle')
     env = ctx.env(env)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
@@ -474,10 +502,26 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         inherited = {'pass_fds': pass_fds} if pass_fds else {}
-        code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
-                           small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
-                           watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.),
-                           **inherited, **({'on_poll': command.on_poll} if hasattr(command, 'on_poll') else {}))
+        cook = None
+        callback = getattr(command, 'on_poll', None)
+        if isinstance(command, UnrealPackage):
+            from .build_cook import Observer
+            cook = Observer(folder, command.cook_mode)
+            cook.reason = getattr(ctx, 'cook_reason', None)
+            original_callback = callback
+            def callback(pid):
+                if original_callback is not None:
+                    original_callback(pid)
+                cook.poll(pid)
+        try:
+            code = guarded.run(argv, folder, purpose=f'atelier build {ctx.game} {step.name}', env=env,
+                               small_gib=small_gib, kind=kind, on_slot=note, timeout=getattr(command, 'timeout', 0.),
+                               watch=getattr(command, 'watch', ()), progress=getattr(command, 'progress', 0.),
+                               **inherited, **({'on_poll': callback} if callback is not None else {}))
+        except BaseException:
+            if cook is not None:
+                cook.finish(success=False)
+            raise
         text = (folder / 'stdout.log').read_text(errors='ignore')
         log.write(text)
         if code and used == ['small']:
@@ -495,12 +539,22 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
         code, text = result.returncode, result.stdout
         log.write(text)
     if code:
+        if step.heavy and cook is not None:
+            cook.finish(success=False)
         raise RuntimeError(f'{step.name}: command exited {code}')
     marker = getattr(command, 'marker', None)
     if marker and marker not in text:
+        if step.heavy and cook is not None:
+            cook.finish(success=False)
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
     from .build_timings import parse_phases
-    return parse_phases(text, allow_echo=isinstance(command, UnrealScript))
+    phases = parse_phases(text, allow_echo=isinstance(command, UnrealScript))
+    if step.heavy and cook is not None:
+        if phases is None:
+            phases = dict(schema=1, status='not-recorded', phases=[], diagnostics=[])
+        phases['cook'] = cook.finish(success=True)
+        ctx.cook_observation = phases['cook']
+    return phases
 
 
 def slot_summary(slots):
@@ -512,19 +566,22 @@ def slot_summary(slots):
     return f', slots {" then ".join(slots)}'
 
 
-def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False):
+def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None):
     from .build_snapshot import require_complete
     require_complete(paths.build_root() / game, game=game)
     if dry:
         from .build_plan import show
-        return show(game, wanted, force=force, echo=echo, verify=verify)
-    ctx = Context(game)
+        return show(game, wanted, force=force, echo=echo, verify=verify,
+                    **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
+    ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
     from .build_hashes import HashIndex
     with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
         return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index)
 
 
 def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None):
+    from .build_cook import validate_force
+    validate_force(ctx, force)
     checkpoint = {}
     try:
         code = _execute_build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
@@ -580,6 +637,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         steps = load_recipe(game).steps(ctx)
     check_modules(steps)
     plan = order(steps, list(wanted))
+    from .build_cook import validate_selection
+    validate_selection(ctx, plan, touch=touch)
     declared_products = {p.name: p for s in steps for p in s.products}
     for step in plan:
         if step.toolchain and not step.products:
@@ -590,13 +649,17 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             raise SystemExit(str(error)) from error
         if step.cache or step.audit:
             try:
-                build_cache.roots(ctx, step)
+                if step.audit:
+                    from .build_audit import roots
+                    roots(ctx, step)
+                else:
+                    build_cache.roots(ctx, step)
             except ValueError as error:
                 raise SystemExit(str(error)) from error
     if touch and any(step.products for step in plan):
         raise SystemExit('Named products require a successful build; --touch cannot certify them')
     remote = None
-    if not force and not touch and any(step.cache for step in plan):
+    if (not force or getattr(ctx, 'cook_mode', CookMode.DEFAULT) is not CookMode.DEFAULT) and not touch and any(step.cache for step in plan):
         from . import artifact_remote
         try:
             remote = artifact_remote.configured()
@@ -650,7 +713,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             stamp.unlink(missing_ok=True)
             echo(f'{print_} FAILED: {error}')
             return 1
-        if not force and previous.get('fingerprint') == current and outputs_ok:
+        from .build_cook import forced
+        force_step = forced(ctx, step, force)
+        if not force_step and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
             echo(f'{print_} up to date')
@@ -667,7 +732,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} touched')
             continue
         try:
-            batch = build_batches.select(ctx, plan, position, done, force=force, index=index, tool_cache=tool_cache)
+            batch = build_batches.select(ctx, plan, position, done, force=force_step, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
             echo(f'{print_} FAILED: {error}')
             return 1
@@ -696,7 +761,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             stamp.unlink(missing_ok=True)
             echo(f'{print_} FAILED: {error}')
             return 1
-        if store is not None and not force:
+        if store is not None and not force_step:
             try:
                 # Source change metadata is local; all transferred output bytes are verified below.
                 if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:

@@ -35,7 +35,8 @@ void UJapanCombatResolver::Strike(AActor* Source, AWandererCharacter* Victim,
     // Vehicle contacts are immediate and undefended. They never consult foot
     // defence history, and the old mount epoch is invalidated before damage.
     if(JapanNetwork::IsOnline(GetWorld())&&
-        (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat))
+        (Victim->GetNetworkActivity()==EJapanActivity::Bike||Victim->GetNetworkActivity()==EJapanActivity::Sailboat||
+         Victim->GetNetworkActivity()==EJapanActivity::Horse))
     {
         const bool Alive=Victim->GetSword()->GetHealth()>0.f;
         if (!Alive) { ++Resolved;if(Result)Result(3);return; }

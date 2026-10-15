@@ -6,16 +6,19 @@ import argparse
 import os
 from pathlib import Path
 import subprocess
+from atelier.capacity_compat import refuse_unmanaged
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 
 
 def command(*args):
+    refuse_unmanaged('Animation lab setup')
     subprocess.run([str(a) for a in args], cwd=REPO, check=True)
 
 
 def prepare(generator, root):
+    refuse_unmanaged('Animation lab setup')
     if generator == "kimodo":
         from atelier.ai.kimodo.install import install
     else:
@@ -39,6 +42,7 @@ def main():
     ap.add_argument('--root', type=Path)
     ap.add_argument('--generator', choices=['both', 'unimate', 'kimodo'], default='both')
     args = ap.parse_args()
+    refuse_unmanaged('Animation lab setup')
     root = (args.root or REPO / 'build/yorimichi' / ('motion_lab' if args.generator == 'both' else args.generator)).resolve()
     command('npm', 'ci', '--prefix', HERE, '--no-audit', '--no-fund')
     generators = ['unimate', 'kimodo'] if args.generator == 'both' else [args.generator]
