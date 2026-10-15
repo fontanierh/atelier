@@ -18,12 +18,10 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'world')); import yori  # noqa: E402
-from contextlib import ExitStack
 from atelier.engine import unreal_root
 from atelier.provenance import head, status
-from atelier.safety.guard import attach as attach_memory_guard, reap
-from atelier.safety.process import spawn_game
-from atelier.safety.render_lock import render_lock, render_processes
+from atelier.safety import guarded
+from atelier.safety.render_lock import RenderBusy, render_processes
 from atelier.safety.provenance import profile_from_log
 
 ROOT = yori.GAME
@@ -58,6 +56,41 @@ def verify_desktop_profile(profile, settings):
 def other_render_processes(ignore_pid=None):
     """Reject overlapping game/editor/art jobs instead of reporting their slowdown."""
     return render_processes(() if ignore_pid is None else (ignore_pid,))
+
+
+def run_benchmark(command, folder, *, purpose, timeout, slot_deadline):
+    """@cc [owner:fontanierh,label:safety] benchmark-common-admission
+    The actual game MUST run through one common guarded admission with performance exclusion requested.
+    Only pre-spawn legacy lock refusals MAY be retried, without holding capacity between attempts.
+    Observed render overlap MUST invalidate performance evidence even after successful native exit.
+    """
+    overlap = {}
+    next_progress = 0.
+
+    def observe(pid):
+        for job in other_render_processes(pid):
+            overlap[job['pid']] = job
+
+    while True:
+        try:
+            code = guarded.run(command, folder, purpose=purpose, timeout=timeout, kind='game',
+                               performance=True, on_poll=observe)
+            break
+        except RenderBusy:
+            remaining = slot_deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            # Admission failed before spawning. No slot or broker reservation is held while waiting.
+            now = time.monotonic()
+            if now >= next_progress:
+                print(f'Waiting for shared render admission; no Unreal process started; {remaining:.0f}s remaining.', flush=True)
+                next_progress = now + 30
+            time.sleep(min(1., remaining))
+    if code:
+        raise subprocess.CalledProcessError(code, command)
+    if overlap:
+        (folder/'overlapping-jobs.json').write_text(json.dumps(list(overlap.values()), indent=2)+'\n')
+        raise RuntimeError('Other rendering jobs overlapped this run; capture is not a valid performance measurement')
 
 
 def summarize(path, warmup=300, phase=None):
@@ -318,34 +351,9 @@ def main():
     inputs.extend(sorted((yori.OUT/'foliage_coverage').glob('*/manifest.json')))
     manifest['asset_sha256']={os.path.relpath(path, ROOT):hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
     (folder/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
-    overlap = {}
-    # One render job at a time on this machine, and ownership of the child from the instant it
-    # exists: anything that fails afterwards (the monitor, the deadline, an interrupt) still reaps it.
-    with ExitStack() as stack:
-        stack.enter_context(render_lock(f'benchmark {args.name} {args.view}',
-                                       wait=max(0.,slot_deadline-time.monotonic())))
-        log = stack.enter_context((folder/'stdout.log').open('w'))
-        process = spawn_game(cmd, stdout=log, stderr=subprocess.STDOUT)
-        stack.callback(reap, process)
-        duration=args.seconds*6+40 if args.compare_after else args.seconds
-        deadline = time.monotonic()+duration+300
-        # The independent 10 GiB guard watches this exact child; losing its telemetry aborts the run.
-        monitor = stack.enter_context(attach_memory_guard(process.pid, folder/'memory-health.json',
-                                                          duration=duration+340))
-        while process.poll() is None:
-            for job in other_render_processes(process.pid): overlap[job['pid']] = job
-            # The guard exits on its own the moment the child is gone, and it polls on a
-            # one-second tick, so a dead monitor only means trouble while the child lives.
-            if monitor is not None and monitor.poll() is not None and process.poll() is None:
-                raise RuntimeError('Memory guard exited before the benchmark finished')
-            if time.monotonic() >= deadline:
-                raise RuntimeError('Benchmark timed out')
-            try: process.wait(timeout=1)
-            except subprocess.TimeoutExpired: pass
-        if process.returncode: raise subprocess.CalledProcessError(process.returncode,cmd)
-    if overlap:
-        (folder/'overlapping-jobs.json').write_text(json.dumps(list(overlap.values()),indent=2)+'\n')
-        raise RuntimeError('Other rendering jobs overlapped this run; capture is not a valid performance measurement')
+    duration=args.seconds*6+40 if args.compare_after else args.seconds
+    run_benchmark(cmd, folder, purpose=f'benchmark {args.name} {args.view}', timeout=duration+300,
+                  slot_deadline=slot_deadline)
     text = (folder/'game.log').read_text()
     if not args.boot:
         if 'BENCHMARK COMPLETE' not in text: raise RuntimeError('Benchmark did not complete')

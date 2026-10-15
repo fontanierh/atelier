@@ -28,11 +28,11 @@ It samples the simultaneous physical footprint of the wrapper and its owned desc
 excluding shared services, under the same ceiling and admission. `memory-health-tree.json` is this aggregate
 receipt, separate from per-process reports. Lost telemetry or a missing successful terminal receipt fails the run.
 """
-import argparse, os, signal, subprocess, sys, time
+import argparse, json, os, signal, subprocess, sys, time
 from contextlib import ExitStack
 from pathlib import Path
 
-from .guard import attach as attach_memory_guard, attach_tree, reap
+from .guard import attach as attach_memory_guard, attach_tree, reap, wait_ready
 from . import process_tree
 from .render_lock import KINDS, SMALL_LIMIT_GIB, render_lock
 from .process import spawn
@@ -41,6 +41,7 @@ from .process import spawn
 # Engine services a cook may start and other work then shares: recorded, never guarded or signalled.
 SHARED_SERVICES = frozenset({'zenserver', 'UnrealTraceServer'})
 FITTING_STARTUP_SECONDS = 2.
+CHILD_EXIT_SECONDS = 2.
 
 
 class Descendants:
@@ -158,9 +159,39 @@ def last_line(path):
         return ''
 
 
+def check_root_guard(child, monitor, report, final=False):
+    """Reconcile a clean monitor exit with the owned child's status, without leaving a live child unguarded."""
+    if monitor is None:
+        return
+    status = monitor.poll()
+    if status not in (None, 0):
+        suffix = ' before the final callback' if final else ''
+        raise SystemExit(f'memory guard failed{suffix}')
+    if status == 0 and child.poll() is None:
+        # proc_pid_rusage can observe exit before waitpid does. Only a clean monitor exit
+        # gets this bounded reconciliation; a surviving child still fails and is reaped.
+        try:
+            child.wait(timeout=CHILD_EXIT_SECONDS)
+        except subprocess.TimeoutExpired:
+            raise SystemExit('memory guard exited before the child') from None
+    if final or status == 0:
+        try:
+            record = json.loads(report.read_text())
+        except FileNotFoundError:
+            return  # A short-lived child may exit before the first sample.
+        except (OSError, ValueError):
+            raise SystemExit('memory guard report is unreadable') from None
+        if not isinstance(record, dict):
+            raise SystemExit('memory guard report is invalid')
+        # Build report directories are reused. An old process's receipt says nothing
+        # about a new child that exited before its first sample.
+        if record.get('pid') == child.pid and record.get('state') in ('memory_limit', 'test_duration'):
+            raise SystemExit(f'memory guard stopped the child: {record["state"]}')
+
+
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
-        on_poll=None):
+        on_poll=None, admission=None, performance=False):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -168,6 +199,12 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     retaining one normal admission. Cleanup that cannot observe tree exit within its bound MUST fail.
     Poll callbacks MUST follow root, watched-child and aggregate health checks. The final callback MUST
     require successful launcher exit and any aggregate terminal receipt before acknowledging results.
+    A clean process-monitor exit MAY precede child reaping by at most two seconds; a surviving child,
+    failed monitor or matching memory/duration stop receipt MUST fail, including without a callback.
+    Capacity-managed work MUST also hold the legacy exclusion bridge and await the broker's own
+    exec gate after both guards are ready. Broker failure MUST fail the run, without falling back to
+    slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
+    Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
 
     Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
@@ -176,8 +213,23 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     Compile-kind work always uses this aggregate protection, including UAT and tool bootstrap wrappers.
     `on_poll(pid)` observes the owned child between waits and once after successful exit. Exceptions
     unwind through the existing guard/child cleanup; the callback never replaces either protection.
+    `admission` is an explicit capacity-client session. During migration it adds the broker gate and
+    exclusive legacy bridge, retaining existing guards, resource policies and foreign-process checks.
+    `performance` asks a configured broker to drain other grants before this run and exclude new ones.
+    An explicit admission session must already carry that flag when performance exclusion is requested.
     """
-    aggregate_tree = aggregate_tree or kind == 'compile'
+    if type(performance) is not bool:
+        raise ValueError('performance request must be a boolean')
+    if performance and admission is not None and getattr(admission, 'request', {}).get('performance') is not True:
+        raise ValueError('explicit capacity admission must request performance exclusion')
+    if admission is None:
+        from ..capacity_runtime import configured_session
+        admission = configured_session(kind=kind, limit_gib=limit_gib, timeout=timeout, folder=folder,
+                                       purpose=purpose or (Path(command[0]).name if command else kind),
+                                       performance=performance)
+    if admission is not None and (not lock or fitting_gib is not None):
+        raise ValueError('capacity admission requires the legacy bridge, without a fitting-lane request')
+    aggregate_tree = aggregate_tree or kind == 'compile' or admission is not None
     if fitting_gib is not None:
         if (not lock or kind != 'job' or not command or Path(command[0]).name.lower() != 'blender'
                 or not any(arg in ('-b', '--background') for arg in command[1:]) or watch or track_tree or aggregate_tree):
@@ -186,6 +238,26 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     folder.mkdir(parents=True, exist_ok=True)
     horizon = timeout if timeout > 0 else None
     with ExitStack() as stack:
+        child, root_start, tree = None, None, None
+        capacity_closed = False
+
+        def retained():
+            if tree is None:
+                return ()
+            excluded = tree.shared_now()
+            return tuple(key for key in tree.depth if key not in excluded)
+
+        def close_capacity():
+            nonlocal capacity_closed
+            if not capacity_closed:
+                capacity_closed = True
+                admission.close(child=child, child_start=root_start, descendants=retained())
+
+        if admission is not None:
+            # Also cancel a queued offer when acquiring the bridge fails. The later callback
+            # moves successful-spawn cleanup before monitor detachment; this fallback is a no-op.
+            stack.callback(close_capacity)
+            admission.offer()
         slot = None
         if lock:
             def taken(name, why):
@@ -193,20 +265,27 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 slot = name
                 if on_slot is not None:
                     on_slot(name, why)
-            stack.enter_context(render_lock(purpose or Path(command[0]).name, small_gib=small_gib, kind=kind,
-                                            on_slot=taken, fitting_gib=fitting_gib))
+            options = dict(small_gib=small_gib, kind=kind, on_slot=taken, fitting_gib=fitting_gib)
+            if admission is not None:
+                options.update(small_gib=None, exclusive_bridge=True)
+            stack.enter_context(render_lock(purpose or Path(command[0]).name, **options))
         if slot in ('small', 'fitting'):
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
         # Register monitors first, so later child/tree cleanup runs before either monitor detaches,
         # including when monitor startup fails. The private pipe holds this same PID before exec.
         monitors = stack.enter_context(ExitStack())
+        if admission is not None:
+            stack.callback(close_capacity)
         descriptors = tuple(pass_fds)
         gate = None
         if aggregate_tree:
-            read_fd, write_fd = os.pipe()
+            if admission is not None:
+                read_fd = admission.gate()
+            else:
+                read_fd, write_fd = os.pipe()
+                gate = stack.enter_context(os.fdopen(write_fd, 'wb', buffering=0))
             gate_read = stack.enter_context(os.fdopen(read_fd, 'rb', buffering=0))
-            gate = stack.enter_context(os.fdopen(write_fd, 'wb', buffering=0))
             descriptors += (read_fd,)
             command = [sys.executable, str(Path(__file__).with_name('exec_gate.py')), str(read_fd), *command]
         inherited = {'pass_fds': descriptors, 'stdin': subprocess.DEVNULL} if descriptors else {}
@@ -218,9 +297,10 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         stack.callback(reap, child, grace=0. if aggregate_tree else 10.)
         where = f', {slot} render slot, {limit_gib:g} GiB limit' if slot in ('small', 'fitting') else ''
         print(f'pid {child.pid}, guard report {folder/"memory-health.json"}{where}', flush=True)
-        tree = None
         root_start = process_tree.started(child.pid) if watch or track_tree or aggregate_tree else None
         if watch or track_tree or aggregate_tree:
+            if type(root_start) is not int or root_start <= 0:
+                raise RuntimeError('could not pin the owned launcher before attaching its tree guards')
             tree = Descendants(child.pid, root_start, folder, watch, horizon, limit_gib, monitors)
             # Runs before the child is reaped; after a success it only reaps leftovers such as shader workers.
             # A lost aggregate monitor cannot leave descendants allocating during a graceful
@@ -238,8 +318,19 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
             aggregate.ready()
             if monitor.poll() is not None:
                 raise RuntimeError('process memory guard exited before releasing the launcher')
-            gate.write(b'1')
-            gate.close()
+            if admission is not None:
+                limit_bytes = int(limit_gib * 1024**3)
+                wait_ready(monitor, child.pid, root_start, folder/'memory-health.json', limit_bytes)
+                admission.start(child_pid=child.pid, child_start=root_start,
+                                process_guard=dict(pid=monitor.pid, start=process_tree.started(monitor.pid),
+                                                   report=str((folder/'memory-health.json').resolve())),
+                                tree_guard=dict(pid=aggregate.process.pid,
+                                                start=process_tree.started(aggregate.process.pid),
+                                                report=str((folder/'memory-health-tree.json').resolve())),
+                                limit_bytes=limit_bytes)
+            else:
+                gate.write(b'1')
+                gate.close()
         started = time.monotonic()
         deadline = started+horizon if horizon else None
         spoken = started
@@ -263,8 +354,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 spoken = time.monotonic()
                 watched = ', '.join(f'{label} {key[0]}' for key, (label, _) in tree.guarded.items() if tree.same(key)) if tree else ''
                 print(f'{(spoken-started)/60:.0f} min{f" [{watched}]" if watched else ""}: {last_line(folder/"stdout.log")}', flush=True)
-            if monitor is not None and monitor.poll() is not None and child.poll() is None:
-                raise SystemExit('memory guard exited before the child')
+            check_root_guard(child, monitor, folder/'memory-health.json')
             if aggregate is not None and child.poll() is None:
                 try:
                     aggregate.check()
@@ -275,6 +365,8 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                         raise
             if deadline is not None and time.monotonic() > deadline:
                 raise SystemExit(f'child exceeded {timeout} s')
+            if admission is not None and child.poll() is None:
+                admission.check(descendants=retained())
             if on_poll is not None and child.poll() is None:
                 on_poll(child.pid)
             try:
@@ -283,11 +375,10 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 pass
         if aggregate is not None:
             aggregate.finish()
+        check_root_guard(child, monitor, folder/'memory-health.json', final=True)
         if on_poll is not None and child.returncode == 0:
             if tree is not None:
                 tree.check()
-            if monitor is not None and monitor.poll() not in (None, 0):
-                raise SystemExit('memory guard failed before the final callback')
             on_poll(child.pid)
         return child.returncode or 0
 

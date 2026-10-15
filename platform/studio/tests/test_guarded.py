@@ -6,6 +6,7 @@ Every case uses a fake child (a sleeping interpreter) and, where the point is th
 fake monitor. Reproducing an out-of-memory kill is not the point: the point is that whatever goes
 wrong after the child exists, the child is reaped and the next run is not blocked by a stale lock.
 """
+import json
 import os
 import signal
 import subprocess
@@ -55,6 +56,97 @@ class FakeMonitor:
         if self.raises:
             raise self.raises
         return 1 if self.dead else None
+
+
+class ReapingChild:
+    """waitpid lags the monitor, or never observes exit until owned cleanup terminates it."""
+    pid = 999999
+
+    def __init__(self, status=0, live=False, completed=False):
+        self.status, self.live = status, live
+        self.returncode = status if completed else None
+        self.waits, self.terminated = [], False
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, timeout=None):
+        self.waits.append(timeout)
+        if self.live and self.returncode is None:
+            raise subprocess.TimeoutExpired('fake child', timeout)
+        if self.returncode is None:
+            self.returncode = self.status
+        return self.returncode
+
+    def terminate(self):
+        self.terminated, self.returncode = True, -signal.SIGTERM
+
+
+class MonitorExitTests(unittest.TestCase):
+    """Deterministic lifecycle interleavings; no render processes or machine admission."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name)
+
+    def run_child(self, child, monitor_status=0, record='running', callback=None):
+        @contextmanager
+        def attach(pid, report, **kwargs):
+            if record is not None:
+                value = dict(pid=pid, state=record) if isinstance(record, str) else record
+                Path(report).write_text(json.dumps(value))
+            yield SimpleNamespace(poll=lambda: monitor_status)
+        with patch.object(guarded_run, 'spawn', return_value=child), \
+                patch.object(guarded_run, 'attach_memory_guard', attach):
+            return guarded_run.run(QUICK, self.folder, lock=False, on_poll=callback)
+
+    def test_clean_monitor_exit_reconciles_delayed_child_reaping(self):
+        child, acknowledged = ReapingChild(), []
+        self.assertEqual(self.run_child(child, callback=acknowledged.append), 0)
+        self.assertEqual(child.waits[0], 2.)
+        self.assertEqual(acknowledged, [child.pid])
+        self.assertFalse(child.terminated)
+
+    def test_clean_monitor_exit_preserves_failed_child_status(self):
+        child, acknowledged = ReapingChild(status=3), []
+        self.assertEqual(self.run_child(child, callback=acknowledged.append), 3)
+        self.assertEqual(acknowledged, [])
+
+    def test_clean_monitor_exit_with_surviving_child_fails_and_reaps_it(self):
+        child, acknowledged = ReapingChild(live=True), []
+        with self.assertRaisesRegex(SystemExit, 'exited before the child'):
+            self.run_child(child, callback=acknowledged.append)
+        self.assertEqual(child.waits[0], 2.)
+        self.assertTrue(child.terminated)
+        self.assertEqual(acknowledged, [])
+
+    def test_failed_terminal_monitor_fails_without_a_callback(self):
+        with self.assertRaisesRegex(SystemExit, 'memory guard failed'):
+            self.run_child(ReapingChild(completed=True), monitor_status=1)
+
+    def test_stop_receipts_never_acknowledge_a_successful_child(self):
+        for state in ('memory_limit', 'test_duration'):
+            for monitor_status in (None, 0):
+                with self.subTest(state=state, monitor_status=monitor_status):
+                    acknowledged = []
+                    with self.assertRaisesRegex(SystemExit, state):
+                        self.run_child(ReapingChild(completed=True), monitor_status=monitor_status,
+                                       record=state, callback=acknowledged.append)
+                    self.assertEqual(acknowledged, [])
+
+    def test_stop_receipt_fails_without_a_callback(self):
+        with self.assertRaisesRegex(SystemExit, 'memory_limit'):
+            self.run_child(ReapingChild(completed=True), record='memory_limit')
+
+    def test_short_child_can_exit_before_first_sample(self):
+        self.assertEqual(self.run_child(ReapingChild(), record=None), 0)
+
+    def test_reused_report_from_an_old_child_is_not_a_current_stop(self):
+        self.assertEqual(self.run_child(ReapingChild(), record=dict(pid=999998, state='memory_limit')), 0)
+
+    def test_invalid_report_fails_closed(self):
+        with self.assertRaisesRegex(SystemExit, 'report is invalid'):
+            self.run_child(ReapingChild(), record=[])
 
 
 class GuardedRunTests(unittest.TestCase):

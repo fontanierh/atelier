@@ -18,7 +18,7 @@ build/            ignored: everything a build generates, per game
 
 | Piece | Where | What |
 |---|---|---|
-| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `setup`, `fetch`, `build` (incremental steps/products), `reuse`, `pool`, `play` (profiles), `playtest`, `stream`, `live`, `qa`, `lint`, `contracts`, `capacity` (shadow plans and retained guard histories), `board`; the lock and memory guard around heavy processes (`atelier.safety`) |
+| `atelier` command | `platform/studio/atelier` | `new`, `doctor`, `setup`, `fetch`, `build` (incremental steps/products), `reuse`, `pool`, `play` (profiles), `playtest`, `stream`, `live`, `qa`, `lint`, `contracts`, `capacity` (shadow plans, resource history and admission broker), `board`; the lock and memory guard around heavy processes (`atelier.safety`) |
 | AI and review tools | `platform/studio/atelier/{ai,review,blender}`, `platform/studio/node` | Tripo, Sunburst, H3 and Seedance helpers, the paid-call ledger, the UniMate and Kimodo runners, contact sheets, glTF previews |
 | Conventions | `platform/conventions` | units and axes, humanoid bones, clip roles, sound cues, naming |
 | AtelierCore | `engine/Plugins/AtelierCore` | runtime data files (`AtelierDataPath`), sprint stamina |
@@ -80,7 +80,9 @@ directory. Automatic publication and hostile-source signer isolation remain sepa
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands
 evaluate supplied snapshots, inspect retained guard histories and exercise durable queue/lease transactions in an
-explicit simulation database. Live admission and native launcher integration remain a separate migration.
+explicit simulation database. A separate supervised Unix broker integrates with the common guarded launcher;
+its migration bridge also takes all legacy lane locks. Machine activation, custom-client migration and removing
+slot exclusion remain separate gates; simulation advice cannot authorize work.
 
 ## Why the studio is Python
 

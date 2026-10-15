@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 
 use schemars::JsonSchema;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// A stored message, exactly as the mailbox holds it.
@@ -131,6 +131,7 @@ pub struct Holder {
     /// The folder name of the checkout running the job.
     pub checkout: String,
     pub time: Value,
+    pub capacity_bridge: bool,
 }
 
 #[derive(Serialize, JsonSchema, Clone, Debug, Default)]
@@ -139,6 +140,74 @@ pub struct Holders {
     pub big: Option<Holder>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub small: Option<Holder>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fitting: Option<Holder>,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug, Default)]
+pub struct CapacityVector {
+    pub memory_mib: u64,
+    pub cpu_millis: u64,
+    pub temp_mib: u64,
+    pub io_slots: u64,
+    pub gpu_mib: u64,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub struct CapacityJob {
+    pub id: String,
+    pub owner: Option<String>,
+    pub checkout: Option<String>,
+    pub purpose: Option<String>,
+    pub phase: Option<String>,
+    pub state: String,
+    pub charged: bool,
+    pub resources: CapacityVector,
+    pub locks: Vec<String>,
+    pub first_ready: f64,
+    pub sequence: u64,
+    pub bypasses: u64,
+    pub retained: u64,
+    pub witnessed: u64,
+    pub wait_reason: String,
+    pub measured_memory_mib: Option<u64>,
+    pub measured_at: Option<f64>,
+    pub ancestry_unknown: bool,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub struct CapacitySnapshot {
+    pub epoch: u64,
+    pub boot_id: String,
+    pub mode: String,
+    pub cutover: bool,
+    pub observed_at: f64,
+    pub recovering: bool,
+    pub total: CapacityVector,
+    pub reserve: CapacityVector,
+    pub charged_resources: CapacityVector,
+    pub charged_count: u64,
+    pub waiting_count: u64,
+    pub total_records: u64,
+    pub returned_records: u64,
+    pub records: Vec<CapacityJob>,
+    pub truncated: bool,
+}
+
+#[derive(Serialize, JsonSchema, Clone, Debug)]
+pub struct CapacityStatus {
+    pub configuration: String,
+    pub availability: String,
+    pub checked_at: Option<f64>,
+    pub fresh: bool,
+    pub snapshot: Option<CapacitySnapshot>,
+}
+
+#[derive(Serialize, JsonSchema, Clone, Debug)]
+pub struct LegacySlots {
+    pub slots: u8,
+    pub fitting_enabled: bool,
+    pub fitting_paused: bool,
 }
 
 /// A remote agent session the watchdog reports on.
@@ -217,6 +286,8 @@ pub struct State {
     pub log_total: i64,
     pub inbox: InboxSummary,
     pub holders: Holders,
+    pub legacy_slots: LegacySlots,
+    pub capacity: CapacityStatus,
     pub sessions: Vec<Session>,
     pub resources: Resources,
     pub disk: Disk,

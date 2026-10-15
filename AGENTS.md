@@ -114,6 +114,13 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   question or follow-up with `--reply-to ID`, and read the context with `atelier board thread ID`. Attach
   evidence (screenshots, films, logs) with `--attach FILE` rather than pasting long paths. To tell every agent,
   post once with `--all-agents` (not a loop of `--to`), and check a message's `audience` before treating it as yours alone.
+- PR screenshots and films go to `refs/pr-media/<PR number>` (a slug before the PR exists) with
+  `atelier pr-media push <key> FILE...`; paste the Markdown lines it prints into the PR description. Never commit
+  PR media to a branch or to main: default clones and fetches skip `refs/pr-media/*` (a `git clone --mirror` takes
+  them). Keep these refs: deleting one eventually breaks its links. The repository is public and these refs are
+  permanent, and lint never sees pixels or metadata: push only game or render captures and films, never desktop,
+  terminal, browser or board screenshots (they can show home paths, hostnames, emails, notifications or tokens).
+  Look at every file before pushing.
 - When you cannot go on without the operator's guidance, help or confirmation, open **one operator task**:
   `atelier board operator-task open --agent NAME "..."` (the ask first, at most 500 characters). The operator
   answers or dismisses it from the board's Tasks page, and the reply arrives in its thread. You hold one at a time;
@@ -187,6 +194,11 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.safety`). `atelier play`
   and `atelier build` do this for you. A game's guard stops it above 10 GiB; `atelier play --memory-gib N` (10 to 14)
   raises that for one session that needs it (Quality graphics at 1080p, for example). Say so in your Holding entry.
+- Capacity admission is being migrated through the common guarded launcher; see [the setup and current mode](docs/BUILD_CAPACITY.md#broker-and-guarded-launch-migration).
+  Installing its supervised broker does not activate clients or replace slots. A configured migration client
+  needs both a broker grant and all legacy lane locks; it permits no additional overlap. Never create a second
+  broker, clear uncertain reservations, lower a profile below its guard ceiling, or bypass a broker outage.
+  Preserve the existing board coordination and guards until the machine's controlled cutover is announced.
 - On macOS, the shared process launcher gives builds and games application resource policies instead of an
   inherited background launchd role. It keeps normal thread QoS and at least nice 10; explicit `taskpolicy -b`
   or `-c background` policies are separate and are not cleared by it.

@@ -1,14 +1,78 @@
-# Capacity admission proposal
+# Capacity admission
 
 Atelier should admit work against available memory and CPU capacity, with additional constraints for GPU use,
 temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
 admits it when all requirements fit. A small job need not wait for a particular lane to become free.
 
-**Status: offline shadow planner, durable lifecycle experiments and retained-history report implemented;
-native admission service proposed.** `atelier capacity plan snapshot.json`
-evaluates a supplied snapshot without writing scheduler state or granting admission. The current render slots,
-live locks, memory guards and machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
+**Status: the supervised broker and common guarded-launch integration are being validated in a conservative
+legacy-lock bridge. Machine activation and the replacement of slots remain rollout gates.** The separate
+`atelier capacity plan snapshot.json` command still evaluates only supplied snapshots; it never grants admission.
+Until clients are explicitly configured, the current render slots, live locks, memory guards and machine board
+remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
 small products reduce the work, and capacity admission schedules the remaining work safely.
+
+## Broker and guarded-launch migration
+
+The production broker uses its own private Unix socket and SQLite namespace. It is separate from every shadow
+database and token below. `atelier capacity serve ABSOLUTE_CONFIG` runs it; `atelier capacity status ABSOLUTE_SOCKET`
+reads its state. `atelier capacity supervise ABSOLUTE_CONFIG` installs macOS login/crash supervision. Installing
+the service does **not** enable clients. Do not create a second broker to work around an outage or an uncertain grant.
+`atelier capacity reconcile ABSOLUTE_SOCKET` releases only reservations whose retained identities have affirmative
+exit evidence; it cannot clear an unknown exit. Same-boot recovery rearms live registered identities and permits
+the original controller's fenced session to report exit only. A verified OS boot change proves prior local jobs
+ended; ordinary daemon restart does not.
+
+The broker configuration is an owner-only JSON file in an owner-only directory, with exactly these fields:
+
+```json
+{
+  "schema": 1,
+  "mode": "legacy-bridge",
+  "state_directory": "/absolute/private/capacity-state",
+  "disk_pool": "/absolute/build-filesystem",
+  "total": {"memory_mib": 32768, "cpu_millis": 10000, "temp_mib": 200000, "io_slots": 2, "gpu_mib": 16000},
+  "reserve": {"memory_mib": 8192, "cpu_millis": 2000, "temp_mib": 20000, "io_slots": 0, "gpu_mib": 0}
+}
+```
+
+These values are illustrative, not this machine's calibrated budget. Disk reservations apply to the one explicit
+filesystem; multi-filesystem actions still need profiles and enforcement for each pool. Preserve the installed
+service's checkout and Python environment. Drain before changing its service configuration; supervision never
+replaces an already running broker with different settings.
+
+Upgraded `guarded.run` clients read the private `~/.cache/atelier/capacity/client.json` only when it exists. An explicit
+`ATELIER_CAPACITY_CLIENT` selects another absolute file. The client file contains `schema: 1`, an absolute `socket`,
+and `profiles` for `job`, `game` and `compile`. Each profile contains a complete `resources` vector and a `locks`
+list. The common launcher always adds its checkout lock. A reservation smaller than the actual guard ceiling
+is refused, including a session using a higher game limit. Missing CPU or I/O capacity is refused. Profiles do
+not alter worker settings or provide kernel CPU quotas; initial budgets must conservatively cover unchanged workers.
+The common launcher can request a performance window with `guarded.run(..., performance=True)`; the configured
+broker requires other grants to drain before admission and excludes new grants until release. The benchmark tool requests this window
+and still rejects observed render overlap. Benchmark, cinematic capture and sailboat QA each use the common
+actual-child guard and admission lifecycle; they do not add a second lock or reservation around it.
+
+An absent default client file keeps legacy behavior. Once configured, a missing broker, invalid profile or
+rejected request fails closed. There is no silent fallback. The initial adapter acquires **all three existing
+lane mutexes together, nonblocking**, so legacy clients cannot race into an uncharged second lane. If any lane
+is busy it releases everything; it never waits with a partial grant. This bridge adds the capacity check while
+permitting no additional native overlap. Unsupported fitting requests and callers bypassing the existing lock
+are refused; those harnesses need explicit migration before machine activation.
+
+The broker owns the exec gate's only writer. The launcher pins its child and attaches its existing process and
+aggregate memory guards before asking for a grant. The broker checks fresh guard receipts, the full resource
+vector, named locks, pressure and service epoch, commits accounting, then releases the gate. An offered or queued
+request holds no resources. Its logical identity survives an uncharged retry; a separate run nonce fences old gates.
+
+Capacity release concerns the **retained registered process roster**, using pinned kernel exit events and the
+controller's actual direct-child wait. It does not turn a failed process lookup or aggregate guard report into
+proof that every possible descendant was discovered or exited. Unwitnessed exits, lost guards and crashes retain
+uncertain charges. Output certification remains the build system's separate responsibility. The legacy bridge
+and foreign-process scan remain necessary while stronger ownership coverage and client migration are validated.
+
+The agent board rollout must show the real machine mode: legacy slots, capacity migration bridge, or full capacity.
+It should show reserved resources separately from measured usage, ready age and wait reasons, named locks, and
+uncertain reservations that still consume capacity. An unavailable broker must be visible rather than displayed
+as an empty pool. Shadow advice below must never appear as a live grant. Slot labels disappear only at cutover.
 
 ## Try the shadow planner
 
@@ -95,6 +159,35 @@ detached descendants, refused upgrades, queue age and pressure failures without 
 They do not validate a native child launch barrier or a real guard-ready receipt. Native integration must block
 useful child work until registration and independent guard readiness are established; current guarded launchers
 are unchanged. The migration and native acceptance gates below still apply.
+
+## Exercise a closed launch barrier
+
+```sh
+experiment=$(mktemp -d)
+uv run atelier capacity probe "$experiment/probe.sqlite"
+```
+
+This explicit one-shot experiment launches only two fixed, harmless Python programs. A controller owns a launcher;
+that launcher owns one worker, which waits on a private inherited socket before writing its single useful byte.
+The controller submits the launcher to a fresh `ShadowService`, registers the worker's pinned identity, records
+**synthetic** guard readiness, and checks a current-epoch heartbeat before opening the gate. Readiness, gate and
+wait messages bind the epoch, a per-run nonce and the relevant OS process-start identities. macOS uses the existing
+libproc birth identity and Linux uses process start ticks; unsupported platforms refuse. No process-table scan,
+native program, render lock, live guard or scheduler state participates.
+
+The roster is complete only by construction: both programs are fixed, and only the launcher creates a child.
+Resource amounts, availability and guard readiness are fixtures, not measurements. The launcher must report its
+exact worker wait result over the inherited socket, and the controller must itself wait for the launcher. Only
+those two facts allow release. An absent or malformed worker wait receipt or an unproven wait retains uncertainty
+and shadow charges; a missing PID or detached parent is never evidence of exit. Readiness or gate identity
+mismatches refuse useful work. EOF refuses
+the useful byte, and channel waits and owned-child cleanup have finite timeouts. The explicit database remains
+for inspection on failure; the command never automatically reconciles a fenced lease or retries an experiment.
+
+Use a fresh database in an owner-only directory with one controller and no other service clients. This is a local
+lifecycle experiment, not hostile-code isolation or a concurrent service-to-launcher fencing protocol: it does not
+make the heartbeat and gate write atomic with another client's restart. Every report says `admission: false` and
+`native_eligible: false`. No arbitrary argv, recipe or workload is accepted, and the native migration gates remain open.
 
 ## Inspect retained resource history
 

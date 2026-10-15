@@ -26,6 +26,12 @@ native action order, corrupt source/native output repair, missing native output 
 loading and cooking remain acceptance gates.
 Source `cache=True` and automatic native package caching stay disabled.
 
+**Current-main integration:** the ten tree specifications now preserve main's additional LOD4, screen-size cadence,
+card coverage and interior-branch reductions. This changes the source catalogue from 64 to 74 mesh records.
+The retained measurements above describe the earlier catalogue; they do not certify these new LODs or the combined
+current source. Offline policy and ownership checks cover the integration. A fresh source/native equivalence run
+against the updated main baseline is still required before merging the pilot or enabling either cache.
+
 ## Edit one asset
 
 Specifications live in [`assets/foliage/`](../assets/foliage): generator, seed/shape arguments, material palette,

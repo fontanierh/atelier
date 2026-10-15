@@ -1194,3 +1194,26 @@ h1, .wordmark, .agent-name, .empty h2, .schedule-card summary, .notify-text h2, 
 /* A thread opened from Threads or Activity slides over a still copy of that list, so the conversation stays hidden. */
 .app.over-list .chat-pane { background: transparent; }
 .app.in-thread.over-list :is(#topbar, #feed, #errorBanner) { visibility: hidden; }
+
+/* Admission budgets describe reservations; host observations stay in the separate telemetry row. */
+.capacity-heading, .capacity-job-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.capacity-heading .eyebrow { margin: 0; }
+.capacity-card > p { margin: 12px 0; line-height: 1.5; }
+.capacity-tag { flex: none; border: 1px solid var(--line); border-radius: 20px; padding: 3px 8px; font-size: 11px; color: var(--muted); }
+.capacity-tag.warning, .capacity-warning { color: var(--warn); }
+.capacity-budget { margin: 16px 0 10px; }
+.capacity-budget > div { display: grid; grid-template-columns: minmax(100px, .8fr) minmax(0, 1.5fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.capacity-budget dt { color: var(--muted); font-size: 13px; }
+.capacity-budget dd { margin: 0; font-size: 13px; }
+.capacity-budget small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.capacity-meta { color: var(--muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.capacity-section h3 { margin: 20px 0 10px; font-size: 13px; font-weight: 650; }
+.capacity-job { padding: 12px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.capacity-job-head strong { font-size: 13px; font-weight: 650; }
+.capacity-job p { margin: 6px 0; font-size: 12px; line-height: 1.5; }
+.capacity-job .capacity-meta { font-size: 11px; }
+.capacity-job.uncertain { border-left: 2px solid var(--warn); padding-left: 10px; }
+.capacity-locks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; color: var(--muted); }
+.capacity-locks code { font-size: 11px; padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; }
+.capacity-reason { color: var(--muted); }
+.capacity-stale .capacity-budget { opacity: .65; }

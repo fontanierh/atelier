@@ -29,6 +29,7 @@ def lod_mesh_type(original, generate, minimum, maximum, level, strides):
     stride = strides[level - 1]
     roadside = generate in (F.tree_broad, F.tree_maple, F.tree_ginkgo)
     conifer = generate in (F.tree_pine, F.tree_cedar)
+    tree = roadside or conifer
 
     class LodMesh(original):
         def __init__(self, *args):
@@ -41,7 +42,8 @@ def lod_mesh_type(original, generate, minimum, maximum, level, strides):
             # The caller still draws every random value, including for dropped cards.
             if (self.card_number - 1) % stride:
                 return
-            scale = min(math.sqrt(stride), 3.0 if roadside or (conifer and level == 3) else 2.2)
+            cap = 3.6 if tree and level == 4 else 3.0 if roadside or (conifer and level == 3) else 2.2
+            scale = min(math.sqrt(stride), cap)
             super().card(center, (size[0] * scale, size[1] * scale), yaw, tilt, m, cell, normal,
                          roll, col, col_bottom, crop)
 
@@ -50,8 +52,10 @@ def lod_mesh_type(original, generate, minimum, maximum, level, strides):
             super().quad(points, *args, **kwargs)
 
         def tube(self, *args, **kwargs):
-            if level == len(strides) and kwargs.get('n', 8) in (5, 6) and generate is not F.bush:
-                return
+            if tree:
+                n = kwargs.get('n', 8)
+                if (level == 1 and n == 5) or (level >= 2 and n in (5, 6)) or (level == 4 and n == 8):
+                    return
             kwargs['n'] = min(kwargs.get('n', 8), 5 if level == 1 else 3)
             super().tube(*args, **kwargs)
 

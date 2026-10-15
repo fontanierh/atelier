@@ -21,12 +21,9 @@ PROJECT=ROOT/'unreal'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from benchmark import other_render_processes
 from desktop_preview import renderer_arguments
-from contextlib import ExitStack
 from atelier.engine import unreal_root
 from atelier.provenance import head
-from atelier.safety.guard import attach as attach_memory_guard, reap
-from atelier.safety.process import spawn_game
-from atelier.safety.render_lock import render_lock
+from atelier.safety import guarded
 
 
 def read_telemetry(path, expected):
@@ -118,27 +115,18 @@ def capture(session, name, spec, scout=False, *, allow_visual_overlap=False):
     manifest['scene_sha256']={os.path.relpath(p,ROOT):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs if p.exists()}
     (folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print('CAPTURING',name,flush=True)
-    # One render job at a time, and ownership of the child from the instant it exists: a monitor
-    # that fails to start, an exception, an interrupt or the deadline all still reap it.
-    with ExitStack() as stack:
-        stack.enter_context(render_lock(f'trailer {session}/{name}'))
-        log=stack.enter_context((folder/'stdout.log').open('w'))
-        shot=spawn_game(cmd,stdout=log,stderr=subprocess.STDOUT)
-        stack.callback(reap,shot)
-        monitor=stack.enter_context(attach_memory_guard(shot.pid,folder/'memory-health.json',duration=1840))
-        started=time.monotonic(); deadline=started+1800; next_progress=started+30
-        while shot.poll() is None:
-            now=time.monotonic()
-            if now>=next_progress:
-                saved_frames=sum(1 for _ in folder.glob(f'frame_*.{ext}'))
-                print(f'CAPTURE PROGRESS {name}: {now-started:.0f}s elapsed, {saved_frames} frames saved',flush=True)
-                next_progress=now+30
-            if monitor is not None and monitor.poll() is not None and shot.poll() is None:
-                raise RuntimeError('Memory guard exited before the shot finished')
-            if time.monotonic()>deadline: raise TimeoutError('Trailer shot exceeded 1800 s')
-            try: shot.wait(timeout=1)
-            except subprocess.TimeoutExpired: pass
-        if shot.returncode: raise subprocess.CalledProcessError(shot.returncode,cmd)
+    started=time.monotonic(); next_progress=started+30
+
+    def progress(pid):
+        nonlocal next_progress
+        now=time.monotonic()
+        if now>=next_progress:
+            saved_frames=sum(1 for _ in folder.glob(f'frame_*.{ext}'))
+            print(f'CAPTURE PROGRESS {name}: {now-started:.0f}s elapsed, {saved_frames} frames saved',flush=True)
+            next_progress=now+30
+
+    code=guarded.run(cmd,folder,purpose=f'trailer {session}/{name}',timeout=1800,kind='game',on_poll=progress)
+    if code: raise subprocess.CalledProcessError(code,cmd)
     assert (PROJECT/'Saved/settings.txt').read_bytes()==saved,'Saved settings changed'
     assert 'TRAILER SHOT COMPLETE' in (folder/'game.log').read_text()
     expected=round(spec['seconds']*fps)

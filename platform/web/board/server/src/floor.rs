@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 
-use crate::api::{Holder, Holders};
+use crate::api::{Holder, Holders, LegacySlots};
 use crate::db;
 
 static TELEMETRY: LazyLock<Regex> =
@@ -148,9 +148,56 @@ pub fn holders() -> Holders {
             kind: record.get("kind").cloned().unwrap_or_else(|| "job".into()),
             checkout: name_of(text("repo").or_else(|| text("checkout")).unwrap_or("")),
             time: record.get("time").cloned().unwrap_or(Value::Null),
+            capacity_bridge: record.get("capacity_bridge").and_then(Value::as_bool).unwrap_or(false),
         })
     };
-    Holders { big: holder(&big), small: holder(&small) }
+    Holders { big: holder(&big), small: holder(&small), fitting: holder(&lane(&big, "fitting")) }
+}
+
+/// Mirror the legacy launcher's lane configuration; disabled lanes can still have a finishing holder.
+pub fn slots() -> LegacySlots {
+    let big = lock_paths().0;
+    let config = read_slots(&big.with_file_name("render-slots.json")).unwrap_or(Value::Null);
+    let selected = std::env::var("ATELIER_RENDER_SLOTS").ok().filter(|value| !value.trim().is_empty());
+    configured_slots(&config, selected.as_deref())
+}
+
+/// @cc [owner:fontanierh,label:correctness] bounded-slot-configuration
+/// HTTP reads MUST open this configuration nonblocking without following its final symlink,
+/// reject special or oversized files before reading, and consume at most 65537 bytes.
+fn read_slots(path: &Path) -> Option<Value> {
+    use std::io::Read;
+    use std::os::unix::fs::OpenOptionsExt;
+    let file = std::fs::OpenOptions::new().read(true).custom_flags(libc::O_NONBLOCK | libc::O_NOFOLLOW).open(path).ok()?;
+    let info = file.metadata().ok()?;
+    if !info.is_file() || info.len() > 65536 { return None; }
+    let mut data = Vec::new();
+    file.take(65537).read_to_end(&mut data).ok()?;
+    if data.len() > 65536 { return None; }
+    serde_json::from_slice(&data).ok()
+}
+
+fn configured_slots(config: &Value, selected: Option<&str>) -> LegacySlots {
+    let number = selected.map(|value| value.trim().parse::<f64>().ok()).unwrap_or_else(|| {
+        config.get("slots").and_then(|value| value.as_f64().or_else(|| value.as_str()?.trim().parse().ok()))
+    });
+    LegacySlots {
+        slots: if number == Some(2.0) { 2 } else { 1 },
+        fitting_enabled: number == Some(2.0) && config.get("fitting_checkout").and_then(Value::as_str)
+            .is_some_and(|path| Path::new(path).is_absolute()),
+        fitting_paused: config.get("fitting_paused").is_some_and(json_truth),
+    }
+}
+
+fn json_truth(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value.as_f64() != Some(0.0),
+        Value::String(value) => !value.is_empty(),
+        Value::Array(value) => !value.is_empty(),
+        Value::Object(value) => !value.is_empty(),
+    }
 }
 
 /// The render board's text, if there is one.
@@ -169,7 +216,7 @@ pub fn engaged<'a>(sections: &BTreeMap<String, String>, holders: &Holders,
         }
     }
     let locked: HashSet<&str> =
-        [&holders.big, &holders.small].into_iter().flatten().map(|h| h.checkout.as_str()).filter(|c| !c.is_empty()).collect();
+        [&holders.big, &holders.small, &holders.fitting].into_iter().flatten().map(|h| h.checkout.as_str()).filter(|c| !c.is_empty()).collect();
     for (agent, checkout) in checkouts {
         if checkout.is_some_and(|checkout| !checkout.is_empty() && locked.contains(checkout)) {
             named.insert(agent.to_owned());
@@ -222,5 +269,40 @@ mod tests {
     fn own_process_has_a_start_time() {
         assert!(process_start(std::process::id() as i64).is_some());
         assert!(process_start(999_999_999).is_none());
+    }
+
+    #[test]
+    fn legacy_configuration_reports_only_enabled_lanes_and_honors_override() {
+        let config = serde_json::json!({"slots": 2, "fitting_checkout": "/work/fit", "fitting_paused": true});
+        let lanes = configured_slots(&config, None);
+        assert!(lanes.slots == 2 && lanes.fitting_enabled && lanes.fitting_paused);
+        let lanes = configured_slots(&config, Some("1"));
+        assert!(lanes.slots == 1 && !lanes.fitting_enabled);
+        assert_eq!(configured_slots(&Value::Null, None).slots, 1);
+        assert_eq!(configured_slots(&Value::Null, Some(" 2 ")).slots, 2);
+        assert_eq!(configured_slots(&serde_json::json!({"slots": " 2 "}), None).slots, 2);
+        assert!(!configured_slots(&serde_json::json!({"slots": 2, "fitting_checkout": "relative"}), None).fitting_enabled);
+    }
+
+    #[test]
+    fn slot_configuration_refuses_special_files_without_waiting_for_a_writer() {
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+        let folder = std::env::temp_dir().join(format!("floor-config-{}", rand::random::<u64>()));
+        std::fs::create_dir(&folder).unwrap();
+        let path = folder.join("slots.json");
+        std::fs::write(&path, "{\"slots\":2}").unwrap();
+        assert_eq!(read_slots(&path).unwrap()["slots"], 2);
+        let link = folder.join("link.json");
+        std::os::unix::fs::symlink(&path, &link).unwrap();
+        assert!(read_slots(&link).is_none());
+        std::fs::remove_file(&path).unwrap();
+        let raw = CString::new(path.as_os_str().as_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(raw.as_ptr(), 0o600) }, 0);
+        let (send, receive) = std::sync::mpsc::channel();
+        let reader = std::thread::spawn(move || { send.send(read_slots(&path)).unwrap(); });
+        assert!(receive.recv_timeout(std::time::Duration::from_secs(2)).expect("slot config read blocked on FIFO").is_none());
+        reader.join().unwrap();
+        std::fs::remove_dir_all(folder).unwrap();
     }
 }
