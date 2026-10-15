@@ -64,6 +64,7 @@ jobs:
         run: |
           cargo clean --release --locked --package atelier-board-server
           cargo build --release --locked
+          cargo test --release --locked --bin atelier-board-server
       # Each runner collects the whole suite, then selects one disjoint group. Fake renderer
       # processes and board servers stay isolated, and new test locations fall into studio.
       - name: Run tests

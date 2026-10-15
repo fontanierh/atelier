@@ -335,8 +335,26 @@ conversation's place, as in Slack's sidebar (choosing an agent or Everyone bring
   tab's badge counts them.
 - **Agents:** listening status, checkout, status line (Idle, Waiting on you) and queued messages for each agent;
   a listener without launchd auto-recovery is flagged.
-- **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
-  newest log entries first.
+- **Render:** PID/start-validated live holders, enabled legacy lanes (including reserved fitting), machine telemetry
+  and the human-maintained schedule, with the newest log entries first. The floor also observes the production
+  capacity broker when the machine's private client configuration is present. A service installed without client
+  activation does not replace the legacy slots. The migration bridge still holds all legacy lanes and adds no
+  native concurrency; the board does not activate clients or offer admission controls.
+
+  Capacity status is fetched by one background observer, separately from HTTP requests, with an 800 ms total socket
+  deadline and a 64 KiB frame limit. Healthy observations poll every three seconds; failures back off to at most
+  thirty seconds. The last observation remains visible as stale after a failed poll, and unavailable status never
+  means no reservations. Invalid configurations, shadow/probe responses and unsupported cutover modes cannot become
+  live status. The observer reads the same default private client configuration and `ATELIER_CAPACITY_CLIENT`
+  override as common launchers; this describes that configured launch path, not an inventory of every checkout.
+
+  Memory, CPU, temporary disk, I/O and GPU reservations are budgets. Unreserved budget is total minus host reserve
+  and charged grants; fresh host pressure can still refuse admission. CPU units are profile estimates, not kernel
+  quotas. GPU memory is a subset of unified memory and must not be added to RAM. Host CPU/free memory telemetry
+  remains separate from job measurements; unmeasured job CPU, disk and GPU usage are unknown. Job memory carries
+  its own measurement time. Broker totals cover all records even when the displayed list is truncated. Ready
+  (`queued`) requests are uncharged; `waiting` means a retry is needed. Draining and uncertain reservations remain
+  charged, including their named locks, until the broker has affirmative release evidence.
 - **Disk** (on the Render floor): free and total space on the home folder's volume, read with one `statfs` on every
   update, and what takes the space. The breakdown measures allocated size (readdir and lstat; never following symlinks
   or leaving the volume, never listing or measuring a place reached through a symlink, a hard-linked file counted

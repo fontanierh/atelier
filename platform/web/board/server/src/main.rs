@@ -1,6 +1,7 @@
 //! The agent board's web server. `atelier board serve` builds and runs it; agents keep writing the same SQLite
 //! mailbox with `atelier board`.
 mod api;
+mod capacity;
 mod db;
 mod disk;
 mod files;
@@ -107,6 +108,7 @@ async fn serve(port: u16, origins: Vec<String>, allowed_user: Option<String>, se
         .and_then(|value| value.parse::<f64>().ok())
         .filter(|seconds| *seconds > 0.0)
         .unwrap_or(3.0);
+    capacity::start();
     tokio::spawn(push::pusher(sender, config.push_subject.clone(), Duration::from_secs_f64(interval)));
     if let Some(parent) = parent {
         // The launcher owns this process: when it goes, so does the server, rather than holding the port.
