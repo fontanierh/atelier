@@ -10,14 +10,20 @@ session and 46s for the other 15 in another session. These selected-build timers
 external proof verification. An externally measured real 63-step no-op inspection launched no tools and changed
 no products or stamps, but still took 34.1s. A controlled interruption retained the first completed owner's
 certificate and left only the unfinished owner stale. Ordinary repair ran that one import in a builder-reported
-26s; only its four native packages and stamp changed. These are bounded pilot measurements, not full-build latency claims.
+26s; only its four native packages and stamp changed. A whitespace-only specification edit reran one source owner,
+returned identical products and skipped all native imports. A real seed edit reran only that source owner and its
+native owner. Restoring the original specification through ordinary builds returned all 63 selected steps to
+current, with byte-identical original source products and unrelated products/stamps unchanged. Deleting one required
+LOD2 FBX also repaired through one ordinary source action: the product returned byte-identically, all native imports
+stayed current and unrelated products/stamps stayed fixed. These are bounded pilot measurements, not full-build latency claims.
 
 The October 14 Blender 5.2.1 LTS source proof matched all 64 legacy mesh records and serialized geometry. It ignores
 auto-numbered collision data-block names in nine trunk FBXs while preserving UCX model names and geometry.
 All 100 split files were byte-identical across repeated exports, another directory and reversed asset order in a
 fresh process. The later explicit native-collision policy changed 18 manifests; all 82 FBXs retained those exact
-bytes. A byte-pattern scan found no common local-path prefixes. Isolated edit boundaries, reversed native action
-order, missing/corrupt output repair, world preservation, loading and cooking remain acceptance gates.
+bytes. A byte-pattern scan found no common local-path prefixes. Helper/texture/shader edit boundaries, reversed
+native action order, corrupt source/native output repair, missing native output repair, world preservation,
+loading and cooking remain acceptance gates.
 Source `cache=True` and automatic native package caching stay disabled.
 
 ## Edit one asset
@@ -64,6 +70,14 @@ Collision validation counts convex UCX hulls separately from box, sphere and cap
 collision count excludes convex hulls. The final collision trace policy must also match the specification.
 Regional importers must not modify shared material instances. Private regional material namespaces are checked for
 collisions with the shared catalogue.
+
+Import processes temporarily set the global distance-field/card generation CVars to zero while assembling the
+LOD chain. These overrides do not change saved mesh build settings; an explicit per-mesh distance-field flag can
+still request generation. Normal uncooked loading can obtain or generate those representations,
+and cooking waits for required builds before serializing target-supported data. Packaged runtime cannot provide
+that editor regeneration path. Loading/cooking acceptance must therefore compare usable derived data against
+the legacy assets under normal settings. Warm DDC availability alone does not prove regeneration from a miss;
+a cold-generation check needs an isolated proof cache, preserving the machine's shared caches.
 
 ## Bounded process reuse
 
