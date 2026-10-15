@@ -72,6 +72,16 @@ def test_content_enumeration_preserves_file_and_directory_symlink_behavior(tmp_p
         assert [p.relative_to(root).as_posix() for p in actual] == ['Data/world.json', 'file.uasset']
 
 
+@pytest.mark.parametrize('root', ['.', 'nested/..'])
+def test_content_enumeration_preserves_relative_root_paths(tmp_path, monkeypatch, root):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'nested').mkdir()
+    for name in ('Data/world.json', 'Japan/Mesh.uasset', 'Data/Network/session.json', 'Saved/junk'):
+        write(tmp_path, name, b'content')
+    content = Path(root)
+    assert identity.content_files(content) == legacy_content_files(content)
+
+
 def test_content_enumeration_excludes_network_when_it_is_a_file(tmp_path):
     content = tmp_path / 'Content'
     write(content, 'Data/Network', b'identity output')

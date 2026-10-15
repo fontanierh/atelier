@@ -259,9 +259,11 @@ def _hash_path(digest, path, skip=True):
             for chunk in iter(lambda: handle.read(1 << 20), b''):
                 digest.update(chunk)
     elif path.is_dir():
+        depth = len(path.parts)
         for child in sorted(path.rglob('*')):
             if child.is_file() and not (skip and (SKIP_PARTS & set(child.parts) or child.suffix in SKIP_SUFFIXES)):
-                digest.update(str(child.relative_to(path)).encode())
+                # rglob preserves this lexical prefix; avoid searching all parent paths per file.
+                digest.update(str(Path(*child.parts[depth:])).encode())
                 _hash_path(digest, child, skip)
     else:
         digest.update(b'missing:' + str(path).encode())
