@@ -23,6 +23,8 @@ import numpy as np  # noqa: E402
 from craterpark.v2 import dsl, generate, v4_config  # noqa: E402
 from craterpark.v2.editor import frontend  # noqa: E402
 
+WOOD = 'material_016'     # ramp boards (assets/craterpark/materials.json)
+KICK_REACH = 30.        # metres of a capped run's end that count as its launch ramp
 GROUND_REACH = 60.     # metres of cut ground kept round every kept piece
 SIDE_COLOURS = ([0.6, 0.58, 0.54], [0.45, 0.43, 0.4])   # pieces.js COL.side, COL.bottom
 
@@ -75,8 +77,10 @@ def piece_mesh(piece):
     for c in SIDE_COLOURS:
         side |= (np.abs(col[F] - c).max(2) < 0.02).all(1)
     parts = []
-    for mask, role, material in ((~side, dsl.RIDING, dsl.DECK if meta['type'] == 'deck' else dsl.CONCRETE),
-                                 (side, dsl.SIDE, dsl.SIDE_WALL)):
+    # wooden ramps (the park's ramp boards) everywhere but the bowls, which stay poured concrete
+    concrete = meta['type'] == 'bowl'
+    for mask, role, material in ((~side, dsl.RIDING, dsl.CONCRETE if concrete else WOOD),
+                                 (side, dsl.SIDE, dsl.SIDE_WALL if concrete else WOOD)):
         if mask.any():
             parts.append(dsl.Mesh.part(V, F[mask], N=N, UV=tile_uv(V, N), role=role, material=material,
                                        feature=meta['id']).subset(np.ones(int(mask.sum()), bool)))
@@ -115,6 +119,26 @@ def ground_mesh(scene, keep_xz):
     m.F = orient(m.V, m.F, np.tile([0., 1., 0.], (len(m.V), 1)))
     m.UV = V[:, [0, 2]] / 8.
     return m
+
+
+def assist_zones(pieces, doc):
+    """The launch ramps the owner capped (params.vert_assist_max): a jump's kicker up to its lip, or the last
+    KICK_REACH metres of a run, as native points with the ramp's half width. export.py turns them into boxes."""
+    zones, params = [], {p['id']: p.get('params', {}) for p in doc['pieces']}
+    for piece in pieces:
+        meta = piece.metadata
+        cap = params[meta['id']].get('vert_assist_max')
+        if cap is None:
+            continue
+        st = meta['stations']
+        if meta['type'] == 'jump':
+            st = st[:meta['info']['lip']['i'] + 1]
+        else:
+            st = [s for s in st if s['d'] >= st[-1]['d'] - KICK_REACH]
+        width = params[meta['id']].get('width', 12)
+        zones.append({'id': meta['id'], 'vert_assist_max': float(cap), 'half_width': width / 2,
+                      'points': [[s['x'], s['y'], s['z']] for s in st]})
+    return zones
 
 
 def main(argv=None):
@@ -178,6 +202,7 @@ def main(argv=None):
                                                  'pieces_sha256': scene.metadata['pieces_sha256']},
                  accepted=False, validation={'ran': False, 'reason': 'editor playtest: supports not built (owner)'},
                  bounds_native=[park.mesh.V.min(0).tolist(), park.mesh.V.max(0).tolist()])
+    index['assist_zones_native'] = assist_zones(scene.pieces, doc)
     arrays['index'] = np.asarray(json.dumps(index))
     (out / 'lines').mkdir(exist_ok=True)
     for stale in (out / 'lines').glob('*.npz'):

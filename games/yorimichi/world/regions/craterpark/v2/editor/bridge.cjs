@@ -20,7 +20,7 @@ function number(x, where) {
   if(typeof x!=='number' || !Number.isFinite(x) || Math.abs(x)>100000) throw Error(`${where}: expected bounded finite number`);
 }
 // Optional parameters the editor reads but does not put in its type defaults (see the editor README).
-const EXTRA = { run: ['corner'], bowl: ['ext', 'deep', 'spines', 'exit_wl', 'exit_wr'], deck: ['outline'] };
+const EXTRA = { run: ['corner', 'vert_assist_max'], jump: ['vert_assist_max'], bowl: ['ext', 'deep', 'spines', 'exit_wl', 'exit_wr'], deck: ['outline'] };
 const WALL_EXTRA = ['level'];
 function validate(park) {
   keys(park,['schema','about','frame','terrain','lines','pieces','rev','saved_at','notes'], 'park');

@@ -8,6 +8,7 @@ marked drop-in.
 """
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -115,6 +116,29 @@ def export_mesh(out, name, vertices, faces, materials, face_materials, uvs=None,
     return result
 
 
+ZONE_PAD = 200.     # cm round each capped launch ramp
+
+
+def assist_boxes(zones, placement):
+    """Editor launch ramps with a vert assist cap -> oriented boxes in island centimetres (yaw about +Z), grown
+    by ZONE_PAD so the rider is inside from the ramp's foot to its lip, and through its full height."""
+    boxes = []
+    for zone in zones:
+        pts = np.asarray(placement.to_unreal(np.asarray(zone['points'], 'f8')), 'f8')
+        axis = pts[-1, :2] - pts[0, :2]
+        yaw = math.atan2(axis[1], axis[0])
+        c, s = math.cos(yaw), math.sin(yaw)
+        local = np.stack([pts[:, 0] * c + pts[:, 1] * s, -pts[:, 0] * s + pts[:, 1] * c], 1)
+        lo, hi = local.min(0), local.max(0)
+        mid = (lo + hi) / 2
+        centre = [mid[0] * c - mid[1] * s, mid[0] * s + mid[1] * c, (pts[:, 2].min() + pts[:, 2].max()) / 2]
+        half = [(hi[0] - lo[0]) / 2 + ZONE_PAD, zone['half_width'] * 100 + ZONE_PAD,
+                (pts[:, 2].max() - pts[:, 2].min()) / 2 + 3 * ZONE_PAD]
+        boxes.append({'id': zone['id'], 'center_cm': [round(v, 1) for v in centre], 'half_extent_cm': [round(v, 1) for v in half],
+                      'yaw_deg': round(math.degrees(yaw), 3), 'vert_assist_max': zone['vert_assist_max']})
+    return boxes
+
+
 def write(out, source, geometry, placement, entry_mesh=export_mesh):
     """Every FBX, build.json and park.json under `out` from the arrays in `geometry` (generate.bundle's npz)."""
     out = Path(out); (out / 'fbx').mkdir(parents=True, exist_ok=True)
@@ -197,6 +221,8 @@ def write(out, source, geometry, placement, entry_mesh=export_mesh):
         park['source_sha256'] = provenance['source_sha256']
     if any(index.get('trees', {}).values()):
         park['trees'] = index['trees']           # the park's own planting (dressing.plant), Spawn's HISM path
+    if index.get('assist_zones_native'):
+        park['assist_zones'] = assist_boxes(index['assist_zones_native'], placement)
     if index.get('lines'):
         # one start per designed line (generate.line_spawns, CraterParkTower.cpp); the first is the hero line
         park['lines'] = index['lines']
