@@ -51,7 +51,13 @@ def tool_context(step, hasher, *, cache=None):
     """Fingerprint the native Python installation without granting portable cache eligibility."""
     from . import build, build_cache, build_inputs, engine
     if type(step.commands[0]) is not build.UnrealScript:
-        return build_cache.tool_context(step, hasher, cache=cache)
+        context = build_cache.tool_context(step, hasher, cache=cache)
+        if type(step.commands[0]) is build.Blender:
+            # A native host may have executed bytecode before the bootstrap. Unlike the
+            # portable source-cache identity, this observation context includes __pycache__.
+            context = {**context, 'audit_installation': [build_inputs.inventory(root, hasher=hasher, complete=True)
+                                                       for root in installation(step.commands[0])]}
+        return context
     command = step.commands[0]
     runtime, = installation(command)
     binary = engine.unreal_cmd().resolve()

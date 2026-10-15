@@ -4,6 +4,7 @@ The parent supplies a private inherited report pipe and approved, hashed install
 An audit covers Python-level action work, not the host's native I/O or native callbacks.
 """
 import json
+from importlib.machinery import BuiltinImporter, FrozenImporter
 import os
 from pathlib import Path
 import sys
@@ -31,6 +32,70 @@ def runtime_roots(approved):
     return sorted(map(str, roots))
 
 
+HOST_MODULES = {
+    'Blender': {'_bpy', 'bpy', 'bpy.app', 'bpy.app.handlers', 'bpy.app.timers',
+                'bpy.app.translations', 'bpy.app.icons', 'bpy.props', 'bpy.types'},
+    'UnrealScript': {'unreal'},
+}
+
+
+def check_preloaded(spec):
+    """@cc [owner:fontanierh,label:correctness] native-preload-provenance
+    Preloaded non-tool Python modules MUST be refused even when their source is a declared input:
+    a declaration cannot prove their already consumed bytes or cached values. Tool module origins,
+    namespace locations MUST belong to a completely fingerprinted installation. Cached bytecode
+    MUST belong to that installation or the fresh private bytecode directory. Originless modules
+    require genuine builtin/frozen loader provenance or an explicit native-host/runtime API;
+    arbitrary search paths grant no trust.
+    """
+    installation = [Path(p).resolve() for p in spec['installation']]
+    bytecode = Path(spec['scratch']).resolve() / 'bytecode'
+    bootstrap = Path(__file__).resolve()
+
+    def tool_path(value):
+        path = Path(value).resolve()
+        return any(path.is_relative_to(root) for root in installation)
+
+    for name, module in list(sys.modules.items()):
+        origin = getattr(module, '__file__', None)
+        info = getattr(module, '__spec__', None)
+        if name == '__main__' and origin and Path(origin).resolve() == bootstrap:
+            continue  # runpy replaces __main__ with the action's own freshly executed module.
+        for locations in (getattr(module, '__path__', None), getattr(info, 'submodule_search_locations', None)):
+            if locations is not None and not all(tool_path(p) for p in locations):
+                raise RuntimeError('Native audit refuses preloaded package paths outside its tool')
+        if origin:
+            if not tool_path(origin):
+                raise RuntimeError('Native audit refuses a preloaded non-tool Python module')
+            actual = getattr(info, 'origin', None)
+            if actual not in (None, 'built-in', 'frozen') and not tool_path(actual):
+                raise RuntimeError('Native audit refuses an inconsistent preloaded module origin')
+            cached = getattr(module, '__cached__', None)
+            if cached and not (tool_path(cached) or Path(cached).resolve().is_relative_to(bytecode)):
+                raise RuntimeError('Native audit refuses preloaded bytecode outside its tool or fresh scratch')
+            continue
+        if (getattr(info, 'loader', None) is BuiltinImporter and name in sys.builtin_module_names
+                and info.origin == 'built-in'):
+            continue
+        if (getattr(info, 'loader', None) is FrozenImporter and info.origin == 'frozen'
+                and FrozenImporter.find_spec(name) is not None):
+            continue
+        locations = getattr(info, 'submodule_search_locations', None)
+        if locations is not None and locations and all(tool_path(p) for p in locations):
+            continue
+        if name in HOST_MODULES[spec['host']] and module is not None:
+            continue
+        # CPython 3.11/3.12 exports these two class namespaces through sys.modules. They have
+        # no module spec; verify their exact binding and defining tool module, not a prefix.
+        if name in ('typing.io', 'typing.re'):
+            parent = sys.modules.get('typing')
+            parent_origin = getattr(parent, '__file__', None)
+            if (parent_origin and tool_path(parent_origin) and type(module).__module__ == 'typing'
+                    and getattr(parent, name.rsplit('.', 1)[1], None) is module):
+                continue
+        raise RuntimeError('Native audit refuses an unverifiable preloaded Python module')
+
+
 def main():
     """@cc [owner:fontanierh,label:correctness] fresh-native-audit-process
     A native host MUST observe at most one audited action. Its irreversible hook MUST remain armed
@@ -48,6 +113,7 @@ def main():
         raise ValueError('Unsupported native audit host')
     spec['runtime'] = runtime_roots(spec['installation'])
     spec['labels'].extend((p, 'runtime') for p in spec['runtime'])
+    check_preloaded(spec)
     worker = load('atelier_native_audit_worker', Path(__file__).with_name('build_audit_worker.py'))
     after = None
     if spec['host'] == 'UnrealScript' and spec['module_guard']:
@@ -56,7 +122,7 @@ def main():
         # Preserve descriptor isolation and the existing before/after native library checks.
         after = lambda: guard.check(spec['script'], left_out, guard.stop)
         after()
-    worker.execute(spec, blender=spec['host'] == 'Blender', after=after)
+    worker.execute(spec, blender=spec['host'] == 'Blender', before=lambda: check_preloaded(spec), after=after)
 
 
 if __name__ == '__main__':

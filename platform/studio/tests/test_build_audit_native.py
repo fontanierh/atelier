@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_audit, build_batches, build_cache, build_plan, build_products, engine
+from atelier import build, build_audit, build_batches, build_cache, build_inputs, build_plan, build_products, engine
 from atelier import build_audit_native
 
 
@@ -185,6 +185,107 @@ def test_host_with_runtime_outside_hashed_installation_cannot_complete(native_ac
     assert not (a.ctx.stamps / 'generate.json').exists()
 
 
+@pytest.mark.parametrize('kind', ['undeclared', 'declared-stale', 'originless', 'namespace',
+                                  'package-path', 'untrusted-bytecode'])
+def test_preloaded_non_tool_module_cannot_supply_unobserved_inputs(native_action, kind):
+    a = native_action
+    hidden = a.root / 'host-startup-secret.py'
+    hidden.write_text("VALUE = 'current source'\n")
+    if kind == 'declared-stale':
+        a.step.inputs.append(hidden)
+    preload = f'''import sys, types
+from importlib.machinery import ModuleSpec
+cached = types.ModuleType('preloaded_project_helper')
+cached.VALUE = 'stale value from before bootstrap'
+'''
+    if kind in ('undeclared', 'declared-stale'):
+        preload += f'cached.__file__ = {str(hidden)!r}\n'
+        if kind == 'undeclared':
+            preload += 'cached.VALUE = open(cached.__file__).read()\n'
+    elif kind == 'namespace':
+        preload += f'''cached.__spec__ = ModuleSpec(cached.__name__, None, is_package=True)
+cached.__spec__.submodule_search_locations = [{str(a.root)!r}]
+'''
+    elif kind in ('package-path', 'untrusted-bytecode'):
+        preload += f'cached.__file__ = {str(Path(sysconfig.get_path("stdlib")) / "os.py")!r}\n'
+        if kind == 'package-path':
+            preload += f'cached.__path__ = [{str(a.root)!r}]\n'
+        else:
+            preload += f'cached.__cached__ = {str(a.root / "stale.pyc")!r}\n'
+    preload += 'sys.modules[cached.__name__] = cached\n'
+    first, rest = a.executable.read_text().split('\n', 1)
+    a.executable.write_text(first + '\n' + preload + rest)
+    a.code("import importlib\nhelper = importlib.import_module('preloaded_project_helper')\n"
+           "output.write_text(helper.VALUE)")
+    assert a.run() == 1, a.messages
+    assert not a.report()['complete'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+    assert not a.output.exists()
+
+
+def test_preloaded_host_api_and_fingerprinted_runtime_remain_usable(native_action, monkeypatch):
+    a = native_action
+    runtime = a.root / 'managed-tool'
+    runtime.mkdir()
+    source = runtime / 'managed_helper.py'
+    source.write_text('first')
+    approved = build_audit.installation(a.step.commands[0])
+    monkeypatch.setattr(build_audit, 'installation', lambda command: [*approved, runtime])
+    monkeypatch.setattr(build_audit, 'tool_context', lambda step, hasher, **kwargs:
+                        {'managed': build_inputs.inventory(runtime, hasher=hasher, complete=True)})
+    host_module = 'bpy' if isinstance(a.step.commands[0], build.Blender) else 'unreal'
+    first, rest = a.executable.read_text().split('\n', 1)
+    a.executable.write_text(first + '\n' + f'''import sys, types
+managed = types.ModuleType('managed_helper')
+managed.__file__ = {str(source)!r}
+managed.VALUE = open(managed.__file__).read()
+sys.modules[managed.__name__] = managed
+native_api = types.ModuleType({host_module!r})
+native_api.VALUE = 'host API'
+sys.modules[native_api.__name__] = native_api
+''' + rest)
+    a.code(f"import importlib\nhelper = importlib.import_module('managed_helper')\n"
+           f"api = importlib.import_module({host_module!r})\noutput.write_text(helper.VALUE + '/' + api.VALUE)")
+    assert a.run() == 0, a.messages
+    assert a.output.read_text() == 'first/host API' and a.report()['passed']
+    before = a.stamp()['fingerprint']
+    source.write_text('second')
+    assert a.run() == 0, a.messages
+    assert a.output.read_text() == 'second/host API'
+    assert a.stamp()['fingerprint'] != before and len(a.calls) == 2
+
+
+def test_preload_gate_rechecks_modules_loaded_by_framework_initialization(native_action):
+    a = native_action
+    hidden = a.root / 'framework-startup-helper.py'
+    hidden.write_text('unobserved')
+    a.executable.write_text(f'''#!{sys.executable}
+import runpy, sys, types
+bootstrap = next((arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('-script=')), None)
+if bootstrap is None:
+    bootstrap = sys.argv[sys.argv.index('--python') + 1]
+namespace = runpy.run_path(bootstrap, run_name='fake_framework')
+sys.modules['__main__'].__file__ = bootstrap
+original = namespace['load']
+def load(name, path):
+    worker = original(name, path)
+    if name == 'atelier_native_audit_worker':
+        module = types.ModuleType('preloaded_late_helper')
+        module.__file__ = {str(hidden)!r}
+        module.VALUE = open(module.__file__).read()
+        sys.modules[module.__name__] = module
+    return worker
+namespace['main'].__globals__['load'] = load
+namespace['main']()
+''')
+    a.code("import importlib\nhelper = importlib.import_module('preloaded_late_helper')\n"
+           "output.write_text(helper.VALUE)")
+    assert a.run() == 1, a.messages
+    assert not a.report()['complete'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+    assert not a.output.exists()
+
+
 def test_native_action_cannot_return_with_live_python_threads(native_action):
     a = native_action
     a.code("import threading\nthreading.Thread(target=threading.Event().wait, daemon=True).start()\n"
@@ -227,6 +328,7 @@ bootstrap = next(arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('-sc
 assert '-script={build_audit.NATIVE}' in sys.argv
 assert Path(sys.argv[1]).exists()
 namespace = runpy.run_path(bootstrap, run_name='fake_framework')
+sys.modules['__main__'].__file__ = bootstrap
 original = namespace['load']
 def check(script, left_out, stop):
     assert left_out == ['excluded.dylib']
@@ -323,6 +425,23 @@ def test_unreal_audit_tool_identity_hashes_recognized_runtime_without_native_cac
     library.write_text('second')
     assert build_audit.tool_context(step, hasher, cache={}) != first
     assert first['host'] == 'UnrealScript'
+
+
+def test_blender_audit_identity_includes_preloaded_ambient_tool_bytecode(tmp_path, monkeypatch):
+    bundle = tmp_path / 'Host.app/Contents'
+    binary = bundle / 'MacOS/host'
+    binary.parent.mkdir(parents=True)
+    binary.write_text('host')
+    bytecode = bundle / 'Resources/python/__pycache__/runtime.pyc'
+    bytecode.parent.mkdir(parents=True)
+    bytecode.write_bytes(b'first')
+    monkeypatch.setattr(engine, 'blender', lambda: str(binary))
+    step = build.Step('native', [build.Blender(tmp_path / 'script.py', factory_startup=True)], audit=True)
+    hasher = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+    cache = {}
+    first = build_audit.tool_context(step, hasher, cache=cache)
+    bytecode.write_bytes(b'second')
+    assert build_audit.tool_context(step, hasher, cache=cache) != first
 
 
 def test_complete_report_without_pipe_closure_is_not_a_completed_read():

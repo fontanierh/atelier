@@ -213,11 +213,11 @@ class Observer:
         external.FileFinder.find_spec = find_spec
 
 
-def execute(spec, *, blender=False, after=None):
+def execute(spec, *, blender=False, before=None, after=None):
     """Execute once; the observer remains armed until this fresh process exits.
 
-    ``after`` is framework-only teardown, never a recipe callback. Native adapters use it for
-    the existing module-isolation check before publishing the terminal completion record.
+    ``before``/``after`` are framework-only checks, never recipe callbacks. Native adapters use
+    them to validate preload provenance after managed imports and retain module-isolation checks.
     """
     observer = Observer(spec)
     if 'host' in spec:
@@ -230,6 +230,8 @@ def execute(spec, *, blender=False, after=None):
     # Import runpy's helper before installing the observer; its subsequent target/module reads
     # still pass through the hook. The prefix was also set before interpreter startup.
     import pkgutil  # noqa: F401
+    if before is not None:
+        before()
     observer.send('start')
     observer.install()
     succeeded = False

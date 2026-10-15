@@ -324,6 +324,14 @@ they do not certify real-host behavior or native package portability. Tool runti
 recognized Python library directories within a fingerprinted host installation, never arbitrary `sys.path` entries.
 Native bootstrap helpers execute their fingerprinted source directly. Ambient runtime `__pycache__` bytes receive
 no runtime exemption, and action imports use a private bytecode prefix even if the host ignored startup flags.
+Before execution, the bootstrap refuses preloaded project/helper modules outside the fingerprinted installation,
+including declared sources: their loaded values may predate those source bytes or come from stale bytecode.
+Package and namespace search locations must also stay inside the tool. Installed module origins and preloaded
+bytecode must belong to the complete tool identity or fresh private bytecode directory; native Blender's audit
+identity therefore includes installed `__pycache__` bytes. Originless modules require builtin/frozen loader
+provenance or an explicit known host API name (`unreal` or the supported Blender API modules). Host API mutable
+native state remains outside Python input observation. CPython's synthetic `typing.io`/`typing.re` namespaces require
+their exact binding to the fingerprinted `typing` module. Preload rejection produces an incomplete report and no stamp.
 Unreal keeps its descriptor isolation and native library checks before/after the observed script. These framework
 checks run outside recipe observation; recipe ctypes calls remain refused.
 

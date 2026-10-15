@@ -148,6 +148,12 @@ host installation, never arbitrary import search paths. Blender uses factory sta
 descriptor isolation and before/after library checks. Offline fake-host tests cover the adapter protocol, not
 successful real-host imports.
 
+The bootstrap rejects preloaded project/helper Python modules even when their source is declared: an import from
+`sys.modules` cannot establish which bytes or earlier reads produced the cached values. Preloaded module origins,
+package paths and bytecode must belong to the fingerprinted tool (or fresh private bytecode scratch); only genuine
+builtin/frozen loaders and an explicit set of native host API modules may lack file origins. Native Blender audits
+include the complete installation bytecode inventory. Native host API state remains outside this Python diagnostic.
+
 Audited native actions always use fresh processes. A `Batch` declaration falls back to ordinary execution for each
 audited action, and direct audited warm-session launches are refused. Irreversible audit hooks and warm module or
 callback state are not silently reused. The observer remains armed after completion; any further observed Python
