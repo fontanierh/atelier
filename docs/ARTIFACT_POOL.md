@@ -34,6 +34,54 @@ it does not choose either result as valid. Fix nondeterminism or missing inputs 
 an entry does not change successful local stamps; use a deliberate `--force` on that action to generate new evidence.
 Corrupt action manifests must be explicitly forgotten before GC can safely determine blob reachability.
 
+## Import a signed offline bundle
+
+```sh
+uv run atelier cache import-bundle /path/to/bundle --trust publishers.json --dry-run
+uv run atelier cache import-bundle /path/to/bundle --trust publishers.json
+uv run atelier build <game> <step>
+```
+
+The importer verifies a supplied bundle, then publishes its portable source products into the existing local
+store. An ordinary build can restore an exact action-key match through its existing staging, complete-inventory
+verification and independent-copy protocol. Importing never writes checkout outputs or success stamps.
+`--dry-run` verifies the same signature, policy, inventories and bytes without changing the store.
+
+Obtain publisher public keys through a trusted channel. The explicit trust file contains only public keys:
+
+```json
+{"schema":1,"publishers":{"<sha256-of-raw-public-key>":"<base64-raw-32-byte-Ed25519-public-key>"}}
+```
+
+The bundle cannot nominate its own trust root. Do not add an unknown key merely because a download includes it.
+The directory contains `manifest.json` and flat `blobs/<sha256>` regular files; archives are not extracted.
+The manifest has exactly `payload` and a base64 Ed25519 `signature`. Signed bytes are
+`b'atelier-artifact-bundle-v1\0'` followed by canonical sorted, compact ASCII JSON of the payload.
+The payload declares schema `1`, namespace `atelier.portable-source.v1`, the publisher key ID, the unchanged
+local action `entry`, `root_names`, a `producer` attestation and a `redistribution` grant for every product.
+`root_names` maps each product to the ordered original basename of each root. These signed labels permit path
+policy checks that the local inventory's numeric root indexes alone cannot provide. They remain publisher assertions;
+the normal build restore also validates the receiving recipe's actual destination paths.
+
+Producer fields are `source_commit`, `clean`, `pushed`, `guarded` and `tool_context`. The three flags must be true.
+Each redistribution record explicitly names `permission` (`private` or `public`) and a bounded `grant` identifier.
+Missing permission refuses import; a private grant permits private local ingestion and never authorizes upload.
+A verified signature authenticates the pinned publisher's assertions. It does not independently prove the build
+was clean, pushed or guarded, that a licence is valid, or that arbitrary file contents contain no secrets.
+Trusted publishers remain responsible for those facts. No signing, export or trusted-producer issuance CLI is provided.
+
+Reads and reconstruction are bounded: manifests at most 2 MiB, trust files 64 KiB, 256 products, 32 roots per
+product, 4,096 inventory records and 256 MiB of logical file content per bundle. Links, special files, unsafe paths,
+declared native package paths and known credential/authentication/ledger paths are refused. Every blob is rehashed, and every
+complete product inventory is reconstructed before publication. Same-key conflicts retain the existing refusal
+policy. A failed publication may leave unreachable blobs; ordinary GC can remove them.
+
+The JSON receipt identifies the accepted action, publisher, assertions and permissions; retain it when auditing
+imports. Removing a public key from the trust file does not revoke bytes already accepted into the local store.
+Use the receipt's action key with `atelier cache forget` when revoking an import. This receiver does not download,
+upload, discover keys or enable automatic remote lookups. HTTP/object-store transport and trusted production are
+separate migration steps.
+
 ## Portable output pool
 
 `atelier pool` is the older explicit pool for independently generated Python outputs. The recipe

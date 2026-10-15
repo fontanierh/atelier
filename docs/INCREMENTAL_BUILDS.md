@@ -22,7 +22,9 @@ resolve into tracked product reads, including empty selections, additions, remov
 actions receive frozen matches through `atelier.build_context.query`; the offline sandbox proves narrow rebuilds
 and restoration. Runtime-discovered query volumes and generated spatial indexes remain proposed.
 [The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
-Unreal restoration, import transactions, native spatial migration and remote storage below still require implementation and native proof.
+Signed offline source bundles can now enter the existing local store after publisher/policy checks and complete
+byte verification. This is a receiver/transport boundary, not online lookup or a trusted producer implementation.
+Unreal restoration, import transactions, native spatial migration and online remote storage below still require implementation and native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 

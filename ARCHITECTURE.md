@@ -71,7 +71,9 @@ matched-product reads. The sandbox exercises these spatial dependencies without 
 [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
-documents automatic cache maintenance alongside the older explicit reuse commands.
+documents automatic cache maintenance, signed offline bundle ingestion and the older explicit reuse commands.
+Offline imports require pinned publisher keys, explicit redistribution grants and complete byte verification;
+online transport and trusted publisher issuance remain separate work.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands
 evaluate supplied snapshots and inspect retained guard histories; measured admission remains a separate migration.

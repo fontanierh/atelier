@@ -2,6 +2,7 @@
 import json
 from collections import Counter
 import math
+from pathlib import Path
 import shutil
 import time
 
@@ -110,13 +111,17 @@ def forget(store, key):
 
 
 def configure(sub):
-    parser = sub.add_parser('cache', help='inspect and prune portable products shared by local checkouts')
+    parser = sub.add_parser('cache', help='inspect, prune and import signed portable products')
     commands = parser.add_subparsers(dest='action', required=True)
     commands.add_parser('status')
     gc = commands.add_parser('gc')
     gc.add_argument('--max-gib', type=float, default=10, help='unique retained blob bytes (default: 10 GiB)')
     gc.add_argument('--max-age-days', type=float, default=30, help='keep unpinned hits/publications this recent')
     gc.add_argument('--dry-run', action='store_true')
+    bundle = commands.add_parser('import-bundle', help='verify a signed offline bundle and add it to the local store')
+    bundle.add_argument('directory', type=Path)
+    bundle.add_argument('--trust', type=Path, required=True, help='explicit allowlist of publisher public keys')
+    bundle.add_argument('--dry-run', action='store_true', help='verify without changing the local store')
     for name in ('pin', 'unpin', 'forget'):
         commands.add_parser(name).add_argument('key')
 
@@ -133,6 +138,9 @@ def main(args):
                                    dry=args.dry_run), indent=2))
         elif args.action == 'forget':
             forget(store, args.key)
+        elif args.action == 'import-bundle':
+            from .artifact_bundle import import_bundle
+            print(json.dumps(import_bundle(args.directory, args.trust, store=store, dry_run=args.dry_run), indent=2))
         else:
             pin(store, args.key, args.action == 'pin')
         return 0
