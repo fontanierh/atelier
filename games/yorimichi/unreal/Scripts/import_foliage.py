@@ -74,7 +74,11 @@ def main():
     verify_bounds(mesh, data['bounds'])
     report['collision'] = data['collision']
     report['simple_collisions'] = meshes.get_simple_collision_count(mesh)
-    assert report['simple_collisions'] == (1 if data['trunk_collision'] else 0), (name, 'collision hulls', report)
+    report['convex_collisions'] = meshes.get_convex_collision_count(mesh)
+    # UE counts boxes, spheres and capsules separately from authored UCX convex hulls.
+    assert report['simple_collisions'] == 0, (name, 'unexpected collision primitives', report)
+    assert report['convex_collisions'] == (1 if data['trunk_collision'] else 0), (name, 'collision hulls', report)
+    assert meshes.get_collision_complexity(mesh) == flag[data['collision']], (name, 'collision policy', report)
     if not editor.save_loaded_asset(mesh, False):
         raise RuntimeError('Could not save foliage package: ' + path)
     report_path = yori.OUT / 'imports/foliage' / (name + '.json')

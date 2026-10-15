@@ -48,6 +48,8 @@ just to reduce invalidation.
 The native owner resets stale LODs, collision, slots and CPU-access settings before applying its full recipe. It
 validates triangle counts, bounds, material order, screen sizes and trunk collision. Base FBXs no longer come from
 `world.props`; the world importer skips stale pre-split foliage FBXs and preserves only exact owned package paths.
+Collision validation counts convex UCX hulls separately from box, sphere and capsule primitives; Unreal's simple
+collision count excludes convex hulls. The final collision trace policy must also match the specification.
 Regional importers must not modify shared material instances. Private regional material namespaces are checked for
 collisions with the shared catalogue.
 
