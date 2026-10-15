@@ -3,6 +3,7 @@ import math
 import numpy as np
 from park_line_gaps import check_required_airs
 from park_line_vert import VertReturns
+from park_line_geometry import RouteProgress
 
 DEFAULTS = dict(huge_air_m=25., min_landing_slope_deg=5., max_landing_mismatch_deg=20.,
                 max_takeoff_angle_deg=80., max_ground_slope_deg=85., bump_loss_mps=2.,
@@ -50,7 +51,8 @@ def analyze(rows, world):
     p = np.array([r['position'] for r in rows]); v = np.array([r['velocity'] for r in rows])
     speed = np.linalg.norm(v, axis=1); states = [r['state'] for r in rows]
     times = np.array([r['time_s'] for r in rows])
-    progress, lateral = world.path.project(p)
+    tracker = RouteProgress(world.path,getattr(world,'spawn_m',world.spec.get('spawn_s_m')))
+    progress,lateral = np.asarray([tracker.update(q,s) for q,s in zip(p,speed)]).T
     ground = np.array([is_ground(s) for s in states])
     airborne = np.array(['Air' in s and not is_bail(s) for s in states])
     bail = [i for i, s in enumerate(states) if is_bail(s)]
@@ -206,6 +208,7 @@ def analyze(rows, world):
                 final=float(speed[-1])), path_progress_m=float(progress.max()), finish_s_m=finish,
                 max_lateral_error_m=float(lateral.max()), rideable_width_m=world.design_width,
                 max_corridor_excess_m=excess,
+                progress_method='Sequential 60 Hz local projection; window max(3 m, three velocity-derived frame distances).',
                 corridor_zones=getattr(world, 'corridor_zones', []),
                 diagnostic_lane_width_m=world.width, airs=airs, gap_checks=gap_checks, bump_candidates=losses,
                 speed_along_line=[dict(time_s=float(times[i]),path_s_m=float(progress[i]),

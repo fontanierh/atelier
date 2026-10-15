@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 from park_line_metrics import is_ground
+from park_line_geometry import RouteProgress
 
 
 class LineFollower:
@@ -12,8 +13,9 @@ class LineFollower:
     A failed tracking trial MUST NOT be represented as proof of a geometry defect.
     """
 
-    def __init__(self, path, config):
+    def __init__(self, path, config, *, start_m=None):
         self.path = path
+        self.progress = RouteProgress(path,start_m)
         self.settings = dict(lookahead_m=5., lookahead_seconds=.45, gain=4., max_stick=.85,
                              smoothing_seconds=.15, min_speed_mps=.5)
         unknown = set(config)-set(self.settings)-{'mode', 'zones'}
@@ -45,13 +47,16 @@ class LineFollower:
         self.active_frames = self.saturated_frames = 0
 
     def steering(self, row):
-        if row is None or not is_ground(row['state']):
+        if row is None:
             self.previous = 0.
             return 0
         position = np.asarray(row['position'], 'f8')
         velocity = np.asarray(row['velocity'], 'f8')[[0, 2]]
         speed = float(np.linalg.norm(velocity))
-        station = float(self.path.project(position[None])[0][0])
+        station,_ = self.progress.update(position,speed)
+        if not is_ground(row['state']):
+            self.previous = 0.
+            return 0
         settings = self.settings
         for zone in self.zones:
             if zone['start_s_m'] <= station < zone['end_s_m']:

@@ -27,14 +27,46 @@ class Path2D:
         t = np.clip((distance-self.s[i])/self.length[i], 0, 1)
         return self.points[i]+t[..., None]*self.delta[i], self.delta[i]/self.length[i, None]
 
-    def project(self, positions):
+    def project(self, positions, interval=None):
         q = np.asarray(positions)[..., [0, 2]]
-        offset = q[:, None]-self.points[None, :-1]
-        t = np.clip(np.sum(offset*self.delta, axis=2)/self.length**2, 0, 1)
-        nearest = self.points[None, :-1]+t[..., None]*self.delta
+        ids = np.arange(len(self.length))
+        if interval is not None:
+            lo,hi = interval
+            if not np.isfinite([lo,hi]).all() or not 0 <= lo <= hi <= self.s[-1]:
+                raise ValueError('projection interval must lie inside its path')
+            ids = ids[(self.s[:-1] <= hi) & (self.s[1:] >= lo)]
+        delta,length = self.delta[ids],self.length[ids]
+        offset = q[:, None]-self.points[None, ids]
+        low,high = (0.,1.) if interval is None else (
+            np.maximum(0.,(lo-self.s[ids])/length),np.minimum(1.,(hi-self.s[ids])/length))
+        t = np.clip(np.sum(offset*delta, axis=2)/length**2, low, high)
+        nearest = self.points[None, ids]+t[..., None]*delta
         d2 = np.sum((q[:, None]-nearest)**2, axis=2)
         i = d2.argmin(1); row = np.arange(len(q))
-        return self.s[i]+t[row, i]*self.length[i], np.sqrt(d2[row, i])
+        return self.s[ids[i]]+t[row, i]*length[i], np.sqrt(d2[row, i])
+
+
+class RouteProgress:
+    """@cc [owner:fontanierh,label:correctness] continuous-route-projection
+    Consecutive 60 Hz observations MUST use a local station window, so crossing
+    or stacked runs cannot teleport the follower or verdict to another leg.
+    The window MUST include at least three observed frame travel distances in
+    either direction, with a three-metre floor. It MUST NOT change simulation
+    poses, velocities, collision or acceptance thresholds. Leaving that local
+    route remains a measurable corridor failure, never a forced path correction.
+    """
+    def __init__(self,path,start=None):
+        self.path,self.station = path,start
+        if start is not None and (not np.isfinite(start) or not 0 <= start <= path.s[-1]):
+            raise ValueError('route start must lie inside the path')
+
+    def update(self,position,speed):
+        window = max(3.,3.*float(speed)/60.)
+        interval = None if self.station is None else (max(0.,self.station-window),
+                                                      min(self.path.s[-1],self.station+window))
+        s,lateral = self.path.project(np.asarray(position)[None],interval)
+        self.station = float(s[0])
+        return self.station,float(lateral[0])
 
 
 def section_knots(section):
@@ -186,4 +218,5 @@ class LineWorld:
                 raise ValueError('spawn is not over a riding surface')
             p[1] = support['height_m']+.05
         _, direction = self.path.at(s)
+        self.spawn_m = float(s)
         return p, float(np.arctan2(direction[0], direction[1])), direction

@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
-from park_line_geometry import LineWorld, Path2D
+from park_line_geometry import LineWorld, Path2D, RouteProgress
 from park_line_metrics import analyze
 from validate_park_lines import validate_speeds
 from park_line_controller import LineFollower
@@ -30,6 +30,26 @@ def test_path_projection_and_heading():
     assert np.allclose(s,[3,17]) and np.allclose(lateral,[2,2])
     p,d = path.at(12)
     assert np.allclose(p,[10,2]) and np.allclose(d,[0,1])
+
+
+def test_continuous_progress_keeps_the_return_leg_at_a_plan_crossing():
+    path=Path2D([[0,0],[0,20],[20,20],[20,0],[0,0],[0,-20]])
+    tracker=RouteProgress(path,0.)
+    progress=[]
+    for station in np.arange(0.,path.s[-1]+.25,.5):
+        p,_=path.at(station)
+        s,error=tracker.update([p[0],0.,p[1]],30.)
+        progress.append(s)
+        assert s==pytest.approx(station) and error<1e-8
+    assert progress[-1]==pytest.approx(100.)
+    assert path.project(np.array([[0.,0.,0.]]))[0][0]==0.
+
+
+def test_tracker_cannot_turn_a_shortcut_into_a_completed_route():
+    path=Path2D([[0,0],[0,20],[20,20],[20,0],[0,0],[0,-20]])
+    tracker=RouteProgress(path,0.)
+    station,error=tracker.update([0.,0.,-20.],20.)
+    assert station<3.1 and error>=20.
 
 
 def test_triangle_surface_tags(tmp_path):
@@ -279,11 +299,19 @@ def test_follower_vert_zone_changes_inputs_without_retaining_the_prior_higher_li
     follower=LineFollower(path,dict(smoothing_seconds=.001,zones=[dict(start_s_m=20,end_s_m=40,gain=.5,max_stick=.2)]))
     row=dict(state='PhysicsGround',position=[30,0,10],velocity=[0,0,20])
     high=abs(follower.steering(row))
-    limited=abs(follower.steering({**row,'position':[30,0,25]}))
-    restored=abs(follower.steering({**row,'position':[30,0,50]}))
+    for z in np.arange(10.5,25.1,.5):limited=abs(follower.steering({**row,'position':[30,0,float(z)]}))
+    for z in np.arange(25.5,50.1,.5):restored=abs(follower.steering({**row,'position':[30,0,float(z)]}))
     assert high>limited and limited<=round(.2*32767) and restored>limited
     assert follower.steering({**row,'position':[30,0,25],'state':'PhysicsAir'})==0
     assert follower.report()['zones'][0]['gain']==.5
+
+
+def test_follower_tracks_airborne_progress_while_keeping_inputs_neutral():
+    path=Path2D([[0,0],[0,100]])
+    follower=LineFollower(path,{},start_m=0.)
+    for z in np.arange(0.,40.,.5):
+        assert follower.steering(dict(state='PhysicsAir',position=[0.,5.,float(z)],velocity=[0.,0.,30.]))==0
+    assert follower.progress.station==pytest.approx(39.5)
 
 
 def test_follower_zones_reject_ambiguous_or_invalid_ranges():

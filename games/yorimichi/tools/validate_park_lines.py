@@ -10,7 +10,7 @@ import sys
 import time
 import numpy as np
 import check_skate_feel as feel
-from park_line_geometry import LineWorld
+from park_line_geometry import LineWorld, RouteProgress
 from park_line_metrics import analyze, is_ground, DEFAULTS
 from park_line_controller import LineFollower
 from park_line_gaps import validate_gap_specs
@@ -88,7 +88,8 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
     spawn, heading, direction = world.spawn()
     collision = dict(triangles=world.triangles.tolist(), rails=world.spec.get('rails', []),
                      spawn=spawn.tolist(), heading=heading)
-    follower = LineFollower(world.path, world.spec['follower']) if 'follower' in world.spec else None
+    follower = LineFollower(world.path, world.spec['follower'],start_m=world.spawn_m) if 'follower' in world.spec else None
+    progress = RouteProgress(world.path,world.spawn_m)
     if follower and any(c.get('left', [0, 0])[0] != 0 for c in world.spec.get('controls', [])):
         raise ValueError('Choose scripted steering or follower; do not combine left.x writers')
     feel.OUTPUT = output
@@ -124,7 +125,7 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
                 trace.write(json.dumps(compact, allow_nan=False)+'\n')
                 if 'Air' in row['state']:
                     last_air_frame = frame
-                path_s = world.path.project(np.array([compact['position']]))[0][0]
+                path_s,_ = progress.update(compact['position'],float(np.linalg.norm(compact['velocity'])))
                 if (world.spec.get('stop_at_finish', True) and path_s >= world.finish_m
                         and is_ground(row['state']) and frame-last_air_frame > recovery_frames):
                     print(f'{run_id}: finish reached at frame {frame+1}; landing recovery observed', flush=True)

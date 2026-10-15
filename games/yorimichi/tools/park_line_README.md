@@ -66,6 +66,12 @@ Spawn is inferred from `spawn_s_m` and collision, or supplied explicitly as `[x,
 the path; initial velocity is horizontal at the requested speed. Thus a low-speed spawn on a downhill start is
 not equivalent to having accelerated down an earlier part of the park: include the full approach in the layout.
 
+The follower, finish detection and final measurements track station continuously at 60 Hz. Each observation
+projects only within `max(3 m, 3 * speed / 60)` of the preceding station, seeded from the declared spawn where
+available. This prevents a plan crossing or stacked run from snapping progress onto a different leg. Airborne
+frames update progress while keeping steering neutral. A shortcut outside that local route remains a corridor
+failure; tracking does not correct the rider's pose or change collision.
+
 With no controls, the rider coasts. This is appropriate for straight feature diagnostics. Curved or pump-assisted
 routes require authored controller inputs; the tool does not claim that an unsteered coast follows a curve.
 Optional `controls` entries specify `start_frame`, `end_frame` (exclusive), `buttons`, `left` and `right`; sticks
