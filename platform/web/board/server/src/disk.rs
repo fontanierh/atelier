@@ -96,6 +96,18 @@ pub fn measure(root: &Path, skip: &HashSet<PathBuf>, seen: &mut HashSet<(u64, u6
     total
 }
 
+/// Whether `path` is a real folder reached without a symlink: below `home`, every folder from `home` down to it;
+/// elsewhere (the engine, the temporary folder), the folder itself. A symlink could lead into a folder macOS guards.
+pub fn real_folder(home: &Path, path: &Path) -> bool {
+    let is_folder = |at: &Path| fs::symlink_metadata(at).is_ok_and(|found| found.is_dir());
+    let Ok(below) = path.strip_prefix(home) else { return is_folder(path) };
+    let mut at = home.to_path_buf();
+    below.components().all(|part| {
+        at.push(part);
+        is_folder(&at)
+    })
+}
+
 /// One place the breakdown measures.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Place {
@@ -121,8 +133,7 @@ impl Plan {
         let mut places = Vec::new();
         for parent in [&dev, &atelier] {
             pause();
-            // A symlinked folder is never listed: it could lead into a folder macOS guards.
-            if !fs::symlink_metadata(parent).is_ok_and(|found| found.is_dir()) {
+            if !real_folder(home, parent) {
                 continue;
             }
             let Ok(entries) = fs::read_dir(parent) else { continue };
@@ -145,9 +156,12 @@ impl Plan {
         }
         // Every place is measured once: a walk never enters another place.
         skip.extend(places.iter().map(|place| place.path.clone()));
+        // A place is measured only if it is reached without a symlink and is not one; a file in ~/dev still counts.
         places.retain(|place| {
             pause();
-            fs::symlink_metadata(&place.path).is_ok()
+            fs::symlink_metadata(&place.path)
+                .is_ok_and(|found| !found.is_symlink() && (!found.is_dir() || real_folder(home, &place.path)))
+                && place.path.parent().is_some_and(|parent| real_folder(home, parent))
         });
         Plan { places, skip }
     }
@@ -593,13 +607,18 @@ mod tests {
     }
 
     #[test]
-    fn a_symlinked_dev_folder_is_never_listed() {
+    fn nothing_reached_through_a_symlink_is_listed_or_measured() {
         let temp = Temp::new("linked");
         let (home, engine) = (temp.0.join("home"), temp.0.join("Epic Games"));
         write(&home.join("Documents/private/x"), 4096);
+        write(&home.join("Documents/atelier/products/x"), 4096);
+        write(&home.join("Library/Caches/app/x"), 4096);
         std::os::unix::fs::symlink(home.join("Documents"), home.join("dev")).unwrap();
+        std::os::unix::fs::symlink(home.join("Documents"), home.join(".cache")).unwrap();
         let plan = Plan::new(&home, &engine, None, &mut || {});
-        assert!(plan.places.iter().all(|place| !place.path.starts_with(home.join("dev"))), "{:?}", plan.places);
+        let shown: Vec<String> = plan.places.iter().map(|p| shown_path(&p.path, &home)).collect();
+        assert_eq!(shown, ["~/Library/Caches", "~/Library"]);
+        assert!(real_folder(&home, &home.join("Library/Caches")) && !real_folder(&home, &home.join(".cache/atelier")));
     }
 
     #[test]

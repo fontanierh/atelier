@@ -339,7 +339,8 @@ conversation's place, as in Slack's sidebar (choosing an agent or Everyone bring
   newest log entries first.
 - **Disk** (on the Render floor): free and total space on the home folder's volume, read with one `statfs` on every
   update, and what takes the space. The breakdown measures allocated size (readdir and lstat; never following symlinks
-  or leaving the volume, a hard-linked file counted once, unreadable folders left out) of each entry in `~/dev` and
+  or leaving the volume, never listing or measuring a place reached through a symlink, a hard-linked file counted
+  once, unreadable folders left out) of each entry in `~/dev` and
   `~/.cache/atelier`, then the rest of `~/.cache`, `~/Library/Caches`, the rest of `~/Library`,
   `/Users/Shared/Epic Games` and the temporary folder. The twelve largest are listed, then **Other**: the used space
   they leave unexplained, shown once a scan has completed. Folders macOS guards for privacy (Desktop, Documents,
