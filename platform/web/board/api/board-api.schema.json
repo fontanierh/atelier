@@ -177,6 +177,9 @@
         "resources": {
           "$ref": "#/$defs/Resources"
         },
+        "disk": {
+          "$ref": "#/$defs/Disk"
+        },
         "csrf": {
           "description": "Send it back as `X-Board-CSRF` on every POST.",
           "type": "string"
@@ -199,6 +202,7 @@
         "holders",
         "sessions",
         "resources",
+        "disk",
         "csrf",
         "sender"
       ]
@@ -680,6 +684,85 @@
       },
       "required": [
         "fresh"
+      ]
+    },
+    "Disk": {
+      "description": "The home folder's volume and what takes its space.",
+      "type": "object",
+      "properties": {
+        "free_bytes": {
+          "description": "Bytes the user can still write on the volume, read on every request (none if it cannot be read).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "total_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "measured_at": {
+          "description": "When the breakdown was last measured, in Unix seconds; none before the first scan finishes. A background scan\nrefreshes it when it is shown, at most once every five minutes.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "scan_seconds": {
+          "description": "How long that scan took, in seconds.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "scanning": {
+          "description": "A scan is running now.",
+          "type": "boolean"
+        },
+        "items": {
+          "description": "The largest places by allocated size, biggest first, then `Other` (the used space they leave unexplained,\nleft out when not positive: an APFS clone counts in full in every place, so places can add up to more).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DiskItem"
+          }
+        }
+      },
+      "required": [
+        "scanning",
+        "items"
+      ]
+    },
+    "DiskItem": {
+      "description": "One place on the disk and its allocated size.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "path": {
+          "description": "Where it is, `~/…` inside the home folder; none for `Other`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "label",
+        "bytes"
       ]
     },
     "Threads": {

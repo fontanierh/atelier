@@ -159,6 +159,33 @@ pub struct Resources {
     pub available_gib: Option<f64>,
 }
 
+/// One place on the disk and its allocated size.
+#[derive(Serialize, JsonSchema, Clone, Debug, PartialEq)]
+pub struct DiskItem {
+    pub label: String,
+    /// Where it is, `~/…` inside the home folder; none for `Other`.
+    pub path: Option<String>,
+    pub bytes: u64,
+}
+
+/// The home folder's volume and what takes its space.
+#[derive(Serialize, JsonSchema, Clone, Debug)]
+pub struct Disk {
+    /// Bytes the user can still write on the volume, read on every request (none if it cannot be read).
+    pub free_bytes: Option<u64>,
+    pub total_bytes: Option<u64>,
+    /// When the breakdown was last measured, in Unix seconds; none before the first scan finishes. A background scan
+    /// refreshes it when it is shown, at most once every five minutes.
+    pub measured_at: Option<f64>,
+    /// How long that scan took, in seconds.
+    pub scan_seconds: Option<f64>,
+    /// A scan is running now.
+    pub scanning: bool,
+    /// The largest places by allocated size, biggest first, then `Other` (the used space they leave unexplained,
+    /// left out when not positive: an APFS clone counts in full in every place, so places can add up to more).
+    pub items: Vec<DiskItem>,
+}
+
 /// The Threads and Activity tabs' unread badges.
 #[derive(Serialize, JsonSchema, Clone, Debug)]
 pub struct InboxSummary {
@@ -184,6 +211,7 @@ pub struct State {
     pub holders: Holders,
     pub sessions: Vec<Session>,
     pub resources: Resources,
+    pub disk: Disk,
     /// Send it back as `X-Board-CSRF` on every POST.
     pub csrf: String,
     /// The name the board posts as.

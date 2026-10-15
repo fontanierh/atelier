@@ -395,6 +395,45 @@ function Schedule({state}: {state: State}) {
 
 const text = (value: unknown) => (typeof value === 'string' ? value : value == null ? '' : String(value));
 
+const gib = (bytes: number) => `${(bytes / 1073741824).toFixed(1)} GiB`;
+const duration = (seconds: number) => (seconds < 60 ? `${Math.max(1, Math.round(seconds))} s` : `${Math.round(seconds / 60)} min`);
+
+/** The home folder's volume and what takes its space. The server measures the breakdown in the background, at most
+ *  once every five minutes, so it can be a few minutes old (or missing until the first scan ends). */
+export function DiskCard({disk, now}: {disk: State['disk']; now: number}) {
+  const {free_bytes: free, total_bytes: total} = disk;
+  const used = free != null && total ? (total - free) / total : null;
+  const biggest = Math.max(1, ...disk.items.map((item) => item.bytes));
+  const measured = disk.measured_at == null ? (disk.scanning ? 'Not measured yet · scanning…' : 'Not measured yet')
+    : `Measured ${since(disk.measured_at, now)}${disk.scan_seconds != null ? ` in ${duration(disk.scan_seconds)}` : ''}${disk.scanning ? ' · scanning…' : ''}`;
+  return (
+    <section className="card disk-card" aria-labelledby="diskHeading" style={{'--i': 1} as React.CSSProperties}>
+      <h2 className="eyebrow" id="diskHeading">Disk</h2>
+      <p className="disk-volume" id="diskVolume">{free != null && total
+        ? <><strong>{gib(free)}</strong> free of {gib(total)}</> : 'Free space unknown'}</p>
+      {used != null && (
+        <div className={`disk-meter${1 - used < .05 ? ' low' : 1 - used < .1 ? ' tight' : ''}`} role="meter" aria-label="Used space"
+             aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(used * 100)}>
+          <span style={{width: `${(used * 100).toFixed(1)}%`}} />
+        </div>
+      )}
+      <p className="disk-status" id="diskStatus">{measured}</p>
+      {disk.items.length > 0 && (
+        <ul className="disk-items" id="diskItems" aria-label="What takes the space">
+          {disk.items.map((item) => (
+            <li key={`${item.label}\n${item.path ?? ''}`} className="disk-item">
+              <span className="disk-label">{item.label}</span><span className="disk-size">{gib(item.bytes)}</span>
+              <span className="disk-path">{item.path ?? 'Smaller places and everything not measured'}</span>
+              <span className="disk-share" aria-hidden="true"><span style={{width: `${(item.bytes / biggest * 100).toFixed(1)}%`}} /></span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {disk.items.length > 0 && <p className="disk-note" id="diskNote">Allocated sizes. An APFS clone counts in full in each place, so places can add up to more than the used space.</p>}
+    </section>
+  );
+}
+
 export function RenderPane() {
   const state = useStore(board, (b) => b.state);
   const jobs = state ? Object.entries(state.holders).filter(([, h]) => h) as [string, NonNullable<State['holders']['big']>][] : [];
@@ -422,6 +461,7 @@ export function RenderPane() {
             <span>{r.fresh && r.available_gib != null ? `${r.available_gib.toFixed(1)} GiB free` : 'Memory · no telemetry'}</span>
           </>}</div>
         </section>
+        {state && <DiskCard disk={state.disk} now={state.time} />}
         <section className="stack" aria-labelledby="scheduleHeading">
           <h2 className="eyebrow" id="scheduleHeading" style={{'--i': 1} as React.CSSProperties}>Schedule</h2>
           {state && <Schedule state={state} />}

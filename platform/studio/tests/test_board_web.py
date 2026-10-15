@@ -603,6 +603,13 @@ def test_board_village_is_served_beside_the_classic_board(http_server):
     assert "'wasm-unsafe-eval'" in headers['Content-Security-Policy']
 
 
+def test_render_floor_reports_the_home_volume_without_waiting_for_a_scan(http_server):
+    disk = snapshot(http_server, limit=1)['disk']
+    assert 0 < disk['free_bytes'] <= disk['total_bytes']
+    # With the breakdown off, it is never measured and never scanning; the page says it is not measured yet.
+    assert (disk['measured_at'], disk['scan_seconds'], disk['scanning'], disk['items']) == (None, None, False, [])
+
+
 def test_board_village_records_phone_timings(http_server, cache):
     report = {'kind': 'cold', 'total_ms': 2400, 'compile_ms': 700, 'standalone': True}
     assert request(http_server, '/api/world/timing', report)[0] == 200

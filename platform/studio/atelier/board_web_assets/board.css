@@ -353,6 +353,22 @@ h1, h2, p { margin: 0; }
 .resources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .resources span { font-size: 13px; color: var(--ink-2); background: rgb(var(--tint) / .039); border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px; font-variant-numeric: tabular-nums; }
 .quiet { color: var(--muted); font-size: 15px; }
+/* Disk: free space on the home volume, then what takes it, each with a bar against the largest place. */
+.disk-volume { font-size: 15px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.disk-volume strong { font: 650 19px/1.2 var(--display); color: var(--ink); }
+.disk-meter { height: 8px; margin: 10px 0 4px; border-radius: 4px; background: rgb(var(--tint) / .071); overflow: hidden; }
+.disk-meter > span { display: block; height: 100%; border-radius: inherit; background: var(--live); }
+.disk-meter.tight > span { background: var(--warn); }
+.disk-meter.low > span { background: var(--error); }
+.disk-items { list-style: none; margin: 10px 0 0; padding: 0; }
+.disk-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 0; border-top: 1px solid var(--line); min-width: 0; }
+.disk-label { font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disk-size { font-size: 13.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.disk-path { grid-column: 1 / -1; font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.disk-share { grid-column: 1 / -1; height: 4px; margin-top: 3px; border-radius: 2px; background: rgb(var(--tint) / .055); overflow: hidden; }
+.disk-share > span { display: block; height: 100%; border-radius: inherit; background: rgb(var(--tint) / .32); }
+.disk-status { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.disk-note { margin-top: 10px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
 .schedule-card { padding: 0; overflow: hidden; }
 .schedule-card summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 15px 16px; font: 650 17px/1.2 var(--display); cursor: pointer; }
 .schedule-card summary::-webkit-details-marker { display: none; }
