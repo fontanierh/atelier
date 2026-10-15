@@ -168,7 +168,7 @@ def main(argv=None):
     parser.add_argument('--out', default=str(yori.OUT / 'craterpark' / 'v2'))
     args = parser.parse_args(argv)
     from craterpark import placement
-    from craterpark.v2 import ao, editor_supports, export, spawns
+    from craterpark.v2 import ao, editor_coping, editor_supports, export, spawns
     start = time.monotonic()
     park_path = Path(args.park).expanduser().resolve()
     out = Path(args.out)
@@ -201,6 +201,10 @@ def main(argv=None):
         print(f"CRATERPARK EDITOR supports: {support_summary['towers']} basalt towers "
               f"({support_summary['columns']} columns), {support_summary['bents']} timber bents", flush=True)
         parts += supports
+        caps = {p['id']: (p.get('params') or {}).get('vert_assist_max') for p in chosen['pieces']}
+        copings, rails, coping_summary = editor_coping.build(scene.pieces, caps)
+        print(f"CRATERPARK EDITOR coping: {coping_summary['rails']} grind rails, {coping_summary['metres']} m", flush=True)
+        parts += copings
     mesh = dsl.Mesh.concat(parts)
     # the riding line: its pieces in order from the roll-in, the centre line, the start on the roll-in's top
     by = {p.metadata['id']: p for p in scene.pieces}
@@ -218,7 +222,7 @@ def main(argv=None):
         spawn = ((st['x'], st['y'], st['z']), float(st['h']))
         ride_lines.append(dsl.RideLine(line, order, path, spawn, path[-1]))
         labels[line] = name
-    park = dsl.Park(mesh, [], ride_lines, [dict(kind='editor_playtest', rev=doc.get('rev'), lines=lines)])
+    park = dsl.Park(mesh, rails, ride_lines, [dict(kind='editor_playtest', rev=doc.get('rev'), lines=lines)])
     generate.declare_scenery(park)
     entries = spawns.entries(park.mesh, park.lines, placement, deck_y=None, labels=labels)
     print('CRATERPARK EDITOR baking occlusion', flush=True)
@@ -230,7 +234,7 @@ def main(argv=None):
                                                  'pieces_sha256': scene.metadata['pieces_sha256']},
                  ground_grid=dict(grid, reach=GROUND_REACH, fade=GROUND_FADE),
                  accepted=False, validation={'ran': False, 'reason': 'editor playtest: generated supports, not v4-validated'},
-                 supports={k: v for k, v in support_summary.items() if k != 'pieces'},
+                 supports={k: v for k, v in support_summary.items() if k != 'pieces'}, coping=coping_summary,
                  bounds_native=[park.mesh.V.min(0).tolist(), park.mesh.V.max(0).tolist()])
     index['assist_zones_native'] = assist_zones(scene.pieces, doc)
     arrays['index'] = np.asarray(json.dumps(index))
