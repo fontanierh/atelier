@@ -20,6 +20,8 @@ import tempfile
 from . import build_products, paths
 
 SCHEMA = 1
+TOOL_SUPPORT = ('build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py',
+                'build_hashes.py', 'paths.py', 'build_deferred.py', 'safety/process.py', 'safety/exec_gate.py')
 DIGEST = re.compile(r'[0-9a-f]{64}')
 NATIVE_SUFFIXES = {'.uasset', '.umap', '.uexp', '.ubulk', '.dylib', '.dll', '.so'}
 
@@ -93,8 +95,13 @@ def roots(ctx, step):
 
 
 def tool_context(step, hasher, *, cache=None):
-    """Installed tool identity, never a process launch. Tools must stay fixed during an invocation.
+    """@cc [owner:fontanierh,label:correctness] source-tool-execution-closure
+    Source keys MUST cover the executed source adapter and identity support, not unrelated
+    orchestration. Python MUST include the managed lock and installed packages. Blender-only
+    actions MAY omit that parent environment only while fingerprinting the complete bundled
+    runtime. Audit/bootstrap code MUST remain covered by the action's required inputs.
 
+    Installed tool identity, never a process launch. Tools must stay fixed during an invocation.
     Enumerate packages/app resources once per invocation. Binary changes invalidate that memo;
     a new invocation rediscovers all resources, using the persistent file-hash hints individually.
     """
@@ -103,11 +110,10 @@ def tool_context(step, hasher, *, cache=None):
     if kinds - {build.Python, build.Blender}:
         raise ValueError('Only Python/Blender source products have a portable tool context')
     context = {'schema': SCHEMA, 'system': platform.system(), 'machine': platform.machine(),
-               'lock': hasher(paths.REPO / 'uv.lock'),
-               'support': {name: hasher(Path(__file__).with_name(name)) for name in
-                           ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py', 'build_deferred.py')}}
+               'support': {name: hasher(Path(__file__).parent / name) for name in TOOL_SUPPORT}}
     cache = {} if cache is None else cache
     if build.Python in kinds:
+        context['lock'] = hasher(paths.REPO / 'uv.lock')
         if os.environ.get('ATELIER_PYTHON') or os.environ.get('PYTHONPATH') or os.environ.get('PYTHONHOME'):
             raise ValueError('Portable Python actions require the managed interpreter without path overrides')
         binary = Path(sys.executable).resolve()

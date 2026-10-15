@@ -29,9 +29,10 @@ DOMAIN = bundle.DOMAIN_V2
 MAX_SOURCE_BYTES = 256 * 1024 * 1024
 MAX_GIT_OUTPUT = 1024 * 1024
 REF = re.compile(r'refs/heads/[A-Za-z0-9][A-Za-z0-9_./-]{0,200}\Z')
-# Keep aligned with build_cache.tool_context: these host files affect the managed action key.
-TOOL_SUPPORT = tuple(Path(build_cache.__file__).with_name(name) for name in
-                     ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py', 'build_deferred.py'))
+# Pin the executed adapter and cache support, plus the publisher's host build/certification
+# engine. The latter is a trust check, not an input to the source action's execution key.
+TOOL_SUPPORT = tuple(Path(build_cache.__file__).parent / name for name in
+                     ('build.py', *build_cache.TOOL_SUPPORT))
 
 
 class PublisherError(ValueError):

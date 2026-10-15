@@ -122,6 +122,17 @@ An unresolved conflict removes the action's shared-cache eligibility.
 
 ## Dependency discovery and ownership
 
+Python and Blender actions execute through `atelier.build_source`, which owns their command classes, argv,
+environment, audit preparation and execution. Their tool keys hash this adapter, identity support and final
+process/exec bootstrap instead of the build engine's scheduling, progress and cook orchestration. Audit workers
+and native bootstrap code remain required inputs. Trusted artifact publication additionally pins the host build
+engine as a certification check, independently of the source action key. Python keeps its managed lock and all
+installed package identities; Blender-only actions use their complete bundled runtime instead of the parent's
+`uv.lock`. This boundary causes one genuine source-key migration; unchanged product bytes still stop downstream
+read-edge rebuilds. Existing stamps are never promoted or rewritten to skip that migration.
+Source actions use the framework environment and declared command overrides. Replacing `Context.env` is not a
+supported source-action extension point; native callers keep their existing context environment interface.
+
 Each action declares the files and products it reads and the exact outputs it owns. One final Unreal package has
 one owner. Base mesh import, authored LODs, collision, material assignment and CPU-access flags are phases of that
 owner's recipe, or inputs to its final assembly. Independent steps must not quietly overwrite the same package.

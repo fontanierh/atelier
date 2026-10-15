@@ -20,7 +20,8 @@ from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from . import engine, paths
-from . import build_inputs, build_products
+from . import build_inputs, build_products, build_source
+from .build_source import Python, Blender
 from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
@@ -33,35 +34,6 @@ SKIP_SUFFIXES = build_inputs.SKIP_SUFFIXES
 
 
 # ---------------------------------------------------------------- commands
-@dataclass
-class Python:
-    """A plain Python script, run with this interpreter (or $ATELIER_PYTHON)."""
-    script: Path
-    args: tuple = ()
-
-    def argv(self, ctx):
-        return [os.environ.get('ATELIER_PYTHON') or sys.executable, str(self.script), *map(str, self.args)]
-
-
-@dataclass
-class Blender:
-    """A script run by headless Blender; everything after `args` reaches the script after `--`."""
-    script: Path
-    args: tuple = ()
-    threads: int = 6
-    factory_startup: bool = False
-    env: tuple = ()
-
-    def __repr__(self):
-        shown = [f for f in fields(self) if f.name not in ('factory_startup', 'env') or getattr(self, f.name)]
-        return f'Blender({", ".join(f"{f.name}={getattr(self, f.name)!r}" for f in shown)})'
-
-    def argv(self, ctx):
-        extra = ['--', *map(str, self.args)] if self.args else []
-        return [ctx.blender, *(['--factory-startup'] if self.factory_startup else []), '-b', '--threads', str(self.threads), '--python-exit-code', '1',
-                '--python', str(self.script), *extra]
-
-
 GUARD = Path(__file__).with_name('unreal_script_guard.py')
 # What decides an isolated script's editor (the descriptor, the closure) and checks it: inputs of every step it runs in
 ISOLATION = (GUARD, Path(__file__).with_name('unreal_modules.py'))
@@ -242,10 +214,8 @@ class Context:
             self.uproject = None
 
     def env(self, extra=()):
-        env = dict(os.environ)
-        env['ATELIER_BUILD_ROOT'] = str(paths.build_root())
-        env.update(dict(extra))
-        return env
+        """Compatibility environment for native callers; source actions use the keyed adapter directly."""
+        return build_source.environment(extra)
 
 
 def load_recipe(game):
@@ -475,6 +445,10 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
     if isinstance(command, Call):
         return command.fn(ctx, log)
+    if isinstance(command, (Python, Blender)):
+        source_request = request or (slot_request(ctx, step) if step.heavy else None)
+        return build_source.run(ctx, step, command, log, source_request, slots,
+                                products=products, audit_receipt=audit_receipt)
     if step.audit:
         from . import build_audit
         with build_audit.prepared(ctx, step, products, receipt=audit_receipt) as (argv, env, descriptors):
@@ -486,6 +460,9 @@ def run_command(ctx, step, command, log, request=None, slots=None, *, products=N
 
 
 def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=()):
+    if isinstance(command, (Python, Blender)):
+        source_request = request or (slot_request(ctx, step) if step.heavy else None)
+        return build_source.run_argv(ctx, step, command, argv, env, log, source_request, slots, pass_fds=pass_fds)
     if isinstance(command, UnrealPackage) and command.cook_mode is not CookMode.DEFAULT and not step.heavy:
         raise ValueError('Experimental cooking requires the normal heavy compile guard lifecycle')
     env = ctx.env(env)
