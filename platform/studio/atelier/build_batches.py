@@ -107,8 +107,9 @@ def expected_growth(ctx, step):
 
 
 class Session:
-    def __init__(self, ctx, candidates, done, index, tool_cache, echo):
+    def __init__(self, ctx, candidates, done, index, tool_cache, echo, products):
         self.ctx, self.candidates, self.done = ctx, candidates, done
+        self.products = products
         self.index, self.tool_cache, self.echo = index, tool_cache, echo
         self.nonce = uuid.uuid4().hex
         self.folder = ctx.out / '.state/batches' / self.nonce
@@ -193,6 +194,7 @@ class Session:
                         {'nonce': self.nonce, 'decision': 'yield' if reason else 'continue', 'reason': reason})
 
     def certify(self, step, key, inputs, receipt, log):
+        build_products.verify_reads(step, self.products, self.done)
         if (not build.outputs_present(step) or build.missing_product_inputs(step) or
                 build.fingerprint(step, self.done, index=self.index, tool_cache=self.tool_cache) != key):
             raise RuntimeError(f'{step.name}: inputs changed or required outputs missing during batch')
@@ -236,6 +238,7 @@ class Session:
             if record is None:
                 continue
             try:
+                build_products.verify_reads(step, self.products, self.done)
                 valid = (not build.missing_product_inputs(step) and build.outputs_present(step)
                          and build.fingerprint(step, self.done, index=self.index, tool_cache=self.tool_cache) == key
                          and build_products.valid_records(step, record['products']))
@@ -250,8 +253,8 @@ class Session:
                 self.error = f'{step.name}: inputs/products changed during the batch; result not certified'
 
 
-def run(ctx, candidates, done, *, index, tool_cache, echo, wanted=()):
-    session = Session(ctx, candidates, done, index, tool_cache, echo)
+def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
+    session = Session(ctx, candidates, done, index, tool_cache, echo, products)
     first = candidates[0][0]
     session.write_plan()
     command = replace(first.commands[0], script=WORKER,

@@ -137,6 +137,17 @@ def feed_results(done: dict, products: dict) -> None:
             done[f'product:{name}'] = digest
 
 
+def verify_reads(step, products, done):
+    """@cc [owner:fontanierh,label:correctness] fresh-consumed-product-certificates
+    A consumer MUST NOT be certified against stale scheduled digests. Its consumed products
+    MUST still match fresh complete byte inventories after execution and before retaining a
+    completed batch result. Reference edges MUST NOT become content reads.
+    """
+    for name in step.reads:
+        if identity(inventory(products[name])) != done.get('product:' + name):
+            raise ValueError(f'{step.name}: consumed product changed: {name}')
+
+
 class Catalogue:
     """@cc [owner:fontanierh,label:correctness] fresh-catalogue-ownership
     Every product and legacy output root MUST participate in ownership validation, even when no

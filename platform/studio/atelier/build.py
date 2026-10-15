@@ -501,6 +501,51 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
 
 
 def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None):
+    checkpoint = {}
+    try:
+        code = _execute_build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                              steps=steps, produced=produced, checkpoint=checkpoint)
+    finally:
+        # Failure and yield paths must also discard earlier certificates with changed reads.
+        invalid = _discard_changed_certificates(ctx, checkpoint, index=index)
+    if invalid:
+        echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
+        return 1
+    return code
+
+
+def _discard_changed_certificates(ctx, checkpoint, *, index):
+    """@cc [owner:fontanierh,label:correctness] completed-product-checkpoint
+    Every build exit MUST discard selected completed/current certificates whose owned products
+    or consumed products changed, including legacy-output consumers and failed/yielded builds.
+    Producer inventories MUST be fresh for this checkpoint; reference bytes MUST NOT invalidate
+    a consumer. Reuse each observed producer inventory only within this checkpoint.
+    """
+    from .build_plan import read_stamp
+    done, plan = checkpoint.get('done', {}), checkpoint.get('plan', ())
+    observed, fresh = {}, {}
+    for step in plan:
+        if step.name not in done:
+            continue
+        try:
+            observed[step.name] = build_products.records(step, hasher=index.digest)
+        except (OSError, ValueError):
+            observed[step.name] = None
+        build_products.feed_results(fresh, observed[step.name])
+    invalid = []
+    for step in plan:
+        if step.name not in done:
+            continue
+        stamp = ctx.stamps / (step.name + '.json')
+        outputs_changed = step.products and observed[step.name] != read_stamp(stamp).get('products', {})
+        reads_changed = any(fresh.get('product:' + name) != done.get('product:' + name) for name in step.reads)
+        if outputs_changed or reads_changed:
+            stamp.unlink(missing_ok=True)
+            invalid.append(step.name)
+    return invalid
+
+
+def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, checkpoint):
     # A trusted producer can supply the exact singleton declarations it already vetted, avoiding
     # a second recipe import that could choose a different action or introduce native prerequisites.
     from . import build_batches, build_cache
@@ -536,6 +581,7 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None)
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     done, ran, restored = {}, 0, 0
+    checkpoint.update(plan=plan, done=done)
     tool_cache = {}
     def verify_spatial(step, expected):
         if step.queries:
@@ -603,7 +649,7 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None)
             return 1
         if batch:
             completed, code = build_batches.run(ctx, batch, done, index=index, tool_cache=tool_cache,
-                                                echo=echo, wanted=wanted)
+                                                echo=echo, products=declared_products, wanted=wanted)
             completed_batches.update(completed)
             ran += len(completed)
             if code:
@@ -663,6 +709,7 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None)
                 if missing:
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
                 products = build_products.records(step)
+                build_products.verify_reads(step, declared_products, done)
                 if step.products and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError(f'{step.name}: inputs changed during build; products not certified')
                 verify_spatial(step, current)
@@ -719,18 +766,6 @@ def _build(ctx, wanted, *, force, touch, echo, index, steps=None, produced=None)
         if produced is not None and not from_cache:
             produced.append((step.name, record))
         echo(f'{print_} {"restored" if from_cache else "done"} in {seconds:.1f} s{slot_summary(slots)}')
-    # Later legacy writers must not silently resave an earlier product owner. This also catches
-    # a batch that touched an already-current neighbour which was not run in that session.
-    invalid = []
-    for step in plan:
-        if step.products:
-            stamp = ctx.stamps / (step.name + '.json')
-            if not build_products.valid_records(step, read_stamp(stamp).get('products', {}), hasher=index.digest):
-                stamp.unlink(missing_ok=True)
-                invalid.append(step.name)
-    if invalid:
-        echo('FAILED: products changed after their owner completed: ' + ', '.join(invalid))
-        return 1
     echo(f'{len(plan)} steps, {ran} ran, {restored} restored, {time.monotonic() - started:.0f} s')
     return 0
 

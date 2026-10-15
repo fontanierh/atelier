@@ -263,6 +263,25 @@ def test_batch_cannot_cross_a_read_edge_or_tool_settings(project):
     assert len(p.launches) == 4  # action1; actions2-3; action4; actions5-6
 
 
+@pytest.mark.parametrize('mutates_own_read', [False, True])
+def test_changed_consumed_product_cannot_keep_a_completed_consumer_stamp(project, mutates_own_read):
+    p = project
+    p.steps[:] = p.steps[:3]
+    source = p.ctx.out / '1.txt'
+    p.steps[1].reads = ['product1']
+    read = f"from pathlib import Path\nPath({str(p.ctx.out / '2.txt')!r}).write_text(Path({str(source)!r}).read_text())\n"
+    mutate = f"from pathlib import Path\nPath({str(source)!r}).write_text('changed input')\n"
+    if mutates_own_read:
+        p.steps[1].commands[0].script.write_text(mutate + read)
+    else:
+        p.steps[1].commands[0].script.write_text(read)
+        p.steps[2].commands[0].script.write_text(mutate + "raise RuntimeError('failed after changing an earlier read')\n")
+    assert p.run() == 1
+    assert (p.ctx.out / '2.txt').read_text() == ('changed input' if mutates_own_read else 'made')
+    assert not (p.ctx.stamps / 'action2.json').exists()
+    assert not (p.ctx.stamps / 'action1.json').exists()
+
+
 def test_batch_rejects_unowned_outputs_and_startup_environment(project):
     p = project
     p.steps[0].products = []

@@ -48,7 +48,10 @@ every member, empty directory and file hash. Missing, altered, unexpected or lin
 Symlinked ancestors such as a system temporary directory are supported; product roots and members cannot be links.
 Input changes during generation prevent certification, and the final stamp is replaced atomically after validation.
 The build also rechecks owned products after all selected steps, catching later importers that resave another
-owner's package. Use `Product(name, required_paths, optional_paths=(...))` for format sidecars that may be absent:
+owner's package. Consumers verify fresh read-product bytes before certification. Completion and failure paths
+also discard earlier consumer stamps when a later writer changes those inputs, including consumers with legacy
+outputs. Reference edges remain independent of referenced content bytes.
+Use `Product(name, required_paths, optional_paths=(...))` for format sidecars that may be absent:
 their absence, appearance, removal or byte change is part of the product identity. Required roots still must exist.
 Optional roots have the same exclusive ownership rules and are not eligible for the portable source cache or Python audit.
 Change receipts retain their ordered root roles separately: an optional root appearing is an added member, its
