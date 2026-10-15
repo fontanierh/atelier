@@ -409,7 +409,7 @@
   },
   {
     "id": "material_036",
-    "baseColor": [0.58, 0.56, 0.2],
+    "baseColor": [0.44, 0.45, 0.2],
     "texture": null,
     "sourceTextureName": null,
     "doubleSided": false,
@@ -463,7 +463,7 @@
   },
   {
     "id": "material_042",
-    "baseColor": [0.74, 0.62, 0.22],
+    "baseColor": [0.5, 0.46, 0.2],
     "texture": null,
     "sourceTextureName": null,
     "doubleSided": false,

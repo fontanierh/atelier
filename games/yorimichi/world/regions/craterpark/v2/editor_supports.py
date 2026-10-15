@@ -52,7 +52,6 @@ VOUSSOIR = 1.         # arch stones: about this long round the arch
 # the start tower: a solid deck standing high above the ground becomes a Japanese castle keep: a curved stone base
 # (ishigaki) under a white-plastered turret (yagura) with a tiled skirt roof, a balcony with a vermilion railing round
 # the deck, a torii over the drop-in and a tiled pavilion roof with upturned eaves over the back of the deck
-FASCIA = 'material_032'       # the ramps' fascia (editor_generate.FASCIA), unused here
 VERMILION = 'material_038'    # lacquered vermilion: torii, posts and railing
 TILE = 'material_039'         # dark blue-grey roof tiles, the torii's black lintel
 PLASTER = 'material_040'      # white lime plaster
@@ -386,17 +385,18 @@ def _arch(secs, ts, f0, f1, top0=None, top1=None):
 
 
 def _tiers(secs, ts, f0, f1, arc):
-    """Lower tiers under a tall opening: each a level band halfway down with its own arch, while room remains.
+    """Lower tiers under a tall opening: each a level band halfway down its lower side with its own arch, while room
+    remains.
     [(band top per sample f0..f1, intrados per sample)]."""
     out = []
     while min(arc[0] - secs[f0].g_hi, arc[-1] - secs[f1].g_hi) > TIER:
-        t0 = secs[f0].g_hi + .5 * (arc[0] - secs[f0].g_hi)
-        t1 = secs[f1].g_hi + .5 * (arc[-1] - secs[f1].g_hi)
-        lower = _arch(secs, ts, f0, f1, t0, t1)
+        # level, as an aqueduct's tiers are: halfway up the lower side, so under a raking ramp the bays step down
+        # one by one instead of a slab raking across the arches above
+        t = min(secs[f0].g_hi + .5 * (arc[0] - secs[f0].g_hi), secs[f1].g_hi + .5 * (arc[-1] - secs[f1].g_hi))
+        lower = _arch(secs, ts, f0, f1, t, t)
         if lower is None:
             break
-        band = [t0 + (t1 - t0) * (ts[k] - ts[f0]) / (ts[f1] - ts[f0]) for k in range(f0, f1 + 1)]
-        out.append((band, lower))
+        out.append(([t] * (f1 - f0 + 1), lower))
         arc = lower
     return out
 
@@ -485,11 +485,12 @@ def _box(b, material, c, fwd, acr, a, w, y0, y1, yaw=0.):
 def _course(b, centre, fwd, acr, along, wide, y0, y1, key, plinth=False, top=None):
     """One rough course of stone, `along` (half, along fwd) by `wide` (half, along acr), from y0 to y1: a little
     shifted, turned and rounded at random, with a corner stone standing out of it about every other course. `top`
-    (along, wide) tapers it to another size at y1."""
-    j = 0. if plinth else .22
+    (along, wide) tapers it to another size at y1, a course of a curved wall (the keep's ishigaki): those stay true to
+    their neighbours, so the curve reads as one sweep of stone, not a stack of slabs."""
+    j = 0. if plinth or top is not None else .22
     cc = centre + (2 * _rand(key, 1.) - 1) * j * fwd + (2 * _rand(key, 2.) - 1) * j * .6 * acr
-    yaw = 0. if plinth else (2 * _rand(key, 3.) - 1) * .025
-    rad = CORNER * (.5 + .7 * _rand(key, 4.))
+    yaw = 0. if plinth or top is not None else (2 * _rand(key, 3.) - 1) * .025
+    rad = CORNER * (.85 if top is not None else .5 + .7 * _rand(key, 4.))
     f = math.cos(yaw) * fwd + math.sin(yaw) * acr
     u = -math.sin(yaw) * fwd + math.cos(yaw) * acr
     rings, normals = [], []
@@ -732,11 +733,10 @@ def _beam(b, material, c, t, n, half, y0, y1, depth, lift=0.):
 
 
 def tower(b, plan, ground, piece, open_sides):
-    """The start tower under a high solid deck, a Japanese castle keep: a curved ishigaki of rough stone courses with
-    long-and-short corner stones, sweeping out toward its foot; a white-plastered turret with dark boards and timber
-    frame on top of it, a tiled skirt roof round its foot; a balcony with a vermilion railing round the deck on the
-    sides no ramp leaves from; a torii over the drop-in and a pavilion with an upturned tiled roof over the back of the
-    deck. Returns the boulders placed, or None if the deck is not high enough for one."""
+    """The start tower under a high solid deck, a Japanese castle keep: a curved ishigaki of stone courses sweeping
+    out toward its foot; a white-plastered turret with dark boards and timber frame on top of it, a tiled skirt roof
+    round its foot; a balcony with a vermilion railing round the deck on the sides no ramp leaves from; a torii over
+    the drop-in and a pavilion with an upturned tiled roof over the back of the deck. Returns the boulders placed, or None if the deck is not high enough for one."""
     V = np.asarray(piece.mesh.V, 'f8')
     c, fwd, acr, a, w, top = _rect(V)
     corners = [c + u * fwd + v * acr for u in (-a, 0, a) for v in (-w, 0, w)]
@@ -754,22 +754,14 @@ def tower(b, plan, ground, piece, open_sides):
     flare = min(ISHIGAKI_FLARE * height, ISHIGAKI_MAX)
     spread = lambda y: .4 + flare * (max(stone_top - y, 0.) / height) ** ISHIGAKI_CURVE
 
-    # the ishigaki: rough courses, each a little shifted and turned, tapering with the curve; long-and-short corner
-    # stones (sangi-zumi) at every corner, the long side turning from face to face course by course
+    # the ishigaki: courses of stone tapering with the curve, true to each other so it sweeps up as one face, with no
+    # corner stones standing out of it (upright blocks on a sloping face step like stairs)
     y, k = foot, 0
     while y < stone_top - .3:
         h = COURSE[0] + (COURSE[1] - COURSE[0]) * _rand(key0, k, 11.)
         y1 = min(y + h, stone_top) if stone_top - (y + h) > .8 else stone_top
         s0, s1 = spread(y), spread(y1)
         _course(b, c, fwd, acr, ya + s0, yw + s0, y - .02, y1, key0 * 13 + k, top=(ya + s1, yw + s1))
-        if y1 > g_hi:
-            for su in (-1, 1):
-                for sv in (-1, 1):
-                    long_f = (k + (su * sv > 0)) % 2 == 0
-                    qa, qw = (1.2, .55) if long_f else (.55, 1.2)
-                    sm = (s0 + s1) / 2 + .12
-                    qc = c + su * (ya + sm - qa + .12) * fwd + sv * (yw + sm - qw + .12) * acr
-                    _box(b, STONE, qc, fwd, acr, qa, qw, y + .05, y1 - .05)
         y, k = y1, k + 1
     # the skirt roof round the turret's foot, over the top of the stone
     _roof(b, c, fwd, acr, [(ya + .05, yw + .05, yagura_foot + .9, 0.), (ya + .55 * SKIRT, yw + .55 * SKIRT,

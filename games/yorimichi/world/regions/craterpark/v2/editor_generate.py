@@ -32,8 +32,8 @@ from craterpark.v2.editor import frontend  # noqa: E402
 
 WOOD = 'material_030'     # ramp planks, a Sunburst painting on piece_uv (assets/craterpark/materials.json)
 PLANKS = 4.             # metres the ramp-plank texture spans each way (eight boards: half-metre boards)
-FASCIA = 'material_032'   # the ramps' outer sides: stained plywood fascia panels, not more boards
-FASCIA_SIZE = 6.        # metres the fascia texture spans each way
+SIDES = 'material_029'    # the ramps' outer sides: the viaducts' masonry (editor_supports.STONE), world-aligned, so the
+                          # stone runs up to the planks as in the concept and only the riding faces are wood
 # a bowl named with a key here is painted with that decal material, laid over it from above (decal_frame, decal_uv):
 # tools/craterpark_textures.py DECALS paints it onto a plan rendered with the same frame
 DECALS = {'Prado': 'material_031'}
@@ -113,12 +113,6 @@ def piece_uv(V, stations, size=PLANKS):
     return uv / size
 
 
-def side_uv(V, stations, size=FASCIA_SIZE):
-    """UVs for a piece's outer sides: the fascia panels along the piece, up its height."""
-    along = piece_uv(V, stations, 1.)[:, 1]
-    return np.stack([along, V[:, 1]], 1) / size
-
-
 def decal_frame(V):
     """The plan frame (x0, z0, width, height) a decal is painted in: the piece's plan bounds, 4% taller, centred in a
     2:3 portrait frame (the painting's 1024x1536); its top is the piece's lowest z."""
@@ -177,7 +171,7 @@ def piece_mesh(piece, decal=None, tower=False):
         ride, ride_uv = decal, decal_uv(V, decal_frame(V))
     for mask, role, material, uv in (
             (~side, dsl.RIDING, ride, ride_uv),
-            (side, dsl.SIDE, dsl.SIDE_WALL if concrete else FASCIA, side_uv(V, meta['stations']) if laid else None)):
+            (side, dsl.SIDE, dsl.SIDE_WALL if concrete else SIDES, None)):
         uv = tile_uv(V, N) if uv is None else uv
         if tower:
             mask = mask & (V[F][:, :, 1].min(1) > V[:, 1].max() - .05)

@@ -171,7 +171,7 @@ WORLD_ALIGNED = {
     'material_026': ('cast_concrete', 4, (148, 142, 132)),      # bridge supports
     'material_027': ('megapark:rock', 10, (150, 146, 152)),     # the edge guard (darker read as black shards in shade)
     'material_028': ('basalt', 6, (104, 106, 114)),             # editor-park basalt support towers
-    'material_029': ('masonry', 5, (104, 98, 94)),             # editor-park viaduct supports
+    'material_029': ('masonry', 5, (84, 80, 80)),              # editor-park viaducts and ramp sides: the concept's charcoal stone
     # not a park material: the volcano's ground inside the crater (hidamari/mountains.py), for M_NorthMountains
     'crater_floor': ('crater_floor', 16, (100, 98, 100)),       # the concept's warm dark grey gravel
 }

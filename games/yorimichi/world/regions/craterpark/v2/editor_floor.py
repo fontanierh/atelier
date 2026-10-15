@@ -31,8 +31,8 @@ SHRUB = 'material_037'        # autumn orange shrubs
 OLIVE = 'material_042'        # olive moss mats
 CONIFER = 'material_043'      # dark green conifers
 GOLD = 'material_044'         # golden-yellow autumn shrubs
-BASALT = 'material_028'       # dark basalt (the support towers' painting): the crags and rocks
-SOLID = {ROCK, BASALT}        # materials with collision; the rest are drawn only
+SOLID = {ROCK}                # materials with collision; the rest are drawn only (the crags and rocks are ROCK too:
+                              # the basalt painting's columns read as flutes on a crag)
 
 CLEAR = 4.            # metres kept clear round every piece's plan...
 BOWL_CLEAR = 8.       # ...and round a bowl (its pit and deck)
@@ -506,7 +506,7 @@ def _spire(b, site, x, z, w, d, h, yaw, lean, seed, material=ROCK):
 
 
 def _crag(b, site, x, z, size, tall, seed):
-    """A crag of dark basalt: two to five spires and slabs over `size` metres across, the tallest `tall` high near its
+    """A crag of broken grey rock: two to five spires and slabs over `size` metres across, the tallest `tall` high near its
     middle, the slabs upright or leaning out. Returns (spires, triangles)."""
     n = 2 + int(_r(seed, 1) * 4)
     tris = 0
@@ -521,7 +521,7 @@ def _crag(b, site, x, z, size, tall, seed):
         dd = w * (.3 + .15 * _r(seed, 70 + m) if slab else .7 + .3 * _r(seed, 70 + m))
         out = .12 * h * _r(seed, 80 + m)
         tris += _spire(b, site, sx, sz, w, dd, h, a + np.pi / 2 if slab else 2 * np.pi * _r(seed, 90 + m),
-                       (out * math.cos(a), out * math.sin(a)), int(seed) * 11 + m, BASALT)
+                       (out * math.cos(a), out * math.sin(a)), int(seed) * 11 + m, ROCK)
     return n, tris
 
 
@@ -804,7 +804,7 @@ def build(pieces, heights, grid, site=None, bake=True):
             h = min(w * (.6 + .8 * _r(k, 30 + m)), 3.)
             if one(bx, bz, 1.5 * w, SLOPE_ROCK, h):
                 _block(b, site, bx, bz, w, w * (.6 + .4 * _r(k, 50 + m)), h, 2 * np.pi * _r(k, 70 + m),
-                       int(k) * 31 + m, BASALT)
+                       int(k) * 31 + m, ROCK)
                 count['rocks'] += 1
 
     # loose stones between them

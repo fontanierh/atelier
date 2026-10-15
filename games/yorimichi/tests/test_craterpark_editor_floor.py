@@ -81,7 +81,7 @@ def test_every_kind_is_placed_on_a_budget(built):
     for kind in ('crags', 'spires', 'rocks', 'stones', 'conifers', 'shrubs', 'tufts', 'cushions', 'snow_m2', 'moss_m2'):
         assert summary[kind] > 0, kind
     assert summary['triangles'] == sum(len(p.F) for p in parts) < 100000
-    assert set(summary['by_material']) == {ef.BASALT, ef.ROCK, ef.SNOW, ef.GRASS, ef.MOSS, ef.OLIVE, ef.SHRUB, ef.GOLD,
+    assert set(summary['by_material']) == {ef.ROCK, ef.SNOW, ef.GRASS, ef.MOSS, ef.OLIVE, ef.SHRUB, ef.GOLD,
                                            ef.CONIFER}
     assert all(m in dsl.MATERIAL for m in summary['by_material'])
 
@@ -108,7 +108,7 @@ def test_snow_lies_in_broad_fields_over_its_share_of_the_open_floor(built):
 def test_crags_are_big_dark_and_gather_at_the_wall_conifers_stylised(built):
     parts, _ = built
     site = floor_site()
-    rock = [p for p in parts if dsl.MATERIALS[int(p.material[0])] == ef.BASALT][0]
+    rock = [p for p in parts if dsl.MATERIALS[int(p.material[0])] == ef.ROCK][0]
     over = rock.V[:, 1] - site.ground(rock.V[:, 0], rock.V[:, 2])
     assert 8. < over.max() <= 15.5, 'the biggest crags stand 8 to 15 m'
     tall = rock.V[over > 3.]
@@ -206,5 +206,5 @@ def test_the_dressing_bakes_its_own_occlusion(built):
     parts, _ = built
     ao = np.concatenate([p.AO for p in parts])
     assert len(ao) == len(vertices(parts)) and np.isfinite(ao).all() and ao.min() >= 0. and ao.max() <= 1.
-    rock = np.concatenate([p.AO for p in parts if dsl.MATERIALS[int(p.material[0])] == ef.BASALT])
+    rock = np.concatenate([p.AO for p in parts if dsl.MATERIALS[int(p.material[0])] == ef.ROCK])
     assert (rock < .9).mean() > .02, 'rocks in a cluster shade one another'
