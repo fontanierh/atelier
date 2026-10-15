@@ -90,10 +90,25 @@ fn lock_paths() -> (PathBuf, PathBuf) {
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| db::home().join(".cache/atelier/render.lock"));
+    let small = lane(&big, "small");
+    (big, small)
+}
+
+/// A lane's lock file beside the big one, as render_lock names it (render.small.lock, render.fitting.lock).
+fn lane(big: &Path, name: &str) -> PathBuf {
     let stem = big.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
     let suffix = big.extension().map(|s| format!(".{}", s.to_string_lossy())).unwrap_or_default();
-    let small = big.with_file_name(format!("{stem}.small{suffix}"));
-    (big, small)
+    big.with_file_name(format!("{stem}.{name}{suffix}"))
+}
+
+/// Whether any render lane has a live holder: the big and small slots, or the reserved fitting lane
+/// (render_lock.fitting_lock_path).
+pub fn any_lane_held() -> bool {
+    lanes_held(&lock_paths().0)
+}
+
+fn lanes_held(big: &Path) -> bool {
+    [big.to_path_buf(), lane(big, "small"), lane(big, "fitting")].iter().any(|path| read_holder(path).is_some())
 }
 
 /// Whoever last wrote the lock file, if that process is still the one it claims to be.
@@ -185,6 +200,22 @@ mod tests {
         let (recent, total) = recent_log(&text, 3);
         assert_eq!(recent, "- entry 97\n  detail 97\n- entry 98\n  detail 98\n- entry 99\n  detail 99");
         assert_eq!(total, 101);
+    }
+
+    #[test]
+    fn every_lane_counts_as_held() {
+        let folder = std::env::temp_dir().join(format!("floor-lanes-{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        let big = folder.join("render.lock");
+        assert!(!lanes_held(&big));
+        let live = format!("{{\"pid\": {}}}", std::process::id());
+        for name in ["render.lock", "render.small.lock", "render.fitting.lock"] {
+            std::fs::write(folder.join(name), &live).unwrap();
+            assert!(lanes_held(&big), "{name}");
+            std::fs::write(folder.join(name), "{\"pid\": 999999999, \"started\": 1}").unwrap();
+            assert!(!lanes_held(&big), "{name} with a dead holder");
+        }
+        std::fs::remove_dir_all(&folder).unwrap();
     }
 
     #[test]

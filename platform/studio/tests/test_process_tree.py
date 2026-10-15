@@ -3,6 +3,7 @@
 Everything is mocked: no process is started and nothing is signalled.
 """
 from contextlib import ExitStack, contextmanager
+import signal
 
 import pytest
 
@@ -96,14 +97,54 @@ def test_a_guard_is_not_attached_to_a_different_process_on_the_same_pid(tmp_path
 
 def test_unwind_rechecks_identity_before_every_signal(monkeypatch, tmp_path):
     # Recorded as (77, 300); by the time it is signalled the pid belongs to another process.
-    world(monkeypatch, starts={10: 100, 77: Then([300, 300, 999])}, kids={10: [77]}, names={77: 'sh'})
+    starts, kids = {10: 100, 77: 300}, {10: [77]}
+    world(monkeypatch, starts=starts, kids=kids, names={77: 'sh'})
     sent = []
     monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append((pid, number)))
     stack = ExitStack()
     tree = guarded.Descendants(10, 100, tmp_path, ('UnrealEditor-Cmd',), None, 10., stack)
     tree.poll()
+    # The new process is foreign: unlike a new child of our root, it must not be
+    # acquired during cleanup discovery. Model the live parent edge explicitly.
+    starts[77], kids[10] = 999, []
     tree.unwind(grace=0)
     assert sent == [], 'a reused pid is never signalled'
+
+
+def test_unwind_rechecks_identity_between_term_and_kill(monkeypatch, tmp_path):
+    starts, kids = {10: 100, 77: 300}, {10: [77]}
+    world(monkeypatch, starts=starts, kids=kids, names={77: 'sh'})
+    sent = []
+
+    def send(pid, number):
+        assert starts[pid] == 300, 'every signal must still target the original identity'
+        sent.append((pid, number))
+        if number == signal.SIGTERM:
+            starts[77], kids[10] = 999, []
+    monkeypatch.setattr(guarded.os, 'kill', send)
+    tree = guarded.Descendants(10, 100, tmp_path, (), None, 10., ExitStack())
+    tree.poll()
+    tree.unwind(grace=0)
+    assert sent == [(77, signal.SIGTERM)], 'SIGKILL must not reach the replacement process'
+
+
+def test_unwind_discovers_a_new_owned_child_even_when_its_pid_was_recorded(monkeypatch, tmp_path):
+    starts = {10: 100, 77: 300}
+    world(monkeypatch, starts=starts, kids={10: [77]}, names={77: 'sh'})
+    sent = []
+
+    def send(pid, number):
+        assert starts[pid] == 999
+        sent.append((pid, number))
+    monkeypatch.setattr(guarded.os, 'kill', send)
+    tree = guarded.Descendants(10, 100, tmp_path, (), None, 10., ExitStack())
+    tree.poll()
+    # This replacement really is a new child of the pinned root, so cleanup must
+    # discover its distinct identity instead of exempting the previously seen PID.
+    starts[77] = 999
+    tree.unwind(grace=0)
+    assert set(tree.depth) == {(77, 300), (77, 999)}
+    assert sent == [(77, signal.SIGTERM), (77, signal.SIGKILL)]
 
 
 def test_shared_engine_services_are_never_signalled(monkeypatch, tmp_path):

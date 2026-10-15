@@ -2,6 +2,7 @@
 //! mailbox with `atelier board`.
 mod api;
 mod db;
+mod disk;
 mod files;
 mod floor;
 mod http;

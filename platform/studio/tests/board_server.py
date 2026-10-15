@@ -37,7 +37,8 @@ class Server:
     Startup MUST have a deadline. Any failure after launch MUST reap this fixture's child before
     propagating, even when construction fails before pytest can register its teardown.
 
-    The server is isolated: HOME is the test's, and launchctl records what it was asked.
+    The server is isolated: HOME is the test's, launchctl records what it was asked, and the render floor's disk
+    breakdown never scans (ATELIER_BOARD_DISK_SCAN=0; its scan is tested in the server's own unit tests).
     """
 
     def __init__(self, tmp_path, origins=(), allowed_user=None, env=None):
@@ -52,7 +53,8 @@ class Server:
             argv += ['--public-origin', origin]
         if allowed_user:
             argv += ['--allowed-user', allowed_user]
-        environ = {**os.environ, 'HOME': str(home), 'ATELIER_BOARD_LAUNCHCTL': str(self.launchctl), **(env or {})}
+        environ = {**os.environ, 'HOME': str(home), 'ATELIER_BOARD_LAUNCHCTL': str(self.launchctl),
+                   'ATELIER_BOARD_DISK_SCAN': '0', **(env or {})}
         self.log = tmp_path / 'board-server.log'
         self.process = None
         readiness = None
