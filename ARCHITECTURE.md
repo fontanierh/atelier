@@ -66,7 +66,8 @@ world map, preferences and the HUD.
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
 plans, historical phase timings, certified-output differences and retained-log DDC diagnostics, file-hash memoization, automatic local caching
-of portable products and opt-in Python input/write auditing. The
+of portable products, opt-in Python input/write auditing and recipe-declared spatial queries with frozen,
+matched-product reads. The sandbox exercises these spatial dependencies without Unreal. The
 [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)

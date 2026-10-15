@@ -17,9 +17,12 @@ Opt-in Python access auditing now checks declared file reads and owned writes be
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
 environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
 Named actions can declare exact optional source files; absent/present identities track conditional reads without
-hashing unrelated siblings. The sandbox demonstrates this with a block override. Runtime query/context APIs remain proposed.
+hashing unrelated siblings. The sandbox demonstrates this with a block override. Recipe-declared spatial boxes now
+resolve into tracked product reads, including empty selections, additions, removals and movement. Audited Python
+actions receive frozen matches through `atelier.build_context.query`; the offline sandbox proves narrow rebuilds
+and restoration. Runtime-discovered query volumes and generated spatial indexes remain proposed.
 [The recipe guide](BUILD_RECIPES.md) describes the implemented API, exercised by the sandbox's asset/placement example.
-Unreal restoration, import transactions, spatial dependencies and remote storage below still require implementation and native proof.
+Unreal restoration, import transactions, native spatial migration and remote storage below still require implementation and native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
@@ -343,6 +346,11 @@ generic edit-boundary test harness; Stage 2 supplies recipe templates, product d
 Python audit bootstraps for Blender/Unreal and the ownership checker. Later stages exercise restore/registry
 recovery, two neighbouring terrain tiles, native/cook invalidation and remote fallback using sandbox fixtures.
 `atelier new` inherits these templates and examples. Yorimichi supplies the demanding case, not platform special cases.
+
+The offline part of Stage 4 now has a sandbox proof: two fixed query tiles update for changed, added, removed
+and moved products, ignore distant edits and unread siblings, and agree after cache restoration and a fresh build.
+Audited actions refuse reads of the raw catalogue or nonmatching products. These are JSON dependency fixtures;
+terrain seams, generated spatial indexes, native queries and collision ordering still require their own proof.
 
 Stage 2 should start with the observed five-tree edit. The current foliage importer already accepts a subset of
 names, which offers a concrete migration seam. Remove its shared material writes into the material owner and

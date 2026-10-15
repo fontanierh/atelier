@@ -20,7 +20,8 @@ def changed_inputs(previous, current):
     for field, label in (('commands', 'commands'), ('products', 'product declarations'), ('tools', 'tool context')):
         if previous.get(field) != current.get(field):
             reasons.append(f'{label} changed')
-    for field, label in (('inputs', 'input'), ('needs', 'dependency'), ('reads', 'product')):
+    for field, label in (('inputs', 'input'), ('needs', 'dependency'), ('reads', 'product'),
+                         ('queries', 'spatial query'), ('spatial_outputs', 'spatial bounds')):
         before, after = previous.get(field, {}), current.get(field, {})
         for name in sorted(before.keys() | after.keys()):
             if before.get(name) != after.get(name):
@@ -86,6 +87,9 @@ def _inspect(ctx, steps, wanted, *, force, index):
                           'previous_seconds': stamp.get('seconds'), 'heavy': step.heavy,
                           'products': [p.name for p in step.products], 'needs': step.needs, 'after': step.after,
                           'reads': step.reads, 'references': step.references})
+        if step.queries:
+            from .build_spatial import manifest
+            decisions[-1]['queries'] = manifest(step)['queries']
         done[step.name] = (stamp['result'] if step.cutoff and status != 'current' and stamp.get('result')
                            else engine.result(step, current, stamp))
         build_products.feed_results(done, stamp.get('products', {}))

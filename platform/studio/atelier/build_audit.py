@@ -123,6 +123,10 @@ def prepared(ctx, step, products):
             root.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-') as temporary, ExitStack() as cleanup:
         control = Path(temporary).resolve()
+        from .build_spatial import manifest
+        action_inputs = control / 'action-inputs.json'
+        action_inputs.write_text(json.dumps(manifest(step)))
+        inputs.append(action_inputs)
         scratch = control / 'scratch'
         for name in ('home', 'tmp', 'cache', 'bytecode'):
             (scratch / name).mkdir(parents=True)
@@ -148,7 +152,7 @@ def prepared(ctx, step, products):
         env = (('HOME', str(scratch / 'home')), ('TMPDIR', str(scratch / 'tmp')),
                ('TMP', str(scratch / 'tmp')), ('TEMP', str(scratch / 'tmp')),
                ('XDG_CACHE_HOME', str(scratch / 'cache')), ('PYTHONPYCACHEPREFIX', str(scratch / 'bytecode')),
-               ('PYTHONDONTWRITEBYTECODE', '1'))
+               ('PYTHONDONTWRITEBYTECODE', '1'), ('ATELIER_ACTION_INPUTS', str(action_inputs)))
         receiver.thread.start()
         try:
             yield argv, env, (write_fd,)

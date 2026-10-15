@@ -178,6 +178,8 @@ gameplay, so gameplay edits rebuild only the code.
 For small rebuilds, name independently consumed products and declare which ones each step reads or merely
 references. Opted-in portable products are restored automatically from the local cache across worktrees; the
 [sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
+Its explicit `spatial.demo` example also tracks nearby products: additions, removals and moves update the
+affected tiles, while distant edits and unread preview outputs leave them current.
 Python generators can opt into an input audit that catches undeclared reads and writes outside their products.
 `atelier build <game> --timings` shows historical execution, restore and instrumented phase durations;
 `--changes` lists differences between certified output inventories. Both inspect receipts without running a build.

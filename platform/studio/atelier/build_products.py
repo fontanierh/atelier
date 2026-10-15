@@ -3,7 +3,7 @@
 Products are opt-in. Legacy steps keep their existing fingerprints; a product consumer reads the
 bytes of its named product instead of depending on everything its producer happened to generate.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import os
@@ -18,6 +18,16 @@ class Product:
 
     name: str
     paths: tuple[Path, ...]
+    collection: str | None = field(default=None, repr=False)
+    bounds: tuple[float, ...] | None = field(default=None, repr=False)
+
+    def __post_init__(self):
+        if self.collection is None and self.bounds is None:
+            return
+        from .build_spatial import box
+        if not isinstance(self.collection, str) or not self.collection:
+            raise ValueError(f'{self.name}: spatial products require a collection and bounds')
+        object.__setattr__(self, 'bounds', box(self.bounds))
 
 
 def file_digest(path: Path) -> str:
@@ -172,6 +182,10 @@ class Graph:
             for step_name, other in legacy_paths:
                 if self.owners[product] != step_name and (parts[:len(other)] == other or other[:len(parts)] == parts):
                     raise ValueError(f'Product {product} overlaps legacy outputs of {step_name}')
+        # Resolve against the complete catalogue before topological sorting or target selection.
+        from .build_spatial import bind
+        self.steps = bind(self.steps, self.owners)
+        self.by_name = {s.name: s for s in self.steps}
         for step in self.steps:
             for dependency in (*step.needs, *step.after):
                 if dependency not in self.by_name:

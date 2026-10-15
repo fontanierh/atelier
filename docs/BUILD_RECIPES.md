@@ -268,3 +268,56 @@ Existing recipes remain supported. Unreal packages, native binaries, Content and
 ineligible for this cache. Transactional Unreal restoration, import ownership, registry refresh, relocation and remote
 storage remain described in [the architecture](INCREMENTAL_BUILDS.md). Keep native imports conservative until their clean/incremental equivalence checks
 pass, following [world build practices](WORLD_BUILD_PRACTICES.md).
+
+## Spatial product reads
+
+Use recipe-declared boxes when an action depends on nearby products. `Product(collection=..., bounds=...)` names
+a collection and a conservative bounding box. `BBoxQuery(name, collection, bounds)` selects its intersecting
+products. Bounds are `(min_x, min_y, min_z, max_x, max_y, max_z)`, finite numbers in a shared coordinate frame and
+unit. Flat boxes and touching boundaries are included. Names are stable product IDs, independent of discovery order.
+
+```python
+from atelier.build import BBoxQuery, Product, Python, Step
+from atelier.build_inputs import local_imports
+
+source = Step('world.rock', [Python(rock_script, (rock_source, rock_output))],
+              inputs=[rock_source], audit=True, cache=True,
+              products=[Product('rock.geometry', (rock_output,),
+                                collection='geometry.cm', bounds=(10, 0, 0, 30, 20, 40))])
+tile = Step('world.tile', [Python(tile_script, (tile_output,))],
+            inputs=local_imports(tile_script), audit=True, cache=True,
+            queries=[BBoxQuery('nearby', 'geometry.cm', (0, -50, -50, 100, 50, 50))],
+            products=[Product('tile.geometry', (tile_output,))])
+```
+
+The tile script reads frozen matches:
+
+```python
+from atelier.build_context import query
+
+for product in query('nearby'):
+    # product.name, product.bounds and product.paths are immutable records.
+    geometry = product.paths[0].read_bytes()
+```
+
+Resolution happens before target selection, ordering and cache lookup, against all current recipe declarations.
+Matching producers become prerequisites and their selected product identities enter the consumer's key. The key
+also includes query criteria and the full sorted result set, even when empty. Unmatched products and unconsumed
+sibling outputs do not enter it. `--plan --json` exposes resolved matches; `--explain` names changed queries.
+
+Queries currently require an audited Python action with named products. Only declared matches grant file access;
+the action does not receive the global catalogue. Include its static imports through `local_imports`, and avoid
+declaring a broad catalogue input on the consumer, which would deliberately invalidate it for every catalogue edit.
+The [sandbox example](../games/sandbox/README.md#spatial-dependencies-without-unreal) exercises this without native tools.
+
+Read catalogue metadata freshly inside `steps(ctx)`, for example from per-source JSON files. Atelier re-evaluates
+the recipe before accepting a query consumer and before/after restoration or execution. Changed bindings, owner
+paths, consumed bytes or refreshed consumer fingerprints refuse certification and require rerunning to replan.
+The executor does not silently add producers to an already running plan. Fresh resolution does not reload arbitrary
+Python globals or cached imported modules; keep catalogues out of such state. Products must not change concurrently
+with their consumers. Endpoint checks cannot prove that a file was unchanged at every instant.
+
+Bounds are author declarations, not a geometric proof. Include each operation's full influence volume and verify
+that product bounds contain the generated geometry. Runtime-discovered boxes, generated spatial catalogues,
+nearest-neighbour queries and native import/query adapters are not implemented. Use broader explicit reads until
+those contracts exist. Native Unreal products remain ineligible for portable caching.

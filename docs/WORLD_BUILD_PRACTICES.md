@@ -7,7 +7,8 @@ inputs and references. It should own its outputs and preserve the outputs of oth
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
 with today's `Step` recipes. Named products and read-only inspection are implemented in the
 [recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
-restoration and tracked spatial queries remain proposed.
+restoration remains proposed. Recipe-declared spatial queries are available for audited Python actions; native
+generators and runtime-derived query volumes still need migration and validation.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
@@ -98,6 +99,14 @@ for coordinates, height samples, normals and any blend margin. Both sides use th
 A generator querying neighbours must record the query volume and its contents. Hash both the selected assets
 and the selection itself: a new wall can cast AO on a ramp, and removing that wall must update the ramp too.
 Movement invalidates the old and new influence volumes.
+
+For audited Python actions, declare a product's conservative `collection` and six-coordinate `bounds`, then add
+a `BBoxQuery` to each consumer's `queries`. Use one coordinate frame and unit per collection. The graph resolves
+inclusive intersections before scheduling, and `atelier.build_context.query(name)` returns only those frozen
+products. Read source catalogue JSON freshly inside `steps(ctx)`; importing a cached module's global catalogue
+does not refresh it. Keep the raw catalogue out of the consumer's inputs so distant edits stay independent.
+See [the runnable sandbox example](../games/sandbox/README.md#spatial-dependencies-without-unreal) and
+[the API and limits](BUILD_RECIPES.md#spatial-product-reads).
 
 Use the operation's actual reach. AO may need a 12 m margin; a support cast down to terrain may need a 30 m
 vertical volume; a road smoother can influence a longer stretch. Tile sizes and margins should be derived from
