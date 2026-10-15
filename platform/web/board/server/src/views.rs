@@ -219,7 +219,7 @@ pub fn snapshot(query: &Query, remote_status: Option<&Path>, sender: &str, csrf:
     let (summary, direct) = inbox::summary(&db, sender)?;
     let mut schedule = floor::sections(&floor::board_text());
     let holders = floor::holders();
-    let render_held = holders.big.is_some() || holders.small.is_some();
+    let render_held = floor::any_lane_held();
     let telemetry = files::read_json(&db::root().join("render-supervisor/latest.json")).unwrap_or(Value::Null);
     let mut sessions = Vec::new();
     if let Some(path) = remote_status {

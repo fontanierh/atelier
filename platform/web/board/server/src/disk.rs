@@ -14,9 +14,10 @@
 //!
 //! A full scan is expensive: on a machine with many checkouts it takes tens of minutes, and opening a guarded folder
 //! can block for seconds while macOS checks it. So the scan runs on one thread in the background band (lowest CPU
-//! priority and throttled disk reads), never while a render lock is held (it pauses and resumes), and the next one
-//! starts only `REFRESH_SECONDS` after the last one finished. Each place keeps its own measurement, so a scan in
-//! progress shows the places it has already measured, and the one it is measuring.
+//! priority and throttled disk reads), never while any render lane's lock is held, the fitting lane included (it
+//! pauses and resumes, checking between directory entries), and the next one starts only `REFRESH_SECONDS` after the
+//! last one finished. Each place keeps its own measurement, so a scan in progress shows the places it has already
+//! measured, and the one it is measuring.
 use std::collections::{HashMap, HashSet};
 use std::ffi::CString;
 use std::fs::{self, Metadata};
@@ -62,7 +63,7 @@ fn allocated(metadata: &Metadata) -> u64 {
 
 /// The allocated bytes under `root`: never following symlinks, never leaving its volume, never entering `skip`, and
 /// counting a hard-linked file only the first time `seen` meets it. What cannot be read is left out. `tick` hears the
-/// running total after every folder (it may pause the walk).
+/// running total after every entry it lists, so a long listing can pause too (it may pause the walk).
 pub fn measure(root: &Path, skip: &HashSet<PathBuf>, seen: &mut HashSet<(u64, u64)>, tick: &mut dyn FnMut(u64)) -> u64 {
     let Ok(metadata) = fs::symlink_metadata(root) else { return 0 };
     let device = metadata.dev();
@@ -86,6 +87,7 @@ pub fn measure(root: &Path, skip: &HashSet<PathBuf>, seen: &mut HashSet<(u64, u6
                     continue;
                 }
                 pending.push((child_path, child));
+                tick(total);
             }
         }
         tick(total);
@@ -345,14 +347,14 @@ fn engine() -> PathBuf {
 }
 
 fn render_busy() -> bool {
-    let holders = crate::floor::holders();
-    holders.big.is_some() || holders.small.is_some()
+    crate::floor::any_lane_held()
 }
 
 /// @cc [owner:fontanierh,label:safety] gentle-disk-scan
 /// A board request MUST NOT wait for the disk breakdown. At most one scan MAY run at a time, in the background
 /// band, and the next MUST NOT start within REFRESH_SECONDS of the previous one finishing. A scan MUST NOT start or
-/// continue while a render lock is held, and MUST NOT open the folders macOS guards for privacy.
+/// continue while any render lane's lock is held (big, small or fitting), and MUST NOT open the folders macOS guards
+/// for privacy.
 ///
 /// The Disk section as the render floor shows it, given whether a render lock is held now.
 pub fn report(render_held: bool) -> Disk {
@@ -567,6 +569,17 @@ mod tests {
         let summary: Vec<(&str, Option<f64>, bool)> = places.iter().map(|p| (p.0.as_str(), p.3, p.4)).collect();
         assert_eq!(summary, [("one", Some(101.0), false), ("two", Some(102.0), false)]);
         assert!(places[0].2 >= first && places[1].2 >= second && !view.paused);
+    }
+
+    #[test]
+    fn a_long_listing_can_pause_between_entries() {
+        let temp = Temp::new("listing");
+        for i in 0..50 {
+            write(&temp.0.join(format!("f{i}")), 1);
+        }
+        let mut ticks = 0;
+        measure(&temp.0, &HashSet::new(), &mut HashSet::new(), &mut |_| ticks += 1);
+        assert!(ticks > 50, "{ticks}");
     }
 
     #[test]

@@ -349,9 +349,9 @@ conversation's place, as in Slack's sidebar (choosing an agent or Everyone bring
   is expensive: `du` over `~/dev`, `~/.cache`, `~/Library` and `/Users/Shared` did not finish in 20 minutes on a
   machine with many checkouts, and opening a guarded folder can block for seconds. So the board scans gently: one scan
   at a time, on one thread in macOS's background band (lowest CPU priority, throttled disk reads); started only when
-  the floor is shown, never while a render lock (big or small) is held, and pausing while one is held, rechecking
-  every few seconds; the next scan starts only five minutes (`REFRESH_SECONDS`) after the last one finished. A request
-  never waits for it. Each place keeps its own measurement time, so a scan in progress shows what it has measured so
+  the floor is shown, never while any render lane's lock (big, small or fitting) is held, and pausing while one is
+  held, rechecking every few seconds, even partway through a folder's listing; the next scan starts only five
+  minutes (`REFRESH_SECONDS`) after the last one finished. A request never waits for it. Each place keeps its own measurement time, so a scan in progress shows what it has measured so
   far and marks the place it is measuring; the section says when the last complete scan finished, how long it took,
   and whether a scan is running or paused. `ATELIER_BOARD_DISK_SCAN=0` turns the breakdown off (the tests' servers
   do), and `ATELIER_BOARD_DISK_ENGINE` points the engine place elsewhere for a preview on a sample tree.
