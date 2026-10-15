@@ -1,7 +1,8 @@
 """Offline package transaction foundation; no Unreal hydration backend is enabled.
 
 The sole backend is a closed, explicitly typed JSON package fixture and its rebuilt registry.
-The public internal entry point always owns one common guarded worker lifecycle. It cannot adopt
+The public internal entry point owns one legacy-only common guarded worker lifecycle with live
+monitor and held-mutex proof; broker configurations and all cutover states refuse. It cannot adopt
 unowned Content, accept a readiness callback, or enable native package restoration.
 """
 from dataclasses import dataclass
@@ -338,7 +339,12 @@ class Scope:
             raise InstallError('Git-tracked Content cannot be installed or retired')
         self.check_index()
 
+    def check_binding(self):
+        if hasattr(self, 'worker_proof'):
+            self.worker_proof.check()
+
     def check_index(self):
+        self.check_binding()
         if hasattr(self, 'index_path'):
             current = _identity(self.index_path.lstat()) if os.path.lexists(self.index_path) else None
             if current != self.index_pin:
@@ -577,6 +583,7 @@ def _prepare(scope, plan, source, *, nonce=None):
                  snapshot_sha256=_digest(plan), previous=previous, old_files=old_files, staged=staged,
                  base=base, base_transaction=None if base_document is None else base_document['transaction'],
                  authored=authored, directories=directories, create=create, operations=operations, phase='installing')
+    scope.check_binding()
     _save(scope.journal, value)
     return value
 
@@ -884,8 +891,9 @@ def _execute(scope, plan=None, source=None, *, resume=False, nonce=None):
 def _guarded(game, plan=None, source=None, *, resume=False, timeout=300):
     """The only installation entry owns one normal checkout mutation/admission lifecycle."""
     from . import capacity_protocol as wire
-    from .capacity_runtime import configured_session
     from .safety import guarded
+    from .safety.worker_binding import WorkerBinding, require_legacy
+    require_legacy()
     if type(timeout) not in (int, float) or not math.isfinite(timeout) or not 1 <= timeout <= 3600:
         raise InstallError('Package worker requires a finite bounded deadline')
     scope = Scope(paths.REPO, game)
@@ -914,15 +922,13 @@ def _guarded(game, plan=None, source=None, *, resume=False, timeout=300):
         descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW)
         os.unlink(name)
         _sync(scope.out)
-        command = [sys.executable, '-m', 'atelier.build_install_worker', 'install', str(descriptor)]
+        binding = WorkerBinding(spec['nonce'], _digest(spec), scope.repo)
+        command = [sys.executable, '-m', 'atelier.build_install_worker', 'install', str(descriptor), str(binding.descriptor)]
         folder = scope.out / 'package-install.guard'
-        admission = configured_session(kind='job', limit_gib=1., timeout=timeout, folder=folder,
-                                       purpose='package installation', performance=True, command=command)
-        if admission is not None:
-            required_disk = math.ceil(sum(leaf['size'] for leaf in _leaves(plan).values()) * 2 / 1024**2) + 64
-            admission.request['resources']['temp_mib'] = max(admission.request['resources']['temp_mib'], required_disk)
-        code = guarded.run(command, folder, purpose='package installation', aggregate_tree=True,
-                           limit_gib=1., timeout=timeout, pass_fds=(descriptor,), admission=admission, performance=True)
+        with binding:
+            code = guarded.run(command, folder, purpose='package installation', aggregate_tree=True,
+                               limit_gib=1., timeout=timeout, pass_fds=(descriptor, binding.descriptor),
+                               performance=True, worker_binding=binding)
         if code:
             raise InstallError('Guarded package worker failed; preserve its journal and stage for recovery')
         if os.path.lexists(scope.journal):
@@ -940,7 +946,9 @@ def _guarded(game, plan=None, source=None, *, resume=False, timeout=300):
 
 
 def install(game, snapshot_path, source_root, *, timeout=300):
-    """Install an eligible complete snapshot through one guarded worker; no native backend exists."""
+    """Install an eligible snapshot through one legacy guarded worker; native/broker modes refuse."""
+    from .safety.worker_binding import require_legacy
+    require_legacy()
     return _guarded(game, _read(Path(snapshot_path)), source_root, timeout=timeout)
 
 

@@ -191,7 +191,7 @@ def check_root_guard(child, monitor, report, final=False):
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
-        on_poll=None, admission=None, performance=False, invocation_id=None):
+        on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
@@ -215,7 +215,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
     try:
         return _run(command, folder, timeout, purpose, lock, env, limit_gib, small_gib, kind,
                     on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
-                    on_poll, admission, performance, _timings=events)
+                    on_poll, admission, performance, worker_binding=worker_binding, _timings=events)
     finally:
         if publish_timings and events.get('ready'):
             def duration(start, end):
@@ -242,7 +242,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
 
 def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
-        on_poll=None, admission=None, performance=False, *, _timings):
+        on_poll=None, admission=None, performance=False, *, worker_binding=None, _timings):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -257,6 +257,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     Shared admission MUST verify the durable boot-bound compatibility barrier. Broker failure MUST fail the run, without falling back to
     slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
     Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
+    An opted-in legacy worker binding MUST publish only after both guards are ready and actual GO,
+    and MUST transfer only the existing held lock context without another admission lock or monitor.
 
     Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
@@ -270,6 +272,12 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     `performance` asks a configured broker to drain other grants before this run and exclude new ones.
     An explicit admission session must already carry that flag when performance exclusion is requested.
     """
+    if worker_binding is not None:
+        from .worker_binding import WorkerBinding, require_legacy
+        if (type(worker_binding) is not WorkerBinding or not lock or not aggregate_tree or kind != 'job'
+                or admission is not None or small_gib is not None or fitting_gib is not None):
+            raise ValueError('Worker binding requires the normal legacy aggregate job lifecycle')
+        require_legacy()
     if type(performance) is not bool:
         raise ValueError('performance request must be a boolean')
     if performance and admission is not None and getattr(admission, 'request', {}).get('performance') is not True:
@@ -322,6 +330,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                 if on_slot is not None:
                     on_slot(name, why)
             options = dict(small_gib=small_gib, kind=kind, on_slot=taken, fitting_gib=fitting_gib)
+            if worker_binding is not None:
+                options['worker_binding'] = worker_binding
             if admission is not None:
                 options.update(small_gib=None)
                 if getattr(admission, 'mode', None) == 'capacity':
@@ -385,9 +395,10 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
             aggregate.ready()
             if monitor.poll() is not None:
                 raise RuntimeError('process memory guard exited before releasing the launcher')
-            if admission is not None:
+            if admission is not None or worker_binding is not None:
                 limit_bytes = int(limit_gib * 1024**3)
                 wait_ready(monitor, child.pid, root_start, folder/'memory-health.json', limit_bytes)
+            if admission is not None:
                 admission.start(child_pid=child.pid, child_start=root_start,
                                 process_guard=dict(pid=monitor.pid, start=process_tree.started(monitor.pid),
                                                    report=str((folder/'memory-health.json').resolve())),
@@ -399,6 +410,12 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                 gate.write(b'1')
                 gate.close()
             _timings['go'] = time.monotonic()
+            if worker_binding is not None:
+                worker_binding.publish((child.pid, root_start),
+                    dict(process_guard=dict(pid=monitor.pid, start=process_tree.started(monitor.pid),
+                                            report=str((folder/'memory-health.json').resolve())),
+                         tree_guard=dict(pid=aggregate.process.pid, start=process_tree.started(aggregate.process.pid),
+                                         report=str((folder/'memory-health-tree.json').resolve()))), limit_bytes)
         started = time.monotonic()
         deadline = started+horizon if horizon else None
         spoken = started

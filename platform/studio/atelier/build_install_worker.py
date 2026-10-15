@@ -3,6 +3,7 @@ import fcntl
 import os
 from pathlib import Path
 import re
+import socket
 import stat
 import sys
 
@@ -18,20 +19,12 @@ def _parent(value):
 
 
 def _spec(descriptor):
-    """@cc [owner:fontanierh,label:safety] guarded-package-request
-    Installation MUST accept only the private read-only unlinked request inherited by the actual
-    controller child. The source, nonce, checkout and recovery transaction MUST remain bound; a
-    caller assertion or alternate command MUST NOT substitute for the normal guarded lifecycle.
-    """
     info = os.fstat(descriptor)
     if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink != 0
             or stat.S_IMODE(info.st_mode) != 0o400 or info.st_size > install.MAX_JSON
             or fcntl.fcntl(descriptor, fcntl.F_GETFL) & os.O_ACCMODE != os.O_RDONLY):
         raise install.InstallError('Package worker requires its private read-only inherited request')
-    try:
-        value = install._decode(os.pread(descriptor, install.MAX_JSON + 1, 0))
-    finally:
-        os.close(descriptor)
+    value = install._decode(os.pread(descriptor, install.MAX_JSON + 1, 0))
     install._fields(value, ('schema', 'operation', 'nonce', 'parent', 'repo', 'game', 'snapshot',
                             'snapshot_sha256', 'source', 'source_pin', 'transaction'))
     if (type(value['schema']) is not int or value['schema'] != 1
@@ -43,9 +36,25 @@ def _spec(descriptor):
     return value
 
 
-def _install(descriptor):
-    value = _spec(descriptor)
+def _install(descriptor, binding_descriptor):
+    """@cc [owner:fontanierh,label:safety] guarded-package-request
+    Installation MUST accept only the private read-only unlinked request inherited by the actual
+    controller child, with independent live guard and held legacy admission proof. The source,
+    nonce, checkout and recovery transaction MUST remain bound; a
+    caller assertion or alternate command MUST NOT substitute for the normal guarded lifecycle.
+    """
+    from .safety.worker_binding import WorkerProof, require_legacy
+    with os.fdopen(descriptor, 'rb') as request, socket.socket(fileno=binding_descriptor) as channel:
+        require_legacy()
+        value = _spec(request.fileno())
+        with WorkerProof.receive(channel, nonce=value['nonce'], request_sha256=install._digest(value),
+                                 parent=value['parent'], repo=paths.REPO, limit_bytes=1024**3) as proof:
+            _install_bound(value, proof)
+
+
+def _install_bound(value, proof):
     scope = install.Scope(paths.REPO, value['game'])
+    scope.worker_proof = proof
     if value['operation'] == 'recover':
         journal = install._journal(scope)
         if journal['nonce'] != value['transaction'] or journal['snapshot_sha256'] != value['snapshot_sha256']:
@@ -61,6 +70,8 @@ def _install(descriptor):
 
 
 def _registry():
+    from .safety.worker_binding import require_legacy
+    require_legacy()
     value = install._decode(sys.stdin.buffer.read(install.MAX_JSON + 1))
     install._fields(value, ('schema', 'backend', 'nonce', 'repo', 'game', 'content_pin', 'parent', 'child'))
     child = _parent(value['parent'])
@@ -80,8 +91,8 @@ def _registry():
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     try:
-        if len(argv) == 2 and argv[0] == 'install':
-            _install(int(argv[1]))
+        if len(argv) == 3 and argv[0] == 'install':
+            _install(int(argv[1]), int(argv[2]))
         elif argv == ['registry']:
             _registry()
         else:

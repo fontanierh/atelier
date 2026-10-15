@@ -196,9 +196,20 @@ they must not leave old packages discoverable by cooking.
 
 The offline transaction foundation is implemented in `atelier.build_install`. Its internal
 `install(game, snapshot_path, source_root, timeout=300)` and `recover(game, timeout=300)` entry points own one
-normal guarded worker with aggregate descendant memory enforcement and exclusive admission. They do not add
-a second render lock. The registry query is a concrete child of that same worker. No build stamp, recipe cache
-eligibility or native restore is enabled by this API.
+normal guarded worker with aggregate descendant memory enforcement and the existing legacy big-slot admission.
+They do not add a second render lock. This experimental installer supports legacy admission only: any explicit/default broker
+configuration or cutover marker, including malformed or unreadable state, refuses before transaction setup.
+Bridge/full-capacity installer support needs a separate admitted-child broker observation protocol; ordinary
+build/play support for those modes is unchanged. The registry query is a concrete child of the same worker.
+No build stamp, recipe cache eligibility or native restore is enabled by this API.
+
+The worker additionally requires a bounded common-launcher binding published after GO, with the actual
+parent/child identities, request digest, both live guard receipts and a close-only duplicate of the existing
+held legacy mutex descriptor. It independently checks those facts at journal, mutation and readiness boundaries.
+A caller-created request descriptor or nonce alone cannot authorize installation. A separate nonblocking
+same-inode conflict probe verifies exclusion; the worker never flocks or unlocks the transferred description.
+The parent retains metadata/unlock ownership and closes its context after child reaping. This is a trusted
+caller lifecycle invariant, not a security sandbox against hostile code running as the same OS user.
 
 Only an explicitly eligible fixture project (`.uproject` containing exactly `schema: 1` and
 `backend: "typed-json-packages-v1"`) can use the current backend. It parses typed JSON primary packages and

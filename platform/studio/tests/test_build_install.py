@@ -339,7 +339,8 @@ def test_parent_symlink_swap_cannot_redirect_content_mutation(project, tmp_path,
     assert list(outside.iterdir()) == [] and project.journal.exists()
 
 
-def test_public_install_uses_actual_guarded_worker_and_registry(project, tmp_path):
+@pytest.mark.parametrize('proof_failure', ['none', 'recover', 'process-not-ready', 'publication-failed'])
+def test_public_install_uses_actual_guarded_worker_and_registry(project, tmp_path, proof_failure):
     import os
     import shutil
     import sys
@@ -360,16 +361,41 @@ try:
     capacity_compat.DEFAULT_RECORD = Path(sys.argv[3]) / 'absent-cutover.json'
 except ImportError:
     pass
-result = build_install.install('fixture', sys.argv[1], sys.argv[2], timeout=30)
-print('INSTALL_COMPLETE', result['transaction'], flush=True)
+from atelier.safety import guarded, worker_binding
+failure = sys.argv[4]
+def refused(*args, **kwargs):
+    raise RuntimeError('injected guard proof failure')
+if failure == 'process-not-ready':
+    guarded.wait_ready = refused
+elif failure == 'publication-failed':
+    worker_binding.WorkerBinding.publish = refused
+try:
+    if failure == 'recover':
+        scope = build_install.Scope(build_install.paths.REPO, 'fixture')
+        build_install._prepare(scope, build_install._read(Path(sys.argv[1])), Path(sys.argv[2]))
+        result = build_install.recover('fixture', timeout=30)
+    else:
+        result = build_install.install('fixture', sys.argv[1], sys.argv[2], timeout=30)
+except RuntimeError as error:
+    if failure in ('none', 'recover') or str(error) != 'injected guard proof failure':
+        raise
+    print('PROOF_REFUSED', flush=True)
+else:
+    if failure not in ('none', 'recover'):
+        raise RuntimeError('invalid guard proof admitted installation')
+    print('INSTALL_COMPLETE', result['transaction'], flush=True)
 '''
     environment = dict(os.environ, PYTHONPATH=str(module_root), ATELIER_RENDER_LOCK=str(tmp_path / 'private-render.lock'),
                        ATELIER_RENDER_LOCK_SCAN='0')
     environment.pop('ATELIER_CAPACITY_CLIENT', None)
     environment.pop('ATELIER_BUILD_ROOT', None)
-    result = subprocess.run([sys.executable, '-c', script, str(manifest), str(root), str(tmp_path)],
+    result = subprocess.run([sys.executable, '-c', script, str(manifest), str(root), str(tmp_path), proof_failure],
                             cwd=project.repo, env=environment, capture_output=True, text=True, timeout=45)
     assert result.returncode == 0, result.stdout + result.stderr
+    if proof_failure not in ('none', 'recover'):
+        assert 'PROOF_REFUSED' in result.stdout and not project.journal.exists()
+        assert not project.content.exists() and not project.current.exists()
+        return
     assert 'INSTALL_COMPLETE' in result.stdout and not project.journal.exists()
     assert (project.content / 'One.uexp').read_bytes() == b'bytes'
     assert install._read(project.receipt)['registry']['child'][0] > 0
@@ -395,11 +421,12 @@ def test_public_guarded_request_and_completion_binding(project, tmp_path, monkey
     def run_guard(command, folder, **kwargs):
         calls.append((command, folder, kwargs))
         assert kwargs['aggregate_tree'] is True and kwargs['performance'] is True
-        assert kwargs['limit_gib'] == 1 and kwargs['admission'] is None
+        assert kwargs['limit_gib'] == 1 and kwargs.get('admission') is None
+        assert kwargs['worker_binding'].descriptor == int(command[-1])
         assert kwargs.get('lock', True) is True
-        assert command[-3:-1] == ['atelier.build_install_worker', 'install']
-        descriptor, = kwargs['pass_fds']
-        assert command[-1] == str(descriptor)
+        assert command[-4:-2] == ['atelier.build_install_worker', 'install']
+        descriptor, binding_descriptor = kwargs['pass_fds']
+        assert command[-2] == str(descriptor) and command[-1] == str(binding_descriptor)
         info = os.fstat(descriptor)
         assert stat.S_ISREG(info.st_mode) and info.st_nlink == 0 and stat.S_IMODE(info.st_mode) == 0o400
         assert fcntl.fcntl(descriptor, fcntl.F_GETFL) & os.O_ACCMODE == os.O_RDONLY
@@ -478,3 +505,101 @@ def test_portable_resume_cannot_bypass_package_barrier(project, tmp_path):
     project.journal.write_text('{}')
     with pytest.raises(SystemExit, match='Package installation'):
         build_snapshot.require_complete(project.out, repo=project.repo, portable_resume=portable)
+
+
+@pytest.mark.parametrize('recover', [False, True])
+def test_configured_installer_refuses_before_scope_creation(tmp_path, monkeypatch, recover):
+    from atelier import capacity_runtime
+    monkeypatch.setattr(capacity_runtime, 'DEFAULT_CONFIG', tmp_path / 'client.json')
+    capacity_runtime.DEFAULT_CONFIG.write_text('{}')
+    monkeypatch.setattr(install, 'Scope', lambda *a: pytest.fail('configured installer created a scope'))
+    with pytest.raises(RuntimeError, match='capacity configuration'):
+        if recover:
+            install.recover('fixture')
+        else:
+            install.install('fixture', tmp_path / 'absent-manifest', tmp_path / 'absent-source')
+
+
+def test_ordinary_unguarded_parent_cannot_forge_installer_lifecycle(project, tmp_path):
+    import os
+    import shutil
+    import sys
+    import atelier
+    root, first = source(tmp_path, [('/Game/One', [], {'.uexp': b'original'})])
+    run(project, root, first)
+    before = {path.name: (path.stat().st_ino, path.read_bytes()) for path in project.content.iterdir()}
+    root, plan = source(tmp_path, [('/Game/One', [], {'.uexp': b'forged-replacement'})], label='second')
+    module_root = project.repo / 'platform' / 'studio'
+    shutil.copytree(Path(atelier.__file__).parent, module_root / 'atelier', ignore=shutil.ignore_patterns('__pycache__'))
+    manifest = tmp_path / 'snapshot.json'
+    manifest.write_text(json.dumps(plan))
+    script = '''
+import json, os, socket, subprocess, sys, tempfile, time, uuid
+from pathlib import Path
+from atelier import build_install as install, capacity_protocol as wire, paths
+nonce = uuid.uuid4().hex
+parent = [os.getpid(), wire.process_start(os.getpid())]
+source = Path(sys.argv[2])
+plan = json.loads(Path(sys.argv[1]).read_text())
+spec = dict(schema=1, operation='install', nonce=nonce, parent=parent, repo=str(paths.REPO), game='fixture',
+            snapshot=plan, snapshot_sha256=install._digest(plan), source=str(source),
+            source_pin=install._directory(source), transaction=nonce)
+fd, name = tempfile.mkstemp()
+os.write(fd, install._encode(spec)); os.fchmod(fd, 0o400); os.close(fd)
+request = os.open(name, os.O_RDONLY); os.unlink(name)
+left, right = socket.socketpair()
+with tempfile.TemporaryFile() as lock:
+    child = subprocess.Popen([sys.executable, '-m', 'atelier.build_install_worker', 'install', str(request), str(right.fileno())],
+                             pass_fds=(request, right.fileno()), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    forged = dict(schema=1, nonce=nonce, request_sha256=install._digest(spec), repo=str(paths.REPO), owner=parent,
+                  child=[child.pid, wire.process_start(child.pid)], guards={}, limit_bytes=1024**3,
+                  lock_path=str(paths.REPO / 'fake.lock'), lock_pin={}, holder={}, observed_monotonic=time.monotonic())
+    wire.send(left, forged, lock.fileno())
+    out, err = child.communicate(timeout=5)
+    print('REFUSED', child.returncode, err.decode(), flush=True)
+os.close(request); left.close(); right.close()
+'''
+    environment = dict(os.environ, PYTHONPATH=str(module_root))
+    environment.pop('ATELIER_CAPACITY_CLIENT', None)
+    result = subprocess.run([sys.executable, '-c', script, str(manifest), str(root)], cwd=project.repo,
+                            env=environment, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0 and 'REFUSED 1' in result.stdout, result.stdout + result.stderr
+    assert 'Invalid capacity protocol fields' in result.stdout
+    assert {path.name: (path.stat().st_ino, path.read_bytes()) for path in project.content.iterdir()} == before
+    assert not project.journal.exists()
+
+
+def test_lost_worker_proof_before_recovery_mutation_retains_barrier(project, tmp_path):
+    from atelier import capacity_protocol as wire
+    root, first = source(tmp_path, [('/Game/One', [], {'.uexp': b'old'})])
+    run(project, root, first)
+    root, second = source(tmp_path, [('/Game/One', [], {'.uexp': b'new'})], label='second')
+    install._prepare(project, second, root)
+    old_inode = (project.content / 'One.uexp').stat().st_ino
+    class LostProof:
+        def check(self):
+            raise wire.CapacityError('Owned monitor is no longer live')
+    project.worker_proof = LostProof()
+    with pytest.raises(wire.CapacityError, match='no longer live'):
+        install._execute(project, resume=True)
+    assert project.journal.exists()
+    assert (project.content / 'One.uexp').stat().st_ino == old_inode
+    assert (project.content / 'One.uexp').read_bytes() == b'old'
+
+
+def test_worker_refuses_config_before_scope_and_closes_private_inputs(tmp_path, monkeypatch):
+    import os
+    import socket
+    from atelier import build_install_worker, capacity_runtime
+    monkeypatch.setattr(capacity_runtime, 'DEFAULT_CONFIG', tmp_path / 'client.json')
+    capacity_runtime.DEFAULT_CONFIG.symlink_to(tmp_path / 'missing')
+    monkeypatch.setattr(install, 'Scope', lambda *a: pytest.fail('configured worker created scope'))
+    request = os.open(tmp_path / 'request', os.O_CREAT | os.O_RDONLY, 0o400)
+    left, right = socket.socketpair()
+    channel = right.detach()
+    with left:
+        with pytest.raises(RuntimeError, match='capacity configuration'):
+            build_install_worker._install(request, channel)
+    for fd in (request, channel):
+        with pytest.raises(OSError):
+            os.fstat(fd)

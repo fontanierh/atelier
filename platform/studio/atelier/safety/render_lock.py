@@ -426,7 +426,7 @@ def _admit_fitting(fitting, big, small, gib):
 
 @contextmanager
 def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='job', on_slot=None, fitting_gib=None,
-                exclusive_bridge=False, capacity=None):
+                exclusive_bridge=False, capacity=None, worker_binding=None):
     """Own a render slot for the duration of the block; yields the lock file taken.
 
     Without `small_gib` this is the machine's single big slot, as it always was. `small_gib`, the job's expected peak,
@@ -438,6 +438,12 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
     together or none, without waiting while holding a subset. Old clients therefore cannot enter a
     second lane after the broker's capacity check. It adds an admission requirement, never concurrency.
     """
+    if worker_binding is not None:
+        from .worker_binding import WorkerBinding, require_legacy
+        if (type(worker_binding) is not WorkerBinding or kind != 'job' or exclusive_bridge
+                or capacity is not None or small_gib is not None or fitting_gib is not None):
+            raise ValueError('Worker binding supports one ordinary legacy big-slot job only')
+        require_legacy()
     kind = kind or 'job'
     if kind not in KINDS:
         raise ValueError(f'kind must be one of {KINDS}, not {kind!r}')
@@ -583,6 +589,8 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
                                  f'Stop them (the phone stream: `atelier stream stop`) first')
         if on_slot is not None:
             on_slot(slot, why)
+        if worker_binding is not None:
+            worker_binding.capture(owned[0], big, record)
         yield {'big': big, 'small': small, 'fitting': fitting}[slot]
     finally:
         for taken in reversed(owned):
