@@ -207,10 +207,6 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   guard report allows it, and says which slot each step used. A compile waits for a small job to finish.
 - A checkout whose code predates the slots stays safe but refuses to start while a small job runs: merge main into
   every checkout before switching to two slots.
-- Opted-in build actions can share a bounded guarded process. Exit 75 and `BATCH YIELDED` mean the batch saved its
-  completed actions and yielded at a memory or time boundary. Recheck Waiting and coordinate a handoff before
-  resuming the printed command without `--force`; keep the original first-ready time. Remaining actions stay `run`
-  in `--plan`. Do not wrap exit 75 in an immediate retry loop. See [batching](docs/BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions).
 - A machine may reserve an additional Blender fitting lane with `fitting_checkout` in `render-slots.json`, keeping
   `slots` at 2. Before enabling it, update every active build/play client to the guard that understands all three
   mutexes; a fitting job refuses live holders with older guards. Only that checkout may request it, through
@@ -247,11 +243,8 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   the machine. Reuse verified artifacts as independent copies (APFS clones are cheap); never share mutable Content,
   Binaries or Intermediate folders between agents. Keep the same installed engine across checkouts.
   Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
-  required outputs, complete named-product inventories and engine build IDs before carrying over successful stamps.
-  Run the incremental build afterward to confirm every unchanged step is up to date. The target must have no
-  Intermediate/Saved discovery caches; reuse leaves the donor's caches behind. An interrupted copy blocks build and
-  launch. Use `atelier reuse <game> --abandon --to <target>` under the normal render lock to remove its recorded
-  generated copy safely, then reuse or build again. Never remove the journal or manufacture stamps by hand.
+  required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
+  to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
 - Make sure the machine's sound masters are fetched before reuse (`uv run atelier fetch <game>`).
   The download cache is shared by all checkouts on the machine.
   Yorimichi's model GLB sources are committed in the asset library, including the skate pier

@@ -117,7 +117,11 @@ the last state as `running`; a sampled span is not the command's full duration. 
 remain separate: summing their individual peaks does not measure a simultaneous process-tree peak. Historical logs
 also cannot reliably assign measurements to instrumented phases, prove complete descendant coverage or estimate
 temporary disk demand. Calibrated resource profiles and admission still require the migration evidence below.
-This reader covers per-process `memory-health` files; separate aggregate tree-guard reports are outside its scope.
+The separate `owned_tree` section reads the latest `memory-health-tree.json` receipt when present. Its footprint
+and guard-reported peak describe the sampled simultaneous owned tree, without adding any per-process peaks.
+It records the owner's pinned identity, last state and cleanup flag; missing or invalid values stay unknown.
+This single retained receipt provides no CPU utilization, phase history or calibrated reservation. Older guards
+without that file still have their per-process history; an absent aggregate receipt is reported explicitly.
 
 Compile-kind commands, including editor compilation, UAT packaging and the build-tool bootstrap, also run an
 independent aggregate descendant guard under the same admission and memory ceiling (normally 10 GiB). The

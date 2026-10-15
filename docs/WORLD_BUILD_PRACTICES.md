@@ -74,12 +74,6 @@ units into one guarded process while keeping their manifests independent. Avoid 
 packages where a bounded spatial/material group is a better runtime unit. Measure memory, package overhead,
 draw calls and rebuild scope together.
 
-The [foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) provides a concrete example: one small JSON specification
-per asset, an export product for its complete LOD chain, and one final native package owner. Shared materials publish
-a separate, small interface product for the paths and LOD-blend flags imports consume. A shader implementation edit
-therefore need not reimport a mesh if that interface stays identical. This separation is valid only when the consumer
-does not inspect other shader state; declare those reads if it starts to do so.
-
 Opt-in [batches](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions) preserve these independent keys and
 receipts. Reset per-asset module caches and tool state explicitly; test a cold asset, a warm asset and reversed asset
 order. A bounded session yields capacity with completed results saved, so an agent must coordinate before resuming.

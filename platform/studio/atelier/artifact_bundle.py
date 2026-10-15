@@ -7,7 +7,7 @@ no network lookup, archive extraction, or checkout hydration.
 """
 import base64
 import binascii
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 import hashlib
 import json
 import os
@@ -108,7 +108,7 @@ def _signature(info):
     return info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
 
-def _read_json(stack, name, limit, *, parent=None):
+def _read_json(stack, name, limit, *, parent=None, with_bytes=False):
     fd, before = _open_file(stack, name, parent=parent)
     if before.st_size > limit:
         raise BundleError('JSON byte limit exceeded')
@@ -120,7 +120,8 @@ def _read_json(stack, name, limit, *, parent=None):
         data.extend(chunk)
     if len(data) > limit or len(data) != before.st_size or _signature(os.fstat(fd)) != _signature(before):
         raise BundleError('JSON input changed or exceeded limit')
-    return _json(data)
+    value = _json(data)
+    return (value, bytes(data)) if with_bytes else value
 
 
 def _names(fd, limit):
@@ -282,27 +283,27 @@ def _verify(stack, directory, trust_file):
     stack.callback(os.close, root)
     if _names(root, 3) != {'manifest.json', 'blobs'}:
         raise BundleError('Unexpected bundle contents')
-    manifest = _read_json(stack, 'manifest.json', MAX_MANIFEST, parent=root)
+    manifest, manifest_bytes = _read_json(stack, 'manifest.json', MAX_MANIFEST, parent=root, with_bytes=True)
     payload, decoded, blobs, logical, count = _manifest(stack, manifest, trust_file, None)
     blob_dir = os.open('blobs', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root)
     stack.callback(os.close, blob_dir)
     if _names(blob_dir, MAX_RECORDS + 1) != set(blobs):
         raise BundleError('Bundle blob set differs from inventories')
-    return payload, decoded, blobs, logical, count, blob_dir
+    return payload, decoded, blobs, logical, count, blob_dir, manifest_bytes
 
 
-def import_bundle(directory: Path, trust_file: Path, *, store=None, dry_run=False):
-    """@cc [owner:fontanierh,label:security] authenticated-offline-artifact-ingestion
-    Only pinned publisher signatures with explicit grants MAY admit portable source products.
-    Every blob and complete staged inventory MUST be verified before Store.publish; its unchanged
-    action-index-last protocol MUST be the only store writer. Dry runs MUST NOT touch the store,
-    checkout outputs, or stamps. Provenance/grants are signer assertions, not independent proof.
+@contextmanager
+def verified_snapshot(directory: Path, trust_file: Path, *, temporary_root=None):
+    """@cc [owner:fontanierh,label:security] verified-portable-bundle-snapshot
+    A yielded snapshot MUST contain independent verified blob copies and complete matching product
+    inventories under the existing signed manifest policy and quotas. Callers MUST consume these
+    staged copies instead of reopening mutable bundle inputs. This helper MUST NOT write the store,
+    checkout outputs or stamps; signatures authenticate publisher assertions only.
     """
-    try:
-        if type(dry_run) is not bool:
-            raise BundleError('Dry run must be a boolean')
-        with ExitStack() as inputs, tempfile.TemporaryDirectory(prefix='atelier-bundle-') as folder:
-            payload, decoded, blobs, logical, count, blob_dir = _verify(inputs, directory, trust_file)
+    with ExitStack() as inputs:
+        try:
+            folder = inputs.enter_context(tempfile.TemporaryDirectory(prefix='atelier-bundle-', dir=temporary_root))
+            payload, decoded, blobs, logical, count, blob_dir, manifest = _verify(inputs, directory, trust_file)
             staging = Path(folder)
             copies = staging / 'blobs'
             copies.mkdir()
@@ -342,13 +343,41 @@ def import_bundle(directory: Path, trust_file: Path, *, store=None, dry_run=Fals
             records = payload['entry']['products']
             if build_products.records(step) != records:
                 raise BundleError('Staged inventory differs')
+            snapshot = SimpleNamespace(payload=payload, staging=staging, blobs=copies, sizes=blobs,
+                                       logical_bytes=logical, inventory_records=count, step=step,
+                                       manifest=manifest)
+        except BundleError:
+            raise
+        except InvalidSignature:
+            raise BundleError('Invalid publisher signature') from None
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError, binascii.Error):
+            raise BundleError('Bundle verification or import failed') from None
+        # A consumer's HTTP/store errors belong to that consumer's boundary. Do not turn
+        # errors raised after a valid snapshot into a misleading verification failure.
+        yield snapshot
+
+
+def import_bundle(directory: Path, trust_file: Path, *, store=None, dry_run=False):
+    """@cc [owner:fontanierh,label:security] authenticated-offline-artifact-ingestion
+    Only pinned publisher signatures with explicit grants MAY admit portable source products.
+    Every blob and complete staged inventory MUST be verified before Store.publish; its unchanged
+    action-index-last protocol MUST be the only store writer. Dry runs MUST NOT touch the store,
+    checkout outputs, or stamps. Provenance/grants are signer assertions, not independent proof.
+    """
+    try:
+        if type(dry_run) is not bool:
+            raise BundleError('Dry run must be a boolean')
+        with verified_snapshot(directory, trust_file) as snapshot:
+            payload = snapshot.payload
+            records = payload['entry']['products']
             if not dry_run:
                 destination = build_cache.Store() if store is None else store
                 conflict = destination.action(payload['entry']['key']).with_suffix('.conflict.json')
                 if conflict.exists():
                     raise BundleError('Action key conflict; inspect atelier cache status')
                 try:
-                    destination.publish(SimpleNamespace(out=staging), step, payload['entry']['key'], records)
+                    destination.publish(SimpleNamespace(out=snapshot.staging), snapshot.step,
+                                        payload['entry']['key'], records)
                 except ValueError as error:
                     if str(error) == 'Same action key produced different bytes; reuse disabled for this key':
                         raise BundleError('Action key conflict; inspect atelier cache status') from None
@@ -357,8 +386,8 @@ def import_bundle(directory: Path, trust_file: Path, *, store=None, dry_run=Fals
                     raise BundleError('Action key conflict; inspect atelier cache status')
             return {'schema': 1, 'namespace': NAMESPACE, 'key': payload['entry']['key'],
                     'publisher': payload['publisher'], 'manifest_sha256': hashlib.sha256(_canonical(payload)).hexdigest(),
-                    'products': sorted(decoded), 'blobs': len(blobs), 'logical_bytes': logical,
-                    'inventory_records': count, 'dry_run': bool(dry_run), 'imported': not dry_run,
+                    'products': sorted(records), 'blobs': len(snapshot.sizes), 'logical_bytes': snapshot.logical_bytes,
+                    'inventory_records': snapshot.inventory_records, 'dry_run': bool(dry_run), 'imported': not dry_run,
                     'producer_attestation': payload['producer'], 'redistribution': payload['redistribution'],
                     'public_redistribution_asserted': all(
                         grant['permission'] == 'public' for grant in payload['redistribution'].values()),

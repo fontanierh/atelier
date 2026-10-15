@@ -39,9 +39,19 @@ def validate(step):
 
 
 def compatible(first, other):
+    """@cc [owner:fontanierh,label:correctness] batch-environment-isolation
+    Shared actions MUST have identical startup overrides and override the same runtime keys.
+    An omitted override MUST start a separate process so it cannot inherit a predecessor's value.
+    Explicit runtime values may differ; each action's command records them in its own key.
+    """
     if other.batch != first.batch or other.cache or type(other.commands[0]) is not type(first.commands[0]):
         return False
     a, b = first.commands[0], other.commands[0]
+    # The worker inherits the first action's environment. Every action must explicitly
+    # replace the same runtime keys, rather than inherit a predecessor's override.
+    runtime = set(first.batch.runtime_env)
+    if {k for k, _ in a.env if k in runtime} != {k for k, _ in b.env if k in runtime}:
+        return False
     env_a = tuple((k, v) for k, v in a.env if k not in first.batch.runtime_env)
     env_b = tuple((k, v) for k, v in b.env if k not in first.batch.runtime_env)
     if env_a != env_b:
@@ -97,8 +107,9 @@ def expected_growth(ctx, step):
 
 
 class Session:
-    def __init__(self, ctx, candidates, done, index, tool_cache, echo):
+    def __init__(self, ctx, candidates, done, index, tool_cache, echo, products):
         self.ctx, self.candidates, self.done = ctx, candidates, done
+        self.products = products
         self.index, self.tool_cache, self.echo = index, tool_cache, echo
         self.nonce = uuid.uuid4().hex
         self.folder = ctx.out / '.state/batches' / self.nonce
@@ -183,6 +194,7 @@ class Session:
                         {'nonce': self.nonce, 'decision': 'yield' if reason else 'continue', 'reason': reason})
 
     def certify(self, step, key, inputs, receipt, log):
+        build_products.verify_reads(step, self.products, self.done)
         if (not build.outputs_present(step) or build.missing_product_inputs(step) or
                 build.fingerprint(step, self.done, index=self.index, tool_cache=self.tool_cache) != key):
             raise RuntimeError(f'{step.name}: inputs changed or required outputs missing during batch')
@@ -226,6 +238,7 @@ class Session:
             if record is None:
                 continue
             try:
+                build_products.verify_reads(step, self.products, self.done)
                 valid = (not build.missing_product_inputs(step) and build.outputs_present(step)
                          and build.fingerprint(step, self.done, index=self.index, tool_cache=self.tool_cache) == key
                          and build_products.valid_records(step, record['products']))
@@ -240,8 +253,8 @@ class Session:
                 self.error = f'{step.name}: inputs/products changed during the batch; result not certified'
 
 
-def run(ctx, candidates, done, *, index, tool_cache, echo, wanted=()):
-    session = Session(ctx, candidates, done, index, tool_cache, echo)
+def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
+    session = Session(ctx, candidates, done, index, tool_cache, echo, products)
     first = candidates[0][0]
     session.write_plan()
     command = replace(first.commands[0], script=WORKER,

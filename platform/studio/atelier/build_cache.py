@@ -128,7 +128,9 @@ def tool_context(step, hasher, *, cache=None):
         key = ('blender', binary, hasher(binary), bundle.stat().st_mtime_ns)
         if key not in cache:
             files = sorted(p for p in bundle.rglob('*') if p.is_file() and '__pycache__' not in p.parts)
-            cache[key] = {p.relative_to(bundle).as_posix(): hasher(p) for p in files}
+            # rglob supplies lexical descendants of this root; no resolution is needed for their keys.
+            depth = len(bundle.parts)
+            cache[key] = {'/'.join(p.parts[depth:]): hasher(p) for p in files}
         context['blender'] = cache[key]
     return context
 

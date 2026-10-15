@@ -97,7 +97,7 @@ def main(game, source, target=None):
     if revision != git(target, 'rev-parse', 'HEAD'):
         raise ValueError('Source and target must have exactly the same source revision before reusing artifacts')
     for repo in (source, target):
-        build_snapshot.require_complete(repo / 'build' / game)
+        build_snapshot.require_complete(repo / 'build' / game, game=game, repo=repo)
         if git(repo, 'status', '--porcelain', '--untracked-files=no'):
             raise ValueError(f'Tracked files must be clean before reusing artifacts: {repo}')
     if os.environ.get('ATELIER_BUILD_ROOT'):

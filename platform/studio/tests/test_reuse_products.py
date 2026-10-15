@@ -91,6 +91,16 @@ def test_reuse_source_identity_filters_only_copied_optional_inputs(snapshot):
         reuse.main('standin', source, target)
 
 
+def test_foreign_reuse_checks_ignore_controller_journal(snapshot, tmp_path, monkeypatch):
+    source, target = snapshot
+    controller = tmp_path / 'controller'
+    write(controller / 'build/standin' / build_snapshot.JOURNAL, '{}')
+    monkeypatch.setattr(paths, 'REPO', controller)
+    assert reuse.main('standin', source, target) == 0
+    assert (controller / 'build/standin' / build_snapshot.JOURNAL).exists()
+    assert (target / 'build/standin' / build_snapshot.COMPLETE).is_file()
+
+
 @pytest.mark.parametrize('changed', ['leaf', 'sidecar', 'missing_source', 'source_difference'])
 def test_bad_donor_or_different_source_cannot_start_copy(snapshot, changed):
     source, target = snapshot

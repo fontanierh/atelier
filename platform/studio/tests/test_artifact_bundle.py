@@ -71,6 +71,18 @@ def assert_refused_without_store(p):
     assert not p.store.root.exists()
 
 
+def test_verified_snapshot_preserves_manifest_bytes_and_consumer_errors(package):
+    class ConsumerError(ValueError):
+        pass
+    original = (package.directory / 'manifest.json').read_bytes()
+    with pytest.raises(ConsumerError, match='consumer failure'):
+        with bundle.verified_snapshot(package.directory, package.trust) as snapshot:
+            assert snapshot.manifest == original
+            assert (snapshot.blobs / package.blob.name).read_bytes() == package.contents
+            raise ConsumerError('consumer failure')
+    assert not snapshot.staging.exists() and not package.store.root.exists()
+
+
 def test_verified_import_preserves_exact_cas_entry_and_private_assertion(package):
     p = package
     receipt = ingest(p)

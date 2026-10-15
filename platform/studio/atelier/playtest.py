@@ -201,7 +201,7 @@ def container_log(launcher, log):
 def main(game, tag=None, download_only=False, extra=(), limit_gib=10.):
     if not download_only:
         from .build_snapshot import require_complete
-        require_complete(paths.build_root() / game)
+        require_complete(paths.build_root() / game, game=game)
     spec = manifest.game(game).get('release')
     if not spec:
         raise SystemExit(f'{game} has no [release] section in game.toml')

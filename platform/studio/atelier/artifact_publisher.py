@@ -366,7 +366,7 @@ def publish(game, step_name, destination: Path, *, profile: Path, echo=print):
         ctx = build.Context(game)
         from .build_snapshot import require_complete
         try:
-            require_complete(ctx.out)
+            require_complete(ctx.out, game=game, repo=repo)
         except SystemExit:
             _fail('Approved action cannot run from this build snapshot')
         step = _eligible(ctx, game, step_name)

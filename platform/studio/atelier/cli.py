@@ -80,7 +80,7 @@ def play(game, profile, settings, extra, memory_gib=None):
     limit = game_limit(memory_gib)
     ctx = Context(game)
     from .build_snapshot import require_complete
-    require_complete(ctx.out)
+    require_complete(ctx.out, game=game)
     data = manifest.game(game)
     profiles = data.get('play', {})
     if profile not in profiles:
@@ -301,7 +301,7 @@ def main(argv=None):
         return contracts.check()
     if args.command == 'qa':
         from .build_snapshot import require_complete
-        require_complete(paths.build_root() / args.game)
+        require_complete(paths.build_root() / args.game, game=args.game)
         script = paths.game_dir(args.game) / 'scenarios' / f'{args.scenario}.py'
         if not script.exists():
             raise SystemExit(f'no scenario {script}')

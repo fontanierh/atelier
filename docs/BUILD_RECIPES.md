@@ -48,7 +48,10 @@ every member, empty directory and file hash. Missing, altered, unexpected or lin
 Symlinked ancestors such as a system temporary directory are supported; product roots and members cannot be links.
 Input changes during generation prevent certification, and the final stamp is replaced atomically after validation.
 The build also rechecks owned products after all selected steps, catching later importers that resave another
-owner's package. Use `Product(name, required_paths, optional_paths=(...))` for format sidecars that may be absent:
+owner's package. Consumers verify fresh read-product bytes before certification. Completion and failure paths
+also discard earlier consumer stamps when a later writer changes those inputs, including consumers with legacy
+outputs. Reference edges remain independent of referenced content bytes.
+Use `Product(name, required_paths, optional_paths=(...))` for format sidecars that may be absent:
 their absence, appearance, removal or byte change is part of the product identity. Required roots still must exist.
 Optional roots have the same exclusive ownership rules and are not eligible for the portable source cache or Python audit.
 Change receipts retain their ordered root roles separately: an optional root appearing is an added member, its
@@ -109,7 +112,9 @@ Step('library.oak', [Blender(script, ('oak',), threads=3, factory_startup=True)]
 Consecutive, ready misses with the same batch policy, command type, startup environment, module closure and tool
 settings can share one guarded process. Arguments and script paths remain per action. `runtime_env=('ASSET_ID',)`
 allows explicitly named environment values to vary between scripts; process-start settings such as `PYTHONHASHSEED`
-cannot vary. Never rely on `runpy` to clear imported module globals, Blender data or Unreal editor state. The recipe
+cannot vary. Actions must override the same set of runtime keys; an added or omitted override starts a separate
+process, so it cannot inherit the preceding action's value. Never rely on `runpy` to clear imported module globals,
+Blender data or Unreal editor state. The recipe
 must reset its own state, and native equivalence checks must cover cold and warm execution in different orders.
 
 The host validates each action's marker, inputs and complete output inventory, saves its individual stamp, and
