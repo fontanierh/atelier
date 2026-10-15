@@ -1,4 +1,5 @@
 #include "SkateComponent.h"
+#include "SkateAssistZones.h"
 #include "SkateRuntimeDetail.h"
 #include "Simulation/GameplaySession.h"
 #include "Simulation/GroundSurfaceRuntime.h"
@@ -459,7 +460,9 @@ FSkateHostPad USkateComponent::ReadHostPad() const
             Out.bController=true;
             Out.bFaceLeft=PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Left);Out.bFaceBottom=PC->IsInputKeyDown(EKeys::Gamepad_FaceButton_Bottom);
             Out.bW=PC->IsInputKeyDown(EKeys::W);Out.bUp=PC->IsInputKeyDown(EKeys::Up);
-            Out.bLeftShoulder=PC->IsInputKeyDown(EKeys::Gamepad_LeftShoulder);Out.bRightShoulder=PC->IsInputKeyDown(EKeys::Gamepad_RightShoulder);
+            Out.bLeftShoulder=PC->IsInputKeyDown(EKeys::Gamepad_LeftShoulder);
+            // RB is the transfer (ReadInput), on the host's bit: the session's own RB (stepping off onto the feet) is not sent.
+            Out.bRightShoulder=false;
             Out.bLeftThumb=PC->IsInputKeyDown(EKeys::Gamepad_LeftThumbstick);Out.bRightThumb=PC->IsInputKeyDown(EKeys::Gamepad_RightThumbstick);
             Out.bQ=PC->IsInputKeyDown(EKeys::Q);Out.bE=PC->IsInputKeyDown(EKeys::E);
             Out.LeftTrigger=PC->GetInputAnalogKeyState(EKeys::Gamepad_LeftTriggerAxis);
@@ -479,6 +482,7 @@ void USkateComponent::TickSimulation(float Dt)
     { CVarSkateFailSimulation->Set(0,ECVF_SetByConsole); RideSimulation->Error=TEXT("Failed on request (skate.FailSimulation)"); }
     if (bSimulationBail) { FollowSimulationBoardInBail(Dt); AfterSimulationRideFrame(Dt); return; }
     if (!RideSimulation) { RuntimeFailure(TEXT("The simulation ride session is gone.")); StowImmediately(); return; }
+    UpdateAssistZones();
     bool bFailed=false;
     const bool Changed=StepSimulation(*RideSimulation,Dt,PhysicalRider && PhysicalRider->IsGettingUp(),bFailed);
     if (bFailed)
@@ -554,6 +558,18 @@ void USkateComponent::TickSimulation(float Dt)
     if (RideSimulation && !bSimulationBail) RefreshSimulationCollision(*RideSimulation,Pos,Rot.Rotator().Yaw,false);
 }
 
+void USkateComponent::UpdateAssistZones()
+{
+    // Assist zones (SkateAssistZones.h, README "Assist zones"): with the board or the rider inside one, the vert assist
+    // is at most its limit. An air keeps the limit it was launched with until it lands, so a kicker's whole jump is
+    // ridden with it; on the ground the limit is the zones' where the board is.
+    float Limit=1.f;
+    if (const USkateAssistSubsystem* Zones=GetWorld()?GetWorld()->GetSubsystem<USkateAssistSubsystem>():nullptr; Zones && !Zones->Zones.IsEmpty())
+        Limit=Zones->VertAssistLimit({Pos,Rider?Rider->GetActorLocation():Pos});
+    if (Mode==ESkateMode::Air) Limit=FMath::Min(Limit,VertAssistHeld);
+    VertAssistHeld=Limit;
+    if (RideSimulation) RideSimulation->VertAssistLimit=Limit;
+}
 void USkateComponent::NameSimulationSpin(ESkateMode Was)
 {
     // The rider's turn about its own up (the pose root's; a shove-it turns only the board) between shown frames.
@@ -627,7 +643,7 @@ bool USkateComponent::StepSimulation(FSkateRuntime& R, float Dt, bool bNeutral, 
         R.Readings.clear();
         if (!bNeutral) ReadFineSticks(R,R.FrameTime,Pad);
         Command.Readings=std::move(R.Readings);R.Readings.clear();R.LastSend=FPlatformTime::Seconds();
-        Command.Input=Input;R.Sent=Input;R.Worker->Enqueue(MoveTemp(Command));
+        Command.Input=Input;Command.VertAssistLimit=R.VertAssistLimit;R.Sent=Input;R.Worker->Enqueue(MoveTemp(Command));
         R.AwaitingPose=true; R.FrameTime=0;
     };
     Send();

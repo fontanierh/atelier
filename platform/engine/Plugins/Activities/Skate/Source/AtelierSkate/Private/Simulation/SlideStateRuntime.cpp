@@ -27,6 +27,7 @@ bool UpdateSlideState(SlideState& state,const SlideStateSettings& configuration,
 {
     if (!services.RequireCurrentSlideToolkit(error)||!services.UpdateSlideReckoning(error)||!services.UpdateSlideSkeletonGround(error)||!services.CaptureSlidePhysicsError(error)) return false;
     const auto completed=services.ReadCompletedSlideFrame(error);if (!completed) return false;const auto& p=*completed;const SlideSurfaceProfile* selected=nullptr;if (!configuration.Surface(p.surface_mode,selected,error)) return false;t.wheel_material=selected->material;
+    if (const auto scale=configuration.settings.friction_scale;scale!=1) {t.wheel_material.static_friction*=scale;t.wheel_material.dynamic_friction*=scale;}
     auto prepared=services.PrepareSlideGroundInput(p.pumping_mode,error);if (!prepared) return false;auto& input=*prepared;
     const auto tilt=CalculateSteeringTilt(input.steering_settings,input.steering,&state.steering_push,&state.damped_turn);t.steering.Update(tilt,input.steering_settings.tilt_blending,p.flags_2468,p.flags_2472);
     input.manual.powersliding=true;Angle geometry;ManualError manual_error;const auto manual=CalculateManual(t.manual,input.manual_settings,input.manual_mode,input.manual,geometry,manual_error);

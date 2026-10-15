@@ -5,7 +5,9 @@ Each case rides the same inputs with stock feel and with one value changed, and 
 menu says: the defaults are bit-exact with no feel at all, gravity keeps jump heights but stretches air time, a gentler
 flick pops higher with a lower flick pace, the 120 Hz flick reading reads the same flicks with the same window and pace
 and keeps a fast hardflip's bottom point that 60 Hz misses, rolling resistance and braking change the coast, and rail magnetism catches
-a rail from farther. Requires the assembled simulation package (skate.runtime) and the explicitly built test-only gameplay-session-cli
+a rail from farther. Drift powerslides start with the stick straight down, grip as far as it is pulled and keep the
+speed and the line when let go, a lower powerslide turn turns the board less, and an assist zone's vert assist limit
+rides as that much assist. Requires the assembled simulation package (skate.runtime) and the explicitly built test-only gameplay-session-cli
 (Tests/build_simulation_session_cli.py --compile, under the render lock and memory guard). Results go to
 build/yorimichi/skate-simulation/feel.
 """
@@ -71,7 +73,7 @@ class Session:
         self.proc.stdin.write(json.dumps({'op': op, **values}) + '\n')
         self.proc.stdin.flush()
 
-    def ride(self, frames, controls, feel=None, velocity=(0, 0, 0), spawn=(0, 0, 0), difficulty='normal'):
+    def ride(self, frames, controls, feel=None, velocity=(0, 0, 0), spawn=(0, 0, 0), difficulty='normal', tune=None, limit=None):
         """Rows of every frame, from a fresh session; controls(frame) gives (buttons, left, right), or with the frame's
         120 Hz stick readings after them (with_readings)."""
         if self.generation:
@@ -80,8 +82,10 @@ class Session:
         self.generation += 1
         extra = {} if feel is None else {'feel': feel}
         self.send('activate', spawn=list(spawn), heading=0, goofy=False, difficulty=difficulty, trucks=.5,
-                  generation=self.generation, velocity=list(velocity), **extra)
+                  generation=self.generation, velocity=list(velocity), **extra, **(tune or {}))
         self.read()
+        if limit is not None:
+            self.send('vert_assist_limit', limit=limit)
         rows = []
         for frame in range(frames):
             buttons, left, right, *readings = controls(frame)
@@ -199,6 +203,27 @@ def jump(session, feel, load=18, snap=2, fine=False):
             'bailed': any('Wipeout' in r['state'] for r in rows), 'states': sorted({r['state'] for r in rows})}
 
 
+def powerslide(session, feel, degrees, depth, start=10, hold=60):
+    """The left stick held `hold` frames from frame 60 at `degrees` off straight down (positive right) and `depth`, from
+    `start` m/s: the frames in SlideGround, the speed it lost a second sliding, the board's widest angle across its
+    travel, and half a second after letting go the speed and how far the line has turned (degrees)."""
+    x, y = math.sin(math.radians(degrees)) * depth, -math.cos(math.radians(degrees)) * depth
+    stick = [round(x * 32767), round(y * 32767)]
+    rows = session.ride(90 + hold, lambda frame: (0, stick if 60 <= frame < 60 + hold else [0, 0], [0, 0]), feel, velocity=(0, 0, start))
+    slid = [i for i, r in enumerate(rows) if r['state'] == 'SlideGround']
+    if not slid:
+        return {'frames': 0}
+    heading = lambda r: math.degrees(math.atan2(r['velocity'][0], r['velocity'][2]))
+    wrap = lambda a: abs((a + 180) % 360 - 180)
+    def across(r):
+        a, b = r['root'], r['bones'][session.deck]
+        forward = [sum(a[j * 4 + k] * b[2 * 4 + j] for j in range(4)) for k in range(3)]
+        return wrap(math.degrees(math.atan2(forward[0], forward[2])) - heading(r))
+    return {'frames': len(slid), 'loss_mps_per_s': (speed(rows[slid[0]]) - speed(rows[slid[-1]])) / max(1, len(slid) - 1) * 60,
+            'board_peak_deg': max(across(rows[i]) for i in slid), 'speed_after': speed(rows[-1]),
+            'line_turn_deg': wrap(heading(rows[-1]) - heading(rows[59]))}
+
+
 def coast(session, feel, buttons=0, seconds=3, start=6):
     rows = session.ride(int(seconds * 60), lambda frame: (buttons, [0, 0], [0, 0]), feel, velocity=(0, 0, start))
     return {'end_speed_mps': speed(rows[-1]), 'distance_m': rows[-1]['root'][14] - rows[0]['root'][14]}
@@ -225,8 +250,8 @@ def main():
         ones = {k: 1 for k in ('flick_radius', 'flick_window', 'flick_pace', 'gravity', 'boneless', 'hippy',
                                'rail_magnetism', 'grind_pop', 'grind_friction', 'braking', 'steering', 'carve', 'grip',
                                'powerslide', 'rolling_friction', 'hill_speed', 'pump', 'wobble', 'wobble_onset',
-                               'manual_drift', 'landing', 'impact')}
-        ones.update(auto_push=-1, assisted_air=-1, tight_flicks=0, flick_120hz=0)
+                               'manual_drift', 'landing', 'impact', 'powerslide_turn')}
+        ones.update(auto_push=-1, assisted_air=-1, tight_flicks=0, flick_120hz=0, drift_powerslide=0, drift_grip=.3, drift_full_grip=.6)
         rides = [flat.ride(330, flick(18, 2), feel, velocity=(0, 0, 5)) for feel in (None, ones)]
         same = all(a['root'] == b['root'] and a['bones'] == b['bones'] and a['velocity'] == b['velocity'] for a, b in zip(*rides))
         check('defaults_exact', same, 'stock feel spelled out matches no feel over 330 frames, bit for bit')
@@ -337,8 +362,43 @@ def main():
         report['braking'] = braking
         check('braking_order', braking['0.5']['distance_m'] >= braking['1']['distance_m'] >= braking['2']['distance_m']
               and braking['0.5']['distance_m'] > braking['2']['distance_m'], braking)
+
+        # Powerslides. The stick dead straight down (inside the per-axis dead zone sideways) slides only as a drift, which
+        # also takes a slide from part tilt (stock wants full tilt) and grips as far as the stick is pulled down. Let go,
+        # a drift brings the board back round under the rider, so it keeps its speed and its line where stock's line
+        # swings round to the board and scrubs. A lower powerslide turn turns the board across its travel less.
+        drift = {'drift_powerslide': 1}
+        slides = {'stock_straight': powerslide(flat, None, 0, 1), 'stock_part': powerslide(flat, None, 0, .7),
+                  'drift_straight': powerslide(flat, drift, 0, 1), 'drift_part': powerslide(flat, drift, 0, .7),
+                  'stock_short_14': powerslide(flat, None, -2, 1, 14, 30), 'drift_short_14': powerslide(flat, drift, 0, 1, 14, 30),
+                  'stock_diagonal': powerslide(flat, None, 25, 1), 'turn_0.6': powerslide(flat, {'powerslide_turn': .6}, 25, 1)}
+        report['powerslide'] = slides
+        check('powerslide_drift_straight_down', not slides['stock_straight']['frames'] and slides['drift_straight']['frames']
+              and not slides['stock_part']['frames'] and slides['drift_part']['frames'], slides)
+        check('powerslide_drift_depth', slides['drift_part']['loss_mps_per_s'] < slides['drift_straight']['loss_mps_per_s'], slides)
+        check('powerslide_drift_line', slides['drift_short_14']['speed_after'] > slides['stock_short_14']['speed_after'] + 3
+              and slides['drift_short_14']['line_turn_deg'] < slides['stock_short_14']['line_turn_deg'] - 20, slides)
+        check('powerslide_turn', slides['turn_0.6']['frames'] and slides['turn_0.6']['board_peak_deg'] < slides['stock_diagonal']['board_peak_deg'], slides)
     finally:
         flat.close()
+
+    # An assist zone's limit on the vert assist: a straight air up a 55-degree quarter with assist 1 and the limit at L
+    # rides exactly as assist L; the limit at 1 changes nothing.
+    radius, lip = 4., math.radians(55)
+    quarter = [(-40, 0), (10, 0)] + [(10 + radius * math.sin(lip * k / 24), radius * (1 - math.cos(lip * k / 24))) for k in range(1, 25)]
+    triangles = [t for (z0, y0), (z1, y1) in zip(quarter, quarter[1:])
+                 for t in ([[-20, y0, z0], [-20, y1, z1], [20, y1, z1]], [[-20, y0, z0], [20, y1, z1], [20, y0, z0]])]
+    session = Session(args.binary, args.simulation_package, {'triangles': triangles, 'rails': [], 'spawn': [0, 0, -30], 'heading': 0}, 'quarter')
+    try:
+        still = lambda frame: (0, [0, 0], [0, 0])
+        air = lambda va, limit=None: session.ride(300, still, None, velocity=(0, 0, 11), spawn=(0, 0, -30), tune={'vert_assist': va}, limit=limit)
+        same = lambda a, b: all(x['root'] == y['root'] and x['velocity'] == y['velocity'] for x, y in zip(a, b))
+        full, half, none = air(1), air(.5), air(0)
+        limited = {'1': same(air(1, 1), full), '0.5': same(air(1, .5), half), '0': same(air(1, 0), none)}
+        report['vert_assist_limit'] = limited
+        check('vert_assist_limit', all(limited.values()) and not same(full, none), limited)
+    finally:
+        session.close()
 
     # Rail magnetism: a 40 cm rail beside the line of travel, from close (stock grinds) to beyond stock's reach. More
     # magnetism grinds from farther, less from nearer.

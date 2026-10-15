@@ -46,12 +46,12 @@ Riding into the sea puts Cairo back on the board at the last dry spot.
 | Push | Cross / A (Square / X pushes mongo) | W |
 | Brake | Circle / B | S |
 | Steer, spin | Left stick | A / D |
-| Powerslide | Left stick down-left / down-right | Hold C (A picks the left side) |
+| Powerslide | Left stick down (down-left / down-right pick the side) | Hold C (A picks the left side) |
 | Ollie | Right stick down, then up | Hold Space, release |
 | Tricks | Right stick gestures | Hold the left mouse button and flick |
 | Manual, nose manual | Right stick partly down / up | Hold the left mouse button, move part-way |
 | Pump on the ground, grab in the air | L2 / R2 (LT / RT) | Q / E |
-| Transfer over the coping | Left stick forward | Hold Shift |
+| Transfer over the coping | Hold R1 / RB | Hold Shift |
 | Look | (follows the board) | Mouse, without the left button |
 
 The flicks: down-up ollie, down-up-left kickflip, down-up-right heelflip, down-left or down-right shove-its, a sweep
@@ -63,6 +63,15 @@ Hardflips and inward heelflips take either motion. The authored arc starts wide 
 hardflip, the heel side for an inward heelflip), rolls through down and finishes about 40° off up on that side. The
 skate. motion starts just off down and finishes just off up. **Tight hardflips and inwards** (Skate feel menu, on by
 default, `bTightFlicks` in `DefaultGame.ini`) adds the second. Without it, a tight flick usually reads as an ollie.
+
+**Drift powerslides** (Skate feel menu, on by default, `bDriftPowerslide`) also start a powerslide with the left
+stick straight down (to the right; a rear diagonal still picks the side), hold it from half tilt, and grip as far as
+the stick is pulled down: the slide's wheel friction at 30% at half tilt, 60% at full tilt (`DriftGrip`,
+`DriftFullGrip`), so a light pull keeps more speed. Let go, the slide holds on for up to half a second while the board
+comes back round under the rider, instead of the line swinging round to the board and scrubbing. From 14 m/s, a half
+second straight-down drift comes out at about 11 m/s with the line turned about 30 degrees; the same stock slide comes
+out at about 4 m/s turned about 80 degrees. **Powerslide turn** (`PowerslideTurn`, 1) is how far the board kicks
+across the line.
 
 **120 Hz flick reading** (Skate feel menu, off by default, `bFlick120Hz`) reads the trick stick twice a tick, between
 frames too, so a quick hardflip keeps the point at the bottom of its arc. The flick window, pace and tolerance keep

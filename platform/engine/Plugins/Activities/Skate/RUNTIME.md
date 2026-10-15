@@ -15,6 +15,7 @@ assistance), built with Rust 1.97.1. The plugin [README](README.md) covers the U
 | `CreateBlank(resources, out, error)` | A session on no world, made ahead of a ride on any thread |
 | `Configure(difficulty, goofy, trucks)` | Controller preset, stance and truck tightness |
 | `Tune(pop, spin, speed, power, vert_assist)` | Scales on the stock values; out-of-range values are an error |
+| `LimitVertAssist(limit)` | At most this much of the tuned vert assist (0..1; a host's assist zone), from the next trajectory selected; 1 is none |
 | `Feel(feel)` | The `FeelTuning` scales (flick, air, rails, rolling, balance; README "Feel"); out-of-range values are an error |
 | `Activate(position, heading)` | Puts the rider on the board at a spot |
 | `Step(pad, frame_interval)` | Adds host time and runs whole ticks |

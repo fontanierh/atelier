@@ -8,8 +8,15 @@
 namespace atelier::skate
 {
 struct ControllerIntent { std::string_view name; float value; };
-struct PushPreferences { bool automatic_push_enabled = false, automatic_push_right = false; };
+// The player's riding choices: automatic pushing, and drift powerslides (FeelTuning::drift_powerslide). drift_hold:
+// a drift powerslide let go while the board is still across its travel holds on (GameplayRuntime::Advance).
+struct PushPreferences
+{ bool automatic_push_enabled = false, automatic_push_right = false, drift_powerslide = false, drift_hold = false; };
 struct SteeringIntentions { std::optional<float> turn, hard_turn, hard_turn_crouch; };
+// The tilt a drift powerslide holds from (PushPreferences::drift_powerslide).
+inline constexpr float DriftSlideTilt = 0.5f;
+// Whether the left stick asks for a powerslide (beyond the slide tilt, below the horizontal), as ProduceRiding reads it.
+bool AsksPowerslide(std::array<float,2> left, PushPreferences);
 SteeringIntentions ProduceSteering(std::array<float,2> left, std::uint32_t actor_flags);
 std::vector<ControllerIntent> ProduceRiding(const DerivedControllerInput&, std::uint32_t actor_flags, PushPreferences);
 std::vector<ControllerIntent> ProduceAnticipation(const DerivedControllerInput&);

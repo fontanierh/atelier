@@ -3,6 +3,7 @@
 #include "WandererCharacter.h"
 #include "JapanHUD.h"
 #include "SkateRails.h"
+#include "SkateAssistZones.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -91,6 +92,27 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
         for (const TSharedPtr<FJsonValue>& Point : Entry->GetArrayField(TEXT("points_cm"))) Rail.Points.Add(JsonVector(Point->AsArray()));
     }
     Park->RegisterRails();
+    // Where the rider's vert assist is limited (docs/CRATERPARK.md, "Assist zones"): boxes in world centimetres, turned
+    // yaw_deg about up. The kickers into a big gap's landing limit it, so the air goes forward, not back into the ramp.
+    int32 Zones = 0;
+    const TArray<TSharedPtr<FJsonValue>>* ZoneList = nullptr;
+    if (USkateAssistSubsystem* Assist = World->GetSubsystem<USkateAssistSubsystem>(); Assist && Root->TryGetArrayField(TEXT("assist_zones"), ZoneList))
+        for (const TSharedPtr<FJsonValue>& Value : *ZoneList)
+        {
+            const TSharedPtr<FJsonObject> Entry = Value->AsObject();
+            const TArray<TSharedPtr<FJsonValue>>* Centre = nullptr; const TArray<TSharedPtr<FJsonValue>>* Half = nullptr;
+            double Limit = 1.;
+            if (!Entry.IsValid() || !Entry->TryGetArrayField(TEXT("center_cm"), Centre) || !Entry->TryGetArrayField(TEXT("half_extent_cm"), Half)
+                || !Entry->TryGetNumberField(TEXT("vert_assist_max"), Limit) || Centre->Num() < 3 || Half->Num() < 3)
+            { UE_LOG(LogTemp, Warning, TEXT("%s: an assist zone without center_cm, half_extent_cm and vert_assist_max is skipped"), *Tag); continue; }
+            FSkateAssistZone Zone;
+            Zone.Id = FName(Entry->HasField(TEXT("id")) ? Entry->GetStringField(TEXT("id")) : FString::Printf(TEXT("zone_%d"), Zones));
+            Zone.Centre = JsonVector(*Centre); Zone.HalfExtent = JsonVector(*Half);
+            Zone.YawDeg = Entry->HasField(TEXT("yaw_deg")) ? float(Entry->GetNumberField(TEXT("yaw_deg"))) : 0.f;
+            Zone.VertAssistMax = float(Limit); Zone.Owner = Park;
+            Assist->Add(MoveTemp(Zone)); ++Zones;
+        }
+    if (Zones) UE_LOG(LogTemp, Display, TEXT("%s: %d assist zones"), *Tag, Zones);
     // The island trees and bushes where the original desert plants stood. They have no collision, so the riding
     // surfaces and the skating snapshot stay the original ones (docs/MEGAPARK.md, "Restyle").
     int32 Trees = 0;

@@ -57,6 +57,14 @@ public:
     /** Read the trick stick at 120 Hz, from a controller thread, instead of once per 60 Hz tick (README, "120 Hz
      *  flicks"). Off is stock. */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") bool bFlick120Hz = false;
+    /** Drift powerslides (README, "Settings"): the left stick straight down starts one too, it holds from half
+     *  tilt, its wheels grip as far as the stick is pulled down (DriftGrip at half tilt to DriftFullGrip at full tilt),
+     *  and let go it holds on while the board comes back round under the rider. Off is stock. */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate") bool bDriftPowerslide = false;
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1.5")) float DriftGrip = .3f;
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0", ClampMax="1.5")) float DriftFullGrip = .6f;
+    /** How far a powerslide turns the board across the travel (1 is stock). */
+    UPROPERTY(Config, EditAnywhere, Category = "Skate", meta=(ClampMin="0.25", ClampMax="1.5")) float PowerslideTurn = 1.f;
     /** The board parts (the board contract in the plugin README: deck top 9.05 cm above the ground, X nose). */
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath DeckMesh;
     UPROPERTY(Config, EditAnywhere, Category = "Skate") FSoftObjectPath TruckMesh;

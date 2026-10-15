@@ -53,6 +53,8 @@ public:
     bool Tune(float pop,float spin,float speed,float power,std::string& error)
     {return Tune(pop,spin,speed,power,0.0f,error);}
     bool Feel(const FeelTuning& feel,std::string& error) {return gameplay->Feel(feel,error);}
+    // At most this much of the tuned vert assistance (an assist zone; GameplayRuntime::LimitVertAssist).
+    bool LimitVertAssist(float limit,std::string& error) {return gameplay->LimitVertAssist(limit,error);}
     bool Activate(Vec3,float heading,std::string& error);
     // A session on no world, ticked once where nothing is: made ahead of a ride (on any thread), it takes a live
     // session's collision (AdoptWorld) and Activate places it, so no ride inherits another's state.

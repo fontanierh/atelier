@@ -80,6 +80,9 @@ with its own build step. `skate.RideTune` overrides the transitions' tuning live
 | `VertAssist` | 0 | 0 to 1; how far short of vertical a quarter pipe still sends a straight air back into it (1 reaches lips of about 50°) |
 | `bTightFlicks` | false | Also read a hardflip or inward heelflip flicked close to straight down then up (newer skate games' motion), beside the authored wide arc: the main gesture set gains a narrower copy of each (`GestureInputPublication::Tune`). Off is stock |
 | `bFlick120Hz` | false | Read Flick-It at 120 Hz (see 120 Hz flicks). Off is stock: one reading a tick |
+| `bDriftPowerslide` | false | Drift powerslides: the left stick straight down starts one too (to the right when dead straight; a rear diagonal picks its side as before), the slide holds from half tilt instead of full tilt, and its wheel friction follows how far down the stick is pulled, from `DriftGrip` of the slide's own at half tilt to `DriftFullGrip` at full tilt. Let go, the slide holds on (up to half a second, at `DriftGrip`) while the board turns back along its travel, so the rider comes out with the speed and the line instead of the line swinging round to the board. Off is stock |
+| `DriftGrip`, `DriftFullGrip` | 0.3, 0.6 | 0 to 1.5; a drift powerslide's wheel friction at half and at full tilt, as shares of the slide's own |
+| `PowerslideTurn` | 1 | 0.25 to 1.5; how far a powerslide turns the board across the travel |
 | `DeckMesh`, `TruckMesh`, `WheelMesh` | none | Board parts (see the board contract); skating is unavailable without all three |
 | `BoardDissolveMaterial` | none | A masked material with a scalar `Dissolve` (0 whole, 1 gone) that fades the board in and out; without one the board shows and hides |
 | `SoundFolder` | none | Content folder of the board sounds |
@@ -146,6 +149,9 @@ bit-exact with stock.
 | `Braking` | 0.25 to 3 | Foot-brake force |
 | `Steering`, `Carve`, `Grip` | 0.5 to 2 | Steering scalar, heading turn strength, wheel friction |
 | `Powerslide` | 0.25 to 3 | A powerslide's slowing force |
+| `PowerslideTurn` | 0.25 to 1.5 | `PowerslideTurn`: the board's slide angle across the travel |
+| `DriftPowerslide` | 0, 1 | `bDriftPowerslide` |
+| `DriftGrip`, `DriftFullGrip` | 0 to 1.5 | `DriftGrip`, `DriftFullGrip` |
 | `RollingFriction` | 0 to 3 | Surface, coasting and manual rolling friction: how fast speed above the board's cruising speed bleeds off (it holds its cruising speed on the flat either way) |
 | `HillSpeed` | 0 to 2 | The speed model's downhill pull |
 | `Pump` | 0 to 3 | Pumping acceleration |
@@ -177,20 +183,29 @@ attenuate over a 500 cm inner radius and 4500 cm falloff.
 | Push | A (X pushes mongo) | W or Up |
 | Brake | B | S or Down |
 | Steer, spin | Left stick | A / D or Left / Right |
-| Powerslide | Left stick down-left / down-right | Hold C; A chooses the left side |
+| Powerslide | Left stick down-left / down-right (or straight down with drift powerslides) | Hold C; A chooses the left side |
 | Load, ollie | Right stick down, then up | Hold Space, release to pop |
 | Flick-It tricks | Right stick gestures | Hold the left mouse button and flick |
 | Manual, nose manual | Right stick partly down / up | Hold the left mouse button and move slowly |
 | Pump (ground), grab (air) | Left / right trigger | Q / E |
-| Transfer over the coping | Left stick forward | Hold Shift |
+| Transfer over the coping | Hold RB (R1) | Hold Shift |
 
 Kickflips flick down then up-left, heelflips down then up-right; goofy mirrors the gestures. Holding the left-trigger
 grab, B makes it a Christ air and A a one-foot; holding the right stick to one side changes the grab, and the right
-trigger with the stick held left is a tuck knee. A grab never requests a transfer: the transfer has its own input. LB,
-RB and both stick clicks pass through to the session's pad; clicking both sticks with both triggers held is the
+trigger with the stick held left is a tuck knee. A grab never requests a transfer: the transfer has its own input, RB,
+on the host's transfer bit (the session's own RB, which steps off onto the feet, is not sent). LB and both stick
+clicks pass through to the session's pad; clicking both sticks with both triggers held is the
 deliberate bail. The adapter undoes the project's 0.25 per-axis stick dead zone, because Flick-It and the manual
 balance read real stick positions. A fast mouse flick points the stick in its direction and springs back after 0.1 s;
 slow movement moves it gradually.
+
+### Assist zones
+
+A game can limit the rider's assistance in places: `USkateAssistSubsystem` (`Public/SkateAssistZones.h`) holds boxes
+in world cm, each turned `YawDeg` about +Z with a `VertAssistMax`. While the board or the rider is inside one, the
+session's vert assist is at most the lowest such limit (`GameplaySession::LimitVertAssist`, sent with every step), and
+an air keeps the limit it was launched with until it lands. With no zones every step sends 1, which leaves the
+assistance exactly as tuned. A zone whose `Owner` is gone no longer applies.
 
 ### 120 Hz flicks
 

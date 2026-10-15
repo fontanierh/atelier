@@ -24,7 +24,8 @@ Vec4 CalculateSlideAngularCorrection(const SlideSettings& s,const SlideSurface& 
 {
     const auto remap=s.input_remap.Evaluate(std::abs(p.slide));auto age=p.elapsed-.5f;age=Fsel(-age,0,age);age=Fsel(1.0f-age,age,1);
     const auto weight=s.remap_vs_speed.Evaluate(p.surface_speed)*age,pi=Float(0x40490fdb),signed_remap=Fsel(p.slide,remap,-remap);
-    const auto angle=std::fma(p.slide*pi,1.0f-weight,(signed_remap*pi)*weight);
+    auto angle=std::fma(p.slide*pi,1.0f-weight,(signed_remap*pi)*weight);
+    if (s.turn_scale!=1) angle*=s.turn_scale;
     const auto velocity=Normalize3(p.velocity,2),side=Normalize3(Cross3(p.normal,velocity),2),desired=Madd4(velocity,Cos(angle),Scale4(side,Sin(angle)));
     auto error=Cross3(p.reference_forward,desired);if (Dot3(p.reference_forward,desired)<0) {const auto negate=error[1]<0;error=p.normal;if (negate) for (auto& value:error) value=-value;}
     const auto strength=std::fma(1.0f-s.softest_wheel_spin,p.wheel_hardness,s.softest_wheel_spin)*surface.yaw_strength;

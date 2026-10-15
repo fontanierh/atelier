@@ -41,6 +41,9 @@ struct ATELIERSKATE_API FSkateFeel
     float Carve = 1.f;                           // how hard a lean turns (0.5..2)
     float Grip = 1.f;                            // wheel grip in turns (0.5..2)
     float Powerslide = 1.f;                      // how hard a powerslide slows (0.25..3)
+    float PowerslideTurn = 1.f;                  // how far a powerslide turns the board across the travel (0.25..1.5)
+    int8 DriftPowerslide = 0;                    // straight down slides too, from half tilt, gripping as far as pulled: 0, 1
+    float DriftGrip = .3f, DriftFullGrip = .6f;  // a drift's wheel friction at half and full tilt, of the slide's (0..1.5)
     float RollingFriction = 1.f;                 // rolling resistance (0..3)
     float HillSpeed = 1.f;                       // downhill pull (0..2)
     float Pump = 1.f;                            // speed from pumping transitions (0..3)

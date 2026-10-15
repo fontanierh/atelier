@@ -354,6 +354,16 @@ tower** button per line, and **F7** returns to the line chosen last (the first b
 after the same ground trace at runtime: with no ground within 50 cm of the start, it refuses with a message. A
 `park.json` without `lines` (r4) falls back to its single marked drop-in, which is also where the map stop stays.
 
+## Assist zones
+
+The kickers that launch into a big gap's landing should send the rider forward even when the player rides with
+**Vert assist** at 1 (which turns straight airs short of vertical back into the ramp). `park.json` lists them under
+`assist_zones`: `[{id, center_cm: [x, y, z], half_extent_cm: [hx, hy, hz], yaw_deg, vert_assist_max}]`, boxes in island
+Unreal cm turned `yaw_deg` about up (`id` and `yaw_deg` are optional). While the board or the rider is inside one, the
+vert assist is at most `vert_assist_max`; an air launched inside one keeps that limit until it lands, so the whole jump
+rides with it. `ASuperUltraMegaPark::Spawn` adds them to the Skate plugin's `USkateAssistSubsystem` (plugin README,
+"Assist zones"); a park without the key changes nothing.
+
 ## Later
 
 - A way up: a zeppelin stop or a trail over the crest.

@@ -388,6 +388,9 @@ private:
     bool TakeRunOut(ERideBailKind Kind);
     bool BeginRunOut();
     bool BeginRecover();
+    /** The assist zones' limit on the vert assist for the next step (SkateAssistZones.h), held through an air. */
+    void UpdateAssistZones();
+    float VertAssistHeld = 1.f;
     bool BeginStepOnClip();
     /** The board leaves the clip (kicked away, or rolling on after a run-out): it flies or rolls on by itself as a
      *  projectile, or settles where it is when it barely moves. */

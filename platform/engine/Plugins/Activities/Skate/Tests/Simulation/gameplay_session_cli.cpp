@@ -103,7 +103,9 @@ bool Feel(const Json& value,FeelTuning& feel,std::string& error)
         {"braking",&FeelTuning::braking},{"steering",&FeelTuning::steering},{"carve",&FeelTuning::carve},{"grip",&FeelTuning::grip},
         {"powerslide",&FeelTuning::powerslide},{"rolling_friction",&FeelTuning::rolling_friction},{"hill_speed",&FeelTuning::hill_speed},
         {"pump",&FeelTuning::pump},{"wobble",&FeelTuning::wobble},{"wobble_onset",&FeelTuning::wobble_onset},
-        {"manual_drift",&FeelTuning::manual_drift},{"landing",&FeelTuning::landing},{"impact",&FeelTuning::impact}};
+        {"manual_drift",&FeelTuning::manual_drift},{"landing",&FeelTuning::landing},{"impact",&FeelTuning::impact},
+        {"powerslide_turn",&FeelTuning::powerslide_turn},{"drift_grip",&FeelTuning::drift_grip},
+        {"drift_full_grip",&FeelTuning::drift_full_grip}};
     for(std::size_t i=0;i<value.keys.size();++i)
     {
         const auto& key=value.keys[i];const auto& child=value.children[i];
@@ -113,11 +115,11 @@ bool Feel(const Json& value,FeelTuning& feel,std::string& error)
             if(!(choice==-1 || choice==0 || choice==1)){error="`"+key+"` is -1, 0 or 1";return false;}
             (key=="auto_push"?feel.auto_push:feel.assisted_air)=std::int8_t(choice);continue;
         }
-        if(key=="tight_flicks" || key=="flick_120hz")
+        if(key=="tight_flicks" || key=="flick_120hz" || key=="drift_powerslide")
         {
             float choice=0;if(!Float(child,choice,error))return false;
             if(!(choice==0 || choice==1)){error="`"+key+"` is 0 or 1";return false;}
-            (key=="tight_flicks"?feel.tight_flicks:feel.flick_120hz)=std::int8_t(choice);continue;
+            (key=="tight_flicks"?feel.tight_flicks:key=="flick_120hz"?feel.flick_120hz:feel.drift_powerslide)=std::int8_t(choice);continue;
         }
         bool known=false;
         for(const auto& [name,field]:fields)if(key==name){if(!Float(child,feel.*field,error))return false;known=true;}
@@ -493,6 +495,13 @@ bool Run(int argc,char** argv,std::string& error)
             if(!Vector(*Field(command,"velocity"),velocity,error))return false;
             if(!Finite(velocity)){error="Invalid launch velocity";return false;}
             session.Launch(velocity);
+        }
+        else if(op=="vert_assist_limit")
+        {
+            // An assist zone's limit on the tuned vert assistance (GameplaySession::LimitVertAssist); no reply.
+            if(!Fields(command,{"op","limit"},{"op","limit"},error))return false;
+            float limit=1;
+            if(!FloatField(command,"limit",limit,error) || !session.LimitVertAssist(limit,error))return false;
         }
         else if(op=="suspend" || op=="quit")
         {

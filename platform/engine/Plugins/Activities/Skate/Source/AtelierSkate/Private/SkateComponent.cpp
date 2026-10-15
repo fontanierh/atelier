@@ -354,8 +354,8 @@ void USkateComponent::ReadInput(float Dt)
     I.TriggerLeft = Trigger(EKeys::Q, EKeys::Gamepad_LeftTriggerAxis);
     I.TriggerRight = Trigger(EKeys::E, EKeys::Gamepad_RightTriggerAxis);
     I.bGrabLeft = I.TriggerLeft > 0; I.bGrabRight = I.TriggerRight > 0;
-    // Shift, or the left stick pushed forward (it steers sideways and powerslides back, never forward).
-    I.bTransfer = Down(EKeys::LeftShift) || Down(EKeys::RightShift) || (I.Left.Y > .7f && FMath::Abs(I.Left.X) < I.Left.Y);
+    // Shift, or the right bumper (R1): held into a lip, the air goes over the coping instead of back into the ramp.
+    I.bTransfer = Down(EKeys::LeftShift) || Down(EKeys::RightShift) || Down(EKeys::Gamepad_RightShoulder);
     In = I;
 }
 

@@ -101,7 +101,8 @@ const TArray<FSkateGroup>& SkateGroups()
             {TEXT("skate_steering"), TEXT("Steering"), TEXT("How much the stick turns the board."), .5f, 2, .05f, &FSkateFeel::Steering},
             {TEXT("skate_carve"), TEXT("Carve"), TEXT("How hard a leaning board turns."), .5f, 2, .05f, &FSkateFeel::Carve},
             {TEXT("skate_grip"), TEXT("Wheel grip"), TEXT("How well the wheels hold a turn before sliding out."), .5f, 2, .05f, &FSkateFeel::Grip},
-            {TEXT("skate_powerslide"), TEXT("Powerslide bite"), TEXT("How hard a powerslide slows the board."), .25f, 3, .05f, &FSkateFeel::Powerslide}}},
+            {TEXT("skate_powerslide"), TEXT("Powerslide bite"), TEXT("How hard a powerslide slows the board."), .25f, 3, .05f, &FSkateFeel::Powerslide},
+            {TEXT("skate_powerslide_turn"), TEXT("Powerslide turn"), TEXT("How far a powerslide kicks the board across the way you go."), .25f, 1.5f, .05f, &FSkateFeel::PowerslideTurn}}},
         {TEXT("Balance"), {
             {TEXT("skate_wobble"), TEXT("Speed wobble"), TEXT("How much the board shakes at speed. 0 never wobbles."), 0, 3, .05f, &FSkateFeel::Wobble},
             {TEXT("skate_wobble_onset"), TEXT("Wobble starts at"), TEXT("The speed the wobble starts at, as a multiple of the difficulty's."), .5f, 3, .05f, &FSkateFeel::WobbleOnset},
@@ -115,6 +116,7 @@ const TArray<FSkateGroup>& SkateGroups()
             {TEXT("skate_stick_reach"), TEXT("Stick full tilt at"), TEXT("Stick travel that counts as fully pushed. Lower reaches the edge sooner."), .6f, 1, .01f, &FSkateFeel::StickReach, true},
             {TEXT("skate_mouse_flick"), TEXT("Mouse flick strength"), TEXT("How far a mouse movement moves the trick stick, beside look sensitivity."), .25f, 4, .05f, &FSkateFeel::MouseFlick, true},
             {TEXT("skate_tight_flicks"), TEXT("Tight hardflips and inwards"), TEXT("Also reads a hardflip or inward heelflip flicked close to straight down then up, as newer skate games do, beside the wide arc."), 0, 1, 1, nullptr, true},
+            {TEXT("skate_drift_powerslide"), TEXT("Drift powerslides"), TEXT("The left stick straight down powerslides too, from half tilt, gripping as far as it is pulled down. Let go, the board comes back round under you and you keep your speed and line."), 0, 1, 1, nullptr, true},
             {TEXT("skate_flick_120hz"), TEXT("120 Hz flick reading"), TEXT("Reads the trick stick twice a tick, between frames too, so a quick flick such as a hardflip keeps every point of its shape. The flick window and pace keep their times."), 0, 1, 1, nullptr, true},
             {TEXT("skate_cam_dist"), TEXT("Skate camera distance"), TEXT("Nearer or farther than the skate camera's own."), .6f, 1.6f, .05f, &FSkateFeel::CameraDistance, true},
             {TEXT("skate_cam_fov"), TEXT("Skate camera field of view"), TEXT("Degrees added to the skate camera's view."), -20, 20, 1, &FSkateFeel::CameraFOV, true}}}};
@@ -128,7 +130,7 @@ FString SkateChoice(const FString& Key, int32 Choice)
     if (Key == TEXT("skate_mode")) return SkateModes[FMath::Clamp(Choice, 0, SkateCustom)];
     if (Key == TEXT("skate_difficulty"))
         return Choice == 0 ? TEXT("Easy · forgiving") : Choice == 2 ? TEXT("Hardcore · strict") : TEXT("Normal");
-    if (Key == TEXT("skate_tight_flicks") || Key == TEXT("skate_flick_120hz")) return Choice == 1 ? TEXT("On") : TEXT("Off");
+    if (Key == TEXT("skate_tight_flicks") || Key == TEXT("skate_flick_120hz") || Key == TEXT("skate_drift_powerslide")) return Choice == 1 ? TEXT("On") : TEXT("Off");
     return Choice == 1 ? TEXT("Off") : Choice == 2 ? TEXT("On") : TEXT("As the difficulty has it");
 }
 // The value a knob starts at: the game's DefaultGame.ini for the settings it had, the stock feel for the rest.
@@ -142,6 +144,7 @@ float SkateDefault(const FSkateKnob& Knob, const FSkateFeel& Defaults)
     }
     if (FCString::Strcmp(Knob.Key, TEXT("skate_tight_flicks")) == 0) return float(Defaults.TightFlicks);
     if (FCString::Strcmp(Knob.Key, TEXT("skate_flick_120hz")) == 0) return float(Defaults.Flick120Hz);
+    if (FCString::Strcmp(Knob.Key, TEXT("skate_drift_powerslide")) == 0) return float(Defaults.DriftPowerslide);
     return float((FCString::Strcmp(Knob.Key, TEXT("skate_auto_push")) == 0 ? Defaults.AutoPush : Defaults.AssistedAir) + 1);
 }
 }
@@ -512,7 +515,7 @@ void UJapanPreferences::Apply()
 FSkateFeel UJapanPreferences::GetSkateFeel() const
 {
     // Easy, Normal and Hardcore are the difficulty as made; Custom tunes every value on its base difficulty. The stick,
-    // mouse, tight flicks, 120 Hz flicks and camera apply in every mode. Custom values stay saved while a preset is played.
+    // mouse, tight flicks, drift powerslides, 120 Hz flicks and camera apply in every mode. Custom values stay saved while a preset is played.
     FSkateFeel Feel = FSkateFeel::Defaults();
     const int32 Mode = FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_mode"))), 0, SkateCustom);
     for (const FSkateGroup& Group : SkateGroups())
@@ -520,6 +523,7 @@ FSkateFeel UJapanPreferences::GetSkateFeel() const
             if (Knob.Field && (Knob.bAlways || Mode == SkateCustom)) Feel.*Knob.Field = Get(Knob.Key);
     Feel.TightFlicks = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_tight_flicks"))), 0, 1));
     Feel.Flick120Hz = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_flick_120hz"))), 0, 1));
+    Feel.DriftPowerslide = int8(FMath::Clamp(FMath::RoundToInt(Get(TEXT("skate_drift_powerslide"))), 0, 1));
     if (Mode != SkateCustom) Feel.Difficulty = SkateDifficulties[Mode];
     else
     {

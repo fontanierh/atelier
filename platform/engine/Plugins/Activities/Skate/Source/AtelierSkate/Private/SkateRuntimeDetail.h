@@ -562,6 +562,7 @@ public:
     {
         ECommand Kind=ECommand::Step;skate_simulation::XboxState Input{};float Dt=0,Heading=0;
         std::vector<skate_simulation::StickReading> Readings;   // a Step's 120 Hz stick readings (empty: the packet's)
+        float VertAssistLimit=1;   // a Step's assist-zone limit on the vert assist (USkateComponent::UpdateAssistZones)
         skate_simulation::Vec3 Spawn{},Velocity{};uint32 Generation=0;FPreferences Preferences;
         std::optional<skate_simulation::GameplayWorldSnapshot> Snapshot;
         std::optional<skate_simulation::PreparedGameplayWorld> World;std::string Error;bool Background=false;
@@ -634,7 +635,8 @@ public:
                 for(auto& Pending:PendingCollisions_)
                     if(!InstallWorld(Pending,Error)){Okay=false;break;}
                 PendingCollisions_.clear();
-                if(Okay)Okay=Session_->Step(Command.Input,Command.Dt,Command.Readings,Error);
+                if(Okay)Okay=Session_->LimitVertAssist(Command.VertAssistLimit,Error)
+                    &&Session_->Step(Command.Input,Command.Dt,Command.Readings,Error);
                 if(Okay)Okay=Publish(false,Error,float((FPlatformTime::Seconds()-Began)*1000.));
                 break;
             }
@@ -804,6 +806,7 @@ public:
     // The simulation's stance (its animation packet's): riding switch, riding fakie, and how many times the stance turned.
     bool Switch=false,Fakie=false;uint32 Turns=0;
     double CollisionReach=6000.;
+    float VertAssistLimit=1;   // sent with every step: the assist zones' limit on the vert assist (1: none)
     // Where a gather last found nothing to snapshot (open water): the next try waits 20 m from it. The coverage
     // (CollisionCentre, CollisionReach) stays the installed world's.
     FVector GatherRetryAt=FVector(UE_BIG_NUMBER);
@@ -852,6 +855,8 @@ public:
         N.gravity=S.Gravity;N.boneless=S.Boneless;N.hippy=S.Hippy;
         N.rail_magnetism=S.RailMagnetism;N.grind_pop=S.GrindPop;N.grind_friction=S.GrindFriction;
         N.braking=S.Braking;N.steering=S.Steering;N.carve=S.Carve;N.grip=S.Grip;N.powerslide=S.Powerslide;
+        N.powerslide_turn=S.PowerslideTurn;N.drift_powerslide=S.DriftPowerslide;
+        N.drift_grip=S.DriftGrip;N.drift_full_grip=S.DriftFullGrip;
         N.rolling_friction=S.RollingFriction;N.hill_speed=S.HillSpeed;N.pump=S.Pump;
         N.wobble=S.Wobble;N.wobble_onset=S.WobbleOnset;N.manual_drift=S.ManualDrift;
         N.landing=S.Landing;N.impact=S.Impact;N.auto_push=S.AutoPush;N.assisted_air=S.AssistedAir;

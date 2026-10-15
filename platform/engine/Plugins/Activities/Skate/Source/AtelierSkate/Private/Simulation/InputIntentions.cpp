@@ -66,6 +66,12 @@ SteeringIntentions ProduceSteering(std::array<float,2> left, std::uint32_t flags
         active && allowed ? std::optional<float>(hard) : std::nullopt,
         active && allowed ? std::optional<float>(std::abs(hard*Float(0x3f59999a))) : std::nullopt};
 }
+bool AsksPowerslide(std::array<float,2> left, PushPreferences preferences)
+{
+    const auto angle = LeftStickAngle(left[0],left[1]);
+    const auto length = ControllerMagnitude(std::fma(left[1],left[1],left[0]*left[0]));
+    return length > (preferences.drift_powerslide ? DriftSlideTilt : 0.89999998f) && angle > -2 && angle < 2;
+}
 std::vector<ControllerIntent> ProduceRiding(const DerivedControllerInput& controller, std::uint32_t flags, PushPreferences preferences)
 {
     const auto& w = controller.Words(); const auto previous = w[6], current = w[13];
@@ -100,14 +106,21 @@ std::vector<ControllerIntent> ProduceRiding(const DerivedControllerInput& contro
         emit("Crouch",stick_crouch-trigger >= -0.0f ? stick_crouch : trigger);
     }
     if (steering.turn) emit("Turn",*steering.turn);
-    if ((flags&(1u<<8)) == 0 && length > 0.89999998f)
+    // A drift powerslide holds from half tilt, and starts with the stick straight down too (its angle is exactly 0 with
+    // the stick inside the per-axis dead zone sideways, which neither diagonal takes): to the right.
+    if ((flags&(1u<<8)) == 0 && length > (preferences.drift_powerslide ? DriftSlideTilt : 0.89999998f))
     {
         constexpr auto scale = 0.28004956f; const auto half_pi = Float(0x3fc90fdb);
         if (angle > 0 && angle < 0.91000003f) emit("RightSlideStart",1);
         if (angle > -0.91000003f && angle < 0) emit("LeftSlideStart",1);
+        if (preferences.drift_powerslide && angle == 0 && left[1] < 0) emit("RightSlideStart",1);
         if (angle > -2 && angle < half_pi) emit("LeftSlide",-((angle+2.0f)*scale));
         if (angle > -half_pi && angle < 2) emit("RightSlide",(2.0f-angle)*scale);
     }
+    // A drift powerslide let go while the board is still across its travel holds on, as if the stick were straight
+    // down, while the board comes back round under the rider (GameplayRuntime::Advance).
+    if ((flags&(1u<<8)) == 0 && preferences.drift_hold && !AsksPowerslide(left,preferences))
+    { constexpr auto scale = 0.28004956f; emit("LeftSlide",-2.0f*scale); emit("RightSlide",2.0f*scale); }
     if ((current&(1u<<28)) != 0) emit("GrabWorld",1);
     return out;
 }

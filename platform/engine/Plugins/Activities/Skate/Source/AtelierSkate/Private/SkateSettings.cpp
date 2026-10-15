@@ -11,6 +11,8 @@ FSkateFeel FSkateFeel::Defaults()
     F.PushSpeed = S->PushSpeedScale; F.PushPower = S->PushPowerScale; F.VertAssist = S->VertAssist;
     F.TightFlicks = int8(S->bTightFlicks ? 1 : 0);
     F.Flick120Hz = int8(S->bFlick120Hz ? 1 : 0);
+    F.DriftPowerslide = int8(S->bDriftPowerslide ? 1 : 0); F.PowerslideTurn = S->PowerslideTurn;
+    F.DriftGrip = S->DriftGrip; F.DriftFullGrip = S->DriftFullGrip;
     return F;
 }
 
@@ -27,7 +29,9 @@ bool FSkateFeel::Validate(FString& Error) const
         {TEXT("Gravity"), Gravity, .5f, 1.5f}, {TEXT("Boneless"), Boneless, .5f, 3}, {TEXT("Hippy"), Hippy, .5f, 3},
         {TEXT("RailMagnetism"), RailMagnetism, .25f, 3}, {TEXT("GrindPop"), GrindPop, .5f, 2}, {TEXT("GrindFriction"), GrindFriction, 0, 3},
         {TEXT("Braking"), Braking, .25f, 3}, {TEXT("Steering"), Steering, .5f, 2}, {TEXT("Carve"), Carve, .5f, 2}, {TEXT("Grip"), Grip, .5f, 2},
-        {TEXT("Powerslide"), Powerslide, .25f, 3}, {TEXT("RollingFriction"), RollingFriction, 0, 3}, {TEXT("HillSpeed"), HillSpeed, 0, 2},
+        {TEXT("Powerslide"), Powerslide, .25f, 3}, {TEXT("PowerslideTurn"), PowerslideTurn, .25f, 1.5f},
+        {TEXT("DriftGrip"), DriftGrip, 0, 1.5f}, {TEXT("DriftFullGrip"), DriftFullGrip, 0, 1.5f},
+        {TEXT("RollingFriction"), RollingFriction, 0, 3}, {TEXT("HillSpeed"), HillSpeed, 0, 2},
         {TEXT("Pump"), Pump, 0, 3}, {TEXT("Wobble"), Wobble, 0, 3}, {TEXT("WobbleOnset"), WobbleOnset, .5f, 3}, {TEXT("ManualDrift"), ManualDrift, 0, 3},
         {TEXT("Landing"), Landing, .5f, 3}, {TEXT("Impact"), Impact, .5f, 3}, {TEXT("GetUpDelay"), GetUpDelay, .25f, 2},
         {TEXT("CameraDistance"), CameraDistance, .6f, 1.6f}, {TEXT("CameraFOV"), CameraFOV, -20, 20}};
@@ -38,5 +42,6 @@ bool FSkateFeel::Validate(FString& Error) const
     if (AutoPush < -1 || AutoPush > 1 || AssistedAir < -1 || AssistedAir > 1) { Error = TEXT("AutoPush and AssistedAir are -1, 0 or 1"); return false; }
     if (TightFlicks < 0 || TightFlicks > 1) { Error = TEXT("TightFlicks is 0 or 1"); return false; }
     if (Flick120Hz < 0 || Flick120Hz > 1) { Error = TEXT("Flick120Hz is 0 or 1"); return false; }
+    if (DriftPowerslide < 0 || DriftPowerslide > 1) { Error = TEXT("DriftPowerslide is 0 or 1"); return false; }
     Error.Reset(); return true;
 }

@@ -14,6 +14,9 @@ struct SlideSettings
 {
     PointGraph<8> input_remap,remap_vs_speed,force_vs_angle,force_vs_speed;
     float softest_wheel_force,softest_wheel_spin,angular_force,force_y_offset;
+    // The player's powerslide (FeelTuning): how far the board turns across the travel (powerslide_turn), and this tick's
+    // share of the slide's wheel friction (drift_powerslide; SlideStateRuntime). 1 is stock.
+    float turn_scale=1,friction_scale=1;
 };
 struct SlideSurface {PointGraph<8> speed_to_force;float yaw_strength,yaw_damping;};
 struct SlideInput

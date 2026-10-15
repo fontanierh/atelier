@@ -29,5 +29,14 @@ struct FeelTuning
     // 0 off (stock): Flick-It reads the stick once per 60 Hz tick. 1: twice per tick (120 Hz), from the host's stick
     // readings (GameplaySession::Step). The flick window, pace and the pause after a trick keep their times.
     std::int8_t flick_120hz=0;
+    // Powerslides: how far the board turns across the travel (1 stock; 0.25..1.5).
+    float powerslide_turn=1;
+    // 0 off (stock). 1 drift: the left stick straight down starts a powerslide as well as a rear diagonal (to the right
+    // when dead straight), the slide holds from half tilt, and the slide's wheel friction follows how far down the stick
+    // is pulled: drift_grip (0..1.5) of the slide's own at half tilt to drift_full_grip at full tilt. Less friction keeps
+    // more speed and bends the line less. Let go, the slide holds on at the light grip while the board comes back round
+    // under the rider (GameplayRuntime::Advance), so the travel does not swing round to the board.
+    std::int8_t drift_powerslide=0;
+    float drift_grip=0.3f,drift_full_grip=0.6f;
 };
 }
