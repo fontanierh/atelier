@@ -275,8 +275,8 @@ exercise the supported log formats without requiring a native build.
 ## Audit a Python generator's accesses
 
 Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. Python actions
-work with or without `cache=True`. Guarded `Blender` and `UnrealScript` commands also support Python access auditing
-with `heavy=True` and `cache=False`; Blender requires `factory_startup=True`. Native products may live in owned
+work with or without `cache=True`. Guarded `Blender` and `UnrealScript` commands have offline-tested Python access
+audit adapters with `heavy=True` and `cache=False`; Blender requires `factory_startup=True`. Native products may live in owned
 generated subpaths under `ctx.out`, or the project's `Content` for Unreal. Optional product roots, linked output
 paths and legacy pool/cutoff protocols are refused. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
 running the script and writes `logs/<step>.audit.json` separately from its products. No extra command is required.
@@ -332,6 +332,11 @@ identity therefore includes installed `__pycache__` bytes. Originless modules re
 provenance or an explicit known host API name (`unreal` or the supported Blender API modules). Host API mutable
 native state remains outside Python input observation. CPython's synthetic `typing.io`/`typing.re` namespaces require
 their exact binding to the fingerprinted `typing` module. Preload rejection produces an incomplete report and no stamp.
+The installed UE 5.8 host is intentionally unsupported by this initial preload policy: its PythonScriptPlugin
+imports wrappers such as `unreal_core.py` from its own `Content/Python` directory and creates additional originless
+native modules such as `_unreal_core`. Those wrapper roots and generated binding identities are not approved or
+fingerprinted by this adapter, so the bootstrap fails closed. Accepting them requires explicit hashed tool roots
+and binding provenance, followed by real-host validation; a broad engine/plugin/project exemption is insufficient.
 Unreal keeps its descriptor isolation and native library checks before/after the observed script. These framework
 checks run outside recipe observation; recipe ctypes calls remain refused.
 
