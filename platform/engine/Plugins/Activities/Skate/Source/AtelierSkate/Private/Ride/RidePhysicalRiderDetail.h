@@ -181,6 +181,10 @@ namespace RidePhysicalRiderDetail
     // from where it was while that is this near (cm); a crossing counts when the pelvis is cut off from this high over
     // the bail's floor (cm).
     constexpr float ThroughTouch = 2.f, ThroughKeep = 30.f, ThroughFloorUp = 30.f;
+    // A bail's body in trouble is held this many updates (about 70 ms) before it is unstable, its speed brought back to
+    // this share of the bail's limit while it is flung.
+    constexpr int32 UnstableHold = 4;
+    constexpr float HeldSpeed = .6f;
     // A body fitted to the skin is the convex hull of its vertices furthest out in this many directions, from at
     // least this many vertices; a hull under this share of the capsule's volume (a bone that carries little skin of
     // its own) leaves the capsule. With 64 directions the hull cut up to 3 cm off a limb's side (none of them

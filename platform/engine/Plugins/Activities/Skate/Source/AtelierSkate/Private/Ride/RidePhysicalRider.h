@@ -381,6 +381,8 @@ private:
     bool bBail = false, bBailOffered = false;
     ERideBailKind LastBailKind = ERideBailKind::Fall;
     float BailTime = 0, Quiet = 0, BailLimit = 2500, BailRise = 400;
+    // The bail's updates in a row with the body in trouble (flung, risen or through a face; UpdateBail).
+    int32 Trouble = 0;
     // The bail's first frames (skate.RideBailTrace): the frame it began and the pelvis's velocity then.
     uint64 BailFrame = 0;
     FVector BailPelvisVelocity = FVector::ZeroVector;

@@ -109,7 +109,7 @@ bool URidePhysicalRider::StartBail(const FVector& Velocity, const FVector& Board
     }
     bEndWhenOut = false; GetUpTime = -1.f; GetUpWait = -1;
     Weight = WeightTarget = 1.f; ApplyWeight();
-    bBail = true; BailTime = 0.f; Quiet = 0.f;
+    bBail = true; BailTime = 0.f; Quiet = 0.f; Trouble = 0;
     // Limp at once: the Bail profile lets go of every anchor and turns gravity on, and the joints keep only its tone
     // toward the clip, within the bail's envelope (ApplyJointLimits). The anchors hold the bodies in the frame of the kinematic root body,
     // and in a bail the ride stops the root on the bail's frame, then carries it to the ground under the body a frame
@@ -196,6 +196,7 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
     // face is checked again from where it was, next update (while that is near: a pelvis rounding a corner moves on).
     bool bThrough = false, bTouch = false;
     FString Crossed;
+    FVector Outside = FVector::ZeroVector;   // a face crossed: its normal on the side the pelvis came from
     {
         FHitResult Hit, Cut;
         FCollisionQueryParams Params(SCENE_QUERY_STAT(RideThrough), false, Rider);
@@ -206,7 +207,7 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
             if (Hit.Distance > FVector::Dist(BailHips, Hips) - ThroughTouch) bTouch = FVector::Dist(BailHips, Hips) < ThroughKeep;
             else if (World->LineTraceSingleByChannel(Cut, BailFloor + FVector(0, 0, ThroughFloorUp), Hips, ECC_Pawn, Params))
             {
-                bThrough = true;
+                bThrough = true; Outside = Hit.ImpactNormal;
                 const UPrimitiveComponent* Face = Hit.GetComponent();
                 Crossed = FString::Printf(TEXT(", through %s/%s at (%.0f, %.0f, %.0f)"), Face && Face->GetOwner() ? *Face->GetOwner()->GetName() : TEXT("?"),
                     Face ? *Face->GetName() : TEXT("?"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z);
@@ -215,15 +216,39 @@ ERideBodyState URidePhysicalRider::UpdateBail(float Dt, float SettleTime)
         if (!bThrough && !bTouch && Hips.Z < BailFloor.Z - 120.f)
         {
             bThrough = World->LineTraceSingleByChannel(Hit, Hips, Hips + FVector(0, 0, 400.f), ECC_Pawn, Params) && Hit.ImpactNormal.Z < -.5f;
-            if (bThrough) Crossed = TEXT(", under the floor");
+            if (bThrough) { Crossed = TEXT(", under the floor"); Outside = FVector::UpVector; }
         }
     }
-    if (!bTouch) BailHips = Hips;
-    if (Speed > BailLimit || Hips.Z > BailStart.Z + BailRise || bThrough || Hips.ContainsNaN())
+    // A hard landing (an overshot gap: 25-30 m/s, 15-20 of them into the ground) can press the bodies into the floor for
+    // a substep or two, past its face, and the solver throws them back out faster than they came. Unstable at once, the
+    // bail ended there and the rider got up, standing, where the body had got to: a teleport off the board. A body in
+    // trouble is held instead (UnstableHold updates) while the solver resolves it: its speed is brought back within the
+    // bail's, its rise stopped and its motion through the face it crossed taken off, so the bail goes on where it is.
+    // Only a body still in trouble after that (through a floor for good, or flung again and again) is unstable. The
+    // pelvis's last place stays on the side it came from while it is through, so the crossing is seen until undone.
+    const bool bFlung = Speed > BailLimit, bRisen = Hips.Z > BailStart.Z + BailRise;
+    if (!bTouch && !bThrough) BailHips = Hips;
+    if (Hips.ContainsNaN() || ((bFlung || bRisen || bThrough) && ++Trouble > UnstableHold))
     {
         UE_LOG(LogTemp, Warning, TEXT("SKATE ride ragdoll unstable (%.0f cm/s, %.0f cm from the start%s)"), Speed, Hips.Z - BailStart.Z, *Crossed);
         return ERideBodyState::Unstable;
     }
+    if (bFlung || bRisen || bThrough)
+    {
+        const float Keep = bFlung ? BailLimit * HeldSpeed / Speed : 1.f;
+        for (FBodyInstance* B : Mesh->Bodies)
+        {
+            if (!B || !B->IsInstanceSimulatingPhysics()) continue;
+            FVector V = B->GetUnrealWorldVelocity() * Keep;
+            if (bRisen) V.Z = FMath::Min(V.Z, 0.);
+            if (bThrough) V -= Outside * FMath::Min(0., FVector::DotProduct(V, Outside));
+            B->SetLinearVelocity(V, false);
+            if (bFlung) B->SetAngularVelocityInRadians(B->GetUnrealWorldAngularVelocityInRadians() * Keep, false);
+        }
+        UE_LOG(LogTemp, Display, TEXT("SKATE ride ragdoll held (%d of %d: %.0f cm/s, %.0f cm from the start%s)"), Trouble, UnstableHold, Speed,
+            Hips.Z - BailStart.Z, *Crossed);
+    }
+    else Trouble = 0;
     if (!IgnoredPairs.IsEmpty() && CVarRideSelfCollision.GetValueOnGameThread() != 0) ReleaseKeptPairs();
     UpdateRamp(Dt);
     {
