@@ -10,17 +10,23 @@ class VertReturns:
         if self.mode not in ('route', 'vert_return'):
             raise ValueError('validation_mode must be route or vert_return')
         self.requirements = {}
+        self.ground_touches = set()
         names = set()
         specs = world.spec.get('required_vert_returns', [])
         if not isinstance(specs, list):
             raise ValueError('required_vert_returns must be a list')
         defaults = dict(max_contact_distance_m=.25, max_departure_distance_m=.75,
                         min_apex_above_coping_m=.5)
-        allowed = set(defaults) | {'id', 'surface', 'coping_y_m', 'max_normal_speed_mps'}
+        allowed = set(defaults) | {'id', 'surface', 'coping_y_m', 'max_normal_speed_mps', 'require_air'}
         for original in specs:
             if not isinstance(original, dict) or set(original)-allowed:
                 raise ValueError('Unknown or invalid required_vert_returns fields')
             spec = {**defaults, **original}
+            spec.setdefault('require_air', True)
+            if not isinstance(spec['require_air'], bool):
+                raise ValueError('Vert require_air must be a boolean')
+            if self.mode == 'vert_return' and not spec['require_air']:
+                raise ValueError('Vert-only trials must require their wall air-out')
             for key in ('id', 'surface'):
                 if not isinstance(spec.get(key), str) or not spec[key]:
                     raise ValueError('Vert returns need nonempty id and surface names')
@@ -36,6 +42,8 @@ class VertReturns:
                     raise ValueError('Vert return bounds must be positive')
             if spec['max_contact_distance_m'] > .5 or spec['max_departure_distance_m'] > 1:
                 raise ValueError('Vert proximity bounds exceed .5 m contact or 1 m departure limit')
+            if spec['max_normal_speed_mps'] > 7.:
+                raise ValueError('Vert normal-speed limit must be at most 7 m/s')
             names.add(spec['id']); self.requirements[spec['surface']] = spec
         if self.mode == 'vert_return' and (not specs or world.spec.get('required_airs')):
             raise ValueError('Vert-only trials need required_vert_returns and cannot declare gap trials')
@@ -59,6 +67,8 @@ class VertReturns:
             result[i] = dict(face=int(f), surface=name, role=self.world.sections[name]['role'],
                              height_m=float(bary @ self.world.triangles[f, :, 1]), normal=n.tolist(),
                              distance_m=float(d), method='globally nearest 3D collision triangle; inferred')
+            if d <= self.requirements[name]['max_contact_distance_m'] and n[1] <= math.cos(math.radians(15.)):
+                self.ground_touches.add(name)
         return result
 
     def on_wall(self, support):
@@ -83,7 +93,7 @@ class VertReturns:
             wall_slope = math.degrees(math.acos(float(np.clip(n[1], -1, 1))))
             if wall_slope < rules['min_landing_slope_deg']:
                 fail.append('vert return landed on a flat deck or apron')
-            if impact > spec['max_normal_speed_mps']:
+            if impact > min(spec['max_normal_speed_mps'], rules['max_landing_normal_speed_mps']):
                 fail.append('vert return exceeds inferred normal-speed limit')
             recovery = (times >= times[end]) & (times <= times[end]+rules['landing_recovery_s'])
             if not all(states[i] in ('PhysicsGround', 'RevertGround') for i in np.flatnonzero(recovery)):
@@ -98,10 +108,18 @@ class VertReturns:
                     method='Peak absolute normal component of last three airborne velocities against nearest return face; not a contact impulse.')
 
     def summarize(self, airs):
+        """@cc [owner:fontanierh,label:correctness] optional-grounded-vert
+        Route-only require_air=false MAY accept a grounded carve only with
+        nearby named collision on a wall at least fifteen degrees steep. Any
+        observed wall flight MUST still pass the same air-out safety checks.
+        This option MUST NOT replace the route hero air or relax impact limits.
+        """
         result = []
         for surface, spec in self.requirements.items():
             candidates = [i for i, a in enumerate(airs) if a.get('vert_return', {}).get('surface') == surface]
-            passed = bool(candidates) and all(airs[i]['safe_landing_pass'] for i in candidates)
+            grounded = not candidates and not spec['require_air'] and surface in self.ground_touches
+            passed = grounded or bool(candidates) and all(airs[i]['safe_landing_pass'] for i in candidates)
             result.append(dict(id=spec['id'], surface=surface, air_indices=candidates, passed=passed,
+                               grounded_carve=grounded,
                                failures=[] if passed else ['required same-wall air-out was absent or failed']))
         return result

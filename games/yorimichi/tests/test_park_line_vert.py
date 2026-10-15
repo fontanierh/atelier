@@ -81,3 +81,39 @@ def test_vert_configuration_is_explicit_and_bounded(tmp_path):
     with pytest.raises(ValueError):VertReturns(world)
     world.spec['validation_mode']='anything'
     with pytest.raises(ValueError):VertReturns(world)
+
+
+def test_optional_grounded_carve_still_needs_wall_contact_and_route_hero(tmp_path):
+    world,rows=vert_trial(tmp_path)
+    world.spec['validation_mode']='route'
+    world.spec['required_vert_returns'][0]['require_air']=False
+    for row in rows:row['state']='PhysicsGround'
+    result=analyze(rows,world)
+    assert result['vert_checks'][0]['passed']
+    assert result['vert_checks'][0]['grounded_carve']
+    assert not result['passed'] and 'no completed qualifying huge air' in result['failures']
+    for row in rows:row['position'][2]=3.
+    assert not analyze(rows,world)['vert_checks'][0]['passed']
+
+
+def test_optional_air_does_not_hide_a_bad_return(tmp_path):
+    world,rows=vert_trial(tmp_path)
+    world.spec['validation_mode']='route'
+    world.spec['required_vert_returns'][0]['require_air']=False
+    rows[47]['velocity']=[20,-8,9]
+    result=analyze(rows,world)
+    assert not result['vert_checks'][0]['passed']
+    assert 'vert return exceeds inferred normal-speed limit' in result['airs'][0]['failures']
+
+
+@pytest.mark.parametrize('setting,value', [('max_normal_speed_mps',8.),('require_air','false')])
+def test_vert_limits_cannot_be_weakened_or_option_coerced(tmp_path,setting,value):
+    world,_=vert_trial(tmp_path)
+    world.spec['required_vert_returns'][0][setting]=value
+    with pytest.raises(ValueError):VertReturns(world)
+
+
+def test_vert_diagnostic_cannot_opt_out_of_air(tmp_path):
+    world,_=vert_trial(tmp_path)
+    world.spec['required_vert_returns'][0]['require_air']=False
+    with pytest.raises(ValueError,match='must require'):VertReturns(world)

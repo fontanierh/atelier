@@ -179,7 +179,8 @@ maximum root-to-collision distances are 0.75 m at departure and 0.25 m at return
 existing minimum slope rule. IDs and surface names must be unique. All bounds must be positive and finite.
 
 For this declared return only, the peak absolute normal component of the last three airborne velocities replaces
-the directional slope/mismatch criterion. The `max_normal_speed_mps` bound is **required**, not calibrated
+the directional slope/mismatch criterion. The `max_normal_speed_mps` bound is **required**, at most 7 m/s,
+and also capped by the route's normal-impact bound. It is not calibrated
 automatically from surviving runs. It remains an estimate against an inferred face, not measured contact speed
 or impulse; nearby seams, animation offsets and early wheel contact limit its precision. The normal return speed,
 distance, face, apex and method are retained in the air's `vert_return` report. No bail and the existing recovery
@@ -187,7 +188,11 @@ duration are still required; vert recovery must remain in riding-ground states. 
 wrong-wall and hard returns fail. Ordinary gap landings retain their original slope/mismatch checks.
 
 Only explicitly declared wall regions get the intentional-vert steepness exemption. `vert_checks` requires an
-observed successful air-out from every declared region; simply carving without an air-out fails. A vert return
+observed successful air-out from every declared region by default. A route can explicitly set
+`require_air: false` for a wall that can be carved at lower speed: without a flight it needs nearby grounded
+contact on that named wall at least 15 degrees steep. Any observed flight still needs the full same-wall return,
+apex, impact and recovery checks; this option cannot turn a failed flight into a passing carve. The separate
+wall-only diagnostic always requires its air-out. A vert return
 never supplies the route's required hero air, even if it travels 25 m horizontally. Default
 `validation_mode: "route"` retains that hero requirement. A **separate wall-only diagnostic** may set
 `validation_mode: "vert_return"`: it must declare a wall return and cannot declare `required_airs`; it omits only
