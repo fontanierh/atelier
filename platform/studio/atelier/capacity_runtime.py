@@ -40,12 +40,15 @@ def read_configuration(path):
     return json.loads(raw)
 
 
-def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None):
+def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
     silently change worker counts. Every request MUST claim its own checkout's named lock.
+    Performance requests MUST preserve their explicit exclusion flag in the broker request.
     """
+    if type(performance) is not bool:
+        raise ValueError('capacity performance request must be a boolean')
     selected = config or os.environ.get('ATELIER_CAPACITY_CLIENT')
     path = Path(selected) if selected is not None else DEFAULT_CONFIG
     try:
@@ -83,5 +86,5 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     request = dict(id=request_id, owner=os.environ.get('ATELIER_AGENT') or 'launcher', checkout=str(REPO),
                    purpose=str(purpose or kind), phase=kind,
                    resources=asdict(resources), locks=sorted(set(locks) | {'checkout:' + str(REPO)}),
-                   seconds=math.ceil(timeout) if timeout > 0 else 300)
+                   seconds=math.ceil(timeout) if timeout > 0 else 300, performance=performance)
     return AdmissionSession(value['socket'], request)

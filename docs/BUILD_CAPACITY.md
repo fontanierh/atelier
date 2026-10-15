@@ -46,6 +46,10 @@ and `profiles` for `job`, `game` and `compile`. Each profile contains a complete
 list. The common launcher always adds its checkout lock. A reservation smaller than the actual guard ceiling
 is refused, including a session using a higher game limit. Missing CPU or I/O capacity is refused. Profiles do
 not alter worker settings or provide kernel CPU quotas; initial budgets must conservatively cover unchanged workers.
+The common launcher can request a performance window with `guarded.run(..., performance=True)`; the configured
+broker requires other grants to drain before admission and excludes new grants until release. The benchmark tool requests this window
+and still rejects observed render overlap. Benchmark, cinematic capture and sailboat QA each use the common
+actual-child guard and admission lifecycle; they do not add a second lock or reservation around it.
 
 An absent default client file keeps legacy behavior. Once configured, a missing broker, invalid profile or
 rejected request fails closed. There is no silent fallback. The initial adapter acquires **all three existing

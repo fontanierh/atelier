@@ -106,6 +106,35 @@ def test_capacity_go_follows_guards_and_close_follows_reap(tmp_path, guards):
     assert session.final[0].returncode == 0
 
 
+@pytest.mark.parametrize('performance', [False, True])
+def test_configured_guarded_launch_forwards_performance_before_admission(tmp_path, guards, monkeypatch, performance):
+    from atelier import capacity_runtime
+    requested = []
+    session = Admission(guards)
+
+    def configured(**options):
+        requested.append(options)
+        return session
+
+    monkeypatch.setattr(capacity_runtime, 'configured_session', configured)
+    assert guarded.run([sys.executable, '-c', 'pass'], tmp_path / 'guard', performance=performance) == 0
+    assert len(requested) == 1 and requested[0]['performance'] is performance
+    assert guards.count('offer') == guards.count('bridge') == guards.count('close') == 1
+
+
+def test_explicit_session_cannot_silently_ignore_performance_window(tmp_path, guards):
+    with pytest.raises(ValueError, match='must request performance exclusion'):
+        guarded.run([sys.executable, '-c', 'pass'], tmp_path, admission=Admission(guards), performance=True)
+    assert guards == []
+
+
+def test_explicit_performance_session_uses_its_one_existing_admission(tmp_path, guards):
+    session = Admission(guards)
+    session.request = {'performance': True}
+    assert guarded.run([sys.executable, '-c', 'pass'], tmp_path, admission=session, performance=True) == 0
+    assert guards.count('offer') == guards.count('close') == 1
+
+
 @pytest.mark.parametrize('failure', ['offer', 'grant', 'heartbeat'])
 def test_capacity_failure_does_not_fall_back_and_owned_child_is_reaped(tmp_path, guards, failure):
     session = Admission(guards, fail=failure)

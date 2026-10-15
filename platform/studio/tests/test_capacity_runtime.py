@@ -51,6 +51,21 @@ def test_configured_profiles_preserve_guard_ceiling_and_checkout_lock(client):
     assert result['resources'] == value['profiles']['compile']['resources']
     assert result['locks'] == sorted(['graphics', 'checkout:' + str(runtime.REPO)])
     assert result['seconds'] == 120
+    assert result['performance'] is False
+
+
+def test_performance_window_reaches_configured_broker_request(client):
+    client[2]()
+    request = runtime.configured_session(kind='game', limit_gib=10, timeout=330, performance=True)
+    assert request['performance'] is True
+    assert request['resources'] == client[1]['profiles']['game']['resources']
+
+
+@pytest.mark.parametrize('value', [None, 0, 1, 'true'])
+def test_performance_flag_must_be_boolean_even_without_configuration(client, value):
+    with pytest.raises(ValueError, match='performance.*boolean'):
+        runtime.configured_session(kind='game', limit_gib=10, timeout=0, performance=value)
+    assert client[3] == []
 
 
 def test_retry_keeps_logical_identity_while_unrelated_actions_are_distinct(client):
