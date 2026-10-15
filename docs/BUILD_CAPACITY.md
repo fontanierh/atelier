@@ -48,7 +48,8 @@ The database directory must already exist, belong to the user and have owner-onl
 provides. Database files and SQLite sidecars must be private, owned, regular and single-link; symlinks and unknown
 existing SQLite files are refused. The database has its own application identity and schema version. These checks
 protect against accidental reuse of unrelated files; this is not a boundary against a hostile process running as
-the same account. Experiments are limited to a 64 MiB database and fixtures to 4 MiB and 1000 operations.
+the same account. Databases larger than 64 MiB are refused before opening for mutation; an accepted transaction
+can grow the file past that threshold, so it is not a disk quota. Fixtures are limited to 4 MiB and 1000 operations.
 
 `ShadowService(database, observe=...)` exposes `apply(operation, now=...)`. The injected observation is an
 `Observation`: sample time, healthy/complete flags, available memory and disk, pinned process states and ownership

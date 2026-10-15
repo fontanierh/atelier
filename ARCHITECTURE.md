@@ -77,7 +77,8 @@ an operator-controlled producer can freshly build an independent audited Python 
 directory. Online uploading and hostile-source signer isolation remain separate work.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands
-evaluate supplied snapshots and inspect retained guard histories; measured admission remains a separate migration.
+evaluate supplied snapshots, inspect retained guard histories and exercise durable queue/lease transactions in an
+explicit simulation database. Live admission and native launcher integration remain a separate migration.
 
 ## Why the studio is Python
 
