@@ -18,7 +18,7 @@ import ast, importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from atelier.build import Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
+from atelier.build import Product, Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
 from atelier import paths, unreal_modules
 
 GAME = Path(__file__).resolve().parent
@@ -411,15 +411,35 @@ def belmonte_steps(out):
     ]
 
 
+def texture_steps(ctx):
+    """One exact PNG/JPEG owner per spec; the familiar aggregate consumes their byte identities."""
+    from atelier.build_inputs import local_imports as action_imports
+    definition = importlib.util.spec_from_file_location('yorimichi_texture_catalog', WORLD / 'texture_catalog.py')
+    catalogue = importlib.util.module_from_spec(definition)
+    definition.loader.exec_module(catalogue)
+    script = WORLD / 'gen_textures.py'
+    support = [path for path in action_imports(script) if path != script]
+    steps, products = [], []
+    for key, (filename, _, assets) in catalogue.TEXTURES.items():
+        spec = WORLD / 'textures' / f'{key}.json'
+        output = ctx.out / 'textures' / filename
+        product = f'texture.{key}'
+        products.append(product)
+        steps.append(Step(f'world.textures.{key}',
+                          [Python(script, ('--texture', key, '--spec', spec, '--output', output,
+                                           *(('--assets', ASSETS) if assets else ())))],
+                          inputs=[spec, *support, *(ASSETS / 'environment/textures' / name for name in assets)],
+                          outputs=[output], products=[Product(product, (output,))], cache=True, audit=True,
+                          about=f'independent {filename} source texture'))
+    return [*steps, Step('world.textures', [], reads=products,
+                        about='all island source textures, retaining the legacy consumer boundary')]
+
+
 def world_steps(ctx):
     """World exports."""
     out = ctx.out
-    return [
+    return [*texture_steps(ctx),
         # ------------------------------------------------------------ world
-        Step('world.textures', [Python(WORLD / 'gen_textures.py')], inputs=[WORLD / 'gen_textures.py', WORLD / 'surface_textures.py', YORI,
-             ASSETS / 'environment/textures/tree-bark.jpg', ASSETS / 'environment/textures/tuscan-ground.jpg',
-             ASSETS / 'environment/textures/tuscan-ground.provenance.json'],
-             outputs=[out / 'textures' / 'T_sky.png', out / 'textures' / 'T_ground_detail.png'], about='procedural textures (leaves, grass, bark, road, sky)'),
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
         Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'build_assets.py', WORLD / 'forest_trees.py', REGIONS / 'forest/specs.py'],
              needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
