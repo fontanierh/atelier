@@ -134,6 +134,12 @@ def configure(sub):
     export.add_argument('step')
     export.add_argument('directory', type=Path)
     export.add_argument('--profile', type=Path, required=True, help='protected operator publisher profile outside the checkout')
+    upload = commands.add_parser('upload-bundle', help='explicitly upload a signed public V2 source bundle over HTTPS')
+    upload.add_argument('directory', type=Path)
+    upload.add_argument('--trust', type=Path, required=True, help='explicit allowlist of publisher public keys')
+    upload.add_argument('--profile', type=Path, required=True, help='protected operator endpoint/credential profile')
+    upload.add_argument('--timeout', type=float, default=30, help='total verification/transfer deadline (max 300 seconds)')
+    upload.add_argument('--dry-run', action='store_true', help='verify snapshot/profile without credentials or network')
     for name in ('pin', 'unpin', 'forget'):
         commands.add_parser(name).add_argument('key')
 
@@ -161,6 +167,11 @@ def main(args):
             from .artifact_publisher import publish
             print(json.dumps(publish(args.game, args.step, args.directory, profile=args.profile,
                                      echo=lambda message: print(message, file=sys.stderr)), indent=2))
+        elif args.action == 'upload-bundle':
+            from .artifact_upload import upload_bundle
+            print(json.dumps(upload_bundle(args.directory, args.trust, profile=args.profile, dry_run=args.dry_run,
+                                           timeout=args.timeout,
+                                           echo=lambda message: print(message, file=sys.stderr)), indent=2))
         else:
             pin(store, args.key, args.action == 'pin')
         return 0

@@ -26,8 +26,10 @@ Signed source bundles can now enter the existing local store after publisher/pol
 verification. Optional HTTPS lookup uses fixed object-store paths, pinned publisher keys and bounded downloads;
 ordinary builds fall back locally on a remote failure. A trusted producer can freshly execute one independent
 audited Python action and export a signed V2 directory after clean/pushed-source, grant, audit and inventory
-checks. It makes no native memory-guard assertion. Online uploading and hostile-source signer isolation remain
-unimplemented. Unreal restoration, import transactions and native spatial migration still require native proof.
+checks. It makes no native memory-guard assertion. Explicit HTTPS upload verifies public V2 bundles before loading
+write credentials, commits immutable manifests last and checks remote bytes. Automatic publication and
+hostile-source signer isolation remain unimplemented. Unreal restoration, import transactions and native spatial
+migration still require native proof.
 Legacy fingerprints, output cutoffs, module isolation and the [portable artifact pool](ARTIFACT_POOL.md) remain.
 The current CLI and safety rules remain in force; no native import recipe or scheduler is switched by this phase.
 
@@ -258,7 +260,9 @@ the replacement satisfies those stronger per-product guarantees.
 
 The optional HTTPS receiver now supports frequent small artifact retrieval from fixed object-store paths, with
 explicit configuration, verified manifests, bounded downloads and local fallback; see [the cache guide](ARTIFACT_POOL.md#fetch-signed-products-over-https).
-Online uploading and hostile-source signing remain separate work. A private object store is the proposed default.
+Explicit public-V2 bundle upload now completes the producer/receiver transport path with immutable conditional
+writes and verified readback. Private redistribution/upload policy, receiver authentication, automatic publication
+and hostile-source signing remain separate work. A private object store is the proposed default.
 GitHub release bundles are a plausible backend for versioned starter packs
 and larger snapshots; choose bundle sizes after checking current service constraints. GitHub Actions caches should
 remain disposable accelerators. The source of truth is the recipe and committed sources, not the availability of
