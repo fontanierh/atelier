@@ -478,10 +478,13 @@ server shares the mailbox, its schema and its rules with the `atelier board` CLI
 For a deployment whose server was already built and reviewed, skip the startup cargo build with the paired
 `--prebuilt-server /absolute/staged/atelier-board-server --prebuilt-sha256 EXPECTED_SHA256` options. The Python
 launcher still initializes the mailbox, starts its presence watcher, supplies the normal server arguments and
-terminates/reaps its child on shutdown. It verifies the staged file's SHA256 immediately before launch: the path
+terminates/reaps its child on shutdown. It copies and hashes the staged file through the same open descriptor: the path
 must be absolute with no symbolic links, and the file must be owned by the launching user, regular, owner-executable
-and at most 256 MiB. Use a stable staged file during verification and startup. A missing option, malformed hash,
-invalid file or digest mismatch refuses startup; this mode never invokes cargo or falls back to another binary.
+and at most 256 MiB. It launches a private, read-only executable snapshot of those verified bytes, retains the
+snapshot through child exit/reaping and removes it afterward. Replacing the source after verification cannot
+change the launched bytes. This private snapshot is not a sandbox against hostile code running as the same user.
+A missing option, malformed hash, invalid file or digest mismatch refuses startup; this mode never invokes cargo
+or falls back to another binary.
 Without either option, the normal incremental build behavior above is unchanged. Building and changing a live
 deployment remain separate operations; these flags do not build, install or restart a service.
 
