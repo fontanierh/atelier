@@ -352,6 +352,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |
 | `atelier capacity history GUARD_DIRECTORY [--json]` | [inspect retained process memory histories](docs/BUILD_CAPACITY.md#inspect-retained-resource-history) without launching work |
 | `atelier capacity shadow FIXTURE --state ABSOLUTE_DB` | [exercise durable queue and lease lifecycles](docs/BUILD_CAPACITY.md#exercise-durable-shadow-lifecycles) in an isolated simulation; never grants native admission |
+| `atelier capacity serve CONFIG` / `status SOCKET` / `supervise CONFIG` | [production broker and guarded-launch migration](docs/BUILD_CAPACITY.md#broker-and-guarded-launch-migration); client activation is separate and the legacy exclusion bridge remains |
 
 **Tests.** Hosted CI runs all Python tests on each PR head in three isolated macOS jobs: board, other studio,
 and games. Each uses normal pytest collection; new tests automatically belong to one group. All three must

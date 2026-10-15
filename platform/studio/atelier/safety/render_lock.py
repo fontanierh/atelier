@@ -334,16 +334,24 @@ def _admit_fitting(fitting, big, small, gib):
 
 
 @contextmanager
-def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='job', on_slot=None, fitting_gib=None):
+def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='job', on_slot=None, fitting_gib=None,
+                exclusive_bridge=False):
     """Own a render slot for the duration of the block; yields the lock file taken.
 
     Without `small_gib` this is the machine's single big slot, as it always was. `small_gib`, the job's expected peak,
     lets it use the small slot when two are configured and it is admitted. `kind` ('job', 'game' or 'compile') is
     recorded in the lock file; a compile also takes the small and fitting slots. `fitting_gib` requests only the
-    configured reserved lane. `on_slot(slot, why)` hears 'big', 'small' or 'fitting' once the scan has passed."""
+    configured reserved lane. `on_slot(slot, why)` hears 'big', 'small' or 'fitting' once the scan has passed.
+
+    `exclusive_bridge` is the capacity client's migration boundary: acquire all existing lane mutexes
+    together or none, without waiting while holding a subset. Old clients therefore cannot enter a
+    second lane after the broker's capacity check. It adds an admission requirement, never concurrency.
+    """
     kind = kind or 'job'
     if kind not in KINDS:
         raise ValueError(f'kind must be one of {KINDS}, not {kind!r}')
+    if exclusive_bridge and (small_gib is not None or fitting_gib is not None or wait):
+        raise ValueError('the capacity bridge requires one nonblocking attempt without a slot preference')
     if fitting_gib is not None and (kind != 'job' or small_gib is not None
                                    or not math.isfinite(fitting_gib) or not 0 < fitting_gib <= SMALL_PEAK_GIB):
         raise ValueError('fitting requires a job with an expected peak above zero and at most 3 GiB, without small_gib')
@@ -359,19 +367,39 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
             why = f'expected {small_gib:.1f} GiB, over the small slot\'s {SMALL_PEAK_GIB:g}'
     eligible = small_gib is not None and not why
     opened, owned = [], []
-    handle = big.open('a+')
-    opened.append(handle)
-    admission = big.with_name(f'{big.stem}.admission{big.suffix}').open('a+')
-    opened.append(admission)
-    deadline = time.monotonic()+max(wait, 0.)
     try:
+        handle = big.open('a+')
+        opened.append(handle)
+        admission = big.with_name(f'{big.stem}.admission{big.suffix}').open('a+')
+        opened.append(admission)
+        bridge_handles = [handle]
+        if exclusive_bridge:
+            for path in (small, fitting):
+                extra = path.open('a+')
+                opened.append(extra)
+                bridge_handles.append(extra)
+        deadline = time.monotonic()+max(wait, 0.)
         while True:
             slot = None
             # Publish the chosen slot's record before another new guard checks admission. Otherwise two
             # launches in the same checkout can both see an empty record between flock and _write.
             if _take(admission):
                 try:
-                    if fitting_gib is not None:
+                    if exclusive_bridge:
+                        taken = []
+                        for candidate in bridge_handles:
+                            if not _take(candidate):
+                                why = f'the capacity bridge needs every lane; {candidate.name} is busy'
+                                break
+                            taken.append(candidate)
+                        if len(taken) == len(bridge_handles):
+                            owned.extend(taken)
+                            slot, why = 'big', 'capacity migration bridge holds every legacy lane'
+                        else:
+                            # Nothing was published. Do not truncate any previous owner's record.
+                            for candidate in reversed(taken):
+                                fcntl.flock(candidate.fileno(), fcntl.LOCK_UN)
+                    elif fitting_gib is not None:
                         taken, why = _admit_fitting(fitting, big, small, fitting_gib)
                         if taken:
                             opened.append(taken)
@@ -396,7 +424,10 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
                                       time=time.time(), protocol=PROTOCOL)
                         if slot in ('small', 'fitting'):
                             record['expected_gib'] = round(float(fitting_gib if slot == 'fitting' else small_gib), 2)
-                        _write(owned[0], record)
+                        if exclusive_bridge:
+                            record['capacity_bridge'] = True
+                        for target in owned if exclusive_bridge else owned[:1]:
+                            _write(target, record)
                 finally:
                     fcntl.flock(admission.fileno(), fcntl.LOCK_UN)
             else:
@@ -412,7 +443,7 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
                 raise RenderBusy(f'another render job is running{detail}; '
                                  f'stop it (or the phone stream) before starting this one{aside}')
             time.sleep(.25)
-        if kind == 'compile':
+        if kind == 'compile' and not exclusive_bridge:
             # Nothing runs beside a compile. Holding the big slot, recorded as a compile, stops new small jobs;
             # one already running is waited for.
             why = 'a compile, which also holds the small and fitting slots'
@@ -439,7 +470,7 @@ def render_lock(purpose, wait=0., ignore=(), scan=None, small_gib=None, kind='jo
             # One listing for both, so a shader worker the other slot's Unreal starts meanwhile is not taken for foreign.
             table = process_table()
             skip = set(ignore)
-            if kind != 'compile':
+            if kind != 'compile' and not exclusive_bridge:
                 for label, path in lock_paths().items():
                     if label != slot:
                         other = read_holder(path)

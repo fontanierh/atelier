@@ -102,6 +102,33 @@ def reap(child, grace=10.):
         _reap_helpers(child.pid)
 
 
+def wait_ready(monitor, pid, started, report, limit_bytes, timeout=5.):
+    """Require a fresh process-guard sample before releasing a capacity-gated child.
+
+    This is evidence of guard health and its configured ceiling, not an exit witness or
+    a claim that the process's descendants have all been discovered.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if monitor is None or monitor.poll() is not None:
+            raise RuntimeError('process memory guard exited before becoming ready')
+        try:
+            with Path(report).open('rb') as handle:
+                raw = handle.read(1024 * 1024 + 1)
+            value = json.loads(raw) if len(raw) <= 1024 * 1024 else None
+        except (OSError, ValueError):
+            value = None
+        if isinstance(value, dict):
+            observed = value.get('time')
+            fresh = (type(observed) in (int, float) and math.isfinite(observed)
+                     and 0 <= time.time() - observed <= 5.)
+            if (fresh and value.get('pid') == pid and value.get('process_start') == started
+                    and value.get('limit_bytes') == limit_bytes and value.get('state') == 'running'):
+                return
+        time.sleep(.01)
+    raise RuntimeError('process memory guard did not become ready')
+
+
 @contextmanager
 def attach(pid, report, duration, limit_gib=10., expected_start=None):
     """`duration=None` means no time limit: the ceiling still applies, nothing kills on the clock. `expected_start`
