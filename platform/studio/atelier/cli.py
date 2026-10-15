@@ -174,9 +174,9 @@ def make_parser():
     p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
-    p = sub.add_parser('capacity', help='inspect retained resource history or evaluate a capacity snapshot')
-    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe'])
-    p.add_argument('path', help='snapshot, guard directory, shadow fixture, or fresh probe database')
+    p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
+    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'supervise'])
+    p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
     p.add_argument('--json', action='store_true')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
@@ -257,6 +257,17 @@ def main(argv=None):
             return shadow_main(args.state, args.path)
         if args.state:
             raise SystemExit('--state is only supported by capacity shadow')
+        if args.action == 'serve':
+            from .capacity_broker import main as serve_main
+            return serve_main(args.path)
+        if args.action == 'supervise':
+            from .capacity_supervision import install
+            return install(args.path)
+        if args.action in ('status', 'reconcile'):
+            import json
+            from .capacity_client import reconcile, status
+            print(json.dumps((reconcile if args.action == 'reconcile' else status)(args.path), indent=2))
+            return 0
         if args.action == 'probe':
             from .capacity_probe import main as probe_main
             return probe_main(args.path)
