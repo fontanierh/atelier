@@ -96,6 +96,35 @@ They do not validate a native child launch barrier or a real guard-ready receipt
 useful child work until registration and independent guard readiness are established; current guarded launchers
 are unchanged. The migration and native acceptance gates below still apply.
 
+## Exercise a closed launch barrier
+
+```sh
+experiment=$(mktemp -d)
+uv run atelier capacity probe "$experiment/probe.sqlite"
+```
+
+This explicit one-shot experiment launches only two fixed, harmless Python programs. A controller owns a launcher;
+that launcher owns one worker, which waits on a private inherited socket before writing its single useful byte.
+The controller submits the launcher to a fresh `ShadowService`, registers the worker's pinned identity, records
+**synthetic** guard readiness, and checks a current-epoch heartbeat before opening the gate. Readiness, gate and
+wait messages bind the epoch, a per-run nonce and the relevant OS process-start identities. macOS uses the existing
+libproc birth identity and Linux uses process start ticks; unsupported platforms refuse. No process-table scan,
+native program, render lock, live guard or scheduler state participates.
+
+The roster is complete only by construction: both programs are fixed, and only the launcher creates a child.
+Resource amounts, availability and guard readiness are fixtures, not measurements. The launcher must report its
+exact worker wait result over the inherited socket, and the controller must itself wait for the launcher. Only
+those two facts allow release. An absent or malformed worker wait receipt or an unproven wait retains uncertainty
+and shadow charges; a missing PID or detached parent is never evidence of exit. Readiness or gate identity
+mismatches refuse useful work. EOF refuses
+the useful byte, and channel waits and owned-child cleanup have finite timeouts. The explicit database remains
+for inspection on failure; the command never automatically reconciles a fenced lease or retries an experiment.
+
+Use a fresh database in an owner-only directory with one controller and no other service clients. This is a local
+lifecycle experiment, not hostile-code isolation or a concurrent service-to-launcher fencing protocol: it does not
+make the heartbeat and gate write atomic with another client's restart. Every report says `admission: false` and
+`native_eligible: false`. No arbitrary argv, recipe or workload is accepted, and the native migration gates remain open.
+
 ## Inspect retained resource history
 
 ```sh

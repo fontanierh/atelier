@@ -175,7 +175,8 @@ def make_parser():
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('capacity', help='inspect retained resource history or evaluate a capacity snapshot')
-    p.add_argument('action', choices=['plan', 'history', 'shadow']); p.add_argument('path', help='snapshot, guard directory, or shadow operation fixture')
+    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe'])
+    p.add_argument('path', help='snapshot, guard directory, shadow fixture, or fresh probe database')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
     p.add_argument('--json', action='store_true')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
@@ -256,6 +257,9 @@ def main(argv=None):
             return shadow_main(args.state, args.path)
         if args.state:
             raise SystemExit('--state is only supported by capacity shadow')
+        if args.action == 'probe':
+            from .capacity_probe import main as probe_main
+            return probe_main(args.path)
         if args.action == 'history':
             from .capacity_history import show
             return show(args.path, as_json=args.json)
