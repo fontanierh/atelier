@@ -17,7 +17,8 @@ def changed_inputs(previous, current):
     if not previous:
         return ['recipe or inputs changed (the old stamp has no input detail)']
     reasons = []
-    for field, label in (('commands', 'commands'), ('products', 'product declarations'), ('tools', 'tool context')):
+    for field, label in (('commands', 'commands'), ('products', 'product declarations'), ('tools', 'tool context'),
+                         ('deferred_inputs', 'deferred input selection')):
         if previous.get(field) != current.get(field):
             reasons.append(f'{label} changed')
     for field, label in (('inputs', 'input'), ('needs', 'dependency'), ('reads', 'product'),

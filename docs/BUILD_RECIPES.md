@@ -58,6 +58,38 @@ Change receipts retain their ordered root roles separately: an optional root app
 removal is a retired member, and an absent root contributes no retained member count. Older receipts without the
 optional-root roles remain unknown when they cannot be compared safely.
 
+## Defer legacy input membership
+
+A legacy action may defer an expensive directory selection until that action is selected and reaches
+its fingerprint decision, after its prerequisites have finished:
+
+```python
+from atelier.build import DeferredInputs, Step
+
+Step('runtime.identity', commands,
+     inputs=[source / 'identity.py'],
+     deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
+                                     support=(source / 'identity.py',))])
+```
+
+`settings` is a tuple of positional collector arguments (nested tuples, paths, strings, integers,
+booleans and `None`). `support` must include the collector's implementation and all its helpers.
+Collectors are trusted recipe functions: they only observe membership and return an ordered list or
+tuple of paths. They must declare all selection settings and code; this API does not discover hidden
+reads, environment dependencies or hostile code. It does not import or launch tools itself.
+
+Unselected collectors do not run. Fingerprints include explicit criteria, support bytes, ordered
+member paths and their normal legacy byte feeds, including an empty selection. After executing an
+opted-in action, a fresh selection and fingerprint must still match before a stamp is written.
+Plans and worktree reuse use the same observation API; reuse filters copied generated members from
+both the source-only byte inputs and membership list. No observation is cached on a recipe Step or
+across invocations. Existing actions without this opt-in retain their fingerprint algorithm.
+
+This first API supports legacy actions only: named products, reads/references, optional inputs,
+spatial queries, audit, caches, pool roots, explicit toolchains and batches cannot use it. Supporting
+named actions later requires preserving complete source/output ownership checks without enumerating
+unselected members. Deferred selection does not grant native cache eligibility or audit certification.
+
 ## Track an optional source file
 
 A step with named products can declare `optional_inputs=[source / 'override.json']`. The exact path contributes

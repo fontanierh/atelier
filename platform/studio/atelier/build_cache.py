@@ -105,7 +105,7 @@ def tool_context(step, hasher, *, cache=None):
     context = {'schema': SCHEMA, 'system': platform.system(), 'machine': platform.machine(),
                'lock': hasher(paths.REPO / 'uv.lock'),
                'support': {name: hasher(Path(__file__).with_name(name)) for name in
-                           ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py')}}
+                           ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py', 'build_deferred.py')}}
     cache = {} if cache is None else cache
     if build.Python in kinds:
         if os.environ.get('ATELIER_PYTHON') or os.environ.get('PYTHONPATH') or os.environ.get('PYTHONHOME'):

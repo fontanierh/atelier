@@ -22,6 +22,7 @@ from pathlib import Path
 from . import engine, paths
 from . import build_inputs, build_products
 from .build_products import Product
+from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
@@ -164,6 +165,7 @@ class Step:
     name: str
     commands: list
     inputs: list = field(default_factory=list)     # files or folders, hashed by content
+    deferred_inputs: list[DeferredInputs] = field(default_factory=list, kw_only=True)  # explicit selected-only membership
     needs: list = field(default_factory=list)      # step names whose results this step uses (their fingerprints feed its own)
     after: list = field(default_factory=list)      # step names that only have to run first (a compiled editor): no rerun when they change
     outputs: list = field(default_factory=list)    # must exist after a run; a missing one forces a rerun
@@ -267,12 +269,15 @@ def _hash_path(digest, path, skip=True):
         digest.update(b'missing:' + str(path).encode())
 
 
-def required_inputs(step):
+def required_inputs(step, *, observation=None):
     named = step.products or step.reads or step.references
     from .build_audit import SUPPORT
     from . import build_spatial
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
-    return [*step.inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
+    if step.deferred_inputs and observation is None:
+        raise ValueError(f'{step.name}: deferred inputs require an explicit input observation')
+    inputs = step.inputs if observation is None else observation.paths
+    return [*inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
             *(SUPPORT if step.audit else ()), *([Path(build_spatial.__file__)] if step.queries else ())]
 
@@ -288,15 +293,16 @@ def missing_product_inputs(step):
     return [str(path) for path in required_inputs(step) if not Path(path).exists()]
 
 
-def fingerprint(step, done, *, index=None, tool_cache=None):
+def fingerprint(step, done, *, index=None, tool_cache=None, observation=None):
     """@cc [owner:fontanierh,label:correctness] legacy-fingerprint-compatibility
-    Steps without named products MUST retain their existing fingerprint algorithm. Read edges
+    Legacy steps without deferred inputs MUST retain their existing fingerprint algorithm. Read edges
     MUST include the consumed product's content identity; references and ordering MUST NOT.
     """
-    return fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache)[0]
+    return fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache,
+                             observation=observation)[0]
 
 
-def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
+def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None):
     """Hash once, optionally retaining per-input identities for build explanations."""
     digest = hashlib.sha256()
     named = bool(step.products or step.reads or step.references)
@@ -310,7 +316,23 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     digest.update(commands.encode())
     state = {'commands': hashlib.sha256(commands.encode()).hexdigest(), 'inputs': {},
              'needs': {name: done.get(name, 'unbuilt') for name in step.needs}}
-    inputs = required_inputs(step)
+    from .build_deferred import observe, validate
+    validate(step)
+    observation = observation if observation is not None else observe(step)
+    inputs = required_inputs(step, observation=observation)
+    if observation.metadata is not None:
+        def portable(value):
+            if isinstance(value, str):
+                return value.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+            if isinstance(value, list):
+                return [portable(item) for item in value]
+            if isinstance(value, dict):
+                return {key: portable(item) for key, item in value.items()}
+            return value
+        metadata = json.dumps(portable({'providers': json.loads(observation.metadata),
+                                        'members': [str(p) for p in observation.members]}), sort_keys=True)
+        digest.update(b'deferred-inputs-v1\0' + metadata.encode())
+        state['deferred_inputs'] = json.loads(metadata)
     if step.cache or step.audit:
         build_inputs.validate_imports(step, declared_inputs(step))
     for item in inputs:
@@ -710,8 +732,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
                 products = build_products.records(step)
                 build_products.verify_reads(step, declared_products, done)
-                if step.products and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
-                    raise RuntimeError(f'{step.name}: inputs changed during build; products not certified')
+                if (step.products or step.deferred_inputs) and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
+                    raise RuntimeError(f'{step.name}: inputs changed during build; outputs not certified')
                 verify_spatial(step, current)
             except Exception as error:
                 log.flush()

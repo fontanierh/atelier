@@ -3,6 +3,12 @@ import importlib.util
 import io
 from pathlib import Path, PureWindowsPath
 import shutil
+from types import SimpleNamespace
+
+from atelier import build, paths
+from atelier.build import DeferredInputs, Step
+from atelier.build_deferred import observe
+from atelier.build_products import Graph
 
 import pytest
 
@@ -211,3 +217,38 @@ def test_gameplay_configuration_changes_executable_identity(project, relative):
     second = identity.create(repo, content, io.StringIO())
     assert second['code'] != first['code']
     assert second['signature'] != first['signature']
+
+
+def test_network_provider_preserves_existing_selection_and_links(tmp_path):
+    source = Path(identity.__file__)
+    root = tmp_path / 'Content'; root.mkdir()
+    for name in ('Data/Network/session.json', 'Other/Data/Network/keep', 'Data/Networked/keep', 'Mesh.uasset',
+                 'Saved/no', 'nested/.DS_Store'):
+        file = root / name; file.parent.mkdir(parents=True, exist_ok=True); file.write_text(name)
+    (root / 'link.uasset').symlink_to(root / 'Mesh.uasset')
+    (root / 'dir-link').symlink_to(root / 'Other', target_is_directory=True)
+    step = Step('network', [], deferred_inputs=[DeferredInputs('content', identity.content_files, (root,), support=(source,))])
+    assert observe(step).members == tuple(identity.content_files(root))
+    assert [p.relative_to(root).as_posix() for p in observe(step).members] == [
+        'Data/Networked/keep', 'Mesh.uasset', 'Other/Data/Network/keep', 'link.uasset']
+
+
+def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
+    recipe = build.load_recipe('yorimichi')
+    # Isolate only composition, without assembling unrelated world/character declarations.
+    for name in ('world_steps', 'character_steps', 'sound_effect_steps', 'unreal_steps', 'staging_steps',
+                 'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'fit_steps', 'pawn_steps'):
+        monkeypatch.setattr(recipe, name, lambda *args: [])
+    monkeypatch.setattr(recipe, 'staging_steps', lambda *args: [Step('data.stage', [])])
+    monkeypatch.setattr(recipe, 'cook_step', lambda *args: Step('cook', []))
+    monkeypatch.setattr(recipe, 'package_step', lambda *args: Step('package', []))
+    def forbidden(*args):
+        pytest.fail('recipe composition scanned generated content')
+    monkeypatch.setattr(Path, 'rglob', forbidden)
+    ctx = SimpleNamespace(out=paths.REPO / 'build/standin', uproject=recipe.GAME / 'unreal/Standin.uproject')
+    declarations = recipe.steps(ctx)
+    network = next(s for s in declarations if s.name == 'data.network')
+    assert network.deferred_inputs[0].settings == (recipe.GAME / 'unreal/Content',)
+    assert network.deferred_inputs[0].collect.__name__ == 'content_files'
+    assert network.inputs[-1] == paths.ENGINE_PLUGINS
+    Graph(declarations)

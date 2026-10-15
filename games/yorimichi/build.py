@@ -18,7 +18,7 @@ import ast, importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from atelier.build import Product, Step, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
+from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
 from atelier import paths, unreal_modules
 
 GAME = Path(__file__).resolve().parent
@@ -820,7 +820,9 @@ def steps(ctx):
                        about='archive retired generated imports before multiplayer identity and cooking'))
     result.append(Step('data.network', [Call('network_identity', identity.stage)],
                        inputs=[GAME / 'network_identity.py', SOURCE, ctx.uproject, GAME / 'unreal/Config',
-                               paths.ENGINE_PLUGINS, *identity.content_files(content)],
+                               paths.ENGINE_PLUGINS],
+                       deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
+                                                       support=(GAME / 'network_identity.py',))],
                        needs=[s.name for s in result if s.name.startswith('unreal.')] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))

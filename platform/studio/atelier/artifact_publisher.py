@@ -31,7 +31,7 @@ MAX_GIT_OUTPUT = 1024 * 1024
 REF = re.compile(r'refs/heads/[A-Za-z0-9][A-Za-z0-9_./-]{0,200}\Z')
 # Keep aligned with build_cache.tool_context: these host files affect the managed action key.
 TOOL_SUPPORT = tuple(Path(build_cache.__file__).with_name(name) for name in
-                     ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py'))
+                     ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py', 'build_deferred.py'))
 
 
 class PublisherError(ValueError):
