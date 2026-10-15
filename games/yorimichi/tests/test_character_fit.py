@@ -153,3 +153,11 @@ def test_a_grip_check_fails_missing_or_drifting_grips():
     assert check.failed({'sword_R': held}, ['sword_R', 'glider_R']) == ['glider_R: no rows at full weight']
     drifting = {**held, 'spread_mm': {'hand_R': 0., 'thumb_end_R': 2.5}, 'ik_miss_max_cm': math.nan}
     assert check.failed({'sword_R': drifting}, ['sword_R']) == ['sword_R spread_mm: 2.5 > 1.0', 'sword_R ik_miss_max_cm: nan > 0.5']
+
+
+def test_horse_clips_are_held_to_their_reaches_like_the_bike(tmp_path, no_baseline):
+    reach = {'hand_L': 0.0, 'hand_R': 0.0, 'foot_L': 0.0, 'foot_R': 4.5}
+    assert 'horse' in fit.REPORTS
+    assert fit.check(character(tmp_path), 'horse', {'HorseWalk': {'frames': 60, 'reach_error_cm': reach}}) == [
+        'HorseWalk reach_foot_R_cm: 4.5 > 4.0']
+    assert fit.check(character(tmp_path), 'horse', {'HorseWalk': {'frames': 60, 'reach_error_cm': {**reach, 'foot_R': 0.}}}) == []

@@ -4,6 +4,7 @@
 #include "JapanSession.h"
 #include "JapanMovementNet.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "SailboatComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
@@ -89,7 +90,7 @@ void JapanVehicleTelemetry::Move(AWandererCharacter* Rider,const FJapanMoveInput
 {
     auto* Record=Get(Rider);if(!Record)return;
     const auto Activity=Rider->GetNetworkActivity();
-    if(Activity!=EJapanActivity::Bike&&Activity!=EJapanActivity::Sailboat)return;
+    if(Activity!=EJapanActivity::Bike&&Activity!=EJapanActivity::Sailboat&&Activity!=EJapanActivity::Horse)return;
     auto Data=Row(Rider);
     Data->SetNumberField(TEXT("input_epoch"),Input.ActivityEpoch);
     Data->SetNumberField(TEXT("dt"),Dt);Data->SetBoolField(TEXT("replay"),Replay);
@@ -98,8 +99,10 @@ void JapanVehicleTelemetry::Move(AWandererCharacter* Rider,const FJapanMoveInput
     Data->SetNumberField(TEXT("distance_cm"),FVector::Dist2D(Before,Rider->GetActorLocation()));
     Data->SetNumberField(TEXT("turn_degrees"),FMath::FindDeltaAngleDegrees(BeforeYaw,Rider->GetActorRotation().Yaw));
     Data->SetNumberField(TEXT("before_yaw"),BeforeYaw);Data->SetNumberField(TEXT("after_yaw"),Rider->GetActorRotation().Yaw);
-    Data->SetNumberField(TEXT("speed"),Activity==EJapanActivity::Bike?Rider->GetBike()->GetSpeed():Rider->GetSailboat()->GetSpeed());
-    Data->SetNumberField(TEXT("serial"),Activity==EJapanActivity::Bike?Rider->GetBike()->GetSerial():Rider->GetSailboat()->GetSerial());
+    Data->SetNumberField(TEXT("speed"),Activity==EJapanActivity::Bike?Rider->GetBike()->GetSpeed():
+        Activity==EJapanActivity::Horse?Rider->GetHorse()->GetSpeed():Rider->GetSailboat()->GetSpeed());
+    Data->SetNumberField(TEXT("serial"),Activity==EJapanActivity::Bike?Rider->GetBike()->GetSerial():
+        Activity==EJapanActivity::Horse?Rider->GetHorse()->GetSerial():Rider->GetSailboat()->GetSerial());
     Append(*Record,Record->Moves,Data);
 }
 void JapanVehicleTelemetry::Crash(AWandererCharacter* Rider,const FHitResult& Hit,float Speed)
@@ -124,7 +127,8 @@ void JapanVehicleTelemetry::RejectedMove(AWandererCharacter* Rider,uint32 Epoch)
 }
 void JapanVehicleTelemetry::Checkpoint(AWandererCharacter* Rider,bool Applied,int32 Bytes)
 {
-    if(Rider->GetNetworkActivity()!=EJapanActivity::Bike&&Rider->GetNetworkActivity()!=EJapanActivity::Sailboat)return;
+    if(Rider->GetNetworkActivity()!=EJapanActivity::Bike&&Rider->GetNetworkActivity()!=EJapanActivity::Sailboat&&
+        Rider->GetNetworkActivity()!=EJapanActivity::Horse)return;
     if(auto* R=Get(Rider)){if(Applied&&Bytes>0)++R->Checkpoints;else ++R->InvalidCheckpoints;}
 }
 void JapanVehicleTelemetry::Presentation(AWandererCharacter* Rider,double Stamp)
@@ -139,10 +143,10 @@ void JapanVehicleTelemetry::Action(AWandererCharacter* Rider,FName Button,uint16
     Data->SetNumberField(TEXT("edge"),Edge);Data->SetBoolField(TEXT("accepted"),Accepted);Data->SetBoolField(TEXT("replay"),Replay);
     Append(*R,R->Actions,Data);
 }
-void JapanVehicleTelemetry::Request(AWandererCharacter* Rider,bool Bike,uint32 Epoch,bool Pending,bool Locked,bool Encounter)
+void JapanVehicleTelemetry::Request(AWandererCharacter* Rider,const TCHAR* Kind,uint32 Epoch,bool Pending,bool Locked,bool Encounter)
 {
     auto* R=Get(Rider);if(!R)return;
-    auto Data=Row(Rider);Data->SetStringField(TEXT("kind"),Bike?TEXT("bike"):TEXT("sail"));
+    auto Data=Row(Rider);Data->SetStringField(TEXT("kind"),Kind);
     const auto* Rules=Rider->GetWorld()->GetGameState<AJapanGameState>();
     Data->SetBoolField(TEXT("enabled"),Rules&&Rules->bPredictedVehicles);
     Data->SetNumberField(TEXT("request_epoch"),Epoch);Data->SetBoolField(TEXT("pending"),Pending);
@@ -174,6 +178,6 @@ void JapanVehicleTelemetry::RejectedMove(AWandererCharacter*,uint32){}
 void JapanVehicleTelemetry::Checkpoint(AWandererCharacter*,bool,int32){}
 void JapanVehicleTelemetry::Presentation(AWandererCharacter*,double){}
 void JapanVehicleTelemetry::Action(AWandererCharacter*,FName,uint16,bool,bool){}
-void JapanVehicleTelemetry::Request(AWandererCharacter*,bool,uint32,bool,bool,bool){}
+void JapanVehicleTelemetry::Request(AWandererCharacter*,const TCHAR*,uint32,bool,bool,bool){}
 TSharedPtr<FJsonObject> JapanVehicleTelemetry::Snapshot(const AWandererCharacter*){return {};}
 #endif

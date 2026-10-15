@@ -695,6 +695,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         slots, peaks, command_times = [], [], []
         audit_receipt = {}
         products = None
+        restore_source = None
         store = build_cache.Store() if step.cache else None
         try:
             verify_spatial(step, current)
@@ -708,8 +709,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError('Inputs changed before cache lookup')
                 products = store.restore(ctx, step, current)
+                if products is not None:
+                    restore_source = 'local'
                 if products is None and remote is not None and remote.fetch(current, store, echo):
                     products = store.restore(ctx, step, current)
+                    if products is not None:
+                        restore_source = 'https'
                 if products is not None and (fingerprint(step, done, index=index, tool_cache=tool_cache) != current or not outputs_present(step)):
                     raise RuntimeError('Restored action inputs or required outputs differ')
             except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
@@ -724,6 +729,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 verify_spatial(step, current)
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
+                    from .build_timings import clear_launch_report, launch_receipt
+                    launch_folder = ctx.logs / f'{step.name}.guard'
+                    fresh_launch = (step.heavy and not isinstance(command, Call)
+                                    and clear_launch_report(launch_folder))
                     command_started = time.monotonic()
                     audited = {'products': declared_products, 'audit_receipt': audit_receipt} if step.audit else {}
                     phases = run_command(ctx, step, command, log, request, slots, **audited)
@@ -731,6 +740,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                               'scope': 'command invocation'}
                     if not isinstance(command, Call) and phases is not None:
                         timing['phases'] = phases
+                    if fresh_launch:
+                        launch = launch_receipt(launch_folder)
+                        if launch is not None:
+                            timing['launcher'] = launch
                     command_times.append(timing)
                     if step.heavy and not isinstance(command, Call):
                         peaks.append(report_peak(ctx.logs / f'{step.name}.guard' / 'memory-health.json'))
@@ -769,6 +782,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                                                              restored=from_cache, optional=optional)
         if from_cache:
             record['restored_from'] = current
+            record['restore_source'] = restore_source
             if previous.get('fingerprint') == current:
                 from .build_timings import producer_receipt
                 producer = producer_receipt(previous)

@@ -32,8 +32,8 @@ build/            ignored: everything a build generates, per game
 | Agent board | `platform/web/board`, `platform/web/board-world` | Rust coordination server, React web UI and world view |
 
 Systems that only one game uses stay in that game. In Yorimichi these are the player character (on-foot movement,
-actions, camera), sword combat and the fox hunter, the sailboat, the zeppelin, the mini-mega ramp, footsteps, the
-world map, preferences and the HUD.
+actions, camera), sword combat and the fox hunter, the sailboat, the bike, the horse, the zeppelin, the mini-mega
+ramp, footsteps, the world map, preferences and the HUD.
 
 ## Rules
 

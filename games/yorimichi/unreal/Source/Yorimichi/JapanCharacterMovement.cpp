@@ -2,6 +2,7 @@
 #include "WandererCharacter.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "JapanNetwork.h"
 #include "SkateComponent.h"
 #include "AdventureMoveSet.h"
@@ -11,6 +12,7 @@ float UJapanCharacterMovement::GetMaxSpeed() const
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return 1400.f;
     if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return 2400.f;   // UBikeComponent::MaxSpeed: downhill and a drift boost carry him past his pedalling speed
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Horse) return 1500.f;   // above the horse's sprint (1480 cm/s)
     return Super::GetMaxSpeed();
 }
 
@@ -27,6 +29,7 @@ void UJapanCharacterMovement::PhysicsRotation(float Dt)
 {
     const auto* Rider = Cast<AWandererCharacter>(CharacterOwner);
     if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Bike) return;
+    if (Rider && JapanNetwork::IsOnline(GetWorld()) && Rider->GetNetworkActivity() == EJapanActivity::Horse) return;   // the horse sets his heading
     if (Rider && Rider->GetSailboat() && Rider->GetSailboat()->IsEquipped()) return;
     if (Rider && Rider->GetSkate() && Rider->GetSkate()->IsRiding()) return;   // the board frame is the actor's rotation
     if (Rider && Rider->GetMoves() && Rider->GetMoves()->ControlsRotation()) return;   // lock-on, gliding, climbing, attacks

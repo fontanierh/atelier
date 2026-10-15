@@ -19,6 +19,9 @@ controls: see [SKATE.md](SKATE.md).
 | Crouch | C | Right stick click | R3 | Right stick click |
 | Get on / step off the skateboard | B | Y (tap) | Triangle (tap) | X (tap) |
 | Bike out and on / off and parked (stopped) | V | Y (hold 0.4 s) | Triangle (hold) | X (hold) |
+| Horse summoned and mounted / off (stopped) | H | RB (hold 0.4 s) | R1 (hold) | R (hold) |
+| Random horse | N | X (mounted) | Square (mounted) | Y (mounted) |
+| Next horse breed / tack set / coat | U / I / O | D-pad Up / Right / Left (mounted) | D-pad Up / Right / Left (mounted) | D-pad Up / Right / Left (mounted) |
 | Skateboard to the hand / put it away | G | D-pad Right | D-pad Right | D-pad Right |
 | Interact, board the zeppelin | E | D-pad Down | D-pad Down | D-pad Down |
 | Sailboat / step ashore | K | D-pad Up | D-pad Up | D-pad Up |
@@ -36,6 +39,12 @@ Getting on the board while running carries the running speed onto it. Riding, th
 left button held) is Flick-It, not the camera. On the sailboat the left stick steers and raises or lowers the sail.
 On the bike (see [BIKE.md](BIKE.md)) the left stick pedals, brakes and steers, a press of Sprint (the left stick) pedals hard until pressed again or he stops pedalling, Jump hops, Crouch
 is a skid stop, Attack rings the bell and Wave waves.
+On the horse (see [HORSE.md](HORSE.md)) the bike's controls ride: the right trigger (W) rides on, the left trigger (S)
+reins in and the left stick (A / D) steers. Alt and J hold it to a walk and a trot, and a press of Sprint sprints until
+pressed again or the horse comes to a halt. Attack, Guard, Jump, Crouch, Wave and Interact do nothing in the saddle.
+The look buttons (Dash, D-pad Up, Right and Left) act on the horse only while mounted, since on foot they are the
+dash, the sailboat, the skateboard and the sword; the keyboard's N, U, I and O work on foot too. Beside a docked
+zeppelin and aboard one RB chooses the stop or the flight speed, so its hold leaves the horse alone there.
 
 The player plays the merged move set (Cairo, Modori, Nox and Paul; see [the move set](../assets/characters/adventure/README.md)).
 Jump in the air is the double jump; pressed again, it opens the paraglider. Roll is the dodge (a side hop with the
@@ -70,8 +79,11 @@ click.
 The hints follow the situation: sailboat steering and sail, zeppelin boarding and flight speed with the interaction
 button, the sword's attack, parry and draw while it is installed, the move set's double jump and paraglider, dodge,
 the sword guard and swim dash,
-and the skate controls while riding. With a controller the mouse-release tip is hidden; stamina rings and the FPS
-counter stay. The two hint rows measure their text and shrink to fit the viewport.
+and the skate controls while riding. On the bike and the horse the first row is their controls, their status and the
+speed in km/h; on foot the second row adds the bike when it is installed and the horse ("Hold RB horse", or "H horse
+N random horse") when the character has horse clips, online only while the host allows vehicles. With a controller
+the mouse-release tip is hidden; stamina rings and the FPS counter stay. The two hint rows measure their text and
+shrink to fit the viewport.
 
 ## Debugging
 

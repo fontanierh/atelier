@@ -2,7 +2,7 @@
 
 Yorimichi (寄り道, "a detour on the way home") is a painterly Japanese island in Unreal Engine 5.8. You walk, run and
 roll through a coastal countryside, a forest hamlet, the city of Hidamari, a fishing cove and an island temple; sail
-a dinghy, ride the zeppelin, skate the pier, Mega Park and Crater Park with skate.-style Flick-It controls, and fight the fox
+a dinghy, ride a horse, the bike and the zeppelin, skate the pier, Mega Park and Crater Park with skate.-style Flick-It controls, and fight the fox
 hunter with a wooden sword. Blender and Python generate the world, characters and animation; Unreal runs the game.
 The story and setting are drafted in [docs/LORE.md](docs/LORE.md).
 
@@ -28,7 +28,7 @@ just it and what it needs. [Source textures](docs/TEXTURE_PRODUCTS.md) have inde
 assets and compiles the editor; later builds
 reuse completed steps. Every model, texture, collision and animation source the game consumes is committed in
 [the asset library](assets/README.md): the model GLBs, including the skate pier's obstacle
-modules, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The
+modules and the horses, the Mega Park's geometry, collision and textures, and the packed character sources and merged moves. The
 skating data is shared: it lives in the [Skate plugin](../../platform/engine/Plugins/Activities/Skate/Data/README.md)
 and `unreal.skate_data` imports it into typed assets under `Content/SkateRuntime` and `Content/SkateMotion`. The [source manifest](assets/source-library.json) records their paths and checksums. The sound
 masters are not committed; `atelier fetch` downloads them. Build stamps, generated Content and the shared derived-data cache are kept for incremental work.
@@ -72,7 +72,9 @@ Scenarios run against the game from another terminal: `uv run atelier qa yorimic
 - the [volcano](docs/VOLCANO.md) north of the city, with [Crater Park](docs/CRATERPARK.md) on its caldera floor.
 
 You get around on foot, in the [sailboat](assets/vehicles/sailboat/README.md), on the
-[zeppelin](world/regions/zeppelin/README.md) between its three stations, or on the skateboard. Leaves, gulls and
+[zeppelin](world/regions/zeppelin/README.md) between its three stations, on the skateboard, on the
+[bike](docs/BIKE.md) or on [horseback](docs/HORSE.md): six breeds, seven tack sets and a coat, mask, mane and
+tint to choose. Leaves, gulls and
 villagers ([wanderer](assets/characters/wanderer/README.md)) keep the island moving.
 
 **Cairo, the default player** ([assets/characters/cairo](assets/characters/cairo/README.md)): walk, run, sprint with stamina,
@@ -116,7 +118,8 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | `world/` | the island generator (`gen_world.py`), textures, props, foliage LODs, terrain, city tiles; `world/regions/*` one folder per region; `world/map/` the map tools and painted sheet |
 | `assets/characters/` | the default player (`cairo`), playable characters (`modori`, `nox`, `paul`), sword trainer (`sword-trainer`), enemy (`fox-hunter`), villagers (`wanderer`), merged moves (`adventure`), grips, pipeline, fit, concepts and shared character [tools](assets/characters/tools/README.md) |
 | `assets/audio/` | sound banks: fetch, slice and synthesis scripts (the sounds are built, not committed) |
-| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat, concepts and sources for the houses, tree house, skate pier and Mega Park |
+| `assets/horses/` | the horse library: breeds, tack, coat masks and variants, its manifest, and the contact and rider steps ([docs/HORSE.md](docs/HORSE.md)) |
+| `assets/` (others) | effect sprites (`fx`), live-workshop props (`props`), the sailboat and bike (`vehicles`, with the riders' shared solve), concepts and sources for the houses, tree house, skate pier and Mega Park |
 | `unreal/` | the Unreal project: `Source` (C++: the game in `Yorimichi`, the types imports save in `YorimichiAssets`, the import tools in `YorimichiImport`), `Config`, `Scripts` (editor import scripts); `Content` is build output |
 | `live/` | the live bridge's in-game Python and saved overlays |
 | `scenarios/` | checks and films driven through the live bridge |
@@ -131,7 +134,7 @@ including props made from a sentence by `assets/props/make_prop.py`.
 | Area | Docs |
 |---|---|
 | World | [WORLD_MAP](docs/WORLD_MAP.md), [VOLCANO](docs/VOLCANO.md), [CRATERPARK](docs/CRATERPARK.md), [TREEHOUSE_PLAN](docs/TREEHOUSE_PLAN.md), [MEGAPARK](docs/MEGAPARK.md), [CAMERA](docs/CAMERA.md), [DESKTOP_PERFORMANCE](docs/DESKTOP_PERFORMANCE.md) |
-| Play | [CONTROLLER_CONTROLS](docs/CONTROLLER_CONTROLS.md), [SKATE](docs/SKATE.md), [FOOTSTEPS](docs/FOOTSTEPS.md), [LIVE_WORKSHOP](docs/LIVE_WORKSHOP.md) |
+| Play | [CONTROLLER_CONTROLS](docs/CONTROLLER_CONTROLS.md), [SKATE](docs/SKATE.md), [BIKE](docs/BIKE.md), [HORSE](docs/HORSE.md), [FOOTSTEPS](docs/FOOTSTEPS.md), [LIVE_WORKSHOP](docs/LIVE_WORKSHOP.md) |
 | Combat | [SWORD_COMBAT](docs/SWORD_COMBAT.md), [FOX_HUNTER_COMBAT](docs/FOX_HUNTER_COMBAT.md), [COMBAT_FEEDBACK](docs/COMBAT_FEEDBACK.md) |
 | Multiplayer | [Implementation, verified scope and test handoff](docs/MULTIPLAYER.md) |
 | Characters and animation | [GRIPS: pose a hand and correct its contact](docs/GRIPS.md), [BODY_SWAP_GUIDE](docs/BODY_SWAP_GUIDE.md), [MIXAMO_WORKFLOW](docs/MIXAMO_WORKFLOW.md), [H3_ANIMATION_REFERENCE_WORKFLOW](../../docs/H3_ANIMATION_REFERENCE_WORKFLOW.md), [ANIMATION_PRINCIPLES](../../docs/ANIMATION_PRINCIPLES.md), [FOX_HUNTER_ANIMATION](docs/FOX_HUNTER_ANIMATION.md), [UNIMATE_EXPERIMENT](docs/UNIMATE_EXPERIMENT.md), [KIMODO_EXPERIMENT](docs/KIMODO_EXPERIMENT.md) |

@@ -13,6 +13,7 @@
 #include "AdventureMoveSet.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "JapanBikeSubsteps.h"
 #include "SailboatComponent.h"
 #include "GameFramework/Controller.h"
@@ -71,7 +72,8 @@ bool UJapanCharacterMovement::PredictsMoves() const
         // Simulated root-motion copies also call PerformMovement. They consume
         // replicated presentation, never the predictor's neutral input holds.
         (Rider->HasAuthority() || Rider->GetLocalRole() == ROLE_AutonomousProxy) &&
-        (Rider->GetNetworkActivity() == EJapanActivity::OnFoot || Rider->GetNetworkActivity() == EJapanActivity::Bike || Rider->GetNetworkActivity() == EJapanActivity::Sailboat);
+        (Rider->GetNetworkActivity() == EJapanActivity::OnFoot || Rider->GetNetworkActivity() == EJapanActivity::Bike ||
+         Rider->GetNetworkActivity() == EJapanActivity::Sailboat || Rider->GetNetworkActivity() == EJapanActivity::Horse);
 }
 
 void UJapanCharacterMovement::SmoothClientPosition(float Dt)
@@ -338,7 +340,9 @@ FJapanMoveInput UJapanCharacterMovement::ReadMoveInput() const
         const bool Menu = Rider->bMenuOpen || Rider->bControlsSuspended ||
             (Rider->GetNetworkActivity()==EJapanActivity::Sailboat && Rider->bVehicleBrakeIntent);
         const bool OnBike = Rider->GetNetworkActivity() == EJapanActivity::Bike;
-        const FVector2D Stick = Menu ? FVector2D::ZeroVector : (OnBike ? Rider->GetBikeIntent() : Rider->MoveIntent).GetClampedToMaxSize(1.);
+        // The horse rides on the bike's controls (triggers or W / S), as offline.
+        const bool Ridden = OnBike || Rider->GetNetworkActivity() == EJapanActivity::Horse;
+        const FVector2D Stick = Menu ? FVector2D::ZeroVector : (Ridden ? Rider->GetBikeIntent() : Rider->MoveIntent).GetClampedToMaxSize(1.);
         Input.X = int8(FMath::Clamp(FMath::RoundToInt(Stick.X * 127.), -127, 127));
         Input.Y = int8(FMath::Clamp(FMath::RoundToInt(Stick.Y * 127.), -127, 127));
         Input.Lean = Menu || !OnBike ? 0 : int8(FMath::Clamp(FMath::RoundToInt(Rider->GetBikeLean() * 127.), -127, 127));
@@ -370,8 +374,9 @@ void UJapanCharacterMovement::ApplyMoveInput(const FJapanMoveInput& Input)
 {
     if (auto* Rider = Cast<AWandererCharacter>(CharacterOwner))
     {
-        // On the bike the stick's forward axis is the pedals; the rider's own MoveIntent keeps the stick.
-        if (Rider->GetNetworkActivity() != EJapanActivity::Bike) Rider->MoveIntent = Input.Stick();
+        // On the bike and the horse the stick's forward axis is the pedals or the reins; the rider's own MoveIntent keeps the stick.
+        if (Rider->GetNetworkActivity() != EJapanActivity::Bike && Rider->GetNetworkActivity() != EJapanActivity::Horse)
+            Rider->MoveIntent = Input.Stick();
         Rider->bWalk = (Input.Flags & FJapanMoveInput::Walk) != 0;
         Rider->bJog = (Input.Flags & FJapanMoveInput::Jog) != 0;
         Rider->bSprintHeld = (Input.Flags & FJapanMoveInput::Sprint) != 0;
@@ -444,6 +449,38 @@ void UJapanCharacterMovement::PerformMovement(float Dt)
             Super::PerformMovement(Step);
         });
         JapanVehicleTelemetry::Move(Rider,ActiveInput,Dt,bReplaying,VehicleBefore,VehicleYawBefore);
+        bInputPrepared = false;
+        if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
+        return;
+    }
+    if (Rider->GetNetworkActivity() == EJapanActivity::Horse)
+    {
+        auto* Horse = Rider->GetHorse();
+        // Walk and Jog cap the gait; the menu reins in. A host's own menus never rein in its guest.
+        FHorseInput HorseInput;
+        HorseInput.Stick = ActiveInput.Stick();
+        HorseInput.bWalk = (ActiveInput.Flags & FJapanMoveInput::Walk) != 0;
+        HorseInput.bJog = (ActiveInput.Flags & FJapanMoveInput::Jog) != 0;
+        HorseInput.bMenu = (ActiveInput.Flags & FJapanMoveInput::Menu) != 0;
+        Horse->SetInput(HorseInput);
+        // Only the sprint (the bike's sprint edge, keeping the edge vocabulary); no combat from the saddle.
+        ActiveInput.ApplyNewEdges(ProcessedEdge, [&](uint8 Edge)
+        {
+            if (!Rider->bReady || HorseInput.bMenu || Horse->NeedsNetworkStow()) return;
+            const FName Button = FJapanMoveInput::ButtonName(Edge);
+            bool Accepted = false;
+            if (Button == TEXT("bike_sprint")) Accepted = Horse->ToggleSprint();
+            JapanVehicleTelemetry::Action(Rider, Button, ProcessedEdge, Accepted, bReplaying);
+        });
+        if (Rider->HasAuthority() && Rider->IsLocallyControlled()) AcknowledgeEdges(ProcessedEdge);
+        // The turn rate depends on speed, so the horse and CMC advance together in the bike's bounded substeps.
+        JapanBikeSubsteps::Run(Dt, [&](float Step)
+        {
+            Horse->SimulateNetwork(Step, HorseInput);
+            Acceleration = FVector::ZeroVector; AnalogInputModifier = 0.f; MaxWalkSpeed = 1500.f;
+            Super::PerformMovement(Step);
+        });
+        JapanVehicleTelemetry::Move(Rider, ActiveInput, Dt, bReplaying, VehicleBefore, VehicleYawBefore);
         bInputPrepared = false;
         if (Rider->IsLocallyControlled() && !bReplaying) ApplyMoveInput(LiveInput);
         return;

@@ -20,24 +20,26 @@ def folder(path):
     return path.removeprefix('/Game/').split('/')[0]
 
 
-# Each mover's imports: its body, its move set and, if playable, its bike clips (/Game/<Name>Bike).
+# Each mover's imports: its body, its move set and, if playable, its bike and horse clips (/Game/<Name>Bike, /Game/<Name>Horse).
 CHARACTER_ROOTS = ({folder(p) for c in MOVERS for p in (c.unreal_path, c.adventure['dest'])}
-                   | {folder(c.unreal_path) + 'Bike' for c in MOVERS if c.playable})
+                   | {folder(c.unreal_path) + 'Bike' for c in MOVERS if c.playable}
+                   | {folder(c.unreal_path) + 'Horse' for c in MOVERS if c.playable})
 ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Collections', 'CraterPark', 'Data', 'Developers',
-    'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
+    'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Horses', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
     'SkateRide', 'SkateRuntime', 'Wanderer',
 } | CHARACTER_ROOTS)
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'craterpark', 'heightmap.bin',
-    'hidamari', 'hippodrome', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
+    'hidamari', 'hippodrome', 'horses', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
 } | {c.id for c in MOVERS})
-# Each mover's runtime data: its move record, its readiness record and bike report if playable and its posed grips if
-# committed.
+# Each mover's runtime data: its move record, its readiness record, bike report if playable, and its posed grips if
+# committed; and the runtime data of the imports that write their own (unreal.hippodrome, unreal.horses).
 CHARACTER_DATA = {
     **{c.id: {'adventure.json'} | ({'character.json', 'bike'} if c.playable else set())
        | ({'grips.json'} if (c.folder.parent / 'grips' / c.id).is_dir() else set()) for c in MOVERS},
     'hippodrome': {'hippodrome.json'},
+    'horses': {'roster.json'},
 }
 # The folders inside a mover's own folder, when its move set is imported there.
 CHARACTER_ASSET_DIRECTORIES = {folder(c.unreal_path): {c.adventure['dest'].rsplit('/', 1)[1], 'Textures'}

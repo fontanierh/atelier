@@ -73,4 +73,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool TrainerPlace(FVector Ground, float Yaw);
     /** Visit the hippodrome as a public venue. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool HippodromeVisit();
+    /** The horse (UHorseComponent) as text: phase, clips, speed, look, status and placement. HorseConfigure sets its look by
+     *  roster ids (breed slug, tack id, coat id or "native", coat mask, hair colour id or "native", hair pattern,
+     *  tint; empty keeps that part) and returns the state, or empty for an unknown id. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString HorseState();
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString HorseConfigure(const FString& Breed, const FString& Tack = TEXT(""), const FString& Coat = TEXT(""), const FString& Mask = TEXT(""), const FString& HairColor = TEXT(""), const FString& HairPattern = TEXT(""), const FString& Tint = TEXT(""));
 };

@@ -1,0 +1,5 @@
+@cc [owner:fontanierh,label:performance] horse-appearance-residency
+An accepted appearance change on a locally controlled horse that replaces breed, tack, coat or mask
+assets MUST release the old component references and request deferred engine collection with incremental
+purging, so trying looks does not wait for the periodic pass. Appearance loading and movement prediction
+MUST NOT collect inline. Remote horses, unchanged looks and colour-only changes MUST NOT request collection.

@@ -3,12 +3,14 @@
 #include "Engine/NetSerialization.h"
 #include "JapanBikeState.h"
 #include "JapanSailState.h"
+#include "JapanHorseState.h"
 #include "JapanActivityState.generated.h"
 
 class AZeppelinService;
 
+/** Wire and receipt values are fixed: append new activities at the end. */
 UENUM()
-enum class EJapanActivity : uint8 { OnFoot, Skate, Bike, Sailboat, Zeppelin };
+enum class EJapanActivity : uint8 { OnFoot, Skate, Bike, Sailboat, Zeppelin, Horse };
 
 /** Server-owned handoff. The epoch invalidates every old movement, pose and action packet together. */
 USTRUCT()
@@ -25,6 +27,7 @@ struct FJapanActivityState
     UPROPERTY() uint8 ClockCorrection = 0;
     UPROPERTY() FJapanBikeState Bike;
     UPROPERTY() FJapanSailState Sail;
+    UPROPERTY() FJapanHorseState Horse;
     UPROPERTY() TObjectPtr<AZeppelinService> Zeppelin;
     /** A replacement character resumes this activity with the preceding pawn's foot/vital state. */
     UPROPERTY() bool bCharacterReplacement = false;

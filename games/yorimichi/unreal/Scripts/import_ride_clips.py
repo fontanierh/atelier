@@ -1,14 +1,15 @@
-"""Import a playable character's bike clips (assets/vehicles/bike/rider.py) into /Game/<Name>Bike. BIKE_CHARACTER picks
-the character folder (default: cairo; <Name> is its id in PascalCase, as its SK_<Name> is named).
+"""Import a playable character's riding clips into /Game/<Rig><Ride>: its bike clips (assets/vehicles/bike/rider.py,
+RIDE=bike, /Game/<Rig>Bike) or its horse clips (assets/horses/rider.py, RIDE=horse, /Game/<Rig>Horse). RIDE_CHARACTER
+picks the character folder (default: cairo; <Rig> is its character.toml [game] bike_rig, as its SK_<Name> is named).
 
-    UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_bike_clips.py -unattended -nosplash -NullRHI -stdout
+    RIDE=bike RIDE_CHARACTER=cairo UnrealEditor-Cmd Yorimichi.uproject -run=pythonscript -script=Scripts/import_ride_clips.py -unattended -nosplash -NullRHI -stdout
 
-Each build/yorimichi/<id>/bike/fbx/A_<Clip>.fbx is imported onto the character's skeleton at the export rate as A_<Clip>,
-with the shared character compression and no root motion. The clips live in their own folder rather than in the
-character's definition's action map, which its own imports rewrite: UBikeComponent loads them by path. The bike's
-channels for each frame (crank, stand, lift, pitch, lean, yaw, steer) and the limb contact windows stay in export.json,
-which data.stage copies to Content/Data/<id>/bike/export.json for the component. Writes
-build/yorimichi/<id>/bike/unreal_import.json.
+Each build/yorimichi/<id>/<ride>/fbx/A_<Clip>.fbx is imported onto the character's skeleton at the export rate as
+A_<Clip>, with the shared character compression and no root motion. The clips live in their own folder rather than in
+the character's definition's action map, which its own imports rewrite: UBikeComponent and UHorseComponent load them by
+path. The rest of each clip's record (the bike's channels per frame, the limb contact windows) stays in export.json;
+for the bike data.stage copies it to Content/Data/<id>/bike/export.json for the component (the horse reads none). Writes
+build/yorimichi/<id>/<ride>/unreal_import.json.
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / 'world')); import yori  # noqa: E402  (build/yorimichi = yori.OUT)
 import json, os, sys
@@ -20,13 +21,16 @@ import animation_compression
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'assets' / 'characters' / 'pipeline'))
 import definition  # noqa: E402
 
-CHARACTER = os.environ.get('BIKE_CHARACTER', 'cairo')
+RIDE = os.environ['RIDE']
+assert RIDE in ('bike', 'horse'), RIDE
+CHARACTER = os.environ.get('RIDE_CHARACTER', 'cairo')
 SPEC = definition.load(CHARACTER)   # its asset name, output folder, Unreal folder and bike rig
 NAME = SPEC.name
-OUT = yori.OUT / SPEC.output / 'bike'
+OUT = yori.OUT / SPEC.output / RIDE
 CONFIG = json.loads((OUT / 'export.json').read_text())
-DEST = f"/Game/{SPEC.game['bike_rig']}Bike"   # AMoverCharacter::GetBikeRig: UBikeComponent reads the clips there
+DEST = f"/Game/{SPEC.game['bike_rig']}{RIDE.capitalize()}"   # AMoverCharacter::GetBikeRig: the ride's component reads the clips there
 E = U.EditorAssetLibrary; AT = U.AssetToolsHelpers.get_asset_tools()
+E.make_directory(DEST)
 
 
 def fbx(name, skeleton):
@@ -62,4 +66,4 @@ for name, entry in CONFIG['clips'].items():
     assert abs(length - entry['duration']) < 1.5 / CONFIG['fps'], (name, 'length', length, entry['duration'])
     report[name] = {'length': round(length, 4), 'frames': entry['frames'], 'loop': entry['loop']}
 (OUT / 'unreal_import.json').write_text(json.dumps({'fps': CONFIG['fps'], 'source_sha256': CONFIG['source_sha256'], 'clips': report}, indent=2) + '\n')
-U.log(f'{CHARACTER.upper()} BIKE IMPORT COMPLETE')
+U.log(f'{CHARACTER.upper()} {RIDE.upper()} IMPORT COMPLETE')

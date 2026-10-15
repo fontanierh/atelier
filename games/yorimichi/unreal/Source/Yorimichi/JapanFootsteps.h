@@ -51,6 +51,9 @@ public:
     virtual void TickComponent(float Dt,ELevelTick TickType,FActorComponentTickFunction* Function) override;
     /** A landing plants both feet at once; Weight scales with the drop. */
     void Land(const FHitResult& Hit,float Weight);
+    /** A hoof of the horse he rides (UHorseComponent). There is no hoof bank (sound-cues.toml names footstep.<surface>
+     *  only): it plays the surface's footstep, heavier and lower. Weight scales the volume with the gait. */
+    void Hoof(const FHitResult& Hit,float Weight);
     FName SurfaceAt(const FHitResult& Hit) const;
     bool IsReady() const { return Set != nullptr; }
 private:

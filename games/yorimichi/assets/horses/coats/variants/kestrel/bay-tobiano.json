@@ -1,0 +1,31 @@
+{
+  "id": "kestrel-bay-tobiano",
+  "breed": "Kestrel",
+  "prompt": "Use case: precise-object-edit. Asset type: 1024x1024 base-colour UV texture atlas for a stylized 3D Kestrel horse used in Yorimichi. Input image 1 is the edit target and exact UV layout reference. The reference is Kestrel's existing square UV coat texture. Its brown filled regions and tiny cream cutouts are the existing anatomy layout. Keep every region at exactly its existing normalized image coordinates. Repaint the coat in-place, with softly painted short horse hair.\nCreate this distinct coat variation: bay tobiano pinto: large flowing ivory white patches and rich bay patches, clearly irregular organic boundaries. The coat colour should read as #8d5c41. Keep the painterly matte game-art style. Preserve anatomical placement, existing UV island edges, markings that identify the muzzle/hooves, all original region borders and the complete square canvas. All new markings follow the existing body surfaces and are painted flat into the atlas. Maintain even baked colour without directional lighting or glossy highlights. Never add a horse illustration, 3D render, scene, text, legend, grid, UV wireframe, watermark, border, new silhouette or extra objects. Never move, rotate, stretch, crop, rearrange, enlarge or omit any UV island. Return exactly one flat texture image matching the reference layout.",
+  "source": "models/kestrel/textures/coat_Kestrel_Mt_Body.png",
+  "source_sha256": "08c3f8ed4464e5e3f5a509894dc0e1458c21c41656c2b3d183b3a885729a6f15",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "1a93737222ad903af17d9b0e77d3690c790e2e02b5a72854525fba9c552ffe79",
+  "status": "done",
+  "started_at": "2026-10-12T19:59:22.646384+00:00",
+  "output": "bay-tobiano.png",
+  "output_sha256": "e515179f94dbeadc6025777094e460fa58ea92fe6198bbe9a618b08fd441282c",
+  "usage": {
+    "input_tokens": 1313,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 289
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 3069
+  },
+  "elapsed_seconds": 36.7,
+  "finished_at": "2026-10-12T19:59:59.371130+00:00"
+}

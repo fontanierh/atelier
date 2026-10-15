@@ -29,6 +29,25 @@ def separate_seats(receipt):
             sum((rows[0][key] - rows[1][key])**2 for key in ('x', 'y')) > 2500)
 
 
+HORSE_LOOK_FIELDS = ('horse_breed', 'horse_tack', 'horse_coat', 'horse_mask', 'horse_hair_color', 'horse_hair_pattern', 'horse_tint')
+
+
+def horse_looks_agree(stage):
+    """Each observer's own player asked for a look; both observers show it on that player's horse."""
+    requested = {}
+    for side in ('host', 'guest'):
+        receipt = stage.get(side, {})
+        request, player = receipt.get('horse_request'), receipt.get('local_player')
+        if (not isinstance(request, dict) or not isinstance(player, str) or not player or
+                not all(isinstance(request.get(k), str) and request[k] for k in HORSE_LOOK_FIELDS)):
+            return False
+        requested[player] = request
+    if len(requested) != 2:
+        return False
+    return all(r.get('player') in requested and all(r.get(k) == requested[r['player']][k] for k in HORSE_LOOK_FIELDS)
+               for side in ('host', 'guest') for r in stage.get(side, {}).get('views', []))
+
+
 def feature_render_checks(folder, case):
     from PIL import Image
     checks = {}
@@ -59,7 +78,7 @@ def feature_checks(folder, case):
     original_classes = {}
     mount_retries = {'host': 0, 'guest': 0}
     mount_epochs = {'host': [], 'guest': []}
-    kind = 1 if case.startswith('switch-skate') else {'switch-bike': 2, 'switch-sail': 3, 'zeppelin': 4}.get(case, 0)
+    kind = 1 if case.startswith('switch-skate') else {'switch-bike': 2, 'switch-sail': 3, 'zeppelin': 4, 'switch-horse': 5}.get(case, 0)
     for s in stages:
         phase = s['phase']
         expected = 'Modori' if (case == 'zeppelin' and phase >= 2) or (case != 'equipment' and phase == 2) else 'Cairo'
@@ -108,6 +127,18 @@ def feature_checks(folder, case):
                     checks[prefix+'stopped_dismount_input'] = (s[side].get('bike_exit_sent') is True and
                                                               s[side].get('bike_exit_grounded') is True and
                                                               type(speed) in (int, float) and abs(speed) <= 40)
+                if case == 'switch-horse' and phase == 4:
+                    speed = s[side].get('horse_exit_speed')
+                    checks[prefix+'stopped_dismount_input'] = (s[side].get('horse_exit_sent') is True and
+                                                              s[side].get('horse_exit_grounded') is True and
+                                                              type(speed) in (int, float) and abs(speed) <= 40)
+                if case == 'switch-horse':
+                    mounted = phase in (1, 2, 3)
+                    checks[prefix+'horse_visible'] = all(r.get('horse_visible') is mounted for r in rows)
+                    if mounted:
+                        checks[prefix+'horse_ride'] = all(type(r.get('horse_role')) is int and 0 <= r['horse_role'] <= 12 and
+                                                          finite_number(r.get('horse_speed')) and r['horse_speed'] >= 0
+                                                          for r in rows)
                 if case == 'switch-sail' and phase == 4:
                     distance = s[side].get('sail_shore_distance')
                     requests = s[side].get('sail_exit_requests')
@@ -151,6 +182,8 @@ def feature_checks(folder, case):
                     checks[prefix+'epoch_'+str(r.get('player'))] = type(epoch) is int and epoch >= old and (not changed or epoch > old)
                     epochs[key] = epoch if type(epoch) is int else old
                     identities[key] = identity
+        if case == 'switch-horse':
+            checks[f'feature_{phase}_horse_appearance_agrees'] = horse_looks_agree(s)
         if case == 'zeppelin' and phase in (1, 2):
             a, b = s['host'], s['guest']
             checks[f'feature_{phase}_shared_ship'] = (flying_ship(a) and flying_ship(b) and

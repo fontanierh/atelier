@@ -2,11 +2,49 @@
 import io
 import json
 import math
+import os
+import stat
+import uuid
 
 PREFIX = 'ATELIER_PHASE '
 MAX_RECORDS = 1000
 MAX_PAYLOAD = 8192
 MAX_DEPTH = 32
+LAUNCH_REPORT = 'execution-timings.json'
+
+
+def clear_launch_report(folder):
+    """Only consume a new invocation's diagnostics; an unreadable old receipt stays unknown."""
+    try:
+        (folder / LAUNCH_REPORT).unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
+def launch_receipt(folder):
+    """Read bounded optional launcher diagnostics, never a certificate or a reason to fail a build."""
+    try:
+        fd = os.open(folder / LAUNCH_REPORT, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+        with os.fdopen(fd, 'rb') as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_size > 8192:
+                return None
+            value = json.loads(stream.read(8193))
+        if (not isinstance(value, dict) or set(value) != {'schema', 'invocation_id', 'admission_seconds',
+                                                        'child_lifetime_seconds', 'execution_seconds'}
+                or type(value['schema']) is not int or value['schema'] != 1
+                or uuid.UUID(value['invocation_id']).hex != value['invocation_id']):
+            return None
+        for name in ('admission_seconds', 'child_lifetime_seconds', 'execution_seconds'):
+            if value[name] is not None and not number(value[name]):
+                return None
+        execution, lifetime = value['execution_seconds'], value['child_lifetime_seconds']
+        if execution is not None and (lifetime is None or execution > lifetime):
+            return None
+        return value
+    except (OSError, ValueError, TypeError, AttributeError, OverflowError, RecursionError):
+        return None
 
 
 def number(value):
@@ -128,6 +166,8 @@ def inspect(ctx, steps, wanted=()):
         seconds = stamp.get('seconds') if kind in ('execution', 'cache restore') else None
         result.append({'step': step.name, 'last_action': kind, 'time': stamp.get('time'),
                        'seconds': seconds if number(seconds) else None, 'producer': producer_receipt(stamp)})
+        if kind == 'cache restore' and stamp.get('restore_source') in ('local', 'https'):
+            result[-1]['restore_source'] = stamp['restore_source']
     return {'schema': 1, 'game': ctx.game, 'historical': True, 'steps': result}
 
 
@@ -145,6 +185,9 @@ def show(game, wanted=(), *, as_json=False, echo=print):
     echo('Historical successful receipts; current inputs and outputs are not checked. Phase times include nested work.')
     for item in report['steps']:
         echo(f"{item['step']:34s} {item['last_action']}: {duration(item['seconds'])}")
+        if item['last_action'] == 'cache restore':
+            source = {'local': 'local store', 'https': 'HTTPS fetched during this build'}.get(item.get('restore_source'), 'not recorded')
+            echo(f'  restore source: {source}')
         producer = item['producer']
         if producer is None:
             echo('  producer timing not recorded')
@@ -161,6 +204,11 @@ def show(game, wanted=(), *, as_json=False, echo=print):
             else:
                 scope = ' (timing scope not recorded)'
             echo(f"  {command.get('kind', 'command')}: {duration(command.get('seconds'))}{scope}")
+            launch = command.get('launcher')
+            if isinstance(launch, dict):
+                echo(f"    admission and guard setup: {duration(launch.get('admission_seconds'))}")
+                echo(f"    child lifetime (includes gated waiting): {duration(launch.get('child_lifetime_seconds'))}")
+                echo(f"    command execution: {duration(launch.get('execution_seconds'))}")
             receipt = command.get('phases')
             if not isinstance(receipt, dict) or not isinstance(receipt.get('phases'), list):
                 echo('    phases not recorded')

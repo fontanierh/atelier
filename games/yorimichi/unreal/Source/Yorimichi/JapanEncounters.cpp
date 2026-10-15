@@ -11,7 +11,7 @@ bool UJapanEncounters::Eligible(const AWandererCharacter* Player)
     const auto* State = Player ? Player->GetPlayerState<AJapanPlayerState>() : nullptr;
     return IsValid(Player) && !Player->IsNpc() && Player->GetController() && Player->IsReady() && State && State->bWorldReady &&
         (Player->GetNetworkActivity() == EJapanActivity::OnFoot || Player->GetNetworkActivity() == EJapanActivity::Bike ||
-         Player->GetNetworkActivity() == EJapanActivity::Sailboat) &&
+         Player->GetNetworkActivity() == EJapanActivity::Sailboat || Player->GetNetworkActivity() == EJapanActivity::Horse) &&
         (!Player->GetSword() || (!Player->GetSword()->IsDown() && Player->GetSword()->GetHealth() > 0.f));
 }
 

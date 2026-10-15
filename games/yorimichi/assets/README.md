@@ -2,8 +2,9 @@
 
 The model GLBs and park assets here are Atelier's own library and are committed
 with the game. A fresh checkout includes the community megapark scene, all 18
-Skate Pier obstacle modules, the motion reference, sword and paraglider, and the
-Hidamari, hippodrome and treehouse props.
+Skate Pier obstacle modules, the motion reference, sword and paraglider, the
+Hidamari, hippodrome and treehouse props, and the horses: six breeds with their
+clips, seven tack sets each, five coat masks and 16 painted coat variants.
 
 `source-library.json` records the local paths, sizes and SHA-256 hashes of all
 source GLBs, texture images, geometry/collision arrays, character Blender files
@@ -17,6 +18,11 @@ geometry and images and confirm that a fresh checkout includes every park step.
   collision arrays and textures. This park's native source format is NPZ and PNG.
 - `characters/adventure/source/manifest.json` records the reference rig and
   equipment GLBs used by the merged move sets.
+- `horses/manifest.json` declares the breeds, tack sets, clips, coat masks, hair
+  colours, hair patterns and tints, and records every horse and tack GLB's size
+  and SHA-256 ([HORSE.md](../docs/HORSE.md)).
+- `horses/coats/variants/manifest.json` lists the coat variant PNGs with their
+  SHA-256 and the provenance record (model and prompt) of each.
 - Prop definitions use `asset.toml` or their region's model catalog.
 
 The build reads these sources directly. GLBs exported during a build are derived

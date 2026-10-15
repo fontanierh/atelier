@@ -5,6 +5,7 @@
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
 #include "PlayableCharacter.h"
@@ -202,4 +203,21 @@ FString UYorimichiLive::SwitchCharacter(const FString& Name)
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     if (P) if (AWandererCharacter* To = FPlayableCharacter::SwitchPlayer(P, Name)) P = To;
     return P ? FPlayableCharacter::NameOf(P) : FString();
+}
+
+FString UYorimichiLive::HorseState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UHorseComponent* H = P ? P->GetHorse() : nullptr;
+    if (!H) return TEXT("no horse");
+    const FVector A = P->GetActorLocation(); const FTransform T = H->GetHorseTransform(); const FRotator R = T.Rotator();
+    return FString::Printf(TEXT("state=%d role=%s horse_clip=%s serial=%u t=%.3f speed=%.0f sprint=%d steer=%.2f ground=%d groundpitch=%.1f breed=%s tack=%s coat=%s mask=%s hair=%s pattern=%s tint=%s status=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f horse=(%.0f,%.0f,%.0f) horserot=(%.1f,%.1f,%.1f)"),
+        int32(H->GetState()), *H->GetRiderClip().ToString(), *H->GetHorseClip().ToString(), H->GetSerial(), H->GetPoseTime(), H->GetSpeed(), H->IsSprinting() ? 1 : 0, H->GetSteering(),
+        P->GetCharacterMovement()->IsMovingOnGround() ? 1 : 0, H->GetGroundPitch(), *H->GetBreedId(), *H->GetTackId(), *H->GetCoatId(), *H->GetMaskId(),
+        *H->GetHairColorId(), *H->GetHairPatternId(), *H->GetTintId(), *H->GetStatus().Replace(TEXT(" "), TEXT("_")),
+        A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+FString UYorimichiLive::HorseConfigure(const FString& Breed, const FString& Tack, const FString& Coat, const FString& Mask, const FString& HairColor, const FString& HairPattern, const FString& Tint)
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); UHorseComponent* H = P ? P->GetHorse() : nullptr;
+    return H && H->ConfigureHorse(Breed, Tack, Coat, Mask, HairColor, HairPattern, Tint) ? HorseState() : FString();
 }

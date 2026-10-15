@@ -10,6 +10,8 @@
 #include "JapanParkedBikeState.h"
 #include "JapanBikePresentation.h"
 #include "JapanSailPresentation.h"
+#include "JapanHorsePresentation.h"
+#include "JapanHorseAppearance.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -22,6 +24,7 @@ class UJapanPreferences;
 class USkateComponent;
 class USailboatComponent;
 class UBikeComponent;
+class UHorseComponent;
 class FJsonObject;
 class FYorimichiPhone;
 class UJapanMap;
@@ -121,7 +124,8 @@ public:
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UBikeComponent* GetBike() const { return Bike; }
-    /** On the sailboat, the bike: the vehicle owns his movement, his animation and his buttons. */
+    UHorseComponent* GetHorse() const { return Horse; }
+    /** On the sailboat, the bike, or the horse: the vehicle owns his movement, his animation and his buttons. */
     bool OnVehicle() const;
     UJapanPreferences* GetPreferences() const { return Preferences; }
     UFUNCTION(BlueprintPure, Category = "Map")
@@ -144,6 +148,9 @@ public:
     UFUNCTION(Client, Reliable) void ClientReceiveMovementReaction(const TArray<uint8>& Encoded);
     UFUNCTION(Server, Reliable) void ServerRecoverMovementReactions(uint32 Epoch);
     bool RequestNetworkSkate();
+    /** Online: ask the host for this horse look (roster indices); every machine shows it once the host has accepted it.
+     *  Offline it applies at once. False when it cannot be asked now. */
+    bool RequestHorseAppearance(const FJapanHorseAppearance& Appearance);
     void TickNetworkActivity();
     bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
     void SetMenuOpen(bool bOpen);
@@ -204,6 +211,16 @@ private:
     UPROPERTY(ReplicatedUsing=OnRep_NetworkBikePresentation) FJapanBikePresentation NetworkBikePresentation;
     double LastBikePublication=-1.;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkParkedBike) FJapanParkedBikeState NetworkParkedBike;
+    bool RequestNetworkHorse();
+    void TickNetworkHorse();
+    UFUNCTION(Server, Reliable) void ServerRequestHorse(uint32 Epoch);
+    UFUNCTION(Server, Reliable) void ServerSetHorseAppearance(const FJapanHorseAppearance& Appearance);
+    UFUNCTION() void OnRep_NetworkHorsePresentation();
+    UFUNCTION() void OnRep_NetworkHorseAppearance();
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHorsePresentation) FJapanHorsePresentation NetworkHorsePresentation;
+    /** The host's accepted look for this player's horse, outside the activity epoch (the owner waits for it too). */
+    UPROPERTY(ReplicatedUsing=OnRep_NetworkHorseAppearance) FJapanHorseAppearance NetworkHorseAppearance;
+    double LastHorsePublication=-1., LastHorseAppearanceAt=-1.;
 
     UFUNCTION() void OnRep_NetworkLoadout();
     UPROPERTY(Replicated) FString NetworkRiderName;
@@ -225,6 +242,7 @@ private:
     float LastAvatarPublication = -1.f;
     friend class FJapanReactionTransportTest;
     friend class FJapanCheckpointTest;
+    friend class FJapanHorseWaterTest;
     friend class AJapanPlayerController;
     friend class FYorimichiPhone;
     friend class UWandererSwordComponent;
@@ -233,7 +251,7 @@ private:
     friend class UJapanCharacterMovement;
     friend struct FAdventureNetworkState;
     friend struct FJapanVehicleQAAccess;
-    float LookGrace=0.f, SkateCameraBlend=0.f, PreferredArmLength=0.f;
+    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
     // Share of the skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
     FMinimalViewInfo BoardCamera;
@@ -242,6 +260,7 @@ private:
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UBikeComponent> Bike;
+    UPROPERTY() TObjectPtr<UHorseComponent> Horse;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
     UPROPERTY() TObjectPtr<ASwordDummy> SwordDummy;
@@ -342,6 +361,12 @@ private:
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleBike(const FInputActionValue& Value);
+    void ToggleHorse(const FInputActionValue& Value);
+    void HorsePad(const FInputActionValue& Value);
+    void RandomizeHorse(const FInputActionValue& Value);
+    void CycleHorseBreed(const FInputActionValue& Value);
+    void CycleHorseTack(const FInputActionValue& Value);
+    void CycleHorseCoat(const FInputActionValue& Value);
     void ToggleCrouch(const FInputActionValue& Value);
     void Dodge(const FInputActionValue& Value);
     void Wave(const FInputActionValue& Value);

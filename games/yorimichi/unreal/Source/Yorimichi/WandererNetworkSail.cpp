@@ -34,7 +34,7 @@ void AWandererCharacter::ServerRequestSail_Implementation(uint32 Epoch)
 {
     auto* Combat=GetWorld()->GetSubsystem<UJapanCombatResolver>();
 #if !UE_BUILD_SHIPPING
-    JapanVehicleTelemetry::Request(this,false,Epoch,Combat->HasPending(this),MovementLocked(),
+    JapanVehicleTelemetry::Request(this,TEXT("sail"),Epoch,Combat->HasPending(this),MovementLocked(),
         GetWorld()->GetSubsystem<UJapanEncounters>()->HoldsPlayer(this));
 #endif
     const bool Exiting=NetworkActivity.Kind==EJapanActivity::Sailboat;

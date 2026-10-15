@@ -30,5 +30,6 @@ Rebuilding from the sources needs the Tripo body and rigged GLBs, which are kept
 ## In the game
 
 `character.toml` sets his export and import. `adventure.toml` sets his move-set fit: the sword carry is pushed
-5.5 cm back and the glider bar is fitted to his grip span. Build `unreal.paul_pawn` with `atelier build yorimichi`,
+5.5 cm back and the glider bar is fitted to his grip span. Build `unreal.paul_pawn unreal.horses unreal.paul_horse`
+with `atelier build yorimichi` (the pawn alone leaves the horse uninstalled; see [HORSE.md](../../../docs/HORSE.md)),
 then pick Paul in the character menu or pass `-rider=Paul`.

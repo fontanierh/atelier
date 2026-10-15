@@ -9,6 +9,7 @@
 #include "WandererSword.h"
 #include "AdventureNetworkState.h"
 #include "BikeComponent.h"
+#include "HorseComponent.h"
 #include "SailboatComponent.h"
 #include "SkateComponent.h"
 #include "ZeppelinService.h"
@@ -100,6 +101,12 @@ void AJapanPlayerController::FinishCharacterSwitch()
     const auto Activity = From->NetworkActivity.Kind;
     FJapanBikeState Bike = From->Bike->CaptureNetworkState();
     FJapanSailState Sail = From->Sailboat->CaptureNetworkState();
+    FJapanHorseState Horse = From->Horse->CaptureNetworkState();
+    // A mounted swap resumes the ride on the replacement: refuse before spawning one without horse clips.
+    const UClass* ChoiceClass = Choice->Class();
+    if (Activity == EJapanActivity::Horse &&
+        (!ChoiceClass || !UHorseComponent::HasRiderClips(ChoiceClass->GetDefaultObject<AWandererCharacter>())))
+    { PendingCharacter.Reset(); ClientCharacterResult(TEXT("This character cannot ride the horse.")); return; }
     const FVector Feet = From->GetActorLocation() - FVector(0,0,From->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
     const FRotator Facing = From->GetActorRotation(), View = GetControlRotation();
     const FString Name = Choice->Name;
@@ -113,6 +120,8 @@ void AJapanPlayerController::FinishCharacterSwitch()
     To->EnterWorld(From->Landscape);
     if (!To->Moves || !To->Definition)
     { To->Destroy(); PendingCharacter.Reset(); ClientCharacterResult(TEXT("The selected character's assets are incomplete.")); return; }
+    if (Activity == EJapanActivity::Horse && !To->Horse->CanRide())
+    { To->Destroy(); PendingCharacter.Reset(); ClientCharacterResult(TEXT("This character cannot ride the horse.")); return; }
     // Fit authored offsets to the replacement body; world-space paths and gameplay
     // clocks survive, but another skeleton's mesh base must never be transplanted.
     Foot.MeshBase = To->Moves->MeshBase; Foot.MeshBaseRotation = To->Moves->MeshBaseRotation;
@@ -124,11 +133,14 @@ void AJapanPlayerController::FinishCharacterSwitch()
     To->NetworkHealth = From->Sword->GetHealth(); To->NetworkHitsTaken = From->Sword->HitsTaken();
     To->Sword->ApplyNetworkHealth(To->NetworkHealth, To->NetworkHitsTaken);
     To->NetworkParkedBike = From->NetworkParkedBike;
+    // The horse's look belongs to the player, not the pawn.
+    To->NetworkHorseAppearance = From->NetworkHorseAppearance;
+    To->OnRep_NetworkHorseAppearance();
     To->NetworkActivity = From->NetworkActivity;
     ++To->NetworkActivity.Epoch; if (!To->NetworkActivity.Epoch) ++To->NetworkActivity.Epoch;
     To->NetworkActivity.Location = To->GetActorLocation(); To->NetworkActivity.Rotation = Facing;
     To->NetworkActivity.Velocity = Velocity; To->NetworkActivity.bFalling = Falling;
-    To->NetworkActivity.Bike = Bike; To->NetworkActivity.Sail = Sail;
+    To->NetworkActivity.Bike = Bike; To->NetworkActivity.Sail = Sail; To->NetworkActivity.Horse = Horse;
     To->NetworkActivity.bFootReaction = false; To->NetworkActivity.bCharacterReplacement = true;
     To->NetworkActivity.ReplacementMovementMode = Movement->PackNetworkMovementMode();
     To->NetworkActivity.bReplacementCrouched = From->bIsCrouched;

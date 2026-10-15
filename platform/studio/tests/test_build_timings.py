@@ -1,13 +1,16 @@
 """Timing diagnostics preserve build/cache semantics and need no native commands."""
 import io
 import json
+import os
 from types import SimpleNamespace
+import uuid
 
 import pytest
 
 from atelier import build, build_timings, cli
 from atelier.build import Call, Python, Step, UnrealScript
 from test_build_audit import action  # noqa: F401 - reuse the isolated real Python/cache fixture
+from test_build_cache import project  # noqa: F401 - independent output/cache fixture
 
 
 def line(event, identity, at, **values):
@@ -16,6 +19,83 @@ def line(event, identity, at, **values):
 
 def interval(identity='work', start=1., end=4.):
     return line('begin', identity, start, name=identity) + line('end', identity, end, ok=True)
+
+
+def launch_record(**values):
+    return {'schema': 1, 'invocation_id': uuid.uuid4().hex, 'admission_seconds': 2.,
+            'child_lifetime_seconds': 5., 'execution_seconds': None, **values}
+
+
+@pytest.mark.parametrize('source', ['local', 'https', None, 'https://secret.invalid/private'])
+def test_restore_source_is_historical_and_never_inferred(tmp_path, monkeypatch, source):
+    ctx = SimpleNamespace(game='fixture', stamps=tmp_path)
+    record = {'seconds': .5, 'commands': [], 'restored_from': 'key'}
+    if source is not None:
+        record['restore_source'] = source
+    (tmp_path / 'mesh.json').write_text(json.dumps(record))
+    monkeypatch.setattr(build, 'Context', lambda *args, **kwargs: ctx)
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda ctx: [Step('mesh', [])]))
+    item = build_timings.inspect(ctx, [Step('mesh', [])])['steps'][0]
+    assert item.get('restore_source') == (source if source in ('local', 'https') else None)
+    messages = []
+    assert build_timings.show('fixture', echo=messages.append) == 0
+    expected = {'local': 'local store', 'https': 'HTTPS fetched during this build'}.get(source, 'not recorded')
+    assert f'  restore source: {expected}' in messages
+    assert all('secret.invalid' not in message for message in messages)
+
+
+@pytest.mark.parametrize('update', [
+    {'schema': True}, {'invocation_id': 'old'}, {'admission_seconds': -1}, {'admission_seconds': True},
+    {'child_lifetime_seconds': float('nan')}, {'execution_seconds': float('inf')},
+    {'execution_seconds': 6.}, {'child_lifetime_seconds': None, 'execution_seconds': 1.}, {'extra': 1},
+])
+def test_invalid_launcher_diagnostics_stay_unknown(tmp_path, update):
+    (tmp_path / build_timings.LAUNCH_REPORT).write_text(json.dumps(launch_record(**update)))
+    assert build_timings.launch_receipt(tmp_path) is None
+
+
+def test_launcher_reader_is_bounded_and_does_not_follow_links_or_wait_on_fifo(tmp_path):
+    path = tmp_path / build_timings.LAUNCH_REPORT
+    target = tmp_path / 'target'
+    target.write_text(json.dumps(launch_record()))
+    path.symlink_to(target)
+    assert build_timings.launch_receipt(tmp_path) is None
+    path.unlink()
+    os.mkfifo(path)
+    assert build_timings.launch_receipt(tmp_path) is None
+    path.unlink()
+    path.write_text('x' * 8193)
+    assert build_timings.launch_receipt(tmp_path) is None
+    path.write_text('[' * 4000 + ']' * 4000)
+    assert build_timings.launch_receipt(tmp_path) is None
+
+
+def test_build_uses_only_new_launcher_receipts_without_changing_products(project, monkeypatch):
+    p = project
+    p.step.heavy = True
+    monkeypatch.setattr(build, 'slot_request', lambda *args: ('job', None))
+    run = build.run_command
+    receipt = launch_record()
+    report = p.ctx.logs / 'mesh.guard' / build_timings.LAUNCH_REPORT
+    def timed(*args, **kwargs):
+        result = run(*args, **kwargs)
+        report.parent.mkdir(exist_ok=True)
+        report.write_text(json.dumps(receipt))
+        return result
+    monkeypatch.setattr(build, 'run_command', timed)
+    assert p.run() == 0
+    record = json.loads((p.ctx.stamps / 'mesh.json').read_text())
+    key = record['fingerprint']
+    assert record['commands'][0]['launcher'] == receipt
+    entry = p.store.action(key).read_bytes()
+    monkeypatch.setattr(build, 'run_command', run)  # Simulates a launcher without new diagnostics.
+    assert p.run(force=True) == 0
+    record = json.loads((p.ctx.stamps / 'mesh.json').read_text())
+    assert 'launcher' not in record['commands'][0] and not report.exists()
+    assert record['fingerprint'] == key and p.store.action(key).read_bytes() == entry
+    p.step.products[1].paths[0].unlink()
+    assert p.run() == 0
+    assert json.loads((p.ctx.stamps / 'mesh.json').read_text())['restore_source'] == 'local'
 
 
 def test_nested_intervals_are_inclusive_and_failed_phase_is_still_measured():
