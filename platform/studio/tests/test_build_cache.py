@@ -47,6 +47,7 @@ def test_build_restores_missing_and_modified_outputs_as_independent_copies(proje
     (p.ctx.out / 'mesh/vertices').unlink()
     p.calls.clear()
     assert p.run() == 0 and p.calls == []
+    assert json.loads((p.ctx.stamps / 'mesh.json').read_text())['restore_source'] == 'local'
     assert build_products.records(p.step) == expected
     (p.ctx.out / 'mesh/vertices').write_text('corruption')
     assert p.run() == 0 and p.calls == []

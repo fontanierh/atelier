@@ -284,9 +284,14 @@ def test_ordinary_build_fetches_then_restores_verified_products_without_executio
     assert build_products.records(p.step) == expected
     stamp = json.loads((p.ctx.stamps / 'mesh.json').read_bytes())
     assert stamp['restored_from'] == key and stamp['fingerprint'] == key
+    assert stamp['restore_source'] == 'https'
     assert len(server.requests) == 3  # Manifest plus two unique files across two products.
     server.requests.clear()
     assert p.run() == 0 and server.requests == []  # Current local products do not use the network.
+    shutil.rmtree(p.ctx.out / 'mesh')
+    assert p.run() == 0 and server.requests == []  # A later restore uses the verified local store.
+    stamp = json.loads((p.ctx.stamps / 'mesh.json').read_bytes())
+    assert stamp['restore_source'] == 'local'
 
 
 @pytest.mark.parametrize('mode', ['outage', 'corruption', 'bad_configuration', 'disabled', 'force'])
@@ -310,6 +315,7 @@ def test_remote_problem_or_bypass_runs_the_real_local_fallback(package, server, 
     assert p.run(force=mode == 'force') == 0 and p.calls == ['mesh']
     stamp = json.loads((p.ctx.stamps / 'mesh.json').read_bytes())
     assert 'restored_from' not in stamp
+    assert 'restore_source' not in stamp
     assert (p.ctx.out / 'mesh/vertices').read_text() == 'one'
     if mode in ('bad_configuration', 'disabled', 'force', 'outage'):
         assert server.requests == []
