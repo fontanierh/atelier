@@ -5,6 +5,86 @@
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "StaticMeshResources.h"
 #include "Misc/FileHelper.h"
+#include "HAL/IConsoleManager.h"
+#include "StaticMeshCompiler.h"
+#include "DistanceFieldAtlas.h"
+#include "MeshCardBuild.h"
+
+FMeshDerivedDataAudit UMeshImportAudit::InspectDerivedData(UStaticMesh* Mesh)
+{
+    FMeshDerivedDataAudit Result;
+    if (!Mesh || !IsInGameThread())
+    {
+        Result.Error = TEXT("A mesh and the editor game thread are required");
+        return Result;
+    }
+    auto CVar = [](const TCHAR* Name)
+    {
+        const IConsoleVariable* Value = IConsoleManager::Get().FindConsoleVariable(Name);
+        return Value ? Value->GetInt() : -1;
+    };
+    Result.GenerateDistanceFields = CVar(TEXT("r.GenerateMeshDistanceFields"));
+    Result.GenerateCards = CVar(TEXT("r.MeshCardRepresentation"));
+    FStaticMeshCompilingManager::Get().FinishCompilation({Mesh});
+    if (GDistanceFieldAsyncQueue)
+    {
+        GDistanceFieldAsyncQueue->BlockUntilBuildComplete(Mesh, false);
+        Result.DistanceFieldTasks = GDistanceFieldAsyncQueue->GetNumOutstandingTasks(Mesh);
+    }
+    if (GCardRepresentationAsyncQueue)
+    {
+        GCardRepresentationAsyncQueue->BlockUntilBuildComplete(Mesh, false);
+        Result.CardTasks = GCardRepresentationAsyncQueue->GetNumOutstandingTasks(Mesh);
+    }
+    if (Mesh->IsCompiling() || Result.DistanceFieldTasks != 0 || Result.CardTasks != 0)
+    {
+        Result.Error = TEXT("Selected-mesh compilation did not complete or a compiler is unavailable");
+        return Result;
+    }
+    Result.MeshRequestsDistanceField = Mesh->bGenerateMeshDistanceField;
+    if (Mesh->GetNumSourceModels() > 0)
+    {
+        const FMeshBuildSettings& Settings = Mesh->GetSourceModel(0).BuildSettings;
+        Result.HasSourceSettings = true;
+        Result.DistanceFieldResolutionScale = Settings.DistanceFieldResolutionScale;
+        Result.MaxLumenMeshCards = Settings.MaxLumenMeshCards;
+    }
+    // Compilation can replace render data. Never retain its pointers across the waits above.
+    const FStaticMeshRenderData* Render = Mesh->GetRenderData();
+    if (!Render || Render->LODResources.IsEmpty())
+    {
+        Result.Error = TEXT("No built LOD0 render data");
+        return Result;
+    }
+    const FStaticMeshLODResources& LOD = Render->LODResources[0];
+    if (const FDistanceFieldVolumeData* Field = LOD.DistanceFieldData)
+    {
+        Result.HasDistanceField = true;
+        Result.DistanceFieldValid = Field->IsValid();
+        Result.DistanceFieldBoundsFinite = Field->LocalSpaceMeshBounds.IsValid && !Field->LocalSpaceMeshBounds.ContainsNaN();
+        Result.DistanceFieldAsyncBuilding = Field->bAsyncBuilding;
+        Result.AlwaysLoadedBytes = Field->AlwaysLoadedMip.Num();
+        Result.StreamableBytes = Field->StreamableMips.GetBulkDataSize();
+        for (const FSparseDistanceFieldMip& Mip : Field->Mips)
+        {
+            Result.MipDimensions.Add(FIntVector(Mip.IndirectionDimensions));
+            Result.MipBricks.Add(Mip.NumDistanceFieldBricks);
+        }
+    }
+    if (const FCardRepresentationData* Cards = LOD.CardRepresentationData)
+    {
+        Result.HasCards = true;
+        Result.CardCount = Cards->MeshCardsBuildData.CardBuildData.Num();
+        Result.CardBoundsFinite = Cards->MeshCardsBuildData.Bounds.IsValid && !Cards->ContainsNaN();
+    }
+    if (Result.DistanceFieldAsyncBuilding)
+    {
+        Result.Error = TEXT("Distance-field payload still reports a pending build");
+        return Result;
+    }
+    Result.Completed = true;
+    return Result;
+}
 
 bool UMeshImportAudit::DumpMeshTriangles(UStaticMesh* Mesh, FVector Origin, const FString& Path)
 {
