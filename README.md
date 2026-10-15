@@ -58,8 +58,9 @@ including the game itself while it plays.
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
 preparation a Mac reached over SSH needs (`atelier setup --headless`).
 
-If `blender` on `PATH` is a wrapper script, set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`.
-Product fingerprints include its complete app bundle; a wrapper script alone cannot identify the installed tool.
+Blender app symlinks and simple shell wrappers that only forward arguments to the app are resolved automatically.
+Product fingerprints include its complete app bundle. For a custom wrapper with settings or extra flags, set
+`BLENDER` to the app executable and put the required flags in the build recipe.
 
 ```sh
 git clone https://github.com/fontanierh/atelier && cd atelier

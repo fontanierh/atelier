@@ -390,9 +390,10 @@ invalidate the key. The sandbox's `world.block` and `world.placements` are execu
 
 The key includes command arguments, declared sources, consumed product digests, the managed Python environment or
 Blender application, dependency lock and build adapters. Python path/interpreter overrides refuse portable caching.
-Cached Blender commands must use `factory_startup=True`. `BLENDER` must resolve to the executable inside the macOS
-app bundle. For the standard install, set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`; the fingerprint
-includes its bundled Python and exporters. A shell wrapper alone cannot identify those resources.
+Cached Blender commands must use `factory_startup=True`. Blender discovery resolves app symlinks and simple
+`#!/bin/sh` wrappers whose only command is `exec /absolute/app/Contents/MacOS/Blender "$@"` (quoted paths work too).
+The fingerprint includes that app's bundled Python and exporters. Wrappers with extra flags, environment changes
+or shell logic remain opaque: select the app executable with `BLENDER` and declare required flags in the recipe.
 Keep installed tools fixed during one build invocation; the next invocation rediscovers their identities.
 A static import check rejects undeclared local helpers, including
 package initializers and relative imports. Use `atelier.build_inputs.local_imports(script, roots)` when declaring
