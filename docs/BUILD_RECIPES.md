@@ -303,8 +303,11 @@ Python's import event also require declared inputs or tool runtime. Namespace pa
 directory or tool runtime.
 
 Writes, removals and renames must stay within owned products or private scratch space. After a cache miss, Atelier
-drops the stamp and removes the action's old product paths before launching it. It unlinks file leaves, preserving
-any other hard-link names; old bytes, metadata and leftover files cannot become inputs. A failed action leaves no
+drops the stamp. The executing child removes old product paths before installing its observer and running the
+recipe; heavy actions reach that child only after normal guarded admission. Refused admission preserves the old
+products. Cleanup rechecks root and ancestor links and removes entries through held parent descriptors. It unlinks
+file leaves, preserving any other hard-link names;
+old bytes, metadata and leftover files cannot become inputs to the recipe. A failed action leaves no
 certified outputs, and a retry starts empty again. Reading back new writes is allowed. Atomic output replacement
 works by writing in the action's private temporary directory and then using `os.replace`. Use an owned directory
 product when a generator needs temporary siblings.

@@ -138,8 +138,10 @@ closure; until it is proven, keep conservative dependencies and restrict shared 
 The implemented `Step.audit=True` accepts one Python, guarded Blender or guarded Unreal Python command per
 owned-product action. Its access hook, private
 scratch/bytecode paths and completion pipe catch undeclared reads, reference misuse, writes outside ownership and
-reuse of stale output bytes. Each executed action starts with empty owned outputs; cache hits restore without running
-it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
+reuse of stale output bytes. The executing child empties owned outputs immediately before observation and recipe
+execution, after ordinary guarded admission for heavy actions. A refused admission preserves prior outputs;
+cache hits restore without running the action. Native host startup and native I/O remain outside this diagnostic.
+Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
 metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
 the tracked context API remains separate work. Native audits use the same private nonce-bound completion pipe
 and existing actual-child guard. They require `cache=False`; they grant no native cache or package-equivalence

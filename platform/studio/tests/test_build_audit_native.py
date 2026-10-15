@@ -85,6 +85,168 @@ def test_native_audit_uses_existing_guard_and_owns_argv_and_report(native_action
     assert a.run() == 0 and len(a.calls) == 1
 
 
+@pytest.mark.parametrize('refusal', ['busy', 'failed'])
+@pytest.mark.parametrize('product', ['file', 'directory', 'content'])
+def test_refused_native_admission_keeps_prior_outputs(native_action, monkeypatch, refusal, product):
+    from atelier.safety.render_lock import RenderBusy
+    a = native_action
+    if product == 'content' and isinstance(a.step.commands[0], build.Blender):
+        pytest.skip('Content ownership belongs to the Unreal adapter')
+    root = (a.ctx.uproject.parent / 'Content/owned' if product == 'content'
+            else a.ctx.out / 'owned' if product == 'directory' else a.output)
+    output = root / 'old.uasset' if product != 'file' else root
+    output.parent.mkdir(parents=True)
+    output.write_text('previous package bytes')
+    peer = a.root / 'authored-peer'
+    os.link(output, peer)
+    before = output.stat().st_ino
+    a.step.products = [build.Product('result', (root,))]
+    a.code("output.write_text('must not run')")
+    calls = []
+    def refused(argv, folder, **kwargs):
+        calls.append(argv)
+        assert output.read_text() == 'previous package bytes' and output.stat().st_ino == before
+        if refusal == 'busy':
+            raise RenderBusy('fake admission busy')
+        folder.mkdir(exist_ok=True)
+        (folder / 'stdout.log').write_text('fake admission refusal; no child started')
+        return 1
+    monkeypatch.setattr(build.guarded, 'run', refused)
+    assert a.run() == 1
+    assert len(calls) == 1
+    assert output.read_text() == peer.read_text() == 'previous package bytes'
+    assert output.stat().st_ino == peer.stat().st_ino == before
+    assert not a.report()['passed'] and not a.report()['complete']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+
+
+@pytest.mark.parametrize('product', ['file', 'directory', 'content'])
+def test_admitted_native_child_clears_old_outputs_before_recipe(native_action, product):
+    a = native_action
+    if product == 'content' and isinstance(a.step.commands[0], build.Blender):
+        pytest.skip('Content ownership belongs to the Unreal adapter')
+    root = (a.ctx.uproject.parent / 'Content/owned' if product == 'content'
+            else a.ctx.out / 'owned' if product == 'directory' else a.output)
+    output = root / 'result.txt' if product != 'file' else root
+    output.parent.mkdir(parents=True)
+    os.link(a.source, output)
+    before = a.source.stat().st_ino
+    if product != 'file':
+        (root / 'linked-child').symlink_to(a.source)
+    a.step.products = [build.Product('result', (root,))]
+    a.code(f'''output = Path({str(output)!r})
+assert not Path({str(root)!r}).exists()
+output.parent.mkdir(parents=True, exist_ok=True)
+size = output.stat().st_size if output.exists() else 0
+with output.open('a') as stream:
+    stream.write(str(size))
+''')
+    assert a.run() == 0, a.messages
+    assert a.report()['passed'] and a.output.exists() == (product == 'file')
+    assert output.read_text() == '0'
+    assert a.source.read_text() == 'input' and a.source.stat().st_ino == before
+    assert output.stat().st_ino != before
+    if product != 'file':
+        assert not (root / 'linked-child').exists()
+
+
+@pytest.mark.parametrize('link', ['root-file', 'root-directory', 'ancestor'])
+def test_native_child_rechecks_links_after_admission_wait(native_action, monkeypatch, link):
+    a = native_action
+    root = a.ctx.out / 'owned'
+    output = root / 'result.txt'
+    output.parent.mkdir(parents=True)
+    output.write_text('prior owned bytes')
+    before = output.stat().st_ino
+    a.output.write_text('first owned product')
+    first_inode = a.output.stat().st_ino
+    a.step.products = [build.Product('first', (a.output,)),
+                       build.Product('result', (output if link != 'root-directory' else root,))]
+    outside = a.root / 'outside'
+    outside.mkdir()
+    external = outside / 'result.txt'
+    external.write_text('untouched external bytes')
+    external_inode = external.stat().st_ino
+    a.code(f"output = Path({str(output)!r})\noutput.write_text('must not run')")
+    guarded = build.guarded.run
+    moved = a.ctx.out / 'preserved'
+    def wait_then_run(argv, folder, **kwargs):
+        swapped = output if link == 'root-file' else root
+        swapped.rename(moved)
+        swapped.symlink_to(external if link == 'root-file' else outside,
+                           target_is_directory=link != 'root-file')
+        return guarded(argv, folder, **kwargs)
+    monkeypatch.setattr(build.guarded, 'run', wait_then_run)
+    assert a.run() == 1, a.messages
+    preserved = moved if link == 'root-file' else moved / 'result.txt'
+    assert preserved.read_text() == 'prior owned bytes' and preserved.stat().st_ino == before
+    assert a.output.read_text() == 'first owned product' and a.output.stat().st_ino == first_inode
+    assert external.read_text() == 'untouched external bytes' and external.stat().st_ino == external_inode
+    assert not a.report()['passed'] and not a.report()['complete']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+
+
+def test_native_child_cleanup_cannot_follow_an_ancestor_swapped_after_open(native_action):
+    a = native_action
+    parent = a.ctx.out / 'products'
+    root = parent / 'owned'
+    root.mkdir(parents=True)
+    os.link(a.source, root / 'old.txt')
+    source_inode = a.source.stat().st_ino
+    a.step.products = [build.Product('result', (root,))]
+    outside = a.root / 'outside'
+    external = outside / 'owned/result.txt'
+    external.parent.mkdir(parents=True)
+    external.write_text('external package')
+    external_inode = external.stat().st_ino
+    moved = a.ctx.out / 'preserved-parent'
+    first, rest = a.executable.read_text().split('\n', 1)
+    a.executable.write_text(first + '\n' + f'''import os, shutil
+remove = shutil.rmtree
+def swap_before_removal(path, *args, **kwargs):
+    if path == 'owned' and kwargs.get('dir_fd') is not None:
+        os.rename({str(parent)!r}, {str(moved)!r})
+        os.symlink({str(outside)!r}, {str(parent)!r}, target_is_directory=True)
+    return remove(path, *args, **kwargs)
+swap_before_removal.avoids_symlink_attacks = remove.avoids_symlink_attacks
+shutil.rmtree = swap_before_removal
+''' + rest)
+    a.code("output.write_text('must not run')")
+    assert a.run() == 1, a.messages
+    assert (moved / 'owned').exists() is False  # Only the originally held owned root was cleared.
+    assert external.read_text() == 'external package' and external.stat().st_ino == external_inode
+    assert a.source.read_text() == 'input' and a.source.stat().st_ino == source_inode
+    assert not a.output.exists() and not a.report()['complete'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+
+
+@pytest.mark.parametrize('failure', ['unsupported', 'removal-error'])
+def test_native_child_cleanup_failure_never_starts_recipe(native_action, failure):
+    a = native_action
+    root = a.ctx.out / 'owned'
+    root.mkdir(parents=True)
+    old = root / 'old.txt'
+    old.write_text('prior bytes')
+    before = old.stat().st_ino
+    a.step.products = [build.Product('result', (root,))]
+    first, rest = a.executable.read_text().split('\n', 1)
+    a.executable.write_text(first + '\n' + f'''import shutil
+remove = shutil.rmtree
+def refused_removal(path, *args, **kwargs):
+    if path == 'owned':
+        raise FileNotFoundError('simulated interrupted directory removal')
+    return remove(path, *args, **kwargs)
+refused_removal.avoids_symlink_attacks = {failure != 'unsupported'!r}
+shutil.rmtree = refused_removal
+''' + rest)
+    output = root / 'new.txt'
+    a.code(f"output = Path({str(output)!r})\noutput.write_text('must not run')")
+    assert a.run() == 1, a.messages
+    assert old.read_text() == 'prior bytes' and old.stat().st_ino == before
+    assert not output.exists() and not a.report()['complete'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()
+
+
 @pytest.mark.parametrize('body', [
     "try:\n    hidden.read_text()\nexcept PermissionError:\n    pass\noutput.write_text('made')",
     "output.write_text('made')\nraise RuntimeError('failed')",

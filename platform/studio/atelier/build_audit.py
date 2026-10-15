@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import secrets
 import select
-import shutil
 import sysconfig
 import tempfile
 import threading
@@ -188,6 +187,8 @@ def prepared(ctx, step, products, *, receipt=None):
     certification. Reference products MUST NOT grant read access. Reports MUST stay outside products;
     failed actions and incomplete reports MUST NOT create stamps or publish cache entries.
     An execution receipt MUST bind its fresh run nonce and exact successful report digest before certification.
+    Preparing an invocation MUST NOT remove owned outputs: an admitted child MUST clear them before
+    installing the observer and running the action, so refused admission preserves existing products.
     """
     from .build import Blender, Python, required_inputs
     from .build_cache import atomic_json
@@ -197,14 +198,6 @@ def prepared(ctx, step, products, *, receipt=None):
     inputs = [*required_inputs(step), *(p for name in step.reads for p in products[name].roots())]
     output_roots = [Path(p).resolve() for product in step.products for p in product.paths]
     report_path = ctx.logs / f'{step.name}.audit.json'
-    # These paths have one owner, and the executor has already dropped its old stamp. Unlinking
-    # leaves (including hard links) preserves their other names; rmtree never follows child links.
-    # Starting empty also prevents old output metadata or bytes from becoming undeclared inputs.
-    for root in output_roots:
-        if root.is_dir():
-            shutil.rmtree(root)
-        else:
-            root.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(dir=ctx.logs, prefix='.audit-') as temporary, ExitStack() as cleanup:
         control = Path(temporary).resolve()
         from .build_spatial import manifest

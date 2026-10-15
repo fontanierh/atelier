@@ -14,6 +14,8 @@ import json
 import os
 from pathlib import Path
 import runpy
+import shutil
+import stat
 import sys
 import threading
 
@@ -21,8 +23,8 @@ import threading
 class Observer:
     """@cc [owner:fontanierh,label:correctness] sticky-build-access-violations
     Observed undeclared reads and writes outside owned products/private scratch MUST remain failures
-    even if the recipe catches their exceptions. The launcher MUST empty owned outputs before this
-    worker runs, so previous output bytes and metadata cannot become inputs.
+    even if the recipe catches their exceptions. This worker MUST empty owned outputs before
+    installing its observer and running the action, so previous bytes and metadata cannot become inputs.
     """
     def __init__(self, spec):
         self.spec = spec
@@ -213,12 +215,56 @@ class Observer:
         external.FileFinder.find_spec = find_spec
 
 
+def clear_outputs(outputs):
+    """@cc [owner:fontanierh,label:safety] admitted-audit-output-cleanup
+    Only the executing child MAY clear an audited action's owned outputs. Heavy actions MUST reach
+    this worker through ordinary guarded admission. Cleanup MUST refuse root/ancestor symbolic links
+    after the admission wait and MUST unlink old leaves without modifying other hard-link names.
+    Removal MUST use a held parent descriptor without following ancestor or child links.
+    Cleanup failure MUST prevent a complete audit report and certification.
+    """
+    roots = [Path(p) for p in outputs]
+
+    def checked(root):
+        if not root.is_absolute() or any(p.is_symlink() for p in (root, *root.parents)):
+            raise RuntimeError('Linked or relative audit cleanup destination')
+
+    for root in roots:
+        checked(root)
+    for root in roots:
+        checked(root)
+        parent = None
+        try:
+            try:
+                parent = os.open(root.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                for component in root.parts[1:-1]:
+                    child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                    os.close(parent)
+                    parent = child
+                mode = os.stat(root.name, dir_fd=parent, follow_symlinks=False).st_mode
+            except FileNotFoundError:
+                continue  # A missing owned root or parent is already empty.
+            if stat.S_ISLNK(mode):
+                raise RuntimeError('Linked audit cleanup destination')
+            if stat.S_ISDIR(mode):
+                if not shutil.rmtree.avoids_symlink_attacks:
+                    raise RuntimeError('Audit cleanup requires descriptor-safe directory removal')
+                shutil.rmtree(root.name, dir_fd=parent)
+            else:
+                os.unlink(root.name, dir_fd=parent)
+        finally:
+            if parent is not None:
+                os.close(parent)
+        checked(root)
+
+
 def execute(spec, *, blender=False, before=None, after=None):
     """Execute once; the observer remains armed until this fresh process exits.
 
     ``before``/``after`` are framework-only checks, never recipe callbacks. Native adapters use
     them to validate preload provenance after managed imports and retain module-isolation checks.
     """
+    clear_outputs(spec['outputs'])
     observer = Observer(spec)
     if 'host' in spec:
         sys._atelier_native_audit_started = observer
