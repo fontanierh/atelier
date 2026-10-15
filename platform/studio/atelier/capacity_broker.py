@@ -247,10 +247,27 @@ class CapacityBroker:
         try:
             return self.guards(record['guards'], tuple(record['child']), tuple(record['principal']),
                                record['limit_bytes'], record['request']['resources']['memory_mib'])
-        except (OSError, ValueError, wire.CapacityError):
+        except (OSError, ValueError, wire.CapacityError) as error:
             # A normal child exit can occur between the first watch poll and receipt validation.
             # Only an already bound positive kernel witness resolves that race.
             record['state'] = 'draining' if self._root_exited(record) else 'uncertain'
+            known = {'Capacity guard identity is not live and owned',
+                     'Capacity guard identity changed during validation',
+                     'Capacity guard receipt is stale or mismatched',
+                     'Capacity guard receipt belongs to another child',
+                     'Capacity guard report repeatedly replaced while reading',
+                     'Capacity file changed while reading',
+                     'Capacity file must be bounded, owned and regular',
+                     'Capacity paths cannot contain symlinks',
+                     'Guard ceiling exceeds the reserved memory envelope',
+                     'Invalid retained guard roster', 'Invalid retained guard process identity',
+                     'Invalid capacity message', 'Invalid capacity protocol fields',
+                     'Invalid capacity integer', 'A pinned process identity is required'}
+            reason = str(error) if isinstance(error, wire.CapacityError) and str(error) in known else type(error).__name__
+            request = record['request']
+            print('capacity guard health failure: ' + json.dumps(dict(
+                owner=request.get('owner'), purpose=request.get('purpose'), pid=record['child'][0],
+                reason=reason, state=record['state'])), file=sys.stderr, flush=True)
             return None
 
     def _refresh(self, state, now):
