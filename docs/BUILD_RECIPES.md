@@ -357,6 +357,12 @@ for product in query('nearby'):
     geometry = product.paths[0].read_bytes()
 ```
 
+When a matching product declares `optional_paths`, the frozen result exposes that separate tuple too.
+Required and optional root roles enter the selector identity; optional-root absence, presence and bytes enter
+the consumed product identity. Audit read grants cover those exact owned roots, including missing optional
+paths, without granting their parent directories or siblings. Products with optional output roots remain
+ineligible for portable caching and Python auditing; this does not enable native package caching.
+
 Resolution happens before target selection, ordering and cache lookup, against all current recipe declarations.
 Matching producers become prerequisites and their selected product identities enter the consumer's key. The key
 also includes query criteria and the full sorted result set, even when empty. Unmatched products and unconsumed

@@ -73,8 +73,9 @@ The [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes remai
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
 documents cache maintenance, signed bundle ingestion, optional HTTPS lookup, snapshot recovery and older pool commands.
-Imports require pinned publisher keys, explicit redistribution grants and complete byte verification; uploading and
-trusted publisher issuance remain separate work. Yorimichi's [foliage pilot](games/yorimichi/docs/FOLIAGE_BUILDS.md)
+Imports require pinned publisher keys, explicit redistribution grants and complete byte verification. An operator-controlled
+producer can freshly build an independent audited Python action and export a signed directory; online uploading and
+hostile-source signer isolation remain separate work. Yorimichi's [foliage pilot](games/yorimichi/docs/FOLIAGE_BUILDS.md)
 separates shared materials from individual mesh owners; automatic cross-revision Unreal package caching stays disabled.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands

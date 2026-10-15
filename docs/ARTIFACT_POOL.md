@@ -87,19 +87,23 @@ Obtain publisher public keys through a trusted channel. The explicit trust file 
 The bundle cannot nominate its own trust root. Do not add an unknown key merely because a download includes it.
 The directory contains `manifest.json` and flat `blobs/<sha256>` regular files; archives are not extracted.
 The manifest has exactly `payload` and a base64 Ed25519 `signature`. Signed bytes are
-`b'atelier-artifact-bundle-v1\0'` followed by canonical sorted, compact ASCII JSON of the payload.
-The payload declares schema `1`, namespace `atelier.portable-source.v1`, the publisher key ID, the unchanged
+`b'atelier-artifact-bundle-v1\0'` (schema `1`) or `b'atelier-artifact-bundle-v2\0'` (schema `2`), followed
+by canonical sorted, compact ASCII JSON of the payload. Both use namespace `atelier.portable-source.v1`, the publisher key ID, the unchanged
 local action `entry`, `root_names`, a `producer` attestation and a `redistribution` grant for every product.
 `root_names` maps each product to the ordered original basename of each root. These signed labels permit path
 policy checks that the local inventory's numeric root indexes alone cannot provide. They remain publisher assertions;
 the normal build restore also validates the receiving recipe's actual destination paths.
 
-Producer fields are `source_commit`, `clean`, `pushed`, `guarded` and `tool_context`. The three flags must be true.
+V1 producer fields remain exactly `source_commit`, `clean`, `pushed`, `guarded` and `tool_context`; the three
+flags must be true. V2 instead requires exactly `source_commit`, `clean`, `pushed`, `execution`, `tool_context`
+and `audit_sha256`. Its two flags must be true, and `execution` must be `audited-python-v1`. The audit digest
+identifies the producer's run-bound audit receipt. V2 makes no native memory-guard assertion. Mixed producer
+variants and signatures under the other version's domain are refused. CAS entries and action keys are unchanged.
 Each redistribution record explicitly names `permission` (`private` or `public`) and a bounded `grant` identifier.
 Missing permission refuses import; a private grant permits private local ingestion and never authorizes upload.
 A verified signature authenticates the pinned publisher's assertions. It does not independently prove the build
 was clean, pushed or guarded, that a licence is valid, or that arbitrary file contents contain no secrets.
-Trusted publishers remain responsible for those facts. No signing, export or trusted-producer issuance CLI is provided.
+Trusted publishers remain responsible for those facts.
 
 Reads and reconstruction are bounded: manifests at most 2 MiB, trust files 64 KiB, 256 products, 32 roots per
 product, 4,096 inventory records and 256 MiB of logical file content per bundle. Links, special files, unsafe paths,
@@ -157,8 +161,53 @@ The transport requires verified HTTPS, refuses redirects and compressed response
 netrc and certificate-path environment settings. URLs cannot contain credentials, queries or fragments. There is
 currently no authentication header or presigned-URL support; an endpoint must be reachable without these, for
 example on a private network with a publicly trusted TLS certificate. It never prints URLs, response bodies or
-foreign network exceptions. No archive extraction, automatic upload, GitHub release adapter or production signer
-is provided by this transport. A repository being public does not grant redistribution rights for its assets.
+foreign network exceptions. Archive extraction, automatic upload and a GitHub release adapter remain unimplemented.
+The trusted local exporter below supplies signed bundles; a public repository does not grant asset redistribution rights.
+
+## Export from a trusted Python producer
+
+```sh
+uv run atelier cache export-bundle sandbox world.block /path/to/new-bundle --profile /path/to/publisher.json
+```
+
+This command always executes a fresh build; it cannot sign an arbitrary old stamp or accept `clean`, `pushed`
+or audit-success flags. The first producer supports one independent `cache=True`, `audit=True`, non-heavy
+Python action with named products. Dependency/reference/query edges, custom verifiers, Blender and Unreal are
+refused. Export writes a new local directory, with the manifest committed last, and never overwrites an existing
+destination. Its receipt says `uploaded: false`. Private grants permit local export/ingestion, not upload.
+
+The operator creates a regular owner-only profile outside the checkout, using absolute paths for the checkout
+and raw 32-byte Ed25519 signing-key file. The key must also be owner-only, have one link, and be outside the
+checkout, build outputs and cache. Provision the key through the operator's trusted secret-handling workflow;
+never commit it. A profile has exactly these fields:
+
+```json
+{"schema":1,"repository":"/path/to/checkout","remote":"https://example.invalid/project.git","ref":"refs/heads/main","actions":["sandbox/world.block"],"grants":"artifact-grants.json","signing_key":"/path/to/protected/signing.key"}
+```
+
+The remote is an explicit credential-free HTTPS URL or absolute local bare-repository path, not a mutable
+checkout remote alias. Git credentials, if needed, remain in the host's trusted Git configuration. The producer
+checks the freshly advertised approved branch before and after execution: a cached remote-tracking ref is not
+pushed evidence. Each Git call has a 15-second deadline and bounded output. Network unavailability refuses export.
+
+The repository maintainer must commit an approved grants file before publication. Every product needs its own
+explicit `permission` and grant identifier; the repository being public does not grant redistribution rights:
+
+```json
+{"schema":1,"actions":{"sandbox/world.block":{"block.shape":{"permission":"private","grant":"approved-policy-reference"},"block.bounds":{"permission":"private","grant":"approved-policy-reference"}}}}
+```
+
+The command requires a clean checkout and checks every consumed source against ordinary committed Git blobs,
+including scripts, audit support, optional-file presence, the recipe, lockfile and grants. Ignored local inputs
+and Git `assume-unchanged` flags cannot bypass those byte checks. Source traversal is bounded to 4,096 records
+and 256 MiB; bundles retain the import limits above. It recomputes the action key/tool context and complete
+output inventories, requires a fresh run-bound successful audit receipt, and repeats source/ref/output checks
+before reading the private key. Blobs are copied and rehashed in private staging. Failed validation produces no bundle.
+
+The host, approved recipe and signer implementation are trusted. The Python input audit is a diagnostic, not a
+security sandbox: environment reads, metadata-derived behavior and arbitrary native I/O remain outside its
+guarantee. Owner-only files and loading the key after execution do not isolate it from malicious code under the
+same user account. This command does not provide hostile-source signing, a native memory guard or online publishing.
 
 ## Portable output pool
 

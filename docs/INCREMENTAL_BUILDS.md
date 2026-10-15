@@ -21,7 +21,9 @@ and movement. Audited Python actions receive frozen matches through `atelier.bui
 sandbox proves narrow rebuilds and restoration. Runtime-discovered query volumes and generated indexes remain proposed.
 Signed source bundles enter the local store after pinned publisher/policy checks and complete byte verification.
 Optional HTTPS lookup uses fixed object-store paths and bounded downloads; ordinary builds fall back locally on
-remote failure. Trusted production and upload remain separate work.
+remote failure. A trusted producer can freshly execute one independent audited Python action and export a signed
+V2 directory after clean/pushed-source, grant, audit and inventory checks. It makes no native memory-guard assertion.
+Online uploading and hostile-source signer isolation remain separate work.
 
 The [Yorimichi foliage pilot](../games/yorimichi/docs/FOLIAGE_BUILDS.md) separates 18 asset owners and shared materials.
 Deterministic source export proof has passed; source caching stays disabled pending recipe/restore validation.
@@ -263,7 +265,7 @@ the replacement satisfies those stronger per-product guarantees.
 
 The optional HTTPS receiver now supports frequent small artifact retrieval from fixed object-store paths, with
 explicit configuration, verified manifests, bounded downloads and local fallback; see [the cache guide](ARTIFACT_POOL.md#fetch-signed-products-over-https).
-Trusted production and uploading remain separate work. A private object store is the proposed default.
+Online uploading and hostile-source signing remain separate work. A private object store is the proposed default.
 GitHub release bundles are a plausible backend for versioned starter packs
 and larger snapshots; choose bundle sizes after checking current service constraints. GitHub Actions caches should
 remain disposable accelerators. The source of truth is the recipe and committed sources, not the availability of

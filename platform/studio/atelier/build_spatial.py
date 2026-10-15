@@ -48,6 +48,7 @@ def bind(steps, owners, *, catalogue=None):
     Each query MUST resolve against all current declarations before scheduling. Its key MUST
     include the selector and complete sorted match set, including an empty set. Unmatched products
     MUST NOT become read dependencies. Touching boxes count as intersections.
+    Frozen matches MUST retain required and optional root roles; fresh byte checks MUST include both.
 
     Work on copies: planning the same recipe twice must not accumulate inferred read edges.
     A checkpoint may bind just its consumer, against a separately validated complete catalogue.

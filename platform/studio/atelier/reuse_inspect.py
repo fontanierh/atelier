@@ -92,6 +92,10 @@ def inspect_game(game):
         if hasattr(step, 'optional_inputs'):
             own_inputs['optional_inputs'] = [p for p in step.optional_inputs if not copied(p)]
         own = replace(step, **own_inputs)
+        if getattr(step, 'queries', ()):
+            # replace does not copy init=False fields. Keep this already-resolved immutable
+            # selection while comparing source identities with copied generated inputs removed.
+            own._query_bindings = step._query_bindings
         source = portable(own, sources)
         sources[step.name] = source
         # A fresh checkout lacks products. Compare the source identity of each producer here;

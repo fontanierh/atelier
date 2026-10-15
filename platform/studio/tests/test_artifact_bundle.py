@@ -46,11 +46,12 @@ def package(tmp_path):
     trust.write_text(json.dumps({'schema': 1, 'publishers': {
         publisher: base64.b64encode(public).decode('ascii')}}))
 
-    def sign(*, rehash=True):
+    def sign(*, rehash=True, domain=None):
         if rehash:
             for record in payload['entry']['products'].values():
                 record['digest'] = build_products.identity(record['inventory'])
-        signature = key.sign(bundle.DOMAIN + canonical(payload))
+        selected = bundle.DOMAIN if payload['schema'] == 1 else bundle.DOMAIN_V2
+        signature = key.sign((selected if domain is None else domain) + canonical(payload))
         (directory / 'manifest.json').write_text(json.dumps({
             'payload': payload, 'signature': base64.b64encode(signature).decode('ascii')}, sort_keys=True))
 
@@ -91,6 +92,45 @@ def test_public_permission_is_explicit_and_survives_receipt(package):
     p.payload['redistribution']['asset']['permission'] = 'public'
     p.sign()
     assert ingest(p)['public_redistribution_asserted'] is True
+
+
+def test_v1_guarded_and_v2_audited_producers_preserve_the_same_cas_entry(package):
+    p = package
+    v1 = ingest(p)
+    original = p.store.action('a' * 64).read_bytes()
+    p.payload['schema'] = 2
+    p.payload['producer'].pop('guarded')
+    p.payload['producer'].update(execution='audited-python-v1', audit_sha256='d' * 64)
+    p.sign()
+    v2 = ingest(p)
+    assert p.store.action('a' * 64).read_bytes() == original
+    assert v1['producer_attestation']['guarded'] is True
+    assert v2['producer_attestation']['execution'] == 'audited-python-v1'
+    assert 'guarded' not in v2['producer_attestation']
+
+
+@pytest.mark.parametrize('condition', ['wrong-domain', 'mixed-variant', 'missing-audit', 'bad-audit',
+                                     'unknown-execution', 'numeric-clean', 'v1-with-v2-fields'])
+def test_versioned_producer_variants_and_signature_domains_are_exact(package, condition):
+    p = package
+    p.payload['schema'] = 2
+    producer = p.payload['producer']
+    producer.pop('guarded')
+    producer.update(execution='audited-python-v1', audit_sha256='d' * 64)
+    if condition == 'mixed-variant':
+        producer['guarded'] = True
+    elif condition == 'missing-audit':
+        producer.pop('audit_sha256')
+    elif condition == 'bad-audit':
+        producer['audit_sha256'] = 'unknown'
+    elif condition == 'unknown-execution':
+        producer['execution'] = 'native'
+    elif condition == 'numeric-clean':
+        producer['clean'] = 1
+    elif condition == 'v1-with-v2-fields':
+        p.payload['schema'] = 1
+    p.sign(domain=bundle.DOMAIN if condition == 'wrong-domain' else None)
+    assert_refused_without_store(p)
 
 
 def test_multiple_products_and_ordered_file_roots_preserve_exact_inventories(package):

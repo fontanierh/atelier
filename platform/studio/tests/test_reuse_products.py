@@ -192,3 +192,35 @@ def test_direct_native_launcher_refuses_partial_snapshot_before_spawning(tmp_pat
     for argv in (['editor', str(project)], ['uat', '-project=' + str(project)]):
         with pytest.raises(SystemExit, match='--abandon'):
             process.spawn(argv, env={})
+
+
+def test_spatial_source_comparison_preserves_frozen_bindings(snapshot, monkeypatch):
+    source, target = snapshot
+    for name in ('ATELIER_PYTHON', 'PYTHONHOME', 'PYTHONPATH'):
+        monkeypatch.delenv(name, raising=False)
+    extra = '''
+from atelier.build import BBoxQuery, Python
+_original_steps = steps
+def steps(ctx):
+    return _original_steps(ctx) + [
+        Step('spatial.source', [], products=[Product('spatial.geometry', (ctx.out / 'geometry.json',),
+             collection='terrain', bounds=(0, 0, 0, 1, 1, 1), optional_paths=(ctx.out / 'geometry.sidecar',))]),
+        Step('spatial.consume', [Python(Path(__file__).with_name('query.py'))], audit=True,
+             queries=[BBoxQuery('near', 'terrain', (0, 0, 0, 1, 1, 1))],
+             products=[Product('spatial.result', (ctx.out / 'result.json',))])]
+'''
+    for repo in (source, target):
+        recipe = repo / 'games/standin/build.py'
+        recipe.write_text(recipe.read_text() + extra)
+        write(repo / 'games/standin/query.py', 'pass\n')
+        write(repo / 'uv.lock', 'fixture managed environment\n')
+    write(source / 'build/standin/geometry.json', 'geometry')
+    write(source / 'build/standin/result.json', 'frozen query result')
+    donor = reuse.inspect(source, 'standin')
+    received = reuse.inspect(target, 'standin')
+    assert reuse.differing_sources(donor, received) == []
+    source_consumer = next(s for s in donor['steps'] if s['name'] == 'spatial.consume')
+    target_consumer = next(s for s in received['steps'] if s['name'] == 'spatial.consume')
+    # Missing generated inputs change full identities, but must not change source-only identities.
+    assert source_consumer['fingerprint'] != target_consumer['fingerprint']
+    assert source_consumer['source'] == target_consumer['source']
