@@ -319,7 +319,7 @@ class CapacityBroker:
         record.update(state='released', release_witness=witness)
         return True
 
-    def _terminal_tree_exit(self, record):
+    def _terminal_tree_exit(self, record, *, preserved=None):
         """@cc [owner:fontanierh,label:safety] exclusive-terminal-tree-release
         Only bridge or full performance-exclusive grants MAY use this policy. The root MUST
         have affirmative exit evidence and its previously bound aggregate report MUST match
@@ -335,8 +335,9 @@ class CapacityBroker:
         try:
             item = wire.fields(record.get('guards', {}).get('tree_guard'), ('pid', 'start', 'report'))
             wire.identity((item['pid'], item['start']))  # Bound at start; terminal monitor may now have exited.
-            receipt = wire.decode(wire.private_file(wire.text(item['report'], maximum=4096),
-                                                    limit=wire.MAX_FRAME, private=False))
+            report = wire.text(item['report'], maximum=4096)
+            receipt = (wire.decode(wire.private_file(report, limit=wire.MAX_FRAME, private=False))
+                       if preserved is None else preserved)
             observed, ready = receipt.get('time'), record.get('first_ready')
             if (type(observed) not in (int, float) or not math.isfinite(observed)
                     or type(ready) not in (int, float) or not math.isfinite(ready)
@@ -351,6 +352,35 @@ class CapacityBroker:
         except (OSError, ValueError, KeyError, TypeError, wire.CapacityError):
             return None
         return {'kind': 'guarded-tree-exit', 'coverage': 'monitored-owned-tree', 'observed_at': observed}
+
+    def _preserved_terminal(self, state, evidence):
+        """@cc [owner:fontanierh,label:safety] attested-preserved-terminal-recovery
+        This explicit same-UID administration request MAY supply an archived original receipt
+        after its bound shared report path was reused. It MUST retain every terminal-tree
+        policy check and bind the evidence digest and original report metadata durably. It
+        attests operator preservation, not cryptographic monitor provenance or per-pin exits.
+        """
+        wire.fields(evidence, ('request_id', 'path'))
+        record = state['records'].get(wire.text(evidence['request_id']))
+        if record is None:
+            raise wire.CapacityError('Preserved terminal request does not exist')
+        if record['state'] == 'released':
+            return False
+        if record['state'] != 'uncertain':
+            raise wire.CapacityError('Preserved terminal evidence requires an uncertain reservation')
+        path = Path(wire.text(evidence['path'], maximum=4096))
+        if not path.is_absolute():
+            raise wire.CapacityError('Preserved terminal archive path must be absolute')
+        raw = wire.private_file(path, limit=wire.MAX_FRAME, private=False)
+        witness = self._terminal_tree_exit(record, preserved=wire.decode(raw))
+        if witness is None:
+            raise wire.CapacityError('Preserved terminal evidence does not satisfy the scoped release policy')
+        bound = record['guards']['tree_guard']
+        witness.update(provenance='operator-preserved', evidence_sha256=hashlib.sha256(raw).hexdigest(),
+                       bound_report_sha256=hashlib.sha256(bound['report'].encode()).hexdigest(),
+                       bound_monitor=[bound['pid'], bound['start']])
+        record.update(state='released', release_witness=witness)
+        return True
 
     def _request(self, value):
         wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers'))
@@ -564,15 +594,19 @@ class CapacityBroker:
                 refreshed = self._refresh(state, now)
                 wire.fields(message, ('namespace', 'action'), ('request', 'id', 'nonce', 'epoch', 'boot_id', 'child',
                             'process_guard', 'tree_guard', 'limit_bytes', 'descendants', 'witness', 'resources', 'locks',
-                            'activation_id', 'candidates'))
+                            'activation_id', 'candidates', 'preserved_terminal'))
                 if message['namespace'] != wire.NAMESPACE:
                     raise wire.CapacityError('Production broker namespace required')
                 action = message['action']
+                if 'preserved_terminal' in message and action != 'reconcile':
+                    raise wire.CapacityError('Preserved terminal evidence is allowed only for reconciliation')
                 if self.mode == 'capacity' and action not in ('status', 'reconcile', 'close'):
                     if not self.compatible or message.get('activation_id') != self.activation_id:
                         raise wire.CapacityError('Full-capacity compatibility proof is unavailable or mismatched')
                 if action in ('status', 'reconcile'):
                     if action == 'reconcile':
+                        if 'preserved_terminal' in message:
+                            refreshed |= self._preserved_terminal(state, message['preserved_terminal'])
                         for retained in state['records'].values():
                             refreshed |= self._settle_exited(retained)
                     result = self._status(state)

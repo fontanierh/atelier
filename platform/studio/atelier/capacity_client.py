@@ -60,16 +60,23 @@ def status(socket_path, *, timeout=2.):
     return _rpc(socket_path, {'action': 'status'}, timeout)[0]
 
 
-def reconcile(socket_path, *, timeout=2.):
-    """Release only retained rosters whose affirmative kernel exits are already recorded."""
-    return _rpc(socket_path, {'action': 'reconcile'}, timeout)[0]
+def reconcile(socket_path, *, timeout=2., request_id=None, preserved_terminal=None):
+    """Apply release policy, optionally attesting a preserved terminal receipt for one request."""
+    if (request_id is None) != (preserved_terminal is None):
+        raise CapacityError('Preserved terminal evidence requires both request ID and archive path')
+    message = {'action': 'reconcile'}
+    if request_id is not None:
+        message['preserved_terminal'] = dict(request_id=wire.text(request_id),
+                                            path=str(Path(preserved_terminal).absolute()))
+    return _rpc(socket_path, message, timeout)[0]
 
 
 class AdmissionSession:
     """@cc [owner:fontanierh,label:safety] guard-facing-broker-admission
     Offers MUST be uncharged. Only the server's committed gate MAY release useful work; the
     client MUST never own a writer or fall back on broker failure. Close MUST obtain affirmative
-    exit evidence for every retained identity or raise while the durable reservation stays held.
+    release evidence under the broker's exact or exclusive terminal-tree policy, or raise while
+    the durable reservation stays held.
     A Popen witness proves the direct child's exit only, never an undiscovered process tree.
     """
     def __init__(self, socket_path, request, *, timeout=2., cutover=None):

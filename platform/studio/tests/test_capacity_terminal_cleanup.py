@@ -1,6 +1,7 @@
 """Exclusive monitored-tree cleanup can resolve historical discovery gaps without invented exits."""
 from dataclasses import asdict
 import json
+import hashlib
 import sqlite3
 import threading
 import time
@@ -8,6 +9,7 @@ import time
 import pytest
 
 from atelier import capacity_protocol as wire
+from atelier import capacity_client
 from atelier.capacity import Resources
 from atelier.capacity_broker import CapacityBroker, SCHEMA
 
@@ -91,14 +93,99 @@ def test_bound_report_must_remain_safe_to_read(terminal, tmp_path, bad):
     assert not broker._settle_exited(record)
 
 
-@pytest.mark.parametrize('action', ['reconcile', 'close'])
+def test_preserved_original_can_recover_an_overwritten_bound_report(terminal, tmp_path):
+    broker, record, bound_path, receipt = terminal
+    archive = tmp_path / 'preserved.json'
+    raw = json.dumps(receipt).encode()
+    archive.write_bytes(raw)
+    bound_path.write_text(json.dumps(receipt | {'owner': 999, 'owner_started': 9990}))
+    state = {'records': {'job': record}}
+    assert not broker._settle_exited(record)
+    assert broker._preserved_terminal(state, dict(request_id='job', path=str(archive)))
+    witness = record['release_witness']
+    assert witness['provenance'] == 'operator-preserved'
+    assert witness['evidence_sha256'] == hashlib.sha256(raw).hexdigest()
+    assert witness['bound_report_sha256'] == hashlib.sha256(str(bound_path).encode()).hexdigest()
+    assert witness['bound_monitor'] == [300, 3000]
+    assert len(record['exited']) == 32
+    assert json.loads(bound_path.read_text())['owner'] == 999
+    assert not broker._preserved_terminal(state, dict(request_id='job', path=str(archive)))
+
+
+@pytest.mark.parametrize('bad', ['root', 'birth', 'limit', 'time', 'cleanup', 'processes', 'missing-root',
+                                 'overlap', 'live', 'symlink', 'mode', 'oversized', 'relative', 'unknown-id'])
+def test_preserved_receipt_cannot_bypass_terminal_policy(terminal, tmp_path, bad):
+    broker, record, _, receipt = terminal
+    archive = tmp_path / 'preserved.json'
+    changes = {'root': {'owner': 101}, 'birth': {'owner_started': 1001}, 'limit': {'limit_bytes': 2},
+               'time': {'time': 1}, 'cleanup': {'cleanup_complete': False}, 'processes': {'processes': [{'pid': 100}]}}
+    archive.write_text(json.dumps(receipt | changes.get(bad, {})))
+    if bad == 'missing-root':
+        record['exited'] = record['exited'][1:]
+    elif bad == 'overlap':
+        broker.mode = 'capacity'
+    elif bad == 'live':
+        broker.alive = lambda pin: True
+    elif bad == 'symlink':
+        link = tmp_path / 'link.json'
+        link.symlink_to(archive)
+        archive = link
+    elif bad == 'mode':
+        archive.chmod(0o666)
+    elif bad == 'oversized':
+        archive.write_bytes(b'x' * (wire.MAX_FRAME + 1))
+    with pytest.raises((wire.CapacityError, OSError)):
+        broker._preserved_terminal({'records': {'job': record}}, dict(
+            request_id='unknown' if bad == 'unknown-id' else 'job',
+            path='relative.json' if bad == 'relative' else str(archive)))
+    assert record['state'] == 'uncertain'
+
+
+def test_client_requires_both_preserved_evidence_arguments(monkeypatch, tmp_path):
+    sent = []
+    monkeypatch.setattr(capacity_client, '_rpc', lambda path, message, timeout: (sent.append(message), None))
+    for arguments in [dict(request_id='job'), dict(preserved_terminal=tmp_path / 'receipt.json')]:
+        with pytest.raises(wire.CapacityError, match='both request ID'):
+            capacity_client.reconcile('/unused', **arguments)
+    capacity_client.reconcile('/unused', request_id='job', preserved_terminal=tmp_path / 'receipt.json')
+    assert sent == [dict(action='reconcile', preserved_terminal=dict(request_id='job', path=str(tmp_path / 'receipt.json'))) ]
+
+
+@pytest.mark.parametrize('arguments', [
+    ['reconcile', '/unused', '--request-id', 'job'],
+    ['reconcile', '/unused', '--preserved-terminal', '/archive'],
+    ['status', '/unused', '--request-id', 'job', '--preserved-terminal', '/archive'],
+])
+def test_cli_preserved_evidence_options_require_reconcile_and_pair(arguments):
+    from atelier import cli
+    with pytest.raises(SystemExit, match='must be used together'):
+        cli.main(['capacity', *arguments])
+
+
+def test_cli_passes_explicit_preservation_attestation(monkeypatch, capsys):
+    from atelier import cli
+    received = []
+    def reconcile(path, **kwargs):
+        received.append((path, kwargs))
+        return {'charged_count': 0}
+    monkeypatch.setattr(capacity_client, 'reconcile', reconcile)
+    assert cli.main(['capacity', 'reconcile', '/socket', '--request-id', 'job', '--preserved-terminal', '/archive']) == 0
+    assert received == [('/socket', dict(request_id='job', preserved_terminal='/archive'))]
+    assert 'charged_count' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('action', ['reconcile', 'close', 'preserved'])
 def test_recovery_commits_before_disposal_and_reconcile_is_idempotent(terminal, action):
-    broker, record, _, _ = terminal
+    broker, record, bound_path, receipt = terminal
     broker.compatible, broker.lease_seconds, broker.boot = True, 10, 'fixture'
     broker._watches, broker._gates, broker._lock = {}, {}, threading.RLock()
     broker._clock = lambda: 20
     broker.total, broker.reserve = Resources(memory_mib=10), Resources()
     record['epoch'] = 1
+    archive = bound_path.with_name('preserved.json')
+    if action == 'preserved':
+        archive.write_text(json.dumps(receipt))
+        bound_path.write_text(json.dumps(receipt | {'owner': 999}))
     if action == 'close':
         record['exited'] = record['exited'][1:]
         broker.started = lambda pid: pid * 10
@@ -116,8 +203,10 @@ def test_recovery_commits_before_disposal_and_reconcile_is_idempotent(terminal, 
         disposed.append(nonce)
     broker._dispose = dispose
     try:
-        for _ in range(2 if action == 'reconcile' else 1):
-            message = dict(namespace=wire.NAMESPACE, action=action)
+        for _ in range(1 if action == 'close' else 2):
+            message = dict(namespace=wire.NAMESPACE, action='reconcile' if action == 'preserved' else action)
+            if action == 'preserved':
+                message['preserved_terminal'] = dict(request_id='job', path=str(archive))
             if action == 'close':
                 message.update(id='job', nonce='fixture', epoch=1, boot_id=broker.boot,
                                witness=dict(kind='direct-parent-wait', parent=[99, 990], child=[100, 1000], returncode=0))

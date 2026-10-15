@@ -29,6 +29,20 @@ remains charged. Same-boot recovery rearms live registered identities and permit
 the original controller's fenced session to report exit only. A verified OS boot change proves prior local jobs
 ended; ordinary daemon restart does not.
 
+If a later invocation overwrote the bound aggregate report, an authorized administrator can attest a preserved
+original terminal JSON file explicitly:
+
+```sh
+uv run atelier capacity reconcile ABSOLUTE_SOCKET --request-id REQUEST_ID --preserved-terminal ABSOLUTE_ARCHIVE
+```
+
+Both options are required together and apply only to reconciliation. The broker reads the bounded owned regular
+archive without following links and applies the same root-exit, identity, limit, time, exclusivity and empty-tree
+checks. Its durable witness records `operator-preserved` provenance, the exact evidence SHA256, and the original
+bound report-path hash and monitor identity. This is an explicit preservation attestation over the authenticated
+same-user administrative socket, not cryptographic proof of the archive's origin. It never invents historical
+per-process exits, replaces the current report, or certifies build outputs. Missing or invalid archives refuse.
+
 The broker configuration is an owner-only JSON file in an owner-only directory, with exactly these fields:
 
 ```json
