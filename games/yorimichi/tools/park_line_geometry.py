@@ -53,6 +53,13 @@ def section_knots(section):
 
 
 class LineWorld:
+    """@cc [owner:fontanierh,label:correctness] authored-route-corridors
+    Width zones MUST be finite, positive, disjoint and inside the route. They
+    MUST change acceptance only on their declared intervals; elsewhere the
+    authored rideable width remains in force. Diagnostic width MUST NOT enter
+    this calculation. The caller is responsible for supplying actual geometry
+    widths; this metadata check does not certify the source mesh.
+    """
     def __init__(self, spec, base):
         self.spec = spec
         self.path = Path2D(spec['path'])
@@ -62,6 +69,20 @@ class LineWorld:
         self.design_width = float(spec.get('rideable_width_m', self.width))
         if min(self.width, self.design_width) <= 0:
             raise ValueError('lane widths must be positive')
+        self.corridor_zones = spec.get('corridor_zones', [])
+        if not isinstance(self.corridor_zones, list):
+            raise ValueError('corridor_zones must be a list')
+        self.corridor_zones = self.corridor_zones.copy()
+        for i,zone in enumerate(self.corridor_zones):
+            if not isinstance(zone, dict) or set(zone) != {'start_s_m', 'end_s_m', 'width_m'}:
+                raise ValueError('corridor zones need start_s_m, end_s_m and width_m')
+            a,b,w = (float(zone[k]) for k in ('start_s_m','end_s_m','width_m'))
+            if not np.isfinite([a,b,w]).all() or not 0 <= a < b <= self.path.s[-1] or w <= 0:
+                raise ValueError('corridor zone bounds/width must be finite and inside the route')
+            self.corridor_zones[i] = dict(start_s_m=a,end_s_m=b,width_m=w)
+        self.corridor_zones = sorted(self.corridor_zones, key=lambda z: z['start_s_m'])
+        if any(a['end_s_m'] > b['start_s_m'] for a,b in zip(self.corridor_zones[:-1],self.corridor_zones[1:])):
+            raise ValueError('corridor zones cannot overlap')
         tris = []
         if 'sections' in spec:
             for section in spec['sections']:

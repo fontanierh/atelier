@@ -64,6 +64,29 @@ def flight_rows():
     return rows
 
 
+def test_authored_width_zone_does_not_expand_the_earlier_narrow_lane():
+    world=FixtureWorld(width=18)
+    world.corridor_zones=[dict(start_s_m=20.,end_s_m=80.,width_m=30.)]
+    rows=flight_rows()
+    for row in rows:
+        if row['position'][2]>=20.:row['position'][0]=12.
+    result=analyze(rows,world)
+    assert result['max_corridor_excess_m']==0
+    rows[5]['position'][0]=12.
+    result=analyze(rows,world)
+    assert result['max_corridor_excess_m']==pytest.approx(3.)
+    assert 'rider left the designed rideable corridor' in result['failures']
+
+
+@pytest.mark.parametrize('zones',[
+    [dict(start_s_m=10,end_s_m=110,width_m=30)],
+    [dict(start_s_m=10,end_s_m=30,width_m=float('nan'))],
+    [dict(start_s_m=10,end_s_m=30,width_m=30),dict(start_s_m=20,end_s_m=40,width_m=18)]])
+def test_invalid_corridor_width_zones_fail_before_a_trial(tmp_path,zones):
+    with pytest.raises(ValueError,match='corridor'):
+        LineWorld(dict(path=[[0,0],[0,100]],triangles=[[[0,0,0],[0,0,2],[2,0,0]]],corridor_zones=zones),tmp_path)
+
+
 def test_verified_landing_passes_and_flat_landing_fails():
     result=analyze(flight_rows(),FixtureWorld())
     assert result['passed'],result['failures']

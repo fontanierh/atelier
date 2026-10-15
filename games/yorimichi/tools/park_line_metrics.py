@@ -178,7 +178,12 @@ def analyze(rows, world):
                                        for reason in a['failures']) for a in airs):
         failures.append('flight has an unsafe or unverified landing/takeoff')
     # A diagnostic wide lane never widens the authored route's acceptance corridor.
-    if lateral.max() > world.design_width/2:
+    widths = np.full(len(progress), world.design_width)
+    for zone in getattr(world, 'corridor_zones', []):
+        at = (progress >= zone['start_s_m']) & (progress <= zone['end_s_m'])
+        widths[at] = zone['width_m']
+    excess = float(max(0., np.max(lateral-widths/2)))
+    if excess > 0:
         failures.append('rider left the designed rideable corridor')
     finish = world.finish_m
     if progress.max() < finish:
@@ -200,6 +205,8 @@ def analyze(rows, world):
                 duration_s=float(times[-1]), speed_mps=dict(min=float(speed.min()), max=float(speed.max()),
                 final=float(speed[-1])), path_progress_m=float(progress.max()), finish_s_m=finish,
                 max_lateral_error_m=float(lateral.max()), rideable_width_m=world.design_width,
+                max_corridor_excess_m=excess,
+                corridor_zones=getattr(world, 'corridor_zones', []),
                 diagnostic_lane_width_m=world.width, airs=airs, gap_checks=gap_checks, bump_candidates=losses,
                 speed_along_line=[dict(time_s=float(times[i]),path_s_m=float(progress[i]),
                                       speed_mps=float(speed[i]),height_m=float(p[i,1]),state=states[i])

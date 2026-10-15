@@ -142,7 +142,7 @@ def simulate(world, entry_speed, binary, package, output, run_id, timeout):
                   controls_mode='path_follower' if follower else 'scripted' if world.spec.get('controls') else 'coast')
     if follower:
         result['controller'] = follower.report()
-        result['controller']['stayed_in_corridor'] = result['max_lateral_error_m'] <= world.design_width/2
+        result['controller']['stayed_in_corridor'] = result['max_corridor_excess_m'] == 0
     return result
 
 

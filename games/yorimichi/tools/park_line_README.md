@@ -56,7 +56,11 @@ a sufficiently sampled designed curve. Inspect bent strips for overlaps before t
 
 The diagnostic lane defaults to 80 m wide because the unattended rider drifts. Set `rideable_width_m` to the
 actual intended corridor: excursions beyond half that width fail even when the diagnostic lane still supports
-the rider. This prevents the broad test lane from concealing route failure. The width is uniform along the path.
+the rider. This prevents the broad test lane from concealing route failure. For an actual wider room or receiver,
+`corridor_zones: [{"start_s_m": 200, "end_s_m": 250, "width_m": 30}]` overrides the authored width only on that
+interval. Zones must be finite, positive, disjoint and inside the route. Derive them from the built surfaces;
+the tool validates metadata and observed tracking, not whether a supplied width matches the source mesh.
+`max_corridor_excess_m` reports the greatest excursion beyond the applicable half-width.
 
 Spawn is inferred from `spawn_s_m` and collision, or supplied explicitly as `[x,y,z]`. Initial heading follows
 the path; initial velocity is horizontal at the requested speed. Thus a low-speed spawn on a downhill start is
