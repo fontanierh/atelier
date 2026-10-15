@@ -274,8 +274,11 @@ exercise the supported log formats without requiring a native build.
 
 ## Audit a Python generator's accesses
 
-Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. It works with
-or without `cache=True`. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
+Add `audit=True` to a step with exactly one `Python` command and named products under `ctx.out`. Python actions
+work with or without `cache=True`. Guarded `Blender` and `UnrealScript` commands also support Python access auditing
+with `heavy=True` and `cache=False`; Blender requires `factory_startup=True`. Native products may live in owned
+generated subpaths under `ctx.out`, or the project's `Content` for Unreal. Optional product roots, linked output
+paths and legacy pool/cutoff protocols are refused. The sandbox's two portable generators opt in. Atelier installs a Python audit hook before
 running the script and writes `logs/<step>.audit.json` separately from its products. No extra command is required.
 
 The audit checks file reads against declared source inputs and `reads` products. A `references` edge grants no
@@ -303,7 +306,9 @@ Audited actions inherit the ordinary launcher; `heavy=True` still takes its norm
 
 A caught access violation remains a failure. Missing, malformed or unsuccessful completion records prevent stamps
 and cache publication, including an `os._exit(0)` that bypasses normal cleanup. Reports travel through a separate
-inherited pipe, not a recipe-owned output. Cache hits verify the audited action key and complete output inventory;
+inherited pipe, not a recipe-owned output. A fresh nonce, ordered start/accesses/complete records and pipe closure
+are required. The hook stays armed after completion: trailing Python access fails certification, even if it repeats
+a formerly allowed read and its exception is caught. Cache hits verify the audited action key and complete output inventory;
 they do not rerun the generator merely to produce another trace. The stamp records restoration separately.
 
 This is a diagnostic for trusted recipes, **not a security sandbox or a proof of complete input closure**. It observes
@@ -312,8 +317,21 @@ without changing their return values. Metadata values (timestamps, permissions a
 reads, direct native I/O and unobserved low-level APIs are outside its guarantee. Recipes must not derive portable
 output from those values. Observed subprocess, network, ctypes, mmap, sqlite3 and opaque descriptor operations,
 and unhandled `os.*` events, are refused;
-an uninstrumented child must not silently supply a supposedly audited result. Blender and Unreal bootstraps are not
-enabled by this option. Their imports still need their own dependency and native equivalence proofs.
+an uninstrumented child must not silently supply a supposedly audited result. Blender/Unreal bootstraps observe
+action-time Python work only; host startup, native callbacks and native imports still need explicit declarations
+and native equivalence proofs. Offline fake-host tests validate this protocol without launching Blender or Unreal;
+they do not certify real-host behavior or native package portability. Tool runtime exemptions come only from
+recognized Python library directories within a fingerprinted host installation, never arbitrary `sys.path` entries.
+Native bootstrap helpers execute their fingerprinted source directly. Ambient runtime `__pycache__` bytes receive
+no runtime exemption, and action imports use a private bytecode prefix even if the host ignored startup flags.
+Unreal keeps its descriptor isolation and native library checks before/after the observed script. These framework
+checks run outside recipe observation; recipe ctypes calls remain refused.
+
+An audited native action runs in a fresh process, including when it declares `Batch(...)`. Such declarations fall
+back to ordinary per-action execution. Warm audited batching is unsupported: hooks cannot be removed and warm
+modules/callbacks can retain earlier action state. The direct batch runner refuses audited candidates. A second
+bootstrap invocation in the same host is a sticky failure. This option never enables native cache restoration or
+publication.
 The worker initializes managed stdlib `ctypes` before installing the observer, including CPython's own
 `PyDLL(None)` handle. This lets NumPy import that existing runtime state. Action-time library loads and symbol
 lookups remain refused, even when their exceptions are caught; NumPy gets no access exemption. Array operations

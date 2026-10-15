@@ -44,7 +44,8 @@ def compatible(first, other):
     An omitted override MUST start a separate process so it cannot inherit a predecessor's value.
     Explicit runtime values may differ; each action's command records them in its own key.
     """
-    if other.batch != first.batch or other.cache or type(other.commands[0]) is not type(first.commands[0]):
+    if (first.audit or other.audit or other.batch != first.batch or other.cache
+            or type(other.commands[0]) is not type(first.commands[0])):
         return False
     a, b = first.commands[0], other.commands[0]
     # The worker inherits the first action's environment. Every action must explicitly
@@ -64,7 +65,7 @@ def compatible(first, other):
 def select(ctx, plan, start, done, *, force, index, tool_cache):
     """Consecutive ready actions only; a future reader never runs before its producer commits."""
     first = plan[start]
-    if first.batch is None or first.cache:
+    if first.batch is None or first.cache or first.audit:
         return []
     candidates = []
     for step in plan[start:]:
@@ -254,6 +255,10 @@ class Session:
 
 
 def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
+    # PEP 578 hooks cannot be removed, and warm imports/callbacks carry action state. An audited
+    # batch declaration falls back through select() to ordinary fresh-process execution.
+    if any(step.audit for step, _, _ in candidates):
+        raise ValueError('Audited batch actions require separate fresh native processes')
     session = Session(ctx, candidates, done, index, tool_cache, echo, products)
     first = candidates[0][0]
     session.write_plan()

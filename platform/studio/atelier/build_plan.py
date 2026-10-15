@@ -59,7 +59,10 @@ def _inspect(ctx, steps, wanted, *, force, index):
         reasons = []
         try:
             if step.cache or step.audit:
-                from .build_cache import roots
+                if step.audit:
+                    from .build_audit import roots
+                else:
+                    from .build_cache import roots
                 roots(ctx, step)
             current, state = engine.fingerprint_state(step, done, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:

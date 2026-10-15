@@ -35,6 +35,7 @@ class Observer:
         self.import_roots.update(p.parent for p, directory in self.inputs if not directory)
         self.seen = set()
         self.failed = False
+        self.sealed = False
         self.local = threading.local()
         self.lock = threading.RLock()
 
@@ -52,6 +53,8 @@ class Observer:
         return f'<external>/{path.name}'
 
     def record(self, operation, path=None, reason=None):
+        if self.sealed:
+            reason = 'Python access after action completion; host must exit before another action'
         label = self.label(path) if path is not None else None
         item = (operation, label, reason)
         with self.lock:
@@ -82,9 +85,13 @@ class Observer:
         return path.is_relative_to(self.scratch) or any(path.is_relative_to(p) for p in self.outputs)
 
     def covered(self, path, *, directory=False):
+        # Blender's managed tool identity excludes ambient __pycache__. Native hosts may ignore
+        # Python startup environment flags, so these bytes never gain a runtime exemption.
+        runtime = any(path.is_relative_to(p) and ('host' not in self.spec
+                      or '__pycache__' not in path.relative_to(p).parts) for p in self.runtime)
         return (any(path == p and (not directory or is_dir) or is_dir and path.is_relative_to(p)
                     for p, is_dir in self.inputs)
-                or any(path.is_relative_to(p) for p in self.runtime))
+                or runtime)
 
     def read(self, path, *, directory=False, metadata=False):
         operation = 'metadata' if metadata else 'list' if directory else 'read'
@@ -206,13 +213,20 @@ class Observer:
         external.FileFinder.find_spec = find_spec
 
 
-def main(config):
-    spec = json.loads(Path(config).read_text())
+def execute(spec, *, blender=False, after=None):
+    """Execute once; the observer remains armed until this fresh process exits.
+
+    ``after`` is framework-only teardown, never a recipe callback. Native adapters use it for
+    the existing module-isolation check before publishing the terminal completion record.
+    """
     observer = Observer(spec)
+    if 'host' in spec:
+        sys._atelier_native_audit_started = observer
     script = spec['script']
-    sys.argv = [script, *spec['args']]
+    sys.argv = [script, *(['--'] if blender else []), *spec['args']]
     sys.path[0] = str(Path(script).parent)
     sys.dont_write_bytecode = True
+    sys.pycache_prefix = str(Path(spec['scratch']) / 'bytecode')
     # Import runpy's helper before installing the observer; its subsequent target/module reads
     # still pass through the hook. The prefix was also set before interpreter startup.
     import pkgutil  # noqa: F401
@@ -227,13 +241,25 @@ def main(config):
         if not succeeded:
             raise
     finally:
+        # The native module guard inspects dyld through ctypes. It is trusted framework work,
+        # not recipe I/O; its exception still prevents a successful completion report.
+        if after is not None:
+            observer.local.busy = True
+            try:
+                after()
+            except BaseException:
+                succeeded = False
+                raise
+            finally:
+                observer.local.busy = False
         if any(t is not threading.current_thread() and t.is_alive() for t in threading.enumerate()):
             observer.failed = True
             observer.send('access', operation='threads', path=None, violation='action returned with live Python threads')
         observer.send('complete', success=succeeded and not observer.failed)
+        observer.sealed = True
     if observer.failed:
         raise SystemExit('Input audit failed; see the action audit report')
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    execute(json.loads(Path(sys.argv[1]).read_text()))

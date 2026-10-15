@@ -18,7 +18,8 @@ member counts. It reuses existing inventories, preserves unknown baselines and m
 Those historical logs do not prove current settings or measured warm/cold improvements; native baselines remain open.
 Opt-in Python access auditing now checks declared file reads and owned writes before certification, with complete
 source directory inventories and separate completion reports; the sandbox uses it. It does not prove metadata,
-environment or native-I/O dependencies. Blender/Unreal audit bootstraps remain proposed.
+environment or native-I/O dependencies. Blender/Unreal Python bootstraps now have offline protocol coverage;
+native execution and equivalence evidence remain separate requirements.
 Named actions can declare exact optional source files; absent/present identities track conditional reads without
 hashing unrelated siblings. The sandbox demonstrates this with a block override. Recipe-declared spatial boxes now
 resolve into tracked product reads, including empty selections, additions, removals and movement. Audited Python
@@ -134,12 +135,25 @@ accesses still need explicit declarations and importer-specific dependency enume
 macOS process-access tracer. Controlled input workspaces and clean-versus-incremental checks test the declared
 closure; until it is proven, keep conservative dependencies and restrict shared publication.
 
-The implemented `Step.audit=True` starts with one Python command per owned-product action. Its access hook, private
+The implemented `Step.audit=True` accepts one Python, guarded Blender or guarded Unreal Python command per
+owned-product action. Its access hook, private
 scratch/bytecode paths and completion pipe catch undeclared reads, reference misuse, writes outside ownership and
 reuse of stale output bytes. Each executed action starts with empty owned outputs; cache hits restore without running
 it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Python
 metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
-the tracked context API and native bootstraps are still separate work.
+the tracked context API remains separate work. Native audits use the same private nonce-bound completion pipe
+and existing actual-child guard. They require `cache=False`; they grant no native cache or package-equivalence
+certification. Their runtime exemptions are restricted to Python library directories inside the fingerprinted
+host installation, never arbitrary import search paths. Blender uses factory startup; Unreal retains its module
+descriptor isolation and before/after library checks. Offline fake-host tests cover the adapter protocol, not
+successful real-host imports.
+
+Audited native actions always use fresh processes. A `Batch` declaration falls back to ordinary execution for each
+audited action, and direct audited warm-session launches are refused. Irreversible audit hooks and warm module or
+callback state are not silently reused. The observer remains armed after completion; any further observed Python
+file access, even one previously allowed, produces a trailing failure record. The parent drains through pipe closure
+and requires exactly start/accesses/complete in order before certification. Native host startup, native callbacks,
+native I/O and environment or metadata values still require explicit dependencies and native equivalence proofs.
 
 Legacy actions can opt into deferred, explicit input membership: only selected actions enumerate their members,
 after prerequisites finish, and execution rechecks the selection before certification. This does not track arbitrary

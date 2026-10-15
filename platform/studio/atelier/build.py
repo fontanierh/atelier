@@ -386,7 +386,10 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
         state['spatial_outputs'] = spatial_outputs
         digest.update(json.dumps(spatial_outputs, sort_keys=True).encode())
     if step.cache or step.audit or step.toolchain:
-        from .build_cache import tool_context
+        if step.audit:
+            from .build_audit import tool_context
+        else:
+            from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
         digest.update(state['tools'].encode())
     if step.batch:
@@ -590,7 +593,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             raise SystemExit(str(error)) from error
         if step.cache or step.audit:
             try:
-                build_cache.roots(ctx, step)
+                if step.audit:
+                    from .build_audit import roots
+                    roots(ctx, step)
+                else:
+                    build_cache.roots(ctx, step)
             except ValueError as error:
                 raise SystemExit(str(error)) from error
     if touch and any(step.products for step in plan):
