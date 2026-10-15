@@ -117,8 +117,17 @@ the last state as `running`; a sampled span is not the command's full duration. 
 remain separate: summing their individual peaks does not measure a simultaneous process-tree peak. Historical logs
 also cannot reliably assign measurements to instrumented phases, prove complete descendant coverage or estimate
 temporary disk demand. Calibrated resource profiles and admission still require the migration evidence below.
-This reader covers per-process `memory-health` files; compound network QA's separate aggregate tree-guard
-report format is outside its scope.
+This reader covers per-process `memory-health` files; separate aggregate tree-guard reports are outside its scope.
+
+Compile-kind commands, including editor compilation, UAT packaging and the build-tool bootstrap, also run an
+independent aggregate descendant guard under the same admission and memory ceiling (normally 10 GiB). The
+launcher waits for a matching live guard receipt before executing. The guard samples the wrapper plus owned
+descendants every quarter second, retains observed ownership across intermediate exits, and excludes shared
+Zen/Trace services and their descendants. Its `memory-health-tree.json` records the simultaneous sampled sum
+and its peak; this is distinct from summing separate process peaks. Per-process guards and helper cleanup remain.
+Missing, stale or failed monitor receipts fail the command, including after a zero launcher exit. Sampling can
+miss short-lived processes or allocation spikes between observations; this is not a whole-host memory measure
+or a throughput benchmark. Compound network QA retains its existing separate aggregate guard protocol.
 
 ## What replaces a slot
 

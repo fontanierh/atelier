@@ -22,12 +22,17 @@ name is in `watch` get their own memory guard (`memory-health-<name>-<pid>.json`
 outer slot turn. When the run ends, for any reason, recorded descendants still running as the same processes are stopped,
 deepest first, before the child itself. Shared engine services a cook starts (Zen, Unreal Trace Server) and anything
 under them are never signalled, nor is anything outside the recorded tree. `progress` prints a line that often while the child is quiet.
+
+Compile-kind launchers additionally wait behind a private exec gate until a sibling aggregate guard is ready.
+It samples the simultaneous physical footprint of the wrapper and its owned descendants every quarter second,
+excluding shared services, under the same ceiling and admission. `memory-health-tree.json` is this aggregate
+receipt, separate from per-process reports. Lost telemetry or a missing successful terminal receipt fails the run.
 """
 import argparse, os, signal, subprocess, sys, time
 from contextlib import ExitStack
 from pathlib import Path
 
-from .guard import attach as attach_memory_guard, reap
+from .guard import attach as attach_memory_guard, attach_tree, reap
 from . import process_tree
 from .render_lock import KINDS, SMALL_LIMIT_GIB, render_lock
 from .process import spawn
@@ -49,7 +54,7 @@ class Descendants:
     def same(self, key):
         return process_tree.started(key[0]) == key[1]
 
-    def poll(self):
+    def poll(self, attach_guards=True):
         # Walk from the root and from every recorded process still alive: an intermediate that lost the root's
         # ancestry (its parent exited) can still start the cook.
         queue = [(*self.root, 0)] + [(*key, depth) for key, depth in self.depth.items()
@@ -68,6 +73,8 @@ class Descendants:
                     self.shared.add(key)
                 if key not in self.shared:
                     queue.append((child, child_start, depth+1))
+        if not attach_guards:
+            return
         for key in self.depth:
             if key in self.guarded or key in self.shared or not self.same(key):
                 continue
@@ -113,6 +120,14 @@ class Descendants:
     def unwind(self, grace=10.):
         """Stop recorded descendants that are still the same processes, deepest first, never a shared service or
         anything under one."""
+        # Discover children born since the last host poll before stopping their parents. No new
+        # monitors are attached during cleanup; the independent aggregate guard remains attached.
+        try:
+            self.poll(attach_guards=False)
+        finally:
+            self._unwind_recorded(grace)
+
+    def _unwind_recorded(self, grace):
         excluded = self.shared_now()
         live = sorted((key for key in self.depth if key not in excluded), key=self.depth.get, reverse=True)
         for key in live:
@@ -144,13 +159,24 @@ def last_line(path):
 
 
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
-        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=()):
-    """Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
+        on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False):
+    """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
+    Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
+    require a successful matching terminal receipt proving observed tree exit before returning success.
+    Every exit path MUST perform owned descendant cleanup and launcher reap before detaching its monitors,
+    retaining one normal admission. Cleanup that cannot observe tree exit within its bound MUST fail.
+
+    Run `command` to completion and return its exit status. `small_gib` and `kind` go to `render_lock`;
     `on_slot(slot, why)` hears which slot the child runs in. `track_tree` records descendants for cleanup
-    when a compound worker attaches its own actual-child guards immediately at launch."""
+    when a compound worker attaches its own actual-child guards immediately at launch. `aggregate_tree`
+    additionally gates execution on an independent aggregate footprint guard for the owned launcher tree.
+    Compile-kind work always uses this aggregate protection, including UAT and tool bootstrap wrappers.
+
+    """
+    aggregate_tree = aggregate_tree or kind == 'compile'
     if fitting_gib is not None:
         if (not lock or kind != 'job' or not command or Path(command[0]).name.lower() != 'blender'
-                or not any(arg in ('-b', '--background') for arg in command[1:]) or watch or track_tree):
+                or not any(arg in ('-b', '--background') for arg in command[1:]) or watch or track_tree or aggregate_tree):
             raise ValueError('the fitting slot requires one background Blender child under its normal lock and guard')
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
@@ -168,20 +194,48 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         if slot in ('small', 'fitting'):
             limit_gib = min(limit_gib, SMALL_LIMIT_GIB)
         log = stack.enter_context((folder/'stdout.log').open('w'))
-        inherited = {'pass_fds': pass_fds, 'stdin': subprocess.DEVNULL} if pass_fds else {}
+        # Register monitors first, so later child/tree cleanup runs before either monitor detaches,
+        # including when monitor startup fails. The private pipe holds this same PID before exec.
+        monitors = stack.enter_context(ExitStack())
+        descriptors = tuple(pass_fds)
+        gate = None
+        if aggregate_tree:
+            read_fd, write_fd = os.pipe()
+            gate_read = stack.enter_context(os.fdopen(read_fd, 'rb', buffering=0))
+            gate = stack.enter_context(os.fdopen(write_fd, 'wb', buffering=0))
+            descriptors += (read_fd,)
+            command = [sys.executable, str(Path(__file__).with_name('exec_gate.py')), str(read_fd), *command]
+        inherited = {'pass_fds': descriptors, 'stdin': subprocess.DEVNULL} if descriptors else {}
         child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env, **inherited)
+        if aggregate_tree:
+            gate_read.close()
         fitting_ready_by = time.monotonic()+FITTING_STARTUP_SECONDS
         fitting_started = False
-        stack.callback(reap, child)
+        stack.callback(reap, child, grace=0. if aggregate_tree else 10.)
         where = f', {slot} render slot, {limit_gib:g} GiB limit' if slot in ('small', 'fitting') else ''
         print(f'pid {child.pid}, guard report {folder/"memory-health.json"}{where}', flush=True)
-        monitor = stack.enter_context(attach_memory_guard(child.pid, folder/'memory-health.json',
-                                                          duration=horizon, limit_gib=limit_gib))
         tree = None
-        if watch or track_tree:
-            tree = Descendants(child.pid, process_tree.started(child.pid), folder, watch, horizon, limit_gib, stack)
+        root_start = process_tree.started(child.pid) if watch or track_tree or aggregate_tree else None
+        if watch or track_tree or aggregate_tree:
+            tree = Descendants(child.pid, root_start, folder, watch, horizon, limit_gib, monitors)
             # Runs before the child is reaped; after a success it only reaps leftovers such as shader workers.
-            stack.callback(tree.unwind)
+            # A lost aggregate monitor cannot leave descendants allocating during a graceful
+            # shutdown window. Ordinary single-process/watched runs retain their existing grace.
+            stack.callback(tree.unwind, grace=0. if aggregate_tree else 10.)
+        monitor = monitors.enter_context(attach_memory_guard(child.pid, folder/'memory-health.json',
+                                                             duration=horizon, limit_gib=limit_gib))
+        aggregate = None
+        if aggregate_tree:
+            if monitor is None:
+                raise RuntimeError('the gated launcher has no process memory guard')
+            aggregate = monitors.enter_context(attach_tree(child.pid, folder/'memory-health-tree.json',
+                                                           duration=horizon, limit_gib=limit_gib,
+                                                           expected_start=root_start))
+            aggregate.ready()
+            if monitor.poll() is not None:
+                raise RuntimeError('process memory guard exited before releasing the launcher')
+            gate.write(b'1')
+            gate.close()
         started = time.monotonic()
         deadline = started+horizon if horizon else None
         spoken = started
@@ -207,12 +261,22 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                 print(f'{(spoken-started)/60:.0f} min{f" [{watched}]" if watched else ""}: {last_line(folder/"stdout.log")}', flush=True)
             if monitor is not None and monitor.poll() is not None and child.poll() is None:
                 raise SystemExit('memory guard exited before the child')
+            if aggregate is not None and child.poll() is None:
+                try:
+                    aggregate.check()
+                except RuntimeError:
+                    # The launcher may have exited between the loop condition and its monitor's
+                    # final receipt. The mandatory finish check below judges that terminal result.
+                    if child.poll() is None:
+                        raise
             if deadline is not None and time.monotonic() > deadline:
                 raise SystemExit(f'child exceeded {timeout} s')
             try:
                 child.wait(timeout=.01 if fitting_gib is not None and not fitting_started else 1)
             except subprocess.TimeoutExpired:
                 pass
+        if aggregate is not None:
+            aggregate.finish()
         return child.returncode or 0
 
 
