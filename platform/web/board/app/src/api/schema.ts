@@ -85,6 +85,7 @@ inbox: InboxSummary
 holders: Holders
 sessions: Session[]
 resources: Resources
+disk: Disk
 /**
  * Send it back as `X-Board-CSRF` on every POST.
  */
@@ -309,6 +310,67 @@ export interface Resources {
 fresh: boolean
 cpu?: (number | null)
 available_gib?: (number | null)
+}
+/**
+ * The home folder's volume and what takes its space.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "Disk".
+ */
+export interface Disk {
+/**
+ * Bytes the user can still write on the volume, read on every request (none if it cannot be read).
+ */
+free_bytes?: (number | null)
+total_bytes?: (number | null)
+/**
+ * When the last complete scan finished, in Unix seconds; none before the first one. A background scan starts
+ * when the floor is shown, five minutes after the last one finished, and never while a render lock is held.
+ */
+measured_at?: (number | null)
+/**
+ * How long that scan took, in seconds.
+ */
+scan_seconds?: (number | null)
+/**
+ * A scan is running now.
+ */
+scanning: boolean
+/**
+ * The running scan waits for a render lock to be released.
+ */
+paused: boolean
+/**
+ * The largest places by allocated size, biggest first, and the one being measured, then `Other` once a scan has
+ * completed (the used space they leave unexplained, left out when not positive: an APFS clone counts in full in
+ * every place, so places can add up to more).
+ */
+items: DiskItem[]
+}
+/**
+ * One place on the disk and its allocated size.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "DiskItem".
+ */
+export interface DiskItem {
+label: string
+/**
+ * Where it is, `~/…` inside the home folder; none for `Other`.
+ */
+path?: (string | null)
+/**
+ * While `measuring`, its last size or the count so far, whichever is larger.
+ */
+bytes: number
+/**
+ * When this place was last measured, in Unix seconds; none for `Other` and a place not measured yet.
+ */
+measured_at?: (number | null)
+/**
+ * The scan is measuring it now.
+ */
+measuring: boolean
 }
 /**
  * `GET /api/threads`: the conversations the reader is part of, unread first, then by newest reply.

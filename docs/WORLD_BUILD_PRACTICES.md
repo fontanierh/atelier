@@ -7,7 +7,9 @@ inputs and references. It should own its outputs and preserve the outputs of oth
 These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
 with today's `Step` recipes. Named products and read-only inspection are implemented in the
 [recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
-restoration and tracked spatial queries remain proposed.
+restoration across revisions remains proposed. Verified whole-build reuse at the same clean revision supports
+named products, including native packages. Recipe-declared spatial queries are available for audited Python actions;
+native generators and runtime-derived query volumes still need migration and validation.
 The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
 
 Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
@@ -72,6 +74,10 @@ units into one guarded process while keeping their manifests independent. Avoid 
 packages where a bounded spatial/material group is a better runtime unit. Measure memory, package overhead,
 draw calls and rebuild scope together.
 
+Opt-in [batches](BUILD_RECIPES.md#reuse-a-tool-process-without-merging-actions) preserve these independent keys and
+receipts. Reset per-asset module caches and tool state explicitly; test a cold asset, a warm asset and reversed asset
+order. A bounded session yields capacity with completed results saved, so an agent must coordinate before resuming.
+
 ## Give every generated package one owner
 
 An importer owns a declared package set and fully describes the final settings of those packages. Material
@@ -98,6 +104,14 @@ for coordinates, height samples, normals and any blend margin. Both sides use th
 A generator querying neighbours must record the query volume and its contents. Hash both the selected assets
 and the selection itself: a new wall can cast AO on a ramp, and removing that wall must update the ramp too.
 Movement invalidates the old and new influence volumes.
+
+For audited Python actions, declare a product's conservative `collection` and six-coordinate `bounds`, then add
+a `BBoxQuery` to each consumer's `queries`. Use one coordinate frame and unit per collection. The graph resolves
+inclusive intersections before scheduling, and `atelier.build_context.query(name)` returns only those frozen
+products. Read source catalogue JSON freshly inside `steps(ctx)`; importing a cached module's global catalogue
+does not refresh it. Keep the raw catalogue out of the consumer's inputs so distant edits stay independent.
+See [the runnable sandbox example](../games/sandbox/README.md#spatial-dependencies-without-unreal) and
+[the API and limits](BUILD_RECIPES.md#spatial-product-reads).
 
 Use the operation's actual reach. AO may need a 12 m margin; a support cast down to terrain may need a 30 m
 vertical volume; a road smoother can influence a longer stretch. Tile sizes and margins should be derived from

@@ -10,6 +10,46 @@ from atelier.build import Call, Product, Step
 from atelier.build_products import Graph, inventory
 
 
+def test_package_sidecars_track_presence_bytes_and_exclusive_ownership(tmp_path):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    package.write_bytes(b'package')
+    product = Product('mesh', (package,), optional_paths=(sidecar,))
+    absent = inventory(product)
+    assert absent['files']['1/.'] == {'kind': 'absent'}
+    sidecar.write_bytes(b'bulk')
+    present = inventory(product)
+    assert present != absent
+    sidecar.write_bytes(b'edit')
+    assert inventory(product) != present
+    owner = Step('mesh', [], products=[product])
+    other = Step('bulk', [], products=[Product('other', (sidecar,))])
+    with pytest.raises(ValueError, match='Overlapping product ownership'):
+        Graph([owner, other])
+    package.unlink()
+    with pytest.raises(OSError):
+        inventory(product)
+
+
+@pytest.mark.parametrize('declaration', ['required', 'optional', 'script'])
+def test_sidecars_cannot_overlap_any_declared_source(tmp_path, declaration):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    owner = Step('mesh', [], products=[Product('mesh', (package,), optional_paths=(sidecar,))])
+    if declaration == 'required': owner.inputs = [sidecar]
+    if declaration == 'optional': owner.optional_inputs = [sidecar]
+    if declaration == 'script': owner.commands = [build.Python(sidecar)]
+    with pytest.raises(ValueError, match='input overlaps its own product'):
+        Graph([owner])
+
+
+@pytest.mark.parametrize('declaration', ['outputs', 'pool_roots'])
+def test_sidecars_cannot_overlap_legacy_output_reservations(tmp_path, declaration):
+    package, sidecar = tmp_path / 'Mesh.uasset', tmp_path / 'Mesh.ubulk'
+    owner = Step('mesh', [], products=[Product('mesh', (package,), optional_paths=(sidecar,))])
+    legacy = Step('legacy', [], **{declaration: [sidecar]})
+    with pytest.raises(ValueError, match='overlaps legacy outputs'):
+        Graph([owner, legacy])
+
+
 @pytest.fixture
 def project(tmp_path, monkeypatch):
     root = tmp_path.resolve()
@@ -141,6 +181,37 @@ def test_changed_inputs_during_run_are_not_certified(project):
     assert not (p.ctx.stamps / 'generate.json').exists()
 
 
+def test_changed_read_during_consumer_execution_is_not_certified(project):
+    p = project
+    source, result = p.ctx.out / 'source.txt', p.ctx.out / 'result.txt'
+    p.add('generate', [(source, 'original')])
+    consumer = p.add('consume', [(result, source.read_text)], reads=['generate.source'])
+    consumer.commands.insert(0, Call('mutate read', lambda ctx, log: source.write_text('changed')))
+    assert p.run() == 1
+    assert result.read_text() == 'changed'
+    assert not (p.ctx.stamps / 'consume.json').exists()
+    assert not (p.ctx.stamps / 'generate.json').exists()
+
+
+@pytest.mark.parametrize('named_outputs', [False, True])
+def test_later_failure_discards_earlier_consumers_of_changed_products(project, named_outputs):
+    p = project
+    source, result = p.ctx.out / 'source.txt', p.ctx.out / 'result.txt'
+    p.add('generate', [(source, 'original')])
+    consumer = p.add('consume', [(result, source.read_text)], reads=['generate.source'])
+    if not named_outputs:
+        consumer.products, consumer.outputs = [], [result]
+    later = p.add('later', [(p.ctx.out / 'later.txt', 'own result')])
+    def mutate_then_fail(ctx, log):
+        source.write_text('changed')
+        raise RuntimeError('later action failed')
+    later.commands.append(Call('mutate earlier input', mutate_then_fail))
+    assert p.run() == 1
+    assert result.read_text() == 'original'
+    assert not (p.ctx.stamps / 'consume.json').exists()
+    assert not (p.ctx.stamps / 'generate.json').exists()
+
+
 def test_missing_product_input_cannot_be_built_or_accepted_as_current(project):
     p = project
     source = p.root / 'source.txt'
@@ -210,5 +281,6 @@ def test_old_stamp_is_readable_and_new_stamp_records_durations(project):
     assert p.run() == 0
     stamp = json.loads((p.ctx.stamps / 'generate.json').read_text())
     assert stamp['commands'][0]['kind'] == 'Call'
+    assert stamp['commands'][0]['scope'] == 'command invocation'
     assert stamp['commands'][0]['seconds'] >= 0
     assert stamp['products']['generate.mesh']['inventory']['schema'] == 1

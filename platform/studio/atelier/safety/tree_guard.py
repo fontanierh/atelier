@@ -94,6 +94,64 @@ def write_report(path, value):
     temporary.replace(path)
 
 
+def drain_owned(tree, timeout=2.):
+    """Observe the retained pinned tree exit, including children found during cleanup."""
+    deadline = time.monotonic() + timeout
+    while True:
+        tree.stop_owned()
+        if not tree.sample():
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(.02)
+
+
+def run_child(pid, started, report, duration=None, limit_gib=10.):
+    """@cc [owner:fontanierh,label:safety] owned-child-aggregate-limit
+    Every sampled owned process MUST contribute to the simultaneous footprint limit except shared
+    engine services and their descendants. Failure or launcher exit MUST stop the retained pinned
+    tree, and successful terminal receipts MUST require observed tree exit. Cleanup that cannot
+    complete within its bound MUST fail; PID reuse MUST NOT transfer ownership.
+    """
+    from . import process_tree
+    tree = OwnedTree(process_tree, pid, started)
+    report = Path(report)
+    began, peak = time.monotonic(), 0
+    limit = int(limit_gib * 1024**3)
+    try:
+        if not tree.same(tree.root):
+            raise RuntimeError('The launcher is no longer the pinned owner')
+        while True:
+            samples = tree.sample()
+            total = sum(p['footprint_bytes'] for p in samples)
+            peak = max(peak, total)
+            elapsed = time.monotonic() - began
+            state = 'running'
+            if total > limit:
+                state = 'memory_limit'
+            elif duration is not None and elapsed >= duration:
+                state = 'test_duration'
+            elif not any((p['pid'], p['started']) == tree.root for p in samples):
+                state = 'child_exited'
+            value = dict(owner=pid, owner_started=started, time=time.time(), observed_monotonic=time.monotonic(),
+                         elapsed_seconds=elapsed,
+                         footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
+                         state=state, processes=samples)
+            if state != 'running':
+                value['cleanup_complete'] = drain_owned(tree)
+                if not value['cleanup_complete']:
+                    value['termination_reason'], value['state'] = state, 'cleanup_incomplete'
+                    state = 'cleanup_incomplete'
+                value['observed_monotonic'] = time.monotonic()
+            write_report(report, value)
+            if state != 'running':
+                return 0 if state == 'child_exited' else 1
+            time.sleep(.25)
+    except BaseException:
+        tree.stop_owned()
+        raise
+
+
 def run(pid, started, report, duration, stop_file, limit_gib=10.):
     from . import process_tree
     tree = OwnedTree(process_tree, pid, started)
@@ -141,9 +199,17 @@ def main():
     parser.add_argument('--pid', type=int, required=True)
     parser.add_argument('--expected-start', type=int, required=True)
     parser.add_argument('--report', type=Path, required=True)
-    parser.add_argument('--stop-file', type=Path, required=True)
-    parser.add_argument('--duration', type=float, required=True)
+    parser.add_argument('--stop-file', type=Path)
+    parser.add_argument('--duration', type=float)
+    parser.add_argument('--child', action='store_true', help='guard an owned launcher until it exits')
+    parser.add_argument('--limit-gib', type=float, default=10.)
     args = parser.parse_args()
+    if args.child:
+        if args.stop_file is not None:
+            parser.error('--child does not use --stop-file')
+        return run_child(args.pid, args.expected_start, args.report, args.duration, args.limit_gib)
+    if args.stop_file is None or args.duration is None or args.limit_gib != 10.:
+        parser.error('compound guards require --stop-file and --duration, with the fixed 10 GiB ceiling')
     # There is deliberately no CLI switch to raise this compound job's 10 GiB ceiling.
     return run(args.pid, args.expected_start, args.report, args.duration, args.stop_file)
 

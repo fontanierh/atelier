@@ -67,6 +67,8 @@ def roots(ctx, step):
     base = ctx.out.resolve()
     result = []
     for product in step.products:
+        if product.optional_paths:
+            raise ValueError('Optional package sidecars are not eligible for the portable cache')
         for root in product.paths:
             root = Path(root)
             # Resolve only the base: a symlink inside the owned tree must never redirect installation.
@@ -103,7 +105,7 @@ def tool_context(step, hasher, *, cache=None):
     context = {'schema': SCHEMA, 'system': platform.system(), 'machine': platform.machine(),
                'lock': hasher(paths.REPO / 'uv.lock'),
                'support': {name: hasher(Path(__file__).with_name(name)) for name in
-                           ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py')}}
+                           ('build.py', 'build_inputs.py', 'build_products.py', 'build_cache.py', 'build_hashes.py', 'paths.py', 'build_deferred.py')}}
     cache = {} if cache is None else cache
     if build.Python in kinds:
         if os.environ.get('ATELIER_PYTHON') or os.environ.get('PYTHONPATH') or os.environ.get('PYTHONHOME'):
@@ -126,7 +128,9 @@ def tool_context(step, hasher, *, cache=None):
         key = ('blender', binary, hasher(binary), bundle.stat().st_mtime_ns)
         if key not in cache:
             files = sorted(p for p in bundle.rglob('*') if p.is_file() and '__pycache__' not in p.parts)
-            cache[key] = {p.relative_to(bundle).as_posix(): hasher(p) for p in files}
+            # rglob supplies lexical descendants of this root; no resolution is needed for their keys.
+            depth = len(bundle.parts)
+            cache[key] = {'/'.join(p.parts[depth:]): hasher(p) for p in files}
         context['blender'] = cache[key]
     return context
 

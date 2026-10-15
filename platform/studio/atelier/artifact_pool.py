@@ -144,6 +144,9 @@ def stamp_of(ctx, step):
 
 
 def main(action, game, name):
+    if action != 'status':
+        from .build_snapshot import require_complete
+        require_complete(paths.build_root() / game, game=game)
     ctx = Context(game);done = {};target = None
     for step in order(load_recipe(game).steps(ctx), []):
         current = fingerprint(step, done);done[step.name] = result(step, current, stamp_of(ctx, step))

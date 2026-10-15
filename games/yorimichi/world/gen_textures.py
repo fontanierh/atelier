@@ -1,4 +1,3 @@
-import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent)); import yori  # noqa: E402,F401
 #!/usr/bin/env python3
 """Painterly textures for the Japan demo (PIL + numpy) -> build/yorimichi/textures/T_*.png|jpg
 
@@ -17,12 +16,15 @@ Every texture is a set of flat, soft-edged brush stamps: nothing photographic.
 """
 import os, math
 import hashlib, json
+import sys
+from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from surface_textures import neutral_detail
 
-OUT = str(yori.TEXTURES)
-os.makedirs(OUT, exist_ok=True)
+OUT = None
+_ASSETS = None
+_EXPECTED = None
 
 
 def rng_for(seed):
@@ -44,6 +46,8 @@ def noise(n, scale, octaves=4, seed=0, m=None):
 
 
 def save(name, im, q=90):
+    if _EXPECTED is not None and name != _EXPECTED:
+        raise ValueError("Texture action tried to write another product")
     p = os.path.join(OUT, name)
     if name.endswith(".png"):
         im.save(p, optimize=True)
@@ -133,21 +137,6 @@ def atlas(name, palettes, seed, **kw):
     save(name, Image.fromarray(np.dstack([np.clip(rgb, 0, 255).astype(np.uint8), (a[..., 0] * 255).astype(np.uint8)]), "RGBA"))
 
 
-def leaves():
-    broad = [((0.38, 0.48, 0.22), (0.60, 0.66, 0.32), (0.18, 0.28, 0.12)),
-             ((0.35, 0.46, 0.20), (0.56, 0.62, 0.30), (0.16, 0.26, 0.11)),
-             ((0.44, 0.50, 0.23), (0.66, 0.68, 0.36), (0.20, 0.29, 0.13))]
-    atlas("T_leaf_broad.png", broad, 11, stamps=260, size=(30, 62), blob_r=0.38)
-    cedar = [((0.26, 0.40, 0.22), (0.42, 0.54, 0.28), (0.12, 0.22, 0.12)),
-             ((0.28, 0.42, 0.23), (0.44, 0.56, 0.29), (0.13, 0.23, 0.13))]
-    atlas("T_leaf_cedar.png", cedar, 12, stamps=520, size=(14, 34), blob_r=0.40)
-    pine = [((0.19, 0.34, 0.21), (0.34, 0.48, 0.27), (0.08, 0.17, 0.10))]
-    atlas("T_leaf_pine.png", pine, 13, stamps=520, size=(6, 64), blob_r=0.44, needle=True)
-    ochre = [((0.70, 0.60, 0.28), (0.84, 0.76, 0.44), (0.46, 0.38, 0.16)),
-             ((0.66, 0.56, 0.26), (0.80, 0.72, 0.42), (0.44, 0.36, 0.15))]
-    atlas("T_leaf_ochre.png", ochre, 14, stamps=240, size=(26, 54), blob_r=0.38)
-
-
 def leaf_shape(kind, cx, cy, R, ang, r):
     """polygon for one leaf: maple star, ginkgo fan or pointed oval"""
     pts = []
@@ -193,11 +182,7 @@ def small_leaf_atlas(name, kind, palette, seed, per_cell=(3, 6), size=(110, 175)
     save(name, Image.fromarray(np.dstack([np.clip(rgb, 0, 255).astype(np.uint8), (a[..., 0] * 255).astype(np.uint8)]), "RGBA"))
 
 
-def autumn_leaves():
-    small_leaf_atlas("T_leaf_maple.png", "maple", [(0.82, 0.26, 0.12), (0.88, 0.45, 0.12), (0.72, 0.16, 0.10), (0.92, 0.60, 0.16), (0.86, 0.34, 0.10)], 41, per_cell=(7, 12), size=(70, 120))
-    small_leaf_atlas("T_leaf_ginkgo.png", "ginkgo", [(0.90, 0.78, 0.30), (0.84, 0.70, 0.24), (0.94, 0.86, 0.44), (0.78, 0.64, 0.22)], 42, per_cell=(7, 12), size=(65, 105))
-    small_leaf_atlas("T_leaf_ochre_small.png", "oval", [(0.72, 0.60, 0.26), (0.80, 0.70, 0.34), (0.62, 0.50, 0.20), (0.86, 0.76, 0.40), (0.70, 0.56, 0.22)], 46, per_cell=(9, 14), size=(60, 100))
-    small_leaf_atlas("T_leaf_small.png", "oval", [(0.50, 0.56, 0.22), (0.64, 0.62, 0.24), (0.74, 0.60, 0.20), (0.42, 0.50, 0.20), (0.82, 0.56, 0.18)], 43, per_cell=(9, 14), size=(60, 100))
+def litter():
     # litter: leaves lying on the ground, one 512 card
     r = rng_for(44); cell = 512
     layer = Image.new("RGBA", (cell, cell), (0, 0, 0, 0)); d = ImageDraw.Draw(layer)
@@ -207,6 +192,9 @@ def autumn_leaves():
         k = 1 + (r.random() * 2 - 1) * 0.15; ang = r.uniform(0, 2 * math.pi)
         d.polygon(leaf_shape("maple" if r.random() < 0.7 else "ginkgo", x, y, R, ang, r), fill=col(base, k) + (255,))
     save("T_litter.png", layer.filter(ImageFilter.GaussianBlur(0.7)))
+
+
+def cloudmask():
     # soft cloud shadows for the sun's light function
     m = noise(512, 2, 3, 45)
     v = np.clip((m - 0.45) * 3.0, 0, 1)
@@ -278,10 +266,14 @@ def grass():
     save("T_grass.png", im)
 
 
-def bark():
+def bark(name=None):
     """Sunburst weathered olive bark and the island's existing dark bark palette."""
-    with Image.open(yori.ASSETS/'environment/textures/tree-bark.jpg') as image:
-        image=image.convert('RGB');save("T_bark_olive.jpg", image)
+    with Image.open(_ASSETS/'environment/textures/tree-bark.jpg') as image:
+        image=image.convert('RGB')
+        if name != "T_bark.jpg":
+            save("T_bark_olive.jpg", image)
+        if name == "T_bark_olive.jpg":
+            return
         rgb=np.asarray(image,dtype=float)/255.
     linear=np.where(rgb<=.04045,rgb/12.92,((rgb+.055)/1.055)**2.4)
     target=np.array([.20,.15,.12])
@@ -292,7 +284,7 @@ def bark():
 
 
 def ground_detail():
-    path=yori.ASSETS/'environment/textures/tuscan-ground.jpg'
+    path=_ASSETS/'environment/textures/tuscan-ground.jpg'
     provenance=json.loads(path.with_suffix('.provenance.json').read_text())
     assert hashlib.sha256(path.read_bytes()).hexdigest()==provenance['source_sha256']
     with Image.open(path) as image:
@@ -403,8 +395,8 @@ def water(n=512):
     save("T_water.jpg", im.filter(ImageFilter.GaussianBlur(1.2)))
 
 
-def white():
-    save("T_white.png", Image.new("RGB", (8, 8), (255, 255, 255)))
+def white(n=8, colour=(255, 255, 255)):
+    save("T_white.png", Image.new("RGB", (n, n), tuple(colour)))
 
 
 def concrete(n=256):
@@ -414,5 +406,49 @@ def concrete(n=256):
     save("T_concrete.jpg", Image.fromarray(np.clip(rgb * 255, 0, 255).astype(np.uint8)))
 
 
-if __name__ == "__main__":
-    leaves(); autumn_leaves(); flower_atlas(); rooftile(); grass(); bark(); road(); ground(); ground_detail(); sky(); water(); concrete(); white()
+def generate(key, spec, output, assets=None):
+    """@cc [owner:fontanierh,label:correctness] independently-owned-texture
+    A selected action MUST NOT consume sibling specs or write another catalogue filename.
+    Seeds and encoding MUST preserve the legacy bytes independently of execution order.
+    """
+    from texture_catalog import TEXTURES, load_spec
+    global OUT, _EXPECTED, _ASSETS
+    filename, generator, source_assets = TEXTURES[key]
+    if source_assets and assets is None:
+        raise ValueError('Asset-backed texture requires its declared asset directory')
+    _ASSETS = Path(assets) if assets is not None else None
+    output = Path(output)
+    if output.name != filename:
+        raise ValueError('Texture output must match its owned catalogue filename')
+    OUT, _EXPECTED = str(output.parent), filename
+    output.parent.mkdir(parents=True, exist_ok=True)
+    options = load_spec(spec)
+    if generator in ('atlas', 'small_leaf_atlas'):
+        globals()[generator](filename, **options)
+    elif generator == 'bark':
+        bark(filename, **options)
+    else:
+        globals()[generator](**options)
+
+
+def main(argv=None):
+    from texture_catalog import TEXTURES
+    values = list(sys.argv[1:] if argv is None else argv)
+    if values:
+        # Keep selected actions free of argparse's environment-dependent locale probes.
+        fields = dict(zip(values[::2], values[1::2]))
+        if (len(values) % 2 or len(fields) * 2 != len(values) or
+                not {'--texture', '--spec', '--output'} <= set(fields) or
+                set(fields) - {'--texture', '--spec', '--output', '--assets'} or
+                fields['--texture'] not in TEXTURES):
+            raise ValueError('Expected --texture KEY --spec FILE --output FILE [--assets DIRECTORY]')
+        generate(fields['--texture'], fields['--spec'], fields['--output'], fields.get('--assets'))
+        return
+    # The direct aggregate command retains the game's established path/environment handling.
+    import yori
+    for key, (filename, _, _) in TEXTURES.items():
+        generate(key, Path(__file__).with_name('textures') / f'{key}.json', yori.TEXTURES / filename, yori.ASSETS)
+
+
+if __name__ == '__main__':
+    main()

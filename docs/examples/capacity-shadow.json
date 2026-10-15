@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "operations": [
+    {
+      "now": 10,
+      "operation": {
+        "id": "example-init", "action": "init",
+        "total": {"memory_mib": 10000, "cpu_millis": 4000, "temp_mib": 10000},
+        "reserve": {"memory_mib": 1000, "temp_mib": 1000}
+      }
+    },
+    {
+      "now": 11,
+      "operation": {
+        "id": "example-submit", "action": "submit", "epoch": 1,
+        "request_id": "mesh", "owner": "example-owner", "checkout": "example-checkout",
+        "resources": {"memory_mib": 2000, "cpu_millis": 1000},
+        "locks": ["checkout:example"], "launcher": [123, 456]
+      }
+    },
+    {
+      "now": 12,
+      "observation": {
+        "at": 12, "healthy": true, "complete": true,
+        "available_mib": 10000, "disk_available_mib": 10000,
+        "processes": {"123:456": "alive"}
+      },
+      "operation": {"id": "example-schedule", "action": "schedule", "epoch": 1}
+    },
+    {
+      "now": 13,
+      "operation": {"id": "example-status", "action": "status", "epoch": 1}
+    }
+  ]
+}

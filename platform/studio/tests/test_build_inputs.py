@@ -63,3 +63,29 @@ def test_an_excluded_directory_cannot_claim_import_coverage(tmp_path, monkeypatc
         build_inputs.validate_imports(step, build.declared_inputs(step))
     step.inputs.append(helper)
     build_inputs.validate_imports(step, build.declared_inputs(step))
+
+
+def test_statement_suites_cover_nested_imports_and_fresh_scans_find_new_modules(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    script = tmp_path / 'run.py'
+    script.write_text('''def later(value):
+    try:
+        import missing
+    except Exception:
+        from caught import value
+    else:
+        import success
+    finally:
+        match value:
+            case 1:
+                import matched
+''')
+    for name in ('caught', 'success', 'matched'):
+        (tmp_path / (name + '.py')).write_text('value = 1')
+    before = set(build_inputs.local_imports(script))
+    assert before == {script, *(tmp_path / (name + '.py') for name in ('caught', 'success', 'matched'))}
+    added = tmp_path / 'missing.py'
+    added.write_text('value = 2')
+    assert set(build_inputs.local_imports(script)) == before | {added}
+    added.unlink()
+    assert set(build_inputs.local_imports(script)) == before

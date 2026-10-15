@@ -154,7 +154,13 @@ def show(game, wanted=(), *, as_json=False, echo=print):
         for command in producer['commands']:
             if not isinstance(command, dict):
                 continue
-            echo(f"  {command.get('kind', 'command')}: {duration(command.get('seconds'))}")
+            if command.get('scope') == 'batch action':
+                scope = ' (batch action; shared startup/shutdown and host verification excluded)'
+            elif command.get('scope') == 'command invocation':
+                scope = ' (command invocation)'
+            else:
+                scope = ' (timing scope not recorded)'
+            echo(f"  {command.get('kind', 'command')}: {duration(command.get('seconds'))}{scope}")
             receipt = command.get('phases')
             if not isinstance(receipt, dict) or not isinstance(receipt.get('phases'), list):
                 echo('    phases not recorded')

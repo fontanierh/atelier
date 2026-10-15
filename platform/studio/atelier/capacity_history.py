@@ -15,10 +15,12 @@ MAX_LINE_BYTES = 8192
 MAX_RECORDS = 100_000
 MAX_SESSIONS = 128
 MAX_LIMIT_CHANGES = 128
+MAX_TREE_BYTES = 1024 * 1024
 SUFFIXES = ('previous.jsonl', 'jsonl', 'json')
 WATCHED = re.compile(r'memory-health-([A-Za-z0-9_.-]{1,128})-([0-9]{1,10})\.(previous\.jsonl|jsonl|json)')
 LABELS = frozenset(('UnrealEditor', 'UnrealEditor-Cmd', 'ShaderCompileWorker', 'dotnet', 'mono', 'bash', 'sh'))
 STATES = frozenset(('running', 'memory_limit', 'test_duration'))
+TREE_STATES = STATES | {'child_exited', 'cleanup_incomplete', 'owner_exited', 'complete', 'children_remain'}
 INTEGERS = ('pid', 'process_start', 'footprint_bytes', 'peak_bytes', 'cpu_ticks', 'limit_bytes')
 FIELDS = (*INTEGERS, 'elapsed_seconds', 'state')
 
@@ -27,7 +29,7 @@ def integer(value):
     return type(value) is int and 0 <= value <= 2**64 - 1
 
 
-def normalize(record):
+def normalize(record, states=STATES):
     result = {key: value if integer(value := record.get(key)) else None for key in INTEGERS}
     if result['pid'] == 0:
         result['pid'] = None
@@ -38,7 +40,7 @@ def normalize(record):
         valid = False
     result['elapsed_seconds'] = elapsed if valid else None
     state = record.get('state')
-    result['state'] = state if isinstance(state, str) and state in STATES else None
+    result['state'] = state if isinstance(state, str) and state in states else None
     return result
 
 
@@ -194,17 +196,49 @@ def consume(data, source, sessions, remaining):
             'record_limited': limited}, parsed
 
 
+def inspect_tree(directory_fd, budget):
+    """Read the latest aggregate receipt, without reconstructing totals from process peaks."""
+    data, status, used = read_file(directory_fd, 'memory-health-tree.json', min(budget, MAX_TREE_BYTES))
+    result = {'file': status, 'observation': None, 'diagnostics': []}
+    if data is None:
+        return result, used
+    try:
+        record = json.loads(data, object_pairs_hook=object_pairs)
+        if not isinstance(record, dict):
+            raise ValueError
+    except (ValueError, UnicodeError, RecursionError):
+        status.update(status='partial', reason='aggregate receipt is not a complete JSON object')
+        return result, used
+    normalized = normalize({**record, 'pid': record.get('owner'), 'process_start': record.get('owner_started')},
+                           states=TREE_STATES)
+    observation = {key: normalized[key] for key in ('pid', 'process_start', 'elapsed_seconds',
+                   'footprint_bytes', 'peak_bytes', 'limit_bytes', 'state')}
+    for key, minimum in (('pid', 2), ('process_start', 1)):
+        if observation[key] is not None and observation[key] < minimum:
+            observation[key] = None
+    observation['cleanup_complete'] = record.get('cleanup_complete') if type(record.get('cleanup_complete')) is bool else None
+    observation['unknown_fields'] = sorted(key for key, value in observation.items() if value is None)
+    result['observation'] = observation
+    footprint, peak = observation['footprint_bytes'], observation['peak_bytes']
+    if footprint is not None and peak is not None and peak < footprint:
+        result['diagnostics'].append('aggregate guard peak below retained footprint')
+    return result, used
+
+
 def inspect(directory):
     """@cc [owner:fontanierh,label:correctness] retained-guard-observations
     Inspection MUST only read bounded retained files, with no native guard imports, process scans,
     writes or admission. Sessions MUST separate process identity changes and elapsed resets.
     Missing observations MUST stay unknown; process footprints MUST NOT be summed into a job peak.
+    An aggregate receipt MUST remain separate from individual process histories and MUST NOT imply
+    complete descendant coverage, a calibrated reservation or measured CPU demand.
     Historical state and sampled spans MUST NOT imply duration, success, liveness or admission.
     """
     result = {'schema': 1, 'historical': True, 'read_status': 'complete', 'families': [], 'diagnostics': [],
               'limitations': ['Only retained samples are observed; missing files and overwritten rotations limit coverage.',
                               'Sampled spans and last states do not establish duration, success, liveness or admission.',
-                              'Process footprints remain separate; the root is not a job-wide memory requirement.',
+                              'Process footprints remain separate; aggregate receipts report only their observed owned tree.',
+                              'The aggregate receipt is one retained snapshot, not a phase profile or calibrated reservation.',
                               'CPU deltas are raw recorded ticks; no time unit or utilization is inferred.']}
     try:
         fd = os.open(Path(directory), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
@@ -212,6 +246,7 @@ def inspect(directory):
         result.update(read_status='unread', diagnostics=['directory could not be read'])
         return result
     try:
+        result['owned_tree'], used = inspect_tree(fd, MAX_TOTAL_BYTES)
         stems = {}
         try:
             with os.scandir(fd) as entries:
@@ -228,7 +263,7 @@ def inspect(directory):
         if len(stems) > MAX_FAMILIES - 1:
             result['diagnostics'].append('watched family limit reached')
         families = [('memory-health', None)] + sorted(stems.items())[:MAX_FAMILIES - 1]
-        remaining_bytes, remaining_records = MAX_TOTAL_BYTES, MAX_RECORDS
+        remaining_bytes, remaining_records = MAX_TOTAL_BYTES - used, MAX_RECORDS
         for family_index, (stem, label) in enumerate(families):
             sessions = Sessions()
             family = {'kind': 'owned' if family_index == 0 else 'watched', 'index': family_index,
@@ -247,8 +282,9 @@ def inspect(directory):
                 family['files'].append({'source': source, **status})
             family.update(sessions=sessions.report(), deduplicated_final_records=sessions.final_duplicates)
             result['families'].append(family)
-        if result['diagnostics'] or any(file['status'] != 'read'
-                                        for family in result['families'] for file in family['files']):
+        tree_partial = result['owned_tree']['file']['status'] not in ('read', 'missing')
+        if tree_partial or result['diagnostics'] or any(file['status'] != 'read'
+                                                      for family in result['families'] for file in family['files']):
             result['read_status'] = 'partial'
         return result
     finally:
@@ -261,10 +297,26 @@ def show(directory, as_json=False, echo=print):
         echo(json.dumps(report, indent=2))
         return 0
     echo('Historical retained guard observations; no duration, success, liveness or admission is established.')
-    echo('Process footprints are separate. CPU deltas are raw ticks with no inferred unit.')
+    echo('Process histories and the owned-tree receipt remain separate. CPU deltas are raw ticks with no inferred unit.')
     echo(f"Read coverage: {report['read_status']}")
     for diagnostic in report['diagnostics']:
         echo('  ' + diagnostic)
+    tree = report.get('owned_tree')
+    if tree:
+        echo('Owned-tree latest receipt: ' + tree['file']['status'])
+        if tree['file'].get('reason'):
+            echo('  ' + tree['file']['reason'])
+        if observation := tree['observation']:
+            display = lambda key: 'unknown' if observation[key] is None else str(observation[key])
+            echo(f"  pid {display('pid')}, start {display('process_start')}; "
+                 f"retained footprint {display('footprint_bytes')} bytes; "
+                 f"guard-reported peak {display('peak_bytes')} bytes")
+            echo(f"  recorded limit {display('limit_bytes')} bytes")
+            echo(f"  last recorded state {display('state')}; cleanup complete {display('cleanup_complete')}")
+            if observation['unknown_fields']:
+                echo('  unknown fields: ' + ', '.join(observation['unknown_fields']))
+        for diagnostic in tree['diagnostics']:
+            echo('  ' + diagnostic)
     for family in report['families']:
         echo(f"{family['kind']} family {family['index']}" + (f" ({family['label']})" if family['label'] else ''))
         for source in family['files']:

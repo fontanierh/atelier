@@ -145,6 +145,8 @@ def build_web(g, install=False):
 
 
 def start(g, local=False):
+    from .build_snapshot import require_complete
+    require_complete(paths.build_root() / g.id, game=g.id)
     if any(alive(r) for r in g.processes().values()):
         raise SystemExit('the stream is already running; `status` or `stop` first')
     running = subprocess.check_output(['ps', '-axo', 'pid=,command='], text=True)

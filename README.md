@@ -48,7 +48,7 @@ including the game itself while it plays.
 | macOS on Apple silicon | 15+ | the only platform tested |
 | Unreal Engine | 5.8 (`/Users/Shared/Epic Games/UE_5.8`, or set `UE_ROOT`) | the games |
 | Full Xcode | licence accepted, selected with `xcode-select`, macOS SDK and Metal toolchain installed | C++ and shaders; CLI tools alone are insufficient |
-| Blender | 5.2.1 LTS on `PATH` (or set `BLENDER`) | meshes, rigs, clips |
+| Blender | 5.2.1 LTS at `/Applications/Blender.app`, via a `PATH` symlink, or set `BLENDER` to the app executable | meshes, rigs, clips |
 | Python | 3.11+ with numpy, Pillow and fontTools (`uv sync`) | the studio |
 | ffmpeg | 7+ on `PATH` | sound slicing, films, review sheets |
 | Node / npm | 24.16+ / 11.11+ for contracts | contract checks; Node also serves streaming pages and AI scripts |
@@ -57,6 +57,9 @@ including the game itself while it plays.
 
 Install full Xcode and its Metal toolchain first: [Setting up a Mac](docs/SETUP.md) has the commands, and the extra
 preparation a Mac reached over SSH needs (`atelier setup --headless`).
+
+If `blender` on `PATH` is a wrapper script, set `BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`.
+Product fingerprints include its complete app bundle; a wrapper script alone cannot identify the installed tool.
 
 ```sh
 git clone https://github.com/fontanierh/atelier && cd atelier
@@ -178,12 +181,23 @@ gameplay, so gameplay edits rebuild only the code.
 For small rebuilds, name independently consumed products and declare which ones each step reads or merely
 references. Opted-in portable products are restored automatically from the local cache across worktrees; the
 [sandbox](games/sandbox/README.md) demonstrates independent geometry and placements without Unreal.
+Its explicit `spatial.demo` example also tracks nearby products: additions, removals and moves update the
+affected tiles, while distant edits and unread preview outputs leave them current.
 Python generators can opt into an input audit that catches undeclared reads and writes outside their products.
 `atelier build <game> --timings` shows historical execution, restore and instrumented phase durations;
 `--changes` lists differences between certified output inventories. Both inspect receipts without running a build.
 `--ddc` reads retained Unreal logs for cache configuration and recorded hit/miss counts, preserving unknowns.
 Named actions can declare exact optional source files, tracking their appearance and removal without depending on a whole directory.
+Signed source-product bundles can be verified and imported with an explicit publisher allowlist.
+[Optional HTTPS lookup](docs/ARTIFACT_POOL.md#fetch-signed-products-over-https) fills local cache misses and falls
+back to generation when the remote store is unavailable; the guide describes configuration and trust limits.
+An operator-controlled [Python producer](docs/ARTIFACT_POOL.md#export-from-a-trusted-python-producer) can build
+one approved audited action and export its signed bundle; this does not upload it.
+An explicit [upload command](docs/ARTIFACT_POOL.md#upload-an-approved-public-bundle) can publish a verified public
+V2 export to a compatible HTTPS object store, using a separate protected operator credential profile.
 [Build recipes](docs/BUILD_RECIPES.md) cover the API, audit limits, input checks and read-only reports.
+Opt-in compatible misses can share a guarded process while retaining individual results. If a batch exits 75
+(`BATCH YIELDED`), coordinate the next render turn and resume the printed command; completed actions stay current.
 
 ### A prop from a sentence
 
@@ -294,7 +308,12 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
   cd ../fresh-worktree && uv sync && uv run atelier build yorimichi   # confirms the carried-over steps
   ```
 
-- **Pool portable outputs** across feature revisions with `atelier pool` ([artifact pool](docs/ARTIFACT_POOL.md)).
+  Named products include full byte inventories. A copy journal blocks launch after interruption;
+  [recovery](docs/ARTIFACT_POOL.md#verified-whole-build-reuse) removes only recorded generated files.
+
+- **Reuse portable products automatically** across feature revisions when their recipe enables `cache=True`.
+  `atelier cache` maintains the store; the older `atelier pool` remains for its explicit texture recipes
+  ([cache and reuse guide](docs/ARTIFACT_POOL.md)).
 - **Guarded heavy work.** `atelier build` and `atelier play` take the machine's render lock (one big slot,
   an optional small slot and a reserved fitting lane) and run Unreal and Blender under a memory guard that stops a job before it
   exhausts the machine. [AGENTS.md](AGENTS.md) describes the render board and the resource logs.
@@ -317,6 +336,10 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
 | `atelier pool publish/restore/status <game> <step>` | [pool explicitly owned portable outputs](docs/ARTIFACT_POOL.md) across feature revisions |
 | `atelier cache status/gc/pin/unpin/forget` | [inspect and prune automatic portable-product reuse](docs/ARTIFACT_POOL.md#automatic-product-cache) |
+| `atelier cache import-bundle DIR --trust FILE` | [verify a signed offline source bundle](docs/ARTIFACT_POOL.md#import-a-signed-offline-bundle) and populate the local cache |
+| `atelier cache fetch-bundle URL KEY --trust FILE` | [download signed source products](docs/ARTIFACT_POOL.md#fetch-signed-products-over-https) into the local cache |
+| `atelier cache export-bundle GAME STEP DIR --profile FILE` | freshly build one approved audited Python action and export a signed local directory |
+| `atelier cache upload-bundle DIR --trust FILE --profile FILE` | explicitly publish a verified public V2 source bundle over HTTPS |
 | `atelier build <game> [step ...]` | build what changed; `--list`, `--force`, `--touch`, full-byte `--verify`; read-only `--plan` / `--dry-run`, `--explain`, `--timings`, `--changes`, `--ddc`, `--json` |
 | `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play under the render lock and memory guard; profiles come from the game's `game.toml` |
 | `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |
@@ -328,6 +351,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier contracts check` | contract syntax and owner policy; semantic review is separate and advisory |
 | `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |
 | `atelier capacity history GUARD_DIRECTORY [--json]` | [inspect retained process memory histories](docs/BUILD_CAPACITY.md#inspect-retained-resource-history) without launching work |
+| `atelier capacity shadow FIXTURE --state ABSOLUTE_DB` | [exercise durable queue and lease lifecycles](docs/BUILD_CAPACITY.md#exercise-durable-shadow-lifecycles) in an isolated simulation; never grants native admission |
 
 **Tests.** Hosted CI runs all Python tests on each PR head in three isolated macOS jobs: board, other studio,
 and games. Each uses normal pytest collection; new tests automatically belong to one group. All three must

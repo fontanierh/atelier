@@ -65,15 +65,22 @@ world map, preferences and the HUD.
 ## Build products
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build
-plans, historical phase timings, certified-output differences and retained-log DDC diagnostics, file-hash memoization, automatic local caching
-of portable products and opt-in Python input/write auditing. The
+plans, historical phase timings, certified-output differences and retained-log DDC diagnostics, file-hash
+memoization, bounded Blender/editor batches, automatic portable-product caching and opt-in Python input/write
+auditing. Recipe-declared spatial queries provide frozen matched-product reads; the sandbox exercises them without
+native tools. Whole-build reuse certifies named inventories and blocks launch while its copy journal is incomplete. The
 [incremental build architecture](docs/INCREMENTAL_BUILDS.md) describes the remaining native import and remote storage
 migration. [World build practices](docs/WORLD_BUILD_PRACTICES.md) explain how to structure asset libraries,
 terrain and regions for small rebuilds. Proposed features are marked; the [artifact pool](docs/ARTIFACT_POOL.md)
-documents automatic cache maintenance alongside the older explicit reuse commands.
+documents automatic cache maintenance, signed bundle ingestion, optional HTTPS lookup, explicit verified public-V2
+bundle upload and the older explicit reuse commands.
+Imports require pinned publisher keys, explicit redistribution grants and complete byte verification;
+an operator-controlled producer can freshly build an independent audited Python action and export a signed
+directory. Automatic publication and hostile-source signer isolation remain separate work.
 The related [capacity admission proposal](docs/BUILD_CAPACITY.md) describes replacing fixed execution slots with
 measured resource reservations while preserving memory guards and exclusive-resource locks. Its current commands
-evaluate supplied snapshots and inspect retained guard histories; measured admission remains a separate migration.
+evaluate supplied snapshots, inspect retained guard histories and exercise durable queue/lease transactions in an
+explicit simulation database. Live admission and native launcher integration remain a separate migration.
 
 ## Why the studio is Python
 

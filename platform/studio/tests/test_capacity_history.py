@@ -205,6 +205,7 @@ def test_directory_family_and_limit_change_caps_are_visible(tmp_path, monkeypatc
 
 def test_read_only_rendering_and_no_native_guard_imports(tmp_path):
     write(tmp_path, 'jsonl', [sample(), sample(elapsed_seconds=2.)])
+    write(tmp_path, 'json', tree_sample(), stem='memory-health-tree')
     before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
     imported = {name for name in sys.modules if name.startswith('atelier.safety')}
     messages = []
@@ -215,3 +216,95 @@ def test_read_only_rendering_and_no_native_guard_imports(tmp_path):
     assert json.loads(messages[0])['historical']
     assert imported == {name for name in sys.modules if name.startswith('atelier.safety')}
     assert before == {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
+
+
+def tree_sample(**changes):
+    return {'owner': 41, 'owner_started': 100, 'elapsed_seconds': 8.,
+            'footprint_bytes': 0, 'peak_bytes': 950, 'limit_bytes': 1000,
+            'state': 'child_exited', 'cleanup_complete': True,
+            'processes': [], **changes}
+
+
+def test_owned_tree_retains_its_simultaneous_peak_separately_from_process_peaks(tmp_path):
+    write(tmp_path, 'json', sample(peak_bytes=10, footprint_bytes=1))
+    write(tmp_path, 'json', sample(pid=42, peak_bytes=2000), stem='memory-health-dotnet-42')
+    write(tmp_path, 'json', tree_sample(processes=[{'name': 'private-name', 'footprint_bytes': 9999}],
+                                      exception='private error'), stem='memory-health-tree')
+    report = history.inspect(tmp_path)
+    tree = report['owned_tree']
+    assert tree['file']['status'] == 'read' and tree['diagnostics'] == []
+    assert tree['observation'] == {'pid': 41, 'process_start': 100, 'elapsed_seconds': 8.,
+                                   'footprint_bytes': 0, 'peak_bytes': 950, 'limit_bytes': 1000,
+                                   'state': 'child_exited', 'cleanup_complete': True, 'unknown_fields': []}
+    assert [f['sessions'][0]['max_guard_peak_bytes'] for f in report['families']] == [10, 2000]
+    assert 'private' not in json.dumps(report)
+    messages = []
+    history.show(tmp_path, echo=messages.append)
+    assert any('Owned-tree latest receipt: read' in line for line in messages)
+    assert any('guard-reported peak 950 bytes' in line for line in messages)
+    assert '  recorded limit 1000 bytes' in messages
+
+
+def test_tree_invalid_or_absent_fields_stay_unknown_without_copying_raw_text(tmp_path):
+    write(tmp_path, 'json', tree_sample(owner=True, owner_started='private', elapsed_seconds=float('nan'),
+                                      footprint_bytes=-1, peak_bytes=True, limit_bytes=None,
+                                      state='private', cleanup_complete='true'), stem='memory-health-tree')
+    tree = history.inspect(tmp_path)['owned_tree']
+    observation = tree['observation']
+    keys = {'pid', 'process_start', 'elapsed_seconds', 'footprint_bytes', 'peak_bytes', 'limit_bytes',
+            'state', 'cleanup_complete'}
+    assert observation['unknown_fields'] == sorted(keys)
+    assert all(observation[key] is None for key in keys)
+    assert 'private' not in json.dumps(tree, allow_nan=False)
+
+
+@pytest.mark.parametrize('pid,start', [(0, 0), (1, 0)])
+def test_tree_impossible_process_identities_stay_unknown(tmp_path, pid, start):
+    write(tmp_path, 'json', tree_sample(owner=pid, owner_started=start), stem='memory-health-tree')
+    observed = history.inspect(tmp_path)['owned_tree']['observation']
+    assert observed['pid'] is None and observed['process_start'] is None
+
+
+@pytest.mark.parametrize('data', ['private', '[]', '{"owner":1,"owner":2}', '{"owner":'])
+def test_tree_malformed_or_nonobject_receipts_are_explicitly_partial(tmp_path, data):
+    (tmp_path / 'memory-health-tree.json').write_text(data)
+    tree = history.inspect(tmp_path)['owned_tree']
+    assert tree['file']['status'] == 'partial' and tree['observation'] is None
+    assert 'private' not in json.dumps(tree)
+
+
+@pytest.mark.parametrize('kind', ['symlink', 'fifo', 'directory'])
+def test_tree_linked_or_special_receipts_are_not_read(tmp_path, kind):
+    path = tmp_path / 'memory-health-tree.json'
+    if kind == 'symlink':
+        secret = tmp_path / 'secret'
+        secret.write_text(json.dumps(tree_sample()))
+        path.symlink_to(secret)
+    elif kind == 'fifo':
+        os.mkfifo(path)
+    else:
+        path.mkdir()
+    tree = history.inspect(tmp_path)['owned_tree']
+    assert tree['file']['status'] == 'unread' and tree['observation'] is None
+
+
+def test_tree_read_is_bounded_and_counts_against_the_invocation_budget(tmp_path, monkeypatch):
+    path = write(tmp_path, 'json', tree_sample(), stem='memory-health-tree')
+    write(tmp_path, 'json', sample())
+    monkeypatch.setattr(history, 'MAX_TOTAL_BYTES', path.stat().st_size)
+    report = history.inspect(tmp_path)
+    assert report['owned_tree']['observation']['peak_bytes'] == 950
+    assert owned(report)['files'][2]['reason'] == 'invocation byte limit reached'
+    monkeypatch.setattr(history, 'MAX_TREE_BYTES', 20)
+    tree = history.inspect(tmp_path)['owned_tree']
+    assert tree['file']['bytes_read'] == 20 and tree['file']['byte_limited']
+    assert tree['file']['status'] == 'partial' and tree['observation'] is None
+
+
+def test_tree_missing_is_explicit_and_inconsistent_peak_is_not_repaired(tmp_path):
+    assert history.inspect(tmp_path)['owned_tree'] == {
+        'file': {'status': 'missing'}, 'observation': None, 'diagnostics': []}
+    write(tmp_path, 'json', tree_sample(footprint_bytes=100, peak_bytes=10), stem='memory-health-tree')
+    tree = history.inspect(tmp_path)['owned_tree']
+    assert tree['observation']['peak_bytes'] == 10 and tree['observation']['footprint_bytes'] == 100
+    assert tree['diagnostics'] == ['aggregate guard peak below retained footprint']

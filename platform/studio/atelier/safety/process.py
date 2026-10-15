@@ -35,6 +35,8 @@ def spawn(command, *, kind='job', **kwargs):
     """A normal Popen child, retaining all the caller's I/O and lifecycle options."""
     if kwargs.get('shell'):
         raise ValueError('Owned work must use argv, not shell=True')
+    from ..build_snapshot import require_launch
+    require_launch(command, cwd=kwargs.get('cwd'), env=kwargs.get('env'))
     return subprocess.Popen(policy_command(command, kind=kind), **kwargs)
 
 
