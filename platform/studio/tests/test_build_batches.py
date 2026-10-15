@@ -59,7 +59,18 @@ def project(tmp_path, monkeypatch):
     monkeypatch.setattr(build, 'run_command', launch)
     messages = []
     return SimpleNamespace(ctx=ctx, steps=steps, launches=launches, messages=messages,
-                           run=lambda: build.build('standin', echo=messages.append))
+                           run=lambda **kwargs: build.build('standin', echo=messages.append, **kwargs))
+
+
+def test_heavy_budget_counts_a_whole_warm_process_once(project):
+    p = project
+    p.steps[2].batch = build.Batch('second process')
+    assert p.run(max_heavy_commands=1) == 75
+    assert len(p.launches) == 1
+    assert {path.stem for path in p.ctx.stamps.glob('action*.json')} == {'action1', 'action2'}
+    assert not (p.ctx.out / '3.txt').exists()
+    assert p.run(max_heavy_commands=2) == 0
+    assert len(p.launches) == 3  # action3, then the final three actions share one process
 
 
 def test_one_warm_process_keeps_individual_results_and_skips_current_actions(project):
