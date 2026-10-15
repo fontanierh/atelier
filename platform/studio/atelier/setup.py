@@ -45,6 +45,18 @@ XML_CACHE_INPUTS = '''
 '''
 
 
+XCODE_TARGET_CREATE = ('\t\t\t\t\t\tUEBuildTarget Target = UEBuildTarget.Create('
+                       'TargetDesc, true, false, bUsePrecompiled, Logger);\n')
+XCODE_TARGET_CREATE_GPF = XCODE_TARGET_CREATE.replace(
+    'bUsePrecompiled, Logger', 'bUsePrecompiled, UnrealIntermediateEnvironment.GenerateProjectFiles, Logger')
+INSTALLED_INTERMEDIATES = ('\t\t\tIntermediateEnvironment = Unreal.IsEngineInstalled() ? '
+    'UnrealIntermediateEnvironment.Default : InDescriptor.IntermediateEnvironment != '
+    'UnrealIntermediateEnvironment.Default ? InDescriptor.IntermediateEnvironment : InRules.IntermediateEnvironment;\n')
+INSTALLED_INTERMEDIATES_GPF = INSTALLED_INTERMEDIATES.replace(
+    'Unreal.IsEngineInstalled() ?', 'Unreal.IsEngineInstalled() && '
+    'InDescriptor.IntermediateEnvironment != UnrealIntermediateEnvironment.GenerateProjectFiles ?')
+
+
 def engine_root():
     return engine.unreal_root().resolve()
 
@@ -116,6 +128,26 @@ def patch_xml_cache_inputs(text):
     if '"Remote XML cache"' in text or text.count(XML_CACHE_LOAD) != 1:
         raise ValueError('Unrecognised XmlConfig.cs; refusing to guess a source patch')
     return text.replace(XML_CACHE_LOAD, XML_CACHE_LOAD + XML_CACHE_INPUTS, 1)
+
+
+def _patch_unique(text, original, replacement, filename):
+    """Refuse missing, duplicate or mixed original/patched occurrences, including on repeat setup."""
+    if text.count(original) + text.count(replacement) != 1:
+        raise ValueError(f'Unrecognised {filename}; refusing to guess a source patch')
+    return text.replace(original, replacement, 1)
+
+
+def patch_xcode_project_target(text):
+    """Pass the project-generation environment to rules creation, as the generic generator does."""
+    return _patch_unique(text, XCODE_TARGET_CREATE, XCODE_TARGET_CREATE_GPF, 'XcodeProjectFileGenerator.cs')
+
+
+def patch_installed_project_intermediates(text):
+    """@cc [owner:fontanierh,label:correctness] isolate-installed-project-metadata
+    Project generation MUST use separate intermediates even for installed engines. Ordinary installed
+    builds MUST retain Default intermediates. Unknown or ambiguous source layouts MUST be refused.
+    """
+    return _patch_unique(text, INSTALLED_INTERMEDIATES, INSTALLED_INTERMEDIATES_GPF, 'UEBuildTarget.cs')
 
 
 def patch_build_script(text, cache, workers):
@@ -197,7 +229,12 @@ def headless_user_dir(root):
 
 
 def prepare_headless(root, workers=3):
-    """Repair only the tested installed engine; rebuild managed tools under the render lock and memory guard."""
+    """@cc [owner:fontanierh,label:safety] versioned-managed-tool-repair
+    Repair MUST refuse unsupported engine versions and source layouts before installed files change.
+    Source identities MUST include both project-generation repairs before a rebuild may be skipped.
+    Rebuilding MUST retain the render lock and actual-child memory guard. A failed installation MUST
+    restore edited sources, shipped managed-tool copies and the prior receipt together.
+    """
     if not isinstance(workers, int) or workers < 1:
         raise ValueError('workers must be a positive integer')
     refuse_unmanaged('Headless toolchain setup')
@@ -209,6 +246,8 @@ def prepare_headless(root, workers=3):
     cache = paths.cache_dir('toolchain', key)
     source = root / 'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs'
     xml_source = root / 'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs'
+    xcode_source = root / 'Engine/Source/Programs/UnrealBuildTool/ProjectFiles/Xcode/XcodeProjectFileGenerator.cs'
+    target_source = root / 'Engine/Source/Programs/UnrealBuildTool/Configuration/UEBuildTarget.cs'
     project = root / 'Engine/Source/Programs/UnrealBuildTool/UnrealBuildTool.csproj'
     wrapper = root / 'Engine/Build/BatchFiles/Mac/Build.sh'
     shader_config = root / 'Engine/Config/BaseEngine.ini'
@@ -226,18 +265,25 @@ def prepare_headless(root, workers=3):
         new_source = patch_user_directory(original_source)
         original_xml = xml_source.read_text()
         new_xml = patch_xml_personal(patch_xml_cache_inputs(original_xml))
+        original_xcode, original_target = xcode_source.read_text(), target_source.read_text()
+        new_xcode = patch_xcode_project_target(original_xcode)
+        new_target = patch_installed_project_intermediates(original_target)
         new_wrapper = patch_build_script(original_wrapper, cache, workers)
         original_shaders = shader_config.read_text()
         new_shaders = patch_shader_config(original_shaders, workers, os.cpu_count() or 8)
         state_file = cache / 'headless.json'
+        original_state = state_file.read_bytes() if state_file.exists() else None
         state = json.loads(state_file.read_text()) if state_file.exists() else {}
         current = (state.get('source_sha256') == _sha(source) and state.get('dll_sha256') == _sha(dll)
                    and state.get('xml_source_sha256') == _sha(xml_source) and state.get('ubt_dll_sha256') == _sha(ubt_dll)
+                   and state.get('xcode_source_sha256') == _sha(xcode_source)
+                   and state.get('target_source_sha256') == _sha(target_source)
                    and state.get('uat_dll_sha256', {}) == {str(f.relative_to(root)): _sha(f) for f in uat_dlls})
         previous_binaries = {binaries / name: (binaries / name).read_bytes() if (binaries / name).exists() else None
                              for name in binary_names}
         previous_binaries.update({file: file.read_bytes() for file in uat_files})
-        files = (source, xml_source, wrapper, shader_config, *(binaries / name for name in binary_names), *uat_files)
+        files = (source, xml_source, xcode_source, target_source, wrapper, shader_config,
+                 *(binaries / name for name in binary_names), *uat_files)
         modes = {file: file.stat().st_mode & 0o7777 for file in files if file.exists()}
         for file in modes:
             if not os.access(file, os.W_OK) and file.stat().st_uid != os.getuid():
@@ -252,15 +298,19 @@ def prepare_headless(root, workers=3):
             for file, mode in modes.items():
                 if file.stat().st_uid == os.getuid():
                     file.chmod(mode | 0o200)
-            if not current or new_source != original_source or new_xml != original_xml:
+            if (not current or new_source != original_source or new_xml != original_xml
+                    or new_xcode != original_xcode or new_target != original_target):
                 source.write_text(new_source)
                 xml_source.write_text(new_xml)
+                xcode_source.write_text(new_xcode)
+                target_source.write_text(new_target)
                 env = dict(os.environ, DOTNET_ROOT=str(dotnet.parent), DOTNET_CLI_TELEMETRY_OPTOUT='1',
                            DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1')
-                output = cache / 'compiled'
+                output = Path(tempfile.mkdtemp(prefix='compiled-', dir=cache))
                 command = [str(dotnet), 'build', str(project),
                            '-c', 'Development', '-o', str(output), '-maxcpucount:2', '-p:BuildInParallel=false']
-                code = guarded.run(command, cache / 'rebuild.guard', timeout=600, lock=False, env=env, kind='compile')
+                code = guarded.run(command, cache / 'rebuild.guard', timeout=600, lock=False,
+                                   env=env, kind='compile', progress=30.)
                 if code:
                     raise RuntimeError(f'Build-tool repair failed (exit {code}); see {cache / "rebuild.guard/stdout.log"}')
                 if not all((output / name).is_file() for name in ('EpicGames.Build.dll', 'UnrealBuildTool.dll')):
@@ -281,11 +331,14 @@ def prepare_headless(root, workers=3):
             shader_config.write_text(new_shaders)
             state_file.write_text(json.dumps(dict(engine=str(root), version=version, workers=workers,
                 source_sha256=_sha(source), dll_sha256=_sha(dll), xml_source_sha256=_sha(xml_source),
+                xcode_source_sha256=_sha(xcode_source), target_source_sha256=_sha(target_source),
                 ubt_dll_sha256=_sha(ubt_dll), uat_dll_sha256={str(f.relative_to(root)): _sha(f) for f in uat_dlls}),
                 indent=2) + '\n')
         except BaseException:   # an interrupt mid-install restores everything as well
             source.write_text(original_source)
             xml_source.write_text(original_xml)
+            xcode_source.write_text(original_xcode)
+            target_source.write_text(original_target)
             wrapper.write_text(original_wrapper)
             shader_config.write_text(original_shaders)
             for file, contents in previous_binaries.items():
@@ -293,6 +346,10 @@ def prepare_headless(root, workers=3):
                     file.unlink(missing_ok=True)
                 else:
                     file.write_bytes(contents)
+            if original_state is None:
+                state_file.unlink(missing_ok=True)
+            else:
+                state_file.write_bytes(original_state)
             raise
         finally:
             for file, mode in modes.items():

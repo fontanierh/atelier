@@ -3,6 +3,7 @@ from contextlib import nullcontext
 import hashlib
 import json
 from pathlib import Path
+import re
 import shlex
 
 import pytest
@@ -41,6 +42,42 @@ def test_documents_probe_patch_keeps_default_behaviour_and_is_idempotent():
         setup.patch_xml_personal('a different engine source layout')
 
 
+@pytest.mark.parametrize('patch,original,replacement', [
+    (setup.patch_xcode_project_target, setup.XCODE_TARGET_CREATE, setup.XCODE_TARGET_CREATE_GPF),
+    (setup.patch_installed_project_intermediates, setup.INSTALLED_INTERMEDIATES, setup.INSTALLED_INTERMEDIATES_GPF),
+])
+def test_project_metadata_patches_are_exact_idempotent_and_refuse_ambiguous_layouts(patch, original, replacement):
+    source = 'before\n' + original + 'after\n'
+    assert patch(source) == 'before\n' + replacement + 'after\n'
+    assert patch(patch(source)) == patch(source)
+    for unknown in ('unrecognized layout', original * 2, replacement * 2, original + replacement):
+        with pytest.raises(ValueError, match='refusing to guess'):
+            patch(unknown)
+
+
+@pytest.mark.parametrize('installed', [False, True])
+@pytest.mark.parametrize('descriptor', ['Default', 'GenerateProjectFiles', 'IWYU', 'NonUnity'])
+@pytest.mark.parametrize('rules', ['Default', 'GenerateProjectFiles'])
+def test_project_metadata_exception_preserves_other_intermediate_environments(installed, descriptor, rules):
+    # Evaluate the patched C# conditional's actual branches, without launching a C# compiler.
+    patched = setup.patch_installed_project_intermediates(setup.INSTALLED_INTERMEDIATES)
+    expression = patched.strip().removeprefix('IntermediateEnvironment = ').removesuffix(';')
+    expression = expression.replace('Unreal.IsEngineInstalled()', repr(installed))
+    expression = expression.replace('InDescriptor.IntermediateEnvironment', repr(descriptor))
+    expression = expression.replace('InRules.IntermediateEnvironment', repr(rules)).replace(' && ', ' and ')
+    expression = re.sub(r'UnrealIntermediateEnvironment\.(\w+)', r"'\1'", expression)
+    def evaluate(value):
+        if '?' not in value:
+            return eval(value.strip(), {'__builtins__': {}})
+        condition, branches = value.split('?', 1)
+        yes, no = branches.split(':', 1)
+        return evaluate(yes if eval(condition.strip(), {'__builtins__': {}}) else no)
+    expected = descriptor if descriptor != 'Default' else rules
+    if installed and descriptor != 'GenerateProjectFiles':
+        expected = 'Default'
+    assert evaluate(expression) == expected
+
+
 def test_wrapper_quotes_cache_paths_and_replaces_only_its_own_block(tmp_path):
     cache = tmp_path / "cache with spaces and a ' quote"
     original = '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n'
@@ -76,6 +113,8 @@ def engine(tmp_path, monkeypatch):
         'Engine/Build/Build.version': json.dumps(dict(MajorVersion=5, MinorVersion=8, PatchVersion=2, Changelist=56702186)),
         'Engine/Source/Programs/Shared/EpicGames.Build/Unreal.cs': setup.METHOD + '\t\t\treturn null;\n\t\t}\n',
         'Engine/Source/Programs/UnrealBuildTool/Configuration/Xml/XmlConfig.cs': setup.XML_CACHE_LOAD + setup.XML_PERSONAL,
+        'Engine/Source/Programs/UnrealBuildTool/ProjectFiles/Xcode/XcodeProjectFileGenerator.cs': setup.XCODE_TARGET_CREATE,
+        'Engine/Source/Programs/UnrealBuildTool/Configuration/UEBuildTarget.cs': setup.INSTALLED_INTERMEDIATES,
         'Engine/Build/BatchFiles/Mac/Build.sh': '#!/bin/sh\necho Running ' + setup.INVOCATION + '\n' + setup.INVOCATION + '\nExitCode=$?\n',
         'Engine/Config/BaseEngine.ini': '[DevOptions.Shaders]\nNumUnusedShaderCompilingThreads=3\nNumUnusedShaderCompilingThreadsDuringGame=4\nPercentageUnusedShaderCompilingThreads=50\n',
         'Engine/Binaries/DotNET/UnrealBuildTool/EpicGames.Build.dll': 'original binary',
@@ -88,6 +127,7 @@ def engine(tmp_path, monkeypatch):
     monkeypatch.setattr(setup.paths, 'cache_dir', lambda *args: tmp_path / 'cache')
     (tmp_path / 'cache').mkdir()
     monkeypatch.setattr(setup, 'render_lock', lambda *args, **kwargs: nullcontext())
+    monkeypatch.setattr(setup, 'refuse_unmanaged', lambda *args: None)
     return root, files
 
 
@@ -196,6 +236,80 @@ def patched_build(calls):
         (output / 'UnrealBuildTool.dll').write_text('patched UBT binary')
         return 0
     return rebuild
+
+
+@pytest.mark.parametrize('key,relative', [
+    ('xcode_source_sha256', 'ProjectFiles/Xcode/XcodeProjectFileGenerator.cs'),
+    ('target_source_sha256', 'Configuration/UEBuildTarget.cs'),
+])
+def test_metadata_source_identity_and_older_receipts_require_rebuild(engine, monkeypatch, tmp_path, key, relative):
+    root, _ = engine
+    calls = []
+    monkeypatch.setattr(setup.guarded, 'run', patched_build(calls))
+    setup.prepare_headless(root)
+    source = root / 'Engine/Source/Programs/UnrealBuildTool' / relative
+    state_file = tmp_path / 'cache/headless.json'
+    state = json.loads(state_file.read_text())
+    assert state[key] == hashlib.sha256(source.read_bytes()).hexdigest()
+    backup = tmp_path / 'cache/originals' / source.relative_to(root)
+    assert backup.is_file() and backup.read_bytes() != source.read_bytes()
+    del state[key]
+    state_file.write_text(json.dumps(state))
+    setup.prepare_headless(root)
+    assert len(calls) == 2
+    source.write_text(source.read_text() + '// changed source identity\n')
+    setup.prepare_headless(root)
+    assert len(calls) == 3
+    assert json.loads(state_file.read_text())[key] == hashlib.sha256(source.read_bytes()).hexdigest()
+
+
+def test_stale_staging_binaries_cannot_certify_an_empty_successful_rebuild(engine, monkeypatch, tmp_path):
+    root, files = engine
+    stale = tmp_path / 'cache/compiled'
+    stale.mkdir()
+    for name in ('EpicGames.Build.dll', 'UnrealBuildTool.dll'):
+        (stale / name).write_text('stale output')
+    monkeypatch.setattr(setup.guarded, 'run', lambda *args, **kwargs: 0)
+    with pytest.raises(RuntimeError, match='did not produce both'):
+        setup.prepare_headless(root)
+    assert not (tmp_path / 'cache/headless.json').exists()
+    for relative, contents in files.items():
+        assert (root / relative).read_text() == contents
+
+
+def test_failed_receipt_write_restores_previous_sources_binaries_and_receipt(engine, monkeypatch, tmp_path):
+    root, files = engine
+    uat_copies(root)
+    monkeypatch.setattr(setup.guarded, 'run', patched_build([]))
+    setup.prepare_headless(root)
+    state_file = tmp_path / 'cache/headless.json'
+    state = json.loads(state_file.read_text())
+    del state['xcode_source_sha256']  # Force an upgrade without modifying the prior installation.
+    state_file.write_text(json.dumps(state))
+    before = {file: file.read_bytes() for file in [*(root / path for path in files),
+                                                *setup.uat_binaries(root), state_file]}
+    original_write = Path.write_text
+    def fail_receipt(path, text, *args, **kwargs):
+        if path == state_file:
+            original_write(path, 'partial receipt')
+            raise OSError('receipt write failed')
+        return original_write(path, text, *args, **kwargs)
+    monkeypatch.setattr(Path, 'write_text', fail_receipt)
+    with pytest.raises(OSError, match='receipt write failed'):
+        setup.prepare_headless(root)
+    assert all(file.read_bytes() == contents for file, contents in before.items())
+
+
+@pytest.mark.parametrize('relative', ['ProjectFiles/Xcode/XcodeProjectFileGenerator.cs', 'Configuration/UEBuildTarget.cs'])
+def test_unknown_metadata_source_refuses_before_installed_files_change(engine, monkeypatch, relative):
+    root, files = engine
+    source = root / 'Engine/Source/Programs/UnrealBuildTool' / relative
+    source.write_text('unexpected source layout')
+    before = {root / path: (root / path).read_bytes() for path in files}
+    monkeypatch.setattr(setup.guarded, 'run', lambda *args, **kwargs: pytest.fail('must not build'))
+    with pytest.raises(ValueError, match='refusing to guess'):
+        setup.prepare_headless(root)
+    assert all(file.read_bytes() == contents for file, contents in before.items())
 
 
 def test_uat_dependency_copies_are_replaced_tracked_and_never_added(engine, monkeypatch, tmp_path):
