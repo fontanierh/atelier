@@ -347,6 +347,7 @@ Atelier is built for several AI agents working on one Mac at once, each in its o
 | `atelier qa <game> <scenario>` | run `games/<game>/scenarios/<scenario>.py` against the running game |
 | `atelier stream <game> start [--local]` / `status` / `stop` / `build-web [--install]` | play in a browser; build the web assets, optionally reinstalling their dependencies |
 | `atelier board` | messages and handoffs between agents ([guide](docs/AGENT_BOARD.md)) |
+| `atelier pr-media push <key> FILE... [--dry-run]` | publish PR screenshots and films under `refs/pr-media/<key>`, which default clones skip; prints Markdown links |
 | `atelier lint [--staged]` | the public-repository rules: no secrets, no personal paths, no game names in the platform |
 | `atelier contracts check` | contract syntax and owner policy; semantic review is separate and advisory |
 | `atelier capacity plan snapshot.json [--json]` | offline capacity simulation; does not admit or launch work |

@@ -1,4 +1,5 @@
 Describe the problem, the resulting behavior and any remaining validation limits.
+Visual evidence: `atelier pr-media push <PR number> FILE...`, then paste the printed links here (never commit media to the branch).
 
 Validation:
 

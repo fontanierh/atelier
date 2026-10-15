@@ -14,6 +14,7 @@
     atelier live state|py|shot         talk to the running game through the live bridge
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
     atelier board post|read|thread|task|supervise|retire|wait|status|serve ...   coordinate machine-local agents (docs/AGENT_BOARD.md)
+    atelier pr-media push <key> FILE... [--remote R] [--dry-run]   publish PR screenshots/films under refs/pr-media/<key>, outside default clones
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
 import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys
@@ -202,6 +203,11 @@ def make_parser():
     p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
     p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
+    p = sub.add_parser('pr-media', help='publish PR screenshots and films under refs/pr-media/<key>')
+    p.add_argument('action', choices=['push']); p.add_argument('key', help='the PR number, or a slug before the PR exists')
+    p.add_argument('files', nargs='+', metavar='FILE')
+    p.add_argument('--remote', default='origin', help='GitHub remote to push to (default: origin)')
+    p.add_argument('--dry-run', action='store_true', help='build the commit and print its links without pushing')
     p = sub.add_parser('lint'); p.add_argument('--staged', action='store_true', help='check the staged files only')
     p = sub.add_parser('contracts', help='check code contract syntax and owners')
     p.add_argument('action', choices=['check'])
@@ -298,6 +304,9 @@ def main(argv=None):
     if args.command == 'stream':
         from . import stream
         return stream.main(args.game, args.action, local=args.local, install=args.install)
+    if args.command == 'pr-media':
+        from . import pr_media
+        return pr_media.push(args.key, args.files, remote=args.remote, dry_run=args.dry_run)
     if args.command == 'lint':
         return lint(args.staged)
     if args.command == 'contracts':
