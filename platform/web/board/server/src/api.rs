@@ -165,7 +165,12 @@ pub struct DiskItem {
     pub label: String,
     /// Where it is, `~/…` inside the home folder; none for `Other`.
     pub path: Option<String>,
+    /// While `measuring`, its last size or the count so far, whichever is larger.
     pub bytes: u64,
+    /// When this place was last measured, in Unix seconds; none for `Other` and a place not measured yet.
+    pub measured_at: Option<f64>,
+    /// The scan is measuring it now.
+    pub measuring: bool,
 }
 
 /// The home folder's volume and what takes its space.
@@ -174,15 +179,18 @@ pub struct Disk {
     /// Bytes the user can still write on the volume, read on every request (none if it cannot be read).
     pub free_bytes: Option<u64>,
     pub total_bytes: Option<u64>,
-    /// When the breakdown was last measured, in Unix seconds; none before the first scan finishes. A background scan
-    /// refreshes it when it is shown, at most once every five minutes.
+    /// When the last complete scan finished, in Unix seconds; none before the first one. A background scan starts
+    /// when the floor is shown, five minutes after the last one finished, and never while a render lock is held.
     pub measured_at: Option<f64>,
     /// How long that scan took, in seconds.
     pub scan_seconds: Option<f64>,
     /// A scan is running now.
     pub scanning: bool,
-    /// The largest places by allocated size, biggest first, then `Other` (the used space they leave unexplained,
-    /// left out when not positive: an APFS clone counts in full in every place, so places can add up to more).
+    /// The running scan waits for a render lock to be released.
+    pub paused: bool,
+    /// The largest places by allocated size, biggest first, and the one being measured, then `Other` once a scan has
+    /// completed (the used space they leave unexplained, left out when not positive: an APFS clone counts in full in
+    /// every place, so places can add up to more).
     pub items: Vec<DiskItem>,
 }
 

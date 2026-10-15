@@ -398,14 +398,18 @@ const text = (value: unknown) => (typeof value === 'string' ? value : value == n
 const gib = (bytes: number) => `${(bytes / 1073741824).toFixed(1)} GiB`;
 const duration = (seconds: number) => (seconds < 60 ? `${Math.max(1, Math.round(seconds))} s` : `${Math.round(seconds / 60)} min`);
 
-/** The home folder's volume and what takes its space. The server measures the breakdown in the background, at most
- *  once every five minutes, so it can be a few minutes old (or missing until the first scan ends). */
+/** The home folder's volume and what takes its space. The server measures the breakdown with a slow background scan
+ *  (five minutes after the last one finished, never during a render), one place at a time, so places carry their
+ *  own measurement time and the one being measured is marked. */
 export function DiskCard({disk, now}: {disk: State['disk']; now: number}) {
   const {free_bytes: free, total_bytes: total} = disk;
   const used = free != null && total ? (total - free) / total : null;
-  const biggest = Math.max(1, ...disk.items.map((item) => item.bytes));
-  const measured = disk.measured_at == null ? (disk.scanning ? 'Not measured yet · scanning…' : 'Not measured yet')
-    : `Measured ${since(disk.measured_at, now)}${disk.scan_seconds != null ? ` in ${duration(disk.scan_seconds)}` : ''}${disk.scanning ? ' · scanning…' : ''}`;
+  // Bars compare places with the largest one; Other (often far larger) fills its bar.
+  const biggest = Math.max(1, ...disk.items.filter((item) => item.path != null).map((item) => item.bytes));
+  const activity = !disk.scanning ? '' : disk.paused ? 'paused while a render runs' : disk.measured_at == null ? 'scanning…' : 'rescanning…';
+  const measured = disk.measured_at == null ? ['Not measured yet', activity].filter(Boolean).join(' · ')
+    : [`Measured ${since(disk.measured_at, now)}${disk.scan_seconds != null ? ` in ${duration(disk.scan_seconds)}` : ''}`, activity]
+      .filter(Boolean).join(' · ');
   return (
     <section className="card disk-card" aria-labelledby="diskHeading" style={{'--i': 1} as React.CSSProperties}>
       <h2 className="eyebrow" id="diskHeading">Disk</h2>
@@ -421,10 +425,12 @@ export function DiskCard({disk, now}: {disk: State['disk']; now: number}) {
       {disk.items.length > 0 && (
         <ul className="disk-items" id="diskItems" aria-label="What takes the space">
           {disk.items.map((item) => (
-            <li key={`${item.label}\n${item.path ?? ''}`} className="disk-item">
+            <li key={`${item.label}\n${item.path ?? ''}`} className={`disk-item${item.measuring ? ' measuring' : ''}`}>
               <span className="disk-label">{item.label}</span><span className="disk-size">{gib(item.bytes)}</span>
               <span className="disk-path">{item.path ?? 'Smaller places and everything not measured'}</span>
-              <span className="disk-share" aria-hidden="true"><span style={{width: `${(item.bytes / biggest * 100).toFixed(1)}%`}} /></span>
+              <span className="disk-age">{item.measuring ? (disk.paused ? 'paused' : 'measuring…')
+                : item.measured_at != null ? since(item.measured_at, now) : ''}</span>
+              <span className="disk-share" aria-hidden="true"><span style={{width: `${Math.min(100, item.bytes / biggest * 100).toFixed(1)}%`}} /></span>
             </li>
           ))}
         </ul>

@@ -337,17 +337,24 @@ conversation's place, as in Slack's sidebar (choosing an agent or Everyone bring
   a listener without launchd auto-recovery is flagged.
 - **Render:** PID/start-validated live holders, machine telemetry and the human-maintained schedule, with the
   newest log entries first.
-- **Disk** (on the Render floor): free and total space on the home folder's volume, read on every update, and what
-  takes the space. The breakdown is a background scan at background priority, started when the floor is shown and at
-  most once every five minutes (`REFRESH_SECONDS` in `platform/web/board/server/src/disk.rs`), so it shows when it was
-  measured, `scanning…` while a scan runs, and "not measured yet" before the first one ends; a request never waits for
-  it. It measures allocated size (never following symlinks or leaving the volume, a hard-linked file counted once) of
-  each entry in the home folder, `~/dev` and `~/.cache/atelier`, then the rest of `~/.cache`, `~/Library/Caches`, the
-  rest of `~/Library`, `/Users/Shared/Epic Games` and the temporary folder. The twelve largest are listed, then
-  **Other**: the used space they leave unexplained. Desktop, Documents, Downloads, other apps' containers, iCloud
-  Drive and `~/Library/CloudStorage` are never opened (macOS would ask for permission) and count under Other. An APFS
-  clone counts in full in every place that holds it, so the places can add up to more than the used space; Other is
-  then left out. `ATELIER_BOARD_DISK_SCAN=0` turns the breakdown off (the tests' servers do).
+- **Disk** (on the Render floor): free and total space on the home folder's volume, read with one `statfs` on every
+  update, and what takes the space. The breakdown measures allocated size (readdir and lstat; never following symlinks
+  or leaving the volume, a hard-linked file counted once, unreadable folders left out) of each entry in `~/dev` and
+  `~/.cache/atelier`, then the rest of `~/.cache`, `~/Library/Caches`, the rest of `~/Library`,
+  `/Users/Shared/Epic Games` and the temporary folder. The twelve largest are listed, then **Other**: the used space
+  they leave unexplained, shown once a scan has completed. Folders macOS guards for privacy (Desktop, Documents,
+  Downloads, the Trash, other apps' containers, Mail, Messages, iCloud Drive and the others listed as `PRIVATE` in
+  `platform/web/board/server/src/disk.rs`) are never opened and count under Other. An APFS clone counts in full in
+  every place that holds it, so the places can add up to more than the used space; Other is then left out. A full scan
+  is expensive: `du` over `~/dev`, `~/.cache`, `~/Library` and `/Users/Shared` did not finish in 20 minutes on a
+  machine with many checkouts, and opening a guarded folder can block for seconds. So the board scans gently: one scan
+  at a time, on one thread in macOS's background band (lowest CPU priority, throttled disk reads); started only when
+  the floor is shown, never while a render lock (big or small) is held, and pausing while one is held, rechecking
+  every few seconds; the next scan starts only five minutes (`REFRESH_SECONDS`) after the last one finished. A request
+  never waits for it. Each place keeps its own measurement time, so a scan in progress shows what it has measured so
+  far and marks the place it is measuring; the section says when the last complete scan finished, how long it took,
+  and whether a scan is running or paused. `ATELIER_BOARD_DISK_SCAN=0` turns the breakdown off (the tests' servers
+  do), and `ATELIER_BOARD_DISK_ENGINE` points the engine place elsewhere for a preview on a sample tree.
 
 Long lines and code wrap or scroll inside their message, so the page never widens. On a phone, Add to Home
 Screen opens the board as a standalone app. Reading the UI never advances agent delivery cursors or grants

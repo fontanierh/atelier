@@ -708,7 +708,7 @@
           "minimum": 0
         },
         "measured_at": {
-          "description": "When the breakdown was last measured, in Unix seconds; none before the first scan finishes. A background scan\nrefreshes it when it is shown, at most once every five minutes.",
+          "description": "When the last complete scan finished, in Unix seconds; none before the first one. A background scan starts\nwhen the floor is shown, five minutes after the last one finished, and never while a render lock is held.",
           "type": [
             "number",
             "null"
@@ -727,8 +727,12 @@
           "description": "A scan is running now.",
           "type": "boolean"
         },
+        "paused": {
+          "description": "The running scan waits for a render lock to be released.",
+          "type": "boolean"
+        },
         "items": {
-          "description": "The largest places by allocated size, biggest first, then `Other` (the used space they leave unexplained,\nleft out when not positive: an APFS clone counts in full in every place, so places can add up to more).",
+          "description": "The largest places by allocated size, biggest first, and the one being measured, then `Other` once a scan has\ncompleted (the used space they leave unexplained, left out when not positive: an APFS clone counts in full in\nevery place, so places can add up to more).",
           "type": "array",
           "items": {
             "$ref": "#/$defs/DiskItem"
@@ -737,6 +741,7 @@
       },
       "required": [
         "scanning",
+        "paused",
         "items"
       ]
     },
@@ -755,14 +760,28 @@
           ]
         },
         "bytes": {
+          "description": "While `measuring`, its last size or the count so far, whichever is larger.",
           "type": "integer",
           "format": "uint64",
           "minimum": 0
+        },
+        "measured_at": {
+          "description": "When this place was last measured, in Unix seconds; none for `Other` and a place not measured yet.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "measuring": {
+          "description": "The scan is measuring it now.",
+          "type": "boolean"
         }
       },
       "required": [
         "label",
-        "bytes"
+        "bytes",
+        "measuring"
       ]
     },
     "Threads": {
