@@ -1,0 +1,1 @@
+../../world/regions/craterpark/v2/editor/pieces.cjs

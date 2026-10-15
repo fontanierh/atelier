@@ -157,3 +157,18 @@ def test_modified_export_is_not_a_pass(tmp_path):
     scene.pieces[0].mesh.V[0, 0] += .01
     with pytest.raises(ValueError, match='parity failed'):
         diagnostic.compare(scene, target)
+
+
+APP = Path(__file__).resolve().parents[1] / 'tools' / 'craterpark_editor'
+
+
+def test_repository_editor_uses_the_pinned_compiler_and_ships_its_designs():
+    pin = json.loads((Path(frontend.__file__).parent / 'pin.json').read_text())
+    assert frontend.sha((APP / 'pieces.js').read_bytes()) == pin['pieces_sha256']
+    page = (APP / 'index.html').read_text()
+    for script in ('vendor/three.min.js', 'vendor/OrbitControls.js', 'pieces.js', 'app.js'):
+        assert f'src="{script}"' in page and (APP / script).is_file()
+    terrain = json.loads((APP / 'data' / 'terrain.json').read_text())
+    assert all((APP / 'data' / name).is_file() for name in [*terrain['inner']['layers'].values(), terrain['outer']['file']])
+    designs = sorted((APP / 'designs').glob('craterpark-rev*.json'))
+    assert designs and all(json.loads(d.read_text())['schema'] == 'craterpark-editor/1' for d in designs)

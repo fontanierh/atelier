@@ -12,7 +12,9 @@
    ATELIER_CRATERPARK_EDITOR_PARK and ATELIER_CRATERPARK_EDITOR_LINES set; otherwise prints that command.
    Only the chosen lines are built, plus the bowls they land in and the decks they start from.
 
-Commit the re-pinned pieces.cjs and pin.json with the build, so the release says which compiler made the park.
+The editor's own code (index.html, app.js, server.py, cpe_client.py, vendor/) is refreshed in tools/craterpark_editor
+from the live folder, and the frozen design is kept as tools/craterpark_editor/designs/craterpark-rev<N>.json.
+Commit those with the re-pinned pieces.cjs and pin.json, so main carries the editor and the design the release used.
 """
 import argparse
 import hashlib
@@ -28,6 +30,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 V2 = ROOT / 'games/yorimichi/world/regions/craterpark/v2'
 VENDORED = V2 / 'editor'
+APP = ROOT / 'games/yorimichi/tools/craterpark_editor'      # the editor's reviewed copy (pieces.js links to pieces.cjs)
+APP_CODE = ['index.html', 'app.js', 'server.py', 'cpe_client.py', 'vendor']
 EDITOR = Path.home() / '.cache/atelier/handoff/craterpark/editor'   # served on the tailnet at /parkeditor/
 
 sys.path.insert(0, str(V2.parents[1]))
@@ -79,6 +83,29 @@ def pin(frozen):
     print(f'bridge meshed {len(scene.pieces)} pieces')
 
 
+def sync_app(editor, frozen):
+    """Refresh the repository copy of the editor's code and keep the shipped design beside it."""
+    changed = []
+    for name in APP_CODE:
+        source, target = editor / name, APP / name
+        if source.is_dir():
+            if not target.exists() or tree(source) != tree(target):
+                shutil.rmtree(target, ignore_errors=True)
+                shutil.copytree(source, target)
+                changed.append(name)
+        elif not target.exists() or sha(source) != sha(target):
+            shutil.copy2(source, target)
+            changed.append(name)
+    rev = frozen.name.removeprefix('rev')
+    design = APP / 'designs' / f'craterpark-rev{rev}.json'
+    if not design.exists():
+        design.parent.mkdir(exist_ok=True)
+        shutil.copy2(frozen / 'park.json', design)
+        changed.append(str(design.relative_to(APP)))
+    if changed:
+        print(f'refreshed tools/craterpark_editor: {", ".join(changed)} (commit them)')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--editor', type=Path, default=EDITOR, help='the live editor folder')
@@ -87,6 +114,7 @@ def main():
     args = parser.parse_args()
     frozen = freeze(args.editor.expanduser())
     pin(frozen)
+    sync_app(args.editor.expanduser(), frozen)
     env = {'ATELIER_CRATERPARK_EDITOR_PARK': str(frozen / 'park.json'), 'ATELIER_CRATERPARK_EDITOR_LINES': args.lines}
     command = ['nice', '-n', '10', 'uv', 'run', 'atelier', 'build', 'yorimichi']
     shown = ' '.join(f'{k}={shlex.quote(v)}' for k, v in env.items()) + ' ' + shlex.join(command)

@@ -1,0 +1,6 @@
+park.json
+versions/
+snapshots/
+viewstate.json
+*.log
+__pycache__/

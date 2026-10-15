@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crater Park Editor</title>
+<script>if (!location.pathname.endsWith('/') && !location.pathname.endsWith('.html')) location.replace(location.pathname + '/' + location.search + location.hash);</script>
+<style>
+body.locked #left, body.locked #right { pointer-events: none; opacity: .5; }
+body.locked #undo, body.locked #redo, body.locked #bnote, body.locked #bversion { pointer-events: none; opacity: .4; }
+#lockbar { position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 20; background: #2a1f12; color: #f3d9b1; border: 1px solid #e0672c; border-radius: 8px; padding: 7px 14px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+
+:root{
+  --bg:#15171a; --panel:#1d2024; --panel2:#23272c; --line:#33383f; --ink:#e8e4dc; --muted:#9aa0a8; --dim:#6b7179;
+  --accent:#e0672c; --ok:#4fb477; --warn:#e3b341; --fail:#e5534b; --focus:#f0a35e;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 var(--font);overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;cursor:pointer}
+button:hover{border-color:#4a515a;background:#2a2f35}
+button.on{background:#3a2a20;border-color:var(--accent);color:#ffd9c2}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1b0f08;font-weight:600}
+button.danger:hover{border-color:var(--fail);color:#ffb4ae}
+button:disabled{opacity:.45;cursor:default}
+input[type=number],input[type=text],select{background:#121417;border:1px solid var(--line);border-radius:5px;padding:3px 6px;min-width:0}
+input:focus,select:focus,button:focus-visible{outline:1px solid var(--focus);outline-offset:0}
+#app{display:grid;grid-template-columns:232px 1fr 330px;grid-template-rows:44px 1fr auto 26px;height:100%}
+header{grid-column:1/4;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+header .brand{font-weight:700;letter-spacing:.02em;margin-right:6px;white-space:nowrap}
+header .brand span{color:var(--accent)}
+header .grp{display:flex;gap:4px;align-items:center}
+header .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+#save{margin-left:auto;color:var(--muted);white-space:nowrap;font-size:12px}
+#save.bad{color:var(--fail)} #save.busy{color:var(--warn)}
+aside{background:var(--panel);overflow:auto;min-height:0}
+#left{grid-row:2/4;border-right:1px solid var(--line);padding:8px}
+#right{grid-row:2/4;grid-column:3;border-left:1px solid var(--line);display:flex;flex-direction:column}
+h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 2px 6px;font-weight:600}
+h3:first-child{margin-top:2px}
+.pal{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.pal button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 7px;text-align:left;min-height:40px}
+.pal button b{font-weight:600;font-size:12px}
+.pal button small{color:var(--muted);font-size:10.5px}
+.palhint{color:var(--dim);font-size:11px;margin:6px 2px 0}
+#lines .ln{display:grid;grid-template-columns:14px 1fr auto auto auto;gap:5px;align-items:center;padding:4px 4px;border-radius:6px;cursor:pointer}
+#lines .ln:hover{background:var(--panel2)}
+#lines .ln.sel{background:#2b2420}
+#lines .sw{width:12px;height:12px;border-radius:3px;border:0;padding:0}
+#lines .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lines .st{font-size:11px;color:var(--muted);white-space:nowrap}
+#lines button{padding:1px 6px;font-size:11px}
+#lines .ln.hid .nm{color:var(--dim);text-decoration:line-through}
+main{grid-row:2;grid-column:2;position:relative;min-width:0;min-height:0}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,-120%);background:rgba(20,22,25,.82);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px;white-space:nowrap;color:var(--ink)}
+.lab.start{font-weight:700;border-width:2px}
+.lab.fail{border-color:var(--fail)} .lab.warn{border-color:var(--warn)} .lab.ok{border-color:var(--ok)}
+#hud{position:absolute;left:10px;bottom:8px;font:11px var(--mono);color:var(--muted);background:rgba(20,22,25,.7);padding:3px 7px;border-radius:5px;pointer-events:none}
+#mode{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#3a2a20;border:1px solid var(--accent);color:#ffd9c2;padding:5px 12px;border-radius:7px;display:none;pointer-events:none}
+#toast{position:absolute;right:12px;top:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}
+#toast div{background:rgba(29,32,36,.95);border:1px solid var(--line);border-radius:7px;padding:6px 10px;max-width:360px}
+#profile{grid-row:3;grid-column:2;border-top:1px solid var(--line);background:var(--panel);position:relative;height:150px}
+#profile.closed{height:26px}
+#profile canvas{width:100%;height:calc(100% - 24px);display:block;cursor:pointer}
+#profile .bar{height:24px;display:flex;align-items:center;gap:8px;padding:0 8px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden}
+#profile .bar button{padding:1px 8px;font-size:12px}
+#pinfo{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#profile .bar b{color:var(--ink)}
+footer{grid-column:1/4;background:var(--panel);border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;display:flex;align-items:center;gap:14px;padding:0 10px;white-space:nowrap;overflow:hidden}
+footer kbd,.help kbd{font:11px var(--mono);background:#2a2e34;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;color:var(--ink)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:9px 0;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);background:transparent}
+.tabs .cnt{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:#3b2222;color:#ffb4ae;font-size:11px;margin-left:4px}
+#insp,#issues{overflow:auto;padding:10px 12px 20px;flex:1;min-height:0}
+.ttl{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.ttl input{flex:1;font-weight:600;font-size:14px;background:transparent;border-color:transparent;padding:2px 4px}
+.ttl input:hover{border-color:var(--line)}
+.kind{color:var(--muted);font-size:12px;margin:0 0 8px 4px}
+.row{display:grid;grid-template-columns:118px 1fr 64px;gap:6px;align-items:center;margin:4px 0}
+.row label{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row input[type=range]{width:100%;accent-color:var(--accent)}
+.row input[type=number]{width:64px;text-align:right}
+.row.b{grid-template-columns:118px 1fr}
+.row .u{color:var(--dim);font-size:11px;margin-left:2px}
+.help-t{color:var(--dim);font-size:11px;margin:-2px 0 6px 124px}
+.sec{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+.sec>b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 8px;font-size:12px;cursor:pointer}
+.chip .x{border:0;background:transparent;padding:0 4px;color:var(--muted)}
+.iss{display:flex;gap:7px;padding:5px 6px;border-radius:6px;cursor:pointer;align-items:flex-start}
+.iss:hover{background:var(--panel2)}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.dot.fail{background:var(--fail)} .dot.warn{background:var(--warn)} .dot.ok{background:var(--ok)}
+.iss small{color:var(--muted);display:block}
+.stat{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px;margin:4px 0}
+.stat span:nth-child(odd){color:var(--muted)}
+.stat span:nth-child(even){font-family:var(--mono);text-align:right}
+.btns{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.note{color:var(--muted);font-size:12px;margin:6px 0}
+.note b{color:var(--ink)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10}
+.modal.open{display:flex}
+.modal>div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 20px;width:min(720px,92vw);max-height:86vh;overflow:auto}
+.modal h2{margin:0 0 10px;font-size:17px}
+.help table{border-collapse:collapse;width:100%;font-size:13px}
+.help td{padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.help td:first-child{white-space:nowrap;width:220px}
+.vers .v{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:6px 4px;border-bottom:1px solid var(--line);align-items:center}
+.loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:20;font-size:15px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">Loading the crater…</div>
+<div id="app">
+  <header>
+    <div class="brand">Crater Park <span>Editor</span></div>
+    <div class="grp"><button id="undo" title="Undo (⌘Z)">↶ Undo</button><button id="redo" title="Redo (⇧⌘Z)">↷ Redo</button></div>
+    <div class="sep"></div>
+    <div class="grp"><button id="v3d" class="on" title="Orbit view (V)">3D</button><button id="vtop" title="Top view (T)">Top</button><button id="vfocus" title="Frame the selection (F)">Frame</button></div>
+    <div class="sep"></div>
+    <div class="grp">
+      <select id="terrain" title="Crater ground shown under the park"><option value="dug">Crater with funnel dig</option><option value="natural">Crater as it is</option></select>
+      <button id="tspeed" title="Colour riding surfaces by rider speed (S)">Speed colours</button>
+      <button id="tarcs" class="on" title="Show jump flight arcs (A)">Flight arcs</button>
+      <button id="tlabels" class="on" title="Show labels (L)">Labels</button>
+      <button id="txray" title="See-through ground, to edit pieces below the surface (X)">See-through ground</button>
+      <button id="tsnap" class="on" title="Snap pieces end to start while dragging (hold ⌘ to bypass)">Snap</button>
+    </div>
+    <div id="save">Loading…</div>
+    <button id="bnote" title="Pin a note for Claude on any spot (N)">📌 Note</button>
+    <button id="bversion" title="Save a named version (⌘S)">Save version</button>
+    <button id="bhistory">History</button>
+    <button id="bhelp" title="Controls (?)">?</button>
+  </header>
+  <aside id="left">
+    <h3>Add a piece</h3>
+    <div id="palette"></div>
+    <p class="palhint">With a piece selected, a new piece snaps onto its end. With nothing selected, click the crater to place it.</p>
+    <h3>Lines</h3>
+    <div id="lines"></div>
+    <div class="btns"><button id="addline">+ New line</button><button id="showall">Show all</button></div>
+  </aside>
+  <main>
+    <canvas id="c" tabindex="0"></canvas>
+    <div id="labels"></div>
+    <div id="mode"></div>
+    <div id="hud"></div>
+    <div id="toast"></div>
+  </main>
+  <section id="profile">
+    <div class="bar"><button id="ptoggle" title="Show or hide the profile">▾</button><b id="ptitle">Line profile</b><button id="pride" title="Watch the slowest rider ride the selected line (R)">▶ Ride</button><label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" id="pfollow" checked> follow camera</label><span id="pinfo">Select a piece to see its line from the roll-in: riding height, ground and speed.</span></div>
+    <canvas id="pc"></canvas>
+  </section>
+  <aside id="right">
+    <div class="tabs"><button id="tinsp" class="on">Selected</button><button id="tiss">Problems <span class="cnt" id="icnt">0</span></button><button id="tnotes">Notes</button></div>
+    <div id="insp"></div>
+    <div id="issues" hidden></div>
+    <div id="notes" hidden style="overflow:auto;padding:10px 12px 20px;flex:1;min-height:0"></div>
+  </aside>
+  <footer id="hint"></footer>
+</div>
+
+<div class="modal help" id="help"><div>
+  <h2>Controls</h2>
+  <table>
+    <tr><td><b>Look around</b></td><td>Drag empty space to orbit · right-drag (or two fingers) to pan · scroll to zoom. <kbd>T</kbd> top view, <kbd>V</kbd> 3D view, <kbd>F</kbd> frame the selection.</td></tr>
+    <tr><td><b>Select</b></td><td>Click a piece. <kbd>Shift</kbd>-click adds or removes pieces. Double-click a piece selects its whole line (or click the line in the Lines list). <kbd>Esc</kbd> clears.</td></tr>
+    <tr><td><b>Move</b></td><td>Drag a piece (or the whole selection). Pieces attached behind it follow. Near another piece’s end it snaps on (orange ring). <kbd>Arrows</kbd> nudge 1 m, with <kbd>Shift</kbd> 10 m.</td></tr>
+    <tr><td><b>Raise / lower</b></td><td><kbd>Alt</kbd>-drag up and down, or <kbd>PgUp</kbd>/<kbd>PgDn</kbd> (or <kbd>]</kbd>/<kbd>[</kbd>) 0.5 m, with <kbd>Shift</kbd> 5 m. <kbd>G</kbd> puts the piece on the ground.</td></tr>
+    <tr><td><b>Rotate</b></td><td>Drag the white ring, or <kbd>Q</kbd>/<kbd>E</kbd> 5°, with <kbd>Shift</kbd> 15°. A whole line rotates about its centre.</td></tr>
+    <tr><td><b>Shape</b></td><td>Every dimension is in the right-hand panel: drag a slider or type a value. Roll-ins: drop, steepness, top and bottom curves, bend left or right. Runways: length, turn, slope, walls.</td></tr>
+    <tr><td><b>Gaps</b></td><td>Select a jump, type the gap you want, press <b>Fit kicker and landing</b>: it picks the lip angle, kicker radius, knuckle drop and landing for the speed riders actually arrive with, and says if there isn’t enough speed and how much more drop would fix it. Or load a proven module.</td></tr>
+    <tr><td><b>Ride it</b></td><td>Select a piece and press <kbd>R</kbd> (or ▶ Ride under the view) to watch the slowest rider go down that line, with a chase camera.</td></tr>
+    <tr><td><b>Add</b></td><td>Pick from the left. With a piece selected the new one is attached to its end (and inserted before what followed); otherwise click the crater to drop it.</td></tr>
+    <tr><td><b>Connect</b></td><td>Drag a piece’s start onto another piece’s end to attach it. In the panel, “Rider goes to” lists where the line continues; “Link to…” then click a piece adds a branch or a jump target.</td></tr>
+    <tr><td><b>Buried pieces</b></td><td>“See-through ground” (<kbd>X</kbd>) makes the crater translucent. Riding surfaces below the ground are tinted red.</td></tr>
+    <tr><td><b>One line only</b></td><td>In Lines: the eye hides a line, <b>Solo</b> shows only that line.</td></tr>
+    <tr><td><b>Copy / delete</b></td><td><kbd>⌘D</kbd> duplicates, <kbd>Delete</kbd> removes. <kbd>⌘Z</kbd> undo, <kbd>⇧⌘Z</kbd> redo.</td></tr>
+    <tr><td><b>Working with Claude</b></td><td>Claude sees what this editor shows (view, selection, what you hover) and can take a snapshot of your screen. Changes Claude makes appear here straight away and <kbd>⌘Z</kbd> undoes them. <kbd>N</kbd> pins a note on any spot for Claude.</td></tr>
+    <tr><td><b>Saving</b></td><td>Every change saves by itself to the Mac. <kbd>⌘S</kbd> or “Save version” keeps a named version; “History” restores any version.</td></tr>
+    <tr><td><b>Physics</b></td><td>Speeds come from riders starting each roll-in at 1, 4 and 8 m/s (the checker’s model). Jumps show lip speed, air and where you land; the Problems tab lists every stall, short landing, hard landing, gap and dead end.</td></tr>
+  </table>
+  <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="primary" data-close>Got it</button></div>
+</div></div>
+
+<div class="modal vers" id="history"><div>
+  <h2>History</h2>
+  <p class="note">Every save is kept as a version every few minutes, plus each named version. Restoring loads it into the editor; you can undo that.</p>
+  <div id="vlist"></div>
+  <div class="btns" style="justify-content:flex-end;margin-top:12px"><button data-close>Close</button></div>
+</div></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="pieces.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
