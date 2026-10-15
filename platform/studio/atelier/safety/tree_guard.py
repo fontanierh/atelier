@@ -80,7 +80,10 @@ class OwnedTree:
         # Recheck service names and pinned identities immediately before each signal. An
         # already-recorded shell may have exec'd a shared service since the last sample.
         for key in sorted(self.parents, key=self.depth.get, reverse=True):
-            if key[0] == exclude_pid or key in self.excluded() or not self.same(key):
+            # Retain historical ancestry, but do not rescan it for every departed compiler.
+            if key[0] == exclude_pid or not self.same(key):
+                continue
+            if key in self.excluded() or not self.same(key):
                 continue
             try:
                 send(key[0], signal.SIGKILL)

@@ -83,3 +83,81 @@ def test_monitor_can_finish_cleanup_before_exiting_itself():
     sent = []
     tree.stop_owned(lambda pid, sig: sent.append(pid), exclude_pid=2)
     assert sent == [3, 1]
+
+
+def test_cleanup_skips_departed_history_before_scanning_shared_ancestry():
+    class CountedProcesses(Processes):
+        calls = 0
+
+        def started(self, pid):
+            self.calls += 1
+            return super().started(pid)
+
+    api = CountedProcesses()
+    api.add(1, 0, 'launcher', 10)
+    api.add(2, 1, 'helper', 20)
+    api.add(3, 2, 'helper', 30)
+    departed = range(100, 1100)
+    for pid in departed:
+        api.add(pid, 1, 'compiler', 40)
+    tree = OwnedTree(api, 1, 100)
+    tree.sample()
+    history = dict(tree.parents)
+    for pid in (1, *departed):
+        del api.rows[pid]
+    api.rows[2].parent = 0  # Retained ownership survives the launcher's exit.
+    api.calls = 0
+    sent = []
+
+    def exited(pid, signal):
+        sent.append(pid)
+        del api.rows[pid]
+
+    tree.stop_owned(exited)
+    assert sent == [3, 2]
+    assert api.calls < 5 * len(history), 'departed compiler history must not cause quadratic OS queries'
+    assert tree.parents == history, 'cleanup must retain pinned ancestry, including departed parents'
+    assert tree.sample() == []
+
+
+def test_cleanup_rechecks_identity_after_shared_ancestry_scan(monkeypatch):
+    api = Processes()
+    api.add(1, 0, 'launcher', 10)
+    api.add(2, 1, 'helper', 20)
+    tree = OwnedTree(api, 1, 100)
+    tree.sample()
+    name = api.name
+
+    def reused_during_scan(pid):
+        result = name(pid)
+        if pid == 2:
+            api.add(2, 0, 'foreign', 900, started=999)
+        return result
+
+    monkeypatch.setattr(api, 'name', reused_during_scan)
+    sent = []
+    tree.stop_owned(lambda pid, signal: sent.append(pid))
+    assert api.rows[2].started == 999
+    assert sent == [1], 'a pin that matched the fast filter can be reused before signalling'
+
+
+def test_cleanup_refreshes_shared_ancestry_between_live_candidates():
+    api = Processes()
+    api.add(1, 0, 'launcher', 10)
+    api.add(2, 1, 'sh', 20)
+    api.add(3, 2, 'helper', 30)
+    api.add(4, 2, 'helper', 40)
+    tree = OwnedTree(api, 1, 100)
+    tree.sample()
+    sent = []
+
+    def exited(pid, signal):
+        sent.append(pid)
+        del api.rows[pid]
+        if pid == 3:
+            api.rows[2].name = 'zenserver'
+            api.add(5, 2, 'shared-helper', 50)
+
+    tree.stop_owned(exited)
+    assert sent == [3, 1]
+    assert set(api.rows) == {2, 4, 5}, 'a new shared service and its children must survive cleanup'
