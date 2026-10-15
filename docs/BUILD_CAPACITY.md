@@ -17,6 +17,8 @@ The production broker uses its own private Unix socket and SQLite namespace. It 
 database and token below. `atelier capacity serve ABSOLUTE_CONFIG` runs it; `atelier capacity status ABSOLUTE_SOCKET`
 reads its state. `atelier capacity supervise ABSOLUTE_CONFIG` installs macOS login/crash supervision. Installing
 the service does **not** enable clients. Do not create a second broker to work around an outage or an uncertain grant.
+If a controller is interrupted, normal broker refresh automatically releases its reservation once every retained
+process has a verified exit and ancestry is known. This releases capacity only; it does not certify build outputs.
 `atelier capacity reconcile ABSOLUTE_SOCKET` releases only reservations whose retained identities have affirmative
 exit evidence; it cannot clear an unknown exit. Same-boot recovery rearms live registered identities and permits
 the original controller's fenced session to report exit only. A verified OS boot change proves prior local jobs

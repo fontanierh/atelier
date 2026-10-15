@@ -196,6 +196,9 @@ class CapacityBroker:
             raise wire.CapacityError('Capacity state exceeds its limit')
         self.connection.execute('UPDATE state SET value=? WHERE id=1', (data,))
         self.connection.commit()
+        for record in state['records'].values():
+            if record['state'] == 'released':
+                self._dispose(record.get('nonce'))
 
     def _clock(self):
         now = time.monotonic()
@@ -293,7 +296,21 @@ class CapacityBroker:
                 except (OSError, ValueError, wire.CapacityError):
                     record['state'] = 'uncertain'
                     changed = True
+            changed |= self._settle_exited(record)
         return changed
+
+    def _settle_exited(self, record):
+        """@cc [owner:fontanierh,label:safety] witnessed-capacity-recovery
+        An uncertain reservation MUST release automatically once every retained process has
+        affirmative exit evidence and its ancestry is known. Missing PIDs, expired heartbeats,
+        an empty roster or unknown ancestry MUST NOT establish completion or certify outputs.
+        """
+        if (record['state'] != 'uncertain' or not record.get('roster')
+                or record.get('ancestry_unknown')
+                or not all(pin in record.get('exited', []) for pin in record['roster'])):
+            return False
+        record.update(state='released', release_witness={'kind': 'retained-kernel-exits'})
+        return True
 
     def _request(self, value):
         wire.fields(value, ('id', 'resources'), ('locks', 'seconds', 'performance', 'checkout', 'owner', 'purpose', 'phase', 'workers'))
@@ -517,12 +534,7 @@ class CapacityBroker:
                 if action in ('status', 'reconcile'):
                     if action == 'reconcile':
                         for retained in state['records'].values():
-                            if (retained['state'] == 'uncertain' and retained.get('roster')
-                                    and not retained.get('ancestry_unknown')
-                                    and all(pin in retained.get('exited', []) for pin in retained['roster'])):
-                                retained.update(state='released', release_witness={'kind': 'retained-kernel-exits'})
-                                self._dispose(retained['nonce'])
-                                refreshed = True
+                            refreshed |= self._settle_exited(retained)
                     result = self._status(state)
                 elif action == 'owned':
                     if (self.mode != 'capacity' or message.get('boot_id') != self.boot
@@ -614,6 +626,8 @@ class CapacityBroker:
                             raise wire.CapacityError('Capacity grant is uncertain or inactive')
                         self._watch(record, message.get('descendants', []))
                         self._refresh(state, now)
+                        if record['state'] not in ('running', 'draining'):
+                            raise wire.CapacityError('Capacity grant is uncertain or inactive')
                         if record['child'] in record.get('exited', []):
                             record['state'] = 'draining'
                         else:
