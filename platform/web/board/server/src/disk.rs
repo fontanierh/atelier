@@ -110,18 +110,23 @@ pub struct Plan {
 }
 
 impl Plan {
-    /// The machine's places, from the home folder, the shared engine folder and the temporary folder.
-    pub fn new(home: &Path, engine: &Path, temp: Option<&Path>) -> Plan {
+    /// The machine's places, from the home folder, the shared engine folder and the temporary folder. `pause` runs
+    /// before each folder it lists and after each entry, so listing can wait for a render too.
+    pub fn new(home: &Path, engine: &Path, temp: Option<&Path>, pause: &mut dyn FnMut()) -> Plan {
         let (dev, cache, library) = (home.join("dev"), home.join(".cache"), home.join("Library"));
         let atelier = cache.join("atelier");
         let mut skip: HashSet<PathBuf> = PRIVATE.iter().map(|name| library.join(name)).collect();
         skip.insert(atelier.clone());
         let mut places = Vec::new();
         for parent in [&dev, &atelier] {
+            pause();
             let Ok(entries) = fs::read_dir(parent) else { continue };
             let mut found: Vec<Place> = entries
                 .flatten()
-                .map(|entry| Place { label: entry.file_name().to_string_lossy().into_owned(), path: entry.path() })
+                .map(|entry| {
+                    pause();
+                    Place { label: entry.file_name().to_string_lossy().into_owned(), path: entry.path() }
+                })
                 .collect();
             found.sort_by(|a, b| a.label.cmp(&b.label));
             places.extend(found);
@@ -371,7 +376,11 @@ pub fn report(render_held: bool) -> Disk {
             let mut ending = Ending(None);
             lower_priority();
             let temp = std::env::temp_dir();
-            let plan = Plan::new(&scan_home, &engine(), temp.parent());
+            let plan = Plan::new(&scan_home, &engine(), temp.parent(), &mut || {
+                while render_busy() {
+                    std::thread::sleep(PAUSE);
+                }
+            });
             let seconds = scan(&plan, &CACHE, &db::now, &render_busy, &|| std::thread::sleep(PAUSE), LOCK_CHECK);
             ending.0 = Some((plan.places, seconds));
         });
@@ -457,7 +466,9 @@ mod tests {
             write(&home.join(path), 4096);
         }
         write(&engine.join("UE/x"), 4096);
-        let plan = Plan::new(&home, &engine, Some(&temp.0.join("not-there")));
+        let mut pauses = 0;
+        let plan = Plan::new(&home, &engine, Some(&temp.0.join("not-there")), &mut || pauses += 1);
+        assert_eq!(pauses, 2 + 3, "before listing ~/dev and ~/.cache/atelier, and after each of their entries");
         let shown: Vec<String> = plan.places.iter().map(|p| shown_path(&p.path, &home)).collect();
         let mut expected: Vec<String> =
             ["~/dev/one", "~/dev/two", "~/.cache/atelier/products", "~/.cache", "~/Library/Caches", "~/Library"]
