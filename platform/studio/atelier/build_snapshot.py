@@ -8,6 +8,7 @@ from . import paths
 JOURNAL = '.reuse-in-progress.json'
 COMPLETE = '.reuse-complete.json'
 PORTABLE_JOURNAL = '.portable-snapshot-in-progress.json'
+PACKAGE_JOURNAL = '.package-install-in-progress.json'
 
 
 def require_complete(out, *, game=None, repo=None, portable_resume=None):
@@ -16,13 +17,17 @@ def require_complete(out, *, game=None, repo=None, portable_resume=None):
     Content and Binaries remain shared by that project. Foreign checkout checks MUST use that
     checkout's root rather than the controller's. Both default and selected roots MUST be checked.
     Only the dedicated portable restorer MAY pass portable_resume, after validating its original
-    key/nonce/scope. That receipt MAY bypass only an identical durable portable journal.
+    key/nonce/scope. That receipt MAY bypass only an identical durable portable journal. A package-install journal
+    MUST remain an unconditional blocker, including with a valid portable-resume receipt.
 
     A crashed copy may contain a mixture of snapshots, even when some stamps exist.
     """
     out = Path(out)
     game = game or out.name
     default = Path(paths.REPO if repo is None else repo) / 'build' / game
+    if any(os.path.lexists(root / PACKAGE_JOURNAL) for root in (default, out)):
+        raise SystemExit('Package installation or registry readiness is incomplete. Recover the exact '
+                         'journaled transaction before build, play, package or direct native launch.')
     if any((root / JOURNAL).exists() for root in (default, out)):
         raise SystemExit(f'Artifact reuse was interrupted. Run `atelier reuse {game} --abandon` '
                          'to remove the partial generated copy, then reuse again or build. '
