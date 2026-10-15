@@ -105,7 +105,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
 
 
 def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False,
-                       command=None):
+                       command=None, small_gib=None):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
@@ -113,6 +113,11 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     those CPU units rather than a generic profile's CPU charge. Every request MUST claim its own
     checkout's named lock.
     Performance requests MUST preserve their explicit exclusion flag in the broker request.
+    Full automatic bounded Blender jobs MAY retain the legacy SMALL guard envelope only with
+    valid measured-small eligibility, no performance exclusion, and an unchanged GPU reservation
+    fitting that envelope. The nominal profile MUST still cover the caller's nominal ceiling.
+    That SMALL memory reservation MUST equal the actual selected guard ceiling; bridge and
+    explicit-session limits MUST NOT be changed by this selection.
     """
     if type(performance) is not bool:
         raise ValueError('capacity performance request must be a boolean')
@@ -159,6 +164,15 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if resources.cpu_millis == 0:
         raise ValueError('capacity profiles must reserve CPU capacity')
     workers = _worker_profile(command) if full or kind == 'job' else None
+    guard_limit_gib = limit_gib
+    if full and kind == 'job' and not performance and workers is not None:
+        from .safety.render_lock import SMALL_LIMIT_GIB, SMALL_PEAK_GIB
+        selected = min(limit_gib, SMALL_LIMIT_GIB)
+        if (type(small_gib) in (int, float) and math.isfinite(small_gib)
+                and 0 <= small_gib <= SMALL_PEAK_GIB
+                and resources.gpu_mib <= math.ceil(selected * 1024)):
+            guard_limit_gib = selected
+            resources = replace(resources, memory_mib=math.ceil(selected * 1024))
     if kind == 'job' and workers is not None:
         resources = replace(resources, cpu_millis=workers * 1000)
     if full:
@@ -183,4 +197,5 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
                    seconds=math.ceil(timeout) if timeout > 0 else 300, performance=performance)
     if full and workers is not None:
         request['workers'] = workers
-    return AdmissionSession(value['socket'], request, **({'cutover': value['cutover']} if full else {}))
+    return AdmissionSession(value['socket'], request,
+                            **({'cutover': value['cutover'], 'guard_limit_gib': guard_limit_gib} if full else {}))

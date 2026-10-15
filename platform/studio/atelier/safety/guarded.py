@@ -257,6 +257,9 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     Shared admission MUST verify the durable boot-bound compatibility barrier. Broker failure MUST fail the run, without falling back to
     slots. Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
     Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
+    Only automatic full sessions MAY select the existing measured-small 4 GiB envelope. Both
+    process and aggregate guards MUST use that actual ceiling and the matching reservation.
+    Explicit sessions MUST retain and cover the caller's actual requested ceiling.
     An opted-in legacy worker binding MUST publish only after both guards are ready and actual GO,
     and MUST transfer only the existing held lock context without another admission lock or monitor.
 
@@ -286,7 +289,13 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
         from ..capacity_runtime import configured_session
         admission = configured_session(kind=kind, limit_gib=limit_gib, timeout=timeout, folder=folder,
                                        purpose=purpose or (Path(command[0]).name if command else kind),
-                                       performance=performance, command=command)
+                                       performance=performance, command=command, small_gib=small_gib)
+        if admission is not None and getattr(admission, 'mode', None) == 'capacity':
+            selected = getattr(admission, 'guard_limit_gib', None)
+            if selected is not None:
+                if type(selected) not in (int, float) or selected not in (limit_gib, min(limit_gib, SMALL_LIMIT_GIB)):
+                    raise ValueError('Configured guard ceiling must retain the nominal or established SMALL envelope')
+                limit_gib = selected
     if admission is not None and (not lock or fitting_gib is not None):
         raise ValueError('capacity admission requires the legacy bridge or sealed shared mutexes, without a fitting-lane request')
     if admission is not None and getattr(admission, 'mode', None) == 'capacity':

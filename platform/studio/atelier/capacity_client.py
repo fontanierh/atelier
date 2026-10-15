@@ -1,5 +1,6 @@
 """Bounded guard-facing capacity RPC. A failed broker never grants a local fallback."""
 from dataclasses import asdict
+import math
 import os
 from pathlib import Path
 import socket
@@ -79,7 +80,11 @@ class AdmissionSession:
     the durable reservation stays held.
     A Popen witness proves the direct child's exit only, never an undiscovered process tree.
     """
-    def __init__(self, socket_path, request, *, timeout=2., cutover=None):
+    def __init__(self, socket_path, request, *, timeout=2., cutover=None, guard_limit_gib=None):
+        if guard_limit_gib is not None and (type(guard_limit_gib) not in (int, float)
+                or not math.isfinite(guard_limit_gib) or guard_limit_gib <= 0):
+            raise CapacityError('Configured guard ceiling must be positive and finite')
+        self._guard_limit_gib = guard_limit_gib
         self.socket_path, self.request, self.timeout = Path(socket_path), dict(request), timeout
         self.cutover = cutover
         self.mode = 'capacity' if cutover is not None else 'legacy-bridge'
@@ -97,6 +102,11 @@ class AdmissionSession:
         self.nonce = self.epoch = self.boot = None
         self.child = None
         self.closed = False
+
+    @property
+    def guard_limit_gib(self):
+        """Selected automatic guard envelope; injected sessions never override the caller's limit."""
+        return self._guard_limit_gib
 
     def _fence(self):
         return {'activation_id': self.activation_id} if self.mode == 'capacity' else {}

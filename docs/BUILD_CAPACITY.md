@@ -191,8 +191,16 @@ windows remain exclusive initially. An explicit bounded Blender thread argument 
 CPU units: the build default remains six, and an explicit three remains three. Unknown commands and compound
 wrappers reserve the entire managed CPU budget and require exclusion; compiles also reserve at least the unchanged
 three compiler workers. These are conservative scheduling units, not kernel quotas. Every reservation covers the
-actual guard ceiling, even when a previous step measured only 3 GiB. Neither threads nor guard limits are changed.
-Explicit sessions undergo the same command, checkout-lock and resource checks as configured sessions.
+actual guard ceiling. Full-mode automatic, non-performance Blender jobs with explicit bounded threads retain
+the existing legacy SMALL eligibility: a valid previous peak of at most 3 GiB selects a guard ceiling of
+`min(nominal, 4 GiB)` and a memory reservation equal to that ceiling. Both actual-child and aggregate guards
+use it. The configured profile must still cover the nominal ceiling, and an unchanged GPU reservation larger
+than the selected envelope keeps the nominal guard and reservation. CPU, arguments, temporary-disk and GPU
+reservations are unchanged. Unknown or first-run work, games, compiles, performance windows and explicit
+sessions retain their nominal ceilings; the migration bridge is unchanged. A stop at 4 GiB fails the invocation
+without raising the limit or retrying automatically. Its recorded peak informs the next invocation and removes
+SMALL eligibility when above 3 GiB. Explicit sessions undergo the same command, checkout-lock and resource
+checks as configured sessions.
 
 The compatibility proof is deliberately stronger than an agent acknowledgement or an empty process scan:
 
