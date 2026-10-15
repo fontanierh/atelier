@@ -1,0 +1,42 @@
+[
+ {
+  "id": "supports-timber",
+  "references": [
+   "build/yorimichi/craterpark/shots/mega_side_a/view.png",
+   "assets/craterpark/concepts/paintover-bowls.jpg"
+  ],
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The ramps float in the air with nothing under them. Paint the ramps as warm wooden skate ramps (ramp boards on top, plywood sides) and add supports that look designed and beautiful, not ugly: heavy timber trestle bents with diagonal cross bracing and visible joints, spaced rhythmically under every ramp and run, standing on squat dark volcanic-stone footings on the crater floor, tapering toward the top, and the tallest towers braced like old wooden roller-coaster trestles. Supports never cross the riding surface or the path of a jump through the air. Keep the crater floor natural volcanic rock and snow, not sand."
+ },
+ {
+  "id": "supports-rock",
+  "references": [
+   "build/yorimichi/craterpark/shots/mega_side_a/view.png",
+   "assets/craterpark/concepts/paintover-bowls.jpg"
+  ],
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The ramps float in the air with nothing under them. Paint the ramps as warm wooden skate ramps, and support them so they look like they grew out of the volcano: sculpted dark volcanic-rock pillars and ridges, basalt columns, earth embankments and arches, rising from the crater floor to meet the underside of each ramp, with moss and snow patches, so the whole line reads as a natural rock formation crowned with wood. Leave the space under every jump open. Keep the crater floor natural volcanic rock and snow, not sand."
+ },
+ {
+  "id": "supports-steel",
+  "references": [
+   "build/yorimichi/craterpark/shots/mega_side_b/view.png",
+   "assets/craterpark/concepts/paintover-bowls.jpg"
+  ],
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The ramps float in the air with nothing under them. Paint the ramps as warm wooden skate ramps, and add light, elegant supports: slender painted steel A-frames and Y-columns in a soft terracotta or sun-faded red, with thin cable bracing, on small concrete footings, few and widely spaced so the ramps still feel like they fly. Leave the space under every jump open. Keep the crater floor natural volcanic rock and snow, not sand."
+ },
+ {
+  "id": "crater-floor",
+  "references": [
+   "build/yorimichi/craterpark/shots/overview/view.png",
+   "assets/craterpark/concepts/paintover-bowls.jpg"
+  ],
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. Redesign the ground around the park: there must be no flat sandy or orange plain. The crater floor is the volcano's own crater floor everywhere: dark grey volcanic rock and gravel, black scree, patches of white snow, tufts of yellow-green moss and hardy grass, a few boulders and lava-rock outcrops, with gentle natural undulation; where the ground is cut for a bowl, show stepped rock and stone retaining edges that blend into the crater. Paint the ramps as warm wooden skate ramps."
+ },
+ {
+  "id": "prado-graphics",
+  "references": [
+   "build/yorimichi/craterpark/shots/prado/view.png",
+   "assets/craterpark/concepts/paintover-bowls.jpg"
+  ],
+  "prompt": "Use case: art-direction paintover for a skate park in a stylized open-world game. Image 1 is an in-game screenshot. Keep its camera, horizon and field of view, and keep every ramp, run, bowl and the terrain exactly where and how they are: do not move, reshape or remove any riding surface. Image 2 is the game's art direction for this park: keep its soft, flat, painterly island style, warm light and palette. The big double-pocket concrete bowl (the Prado) gets bold, cool painted graphics on its smooth concrete: a huge sun with radiating rays across the floor between the two pockets, sweeping wave and lava-flow bands along the walls, a tiled coping edge in terracotta, and the name 'PRADO' painted large in a playful hand-lettered style on the flat bottom, in the island palette (sun yellow, terracotta, teal, deep blue, cream). Keep the bowl's shape, the spine between the pockets and the raised vert wall exactly. Keep the crater floor natural volcanic rock and snow, not sand. Paint the ramps around it as warm wooden skate ramps."
+ }
+]
