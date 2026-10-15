@@ -174,8 +174,8 @@ def make_parser():
     p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
-    p = sub.add_parser('capacity', help='evaluate a capacity snapshot without admitting work')
-    p.add_argument('action', choices=['plan']); p.add_argument('snapshot')
+    p = sub.add_parser('capacity', help='inspect retained resource history or evaluate a capacity snapshot')
+    p.add_argument('action', choices=['plan', 'history']); p.add_argument('path', help='snapshot JSON or guard report directory')
     p.add_argument('--json', action='store_true')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
@@ -248,8 +248,11 @@ def main(argv=None):
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'capacity':
+        if args.action == 'history':
+            from .capacity_history import show
+            return show(args.path, as_json=args.json)
         from . import capacity
-        return capacity.main(args.snapshot, as_json=args.json)
+        return capacity.main(args.path, as_json=args.json)
     if args.command == 'build':
         if args.ddc:
             if args.timings or args.changes or args.list or args.dry_run or args.explain or args.force or args.touch or args.verify:

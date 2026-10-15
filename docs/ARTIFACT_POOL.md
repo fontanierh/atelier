@@ -11,7 +11,8 @@ Named-product actions with `cache=True` publish verified portable outputs during
 actions automatically across revisions and worktrees. [The recipe guide](BUILD_RECIPES.md) covers eligibility and the
 sandbox example. This store lives under `ATELIER_CACHE/products/v1` (by default the machine-local Atelier cache).
 It uses content-addressed blobs and complete inventories. Restores are independent APFS clones or copies, never
-links; a checkout stays usable if its cache entry is deleted. Nothing is uploaded.
+links; a checkout stays usable if its cache entry is deleted. Nothing is uploaded. Remote reads are
+disabled unless explicitly configured as described below.
 
 ```sh
 uv run atelier cache status
@@ -63,6 +64,101 @@ Recovery removes only the journal's allowlisted generated copy scope, plus its s
 preserves tracked files, logs and unrelated paths, and never follows links. An interrupted recovery can be repeated.
 Then reuse into the fresh target again or build it normally. This protocol supports whole-build native copies;
 it does not enable automatic per-package Unreal caching across revisions.
+
+## Import a signed offline bundle
+
+```sh
+uv run atelier cache import-bundle /path/to/bundle --trust publishers.json --dry-run
+uv run atelier cache import-bundle /path/to/bundle --trust publishers.json
+uv run atelier build <game> <step>
+```
+
+The importer verifies a supplied bundle, then publishes its portable source products into the existing local
+store. An ordinary build can restore an exact action-key match through its existing staging, complete-inventory
+verification and independent-copy protocol. Importing never writes checkout outputs or success stamps.
+`--dry-run` verifies the same signature, policy, inventories and bytes without changing the store.
+
+Obtain publisher public keys through a trusted channel. The explicit trust file contains only public keys:
+
+```json
+{"schema":1,"publishers":{"<sha256-of-raw-public-key>":"<base64-raw-32-byte-Ed25519-public-key>"}}
+```
+
+The bundle cannot nominate its own trust root. Do not add an unknown key merely because a download includes it.
+The directory contains `manifest.json` and flat `blobs/<sha256>` regular files; archives are not extracted.
+The manifest has exactly `payload` and a base64 Ed25519 `signature`. Signed bytes are
+`b'atelier-artifact-bundle-v1\0'` followed by canonical sorted, compact ASCII JSON of the payload.
+The payload declares schema `1`, namespace `atelier.portable-source.v1`, the publisher key ID, the unchanged
+local action `entry`, `root_names`, a `producer` attestation and a `redistribution` grant for every product.
+`root_names` maps each product to the ordered original basename of each root. These signed labels permit path
+policy checks that the local inventory's numeric root indexes alone cannot provide. They remain publisher assertions;
+the normal build restore also validates the receiving recipe's actual destination paths.
+
+Producer fields are `source_commit`, `clean`, `pushed`, `guarded` and `tool_context`. The three flags must be true.
+Each redistribution record explicitly names `permission` (`private` or `public`) and a bounded `grant` identifier.
+Missing permission refuses import; a private grant permits private local ingestion and never authorizes upload.
+A verified signature authenticates the pinned publisher's assertions. It does not independently prove the build
+was clean, pushed or guarded, that a licence is valid, or that arbitrary file contents contain no secrets.
+Trusted publishers remain responsible for those facts. No signing, export or trusted-producer issuance CLI is provided.
+
+Reads and reconstruction are bounded: manifests at most 2 MiB, trust files 64 KiB, 256 products, 32 roots per
+product, 4,096 inventory records and 256 MiB of logical file content per bundle. Links, special files, unsafe paths,
+declared native package paths and known credential/authentication/ledger paths are refused. Every blob is rehashed, and every
+complete product inventory is reconstructed before publication. Same-key conflicts retain the existing refusal
+policy. A failed publication may leave unreachable blobs; ordinary GC can remove them.
+
+The JSON receipt identifies the accepted action, publisher, assertions and permissions; retain it when auditing
+imports. Removing a public key from the trust file does not revoke bytes already accepted into the local store.
+Use the receipt's action key with `atelier cache forget` when revoking an import. This receiver does not upload
+or discover keys. The HTTPS transport below uses the same validation and store publication protocol.
+
+## Fetch signed products over HTTPS
+
+```sh
+uv run atelier cache fetch-bundle https://cache.example.test/products/ <action-key> --trust publishers.json --dry-run
+uv run atelier cache fetch-bundle https://cache.example.test/products/ <action-key> --trust publishers.json
+```
+
+An HTTPS object-store endpoint serves two fixed paths under its configured prefix:
+
+```text
+actions/<action-key>/manifest.json
+blobs/<sha256>
+```
+
+The manifest format, trust file, inventory policies and quotas are the same as the offline bundle. The requested
+action key, signature and all policy/size declarations must pass before any blob request. Blob URLs come only
+from the configured prefix and validated digests. All downloaded bytes are rehashed, then the ordinary bundle
+importer rechecks trust and complete inventories before publishing to the local store. It writes no checkout
+outputs or stamps. Normal builds perform restoration and certify their inputs independently.
+
+To enable lookup automatically after a local product-cache miss, set both variables in the build environment:
+
+```sh
+export ATELIER_ARTIFACT_URL=https://cache.example.test/products/
+export ATELIER_ARTIFACT_TRUST=/path/to/publishers.json
+uv run atelier build <game>
+```
+
+Only `cache=True` actions use remote lookup. Current outputs and local cache hits avoid it; plans, `--force`
+and `--touch` never contact it. Without both settings, no remote lookup is enabled. An incomplete or invalid
+configuration reports an unavailable cache and continues locally. Missing actions run normally. A transport,
+signature, policy or import failure disables later remote lookups for that build and leaves local execution
+as the fallback. A remote hit enters the ordinary local restore path, including input rechecks and stamp handling.
+
+`ATELIER_ARTIFACT_TIMEOUT` sets a shared lookup allowance per build (default 30 seconds; maximum 300).
+Transfer and verification time consume it; local generation between lookups does not. The explicit command's
+`--timeout` sets its transfer deadline. An owned network process enforces that deadline even during stalled DNS
+resolution or slow trickle responses, and is reaped on every exit. Cleanup and parent-side inventory verification
+can extend the command beyond the network deadline. Waiting progress is emitted at least every 10 seconds;
+explicit commands put progress on stderr and the JSON receipt on stdout. No cache lock is held during networking.
+
+The transport requires verified HTTPS, refuses redirects and compressed responses, and ignores implicit proxy,
+netrc and certificate-path environment settings. URLs cannot contain credentials, queries or fragments. There is
+currently no authentication header or presigned-URL support; an endpoint must be reachable without these, for
+example on a private network with a publicly trusted TLS certificate. It never prints URLs, response bodies or
+foreign network exceptions. No archive extraction, automatic upload, GitHub release adapter or production signer
+is provided by this transport. A repository being public does not grant redistribution rights for its assets.
 
 ## Portable output pool
 

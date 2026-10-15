@@ -4,7 +4,7 @@ Atelier should admit work against available memory and CPU capacity, with additi
 temporary disk space and resources that require exclusive access. Agents request a workload profile; the machine
 admits it when all requirements fit. A small job need not wait for a particular lane to become free.
 
-**Status: offline shadow planner implemented; admission service proposed.** `atelier capacity plan snapshot.json`
+**Status: offline shadow planner and retained-history report implemented; admission service proposed.** `atelier capacity plan snapshot.json`
 evaluates a supplied snapshot without writing scheduler state or granting admission. The current render slots,
 live locks, memory guards and machine board remain authoritative. This design complements the [incremental build proposal](INCREMENTAL_BUILDS.md):
 small products reduce the work, and capacity admission schedules the remaining work safely.
@@ -24,6 +24,36 @@ The implementation checks complete resource sets and named locks, models immedia
 excludes overlapping performance windows, and protects waiters after two short bypasses. Advice can say
 `would-admit`, but always carries `admission: false`. It does not observe processes, maintain leases, update queue
 ages or enforce worker limits. Those belong to the proposed supervised service and its rollout tests below.
+
+A ready request whose resources plus the host reserve exceed total capacity even with no holders receives
+`cannot-fit`, with the exceeded dimensions named. This is terminal advice for the supplied snapshot, not a claim
+about future machine configurations. Such requests neither protect the queue nor consume virtual capacity;
+the next feasible waiter keeps its original age and fairness protection. A request that fits an empty snapshot
+can still `wait` for active holders, named locks or a performance window to drain.
+
+## Inspect retained resource history
+
+```sh
+uv run atelier capacity history build/sandbox/logs/unreal.compile.guard --json
+```
+
+This reads existing `memory-health.json`, `memory-health.jsonl` and the rotated `memory-health.previous.jsonl`,
+plus separately watched process reports in that directory. It does not start a process, query live usage, change
+guard settings or grant admission. Missing files produce unknown history. Reads and report sizes are bounded;
+invalid, changing or truncated data is reported without copying raw records or private error text into the result.
+
+Histories distinguish PID/start identities and sampling sessions. A restarted monitor's elapsed-time reset starts
+a new session, and a final sample already in the history is counted once. Reports show observed footprint peaks,
+guard-reported peaks, sampled spans, limit changes, the last recorded state and raw CPU counter deltas when valid.
+Unknown values stay unknown. CPU counter units are not translated into a worker budget.
+
+These are retained observations, not proof of command success or current liveness. A normal process exit may leave
+the last state as `running`; a sampled span is not the command's full duration. A launcher and its watched children
+remain separate: summing their individual peaks does not measure a simultaneous process-tree peak. Historical logs
+also cannot reliably assign measurements to instrumented phases, prove complete descendant coverage or estimate
+temporary disk demand. Calibrated resource profiles and admission still require the migration evidence below.
+This reader covers per-process `memory-health` files; compound network QA's separate aggregate tree-guard
+report format is outside its scope.
 
 ## What replaces a slot
 
@@ -94,7 +124,9 @@ owned-tree guard enforces it; never reserve 3 GiB while allowing an unaccounted 
 inside the reservation and machine headroom for sampling delay. A lower existing per-process or game limit still
 applies. Capacity admission must not silently raise the current game limits or authorize new memory exceptions.
 
-Reuse the existing pinned PID/start-time ownership tracking and aggregate tree guard. Account for compiler and
+Reuse pinned PID/start-time ownership tracking. Validate and integrate the existing aggregate tree-guard
+machinery across capacity-managed launches before cutover; ordinary guarded launches currently use separate
+per-process monitors. Account for compiler and
 shader workers, SDK helpers and subprocesses that outlive their immediate parent. Shared engine services remain
 excluded from job-owned termination. Stopping or releasing an agent session does not prove that its job exited.
 

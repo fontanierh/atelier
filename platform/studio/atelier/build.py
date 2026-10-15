@@ -22,6 +22,7 @@ from pathlib import Path
 from . import engine, paths
 from . import build_inputs, build_products
 from .build_products import Product
+from .build_spatial import BBoxQuery
 from .safety import guarded
 from .safety.render_lock import GiB, slot_count
 
@@ -179,6 +180,8 @@ class Step:
     cache: bool = False                                   # explicitly portable products; automatic local reuse
     audit: bool = False                                   # observe one Python action's inputs and owned writes
     optional_inputs: list[Path] = field(default_factory=list)  # exact source files: absence is an input identity
+    queries: list[BBoxQuery] = field(default_factory=list)     # graph-resolved spatial product reads
+    _query_bindings: tuple | None = field(default=None, init=False, repr=False, compare=False)
     toolchain: bool = False                               # installed Python/Blender identity, without cache publication
     batch: Batch | None = None                            # opt-in scripts that reset their own transient process state
 
@@ -267,10 +270,11 @@ def _hash_path(digest, path, skip=True):
 def required_inputs(step):
     named = step.products or step.reads or step.references
     from .build_audit import SUPPORT
+    from . import build_spatial
     batch_code = [Path(__file__).with_name(name) for name in ('build_batches.py', 'build_batch_worker.py')] if step.batch else []
     return [*step.inputs, *batch_code, *(c.script for c in step.commands if named and hasattr(c, 'script')),
             *(p for c in step.commands for p in getattr(c, 'runs', list)()),
-            *(SUPPORT if step.audit else ())]
+            *(SUPPORT if step.audit else ()), *([Path(build_spatial.__file__)] if step.queries else ())]
 
 
 def declared_inputs(step):
@@ -347,6 +351,16 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None):
     if step.audit:
         state['audit'] = 1
         digest.update(b'python-input-audit-v1\0')
+    if step.queries:
+        from .build_spatial import manifest
+        declarations = json.dumps(manifest(step), sort_keys=True)
+        declarations = declarations.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
+        state['queries'] = json.loads(declarations)['queries']
+        digest.update(b'spatial-inputs-v1\0' + declarations.encode())
+    spatial_outputs = {p.name: [p.collection, p.bounds] for p in step.products if p.collection is not None}
+    if spatial_outputs:
+        state['spatial_outputs'] = spatial_outputs
+        digest.update(json.dumps(spatial_outputs, sort_keys=True).encode())
     if step.cache or step.audit or step.toolchain:
         from .build_cache import tool_context
         state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
@@ -508,10 +522,24 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 raise SystemExit(str(error)) from error
     if touch and any(step.products for step in plan):
         raise SystemExit('Named products require a successful build; --touch cannot certify them')
+    remote = None
+    if not force and not touch and any(step.cache for step in plan):
+        from . import artifact_remote
+        try:
+            remote = artifact_remote.configured()
+        except artifact_remote.RemoteError as error:
+            echo(f'Remote cache unavailable ({error}); continuing locally')
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     done, ran, restored = {}, 0, 0
     tool_cache = {}
+    def verify_spatial(step, expected):
+        if step.queries:
+            from .build_spatial import verify_current
+            fresh = verify_current(ctx, step, done, hasher=index.digest)
+            if fingerprint(fresh, done, index=index, tool_cache=tool_cache) != expected:
+                raise ValueError(f'{step.name}: spatial action changed; rerun the build to replan')
+
     # The graph includes every prerequisite. Unrelated stamps cannot affect this selected build.
     started = time.monotonic()
     completed_batches = set()
@@ -533,6 +561,8 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         try:
             current, input_state = fingerprint_state(step, done, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
+            if step.queries:
+                stamp.unlink(missing_ok=True)
             echo(f'{print_} FAILED: {error}')
             return 1
         from .build_plan import read_stamp
@@ -540,6 +570,12 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         outputs_ok = outputs_present(step)
         if step.products:
             outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}), hasher=index.digest)
+        try:
+            verify_spatial(step, current)
+        except (OSError, ValueError, SyntaxError) as error:
+            stamp.unlink(missing_ok=True)
+            echo(f'{print_} FAILED: {error}')
+            return 1
         if not force and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
@@ -578,12 +614,20 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         slots, peaks, command_times = [], [], []
         products = None
         store = build_cache.Store() if step.cache else None
+        try:
+            verify_spatial(step, current)
+        except (OSError, ValueError, SyntaxError) as error:
+            stamp.unlink(missing_ok=True)
+            echo(f'{print_} FAILED: {error}')
+            return 1
         if store is not None and not force:
             try:
                 # Source change metadata is local; all transferred output bytes are verified below.
                 if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError('Inputs changed before cache lookup')
                 products = store.restore(ctx, step, current)
+                if products is None and remote is not None and remote.fetch(current, store, echo):
+                    products = store.restore(ctx, step, current)
                 if products is not None and (fingerprint(step, done, index=index, tool_cache=tool_cache) != current or not outputs_present(step)):
                     raise RuntimeError('Restored action inputs or required outputs differ')
             except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
@@ -593,6 +637,9 @@ def _build(ctx, wanted, *, force, touch, echo, index):
         with open(log_path, 'w') as log:
             try:
                 stamp.unlink(missing_ok=True)
+                # Also covers a restored hit. A changed catalogue is not a cache miss: continuing
+                # would execute an obsolete plan whose newly selected producers have not run.
+                verify_spatial(step, current)
                 request = slot_request(ctx, step) if step.heavy else None   # from the reports of the previous run
                 for command in (() if from_cache else step.commands):
                     command_started = time.monotonic()
@@ -613,6 +660,7 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 products = build_products.records(step)
                 if step.products and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError(f'{step.name}: inputs changed during build; products not certified')
+                verify_spatial(step, current)
             except Exception as error:
                 log.flush()
                 tail = log_path.read_text(errors='ignore').splitlines()[-25:]

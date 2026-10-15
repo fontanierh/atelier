@@ -2,6 +2,7 @@
 import json
 from collections import Counter
 import math
+from pathlib import Path
 import shutil
 import time
 
@@ -110,13 +111,23 @@ def forget(store, key):
 
 
 def configure(sub):
-    parser = sub.add_parser('cache', help='inspect and prune portable products shared by local checkouts')
+    parser = sub.add_parser('cache', help='inspect, prune and import signed portable products')
     commands = parser.add_subparsers(dest='action', required=True)
     commands.add_parser('status')
     gc = commands.add_parser('gc')
     gc.add_argument('--max-gib', type=float, default=10, help='unique retained blob bytes (default: 10 GiB)')
     gc.add_argument('--max-age-days', type=float, default=30, help='keep unpinned hits/publications this recent')
     gc.add_argument('--dry-run', action='store_true')
+    bundle = commands.add_parser('import-bundle', help='verify a signed offline bundle and add it to the local store')
+    bundle.add_argument('directory', type=Path)
+    bundle.add_argument('--trust', type=Path, required=True, help='explicit allowlist of publisher public keys')
+    bundle.add_argument('--dry-run', action='store_true', help='verify without changing the local store')
+    remote = commands.add_parser('fetch-bundle', help='download signed source products over HTTPS into the local store')
+    remote.add_argument('endpoint', help='HTTPS object-store prefix; no credentials, query or fragment')
+    remote.add_argument('key', help='exact action key to fetch')
+    remote.add_argument('--trust', type=Path, required=True, help='explicit allowlist of publisher public keys')
+    remote.add_argument('--timeout', type=float, default=30, help='total transfer deadline in seconds (max 300)')
+    remote.add_argument('--dry-run', action='store_true', help='download and verify without changing the local store')
     for name in ('pin', 'unpin', 'forget'):
         commands.add_parser(name).add_argument('key')
 
@@ -133,6 +144,13 @@ def main(args):
                                    dry=args.dry_run), indent=2))
         elif args.action == 'forget':
             forget(store, args.key)
+        elif args.action == 'import-bundle':
+            from .artifact_bundle import import_bundle
+            print(json.dumps(import_bundle(args.directory, args.trust, store=store, dry_run=args.dry_run), indent=2))
+        elif args.action == 'fetch-bundle':
+            from .artifact_remote import fetch_bundle, stderr_progress
+            print(json.dumps(fetch_bundle(args.endpoint, args.key, args.trust, store=store, dry_run=args.dry_run,
+                                          timeout=args.timeout, echo=stderr_progress), indent=2))
         else:
             pin(store, args.key, args.action == 'pin')
         return 0

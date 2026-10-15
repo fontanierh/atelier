@@ -73,3 +73,76 @@ def test_unified_gpu_memory_cannot_escape_the_system_memory_budget():
         Resources(memory_mib=1000, gpu_mib=2000)
     assert 'capacity:memory_mib' in conflicts(
         Request('gpu', Resources(memory_mib=21000, gpu_mib=1000)), [], TOTAL, RESERVE)
+
+
+@pytest.mark.parametrize('dimension', list(vars(TOTAL)))
+def test_ready_request_that_cannot_fit_an_empty_snapshot_names_each_exceeded_dimension(dimension):
+    amount = getattr(TOTAL, dimension) - getattr(RESERVE, dimension) + 1
+    resources = {dimension: amount}
+    if dimension == 'gpu_mib':
+        resources['memory_mib'] = amount  # The GPU ceiling remains a valid unified-memory subset.
+    request = Request('oversized', Resources(**resources), ready_at=10, bypasses=2)
+    report = plan(TOTAL, RESERVE, [], [request], now=10)
+    decision, = report['decisions']
+    assert decision['recommendation'] == 'cannot-fit'
+    assert decision['exceeded_dimensions'] == [dimension]
+    assert f'capacity:{dimension}' in decision['reasons']
+    assert 'this snapshot' in decision['reasons'][-1] and 'no holders' in decision['reasons'][-1]
+    assert decision['ready_at'] == 10 and report['mode'] == 'shadow' and report['admission'] is False
+    if getattr(RESERVE, dimension):
+        assert amount <= getattr(TOTAL, dimension)  # Reserve alone makes these requests impossible.
+
+
+def test_impossible_oldest_waiter_preserves_next_feasible_protection_and_age_after_release():
+    holder = Request('active', Resources(memory_mib=10000))
+    impossible = Request('impossible', Resources(memory_mib=21000), ready_at=5, seconds=900, bypasses=2)
+    protected = Request('protected', Resources(memory_mib=15000), ready_at=10, seconds=900, bypasses=2)
+    short = Request('short', Resources(memory_mib=1000), ready_at=20, seconds=30)
+    waiting = [impossible, protected, short]
+    busy = plan(TOTAL, RESERVE, [holder], waiting, now=30)['decisions']
+    assert [d['recommendation'] for d in busy] == ['cannot-fit', 'wait', 'wait']
+    assert busy[2]['reasons'][-1] == 'drain for oldest protected waiter: protected'
+    released = plan(TOTAL, RESERVE, [], waiting, now=30)['decisions']
+    assert [d['recommendation'] for d in released] == ['cannot-fit', 'would-admit', 'would-admit']
+    assert [d['ready_at'] for d in released] == [5, 10, 20]
+    assert waiting == [impossible, protected, short] and protected.bypasses == 2
+
+
+@pytest.mark.parametrize('bypasses', [0, 1, 2])
+def test_impossible_requests_never_reserve_virtual_capacity_or_locks(bypasses):
+    impossible = Request('impossible', Resources(memory_mib=21000), locks=('checkout',),
+                         ready_at=0, bypasses=bypasses, performance=True)
+    jobs = [Request(f'job{i}', Resources(memory_mib=12000), locks=('checkout',), ready_at=1) for i in range(2)]
+    report = plan(TOTAL, RESERVE, [], [impossible, *jobs], now=2)
+    assert [d['recommendation'] for d in report['decisions']] == ['cannot-fit', 'would-admit', 'wait']
+    assert report['decisions'][1]['reasons'] == []
+    assert 'capacity:memory_mib' in report['decisions'][2]['reasons']
+    assert not any('performance' in reason or 'protected waiter' in reason
+                   for decision in report['decisions'][1:] for reason in decision['reasons'])
+
+
+def test_exact_empty_holder_envelope_fit_is_feasible():
+    request = Request('exact', Resources(**{key: value - getattr(RESERVE, key) for key, value in vars(TOTAL).items()}),
+                      bypasses=2)
+    decision, = plan(TOTAL, RESERVE, [], [request], now=0)['decisions']
+    assert decision['recommendation'] == 'would-admit' and decision['reasons'] == []
+
+
+@pytest.mark.parametrize('holder,locks,reason', [
+    (Request('holder', Resources(), locks=('checkout',)), ('checkout',), 'lock:checkout'),
+    (Request('holder', Resources(memory_mib=1000), performance=True), (), 'performance window must drain first'),
+    (Request('holder', Resources(memory_mib=25000)), (), 'capacity:memory_mib'),
+])
+def test_feasible_requests_still_wait_for_locks_performance_and_existing_overcommit(holder, locks, reason):
+    request = Request('fitting', Resources(memory_mib=1000), locks=locks)
+    decision, = plan(TOTAL, RESERVE, [holder], [request], now=0)['decisions']
+    assert decision['recommendation'] == 'wait' and reason in decision['reasons']
+    assert 'exceeded_dimensions' not in decision
+
+
+def test_future_impossible_request_keeps_not_ready_behavior():
+    future = Request('future', Resources(memory_mib=21000), ready_at=10, bypasses=2)
+    fitting = Request('fitting', Resources(memory_mib=1000))
+    result = plan(TOTAL, RESERVE, [], [future, fitting], now=1)['decisions']
+    assert result[0]['recommendation'] == 'wait' and result[0]['reasons'] == ['not ready']
+    assert result[1]['recommendation'] == 'would-admit'
