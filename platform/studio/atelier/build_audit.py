@@ -44,7 +44,12 @@ def installation(command):
         if binary.parent.name != 'MacOS' or bundle.name != 'Contents':
             raise ValueError('Native Blender audits require a complete macOS app bundle')
         return [bundle]
-    return [engine.unreal_root().resolve() / 'Engine/Binaries/ThirdParty/Python3/Mac']
+    root = engine.unreal_root().resolve()
+    version = json.loads((root / 'Engine/Build/Build.version').read_text())
+    if (version.get('MajorVersion'), version.get('MinorVersion')) != (5, 8):
+        raise ValueError('Native Unreal Python audit tool layout is verified only for UE 5.8')
+    return [root / 'Engine/Binaries/ThirdParty/Python3/Mac',
+            root / 'Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python']
 
 
 def tool_context(step, hasher, *, cache=None):
@@ -59,13 +64,19 @@ def tool_context(step, hasher, *, cache=None):
                                                        for root in installation(step.commands[0])]}
         return context
     command = step.commands[0]
-    runtime, = installation(command)
+    runtime, wrappers = installation(command)
     binary = engine.unreal_cmd().resolve()
-    version = engine.unreal_root() / 'Engine/Build/Build.version'
+    root = engine.unreal_root()
+    version = root / 'Engine/Build/Build.version'
+    plugin = root / 'Engine/Plugins/Experimental/PythonScriptPlugin/Binaries/Mac'
     # Revalidate every file through the invocation's hasher. No private runtime or ambient
     # import directory is inferred from the parent interpreter's package paths.
     return {'schema': 1, 'host': 'UnrealScript', 'binary': hasher(binary), 'version': hasher(version),
-            'python': build_inputs.inventory(runtime, hasher=hasher, complete=True)}
+            'python': build_inputs.inventory(runtime, hasher=hasher, complete=True),
+            'wrappers': build_inputs.inventory(wrappers, hasher=hasher, complete=True),
+            'plugin': {name: hasher(plugin / name) for name in
+                       ('libUnrealEditor-PythonScriptPlugin.dylib',
+                        'libUnrealEditor-PythonScriptPluginPreload.dylib', 'UnrealEditor.modules')}}
 
 
 def roots(ctx, step):

@@ -153,10 +153,13 @@ The bootstrap rejects preloaded project/helper Python modules even when their so
 package paths and bytecode must belong to the fingerprinted tool (or fresh private bytecode scratch); only genuine
 builtin/frozen loaders and an explicit set of native host API modules may lack file origins. Native Blender audits
 include the complete installation bytecode inventory. Native host API state remains outside this Python diagnostic.
-Installed UE 5.8 execution remains intentionally unsupported: its PythonScriptPlugin preloads wrappers from a
-separate `Content/Python` directory and generated originless native modules. Their roots and binding identities
-are not approved by the current adapter, which fails closed. Offline protocol coverage does not establish UE
-readiness; exact hashed wrapper roots, binding provenance and real-host evidence are still required.
+The UE adapter is source-verified and version-gated to 5.8. Its complete tool identity covers the exact bundled
+Python runtime and PythonScriptPlugin `Content/Python` wrapper tree, both PythonScriptPlugin native binaries and
+their module descriptor, the editor and engine version. Only the source-proven originless `unreal`, `_unreal_core`,
+`_unreal_slate`, `_unreal_engine` and `_unreal_editor` bindings are approved. Wrapper imports work through retained
+native search paths and exact tool-root read permissions; other plugin/project paths and unknown generated
+binding modules remain refused. Offline fake-host coverage does not establish actual UE execution or native
+equivalence acceptance; those proof gates remain separate.
 
 Audited native actions always use fresh processes. A `Batch` declaration falls back to ordinary execution for each
 audited action, and direct audited warm-session launches are refused. Irreversible audit hooks and warm module or

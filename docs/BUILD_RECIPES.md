@@ -332,11 +332,20 @@ identity therefore includes installed `__pycache__` bytes. Originless modules re
 provenance or an explicit known host API name (`unreal` or the supported Blender API modules). Host API mutable
 native state remains outside Python input observation. CPython's synthetic `typing.io`/`typing.re` namespaces require
 their exact binding to the fingerprinted `typing` module. Preload rejection produces an incomplete report and no stamp.
-The installed UE 5.8 host is intentionally unsupported by this initial preload policy: its PythonScriptPlugin
-imports wrappers such as `unreal_core.py` from its own `Content/Python` directory and creates additional originless
-native modules such as `_unreal_core`. Those wrapper roots and generated binding identities are not approved or
-fingerprinted by this adapter, so the bootstrap fails closed. Accepting them requires explicit hashed tool roots
-and binding provenance, followed by real-host validation; a broad engine/plugin/project exemption is insufficient.
+The source-verified UE adapter is version-gated to UE 5.8. It completely fingerprints the bundled
+`Engine/Binaries/ThirdParty/Python3/Mac` runtime and the exact
+`Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python` wrapper directory, including bytecode. That wrapper
+directory also grants tool reads during the action. The identity includes the editor, `Build.version`, both
+`libUnrealEditor-PythonScriptPlugin.dylib` and `libUnrealEditor-PythonScriptPluginPreload.dylib`, and their
+`UnrealEditor.modules` descriptor. The shipped source creates exactly `_unreal_core`, `_unreal_slate`,
+`_unreal_engine` and `_unreal_editor` at startup; those originless bindings join `unreal` as explicit native APIs.
+UE's source-proven originless `__main__` placeholder is allowed only without file/spec origins; the recipe runs
+in a fresh `runpy` main module, so startup globals in that placeholder do not become recipe globals.
+Native startup search paths are retained, but grant no additional read permission. Other plugin/project roots,
+preloaded project helpers and unknown dynamic native modules remain refused. The wrapper registry also generates
+module names from loaded engine/game modules; those require explicit provenance before approval, not a prefix
+wildcard. Fake hosts exercise the actual wrapper layout and known binding names. Actual UE execution and complete
+native dependency/equivalence acceptance remain unvalidated and separate from this offline adapter.
 Unreal keeps its descriptor isolation and native library checks before/after the observed script. These framework
 checks run outside recipe observation; recipe ctypes calls remain refused.
 

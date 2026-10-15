@@ -416,15 +416,117 @@ def test_unreal_audit_tool_identity_hashes_recognized_runtime_without_native_cac
     binary, version = root / 'editor', root / 'Engine/Build/Build.version'
     version.parent.mkdir()
     binary.write_text('editor')
-    version.write_text('{}')
+    version.write_text(json.dumps({'MajorVersion': 5, 'MinorVersion': 8, 'PatchVersion': 2}))
+    plugin = root / 'Engine/Plugins/Experimental/PythonScriptPlugin'
+    wrapper = plugin / 'Content/Python/unreal_core.py'
+    wrapper.parent.mkdir(parents=True)
+    wrapper.write_text('from _unreal_core import *\n')
+    bytecode = wrapper.parent / '__pycache__/unreal_core.pyc'
+    bytecode.parent.mkdir()
+    bytecode.write_bytes(b'bytecode')
+    binaries = plugin / 'Binaries/Mac'
+    binaries.mkdir(parents=True)
+    native = [binaries / name for name in ('libUnrealEditor-PythonScriptPlugin.dylib',
+              'libUnrealEditor-PythonScriptPluginPreload.dylib', 'UnrealEditor.modules')]
+    for file in native:
+        file.write_bytes(b'native')
     monkeypatch.setattr(engine, 'unreal_root', lambda: root)
     monkeypatch.setattr(engine, 'unreal_cmd', lambda: binary)
     step = build.Step('native', [build.UnrealScript(tmp_path / 'script.py', 'DONE')], audit=True)
     hasher = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
     first = build_audit.tool_context(step, hasher, cache={})
-    library.write_text('second')
-    assert build_audit.tool_context(step, hasher, cache={}) != first
     assert first['host'] == 'UnrealScript'
+    assert build_audit.installation(step.commands[0]) == [runtime, wrapper.parent]
+    for file in (library, wrapper, bytecode, *native):
+        before = build_audit.tool_context(step, hasher, cache={})
+        file.write_bytes(file.read_bytes() + b'changed')
+        assert build_audit.tool_context(step, hasher, cache={}) != before, file.name
+    native[0].unlink()
+    with pytest.raises(FileNotFoundError):
+        build_audit.tool_context(step, hasher, cache={})
+
+
+@pytest.mark.parametrize('major,minor', [(5, 7), (5, 9), (6, 0)])
+def test_unreal_source_verified_tool_adapter_refuses_other_engine_versions(tmp_path, monkeypatch, major, minor):
+    version = tmp_path / 'Engine/Build/Build.version'
+    version.parent.mkdir(parents=True)
+    version.write_text(json.dumps({'MajorVersion': major, 'MinorVersion': minor}))
+    monkeypatch.setattr(engine, 'unreal_root', lambda: tmp_path)
+    with pytest.raises(ValueError, match='verified only for UE 5.8'):
+        build_audit.installation(build.UnrealScript(tmp_path / 'script.py', 'DONE'))
+
+
+@pytest.mark.parametrize('native_action', ['UnrealScript'], indirect=True)
+def test_unreal_tool_wrapper_tree_and_exact_native_bindings_work_in_fake_host(native_action, monkeypatch):
+    a = native_action
+    wrappers = a.root / 'engine/Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python'
+    wrappers.mkdir(parents=True)
+    core = wrappers / 'unreal_core.py'
+    core.write_text("from _unreal_core import *\nVALUE = 'first'\n")
+    helper = wrappers / 'tool_helper.py'
+    helper.write_text("VALUE = 'action-time wrapper read'\n")
+    approved = build_audit.installation(a.step.commands[0])
+    monkeypatch.setattr(build_audit, 'installation', lambda command: [*approved, wrappers])
+    # The stand-in executes with this test's managed interpreter. The production tool-context
+    # test above independently exercises the actual UE layout, binary and wrapper identities.
+    monkeypatch.setattr(build_audit, 'tool_context', lambda step, hasher, **kwargs:
+                        {'wrappers': build_inputs.inventory(wrappers, hasher=hasher, complete=True)})
+    first, rest = a.executable.read_text().split('\n', 1)
+    # UE RunFile executes in copied globals, while its real __main__ module has no __file__.
+    rest = rest.replace("namespace = runpy.run_path(bootstrap, run_name='__main__')", '''
+del sys.modules['__main__'].__file__
+sys.modules['__main__'].STARTUP_VALUE = 'must not leak into the action main module'
+namespace = {'__name__': '__main__', '__file__': bootstrap}
+exec(compile(open(bootstrap, 'rb').read(), bootstrap, 'exec'), namespace)
+''')
+    a.executable.write_text(first + '\n' + f'''import sys, types
+for suffix in ('core', 'slate', 'engine', 'editor'):
+    binding = types.ModuleType('_unreal_' + suffix)
+    binding.VALUE = suffix
+    sys.modules[binding.__name__] = binding
+sys.path.insert(0, {str(wrappers)!r})
+import unreal_core
+unreal = types.ModuleType('unreal')
+unreal.VALUE = unreal_core.VALUE
+sys.modules['unreal'] = unreal
+''' + rest)
+    a.code("import unreal, unreal_core, _unreal_core, _unreal_slate, _unreal_engine, _unreal_editor\n"
+           "import __main__\nassert __main__.__file__ == __file__\nassert not hasattr(__main__, 'STARTUP_VALUE')\n"
+           "import importlib\nhelper = importlib.import_module('tool_helper')\n"
+           "output.write_text(unreal.VALUE + '/' + helper.VALUE)\n")
+    assert a.run() == 0, a.messages
+    assert a.output.read_text() == 'first/action-time wrapper read' and a.report()['passed']
+    assert any(r['path'].endswith('tool_helper.py') for r in a.report()['accesses'])
+    before = a.stamp()['fingerprint']
+    core.write_text("from _unreal_core import *\nVALUE = 'second'\n")
+    assert a.run() == 0, a.messages
+    assert a.output.read_text() == 'second/action-time wrapper read'
+    assert a.stamp()['fingerprint'] != before and len(a.calls) == 2
+
+
+@pytest.mark.parametrize('native_action', ['UnrealScript'], indirect=True)
+@pytest.mark.parametrize('kind', ['unknown-dynamic', 'project-wrapper', 'known-binding-project-origin',
+                                  'known-binding-project-spec'])
+def test_unreal_adapter_does_not_grant_project_or_dynamic_binding_exemptions(native_action, kind):
+    a = native_action
+    project = a.root / 'engine/Engine/Plugins/UnknownProject/Content/Python/unreal_project.py'
+    project.parent.mkdir(parents=True)
+    project.write_text('unobserved project input')
+    name = '_unreal_core' if kind.startswith('known-binding') else '_unreal_unknown_project'
+    origin = '' if kind == 'unknown-dynamic' else f'module.__file__ = {str(project)!r}\n'
+    if kind == 'known-binding-project-spec':
+        origin = f"module.__spec__ = ModuleSpec(module.__name__, None, origin={str(project)!r})\n"
+    first, rest = a.executable.read_text().split('\n', 1)
+    a.executable.write_text(first + '\n' + f'''import sys, types
+from importlib.machinery import ModuleSpec
+module = types.ModuleType({name!r})
+module.VALUE = 'project state'
+{origin}sys.modules[module.__name__] = module
+''' + rest)
+    a.code(f"import importlib\nhelper = importlib.import_module({name!r})\noutput.write_text(helper.VALUE)")
+    assert a.run() == 1
+    assert not a.report()['complete'] and not a.report()['passed']
+    assert not (a.ctx.stamps / 'generate.json').exists()
 
 
 def test_blender_audit_identity_includes_preloaded_ambient_tool_bytecode(tmp_path, monkeypatch):

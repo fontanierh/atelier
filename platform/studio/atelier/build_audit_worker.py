@@ -224,7 +224,10 @@ def execute(spec, *, blender=False, before=None, after=None):
         sys._atelier_native_audit_started = observer
     script = spec['script']
     sys.argv = [script, *(['--'] if blender else []), *spec['args']]
-    sys.path[0] = str(Path(script).parent)
+    if 'host' in spec:
+        sys.path.insert(0, str(Path(script).parent))
+    else:
+        sys.path[0] = str(Path(script).parent)
     sys.dont_write_bytecode = True
     sys.pycache_prefix = str(Path(spec['scratch']) / 'bytecode')
     # Import runpy's helper before installing the observer; its subsequent target/module reads

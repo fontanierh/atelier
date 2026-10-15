@@ -22,20 +22,28 @@ def load(name, path):
     return module
 
 
-def runtime_roots(approved):
+def runtime_roots(approved, *, host=None):
     """Only recognized Python library directories inside the hashed host installation."""
     approved = [Path(p).resolve() for p in approved]
     roots = {Path(sysconfig.get_path(name)).resolve()
              for name in ('stdlib', 'platstdlib', 'purelib', 'platlib')}
     if not roots or any(not any(p.is_relative_to(base) for base in approved) for p in roots):
         raise RuntimeError('Native Python runtime is outside its fingerprinted installation')
+    if host == 'UnrealScript':
+        # Source-verified UE 5.8 wrapper directory, completely inventoried by the parent. Do
+        # not grant other engine/plugin/project paths just because a host added them to sys.path.
+        suffix = ('Engine', 'Plugins', 'Experimental', 'PythonScriptPlugin', 'Content', 'Python')
+        roots.update(p for p in approved if p.parts[-len(suffix):] == suffix)
     return sorted(map(str, roots))
 
 
 HOST_MODULES = {
     'Blender': {'_bpy', 'bpy', 'bpy.app', 'bpy.app.handlers', 'bpy.app.timers',
                 'bpy.app.translations', 'bpy.app.icons', 'bpy.props', 'bpy.types'},
-    'UnrealScript': {'unreal'},
+    # UE 5.8 PythonScriptPlugin.cpp imports these four bindings at startup. PyCore/PySlate/
+    # PyEngine/PyEditor.cpp create exactly these originless modules with PyImport_AddModule.
+    # Both native plugin binaries and their module descriptor are part of the tool identity.
+    'UnrealScript': {'unreal', '_unreal_core', '_unreal_slate', '_unreal_engine', '_unreal_editor'},
 }
 
 
@@ -61,6 +69,11 @@ def check_preloaded(spec):
         info = getattr(module, '__spec__', None)
         if name == '__main__' and origin and Path(origin).resolve() == bootstrap:
             continue  # runpy replaces __main__ with the action's own freshly executed module.
+        if (name == '__main__' and spec['host'] == 'UnrealScript' and origin is None and info is None
+                and isinstance(module, ModuleType) and module.__name__ == '__main__'):
+            # UE 5.8 creates this empty module with PyImport_AddModule, then executes files in
+            # a copied globals dict. runpy replaces it before the recipe can import __main__.
+            continue
         for locations in (getattr(module, '__path__', None), getattr(info, 'submodule_search_locations', None)):
             if locations is not None and not all(tool_path(p) for p in locations):
                 raise RuntimeError('Native audit refuses preloaded package paths outside its tool')
@@ -83,7 +96,8 @@ def check_preloaded(spec):
         locations = getattr(info, 'submodule_search_locations', None)
         if locations is not None and locations and all(tool_path(p) for p in locations):
             continue
-        if name in HOST_MODULES[spec['host']] and module is not None:
+        if (name in HOST_MODULES[spec['host']] and module is not None
+                and getattr(info, 'origin', None) in (None, 'built-in')):
             continue
         # CPython 3.11/3.12 exports these two class namespaces through sys.modules. They have
         # no module spec; verify their exact binding and defining tool module, not a prefix.
@@ -111,7 +125,7 @@ def main():
     spec = json.loads(Path(os.environ['ATELIER_AUDIT_SPEC']).read_text())
     if spec['host'] not in ('Blender', 'UnrealScript'):
         raise ValueError('Unsupported native audit host')
-    spec['runtime'] = runtime_roots(spec['installation'])
+    spec['runtime'] = runtime_roots(spec['installation'], host=spec['host'])
     spec['labels'].extend((p, 'runtime') for p in spec['runtime'])
     check_preloaded(spec)
     worker = load('atelier_native_audit_worker', Path(__file__).with_name('build_audit_worker.py'))
