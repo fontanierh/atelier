@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from atelier import artifact_bundle, cache_admin
+from atelier import artifact_bundle, artifact_remote, cache_admin
 
 
 def arguments(argv):
@@ -41,3 +41,24 @@ def test_import_refusal_is_failure_not_a_successful_cache_command(monkeypatch, c
     monkeypatch.setattr(artifact_bundle, 'import_bundle', refuse)
     assert cache_admin.main(arguments(['import-bundle', 'bundle', '--trust', 'publishers.json'])) == 1
     assert capsys.readouterr().out == 'cache: Unknown publisher\n'
+
+
+def test_fetch_requires_explicit_trust():
+    with pytest.raises(SystemExit) as error:
+        arguments(['fetch-bundle', 'https://cache.example.test/', 'a' * 64])
+    assert error.value.code == 2
+
+
+def test_fetch_forwards_key_trust_deadline_and_dry_run(monkeypatch, capsys):
+    store, calls = object(), []
+    monkeypatch.setattr(cache_admin, 'Store', lambda: store)
+    def fetch(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {'dry_run': True}
+    monkeypatch.setattr(artifact_remote, 'fetch_bundle', fetch)
+    args = arguments(['fetch-bundle', 'https://cache.example.test/', 'a' * 64,
+                      '--trust', 'trust.json', '--timeout', '12', '--dry-run'])
+    assert cache_admin.main(args) == 0
+    assert calls == [(('https://cache.example.test/', 'a' * 64, Path('trust.json')),
+                      {'store': store, 'dry_run': True, 'timeout': 12, 'echo': artifact_remote.stderr_progress})]
+    assert json.loads(capsys.readouterr().out) == {'dry_run': True}

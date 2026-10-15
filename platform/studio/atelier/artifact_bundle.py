@@ -2,7 +2,8 @@
 
 Signatures authenticate publisher assertions; they do not independently prove a
 clean/pushed/guarded build, redistribution rights, or the absence of secrets.
-There is no publisher, network lookup, archive extraction, or checkout hydration.
+Transport and producers use the same manifest validation; this module performs
+no network lookup, archive extraction, or checkout hydration.
 """
 import base64
 import binascii
@@ -197,14 +198,7 @@ def _records(entry):
     return decoded, blobs, logical, count
 
 
-def _verify(stack, directory, trust_file):
-    # System aliases such as /tmp are fine; bundle/trust roots themselves are not links.
-    directory = Path(directory)
-    root = os.open(directory.parent.resolve() / directory.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    stack.callback(os.close, root)
-    if _names(root, 3) != {'manifest.json', 'blobs'}:
-        raise BundleError('Unexpected bundle contents')
-    payload_file = _read_json(stack, 'manifest.json', MAX_MANIFEST, parent=root)
+def _manifest(stack, payload_file, trust_file, expected_key):
     _fields(payload_file, ('payload', 'signature'))
     payload = payload_file['payload']
     _fields(payload, ('schema', 'namespace', 'publisher', 'entry', 'producer', 'redistribution', 'root_names'))
@@ -233,6 +227,8 @@ def _verify(stack, directory, trust_file):
             any(producer[name] is not True for name in ('clean', 'pushed', 'guarded'))):
         raise BundleError('Required publisher attestations missing')
     decoded, blobs, logical, count = _records(payload['entry'])
+    if expected_key is not None and payload['entry']['key'] != expected_key:
+        raise BundleError('Signed action key differs from requested key')
     labels = payload['root_names']
     if type(labels) is not dict or set(labels) != set(decoded):
         raise BundleError('Signed root names required for every product')
@@ -252,6 +248,35 @@ def _verify(stack, directory, trust_file):
         _fields(grant, ('permission', 'grant'))
         if grant['permission'] not in ('private', 'public') or not IDENTIFIER.fullmatch(grant['grant']):
             raise BundleError('Invalid redistribution grant')
+    return payload, decoded, blobs, logical, count
+
+
+def verify_manifest(data: bytes, trust_file: Path, *, expected_key=None):
+    """Authenticate policy and quotas before a transport requests any signed blobs."""
+    try:
+        if type(data) is not bytes or len(data) > MAX_MANIFEST:
+            raise BundleError('Manifest byte limit exceeded')
+        if expected_key is not None and (type(expected_key) is not str or not build_cache.DIGEST.fullmatch(expected_key)):
+            raise BundleError('Invalid requested action key')
+        with ExitStack() as inputs:
+            return _manifest(inputs, _json(data), trust_file, expected_key)
+    except BundleError:
+        raise
+    except InvalidSignature:
+        raise BundleError('Invalid publisher signature') from None
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError, binascii.Error):
+        raise BundleError('Manifest verification failed') from None
+
+
+def _verify(stack, directory, trust_file):
+    # System aliases such as /tmp are fine; bundle/trust roots themselves are not links.
+    directory = Path(directory)
+    root = os.open(directory.parent.resolve() / directory.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    stack.callback(os.close, root)
+    if _names(root, 3) != {'manifest.json', 'blobs'}:
+        raise BundleError('Unexpected bundle contents')
+    manifest = _read_json(stack, 'manifest.json', MAX_MANIFEST, parent=root)
+    payload, decoded, blobs, logical, count = _manifest(stack, manifest, trust_file, None)
     blob_dir = os.open('blobs', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root)
     stack.callback(os.close, blob_dir)
     if _names(blob_dir, MAX_RECORDS + 1) != set(blobs):

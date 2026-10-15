@@ -498,6 +498,13 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 raise SystemExit(str(error)) from error
     if touch and any(step.products for step in plan):
         raise SystemExit('Named products require a successful build; --touch cannot certify them')
+    remote = None
+    if not force and not touch and any(step.cache for step in plan):
+        from . import artifact_remote
+        try:
+            remote = artifact_remote.configured()
+        except artifact_remote.RemoteError as error:
+            echo(f'Remote cache unavailable ({error}); continuing locally')
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     done, ran, restored = {}, 0, 0
@@ -579,6 +586,8 @@ def _build(ctx, wanted, *, force, touch, echo, index):
                 if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
                     raise RuntimeError('Inputs changed before cache lookup')
                 products = store.restore(ctx, step, current)
+                if products is None and remote is not None and remote.fetch(current, store, echo):
+                    products = store.restore(ctx, step, current)
                 if products is not None and (fingerprint(step, done, index=index, tool_cache=tool_cache) != current or not outputs_present(step)):
                     raise RuntimeError('Restored action inputs or required outputs differ')
             except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
