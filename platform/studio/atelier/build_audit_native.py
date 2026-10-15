@@ -51,10 +51,10 @@ def check_preloaded(spec):
     """@cc [owner:fontanierh,label:correctness] native-preload-provenance
     Preloaded non-tool Python modules MUST be refused even when their source is a declared input:
     a declaration cannot prove their already consumed bytes or cached values. Tool module origins,
-    namespace locations MUST belong to a completely fingerprinted installation. Cached bytecode
-    MUST belong to that installation or the fresh private bytecode directory. Originless modules
-    require genuine builtin/frozen loader provenance or an explicit native-host/runtime API;
-    arbitrary search paths grant no trust.
+    module-spec origins and namespace locations MUST belong to a completely fingerprinted
+    installation. Cached bytecode MUST belong to that installation or the fresh private bytecode
+    directory. Originless modules require genuine builtin/frozen loader provenance or an explicit
+    native-host/runtime API; arbitrary search paths grant no trust.
     """
     installation = [Path(p).resolve() for p in spec['installation']]
     bytecode = Path(spec['scratch']).resolve() / 'bytecode'
@@ -67,25 +67,27 @@ def check_preloaded(spec):
     for name, module in list(sys.modules.items()):
         origin = getattr(module, '__file__', None)
         info = getattr(module, '__spec__', None)
-        if name == '__main__' and origin and Path(origin).resolve() == bootstrap:
+        bootstrap_main = name == '__main__' and origin and Path(origin).resolve() == bootstrap
+        actual = getattr(info, 'origin', None)
+        if (actual not in (None, 'built-in', 'frozen') and not tool_path(actual)
+                and not (bootstrap_main and Path(actual).resolve() == bootstrap)):
+            raise RuntimeError('Native audit refuses an inconsistent preloaded module origin')
+        cached = getattr(module, '__cached__', None)
+        if cached and not (tool_path(cached) or Path(cached).resolve().is_relative_to(bytecode)):
+            raise RuntimeError('Native audit refuses preloaded bytecode outside its tool or fresh scratch')
+        for locations in (getattr(module, '__path__', None), getattr(info, 'submodule_search_locations', None)):
+            if locations is not None and not all(tool_path(p) for p in locations):
+                raise RuntimeError('Native audit refuses preloaded package paths outside its tool')
+        if bootstrap_main:
             continue  # runpy replaces __main__ with the action's own freshly executed module.
         if (name == '__main__' and spec['host'] == 'UnrealScript' and origin is None and info is None
                 and isinstance(module, ModuleType) and module.__name__ == '__main__'):
             # UE 5.8 creates this empty module with PyImport_AddModule, then executes files in
             # a copied globals dict. runpy replaces it before the recipe can import __main__.
             continue
-        for locations in (getattr(module, '__path__', None), getattr(info, 'submodule_search_locations', None)):
-            if locations is not None and not all(tool_path(p) for p in locations):
-                raise RuntimeError('Native audit refuses preloaded package paths outside its tool')
         if origin:
             if not tool_path(origin):
                 raise RuntimeError('Native audit refuses a preloaded non-tool Python module')
-            actual = getattr(info, 'origin', None)
-            if actual not in (None, 'built-in', 'frozen') and not tool_path(actual):
-                raise RuntimeError('Native audit refuses an inconsistent preloaded module origin')
-            cached = getattr(module, '__cached__', None)
-            if cached and not (tool_path(cached) or Path(cached).resolve().is_relative_to(bytecode)):
-                raise RuntimeError('Native audit refuses preloaded bytecode outside its tool or fresh scratch')
             continue
         if (getattr(info, 'loader', None) is BuiltinImporter and name in sys.builtin_module_names
                 and info.origin == 'built-in'):

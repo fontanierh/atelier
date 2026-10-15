@@ -186,13 +186,14 @@ def test_host_with_runtime_outside_hashed_installation_cannot_complete(native_ac
 
 
 @pytest.mark.parametrize('kind', ['undeclared', 'declared-stale', 'originless', 'namespace',
-                                  'package-path', 'untrusted-bytecode'])
+                                  'package-path', 'untrusted-bytecode', 'host-bytecode'])
 def test_preloaded_non_tool_module_cannot_supply_unobserved_inputs(native_action, kind):
     a = native_action
     hidden = a.root / 'host-startup-secret.py'
     hidden.write_text("VALUE = 'current source'\n")
     if kind == 'declared-stale':
         a.step.inputs.append(hidden)
+    name = 'preloaded_project_helper'
     preload = f'''import sys, types
 from importlib.machinery import ModuleSpec
 cached = types.ModuleType('preloaded_project_helper')
@@ -212,10 +213,13 @@ cached.__spec__.submodule_search_locations = [{str(a.root)!r}]
             preload += f'cached.__path__ = [{str(a.root)!r}]\n'
         else:
             preload += f'cached.__cached__ = {str(a.root / "stale.pyc")!r}\n'
+    elif kind == 'host-bytecode':
+        name = 'bpy' if isinstance(a.step.commands[0], build.Blender) else 'unreal'
+        preload += f"cached.__name__ = {name!r}\ncached.__cached__ = {str(hidden)!r}\n"
     preload += 'sys.modules[cached.__name__] = cached\n'
     first, rest = a.executable.read_text().split('\n', 1)
     a.executable.write_text(first + '\n' + preload + rest)
-    a.code("import importlib\nhelper = importlib.import_module('preloaded_project_helper')\n"
+    a.code(f"import importlib\nhelper = importlib.import_module({name!r})\n"
            "output.write_text(helper.VALUE)")
     assert a.run() == 1, a.messages
     assert not a.report()['complete'] and not a.report()['passed']
@@ -253,6 +257,51 @@ sys.modules[native_api.__name__] = native_api
     assert a.run() == 0, a.messages
     assert a.output.read_text() == 'second/host API'
     assert a.stamp()['fingerprint'] != before and len(a.calls) == 2
+
+
+@pytest.mark.parametrize('provenance', ['tool-namespace', 'external-spec', 'external-bytecode'])
+def test_preloaded_namespace_requires_all_origins_inside_hashed_tool(native_action, monkeypatch, provenance):
+    a = native_action
+    runtime = a.root / 'managed-tool'
+    namespace = runtime / 'tool_namespace'
+    namespace.mkdir(parents=True)
+    value = namespace / 'value.txt'
+    value.write_text('fingerprinted tool value')
+    (namespace / 'helper.py').write_text("VALUE = 'fingerprinted helper'\n")
+    hidden = a.root / 'unobserved-startup.txt'
+    hidden.write_text('external startup value')
+    approved = build_audit.installation(a.step.commands[0])
+    monkeypatch.setattr(build_audit, 'installation', lambda command: [*approved, runtime])
+    monkeypatch.setattr(build_audit, 'tool_context', lambda step, hasher, **kwargs:
+                        {'managed': build_inputs.inventory(runtime, hasher=hasher, complete=True)})
+    first, rest = a.executable.read_text().split('\n', 1)
+    preload = f'''import sys
+sys.path.insert(0, {str(runtime)!r})
+import tool_namespace
+assert tool_namespace.__file__ is None and tool_namespace.__spec__.origin is None
+from tool_namespace import helper
+tool_namespace.VALUE = open({str(value)!r}).read()
+'''
+    if provenance != 'tool-namespace':
+        attribute = '__spec__.origin' if provenance == 'external-spec' else '__cached__'
+        preload += f'''tool_namespace.{attribute} = {str(hidden)!r}
+tool_namespace.VALUE = open({str(hidden)!r}).read()
+'''
+    a.executable.write_text(first + '\n' + preload + rest)
+    a.code("import tool_namespace\nfrom tool_namespace import helper\n"
+           "output.write_text(tool_namespace.VALUE + '/' + helper.VALUE)")
+    if provenance == 'tool-namespace':
+        assert a.run() == 0, a.messages
+        assert a.output.read_text() == 'fingerprinted tool value/fingerprinted helper' and a.report()['passed']
+        before = a.stamp()['fingerprint']
+        value.write_text('changed tool value')
+        assert a.run() == 0, a.messages
+        assert a.output.read_text() == 'changed tool value/fingerprinted helper'
+        assert a.stamp()['fingerprint'] != before and len(a.calls) == 2
+    else:
+        assert a.run() == 1, a.messages
+        assert not a.report()['complete'] and not a.report()['passed']
+        assert not a.output.exists() and not (a.ctx.stamps / 'generate.json').exists()
 
 
 def test_preload_gate_rechecks_modules_loaded_by_framework_initialization(native_action):
