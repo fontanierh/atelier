@@ -249,3 +249,26 @@ def test_gap_gate_does_not_hide_bad_secondary_with_successful_hero(change,expect
 def test_invalid_gap_requirement_fails_closed(key,value):
     _,world=paired_flights();world.spec['required_airs'][0][key]=value
     with pytest.raises(ValueError):validate_gap_specs(world)
+
+
+def test_follower_vert_zone_changes_inputs_without_retaining_the_prior_higher_limit():
+    path=Path2D([[0,0],[0,100]])
+    follower=LineFollower(path,dict(smoothing_seconds=.001,zones=[dict(start_s_m=20,end_s_m=40,gain=.5,max_stick=.2)]))
+    row=dict(state='PhysicsGround',position=[30,0,10],velocity=[0,0,20])
+    high=abs(follower.steering(row))
+    limited=abs(follower.steering({**row,'position':[30,0,25]}))
+    restored=abs(follower.steering({**row,'position':[30,0,50]}))
+    assert high>limited and limited<=round(.2*32767) and restored>limited
+    assert follower.steering({**row,'position':[30,0,25],'state':'PhysicsAir'})==0
+    assert follower.report()['zones'][0]['gain']==.5
+
+
+def test_follower_zones_reject_ambiguous_or_invalid_ranges():
+    path=Path2D([[0,0],[0,100]])
+    invalid=[dict(start_s_m=30,end_s_m=20),dict(start_s_m=0,end_s_m=101),
+             dict(start_s_m=0,end_s_m=10,max_stick=1.1),dict(start_s_m=0,end_s_m=10,gain=float('nan')),
+             dict(start_s_m=0,end_s_m=10,teleport=True)]
+    for zone in invalid:
+        with pytest.raises(ValueError):LineFollower(path,dict(zones=[zone]))
+    with pytest.raises(ValueError):
+        LineFollower(path,dict(zones=[dict(start_s_m=0,end_s_m=30),dict(start_s_m=20,end_s_m=40)]))
