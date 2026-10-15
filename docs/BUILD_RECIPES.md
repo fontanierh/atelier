@@ -229,9 +229,11 @@ output from those values. Observed subprocess, network, ctypes, mmap, sqlite3 an
 and unhandled `os.*` events, are refused;
 an uninstrumented child must not silently supply a supposedly audited result. Blender and Unreal bootstraps are not
 enabled by this option. Their imports still need their own dependency and native equivalence proofs.
-Libraries that use a refused mechanism during initialization also cannot pass, even if they catch its exception;
-the installed NumPy uses `ctypes` this way. Such recipes must keep `audit=False` until a specific adapter proves the
-required native behavior. Do not add a blanket exemption for the library.
+The worker initializes managed stdlib `ctypes` before installing the observer, including CPython's own
+`PyDLL(None)` handle. This lets NumPy import that existing runtime state. Action-time library loads and symbol
+lookups remain refused, even when their exceptions are caught; NumPy gets no access exemption. Array operations
+still have the native-I/O limits above. Other libraries that emit a refused event during initialization cannot
+pass and must keep `audit=False` until a specific adapter supports their required behavior.
 
 ## Migration boundary
 

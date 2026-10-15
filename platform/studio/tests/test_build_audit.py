@@ -66,6 +66,44 @@ assert output.read_text() == 'input'
     assert (a.ctx.logs / 'generate.audit.json').read_bytes() == before
 
 
+def test_numpy_initialization_and_array_output_are_observed(action):
+    a = action
+    a.code('''import numpy as np
+values = np.arange(6, dtype=np.int64).reshape(2, 3)
+with output.open('wb') as stream:
+    np.save(stream, values * values)
+''')
+    assert a.run() == 0, a.messages
+    import numpy as np
+    np.testing.assert_array_equal(np.load(a.output), [[0, 1, 4], [9, 16, 25]])
+    report = a.report()
+    assert report['complete'] and report['passed'] and report['violations'] == []
+    assert any(r['operation'] == 'read' and 'numpy' in r['path'] for r in report['accesses'])
+    assert any(r['operation'] == 'write' and r['path'].endswith('/result.txt') for r in report['accesses'])
+
+
+@pytest.mark.parametrize('operation,event', [
+    ('ctypes.CDLL(None)', 'ctypes.dlopen'),
+    ('ctypes.PyDLL(None)', 'ctypes.dlopen'),
+    ('ctypes.pythonapi.Py_GetVersion', 'ctypes.dlsym'),
+])
+def test_action_ctypes_operations_remain_sticky_failures(action, operation, event):
+    a = action
+    a.code(f'''import ctypes
+try:
+    {operation}
+except PermissionError:
+    pass
+output.write_text('otherwise successful')
+''')
+    assert a.run() == 1
+    report = a.report()
+    assert not report['passed']
+    assert any(r['operation'] == event for r in report['violations'])
+    assert not (a.ctx.stamps / 'generate.json').exists()
+    assert not list((a.store.root / 'actions').glob('*.json'))
+
+
 @pytest.mark.parametrize('operation', [
     "hidden.read_text()",
     "__import__('io').open(hidden).read()",
