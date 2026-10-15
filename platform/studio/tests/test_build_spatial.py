@@ -13,6 +13,90 @@ NEAR = (0, 0, 0, 10, 10, 10)
 FAR = (100, 100, 100, 110, 110, 110)
 
 
+def test_checkpoint_resolves_only_current_consumer_against_complete_catalogue(recipe, monkeypatch):
+    r = recipe
+    product = r.product('near')
+    product.paths[0].parent.mkdir(parents=True)
+    product.paths[0].write_text('geometry')
+    consumer = r.consumer()
+    other = replace(consumer, name='other', products=[Product('other', (r.root / 'other',))],
+                    queries=[BBoxQuery('elsewhere', 'terrain', FAR)])
+    steps = [r.producer('source', product), consumer, other]
+    frozen = Graph(steps).by_name[consumer.name]
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: steps))
+    calls = []
+    real_bind = build_spatial.bind
+    def bind(selected, *args, **kwargs):
+        calls.append([s.name for s in selected])
+        assert kwargs['catalogue'] == steps
+        return real_bind(selected, *args, **kwargs)
+    monkeypatch.setattr(build_spatial, 'bind', bind)
+    done = {'product:near': build_products.identity(build_products.inventory(product))}
+    assert build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done).reads == ['near']
+    assert calls == [['consume']]
+    assert consumer.reads == other.reads == []
+
+
+@pytest.mark.parametrize('overlap', ['product', 'legacy', 'symlink'])
+def test_checkpoint_still_refuses_unmatched_output_ownership_conflicts(recipe, monkeypatch, overlap):
+    r = recipe
+    product = r.product('near')
+    product.paths[0].parent.mkdir(parents=True)
+    product.paths[0].write_text('geometry')
+    steps = [r.producer('source', product), r.consumer()]
+    frozen = Graph(steps).by_name['consume']
+    if overlap == 'legacy':
+        steps.append(Step('legacy', [], outputs=[product.paths[0].parent]))
+    else:
+        output = product.paths[0]
+        if overlap == 'symlink':
+            output = r.root / 'alias'
+            output.symlink_to(product.paths[0])
+        steps.append(r.producer('far', r.product('far', FAR, paths=(output,))))
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: steps))
+    done = {'product:near': build_products.identity(build_products.inventory(product))}
+    with pytest.raises(ValueError, match='[Oo]verlap'):
+        build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done)
+
+
+def test_catalogue_does_not_reuse_resolved_aliases_between_checkpoints(recipe, monkeypatch):
+    r = recipe
+    product = r.product('near')
+    product.paths[0].parent.mkdir(parents=True)
+    product.paths[0].write_text('geometry')
+    alias = r.root / 'alias'
+    alias.symlink_to(r.root / 'unrelated')
+    steps = [r.producer('source', product), r.producer('far', r.product('far', FAR, paths=(alias,))), r.consumer()]
+    frozen = Graph(steps).by_name['consume']
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: steps))
+    done = {'product:near': build_products.identity(build_products.inventory(product))}
+    build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done)
+    alias.unlink()
+    alias.symlink_to(product.paths[0])
+    with pytest.raises(ValueError, match='Overlapping product'):
+        build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done)
+
+
+@pytest.mark.parametrize('field', ['reads', 'references', 'needs', 'after'])
+def test_checkpoint_refuses_removed_explicit_dependency_even_with_old_receipts(recipe, monkeypatch, field):
+    r = recipe
+    product = r.product('near')
+    extra = Product('extra', (r.root / 'extra',))
+    for p in (product, extra):
+        p.paths[0].parent.mkdir(parents=True, exist_ok=True)
+        p.paths[0].write_text('geometry')
+    dependency = 'extra' if field in ('reads', 'references') else 'extra_source'
+    steps = [r.producer('source', product), r.producer('extra_source', extra),
+             r.consumer(**{field: [dependency]})]
+    frozen = Graph(steps).by_name['consume']
+    steps.pop(1)
+    monkeypatch.setattr(build, 'load_recipe', lambda game: SimpleNamespace(steps=lambda ctx: steps))
+    done = {f'product:{p.name}': build_products.identity(build_products.inventory(p)) for p in (product, extra)}
+    done['extra_source'] = 'previously completed'
+    with pytest.raises(ValueError, match='unknown'):
+        build_spatial.verify_current(SimpleNamespace(game='fixture'), frozen, done)
+
+
 @pytest.fixture
 def recipe(tmp_path, monkeypatch):
     script = tmp_path / 'generate.py'

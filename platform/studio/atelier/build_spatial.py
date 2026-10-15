@@ -42,16 +42,17 @@ class Binding:
     matches: tuple[Match, ...]
 
 
-def bind(steps, owners):
+def bind(steps, owners, *, catalogue=None):
     """@cc [owner:fontanierh,label:correctness] complete-spatial-membership
     Each query MUST resolve against all current declarations before scheduling. Its key MUST
     include the selector and complete sorted match set, including an empty set. Unmatched products
     MUST NOT become read dependencies. Touching boxes count as intersections.
 
     Work on copies: planning the same recipe twice must not accumulate inferred read edges.
+    A checkpoint may bind just its consumer, against a separately validated complete catalogue.
     """
     collections = {}
-    for step in steps:
+    for step in steps if catalogue is None else catalogue:
         for product in step.products:
             if product.collection is not None:
                 collections.setdefault(product.collection, []).append(
@@ -94,7 +95,11 @@ def manifest(step):
 def verify_current(ctx, step, done, *, hasher=None):
     """Abort on catalogue drift; the current execution plan cannot safely add new producers."""
     from . import build, build_products
-    current = build_products.Graph(build.load_recipe(ctx.game).steps(ctx)).by_name.get(step.name)
+    catalogue = build_products.Catalogue(build.load_recipe(ctx.game).steps(ctx))
+    current = catalogue.by_name.get(step.name)
+    if current is not None:
+        current = bind([current], catalogue.owners, catalogue=catalogue.steps)[0]
+        catalogue.validate_dependencies(current)
     if (current is None or current.reads != step.reads or current.needs != step.needs
             or current.after != step.after or manifest(current) != manifest(step)):
         raise ValueError(f'{step.name}: spatial inputs changed; rerun the build to replan')

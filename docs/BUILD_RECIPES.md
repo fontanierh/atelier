@@ -317,6 +317,11 @@ The executor does not silently add producers to an already running plan. Fresh r
 Python globals or cached imported modules; keep catalogues out of such state. Products must not change concurrently
 with their consumers. Endpoint checks cannot prove that a file was unchanged at every instant.
 
+Each checkpoint resolves only the current action's queries, while revalidating ownership against the complete
+fresh catalogue. Shared source paths are resolved once within that validation; path results are not retained
+between checkpoints. Recipe loading, complete ownership checks and matched-product inventories still have a
+cost. Profile large catalogues before migration; this API does not provide a persistent spatial index or watcher.
+
 Bounds are author declarations, not a geometric proof. Include each operation's full influence volume and verify
 that product bounds contain the generated geometry. Runtime-discovered boxes, generated spatial catalogues,
 nearest-neighbour queries and native import/query adapters are not implemented. Use broader explicit reads until

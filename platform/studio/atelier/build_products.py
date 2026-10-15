@@ -120,11 +120,13 @@ def feed_results(done: dict, products: dict) -> None:
             done[f'product:{name}'] = digest
 
 
-class Graph:
-    """Validate declarations once, then select a stable topological execution order.
+class Catalogue:
+    """@cc [owner:fontanierh,label:correctness] fresh-catalogue-ownership
+    Every product and legacy output root MUST participate in ownership validation, even when no
+    query selects it. Resolved-path memoization MUST stay local to one validation, so filesystem
+    aliases are checked again at the next checkpoint.
 
-    Read/order edges constrain execution. Reference edges only expand the selected snapshot;
-    mutually referencing records are allowed when neither embeds data derived from the other.
+    Validate ownership without resolving queries or scheduling actions.
     """
 
     def __init__(self, steps):
@@ -134,13 +136,23 @@ class Graph:
         self.by_name = {}
         self.owners = {}
         owned_paths = []
+        resolved_paths = {}
+
+        def resolve(path):
+            # Shared scripts/support files appear in many actions. Reuse only within this
+            # validation; every fresh catalogue rechecks filesystem aliases from scratch.
+            path = Path(path)
+            if path not in resolved_paths:
+                resolved_paths[path] = path.resolve()
+            return resolved_paths[path]
+
         for step in self.steps:
             build_audit.validate(step)
             if step.optional_inputs:
                 if not step.products:
                     raise ValueError(f'{step.name}: optional inputs require named products')
-                required = {str(Path(p).resolve()).casefold() for p in required_inputs(step)}
-                optional = [str(Path(p).resolve()).casefold() for p in step.optional_inputs]
+                required = {str(resolve(p)).casefold() for p in required_inputs(step)}
+                optional = [str(resolve(p)).casefold() for p in step.optional_inputs]
                 if len(set(optional)) != len(optional) or required.intersection(optional):
                     raise ValueError(f'{step.name}: duplicate or required optional input')
             if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', step.name):
@@ -148,7 +160,7 @@ class Graph:
             if step.name in self.by_name:
                 raise ValueError(f'Duplicate step: {step.name}')
             self.by_name[step.name] = step
-            sources = [tuple(p.casefold() for p in Path(source).resolve().parts)
+            sources = [tuple(p.casefold() for p in resolve(source).parts)
                        for source in declared_inputs(step)] if step.products else []
             for product in step.products:
                 if not product.name or product.name in self.owners:
@@ -157,7 +169,7 @@ class Graph:
                     raise ValueError(f'{product.name}: a product must declare output paths')
                 self.owners[product.name] = step.name
                 for path in product.paths:
-                    output = Path(os.path.abspath(path)).resolve()
+                    output = resolve(Path(os.path.abspath(path)))
                     parts = tuple(p.casefold() for p in output.parts)
                     for source in sources:
                         if source[:len(parts)] == parts or parts[:len(source)] == source:
@@ -175,24 +187,39 @@ class Graph:
             previous = path, owner
         # Legacy declarations still reserve their paths. Product restoration and audited rebuilds
         # replace whole roots, so those roots cannot contain (or sit inside) another step's outputs.
-        legacy_paths = [(step.name, tuple(p.casefold() for p in Path(path).resolve().parts))
+        legacy_paths = [(step.name, tuple(p.casefold() for p in resolve(path).parts))
                         for step in self.steps for path in (*step.outputs, *step.pool_roots)]
         for path, product in owned_paths:
             parts = tuple(p.casefold() for p in path.parts)
             for step_name, other in legacy_paths:
                 if self.owners[product] != step_name and (parts[:len(other)] == other or other[:len(parts)] == parts):
                     raise ValueError(f'Product {product} overlaps legacy outputs of {step_name}')
+
+    def validate_dependencies(self, step):
+        """Check both explicit and resolved edges against these current declarations."""
+        for dependency in (*step.needs, *step.after):
+            if dependency not in self.by_name:
+                raise ValueError(f'{step.name}: unknown step dependency {dependency}')
+        for name in (*step.reads, *step.references):
+            if name not in self.owners:
+                raise ValueError(f'{step.name}: unknown product {name}')
+
+
+class Graph(Catalogue):
+    """Select a stable topological order after complete ownership and query validation.
+
+    Read/order edges constrain execution. Reference edges only expand the selected snapshot;
+    mutually referencing records are allowed when neither embeds data derived from the other.
+    """
+
+    def __init__(self, steps):
+        super().__init__(steps)
         # Resolve against the complete catalogue before topological sorting or target selection.
         from .build_spatial import bind
         self.steps = bind(self.steps, self.owners)
         self.by_name = {s.name: s for s in self.steps}
         for step in self.steps:
-            for dependency in (*step.needs, *step.after):
-                if dependency not in self.by_name:
-                    raise ValueError(f'{step.name}: unknown step dependency {dependency}')
-            for name in (*step.reads, *step.references):
-                if name not in self.owners:
-                    raise ValueError(f'{step.name}: unknown product {name}')
+            self.validate_dependencies(step)
         self._topological = self._sort()
 
     def prerequisites(self, step):
