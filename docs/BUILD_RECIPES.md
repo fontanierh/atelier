@@ -109,7 +109,9 @@ Step('library.oak', [Blender(script, ('oak',), threads=3, factory_startup=True)]
 Consecutive, ready misses with the same batch policy, command type, startup environment, module closure and tool
 settings can share one guarded process. Arguments and script paths remain per action. `runtime_env=('ASSET_ID',)`
 allows explicitly named environment values to vary between scripts; process-start settings such as `PYTHONHASHSEED`
-cannot vary. Never rely on `runpy` to clear imported module globals, Blender data or Unreal editor state. The recipe
+cannot vary. Actions must override the same set of runtime keys; an added or omitted override starts a separate
+process, so it cannot inherit the preceding action's value. Never rely on `runpy` to clear imported module globals,
+Blender data or Unreal editor state. The recipe
 must reset its own state, and native equivalence checks must cover cold and warm execution in different orders.
 
 The host validates each action's marker, inputs and complete output inventory, saves its individual stamp, and

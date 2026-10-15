@@ -229,6 +229,32 @@ def test_environment_reset_preserves_untouched_native_keys(monkeypatch):
     assert writes == [('ASSET_ID', 'pine')]
 
 
+@pytest.mark.parametrize('host_value', [None, 'host'])
+def test_runtime_override_presence_starts_a_new_process_without_leaking_values(project, monkeypatch, host_value):
+    p = project
+    p.steps[:] = p.steps[:4]
+    if host_value is None:
+        monkeypatch.delenv('ASSET_ID', raising=False)
+    else:
+        monkeypatch.setenv('ASSET_ID', host_value)
+    for step, value in zip(p.steps, ('oak', None, 'pine', 'cedar')):
+        step.batch = build.Batch('runtime environment', runtime_env=('ASSET_ID',))
+        step.commands[0].env = () if value is None else (('ASSET_ID', value),)
+        step.commands[0].script.write_text(
+            "import os, sys\nfrom pathlib import Path\n"
+            "Path(sys.argv[-1]).write_text(repr(os.environ.get('ASSET_ID')))\n"
+            # A script mutation also must not leak to the next action in its warm process.
+            "os.environ['ASSET_ID'] = 'script mutation'\n")
+    assert p.run() == 0
+    assert len(p.launches) == 3  # explicit oak; inherited host; explicit pine and cedar together
+    assert [(p.ctx.out / f'{i}.txt').read_text() for i in range(1, 5)] == [
+        repr('oak'), repr(host_value), repr('pine'), repr('cedar')]
+    stamps = {path.name: path.read_bytes() for path in p.ctx.stamps.glob('action*.json')}
+    assert len(stamps) == 4
+    assert p.run() == 0 and len(p.launches) == 3
+    assert {path.name: path.read_bytes() for path in p.ctx.stamps.glob('action*.json')} == stamps
+
+
 def test_batch_cannot_cross_a_read_edge_or_tool_settings(project):
     p = project
     p.steps[1].reads.append('product1')

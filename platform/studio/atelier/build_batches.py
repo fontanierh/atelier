@@ -39,9 +39,19 @@ def validate(step):
 
 
 def compatible(first, other):
+    """@cc [owner:fontanierh,label:correctness] batch-environment-isolation
+    Shared actions MUST have identical startup overrides and override the same runtime keys.
+    An omitted override MUST start a separate process so it cannot inherit a predecessor's value.
+    Explicit runtime values may differ; each action's command records them in its own key.
+    """
     if other.batch != first.batch or other.cache or type(other.commands[0]) is not type(first.commands[0]):
         return False
     a, b = first.commands[0], other.commands[0]
+    # The worker inherits the first action's environment. Every action must explicitly
+    # replace the same runtime keys, rather than inherit a predecessor's override.
+    runtime = set(first.batch.runtime_env)
+    if {k for k, _ in a.env if k in runtime} != {k for k, _ in b.env if k in runtime}:
+        return False
     env_a = tuple((k, v) for k, v in a.env if k not in first.batch.runtime_env)
     env_b = tuple((k, v) for k, v in b.env if k not in first.batch.runtime_env)
     if env_a != env_b:
