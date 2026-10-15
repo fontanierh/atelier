@@ -141,6 +141,10 @@ it. Unsupported observed subprocess mechanisms fail. Path checks for ordinary Py
 metadata queries do not make timestamp values portable. See [the current API and limits](BUILD_RECIPES.md#audit-a-python-generators-accesses);
 the tracked context API and native bootstraps are still separate work.
 
+Legacy actions can opt into deferred, explicit input membership: only selected actions enumerate their members,
+after prerequisites finish, and execution rechecks the selection before certification. This does not track arbitrary
+reads or enable native caching; [the recipe guide](BUILD_RECIPES.md#defer-legacy-input-membership) describes its restricted scope.
+
 The planner should reject cycles, duplicate package ownership, missing products and writes outside owned paths.
 Every output, including leaf assets and bulk-data sidecars, belongs in a verified manifest. A sentinel such as
 `Torii.fbx` or `manifest.json` existing is insufficient evidence that the rest of a step's outputs survive.

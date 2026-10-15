@@ -39,7 +39,7 @@ def inspect_game(game):
                 break
         digest.update(b'missing:' + name.encode())
 
-    def fingerprint(step, done):
+    def fingerprint(step, done, observation=None):
         nonlocal input_index
         if hasattr(step, 'cache'):
             # Memory-only hints: read each source/tool file from disk once in this inspection,
@@ -48,13 +48,14 @@ def inspect_game(game):
             if input_index is None:
                 from atelier.build_hashes import HashIndex
                 input_index = HashIndex()
-            return build.fingerprint(step, done, index=input_index, tool_cache=tools)
+            return build.fingerprint(step, done, index=input_index, tool_cache=tools,
+                                     **({'observation': observation} if observation is not None else {}))
         return build.fingerprint(step, done)
 
-    def portable(step, done):
+    def portable(step, done, observation=None):
         build._hash_path = portable_hash_path
         try:
-            return fingerprint(step, done)
+            return fingerprint(step, done, observation)
         finally:
             build._hash_path = raw_hash_path
 
@@ -86,8 +87,12 @@ def inspect_game(game):
                 products = build_products.records(step)
             except (OSError, ValueError) as error:
                 problem = str(error)
-        value = fingerprint(step, done)
-        verified = portable(step, compared)
+        observation = None
+        if getattr(step, 'deferred_inputs', ()):
+            from atelier.build_deferred import observe
+            observation = observe(step)
+        value = fingerprint(step, done, observation)
+        verified = portable(step, compared, observation)
         own_inputs = {'inputs': [p for p in step.inputs if not copied(p)]}
         if hasattr(step, 'optional_inputs'):
             own_inputs['optional_inputs'] = [p for p in step.optional_inputs if not copied(p)]
@@ -96,7 +101,7 @@ def inspect_game(game):
             # replace does not copy init=False fields. Keep this already-resolved immutable
             # selection while comparing source identities with copied generated inputs removed.
             own._query_bindings = step._query_bindings
-        source = portable(own, sources)
+        source = portable(own, sources, observation.excluding(copied) if observation is not None else None)
         sources[step.name] = source
         # A fresh checkout lacks products. Compare the source identity of each producer here;
         # the full byte identities are compared after copying, before any stamp is installed.

@@ -51,10 +51,12 @@ def content_files(content):
     lexical exclusions. It MUST NOT resolve symlinks or add filesystem/Git ignore policies.
     """
     files = []
+    depth = len(content.parts)
     for path in content.rglob('*'):
         if not path.is_file():
             continue
-        relative = path.relative_to(content)
+        # rglob retains the root's lexical prefix, including relative roots and linked ancestors.
+        relative = type(path)(*path.parts[depth:])
         if (IGNORED.intersection(relative.parts) or path.name.casefold() in DESKTOP_METADATA
                 or relative.is_relative_to('Data/Network')):
             continue

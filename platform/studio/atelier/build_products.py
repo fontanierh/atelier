@@ -158,7 +158,7 @@ class Catalogue:
     """
 
     def __init__(self, steps):
-        from . import build_audit
+        from . import build_audit, build_deferred
         from .build import declared_inputs, required_inputs
         self.steps = list(steps)
         self.by_name = {}
@@ -175,6 +175,7 @@ class Catalogue:
             return resolved_paths[path]
 
         for step in self.steps:
+            build_deferred.validate(step)
             build_audit.validate(step)
             if step.optional_inputs:
                 if not step.products:
