@@ -4,7 +4,7 @@
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
     atelier reuse <game> --from PATH [--to PATH]   seed a fresh worktree (this one by default) from a verified build of the same revision
-    atelier pool publish|restore|status <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
+    atelier pool publish|restore|status|abandon <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
     atelier cache status|gc|pin|unpin|forget   inspect and prune automatic local product reuse
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
     atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
@@ -169,7 +169,7 @@ def make_parser():
     mode.add_argument('--from', dest='source')
     mode.add_argument('--abandon', action='store_true', help='remove an interrupted generated copy; keep tracked sources/logs')
     p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
-    p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status'])
+    p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status', 'abandon'])
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     from atelier.harness import capacity_cli

@@ -11,12 +11,11 @@ from pathlib import Path
 import platform
 import shutil
 import sys
-import tempfile
 
 from . import paths
 from .build import Context, Python, fingerprint, load_recipe, order, result
 from .reuse import copy_tree
-from atelier.harness.safety.render_lock import render_lock
+from . import artifact_pool_state as state
 
 
 def digest(path):
@@ -37,7 +36,10 @@ def roots(ctx, step):
     base = ctx.out.resolve()
     for item in step.pool_roots:
         item = Path(item)
-        relative = item.resolve().relative_to(base)
+        relative = item.absolute().relative_to(ctx.out.absolute())
+        state.owned_roots([str(relative)])
+        state.destination(ctx.out, relative)
+        item.resolve().relative_to(base)
         if not relative.parts or relative.parts[0] in ('logs', 'stamps'):
             raise ValueError('Pool roots must be exclusively owned generated subfolders')
         if any(part in ('Content', 'Binaries', 'Intermediate') for part in relative.parts):
@@ -90,7 +92,7 @@ def clone_function():
     return fn
 
 
-def transfer(action, ctx, step, current, pool):
+def transfer(action, ctx, step, current, pool, *, staging, begin=lambda: None):
     owned = roots(ctx, step)
     identity = key(ctx, step, current)
     entry = pool / identity
@@ -100,29 +102,29 @@ def transfer(action, ctx, step, current, pool):
         if stamp.get('fingerprint') != current or stamp.get('pool_key') != identity or stamp.get('touched'):
             raise ValueError('Requires a fresh successful build with matching pool context; legacy/touched stamps refused')
         before = inventory(ctx.out, owned)
+        begin()
         pool.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=pool, prefix='.publish-') as name:
-            staging = Path(name) / 'entry';staging.mkdir()
-            for root in owned:
-                copy_tree(ctx.out / root, staging / 'outputs' / root, paths.REPO, paths.REPO, clone_function())
-            if inventory(staging / 'outputs', owned) != before or inventory(ctx.out, owned) != before:
-                raise ValueError('Output files changed during publication')
-            (staging / 'manifest.json').write_text(json.dumps(dict(key=identity, files=before, stamp=stamp), sort_keys=True)+'\n')
-            if entry.exists():
-                existing = json.loads((entry / 'manifest.json').read_text())
-                if existing['files'] != before or inventory(entry / 'outputs', owned) != before:
-                    raise ValueError('Same key produced different bytes; cache entry remains unchanged')
-            else:
-                staging.rename(entry)
-        return identity
+        staging.mkdir()
+        for root in owned:
+            copy_tree(ctx.out / root, staging / 'outputs' / root, paths.REPO, paths.REPO, clone_function())
+        if inventory(staging / 'outputs', owned) != before or inventory(ctx.out, owned) != before:
+            raise ValueError('Output files changed during publication')
+        state.write(staging / 'manifest.json', dict(key=identity, files=before, stamp=stamp))
+        existing = entry.exists()
+        if existing:
+            manifest = state.read(entry / 'manifest.json')
+            if manifest.get('key') != identity or manifest.get('files') != before or inventory(entry / 'outputs', owned) != before:
+                raise ValueError('Same key produced different bytes; cache entry remains unchanged')
+        return dict(key=identity, files=before, stamp=stamp, existing=existing)
     if not entry.exists():
         raise ValueError('Pool miss: no successful output with this source/tool context')
-    manifest = json.loads((entry / 'manifest.json').read_text())
+    manifest = state.read(entry / 'manifest.json')
     if (manifest.get('key') != identity or manifest['stamp'].get('pool_key') != identity
             or manifest['stamp'].get('fingerprint') != current or manifest['stamp'].get('touched')
             or inventory(entry / 'outputs', owned) != manifest['files']):
         raise ValueError('Pool manifest or output hashes differ; refusing restore')
     # Verify everything before mutation; remove the old stamp before replacing files so interruption cannot certify.
+    begin()
     stamp_path.unlink(missing_ok=True)
     for root in owned:
         destination = ctx.out / root
@@ -131,11 +133,8 @@ def transfer(action, ctx, step, current, pool):
         copy_tree(entry / 'outputs' / root, destination, paths.REPO, paths.REPO, clone_function())
     if inventory(ctx.out, owned) != manifest['files'] or not all(Path(o).is_file() for o in step.outputs):
         raise ValueError('Restored outputs differ; no stamp created')
-    ctx.stamps.mkdir(parents=True, exist_ok=True)
-    stamp = dict(manifest['stamp'], pooled_from=identity)
-    temporary = stamp_path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(stamp)+'\n');temporary.replace(stamp_path)
-    return identity
+    # The admitted worker returns metadata only. The parent installs this stamp after guard close.
+    return dict(key=identity, files=manifest['files'], stamp=dict(manifest['stamp'], pooled_from=identity), existing=True)
 
 
 def stamp_of(ctx, step):
@@ -143,10 +142,7 @@ def stamp_of(ctx, step):
     return json.loads(path.read_text()) if path.exists() else {}
 
 
-def main(action, game, name):
-    if action != 'status':
-        from .build_snapshot import require_complete
-        require_complete(paths.build_root() / game, game=game)
+def select(game, name):
     ctx = Context(game);done = {};target = None
     for step in order(load_recipe(game).steps(ctx), []):
         current = fingerprint(step, done);done[step.name] = result(step, current, stamp_of(ctx, step))
@@ -154,22 +150,15 @@ def main(action, game, name):
             target = (step, current)
     if target is None:
         raise ValueError(f'Unknown step: {name}')
-    step, current = target
-    identity = key(ctx, step, current)
-    pool = paths.cache_dir('artifact-pool', 'v1')
+    return ctx, *target
+
+
+def main(action, game, name):
+    from .artifact_pool_transfer import launch
     if action == 'status':
+        ctx, step, current = select(game, name)
+        identity = key(ctx, step, current)
+        pool = paths.cache_dir('artifact-pool', 'v1', create=False)
         print(f'{name}: {"hit" if (pool / identity).exists() else "miss"} {identity}')
         return 0
-    # File replacement is bounded actual work and cannot overlap a builder in this checkout.
-    with render_lock(f'artifact pool {action} {name}'):
-        before = key(ctx, step, current)
-        copied = transfer(action, ctx, step, current, pool)
-        fresh = {};now = None
-        for item in order(load_recipe(game).steps(ctx), []):
-            value = fingerprint(item, fresh);fresh[item.name] = result(item, value, stamp_of(ctx, item))
-            if item.name == name:now = key(ctx, item, value)
-        if now != before:
-            if action == 'restore': (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
-            raise ValueError('Source context changed during transfer')
-    print(f'{action} {name}: {copied}; independent copies, full file hashes verified')
-    return 0
+    return launch(action, game, name)

@@ -128,7 +128,7 @@ Before the first replacement, reuse writes and fsyncs a journal under the target
 receipt follows the final source, engine and output checks; the journal is removed last. While it exists, builds,
 play, package, stream, QA and shared native launch paths refuse the incomplete snapshot. Do not delete the journal
 or create stamps by hand. Changing `ATELIER_BUILD_ROOT` does not bypass the checkout's default journal: copied
-Content and Binaries still belong to that project. After coordinating a short render-lock turn, discard an
+Content and Binaries still belong to that project. Using normal guarded admission, discard an
 interrupted generated copy with:
 
 ```sh
@@ -339,7 +339,7 @@ currently opts in the Hidamari and tree-house texture finishing steps. All other
 steps refuse pooling. Pool entries stay in the machine-local ignored cache; licensed/private output
 must never be added to Git or uploaded to a public artifact store.
 
-After a successful build records the new pool context, publish it at a render release:
+After a successful build records the new pool context, publish it:
 
 ```sh
 uv run atelier pool publish yorimichi world.hidamari_textures
@@ -360,11 +360,36 @@ support files. It deliberately excludes whole Git revision, so unrelated feature
 All output files are inventoried and SHA-256 checked before publication and restoration. Entries
 publish atomically; a repeated key with different bytes refuses to overwrite the first entry.
 Restores are independent APFS clones where available, regular copies elsewhere. Symlinks refuse.
-A failed/interrupted restore removes its stamp before replacing files and cannot certify completion.
+Publish/restore run an owned file worker through the normal guarded admission lifecycle. In full mode,
+this unclassified file command currently requests the managed CPU pool with exclusion and a 10 GiB
+aggregate/actual-child ceiling; it does not claim calibrated file-copy concurrency. Legacy mode retains
+its ordinary big-slot guard. The worker waits normally for admission; no coordinator message or manual
+lock is needed. No second render lock is taken. `status` only reads cache availability; restoration
+also verifies every file.
 
-Publish/restore take the normal render mutex for actual file transfer; they fail promptly when busy.
-Read the machine ledger/telemetry and coordinate these useful short turns. `status` only reads cache
-availability; restoration also verifies every file. Legacy and `--touch` stamps cannot publish: a real
+Stop other writers in the receiving checkout before copying, as with whole-build reuse. Before any
+replacement, a durable `.pool-transfer-in-progress.json` records the exact step, source/tool key, output
+scope, cache and invocation. The worker rechecks the queued request's source and journal after admission.
+Copies and full inventories complete under its guard. The parent publishes the immutable entry or restored
+stamp only after the worker exits successfully and both guard cleanup and capacity close succeed.
+Build, play, package and direct native launch refuse an incomplete journal, including through another output root.
+The private file-publication mutex serializes finalization and recovery; it is not an execution grant and
+is never taken while waiting for admission.
+
+A failed/interrupted restore removes its old stamp before replacing files and cannot certify completion.
+Repeat the exact original publish/restore command to retry, preserving its key, checkout, output root and cache.
+The retry verifies the same scope and replaces only its own pending attempt. If the source/key changed or you
+want to stop the transfer, use normal guarded cleanup:
+
+```sh
+uv run atelier pool abandon yorimichi world.hidamari_textures
+```
+
+Abandoning a restore removes only that journal's generated output roots and step stamp, leaving the immutable
+cache entry, other steps and logs intact. Abandoning a publish removes only its pending cache copy; the original
+outputs and producer stamp remain. Recovery refuses unsafe paths, symlink scopes, changed journal identity
+or other incomplete installation barriers. Do not delete the journal or manufacture stamps by hand.
+Legacy and `--touch` stamps cannot publish: a real
 successful build must have recorded the matching pool key. A miss leaves ordinary incremental build
 as the fallback. This first pool is explicit, rather than silently changing every build's behavior.
 

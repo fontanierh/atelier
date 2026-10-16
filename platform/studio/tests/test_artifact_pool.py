@@ -3,6 +3,8 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 import json
+import shutil
+import uuid
 
 import pytest
 
@@ -25,41 +27,54 @@ def sample(tmp_path, monkeypatch):
     return ctx,step,tmp_path/'pool'
 
 
+def transfer(action, ctx, step, current, cache):
+    # Seed an immutable entry for file-verification unit tests; guarded publication is tested separately.
+    stage = cache / ('.pending-' + uuid.uuid4().hex)
+    value = pool.transfer(action, ctx, step, current, cache, staging=stage)
+    if action == 'publish':
+        if value['existing']:
+            shutil.rmtree(stage)
+        else:
+            stage.rename(cache / value['key'])
+    return value
+
+
 def certify(ctx):
     (ctx.stamps/'world.textures.json').write_text(json.dumps(dict(fingerprint='source',pool_key='identity',seconds=1)))
 
 
 def test_independent_complete_roundtrip(sample):
     ctx,step,cache=sample;certify(ctx)
-    pool.transfer('publish',ctx,step,'source',cache)
+    transfer('publish',ctx,step,'source',cache)
     (ctx.out/'textures'/'image.png').write_bytes(b'mutated')
     (ctx.out/'textures'/'extra').write_text('stale')
-    pool.transfer('restore',ctx,step,'source',cache)
+    restored = transfer('restore',ctx,step,'source',cache)
     assert (ctx.out/'textures'/'image.png').read_bytes()==b'pixels'
     assert not (ctx.out/'textures'/'extra').exists()
     assert (cache/'identity'/'outputs'/'textures'/'image.png').stat().st_ino != (ctx.out/'textures'/'image.png').stat().st_ino
-    assert json.loads((ctx.stamps/'world.textures.json').read_text())['pooled_from']=='identity'
+    assert restored['stamp']['pooled_from']=='identity'
+    assert not (ctx.stamps/'world.textures.json').exists()  # Only the guarded parent may certify.
 
 
 @pytest.mark.parametrize('stamp',[dict(fingerprint='source'),dict(fingerprint='source',pool_key='identity',touched=True)])
 def test_legacy_or_touched_stamps_refused(sample,stamp):
     ctx,step,cache=sample;(ctx.stamps/'world.textures.json').write_text(json.dumps(stamp))
-    with pytest.raises(ValueError,match='fresh successful'):pool.transfer('publish',ctx,step,'source',cache)
+    with pytest.raises(ValueError,match='fresh successful'):transfer('publish',ctx,step,'source',cache)
     assert not cache.exists()
 
 
 def test_corruption_refused_before_target_mutation(sample):
-    ctx,step,cache=sample;certify(ctx);pool.transfer('publish',ctx,step,'source',cache)
+    ctx,step,cache=sample;certify(ctx);transfer('publish',ctx,step,'source',cache)
     (cache/'identity'/'outputs'/'textures'/'image.png').write_bytes(b'corrupt')
     before=(ctx.stamps/'world.textures.json').read_text()
-    with pytest.raises(ValueError,match='hashes differ'):pool.transfer('restore',ctx,step,'source',cache)
+    with pytest.raises(ValueError,match='hashes differ'):transfer('restore',ctx,step,'source',cache)
     assert (ctx.stamps/'world.textures.json').read_text()==before
     assert (ctx.out/'textures'/'image.png').read_bytes()==b'pixels'
 
 
 def test_symlinks_refused(sample):
     ctx,step,cache=sample;certify(ctx);(ctx.out/'textures'/'link').symlink_to('image.png')
-    with pytest.raises(ValueError,match='symlinks'):pool.transfer('publish',ctx,step,'source',cache)
+    with pytest.raises(ValueError,match='symlinks'):transfer('publish',ctx,step,'source',cache)
 
 
 def test_escaping_root_and_dependency_refused(sample):
@@ -71,9 +86,9 @@ def test_escaping_root_and_dependency_refused(sample):
 
 
 def test_same_key_different_bytes_does_not_overwrite(sample):
-    ctx,step,cache=sample;certify(ctx);pool.transfer('publish',ctx,step,'source',cache)
+    ctx,step,cache=sample;certify(ctx);transfer('publish',ctx,step,'source',cache)
     (ctx.out/'textures'/'image.png').write_bytes(b'other')
-    with pytest.raises(ValueError,match='different bytes'):pool.transfer('publish',ctx,step,'source',cache)
+    with pytest.raises(ValueError,match='different bytes'):transfer('publish',ctx,step,'source',cache)
     assert (cache/'identity'/'outputs'/'textures'/'image.png').read_bytes()==b'pixels'
 
 
@@ -102,6 +117,6 @@ def test_status_keys_a_step_on_the_result_its_cutoff_need_recorded(sample, monke
     monkeypatch.setattr(pool,'Context',lambda game:ctx)
     monkeypatch.setattr(pool,'load_recipe',lambda game:SimpleNamespace(steps=lambda c:[digest,textures]))
     monkeypatch.setattr(pool,'key',lambda ctx,step,current:seen.append(current) or 'identity')
-    monkeypatch.setattr(pool.paths,'cache_dir',lambda *names:cache)
+    monkeypatch.setattr(pool.paths,'cache_dir',lambda *names, **kwargs:cache)
     assert pool.main('status','sandbox','world.textures')==0
     assert seen==[fingerprint(textures,{'digest':'outputs:recorded'})]
