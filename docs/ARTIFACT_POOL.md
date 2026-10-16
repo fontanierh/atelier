@@ -388,7 +388,9 @@ uv run atelier pool abandon yorimichi world.hidamari_textures
 Abandoning a restore removes only that journal's generated output roots and step stamp, leaving the immutable
 cache entry, other steps and logs intact. Abandoning a publish removes only its pending cache copy; the original
 outputs and producer stamp remain. Recovery refuses unsafe paths, symlink scopes, changed journal identity
-or other incomplete installation barriers. Do not delete the journal or manufacture stamps by hand.
+or other incomplete installation barriers. Reserved names and overlapping roots are checked without case
+sensitivity, including on APFS. Transaction JSON reads are bounded to 8 MiB and refuse links/special files.
+Do not delete the journal or manufacture stamps by hand.
 Legacy and `--touch` stamps cannot publish: a real
 successful build must have recorded the matching pool key. A miss leaves ordinary incremental build
 as the fallback. This first pool is explicit, rather than silently changing every build's behavior.

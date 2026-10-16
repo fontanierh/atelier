@@ -186,7 +186,7 @@ def test_partial_pool_transfer_blocks_default_root_even_with_an_output_override(
                                       env={'ATELIER_BUILD_ROOT':str(alternate.parent)})
 
 
-@pytest.mark.parametrize('roots',[['../outside'],['logs'],['stamps'],['a/../b'],['a','a/b'],['Content'],['a//b']])
+@pytest.mark.parametrize('roots',[['../outside'],['logs'],['stamps'],['a/../b'],['a','a/b'],['Content'],['a//b'],['LoGs'],['StAmPs'],['bINARIES'],['a','A/b']])
 def test_unsafe_or_ambiguous_journal_scope_refuses(roots):
     with pytest.raises(ValueError):state.owned_roots(roots)
 
@@ -257,3 +257,13 @@ def test_foreign_project_launch_does_not_consult_controller_pool_journal(fixture
     project.parent.mkdir(parents=True);project.write_text('{}')
     build_snapshot.require_launch(['editor',str(project)],env={})
     assert f.journal.exists()
+
+
+def test_case_alias_of_logs_is_never_a_removable_pool_root(fixture,monkeypatch):
+    f=fixture
+    f.step.pool_roots=[f.ctx.out/'LoGs']
+    f.step.outputs=[f.ctx.out/'LoGs/output']
+    fake_guard(monkeypatch)
+    with pytest.raises(ValueError,match='unsafe'):
+        pool.main('publish','sandbox','world.textures')
+    assert not f.journal.exists() and f.stamp.exists()

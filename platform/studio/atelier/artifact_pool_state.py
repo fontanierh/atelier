@@ -65,10 +65,11 @@ def owned_roots(value):
     roots = [Path(p) for p in value]
     for raw, path in zip(value, roots):
         if (path.is_absolute() or not path.parts or str(path) != raw
-                or any(p in ('', '.', '..', 'Content', 'Binaries', 'Intermediate') for p in path.parts)
-                or path.parts[0] in ('logs', 'stamps') or '\\' in str(path)):
+                or any(p.casefold() in ('', '.', '..', 'content', 'binaries', 'intermediate') for p in path.parts)
+                or path.parts[0].casefold() in ('logs', 'stamps') or '\\' in str(path)):
             raise ValueError('Pool journal output scope is unsafe')
-    if any(a == b or a in b.parents or b in a.parents for i,a in enumerate(roots) for b in roots[i+1:]):
+    folded = [tuple(part.casefold() for part in path.parts) for path in roots]
+    if any(a == b[:len(a)] or b == a[:len(b)] for i,a in enumerate(folded) for b in folded[i+1:]):
         raise ValueError('Pool journal output roots overlap')
     return roots
 
@@ -120,6 +121,7 @@ def transaction(out):
 
 def destination(out, root):
     """Never follow an existing output link, including a link above a nested owned root."""
+    owned_roots([str(root)])
     current = Path(out)
     for part in Path(root).parts:
         current /= part

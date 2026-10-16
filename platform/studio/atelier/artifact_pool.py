@@ -40,13 +40,8 @@ def roots(ctx, step):
         state.owned_roots([str(relative)])
         state.destination(ctx.out, relative)
         item.resolve().relative_to(base)
-        if not relative.parts or relative.parts[0] in ('logs', 'stamps'):
-            raise ValueError('Pool roots must be exclusively owned generated subfolders')
-        if any(part in ('Content', 'Binaries', 'Intermediate') for part in relative.parts):
-            raise ValueError('Mutable Unreal outputs are not portable pool roots')
         result.append(relative)
-    if any(a == b or a in b.parents or b in a.parents for i, a in enumerate(result) for b in result[i+1:]):
-        raise ValueError('Pool roots overlap')
+    state.owned_roots([str(root) for root in result])
     for output in step.outputs:
         relative = Path(output).resolve().relative_to(base)
         if not any(relative == root or root in relative.parents for root in result):
