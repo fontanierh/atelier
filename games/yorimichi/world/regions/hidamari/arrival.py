@@ -15,6 +15,7 @@ AREA = (301., 373., 8., 232.)          # x0, x1, y0, y1 of the paddy hillside
 CELL = (4., 6.)                        # a paddy, along x and y: narrow, the hillside is steep
 ROAD_CLEAR = 11.                       # metres from the arrival road's centre line
 STEP_MAX = 2.2                         # the most a paddy's wall may stand above the ground
+SKIRT = .8                             # how far the road ribbon's edge skirt reaches below its shoulder
 SHRINE = (356.1, 118.9)                # beside the road's bend, facing it
 BUS_STOP = (373.3, 136.7, 45)
 GATE_X = 399.; GATE_Y = 140.; GATE_HALF = 8.8
@@ -34,10 +35,42 @@ def palette():
 
 
 @lru_cache(maxsize=1)
-def _road():
+def _world():
     import json, yori
-    start = max(json.loads((yori.OUT/'world.json').read_text())['road'], key=lambda q: q[0])[:2]
+    return json.loads((yori.OUT/'world.json').read_text())
+
+
+@lru_cache(maxsize=1)
+def _road():
+    start = max(_world()['road'], key=lambda q: q[0])[:2]
     return [tuple(start), (335., 85.), (390., 140.), (420., 140.)]
+
+
+@lru_cache(maxsize=1)
+def _island():
+    import numpy as np, yori
+    world = _world()
+    return np.load(yori.OUT/'heightmap.npy'), world['n'], world['size']
+
+
+def island_height(x, y):
+    """The island terrain mesh (build_terrain.py) at (x, y): the higher of its quad's two triangulations, so a surface
+    laid on it never sinks under either diagonal the exporter or Unreal may pick."""
+    H, n, size = _island(); step = size/(n-1)
+    fx, fy = (x+size/2)/step, (y+size/2)/step
+    i, j = min(max(int(math.floor(fx)), 0), n-2), min(max(int(math.floor(fy)), 0), n-2); tx, ty = fx-i, fy-j
+    a, b, c, d = float(H[j, i]), float(H[j, i+1]), float(H[j+1, i+1]), float(H[j+1, i])
+    # diagonal a-c: triangles (a, b, c) and (a, c, d); diagonal b-d: triangles (a, b, d) and (b, c, d)
+    ac = a+(b-a)*tx+(c-b)*ty if tx >= ty else a+(c-d)*tx+(d-a)*ty
+    bd = a+(b-a)*tx+(d-a)*ty if tx+ty <= 1 else c+(c-d)*(tx-1)+(c-b)*(ty-1)
+    return max(ac, bd)
+
+
+def ground(height):
+    """The ground the road ribbon lies on. The island road ends just west of x 300, the island terrain's east edge,
+    so the ribbon's first metres sit on the island terrain mesh, not Hidamari's ground model; the two agree at x 300."""
+    edge = _island()[2]/2
+    return lambda x, y: island_height(x, y) if x < edge else float(height(x, y))
 
 
 def road_distance(x, y):
@@ -228,7 +261,7 @@ def _samples():
 def _ribbon(m, height):
     """The road itself, draped on the hillside from the island road's end to the gate: asphalt with white edge
     lines and gravel shoulders (the terrain's grid is too coarse to draw a narrow diagonal road)."""
-    pts, normals = _samples()
+    pts, normals = _samples(); height = ground(height)
     bands = [(-3.4, -2.6, 'ar_road_gravel', .10), (-2.6, 2.6, 'ar_road_asphalt', .12), (2.6, 3.4, 'ar_road_gravel', .10),
              (-2.45, -2.33, 'ar_road_line', .13), (2.33, 2.45, 'ar_road_line', .13)]
     for k in range(len(pts)-1):
@@ -236,6 +269,14 @@ def _ribbon(m, height):
         for lo, hi, key, lift in bands:
             corner = lambda c, v, w: (c[0]+v[0]*w, c[1]+v[1]*w, float(height(c[0]+v[0]*w, c[1]+v[1]*w))+lift)
             m.poly([corner(p, n, hi), corner(p, n, lo), corner(q, o, lo), corner(q, o, hi)], key)
+    # A gravel skirt under both shoulders' outer edges and the start: on the steep hillside a terrain quad's two
+    # diagonals can differ by half a metre, so the ribbon may stand above the triangle the engine draws.
+    edge = lambda c, v, w, dz: (c[0]+v[0]*w, c[1]+v[1]*w, float(height(c[0]+v[0]*w, c[1]+v[1]*w))+.10+dz)
+    skirts = [(pts[k], normals[k], s, pts[k+1], normals[k+1], s) for k in range(len(pts)-1) for s in (-3.4, 3.4)]
+    skirts.append((pts[0], normals[0], -3.4, pts[0], normals[0], 3.4))
+    for p, n, s, q, o, t in skirts:
+        quad = [edge(p, n, s, 0.), edge(q, o, t, 0.), edge(q, o, t, -SKIRT), edge(p, n, s, -SKIRT)]
+        m.poly(quad, 'ar_road_gravel'); m.poly(quad[::-1], 'ar_road_gravel')
 
 
 def arrival(m, height):
