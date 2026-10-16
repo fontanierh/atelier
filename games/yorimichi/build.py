@@ -609,10 +609,13 @@ def world_steps(ctx):
         digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
         *belmonte_steps(out)[:2],
+        # Zeppelin samples layout products and shared terrain code, not Hidamari's exported city/assets.
+        # Keep the old build order; track tree metadata read by the imported treehouse layout directly.
         Step('world.zeppelin', [Blender(REGIONS / 'zeppelin' / 'build.py', threads=2)],
              inputs=[REGIONS / 'zeppelin', REGIONS / 'village' / 'build.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
-                     REGIONS / 'megapark' / 'gate.py'],
-             needs=['world.layout', 'world.hidamari'],
+                     REGIONS / 'megapark' / 'gate.py', ASSETS / 'megapark' / 'map.json',
+                     ASSETS / 'megapark' / 'geometry', ASSETS / 'megapark' / 'collision'],
+             needs=['world.layout', 'world.treehouse_trees'], after=['world.hidamari'],
              outputs=[out / 'zeppelin' / 'manifest.json'], about='airship and its three stations', heavy=True),
         digest_step(out, 'world.zeppelin', 'meshes', 'the zeppelin meshes unreal.world reads', out / 'zeppelin', ['manifest.json', 'assets']),
         Step('world.hidamari_textures', [Python(TOOLS / 'hidamari_textures.py', ('finish',))],
