@@ -540,6 +540,12 @@ void USkateComponent::RetargetRiderPose()
             for (const FString& Word : Words) Grip.Add(FCString::Atof(*Word));
             Grip.SetNumZeroed(9);
         }
+        TArray<float> Reach;
+        {
+            TArray<FString> Words; CVarSkateGrabReach.GetValueOnGameThread().ParseIntoArrayWS(Words);
+            for (const FString& Word : Words) Reach.Add(FCString::Atof(*Word));
+            if (Reach.Num()<4 || Reach[1]<=Reach[0]) Reach={4.f,20.f,.97f,.25f};
+        }
         // The deck mesh's frame is the source deck's (SM_SkateDeck: origin at the deck-top centre, nose +X).
         const FBox Box=Deck->GetStaticMesh()->GetBoundingBox();
         const double HalfWidth=Box.GetExtent().Y,HalfLength=Box.GetExtent().X,Flat=HalfLength-HalfWidth,KickStart=.675*HalfLength;
@@ -548,101 +554,159 @@ void USkateComponent::RetargetRiderPose()
         auto RailTop=[&](double X){ const double T=FMath::Clamp((FMath::Abs(X)-KickStart)/(HalfLength-KickStart),0.,1.); return Concave+T*T*(Box.Max.Z-Concave); };
         // The visible deck: a bigger board's outline scales with it, the grip offsets stay at the hand's size.
         const FTransform DeckToMesh=(bOffBoardPose?OffBoardDeck:ShownRuntime->Bone(TEXT("SKATEBOARD_ROOT"))*BoardGrowth()).GetRelativeTransform(MeshWorld);
-        for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
+        // A rider whose arms are short for its shoulders' height (long legs, short arms) cannot reach the rail with the
+        // pose's own crouch, and a two-bone arm does not stretch: its hand stops short, the arm locked straight. The
+        // first pass measures how far each gripping wrist is beyond the arm's reach (skate.GrabReach's share of its
+        // length); the body (pelvis and all above, the legs re-solved to their feet) then lowers towards the board by
+        // the most a grip needs, weighted by the grip, at most a share of the leg; the second pass solves the arms.
+        const FVector TowardBoard=-DeckToMesh.GetRotation().GetUpVector();
+        double Drop=0;
+        for (int32 Pass=0;Pass<2;++Pass)
         {
-            auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };
-            const FString SourceSide=Side[0]=='L'?TEXT("LEFT"):TEXT("RIGHT");
-            const int32 Upper=Target(TEXT("upperarm")),Fore=Target(TEXT("forearm")),Hand=Target(TEXT("hand")),ThumbEnd=Target(TEXT("thumb_end"));
-            const int32 SHand=Source(*(SourceSide+TEXT("HAND"))),SFore=Source(*(SourceSide+TEXT("FOREARM")));
-            if (Upper<0 || Fore<0 || Hand<0 || SHand<0 || SFore<0) continue;
-            // The source hand and its length axis in its deck's frame; its knuckles are about 9 cm down that axis.
-            const FTransform SourceHand=ShownRuntime->Bones[SHand].GetRelativeTransform(ShownRuntime->Bones[SDeck]);
-            const FTransform& SourceRef=ShownRuntime->Reference[SHand];
-            const FVector Axis=SourceHand.GetRotation().RotateVector(SourceRef.GetRotation().UnrotateVector(
-                (SourceRef.GetLocation()-ShownRuntime->Reference[SFore].GetLocation()).GetSafeNormal()));
-            const FVector Knuckle=SourceHand.GetLocation()+Axis*SourceKnuckle;
-            // The nearest point of the deck's outline (straight rails, round ends) and its outward normal.
-            const double Along=FMath::Clamp(Knuckle.X,-Flat,Flat);
-            FVector Out=FVector(Knuckle.X-Along,Knuckle.Y,0).GetSafeNormal();
-            if (Out.IsNearlyZero()) continue;
-            const FVector Edge=FVector(Along,0,0)+Out*HalfWidth;
-            const float Weight=1.f-FMath::SmoothStep(4.f,20.f,float(FVector::Dist(Knuckle,Edge+FVector(0,0,RailTop(Edge.X)-Thickness*.5))));
-            if (Weight<=0.f) continue;
-            // Hand frame on the board: fingers down the source hand's axis, kept in the plane across the edge; palm
-            // towards the deck.
-            const FVector Down=(Axis-(Axis|Out)*Out).GetSafeNormal(),Palm=(-Out-((-Out)|Down)*Down).GetSafeNormal();
-            const FTransform& HandBind=Bind[Hand];
-            auto Local=[&](int32 Bone){ return HandBind.GetRotation().UnrotateVector(Bind[Bone].GetLocation()-HandBind.GetLocation()); };
-            // The rider's own hand frame and size come from its bind. Fingers are optional in the humanoid contract:
-            // with them, the hand's axis runs to the middle knuckle (or the knuckles' mean), the knuckle line crosses
-            // it, the palm is on the thumb's side and a finger's width is the knuckle spacing. Without them, the hand
-            // continues the forearm, its palm faces the bind's floor and its size follows the upper arm.
-            TArray<int32> Knuckles,Numbers;
-            for (int32 N=0;N<4;++N)
-                if (const int32 K=Target(*FString::Printf(TEXT("finger_%d"),N)); K>=0) { Knuckles.Add(K); Numbers.Add(N); }
-            const double UpperLength=FVector::Dist(Bind[Upper].GetLocation(),Bind[Fore].GetLocation());
-            FVector KnuckleLocal=HandBind.GetRotation().UnrotateVector(HandBind.GetLocation()-Bind[Fore].GetLocation()).GetSafeNormal()*UpperLength*.45;
-            double FingerWidth=UpperLength*.1;
-            if (const int32 Middle=Target(TEXT("finger_1")); Middle>=0) KnuckleLocal=Local(Middle);
-            else if (!Knuckles.IsEmpty())
+            if (Pass==1 && Drop>0)
             {
-                KnuckleLocal=FVector::ZeroVector;
-                for (const int32 K : Knuckles) KnuckleLocal+=Local(K)/Knuckles.Num();
-            }
-            const FVector LAlong=KnuckleLocal.GetSafeNormal();
-            FVector LAcross=FVector::ZeroVector;
-            if (Knuckles.Num()>=2)
-            {
-                // The knuckle line is not square to the hand's axis: square it first, or the palm normal tilts with it.
-                const FVector Line=Local(Knuckles.Last())-Local(Knuckles[0]);
-                LAcross=FVector::VectorPlaneProject(Line,LAlong).GetSafeNormal();
-                FingerWidth=Line.Size()/(Numbers.Last()-Numbers[0]);
-            }
-            FVector LPalm=ThumbEnd>=0?Local(ThumbEnd):HandBind.GetRotation().UnrotateVector(FVector::DownVector);
-            LPalm-=(LPalm|LAlong)*LAlong; LPalm-=(LPalm|LAcross)*LAcross; LPalm.Normalize();
-            if (Down.IsNearlyZero() || Palm.IsNearlyZero() || LAlong.IsNearlyZero() || LPalm.IsNearlyZero()) continue;
-            const FQuat HandInDeck=FRotationMatrix::MakeFromXY(Down,Palm).ToQuat()*FRotationMatrix::MakeFromXY(LAlong,LPalm).ToQuat().Inverse();
-            const FQuat HandRotation=DeckToMesh.GetRotation()*HandInDeck;
-            const double Width=FingerWidth*Mesh->GetComponentScale().Z/BoardScale();
-            const FVector KnuckleTarget=DeckToMesh.TransformPosition(Edge+Out*Grip[1]*Width+FVector(0,0,RailTop(Edge.X)+Grip[0]*Width));
-            const FVector Wrist=KnuckleTarget-HandRotation.RotateVector(KnuckleLocal);
-            const FQuat Retargeted=Output[Hand].GetRotation();
-            const FVector Pole=Targets[Fore]+(Targets[Fore]-(Targets[Upper]+Targets[Hand])*.5)*2;
-            AnimationCore::SolveTwoBoneIK(Output[Upper],Output[Fore],Output[Hand],Pole,FMath::Lerp(Output[Hand].GetLocation(),Wrist,double(Weight)),false,1.f,1.f);
-            Output[Hand].SetRotation(FQuat::Slerp(Retargeted,HandRotation,Weight));
-            // Curl each finger towards the palm about its own knuckle axis. Finger angles are absolute (cumulative from
-            // the hand's axis, so the bind's own curl does not add up); the thumb swings towards the fingers first.
-            const FQuat HandNow=Output[Hand].GetRotation();
-            TMap<int32,FQuat> Turns;
-            for (int32 Digit=0;Digit<5;++Digit)
-            {
-                const bool Thumb=Digit==4;
-                const int32 Joints[3]={Thumb?Target(TEXT("thumb")):Target(*FString::Printf(TEXT("finger_%d"),Digit)),
-                    Thumb?Target(TEXT("thumb_tip")):Target(*FString::Printf(TEXT("finger_tip_%d"),Digit)),
-                    Thumb?ThumbEnd:Target(*FString::Printf(TEXT("finger_end_%d"),Digit))};
-                if (Joints[0]<0 || Joints[1]<0 || Joints[2]<0) continue;
-                const FVector Segments[3]={(Local(Joints[1])-Local(Joints[0])).GetSafeNormal(),(Local(Joints[2])-Local(Joints[1])).GetSafeNormal(),(Local(Joints[2])-Local(Joints[1])).GetSafeNormal()};
-                const FVector SwingAxis=(Segments[0]^LAlong).GetSafeNormal();
-                const double Swing=Thumb?FMath::DegreesToRadians(Grip[5]*Weight):0.;
-                const FVector Bend=(FQuat(SwingAxis,Swing).RotateVector(Segments[0])^LPalm).GetSafeNormal();
-                double Applied=0,Wanted=0;
-                for (int32 J=0;J<3;++J)
+                const int32 Pelvis=Index(TEXT("pelvis"));
+                const int32 Legs[2][3]={{Index(TEXT("thigh_L")),Index(TEXT("shin_L")),Index(TEXT("foot_L"))},{Index(TEXT("thigh_R")),Index(TEXT("shin_R")),Index(TEXT("foot_R"))}};
+                double Leg=0;
+                if (Legs[0][0]>=0 && Legs[0][1]>=0 && Legs[0][2]>=0)
+                    Leg=FVector::Dist(Bind[Legs[0][0]].GetLocation(),Bind[Legs[0][1]].GetLocation())+FVector::Dist(Bind[Legs[0][1]].GetLocation(),Bind[Legs[0][2]].GetLocation());
+                Drop=FMath::Min(Drop,double(Reach[3])*Leg);
+                if (Pelvis<0 || Drop<=0) Drop=0;
+                else
                 {
-                    const double BindAngle=FMath::RadiansToDegrees(FMath::Atan2(Segments[J]|LPalm,Segments[J]|LAlong));
-                    Wanted+=Grip[Thumb?6+J:2+J];
-                    const double Delta=Thumb?Grip[6+J]:(Wanted-BindAngle)-Applied; Applied+=Delta;
-                    FQuat Turn=FQuat(HandNow.RotateVector(Bend),FMath::DegreesToRadians(Delta*Weight));
-                    if (J==0 && Thumb) Turn=Turn*FQuat(HandNow.RotateVector(SwingAxis),Swing);
-                    Turns.Add(Joints[J],Turn);
+                    FTransform Feet[2];
+                    for (int32 S=0;S<2;++S) if (Legs[S][2]>=0) Feet[S]=Output[Legs[S][2]];
+                    for (int32 I=Pelvis;I<Ref.GetNum();++I)
+                    {
+                        int32 Up=I;
+                        while (Up>Pelvis) Up=Ref.GetParentIndex(Up);
+                        if (Up==Pelvis) Output[I].AddToTranslation(TowardBoard*Drop);
+                    }
+                    for (int32 S=0;S<2;++S)
+                    {
+                        const int32 A=Legs[S][0],B=Legs[S][1],C=Legs[S][2];
+                        if (A<0 || B<0 || C<0) continue;
+                        const FVector Knee=Output[B].GetLocation(),Pole=Knee+(Knee-(Output[A].GetLocation()+Output[C].GetLocation())*.5)*2;
+                        AnimationCore::SolveTwoBoneIK(Output[A],Output[B],Output[C],Pole,Feet[S].GetLocation(),false,1.f,1.f);
+                        Output[C].SetRotation(Feet[S].GetRotation());
+                        for (int32 I=C+1;I<Ref.GetNum();++I)
+                        {
+                            int32 Up=I;
+                            while (Up>C) Up=Ref.GetParentIndex(Up);
+                            if (Up==C) Output[I]=Ref.GetRefBonePose()[I]*Output[Ref.GetParentIndex(I)];
+                        }
+                    }
                 }
             }
-            for (int32 I=Hand+1;I<Ref.GetNum();++I)
+            for (const TCHAR* Side : {TEXT("L"),TEXT("R")})
             {
-                int32 Up=Ref.GetParentIndex(I);
-                while (Up>Hand) Up=Ref.GetParentIndex(Up);
-                if (Up!=Hand) continue;
-                Output[I]=Ref.GetRefBonePose()[I]*Output[Ref.GetParentIndex(I)];
-                if (const FQuat* Turn=Turns.Find(I)) Output[I].SetRotation(*Turn*Output[I].GetRotation());
+                auto Target=[&](const TCHAR* Name){ return Index(FString::Printf(TEXT("%s_%s"),Name,Side)); };
+                const FString SourceSide=Side[0]=='L'?TEXT("LEFT"):TEXT("RIGHT");
+                const int32 Upper=Target(TEXT("upperarm")),Fore=Target(TEXT("forearm")),Hand=Target(TEXT("hand")),ThumbEnd=Target(TEXT("thumb_end"));
+                const int32 SHand=Source(*(SourceSide+TEXT("HAND"))),SFore=Source(*(SourceSide+TEXT("FOREARM")));
+                if (Upper<0 || Fore<0 || Hand<0 || SHand<0 || SFore<0) continue;
+                // The source hand and its length axis in its deck's frame; its knuckles are about 9 cm down that axis.
+                const FTransform SourceHand=ShownRuntime->Bones[SHand].GetRelativeTransform(ShownRuntime->Bones[SDeck]);
+                const FTransform& SourceRef=ShownRuntime->Reference[SHand];
+                const FVector Axis=SourceHand.GetRotation().RotateVector(SourceRef.GetRotation().UnrotateVector(
+                    (SourceRef.GetLocation()-ShownRuntime->Reference[SFore].GetLocation()).GetSafeNormal()));
+                const FVector Knuckle=SourceHand.GetLocation()+Axis*SourceKnuckle;
+                // The nearest point of the deck's outline (straight rails, round ends) and its outward normal.
+                const double Along=FMath::Clamp(Knuckle.X,-Flat,Flat);
+                FVector Out=FVector(Knuckle.X-Along,Knuckle.Y,0).GetSafeNormal();
+                if (Out.IsNearlyZero()) continue;
+                const FVector Edge=FVector(Along,0,0)+Out*HalfWidth;
+                const float Weight=1.f-FMath::SmoothStep(Reach[0],Reach[1],float(FVector::Dist(Knuckle,Edge+FVector(0,0,RailTop(Edge.X)-Thickness*.5))));
+                if (Weight<=0.f) continue;
+                // Hand frame on the board: fingers down the source hand's axis, kept in the plane across the edge; palm
+                // towards the deck.
+                const FVector Down=(Axis-(Axis|Out)*Out).GetSafeNormal(),Palm=(-Out-((-Out)|Down)*Down).GetSafeNormal();
+                const FTransform& HandBind=Bind[Hand];
+                auto Local=[&](int32 Bone){ return HandBind.GetRotation().UnrotateVector(Bind[Bone].GetLocation()-HandBind.GetLocation()); };
+                // The rider's own hand frame and size come from its bind. Fingers are optional in the humanoid contract:
+                // with them, the hand's axis runs to the middle knuckle (or the knuckles' mean), the knuckle line crosses
+                // it, the palm is on the thumb's side and a finger's width is the knuckle spacing. Without them, the hand
+                // continues the forearm, its palm faces the bind's floor and its size follows the upper arm.
+                TArray<int32> Knuckles,Numbers;
+                for (int32 N=0;N<4;++N)
+                    if (const int32 K=Target(*FString::Printf(TEXT("finger_%d"),N)); K>=0) { Knuckles.Add(K); Numbers.Add(N); }
+                const double UpperLength=FVector::Dist(Bind[Upper].GetLocation(),Bind[Fore].GetLocation());
+                FVector KnuckleLocal=HandBind.GetRotation().UnrotateVector(HandBind.GetLocation()-Bind[Fore].GetLocation()).GetSafeNormal()*UpperLength*.45;
+                double FingerWidth=UpperLength*.1;
+                if (const int32 Middle=Target(TEXT("finger_1")); Middle>=0) KnuckleLocal=Local(Middle);
+                else if (!Knuckles.IsEmpty())
+                {
+                    KnuckleLocal=FVector::ZeroVector;
+                    for (const int32 K : Knuckles) KnuckleLocal+=Local(K)/Knuckles.Num();
+                }
+                const FVector LAlong=KnuckleLocal.GetSafeNormal();
+                FVector LAcross=FVector::ZeroVector;
+                if (Knuckles.Num()>=2)
+                {
+                    // The knuckle line is not square to the hand's axis: square it first, or the palm normal tilts with it.
+                    const FVector Line=Local(Knuckles.Last())-Local(Knuckles[0]);
+                    LAcross=FVector::VectorPlaneProject(Line,LAlong).GetSafeNormal();
+                    FingerWidth=Line.Size()/(Numbers.Last()-Numbers[0]);
+                }
+                FVector LPalm=ThumbEnd>=0?Local(ThumbEnd):HandBind.GetRotation().UnrotateVector(FVector::DownVector);
+                LPalm-=(LPalm|LAlong)*LAlong; LPalm-=(LPalm|LAcross)*LAcross; LPalm.Normalize();
+                if (Down.IsNearlyZero() || Palm.IsNearlyZero() || LAlong.IsNearlyZero() || LPalm.IsNearlyZero()) continue;
+                const FQuat HandInDeck=FRotationMatrix::MakeFromXY(Down,Palm).ToQuat()*FRotationMatrix::MakeFromXY(LAlong,LPalm).ToQuat().Inverse();
+                const FQuat HandRotation=DeckToMesh.GetRotation()*HandInDeck;
+                const double Width=FingerWidth*Mesh->GetComponentScale().Z/BoardScale();
+                const FVector KnuckleTarget=DeckToMesh.TransformPosition(Edge+Out*Grip[1]*Width+FVector(0,0,RailTop(Edge.X)+Grip[0]*Width));
+                const FVector Wrist=KnuckleTarget-HandRotation.RotateVector(KnuckleLocal);
+                if (Pass==0)
+                {
+                    // The drop along TowardBoard that brings this wrist target within reach of the shoulder: the nearer
+                    // root of |V - d U| = Length (or V's projection, the nearest it can come).
+                    const double Length=(FVector::Dist(Bind[Upper].GetLocation(),Bind[Fore].GetLocation())+FVector::Dist(Bind[Fore].GetLocation(),Bind[Hand].GetLocation()))*Reach[2];
+                    const FVector V=Wrist-Output[Upper].GetLocation();
+                    if (V.Size()>Length)
+                    {
+                        const double Along=V|TowardBoard,Disc=Along*Along-V.SizeSquared()+Length*Length;
+                        Drop=FMath::Max(Drop,Weight*FMath::Max(0.,Disc>=0?Along-FMath::Sqrt(Disc):Along));
+                    }
+                    continue;
+                }
+                const FQuat Retargeted=Output[Hand].GetRotation();
+                const FVector Pole=Targets[Fore]+(Targets[Fore]-(Targets[Upper]+Targets[Hand])*.5)*2+TowardBoard*Drop;
+                AnimationCore::SolveTwoBoneIK(Output[Upper],Output[Fore],Output[Hand],Pole,FMath::Lerp(Output[Hand].GetLocation(),Wrist,double(Weight)),false,1.f,1.f);
+                Output[Hand].SetRotation(FQuat::Slerp(Retargeted,HandRotation,Weight));
+                // Curl each finger towards the palm about its own knuckle axis. Finger angles are absolute (cumulative from
+                // the hand's axis, so the bind's own curl does not add up); the thumb swings towards the fingers first.
+                const FQuat HandNow=Output[Hand].GetRotation();
+                TMap<int32,FQuat> Turns;
+                for (int32 Digit=0;Digit<5;++Digit)
+                {
+                    const bool Thumb=Digit==4;
+                    const int32 Joints[3]={Thumb?Target(TEXT("thumb")):Target(*FString::Printf(TEXT("finger_%d"),Digit)),
+                        Thumb?Target(TEXT("thumb_tip")):Target(*FString::Printf(TEXT("finger_tip_%d"),Digit)),
+                        Thumb?ThumbEnd:Target(*FString::Printf(TEXT("finger_end_%d"),Digit))};
+                    if (Joints[0]<0 || Joints[1]<0 || Joints[2]<0) continue;
+                    const FVector Segments[3]={(Local(Joints[1])-Local(Joints[0])).GetSafeNormal(),(Local(Joints[2])-Local(Joints[1])).GetSafeNormal(),(Local(Joints[2])-Local(Joints[1])).GetSafeNormal()};
+                    const FVector SwingAxis=(Segments[0]^LAlong).GetSafeNormal();
+                    const double Swing=Thumb?FMath::DegreesToRadians(Grip[5]*Weight):0.;
+                    const FVector Bend=(FQuat(SwingAxis,Swing).RotateVector(Segments[0])^LPalm).GetSafeNormal();
+                    double Applied=0,Wanted=0;
+                    for (int32 J=0;J<3;++J)
+                    {
+                        const double BindAngle=FMath::RadiansToDegrees(FMath::Atan2(Segments[J]|LPalm,Segments[J]|LAlong));
+                        Wanted+=Grip[Thumb?6+J:2+J];
+                        const double Delta=Thumb?Grip[6+J]:(Wanted-BindAngle)-Applied; Applied+=Delta;
+                        FQuat Turn=FQuat(HandNow.RotateVector(Bend),FMath::DegreesToRadians(Delta*Weight));
+                        if (J==0 && Thumb) Turn=Turn*FQuat(HandNow.RotateVector(SwingAxis),Swing);
+                        Turns.Add(Joints[J],Turn);
+                    }
+                }
+                for (int32 I=Hand+1;I<Ref.GetNum();++I)
+                {
+                    int32 Up=Ref.GetParentIndex(I);
+                    while (Up>Hand) Up=Ref.GetParentIndex(Up);
+                    if (Up!=Hand) continue;
+                    Output[I]=Ref.GetRefBonePose()[I]*Output[Ref.GetParentIndex(I)];
+                    if (const FQuat* Turn=Turns.Find(I)) Output[I].SetRotation(*Turn*Output[I].GetRotation());
+                }
             }
         }
     }

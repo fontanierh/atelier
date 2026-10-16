@@ -76,6 +76,9 @@ namespace SkateRuntimeDetail
 {
     TAutoConsoleVariable<FString> CVarSkateGrip(TEXT("skate.Grip"),TEXT("-.705 .94 25 75 10 40 40 15 10"),
         TEXT("Grab grip: lift out (finger widths) mcp pip dip thumbswing thumb1 thumb2 thumb3 (degrees)"));
+    TAutoConsoleVariable<FString> CVarSkateGrabReach(TEXT("skate.GrabReach"),TEXT("4 20 .97 .25"),
+        TEXT("Grab reach: grip from full to none as the source knuckle is near..far (cm) from its deck's edge; the share of "
+             "the arm's length a gripping arm may straighten to; the most the body lowers towards the board for it (share of the leg)"));
     TAutoConsoleVariable<float> CVarSkateArmClear(TEXT("skate.ArmClear"),2.f,
         TEXT("cm the hands and forearms keep clear of the rider's own pelvis, spine, chest and thighs; below 0 off"));
     TAutoConsoleVariable<float> CVarSkateFootGround(TEXT("skate.FootGround"),.5f,

@@ -69,6 +69,7 @@ namespace SkateRuntimeDetail
     // The retargeted limbs against this rider's own body and the ground (RetargetRiderPose): how far each forearm and
     // hand stays out of its pelvis, spine, chest and thighs, and how far above the ground under it each foot's sole
     // stays (cm; below 0 off).
+    extern TAutoConsoleVariable<FString> CVarSkateGrabReach;
     extern TAutoConsoleVariable<float> CVarSkateArmClear;
     extern TAutoConsoleVariable<float> CVarSkateFootGround;
     // The simulation thread steps in lockstep with the game: each frame waits for the last frame's step, so no frame's
