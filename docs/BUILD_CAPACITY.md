@@ -132,6 +132,31 @@ The full-pool entries above describe the current fallback, not evidence that eve
 cores. Lowering only that number does not remove the separate exclusion flag. Known bounded workloads should
 get a measured profile instead of keeping a broad classification indefinitely.
 
+#### Standalone native tool builds
+
+CPU-heavy tool and dependency builds need the same admission as game builds, even when their source is
+outside Atelier. This includes CMake, Cargo, Make and Ninja commands. Run them from your own current-main
+Atelier worktree after `uv sync`, leaving `ATELIER_CAPACITY_CLIENT` unset. For example:
+
+```sh
+ATELIER_AGENT=OWNER nice -n 10 uv run python -m atelier.harness.safety.guarded \
+  --kind compile --report build/tool-compile.guard --timeout 1800 \
+  --purpose "compile local tool" -- cmake --build /absolute/tool-build -j 3
+```
+
+Use a fresh report directory per invocation and a timeout that covers the intended work. Substitute the
+actual tool command and its supported worker cap; keep the existing three-worker tuning on this Mac.
+Run a potentially long or queued command in the client's background job facility and retain its logs.
+The compile guard covers the owned process tree and uses the installed compile profile: currently the
+full managed CPU budget, performance exclusion and the normal 10 GiB memory ceiling. A profile that
+cannot accommodate the work must be investigated rather than bypassed or privately reduced.
+
+`nice -n 10` and `-j 3` control priority and tool parallelism; they do not acquire admission or protect an
+active game's performance window. Admission is cooperative: the broker cannot prevent every arbitrary
+compiler launched outside the guarded entry points. All agents must use them. Do not add a guard around
+`atelier build/play`, which already owns its lifecycle, or request a second legacy lock. Ordinary admission
+queues this compile when necessary; it needs no pre-announcement, coordinator ACK or release message.
+
 #### Compiler workers are not the whole build
 
 Treat these as separate measurements and policy choices:

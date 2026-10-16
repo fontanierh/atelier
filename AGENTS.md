@@ -248,6 +248,12 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   concurrency. Keep the pilot client until the operator announces maintenance or full cutover; then use the
   installed default client after checking the matching live mode. Never edit broker settings, clear uncertain reservations,
   lower profiles below guard ceilings or bypass a refusal. Keep incident delivery and normal guards active.
+- Standalone CPU-heavy native builds also need admission, including tools and dependencies outside this
+  repository. Run CMake, Cargo, Make or Ninja through the [standalone compile workflow](docs/BUILD_CAPACITY.md#standalone-native-tool-builds)
+  with `--kind compile`, from your own current-main checkout after `uv sync`. Keep the supported worker cap
+  (normally three); `nice` or `-j 3` alone does not provide admission, memory guards or game isolation.
+  Do not wrap `atelier build/play` in another guard. Normal admission decides when the standalone compile
+  can run; no pre-build board message, coordinator acknowledgement or manual handoff is required.
 - On macOS, the shared process launcher gives builds and games application resource policies instead of an
   inherited background launchd role. It keeps normal thread QoS and at least nice 10; explicit `taskpolicy -b`
   or `-c background` policies are separate and are not cleared by it.
