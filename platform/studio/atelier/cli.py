@@ -173,13 +173,16 @@ def make_parser():
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
     p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
-    p.add_argument('action', choices=['plan', 'history', 'shadow', 'probe', 'serve', 'status', 'reconcile',
+    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile',
                                     'supervise', 'prepare-cutover', 'activate-cutover', 'migrate-volume-seal', 'promote-prior-boot'])
     p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
     p.add_argument('--request-id', help='request whose preserved terminal receipt is attested (reconcile only)')
     p.add_argument('--preserved-terminal', help='preserved original aggregate terminal JSON (reconcile only; requires --request-id)')
     p.add_argument('--json', action='store_true')
+    p.add_argument('--output', help='new evidence directory (observe-cpu only)')
+    p.add_argument('--seconds', type=float, help='CPU observation duration, at most 900s (default: 60)')
+    p.add_argument('--interval', type=float, help='CPU observation interval, 0.25 to 5s (default: 1)')
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
     p.add_argument('--rebuild-touched', action='store_true',
@@ -275,6 +278,8 @@ def main(argv=None):
     if args.command == 'fetch':
         return fetch(args.game)
     if args.command == 'capacity':
+        if args.action != 'observe-cpu' and any(v is not None for v in (args.output, args.seconds, args.interval)):
+            raise SystemExit('--output, --seconds and --interval are only supported by capacity observe-cpu')
         if ((args.request_id is None) != (args.preserved_terminal is None)
                 or (args.request_id is not None and args.action != 'reconcile')):
             raise SystemExit('--request-id and --preserved-terminal must be used together with capacity reconcile')
@@ -285,6 +290,12 @@ def main(argv=None):
             return shadow_main(args.state, args.path)
         if args.state:
             raise SystemExit('--state is only supported by capacity shadow')
+        if args.action == 'observe-cpu':
+            if args.output is None:
+                raise SystemExit('capacity observe-cpu requires --output with a new evidence directory')
+            from .capacity_cpu import main as observe_cpu
+            return observe_cpu(args.path, args.output, seconds=60 if args.seconds is None else args.seconds,
+                               interval=1 if args.interval is None else args.interval, as_json=args.json)
         if args.action in ('prepare-cutover', 'activate-cutover', 'migrate-volume-seal', 'promote-prior-boot'):
             from . import capacity_compat
             operation = {'prepare-cutover': capacity_compat.prepare, 'activate-cutover': capacity_compat.activate,

@@ -240,6 +240,9 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   A shell wrapper's CPU counter excludes its children; whole-machine CPU percentages include other jobs.
   Neither establishes the complete job's CPU need. A smaller profile must cover its actual worker controls and
   helper load, and its separate exclusion/release policy must be validated before claiming extra concurrency.
+  For a focused macOS CPU investigation, use `atelier capacity observe-cpu GUARD_DIR --output NEW_DIR`
+  in the background; its paired owned-tree samples retain gaps and never establish a hard peak bound.
+  This is optional diagnostic work, not a pre-build message or an extra admission requirement.
   Explicit sealed maintenance is one guarded job at a time,
   with read-only exclusive ownership of all sealed lanes and normal nominal guard ceilings; it is not full
   concurrency. Keep the pilot client until the operator announces maintenance or full cutover; then use the

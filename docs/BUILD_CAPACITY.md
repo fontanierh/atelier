@@ -161,6 +161,29 @@ its compiler children. Watched-process reports are separate and must not be doub
 `proc_pid_rusage` CPU counters require the host's `mach_timebase_info` conversion before comparison with
 wall-clock seconds.
 
+For a focused observation of an already-running guarded job on macOS:
+
+```sh
+uv run atelier capacity observe-cpu build/sandbox/logs/unreal.compile.guard \
+  --seconds 60 --interval 1 --output build/cpu-observation-1
+```
+
+Run the observer in the normal background job facility. It reads the fresh aggregate guard roster and
+samples only matching PID/birth identities. It starts no workload, takes no admission reservation and never
+signals a process. The new output directory retains interval samples and a summary; existing evidence refuses
+overwrite. Observation ends at its deadline or the bound guard's terminal report. A changed invocation, stale
+report or read failure stops observation with partial evidence preserved. The default duration is 60 seconds;
+the maximum is 900, with sampling intervals from 0.25 to 5 seconds.
+
+The reported CPU units sum paired counters from the sampled owned tree. First observations, unavailable
+processes, counter resets and departed identities are explicit gaps, never zero usage or an inferred exit tail.
+Processes that live entirely between polls can be missed. A sampled maximum is therefore not a hard bound,
+complete lifetime accounting or permission to lower a reservation. Keep the command, tool version, worker
+settings and source identity alongside the observation; watched root-process histories must not be added again.
+The installed UE5.8 Mac core-count getters read hardware counts directly rather than the generic `-corelimit`
+parser. That flag alone does not establish a smaller Mac job envelope. Verify the actual platform/tool controls
+and helper pools before comparing a lower-worker profile.
+
 Compare useful work per elapsed second, memory peaks, host responsiveness and output equivalence under
 normal guards. Keep all existing memory ceilings and the host reserve. Validate command recognition and
 matching launcher/broker enforcement, then verify overlap and cleanup with the real intended neighboring
