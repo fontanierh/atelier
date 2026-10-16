@@ -186,7 +186,9 @@ def test_partial_pool_transfer_blocks_default_root_even_with_an_output_override(
                                       env={'ATELIER_BUILD_ROOT':str(alternate.parent)})
 
 
-@pytest.mark.parametrize('roots',[['../outside'],['logs'],['stamps'],['a/../b'],['a','a/b'],['Content'],['a//b'],['LoGs'],['StAmPs'],['bINARIES'],['a','A/b']])
+@pytest.mark.parametrize('roots',[['../outside'],['logs'],['stamps'],['a/../b'],['a','a/b'],['Content'],['a//b'],['LoGs'],['StAmPs'],['bINARIES'],['a','A/b'],
+    ['caf\u00e9','cafe\u0301/b'],['caf\u00e9','cafe\u0301'],[state.JOURNAL],
+    ['.REUSE-in-progress.json'],['.portable-snapshot-in-progress.json'],['.package-install-in-progress.json']])
 def test_unsafe_or_ambiguous_journal_scope_refuses(roots):
     with pytest.raises(ValueError):state.owned_roots(roots)
 

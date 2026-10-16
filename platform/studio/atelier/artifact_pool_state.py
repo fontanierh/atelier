@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import stat
 import time
+import unicodedata
 import uuid
 
 JOURNAL = '.pool-transfer-in-progress.json'
@@ -66,9 +67,10 @@ def owned_roots(value):
     for raw, path in zip(value, roots):
         if (path.is_absolute() or not path.parts or str(path) != raw
                 or any(p.casefold() in ('', '.', '..', 'content', 'binaries', 'intermediate') for p in path.parts)
-                or path.parts[0].casefold() in ('logs', 'stamps') or '\\' in str(path)):
+                or path.parts[0].casefold() in ('logs', 'stamps', JOURNAL, '.reuse-in-progress.json',
+                    '.portable-snapshot-in-progress.json', '.package-install-in-progress.json') or '\\' in str(path)):
             raise ValueError('Pool journal output scope is unsafe')
-    folded = [tuple(part.casefold() for part in path.parts) for path in roots]
+    folded = [tuple(unicodedata.normalize('NFD', part).casefold() for part in path.parts) for path in roots]
     if any(a == b[:len(a)] or b == a[:len(b)] for i,a in enumerate(folded) for b in folded[i+1:]):
         raise ValueError('Pool journal output roots overlap')
     return roots
