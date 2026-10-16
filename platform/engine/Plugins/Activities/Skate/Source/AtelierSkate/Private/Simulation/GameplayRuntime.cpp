@@ -277,6 +277,11 @@ bool GameplayRuntime::Feel(const FeelTuning& t,std::string& error)
     // about 4 s, not 1.3 s.
     if(input->grind){input->grind->entry_tolerance=entry;input->grind->slide_hold=std::max(1.0f,2*t.grind_tolerance-1);}
     camera.settings.manager.rig.anchor.speed_clamp=stock.camera_anchor_speed*t.camera_follow;
+    // A camera that keeps up also keeps the speed shake, which a stock camera lost by falling behind above about 40 m/s:
+    // from 30 to 40 m/s it eases to a quarter of its size at half its rate. At camera_follow 1 the shake is stock.
+    {auto& shake=camera.settings.manager.shake;const bool keep=t.camera_follow>1;
+     shake.high_speed_start=keep?30.0f:0;shake.high_speed_end=keep?40.0f:0;
+     shake.high_speed_amplitude=keep?0.25f:1;shake.high_speed_frequency=keep?0.5f:1;}
     // Wall-follow air (WallFollow.h): a change restarts it, so an air already turning stops and nothing is half latched.
     if(t.wall_follow!=trajectory.wall_follow.strength)
     {trajectory.wall_follow.Reset();trajectory.wall_follow.strength=t.wall_follow;trajectory.selector.SetWallFollow(0,0);}

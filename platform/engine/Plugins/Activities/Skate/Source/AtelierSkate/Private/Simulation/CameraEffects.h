@@ -12,6 +12,11 @@ struct ShakeSettings {
         frequency_minimum = 0, frequency_maximum = 0, frequency_top_speed = 0;
   float data_frames_per_second = 0, translation_multiplier = 0,
         rotation_multiplier = 0, dutch_multiplier = 0;
+  // Not stock (GameplayRuntime::Tune, camera_follow): from high_speed_start to
+  // high_speed_end (m/s) the speed shake eases to these shares of its amplitude
+  // and rate. An end not above the start is the stock shake, exactly.
+  float high_speed_start = 0, high_speed_end = 0, high_speed_amplitude = 1,
+        high_speed_frequency = 1;
 };
 struct ShakeEffect {
   Vec4 translation{};

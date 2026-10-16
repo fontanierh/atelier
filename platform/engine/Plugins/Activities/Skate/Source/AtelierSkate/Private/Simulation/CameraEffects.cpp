@@ -64,6 +64,17 @@ bool ShakeEffect::Update(float dt, float speed, float distance, Basis3 basis,
                                   Clamp(speed / s.amplitude_top_speed, 0, 1)),
                 s.amplitude_maximum - s.amplitude_minimum, s.amplitude_minimum)
           : s.amplitude_minimum;
+  // A camera that keeps up with a fast rider stays within the 3.4 m the shake
+  // fades over (distance_weight below), which a stock camera only left above
+  // its 40 m/s follow cap: there the shake eases instead (landings unchanged).
+  float high_speed = 0;
+  if (s.high_speed_end > s.high_speed_start) {
+    const float t = Clamp((speed - s.high_speed_start) /
+                              (s.high_speed_end - s.high_speed_start),
+                          0, 1);
+    high_speed = t * t * (3 - 2 * t);
+    amplitude *= 1 + high_speed * (s.high_speed_amplitude - 1);
+  }
   amplitude = (impulse + amplitude) * weight;
   float frequency =
       s.frequency_top_speed != 0
@@ -72,6 +83,8 @@ bool ShakeEffect::Update(float dt, float speed, float distance, Basis3 basis,
                                   Clamp(speed / s.frequency_top_speed, 0, 1)),
                 s.frequency_maximum - s.frequency_minimum, s.frequency_minimum)
           : s.frequency_minimum;
+  if (high_speed > 0)
+    frequency *= 1 + high_speed * (s.high_speed_frequency - 1);
   if (impulse > 0)
     frequency = s.impulse_frequency;
   time = std::fma(s.data_frames_per_second * frequency, dt, time);
