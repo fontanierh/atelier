@@ -2013,6 +2013,10 @@
       "bytes": 799738,
       "sha256": "91d1f2d83ca8e3958c5f8a73c9085066197bf64176f83ede05ff88d927dc1d4f"
     },
+    "characters/meshaxiom-head-reference-set/references/yaw240-pitch-40.png": {
+      "bytes": 773789,
+      "sha256": "dcd6bfecbdf36fab133545b72c78c3bc24f821f4a55fa467046b2c612fbf8f21"
+    },
     "characters/meshaxiom-head-reference-set/references/yaw240-pitch-5.png": {
       "bytes": 760650,
       "sha256": "dffbbc68ec16bf3cde2fecc844eb9b54876d5f8071127d52414fa033c5fe68ab"

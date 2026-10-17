@@ -246,13 +246,19 @@ def paint_variants(args):
               camera_angle_x=anchor['camera_angle_x'], calibration='Fixed original camera, no shape fitting'))
         manifest = folder/'views.json'
         used_views = [view for view in views if view['name'] == anchor['name']] if variant == 'guided-single' else views
+        if variant in ('front-first', '4k'):
+            priorities = [anchor['name'], 'yaw120-pitch-5', 'yaw0-pitch-5', 'yaw180-pitch-5',
+                          'yaw240-pitch-5', 'yaw300-pitch-5', 'yaw60-pitch55', 'yaw240-pitch-40']
+            used_views = sorted(used_views, key=lambda view: priorities.index(view['name'])
+                                if view['name'] in priorities else len(priorities))
         if not used_views:
             raise ValueError('Guided-single variant requires the generated front camera')
         write(manifest, dict(mesh_sha256=digest(source), views=[
             {**view, 'image': os.path.relpath(view['image'], folder)} for view in used_views]))
         recipe = SimpleNamespace(mesh=source, image=args.image, output=folder, module=VENDOR,
                                  views=None if variant == 'single' else manifest,
-                                 blend='weighted' if variant in ('single', 'guided-single', 'weighted') else 'best-angle')
+                                 blend=('weighted' if variant in ('single', 'guided-single', 'weighted')
+                                        else 'best-angle' if variant == 'best-angle' else 'front-first'))
         started = time.monotonic()
         paint(recipe, pm)
         paint_seconds = time.monotonic()-started
@@ -288,8 +294,8 @@ def main(argv=None):
     parser.add_argument('--image', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--blender', type=Path, default=Path('/Applications/Blender.app/Contents/MacOS/Blender'))
-    parser.add_argument('--views', default='yaw0-pitch-5,yaw60-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55')
-    parser.add_argument('--variants', default='single,guided-single,weighted,best-angle,4k')
+    parser.add_argument('--views', default='yaw0-pitch-5,yaw60-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55,yaw240-pitch-40')
+    parser.add_argument('--variants', default='single,guided-single,weighted,best-angle,front-first,4k')
     parser.add_argument('--report', type=Path)
     parser.add_argument('--memory-gib', type=int, choices=range(4, 11), default=10,
                         help='Aggregate CPU preparation/painting ceiling, 4–10 GiB')
@@ -297,7 +303,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.stage == 'references':
         return references(args)
-    if set(args.variants.split(',')) - {'single', 'guided-single', 'weighted', 'best-angle', '4k'}:
+    if set(args.variants.split(',')) - {'single', 'guided-single', 'weighted', 'best-angle', 'front-first', '4k'}:
         parser.error('Unknown texture variant')
     if args.worker:
         return (prepare if args.stage == 'prepare' else paint_variants)(args)

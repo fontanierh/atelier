@@ -111,6 +111,18 @@
       "bytes": 2764,
       "sha256": "472f1f32a6f0bdf7f3485022f4dd9fa97c5cd20651dafaebd3d49ef9debb7ee1"
     },
+    "references/yaw240-pitch-40.png": {
+      "bytes": 773789,
+      "sha256": "dcd6bfecbdf36fab133545b72c78c3bc24f821f4a55fa467046b2c612fbf8f21"
+    },
+    "references/yaw240-pitch-40.prompt.txt": {
+      "bytes": 1076,
+      "sha256": "9c9658d43b7168985df1c5320120f4a19451ced13895ced7991c7b2827110837"
+    },
+    "references/yaw240-pitch-40.provenance.json": {
+      "bytes": 2770,
+      "sha256": "f0a9caae2ae35b83af661c5896db9a21c388419d65a981b880463a37e40f7066"
+    },
     "references/yaw240-pitch-5.png": {
       "bytes": 760650,
       "sha256": "dffbbc68ec16bf3cde2fecc844eb9b54876d5f8071127d52414fa033c5fe68ab"
@@ -178,5 +190,6 @@
   },
   "geometry_source_sha256": "ca7520d32c408a16fdc9d89cdb4feb2fa112fbe728d139467706e2cb593a9ff7",
   "native_json_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
-  "identity_reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e"
+  "identity_reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "reference_view_count": 8
 }

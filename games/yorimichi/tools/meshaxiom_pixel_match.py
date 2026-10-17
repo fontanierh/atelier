@@ -192,9 +192,12 @@ def paint(args, pm):
             views.append(pm.View(matte(Image.open(path)), matrix, fov, record['name']))
             view_records.append(record)
     with stage('Pixel Match projection'):
-        projector = partial(best_angle, pm=pm) if getattr(args, 'blend', 'weighted') == 'best-angle' else pm.paint_texture
+        blend = getattr(args, 'blend', 'weighted')
+        projector = pm.paint_texture if blend == 'weighted' else partial(select_view, pm=pm, mode=blend)
+        settings = (pm.Settings(match_colour=False, facing_low=.08, facing_high=.35, edge_px=2)
+                    if blend == 'front-first' else pm.Settings(match_colour=False))
         painted, weights = projector(base, positions, uvs, faces, views, frame=IDENTITY_FRAME,
-                                     settings=pm.Settings(match_colour=False))
+                                     settings=settings)
     with stage('Protection and geometry validation'):
         h, w = base.shape[:2]
         face_of, _ = pm.rasterize((uvs*np.array([w, h]))[faces], np.zeros((len(faces), 3)), (h, w))
@@ -228,6 +231,7 @@ def paint(args, pm):
             if before_bin[start_a:start_a+a['byteLength']] != after_bin[start_b:start_b+b['byteLength']]:
                 raise AssertionError('A non-texture buffer changed')
     report = dict(pixel_match_revision='7793fd3622bab7d3fd4526ba02433244d5bf02e2',
+                  adapter_sha256=digest(Path(__file__)),
                   module_sha256=digest(args.module), input_mesh_sha256=digest(args.mesh),
                   reference_sha256=digest(args.image), calibration_sha256=digest(args.output/'calibration.json'),
                   output_sha256=digest(model_path), triangle_count=len(faces),
@@ -238,22 +242,37 @@ def paint(args, pm):
                   geometry_and_uvs_identical=True, non_texture_buffers_identical=True,
                   view_count=len(views), views=view_records,
                   blend=getattr(args, 'blend', 'weighted'),
+                  projection_settings=dict(facing_low=settings.facing_low, facing_high=settings.facing_high,
+                                           edge_px=settings.edge_px, depth_tolerance=settings.depth_tolerance,
+                                           minimum_source_confidence=.3 if blend == 'front-first' else 0,
+                                           normals='triangle' if blend == 'front-first' else 'UV vertex'),
+                  confidence_kind='Applied blend weight; front-first uses binary accepted visibility',
                   views_manifest_sha256=digest(args.views) if getattr(args, 'views', None) else None,
                   unseen_surface='Neutral base retained wherever no calibrated view has weight.', match_colour=False)
     (args.output/'pixel-match-report.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(report), flush=True)
 
 
-def best_angle(texture, positions, uvs, faces, views, *, frame, settings, pm):
-    """Select the most frontal visible reference per texel; keep zero-weight base unchanged."""
+def select_view(texture, positions, uvs, faces, views, *, frame, settings, pm, mode):
+    """@cc [owner:fontanierh,label:correctness] coherent-visible-reference-selection
+    In front-first mode each covered texel MUST use the first manifest view with visibility
+    confidence at least 0.3; later views MUST NOT replace it. Triangle normals MAY affect
+    projection confidence only. No stored geometry, UV, index or normal buffer MAY change.
+    """
     h, w = texture.shape[:2]
     face_of, bary = pm.rasterize((uvs*np.array([w, h]))[faces], np.zeros((len(faces), 3)), (h, w))
     covered = face_of >= 0
     corners = faces[face_of[covered]]
     view_pos = pm.to_view_space(positions, frame)
-    normals = pm.vertex_normals(view_pos, faces)
     points = (bary[covered, :, None]*view_pos[corners]).sum(axis=1)
-    normal = (bary[covered, :, None]*normals[corners]).sum(axis=1)
+    if mode == 'front-first':
+        # Projection normals only: avoid cancellation across inconsistently wound UV seams.
+        # The stored GLB normals, positions, UVs and connectivity remain byte-identical.
+        triangle = view_pos[corners]
+        normal = np.cross(triangle[:, 1]-triangle[:, 0], triangle[:, 2]-triangle[:, 0])
+    else:
+        normals = pm.vertex_normals(view_pos, faces)
+        normal = (bary[covered, :, None]*normals[corners]).sum(axis=1)
     normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-12)
     best = np.zeros(len(points))
     weight = np.zeros(len(points))
@@ -263,9 +282,11 @@ def best_angle(texture, positions, uvs, faces, views, *, frame, settings, pm):
         direction = view.position-points
         direction /= np.maximum(np.linalg.norm(direction, axis=1, keepdims=True), 1e-12)
         score = confidence*np.abs((normal*direction).sum(axis=1))**4
-        take = score > best
-        best[take], weight[take], colour[take] = score[take], confidence[take], rgb[take]
-        print(f'Best-angle projection: {index+1}/{len(views)} views evaluated', flush=True)
+        take = ((confidence >= .3) & (weight == 0)) if mode == 'front-first' else score > best
+        best[take] = score[take]
+        weight[take] = 1. if mode == 'front-first' else confidence[take]
+        colour[take] = rgb[take]
+        print(f'{mode} projection: {index+1}/{len(views)} views evaluated', flush=True)
     out = texture.astype(float).copy()
     own = out[covered, :3]
     out[covered, :3] = own*(1-weight[:, None])+colour*weight[:, None]
@@ -285,7 +306,7 @@ def main():
     parser.add_argument('--yaw', type=float)
     parser.add_argument('--pitch', type=float)
     parser.add_argument('--views', type=Path, help='Optional hashed camera/image manifest for multiview painting')
-    parser.add_argument('--blend', choices=['weighted', 'best-angle'], default='weighted')
+    parser.add_argument('--blend', choices=['weighted', 'best-angle', 'front-first'], default='weighted')
     args = parser.parse_args()
     pm = load_module(args.module)
     (calibrate if args.stage == 'calibrate' else paint)(args, pm)

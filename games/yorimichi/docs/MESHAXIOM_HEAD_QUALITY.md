@@ -16,7 +16,7 @@ scale, origin and Z-up to Y-up conversion used by the baseline.
 Compare the original 18,931-triangle head with:
 
 1. Better UV packing, the original image, and a 2K atlas.
-2. A geometry-guided front image, then all seven geometry-guided Sunburst views.
+2. A geometry-guided front image, then seven and eight geometry-guided Sunburst views.
 3. Weighted blending versus best-angle reference selection, without changing UVs or geometry.
 4. A 4K atlas with the same UVs and geometry.
 5. A new 30,000-face native request using the original reference, seed and 20-step recipe.
@@ -34,7 +34,7 @@ verifies all native triangles, measures actual atlas occupancy, and chooses the 
 packing. It renders eight known perspective cameras from the fixed surface. This is
 scripted UV authoring and rendering, not manual mesh editing.
 
-`references` makes seven sequential GPT Image 2.5 Sunburst high-quality edits. Each call
+`references` makes eight sequential GPT Image 2.5 Sunburst high-quality edits. Each call
 receives the identity reference and one fixed-camera clay render. It requests exact
 silhouette, feature positions and framing, with flat material colors. Every paid request
 has an exclusive provenance ledger, full prompt, input hashes and camera matrix; an
@@ -48,6 +48,15 @@ Pixel Match weighted blend, and a deterministic most-frontal visible-view select
 Occlusion, matte and grazing-angle weights protect unseen texels, which remain neutral.
 Neither painting method repairs mesh defects or invents unseen geometry.
 
+The first seven-view results exposed doubled eyes in weighted blending and broken
+pupils in per-texel best-angle selection. The next variant keeps the front image
+where its visibility confidence is at least 0.3, then fills remaining texels from
+the opposite face, profiles, rear, top and underside. It samples accepted colors
+at full weight. Triangle normals are used only for projection confidence, avoiding
+cancellation in averaged normals; the stored mesh normals also remain unchanged.
+Its facing thresholds are 0.08/0.35 and silhouette fade is two pixels. These choices
+are recorded with each result. The 4K variant uses this same coherent projection.
+
 For each result it verifies both the native triangle multiset and byte-identical
 non-image GLB buffers. It saves confidence, protected/changed masks and eight diagnostic
 renders. Coverage means the fraction of occupied UV texels reached by a reference;
@@ -55,7 +64,7 @@ it is not a measurement of physical surface area or a visual-quality score.
 
 The committed `meshaxiom-head-reference-set` contains the exact UV clay mesh, camera
 guides, generated views and paid receipts. The hosted `Fixed geometry head textures`
-workflow projects its four 2K variants under a 4 GiB aggregate guard, without downloading
+workflow projects its five 2K variants under a 4 GiB aggregate guard, without downloading
 model weights, launching Blender or making paid calls. It retains models, renders and
 geometry evidence. These hosted CPU results are separate from laptop measurements.
 Local preparation and painting default to 10 GiB; `--memory-gib 4` selects a lower ceiling.
@@ -66,6 +75,26 @@ Use the runtime from the Apple Silicon document. Commands run from a repository 
 the public entry points own their existing admission and aggregate memory guard. Do not
 wrap preparation in another render lock. Set `ATELIER_AGENT` to your registered board owner
 on a managed machine. Keep paid credentials in the ignored environment.
+
+To replay the fixed head without new image charges, copy the committed reference set
+to an ignored build directory and run only `paint`. This also avoids Blender and model
+weights for texture experiments. Use a new output/report directory for each run.
+
+```sh
+uv run python - <<'PY'
+import shutil
+shutil.copytree('games/yorimichi/assets/characters/meshaxiom-head-reference-set',
+                'build/yorimichi/meshaxiom/head-quality/replay')
+PY
+uv run python games/yorimichi/tools/meshaxiom_quality.py paint \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-quality/replay \
+  --report build/yorimichi/logs/meshaxiom-quality-replay.guard \
+  --variants front-first --memory-gib 4
+```
+
+For a new reference set, prepare its cameras and explicitly make the paid image calls:
 
 ```sh
 uv run python games/yorimichi/tools/meshaxiom_quality.py prepare \

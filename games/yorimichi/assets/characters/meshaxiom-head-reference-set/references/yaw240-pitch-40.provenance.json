@@ -1,0 +1,63 @@
+{
+  "prompt": "Use case: identity-preserve. Asset type: calibrated albedo reference for a fixed 3D game head.\nImage 1 supplies the character identity and colors. Image 2 is the exact geometry/camera target to color.\nPaint ONLY the head shown in image 2. Preserve its silhouette, nose, eyes, mouth, ears, hair tufts,\nponytail, neck shape, projection, framing, and black background pixel positions exactly.\nThe target camera has yaw 240 degrees and pitch -40 degrees around the SAME head.\nUse the warm brown skin, dark indigo hair, brown eyes, eyebrows and friendly expression of image 1.\nFollow image 2 for WHICH parts are visible: do not turn the head toward image 1; do not add a face on the back.\nFor back views, faithfully color the back of the indigo hair and ponytail and the brown neck.\nMaterial colors should be clean, detailed stylized game albedo, diffuse and evenly lit. Avoid baked highlights,\ncast shadows, outlines, accessories, text, watermarks, new hair tufts, or geometry changes.\nReturn one 1024x1024 image at exactly the target framing, pure black outside the target head.",
+  "guide_sha256": "f616ab2aa20bf6251e643057dc77c268eed345afd7fa0d48b5c0276727a4c9aa",
+  "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "camera": {
+    "name": "yaw240-pitch-40",
+    "guide": "yaw240-pitch-40.png",
+    "guide_sha256": "f616ab2aa20bf6251e643057dc77c268eed345afd7fa0d48b5c0276727a4c9aa",
+    "yaw": 240,
+    "pitch": -40,
+    "transform_matrix": [
+      [
+        -0.5000000000000006,
+        -0.5566703992264191,
+        -0.6634139481689382,
+        -0.7797378682083868
+      ],
+      [
+        0.0,
+        0.7660444431189781,
+        -0.6427876096865393,
+        -0.5769445605077448
+      ],
+      [
+        0.8660254037844385,
+        -0.32139380484326996,
+        -0.38302222155948934,
+        -0.4341456181624115
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_angle_x": 0.3141592653589793
+  },
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "22809716e37f7787f5d229706188acc538e171fddc52a483888dffdd35f17676",
+  "status": "done",
+  "started_at": "2026-10-17T10:10:04.988504+00:00",
+  "output": "yaw240-pitch-40.png",
+  "output_sha256": "dcd6bfecbdf36fab133545b72c78c3bc24f821f4a55fa467046b2c612fbf8f21",
+  "usage": {
+    "input_tokens": 2320,
+    "input_tokens_details": {
+      "image_tokens": 2048,
+      "text_tokens": 272
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4076
+  },
+  "elapsed_seconds": 38.7,
+  "finished_at": "2026-10-17T10:10:43.747923+00:00"
+}

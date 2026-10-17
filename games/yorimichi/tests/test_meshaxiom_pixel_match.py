@@ -128,7 +128,7 @@ def test_projection_preserves_geometry_and_occluded_texels(adapter, tmp_path):
         adapter.paint(args,pm)
 
 
-@pytest.mark.parametrize('blend', ['weighted', 'best-angle'])
+@pytest.mark.parametrize('blend', ['weighted', 'best-angle', 'front-first'])
 def test_multiview_reaches_occluded_rear_without_changing_front_geometry(adapter, tmp_path, blend):
     vendor = REPO/'games/yorimichi/tools/pixel_match/photo_paint.py'
     pm = adapter.load_module(vendor)
@@ -209,3 +209,29 @@ def test_uv_verifier_detects_geometry_edits_even_with_identical_counts(adapter, 
     model.write_bytes(pm._join_glb(doc, bytes(binary)))
     with pytest.raises(ValueError, match='coordinates or winding changed'):
         quality.verify_geometry(native, model, pm)
+
+
+def test_front_first_avoids_blending_disagreeing_features_and_fills_unseen_regions(adapter, tmp_path):
+    pm = adapter.load_module(REPO/'games/yorimichi/tools/pixel_match/photo_paint.py')
+    model = tmp_path/'clay.glb'
+    fixture_glb(pm, model)
+    positions, uvs, faces, base = pm.read_glb(model)
+    camera = np.eye(4)
+    camera[2, 3] = 3
+    first = np.full((64,64,4), [210,40,20,255], dtype='uint8')
+    second = np.full((64,64,4), [20,40,210,255], dtype='uint8')
+    views = [pm.View(image, camera, np.deg2rad(45), name)
+             for image, name in [(first, 'face'), (second, 'other')]]
+    settings = pm.Settings(facing_low=.08, facing_high=.35, edge_px=2, match_colour=False)
+    selected, _ = adapter.select_view(base, positions, uvs, faces, views,
+                                     frame=adapter.IDENTITY_FRAME, settings=settings, pm=pm, mode='front-first')
+    weighted, _ = pm.paint_texture(base, positions, uvs, faces, views,
+                                   frame=adapter.IDENTITY_FRAME, settings=settings)
+    assert selected[32,16,0] > selected[32,16,2]+100
+    assert abs(int(weighted[32,16,0])-int(weighted[32,16,2])) < 10
+    transparent = first.copy()
+    transparent[...,3] = 0
+    views[0] = pm.View(transparent, camera, np.deg2rad(45), 'face')
+    fallback, _ = adapter.select_view(base, positions, uvs, faces, views,
+                                     frame=adapter.IDENTITY_FRAME, settings=settings, pm=pm, mode='front-first')
+    assert fallback[32,16,2] > fallback[32,16,0]+100
