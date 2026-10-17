@@ -1761,6 +1761,10 @@
       "bytes": 98352,
       "sha256": "1ce1d8426e6a4d9f43776d82153b942fd64799c5bfe2082a5b43f4d6e56957df"
     },
+    "characters/bell-ringer/references/sheet.jpg": {
+      "bytes": 170641,
+      "sha256": "ef7ff27f63809dbb3606835c9d3028687dc2e864e7188b0458a08be27cad4031"
+    },
     "characters/cairo/Cairo-Game-r18.blend": {
       "bytes": 19616991,
       "sha256": "1d2b07733f98e2bbc5b92751b72acaff9926b8c62a0a268227cbd9b13fec4f7e"

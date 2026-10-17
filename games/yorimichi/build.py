@@ -978,6 +978,8 @@ def character_steps(ctx):
              inputs=[CHARS / 'fox-hunter', NAMES], outputs=[out / 'fox_hunter' / 'export.json'], about='the fox hunter: mesh and 15 clips', heavy=True),
         Step('characters.wanderer', [Blender(CHARS / 'wanderer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
              inputs=[CHARS / 'wanderer'], outputs=[out / 'wanderer' / 'build.json'], about='the villagers (procedural model and clips)', heavy=True),
+        Step('characters.bell_ringer', [Blender(CHARS / 'bell-ringer' / 'build.py', ('--animations', '--export', '--no-render'), threads=4)],
+             inputs=[CHARS / 'bell-ringer'], outputs=[out / 'bell-ringer' / 'build.json'], about='Suzu, the bell-ringer (procedural model and clips)', heavy=True),
     ]
 
 

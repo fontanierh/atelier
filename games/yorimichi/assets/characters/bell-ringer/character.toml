@@ -1,0 +1,10 @@
+# Suzu, the bell-ringer of Hidamari: an NPC built entirely by build.py (no binary source), like the villager.
+id = "bell-ringer"
+display_name = "Suzu, the Bell-ringer"
+role = "npc"
+rig = "suzu-33"                        # her compact rig, not the humanoid contract
+build = "build.py"
+build_args = ["--animations", "--export", "--no-render"]
+references = ["references/sheet.jpg"]
+unreal_path = "/Game/BellRinger"
+licence = "own"

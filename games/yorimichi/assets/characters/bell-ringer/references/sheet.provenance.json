@@ -1,0 +1,46 @@
+{
+  "asset": "bell-ringer",
+  "character": "suzu",
+  "stage": "design-sheet",
+  "image": "sheet",
+  "provider": "openai",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/assets/characters/tools/bell_ringer_concepts.py",
+  "prompt_file": "sheet.prompt.txt",
+  "prompt_sha256": "80a1db9487bfb8384573fae45f34e92ffa01d68657befaa9ea02433427e5b46b",
+  "reference_files": {
+    "build/yorimichi/characters/bell-ringer/style-refs/cairo_front_tpose.png": "d4628476134d1e9266d993e7ddb4c0f1ac20f1ee15bbb9eec75653a7f5c54836",
+    "build/yorimichi/characters/bell-ringer/style-refs/cairo_three_quarter.png": "a7cdb1d5438d7ca1e0f75d5ddc3156627c54ad2fcbab587404c073eb007518b6",
+    "games/yorimichi/assets/characters/wanderer/references/design-sheet.png": "3eefbe3a66710e46a5e9f1ecf17d322e28d4dd9f1935ce0461a4ede22bea815e"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-17T14:00:32.307078+00:00",
+  "output": "sheet.png",
+  "output_sha256": "9ebd1ac2cd7e3b6362d97f5473f19b42ac4559154e65b9976f15db927e81697c",
+  "usage": {
+    "input_tokens": 4058,
+    "input_tokens_details": {
+      "image_tokens": 3128,
+      "text_tokens": 930
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 5430
+  },
+  "elapsed_seconds": 39.3,
+  "api_seconds": 39.2,
+  "compact_copy": {
+    "file": "sheet.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-17T14:01:11.645574+00:00"
+}
