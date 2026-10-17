@@ -94,8 +94,9 @@ ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/he
 ```
 
 This recipe uses smaller 512-pixel conditioning with 1024 shape support and the
-published 1024 texture checkpoint. Full 1024 conditioning is a separate experiment;
-a successful reduced recipe must not be called a successful full-default run.
+published 1024 texture checkpoint. A separate successful trial uses `--condition-size 1024 --naf-size 512`: 629.91
+seconds through the verified GLB, 12.75 GiB peak aggregate footprint. Full NAF1024
+conditioning hit its allocator limit; neither reduced recipe is the full default.
 The temporary rigid camera alignment is used only for neural support and baking.
 Every exported mesh buffer and original native triangle/winding is verified.
 Only base color and metallic/roughness material data are replaced. The shader's
@@ -129,7 +130,8 @@ ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/he
   trellis generate --root build/yorimichi/meshaxiom/head-models \
   --report build/yorimichi/logs/head-trellis-512.guard --memory-gib 12 -- \
   --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
-  --output build/yorimichi/meshaxiom/head-trellis-512 --resolution 512 --steps 12
+  --output build/yorimichi/meshaxiom/head-trellis-512 --resolution 512 --steps 12 \
+  --vertex-colors
 ```
 
 The raw recipe disables cleanup, simplification and hole filling and sets the
@@ -147,10 +149,16 @@ scope before loading shape models; deleting callee parameters does not release
 caller references. Input preprocessing records the deterministic alpha mask,
 foreground crop and prepared-image hash. Checkpoint/model state mismatches reject.
 
+The measured 512 native output has 4,916,486 triangles. Raw UV unwrapping exceeded
+its ten-minute phase bound; use `--vertex-colors` below for the tested UV-free path.
+The recorded neural/checkpoint plus export stages total 331.22 seconds, excluding
+the discarded UV attempt. They are separate measured stages.
+
 `trellis compare` accepts `--model`, `--image`, `--output` and optional
 `--yaw-offset` after `--`, under the same outer guard. It creates eight base-color
 views with the same yaw/pitch labels and framing rule as MeshAxiom, recording any
-camera-frame offset. The source GLB bytes remain unchanged. Use a fresh report for
+camera-frame offset. For this head, pass `--yaw-offset -90` when comparing existing vertex-color exports;
+the generation runner records that offset by default. The source GLB bytes remain unchanged. Use a fresh report for
 this separate render job. Base-color comparison avoids differences in PBR lighting;
 interactive material inspection is a separate viewing check.
 
@@ -201,3 +209,23 @@ slow raw-mesh unwrap for every trial. The pinned feature extractor fails closed 
 MLX extraction fails; it never falls back to an unpinned local Torch checkout or
 random conditioning. Multiple `--image` inputs still use the port's documented
 feature-concatenation heuristic without camera calibration.
+
+## Original photograph over native vertex colors
+
+A separate deterministic trial uses the same pinned Pixel Match visibility,
+facing and matte weights on native TRELLIS vertices. It searches nine rigid
+camera poses against the reference silhouette and changes only the COLOR_0
+bytes. The GLB scene, materials, positions, normals and triangle buffers stay
+identical, and vertices with zero weight retain their exact learned colors.
+Silhouette registration does not prove eye/mouth correspondence; eight renders
+are mandatory evidence for accepting or rejecting the output. No UV construction
+or geometry fitting is involved.
+
+```sh
+ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python \
+  games/yorimichi/tools/head_models/vertex_photo.py \
+  --model build/yorimichi/meshaxiom/head-trellis-512/head.glb \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-trellis-512-photo \
+  --report build/yorimichi/logs/head-trellis-photo.guard --memory-gib 8
+```

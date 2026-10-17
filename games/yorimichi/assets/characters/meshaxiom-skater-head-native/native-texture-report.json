@@ -1,0 +1,126 @@
+{
+  "worker_sha256": "b7fbdd895403fa95149c4e2602aed867a55380c6a5b7e01018be2554fc40b572",
+  "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
+  "output_sha256": "0e9a9bfd33adda28b6cb1a03ddc9d67ecea1b9b86e6ee0b8997e86e0637e0921",
+  "native_triangles": 18931,
+  "geometry_changed": false,
+  "non_image_buffers_identical": true,
+  "naf_target_size": 512,
+  "image_conditioning_size": 1024,
+  "texture_resolution": [
+    2048,
+    2048
+  ],
+  "shape_resolution": 1024,
+  "steps": 12,
+  "seed": 42,
+  "weight_bindings": [
+    {
+      "repo": "microsoft/TRELLIS.2-4B",
+      "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+      "file": "ckpts/shape_enc_next_dc_f16c32_fp16.json",
+      "size_bytes": 653,
+      "sha256": "5a960a5c419d70f8d4a7a6b6e52ae689cd948c88bd7ed92346adfbf82cd12007",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "microsoft/TRELLIS.2-4B",
+      "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+      "file": "ckpts/shape_enc_next_dc_f16c32_fp16.safetensors",
+      "size_bytes": 708797208,
+      "sha256": "f37c5ff5b983b68e9946060000f09bc131f3e84318a2c8b7430a81e4b4636c41",
+      "expected_lfs_sha256": "f37c5ff5b983b68e9946060000f09bc131f3e84318a2c8b7430a81e4b4636c41"
+    },
+    {
+      "repo": "microsoft/TRELLIS.2-4B",
+      "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+      "file": "ckpts/tex_dec_next_dc_f16c32_fp16.json",
+      "size_bytes": 705,
+      "sha256": "22074e4ab5b28e2b72d33a3fe61bf416134b89e12d0fc5c729f37da75da0c4d1",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "microsoft/TRELLIS.2-4B",
+      "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+      "file": "ckpts/tex_dec_next_dc_f16c32_fp16.safetensors",
+      "size_bytes": 948458812,
+      "sha256": "97ea69addea2ecd9312910f5f548234665eef51c088386180b7cd5b258645e3c",
+      "expected_lfs_sha256": "97ea69addea2ecd9312910f5f548234665eef51c088386180b7cd5b258645e3c"
+    },
+    {
+      "repo": "TencentARC/Pixal3D",
+      "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+      "file": "pipeline.json",
+      "size_bytes": 4068,
+      "sha256": "1647217de06e32477702d14895e826fea73497d94537b809a53637f13482a237",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "TencentARC/Pixal3D",
+      "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+      "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.json",
+      "size_bytes": 535,
+      "sha256": "f18455729d08d2ce7ef809f947ffa47f6f468b3bcf8a86473e8c326e80128ac2",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "TencentARC/Pixal3D",
+      "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+      "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+      "size_bytes": 5546960656,
+      "sha256": "65df179ad02f9e92bc18335d7861fadd95f268e6249217352468dd83cb79d1d0",
+      "expected_lfs_sha256": "65df179ad02f9e92bc18335d7861fadd95f268e6249217352468dd83cb79d1d0"
+    },
+    {
+      "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+      "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+      "file": "config.json",
+      "size_bytes": 745,
+      "sha256": "135ecd23e34a70b6fbed8b083fdecb319b7e3a54e3d849258bbe4ddcf1783bb5",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+      "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+      "file": "preprocessor_config.json",
+      "size_bytes": 585,
+      "sha256": "960c41d1f3a7778b936365769a2d90550b318a6c0a53a0296957adacfe5e0dd7",
+      "expected_lfs_sha256": null
+    },
+    {
+      "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+      "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+      "file": "model.safetensors",
+      "size_bytes": 1212559808,
+      "sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+      "expected_lfs_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179"
+    },
+    {
+      "repo": "valeoai/NAF",
+      "revision": "37f2dfc180f2de53d98bd601109c0da0dd6b0f43",
+      "release_tag": "model",
+      "file": "naf_release.pth",
+      "size_bytes": 2664431,
+      "sha256": "c096c1ab2217a5c3ac136365f721685e2201379cb69d509cfb0261183847c98f"
+    }
+  ],
+  "model_key_checks": {
+    "shape_enc_next_dc_f16c32_fp16": {
+      "keys": 284,
+      "strict_complete_state": true
+    },
+    "slat_flow_imgshape2tex_dit_1_3B_1024_bf16": {
+      "keys": 700,
+      "strict_complete_state": true
+    },
+    "tex_dec_next_dc_f16c32_fp16": {
+      "keys": 284,
+      "strict_complete_state": true
+    }
+  },
+  "seconds": 629.912,
+  "source_commit": "0be9e69a729432323dfb60a418801e5e9e7a1437",
+  "encoder_decoder_import_adapter_sha256": "386de12e3c10b1ec48d2f864a40ffd34adc802fd55a7b2dbf7e9b3fc23590212",
+  "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "camera_manifest_sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+}

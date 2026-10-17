@@ -98,3 +98,36 @@ def test_vertex_bake_matches_colors_by_decoder_coordinates_without_mutation():
         bake.vertex_colors(coords, missing, attributes, 8)
     with pytest.raises(ValueError, match='Duplicate'):
         bake.vertex_colors(coords, coords[[0, 0, 2]], attributes, 8)
+
+
+def test_vertex_photo_preserves_unobserved_colors_geometry_and_bindings():
+    import copy
+    import numpy as np
+    photo = load(TOOLS/'head_models/vertex_photo.py')
+    positions = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype='<f4')
+    normals = np.tile([0., 0., 1.], (3, 1)).astype('<f4')
+    colors = np.full((3, 3), .2, dtype='<f4')
+    indices = np.array([0, 1, 2], dtype='<u4')
+    payload = b''.join(a.tobytes() for a in [positions, normals, colors, indices])
+    doc = dict(scene=0, scenes=[dict(nodes=[0])], nodes=[dict(mesh=0)],
+        meshes=[dict(primitives=[dict(attributes=dict(POSITION=0, NORMAL=1, COLOR_0=2), indices=3)])],
+        buffers=[dict(byteLength=len(payload))],
+        bufferViews=[dict(buffer=0, byteOffset=i*36, byteLength=36 if i<3 else 12) for i in range(4)],
+        accessors=[dict(bufferView=i, componentType=5126 if i<3 else 5125, count=3, type='VEC3' if i<3 else 'SCALAR') for i in range(4)])
+    original = copy.deepcopy(doc)
+    output, painted, _ = photo.replace_colors(doc, payload, colors, np.array([1., 0., .5]), np.full((3, 3), 255.))
+    assert painted == 2 and doc == original
+    assert output[:72] == payload[:72] and output[108:] == payload[108:]
+    result = np.frombuffer(output, dtype='<f4', offset=72, count=9).reshape(3, 3)
+    assert np.array_equal(result[0], [1, 1, 1])
+    assert np.array_equal(result[1], colors[1])
+    assert np.allclose(result[2], .6)
+    assert photo.replace_colors(doc, payload, colors, np.zeros(3), np.full((3, 3), 255.))[0] == payload
+    malicious = copy.deepcopy(doc); malicious['bufferViews'][2]['byteOffset'] = 36
+    with pytest.raises(ValueError, match='Overlapping'):
+        photo.native_arrays(malicious, payload)
+    malicious = copy.deepcopy(doc); malicious['nodes'][0]['scale'] = [2, 2, 2]
+    with pytest.raises(ValueError, match='identity scene'):
+        photo.native_arrays(malicious, payload)
+    with pytest.raises(ValueError, match='Invalid photo support'):
+        photo.replace_colors(doc, payload, colors, np.array([1., float('nan'), 0.]), np.full((3, 3), 255.))

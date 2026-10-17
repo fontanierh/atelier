@@ -1,0 +1,204 @@
+{
+  "hardware": {
+    "chip": "Apple M1 Max",
+    "gpu_cores": 32,
+    "unified_memory_gib": 32
+  },
+  "software": {
+    "python": "3.12.12",
+    "torch": "2.7.1",
+    "transformers": "4.57.3",
+    "macos": "26.2"
+  },
+  "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
+  "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
+  "timing_scope": "Geometry workers plus selected UV preparation and native texture worker through verified PBR GLB; excludes image API, installation, downloads, queues and final diagnostic renders.",
+  "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "face_budget": 16000,
+  "steps": 20,
+  "vertex_seed": 2026082301,
+  "topology_seed": 1574365204,
+  "vertex_seconds": 2522.16,
+  "topology_seconds": 876.49,
+  "total_worker_seconds": 4052.5,
+  "vertex_count": 9554,
+  "face_count": 18931,
+  "usable_face_count": 18925,
+  "guards": {
+    "vertex": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "peak_bytes": 7336481024,
+      "limit_bytes": 17179869184,
+      "elapsed_seconds": 2524.1922850420087
+    },
+    "topology": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "peak_bytes": 6932401600,
+      "limit_bytes": 17179869184,
+      "elapsed_seconds": 878.0575261250051
+    },
+    "native_texture": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 639.0728104159934,
+      "peak_bytes": 13694607360,
+      "limit_bytes": 15032385536
+    },
+    "photo_overlay": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 17.601139249978587,
+      "peak_bytes": 1800704896,
+      "limit_bytes": 4294967296
+    }
+  },
+  "topology_policy": {
+    "version": "meshaxiom-topology-decode-policy-v1",
+    "cfg": 3.0,
+    "steps": 20,
+    "sampler": "dpmpp2m",
+    "face_thresh": null,
+    "edge_thresh": null,
+    "adaptive": null,
+    "ladder": [
+      0.0,
+      0.005,
+      0.01,
+      0.015,
+      0.02,
+      0.03,
+      0.04,
+      0.06,
+      0.08,
+      0.1,
+      0.13,
+      0.16,
+      0.2,
+      0.25,
+      0.3,
+      0.4,
+      0.5,
+      0.6
+    ],
+    "prune": "edge_capacity2",
+    "note": "original protocol",
+    "latent": "mean_and_sample",
+    "onestep_cfg": 1.0,
+    "mean_k": 4,
+    "edge_cap": 2.0,
+    "merge": "draw_first_attached",
+    "veto": -100.0,
+    "mean_estimator": "onestep_mean",
+    "extra_draws": 0,
+    "noise_scale": 0.5,
+    "extra_noise_scale": 1.0
+  },
+  "mesh_audit": {
+    "vertices": 9554,
+    "faces": 18931,
+    "edges": 29058,
+    "boundary_edges": 1323,
+    "nonmanifold_edges": 0,
+    "isolated_vertices": 0,
+    "components": 6,
+    "euler": -573,
+    "faces_per_vertex": 1.9814737282813482,
+    "used_vertices": 9554,
+    "min_angle_mean_deg": 30.90143030137008,
+    "sliver_share": 0.11557762400295811,
+    "degenerate_faces": 6,
+    "degree_mean": 6.082897215825832,
+    "degree_hist": {
+      "0": 0,
+      "1": 0,
+      "2": 3,
+      "3": 66,
+      "4": 729,
+      "5": 2248,
+      "6": 3641,
+      "7": 1761,
+      "8": 697,
+      "9": 232,
+      "10": 99,
+      "11": 41,
+      "12": 37
+    },
+    "edge_length_mean": 0.04436016826431331,
+    "edge_length_p95": 0.1060458746913924,
+    "area_total": 16.715217791260063
+  },
+  "face_acceptance": {
+    "minimum_faces": 15000,
+    "usable_faces": 18925,
+    "meets_minimum_faces": true
+  },
+  "export_orientation": {
+    "version": "meshaxiom-export-orientation-v1",
+    "module": "meshaxiom/vendor/recipe/orient_faces.py",
+    "module_sha256": "90458f3c690429d378a7a35e9e6d87944f1be2011f14ef2c85462bfcdfc325de",
+    "faces": 18931,
+    "inconsistent_edges_before": 20127,
+    "inconsistent_edges_after": 455,
+    "two_face_edges": 27735,
+    "pieces": 16,
+    "nonorientable_pieces": 1,
+    "flipped_faces": 9498,
+    "outward_flipped_pieces": 8,
+    "applied_to": [
+      "mesh.obj",
+      "mesh.json"
+    ]
+  },
+  "extraction": {
+    "edge": {
+      "cap_hit": false,
+      "candidate_edges": 32659,
+      "returned_edges": 32659,
+      "max_edges": 48000
+    },
+    "triangles": {
+      "cap_hit": false,
+      "enumerated_candidates": 26001,
+      "returned_candidates": 26001,
+      "max_triangles": 20000000,
+      "order_dependent": false
+    },
+    "modified_by_cap": false,
+    "returned_faces": 24116
+  },
+  "adapter_identity": {
+    "adapter_revision": "225f24c14e2201bd2b9950fbfc4b509a38afe7e0",
+    "sha256": {
+      "platform/studio/atelier/ai/meshaxiom/apple.py": "0a11e236f970b4f5b1391b105a216ca3d732305764920ede258628e9e5fe39e1",
+      "platform/studio/atelier/ai/meshaxiom/worker.py": "24b92826a5a068fd06d4218ce6f4187e469c98053dd2c472b131bffa3a278e5d",
+      "platform/studio/atelier/ai/meshaxiom/requirements.lock.txt": "61c3c09909f0bf61ff90c59e2e787a3770cbf3f858b4b8705bdc1b30c36913c9"
+    }
+  },
+  "new_swapout_observed": false,
+  "geometry_worker_seconds": 3398.65,
+  "native_texture_worker_seconds": 629.912,
+  "uv_preparation_seconds": 19.89,
+  "native_texture_software": {
+    "python": "3.10.19",
+    "torch": "2.12.0",
+    "device": "MPS"
+  },
+  "native_texture_configuration": {
+    "naf_target_size": 512,
+    "image_conditioning_size": 1024,
+    "shape_resolution": 1024,
+    "steps": 12,
+    "seed": 42,
+    "output_sha256": "0e9a9bfd33adda28b6cb1a03ddc9d67ecea1b9b86e6ee0b8997e86e0637e0921"
+  },
+  "hybrid": {
+    "variant": "single",
+    "model_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
+    "painted_fraction": 0.1610758990147663,
+    "covered_texels": 2048854,
+    "views": 1,
+    "projection_validation_seconds": 4.048
+  }
+}

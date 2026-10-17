@@ -1,0 +1,9 @@
+{
+  "native_file": "mesh.source.json.gz",
+  "native_sha256": "ca7520d32c408a16fdc9d89cdb4feb2fa112fbe728d139467706e2cb593a9ff7",
+  "model_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
+  "native_vertices": 9554,
+  "triangles": 18931,
+  "all_triangles_and_winding_preserved": true,
+  "transform": "Uniform height .35m, ground origin, Z-up to Y-up; float32 verification"
+}

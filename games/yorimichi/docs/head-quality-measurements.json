@@ -237,7 +237,7 @@
     "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
   },
   "new_sunburst_high_calls_for_quality_phase": 17,
-  "learned_texturing_and_trellis2_status": "Native Pixal512 and two hybrids complete; native image1024 trial running; raw TRELLIS512 checkpoints ready for queued vertex bake; cascade/multiview results pending.",
+  "learned_texturing_and_trellis2_status": "Native image512/image1024 and photo hybrids complete; TRELLIS512 raw native vertex-color head complete; cascade and multiple-image runs pending.",
   "native_pixal_pbr_512": {
     "report": {
       "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
@@ -324,5 +324,595 @@
       "limit_bytes": 12884901888
     },
     "cleanup": "Positive empty process-tree receipt; checkpoints retained for deterministic vertex-color bake"
+  },
+  "native_pixal_pbr_image1024": {
+    "report": {
+      "worker_sha256": "b7fbdd895403fa95149c4e2602aed867a55380c6a5b7e01018be2554fc40b572",
+      "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
+      "output_sha256": "0e9a9bfd33adda28b6cb1a03ddc9d67ecea1b9b86e6ee0b8997e86e0637e0921",
+      "native_triangles": 18931,
+      "geometry_changed": false,
+      "non_image_buffers_identical": true,
+      "naf_target_size": 512,
+      "image_conditioning_size": 1024,
+      "texture_resolution": [
+        2048,
+        2048
+      ],
+      "shape_resolution": 1024,
+      "steps": 12,
+      "seed": 42,
+      "weight_bindings": [
+        {
+          "repo": "microsoft/TRELLIS.2-4B",
+          "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+          "file": "ckpts/shape_enc_next_dc_f16c32_fp16.json",
+          "size_bytes": 653,
+          "sha256": "5a960a5c419d70f8d4a7a6b6e52ae689cd948c88bd7ed92346adfbf82cd12007",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "microsoft/TRELLIS.2-4B",
+          "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+          "file": "ckpts/shape_enc_next_dc_f16c32_fp16.safetensors",
+          "size_bytes": 708797208,
+          "sha256": "f37c5ff5b983b68e9946060000f09bc131f3e84318a2c8b7430a81e4b4636c41",
+          "expected_lfs_sha256": "f37c5ff5b983b68e9946060000f09bc131f3e84318a2c8b7430a81e4b4636c41"
+        },
+        {
+          "repo": "microsoft/TRELLIS.2-4B",
+          "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+          "file": "ckpts/tex_dec_next_dc_f16c32_fp16.json",
+          "size_bytes": 705,
+          "sha256": "22074e4ab5b28e2b72d33a3fe61bf416134b89e12d0fc5c729f37da75da0c4d1",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "microsoft/TRELLIS.2-4B",
+          "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+          "file": "ckpts/tex_dec_next_dc_f16c32_fp16.safetensors",
+          "size_bytes": 948458812,
+          "sha256": "97ea69addea2ecd9312910f5f548234665eef51c088386180b7cd5b258645e3c",
+          "expected_lfs_sha256": "97ea69addea2ecd9312910f5f548234665eef51c088386180b7cd5b258645e3c"
+        },
+        {
+          "repo": "TencentARC/Pixal3D",
+          "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+          "file": "pipeline.json",
+          "size_bytes": 4068,
+          "sha256": "1647217de06e32477702d14895e826fea73497d94537b809a53637f13482a237",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "TencentARC/Pixal3D",
+          "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+          "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.json",
+          "size_bytes": 535,
+          "sha256": "f18455729d08d2ce7ef809f947ffa47f6f468b3bcf8a86473e8c326e80128ac2",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "TencentARC/Pixal3D",
+          "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+          "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+          "size_bytes": 5546960656,
+          "sha256": "65df179ad02f9e92bc18335d7861fadd95f268e6249217352468dd83cb79d1d0",
+          "expected_lfs_sha256": "65df179ad02f9e92bc18335d7861fadd95f268e6249217352468dd83cb79d1d0"
+        },
+        {
+          "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+          "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+          "file": "config.json",
+          "size_bytes": 745,
+          "sha256": "135ecd23e34a70b6fbed8b083fdecb319b7e3a54e3d849258bbe4ddcf1783bb5",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+          "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+          "file": "preprocessor_config.json",
+          "size_bytes": 585,
+          "sha256": "960c41d1f3a7778b936365769a2d90550b318a6c0a53a0296957adacfe5e0dd7",
+          "expected_lfs_sha256": null
+        },
+        {
+          "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+          "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+          "file": "model.safetensors",
+          "size_bytes": 1212559808,
+          "sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+          "expected_lfs_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179"
+        },
+        {
+          "repo": "valeoai/NAF",
+          "revision": "37f2dfc180f2de53d98bd601109c0da0dd6b0f43",
+          "release_tag": "model",
+          "file": "naf_release.pth",
+          "size_bytes": 2664431,
+          "sha256": "c096c1ab2217a5c3ac136365f721685e2201379cb69d509cfb0261183847c98f"
+        }
+      ],
+      "model_key_checks": {
+        "shape_enc_next_dc_f16c32_fp16": {
+          "keys": 284,
+          "strict_complete_state": true
+        },
+        "slat_flow_imgshape2tex_dit_1_3B_1024_bf16": {
+          "keys": 700,
+          "strict_complete_state": true
+        },
+        "tex_dec_next_dc_f16c32_fp16": {
+          "keys": 284,
+          "strict_complete_state": true
+        }
+      },
+      "seconds": 629.912,
+      "source_commit": "0be9e69a729432323dfb60a418801e5e9e7a1437",
+      "encoder_decoder_import_adapter_sha256": "386de12e3c10b1ec48d2f864a40ffd34adc802fd55a7b2dbf7e9b3fc23590212",
+      "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "camera_manifest_sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "software": {
+        "python": "3.12.12",
+        "torch": "2.7.1",
+        "transformers": "4.57.3",
+        "macos": "26.2"
+      },
+      "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
+      "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
+      "timing_scope": "Geometry workers plus selected UV preparation and native texture worker through verified PBR GLB; excludes image API, installation, downloads, queues and final diagnostic renders.",
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "face_budget": 16000,
+      "steps": 20,
+      "vertex_seed": 2026082301,
+      "topology_seed": 1574365204,
+      "vertex_seconds": 2522.16,
+      "topology_seconds": 876.49,
+      "total_worker_seconds": 4048.452,
+      "vertex_count": 9554,
+      "face_count": 18931,
+      "usable_face_count": 18925,
+      "guards": {
+        "vertex": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "peak_bytes": 7336481024,
+          "limit_bytes": 17179869184,
+          "elapsed_seconds": 2524.1922850420087
+        },
+        "topology": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "peak_bytes": 6932401600,
+          "limit_bytes": 17179869184,
+          "elapsed_seconds": 878.0575261250051
+        },
+        "native_texture": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 639.0728104159934,
+          "peak_bytes": 13694607360,
+          "limit_bytes": 15032385536
+        }
+      },
+      "topology_policy": {
+        "version": "meshaxiom-topology-decode-policy-v1",
+        "cfg": 3.0,
+        "steps": 20,
+        "sampler": "dpmpp2m",
+        "face_thresh": null,
+        "edge_thresh": null,
+        "adaptive": null,
+        "ladder": [
+          0.0,
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.03,
+          0.04,
+          0.06,
+          0.08,
+          0.1,
+          0.13,
+          0.16,
+          0.2,
+          0.25,
+          0.3,
+          0.4,
+          0.5,
+          0.6
+        ],
+        "prune": "edge_capacity2",
+        "note": "original protocol",
+        "latent": "mean_and_sample",
+        "onestep_cfg": 1.0,
+        "mean_k": 4,
+        "edge_cap": 2.0,
+        "merge": "draw_first_attached",
+        "veto": -100.0,
+        "mean_estimator": "onestep_mean",
+        "extra_draws": 0,
+        "noise_scale": 0.5,
+        "extra_noise_scale": 1.0
+      },
+      "mesh_audit": {
+        "vertices": 9554,
+        "faces": 18931,
+        "edges": 29058,
+        "boundary_edges": 1323,
+        "nonmanifold_edges": 0,
+        "isolated_vertices": 0,
+        "components": 6,
+        "euler": -573,
+        "faces_per_vertex": 1.9814737282813482,
+        "used_vertices": 9554,
+        "min_angle_mean_deg": 30.90143030137008,
+        "sliver_share": 0.11557762400295811,
+        "degenerate_faces": 6,
+        "degree_mean": 6.082897215825832,
+        "degree_hist": {
+          "0": 0,
+          "1": 0,
+          "2": 3,
+          "3": 66,
+          "4": 729,
+          "5": 2248,
+          "6": 3641,
+          "7": 1761,
+          "8": 697,
+          "9": 232,
+          "10": 99,
+          "11": 41,
+          "12": 37
+        },
+        "edge_length_mean": 0.04436016826431331,
+        "edge_length_p95": 0.1060458746913924,
+        "area_total": 16.715217791260063
+      },
+      "face_acceptance": {
+        "minimum_faces": 15000,
+        "usable_faces": 18925,
+        "meets_minimum_faces": true
+      },
+      "export_orientation": {
+        "version": "meshaxiom-export-orientation-v1",
+        "module": "meshaxiom/vendor/recipe/orient_faces.py",
+        "module_sha256": "90458f3c690429d378a7a35e9e6d87944f1be2011f14ef2c85462bfcdfc325de",
+        "faces": 18931,
+        "inconsistent_edges_before": 20127,
+        "inconsistent_edges_after": 455,
+        "two_face_edges": 27735,
+        "pieces": 16,
+        "nonorientable_pieces": 1,
+        "flipped_faces": 9498,
+        "outward_flipped_pieces": 8,
+        "applied_to": [
+          "mesh.obj",
+          "mesh.json"
+        ]
+      },
+      "extraction": {
+        "edge": {
+          "cap_hit": false,
+          "candidate_edges": 32659,
+          "returned_edges": 32659,
+          "max_edges": 48000
+        },
+        "triangles": {
+          "cap_hit": false,
+          "enumerated_candidates": 26001,
+          "returned_candidates": 26001,
+          "max_triangles": 20000000,
+          "order_dependent": false
+        },
+        "modified_by_cap": false,
+        "returned_faces": 24116
+      },
+      "adapter_identity": {
+        "adapter_revision": "225f24c14e2201bd2b9950fbfc4b509a38afe7e0",
+        "sha256": {
+          "platform/studio/atelier/ai/meshaxiom/apple.py": "0a11e236f970b4f5b1391b105a216ca3d732305764920ede258628e9e5fe39e1",
+          "platform/studio/atelier/ai/meshaxiom/worker.py": "24b92826a5a068fd06d4218ce6f4187e469c98053dd2c472b131bffa3a278e5d",
+          "platform/studio/atelier/ai/meshaxiom/requirements.lock.txt": "61c3c09909f0bf61ff90c59e2e787a3770cbf3f858b4b8705bdc1b30c36913c9"
+        }
+      },
+      "new_swapout_observed": false,
+      "geometry_worker_seconds": 3398.65,
+      "native_texture_worker_seconds": 629.912,
+      "uv_preparation_seconds": 19.89,
+      "native_texture_software": {
+        "python": "3.10.19",
+        "torch": "2.12.0",
+        "device": "MPS"
+      },
+      "native_texture_configuration": {
+        "naf_target_size": 512,
+        "image_conditioning_size": 1024,
+        "shape_resolution": 1024,
+        "steps": 12,
+        "seed": 42,
+        "output_sha256": "0e9a9bfd33adda28b6cb1a03ddc9d67ecea1b9b86e6ee0b8997e86e0637e0921"
+      }
+    },
+    "assessment": "Modestly sharper eyes and mouth than image512; NAF remains512, so not the full upstream default."
+  },
+  "native_image1024_front_hybrid": {
+    "variants": [
+      {
+        "variant": "single",
+        "model_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
+        "painted_fraction": 0.1610758990147663,
+        "covered_texels": 2048854,
+        "views": 1,
+        "projection_validation_seconds": 4.048
+      }
+    ],
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "software": {
+        "python": "3.12.12",
+        "torch": "2.7.1",
+        "transformers": "4.57.3",
+        "macos": "26.2"
+      },
+      "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
+      "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
+      "timing_scope": "Geometry workers plus selected UV preparation and native texture worker through verified PBR GLB; excludes image API, installation, downloads, queues and final diagnostic renders.",
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "face_budget": 16000,
+      "steps": 20,
+      "vertex_seed": 2026082301,
+      "topology_seed": 1574365204,
+      "vertex_seconds": 2522.16,
+      "topology_seconds": 876.49,
+      "total_worker_seconds": 4052.5,
+      "vertex_count": 9554,
+      "face_count": 18931,
+      "usable_face_count": 18925,
+      "guards": {
+        "vertex": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "peak_bytes": 7336481024,
+          "limit_bytes": 17179869184,
+          "elapsed_seconds": 2524.1922850420087
+        },
+        "topology": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "peak_bytes": 6932401600,
+          "limit_bytes": 17179869184,
+          "elapsed_seconds": 878.0575261250051
+        },
+        "native_texture": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 639.0728104159934,
+          "peak_bytes": 13694607360,
+          "limit_bytes": 15032385536
+        },
+        "photo_overlay": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 17.601139249978587,
+          "peak_bytes": 1800704896,
+          "limit_bytes": 4294967296
+        }
+      },
+      "topology_policy": {
+        "version": "meshaxiom-topology-decode-policy-v1",
+        "cfg": 3.0,
+        "steps": 20,
+        "sampler": "dpmpp2m",
+        "face_thresh": null,
+        "edge_thresh": null,
+        "adaptive": null,
+        "ladder": [
+          0.0,
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.03,
+          0.04,
+          0.06,
+          0.08,
+          0.1,
+          0.13,
+          0.16,
+          0.2,
+          0.25,
+          0.3,
+          0.4,
+          0.5,
+          0.6
+        ],
+        "prune": "edge_capacity2",
+        "note": "original protocol",
+        "latent": "mean_and_sample",
+        "onestep_cfg": 1.0,
+        "mean_k": 4,
+        "edge_cap": 2.0,
+        "merge": "draw_first_attached",
+        "veto": -100.0,
+        "mean_estimator": "onestep_mean",
+        "extra_draws": 0,
+        "noise_scale": 0.5,
+        "extra_noise_scale": 1.0
+      },
+      "mesh_audit": {
+        "vertices": 9554,
+        "faces": 18931,
+        "edges": 29058,
+        "boundary_edges": 1323,
+        "nonmanifold_edges": 0,
+        "isolated_vertices": 0,
+        "components": 6,
+        "euler": -573,
+        "faces_per_vertex": 1.9814737282813482,
+        "used_vertices": 9554,
+        "min_angle_mean_deg": 30.90143030137008,
+        "sliver_share": 0.11557762400295811,
+        "degenerate_faces": 6,
+        "degree_mean": 6.082897215825832,
+        "degree_hist": {
+          "0": 0,
+          "1": 0,
+          "2": 3,
+          "3": 66,
+          "4": 729,
+          "5": 2248,
+          "6": 3641,
+          "7": 1761,
+          "8": 697,
+          "9": 232,
+          "10": 99,
+          "11": 41,
+          "12": 37
+        },
+        "edge_length_mean": 0.04436016826431331,
+        "edge_length_p95": 0.1060458746913924,
+        "area_total": 16.715217791260063
+      },
+      "face_acceptance": {
+        "minimum_faces": 15000,
+        "usable_faces": 18925,
+        "meets_minimum_faces": true
+      },
+      "export_orientation": {
+        "version": "meshaxiom-export-orientation-v1",
+        "module": "meshaxiom/vendor/recipe/orient_faces.py",
+        "module_sha256": "90458f3c690429d378a7a35e9e6d87944f1be2011f14ef2c85462bfcdfc325de",
+        "faces": 18931,
+        "inconsistent_edges_before": 20127,
+        "inconsistent_edges_after": 455,
+        "two_face_edges": 27735,
+        "pieces": 16,
+        "nonorientable_pieces": 1,
+        "flipped_faces": 9498,
+        "outward_flipped_pieces": 8,
+        "applied_to": [
+          "mesh.obj",
+          "mesh.json"
+        ]
+      },
+      "extraction": {
+        "edge": {
+          "cap_hit": false,
+          "candidate_edges": 32659,
+          "returned_edges": 32659,
+          "max_edges": 48000
+        },
+        "triangles": {
+          "cap_hit": false,
+          "enumerated_candidates": 26001,
+          "returned_candidates": 26001,
+          "max_triangles": 20000000,
+          "order_dependent": false
+        },
+        "modified_by_cap": false,
+        "returned_faces": 24116
+      },
+      "adapter_identity": {
+        "adapter_revision": "225f24c14e2201bd2b9950fbfc4b509a38afe7e0",
+        "sha256": {
+          "platform/studio/atelier/ai/meshaxiom/apple.py": "0a11e236f970b4f5b1391b105a216ca3d732305764920ede258628e9e5fe39e1",
+          "platform/studio/atelier/ai/meshaxiom/worker.py": "24b92826a5a068fd06d4218ce6f4187e469c98053dd2c472b131bffa3a278e5d",
+          "platform/studio/atelier/ai/meshaxiom/requirements.lock.txt": "61c3c09909f0bf61ff90c59e2e787a3770cbf3f858b4b8705bdc1b30c36913c9"
+        }
+      },
+      "new_swapout_observed": false,
+      "geometry_worker_seconds": 3398.65,
+      "native_texture_worker_seconds": 629.912,
+      "uv_preparation_seconds": 19.89,
+      "native_texture_software": {
+        "python": "3.10.19",
+        "torch": "2.12.0",
+        "device": "MPS"
+      },
+      "native_texture_configuration": {
+        "naf_target_size": 512,
+        "image_conditioning_size": 1024,
+        "shape_resolution": 1024,
+        "steps": 12,
+        "seed": 42,
+        "output_sha256": "0e9a9bfd33adda28b6cb1a03ddc9d67ecea1b9b86e6ee0b8997e86e0637e0921"
+      },
+      "hybrid": {
+        "variant": "single",
+        "model_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
+        "painted_fraction": 0.1610758990147663,
+        "covered_texels": 2048854,
+        "views": 1,
+        "projection_validation_seconds": 4.048
+      }
+    },
+    "assessment": "Best compact MeshAxiom result so far: original front sharpness and learned PBR color elsewhere. Geometry and non-image GLB buffers unchanged."
+  },
+  "trellis_512_vertex_color": {
+    "report": {
+      "method": "Learned native voxel color to raw dual-grid vertex bake, no UVs",
+      "worker_sha256": "6370c88f27221b0c59c931a23c3e60c86be2066a5490e85085c6a5c3b72337ca",
+      "native_checkpoint_sha256": "43a98675937d5103ecc1e16ed3a6f292c70cc33f20a5fb5969537571533fa442",
+      "texture_checkpoint_sha256": "6fd7a72880613175e77cc46c19b549a982117560695735d9cdf6432d3db33f5f",
+      "output_sha256": "126df574f3d6cd91a0f599487c9ea67413d47da1c35d2500e9c8c60287c53bf0",
+      "vertices": 2401454,
+      "triangles": 4916486,
+      "all_native_positions_and_indices_exact": true,
+      "material": "sRGB field converted to linear vertex RGB; uniform roughness.85/metallic0; PBR variation omitted",
+      "transform": "Only fixed Z-up to Y-up axis rotation",
+      "seconds": 82.593
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 2401454,
+      "face_count": 4916486,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 331.217,
+      "timing_scope": "From guarded neural process launch to completed shape/PBR checkpoint (filesystem timestamp minus bound guard start), plus complete verified vertex GLB/source bake. Excludes discarded UV attempt, queues, downloads and diagnostic views.",
+      "neural_checkpoint_seconds_from_guard_start": 248.624,
+      "vertex_bake_seconds": 82.593,
+      "discarded_uv_attempt_exit": 143,
+      "guards": {
+        "neural": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 858.2875342920015,
+          "peak_bytes": 7715243328,
+          "limit_bytes": 12884901888
+        },
+        "vertex_bake": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 137.04375437501585,
+          "peak_bytes": 1685901824,
+          "limit_bytes": 8589934592
+        },
+        "matched_views": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 56.091601624997566,
+          "peak_bytes": 1106332992,
+          "limit_bytes": 4294967296
+        }
+      }
+    },
+    "camera_yaw_offset_degrees": -90,
+    "assessment": "More coherent hair and silhouette, but pale pupils and facial speckles remain. Vertex color preview omits learned roughness/metallic variation."
   }
 }

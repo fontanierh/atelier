@@ -1,0 +1,45 @@
+{
+  "kind": "Fixed native MeshAxiom head with learned Pixal3D/TRELLIS.2 PBR and original-front Pixel Match overlay",
+  "geometry_source": "../meshaxiom-skater-head/mesh.source.json.gz",
+  "reference_set": "../meshaxiom-head-reference-set",
+  "selected_model": "head.glb",
+  "native_triangles": 18931,
+  "geometry_edits": "None after native generation. Uniform height/origin/axis transform and UV seam splits only. Exact triangles/winding and non-image GLB buffers verified.",
+  "texture_recipe": {
+    "image_conditioning_size": 1024,
+    "naf_target_size": 512,
+    "shape_resolution": 1024,
+    "steps": 12,
+    "seed": 42,
+    "atlas_size": 2048,
+    "photo_coverage_fraction": 0.1610758990147663,
+    "unseen_surface": "Learned PBR model predictions; not additional observations",
+    "manual_editing": false
+  },
+  "files": {
+    "benchmark.json": {
+      "bytes": 5602,
+      "sha256": "28a8340ac4d3f8ca9e8823529abaf8fca37edbae46a008346af71ee73b1e3c23"
+    },
+    "geometry-verification.json": {
+      "bytes": 401,
+      "sha256": "2887cde3acba0a4ec49e4254f32dcfc454dfc573de4a77b8853e7529dd2cb88c"
+    },
+    "head.glb": {
+      "bytes": 7013692,
+      "sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69"
+    },
+    "material-base-verification.json": {
+      "bytes": 254,
+      "sha256": "6a0a494e90653274da4fc670cd1ec3ce72cdac293825c6805e3444812a70e08c"
+    },
+    "native-texture-report.json": {
+      "bytes": 5014,
+      "sha256": "415745f4e2b537176ac8d2acd735236dfd0ec2d4b9e80b928dc6c1940bc08b26"
+    },
+    "pixel-match-report.json": {
+      "bytes": 1459,
+      "sha256": "e9effe96b3f1da258fd623b9eed1f3f0857831680c6d07ff83d8562faba29235"
+    }
+  }
+}

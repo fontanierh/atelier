@@ -97,6 +97,51 @@ It rejects position, normal, UV, index or node-transform differences. Reference
 generation cameras remain bound to their original clay guides; projection
 records separately identify the PBR target GLB.
 
+## Larger native image conditioner
+
+Increasing DINO image conditioning to 1024 pixels while keeping NAF at 512 completed
+locally in 629.91 seconds through the verified GLB, or 639.07 seconds including eight
+views. Peak aggregate footprint was **12.75 GiB**, under the same 14 GiB tree and
+12 GiB MPS ceilings, with no new swap-out observed. This modestly improves eye and
+mouth boundaries; it still does not run the full upstream NAF1024 default.
+
+Projecting the original front photograph over this learned material took another
+4.05 seconds through verified output. The whole overlay job, including eight views,
+took 17.60 seconds and peaked at 1.68 GiB. This is currently the strongest compact
+MeshAxiom candidate: sharp front features, coherent learned colors on the sides and
+back, and the native metallic/roughness map retained. The photograph observes only
+16.11% of occupied texels. The remainder is model prediction. Geometry, UVs, normals,
+indices, material bindings and every non-image buffer remain unchanged.
+
+## TRELLIS.2 native generation
+
+The 512 MLX trial completed native structure, shape and PBR inference locally. It
+produced **2,401,454 vertices and 4,916,486 raw triangles**. Constructing UVs on that
+unaltered surface exceeded the ten-minute phase bound; the owned attempt ended
+cleanly after 858.29 seconds, retaining complete checkpoints. No simplified or
+repaired mesh was substituted.
+
+A deterministic UV-free bake assigns each dual-grid vertex its own native decoder
+voxel color and preserves every raw position/index, with only the fixed axis
+rotation. It took 82.59 seconds through the verified 139 MiB GLB and complete gzip
+source archive; the full bake plus eight renders took 137.04 seconds and peaked
+at 1.57 GiB. The neural attempt peaked at 7.19 GiB under a 12 GiB aggregate ceiling.
+The learned PBR alpha field is opaque (minimum 0.9949); the pale pupils cannot be
+explained by simply forgetting transparency.
+
+The measured stages sum to **331.22 seconds**: 248.62 seconds from neural process
+launch to the completed PBR checkpoint plus 82.59 seconds for verified export.
+This is a sum of separate measured stages, **not an uninterrupted end-to-end run**.
+It excludes the discarded UV work, downloads, queues and diagnostic views.
+
+The native geometry has more coherent hair and a smoother silhouette than MeshAxiom,
+but these samples have pale pupil centers, facial speckles and weaker reference
+identity. Vertex color preserves the learned RGB field, not its spatially varying
+roughness/metallic values; the preview uses uniform 0.85 roughness and zero metallic.
+All eight camera labels match the MeshAxiom comparisons semantically: TRELLIS uses
+a recorded -90-degree camera-yaw offset because its face points along a different
+world axis. The model itself is unchanged.
+
 ## Higher native density
 
 The 30,000-face request produced 14,936 vertices and **29,427 native triangles**
