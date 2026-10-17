@@ -254,7 +254,10 @@ The committed [provenance](../assets/characters/trellis-skater-head/provenance.j
 binds selected files, dense checkpoint, color cloud, reduced geometry, UV bake,
 SAM2 weights, mask prompts, camera parameters, protected buffers, protected texels,
 timings and aggregate guard cleanup. It contains public relative paths only.
-The source library records checksums for the committed GLBs, maps and geometry sources.
+The source library records checksums for the committed GLBs, maps and quad NPZ.
+Compressed JSON geometry sources are bound by the provenance file instead: the
+library verifier deliberately inventories supported asset formats, excluding metadata
+JSON and gzip files.
 
 Focused behavioral tests cover UV ownership/overlap rejection, top-left texture
 orientation, immutable geometric corners after attribute compaction, source color
