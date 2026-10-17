@@ -1,0 +1,167 @@
+{
+  "hardware": {
+    "chip": "Apple M1 Max",
+    "gpu_cores": 32,
+    "unified_memory_gib": 32
+  },
+  "software": {
+    "python": "3.12.12",
+    "torch": "2.7.1",
+    "transformers": "4.57.3",
+    "macos": "26.2"
+  },
+  "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
+  "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
+  "timing_scope": "Worker elapsed time including model loading/checks, after validation probes warmed filesystem/Metal caches; excludes download, image API, queue and authoring",
+  "input_sha256": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4",
+  "face_budget": 16000,
+  "steps": 20,
+  "vertex_seed": 2026082301,
+  "topology_seed": 1574365204,
+  "vertex_seconds": 1496.54,
+  "topology_seconds": 915.26,
+  "total_worker_seconds": 2411.8,
+  "vertex_count": 9169,
+  "face_count": 16983,
+  "usable_face_count": 16960,
+  "guards": {
+    "vertex": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "peak_bytes": 7265439872,
+      "limit_bytes": 17179869184,
+      "elapsed_seconds": 1498.7117727919976
+    },
+    "topology": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "peak_bytes": 6923881984,
+      "limit_bytes": 17179869184,
+      "elapsed_seconds": 916.6945725419937
+    }
+  },
+  "topology_policy": {
+    "version": "meshaxiom-topology-decode-policy-v1",
+    "cfg": 3.0,
+    "steps": 20,
+    "sampler": "dpmpp2m",
+    "face_thresh": null,
+    "edge_thresh": null,
+    "adaptive": null,
+    "ladder": [
+      0.0,
+      0.005,
+      0.01,
+      0.015,
+      0.02,
+      0.03,
+      0.04,
+      0.06,
+      0.08,
+      0.1,
+      0.13,
+      0.16,
+      0.2,
+      0.25,
+      0.3,
+      0.4,
+      0.5,
+      0.6
+    ],
+    "prune": "edge_capacity2",
+    "note": "original protocol",
+    "latent": "mean_and_sample",
+    "onestep_cfg": 1.0,
+    "mean_k": 4,
+    "edge_cap": 2.0,
+    "merge": "draw_first_attached",
+    "veto": -100.0,
+    "mean_estimator": "onestep_mean",
+    "extra_draws": 0,
+    "noise_scale": 0.5,
+    "extra_noise_scale": 1.0
+  },
+  "mesh_audit": {
+    "vertices": 9169,
+    "faces": 16983,
+    "edges": 26388,
+    "boundary_edges": 1827,
+    "nonmanifold_edges": 0,
+    "isolated_vertices": 0,
+    "components": 92,
+    "euler": -236,
+    "faces_per_vertex": 1.8522194350528955,
+    "used_vertices": 9169,
+    "min_angle_mean_deg": 22.632378896223262,
+    "sliver_share": 0.384443266796208,
+    "degenerate_faces": 23,
+    "degree_mean": 5.7559166757552624,
+    "degree_hist": {
+      "0": 0,
+      "1": 0,
+      "2": 7,
+      "3": 267,
+      "4": 1274,
+      "5": 2242,
+      "6": 3261,
+      "7": 1317,
+      "8": 530,
+      "9": 171,
+      "10": 54,
+      "11": 28,
+      "12": 18
+    },
+    "edge_length_mean": 0.05421845720185399,
+    "edge_length_p95": 0.2112988802546644,
+    "area_total": 15.291108510287387
+  },
+  "face_acceptance": {
+    "minimum_faces": 15000,
+    "usable_faces": 16960,
+    "meets_minimum_faces": true
+  },
+  "export_orientation": {
+    "version": "meshaxiom-export-orientation-v1",
+    "module": "meshaxiom/vendor/recipe/orient_faces.py",
+    "module_sha256": "90458f3c690429d378a7a35e9e6d87944f1be2011f14ef2c85462bfcdfc325de",
+    "faces": 16983,
+    "inconsistent_edges_before": 17487,
+    "inconsistent_edges_after": 76,
+    "two_face_edges": 24561,
+    "pieces": 127,
+    "nonorientable_pieces": 10,
+    "flipped_faces": 8470,
+    "outward_flipped_pieces": 56,
+    "applied_to": [
+      "mesh.obj",
+      "mesh.json"
+    ]
+  },
+  "extraction": {
+    "edge": {
+      "cap_hit": false,
+      "candidate_edges": 29314,
+      "returned_edges": 29314,
+      "max_edges": 48000
+    },
+    "triangles": {
+      "cap_hit": false,
+      "enumerated_candidates": 23829,
+      "returned_candidates": 23829,
+      "max_triangles": 20000000,
+      "order_dependent": false
+    },
+    "modified_by_cap": false,
+    "returned_faces": 21533
+  },
+  "adapter_identity": {
+    "adapter_revision": "4aa0ae8ffdd7ccff3303b6854ad2263bd2dd4e74",
+    "algorithm_files": {
+      "platform/studio/atelier/ai/meshaxiom/apple.py": "0a11e236f970b4f5b1391b105a216ca3d732305764920ede258628e9e5fe39e1",
+      "platform/studio/atelier/ai/meshaxiom/worker.py": "24b92826a5a068fd06d4218ce6f4187e469c98053dd2c472b131bffa3a278e5d",
+      "platform/studio/atelier/ai/meshaxiom/requirements.lock.txt": "61c3c09909f0bf61ff90c59e2e787a3770cbf3f858b4b8705bdc1b30c36913c9"
+    },
+    "note": "Recorded during this running stage; no algorithm/client source edits permitted until its positive exit."
+  },
+  "new_swapout_observed": false
+}

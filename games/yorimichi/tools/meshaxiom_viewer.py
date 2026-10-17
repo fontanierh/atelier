@@ -4,6 +4,7 @@ No model weights, repository root or credentials are copied. Tailscale may proxy
 static HTTP server at this directory; hosting configuration stays outside the public repo.
 """
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -33,6 +34,8 @@ def stage(args):
     if not output.is_relative_to((REPO / 'build/yorimichi').resolve()):
         raise ValueError('Stage the viewer beneath build/yorimichi')
     raw = args.mesh.read_bytes()
+    if args.mesh.suffix == '.gz':
+        raw = gzip.decompress(raw)
     mesh = json.loads(raw)
     if not mesh.get('vertices') or not mesh.get('faces'):
         raise ValueError('Provide completed generated mesh geometry')

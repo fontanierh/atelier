@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "name": "Neighborhood street-food cart \u2014 MeshAxiom",
+  "status": "Experimental: face minimum passed; visual cleanup required",
+  "model": "food_cart.glb",
+  "source_mesh": "mesh.source.json.gz",
+  "reference": "reference.png",
+  "benchmark": "benchmark.json",
+  "geometry": {
+    "source_sha256": "72579e208c13ad4f1b0bc22489b3d9912f6a924cc2e8798928296346b5c72efa",
+    "output_sha256": "05562bcf8f181ca083a45b3402bf73462d9db9076d2eb5ff1260b76f842b2114",
+    "vertices": 9169,
+    "triangles": 16983,
+    "height_metres": 1.8,
+    "scale": 0.9995661605206074,
+    "source_center_xy": [
+      0.0,
+      0.0
+    ],
+    "source_ground_z": -0.892578125,
+    "up_axis": "y",
+    "palette": "cart",
+    "changes": "Uniform scale/origin, Z-up to Y-up, matte face materials; no geometry repair"
+  },
+  "sha256": {
+    "food_cart.glb": "05562bcf8f181ca083a45b3402bf73462d9db9076d2eb5ff1260b76f842b2114",
+    "reference.png": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4",
+    "reference.provenance.json": "f1db3856d68f71ba16e35d8204a096537ef8b99ee709d3e4d4dca29aafe11a99",
+    "benchmark.json": "25d5a86b5c10e60377f789904c55e2200ed12c3d0685e68cdbdbe1b7ca021307",
+    "mesh-audit.json": "d5791c3e331512e10ab3c3177de7c0f0d240fdd31c5f6f6d2a360b3788a83c75",
+    "export.json": "258e1a9916766ff7ce84d24c75a250de053c1814b8bd2ff49d10f393faa1dd3b",
+    "mesh.source.json.gz": "b8ccdbda52b5cabc899a793174daa3b06658bcf598466953e946333b602ec3a0"
+  },
+  "source_mesh_encoding": "gzip; decompression reproduces the original native JSON bytes",
+  "native_mesh_json_sha256": "72579e208c13ad4f1b0bc22489b3d9912f6a924cc2e8798928296346b5c72efa"
+}

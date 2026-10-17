@@ -1,0 +1,43 @@
+{
+  "source_mesh_sha256": "72579e208c13ad4f1b0bc22489b3d9912f6a924cc2e8798928296346b5c72efa",
+  "raw_faces": 16983,
+  "minimum_faces": 15000,
+  "usable_faces": 16960,
+  "meets_minimum_faces": true,
+  "metrics": {
+    "vertices": 9169,
+    "faces": 16983,
+    "edges": 26388,
+    "boundary_edges": 1827,
+    "nonmanifold_edges": 0,
+    "isolated_vertices": 0,
+    "components": 92,
+    "euler": -236,
+    "faces_per_vertex": 1.8522194350528955,
+    "used_vertices": 9169,
+    "min_angle_mean_deg": 22.632378896223262,
+    "sliver_share": 0.384443266796208,
+    "degenerate_faces": 23,
+    "degree_mean": 5.7559166757552624,
+    "degree_hist": {
+      "0": 0,
+      "1": 0,
+      "2": 7,
+      "3": 267,
+      "4": 1274,
+      "5": 2242,
+      "6": 3261,
+      "7": 1317,
+      "8": 530,
+      "9": 171,
+      "10": 54,
+      "11": 28,
+      "12": 18
+    },
+    "edge_length_mean": 0.05421845720185399,
+    "edge_length_p95": 0.2112988802546644,
+    "area_total": 15.291108510287387
+  },
+  "geometry_changes": "none; inspection only",
+  "acceptance": "Counts and topology metrics are not a visual or rigging approval"
+}

@@ -6185,6 +6185,10 @@
       "bytes": 167902,
       "sha256": "55bd3d5217d9cd9dd4c616f9450a63da608ecd7e765b20e152a154d657211559"
     },
+    "props/food-cart-meshaxiom/food_cart.glb": {
+      "bytes": 315080,
+      "sha256": "05562bcf8f181ca083a45b3402bf73462d9db9076d2eb5ff1260b76f842b2114"
+    },
     "props/food-cart-meshaxiom/reference.png": {
       "bytes": 1214190,
       "sha256": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4"

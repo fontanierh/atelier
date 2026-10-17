@@ -114,9 +114,27 @@ ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarde
 After inspecting the first bin, the owner requested a food cart and a character head, at least 15,000
 faces each, and explicitly authorized a **16 GiB** session ceiling. Both Sunburst high references are
 retained in the asset library. The inference condition is 16,000 faces; actual output counts must be
-checked separately. The cart vertex stage has completed **9,169 vertices in 1,496.54 seconds**, with
-a **6.77 GiB** aggregate peak and complete empty cleanup. Its topology stage is queued; neither larger
-asset has a complete measured geometry result at this documentation checkpoint.
+checked separately. The cart has completed with **9,169 vertices, 16,983 raw triangles and 16,960 unique
+nondegenerate triangles**. Vertex inference took 1,496.54 seconds and topology took 915.26 seconds:
+**40m 12s of worker time**, excluding queue waits and other interleaved jobs. Maximum aggregate footprint
+was **6.77 GiB**; both guards ended with complete empty cleanup and no new swap-out was observed.
+
+The cart has 1,827 boundary edges, 92 connected components, 23 degenerate triangles and no nonmanifold
+edges. The published orientation pass leaves 76 inconsistently wound edges and ten nonorientable pieces.
+Its face minimum passes, but this is an experimental mesh requiring visual review and cleanup. The
+1.8-metre, ground-origin export uses simple wood/indigo preview materials. A format round-trip verified
+every original triangle and winding, the height and ground position, and byte-identical served downloads.
+The source is retained losslessly as `assets/props/food-cart-meshaxiom/mesh.source.json.gz`; decompressing
+it reproduces the native JSON SHA256 in the manifest. The exporter and viewer accept either JSON or gzip.
+
+```sh
+uv run python games/yorimichi/tools/meshaxiom_export.py \
+  --mesh games/yorimichi/assets/props/food-cart-meshaxiom/mesh.source.json.gz \
+  --output build/yorimichi/meshaxiom/food-cart/reproduced.glb --height 1.8 --palette cart
+```
+
+At this checkpoint, the head vertex stage has completed 9,554 vertices in 2,522.16 seconds at 6.83 GiB;
+head topology and the Pixel Match comparison are still running or pending.
 
 `atelier.ai.meshaxiom.guarded` reserves the full selected memory and GPU envelope in an explicit broker
 session and uses the existing per-process and aggregate guards. The shared profile, 4 GiB host reserve,

@@ -17,6 +17,7 @@ uv run python -m http.server 8920 --bind 127.0.0.1 \
 The authored bin GLB requires the Blender export described in the experiment guide. A raw completed
 inference `mesh.glb` may also be supplied for inspection; its bytes are retained unchanged for download.
 Repeat the stage command with another `--asset` slug and its files to add a model to the selector.
+`--mesh` accepts raw JSON or a lossless `.json.gz` source; the staged page receives the exact decoded JSON.
 The most recently staged asset becomes the default. `?asset=recycling-bin` selects a stable entry.
 The viewer normalizes displayed height and axes without changing connectivity; material colors are
 simple preview assignments. Triangle count comes from the loaded faces, and timings/memory come
