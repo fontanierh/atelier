@@ -1,21 +1,34 @@
 # Local textured-head comparison
 
-**Best unlit appearance:** the native TRELLIS.2 cascade at an actual 768 grid, with a
-deterministic bake of its learned RGB field and standard `KHR_materials_unlit`. Its
-11,386,792 triangles give the most coherent head/hair across the matched views,
-and the higher texture stage fixes the 512 trial's pale pupils. The complete
-guarded job took **20m07s**, including exact export and eight views, peaking at
-**13.06 GiB** under a 14 GiB aggregate ceiling on the 32 GiB M1 Max. A separate
-material-only export preserves the entire binary payload, including every position,
-normal, index and color byte. It takes 0.974 seconds through the verified GLB, or
-96.69 seconds including eight review renders at 2.29 GiB peak. The two complete
-jobs sum to **21m44s**; this is not one uninterrupted run.
+**Best setup: native TRELLIS.2 cascade at an actual 768 grid, native learned RGB
+vertex colors, then automated lit-normal correction with 16 tensor-filter iterations.**
+This keeps the complete 11,386,792-triangle surface and now works with conventional
+lighting. The normal pass largely removes the fine shading grain visible in the raw
+lit export. It uses the original lit material, uniform roughness 0.85 and metallic 0;
+spatially varying native PBR is still omitted.
 
-The raw lit version shows strong surface grain. Tightening camera clipping did not
-remove it; disabling lighting did. The selected unlit material bypasses lighting
-and does not repair normals or geometry. Both versions have actual eight-view
-WebGL controls in the gallery, using the same cameras and lights. Small color
-speckles and surface holes remain. This is an appearance prototype.
+Native generation, exact export and eight review views took **20m07s**, peaking at
+**13.06 GiB** under a 14 GiB aggregate ceiling on the 32 GiB M1 Max. Normal correction
+adds **38.87 seconds**, peaking at **3.92 GiB** under an 8 GiB guard. The separate jobs
+sum to **20m46s**, excluding queues/downloads and the final browser review. No neural
+regeneration, manual Blender editing or geometric smoothing is involved.
+
+About 13.89% of sampled raw edges had opposing endpoint normals. A sign-independent,
+area-weighted normal tensor avoids cancellation from face-normal sign disagreement.
+Sixteen half-step averages use only triangle-connected neighbors. The principal axes
+become shading normals; automatic coincident vertex copies align each triangle's
+normal signs with its existing winding, as required for standard double-sided lighting.
+Every ordered triangle's **position bytes, winding and corner-color bytes remain exact**,
+including duplicates and degenerates. No triangle is removed, repaired or reordered.
+Exported vertices increase from 5,598,831 to 8,580,395 solely for normal seams. The GLB
+therefore changes its attribute/index layout while its geometric surface stays exact.
+
+The zero-iteration control fixes most of the grain in 13.27 seconds at 3.15 GiB peak;
+16 iterations give a modest further smoothing of shading. Both have eight actual lit
+WebGL views. A gray eight-view control shows the selected normals without texture, and
+changing light intensity changes the selected render. This is genuine lit shading,
+not the earlier unlit workaround. Small geometric pits, holes, hair artifacts and
+learned color speckles remain. The original lit and unlit variants remain diagnostics.
 
 **Best compact conventionally lit asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
 front photograph, committed as the 7 MB
@@ -23,19 +36,19 @@ front photograph, committed as the 7 MB
 the full native metallic/roughness map and every mesh buffer. Geometry + selected
 UV preparation + native texture + photo projection sum to 67m33s across measured
 stages, excluding downloads, queues, paid images and diagnostic views. Peak memory
-is 12.75 GiB. The detailed TRELLIS export is 323 MiB and uses uniform roughness/metallic
-values for its vertex-color preview; spatially varying native PBR is not represented.
+is 12.75 GiB. The corrected dense TRELLIS export is about 425 MiB (the raw export is 323 MiB).
+Normal seams increase storage; native spatial PBR variation is not represented.
 
 The [eight-view gallery](MESHAXIOM_HEAD_GALLERY.md) compares the actual GLBs from
 five independent neural geometries. Rankings are qualitative judgments of facial
 coherence, likeness, profile/rear continuity and visible defects. No post-generation
-mesh editing is used. [Apple Silicon recipes](APPLE_HEAD_MODELS.md) include pinned
+geometric editing is used; the final pass changes shading attributes only. [Apple Silicon recipes](APPLE_HEAD_MODELS.md) include pinned
 weights, actual tensor sizes, guarded installation and exact reproduction commands.
 The [earlier experiment](MESHAXIOM_EXPERIMENT.md) documents the MeshAxiom geometry port.
 
 | Rank | Approach / variants | Finding |
 | --- | --- | --- |
-| **1** | TRELLIS cascade actual 768, native colors + standard unlit material | Best unlit appearance, shape, hair and coherent eyes; bypasses raw lit surface grain |
+| **1** | TRELLIS actual768, native colors + normal tensors/seams, 16 iterations | Best lit appearance; zero-iteration control fixes most grain, 16 gives modest further smoothing |
 | **2** | MeshAxiom 18K, native image1024 PBR + original front | Best compact head and sharp reference face; coarser native geometry |
 | **3** | MeshAxiom 18K, native image512 PBR + original front | Similar compact hybrid; softer unseen details |
 | 4 | Front-first eight-view 2K, 4K and bounded completion | Best photo-only replay; side seams persist; 4K gives modest benefit |
@@ -45,17 +58,35 @@ The [earlier experiment](MESHAXIOM_EXPERIMENT.md) documents the MeshAxiom geomet
 | 8 | Original UV/single, Smart UV/single, geometry-guided front | Most unseen surfaces stay neutral despite better atlas occupancy |
 | Rejected | Weighted, best-angle and guided-opposite photo variants | Doubled features or pupil discontinuities |
 | Rejected | TRELLIS two-image 512 and 768 photo overlay | Cheek hair artifact / feature misregistration |
-| Diagnostic | TRELLIS cascade768, original lit material | Same native colors and geometry as the winner; strong surface grain under lighting |
+| Diagnostic | TRELLIS cascade768, original lit / unlit material | Raw lighting grain / lighting bypass; both superseded by corrected lit normals |
 
 All five neural meshes remain unretouched experimental outputs. No same-reference
 Tripo model was evaluated, so these results do not establish Tripo quality parity
 or production/rigging readiness. The native TRELLIS result is the strongest local
 recipe tested here.
 
-The comparison contains **22 recipes**, with eight matched views of each. The last
-recipe changes only material metadata, so there are still five neural geometries.
-Paired WebGL sheets explicitly compare lit and unlit display; the other sheets
-compare base color without relighting.
+The comparison contains **24 recipes**, with eight matched views of each, across
+five neural geometries. The last two change shading normals and coincident normal
+seams only. WebGL sheets explicitly compare raw, corrected and unlit shading; the
+other sheets compare base color without relighting.
+
+## When to use this instead of Tripo
+
+**This is a lower-quality fallback to Tripo. Prefer Tripo when credits are available.**
+The local result still has small holes/pits, imperfect hair and likeness, no rigging
+qualification, no spatial PBR variation in the dense export, and a very large triangle
+count. It is useful for local concepts and drafts when Tripo credits run out, rather
+than a production-ready replacement. No controlled same-reference Tripo benchmark was
+run here; this is the practical quality recommendation, not a measured parity claim.
+
+For free generation on hardware you already own, use an existing or self-made input
+image, the pinned MLX TRELLIS cascade, `--vertex-colors`, then `lit_normals.py
+--iterations 16`. All 3D inference and normal processing are local, with no Tripo
+credits or per-generation API calls. **New Sunburst reference images cost money**;
+the paid references in this comparison were generated earlier. Reusing the committed
+reference or supplying your own image avoids that paid step. The exact best commands
+are in [the Apple Silicon recipe](APPLE_HEAD_MODELS.md#reproduce-the-best-lit-head).
+This was measured on 32 GiB total RAM, not a 16 GiB-total MacBook.
 
 ## Measured photo comparisons
 
@@ -232,9 +263,10 @@ through verified output, or 207.29 seconds including all eight renders, peaking
 at 4.34 GiB under an 8 GiB aggregate guard. Camera silhouette overlap is 94.26%. The
 original native geometry and every non-color byte remain identical. It is rejected
 for doubled brow/lid outlines, nose misregistration and side/neck color transitions.
-The unoverlaid native 768 colors with standard unlit material are the selected
-appearance result. Its entire binary payload is identical to the retained raw lit
-baseline. The compact MeshAxiom hybrid remains the selected conventionally lit PBR asset.
+The unoverlaid native 768 colors with corrected lit normals are the selected
+appearance result. The earlier standard-unlit trial preserves the raw binary but
+bypasses lighting; it is retained as a diagnostic. The compact MeshAxiom hybrid
+remains the selected compact PBR asset.
 
 ## Higher native density
 

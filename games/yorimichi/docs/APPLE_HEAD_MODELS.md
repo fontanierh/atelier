@@ -5,6 +5,13 @@ supplies reference images; it does not generate the 3D meshes. The comparison an
 measured results are in [MESHAXIOM_HEAD_QUALITY.md](MESHAXIOM_HEAD_QUALITY.md).
 The machine is a 32 GiB M1 Max. A process ceiling is distinct from installed RAM.
 
+**Recommended local fallback:** TRELLIS cascade requested1024/actual768, 16,384-token
+budget, twelve steps, native vertex colors, then 16-iteration lit-normal correction.
+This is lower-quality than Tripo and is useful when Tripo credits are unavailable.
+With an existing/self-made reference, generation requires no paid API calls; new
+Sunburst references are paid. The [best lit recipe](#reproduce-the-best-lit-head)
+keeps all geometric triangles and uses conventional lighting. No manual Blender step.
+
 ## Isolated runtimes and exact weights
 
 `tools/head_models.py` owns normal admission and one aggregate process-tree guard
@@ -233,7 +240,7 @@ MLX extraction fails; it never falls back to an unpinned local Torch checkout or
 random conditioning. Multiple `--image` inputs still use the port's documented
 feature-concatenation heuristic without camera calibration.
 
-## Reproduce the detailed single-image head
+## Reproduce the best lit head
 
 This is the measured cascade recipe. It requests 1024 and records the effective grid;
 the M1 Max trial selected 768 with 13,128 shape tokens and retained all 11,386,792
@@ -249,26 +256,37 @@ ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/he
   --resolution 1024 --max-tokens 16384 --mlx-gib 10 --steps 12 --vertex-colors
 ```
 
-For the selected appearance preview, export a standard unlit material without changing
-the complete binary payload. The raw lit output has surface grain; unlit display
-bypasses lighting and does not fix normals or geometry. Keep the lit output for
-comparison. This verified conversion took 0.974 seconds, or 96.69 seconds including
-eight matched renders at 2.29 GiB peak. Combined with generation, the two complete
-jobs sum to 21m44s. Use a fresh output and guard report:
+Then run the deterministic shading-only pass. It computes area-weighted normal
+tensors, filters them across triangle adjacency, and creates coincident normal seams
+where winding requires different shading-normal signs. It never moves a position,
+reverses a triangle or removes a face. The export verifies exact ordered triangle
+position/color bytes and source-index mapping, including duplicate and degenerate
+faces. Normal seam copies increase exported vertices to 8,580,395; they do not change
+the geometric surface. All scene and original lit material bindings stay identical.
 
 ```sh
 ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python \
-  games/yorimichi/tools/head_models/materials.py \
+  games/yorimichi/tools/head_models/lit_normals.py \
   --model build/yorimichi/meshaxiom/head-trellis-cascade/head.glb \
-  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
-  --output build/yorimichi/meshaxiom/head-trellis-cascade-unlit \
-  --report build/yorimichi/logs/head-trellis-unlit.guard --memory-gib 8
+  --output build/yorimichi/meshaxiom/head-trellis-cascade-lit \
+  --report build/yorimichi/logs/head-trellis-lit-normals.guard \
+  --iterations 16 --memory-gib 8
 ```
 
-The report verifies source identity, all scene/geometry bindings and the complete
-GLB binary. Only `KHR_materials_unlit` and its `extensionsUsed` entry are added.
-The gallery includes paired pure WebGL lit/unlit views using the same cameras and
-lights; this is separate from the CPU base-color diagnostic renders.
+Use fresh output/report paths. This pass took 38.87 seconds at 3.92 GiB peak. The
+separate native-generation and normal jobs sum to 20m46s, with maximum physical
+footprint 13.06 GiB; queues/downloads and final browser review are excluded. The
+zero-iteration control takes 13.27 seconds and fixes most grain; sixteen iterations
+add modest shading smoothness. Standard double-sided lit shading now works without
+unlit extensions or a custom viewer shader. The material still uses native RGB,
+uniform roughness0.85/metallic0, rather than spatial PBR variation. Small raw surface
+and color defects remain; this is not Tripo quality or a production/rigging approval.
+
+The former `materials.py` standard-unlit export remains an optional diagnostic. It
+preserves the entire raw binary but bypasses lighting; it is no longer the selected
+setup. Eight matched actual WebGL views for both normal variants, a selected gray
+control and the raw lit/unlit baselines are in the gallery. Browser QA also verifies
+that changing light intensity changes the selected render.
 
 The raw dense GLBs and full source archives are generated comparison outputs beneath
 `build/yorimichi`, alongside SHA-bound model/geometry reports. The viewer offers

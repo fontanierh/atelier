@@ -79,3 +79,15 @@ The head comparison also stages `skater-head-native-pixal` (native learned PBR),
 `skater-head-native-multiview` (native PBR with eight-view front-first projection).
 All three retain the same 18,931 native triangles. See the head-quality report
 for the smaller 512-pixel conditioning setting and measured memory limits.
+
+## Best lit local setup
+
+The selected detailed head now uses native TRELLIS vertex RGB plus
+`head_models/lit_normals.py --iterations 16`, with the original conventionally lit
+material. The normal pass duplicates coincident attributes at normal seams while
+verifying every ordered triangle position, winding and corner color. It never
+moves or removes geometric triangles. The old raw lit and unlit variants remain
+controls. See the exact guarded commands in
+[APPLE_HEAD_MODELS.md](../../docs/APPLE_HEAD_MODELS.md#reproduce-the-best-lit-head).
+This is a lower-quality local fallback when Tripo credits run out. Existing or
+self-made reference images avoid paid generation calls; new Sunburst images are paid.

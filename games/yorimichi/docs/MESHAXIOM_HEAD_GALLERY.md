@@ -1,23 +1,39 @@
 # Eight-view head comparison
 
-22 actual generated/material variants, five independent native neural geometries.
+24 actual generated/material variants, five independent native neural geometries.
 [Ranking and measurements](MESHAXIOM_HEAD_QUALITY.md) · [Apple Silicon recipes](APPLE_HEAD_MODELS.md).
 Every sheet contains both profiles, front three-quarter views, rear, top and underside.
 All use the same framing rule and semantic yaw/pitch labels. TRELLIS records a -90-degree
 camera-yaw offset for its different face-forward axis; the mesh is unchanged.
 
-The selected unlit and extra lit-control sheets capture the actual WebGL model canvas
+The selected corrected-normal, unlit and extra lit-control sheets capture the actual WebGL model canvas
 with matched cameras and lights. The other CPU sheets compare base color without
 relighting. TRELLIS uses native learned
 RGB baked to vertex colors, with uniform roughness/metallic values in its GLB preview;
 its native PBR field's material variation is omitted. MeshAxiom learned-PBR GLBs retain
 their metallic/roughness map for interactive inspection. Ranking is qualitative.
-The unlit winner bypasses lighting; raw normals and geometry are not repaired.
+The selected result corrects shading normals with automatic coincident seams; its
+ordered geometric triangles and corner colors remain exact. Gray views show the
+remaining raw surface defects. The old unlit workaround bypasses lighting.
 
 <details open>
-<summary>Selected appearance: TRELLIS768 native colors + standard unlit material (WebGL)</summary>
+<summary>Selected: TRELLIS768 + 16-iteration corrected lit normals (WebGL)</summary>
 
-![Selected unlit head: eight actual WebGL views](https://raw.githubusercontent.com/fontanierh/atelier/b2b77f278b6758a649cc9cbcfe7da5b2d29b6cbb/head-trellis768-webgl-unlit.png)
+![Selected lit head: eight views](https://raw.githubusercontent.com/fontanierh/atelier/06f5ea59fa5d4ab5d4d48cf150a644d85215661c/head-trellis768-lit-normal16.png)
+
+</details>
+
+<details>
+<summary>Control: TRELLIS768 + sign-independent normal tensors/seams, zero diffusion (WebGL)</summary>
+
+![Zero-iteration lit normal control: eight views](https://raw.githubusercontent.com/fontanierh/atelier/06f5ea59fa5d4ab5d4d48cf150a644d85215661c/head-trellis768-lit-normal0.png)
+
+</details>
+
+<details>
+<summary>Former workaround: TRELLIS768 native colors + unlit material (WebGL)</summary>
+
+![Unlit diagnostic: eight actual WebGL views](https://raw.githubusercontent.com/fontanierh/atelier/b2b77f278b6758a649cc9cbcfe7da5b2d29b6cbb/head-trellis768-webgl-unlit.png)
 
 </details>
 
@@ -171,8 +187,16 @@ The unlit winner bypasses lighting; raw normals and geometry are not repaired.
 ## Lighting control on the same raw model
 
 This is an additional render of the raw lit baseline already listed above, not a
-23rd recipe. The complete binary payload is identical to the unlit winner. Both
+25th recipe. The complete binary payload is identical to the unlit diagnostic. Both
 WebGL sheets use the same framing, cameras and lights. Lit surface grain remains;
 the unlit material bypasses lighting instead of repairing it.
 
 ![Raw lit TRELLIS768: eight actual WebGL views](https://raw.githubusercontent.com/fontanierh/atelier/b2b77f278b6758a649cc9cbcfe7da5b2d29b6cbb/head-trellis768-webgl-lit.png)
+
+## Selected lit normals without color
+
+This is a gray display of the same selected corrected-normal export, not another
+recipe or a geometry edit. The material responds to the same scene lights. Fine
+raw pits and open surfaces remain despite the substantial reduction in shading grain.
+
+![Selected lit normals, gray: eight views](https://raw.githubusercontent.com/fontanierh/atelier/06f5ea59fa5d4ab5d4d48cf150a644d85215661c/head-trellis768-lit-normal16-gray.png)

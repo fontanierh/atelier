@@ -237,7 +237,7 @@
     "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
   },
   "new_sunburst_high_calls_for_quality_phase": 17,
-  "learned_texturing_and_trellis2_status": "Complete:22 recipes across5 native geometries, eight views each, plus matched eight-view lit/unlit controls. Selected appearance: standard-unlit native TRELLIS cascade768. Compact lit choice: native Pixal image1024 PBR/front MeshAxiom18K.",
+  "learned_texturing_and_trellis2_status": "Complete:24 recipes across5 native geometries, eight views each. Selected: native TRELLIS actual768 plus16 normal-tensor diffusion iterations and winding-aligned normal seams. Local lower-quality fallback to Tripo; reference images may be paid.",
   "native_pixal_pbr_512": {
     "report": {
       "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
@@ -1287,12 +1287,12 @@
     "assessment": "Not selected: stronger reference detail but doubled brow/lid outlines, nose projection mismatch and visible side/neck transition."
   },
   "selection": {
-    "best_overall": "trellis_cascade_actual768_unlit",
-    "best_overall_sha256": "c933fa90dcd2bacfd526567c216afb78bb127b4662cf4df7452c467431e3a283",
+    "best_overall": "trellis_cascade768_lit_normals16",
+    "best_overall_sha256": "cbe576a9e80697a9424593fe8033f8b3f3bca4c2210b15b9c2c637f28548d433",
     "best_compact": "native_image1024_front_hybrid",
     "best_compact_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
     "criteria": "Qualitative eight-view facial coherence, likeness, profile/rear continuity and visible defects; no numerical Tripo parity claim.",
-    "material_scope": "Best unlit appearance; retained native lit model shows grain. Best compact conventionally lit material remains MeshAxiom native PBR/front hybrid."
+    "material_scope": "Best conventionally lit appearance: native learned RGB, uniform roughness/metallic and corrected shading normals. All ordered geometric triangles/winding/corner colors are exact; automatic coincident normal-seam copies only. Compact PBR choice remains MeshAxiom native image1024/front hybrid."
   },
   "final_viewer_validation": {
     "results": [
@@ -1447,5 +1447,197 @@
       "limit_bytes": 8589934592
     },
     "capture": "Pure WebGL renderer PNG exports, identical cameras/lights for lit/unlit; no browser/page UI in archived evidence."
+  },
+  "trellis_cascade768_lit_normals0": {
+    "report": {
+      "native_vertices": 5598831,
+      "exported_vertices": 8574785,
+      "normal_seam_copies": 2975954,
+      "triangles": 11386792,
+      "ordered_triangle_positions_colors_winding_exact": true,
+      "scene_material_bindings_identical": true,
+      "method": "Area-weighted unoriented normal tensors, connected diffusion, winding-aligned normal seams",
+      "worker_sha256": "7c94dc8135fa34dcf9529fcf0941a4460b665c625d53ac430cc9b9cae300c5a0",
+      "input_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "output_sha256": "29e68129bcde2367826df0211eae9290e9f45f3dc287bc45254203a6dac5563d",
+      "iterations": 0,
+      "relaxation": 0.5,
+      "normal_field_sha256": "aaf3cf545d849709087c1a31d73277b9ea2275bd07d2ad4ac36e6525b7eb23d5",
+      "seconds": 12.947,
+      "limitations": "Only shading is filtered. Raw geometry, holes, self-intersections and learned color speckles remain."
+    },
+    "guard": {
+      "state": "child_exited",
+      "elapsed_seconds": 13.270821624988457,
+      "peak_bytes": 3382386176,
+      "limit_bytes": 8589934592,
+      "cleanup_complete": true
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 5598831,
+      "face_count": 11386792,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 1220.1547078329895,
+      "timing_scope": "Sum of native generation/export/eight review views and deterministic lit-normal export; no geometry alteration",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 1206.883886208001,
+          "peak_bytes": 14024776832,
+          "limit_bytes": 15032385536
+        },
+        "normal_filter": {
+          "state": "child_exited",
+          "elapsed_seconds": 13.270821624988457,
+          "peak_bytes": 3382386176,
+          "limit_bytes": 8589934592,
+          "cleanup_complete": true
+        }
+      }
+    }
+  },
+  "trellis_cascade768_lit_normals16": {
+    "report": {
+      "native_vertices": 5598831,
+      "exported_vertices": 8580395,
+      "normal_seam_copies": 2981564,
+      "triangles": 11386792,
+      "ordered_triangle_positions_colors_winding_exact": true,
+      "scene_material_bindings_identical": true,
+      "method": "Area-weighted unoriented normal tensors, connected diffusion, winding-aligned normal seams",
+      "worker_sha256": "7c94dc8135fa34dcf9529fcf0941a4460b665c625d53ac430cc9b9cae300c5a0",
+      "input_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "output_sha256": "cbe576a9e80697a9424593fe8033f8b3f3bca4c2210b15b9c2c637f28548d433",
+      "iterations": 16,
+      "relaxation": 0.5,
+      "normal_field_sha256": "92cee10de495a1d1b55005b058fa1006508b1db9befac445426cd06b1ced076b",
+      "seconds": 38.518,
+      "limitations": "Only shading is filtered. Raw geometry, holes, self-intersections and learned color speckles remain."
+    },
+    "guard": {
+      "state": "child_exited",
+      "elapsed_seconds": 38.8739477499912,
+      "peak_bytes": 4211664256,
+      "limit_bytes": 8589934592,
+      "cleanup_complete": true
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 5598831,
+      "face_count": 11386792,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 1245.7578339579923,
+      "timing_scope": "Sum of native generation/export/eight review views and deterministic lit-normal export; no geometry alteration",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 1206.883886208001,
+          "peak_bytes": 14024776832,
+          "limit_bytes": 15032385536
+        },
+        "normal_filter": {
+          "state": "child_exited",
+          "elapsed_seconds": 38.8739477499912,
+          "peak_bytes": 4211664256,
+          "limit_bytes": 8589934592,
+          "cleanup_complete": true
+        }
+      }
+    }
+  },
+  "normal_diagnosis": {
+    "vertices": 5598831,
+    "faces": 11386792,
+    "normal_length_percentiles": [
+      0.0,
+      0.9999998807907104,
+      1.0,
+      1.0,
+      1.0000001192092896
+    ],
+    "edge_angle_percentiles": [
+      0.0,
+      1.9294525384902954,
+      14.367704629898071,
+      162.96617431640627,
+      177.29948348999022,
+      179.51622009277344,
+      179.99998474121094
+    ],
+    "edge_opposite_fraction": 0.13890294024660133,
+    "sample_degenerate_fraction": 0.0,
+    "face_disagrees_with_average_fraction": 0.15399936768890293,
+    "bounds": [
+      [
+        -0.3485506772994995,
+        -0.48628556728363037,
+        -0.4207848310470581
+      ],
+      [
+        0.3484790325164795,
+        0.4864288568496704,
+        0.4193815588951111
+      ]
+    ],
+    "seconds": 0.4414672499988228
+  },
+  "lit_normal_viewer_validation": {
+    "results": [
+      {
+        "asset": "trellis-head-cascade768",
+        "triangles": 11386792,
+        "material_types": [
+          "MeshStandardMaterial"
+        ],
+        "controls": true,
+        "mobile_layout": true,
+        "page_errors": [],
+        "pure_model_renders": 8,
+        "lighting_response": null
+      },
+      {
+        "asset": "trellis-head-lit-normal0",
+        "triangles": 11386792,
+        "material_types": [
+          "MeshStandardMaterial"
+        ],
+        "controls": true,
+        "mobile_layout": true,
+        "page_errors": [],
+        "pure_model_renders": 8,
+        "lighting_response": null
+      },
+      {
+        "asset": "trellis-head-lit-normal16",
+        "triangles": 11386792,
+        "material_types": [
+          "MeshStandardMaterial"
+        ],
+        "controls": true,
+        "mobile_layout": true,
+        "page_errors": [],
+        "pure_model_renders": 8,
+        "lighting_response": true
+      }
+    ],
+    "guard": {
+      "state": "child_exited",
+      "elapsed_seconds": 23.876712458994007,
+      "peak_bytes": 4262747392,
+      "limit_bytes": 8589934592,
+      "cleanup_complete": true
+    },
+    "capture": "Pure WebGL canvas exports; same cameras and lights, eight views per variant and eight selected gray views; selected material responds to scaled light intensity."
   }
 }

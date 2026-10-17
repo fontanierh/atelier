@@ -149,3 +149,52 @@ def test_unlit_material_keeps_geometry_and_existing_material_properties():
     assert document == before
     with pytest.raises(ValueError, match='unextended'):
         module.unlit_document(converted)
+
+
+def test_lit_normal_seams_preserve_every_ordered_triangle_and_color():
+    import copy
+    import numpy as np
+    module = load(TOOLS/'head_models/lit_normals.py')
+    positions = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype='<f4')
+    normals = np.tile([0., 0., 1.], (4, 1)).astype('<f4')
+    colors = np.arange(12, dtype='<f4').reshape(4, 3)/12
+    # Opposing winding, exact duplicates and degenerates must all survive.
+    faces = np.array([[0, 1, 2], [1, 2, 3], [0, 1, 2], [0, 0, 1]], dtype='<u4')
+    arrays = [positions, normals, colors, faces]
+    payload = b''.join(a.tobytes() for a in arrays)
+    document = dict(scene=0, scenes=[dict(nodes=[0])], nodes=[dict(mesh=0)],
+        meshes=[dict(primitives=[dict(attributes=dict(POSITION=0, NORMAL=1, COLOR_0=2), indices=3, material=0)])],
+        materials=[dict(doubleSided=True, pbrMetallicRoughness=dict(metallicFactor=0, roughnessFactor=.85))],
+        buffers=[dict(byteLength=len(payload))],
+        bufferViews=[dict(buffer=0, byteOffset=i*48, byteLength=48) for i in range(4)],
+        accessors=[dict(bufferView=i, componentType=5126 if i<3 else 5125, count=4 if i<3 else 12,
+                        type='VEC3' if i<3 else 'SCALAR') for i in range(4)])
+    before = copy.deepcopy(document)
+    output, binary, proof = module.normal_seams(document, payload, normals)
+    p, n, c, f, _ = module.native_arrays(output, binary)
+    assert document == before and proof['triangles'] == 4 and proof['normal_seam_copies'] == 3
+    assert p[f].tobytes() == positions[faces].tobytes()
+    assert c[f].tobytes() == colors[faces].tobytes()
+    assert p[:4].tobytes() == positions.tobytes()
+    assert output['materials'] == document['materials']
+    cross = np.cross(p[f[:, 1]]-p[f[:, 0]], p[f[:, 2]]-p[f[:, 0]])
+    assert np.all((n[f]*cross[:, None, :]).sum(2) >= 0)
+    with pytest.raises(ValueError, match='unit normal'):
+        module.normal_seams(document, payload, np.full_like(normals, np.nan))
+
+
+def test_normal_tensor_filter_ignores_winding_and_keeps_disconnected_surfaces_separate():
+    import numpy as np
+    module = load(TOOLS/'head_models/lit_normals.py')
+    # Nearly touching perpendicular sheets must not average across empty space.
+    positions = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0],
+                          [0, 0, 1e-6], [1, 0, 1e-6], [0, 0, 1], [9, 9, 9]], dtype='float32')
+    normals = np.array([[0, 0, 1]]*3 + [[0, -1, 0]]*3 + [[0, 0, 0]], dtype='float32')
+    faces = np.array([[0, 1, 2], [0, 2, 1], [3, 4, 5], [0, 0, 1]], dtype='uint32')
+    before = [a.tobytes() for a in [positions, normals, faces]]
+    axes = module.normal_axes(positions, normals, faces, 3)
+    assert np.allclose(axes[:3], normals[:3]) and np.allclose(axes[3:6], normals[3:6])
+    assert np.isfinite(axes[6]).all() and np.isclose(np.linalg.norm(axes[6]), 1)
+    assert [a.tobytes() for a in [positions, normals, faces]] == before
+    with pytest.raises(ValueError, match='iterations'):
+        module.normal_axes(positions, normals, faces, 65)
