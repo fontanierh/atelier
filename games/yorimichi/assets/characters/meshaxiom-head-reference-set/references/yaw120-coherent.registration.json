@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "raw_sha256": "59e525258c3dceace93d10fc9a9a9e88108785b4f25ee027e5fdb2598e17bed8",
+  "silhouette_sha256": "052c75ed1ae1b57c7a112515be2c17bd3b98bbeb6ecb471c2a381022e07797f1",
+  "tool_sha256": "eec4490c754f7768c74eb30e9d7b6bf620531c2f308d748d231611ceed10bc77",
+  "output": "yaw120-coherent-registered.png",
+  "output_sha256": "ab1266a66ed39c1327c95f5ea7ff2e135eabb97c5bbf6d209efbf3de12d5653b",
+  "uniform_scale": 1.0372508591065293,
+  "translation_pixels": [
+    -16.516563573883218,
+    -20.33030927835057
+  ],
+  "silhouette_iou_before": 0.9066221472707037,
+  "silhouette_iou_after": 0.9677912455490415,
+  "method": "Uniform 2D scale and translation; no shape warp or mesh changes"
+}

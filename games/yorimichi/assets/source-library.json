@@ -1945,6 +1945,10 @@
       "bytes": 164777,
       "sha256": "62013b3decd642ef7abf2bee0cd81d8cfa0f6cbf8e7731fd20553925b9c90618"
     },
+    "characters/meshaxiom-head-reference-set/guides/yaw120-coherent-guide.png": {
+      "bytes": 63086,
+      "sha256": "dd85ce8011c605740b457100e5da9792fb9f9fdb2f550f45939e9e758a50fb12"
+    },
     "characters/meshaxiom-head-reference-set/guides/yaw120-pitch-5-mask.png": {
       "bytes": 6795,
       "sha256": "4df2712f496e9af224acd66ba7b8294f723627f7a267211607ba737a46c1f5a4"
@@ -2005,9 +2009,13 @@
       "bytes": 769774,
       "sha256": "eca0e56f285f523f453311d149150b0d93d01d3d6081d04c48521f672792ae8c"
     },
-    "characters/meshaxiom-head-reference-set/references/yaw120-pitch-5.png": {
-      "bytes": 816183,
-      "sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8"
+    "characters/meshaxiom-head-reference-set/references/yaw120-coherent-registered.png": {
+      "bytes": 684666,
+      "sha256": "ab1266a66ed39c1327c95f5ea7ff2e135eabb97c5bbf6d209efbf3de12d5653b"
+    },
+    "characters/meshaxiom-head-reference-set/references/yaw120-coherent.png": {
+      "bytes": 771418,
+      "sha256": "59e525258c3dceace93d10fc9a9a9e88108785b4f25ee027e5fdb2598e17bed8"
     },
     "characters/meshaxiom-head-reference-set/references/yaw180-pitch-5.png": {
       "bytes": 799738,

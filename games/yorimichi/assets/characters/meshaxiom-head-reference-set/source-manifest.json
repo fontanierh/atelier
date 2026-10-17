@@ -8,8 +8,8 @@
   "quality": "high",
   "files": {
     "guides/cameras.json": {
-      "bytes": 6370,
-      "sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+      "bytes": 6905,
+      "sha256": "f88191b9d7abfe8f1b870d6c18909344ebdf707e90bbb5b4480813673038b4a1"
     },
     "guides/yaw0-pitch-5-mask.png": {
       "bytes": 6500,
@@ -18,6 +18,10 @@
     "guides/yaw0-pitch-5.png": {
       "bytes": 164777,
       "sha256": "62013b3decd642ef7abf2bee0cd81d8cfa0f6cbf8e7731fd20553925b9c90618"
+    },
+    "guides/yaw120-coherent-guide.png": {
+      "bytes": 63086,
+      "sha256": "dd85ce8011c605740b457100e5da9792fb9f9fdb2f550f45939e9e758a50fb12"
     },
     "guides/yaw120-pitch-5-mask.png": {
       "bytes": 6795,
@@ -87,17 +91,25 @@
       "bytes": 2691,
       "sha256": "2fe643b205c16ea57c67bd794f03af5ebf4e9927dee905d1e81c402c1a719dee"
     },
-    "references/yaw120-pitch-5.png": {
-      "bytes": 816183,
-      "sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8"
+    "references/yaw120-coherent-registered.png": {
+      "bytes": 684666,
+      "sha256": "ab1266a66ed39c1327c95f5ea7ff2e135eabb97c5bbf6d209efbf3de12d5653b"
     },
-    "references/yaw120-pitch-5.prompt.txt": {
-      "bytes": 1075,
-      "sha256": "3291ccb75d431f13170609b72d11a88bbb954a21dea081e726337cf898962c17"
+    "references/yaw120-coherent.png": {
+      "bytes": 771418,
+      "sha256": "59e525258c3dceace93d10fc9a9a9e88108785b4f25ee027e5fdb2598e17bed8"
     },
-    "references/yaw120-pitch-5.provenance.json": {
-      "bytes": 2762,
-      "sha256": "afd9c035fe391dfebc510b7550b6606ad852cc1eb3bc5bfba19f574c9d7fe880"
+    "references/yaw120-coherent.prompt.txt": {
+      "bytes": 1527,
+      "sha256": "8a9db0c6c2b61b8e6678097fb702be06a6d27ed18346e85899145aa5111036f1"
+    },
+    "references/yaw120-coherent.provenance.json": {
+      "bytes": 3731,
+      "sha256": "0ab77e6aa97b17c880fd39c8a2cc22edb87a7d67ef90cf47ffec0c24cd9efb31"
+    },
+    "references/yaw120-coherent.registration.json": {
+      "bytes": 710,
+      "sha256": "fa99be058751e0ae1e9321a2517090cf39ff59bf5a134459d9b4993cc2272007"
     },
     "references/yaw180-pitch-5.png": {
       "bytes": 799738,
@@ -191,5 +203,7 @@
   "geometry_source_sha256": "ca7520d32c408a16fdc9d89cdb4feb2fa112fbe728d139467706e2cb593a9ff7",
   "native_json_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
   "identity_reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
-  "reference_view_count": 8
+  "reference_view_count": 8,
+  "opposite_view_method": "Sunburst completion of a projected front texture; original colors remain authoritative in front-first projection",
+  "opposite_view_registration": "Uniform 2D scale and translation; raw paid image preserved; silhouette IoU .9066 to .9678"
 }

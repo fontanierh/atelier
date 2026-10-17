@@ -10,6 +10,7 @@ import gzip
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -157,12 +158,18 @@ def references(args):
     selected = set(args.views.split(','))
     if selected - {view['name'] for view in cameras['views']}:
         raise ValueError('Unknown requested camera')
-    for name in selected:
-        if (output/f'{name}.provenance.json').exists():
-            raise FileExistsError(f'{name}: paid receipt already exists; reconcile it, do not retry')
     for view in cameras['views']:
         if view['name'] not in selected:
             continue
+        stem = view.get('reference_stem', view['name'])
+        if not re.fullmatch(r'[a-z0-9-]{1,80}', stem):
+            raise ValueError('Invalid reference filename stem')
+        if (output/f'{stem}.provenance.json').exists():
+            raise FileExistsError(f'{stem}: paid receipt already exists; reconcile it, do not retry')
+    for view in cameras['views']:
+        if view['name'] not in selected:
+            continue
+        stem = view.get('reference_stem', view['name'])
         guide = args.output/'guides'/view['guide']
         if digest(guide) != view['guide_sha256']:
             raise ValueError('Geometry guide identity changed')
@@ -177,14 +184,128 @@ For back views, faithfully color the back of the indigo hair and ponytail and th
 Material colors should be clean, detailed stylized game albedo, diffuse and evenly lit. Avoid baked highlights,
 cast shadows, outlines, accessories, text, watermarks, new hair tufts, or geometry changes.
 Return one 1024x1024 image at exactly the target framing, pure black outside the target head.'''
-        prompt_path = output/f'{view["name"]}.prompt.txt'
+        if view.get('guide_mode') == 'fill-unpainted':
+            prompt += '''
+Image 2 is a render of the SAME mesh with the front texture already projected into this camera.
+Keep its already colored areas EXACTLY: face, pupils, eyebrows, lips, skin and hair colors.
+Fill only its blank neutral-gray surface regions. Continue the existing colors smoothly
+across the boundary. The projected face is authoritative for feature positions and gaze;
+do not redraw it to face the camera. The black background and all shapes remain fixed.'''
+        prompt_path = output/f'{stem}.prompt.txt'
         prompt_path.write_text(prompt+'\n')
-        print(f'Sunburst high: submitting {view["name"]}; one ledgered call, no automatic retry', flush=True)
-        with stage(f'Sunburst {view["name"]}'):
-            paint(output/f'{view["name"]}.png', prompt, '1024x1024', images=[args.image, guide],
-                  record=output/f'{view["name"]}.provenance.json',
+        print(f'Sunburst high: submitting {stem}; one ledgered call, no automatic retry', flush=True)
+        with stage(f'Sunburst {stem}'):
+            paint(output/f'{stem}.png', prompt, '1024x1024', images=[args.image, guide],
+                  record=output/f'{stem}.provenance.json',
                   metadata=dict(prompt=prompt, guide_sha256=digest(guide),
                                 reference_sha256=digest(args.image), camera=view), timeout=300)
+    return 0
+
+
+def coherent_guide(args):
+    """Crop an existing guarded diagnostic render into a hashed paint-completion guide.
+
+    This stage only reads completed files, verifies geometry and crops a saved image.
+    It does not render, invoke Blender, allocate a model or make a paid call.
+    """
+    if args.from_model is None or args.from_contact is None:
+        raise ValueError('Provide the completed --from-model and --from-contact')
+    if not re.fullmatch(r'[a-z0-9-]{1,80}', args.reference_stem):
+        raise ValueError('Invalid reference filename stem')
+    if (args.output/'references'/f'{args.reference_stem}.provenance.json').exists():
+        raise FileExistsError('Guide already has a paid receipt; preserve its inputs')
+    proof = json.loads((args.from_model.parent/'pixel-match-report.json').read_text())
+    if proof['output_sha256'] != digest(args.from_model):
+        raise ValueError('Completed source model no longer matches its report')
+    verify_geometry(args.mesh, args.from_model, load_module(VENDOR))
+    path = args.output/'guides/cameras.json'
+    cameras = json.loads(path.read_text())
+    if cameras['reference_sha256'] != digest(args.image):
+        raise ValueError('Identity reference changed')
+    index = next(i for i, view in enumerate(cameras['views']) if view['name'] == args.guide_view)
+    image = Image.open(args.from_contact).convert('RGB')
+    if image.size != (1536, 816) or len(cameras['views']) != 8:
+        raise ValueError('Expected the eight-camera 384-pixel diagnostic contact sheet')
+    x, y = index%4*384, index//4*408
+    target = args.output/'guides'/f'{args.reference_stem}-guide.png'
+    image.crop((x, y, x+384, y+384)).save(target)
+    view = cameras['views'][index]
+    view.update(silhouette_guide=view.get('silhouette_guide', view['guide']),
+                silhouette_guide_sha256=view.get('silhouette_guide_sha256', view['guide_sha256']))
+    view.update(guide=target.name, guide_sha256=digest(target), guide_mode='fill-unpainted',
+                reference_stem=args.reference_stem, derived_from_model_sha256=digest(args.from_model),
+                derived_from_contact_sha256=digest(args.from_contact), contact_crop_pixels=[x,y,x+384,y+384])
+    write(path, cameras)
+    print(json.dumps(view), flush=True)
+    return 0
+
+
+def register_reference(args):
+    """@cc [owner:fontanierh,label:correctness] bounded-reference-framing-correction
+    Registration MUST only change uniform 2D scale and translation, preserving the raw paid
+    output. It MUST reject scale outside 0.85–1.15, shifts beyond 12% of image width, and
+    full-resolution silhouette IoU below 0.95. Input/output hashes and transform MUST be recorded.
+    """
+    cameras = json.loads((args.output/'guides/cameras.json').read_text())
+    view = next(view for view in cameras['views'] if view['name'] == args.guide_view)
+    stem = view.get('reference_stem', view['name'])
+    if not re.fullmatch(r'[a-z0-9-]{1,80}', stem):
+        raise ValueError('Invalid reference filename stem')
+    source = args.output/'references'/f'{stem}.png'
+    receipt = json.loads(source.with_suffix('.provenance.json').read_text())
+    if (receipt.get('status') != 'done' or receipt.get('output_sha256') != digest(source)
+            or receipt.get('camera') != view or receipt.get('reference_sha256') != digest(args.image)):
+        raise ValueError('Paid source identity changed')
+    guide = args.output/'guides'/view.get('silhouette_guide', view['guide'])
+    if digest(guide) != view.get('silhouette_guide_sha256', view['guide_sha256']):
+        raise ValueError('Silhouette guide changed')
+    image = Image.fromarray(matte(Image.open(source)))
+    target = np.asarray(Image.open(guide).convert('RGB')).max(axis=2) > 8
+    mask = np.asarray(image)[..., 3] > 127
+    if image.size[0] != image.size[1] or mask.shape != target.shape:
+        raise ValueError('Use square, equally sized source and silhouette images')
+    boxes = []
+    for values in (mask, target):
+        ys, xs = np.nonzero(values)
+        if len(xs) == 0:
+            raise ValueError('Empty registration silhouette')
+        boxes.append((xs.min(), ys.min(), xs.max(), ys.max()))
+    sb, tb = boxes
+    source_center = np.array([(sb[0]+sb[2])/2, (sb[1]+sb[3])/2])
+    target_center = np.array([(tb[0]+tb[2])/2, (tb[1]+tb[3])/2])
+    scale_y = (tb[3]-tb[1])/max(sb[3]-sb[1], 1)
+    small = Image.fromarray((mask*255).astype('uint8')).resize((128,128), Image.Resampling.NEAREST)
+    target_small = np.asarray(Image.fromarray((target*255).astype('uint8')).resize((128,128), Image.Resampling.NEAREST)) > 127
+    ratio = image.width/128
+    best = (-1., None, None)
+    for scale in np.linspace(scale_y*.94, scale_y*1.06, 13):
+        for dx in range(-24,25,8):
+            for dy in range(-24,25,8):
+                shift = target_center-scale*source_center+np.array([dx,dy])*image.width/1024
+                inverse = (1/scale,0,-shift[0]/scale/ratio,0,1/scale,-shift[1]/scale/ratio)
+                moved = np.asarray(small.transform((128,128), Image.Transform.AFFINE,
+                                                   inverse, Image.Resampling.NEAREST)) > 127
+                iou = float((moved & target_small).sum()/max((moved | target_small).sum(), 1))
+                if iou > best[0]:
+                    best = (iou, float(scale), shift)
+    _, scale, shift = best
+    if not .85 <= scale <= 1.15 or np.any(np.abs(shift) > image.width*.12):
+        raise ValueError('Reference needs more than a small framing correction; reject its pose')
+    inverse = (1/scale,0,-shift[0]/scale,0,1/scale,-shift[1]/scale)
+    registered = image.transform(image.size, Image.Transform.AFFINE, inverse, Image.Resampling.BICUBIC)
+    aligned = np.asarray(registered)[...,3] > 127
+    after = float((aligned & target).sum()/max((aligned | target).sum(), 1))
+    if after < .95:
+        raise ValueError(f'Framing correction still fails silhouette check: {after:.4f} < .95')
+    output = source.with_name(f'{stem}-registered.png')
+    registered.save(output)
+    record = dict(status='complete', raw_sha256=digest(source), silhouette_sha256=digest(guide),
+                  tool_sha256=digest(Path(__file__)), output=output.name, output_sha256=digest(output),
+                  uniform_scale=scale, translation_pixels=shift.tolist(),
+                  silhouette_iou_before=float((mask & target).sum()/max((mask | target).sum(), 1)),
+                  silhouette_iou_after=after, method='Uniform 2D scale and translation; no shape warp or mesh changes')
+    write(source.with_suffix('.registration.json'), record)
+    print(json.dumps(record), flush=True)
     return 0
 
 
@@ -207,24 +328,46 @@ def paint_variants(args):
     for view in cameras['views']:
         if view['name'] not in selected:
             continue
-        path = args.output/'references'/f'{view["name"]}.png'
+        stem = view.get('reference_stem', view['name'])
+        if not re.fullmatch(r'[a-z0-9-]{1,80}', stem):
+            raise ValueError('Invalid reference filename stem')
+        path = args.output/'references'/f'{stem}.png'
         receipt = json.loads(path.with_suffix('.provenance.json').read_text())
         if receipt.get('status') != 'done' or receipt.get('output_sha256') != digest(path):
             raise ValueError('Generated reference differs from its paid receipt')
         if (receipt.get('guide_sha256') != view['guide_sha256']
                 or receipt.get('reference_sha256') != digest(args.image) or receipt.get('camera') != view):
             raise ValueError('Generated reference recipe differs from the guide manifest')
-        generated = matte(Image.open(path))
         guide = args.output/'guides'/view['guide']
         if digest(guide) != view['guide_sha256']:
             raise ValueError('Geometry guide changed before projection')
-        target = np.asarray(Image.open(guide).convert('RGB')).max(axis=2) > 8
+        silhouette_guide = args.output/'guides'/view.get('silhouette_guide', view['guide'])
+        if digest(silhouette_guide) != view.get('silhouette_guide_sha256', view['guide_sha256']):
+            raise ValueError('Silhouette guide changed')
+        raw_sha256 = digest(path)
+        registration_path = path.with_suffix('.registration.json')
+        registration = None
+        if registration_path.exists():
+            registration = json.loads(registration_path.read_text())
+            derived = path.with_name(f'{stem}-registered.png')
+            if (registration.get('status') != 'complete' or registration.get('raw_sha256') != raw_sha256
+                    or registration.get('silhouette_sha256') != digest(silhouette_guide)
+                    or registration.get('output') != derived.name
+                    or registration.get('output_sha256') != digest(derived)):
+                raise ValueError('Registered reference inputs or output changed')
+            path = derived
+        generated = matte(Image.open(path))
+        target = np.asarray(Image.open(silhouette_guide).convert('RGB')).max(axis=2) > 8
         mask = generated[..., 3] > 127
         iou = float((target & mask).sum()/max((target | mask).sum(), 1))
         if iou < .95:
             raise ValueError(f'{view["name"]}: guide silhouette IoU {iou:.4f} below .95; reject view')
-        checks.append(dict(name=view['name'], silhouette_iou=iou, image_sha256=digest(path)))
+        checks.append(dict(name=view['name'], silhouette_iou=iou, image_sha256=digest(path),
+                           guide_sha256=view['guide_sha256'], guide_mode=view.get('guide_mode', 'clay'),
+                           reference_stem=stem, registration=registration))
         views.append(dict(name=view['name'], image=str(path), image_sha256=digest(path),
+                          raw_image_sha256=raw_sha256,
+                          registration_sha256=digest(registration_path) if registration else None,
                           transform_matrix=view['transform_matrix'], camera_angle_x=view['camera_angle_x']))
     if len(checks) != len(selected):
         raise ValueError('Missing requested cameras')
@@ -289,7 +432,7 @@ def paint_variants(args):
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('stage', choices=['prepare', 'references', 'paint'])
+    parser.add_argument('stage', choices=['prepare', 'references', 'paint', 'guide', 'register'])
     parser.add_argument('--mesh', type=Path, required=True)
     parser.add_argument('--image', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -297,12 +440,20 @@ def main(argv=None):
     parser.add_argument('--views', default='yaw0-pitch-5,yaw60-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55,yaw240-pitch-40')
     parser.add_argument('--variants', default='single,guided-single,weighted,best-angle,front-first,4k')
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--from-model', type=Path)
+    parser.add_argument('--from-contact', type=Path)
+    parser.add_argument('--guide-view', default='yaw120-pitch-5')
+    parser.add_argument('--reference-stem', default='yaw120-coherent')
     parser.add_argument('--memory-gib', type=int, choices=range(4, 11), default=10,
                         help='Aggregate CPU preparation/painting ceiling, 4–10 GiB')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.stage == 'references':
         return references(args)
+    if args.stage == 'guide':
+        return coherent_guide(args)
+    if args.stage == 'register':
+        return register_reference(args)
     if set(args.variants.split(',')) - {'single', 'guided-single', 'weighted', 'best-angle', 'front-first', '4k'}:
         parser.error('Unknown texture variant')
     if args.worker:

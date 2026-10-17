@@ -72,8 +72,8 @@
     },
     {
       "name": "yaw120-pitch-5",
-      "guide": "yaw120-pitch-5.png",
-      "guide_sha256": "052c75ed1ae1b57c7a112515be2c17bd3b98bbeb6ecb471c2a381022e07797f1",
+      "guide": "yaw120-coherent-guide.png",
+      "guide_sha256": "dd85ce8011c605740b457100e5da9792fb9f9fdb2f550f45939e9e758a50fb12",
       "yaw": 120,
       "pitch": -5,
       "transform_matrix": [
@@ -102,7 +102,19 @@
           1.0
         ]
       ],
-      "camera_angle_x": 0.3141592653589793
+      "camera_angle_x": 0.3141592653589793,
+      "silhouette_guide": "yaw120-pitch-5.png",
+      "silhouette_guide_sha256": "052c75ed1ae1b57c7a112515be2c17bd3b98bbeb6ecb471c2a381022e07797f1",
+      "guide_mode": "fill-unpainted",
+      "reference_stem": "yaw120-coherent",
+      "derived_from_model_sha256": "d6b3c86f8ca3bed6e3dfcd27b899ecd7f0ff8e43eb5072eab78720b429d6110b",
+      "derived_from_contact_sha256": "74c777522b7960e920b4f8f8f4adbdb5722efa40b2085c513b216e2d1b051595",
+      "contact_crop_pixels": [
+        768,
+        0,
+        1152,
+        384
+      ]
     },
     {
       "name": "yaw180-pitch-5",

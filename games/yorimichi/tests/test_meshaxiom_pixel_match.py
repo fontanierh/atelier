@@ -235,3 +235,70 @@ def test_front_first_avoids_blending_disagreeing_features_and_fills_unseen_regio
     fallback, _ = adapter.select_view(base, positions, uvs, faces, views,
                                      frame=adapter.IDENTITY_FRAME, settings=settings, pm=pm, mode='front-first')
     assert fallback[32,16,2] > fallback[32,16,0]+100
+
+
+def test_coherent_reference_gets_new_receipt_and_preserves_prior_paid_inputs(tmp_path, monkeypatch):
+    from atelier.ai import images
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_coherent_reference_test', SCRIPT.with_name('meshaxiom_quality.py'))
+    quality = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(quality)
+    (tmp_path/'guides').mkdir()
+    (tmp_path/'references').mkdir()
+    image = tmp_path/'identity.png'
+    image.write_bytes(b'identity input')
+    guide = tmp_path/'guides/coherent.png'
+    guide.write_bytes(b'completed projected guide')
+    view = dict(name='view', reference_stem='view-coherent', guide=guide.name,
+                guide_sha256=quality.digest(guide), guide_mode='fill-unpainted', yaw=120, pitch=-5)
+    (tmp_path/'guides/cameras.json').write_text(json.dumps(dict(
+        reference_sha256=quality.digest(image), views=[view])))
+    old = tmp_path/'references/view.provenance.json'
+    old.write_bytes(b'prior paid operation')
+    calls = []
+    def submit(target, prompt, size, context=None, **kwargs):
+        calls.append((target, prompt))
+        kwargs['record'].write_text('uncertain receipt')
+    monkeypatch.setattr(images, 'paint', submit)
+    args = SimpleNamespace(output=tmp_path, image=image, views='view')
+    quality.references(args)
+    assert calls[0][0].name == 'view-coherent.png'
+    assert 'Fill only its blank neutral-gray' in calls[0][1]
+    assert old.read_bytes() == b'prior paid operation'
+    with pytest.raises(FileExistsError, match='receipt already exists'):
+        quality.references(args)
+    with pytest.raises(FileExistsError, match='paid receipt'):
+        quality.coherent_guide(SimpleNamespace(output=tmp_path, from_model=tmp_path/'unused.glb',
+                                             from_contact=tmp_path/'unused.png', reference_stem='view-coherent'))
+    assert len(calls) == 1
+
+
+def test_uniform_registration_preserves_paid_pixels_and_records_actual_alignment(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_registration_test', SCRIPT.with_name('meshaxiom_quality.py'))
+    quality = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(quality)
+    (tmp_path/'guides').mkdir()
+    (tmp_path/'references').mkdir()
+    source = tmp_path/'references/view.png'
+    pixels = np.zeros((128,128,3), dtype='uint8')
+    pixels[22:110,28:104] = [200,130,90]
+    Image.fromarray(pixels).save(source)
+    original = source.read_bytes()
+    guide = tmp_path/'guides/view.png'
+    target = np.zeros_like(pixels)
+    target[16:112,20:104] = 160
+    Image.fromarray(target).save(guide)
+    identity = tmp_path/'identity.png'
+    identity.write_bytes(b'identity')
+    view = dict(name='view', guide=guide.name, guide_sha256=quality.digest(guide))
+    (tmp_path/'guides/cameras.json').write_text(json.dumps(dict(views=[view])))
+    source.with_suffix('.provenance.json').write_text(json.dumps(dict(status='done', camera=view,
+        output_sha256=quality.digest(source), reference_sha256=quality.digest(identity))))
+    quality.register_reference(SimpleNamespace(output=tmp_path, image=identity, guide_view='view'))
+    record = json.loads(source.with_suffix('.registration.json').read_text())
+    assert source.read_bytes() == original
+    assert record['silhouette_iou_after'] >= .95
+    assert record['silhouette_iou_after'] > record['silhouette_iou_before']
+    assert record['raw_sha256'] == quality.digest(source)
+    assert record['output_sha256'] == quality.digest(source.with_name(record['output']))

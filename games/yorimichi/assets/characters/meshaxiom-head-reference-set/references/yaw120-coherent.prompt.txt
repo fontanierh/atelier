@@ -9,3 +9,8 @@ For back views, faithfully color the back of the indigo hair and ponytail and th
 Material colors should be clean, detailed stylized game albedo, diffuse and evenly lit. Avoid baked highlights,
 cast shadows, outlines, accessories, text, watermarks, new hair tufts, or geometry changes.
 Return one 1024x1024 image at exactly the target framing, pure black outside the target head.
+Image 2 is a render of the SAME mesh with the front texture already projected into this camera.
+Keep its already colored areas EXACTLY: face, pupils, eyebrows, lips, skin and hair colors.
+Fill only its blank neutral-gray surface regions. Continue the existing colors smoothly
+across the boundary. The projected face is authoritative for feature positions and gaze;
+do not redraw it to face the camera. The black background and all shapes remain fixed.

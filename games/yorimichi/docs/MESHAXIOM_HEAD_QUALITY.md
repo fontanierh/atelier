@@ -57,6 +57,22 @@ cancellation in averaged normals; the stored mesh normals also remain unchanged.
 Its facing thresholds are 0.08/0.35 and silhouette fade is two pixels. These choices
 are recorded with each result. The 4K variant uses this same coherent projection.
 
+An additional opposite-view experiment uses the already projected front as guidance.
+The `guide` stage crops that camera from the completed diagnostic contact sheet and
+records the source model/contact hashes and crop rectangle. It preserves the original
+camera and pure-clay silhouette check. Sunburst fills its neutral-gray regions while
+using the existing face colors and gaze as context. The new reference has a separate
+filename and paid receipt; previous paid inputs remain in the experiment archive.
+The current source set selects this candidate for comparison. No geometry changes are
+made when constructing its guide or projecting the result.
+
+That candidate initially failed silhouette overlap at 90.7%. `register` corrected its
+image framing with a 1.03725 uniform scale and translation of (-16.52, -20.33) pixels,
+raising overlap to 96.8%. The raw paid PNG remains unchanged. Its registered copy and
+sidecar record identify both inputs, output hash and transform. No nonuniform warp,
+mesh change or camera-threshold exception is used. Registration rejects scales beyond
+0.85–1.15, shifts beyond 12% of image width, or final overlap below 95%.
+
 For each result it verifies both the native triangle multiset and byte-identical
 non-image GLB buffers. It saves confidence, protected/changed masks and eight diagnostic
 renders. Coverage means the fraction of occupied UV texels reached by a reference;
@@ -114,6 +130,30 @@ uv run python games/yorimichi/tools/meshaxiom_quality.py paint \
   --output build/yorimichi/meshaxiom/head-quality/original \
   --report build/yorimichi/logs/meshaxiom-quality-paint.guard
 ```
+
+To create a front-projected opposite-view candidate, first generate only the front
+reference and bake it with `paint --views yaw60-pitch-5 --variants guided-single`.
+Then use the completed GLB and contact sheet in a new, uniquely named experiment:
+
+```sh
+uv run python games/yorimichi/tools/meshaxiom_quality.py guide \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-quality/original \
+  --from-model build/yorimichi/meshaxiom/head-quality/original/guided-single/head-pixel-match.glb \
+  --from-contact build/yorimichi/meshaxiom/head-quality/original/guided-single/contact.png \
+  --reference-stem yaw120-coherent
+```
+
+Run `references --views yaw120-pitch-5` with the same mesh/image/output to make its
+new paid call. The guide stage itself only crops completed files and verifies their
+identity; it launches no native work or model. An existing receipt blocks both guide
+replacement and another submission. The current saved candidate used the 384-pixel
+camera crop as context and requested a 1024-pixel output.
+
+If only image framing drifted, run the same arguments with stage `register` and
+`--guide-view yaw120-pitch-5`. Painting verifies the registered source/output hashes and
+measures overlap again. A view that still fails the threshold is rejected.
 
 On this shared Mac prefix native commands with `nice -n 10`. The image stage is remote
 and does not hold render capacity while waiting. Use only available normal admission;
