@@ -17,6 +17,17 @@ inspection. There is no universal one-command character generator. For props, st
 with one isolated object, then review thin parts, holes and silhouette before using
 the head-oriented reconstruction settings unchanged.
 
+| Step | Tools |
+| --- | --- |
+| Reference images | Existing/self-made images, or GPT Image 2.5 Sunburst through the paid-call ledger |
+| Local 3D generation | Microsoft TRELLIS.2 through the pinned MLX port |
+| Exterior cleanup and reduction | Open3D raycasting, screened Poisson and QEM simplification |
+| UV atlas and texture bake | xatlas and our nearest-surface color-transfer scripts |
+| Skin/hair masks and repaint | SAM2.1 Tiny on MPS and our visibility-weighted projection/repair scripts |
+| Assembly, accessories and rig | Blender controlled by Python scripts |
+| Multi-view inspection | Lit WebGL browser viewer and scripted comparison renders |
+| Game import | Atelier's build pipeline and Unreal Engine 5.8 |
+
 ## 1. Prepare references and capacity
 
 Run from the repository root after `uv sync` and the [Mac setup](../../../docs/SETUP.md).
