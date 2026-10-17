@@ -2213,25 +2213,9 @@
       "bytes": 6675660,
       "sha256": "1478d5402c5511afbb176656d7d16f2427202b8cc81f66e1641693514e9c68cc"
     },
-    "characters/trellis-skater-head/mesh-40k.source.json.gz": {
-      "bytes": 752322,
-      "sha256": "c4480fd48fb1827022995ac73cfa7821c54bdcb93b5c368f0ab26d9ca7628bb3"
-    },
-    "characters/trellis-skater-head/mesh-quads.source.json.gz": {
-      "bytes": 351574,
-      "sha256": "c44d14fa1aca7839e2da3cbc9289606c74ad3c86f445587dcaa033b24b1d8292"
-    },
-    "characters/trellis-skater-head/mesh.source.json.gz": {
-      "bytes": 1776453,
-      "sha256": "aadf4baced202bbeb1ab3cd4bdf19999466cc5891f0e77c4dc596a39da78b9cf"
-    },
     "characters/trellis-skater-head/occupied-mask.png": {
       "bytes": 201007,
       "sha256": "f0a110b3edbf4458f9df35ed1efa67304fe66e788a575f134f8f4410649f5882"
-    },
-    "characters/trellis-skater-head/provenance.json": {
-      "bytes": 66945,
-      "sha256": "d127170f767e7c39212a803576164d3dce1b131c0946abb7cc672c505320d954"
     },
     "characters/trellis-skater-head/quad-mesh.npz": {
       "bytes": 243383,
