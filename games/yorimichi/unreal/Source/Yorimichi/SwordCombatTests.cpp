@@ -12,6 +12,7 @@
 #include "GameFramework/WorldSettings.h"
 #include "RoninProjectile.h"
 #include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "JapanDefenceTimeline.h"
 #include "JapanNetwork.h"
 #include "Engine/Engine.h"
@@ -212,6 +213,33 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     const float BeforeActivity = Moves->GuardPressure();
     Moves->Reset();
     TestEqual(TEXT("Changing activities cannot erase contact-owned guard pressure"), Moves->GuardPressure(), BeforeActivity);
+    Dummy->Destroy();
+    Npc->bHostileRonin = true;
+    Npc->SetActorLocation(Player->GetActorLocation() + FVector(100, 0, 0));
+    Npc->SetActorRotation(FRotator(0, 180, 0));
+    FAdventureMove Recoil; Recoil.Name = TEXT("HitMF"); Recoil.End = .5f;
+    Enemy->Moves.Add(Recoil.Name, Recoil); Enemy->Moves.Add(Cut.Name, Cut);
+    Npc->Definition = NewObject<UWandererDefinition>(Npc);
+    Npc->Definition->Actions.Add(Recoil.Name, NewObject<UAnimSequence>(Npc->Definition));
+    auto* Blade = NewObject<UStaticMeshComponent>(Npc);
+    Blade->SetupAttachment(Npc->GetCapsuleComponent()); Blade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Blade->RegisterComponent();
+    Enemy->Props.Add(TEXT("sword"), Blade); Enemy->BladeTip = FVector(100, 0, 0);
+    Enemy->bArmed = true; Enemy->Strength = 1;
+    Npc->AnimationAction = Cut.Name; Npc->ActionSourceStartTime = 0.f; Npc->ActionPlayRate = 1.f; Npc->ActionTime = .11f;
+    ++Npc->ActionSerial;
+    Enemy->BladePoints(Enemy->PreviousBlade);
+    Moves->bArmed = Moves->bGuardHeld = true; Moves->Invulnerable = 0.f; Moves->Pressure = {};
+    Player->AnimationAction = Parry.Name; Player->ActionSourceStartTime = 0.f; Player->ActionPlayRate = 1.f; Player->ActionTime = .08f;
+    ++Player->ActionSerial;
+    const int32 BeforeParries = Moves->ParryCount;
+    const float BeforeParryHealth = Player->GetSword()->GetHealth();
+    Enemy->AdvanceCombat(.016f);
+    TestEqual(TEXT("A real blade sweep meets the defender's perfect parry once"), Moves->ParryCount, BeforeParries + 1);
+    TestEqual(TEXT("The synchronous deflection starts the real recoil action"), Npc->AnimationAction, Recoil.Name);
+    TestEqual(TEXT("The ended blade/arc sweep cannot add block pressure after a perfect parry"), Moves->GuardPressure(), 0.f);
+    TestEqual(TEXT("The ended sweep cannot deal another contact's damage"), Player->GetSword()->GetHealth(), BeforeParryHealth);
+
     return true;
 }
 #endif

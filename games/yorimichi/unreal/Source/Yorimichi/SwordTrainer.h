@@ -91,6 +91,7 @@ public:
     TMap<FString, int32> Counts;
 
 private:
+    friend class FSwordCombatContactTest;
     EBout Bout = EBout::Home;
     TWeakObjectPtr<AWandererCharacter> Opponent;
     FVector Home = FVector::ZeroVector;

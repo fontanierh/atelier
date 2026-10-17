@@ -248,6 +248,7 @@ void UAdventureMoveSet::StartAttack()
 
 void UAdventureMoveSet::AdvanceCombat(float Dt)
 {
+    const uint32 SwingSerial = Character->GetActionSerial();
     const FAdventureMove* Now = Current();
     const FName Name = Now ? Now->Name : NAME_None;
     LungeTime = FMath::Max(0.f, LungeTime - Dt);
@@ -277,9 +278,11 @@ void UAdventureMoveSet::AdvanceCombat(float Dt)
     if (bActive) SweepBlade();
     else if (Now && bArmed && IsAttack(Name)) BladePoints(PreviousBlade);
     else PreviousBlade.Reset();
+    if (Character->GetActionSerial() != SwingSerial) return; // A synchronous parry ended this swing.
     const bool bLungeActive = Now && bArmed && IsAttack(Name) && !Now->Active.IsEmpty() && ArcEnd >= 0.f &&
         SwordCombat::CrossesWindow(Before, SourceTime(), FVector2f(Now->Active[0].X, ArcEnd));
     if (bActive || bLungeActive) SweepArc();
+    if (Character->GetActionSerial() != SwingSerial) return;
     if (Mode != EAdventureMoveMode::Ground && Mode != EAdventureMoveMode::Air) { AttackBuffer = 0.f; bCharging = false; return; }
     // The draw that an attack press started cuts from its input point.
     if (Name == TEXT("DrawSword") && bAttackAfterDraw && Now && SourceTime() >= Now->Input && bArmed) StartCut(0);
@@ -333,6 +336,7 @@ void UAdventureMoveSet::BladePoints(TArray<FVector>& Out) const
 
 void UAdventureMoveSet::SweepBlade()
 {
+    const uint32 SwingSerial = Character->GetActionSerial();
     TArray<FVector> Now; BladePoints(Now);
     if (Now.IsEmpty()) return;
     if (!bSwung) { bSwung = true; if (!JapanCombat::Publish(Character, EJapanCombatCue::Swing, Now.Last(), FVector::ZeroVector, FMath::Min(Strength, 3), Character))
@@ -348,7 +352,9 @@ void UAdventureMoveSet::SweepBlade()
                 if (!A || A == Character || HitThisSwing.Contains(A) || !IsTargetable(A)) continue;
                 HitThisSwing.Add(A);
                 Strike(A, Strength, H.bStartPenetrating ? ToPt : FVector(H.ImpactPoint), ToPt - FromPt);
+                if (Character->GetActionSerial() != SwingSerial) return false;
             }
+            return true;
         };
         for (int32 I = 0; I < Now.Num(); ++I)
         {
@@ -356,7 +362,7 @@ void UAdventureMoveSet::SweepBlade()
             {
                 TArray<FHitResult> Hits;
                 Character->GetWorld()->SweepMultiByChannel(Hits, PreviousBlade[I], Now[I], FQuat::Identity, Chan, FCollisionShape::MakeSphere(10.f), Query);
-                CheckHits(Hits, PreviousBlade[I], Now[I]);
+                if (!CheckHits(Hits, PreviousBlade[I], Now[I])) return;
             }
         }
         for (const float Alpha : { 0.5f, 1.f })
@@ -365,7 +371,7 @@ void UAdventureMoveSet::SweepBlade()
             const FVector Tip = FMath::Lerp(PreviousBlade.Last(), Now.Last(), Alpha);
             TArray<FHitResult> SpineHits;
             Character->GetWorld()->SweepMultiByChannel(SpineHits, Base, Tip, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(10.f), Query);
-            CheckHits(SpineHits, Base, Tip);
+            if (!CheckHits(SpineHits, Base, Tip)) return;
         }
     }
     PreviousBlade = Now;
@@ -373,6 +379,7 @@ void UAdventureMoveSet::SweepBlade()
 
 void UAdventureMoveSet::SweepArc()
 {
+    const uint32 SwingSerial = Character->GetActionSerial();
     const FVector Here = Character->GetActorLocation();
     const FVector Forward = Character->GetActorForwardVector();
     const float Range = Character->GetCapsuleComponent()->GetScaledCapsuleRadius() + BladeLength() + 36.f;
@@ -400,9 +407,9 @@ void UAdventureMoveSet::SweepArc()
     };
     // The few things a blade can strike (IsTargetable), found directly rather than through a collision channel.
     UWorld* World = Character->GetWorld();
-    for (TActorIterator<AFoxHunter> It(World); It; ++It) Consider(*It);
-    for (TActorIterator<ASwordDummy> It(World); It; ++It) Consider(*It);
-    for (TActorIterator<AWandererCharacter> It(World); It; ++It) Consider(*It);
+    for (TActorIterator<AFoxHunter> It(World); It && Character->GetActionSerial() == SwingSerial; ++It) Consider(*It);
+    for (TActorIterator<ASwordDummy> It(World); It && Character->GetActionSerial() == SwingSerial; ++It) Consider(*It);
+    for (TActorIterator<AWandererCharacter> It(World); It && Character->GetActionSerial() == SwingSerial; ++It) Consider(*It);
 }
 
 float UAdventureMoveSet::BladeLength() const
