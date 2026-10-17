@@ -3,6 +3,8 @@
 #include "Misc/AutomationTest.h"
 #include "AdventureMoveSet.h"
 #include "WandererCharacter.h"
+#include "WandererDefinition.h"
+#include "Animation/AnimSequence.h"
 #include "WandererSword.h"
 #include "SwordTrainer.h"
 #include "RoninProjectile.h"
@@ -170,9 +172,12 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     ON_SCOPE_EXIT { if (Dummy) Dummy->Destroy(); };
     if (!TestNotNull(TEXT("Plunge regression owns a real training post"), Dummy)) return false;
     FAdventureMove Landing; Landing.Name = TEXT("PlungeLand"); Moves->Moves.Add(Landing.Name, Landing);
+    Player->Definition = NewObject<UWandererDefinition>(Player);
+    Player->Definition->Actions.Add(Landing.Name, NewObject<UAnimSequence>(Player->Definition));
     Player->AnimationAction = TEXT("PlungeAir");
     Moves->HitThisSwing.Reset(); Moves->Strength = 3; Moves->CustomBladeLength = 100.f;
     Moves->Landed(FHitResult());
+    TestEqual(TEXT("Landing starts the actual next action"), Player->AnimationAction, Landing.Name);
     TestEqual(TEXT("Landing impact registers one hit"), Dummy->HitsTaken, 1);
     Moves->SweepArc();
     TestEqual(TEXT("The following active arc cannot duplicate the landing contact"), Dummy->HitsTaken, 1);
