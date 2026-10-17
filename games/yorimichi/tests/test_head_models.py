@@ -82,3 +82,19 @@ def test_dense_triangle_proof_keeps_winding_and_duplicate_counts():
     assert not geometry.same_triangles(source, changed)
     with pytest.raises(ValueError, match='Nonfinite'):
         geometry.canonical_triangles(np.full((1, 3, 3), np.nan))
+
+
+def test_vertex_bake_matches_colors_by_decoder_coordinates_without_mutation():
+    import numpy as np
+    bake = load(TOOLS/'head_models/vertex_bake.py')
+    coords = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+    attributes = np.array([[.1, .2, .3], [.4, .5, .6], [.7, .8, .9]], dtype='float32')
+    original = attributes.copy()
+    assert np.array_equal(bake.vertex_colors(coords, coords[[2, 0, 1]], attributes[[2, 0, 1]], 8), attributes)
+    assert np.array_equal(attributes, original)
+    missing = coords.copy()
+    missing[1] = [2, 0, 0]
+    with pytest.raises(ValueError, match='Missing'):
+        bake.vertex_colors(coords, missing, attributes, 8)
+    with pytest.raises(ValueError, match='Duplicate'):
+        bake.vertex_colors(coords, coords[[0, 0, 2]], attributes, 8)

@@ -130,3 +130,33 @@ views with the same yaw/pitch labels and framing rule as MeshAxiom, recording an
 camera-frame offset. The source GLB bytes remain unchanged. Use a fresh report for
 this separate render job. Base-color comparison avoids differences in PBR lighting;
 interactive material inspection is a separate viewing check.
+
+## A UV-free color-field bake for dense raw output
+
+`head_models/vertex_bake.py` samples the learned native color by the decoder voxel
+that produced each raw vertex. It verifies coordinate correspondence and rejects
+missing/duplicate support. It writes the original raw indices and positions, after
+the same fixed axis rotation, into a GLB and verifies them byte for byte. There is
+no simplification, repair, smoothing or vertex movement. Linear vertex colors
+represent the learned sRGB field; this preview uses uniform roughness/metallic
+values, so it does not preserve the PBR field's material variation.
+
+This is an alternative deterministic material bake when constructing UVs on a
+multimillion-triangle raw output dominates the neural computation. It consumes
+completed shape-decoder, raw-mesh and texture checkpoints; it makes no new model
+or paid call. It streams the complete source JSON into gzip with bounded chunks.
+Its optional eight-view renders use the same base-color camera/framing rule.
+
+```sh
+ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python \
+  games/yorimichi/tools/head_models/vertex_bake.py \
+  --checkpoint build/yorimichi/meshaxiom/head-trellis-512/checkpoints \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-trellis-512-vertex \
+  --report build/yorimichi/logs/head-trellis-vertex.guard --memory-gib 8 --render
+```
+
+The viewer's dense-GLB path checks the complete exported triangle count and renders
+all triangles. It defers the optional browser edge-map construction and avoids
+loading another giant JSON representation into the page. The downloadable source
+and GLB remain complete. Color/gray switching also handles vertex-color materials.

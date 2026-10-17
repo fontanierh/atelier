@@ -46,7 +46,8 @@ def stage(args):
         raise ValueError('GLB rendering requires the supplied export')
     record = dict(id=args.asset, title=args.title, palette=args.palette, note=args.note,
                   triangles=len(mesh['faces']), vertices=len(mesh['vertices']),
-                  seconds=None, peak_gib=None, render_glb=args.render_glb)
+                  seconds=None, peak_gib=None, render_glb=args.render_glb,
+                  defer_topology=bool(args.render_glb and len(mesh['faces']) > 200000))
     if args.benchmark:
         benchmark = json.loads(args.benchmark.read_text())
         if (benchmark['vertex_count'] != len(mesh['vertices']) or benchmark['face_count'] != len(mesh['faces'])

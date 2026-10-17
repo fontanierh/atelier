@@ -15,7 +15,7 @@ controls.addEventListener('change',()=>requestDraw());controls.addEventListener(
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();requestDraw();}
 new ResizeObserver(resize).observe(stage);document.addEventListener('visibilitychange',()=>requestDraw(3));
 function reset(){controls.target.set(0,.48,0);camera.position.set(1.5,1.25,2.2);controls.update();requestDraw(3);}
-function updateMaterial(){if(!mesh)return;for(const m of materials){m.wireframe=wire;m.color.set(colored?m.userData.color:0xa6adb5);m.map=colored?m.userData.map:null;m.needsUpdate=true;}requestDraw();}
+function updateMaterial(){if(!mesh)return;for(const m of materials){m.wireframe=wire;m.color.set(colored?m.userData.color:0xa6adb5);m.map=colored?m.userData.map:null;m.vertexColors=colored&&Boolean(m.userData.vertexColors);m.needsUpdate=true;}requestDraw();}
 document.querySelector('#reset').onclick=reset;
 document.querySelector('#wire').onclick=e=>{wire=!wire;e.currentTarget.setAttribute('aria-pressed',String(wire));updateMaterial();};
 document.querySelector('#edges').onclick=e=>{if(!boundaries)return;boundaries.visible=!boundaries.visible;e.currentTarget.setAttribute('aria-pressed',String(boundaries.visible));requestDraw();};
@@ -33,12 +33,16 @@ try{
  const reference=document.querySelector('#reference');reference.src=asset.reference;reference.alt=`Sunburst reference for ${asset.title}`;
  document.querySelector('#note').textContent=asset.note;
  if(asset.model){const link=document.querySelector('#download');link.href=asset.model;link.download=`meshaxiom_${asset.id}.glb`;link.hidden=false;}
- const response=await fetch(asset.mesh);if(!response.ok)throw new Error(`Mesh HTTP ${response.status}`);const data=await response.json();
- const lo=[0,1,2].map(i=>Math.min(...data.vertices.map(v=>v[i]))),hi=[0,1,2].map(i=>Math.max(...data.vertices.map(v=>v[i]))),scale=1/(hi[2]-lo[2]);
+ let data=null,lo,hi,scale;
+ if(!asset.defer_topology){
+  const response=await fetch(asset.mesh);if(!response.ok)throw new Error(`Mesh HTTP ${response.status}`);data=await response.json();
+  lo=[Infinity,Infinity,Infinity];hi=[-Infinity,-Infinity,-Infinity];for(const vertex of data.vertices){for(let i=0;i<3;i++){lo[i]=Math.min(lo[i],vertex[i]);hi[i]=Math.max(hi[i],vertex[i]);}}scale=1/(hi[2]-lo[2]);
+ }else if(!asset.render_glb){throw new Error('Deferred topology requires a native GLB');}
+ const expectedTriangles=data?data.faces.length:asset.triangles;
  if(asset.render_glb){
   const gltf=await new GLTFLoader().loadAsync(asset.model);mesh=gltf.scene;
-  let displayedTriangles=0;mesh.traverse(node=>{if(!node.isMesh)return;displayedTriangles+=(node.geometry.index?node.geometry.index.count:node.geometry.attributes.position.count)/3;for(const m of Array.isArray(node.material)?node.material:[node.material]){m.side=THREE.DoubleSide;m.userData.color=m.color.getHex();m.userData.map=m.map;materials.push(m);}});
-  if(displayedTriangles!==data.faces.length)throw new Error('GLB and generated mesh triangle counts differ');
+  let displayedTriangles=0;mesh.traverse(node=>{if(!node.isMesh)return;displayedTriangles+=(node.geometry.index?node.geometry.index.count:node.geometry.attributes.position.count)/3;for(const m of Array.isArray(node.material)?node.material:[node.material]){m.side=THREE.DoubleSide;m.userData.color=m.color.getHex();m.userData.map=m.map;m.userData.vertexColors=m.vertexColors;materials.push(m);}});
+  if(displayedTriangles!==expectedTriangles)throw new Error('GLB and generated mesh triangle counts differ');
   const box=new THREE.Box3().setFromObject(mesh),height=box.max.y-box.min.y,center=box.getCenter(new THREE.Vector3());
   if(!(height>0))throw new Error('GLB has no height');
   mesh.scale.setScalar(1/height);mesh.position.set(-center.x/height,-box.min.y/height,-center.z/height);scene.add(mesh);
@@ -52,13 +56,15 @@ try{
 
  materials=palette;for(const m of materials)m.userData.map=null;
  }
+ if(data){
  const edgeCounts=new Map();for(const face of data.faces){for(let k=0;k<3;k++){const a=face[k],b=face[(k+1)%3],key=a<b?`${a},${b}`:`${b},${a}`;edgeCounts.set(key,(edgeCounts.get(key)||0)+1);}}
  const openPositions=[];let nonmanifold=0;for(const [key,count] of edgeCounts){if(count>2)nonmanifold++;if(count!==1)continue;for(const index of key.split(',').map(Number)){const v=data.vertices[index];openPositions.push((v[0]-(lo[0]+hi[0])/2)*scale,(v[2]-lo[2])*scale,-(v[1]-(lo[1]+hi[1])/2)*scale);}}
  const edgeGeometry=new THREE.BufferGeometry();edgeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(openPositions,3));
  boundaries=new THREE.LineSegments(edgeGeometry,new THREE.LineBasicMaterial({color:0xff8066,depthTest:false}));boundaries.visible=false;boundaries.renderOrder=2;scene.add(boundaries);
  document.querySelector('#topology').textContent=`${openPositions.length/6} open edges · ${nonmanifold} nonmanifold edges. Open edges are highlighted in red when enabled; some openings may be intentional.`;
+ }else{document.querySelector('#edges').disabled=true;document.querySelector('#topology').textContent='Full native mesh displayed. Edge overlay is unavailable for this dense preview.';}
  const grid=new THREE.GridHelper(4,20,0x40516b,0x2d3c50);grid.position.y=-.015;grid.material.transparent=true;grid.material.opacity=.45;scene.add(grid);
- document.querySelector('#triangles').textContent=data.faces.length.toLocaleString();
- window.meshaxiomViewer={loaded:true,asset:asset.id,triangles:data.faces.length,sourceVertices:data.vertices.length,renderMode:asset.render_glb?'glb':'mesh-json',reset};loading.hidden=true;reset();
+ document.querySelector('#triangles').textContent=expectedTriangles.toLocaleString();
+ window.meshaxiomViewer={loaded:true,asset:asset.id,triangles:expectedTriangles,sourceVertices:data?data.vertices.length:asset.vertices,renderMode:asset.render_glb?'glb':'mesh-json',reset};loading.hidden=true;reset();
 }catch(error){console.error(error);loading.textContent='The mesh could not load. Please reload.';window.meshaxiomViewer={loaded:false,error:String(error)};}
 resize();
