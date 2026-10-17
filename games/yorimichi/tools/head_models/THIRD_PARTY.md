@@ -9,6 +9,12 @@ redistributed. The manifests bind repositories, revisions, sizes and SHA256 valu
 - [Pixal3D-mac](https://github.com/pawel-mazurkiewicz/Pixal3D-mac): Metal/MPS kernels and model implementation.
 - [trellis2mlx](https://github.com/lyonsno/trellis2mlx): MLX implementation and inference/export driver.
 - [valeoai/NAF](https://github.com/valeoai/NAF): image-feature upsampling.
+- [Open3D](https://github.com/isl-org/Open3D): exterior raycasting, point fusion, screened Poisson and QEM reduction.
+- [xatlas Python](https://github.com/mworchel/xatlas-python): automatic UV atlas generation/repacking.
+- [SAM2](https://github.com/facebookresearch/sam2): automatically prompted eight-view masks, using
+  [SAM2.1 Hiera Tiny](https://huggingface.co/facebook/sam2.1-hiera-tiny), Apache-2.0, revision
+  `de431c4043854a71d8101e17995dfe596bf101a5`. Weights are downloaded, never redistributed.
+- Blender's installed QuadriFlow: optional quad reduction, used without manual edits.
 
 Only small compatibility patches are included here. Full pinned upstream sources
 and their licenses are fetched into the ignored build runtime by setup. The model

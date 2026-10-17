@@ -1,0 +1,2751 @@
+{
+  "schema": 1,
+  "origin": "Derived from the retained native TRELLIS.2 head; no manual editing",
+  "reference": "../meshaxiom-skater-head/reference.png",
+  "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "source_code_commit": "6a70b228e6222c371d50f84631607ec06fdbb596",
+  "source_files": {
+    "retopo_blender.py": "1c91d8167e6e96f92e6b63a9650e235c18ea4ca9ca4ac25e553e07872bdbade3",
+    "retopo.py": "235e9160adea4a4c71225d590b39503d7521c589e9e9f39fce854a3c84cd4b33",
+    "masks.py": "0dd94f9f58ca4ea379da42c18647be8d038d5873be3281c5e5998f5a0f6db099",
+    "surface.py": "d256897b1e71a61c13bc2fae57630c13f1b980923df577415bae700ca7fa45a1"
+  },
+  "original": {
+    "triangles": 11386792,
+    "vertices": 5598831,
+    "checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+    "retained": true
+  },
+  "surface": {
+    "method": "26 exterior depth/color views; deterministic local filtering and oriented fusion",
+    "native_mesh_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+    "native_texture_sha256": "58cf0e7e89cc3e5523d8624189314de2d99269db3210a5e28d1da4d40a93ebf7",
+    "worker_sha256": "d256897b1e71a61c13bc2fae57630c13f1b980923df577415bae700ca7fa45a1",
+    "cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "original_triangles": 11386792,
+    "original_vertices": 5598831,
+    "points": 535994,
+    "voxel_size": 0.0025,
+    "median_width": 3,
+    "depth_outlier_threshold": 0.0025,
+    "color_space": "sRGB in cloud; linear-light voxel averaging",
+    "source_frame": "Unscaled native TRELLIS Z-up unit cube",
+    "views": [
+      {
+        "yaw": 0,
+        "pitch": -25,
+        "eye": [
+          1.99384130908912,
+          0.0007016360759735107,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 156070,
+        "repaired_depth_pixels": 2152
+      },
+      {
+        "yaw": 30,
+        "pitch": -25,
+        "eye": [
+          1.7267124254955608,
+          0.9976402018162884,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 144368,
+        "repaired_depth_pixels": 2320
+      },
+      {
+        "yaw": 60,
+        "pitch": -25,
+        "eye": [
+          0.9969027433488052,
+          1.7274498839630443,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 134807,
+        "repaired_depth_pixels": 2542
+      },
+      {
+        "yaw": 90,
+        "pitch": -25,
+        "eye": [
+          -3.582239150988768e-05,
+          1.9945787675566036,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 127164,
+        "repaired_depth_pixels": 2488
+      },
+      {
+        "yaw": 120,
+        "pitch": -25,
+        "eye": [
+          -0.9969743881318247,
+          1.7274498839630443,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 135167,
+        "repaired_depth_pixels": 2528
+      },
+      {
+        "yaw": 150,
+        "pitch": -25,
+        "eye": [
+          -1.7267840702785808,
+          0.9976402018162884,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 146152,
+        "repaired_depth_pixels": 2426
+      },
+      {
+        "yaw": 180,
+        "pitch": -25,
+        "eye": [
+          -1.99391295387214,
+          0.0007016360759737549,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 157818,
+        "repaired_depth_pixels": 2208
+      },
+      {
+        "yaw": 210,
+        "pitch": -25,
+        "eye": [
+          -1.7267840702785808,
+          -0.9962369296643417,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 150231,
+        "repaired_depth_pixels": 1961
+      },
+      {
+        "yaw": 240,
+        "pitch": -25,
+        "eye": [
+          -0.9969743881318259,
+          -1.7260466118110969,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 136874,
+        "repaired_depth_pixels": 1863
+      },
+      {
+        "yaw": 270,
+        "pitch": -25,
+        "eye": [
+          -3.5822391510376036e-05,
+          -1.9931754954046565,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 125498,
+        "repaired_depth_pixels": 1895
+      },
+      {
+        "yaw": 300,
+        "pitch": -25,
+        "eye": [
+          0.9969027433488052,
+          -1.7260466118110973,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 137470,
+        "repaired_depth_pixels": 1857
+      },
+      {
+        "yaw": 330,
+        "pitch": -25,
+        "eye": [
+          1.7267124254955604,
+          -0.9962369296643424,
+          -0.9296885310465188
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 150787,
+        "repaired_depth_pixels": 1905
+      },
+      {
+        "yaw": 0,
+        "pitch": 25,
+        "eye": [
+          1.99384130908912,
+          0.0007016360759735107,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 157966,
+        "repaired_depth_pixels": 2012
+      },
+      {
+        "yaw": 30,
+        "pitch": 25,
+        "eye": [
+          1.7267124254955608,
+          0.9976402018162884,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 150602,
+        "repaired_depth_pixels": 2464
+      },
+      {
+        "yaw": 60,
+        "pitch": 25,
+        "eye": [
+          0.9969027433488052,
+          1.7274498839630443,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 135255,
+        "repaired_depth_pixels": 2408
+      },
+      {
+        "yaw": 90,
+        "pitch": 25,
+        "eye": [
+          -3.582239150988768e-05,
+          1.9945787675566036,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 130975,
+        "repaired_depth_pixels": 2510
+      },
+      {
+        "yaw": 120,
+        "pitch": 25,
+        "eye": [
+          -0.9969743881318247,
+          1.7274498839630443,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 134662,
+        "repaired_depth_pixels": 2530
+      },
+      {
+        "yaw": 150,
+        "pitch": 25,
+        "eye": [
+          -1.7267840702785808,
+          0.9976402018162884,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 149991,
+        "repaired_depth_pixels": 2703
+      },
+      {
+        "yaw": 180,
+        "pitch": 25,
+        "eye": [
+          -1.99391295387214,
+          0.0007016360759737549,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 158836,
+        "repaired_depth_pixels": 2175
+      },
+      {
+        "yaw": 210,
+        "pitch": 25,
+        "eye": [
+          -1.7267840702785808,
+          -0.9962369296643417,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 156723,
+        "repaired_depth_pixels": 2009
+      },
+      {
+        "yaw": 240,
+        "pitch": 25,
+        "eye": [
+          -0.9969743881318259,
+          -1.7260466118110969,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 140119,
+        "repaired_depth_pixels": 1750
+      },
+      {
+        "yaw": 270,
+        "pitch": 25,
+        "eye": [
+          -3.5822391510376036e-05,
+          -1.9931754954046565,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 125701,
+        "repaired_depth_pixels": 1912
+      },
+      {
+        "yaw": 300,
+        "pitch": 25,
+        "eye": [
+          0.9969027433488052,
+          -1.7260466118110973,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 142279,
+        "repaired_depth_pixels": 1779
+      },
+      {
+        "yaw": 330,
+        "pitch": 25,
+        "eye": [
+          1.7267124254955604,
+          -0.9962369296643424,
+          0.9298318206125589
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 159007,
+        "repaired_depth_pixels": 2038
+      },
+      {
+        "yaw": 0,
+        "pitch": 80,
+        "eye": [
+          0.3819901684757369,
+          0.0007016360759735107,
+          2.1666487014098776
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 128557,
+        "repaired_depth_pixels": 1711
+      },
+      {
+        "yaw": 180,
+        "pitch": -75,
+        "eye": [
+          -0.5694377216170556,
+          0.0007016360759735805,
+          -2.1249651730529306
+        ],
+        "center": [
+          -3.5822391510009766e-05,
+          0.0007016360759735107,
+          7.164478302001953e-05
+        ],
+        "up": [
+          0,
+          0,
+          1
+        ],
+        "fov": 35,
+        "width": 768,
+        "height": 768,
+        "points": 107932,
+        "repaired_depth_pixels": 2457
+      }
+    ],
+    "seconds": 16.45274641699507
+  },
+  "reconstruct": {
+    "method": "Exterior oriented screened Poisson + adaptive QEM; no manual edits",
+    "source_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "worker_sha256": "d256897b1e71a61c13bc2fae57630c13f1b980923df577415bae700ca7fa45a1",
+    "depth": 9,
+    "solver_threads": 1,
+    "point_support": 400000,
+    "sample_seed": 42,
+    "small_component_area_fraction": 0.005,
+    "results": [
+      {
+        "target_triangles": 40000,
+        "vertices": 20006,
+        "triangles": 39999,
+        "nonmanifold_edges": 0,
+        "boundary_edges": 47,
+        "sha256": "9e06f0798aa2790355e524fd749f4e6e02f12a1ecc9f6c92818ab608596d31cd",
+        "removed_degenerate_float32_triangles": 0
+      },
+      {
+        "target_triangles": 100000,
+        "vertices": 50018,
+        "triangles": 99999,
+        "nonmanifold_edges": 0,
+        "boundary_edges": 67,
+        "sha256": "ce03b8bd79c1b3f8eff9a32fc7ffaedbcdbf89f6ff8af3b9cd238be41a90fa10",
+        "removed_degenerate_float32_triangles": 0
+      }
+    ],
+    "seconds": 39.813903624977684,
+    "limitation": "A derived surface, with possible feature loss; no facial deformation-loop guarantee"
+  },
+  "bake100k": {
+    "source_sha256": "ce03b8bd79c1b3f8eff9a32fc7ffaedbcdbf89f6ff8af3b9cd238be41a90fa10",
+    "native_checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+    "texture_checkpoint_sha256": "58cf0e7e89cc3e5523d8624189314de2d99269db3210a5e28d1da4d40a93ebf7",
+    "model_sha256": "7c4e22a03f694288b179f855e98b0ffb52150e418eaa3141a0c62036182c8549",
+    "color_cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "export_vertices": 78911,
+    "geometry_normals_uv_indices_sha256": "937715437421fb20ee4a13a457bea7eaf50f4617bf209298863963a1ae527091",
+    "method": "xatlas + native surface-neighbor componentwise color median",
+    "neighbors": 1,
+    "texture_size": 4096,
+    "charts": 4839,
+    "repaired_uv_triangles": 3484,
+    "uv_reused": false,
+    "normal_tensor_iterations": 4,
+    "triangles": 99999,
+    "vertices": 50018,
+    "occupied_texels": 1235324,
+    "uv_interior_overlap_texels": 0,
+    "exact_reduced_triangles": true,
+    "color_support_distance_percentiles": [
+      0.001000737480353564,
+      0.019461461436003392,
+      0.08534448571503167,
+      0.13502109050750732
+    ],
+    "masks": "Approximate color-based material regions; dark mask also includes brows/eyes. No semantic ground-truth claim.",
+    "material": "Conventional lit PBR; uniform roughness .85, metallic 0; no normal map",
+    "seconds": 25.310535041993717
+  },
+  "bake40k": {
+    "source_sha256": "1d1af40e09c07ae901fd6474f0b68d555be964c04fea5d32f16d8d7e4e9f5c84",
+    "native_checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+    "texture_checkpoint_sha256": "58cf0e7e89cc3e5523d8624189314de2d99269db3210a5e28d1da4d40a93ebf7",
+    "model_sha256": "b45bf54050d7a0efa36400a53619117e27358ab37c584a537e8cd4a4b37fa21b",
+    "color_cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "export_vertices": 33473,
+    "geometry_normals_uv_indices_sha256": "79129735c21ebaee066b928fb63bc12d7622ea076501bbdf534b1b45251bc201",
+    "method": "xatlas + native surface-neighbor componentwise color median",
+    "neighbors": 1,
+    "texture_size": 4096,
+    "charts": null,
+    "repaired_uv_triangles": 0,
+    "uv_reused": true,
+    "normal_tensor_iterations": 4,
+    "triangles": 39999,
+    "vertices": 20006,
+    "occupied_texels": 2165535,
+    "uv_interior_overlap_texels": 0,
+    "exact_reduced_triangles": true,
+    "color_support_distance_percentiles": [
+      0.0010270612547174096,
+      0.0195953000336885,
+      0.08531769320368768,
+      0.13487555086612701
+    ],
+    "masks": "Approximate color-based material regions; dark mask also includes brows/eyes. No semantic ground-truth claim.",
+    "material": "Conventional lit PBR; uniform roughness .85, metallic 0; no normal map",
+    "seconds": 6.620741708000423
+  },
+  "quad": {
+    "source_sha256": "ce03b8bd79c1b3f8eff9a32fc7ffaedbcdbf89f6ff8af3b9cd238be41a90fa10",
+    "output_sha256": "5f7fbe7bd7286849e717257d55260bafac97c6787bb9d278d923bb9ee4e094e9",
+    "method": "QuadriFlow on reconstructed surface; no manual edits",
+    "blender": "5.2.1 LTS",
+    "seed": 42,
+    "target_quads": 10000,
+    "quads": 9092,
+    "polygons": 9092,
+    "triangles": 18184,
+    "vertices": 9121,
+    "preflight": {
+      "vertices": 50018,
+      "faces": 99999,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 67,
+      "wire_edges": 0,
+      "short_edges": 0,
+      "inconsistent_edges": 0
+    },
+    "topology": {
+      "vertices": 9121,
+      "faces": 9092,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 76,
+      "wire_edges": 0,
+      "short_edges": 0,
+      "inconsistent_edges": 0
+    },
+    "seconds": 4.968235125008505,
+    "limitation": "Automatic quad flow does not guarantee facial deformation loops"
+  },
+  "quad_bake": {
+    "source_sha256": "5f7fbe7bd7286849e717257d55260bafac97c6787bb9d278d923bb9ee4e094e9",
+    "native_checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+    "texture_checkpoint_sha256": "58cf0e7e89cc3e5523d8624189314de2d99269db3210a5e28d1da4d40a93ebf7",
+    "model_sha256": "fb14cf565a1cdf452e2dda60ab7e9eb6c3f673ccbc89783a0161037e0b81d592",
+    "color_cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "export_vertices": 14262,
+    "geometry_normals_uv_indices_sha256": "b0c0e794b96e8e4a6c8916c9f5e86bf6948eb3e6a9817dc88ebedd99a0687d81",
+    "method": "xatlas + native surface-neighbor componentwise color median",
+    "neighbors": 1,
+    "texture_size": 4096,
+    "charts": 618,
+    "repaired_uv_triangles": 117,
+    "uv_reused": false,
+    "normal_tensor_iterations": 4,
+    "triangles": 18184,
+    "vertices": 9121,
+    "occupied_texels": 4283631,
+    "uv_interior_overlap_texels": 0,
+    "exact_reduced_triangles": true,
+    "color_support_distance_percentiles": [
+      0.001363644259981811,
+      0.024196905083954334,
+      0.08743887022137645,
+      0.1320662498474121
+    ],
+    "masks": "Approximate color-based material regions; dark mask also includes brows/eyes. No semantic ground-truth claim.",
+    "material": "Conventional lit PBR; uniform roughness .85, metallic 0; no normal map",
+    "seconds": 9.234890583000379
+  },
+  "masks": {
+    "method": "Automatic color prompts + eight-view SAM2 + visibility-weighted UV fusion",
+    "paint_mode": "repair",
+    "input_sha256": "7c4e22a03f694288b179f855e98b0ffb52150e418eaa3141a0c62036182c8549",
+    "output_sha256": "1478d5402c5511afbb176656d7d16f2427202b8cc81f66e1641693514e9c68cc",
+    "mesh_sha256": "f0cb8f04738fd8adc2e2126dfd2ca10b051bf3676b6d301b47948975e2a49d5c",
+    "masks_manifest_sha256": "58583631a226eab33982e4e47014bd8ccf3a13f7bd0041a935c9ed95b4ecaa41",
+    "color_cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+    "sam2_revision": "de431c4043854a71d8101e17995dfe596bf101a5",
+    "sam2_weights_sha256": "48c14467e5cf9e51870511feb72c89688e82dd74523142c0538b663e193ac2a7",
+    "export_vertices": 78911,
+    "geometry_normals_uv_indices_sha256": "937715437421fb20ee4a13a457bea7eaf50f4617bf209298863963a1ae527091",
+    "skin_texels": 331926,
+    "hair_texels": 435833,
+    "protected_texels": 467565,
+    "painted_skin_texels": 1,
+    "painted_hair_texels": 106,
+    "protected_texture_sha256": "972323ed791de82a592e8c877c49aef1d3e17edd49b440a4bba32f18ebe5d8ad",
+    "geometry_normals_uv_indices_identical": true,
+    "seconds": 10.238147707976168,
+    "limitations": "Approximate palette-prompted masks; gold regions protect features and unknown surfaces. Inspect before reuse."
+  },
+  "sam2": {
+    "repo": "facebook/sam2.1-hiera-tiny",
+    "revision": "de431c4043854a71d8101e17995dfe596bf101a5",
+    "license": "Apache-2.0",
+    "files": {
+      "model.safetensors": {
+        "bytes": 155908064,
+        "sha256": "48c14467e5cf9e51870511feb72c89688e82dd74523142c0538b663e193ac2a7"
+      },
+      "config.json": {
+        "bytes": 5695,
+        "sha256": "860aff9751b139d83a4ad7df1e5535416fded533e0ead02625edbefcb9953cce"
+      },
+      "processor_config.json": {
+        "bytes": 95,
+        "sha256": "f8a68e865cfad115c1c2763f3d93eca7b1c622da06da2a9273eb437fb2389b6d"
+      },
+      "README.md": {
+        "bytes": 19965,
+        "sha256": "dfa401b1b9358b9650ae487dd2f2bb336fd745c3609e3244adf2e97a22343857"
+      },
+      "preprocessor_config.json": {
+        "bytes": 683,
+        "sha256": "6ebf229ee259368ce4a8d4f2fe893a72b053023710853e257253939e601f583d"
+      }
+    }
+  },
+  "mask_views": {
+    "model_sha256": "7c4e22a03f694288b179f855e98b0ffb52150e418eaa3141a0c62036182c8549",
+    "mesh_sha256": "f0cb8f04738fd8adc2e2126dfd2ca10b051bf3676b6d301b47948975e2a49d5c",
+    "normalization": {
+      "origin": [
+        6.495416164398193e-05,
+        -0.4862014055252075,
+        0.0007572174072265625
+      ],
+      "height": 0.9718929529190063
+    },
+    "source_views_sha256": "571a586a3b65210a93a8ba6efdcfa074b797891824dbbdc277943cb13953e056",
+    "source_views": "pipeline100k-views",
+    "sam2_revision": "de431c4043854a71d8101e17995dfe596bf101a5",
+    "sam2_weights_sha256": "48c14467e5cf9e51870511feb72c89688e82dd74523142c0538b663e193ac2a7",
+    "device": "mps",
+    "views": [
+      {
+        "name": "view0",
+        "camera": {
+          "yaw": -90,
+          "pitch": -5,
+          "eye": [
+            -2.1916283358018402,
+            0.308257365955152,
+            1.3419853131801823e-16
+          ],
+          "forward": [
+            0.9961946980917454,
+            0.08715574274765817,
+            -6.099933241728101e-17
+          ],
+          "right": [
+            6.123233995736767e-17,
+            -0.0,
+            1.0
+          ],
+          "up": [
+            -0.08715574274765817,
+            0.9961946980917454,
+            5.336750069161487e-18
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "133cf6fdff058ea53d237ed527108ae2d3501ff63bd1823dac02f691f8005ede",
+        "depth_sha256": "dc1ef2d073cbcdca99d9a9324afa5a187c566779b89c133b37fc7a3c2a4f4162",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                391,
+                522
+              ],
+              [
+                547,
+                411
+              ],
+              [
+                390,
+                346
+              ],
+              [
+                336,
+                627
+              ],
+              [
+                474,
+                474
+              ],
+              [
+                220,
+                435
+              ]
+            ],
+            "negative": [
+              [
+                353,
+                208
+              ],
+              [
+                178,
+                480
+              ],
+              [
+                541,
+                183
+              ],
+              [
+                235,
+                321
+              ],
+              [
+                445,
+                181
+              ],
+              [
+                282,
+                252
+              ],
+              [
+                287,
+                423
+              ],
+              [
+                468,
+                307
+              ],
+              [
+                339,
+                354
+              ],
+              [
+                549,
+                249
+              ],
+              [
+                339,
+                408
+              ],
+              [
+                567,
+                342
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.31328386068344116,
+              0.36531615257263184,
+              0.5951139330863953
+            ],
+            "constraint_score": 1.105693275366025
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                353,
+                208
+              ],
+              [
+                178,
+                480
+              ],
+              [
+                541,
+                183
+              ],
+              [
+                235,
+                321
+              ],
+              [
+                445,
+                181
+              ],
+              [
+                282,
+                252
+              ]
+            ],
+            "negative": [
+              [
+                391,
+                522
+              ],
+              [
+                547,
+                411
+              ],
+              [
+                390,
+                346
+              ],
+              [
+                336,
+                627
+              ],
+              [
+                474,
+                474
+              ],
+              [
+                220,
+                435
+              ],
+              [
+                287,
+                423
+              ],
+              [
+                468,
+                307
+              ],
+              [
+                339,
+                354
+              ],
+              [
+                549,
+                249
+              ],
+              [
+                339,
+                408
+              ],
+              [
+                567,
+                342
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.05996343493461609,
+              0.027377309277653694,
+              0.0965408906340599
+            ],
+            "constraint_score": 0.9910904892259933
+          }
+        ],
+        "masks": {
+          "skin": "4d1700072cb66f0dce16683e007656ad921dc162909bd371432f0f5daee1bb66",
+          "hair": "88c158b5c33bc9b8d3a42b8a2aca39363704d68c2197ed89b8508aafe07ed224"
+        }
+      },
+      {
+        "name": "view1",
+        "camera": {
+          "yaw": -30,
+          "pitch": -5,
+          "eye": [
+            -1.0958141679009201,
+            0.308257365955152,
+            1.8980058144582064
+          ],
+          "forward": [
+            0.4980973490458727,
+            0.08715574274765817,
+            -0.862729915662821
+          ],
+          "right": [
+            0.8660254037844387,
+            -0.0,
+            0.49999999999999994
+          ],
+          "up": [
+            -0.043577871373829076,
+            0.9961946980917457,
+            0.07547908730517333
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "d9f3b9785f4d07067a533ff079a6677be15661a3beff8161fe107a90a2e15c47",
+        "depth_sha256": "9012d12e5c466ecb75555085e74ab997b513ffe43366f1db4690b7c84f1434f1",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                404,
+                465
+              ],
+              [
+                509,
+                235
+              ],
+              [
+                318,
+                612
+              ],
+              [
+                228,
+                357
+              ],
+              [
+                526,
+                396
+              ],
+              [
+                374,
+                546
+              ]
+            ],
+            "negative": [
+              [
+                309,
+                180
+              ],
+              [
+                583,
+                197
+              ],
+              [
+                449,
+                136
+              ],
+              [
+                232,
+                259
+              ],
+              [
+                375,
+                146
+              ],
+              [
+                266,
+                215
+              ],
+              [
+                277,
+                313
+              ],
+              [
+                536,
+                333
+              ],
+              [
+                217,
+                481
+              ],
+              [
+                412,
+                254
+              ],
+              [
+                413,
+                326
+              ],
+              [
+                487,
+                192
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.1844121664762497,
+              0.061474695801734924,
+              0.28195643424987793
+            ],
+            "constraint_score": 1.0370743628000099
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                309,
+                180
+              ],
+              [
+                583,
+                197
+              ],
+              [
+                449,
+                136
+              ],
+              [
+                232,
+                259
+              ],
+              [
+                375,
+                146
+              ],
+              [
+                266,
+                215
+              ]
+            ],
+            "negative": [
+              [
+                404,
+                465
+              ],
+              [
+                509,
+                235
+              ],
+              [
+                318,
+                612
+              ],
+              [
+                228,
+                357
+              ],
+              [
+                526,
+                396
+              ],
+              [
+                374,
+                546
+              ],
+              [
+                277,
+                313
+              ],
+              [
+                536,
+                333
+              ],
+              [
+                217,
+                481
+              ],
+              [
+                412,
+                254
+              ],
+              [
+                413,
+                326
+              ],
+              [
+                487,
+                192
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.08681350201368332,
+              0.2041204273700714,
+              0.29059725999832153
+            ],
+            "constraint_score": 1.0334361064537625
+          }
+        ],
+        "masks": {
+          "skin": "3d4c5d29d12b2a0d91aa1badfb917cc5e034a172f19b705f0a06c550fedcefcd",
+          "hair": "d249ab217af688cf5e465345de76a91212ce05ed82c39f4c917ec240d8fe2609"
+        }
+      },
+      {
+        "name": "view2",
+        "camera": {
+          "yaw": 30,
+          "pitch": -5,
+          "eye": [
+            1.0958141679009201,
+            0.308257365955152,
+            1.8980058144582064
+          ],
+          "forward": [
+            -0.4980973490458727,
+            0.08715574274765817,
+            -0.862729915662821
+          ],
+          "right": [
+            0.8660254037844387,
+            0.0,
+            -0.49999999999999994
+          ],
+          "up": [
+            0.043577871373829076,
+            0.9961946980917457,
+            0.07547908730517333
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "167d6995e1f0bf7e2b9813f637facd4807f7be3a86a52c4cd257578262a10b49",
+        "depth_sha256": "fe1ea890dbe34e760a39c5e59c5a479de8886a63f03749d0a4c6976d9c125cf1",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                362,
+                464
+              ],
+              [
+                261,
+                237
+              ],
+              [
+                446,
+                611
+              ],
+              [
+                539,
+                357
+              ],
+              [
+                250,
+                399
+              ],
+              [
+                393,
+                544
+              ]
+            ],
+            "negative": [
+              [
+                461,
+                173
+              ],
+              [
+                212,
+                171
+              ],
+              [
+                337,
+                136
+              ],
+              [
+                539,
+                258
+              ],
+              [
+                404,
+                139
+              ],
+              [
+                505,
+                211
+              ],
+              [
+                490,
+                309
+              ],
+              [
+                222,
+                335
+              ],
+              [
+                550,
+                481
+              ],
+              [
+                347,
+                255
+              ],
+              [
+                433,
+                245
+              ],
+              [
+                339,
+                323
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.3280961811542511,
+              0.1394408643245697,
+              0.4713137447834015
+            ],
+            "constraint_score": 1.078334836491544
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                461,
+                173
+              ],
+              [
+                212,
+                171
+              ],
+              [
+                337,
+                136
+              ],
+              [
+                539,
+                258
+              ],
+              [
+                404,
+                139
+              ],
+              [
+                505,
+                211
+              ]
+            ],
+            "negative": [
+              [
+                362,
+                464
+              ],
+              [
+                261,
+                237
+              ],
+              [
+                446,
+                611
+              ],
+              [
+                539,
+                357
+              ],
+              [
+                250,
+                399
+              ],
+              [
+                393,
+                544
+              ],
+              [
+                490,
+                309
+              ],
+              [
+                222,
+                335
+              ],
+              [
+                550,
+                481
+              ],
+              [
+                347,
+                255
+              ],
+              [
+                433,
+                245
+              ],
+              [
+                339,
+                323
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.09672325104475021,
+              0.2700516879558563,
+              0.3693358302116394
+            ],
+            "constraint_score": 1.0129017195393468
+          }
+        ],
+        "masks": {
+          "skin": "64944d0f7e34b9a3f19e6c9443b2e0f578cf0a4599a84f90a2ac63f390090699",
+          "hair": "b1513e5f15088230ab4901dbc327f69320db498fc7de207493a993416f7706dd"
+        }
+      },
+      {
+        "name": "view3",
+        "camera": {
+          "yaw": 90,
+          "pitch": -5,
+          "eye": [
+            2.1916283358018402,
+            0.308257365955152,
+            1.3419853131801823e-16
+          ],
+          "forward": [
+            -0.9961946980917454,
+            0.08715574274765817,
+            -6.099933241728101e-17
+          ],
+          "right": [
+            6.123233995736767e-17,
+            0.0,
+            -1.0
+          ],
+          "up": [
+            0.08715574274765817,
+            0.9961946980917454,
+            5.336750069161487e-18
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "e3da0f3c44e56e22d02ce1eca4c6a693b3b234ebd90409a313e687b9737ab108",
+        "depth_sha256": "741b8eb62f7eb2b0dd1ce8e09311d8c2553d395802906ba3c79d2001bae896db",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                376,
+                522
+              ],
+              [
+                218,
+                409
+              ],
+              [
+                377,
+                346
+              ],
+              [
+                427,
+                629
+              ],
+              [
+                291,
+                474
+              ],
+              [
+                548,
+                435
+              ]
+            ],
+            "negative": [
+              [
+                448,
+                223
+              ],
+              [
+                589,
+                478
+              ],
+              [
+                290,
+                162
+              ],
+              [
+                539,
+                337
+              ],
+              [
+                372,
+                185
+              ],
+              [
+                508,
+                268
+              ],
+              [
+                480,
+                422
+              ],
+              [
+                308,
+                305
+              ],
+              [
+                201,
+                262
+              ],
+              [
+                429,
+                353
+              ],
+              [
+                268,
+                249
+              ],
+              [
+                425,
+                409
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.2395346313714981,
+              0.37502235174179077,
+              0.5907515287399292
+            ],
+            "constraint_score": 1.10573553970049
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                448,
+                223
+              ],
+              [
+                589,
+                478
+              ],
+              [
+                290,
+                162
+              ],
+              [
+                539,
+                337
+              ],
+              [
+                372,
+                185
+              ],
+              [
+                508,
+                268
+              ]
+            ],
+            "negative": [
+              [
+                376,
+                522
+              ],
+              [
+                218,
+                409
+              ],
+              [
+                377,
+                346
+              ],
+              [
+                427,
+                629
+              ],
+              [
+                291,
+                474
+              ],
+              [
+                548,
+                435
+              ],
+              [
+                480,
+                422
+              ],
+              [
+                308,
+                305
+              ],
+              [
+                201,
+                262
+              ],
+              [
+                429,
+                353
+              ],
+              [
+                268,
+                249
+              ],
+              [
+                425,
+                409
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.028325676918029785,
+              0.01877741329371929,
+              0.04682103544473648
+            ],
+            "constraint_score": 0.95992216599171
+          }
+        ],
+        "masks": {
+          "skin": "617dc73b5cd1e510ed6194aa2d2df7fde49dc45d588e9d7de26d59d53f5bbc5f",
+          "hair": "0782391a0f378b87ed06b110fdb51ed5e8c97ba0a7dedb0def47efdc88dae9e2"
+        }
+      },
+      {
+        "name": "view4",
+        "camera": {
+          "yaw": 150,
+          "pitch": -5,
+          "eye": [
+            1.0958141679009201,
+            0.308257365955152,
+            -1.8980058144582064
+          ],
+          "forward": [
+            -0.4980973490458727,
+            0.08715574274765817,
+            0.862729915662821
+          ],
+          "right": [
+            -0.8660254037844387,
+            0.0,
+            -0.49999999999999994
+          ],
+          "up": [
+            0.043577871373829076,
+            0.9961946980917457,
+            -0.07547908730517333
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "dc59d20464ac16c6df142ee249ea14b06803fe2ade532fc71b8f21beb15659dc",
+        "depth_sha256": "cf765d8bf68f3421a03ac40445b1d13a51f024fa419ad73ad6aca5d55013c8c1",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                369,
+                604
+              ],
+              [
+                227,
+                359
+              ],
+              [
+                289,
+                488
+              ],
+              [
+                483,
+                611
+              ],
+              [
+                336,
+                541
+              ],
+              [
+                426,
+                610
+              ]
+            ],
+            "negative": [
+              [
+                386,
+                231
+              ],
+              [
+                578,
+                482
+              ],
+              [
+                516,
+                316
+              ],
+              [
+                266,
+                264
+              ],
+              [
+                460,
+                260
+              ],
+              [
+                311,
+                193
+              ],
+              [
+                328,
+                402
+              ],
+              [
+                485,
+                434
+              ],
+              [
+                406,
+                483
+              ],
+              [
+                270,
+                350
+              ],
+              [
+                413,
+                386
+              ],
+              [
+                442,
+                452
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.36343199014663696,
+              0.5625858902931213,
+              0.7258648872375488
+            ],
+            "constraint_score": 1.121183338011585
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                386,
+                231
+              ],
+              [
+                578,
+                482
+              ],
+              [
+                516,
+                316
+              ],
+              [
+                266,
+                264
+              ],
+              [
+                460,
+                260
+              ],
+              [
+                311,
+                193
+              ]
+            ],
+            "negative": [
+              [
+                369,
+                604
+              ],
+              [
+                227,
+                359
+              ],
+              [
+                289,
+                488
+              ],
+              [
+                483,
+                611
+              ],
+              [
+                336,
+                541
+              ],
+              [
+                426,
+                610
+              ],
+              [
+                328,
+                402
+              ],
+              [
+                485,
+                434
+              ],
+              [
+                406,
+                483
+              ],
+              [
+                270,
+                350
+              ],
+              [
+                413,
+                386
+              ],
+              [
+                442,
+                452
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.06478463858366013,
+              0.04601725935935974,
+              0.13425061106681824
+            ],
+            "constraint_score": 0.9923439267828205
+          }
+        ],
+        "masks": {
+          "skin": "abda0c43cf33003474d255ad00a443f44e7a977f21fb63e4ef49ef482272e50d",
+          "hair": "30736a7b925906a90ab37b1884d8f9b9fe722047cb9b64d7272f3390253ce125"
+        }
+      },
+      {
+        "name": "view5",
+        "camera": {
+          "yaw": 210,
+          "pitch": -5,
+          "eye": [
+            -1.0958141679009203,
+            0.308257365955152,
+            -1.8980058144582062
+          ],
+          "forward": [
+            0.49809734904587283,
+            0.08715574274765817,
+            0.8627299156628209
+          ],
+          "right": [
+            -0.8660254037844386,
+            0.0,
+            0.5000000000000001
+          ],
+          "up": [
+            -0.04357787137382909,
+            0.9961946980917455,
+            -0.07547908730517332
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "63ff367870ac6c721f5d5b62452d14c9d692d784fee7db9b55adbd1e93d1a18e",
+        "depth_sha256": "adee0d665f2ea9c669adf5f27fe461b6c0bcf8cfb8b7d0df53bf0e42bf4b706d",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                398,
+                604
+              ],
+              [
+                540,
+                359
+              ],
+              [
+                478,
+                488
+              ],
+              [
+                285,
+                610
+              ],
+              [
+                431,
+                541
+              ],
+              [
+                342,
+                610
+              ]
+            ],
+            "negative": [
+              [
+                384,
+                230
+              ],
+              [
+                188,
+                483
+              ],
+              [
+                252,
+                314
+              ],
+              [
+                518,
+                245
+              ],
+              [
+                309,
+                258
+              ],
+              [
+                451,
+                234
+              ],
+              [
+                441,
+                401
+              ],
+              [
+                283,
+                436
+              ],
+              [
+                363,
+                485
+              ],
+              [
+                354,
+                386
+              ],
+              [
+                507,
+                341
+              ],
+              [
+                327,
+                454
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.2624259293079376,
+              0.3681512475013733,
+              0.5185671448707581
+            ],
+            "constraint_score": 1.078163656288957
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                384,
+                230
+              ],
+              [
+                188,
+                483
+              ],
+              [
+                252,
+                314
+              ],
+              [
+                518,
+                245
+              ],
+              [
+                309,
+                258
+              ],
+              [
+                451,
+                234
+              ]
+            ],
+            "negative": [
+              [
+                398,
+                604
+              ],
+              [
+                540,
+                359
+              ],
+              [
+                478,
+                488
+              ],
+              [
+                285,
+                610
+              ],
+              [
+                431,
+                541
+              ],
+              [
+                342,
+                610
+              ],
+              [
+                441,
+                401
+              ],
+              [
+                283,
+                436
+              ],
+              [
+                363,
+                485
+              ],
+              [
+                354,
+                386
+              ],
+              [
+                507,
+                341
+              ],
+              [
+                327,
+                454
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.047528475522994995,
+              0.02660069614648819,
+              0.10093015432357788
+            ],
+            "constraint_score": 0.849197731658698
+          }
+        ],
+        "masks": {
+          "skin": "84ab584eaaf089c92a48d218d287906904576663085e4aad7e895dfb970f4041",
+          "hair": "f81e0126a4d7ba5d0083c0d0328a22b31bb3c2a7246703183b5ad1819e4fd4db"
+        }
+      },
+      {
+        "name": "view6",
+        "camera": {
+          "yaw": -30,
+          "pitch": 55,
+          "eye": [
+            -0.6309340799861506,
+            2.302134497435782,
+            1.092809882762739
+          ],
+          "forward": [
+            0.28678821817552297,
+            -0.8191520442889918,
+            -0.4967317648921541
+          ],
+          "right": [
+            0.8660254037844387,
+            -0.0,
+            0.4999999999999999
+          ],
+          "up": [
+            0.4095760221444958,
+            0.573576436351046,
+            -0.7094064799162225
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "5db6de4692707a88445b8a03e39788c162c2f2c7fe6722c3389a3f8c4beb44dc",
+        "depth_sha256": "a23f8f85eba64838da8f7d767ff93b80465cad0a577ed507fac164253c6f00ac",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                461,
+                572
+              ],
+              [
+                223,
+                452
+              ],
+              [
+                544,
+                418
+              ],
+              [
+                325,
+                541
+              ],
+              [
+                466,
+                475
+              ],
+              [
+                393,
+                566
+              ]
+            ],
+            "negative": [
+              [
+                383,
+                259
+              ],
+              [
+                247,
+                357
+              ],
+              [
+                557,
+                328
+              ],
+              [
+                489,
+                246
+              ],
+              [
+                279,
+                258
+              ],
+              [
+                330,
+                329
+              ],
+              [
+                374,
+                452
+              ],
+              [
+                490,
+                400
+              ],
+              [
+                269,
+                438
+              ],
+              [
+                428,
+                418
+              ],
+              [
+                322,
+                443
+              ],
+              [
+                420,
+                526
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.29858559370040894,
+              0.6148460507392883,
+              0.6770756244659424
+            ],
+            "constraint_score": 1.1150609170827788
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                383,
+                259
+              ],
+              [
+                247,
+                357
+              ],
+              [
+                557,
+                328
+              ],
+              [
+                489,
+                246
+              ],
+              [
+                279,
+                258
+              ],
+              [
+                330,
+                329
+              ]
+            ],
+            "negative": [
+              [
+                461,
+                572
+              ],
+              [
+                223,
+                452
+              ],
+              [
+                544,
+                418
+              ],
+              [
+                325,
+                541
+              ],
+              [
+                466,
+                475
+              ],
+              [
+                393,
+                566
+              ],
+              [
+                374,
+                452
+              ],
+              [
+                490,
+                400
+              ],
+              [
+                269,
+                438
+              ],
+              [
+                428,
+                418
+              ],
+              [
+                322,
+                443
+              ],
+              [
+                420,
+                526
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.1961219608783722,
+              0.13849560916423798,
+              0.3475912809371948
+            ],
+            "constraint_score": 1.0411837089914617
+          }
+        ],
+        "masks": {
+          "skin": "bec55c90fdc97b0ae34e6eb9e8267efda042cd384dd02854f844ae99ecd16456",
+          "hair": "acf7dd9dbc73a472fc8aaedc1bbaac2ffe6bbb1ab1ab9ba74aba93a17704a491"
+        }
+      },
+      {
+        "name": "view7",
+        "camera": {
+          "yaw": 150,
+          "pitch": -40,
+          "eye": [
+            0.8426488874308757,
+            -0.9141327413103866,
+            -1.4595106859716647
+          ],
+          "forward": [
+            -0.38302222155948895,
+            0.6427876096865393,
+            0.6634139481689384
+          ],
+          "right": [
+            -0.8660254037844387,
+            0.0,
+            -0.49999999999999994
+          ],
+          "up": [
+            0.32139380484326957,
+            0.766044443118978,
+            -0.5566703992264194
+          ],
+          "fov": 34.0,
+          "width": 768,
+          "height": 768
+        },
+        "image_sha256": "ed3172b7c3f49b2b96e106a4bd7e2482e223840aa8e442d4000d4cfebc152c50",
+        "depth_sha256": "e2e51a7a6305d340aff7ad8d2aff4a6352e04fa441049352e6f37ccd6ecc73ca",
+        "prompts": [
+          {
+            "label": "skin",
+            "positive": [
+              [
+                377,
+                531
+              ],
+              [
+                232,
+                317
+              ],
+              [
+                281,
+                440
+              ],
+              [
+                494,
+                573
+              ],
+              [
+                412,
+                617
+              ],
+              [
+                326,
+                489
+              ]
+            ],
+            "negative": [
+              [
+                404,
+                220
+              ],
+              [
+                581,
+                369
+              ],
+              [
+                257,
+                237
+              ],
+              [
+                512,
+                271
+              ],
+              [
+                330,
+                221
+              ],
+              [
+                462,
+                237
+              ],
+              [
+                480,
+                378
+              ],
+              [
+                298,
+                332
+              ],
+              [
+                388,
+                357
+              ],
+              [
+                435,
+                362
+              ],
+              [
+                343,
+                344
+              ],
+              [
+                220,
+                393
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.41126662492752075,
+              0.5052812695503235,
+              0.7354941368103027
+            ],
+            "constraint_score": 1.1262125286175853
+          },
+          {
+            "label": "hair",
+            "positive": [
+              [
+                404,
+                220
+              ],
+              [
+                581,
+                369
+              ],
+              [
+                257,
+                237
+              ],
+              [
+                512,
+                271
+              ],
+              [
+                330,
+                221
+              ],
+              [
+                462,
+                237
+              ]
+            ],
+            "negative": [
+              [
+                377,
+                531
+              ],
+              [
+                232,
+                317
+              ],
+              [
+                281,
+                440
+              ],
+              [
+                494,
+                573
+              ],
+              [
+                412,
+                617
+              ],
+              [
+                326,
+                489
+              ],
+              [
+                480,
+                378
+              ],
+              [
+                298,
+                332
+              ],
+              [
+                388,
+                357
+              ],
+              [
+                435,
+                362
+              ],
+              [
+                343,
+                344
+              ],
+              [
+                220,
+                393
+              ]
+            ],
+            "candidate": 2,
+            "model_scores": [
+              0.06996360421180725,
+              0.0930287167429924,
+              0.18643833696842194
+            ],
+            "constraint_score": 0.990781086712518
+          }
+        ],
+        "masks": {
+          "skin": "f7d092353958468ecae15e0c181ec77207129d2b18e1e9aa07f4a4ea73595000",
+          "hair": "d005c8ed23c4d49b84adf2cc76d2c75c3913d972de1fc993185f6dc0b42ed672"
+        }
+      }
+    ],
+    "limitation": "Automatically prompted masks, not semantic ground truth"
+  },
+  "guards": {
+    "surface": {
+      "report": "trellis-public-surface-01.guard",
+      "child_seconds": 20.51394562498899,
+      "admission_seconds": 0.3594747500028461,
+      "peak_bytes": 2839583936,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "reconstruct": {
+      "report": "trellis-public-reconstruct-01.guard",
+      "child_seconds": 40.613971500017215,
+      "admission_seconds": 0.3258822500065435,
+      "peak_bytes": 1510234176,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "atlas100k": {
+      "report": "trellis-public100k-sharp-01.guard",
+      "child_seconds": 25.873167249985272,
+      "admission_seconds": 0.3124776250042487,
+      "peak_bytes": 1515655296,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "views": {
+      "report": "trellis-public100k-maskviews-01.guard",
+      "child_seconds": 2.446113875019364,
+      "admission_seconds": 0.29780537501210347,
+      "peak_bytes": 1264570432,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "sam2": {
+      "report": "trellis-public100k-sam-02.guard",
+      "child_seconds": 8.150315957987914,
+      "admission_seconds": 0.3617422079842072,
+      "peak_bytes": 3932687744,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "paint": {
+      "report": "trellis-public100k-maskpaint-02.guard",
+      "child_seconds": 10.722699874982936,
+      "admission_seconds": 0.3305061669962015,
+      "peak_bytes": 1617269056,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "quad": {
+      "report": "trellis-public-quad10k-01.guard",
+      "child_seconds": 6.067014375003055,
+      "admission_seconds": 0.3387371249846183,
+      "peak_bytes": 629608576,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    },
+    "quad_atlas": {
+      "report": "trellis-public-quad10k-bake-01.guard",
+      "child_seconds": 9.71703145801439,
+      "admission_seconds": 1.4781270000094082,
+      "peak_bytes": 1482379328,
+      "limit_bytes": 8589934592,
+      "state": "child_exited",
+      "cleanup_complete": true
+    }
+  },
+  "comparison": {
+    "full_paint": {
+      "method": "Automatic color prompts + eight-view SAM2 + visibility-weighted UV fusion",
+      "paint_mode": "full",
+      "input_sha256": "7c4e22a03f694288b179f855e98b0ffb52150e418eaa3141a0c62036182c8549",
+      "output_sha256": "6ac37bd31a26a17281cbfe3944a9633696329706b5cfc22c1f8054c5f76eb93a",
+      "mesh_sha256": "f0cb8f04738fd8adc2e2126dfd2ca10b051bf3676b6d301b47948975e2a49d5c",
+      "masks_manifest_sha256": "58583631a226eab33982e4e47014bd8ccf3a13f7bd0041a935c9ed95b4ecaa41",
+      "color_cloud_sha256": "53d1f694ed1688d4ab149f6ef0c5df1d12ed2fabdc25ce5abe8b8af2df01bf28",
+      "sam2_revision": "de431c4043854a71d8101e17995dfe596bf101a5",
+      "sam2_weights_sha256": "48c14467e5cf9e51870511feb72c89688e82dd74523142c0538b663e193ac2a7",
+      "export_vertices": 78911,
+      "geometry_normals_uv_indices_sha256": "937715437421fb20ee4a13a457bea7eaf50f4617bf209298863963a1ae527091",
+      "skin_texels": 331926,
+      "hair_texels": 435833,
+      "protected_texels": 467565,
+      "painted_skin_texels": 331926,
+      "painted_hair_texels": 435833,
+      "protected_texture_sha256": "972323ed791de82a592e8c877c49aef1d3e17edd49b440a4bba32f18ebe5d8ad",
+      "geometry_normals_uv_indices_identical": true,
+      "seconds": 11.026022417005152,
+      "limitations": "Approximate palette-prompted masks; gold regions protect features and unknown surfaces. Inspect before reuse."
+    },
+    "browser": [
+      {
+        "loaded": true,
+        "asset": "trellis-clean100k-repaint",
+        "triangles": 99999,
+        "sourceVertices": 50018,
+        "renderMode": "glb",
+        "lighting_response": true,
+        "errors": []
+      },
+      {
+        "loaded": true,
+        "asset": "trellis-clean100k-regions",
+        "triangles": 99999,
+        "sourceVertices": 50018,
+        "renderMode": "glb",
+        "lighting_response": true,
+        "errors": []
+      },
+      {
+        "loaded": true,
+        "asset": "trellis-clean18k-quads",
+        "triangles": 18184,
+        "sourceVertices": 9121,
+        "renderMode": "glb",
+        "lighting_response": true,
+        "errors": []
+      }
+    ]
+  },
+  "files": {
+    "head.glb": {
+      "bytes": 6675660,
+      "sha256": "1478d5402c5511afbb176656d7d16f2427202b8cc81f66e1641693514e9c68cc"
+    },
+    "head-40k.glb": {
+      "bytes": 4866512,
+      "sha256": "b45bf54050d7a0efa36400a53619117e27358ab37c584a537e8cd4a4b37fa21b"
+    },
+    "head-quads.glb": {
+      "bytes": 4240400,
+      "sha256": "fb14cf565a1cdf452e2dda60ab7e9eb6c3f673ccbc89783a0161037e0b81d592"
+    },
+    "basecolor.png": {
+      "bytes": 2949210,
+      "sha256": "eaad01ef5174baa1854ebe925ef1cb0670fb171dc0d4628cba2040e29bb6180f"
+    },
+    "mesh.source.json.gz": {
+      "bytes": 1776453,
+      "sha256": "aadf4baced202bbeb1ab3cd4bdf19999466cc5891f0e77c4dc596a39da78b9cf"
+    },
+    "mesh-40k.source.json.gz": {
+      "bytes": 752322,
+      "sha256": "c4480fd48fb1827022995ac73cfa7821c54bdcb93b5c368f0ab26d9ca7628bb3"
+    },
+    "mesh-quads.source.json.gz": {
+      "bytes": 351574,
+      "sha256": "c44d14fa1aca7839e2da3cbc9289606c74ad3c86f445587dcaa033b24b1d8292"
+    },
+    "quad-mesh.npz": {
+      "bytes": 243383,
+      "sha256": "5f7fbe7bd7286849e717257d55260bafac97c6787bb9d278d923bb9ee4e094e9"
+    },
+    "skin-mask.png": {
+      "bytes": 73031,
+      "sha256": "048170b3c7b9e0ec4dd7c5cc2be63d29205c96d344b7bdbe5c8abb4f4b28847b"
+    },
+    "hair-mask.png": {
+      "bytes": 116886,
+      "sha256": "d851d8172de7f8e62d5942026bd2f525cfea7009d850738646682f05ace982ba"
+    },
+    "features-and-unknown-mask.png": {
+      "bytes": 156119,
+      "sha256": "59a4afa6b25293de4713417218a211095e630ad156ea073a18b53bde476f7e00"
+    },
+    "occupied-mask.png": {
+      "bytes": 201007,
+      "sha256": "f0a110b3edbf4458f9df35ed1efa67304fe66e788a575f134f8f4410649f5882"
+    },
+    "regions.png": {
+      "bytes": 494830,
+      "sha256": "ebe20025a090e7f888b57f47c3bb383a1da4a741b4fd35493628a8d9a9a5f892"
+    }
+  },
+  "limitations": [
+    "Derived geometry changes the original surface; subsequent atlas/paint preserves each ordered reduced triangle.",
+    "Automatic fragmented UV atlas, not an artist-authored facial unwrap.",
+    "SAM2 regions are conservative palette-prompted masks, not ground-truth anatomical segmentation.",
+    "No production rigging or same-reference Tripo comparison; lower quality than Tripo."
+  ]
+}

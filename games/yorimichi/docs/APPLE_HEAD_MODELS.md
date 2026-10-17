@@ -6,11 +6,16 @@ measured results are in [MESHAXIOM_HEAD_QUALITY.md](MESHAXIOM_HEAD_QUALITY.md).
 The machine is a 32 GiB M1 Max. A process ceiling is distinct from installed RAM.
 
 **Recommended local fallback:** TRELLIS cascade requested1024/actual768, 16,384-token
-budget, twelve steps, native vertex colors, then 16-iteration lit-normal correction.
+budget, twelve steps, native vertex colors, then automatic exterior reconstruction,
+100K reduction, checked 4K UV baking and optional conservative eight-view SAM2 repair.
+Use 40K for a lighter asset. The [current exact setup](TRELLIS_HEAD_RETOPO.md) includes
+measurements, committed assets, approximate masks and every processing command.
 This is lower-quality than Tripo and is useful when Tripo credits are unavailable.
 With an existing/self-made reference, generation requires no paid API calls; new
-Sunburst references are paid. The [best lit recipe](#reproduce-the-best-lit-head)
-keeps all geometric triangles and uses conventional lighting. No manual Blender step.
+Sunburst references are paid. The [native source recipe](#reproduce-the-best-lit-head)
+below still reproduces the dense source; its optional normal-only control preserves
+all dense triangles. The new reduction creates a separate derived surface, then UV
+and painting retain that reduced geometry. All use conventional lighting; no manual Blender step.
 
 ## Isolated runtimes and exact weights
 
@@ -241,6 +246,11 @@ random conditioning. Multiple `--image` inputs still use the port's documented
 feature-concatenation heuristic without camera calibration.
 
 ## Reproduce the best lit head
+
+For the current recommendation, use this native generation command and then the
+[automatic reduction/UV/mask pipeline](TRELLIS_HEAD_RETOPO.md#reproduce-from-the-retained-native-checkpoints).
+The dense normal-only pass below is the former PR391 recommendation and a retained
+geometry-preserving control, not a prerequisite for reduction.
 
 This is the measured cascade recipe. It requests 1024 and records the effective grid;
 the M1 Max trial selected 768 with 13,128 shape tokens and retained all 11,386,792

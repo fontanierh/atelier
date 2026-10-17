@@ -1,6 +1,21 @@
 # Local textured-head comparison
 
-**Best setup: native TRELLIS.2 cascade at an actual 768 grid, native learned RGB
+**Current best: TRELLIS cascade768 + automatic exterior reconstruction, 100K
+reduction, checked 4K UV bake and optional conservative SAM2 repair.** The
+[new comparison and exact setup](TRELLIS_HEAD_RETOPO.md) and
+[multi-view gallery](TRELLIS_HEAD_RETOPO_GALLERY.md) supersede the dense recommendation
+below. A 40K version is the lighter choice. These automated derivatives fix the
+visible skin dots far better than the earlier color/shading-only passes and add UVs
+and approximate skin/hair masks. They change a separate copy's geometry, as later
+authorized by the owner; the original dense source remains retained.
+
+This remains **lower quality than Tripo**, useful for free local generation when
+credits are unavailable and an existing/self-made reference is available. New
+Sunburst references are paid. No same-reference Tripo comparison was performed.
+
+## Earlier geometry-preserving comparison (PR391)
+
+**Former setup: native TRELLIS.2 cascade at an actual 768 grid, native learned RGB
 vertex colors, then automated lit-normal correction with 16 tensor-filter iterations.**
 This keeps the complete 11,386,792-triangle surface and now works with conventional
 lighting. The normal pass largely removes the fine shading grain visible in the raw
@@ -30,7 +45,7 @@ changing light intensity changes the selected render. This is genuine lit shadin
 not the earlier unlit workaround. Small geometric pits, holes, hair artifacts and
 learned color speckles remain. The original lit and unlit variants remain diagnostics.
 
-**Best compact conventionally lit asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
+**Earlier compact conventionally lit asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
 front photograph, committed as the 7 MB
 [`head.glb`](../assets/characters/meshaxiom-skater-head-native/head.glb). It retains
 the full native metallic/roughness map and every mesh buffer. Geometry + selected

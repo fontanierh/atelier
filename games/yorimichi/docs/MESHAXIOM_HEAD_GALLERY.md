@@ -1,5 +1,10 @@
 # Eight-view head comparison
 
+The current best setup and later low-poly/UV/mask experiments are in the
+[TRELLIS reconstruction gallery](TRELLIS_HEAD_RETOPO_GALLERY.md). This page retains
+the earlier 24-recipe comparison, whose selected dense head is now a historical
+geometry-preserving baseline. The original sources remain retained.
+
 24 actual generated/material variants, five independent native neural geometries.
 [Ranking and measurements](MESHAXIOM_HEAD_QUALITY.md) · [Apple Silicon recipes](APPLE_HEAD_MODELS.md).
 Every sheet contains both profiles, front three-quarter views, rear, top and underside.

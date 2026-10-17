@@ -2189,6 +2189,62 @@
       "bytes": 21263282,
       "sha256": "c83abba40d047f34852108485645b8e35a3207edb1159432dfe49c796313e0c6"
     },
+    "characters/trellis-skater-head/basecolor.png": {
+      "bytes": 2949210,
+      "sha256": "eaad01ef5174baa1854ebe925ef1cb0670fb171dc0d4628cba2040e29bb6180f"
+    },
+    "characters/trellis-skater-head/features-and-unknown-mask.png": {
+      "bytes": 156119,
+      "sha256": "59a4afa6b25293de4713417218a211095e630ad156ea073a18b53bde476f7e00"
+    },
+    "characters/trellis-skater-head/hair-mask.png": {
+      "bytes": 116886,
+      "sha256": "d851d8172de7f8e62d5942026bd2f525cfea7009d850738646682f05ace982ba"
+    },
+    "characters/trellis-skater-head/head-40k.glb": {
+      "bytes": 4866512,
+      "sha256": "b45bf54050d7a0efa36400a53619117e27358ab37c584a537e8cd4a4b37fa21b"
+    },
+    "characters/trellis-skater-head/head-quads.glb": {
+      "bytes": 4240400,
+      "sha256": "fb14cf565a1cdf452e2dda60ab7e9eb6c3f673ccbc89783a0161037e0b81d592"
+    },
+    "characters/trellis-skater-head/head.glb": {
+      "bytes": 6675660,
+      "sha256": "1478d5402c5511afbb176656d7d16f2427202b8cc81f66e1641693514e9c68cc"
+    },
+    "characters/trellis-skater-head/mesh-40k.source.json.gz": {
+      "bytes": 752322,
+      "sha256": "c4480fd48fb1827022995ac73cfa7821c54bdcb93b5c368f0ab26d9ca7628bb3"
+    },
+    "characters/trellis-skater-head/mesh-quads.source.json.gz": {
+      "bytes": 351574,
+      "sha256": "c44d14fa1aca7839e2da3cbc9289606c74ad3c86f445587dcaa033b24b1d8292"
+    },
+    "characters/trellis-skater-head/mesh.source.json.gz": {
+      "bytes": 1776453,
+      "sha256": "aadf4baced202bbeb1ab3cd4bdf19999466cc5891f0e77c4dc596a39da78b9cf"
+    },
+    "characters/trellis-skater-head/occupied-mask.png": {
+      "bytes": 201007,
+      "sha256": "f0a110b3edbf4458f9df35ed1efa67304fe66e788a575f134f8f4410649f5882"
+    },
+    "characters/trellis-skater-head/provenance.json": {
+      "bytes": 66945,
+      "sha256": "d127170f767e7c39212a803576164d3dce1b131c0946abb7cc672c505320d954"
+    },
+    "characters/trellis-skater-head/quad-mesh.npz": {
+      "bytes": 243383,
+      "sha256": "5f7fbe7bd7286849e717257d55260bafac97c6787bb9d278d923bb9ee4e094e9"
+    },
+    "characters/trellis-skater-head/regions.png": {
+      "bytes": 494830,
+      "sha256": "ebe20025a090e7f888b57f47c3bb383a1da4a741b4fd35493628a8d9a9a5f892"
+    },
+    "characters/trellis-skater-head/skin-mask.png": {
+      "bytes": 73031,
+      "sha256": "048170b3c7b9e0ec4dd7c5cc2be63d29205c96d344b7bdbe5c8abb4f4b28847b"
+    },
     "characters/wanderer/references/design-sheet.png": {
       "bytes": 1864774,
       "sha256": "3eefbe3a66710e46a5e9f1ecf17d322e28d4dd9f1935ce0461a4ede22bea815e"
