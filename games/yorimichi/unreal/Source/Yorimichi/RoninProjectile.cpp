@@ -12,7 +12,7 @@ ARoninProjectile::ARoninProjectile()
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
     SetReplicateMovement(true);
-    NetUpdateFrequency = 30.f;
+    SetNetUpdateFrequency(30.f);
     Blade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ThrownBlade"));
     SetRootComponent(Blade);
     Blade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -69,7 +69,7 @@ void ARoninProjectile::Tick(float Dt)
             ((!bReflected && !Victim->IsNpc()) || (bReflected && Victim == Thrower.Get())))
         {
             SetActorLocation(Hit.Location);
-            Contact(Victim, Hit.bStartPenetrating ? Hit.Location : FVector(Hit.ImpactPoint));
+            Contact(Victim, Hit.bStartPenetrating ? FVector(Hit.Location) : FVector(Hit.ImpactPoint));
         }
         else if (Hit.bBlockingHit) Destroy(); // Cover and other bodies stop the projectile.
         else continue; // Noncombat overlap volumes do not consume a blade.
