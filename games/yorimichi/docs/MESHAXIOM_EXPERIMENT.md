@@ -196,6 +196,20 @@ real projection onto visible and occluded surfaces and reject changed calibratio
 After the head's geometry exists, run each stage through normal admission with a fresh report directory:
 
 ```sh
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -u \
+  games/yorimichi/tools/meshaxiom_prepare.py \
+  --report build/yorimichi/logs/meshaxiom-head-prepare-new.guard --timeout 600 \
+  --mesh build/yorimichi/meshaxiom/skater-head/16k/mesh.json \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/skater-head/pixel-match
+```
+
+This combined entry point owns one guard/lock and explicitly watches its complete Blender/Python
+tree, including on standalone machines. Do not wrap it in another guard. The measured original run
+used the managed machine's outer aggregate guard; the public entry point now owns that guarantee.
+Alternatively, run Blender and camera calibration separately, guarding each actual process:
+
+```sh
 ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
   --report build/yorimichi/logs/meshaxiom-head-uv-new.guard --timeout 600 \
   --purpose 'MeshAxiom head UV preparation' -- \

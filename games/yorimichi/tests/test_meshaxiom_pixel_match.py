@@ -1,7 +1,9 @@
 """Exercise real projection on occluded geometry, without model weights or Blender."""
 import importlib.util
 import json
+import os
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 
 import numpy as np
@@ -28,6 +30,45 @@ def test_border_matte_keeps_enclosed_black_features(adapter):
     assert np.all(result[:4, :, 3] == 0)
     assert np.all(result[12:16, 12:16, 3] == 255)
     assert np.array_equal(result[..., :3], pixels)
+
+
+def test_preparation_guard_failure_never_starts_native_work(monkeypatch, tmp_path):
+    from atelier.harness.safety import guarded
+    script = SCRIPT.with_name('meshaxiom_prepare.py')
+    spec = importlib.util.spec_from_file_location('meshaxiom_prepare_test', script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    def unavailable(*args, **kwargs):
+        raise RuntimeError('guard unavailable')
+    def forbidden(*args):
+        pytest.fail('Native preparation started without a live guard')
+    monkeypatch.setattr(guarded, 'run', unavailable)
+    monkeypatch.setattr(module, 'prepare', forbidden)
+    output = tmp_path/'output'
+    with pytest.raises(RuntimeError, match='guard unavailable'):
+        module.main(['--mesh', 'unused.json', '--image', 'unused.png', '--output', str(output),
+                     '--report', str(tmp_path/'guard')])
+    assert not output.exists()
+
+
+@pytest.mark.skipif(sys.platform != 'darwin' or os.environ.get('CI') != 'true',
+                    reason='Real unmanaged guard needs the isolated macOS CI host, without a live local build')
+def test_standalone_preparation_has_real_aggregate_cleanup(monkeypatch, tmp_path):
+    from atelier.harness import capacity_runtime
+    spec = importlib.util.spec_from_file_location('meshaxiom_prepare_unmanaged_test', SCRIPT.with_name('meshaxiom_prepare.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    monkeypatch.setattr(capacity_runtime, 'configured_session', lambda **kwargs: None)
+    report = tmp_path/'guard'
+    # A tiny failure control exercises the real wrapper/worker/owned-child lifecycle.
+    # No Blender, weights or source geometry are needed; failed UV export must stop calibration.
+    result = module.main(['--mesh', 'unused.json', '--image', 'unused.png', '--output', str(tmp_path/'output'),
+                          '--blender', '/usr/bin/false', '--report', str(report), '--timeout', '30'])
+    assert result == 1
+    assert 'UV preparation: Blender exited 1' in (report/'stdout.log').read_text()
+    receipt = json.loads((report/'memory-health-tree.json').read_text())
+    assert receipt['state'] == 'child_exited' and receipt['cleanup_complete']
+    assert receipt['peak_bytes'] > 0 and receipt['processes'] == []
 
 
 def fixture_glb(pm, path):

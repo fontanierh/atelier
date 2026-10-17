@@ -1,4 +1,4 @@
-"""Run sequential Apple Silicon stages; invoke this command through atelier.safety.guarded."""
+"""Low-level sequential workers; use atelier.ai.meshaxiom.guarded for guarded per-stage launches."""
 import argparse
 import json
 from pathlib import Path

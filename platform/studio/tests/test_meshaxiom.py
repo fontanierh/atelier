@@ -117,3 +117,12 @@ def test_session_ceiling_rejected_before_admission(ceiling):
     from atelier.ai.meshaxiom.guarded import admission_for
     with pytest.raises(ValueError, match='10–16 GiB'):
         admission_for([], 'report', 3600, 'model', ceiling)
+
+
+@pytest.mark.parametrize('ceiling', [11, 16])
+def test_larger_session_refuses_unmanaged_machine(monkeypatch, ceiling):
+    from atelier.ai.meshaxiom.guarded import admission_for
+    from atelier.harness import capacity_runtime
+    monkeypatch.setattr(capacity_runtime, 'configured_session', lambda **kw: None)
+    with pytest.raises(ValueError, match='require a full-capacity broker'):
+        admission_for(['python'], 'report', 3600, 'model', ceiling)

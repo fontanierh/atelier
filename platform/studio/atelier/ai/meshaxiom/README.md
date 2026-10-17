@@ -26,11 +26,14 @@ No upstream source or pretrained weights are bundled with this adapter.
 Run through the existing machine memory guard, using a fresh report directory and an explicit deadline:
 
 ```sh
-ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
-  --report build/meshaxiom/run-01.guard --timeout 1800 --purpose "MeshAxiom image-to-mesh" -- \
-  build/meshaxiom/venv/bin/python -u -m atelier.ai.meshaxiom \
-  --root build/meshaxiom --image reference.png --output build/meshaxiom/object --face-budget 2000
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.ai.meshaxiom.guarded \
+  --root build/meshaxiom --image reference.png --output build/meshaxiom/object \
+  --stage vertex --face-budget 2000 --memory-gib 10 --timeout 1800 \
+  --report build/meshaxiom/vertex-01.guard
 ```
+
+After a clean vertex exit, repeat with `--stage topology` and a fresh report directory. This entry
+point explicitly guards the complete process tree even on a machine without the capacity broker.
 
 Use one centered object against a black background. The model receives a 512 by 512 RGB image.
 Sunburst references must use Atelier's paid-call ledger and include the exact prompt, model and quality.
@@ -58,7 +61,10 @@ pinned upstream definitions. It does not load the pretrained weights or claim im
 For a larger experiment **explicitly authorized by the machine owner**, select up to a 16 GiB session
 ceiling. This command uses the same actual-child and aggregate guards, normal broker admission and host
 headroom, with a matching explicit memory/GPU reservation. It never edits shared capacity profiles.
-Run the two stages separately and inspect the first guard receipt before submitting the second:
+Ceilings above 10 GiB require the configured full-capacity broker and refuse unmanaged or other
+admission modes. The normal 10 GiB path retains the existing legacy lock and aggregate guard on
+standalone machines. Run the two stages separately and inspect the first guard receipt before
+submitting the second:
 
 ```sh
 ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.ai.meshaxiom.guarded \

@@ -25,7 +25,7 @@ def admission_for(command, report, timeout, purpose, memory_gib):
     baseline = configured_session(kind='job', limit_gib=10, timeout=timeout, folder=report,
                                   purpose=purpose, command=command, performance=True)
     if baseline is None:
-        return None  # Unmanaged machines still use the normal render lock and both guards.
+        raise ValueError('Larger MeshAxiom sessions require a full-capacity broker; use the normal 10 GiB ceiling')
     if baseline.mode != 'capacity':
         raise ValueError('Larger MeshAxiom sessions require normal full-capacity mode')
     request = copy.deepcopy(baseline.request)
