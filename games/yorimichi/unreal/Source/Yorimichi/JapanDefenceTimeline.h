@@ -9,6 +9,7 @@ struct FJapanDefenceSample
     bool bCanParry = false, bCanDodge = false, bGuardHeld = false;
     bool bJumpDodge = false;
     bool bArmed = false, bGround = false, bRecovering = false, bGuardBroken = false;
+    bool bGuardEligible = true; // A held button cannot guard through an attack or charge.
     FVector Location = FVector::ZeroVector, Forward = FVector::ForwardVector;
 };
 

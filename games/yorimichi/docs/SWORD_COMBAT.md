@@ -45,7 +45,8 @@ a melee attacker within counterattack reach. An early attempt falls back to held
 bypasses it. The server uses the same window and facing rules for remote players.
 
 Ordinary blocks accumulate guard pressure: four quick light blows, three stronger blows, or one full heavy blow
-break guard. A break opens the existing guard-break animation and vulnerable recovery. Pressure begins recovering
+break guard. Attacking or charging opens your guard even if its button stays held. A break opens the existing
+guard-break animation and vulnerable recovery. Pressure begins recovering
 after 1.1 s without a blocked hit, at 28% per second. A perfect parry removes 45%. A thin amber line under the
 player's and selected opponent's health shows accumulated pressure; sparks and recoil distinguish a block from
 a hit or perfect parry. Contact-owned pressure is authoritative and never reapplied by movement replay.

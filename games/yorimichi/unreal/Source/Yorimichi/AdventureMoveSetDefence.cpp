@@ -78,6 +78,7 @@ void UAdventureMoveSet::RecordDefence(uint16 ThroughEdge, double BeforeStep, boo
     const auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
     S.bGuardHeld = bGuardHeld && (!bRemote || !Movement || Movement->ReactionEdgeEligible(ReactionGuardEdge, true));
     S.bGuardBroken = !bRemote && GuardBroken > 0.f; // Remote breaks are contact-time timeline entries.
+    S.bGuardEligible = !IsAttacking() && !bDown;
     const FName Parry = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
     S.bCanParry = S.bGround && !bDown && Has(Parry) &&
         (!Busy() || (Action && IsGuardHit(Action->Name) && SourceTime() >= Action->Input));

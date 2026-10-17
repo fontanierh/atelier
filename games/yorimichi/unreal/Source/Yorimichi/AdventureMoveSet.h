@@ -118,7 +118,7 @@ public:
     bool HoldsStamina() const { return Mode != EAdventureMoveMode::Ground || bCharging; }
     bool IsArmed() const { return bArmed; }
     /** The guard is up: held, the sword out, and not just broken by a heavy blow. */
-    bool IsGuarding() const { return bGuardHeld && bArmed && GuardBroken <= 0.f; }
+    bool IsGuarding() const { return bGuardHeld && bArmed && !bDown && !IsAttacking() && GuardBroken <= 0.f; }
     bool HasInputHolds() const { return bAttackHeld || bGuardHeld || bJumpHeld; }
     bool IsSwordGuarding() const { return IsGuarding() && !HasShield(); }
     bool IsLocked() const { return bLocked; }

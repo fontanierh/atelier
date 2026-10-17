@@ -160,7 +160,8 @@ void Drive(AWandererCharacter* Player, const FString& Folder, int32 Person, FStr
             if (!Move || Move->Guard.IsEmpty()) { Error = TEXT("The live parry has no authored defence window"); return; }
             const FVector2f Window = Move->Guard[0];
             StrikeAt = FMath::Max(Now, Started + (Window.X - Move->Start) / Move->Rate + .015);
-            WindowEnd = Started + (Window.Y - Move->Start) / Move->Rate;
+            WindowEnd = FMath::Min(Started + (Window.Y - Move->Start) / Move->Rate,
+                Started + (Window.X - Move->Start) / Move->Rate + SwordCombat::PerfectParrySeconds);
         }
         else { StrikeAt = Started + .1; WindowEnd = Started + .25; }
     }

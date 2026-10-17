@@ -105,10 +105,15 @@ bool FSwordCombatContactTest::RunTest(const FString&)
         Timeline.Resolve(10.08, FVector(-100, 0, 0), .5f, Edge), EJapanDefence::None);
     TestEqual(TEXT("Rear contact does not consume the front-facing parry"),
         Timeline.Resolve(10.08, FVector(100, 0, 0), .5f, Edge), EJapanDefence::Parry);
+    Timeline.Reset(); Sample.Time = 11.; Sample.bGuardEligible = false;
+    Timeline.Record(Sample); Timeline.Hold(2, 11., true);
+    TestEqual(TEXT("A new held-guard edge cannot shield an attacking server sample"),
+        Timeline.Resolve(11., FVector(100, 0, 0), .5f, Edge), EJapanDefence::None);
 
     Player->GetSword()->RestoreHealth(); Moves->Invulnerable = 0.f; Moves->Pressure = {};
     Moves->bGuardHeld = true; Player->AnimationAction = Parry.Name;
     ++Player->ActionSerial; Player->ActionTime = .08f;
+    Npc->SetActorLocation(Npc->GetActorLocation() + FVector(0, 0, 140));
     auto* Shot = ARoninProjectile::Throw(Npc, Player);
     if (!TestNotNull(TEXT("The scout launches an actual projectile"), Shot)) return false;
     Shot->Tick(.2f);
@@ -116,9 +121,10 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     Enemy->Invulnerable = 0.f;
     const float EnemyHealth = Npc->GetSword()->GetHealth();
     Shot->Tick(.2f);
-    TestTrue(TEXT("The reflected blade reaches its thrower"), Shot->IsActorBeingDestroyed());
+    TestTrue(TEXT("The reflected blade reaches a thrower on higher ground"), Shot->IsActorBeingDestroyed());
     TestEqual(TEXT("Reflection deals real resolved damage"), Npc->GetSword()->GetHealth(), EnemyHealth - 18.f);
 
+    Npc->SetActorLocation(Npc->GetActorLocation() - FVector(0, 0, 140));
     Shot = ARoninProjectile::Throw(Npc, Player);
     if (!TestNotNull(TEXT("A second projectile launches before cover enters its path"), Shot)) return false;
     auto* Cover = World->SpawnActor<AActor>(FVector(100, 0, 100015), FRotator::ZeroRotator);
@@ -137,6 +143,22 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     Shot->Tick(.2f);
     TestFalse(TEXT("Stepping off the committed line avoids contact"), Shot->IsActorBeingDestroyed());
     TestTrue(TEXT("Flight cannot home after release"), FMath::Abs(Shot->Velocity.Y) < .001f);
+    Shot->Destroy();
+    FAdventureMove Hop; Hop.Name = TEXT("HopL"); Moves->Moves.Add(Hop.Name, Hop);
+    FAdventureMove Flurry; Flurry.Name = TEXT("Flurry"); Moves->Moves.Add(Flurry.Name, Flurry);
+    Player->AnimationAction = Hop.Name; Moves->Invulnerable = .4f; Moves->JustAvoid = .2f;
+    Shot = ARoninProjectile::Throw(Npc, Player);
+    if (!TestNotNull(TEXT("A projectile can meet a precise dodge"), Shot)) return false;
+    Shot->Tick(.5f);
+    TestTrue(TEXT("The dodge disposes of the projectile"), Shot->IsActorBeingDestroyed());
+    TestFalse(TEXT("Dodging a projectile cannot start melee flurry at a vanished target"), Moves->InFlurry());
+    TestEqual(TEXT("The projectile dodge preserves player health"), Player->GetSword()->GetHealth(), 100.f);
+    Moves->Invulnerable = 0.f;
+    FAdventureMove Cut; Cut.Name = TEXT("CutS1"); Moves->Moves.Add(Cut.Name, Cut);
+    Player->AnimationAction = Cut.Name;
+    TestFalse(TEXT("A raised guard is unavailable during the player's own cut"), Moves->IsGuarding());
+    TestEqual(TEXT("A counter-hit lands through an attacking player's held guard"),
+        Moves->IncomingStrike(Npc, 10.f, Player->GetActorLocation() + FVector(100, 0, 0)), 0);
     return true;
 }
 #endif

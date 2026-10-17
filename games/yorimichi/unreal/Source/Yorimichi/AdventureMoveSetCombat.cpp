@@ -13,6 +13,7 @@
 #include "JapanFootsteps.h"
 #include "YorimichiCombatFX.h"
 #include "FoxHunter.h"
+#include "RoninProjectile.h"
 #include "MegaRamp.h"
 #include "SuperUltraMegaPark.h"
 #include "Animation/AnimSequence.h"
@@ -518,7 +519,7 @@ int32 UAdventureMoveSet::IncomingStrike(AActor* Source, float Damage, const FVec
     if (DefenceOverride.IsSet() ? (DefenceOverride.GetValue() == EJapanDefence::Dodge || DefenceOverride.GetValue() == EJapanDefence::PerfectDodge) : (IsHop(Name) && Invulnerable > 0.f))
     {
         ++DodgeCount;
-        if ((DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::PerfectDodge : JustAvoid > 0.f) && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
+        if (!(Source && Source->IsA<ARoninProjectile>()) && (DefenceOverride.IsSet() ? DefenceOverride.GetValue() == EJapanDefence::PerfectDodge : JustAvoid > 0.f) && (bArmed || Has(TEXT("DrawSword"))) && Has(TEXT("Flurry")))
         {
             FAdventureMovementReaction Reaction;
             Reaction.Flags = FAdventureMovementReaction::PerfectDodge | FAdventureMovementReaction::ClearHop;

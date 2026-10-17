@@ -33,12 +33,13 @@ streaks for a painted look). `unreal.fx` runs `unreal/Scripts/import_combat_fx.p
 | Event | Picture and timing | Sound |
 | --- | --- | --- |
 | Swing, 0.06 s before the active window | the slash trail | `sword_swing`, or `sword_swing_heavy` for a charged strike |
+| Enemy attack tell | one small warm glint at the weapon for 0.12 s, about 0.16 s before a committed opening | a quiet `sword_swing` |
 | Sword hit (quick, charged, full) | hit-stop 55, 80 or 130 ms on both fighters; two flashes; 14, 17 or 20 sparks thrown along the swing; 4 streaks (7 when charged); a ring when charged; a 495–718 lm light flash; shake 0.28, 0.45 or 0.75; dust at the target's feet; 0.32 s of slow motion (0.3×) on a full charge | `hit_body`, or `hit_heavy` when charged |
 | Parry | hit-stop 90 ms; white-gold flashes, 30 sparks, 7 streaks, two rings; a 720 lm flash; shake 0.5; 0.34 s of slow motion (0.28×) | `parry` |
 | Parry raise | | a soft `sword_swing` |
 | Player hit | hit-stop 70 ms; 12 red-orange sparks and streaks; a 405 lm flash; shake 0.6; a red wash on the HUD | `player_hurt` |
 | Player knocked down | as a hit with 120 ms hit-stop, shake 0.9 and a full wash; a thud and dust 0.55 s later | `player_hurt`, `body_fall` |
-| Guard broken (a heavy blow on the guard) | 26 gold sparks thrown back off the guard, a flash; shake 0.6 | `hit_heavy` |
+| Guard broken (a heavy blow or accumulated block pressure) | 26 gold sparks thrown back off the guard, a flash; shake 0.6 | `hit_heavy` |
 | Charge winding up and held | embers rising off the blade (26 to 96 a second as the charge fills) and a glow gathering at the tip | `sword_charge` |
 | Charge full | a flash, a ring, 14 sparks, a 360 lm flash | `charge_ready` (a wind bell) |
 | Roll, dash, fox dashes | a dust puff | `dash` |

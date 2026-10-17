@@ -155,7 +155,7 @@ EJapanDefence FJapanDefenceTimeline::Resolve(double Contact, const FVector& From
             }
     if (!Sample) { ++MissingSamples; return EJapanDefence::None; }
     if (Sample->bRecovering) return EJapanDefence::Recovering;
-    if (!Broken && !Sample->bGuardBroken && Sample->bGround && Sample->bArmed && GuardHeld(Contact, *Sample) &&
+    if (!Broken && !Sample->bGuardBroken && Sample->bGuardEligible && Sample->bGround && Sample->bArmed && GuardHeld(Contact, *Sample) &&
         (Sample->Forward.GetSafeNormal2D() | (From - Sample->Location).GetSafeNormal2D()) >= GuardCosine)
         return EJapanDefence::Guard;
     return EJapanDefence::None;

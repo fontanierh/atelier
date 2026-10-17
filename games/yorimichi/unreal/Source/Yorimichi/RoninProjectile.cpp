@@ -90,10 +90,12 @@ void ARoninProjectile::Contact(AWandererCharacter* Victim, const FVector& At)
                 Shot->bReflected = true;
                 Shot->bPending = false;
                 Shot->SetOwner(Player);
-                const FVector Direction = (Shot->Thrower->GetActorLocation() - Player->GetActorLocation()).GetSafeNormal2D();
-                Shot->Velocity = Direction * 1450.f;
-                Shot->SetActorLocation(Player->GetActorLocation() + FVector(0, 0, 15.f) + Direction *
-                    (Player->GetCapsuleComponent()->GetScaledCapsuleRadius() + 18.f));
+                const FVector Aim = Shot->Thrower->GetActorLocation() + FVector(0, 0, 15.f);
+                const FVector Direction = (Aim - (Player->GetActorLocation() + FVector(0, 0, 15.f))).GetSafeNormal();
+                const FVector Start = Player->GetActorLocation() + FVector(0, 0, 15.f) + Direction *
+                    (Player->GetCapsuleComponent()->GetScaledCapsuleRadius() + 18.f);
+                Shot->Velocity = (Aim - Start).GetSafeNormal() * 1450.f;
+                Shot->SetActorLocationAndRotation(Start, Shot->Velocity.Rotation());
                 Shot->ForceNetUpdate();
             }
             else Shot->Destroy();
