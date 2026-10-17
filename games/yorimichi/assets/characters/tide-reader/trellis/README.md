@@ -38,15 +38,20 @@ The assembly retains the authored accessories and writes one 30-bone armature: t
 
 Blender's bone-heat solve failed on the generated body, so the selected mesh uses deterministic nearest-segment weights with at most four influences per vertex and zero unweighted vertices. The palette material's vertex-colour emission link is flattened to black for glTF because glTF cannot represent it; `COLOR_0` still carries the full indigo/brass palette.
 
-Reproduce the assembly from a clean worktree:
+Reproduce the assembly from a clean worktree. The measured assembly peak was 0.68 GiB, so this uses the
+existing 3 GiB small envelope; normal admission still decides the turn and the command uses a fresh report and
+output rather than overwriting the selected artifact.
 
 ```sh
-blender -b --python-exit-code 1 --python games/yorimichi/assets/characters/tide-reader/assemble_trellis.py -- \
+ATELIER_AGENT=tide-reader nice -n 10 uv run python -m atelier.safety.guarded \
+  --small 3 --report build/yorimichi/kiyo-local/assembly-guarded.guard --timeout 600 \
+  --purpose 'Kiyo corrected TRELLIS assembly fit' -- \
+  blender -b --threads 3 --python-exit-code 1 --python games/yorimichi/assets/characters/tide-reader/assemble_trellis.py -- \
   --head build/yorimichi/kiyo-local/head-post/paint100k/head.glb \
   --body build/yorimichi/kiyo-local/body-post/bake160k-final/head.glb \
   --baseline games/yorimichi/assets/characters/tide-reader/Kiyo-r01.blend \
-  --output build/yorimichi/kiyo-local/assembly \
-  --report build/yorimichi/kiyo-local/assembly/report.json
+  --output build/yorimichi/kiyo-local/assembly-verify \
+  --report build/yorimichi/kiyo-local/assembly-verify/report.json
 ```
 
 The generation, reconstruction, UV and mask commands are in `games/yorimichi/docs/TRELLIS_HEAD_RETOPO.md`, `TRELLIS_HEAD_RETOPO_GALLERY.md` and `APPLE_HEAD_MODELS.md`. Use normal render admission and the documented aggregate guards.

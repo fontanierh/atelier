@@ -20,7 +20,7 @@ and hat fit, the selected GLB/Blend and the local generation reports.
 ATELIER_AGENT=tide-reader nice -n 10 uv run python -m atelier.safety.guarded \
   --small 3 --report build/yorimichi/tide-reader/guard --timeout 1200 \
   --purpose 'Kiyo tide-reader NPC Blender build' -- \
-  blender -b --threads 2 --python-exit-code 1 --python build.py -- \
+  blender -b --threads 2 --python-exit-code 1 --python games/yorimichi/assets/characters/tide-reader/build.py -- \
   --views front,profile,back,three_quarter,face,hat --export
 ```
 
