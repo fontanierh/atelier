@@ -106,6 +106,19 @@ policy do not guarantee animation-ready facial edge loops, watertight surfaces o
 topology. Any later cleanup must retain a raw source and describe the geometry changes; subdivision
 alone must not be presented as newly inferred detail.
 
+## Interactive inspection
+
+`games/yorimichi/tools/meshaxiom_viewer.py` stages only explicitly supplied geometry, image and GLB
+inputs into `build/yorimichi/meshaxiom/viewer`. Its adjacent README gives the loopback HTTP and
+Tailscale Serve commands. The page supports orbit, zoom, wireframe, gray/color comparison and a
+model selector. A browser check on the live tailnet route verified model loading, all toggles, the
+phone layout and no page errors. Fetching the served mesh, reference and GLB reproduced the source
+SHA256 values. The viewer uses the committed, pinned Three.js bundle and no external CDN.
+
+The displayed colors are simple preview materials. The downloadable GLB preserves the supplied
+export bytes, while the viewer converts Z-up JSON into Y-up and normalizes its displayed height.
+This display transform does not change connectivity. Only completed meshes enter the model selector.
+
 ## If weights have to stream from SSD
 
 SSD layer streaming was **not needed or implemented** for the measured run. The largest resident
