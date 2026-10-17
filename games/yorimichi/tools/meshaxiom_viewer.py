@@ -39,9 +39,11 @@ def stage(args):
     public = {'mesh.json': raw, 'reference.png': args.reference.read_bytes()}
     if args.model:
         public['model.glb'] = args.model.read_bytes()
+    if args.render_glb and not args.model:
+        raise ValueError('GLB rendering requires the supplied export')
     record = dict(id=args.asset, title=args.title, palette=args.palette, note=args.note,
                   triangles=len(mesh['faces']), vertices=len(mesh['vertices']),
-                  seconds=None, peak_gib=None)
+                  seconds=None, peak_gib=None, render_glb=args.render_glb)
     if args.benchmark:
         benchmark = json.loads(args.benchmark.read_text())
         if (benchmark['vertex_count'] != len(mesh['vertices']) or benchmark['face_count'] != len(mesh['faces'])
@@ -74,6 +76,7 @@ def main():
     p.add_argument('--mesh', type=Path, required=True)
     p.add_argument('--reference', type=Path, required=True)
     p.add_argument('--model', type=Path)
+    p.add_argument('--render-glb', action='store_true', help='Display the actual exported materials and texture')
     p.add_argument('--benchmark', type=Path)
     p.add_argument('--palette', choices=['bin', 'cart', 'clay'], default='clay')
     p.add_argument('--note', default='MeshAxiom geometry. Inspect the wireframe for open surfaces and broken faces.')
