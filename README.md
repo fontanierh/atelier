@@ -157,42 +157,18 @@ multiple Tripo models, Pixel Match texture repairs, assembly and a bespoke clipp
 
 ### Clean assets from local models
 
-The best tested local head recipe uses **TRELLIS.2 through MLX**, then automatic exterior reconstruction,
-adaptive triangle reduction, a 4K UV bake and optional SAM2 texture repair. Scripts run the processing;
-there is no manual Blender sculpting or painting. **It is below Tripo quality**, but it is a useful fallback
-when no Tripo credits are available. Inference and cleanup require no paid API calls with an existing or
-self-made reference; generating new Sunburst reference images costs money.
+Generate textured assets on Apple Silicon with TRELLIS.2 through MLX, followed by scripted processing:
 
-1. **Prepare one isolated reference per part.** For characters, generate a close head and a separate
-   headless body in a T-pose. Keep side/back views for inspection; the tested geometry recipe conditions on
-   one image rather than a turnaround sheet.
-2. **Generate locally.** Reuse the pinned, verified model weights. Start with requested resolution 1024,
-   16,384 tokens, twelve steps, seed 42 and native learned RGB. Record the actual grid: the selected head
-   used 768. Keep the original dense checkpoints.
-3. **Clean and reduce.** Fuse 26 exterior depth/color views, run single-thread screened Poisson, then QEM
-   reduction. Start with 100K triangles for a close-view head; compare 40K for a lighter version. This
-   creates a new surface and removes much of the dense source's speckling; extra faces or color blur alone
-   did not solve it.
-4. **UV, bake and repair.** Bake a checked 4K atlas with `--neighbors 1`, then optionally infer eight-view
-   skin/hair masks and use conservative `--paint-mode repair`. Adapt the palette rules to the character.
-   From the selected reduced mesh onward, UVs preserve its triangle corners and texture repair preserves
-   its position, normal, UV and index buffers.
-5. **Assemble and inspect.** Finish painting before rigging. Fit separate parts with a script using the
-   actual neck socket, seat retained hats against the crown, and place rig pivots at the fitted joints.
-   Check front, profile, back, close-ups and poses under normal lighting. Publish a viewer comparing the
-   references, baseline and new result before accepting the asset.
-6. **Commit the selected sources.** Keep generated trials under `build/yorimichi/`; commit game-consumed
-   GLBs/textures and their checksums in the asset library. Model weights stay in the verified local runtime.
+1. **Prepare reference pictures**, with separate head and body images for characters.
+2. **Generate each part locally**, then clean and simplify its surface.
+3. **Add UVs and textures**, separating skin and hair for optional color repair.
+4. **Fit, join and rig the parts**, then inspect multiple views and poses before committing the game asset.
 
-The measured setup is a **32 GiB M1 Max**: native generation/export took about twenty minutes at 13.06 GiB
-peak; the selected cleanup/UV/mask stages took 1m48s at up to 3.66 GiB. These exclude installation,
-downloads, queues, assembly and final QA. A 14 GiB process cap does not establish safe operation on a
-16 GiB laptop. All heavy stages use normal admission and aggregate memory guards.
+This is below Tripo quality, but useful when no Tripo credits are available. Local inference uses no paid
+API calls with existing or self-made references; new Sunburst reference images are paid.
 
-**[Local asset pipeline: commands and acceptance checks](games/yorimichi/docs/LOCAL_ASSET_PIPELINE.md)**
-connects setup through delivery, including cache reuse, head/body fitting and current limitations.
-The [ranked head results and exact processing recipe](games/yorimichi/docs/TRELLIS_HEAD_RETOPO.md) and
-[multi-view gallery](games/yorimichi/docs/TRELLIS_HEAD_RETOPO_GALLERY.md) show what this workflow achieved.
+The **[local asset pipeline guide](games/yorimichi/docs/LOCAL_ASSET_PIPELINE.md)** covers the tools,
+commands, tested settings, hardware limits, assembly checks and comparison results.
 
 ### Worlds from code
 
