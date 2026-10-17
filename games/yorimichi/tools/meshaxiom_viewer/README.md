@@ -34,4 +34,5 @@ personal tailnet hostname do not belong in the public repository. Do not serve t
 
 Rendering is on demand, stops when hidden and caps pixel ratio at 1.5. Only an explicitly enabled
 turntable renders continuously. Orbit, zoom, wireframe, gray/color comparison and reset work on
-mouse and touch layouts. All geometry and GLB transfers stay on the serving host/tailnet.
+mouse and touch layouts. Open edges can be highlighted in red, with boundary/nonmanifold
+counts computed from the loaded mesh. All geometry and GLB transfers stay on the serving host/tailnet.

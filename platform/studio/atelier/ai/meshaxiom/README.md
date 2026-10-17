@@ -70,3 +70,14 @@ ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.ai.meshaxiom.
 After successful vertex completion, repeat with `--stage topology` and a fresh report path. The 16,000-face
 condition is approximate: inspect the realized triangle count instead of treating the request as a guarantee.
 The released model consumes one image per object; it has no native multiview conditioning interface.
+
+After topology completes, inspect it without loading model weights:
+
+```sh
+build/meshaxiom/venv/bin/python -m atelier.ai.meshaxiom.audit \
+  --root build/meshaxiom --output build/meshaxiom/object-16k --minimum-faces 15000
+```
+
+The report includes raw and canonical usable face counts, boundary/nonmanifold edges, components,
+degenerates and slivers. A missed minimum returns exit code 2. Passing the count does not approve
+the visual result or facial edge flow; inspect both solid and wireframe views.

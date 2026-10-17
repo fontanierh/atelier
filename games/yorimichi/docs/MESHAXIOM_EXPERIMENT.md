@@ -100,7 +100,8 @@ managed CPU budget and checkout locks remain intact. The README includes the exa
 The larger request uses a 12,000-node hard bound and a one-hour deadline per stage. The head follows
 the cart as a separate job; no two inference models are launched together.
 
-Topology acceptance includes actual triangle count, boundary and nonmanifold edges, degenerates,
+Topology acceptance includes at least 15,000 unique nondegenerate triangles for the larger assets,
+boundary and nonmanifold edges, degenerates,
 components, silhouette and wireframe inspection. Learned connectivity and the published edge-capacity
 policy do not guarantee animation-ready facial edge loops, watertight surfaces or clean production
 topology. Any later cleanup must retain a raw source and describe the geometry changes; subdivision
@@ -111,7 +112,7 @@ alone must not be presented as newly inferred detail.
 `games/yorimichi/tools/meshaxiom_viewer.py` stages only explicitly supplied geometry, image and GLB
 inputs into `build/yorimichi/meshaxiom/viewer`. Its adjacent README gives the loopback HTTP and
 Tailscale Serve commands. The page supports orbit, zoom, wireframe, gray/color comparison and a
-model selector. A browser check on the live tailnet route verified model loading, all toggles, the
+model selector, plus a red open-edge overlay. A browser check on the live tailnet route verified model loading, all toggles, the
 phone layout and no page errors. Fetching the served mesh, reference and GLB reproduced the source
 SHA256 values. The viewer uses the committed, pinned Three.js bundle and no external CDN.
 

@@ -7,7 +7,7 @@ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.01,30);
 const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.12;controls.minDistance=.5;controls.maxDistance=6;
 scene.add(new THREE.HemisphereLight(0xe8efff,0x333139,2.2));
 for(const [color,intensity,position] of [[0xffedcf,3,[3,4,5]],[0xaac5f7,1.5,[-4,2,-1]]]){const l=new THREE.DirectionalLight(color,intensity);l.position.fromArray(position);scene.add(l);}
-let queued=false,frames=0,spin=false,mesh=null,wire=false,colored=true;
+let queued=false,frames=0,spin=false,mesh=null,wire=false,colored=true,boundaries=null;
 function requestDraw(n=0){frames=Math.max(frames,n);if(!queued&&!document.hidden){queued=true;requestAnimationFrame(draw);}}
 function draw(){queued=false;if(document.hidden)return;controls.update();renderer.render(scene,camera);if(spin||frames-->0)requestDraw();}
 controls.addEventListener('change',()=>requestDraw());controls.addEventListener('start',()=>requestDraw(45));controls.addEventListener('end',()=>requestDraw(45));
@@ -17,6 +17,7 @@ function reset(){controls.target.set(0,.48,0);camera.position.set(1.5,1.25,2.2);
 function updateMaterial(){if(!mesh)return;for(const m of mesh.material){m.wireframe=wire;m.color.set(colored?m.userData.color:0xa6adb5);m.needsUpdate=true;}requestDraw();}
 document.querySelector('#reset').onclick=reset;
 document.querySelector('#wire').onclick=e=>{wire=!wire;e.currentTarget.setAttribute('aria-pressed',String(wire));updateMaterial();};
+document.querySelector('#edges').onclick=e=>{if(!boundaries)return;boundaries.visible=!boundaries.visible;e.currentTarget.setAttribute('aria-pressed',String(boundaries.visible));requestDraw();};
 document.querySelector('#color').onclick=e=>{colored=!colored;e.currentTarget.setAttribute('aria-pressed',String(colored));updateMaterial();};
 document.querySelector('#spin').onclick=e=>{spin=!spin;controls.autoRotate=spin;controls.autoRotateSpeed=1.2;e.currentTarget.setAttribute('aria-pressed',String(spin));requestDraw(2);};
 try{
@@ -39,6 +40,11 @@ try{
  for(const face of data.faces){const z=face.reduce((sum,index)=>sum+(data.vertices[index][2]-lo[2])*scale/3,0);const positions=buckets[z>(asset.palette==='cart' ? .68 : .78)?1:0];for(const index of face){const v=data.vertices[index];positions.push((v[0]-(lo[0]+hi[0])/2)*scale,(v[2]-lo[2])*scale,-(v[1]-(lo[1]+hi[1])/2)*scale);}}
  const positions=buckets.flat();let offset=0;for(let i=0;i<buckets.length;i++){geometry.addGroup(offset,buckets[i].length/3,i);offset+=buckets[i].length/3;}
  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();mesh=new THREE.Mesh(geometry,palette);scene.add(mesh);
+ const edgeCounts=new Map();for(const face of data.faces){for(let k=0;k<3;k++){const a=face[k],b=face[(k+1)%3],key=a<b?`${a},${b}`:`${b},${a}`;edgeCounts.set(key,(edgeCounts.get(key)||0)+1);}}
+ const openPositions=[];let nonmanifold=0;for(const [key,count] of edgeCounts){if(count>2)nonmanifold++;if(count!==1)continue;for(const index of key.split(',').map(Number)){const v=data.vertices[index];openPositions.push((v[0]-(lo[0]+hi[0])/2)*scale,(v[2]-lo[2])*scale,-(v[1]-(lo[1]+hi[1])/2)*scale);}}
+ const edgeGeometry=new THREE.BufferGeometry();edgeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(openPositions,3));
+ boundaries=new THREE.LineSegments(edgeGeometry,new THREE.LineBasicMaterial({color:0xff8066,depthTest:false}));boundaries.visible=false;boundaries.renderOrder=2;scene.add(boundaries);
+ document.querySelector('#topology').textContent=`${openPositions.length/6} open edges · ${nonmanifold} nonmanifold edges. Open edges are highlighted in red when enabled; some openings may be intentional.`;
  const grid=new THREE.GridHelper(4,20,0x40516b,0x2d3c50);grid.position.y=-.015;grid.material.transparent=true;grid.material.opacity=.45;scene.add(grid);
  document.querySelector('#triangles').textContent=data.faces.length.toLocaleString();
  window.meshaxiomViewer={loaded:true,asset:asset.id,triangles:data.faces.length,sourceVertices:data.vertices.length,reset};loading.hidden=true;reset();
