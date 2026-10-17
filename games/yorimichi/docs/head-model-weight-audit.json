@@ -1,0 +1,147 @@
+[
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/shape_enc_next_dc_f16c32_fp16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 708797208,
+    "sha256": "f37c5ff5b983b68e9946060000f09bc131f3e84318a2c8b7430a81e4b4636c41",
+    "parameters_by_dtype": {
+      "F16": 354385392
+    },
+    "tensor_bytes_by_dtype": {
+      "F16": 708770784
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/tex_dec_next_dc_f16c32_fp16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 948458812,
+    "sha256": "97ea69addea2ecd9312910f5f548234665eef51c088386180b7cd5b258645e3c",
+    "parameters_by_dtype": {
+      "F16": 474216006
+    },
+    "tensor_bytes_by_dtype": {
+      "F16": 948432012
+    }
+  },
+  {
+    "repo": "TencentARC/Pixal3D",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+    "revision": "b0cb2e1b794cab9aa0ac38a95d794a4d9337437f",
+    "file_bytes": 5546960656,
+    "sha256": "65df179ad02f9e92bc18335d7861fadd95f268e6249217352468dd83cb79d1d0",
+    "parameters_by_dtype": {
+      "F32": 1386720800
+    },
+    "tensor_bytes_by_dtype": {
+      "F32": 5546883200
+    }
+  },
+  {
+    "repo": "camenduru/dinov3-vitl16-pretrain-lvd1689m",
+    "file": "model.safetensors",
+    "revision": "3c276edd87d6f6e569ff0c4400e086807d0f3881",
+    "file_bytes": 1212559808,
+    "sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+    "parameters_by_dtype": {
+      "F32": 303129600
+    },
+    "tensor_bytes_by_dtype": {
+      "F32": 1212518400
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/ss_flow_img_dit_1_3B_64_bf16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 2584426920,
+    "sha256": "ca01377c485bec418076d38ee80166d32dc776d744f2553b835cba1e97a7abf6",
+    "parameters_by_dtype": {
+      "BF16": 1292179976
+    },
+    "tensor_bytes_by_dtype": {
+      "BF16": 2584359952
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 2584574424,
+    "sha256": "ec5e0917ef9b7e25ad51dffc7d19687a42019871f94239f2fa7f86264c55b70f",
+    "parameters_by_dtype": {
+      "BF16": 1292253728
+    },
+    "tensor_bytes_by_dtype": {
+      "BF16": 2584507456
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 2584672728,
+    "sha256": "8371aa1c5d13be79dcd5ddfd2cf3835e902e204dc34427169a1c702828e1a94d",
+    "parameters_by_dtype": {
+      "BF16": 1292302880
+    },
+    "tensor_bytes_by_dtype": {
+      "BF16": 2584605760
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/shape_dec_next_dc_f16c32_fp16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 948490494,
+    "sha256": "e3b718d3e43e4f8780e9a24ac6fff231811a67e3b058e336e10fe654c911d581",
+    "parameters_by_dtype": {
+      "F16": 474231463
+    },
+    "tensor_bytes_by_dtype": {
+      "F16": 948462926
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_1024_bf16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 2584574424,
+    "sha256": "07cd0596f634c5adc1890023d16023afc5eed02fb84b22bb23aff5bf0030fbbd",
+    "parameters_by_dtype": {
+      "BF16": 1292253728
+    },
+    "tensor_bytes_by_dtype": {
+      "BF16": 2584507456
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file_bytes": 2584672728,
+    "sha256": "580401269059a339b8318ab9ced459a13ba63391721c83a6c383198c29e77686",
+    "parameters_by_dtype": {
+      "BF16": 1292302880
+    },
+    "tensor_bytes_by_dtype": {
+      "BF16": 2584605760
+    }
+  },
+  {
+    "repo": "microsoft/TRELLIS-image-large",
+    "file": "ckpts/ss_dec_conv3d_16l8_fp16.safetensors",
+    "revision": "25e0d31ffbebe4b5a97464dd851910efc3002d96",
+    "file_bytes": 147591972,
+    "sha256": "1c76d4a40519aa2d711cc263a8404105231ac26db31d946bed48b84fee79009a",
+    "parameters_by_dtype": {
+      "F32": 121505,
+      "F16": 73549696
+    },
+    "tensor_bytes_by_dtype": {
+      "F32": 486020,
+      "F16": 147099392
+    }
+  }
+]

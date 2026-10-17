@@ -43,6 +43,29 @@ print credentials. Only selected checkpoints are fetched. The public DINO mirror
 matches the official checkpoint's SHA256. Model downloads are read-only operations,
 not paid generation calls. Generated Sunburst references retain their paid ledgers.
 
+## Actual tensor sizes
+
+The [weight-header audit](head-model-weight-audit.json) reads the downloaded
+safetensors headers, rather than inferring precision from filenames. Sizes below
+are whole files in GiB. JSON manifests also bind exact revisions and SHA256 values.
+
+| Component | Parameters | Stored precision | File GiB |
+| --- | ---: | --- | ---: |
+| Pixal3D texture flow | 1.387 billion | Float32, despite the bf16 filename | 5.166 |
+| TRELLIS sparse-structure flow | 1.292 billion | BF16 | 2.407 |
+| TRELLIS shape flow, each 512/1024 checkpoint | 1.292 billion | BF16 | 2.407 |
+| TRELLIS texture flow, each 512/1024 checkpoint | 1.292 billion | BF16 | 2.407 |
+| Supplied-shape encoder | 354 million | Float16 | 0.660 |
+| Shape decoder | 474 million | Float16 | 0.883 |
+| PBR decoder | 474 million | Float16 | 0.883 |
+| DINOv3 image encoder | 303 million | Float32 | 1.129 |
+| Sparse-structure decoder | 73.7 million | Mostly Float16, 0.12 million Float32 | 0.137 |
+
+The native MPS loader casts weights to each destination module's declared dtype.
+Only one large stage model is kept at a time. The flow/PBR/conditioning activations,
+voxel caches and framework allocation pools are substantial, so checkpoint size
+alone does not predict physical footprint. Use the measured process-tree peaks.
+
 ## MeshAxiom's native texture model stack
 
 The original repository documents a supplied-shape texture path using Pixal3D's
@@ -160,3 +183,21 @@ The viewer's dense-GLB path checks the complete exported triangle count and rend
 all triangles. It defers the optional browser edge-map construction and avoids
 loading another giant JSON representation into the page. The downloadable source
 and GLB remain complete. Color/gray switching also handles vertex-color materials.
+
+
+For cascade experiments, `--mlx-gib 10` and `--max-tokens 8192` select explicit
+framework/token ceilings while the outer aggregate cap remains independently
+enforced. Requested 1024 grids may reduce in 128-cell steps to meet the token
+ceiling; the actual grid is recorded. This fixes the pinned port's early-exit
+condition that otherwise ignores the limit at 1024 and can loop below a valid grid
+when starting at 768. High stages use 1024-pixel DINO conditioning and the published
+1024 texture flow, following the official cascade's stage choices. The 512 baseline
+retains its 512 conditioning and texture checkpoint. No CUDA numerical-parity claim
+is made for the MLX implementation.
+
+`trellis generate -- ... --vertex-colors` stops after native shape/PBR checkpoints
+and performs the UV-free bake in the same aggregate guard. It avoids repeating the
+slow raw-mesh unwrap for every trial. The pinned feature extractor fails closed if
+MLX extraction fails; it never falls back to an unpinned local Torch checkout or
+random conditioning. Multiple `--image` inputs still use the port's documented
+feature-concatenation heuristic without camera calibration.

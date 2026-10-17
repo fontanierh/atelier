@@ -64,6 +64,38 @@
     "expected_lfs_sha256": "e3b718d3e43e4f8780e9a24ac6fff231811a67e3b058e336e10fe654c911d581"
   },
   {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_1024_bf16.json",
+    "size_bytes": 458,
+    "sha256": "7ebd6d367393f52fee9e92c2b3d727a9026a338549c6a6fa84c7ea122140ffdd",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_1024_bf16.safetensors",
+    "size_bytes": 2584574424,
+    "sha256": "07cd0596f634c5adc1890023d16023afc5eed02fb84b22bb23aff5bf0030fbbd",
+    "expected_lfs_sha256": "07cd0596f634c5adc1890023d16023afc5eed02fb84b22bb23aff5bf0030fbbd"
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.json",
+    "size_bytes": 458,
+    "sha256": "31f4fdad9974930e5e9324ac9dfb6ef7de6b30cea51854ba515ef827a8d353b2",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+    "size_bytes": 2584672728,
+    "sha256": "580401269059a339b8318ab9ced459a13ba63391721c83a6c383198c29e77686",
+    "expected_lfs_sha256": "580401269059a339b8318ab9ced459a13ba63391721c83a6c383198c29e77686"
+  },
+  {
     "repo": "microsoft/TRELLIS-image-large",
     "revision": "25e0d31ffbebe4b5a97464dd851910efc3002d96",
     "file": "ckpts/ss_dec_conv3d_16l8_fp16.json",
