@@ -7,6 +7,9 @@
 #include "Animation/AnimSequence.h"
 #include "WandererSword.h"
 #include "SwordTrainer.h"
+#include "YorimichiCombatFX.h"
+#include "EngineUtils.h"
+#include "GameFramework/WorldSettings.h"
 #include "RoninProjectile.h"
 #include "Components/BoxComponent.h"
 #include "JapanDefenceTimeline.h"
@@ -54,6 +57,16 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     for (const FWorldContext& Context : GEngine->GetWorldContexts())
         if (Context.World() && Context.World()->IsGameWorld()) { World = Context.World(); break; }
     if (!TestNotNull(TEXT("Contact regression runs in a native game world"), World)) return false;
+    // Resolved contacts spawn real offline slow-motion FX. They must not change the next fixture's clock.
+    const float OriginalDilation = World->GetWorldSettings()->TimeDilation;
+    TSet<AYorimichiCombatFX*> ExistingFX;
+    for (TActorIterator<AYorimichiCombatFX> It(World); It; ++It) ExistingFX.Add(*It);
+    ON_SCOPE_EXIT
+    {
+        for (TActorIterator<AYorimichiCombatFX> It(World); It; ++It)
+            if (!ExistingFX.Contains(*It)) It->Destroy();
+        World->GetWorldSettings()->SetTimeDilation(OriginalDilation);
+    };
     FActorSpawnParameters Spawn;
     Spawn.ObjectFlags |= RF_Transient; Spawn.bDeferConstruction = true;
     Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
