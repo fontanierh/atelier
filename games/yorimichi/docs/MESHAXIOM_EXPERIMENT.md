@@ -27,6 +27,9 @@ The raw mesh has 214 boundary edges, three degenerate triangles, five components
 edges. It is an experimental decorative prop, not a watertight fabrication mesh. The upstream topology
 policy includes bounded edge-capacity repair and winding correction; the report identifies those steps.
 The authoring script adds scale, origin and matte materials without replacing the neural geometry.
+The initial port used `2 × realized vertices` for the extraction cap; this was corrected to the requested
+face budget before the larger runs. The first bin's union of both decoded edge graphs is 3,534 edges,
+below both the correct 6,000-edge cap and the initial 6,294-edge cap, so that discrepancy did not alter it.
 
 ## Models and memory
 

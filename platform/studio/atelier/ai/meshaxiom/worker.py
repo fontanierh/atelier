@@ -140,7 +140,8 @@ def topology(args, bundle):
     # All geometry extraction is CPU; bound pair tiles and preserve the published threshold/merge policy.
     from meshaxiom_core.topology.spacetime import extract_mesh_topology
     print('CPU topology extraction and published edge-capacity repair',flush=True)
-    lod=2*len(coords);max_edges=int(float(pol.get('edge_cap',0))*1.5*lod) or 4_000_000
+    # The published decoder conditions its safety cap on requested faces, not realized vertices.
+    max_edges=max(1,int(float(pol.get('edge_cap',0))*1.5*args.face_budget)) if pol.get('edge_cap') else 4_000_000
     def extract(ze,zf):
         e,f,info=extract_mesh_topology(ze[0],zf[0],metric,et,ft,max_edges=max_edges,return_info=True)
         if pol.get('prune')=='edge_capacity2':f=decoder.prune_edge_capacity(zf[0],f,metric,2)
