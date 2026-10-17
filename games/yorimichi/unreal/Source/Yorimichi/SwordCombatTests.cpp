@@ -10,6 +10,7 @@
 #include "YorimichiCombatFX.h"
 #include "EngineUtils.h"
 #include "GameFramework/WorldSettings.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "RoninProjectile.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -212,7 +213,10 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     TestEqual(TEXT("The next action cannot inherit an old lunge's contact window"), Moves->ArcEnd, -1.f);
     Moves->Pressure.Block(10.f, World->GetTimeSeconds(), 25.f);
     const float BeforeActivity = Moves->GuardPressure();
+    // These deferred actors have no floor beneath them; establish the grounded activity used by the parry below.
+    Player->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     Moves->Reset();
+    TestTrue(TEXT("The activity reset leaves the parry fixture grounded"), Moves->Mode == EAdventureMoveMode::Ground);
     TestEqual(TEXT("Changing activities cannot erase contact-owned guard pressure"), Moves->GuardPressure(), BeforeActivity);
     Dummy->Destroy();
     Npc->bHostileRonin = true;
