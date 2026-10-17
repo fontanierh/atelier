@@ -970,7 +970,7 @@ void UAdventureMoveSet::Reset()
     LungeTarget = nullptr; LungeTime = 0.f; bLungePoint = false;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
-    Pressure = {}; ParriedActionSerial = 0;
+    ParriedActionSerial = 0; // Activity changes preserve contact-owned guard pressure and its recovery clock.
     if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;

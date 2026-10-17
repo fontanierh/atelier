@@ -59,17 +59,20 @@ void ARoninProjectile::Tick(float Dt)
     const FVector Before = GetActorLocation(), After = Before + Velocity * Dt;
     FCollisionQueryParams Query(SCENE_QUERY_STAT(RoninProjectile), false, GetOwner());
     Query.AddIgnoredActor(this);
-    FHitResult Hit;
-    if (GetWorld()->SweepSingleByChannel(Hit, Before, After, FQuat::Identity, ECC_Pawn,
-        FCollisionShape::MakeSphere(7.f), Query))
+    TArray<FHitResult> Hits;
+    // Online player capsules deliberately overlap Pawn queries. Keep touch contacts as well as cover blocks.
+    GetWorld()->SweepMultiByChannel(Hits, Before, After, FQuat::Identity, ECC_Pawn,
+        FCollisionShape::MakeSphere(7.f), Query);
+    for (const FHitResult& Hit : Hits)
     {
         if (auto* Victim = Cast<AWandererCharacter>(Hit.GetActor()); Victim &&
             ((!bReflected && !Victim->IsNpc()) || (bReflected && Victim == Thrower.Get())))
         {
             SetActorLocation(Hit.Location);
-            Contact(Victim, Hit.ImpactPoint);
+            Contact(Victim, Hit.bStartPenetrating ? Hit.Location : FVector(Hit.ImpactPoint));
         }
-        else Destroy(); // Cover and other bodies stop the projectile.
+        else if (Hit.bBlockingHit) Destroy(); // Cover and other bodies stop the projectile.
+        else continue; // Noncombat overlap volumes do not consume a blade.
         return;
     }
     SetActorLocation(After);

@@ -8,6 +8,7 @@
 #include "RoninProjectile.h"
 #include "Components/BoxComponent.h"
 #include "JapanDefenceTimeline.h"
+#include "JapanNetwork.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Misc/ScopeExit.h"
@@ -114,6 +115,7 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     Moves->bGuardHeld = true; Player->AnimationAction = Parry.Name;
     ++Player->ActionSerial; Player->ActionTime = .08f;
     Npc->SetActorLocation(Npc->GetActorLocation() + FVector(0, 0, 140));
+    JapanNetwork::ConfigurePlayerCollision(Player->GetCapsuleComponent());
     auto* Shot = ARoninProjectile::Throw(Npc, Player);
     if (!TestNotNull(TEXT("The scout launches an actual projectile"), Shot)) return false;
     Shot->Tick(.2f);
@@ -169,11 +171,17 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     if (!TestNotNull(TEXT("Plunge regression owns a real training post"), Dummy)) return false;
     FAdventureMove Landing; Landing.Name = TEXT("PlungeLand"); Moves->Moves.Add(Landing.Name, Landing);
     Player->AnimationAction = TEXT("PlungeAir");
-    Moves->HitThisSwing.Reset(); Moves->Strength = 3;
+    Moves->HitThisSwing.Reset(); Moves->Strength = 3; Moves->CustomBladeLength = 100.f;
     Moves->Landed(FHitResult());
     TestEqual(TEXT("Landing impact registers one hit"), Dummy->HitsTaken, 1);
     Moves->SweepArc();
     TestEqual(TEXT("The following active arc cannot duplicate the landing contact"), Dummy->HitsTaken, 1);
+    Moves->HitThisSwing.Reset(); Moves->SweepArc();
+    TestEqual(TEXT("A fresh contact list proves the post is inside the active arc"), Dummy->HitsTaken, 2);
+    Moves->Pressure.Block(10.f, World->GetTimeSeconds(), 25.f);
+    const float BeforeActivity = Moves->GuardPressure();
+    Moves->Reset();
+    TestEqual(TEXT("Changing activities cannot erase contact-owned guard pressure"), Moves->GuardPressure(), BeforeActivity);
     return true;
 }
 #endif
