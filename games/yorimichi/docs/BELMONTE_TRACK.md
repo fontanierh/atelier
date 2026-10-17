@@ -1,6 +1,13 @@
 # Belmonte railway track
 
-The track for the Belmonte steam line (H2 to Belmonte, 7.17 km, route v3 at 4%), generated from the route study.
+The track for the Belmonte steam line (Hidamari town station to Belmonte, 7.40 km at 4%), generated from the route study.
+
+Hidamari uses the clock-tower station's existing platform, extended for the 131 m consist. The line runs east along
+the old yard, replacing the decorative railcar, narrow-gauge track and engine shed. Its rail datum is fixed 0.67 m
+below the station floor; the platform meets the existing surface 0.25 m above that floor. Boarding is on the right
+at Hidamari and on the left at Belmonte. The east lane ends either side of the extended station yard. The passing
+loop keeps its location with chainages 4810–5070 m. The lower town approach needs about 390 m more tunnel beyond
+the spiral than the former H2 alignment (1.32 km, within a 1.4 km budget).
 
 - Input: `build/yorimichi/belmonte-train/route/route.json` (`world/train/route.py`, explicit step
   `world.belmonte_train_route`).

@@ -4,7 +4,7 @@ The city at the eastern end of the coastal road: arrival terraces, a clock hall 
 shopping arcade, two temples and a shrine on the hillside, a sunlit park with a pond and a cedar bridge, the station
 district, and a fishing harbour with a fish market, lighthouse, breakwater and canal. Street lamps, benches, flower
 beds, street trees and resident groups fill it. North of it rise the foothills and a distant volcano, with a trail
-up from the park. Buildings are exteriors; there is no shopping, fishing or train travel.
+up from the park. Buildings are exteriors; the Belmonte train serves the clock-tower station's extended platform.
 
 ## Build and check
 

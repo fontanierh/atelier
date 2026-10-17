@@ -149,7 +149,7 @@ private:
     struct FDoor
     {
         FString Id, Kind;
-        bool bStation = false, bLocked = false, bPlatformSide = false;
+        bool bStation = false, bLocked = false, bPlatformSide = false, bLeft = false;
         TArray<FVector> Handles;
         TObjectPtr<UBoxComponent> Box;
         TArray<FLeaf> Leaves;
@@ -197,7 +197,7 @@ private:
         float BoardTime = 0.f, BoardLength = 0.f;
         bool bBoardUp = true, bBoardMoving = false;
     };
-    struct FStation { FString Key, Name; double Chainage = 0.; FVector Arrival = FVector::ZeroVector; float Yaw = 0.f; };
+    struct FStation { FString Key, Name; double Chainage = 0.; FVector Arrival = FVector::ZeroVector; float Yaw = 0.f; bool bLeft = true; };
     bool Initialize(const FString& Path);
     void BuildStations(const TSharedPtr<FJsonObject>& Root);
     void PlaceVehicles(double Time, bool bForce);

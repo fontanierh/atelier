@@ -69,14 +69,23 @@ class Alignment(unittest.TestCase):
 
     def test_endpoints_on_station_axes(self):
         line = self.line
-        for station, index in ((R.HIDAMARI, slice(0, 201)), (R.BELMONTE, slice(-201, None))):
+        for station, index in ((R.HIDAMARI, line.s <= R.HIDAMARI.reserve[0]),
+                               (R.BELMONTE, line.s >= line.length - R.BELMONTE.reserve[0])):
             pts = np.c_[line.x[index], line.y[index]] - station.centre
             across = pts @ np.array([-station.axis[1], station.axis[0]])
             self.assertLess(np.abs(across).max(), .01, station.name)
             self.assertTrue(np.allclose(line.curvature[index], 0.), station.name)
             heading = np.degrees(line.heading[index]) % 360
             self.assertTrue(np.allclose(heading, station.bearing % 360, atol=1e-3), station.name)
-        self.assertAlmostEqual(float(np.hypot(line.x[0] - R.HIDAMARI.centre[0], line.y[0] - R.HIDAMARI.centre[1])), 100., 2)
+        self.assertAlmostEqual(float(np.hypot(line.x[0] - R.HIDAMARI.centre[0], line.y[0] - R.HIDAMARI.centre[1])),
+                               R.HIDAMARI.reserve[0] / 2, 2)
+
+    def test_hidamari_uses_the_town_platform(self):
+        from hidamari import station_yard as S
+        self.assertEqual(R.HIDAMARI.bearing, 0.)
+        self.assertAlmostEqual(self.line.y[0], 299.95 + 1.85)
+        self.assertAlmostEqual(self.line.x[0], S.X0)
+        self.assertGreater(self.line.x[0] - 2.45, 1120 + 5.5)  # buffer/ballast clear the west lane
 
 
 @unittest.skipUnless(BUILT, 'needs world.hidamari and world.belmonte')
@@ -122,6 +131,8 @@ class Profile(unittest.TestCase):
         for on in (line.s <= R.HIDAMARI.reserve[0], line.s >= line.length - R.BELMONTE.reserve[0]):
             self.assertLess(np.ptp(rail[on]), 1e-6)
             self.assertLessEqual(np.abs(rail[on] - zg[on]).max(), R.PLATFORM_OFFSET + .5)
+        from hidamari import station_yard as S
+        self.assertAlmostEqual(rail[0], S.floor_z() + S.RAIL, places=6)
 
     def test_spiral_is_a_climbing_tunnel(self):
         line, rail, kind = self.r['line'], self.r['rail'], self.r['kind']

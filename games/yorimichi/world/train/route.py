@@ -1,4 +1,4 @@
-"""Railway alignment study for the Belmonte steam train: Hidamari's station H2 to a station on Belmonte's eastern edge.
+"""Railway alignment for the Belmonte steam train: Hidamari's town station to Belmonte's eastern edge.
 
     python games/yorimichi/world/train/route.py [--out DIR] [--optimise]
 
@@ -58,8 +58,10 @@ class Station:
         return np.array([math.cos(a), math.sin(a)])
 
 
-# H2 from the station study: on the RAILWAY corridor's first leg (37.24 degrees), clear of the city's blocks.
-HIDAMARI = Station('Hidamari', (1345., 388.), 37.24, 160., (200., 56.))
+# The town station's existing south-side platform, extended east for the full consist. The buffer stays east of
+# the x=1120 lane; the old engine shed gives way to the approach. Share the rail datum with the station builder.
+from hidamari import station_yard
+HIDAMARI = Station('Hidamari', station_yard.SERVICE_CENTRE, 0., 160., (160., 56.))
 # The old RAILWAY end (1350, 3780 + NORTH_SHIFT), moved 25 m east and north: inside Belmonte's eastern bounds on the
 # river's north bank, 650 m east of the town's south-east gate and 150 m south of the eastern estate, clear of every
 # building and of the water. Ground 181.6-184.9 m along the track (12 m across the whole 200 x 60 m reserve). A flatter
@@ -93,7 +95,7 @@ FORMATION = 8.
 SLOPE = 1.5
 # View-weighted costs, cubic metres of earthwork per metre of line: a tunnel hides the landscape, a viaduct shows it.
 MAX_BEND = 100.             # degrees: the largest single curve in the open
-TUNNEL_BUDGET = 1000.       # metres of tunnel besides the spiral
+TUNNEL_BUDGET = 1400.       # the town station is 11 m below H2; its lower approach needs about 390 m more tunnel
 TUNNEL_COST = 10000.        # four times a 32 m deep cutting: tunnels only where nothing in the open fits
 VIADUCT_COST = 300.
 VIADUCT_RISE = 15.          # per metre of height above EMBANKMENT_HEIGHT
@@ -122,7 +124,7 @@ LOOP_RADIUS = 500.
 LOOP_GRADE = .01
 TRACK_SPACING = 4.
 LOOP_SEARCH = 240.          # seconds of timetable offset searched first when placing the loop (optimiser)
-LOOP = (4580., 4840.)       # Paul, 2026-10-14: the approved loop, kept when the profile changes
+LOOP = (4810., 5070.)       # the approved loop's same location, re-chained after the town-station approach
 LOOP_TRIES = 12             # loop windows given their own profile when placing the loop
 HEADWAY_COST = 20000.       # m3 of earthwork worth one second of headway when choosing the loop
 OFFSET_COST = 2000.         # m3 of earthwork worth one second of timetable offset when choosing the loop
@@ -139,10 +141,10 @@ CELL = 50.                  # empty-space cells
 RASTER_BOUNDS = (-1280., -1780., 4600., 6800.)    # the line's box plus VIEW_RANGE, fixed so the cache survives tuning
 
 # Tangent points between the two stations, tuned by `optimise` (python route.py --optimise prints new values). The line
-# leaves H2 north-east, enters the far hills' southern slope and climbs one turn of spiral tunnel inside it, runs north
+# leaves the town station east, enters the far hills' southern slope and climbs one turn of spiral tunnel, runs north
 # over the plateau east of the volcano and comes down through Belmonte's country. An entry (x, y, turns, radius) is the
 # spiral (see spiral_loops). FIRST and LAST are distances along the stations' axes from their centres.
-FIRST = 295.
+FIRST = 400.
 PIS = [(2300., 710.), (2170., 1580.), (2440., 2080., -1, 300.), (2490., 2345.), (2465., 3440.), (2075., 3880.)]
 LAST = 390.
 # Alternatives costed in route.json: the first study's short line round the volcano's eastern flank (v1, tunnel-heavy)
@@ -518,7 +520,8 @@ def vertical(s, zg, grade=MAX_GRADE, loop=None, spiral=None):
     s, zg = np.asarray(s, float), np.asarray(zg, float)
     length = float(s[-1])
     _, platform, _, track = zones(s, length, loop)
-    z0 = float(zg.min()) - 60.
+    datum = station_yard.floor_z() + station_yard.RAIL
+    z0 = datum + math.floor((float(zg.min()) - 60. - datum) / DZ) * DZ
     levels = z0 + DZ * np.arange(int((zg.max() + 80. - z0) / DZ))
     m = len(levels)
     ds = np.diff(s, prepend=s[0])
@@ -534,6 +537,9 @@ def vertical(s, zg, grade=MAX_GRADE, loop=None, spiral=None):
         c = cost(h, FORMATION + (TRACK_SPACING if track[i] else 0.)) * max(ds[i], 1.)
         if platform[i]:
             c = np.where(np.abs(h) <= PLATFORM_OFFSET, c, big)
+        if s[i] <= HIDAMARI.reserve[0]:
+            # A fixed station cannot follow the optimizer up or down by PLATFORM_OFFSET metres.
+            c = np.where(np.abs(levels - datum) < DZ / 2, c, big)
         if track[i]:
             c = np.where((h > -(TUNNEL_COVER + TUNNEL_BORE)) & (h <= EMBANKMENT_HEIGHT), c, big)
         return c
@@ -1141,10 +1147,16 @@ def place_loop(line, zg, grade, tries=None, every=3):
     return best[1], best[2], best[3], meet
 
 
+class InfeasibleRoute(ValueError):
+    """A studied alternative cannot meet the alignment or profile constraints."""
+
+
 def study(points=None, sampler=ground, grade=None):
     """Everything route.json holds except the views: alignment, ground, profile, loop, structures, operation. The
     grade limit is DESIGN_GRADE unless `grade` is given."""
     line = alignment(points)
+    if line is None:
+        raise InfeasibleRoute('curves do not fit the station reserves and tangent points')
     zg = np.asarray(sampler(line.x, line.y), float)
     plain = {g: vertical(line.s, zg, g, spiral=line.spiral_mask())[1] for g in (PREFERRED_GRADE, MAX_GRADE)}
     if grade is None:
@@ -1159,6 +1171,8 @@ def study(points=None, sampler=ground, grade=None):
     if rail is None and grade < MAX_GRADE:
         grade = MAX_GRADE
         loop, rail, total, meet = place_loop(line, zg, grade)
+    if rail is None:
+        raise InfeasibleRoute(f'no profile meets the fixed station height and {grade * 100:g}% grade limit')
     kind = classify(rail - zg, line.spiral_mask())
     up, down = run(line, rail, 1), run(line, rail, -1)
     centre = (loop[0] + loop[1]) / 2 if loop else math.nan
@@ -1457,20 +1471,30 @@ def main():
     report['alternatives_costed'] = {f'profile without loop at {g * 100:.1f}%': (round(c) if math.isfinite(c) else 'infeasible')
                                      for g, c in r['plain_costs'].items()}
     print('alternatives', flush=True)
-    options = [('recommended', r), (f'same line at {OPTION_GRADE * 100:.1f}%', study(grade=OPTION_GRADE))]
+    options, infeasible = [('recommended', r)], []
+
+    def alternative(name, points=None, grade=None):
+        try:
+            options.append((name, study(points, grade=grade)))
+        except InfeasibleRoute as error:
+            infeasible.append(dict(name=name, feasible=False, reason=str(error)))
+
+    alternative(f'same line at {OPTION_GRADE * 100:.1f}%', grade=OPTION_GRADE)
     global MIN_RADIUS
     for name, values in ALTERNATIVES.items():
         kept, MIN_RADIUS = MIN_RADIUS, values['min_radius']
         try:
             points = tangent_points(values['first'], values['pis'], values['last'])
-            options.append((name, study(points, grade=values['grade'])))
+            alternative(name, points, values['grade'])
         finally:
             MIN_RADIUS = kept
-    report['alternatives'] = [dict(name=name, **brief(summary(option))) for name, option in options]
+    report['alternatives'] = [dict(name=name, **brief(summary(option))) for name, option in options] + infeasible
     grade = np.r_[np.diff(rail) / np.diff(line.s), 0.]
     data = {'version': 1, 'frame': 'Blender metres, x east, y north, z up; bearings counter-clockwise from east',
             'stations': {st.name: {'centre': list(st.centre), 'bearing': st.bearing, 'platform': st.platform,
-                                   'reserve': list(st.reserve)} for st in (HIDAMARI, BELMONTE)},
+                                   'reserve': list(st.reserve),
+                                   **({'side': 'r', 'top_above_rail_m': .25 - station_yard.RAIL}
+                                      if st == HIDAMARI else {})} for st in (HIDAMARI, BELMONTE)},
             'tangent_points': [[round(float(a), 2), round(float(b), 2)] for a, b in line.points],
             'curves': [{'deflection_deg': round(math.degrees(c[0]), 2), 'radius': round(c[1], 1), 'spiral': round(c[2], 1)}
                        for c in line.curves],

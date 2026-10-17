@@ -194,7 +194,7 @@ def height(x,y):
     x,y=np.broadcast_arrays(np.asarray(x,dtype=float),np.asarray(y,dtype=float))
     from zeppelin.layout import city_pad
     base=city_pad(x,y,street_height(x,y))
-    if not x.size or np.max(x)<435 or np.min(x)>1240 or np.max(y)<-110 or np.min(y)>372:return base
+    if not x.size or np.max(x)<435 or np.min(x)>station_yard.X1+4 or np.max(y)<-110 or np.min(y)>372:return base
     shape=x.shape;xx=x.ravel();yy=y.ravel();weights=np.zeros(xx.size);targets=np.zeros(xx.size)
     coverage=np.zeros(xx.size)
     core=np.zeros(xx.size,dtype=bool);core_z=np.zeros(xx.size)
@@ -218,7 +218,10 @@ def height(x,y):
     # Overlapping shoulder blends meet without humps in the narrow side alleys.
     target=np.divide(targets,weights,out=base.ravel().copy(),where=weights>0)
     target[core]=core_z[core];strength=np.minimum(1,coverage);strength[core]=1
-    vertical=np.min(abs(xx[:,None]-np.asarray(ROAD_X)),axis=1)
+    distances=abs(xx[:,None]-np.asarray(ROAD_X))
+    lane, south, north=station_yard.LANE_BREAK
+    distances[(yy>south)&(yy<north),ROAD_X.index(lane)]=np.inf
+    vertical=np.min(distances,axis=1)
     vertical=np.where((yy>=-90)&(yy<=350),vertical,np.inf)
     road_distance=np.minimum(vertical,np.min(abs(yy[:,None]-np.asarray(ROAD_Y)),axis=1))
     # Roads occupy +/-8 m. The closest pad starts at 8.4 m; retain a smooth join.
@@ -551,8 +554,13 @@ def generate():
         put(name,0,0,0)
     end=max(world['road'],key=lambda p:p[0]);arrival=[end,[335,85,float(height(335,85))],[390,140,float(height(390,140))],[650,140,20]]
     roads=[[[float(x),float(y),float(height(x,y))] for x in np.arange(400,1251,2)] for y in ROAD_Y]
-    roads += [[[float(x),float(y),float(height(x,y))] for y in np.arange(-90,351,2) if not (x==730 and y>162)] for x in ROAD_X]
-    road_widths=[list(road_width(y=y)) for y in ROAD_Y]+[list(road_width(x=x)) for x in ROAD_X]
+    road_widths=[list(road_width(y=y)) for y in ROAD_Y]
+    lane,south,north=station_yard.LANE_BREAK
+    for x in ROAD_X:
+        spans=[(-90,south),(north,350)] if x==lane else [(-90,162 if x==730 else 350)]
+        for a,b in spans:
+            roads.append([[float(x),float(y),float(height(x,y))] for y in np.arange(a,b+1,2)])
+            road_widths.append(list(road_width(x=x)))
     # Resample approach straight segments for exact terrain-conforming strip construction.
     path=[]
     for a,b in zip(arrival,arrival[1:]):

@@ -475,8 +475,9 @@ PLATFORM = {'edge_m': 1.85, 'width_m': 4.0, 'top_above_rail_m': 1.0, 'extra_leng
 
 
 def stations(route, train, terminals):
-    """A makeshift platform on the left of the line (looking up it, toward Belmonte) at each terminus, the buffer stop
-    at the line's end and the map's arrival spot on the platform, a few metres from a first-class door."""
+    """The platform on the station's authored side (left by default), its buffer stop and map arrival near a door.
+    Hidamari's platform extends the town station at its existing floor height; Belmonte keeps the raised platform.
+    """
     samples = route['samples']
     chain = [s['s'] for s in samples]
 
@@ -490,23 +491,27 @@ def stations(route, train, terminals):
         return x, y, a['rail_z'] + f * (b['rail_z'] - a['rail_z']), dx / n, dy / n
     names = sorted(route.get('stations', {}), key=lambda k: route['stations'][k]['centre'][1])
     first = next((v for v in train['vehicles'] if v['id'] == 'first-class'), train['vehicles'][len(train['vehicles']) // 2])
-    door = next((d for d in first['doors'] if d['kind'] == 'exterior' and d['side'] == 'l'), None)
     out = []
     for index, (chainage, end) in enumerate(zip(terminals, (chain[0], chain[-1]))):
+        name = names[index] if index < len(names) else ('Hidamari', 'Belmonte')[index]
+        spec = route.get('stations', {}).get(name, {})
+        side = spec.get('side', 'l')
+        sign = -1 if side == 'r' else 1
+        door = next((d for d in first['doors'] if d['kind'] == 'exterior' and d['side'] == side), None)
         x, y, z, dx, dy = at(chainage)
-        lx, ly = -dy, dx            # the left of the line, in Blender's frame
+        lx, ly = -dy * sign, dx * sign
         length = train['length'] + PLATFORM['extra_length_m']
         middle = PLATFORM['edge_m'] + PLATFORM['width_m'] / 2
         lo = min(s['ground_z'] for s in samples if abs(s['s'] - chainage) <= length / 2 + 10)
-        top = z + PLATFORM['top_above_rail_m']
+        height = spec.get('top_above_rail_m', PLATFORM['top_above_rail_m'])
+        top = z + height
         bottom = min(lo - 1.0, top - 0.5)
         door_x = (first['offset'] + (door['collision'][0] + door['collision'][3]) / 200) if door else first['offset']
         ax, ay, az, adx, ady = at(chainage + door_x - 7.0)
-        arrival = (ax - ady * (PLATFORM['edge_m'] + 2.5), ay + adx * (PLATFORM['edge_m'] + 2.5), az + PLATFORM['top_above_rail_m'])
+        arrival = (ax - ady * sign * (PLATFORM['edge_m'] + 2.5), ay + adx * sign * (PLATFORM['edge_m'] + 2.5), az + height)
         ex, ey, ez, edx, edy = at(end)
-        name = names[index] if index < len(names) else ('Hidamari', 'Belmonte')[index]
         out.append({
-            'key': name.lower() + '_station', 'name': 'Gare de ' + name, 'chainage': chainage, 'side': 'l',
+            'key': name.lower() + '_station', 'name': 'Gare de ' + name, 'chainage': chainage, 'side': side,
             'platform': {'centre': to_ue(x + lx * middle, y + ly * middle, (top + bottom) / 2),
                          'yaw': round(-math.degrees(math.atan2(dy, dx)), 3),
                          'size': [round(length * 100, 1), round(PLATFORM['width_m'] * 100, 1), round((top - bottom) * 100, 1)]},

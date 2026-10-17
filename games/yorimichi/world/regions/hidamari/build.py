@@ -442,7 +442,6 @@ def main():
     builders['HD_Graves']=temple_precinct.graves
     builders['HD_Precinct']=lambda:temple_precinct.precinct(M('HD_Precinct'),height)
     builders['HD_StationYard']=lambda:station_yard.yard(M('HD_StationYard'),height)
-    builders['HD_Railcar']=station_yard.railcar
     builders['HD_ParkGrounds']=lambda:park_grounds.grounds(M('HD_ParkGrounds'),height)
     builders['HD_Arrival']=lambda:arrival.arrival(M('HD_Arrival'),height)
     # Reference-led kit modules replace legacy shop variants by mesh name.

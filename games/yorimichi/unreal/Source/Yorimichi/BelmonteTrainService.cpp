@@ -287,9 +287,11 @@ void ABelmonteTrainService::BuildStations(const TSharedPtr<FJsonObject>& Root)
         FStation& Station = Stations.AddDefaulted_GetRef();
         Station.Key = S->GetStringField(TEXT("key")); Station.Name = S->GetStringField(TEXT("name"));
         Station.Chainage = S->GetNumberField(TEXT("chainage"));
+        FString Side;
+        if (S->TryGetStringField(TEXT("side"), Side)) Station.bLeft = Side != TEXT("r");
         const auto Arrival = S->GetObjectField(TEXT("arrival"));
         Station.Arrival = JsonVector(Arrival->GetArrayField(TEXT("location"))); Station.Yaw = float(Arrival->GetNumberField(TEXT("yaw")));
-        // A makeshift platform (no station building yet) and the buffer stop at the end of the line.
+        // Extend Hidamari's authored platform; Belmonte has a freestanding platform. Both use their station's side.
         if (Cube)
         {
             Parts.Add(Block(this, RootComponent, Station.Key + TEXT("_Platform"), Cube, S->GetObjectField(TEXT("platform")), FLinearColor(.42f, .40f, .36f)));
@@ -394,7 +396,7 @@ bool ABelmonteTrainService::Initialize(const FString& Path)
                     Door.Id = D->GetStringField(TEXT("id")); Door.Kind = D->GetStringField(TEXT("kind"));
                     Door.bStation = D->GetStringField(TEXT("opens")) == TEXT("station");
                     Door.bLocked = D->GetBoolField(TEXT("locked"));
-                    Door.bPlatformSide = D->GetStringField(TEXT("side")) == TEXT("l");
+                    Door.bLeft = D->GetStringField(TEXT("side")) == TEXT("l");
                     for (const auto& H : D->GetArrayField(TEXT("handles"))) Door.Handles.Add(JsonVector(H->AsArray()));
                     const FBox Box = JsonBox(D->GetArrayField(TEXT("collision")));
                     auto* Shape = NewObject<UBoxComponent>(this, *FString::Printf(TEXT("%s_Door_%s"), *Name, *Door.Id));
@@ -538,8 +540,12 @@ void ABelmonteTrainService::UpdateDoors(double Time, float Dt)
 {
     for (int32 Train = 0; Train < Line.Trains.Num(); ++Train) TrainAtStation[Train] = AtStation(Train, Time);
     for (FVehicle& V : Vehicles)
+    {
+        const double S = Line.Chainage(V.Train, Time);
+        const FStation* Station = Stations.FindByPredicate([S](const FStation& Stop) { return FMath::Abs(Stop.Chainage - S) < 5.; });
         for (FDoor& Door : V.Doors)
         {
+            Door.bPlatformSide = Station && Door.bLeft == Station->bLeft;
             // A door a rider is stepping through stays open until they are through (the move takes about two seconds;
             // AtStation already ends eight seconds before departure).
             if (Door.bStation && !Door.bBusy && (!TrainAtStation[V.Train] || !Door.bPlatformSide)) Door.bOpen = false;
@@ -563,6 +569,7 @@ void ABelmonteTrainService::UpdateDoors(double Time, float Dt)
                 }
             }
         }
+    }
 }
 
 ABelmonteTrainService::FRider& ABelmonteTrainService::RiderFor(AWandererCharacter* Character)
@@ -1282,7 +1289,8 @@ bool ABelmonteTrainService::GoToStation(const FString& Where, bool bWaitForTrain
                 { Wait = T - Now; break; }
         if (Wait > 0.) { DevOffset += Wait - 2.; PublishNetworkState(); }
     }
-    const bool bMoved = Player->TravelTo(Station->Arrival, Station->Yaw, TEXT("train station"), 3000.f);
+    // The arrival record is at platform height. Search below its canopy, rather than landing on the roof.
+    const bool bMoved = Player->TravelTo(Station->Arrival, Station->Yaw, TEXT("train station"), 200.f);
     UE_LOG(LogTemp, Display, TEXT("TRAIN GO %s moved=%d skipped=%.0fs at=(%.0f,%.0f,%.0f)"), *Station->Name, bMoved, FMath::Max(Wait, 0.), Station->Arrival.X, Station->Arrival.Y, Station->Arrival.Z);
     PlaceVehicles(ServiceTime(), true);
     return bMoved;

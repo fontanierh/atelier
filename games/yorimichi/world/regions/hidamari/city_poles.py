@@ -15,7 +15,7 @@ SIDE_X = 1           # the north-south streets' on the east one
 JUNCTION = 11.       # metres from a crossing street's centre line kept free of poles
 KEEP_OUT = [(589, 727, 61, 89),        # the covered arcade (x0, x1, y0, y1)
             (655, 810, 118, 222),      # the clock square
-            (1150, 1225, 270, 315)]    # the station square
+            (1128, 1300, 270, 322)]    # the station square, extended platform and open railway approach
 CLEAR = 1.6          # metres to any lamp, planter, bench, bollard, street prop or tree trunk
 ANCHORS = [(0., -1.05, 10.53), (0., 0., 10.53), (0., 1.05, 10.53)]   # the top crossarm's insulators (pole frame)
 SAG = .035           # of the span

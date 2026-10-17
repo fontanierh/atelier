@@ -4,6017 +4,6201 @@
  "samples": [
   {
    "s": 0.0,
-   "x": 1265.39,
-   "y": 327.48,
-   "rail_z": 42.0,
-   "ground_z": 36.0,
-   "class": "embankment"
+   "x": 1128.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 33.735,
+   "class": "cutting"
   },
   {
    "s": 10.0,
-   "x": 1273.35,
-   "y": 333.54,
-   "rail_z": 42.0,
-   "ground_z": 36.0,
+   "x": 1138.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 20.0,
-   "x": 1281.31,
-   "y": 339.59,
-   "rail_z": 42.0,
-   "ground_z": 36.0,
+   "x": 1148.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 30.0,
-   "x": 1289.27,
-   "y": 345.64,
-   "rail_z": 42.0,
-   "ground_z": 36.252,
+   "x": 1158.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 40.0,
-   "x": 1297.23,
-   "y": 351.69,
-   "rail_z": 42.0,
-   "ground_z": 36.831,
+   "x": 1168.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 50.0,
-   "x": 1305.19,
-   "y": 357.74,
-   "rail_z": 42.0,
-   "ground_z": 37.41,
+   "x": 1178.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 60.0,
-   "x": 1313.16,
-   "y": 363.79,
-   "rail_z": 42.0,
-   "ground_z": 37.989,
+   "x": 1188.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 70.0,
-   "x": 1321.12,
-   "y": 369.85,
-   "rail_z": 42.0,
-   "ground_z": 38.568,
+   "x": 1198.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 80.0,
-   "x": 1329.08,
-   "y": 375.9,
-   "rail_z": 42.0,
-   "ground_z": 39.147,
+   "x": 1208.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 90.0,
-   "x": 1337.04,
-   "y": 381.95,
-   "rail_z": 42.0,
-   "ground_z": 39.726,
+   "x": 1218.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 100.0,
-   "x": 1345.0,
-   "y": 388.0,
-   "rail_z": 42.0,
-   "ground_z": 40.304,
+   "x": 1228.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 110.0,
-   "x": 1352.96,
-   "y": 394.05,
-   "rail_z": 42.0,
-   "ground_z": 40.883,
+   "x": 1238.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 120.0,
-   "x": 1360.92,
-   "y": 400.1,
-   "rail_z": 42.0,
-   "ground_z": 41.462,
+   "x": 1248.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
    "class": "embankment"
   },
   {
    "s": 130.0,
-   "x": 1368.88,
-   "y": 406.15,
-   "rail_z": 42.0,
-   "ground_z": 42.041,
-   "class": "cutting"
+   "x": 1258.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
+   "class": "embankment"
   },
   {
    "s": 140.0,
-   "x": 1376.84,
-   "y": 412.21,
-   "rail_z": 42.0,
-   "ground_z": 42.62,
-   "class": "cutting"
+   "x": 1268.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
+   "class": "embankment"
   },
   {
    "s": 150.0,
-   "x": 1384.81,
-   "y": 418.26,
-   "rail_z": 42.0,
-   "ground_z": 43.199,
-   "class": "cutting"
+   "x": 1278.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
+   "class": "embankment"
   },
   {
    "s": 160.0,
-   "x": 1392.77,
-   "y": 424.31,
-   "rail_z": 42.0,
-   "ground_z": 43.777,
-   "class": "cutting"
+   "x": 1288.0,
+   "y": 301.8,
+   "rail_z": 30.97,
+   "ground_z": 30.25,
+   "class": "embankment"
   },
   {
    "s": 170.0,
-   "x": 1400.73,
-   "y": 430.36,
-   "rail_z": 42.0,
-   "ground_z": 44.356,
-   "class": "cutting"
+   "x": 1298.0,
+   "y": 301.8,
+   "rail_z": 31.02,
+   "ground_z": 30.25,
+   "class": "embankment"
   },
   {
    "s": 180.0,
-   "x": 1408.69,
-   "y": 436.41,
-   "rail_z": 42.0,
-   "ground_z": 44.935,
+   "x": 1308.0,
+   "y": 301.8,
+   "rail_z": 31.12,
+   "ground_z": 33.735,
    "class": "cutting"
   },
   {
    "s": 190.0,
-   "x": 1416.65,
-   "y": 442.46,
-   "rail_z": 42.0,
-   "ground_z": 45.514,
+   "x": 1318.0,
+   "y": 301.8,
+   "rail_z": 31.27,
+   "ground_z": 33.735,
    "class": "cutting"
   },
   {
    "s": 200.0,
-   "x": 1424.61,
-   "y": 448.52,
-   "rail_z": 42.0,
-   "ground_z": 41.043,
-   "class": "embankment"
+   "x": 1328.0,
+   "y": 301.8,
+   "rail_z": 31.47,
+   "ground_z": 33.735,
+   "class": "cutting"
   },
   {
    "s": 210.0,
-   "x": 1432.57,
-   "y": 454.57,
-   "rail_z": 42.05,
-   "ground_z": 41.373,
-   "class": "embankment"
+   "x": 1338.0,
+   "y": 301.81,
+   "rail_z": 31.72,
+   "ground_z": 33.736,
+   "class": "cutting"
   },
   {
    "s": 220.0,
-   "x": 1440.54,
-   "y": 460.6,
-   "rail_z": 42.15,
-   "ground_z": 41.724,
-   "class": "embankment"
+   "x": 1348.0,
+   "y": 301.84,
+   "rail_z": 32.02,
+   "ground_z": 33.738,
+   "class": "cutting"
   },
   {
    "s": 230.0,
-   "x": 1448.54,
-   "y": 466.61,
-   "rail_z": 42.3,
-   "ground_z": 42.122,
-   "class": "embankment"
+   "x": 1358.0,
+   "y": 301.91,
+   "rail_z": 32.37,
+   "ground_z": 33.744,
+   "class": "cutting"
   },
   {
    "s": 240.0,
-   "x": 1456.56,
-   "y": 472.58,
-   "rail_z": 42.5,
-   "ground_z": 42.903,
+   "x": 1368.0,
+   "y": 302.02,
+   "rail_z": 32.77,
+   "ground_z": 33.755,
    "class": "cutting"
   },
   {
    "s": 250.0,
-   "x": 1464.63,
-   "y": 478.49,
-   "rail_z": 42.75,
-   "ground_z": 43.689,
+   "x": 1378.0,
+   "y": 302.2,
+   "rail_z": 33.17,
+   "ground_z": 33.771,
    "class": "cutting"
   },
   {
    "s": 260.0,
-   "x": 1472.75,
-   "y": 484.32,
-   "rail_z": 43.05,
-   "ground_z": 44.478,
+   "x": 1387.99,
+   "y": 302.46,
+   "rail_z": 33.57,
+   "ground_z": 33.794,
    "class": "cutting"
   },
   {
    "s": 270.0,
-   "x": 1480.93,
-   "y": 490.07,
-   "rail_z": 43.4,
-   "ground_z": 45.27,
-   "class": "cutting"
+   "x": 1397.99,
+   "y": 302.81,
+   "rail_z": 33.97,
+   "ground_z": 33.825,
+   "class": "embankment"
   },
   {
    "s": 280.0,
-   "x": 1489.19,
-   "y": 495.71,
-   "rail_z": 43.8,
-   "ground_z": 46.066,
-   "class": "cutting"
+   "x": 1407.98,
+   "y": 303.26,
+   "rail_z": 34.37,
+   "ground_z": 33.866,
+   "class": "embankment"
   },
   {
    "s": 290.0,
-   "x": 1497.53,
-   "y": 501.23,
-   "rail_z": 44.2,
-   "ground_z": 46.865,
-   "class": "cutting"
+   "x": 1417.96,
+   "y": 303.82,
+   "rail_z": 34.77,
+   "ground_z": 33.917,
+   "class": "embankment"
   },
   {
    "s": 300.0,
-   "x": 1505.95,
-   "y": 506.62,
-   "rail_z": 44.6,
-   "ground_z": 47.647,
-   "class": "cutting"
+   "x": 1427.94,
+   "y": 304.5,
+   "rail_z": 35.17,
+   "ground_z": 28.358,
+   "class": "embankment"
   },
   {
    "s": 310.0,
-   "x": 1514.45,
-   "y": 511.89,
-   "rail_z": 45.0,
-   "ground_z": 48.382,
-   "class": "cutting"
+   "x": 1437.91,
+   "y": 305.28,
+   "rail_z": 35.57,
+   "ground_z": 28.568,
+   "class": "embankment"
   },
   {
    "s": 320.0,
-   "x": 1523.03,
-   "y": 517.03,
-   "rail_z": 45.4,
-   "ground_z": 49.406,
-   "class": "cutting"
+   "x": 1447.87,
+   "y": 306.18,
+   "rail_z": 35.97,
+   "ground_z": 28.787,
+   "class": "embankment"
   },
   {
    "s": 330.0,
-   "x": 1531.69,
-   "y": 522.04,
-   "rail_z": 45.8,
-   "ground_z": 50.457,
-   "class": "cutting"
+   "x": 1457.82,
+   "y": 307.18,
+   "rail_z": 36.37,
+   "ground_z": 29.47,
+   "class": "embankment"
   },
   {
    "s": 340.0,
-   "x": 1540.42,
-   "y": 526.91,
-   "rail_z": 46.2,
-   "ground_z": 51.466,
-   "class": "cutting"
+   "x": 1467.75,
+   "y": 308.3,
+   "rail_z": 36.77,
+   "ground_z": 30.187,
+   "class": "embankment"
   },
   {
    "s": 350.0,
-   "x": 1549.22,
-   "y": 531.66,
-   "rail_z": 46.6,
-   "ground_z": 52.425,
-   "class": "cutting"
+   "x": 1477.68,
+   "y": 309.53,
+   "rail_z": 37.17,
+   "ground_z": 30.913,
+   "class": "embankment"
   },
   {
    "s": 360.0,
-   "x": 1558.09,
-   "y": 536.27,
-   "rail_z": 47.0,
-   "ground_z": 53.329,
-   "class": "cutting"
+   "x": 1487.59,
+   "y": 310.87,
+   "rail_z": 37.57,
+   "ground_z": 31.648,
+   "class": "embankment"
   },
   {
    "s": 370.0,
-   "x": 1567.03,
-   "y": 540.75,
-   "rail_z": 47.4,
-   "ground_z": 54.176,
-   "class": "cutting"
+   "x": 1497.48,
+   "y": 312.31,
+   "rail_z": 37.97,
+   "ground_z": 32.39,
+   "class": "embankment"
   },
   {
    "s": 380.0,
-   "x": 1576.04,
-   "y": 545.09,
-   "rail_z": 47.8,
-   "ground_z": 54.965,
-   "class": "cutting"
+   "x": 1507.36,
+   "y": 313.87,
+   "rail_z": 38.37,
+   "ground_z": 33.141,
+   "class": "embankment"
   },
   {
    "s": 390.0,
-   "x": 1585.11,
-   "y": 549.3,
-   "rail_z": 48.2,
-   "ground_z": 55.741,
-   "class": "cutting"
+   "x": 1517.22,
+   "y": 315.54,
+   "rail_z": 38.77,
+   "ground_z": 33.962,
+   "class": "embankment"
   },
   {
    "s": 400.0,
-   "x": 1594.25,
-   "y": 553.37,
-   "rail_z": 48.6,
-   "ground_z": 56.633,
-   "class": "cutting"
+   "x": 1527.06,
+   "y": 317.32,
+   "rail_z": 39.17,
+   "ground_z": 35.161,
+   "class": "embankment"
   },
   {
    "s": 410.0,
-   "x": 1603.44,
-   "y": 557.3,
-   "rail_z": 49.0,
-   "ground_z": 57.448,
-   "class": "cutting"
+   "x": 1536.88,
+   "y": 319.2,
+   "rail_z": 39.57,
+   "ground_z": 36.366,
+   "class": "embankment"
   },
   {
    "s": 420.0,
-   "x": 1612.69,
-   "y": 561.1,
-   "rail_z": 49.4,
-   "ground_z": 58.19,
-   "class": "cutting"
+   "x": 1546.68,
+   "y": 321.2,
+   "rail_z": 39.97,
+   "ground_z": 37.578,
+   "class": "embankment"
   },
   {
    "s": 430.0,
-   "x": 1622.0,
-   "y": 564.75,
-   "rail_z": 49.8,
-   "ground_z": 58.856,
-   "class": "cutting"
+   "x": 1556.46,
+   "y": 323.3,
+   "rail_z": 40.37,
+   "ground_z": 38.797,
+   "class": "embankment"
   },
   {
    "s": 440.0,
-   "x": 1631.36,
-   "y": 568.26,
-   "rail_z": 50.2,
-   "ground_z": 59.44,
-   "class": "cutting"
+   "x": 1566.21,
+   "y": 325.51,
+   "rail_z": 40.77,
+   "ground_z": 40.023,
+   "class": "embankment"
   },
   {
    "s": 450.0,
-   "x": 1640.78,
-   "y": 571.64,
-   "rail_z": 50.6,
-   "ground_z": 59.962,
+   "x": 1575.94,
+   "y": 327.83,
+   "rail_z": 41.17,
+   "ground_z": 41.254,
    "class": "cutting"
   },
   {
    "s": 460.0,
-   "x": 1650.24,
-   "y": 574.87,
-   "rail_z": 51.0,
-   "ground_z": 60.43,
+   "x": 1585.64,
+   "y": 330.26,
+   "rail_z": 41.57,
+   "ground_z": 42.585,
    "class": "cutting"
   },
   {
    "s": 470.0,
-   "x": 1659.75,
-   "y": 577.95,
-   "rail_z": 51.4,
-   "ground_z": 60.946,
+   "x": 1595.31,
+   "y": 332.8,
+   "rail_z": 41.97,
+   "ground_z": 44.192,
    "class": "cutting"
   },
   {
    "s": 480.0,
-   "x": 1669.31,
-   "y": 580.9,
-   "rail_z": 51.8,
-   "ground_z": 61.417,
+   "x": 1604.95,
+   "y": 335.44,
+   "rail_z": 42.37,
+   "ground_z": 45.804,
    "class": "cutting"
   },
   {
    "s": 490.0,
-   "x": 1678.91,
-   "y": 583.7,
-   "rail_z": 52.2,
-   "ground_z": 61.836,
+   "x": 1614.57,
+   "y": 338.19,
+   "rail_z": 42.77,
+   "ground_z": 47.42,
    "class": "cutting"
   },
   {
    "s": 500.0,
-   "x": 1688.55,
-   "y": 586.35,
-   "rail_z": 52.6,
-   "ground_z": 62.232,
+   "x": 1624.15,
+   "y": 341.05,
+   "rail_z": 43.17,
+   "ground_z": 49.042,
    "class": "cutting"
   },
   {
    "s": 510.0,
-   "x": 1698.23,
-   "y": 588.87,
-   "rail_z": 53.0,
-   "ground_z": 62.605,
+   "x": 1633.7,
+   "y": 344.01,
+   "rail_z": 43.57,
+   "ground_z": 50.667,
    "class": "cutting"
   },
   {
    "s": 520.0,
-   "x": 1707.94,
-   "y": 591.24,
-   "rail_z": 53.4,
-   "ground_z": 62.974,
+   "x": 1643.22,
+   "y": 347.08,
+   "rail_z": 43.97,
+   "ground_z": 52.297,
    "class": "cutting"
   },
   {
    "s": 530.0,
-   "x": 1717.68,
-   "y": 593.51,
-   "rail_z": 53.8,
-   "ground_z": 63.343,
+   "x": 1652.7,
+   "y": 350.25,
+   "rail_z": 44.37,
+   "ground_z": 53.985,
    "class": "cutting"
   },
   {
    "s": 540.0,
-   "x": 1727.44,
-   "y": 595.67,
-   "rail_z": 54.2,
-   "ground_z": 63.749,
+   "x": 1662.15,
+   "y": 353.53,
+   "rail_z": 44.77,
+   "ground_z": 55.859,
    "class": "cutting"
   },
   {
    "s": 550.0,
-   "x": 1737.22,
-   "y": 597.76,
-   "rail_z": 54.6,
-   "ground_z": 64.157,
-   "class": "cutting"
+   "x": 1671.56,
+   "y": 356.92,
+   "rail_z": 45.17,
+   "ground_z": 57.736,
+   "class": "deep cutting"
   },
   {
    "s": 560.0,
-   "x": 1747.02,
-   "y": 599.79,
-   "rail_z": 55.0,
-   "ground_z": 64.557,
-   "class": "cutting"
+   "x": 1680.93,
+   "y": 360.41,
+   "rail_z": 45.57,
+   "ground_z": 59.616,
+   "class": "deep cutting"
   },
   {
    "s": 570.0,
-   "x": 1756.82,
-   "y": 601.77,
-   "rail_z": 55.4,
-   "ground_z": 64.949,
-   "class": "cutting"
+   "x": 1690.26,
+   "y": 364.0,
+   "rail_z": 45.97,
+   "ground_z": 61.499,
+   "class": "deep cutting"
   },
   {
    "s": 580.0,
-   "x": 1766.62,
-   "y": 603.73,
-   "rail_z": 55.8,
-   "ground_z": 65.323,
-   "class": "cutting"
+   "x": 1699.56,
+   "y": 367.7,
+   "rail_z": 46.37,
+   "ground_z": 63.384,
+   "class": "deep cutting"
   },
   {
    "s": 590.0,
-   "x": 1776.43,
-   "y": 605.69,
-   "rail_z": 56.2,
-   "ground_z": 65.666,
-   "class": "cutting"
+   "x": 1708.81,
+   "y": 371.49,
+   "rail_z": 46.77,
+   "ground_z": 65.273,
+   "class": "deep cutting"
   },
   {
    "s": 600.0,
-   "x": 1786.24,
-   "y": 607.64,
-   "rail_z": 56.6,
-   "ground_z": 65.986,
-   "class": "cutting"
+   "x": 1718.01,
+   "y": 375.4,
+   "rail_z": 47.17,
+   "ground_z": 67.167,
+   "class": "deep cutting"
   },
   {
    "s": 610.0,
-   "x": 1796.05,
-   "y": 609.59,
-   "rail_z": 57.0,
-   "ground_z": 66.264,
-   "class": "cutting"
+   "x": 1727.18,
+   "y": 379.4,
+   "rail_z": 47.57,
+   "ground_z": 69.098,
+   "class": "deep cutting"
   },
   {
    "s": 620.0,
-   "x": 1805.85,
-   "y": 611.56,
-   "rail_z": 57.4,
-   "ground_z": 66.497,
-   "class": "cutting"
+   "x": 1736.29,
+   "y": 383.51,
+   "rail_z": 47.97,
+   "ground_z": 71.023,
+   "class": "deep cutting"
   },
   {
    "s": 630.0,
-   "x": 1815.65,
-   "y": 613.56,
-   "rail_z": 57.8,
-   "ground_z": 66.65,
-   "class": "cutting"
+   "x": 1745.37,
+   "y": 387.71,
+   "rail_z": 48.37,
+   "ground_z": 72.944,
+   "class": "deep cutting"
   },
   {
    "s": 640.0,
-   "x": 1825.44,
-   "y": 615.62,
-   "rail_z": 58.2,
-   "ground_z": 66.711,
-   "class": "cutting"
+   "x": 1754.39,
+   "y": 392.02,
+   "rail_z": 48.77,
+   "ground_z": 74.858,
+   "class": "tunnel"
   },
   {
    "s": 650.0,
-   "x": 1835.2,
-   "y": 617.76,
-   "rail_z": 58.6,
-   "ground_z": 66.767,
-   "class": "cutting"
+   "x": 1763.37,
+   "y": 396.43,
+   "rail_z": 49.17,
+   "ground_z": 76.767,
+   "class": "tunnel"
   },
   {
    "s": 660.0,
-   "x": 1844.95,
-   "y": 620.0,
-   "rail_z": 59.0,
-   "ground_z": 66.787,
-   "class": "cutting"
+   "x": 1772.3,
+   "y": 400.93,
+   "rail_z": 49.57,
+   "ground_z": 78.67,
+   "class": "tunnel"
   },
   {
    "s": 670.0,
-   "x": 1854.66,
-   "y": 622.38,
-   "rail_z": 59.4,
-   "ground_z": 66.838,
-   "class": "cutting"
+   "x": 1781.17,
+   "y": 405.54,
+   "rail_z": 49.97,
+   "ground_z": 80.566,
+   "class": "tunnel"
   },
   {
    "s": 680.0,
-   "x": 1864.33,
-   "y": 624.91,
-   "rail_z": 59.8,
-   "ground_z": 66.843,
-   "class": "cutting"
+   "x": 1790.0,
+   "y": 410.24,
+   "rail_z": 50.37,
+   "ground_z": 82.405,
+   "class": "tunnel"
   },
   {
    "s": 690.0,
-   "x": 1873.96,
-   "y": 627.62,
-   "rail_z": 60.2,
-   "ground_z": 66.907,
-   "class": "cutting"
+   "x": 1798.77,
+   "y": 415.04,
+   "rail_z": 50.77,
+   "ground_z": 84.197,
+   "class": "tunnel"
   },
   {
    "s": 700.0,
-   "x": 1883.53,
-   "y": 630.53,
-   "rail_z": 60.6,
-   "ground_z": 66.965,
-   "class": "cutting"
+   "x": 1807.51,
+   "y": 419.91,
+   "rail_z": 51.17,
+   "ground_z": 85.985,
+   "class": "tunnel"
   },
   {
    "s": 710.0,
-   "x": 1893.04,
-   "y": 633.62,
-   "rail_z": 61.0,
-   "ground_z": 67.086,
-   "class": "cutting"
+   "x": 1816.2,
+   "y": 424.84,
+   "rail_z": 51.57,
+   "ground_z": 87.768,
+   "class": "tunnel"
   },
   {
    "s": 720.0,
-   "x": 1902.49,
-   "y": 636.9,
-   "rail_z": 61.4,
-   "ground_z": 67.24,
-   "class": "cutting"
+   "x": 1824.87,
+   "y": 429.83,
+   "rail_z": 51.97,
+   "ground_z": 89.547,
+   "class": "tunnel"
   },
   {
    "s": 730.0,
-   "x": 1911.86,
-   "y": 640.37,
-   "rail_z": 61.8,
-   "ground_z": 67.411,
-   "class": "cutting"
+   "x": 1833.51,
+   "y": 434.86,
+   "rail_z": 52.37,
+   "ground_z": 91.322,
+   "class": "tunnel"
   },
   {
    "s": 740.0,
-   "x": 1921.17,
-   "y": 644.02,
-   "rail_z": 62.2,
-   "ground_z": 67.62,
-   "class": "cutting"
+   "x": 1842.14,
+   "y": 439.92,
+   "rail_z": 52.77,
+   "ground_z": 93.055,
+   "class": "tunnel"
   },
   {
    "s": 750.0,
-   "x": 1930.41,
-   "y": 647.86,
-   "rail_z": 62.6,
-   "ground_z": 67.801,
-   "class": "cutting"
+   "x": 1850.75,
+   "y": 445.0,
+   "rail_z": 53.17,
+   "ground_z": 94.74,
+   "class": "tunnel"
   },
   {
    "s": 760.0,
-   "x": 1939.56,
-   "y": 651.89,
-   "rail_z": 63.0,
-   "ground_z": 67.93,
-   "class": "cutting"
+   "x": 1859.37,
+   "y": 450.08,
+   "rail_z": 53.57,
+   "ground_z": 96.338,
+   "class": "tunnel"
   },
   {
    "s": 770.0,
-   "x": 1948.63,
-   "y": 656.09,
-   "rail_z": 63.4,
-   "ground_z": 67.992,
-   "class": "cutting"
+   "x": 1867.98,
+   "y": 455.16,
+   "rail_z": 53.97,
+   "ground_z": 97.92,
+   "class": "tunnel"
   },
   {
    "s": 780.0,
-   "x": 1957.62,
-   "y": 660.48,
-   "rail_z": 63.8,
-   "ground_z": 67.836,
-   "class": "cutting"
+   "x": 1876.59,
+   "y": 460.24,
+   "rail_z": 54.37,
+   "ground_z": 99.513,
+   "class": "tunnel"
   },
   {
    "s": 790.0,
-   "x": 1966.52,
-   "y": 665.04,
-   "rail_z": 64.2,
-   "ground_z": 67.268,
-   "class": "cutting"
+   "x": 1885.2,
+   "y": 465.33,
+   "rail_z": 54.77,
+   "ground_z": 101.117,
+   "class": "tunnel"
   },
   {
    "s": 800.0,
-   "x": 1975.32,
-   "y": 669.79,
-   "rail_z": 64.6,
-   "ground_z": 66.361,
-   "class": "cutting"
+   "x": 1893.79,
+   "y": 470.45,
+   "rail_z": 55.17,
+   "ground_z": 102.731,
+   "class": "tunnel"
   },
   {
    "s": 810.0,
-   "x": 1984.03,
-   "y": 674.7,
-   "rail_z": 65.0,
-   "ground_z": 65.22,
-   "class": "cutting"
+   "x": 1902.36,
+   "y": 475.6,
+   "rail_z": 55.57,
+   "ground_z": 104.356,
+   "class": "tunnel"
   },
   {
    "s": 820.0,
-   "x": 1992.64,
-   "y": 679.79,
-   "rail_z": 65.4,
-   "ground_z": 64.056,
-   "class": "embankment"
+   "x": 1910.89,
+   "y": 480.82,
+   "rail_z": 55.97,
+   "ground_z": 105.99,
+   "class": "tunnel"
   },
   {
    "s": 830.0,
-   "x": 2001.14,
-   "y": 685.05,
-   "rail_z": 65.8,
-   "ground_z": 62.964,
-   "class": "embankment"
+   "x": 1919.38,
+   "y": 486.1,
+   "rail_z": 56.37,
+   "ground_z": 107.633,
+   "class": "tunnel"
   },
   {
    "s": 840.0,
-   "x": 2009.54,
-   "y": 690.48,
-   "rail_z": 66.2,
-   "ground_z": 61.971,
-   "class": "embankment"
+   "x": 1927.82,
+   "y": 491.47,
+   "rail_z": 56.77,
+   "ground_z": 109.295,
+   "class": "tunnel"
   },
   {
    "s": 850.0,
-   "x": 2017.83,
-   "y": 696.07,
-   "rail_z": 66.6,
-   "ground_z": 61.218,
-   "class": "embankment"
+   "x": 1936.19,
+   "y": 496.95,
+   "rail_z": 57.17,
+   "ground_z": 110.967,
+   "class": "tunnel"
   },
   {
    "s": 860.0,
-   "x": 2026.0,
-   "y": 701.83,
-   "rail_z": 67.0,
-   "ground_z": 60.821,
-   "class": "embankment"
+   "x": 1944.48,
+   "y": 502.54,
+   "rail_z": 57.57,
+   "ground_z": 112.572,
+   "class": "tunnel"
   },
   {
    "s": 870.0,
-   "x": 2034.06,
-   "y": 707.75,
-   "rail_z": 67.4,
-   "ground_z": 60.871,
-   "class": "embankment"
+   "x": 1952.69,
+   "y": 508.25,
+   "rail_z": 57.97,
+   "ground_z": 113.9,
+   "class": "tunnel"
   },
   {
    "s": 880.0,
-   "x": 2042.0,
-   "y": 713.84,
-   "rail_z": 67.8,
-   "ground_z": 61.429,
-   "class": "embankment"
+   "x": 1960.81,
+   "y": 514.08,
+   "rail_z": 58.37,
+   "ground_z": 114.833,
+   "class": "tunnel"
   },
   {
    "s": 890.0,
-   "x": 2049.81,
-   "y": 720.07,
-   "rail_z": 68.2,
-   "ground_z": 62.49,
-   "class": "embankment"
+   "x": 1968.84,
+   "y": 520.03,
+   "rail_z": 58.77,
+   "ground_z": 115.34,
+   "class": "tunnel"
   },
   {
    "s": 900.0,
-   "x": 2057.5,
-   "y": 726.47,
-   "rail_z": 68.6,
-   "ground_z": 64.058,
-   "class": "embankment"
+   "x": 1976.79,
+   "y": 526.1,
+   "rail_z": 59.17,
+   "ground_z": 115.349,
+   "class": "tunnel"
   },
   {
    "s": 910.0,
-   "x": 2065.06,
-   "y": 733.01,
-   "rail_z": 69.0,
-   "ground_z": 65.988,
-   "class": "embankment"
+   "x": 1984.65,
+   "y": 532.29,
+   "rail_z": 59.57,
+   "ground_z": 114.906,
+   "class": "tunnel"
   },
   {
    "s": 920.0,
-   "x": 2072.49,
-   "y": 739.71,
-   "rail_z": 69.4,
-   "ground_z": 68.206,
-   "class": "embankment"
+   "x": 1992.41,
+   "y": 538.59,
+   "rail_z": 59.97,
+   "ground_z": 113.985,
+   "class": "tunnel"
   },
   {
    "s": 930.0,
-   "x": 2079.78,
-   "y": 746.55,
-   "rail_z": 69.8,
-   "ground_z": 70.52,
-   "class": "cutting"
+   "x": 2000.09,
+   "y": 545.0,
+   "rail_z": 60.37,
+   "ground_z": 112.594,
+   "class": "tunnel"
   },
   {
    "s": 940.0,
-   "x": 2086.94,
-   "y": 753.54,
-   "rail_z": 70.2,
-   "ground_z": 72.64,
-   "class": "cutting"
+   "x": 2007.66,
+   "y": 551.53,
+   "rail_z": 60.77,
+   "ground_z": 110.681,
+   "class": "tunnel"
   },
   {
    "s": 950.0,
-   "x": 2093.95,
-   "y": 760.66,
-   "rail_z": 70.6,
-   "ground_z": 74.296,
-   "class": "cutting"
+   "x": 2015.14,
+   "y": 558.17,
+   "rail_z": 61.17,
+   "ground_z": 108.336,
+   "class": "tunnel"
   },
   {
    "s": 960.0,
-   "x": 2100.82,
-   "y": 767.93,
-   "rail_z": 71.0,
-   "ground_z": 75.372,
-   "class": "cutting"
+   "x": 2022.52,
+   "y": 564.92,
+   "rail_z": 61.57,
+   "ground_z": 105.57,
+   "class": "tunnel"
   },
   {
    "s": 970.0,
-   "x": 2107.55,
-   "y": 775.33,
-   "rail_z": 71.4,
-   "ground_z": 75.897,
-   "class": "cutting"
+   "x": 2029.8,
+   "y": 571.77,
+   "rail_z": 61.97,
+   "ground_z": 102.369,
+   "class": "tunnel"
   },
   {
    "s": 980.0,
-   "x": 2114.12,
-   "y": 782.86,
-   "rail_z": 71.8,
-   "ground_z": 75.946,
-   "class": "cutting"
+   "x": 2036.98,
+   "y": 578.73,
+   "rail_z": 62.37,
+   "ground_z": 98.775,
+   "class": "tunnel"
   },
   {
    "s": 990.0,
-   "x": 2120.55,
-   "y": 790.53,
-   "rail_z": 72.2,
-   "ground_z": 75.856,
-   "class": "cutting"
+   "x": 2044.06,
+   "y": 585.8,
+   "rail_z": 62.77,
+   "ground_z": 94.808,
+   "class": "tunnel"
   },
   {
    "s": 1000.0,
-   "x": 2126.81,
-   "y": 798.32,
-   "rail_z": 72.6,
-   "ground_z": 75.79,
-   "class": "cutting"
+   "x": 2051.03,
+   "y": 592.97,
+   "rail_z": 63.17,
+   "ground_z": 90.462,
+   "class": "tunnel"
   },
   {
    "s": 1010.0,
-   "x": 2132.93,
-   "y": 806.23,
-   "rail_z": 73.0,
-   "ground_z": 75.831,
-   "class": "cutting"
+   "x": 2057.89,
+   "y": 600.24,
+   "rail_z": 63.57,
+   "ground_z": 85.729,
+   "class": "deep cutting"
   },
   {
    "s": 1020.0,
-   "x": 2138.88,
-   "y": 814.27,
-   "rail_z": 73.4,
-   "ground_z": 76.045,
-   "class": "cutting"
+   "x": 2064.64,
+   "y": 607.62,
+   "rail_z": 63.97,
+   "ground_z": 80.608,
+   "class": "deep cutting"
   },
   {
    "s": 1030.0,
-   "x": 2144.67,
-   "y": 822.42,
-   "rail_z": 73.8,
-   "ground_z": 76.484,
+   "x": 2071.29,
+   "y": 615.09,
+   "rail_z": 64.37,
+   "ground_z": 75.227,
    "class": "cutting"
   },
   {
    "s": 1040.0,
-   "x": 2150.3,
-   "y": 830.69,
-   "rail_z": 74.2,
-   "ground_z": 77.179,
+   "x": 2077.83,
+   "y": 622.66,
+   "rail_z": 64.77,
+   "ground_z": 69.705,
    "class": "cutting"
   },
   {
    "s": 1050.0,
-   "x": 2155.76,
-   "y": 839.06,
-   "rail_z": 74.6,
-   "ground_z": 78.149,
-   "class": "cutting"
+   "x": 2084.25,
+   "y": 630.32,
+   "rail_z": 65.17,
+   "ground_z": 64.257,
+   "class": "embankment"
   },
   {
    "s": 1060.0,
-   "x": 2161.05,
-   "y": 847.55,
-   "rail_z": 75.0,
-   "ground_z": 79.39,
-   "class": "cutting"
+   "x": 2090.56,
+   "y": 638.08,
+   "rail_z": 65.57,
+   "ground_z": 59.199,
+   "class": "embankment"
   },
   {
    "s": 1070.0,
-   "x": 2166.18,
-   "y": 856.14,
-   "rail_z": 75.4,
-   "ground_z": 80.873,
-   "class": "cutting"
+   "x": 2096.75,
+   "y": 645.93,
+   "rail_z": 65.97,
+   "ground_z": 54.834,
+   "class": "viaduct"
   },
   {
    "s": 1080.0,
-   "x": 2171.13,
-   "y": 864.82,
-   "rail_z": 75.8,
-   "ground_z": 82.554,
-   "class": "cutting"
+   "x": 2102.83,
+   "y": 653.87,
+   "rail_z": 66.37,
+   "ground_z": 51.556,
+   "class": "viaduct"
   },
   {
    "s": 1090.0,
-   "x": 2175.9,
-   "y": 873.61,
-   "rail_z": 76.2,
-   "ground_z": 84.386,
-   "class": "cutting"
+   "x": 2108.79,
+   "y": 661.9,
+   "rail_z": 66.77,
+   "ground_z": 49.611,
+   "class": "viaduct"
   },
   {
    "s": 1100.0,
-   "x": 2180.5,
-   "y": 882.49,
-   "rail_z": 76.6,
-   "ground_z": 86.296,
-   "class": "cutting"
+   "x": 2114.63,
+   "y": 670.02,
+   "rail_z": 67.17,
+   "ground_z": 49.033,
+   "class": "viaduct"
   },
   {
    "s": 1110.0,
-   "x": 2184.92,
-   "y": 891.46,
-   "rail_z": 77.0,
-   "ground_z": 88.211,
-   "class": "cutting"
+   "x": 2120.35,
+   "y": 678.22,
+   "rail_z": 67.57,
+   "ground_z": 50.045,
+   "class": "viaduct"
   },
   {
    "s": 1120.0,
-   "x": 2189.16,
-   "y": 900.51,
-   "rail_z": 77.4,
-   "ground_z": 90.056,
-   "class": "deep cutting"
+   "x": 2125.95,
+   "y": 686.51,
+   "rail_z": 67.97,
+   "ground_z": 51.93,
+   "class": "viaduct"
   },
   {
    "s": 1130.0,
-   "x": 2193.22,
-   "y": 909.65,
-   "rail_z": 77.8,
-   "ground_z": 91.739,
-   "class": "deep cutting"
+   "x": 2131.43,
+   "y": 694.87,
+   "rail_z": 68.37,
+   "ground_z": 53.897,
+   "class": "viaduct"
   },
   {
    "s": 1140.0,
-   "x": 2197.1,
-   "y": 918.87,
-   "rail_z": 78.2,
-   "ground_z": 93.338,
-   "class": "deep cutting"
+   "x": 2136.78,
+   "y": 703.32,
+   "rail_z": 68.77,
+   "ground_z": 55.677,
+   "class": "viaduct"
   },
   {
    "s": 1150.0,
-   "x": 2200.79,
-   "y": 928.16,
-   "rail_z": 78.6,
-   "ground_z": 95.017,
-   "class": "deep cutting"
+   "x": 2142.01,
+   "y": 711.84,
+   "rail_z": 69.17,
+   "ground_z": 57.142,
+   "class": "viaduct"
   },
   {
    "s": 1160.0,
-   "x": 2204.3,
-   "y": 937.53,
-   "rail_z": 79.0,
-   "ground_z": 96.828,
-   "class": "deep cutting"
+   "x": 2147.11,
+   "y": 720.45,
+   "rail_z": 69.57,
+   "ground_z": 58.254,
+   "class": "viaduct"
   },
   {
    "s": 1170.0,
-   "x": 2207.62,
-   "y": 946.96,
-   "rail_z": 79.4,
-   "ground_z": 98.83,
-   "class": "deep cutting"
+   "x": 2152.08,
+   "y": 729.12,
+   "rail_z": 69.97,
+   "ground_z": 58.926,
+   "class": "viaduct"
   },
   {
    "s": 1180.0,
-   "x": 2210.74,
-   "y": 956.46,
-   "rail_z": 79.8,
-   "ground_z": 100.912,
-   "class": "deep cutting"
+   "x": 2156.93,
+   "y": 737.87,
+   "rail_z": 70.37,
+   "ground_z": 59.213,
+   "class": "viaduct"
   },
   {
    "s": 1190.0,
-   "x": 2213.68,
-   "y": 966.02,
-   "rail_z": 80.2,
-   "ground_z": 103.11,
-   "class": "deep cutting"
+   "x": 2161.64,
+   "y": 746.69,
+   "rail_z": 70.77,
+   "ground_z": 59.223,
+   "class": "viaduct"
   },
   {
    "s": 1200.0,
-   "x": 2216.43,
-   "y": 975.63,
-   "rail_z": 80.6,
-   "ground_z": 105.35,
-   "class": "deep cutting"
+   "x": 2166.23,
+   "y": 755.57,
+   "rail_z": 71.17,
+   "ground_z": 59.086,
+   "class": "viaduct"
   },
   {
    "s": 1210.0,
-   "x": 2218.99,
-   "y": 985.3,
-   "rail_z": 81.0,
-   "ground_z": 107.615,
-   "class": "tunnel"
+   "x": 2170.68,
+   "y": 764.53,
+   "rail_z": 71.57,
+   "ground_z": 58.934,
+   "class": "viaduct"
   },
   {
    "s": 1220.0,
-   "x": 2221.35,
-   "y": 995.02,
-   "rail_z": 81.4,
-   "ground_z": 109.9,
-   "class": "tunnel"
+   "x": 2175.0,
+   "y": 773.55,
+   "rail_z": 71.97,
+   "ground_z": 58.957,
+   "class": "viaduct"
   },
   {
    "s": 1230.0,
-   "x": 2223.51,
-   "y": 1004.78,
-   "rail_z": 81.8,
-   "ground_z": 112.163,
-   "class": "tunnel"
+   "x": 2179.19,
+   "y": 782.63,
+   "rail_z": 72.37,
+   "ground_z": 59.345,
+   "class": "viaduct"
   },
   {
    "s": 1240.0,
-   "x": 2225.49,
-   "y": 1014.58,
-   "rail_z": 82.2,
-   "ground_z": 114.356,
-   "class": "tunnel"
+   "x": 2183.24,
+   "y": 791.77,
+   "rail_z": 72.77,
+   "ground_z": 60.148,
+   "class": "viaduct"
   },
   {
    "s": 1250.0,
-   "x": 2227.26,
-   "y": 1024.43,
-   "rail_z": 82.6,
-   "ground_z": 116.51,
-   "class": "tunnel"
+   "x": 2187.16,
+   "y": 800.97,
+   "rail_z": 73.17,
+   "ground_z": 61.343,
+   "class": "viaduct"
   },
   {
    "s": 1260.0,
-   "x": 2228.84,
-   "y": 1034.3,
-   "rail_z": 83.0,
-   "ground_z": 118.508,
-   "class": "tunnel"
+   "x": 2190.94,
+   "y": 810.22,
+   "rail_z": 73.57,
+   "ground_z": 62.907,
+   "class": "viaduct"
   },
   {
    "s": 1270.0,
-   "x": 2230.22,
-   "y": 1044.2,
-   "rail_z": 83.4,
-   "ground_z": 120.348,
-   "class": "tunnel"
+   "x": 2194.59,
+   "y": 819.54,
+   "rail_z": 73.97,
+   "ground_z": 64.821,
+   "class": "embankment"
   },
   {
    "s": 1280.0,
-   "x": 2231.41,
-   "y": 1054.13,
-   "rail_z": 83.8,
-   "ground_z": 122.087,
-   "class": "tunnel"
+   "x": 2198.1,
+   "y": 828.9,
+   "rail_z": 74.37,
+   "ground_z": 67.045,
+   "class": "embankment"
   },
   {
    "s": 1290.0,
-   "x": 2232.39,
-   "y": 1064.08,
-   "rail_z": 84.2,
-   "ground_z": 123.654,
-   "class": "tunnel"
+   "x": 2201.47,
+   "y": 838.32,
+   "rail_z": 74.77,
+   "ground_z": 69.548,
+   "class": "embankment"
   },
   {
    "s": 1300.0,
-   "x": 2233.18,
-   "y": 1074.05,
-   "rail_z": 84.6,
-   "ground_z": 125.045,
-   "class": "tunnel"
+   "x": 2204.7,
+   "y": 847.78,
+   "rail_z": 75.17,
+   "ground_z": 72.277,
+   "class": "embankment"
   },
   {
    "s": 1310.0,
-   "x": 2233.76,
-   "y": 1084.04,
-   "rail_z": 85.0,
-   "ground_z": 126.258,
-   "class": "tunnel"
+   "x": 2207.79,
+   "y": 857.29,
+   "rail_z": 75.57,
+   "ground_z": 75.309,
+   "class": "embankment"
   },
   {
    "s": 1320.0,
-   "x": 2234.15,
-   "y": 1094.03,
-   "rail_z": 85.4,
-   "ground_z": 127.294,
-   "class": "tunnel"
+   "x": 2210.73,
+   "y": 866.85,
+   "rail_z": 75.97,
+   "ground_z": 78.396,
+   "class": "cutting"
   },
   {
    "s": 1330.0,
-   "x": 2234.34,
-   "y": 1104.03,
-   "rail_z": 85.8,
-   "ground_z": 128.152,
-   "class": "tunnel"
+   "x": 2213.54,
+   "y": 876.44,
+   "rail_z": 76.37,
+   "ground_z": 81.538,
+   "class": "cutting"
   },
   {
    "s": 1340.0,
-   "x": 2234.33,
-   "y": 1114.03,
-   "rail_z": 86.2,
-   "ground_z": 128.837,
-   "class": "tunnel"
+   "x": 2216.21,
+   "y": 886.08,
+   "rail_z": 76.77,
+   "ground_z": 84.575,
+   "class": "cutting"
   },
   {
    "s": 1350.0,
-   "x": 2234.12,
-   "y": 1124.02,
-   "rail_z": 86.6,
-   "ground_z": 129.358,
-   "class": "tunnel"
+   "x": 2218.73,
+   "y": 895.76,
+   "rail_z": 77.17,
+   "ground_z": 87.461,
+   "class": "cutting"
   },
   {
    "s": 1360.0,
-   "x": 2233.71,
-   "y": 1134.02,
-   "rail_z": 87.0,
-   "ground_z": 129.705,
-   "class": "tunnel"
+   "x": 2221.12,
+   "y": 905.47,
+   "rail_z": 77.57,
+   "ground_z": 90.111,
+   "class": "deep cutting"
   },
   {
    "s": 1370.0,
-   "x": 2233.1,
-   "y": 1144.0,
-   "rail_z": 87.4,
-   "ground_z": 129.879,
-   "class": "tunnel"
+   "x": 2223.35,
+   "y": 915.22,
+   "rail_z": 77.97,
+   "ground_z": 92.544,
+   "class": "deep cutting"
   },
   {
    "s": 1380.0,
-   "x": 2232.3,
-   "y": 1153.96,
-   "rail_z": 87.8,
-   "ground_z": 129.877,
-   "class": "tunnel"
+   "x": 2225.45,
+   "y": 924.99,
+   "rail_z": 78.37,
+   "ground_z": 94.96,
+   "class": "deep cutting"
   },
   {
    "s": 1390.0,
-   "x": 2231.32,
-   "y": 1163.92,
-   "rail_z": 88.2,
-   "ground_z": 129.7,
-   "class": "tunnel"
+   "x": 2227.4,
+   "y": 934.8,
+   "rail_z": 78.77,
+   "ground_z": 97.459,
+   "class": "deep cutting"
   },
   {
    "s": 1400.0,
-   "x": 2230.2,
-   "y": 1173.85,
-   "rail_z": 88.6,
-   "ground_z": 129.316,
-   "class": "tunnel"
+   "x": 2229.2,
+   "y": 944.64,
+   "rail_z": 79.17,
+   "ground_z": 99.958,
+   "class": "deep cutting"
   },
   {
    "s": 1410.0,
-   "x": 2228.96,
-   "y": 1183.78,
-   "rail_z": 89.0,
-   "ground_z": 128.592,
-   "class": "tunnel"
+   "x": 2230.86,
+   "y": 954.5,
+   "rail_z": 79.57,
+   "ground_z": 102.495,
+   "class": "deep cutting"
   },
   {
    "s": 1420.0,
-   "x": 2227.63,
-   "y": 1193.69,
-   "rail_z": 89.4,
-   "ground_z": 127.445,
+   "x": 2232.38,
+   "y": 964.38,
+   "rail_z": 79.97,
+   "ground_z": 105.051,
    "class": "tunnel"
   },
   {
    "s": 1430.0,
-   "x": 2226.22,
-   "y": 1203.59,
-   "rail_z": 89.8,
-   "ground_z": 125.898,
+   "x": 2233.74,
+   "y": 974.29,
+   "rail_z": 80.37,
+   "ground_z": 107.571,
    "class": "tunnel"
   },
   {
    "s": 1440.0,
-   "x": 2224.76,
-   "y": 1213.48,
-   "rail_z": 90.2,
-   "ground_z": 124.013,
+   "x": 2234.97,
+   "y": 984.21,
+   "rail_z": 80.77,
+   "ground_z": 110.031,
    "class": "tunnel"
   },
   {
    "s": 1450.0,
-   "x": 2223.29,
-   "y": 1223.37,
-   "rail_z": 90.6,
-   "ground_z": 121.926,
+   "x": 2236.04,
+   "y": 994.16,
+   "rail_z": 81.17,
+   "ground_z": 112.471,
    "class": "tunnel"
   },
   {
    "s": 1460.0,
-   "x": 2221.81,
-   "y": 1233.26,
-   "rail_z": 91.0,
-   "ground_z": 119.579,
+   "x": 2236.97,
+   "y": 1004.11,
+   "rail_z": 81.57,
+   "ground_z": 114.805,
    "class": "tunnel"
   },
   {
    "s": 1470.0,
-   "x": 2220.33,
-   "y": 1243.15,
-   "rail_z": 91.4,
-   "ground_z": 117.043,
+   "x": 2237.75,
+   "y": 1014.08,
+   "rail_z": 81.97,
+   "ground_z": 117.006,
    "class": "tunnel"
   },
   {
    "s": 1480.0,
-   "x": 2218.86,
-   "y": 1253.04,
-   "rail_z": 91.8,
-   "ground_z": 114.494,
-   "class": "deep cutting"
+   "x": 2238.39,
+   "y": 1024.06,
+   "rail_z": 82.37,
+   "ground_z": 119.048,
+   "class": "tunnel"
   },
   {
    "s": 1490.0,
-   "x": 2217.39,
-   "y": 1262.93,
-   "rail_z": 92.2,
-   "ground_z": 111.92,
-   "class": "deep cutting"
+   "x": 2238.87,
+   "y": 1034.05,
+   "rail_z": 82.77,
+   "ground_z": 120.903,
+   "class": "tunnel"
   },
   {
    "s": 1500.0,
-   "x": 2215.96,
-   "y": 1272.83,
-   "rail_z": 92.6,
-   "ground_z": 109.357,
-   "class": "deep cutting"
+   "x": 2239.21,
+   "y": 1044.04,
+   "rail_z": 83.17,
+   "ground_z": 122.556,
+   "class": "tunnel"
   },
   {
    "s": 1510.0,
-   "x": 2214.56,
-   "y": 1282.73,
-   "rail_z": 93.0,
-   "ground_z": 106.935,
-   "class": "deep cutting"
+   "x": 2239.41,
+   "y": 1054.04,
+   "rail_z": 83.57,
+   "ground_z": 124.038,
+   "class": "tunnel"
   },
   {
    "s": 1520.0,
-   "x": 2213.22,
-   "y": 1292.64,
-   "rail_z": 93.4,
-   "ground_z": 104.793,
-   "class": "cutting"
+   "x": 2239.45,
+   "y": 1064.04,
+   "rail_z": 83.97,
+   "ground_z": 125.355,
+   "class": "tunnel"
   },
   {
    "s": 1530.0,
-   "x": 2211.95,
-   "y": 1302.56,
-   "rail_z": 93.8,
-   "ground_z": 102.876,
-   "class": "cutting"
+   "x": 2239.35,
+   "y": 1074.04,
+   "rail_z": 84.37,
+   "ground_z": 126.508,
+   "class": "tunnel"
   },
   {
    "s": 1540.0,
-   "x": 2210.76,
-   "y": 1312.49,
-   "rail_z": 94.2,
-   "ground_z": 101.129,
-   "class": "cutting"
+   "x": 2239.1,
+   "y": 1084.04,
+   "rail_z": 84.77,
+   "ground_z": 127.496,
+   "class": "tunnel"
   },
   {
    "s": 1550.0,
-   "x": 2209.66,
-   "y": 1322.43,
-   "rail_z": 94.6,
-   "ground_z": 99.544,
-   "class": "cutting"
+   "x": 2238.7,
+   "y": 1094.03,
+   "rail_z": 85.17,
+   "ground_z": 128.322,
+   "class": "tunnel"
   },
   {
    "s": 1560.0,
-   "x": 2208.68,
-   "y": 1332.38,
-   "rail_z": 95.0,
-   "ground_z": 98.141,
-   "class": "cutting"
+   "x": 2238.16,
+   "y": 1104.02,
+   "rail_z": 85.57,
+   "ground_z": 128.986,
+   "class": "tunnel"
   },
   {
    "s": 1570.0,
-   "x": 2207.8,
-   "y": 1342.34,
-   "rail_z": 95.4,
-   "ground_z": 96.816,
-   "class": "cutting"
+   "x": 2237.47,
+   "y": 1113.99,
+   "rail_z": 85.97,
+   "ground_z": 129.495,
+   "class": "tunnel"
   },
   {
    "s": 1580.0,
-   "x": 2207.03,
-   "y": 1352.31,
-   "rail_z": 95.8,
-   "ground_z": 95.547,
-   "class": "embankment"
+   "x": 2236.63,
+   "y": 1123.96,
+   "rail_z": 86.37,
+   "ground_z": 129.853,
+   "class": "tunnel"
   },
   {
    "s": 1590.0,
-   "x": 2206.38,
-   "y": 1362.29,
-   "rail_z": 96.2,
-   "ground_z": 94.317,
-   "class": "embankment"
+   "x": 2235.65,
+   "y": 1133.91,
+   "rail_z": 86.77,
+   "ground_z": 130.049,
+   "class": "tunnel"
   },
   {
    "s": 1600.0,
-   "x": 2205.83,
-   "y": 1372.28,
-   "rail_z": 96.6,
-   "ground_z": 93.111,
-   "class": "embankment"
+   "x": 2234.54,
+   "y": 1143.85,
+   "rail_z": 87.17,
+   "ground_z": 130.107,
+   "class": "tunnel"
   },
   {
    "s": 1610.0,
-   "x": 2205.4,
-   "y": 1382.27,
-   "rail_z": 97.0,
-   "ground_z": 91.909,
-   "class": "embankment"
+   "x": 2233.33,
+   "y": 1153.77,
+   "rail_z": 87.57,
+   "ground_z": 130.045,
+   "class": "tunnel"
   },
   {
    "s": 1620.0,
-   "x": 2205.08,
-   "y": 1392.26,
-   "rail_z": 97.4,
-   "ground_z": 90.691,
-   "class": "embankment"
+   "x": 2232.03,
+   "y": 1163.69,
+   "rail_z": 87.97,
+   "ground_z": 129.821,
+   "class": "tunnel"
   },
   {
    "s": 1630.0,
-   "x": 2204.87,
-   "y": 1402.26,
-   "rail_z": 97.8,
-   "ground_z": 89.451,
-   "class": "embankment"
+   "x": 2230.65,
+   "y": 1173.59,
+   "rail_z": 88.37,
+   "ground_z": 129.403,
+   "class": "tunnel"
   },
   {
    "s": 1640.0,
-   "x": 2204.77,
-   "y": 1412.26,
-   "rail_z": 98.2,
-   "ground_z": 88.15,
-   "class": "viaduct"
+   "x": 2229.23,
+   "y": 1183.49,
+   "rail_z": 88.77,
+   "ground_z": 128.645,
+   "class": "tunnel"
   },
   {
    "s": 1650.0,
-   "x": 2204.78,
-   "y": 1422.26,
-   "rail_z": 98.6,
-   "ground_z": 86.759,
-   "class": "viaduct"
+   "x": 2227.77,
+   "y": 1193.38,
+   "rail_z": 89.17,
+   "ground_z": 127.502,
+   "class": "tunnel"
   },
   {
    "s": 1660.0,
-   "x": 2204.9,
-   "y": 1432.26,
-   "rail_z": 99.0,
-   "ground_z": 85.271,
-   "class": "viaduct"
+   "x": 2226.29,
+   "y": 1203.27,
+   "rail_z": 89.57,
+   "ground_z": 125.958,
+   "class": "tunnel"
   },
   {
    "s": 1670.0,
-   "x": 2205.13,
-   "y": 1442.26,
-   "rail_z": 99.4,
-   "ground_z": 83.862,
-   "class": "viaduct"
+   "x": 2224.81,
+   "y": 1213.16,
+   "rail_z": 89.97,
+   "ground_z": 124.075,
+   "class": "tunnel"
   },
   {
    "s": 1680.0,
-   "x": 2205.48,
-   "y": 1452.25,
-   "rail_z": 99.8,
-   "ground_z": 82.63,
-   "class": "viaduct"
+   "x": 2223.34,
+   "y": 1223.05,
+   "rail_z": 90.37,
+   "ground_z": 121.996,
+   "class": "tunnel"
   },
   {
    "s": 1690.0,
-   "x": 2205.93,
-   "y": 1462.24,
-   "rail_z": 100.2,
-   "ground_z": 81.554,
-   "class": "viaduct"
+   "x": 2221.86,
+   "y": 1232.94,
+   "rail_z": 90.77,
+   "ground_z": 119.659,
+   "class": "tunnel"
   },
   {
    "s": 1700.0,
-   "x": 2206.5,
-   "y": 1472.22,
-   "rail_z": 100.6,
-   "ground_z": 80.621,
-   "class": "viaduct"
+   "x": 2220.38,
+   "y": 1242.83,
+   "rail_z": 91.17,
+   "ground_z": 117.127,
+   "class": "tunnel"
   },
   {
    "s": 1710.0,
-   "x": 2207.18,
-   "y": 1482.2,
-   "rail_z": 101.0,
-   "ground_z": 79.82,
-   "class": "viaduct"
+   "x": 2218.91,
+   "y": 1252.72,
+   "rail_z": 91.57,
+   "ground_z": 114.575,
+   "class": "deep cutting"
   },
   {
    "s": 1720.0,
-   "x": 2207.96,
-   "y": 1492.17,
-   "rail_z": 101.4,
-   "ground_z": 79.135,
-   "class": "viaduct"
+   "x": 2217.44,
+   "y": 1262.62,
+   "rail_z": 91.97,
+   "ground_z": 112.005,
+   "class": "deep cutting"
   },
   {
    "s": 1730.0,
-   "x": 2208.86,
-   "y": 1502.13,
-   "rail_z": 101.8,
-   "ground_z": 78.554,
-   "class": "viaduct"
+   "x": 2216.0,
+   "y": 1272.51,
+   "rail_z": 92.37,
+   "ground_z": 109.439,
+   "class": "deep cutting"
   },
   {
    "s": 1740.0,
-   "x": 2209.87,
-   "y": 1512.08,
-   "rail_z": 102.2,
-   "ground_z": 78.063,
-   "class": "viaduct"
+   "x": 2214.61,
+   "y": 1282.41,
+   "rail_z": 92.77,
+   "ground_z": 107.007,
+   "class": "deep cutting"
   },
   {
    "s": 1750.0,
-   "x": 2210.99,
-   "y": 1522.01,
-   "rail_z": 102.6,
-   "ground_z": 77.775,
-   "class": "viaduct"
+   "x": 2213.26,
+   "y": 1292.32,
+   "rail_z": 93.17,
+   "ground_z": 104.858,
+   "class": "cutting"
   },
   {
    "s": 1760.0,
-   "x": 2212.22,
-   "y": 1531.94,
-   "rail_z": 103.0,
-   "ground_z": 77.585,
-   "class": "viaduct"
+   "x": 2211.99,
+   "y": 1302.24,
+   "rail_z": 93.57,
+   "ground_z": 102.934,
+   "class": "cutting"
   },
   {
    "s": 1770.0,
-   "x": 2213.56,
-   "y": 1541.85,
-   "rail_z": 103.4,
-   "ground_z": 77.462,
-   "class": "viaduct"
+   "x": 2210.79,
+   "y": 1312.17,
+   "rail_z": 93.97,
+   "ground_z": 101.184,
+   "class": "cutting"
   },
   {
    "s": 1780.0,
-   "x": 2215.01,
-   "y": 1551.74,
-   "rail_z": 103.8,
-   "ground_z": 77.392,
-   "class": "viaduct"
+   "x": 2209.7,
+   "y": 1322.11,
+   "rail_z": 94.37,
+   "ground_z": 99.59,
+   "class": "cutting"
   },
   {
    "s": 1790.0,
-   "x": 2216.57,
-   "y": 1561.62,
-   "rail_z": 104.2,
-   "ground_z": 77.561,
-   "class": "viaduct"
+   "x": 2208.71,
+   "y": 1332.06,
+   "rail_z": 94.77,
+   "ground_z": 98.185,
+   "class": "cutting"
   },
   {
    "s": 1800.0,
-   "x": 2218.24,
-   "y": 1571.48,
-   "rail_z": 104.6,
-   "ground_z": 77.658,
-   "class": "viaduct"
+   "x": 2207.83,
+   "y": 1342.02,
+   "rail_z": 95.17,
+   "ground_z": 96.856,
+   "class": "cutting"
   },
   {
    "s": 1810.0,
-   "x": 2220.02,
-   "y": 1581.32,
-   "rail_z": 105.0,
-   "ground_z": 77.655,
-   "class": "viaduct"
+   "x": 2207.06,
+   "y": 1351.99,
+   "rail_z": 95.57,
+   "ground_z": 95.587,
+   "class": "cutting"
   },
   {
    "s": 1820.0,
-   "x": 2221.91,
-   "y": 1591.14,
-   "rail_z": 105.4,
-   "ground_z": 77.842,
-   "class": "viaduct"
+   "x": 2206.4,
+   "y": 1361.97,
+   "rail_z": 95.97,
+   "ground_z": 94.357,
+   "class": "embankment"
   },
   {
    "s": 1830.0,
-   "x": 2223.91,
-   "y": 1600.94,
-   "rail_z": 105.8,
-   "ground_z": 78.036,
-   "class": "viaduct"
+   "x": 2205.85,
+   "y": 1371.96,
+   "rail_z": 96.37,
+   "ground_z": 93.15,
+   "class": "embankment"
   },
   {
    "s": 1840.0,
-   "x": 2226.01,
-   "y": 1610.71,
-   "rail_z": 106.2,
-   "ground_z": 78.417,
-   "class": "viaduct"
+   "x": 2205.41,
+   "y": 1381.95,
+   "rail_z": 96.77,
+   "ground_z": 91.948,
+   "class": "embankment"
   },
   {
    "s": 1850.0,
-   "x": 2228.23,
-   "y": 1620.47,
-   "rail_z": 106.6,
-   "ground_z": 79.047,
-   "class": "viaduct"
+   "x": 2205.09,
+   "y": 1391.94,
+   "rail_z": 97.17,
+   "ground_z": 90.731,
+   "class": "embankment"
   },
   {
    "s": 1860.0,
-   "x": 2230.55,
-   "y": 1630.19,
-   "rail_z": 107.0,
-   "ground_z": 79.906,
-   "class": "viaduct"
+   "x": 2204.87,
+   "y": 1401.94,
+   "rail_z": 97.57,
+   "ground_z": 89.492,
+   "class": "embankment"
   },
   {
    "s": 1870.0,
-   "x": 2232.98,
-   "y": 1639.89,
-   "rail_z": 107.4,
-   "ground_z": 81.186,
-   "class": "viaduct"
+   "x": 2204.77,
+   "y": 1411.94,
+   "rail_z": 97.97,
+   "ground_z": 88.193,
+   "class": "embankment"
   },
   {
    "s": 1880.0,
-   "x": 2235.52,
-   "y": 1649.56,
-   "rail_z": 107.8,
-   "ground_z": 82.778,
+   "x": 2204.78,
+   "y": 1421.94,
+   "rail_z": 98.37,
+   "ground_z": 86.805,
    "class": "viaduct"
   },
   {
    "s": 1890.0,
-   "x": 2238.17,
-   "y": 1659.21,
-   "rail_z": 108.2,
-   "ground_z": 84.865,
+   "x": 2204.89,
+   "y": 1431.94,
+   "rail_z": 98.77,
+   "ground_z": 85.319,
    "class": "viaduct"
   },
   {
    "s": 1900.0,
-   "x": 2240.92,
-   "y": 1668.82,
-   "rail_z": 108.6,
-   "ground_z": 87.351,
+   "x": 2205.12,
+   "y": 1441.93,
+   "rail_z": 99.17,
+   "ground_z": 83.905,
    "class": "viaduct"
   },
   {
    "s": 1910.0,
-   "x": 2243.78,
-   "y": 1678.4,
-   "rail_z": 109.0,
-   "ground_z": 90.36,
+   "x": 2205.46,
+   "y": 1451.93,
+   "rail_z": 99.57,
+   "ground_z": 82.667,
    "class": "viaduct"
   },
   {
    "s": 1920.0,
-   "x": 2246.74,
-   "y": 1687.95,
-   "rail_z": 109.4,
-   "ground_z": 93.869,
+   "x": 2205.92,
+   "y": 1461.92,
+   "rail_z": 99.97,
+   "ground_z": 81.586,
    "class": "viaduct"
   },
   {
    "s": 1930.0,
-   "x": 2249.82,
-   "y": 1697.47,
-   "rail_z": 109.8,
-   "ground_z": 97.771,
+   "x": 2206.48,
+   "y": 1471.9,
+   "rail_z": 100.37,
+   "ground_z": 80.649,
    "class": "viaduct"
   },
   {
    "s": 1940.0,
-   "x": 2252.99,
-   "y": 1706.95,
-   "rail_z": 110.2,
-   "ground_z": 102.021,
-   "class": "embankment"
+   "x": 2207.15,
+   "y": 1481.88,
+   "rail_z": 100.77,
+   "ground_z": 79.843,
+   "class": "viaduct"
   },
   {
    "s": 1950.0,
-   "x": 2256.28,
-   "y": 1716.4,
-   "rail_z": 110.6,
-   "ground_z": 106.443,
-   "class": "embankment"
+   "x": 2207.94,
+   "y": 1491.85,
+   "rail_z": 101.17,
+   "ground_z": 79.155,
+   "class": "viaduct"
   },
   {
    "s": 1960.0,
-   "x": 2259.66,
-   "y": 1725.81,
-   "rail_z": 111.0,
-   "ground_z": 111.007,
-   "class": "cutting"
+   "x": 2208.83,
+   "y": 1501.81,
+   "rail_z": 101.57,
+   "ground_z": 78.571,
+   "class": "viaduct"
   },
   {
    "s": 1970.0,
-   "x": 2263.15,
-   "y": 1735.18,
-   "rail_z": 111.4,
-   "ground_z": 115.732,
-   "class": "cutting"
+   "x": 2209.84,
+   "y": 1511.76,
+   "rail_z": 101.97,
+   "ground_z": 78.077,
+   "class": "viaduct"
   },
   {
    "s": 1980.0,
-   "x": 2266.75,
-   "y": 1744.51,
-   "rail_z": 111.8,
-   "ground_z": 120.565,
-   "class": "cutting"
+   "x": 2210.95,
+   "y": 1521.7,
+   "rail_z": 102.37,
+   "ground_z": 77.782,
+   "class": "viaduct"
   },
   {
    "s": 1990.0,
-   "x": 2270.45,
-   "y": 1753.8,
-   "rail_z": 112.2,
-   "ground_z": 125.518,
-   "class": "deep cutting"
+   "x": 2212.18,
+   "y": 1531.62,
+   "rail_z": 102.77,
+   "ground_z": 77.59,
+   "class": "viaduct"
   },
   {
    "s": 2000.0,
-   "x": 2274.25,
-   "y": 1763.05,
-   "rail_z": 112.6,
-   "ground_z": 130.622,
-   "class": "deep cutting"
+   "x": 2213.52,
+   "y": 1541.53,
+   "rail_z": 103.17,
+   "ground_z": 77.464,
+   "class": "viaduct"
   },
   {
    "s": 2010.0,
-   "x": 2278.15,
-   "y": 1772.25,
-   "rail_z": 113.0,
-   "ground_z": 135.878,
-   "class": "deep cutting"
+   "x": 2214.96,
+   "y": 1551.42,
+   "rail_z": 103.57,
+   "ground_z": 77.392,
+   "class": "viaduct"
   },
   {
    "s": 2020.0,
-   "x": 2282.16,
-   "y": 1781.42,
-   "rail_z": 113.4,
-   "ground_z": 141.303,
-   "class": "tunnel"
+   "x": 2216.52,
+   "y": 1561.3,
+   "rail_z": 103.97,
+   "ground_z": 77.556,
+   "class": "viaduct"
   },
   {
    "s": 2030.0,
-   "x": 2286.27,
-   "y": 1790.53,
-   "rail_z": 113.8,
-   "ground_z": 146.851,
-   "class": "tunnel"
+   "x": 2218.19,
+   "y": 1571.16,
+   "rail_z": 104.37,
+   "ground_z": 77.657,
+   "class": "viaduct"
   },
   {
    "s": 2040.0,
-   "x": 2290.48,
-   "y": 1799.61,
-   "rail_z": 114.2,
-   "ground_z": 152.561,
-   "class": "tunnel"
+   "x": 2219.96,
+   "y": 1581.0,
+   "rail_z": 104.77,
+   "ground_z": 77.654,
+   "class": "viaduct"
   },
   {
    "s": 2050.0,
-   "x": 2294.79,
-   "y": 1808.63,
-   "rail_z": 114.6,
-   "ground_z": 158.513,
-   "class": "tunnel"
+   "x": 2221.85,
+   "y": 1590.82,
+   "rail_z": 105.17,
+   "ground_z": 77.836,
+   "class": "viaduct"
   },
   {
    "s": 2060.0,
-   "x": 2299.19,
-   "y": 1817.61,
-   "rail_z": 115.0,
-   "ground_z": 164.718,
-   "class": "tunnel"
+   "x": 2223.84,
+   "y": 1600.62,
+   "rail_z": 105.57,
+   "ground_z": 78.029,
+   "class": "viaduct"
   },
   {
    "s": 2070.0,
-   "x": 2303.69,
-   "y": 1826.54,
-   "rail_z": 115.4,
-   "ground_z": 171.113,
-   "class": "tunnel"
+   "x": 2225.94,
+   "y": 1610.4,
+   "rail_z": 105.97,
+   "ground_z": 78.397,
+   "class": "viaduct"
   },
   {
    "s": 2080.0,
-   "x": 2308.26,
-   "y": 1835.43,
-   "rail_z": 115.8,
-   "ground_z": 177.557,
-   "class": "tunnel"
+   "x": 2228.16,
+   "y": 1620.15,
+   "rail_z": 106.37,
+   "ground_z": 79.023,
+   "class": "viaduct"
   },
   {
    "s": 2090.0,
-   "x": 2312.89,
-   "y": 1844.3,
-   "rail_z": 116.2,
-   "ground_z": 183.965,
-   "class": "tunnel"
+   "x": 2230.48,
+   "y": 1629.88,
+   "rail_z": 106.77,
+   "ground_z": 79.867,
+   "class": "viaduct"
   },
   {
    "s": 2100.0,
-   "x": 2317.56,
-   "y": 1853.14,
-   "rail_z": 116.6,
-   "ground_z": 190.266,
-   "class": "tunnel"
+   "x": 2232.9,
+   "y": 1639.58,
+   "rail_z": 107.17,
+   "ground_z": 81.143,
+   "class": "viaduct"
   },
   {
    "s": 2110.0,
-   "x": 2322.28,
-   "y": 1861.96,
-   "rail_z": 117.0,
-   "ground_z": 196.36,
-   "class": "tunnel"
+   "x": 2235.44,
+   "y": 1649.25,
+   "rail_z": 107.57,
+   "ground_z": 82.717,
+   "class": "viaduct"
   },
   {
    "s": 2120.0,
-   "x": 2327.01,
-   "y": 1870.76,
-   "rail_z": 117.4,
-   "ground_z": 202.235,
-   "class": "tunnel"
+   "x": 2238.08,
+   "y": 1658.9,
+   "rail_z": 107.97,
+   "ground_z": 84.795,
+   "class": "viaduct"
   },
   {
    "s": 2130.0,
-   "x": 2331.76,
-   "y": 1879.56,
-   "rail_z": 117.8,
-   "ground_z": 207.856,
-   "class": "tunnel"
+   "x": 2240.83,
+   "y": 1668.51,
+   "rail_z": 108.37,
+   "ground_z": 87.261,
+   "class": "viaduct"
   },
   {
    "s": 2140.0,
-   "x": 2336.52,
-   "y": 1888.36,
-   "rail_z": 118.2,
-   "ground_z": 213.231,
-   "class": "tunnel"
+   "x": 2243.69,
+   "y": 1678.1,
+   "rail_z": 108.77,
+   "ground_z": 90.259,
+   "class": "viaduct"
   },
   {
    "s": 2150.0,
-   "x": 2341.27,
-   "y": 1897.16,
-   "rail_z": 118.6,
-   "ground_z": 218.346,
-   "class": "tunnel"
+   "x": 2246.65,
+   "y": 1687.65,
+   "rail_z": 109.17,
+   "ground_z": 93.748,
+   "class": "viaduct"
   },
   {
    "s": 2160.0,
-   "x": 2346.02,
-   "y": 1905.96,
-   "rail_z": 119.0,
-   "ground_z": 223.182,
-   "class": "tunnel"
+   "x": 2249.72,
+   "y": 1697.17,
+   "rail_z": 109.57,
+   "ground_z": 97.643,
+   "class": "viaduct"
   },
   {
    "s": 2170.0,
-   "x": 2350.77,
-   "y": 1914.76,
-   "rail_z": 119.4,
-   "ground_z": 227.716,
-   "class": "tunnel"
+   "x": 2252.89,
+   "y": 1706.65,
+   "rail_z": 109.97,
+   "ground_z": 101.883,
+   "class": "embankment"
   },
   {
    "s": 2180.0,
-   "x": 2355.52,
-   "y": 1923.56,
-   "rail_z": 119.8,
-   "ground_z": 231.906,
-   "class": "tunnel"
+   "x": 2256.17,
+   "y": 1716.1,
+   "rail_z": 110.37,
+   "ground_z": 106.298,
+   "class": "embankment"
   },
   {
    "s": 2190.0,
-   "x": 2360.27,
-   "y": 1932.36,
-   "rail_z": 120.2,
-   "ground_z": 235.724,
-   "class": "tunnel"
+   "x": 2259.55,
+   "y": 1725.51,
+   "rail_z": 110.77,
+   "ground_z": 110.861,
+   "class": "cutting"
   },
   {
    "s": 2200.0,
-   "x": 2365.02,
-   "y": 1941.16,
-   "rail_z": 120.6,
-   "ground_z": 239.147,
-   "class": "tunnel"
+   "x": 2263.04,
+   "y": 1734.88,
+   "rail_z": 111.17,
+   "ground_z": 115.579,
+   "class": "cutting"
   },
   {
    "s": 2210.0,
-   "x": 2369.78,
-   "y": 1949.96,
-   "rail_z": 121.0,
-   "ground_z": 242.137,
-   "class": "tunnel"
+   "x": 2266.63,
+   "y": 1744.21,
+   "rail_z": 111.57,
+   "ground_z": 120.406,
+   "class": "cutting"
   },
   {
    "s": 2220.0,
-   "x": 2374.53,
-   "y": 1958.75,
-   "rail_z": 121.4,
-   "ground_z": 244.689,
-   "class": "tunnel"
+   "x": 2270.33,
+   "y": 1753.5,
+   "rail_z": 111.97,
+   "ground_z": 125.355,
+   "class": "deep cutting"
   },
   {
    "s": 2230.0,
-   "x": 2379.28,
-   "y": 1967.55,
-   "rail_z": 121.8,
-   "ground_z": 246.792,
-   "class": "tunnel"
+   "x": 2274.13,
+   "y": 1762.75,
+   "rail_z": 112.37,
+   "ground_z": 130.457,
+   "class": "deep cutting"
   },
   {
    "s": 2240.0,
-   "x": 2384.03,
-   "y": 1976.35,
-   "rail_z": 122.2,
-   "ground_z": 248.434,
-   "class": "tunnel"
+   "x": 2278.03,
+   "y": 1771.96,
+   "rail_z": 112.77,
+   "ground_z": 135.707,
+   "class": "deep cutting"
   },
   {
    "s": 2250.0,
-   "x": 2388.78,
-   "y": 1985.15,
-   "rail_z": 122.6,
-   "ground_z": 249.608,
+   "x": 2282.03,
+   "y": 1781.12,
+   "rail_z": 113.17,
+   "ground_z": 141.126,
    "class": "tunnel"
   },
   {
    "s": 2260.0,
-   "x": 2393.53,
-   "y": 1993.95,
-   "rail_z": 123.0,
-   "ground_z": 250.313,
+   "x": 2286.14,
+   "y": 1790.24,
+   "rail_z": 113.57,
+   "ground_z": 146.671,
    "class": "tunnel"
   },
   {
    "s": 2270.0,
-   "x": 2398.28,
-   "y": 2002.75,
-   "rail_z": 123.4,
-   "ground_z": 250.529,
+   "x": 2290.34,
+   "y": 1799.31,
+   "rail_z": 113.97,
+   "ground_z": 152.374,
    "class": "tunnel"
   },
   {
    "s": 2280.0,
-   "x": 2403.04,
-   "y": 2011.55,
-   "rail_z": 123.8,
-   "ground_z": 250.42,
+   "x": 2294.65,
+   "y": 1808.34,
+   "rail_z": 114.37,
+   "ground_z": 158.319,
    "class": "tunnel"
   },
   {
    "s": 2290.0,
-   "x": 2407.79,
-   "y": 2020.35,
-   "rail_z": 124.2,
-   "ground_z": 250.218,
+   "x": 2299.05,
+   "y": 1817.32,
+   "rail_z": 114.77,
+   "ground_z": 164.515,
    "class": "tunnel"
   },
   {
    "s": 2300.0,
-   "x": 2412.54,
-   "y": 2029.15,
-   "rail_z": 124.6,
-   "ground_z": 250.014,
+   "x": 2303.54,
+   "y": 1826.25,
+   "rail_z": 115.17,
+   "ground_z": 170.907,
    "class": "tunnel"
   },
   {
    "s": 2310.0,
-   "x": 2417.29,
-   "y": 2037.95,
-   "rail_z": 125.0,
-   "ground_z": 249.807,
+   "x": 2308.11,
+   "y": 1835.15,
+   "rail_z": 115.57,
+   "ground_z": 177.35,
    "class": "tunnel"
   },
   {
    "s": 2320.0,
-   "x": 2422.04,
-   "y": 2046.75,
-   "rail_z": 125.4,
-   "ground_z": 249.598,
+   "x": 2312.74,
+   "y": 1844.01,
+   "rail_z": 115.97,
+   "ground_z": 183.759,
    "class": "tunnel"
   },
   {
    "s": 2330.0,
-   "x": 2426.79,
-   "y": 2055.54,
-   "rail_z": 125.8,
-   "ground_z": 249.394,
+   "x": 2317.41,
+   "y": 1852.85,
+   "rail_z": 116.37,
+   "ground_z": 190.066,
    "class": "tunnel"
   },
   {
    "s": 2340.0,
-   "x": 2431.55,
-   "y": 2064.34,
-   "rail_z": 126.2,
-   "ground_z": 249.253,
+   "x": 2322.12,
+   "y": 1861.67,
+   "rail_z": 116.77,
+   "ground_z": 196.169,
    "class": "tunnel"
   },
   {
    "s": 2350.0,
-   "x": 2436.3,
-   "y": 2073.14,
-   "rail_z": 126.6,
-   "ground_z": 249.104,
+   "x": 2326.86,
+   "y": 1870.48,
+   "rail_z": 117.17,
+   "ground_z": 202.052,
    "class": "tunnel"
   },
   {
    "s": 2360.0,
-   "x": 2441.05,
-   "y": 2081.94,
-   "rail_z": 127.0,
-   "ground_z": 248.946,
+   "x": 2331.61,
+   "y": 1879.28,
+   "rail_z": 117.57,
+   "ground_z": 207.679,
    "class": "tunnel"
   },
   {
    "s": 2370.0,
-   "x": 2445.8,
-   "y": 2090.74,
-   "rail_z": 127.4,
-   "ground_z": 248.779,
+   "x": 2336.36,
+   "y": 1888.08,
+   "rail_z": 117.97,
+   "ground_z": 213.063,
    "class": "tunnel"
   },
   {
    "s": 2380.0,
-   "x": 2450.57,
-   "y": 2099.53,
-   "rail_z": 127.8,
-   "ground_z": 248.605,
+   "x": 2341.11,
+   "y": 1896.88,
+   "rail_z": 118.37,
+   "ground_z": 218.188,
    "class": "tunnel"
   },
   {
    "s": 2390.0,
-   "x": 2455.4,
-   "y": 2108.28,
-   "rail_z": 128.2,
-   "ground_z": 248.425,
+   "x": 2345.87,
+   "y": 1905.68,
+   "rail_z": 118.77,
+   "ground_z": 223.035,
    "class": "tunnel"
   },
   {
    "s": 2400.0,
-   "x": 2460.32,
-   "y": 2116.99,
-   "rail_z": 128.6,
-   "ground_z": 248.235,
+   "x": 2350.62,
+   "y": 1914.48,
+   "rail_z": 119.17,
+   "ground_z": 227.579,
    "class": "tunnel"
   },
   {
    "s": 2410.0,
-   "x": 2465.37,
-   "y": 2125.62,
-   "rail_z": 129.0,
-   "ground_z": 248.07,
+   "x": 2355.37,
+   "y": 1923.28,
+   "rail_z": 119.57,
+   "ground_z": 231.782,
    "class": "tunnel"
   },
   {
    "s": 2420.0,
-   "x": 2470.58,
-   "y": 2134.16,
-   "rail_z": 129.4,
-   "ground_z": 247.954,
+   "x": 2360.12,
+   "y": 1932.07,
+   "rail_z": 119.97,
+   "ground_z": 235.613,
    "class": "tunnel"
   },
   {
    "s": 2430.0,
-   "x": 2475.99,
-   "y": 2142.57,
-   "rail_z": 129.8,
-   "ground_z": 247.835,
+   "x": 2364.87,
+   "y": 1940.87,
+   "rail_z": 120.37,
+   "ground_z": 239.04,
    "class": "tunnel"
   },
   {
    "s": 2440.0,
-   "x": 2481.62,
-   "y": 2150.83,
-   "rail_z": 130.2,
-   "ground_z": 247.711,
+   "x": 2369.62,
+   "y": 1949.67,
+   "rail_z": 120.77,
+   "ground_z": 242.041,
    "class": "tunnel"
   },
   {
    "s": 2450.0,
-   "x": 2487.51,
-   "y": 2158.91,
-   "rail_z": 130.6,
-   "ground_z": 247.585,
+   "x": 2374.37,
+   "y": 1958.47,
+   "rail_z": 121.17,
+   "ground_z": 244.608,
    "class": "tunnel"
   },
   {
    "s": 2460.0,
-   "x": 2493.67,
-   "y": 2166.79,
-   "rail_z": 131.0,
-   "ground_z": 247.457,
+   "x": 2379.13,
+   "y": 1967.27,
+   "rail_z": 121.57,
+   "ground_z": 246.727,
    "class": "tunnel"
   },
   {
    "s": 2470.0,
-   "x": 2500.08,
-   "y": 2174.46,
-   "rail_z": 131.4,
-   "ground_z": 247.326,
+   "x": 2383.88,
+   "y": 1976.07,
+   "rail_z": 121.97,
+   "ground_z": 248.384,
    "class": "tunnel"
   },
   {
    "s": 2480.0,
-   "x": 2506.75,
-   "y": 2181.92,
-   "rail_z": 131.8,
-   "ground_z": 247.193,
+   "x": 2388.63,
+   "y": 1984.87,
+   "rail_z": 122.37,
+   "ground_z": 249.573,
    "class": "tunnel"
   },
   {
    "s": 2490.0,
-   "x": 2513.66,
-   "y": 2189.14,
-   "rail_z": 132.2,
-   "ground_z": 247.057,
+   "x": 2393.38,
+   "y": 1993.67,
+   "rail_z": 122.77,
+   "ground_z": 250.294,
    "class": "tunnel"
   },
   {
    "s": 2500.0,
-   "x": 2520.81,
-   "y": 2196.14,
-   "rail_z": 132.6,
-   "ground_z": 246.892,
+   "x": 2398.13,
+   "y": 2002.47,
+   "rail_z": 123.17,
+   "ground_z": 250.527,
    "class": "tunnel"
   },
   {
    "s": 2510.0,
-   "x": 2528.19,
-   "y": 2202.89,
-   "rail_z": 133.0,
-   "ground_z": 246.719,
+   "x": 2402.88,
+   "y": 2011.27,
+   "rail_z": 123.57,
+   "ground_z": 250.427,
    "class": "tunnel"
   },
   {
    "s": 2520.0,
-   "x": 2535.78,
-   "y": 2209.39,
-   "rail_z": 133.4,
-   "ground_z": 246.532,
+   "x": 2407.64,
+   "y": 2020.07,
+   "rail_z": 123.97,
+   "ground_z": 250.225,
    "class": "tunnel"
   },
   {
    "s": 2530.0,
-   "x": 2543.59,
-   "y": 2215.63,
-   "rail_z": 133.8,
-   "ground_z": 246.336,
+   "x": 2412.39,
+   "y": 2028.86,
+   "rail_z": 124.37,
+   "ground_z": 250.02,
    "class": "tunnel"
   },
   {
    "s": 2540.0,
-   "x": 2551.61,
-   "y": 2221.61,
-   "rail_z": 134.2,
-   "ground_z": 246.132,
+   "x": 2417.14,
+   "y": 2037.66,
+   "rail_z": 124.77,
+   "ground_z": 249.814,
    "class": "tunnel"
   },
   {
    "s": 2550.0,
-   "x": 2559.82,
-   "y": 2227.32,
-   "rail_z": 134.6,
-   "ground_z": 245.922,
+   "x": 2421.89,
+   "y": 2046.46,
+   "rail_z": 125.17,
+   "ground_z": 249.605,
    "class": "tunnel"
   },
   {
    "s": 2560.0,
-   "x": 2568.21,
-   "y": 2232.75,
-   "rail_z": 135.0,
-   "ground_z": 245.706,
+   "x": 2426.64,
+   "y": 2055.26,
+   "rail_z": 125.57,
+   "ground_z": 249.399,
    "class": "tunnel"
   },
   {
    "s": 2570.0,
-   "x": 2576.78,
-   "y": 2237.9,
-   "rail_z": 135.4,
-   "ground_z": 245.486,
+   "x": 2431.39,
+   "y": 2064.06,
+   "rail_z": 125.97,
+   "ground_z": 249.258,
    "class": "tunnel"
   },
   {
    "s": 2580.0,
-   "x": 2585.52,
-   "y": 2242.77,
-   "rail_z": 135.8,
-   "ground_z": 245.261,
+   "x": 2436.14,
+   "y": 2072.86,
+   "rail_z": 126.37,
+   "ground_z": 249.109,
    "class": "tunnel"
   },
   {
    "s": 2590.0,
-   "x": 2594.42,
-   "y": 2247.33,
-   "rail_z": 136.2,
-   "ground_z": 245.033,
+   "x": 2440.9,
+   "y": 2081.66,
+   "rail_z": 126.77,
+   "ground_z": 248.951,
    "class": "tunnel"
   },
   {
    "s": 2600.0,
-   "x": 2603.46,
-   "y": 2251.6,
-   "rail_z": 136.6,
-   "ground_z": 244.785,
+   "x": 2445.65,
+   "y": 2090.46,
+   "rail_z": 127.17,
+   "ground_z": 248.785,
    "class": "tunnel"
   },
   {
    "s": 2610.0,
-   "x": 2612.64,
-   "y": 2255.57,
-   "rail_z": 137.0,
-   "ground_z": 244.538,
+   "x": 2450.42,
+   "y": 2099.25,
+   "rail_z": 127.57,
+   "ground_z": 248.611,
    "class": "tunnel"
   },
   {
    "s": 2620.0,
-   "x": 2621.95,
-   "y": 2259.23,
-   "rail_z": 137.4,
-   "ground_z": 244.284,
+   "x": 2455.25,
+   "y": 2108.0,
+   "rail_z": 127.97,
+   "ground_z": 248.431,
    "class": "tunnel"
   },
   {
    "s": 2630.0,
-   "x": 2631.37,
-   "y": 2262.57,
-   "rail_z": 137.8,
-   "ground_z": 244.031,
+   "x": 2460.16,
+   "y": 2116.71,
+   "rail_z": 128.37,
+   "ground_z": 248.242,
    "class": "tunnel"
   },
   {
    "s": 2640.0,
-   "x": 2640.9,
-   "y": 2265.6,
-   "rail_z": 138.2,
-   "ground_z": 243.79,
+   "x": 2465.21,
+   "y": 2125.35,
+   "rail_z": 128.77,
+   "ground_z": 248.073,
    "class": "tunnel"
   },
   {
    "s": 2650.0,
-   "x": 2650.52,
-   "y": 2268.31,
-   "rail_z": 138.6,
-   "ground_z": 243.56,
+   "x": 2470.41,
+   "y": 2133.88,
+   "rail_z": 129.17,
+   "ground_z": 247.958,
    "class": "tunnel"
   },
   {
    "s": 2660.0,
-   "x": 2660.23,
-   "y": 2270.7,
-   "rail_z": 139.0,
-   "ground_z": 243.343,
+   "x": 2475.81,
+   "y": 2142.3,
+   "rail_z": 129.57,
+   "ground_z": 247.839,
    "class": "tunnel"
   },
   {
    "s": 2670.0,
-   "x": 2670.02,
-   "y": 2272.76,
-   "rail_z": 139.4,
-   "ground_z": 243.14,
+   "x": 2481.44,
+   "y": 2150.57,
+   "rail_z": 129.97,
+   "ground_z": 247.715,
    "class": "tunnel"
   },
   {
    "s": 2680.0,
-   "x": 2679.87,
-   "y": 2274.49,
-   "rail_z": 139.8,
-   "ground_z": 242.952,
+   "x": 2487.32,
+   "y": 2158.65,
+   "rail_z": 130.37,
+   "ground_z": 247.59,
    "class": "tunnel"
   },
   {
    "s": 2690.0,
-   "x": 2689.77,
-   "y": 2275.9,
-   "rail_z": 140.2,
-   "ground_z": 242.781,
+   "x": 2493.47,
+   "y": 2166.54,
+   "rail_z": 130.77,
+   "ground_z": 247.461,
    "class": "tunnel"
   },
   {
    "s": 2700.0,
-   "x": 2699.71,
-   "y": 2276.97,
-   "rail_z": 140.6,
-   "ground_z": 242.629,
+   "x": 2499.87,
+   "y": 2174.22,
+   "rail_z": 131.17,
+   "ground_z": 247.331,
    "class": "tunnel"
   },
   {
    "s": 2710.0,
-   "x": 2709.68,
-   "y": 2277.72,
-   "rail_z": 141.0,
-   "ground_z": 242.496,
+   "x": 2506.53,
+   "y": 2181.68,
+   "rail_z": 131.57,
+   "ground_z": 247.197,
    "class": "tunnel"
   },
   {
    "s": 2720.0,
-   "x": 2719.67,
-   "y": 2278.13,
-   "rail_z": 141.4,
-   "ground_z": 242.387,
+   "x": 2513.43,
+   "y": 2188.91,
+   "rail_z": 131.97,
+   "ground_z": 247.062,
    "class": "tunnel"
   },
   {
    "s": 2730.0,
-   "x": 2729.67,
-   "y": 2278.21,
-   "rail_z": 141.8,
-   "ground_z": 242.31,
+   "x": 2520.58,
+   "y": 2195.91,
+   "rail_z": 132.37,
+   "ground_z": 246.897,
    "class": "tunnel"
   },
   {
    "s": 2740.0,
-   "x": 2739.67,
-   "y": 2277.95,
-   "rail_z": 142.2,
-   "ground_z": 242.327,
+   "x": 2527.95,
+   "y": 2202.67,
+   "rail_z": 132.77,
+   "ground_z": 246.725,
    "class": "tunnel"
   },
   {
    "s": 2750.0,
-   "x": 2749.65,
-   "y": 2277.36,
-   "rail_z": 142.6,
-   "ground_z": 242.37,
+   "x": 2535.54,
+   "y": 2209.18,
+   "rail_z": 133.17,
+   "ground_z": 246.538,
    "class": "tunnel"
   },
   {
    "s": 2760.0,
-   "x": 2759.61,
-   "y": 2276.44,
-   "rail_z": 143.0,
-   "ground_z": 242.441,
+   "x": 2543.34,
+   "y": 2215.43,
+   "rail_z": 133.57,
+   "ground_z": 246.342,
    "class": "tunnel"
   },
   {
    "s": 2770.0,
-   "x": 2769.53,
-   "y": 2275.19,
-   "rail_z": 143.4,
-   "ground_z": 242.542,
+   "x": 2551.35,
+   "y": 2221.42,
+   "rail_z": 133.97,
+   "ground_z": 246.139,
    "class": "tunnel"
   },
   {
    "s": 2780.0,
-   "x": 2779.4,
-   "y": 2273.61,
-   "rail_z": 143.8,
-   "ground_z": 242.673,
+   "x": 2559.55,
+   "y": 2227.14,
+   "rail_z": 134.37,
+   "ground_z": 245.929,
    "class": "tunnel"
   },
   {
    "s": 2790.0,
-   "x": 2789.22,
-   "y": 2271.69,
-   "rail_z": 144.2,
-   "ground_z": 242.835,
+   "x": 2567.94,
+   "y": 2232.58,
+   "rail_z": 134.77,
+   "ground_z": 245.713,
    "class": "tunnel"
   },
   {
    "s": 2800.0,
-   "x": 2798.96,
-   "y": 2269.46,
-   "rail_z": 144.6,
-   "ground_z": 243.053,
+   "x": 2576.5,
+   "y": 2237.74,
+   "rail_z": 135.17,
+   "ground_z": 245.493,
    "class": "tunnel"
   },
   {
    "s": 2810.0,
-   "x": 2808.63,
-   "y": 2266.9,
-   "rail_z": 145.0,
-   "ground_z": 243.351,
+   "x": 2585.24,
+   "y": 2242.61,
+   "rail_z": 135.57,
+   "ground_z": 245.269,
    "class": "tunnel"
   },
   {
    "s": 2820.0,
-   "x": 2818.2,
-   "y": 2264.02,
-   "rail_z": 145.4,
-   "ground_z": 243.679,
+   "x": 2594.13,
+   "y": 2247.19,
+   "rail_z": 135.97,
+   "ground_z": 245.041,
    "class": "tunnel"
   },
   {
    "s": 2830.0,
-   "x": 2827.68,
-   "y": 2260.82,
-   "rail_z": 145.8,
-   "ground_z": 244.036,
+   "x": 2603.17,
+   "y": 2251.47,
+   "rail_z": 136.37,
+   "ground_z": 244.793,
    "class": "tunnel"
   },
   {
    "s": 2840.0,
-   "x": 2837.04,
-   "y": 2257.31,
-   "rail_z": 146.2,
-   "ground_z": 244.422,
+   "x": 2612.34,
+   "y": 2255.45,
+   "rail_z": 136.77,
+   "ground_z": 244.546,
    "class": "tunnel"
   },
   {
    "s": 2850.0,
-   "x": 2846.28,
-   "y": 2253.48,
-   "rail_z": 146.6,
-   "ground_z": 244.854,
+   "x": 2621.64,
+   "y": 2259.11,
+   "rail_z": 137.17,
+   "ground_z": 244.292,
    "class": "tunnel"
   },
   {
    "s": 2860.0,
-   "x": 2855.39,
-   "y": 2249.35,
-   "rail_z": 147.0,
-   "ground_z": 245.314,
+   "x": 2631.06,
+   "y": 2262.47,
+   "rail_z": 137.57,
+   "ground_z": 244.039,
    "class": "tunnel"
   },
   {
    "s": 2870.0,
-   "x": 2864.35,
-   "y": 2244.92,
-   "rail_z": 147.4,
-   "ground_z": 245.799,
+   "x": 2640.59,
+   "y": 2265.51,
+   "rail_z": 137.97,
+   "ground_z": 243.797,
    "class": "tunnel"
   },
   {
    "s": 2880.0,
-   "x": 2873.16,
-   "y": 2240.2,
-   "rail_z": 147.8,
-   "ground_z": 246.296,
+   "x": 2650.21,
+   "y": 2268.23,
+   "rail_z": 138.37,
+   "ground_z": 243.567,
    "class": "tunnel"
   },
   {
    "s": 2890.0,
-   "x": 2881.81,
-   "y": 2235.18,
-   "rail_z": 148.2,
-   "ground_z": 246.801,
+   "x": 2659.92,
+   "y": 2270.62,
+   "rail_z": 138.77,
+   "ground_z": 243.349,
    "class": "tunnel"
   },
   {
    "s": 2900.0,
-   "x": 2890.29,
-   "y": 2229.88,
-   "rail_z": 148.6,
-   "ground_z": 247.312,
+   "x": 2669.7,
+   "y": 2272.7,
+   "rail_z": 139.17,
+   "ground_z": 243.146,
    "class": "tunnel"
   },
   {
    "s": 2910.0,
-   "x": 2898.59,
-   "y": 2224.3,
-   "rail_z": 149.0,
-   "ground_z": 247.827,
+   "x": 2679.55,
+   "y": 2274.44,
+   "rail_z": 139.57,
+   "ground_z": 242.958,
    "class": "tunnel"
   },
   {
    "s": 2920.0,
-   "x": 2906.69,
-   "y": 2218.44,
-   "rail_z": 149.4,
-   "ground_z": 248.345,
+   "x": 2689.45,
+   "y": 2275.86,
+   "rail_z": 139.97,
+   "ground_z": 242.786,
    "class": "tunnel"
   },
   {
    "s": 2930.0,
-   "x": 2914.6,
-   "y": 2212.32,
-   "rail_z": 149.8,
-   "ground_z": 248.865,
+   "x": 2699.39,
+   "y": 2276.95,
+   "rail_z": 140.37,
+   "ground_z": 242.633,
    "class": "tunnel"
   },
   {
    "s": 2940.0,
-   "x": 2922.3,
-   "y": 2205.94,
-   "rail_z": 150.2,
-   "ground_z": 249.385,
+   "x": 2709.36,
+   "y": 2277.7,
+   "rail_z": 140.77,
+   "ground_z": 242.5,
    "class": "tunnel"
   },
   {
    "s": 2950.0,
-   "x": 2929.78,
-   "y": 2199.3,
-   "rail_z": 150.6,
-   "ground_z": 249.905,
+   "x": 2719.35,
+   "y": 2278.12,
+   "rail_z": 141.17,
+   "ground_z": 242.39,
    "class": "tunnel"
   },
   {
    "s": 2960.0,
-   "x": 2937.03,
-   "y": 2192.42,
-   "rail_z": 151.0,
-   "ground_z": 250.369,
+   "x": 2729.35,
+   "y": 2278.21,
+   "rail_z": 141.57,
+   "ground_z": 242.31,
    "class": "tunnel"
   },
   {
    "s": 2970.0,
-   "x": 2944.06,
-   "y": 2185.3,
-   "rail_z": 151.4,
-   "ground_z": 250.726,
+   "x": 2739.35,
+   "y": 2277.96,
+   "rail_z": 141.97,
+   "ground_z": 242.326,
    "class": "tunnel"
   },
   {
    "s": 2980.0,
-   "x": 2950.84,
-   "y": 2177.95,
-   "rail_z": 151.8,
-   "ground_z": 250.995,
+   "x": 2749.33,
+   "y": 2277.39,
+   "rail_z": 142.37,
+   "ground_z": 242.368,
    "class": "tunnel"
   },
   {
    "s": 2990.0,
-   "x": 2957.37,
-   "y": 2170.38,
-   "rail_z": 152.2,
-   "ground_z": 251.243,
+   "x": 2759.29,
+   "y": 2276.48,
+   "rail_z": 142.77,
+   "ground_z": 242.439,
    "class": "tunnel"
   },
   {
    "s": 3000.0,
-   "x": 2963.65,
-   "y": 2162.6,
-   "rail_z": 152.6,
-   "ground_z": 251.468,
+   "x": 2769.21,
+   "y": 2275.23,
+   "rail_z": 143.17,
+   "ground_z": 242.538,
    "class": "tunnel"
   },
   {
    "s": 3010.0,
-   "x": 2969.66,
-   "y": 2154.61,
-   "rail_z": 153.0,
-   "ground_z": 251.673,
-   "class": "tunnel"
-  },
-  {
-   "s": 3020.0,
-   "x": 2975.4,
-   "y": 2146.42,
-   "rail_z": 153.4,
-   "ground_z": 251.857,
-   "class": "tunnel"
-  },
-  {
-   "s": 3030.0,
-   "x": 2980.87,
-   "y": 2138.05,
-   "rail_z": 153.8,
-   "ground_z": 252.021,
-   "class": "tunnel"
-  },
-  {
-   "s": 3040.0,
-   "x": 2986.06,
-   "y": 2129.5,
-   "rail_z": 154.2,
-   "ground_z": 252.168,
-   "class": "tunnel"
-  },
-  {
-   "s": 3050.0,
-   "x": 2990.95,
-   "y": 2120.78,
-   "rail_z": 154.6,
-   "ground_z": 252.29,
-   "class": "tunnel"
-  },
-  {
-   "s": 3060.0,
-   "x": 2995.56,
-   "y": 2111.91,
-   "rail_z": 155.0,
-   "ground_z": 252.361,
-   "class": "tunnel"
-  },
-  {
-   "s": 3070.0,
-   "x": 2999.87,
-   "y": 2102.88,
-   "rail_z": 155.4,
-   "ground_z": 252.432,
-   "class": "tunnel"
-  },
-  {
-   "s": 3080.0,
-   "x": 3003.87,
-   "y": 2093.72,
-   "rail_z": 155.8,
-   "ground_z": 252.505,
-   "class": "tunnel"
-  },
-  {
-   "s": 3090.0,
-   "x": 3007.56,
-   "y": 2084.43,
-   "rail_z": 156.2,
-   "ground_z": 252.577,
-   "class": "tunnel"
-  },
-  {
-   "s": 3100.0,
-   "x": 3010.95,
-   "y": 2075.02,
-   "rail_z": 156.6,
-   "ground_z": 252.65,
-   "class": "tunnel"
-  },
-  {
-   "s": 3110.0,
-   "x": 3014.02,
-   "y": 2065.5,
-   "rail_z": 157.0,
-   "ground_z": 252.725,
-   "class": "tunnel"
-  },
-  {
-   "s": 3120.0,
-   "x": 3016.77,
-   "y": 2055.88,
-   "rail_z": 157.4,
-   "ground_z": 252.804,
-   "class": "tunnel"
-  },
-  {
-   "s": 3130.0,
-   "x": 3019.19,
-   "y": 2046.18,
-   "rail_z": 157.8,
-   "ground_z": 252.886,
-   "class": "tunnel"
-  },
-  {
-   "s": 3140.0,
-   "x": 3021.3,
-   "y": 2036.41,
-   "rail_z": 158.2,
-   "ground_z": 252.983,
-   "class": "tunnel"
-  },
-  {
-   "s": 3150.0,
-   "x": 3023.07,
-   "y": 2026.57,
-   "rail_z": 158.6,
-   "ground_z": 253.098,
-   "class": "tunnel"
-  },
-  {
-   "s": 3160.0,
-   "x": 3024.52,
-   "y": 2016.67,
-   "rail_z": 159.0,
-   "ground_z": 253.23,
-   "class": "tunnel"
-  },
-  {
-   "s": 3170.0,
-   "x": 3025.63,
-   "y": 2006.74,
-   "rail_z": 159.4,
-   "ground_z": 253.379,
-   "class": "tunnel"
-  },
-  {
-   "s": 3180.0,
-   "x": 3026.42,
-   "y": 1996.77,
-   "rail_z": 159.8,
-   "ground_z": 253.546,
-   "class": "tunnel"
-  },
-  {
-   "s": 3190.0,
-   "x": 3026.87,
-   "y": 1986.78,
-   "rail_z": 160.2,
-   "ground_z": 253.731,
-   "class": "tunnel"
-  },
-  {
-   "s": 3200.0,
-   "x": 3026.99,
-   "y": 1976.78,
-   "rail_z": 160.6,
-   "ground_z": 253.951,
-   "class": "tunnel"
-  },
-  {
-   "s": 3210.0,
-   "x": 3026.78,
-   "y": 1966.78,
-   "rail_z": 161.0,
-   "ground_z": 254.187,
-   "class": "tunnel"
-  },
-  {
-   "s": 3220.0,
-   "x": 3026.23,
-   "y": 1956.8,
-   "rail_z": 161.4,
-   "ground_z": 254.437,
-   "class": "tunnel"
-  },
-  {
-   "s": 3230.0,
-   "x": 3025.35,
-   "y": 1946.84,
-   "rail_z": 161.8,
-   "ground_z": 254.698,
-   "class": "tunnel"
-  },
-  {
-   "s": 3240.0,
-   "x": 3024.14,
-   "y": 1936.91,
-   "rail_z": 162.2,
-   "ground_z": 254.967,
-   "class": "tunnel"
-  },
-  {
-   "s": 3250.0,
-   "x": 3022.59,
-   "y": 1927.03,
-   "rail_z": 162.6,
-   "ground_z": 255.243,
-   "class": "tunnel"
-  },
-  {
-   "s": 3260.0,
-   "x": 3020.72,
-   "y": 1917.21,
-   "rail_z": 163.0,
-   "ground_z": 255.481,
-   "class": "tunnel"
-  },
-  {
-   "s": 3270.0,
-   "x": 3018.53,
-   "y": 1907.45,
-   "rail_z": 163.4,
-   "ground_z": 255.619,
-   "class": "tunnel"
-  },
-  {
-   "s": 3280.0,
-   "x": 3016.01,
-   "y": 1897.78,
-   "rail_z": 163.8,
-   "ground_z": 255.75,
-   "class": "tunnel"
-  },
-  {
-   "s": 3290.0,
-   "x": 3013.17,
-   "y": 1888.19,
-   "rail_z": 164.2,
-   "ground_z": 255.873,
-   "class": "tunnel"
-  },
-  {
-   "s": 3300.0,
-   "x": 3010.01,
-   "y": 1878.7,
-   "rail_z": 164.6,
-   "ground_z": 255.983,
-   "class": "tunnel"
-  },
-  {
-   "s": 3310.0,
-   "x": 3006.53,
-   "y": 1869.32,
-   "rail_z": 165.0,
-   "ground_z": 256.078,
-   "class": "tunnel"
-  },
-  {
-   "s": 3320.0,
-   "x": 3002.75,
-   "y": 1860.07,
-   "rail_z": 165.4,
-   "ground_z": 256.155,
-   "class": "tunnel"
-  },
-  {
-   "s": 3330.0,
-   "x": 2998.66,
-   "y": 1850.94,
-   "rail_z": 165.8,
-   "ground_z": 256.184,
-   "class": "tunnel"
-  },
-  {
-   "s": 3340.0,
-   "x": 2994.26,
-   "y": 1841.96,
-   "rail_z": 166.2,
-   "ground_z": 256.074,
-   "class": "tunnel"
-  },
-  {
-   "s": 3350.0,
-   "x": 2989.58,
-   "y": 1833.13,
-   "rail_z": 166.6,
-   "ground_z": 255.94,
-   "class": "tunnel"
-  },
-  {
-   "s": 3360.0,
-   "x": 2984.59,
-   "y": 1824.46,
-   "rail_z": 167.0,
-   "ground_z": 255.779,
-   "class": "tunnel"
-  },
-  {
-   "s": 3370.0,
-   "x": 2979.33,
-   "y": 1815.96,
-   "rail_z": 167.4,
-   "ground_z": 255.589,
-   "class": "tunnel"
-  },
-  {
-   "s": 3380.0,
-   "x": 2973.78,
-   "y": 1807.64,
-   "rail_z": 167.8,
-   "ground_z": 255.369,
-   "class": "tunnel"
-  },
-  {
-   "s": 3390.0,
-   "x": 2967.96,
-   "y": 1799.51,
-   "rail_z": 168.2,
-   "ground_z": 255.117,
-   "class": "tunnel"
-  },
-  {
-   "s": 3400.0,
-   "x": 2961.87,
-   "y": 1791.58,
-   "rail_z": 168.6,
-   "ground_z": 254.832,
-   "class": "tunnel"
-  },
-  {
-   "s": 3410.0,
-   "x": 2955.52,
-   "y": 1783.85,
-   "rail_z": 169.0,
-   "ground_z": 254.494,
-   "class": "tunnel"
-  },
-  {
-   "s": 3420.0,
-   "x": 2948.91,
-   "y": 1776.35,
-   "rail_z": 169.4,
-   "ground_z": 254.052,
-   "class": "tunnel"
-  },
-  {
-   "s": 3430.0,
-   "x": 2942.06,
-   "y": 1769.06,
-   "rail_z": 169.8,
-   "ground_z": 253.611,
-   "class": "tunnel"
-  },
-  {
-   "s": 3440.0,
-   "x": 2934.97,
-   "y": 1762.01,
-   "rail_z": 170.2,
-   "ground_z": 253.174,
-   "class": "tunnel"
-  },
-  {
-   "s": 3450.0,
-   "x": 2927.65,
-   "y": 1755.2,
-   "rail_z": 170.6,
-   "ground_z": 252.782,
-   "class": "tunnel"
-  },
-  {
-   "s": 3460.0,
-   "x": 2920.11,
-   "y": 1748.64,
-   "rail_z": 171.0,
-   "ground_z": 252.467,
-   "class": "tunnel"
-  },
-  {
-   "s": 3470.0,
-   "x": 2912.35,
-   "y": 1742.33,
-   "rail_z": 171.4,
-   "ground_z": 252.164,
-   "class": "tunnel"
-  },
-  {
-   "s": 3480.0,
-   "x": 2904.38,
-   "y": 1736.28,
-   "rail_z": 171.8,
-   "ground_z": 251.873,
-   "class": "tunnel"
-  },
-  {
-   "s": 3490.0,
-   "x": 2896.22,
-   "y": 1730.5,
-   "rail_z": 172.2,
-   "ground_z": 251.595,
-   "class": "tunnel"
-  },
-  {
-   "s": 3500.0,
-   "x": 2887.87,
-   "y": 1725.0,
-   "rail_z": 172.6,
-   "ground_z": 251.33,
-   "class": "tunnel"
-  },
-  {
-   "s": 3510.0,
-   "x": 2879.34,
-   "y": 1719.78,
-   "rail_z": 173.0,
-   "ground_z": 251.078,
-   "class": "tunnel"
-  },
-  {
-   "s": 3520.0,
-   "x": 2870.65,
-   "y": 1714.85,
-   "rail_z": 173.4,
-   "ground_z": 250.878,
-   "class": "tunnel"
-  },
-  {
-   "s": 3530.0,
-   "x": 2861.79,
-   "y": 1710.21,
-   "rail_z": 173.8,
-   "ground_z": 250.755,
-   "class": "tunnel"
-  },
-  {
-   "s": 3540.0,
-   "x": 2852.78,
-   "y": 1705.86,
-   "rail_z": 174.2,
-   "ground_z": 250.817,
-   "class": "tunnel"
-  },
-  {
-   "s": 3550.0,
-   "x": 2843.63,
-   "y": 1701.82,
-   "rail_z": 174.6,
-   "ground_z": 250.908,
-   "class": "tunnel"
-  },
-  {
-   "s": 3560.0,
-   "x": 2834.36,
-   "y": 1698.09,
-   "rail_z": 175.0,
-   "ground_z": 251.025,
-   "class": "tunnel"
-  },
-  {
-   "s": 3570.0,
-   "x": 2824.96,
-   "y": 1694.67,
-   "rail_z": 175.4,
-   "ground_z": 251.168,
-   "class": "tunnel"
-  },
-  {
-   "s": 3580.0,
-   "x": 2815.46,
-   "y": 1691.56,
-   "rail_z": 175.8,
-   "ground_z": 251.334,
-   "class": "tunnel"
-  },
-  {
-   "s": 3590.0,
-   "x": 2805.86,
-   "y": 1688.77,
-   "rail_z": 176.2,
-   "ground_z": 251.523,
-   "class": "tunnel"
-  },
-  {
-   "s": 3600.0,
-   "x": 2796.17,
-   "y": 1686.3,
-   "rail_z": 176.6,
-   "ground_z": 251.732,
-   "class": "tunnel"
-  },
-  {
-   "s": 3610.0,
-   "x": 2786.4,
-   "y": 1684.16,
-   "rail_z": 177.0,
-   "ground_z": 252.078,
-   "class": "tunnel"
-  },
-  {
-   "s": 3620.0,
-   "x": 2776.57,
-   "y": 1682.34,
-   "rail_z": 177.4,
-   "ground_z": 252.441,
-   "class": "tunnel"
-  },
-  {
-   "s": 3630.0,
-   "x": 2766.68,
-   "y": 1680.85,
-   "rail_z": 177.8,
-   "ground_z": 252.815,
-   "class": "tunnel"
-  },
-  {
-   "s": 3640.0,
-   "x": 2756.74,
-   "y": 1679.7,
-   "rail_z": 178.2,
-   "ground_z": 253.199,
-   "class": "tunnel"
-  },
-  {
-   "s": 3650.0,
-   "x": 2746.78,
-   "y": 1678.87,
-   "rail_z": 178.6,
-   "ground_z": 253.593,
-   "class": "tunnel"
-  },
-  {
-   "s": 3660.0,
-   "x": 2736.79,
-   "y": 1678.38,
-   "rail_z": 179.0,
-   "ground_z": 253.996,
-   "class": "tunnel"
-  },
-  {
-   "s": 3670.0,
-   "x": 2726.79,
-   "y": 1678.22,
-   "rail_z": 179.4,
-   "ground_z": 254.394,
-   "class": "tunnel"
-  },
-  {
-   "s": 3680.0,
-   "x": 2716.8,
-   "y": 1678.39,
-   "rail_z": 179.8,
-   "ground_z": 254.73,
-   "class": "tunnel"
-  },
-  {
-   "s": 3690.0,
-   "x": 2706.81,
-   "y": 1678.9,
-   "rail_z": 180.2,
-   "ground_z": 255.071,
-   "class": "tunnel"
-  },
-  {
-   "s": 3700.0,
-   "x": 2696.84,
-   "y": 1679.74,
-   "rail_z": 180.6,
-   "ground_z": 255.418,
-   "class": "tunnel"
-  },
-  {
-   "s": 3710.0,
-   "x": 2686.91,
-   "y": 1680.91,
-   "rail_z": 181.0,
-   "ground_z": 255.767,
-   "class": "tunnel"
-  },
-  {
-   "s": 3720.0,
-   "x": 2677.03,
-   "y": 1682.41,
-   "rail_z": 181.4,
-   "ground_z": 256.117,
-   "class": "tunnel"
-  },
-  {
-   "s": 3730.0,
-   "x": 2667.2,
-   "y": 1684.24,
-   "rail_z": 181.8,
-   "ground_z": 256.468,
-   "class": "tunnel"
-  },
-  {
-   "s": 3740.0,
-   "x": 2657.43,
-   "y": 1686.39,
-   "rail_z": 182.2,
-   "ground_z": 256.769,
-   "class": "tunnel"
-  },
-  {
-   "s": 3750.0,
-   "x": 2647.75,
-   "y": 1688.87,
-   "rail_z": 182.6,
-   "ground_z": 256.989,
-   "class": "tunnel"
-  },
-  {
-   "s": 3760.0,
-   "x": 2638.15,
-   "y": 1691.68,
-   "rail_z": 183.0,
-   "ground_z": 257.211,
-   "class": "tunnel"
-  },
-  {
-   "s": 3770.0,
-   "x": 2628.65,
-   "y": 1694.8,
-   "rail_z": 183.4,
-   "ground_z": 257.434,
-   "class": "tunnel"
-  },
-  {
-   "s": 3780.0,
-   "x": 2619.26,
-   "y": 1698.23,
-   "rail_z": 183.8,
-   "ground_z": 257.658,
-   "class": "tunnel"
-  },
-  {
-   "s": 3790.0,
-   "x": 2609.98,
-   "y": 1701.98,
-   "rail_z": 184.2,
-   "ground_z": 257.883,
-   "class": "tunnel"
-  },
-  {
-   "s": 3800.0,
-   "x": 2600.84,
-   "y": 1706.03,
-   "rail_z": 184.6,
-   "ground_z": 258.108,
-   "class": "tunnel"
-  },
-  {
-   "s": 3810.0,
-   "x": 2591.84,
-   "y": 1710.39,
-   "rail_z": 185.0,
-   "ground_z": 258.303,
-   "class": "tunnel"
-  },
-  {
-   "s": 3820.0,
-   "x": 2582.99,
-   "y": 1715.04,
-   "rail_z": 185.4,
-   "ground_z": 258.39,
-   "class": "tunnel"
-  },
-  {
-   "s": 3830.0,
-   "x": 2574.3,
-   "y": 1719.98,
-   "rail_z": 185.8,
-   "ground_z": 258.457,
-   "class": "tunnel"
-  },
-  {
-   "s": 3840.0,
-   "x": 2565.78,
-   "y": 1725.22,
-   "rail_z": 186.2,
-   "ground_z": 258.489,
-   "class": "tunnel"
-  },
-  {
-   "s": 3850.0,
-   "x": 2557.44,
-   "y": 1730.73,
-   "rail_z": 186.6,
-   "ground_z": 258.52,
-   "class": "tunnel"
-  },
-  {
-   "s": 3860.0,
-   "x": 2549.28,
-   "y": 1736.52,
-   "rail_z": 187.0,
-   "ground_z": 258.552,
-   "class": "tunnel"
-  },
-  {
-   "s": 3870.0,
-   "x": 2541.33,
-   "y": 1742.58,
-   "rail_z": 187.4,
-   "ground_z": 258.583,
-   "class": "tunnel"
-  },
-  {
-   "s": 3880.0,
-   "x": 2533.58,
-   "y": 1748.89,
-   "rail_z": 187.8,
-   "ground_z": 258.614,
-   "class": "tunnel"
-  },
-  {
-   "s": 3890.0,
-   "x": 2526.04,
-   "y": 1755.47,
-   "rail_z": 188.2,
-   "ground_z": 258.644,
-   "class": "tunnel"
-  },
-  {
-   "s": 3900.0,
-   "x": 2518.73,
-   "y": 1762.29,
-   "rail_z": 188.6,
-   "ground_z": 258.635,
-   "class": "tunnel"
-  },
-  {
-   "s": 3910.0,
-   "x": 2511.65,
-   "y": 1769.35,
-   "rail_z": 189.0,
-   "ground_z": 258.626,
-   "class": "tunnel"
-  },
-  {
-   "s": 3920.0,
-   "x": 2504.81,
-   "y": 1776.64,
-   "rail_z": 189.4,
-   "ground_z": 258.615,
-   "class": "tunnel"
-  },
-  {
-   "s": 3930.0,
-   "x": 2498.21,
-   "y": 1784.16,
-   "rail_z": 189.8,
-   "ground_z": 258.604,
-   "class": "tunnel"
-  },
-  {
-   "s": 3940.0,
-   "x": 2491.87,
-   "y": 1791.89,
-   "rail_z": 190.2,
-   "ground_z": 258.522,
-   "class": "tunnel"
-  },
-  {
-   "s": 3950.0,
-   "x": 2485.79,
-   "y": 1799.83,
-   "rail_z": 190.6,
-   "ground_z": 258.419,
-   "class": "tunnel"
-  },
-  {
-   "s": 3960.0,
-   "x": 2479.98,
-   "y": 1807.97,
-   "rail_z": 191.0,
-   "ground_z": 258.306,
-   "class": "tunnel"
-  },
-  {
-   "s": 3970.0,
-   "x": 2474.44,
-   "y": 1816.3,
-   "rail_z": 191.4,
-   "ground_z": 258.183,
-   "class": "tunnel"
-  },
-  {
-   "s": 3980.0,
-   "x": 2469.19,
-   "y": 1824.8,
-   "rail_z": 191.8,
-   "ground_z": 258.052,
-   "class": "tunnel"
-  },
-  {
-   "s": 3990.0,
-   "x": 2464.22,
-   "y": 1833.48,
-   "rail_z": 192.2,
-   "ground_z": 257.913,
-   "class": "tunnel"
-  },
-  {
-   "s": 4000.0,
-   "x": 2459.54,
-   "y": 1842.32,
-   "rail_z": 192.6,
-   "ground_z": 257.765,
-   "class": "tunnel"
-  },
-  {
-   "s": 4010.0,
-   "x": 2455.16,
-   "y": 1851.31,
-   "rail_z": 193.0,
-   "ground_z": 257.594,
-   "class": "tunnel"
-  },
-  {
-   "s": 4020.0,
-   "x": 2451.08,
-   "y": 1860.44,
-   "rail_z": 193.4,
-   "ground_z": 257.288,
-   "class": "tunnel"
-  },
-  {
-   "s": 4030.0,
-   "x": 2447.31,
-   "y": 1869.7,
-   "rail_z": 193.8,
-   "ground_z": 256.95,
-   "class": "tunnel"
-  },
-  {
-   "s": 4040.0,
-   "x": 2443.85,
-   "y": 1879.08,
-   "rail_z": 194.2,
-   "ground_z": 256.603,
-   "class": "tunnel"
-  },
-  {
-   "s": 4050.0,
-   "x": 2440.7,
-   "y": 1888.57,
-   "rail_z": 194.6,
-   "ground_z": 256.248,
-   "class": "tunnel"
-  },
-  {
-   "s": 4060.0,
-   "x": 2437.87,
-   "y": 1898.16,
-   "rail_z": 195.0,
-   "ground_z": 255.886,
-   "class": "tunnel"
-  },
-  {
-   "s": 4070.0,
-   "x": 2435.36,
-   "y": 1907.84,
-   "rail_z": 195.4,
-   "ground_z": 255.521,
-   "class": "tunnel"
-  },
-  {
-   "s": 4080.0,
-   "x": 2433.18,
-   "y": 1917.6,
-   "rail_z": 195.8,
-   "ground_z": 255.153,
-   "class": "tunnel"
-  },
-  {
-   "s": 4090.0,
-   "x": 2431.32,
-   "y": 1927.42,
-   "rail_z": 196.2,
-   "ground_z": 254.726,
-   "class": "tunnel"
-  },
-  {
-   "s": 4100.0,
-   "x": 2429.8,
-   "y": 1937.31,
-   "rail_z": 196.6,
-   "ground_z": 254.283,
-   "class": "tunnel"
-  },
-  {
-   "s": 4110.0,
-   "x": 2428.6,
-   "y": 1947.23,
-   "rail_z": 197.0,
-   "ground_z": 253.843,
-   "class": "tunnel"
-  },
-  {
-   "s": 4120.0,
-   "x": 2427.73,
-   "y": 1957.2,
-   "rail_z": 197.4,
-   "ground_z": 253.409,
-   "class": "tunnel"
-  },
-  {
-   "s": 4130.0,
-   "x": 2427.2,
-   "y": 1967.18,
-   "rail_z": 197.8,
-   "ground_z": 252.981,
-   "class": "tunnel"
-  },
-  {
-   "s": 4140.0,
-   "x": 2427.0,
-   "y": 1977.18,
-   "rail_z": 198.2,
-   "ground_z": 252.562,
-   "class": "tunnel"
-  },
-  {
-   "s": 4150.0,
-   "x": 2427.13,
-   "y": 1987.18,
-   "rail_z": 198.6,
-   "ground_z": 252.152,
-   "class": "tunnel"
-  },
-  {
-   "s": 4160.0,
-   "x": 2427.59,
-   "y": 1997.17,
-   "rail_z": 199.0,
-   "ground_z": 251.764,
-   "class": "tunnel"
-  },
-  {
-   "s": 4170.0,
-   "x": 2428.37,
-   "y": 2007.14,
-   "rail_z": 199.4,
-   "ground_z": 251.387,
-   "class": "tunnel"
-  },
-  {
-   "s": 4180.0,
-   "x": 2429.44,
-   "y": 2017.08,
-   "rail_z": 199.8,
-   "ground_z": 251.019,
-   "class": "tunnel"
-  },
-  {
-   "s": 4190.0,
-   "x": 2430.73,
-   "y": 2026.99,
-   "rail_z": 200.2,
-   "ground_z": 250.658,
-   "class": "tunnel"
-  },
-  {
-   "s": 4200.0,
-   "x": 2432.22,
-   "y": 2036.88,
-   "rail_z": 200.6,
-   "ground_z": 250.305,
-   "class": "tunnel"
-  },
-  {
-   "s": 4210.0,
-   "x": 2433.86,
-   "y": 2046.75,
-   "rail_z": 201.0,
-   "ground_z": 249.955,
-   "class": "tunnel"
-  },
-  {
-   "s": 4220.0,
-   "x": 2435.62,
-   "y": 2056.59,
-   "rail_z": 201.4,
-   "ground_z": 249.624,
-   "class": "tunnel"
-  },
-  {
-   "s": 4230.0,
-   "x": 2437.44,
-   "y": 2066.42,
-   "rail_z": 201.8,
-   "ground_z": 249.356,
-   "class": "tunnel"
-  },
-  {
-   "s": 4240.0,
-   "x": 2439.29,
-   "y": 2076.25,
-   "rail_z": 202.2,
-   "ground_z": 249.085,
-   "class": "tunnel"
-  },
-  {
-   "s": 4250.0,
-   "x": 2441.15,
-   "y": 2086.08,
-   "rail_z": 202.6,
-   "ground_z": 248.811,
-   "class": "tunnel"
-  },
-  {
-   "s": 4260.0,
-   "x": 2443.0,
-   "y": 2095.9,
-   "rail_z": 203.0,
-   "ground_z": 248.533,
-   "class": "tunnel"
-  },
-  {
-   "s": 4270.0,
-   "x": 2444.85,
-   "y": 2105.73,
-   "rail_z": 203.4,
-   "ground_z": 248.252,
-   "class": "tunnel"
-  },
-  {
-   "s": 4280.0,
-   "x": 2446.71,
-   "y": 2115.56,
-   "rail_z": 203.8,
-   "ground_z": 247.966,
-   "class": "tunnel"
-  },
-  {
-   "s": 4290.0,
-   "x": 2448.56,
-   "y": 2125.38,
-   "rail_z": 204.2,
-   "ground_z": 247.716,
-   "class": "tunnel"
-  },
-  {
-   "s": 4300.0,
-   "x": 2450.42,
-   "y": 2135.21,
-   "rail_z": 204.6,
-   "ground_z": 247.537,
-   "class": "tunnel"
-  },
-  {
-   "s": 4310.0,
-   "x": 2452.27,
-   "y": 2145.04,
-   "rail_z": 205.0,
-   "ground_z": 247.352,
-   "class": "tunnel"
-  },
-  {
-   "s": 4320.0,
-   "x": 2454.13,
-   "y": 2154.86,
-   "rail_z": 205.4,
-   "ground_z": 247.16,
-   "class": "tunnel"
-  },
-  {
-   "s": 4330.0,
-   "x": 2455.98,
-   "y": 2164.69,
-   "rail_z": 205.8,
-   "ground_z": 246.962,
-   "class": "tunnel"
-  },
-  {
-   "s": 4340.0,
-   "x": 2457.83,
-   "y": 2174.52,
-   "rail_z": 206.2,
-   "ground_z": 246.757,
-   "class": "tunnel"
-  },
-  {
-   "s": 4350.0,
-   "x": 2459.69,
-   "y": 2184.34,
-   "rail_z": 206.6,
-   "ground_z": 246.546,
-   "class": "tunnel"
-  },
-  {
-   "s": 4360.0,
-   "x": 2461.54,
-   "y": 2194.17,
-   "rail_z": 207.0,
-   "ground_z": 246.315,
-   "class": "tunnel"
-  },
-  {
-   "s": 4370.0,
-   "x": 2463.4,
-   "y": 2204.0,
-   "rail_z": 207.4,
-   "ground_z": 246.064,
-   "class": "tunnel"
-  },
-  {
-   "s": 4380.0,
-   "x": 2465.25,
-   "y": 2213.82,
-   "rail_z": 207.8,
-   "ground_z": 245.808,
-   "class": "tunnel"
-  },
-  {
-   "s": 4390.0,
-   "x": 2467.1,
-   "y": 2223.65,
-   "rail_z": 208.2,
-   "ground_z": 245.547,
-   "class": "tunnel"
-  },
-  {
-   "s": 4400.0,
-   "x": 2468.94,
-   "y": 2233.48,
-   "rail_z": 208.6,
-   "ground_z": 245.28,
-   "class": "tunnel"
-  },
-  {
-   "s": 4410.0,
-   "x": 2470.74,
-   "y": 2243.32,
-   "rail_z": 209.0,
-   "ground_z": 245.008,
-   "class": "tunnel"
-  },
-  {
-   "s": 4420.0,
-   "x": 2472.51,
-   "y": 2253.16,
-   "rail_z": 209.4,
-   "ground_z": 244.73,
-   "class": "tunnel"
-  },
-  {
-   "s": 4430.0,
-   "x": 2474.22,
-   "y": 2263.01,
-   "rail_z": 209.8,
-   "ground_z": 244.367,
-   "class": "tunnel"
-  },
-  {
-   "s": 4440.0,
-   "x": 2475.86,
-   "y": 2272.88,
-   "rail_z": 210.2,
-   "ground_z": 243.949,
-   "class": "tunnel"
-  },
-  {
-   "s": 4450.0,
-   "x": 2477.41,
-   "y": 2282.76,
-   "rail_z": 210.6,
-   "ground_z": 243.527,
-   "class": "tunnel"
-  },
-  {
-   "s": 4460.0,
-   "x": 2478.87,
-   "y": 2292.65,
-   "rail_z": 211.0,
-   "ground_z": 243.1,
-   "class": "tunnel"
-  },
-  {
-   "s": 4470.0,
-   "x": 2480.22,
-   "y": 2302.56,
-   "rail_z": 211.4,
+   "x": 2779.08,
+   "y": 2273.66,
+   "rail_z": 143.57,
    "ground_z": 242.668,
    "class": "tunnel"
   },
   {
+   "s": 3020.0,
+   "x": 2788.9,
+   "y": 2271.76,
+   "rail_z": 143.97,
+   "ground_z": 242.829,
+   "class": "tunnel"
+  },
+  {
+   "s": 3030.0,
+   "x": 2798.65,
+   "y": 2269.53,
+   "rail_z": 144.37,
+   "ground_z": 243.044,
+   "class": "tunnel"
+  },
+  {
+   "s": 3040.0,
+   "x": 2808.32,
+   "y": 2266.98,
+   "rail_z": 144.77,
+   "ground_z": 243.341,
+   "class": "tunnel"
+  },
+  {
+   "s": 3050.0,
+   "x": 2817.9,
+   "y": 2264.11,
+   "rail_z": 145.17,
+   "ground_z": 243.668,
+   "class": "tunnel"
+  },
+  {
+   "s": 3060.0,
+   "x": 2827.38,
+   "y": 2260.93,
+   "rail_z": 145.57,
+   "ground_z": 244.024,
+   "class": "tunnel"
+  },
+  {
+   "s": 3070.0,
+   "x": 2836.74,
+   "y": 2257.42,
+   "rail_z": 145.97,
+   "ground_z": 244.409,
+   "class": "tunnel"
+  },
+  {
+   "s": 3080.0,
+   "x": 2845.99,
+   "y": 2253.61,
+   "rail_z": 146.37,
+   "ground_z": 244.84,
+   "class": "tunnel"
+  },
+  {
+   "s": 3090.0,
+   "x": 2855.1,
+   "y": 2249.49,
+   "rail_z": 146.77,
+   "ground_z": 245.299,
+   "class": "tunnel"
+  },
+  {
+   "s": 3100.0,
+   "x": 2864.07,
+   "y": 2245.07,
+   "rail_z": 147.17,
+   "ground_z": 245.783,
+   "class": "tunnel"
+  },
+  {
+   "s": 3110.0,
+   "x": 2872.88,
+   "y": 2240.36,
+   "rail_z": 147.57,
+   "ground_z": 246.28,
+   "class": "tunnel"
+  },
+  {
+   "s": 3120.0,
+   "x": 2881.54,
+   "y": 2235.35,
+   "rail_z": 147.97,
+   "ground_z": 246.785,
+   "class": "tunnel"
+  },
+  {
+   "s": 3130.0,
+   "x": 2890.02,
+   "y": 2230.05,
+   "rail_z": 148.37,
+   "ground_z": 247.296,
+   "class": "tunnel"
+  },
+  {
+   "s": 3140.0,
+   "x": 2898.33,
+   "y": 2224.48,
+   "rail_z": 148.77,
+   "ground_z": 247.811,
+   "class": "tunnel"
+  },
+  {
+   "s": 3150.0,
+   "x": 2906.44,
+   "y": 2218.63,
+   "rail_z": 149.17,
+   "ground_z": 248.328,
+   "class": "tunnel"
+  },
+  {
+   "s": 3160.0,
+   "x": 2914.35,
+   "y": 2212.52,
+   "rail_z": 149.57,
+   "ground_z": 248.848,
+   "class": "tunnel"
+  },
+  {
+   "s": 3170.0,
+   "x": 2922.05,
+   "y": 2206.15,
+   "rail_z": 149.97,
+   "ground_z": 249.368,
+   "class": "tunnel"
+  },
+  {
+   "s": 3180.0,
+   "x": 2929.54,
+   "y": 2199.52,
+   "rail_z": 150.37,
+   "ground_z": 249.888,
+   "class": "tunnel"
+  },
+  {
+   "s": 3190.0,
+   "x": 2936.81,
+   "y": 2192.65,
+   "rail_z": 150.77,
+   "ground_z": 250.355,
+   "class": "tunnel"
+  },
+  {
+   "s": 3200.0,
+   "x": 2943.83,
+   "y": 2185.53,
+   "rail_z": 151.17,
+   "ground_z": 250.717,
+   "class": "tunnel"
+  },
+  {
+   "s": 3210.0,
+   "x": 2950.62,
+   "y": 2178.19,
+   "rail_z": 151.57,
+   "ground_z": 250.987,
+   "class": "tunnel"
+  },
+  {
+   "s": 3220.0,
+   "x": 2957.16,
+   "y": 2170.63,
+   "rail_z": 151.97,
+   "ground_z": 251.235,
+   "class": "tunnel"
+  },
+  {
+   "s": 3230.0,
+   "x": 2963.45,
+   "y": 2162.85,
+   "rail_z": 152.37,
+   "ground_z": 251.461,
+   "class": "tunnel"
+  },
+  {
+   "s": 3240.0,
+   "x": 2969.47,
+   "y": 2154.87,
+   "rail_z": 152.77,
+   "ground_z": 251.666,
+   "class": "tunnel"
+  },
+  {
+   "s": 3250.0,
+   "x": 2975.22,
+   "y": 2146.69,
+   "rail_z": 153.17,
+   "ground_z": 251.851,
+   "class": "tunnel"
+  },
+  {
+   "s": 3260.0,
+   "x": 2980.7,
+   "y": 2138.32,
+   "rail_z": 153.57,
+   "ground_z": 252.016,
+   "class": "tunnel"
+  },
+  {
+   "s": 3270.0,
+   "x": 2985.89,
+   "y": 2129.78,
+   "rail_z": 153.97,
+   "ground_z": 252.163,
+   "class": "tunnel"
+  },
+  {
+   "s": 3280.0,
+   "x": 2990.8,
+   "y": 2121.06,
+   "rail_z": 154.37,
+   "ground_z": 252.288,
+   "class": "tunnel"
+  },
+  {
+   "s": 3290.0,
+   "x": 2995.42,
+   "y": 2112.19,
+   "rail_z": 154.77,
+   "ground_z": 252.359,
+   "class": "tunnel"
+  },
+  {
+   "s": 3300.0,
+   "x": 2999.73,
+   "y": 2103.17,
+   "rail_z": 155.17,
+   "ground_z": 252.43,
+   "class": "tunnel"
+  },
+  {
+   "s": 3310.0,
+   "x": 3003.74,
+   "y": 2094.01,
+   "rail_z": 155.57,
+   "ground_z": 252.503,
+   "class": "tunnel"
+  },
+  {
+   "s": 3320.0,
+   "x": 3007.45,
+   "y": 2084.73,
+   "rail_z": 155.97,
+   "ground_z": 252.575,
+   "class": "tunnel"
+  },
+  {
+   "s": 3330.0,
+   "x": 3010.84,
+   "y": 2075.32,
+   "rail_z": 156.37,
+   "ground_z": 252.647,
+   "class": "tunnel"
+  },
+  {
+   "s": 3340.0,
+   "x": 3013.92,
+   "y": 2065.81,
+   "rail_z": 156.77,
+   "ground_z": 252.722,
+   "class": "tunnel"
+  },
+  {
+   "s": 3350.0,
+   "x": 3016.68,
+   "y": 2056.2,
+   "rail_z": 157.17,
+   "ground_z": 252.801,
+   "class": "tunnel"
+  },
+  {
+   "s": 3360.0,
+   "x": 3019.12,
+   "y": 2046.5,
+   "rail_z": 157.57,
+   "ground_z": 252.883,
+   "class": "tunnel"
+  },
+  {
+   "s": 3370.0,
+   "x": 3021.23,
+   "y": 2036.72,
+   "rail_z": 157.97,
+   "ground_z": 252.98,
+   "class": "tunnel"
+  },
+  {
+   "s": 3380.0,
+   "x": 3023.02,
+   "y": 2026.88,
+   "rail_z": 158.37,
+   "ground_z": 253.094,
+   "class": "tunnel"
+  },
+  {
+   "s": 3390.0,
+   "x": 3024.48,
+   "y": 2016.99,
+   "rail_z": 158.77,
+   "ground_z": 253.225,
+   "class": "tunnel"
+  },
+  {
+   "s": 3400.0,
+   "x": 3025.6,
+   "y": 2007.06,
+   "rail_z": 159.17,
+   "ground_z": 253.374,
+   "class": "tunnel"
+  },
+  {
+   "s": 3410.0,
+   "x": 3026.4,
+   "y": 1997.09,
+   "rail_z": 159.57,
+   "ground_z": 253.54,
+   "class": "tunnel"
+  },
+  {
+   "s": 3420.0,
+   "x": 3026.86,
+   "y": 1987.1,
+   "rail_z": 159.97,
+   "ground_z": 253.724,
+   "class": "tunnel"
+  },
+  {
+   "s": 3430.0,
+   "x": 3026.99,
+   "y": 1977.1,
+   "rail_z": 160.37,
+   "ground_z": 253.943,
+   "class": "tunnel"
+  },
+  {
+   "s": 3440.0,
+   "x": 3026.79,
+   "y": 1967.1,
+   "rail_z": 160.77,
+   "ground_z": 254.179,
+   "class": "tunnel"
+  },
+  {
+   "s": 3450.0,
+   "x": 3026.25,
+   "y": 1957.12,
+   "rail_z": 161.17,
+   "ground_z": 254.428,
+   "class": "tunnel"
+  },
+  {
+   "s": 3460.0,
+   "x": 3025.38,
+   "y": 1947.16,
+   "rail_z": 161.57,
+   "ground_z": 254.689,
+   "class": "tunnel"
+  },
+  {
+   "s": 3470.0,
+   "x": 3024.18,
+   "y": 1937.23,
+   "rail_z": 161.97,
+   "ground_z": 254.958,
+   "class": "tunnel"
+  },
+  {
+   "s": 3480.0,
+   "x": 3022.65,
+   "y": 1927.35,
+   "rail_z": 162.37,
+   "ground_z": 255.234,
+   "class": "tunnel"
+  },
+  {
+   "s": 3490.0,
+   "x": 3020.79,
+   "y": 1917.52,
+   "rail_z": 162.77,
+   "ground_z": 255.477,
+   "class": "tunnel"
+  },
+  {
+   "s": 3500.0,
+   "x": 3018.6,
+   "y": 1907.77,
+   "rail_z": 163.17,
+   "ground_z": 255.615,
+   "class": "tunnel"
+  },
+  {
+   "s": 3510.0,
+   "x": 3016.09,
+   "y": 1898.09,
+   "rail_z": 163.57,
+   "ground_z": 255.746,
+   "class": "tunnel"
+  },
+  {
+   "s": 3520.0,
+   "x": 3013.26,
+   "y": 1888.5,
+   "rail_z": 163.97,
+   "ground_z": 255.869,
+   "class": "tunnel"
+  },
+  {
+   "s": 3530.0,
+   "x": 3010.11,
+   "y": 1879.0,
+   "rail_z": 164.37,
+   "ground_z": 255.979,
+   "class": "tunnel"
+  },
+  {
+   "s": 3540.0,
+   "x": 3006.65,
+   "y": 1869.62,
+   "rail_z": 164.77,
+   "ground_z": 256.075,
+   "class": "tunnel"
+  },
+  {
+   "s": 3550.0,
+   "x": 3002.87,
+   "y": 1860.36,
+   "rail_z": 165.17,
+   "ground_z": 256.153,
+   "class": "tunnel"
+  },
+  {
+   "s": 3560.0,
+   "x": 2998.79,
+   "y": 1851.24,
+   "rail_z": 165.57,
+   "ground_z": 256.187,
+   "class": "tunnel"
+  },
+  {
+   "s": 3570.0,
+   "x": 2994.41,
+   "y": 1842.25,
+   "rail_z": 165.97,
+   "ground_z": 256.078,
+   "class": "tunnel"
+  },
+  {
+   "s": 3580.0,
+   "x": 2989.73,
+   "y": 1833.41,
+   "rail_z": 166.37,
+   "ground_z": 255.945,
+   "class": "tunnel"
+  },
+  {
+   "s": 3590.0,
+   "x": 2984.76,
+   "y": 1824.74,
+   "rail_z": 166.77,
+   "ground_z": 255.785,
+   "class": "tunnel"
+  },
+  {
+   "s": 3600.0,
+   "x": 2979.5,
+   "y": 1816.23,
+   "rail_z": 167.17,
+   "ground_z": 255.596,
+   "class": "tunnel"
+  },
+  {
+   "s": 3610.0,
+   "x": 2973.96,
+   "y": 1807.9,
+   "rail_z": 167.57,
+   "ground_z": 255.376,
+   "class": "tunnel"
+  },
+  {
+   "s": 3620.0,
+   "x": 2968.15,
+   "y": 1799.77,
+   "rail_z": 167.97,
+   "ground_z": 255.125,
+   "class": "tunnel"
+  },
+  {
+   "s": 3630.0,
+   "x": 2962.07,
+   "y": 1791.83,
+   "rail_z": 168.37,
+   "ground_z": 254.842,
+   "class": "tunnel"
+  },
+  {
+   "s": 3640.0,
+   "x": 2955.72,
+   "y": 1784.1,
+   "rail_z": 168.77,
+   "ground_z": 254.508,
+   "class": "tunnel"
+  },
+  {
+   "s": 3650.0,
+   "x": 2949.13,
+   "y": 1776.58,
+   "rail_z": 169.17,
+   "ground_z": 254.066,
+   "class": "tunnel"
+  },
+  {
+   "s": 3660.0,
+   "x": 2942.28,
+   "y": 1769.29,
+   "rail_z": 169.57,
+   "ground_z": 253.626,
+   "class": "tunnel"
+  },
+  {
+   "s": 3670.0,
+   "x": 2935.2,
+   "y": 1762.23,
+   "rail_z": 169.97,
+   "ground_z": 253.188,
+   "class": "tunnel"
+  },
+  {
+   "s": 3680.0,
+   "x": 2927.89,
+   "y": 1755.42,
+   "rail_z": 170.37,
+   "ground_z": 252.792,
+   "class": "tunnel"
+  },
+  {
+   "s": 3690.0,
+   "x": 2920.35,
+   "y": 1748.84,
+   "rail_z": 170.77,
+   "ground_z": 252.477,
+   "class": "tunnel"
+  },
+  {
+   "s": 3700.0,
+   "x": 2912.6,
+   "y": 1742.53,
+   "rail_z": 171.17,
+   "ground_z": 252.173,
+   "class": "tunnel"
+  },
+  {
+   "s": 3710.0,
+   "x": 2904.64,
+   "y": 1736.47,
+   "rail_z": 171.57,
+   "ground_z": 251.882,
+   "class": "tunnel"
+  },
+  {
+   "s": 3720.0,
+   "x": 2896.49,
+   "y": 1730.69,
+   "rail_z": 171.97,
+   "ground_z": 251.603,
+   "class": "tunnel"
+  },
+  {
+   "s": 3730.0,
+   "x": 2888.14,
+   "y": 1725.18,
+   "rail_z": 172.37,
+   "ground_z": 251.338,
+   "class": "tunnel"
+  },
+  {
+   "s": 3740.0,
+   "x": 2879.62,
+   "y": 1719.94,
+   "rail_z": 172.77,
+   "ground_z": 251.086,
+   "class": "tunnel"
+  },
+  {
+   "s": 3750.0,
+   "x": 2870.93,
+   "y": 1715.0,
+   "rail_z": 173.17,
+   "ground_z": 250.883,
+   "class": "tunnel"
+  },
+  {
+   "s": 3760.0,
+   "x": 2862.08,
+   "y": 1710.35,
+   "rail_z": 173.57,
+   "ground_z": 250.754,
+   "class": "tunnel"
+  },
+  {
+   "s": 3770.0,
+   "x": 2853.07,
+   "y": 1706.0,
+   "rail_z": 173.97,
+   "ground_z": 250.815,
+   "class": "tunnel"
+  },
+  {
+   "s": 3780.0,
+   "x": 2843.93,
+   "y": 1701.95,
+   "rail_z": 174.37,
+   "ground_z": 250.904,
+   "class": "tunnel"
+  },
+  {
+   "s": 3790.0,
+   "x": 2834.66,
+   "y": 1698.2,
+   "rail_z": 174.77,
+   "ground_z": 251.021,
+   "class": "tunnel"
+  },
+  {
+   "s": 3800.0,
+   "x": 2825.27,
+   "y": 1694.77,
+   "rail_z": 175.17,
+   "ground_z": 251.163,
+   "class": "tunnel"
+  },
+  {
+   "s": 3810.0,
+   "x": 2815.77,
+   "y": 1691.65,
+   "rail_z": 175.57,
+   "ground_z": 251.328,
+   "class": "tunnel"
+  },
+  {
+   "s": 3820.0,
+   "x": 2806.17,
+   "y": 1688.85,
+   "rail_z": 175.97,
+   "ground_z": 251.516,
+   "class": "tunnel"
+  },
+  {
+   "s": 3830.0,
+   "x": 2796.48,
+   "y": 1686.38,
+   "rail_z": 176.37,
+   "ground_z": 251.725,
+   "class": "tunnel"
+  },
+  {
+   "s": 3840.0,
+   "x": 2786.71,
+   "y": 1684.22,
+   "rail_z": 176.77,
+   "ground_z": 252.066,
+   "class": "tunnel"
+  },
+  {
+   "s": 3850.0,
+   "x": 2776.88,
+   "y": 1682.4,
+   "rail_z": 177.17,
+   "ground_z": 252.429,
+   "class": "tunnel"
+  },
+  {
+   "s": 3860.0,
+   "x": 2767.0,
+   "y": 1680.9,
+   "rail_z": 177.57,
+   "ground_z": 252.802,
+   "class": "tunnel"
+  },
+  {
+   "s": 3870.0,
+   "x": 2757.06,
+   "y": 1679.73,
+   "rail_z": 177.97,
+   "ground_z": 253.187,
+   "class": "tunnel"
+  },
+  {
+   "s": 3880.0,
+   "x": 2747.1,
+   "y": 1678.89,
+   "rail_z": 178.37,
+   "ground_z": 253.58,
+   "class": "tunnel"
+  },
+  {
+   "s": 3890.0,
+   "x": 2737.11,
+   "y": 1678.39,
+   "rail_z": 178.77,
+   "ground_z": 253.983,
+   "class": "tunnel"
+  },
+  {
+   "s": 3900.0,
+   "x": 2727.11,
+   "y": 1678.22,
+   "rail_z": 179.17,
+   "ground_z": 254.383,
+   "class": "tunnel"
+  },
+  {
+   "s": 3910.0,
+   "x": 2717.12,
+   "y": 1678.38,
+   "rail_z": 179.57,
+   "ground_z": 254.719,
+   "class": "tunnel"
+  },
+  {
+   "s": 3920.0,
+   "x": 2707.13,
+   "y": 1678.88,
+   "rail_z": 179.97,
+   "ground_z": 255.06,
+   "class": "tunnel"
+  },
+  {
+   "s": 3930.0,
+   "x": 2697.16,
+   "y": 1679.7,
+   "rail_z": 180.37,
+   "ground_z": 255.406,
+   "class": "tunnel"
+  },
+  {
+   "s": 3940.0,
+   "x": 2687.23,
+   "y": 1680.86,
+   "rail_z": 180.77,
+   "ground_z": 255.755,
+   "class": "tunnel"
+  },
+  {
+   "s": 3950.0,
+   "x": 2677.34,
+   "y": 1682.36,
+   "rail_z": 181.17,
+   "ground_z": 256.106,
+   "class": "tunnel"
+  },
+  {
+   "s": 3960.0,
+   "x": 2667.51,
+   "y": 1684.17,
+   "rail_z": 181.57,
+   "ground_z": 256.457,
+   "class": "tunnel"
+  },
+  {
+   "s": 3970.0,
+   "x": 2657.74,
+   "y": 1686.32,
+   "rail_z": 181.97,
+   "ground_z": 256.762,
+   "class": "tunnel"
+  },
+  {
+   "s": 3980.0,
+   "x": 2648.06,
+   "y": 1688.79,
+   "rail_z": 182.37,
+   "ground_z": 256.982,
+   "class": "tunnel"
+  },
+  {
+   "s": 3990.0,
+   "x": 2638.45,
+   "y": 1691.58,
+   "rail_z": 182.77,
+   "ground_z": 257.204,
+   "class": "tunnel"
+  },
+  {
+   "s": 4000.0,
+   "x": 2628.95,
+   "y": 1694.69,
+   "rail_z": 183.17,
+   "ground_z": 257.427,
+   "class": "tunnel"
+  },
+  {
+   "s": 4010.0,
+   "x": 2619.55,
+   "y": 1698.12,
+   "rail_z": 183.57,
+   "ground_z": 257.651,
+   "class": "tunnel"
+  },
+  {
+   "s": 4020.0,
+   "x": 2610.28,
+   "y": 1701.85,
+   "rail_z": 183.97,
+   "ground_z": 257.876,
+   "class": "tunnel"
+  },
+  {
+   "s": 4030.0,
+   "x": 2601.13,
+   "y": 1705.9,
+   "rail_z": 184.37,
+   "ground_z": 258.1,
+   "class": "tunnel"
+  },
+  {
+   "s": 4040.0,
+   "x": 2592.13,
+   "y": 1710.24,
+   "rail_z": 184.77,
+   "ground_z": 258.3,
+   "class": "tunnel"
+  },
+  {
+   "s": 4050.0,
+   "x": 2583.27,
+   "y": 1714.89,
+   "rail_z": 185.17,
+   "ground_z": 258.387,
+   "class": "tunnel"
+  },
+  {
+   "s": 4060.0,
+   "x": 2574.58,
+   "y": 1719.82,
+   "rail_z": 185.57,
+   "ground_z": 258.456,
+   "class": "tunnel"
+  },
+  {
+   "s": 4070.0,
+   "x": 2566.05,
+   "y": 1725.04,
+   "rail_z": 185.97,
+   "ground_z": 258.488,
+   "class": "tunnel"
+  },
+  {
+   "s": 4080.0,
+   "x": 2557.7,
+   "y": 1730.55,
+   "rail_z": 186.37,
+   "ground_z": 258.519,
+   "class": "tunnel"
+  },
+  {
+   "s": 4090.0,
+   "x": 2549.54,
+   "y": 1736.33,
+   "rail_z": 186.77,
+   "ground_z": 258.551,
+   "class": "tunnel"
+  },
+  {
+   "s": 4100.0,
+   "x": 2541.58,
+   "y": 1742.38,
+   "rail_z": 187.17,
+   "ground_z": 258.582,
+   "class": "tunnel"
+  },
+  {
+   "s": 4110.0,
+   "x": 2533.82,
+   "y": 1748.69,
+   "rail_z": 187.57,
+   "ground_z": 258.613,
+   "class": "tunnel"
+  },
+  {
+   "s": 4120.0,
+   "x": 2526.28,
+   "y": 1755.25,
+   "rail_z": 187.97,
+   "ground_z": 258.644,
+   "class": "tunnel"
+  },
+  {
+   "s": 4130.0,
+   "x": 2518.96,
+   "y": 1762.07,
+   "rail_z": 188.37,
+   "ground_z": 258.635,
+   "class": "tunnel"
+  },
+  {
+   "s": 4140.0,
+   "x": 2511.87,
+   "y": 1769.12,
+   "rail_z": 188.77,
+   "ground_z": 258.626,
+   "class": "tunnel"
+  },
+  {
+   "s": 4150.0,
+   "x": 2505.02,
+   "y": 1776.4,
+   "rail_z": 189.17,
+   "ground_z": 258.616,
+   "class": "tunnel"
+  },
+  {
+   "s": 4160.0,
+   "x": 2498.42,
+   "y": 1783.91,
+   "rail_z": 189.57,
+   "ground_z": 258.604,
+   "class": "tunnel"
+  },
+  {
+   "s": 4170.0,
+   "x": 2492.07,
+   "y": 1791.64,
+   "rail_z": 189.97,
+   "ground_z": 258.525,
+   "class": "tunnel"
+  },
+  {
+   "s": 4180.0,
+   "x": 2485.98,
+   "y": 1799.57,
+   "rail_z": 190.37,
+   "ground_z": 258.422,
+   "class": "tunnel"
+  },
+  {
+   "s": 4190.0,
+   "x": 2480.16,
+   "y": 1807.7,
+   "rail_z": 190.77,
+   "ground_z": 258.309,
+   "class": "tunnel"
+  },
+  {
+   "s": 4200.0,
+   "x": 2474.62,
+   "y": 1816.03,
+   "rail_z": 191.17,
+   "ground_z": 258.187,
+   "class": "tunnel"
+  },
+  {
+   "s": 4210.0,
+   "x": 2469.35,
+   "y": 1824.53,
+   "rail_z": 191.57,
+   "ground_z": 258.056,
+   "class": "tunnel"
+  },
+  {
+   "s": 4220.0,
+   "x": 2464.37,
+   "y": 1833.2,
+   "rail_z": 191.97,
+   "ground_z": 257.917,
+   "class": "tunnel"
+  },
+  {
+   "s": 4230.0,
+   "x": 2459.69,
+   "y": 1842.03,
+   "rail_z": 192.37,
+   "ground_z": 257.77,
+   "class": "tunnel"
+  },
+  {
+   "s": 4240.0,
+   "x": 2455.3,
+   "y": 1851.02,
+   "rail_z": 192.77,
+   "ground_z": 257.6,
+   "class": "tunnel"
+  },
+  {
+   "s": 4250.0,
+   "x": 2451.21,
+   "y": 1860.14,
+   "rail_z": 193.17,
+   "ground_z": 257.299,
+   "class": "tunnel"
+  },
+  {
+   "s": 4260.0,
+   "x": 2447.43,
+   "y": 1869.4,
+   "rail_z": 193.57,
+   "ground_z": 256.961,
+   "class": "tunnel"
+  },
+  {
+   "s": 4270.0,
+   "x": 2443.95,
+   "y": 1878.78,
+   "rail_z": 193.97,
+   "ground_z": 256.614,
+   "class": "tunnel"
+  },
+  {
+   "s": 4280.0,
+   "x": 2440.8,
+   "y": 1888.26,
+   "rail_z": 194.37,
+   "ground_z": 256.259,
+   "class": "tunnel"
+  },
+  {
+   "s": 4290.0,
+   "x": 2437.96,
+   "y": 1897.85,
+   "rail_z": 194.77,
+   "ground_z": 255.898,
+   "class": "tunnel"
+  },
+  {
+   "s": 4300.0,
+   "x": 2435.44,
+   "y": 1907.53,
+   "rail_z": 195.17,
+   "ground_z": 255.533,
+   "class": "tunnel"
+  },
+  {
+   "s": 4310.0,
+   "x": 2433.25,
+   "y": 1917.28,
+   "rail_z": 195.57,
+   "ground_z": 255.165,
+   "class": "tunnel"
+  },
+  {
+   "s": 4320.0,
+   "x": 2431.38,
+   "y": 1927.11,
+   "rail_z": 195.97,
+   "ground_z": 254.741,
+   "class": "tunnel"
+  },
+  {
+   "s": 4330.0,
+   "x": 2429.84,
+   "y": 1936.99,
+   "rail_z": 196.37,
+   "ground_z": 254.297,
+   "class": "tunnel"
+  },
+  {
+   "s": 4340.0,
+   "x": 2428.63,
+   "y": 1946.91,
+   "rail_z": 196.77,
+   "ground_z": 253.858,
+   "class": "tunnel"
+  },
+  {
+   "s": 4350.0,
+   "x": 2427.75,
+   "y": 1956.88,
+   "rail_z": 197.17,
+   "ground_z": 253.423,
+   "class": "tunnel"
+  },
+  {
+   "s": 4360.0,
+   "x": 2427.21,
+   "y": 1966.86,
+   "rail_z": 197.57,
+   "ground_z": 252.995,
+   "class": "tunnel"
+  },
+  {
+   "s": 4370.0,
+   "x": 2427.0,
+   "y": 1976.86,
+   "rail_z": 197.97,
+   "ground_z": 252.575,
+   "class": "tunnel"
+  },
+  {
+   "s": 4380.0,
+   "x": 2427.12,
+   "y": 1986.86,
+   "rail_z": 198.37,
+   "ground_z": 252.165,
+   "class": "tunnel"
+  },
+  {
+   "s": 4390.0,
+   "x": 2427.57,
+   "y": 1996.85,
+   "rail_z": 198.77,
+   "ground_z": 251.777,
+   "class": "tunnel"
+  },
+  {
+   "s": 4400.0,
+   "x": 2428.35,
+   "y": 2006.82,
+   "rail_z": 199.17,
+   "ground_z": 251.399,
+   "class": "tunnel"
+  },
+  {
+   "s": 4410.0,
+   "x": 2429.4,
+   "y": 2016.76,
+   "rail_z": 199.57,
+   "ground_z": 251.03,
+   "class": "tunnel"
+  },
+  {
+   "s": 4420.0,
+   "x": 2430.69,
+   "y": 2026.68,
+   "rail_z": 199.97,
+   "ground_z": 250.67,
+   "class": "tunnel"
+  },
+  {
+   "s": 4430.0,
+   "x": 2432.17,
+   "y": 2036.57,
+   "rail_z": 200.37,
+   "ground_z": 250.316,
+   "class": "tunnel"
+  },
+  {
+   "s": 4440.0,
+   "x": 2433.81,
+   "y": 2046.43,
+   "rail_z": 200.77,
+   "ground_z": 249.966,
+   "class": "tunnel"
+  },
+  {
+   "s": 4450.0,
+   "x": 2435.56,
+   "y": 2056.28,
+   "rail_z": 201.17,
+   "ground_z": 249.633,
+   "class": "tunnel"
+  },
+  {
+   "s": 4460.0,
+   "x": 2437.38,
+   "y": 2066.11,
+   "rail_z": 201.57,
+   "ground_z": 249.365,
+   "class": "tunnel"
+  },
+  {
+   "s": 4470.0,
+   "x": 2439.23,
+   "y": 2075.94,
+   "rail_z": 201.97,
+   "ground_z": 249.094,
+   "class": "tunnel"
+  },
+  {
    "s": 4480.0,
-   "x": 2481.45,
-   "y": 2312.48,
-   "rail_z": 211.8,
-   "ground_z": 242.233,
+   "x": 2441.09,
+   "y": 2085.76,
+   "rail_z": 202.37,
+   "ground_z": 248.82,
    "class": "tunnel"
   },
   {
    "s": 4490.0,
-   "x": 2482.58,
-   "y": 2322.42,
-   "rail_z": 212.2,
-   "ground_z": 241.795,
+   "x": 2442.94,
+   "y": 2095.59,
+   "rail_z": 202.77,
+   "ground_z": 248.542,
    "class": "tunnel"
   },
   {
    "s": 4500.0,
-   "x": 2483.6,
-   "y": 2332.36,
-   "rail_z": 212.6,
-   "ground_z": 241.282,
+   "x": 2444.8,
+   "y": 2105.42,
+   "rail_z": 203.17,
+   "ground_z": 248.261,
    "class": "tunnel"
   },
   {
    "s": 4510.0,
-   "x": 2484.51,
-   "y": 2342.32,
-   "rail_z": 213.0,
-   "ground_z": 240.752,
+   "x": 2446.65,
+   "y": 2115.24,
+   "rail_z": 203.57,
+   "ground_z": 247.975,
    "class": "tunnel"
   },
   {
    "s": 4520.0,
-   "x": 2485.3,
-   "y": 2352.29,
-   "rail_z": 213.35,
-   "ground_z": 240.22,
+   "x": 2448.5,
+   "y": 2125.07,
+   "rail_z": 203.97,
+   "ground_z": 247.721,
    "class": "tunnel"
   },
   {
    "s": 4530.0,
-   "x": 2485.99,
-   "y": 2362.27,
-   "rail_z": 213.65,
-   "ground_z": 239.687,
+   "x": 2450.36,
+   "y": 2134.9,
+   "rail_z": 204.37,
+   "ground_z": 247.543,
    "class": "tunnel"
   },
   {
    "s": 4540.0,
-   "x": 2486.57,
-   "y": 2372.25,
-   "rail_z": 213.9,
-   "ground_z": 239.153,
+   "x": 2452.21,
+   "y": 2144.72,
+   "rail_z": 204.77,
+   "ground_z": 247.358,
    "class": "tunnel"
   },
   {
    "s": 4550.0,
-   "x": 2487.03,
-   "y": 2382.24,
-   "rail_z": 214.1,
-   "ground_z": 238.62,
-   "class": "deep cutting"
+   "x": 2454.07,
+   "y": 2154.55,
+   "rail_z": 205.17,
+   "ground_z": 247.166,
+   "class": "tunnel"
   },
   {
    "s": 4560.0,
-   "x": 2487.38,
-   "y": 2392.23,
-   "rail_z": 214.25,
-   "ground_z": 238.088,
-   "class": "deep cutting"
+   "x": 2455.92,
+   "y": 2164.37,
+   "rail_z": 205.57,
+   "ground_z": 246.968,
+   "class": "tunnel"
   },
   {
    "s": 4570.0,
-   "x": 2487.62,
-   "y": 2402.23,
-   "rail_z": 214.35,
-   "ground_z": 237.587,
-   "class": "deep cutting"
+   "x": 2457.77,
+   "y": 2174.2,
+   "rail_z": 205.97,
+   "ground_z": 246.764,
+   "class": "tunnel"
   },
   {
    "s": 4580.0,
-   "x": 2487.76,
-   "y": 2412.23,
-   "rail_z": 214.45,
-   "ground_z": 237.087,
-   "class": "deep cutting"
+   "x": 2459.63,
+   "y": 2184.03,
+   "rail_z": 206.37,
+   "ground_z": 246.553,
+   "class": "tunnel"
   },
   {
    "s": 4590.0,
-   "x": 2487.8,
-   "y": 2422.23,
-   "rail_z": 214.55,
-   "ground_z": 236.588,
-   "class": "deep cutting"
+   "x": 2461.48,
+   "y": 2193.85,
+   "rail_z": 206.77,
+   "ground_z": 246.323,
+   "class": "tunnel"
   },
   {
    "s": 4600.0,
-   "x": 2487.76,
-   "y": 2432.23,
-   "rail_z": 214.65,
-   "ground_z": 236.091,
-   "class": "deep cutting"
+   "x": 2463.34,
+   "y": 2203.68,
+   "rail_z": 207.17,
+   "ground_z": 246.073,
+   "class": "tunnel"
   },
   {
    "s": 4610.0,
-   "x": 2487.66,
-   "y": 2442.23,
-   "rail_z": 214.75,
-   "ground_z": 235.594,
-   "class": "deep cutting"
+   "x": 2465.19,
+   "y": 2213.51,
+   "rail_z": 207.57,
+   "ground_z": 245.816,
+   "class": "tunnel"
   },
   {
    "s": 4620.0,
-   "x": 2487.5,
-   "y": 2452.23,
-   "rail_z": 214.85,
-   "ground_z": 235.098,
-   "class": "deep cutting"
+   "x": 2467.04,
+   "y": 2223.34,
+   "rail_z": 207.97,
+   "ground_z": 245.555,
+   "class": "tunnel"
   },
   {
    "s": 4630.0,
-   "x": 2487.31,
-   "y": 2462.23,
-   "rail_z": 214.95,
-   "ground_z": 234.634,
-   "class": "deep cutting"
+   "x": 2468.88,
+   "y": 2233.16,
+   "rail_z": 208.37,
+   "ground_z": 245.289,
+   "class": "tunnel"
   },
   {
    "s": 4640.0,
-   "x": 2487.09,
-   "y": 2472.22,
-   "rail_z": 215.05,
-   "ground_z": 234.235,
-   "class": "deep cutting"
+   "x": 2470.69,
+   "y": 2243.0,
+   "rail_z": 208.77,
+   "ground_z": 245.017,
+   "class": "tunnel"
   },
   {
    "s": 4650.0,
-   "x": 2486.87,
-   "y": 2482.22,
-   "rail_z": 215.15,
-   "ground_z": 233.836,
-   "class": "deep cutting"
+   "x": 2472.45,
+   "y": 2252.84,
+   "rail_z": 209.17,
+   "ground_z": 244.739,
+   "class": "tunnel"
   },
   {
    "s": 4660.0,
-   "x": 2486.64,
-   "y": 2492.22,
-   "rail_z": 215.25,
-   "ground_z": 233.436,
-   "class": "deep cutting"
+   "x": 2474.16,
+   "y": 2262.7,
+   "rail_z": 209.57,
+   "ground_z": 244.38,
+   "class": "tunnel"
   },
   {
    "s": 4670.0,
-   "x": 2486.41,
-   "y": 2502.22,
-   "rail_z": 215.35,
-   "ground_z": 233.036,
-   "class": "deep cutting"
+   "x": 2475.8,
+   "y": 2272.56,
+   "rail_z": 209.97,
+   "ground_z": 243.963,
+   "class": "tunnel"
   },
   {
    "s": 4680.0,
-   "x": 2486.18,
-   "y": 2512.21,
-   "rail_z": 215.45,
-   "ground_z": 232.635,
-   "class": "deep cutting"
+   "x": 2477.36,
+   "y": 2282.44,
+   "rail_z": 210.37,
+   "ground_z": 243.54,
+   "class": "tunnel"
   },
   {
    "s": 4690.0,
-   "x": 2485.95,
-   "y": 2522.21,
-   "rail_z": 215.55,
-   "ground_z": 232.234,
-   "class": "deep cutting"
+   "x": 2478.82,
+   "y": 2292.33,
+   "rail_z": 210.77,
+   "ground_z": 243.113,
+   "class": "tunnel"
   },
   {
    "s": 4700.0,
-   "x": 2485.73,
-   "y": 2532.21,
-   "rail_z": 215.65,
-   "ground_z": 231.99,
-   "class": "deep cutting"
+   "x": 2480.17,
+   "y": 2302.24,
+   "rail_z": 211.17,
+   "ground_z": 242.682,
+   "class": "tunnel"
   },
   {
    "s": 4710.0,
-   "x": 2485.5,
-   "y": 2542.21,
-   "rail_z": 215.75,
-   "ground_z": 231.855,
-   "class": "deep cutting"
+   "x": 2481.42,
+   "y": 2312.16,
+   "rail_z": 211.57,
+   "ground_z": 242.247,
+   "class": "tunnel"
   },
   {
    "s": 4720.0,
-   "x": 2485.27,
-   "y": 2552.2,
-   "rail_z": 215.85,
-   "ground_z": 231.72,
-   "class": "deep cutting"
+   "x": 2482.55,
+   "y": 2322.1,
+   "rail_z": 211.97,
+   "ground_z": 241.809,
+   "class": "tunnel"
   },
   {
    "s": 4730.0,
-   "x": 2485.04,
-   "y": 2562.2,
-   "rail_z": 215.95,
-   "ground_z": 231.584,
-   "class": "deep cutting"
+   "x": 2483.57,
+   "y": 2332.04,
+   "rail_z": 212.37,
+   "ground_z": 241.299,
+   "class": "tunnel"
   },
   {
    "s": 4740.0,
-   "x": 2484.81,
-   "y": 2572.2,
-   "rail_z": 216.05,
-   "ground_z": 231.447,
-   "class": "deep cutting"
+   "x": 2484.48,
+   "y": 2342.0,
+   "rail_z": 212.77,
+   "ground_z": 240.769,
+   "class": "tunnel"
   },
   {
    "s": 4750.0,
-   "x": 2484.58,
-   "y": 2582.19,
-   "rail_z": 216.15,
-   "ground_z": 231.309,
-   "class": "deep cutting"
+   "x": 2485.28,
+   "y": 2351.97,
+   "rail_z": 213.12,
+   "ground_z": 240.237,
+   "class": "tunnel"
   },
   {
    "s": 4760.0,
-   "x": 2484.36,
-   "y": 2592.19,
-   "rail_z": 216.25,
-   "ground_z": 231.171,
-   "class": "deep cutting"
+   "x": 2485.97,
+   "y": 2361.95,
+   "rail_z": 213.42,
+   "ground_z": 239.704,
+   "class": "tunnel"
   },
   {
    "s": 4770.0,
-   "x": 2484.13,
-   "y": 2602.19,
-   "rail_z": 216.35,
-   "ground_z": 231.144,
-   "class": "deep cutting"
+   "x": 2486.55,
+   "y": 2371.93,
+   "rail_z": 213.67,
+   "ground_z": 239.171,
+   "class": "tunnel"
   },
   {
    "s": 4780.0,
-   "x": 2483.9,
-   "y": 2612.19,
-   "rail_z": 216.45,
-   "ground_z": 231.135,
+   "x": 2487.02,
+   "y": 2381.92,
+   "rail_z": 213.87,
+   "ground_z": 238.637,
    "class": "deep cutting"
   },
   {
    "s": 4790.0,
-   "x": 2483.67,
-   "y": 2622.18,
-   "rail_z": 216.55,
-   "ground_z": 231.125,
+   "x": 2487.37,
+   "y": 2391.91,
+   "rail_z": 214.02,
+   "ground_z": 238.105,
    "class": "deep cutting"
   },
   {
    "s": 4800.0,
-   "x": 2483.44,
-   "y": 2632.18,
-   "rail_z": 216.65,
-   "ground_z": 231.115,
+   "x": 2487.62,
+   "y": 2401.91,
+   "rail_z": 214.12,
+   "ground_z": 237.603,
    "class": "deep cutting"
   },
   {
    "s": 4810.0,
-   "x": 2483.22,
-   "y": 2642.18,
-   "rail_z": 216.75,
-   "ground_z": 231.104,
+   "x": 2487.76,
+   "y": 2411.91,
+   "rail_z": 214.22,
+   "ground_z": 237.103,
    "class": "deep cutting"
   },
   {
    "s": 4820.0,
-   "x": 2482.99,
-   "y": 2652.18,
-   "rail_z": 216.85,
-   "ground_z": 231.092,
+   "x": 2487.8,
+   "y": 2421.91,
+   "rail_z": 214.32,
+   "ground_z": 236.604,
    "class": "deep cutting"
   },
   {
    "s": 4830.0,
-   "x": 2482.76,
-   "y": 2662.17,
-   "rail_z": 216.95,
-   "ground_z": 231.08,
+   "x": 2487.77,
+   "y": 2431.91,
+   "rail_z": 214.42,
+   "ground_z": 236.106,
    "class": "deep cutting"
   },
   {
    "s": 4840.0,
-   "x": 2482.53,
-   "y": 2672.17,
-   "rail_z": 217.05,
-   "ground_z": 231.073,
+   "x": 2487.66,
+   "y": 2441.91,
+   "rail_z": 214.52,
+   "ground_z": 235.61,
    "class": "deep cutting"
   },
   {
    "s": 4850.0,
-   "x": 2482.3,
-   "y": 2682.17,
-   "rail_z": 217.15,
-   "ground_z": 231.065,
+   "x": 2487.51,
+   "y": 2451.91,
+   "rail_z": 214.62,
+   "ground_z": 235.114,
    "class": "deep cutting"
   },
   {
    "s": 4860.0,
-   "x": 2482.07,
-   "y": 2692.17,
-   "rail_z": 217.25,
-   "ground_z": 231.057,
+   "x": 2487.32,
+   "y": 2461.9,
+   "rail_z": 214.72,
+   "ground_z": 234.647,
    "class": "deep cutting"
   },
   {
    "s": 4870.0,
-   "x": 2481.85,
-   "y": 2702.16,
-   "rail_z": 217.4,
-   "ground_z": 231.048,
+   "x": 2487.1,
+   "y": 2471.9,
+   "rail_z": 214.82,
+   "ground_z": 234.248,
    "class": "deep cutting"
   },
   {
    "s": 4880.0,
-   "x": 2481.62,
-   "y": 2712.16,
-   "rail_z": 217.6,
-   "ground_z": 231.038,
+   "x": 2486.87,
+   "y": 2481.9,
+   "rail_z": 214.92,
+   "ground_z": 233.849,
    "class": "deep cutting"
   },
   {
    "s": 4890.0,
-   "x": 2481.39,
-   "y": 2722.16,
-   "rail_z": 217.85,
-   "ground_z": 231.027,
+   "x": 2486.65,
+   "y": 2491.9,
+   "rail_z": 215.02,
+   "ground_z": 233.449,
    "class": "deep cutting"
   },
   {
    "s": 4900.0,
-   "x": 2481.16,
-   "y": 2732.16,
-   "rail_z": 218.15,
-   "ground_z": 231.039,
+   "x": 2486.42,
+   "y": 2501.89,
+   "rail_z": 215.12,
+   "ground_z": 233.049,
    "class": "deep cutting"
   },
   {
    "s": 4910.0,
-   "x": 2480.93,
-   "y": 2742.15,
-   "rail_z": 218.5,
-   "ground_z": 231.09,
+   "x": 2486.19,
+   "y": 2511.89,
+   "rail_z": 215.22,
+   "ground_z": 232.648,
    "class": "deep cutting"
   },
   {
    "s": 4920.0,
-   "x": 2480.7,
-   "y": 2752.15,
-   "rail_z": 218.9,
-   "ground_z": 231.141,
+   "x": 2485.96,
+   "y": 2521.89,
+   "rail_z": 215.32,
+   "ground_z": 232.247,
    "class": "deep cutting"
   },
   {
    "s": 4930.0,
-   "x": 2480.48,
-   "y": 2762.15,
-   "rail_z": 219.3,
-   "ground_z": 231.191,
-   "class": "cutting"
+   "x": 2485.73,
+   "y": 2531.89,
+   "rail_z": 215.42,
+   "ground_z": 231.995,
+   "class": "deep cutting"
   },
   {
    "s": 4940.0,
-   "x": 2480.25,
-   "y": 2772.15,
-   "rail_z": 219.7,
-   "ground_z": 231.241,
-   "class": "cutting"
+   "x": 2485.5,
+   "y": 2541.88,
+   "rail_z": 215.52,
+   "ground_z": 231.86,
+   "class": "deep cutting"
   },
   {
    "s": 4950.0,
-   "x": 2480.02,
-   "y": 2782.14,
-   "rail_z": 220.1,
-   "ground_z": 231.291,
-   "class": "cutting"
+   "x": 2485.28,
+   "y": 2551.88,
+   "rail_z": 215.62,
+   "ground_z": 231.724,
+   "class": "deep cutting"
   },
   {
    "s": 4960.0,
-   "x": 2479.79,
-   "y": 2792.14,
-   "rail_z": 220.5,
-   "ground_z": 231.34,
-   "class": "cutting"
+   "x": 2485.05,
+   "y": 2561.88,
+   "rail_z": 215.72,
+   "ground_z": 231.588,
+   "class": "deep cutting"
   },
   {
    "s": 4970.0,
-   "x": 2479.56,
-   "y": 2802.14,
-   "rail_z": 220.9,
-   "ground_z": 231.376,
-   "class": "cutting"
+   "x": 2484.82,
+   "y": 2571.88,
+   "rail_z": 215.82,
+   "ground_z": 231.451,
+   "class": "deep cutting"
   },
   {
    "s": 4980.0,
-   "x": 2479.33,
-   "y": 2812.14,
-   "rail_z": 221.3,
-   "ground_z": 231.404,
-   "class": "cutting"
+   "x": 2484.59,
+   "y": 2581.87,
+   "rail_z": 215.92,
+   "ground_z": 231.314,
+   "class": "deep cutting"
   },
   {
    "s": 4990.0,
-   "x": 2479.11,
-   "y": 2822.13,
-   "rail_z": 221.7,
-   "ground_z": 231.432,
-   "class": "cutting"
+   "x": 2484.36,
+   "y": 2591.87,
+   "rail_z": 216.02,
+   "ground_z": 231.176,
+   "class": "deep cutting"
   },
   {
    "s": 5000.0,
-   "x": 2478.88,
-   "y": 2832.13,
-   "rail_z": 222.1,
-   "ground_z": 231.459,
-   "class": "cutting"
+   "x": 2484.14,
+   "y": 2601.87,
+   "rail_z": 216.12,
+   "ground_z": 231.144,
+   "class": "deep cutting"
   },
   {
    "s": 5010.0,
-   "x": 2478.65,
-   "y": 2842.13,
-   "rail_z": 222.5,
-   "ground_z": 231.486,
-   "class": "cutting"
+   "x": 2483.91,
+   "y": 2611.87,
+   "rail_z": 216.22,
+   "ground_z": 231.135,
+   "class": "deep cutting"
   },
   {
    "s": 5020.0,
-   "x": 2478.42,
-   "y": 2852.12,
-   "rail_z": 222.9,
-   "ground_z": 231.512,
-   "class": "cutting"
+   "x": 2483.68,
+   "y": 2621.86,
+   "rail_z": 216.32,
+   "ground_z": 231.125,
+   "class": "deep cutting"
   },
   {
    "s": 5030.0,
-   "x": 2478.19,
-   "y": 2862.12,
-   "rail_z": 223.3,
-   "ground_z": 231.538,
-   "class": "cutting"
+   "x": 2483.45,
+   "y": 2631.86,
+   "rail_z": 216.42,
+   "ground_z": 231.115,
+   "class": "deep cutting"
   },
   {
    "s": 5040.0,
-   "x": 2477.97,
-   "y": 2872.12,
-   "rail_z": 223.7,
-   "ground_z": 231.688,
-   "class": "cutting"
+   "x": 2483.22,
+   "y": 2641.86,
+   "rail_z": 216.52,
+   "ground_z": 231.104,
+   "class": "deep cutting"
   },
   {
    "s": 5050.0,
-   "x": 2477.74,
-   "y": 2882.12,
-   "rail_z": 224.1,
-   "ground_z": 231.852,
-   "class": "cutting"
+   "x": 2482.99,
+   "y": 2651.86,
+   "rail_z": 216.62,
+   "ground_z": 231.092,
+   "class": "deep cutting"
   },
   {
    "s": 5060.0,
-   "x": 2477.51,
-   "y": 2892.11,
-   "rail_z": 224.5,
-   "ground_z": 232.016,
-   "class": "cutting"
+   "x": 2482.77,
+   "y": 2661.85,
+   "rail_z": 216.72,
+   "ground_z": 231.08,
+   "class": "deep cutting"
   },
   {
    "s": 5070.0,
-   "x": 2477.28,
-   "y": 2902.11,
-   "rail_z": 224.9,
-   "ground_z": 232.181,
-   "class": "cutting"
+   "x": 2482.54,
+   "y": 2671.85,
+   "rail_z": 216.82,
+   "ground_z": 231.073,
+   "class": "deep cutting"
   },
   {
    "s": 5080.0,
-   "x": 2477.05,
-   "y": 2912.11,
-   "rail_z": 225.3,
-   "ground_z": 232.346,
-   "class": "cutting"
+   "x": 2482.31,
+   "y": 2681.85,
+   "rail_z": 216.92,
+   "ground_z": 231.066,
+   "class": "deep cutting"
   },
   {
    "s": 5090.0,
-   "x": 2476.82,
-   "y": 2922.11,
-   "rail_z": 225.7,
-   "ground_z": 232.512,
-   "class": "cutting"
+   "x": 2482.08,
+   "y": 2691.85,
+   "rail_z": 217.02,
+   "ground_z": 231.057,
+   "class": "deep cutting"
   },
   {
    "s": 5100.0,
-   "x": 2476.6,
-   "y": 2932.1,
-   "rail_z": 226.1,
-   "ground_z": 232.677,
-   "class": "cutting"
+   "x": 2481.85,
+   "y": 2701.84,
+   "rail_z": 217.17,
+   "ground_z": 231.048,
+   "class": "deep cutting"
   },
   {
    "s": 5110.0,
-   "x": 2476.37,
-   "y": 2942.1,
-   "rail_z": 226.5,
-   "ground_z": 232.84,
-   "class": "cutting"
+   "x": 2481.62,
+   "y": 2711.84,
+   "rail_z": 217.37,
+   "ground_z": 231.038,
+   "class": "deep cutting"
   },
   {
    "s": 5120.0,
-   "x": 2476.14,
-   "y": 2952.1,
-   "rail_z": 226.9,
-   "ground_z": 233.003,
-   "class": "cutting"
+   "x": 2481.4,
+   "y": 2721.84,
+   "rail_z": 217.62,
+   "ground_z": 231.027,
+   "class": "deep cutting"
   },
   {
    "s": 5130.0,
-   "x": 2475.91,
-   "y": 2962.1,
-   "rail_z": 227.3,
-   "ground_z": 233.167,
-   "class": "cutting"
+   "x": 2481.17,
+   "y": 2731.83,
+   "rail_z": 217.92,
+   "ground_z": 231.037,
+   "class": "deep cutting"
   },
   {
    "s": 5140.0,
-   "x": 2475.68,
-   "y": 2972.09,
-   "rail_z": 227.7,
-   "ground_z": 233.332,
-   "class": "cutting"
+   "x": 2480.94,
+   "y": 2741.83,
+   "rail_z": 218.27,
+   "ground_z": 231.088,
+   "class": "deep cutting"
   },
   {
    "s": 5150.0,
-   "x": 2475.45,
-   "y": 2982.09,
-   "rail_z": 228.1,
-   "ground_z": 233.498,
-   "class": "cutting"
+   "x": 2480.71,
+   "y": 2751.83,
+   "rail_z": 218.67,
+   "ground_z": 231.139,
+   "class": "deep cutting"
   },
   {
    "s": 5160.0,
-   "x": 2475.23,
-   "y": 2992.09,
-   "rail_z": 228.5,
-   "ground_z": 233.664,
-   "class": "cutting"
+   "x": 2480.48,
+   "y": 2761.83,
+   "rail_z": 219.07,
+   "ground_z": 231.19,
+   "class": "deep cutting"
   },
   {
    "s": 5170.0,
-   "x": 2475.0,
-   "y": 3002.09,
-   "rail_z": 228.9,
-   "ground_z": 233.825,
+   "x": 2480.26,
+   "y": 2771.82,
+   "rail_z": 219.47,
+   "ground_z": 231.24,
    "class": "cutting"
   },
   {
    "s": 5180.0,
-   "x": 2474.77,
-   "y": 3012.08,
-   "rail_z": 229.3,
-   "ground_z": 233.979,
+   "x": 2480.03,
+   "y": 2781.82,
+   "rail_z": 219.87,
+   "ground_z": 231.289,
    "class": "cutting"
   },
   {
    "s": 5190.0,
-   "x": 2474.54,
-   "y": 3022.08,
-   "rail_z": 229.7,
-   "ground_z": 234.133,
+   "x": 2479.8,
+   "y": 2791.82,
+   "rail_z": 220.27,
+   "ground_z": 231.338,
    "class": "cutting"
   },
   {
    "s": 5200.0,
-   "x": 2474.31,
-   "y": 3032.08,
-   "rail_z": 230.1,
-   "ground_z": 234.287,
+   "x": 2479.57,
+   "y": 2801.82,
+   "rail_z": 220.67,
+   "ground_z": 231.375,
    "class": "cutting"
   },
   {
    "s": 5210.0,
-   "x": 2474.09,
-   "y": 3042.08,
-   "rail_z": 230.5,
-   "ground_z": 234.442,
+   "x": 2479.34,
+   "y": 2811.81,
+   "rail_z": 221.07,
+   "ground_z": 231.403,
    "class": "cutting"
   },
   {
    "s": 5220.0,
-   "x": 2473.86,
-   "y": 3052.07,
-   "rail_z": 230.9,
-   "ground_z": 234.598,
+   "x": 2479.11,
+   "y": 2821.81,
+   "rail_z": 221.47,
+   "ground_z": 231.431,
    "class": "cutting"
   },
   {
    "s": 5230.0,
-   "x": 2473.63,
-   "y": 3062.07,
-   "rail_z": 231.3,
-   "ground_z": 234.754,
+   "x": 2478.89,
+   "y": 2831.81,
+   "rail_z": 221.87,
+   "ground_z": 231.458,
    "class": "cutting"
   },
   {
    "s": 5240.0,
-   "x": 2473.4,
-   "y": 3072.07,
-   "rail_z": 231.7,
-   "ground_z": 234.898,
+   "x": 2478.66,
+   "y": 2841.81,
+   "rail_z": 222.27,
+   "ground_z": 231.485,
    "class": "cutting"
   },
   {
    "s": 5250.0,
-   "x": 2473.17,
-   "y": 3082.06,
-   "rail_z": 232.05,
-   "ground_z": 235.037,
+   "x": 2478.43,
+   "y": 2851.8,
+   "rail_z": 222.67,
+   "ground_z": 231.511,
    "class": "cutting"
   },
   {
    "s": 5260.0,
-   "x": 2472.92,
-   "y": 3092.06,
-   "rail_z": 232.35,
-   "ground_z": 235.178,
+   "x": 2478.2,
+   "y": 2861.8,
+   "rail_z": 223.07,
+   "ground_z": 231.537,
    "class": "cutting"
   },
   {
    "s": 5270.0,
-   "x": 2472.64,
-   "y": 3102.06,
-   "rail_z": 232.6,
-   "ground_z": 235.319,
+   "x": 2477.97,
+   "y": 2871.8,
+   "rail_z": 223.47,
+   "ground_z": 231.682,
    "class": "cutting"
   },
   {
    "s": 5280.0,
-   "x": 2472.32,
-   "y": 3112.05,
-   "rail_z": 232.8,
-   "ground_z": 235.461,
+   "x": 2477.74,
+   "y": 2881.8,
+   "rail_z": 223.87,
+   "ground_z": 231.846,
    "class": "cutting"
   },
   {
    "s": 5290.0,
-   "x": 2471.94,
-   "y": 3122.05,
-   "rail_z": 232.95,
-   "ground_z": 235.606,
+   "x": 2477.52,
+   "y": 2891.79,
+   "rail_z": 224.27,
+   "ground_z": 232.011,
    "class": "cutting"
   },
   {
    "s": 5300.0,
-   "x": 2471.48,
-   "y": 3132.03,
-   "rail_z": 233.05,
-   "ground_z": 235.751,
+   "x": 2477.29,
+   "y": 2901.79,
+   "rail_z": 224.67,
+   "ground_z": 232.176,
    "class": "cutting"
   },
   {
    "s": 5310.0,
-   "x": 2470.95,
-   "y": 3142.02,
-   "rail_z": 233.1,
-   "ground_z": 235.801,
+   "x": 2477.06,
+   "y": 2911.79,
+   "rail_z": 225.07,
+   "ground_z": 232.341,
    "class": "cutting"
   },
   {
    "s": 5320.0,
-   "x": 2470.31,
-   "y": 3152.0,
-   "rail_z": 233.1,
-   "ground_z": 235.846,
+   "x": 2476.83,
+   "y": 2921.79,
+   "rail_z": 225.47,
+   "ground_z": 232.507,
    "class": "cutting"
   },
   {
    "s": 5330.0,
-   "x": 2469.56,
-   "y": 3161.97,
-   "rail_z": 233.05,
-   "ground_z": 235.893,
+   "x": 2476.6,
+   "y": 2931.78,
+   "rail_z": 225.87,
+   "ground_z": 232.672,
    "class": "cutting"
   },
   {
    "s": 5340.0,
-   "x": 2468.7,
-   "y": 3171.93,
-   "rail_z": 232.95,
-   "ground_z": 235.941,
+   "x": 2476.37,
+   "y": 2941.78,
+   "rail_z": 226.27,
+   "ground_z": 232.834,
    "class": "cutting"
   },
   {
    "s": 5350.0,
-   "x": 2467.73,
-   "y": 3181.89,
-   "rail_z": 232.8,
-   "ground_z": 235.99,
+   "x": 2476.15,
+   "y": 2951.78,
+   "rail_z": 226.67,
+   "ground_z": 232.998,
    "class": "cutting"
   },
   {
    "s": 5360.0,
-   "x": 2466.65,
-   "y": 3191.83,
-   "rail_z": 232.6,
-   "ground_z": 236.042,
+   "x": 2475.92,
+   "y": 2961.77,
+   "rail_z": 227.07,
+   "ground_z": 233.162,
    "class": "cutting"
   },
   {
    "s": 5370.0,
-   "x": 2465.46,
-   "y": 3201.76,
-   "rail_z": 232.35,
-   "ground_z": 236.021,
+   "x": 2475.69,
+   "y": 2971.77,
+   "rail_z": 227.47,
+   "ground_z": 233.327,
    "class": "cutting"
   },
   {
    "s": 5380.0,
-   "x": 2464.16,
-   "y": 3211.67,
-   "rail_z": 232.05,
-   "ground_z": 235.761,
+   "x": 2475.46,
+   "y": 2981.77,
+   "rail_z": 227.87,
+   "ground_z": 233.492,
    "class": "cutting"
   },
   {
    "s": 5390.0,
-   "x": 2462.75,
-   "y": 3221.57,
-   "rail_z": 231.7,
-   "ground_z": 235.547,
+   "x": 2475.23,
+   "y": 2991.77,
+   "rail_z": 228.27,
+   "ground_z": 233.659,
    "class": "cutting"
   },
   {
    "s": 5400.0,
-   "x": 2461.23,
-   "y": 3231.46,
-   "rail_z": 231.3,
-   "ground_z": 235.336,
+   "x": 2475.01,
+   "y": 3001.76,
+   "rail_z": 228.67,
+   "ground_z": 233.821,
    "class": "cutting"
   },
   {
    "s": 5410.0,
-   "x": 2459.6,
-   "y": 3241.32,
-   "rail_z": 230.9,
-   "ground_z": 235.127,
+   "x": 2474.78,
+   "y": 3011.76,
+   "rail_z": 229.07,
+   "ground_z": 233.974,
    "class": "cutting"
   },
   {
    "s": 5420.0,
-   "x": 2457.86,
-   "y": 3251.17,
-   "rail_z": 230.5,
-   "ground_z": 234.861,
+   "x": 2474.55,
+   "y": 3021.76,
+   "rail_z": 229.47,
+   "ground_z": 234.128,
    "class": "cutting"
   },
   {
    "s": 5430.0,
-   "x": 2456.01,
-   "y": 3261.0,
-   "rail_z": 230.1,
-   "ground_z": 234.236,
+   "x": 2474.32,
+   "y": 3031.76,
+   "rail_z": 229.87,
+   "ground_z": 234.282,
    "class": "cutting"
   },
   {
    "s": 5440.0,
-   "x": 2454.05,
-   "y": 3270.8,
-   "rail_z": 229.7,
-   "ground_z": 233.613,
+   "x": 2474.09,
+   "y": 3041.75,
+   "rail_z": 230.27,
+   "ground_z": 234.437,
    "class": "cutting"
   },
   {
    "s": 5450.0,
-   "x": 2451.99,
-   "y": 3280.59,
-   "rail_z": 229.3,
-   "ground_z": 232.992,
+   "x": 2473.86,
+   "y": 3051.75,
+   "rail_z": 230.67,
+   "ground_z": 234.593,
    "class": "cutting"
   },
   {
    "s": 5460.0,
-   "x": 2449.81,
-   "y": 3290.35,
-   "rail_z": 228.9,
-   "ground_z": 232.374,
+   "x": 2473.64,
+   "y": 3061.75,
+   "rail_z": 231.07,
+   "ground_z": 234.749,
    "class": "cutting"
   },
   {
    "s": 5470.0,
-   "x": 2447.53,
-   "y": 3300.08,
-   "rail_z": 228.5,
-   "ground_z": 232.014,
+   "x": 2473.41,
+   "y": 3071.75,
+   "rail_z": 231.47,
+   "ground_z": 234.893,
    "class": "cutting"
   },
   {
    "s": 5480.0,
-   "x": 2445.13,
-   "y": 3309.79,
-   "rail_z": 228.1,
-   "ground_z": 231.141,
+   "x": 2473.18,
+   "y": 3081.74,
+   "rail_z": 231.82,
+   "ground_z": 235.033,
    "class": "cutting"
   },
   {
    "s": 5490.0,
-   "x": 2442.64,
-   "y": 3319.48,
-   "rail_z": 227.7,
-   "ground_z": 230.273,
+   "x": 2472.93,
+   "y": 3091.74,
+   "rail_z": 232.12,
+   "ground_z": 235.173,
    "class": "cutting"
   },
   {
    "s": 5500.0,
-   "x": 2440.03,
-   "y": 3329.13,
-   "rail_z": 227.3,
-   "ground_z": 229.412,
+   "x": 2472.65,
+   "y": 3101.74,
+   "rail_z": 232.37,
+   "ground_z": 235.314,
    "class": "cutting"
   },
   {
    "s": 5510.0,
-   "x": 2437.31,
-   "y": 3338.76,
-   "rail_z": 226.9,
-   "ground_z": 228.833,
+   "x": 2472.33,
+   "y": 3111.73,
+   "rail_z": 232.57,
+   "ground_z": 235.457,
    "class": "cutting"
   },
   {
    "s": 5520.0,
-   "x": 2434.49,
-   "y": 3348.35,
-   "rail_z": 226.5,
-   "ground_z": 228.449,
+   "x": 2471.95,
+   "y": 3121.72,
+   "rail_z": 232.72,
+   "ground_z": 235.601,
    "class": "cutting"
   },
   {
    "s": 5530.0,
-   "x": 2431.57,
-   "y": 3357.91,
-   "rail_z": 226.1,
-   "ground_z": 227.564,
+   "x": 2471.5,
+   "y": 3131.71,
+   "rail_z": 232.82,
+   "ground_z": 235.747,
    "class": "cutting"
   },
   {
    "s": 5540.0,
-   "x": 2428.53,
-   "y": 3367.44,
-   "rail_z": 225.7,
-   "ground_z": 226.584,
+   "x": 2470.96,
+   "y": 3141.7,
+   "rail_z": 232.87,
+   "ground_z": 235.8,
    "class": "cutting"
   },
   {
    "s": 5550.0,
-   "x": 2425.39,
-   "y": 3376.93,
-   "rail_z": 225.3,
-   "ground_z": 225.859,
+   "x": 2470.33,
+   "y": 3151.68,
+   "rail_z": 232.87,
+   "ground_z": 235.845,
    "class": "cutting"
   },
   {
    "s": 5560.0,
-   "x": 2422.15,
-   "y": 3386.39,
-   "rail_z": 224.9,
-   "ground_z": 225.455,
+   "x": 2469.58,
+   "y": 3161.65,
+   "rail_z": 232.82,
+   "ground_z": 235.891,
    "class": "cutting"
   },
   {
    "s": 5570.0,
-   "x": 2418.8,
-   "y": 3395.82,
-   "rail_z": 224.5,
-   "ground_z": 225.064,
+   "x": 2468.73,
+   "y": 3171.62,
+   "rail_z": 232.72,
+   "ground_z": 235.939,
    "class": "cutting"
   },
   {
    "s": 5580.0,
-   "x": 2415.35,
-   "y": 3405.2,
-   "rail_z": 224.1,
-   "ground_z": 224.353,
+   "x": 2467.76,
+   "y": 3181.57,
+   "rail_z": 232.57,
+   "ground_z": 235.989,
    "class": "cutting"
   },
   {
    "s": 5590.0,
-   "x": 2411.79,
-   "y": 3414.55,
-   "rail_z": 223.7,
-   "ground_z": 223.601,
-   "class": "embankment"
+   "x": 2466.69,
+   "y": 3191.51,
+   "rail_z": 232.37,
+   "ground_z": 236.04,
+   "class": "cutting"
   },
   {
    "s": 5600.0,
-   "x": 2408.13,
-   "y": 3423.85,
-   "rail_z": 223.3,
-   "ground_z": 223.231,
-   "class": "embankment"
+   "x": 2465.5,
+   "y": 3201.44,
+   "rail_z": 232.12,
+   "ground_z": 236.032,
+   "class": "cutting"
   },
   {
    "s": 5610.0,
-   "x": 2404.36,
-   "y": 3433.12,
-   "rail_z": 222.9,
-   "ground_z": 222.879,
-   "class": "embankment"
+   "x": 2464.2,
+   "y": 3211.35,
+   "rail_z": 231.82,
+   "ground_z": 235.768,
+   "class": "cutting"
   },
   {
    "s": 5620.0,
-   "x": 2400.5,
-   "y": 3442.34,
-   "rail_z": 222.5,
-   "ground_z": 222.545,
+   "x": 2462.8,
+   "y": 3221.26,
+   "rail_z": 231.47,
+   "ground_z": 235.554,
    "class": "cutting"
   },
   {
    "s": 5630.0,
-   "x": 2396.53,
-   "y": 3451.52,
-   "rail_z": 222.1,
-   "ground_z": 222.003,
-   "class": "embankment"
+   "x": 2461.28,
+   "y": 3231.14,
+   "rail_z": 231.07,
+   "ground_z": 235.343,
+   "class": "cutting"
   },
   {
    "s": 5640.0,
-   "x": 2392.45,
-   "y": 3460.65,
-   "rail_z": 221.7,
-   "ground_z": 221.201,
-   "class": "embankment"
+   "x": 2459.65,
+   "y": 3241.01,
+   "rail_z": 230.67,
+   "ground_z": 235.133,
+   "class": "cutting"
   },
   {
    "s": 5650.0,
-   "x": 2388.28,
-   "y": 3469.74,
-   "rail_z": 221.3,
-   "ground_z": 220.275,
-   "class": "embankment"
+   "x": 2457.92,
+   "y": 3250.85,
+   "rail_z": 230.27,
+   "ground_z": 234.881,
+   "class": "cutting"
   },
   {
    "s": 5660.0,
-   "x": 2384.01,
-   "y": 3478.78,
-   "rail_z": 220.9,
-   "ground_z": 219.19,
-   "class": "embankment"
+   "x": 2456.07,
+   "y": 3260.68,
+   "rail_z": 229.87,
+   "ground_z": 234.256,
+   "class": "cutting"
   },
   {
    "s": 5670.0,
-   "x": 2379.64,
-   "y": 3487.77,
-   "rail_z": 220.5,
-   "ground_z": 218.103,
-   "class": "embankment"
+   "x": 2454.12,
+   "y": 3270.49,
+   "rail_z": 229.47,
+   "ground_z": 233.633,
+   "class": "cutting"
   },
   {
    "s": 5680.0,
-   "x": 2375.16,
-   "y": 3496.72,
-   "rail_z": 220.1,
-   "ground_z": 217.302,
-   "class": "embankment"
+   "x": 2452.05,
+   "y": 3280.27,
+   "rail_z": 229.07,
+   "ground_z": 233.012,
+   "class": "cutting"
   },
   {
    "s": 5690.0,
-   "x": 2370.59,
-   "y": 3505.61,
-   "rail_z": 219.7,
-   "ground_z": 216.455,
-   "class": "embankment"
+   "x": 2449.88,
+   "y": 3290.04,
+   "rail_z": 228.67,
+   "ground_z": 232.394,
+   "class": "cutting"
   },
   {
    "s": 5700.0,
-   "x": 2365.92,
-   "y": 3514.45,
-   "rail_z": 219.3,
-   "ground_z": 215.624,
-   "class": "embankment"
+   "x": 2447.6,
+   "y": 3299.77,
+   "rail_z": 228.27,
+   "ground_z": 232.029,
+   "class": "cutting"
   },
   {
    "s": 5710.0,
-   "x": 2361.15,
-   "y": 3523.24,
-   "rail_z": 218.9,
-   "ground_z": 214.934,
-   "class": "embankment"
+   "x": 2445.21,
+   "y": 3309.48,
+   "rail_z": 227.87,
+   "ground_z": 231.169,
+   "class": "cutting"
   },
   {
    "s": 5720.0,
-   "x": 2356.29,
-   "y": 3531.98,
-   "rail_z": 218.5,
-   "ground_z": 214.601,
-   "class": "embankment"
+   "x": 2442.72,
+   "y": 3319.17,
+   "rail_z": 227.47,
+   "ground_z": 230.301,
+   "class": "cutting"
   },
   {
    "s": 5730.0,
-   "x": 2351.32,
-   "y": 3540.66,
-   "rail_z": 218.1,
-   "ground_z": 214.558,
-   "class": "embankment"
+   "x": 2440.11,
+   "y": 3328.82,
+   "rail_z": 227.07,
+   "ground_z": 229.44,
+   "class": "cutting"
   },
   {
    "s": 5740.0,
-   "x": 2346.26,
-   "y": 3549.28,
-   "rail_z": 217.7,
-   "ground_z": 214.692,
-   "class": "embankment"
+   "x": 2437.4,
+   "y": 3338.45,
+   "rail_z": 226.67,
+   "ground_z": 228.845,
+   "class": "cutting"
   },
   {
    "s": 5750.0,
-   "x": 2341.11,
-   "y": 3557.85,
-   "rail_z": 217.3,
-   "ground_z": 214.81,
-   "class": "embankment"
+   "x": 2434.59,
+   "y": 3348.04,
+   "rail_z": 226.27,
+   "ground_z": 228.461,
+   "class": "cutting"
   },
   {
    "s": 5760.0,
-   "x": 2335.86,
-   "y": 3566.37,
-   "rail_z": 216.9,
-   "ground_z": 215.148,
-   "class": "embankment"
+   "x": 2431.66,
+   "y": 3357.6,
+   "rail_z": 225.87,
+   "ground_z": 227.596,
+   "class": "cutting"
   },
   {
    "s": 5770.0,
-   "x": 2330.52,
-   "y": 3574.82,
-   "rail_z": 216.5,
-   "ground_z": 215.63,
-   "class": "embankment"
+   "x": 2428.63,
+   "y": 3367.13,
+   "rail_z": 225.47,
+   "ground_z": 226.615,
+   "class": "cutting"
   },
   {
    "s": 5780.0,
-   "x": 2325.08,
-   "y": 3583.21,
-   "rail_z": 216.1,
-   "ground_z": 216.075,
-   "class": "embankment"
+   "x": 2425.5,
+   "y": 3376.63,
+   "rail_z": 225.07,
+   "ground_z": 225.872,
+   "class": "cutting"
   },
   {
    "s": 5790.0,
-   "x": 2319.55,
-   "y": 3591.54,
-   "rail_z": 215.7,
-   "ground_z": 215.93,
+   "x": 2422.25,
+   "y": 3386.09,
+   "rail_z": 224.67,
+   "ground_z": 225.467,
    "class": "cutting"
   },
   {
    "s": 5800.0,
-   "x": 2313.93,
-   "y": 3599.81,
-   "rail_z": 215.3,
-   "ground_z": 215.505,
+   "x": 2418.91,
+   "y": 3395.51,
+   "rail_z": 224.27,
+   "ground_z": 225.076,
    "class": "cutting"
   },
   {
    "s": 5810.0,
-   "x": 2308.21,
-   "y": 3608.02,
-   "rail_z": 214.9,
-   "ground_z": 214.942,
+   "x": 2415.46,
+   "y": 3404.9,
+   "rail_z": 223.87,
+   "ground_z": 224.384,
    "class": "cutting"
   },
   {
    "s": 5820.0,
-   "x": 2302.41,
-   "y": 3616.16,
-   "rail_z": 214.5,
-   "ground_z": 214.385,
-   "class": "embankment"
+   "x": 2411.9,
+   "y": 3414.25,
+   "rail_z": 223.47,
+   "ground_z": 223.613,
+   "class": "cutting"
   },
   {
    "s": 5830.0,
-   "x": 2296.51,
-   "y": 3624.24,
-   "rail_z": 214.1,
-   "ground_z": 213.836,
-   "class": "embankment"
+   "x": 2408.25,
+   "y": 3423.55,
+   "rail_z": 223.07,
+   "ground_z": 223.242,
+   "class": "cutting"
   },
   {
    "s": 5840.0,
-   "x": 2290.53,
-   "y": 3632.25,
-   "rail_z": 213.7,
-   "ground_z": 213.301,
-   "class": "embankment"
+   "x": 2404.48,
+   "y": 3432.82,
+   "rail_z": 222.67,
+   "ground_z": 222.89,
+   "class": "cutting"
   },
   {
    "s": 5850.0,
-   "x": 2284.46,
-   "y": 3640.2,
-   "rail_z": 213.3,
-   "ground_z": 212.778,
-   "class": "embankment"
+   "x": 2400.62,
+   "y": 3442.04,
+   "rail_z": 222.27,
+   "ground_z": 222.556,
+   "class": "cutting"
   },
   {
    "s": 5860.0,
-   "x": 2278.3,
-   "y": 3648.07,
-   "rail_z": 212.9,
-   "ground_z": 212.263,
-   "class": "embankment"
+   "x": 2396.65,
+   "y": 3451.22,
+   "rail_z": 221.87,
+   "ground_z": 222.024,
+   "class": "cutting"
   },
   {
    "s": 5870.0,
-   "x": 2272.05,
-   "y": 3655.88,
-   "rail_z": 212.5,
-   "ground_z": 211.897,
+   "x": 2392.59,
+   "y": 3460.36,
+   "rail_z": 221.47,
+   "ground_z": 221.23,
    "class": "embankment"
   },
   {
    "s": 5880.0,
-   "x": 2265.72,
-   "y": 3663.62,
-   "rail_z": 212.1,
-   "ground_z": 211.554,
+   "x": 2388.42,
+   "y": 3469.45,
+   "rail_z": 221.07,
+   "ground_z": 220.309,
    "class": "embankment"
   },
   {
    "s": 5890.0,
-   "x": 2259.31,
-   "y": 3671.3,
-   "rail_z": 211.7,
-   "ground_z": 211.195,
+   "x": 2384.15,
+   "y": 3478.49,
+   "rail_z": 220.67,
+   "ground_z": 219.229,
    "class": "embankment"
   },
   {
    "s": 5900.0,
-   "x": 2252.84,
-   "y": 3678.92,
-   "rail_z": 211.3,
-   "ground_z": 210.665,
+   "x": 2379.78,
+   "y": 3487.48,
+   "rail_z": 220.27,
+   "ground_z": 218.141,
    "class": "embankment"
   },
   {
    "s": 5910.0,
-   "x": 2246.31,
-   "y": 3686.5,
-   "rail_z": 210.9,
-   "ground_z": 210.028,
+   "x": 2375.31,
+   "y": 3496.43,
+   "rail_z": 219.87,
+   "ground_z": 217.32,
    "class": "embankment"
   },
   {
    "s": 5920.0,
-   "x": 2239.74,
-   "y": 3694.04,
-   "rail_z": 210.5,
-   "ground_z": 209.393,
+   "x": 2370.74,
+   "y": 3505.32,
+   "rail_z": 219.47,
+   "ground_z": 216.487,
    "class": "embankment"
   },
   {
    "s": 5930.0,
-   "x": 2233.14,
-   "y": 3701.55,
-   "rail_z": 210.1,
-   "ground_z": 208.795,
+   "x": 2366.07,
+   "y": 3514.17,
+   "rail_z": 219.07,
+   "ground_z": 215.646,
    "class": "embankment"
   },
   {
    "s": 5940.0,
-   "x": 2226.52,
-   "y": 3709.05,
-   "rail_z": 209.7,
-   "ground_z": 208.331,
+   "x": 2361.31,
+   "y": 3522.96,
+   "rail_z": 218.67,
+   "ground_z": 214.951,
    "class": "embankment"
   },
   {
    "s": 5950.0,
-   "x": 2219.89,
-   "y": 3716.53,
-   "rail_z": 209.3,
-   "ground_z": 207.868,
+   "x": 2356.44,
+   "y": 3531.7,
+   "rail_z": 218.27,
+   "ground_z": 214.603,
    "class": "embankment"
   },
   {
    "s": 5960.0,
-   "x": 2213.26,
-   "y": 3724.02,
-   "rail_z": 208.9,
-   "ground_z": 207.396,
+   "x": 2351.48,
+   "y": 3540.38,
+   "rail_z": 217.87,
+   "ground_z": 214.561,
    "class": "embankment"
   },
   {
    "s": 5970.0,
-   "x": 2206.63,
-   "y": 3731.5,
-   "rail_z": 208.5,
-   "ground_z": 206.916,
+   "x": 2346.43,
+   "y": 3549.01,
+   "rail_z": 217.47,
+   "ground_z": 214.682,
    "class": "embankment"
   },
   {
    "s": 5980.0,
-   "x": 2199.99,
-   "y": 3738.98,
-   "rail_z": 208.1,
-   "ground_z": 206.437,
+   "x": 2341.28,
+   "y": 3557.58,
+   "rail_z": 217.07,
+   "ground_z": 214.802,
    "class": "embankment"
   },
   {
    "s": 5990.0,
-   "x": 2193.36,
-   "y": 3746.47,
-   "rail_z": 207.7,
-   "ground_z": 205.957,
+   "x": 2336.03,
+   "y": 3566.09,
+   "rail_z": 216.67,
+   "ground_z": 215.132,
    "class": "embankment"
   },
   {
    "s": 6000.0,
-   "x": 2186.73,
-   "y": 3753.95,
-   "rail_z": 207.3,
-   "ground_z": 205.588,
+   "x": 2330.69,
+   "y": 3574.55,
+   "rail_z": 216.27,
+   "ground_z": 215.612,
    "class": "embankment"
   },
   {
    "s": 6010.0,
-   "x": 2180.09,
-   "y": 3761.43,
-   "rail_z": 206.9,
-   "ground_z": 205.343,
-   "class": "embankment"
+   "x": 2325.26,
+   "y": 3582.94,
+   "rail_z": 215.87,
+   "ground_z": 216.06,
+   "class": "cutting"
   },
   {
    "s": 6020.0,
-   "x": 2173.46,
-   "y": 3768.92,
-   "rail_z": 206.5,
-   "ground_z": 205.097,
-   "class": "embankment"
+   "x": 2319.73,
+   "y": 3591.28,
+   "rail_z": 215.47,
+   "ground_z": 215.942,
+   "class": "cutting"
   },
   {
    "s": 6030.0,
-   "x": 2166.83,
-   "y": 3776.4,
-   "rail_z": 206.1,
-   "ground_z": 204.851,
-   "class": "embankment"
+   "x": 2314.11,
+   "y": 3599.55,
+   "rail_z": 215.07,
+   "ground_z": 215.52,
+   "class": "cutting"
   },
   {
    "s": 6040.0,
-   "x": 2160.19,
-   "y": 3783.88,
-   "rail_z": 205.7,
-   "ground_z": 204.607,
-   "class": "embankment"
+   "x": 2308.4,
+   "y": 3607.76,
+   "rail_z": 214.67,
+   "ground_z": 214.96,
+   "class": "cutting"
   },
   {
    "s": 6050.0,
-   "x": 2153.56,
-   "y": 3791.37,
-   "rail_z": 205.3,
-   "ground_z": 204.366,
-   "class": "embankment"
+   "x": 2302.6,
+   "y": 3615.9,
+   "rail_z": 214.27,
+   "ground_z": 214.402,
+   "class": "cutting"
   },
   {
    "s": 6060.0,
-   "x": 2146.93,
-   "y": 3798.85,
-   "rail_z": 204.9,
-   "ground_z": 204.124,
+   "x": 2296.7,
+   "y": 3623.98,
+   "rail_z": 213.87,
+   "ground_z": 213.853,
    "class": "embankment"
   },
   {
    "s": 6070.0,
-   "x": 2140.3,
-   "y": 3806.33,
-   "rail_z": 204.55,
-   "ground_z": 204.01,
+   "x": 2290.72,
+   "y": 3631.99,
+   "rail_z": 213.47,
+   "ground_z": 213.318,
    "class": "embankment"
   },
   {
    "s": 6080.0,
-   "x": 2133.66,
-   "y": 3813.82,
-   "rail_z": 204.25,
-   "ground_z": 203.921,
+   "x": 2284.65,
+   "y": 3639.94,
+   "rail_z": 213.07,
+   "ground_z": 212.794,
    "class": "embankment"
   },
   {
    "s": 6090.0,
-   "x": 2127.03,
-   "y": 3821.3,
-   "rail_z": 204.0,
-   "ground_z": 203.832,
+   "x": 2278.5,
+   "y": 3647.82,
+   "rail_z": 212.67,
+   "ground_z": 212.28,
    "class": "embankment"
   },
   {
    "s": 6100.0,
-   "x": 2120.4,
-   "y": 3828.79,
-   "rail_z": 203.8,
-   "ground_z": 203.743,
+   "x": 2272.25,
+   "y": 3655.63,
+   "rail_z": 212.27,
+   "ground_z": 211.907,
    "class": "embankment"
   },
   {
    "s": 6110.0,
-   "x": 2113.78,
-   "y": 3836.28,
-   "rail_z": 203.65,
-   "ground_z": 203.651,
-   "class": "cutting"
+   "x": 2265.92,
+   "y": 3663.37,
+   "rail_z": 211.87,
+   "ground_z": 211.565,
+   "class": "embankment"
   },
   {
    "s": 6120.0,
-   "x": 2107.18,
-   "y": 3843.8,
-   "rail_z": 203.55,
-   "ground_z": 203.561,
-   "class": "cutting"
+   "x": 2259.51,
+   "y": 3671.05,
+   "rail_z": 211.47,
+   "ground_z": 211.206,
+   "class": "embankment"
   },
   {
    "s": 6130.0,
-   "x": 2100.62,
-   "y": 3851.34,
-   "rail_z": 203.5,
-   "ground_z": 203.494,
+   "x": 2253.04,
+   "y": 3678.68,
+   "rail_z": 211.07,
+   "ground_z": 210.685,
    "class": "embankment"
   },
   {
    "s": 6140.0,
-   "x": 2094.1,
-   "y": 3858.92,
-   "rail_z": 203.5,
-   "ground_z": 203.53,
-   "class": "cutting"
+   "x": 2246.52,
+   "y": 3686.26,
+   "rail_z": 210.67,
+   "ground_z": 210.049,
+   "class": "embankment"
   },
   {
    "s": 6150.0,
-   "x": 2087.63,
-   "y": 3866.55,
-   "rail_z": 203.55,
-   "ground_z": 203.567,
-   "class": "cutting"
+   "x": 2239.95,
+   "y": 3693.8,
+   "rail_z": 210.27,
+   "ground_z": 209.414,
+   "class": "embankment"
   },
   {
    "s": 6160.0,
-   "x": 2081.23,
-   "y": 3874.24,
-   "rail_z": 203.6,
-   "ground_z": 203.606,
-   "class": "cutting"
+   "x": 2233.36,
+   "y": 3701.31,
+   "rail_z": 209.87,
+   "ground_z": 208.809,
+   "class": "embankment"
   },
   {
    "s": 6170.0,
-   "x": 2074.91,
-   "y": 3881.98,
-   "rail_z": 203.65,
-   "ground_z": 203.649,
+   "x": 2226.74,
+   "y": 3708.81,
+   "rail_z": 209.47,
+   "ground_z": 208.346,
    "class": "embankment"
   },
   {
    "s": 6180.0,
-   "x": 2068.67,
-   "y": 3889.8,
-   "rail_z": 203.7,
-   "ground_z": 203.692,
+   "x": 2220.11,
+   "y": 3716.29,
+   "rail_z": 209.07,
+   "ground_z": 207.882,
    "class": "embankment"
   },
   {
    "s": 6190.0,
-   "x": 2062.5,
-   "y": 3897.67,
-   "rail_z": 203.75,
-   "ground_z": 203.735,
+   "x": 2213.47,
+   "y": 3723.78,
+   "rail_z": 208.67,
+   "ground_z": 207.411,
    "class": "embankment"
   },
   {
    "s": 6200.0,
-   "x": 2056.4,
-   "y": 3905.59,
-   "rail_z": 203.85,
-   "ground_z": 203.831,
+   "x": 2206.84,
+   "y": 3731.26,
+   "rail_z": 208.27,
+   "ground_z": 206.932,
    "class": "embankment"
   },
   {
    "s": 6210.0,
-   "x": 2050.35,
-   "y": 3913.55,
-   "rail_z": 203.95,
-   "ground_z": 203.954,
-   "class": "cutting"
+   "x": 2200.21,
+   "y": 3738.74,
+   "rail_z": 207.87,
+   "ground_z": 206.452,
+   "class": "embankment"
   },
   {
    "s": 6220.0,
-   "x": 2044.34,
-   "y": 3921.55,
-   "rail_z": 204.1,
-   "ground_z": 204.075,
+   "x": 2193.57,
+   "y": 3746.23,
+   "rail_z": 207.47,
+   "ground_z": 205.973,
    "class": "embankment"
   },
   {
    "s": 6230.0,
-   "x": 2038.37,
-   "y": 3929.57,
-   "rail_z": 204.2,
-   "ground_z": 204.197,
+   "x": 2186.94,
+   "y": 3753.71,
+   "rail_z": 207.07,
+   "ground_z": 205.596,
    "class": "embankment"
   },
   {
    "s": 6240.0,
-   "x": 2032.41,
-   "y": 3937.6,
-   "rail_z": 204.3,
-   "ground_z": 204.326,
-   "class": "cutting"
+   "x": 2180.31,
+   "y": 3761.19,
+   "rail_z": 206.67,
+   "ground_z": 205.351,
+   "class": "embankment"
   },
   {
    "s": 6250.0,
-   "x": 2026.47,
-   "y": 3945.64,
-   "rail_z": 204.45,
-   "ground_z": 204.469,
-   "class": "cutting"
+   "x": 2173.67,
+   "y": 3768.68,
+   "rail_z": 206.27,
+   "ground_z": 205.105,
+   "class": "embankment"
   },
   {
    "s": 6260.0,
-   "x": 2020.52,
-   "y": 3953.68,
-   "rail_z": 204.65,
-   "ground_z": 204.633,
+   "x": 2167.04,
+   "y": 3776.16,
+   "rail_z": 205.87,
+   "ground_z": 204.859,
    "class": "embankment"
   },
   {
    "s": 6270.0,
-   "x": 2014.58,
-   "y": 3961.72,
-   "rail_z": 204.8,
-   "ground_z": 204.823,
-   "class": "cutting"
+   "x": 2160.41,
+   "y": 3783.64,
+   "rail_z": 205.47,
+   "ground_z": 204.615,
+   "class": "embankment"
   },
   {
    "s": 6280.0,
-   "x": 2008.63,
-   "y": 3969.76,
-   "rail_z": 205.0,
-   "ground_z": 205.023,
-   "class": "cutting"
+   "x": 2153.77,
+   "y": 3791.13,
+   "rail_z": 205.07,
+   "ground_z": 204.373,
+   "class": "embankment"
   },
   {
    "s": 6290.0,
-   "x": 2002.69,
-   "y": 3977.8,
-   "rail_z": 205.25,
-   "ground_z": 205.245,
+   "x": 2147.14,
+   "y": 3798.61,
+   "rail_z": 204.72,
+   "ground_z": 204.132,
    "class": "embankment"
   },
   {
    "s": 6300.0,
-   "x": 1996.74,
-   "y": 3985.84,
-   "rail_z": 205.55,
-   "ground_z": 205.466,
+   "x": 2140.51,
+   "y": 3806.09,
+   "rail_z": 204.42,
+   "ground_z": 204.013,
    "class": "embankment"
   },
   {
    "s": 6310.0,
-   "x": 1990.79,
-   "y": 3993.88,
-   "rail_z": 205.85,
-   "ground_z": 205.687,
+   "x": 2133.88,
+   "y": 3813.58,
+   "rail_z": 204.17,
+   "ground_z": 203.924,
    "class": "embankment"
   },
   {
    "s": 6320.0,
-   "x": 1984.85,
-   "y": 4001.93,
-   "rail_z": 206.2,
-   "ground_z": 205.921,
+   "x": 2127.24,
+   "y": 3821.06,
+   "rail_z": 203.97,
+   "ground_z": 203.835,
    "class": "embankment"
   },
   {
    "s": 6330.0,
-   "x": 1978.9,
-   "y": 4009.97,
-   "rail_z": 206.55,
-   "ground_z": 206.192,
+   "x": 2120.61,
+   "y": 3828.55,
+   "rail_z": 203.82,
+   "ground_z": 203.746,
    "class": "embankment"
   },
   {
    "s": 6340.0,
-   "x": 1972.96,
-   "y": 4018.01,
-   "rail_z": 206.85,
-   "ground_z": 206.463,
+   "x": 2113.99,
+   "y": 3836.04,
+   "rail_z": 203.67,
+   "ground_z": 203.654,
    "class": "embankment"
   },
   {
    "s": 6350.0,
-   "x": 1967.01,
-   "y": 4026.05,
-   "rail_z": 207.1,
-   "ground_z": 206.735,
+   "x": 2107.39,
+   "y": 3843.56,
+   "rail_z": 203.57,
+   "ground_z": 203.564,
    "class": "embankment"
   },
   {
    "s": 6360.0,
-   "x": 1961.07,
-   "y": 4034.09,
-   "rail_z": 207.3,
-   "ground_z": 207.019,
+   "x": 2100.83,
+   "y": 3851.1,
+   "rail_z": 203.52,
+   "ground_z": 203.493,
    "class": "embankment"
   },
   {
    "s": 6370.0,
-   "x": 1955.12,
-   "y": 4042.13,
-   "rail_z": 207.45,
-   "ground_z": 207.334,
-   "class": "embankment"
+   "x": 2094.31,
+   "y": 3858.68,
+   "rail_z": 203.52,
+   "ground_z": 203.529,
+   "class": "cutting"
   },
   {
    "s": 6380.0,
-   "x": 1949.18,
-   "y": 4050.17,
-   "rail_z": 207.55,
-   "ground_z": 207.649,
-   "class": "cutting"
+   "x": 2087.84,
+   "y": 3866.31,
+   "rail_z": 203.57,
+   "ground_z": 203.566,
+   "class": "embankment"
   },
   {
    "s": 6390.0,
-   "x": 1943.23,
-   "y": 4058.21,
-   "rail_z": 207.6,
-   "ground_z": 207.964,
-   "class": "cutting"
+   "x": 2081.44,
+   "y": 3873.99,
+   "rail_z": 203.62,
+   "ground_z": 203.604,
+   "class": "embankment"
   },
   {
    "s": 6400.0,
-   "x": 1937.29,
-   "y": 4066.25,
-   "rail_z": 207.6,
-   "ground_z": 208.293,
-   "class": "cutting"
+   "x": 2075.11,
+   "y": 3881.73,
+   "rail_z": 203.67,
+   "ground_z": 203.647,
+   "class": "embankment"
   },
   {
    "s": 6410.0,
-   "x": 1931.34,
-   "y": 4074.29,
-   "rail_z": 207.55,
-   "ground_z": 208.657,
+   "x": 2068.87,
+   "y": 3889.54,
+   "rail_z": 203.67,
+   "ground_z": 203.69,
    "class": "cutting"
   },
   {
    "s": 6420.0,
-   "x": 1925.39,
-   "y": 4082.33,
-   "rail_z": 207.45,
-   "ground_z": 209.021,
+   "x": 2062.7,
+   "y": 3897.42,
+   "rail_z": 203.72,
+   "ground_z": 203.734,
    "class": "cutting"
   },
   {
    "s": 6430.0,
-   "x": 1919.43,
-   "y": 4090.36,
-   "rail_z": 207.3,
-   "ground_z": 209.383,
+   "x": 2056.59,
+   "y": 3905.34,
+   "rail_z": 203.82,
+   "ground_z": 203.827,
    "class": "cutting"
   },
   {
    "s": 6440.0,
-   "x": 1913.43,
-   "y": 4098.36,
-   "rail_z": 207.1,
-   "ground_z": 209.741,
-   "class": "cutting"
+   "x": 2050.54,
+   "y": 3913.3,
+   "rail_z": 203.97,
+   "ground_z": 203.95,
+   "class": "embankment"
   },
   {
    "s": 6450.0,
-   "x": 1907.39,
-   "y": 4106.33,
-   "rail_z": 206.85,
-   "ground_z": 210.117,
+   "x": 2044.54,
+   "y": 3921.29,
+   "rail_z": 204.07,
+   "ground_z": 204.071,
    "class": "cutting"
   },
   {
    "s": 6460.0,
-   "x": 1901.28,
-   "y": 4114.24,
-   "rail_z": 206.55,
-   "ground_z": 210.488,
+   "x": 2038.56,
+   "y": 3929.31,
+   "rail_z": 204.17,
+   "ground_z": 204.193,
    "class": "cutting"
   },
   {
    "s": 6470.0,
-   "x": 1895.09,
-   "y": 4122.1,
-   "rail_z": 206.2,
-   "ground_z": 210.856,
+   "x": 2032.6,
+   "y": 3937.34,
+   "rail_z": 204.32,
+   "ground_z": 204.321,
    "class": "cutting"
   },
   {
    "s": 6480.0,
-   "x": 1888.81,
-   "y": 4129.88,
-   "rail_z": 205.8,
-   "ground_z": 211.235,
-   "class": "cutting"
+   "x": 2026.66,
+   "y": 3945.38,
+   "rail_z": 204.47,
+   "ground_z": 204.464,
+   "class": "embankment"
   },
   {
    "s": 6490.0,
-   "x": 1882.42,
-   "y": 4137.57,
-   "rail_z": 205.4,
-   "ground_z": 211.649,
+   "x": 2020.71,
+   "y": 3953.42,
+   "rail_z": 204.62,
+   "ground_z": 204.627,
    "class": "cutting"
   },
   {
    "s": 6500.0,
-   "x": 1875.91,
-   "y": 4145.16,
-   "rail_z": 205.0,
-   "ground_z": 212.06,
-   "class": "cutting"
+   "x": 2014.77,
+   "y": 3961.46,
+   "rail_z": 204.82,
+   "ground_z": 204.817,
+   "class": "embankment"
   },
   {
    "s": 6510.0,
-   "x": 1869.28,
-   "y": 4152.65,
-   "rail_z": 204.6,
-   "ground_z": 212.453,
-   "class": "cutting"
+   "x": 2008.82,
+   "y": 3969.5,
+   "rail_z": 205.02,
+   "ground_z": 205.016,
+   "class": "embankment"
   },
   {
    "s": 6520.0,
-   "x": 1862.53,
-   "y": 4160.03,
-   "rail_z": 204.2,
-   "ground_z": 212.828,
-   "class": "cutting"
+   "x": 2002.88,
+   "y": 3977.54,
+   "rail_z": 205.27,
+   "ground_z": 205.238,
+   "class": "embankment"
   },
   {
    "s": 6530.0,
-   "x": 1855.67,
-   "y": 4167.3,
-   "rail_z": 203.8,
-   "ground_z": 213.238,
-   "class": "cutting"
+   "x": 1996.93,
+   "y": 3985.59,
+   "rail_z": 205.52,
+   "ground_z": 205.459,
+   "class": "embankment"
   },
   {
    "s": 6540.0,
-   "x": 1848.69,
-   "y": 4174.46,
-   "rail_z": 203.4,
-   "ground_z": 213.627,
-   "class": "cutting"
+   "x": 1990.99,
+   "y": 3993.63,
+   "rail_z": 205.82,
+   "ground_z": 205.68,
+   "class": "embankment"
   },
   {
    "s": 6550.0,
-   "x": 1841.59,
-   "y": 4181.51,
-   "rail_z": 203.0,
-   "ground_z": 213.999,
-   "class": "cutting"
+   "x": 1985.04,
+   "y": 4001.67,
+   "rail_z": 206.17,
+   "ground_z": 205.912,
+   "class": "embankment"
   },
   {
    "s": 6560.0,
-   "x": 1834.39,
-   "y": 4188.44,
-   "rail_z": 202.6,
-   "ground_z": 214.375,
-   "class": "cutting"
+   "x": 1979.1,
+   "y": 4009.71,
+   "rail_z": 206.52,
+   "ground_z": 206.183,
+   "class": "embankment"
   },
   {
    "s": 6570.0,
-   "x": 1827.07,
-   "y": 4195.26,
-   "rail_z": 202.2,
-   "ground_z": 214.78,
-   "class": "deep cutting"
+   "x": 1973.15,
+   "y": 4017.75,
+   "rail_z": 206.82,
+   "ground_z": 206.455,
+   "class": "embankment"
   },
   {
    "s": 6580.0,
-   "x": 1819.65,
-   "y": 4201.96,
-   "rail_z": 201.8,
-   "ground_z": 215.167,
-   "class": "deep cutting"
+   "x": 1967.2,
+   "y": 4025.79,
+   "rail_z": 207.07,
+   "ground_z": 206.726,
+   "class": "embankment"
   },
   {
    "s": 6590.0,
-   "x": 1812.11,
-   "y": 4208.54,
-   "rail_z": 201.4,
-   "ground_z": 215.513,
-   "class": "deep cutting"
+   "x": 1961.26,
+   "y": 4033.83,
+   "rail_z": 207.27,
+   "ground_z": 207.009,
+   "class": "embankment"
   },
   {
    "s": 6600.0,
-   "x": 1804.48,
-   "y": 4214.99,
-   "rail_z": 201.0,
-   "ground_z": 215.859,
-   "class": "deep cutting"
+   "x": 1955.31,
+   "y": 4041.87,
+   "rail_z": 207.42,
+   "ground_z": 207.324,
+   "class": "embankment"
   },
   {
    "s": 6610.0,
-   "x": 1796.74,
-   "y": 4221.33,
-   "rail_z": 200.6,
-   "ground_z": 216.235,
-   "class": "deep cutting"
+   "x": 1949.37,
+   "y": 4049.91,
+   "rail_z": 207.52,
+   "ground_z": 207.638,
+   "class": "cutting"
   },
   {
    "s": 6620.0,
-   "x": 1788.91,
-   "y": 4227.54,
-   "rail_z": 200.2,
-   "ground_z": 216.608,
-   "class": "deep cutting"
+   "x": 1943.42,
+   "y": 4057.95,
+   "rail_z": 207.57,
+   "ground_z": 207.954,
+   "class": "cutting"
   },
   {
    "s": 6630.0,
-   "x": 1780.97,
-   "y": 4233.63,
-   "rail_z": 199.8,
-   "ground_z": 216.956,
-   "class": "deep cutting"
+   "x": 1937.48,
+   "y": 4065.99,
+   "rail_z": 207.57,
+   "ground_z": 208.281,
+   "class": "cutting"
   },
   {
    "s": 6640.0,
-   "x": 1772.94,
-   "y": 4239.58,
-   "rail_z": 199.4,
-   "ground_z": 217.294,
-   "class": "deep cutting"
+   "x": 1931.53,
+   "y": 4074.03,
+   "rail_z": 207.52,
+   "ground_z": 208.645,
+   "class": "cutting"
   },
   {
    "s": 6650.0,
-   "x": 1764.81,
-   "y": 4245.41,
-   "rail_z": 199.0,
-   "ground_z": 217.637,
-   "class": "deep cutting"
+   "x": 1925.59,
+   "y": 4082.07,
+   "rail_z": 207.42,
+   "ground_z": 209.009,
+   "class": "cutting"
   },
   {
    "s": 6660.0,
-   "x": 1756.6,
-   "y": 4251.11,
-   "rail_z": 198.6,
-   "ground_z": 217.967,
-   "class": "deep cutting"
+   "x": 1919.62,
+   "y": 4090.1,
+   "rail_z": 207.27,
+   "ground_z": 209.372,
+   "class": "cutting"
   },
   {
    "s": 6670.0,
-   "x": 1748.29,
-   "y": 4256.67,
-   "rail_z": 198.2,
-   "ground_z": 217.976,
-   "class": "deep cutting"
+   "x": 1913.63,
+   "y": 4098.1,
+   "rail_z": 207.07,
+   "ground_z": 209.728,
+   "class": "cutting"
   },
   {
    "s": 6680.0,
-   "x": 1739.89,
-   "y": 4262.11,
-   "rail_z": 197.8,
-   "ground_z": 217.601,
-   "class": "deep cutting"
+   "x": 1907.58,
+   "y": 4106.07,
+   "rail_z": 206.82,
+   "ground_z": 210.105,
+   "class": "cutting"
   },
   {
    "s": 6690.0,
-   "x": 1731.41,
-   "y": 4267.4,
-   "rail_z": 197.4,
-   "ground_z": 216.934,
-   "class": "deep cutting"
+   "x": 1901.48,
+   "y": 4113.99,
+   "rail_z": 206.52,
+   "ground_z": 210.476,
+   "class": "cutting"
   },
   {
    "s": 6700.0,
-   "x": 1722.84,
-   "y": 4272.56,
-   "rail_z": 197.0,
-   "ground_z": 216.013,
-   "class": "deep cutting"
+   "x": 1895.29,
+   "y": 4121.85,
+   "rail_z": 206.17,
+   "ground_z": 210.845,
+   "class": "cutting"
   },
   {
    "s": 6710.0,
-   "x": 1714.2,
-   "y": 4277.59,
-   "rail_z": 196.6,
-   "ground_z": 214.852,
-   "class": "deep cutting"
+   "x": 1889.01,
+   "y": 4129.63,
+   "rail_z": 205.77,
+   "ground_z": 211.222,
+   "class": "cutting"
   },
   {
    "s": 6720.0,
-   "x": 1705.47,
-   "y": 4282.47,
-   "rail_z": 196.2,
-   "ground_z": 213.457,
-   "class": "deep cutting"
+   "x": 1882.63,
+   "y": 4137.33,
+   "rail_z": 205.37,
+   "ground_z": 211.636,
+   "class": "cutting"
   },
   {
    "s": 6730.0,
-   "x": 1696.67,
-   "y": 4287.22,
-   "rail_z": 195.8,
-   "ground_z": 211.862,
-   "class": "deep cutting"
+   "x": 1876.12,
+   "y": 4144.92,
+   "rail_z": 204.97,
+   "ground_z": 212.046,
+   "class": "cutting"
   },
   {
    "s": 6740.0,
-   "x": 1687.79,
-   "y": 4291.82,
-   "rail_z": 195.4,
-   "ground_z": 210.072,
-   "class": "deep cutting"
+   "x": 1869.5,
+   "y": 4152.41,
+   "rail_z": 204.57,
+   "ground_z": 212.441,
+   "class": "cutting"
   },
   {
    "s": 6750.0,
-   "x": 1678.84,
-   "y": 4296.28,
-   "rail_z": 195.0,
-   "ground_z": 208.1,
-   "class": "deep cutting"
+   "x": 1862.75,
+   "y": 4159.79,
+   "rail_z": 204.17,
+   "ground_z": 212.815,
+   "class": "cutting"
   },
   {
    "s": 6760.0,
-   "x": 1669.82,
-   "y": 4300.6,
-   "rail_z": 194.6,
-   "ground_z": 205.986,
+   "x": 1855.89,
+   "y": 4167.07,
+   "rail_z": 203.77,
+   "ground_z": 213.225,
    "class": "cutting"
   },
   {
    "s": 6770.0,
-   "x": 1660.73,
-   "y": 4304.77,
-   "rail_z": 194.2,
-   "ground_z": 203.744,
+   "x": 1848.91,
+   "y": 4174.23,
+   "rail_z": 203.37,
+   "ground_z": 213.615,
    "class": "cutting"
   },
   {
    "s": 6780.0,
-   "x": 1651.58,
-   "y": 4308.8,
-   "rail_z": 193.8,
-   "ground_z": 201.408,
+   "x": 1841.82,
+   "y": 4181.28,
+   "rail_z": 202.97,
+   "ground_z": 213.988,
    "class": "cutting"
   },
   {
    "s": 6790.0,
-   "x": 1642.36,
-   "y": 4312.68,
-   "rail_z": 193.4,
-   "ground_z": 199.01,
+   "x": 1834.62,
+   "y": 4188.22,
+   "rail_z": 202.57,
+   "ground_z": 214.362,
    "class": "cutting"
   },
   {
    "s": 6800.0,
-   "x": 1633.09,
-   "y": 4316.41,
-   "rail_z": 193.0,
-   "ground_z": 196.586,
-   "class": "cutting"
+   "x": 1827.31,
+   "y": 4195.04,
+   "rail_z": 202.17,
+   "ground_z": 214.767,
+   "class": "deep cutting"
   },
   {
    "s": 6810.0,
-   "x": 1623.75,
-   "y": 4319.99,
-   "rail_z": 192.6,
-   "ground_z": 194.175,
-   "class": "cutting"
+   "x": 1819.89,
+   "y": 4201.74,
+   "rail_z": 201.77,
+   "ground_z": 215.156,
+   "class": "deep cutting"
   },
   {
    "s": 6820.0,
-   "x": 1614.36,
-   "y": 4323.42,
-   "rail_z": 192.2,
-   "ground_z": 191.834,
-   "class": "embankment"
+   "x": 1812.36,
+   "y": 4208.33,
+   "rail_z": 201.37,
+   "ground_z": 215.502,
+   "class": "deep cutting"
   },
   {
    "s": 6830.0,
-   "x": 1604.91,
-   "y": 4326.71,
-   "rail_z": 191.8,
-   "ground_z": 189.612,
-   "class": "embankment"
+   "x": 1804.73,
+   "y": 4214.79,
+   "rail_z": 200.97,
+   "ground_z": 215.847,
+   "class": "deep cutting"
   },
   {
    "s": 6840.0,
-   "x": 1595.42,
-   "y": 4329.84,
-   "rail_z": 191.4,
-   "ground_z": 187.572,
-   "class": "embankment"
+   "x": 1796.99,
+   "y": 4221.13,
+   "rail_z": 200.57,
+   "ground_z": 216.223,
+   "class": "deep cutting"
   },
   {
    "s": 6850.0,
-   "x": 1585.87,
-   "y": 4332.82,
-   "rail_z": 191.0,
-   "ground_z": 185.788,
-   "class": "embankment"
+   "x": 1789.16,
+   "y": 4227.34,
+   "rail_z": 200.17,
+   "ground_z": 216.596,
+   "class": "deep cutting"
   },
   {
    "s": 6860.0,
-   "x": 1576.28,
-   "y": 4335.64,
-   "rail_z": 190.6,
-   "ground_z": 184.337,
-   "class": "embankment"
+   "x": 1781.23,
+   "y": 4233.43,
+   "rail_z": 199.77,
+   "ground_z": 216.946,
+   "class": "deep cutting"
   },
   {
    "s": 6870.0,
-   "x": 1566.64,
-   "y": 4338.32,
-   "rail_z": 190.2,
-   "ground_z": 184.23,
-   "class": "embankment"
+   "x": 1773.2,
+   "y": 4239.39,
+   "rail_z": 199.37,
+   "ground_z": 217.282,
+   "class": "deep cutting"
   },
   {
    "s": 6880.0,
-   "x": 1556.96,
-   "y": 4340.83,
-   "rail_z": 189.8,
-   "ground_z": 184.623,
-   "class": "embankment"
+   "x": 1765.08,
+   "y": 4245.23,
+   "rail_z": 198.97,
+   "ground_z": 217.626,
+   "class": "deep cutting"
   },
   {
    "s": 6890.0,
-   "x": 1547.25,
-   "y": 4343.2,
-   "rail_z": 189.4,
-   "ground_z": 184.948,
-   "class": "embankment"
+   "x": 1756.86,
+   "y": 4250.93,
+   "rail_z": 198.57,
+   "ground_z": 217.957,
+   "class": "deep cutting"
   },
   {
    "s": 6900.0,
-   "x": 1537.5,
-   "y": 4345.42,
-   "rail_z": 189.0,
-   "ground_z": 185.186,
-   "class": "embankment"
+   "x": 1748.56,
+   "y": 4256.5,
+   "rail_z": 198.17,
+   "ground_z": 217.986,
+   "class": "deep cutting"
   },
   {
    "s": 6910.0,
-   "x": 1527.72,
-   "y": 4347.51,
-   "rail_z": 188.65,
-   "ground_z": 185.348,
-   "class": "embankment"
+   "x": 1740.16,
+   "y": 4261.93,
+   "rail_z": 197.77,
+   "ground_z": 217.616,
+   "class": "deep cutting"
   },
   {
    "s": 6920.0,
-   "x": 1517.92,
-   "y": 4349.49,
-   "rail_z": 188.35,
-   "ground_z": 185.331,
-   "class": "embankment"
+   "x": 1731.68,
+   "y": 4267.24,
+   "rail_z": 197.37,
+   "ground_z": 216.958,
+   "class": "deep cutting"
   },
   {
    "s": 6930.0,
-   "x": 1508.1,
-   "y": 4351.39,
-   "rail_z": 188.1,
-   "ground_z": 185.313,
-   "class": "embankment"
+   "x": 1723.12,
+   "y": 4272.4,
+   "rail_z": 196.97,
+   "ground_z": 216.046,
+   "class": "deep cutting"
   },
   {
    "s": 6940.0,
-   "x": 1498.27,
-   "y": 4353.21,
-   "rail_z": 187.9,
-   "ground_z": 185.241,
-   "class": "embankment"
+   "x": 1714.48,
+   "y": 4277.43,
+   "rail_z": 196.57,
+   "ground_z": 214.893,
+   "class": "deep cutting"
   },
   {
    "s": 6950.0,
-   "x": 1488.43,
-   "y": 4354.99,
-   "rail_z": 187.75,
-   "ground_z": 185.058,
-   "class": "embankment"
+   "x": 1705.75,
+   "y": 4282.32,
+   "rail_z": 196.17,
+   "ground_z": 213.506,
+   "class": "deep cutting"
   },
   {
    "s": 6960.0,
-   "x": 1478.58,
-   "y": 4356.74,
-   "rail_z": 187.65,
-   "ground_z": 184.822,
-   "class": "embankment"
+   "x": 1696.95,
+   "y": 4287.07,
+   "rail_z": 195.77,
+   "ground_z": 211.917,
+   "class": "deep cutting"
   },
   {
    "s": 6970.0,
-   "x": 1468.73,
-   "y": 4358.47,
-   "rail_z": 187.6,
-   "ground_z": 184.436,
-   "class": "embankment"
+   "x": 1688.08,
+   "y": 4291.67,
+   "rail_z": 195.37,
+   "ground_z": 210.133,
+   "class": "deep cutting"
   },
   {
    "s": 6980.0,
-   "x": 1458.88,
-   "y": 4360.21,
-   "rail_z": 187.6,
-   "ground_z": 184.094,
-   "class": "embankment"
+   "x": 1679.13,
+   "y": 4296.14,
+   "rail_z": 194.97,
+   "ground_z": 208.168,
+   "class": "deep cutting"
   },
   {
    "s": 6990.0,
-   "x": 1449.03,
-   "y": 4361.95,
-   "rail_z": 187.6,
-   "ground_z": 183.54,
-   "class": "embankment"
+   "x": 1670.11,
+   "y": 4300.46,
+   "rail_z": 194.57,
+   "ground_z": 206.057,
+   "class": "cutting"
   },
   {
    "s": 7000.0,
-   "x": 1439.19,
-   "y": 4363.68,
-   "rail_z": 187.6,
-   "ground_z": 182.911,
-   "class": "embankment"
+   "x": 1661.03,
+   "y": 4304.64,
+   "rail_z": 194.17,
+   "ground_z": 203.818,
+   "class": "cutting"
   },
   {
    "s": 7010.0,
-   "x": 1429.34,
-   "y": 4365.42,
-   "rail_z": 187.6,
-   "ground_z": 182.298,
-   "class": "embankment"
+   "x": 1651.88,
+   "y": 4308.67,
+   "rail_z": 193.77,
+   "ground_z": 201.485,
+   "class": "cutting"
   },
   {
    "s": 7020.0,
-   "x": 1419.49,
-   "y": 4367.16,
-   "rail_z": 187.6,
-   "ground_z": 181.852,
-   "class": "embankment"
+   "x": 1642.66,
+   "y": 4312.55,
+   "rail_z": 193.37,
+   "ground_z": 199.087,
+   "class": "cutting"
   },
   {
    "s": 7030.0,
-   "x": 1409.64,
-   "y": 4368.89,
-   "rail_z": 187.6,
-   "ground_z": 181.601,
-   "class": "embankment"
+   "x": 1633.39,
+   "y": 4316.29,
+   "rail_z": 192.97,
+   "ground_z": 196.663,
+   "class": "cutting"
   },
   {
    "s": 7040.0,
-   "x": 1399.79,
-   "y": 4370.63,
-   "rail_z": 187.6,
-   "ground_z": 181.703,
-   "class": "embankment"
+   "x": 1624.05,
+   "y": 4319.88,
+   "rail_z": 192.57,
+   "ground_z": 194.251,
+   "class": "cutting"
   },
   {
    "s": 7050.0,
-   "x": 1389.95,
-   "y": 4372.36,
-   "rail_z": 187.6,
-   "ground_z": 181.95,
+   "x": 1614.66,
+   "y": 4323.32,
+   "rail_z": 192.17,
+   "ground_z": 191.907,
    "class": "embankment"
   },
   {
    "s": 7060.0,
-   "x": 1380.1,
-   "y": 4374.1,
-   "rail_z": 187.6,
-   "ground_z": 182.074,
+   "x": 1605.22,
+   "y": 4326.6,
+   "rail_z": 191.77,
+   "ground_z": 189.679,
    "class": "embankment"
   },
   {
    "s": 7070.0,
-   "x": 1370.25,
-   "y": 4375.84,
-   "rail_z": 187.6,
-   "ground_z": 182.262,
+   "x": 1595.72,
+   "y": 4329.74,
+   "rail_z": 191.37,
+   "ground_z": 187.633,
    "class": "embankment"
   },
   {
    "s": 7080.0,
-   "x": 1360.4,
-   "y": 4377.57,
-   "rail_z": 187.6,
-   "ground_z": 182.523,
+   "x": 1586.18,
+   "y": 4332.72,
+   "rail_z": 190.97,
+   "ground_z": 185.839,
    "class": "embankment"
   },
   {
    "s": 7090.0,
-   "x": 1350.55,
-   "y": 4379.31,
-   "rail_z": 187.6,
-   "ground_z": 182.793,
+   "x": 1576.59,
+   "y": 4335.55,
+   "rail_z": 190.57,
+   "ground_z": 184.377,
    "class": "embankment"
   },
   {
    "s": 7100.0,
-   "x": 1340.71,
-   "y": 4381.05,
-   "rail_z": 187.6,
-   "ground_z": 182.842,
+   "x": 1566.95,
+   "y": 4338.23,
+   "rail_z": 190.17,
+   "ground_z": 184.219,
    "class": "embankment"
   },
   {
    "s": 7110.0,
-   "x": 1330.86,
-   "y": 4382.78,
-   "rail_z": 187.6,
-   "ground_z": 182.955,
+   "x": 1557.28,
+   "y": 4340.76,
+   "rail_z": 189.77,
+   "ground_z": 184.612,
    "class": "embankment"
   },
   {
    "s": 7120.0,
-   "x": 1321.01,
-   "y": 4384.52,
-   "rail_z": 187.6,
-   "ground_z": 183.207,
+   "x": 1547.56,
+   "y": 4343.12,
+   "rail_z": 189.37,
+   "ground_z": 184.938,
    "class": "embankment"
   },
   {
    "s": 7130.0,
-   "x": 1311.16,
-   "y": 4386.26,
-   "rail_z": 187.6,
-   "ground_z": 183.661,
+   "x": 1537.81,
+   "y": 4345.35,
+   "rail_z": 188.97,
+   "ground_z": 185.181,
    "class": "embankment"
   },
   {
    "s": 7140.0,
-   "x": 1301.31,
-   "y": 4387.99,
-   "rail_z": 187.6,
-   "ground_z": 184.089,
+   "x": 1528.03,
+   "y": 4347.44,
+   "rail_z": 188.62,
+   "ground_z": 185.343,
    "class": "embankment"
   },
   {
    "s": 7150.0,
-   "x": 1291.47,
-   "y": 4389.73,
-   "rail_z": 187.6,
-   "ground_z": 184.465,
+   "x": 1518.23,
+   "y": 4349.43,
+   "rail_z": 188.32,
+   "ground_z": 185.333,
    "class": "embankment"
   },
   {
    "s": 7160.0,
-   "x": 1281.62,
-   "y": 4391.47,
-   "rail_z": 187.6,
-   "ground_z": 184.758,
+   "x": 1508.41,
+   "y": 4351.33,
+   "rail_z": 188.07,
+   "ground_z": 185.314,
    "class": "embankment"
   },
   {
-   "s": 7165.18,
+   "s": 7170.0,
+   "x": 1498.58,
+   "y": 4353.15,
+   "rail_z": 187.87,
+   "ground_z": 185.244,
+   "class": "embankment"
+  },
+  {
+   "s": 7180.0,
+   "x": 1488.74,
+   "y": 4354.93,
+   "rail_z": 187.72,
+   "ground_z": 185.066,
+   "class": "embankment"
+  },
+  {
+   "s": 7190.0,
+   "x": 1478.9,
+   "y": 4356.68,
+   "rail_z": 187.62,
+   "ground_z": 184.829,
+   "class": "embankment"
+  },
+  {
+   "s": 7200.0,
+   "x": 1469.05,
+   "y": 4358.42,
+   "rail_z": 187.57,
+   "ground_z": 184.449,
+   "class": "embankment"
+  },
+  {
+   "s": 7210.0,
+   "x": 1459.2,
+   "y": 4360.15,
+   "rail_z": 187.57,
+   "ground_z": 184.099,
+   "class": "embankment"
+  },
+  {
+   "s": 7220.0,
+   "x": 1449.35,
+   "y": 4361.89,
+   "rail_z": 187.57,
+   "ground_z": 183.559,
+   "class": "embankment"
+  },
+  {
+   "s": 7230.0,
+   "x": 1439.5,
+   "y": 4363.63,
+   "rail_z": 187.57,
+   "ground_z": 182.931,
+   "class": "embankment"
+  },
+  {
+   "s": 7240.0,
+   "x": 1429.65,
+   "y": 4365.36,
+   "rail_z": 187.57,
+   "ground_z": 182.316,
+   "class": "embankment"
+  },
+  {
+   "s": 7250.0,
+   "x": 1419.81,
+   "y": 4367.1,
+   "rail_z": 187.57,
+   "ground_z": 181.866,
+   "class": "embankment"
+  },
+  {
+   "s": 7260.0,
+   "x": 1409.96,
+   "y": 4368.84,
+   "rail_z": 187.57,
+   "ground_z": 181.6,
+   "class": "embankment"
+  },
+  {
+   "s": 7270.0,
+   "x": 1400.11,
+   "y": 4370.57,
+   "rail_z": 187.57,
+   "ground_z": 181.696,
+   "class": "embankment"
+  },
+  {
+   "s": 7280.0,
+   "x": 1390.26,
+   "y": 4372.31,
+   "rail_z": 187.57,
+   "ground_z": 181.942,
+   "class": "embankment"
+  },
+  {
+   "s": 7290.0,
+   "x": 1380.41,
+   "y": 4374.05,
+   "rail_z": 187.57,
+   "ground_z": 182.073,
+   "class": "embankment"
+  },
+  {
+   "s": 7300.0,
+   "x": 1370.57,
+   "y": 4375.78,
+   "rail_z": 187.57,
+   "ground_z": 182.252,
+   "class": "embankment"
+  },
+  {
+   "s": 7310.0,
+   "x": 1360.72,
+   "y": 4377.52,
+   "rail_z": 187.57,
+   "ground_z": 182.512,
+   "class": "embankment"
+  },
+  {
+   "s": 7320.0,
+   "x": 1350.87,
+   "y": 4379.25,
+   "rail_z": 187.57,
+   "ground_z": 182.785,
+   "class": "embankment"
+  },
+  {
+   "s": 7330.0,
+   "x": 1341.02,
+   "y": 4380.99,
+   "rail_z": 187.57,
+   "ground_z": 182.842,
+   "class": "embankment"
+  },
+  {
+   "s": 7340.0,
+   "x": 1331.17,
+   "y": 4382.73,
+   "rail_z": 187.57,
+   "ground_z": 182.946,
+   "class": "embankment"
+  },
+  {
+   "s": 7350.0,
+   "x": 1321.33,
+   "y": 4384.46,
+   "rail_z": 187.57,
+   "ground_z": 183.194,
+   "class": "embankment"
+  },
+  {
+   "s": 7360.0,
+   "x": 1311.48,
+   "y": 4386.2,
+   "rail_z": 187.57,
+   "ground_z": 183.646,
+   "class": "embankment"
+  },
+  {
+   "s": 7370.0,
+   "x": 1301.63,
+   "y": 4387.94,
+   "rail_z": 187.57,
+   "ground_z": 184.076,
+   "class": "embankment"
+  },
+  {
+   "s": 7380.0,
+   "x": 1291.78,
+   "y": 4389.67,
+   "rail_z": 187.57,
+   "ground_z": 184.456,
+   "class": "embankment"
+  },
+  {
+   "s": 7390.0,
+   "x": 1281.93,
+   "y": 4391.41,
+   "rail_z": 187.57,
+   "ground_z": 184.75,
+   "class": "embankment"
+  },
+  {
+   "s": 7395.5,
    "x": 1276.52,
    "y": 4392.36,
-   "rail_z": 187.6,
+   "rail_z": 187.57,
    "ground_z": 184.89,
    "class": "embankment"
   }
  ],
  "passing_loop": {
-  "start": 4580.0,
-  "end": 4840.0,
+  "start": 4810.0,
+  "end": 5070.0,
   "second_track": [
    [
-    4580.0,
-    2487.76,
-    2412.23
-   ],
-   [
-    4585.0,
-    2488.05,
-    2417.23
-   ],
-   [
-    4590.0,
-    2488.8,
-    2422.23
-   ],
-   [
-    4595.0,
-    2489.78,
-    2427.24
-   ],
-   [
-    4600.0,
-    2490.76,
-    2432.25
-   ],
-   [
-    4605.0,
-    2491.44,
-    2437.27
-   ],
-   [
-    4610.0,
-    2491.66,
-    2442.28
-   ],
-   [
-    4615.0,
-    2491.58,
-    2447.29
-   ],
-   [
-    4620.0,
-    2491.5,
-    2452.3
-   ],
-   [
-    4625.0,
-    2491.41,
-    2457.3
-   ],
-   [
-    4630.0,
-    2491.31,
-    2462.31
-   ],
-   [
-    4635.0,
-    2491.2,
-    2467.31
-   ],
-   [
-    4640.0,
-    2491.09,
-    2472.31
-   ],
-   [
-    4645.0,
-    2490.98,
-    2477.31
-   ],
-   [
-    4650.0,
-    2490.87,
-    2482.31
-   ],
-   [
-    4655.0,
-    2490.75,
-    2487.31
-   ],
-   [
-    4660.0,
-    2490.64,
-    2492.31
-   ],
-   [
-    4665.0,
-    2490.52,
-    2497.31
-   ],
-   [
-    4670.0,
-    2490.41,
-    2502.31
-   ],
-   [
-    4675.0,
-    2490.3,
-    2507.31
-   ],
-   [
-    4680.0,
-    2490.18,
-    2512.3
-   ],
-   [
-    4685.0,
-    2490.07,
-    2517.3
-   ],
-   [
-    4690.0,
-    2489.95,
-    2522.3
-   ],
-   [
-    4695.0,
-    2489.84,
-    2527.3
-   ],
-   [
-    4700.0,
-    2489.72,
-    2532.3
-   ],
-   [
-    4705.0,
-    2489.61,
-    2537.3
-   ],
-   [
-    4710.0,
-    2489.5,
-    2542.3
-   ],
-   [
-    4715.0,
-    2489.38,
-    2547.3
-   ],
-   [
-    4720.0,
-    2489.27,
-    2552.29
-   ],
-   [
-    4725.0,
-    2489.15,
-    2557.29
-   ],
-   [
-    4730.0,
-    2489.04,
-    2562.29
-   ],
-   [
-    4735.0,
-    2488.93,
-    2567.29
-   ],
-   [
-    4740.0,
-    2488.81,
-    2572.29
-   ],
-   [
-    4745.0,
-    2488.7,
-    2577.29
-   ],
-   [
-    4750.0,
-    2488.58,
-    2582.29
-   ],
-   [
-    4755.0,
-    2488.47,
-    2587.28
-   ],
-   [
-    4760.0,
-    2488.36,
-    2592.28
-   ],
-   [
-    4765.0,
-    2488.24,
-    2597.28
-   ],
-   [
-    4770.0,
-    2488.13,
-    2602.28
-   ],
-   [
-    4775.0,
-    2488.01,
-    2607.28
-   ],
-   [
-    4780.0,
-    2487.9,
-    2612.28
-   ],
-   [
-    4785.0,
-    2487.78,
-    2617.28
-   ],
-   [
-    4790.0,
-    2487.67,
-    2622.28
-   ],
-   [
-    4795.0,
-    2487.56,
-    2627.27
-   ],
-   [
-    4800.0,
-    2487.44,
-    2632.27
-   ],
-   [
-    4805.0,
-    2487.33,
-    2637.27
-   ],
-   [
     4810.0,
-    2487.21,
-    2642.27
+    2487.76,
+    2411.91
    ],
    [
     4815.0,
-    2486.83,
-    2647.26
+    2488.05,
+    2416.91
    ],
    [
     4820.0,
-    2485.99,
-    2652.25
+    2488.8,
+    2421.91
    ],
    [
     4825.0,
-    2484.87,
-    2657.22
+    2489.78,
+    2426.92
    ],
    [
     4830.0,
-    2483.76,
-    2662.2
+    2490.77,
+    2431.93
    ],
    [
     4835.0,
-    2482.91,
-    2667.18
+    2491.45,
+    2436.95
    ],
    [
     4840.0,
-    2482.53,
-    2672.17
+    2491.66,
+    2441.96
+   ],
+   [
+    4845.0,
+    2491.59,
+    2446.97
+   ],
+   [
+    4850.0,
+    2491.51,
+    2451.98
+   ],
+   [
+    4855.0,
+    2491.41,
+    2456.98
+   ],
+   [
+    4860.0,
+    2491.32,
+    2461.99
+   ],
+   [
+    4865.0,
+    2491.21,
+    2466.99
+   ],
+   [
+    4870.0,
+    2491.1,
+    2471.99
+   ],
+   [
+    4875.0,
+    2490.99,
+    2476.99
+   ],
+   [
+    4880.0,
+    2490.87,
+    2481.99
+   ],
+   [
+    4885.0,
+    2490.76,
+    2486.99
+   ],
+   [
+    4890.0,
+    2490.65,
+    2491.99
+   ],
+   [
+    4895.0,
+    2490.53,
+    2496.99
+   ],
+   [
+    4900.0,
+    2490.42,
+    2501.99
+   ],
+   [
+    4905.0,
+    2490.3,
+    2506.98
+   ],
+   [
+    4910.0,
+    2490.19,
+    2511.98
+   ],
+   [
+    4915.0,
+    2490.07,
+    2516.98
+   ],
+   [
+    4920.0,
+    2489.96,
+    2521.98
+   ],
+   [
+    4925.0,
+    2489.85,
+    2526.98
+   ],
+   [
+    4930.0,
+    2489.73,
+    2531.98
+   ],
+   [
+    4935.0,
+    2489.62,
+    2536.98
+   ],
+   [
+    4940.0,
+    2489.5,
+    2541.98
+   ],
+   [
+    4945.0,
+    2489.39,
+    2546.97
+   ],
+   [
+    4950.0,
+    2489.28,
+    2551.97
+   ],
+   [
+    4955.0,
+    2489.16,
+    2556.97
+   ],
+   [
+    4960.0,
+    2489.05,
+    2561.97
+   ],
+   [
+    4965.0,
+    2488.93,
+    2566.97
+   ],
+   [
+    4970.0,
+    2488.82,
+    2571.97
+   ],
+   [
+    4975.0,
+    2488.71,
+    2576.97
+   ],
+   [
+    4980.0,
+    2488.59,
+    2581.97
+   ],
+   [
+    4985.0,
+    2488.48,
+    2586.96
+   ],
+   [
+    4990.0,
+    2488.36,
+    2591.96
+   ],
+   [
+    4995.0,
+    2488.25,
+    2596.96
+   ],
+   [
+    5000.0,
+    2488.13,
+    2601.96
+   ],
+   [
+    5005.0,
+    2488.02,
+    2606.96
+   ],
+   [
+    5010.0,
+    2487.91,
+    2611.96
+   ],
+   [
+    5015.0,
+    2487.79,
+    2616.96
+   ],
+   [
+    5020.0,
+    2487.68,
+    2621.95
+   ],
+   [
+    5025.0,
+    2487.56,
+    2626.95
+   ],
+   [
+    5030.0,
+    2487.45,
+    2631.95
+   ],
+   [
+    5035.0,
+    2487.34,
+    2636.95
+   ],
+   [
+    5040.0,
+    2487.22,
+    2641.95
+   ],
+   [
+    5045.0,
+    2486.84,
+    2646.94
+   ],
+   [
+    5050.0,
+    2485.99,
+    2651.92
+   ],
+   [
+    5055.0,
+    2484.88,
+    2656.9
+   ],
+   [
+    5060.0,
+    2483.77,
+    2661.88
+   ],
+   [
+    5065.0,
+    2482.92,
+    2666.86
+   ],
+   [
+    5070.0,
+    2482.54,
+    2671.85
    ]
   ]
  },
