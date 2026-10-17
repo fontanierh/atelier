@@ -273,7 +273,8 @@ void UAdventureMoveSet::Play(FName Name, float Blend, float StartAt, float Speed
     Character->ActionPlayRate = M->Rate * Speed;
     Character->ActionDuration = FMath::Max(M->End - Character->ActionSourceStartTime, 0.f) / Character->ActionPlayRate;
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
-    HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false;
+    HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false; ArcEnd = -1.f;
+    bAttackTell = false;
     Strength = StrengthOf(Name);
     if (Character->HasAuthority() && !Character->IsLocallyControlled())
         if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()))
@@ -678,8 +679,11 @@ void UAdventureMoveSet::Landed(const FHitResult& Hit)
         const FVector Ground = Character->GetActorLocation() - FVector(0, 0, HalfHeight());
         if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) { FX->Dust(Ground, 1.6f); FX->Shake(.45f); }
         for (TActorIterator<AActor> It(Character->GetWorld()); It; ++It)
-            if (IsTargetable(*It) && FVector::Dist(It->GetActorLocation(), Ground) < 320.f)
+            if (IsTargetable(*It) && !HitThisSwing.Contains(*It) && FVector::Dist(It->GetActorLocation(), Ground) < 320.f)
+            {
+                HitThisSwing.Add(*It);
                 Strike(*It, 3, It->GetActorLocation(), FVector::DownVector);
+            }
         return;
     }
     const float Hard = GetParam(TEXT("HardLandHeight"), 450.f), Hurt = GetParam(TEXT("FallDamageHeight"), 900.f);
@@ -966,6 +970,7 @@ void UAdventureMoveSet::Reset()
     LungeTarget = nullptr; LungeTime = 0.f; bLungePoint = false;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
+    ParriedActionSerial = 0; // Activity changes preserve contact-owned guard pressure and its recovery clock.
     if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
@@ -1001,6 +1006,8 @@ FString UAdventureMoveSet::Describe() const
     O->SetNumberField(TEXT("health"), Character->GetSword() ? Character->GetSword()->GetHealth() : 0.f);
     O->SetNumberField(TEXT("hits"), HitCount);
     O->SetNumberField(TEXT("parries"), ParryCount);
+    O->SetNumberField(TEXT("perfect_parries"), ParryCount);
+    O->SetNumberField(TEXT("guard_pressure"), GuardPressure());
     O->SetNumberField(TEXT("staggers"), StaggerCount);
     O->SetNumberField(TEXT("guard_breaks"), GuardBreakCount);
     O->SetBoolField(TEXT("guard_broken"), GuardBroken > 0.f);

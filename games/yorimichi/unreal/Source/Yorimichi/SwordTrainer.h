@@ -106,11 +106,14 @@ private:
     FString Intent = TEXT("home"), Forced, ForcedDefence;
     float Think = 0.f, IntentTime = 0.f, Cooldown = 0.f, StrafeSign = 1.f, StrafeSwitch = 0.f, PressGap = 0.f, HoldFor = 0.f;
     float OpponentGuardTime = 0.f, PracticeTimer = 2.f, DefeatCooldown = 0.f;
+    float OpeningElapsed = 0.f, ProjectileCooldown = 0.f;
+    bool bOpeningTell = false, bThrowReleased = false;
     bool bWhiffWatching = false, bDefeated = false;
     int32 CombosLeft = 0;
     bool bGuardDown = false, bAttackDown = false, bAirStep = false, bGuardUp = true;
     float GuardSwitch = 0.f;
     FRandomStream Dice;
+    void AttackTell();
     bool bHostileRonin = false;
     int32 RoninRole = 0;
     float RoleScale = 1.f;

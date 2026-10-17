@@ -78,6 +78,7 @@ void UAdventureMoveSet::RecordDefence(uint16 ThroughEdge, double BeforeStep, boo
     const auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement());
     S.bGuardHeld = bGuardHeld && (!bRemote || !Movement || Movement->ReactionEdgeEligible(ReactionGuardEdge, true));
     S.bGuardBroken = !bRemote && GuardBroken > 0.f; // Remote breaks are contact-time timeline entries.
+    S.bGuardEligible = !IsAttacking() && !bDown;
     const FName Parry = !HasShield() && Has(TEXT("SwordParry")) ? FName(TEXT("SwordParry")) : FName(TEXT("Parry"));
     S.bCanParry = S.bGround && !bDown && Has(Parry) &&
         (!Busy() || (Action && IsGuardHit(Action->Name) && SourceTime() >= Action->Input));
@@ -164,7 +165,8 @@ bool UAdventureMoveSet::PressNetwork(FName Button, uint16 Edge, uint16 AgeMillis
                     UE_LOG(LogTemp, Display, TEXT("NETWORK defence authored edge=%u action=%s intervals=%d"), Edge, *Name.ToString(), M->Guard.Num());
                 for (const FVector2f& W : M->Guard)
                 {
-                    const double Start = FMath::Max(0., double(W.X - M->Start) / M->Rate), End = double(W.Y - M->Start) / M->Rate;
+                    const double Start = FMath::Max(0., double(W.X - M->Start) / M->Rate);
+                    const double End = FMath::Min(double(W.Y - M->Start) / M->Rate, Start + SwordCombat::PerfectParrySeconds);
                     const bool IntervalAdded = DefenceTimeline.Add(Edge, Original, EJapanDefence::Parry, Start, End);
                     Added |= IntervalAdded;
                     if (TraceNetworkDefence())

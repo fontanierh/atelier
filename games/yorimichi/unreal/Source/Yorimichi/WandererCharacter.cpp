@@ -190,6 +190,7 @@ void AWandererCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     DOREPLIFETIME_CONDITION(AWandererCharacter, NetworkAvatar, COND_SimulatedOnly);
     DOREPLIFETIME(AWandererCharacter, NetworkHealth);
     DOREPLIFETIME(AWandererCharacter, NetworkHitsTaken);
+    DOREPLIFETIME(AWandererCharacter, NetworkGuardPressure);
     DOREPLIFETIME(AWandererCharacter, NetworkActivity);
     DOREPLIFETIME_CONDITION(AWandererCharacter, bNetworkMovementReady, COND_OwnerOnly);
     DOREPLIFETIME(AWandererCharacter, NetworkParkedBike);
@@ -1420,6 +1421,7 @@ void AWandererCharacter::Tick(float Dt)
         if (HasAuthority())
         {
             if (Sword) { NetworkHealth = Sword->GetHealth(); NetworkHitsTaken = Sword->HitsTaken(); }
+            if (Moves) NetworkGuardPressure = FMath::RoundToFloat(Moves->GuardPressure() * 100.f) / 100.f;
             if (Moves && NetworkActivity.Kind == EJapanActivity::OnFoot && GetWorld()->GetTimeSeconds() - LastAvatarPublication >= .05f)
             {
                 NetworkAvatar = Moves->CapturePresentation();

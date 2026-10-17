@@ -8,3 +8,12 @@ MUST NOT collect inline. Remote horses, unchanged looks and colour-only changes 
 Stationary grounded steering MUST animate stepping in its turn direction, with rotation and animation phase
 scaled by the same steering magnitude. Pivot presentation MUST derive from existing checkpointed state without
 adding wire role IDs. When pivot clips are absent, the horse MAY use its walk clip as a stepping fallback.
+
+@cc [owner:fontanierh,label:correctness] sword-contact-defence
+Sword contact MUST resolve at most once per target per swing and MUST observe active windows crossed
+between simulation samples. A perfect parry MUST face the contact, last at most 120 ms of the authored
+guard window, and deflect at most one contact per attempt, locally and in server defence history.
+Guard pressure MUST change only on resolved contacts and decay with the authority world clock;
+movement replay MUST NOT reapply pressure, damage or contact counters. NPC hit immunity MUST allow
+separate combo cuts while retaining player recovery protection. Projectile damage MUST resolve only
+on authority through the shared defence resolver; flight MUST stop at cover and MUST NOT home after release.

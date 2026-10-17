@@ -4,6 +4,15 @@
 #include "WandererCharacter.h"
 #include "Engine/World.h"
 
+void AYorimichiCombatFX::AttackTell(const FVector& At)
+{
+    // One brief glint on the weapon, without camera shake, a HUD arrow or time dilation.
+    FParticle& Glint = Spawn(ESprite::Glow, At);
+    Glint.Size0 = 4.f; Glint.Size1 = 10.f; Glint.Life = .12f;
+    Glint.Color = FLinearColor(1.f, .86f, .56f) * 2.f;
+    Glint.FadeIn = .02f;
+    Play(TEXT("sword_swing"), At, .18f, .02f);
+}
 // Yorimichi's combat reactions, composed from the platform's effects (AAtelierFX): which sparks, flashes, rings, light,
 // shake, slow motion and sound each moment of the sword fight gets.
 

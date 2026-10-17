@@ -62,6 +62,7 @@ public:
     /** The health a sparring blow of this strength (1 a cut, 2 a charged or finishing one, 3 full power) takes from
      *  the partner: a full-power blow knocks down (the move set's HeavyDamage, 25). */
     virtual float SparringDamage(int32 Power) const { return Power >= 3 ? 28.f : Power == 2 ? 18.f : 10.f; }
+    float GetNetworkGuardPressure() const { return NetworkGuardPressure; }
     /** Its name as -rider= and the character switch know it (FPlayableCharacter); empty: the default character's. */
     virtual FString GetPlayableName() const { return FString(); }
     /** Whose bike clips it rides with (/Game/<Rig>Bike, Content/Data/<rig>/bike); empty: the default character's. */
@@ -237,11 +238,13 @@ private:
     UPROPERTY(ReplicatedUsing=OnRep_NetworkAvatar) FJapanAvatarState NetworkAvatar;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) float NetworkHealth = 100.f;
     UPROPERTY(ReplicatedUsing=OnRep_NetworkHealth) int32 NetworkHitsTaken = 0;
+    UPROPERTY(Replicated) float NetworkGuardPressure = 0.f;
     UFUNCTION() void OnRep_NetworkAvatar();
     UFUNCTION() void OnRep_NetworkHealth();
     bool bNetworkAvatarReceived = false;
     float LastAvatarPublication = -1.f;
     friend class FJapanReactionTransportTest;
+    friend class FSwordCombatContactTest;
     friend class FJapanCheckpointTest;
     friend class FJapanHorseWaterTest;
     friend class AJapanPlayerController;

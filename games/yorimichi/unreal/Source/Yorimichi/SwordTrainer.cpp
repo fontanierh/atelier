@@ -1,4 +1,6 @@
 #include "SwordTrainer.h"
+#include "RoninProjectile.h"
+#include "JapanCombat.h"
 #include "AtelierData.h"
 #include "AdventureMoveSet.h"
 #include "JapanGameMode.h"
@@ -882,6 +884,7 @@ void ASwordTrainer::AdvanceFight(float Dt)
     if (bHostileRonin && Moves) Moves->SetCombatTarget(P);
     FaceToward(There, Dt);
     Cooldown = FMath::Max(0.f, Cooldown - Dt);
+    ProjectileCooldown = FMath::Max(0.f, ProjectileCooldown - Dt);
     PressGap = FMath::Max(0.f, PressGap - Dt);
     OpponentGuardTime = Theirs->IsGuarding() && !Theirs->IsAttacking() ? OpponentGuardTime + Dt : 0.f;
     if (!Moves->IsArmed() && !Moves->IsBusy()) { Press(TEXT("weapon")); return; }
@@ -893,6 +896,13 @@ void ASwordTrainer::AdvanceFight(float Dt)
         return;
     }
     if (Moves->IsDown()) { ReleaseAll(); SetIntent(TEXT("down")); return; }
+    const FString Reaction = Moves->GetActionName().ToString();
+    if (Moves->IsBusy() && (Reaction.StartsWith(TEXT("Hit")) || Reaction.Contains(TEXT("GuardBreak"))))
+    {
+        ReleaseAll(); Drive(FVector2D::ZeroVector, 0);
+        CombosLeft = 0; Cooldown = FMath::Max(Cooldown, .55f); SetIntent(TEXT("staggered"));
+        return;
+    }
     // Group encounter ticket check for the hostile Kasa Ronin camp: up to 2 Ronin attack at once while the 3rd flanks.
     bool bCanTakeTicket = true;
     if (bHostileRonin)
@@ -980,7 +990,8 @@ void ASwordTrainer::AdvanceFight(float Dt)
             if (PeerDist > 1.f && PeerDist < 220.f)
                 PeerRepulse += Away.GetSafeNormal2D() * ((220.f - PeerDist) / 220.f);
         }
-        const float RoleWant = !bCanTakeTicket ? 345.f : (RoninRole == 0 ? 245.f : (RoninRole == 1 ? 265.f : 285.f));
+        const float RoleWant = !bCanTakeTicket ? 345.f :
+            (RoninRole == 0 ? (ProjectileCooldown <= 0.f ? 580.f : 245.f) : (RoninRole == 1 ? 265.f : 285.f));
         const float RoleRadial = Distance > RoleWant + 35.f ? 1.f : (Distance < RoleWant - 45.f ? -.85f : 0.f);
         const FVector ToPlayerDir = (There - Here).GetSafeNormal2D();
         const FVector RightOfView = FVector(-ToPlayerDir.Y, ToPlayerDir.X, 0.f);
@@ -1097,6 +1108,8 @@ void ASwordTrainer::Open(float Distance)
         // Shares of her openings, by what the distance allows; the rest is a combo.
         struct FOption { const TCHAR* Name; float Share; };
         TArray<FOption> Options = { { TEXT("charge"), S.Charge }, { TEXT("jump"), S.JumpCut }, { TEXT("double"), S.DoubleJump }, { TEXT("feint"), S.Feint } };
+        if (bHostileRonin && RoninRole == 0 && ProjectileCooldown <= 0.f && Distance >= 450.f && Distance <= 1100.f)
+            Options.Insert({ TEXT("throw"), .65f }, 0);
         if (Distance > 380.f) Options.Add({ TEXT("dash"), S.DashCut * 2.f });
         float R = Dice.FRand();
         for (const FOption& O : Options) { if (R < O.Share) { Pick = O.Name; break; } R -= O.Share; }
@@ -1104,6 +1117,7 @@ void ASwordTrainer::Open(float Distance)
     }
     CombosLeft = Pick == TEXT("combo") ? Dice.RandRange(1, S.MaxCombo) : 0;
     HoldFor = 0.f; bAirStep = false;
+    OpeningElapsed = 0.f; bOpeningTell = bThrowReleased = false;
     SetIntent(TEXT("attack ") + Pick);
     Counts.FindOrAdd(TEXT("open_") + Pick)++;
 }
@@ -1120,6 +1134,26 @@ bool ASwordTrainer::Press_Attack(float Dt, float Distance)
         return false;
     };
     if (IntentTime > 4.5f) return Done();
+    if (Kind == TEXT("throw"))
+    {
+        // A sleeve blade accompanies a quick slash. The scout commits its aim at release.
+        if (!bHostileRonin || RoninRole != 0 || Distance < 320.f || Distance > 1250.f) return Done();
+        Drive(FVector2D::ZeroVector, 0);
+        Hold(TEXT("guard"), !bAirStep);
+        OpeningElapsed += Dt;
+        if (!bOpeningTell && OpeningElapsed >= .44f) { AttackTell(); bOpeningTell = true; }
+        if (!bAirStep && OpeningElapsed >= .60f)
+        {
+            Hold(TEXT("guard"), false);
+            Press(TEXT("attack")); Press(TEXT("attack_release")); bAirStep = true;
+        }
+        if (bAirStep && !bThrowReleased && Moves->IsAttacking())
+        {
+            if (ARoninProjectile::Throw(this, Opponent.Get())) Counts.FindOrAdd(TEXT("projectiles"))++;
+            bThrowReleased = true; ProjectileCooldown = 4.8f;
+        }
+        return bThrowReleased && !Moves->IsAttacking() ? Done() : true;
+    }
     const UWandererSwordComponent* Sword = GetSword();
     (void)Sword;
     if (Kind == TEXT("combo") || Kind == TEXT("charge"))
@@ -1144,6 +1178,15 @@ bool ASwordTrainer::Press_Attack(float Dt, float Distance)
             }
         }
         Drive(FVector2D::ZeroVector, 1);
+        if (Kind == TEXT("combo") && !bAirStep)
+        {
+            const float Windup = bHostileRonin ? (RoninRole == 0 ? .30f : RoninRole == 1 ? .42f : .56f) : .38f;
+            OpeningElapsed += Dt;
+            Hold(TEXT("guard"), true);
+            if (!bOpeningTell && OpeningElapsed >= Windup - .16f) { AttackTell(); bOpeningTell = true; }
+            if (OpeningElapsed < Windup) return true;
+            Hold(TEXT("guard"), false);
+        }
         bAirStep = true;   // in range: the attack has begun
         if (Kind == TEXT("charge"))
         {
@@ -1156,10 +1199,14 @@ bool ASwordTrainer::Press_Attack(float Dt, float Distance)
             return true;
         }
         // Each cut takes the next press from its input point; pressing every few tenths keeps the combo going.
+        if (CombosLeft > 0 && PressGap > 0.f && PressGap <= .16f && !bOpeningTell)
+        { AttackTell(); bOpeningTell = true; }
         if (CombosLeft > 0 && PressGap <= 0.f)
         {
             Press(TEXT("attack")); Press(TEXT("attack_release"));
-            --CombosLeft; PressGap = Level == 0 ? .55f : .32f;
+            --CombosLeft;
+            PressGap = bHostileRonin ? (RoninRole == 0 ? .42f : RoninRole == 1 ? .54f : .66f) : (Level == 0 ? .55f : .32f);
+            bOpeningTell = false;
             return true;
         }
         if (CombosLeft <= 0 && !Moves->IsAttacking() && PressGap <= 0.f) return Done();
@@ -1212,6 +1259,14 @@ bool ASwordTrainer::Press_Attack(float Dt, float Distance)
         return Moves->IsHopping() || IntentTime < .4f ? true : Done();
     }
     return Done();
+}
+
+void ASwordTrainer::AttackTell()
+{
+    FVector Base, Tip, Major;
+    const FVector At = Moves && Moves->GetBladePose(Base, Tip, Major) ? Tip : GetActorLocation() + FVector(0, 0, 40.f);
+    if (!JapanCombat::Publish(this, EJapanCombatCue::AttackTell, At, FVector::ZeroVector, 0.f, this))
+        if (auto* FX = AYorimichiCombatFX::Get(this)) FX->AttackTell(At);
 }
 
 FString ASwordTrainer::Describe() const

@@ -1,0 +1,217 @@
+#include "SwordCombatRules.h"
+#if WITH_DEV_AUTOMATION_TESTS
+#include "Misc/AutomationTest.h"
+#include "AdventureMoveSet.h"
+#include "WandererCharacter.h"
+#include "WandererDefinition.h"
+#include "Animation/AnimSequence.h"
+#include "WandererSword.h"
+#include "SwordTrainer.h"
+#include "YorimichiCombatFX.h"
+#include "EngineUtils.h"
+#include "GameFramework/WorldSettings.h"
+#include "RoninProjectile.h"
+#include "Components/BoxComponent.h"
+#include "JapanDefenceTimeline.h"
+#include "JapanNetwork.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "Misc/ScopeExit.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSwordCombatRulesTest, "Yorimichi.Combat.Rules",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FSwordCombatRulesTest::RunTest(const FString&)
+{
+    const FVector2f Window(.10f, .13f);
+    for (float Hz : {15.f, 30.f, 60.f, 120.f})
+    {
+        int32 Contacts = 0;
+        bool HitThisSwing = false;
+        for (float Before = 0.f; Before < .3f; Before += 1.f / Hz)
+            if (!HitThisSwing && SwordCombat::CrossesWindow(Before, Before + 1.f / Hz, Window))
+            { ++Contacts; HitThisSwing = true; }
+        TestEqual(TEXT("A narrow active window lands once at every supported frame rate"), Contacts, 1);
+    }
+    TestFalse(TEXT("Windup cannot strike early"), SwordCombat::CrossesWindow(0.f, .09f, Window));
+    TestFalse(TEXT("Recovery cannot reopen contact"), SwordCombat::CrossesWindow(.14f, .2f, Window));
+    SwordCombat::FGuardPressure Pressure;
+    for (int32 I = 0; I < 3; ++I)
+        TestFalse(TEXT("The first three quick blocks hold"), Pressure.Block(10.f, I * .4, 25.f));
+    TestTrue(TEXT("The fourth quick block breaks guard"), Pressure.Block(10.f, 1.2, 25.f));
+    TestEqual(TEXT("A break consumes accumulated pressure"), Pressure.At(1.2), 0.f);
+    TestTrue(TEXT("A heavy hit can break a fresh guard"), Pressure.Block(28.f, 2., 25.f));
+    Pressure.Block(10.f, 3., 25.f); Pressure.Block(10.f, 3.4, 25.f);
+    const float Loaded = Pressure.At(3.4);
+    TestEqual(TEXT("Short pauses do not erase defensive pressure"), Pressure.At(4.), Loaded);
+    TestTrue(TEXT("Disengagement restores guard"), Pressure.At(6.) < Loaded);
+    Pressure.Parry(3.5);
+    TestTrue(TEXT("Precise defence relieves pressure"), Pressure.At(3.5) < Loaded);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FSwordCombatContactTest, "Yorimichi.Combat.Contacts",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FSwordCombatContactTest::RunTest(const FString&)
+{
+    UWorld* World = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { World = Context.World(); break; }
+    if (!TestNotNull(TEXT("Contact regression runs in a native game world"), World)) return false;
+    // Resolved contacts spawn real offline slow-motion FX. They must not change the next fixture's clock.
+    const float OriginalDilation = World->GetWorldSettings()->TimeDilation;
+    TSet<AYorimichiCombatFX*> ExistingFX;
+    for (TActorIterator<AYorimichiCombatFX> It(World); It; ++It) ExistingFX.Add(*It);
+    ON_SCOPE_EXIT
+    {
+        for (TActorIterator<AYorimichiCombatFX> It(World); It; ++It)
+            if (!ExistingFX.Contains(*It)) It->Destroy();
+        World->GetWorldSettings()->SetTimeDilation(OriginalDilation);
+    };
+    FActorSpawnParameters Spawn;
+    Spawn.ObjectFlags |= RF_Transient; Spawn.bDeferConstruction = true;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* Player = World->SpawnActor<AWandererCharacter>(FVector(0, 0, 100000), FRotator::ZeroRotator, Spawn);
+    auto* Npc = World->SpawnActor<ASwordTrainer>(FVector(200, 0, 100000), FRotator::ZeroRotator, Spawn);
+    ON_SCOPE_EXIT { if (Player) Player->Destroy(); if (Npc) Npc->Destroy(); };
+    if (!Player || !Npc) return false;
+    auto* Moves = NewObject<UAdventureMoveSet>(Player); Moves->Character = Player;
+    auto* Enemy = NewObject<UAdventureMoveSet>(Npc); Enemy->Character = Npc;
+    Player->Moves = Moves; Npc->Moves = Enemy;
+    Player->GetSword()->Initialize(Player); Npc->GetSword()->Initialize(Npc);
+    const FVector Front = Player->GetActorLocation() + FVector(100, 0, 0);
+    Moves->DefenceOverride = EJapanDefence::Guard;
+    for (int32 I = 0; I < 4; ++I) Moves->IncomingStrike(Npc, 10.f, Front);
+    TestEqual(TEXT("Repeated ordinary blocks resolve a real guard break"), Moves->GuardBreakCount, 1);
+    TestTrue(TEXT("Broken guard has a vulnerable recovery"), Moves->GuardBroken > 0.f);
+    TestEqual(TEXT("Blocked hits do not deal health damage"), Player->GetSword()->GetHealth(), 100.f);
+    Moves->DefenceOverride.Reset(); Moves->GuardBroken = 0.f; Moves->Pressure = {};
+    Moves->bArmed = Moves->bGuardHeld = true;
+    FAdventureMove Parry; Parry.Name = TEXT("SwordParry"); Parry.Guard.Add(FVector2f(.0333f, .3f));
+    Moves->Moves.Add(Parry.Name, Parry);
+    Player->AnimationAction = Parry.Name; Player->ActionTime = .08f; Player->ActionSerial = 10;
+    TestEqual(TEXT("A precise front contact perfect-parries"), Moves->IncomingStrike(Npc, 10.f, Front), 1);
+    TestEqual(TEXT("One attempt cannot perfect-parry a second contact"), Moves->IncomingStrike(Npc, 10.f, Front), 3);
+    TestEqual(TEXT("The second contact strains the held guard"), Moves->ParryCount, 1);
+    ++Player->ActionSerial;
+    TestEqual(TEXT("A rear contact bypasses a parry"), Moves->IncomingStrike(Npc, 10.f,
+        Player->GetActorLocation() - FVector(100, 0, 0)), 0);
+    Moves->Invulnerable = 0.f;
+    ++Player->ActionSerial; Player->ActionTime = .22f;
+    TestEqual(TEXT("An early parry expires into an ordinary held block"), Moves->IncomingStrike(Npc, 10.f, Front), 3);
+    TestEqual(TEXT("Only the precise attempt counted as a parry"), Moves->ParryCount, 1);
+    Player->AnimationAction = NAME_None;
+    Moves->bGuardHeld = false; Moves->Invulnerable = 0.f;
+    Moves->IncomingStrike(Npc, 10.f, Front);
+    TestEqual(TEXT("Player keeps the ordinary hit recovery"), Moves->Invulnerable, .7f);
+    const FVector EnemyFront = Npc->GetActorLocation() + FVector(100, 0, 0);
+    Enemy->IncomingStrike(Player, 10.f, EnemyFront);
+    TestEqual(TEXT("NPC contact uses short combo-compatible recovery"), Enemy->Invulnerable, .1f);
+    TestEqual(TEXT("An immediate duplicate still meets NPC recovery"), Enemy->IncomingStrike(Player, 10.f, EnemyFront), 3);
+    Enemy->Invulnerable = 0.f;
+    TestEqual(TEXT("The next separate cut lands on the NPC"), Enemy->IncomingStrike(Player, 10.f, EnemyFront), 0);
+    TestEqual(TEXT("Both separate NPC hits took health"), Npc->GetSword()->GetHealth(), 80.f);
+
+    FJapanDefenceTimeline Timeline;
+    FJapanDefenceSample Sample;
+    Sample.Time = 10.; Sample.bGround = Sample.bArmed = Sample.bCanParry = Sample.bGuardHeld = true;
+    Timeline.Record(Sample); Timeline.Add(1, 10., EJapanDefence::Parry, .0333, .1533);
+    Sample.Time = 10.08; Timeline.Record(Sample);
+    uint16 Edge = 0;
+    TestEqual(TEXT("Server history cannot parry a rear contact"),
+        Timeline.Resolve(10.08, FVector(-100, 0, 0), .5f, Edge), EJapanDefence::None);
+    TestEqual(TEXT("Rear contact does not consume the front-facing parry"),
+        Timeline.Resolve(10.08, FVector(100, 0, 0), .5f, Edge), EJapanDefence::Parry);
+    Timeline.Reset(); Sample.Time = 11.; Sample.bGuardEligible = false;
+    Timeline.Record(Sample); Timeline.Hold(2, 11., true);
+    TestEqual(TEXT("A new held-guard edge cannot shield an attacking server sample"),
+        Timeline.Resolve(11., FVector(100, 0, 0), .5f, Edge), EJapanDefence::None);
+
+    Player->GetSword()->RestoreHealth(); Moves->Invulnerable = 0.f; Moves->Pressure = {};
+    Moves->bGuardHeld = true; Player->AnimationAction = Parry.Name;
+    ++Player->ActionSerial; Player->ActionTime = .08f;
+    Npc->SetActorLocation(Npc->GetActorLocation() + FVector(0, 0, 140));
+    JapanNetwork::ConfigurePlayerCollision(Player->GetCapsuleComponent());
+    auto* Shot = ARoninProjectile::Throw(Npc, Player);
+    if (!TestNotNull(TEXT("The scout launches an actual projectile"), Shot)) return false;
+    Shot->Tick(.2f);
+    TestTrue(TEXT("A swept projectile contact is reflected by a perfect parry"), Shot->bReflected && !Shot->IsActorBeingDestroyed());
+    TestTrue(TEXT("Reflection keeps the original swept contact point"), Shot->GetActorLocation().X <= 29.5f);
+    Enemy->Invulnerable = 0.f;
+    const float EnemyHealth = Npc->GetSword()->GetHealth();
+    Shot->Tick(.2f);
+    TestTrue(TEXT("The reflected blade reaches a thrower on higher ground"), Shot->IsActorBeingDestroyed());
+    TestEqual(TEXT("Reflection deals real resolved damage"), Npc->GetSword()->GetHealth(), EnemyHealth - 18.f);
+
+    Npc->SetActorLocation(Npc->GetActorLocation() - FVector(0, 0, 140));
+    Shot = ARoninProjectile::Throw(Npc, Player);
+    if (!TestNotNull(TEXT("A second projectile launches before cover enters its path"), Shot)) return false;
+    auto* Cover = World->SpawnActor<AActor>(FVector(100, 0, 100015), FRotator::ZeroRotator);
+    ON_SCOPE_EXIT { if (Cover) Cover->Destroy(); if (Shot && !Shot->IsActorBeingDestroyed()) Shot->Destroy(); };
+    auto* Wall = NewObject<UBoxComponent>(Cover);
+    Cover->SetRootComponent(Wall); Wall->SetBoxExtent(FVector(4, 100, 100));
+    Wall->SetCollisionEnabled(ECollisionEnabled::QueryOnly); Wall->SetCollisionResponseToAllChannels(ECR_Block);
+    Wall->RegisterComponent(); Wall->SetWorldLocation(FVector(100, 0, 100015));
+    Shot->Tick(.2f);
+    TestTrue(TEXT("Cover intercepts the blade between ticks"), Shot->IsActorBeingDestroyed());
+    TestEqual(TEXT("Cover protects player health"), Player->GetSword()->GetHealth(), 100.f);
+    Wall->SetWorldLocation(FVector(167, 0, 100015));
+    auto* Occluded = ARoninProjectile::Throw(Npc, Player);
+    TestNull(TEXT("A muzzle offset cannot place a projectile beyond adjacent cover"), Occluded);
+    if (Occluded) Occluded->Destroy();
+    Cover->Destroy();
+    Shot = ARoninProjectile::Throw(Npc, Player);
+    if (!TestNotNull(TEXT("The next shot commits to the original target point"), Shot)) return false;
+    Player->SetActorLocation(Player->GetActorLocation() + FVector(0, 300, 0));
+    Shot->Tick(.2f);
+    TestFalse(TEXT("Stepping off the committed line avoids contact"), Shot->IsActorBeingDestroyed());
+    TestTrue(TEXT("Flight cannot home after release"), FMath::Abs(Shot->Velocity.Y) < .001f);
+    Shot->Destroy();
+    FAdventureMove Hop; Hop.Name = TEXT("HopL"); Moves->Moves.Add(Hop.Name, Hop);
+    FAdventureMove Flurry; Flurry.Name = TEXT("Flurry"); Moves->Moves.Add(Flurry.Name, Flurry);
+    Player->AnimationAction = Hop.Name; Moves->Invulnerable = .4f; Moves->JustAvoid = .2f;
+    Shot = ARoninProjectile::Throw(Npc, Player);
+    if (!TestNotNull(TEXT("A projectile can meet a precise dodge"), Shot)) return false;
+    Shot->Tick(.5f);
+    TestTrue(TEXT("The dodge disposes of the projectile"), Shot->IsActorBeingDestroyed());
+    TestFalse(TEXT("Dodging a projectile cannot start melee flurry at a vanished target"), Moves->InFlurry());
+    TestEqual(TEXT("The projectile dodge preserves player health"), Player->GetSword()->GetHealth(), 100.f);
+    Moves->Invulnerable = 0.f;
+    FAdventureMove Cut; Cut.Name = TEXT("CutS1"); Moves->Moves.Add(Cut.Name, Cut);
+    Player->AnimationAction = Cut.Name;
+    TestFalse(TEXT("A raised guard is unavailable during the player's own cut"), Moves->IsGuarding());
+    TestEqual(TEXT("A counter-hit lands through an attacking player's held guard"),
+        Moves->IncomingStrike(Npc, 10.f, Player->GetActorLocation() + FVector(100, 0, 0)), 0);
+    auto* Dummy = World->SpawnActor<ASwordDummy>(Player->GetActorLocation() + FVector(100, 0, 0), FRotator::ZeroRotator);
+    ON_SCOPE_EXIT { if (Dummy) Dummy->Destroy(); };
+    if (!TestNotNull(TEXT("Plunge regression owns a real training post"), Dummy)) return false;
+    FAdventureMove Landing; Landing.Name = TEXT("PlungeLand"); Moves->Moves.Add(Landing.Name, Landing);
+    Player->Definition = NewObject<UWandererDefinition>(Player);
+    Player->Definition->Actions.Add(Landing.Name, NewObject<UAnimSequence>(Player->Definition));
+    Player->AnimationAction = TEXT("PlungeAir");
+    Moves->HitThisSwing.Reset(); Moves->Strength = 3; Moves->CustomBladeLength = 100.f;
+    Moves->Landed(FHitResult());
+    TestEqual(TEXT("Landing starts the actual next action"), Player->AnimationAction, Landing.Name);
+    TestEqual(TEXT("Landing impact registers one hit"), Dummy->HitsTaken, 1);
+    Moves->SweepArc();
+    TestEqual(TEXT("The following active arc cannot duplicate the landing contact"), Dummy->HitsTaken, 1);
+    Moves->HitThisSwing.Reset(); Moves->SweepArc();
+    TestEqual(TEXT("A fresh contact list proves the post is inside the active arc"), Dummy->HitsTaken, 2);
+    Cut.Active.Add(FVector2f(.10f, .13f)); Cut.End = .5f; Cut.Input = .4f;
+    Moves->Moves.Add(Cut.Name, Cut); Player->AnimationAction = Cut.Name;
+    Player->ActionSourceStartTime = 0.f; Player->ActionPlayRate = 1.f; Player->ActionTime = .05f;
+    Moves->ArcEnd = .3f; Moves->HitThisSwing.Reset();
+    Moves->AdvanceCombat(.016f);
+    TestEqual(TEXT("The lunge fallback cannot deal damage during windup"), Dummy->HitsTaken, 2);
+    Player->ActionTime = .15f; Moves->AdvanceCombat(.10f);
+    TestEqual(TEXT("Crossing the entire active window still lands a real arc contact"), Dummy->HitsTaken, 3);
+    Moves->HitThisSwing.Reset(); Player->ActionTime = .4f; Moves->AdvanceCombat(.05f);
+    TestEqual(TEXT("A completed lunge cannot strike during recovery"), Dummy->HitsTaken, 3);
+    Moves->ArcEnd = .3f; Moves->Play(Landing.Name);
+    TestEqual(TEXT("The next action cannot inherit an old lunge's contact window"), Moves->ArcEnd, -1.f);
+    Moves->Pressure.Block(10.f, World->GetTimeSeconds(), 25.f);
+    const float BeforeActivity = Moves->GuardPressure();
+    Moves->Reset();
+    TestEqual(TEXT("Changing activities cannot erase contact-owned guard pressure"), Moves->GuardPressure(), BeforeActivity);
+    return true;
+}
+#endif
