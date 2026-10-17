@@ -302,3 +302,39 @@ def test_uniform_registration_preserves_paid_pixels_and_records_actual_alignment
     assert record['silhouette_iou_after'] > record['silhouette_iou_before']
     assert record['raw_sha256'] == quality.digest(source)
     assert record['output_sha256'] == quality.digest(source.with_name(record['output']))
+
+
+def test_transferred_photos_keep_original_mesh_identity_and_reject_new_silhouette_drift(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_transfer_test', SCRIPT.with_name('meshaxiom_quality.py'))
+    quality = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(quality)
+    (tmp_path/'guides').mkdir()
+    (tmp_path/'uv').mkdir()
+    model = tmp_path/'uv/clay-uv.glb'
+    model.write_bytes(b'original native geometry UV export')
+    identity = tmp_path/'identity.png'
+    identity.write_bytes(b'original identity')
+    (tmp_path/'uv-comparison.json').write_text(json.dumps([dict(name='uv')]))
+    camera_path = tmp_path/'guides/cameras.json'
+    camera_path.write_text(json.dumps(dict(mesh_sha256=quality.digest(model),
+                                         reference_sha256=quality.digest(identity), views=[])))
+    assert quality.camera_set(tmp_path, identity)[0] == model
+    model.write_bytes(b'a different density output cannot masquerade as the generation mesh')
+    with pytest.raises(ValueError, match='Guide inputs no longer match'):
+        quality.camera_set(tmp_path, identity)
+    guide = tmp_path/'guides/target.png'
+    pixels = np.zeros((64,64,3), dtype='uint8')
+    pixels[12:52,12:52] = 160
+    Image.fromarray(pixels).save(guide)
+    camera = dict(name='target', guide=guide.name, guide_sha256=quality.digest(guide))
+    photo = quality.matte(Image.fromarray(pixels))
+    assert quality.projection_fit(tmp_path, camera, photo)['target_silhouette_iou'] == 1
+    # A source photograph can pass its own guide while failing the new mesh's silhouette.
+    changed = pixels.copy()
+    changed[:24] = 0
+    with pytest.raises(ValueError, match='reject transfer'):
+        quality.projection_fit(tmp_path, camera, quality.matte(Image.fromarray(changed)))
+    guide.write_bytes(b'target guide changed after calibration')
+    with pytest.raises(ValueError, match='Target projection guide changed'):
+        quality.projection_fit(tmp_path, camera, photo)

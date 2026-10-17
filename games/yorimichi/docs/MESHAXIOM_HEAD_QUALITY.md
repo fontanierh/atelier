@@ -51,6 +51,13 @@ peaks near 7.14 GiB. Reuse the committed eight images and run only the 2K
 `front-first` variant under a 4 GiB guard for the cheaper texture pipeline.
 The guard must still obtain normal admission on a shared machine.
 
+The first 16 GiB topology reservation was refused before useful work because the
+full reservation plus the existing 4 GiB host headroom did not fit. Its guarded
+launcher exited with empty, complete cleanup. A new run uses a **lower 12 GiB
+actual-child and aggregate ceiling**, with a matching 12 GiB broker reservation;
+no shared profile, reserve or guard was changed. The owner's 16 GiB maximum is
+an upper bound, not a requirement to reserve unavailable memory.
+
 Native generation uses the sequential, mmap-backed model lifecycle documented in
 the Apple Silicon experiment. The 30,000-face vertex request completed with 14,936
 vertices in 3,470.25 seconds and peaked at 7.85 GiB. The requested face count is
@@ -134,6 +141,16 @@ For each result it verifies both the native triangle multiset and byte-identical
 non-image GLB buffers. It saves confidence, protected/changed masks and eight diagnostic
 renders. Coverage means the fraction of occupied UV texels reached by a reference;
 it is not a measurement of physical surface area or a visual-quality score.
+
+For a separately generated denser head, `paint --reference-set PATH` can reuse the
+earlier photos after a fresh `prepare` on the new native output. The source UV mesh,
+paid cameras and guide hashes remain bound to the original generation; the new UV
+mesh and projection cameras are recorded separately. Both the original image/guide
+fit and the image/new-guide fit must reach 95% silhouette overlap. A passing outline
+does not prove facial correspondence, so rendered eyes, mouth and ears still decide
+whether this transfer is useful. A failure is rejected rather than hidden by changing
+the camera receipt or weakening the threshold. This is texture transfer, not multiview
+conditioning of MeshAxiom's geometry model.
 
 The committed `meshaxiom-head-reference-set` contains the exact UV clay mesh, camera
 guides, generated views and paid receipts. The hosted `Fixed geometry head textures`

@@ -309,39 +309,71 @@ def register_reference(args):
     return 0
 
 
+def camera_set(folder, reference):
+    records = json.loads((folder/'uv-comparison.json').read_text())
+    model = folder/records[0]['name']/'clay-uv.glb'
+    cameras = json.loads((folder/'guides/cameras.json').read_text())
+    if cameras['mesh_sha256'] != digest(model) or cameras['reference_sha256'] != digest(reference):
+        raise ValueError('Guide inputs no longer match')
+    return model, cameras
+
+
+def projection_fit(folder, camera, generated):
+    """Check a frozen photo against the new mesh's independently calibrated guide."""
+    guide = folder/'guides'/camera['guide']
+    if digest(guide) != camera['guide_sha256']:
+        raise ValueError('Target projection guide changed')
+    target = np.asarray(Image.open(guide).convert('RGB')).max(axis=2) > 8
+    mask = generated[..., 3] > 127
+    if target.shape != mask.shape:
+        raise ValueError('Target projection guide and reference dimensions differ')
+    iou = float((target & mask).sum()/max((target | mask).sum(), 1))
+    if iou < .95:
+        raise ValueError(f'{camera["name"]}: target silhouette IoU {iou:.4f} below .95; reject transfer')
+    return dict(target_guide_sha256=digest(guide), target_silhouette_iou=iou)
+
+
 def paint_variants(args):
+    """@cc [owner:fontanierh,label:correctness] texture-transfer-identifies-both-meshes
+    Reusing photographs on a new native mesh MUST retain their original generation mesh,
+    guide and paid camera identity. The new projection mesh/camera MUST be identified
+    separately, and both source and target silhouette checks MUST meet the unchanged .95
+    threshold. Transfer MUST NOT change geometry, alter receipts or imply multiview geometry conditioning.
+    """
     from meshaxiom_pixel_match import paint
     pm = load_module(VENDOR)
     # Keep the exact pinned rasterizer, with smaller triangle batches to bound fragment arrays at 4K.
     pm.rasterize = partial(pm.rasterize, chunk=256)
-    records = json.loads((args.output/'uv-comparison.json').read_text())
-    model = args.output/records[0]['name']/'clay-uv.glb'
-    cameras = json.loads((args.output/'guides/cameras.json').read_text())
-    if cameras['mesh_sha256'] != digest(model) or cameras['reference_sha256'] != digest(args.image):
-        raise ValueError('Guide inputs no longer match')
+    model, cameras = camera_set(args.output, args.image)
+    reference_root = getattr(args, 'reference_set', None) or args.output
+    generation_model, generation_cameras = camera_set(reference_root, args.image)
+    generation_views = {view['name']: view for view in generation_cameras['views']}
     anchor = next(view for view in cameras['views'] if view['yaw'] == 60 and view['pitch'] == -5)
     selected = set(args.views.split(','))
     views = [] if anchor['name'] in selected else [dict(
         name='original', image=str(args.image), image_sha256=digest(args.image),
         transform_matrix=anchor['transform_matrix'], camera_angle_x=anchor['camera_angle_x'])]
     checks = []
-    for view in cameras['views']:
-        if view['name'] not in selected:
+    for target_view in cameras['views']:
+        if target_view['name'] not in selected:
             continue
+        view = generation_views[target_view['name']]
+        if (view['yaw'], view['pitch']) != (target_view['yaw'], target_view['pitch']):
+            raise ValueError('Generation and projection camera labels differ')
         stem = view.get('reference_stem', view['name'])
         if not re.fullmatch(r'[a-z0-9-]{1,80}', stem):
             raise ValueError('Invalid reference filename stem')
-        path = args.output/'references'/f'{stem}.png'
+        path = reference_root/'references'/f'{stem}.png'
         receipt = json.loads(path.with_suffix('.provenance.json').read_text())
         if receipt.get('status') != 'done' or receipt.get('output_sha256') != digest(path):
             raise ValueError('Generated reference differs from its paid receipt')
         if (receipt.get('guide_sha256') != view['guide_sha256']
                 or receipt.get('reference_sha256') != digest(args.image) or receipt.get('camera') != view):
             raise ValueError('Generated reference recipe differs from the guide manifest')
-        guide = args.output/'guides'/view['guide']
+        guide = reference_root/'guides'/view['guide']
         if digest(guide) != view['guide_sha256']:
             raise ValueError('Geometry guide changed before projection')
-        silhouette_guide = args.output/'guides'/view.get('silhouette_guide', view['guide'])
+        silhouette_guide = reference_root/'guides'/view.get('silhouette_guide', view['guide'])
         if digest(silhouette_guide) != view.get('silhouette_guide_sha256', view['guide_sha256']):
             raise ValueError('Silhouette guide changed')
         raw_sha256 = digest(path)
@@ -362,13 +394,19 @@ def paint_variants(args):
         iou = float((target & mask).sum()/max((target | mask).sum(), 1))
         if iou < .95:
             raise ValueError(f'{view["name"]}: guide silhouette IoU {iou:.4f} below .95; reject view')
+        transfer = projection_fit(args.output, target_view, generated) if reference_root != args.output else {}
         checks.append(dict(name=view['name'], silhouette_iou=iou, image_sha256=digest(path),
                            guide_sha256=view['guide_sha256'], guide_mode=view.get('guide_mode', 'clay'),
-                           reference_stem=stem, registration=registration))
+                           reference_stem=stem, registration=registration, **transfer))
         views.append(dict(name=view['name'], image=str(path), image_sha256=digest(path),
                           raw_image_sha256=raw_sha256,
                           registration_sha256=digest(registration_path) if registration else None,
-                          transform_matrix=view['transform_matrix'], camera_angle_x=view['camera_angle_x']))
+                          reference_generation=dict(mesh_sha256=digest(generation_model),
+                              guide_sha256=view['guide_sha256'], camera=view,
+                              receipt_sha256=digest((reference_root/'references'/f'{stem}.provenance.json'))),
+                          projection_mesh_sha256=digest(model),
+                          transform_matrix=target_view['transform_matrix'],
+                          camera_angle_x=target_view['camera_angle_x'], **transfer))
     if len(checks) != len(selected):
         raise ValueError('Missing requested cameras')
     write(args.output/'reference-validation.json', checks)
@@ -386,7 +424,8 @@ def paint_variants(args):
         Image.fromarray(rgba).save(folder/'reference-matted.png')
         write(folder/'calibration.json', dict(mesh_sha256=digest(source), reference_sha256=digest(args.image),
               matted_sha256=digest(folder/'reference-matted.png'), transform_matrix=anchor['transform_matrix'],
-              camera_angle_x=anchor['camera_angle_x'], calibration='Fixed original camera, no shape fitting'))
+              camera_angle_x=anchor['camera_angle_x'],
+              calibration='Target mesh silhouette camera; generation cameras retained separately; no mesh fitting'))
         manifest = folder/'views.json'
         used_views = [view for view in views if view['name'] == anchor['name']] if variant == 'guided-single' else views
         if variant in ('front-first', '4k'):
@@ -397,7 +436,8 @@ def paint_variants(args):
         if not used_views:
             raise ValueError('Guided-single variant requires the generated front camera')
         write(manifest, dict(mesh_sha256=digest(source), views=[
-            {**view, 'image': os.path.relpath(view['image'], folder)} for view in used_views]))
+            {**view, 'projection_mesh_sha256': digest(source),
+             'image': os.path.relpath(view['image'], folder)} for view in used_views]))
         recipe = SimpleNamespace(mesh=source, image=args.image, output=folder, module=VENDOR,
                                  views=None if variant == 'single' else manifest,
                                  blend=('weighted' if variant in ('single', 'guided-single', 'weighted')
@@ -442,6 +482,8 @@ def main(argv=None):
     parser.add_argument('--report', type=Path)
     parser.add_argument('--from-model', type=Path)
     parser.add_argument('--from-contact', type=Path)
+    parser.add_argument('--reference-set', type=Path,
+                        help='Reuse verified photos from an earlier mesh; independently check new guide overlap')
     parser.add_argument('--guide-view', default='yaw120-pitch-5')
     parser.add_argument('--reference-stem', default='yaw120-coherent')
     parser.add_argument('--memory-gib', type=int, choices=range(4, 11), default=10,
