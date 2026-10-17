@@ -1,0 +1,28 @@
+diff --git a/extern/o_voxel/src/convert/flexible_dual_grid.cpp b/extern/o_voxel/src/convert/flexible_dual_grid.cpp
+index ad89edc..3e8368c 100644
+--- a/extern/o_voxel/src/convert/flexible_dual_grid.cpp
++++ b/extern/o_voxel/src/convert/flexible_dual_grid.cpp
+@@ -307 +307 @@ void boundry_qef(
+-        if (segment_length < 1e-6d) continue; // Skip degenerate edges (zero-length)
++        if (segment_length < 1e-6) continue; // Skip degenerate edges (zero-length)
+@@ -337 +337 @@ void boundry_qef(
+-            if (dir[axis] == 0.0d) {
++            if (dir[axis] == 0.0) {
+@@ -424,0 +425 @@ void face_from_dual_vertices(
++    TORCH_CHECK(dual_vertices.size() <= std::numeric_limits<int>::max(), "Voxel index exceeds int32 capacity");
+@@ -441 +442 @@ void face_from_dual_vertices(
+-            int4 quad_indices{i, neigh_indices[0], neigh_indices[2], neigh_indices[1]};
++            int4 quad_indices{i, static_cast<int>(neigh_indices[0]), static_cast<int>(neigh_indices[2]), static_cast<int>(neigh_indices[1])};
+@@ -447 +448 @@ void face_from_dual_vertices(
+-            int4 quad_indices{i, neigh_indices[1], neigh_indices[5], neigh_indices[3]};
++            int4 quad_indices{i, static_cast<int>(neigh_indices[1]), static_cast<int>(neigh_indices[5]), static_cast<int>(neigh_indices[3])};
+@@ -453 +454 @@ void face_from_dual_vertices(
+-            int4 quad_indices{i, neigh_indices[0], neigh_indices[4], neigh_indices[3]};
++            int4 quad_indices{i, static_cast<int>(neigh_indices[0]), static_cast<int>(neigh_indices[4]), static_cast<int>(neigh_indices[3])};
+diff --git a/pixal3d/modules/sparse/attention/full_attn.py b/pixal3d/modules/sparse/attention/full_attn.py
+index ac32ab7..46fece6 100644
+--- a/pixal3d/modules/sparse/attention/full_attn.py
++++ b/pixal3d/modules/sparse/attention/full_attn.py
+@@ -293 +293 @@ def sparse_scaled_dot_product_attention(*args, **kwargs):
+-            _chunk = 2048
++            _chunk = 256

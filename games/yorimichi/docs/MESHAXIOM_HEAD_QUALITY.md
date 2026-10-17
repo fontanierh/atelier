@@ -6,6 +6,8 @@ candidate is inspected from eight matched yaw/pitch labels, including both profi
 rear, top and underside. No post-generation mesh editing is allowed.
 The existing [Apple Silicon experiment](MESHAXIOM_EXPERIMENT.md) supplies the pinned
 weights, runtime installation, single-view baseline, and hardware measurements.
+[Local head model recipes](APPLE_HEAD_MODELS.md) documents the pinned native texture
+and MLX runtimes and their aggregate guards.
 
 ## Measured comparisons so far
 

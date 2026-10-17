@@ -1,0 +1,82 @@
+[
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/ss_flow_img_dit_1_3B_64_bf16.json",
+    "size_bytes": 467,
+    "sha256": "6cdfb636854f60ffcadd8c49244169cd449f34c5ccdb55b5ff7c04678f9c399e",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/ss_flow_img_dit_1_3B_64_bf16.safetensors",
+    "size_bytes": 2584426920,
+    "sha256": "ca01377c485bec418076d38ee80166d32dc776d744f2553b835cba1e97a7abf6",
+    "expected_lfs_sha256": "ca01377c485bec418076d38ee80166d32dc776d744f2553b835cba1e97a7abf6"
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_512_bf16.json",
+    "size_bytes": 458,
+    "sha256": "ddbd7a1d34ce9a8e7af2f6ef9ae686d9ab49f69e62dacb98d8409b511cdbd5e2",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+    "size_bytes": 2584574424,
+    "sha256": "ec5e0917ef9b7e25ad51dffc7d19687a42019871f94239f2fa7f86264c55b70f",
+    "expected_lfs_sha256": "ec5e0917ef9b7e25ad51dffc7d19687a42019871f94239f2fa7f86264c55b70f"
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_512_bf16.json",
+    "size_bytes": 458,
+    "sha256": "3093796257a62f838d2e5578ac4580ca3b7d88d10b87d348065d3fdfcc4c2077",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+    "size_bytes": 2584672728,
+    "sha256": "8371aa1c5d13be79dcd5ddfd2cf3835e902e204dc34427169a1c702828e1a94d",
+    "expected_lfs_sha256": "8371aa1c5d13be79dcd5ddfd2cf3835e902e204dc34427169a1c702828e1a94d"
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/shape_dec_next_dc_f16c32_fp16.json",
+    "size_bytes": 678,
+    "sha256": "5f1b856dffce79466fb18f5f0eefc08f08c673b24b3c05b20359c0b6d318a209",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS.2-4B",
+    "revision": "af44b45f2e35a493886929c6d786e563ec68364d",
+    "file": "ckpts/shape_dec_next_dc_f16c32_fp16.safetensors",
+    "size_bytes": 948490494,
+    "sha256": "e3b718d3e43e4f8780e9a24ac6fff231811a67e3b058e336e10fe654c911d581",
+    "expected_lfs_sha256": "e3b718d3e43e4f8780e9a24ac6fff231811a67e3b058e336e10fe654c911d581"
+  },
+  {
+    "repo": "microsoft/TRELLIS-image-large",
+    "revision": "25e0d31ffbebe4b5a97464dd851910efc3002d96",
+    "file": "ckpts/ss_dec_conv3d_16l8_fp16.json",
+    "size_bytes": 245,
+    "sha256": "646781293f1cda74720de85d1cef50a957fb4aebd9a4bd014e454e32f2330ac5",
+    "expected_lfs_sha256": null
+  },
+  {
+    "repo": "microsoft/TRELLIS-image-large",
+    "revision": "25e0d31ffbebe4b5a97464dd851910efc3002d96",
+    "file": "ckpts/ss_dec_conv3d_16l8_fp16.safetensors",
+    "size_bytes": 147591972,
+    "sha256": "1c76d4a40519aa2d711cc263a8404105231ac26db31d946bed48b84fee79009a",
+    "expected_lfs_sha256": "1c76d4a40519aa2d711cc263a8404105231ac26db31d946bed48b84fee79009a"
+  }
+]
