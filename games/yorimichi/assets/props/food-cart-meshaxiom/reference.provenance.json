@@ -1,0 +1,29 @@
+{
+  "purpose": "MeshAxiom 16000-face Apple Silicon experiment",
+  "prop": "food-cart",
+  "prompt": "Use case: stylized-concept. Asset type: one single-view image-to-3D reference for Yorimichi, a cozy Japanese skateboarding town. Subject: one small street-food pushcart, an intricate but readable freestanding game prop. A warm wood cabinet on two chunky spoked wheels and two sturdy short legs. A serving counter projects at the front, with a round cooking pot and a small griddle solidly attached to its top. Four substantial wooden posts support a small curved corrugated indigo canopy with an ochre valance. A folded side shelf, rear push handles, a lower storage rack and one squat gas cylinder attached low on the side add distinct three-dimensional forms. Clear open space between the roof and counter and between the wheels and cabinet. Consistent physical construction, all parts connected into one cart. Use chunky thicknesses, avoid hair-thin spokes or cables. Stylized painterly low-poly game art with precise broad mechanical forms, warm weathered wood, faded indigo metal, mustard ochre trim and muted iron. No text, logos, stickers, banners, people, plants, environment or loose items. Three-quarter front view, camera slightly above counter level so the counter, wheel, side shelf and roof are readable; natural near-orthographic perspective. Complete object centered with clear margins and fills 80 percent of a square frame. Pure solid black background; no floor, no cast shadow. Soft studio illumination. This is a reference for an approximately 16000-triangle mesh, with meaningful silhouette and structural detail, not surface noise.\n",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/generations",
+  "prompt_sha256": "68cf9c853f0862d6fc56c0340cadbec4cd052fa78f89a8da6db32cb6fe11b144",
+  "status": "done",
+  "started_at": "2026-10-17T01:34:19.467622+00:00",
+  "output": "reference.png",
+  "output_sha256": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4",
+  "usage": {
+    "input_tokens": 323,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 323
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 2079
+  },
+  "elapsed_seconds": 33.2,
+  "finished_at": "2026-10-17T01:34:52.676949+00:00"
+}

@@ -1937,6 +1937,10 @@
       "bytes": 475801,
       "sha256": "0e7b36816e758ac83e59330dbc4232444b8787489bea5eaf26496bdc539c950e"
     },
+    "characters/meshaxiom-skater-head/reference.png": {
+      "bytes": 810295,
+      "sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e"
+    },
     "characters/modori/Modori-Rig-r01.blend": {
       "bytes": 10602509,
       "sha256": "d455d593f413af9cc026a2bbf6aa77f5a2419220b505d215f05ac54ee9279be1"
@@ -6180,6 +6184,14 @@
     "megapark/textures/bee8e9ba50a8ffa7.png": {
       "bytes": 167902,
       "sha256": "55bd3d5217d9cd9dd4c616f9450a63da608ecd7e765b20e152a154d657211559"
+    },
+    "props/food-cart-meshaxiom/reference.png": {
+      "bytes": 1214190,
+      "sha256": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4"
+    },
+    "props/recycling-bin-meshaxiom/reference.png": {
+      "bytes": 870342,
+      "sha256": "3bb987cbb15d8a1b84cadcec0eb35748907ce0f5cfd175fc507ebfac8264fa24"
     },
     "props/stone-lantern/concept.png": {
       "bytes": 1116491,

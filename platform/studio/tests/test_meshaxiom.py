@@ -91,3 +91,29 @@ def test_upstream_edits_are_rejected_even_at_pinned_head(monkeypatch,tmp_path):
     monkeypatch.setattr(install.subprocess,'check_output',lambda *a,**kw:next(outputs))
     with pytest.raises(ValueError,match='must be clean'):
         install.verify_source(tmp_path)
+
+
+def test_larger_session_reserves_full_cpu_memory_gpu_without_changing_shared_profile(monkeypatch):
+    from types import SimpleNamespace
+    from atelier.ai.meshaxiom.guarded import admission_for
+    from atelier.harness import capacity_runtime, capacity_client
+    request = dict(resources=dict(memory_mib=10240, gpu_mib=0, cpu_millis=8000),
+                   checkout='fixture', locks=['checkout:fixture'], performance=True)
+    original = json.loads(json.dumps(request))
+    baseline = SimpleNamespace(request=request, mode='capacity', socket_path='/fixture/socket',
+                               timeout=2, cutover='/fixture/cutover')
+    monkeypatch.setattr(capacity_runtime, 'configured_session', lambda **kw: baseline)
+    monkeypatch.setattr(capacity_client, 'AdmissionSession', lambda *a, **kw: (a, kw))
+    (endpoint, selected), options = admission_for(['python'], 'report', 3600, 'model', 16)
+    assert request == original
+    assert selected['resources'] == dict(memory_mib=16384, gpu_mib=16384, cpu_millis=8000)
+    assert selected['locks'] == request['locks'] and selected['checkout'] == request['checkout']
+    assert selected['performance'] is True
+    assert endpoint == baseline.socket_path and options['cutover'] == baseline.cutover
+
+
+@pytest.mark.parametrize('ceiling', [9, 17])
+def test_session_ceiling_rejected_before_admission(ceiling):
+    from atelier.ai.meshaxiom.guarded import admission_for
+    with pytest.raises(ValueError, match='10–16 GiB'):
+        admission_for([], 'report', 3600, 'model', ceiling)

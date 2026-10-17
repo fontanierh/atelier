@@ -67,6 +67,62 @@ See `platform/studio/atelier/ai/meshaxiom/README.md` for the isolated installer 
 Start with a 2,000-face request, the default 20-step schedule, and the normal 10 GiB guard. The implementation
 prints each completed diffusion step and refuses geometry growth beyond its explicit node bound.
 
+The tested machine is an M1 Max MacBook Pro with 10 CPU cores, 32 GPU cores, 32 GiB unified memory and
+macOS 26.2. No remote GPU or paid 3D service was used. The one paid operation for the first asset was
+the Sunburst reference; inference uses the downloaded public weights. The practical low-cost route is
+this resident, sequential MPS implementation on an existing Apple Silicon Mac, without buying a CUDA PC.
+The 6.42 GiB figure is an observed process-tree peak for the small bin, not a minimum system-RAM promise
+or a measurement for a 16,000-face object. Smaller-memory Macs and other chips are unmeasured.
+
+Keep at least 30 GiB free for the initial 19.66 GiB checkpoint payload, source and isolated dependencies.
+Install once, retain the verified files and use a fresh output/report directory for each attempt. Close
+other memory-intensive applications. Admission still checks available memory and the host reserve before
+launching a model; an idle-looking machine alone does not authorize admission. Do not change the MPS
+high-watermark setting, disable guards or treat operating-system swapping as an inference strategy.
+
+The first reference is reproducible from the committed prompt and provenance next to its PNG. New
+references use `atelier.ai.images.paint(..., model='gpt-image-2.5-sunburst', quality='high', record=...)`;
+the ledger record must not already exist. Reusing the committed PNG requires no API call or credential.
+This is a single-image model. Its released `generate(image, ...)` interface has no native multiview
+conditioning; concatenating a turnaround sheet is not a verified substitute.
+
+## Larger-object follow-up
+
+After inspecting the first bin, the owner requested a food cart and a character head, at least 15,000
+faces each, and explicitly authorized a **16 GiB** session ceiling. Both Sunburst high references are
+retained in the asset library. The inference condition is 16,000 faces; actual output counts must be
+checked separately. At this documentation checkpoint, the cart vertex stage is queued behind a machine
+capacity-recovery hold; neither larger asset has a measured result yet.
+
+`atelier.ai.meshaxiom.guarded` reserves the full selected memory and GPU envelope in an explicit broker
+session and uses the existing per-process and aggregate guards. The shared profile, 4 GiB host reserve,
+managed CPU budget and checkout locks remain intact. The README includes the exact staged command.
+The larger request uses a 12,000-node hard bound and a one-hour deadline per stage. The head follows
+the cart as a separate job; no two inference models are launched together.
+
+Topology acceptance includes actual triangle count, boundary and nonmanifold edges, degenerates,
+components, silhouette and wireframe inspection. Learned connectivity and the published edge-capacity
+policy do not guarantee animation-ready facial edge loops, watertight surfaces or clean production
+topology. Any later cleanup must retain a raw source and describe the geometry changes; subdivision
+alone must not be presented as newly inferred detail.
+
+## If weights have to stream from SSD
+
+SSD layer streaming was **not needed or implemented** for the measured run. The largest resident
+image-only model is about 4.39 GiB at 16-bit precision, and the transformer stages are sequential.
+Checkpoint mmap avoids a second full CPU copy during loading; it does not mean transformer layers
+are fetched from disk anew at every denoising step.
+
+A simple I/O estimate shows the cost of genuine layer offload. Vertex generation makes roughly
+`9 levels × 20 steps × 2 guidance branches = 360` transformer evaluations. Topology adds roughly
+40 more, plus its mean-estimation work. If about 4 GiB had to be reread for every evaluation, that is
+about 1.6 TiB of traffic. At an assumed sustained 1–3 GiB/s, disk reads alone would take roughly
+9–27 minutes, before accounting for compute, transfers, synchronization and any overlap. These are
+illustrative bandwidth assumptions, not measured SSD or end-to-end timings. They are not a prediction
+for the 16K assets. Retaining some layers reduces traffic, and CPU execution changes the tradeoff.
+An actual small-RAM implementation would need its own benchmark. Four/eight-bit quantization is another
+possible route, but no quantized checkpoint, kernel port or output-quality validation is supplied here.
+
 ## Provenance
 
 - Upstream source: `AlayaLab/MeshAxiom`, revision `6504db7126ec58e9d275833fb0e5f66640b01abe`.

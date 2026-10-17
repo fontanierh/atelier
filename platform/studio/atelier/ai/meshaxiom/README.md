@@ -54,3 +54,19 @@ build/meshaxiom/venv/bin/python -m atelier.ai.meshaxiom.verify
 
 This compares tiled masked attention, FP64 rotary tables and the guided DPM++2M sampler against the
 pinned upstream definitions. It does not load the pretrained weights or claim image-level CUDA identity.
+
+For a larger experiment **explicitly authorized by the machine owner**, select up to a 16 GiB session
+ceiling. This command uses the same actual-child and aggregate guards, normal broker admission and host
+headroom, with a matching explicit memory/GPU reservation. It never edits shared capacity profiles.
+Run the two stages separately and inspect the first guard receipt before submitting the second:
+
+```sh
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.ai.meshaxiom.guarded \
+  --root build/meshaxiom --image reference.png --output build/meshaxiom/object-16k \
+  --stage vertex --face-budget 16000 --max-nodes 12000 --memory-gib 16 --timeout 3600 \
+  --report build/meshaxiom/vertex-16k-01.guard
+```
+
+After successful vertex completion, repeat with `--stage topology` and a fresh report path. The 16,000-face
+condition is approximate: inspect the realized triangle count instead of treating the request as a guarantee.
+The released model consumes one image per object; it has no native multiview conditioning interface.
