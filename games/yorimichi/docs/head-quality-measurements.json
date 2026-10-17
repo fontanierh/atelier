@@ -237,7 +237,7 @@
     "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
   },
   "new_sunburst_high_calls_for_quality_phase": 17,
-  "learned_texturing_and_trellis2_status": "Native image512/image1024 and photo hybrids complete; TRELLIS512 raw native vertex-color head complete; cascade and multiple-image runs pending.",
+  "learned_texturing_and_trellis2_status": "Complete:21 recipes across5 independent native geometries, each with8 matched views. Winner: native TRELLIS cascade actual768 with immutable vertex-color bake. Compact choice: native Pixal image1024 PBR + original front on original18K MeshAxiom.",
   "native_pixal_pbr_512": {
     "report": {
       "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
@@ -858,7 +858,7 @@
         "projection_validation_seconds": 4.048
       }
     },
-    "assessment": "Best compact MeshAxiom result so far: original front sharpness and learned PBR color elsewhere. Geometry and non-image GLB buffers unchanged."
+    "assessment": "Selected compact MeshAxiom result: original front sharpness and learned PBR color elsewhere. Geometry and non-image GLB buffers unchanged."
   },
   "trellis_512_vertex_color": {
     "report": {
@@ -914,5 +914,451 @@
     },
     "camera_yaw_offset_degrees": -90,
     "assessment": "More coherent hair and silhouette, but pale pupils and facial speckles remain. Vertex color preview omits learned roughness/metallic variation."
+  },
+  "trellis_cascade_actual768": {
+    "report": {
+      "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+      "backend": "Microsoft TRELLIS.2 MLX, native vertex colors",
+      "native_vertices": 5598831,
+      "native_triangles": 11386792,
+      "output_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "native_checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+      "all_native_positions_and_indices_exact": true,
+      "seconds": 1196.521,
+      "strict_model_key_checks": [
+        {
+          "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+          "keys": 74,
+          "strict_complete_state": true
+        },
+        {
+          "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+          "keys": 292,
+          "strict_complete_state": true
+        },
+        {
+          "file": "slat_flow_img2shape_dit_1_3B_1024_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+          "keys": 292,
+          "strict_complete_state": true
+        },
+        {
+          "file": "slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+          "keys": 284,
+          "strict_complete_state": true
+        }
+      ],
+      "mlx_peak_bytes": 11857778932,
+      "quantize": 0,
+      "resolution_requested": 1024,
+      "actual_mesh_grid_size": 768
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 5598831,
+      "face_count": 11386792,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 1206.883886208001,
+      "timing_scope": "Whole guarded process including weight checks, conditioning, native inference, exact vertex-color GLB/source export and eight diagnostic renders; excludes queues and downloads.",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 1206.883886208001,
+          "peak_bytes": 14024776832,
+          "limit_bytes": 15032385536
+        }
+      }
+    },
+    "native_vertex_bake": {
+      "method": "Learned native voxel color to raw dual-grid vertex bake, no UVs",
+      "worker_sha256": "5df7406dec6a74d3794391344076466332ec8dd3f56e0e8d1cdb72c4b63bc8b7",
+      "native_checkpoint_sha256": "da518226bf65afcd233ba5b6497c0ab9a00eda4a79cc307a0cc1887d2bcae758",
+      "texture_checkpoint_sha256": "58cf0e7e89cc3e5523d8624189314de2d99269db3210a5e28d1da4d40a93ebf7",
+      "output_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "vertices": 5598831,
+      "triangles": 11386792,
+      "all_native_positions_and_indices_exact": true,
+      "material": "sRGB field converted to linear vertex RGB; uniform roughness.85/metallic0; PBR variation omitted",
+      "transform": "Only fixed Z-up to Y-up axis rotation",
+      "seconds": 194.207
+    },
+    "actual_shape_tokens": 13128,
+    "new_swapout_observed": false,
+    "assessment": "Much improved pupils and more coherent shape/hair than512; small skin speckles remain. Raw native geometry is unchanged."
+  },
+  "trellis_two_image_512": {
+    "report": {
+      "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+      "backend": "Microsoft TRELLIS.2 MLX, native vertex colors",
+      "native_vertices": 2119830,
+      "native_triangles": 4385654,
+      "output_sha256": "a406d1e13771630dc63e20392bb84e20b41eb082e0009a457e6d6560f4570b7e",
+      "native_checkpoint_sha256": "bf092fd956bca0e0a2534e34af2436c38ed6d39f2843659cc3fa0937d46cd877",
+      "all_native_positions_and_indices_exact": true,
+      "seconds": 389.769,
+      "strict_model_key_checks": [
+        {
+          "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+          "keys": 74,
+          "strict_complete_state": true
+        },
+        {
+          "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+          "keys": 292,
+          "strict_complete_state": true
+        },
+        {
+          "file": "slat_flow_imgshape2tex_dit_1_3B_512_bf16.safetensors",
+          "keys": 640,
+          "strict_complete_state": true
+        },
+        {
+          "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+          "keys": 284,
+          "strict_complete_state": true
+        }
+      ],
+      "mlx_peak_bytes": 5322742000,
+      "quantize": 0,
+      "resolution_requested": 512,
+      "actual_mesh_grid_size": 512
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 2119830,
+      "face_count": 4385654,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 400.843822209019,
+      "timing_scope": "Whole guarded two-image process including checks, preprocessing, native inference, verified GLB/source export and eight views; excludes queues and downloads.",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 400.843822209019,
+          "peak_bytes": 7654965824,
+          "limit_bytes": 15032385536
+        }
+      }
+    },
+    "configuration": {
+      "resolution": 512,
+      "steps": 12,
+      "seed": 42,
+      "quantize": 0,
+      "max_tokens": 16384,
+      "mlx_limit_gib": 10,
+      "vertex_colors": true,
+      "target_faces": 0,
+      "cleanup": false,
+      "hole_fill": false,
+      "texture_size": 2048,
+      "camera_yaw_offset": -90,
+      "high_stage_image_size": 512,
+      "texture_model_resolution": 512
+    },
+    "image_count": 2,
+    "fusion": "Concatenated DINO feature sequences, no camera labels or multiview-trained checkpoint",
+    "assessment": "Rejected: a new hair tuft crosses the cheek, eyes become muddied; higher single-image cascade is much stronger.",
+    "control_limit": "Extra DINO construction consumes RNG before sampling; this is a whole-recipe trial, not a view-count-only causal comparison."
+  },
+  "trellis_512_photo_overlay": {
+    "report": {
+      "method": "Depth/facing/matte-weighted original photo over native learned vertex colors",
+      "worker_sha256": "d3b0f553dcd1c8b29ba93d81003996c324bb546e9ba471d473157c81fdd3defd",
+      "input_sha256": "126df574f3d6cd91a0f599487c9ea67413d47da1c35d2500e9c8c60287c53bf0",
+      "output_sha256": "f98474187a07a45856a8f6fb08905e8fa22b3aa6d0f95d0ce8351b5c3963e653",
+      "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "triangles": 4916486,
+      "vertices": 2401454,
+      "painted_vertices": 275991,
+      "painted_vertex_fraction": 0.11492662362052324,
+      "protected_vertex_color_sha256": "5d048ab4848da042895bdb25fc63228fc5636fd596918ff8cca75662fb4ef988",
+      "geometry_normals_indices_materials_identical": true,
+      "camera": {
+        "yaw": -30,
+        "pitch": -5,
+        "silhouette_iou_96px": 0.949474224160041,
+        "transform_matrix": [
+          [
+            0.8660254037844387,
+            -0.043577871373829076,
+            -0.4980973490458727,
+            -1.8046058833308827
+          ],
+          [
+            -0.0,
+            0.9961946980917457,
+            -0.08715574274765817,
+            -0.3139993528377043
+          ],
+          [
+            0.49999999999999994,
+            0.07547908730517333,
+            0.862729915662821,
+            3.1344053515889563
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "camera_angle_x": 0.3141592653589793
+      },
+      "limitations": "Silhouette registration does not establish eye/mouth correspondence. Inspect eight views. Vertex fraction is not surface area.",
+      "seconds": 46.883
+    },
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 100.83825729202363,
+      "peak_bytes": 1930957696,
+      "limit_bytes": 8589934592
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 2401454,
+      "face_count": 4916486,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 432.0552572920236,
+      "timing_scope": "Sum of the separately measured native checkpoint/export stages (discarded UV work and base views excluded) plus whole photo-overlay job including eight views. Not one uninterrupted run.",
+      "neural_checkpoint_seconds_from_guard_start": 248.624,
+      "vertex_bake_seconds": 82.593,
+      "discarded_uv_attempt_exit": 143,
+      "guards": {
+        "neural": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 858.2875342920015,
+          "peak_bytes": 7715243328,
+          "limit_bytes": 12884901888
+        },
+        "vertex_bake": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 137.04375437501585,
+          "peak_bytes": 1685901824,
+          "limit_bytes": 8589934592
+        },
+        "matched_views": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 56.091601624997566,
+          "peak_bytes": 1106332992,
+          "limit_bytes": 4294967296
+        },
+        "photo_overlay": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 100.83825729202363,
+          "peak_bytes": 1930957696,
+          "limit_bytes": 8589934592
+        }
+      }
+    },
+    "assessment": "Sharper reference eyes, but doubled brow/lid outlines and neck color patches remain; not selected."
+  },
+  "trellis_768_photo_overlay": {
+    "report": {
+      "method": "Depth/facing/matte-weighted original photo over native learned vertex colors",
+      "worker_sha256": "d3b0f553dcd1c8b29ba93d81003996c324bb546e9ba471d473157c81fdd3defd",
+      "input_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "output_sha256": "2966c3fded6303f99f4fe63c76825ac217cf2956a3de1fd68817ae37ab471951",
+      "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "triangles": 11386792,
+      "vertices": 5598831,
+      "painted_vertices": 589573,
+      "painted_vertex_fraction": 0.1053028748322641,
+      "protected_vertex_color_sha256": "96180e67418805f79f31fc5a536f96e646c4b52893ac3cd276cb57486c20e8e5",
+      "geometry_normals_indices_materials_identical": true,
+      "camera": {
+        "yaw": -30,
+        "pitch": -5,
+        "silhouette_iou_96px": 0.9425813008130082,
+        "transform_matrix": [
+          [
+            0.8660254037844387,
+            -0.043577871373829076,
+            -0.4980973490458727,
+            -1.751771265864453
+          ],
+          [
+            -0.0,
+            0.9961946980917457,
+            -0.08715574274765817,
+            -0.30623198168468724
+          ],
+          [
+            0.49999999999999994,
+            0.07547908730517333,
+            0.862729915662821,
+            3.0458694497351018
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "camera_angle_x": 0.3141592653589793
+      },
+      "limitations": "Silhouette registration does not establish eye/mouth correspondence. Inspect eight views. Vertex fraction is not surface area.",
+      "seconds": 102.723
+    },
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 207.29029049997916,
+      "peak_bytes": 4657260608,
+      "limit_bytes": 8589934592
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 5598831,
+      "face_count": 11386792,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 1414.1741767079802,
+      "timing_scope": "Sum of the complete guarded cascade job and complete photo-overlay job, both including eight diagnostic views; excludes queues/downloads.",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 1206.883886208001,
+          "peak_bytes": 14024776832,
+          "limit_bytes": 15032385536
+        },
+        "photo_overlay": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 207.29029049997916,
+          "peak_bytes": 4657260608,
+          "limit_bytes": 8589934592
+        }
+      }
+    },
+    "assessment": "Not selected: stronger reference detail but doubled brow/lid outlines, nose projection mismatch and visible side/neck transition."
+  },
+  "selection": {
+    "best_overall": "trellis_cascade_actual768",
+    "best_overall_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+    "best_compact": "native_image1024_front_hybrid",
+    "best_compact_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
+    "criteria": "Qualitative eight-view facial coherence, likeness, profile/rear continuity and visible defects; no numerical Tripo parity claim."
+  },
+  "final_viewer_validation": {
+    "results": [
+      {
+        "asset": "trellis-head-cascade768",
+        "triangles": 11386792,
+        "loaded": true,
+        "edge_audit_deferred": true,
+        "raw_mesh_json_requested": false,
+        "page_errors": []
+      },
+      {
+        "asset": "trellis-head-multiview512",
+        "triangles": 4385654,
+        "loaded": true,
+        "edge_audit_deferred": true,
+        "raw_mesh_json_requested": false,
+        "page_errors": []
+      },
+      {
+        "asset": "trellis-head-512-photo",
+        "triangles": 4916486,
+        "loaded": true,
+        "edge_audit_deferred": true,
+        "raw_mesh_json_requested": false,
+        "page_errors": []
+      },
+      {
+        "asset": "trellis-head-cascade768-photo",
+        "triangles": 11386792,
+        "loaded": true,
+        "edge_audit_deferred": true,
+        "raw_mesh_json_requested": false,
+        "page_errors": []
+      },
+      {
+        "asset": "skater-head-smart-uv-single",
+        "triangles": 18931,
+        "loaded": true,
+        "edge_audit_deferred": false,
+        "raw_mesh_json_requested": true,
+        "page_errors": []
+      },
+      {
+        "asset": "skater-head-guided-front",
+        "triangles": 18931,
+        "loaded": true,
+        "edge_audit_deferred": false,
+        "raw_mesh_json_requested": true,
+        "page_errors": []
+      },
+      {
+        "asset": "skater-head-guided-rejected",
+        "triangles": 18931,
+        "loaded": true,
+        "edge_audit_deferred": false,
+        "raw_mesh_json_requested": true,
+        "page_errors": []
+      }
+    ],
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 49.54486033300054,
+      "peak_bytes": 3921872640,
+      "limit_bytes": 8589934592
+    },
+    "scope": "Desktop Chrome with desktop/mobile viewport layouts, all available controls, exact complete GLB triangle counts, no dense raw JSON fetch, no page errors. This is not real-device Safari validation."
   }
 }

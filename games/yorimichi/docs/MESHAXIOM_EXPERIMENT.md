@@ -21,6 +21,11 @@ exited cleanly and returned all resources; supervisor samples showed no new swap
 1-metre GLB and four CPU review views completed in another 45.77 seconds at 1.07 GiB peak.
 The bin proves that the full pipeline runs locally, but its visual result needs substantial cleanup.
 
+The follow-up [head comparison](MESHAXIOM_HEAD_QUALITY.md) tests denser native
+geometry, multiview Pixel Match, the documented learned texture stack and TRELLIS.2
+on the same laptop. [Apple Silicon recipes](APPLE_HEAD_MODELS.md) include the actual
+weight audit, bounded MPS/MLX runtimes and deterministic material bakes.
+
 ## Measured run
 
 | Stage | Worker time | Aggregate guard peak |

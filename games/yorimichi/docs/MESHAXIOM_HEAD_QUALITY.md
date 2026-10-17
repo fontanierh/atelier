@@ -1,15 +1,49 @@
 # Local textured-head comparison
 
-Work in progress: this comparison will rank all locally generated candidates after
-the native Pixal3D texturing and Microsoft TRELLIS.2 experiments finish. Each
-candidate is inspected from eight matched yaw/pitch labels, including both profiles,
-rear, top and underside. No post-generation mesh editing is allowed.
-The existing [Apple Silicon experiment](MESHAXIOM_EXPERIMENT.md) supplies the pinned
-weights, runtime installation, single-view baseline, and hardware measurements.
-[Local head model recipes](APPLE_HEAD_MODELS.md) documents the pinned native texture
-and MLX runtimes and their aggregate guards.
+**Best overall:** the native TRELLIS.2 cascade at an actual 768 grid, with a
+deterministic bake of its learned RGB field to the unchanged native vertices. Its
+11,386,792 triangles give the most coherent head/hair across the matched views,
+and the higher texture stage fixes the 512 trial's pale pupils. The complete
+guarded job took **20m07s**, including exact export and eight views, peaking at
+**13.06 GiB** under a 14 GiB aggregate ceiling on the 32 GiB M1 Max.
 
-## Measured comparisons so far
+**Best compact asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
+front photograph, committed as the 7 MB
+[`head.glb`](../assets/characters/meshaxiom-skater-head-native/head.glb). It retains
+the full native metallic/roughness map and every mesh buffer. Geometry + selected
+UV preparation + native texture + photo projection sum to 67m33s across measured
+stages, excluding downloads, queues, paid images and diagnostic views. Peak memory
+is 12.75 GiB. The detailed TRELLIS export is 323 MiB and uses uniform roughness/metallic
+values for its vertex-color preview; spatially varying native PBR is not represented.
+
+The [eight-view gallery](MESHAXIOM_HEAD_GALLERY.md) compares the actual GLBs from
+five independent neural geometries. Rankings are qualitative judgments of facial
+coherence, likeness, profile/rear continuity and visible defects. No post-generation
+mesh editing is used. [Apple Silicon recipes](APPLE_HEAD_MODELS.md) include pinned
+weights, actual tensor sizes, guarded installation and exact reproduction commands.
+The [earlier experiment](MESHAXIOM_EXPERIMENT.md) documents the MeshAxiom geometry port.
+
+| Rank | Approach / variants | Finding |
+| --- | --- | --- |
+| **1** | TRELLIS cascade actual 768, native color field | Best overall shape, hair and coherent eyes; small skin speckles remain |
+| **2** | MeshAxiom 18K, native image1024 PBR + original front | Best compact head and sharp reference face; coarser native geometry |
+| **3** | MeshAxiom 18K, native image512 PBR + original front | Similar compact hybrid; softer unseen details |
+| 4 | Front-first eight-view 2K, 4K and bounded completion | Best photo-only replay; side seams persist; 4K gives modest benefit |
+| 5 | Native image1024 / image512 PBR and 512-PBR/eight-view hybrid | Learned coverage helps unseen sides; softer face or inherited photo seams |
+| 6 | MeshAxiom 29K, eight-view texture / completion | More ear detail, worse eye/lip placement in these samples |
+| 7 | TRELLIS 512 native / original-photo overlay | Raw pupils pale; overlay sharpens eyes but doubles feature outlines |
+| 8 | Original UV/single, Smart UV/single, geometry-guided front | Most unseen surfaces stay neutral despite better atlas occupancy |
+| Rejected | Weighted, best-angle and guided-opposite photo variants | Doubled features or pupil discontinuities |
+| Rejected | TRELLIS two-image 512 and 768 photo overlay | Cheek hair artifact / feature misregistration |
+
+All five neural meshes remain unretouched experimental outputs. No same-reference
+Tripo model was evaluated, so these results do not establish Tripo quality parity
+or production/rigging readiness. The native TRELLIS result is the strongest local
+recipe tested here.
+
+The comparison contains **21 recipes**, with eight matched views of each.
+
+## Measured photo comparisons
 
 The baseline has 18,931 native triangles (18,925 nondegenerate), 1,323 boundary edges
 and six connected components. UV authoring and projection preserve those defects.
@@ -107,7 +141,7 @@ mouth boundaries; it still does not run the full upstream NAF1024 default.
 
 Projecting the original front photograph over this learned material took another
 4.05 seconds through verified output. The whole overlay job, including eight views,
-took 17.60 seconds and peaked at 1.68 GiB. This is currently the strongest compact
+took 17.60 seconds and peaked at 1.68 GiB. This is the selected compact
 MeshAxiom candidate: sharp front features, coherent learned colors on the sides and
 back, and the native metallic/roughness map retained. The photograph observes only
 16.11% of occupied texels. The remainder is model prediction. Geometry, UVs, normals,
@@ -142,6 +176,50 @@ All eight camera labels match the MeshAxiom comparisons semantically: TRELLIS us
 a recorded -90-degree camera-yaw offset because its face points along a different
 world axis. The model itself is unchanged.
 
+The higher cascade requested 1024 but selected an actual **768** grid with 13,128
+shape tokens under the strict 16,384-token bound. High stages use DINO1024 and the
+published 1024 texture flow. It generated **5,598,831 vertices / 11,386,792 triangles**
+and completed its whole guarded job, including exact export and eight views, in
+**1,206.88 seconds (20m07s)**. Peak physical footprint was **13.06 GiB** under the
+14 GiB aggregate guard, with positive empty cleanup and no new swap-out. Native
+inference through shape/PBR checkpoints took 896.5 seconds inside that job; verified
+GLB/source export took 194.21 seconds. The 323 MiB GLB preserves every raw triangle.
+
+This visibly fixes the 512 sample's pale pupil centers and improves hair and facial
+shape across both profiles. Skin speckles remain. It changes resolution, high-stage
+conditioning and model checkpoints together, so this is a comparison of complete
+recipes, not a controlled density-only experiment. The MLX memory setting is a
+guideline: the selected 10 GiB setting reported 11.04 GiB by MLX accounting. The
+separate physical process-tree guard supplies the enforced safety ceiling.
+
+The two-image 512 trial combines the original identity image with one previously
+generated side view by concatenating DINO tokens, without camera labels. It produced
+**4,385,654 native triangles**, completing the whole guarded job and eight views in
+400.84 seconds at 7.13 GiB peak. It is rejected: a new hair tuft crosses the cheek,
+eye detail deteriorates and the higher single-image cascade is visibly stronger.
+The extra DINO construction also changes the RNG state before sampling, so this
+is not a controlled view-count-only comparison. No compatible multiview-trained
+geometry checkpoint was introduced.
+
+The deterministic original-photo overlay on the 512 head changes only native
+COLOR_0 bytes. It touches 11.49% of vertices (not surface-area coverage), preserves
+every zero-weight color and all scene/material/geometry buffers, and finishes its
+whole job plus eight views in 100.84 seconds at 1.80 GiB peak. Nine rigid camera
+poses select yaw -30/pitch -5 with 94.95% silhouette overlap. This is a fresh
+registration of the original identity photograph, not transfer of a calibrated
+multiview receipt or a change to the earlier 95% transfer gate.
+
+The overlay recovers dark pupils and reference detail but leaves doubled brow/lid
+outlines and color patches at the neck and side boundary. It is not selected.
+A good silhouette match still does not guarantee internal facial correspondence.
+
+The same overlay on the 768 head touches 10.53% of vertices. It takes 102.72 seconds
+through verified output, or 207.29 seconds including all eight renders, peaking
+at 4.34 GiB under an 8 GiB aggregate guard. Camera silhouette overlap is 94.26%. The
+original native geometry and every non-color byte remain identical. It is rejected
+for doubled brow/lid outlines, nose misregistration and side/neck color transitions.
+The unoverlaid native 768 material is the selected result.
+
 ## Higher native density
 
 The 30,000-face request produced 14,936 vertices and **29,427 native triangles**
@@ -166,8 +244,8 @@ preserving observations; it took 13.32 seconds and peaked at 1.03 GiB.
 
 At matched viewing size the denser head adds some ear and silhouette detail,
 but it still has the cheek seam and introduces worse eye/lip alignment and pale
-hair patches in these texture samples. The earlier completed 2K head is stronger
-so far. This comparison changes both native geometry and geometry-guided reference
+hair patches in these texture samples. The earlier completed 2K photo-only head is stronger
+than this denser photo-only trial. This comparison changes both native geometry and geometry-guided reference
 images: it does not isolate face density as the cause of any texture difference.
 
 ## Memory and a cheaper replay
@@ -182,7 +260,7 @@ The guard must still obtain normal admission on a shared machine.
 
 The first 16 GiB topology reservation was refused before useful work because the
 full reservation plus the existing 4 GiB host headroom did not fit. Its guarded
-launcher exited with empty, complete cleanup. A new run uses a **lower 12 GiB
+launcher exited with empty, complete cleanup. The subsequent successful topology run used a **lower 12 GiB
 actual-child and aggregate ceiling**, with a matching 12 GiB broker reservation;
 no shared profile, reserve or guard was changed. The owner's 16 GiB maximum is
 an upper bound, not a requirement to reserve unavailable memory.
@@ -302,7 +380,7 @@ The source photographs are 1024 pixels square. A 4K atlas gives their projection
 storage resolution, but it does not create additional source detail or correct feature
 placement. The source mesh's open boundaries and inconsistent winding also survive
 every texture variant. The viewer exposes those edges on the exact native triangles.
-These results remain short of the requested Tripo-quality target for a finished head.
+No same-reference Tripo output was evaluated; native surface defects remain.
 
 Geometry uses the released single-image-conditioned MeshAxiom weights and published
 mean/sample topology decoder. Multiview photographs are used for texture projection.

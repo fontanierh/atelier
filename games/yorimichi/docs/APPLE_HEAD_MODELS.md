@@ -11,7 +11,11 @@ The machine is a 32 GiB M1 Max. A process ceiling is distinct from installed RAM
 for installation, downloads, inference and comparison renders. The explicit larger
 memory reservation uses the existing reviewed MeshAxiom adapter. It never changes
 machine profiles, host reserves or other owners' processes. Each attempt needs a
-new report directory. Commands expected to take more than thirty seconds must run
+new report directory. Ceilings above 10 GiB require the existing managed full-capacity
+broker; unmanaged machines retain the ordinary 10 GiB maximum and refuse before work.
+The native image1024 recipe does not fit that smaller envelope. The measured TRELLIS512
+process peak was 7.19 GiB, but a separate unmanaged 10 GiB run is not claimed.
+Commands expected to take more than thirty seconds must run
 in the client's background facility, retaining the session ID for bounded polls.
 
 Run from the repository root. The examples use an ignored runtime below
@@ -94,8 +98,8 @@ ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/he
 ```
 
 This recipe uses smaller 512-pixel conditioning with 1024 shape support and the
-published 1024 texture checkpoint. A separate successful trial uses `--condition-size 1024 --naf-size 512`: 629.91
-seconds through the verified GLB, 12.75 GiB peak aggregate footprint. Full NAF1024
+published 1024 texture checkpoint. A separate successful trial uses
+`--condition-size 1024 --naf-size 512`: 629.91 seconds through the verified GLB, 12.75 GiB peak aggregate footprint. Full NAF1024
 conditioning hit its allocator limit; neither reduced recipe is the full default.
 The temporary rigid camera alignment is used only for neural support and baking.
 Every exported mesh buffer and original native triangle/winding is verified.
@@ -118,6 +122,21 @@ option concatenates DINO feature sequences. It does not supply calibrated camera
 labels or a new multiview-trained checkpoint, so that route is an experimental
 inference heuristic. The original CUDA implementation and this port are different
 runtime implementations; source identity alone is not proof of numerical parity.
+
+The pinned [official implementation](https://github.com/microsoft/TRELLIS.2/tree/75fbf0183001ed9876c8dbb35de6b68552ee08bd)
+documents 512³–1536³ generation and supplied-shape PBR texturing, with a Linux/NVIDIA
+CUDA environment and at least 24 GB GPU memory. Those CUDA timings and requirements
+are distinct from the measured Apple implementations here.
+
+| Option | Official / port support | Local trial scope |
+| --- | --- | --- |
+| Generation density | Official 512/1024/1536; MLX wrapper 512/768/1024 | 512 and requested1024 reduced to768 by token budget |
+| Texture only on supplied shape | Official TRELLIS.2; MeshAxiom documents Pixal3D plus TRELLIS encoder/decoder | Pixal MPS image512 and image1024, both NAF512 |
+| Sampling steps | MLX wrapper 8/12/20 | 12 in these TRELLIS and native-texture trials |
+| Multiple images | MLX concatenates image-feature tokens; no calibrated view labels | Original identity plus one existing side-view reference |
+| Quantization | MLX optional flow 4/8-bit | Available, not tested or ranked here |
+| Atlas size | MLX wrapper 1K/2K/4K | Raw UV attempt bounded; verified vertex-color alternative used |
+| Mesh cleanup / face target | Port normally supports these export operations | Disabled; every raw native triangle retained |
 
 ```sh
 ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/head_models.py \
@@ -142,9 +161,12 @@ in bounded chunks and compares sorted exact float32 records, retaining winding a
 duplicate counts. This is verification, not repair. Raw meshes can contain millions
 of triangles and be expensive to export or view despite modest neural-model memory.
 
-The 512 trial uses an 8 GiB MLX allocation limit and a separate 12 GiB aggregate
-process-tree guard. Both remain active; framework accounting is not physical process
-footprint. The adapter also drops the sparse-structure models from their caller
+The 512 trial uses an 8 GiB MLX memory setting and a separate 12 GiB aggregate
+process-tree guard. MLX documents `set_memory_limit` as a guideline during graph
+evaluation, not a hard allocation ceiling. The cascade selected 10 GiB but reported
+11.04 GiB peak by MLX accounting; its actual process-tree peak was 13.06 GiB under
+the enforced 14 GiB aggregate guard. Framework accounting is not physical process
+footprint, and the outer guard is the safety ceiling. The adapter also drops the sparse-structure models from their caller
 scope before loading shape models; deleting callee parameters does not release
 caller references. Input preprocessing records the deterministic alpha mask,
 foreground crop and prepared-image hash. Checkpoint/model state mismatches reject.
@@ -157,8 +179,9 @@ the discarded UV attempt. They are separate measured stages.
 `trellis compare` accepts `--model`, `--image`, `--output` and optional
 `--yaw-offset` after `--`, under the same outer guard. It creates eight base-color
 views with the same yaw/pitch labels and framing rule as MeshAxiom, recording any
-camera-frame offset. For this head, pass `--yaw-offset -90` when comparing existing vertex-color exports;
-the generation runner records that offset by default. The source GLB bytes remain unchanged. Use a fresh report for
+camera-frame offset. For this head, pass `--yaw-offset -90` when comparing existing
+vertex-color exports; the generation runner records that offset by default. The
+source GLB bytes remain unchanged. Use a fresh report for
 this separate render job. Base-color comparison avoids differences in PBR lighting;
 interactive material inspection is a separate viewing check.
 
@@ -193,9 +216,9 @@ loading another giant JSON representation into the page. The downloadable source
 and GLB remain complete. Color/gray switching also handles vertex-color materials.
 
 
-For cascade experiments, `--mlx-gib 10` and `--max-tokens 8192` select explicit
-framework/token ceilings while the outer aggregate cap remains independently
-enforced. Requested 1024 grids may reduce in 128-cell steps to meet the token
+For cascade experiments, `--mlx-gib 10` selects the MLX memory guideline and
+`--max-tokens 16384` selects a strict token ceiling. The outer aggregate cap remains
+independently enforced. Requested 1024 grids may reduce in 128-cell steps to meet the token
 ceiling; the actual grid is recorded. This fixes the pinned port's early-exit
 condition that otherwise ignores the limit at 1024 and can loop below a valid grid
 when starting at 768. High stages use 1024-pixel DINO conditioning and the published
@@ -209,6 +232,29 @@ slow raw-mesh unwrap for every trial. The pinned feature extractor fails closed 
 MLX extraction fails; it never falls back to an unpinned local Torch checkout or
 random conditioning. Multiple `--image` inputs still use the port's documented
 feature-concatenation heuristic without camera calibration.
+
+## Reproduce the detailed single-image head
+
+This is the measured cascade recipe. It requests 1024 and records the effective grid;
+the M1 Max trial selected 768 with 13,128 shape tokens and retained all 11,386,792
+triangles. The whole guarded job took 20m07s at 13.06 GiB peak, including eight views.
+Use the pinned `trellis setup` and `trellis download` commands above first.
+
+```sh
+ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/head_models.py \
+  trellis generate --root build/yorimichi/meshaxiom/head-models \
+  --report build/yorimichi/logs/head-trellis-cascade.guard --memory-gib 14 --timeout 3600 -- \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-trellis-cascade \
+  --resolution 1024 --max-tokens 16384 --mlx-gib 10 --steps 12 --vertex-colors
+```
+
+The raw dense GLBs and full source archives are generated comparison outputs beneath
+`build/yorimichi`, alongside SHA-bound model/geometry reports. The viewer offers
+complete GLB/source downloads. They are not game-consumed inputs. The compact 7 MB
+MeshAxiom native-PBR/front-photo head is committed at
+`assets/characters/meshaxiom-skater-head-native/head.glb`, with its source manifest
+and proofs, so a fresh checkout can use that asset without another generation.
 
 ## Original photograph over native vertex colors
 
