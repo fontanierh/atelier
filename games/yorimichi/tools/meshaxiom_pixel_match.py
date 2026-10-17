@@ -1,10 +1,11 @@
 """Calibrate and project a Sunburst reference with the repo's pinned Pixel Match module.
 
-Use through atelier.safety.guarded. This is a single-view experiment: unseen atlas texels
-remain neutral, and projection does not add geometry or repair the generated topology.
+Use through atelier.safety.guarded. A calibrated reference or an explicitly hashed view
+manifest paints visible texels; unseen texels remain neutral. Geometry stays unchanged.
 """
 import argparse
 from contextlib import contextmanager
+from functools import partial
 import hashlib
 import importlib.util
 import json
@@ -156,7 +157,7 @@ def calibrate(args, pm):
 def paint(args, pm):
     """@cc [owner:fontanierh,label:correctness] pixel-match-preserves-generated-geometry
     Projection MUST preserve every position, UV and triangle index. Texels unseen by the
-    calibrated reference MUST keep their neutral base, including a four-texel exclusion
+    calibrated references MUST keep their neutral base, including a four-texel exclusion
     in empty gutters around protected UV coverage. Provenance MUST identify all inputs.
     """
     calibration = json.loads((args.output/'calibration.json').read_text())
@@ -168,9 +169,32 @@ def paint(args, pm):
     positions, uvs, faces, base = pm.read_glb(args.mesh)
     view = pm.View(np.array(Image.open(rgba_path).convert('RGBA')),
                    np.array(calibration['transform_matrix']), calibration['camera_angle_x'], 'Sunburst head')
+    views = [view]
+    view_records = []
+    if getattr(args, 'views', None):
+        manifest = json.loads(args.views.read_text())
+        if manifest['mesh_sha256'] != digest(args.mesh):
+            raise ValueError('Multiview manifest mesh no longer matches')
+        if not 1 <= len(manifest['views']) <= 12:
+            raise ValueError('Use 1–12 calibrated views')
+        views = []
+        for record in manifest['views']:
+            path = args.views.parent/record['image']
+            if digest(path) != record['image_sha256']:
+                raise ValueError('Multiview reference no longer matches')
+            matrix = np.asarray(record['transform_matrix'], dtype=float)
+            fov = float(record['camera_angle_x'])
+            if (matrix.shape != (4, 4) or not np.isfinite(matrix).all() or not 0 < fov < math.pi
+                    or not np.allclose(matrix[3], [0, 0, 0, 1])
+                    or not np.allclose(matrix[:3, :3].T @ matrix[:3, :3], np.eye(3), atol=1e-5)
+                    or not np.isclose(np.linalg.det(matrix[:3, :3]), 1, atol=1e-5)):
+                raise ValueError('Invalid multiview camera')
+            views.append(pm.View(matte(Image.open(path)), matrix, fov, record['name']))
+            view_records.append(record)
     with stage('Pixel Match projection'):
-        painted, weights = pm.paint_texture(base, positions, uvs, faces, [view], frame=IDENTITY_FRAME,
-                                           settings=pm.Settings(match_colour=False))
+        projector = partial(best_angle, pm=pm) if getattr(args, 'blend', 'weighted') == 'best-angle' else pm.paint_texture
+        painted, weights = projector(base, positions, uvs, faces, views, frame=IDENTITY_FRAME,
+                                     settings=pm.Settings(match_colour=False))
     with stage('Protection and geometry validation'):
         h, w = base.shape[:2]
         face_of, _ = pm.rasterize((uvs*np.array([w, h]))[faces], np.zeros((len(faces), 3)), (h, w))
@@ -212,9 +236,43 @@ def paint(args, pm):
                   covered_surface_fraction_painted=float(((weights > 0) & covered).sum()/max(covered.sum(), 1)),
                   protected_texels=int(protected.sum()), changed_protected_texels=0,
                   geometry_and_uvs_identical=True, non_texture_buffers_identical=True,
-                  unseen_surface='Neutral base retained. One view; no inferred back texture.', match_colour=False)
+                  view_count=len(views), views=view_records,
+                  blend=getattr(args, 'blend', 'weighted'),
+                  views_manifest_sha256=digest(args.views) if getattr(args, 'views', None) else None,
+                  unseen_surface='Neutral base retained wherever no calibrated view has weight.', match_colour=False)
     (args.output/'pixel-match-report.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(report), flush=True)
+
+
+def best_angle(texture, positions, uvs, faces, views, *, frame, settings, pm):
+    """Select the most frontal visible reference per texel; keep zero-weight base unchanged."""
+    h, w = texture.shape[:2]
+    face_of, bary = pm.rasterize((uvs*np.array([w, h]))[faces], np.zeros((len(faces), 3)), (h, w))
+    covered = face_of >= 0
+    corners = faces[face_of[covered]]
+    view_pos = pm.to_view_space(positions, frame)
+    normals = pm.vertex_normals(view_pos, faces)
+    points = (bary[covered, :, None]*view_pos[corners]).sum(axis=1)
+    normal = (bary[covered, :, None]*normals[corners]).sum(axis=1)
+    normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-12)
+    best = np.zeros(len(points))
+    weight = np.zeros(len(points))
+    colour = np.zeros((len(points), 3))
+    for index, view in enumerate(views):
+        confidence, rgb = pm.view_weights(points, normal, view, view_pos, faces, settings)
+        direction = view.position-points
+        direction /= np.maximum(np.linalg.norm(direction, axis=1, keepdims=True), 1e-12)
+        score = confidence*np.abs((normal*direction).sum(axis=1))**4
+        take = score > best
+        best[take], weight[take], colour[take] = score[take], confidence[take], rgb[take]
+        print(f'Best-angle projection: {index+1}/{len(views)} views evaluated', flush=True)
+    out = texture.astype(float).copy()
+    own = out[covered, :3]
+    out[covered, :3] = own*(1-weight[:, None])+colour*weight[:, None]
+    weights = np.zeros((h, w))
+    weights[covered] = weight
+    out, weights = pm._grow_into_gutter(out, weights, covered, settings.gutter_px)
+    return np.clip(np.rint(out), 0, 255).astype('uint8'), weights
 
 
 def main():
@@ -226,6 +284,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--yaw', type=float)
     parser.add_argument('--pitch', type=float)
+    parser.add_argument('--views', type=Path, help='Optional hashed camera/image manifest for multiview painting')
+    parser.add_argument('--blend', choices=['weighted', 'best-angle'], default='weighted')
     args = parser.parse_args()
     pm = load_module(args.module)
     (calibrate if args.stage == 'calibrate' else paint)(args, pm)

@@ -125,3 +125,81 @@ def test_projection_preserves_geometry_and_occluded_texels(adapter, tmp_path):
     reference.write_bytes(b'changed reference')
     with pytest.raises(ValueError,match='no longer match'):
         adapter.paint(args,pm)
+
+
+@pytest.mark.parametrize('blend', ['weighted', 'best-angle'])
+def test_multiview_reaches_occluded_rear_without_changing_front_geometry(adapter, tmp_path, blend):
+    vendor = REPO/'games/yorimichi/tools/pixel_match/photo_paint.py'
+    pm = adapter.load_module(vendor)
+    model = tmp_path/'clay.glb'
+    fixture_glb(pm, model)
+    front = tmp_path/'front.png'
+    rear = tmp_path/'rear.png'
+    Image.new('RGBA', (64, 64), (210, 40, 20, 255)).save(front)
+    Image.new('RGBA', (64, 64), (20, 40, 210, 255)).save(rear)
+    Image.open(front).save(tmp_path/'reference-matted.png')
+    camera = np.eye(4)
+    camera[2, 3] = 3
+    back_camera = np.diag([-1., 1., -1., 1.])
+    back_camera[2, 3] = -3
+    fov = float(np.deg2rad(45))
+    (tmp_path/'calibration.json').write_text(json.dumps(dict(
+        mesh_sha256=adapter.digest(model), reference_sha256=adapter.digest(front),
+        matted_sha256=adapter.digest(tmp_path/'reference-matted.png'),
+        transform_matrix=camera.tolist(), camera_angle_x=fov)))
+    manifest = tmp_path/'views.json'
+    views = [dict(name=name, image=path.name, image_sha256=adapter.digest(path),
+                  transform_matrix=matrix.tolist(), camera_angle_x=fov)
+             for name, path, matrix in [('front', front, camera), ('rear', rear, back_camera)]]
+    manifest.write_text(json.dumps(dict(mesh_sha256=adapter.digest(model), views=views)))
+    args = SimpleNamespace(module=vendor, mesh=model, image=front, output=tmp_path, views=manifest, blend=blend)
+    adapter.paint(args, pm)
+    report = json.loads((tmp_path/'pixel-match-report.json').read_text())
+    assert report['view_count'] == 2 and report['covered_surface_fraction_painted'] > .9
+    assert report['non_texture_buffers_identical'] and report['geometry_and_uvs_identical']
+    after = pm.read_glb(tmp_path/'head-pixel-match.glb')[3]
+    assert after[32, 16, 0] > after[32, 16, 2]  # front stays red
+    assert after[32, 48, 2] > after[32, 48, 0]  # formerly unseen rear becomes blue
+    views[0]['transform_matrix'][0][0] = 2
+    manifest.write_text(json.dumps(dict(mesh_sha256=adapter.digest(model), views=views)))
+    with pytest.raises(ValueError, match='Invalid multiview camera'):
+        adapter.paint(args, pm)
+    views[0]['transform_matrix'] = camera.tolist()
+    manifest.write_text(json.dumps(dict(mesh_sha256=adapter.digest(model), views=views)))
+    rear.write_bytes(b'changed reference')
+    with pytest.raises(ValueError, match='reference no longer matches'):
+        adapter.paint(args, pm)
+
+
+@pytest.mark.parametrize('mutation', ['position', 'winding'])
+def test_uv_verifier_detects_geometry_edits_even_with_identical_counts(adapter, tmp_path, monkeypatch, mutation):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_quality_test', SCRIPT.with_name('meshaxiom_quality.py'))
+    quality = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(quality)
+    pm = adapter.load_module(REPO/'games/yorimichi/tools/pixel_match/photo_paint.py')
+    model = tmp_path/'clay.glb'
+    fixture_glb(pm, model)
+    native = tmp_path/'mesh.json'
+    native.write_text(json.dumps(dict(vertices=[[-1,-1,0],[1,-1,0],[1,-1,2],[-1,-1,2],
+                                               [-1,1,0],[1,1,0],[1,1,2],[-1,1,2]],
+                                      faces=[[0,1,2],[0,2,3],[4,6,5],[4,7,6]])))
+    positions = np.array([[-.175,0,.175],[.175,0,.175],[.175,.35,.175],[-.175,.35,.175],
+                          [-.175,0,-.175],[.175,0,-.175],[.175,.35,-.175],[-.175,.35,-.175]], dtype='<f4')
+    doc, binary = pm._split_glb(model.read_bytes())
+    binary = bytearray(binary)
+    binary[:positions.nbytes] = positions.tobytes()
+    model.write_bytes(pm._join_glb(doc, bytes(binary)))
+    assert quality.verify_geometry(native, model, pm)['all_triangles_and_winding_preserved']
+    if mutation == 'position':
+        positions[0, 0] += .001
+        binary[:positions.nbytes] = positions.tobytes()
+    else:
+        view = doc['bufferViews'][2]
+        offset = view['byteOffset']
+        indices = np.frombuffer(binary, dtype='<u2', count=12, offset=offset).copy()
+        indices[0], indices[1] = indices[1], indices[0]
+        binary[offset:offset+indices.nbytes] = indices.tobytes()
+    model.write_bytes(pm._join_glb(doc, bytes(binary)))
+    with pytest.raises(ValueError, match='coordinates or winding changed'):
+        quality.verify_geometry(native, model, pm)

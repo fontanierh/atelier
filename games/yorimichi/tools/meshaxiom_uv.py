@@ -5,6 +5,7 @@ Run with Blender --background --threads 3 --python SCRIPT -- ARGS under Atelier'
 import argparse
 from array import array
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -21,7 +22,11 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--height', type=float, default=.35)
     parser.add_argument('--atlas-size', type=int, choices=[1024, 2048], default=2048)
+    parser.add_argument('--angle', type=float, default=66)
+    parser.add_argument('--margin', type=float, default=.008)
     args = parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+    if not (1 <= args.angle <= 89 and 0 <= args.margin <= .05):
+        parser.error('UV angle must be 1–89 degrees and margin 0–0.05')
     start = time.monotonic()
     args.output.mkdir(parents=True, exist_ok=True)
     data = json.loads(args.mesh.read_text())
@@ -44,7 +49,7 @@ def main():
     print(f'Adding UVs to {len(mesh.polygons)} native triangles, no remeshing or subdivision', flush=True)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.smart_project(angle_limit=1.151917306, island_margin=.008)
+    bpy.ops.uv.smart_project(angle_limit=math.radians(args.angle), island_margin=args.margin)
     bpy.ops.object.mode_set(mode='OBJECT')
     if len(mesh.polygons) != len(data['faces']) or len(mesh.vertices) != len(positions):
         raise RuntimeError('UV preparation changed the native geometry counts')
@@ -66,7 +71,8 @@ def main():
                   authoring_vertices=len(mesh.vertices), authoring_triangles=len(mesh.polygons),
                   height_metres=args.height, uniform_scale=scale, shading='smooth',
                   geometry_changes='Uniform scale and origin only; original connectivity',
-                  uv_method='Blender Smart UV Project, 66 degrees, 0.008 island margin',
+                  uv_method='Blender Smart UV Project', angle_degrees=args.angle,
+                  island_margin=args.margin,
                   atlas_size=args.atlas_size, seconds=time.monotonic()-start)
     (args.output/'uv-export.json').write_text(json.dumps(record, indent=2)+'\n')
     print(json.dumps(record), flush=True)

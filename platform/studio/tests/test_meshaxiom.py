@@ -45,7 +45,8 @@ def test_complete_payload_receipt_identifies_every_consumed_file(tmp_path, monke
         assert hashlib.sha256((tmp_path/'models'/record['file']).read_bytes()).hexdigest() == record['sha256']
 
 
-@pytest.mark.parametrize('flag,value', [('--face-budget', '-1'), ('--max-nodes', '26001'), ('--stop-level', '10')])
+@pytest.mark.parametrize('flag,value', [('--face-budget', '-1'), ('--face-budget', '30001'),
+                                       ('--max-nodes', '26001'), ('--stop-level', '10')])
 def test_unsafe_worker_arguments_fail_before_allocating_or_creating_output(tmp_path, monkeypatch, flag, value):
     from atelier.ai.meshaxiom import worker
     output = tmp_path/'result'

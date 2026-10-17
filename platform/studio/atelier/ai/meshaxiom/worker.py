@@ -172,8 +172,8 @@ def main():
     p.add_argument('--seed',type=int,default=2026082301);p.add_argument('--stop-level',type=int,default=9)
     p.add_argument('--max-nodes',type=int,default=8192);p.add_argument('--load-only',action='store_true')
     args=p.parse_args()
-    if not (1<=args.face_budget<=16000 and 1<=args.steps<=40 and 1<=args.max_nodes<=26000 and 1<=args.stop_level<=9):
-        p.error('face budget 1–16000, steps 1–40, max nodes 1–26000 and stop level 1–9 are required')
+    if not (1<=args.face_budget<=30000 and 1<=args.steps<=40 and 1<=args.max_nodes<=26000 and 1<=args.stop_level<=9):
+        p.error('face budget 1–30000, steps 1–40, max nodes 1–26000 and stop level 1–9 are required')
     args.root=args.root.resolve();args.output.mkdir(parents=True,exist_ok=True)
     if args.stage=='topology':
         validate_vertex_input(args)

@@ -16,8 +16,8 @@ def main():
     parser.add_argument('--max-nodes',type=int,default=8192)
     parser.add_argument('--stage',choices=['all','vertex','topology'],default='all')
     args=parser.parse_args()
-    if not 1<=args.face_budget<=16000 or not 1<=args.steps<=40 or not 1<=args.max_nodes<=26000:
-        parser.error('face budget must be 1–16000, steps 1–40, max nodes 1–26000')
+    if not 1<=args.face_budget<=30000 or not 1<=args.steps<=40 or not 1<=args.max_nodes<=26000:
+        parser.error('face budget must be 1–30000, steps 1–40, max nodes 1–26000')
     args.output.mkdir(parents=True,exist_ok=True)
     for stage in (['vertex','topology'] if args.stage=='all' else [args.stage]):
         subprocess.run([sys.executable,'-u','-m','atelier.ai.meshaxiom.worker','--stage',stage,

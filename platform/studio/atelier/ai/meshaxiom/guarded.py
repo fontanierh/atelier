@@ -49,7 +49,7 @@ def main():
     p.add_argument('--memory-gib', type=int, choices=range(10, 17), default=10)
     p.add_argument('--timeout', type=int, default=3600)
     args = p.parse_args()
-    if not (1 <= args.face_budget <= 16000 and 1 <= args.steps <= 40
+    if not (1 <= args.face_budget <= 30000 and 1 <= args.steps <= 40
             and 1 <= args.max_nodes <= 26000 and 1 <= args.timeout <= 7200):
         p.error('Invalid face/step/node bounds or stage deadline (1–7200 seconds)')
     if args.report.exists():
