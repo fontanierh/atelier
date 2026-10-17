@@ -163,18 +163,26 @@ def seeds(mask, count):
     return points
 
 
-def priors(rgb, occupied):
+def priors(rgb, occupied, hair_palette='navy'):
     from scipy import ndimage
     from scipy.spatial import ConvexHull, QhullError
     values = rgb.astype('float32')/255
+    chroma = values.max(2)-values.min(2)
     skin = ((values[..., 0] > .45) & (values[..., 0] > values[..., 1]*1.15)
             & (values[..., 0] > values[..., 2]*1.4) & occupied)
-    navy = (values.max(2) < .4) & (values[..., 2] > values[..., 0]*.95) & occupied
-    labels, _ = ndimage.label(navy, structure=np.ones((3, 3)))
+    if hair_palette == 'navy':
+        hair_prior = (values.max(2) < .4) & (values[..., 2] > values[..., 0]*.95) & occupied
+    elif hair_palette == 'grey':
+        # Kiyo's hair is neutral silver-grey, not the skater's navy. The skin
+        # hull below protects detached brows and eye shapes as features.
+        hair_prior = ((chroma < .12) & (values.max(2) > .24) & (values.max(2) < .98) & occupied)
+    else:
+        raise ValueError('Unsupported hair palette')
+    labels, _ = ndimage.label(hair_prior, structure=np.ones((3, 3)))
     counts = np.bincount(labels.ravel()); counts[0] = 0
     hair = labels == counts.argmax() if counts.max() else np.zeros_like(skin)
-    # Skin's convex support includes facial features; detached navy components
-    # outside it (e.g. a ponytail) belong to hair rather than brows/eyeliner.
+    # Skin's convex support includes facial features; detached hair components
+    # outside it (e.g. a ponytail or low bun) belong to hair rather than brows.
     samples = np.argwhere(skin)
     inside = np.zeros_like(skin)
     if len(samples) >= 3:
@@ -194,7 +202,7 @@ def priors(rgb, occupied):
     # inside the skin hull even when connected to the main hair component.
     # This also leaves some bangs unknown: conservative repainting is intended.
     dark_features = (values.max(2) < .4) & occupied & (~hair | inside)
-    neutral = ((values.min(2) > .45) & ((values.max(2)-values.min(2)) < .25) & occupied & ~hair)
+    neutral = ((values.min(2) > .45) & (chroma < .25) & occupied & ~hair)
     features = ndimage.binary_dilation(dark_features | neutral, iterations=2)
     return skin & ~features, hair & ~features, features & occupied
 
@@ -231,7 +239,7 @@ def infer(args):
         rgba = np.array(Image.open(image_path).convert('RGBA'))
         occupied = rgba[..., 3] > 250
         rgb = rgba[..., :3].copy(); rgb[~occupied] = 128
-        skin, hair, features = priors(rgb, occupied)
+        skin, hair, features = priors(rgb, occupied, args.hair_palette)
         skin_points, hair_points, feature_points = seeds(skin, 6), seeds(hair, 6), seeds(features, 6)
         masks, prompts = {}, []
         for name, positive, negative, prior in [('skin', skin_points, hair_points+feature_points, skin),
@@ -377,15 +385,25 @@ def project(args):
             or not all(np.isfinite(a).all() for a in (support, colors))
             or colors.min() < 0 or colors.max() > 1):
         raise ValueError('Invalid repaint color support')
-    warm = (colors[:, 0] > colors[:, 1]*1.15) & (colors[:, 0] > colors[:, 2]*1.35) & (colors[:, 0] > .2)
-    navy = (colors.max(1) < .4) & (colors[:, 2] > colors[:, 0]*.95)
     values = texture.astype('float32')/255
+    warm = (colors[:, 0] > colors[:, 1]*1.15) & (colors[:, 0] > colors[:, 2]*1.35) & (colors[:, 0] > .2)
+    if args.hair_palette == 'navy':
+        hair_colors = (colors.max(1) < .4) & (colors[:, 2] > colors[:, 0]*.95)
+        skin_contamination = (values.max(2) < .4) & (values[..., 2] > values[..., 0]*.95)
+    elif args.hair_palette == 'grey':
+        # Kiyo-specific neutral silver-grey hair. The indigo hat is separate
+        # authored geometry and never reaches this bake.
+        hair_colors = ((colors.max(1)-colors.min(1) < .12)
+                       & (colors.max(1) > .24) & (colors.max(1) < .98))
+        skin_contamination = ((values.max(2) < .42) & (values.max(2)-values.min(2) < .12))
+    else:
+        raise ValueError('Unsupported hair palette')
     skin_target, hair_target = skin.copy(), hair.copy()
     if args.paint_mode == 'repair':
-        skin_target &= (values.max(2) < .4) & (values[..., 2] > values[..., 0]*.95)
+        skin_target &= skin_contamination
         hair_target &= (values[..., 0] > values[..., 1]*1.15) & (values[..., 0] > values[..., 2]*1.35)
     painted = texture.copy()
-    for name, target, candidates in [('skin', skin_target, warm), ('hair', hair_target, navy)]:
+    for name, target, candidates in [('skin', skin_target, warm), ('hair', hair_target, hair_colors)]:
         y, x = np.nonzero(target)
         if not len(y):
             continue
@@ -443,6 +461,7 @@ def main():
     p.add_argument('--output', type=Path)
     p.add_argument('--device', choices=['auto', 'cpu', 'mps'], default='auto')
     p.add_argument('--paint-mode', choices=['repair', 'full'], default='repair')
+    p.add_argument('--hair-palette', choices=['navy', 'grey'], default='navy')
     args = p.parse_args()
     return globals()[args.stage](args)
 

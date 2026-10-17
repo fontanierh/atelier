@@ -1,0 +1,22 @@
+{
+  "method": "Automatic color prompts + eight-view SAM2 + visibility-weighted UV fusion",
+  "paint_mode": "repair",
+  "input_sha256": "1234b30e32acb0d52ea4e2f5c69872cc4db037014397c2787f454c717eaec981",
+  "output_sha256": "7d1f4965303d959124ce14ca2cdb96f8ce3d228b18ff168944e108344eabcac7",
+  "mesh_sha256": "5c2b0dcc7495ba8d02e29349f5ce7ba1cb51bf8e29d5e99dccfd55a0b9b5bbda",
+  "masks_manifest_sha256": "d06ec93355f70f140039c7da11d020b6d34032a81fdec9d98af5b06043924b37",
+  "color_cloud_sha256": "1ce7a634c13a7d5c0b8910c0c52c4548119970da2e03f33bfdca31e33f2c6477",
+  "sam2_revision": "de431c4043854a71d8101e17995dfe596bf101a5",
+  "sam2_weights_sha256": "48c14467e5cf9e51870511feb72c89688e82dd74523142c0538b663e193ac2a7",
+  "export_vertices": 70723,
+  "geometry_normals_uv_indices_sha256": "3471fb150b59aa0001f01afeae74d1d9aa76f62d45c4e2f066c6efefce890ece",
+  "skin_texels": 2135680,
+  "hair_texels": 6015115,
+  "protected_texels": 2464827,
+  "painted_skin_texels": 57,
+  "painted_hair_texels": 73,
+  "protected_texture_sha256": "aa61e3a08ea828ad19edcbb71922c5da6b7af90a33ef0e72aab9da3da93757be",
+  "geometry_normals_uv_indices_identical": true,
+  "seconds": 25.62957574997563,
+  "limitations": "Approximate palette-prompted masks; gold regions protect features and unknown surfaces. Inspect before reuse."
+}

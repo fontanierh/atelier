@@ -24,6 +24,7 @@ def main(argv=None):
     p.add_argument('--report', type=Path, required=True)
     p.add_argument('--device', choices=['auto', 'cpu', 'mps'], default='auto')
     p.add_argument('--paint-mode', choices=['repair', 'full'], default='repair')
+    p.add_argument('--hair-palette', choices=['navy', 'grey'], default='navy')
     p.add_argument('--memory-gib', type=int, choices=range(4, 11), default=8)
     p.add_argument('--timeout', type=int, default=900)
     args = p.parse_args(argv)
@@ -44,7 +45,7 @@ def main(argv=None):
         p.error('Repainting requires the source --color-cloud')
     py = sys.executable if args.stage == 'setup' else str(root/('sam-venv' if args.stage == 'infer' else 'venv')/'bin/python')
     command = [py, '-u', str(WORKER), args.stage, '--root', str(root), '--device', args.device,
-               '--paint-mode', args.paint_mode]
+               '--paint-mode', args.paint_mode, '--hair-palette', args.hair_palette]
     for name in ('source', 'model', 'views', 'color_cloud', 'output'):
         value = getattr(args, name)
         if value is not None:

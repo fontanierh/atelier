@@ -80,7 +80,7 @@ def test_texture_geometry_collision_and_animation_sources_are_complete():
     verifier = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(verifier)
     report = verifier.verify()
-    assert report['formats']['.blend'] == 5
+    assert report['formats']['.blend'] == 6
     for path in (ASSETS / 'characters').glob('*/character.toml'):
         character = tomllib.loads(path.read_text())
         if character.get('source'):

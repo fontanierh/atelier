@@ -1,0 +1,12 @@
+{
+  "method": "Blender Smart UV charts with conflicting faces split, then pack islands",
+  "source": "mesh-160000-smartrepair.npz",
+  "output": "mesh-160000-smartrepair-r2.npz",
+  "vertices": 80014,
+  "triangles": 160000,
+  "uv_min": 0.0028815451078116894,
+  "uv_max": 0.9971185922622681,
+  "island_margin": 0.0015,
+  "seconds": 3.645,
+  "exact_triangles": true
+}

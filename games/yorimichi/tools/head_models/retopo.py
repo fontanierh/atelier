@@ -203,6 +203,12 @@ def unwrap(vertices, faces, size):
         packed = xatlas.Atlas()
         corners = np.arange(faces.size, dtype='uint32').reshape(-1, 3)
         packed.add_uv_mesh(uv.reshape(-1, 2), corners, face_materials=labels[:, None])
+        # Thousands of repaired triangle islands need the requested page size.
+        # Automatic packing can choose a smaller page and overlap them at 4096.
+        # Eight texels also over-pads these tiny islands; four is the measured
+        # collision-free layout for the Kiyo 100K surface.
+        pack.resolution = size
+        pack.padding = 4
         with progress('Repacking intact charts and repaired triangle islands'):
             packed.generate(pack_options=pack)
         mapping, indices, coords = packed[0]

@@ -10,6 +10,10 @@ entirely by [build.py](build.py) in headless Blender from [kiyo_mesh.py](kiyo_me
 no downloaded mesh, photogrammetry or texture atlas. Her visible design is deliberately limited to broad faceted
 forms that survive at game-camera distance.
 
+The [local TRELLIS variant](trellis/README.md) is the separately generated head-and-body rebuild used for the
+comparison viewer. It keeps the procedural `Kiyo-r01` above as its baseline and records the measured neck, profile
+and hat fit, the selected GLB/Blend and the local generation reports.
+
 ## Build
 
 ```sh
@@ -46,3 +50,4 @@ review.
 | `build.py` | headless Blender scene, validation, renders, packed `.blend` and GLB export |
 | `verify.py` | fresh-checkout checks for the GLB, rig, vertex colours, bounds and committed source hash |
 | `references/` | the approved compact sheets, prompts and provenance |
+| `trellis/` | the selected local TRELLIS head/body variant, references and reports |

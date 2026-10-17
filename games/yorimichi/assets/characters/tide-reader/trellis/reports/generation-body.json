@@ -1,0 +1,56 @@
+{
+  "worker_sha256": "43c0e46379673a117041614388a3429aa6f75f3b448697a7c89373d719991dca",
+  "backend": "Microsoft TRELLIS.2 MLX, native vertex colors",
+  "native_vertices": 2166686,
+  "native_triangles": 4345274,
+  "output_sha256": "48a056755509561070b0be6043b0b36551319801ef90f7c7fd914431b76ce532",
+  "native_checkpoint_sha256": "c2141138c00a5d0f3050ab699fee9c16318acfb429f7046319556c1ed0694418",
+  "all_native_positions_and_indices_exact": true,
+  "seconds": 459.981,
+  "strict_model_key_checks": [
+    {
+      "file": "ss_flow_img_dit_1_3B_64_bf16.safetensors",
+      "keys": 640,
+      "strict_complete_state": true
+    },
+    {
+      "file": "ss_dec_conv3d_16l8_fp16.safetensors",
+      "keys": 74,
+      "strict_complete_state": true
+    },
+    {
+      "file": "slat_flow_img2shape_dit_1_3B_512_bf16.safetensors",
+      "keys": 640,
+      "strict_complete_state": true
+    },
+    {
+      "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+      "keys": 292,
+      "strict_complete_state": true
+    },
+    {
+      "file": "slat_flow_img2shape_dit_1_3B_1024_bf16.safetensors",
+      "keys": 640,
+      "strict_complete_state": true
+    },
+    {
+      "file": "shape_dec_next_dc_f16c32_fp16.safetensors",
+      "keys": 292,
+      "strict_complete_state": true
+    },
+    {
+      "file": "slat_flow_imgshape2tex_dit_1_3B_1024_bf16.safetensors",
+      "keys": 640,
+      "strict_complete_state": true
+    },
+    {
+      "file": "tex_dec_next_dc_f16c32_fp16.safetensors",
+      "keys": 284,
+      "strict_complete_state": true
+    }
+  ],
+  "mlx_peak_bytes": 6512500222,
+  "quantize": 0,
+  "resolution_requested": 1024,
+  "actual_mesh_grid_size": 1024
+}
