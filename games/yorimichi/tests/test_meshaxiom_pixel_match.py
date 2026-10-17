@@ -338,3 +338,22 @@ def test_transferred_photos_keep_original_mesh_identity_and_reject_new_silhouett
     guide.write_bytes(b'target guide changed after calibration')
     with pytest.raises(ValueError, match='Target projection guide changed'):
         quality.projection_fit(tmp_path, camera, photo)
+
+
+def test_completion_preserves_observations_and_only_fills_nearby_unseen_samples(monkeypatch):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_completion_test', SCRIPT.with_name('meshaxiom_complete.py'))
+    completion = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(completion)
+    points = np.array([[0,0,0],[.001,0,0],[.025,0,0],[.026,0,0],[.04,0,0]])
+    colours = np.array([[200,20,10],[128,128,128],[10,20,200],[128,128,128],[128,128,128]], dtype='uint8')
+    observed = np.array([True,False,True,False,False])
+    result, filled = completion.extrapolate(points, colours, observed)
+    assert np.array_equal(result[observed], colours[observed])
+    assert np.array_equal(result[1], colours[0])
+    assert np.array_equal(result[3], colours[2])
+    assert np.array_equal(result[4], colours[4])
+    assert filled.tolist() == [False,True,False,True,False]
+    assert np.array_equal(colours[1], [128,128,128])  # the original texture remains an independent input
+    with pytest.raises(ValueError, match='bounded completion workspace'):
+        completion.extrapolate(np.array([[0.,0,0],[1,1,1]]), colours[:2], observed[:2])

@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/head-texture.yml'
       - 'games/yorimichi/tools/meshaxiom_quality.py'
+      - 'games/yorimichi/tools/meshaxiom_complete.py'
       - 'games/yorimichi/tools/meshaxiom_pixel_match.py'
       - 'games/yorimichi/tools/pixel_match/**'
       - 'games/yorimichi/assets/characters/meshaxiom-head-reference-set/**'
@@ -65,3 +66,20 @@ jobs:
             build/yorimichi/meshaxiom/ci-head-quality/texture-comparison.json
             build/yorimichi/meshaxiom/ci-head-quality/reference-validation.json
             build/yorimichi/meshaxiom/ci-head-quality/guard/memory-health-tree.json
+      - name: Test bounded surface colour completion without changing observed texels
+        run: |
+          nice -n 10 uv run python -u games/yorimichi/tools/meshaxiom_complete.py \
+            --source build/yorimichi/meshaxiom/ci-head-quality/front-first \
+            --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+            --output build/yorimichi/meshaxiom/ci-head-quality/surface-fill \
+            --report build/yorimichi/meshaxiom/ci-head-quality/completion-guard --memory-gib 4
+      - name: Retain completion experiment and unchanged-geometry evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: head-completion-${{ github.event.pull_request.head.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            build/yorimichi/meshaxiom/ci-head-quality/surface-fill/
+            build/yorimichi/meshaxiom/ci-head-quality/completion-guard/memory-health-tree.json
