@@ -6397,6 +6397,46 @@
       "bytes": 4521568,
       "sha256": "cbd234756dc1372f0dd82edcf1ba8edc49b172f7729f5c2f8b1ba4fb4aa50a69"
     },
+    "shorelines/concepts/belmonte-east.jpg": {
+      "bytes": 368593,
+      "sha256": "f797bdcd8ace47072ecdc0704d5a26d8a734cc8cac5b83fa629c2b23fa77fe49"
+    },
+    "shorelines/concepts/belmonte-west.jpg": {
+      "bytes": 397911,
+      "sha256": "fb4afb05d9207dbbd828db1853836aca17cb9d4752f2dfbe7718e0617eaae49e"
+    },
+    "shorelines/concepts/east-city.jpg": {
+      "bytes": 433678,
+      "sha256": "00bdcb32e7cdea235a11aea96229326b9f7f9487f69dd618ad2051354d1603e4"
+    },
+    "shorelines/concepts/east-volcano.jpg": {
+      "bytes": 398621,
+      "sha256": "2cf6f82f9799f88f0a5df4f5777fe56ff955ed5056888e29c462111af04c9e76"
+    },
+    "shorelines/concepts/harbor.jpg": {
+      "bytes": 377631,
+      "sha256": "758d75ea5228eeee3136fc8f4163f5b37e92afca28f3357cc310290fee7025e6"
+    },
+    "shorelines/concepts/islet.jpg": {
+      "bytes": 371445,
+      "sha256": "811c458d6455121b7cf7ff9cef178094c631349ea1aae9cba38b9371bf5fd65e"
+    },
+    "shorelines/concepts/north.jpg": {
+      "bytes": 352885,
+      "sha256": "682f398003e5f2785776b24b4cc131149e212167a196e26e617477038d87a3c2"
+    },
+    "shorelines/concepts/southwest.jpg": {
+      "bytes": 397175,
+      "sha256": "650e00221fd2437de85249feb79c01f6dfe7ad129d9020b69aefb0d8030e2e8e"
+    },
+    "shorelines/concepts/spawn.jpg": {
+      "bytes": 362927,
+      "sha256": "ec526bd33dfcdc5db3a747f5522bac02ada66818cdbc063e316d5992853cf170"
+    },
+    "shorelines/concepts/west-volcano.jpg": {
+      "bytes": 346117,
+      "sha256": "1e52f06e01ad8a37586f328c1b05c512e21c1300412d1d56d31c0f7c198eed00"
+    },
     "skatepark/concepts/bowl-transitions.jpg": {
       "bytes": 335478,
       "sha256": "edf136622f9d377e0729e19d68c7c5b63ebd48e2921802c59f1c429dfe1340ab"

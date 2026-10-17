@@ -77,6 +77,8 @@ def main():
     # terrain: same path as the world setup
     terrain=V.import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain')
     sand_material()
+    from forest_ground import coast_instance
+    coast_instance()
     for i,slot in enumerate(terrain.static_materials):
         key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]
         m=EAL.load_asset('/Game/Japan/Materials/MI_'+key);assert m,'Missing terrain material '+key

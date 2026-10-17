@@ -7,12 +7,13 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 from pathlib import Path
 import unreal
 import sea_look
+import coast_water
 
 EAL=unreal.EditorAssetLibrary
 MEL=unreal.MaterialEditingLibrary
 
 # HD_Sea's rectangle in Blender metres (x0, y0, x1, y1: hidamari/build.py sea_mesh) and the width of its calm border (m)
-SEA_RECT=(300,-1600,1800,600)
+SEA_RECT=coast_water.HARBOR_RECT
 EDGE=200
 FAR_FADE=(300,900)   # metres: the lit harbour water gives way to the open sea look with distance
 
@@ -70,7 +71,7 @@ def material(water=False):
         depth=node(unreal.MaterialExpressionPixelDepth)
         edge=custom(f'''
 float x=P.x*.01, y=-P.y*.01;     // Blender metres: Unreal's y is negated
-return smoothstep(0,1,saturate(min(min(x-{x0}.,{x1}.-x),min(y-({y0}.),{y1}.-y))/{EDGE}.))*(1-smoothstep({FAR_FADE[0]*100}.,{FAR_FADE[1]*100}.,D));
+return smoothstep(0,1,saturate(min(min(x-{S.num(x0)},{S.num(x1)}-x),min(y-({S.num(y0)}),{S.num(y1)}-y))/{S.num(EDGE)}))*(1-smoothstep({FAR_FADE[0]*100}.,{FAR_FADE[1]*100}.,D));
 ''',[('P',pos,''),('D',depth,'')],FLOAT1)
         # H: with distance the lit water gives way to the same haze as the open sea's.
         haze=custom(S.HAZE,[('D',depth,'')],FLOAT1)

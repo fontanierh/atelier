@@ -1,0 +1,242 @@
+[
+  {
+    "id": "01",
+    "key": "spawn",
+    "title": "Spawn & Sunset Pier",
+    "tagline": "A welcoming crescent",
+    "kind": "Beach",
+    "priority": "P1",
+    "bounds": [
+      -380,
+      -240,
+      300,
+      -100
+    ],
+    "pin": [
+      -140,
+      -180
+    ],
+    "where": "The first stretch below the hamlet road, including the mainland around Sunset Pier.",
+    "problem": "Ground meets the sea without a continuous authored beach; the small cove sand pad does not cover this frontage.",
+    "proposal": "A 20\u201335 m pale sand crescent below the road, with two short dark rock shoulders and a gently submerged sand shelf. Keep the pier, road and island crossing clear.",
+    "access": "Low coastal steps beside the existing detour lane; an uninterrupted walkable dry strip where slope allows.",
+    "image": "assets/spawn.jpg",
+    "provenance": "assets/spawn.provenance.json"
+  },
+  {
+    "id": "02",
+    "key": "harbor",
+    "title": "Hidamari south & harbor",
+    "tagline": "A working waterfront, with breathing room",
+    "kind": "Harbor",
+    "priority": "P1",
+    "bounds": [
+      300,
+      -300,
+      1420,
+      -100
+    ],
+    "pin": [
+      820,
+      -175
+    ],
+    "where": "The full southern city frontage, harbor entrance and canal mouth.",
+    "problem": "The city has its own water sheet 2.5 cm above the main sea. The broad lawn-to-water boundary lacks a continuous beach or quay treatment.",
+    "proposal": "Keep the working quay and breakwater. Add 15\u201325 m sand pockets to either side, with stone revetments only under built waterfronts. Keep the canal opening and boat approach open.",
+    "access": "Quay stairs reach the sand pockets; no rocks across navigable water.",
+    "image": "assets/harbor.jpg",
+    "provenance": "assets/harbor.provenance.json"
+  },
+  {
+    "id": "03",
+    "key": "east-city",
+    "title": "Far east / city headland",
+    "tagline": "Cliffs that turn into coves",
+    "kind": "Cliff",
+    "priority": "P1",
+    "bounds": [
+      1320,
+      -220,
+      3200,
+      900
+    ],
+    "pin": [
+      2900,
+      200
+    ],
+    "where": "The southeast corner and east-facing terrain beyond the city, continuing north to y=900.",
+    "problem": "The detailed city ends well before the coarse backdrop edge. The outer terrain is a rectangular open edge, rather than a designed coastal profile.",
+    "proposal": "A scalloped rocky headland with 15\u201345 m faces and 10\u201320 m sandy coves at the low points. Regrade the outer backdrop inside its current envelope; extend the rock toe below water.",
+    "access": "One coastal lookout and a safe descent near the city; remote cliff toes remain boat-only.",
+    "image": "assets/east-city.jpg",
+    "provenance": "assets/east-city.provenance.json"
+  },
+  {
+    "id": "04",
+    "key": "east-volcano",
+    "title": "Volcano east / railway coast",
+    "tagline": "A dark, broken volcanic edge",
+    "kind": "Cliff",
+    "priority": "P2",
+    "bounds": [
+      2400,
+      900,
+      3200,
+      3600
+    ],
+    "pin": [
+      3120,
+      2300
+    ],
+    "where": "Eastern outer coast beside the volcano and inland railway corridor.",
+    "problem": "The far-hill mesh stops at x=3200 with elevated open edges; the railway rounds the volcano inland at x\u22482450.",
+    "proposal": "Stepped charcoal rock headlands, 30\u201380 m cliff faces and occasional gravel coves. Preserve the railway corridor and its earthworks. Use broad rock masses that read from the summit.",
+    "access": "Keep cliff rims outside the railway clearance; descents only at naturally low coves.",
+    "image": "assets/east-volcano.jpg",
+    "provenance": "assets/east-volcano.provenance.json"
+  },
+  {
+    "id": "05",
+    "key": "belmonte-east",
+    "title": "Belmonte east coast",
+    "tagline": "Long beaches between headlands",
+    "kind": "Beach",
+    "priority": "P1",
+    "bounds": [
+      2600,
+      3600,
+      3200,
+      6500
+    ],
+    "pin": [
+      2920,
+      5000
+    ],
+    "where": "Eastern country outside Belmonte, north of the volcano corridor.",
+    "problem": "The north-country inland mask becomes exactly zero at x\u22653000. That creates a broad coplanar terrain apron under the sea.",
+    "proposal": "Two or three generous 30\u201360 m ochre sand bays separated by low rocky points. Replace the zero-height apron with a sloping submerged shelf; keep Belmonte\u2019s valley and railway untouched.",
+    "access": "Country paths descend from inland; beach scale should remain legible from the volcano.",
+    "image": "assets/belmonte-east.jpg",
+    "provenance": "assets/belmonte-east.provenance.json"
+  },
+  {
+    "id": "06",
+    "key": "north",
+    "title": "Northern cape",
+    "tagline": "A proper end to the island",
+    "kind": "Beach",
+    "priority": "P1",
+    "bounds": [
+      -3200,
+      6500,
+      3200,
+      7100
+    ],
+    "pin": [
+      500,
+      7020
+    ],
+    "where": "The complete northern closure, including the northwest and northeast turns.",
+    "problem": "The country is multiplied by smooth((7100\u2212y)/1000): it reaches z=0 exactly at the last row. The north edge has no submerged continuation.",
+    "proposal": "A broad shallow crescent interrupted by two rocky capes and a few low dunes. Establish a finite dry shore before the terrain boundary, then sink the final rows safely below the sea.",
+    "access": "A quiet distant destination; no extra landmark or settlement needed.",
+    "image": "assets/north.jpg",
+    "provenance": "assets/north.provenance.json"
+  },
+  {
+    "id": "07",
+    "key": "belmonte-west",
+    "title": "Belmonte west coast",
+    "tagline": "Sheltered sand & wooded bluffs",
+    "kind": "Beach",
+    "priority": "P1",
+    "bounds": [
+      -3200,
+      3600,
+      -2500,
+      6500
+    ],
+    "pin": [
+      -2910,
+      5000
+    ],
+    "where": "Western north-country coast outside the imported Belmonte valley.",
+    "problem": "The same inland mask reaches zero at x\u2264\u22123000. The exported grid carries that flat strip along most of the western country.",
+    "proposal": "An alternating rhythm of 25\u201350 m sand coves and 10\u201330 m wooded rock bluffs, with a deeper sheltered bay in the middle. Remove the coplanar shelf all along this side.",
+    "access": "A small number of connecting country paths; keep the inland authored valley intact.",
+    "image": "assets/belmonte-west.jpg",
+    "provenance": "assets/belmonte-west.provenance.json"
+  },
+  {
+    "id": "08",
+    "key": "west-volcano",
+    "title": "Western volcano coast",
+    "tagline": "Big cliffs, calm silhouettes",
+    "kind": "Cliff",
+    "priority": "P2",
+    "bounds": [
+      -3200,
+      900,
+      -2500,
+      3600
+    ],
+    "pin": [
+      -3140,
+      2300
+    ],
+    "where": "The long western outer terrain edge opposite the volcanic highlands.",
+    "problem": "The coarse far-hill grid is clipped at x=\u22123200 while still elevated; its open mesh edge offers no sea cliff face or submerged toe.",
+    "proposal": "A sequence of 40\u2013100 m rugged cliffs with long rock shelves and sparse pebble landings. Carve broad inlets inside the current boundary and close the terrain below the sea.",
+    "access": "Boat access to a few shelves; no continuous path forced onto steep cliffs.",
+    "image": "assets/west-volcano.jpg",
+    "provenance": "assets/west-volcano.provenance.json"
+  },
+  {
+    "id": "09",
+    "key": "southwest",
+    "title": "Southwest outer coast",
+    "tagline": "A wild coast that softens toward home",
+    "kind": "Cliff",
+    "priority": "P2",
+    "bounds": [
+      -3200,
+      -100,
+      -380,
+      900
+    ],
+    "pin": [
+      -2400,
+      20
+    ],
+    "where": "Southwestern mainland from the western edge back toward the hamlet and spawn bay.",
+    "problem": "The backdrop\u2019s southern sea crossing exists, but uses coarse grass-covered cells; the western corner is still a clipped high terrain edge.",
+    "proposal": "Scalloped 10\u201340 m wooded headlands with a few pale sand and pebble pockets. Gradually lower the cliffs toward the spawn crescent so the coast has one continuous silhouette.",
+    "access": "Retain open sailing water toward the temple islet; remote pockets can remain boat-only.",
+    "image": "assets/southwest.jpg",
+    "provenance": "assets/southwest.provenance.json"
+  },
+  {
+    "id": "10",
+    "key": "islet",
+    "title": "Temple islet & landing",
+    "tagline": "Keep the rocks. Make the landing belong.",
+    "kind": "Mixed",
+    "priority": "P2",
+    "bounds": [
+      -500,
+      -800,
+      100,
+      -280
+    ],
+    "pin": [
+      -160,
+      -560
+    ],
+    "where": "The entire separate southwest temple islet, including the north-facing landing and sea stacks.",
+    "problem": "This already has authored 8\u201338 m cliffs and a small sand cove. It needs a waterline and landing continuity pass, rather than wholesale replacement.",
+    "proposal": "Retain the current cliff silhouette and four stacks. Broaden only the landing cove into a 12\u201320 m usable beach, tie its sand into the stair approach and carry wet rock below water.",
+    "access": "Keep the existing landing, stair, gates and temple; preserve the boat crossing.",
+    "image": "assets/islet.jpg",
+    "provenance": "assets/islet.provenance.json"
+  }
+]

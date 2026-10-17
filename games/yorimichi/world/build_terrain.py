@@ -7,6 +7,7 @@ import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_
 import sys, os, json, math
 import bpy, bmesh
 import numpy as np
+import shorelines
 from mathutils import Vector
 
 OUT = str(yori.OUT)
@@ -32,6 +33,16 @@ def obj(name, verts, faces, m, uvs=None, smooth=True):
     ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob); return ob
 
 
+def coastal_colours(ob):
+    """Linear palette plus its coverage; the importer uses these on opaque ground."""
+    points=np.asarray([v.co[:] for v in ob.data.vertices])
+    normals=np.asarray([v.normal.z for v in ob.data.vertices])
+    colours,amount=shorelines.paint(points[:,0],points[:,1],points[:,2],normals)
+    attribute=ob.data.color_attributes.new(name='Color',type='FLOAT_COLOR',domain='POINT')
+    attribute.data.foreach_set('color',np.c_[colours,amount].astype('f4').ravel())
+    return amount
+
+
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     W = json.load(open(os.path.join(OUT, "world.json"))); H = np.load(os.path.join(OUT, "heightmap.npy"))
@@ -45,6 +56,11 @@ def main():
         for i in range(n - 1):
             a = j * n + i; faces.append((a, a + 1, a + n + 1, a + n))
     terrain = obj("Terrain", verts, faces, ground, uvs=lambda co: (co.x / 6.0, co.y / 6.0))
+    coastal_colours(terrain)
+    terrain.data.materials.append(mat('Coast'))
+    for face in terrain.data.polygons:
+        if float(shorelines.weight(face.center.x,face.center.y)) > 0.:
+            face.material_index=1
     # road strip
     R = np.array(W["road"]); w = W["road_width"] / 2
     T = np.gradient(R[:, :2], axis=0); T /= np.linalg.norm(T, axis=1)[:, None]; Nn = np.stack([-T[:, 1], T[:, 0]], 1)
@@ -79,19 +95,9 @@ def main():
         for i in range(len(L) - 1):
             a = 2 * i; lf.append((a + 2, a + 3, a + 1, a))
         lane = obj("Lane", lv, lf, sand_m, uvs=lambda co: (co.x / 6.0, co.y / 6.0), smooth=True)
-        # cove sand pad: an irregular disc around the beach point, following the terrain
-        bx, by = SW["beach"]; rings = 3; segs = 22; sv, sf = [(bx, by, hsample(bx, by) + 0.05)], []
-        for r in range(1, rings + 1):
-            rad = 5.0 * r
-            for k in range(segs):
-                a = 2 * np.pi * k / segs; rr = rad * (1.0 + 0.18 * np.sin(3 * a + r) + 0.1 * np.cos(5 * a))
-                x = bx + rr * np.cos(a); y = by + rr * np.sin(a) * 0.8; sv.append((float(x), float(y), hsample(x, y) + 0.05))
-        for k in range(segs): sf.append((0, 1 + k, 1 + (k + 1) % segs))
-        for r in range(1, rings):
-            b0 = 1 + (r - 1) * segs; b1 = 1 + r * segs
-            for k in range(segs): sf.append((b0 + k, b1 + k, b1 + (k + 1) % segs, b0 + (k + 1) % segs))
-        sand = obj("Sand", sv, sf, sand_m, uvs=lambda co: (co.x / 6.0, co.y / 6.0), smooth=True)
-        print("southwest lane %d verts, sand pad %d verts" % (len(lv), len(sv)))
+        # Sand now belongs to the ground's Coast section. The former raised
+        # sand disc left a second surface only 5 cm above the beach.
+        print("southwest lane %d verts; beach painted on ground" % len(lv),flush=True)
     # guardrail: one continuous W-beam strip along the downhill edge (runs from world.json), posts every 2 m
     paint = mat("Paint", (0.86, 0.86, 0.84))
     gv, gf = [], []
@@ -151,15 +157,28 @@ def main():
         from belmonte import terrain as belmonte_terrain
         FZ=belmonte_terrain.old_backdrop(FZ,FX,FY)
 
-    fverts = [(float(FX[j, i]), float(FY[j, i]), float(FZ[j, i])) for j in range(fn) for i in range(fn)]
-    ffaces = [(j * fn + i, j * fn + i + 1, (j + 1) * fn + i + 1, (j + 1) * fn + i) for j in range(fn - 1) for i in range(fn - 1)]
+    # Include the exact fine-terrain boundaries, then omit their interiors.
+    # Shaping both buried and visible ground onto one coast would recreate the
+    # original coplanar flicker under the new beaches.
+    from belmonte.terrain import grid_height
+    from hidamari.layout import coastal_backdrop_height,terrain_axes
+    # All cells share the fine shoreline edge knots, including adjacent far cells.
+    fine_y=np.unique(np.r_[np.linspace(-300.,300.,n),terrain_axes()[1]])
+    fine_y=fine_y[(fine_y>=-300.) & (fine_y<=-100.)]
+    xs=np.unique(np.r_[fx_,-300.,300.,1420.]);ys=np.unique(np.r_[fx_,fine_y,-300.,300.,500.])
+    xx,yy=np.meshgrid(xs,ys);z=grid_height(fx_,fx_,FZ,xx,yy)
+    def owned(x,y):
+        return (-300.<x<300. and -300.<y<300.) or (300.<x<1420. and -300.<y<500.)
+    fverts,ffaces=shorelines.grid_mesh(xs,ys,z,hidden=owned,shape=coastal_backdrop_height)
+    print('coastal far hills: %d vertices, %d quads'%(len(fverts),len(ffaces)),flush=True)
     from train import earthworks  # the Belmonte railway's cuttings through the far hills (RAILWAY_EARTHWORKS=0: none)
     from hidamari.mountains import contains as under_foothills
     fverts, ffaces, _ = earthworks.polygons(fverts, ffaces, 4., hidden=under_foothills)
     hills = obj("FarHills", fverts, ffaces, far, uvs=lambda co: (co.x / 180.0, co.y / 180.0))
+    coastal_colours(hills)
     # export terrain fbx
     bpy.ops.object.select_all(action="DESELECT")
-    for o in [terrain, road, wires, hills] + ([rail] if rail else []) + ([lane, sand] if lane else []): o.select_set(True)
+    for o in [terrain, road, wires, hills] + ([rail] if rail else []) + ([lane] if lane else []): o.select_set(True)
     bpy.context.view_layer.objects.active = terrain
     path = os.path.join(OUT, "terrain.fbx")
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",
@@ -169,8 +188,8 @@ def main():
     # The sea reaches past the sky dome (a 20 km sphere, JapanWorld.cpp): every view ray that goes below the horizon meets
     # water, never the dome's lower half. At 3.4 km it stopped short, and a band of the dome's below-horizon colour showed
     # between the sea's far edge and the horizon.
-    s2 = 24000.0
-    sea = obj("Sea", [(-s2, -s2, 0), (s2, -s2, 0), (s2, s2, 0), (-s2, s2, 0)], [(0, 1, 2, 3)], water, uvs=lambda co: (co.x / 24.0, co.y / 24.0), smooth=False)
+    sea_vertices,sea_faces=shorelines.sea_mesh()
+    sea = obj("Sea", sea_vertices, sea_faces, water, uvs=lambda co: (co.x / 24.0, co.y / 24.0), smooth=False)
     bpy.ops.object.select_all(action="DESELECT"); sea.select_set(True); bpy.context.view_layer.objects.active = sea
     os.makedirs(os.path.join(OUT, "assets"), exist_ok=True)
     bpy.ops.export_scene.fbx(filepath=os.path.join(OUT, "assets", "Sea.fbx"), use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Y", axis_up="Z",

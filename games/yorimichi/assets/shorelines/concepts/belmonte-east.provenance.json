@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: A high oblique concept view of the eastern shore of a large island north of a snowy volcano. The inland countryside has amber deciduous groves, fields and a distant small terracotta-roofed Italianate hill town, Belmonte, on an elevated inland valley, not on the beach. Two broad ochre sand bays 30 to 60 metres deep are separated by low warm grey rock points, dry grass backshore, dark wet sand at the sea and gently submerged shelves. Quiet, natural, no resort.",
+  "location": "Belmonte east coast",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "01f438740675ee2b38bf2b1da8cf179adfc0cf8df640701567aa2b8592cf2b71",
+  "status": "done",
+  "started_at": "2026-10-17T17:20:06.544024+00:00",
+  "output": "belmonte-east.png",
+  "output_sha256": "4bf7e09e10f6540588153af5dfeecf2e6a4316c38af3cd80a610ae19925229f8",
+  "usage": {
+    "input_tokens": 1214,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 294
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2586
+  },
+  "elapsed_seconds": 37.2,
+  "finished_at": "2026-10-17T17:20:43.720423+00:00",
+  "presentation_derivative": {
+    "file": "belmonte-east.jpg",
+    "sha256": "f797bdcd8ace47072ecdc0704d5a26d8a734cc8cac5b83fa629c2b23fa77fe49",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

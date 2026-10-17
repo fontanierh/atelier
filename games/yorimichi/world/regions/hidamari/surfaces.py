@@ -16,6 +16,7 @@ import bpy
 from village import build as v
 
 RULES = [
+    ('earth', r'^coast_sand$'),
     ('road', r'^ar_island_road$'),          # MI_Road, on the UVs the face carries
     ('rice', r'^ar_rice'),                  # before 'flat' (stalk) and 'grass' (lawn)
     ('drystone', r'drystone'),

@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: An oblique arrival view by boat of a small steep wooded Japanese temple islet, around 300 metres across. Existing uneven dark stone cliffs 8 to 38 metres high and four sea stacks surround it. A single north-facing pale sand cove 12 to 20 metres deep gives a clear landing; a stone switchback stair with red torii gates climbs through autumn trees and pines to a modest temple on the wooded crown. Preserve a rugged silhouette, make the cove connect naturally to the stair. No new buildings.",
+  "location": "Temple islet & landing",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "73fc15e4ecf3b3cc3a5b63df446dd5d98e90cac6f94355b075a6b2153f7352d5",
+  "status": "done",
+  "started_at": "2026-10-17T17:21:15.642717+00:00",
+  "output": "islet.png",
+  "output_sha256": "e893cbca43682aa89152e107ef0ae6c735ab574cc2de0f1780ff710689f11103",
+  "usage": {
+    "input_tokens": 1216,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 296
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2588
+  },
+  "elapsed_seconds": 35.8,
+  "finished_at": "2026-10-17T17:21:51.427791+00:00",
+  "presentation_derivative": {
+    "file": "islet.jpg",
+    "sha256": "811c458d6455121b7cf7ff9cef178094c631349ea1aae9cba38b9371bf5fd65e",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

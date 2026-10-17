@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: A dramatic but calm oblique view of the western edge of a large Japanese autumn island. Tall layered warm grey cliffs 40 to 100 metres high form broad uneven promontories, with dark wet rock shelves and a few small pebble landings at their feet. Dense autumn forest on the plateau, a broad snow-capped volcano rises well inland. Readable large rock masses, no needle-like towers, clean coherent waterline, quiet blue teal ocean.",
+  "location": "Western volcano coast",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "fe90e32f4bab65a501cbb89e5dc5957ed66babf2d8043c3c9c25fc239ccf5f1f",
+  "status": "done",
+  "started_at": "2026-10-17T17:20:43.753024+00:00",
+  "output": "west-volcano.png",
+  "output_sha256": "e083de942c2488ea7ed32fcc6c1dd1e309579a44062961e8d8e7cfa03beda5a8",
+  "usage": {
+    "input_tokens": 1201,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 281
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2573
+  },
+  "elapsed_seconds": 34.1,
+  "finished_at": "2026-10-17T17:21:17.901967+00:00",
+  "presentation_derivative": {
+    "file": "west-volcano.jpg",
+    "sha256": "1e52f06e01ad8a37586f328c1b05c512e21c1300412d1d56d31c0f7c198eed00",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

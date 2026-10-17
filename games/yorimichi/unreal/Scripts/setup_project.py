@@ -179,6 +179,8 @@ def main():
     if not all(MI.values()):
         raise RuntimeError('Build unreal.materials before importing the world')
     MI['FarForest'] = instance('MI_FarForest', forest_ground_material())
+    from forest_ground import coast_instance
+    MI['Coast'] = coast_instance(MI['FarForest'].get_editor_property('parent'))
     for path in sorted(glob.glob(os.path.join(OUT, "assets", "*.fbx"))):
         name = os.path.splitext(os.path.basename(path))[0]
         if name in FOLIAGE:

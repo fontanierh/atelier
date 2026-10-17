@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: A wide high oblique view of the remote northern cape of an autumn island. A broad pale ochre sand crescent connects two low dark stone headlands, small wind-shaped dunes and coarse grasses behind the beach, amber forests and quiet rolling countryside inland. A distant terracotta-roofed inland town is only a small contextual shape. The coastline visibly curves around the island and the seabed slopes into teal water; no flat grassy plane merging into the sea, no snow at sea level.",
+  "location": "Northern cape",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "060615e2df60327b7d2913b5a7a1b42d94f437162add52fedc5496d427aefc12",
+  "status": "done",
+  "started_at": "2026-10-17T17:20:11.355669+00:00",
+  "output": "north.png",
+  "output_sha256": "5cf2258d8ff89c9a6c65915433d209411a54c7c766096d5b641075f0dc77ea6c",
+  "usage": {
+    "input_tokens": 1207,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 287
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2579
+  },
+  "elapsed_seconds": 35.1,
+  "finished_at": "2026-10-17T17:20:46.408705+00:00",
+  "presentation_derivative": {
+    "file": "north.jpg",
+    "sha256": "682f398003e5f2785776b24b4cc131149e212167a196e26e617477038d87a3c2",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

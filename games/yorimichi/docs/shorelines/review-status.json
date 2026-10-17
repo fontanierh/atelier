@@ -1,0 +1,10 @@
+{
+  "state": "Implementation in review",
+  "summary": "The shoreline changes are implemented on the review branch. Native terrain imports, whole-coast views and walking checks are in progress.",
+  "scope": "No native game images are published yet. The concept images on the proposal page show the approved design direction.",
+  "checks": [],
+  "limits": ["Visual approval and the moving volcano-view check are pending. The current game limits sailing to the southern ocean; the full perimeter will be inspected with camera footage."],
+  "stills": [],
+  "films": [],
+  "links": [{"title": "Implementation and review", "href": "https://github.com/fontanierh/atelier/pull/395"}]
+}

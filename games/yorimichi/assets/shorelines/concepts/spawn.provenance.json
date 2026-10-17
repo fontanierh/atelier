@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: A low oblique view along a sheltered Japanese island beach beneath the existing narrow uphill hamlet road, wooden utility poles and modest houses set back among amber maples and dark pines. A simple skate pier stays offshore to one side. Warm pale sand forms a generous crescent, wet sand darkens gradually, two low dark rock shoulders frame the bay; a wooded temple islet is visible offshore. No new buildings.",
+  "location": "Spawn & Sunset Pier",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "251f6729bea8318a50a0827b0ca447f25e6b703f44fef2f3a2d2b716d1015e6e",
+  "status": "done",
+  "started_at": "2026-10-17T17:19:32.100708+00:00",
+  "output": "spawn.png",
+  "output_sha256": "5a290fb5b11b1493cc0ac6edb7e72e71597968601ce1f63b8ceb949b9bc8323a",
+  "usage": {
+    "input_tokens": 1193,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 273
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2565
+  },
+  "elapsed_seconds": 34.2,
+  "finished_at": "2026-10-17T17:20:06.367693+00:00",
+  "presentation_derivative": {
+    "file": "spawn.jpg",
+    "sha256": "ec526bd33dfcdc5db3a747f5522bac02ada66818cdbc063e316d5992853cf170",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

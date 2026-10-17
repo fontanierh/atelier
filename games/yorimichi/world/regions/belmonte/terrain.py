@@ -5,6 +5,7 @@ import numpy as np
 from belmonte import layout as L, source
 from hidamari import layout as H
 from hippodrome.build import Mesh
+import shorelines
 
 OUTER = (L.BOUNDS[0] - L.APRON, L.SOUTH_JOIN, L.BOUNDS[2] + L.APRON, L.BOUNDS[3] + L.APRON)
 # The country runs out to sea NORTH_SHIFT metres further north than it first did, keeping its distance from the valley.
@@ -47,6 +48,7 @@ def country_grid():
 
 def country_height(x, y, *, carved=False):
     out = np.where(np.asarray(y) <= 3200., old_height(x, y), grid_height(*country_grid(), x, y))
+    out = shorelines.height(x, y, out)
     if carved:
         from train import earthworks
         out = earthworks.carve(x, y, out)
@@ -113,14 +115,9 @@ def country():
     if under.any():
         z = z.copy()
         z[under] = np.minimum(z[under], H.north_height(x[under], y[under], carved=False) - 25.)
-    for j, (ay, by) in enumerate(zip(ys[:-1], ys[1:])):
-        if ay < 3200.:
-            continue  # Existing FarHills owns this band outside the fine collar.
-        for i, (ax, bx) in enumerate(zip(xs[:-1], xs[1:])):
-            if OUTER[0] <= ax and bx <= OUTER[2] and ay >= OUTER[1] and by <= OUTER[3]:
-                continue
-            mesh.quad(np.array([ax, ay, z[j, i]]) - L.ORIGIN,
-                      np.array([bx, ay, z[j, i + 1]]) - L.ORIGIN,
-                      np.array([bx, by, z[j + 1, i + 1]]) - L.ORIGIN,
-                      np.array([ax, by, z[j + 1, i]]) - L.ORIGIN)
+    vertices, faces = shorelines.grid_mesh(xs, ys, z, hidden=lambda x,y:
+        y < 3200. or (OUTER[0] < x < OUTER[2] and OUTER[1] < y < OUTER[3]))
+    vertices = np.asarray(vertices)-L.ORIGIN
+    for a,b,c,d in faces:
+        mesh.quad(vertices[a],vertices[b],vertices[c],vertices[d])
     return mesh

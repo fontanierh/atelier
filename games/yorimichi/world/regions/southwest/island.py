@@ -27,7 +27,7 @@ SUMMIT=(0.0,8.0)          # the temple terrace, on the crown's north spur
 SUMMIT_R=15.0             # flat radius: a 30 m circle, enough for the 26 x 20 m temple set
 SUMMIT_Z=82.0
 LANDING=(-20.0,112.0)     # cove on the north side (toward the beach); island local y is north like the world
-COVE_R=16.0               # sand only here
+COVE_R=22.0               # usable landing beach, still the islet's only sand cove
 CENTRE=(0.0,-6.0)         # the coastline is a radius around this point, by bearing
 STEP=2.0
 NOISE_AMP=(3.0,0.6)       # large / small relief noise amplitude in metres
@@ -176,7 +176,7 @@ def height(x,y):
         z=np.where(spur>z,z+(spur-z)*(1-w),z)
     # Open the landing cove to the sea. The radial cove alone leaves an 8 m
     # ridge across its mouth, trapping a rider against the island shoreline.
-    cut=np.clip((15.0-np.abs(x-LANDING[0]))/8.0,0,1)
+    cut=np.clip((21.0-np.abs(x-LANDING[0]))/10.0,0,1)
     cut=cut*cut*(3-2*cut)*np.clip((y-(LANDING[1]-4.0))/4.0,0,1)
     beach=np.maximum(-3.0,0.6-np.maximum(y-LANDING[1],0)*.12)
     return z*(1-cut)+np.minimum(z,beach)*cut

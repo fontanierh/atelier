@@ -1023,7 +1023,7 @@ def unreal_steps(ctx):
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              # The city's arcade and harbor materials read the region's committed paintings.
-             inputs=[WORLD / 'asset_catalog.py', REGIONS / 'hidamari' / 'textures',
+             inputs=[WORLD / 'asset_catalog.py', WORLD / 'coast_water.py', REGIONS / 'hidamari' / 'textures',
                      *[SCRIPTS / n for n in ('setup_project.py', 'material_assets.py', 'mesh_import.py',
                                           'import_wanderer.py', 'cape_boy_material.py', 'animation_compression.py', 'import_village.py',
                                           'import_hidamari.py', 'import_southwest.py', 'arcade_material.py', 'plaza_material.py',
@@ -1037,7 +1037,7 @@ def unreal_steps(ctx):
         # The volcano: its meshes, M_NorthMountains with the rock and snow mask textures, M_NorthGate. The world import
         # purges /Game/Japan and makes the textures and MPC these materials use, so this reruns after it.
         Step('unreal.north', [UnrealScript(SCRIPTS / 'import_hidamari.py', 'HIDAMARI IMPORT COMPLETE', env=(('HIDAMARI_ASSETS', 'HD_North*'),))],
-             inputs=[ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
+             inputs=[WORLD / 'coast_water.py', SCRIPTS / 'forest_ground.py', ASSETS / 'environment/textures/volcanic-rock.jpg', out / 'hidamari' / 'north_snow.png', out / 'hidamari' / 'north_snow.json',
                      out / 'hidamari' / 'north_crater.png', out / 'hidamari' / 'north_crater.json',
                      out / 'craterpark' / 'textures' / 'crater_floor.png', TOOLS / 'craterpark_textures.py',
                      *[SCRIPTS / n for n in ('import_hidamari.py', 'mountain_material.py', 'import_village.py', 'atmosphere.py', 'ground_grain.py', 'sea_look.py')]],
@@ -1046,7 +1046,8 @@ def unreal_steps(ctx):
         # The regions below layer onto the world (the south-west import replaces the terrain's and the sea's materials),
         # so they rerun when it is reimported.
         Step('unreal.southwest', [UnrealScript(SCRIPTS / 'import_southwest.py', 'SOUTHWEST IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py'], needs=['unreal.world', 'world.southwest', 'world.terrain.meshes'], heavy=True,
+             inputs=[SCRIPTS / 'import_southwest.py', SCRIPTS / 'sea_look.py', SCRIPTS / 'forest_ground.py',
+                     SCRIPTS / 'ground_grain.py', SCRIPTS / 'material_assets.py'], needs=['unreal.world', 'world.southwest', 'world.terrain.meshes'], heavy=True,
              about='south-west props, the terrain and the sea'),
         Step('unreal.mega', [UnrealScript(SCRIPTS / 'import_mega.py', 'MEGA IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_mega.py'], needs=['unreal.world', 'world.mega'], heavy=True, about='the mini-mega ramp'),

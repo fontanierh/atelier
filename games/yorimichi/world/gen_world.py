@@ -11,6 +11,7 @@ import os, json, math
 import numpy as np
 from PIL import Image
 from houses import layout as houses_layout
+import shorelines
 
 HERE = str(yori.WORLD)
 OUT = str(yori.OUT)
@@ -46,6 +47,7 @@ H += 12 * smooth((t - 0.7) / 0.3) * (fbm(N, 5, 2, 3) - 0.3)              # rough
 SHRINE = (200, 85)
 knoll = np.exp(-(((X - SHRINE[0]) ** 2 + (Y - SHRINE[1]) ** 2) / (2 * 30 ** 2)))
 H += 9 * knoll
+H = shorelines.height(X, Y, H)
 
 
 def sample_h(x, y):
@@ -322,7 +324,11 @@ for gy in np.arange(-1300, 2600, 11.0):
         h = far_h(x, y)
         if h < 1 or rng.random() > 0.75: continue
         name = rng.choice(["Tree_Maple_A", "Tree_Broad_A", "Tree_Cedar_B", "Tree_Pine_B", "Tree_Ginkgo"], p=[0.5, 0.14, 0.08, 0.14, 0.14])
-        put(name, x, y, h - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75), into=far_trees)
+        put(name, x, y, float(shorelines.height(x,y,h)) - 0.3, scale=rng.uniform(2.0, 3.2) * (1.0 if max(abs(x), abs(y)) > 700 else 0.75), into=far_trees)
+# Consume the original placement draws before clearing beaches, so an altered
+# coast cannot reshuffle the unaffected inland forest's random sequence.
+for name,rows in far_trees.items():
+    far_trees[name]=[row for row in rows if row[2]>1. and shorelines.vegetation(row[0],row[1])]
 # Clear only this producer's trees where Mega Park supplies its own canopy.
 # Detailed park, southwest and tree-house trees can share these asset names.
 from megapark.forest import clear_far_forest
@@ -361,6 +367,7 @@ from train import earthworks as train_earthworks
 from train.corridor import clear_instances  # no trees or bushes where the Belmonte train runs (route v3)
 H[:] = train_earthworks.carve(X, Y, H)
 clear_instances(inst)
+print('coast: cleared %d mainland beach vegetation instances'%shorelines.clear_vegetation(inst),flush=True)
 np.save(os.path.join(OUT, "heightmap.npy"), H.astype(np.float32))
 H.astype("<f4").tofile(os.path.join(OUT, "heightmap.bin"))  # runtime cosmetic-particle ground sampling
 with open(os.path.join(OUT, "world.json"), "w") as fh:

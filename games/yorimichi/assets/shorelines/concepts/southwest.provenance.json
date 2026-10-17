@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: A sweeping oblique view of the southwestern coast of a Japanese autumn island. Low to medium weathered dark grey rocky headlands 10 to 40 metres high alternate with small pale sand and pebble coves. Amber forest and dark pines sit above the rocks; toward the distance the cliffs become lower and open into a welcoming hamlet beach. Keep the sea passage to a small wooded temple islet clear. No extra structures.",
+  "location": "Southwest outer coast",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "1c4d75796ae700bb83e7b32fb70bd4963b49d36f55e594c78bdfc8898bf6f2c7",
+  "status": "done",
+  "started_at": "2026-10-17T17:20:46.441564+00:00",
+  "output": "southwest.png",
+  "output_sha256": "636c6f33b738abf3d733b0f5e6c3c02bac5a26162431c1ae5b8d7a5d14ce172c",
+  "usage": {
+    "input_tokens": 1196,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 276
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2568
+  },
+  "elapsed_seconds": 33.2,
+  "finished_at": "2026-10-17T17:21:19.616045+00:00",
+  "presentation_derivative": {
+    "file": "southwest.jpg",
+    "sha256": "650e00221fd2437de85249feb79c01f6dfe7ad129d9020b69aefb0d8030e2e8e",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}

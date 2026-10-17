@@ -1,7 +1,8 @@
 """The open-sea look, shared by the sea plane's M_Sea (import_southwest.py) and the Hidamari harbour's M_HarborWater
 (harbor_material.py), so the two read as one sea from any distance.
 
-M_Sea covers the big sea plane; M_HarborWater covers the harbour's HD_Sea rectangle, which sits 2.5 cm above it. On
+M_Sea covers the sea outside the harbour's HD_Sea rectangle. M_HarborWater owns that rectangle at the same z=0;
+the meshes share their boundary and do not overlap. On
 the rectangle's outline the harbour water is exactly the open sea (these waves and this colour), and it turns into
 its own lit water over its 200 m border.
 

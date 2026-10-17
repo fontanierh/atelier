@@ -181,6 +181,8 @@ if not only or os.environ.get('HIDAMARI_TERRAIN')=='1':
     mesh=import_mesh(ROOT/'terrain.fbx','/Game/Japan','Terrain',fresh_slots=True)
     from import_southwest import sand_material
     sand_material()   # the beach slot; the south-west import (later in a fresh build) owns it
+    from forest_ground import coast_instance
+    coast_instance()
     materials=[]
     for slot in mesh.static_materials:
         key=str(slot.get_editor_property('imported_material_slot_name')).split('.')[0]

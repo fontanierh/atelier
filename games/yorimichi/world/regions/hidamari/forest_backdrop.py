@@ -9,6 +9,7 @@ from forest.specs import MODEL_BY_KIND
 import numpy as np
 from hidamari import mountains
 from megapark import trail as park_trail
+import shorelines
 
 
 def triangular(u,v,z00,z10,z01,z11):
@@ -24,6 +25,8 @@ def ground(x,y,height,backdrop_grid,terrain_axes,north_height):
     fy=np.clip((y+3200)/6400*(len(axis)-1),0,len(axis)-1.001)
     ix=fx.astype(int);iy=fy.astype(int);u=fx-ix;v=fy-iy
     z=triangular(u,v,far[iy,ix],far[iy,ix+1],far[iy+1,ix],far[iy+1,ix+1])
+    from hidamari.layout import coastal_backdrop_height
+    z=coastal_backdrop_height(x,y,z)
     # The foothills' apron covers the far hills' sagging last cells (mountains.apron_grids): it is the ground there.
     mask=mountains.contains(x,y)|park_trail.in_approach(x,y)|mountains.in_apron(x,y)
     z[mask]=north_height(x[mask],y[mask],carved=False)
@@ -59,7 +62,7 @@ def append(instances,buildings,height,backdrop_grid,terrain_axes,north_height,ro
         dx=x-cx;dy=y-cy;lx=dx*math.cos(a)+dy*math.sin(a);ly=-dx*math.sin(a)+dy*math.cos(a)
         keep&=~((abs(lx)<b['width']/2+13)&(abs(ly)<b['depth']/2+13))
     x=x[keep];y=y[keep];z=ground(x,y,height,backdrop_grid,terrain_axes,north_height)
-    valid=(z>4)&((x>2320)|(z<215+20*np.sin(x*.009)))
+    valid=(z>4)&shorelines.vegetation(x,y)&((x>2320)|(z<215+20*np.sin(x*.009)))
     x=x[valid];y=y[valid];z=z[valid]
     ever=mountains.noise(x,y,95.,85)+.5*mountains.noise(x,y,38.,86)+.2*mountains.noise(x,y,2.3,87)
     hue=mountains.noise(x,y,90.,88)+.5*mountains.noise(x,y,35.,89)+.2*mountains.noise(x,y,2.3,90)

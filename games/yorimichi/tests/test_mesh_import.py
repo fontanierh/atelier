@@ -131,7 +131,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
     p = importer
     scripts = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
     terrain_package = '/Game/Japan/Terrain'
-    names = ('Ground', 'Road', 'Sand')
+    names = ('Ground', 'Road', 'Sand', 'Coast')
     materials = {name: object() for name in names}
 
     class Slot:
@@ -153,7 +153,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
     unrelated = p.assets['/Game/Other/Mesh'] = Mesh(object())
     p.assets.update({'/Game/Japan/Materials/MI_' + name: material for name, material in materials.items()})
     p.assets['/Game/Japan/Materials/M_Village'] = object()
-    saved, logs, sand_calls = [], [], []
+    saved, logs, sand_calls, coast_calls = [], [], [], []
     collision = {}
     original_execute = p.unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks
     def execute(tasks):
@@ -175,6 +175,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         'plaza_material': SimpleNamespace(water_material=lambda *args: object(), paving_material=lambda: object()),
         'city_material': SimpleNamespace(),
         'import_southwest': SimpleNamespace(sand_material=lambda: sand_calls.append('sand')),
+        'forest_ground': SimpleNamespace(coast_instance=lambda: coast_calls.append('coast')),
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
     for name in ('import_village', 'mesh_materials'):
@@ -197,7 +198,8 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
     assert collision == {'collision_trace_flag': 'complex'}
     assert p.assets['/Game/Other/Mesh'] is unrelated and unrelated.centimetres is None
     assert json.loads((tmp_path / 'hidamari/import-report.json').read_text()) == {}
-    assert sand_calls == ['sand', 'sand'] and logs == ['HIDAMARI IMPORT COMPLETE'] * 2
+    assert sand_calls == ['sand', 'sand'] and coast_calls == ['coast', 'coast']
+    assert logs == ['HIDAMARI IMPORT COMPLETE'] * 2
 
 
 @pytest.mark.parametrize('initial', ['new', 'stale-slots', 'stale-lods'])

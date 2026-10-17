@@ -1,0 +1,37 @@
+{
+  "prompt": "Use case: stylized-concept. Asset type: Yorimichi shoreline design proposal, not an in-game screenshot. Reference image is ONLY for the existing game art direction: simplified faceted 3D terrain, painterly surface variation, masses of amber maples and dark pines, blue sky, restrained atmospheric depth. Match that production-friendly stylized game aesthetic, not photorealism or a flat illustration. Landscape 3:2 composition, coastal land and water occupy most of the image. Clear warm late-afternoon daylight, readable rock and sand materials. Show dry backshore, broad beach or solid cliff, wet waterline, and submerged toe as one physically continuous coast. No text, labels, collage, watermark, people, UI, gratuitous structures or excessive foam. Do not reproduce the reference camera or the floating skatepark edge. Scene: An oblique view around the far eastern headland of a Japanese island, with a modest blue-tiled town well inland to the left. Layered warm grey rock cliffs 15 to 45 metres high curve into two small sandy coves; grassy tops, wind-shaped pines, amber autumn trees, dark submerged rock toes and a clear teal sea. Natural scalloped coastline instead of a straight cut. No sea arches or fantasy structures.",
+  "location": "Far east / city headland",
+  "source_revision": "f0c7e40d",
+  "reference_role": "game art direction only; proposal camera and shore geometry are new",
+  "reference": "craterpark/shots/belmonte_view/view.png",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "781bcf4e2d998a7d138eadc2599f9453bfbd97af4a93a1cb8c9ea05db471a4a8",
+  "status": "done",
+  "started_at": "2026-10-17T17:19:32.101107+00:00",
+  "output": "east-city.png",
+  "output_sha256": "82b1e8743e499410f8d49897a7b0a06a72250188b1461227528332a7d6eb63ce",
+  "usage": {
+    "input_tokens": 1197,
+    "input_tokens_details": {
+      "image_tokens": 920,
+      "text_tokens": 277
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2569
+  },
+  "elapsed_seconds": 34.3,
+  "finished_at": "2026-10-17T17:20:06.511550+00:00",
+  "presentation_derivative": {
+    "file": "east-city.jpg",
+    "sha256": "00bdcb32e7cdea235a11aea96229326b9f7f9487f69dd618ad2051354d1603e4",
+    "jpeg_quality": 88,
+    "size": "1536x1024"
+  }
+}
