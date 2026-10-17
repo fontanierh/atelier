@@ -237,7 +237,7 @@
     "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
   },
   "new_sunburst_high_calls_for_quality_phase": 17,
-  "learned_texturing_and_trellis2_status": "Complete:21 recipes across5 independent native geometries, each with8 matched views. Winner: native TRELLIS cascade actual768 with immutable vertex-color bake. Compact choice: native Pixal image1024 PBR + original front on original18K MeshAxiom.",
+  "learned_texturing_and_trellis2_status": "Complete:22 recipes across5 native geometries, eight views each, plus matched eight-view lit/unlit controls. Selected appearance: standard-unlit native TRELLIS cascade768. Compact lit choice: native Pixal image1024 PBR/front MeshAxiom18K.",
   "native_pixal_pbr_512": {
     "report": {
       "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
@@ -1287,11 +1287,12 @@
     "assessment": "Not selected: stronger reference detail but doubled brow/lid outlines, nose projection mismatch and visible side/neck transition."
   },
   "selection": {
-    "best_overall": "trellis_cascade_actual768",
-    "best_overall_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+    "best_overall": "trellis_cascade_actual768_unlit",
+    "best_overall_sha256": "c933fa90dcd2bacfd526567c216afb78bb127b4662cf4df7452c467431e3a283",
     "best_compact": "native_image1024_front_hybrid",
     "best_compact_sha256": "93c8b332e35e8c724d06ef2ac7ba22f722a4070e5d95f6921f924040a321ca69",
-    "criteria": "Qualitative eight-view facial coherence, likeness, profile/rear continuity and visible defects; no numerical Tripo parity claim."
+    "criteria": "Qualitative eight-view facial coherence, likeness, profile/rear continuity and visible defects; no numerical Tripo parity claim.",
+    "material_scope": "Best unlit appearance; retained native lit model shows grain. Best compact conventionally lit material remains MeshAxiom native PBR/front hybrid."
   },
   "final_viewer_validation": {
     "results": [
@@ -1360,5 +1361,91 @@
       "limit_bytes": 8589934592
     },
     "scope": "Desktop Chrome with desktop/mobile viewport layouts, all available controls, exact complete GLB triangle counts, no dense raw JSON fetch, no page errors. This is not real-device Safari validation."
+  },
+  "trellis_cascade_actual768_unlit": {
+    "report": {
+      "method": "Standard KHR_materials_unlit over native learned vertex RGB",
+      "worker_sha256": "a0c8a0c59dd8fd069e37db967941391fd55047b50c2af56c6a57b1f2290a854c",
+      "input_sha256": "a283437cadfed67e88baff5adc3179c88942568d0fcf358ec0ce909500dd3748",
+      "output_sha256": "c933fa90dcd2bacfd526567c216afb78bb127b4662cf4df7452c467431e3a283",
+      "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "vertices": 5598831,
+      "triangles": 11386792,
+      "complete_binary_identical": true,
+      "scene_geometry_bindings_identical": true,
+      "positions_normals_indices_colors_unchanged": true,
+      "limitations": "Unlit appearance preview. Raw lit normal grain remains in the retained lit model; no geometry or normal repair.",
+      "seconds": 0.974
+    },
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 96.68709504199796,
+      "peak_bytes": 2454067072,
+      "limit_bytes": 8589934592
+    },
+    "benchmark": {
+      "hardware": {
+        "chip": "Apple M1 Max",
+        "gpu_cores": 32,
+        "unified_memory_gib": 32
+      },
+      "vertex_count": 5598831,
+      "face_count": 11386792,
+      "input_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "total_worker_seconds": 1303.570981249999,
+      "timing_scope": "Sum of complete native generation/export job and complete material-only unlit job, each with eight review views; excludes queues/downloads. Same native geometry and complete binary payload.",
+      "guards": {
+        "generation": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 1206.883886208001,
+          "peak_bytes": 14024776832,
+          "limit_bytes": 15032385536
+        },
+        "unlit_export": {
+          "state": "child_exited",
+          "cleanup_complete": true,
+          "elapsed_seconds": 96.68709504199796,
+          "peak_bytes": 2454067072,
+          "limit_bytes": 8589934592
+        }
+      }
+    },
+    "assessment": "Selected unlit appearance prototype. Faithful native RGB with identical full binary payload; disables lighting without repairing raw normal/surface grain."
+  },
+  "unlit_viewer_validation": {
+    "results": [
+      {
+        "asset": "trellis-head-cascade768",
+        "triangles": 11386792,
+        "material_types": [
+          "MeshStandardMaterial"
+        ],
+        "controls": true,
+        "mobile_layout": true,
+        "page_errors": [],
+        "pure_model_renders": 8
+      },
+      {
+        "asset": "trellis-head-cascade768-unlit",
+        "triangles": 11386792,
+        "material_types": [
+          "MeshBasicMaterial"
+        ],
+        "controls": true,
+        "mobile_layout": true,
+        "page_errors": [],
+        "pure_model_renders": 8
+      }
+    ],
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 11.171945875015808,
+      "peak_bytes": 4189795648,
+      "limit_bytes": 8589934592
+    },
+    "capture": "Pure WebGL renderer PNG exports, identical cameras/lights for lit/unlit; no browser/page UI in archived evidence."
   }
 }

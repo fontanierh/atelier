@@ -131,3 +131,21 @@ def test_vertex_photo_preserves_unobserved_colors_geometry_and_bindings():
         photo.native_arrays(malicious, payload)
     with pytest.raises(ValueError, match='Invalid photo support'):
         photo.replace_colors(doc, payload, colors, np.array([1., float('nan'), 0.]), np.full((3, 3), 255.))
+
+
+def test_unlit_material_keeps_geometry_and_existing_material_properties():
+    import copy
+    module = load(TOOLS/'head_models/materials.py')
+    document = dict(asset=dict(version='2.0'), nodes=[dict(mesh=0)],
+        meshes=[dict(primitives=[dict(attributes=dict(POSITION=0, NORMAL=1, COLOR_0=2), indices=3, material=0)])],
+        materials=[dict(doubleSided=True, pbrMetallicRoughness=dict(baseColorFactor=[1, 1, 1, 1], roughnessFactor=.85, metallicFactor=0))])
+    before = copy.deepcopy(document)
+    converted = module.unlit_document(document)
+    assert document == before
+    assert converted['nodes'] == document['nodes'] and converted['meshes'] == document['meshes']
+    assert converted['materials'][0]['pbrMetallicRoughness'] == document['materials'][0]['pbrMetallicRoughness']
+    assert converted['materials'][0]['extensions'] == {'KHR_materials_unlit': {}}
+    converted['nodes'][0]['mesh'] = 9
+    assert document == before
+    with pytest.raises(ValueError, match='unextended'):
+        module.unlit_document(converted)

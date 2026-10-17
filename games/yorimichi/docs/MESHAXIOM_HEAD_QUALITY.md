@@ -1,13 +1,23 @@
 # Local textured-head comparison
 
-**Best overall:** the native TRELLIS.2 cascade at an actual 768 grid, with a
-deterministic bake of its learned RGB field to the unchanged native vertices. Its
+**Best unlit appearance:** the native TRELLIS.2 cascade at an actual 768 grid, with a
+deterministic bake of its learned RGB field and standard `KHR_materials_unlit`. Its
 11,386,792 triangles give the most coherent head/hair across the matched views,
 and the higher texture stage fixes the 512 trial's pale pupils. The complete
 guarded job took **20m07s**, including exact export and eight views, peaking at
-**13.06 GiB** under a 14 GiB aggregate ceiling on the 32 GiB M1 Max.
+**13.06 GiB** under a 14 GiB aggregate ceiling on the 32 GiB M1 Max. A separate
+material-only export preserves the entire binary payload, including every position,
+normal, index and color byte. It takes 0.974 seconds through the verified GLB, or
+96.69 seconds including eight review renders at 2.29 GiB peak. The two complete
+jobs sum to **21m44s**; this is not one uninterrupted run.
 
-**Best compact asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
+The raw lit version shows strong surface grain. Tightening camera clipping did not
+remove it; disabling lighting did. The selected unlit material bypasses lighting
+and does not repair normals or geometry. Both versions have actual eight-view
+WebGL controls in the gallery, using the same cameras and lights. Small color
+speckles and surface holes remain. This is an appearance prototype.
+
+**Best compact conventionally lit asset:** MeshAxiom 18K + native Pixal image1024/NAF512 PBR + original
 front photograph, committed as the 7 MB
 [`head.glb`](../assets/characters/meshaxiom-skater-head-native/head.glb). It retains
 the full native metallic/roughness map and every mesh buffer. Geometry + selected
@@ -25,7 +35,7 @@ The [earlier experiment](MESHAXIOM_EXPERIMENT.md) documents the MeshAxiom geomet
 
 | Rank | Approach / variants | Finding |
 | --- | --- | --- |
-| **1** | TRELLIS cascade actual 768, native color field | Best overall shape, hair and coherent eyes; small skin speckles remain |
+| **1** | TRELLIS cascade actual 768, native colors + standard unlit material | Best unlit appearance, shape, hair and coherent eyes; bypasses raw lit surface grain |
 | **2** | MeshAxiom 18K, native image1024 PBR + original front | Best compact head and sharp reference face; coarser native geometry |
 | **3** | MeshAxiom 18K, native image512 PBR + original front | Similar compact hybrid; softer unseen details |
 | 4 | Front-first eight-view 2K, 4K and bounded completion | Best photo-only replay; side seams persist; 4K gives modest benefit |
@@ -35,13 +45,17 @@ The [earlier experiment](MESHAXIOM_EXPERIMENT.md) documents the MeshAxiom geomet
 | 8 | Original UV/single, Smart UV/single, geometry-guided front | Most unseen surfaces stay neutral despite better atlas occupancy |
 | Rejected | Weighted, best-angle and guided-opposite photo variants | Doubled features or pupil discontinuities |
 | Rejected | TRELLIS two-image 512 and 768 photo overlay | Cheek hair artifact / feature misregistration |
+| Diagnostic | TRELLIS cascade768, original lit material | Same native colors and geometry as the winner; strong surface grain under lighting |
 
 All five neural meshes remain unretouched experimental outputs. No same-reference
 Tripo model was evaluated, so these results do not establish Tripo quality parity
 or production/rigging readiness. The native TRELLIS result is the strongest local
 recipe tested here.
 
-The comparison contains **21 recipes**, with eight matched views of each.
+The comparison contains **22 recipes**, with eight matched views of each. The last
+recipe changes only material metadata, so there are still five neural geometries.
+Paired WebGL sheets explicitly compare lit and unlit display; the other sheets
+compare base color without relighting.
 
 ## Measured photo comparisons
 
@@ -218,7 +232,9 @@ through verified output, or 207.29 seconds including all eight renders, peaking
 at 4.34 GiB under an 8 GiB aggregate guard. Camera silhouette overlap is 94.26%. The
 original native geometry and every non-color byte remain identical. It is rejected
 for doubled brow/lid outlines, nose misregistration and side/neck color transitions.
-The unoverlaid native 768 material is the selected result.
+The unoverlaid native 768 colors with standard unlit material are the selected
+appearance result. Its entire binary payload is identical to the retained raw lit
+baseline. The compact MeshAxiom hybrid remains the selected conventionally lit PBR asset.
 
 ## Higher native density
 

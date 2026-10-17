@@ -249,6 +249,27 @@ ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python games/yorimichi/tools/he
   --resolution 1024 --max-tokens 16384 --mlx-gib 10 --steps 12 --vertex-colors
 ```
 
+For the selected appearance preview, export a standard unlit material without changing
+the complete binary payload. The raw lit output has surface grain; unlit display
+bypasses lighting and does not fix normals or geometry. Keep the lit output for
+comparison. This verified conversion took 0.974 seconds, or 96.69 seconds including
+eight matched renders at 2.29 GiB peak. Combined with generation, the two complete
+jobs sum to 21m44s. Use a fresh output and guard report:
+
+```sh
+ATELIER_AGENT=meshaxiom-laptop nice -n 10 uv run python \
+  games/yorimichi/tools/head_models/materials.py \
+  --model build/yorimichi/meshaxiom/head-trellis-cascade/head.glb \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-trellis-cascade-unlit \
+  --report build/yorimichi/logs/head-trellis-unlit.guard --memory-gib 8
+```
+
+The report verifies source identity, all scene/geometry bindings and the complete
+GLB binary. Only `KHR_materials_unlit` and its `extensionsUsed` entry are added.
+The gallery includes paired pure WebGL lit/unlit views using the same cameras and
+lights; this is separate from the CPU base-color diagnostic renders.
+
 The raw dense GLBs and full source archives are generated comparison outputs beneath
 `build/yorimichi`, alongside SHA-bound model/geometry reports. The viewer offers
 complete GLB/source downloads. They are not game-consumed inputs. The compact 7 MB

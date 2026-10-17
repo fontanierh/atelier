@@ -1,7 +1,7 @@
 """Calibrate and project a Sunburst reference with the repo's pinned Pixel Match module.
 
 Use through atelier.safety.guarded. A calibrated reference or an explicitly hashed view
-manifest paints visible texels; unseen texels remain neutral. Geometry stays unchanged.
+manifest paints visible texels; unseen texels retain their input base colors. Geometry stays unchanged.
 """
 import argparse
 from contextlib import contextmanager
@@ -157,7 +157,8 @@ def calibrate(args, pm):
 def paint(args, pm):
     """@cc [owner:fontanierh,label:correctness] pixel-match-preserves-generated-geometry
     Projection MUST preserve every position, UV and triangle index. Texels unseen by the
-    calibrated references MUST keep their neutral base, including a four-texel exclusion
+    calibrated references MUST keep their input base colors (neutral only for a neutral
+    input, or learned PBR colors for a material base), including a four-texel exclusion
     in empty gutters around protected UV coverage. Provenance MUST identify all inputs.
     """
     calibration = json.loads((args.output/'calibration.json').read_text())

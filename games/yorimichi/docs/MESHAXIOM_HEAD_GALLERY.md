@@ -1,20 +1,30 @@
 # Eight-view head comparison
 
-21 actual generated/material variants, five independent native neural geometries.
+22 actual generated/material variants, five independent native neural geometries.
 [Ranking and measurements](MESHAXIOM_HEAD_QUALITY.md) · [Apple Silicon recipes](APPLE_HEAD_MODELS.md).
 Every sheet contains both profiles, front three-quarter views, rear, top and underside.
 All use the same framing rule and semantic yaw/pitch labels. TRELLIS records a -90-degree
 camera-yaw offset for its different face-forward axis; the mesh is unchanged.
 
-These CPU sheets compare base color without relighting. TRELLIS uses native learned
+The selected unlit and extra lit-control sheets capture the actual WebGL model canvas
+with matched cameras and lights. The other CPU sheets compare base color without
+relighting. TRELLIS uses native learned
 RGB baked to vertex colors, with uniform roughness/metallic values in its GLB preview;
 its native PBR field's material variation is omitted. MeshAxiom learned-PBR GLBs retain
 their metallic/roughness map for interactive inspection. Ranking is qualitative.
+The unlit winner bypasses lighting; raw normals and geometry are not repaired.
+
+<details open>
+<summary>Selected appearance: TRELLIS768 native colors + standard unlit material (WebGL)</summary>
+
+![Selected unlit head: eight actual WebGL views](https://raw.githubusercontent.com/fontanierh/atelier/b2b77f278b6758a649cc9cbcfe7da5b2d29b6cbb/head-trellis768-webgl-unlit.png)
+
+</details>
 
 <details>
-<summary>1. Selected: TRELLIS native cascade768, 11,386,792 untouched triangles</summary>
+<summary>Raw lit TRELLIS cascade768 baseline: base-color comparison, 11,386,792 untouched triangles</summary>
 
-![1. Selected: TRELLIS native cascade768, 11,386,792 untouched triangles](https://raw.githubusercontent.com/fontanierh/atelier/aacb1a23cf6e9b7691915d54ebf82b3f1129c3df/head-trellis-cascade768-native-color.png)
+![Raw TRELLIS cascade768: eight base-color views](https://raw.githubusercontent.com/fontanierh/atelier/aacb1a23cf6e9b7691915d54ebf82b3f1129c3df/head-trellis-cascade768-native-color.png)
 
 </details>
 
@@ -157,3 +167,12 @@ their metallic/roughness map for interactive inspection. Ranking is qualitative.
 ![TRELLIS768 + original-photo overlay: feature misregistration](https://raw.githubusercontent.com/fontanierh/atelier/aacb1a23cf6e9b7691915d54ebf82b3f1129c3df/head-trellis-cascade768-photo-overlay.png)
 
 </details>
+
+## Lighting control on the same raw model
+
+This is an additional render of the raw lit baseline already listed above, not a
+23rd recipe. The complete binary payload is identical to the unlit winner. Both
+WebGL sheets use the same framing, cameras and lights. Lit surface grain remains;
+the unlit material bypasses lighting instead of repairing it.
+
+![Raw lit TRELLIS768: eight actual WebGL views](https://raw.githubusercontent.com/fontanierh/atelier/b2b77f278b6758a649cc9cbcfe7da5b2d29b6cbb/head-trellis768-webgl-lit.png)
