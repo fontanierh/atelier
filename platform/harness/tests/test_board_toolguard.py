@@ -67,3 +67,28 @@ def test_hook_cli_emits_valid_protocol_without_command_logging(monkeypatch, caps
     output = capsys.readouterr()
     assert output.out == ''
     assert output.err == 'Invalid Claude tool-hook input\n'
+
+
+@pytest.mark.parametrize('command', [
+    'nice -n 10 uv run atelier build sandbox',
+    "zsh -c 'uv run atelier build sandbox unreal.package > build.log'",
+    'uv run atelier play sandbox',
+    'uv run python -m atelier.harness.safety.guarded --kind compile -- tool',
+])
+def test_native_background_job_cannot_inherit_killing_default(command):
+    result=guard.decision(event(command=command,run_in_background=True))['hookSpecificOutput']
+    assert result['permissionDecision']=='deny'
+    assert 'explicit background timeout' in result['permissionDecisionReason']
+    assert 'updatedInput' not in result
+
+
+def test_unrelated_background_work_retains_native_tool_defaults():
+    assert guard.decision(event(command='cat notes.txt',run_in_background=True)) is None
+
+
+
+def test_native_foreground_build_is_not_silently_shortened_to_thirty_seconds():
+    result=guard.decision(event(command='uv run atelier build sandbox',timeout=900_000))['hookSpecificOutput']
+    assert result['permissionDecision']=='deny'
+    assert 'run_in_background' in result['permissionDecisionReason']
+    assert 'updatedInput' not in result

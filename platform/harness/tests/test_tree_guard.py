@@ -211,3 +211,12 @@ def test_stop_receipts_preserve_the_offending_pre_cleanup_sample(tmp_path, monke
         assert value['state'] == state and value['cleanup_complete'] is True
         assert value['processes'] == before and value['footprint_bytes'] == 77 and value['peak_bytes'] == 77
         assert value['cleanup_processes'] == [] and value['cleanup_footprint_bytes'] == 0
+
+
+
+def test_zombie_controller_is_treated_as_lost(monkeypatch):
+    from atelier.harness.safety import tree_guard,process_tree
+    monkeypatch.setattr(process_tree,'usage',lambda pid:SimpleNamespace(started=100,exited=1))
+    assert not tree_guard.controller_live((1,100))
+    monkeypatch.setattr(process_tree,'usage',lambda pid:SimpleNamespace(started=101,exited=0))
+    assert not tree_guard.controller_live((1,100))

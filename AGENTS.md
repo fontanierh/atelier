@@ -182,7 +182,9 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   output checks; background jobs keep their timeouts and guards. Launch lengthy jobs in the background
   from the start, rather than relying on a foreground timeout to stop them.
 - Keep the persistent board listener armed throughout jobs and waits. Process notifications and user steering
-  promptly; if using a fallback wait, re-arm it immediately before starting or checking another job. Run the job
+  promptly; if using a fallback wait, re-arm it immediately before starting or checking another job. Set an explicit background job deadline covering queue time, the entire command and cleanup; never inherit
+  a short executor default. Use Atelier's own execution deadline; do not put a shorter session/shell deadline around an entire queued
+  build that kills its guards before cleanup. Cancel with Ctrl-C or SIGTERM and allow cleanup to finish. Run the job
   independently so acknowledging a message does not require waiting for the job to finish or restarting the agent.
 - Long-running scripts must flush meaningful stdout progress at least every 30 seconds, including while waiting
   for prerequisites. Report the current stage, observed completed units or frames, elapsed time, and the condition

@@ -5,6 +5,7 @@ This hook only changes future tool inputs; it never signals a running process.
 """
 import json
 import math
+import re
 import sys
 
 
@@ -19,6 +20,21 @@ def decision(event):
     if not isinstance(original, dict):
         return None
     tool = event.get('tool_name')
+    if tool == 'Bash':
+        command = original.get('command', '')
+        native = isinstance(command, str) and re.search(
+            r'(?<![\w.-])atelier\s+(?:build|play)\b|(?:atelier\.harness|atelier)\.safety\.guarded\b', command)
+        timeout = original.get('timeout')
+        explicit = (type(timeout) in (int, float) and math.isfinite(timeout) and timeout > 0)
+        if native and (not original.get('run_in_background', False) or not explicit):
+            return {'hookSpecificOutput': {
+                'hookEventName': 'PreToolUse', 'permissionDecision': 'deny',
+                'permissionDecisionReason': (
+                    'An implicit background deadline can kill the build and its cleanup guards. '
+                    'Use run_in_background with an explicit background timeout covering queue time, the entire command and cleanup. '
+                    'Use Atelier execution deadlines for bounded steps; cancel with Ctrl-C or SIGTERM. '
+                    'If the executor cannot cover that duration, use a supervised job facility.'),
+            }}
     if tool == 'Bash' and not original.get('run_in_background', False):
         limit = FOREGROUND_MS
     elif tool == 'TaskOutput' and original.get('block', True):

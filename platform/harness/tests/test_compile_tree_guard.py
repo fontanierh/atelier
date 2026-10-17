@@ -73,7 +73,7 @@ def test_attach_discards_previous_receipt_before_starting_monitor(tmp_path, monk
     receipt(path)
     monkeypatch.setattr(process_tree, 'started', lambda pid: 456)
     process = MonitorProcess()
-    monkeypatch.setattr(guard.subprocess, 'Popen', lambda command: process)
+    monkeypatch.setattr(guard.subprocess, 'Popen', lambda command, **options: process)
     with guard.attach_tree(123, path, duration=None, expected_start=456) as monitor:
         assert not path.exists()
         with pytest.raises(RuntimeError, match='become ready'):

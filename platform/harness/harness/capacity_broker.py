@@ -36,7 +36,9 @@ class CapacityBroker:
     Queued offers MUST charge no resources. Final complete-vector and lock accounting MUST commit
     before this broker's sole gate writer releases a child, in one serialized actor turn. Restart,
     lost health and missing exit evidence MUST retain grants. No process MAY be signalled here.
-    Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants
+    Explicit operator-directed administrative abandonment of an interrupted exclusive compile MAY
+    separately use current kernel quiescence under the administrative policy; it MUST NOT certify
+    outputs or run through ordinary close/reconcile. Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants
     MAY instead use a positively exited root plus its bound aggregate guard's terminal empty-tree
     cleanup receipt; that witnesses the monitored owned tree, not every descendant's kernel exit.
     The adapter MUST retain exclusive legacy exclusion in bridge
@@ -381,8 +383,9 @@ class CapacityBroker:
         Only bridge or sealed-mode performance-exclusive grants MAY use this policy. The root MUST
         have affirmative exit evidence and its previously bound aggregate report MUST match
         identity, ceiling and invocation time, with completed cleanup. A normal child exit
-        MUST satisfy the normal terminal sample checks. A memory/duration stop MUST have
+        MUST satisfy the normal terminal sample checks. A memory/duration/controller-loss stop MUST have
         explicitly empty, zero post-drain cleanup and MUST NOT certify successful completion.
+        A controller-loss receipt MUST bind the original controller and require that identity no longer live.
         A normal exit's processes/footprint MUST be empty/zero, or an older pre-cleanup sample whose
         entire reported tail has retained positive exits and an exact footprint sum.
         Any verifiably live retained identity MUST refuse release. This
@@ -397,6 +400,9 @@ class CapacityBroker:
 
     def _stopped_terminal_sample(self, record, receipt):
         """Guard stops retain the offending sample separately from the observed cleanup."""
+        if receipt.get('state') == 'controller_exited' and (
+                receipt.get('controller') != record.get('principal') or self.alive(tuple(record['principal']))):
+            return False
         if (receipt.get('cleanup_processes') != []
                 or type(receipt.get('cleanup_footprint_bytes')) is not int
                 or receipt['cleanup_footprint_bytes'] != 0):
@@ -453,7 +459,7 @@ class CapacityBroker:
                        if preserved is None else preserved)
             observed, ready = receipt.get('time'), record.get('first_ready')
             exited = {tuple(pin) for pin in record.get('exited', [])}
-            stopped = receipt.get('state') in ('memory_limit', 'test_duration')
+            stopped = receipt.get('state') in ('memory_limit', 'test_duration', 'controller_exited')
             sample_valid = (self._stopped_terminal_sample(record, receipt) if stopped and allow_stopped and not pending
                             else receipt.get('state') == 'child_exited'
                             and self._settled_terminal_sample(record, receipt, exited))
@@ -816,18 +822,37 @@ class CapacityBroker:
                 refreshed = self._refresh(state, now)
                 wire.fields(message, ('namespace', 'action'), ('request', 'id', 'nonce', 'epoch', 'boot_id', 'child',
                             'process_guard', 'tree_guard', 'limit_bytes', 'descendants', 'witness', 'resources', 'locks',
-                            'activation_id', 'candidates', 'preserved_terminal'))
+                            'activation_id', 'candidates', 'preserved_terminal', 'interrupted_compile'))
                 if message['namespace'] != wire.NAMESPACE:
                     raise wire.CapacityError('Production broker namespace required')
                 action = message['action']
+                if 'interrupted_compile' in message and action != 'abandon-interrupted':
+                    raise wire.CapacityError('Interrupted compile evidence requires explicit administrative action')
                 if 'preserved_terminal' in message and action != 'reconcile':
                     raise wire.CapacityError('Preserved terminal evidence is allowed only for reconciliation')
-                if self.mode in ('capacity', 'sealed-maintenance') and action not in ('status', 'reconcile', 'close'):
+                if self.mode in ('capacity', 'sealed-maintenance') and action not in ('status', 'reconcile', 'close', 'abandon-interrupted'):
                     if not self.compatible or message.get('activation_id') != self.activation_id:
                         if action == 'start':
                             self._start_refusal('compatibility-fence')
                         raise wire.CapacityError('Full-capacity compatibility proof is unavailable or mismatched')
-                if action in ('status', 'reconcile'):
+                if action == 'abandon-interrupted':
+                    from atelier.harness import capacity_abandon
+                    evidence = wire.fields(message.get('interrupted_compile', {}),
+                        ('id', 'nonce', 'epoch', 'boot_id', 'operator_reference', 'administrator', 'services'))
+                    print(json.dumps({'event': 'capacity administrative abandon attempt',
+                                      'epoch': state['epoch'], 'peer_pid': principal[0]}), file=sys.stderr, flush=True)
+                    if self.mode != 'capacity' or not self.compatible:
+                        raise wire.CapacityError('Administrative recovery requires healthy full-capacity compatibility')
+                    record = state['records'].get(evidence.get('id'))
+                    if record is None:
+                        raise wire.CapacityError('Interrupted compile request does not exist')
+                    if any(other is not record and other['state'] in HELD for other in state['records'].values()):
+                        raise wire.CapacityError('Another charged job prevents interrupted compile recovery')
+                    witness = capacity_abandon.recover(record, evidence, principal=principal, boot=self.boot,
+                                                       epoch=state['epoch'])
+                    record.update(state='released', release_witness=witness)
+                    result = {'released': True, 'state': 'released', 'witness': witness}
+                elif action in ('status', 'reconcile'):
                     if action == 'reconcile':
                         if 'preserved_terminal' in message:
                             refreshed |= self._preserved_terminal(state, message['preserved_terminal'])
@@ -913,6 +938,8 @@ class CapacityBroker:
                             facts = self.guards(guards, child, principal, message['limit_bytes'],
                                                  record['request']['resources']['memory_mib'])
                             if self.mode in ('capacity', 'sealed-maintenance'):
+                                if self.guards is wire.validate_guards:
+                                    wire.require_independent_guards(guards, principal)
                                 self._foreign_check(state)
                             self._pressure(state, record)
                             self._validate_compatibility(state)
@@ -920,6 +947,8 @@ class CapacityBroker:
                             # Revalidate after all compatibility, process-scan and pressure I/O.
                             facts = self.guards(guards, child, principal, message['limit_bytes'],
                                                 record['request']['resources']['memory_mib'])
+                            if self.mode in ('capacity', 'sealed-maintenance') and self.guards is wire.validate_guards:
+                                wire.require_independent_guards(guards, principal)
                             if self.started(child[0]) != child[1] or self.started(principal[0]) != principal[1]:
                                 raise wire.CapacityError('Launcher/controller changed before admission')
                             record['child'] = list(child)

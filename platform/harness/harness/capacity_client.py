@@ -153,6 +153,11 @@ def reconcile(socket_path, *, timeout=2., request_id=None, preserved_terminal=No
     return _rpc(socket_path, message, timeout)[0]
 
 
+def abandon_interrupted(socket_path, evidence, *, timeout=5.):
+    """Operator-directed administration only; never called by automatic guarded cleanup."""
+    return _rpc(socket_path, {'action': 'abandon-interrupted', 'interrupted_compile': evidence}, timeout)[0]
+
+
 class AdmissionSession:
     """@cc [owner:fontanierh,label:safety] guard-facing-broker-admission
     Offers MUST be uncharged. Only the server's committed gate MAY release useful work; the

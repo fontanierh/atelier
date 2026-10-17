@@ -3,12 +3,13 @@
 
 def configure(sub):
     p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
-    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile',
+    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'abandon-interrupted',
                                     'supervise', 'prepare-cutover', 'activate-cutover', 'migrate-volume-seal', 'promote-prior-boot'])
     p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
     p.add_argument('--request-id', help='request whose preserved terminal receipt is attested (reconcile only)')
     p.add_argument('--preserved-terminal', help='preserved original aggregate terminal JSON (reconcile only; requires --request-id)')
+    p.add_argument('--administrative-evidence', help='reviewed fenced interrupted-compile administration JSON')
     p.add_argument('--json', action='store_true')
     p.add_argument('--output', help='new evidence directory (observe-cpu only)')
     p.add_argument('--seconds', type=float, help='CPU observation duration, at most 900s (default: 60)')
@@ -16,6 +17,18 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'abandon-interrupted':
+        if not args.administrative_evidence or any(v is not None for v in
+                (args.state, args.request_id, args.preserved_terminal, args.output, args.seconds, args.interval)):
+            raise SystemExit('abandon-interrupted requires only --administrative-evidence and the installed socket')
+        import json
+        from atelier.harness import capacity_protocol as wire
+        from atelier.harness.capacity_client import abandon_interrupted
+        evidence = wire.decode(wire.private_file(args.administrative_evidence, limit=wire.MAX_FRAME))
+        print(json.dumps(abandon_interrupted(args.path, evidence), indent=2))
+        return 0
+    if args.administrative_evidence is not None:
+        raise SystemExit('--administrative-evidence is only for abandon-interrupted')
     if args.action != 'observe-cpu' and any(v is not None for v in (args.output, args.seconds, args.interval)):
         raise SystemExit('--output, --seconds and --interval are only supported by capacity observe-cpu')
     if ((args.request_id is None) != (args.preserved_terminal is None)

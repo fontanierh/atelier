@@ -35,6 +35,14 @@ A positively queued request waits for up to 30 minutes. It holds no resources or
 age and prints progress. Run long or queued commands in the client's background job facility. Cancellation
 closes the uncharged request. Policy, ownership, protocol and fencing errors stop the command.
 
+Use Atelier's execution deadline for bounded work. Do not wrap a queued multi-step build in a shorter
+session or shell deadline that kills its entire process tree. Cancel with Ctrl-C or SIGTERM and allow
+cleanup to finish. Guards run in separate sessions; if the controller is killed, the aggregate guard
+stops its pinned workload, writes an interruption/cleanup receipt and exits. The interrupted step
+fails and must rerun; it never receives a successful build stamp. Full admission refuses older clients
+that lack independent guard sessions and controller-loss monitoring; update the launching checkout. Losing the independent guard itself
+can still require the explicit administrative recovery described in the operator guide.
+
 A selected request that loses its turn before execution may requeue at most twice within that same deadline.
 The launcher first proves its gate child exited, the guarded tree is empty and the request is uncharged.
 It never replays a start or treats missing timing data as proof that a child did not execute.

@@ -789,3 +789,41 @@ def test_missing_gate_is_a_plain_refusal_with_its_own_reason(broker, capsys):
     finally:
         child.kill(); child.wait()
         admission.close(child=child, child_start=admission.child[1])
+
+
+def test_administrative_interruption_is_atomic_fenced_and_not_normal_reconcile(broker, monkeypatch, tmp_path):
+    from atelier.harness import capacity_abandon as abandon
+    guards = {}
+    for kind in ('process_guard', 'tree_guard'):
+        p = tmp_path / (kind + '.json')
+        p.write_text('{"state":"running"}')
+        guards[kind] = dict(pid=80 + len(guards), start=800 + len(guards), report=str(p))
+    record = dict(request=dict(id='stopped-compile', owner='worker', phase='compile', performance=True,
+                              resources=asdict(Resources(memory_mib=128,cpu_millis=1000)), locks=['fixture'], seconds=1),
+                  sequence=1, first_ready=time.time()-10, bypasses=0, nonce='one-use', state='uncertain',
+                  child=[70,700], principal=[71,710], guards=guards, roster=[[70,700],[72,720]],
+                  exited=[[70,700]], ancestry_unknown=True, epoch=1, limit_bytes=128*1024**2, heartbeat=time.monotonic()-60)
+    with broker._lock:
+        state=broker._load();state['records']['stopped-compile']=record;broker._save(state)
+    assert client.reconcile(broker.socket_path)['charged_count']==1
+    evidence=dict(id='stopped-compile',nonce='one-use',epoch=1,boot_id=broker.boot,
+                  administrator='maintenance',operator_reference='operator instruction 123',services=[])
+    # Legacy mode is never eligible; then emulate healthy verified full mode for this private broker.
+    with pytest.raises(wire.CapacityError):client.abandon_interrupted(broker.socket_path,evidence)
+    broker.mode='capacity'
+    monkeypatch.setattr(broker,'_compatibility_proof',lambda:{'activation_id':broker.activation_id})
+    monkeypatch.setattr(abandon,'absent',lambda pin:True)
+    rows={90:dict(pid=90,started=10,parent=1,executable='/apps/agent')}
+    monkeypatch.setattr(abandon,'census',lambda:rows)
+    wrong={**evidence,'epoch':2}
+    with pytest.raises(wire.CapacityError):client.abandon_interrupted(broker.socket_path,wrong)
+    assert client.status(broker.socket_path)['charged_count']==1
+    result=client.abandon_interrupted(broker.socket_path,evidence)
+    assert result['released'] is True and result['witness']['output_certified'] is False
+    assert client.status(broker.socket_path)['charged_count']==0
+    with pytest.raises(wire.CapacityError):client.abandon_interrupted(broker.socket_path,evidence)
+    with broker._lock:
+        state=broker._load();saved=state['records']['stopped-compile'];broker.connection.rollback()
+    assert saved['release_witness']['kind']=='administrative-interruption'
+    assert saved['exited']==[[70,700]] and saved['ancestry_unknown']
+    assert all(json.loads(Path(g['report']).read_text())['state']=='running' for g in guards.values())

@@ -109,12 +109,23 @@ def drain_owned(tree, timeout=2.):
         time.sleep(.02)
 
 
-def run_child(pid, started, report, duration=None, limit_gib=10.):
+
+def controller_live(pin):
+    from atelier.harness.safety import process_tree
+    try:
+        sample = process_tree.usage(pin[0])
+        return sample.started == pin[1] and not sample.exited
+    except ProcessLookupError:
+        return False  # Losing controller observation stops only this guard's owned workload.
+
+def run_child(pid, started, report, duration=None, limit_gib=10., controller=None):
     """@cc [owner:fontanierh,label:safety] owned-child-aggregate-limit
     Every sampled owned process MUST contribute to the simultaneous footprint limit except shared
     engine services and their descendants. Failure or launcher exit MUST stop the retained pinned
     tree, and successful terminal receipts MUST require observed tree exit. Cleanup that cannot
-    complete within its bound MUST fail; PID reuse MUST NOT transfer ownership.
+    complete within its bound MUST fail; PID reuse MUST NOT transfer ownership. A bound controller
+    disappearing MUST stop the owned tree and publish controller_exited with post-drain cleanup,
+    never successful completion. Independent guards MUST outlive the controller process group.
     """
     from atelier.harness.safety import process_tree
     tree = OwnedTree(process_tree, pid, started)
@@ -134,12 +145,16 @@ def run_child(pid, started, report, duration=None, limit_gib=10.):
                 state = 'memory_limit'
             elif duration is not None and elapsed >= duration:
                 state = 'test_duration'
+            elif controller is not None and not controller_live(controller):
+                state = 'controller_exited'
             elif not any((p['pid'], p['started']) == tree.root for p in samples):
                 state = 'child_exited'
             value = dict(owner=pid, owner_started=started, time=time.time(), observed_monotonic=time.monotonic(),
                          elapsed_seconds=elapsed,
                          footprint_bytes=total, peak_bytes=peak, limit_bytes=limit,
                          state=state, processes=samples)
+            if controller is not None:
+                value['controller'] = list(controller)
             if state != 'running':
                 value['cleanup_complete'] = drain_owned(tree)
                 # drain_owned may have ended helpers from the pre-cleanup sample. Publish
@@ -216,13 +231,20 @@ def main():
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--stop-file', type=Path)
     parser.add_argument('--duration', type=float)
+    parser.add_argument('--controller-pid', type=int)
+    parser.add_argument('--controller-start', type=int)
     parser.add_argument('--child', action='store_true', help='guard an owned launcher until it exits')
     parser.add_argument('--limit-gib', type=float, default=10.)
     args = parser.parse_args()
+    if (args.controller_pid is None) != (args.controller_start is None):
+        parser.error('controller PID and start must be provided together')
+    if args.controller_pid is not None and (not args.child or args.controller_pid <= 0 or args.controller_start <= 0):
+        parser.error('a positive controller identity is only valid with --child')
     if args.child:
         if args.stop_file is not None:
             parser.error('--child does not use --stop-file')
-        return run_child(args.pid, args.expected_start, args.report, args.duration, args.limit_gib)
+        return run_child(args.pid, args.expected_start, args.report, args.duration, args.limit_gib,
+                         None if args.controller_pid is None else (args.controller_pid, args.controller_start))
     if args.stop_file is None or args.duration is None or args.limit_gib != 10.:
         parser.error('compound guards require --stop-file and --duration, with the fixed 10 GiB ceiling')
     # There is deliberately no CLI switch to raise this compound job's 10 GiB ceiling.

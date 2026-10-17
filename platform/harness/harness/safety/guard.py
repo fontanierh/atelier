@@ -147,7 +147,7 @@ def attach(pid, report, duration, limit_gib=10., expected_start=None):
                '--limit-gib', str(limit_gib)]
     if duration is not None:
         command += ['--duration', str(duration)]
-    monitor = subprocess.Popen(command)
+    monitor = subprocess.Popen(command, start_new_session=True)
     try:
         yield monitor
     finally:
@@ -222,10 +222,11 @@ def attach_tree(pid, report, duration, limit_gib=10., expected_start=None):
     report = Path(report)
     report.unlink(missing_ok=True)  # an earlier run is never a readiness receipt
     command = [sys.executable, '-m', 'atelier.harness.safety.tree_guard', '--child', '--pid', str(pid),
-               '--expected-start', str(started), '--report', str(report), '--limit-gib', str(limit_gib)]
+               '--expected-start', str(started), '--report', str(report), '--limit-gib', str(limit_gib),
+               '--controller-pid', str(os.getpid()), '--controller-start', str(usage(os.getpid()).started)]
     if duration is not None:
         command += ['--duration', str(duration)]
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, start_new_session=True)
     monitor = TreeMonitor(process, pid, started, report)
     try:
         yield monitor

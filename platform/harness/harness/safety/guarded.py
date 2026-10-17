@@ -278,11 +278,13 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
         previous = None
         for attempt in range(3):
             try:
-                code = _run(command, folder, timeout, purpose, lock, env, limit_gib, small_gib, kind,
-                            on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
-                            on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
-                            _requeue=previous, _queue_deadline=entered + 1800.,
-                            **({'_completion': completion} if completion is not None else {}))
+                from atelier.harness.safety.cancellation import termination_cleanup
+                with termination_cleanup():
+                    code = _run(command, folder, timeout, purpose, lock, env, limit_gib, small_gib, kind,
+                                on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
+                                on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
+                                _requeue=previous, _queue_deadline=entered + 1800.,
+                                **({'_completion': completion} if completion is not None else {}))
                 break
             except CapacityOfferLost as error:
                 # The typed broker denial is necessary but not sufficient: _run must also
