@@ -6,8 +6,9 @@ street and skate-park palette. Geometry is inferred locally using the public Mes
 
 The complete model pipeline produced **1,049 vertices and 1,938 triangles in 392.69 seconds** on the laptop,
 with a **6.42 GiB** maximum measured process-tree footprint. Both stages used the normal 10 GiB guards,
-exited cleanly and returned all resources; supervisor samples showed no new swap-out. Visual inspection
-and the authored GLB export are queued behind another agent's compile.
+exited cleanly and returned all resources; supervisor samples showed no new swap-out. The authored
+1-metre GLB and four CPU review views completed in another 45.77 seconds at 1.07 GiB peak.
+The bin proves that the full pipeline runs locally, but its visual result needs substantial cleanup.
 
 ## Measured run
 
@@ -19,6 +20,7 @@ and the authored GLB export are queued behind another agent's compile.
 
 These times include model loading and checkpoint checks for the measured stage. They exclude the
 initial model download, the 30-second Sunburst request, capacity queue time and Blender authoring.
+Validation probes had already warmed filesystem and Metal caches; this is not a cold-boot benchmark.
 The vertex model held 4.39 GiB of MPS weights. Before VAE loading, topology model memory fell to zero;
 the decoder then held 0.13 GiB. `assets/props/recycling-bin-meshaxiom/benchmark.json` retains the counts,
 settings, mesh audit and selected positive guard-exit evidence without machine-private paths.
@@ -27,6 +29,9 @@ The raw mesh has 214 boundary edges, three degenerate triangles, five components
 edges. It is an experimental decorative prop, not a watertight fabrication mesh. The upstream topology
 policy includes bounded edge-capacity repair and winding correction; the report identifies those steps.
 The authoring script adds scale, origin and matte materials without replacing the neural geometry.
+The cabinet, lid, door and feet are recognizable. Both reference bottle apertures were lost, and a
+large diagonal front face remains. One nonorientable component and 12 inconsistently wound two-face
+edges remain after upstream orientation correction. This first asset is not production-approved.
 The initial port used `2 × realized vertices` for the extraction cap; this was corrected to the requested
 face budget before the larger runs. The first bin's union of both decoded edge graphs is 3,534 edges,
 below both the correct 6,000-edge cap and the initial 6,294-edge cap, so that discrepancy did not alter it.
@@ -88,6 +93,21 @@ references use `atelier.ai.images.paint(..., model='gpt-image-2.5-sunburst', qua
 the ledger record must not already exist. Reusing the committed PNG requires no API call or credential.
 This is a single-image model. Its released `generate(image, ...)` interface has no native multiview
 conditioning; concatenating a turnaround sheet is not a verified substitute.
+
+The first authored source is `assets/props/recycling-bin-meshaxiom/recycling_bin.glb`, with raw neural
+geometry, a complete checksum manifest and benchmark beside it. Recreate its scale/material export and
+four review images with the guarded Blender command below (the inference result must already exist):
+
+```sh
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
+  --report build/yorimichi/logs/meshaxiom-preview-new.guard --timeout 600 \
+  --purpose 'MeshAxiom prop authoring and review' -- \
+  /Applications/Blender.app/Contents/MacOS/Blender --background --threads 2 \
+  --python games/yorimichi/tools/meshaxiom_prop.py -- \
+  --mesh build/yorimichi/meshaxiom/bin-2k/mesh.json \
+  --output games/yorimichi/assets/props/recycling-bin-meshaxiom \
+  --previews build/yorimichi/meshaxiom/previews
+```
 
 ## Larger-object follow-up
 

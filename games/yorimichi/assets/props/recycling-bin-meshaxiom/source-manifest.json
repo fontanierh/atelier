@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "name": "Neighborhood recycling bin \u2014 MeshAxiom first pipeline proof",
+  "status": "experimental: visual cleanup required; not production-approved",
+  "model": "recycling_bin.glb",
+  "source_mesh": "mesh.source.json",
+  "reference": "reference.png",
+  "provenance": "reference.provenance.json",
+  "benchmark": "benchmark.json",
+  "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
+  "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
+  "geometry": {
+    "source_vertices": 1049,
+    "export_triangles": 1938,
+    "height_metres": 1.0,
+    "origin": "ground, centered in XY before glTF Y-up conversion",
+    "source_to_metres_scale": 0.5267489711934157,
+    "postprocess": "uniform scale, origin, flat shading, two matte material assignments; no remeshing or vertex repair",
+    "material_rule": "ochre for face centers above0.78m, indigo below; authoring preview only"
+  },
+  "visual_findings": [
+    "Cabinet, lid, front door panel and feet are recognizable.",
+    "Both circular bottle apertures from the reference were lost.",
+    "A large diagonal front face and small open surfaces remain."
+  ],
+  "sha256": {
+    "recycling_bin.glb": "b61bc48ff6ec873a0a78fb1efda760e5b6457762a933cbb8770198744c54f469",
+    "mesh.source.json": "0235213f1bbe6050af76c177c88c83def3ef8c1a0c99adcf570f77dd25d8cd89",
+    "reference.png": "3bb987cbb15d8a1b84cadcec0eb35748907ce0f5cfd175fc507ebfac8264fa24",
+    "reference.provenance.json": "f242b4074a7ff46f4871e00c92a2dc0efa0707173f871371079bedc42b929463",
+    "benchmark.json": "dc6197d4f0d5c8e9365b4421bdd2ca049cb1e80acf72fbc3b39d7a7a8bfdaf89"
+  }
+}

@@ -7,7 +7,8 @@
   "software": {
     "python": "3.12.12",
     "torch": "2.7.1",
-    "transformers": "4.57.3"
+    "transformers": "4.57.3",
+    "macos": "26.2"
   },
   "source_revision": "6504db7126ec58e9d275833fb0e5f66640b01abe",
   "model_revision": "b80240ce4f77a28bc4debdcca895e96c78ddb294",
@@ -113,5 +114,42 @@
     "area_total": 11.027346109555246
   },
   "geometry_scope": "Published mean/sample topology policy, edge-capacity repair and winding correction; no vertex repair or remeshing",
-  "new_swapout_observed": false
+  "new_swapout_observed": false,
+  "timing_scope": "Worker elapsed time including model loading/checks, after validation probes warmed filesystem/Metal caches; excludes download, image API, queue and authoring",
+  "edge_cap_audit": {
+    "initial_cap": 6294,
+    "upstream_requested_budget_cap": 6000,
+    "union_edges_mean_and_draw": 3534,
+    "changed_geometry": false
+  },
+  "authoring": {
+    "blender": "5.2.1 LTS",
+    "seconds": 45.77,
+    "peak_bytes": 1143886656,
+    "guard_state": "child_exited",
+    "cleanup_complete": true,
+    "views": 4,
+    "resolution": [
+      768,
+      768
+    ],
+    "cpu_threads": 2
+  },
+  "export_orientation": {
+    "version": "meshaxiom-export-orientation-v1",
+    "module": "meshaxiom/vendor/recipe/orient_faces.py",
+    "module_sha256": "90458f3c690429d378a7a35e9e6d87944f1be2011f14ef2c85462bfcdfc325de",
+    "faces": 1938,
+    "inconsistent_edges_before": 2045,
+    "inconsistent_edges_after": 12,
+    "two_face_edges": 2800,
+    "pieces": 5,
+    "nonorientable_pieces": 1,
+    "flipped_faces": 967,
+    "outward_flipped_pieces": 3,
+    "applied_to": [
+      "mesh.obj",
+      "mesh.json"
+    ]
+  }
 }

@@ -6189,6 +6189,10 @@
       "bytes": 1214190,
       "sha256": "0c06621695acab60100c1f34eb4a7b6f2f08325570a0f1e4c39fc893bfdf53b4"
     },
+    "props/recycling-bin-meshaxiom/recycling_bin.glb": {
+      "bytes": 120588,
+      "sha256": "b61bc48ff6ec873a0a78fb1efda760e5b6457762a933cbb8770198744c54f469"
+    },
     "props/recycling-bin-meshaxiom/reference.png": {
       "bytes": 870342,
       "sha256": "3bb987cbb15d8a1b84cadcec0eb35748907ce0f5cfd175fc507ebfac8264fa24"
