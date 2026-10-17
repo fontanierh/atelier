@@ -16,7 +16,7 @@ scale, origin and Z-up to Y-up conversion used by the baseline.
 Compare the original 18,931-triangle head with:
 
 1. Better UV packing, the original image, and a 2K atlas.
-2. The same geometry and UVs, with the original image plus six geometry-guided Sunburst views.
+2. A geometry-guided front image, then all seven geometry-guided Sunburst views.
 3. Weighted blending versus best-angle reference selection, without changing UVs or geometry.
 4. A 4K atlas with the same UVs and geometry.
 5. A new 30,000-face native request using the original reference, seed and 20-step recipe.
@@ -34,7 +34,7 @@ verifies all native triangles, measures actual atlas occupancy, and chooses the 
 packing. It renders eight known perspective cameras from the fixed surface. This is
 scripted UV authoring and rendering, not manual mesh editing.
 
-`references` makes six sequential GPT Image 2.5 Sunburst high-quality edits. Each call
+`references` makes seven sequential GPT Image 2.5 Sunburst high-quality edits. Each call
 receives the identity reference and one fixed-camera clay render. It requests exact
 silhouette, feature positions and framing, with flat material colors. Every paid request
 has an exclusive provenance ledger, full prompt, input hashes and camera matrix; an
@@ -42,7 +42,8 @@ uncertain call is never retried automatically. Successful calls can be run in se
 explicit view subsets; rerunning an existing ledger refuses before submission.
 
 `paint` rejects generated views with silhouette overlap below 95%. This checks the outer
-shape, not facial feature consistency. It compares single-view projection, the pinned
+shape, not facial feature consistency. It compares the original and geometry-guided
+single-view projections, the pinned
 Pixel Match weighted blend, and a deterministic most-frontal visible-view selection.
 Occlusion, matte and grazing-angle weights protect unseen texels, which remain neutral.
 Neither painting method repairs mesh defects or invents unseen geometry.

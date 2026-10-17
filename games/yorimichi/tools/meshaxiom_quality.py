@@ -198,8 +198,9 @@ def paint_variants(args):
         raise ValueError('Guide inputs no longer match')
     anchor = next(view for view in cameras['views'] if view['yaw'] == 60 and view['pitch'] == -5)
     selected = set(args.views.split(','))
-    views = [dict(name='original', image=str(args.image), image_sha256=digest(args.image),
-                  transform_matrix=anchor['transform_matrix'], camera_angle_x=anchor['camera_angle_x'])]
+    views = [] if anchor['name'] in selected else [dict(
+        name='original', image=str(args.image), image_sha256=digest(args.image),
+        transform_matrix=anchor['transform_matrix'], camera_angle_x=anchor['camera_angle_x'])]
     checks = []
     for view in cameras['views']:
         if view['name'] not in selected:
@@ -242,11 +243,14 @@ def paint_variants(args):
               matted_sha256=digest(folder/'reference-matted.png'), transform_matrix=anchor['transform_matrix'],
               camera_angle_x=anchor['camera_angle_x'], calibration='Fixed original camera, no shape fitting'))
         manifest = folder/'views.json'
+        used_views = [view for view in views if view['name'] == anchor['name']] if variant == 'guided-single' else views
+        if not used_views:
+            raise ValueError('Guided-single variant requires the generated front camera')
         write(manifest, dict(mesh_sha256=digest(source), views=[
-            {**view, 'image': os.path.relpath(view['image'], folder)} for view in views]))
+            {**view, 'image': os.path.relpath(view['image'], folder)} for view in used_views]))
         recipe = SimpleNamespace(mesh=source, image=args.image, output=folder, module=VENDOR,
                                  views=None if variant == 'single' else manifest,
-                                 blend='weighted' if variant in ('single', 'weighted') else 'best-angle')
+                                 blend='weighted' if variant in ('single', 'guided-single', 'weighted') else 'best-angle')
         started = time.monotonic()
         paint(recipe, pm)
         paint_seconds = time.monotonic()-started
@@ -282,14 +286,14 @@ def main(argv=None):
     parser.add_argument('--image', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--blender', type=Path, default=Path('/Applications/Blender.app/Contents/MacOS/Blender'))
-    parser.add_argument('--views', default='yaw0-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55')
-    parser.add_argument('--variants', default='single,weighted,best-angle,4k')
+    parser.add_argument('--views', default='yaw0-pitch-5,yaw60-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55')
+    parser.add_argument('--variants', default='single,guided-single,weighted,best-angle,4k')
     parser.add_argument('--report', type=Path)
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.stage == 'references':
         return references(args)
-    if set(args.variants.split(',')) - {'single', 'weighted', 'best-angle', '4k'}:
+    if set(args.variants.split(',')) - {'single', 'guided-single', 'weighted', 'best-angle', '4k'}:
         parser.error('Unknown texture variant')
     if args.worker:
         return (prepare if args.stage == 'prepare' else paint_variants)(args)
