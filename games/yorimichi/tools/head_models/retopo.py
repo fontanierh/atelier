@@ -333,8 +333,10 @@ def dense(args):
 def textured_glb(vertices, faces, uv_corners, pixels):
     """@cc [owner:fontanierh,label:correctness] retopo-bake-keeps-every-triangle
     Export MUST retain all ordered reduced triangle positions and winding exactly,
-    up to the documented fixed Z-up to Y-up rotation. Only coincident UV seam
-    vertices MAY be added. Colors MUST use a texture without COLOR_0 multiplication.
+    up to the documented fixed Z-up to Y-up rotation. Only coincident vertices
+    required by UV or winding-aligned shading-normal seams MAY be added; they MUST
+    NOT move, omit, reorder or reverse geometric triangles.
+    Colors MUST use a texture without COLOR_0 multiplication.
     Lighting MUST remain conventional PBR, with no unlit extension or normal map.
     """
     from PIL import Image

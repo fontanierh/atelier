@@ -34,7 +34,10 @@ main source of the visible improvement; SAM2 is not responsible for removing the
 The original dense checkpoint and selected dense viewer export remain retained.
 
 After reduction, UV generation/export verifies every ordered triangle corner and
-winding. UV seams add coincident render vertices without moving triangle corners.
+winding. UV and shading-normal seams add coincident render vertices without moving
+triangle corners. In the selected export, 740 vertices have the same position/UV
+pair as another vertex but a different shading normal. These are intentional
+normal discontinuities, not additional geometric surface detail.
 Repainting verifies identical position, normal, UV and index bytes, identical scene
 and material bindings, and unchanged protected texels. These guarantees apply to
 the chosen reduced derivative, not geometric equivalence to the dense original.
