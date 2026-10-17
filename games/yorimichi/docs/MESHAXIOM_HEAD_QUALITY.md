@@ -1,6 +1,9 @@
-# Fixed-geometry head quality experiment
+# Local textured-head comparison
 
-Work in progress: results will be filled after the guarded experiments complete.
+Work in progress: this comparison will rank all locally generated candidates after
+the native Pixal3D texturing and Microsoft TRELLIS.2 experiments finish. Each
+candidate is inspected from eight matched yaw/pitch labels, including both profiles,
+rear, top and underside. No post-generation mesh editing is allowed.
 The existing [Apple Silicon experiment](MESHAXIOM_EXPERIMENT.md) supplies the pinned
 weights, runtime installation, single-view baseline, and hardware measurements.
 
@@ -14,23 +17,27 @@ island margin. Its 2,048,854 occupied texels provide about nine times the previo
 texel area. This is a packing measurement, not proof of better visual quality.
 Preparation took 19.89 seconds and peaked at 1.26 GiB on the M1 Max.
 
-The following first eight-view comparison ran on hosted macOS CI at `4eda5848`,
-under a 4 GiB aggregate guard. All five outputs preserved every native triangle
-and winding. Times include projection and buffer validation, but exclude the
+The following eight-view comparison reproduced **on the M1 Max** under a 4 GiB
+aggregate guard. Its five GLBs match the earlier hosted macOS results byte for byte.
+All five outputs preserved every native triangle and winding. Times include
+projection and buffer validation, but exclude the
 eight diagnostic renders per output and remote image generation.
 
 | Projection | Occupied texels painted | Seconds | Observed result |
 | --- | ---: | ---: | --- |
-| Original single image | 16.11% | 8.37 | Most sides and back stay neutral |
-| Geometry-guided front | 16.33% | 8.26 | Better alignment, similar limited coverage |
-| Eight-view weighted blend | 55.11% | 25.85 | Doubled facial features |
-| Eight-view best angle | 55.11% | 24.26 | Broken pupil shapes at view boundaries |
-| Eight-view front first | 56.06% | 24.82 | Coherent eyes; side seams and neck patches remain |
+| Original single image | 16.11% | 3.94 | Most sides and back stay neutral |
+| Geometry-guided front | 16.33% | 4.53 | Better alignment, similar limited coverage |
+| Eight-view weighted blend | 55.11% | 16.65 | Doubled facial features |
+| Eight-view best angle | 55.11% | 17.21 | Broken pupil shapes at view boundaries |
+| Eight-view front first | 56.06% | 17.08 | Coherent eyes; side seams and neck patches remain |
 
-That complete hosted run took 164.10 seconds including diagnostic renders and
-peaked at 1.91 GiB. Hosted timings are not laptop benchmarks. The nine Sunburst
-calls include one additional guided opposite-view candidate; its results and
-the local 4K/density comparisons follow after validation.
+The complete local five-variant run, including forty diagnostic renders, took
+108.24 seconds and peaked at 1.96 GiB. The earlier hosted run took 164.10 seconds
+and peaked at 1.91 GiB; those hosted timings are separate from laptop benchmarks.
+The nine additional Sunburst
+reference calls include eight selected views and one rejected guided opposite-view candidate;
+the identity image comes from the earlier experiment. A further eight calls supplied
+the independently generated denser head below.
 
 On the laptop, the selected eight-view recipe reproduced the hosted 2K GLB
 byte for byte. Its projection and validation took 17.07 seconds at 2K and
@@ -40,6 +47,42 @@ The 2K output is 2.96 MB; 4K is 7.05 MB. Painted coverage was 56.06% and 56.08%
 of occupied texels respectively. Both preserve all 18,931 triangles and winding.
 At matched viewing size, 4K adds modest detail but does not remove side seams,
 patches, or the original surface defects. The 2K output is the cheaper default.
+
+A separate deterministic color-completion pass extrapolated nearby surface-cell
+colors into 352,560 previously unobserved occupied texels (17.21% of occupied
+texels). All 1,148,583 observed texels remain byte-identical, as do every
+non-image GLB buffer and the original native triangles/winding. This is color
+extrapolation, not additional observed coverage. It took 15.23 seconds and peaked
+at 1.10 GiB under a 4 GiB aggregate guard. It removes some neutral hair patches,
+but the cheek seam and existing shape defects remain visible.
+
+## Higher native density
+
+The 30,000-face request produced 14,936 vertices and **29,427 native triangles**
+(29,420 nondegenerate), using the original identity image, seeds and 20 sampling
+steps. Vertex generation took 3,470.25 seconds; topology took 1,670.99 seconds.
+The combined worker time was 85 minutes 41 seconds, excluding queues, references,
+UVs and painting. Peak physical footprint was 7.85 GiB for vertices and 7.52 GiB
+for topology. The stages used actual 16 GiB and 12 GiB aggregate ceilings respectively.
+
+The new head has 1,197 boundary edges, three components, no nonmanifold edges and
+seven degenerate faces. Its UV atlas occupies 53.40%, up from 48.85% on the earlier
+head. Every native triangle and winding survives UV authoring and texturing.
+It remains an open experimental mesh; the face count is not a rigging approval.
+
+Reusing the earlier eight photos failed the independent target-silhouette gate:
+overlap ranged from 88.44% to 94.93%. No threshold or source receipt was changed.
+Eight fresh Sunburst high references were generated from the new head's own
+cameras. Front-first projection painted 62.64% of occupied texels in a complete
+28.39-second run, including eight diagnostic renders, peaking at 2.03 GiB under
+a 4 GiB guard. Color completion filled another 250,921 occupied texels while
+preserving observations; it took 13.32 seconds and peaked at 1.03 GiB.
+
+At matched viewing size the denser head adds some ear and silhouette detail,
+but it still has the cheek seam and introduces worse eye/lip alignment and pale
+hair patches in these texture samples. The earlier completed 2K head is stronger
+so far. This comparison changes both native geometry and geometry-guided reference
+images: it does not isolate face density as the cause of any texture difference.
 
 ## Memory and a cheaper replay
 
@@ -84,9 +127,10 @@ Compare the original 18,931-triangle head with:
    Requested density is conditioning; it is not a guarantee of actual face count.
 
 The original request was 16,000 faces. The higher request stays within upstream's public
-30,000-face limit and the existing 26,000-vertex safety bound. The native stages use a
-separate 16 GiB aggregate ceiling and full broker reservation; shared machine profiles
-and host reserves stay unchanged. Each stage has a two-hour deadline.
+30,000-face limit and the existing 26,000-vertex safety bound. The native stages use
+separate aggregate ceilings and matching full broker reservations, up to the owner's
+16 GiB maximum; shared machine profiles and host reserves stay unchanged. Each stage
+has a two-hour deadline.
 
 ## Pipeline
 
@@ -158,6 +202,27 @@ workflow projects its five 2K variants under a 4 GiB aggregate guard, without do
 model weights, launching Blender or making paid calls. It retains models, renders and
 geometry evidence. These hosted CPU results are separate from laptop measurements.
 Local preparation and painting default to 10 GiB; `--memory-gib 4` selects a lower ceiling.
+
+## Quality limits
+
+More views substantially improve coverage, but their facial features must agree in
+3D. A 98% silhouette match can coexist with incorrectly placed pupils or a different
+mouth. Blending those views averages incompatible features; choosing the most frontal
+view independently at each texel can cut across a pupil. The front-first ordering is
+a reproducible compromise, and the rejected projected-front guide shows that asking
+an image model to preserve existing pixels does not guarantee it will do so.
+
+The source photographs are 1024 pixels square. A 4K atlas gives their projection more
+storage resolution, but it does not create additional source detail or correct feature
+placement. The source mesh's open boundaries and inconsistent winding also survive
+every texture variant. The viewer exposes those edges on the exact native triangles.
+These results remain short of the requested Tripo-quality target for a finished head.
+
+Geometry uses the released single-image-conditioned MeshAxiom weights and published
+mean/sample topology decoder. Multiview photographs are used for texture projection.
+An experimental multiview inference hook in the pinned vendor tree is not a substitute
+for a compatible checkpoint trained for multiview geometry. This pipeline does not
+claim that its additional photographs improve MeshAxiom's underlying reconstruction.
 
 ## Reproduction
 
@@ -251,3 +316,20 @@ uv run python -m atelier.ai.meshaxiom.guarded \
 Repeat with `--stage topology` and a new topology report directory. A larger ceiling
 requires the managed full-capacity broker; unmanaged machines keep the ordinary 10 GiB
 ceiling. Do not claim an unmeasured 30K run fits a smaller laptop.
+
+After a new native output completes, prepare its UVs/cameras with `prepare`, then try
+the frozen photo set without another paid request:
+
+```sh
+uv run python games/yorimichi/tools/meshaxiom_quality.py paint \
+  --mesh build/yorimichi/meshaxiom/head-quality/30k/mesh.json \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/head-quality/30k-quality \
+  --reference-set games/yorimichi/assets/characters/meshaxiom-head-reference-set \
+  --report build/yorimichi/logs/meshaxiom-quality-transfer.guard \
+  --variants front-first
+```
+
+Use a new report directory for each attempt. A failed fit needs a different documented
+reference setup; do not rewrite the paid receipt or treat the earlier mesh's guide as
+if it had been generated from the new mesh.

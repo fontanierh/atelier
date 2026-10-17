@@ -1,0 +1,241 @@
+{
+  "hardware": {
+    "chip": "Apple M1 Max",
+    "gpu_cores": 32,
+    "unified_memory_gib": 32
+  },
+  "interpretation": "Native local measurements, excluding paid image generation and queues. Peak physical footprint includes owned process trees, not just RSS.",
+  "baseline_native_mesh_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
+  "diagnostic_views": [
+    "yaw0-pitch-5",
+    "yaw60-pitch-5",
+    "yaw120-pitch-5",
+    "yaw180-pitch-5",
+    "yaw240-pitch-5",
+    "yaw300-pitch-5",
+    "yaw60-pitch55",
+    "yaw240-pitch-40"
+  ],
+  "local_texture_matrix": {
+    "variants": [
+      {
+        "variant": "single",
+        "model_sha256": "6133863700c991adad131b6b15c1f3f3a80dc185be9a4361dcdcf9b0f1b8e3ea",
+        "painted_fraction": 0.1610758990147663,
+        "covered_texels": 2048854,
+        "views": 1,
+        "projection_validation_seconds": 3.938
+      },
+      {
+        "variant": "guided-single",
+        "model_sha256": "d6b3c86f8ca3bed6e3dfcd27b899ecd7f0ff8e43eb5072eab78720b429d6110b",
+        "painted_fraction": 0.16328249841130701,
+        "covered_texels": 2048854,
+        "views": 1,
+        "projection_validation_seconds": 4.533
+      },
+      {
+        "variant": "weighted",
+        "model_sha256": "48ddcb3a116a4029cd4392c5fabd6d2db04a6de35f1c880458307fd85da0c96b",
+        "painted_fraction": 0.5510602512428899,
+        "covered_texels": 2048854,
+        "views": 8,
+        "projection_validation_seconds": 16.649
+      },
+      {
+        "variant": "best-angle",
+        "model_sha256": "2e13914599155f49236737701dddfcc813d7af79978c72f807b8b1b8086eb201",
+        "painted_fraction": 0.5510602512428899,
+        "covered_texels": 2048854,
+        "views": 8,
+        "projection_validation_seconds": 17.213
+      },
+      {
+        "variant": "front-first",
+        "model_sha256": "06f711d8a8694e9b04c8e876c0a26b13c187b74da58c2d6359a6c695be47220a",
+        "painted_fraction": 0.5605977780749629,
+        "covered_texels": 2048854,
+        "views": 8,
+        "projection_validation_seconds": 17.081
+      }
+    ],
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 108.24374004101264,
+      "peak_bytes": 2102826624,
+      "limit_bytes": 4294967296
+    }
+  },
+  "local_surface_completion": {
+    "report": {
+      "input_sha256": "06f711d8a8694e9b04c8e876c0a26b13c187b74da58c2d6359a6c695be47220a",
+      "output_sha256": "53883122d8124ffc9beb28efab94b8531da4a8672bc2fa7aaf709e02bedc7b1f",
+      "projection_receipt_sha256": "82ec7c3871389868160f7da3269ff2112cf57af7431b06d1977719bea16cedd4",
+      "observation_mask_sha256": "613aea480200c484d6f6612eed3a6eda1ec658b36edfba9a85106490ff21a049",
+      "tool_sha256": "66273a6e79b119585c70315fb09b3d6c3cde1bdf2b83b16ccd0ee631177a2eee",
+      "observed_texels": 1148583,
+      "extrapolated_texels": 352560,
+      "occupied_texels": 2048854,
+      "observed_texels_unchanged": true,
+      "observed_rgb_sha256": "632e0264c63e5b71cab4c5c269c27cecd7ee36293b3e19c75a8fece403fc39b4",
+      "non_image_buffers_identical": true,
+      "voxel_metres": 0.002734375,
+      "search_radius_metres": 0.00546875,
+      "neighbouring_cells_per_axis": 5,
+      "method": "Nearest occupied surface-cell mean within radius; not a new observation",
+      "remaining_unseen": "Original neutral texels retained beyond the bounded search",
+      "diagnostic_camera_manifest_sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+    },
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 15.225011167000048,
+      "peak_bytes": 1185173056,
+      "limit_bytes": 4294967296
+    }
+  },
+  "higher_density": {
+    "native_audit": {
+      "source_mesh_sha256": "999eed48a1df10eed84919f2f3038fbbcc32ff4ac77a7bf083194350a1def475",
+      "raw_faces": 29427,
+      "minimum_faces": 15000,
+      "usable_faces": 29420,
+      "meets_minimum_faces": true,
+      "metrics": {
+        "vertices": 14936,
+        "faces": 29427,
+        "edges": 44739,
+        "boundary_edges": 1197,
+        "nonmanifold_edges": 0,
+        "isolated_vertices": 0,
+        "components": 3,
+        "euler": -376,
+        "faces_per_vertex": 1.9702062131762186,
+        "used_vertices": 14936,
+        "min_angle_mean_deg": 31.57264180068374,
+        "sliver_share": 0.09406327522343426,
+        "degenerate_faces": 7,
+        "degree_mean": 5.990760578468131,
+        "degree_hist": {
+          "0": 0,
+          "1": 0,
+          "2": 8,
+          "3": 100,
+          "4": 1025,
+          "5": 3575,
+          "6": 6160,
+          "7": 2825,
+          "8": 925,
+          "9": 218,
+          "10": 64,
+          "11": 18,
+          "12": 18
+        },
+        "edge_length_mean": 0.03423402412183055,
+        "edge_length_p95": 0.07297477223542737,
+        "area_total": 13.993254086155343
+      },
+      "geometry_changes": "none; inspection only",
+      "acceptance": "Counts and topology metrics are not a visual or rigging approval"
+    },
+    "vertex_worker_seconds": 3470.25,
+    "topology_worker_seconds": 1670.99,
+    "vertex_guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 3472.070746790996,
+      "peak_bytes": 8428916992,
+      "limit_bytes": 17179869184
+    },
+    "topology_guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 1672.4924244590075,
+      "peak_bytes": 8075136704,
+      "limit_bytes": 12884901888
+    },
+    "uv_trials": [
+      {
+        "name": "uv-89-5e-05",
+        "angle": 89,
+        "margin": 5e-05,
+        "covered_texels": 2239666,
+        "atlas_texels": 4194304,
+        "occupancy": 0.5339779853820801,
+        "model_sha256": "0d58d543c6b5677aa883991f70ae46b992d672f436348bc67d7b7f2a2641e539"
+      },
+      {
+        "name": "uv-89-0.0002",
+        "angle": 89,
+        "margin": 0.0002,
+        "covered_texels": 2148859,
+        "atlas_texels": 4194304,
+        "occupancy": 0.5123279094696045,
+        "model_sha256": "8219ad24ce311c073818682102c33dc181c457d4879e1909a523fbe5c513ba5a"
+      },
+      {
+        "name": "uv-66-0.0002",
+        "angle": 66,
+        "margin": 0.0002,
+        "covered_texels": 2016616,
+        "atlas_texels": 4194304,
+        "occupancy": 0.48079872131347656,
+        "model_sha256": "f4da609eb06f3d0abc08c9701b21371a85a7ee32b9c382f95babbfabfa464a0a"
+      }
+    ],
+    "uv_guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 20.80684224999277,
+      "peak_bytes": 1067243712,
+      "limit_bytes": 4294967296
+    },
+    "texture_variants": [
+      {
+        "variant": "front-first",
+        "model_sha256": "f8ef4ec9c8417375cc16736f6300da19dcd229cf1e72f98c6d615388b6596a97",
+        "painted_fraction": 0.6263505361960221,
+        "covered_texels": 2239666,
+        "views": 8,
+        "projection_validation_seconds": 15.634
+      }
+    ],
+    "texture_guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 28.387185666011646,
+      "peak_bytes": 2178635136,
+      "limit_bytes": 4294967296
+    },
+    "completion_report": {
+      "input_sha256": "f8ef4ec9c8417375cc16736f6300da19dcd229cf1e72f98c6d615388b6596a97",
+      "output_sha256": "900a26ca85f2b3d9bd843f740bf0f985f3e9f5d68df87e6a6133beee82d5a725",
+      "projection_receipt_sha256": "91d1f6593dd3d8c01a2e3d70343d0fd3789995091bf382c14513743ab4e929f9",
+      "observation_mask_sha256": "a0587bed860f762fa0313fa7b1d38c97e603e07b66e80ac2fa9992a5a8164b08",
+      "tool_sha256": "66273a6e79b119585c70315fb09b3d6c3cde1bdf2b83b16ccd0ee631177a2eee",
+      "observed_texels": 1402816,
+      "extrapolated_texels": 250921,
+      "occupied_texels": 2239666,
+      "observed_texels_unchanged": true,
+      "observed_rgb_sha256": "f504ca5b7744eb5deb251ab47d76fea2b85a8bf686fc8a5883c4c83278542d18",
+      "non_image_buffers_identical": true,
+      "voxel_metres": 0.002734375,
+      "search_radius_metres": 0.00546875,
+      "neighbouring_cells_per_axis": 5,
+      "method": "Nearest occupied surface-cell mean within radius; not a new observation",
+      "remaining_unseen": "Original neutral texels retained beyond the bounded search",
+      "diagnostic_camera_manifest_sha256": "d9f776f89adf459d9f53f9ab59f0b5bebbee34c3ad28a20010ca98ce542d1c58"
+    },
+    "completion_guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 13.32320433302084,
+      "peak_bytes": 1104842176,
+      "limit_bytes": 4294967296
+    },
+    "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
+  },
+  "new_sunburst_high_calls_for_quality_phase": 17,
+  "learned_texturing_and_trellis2_status": "Pending local inference; final ranking not complete"
+}

@@ -43,6 +43,22 @@ uv run python games/yorimichi/tools/meshaxiom_viewer.py \
 
 Repeat with `--asset skater-head`, a clay title and `head_clay.glb` for the matching unpainted entry.
 
+The selected eight-view 2K comparison is also committed and needs no paid calls or model weights:
+
+```sh
+uv run python games/yorimichi/tools/meshaxiom_viewer.py \
+  --asset skater-head-multiview --title 'Skater head · eight views' --render-glb \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+  --model games/yorimichi/assets/characters/meshaxiom-skater-head-multiview/head.glb \
+  --reference games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --benchmark games/yorimichi/assets/characters/meshaxiom-skater-head/benchmark.json \
+  --note 'Eight-view front-first projection; all native triangles preserved. Seams and surface defects remain. Generation timing excludes texture authoring.'
+```
+
+See [the quality experiment](../../docs/MESHAXIOM_HEAD_QUALITY.md) for measured 2K/4K
+comparisons and exact photo replay. Viewer generation statistics describe the original native
+geometry run; texture timings and memory are recorded separately in the selected asset's provenance.
+
 For tailnet access, proxy this loopback port using an available Tailscale Serve path:
 
 ```sh
