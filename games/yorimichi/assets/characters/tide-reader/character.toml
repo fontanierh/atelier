@@ -1,0 +1,14 @@
+# Kiyo, the tide-reader of Hidamari. Source: the current procedural Blender build and its manifest.
+id = "tide-reader"
+display_name = "Kiyo"
+role = "npc"
+rig = "humanoid"                    # platform/conventions/rigs/humanoid.toml, 23 core bones
+height_cm = 155
+revision = "r01"
+source = "Kiyo-r01.blend"
+manifest = "source-manifest.json"
+build = "build.py"
+build_args = ["--views", "front,profile,back,three_quarter,face,hat", "--export"]
+references = ["references/sheet.jpg", "references/details.jpg", "references/poses.jpg"]
+unreal_path = "/Game/TideReader"
+licence = "own (Sunburst concept sheets, procedural Blender mesh and rig)"
