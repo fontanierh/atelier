@@ -679,8 +679,11 @@ void UAdventureMoveSet::Landed(const FHitResult& Hit)
         const FVector Ground = Character->GetActorLocation() - FVector(0, 0, HalfHeight());
         if (AYorimichiCombatFX* FX = AYorimichiCombatFX::Get(Character)) { FX->Dust(Ground, 1.6f); FX->Shake(.45f); }
         for (TActorIterator<AActor> It(Character->GetWorld()); It; ++It)
-            if (IsTargetable(*It) && FVector::Dist(It->GetActorLocation(), Ground) < 320.f)
+            if (IsTargetable(*It) && !HitThisSwing.Contains(*It) && FVector::Dist(It->GetActorLocation(), Ground) < 320.f)
+            {
+                HitThisSwing.Add(*It);
                 Strike(*It, 3, It->GetActorLocation(), FVector::DownVector);
+            }
         return;
     }
     const float Hard = GetParam(TEXT("HardLandHeight"), 450.f), Hurt = GetParam(TEXT("FallDamageHeight"), 900.f);

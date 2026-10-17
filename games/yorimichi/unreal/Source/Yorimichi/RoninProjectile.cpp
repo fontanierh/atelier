@@ -31,13 +31,16 @@ ARoninProjectile* ARoninProjectile::Throw(AWandererCharacter* Source, AWandererC
 {
     if (!Source || !Target || !Source->HasAuthority()) return nullptr;
     const FVector Aim = Target->GetActorLocation() + FVector(0, 0, 15.f);
-    const FVector Direction = (Aim - Source->GetActorLocation()).GetSafeNormal();
-    const FVector Start = Source->GetActorLocation() + FVector(0, 0, 25.f) +
+    const FVector Muzzle = Source->GetActorLocation() + FVector(0, 0, 25.f);
+    const FVector Direction = (Aim - Muzzle).GetSafeNormal();
+    const FVector Start = Muzzle +
         Direction * (Source->GetCapsuleComponent()->GetScaledCapsuleRadius() + 25.f);
     FHitResult Wall;
     FCollisionQueryParams Query(SCENE_QUERY_STAT(RoninThrowLOS), false, Source);
     Query.AddIgnoredActor(Target);
-    if (Source->GetWorld()->LineTraceSingleByChannel(Wall, Start, Aim, ECC_Visibility, Query)) return nullptr;
+    if (Source->GetWorld()->SweepSingleByChannel(Wall, Muzzle, Start, FQuat::Identity, ECC_Pawn,
+        FCollisionShape::MakeSphere(7.f), Query) ||
+        Source->GetWorld()->LineTraceSingleByChannel(Wall, Muzzle, Aim, ECC_Visibility, Query)) return nullptr;
     FActorSpawnParameters Spawn;
     Spawn.Owner = Source;
     if (auto* Shot = Source->GetWorld()->SpawnActor<ARoninProjectile>(Start, Direction.Rotation(), Spawn))
@@ -91,9 +94,7 @@ void ARoninProjectile::Contact(AWandererCharacter* Victim, const FVector& At)
                 Shot->bPending = false;
                 Shot->SetOwner(Player);
                 const FVector Aim = Shot->Thrower->GetActorLocation() + FVector(0, 0, 15.f);
-                const FVector Direction = (Aim - (Player->GetActorLocation() + FVector(0, 0, 15.f))).GetSafeNormal();
-                const FVector Start = Player->GetActorLocation() + FVector(0, 0, 15.f) + Direction *
-                    (Player->GetCapsuleComponent()->GetScaledCapsuleRadius() + 18.f);
+                const FVector Start = Shot->GetActorLocation(); // Reflect from the contact, never teleport across adjacent cover.
                 Shot->Velocity = (Aim - Start).GetSafeNormal() * 1450.f;
                 Shot->SetActorLocationAndRotation(Start, Shot->Velocity.Rotation());
                 Shot->ForceNetUpdate();

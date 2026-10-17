@@ -118,6 +118,7 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     if (!TestNotNull(TEXT("The scout launches an actual projectile"), Shot)) return false;
     Shot->Tick(.2f);
     TestTrue(TEXT("A swept projectile contact is reflected by a perfect parry"), Shot->bReflected && !Shot->IsActorBeingDestroyed());
+    TestTrue(TEXT("Reflection keeps the original swept contact point"), Shot->GetActorLocation().X <= 29.5f);
     Enemy->Invulnerable = 0.f;
     const float EnemyHealth = Npc->GetSword()->GetHealth();
     Shot->Tick(.2f);
@@ -136,6 +137,10 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     Shot->Tick(.2f);
     TestTrue(TEXT("Cover intercepts the blade between ticks"), Shot->IsActorBeingDestroyed());
     TestEqual(TEXT("Cover protects player health"), Player->GetSword()->GetHealth(), 100.f);
+    Wall->SetWorldLocation(FVector(167, 0, 100015));
+    auto* Occluded = ARoninProjectile::Throw(Npc, Player);
+    TestNull(TEXT("A muzzle offset cannot place a projectile beyond adjacent cover"), Occluded);
+    if (Occluded) Occluded->Destroy();
     Cover->Destroy();
     Shot = ARoninProjectile::Throw(Npc, Player);
     if (!TestNotNull(TEXT("The next shot commits to the original target point"), Shot)) return false;
@@ -159,6 +164,16 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     TestFalse(TEXT("A raised guard is unavailable during the player's own cut"), Moves->IsGuarding());
     TestEqual(TEXT("A counter-hit lands through an attacking player's held guard"),
         Moves->IncomingStrike(Npc, 10.f, Player->GetActorLocation() + FVector(100, 0, 0)), 0);
+    auto* Dummy = World->SpawnActor<ASwordDummy>(Player->GetActorLocation() + FVector(100, 0, 0), FRotator::ZeroRotator);
+    ON_SCOPE_EXIT { if (Dummy) Dummy->Destroy(); };
+    if (!TestNotNull(TEXT("Plunge regression owns a real training post"), Dummy)) return false;
+    FAdventureMove Landing; Landing.Name = TEXT("PlungeLand"); Moves->Moves.Add(Landing.Name, Landing);
+    Player->AnimationAction = TEXT("PlungeAir");
+    Moves->HitThisSwing.Reset(); Moves->Strength = 3;
+    Moves->Landed(FHitResult());
+    TestEqual(TEXT("Landing impact registers one hit"), Dummy->HitsTaken, 1);
+    Moves->SweepArc();
+    TestEqual(TEXT("The following active arc cannot duplicate the landing contact"), Dummy->HitsTaken, 1);
     return true;
 }
 #endif
