@@ -237,5 +237,92 @@
     "assessment": "Additional ear/silhouette detail, but cheek seam and poorer eye/lip alignment remain; new guided photos confound a density-only comparison."
   },
   "new_sunburst_high_calls_for_quality_phase": 17,
-  "learned_texturing_and_trellis2_status": "Pending local inference; final ranking not complete"
+  "learned_texturing_and_trellis2_status": "Native Pixal512 and two hybrids complete; native image1024 trial running; raw TRELLIS512 checkpoints ready for queued vertex bake; cascade/multiview results pending.",
+  "native_pixal_pbr_512": {
+    "report": {
+      "method": "MeshAxiom documented Pixal3D texture flow + TRELLIS.2 supplied-shape encoder/PBR decoder; MPS adapter",
+      "output_sha256": "72a2764b7ecf99afe8c64e62cdcf1e7c2ec4474649e1b6487a70036b4df515c8",
+      "native_triangles": 18931,
+      "geometry_changed": false,
+      "non_image_buffers_identical": true,
+      "naf_target_size": 512,
+      "image_conditioning_size": 512,
+      "texture_resolution": [
+        2048,
+        2048
+      ],
+      "shape_resolution": 1024,
+      "steps": 12,
+      "seed": 42,
+      "model_key_checks": {
+        "shape_enc_next_dc_f16c32_fp16": {
+          "keys": 284,
+          "strict_complete_state": true
+        },
+        "slat_flow_imgshape2tex_dit_1_3B_1024_bf16": {
+          "keys": 700,
+          "strict_complete_state": true
+        },
+        "tex_dec_next_dc_f16c32_fp16": {
+          "keys": 284,
+          "strict_complete_state": true
+        }
+      },
+      "seconds": 582.592,
+      "source_commit": "0be9e69a729432323dfb60a418801e5e9e7a1437",
+      "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+      "camera_manifest_sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+    },
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 590.930395125004,
+      "peak_bytes": 12620160960,
+      "limit_bytes": 15032385536
+    },
+    "field_voxels": 5872775,
+    "new_swapout_observed": false
+  },
+  "native_pbr_hybrids": {
+    "variants": [
+      {
+        "variant": "single",
+        "model_sha256": "8a8dc6455a6fa49e5891e49184765fb13d6a57cb3f76d5e5e92341bc2c08900b",
+        "painted_fraction": 0.1610758990147663,
+        "covered_texels": 2048854,
+        "views": 1,
+        "projection_validation_seconds": 4.044
+      },
+      {
+        "variant": "front-first",
+        "model_sha256": "0edb7402948afe8f302ae0462ffd1c3691910072ddf99aa883cd50453d62e3d8",
+        "painted_fraction": 0.5605977780749629,
+        "covered_texels": 2048854,
+        "views": 8,
+        "projection_validation_seconds": 15.58
+      }
+    ],
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 40.98058274999494,
+      "peak_bytes": 2194200320,
+      "limit_bytes": 4294967296
+    },
+    "assessment": "Original-front hybrid has sharper face and smoother sides; eight-view hybrid retains the cheek seam. All native mesh buffers and PBR metallic/roughness data unchanged."
+  },
+  "trellis_512_uv_attempt": {
+    "outcome": "Native shape and PBR checkpoints completed; raw xatlas unwrap ended after its600s phase bound without an atlas. No UV GLB produced.",
+    "exit_code": 143,
+    "native_vertices": 2401454,
+    "native_triangles": 4916486,
+    "guard": {
+      "state": "child_exited",
+      "cleanup_complete": true,
+      "elapsed_seconds": 858.2875342920015,
+      "peak_bytes": 7715243328,
+      "limit_bytes": 12884901888
+    },
+    "cleanup": "Positive empty process-tree receipt; checkpoints retained for deterministic vertex-color bake"
+  }
 }

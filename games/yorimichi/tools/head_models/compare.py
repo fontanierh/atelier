@@ -24,6 +24,11 @@ args.output.mkdir(parents=True, exist_ok=True)
 pm = load_module(VENDOR)
 pm.rasterize = partial(pm.rasterize, chunk=256)
 before = digest(args.model)
+doc, _ = pm._split_glb(args.model.read_bytes())
+if 'COLOR_0' in doc['meshes'][0]['primitives'][0]['attributes']:
+    from vertex_bake import render_existing
+    render_existing(args)
+    raise SystemExit(0)
 positions, uvs, faces, texture = pm.read_glb(args.model)
 reference = matte(Image.open(args.image))
 contact = Image.new('RGB', (1536, 816))

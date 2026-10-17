@@ -171,6 +171,16 @@ def test_material_base_accepts_texture_only_and_rejects_geometry_uv_normals_and_
     base.write_bytes(pm._join_glb(changed, payload))
     with pytest.raises(ValueError, match='node transforms'):
         quality.verify_material_base(source, base, pm)
+    changed, payload = pm._split_glb(valid)
+    changed['scenes'] = [dict(nodes=[])]
+    base.write_bytes(pm._join_glb(changed, payload))
+    with pytest.raises(ValueError, match='prepared mesh scenes'):
+        quality.verify_material_base(source, base, pm)
+    changed, payload = pm._split_glb(valid)
+    changed['bufferViews'][0]['byteStride'] = 16
+    base.write_bytes(pm._join_glb(changed, payload))
+    with pytest.raises(ValueError, match='prepared mesh buffer interpretation|interleaved buffers'):
+        quality.verify_material_base(source, base, pm)
     assert source.read_bytes() == original
 
 

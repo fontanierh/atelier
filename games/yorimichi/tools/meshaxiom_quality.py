@@ -335,15 +335,15 @@ def projection_fit(folder, camera, generated):
 
 def verify_material_base(source, base, pm):
     """@cc [owner:fontanierh,label:correctness] hybrid-preserves-prepared-mesh
-    A material base MUST retain the prepared mesh's nodes, accessors, primitives and
-    every non-image buffer byte, including positions, normals, UVs and indices.
+    A material base MUST retain the prepared scene binding, nodes, accessors, primitives,
+    non-image buffer interpretation and every byte of positions, normals, UVs and indices.
     Only material/image content MAY differ. Geometry differences MUST reject before painting.
     """
     pm.read_glb(source)
     pm.read_glb(base)
     before, before_binary = pm._split_glb(source.read_bytes())
     after, after_binary = pm._split_glb(base.read_bytes())
-    for key in ('nodes', 'meshes', 'accessors'):
+    for key in ('scene', 'scenes', 'nodes', 'meshes', 'accessors'):
         if before.get(key) != after.get(key):
             raise ValueError(f'Material base changed prepared mesh {key}')
     images = {item['bufferView'] for item in before['images']}
@@ -353,6 +353,9 @@ def verify_material_base(source, base, pm):
         if index in images:
             continue
         b = after['bufferViews'][index]
+        if ({k: v for k, v in a.items() if k != 'byteOffset'} !=
+                {k: v for k, v in b.items() if k != 'byteOffset'}):
+            raise ValueError('Material base changed prepared mesh buffer interpretation')
         start_a, start_b = a.get('byteOffset', 0), b.get('byteOffset', 0)
         if (a['byteLength'] != b['byteLength'] or
                 before_binary[start_a:start_a+a['byteLength']] !=

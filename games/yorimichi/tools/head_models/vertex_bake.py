@@ -49,6 +49,7 @@ def srgb(values):
 
 def worker(args):
     started=time.monotonic();args.output.mkdir(parents=True,exist_ok=True)
+    print('Loading native shape/PBR checkpoints for vertex bake',flush=True)
     if (args.output/'head.glb').exists():raise ValueError('Completed vertex-bake trial exists')
     with np.load(args.checkpoint/'mesh_raw.npz',allow_pickle=False) as raw:
         vertices=raw['vertices'].astype('<f4');faces=raw['faces'].astype('<u4')
@@ -61,6 +62,7 @@ def worker(args):
     if len(vertices)!=len(colors) or not np.isfinite(vertices).all() or faces.max()>=len(vertices):
         raise ValueError('Raw mesh and decoder support differ')
     positions=vertices.copy();positions[:,1]=vertices[:,2];positions[:,2]=-vertices[:,1]
+    print(f'Color support verified for{len(vertices):,} native vertices; deriving display normals',flush=True)
     normals=np.zeros_like(positions)
     for start in range(0,len(faces),65536):
         f=faces[start:start+65536];p=positions[f]
@@ -89,16 +91,22 @@ def worker(args):
         actual=np.frombuffer(payload,dtype='<f4' if index==0 else '<u4',count=expected.size,offset=offset).reshape(expected.shape)
         if not np.array_equal(actual,expected):raise ValueError('Vertex bake changed raw positions/indices')
     del binary,payload,arrays
+    print('Raw positions/indices verified in GLB; streaming complete source archive',flush=True)
+    spoken=time.monotonic()
     # Stream the complete native source for independent downloads without a huge Python list.
     with gzip.open(args.output/'mesh.json.gz','wt',encoding='utf-8') as out:
         out.write('{"vertices":[')
         for first in range(0,len(positions),65536):
             if first:out.write(',')
             out.write(json.dumps(positions[first:first+65536].tolist(),separators=(',',':'))[1:-1])
+            if time.monotonic()-spoken>=20:
+                print(f'Source archive: {min(first+65536,len(positions)):,}/{len(positions):,} vertices',flush=True);spoken=time.monotonic()
         out.write('],"faces":[')
         for first in range(0,len(faces),65536):
             if first:out.write(',')
             out.write(json.dumps(faces[first:first+65536].tolist(),separators=(',',':'))[1:-1])
+            if time.monotonic()-spoken>=20:
+                print(f'Source archive: {min(first+65536,len(faces)):,}/{len(faces):,} triangles',flush=True);spoken=time.monotonic()
         out.write(']}')
     report=dict(method='Learned native voxel color to raw dual-grid vertex bake, no UVs',
         worker_sha256=digest(Path(__file__)),native_checkpoint_sha256=digest(args.checkpoint/'mesh_raw.npz'),
@@ -109,6 +117,10 @@ def worker(args):
     write(args.output/'vertex-bake.json',report)
     print(json.dumps(report),flush=True)
     if not args.render:return
+    render_vertices(args,pm,positions,faces,values,model)
+
+
+def render_vertices(args,pm,positions,faces,values,model):
     pm.rasterize=partial(pm.rasterize,chunk=256)
     reference=matte(Image.open(args.image));contact=Image.new('RGB',(1536,816));draw=ImageDraw.Draw(contact)
     cameras=[]
@@ -126,6 +138,29 @@ def worker(args):
     contact.save(args.output/'contact.png')
     write(args.output/'comparison.json',dict(model_sha256=digest(model),reference_sha256=digest(args.image),
         camera_yaw_offset=args.yaw_offset,source_unchanged=True,mode='Base color, no relighting',views=cameras))
+
+
+def render_existing(args):
+    """Render an existing native vertex-color GLB without rewriting its model bytes."""
+    args.output.mkdir(parents=True,exist_ok=True)
+    pm=load_module(VENDOR);before=digest(args.model)
+    doc,payload=pm._split_glb(args.model.read_bytes())
+    if doc.get('nodes')!=[dict(mesh=0)]:raise ValueError('Vertex-color comparison requires identity node transforms')
+    if len(doc['meshes'])!=1 or len(doc['meshes'][0]['primitives'])!=1:
+        raise ValueError('Vertex-color comparison requires one complete native primitive')
+    primitive=doc['meshes'][0]['primitives'][0]
+    if primitive.get('mode',4)!=4:raise ValueError('Expected native triangles')
+    def read(index,kind,component,dtype,width):
+        a=doc['accessors'][index];v=doc['bufferViews'][a['bufferView']]
+        if a['type']!=kind or a['componentType']!=component or a.get('sparse') or v.get('byteStride') or v.get('buffer',0)!=0:
+            raise ValueError('Unsupported native vertex attribute layout')
+        return np.frombuffer(payload,dtype=dtype,count=a['count']*width,
+            offset=v.get('byteOffset',0)+a.get('byteOffset',0)).reshape(a['count'],width)
+    positions=read(primitive['attributes']['POSITION'],'VEC3',5126,'<f4',3)
+    values=read(primitive['attributes']['COLOR_0'],'VEC3',5126,'<f4',3)
+    faces=read(primitive['indices'],'SCALAR',5125,'<u4',1).reshape(-1,3)
+    render_vertices(args,pm,positions,faces,values,args.model)
+    if digest(args.model)!=before:raise ValueError('Comparison changed the native GLB')
 
 
 def main(argv=None):

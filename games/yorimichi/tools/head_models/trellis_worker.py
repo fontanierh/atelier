@@ -18,6 +18,7 @@ p.add_argument('--output',type=Path,required=True)
 p.add_argument('--resolution',type=int,choices=[512,768,1024],default=512)
 p.add_argument('--steps',type=int,choices=[8,12,20],default=12)
 p.add_argument('--quantize',type=int,choices=[0,4,8],default=0)
+p.add_argument('--yaw-offset',type=float,default=-90,help='Camera-frame offset for matched semantic head views; no geometry change')
 p.add_argument('--vertex-colors',action='store_true',help='Bake learned colors at raw vertices without UV construction')
 p.add_argument('--mlx-gib',type=int,choices=[8,10,12],default=8)
 p.add_argument('--max-tokens',type=int,choices=[8192,12288,16384],default=16384)
@@ -138,7 +139,7 @@ if args.resolution==512:argv+=['--no-cascade']
 write(args.output/'requested-recipe.json',dict(backend='Microsoft TRELLIS.2 via pinned MLX port',
     source_commit=actual,source_sha256=digest(source_path),executed_source_sha256=hashlib.sha256(source.encode()).hexdigest(),
     source_patches=patches,configuration=dict(resolution=args.resolution,steps=args.steps,seed=42,
-        quantize=args.quantize,max_tokens=args.max_tokens,mlx_limit_gib=args.mlx_gib,vertex_colors=args.vertex_colors,target_faces=0,cleanup=False,hole_fill=False,texture_size=args.texture_size,high_stage_image_size=1024 if args.resolution>512 else 512,
+        quantize=args.quantize,max_tokens=args.max_tokens,mlx_limit_gib=args.mlx_gib,vertex_colors=args.vertex_colors,target_faces=0,cleanup=False,hole_fill=False,texture_size=args.texture_size,camera_yaw_offset=args.yaw_offset,high_stage_image_size=1024 if args.resolution>512 else 512,
         texture_model_resolution=1024 if args.resolution>512 else 512),
     image_provenance=image_provenance,weights=receipts,
     multiview='Concatenated DINO feature sequences without camera labels; experimental inference heuristic, not a multiview-trained checkpoint' if len(prepared)>1 else 'single reference image'))
@@ -147,12 +148,16 @@ start=time.monotonic()
 namespace={'__name__':'__main__','__file__':str(source_path)}
 with stage('TRELLIS.2 MLX native generation and raw-geometry texture bake'):
     exec(compile(source,str(source_path),'exec'),namespace)
+from trellmlx.modules.sparse_conv import clear_neighbor_map_cache
+clear_neighbor_map_cache()
 gc.collect();mx.synchronize();mx.clear_cache()
 
 if args.vertex_colors:
     from vertex_bake import worker as bake_vertices
     bake_vertices(SimpleNamespace(checkpoint=args.output/'checkpoints',output=args.output,
-        image=args.image[0],render=True,yaw_offset=0))
+        image=args.image[0],render=False,yaw_offset=args.yaw_offset))
+    from vertex_bake import render_existing
+    render_existing(SimpleNamespace(model=args.output/'head.glb',image=args.image[0],output=args.output,yaw_offset=args.yaw_offset))
     proof=json.loads((args.output/'vertex-bake.json').read_text())
     report=dict(worker_sha256=digest(Path(__file__)),backend='Microsoft TRELLIS.2 MLX, native vertex colors',
         native_vertices=proof['vertices'],native_triangles=proof['triangles'],
