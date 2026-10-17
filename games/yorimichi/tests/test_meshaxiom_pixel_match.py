@@ -72,9 +72,10 @@ def test_standalone_preparation_has_real_aggregate_cleanup(monkeypatch, tmp_path
     assert receipt['peak_bytes'] > 0 and receipt['processes'] == []
 
 
-def fixture_glb(pm, path):
-    positions = np.array([[-.5,-.5,.2],[.5,-.5,.2],[.5,.5,.2],[-.5,.5,.2],
-                          [-.5,-.5,-.2],[.5,-.5,-.2],[.5,.5,-.2],[-.5,.5,-.2]], dtype='<f4')
+def fixture_glb(pm, path, positions=None):
+    positions = np.array(positions if positions is not None else [
+        [-.5,-.5,.2],[.5,-.5,.2],[.5,.5,.2],[-.5,.5,.2],
+        [-.5,-.5,-.2],[.5,-.5,-.2],[.5,.5,-.2],[-.5,.5,-.2]], dtype='<f4')
     uvs = np.array([[.05,.05],[.45,.05],[.45,.95],[.05,.95],
                     [.55,.05],[.95,.05],[.95,.95],[.55,.95]], dtype='<f4')
     faces = np.array([[0,1,2],[0,2,3],[4,6,5],[4,7,6]], dtype='<u2')
@@ -357,3 +358,50 @@ def test_completion_preserves_observations_and_only_fills_nearby_unseen_samples(
     assert np.array_equal(colours[1], [128,128,128])  # the original texture remains an independent input
     with pytest.raises(ValueError, match='bounded completion workspace'):
         completion.extrapolate(np.array([[0.,0,0],[1,1,1]]), colours[:2], observed[:2])
+
+
+def test_completion_roundtrip_keeps_original_glb_and_observed_rgba(adapter, monkeypatch, tmp_path):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_completion_roundtrip', SCRIPT.with_name('meshaxiom_complete.py'))
+    completion = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(completion)
+    pm = adapter.load_module(completion.VENDOR)
+    source = tmp_path/'front-first'
+    source.mkdir()
+    (tmp_path/'guides').mkdir()
+    model = source/'head-pixel-match.glb'
+    positions = [[-.175,0,.001],[.175,0,.001],[.175,.35,.001],[-.175,.35,.001],
+                 [-.175,0,-.001],[.175,0,-.001],[.175,.35,-.001],[-.175,.35,-.001]]
+    fixture_glb(pm, model, positions)
+    vertices, uvs, faces, texture = pm.read_glb(model)
+    face, _ = pm.rasterize((uvs*64)[faces], np.zeros((4,3)), (64,64))
+    observed = (face >= 0) & (face < 2)
+    owned = texture.copy()
+    owned[observed, :3] = [200,40,20]
+    model.write_bytes(pm.replace_base_colour(model.read_bytes(), pm.encode_png(owned)))
+    original = model.read_bytes()
+    Image.fromarray((observed*255).astype('uint8')).save(source/'confidence.png')
+    (source/'views.json').write_text('{}')
+    proof = dict(output_sha256=adapter.digest(model), blend='front-first',
+                 views_manifest_sha256=adapter.digest(source/'views.json'),
+                 painted_surface_texels=int(observed.sum()), input_mesh_sha256=adapter.digest(model),
+                 reference_sha256='fixture identity')
+    (source/'pixel-match-report.json').write_text(json.dumps(proof))
+    camera = np.eye(4)
+    camera[2,3] = 3
+    views = [dict(name=f'view{i}', transform_matrix=camera.tolist(), camera_angle_x=np.deg2rad(45))
+             for i in range(8)]
+    (tmp_path/'guides/cameras.json').write_text(json.dumps(dict(
+        mesh_sha256=adapter.digest(model), reference_sha256=proof['reference_sha256'], views=views)))
+    native = tmp_path/'native.json'
+    native.write_text(json.dumps(dict(vertices=(vertices[:,[0,2,1]] * [1,-1,1]).tolist(),
+                                     faces=faces.tolist())))
+    output = tmp_path/'complete'
+    assert completion.complete(SimpleNamespace(source=source, mesh=native, output=output)) == 0
+    assert model.read_bytes() == original
+    result = pm.read_glb(output/'head-completed.glb')
+    assert np.array_equal(result[3][observed], owned[observed])
+    assert np.any(result[3][face >= 2] != owned[face >= 2])
+    report = json.loads((output/'completion-report.json').read_text())
+    assert report['extrapolated_texels'] > 0 and report['non_image_buffers_identical']
+    assert json.loads((output/'geometry-verification.json').read_text())['all_triangles_and_winding_preserved']

@@ -77,6 +77,7 @@ def complete(args):
     pm = load_module(VENDOR)
     pm.rasterize = partial(pm.rasterize, chunk=256)
     positions, uvs, faces, texture = pm.read_glb(model)
+    texture = texture.copy()  # Pillow-backed input is read-only; retain the source independently.
     mask = np.asarray(Image.open(mask_path).convert('L'))
     if mask.shape != texture.shape[:2] or not np.isin(mask, [0, 255]).all():
         raise ValueError('Completion needs the binary front-first observation mask')

@@ -83,3 +83,4 @@ jobs:
           path: |
             build/yorimichi/meshaxiom/ci-head-quality/surface-fill/
             build/yorimichi/meshaxiom/ci-head-quality/completion-guard/memory-health-tree.json
+            build/yorimichi/meshaxiom/ci-head-quality/completion-guard/stdout.log
