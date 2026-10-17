@@ -1,0 +1,23 @@
+{
+  "pixel_match_revision": "7793fd3622bab7d3fd4526ba02433244d5bf02e2",
+  "module_sha256": "a64f11ee0616f3d0457574037979d0d9faf0970814e86c9a69f9ca70c88bc562",
+  "input_mesh_sha256": "7226a08d94344ba34b8a8fb8c612856e06dc3090b1e1485069e1cdef207c65c6",
+  "reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+  "calibration_sha256": "07e5ddc7ad700d551b23fb9b549cc962ff4c782fa4f59a7afbebd81d0d2eac56",
+  "output_sha256": "f46800124996d370cc6335c7da7f2f40b478958dd1bdefb2c4eb072c61159a20",
+  "triangle_count": 18931,
+  "exported_vertices": 20006,
+  "atlas_size": [
+    2048,
+    2048
+  ],
+  "covered_texels": 228161,
+  "painted_surface_texels": 34845,
+  "covered_surface_fraction_painted": 0.1527211048338673,
+  "protected_texels": 193316,
+  "changed_protected_texels": 0,
+  "geometry_and_uvs_identical": true,
+  "non_texture_buffers_identical": true,
+  "unseen_surface": "Neutral base retained. One view; no inferred back texture.",
+  "match_colour": false
+}

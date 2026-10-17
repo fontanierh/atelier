@@ -29,6 +29,20 @@ The GLB triangle count must equal the supplied generated JSON's count. UV or nor
 exported vertices without changing the original triangle connectivity. The download always preserves
 the export's exact bytes.
 
+The completed head comparison can be staged directly from the committed sources, with no inference:
+
+```sh
+uv run python games/yorimichi/tools/meshaxiom_viewer.py \
+  --asset skater-head-pixel-match --title 'Skater head · Pixel Match' --render-glb \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+  --model games/yorimichi/assets/characters/meshaxiom-skater-head/head_pixel_match.glb \
+  --reference games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --benchmark games/yorimichi/assets/characters/meshaxiom-skater-head/benchmark.json \
+  --note 'Single-view texture comparison; unseen surfaces remain neutral. Experimental topology.'
+```
+
+Repeat with `--asset skater-head`, a clay title and `head_clay.glb` for the matching unpainted entry.
+
 For tailnet access, proxy this loopback port using an available Tailscale Serve path:
 
 ```sh

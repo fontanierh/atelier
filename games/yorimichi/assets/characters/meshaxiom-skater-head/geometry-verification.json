@@ -1,0 +1,11 @@
+{
+  "native_triangle_count": 18931,
+  "exported_triangle_count": 18931,
+  "all_triangles_and_winding_preserved": true,
+  "positions": "Uniform scale/origin and Z-up to Y-up, verified at exported float32 precision",
+  "uv_seam_vertex_count": 20006,
+  "atlas_size": [
+    2048,
+    2048
+  ]
+}

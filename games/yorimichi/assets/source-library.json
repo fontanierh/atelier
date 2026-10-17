@@ -1937,6 +1937,34 @@
       "bytes": 475801,
       "sha256": "0e7b36816e758ac83e59330dbc4232444b8787489bea5eaf26496bdc539c950e"
     },
+    "characters/meshaxiom-skater-head/base-colour.png": {
+      "bytes": 168021,
+      "sha256": "3bcc5fcd99c8964b29cea501ec54734d13d5f85ccf24feb0d90fa1b442547d94"
+    },
+    "characters/meshaxiom-skater-head/changed.png": {
+      "bytes": 28634,
+      "sha256": "30b13380d432d1625302288b2818ad2e5ddaa3b4c35ab3d36b539c46107d4d1e"
+    },
+    "characters/meshaxiom-skater-head/confidence.png": {
+      "bytes": 50943,
+      "sha256": "2c82d9e5121e36dea1f774c0a85310c955cc4cb4fa8582cffa14b27c7918821f"
+    },
+    "characters/meshaxiom-skater-head/head_clay.glb": {
+      "bytes": 833524,
+      "sha256": "7226a08d94344ba34b8a8fb8c612856e06dc3090b1e1485069e1cdef207c65c6"
+    },
+    "characters/meshaxiom-skater-head/head_pixel_match.glb": {
+      "bytes": 923244,
+      "sha256": "f46800124996d370cc6335c7da7f2f40b478958dd1bdefb2c4eb072c61159a20"
+    },
+    "characters/meshaxiom-skater-head/protected.png": {
+      "bytes": 54391,
+      "sha256": "ed63e6ec3b4c6b99b7aecc94de46ac154df623e1c48c0fbfcaa69ffa8edb49bc"
+    },
+    "characters/meshaxiom-skater-head/reference-matted.png": {
+      "bytes": 856810,
+      "sha256": "40d9ef61a90f09abf7fc4436739a2b662390875a5058fadc216e501dffe64547"
+    },
     "characters/meshaxiom-skater-head/reference.png": {
       "bytes": 810295,
       "sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e"

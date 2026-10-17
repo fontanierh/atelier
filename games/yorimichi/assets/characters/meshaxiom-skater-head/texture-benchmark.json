@@ -1,0 +1,20 @@
+{
+  "prepare": {
+    "elapsed_seconds": 10.214332667004783,
+    "peak_bytes": 754305920,
+    "limit_bytes": 10737418240,
+    "state": "child_exited",
+    "cleanup_complete": true
+  },
+  "projection_and_browser": {
+    "elapsed_seconds": 56.87418358300056,
+    "peak_bytes": 1412354944,
+    "limit_bytes": 10737418240,
+    "state": "child_exited",
+    "cleanup_complete": true
+  },
+  "projection_seconds": 1.7,
+  "geometry_validation_seconds": 1.0,
+  "browser_qa": "Food cart and both head GLBs loaded on the live tailnet route; >=15000 triangles, controls, mobile overflow and page errors checked; browser closed",
+  "alignment_review": "Eye, nose, mouth and chin registration visually inspected before projection; approximate fit, not a facial landmark optimization"
+}

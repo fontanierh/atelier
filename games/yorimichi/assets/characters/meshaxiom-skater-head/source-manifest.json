@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "name": "Skater head \u2014 MeshAxiom with Pixel Match comparison",
+  "status": "Experimental: native face minimum passed; open edges, winding and facial cleanup remain",
+  "model": "head_pixel_match.glb",
+  "clay_model": "head_clay.glb",
+  "source_mesh": "mesh.source.json.gz",
+  "source_mesh_encoding": "gzip; exact original native JSON bytes",
+  "native_mesh_json_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
+  "reference": "reference.png",
+  "benchmark": "benchmark.json",
+  "texture_benchmark": "texture-benchmark.json",
+  "pixel_match_report": "pixel-match-report.json",
+  "geometry": {
+    "native_vertices": 9554,
+    "raw_triangles": 18931,
+    "usable_triangles": 18925,
+    "height_metres": 0.35,
+    "changes": "Uniform scale/origin and Z-up to Y-up only; native triangles and winding verified, UVs and smooth shading added, texture projection preserves all non-image buffers"
+  },
+  "texture": {
+    "method": "Pinned Nox Pixel Match projection module",
+    "view_count": 1,
+    "atlas_size": [
+      2048,
+      2048
+    ],
+    "unseen_surface": "Neutral base retained; no inferred back texture",
+    "covered_uv_fraction_painted": 0.1527211048338673,
+    "changed_protected_texels": 0
+  },
+  "sha256": {
+    "base-colour.png": "3bcc5fcd99c8964b29cea501ec54734d13d5f85ccf24feb0d90fa1b442547d94",
+    "benchmark.json": "f6aac49652c60badac25e6417b12e58bb4085325bda208188b8c2c1a60f93e8e",
+    "calibration.json": "07e5ddc7ad700d551b23fb9b549cc962ff4c782fa4f59a7afbebd81d0d2eac56",
+    "changed.png": "30b13380d432d1625302288b2818ad2e5ddaa3b4c35ab3d36b539c46107d4d1e",
+    "confidence.png": "2c82d9e5121e36dea1f774c0a85310c955cc4cb4fa8582cffa14b27c7918821f",
+    "geometry-verification.json": "a7b722b0514816358acdf05d40aed1c89a6e3e2abe82997796f02faeb1e1ca6b",
+    "head_clay.glb": "7226a08d94344ba34b8a8fb8c612856e06dc3090b1e1485069e1cdef207c65c6",
+    "head_pixel_match.glb": "f46800124996d370cc6335c7da7f2f40b478958dd1bdefb2c4eb072c61159a20",
+    "mesh-audit.json": "1ba22cb765001c843774c3c8a774e18bfa462ef629bfd0e9e8815ff3527c471b",
+    "mesh.source.json.gz": "ca7520d32c408a16fdc9d89cdb4feb2fa112fbe728d139467706e2cb593a9ff7",
+    "pixel-match-report.json": "0b8b5531bb73e69a46c28c7b09e062c07abd257afbf44f83a5c07d1847f712e4",
+    "protected.png": "ed63e6ec3b4c6b99b7aecc94de46ac154df623e1c48c0fbfcaa69ffa8edb49bc",
+    "reference-matted.png": "40d9ef61a90f09abf7fc4436739a2b662390875a5058fadc216e501dffe64547",
+    "reference-prompt.txt": "93c33948985dd77bacfbfd71ae59d75ad06b5a007c5c09d7cba26f252d602106",
+    "reference.png": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
+    "reference.provenance.json": "7f2c68e71cf0e2b048b10aa74a30c8fcf97e1117fd32f3bce2860babcfadf3e7",
+    "texture-benchmark.json": "9b73d07a8a87d78533f4832c1e52926e707f2b8234eb1f6f5a6011fb02030547",
+    "uv-export.json": "f4c39b269ea4a5e6f2e70953cc23535eb3f7b5df02168b3669842c2f5159909c"
+  }
+}

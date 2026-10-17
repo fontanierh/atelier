@@ -1,8 +1,19 @@
 # MeshAxiom Apple Silicon proof of concept
 
-This experiment generates a neighborhood recycling-bin prop for Yorimichi on a 32 GiB M1 Max MacBook Pro.
-The input is a GPT Image 2.5 Sunburst reference with a faded indigo cabinet and ochre lid, matching the
-street and skate-park palette. Geometry is inferred locally using the public MeshAxiom-Base EMA weights.
+This experiment runs the public MeshAxiom-Base EMA weights locally on a 32 GiB M1 Max MacBook Pro,
+using GPT Image 2.5 Sunburst references for Yorimichi. It produced a recycling bin, a street-food cart
+and a character head. The two larger meshes exceed the requested 15,000 usable triangles without
+subdivision or replacing the generated connectivity.
+
+| Asset | Raw / usable triangles | Local geometry inference | Peak process-tree memory |
+| --- | ---: | ---: | ---: |
+| Recycling bin | 1,938 / 1,935 | 6m 33s | 6.42 GiB |
+| Street-food cart | 16,983 / 16,960 | 40m 12s | 6.77 GiB |
+| Skater head | 18,931 / 18,925 | 56m 39s | 6.83 GiB |
+
+Usable counts exclude duplicate, repeated-index and zero-area triangles. These are measured geometry
+runs, excluding downloads, reference generation, capacity waits, UVs and textures. The meshes remain
+experimental: face count and learned connectivity do not establish production or animation quality.
 
 The complete model pipeline produced **1,049 vertices and 1,938 triangles in 392.69 seconds** on the laptop,
 with a **6.42 GiB** maximum measured process-tree footprint. Both stages used the normal 10 GiB guards,
@@ -79,8 +90,12 @@ The tested machine is an M1 Max MacBook Pro with 10 CPU cores, 32 GPU cores, 32 
 macOS 26.2. No remote GPU or paid 3D service was used. The one paid operation for the first asset was
 the Sunburst reference; inference uses the downloaded public weights. The practical low-cost route is
 this resident, sequential MPS implementation on an existing Apple Silicon Mac, without buying a CUDA PC.
-The 6.42 GiB figure is an observed process-tree peak for the small bin, not a minimum system-RAM promise
-or a measurement for a 16,000-face object. Smaller-memory Macs and other chips are unmeasured.
+The 6.42 GiB figure is the small bin's observed process-tree peak; the larger runs measured up to
+6.83 GiB. Neither is a minimum system-RAM promise. Smaller-memory Macs and other chips are unmeasured.
+For a lower-memory Mac, start with the 2K request and 10 GiB guard, retaining the host reserve; do not
+copy the owner-selected 16 GiB reservation onto a 16 GiB computer. A 16 GiB Mac is a plausible target
+for the resident implementation, but needs its own guarded validation. No streamed-weight runner is
+required for the tested laptop.
 
 Keep at least 30 GiB free for the initial 19.66 GiB checkpoint payload, source and isolated dependencies.
 Install once, retain the verified files and use a fresh output/report directory for each attempt. Close
@@ -121,7 +136,9 @@ was **6.77 GiB**; both guards ended with complete empty cleanup and no new swap-
 
 The cart has 1,827 boundary edges, 92 connected components, 23 degenerate triangles and no nonmanifold
 edges. The published orientation pass leaves 76 inconsistently wound edges and ten nonorientable pieces.
-Its face minimum passes, but this is an experimental mesh requiring visual review and cleanup. The
+Its face minimum passes, but this is an experimental mesh requiring cleanup. Visual inspection retained
+the roof ribs, spoked wheels and steamer, while the lower cabinet boards, curtain and bottle are missing
+or substantially simplified. Some roof/post junctions have gaps and stretched triangles. The
 1.8-metre, ground-origin export uses simple wood/indigo preview materials. A format round-trip verified
 every original triangle and winding, the height and ground position, and byte-identical served downloads.
 The source is retained losslessly as `assets/props/food-cart-meshaxiom/mesh.source.json.gz`; decompressing
@@ -133,8 +150,12 @@ uv run python games/yorimichi/tools/meshaxiom_export.py \
   --output build/yorimichi/meshaxiom/food-cart/reproduced.glb --height 1.8 --palette cart
 ```
 
-At this checkpoint, the head vertex stage has completed 9,554 vertices in 2,522.16 seconds at 6.83 GiB;
-head topology and the Pixel Match comparison are still running or pending.
+The head completed **9,554 vertices, 18,931 raw triangles and 18,925 unique nondegenerate triangles**.
+Vertex inference took 2,522.16 seconds and topology took 876.49 seconds, totaling **56m 39s** at
+**6.83 GiB** maximum aggregate footprint. Both guards exited with complete empty cleanup; no new
+swap-out was observed. Its audit finds 1,323 boundary edges, six connected components, six degenerate
+triangles and no nonmanifold edges. The orientation pass leaves 455 inconsistently wound edges and
+one nonorientable piece. The raw source and benchmark are retained next to the head reference.
 
 `atelier.ai.meshaxiom.guarded` reserves the full selected memory and GPU envelope in an explicit broker
 session and uses the existing per-process and aggregate guards. The shared profile, 4 GiB host reserve,
@@ -207,17 +228,38 @@ ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarde
   --output build/yorimichi/meshaxiom/skater-head/pixel-match
 ```
 
-At this checkpoint the adapter is prepared and tested; the head comparison still awaits geometry.
-Inspect front, sides, back and underside before accepting a texture. The projection includes the
+The completed head used a 35 cm export and a 2,048 by 2,048 atlas. UV preparation and camera fitting
+took **10.21 seconds** at **0.70 GiB** peak. The selected camera is yaw 60 degrees, pitch -5 degrees;
+its 96-pixel silhouette IoU is 0.947. Visual inspection found an approximate eye/nose/mouth/chin fit,
+with remaining facial registration error. A triangle-coordinate comparison verified every original
+triangle and its winding after scale/origin/axis conversion, despite UV seams splitting the exported
+vertex count from 9,554 to 20,006.
+
+Actual Pixel Match projection took **1.7 seconds**, followed by 1.0 second of protection and geometry
+validation. Projection, staging and three-model browser QA together used **56.87 seconds** at
+**1.32 GiB** peak. Both jobs used the normal 10 GiB guard and exited with complete empty cleanup.
+Of 228,161 covered UV texels, 34,845 received reference color (**15.27% of occupied UV texels**, not a
+physical surface-area percentage); all 193,316 protected texels remained unchanged. Positions, UVs,
+indices and every non-texture buffer remained identical. The fragmented Smart UV layout occupies only
+5.44% of the atlas, limiting effective texture resolution despite its nominal 2K size.
+
+The front gains recognizable skin, eyes and hair color. The opposite cheek, nose side, much of the
+hair and the back retain neutral patches; eye/mouth borders and hair tips show seams or jagged edges.
+Front, side and rear views were inspected. This is a partial texture comparison, not a finished
+character: better UV packing, calibrated additional views, winding/normal cleanup and facial retopology
+are still needed. Inspect the underside before production acceptance. The projection includes the
 reference's painted lighting and cannot repair malformed ears, missing surfaces or facial edge loops.
+The head's asset directory retains the clay and painted GLBs, base color, matte, confidence/protection/
+change masks, calibration, geometry verification and timing reports with checksums.
 
 ## Interactive inspection
 
 `games/yorimichi/tools/meshaxiom_viewer.py` stages only explicitly supplied geometry, image and GLB
 inputs into `build/yorimichi/meshaxiom/viewer`. Its adjacent README gives the loopback HTTP and
 Tailscale Serve commands. The page supports orbit, zoom, wireframe, gray/color comparison and a
-model selector, plus a red open-edge overlay. A browser check on the live tailnet route verified model loading, all toggles, the
-phone layout and no page errors. Fetching the served mesh, reference and GLB reproduced the source
+model selector, plus a red open-edge overlay. Browser checks on the live tailnet route verified the
+cart and both head GLBs, their native triangle counts, all toggles, phone layouts and no page errors.
+The owned browser closed after the checks. Fetching the served mesh, reference and GLB reproduced the source
 SHA256 values. The viewer uses the committed, pinned Three.js bundle and no external CDN.
 
 JSON-mode colors are simple preview materials. With `--render-glb`, the viewer loads the supplied
