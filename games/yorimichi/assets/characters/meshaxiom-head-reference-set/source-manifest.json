@@ -7,9 +7,13 @@
   "image_model": "gpt-image-2.5-sunburst",
   "quality": "high",
   "files": {
-    "guides/cameras.json": {
+    "guides/cameras-coherent.json": {
       "bytes": 6905,
       "sha256": "f88191b9d7abfe8f1b870d6c18909344ebdf707e90bbb5b4480813673038b4a1"
+    },
+    "guides/cameras.json": {
+      "bytes": 6370,
+      "sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
     },
     "guides/yaw0-pitch-5-mask.png": {
       "bytes": 6500,
@@ -111,6 +115,18 @@
       "bytes": 710,
       "sha256": "fa99be058751e0ae1e9321a2517090cf39ff59bf5a134459d9b4993cc2272007"
     },
+    "references/yaw120-pitch-5.png": {
+      "bytes": 816183,
+      "sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8"
+    },
+    "references/yaw120-pitch-5.prompt.txt": {
+      "bytes": 1075,
+      "sha256": "3291ccb75d431f13170609b72d11a88bbb954a21dea081e726337cf898962c17"
+    },
+    "references/yaw120-pitch-5.provenance.json": {
+      "bytes": 2762,
+      "sha256": "afd9c035fe391dfebc510b7550b6606ad852cc1eb3bc5bfba19f574c9d7fe880"
+    },
     "references/yaw180-pitch-5.png": {
       "bytes": 799738,
       "sha256": "91d1f2d83ca8e3958c5f8a73c9085066197bf64176f83ede05ff88d927dc1d4f"
@@ -204,6 +220,8 @@
   "native_json_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
   "identity_reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e",
   "reference_view_count": 8,
-  "opposite_view_method": "Sunburst completion of a projected front texture; original colors remain authoritative in front-first projection",
-  "opposite_view_registration": "Uniform 2D scale and translation; raw paid image preserved; silhouette IoU .9066 to .9678"
+  "opposite_view_method": "Selected: independent geometry-guided Sunburst image. Rejected alternative: completion of projected front texture, available through cameras-coherent.json.",
+  "opposite_view_registration": "Rejected alternative only: uniform 2D scale/translation, raw image preserved; silhouette IoU .9066 to .9678, but rendered facial features worsened.",
+  "selection": "Eight independent geometry-guided views, front-first projection. The additional front-projected opposite-view candidate is rejected: framing passed after bounded registration, but rendered eye alignment worsened.",
+  "alternative_camera_manifest": "guides/cameras-coherent.json"
 }

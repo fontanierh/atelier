@@ -1,0 +1,32 @@
+{
+  "kind": "Fixed native MeshAxiom head with eight-view Sunburst/Pixel Match texture",
+  "geometry_source": "../meshaxiom-skater-head/mesh.source.json.gz",
+  "reference_set": "../meshaxiom-head-reference-set",
+  "reference_manifest_sha256": "9b36a53fd08f5c6f46b0c85c43d6795b72ab5880da7af8cacd81e7685f22b257",
+  "selected_model": "head.glb",
+  "native_triangles": 18931,
+  "geometry_edits": "None. Uniform scale/origin/axis transform and UV seam vertex duplication only; all native triangles and winding verified at float32.",
+  "texture_recipe": "Smart UV89deg/margin.00005, 2K, eight calibrated Sunbursthigh photos, front-first confidence.3, facing.08/.35, edge2px. No manual editing.",
+  "files": {
+    "geometry-verification.json": {
+      "bytes": 401,
+      "sha256": "b3e0c46708298e0f1bc5f0f05adfa9329586dc620d1b5cc4201fb1f83a8a0bbe"
+    },
+    "head.glb": {
+      "bytes": 2958668,
+      "sha256": "06f711d8a8694e9b04c8e876c0a26b13c187b74da58c2d6359a6c695be47220a"
+    },
+    "pixel-match-report.json": {
+      "bytes": 8549,
+      "sha256": "d90ffa466fe995a561bba2e5f978a1536799e31775d21561f09a1df4249b6e25"
+    },
+    "reference-validation.json": {
+      "bytes": 2778,
+      "sha256": "8fd13c339dd403c66fb9506fef1bc426d6966eeb46dbc6360c46b14fe021bb0d"
+    },
+    "texture-benchmark.json": {
+      "bytes": 1177,
+      "sha256": "5b6adf3907fdebee9685f6ca6746e00a9e5be33d1ceb4f1034c61df19586d6c6"
+    }
+  }
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "name": "yaw0-pitch-5",
+    "silhouette_iou": 0.991653568418415,
+    "image_sha256": "eca0e56f285f523f453311d149150b0d93d01d3d6081d04c48521f672792ae8c",
+    "guide_sha256": "62013b3decd642ef7abf2bee0cd81d8cfa0f6cbf8e7731fd20553925b9c90618",
+    "guide_mode": "clay",
+    "reference_stem": "yaw0-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw60-pitch-5",
+    "silhouette_iou": 0.988692162031535,
+    "image_sha256": "79c5f686af4368ede2f19518606c738cbd38a60b812f44d06c1fd89916a14c49",
+    "guide_sha256": "a426076aa61eb02da6e1cb2b9b129cf6ce35790399bbe98407dcd52502eaed7d",
+    "guide_mode": "clay",
+    "reference_stem": "yaw60-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw120-pitch-5",
+    "silhouette_iou": 0.9900819181905504,
+    "image_sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8",
+    "guide_sha256": "052c75ed1ae1b57c7a112515be2c17bd3b98bbeb6ecb471c2a381022e07797f1",
+    "guide_mode": "clay",
+    "reference_stem": "yaw120-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw180-pitch-5",
+    "silhouette_iou": 0.9892054891283695,
+    "image_sha256": "91d1f2d83ca8e3958c5f8a73c9085066197bf64176f83ede05ff88d927dc1d4f",
+    "guide_sha256": "78d503fa8a1b5aa3dfcfb95200dd55a89af276c55a713ae1a886aa746f216b0b",
+    "guide_mode": "clay",
+    "reference_stem": "yaw180-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw240-pitch-5",
+    "silhouette_iou": 0.989998165621966,
+    "image_sha256": "dffbbc68ec16bf3cde2fecc844eb9b54876d5f8071127d52414fa033c5fe68ab",
+    "guide_sha256": "34403a8642fa144f0a631c2cc303f7f3c0660390877ef2162c1be53bd61e5bf6",
+    "guide_mode": "clay",
+    "reference_stem": "yaw240-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw300-pitch-5",
+    "silhouette_iou": 0.9915540890120377,
+    "image_sha256": "e75810d2ce66c21021dd87083a15dbde3b5feff87ca46be01de55563c709d5d4",
+    "guide_sha256": "42cf268c864be42217348d5754cfc7590448d665a733a34a27413aa7ee25c450",
+    "guide_mode": "clay",
+    "reference_stem": "yaw300-pitch-5",
+    "registration": null
+  },
+  {
+    "name": "yaw60-pitch55",
+    "silhouette_iou": 0.9814381423947374,
+    "image_sha256": "f5e32179105d7780b51a557ecde765a024b8060186d5263fe97e6128441fa601",
+    "guide_sha256": "22f3a192359b8f5e7053049abc1b61aee7568792064cc59209a7bf80e0d0eee0",
+    "guide_mode": "clay",
+    "reference_stem": "yaw60-pitch55",
+    "registration": null
+  },
+  {
+    "name": "yaw240-pitch-40",
+    "silhouette_iou": 0.9672291086397193,
+    "image_sha256": "dcd6bfecbdf36fab133545b72c78c3bc24f821f4a55fa467046b2c612fbf8f21",
+    "guide_sha256": "f616ab2aa20bf6251e643057dc77c268eed345afd7fa0d48b5c0276727a4c9aa",
+    "guide_mode": "clay",
+    "reference_stem": "yaw240-pitch-40",
+    "registration": null
+  }
+]

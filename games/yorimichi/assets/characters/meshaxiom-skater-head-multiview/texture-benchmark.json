@@ -1,0 +1,32 @@
+{
+  "hardware": {
+    "chip": "Apple M1 Max",
+    "gpu_cores": 32,
+    "unified_memory_gib": 32
+  },
+  "scope": "Local CPU projection, validation and sixteen diagnostic renders. Excludes native mesh generation, image API, UV preparation and queue time. 2K and 4K use the same eight views and UVs.",
+  "variants": [
+    {
+      "variant": "front-first",
+      "model_sha256": "06f711d8a8694e9b04c8e876c0a26b13c187b74da58c2d6359a6c695be47220a",
+      "painted_fraction": 0.5605977780749629,
+      "covered_texels": 2048854,
+      "views": 8,
+      "projection_validation_seconds": 17.073
+    },
+    {
+      "variant": "4k",
+      "model_sha256": "b21893a5664e984289c6ab7116dee7499cb868ff2e611352cb3784c0582b934f",
+      "painted_fraction": 0.5607894057421354,
+      "covered_texels": 8195836,
+      "views": 8,
+      "projection_validation_seconds": 35.096
+    }
+  ],
+  "pair_elapsed_seconds": 75.78448895899055,
+  "pair_peak_bytes": 7670170048,
+  "limit_bytes": 10737418240,
+  "state": "child_exited",
+  "cleanup_complete": true,
+  "selection": "2K front-first: modest matched-size difference at4K, lower memory and download size. Original geometry defects and seams remain."
+}

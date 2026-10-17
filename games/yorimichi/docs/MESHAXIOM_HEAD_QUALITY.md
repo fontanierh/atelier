@@ -4,6 +4,60 @@ Work in progress: results will be filled after the guarded experiments complete.
 The existing [Apple Silicon experiment](MESHAXIOM_EXPERIMENT.md) supplies the pinned
 weights, runtime installation, single-view baseline, and hardware measurements.
 
+## Measured comparisons so far
+
+The baseline has 18,931 native triangles (18,925 nondegenerate), 1,323 boundary edges
+and six connected components. UV authoring and projection preserve those defects.
+The previous atlas occupied 5.44% of its pixels. Three automated Smart UV trials
+occupied 46.52%, 46.86% and 48.85%; the last used an 89-degree angle and 0.00005
+island margin. Its 2,048,854 occupied texels provide about nine times the previous
+texel area. This is a packing measurement, not proof of better visual quality.
+Preparation took 19.89 seconds and peaked at 1.26 GiB on the M1 Max.
+
+The following first eight-view comparison ran on hosted macOS CI at `4eda5848`,
+under a 4 GiB aggregate guard. All five outputs preserved every native triangle
+and winding. Times include projection and buffer validation, but exclude the
+eight diagnostic renders per output and remote image generation.
+
+| Projection | Occupied texels painted | Seconds | Observed result |
+| --- | ---: | ---: | --- |
+| Original single image | 16.11% | 8.37 | Most sides and back stay neutral |
+| Geometry-guided front | 16.33% | 8.26 | Better alignment, similar limited coverage |
+| Eight-view weighted blend | 55.11% | 25.85 | Doubled facial features |
+| Eight-view best angle | 55.11% | 24.26 | Broken pupil shapes at view boundaries |
+| Eight-view front first | 56.06% | 24.82 | Coherent eyes; side seams and neck patches remain |
+
+That complete hosted run took 164.10 seconds including diagnostic renders and
+peaked at 1.91 GiB. Hosted timings are not laptop benchmarks. The nine Sunburst
+calls include one additional guided opposite-view candidate; its results and
+the local 4K/density comparisons follow after validation.
+
+On the laptop, the selected eight-view recipe reproduced the hosted 2K GLB
+byte for byte. Its projection and validation took 17.07 seconds at 2K and
+35.10 seconds at 4K. The complete pair, including sixteen diagnostic views,
+took 75.78 seconds and peaked at 7.14 GiB under the unchanged 10 GiB CPU guard.
+The 2K output is 2.96 MB; 4K is 7.05 MB. Painted coverage was 56.06% and 56.08%
+of occupied texels respectively. Both preserve all 18,931 triangles and winding.
+At matched viewing size, 4K adds modest detail but does not remove side seams,
+patches, or the original surface defects. The 2K output is the cheaper default.
+
+## Memory and a cheaper replay
+
+These measurements come from a 32 GiB M1 Max. A 16 GiB process ceiling does not
+demonstrate operation on a laptop with 16 GiB total: macOS and other processes
+also need memory. Texture replay needs neither MeshAxiom weights nor a GPU model.
+The measured 2K projection peaks near 2 GiB, whereas the complete 2K/4K pair
+peaks near 7.14 GiB. Reuse the committed eight images and run only the 2K
+`front-first` variant under a 4 GiB guard for the cheaper texture pipeline.
+The guard must still obtain normal admission on a shared machine.
+
+Native generation uses the sequential, mmap-backed model lifecycle documented in
+the Apple Silicon experiment. The 30,000-face vertex request completed with 14,936
+vertices in 3,470.25 seconds and peaked at 7.85 GiB. The requested face count is
+conditioning, not an exact output count; its topology and geometry comparison
+are measured separately. No disk-streaming performance estimate substitutes for
+these actual runs.
+
 ## Constraint and experiment matrix
 
 The geometry is never edited after native MeshAxiom generation. No retopology,
@@ -63,8 +117,11 @@ records the source model/contact hashes and crop rectangle. It preserves the ori
 camera and pure-clay silhouette check. Sunburst fills its neutral-gray regions while
 using the existing face colors and gaze as context. The new reference has a separate
 filename and paid receipt; previous paid inputs remain in the experiment archive.
-The current source set selects this candidate for comparison. No geometry changes are
-made when constructing its guide or projecting the result.
+The candidate worsened rendered eye alignment even with the projected front as context.
+The selected recipe therefore retains the earlier eight independent geometry-guided views.
+Its rejected candidate inputs remain available with `guides/cameras-coherent.json` for
+reproducing the negative experiment. No geometry changes are made when constructing
+its guide or projecting the result.
 
 That candidate initially failed silhouette overlap at 90.7%. `register` corrected its
 image framing with a 1.03725 uniform scale and translation of (-16.52, -20.33) pixels,

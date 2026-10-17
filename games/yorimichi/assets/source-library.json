@@ -2017,6 +2017,10 @@
       "bytes": 771418,
       "sha256": "59e525258c3dceace93d10fc9a9a9e88108785b4f25ee027e5fdb2598e17bed8"
     },
+    "characters/meshaxiom-head-reference-set/references/yaw120-pitch-5.png": {
+      "bytes": 816183,
+      "sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8"
+    },
     "characters/meshaxiom-head-reference-set/references/yaw180-pitch-5.png": {
       "bytes": 799738,
       "sha256": "91d1f2d83ca8e3958c5f8a73c9085066197bf64176f83ede05ff88d927dc1d4f"
@@ -2044,6 +2048,10 @@
     "characters/meshaxiom-head-reference-set/uv-89-5e-05/clay-uv.glb": {
       "bytes": 805524,
       "sha256": "f17b706ffd876b5cefb91ee0d7505e08ab469144009c4e0469079719ce5b0993"
+    },
+    "characters/meshaxiom-skater-head-multiview/head.glb": {
+      "bytes": 2958668,
+      "sha256": "06f711d8a8694e9b04c8e876c0a26b13c187b74da58c2d6359a6c695be47220a"
     },
     "characters/meshaxiom-skater-head/base-colour.png": {
       "bytes": 168021,
