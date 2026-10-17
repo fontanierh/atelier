@@ -22,6 +22,12 @@ The viewer normalizes displayed height and axes without changing connectivity; m
 simple preview assignments. Triangle count comes from the loaded faces, and timings/memory come
 from the supplied benchmark. No benchmark means those measurements display as unavailable.
 
+For a UV'd or Pixel Match export, add `--render-glb` to display its actual embedded material and
+texture. The Colors toggle then compares texture against gray clay on the same geometry and normals.
+The GLB triangle count must equal the supplied generated JSON's count. UV or normal seams can split
+exported vertices without changing the original triangle connectivity. The download always preserves
+the export's exact bytes.
+
 For tailnet access, proxy this loopback port using an available Tailscale Serve path:
 
 ```sh

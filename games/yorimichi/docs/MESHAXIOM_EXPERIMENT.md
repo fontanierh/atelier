@@ -114,8 +114,9 @@ ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarde
 After inspecting the first bin, the owner requested a food cart and a character head, at least 15,000
 faces each, and explicitly authorized a **16 GiB** session ceiling. Both Sunburst high references are
 retained in the asset library. The inference condition is 16,000 faces; actual output counts must be
-checked separately. At this documentation checkpoint, the cart vertex stage is queued behind a machine
-capacity-recovery hold; neither larger asset has a measured result yet.
+checked separately. The cart vertex stage has completed **9,169 vertices in 1,496.54 seconds**, with
+a **6.77 GiB** aggregate peak and complete empty cleanup. Its topology stage is queued; neither larger
+asset has a complete measured geometry result at this documentation checkpoint.
 
 `atelier.ai.meshaxiom.guarded` reserves the full selected memory and GPU envelope in an explicit broker
 session and uses the existing per-process and aggregate guards. The shared profile, 4 GiB host reserve,
@@ -130,6 +131,68 @@ policy do not guarantee animation-ready facial edge loops, watertight surfaces o
 topology. Any later cleanup must retain a raw source and describe the geometry changes; subdivision
 alone must not be presented as newly inferred detail.
 
+## Pixel Match texture comparison
+
+The owner also requested the approach documented in the [Nox recipe](NOX_CHARACTER_RECIPE.md#4-paint-the-hidden-face-without-rebuilding-the-hair).
+`games/yorimichi/tools/meshaxiom_pixel_match.py` uses that same committed projection module from
+`Bingeljell/image-to-3dlab`, revision `7793fd3622bab7d3fd4526ba02433244d5bf02e2`, verified by SHA256.
+It projects the existing Sunburst pixels into UVs; it does not infer new geometry. MeshAxiom's geometry
+model takes one image, while the Pixel Match projection module accepts a list of calibrated texture views.
+The first comparison uses one view and retains neutral material on unseen surfaces.
+
+Unlike Nox's existing atlas and face-only repairs, this new mesh initially has no UVs. The Blender
+adapter adds Smart UV Project islands and a neutral 2K atlas to the native triangles, with uniform
+scale and origin changes only. Smart UV Project changes UV layout, not topology. A small-field-of-view
+perspective camera is fitted against the reference silhouette; the calibration clay render and overlay
+must then be inspected for eye, nose, mouth and chin registration. Silhouette agreement alone does not
+establish facial alignment. Explicit yaw/pitch overrides allow a correction without changing the mesh.
+
+Projection uses depth visibility, facing confidence and the reference matte. Near-black pixels connected
+to the image border become background; enclosed dark eyes and hair pixels remain intact. Global colour
+matching is disabled so unseen surfaces retain their original neutral base. The runner saves confidence,
+protected and changed-texel masks, protects empty gutters within four texels of unseen UV coverage,
+and verifies unchanged positions, UVs, indices and every non-texture GLB buffer. Focused tests exercise
+real projection onto visible and occluded surfaces and reject changed calibration inputs.
+
+After the head's geometry exists, run each stage through normal admission with a fresh report directory:
+
+```sh
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
+  --report build/yorimichi/logs/meshaxiom-head-uv-new.guard --timeout 600 \
+  --purpose 'MeshAxiom head UV preparation' -- \
+  /Applications/Blender.app/Contents/MacOS/Blender --background --threads 3 \
+  --python games/yorimichi/tools/meshaxiom_uv.py -- \
+  --mesh build/yorimichi/meshaxiom/skater-head/16k/mesh.json \
+  --output build/yorimichi/meshaxiom/skater-head/pixel-match --height .35
+
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
+  --report build/yorimichi/logs/meshaxiom-head-camera-new.guard --timeout 900 \
+  --purpose 'Pixel Match camera calibration' -- \
+  python -u games/yorimichi/tools/meshaxiom_pixel_match.py calibrate \
+  --module games/yorimichi/tools/pixel_match/photo_paint.py \
+  --mesh build/yorimichi/meshaxiom/skater-head/pixel-match/clay-uv.glb \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/skater-head/pixel-match
+```
+
+Inspect `calibration-clay.png` and `calibration-overlay.png` before painting. Repeat the second command
+with a new guard report and explicit `--yaw`/`--pitch` if needed. Then use that calibrated camera:
+
+```sh
+ATELIER_AGENT=YOUR_BOARD_OWNER nice -n 10 uv run python -m atelier.safety.guarded \
+  --report build/yorimichi/logs/meshaxiom-head-paint-new.guard --timeout 900 \
+  --purpose 'Pixel Match texture projection' -- \
+  python -u games/yorimichi/tools/meshaxiom_pixel_match.py paint \
+  --module games/yorimichi/tools/pixel_match/photo_paint.py \
+  --mesh build/yorimichi/meshaxiom/skater-head/pixel-match/clay-uv.glb \
+  --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+  --output build/yorimichi/meshaxiom/skater-head/pixel-match
+```
+
+At this checkpoint the adapter is prepared and tested; the head comparison still awaits geometry.
+Inspect front, sides, back and underside before accepting a texture. The projection includes the
+reference's painted lighting and cannot repair malformed ears, missing surfaces or facial edge loops.
+
 ## Interactive inspection
 
 `games/yorimichi/tools/meshaxiom_viewer.py` stages only explicitly supplied geometry, image and GLB
@@ -139,9 +202,11 @@ model selector, plus a red open-edge overlay. A browser check on the live tailne
 phone layout and no page errors. Fetching the served mesh, reference and GLB reproduced the source
 SHA256 values. The viewer uses the committed, pinned Three.js bundle and no external CDN.
 
-The displayed colors are simple preview materials. The downloadable GLB preserves the supplied
-export bytes, while the viewer converts Z-up JSON into Y-up and normalizes its displayed height.
-This display transform does not change connectivity. Only completed meshes enter the model selector.
+JSON-mode colors are simple preview materials. With `--render-glb`, the viewer loads the supplied
+export's actual materials and texture and verifies its triangle count against the generated mesh.
+The downloadable GLB preserves the supplied export bytes. Both display modes normalize height and
+origin; JSON mode also converts Z-up to Y-up. These display transforms do not change connectivity.
+Only completed meshes enter the model selector.
 
 ## If weights have to stream from SSD
 
