@@ -144,7 +144,7 @@ void UAdventureMoveSet::StartCut(int32 Index)
     {
         float End = -1.f;
         for (const FVector2f& W : M->Active) End = FMath::Max(End, W.Y);
-        ArcEnd = LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : End;
+        ArcEnd = End >= 0.f && LungeTime > 0.f ? FMath::Max(End, M->Start + (LungeTime + .08f) * M->Rate) : -1.f;
     }
     JapanEnemyQA::StartedCut(Character, HadBufferedPress);
 }
@@ -277,7 +277,9 @@ void UAdventureMoveSet::AdvanceCombat(float Dt)
     if (bActive) SweepBlade();
     else if (Now && bArmed && IsAttack(Name)) BladePoints(PreviousBlade);
     else PreviousBlade.Reset();
-    if (bActive || (Now && bArmed && IsAttack(Name) && SourceTime() <= ArcEnd)) SweepArc();
+    const bool bLungeActive = Now && bArmed && IsAttack(Name) && !Now->Active.IsEmpty() && ArcEnd >= 0.f &&
+        SwordCombat::CrossesWindow(Before, SourceTime(), FVector2f(Now->Active[0].X, ArcEnd));
+    if (bActive || bLungeActive) SweepArc();
     if (Mode != EAdventureMoveMode::Ground && Mode != EAdventureMoveMode::Air) { AttackBuffer = 0.f; bCharging = false; return; }
     // The draw that an attack press started cuts from its input point.
     if (Name == TEXT("DrawSword") && bAttackAfterDraw && Now && SourceTime() >= Now->Input && bArmed) StartCut(0);

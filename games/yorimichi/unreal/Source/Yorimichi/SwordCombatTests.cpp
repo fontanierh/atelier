@@ -178,6 +178,18 @@ bool FSwordCombatContactTest::RunTest(const FString&)
     TestEqual(TEXT("The following active arc cannot duplicate the landing contact"), Dummy->HitsTaken, 1);
     Moves->HitThisSwing.Reset(); Moves->SweepArc();
     TestEqual(TEXT("A fresh contact list proves the post is inside the active arc"), Dummy->HitsTaken, 2);
+    Cut.Active.Add(FVector2f(.10f, .13f)); Cut.End = .5f; Cut.Input = .4f;
+    Moves->Moves.Add(Cut.Name, Cut); Player->AnimationAction = Cut.Name;
+    Player->ActionSourceStartTime = 0.f; Player->ActionPlayRate = 1.f; Player->ActionTime = .05f;
+    Moves->ArcEnd = .3f; Moves->HitThisSwing.Reset();
+    Moves->AdvanceCombat(.016f);
+    TestEqual(TEXT("The lunge fallback cannot deal damage during windup"), Dummy->HitsTaken, 2);
+    Player->ActionTime = .15f; Moves->AdvanceCombat(.10f);
+    TestEqual(TEXT("Crossing the entire active window still lands a real arc contact"), Dummy->HitsTaken, 3);
+    Moves->HitThisSwing.Reset(); Player->ActionTime = .4f; Moves->AdvanceCombat(.05f);
+    TestEqual(TEXT("A completed lunge cannot strike during recovery"), Dummy->HitsTaken, 3);
+    Moves->ArcEnd = .3f; Moves->Play(Landing.Name);
+    TestEqual(TEXT("The next action cannot inherit an old lunge's contact window"), Moves->ArcEnd, -1.f);
     Moves->Pressure.Block(10.f, World->GetTimeSeconds(), 25.f);
     const float BeforeActivity = Moves->GuardPressure();
     Moves->Reset();

@@ -273,7 +273,7 @@ void UAdventureMoveSet::Play(FName Name, float Blend, float StartAt, float Speed
     Character->ActionPlayRate = M->Rate * Speed;
     Character->ActionDuration = FMath::Max(M->End - Character->ActionSourceStartTime, 0.f) / Character->ActionPlayRate;
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
-    HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false;
+    HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false; ArcEnd = -1.f;
     bAttackTell = false;
     Strength = StrengthOf(Name);
     if (Character->HasAuthority() && !Character->IsLocallyControlled())
