@@ -1,0 +1,42 @@
+{
+  "asset": "tide-reader",
+  "stage": "reference",
+  "sheet": "details",
+  "provider": "openai",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/assets/characters/tide-reader/concept.py",
+  "prompt_file": "details.prompt.txt",
+  "prompt_sha256": "9a9e19259c3d52188965b62f362649aadc635098b8801e3f00c07bb89a995d26",
+  "reference_files": {
+    "games/yorimichi/assets/characters/tide-reader/references/sheet.jpg": "d2338d0356bc73d499a23f13080432bd7df3091e43b18b434809df34dbde2187"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-17T14:28:18.436023+00:00",
+  "usage": {
+    "input_tokens": 1321,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 241
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2693
+  },
+  "outputs": {
+    "details.png": "1d953d4c41f2ddbe0a3d55b0a56cde4d1ae436d13cb832b4fe18315f301873d2"
+  },
+  "compact_copy": {
+    "file": "details.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-17T14:28:57.289937+00:00"
+}

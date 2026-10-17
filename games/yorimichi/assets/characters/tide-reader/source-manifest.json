@@ -1,0 +1,57 @@
+{
+  "native": "Kiyo-r01.blend",
+  "native_sha256": "904a41372f4a55b062cb0c29e32a9cfaa08ab57bbc3dbd1b432368615a49b1c8",
+  "render_glb": "Kiyo-r01.glb",
+  "render_glb_sha256": "afb3cb50f0f1da610ac072365e41d24eb59151494926338cbb7326f17de1548e",
+  "height_cm": 154.8,
+  "floor_m": 0.00699999276548624,
+  "axes": "Z up, facing -Y, soles on the shared 6.5 mm game floor",
+  "revision": "r01",
+  "rig": {
+    "contract": "humanoid",
+    "core_bones": 23,
+    "extras": [
+      "hat",
+      "hair_bun",
+      "cape_L",
+      "cape_R",
+      "staff",
+      "tide_board",
+      "satchel"
+    ]
+  },
+  "geometry": {
+    "vertices": 3208,
+    "polygons": 2837,
+    "triangles": 5674
+  },
+  "material": "M_Kiyo_Palette: one opaque vertex-colour material",
+  "weighting": {
+    "unweighted_vertices": 0,
+    "max_influences": 4,
+    "weight_sum_min": 0.9999999701976776,
+    "weight_sum_max": 1.0000000298023224
+  },
+  "references": [
+    "references/sheet.jpg",
+    "references/details.jpg",
+    "references/poses.jpg"
+  ],
+  "reference_sha256": {
+    "references/sheet.jpg": "d2338d0356bc73d499a23f13080432bd7df3091e43b18b434809df34dbde2187",
+    "references/details.jpg": "471aea6df4464a7f54091bd16212bbddadc04f5aba37f81f85189448a3181c26",
+    "references/poses.jpg": "8a63dbdf1e7c2f414b6084e8900b3ba96f6e6137a6f663aef56ae1b44fb553af"
+  },
+  "reference_provenance": {
+    "sheet": "references/sheet.provenance.json",
+    "details": "references/details.provenance.json",
+    "poses": "references/poses.provenance.json"
+  },
+  "build_sources": {
+    "kiyo_mesh.py": "70e4f2b63b7281e9348d8905d81c6fbc4807abc155fcd38a67cfc01c4e834072",
+    "kiyo_rig.py": "ddaea1b49e4e836e6f73add1df270bc73d0e569447ee9e00c08ea69c9d8fd26e",
+    "build.py": "622430b53b43a92a2478e76551855a5d4192c6245a8b677804cd045f2b60cd10"
+  },
+  "build_report": "build/yorimichi/tide-reader/build.json",
+  "history": "Kiyo r01: Sunburst turnaround, construction and attitude sheets, then procedural low-poly Blender geometry."
+}
