@@ -4,6 +4,7 @@ Run with Blender --background --threads 3 --python SCRIPT -- ARGS under Atelier'
 """
 import argparse
 from array import array
+import gzip
 import json
 import math
 from pathlib import Path
@@ -29,7 +30,8 @@ def main():
         parser.error('UV angle must be 1–89 degrees and margin 0–0.05')
     start = time.monotonic()
     args.output.mkdir(parents=True, exist_ok=True)
-    data = json.loads(args.mesh.read_text())
+    payload = args.mesh.read_bytes()
+    data = json.loads(gzip.decompress(payload) if args.mesh.suffix == '.gz' else payload)
     lo = [min(v[i] for v in data['vertices']) for i in range(3)]
     hi = [max(v[i] for v in data['vertices']) for i in range(3)]
     scale = args.height/(hi[2]-lo[2])

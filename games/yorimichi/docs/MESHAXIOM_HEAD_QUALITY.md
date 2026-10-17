@@ -62,18 +62,18 @@ on a managed machine. Keep paid credentials in the ignored environment.
 
 ```sh
 uv run python games/yorimichi/tools/meshaxiom_quality.py prepare \
-  --mesh build/yorimichi/meshaxiom/skater-head/16k/mesh.json \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
   --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
   --output build/yorimichi/meshaxiom/head-quality/original \
   --report build/yorimichi/logs/meshaxiom-quality-uv.guard
 
 uv run python games/yorimichi/tools/meshaxiom_quality.py references \
-  --mesh build/yorimichi/meshaxiom/skater-head/16k/mesh.json \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
   --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
   --output build/yorimichi/meshaxiom/head-quality/original
 
 uv run python games/yorimichi/tools/meshaxiom_quality.py paint \
-  --mesh build/yorimichi/meshaxiom/skater-head/16k/mesh.json \
+  --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
   --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
   --output build/yorimichi/meshaxiom/head-quality/original \
   --report build/yorimichi/logs/meshaxiom-quality-paint.guard

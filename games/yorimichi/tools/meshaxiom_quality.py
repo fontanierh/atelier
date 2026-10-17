@@ -6,6 +6,7 @@ ledgered, sequential, and never retried. No mesh repair or deformation is perfor
 import argparse
 from collections import Counter
 from functools import partial
+import gzip
 import json
 import os
 from pathlib import Path
@@ -42,7 +43,8 @@ def verify_geometry(source, model, pm):
     the documented uniform scale, origin and axis conversion. UV seam splits MAY duplicate
     vertices; no triangle, hole, connected component or nonmanifold edge MAY be repaired.
     """
-    native = json.loads(source.read_text())
+    payload = source.read_bytes()
+    native = json.loads(gzip.decompress(payload) if source.suffix == '.gz' else payload)
     vertices = np.asarray(native['vertices'])
     lo, hi = vertices.min(axis=0), vertices.max(axis=0)
     positions = ((vertices-np.array([(lo[0]+hi[0])/2, (lo[1]+hi[1])/2, lo[2]]))
@@ -51,7 +53,7 @@ def verify_geometry(source, model, pm):
     exported, _, faces, _ = pm.read_glb(model)
     if triangle_multiset(positions[np.asarray(native['faces'])]) != triangle_multiset(exported[faces]):
         raise ValueError('Native triangle coordinates or winding changed')
-    return dict(native_sha256=digest(source), model_sha256=digest(model),
+    return dict(native_file=source.name, native_sha256=digest(source), model_sha256=digest(model),
                 native_vertices=len(vertices), triangles=len(faces),
                 all_triangles_and_winding_preserved=True,
                 transform='Uniform height .35m, ground origin, Z-up to Y-up; float32 verification')

@@ -1,5 +1,6 @@
 """Exercise real projection on occluded geometry, without model weights or Blender."""
 import importlib.util
+import gzip
 import json
 import os
 from pathlib import Path
@@ -172,7 +173,8 @@ def test_multiview_reaches_occluded_rear_without_changing_front_geometry(adapter
 
 
 @pytest.mark.parametrize('mutation', ['position', 'winding'])
-def test_uv_verifier_detects_geometry_edits_even_with_identical_counts(adapter, tmp_path, monkeypatch, mutation):
+@pytest.mark.parametrize('compressed', [False, True])
+def test_uv_verifier_detects_geometry_edits_even_with_identical_counts(adapter, tmp_path, monkeypatch, mutation, compressed):
     monkeypatch.syspath_prepend(str(SCRIPT.parent))
     spec = importlib.util.spec_from_file_location('meshaxiom_quality_test', SCRIPT.with_name('meshaxiom_quality.py'))
     quality = importlib.util.module_from_spec(spec)
@@ -184,6 +186,10 @@ def test_uv_verifier_detects_geometry_edits_even_with_identical_counts(adapter, 
     native.write_text(json.dumps(dict(vertices=[[-1,-1,0],[1,-1,0],[1,-1,2],[-1,-1,2],
                                                [-1,1,0],[1,1,0],[1,1,2],[-1,1,2]],
                                       faces=[[0,1,2],[0,2,3],[4,6,5],[4,7,6]])))
+    if compressed:
+        packed = tmp_path/'mesh.json.gz'
+        packed.write_bytes(gzip.compress(native.read_bytes()))
+        native = packed
     positions = np.array([[-.175,0,.175],[.175,0,.175],[.175,.35,.175],[-.175,.35,.175],
                           [-.175,0,-.175],[.175,0,-.175],[.175,.35,-.175],[-.175,.35,-.175]], dtype='<f4')
     doc, binary = pm._split_glb(model.read_bytes())
