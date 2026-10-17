@@ -73,3 +73,9 @@ Rendering is on demand, stops when hidden and caps pixel ratio at 1.5. Only an e
 turntable renders continuously. Orbit, zoom, wireframe, gray/color comparison and reset work on
 mouse and touch layouts. Open edges can be highlighted in red, with boundary/nonmanifold
 counts computed from the loaded mesh. All geometry and GLB transfers stay on the serving host/tailnet.
+
+The head comparison also stages `skater-head-native-pixal` (native learned PBR),
+`skater-head-native-front` (native PBR with the original front photograph), and
+`skater-head-native-multiview` (native PBR with eight-view front-first projection).
+All three retain the same 18,931 native triangles. See the head-quality report
+for the smaller 512-pixel conditioning setting and measured memory limits.

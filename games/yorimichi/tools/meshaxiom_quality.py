@@ -333,6 +333,35 @@ def projection_fit(folder, camera, generated):
     return dict(target_guide_sha256=digest(guide), target_silhouette_iou=iou)
 
 
+def verify_material_base(source, base, pm):
+    """@cc [owner:fontanierh,label:correctness] hybrid-preserves-prepared-mesh
+    A material base MUST retain the prepared mesh's nodes, accessors, primitives and
+    every non-image buffer byte, including positions, normals, UVs and indices.
+    Only material/image content MAY differ. Geometry differences MUST reject before painting.
+    """
+    pm.read_glb(source)
+    pm.read_glb(base)
+    before, before_binary = pm._split_glb(source.read_bytes())
+    after, after_binary = pm._split_glb(base.read_bytes())
+    for key in ('nodes', 'meshes', 'accessors'):
+        if before.get(key) != after.get(key):
+            raise ValueError(f'Material base changed prepared mesh {key}')
+    images = {item['bufferView'] for item in before['images']}
+    if len(after['bufferViews']) < len(before['bufferViews']):
+        raise ValueError('Material base removed a prepared buffer')
+    for index, a in enumerate(before['bufferViews']):
+        if index in images:
+            continue
+        b = after['bufferViews'][index]
+        start_a, start_b = a.get('byteOffset', 0), b.get('byteOffset', 0)
+        if (a['byteLength'] != b['byteLength'] or
+                before_binary[start_a:start_a+a['byteLength']] !=
+                after_binary[start_b:start_b+b['byteLength']]):
+            raise ValueError('Material base changed a prepared mesh buffer')
+    return dict(prepared_mesh_sha256=digest(source), material_base_sha256=digest(base),
+                prepared_nodes_accessors_and_mesh_buffers_identical=True)
+
+
 def paint_variants(args):
     """@cc [owner:fontanierh,label:correctness] texture-transfer-identifies-both-meshes
     Reusing photographs on a new native mesh MUST retain their original generation mesh,
@@ -348,6 +377,11 @@ def paint_variants(args):
     reference_root = getattr(args, 'reference_set', None) or args.output
     generation_model, generation_cameras = camera_set(reference_root, args.image)
     generation_views = {view['name']: view for view in generation_cameras['views']}
+    if getattr(args, 'material_base', None) is not None:
+        proof = verify_material_base(model, args.material_base, pm)
+        verify_geometry(args.mesh, args.material_base, pm)
+        write(args.output/'material-base-verification.json', proof)
+        model = args.material_base
     anchor = next(view for view in cameras['views'] if view['yaw'] == 60 and view['pitch'] == -5)
     selected = set(args.views.split(','))
     views = [] if anchor['name'] in selected else [dict(
@@ -484,12 +518,16 @@ def main(argv=None):
     parser.add_argument('--from-contact', type=Path)
     parser.add_argument('--reference-set', type=Path,
                         help='Reuse verified photos from an earlier mesh; independently check new guide overlap')
+    parser.add_argument('--material-base', type=Path,
+                        help='Retain an existing material outside photo coverage; prepared mesh buffers must match exactly')
     parser.add_argument('--guide-view', default='yaw120-pitch-5')
     parser.add_argument('--reference-stem', default='yaw120-coherent')
     parser.add_argument('--memory-gib', type=int, choices=range(4, 11), default=10,
                         help='Aggregate CPU preparation/painting ceiling, 4–10 GiB')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.material_base is not None and args.stage != 'paint':
+        parser.error('--material-base is only supported by paint')
     if args.stage == 'references':
         return references(args)
     if args.stage == 'guide':

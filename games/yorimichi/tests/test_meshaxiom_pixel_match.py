@@ -98,11 +98,17 @@ def fixture_glb(pm, path, positions=None):
     path.write_bytes(pm._join_glb(doc,binary))
 
 
-def test_projection_preserves_geometry_and_occluded_texels(adapter, tmp_path):
+@pytest.mark.parametrize('coloured_base', [False, True])
+def test_projection_preserves_geometry_and_occluded_texels(adapter, tmp_path, coloured_base):
     vendor = REPO/'games/yorimichi/tools/pixel_match/photo_paint.py'
     pm = adapter.load_module(vendor)
     model = tmp_path/'clay.glb'
     fixture_glb(pm, model)
+    if coloured_base:
+        pixels = pm.read_glb(model)[3].copy()
+        pixels[..., :3] = [37, 92, 141]
+        pixels[::2, ::2, :3] = [80, 120, 190]
+        model.write_bytes(pm.replace_base_colour(model.read_bytes(), pm.encode_png(pixels)))
     reference = tmp_path/'reference.png'
     image = np.full((64,64,4), [210,40,20,255], dtype='uint8')
     Image.fromarray(image).save(reference)
@@ -127,6 +133,45 @@ def test_projection_preserves_geometry_and_occluded_texels(adapter, tmp_path):
     reference.write_bytes(b'changed reference')
     with pytest.raises(ValueError,match='no longer match'):
         adapter.paint(args,pm)
+
+
+def test_material_base_accepts_texture_only_and_rejects_geometry_uv_normals_and_winding(adapter, monkeypatch, tmp_path):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    spec = importlib.util.spec_from_file_location('meshaxiom_material_base_test', SCRIPT.with_name('meshaxiom_quality.py'))
+    quality = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(quality)
+    pm = adapter.load_module(quality.VENDOR)
+    source, base = tmp_path/'prepared.glb', tmp_path/'native-material.glb'
+    fixture_glb(pm, source)
+    doc, binary = pm._split_glb(source.read_bytes())
+    normals = np.tile(np.array([[0., 0., 1.]], dtype='<f4'), (8, 1)).tobytes()
+    binary += b'\0'*(-len(binary)%4)
+    doc['bufferViews'].append(dict(buffer=0, byteOffset=len(binary), byteLength=len(normals)))
+    binary += normals
+    doc['buffers'][0]['byteLength'] = len(binary)
+    doc['accessors'].append(dict(bufferView=4, componentType=5126, count=8, type='VEC3'))
+    doc['meshes'][0]['primitives'][0]['attributes']['NORMAL'] = 3
+    source.write_bytes(pm._join_glb(doc, binary))
+    original = source.read_bytes()
+    colours = np.full((64, 64, 4), [55, 95, 140, 255], dtype='uint8')
+    base.write_bytes(pm.replace_base_colour(original, pm.encode_png(colours)))
+    assert quality.verify_material_base(source, base, pm)['prepared_nodes_accessors_and_mesh_buffers_identical']
+    valid = base.read_bytes()
+    # A material edit cannot conceal changes to any geometry-bearing buffer.
+    for index in (0, 1, 2, 4):  # position, UV, indices, normal
+        changed, payload = pm._split_glb(valid)
+        payload = bytearray(payload)
+        start = changed['bufferViews'][index].get('byteOffset', 0)
+        payload[start] ^= 1
+        base.write_bytes(pm._join_glb(changed, bytes(payload)))
+        with pytest.raises(ValueError, match='prepared mesh buffer'):
+            quality.verify_material_base(source, base, pm)
+    changed, payload = pm._split_glb(valid)
+    changed['nodes'][0]['translation'] = [0, 0, .01]
+    base.write_bytes(pm._join_glb(changed, payload))
+    with pytest.raises(ValueError, match='node transforms'):
+        quality.verify_material_base(source, base, pm)
+    assert source.read_bytes() == original
 
 
 @pytest.mark.parametrize('blend', ['weighted', 'best-angle', 'front-first'])

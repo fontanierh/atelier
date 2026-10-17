@@ -56,6 +56,45 @@ extrapolation, not additional observed coverage. It took 15.23 seconds and peake
 at 1.10 GiB under a 4 GiB aggregate guard. It removes some neutral hair patches,
 but the cheek seam and existing shape defects remain visible.
 
+## Native learned PBR and hybrid textures
+
+The native texture recipe named by MeshAxiom uses Tencent Pixal3D's image/shape
+texture flow with TRELLIS.2's supplied-shape encoder and PBR decoder. It now runs
+locally on MPS without changing the supplied mesh or its UVs. The successful trial
+used 512-pixel DINO/NAF conditioning, 1024 shape support, twelve texture sampling
+steps, seed 42 and a 2K atlas. This is the documented model stack adapted to a
+smaller conditioner, not a successful run of its full 1024-pixel default recipe.
+
+The complete guarded job took 590.93 seconds, including eight diagnostic renders;
+the verified GLB was ready after 582.59 seconds. Peak aggregate physical footprint
+was **11.75 GiB**, under a 14 GiB process-tree ceiling and a separate 12 GiB MPS
+allocator ceiling. No new swap-out was observed. Every original non-image buffer
+and all 18,931 native triangles/winding remain unchanged. The decoder produced
+5,872,775 finite PBR voxels. Materials cover unseen sides well, but the eyes and
+facial details are softer than the projected photographs. The CPU comparison
+renders show base color with matched cameras; the interactive viewer also loads
+the native metallic/roughness map.
+
+Full-size conditioning attempts hit their explicit MPS allocator limits and
+exited cleanly. A 16 GiB aggregate attempt was refused before work because the
+reservation plus unchanged host headroom did not fit. These failures are not
+claims that the default model recipe runs within the available envelope.
+
+Two deterministic hybrid trials retain that native PBR base outside calibrated
+photo coverage. The original image replaces 16.11% of occupied texels; eight
+front-first views replace 56.06%. The two-output job, including sixteen renders,
+took 40.98 seconds and peaked at 2.04 GiB under a 4 GiB aggregate guard. The
+single-front hybrid has sharper eyes and smoother sides than the eight-view
+hybrid, which inherits the photo disagreement and cheek seam. Unobserved base
+colors are learned predictions, not observed texture coverage. Neither hybrid
+changes geometry, normals, UVs, indices or the native metallic/roughness image.
+
+`paint --material-base PATH` checks the original prepared mesh's nodes, accessors,
+primitives and every non-image buffer before using a different material base.
+It rejects position, normal, UV, index or node-transform differences. Reference
+generation cameras remain bound to their original clay guides; projection
+records separately identify the PBR target GLB.
+
 ## Higher native density
 
 The 30,000-face request produced 14,936 vertices and **29,427 native triangles**

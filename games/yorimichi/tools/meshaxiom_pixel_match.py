@@ -248,7 +248,7 @@ def paint(args, pm):
                                            normals='triangle' if blend == 'front-first' else 'UV vertex'),
                   confidence_kind='Applied blend weight; front-first uses binary accepted visibility',
                   views_manifest_sha256=digest(args.views) if getattr(args, 'views', None) else None,
-                  unseen_surface='Neutral base retained wherever no calibrated view has weight.', match_colour=False)
+                  unseen_surface='Input base colors retained wherever no calibrated view has weight.', match_colour=False)
     (args.output/'pixel-match-report.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(report), flush=True)
 
