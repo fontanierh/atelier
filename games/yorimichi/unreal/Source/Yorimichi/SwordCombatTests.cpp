@@ -12,6 +12,7 @@
 #include "GameFramework/WorldSettings.h"
 #include "RoninProjectile.h"
 #include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "JapanDefenceTimeline.h"
 #include "JapanNetwork.h"
