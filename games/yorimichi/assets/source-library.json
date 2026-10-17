@@ -6920,6 +6920,42 @@
     "vehicles/belmonte-train/textures/wall-peel.jpg": {
       "bytes": 961516,
       "sha256": "81e0d1eb0bc751cbad810791f6f999520631eb56392f836005c986daefdd8013"
+    },
+    "characters/tide-reader/Kiyo-r01.blend": {
+      "bytes": 176518,
+      "sha256": "904a41372f4a55b062cb0c29e32a9cfaa08ab57bbc3dbd1b432368615a49b1c8"
+    },
+    "characters/tide-reader/Kiyo-r01.glb": {
+      "bytes": 655060,
+      "sha256": "afb3cb50f0f1da610ac072365e41d24eb59151494926338cbb7326f17de1548e"
+    },
+    "characters/tide-reader/references/details.jpg": {
+      "bytes": 227860,
+      "sha256": "471aea6df4464a7f54091bd16212bbddadc04f5aba37f81f85189448a3181c26"
+    },
+    "characters/tide-reader/references/poses.jpg": {
+      "bytes": 131836,
+      "sha256": "8a63dbdf1e7c2f414b6084e8900b3ba96f6e6137a6f663aef56ae1b44fb553af"
+    },
+    "characters/tide-reader/references/sheet.jpg": {
+      "bytes": 208383,
+      "sha256": "d2338d0356bc73d499a23f13080432bd7df3091e43b18b434809df34dbde2187"
+    },
+    "characters/tide-reader/trellis/Kiyo-TRELLIS.blend": {
+      "bytes": 19780090,
+      "sha256": "de6f977fb7d23794d2e25d091bf1604c65ebedb999703acb8f9520af5226ee74"
+    },
+    "characters/tide-reader/trellis/Kiyo-TRELLIS.glb": {
+      "bytes": 18551192,
+      "sha256": "1406d3a1ace22857026daaf19990d8bf313708e99baa891de68912f35f18c8df"
+    },
+    "characters/tide-reader/trellis/references/head.png": {
+      "bytes": 715536,
+      "sha256": "509e04fe1e2eac7d67c73b9e31111e14f0ca8e126dfe39138f24df18941d6f17"
+    },
+    "characters/tide-reader/trellis/references/body.png": {
+      "bytes": 610786,
+      "sha256": "584c374d7ed31ab247ef6bc60595bc99a6960cb9afca9a34cbf726ec7b5b2143"
     }
   }
 }

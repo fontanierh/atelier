@@ -1,0 +1,13 @@
+{
+  "method": "Blender Smart UV charts, split conflicting faces, local UV shrink",
+  "source": "build/yorimichi/kiyo-local/body-post/reconstruct/mesh-160000-smartrepair-r2.npz",
+  "output": "build/yorimichi/kiyo-local/body-post/reconstruct/mesh-160000-finallayout.npz",
+  "vertices": 80014,
+  "triangles": 160000,
+  "iterations": 1,
+  "local_scale": 0.9,
+  "final_conflicts": 0,
+  "uv_min": 0.0028815451078116894,
+  "uv_max": 0.9971185922622681,
+  "exact_triangles": true
+}

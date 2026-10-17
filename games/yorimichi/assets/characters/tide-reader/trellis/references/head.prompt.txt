@@ -1,0 +1,14 @@
+The attached images are the approved Sunburst turnaround sheet, construction-detail sheet and face-close crop for Kiyo, the elderly tide-reader of the stylised Japanese game Yorimichi. They are the authority for her identity, age, face, hair, palette and faceted game-model language. Paint one production reference for a separately generated 3D head. This is not a redesign and not a character sheet.
+
+ONE ISOLATED COMPLETE HEAD ONLY, orthographic front view, looking straight at the camera, neutral patient expression. No neck, shoulders, torso, clothing, hat, staff, tide-board, satchel or body. The whole skull and every grey hair silhouette must fit with clear margin. The wide indigo weather hat is intentionally excluded because it remains a separately authored procedural accessory.
+
+IDENTITY: an elderly coastal fisherwoman, about seventy years old, broad angular face with a strong jaw, full weathered cheeks, broad rounded nose, warm sun-browned skin and simple faceted shell earrings. Two dark vertical pill eyes with no whites and no irises, under heavy level lids; a few short crow's-feet creases, relaxed level brows, a small calm closed mouth and two short smile creases. Do not rejuvenate her, change her ethnicity or copy a young skater.
+
+HAIR: silver-grey, thick and sculptural, in a low bun at the nape plus a few broad angular side locks and a short swept fringe. Keep the eyes, brows and mouth fully readable. No thin strands. The bun and locks may extend beyond the skull, but no hair may touch the image edge.
+
+STYLE: soft matte, smoothly modelled low-poly game character from the approved design: large readable facial planes, restrained facet detail, no pores, no individual hair fibres, no photographic texture, no painterly brushwork. Even neutral studio lighting that reveals the face shape.
+
+REGISTRATION: exactly one head, centred on a 1024-square canvas. Crown near y=55, chin near y=900, nose on the vertical centre line, symmetric ears, front of both earrings visible. Clear margin at every side.
+
+BACKGROUND: uniform pure black (#000000), connected to all four borders, with no gradient, vignette, cast shadow or halo. The head and hair are fully opaque and have crisp clean edges. No text, labels, border, multiple views, inset or alternate expression.
+

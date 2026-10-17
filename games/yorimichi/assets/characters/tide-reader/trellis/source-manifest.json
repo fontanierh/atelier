@@ -1,0 +1,220 @@
+{
+  "variant": "trellis",
+  "revision": "trellis-r01",
+  "native": "Kiyo-TRELLIS.blend",
+  "native_sha256": "de6f977fb7d23794d2e25d091bf1604c65ebedb999703acb8f9520af5226ee74",
+  "render_glb": "Kiyo-TRELLIS.glb",
+  "render_glb_sha256": "1406d3a1ace22857026daaf19990d8bf313708e99baa891de68912f35f18c8df",
+  "height_m": 1.5202107429504395,
+  "height_cm": 152.02,
+  "floor_m": 0.0065000057220458984,
+  "axes": "Z up, facing -Y, soles on the shared 6.5 mm game floor",
+  "rig": {
+    "contract": "humanoid",
+    "bones": 30,
+    "core_bones": 23,
+    "extras": [
+      "hat",
+      "hair_bun",
+      "cape_L",
+      "cape_R",
+      "staff",
+      "tide_board",
+      "satchel"
+    ]
+  },
+  "geometry": {
+    "triangles": 261583,
+    "vertices": 184791,
+    "meshes": {
+      "Kiyo_Trellis_Body": 110348,
+      "Kiyo_Trellis_Head": 70723,
+      "Kiyo_hat": 193,
+      "Kiyo_staff": 325,
+      "Kiyo_tide_board": 273,
+      "Kiyo_satchel": 130
+    }
+  },
+  "materials": [
+    "M_Kiyo_Palette",
+    "Material_0",
+    "Material_0.001"
+  ],
+  "material": "Two embedded 4K PBR atlases for the generated head/body; one vertex-colour palette material for the authored accessories.",
+  "weighting": {
+    "body": "custom nearest-segment weights (bone heat failed)",
+    "unweighted_vertices": 0,
+    "max_influences": 4
+  },
+  "generation": {
+    "backend": "Microsoft TRELLIS.2 MLX, native learned RGB and vertex colours, single-image conditioning",
+    "seed": 42,
+    "steps": 12,
+    "max_tokens": 16384,
+    "head": {
+      "reference": "references/head.png",
+      "resolution_requested": 1024,
+      "actual_mesh_grid_size": 768,
+      "selected_tokens": 14668,
+      "native_vertices": 4004518,
+      "native_triangles": 8074802,
+      "seconds": 1043.422,
+      "aggregate_peak_gib": 9.382,
+      "output_sha256": "dbd54bfde4beab4321caafd0f551c153621a7caf0f0a0d696b0db107599fd670"
+    },
+    "body": {
+      "reference": "references/body.png",
+      "resolution_requested": 1024,
+      "actual_mesh_grid_size": 1024,
+      "selected_tokens": 6981,
+      "native_vertices": 2166686,
+      "native_triangles": 4345274,
+      "seconds": 459.981,
+      "aggregate_peak_gib": 7.68,
+      "output_sha256": "48a056755509561070b0be6043b0b36551319801ef90f7c7fd914431b76ce532"
+    }
+  },
+  "processing": {
+    "head": {
+      "selected_glb_sha256": "7d1f4965303d959124ce14ca2cdb96f8ce3d228b18ff168944e108344eabcac7",
+      "triangles": 99999,
+      "vertices": 50009,
+      "charts": 4609,
+      "texture_size": 4096,
+      "neighbors": 1,
+      "repaired_uv_triangles": 3976,
+      "uv_interior_overlap_texels": 0,
+      "paint_mode": "repair",
+      "hair_palette": "grey",
+      "painted_skin_texels": 57,
+      "painted_hair_texels": 73,
+      "geometry_normals_uv_indices_identical": true
+    },
+    "body": {
+      "selected_glb_sha256": "33d7081632cb8858ac2f8219e80b1a246108956bed2e382c3cbf67d7972e0429",
+      "triangles": 160000,
+      "vertices": 80014,
+      "texture_size": 4096,
+      "neighbors": 1,
+      "uv_interior_overlap_texels": 0,
+      "final_conflicts": 0,
+      "local_uv_scale": 0.9,
+      "split_conflicting_triangles": 1206,
+      "shrunk_residual_triangles": 20,
+      "smartrepair_seconds": 3.645
+    }
+  },
+  "assembly": {
+    "method": "Processed TRELLIS head and body, uniform fit, measured neck/profile placement, one shared armature",
+    "body_uniform_scale": 1.3365658496535682,
+    "head_uniform_scale": 0.3645067475856404,
+    "head_neck_overlap_m": 0.03499999999999992,
+    "head_fit": {
+      "body_neck_plug_xy": [
+        -0.0008482711079497156,
+        0.05521777885300772
+      ],
+      "head_under_cap_xy_before": [
+        0.002002269334023066,
+        0.053586235147295394
+      ],
+      "head_under_cap_xy_after": [
+        0.002002269334023066,
+        0.01513400058108369
+      ],
+      "body_chest_front_y": -0.08319413661956787,
+      "head_face_front_y_before": -0.06474190205335617,
+      "head_face_front_y_after": -0.10319413661956787,
+      "forward_axis": "-Y",
+      "profile_shift_requested_m": -0.038452234566211704,
+      "profile_shift_m": -0.038452234566211704,
+      "profile_shift_clamped": false,
+      "profile_clearance_target_m": 0.02,
+      "profile_clearance_m": 0.020000000000000004,
+      "rig_pivot_xy": [
+        -0.0008482711079497156,
+        0.05521777885300772
+      ],
+      "cap_y_range": [
+        -0.04312194138765335,
+        0.20262987911701202
+      ]
+    },
+    "hat_fit": {
+      "crown_xy": [
+        -0.004502260358714334,
+        0.018998753606483353
+      ],
+      "inner_brim_z_before": 1.4040000438690186,
+      "contact_z": 1.3797107934951782,
+      "contact_measured": true,
+      "vertical_shift_m": -0.028289250373840336,
+      "vertical_shift_clamped": false,
+      "contact_overlap_target_m": 0.004,
+      "contact_overlap_m": 0.0040000000000000036,
+      "hat_bbox_after": [
+        [
+          -0.3055022656917572,
+          -0.282001256942749,
+          1.3407107591629028
+        ],
+        [
+          0.29649773240089417,
+          0.31999874114990234,
+          1.5267107486724854
+        ]
+      ]
+    },
+    "body_weighting": "custom nearest-segment weights (bone heat failed)",
+    "palette_emission": "vertex-colour emission link flattened to black for glTF; Base Color retains the palette",
+    "unweighted_vertices": 0,
+    "max_influences": 4,
+    "seconds": 11.651864333020058
+  },
+  "references": [
+    "references/head.png",
+    "references/body.png"
+  ],
+  "reference_sha256": {
+    "references/head.png": "509e04fe1e2eac7d67c73b9e31111e14f0ca8e126dfe39138f24df18941d6f17",
+    "references/body.png": "584c374d7ed31ab247ef6bc60595bc99a6960cb9afca9a34cbf726ec7b5b2143"
+  },
+  "reference_provenance": {
+    "head": [
+      "references/head.prompt.txt",
+      "references/head.provenance.json"
+    ],
+    "body": [
+      "references/body.prompt.txt",
+      "references/body.provenance.json"
+    ]
+  },
+  "reports": [
+    "assembly.json",
+    "body-bake.json",
+    "body-final-layout.json",
+    "body-smart-conflicts-r2.json",
+    "body-smart-conflicts.json",
+    "body-smartrepair.json",
+    "generation-body.json",
+    "generation-head.json",
+    "head-bake.json",
+    "head-paint.json"
+  ],
+  "viewer": {
+    "description": "Three-way reference / procedural / local TRELLIS viewer staged as a build artifact.",
+    "modes": [
+      "matched front, three-quarter, profile and head renders",
+      "wireframe",
+      "material",
+      "turntable",
+      "downloads"
+    ]
+  },
+  "limitations": [
+    "Free local fallback below Tripo-quality parity; no claim of hosted-service parity.",
+    "Automatic masks and conservative repair; inspect all views rather than treating masks as semantic truth.",
+    "Deterministic nearest-segment body weights, not an animator-authored skin; pose validation is required.",
+    "The 14 GiB process cap is not evidence that the job fits a 16 GiB installed-RAM host."
+  ]
+}

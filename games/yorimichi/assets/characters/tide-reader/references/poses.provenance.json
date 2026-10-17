@@ -1,0 +1,42 @@
+{
+  "asset": "tide-reader",
+  "stage": "reference",
+  "sheet": "poses",
+  "provider": "openai",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/assets/characters/tide-reader/concept.py",
+  "prompt_file": "poses.prompt.txt",
+  "prompt_sha256": "0d32316de387c8927e919fb51589d57e58a2458e848aeb301fda6a67b9457472",
+  "reference_files": {
+    "games/yorimichi/assets/characters/tide-reader/references/sheet.jpg": "d2338d0356bc73d499a23f13080432bd7df3091e43b18b434809df34dbde2187"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-17T14:28:18.442613+00:00",
+  "usage": {
+    "input_tokens": 1251,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 171
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2623
+  },
+  "outputs": {
+    "poses.png": "4ac53d4e5c84e899a6b75151347e63eff2435281a7fb07c237cb2023a00a92a1"
+  },
+  "compact_copy": {
+    "file": "poses.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-17T14:28:52.500942+00:00"
+}

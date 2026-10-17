@@ -1,0 +1,42 @@
+{
+  "asset": "tide-reader",
+  "stage": "reference",
+  "sheet": "sheet",
+  "provider": "openai",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/assets/characters/tide-reader/concept.py",
+  "prompt_file": "sheet.prompt.txt",
+  "prompt_sha256": "bf8783c95bbeaeec1ff5fa374dc0e462898eba01f1ee69e29b35a9b8748d5436",
+  "reference_files": {
+    "games/yorimichi/assets/characters/wanderer/references/design-sheet.png": "3eefbe3a66710e46a5e9f1ecf17d322e28d4dd9f1935ce0461a4ede22bea815e"
+  },
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-17T14:27:16.308970+00:00",
+  "usage": {
+    "input_tokens": 1805,
+    "input_tokens_details": {
+      "image_tokens": 1080,
+      "text_tokens": 725
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 3177
+  },
+  "outputs": {
+    "sheet.png": "2aefeabb3a9db3967f08aa7125d5d9856dd5cf075ba43c9d5755edea42b5c793"
+  },
+  "compact_copy": {
+    "file": "sheet.jpg",
+    "size": "1536x1024",
+    "jpeg_quality": 88,
+    "chroma": "4:2:0"
+  },
+  "finished_at": "2026-10-17T14:27:55.535488+00:00"
+}

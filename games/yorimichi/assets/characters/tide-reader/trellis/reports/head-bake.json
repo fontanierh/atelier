@@ -1,0 +1,30 @@
+{
+  "source_sha256": "e9eaf75a6a84b14c99ed16f99594ab865ae983adddc0aad8e2e8428aa5d0827d",
+  "native_checkpoint_sha256": "9d26e2c731b1b1f198df3b24f130a287a09bfbbcd46dcd97ac19a1fa6e5c2b6c",
+  "texture_checkpoint_sha256": "c4ad05b37248890902bc9553d25bfb5a5f68899a78e3e36b045d332a93b8ae5d",
+  "model_sha256": "1234b30e32acb0d52ea4e2f5c69872cc4db037014397c2787f454c717eaec981",
+  "color_cloud_sha256": "1ce7a634c13a7d5c0b8910c0c52c4548119970da2e03f33bfdca31e33f2c6477",
+  "export_vertices": 70723,
+  "geometry_normals_uv_indices_sha256": "3471fb150b59aa0001f01afeae74d1d9aa76f62d45c4e2f066c6efefce890ece",
+  "method": "xatlas + native surface-neighbor componentwise color median",
+  "neighbors": 1,
+  "texture_size": 4096,
+  "charts": 4609,
+  "repaired_uv_triangles": 3976,
+  "uv_reused": false,
+  "normal_tensor_iterations": 4,
+  "triangles": 99999,
+  "vertices": 50009,
+  "occupied_texels": 10615622,
+  "uv_interior_overlap_texels": 0,
+  "exact_reduced_triangles": true,
+  "color_support_distance_percentiles": [
+    0.000923378043808043,
+    0.0017154247616417697,
+    0.020004856325685855,
+    0.038678526878356934
+  ],
+  "masks": "Approximate color-based material regions; dark mask also includes brows/eyes. No semantic ground-truth claim.",
+  "material": "Conventional lit PBR; uniform roughness .85, metallic 0; no normal map",
+  "seconds": 33.657328832981875
+}

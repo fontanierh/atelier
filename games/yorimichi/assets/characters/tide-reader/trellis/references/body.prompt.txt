@@ -1,0 +1,16 @@
+The attached images are the approved Sunburst turnaround sheet, construction-detail sheet and full-front crop for Kiyo, the elderly tide-reader of the stylised Japanese game Yorimichi. They are the authority for her identity, clothing design, palette and faceted game-model language. Paint one production reference for a separately generated 3D body. This is not a redesign and not a character sheet.
+
+ONE ISOLATED HEADLESS BODY, orthographic front view, symmetric T-pose. No head, hair, face, hat, earrings or neck above the base of the throat. End the bare warm-skin neck in a clean horizontal plug. Both arms are fully straight and horizontal at shoulder height, elbows straight, palms down, fingers relaxed and straight. Both legs are straight with a small natural gap, feet forward, the broad straw soles level on one baseline.
+
+PROPORTIONS: short and broad, about 4.4 heads tall if the missing head were shown, mature elderly fisherwoman. Do not make a slim tall youth.
+
+CLOTHING: deep-indigo layered fisherman's coat reaching mid-thigh, with a short broad shoulder cape over it, an asymmetric crossed front, a cream inner collar and wide sleeves pushed up to the forearms with broad cream cuffs. A muted rust sash wraps the waist twice. Dark blue-grey cropped trousers, cream shin wraps and broad flat straw sandals with simple straps. Keep the garment planes broad and readable. No embroidery, lace, tiny seams, thin cords, wicker microgeometry or texture noise.
+
+REMOVE ALL HELD AND DANGLING PROPS: no tide staff, wooden tide-board, shell counters, satchel, diagonal bag strap, bamboo case, rolled chart, jewellery or other accessory. The coat and body beneath the removed satchel remain plain and complete. Bare warm-brown hands and forearms, five fingers on each hand.
+
+STYLE: soft matte, smoothly modelled low-poly game character in the approved design: clean sculptural planes, restrained facets, no photographic fabric texture and no painterly brushwork. Even neutral studio lighting.
+
+REGISTRATION: exactly one body, centred on a 1024-square canvas. Neck top near y=55, straight hand axes near y=245, crotch near y=520, soles near y=955. Clear margin around every fingertip, elbow, sleeve and sandal.
+
+BACKGROUND: uniform pure black (#000000), connected to all four borders, with no gradient, vignette, floor, cast shadow or halo. The body is fully opaque and has crisp clean edges. No text, labels, border, multiple views, inset or alternate pose.
+
