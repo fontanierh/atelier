@@ -1,0 +1,49 @@
+{
+  "asset": "tide-reader",
+  "stage": "trellis-reference",
+  "part": "body",
+  "provider": "openai",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/assets/characters/tide-reader/trellis_references.py",
+  "prompt_file": "trellis/references/body.prompt.txt",
+  "prompt_sha256": "c1c1a760f0eeae316804a91a0b59753736d855d914ad25b3c1d133a4a017bdba",
+  "reference_files": {
+    "games/yorimichi/assets/characters/tide-reader/references/sheet.jpg": "d2338d0356bc73d499a23f13080432bd7df3091e43b18b434809df34dbde2187",
+    "games/yorimichi/assets/characters/tide-reader/references/details.jpg": "471aea6df4464a7f54091bd16212bbddadc04f5aba37f81f85189448a3181c26",
+    "build/yorimichi/characters/tide-reader/trellis/references/inputs/kiyo-body-front.png": "fe850a3bff53b92a47fb731e7a9a33101713bc53e6a1f2a7d505f9da8630b8ad"
+  },
+  "crops": "Single-figure crops from the approved sheet are edit inputs only; the output is one isolated object.",
+  "background": "pure black for the wrapper's border-connected matte",
+  "hashes": "of the files as the API saw and returned them; the full-size original is kept outside the repository",
+  "status": "done",
+  "started_at": "2026-10-17T16:24:53.713147+00:00",
+  "usage": {
+    "input_tokens": 3462,
+    "input_tokens_details": {
+      "image_tokens": 2896,
+      "text_tokens": 566
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 5218
+  },
+  "outputs": {
+    "body.png": "584c374d7ed31ab247ef6bc60595bc99a6960cb9afca9a34cbf726ec7b5b2143"
+  },
+  "image": {
+    "dimensions": [
+      1024,
+      1024
+    ],
+    "mode": "RGB",
+    "genuine_alpha": false
+  },
+  "elapsed_seconds": 35.6,
+  "finished_at": "2026-10-17T16:25:29.347311+00:00"
+}
