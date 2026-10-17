@@ -19,6 +19,8 @@ including the game itself while it plays.
 
 - **[Make a character from a prompt](#a-character-from-a-prompt)**: concepts, a 3D model, a skeleton with fingers,
   outfits and a reviewed library of clips.
+- **[Generate clean assets locally](#clean-assets-from-local-models)**: Apple Silicon inference, automatic
+  surface reconstruction, reduction, UV baking and texture repair without spending Tripo credits.
 - **[Build worlds from code](#worlds-from-code)**: Blender scripts generate the meshes, the build imports them into
   Unreal and reruns only what changed.
 - **[Put a prop in the running game from a sentence](#a-prop-from-a-sentence)**, with no editor and no rebuild.
@@ -152,6 +154,21 @@ problem, the agent builds a tool to capture their intent, and code applies the c
 prompts, the commands, the costs and the pitfalls.
 [Nox’s recipe](games/yorimichi/docs/NOX_CHARACTER_RECIPE.md) follows our separate head/body experiment through
 multiple Tripo models, Pixel Match texture repairs, assembly and a bespoke clipping review tool.
+
+### Clean assets from local models
+
+Generate textured assets on Apple Silicon with TRELLIS.2 through MLX, followed by scripted processing:
+
+1. **Prepare reference pictures**, with separate head and body images for characters.
+2. **Generate each part locally**, then clean and simplify its surface.
+3. **Add UVs and textures**, separating skin and hair for optional color repair.
+4. **Fit, join and rig the parts**, then inspect multiple views and poses before committing the game asset.
+
+This is below Tripo quality, but useful when no Tripo credits are available. Local inference uses no paid
+API calls with existing or self-made references; new Sunburst reference images are paid.
+
+The **[local asset pipeline guide](games/yorimichi/docs/LOCAL_ASSET_PIPELINE.md)** covers the tools,
+commands, tested settings, hardware limits, assembly checks and comparison results.
 
 ### Worlds from code
 

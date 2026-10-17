@@ -29,6 +29,13 @@ The build reads these sources directly. GLBs exported during a build are derived
 from committed models, Blender sources or mesh-building scripts and go under
 `build/yorimichi/`. `atelier fetch yorimichi` obtains the sound masters.
 
+For new local model sources, follow the [local asset pipeline](../docs/LOCAL_ASSET_PIPELINE.md):
+TRELLIS.2/MLX generation, exterior reconstruction and reduction, checked UV baking,
+optional masked repaint, scripted assembly and multi-view review. It includes the
+tested Apple Silicon settings, weight-cache reuse and the source/provenance handoff.
+It is a free local inference fallback below Tripo quality; new Sunburst references
+are paid. The automatic head recipe needs adaptation and inspection for other shapes.
+
 The four character Blender sources pack their meshes, textures, rigs and authored
 animations. The merged set's 109 motion-reference clips and paraglider animation
 are committed in `characters/adventure/source/`. The skating data is not part of this library: it
