@@ -274,6 +274,7 @@ void UAdventureMoveSet::Play(FName Name, float Blend, float StartAt, float Speed
     Character->ActionDuration = FMath::Max(M->End - Character->ActionSourceStartTime, 0.f) / Character->ActionPlayRate;
     bDriving = false; DriveVelocity = FVector::ZeroVector; DriveMesh = FVector::ZeroVector;
     HitThisSwing.Reset(); PreviousBlade.Reset(); bSwung = false;
+    bAttackTell = false;
     Strength = StrengthOf(Name);
     if (Character->HasAuthority() && !Character->IsLocallyControlled())
         if (auto* Movement = Cast<UJapanCharacterMovement>(Character->GetCharacterMovement()))
@@ -966,6 +967,7 @@ void UAdventureMoveSet::Reset()
     LungeTarget = nullptr; LungeTime = 0.f; bLungePoint = false;
     JumpBuffer = AttackBuffer = NoClimb = Invulnerable = JustAvoid = SwimDashTime = GuardBroken = 0.f;
     FlinchTime = -1.f; HitStreak = 0; SinceHit = 99.f;
+    Pressure = {}; ParriedActionSerial = 0;
     if (FlurryTime > 0.f) { FlurryTime = 0.f; if (!JapanNetwork::IsOnline(Character->GetWorld())) Character->CustomTimeDilation = 1.f; }
     ClimbShift = ClimbShiftTarget = 0.f; MeshOffsetLength = 0.f; MeshDriveLocal = DriveMesh = FVector::ZeroVector;
     FlipTime = -1.f; FlipAngle = FlipLift = FlipSettle = 0.f; bAirJumpUsed = false;
@@ -1001,6 +1003,8 @@ FString UAdventureMoveSet::Describe() const
     O->SetNumberField(TEXT("health"), Character->GetSword() ? Character->GetSword()->GetHealth() : 0.f);
     O->SetNumberField(TEXT("hits"), HitCount);
     O->SetNumberField(TEXT("parries"), ParryCount);
+    O->SetNumberField(TEXT("perfect_parries"), ParryCount);
+    O->SetNumberField(TEXT("guard_pressure"), GuardPressure());
     O->SetNumberField(TEXT("staggers"), StaggerCount);
     O->SetNumberField(TEXT("guard_breaks"), GuardBreakCount);
     O->SetBoolField(TEXT("guard_broken"), GuardBroken > 0.f);

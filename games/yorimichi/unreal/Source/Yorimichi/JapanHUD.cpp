@@ -144,6 +144,8 @@ void AJapanHUD::DrawHUD()
                 FLinearColor(.97f, .9f, .76f), X, Y - 28 * Scale, Font, 1.4f * Scale);
             DrawRect(FLinearColor(0, 0, 0, .45f), X - 3 * Scale, Y - 3 * Scale, W + 6 * Scale, 16 * Scale);
             DrawRect(FLinearColor(.95f, .45f, .22f), X, Y, W * Trainer->GetHealthFraction(), 10 * Scale);
+            if (const auto* Moves = Trainer->GetMoves(); Moves && Moves->GuardPressure() > .01f)
+                DrawRect(FLinearColor(.95f, .75f, .35f), X, Y + 12 * Scale, W * Moves->GuardPressure(), 3 * Scale);
             if (!Trainer->IsHostileRonin())
                 DrawText(FString::Printf(TEXT("bouts  you %d  ·  Kaede %d"), Trainer->GetLosses(), Trainer->GetWins()), FLinearColor(.85f, .82f, .74f), X, Y + 16 * Scale, Font, 1.f * Scale);
         }
@@ -300,6 +302,8 @@ void AJapanHUD::DrawHUD()
         DrawRect(FLinearColor(0,0,0,.45f),BarX-2,BarY-2,BarW+4,BarH+4);
         DrawRect(Health>.3f?FLinearColor(.86f,.32f,.28f):FLinearColor(1.f,.15f,.1f),BarX,BarY,BarW*Health,BarH);
         DrawText(Sword->IsDown()?TEXT("knocked down"):FString::Printf(TEXT("%.0f"),Sword->GetHealth()),FLinearColor(.94f,.92f,.84f),BarX+BarW+8,BarY-4,Font,1.f);
+        if (const auto* Moves = Pawn->GetMoves(); Moves && Moves->GuardPressure() > .01f)
+            DrawRect(FLinearColor(.95f,.75f,.35f),BarX,BarY+BarH+3,BarW*Moves->GuardPressure(),3.f);
         const AFoxHunter* Nearest=nullptr; float Best=1e9f;
         for (TActorIterator<AFoxHunter> It(GetWorld());It;++It)
         {

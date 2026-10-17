@@ -135,10 +135,13 @@ EJapanDefence FJapanDefenceTimeline::Resolve(double Contact, const FVector& From
             if (Contact < R.RecoveryEnd) return EJapanDefence::Recovering;
             Broken |= Contact < R.GuardEnd;
         }
+    const FJapanDefenceSample* Sample = At(Contact);
+    const bool Facing = Sample && (Sample->Forward.GetSafeNormal2D() |
+        (From - Sample->Location).GetSafeNormal2D()) >= GuardCosine;
     // Parry precedes dodge and recovery, matching IncomingStrike's authored priority.
     for (EJapanDefence Kind : {EJapanDefence::Parry, EJapanDefence::Dodge})
         for (FWindow& W : Windows)
-            if (W.Kind == Kind && !(Broken && Kind == EJapanDefence::Parry) && !W.bConsumed && W.Start <= Contact && Contact <= W.End &&
+            if (W.Kind == Kind && (Kind != EJapanDefence::Parry || Facing) && !(Broken && Kind == EJapanDefence::Parry) && !W.bConsumed && W.Start <= Contact && Contact <= W.End &&
                 (Kind == EJapanDefence::Dodge || Contact < W.SelfCutoff))
             {
                 UsedEdge = W.Edge;
@@ -150,7 +153,6 @@ EJapanDefence FJapanDefenceTimeline::Resolve(double Contact, const FVector& From
                     for (FWindow& Same : Windows) if (Same.Edge == UsedEdge) Same.bConsumed = true;
                 return Kind == EJapanDefence::Dodge && W.PerfectEnd > W.Press && Contact <= W.PerfectEnd ? EJapanDefence::PerfectDodge : Kind;
             }
-    const FJapanDefenceSample* Sample = At(Contact);
     if (!Sample) { ++MissingSamples; return EJapanDefence::None; }
     if (Sample->bRecovering) return EJapanDefence::Recovering;
     if (!Broken && !Sample->bGuardBroken && Sample->bGround && Sample->bArmed && GuardHeld(Contact, *Sample) &&

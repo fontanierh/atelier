@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "SwordCombatRules.h"
 #include "UObject/Object.h"
 #include "JapanDefenceTimeline.h"
 #include "JapanDefenceClock.h"
@@ -190,6 +191,7 @@ public:
     AActor* GetCombatTarget() const { return CombatTarget.Get(); }
     int32 HitsLanded() const { return HitCount; }
     int32 Parries() const { return ParryCount; }
+    float GuardPressure() const;
     int32 Dodges() const { return DodgeCount; }
     int32 DoubleJumps() const { return DoubleJumpCount; }
     // For a character the game drives (ASwordTrainer) reading its own body and its opponent's, like a player watching.
@@ -222,6 +224,7 @@ private:
     friend struct FJapanMultiplayerQAAccess;
     friend class FJapanReactionTransportTest;
     friend class FJapanReactionPayloadTest;
+    friend class FSwordCombatContactTest;
     void SubmitMovementReaction(const FAdventureMovementReaction& Reaction);
     void FreezeReactionAction(FAdventureMovementReaction& Reaction, FName Name, float Blend) const;
     void FreezeReactionFlinch(FAdventureMovementReaction& Reaction, const FVector& Away, float Degrees, float Peak, float Side) const;
@@ -380,6 +383,9 @@ private:
     float FlinchTime = -1.f, FlinchAngle = 0.f, FlinchPeak = .07f, FlinchTwist = 0.f, GuardBroken = 0.f, SinceHit = 99.f;
     FVector FlinchAxis = FVector::ZeroVector;
     int32 HitStreak = 0, StaggerCount = 0, GuardBreakCount = 0;
+    SwordCombat::FGuardPressure Pressure;
+    uint32 ParriedActionSerial = 0;
+    bool bAttackTell = false;
     void Flinch(const FVector& Away, float Degrees, float Peak, float Side);
     // Effects: the sprint's dust and speed lines, the glider's wind.
     float SprintFX = 0.f, GlideFX = 0.f;

@@ -88,6 +88,7 @@ void JapanCombat::Present(const UObject* Context, const FJapanCombatEvent& Event
     switch (Event.Kind)
     {
     case EJapanCombatCue::Hit: FX->SwordHit(Event.At, Event.Direction, FMath::Clamp(FMath::RoundToInt(Event.Amount), 1, 3), Event.Actor, Event.Other); break;
+    case EJapanCombatCue::AttackTell: FX->AttackTell(Event.At); break;
     case EJapanCombatCue::Parry:
         FX->Parry(Event.At, Event.Actor, Event.Other);
         if (Event.Amount > .5f)

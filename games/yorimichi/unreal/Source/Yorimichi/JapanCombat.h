@@ -6,7 +6,7 @@
 class AWandererCharacter;
 
 UENUM()
-enum class EJapanCombatCue : uint8 { Hit, Parry, Hurt, Dodge, Sound, Swing, Guard, GuardBreak, Draw, ChargeReady, Dash };
+enum class EJapanCombatCue : uint8 { Hit, Parry, Hurt, Dodge, Sound, Swing, Guard, GuardBreak, Draw, ChargeReady, Dash, AttackTell };
 
 USTRUCT()
 struct FJapanCombatEvent

@@ -21,6 +21,7 @@ public:
     void SwordSwing(const FVector& At, int32 Strength);
     void SwordHit(const FVector& At, const FVector& SwingDir, int32 Strength, AActor* Wielder, AActor* Victim);
     void Parry(const FVector& At, AActor* Defender, AActor* Attacker);
+    void AttackTell(const FVector& At);
     void PlayerHurt(const FVector& At, const FVector& From, float Damage, AActor* Victim, AActor* Attacker, bool bKnockDown);
     void ChargeTick(const FVector& Base, const FVector& Tip, float Fraction, float Dt);
     void ChargeReady(const FVector& At);
