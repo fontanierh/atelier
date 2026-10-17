@@ -1,0 +1,7 @@
+Use case: stylized-concept.
+Asset type: single image reference for image-to-3D geometry generation for the cozy skateboarding town game Yorimichi.
+Primary request: one compact freestanding neighborhood recycling bin, a charming chunky Japanese streetside prop. A single sturdy rectangular steel cabinet with softly rounded corners, a slightly sloped overhanging ochre yellow lid, two clearly recessed circular bottle openings high on its front, and a broad inset front door panel. Short sturdy feet integral to the cabinet. No thin projecting parts, no separate accessories.
+Style: soft painterly low-poly game art; faded deep indigo painted steel cabinet, warm mustard ochre lid, a little warm rust at the bottom, matte materials. Readable broad geometric shapes with a handmade feel.
+Composition: one isolated complete object centered, three-quarter front view with the right side visible, camera slightly above the bin, modest orthographic perspective. Entire object visible, fills 75 percent of the square image with clear margin. Plain pure black background, no environment, no ground plane, no cast shadow, no other objects.
+Lighting: soft neutral studio illumination that clearly shows front, side and top planes.
+Constraints: no text, lettering, numbers, logos, labels, pictograms, plants or people. Only the one bin. No transparency or glass. Broad simple surfaces suitable for a 2000 to 4000 triangle game prop.
