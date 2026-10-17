@@ -1,0 +1,29 @@
+[
+  {
+    "name": "uv-89-5e-05",
+    "angle": 89,
+    "margin": 5e-05,
+    "covered_texels": 2048854,
+    "atlas_texels": 4194304,
+    "occupancy": 0.48848485946655273,
+    "model_sha256": "f17b706ffd876b5cefb91ee0d7505e08ab469144009c4e0469079719ce5b0993"
+  },
+  {
+    "name": "uv-89-0.0002",
+    "angle": 89,
+    "margin": 0.0002,
+    "covered_texels": 1965263,
+    "atlas_texels": 4194304,
+    "occupancy": 0.468555212020874,
+    "model_sha256": "2c9b60636c8fdef2c6743b7f2aeac868a4a311dc2c6b56e8e3cdc8eb399216cf"
+  },
+  {
+    "name": "uv-66-0.0002",
+    "angle": 66,
+    "margin": 0.0002,
+    "covered_texels": 1951319,
+    "atlas_texels": 4194304,
+    "occupancy": 0.46523070335388184,
+    "model_sha256": "c59fd2786d6ae38522ea49b0ca7b6cbaf7660440086ba35e8813e5c915e82300"
+  }
+]

@@ -53,6 +53,13 @@ non-image GLB buffers. It saves confidence, protected/changed masks and eight di
 renders. Coverage means the fraction of occupied UV texels reached by a reference;
 it is not a measurement of physical surface area or a visual-quality score.
 
+The committed `meshaxiom-head-reference-set` contains the exact UV clay mesh, camera
+guides, generated views and paid receipts. The hosted `Fixed geometry head textures`
+workflow projects its four 2K variants under a 4 GiB aggregate guard, without downloading
+model weights, launching Blender or making paid calls. It retains models, renders and
+geometry evidence. These hosted CPU results are separate from laptop measurements.
+Local preparation and painting default to 10 GiB; `--memory-gib 4` selects a lower ceiling.
+
 ## Reproduction
 
 Use the runtime from the Apple Silicon document. Commands run from a repository checkout;

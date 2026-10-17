@@ -1,0 +1,182 @@
+{
+  "kind": "geometry-guided multiview reference set",
+  "geometry_source": "../meshaxiom-skater-head/mesh.source.json.gz",
+  "identity_reference": "../meshaxiom-skater-head/reference.png",
+  "native_triangles": 18931,
+  "blender": "5.2.1 LTS, build 9e2066aef7ef",
+  "image_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "files": {
+    "guides/cameras.json": {
+      "bytes": 6370,
+      "sha256": "1990ee17f46c740ef2a4a27c1f60e20c06e85366982e1ed4fa79dce17f68bede"
+    },
+    "guides/yaw0-pitch-5-mask.png": {
+      "bytes": 6500,
+      "sha256": "b33c0c5de9dbef0ed314df2be305748a76ca731602be6d5def90ba876da7b9c9"
+    },
+    "guides/yaw0-pitch-5.png": {
+      "bytes": 164777,
+      "sha256": "62013b3decd642ef7abf2bee0cd81d8cfa0f6cbf8e7731fd20553925b9c90618"
+    },
+    "guides/yaw120-pitch-5-mask.png": {
+      "bytes": 6795,
+      "sha256": "4df2712f496e9af224acd66ba7b8294f723627f7a267211607ba737a46c1f5a4"
+    },
+    "guides/yaw120-pitch-5.png": {
+      "bytes": 176325,
+      "sha256": "052c75ed1ae1b57c7a112515be2c17bd3b98bbeb6ecb471c2a381022e07797f1"
+    },
+    "guides/yaw180-pitch-5-mask.png": {
+      "bytes": 6822,
+      "sha256": "0cf6be8e9bc27923f06fe0b983f388d4f2cbf93936353888dcabb6c66d9f5573"
+    },
+    "guides/yaw180-pitch-5.png": {
+      "bytes": 165977,
+      "sha256": "78d503fa8a1b5aa3dfcfb95200dd55a89af276c55a713ae1a886aa746f216b0b"
+    },
+    "guides/yaw240-pitch-40-mask.png": {
+      "bytes": 6944,
+      "sha256": "5aa09ba4ef290984fd73ff4f9d9324b9abe2773b71eb8cb9269d39d541aa256d"
+    },
+    "guides/yaw240-pitch-40.png": {
+      "bytes": 176219,
+      "sha256": "f616ab2aa20bf6251e643057dc77c268eed345afd7fa0d48b5c0276727a4c9aa"
+    },
+    "guides/yaw240-pitch-5-mask.png": {
+      "bytes": 7160,
+      "sha256": "f237402e2b5dcbce74db5ab55de8ddf10afb75b4715a1884871f513c74b2bb83"
+    },
+    "guides/yaw240-pitch-5.png": {
+      "bytes": 169189,
+      "sha256": "34403a8642fa144f0a631c2cc303f7f3c0660390877ef2162c1be53bd61e5bf6"
+    },
+    "guides/yaw300-pitch-5-mask.png": {
+      "bytes": 7232,
+      "sha256": "e0792b4e66ddf6863885029df9d22b33cc8d729a49f9133fd2b2ea998b7140f8"
+    },
+    "guides/yaw300-pitch-5.png": {
+      "bytes": 168578,
+      "sha256": "42cf268c864be42217348d5754cfc7590448d665a733a34a27413aa7ee25c450"
+    },
+    "guides/yaw60-pitch-5-mask.png": {
+      "bytes": 6653,
+      "sha256": "0515de24c2eb470cc6441833d206156d18e84fd4cb7709bca84699c8930aa076"
+    },
+    "guides/yaw60-pitch-5.png": {
+      "bytes": 177397,
+      "sha256": "a426076aa61eb02da6e1cb2b9b129cf6ce35790399bbe98407dcd52502eaed7d"
+    },
+    "guides/yaw60-pitch55-mask.png": {
+      "bytes": 6971,
+      "sha256": "f9f5e76211e542bc7c31a76e472dca98745e9813eaceba1a02f425b9daa815b5"
+    },
+    "guides/yaw60-pitch55.png": {
+      "bytes": 196272,
+      "sha256": "22f3a192359b8f5e7053049abc1b61aee7568792064cc59209a7bf80e0d0eee0"
+    },
+    "references/yaw0-pitch-5.png": {
+      "bytes": 769774,
+      "sha256": "eca0e56f285f523f453311d149150b0d93d01d3d6081d04c48521f672792ae8c"
+    },
+    "references/yaw0-pitch-5.prompt.txt": {
+      "bytes": 1073,
+      "sha256": "d507644645632d103914a9533a03e1ef0c279843411973b11b3fb680e19ac6ad"
+    },
+    "references/yaw0-pitch-5.provenance.json": {
+      "bytes": 2691,
+      "sha256": "2fe643b205c16ea57c67bd794f03af5ebf4e9927dee905d1e81c402c1a719dee"
+    },
+    "references/yaw120-pitch-5.png": {
+      "bytes": 816183,
+      "sha256": "c7a82cf4ba17f17d33a23ca47d1f2e193569b71b04190881180124da7e1dd0e8"
+    },
+    "references/yaw120-pitch-5.prompt.txt": {
+      "bytes": 1075,
+      "sha256": "3291ccb75d431f13170609b72d11a88bbb954a21dea081e726337cf898962c17"
+    },
+    "references/yaw120-pitch-5.provenance.json": {
+      "bytes": 2762,
+      "sha256": "afd9c035fe391dfebc510b7550b6606ad852cc1eb3bc5bfba19f574c9d7fe880"
+    },
+    "references/yaw180-pitch-5.png": {
+      "bytes": 799738,
+      "sha256": "91d1f2d83ca8e3958c5f8a73c9085066197bf64176f83ede05ff88d927dc1d4f"
+    },
+    "references/yaw180-pitch-5.prompt.txt": {
+      "bytes": 1075,
+      "sha256": "3716124c4d05a7b66509b8b10f6500c187e1d06a8895269bf1cd4af72487f4d3"
+    },
+    "references/yaw180-pitch-5.provenance.json": {
+      "bytes": 2764,
+      "sha256": "472f1f32a6f0bdf7f3485022f4dd9fa97c5cd20651dafaebd3d49ef9debb7ee1"
+    },
+    "references/yaw240-pitch-5.png": {
+      "bytes": 760650,
+      "sha256": "dffbbc68ec16bf3cde2fecc844eb9b54876d5f8071127d52414fa033c5fe68ab"
+    },
+    "references/yaw240-pitch-5.prompt.txt": {
+      "bytes": 1075,
+      "sha256": "e60e3ce3ecbc16c3dff50d78ab7b7383f70f229b7fbdb99dbb0df9286de1f595"
+    },
+    "references/yaw240-pitch-5.provenance.json": {
+      "bytes": 2766,
+      "sha256": "f8cb443683b2815cb21c9d9f914d3782a7c92c2f9ed1f2959f0b97f8ba43c8ad"
+    },
+    "references/yaw300-pitch-5.png": {
+      "bytes": 783514,
+      "sha256": "e75810d2ce66c21021dd87083a15dbde3b5feff87ca46be01de55563c709d5d4"
+    },
+    "references/yaw300-pitch-5.prompt.txt": {
+      "bytes": 1075,
+      "sha256": "70b44808ad6bb97b2fc04c883a7c8c36a55d24bf65d56e394a80463fe68ddd5b"
+    },
+    "references/yaw300-pitch-5.provenance.json": {
+      "bytes": 2762,
+      "sha256": "050a4c1b7d19e654cc84cb2da8b2e16f20edaaf667dbae37329488f25d578770"
+    },
+    "references/yaw60-pitch-5.png": {
+      "bytes": 795795,
+      "sha256": "79c5f686af4368ede2f19518606c738cbd38a60b812f44d06c1fd89916a14c49"
+    },
+    "references/yaw60-pitch-5.prompt.txt": {
+      "bytes": 1074,
+      "sha256": "573b2f912ce8b0cf68486c6ee423001b64226a33574f7896c0a193bb81338496"
+    },
+    "references/yaw60-pitch-5.provenance.json": {
+      "bytes": 2753,
+      "sha256": "8e17c709859ae3672f24c36aa5001a0a5df13e7902131181ef9f61fb415ead5a"
+    },
+    "references/yaw60-pitch55.png": {
+      "bytes": 905800,
+      "sha256": "f5e32179105d7780b51a557ecde765a024b8060186d5263fe97e6128441fa601"
+    },
+    "references/yaw60-pitch55.prompt.txt": {
+      "bytes": 1074,
+      "sha256": "7971a0e6de2cc4536a295a151f8a9099eb653957000641f0044e13034fe2378e"
+    },
+    "references/yaw60-pitch55.provenance.json": {
+      "bytes": 2749,
+      "sha256": "0a3b841dffa0a6524fa33a0f2c8c4152a31e59b46f576d46edf26e0e13deedf0"
+    },
+    "uv-89-5e-05/clay-uv.glb": {
+      "bytes": 805524,
+      "sha256": "f17b706ffd876b5cefb91ee0d7505e08ab469144009c4e0469079719ce5b0993"
+    },
+    "uv-89-5e-05/geometry-verification.json": {
+      "bytes": 361,
+      "sha256": "fdae015216021bed8f8eb3bd82d03957668ccee3a1902b71d029dce856cefe25"
+    },
+    "uv-89-5e-05/uv-export.json": {
+      "bytes": 435,
+      "sha256": "3460273bfa2d27216849f5934b05029ed7d7860c53981ca833cd18606e3ab063"
+    },
+    "uv-comparison.json": {
+      "bytes": 782,
+      "sha256": "4ba301a7575c49d34eb4dd3a7a15a8b1aaf1a07a1c41829b59576bd02d13da70"
+    }
+  },
+  "geometry_source_sha256": "ca7520d32c408a16fdc9d89cdb4feb2fa112fbe728d139467706e2cb593a9ff7",
+  "native_json_sha256": "584a364105a85de07159f9fab28b2f5bcafcf7ea10cb45bec4c938c0b298b85f",
+  "identity_reference_sha256": "a4ccece26cf19825e840f37513710bc9da348be64227d8f2b7d982407439341e"
+}

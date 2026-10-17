@@ -1,0 +1,15 @@
+{
+  "source_vertices": 9554,
+  "source_triangles": 18931,
+  "authoring_vertices": 9554,
+  "authoring_triangles": 18931,
+  "height_metres": 0.35,
+  "uniform_scale": 0.1839835728952772,
+  "shading": "smooth",
+  "geometry_changes": "Uniform scale and origin only; original connectivity",
+  "uv_method": "Blender Smart UV Project",
+  "angle_degrees": 89.0,
+  "island_margin": 5e-05,
+  "atlas_size": 2048,
+  "seconds": 0.3401177499908954
+}

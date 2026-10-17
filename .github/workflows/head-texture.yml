@@ -1,0 +1,66 @@
+name: Fixed geometry head textures
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/head-texture.yml'
+      - 'games/yorimichi/tools/meshaxiom_quality.py'
+      - 'games/yorimichi/tools/meshaxiom_pixel_match.py'
+      - 'games/yorimichi/tools/pixel_match/**'
+      - 'games/yorimichi/assets/characters/meshaxiom-head-reference-set/**'
+      - 'games/yorimichi/assets/characters/meshaxiom-skater-head/**'
+      - 'platform/harness/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: head-texture-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  paint:
+    name: Guarded CPU texture experiment
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - run: uv sync --frozen --managed-python
+      - name: Copy committed fixed geometry and reference inputs
+        run: |
+          uv run python - <<'PY'
+          import shutil
+          shutil.copytree('games/yorimichi/assets/characters/meshaxiom-head-reference-set',
+                          'build/yorimichi/meshaxiom/ci-head-quality')
+          PY
+      - name: Project four 2K variants without model weights or paid calls
+        run: |
+          nice -n 10 uv run python -u games/yorimichi/tools/meshaxiom_quality.py paint \
+            --mesh games/yorimichi/assets/characters/meshaxiom-skater-head/mesh.source.json.gz \
+            --image games/yorimichi/assets/characters/meshaxiom-skater-head/reference.png \
+            --output build/yorimichi/meshaxiom/ci-head-quality \
+            --report build/yorimichi/meshaxiom/ci-head-quality/guard \
+            --variants single,guided-single,weighted,best-angle --memory-gib 4
+      - name: Retain completed renders, models and geometry evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: head-textures-${{ github.event.pull_request.head.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            build/yorimichi/meshaxiom/ci-head-quality/*/head-pixel-match.glb
+            build/yorimichi/meshaxiom/ci-head-quality/*/contact.png
+            build/yorimichi/meshaxiom/ci-head-quality/*/pixel-match-report.json
+            build/yorimichi/meshaxiom/ci-head-quality/*/geometry-verification.json
+            build/yorimichi/meshaxiom/ci-head-quality/texture-comparison.json
+            build/yorimichi/meshaxiom/ci-head-quality/reference-validation.json
+            build/yorimichi/meshaxiom/ci-head-quality/guard/memory-health-tree.json

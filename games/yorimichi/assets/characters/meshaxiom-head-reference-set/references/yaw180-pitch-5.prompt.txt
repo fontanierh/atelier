@@ -1,0 +1,11 @@
+Use case: identity-preserve. Asset type: calibrated albedo reference for a fixed 3D game head.
+Image 1 supplies the character identity and colors. Image 2 is the exact geometry/camera target to color.
+Paint ONLY the head shown in image 2. Preserve its silhouette, nose, eyes, mouth, ears, hair tufts,
+ponytail, neck shape, projection, framing, and black background pixel positions exactly.
+The target camera has yaw 180 degrees and pitch -5 degrees around the SAME head.
+Use the warm brown skin, dark indigo hair, brown eyes, eyebrows and friendly expression of image 1.
+Follow image 2 for WHICH parts are visible: do not turn the head toward image 1; do not add a face on the back.
+For back views, faithfully color the back of the indigo hair and ponytail and the brown neck.
+Material colors should be clean, detailed stylized game albedo, diffuse and evenly lit. Avoid baked highlights,
+cast shadows, outlines, accessories, text, watermarks, new hair tufts, or geometry changes.
+Return one 1024x1024 image at exactly the target framing, pure black outside the target head.

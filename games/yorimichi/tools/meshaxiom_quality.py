@@ -291,6 +291,8 @@ def main(argv=None):
     parser.add_argument('--views', default='yaw0-pitch-5,yaw60-pitch-5,yaw120-pitch-5,yaw180-pitch-5,yaw240-pitch-5,yaw300-pitch-5,yaw60-pitch55')
     parser.add_argument('--variants', default='single,guided-single,weighted,best-angle,4k')
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--memory-gib', type=int, choices=range(4, 11), default=10,
+                        help='Aggregate CPU preparation/painting ceiling, 4–10 GiB')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.stage == 'references':
@@ -304,7 +306,7 @@ def main(argv=None):
     from atelier.harness.safety.guarded import run
     return run([sys.executable, '-u', str(Path(__file__).resolve()), '--worker', *argv],
                args.report, timeout=900, purpose=f'Fixed-geometry head quality: {args.stage}',
-               aggregate_tree=True, progress=20)
+               limit_gib=args.memory_gib, aggregate_tree=True, progress=20)
 
 
 if __name__ == '__main__':
