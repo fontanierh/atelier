@@ -32,6 +32,14 @@ def test_entire_committed_railway_and_tunnel_cover_are_preserved():
     assert np.max(S.height(np.full_like(y, 3200.), y, 300.)) < -1.
 
 
+def test_entire_occupied_belmonte_footprint_keeps_its_ground():
+    from belmonte.layout import BOUNDS
+    x, y = np.meshgrid(np.linspace(BOUNDS[0], BOUNDS[2], 41),
+                       np.linspace(BOUNDS[1], BOUNDS[3], 41))
+    base = 210.+.01*(x-550.)+.005*(y-4500.)
+    np.testing.assert_array_equal(S.height(x, y, base), base)
+
+
 def test_existing_road_and_quay_top_are_protected():
     x, y = np.meshgrid(np.linspace(-300., 1420., 79), [-125., -100., -90., 0.])
     base = 2.4+.04*(y+125.)
@@ -52,7 +60,9 @@ def test_old_zero_height_country_aprons_are_submerged():
 
 def test_profile_has_dry_land_and_a_continuous_underwater_toe():
     for y in [800., 2400., 4600., 6000.]:
-        x = np.linspace(2500., 3200., 1401)
+        # Include the full country transition, whose low foreground now
+        # extends farther inland than the former narrow cliff strip.
+        x = np.linspace(1500., 3200., 3401)
         z = S.height(x, np.full_like(x, y), 180.)
         assert z.min() <= -15.
         assert z.max() > 30.
@@ -203,3 +213,47 @@ def test_wider_country_refinement_matches_ground_beyond_old_coast_band(monkeypat
     p = np.asarray(vertices)
     assert len(faces) > 100
     np.testing.assert_allclose(p[:,2], terrain.country_height(p[:,0],p[:,1]), atol=1e-10)
+
+
+def eastern_waterline(y):
+    lo, hi = np.full_like(np.asarray(y, float), 2500.), np.full_like(np.asarray(y, float), 3200.)
+    for _ in range(32):
+        middle = (lo+hi)/2.
+        distance, _ = S.field(middle, y)
+        lo, hi = np.where(distance > 0., middle, lo), np.where(distance <= 0., middle, hi)
+    return (lo+hi)/2.
+
+
+def test_country_foreground_stays_low_and_breaks_into_knolls():
+    # The rejected native ground reached about 100 m just 500 m behind the
+    # sand. A low foreground must survive the actual 225 m plateau scale.
+    for y in [4680., 5810.]:
+        d = np.arange(150., 501., 5.)
+        x = eastern_waterline(y)-d
+        base = 225.*S.smooth((3000.-x)/750.)
+        z = S.height(x, y, base)
+        assert np.max(z[d <= 300.]) < 38.
+        assert z[-1] < 70.
+    # Sample a two-dimensional patch behind the first bay: useful relief
+    # must cross the shelf, rather than making another parallel berm.
+    y, d = np.meshgrid(np.arange(4600., 4761., 10.), [250., 350., 450.])
+    x = eastern_waterline(y)-d
+    z = S.height(x, y, 225.)
+    assert np.ptp(z[1]) > 15.
+    assert np.min(np.ptp(z, axis=0)) > 15.
+
+
+def test_eastern_rock_wall_is_interrupted_by_physical_pocket_beaches():
+    for y in [560., 1050., 3000.]:
+        waterline = float(eastern_waterline(y))
+        x = np.arange(waterline-90., waterline+30., .25)
+        z = S.height(x, y, 180.)
+        _, rock = S.field(waterline, y)
+        assert rock < .01
+        assert np.count_nonzero((z > .2) & (z < 3.))*.25 >= 25.
+    centre = float(eastern_waterline(560.))
+    banks = np.mean(eastern_waterline(np.array([400., 720.])))
+    assert centre < banks-100.
+    for y in [400., 720.]:
+        _, rock = S.field(eastern_waterline(y), y)
+        assert rock > .85

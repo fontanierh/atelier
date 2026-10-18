@@ -20,7 +20,8 @@ RAIL_LINE = Path(__file__).resolve().parents[1]/'assets/vehicles/belmonte-train/
 SAND = np.array([.38, .305, .185])
 WET_SAND = np.array([.145, .119, .080])
 ROCK = np.array([.185, .180, .155])
-MEADOW = np.array([.175, .185, .067])
+LIGHT_ROCK = np.array([.43, .40, .33])
+MEADOW = np.array([.26, .25, .105])
 
 
 def smooth(t):
@@ -42,6 +43,12 @@ def _base_field(x, y):
     country = smooth((y-3500.)/350.)
     east -= country*(235.*np.exp(-((y-4680.)/290.)**2)
                      +205.*np.exp(-((y-5810.)/280.)**2))
+    pockets = [(560., 75., 130.), (1050., 110., 170.), (3000., 110., 145.)]
+    pocket = np.zeros_like(y)
+    for centre, width, depth in pockets:
+        inlet = np.exp(-((y-centre)/width)**4)
+        east -= depth*inlet
+        pocket = np.maximum(pocket, inlet)
     east += 19.*np.sin(y/61.)+9.*np.sin(y/29.+.5)
     west = -2970.+85.*np.sin(y/740.+1.2)+42.*np.sin(y/193.)
     north = 6835.-100.*(x/3000.)**2+65.*np.sin(x/530.)
@@ -65,6 +72,9 @@ def _base_field(x, y):
                            np.exp(-((y-5810.)/370.)**4))
     country_rock = np.where(de < dw, 1.-smooth((east_bays-.25)/.55), country_rock)
     side_rock = flank*(1.-smooth((y-3400.)/500.))+country_rock*smooth((y-3400.)/500.)
+    # Real sand inlets interrupt the eastern shelf, instead of painting a
+    # different colour onto a continuous cliff wall.
+    side_rock *= np.where(de < dw, 1.-pocket, 1.)
     cap = .85*smooth((np.abs(x)-1450.)/1100.)
     side_rock = side_rock*(1.-smooth((np.minimum(de, dw)-dn)/180.))+cap*smooth((np.minimum(de, dw)-dn)/180.)
     shoulders = .8*np.exp(-((x+340.)/70.)**2)+.75*np.exp(-((x-260.)/65.)**2)
@@ -112,7 +122,12 @@ def reach(x, y):
 
 def perimeter_weight(x, y):
     d, _ = field(x, y)
-    return 1.-smooth((d-100.)/(reach(x, y)-100.))
+    band = reach(x, y)
+    inland = smooth((d-100.)/(band-100.))
+    country = (band-REACH)/(COUNTRY_REACH-REACH)
+    # Keep the foreground on the authored low shelf. The old 225 m plateau
+    # must not dominate halfway through that shelf merely because it is high.
+    return 1.-inland*(1.-country+country*inland)
 
 
 def weight(x, y):
@@ -136,6 +151,8 @@ def height(x, y, base):
     Ground beyond reach(x, y) inside the coast MUST remain unchanged.
     Country bays MUST retain broad dry sand followed by a rolling backshore,
     without compressing the high country into the southern 260 metre band.
+    Country foreground relief MUST vary in two dimensions and taper out before
+    protected or unchanged ground, rather than becoming one smooth ramp.
     Exterior ground MUST pass through sea level into a submerged toe; it MUST
     NOT retain broad zero-height quads. The occupied southern road/quay ground
     above y=-125 MUST remain unchanged. The committed railway and its natural
@@ -178,7 +195,16 @@ def height(x, y, base):
     target = beach*(1.-rock)+cliff*rock
     target = np.where(d < 0., np.maximum(FLOOR, d*(.18+.42*rock)), target)
     w = weight(x, y)
-    return base*(1.-w)+target*w
+    ground = base*(1.-w)+target*w
+    perimeter = perimeter_weight(x, y)
+    protection = np.divide(w, perimeter, out=np.zeros_like(w), where=perimeter > 1e-8)
+    band = reach(x, y)
+    country_band = (band-REACH)/(COUNTRY_REACH-REACH)
+    relief = (11.*np.sin(x/140.+y/93.)+7.*np.sin(y/71.-x/113.)
+              +3.*np.sin(x/57.+y/149.))
+    relief *= smooth((d-100.)/150.)*smooth((band-d)/180.)
+    relief *= country_band*protection*np.minimum(1., np.maximum(ground-4., 0.)/28.)
+    return ground+relief
 
 
 def vegetation(x, y):
@@ -206,7 +232,11 @@ def paint(x, y, z, normal_z):
     wet = 1.-smooth((z-.05)/1.8)
     sand = SAND*(1.-wet[..., None])+WET_SAND*wet[..., None]
     facet = .86+.16*np.sin(x/12.+y/19.)+.08*np.sin(z/6.+y/37.)
-    stone = ROCK*facet[..., None]*(.70+.30*normal_z[..., None])
+    # Pale continental rock at the city headland and country bays, retaining
+    # the dark volcanic flanks between them.
+    pale = np.clip(smooth((1200.-y)/300.)+smooth((y-3400.)/400.), 0., 1.)
+    geology = ROCK*(1.-pale[..., None])+LIGHT_ROCK*pale[..., None]
+    stone = geology*facet[..., None]*(.70+.30*normal_z[..., None])
     stone *= (1.-.35*wet[..., None])
     exposure = np.maximum(rock*(1.-smooth((z-45.)/35.)), smooth((.85-normal_z)/.22))
     shore = sand*(1.-exposure[..., None])+stone*exposure[..., None]
