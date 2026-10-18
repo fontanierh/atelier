@@ -31,6 +31,24 @@ def records(folder: Path) -> dict[str, dict[str, str]]:
     return result
 
 
+def model_records(folder: Path) -> dict[str, dict[str, str]]:
+    manifest_path = folder / "source-manifest.json"
+    existing = {}
+    if manifest_path.is_file():
+        existing = json.loads(manifest_path.read_text()).get("models", {})
+    result = {}
+    for slug, record in existing.items():
+        model = folder / "models" / record.get("model", f"{slug}.glb")
+        validation = folder / "models" / record.get("validation", f"{slug}.validation.json")
+        if model.is_file():
+            result[slug] = {
+                **record,
+                "model_sha256": sha256(model),
+                "validation_sha256": sha256(validation) if validation.is_file() else "",
+            }
+    return result
+
+
 def main() -> int:
     manifest = {
         "schema": 1,
@@ -38,7 +56,7 @@ def main() -> int:
         "status": "review-only; no Unreal placement",
         "references": records(LIBRARY / "references"),
         "textures": records(LIBRARY / "textures"),
-        "models": {},
+        "models": model_records(LIBRARY),
         "generator": "games/yorimichi/tools/jungle_city_manifest.py",
     }
     (LIBRARY / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
