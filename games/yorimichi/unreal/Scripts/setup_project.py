@@ -170,6 +170,11 @@ def build_level(terrain_mesh, W, MI):
 
 
 def main():
+    """@cc [owner:fontanierh,label:correctness] world-terrain-single-source-pass
+    With a city manifest, the city importer MUST perform the sole final-source Terrain import,
+    including its fresh slots, unit conversion, material bindings, complex collision and save.
+    The level MUST reference that final mesh; without a city, the legacy setup path MUST remain.
+    """
     if os.environ.get('JAPAN_ONLY'):
         raise RuntimeError('JAPAN_ONLY is retired; select unreal.materials or unreal.foliage.<asset>')
     import json
@@ -187,13 +192,6 @@ def main():
             continue  # stale pre-split exports may still exist; their independent owner imports them
         import_fbx(path, "/Game/Japan/Assets", name)
         assign(f"/Game/Japan/Assets/{name}", MI)
-    import_fbx(os.path.join(OUT, "terrain.fbx"), "/Game/Japan", "Terrain")
-    assign("/Game/Japan/Terrain", MI)
-    terrain = EAL.load_asset("/Game/Japan/Terrain")
-    if terrain:
-        bs = terrain.get_editor_property("body_setup")
-        if bs: bs.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-        EAL.save_loaded_asset(terrain)
     # props need collision too (trees, poles, rails): complex-as-simple is fine for a demo; the houses have their own import
     for name in ("Pole", "Pole_Lamp", "Guardrail", "Lantern", "Torii"):
         m = EAL.load_asset(f"/Game/Japan/Assets/{name}")
@@ -209,6 +207,20 @@ def main():
     if os.path.exists(os.path.join(OUT,"hidamari","manifest.json")):
         # The volcano (HD_North*) is unreal.north's: a snow or rock change reimports only it.
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_hidamari.py"),init_globals={"NORTH":False},run_name="__main__")
+        # The city owner already imports this exact terrain.fbx, refreshes its material slots,
+        # binds all terrain materials and saves complex collision. An earlier setup import
+        # only built a second copy before that final pass; no preceding owner consumes Terrain.
+        terrain = EAL.load_asset("/Game/Japan/Terrain")
+        if terrain is None:
+            raise RuntimeError("City import did not produce /Game/Japan/Terrain")
+    else:
+        import_fbx(os.path.join(OUT, "terrain.fbx"), "/Game/Japan", "Terrain")
+        assign("/Game/Japan/Terrain", MI)
+        terrain = EAL.load_asset("/Game/Japan/Terrain")
+        if terrain:
+            bs = terrain.get_editor_property("body_setup")
+            if bs: bs.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+            EAL.save_loaded_asset(terrain)
     if os.path.exists(os.path.join(OUT,"sailboat","manifest.json")):
         runpy.run_path(os.path.join(os.path.dirname(__file__),"import_sailboat.py"),run_name="__main__")
     if W.get("zeppelin"):
