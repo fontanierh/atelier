@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-texture",
+  "material": "aged_tropical_timber",
+  "prompt": "Create one seamless tileable material texture for a stylised game environment.\nFlat straight-on orthographic view, evenly lit, no perspective, no object silhouette, no vignette,\nno cast shadow, no highlights, no text, no label, no border, no frame. The pattern must repeat\ncleanly when the left edge meets the right and the top meets the bottom. Keep the warm hand-painted\nlook of Images 1 and 2: restrained colour variation, matte surface, broad readable detail and subtle\nwear. Material: aged tropical timber plains and beams, warm umber grain, dark seams, subtle\nadze marks, sun bleaching, small cracks and a little green dampness near the edges.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "61667da54f086ed9e3b9eaca10029611285be21563e29023b3603fb03a165ac1",
+  "status": "done",
+  "started_at": "2026-10-18T09:11:01.840556+00:00",
+  "output": "aged_tropical_timber.png",
+  "output_sha256": "e0ce9915783c215f4d21e937747929789db3580411fe66dc783a1e0d838f2cd0",
+  "usage": {
+    "input_tokens": 2329,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 169
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4085
+  },
+  "elapsed_seconds": 37.8,
+  "finished_at": "2026-10-18T09:11:39.658458+00:00"
+}

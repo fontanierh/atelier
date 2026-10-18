@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-trellis-reference",
+  "asset": "stilt_house",
+  "prompt": "Paint exactly one complete architectural object or plant for 3D reconstruction.\nShow the whole silhouette with a clear margin, three-quarter front view from slightly above,\ncentred and orthographic-feeling, on a completely flat pure black background. Use soft even\nlight with no cast shadow and no ground plane. Every visible component must be solid and\nconnected; no floating trim, detached pieces, holes in the main silhouette, people, tools,\ntext, labels, watermark, frame or surrounding scenery. Keep the hand-painted stylisation of\nImages 1 and 2: warm readable colours, matte surfaces, crisp chunky forms, subtle weathering,\nmoss in creases, and believable Cambodian jungle-city proportions. The object is a reusable\nmodule, not a ruin fragment. Object: a Southeast Asian timber stilt house, about 14 metres long and 11 metres tall,\nwith a low stone footing, twelve timber posts, enclosed plank walls, shaded veranda, two stair flights,\nsteep dark teal tiled roof and small finials; one complete modular house without furniture or people.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "f55b0b603c29a494efa10dee20033b92840ed632cb52f08afc2cc4c23e070a3f",
+  "status": "done",
+  "started_at": "2026-10-18T09:04:32.256640+00:00",
+  "output": "stilt_house.png",
+  "output_sha256": "13abe8cc3d9e2a4986e189197e75bc03fb39bc9169ba88543e93b39ecdddeb01",
+  "usage": {
+    "input_tokens": 2403,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 243
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4159
+  },
+  "elapsed_seconds": 37.7,
+  "finished_at": "2026-10-18T09:05:09.973191+00:00"
+}

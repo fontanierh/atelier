@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-trellis-reference",
+  "asset": "great_fig_tree",
+  "prompt": "Paint exactly one complete architectural object or plant for 3D reconstruction.\nShow the whole silhouette with a clear margin, three-quarter front view from slightly above,\ncentred and orthographic-feeling, on a completely flat pure black background. Use soft even\nlight with no cast shadow and no ground plane. Every visible component must be solid and\nconnected; no floating trim, detached pieces, holes in the main silhouette, people, tools,\ntext, labels, watermark, frame or surrounding scenery. Keep the hand-painted stylisation of\nImages 1 and 2: warm readable colours, matte surfaces, crisp chunky forms, subtle weathering,\nmoss in creases, and believable Cambodian jungle-city proportions. The object is a reusable\nmodule, not a ruin fragment. Object: an enormous tropical fig tree, about 28 metres tall, with a broad buttressed\ntrunk, twisting aerial roots, spreading asymmetrical branches and several layered dark green canopy\nclusters with a few orange-red blossoms; the trunk, roots and canopy are connected into one solid object.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "343669b2af0b5b65933cf30cc49a218a36a5e43b45031e24d85e14112d708946",
+  "status": "done",
+  "started_at": "2026-10-18T09:03:50.484750+00:00",
+  "output": "great_fig_tree.png",
+  "output_sha256": "a874fb2855db1d076f659767b17fa9599959a9b89615103f1b0c9a76e1b37d44",
+  "usage": {
+    "input_tokens": 2400,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 240
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4156
+  },
+  "elapsed_seconds": 41.7,
+  "finished_at": "2026-10-18T09:04:32.235592+00:00"
+}

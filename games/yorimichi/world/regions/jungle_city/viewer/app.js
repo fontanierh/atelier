@@ -8,29 +8,31 @@ const loading=document.querySelector('#loading');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'default'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.NoToneMapping;
-renderer.toneMappingExposure=1.0;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.08;
 renderer.shadowMap.enabled=false;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color('#74a2aa');
-scene.fog=new THREE.FogExp2('#789b91',0.00125);
-const camera=new THREE.PerspectiveCamera(43,1,1,2400);
+scene.background=new THREE.Color('#82b9c2');
+scene.fog=new THREE.FogExp2('#8eb4a7',0.00072);
+const camera=new THREE.PerspectiveCamera(42,1,1,3200);
 const controls=new OrbitControls(camera,canvas);
 controls.enableDamping=true;controls.dampingFactor=.065;controls.screenSpacePanning=true;
-controls.minDistance=28;controls.maxDistance=980;controls.maxPolarAngle=Math.PI*.485;
+controls.minDistance=18;controls.maxDistance=1550;controls.maxPolarAngle=Math.PI*.492;
 
-scene.add(new THREE.HemisphereLight('#d9edf0','#263b26',1.25));
-const sun=new THREE.DirectionalLight('#fff1cb',2.45);sun.position.set(-280,420,210);scene.add(sun);
-const rim=new THREE.DirectionalLight('#8bc9c4',.55);rim.position.set(360,180,-310);scene.add(rim);
+scene.add(new THREE.HemisphereLight('#e4f7f2','#31583a',2.05));
+const sun=new THREE.DirectionalLight('#fff0c2',3.65);sun.position.set(-360,520,280);scene.add(sun);
+const rim=new THREE.DirectionalLight('#8bd1d2',.95);rim.position.set(420,180,-360);scene.add(rim);
 
 const locations={
-  aerial:{target:[0,16,0],position:[415,360,470],description:'City whole'},
-  east:{target:[130,18,18],position:[365,82,112],description:'East causeway'},
-  temple:{target:[0,32,12],position:[168,118,188],description:'Temple mountain'},
-  market:{target:[118,18,-82],position:[242,86,-208],description:'Market terraces'},
-  baray:{target:[-248,15,-22],position:[-390,122,-190],description:'West baray'},
-  jungle:{target:[-210,24,160],position:[-348,96,278],description:'Jungle edge'},
+  aerial:{target:[0,25,-12],position:[455,505,-445],description:'Whole city'},
+  east:{target:[80,15,0],position:[360,85,-40],description:'East causeway'},
+  temple:{target:[0,35,-7],position:[195,175,-175],description:'Temple mountain'},
+  market:{target:[180,15,20],position:[325,105,195],description:'Market city'},
+  baray:{target:[-218,10,20],position:[-345,125,155],description:'West baray'},
+  gate:{target:[0,18,104],position:[20,105,235],description:'South gate'},
+  bridge:{target:[0,7,119],position:[135,75,210],description:'Naga bridge'},
+  jungle:{target:[-275,15,-35],position:[-425,150,-170],description:'Jungle edge'},
 };
 let cameraTween=null,tourTimer=0,touring=false;
 
@@ -68,7 +70,17 @@ controls.addEventListener('start',()=>{touring=false;document.querySelector('#to
 const loader=new GLTFLoader();
 loader.load('./models/JungleCity.glb',gltf=>{
   const model=gltf.scene;
-  model.traverse(object=>{if(object.isMesh){object.castShadow=false;object.receiveShadow=false;}});
+  const tintMaterial=material=>{
+    const name=(material.name||'').toLowerCase();
+    if(name.includes('water')){material.color.setRGB(.03,.31,.38);material.roughness=.27;material.metalness=.02;}
+    else if(name.includes('leaf')||name.includes('grass')) material.color.setRGB(1.35,1.75,1.25);
+    else if(name.includes('flower')) material.color.setRGB(1.8,1.25,.9);
+    else if(name.includes('roof')) material.color.setRGB(1.25,1.55,1.48);
+    else if(name.includes('laterite')) material.color.setRGB(1.42,1.02,.82);
+    else if(name.includes('sandstone')||name.includes('earth')) material.color.setRGB(1.16,1.05,.86);
+    else if(name.includes('timber')) material.color.setRGB(1.5,1.18,.9);
+  };
+  model.traverse(object=>{if(object.isMesh){object.castShadow=false;object.receiveShadow=false;if(Array.isArray(object.material))object.material.forEach(tintMaterial);else if(object.material)tintMaterial(object.material);}});
   scene.add(model);
   window.jungleCityViewer={loaded:true,model,locations,setView,renderer,scene,camera,sampleCanvas(){
     renderer.render(scene,camera);

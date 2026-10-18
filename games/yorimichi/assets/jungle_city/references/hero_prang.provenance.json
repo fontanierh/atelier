@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-trellis-reference",
+  "asset": "hero_prang",
+  "prompt": "Paint exactly one complete architectural object or plant for 3D reconstruction.\nShow the whole silhouette with a clear margin, three-quarter front view from slightly above,\ncentred and orthographic-feeling, on a completely flat pure black background. Use soft even\nlight with no cast shadow and no ground plane. Every visible component must be solid and\nconnected; no floating trim, detached pieces, holes in the main silhouette, people, tools,\ntext, labels, watermark, frame or surrounding scenery. Keep the hand-painted stylisation of\nImages 1 and 2: warm readable colours, matte surfaces, crisp chunky forms, subtle weathering,\nmoss in creases, and believable Cambodian jungle-city proportions. The object is a reusable\nmodule, not a ruin fragment. Object: a monumental Khmer-inspired sandstone temple tower, about 38 metres tall,\nwith a broad stepped base, steep central stair, colonnaded gallery, three receding carved tiers,\ndeep false-door porches, repeated pilasters and lotus-bud spire; mossy warm sandstone with a few\nflowering vines, but the architecture remains intact and usable.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "e86f53d0285952b9a7f171c79a9b5c1d033a4ff6e47a9369dee1f2f74b638324",
+  "status": "done",
+  "started_at": "2026-10-18T09:00:08.345552+00:00",
+  "output": "hero_prang.png",
+  "output_sha256": "2cd1e71ab773d0f93b877179ecf7e04cc6a7d63c96ee820c76a17f9d3e61d167",
+  "usage": {
+    "input_tokens": 2414,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 254
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4170
+  },
+  "elapsed_seconds": 42.9,
+  "finished_at": "2026-10-18T09:00:51.299290+00:00"
+}

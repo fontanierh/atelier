@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-texture",
+  "material": "jungle_canopy",
+  "prompt": "Create one seamless tileable material texture for a stylised game environment.\nFlat straight-on orthographic view, evenly lit, no perspective, no object silhouette, no vignette,\nno cast shadow, no highlights, no text, no label, no border, no frame. The pattern must repeat\ncleanly when the left edge meets the right and the top meets the bottom. Keep the warm hand-painted\nlook of Images 1 and 2: restrained colour variation, matte surface, broad readable detail and subtle\nwear. Material: layered stylised tropical leaves seen from above, deep green, olive and teal foliage,\nsmall pale undersides, scattered orange-red blossoms and no visible branches or sky.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "0c226bc355fe86bd24a8ad541923a6d534aa3afa345f913a640555fd0725a777",
+  "status": "done",
+  "started_at": "2026-10-18T09:11:39.698369+00:00",
+  "output": "jungle_canopy.png",
+  "output_sha256": "2f87f2df94461915e75f942b679d923726e4b4261e7c39a82dff5239f8c945b3",
+  "usage": {
+    "input_tokens": 2326,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 166
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4082
+  },
+  "elapsed_seconds": 45.9,
+  "finished_at": "2026-10-18T09:12:25.640949+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-texture",
+  "material": "dark_teal_roof_tile",
+  "prompt": "Create one seamless tileable material texture for a stylised game environment.\nFlat straight-on orthographic view, evenly lit, no perspective, no object silhouette, no vignette,\nno cast shadow, no highlights, no text, no label, no border, no frame. The pattern must repeat\ncleanly when the left edge meets the right and the top meets the bottom. Keep the warm hand-painted\nlook of Images 1 and 2: restrained colour variation, matte surface, broad readable detail and subtle\nwear. Material: small overlapping Khmer roof tiles in dark blue-green and charcoal, softly\nuneven rows, warm edge wear, tiny chips and restrained moss near the lower tile edges.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "c2201bb43bc855591c87a3fd000b7f5deff189abcf69042ccde9e5b2d386778c",
+  "status": "done",
+  "started_at": "2026-10-18T09:10:23.432602+00:00",
+  "output": "dark_teal_roof_tile.png",
+  "output_sha256": "408d67e9d8940ee31c0ab5e5959d320f608976654d439a22bd125cbc825c4da8",
+  "usage": {
+    "input_tokens": 2326,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 166
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4082
+  },
+  "elapsed_seconds": 38.4,
+  "finished_at": "2026-10-18T09:11:01.815220+00:00"
+}

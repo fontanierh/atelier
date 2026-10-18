@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-trellis-reference",
+  "asset": "naga_bridge",
+  "prompt": "Paint exactly one complete architectural object or plant for 3D reconstruction.\nShow the whole silhouette with a clear margin, three-quarter front view from slightly above,\ncentred and orthographic-feeling, on a completely flat pure black background. Use soft even\nlight with no cast shadow and no ground plane. Every visible component must be solid and\nconnected; no floating trim, detached pieces, holes in the main silhouette, people, tools,\ntext, labels, watermark, frame or surrounding scenery. Keep the hand-painted stylisation of\nImages 1 and 2: warm readable colours, matte surfaces, crisp chunky forms, subtle weathering,\nmoss in creases, and believable Cambodian jungle-city proportions. The object is a reusable\nmodule, not a ruin fragment. Object: a complete short Khmer stone bridge module, about 28 metres long, with a wide\nworn sandstone deck, four shallow steps at both ends, heavy carved parapets, and a large seven-head\nnaga balustrade terminal at each end; the bridge deck and supports form one solid connected object.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "48c966615dd4f7e1de71c9d41c025d2fc85003d82977891a9cf22ee16641d981",
+  "status": "done",
+  "started_at": "2026-10-18T09:01:28.801516+00:00",
+  "output": "naga_bridge.png",
+  "output_sha256": "1e501f31a6f4d19b72d8af4ff9df6b38a60dfe4322c6486858c42171b16a23c2",
+  "usage": {
+    "input_tokens": 2405,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 245
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4161
+  },
+  "elapsed_seconds": 35.0,
+  "finished_at": "2026-10-18T09:02:03.853501+00:00"
+}

@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "name": "Jungle City unplaced proposal asset sources",
+  "status": "review-only; no Unreal placement",
+  "references": {
+    "great_fig_tree.jpg": {
+      "sha256": "383847f621ad36c940773825e979e28a3276453f113ce621d2bab939133f8504",
+      "provenance": "great_fig_tree.provenance.json"
+    },
+    "guardian_statue.jpg": {
+      "sha256": "34e2cd32c0979e85de0617b50bfa2a3a02e5cea1d41d1c2e40ed221285db974c",
+      "provenance": "guardian_statue.provenance.json"
+    },
+    "hero_prang.jpg": {
+      "sha256": "40ac5352ffbcec445a731b8fb80cb69743699f440c557f08fc196fe31ead5f5b",
+      "provenance": "hero_prang.provenance.json"
+    },
+    "market_hall.jpg": {
+      "sha256": "85edfb2d7a95e0448de2f84708da2acc792d8eeaae7a5ec6c3fbda608d5d89cb",
+      "provenance": "market_hall.provenance.json"
+    },
+    "monumental_gate.jpg": {
+      "sha256": "c9318476873901ef6570af8370deba2d68a2ba86b8ebaa2c11894d01ae16366c",
+      "provenance": "monumental_gate.provenance.json"
+    },
+    "naga_bridge.jpg": {
+      "sha256": "f6cd01f382efab34c3ddadb53fee94d87db990764c17ca5a064f86f5086f6281",
+      "provenance": "naga_bridge.provenance.json"
+    },
+    "reservoir_pavilion.jpg": {
+      "sha256": "8c62c306eb05787aa24c2a5ea4ae2b4e8283e6b9805aee93619490088b5637dd",
+      "provenance": "reservoir_pavilion.provenance.json"
+    },
+    "stilt_house.jpg": {
+      "sha256": "f958055d68bf7cbd6ab4ad76c93526ea9e43a63af5abb69efe9af9f4722696a2",
+      "provenance": "stilt_house.provenance.json"
+    }
+  },
+  "textures": {
+    "aged_tropical_timber.jpg": {
+      "sha256": "a869c34e1ca16cf30a6f5e221128d1632fc35224585fa55ff31de175348d34fb",
+      "provenance": "aged_tropical_timber.provenance.json"
+    },
+    "dark_teal_roof_tile.jpg": {
+      "sha256": "ca3bab35992833ff9fdceee092ae0fe6c17e7effb6e4f93593a5eb385016314b",
+      "provenance": "dark_teal_roof_tile.provenance.json"
+    },
+    "jungle_canopy.jpg": {
+      "sha256": "9297b5cca2b5eef0589bf10911504596713a0e0c44d280be81af5e7253d07442",
+      "provenance": "jungle_canopy.provenance.json"
+    },
+    "mossy_stair_stone.jpg": {
+      "sha256": "d437dafc1ec44ed49b4f0efae1c6354425063cc243c2321562fc17b2810dc435",
+      "provenance": "mossy_stair_stone.provenance.json"
+    },
+    "red_laterite_blocks.jpg": {
+      "sha256": "f5edfeee8823614138cafb49102f011c2615521ca50183dc7a4404f505ae8d1f",
+      "provenance": "red_laterite_blocks.provenance.json"
+    },
+    "warm_carved_sandstone.jpg": {
+      "sha256": "bb97c580276fcb2eb56374587a1e0df0418c7780cce1a4a8c75950856e00d463",
+      "provenance": "warm_carved_sandstone.provenance.json"
+    }
+  },
+  "models": {},
+  "generator": "games/yorimichi/tools/jungle_city_manifest.py"
+}

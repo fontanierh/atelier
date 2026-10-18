@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-texture",
+  "material": "mossy_stair_stone",
+  "prompt": "Create one seamless tileable material texture for a stylised game environment.\nFlat straight-on orthographic view, evenly lit, no perspective, no object silhouette, no vignette,\nno cast shadow, no highlights, no text, no label, no border, no frame. The pattern must repeat\ncleanly when the left edge meets the right and the top meets the bottom. Keep the warm hand-painted\nlook of Images 1 and 2: restrained colour variation, matte surface, broad readable detail and subtle\nwear. Material: worn pale sandstone paving slabs and stair stone, uneven joints, dark foot polish,\nhairline cracks, scattered moss and tiny grass shoots.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "fbe0ec6c43a076d514acc8028ee08e5a3a9ce770e0dde7b598353cf85e8a9e50",
+  "status": "done",
+  "started_at": "2026-10-18T09:09:41.363502+00:00",
+  "output": "mossy_stair_stone.png",
+  "output_sha256": "26f00ec132890934d786bb96556442f7a7e3370105a4f297f97b6f664285f597",
+  "usage": {
+    "input_tokens": 2320,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 160
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4076
+  },
+  "elapsed_seconds": 42.0,
+  "finished_at": "2026-10-18T09:10:23.406166+00:00"
+}

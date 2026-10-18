@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-trellis-reference",
+  "asset": "guardian_statue",
+  "prompt": "Paint exactly one complete architectural object or plant for 3D reconstruction.\nShow the whole silhouette with a clear margin, three-quarter front view from slightly above,\ncentred and orthographic-feeling, on a completely flat pure black background. Use soft even\nlight with no cast shadow and no ground plane. Every visible component must be solid and\nconnected; no floating trim, detached pieces, holes in the main silhouette, people, tools,\ntext, labels, watermark, frame or surrounding scenery. Keep the hand-painted stylisation of\nImages 1 and 2: warm readable colours, matte surfaces, crisp chunky forms, subtle weathering,\nmoss in creases, and believable Cambodian jungle-city proportions. The object is a reusable\nmodule, not a ruin fragment. Object: a monumental standing Khmer guardian warrior statue on a carved sandstone\npedestal, about 9 metres tall, holding a long stone staff with both hands, square serene face, broad\nshouldered ceremonial skirt and tall tiered headdress; weathered warm sandstone with moss and small vines.",
+  "references": [
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/material-studies.jpg",
+    "games/yorimichi/world/regions/jungle_city/assets/concepts/temple-mountain.jpg"
+  ],
+  "execution": "games/yorimichi/tools/jungle_city_assets.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1024x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "717e7e5c203c97327f8d8a3e501ff9e7f0be9801c147fe5bd895cc2a0d391302",
+  "status": "done",
+  "started_at": "2026-10-18T09:03:17.574721+00:00",
+  "output": "guardian_statue.png",
+  "output_sha256": "cebaafb1ccb63aff3f755f0505d44049bfc4c7317b30c21a9d233e4b455344e3",
+  "usage": {
+    "input_tokens": 2400,
+    "input_tokens_details": {
+      "image_tokens": 2160,
+      "text_tokens": 240
+    },
+    "output_tokens": 1756,
+    "output_tokens_details": {
+      "image_tokens": 1756,
+      "text_tokens": 0
+    },
+    "total_tokens": 4156
+  },
+  "elapsed_seconds": 32.9,
+  "finished_at": "2026-10-18T09:03:50.461758+00:00"
+}

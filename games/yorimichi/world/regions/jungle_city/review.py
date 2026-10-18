@@ -14,12 +14,14 @@ REPO = HERE.parents[4]
 MODEL = REPO / "build" / "yorimichi" / "jungle-city" / "models" / "JungleCity.blend"
 OUT = REPO / "build" / "yorimichi" / "jungle-city" / "reviews"
 VIEWS = {
-    "master-aerial": ((520, 500, 560), (0, 16, 0)),
-    "east-causeway": ((382, 108, 108), (125, 18, 18)),
-    "temple-mountain": ((205, 165, 190), (0, 32, 12)),
-    "market-terraces": ((335, -310, 175), (118, -82, 20)),
-    "baray-reservoir": ((-430, -245, 230), (-225, -15, 15)),
-    "play-scale-check": ((286, -274, 152), (0, 0, 42)),
+    "master-aerial": ((535, 515, 575), (0, 12, 0)),
+    "east-causeway": ((390, 112, 116), (112, 8, 5)),
+    "temple-mountain": ((215, 176, 182), (0, 34, 12)),
+    "market-terraces": ((355, -338, 192), (178, -18, 18)),
+    "baray-reservoir": ((-452, -282, 238), (-218, -18, 12)),
+    "main-gate": ((18, -356, 122), (0, -188, 18)),
+    "stone-bridges": ((148, -338, 88), (0, -224, 9)),
+    "play-scale-check": ((305, -292, 142), (0, 0, 34)),
 }
 
 
@@ -32,8 +34,8 @@ def main() -> int:
     bpy.ops.wm.open_mainfile(filepath=str(MODEL))
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"
-    scene.render.resolution_x = 960
-    scene.render.resolution_y = 640
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 800
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.render.film_transparent = False
