@@ -68,6 +68,12 @@
       "model_sha256": "b27b5c97952d2914a8230464023753ce7537270d70f32c0438f56ffedc7ef752",
       "validation": "hero_prang.validation.json",
       "validation_sha256": "708c0cbc8ceaf362d1adf96bdc0aeeb0c3981d195f605a33229c3cca2845f271"
+    },
+    "monumental_gate": {
+      "model": "monumental_gate.glb",
+      "model_sha256": "ff8e8d6efa3430ce8846b1680b73cf2c9cb7d5cede9c647f5fc99c019157811d",
+      "validation": "monumental_gate.validation.json",
+      "validation_sha256": "906ed1789b28be8ab5b2e06b77fc6f7a6b8b6e8ed0cfbda8cf03a1d8c21a59a0"
     }
   },
   "generator": "games/yorimichi/tools/jungle_city_manifest.py"
