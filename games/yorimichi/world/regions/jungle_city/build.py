@@ -252,26 +252,48 @@ def shrine(name: str, x: float, y: float, scale: float, collection: bpy.types.Co
 
 
 def tree(name: str, x: float, y: float, z: float, scale: float, collection: bpy.types.Collection,
-         flowering: bool = False) -> None:
-    trunk_height = 7.8 * scale
-    cylinder(f"{name}_trunk", (x, y, z + trunk_height / 2), .58 * scale, trunk_height,
+         flowering: bool = False, emergent: bool = False) -> None:
+    trunk_height = 7.8 * scale * (1.32 if emergent else 1.0)
+    cylinder(f"{name}_trunk", (x, y, z + trunk_height / 2), (.72 if emergent else .58) * scale, trunk_height,
              "timber", collection, 9)
-    for branch in range(3):
-        angle = branch * math.tau / 3 + RNG.uniform(-.55, .55)
-        length = 3.6 * scale
+    branch_count = 5 if emergent else 4
+    for branch in range(branch_count):
+        angle = branch * math.tau / branch_count + RNG.uniform(-.55, .55)
+        length = RNG.uniform(3.6, 5.4) * scale
         cylinder(f"{name}_branch_{branch}",
                  (x + math.cos(angle) * length * .35, y + math.sin(angle) * length * .35,
                   z + trunk_height * .84), .26 * scale, length, "timber", collection, 8,
                  (0, math.pi / 2, angle))
-    for cluster in range(4):
-        angle = cluster * math.tau / 4 + RNG.uniform(-.45, .45)
-        radius = RNG.uniform(2.1, 3.6) * scale
-        cx = x + math.cos(angle) * RNG.uniform(1.2, 3.2) * scale
-        cy = y + math.sin(angle) * RNG.uniform(1.2, 3.2) * scale
-        cz = z + trunk_height + RNG.uniform(-1.0, 2.1) * scale
-        mat = "flower" if flowering and cluster == 0 else ("leaf_light" if cluster % 2 else "leaf")
+    cluster_count = 9 if emergent else 7
+    for cluster in range(cluster_count):
+        angle = cluster * math.tau / cluster_count + RNG.uniform(-.55, .55)
+        radius = RNG.uniform(1.9, 3.7) * scale
+        spread = RNG.uniform(1.1, 4.1) * scale
+        cx = x + math.cos(angle) * spread
+        cy = y + math.sin(angle) * spread
+        cz = z + trunk_height + RNG.uniform(-1.4, 2.8) * scale
+        mat = "flower" if flowering and cluster in (0, 5) else ("leaf_light" if cluster % 3 else "leaf")
         sphere(f"{name}_canopy_{cluster}", (cx, cy, cz),
-               (radius * 1.35, radius, radius * .72), mat, collection)
+               (radius * 1.42, radius, radius * (.72 if cluster % 2 else .9)), mat, collection)
+    if emergent:
+        for epiphyte in range(3):
+            angle = epiphyte * math.tau / 3 + .4
+            sphere(f"{name}_epiphyte_{epiphyte}",
+                   (x + math.cos(angle) * 1.8 * scale, y + math.sin(angle) * 1.8 * scale,
+                    z + trunk_height * RNG.uniform(.54, .76)),
+                   (1.4 * scale, 1.1 * scale, .75 * scale), "leaf_light", collection)
+
+
+def undergrowth(name: str, x: float, y: float, z: float, scale: float,
+                collection: bpy.types.Collection) -> None:
+    for cluster in range(4):
+        angle = RNG.uniform(0, math.tau)
+        radius = RNG.uniform(.7, 1.7) * scale
+        sphere(f"{name}_{cluster}",
+               (x + math.cos(angle) * radius, y + math.sin(angle) * radius,
+                z + RNG.uniform(.35, .8) * scale),
+               (radius * 1.45, radius, radius * .7),
+               "leaf_light" if cluster % 2 else "leaf", collection)
 
 
 def terrain_grid(name: str, collection: bpy.types.Collection) -> None:
@@ -479,7 +501,11 @@ def build_jungle() -> None:
         for y in range(-242, 243, 27):
             points.append((x + RNG.uniform(-7, 7), y + RNG.uniform(-9, 9)))
     for index, (x, y) in enumerate(points):
-        tree(f"JungleTree_{index:03d}", x, y, 3.0, RNG.uniform(.72, 1.62), coll, index % 19 == 0)
+        tree(f"JungleTree_{index:03d}", x, y, 3.0, RNG.uniform(.72, 1.62), coll,
+             index % 19 == 0, index % 11 == 0)
+        if index % 3 == 0:
+            undergrowth(f"JungleUnderstory_{index:03d}", x + RNG.uniform(-4, 4),
+                        y + RNG.uniform(-4, 4), 3.0, RNG.uniform(.65, 1.25), coll)
     inner = []
     for x in (-222, -188, -155, -121, 121, 155, 188, 222):
         for y in range(-178, 179, 31):
@@ -488,7 +514,11 @@ def build_jungle() -> None:
         for x in range(-105, 106, 29):
             inner.append((x + RNG.uniform(-4, 4), y + RNG.uniform(-4, 4)))
     for index, (x, y) in enumerate(inner):
-        tree(f"CityGrove_{index:03d}", x, y, 5.4, RNG.uniform(.55, .92), coll, index % 13 == 0)
+        tree(f"CityGrove_{index:03d}", x, y, 5.4, RNG.uniform(.55, .92), coll,
+             index % 13 == 0, index % 17 == 0)
+        if index % 2 == 0:
+            undergrowth(f"CityUnderstory_{index:03d}", x + RNG.uniform(-3, 3),
+                        y + RNG.uniform(-3, 3), 5.4, RNG.uniform(.5, .85), coll)
     for index, (x, y) in enumerate([(-302, -142), (-298, 126), (298, -154), (303, 153),
                                     (-166, 239), (169, -239), (-274, 226), (276, 226)]):
         tree(f"GuardianFig_{index}", x, y, 3.1, 2.35, coll, index % 2 == 0)
@@ -510,22 +540,54 @@ def build_props() -> None:
         cone(f"PromenadeFlame_{index:02d}", (x, y, 10.1), .86, .18, 1.9, "lantern", coll, 9)
 
 
+def linked_hierarchy_copy(root: bpy.types.Object, name: str) -> bpy.types.Object:
+    bpy.ops.object.select_all(action="DESELECT")
+    hierarchy = [root, *root.children_recursive]
+    for obj in hierarchy:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = root
+    bpy.ops.object.duplicate(linked=True)
+    duplicated = list(bpy.context.selected_objects)
+    copied_root = next(obj for obj in duplicated if obj.parent is None)
+    copied_root.name = name
+    return copied_root
+
+
 def load_hero_assets() -> None:
     if not HERO_MODELS.is_dir():
         return
     coll = bpy.data.collections.new("08_HeroAssets")
     bpy.context.scene.collection.children.link(coll)
-    placements = {
-        "hero_prang": ((0, 7, 28), 34, 0),
-        "monumental_gate": ((0, -190, 3), 43, 0),
-        "naga_bridge": ((0, -228, 3.6), 34, 0),
-        "reservoir_pavilion": ((-218, 83, 3.2), 18, 0),
-        "market_hall": ((183, -138, 5.2), 38, math.pi / 2),
-        "guardian_statue": ((-7, -230, 3.8), 10, 0),
-        "great_fig_tree": ((-302, 128, 2.6), 31, 0),
-        "stilt_house": ((273, 88, 3.0), 17, math.pi / 2),
+    placements: dict[str, list[tuple[tuple[float, float, float], float, float]]] = {
+        "hero_prang": [((0, 7, 28), 34, 0), ((-35, -16, 26.4), 22, 0),
+                       ((35, -16, 26.4), 22, math.pi), ((-35, 30, 26.4), 22, math.pi / 2),
+                       ((35, 30, 26.4), 22, -math.pi / 2), ((-75, 7, 26.4), 18, math.pi / 2),
+                       ((75, 7, 26.4), 18, -math.pi / 2)],
+        "monumental_gate": [((0, -190, 3), 32, 0), ((0, 190, 3), 32, math.pi),
+                            ((-236, 0, 3), 32, math.pi / 2), ((236, 0, 3), 32, -math.pi / 2),
+                            ((0, -104, 5), 25, 0), ((0, 104, 5), 25, math.pi),
+                            ((-116, 0, 5), 25, math.pi / 2), ((116, 0, 5), 25, -math.pi / 2)],
+        "naga_bridge": [((0, -228, 3.6), 28, 0), ((0, 228, 3.6), 28, math.pi),
+                        ((-275, 0, 3.6), 28, math.pi / 2), ((275, 0, 3.6), 28, -math.pi / 2)],
+        "reservoir_pavilion": [((-218, 83, 3.2), 15, 0), ((-218, -84, 3.2), 15, math.pi),
+                               ((198, 112, 3.2), 15, math.pi / 2), ((198, 45, 3.2), 15, -math.pi / 2)],
+        "market_hall": [((165, -118, 5.2), 18, 0), ((202, -118, 5.2), 18, 0),
+                        ((165, -67, 5.2), 18, 0), ((202, -67, 5.2), 18, 0),
+                        ((165, 67, 5.2), 18, math.pi / 2), ((202, 67, 5.2), 18, math.pi / 2),
+                        ((-185, 122, 5.2), 18, 0), ((-222, 122, 5.2), 18, 0)],
+        "guardian_statue": [((-7, -230, 3.8), 10, 0), ((7, -230, 3.8), 10, 0),
+                            ((-7, 230, 3.8), 10, math.pi), ((7, 230, 3.8), 10, math.pi),
+                            ((-275, -7, 3.8), 9, math.pi / 2), ((275, 7, 3.8), 9, -math.pi / 2)],
+        "great_fig_tree": [((-302, 128, 2.6), 31, 0), ((-302, -142, 2.6), 29, 1.2),
+                           ((298, -154, 2.6), 30, 2.3), ((303, 153, 2.6), 28, .4),
+                           ((-166, 239, 2.6), 27, 1.8), ((169, -239, 2.6), 28, .8),
+                           ((-274, 226, 2.6), 25, 2.7), ((276, 226, 2.6), 26, 1.4)],
+        "stilt_house": [((273, 88, 3.0), 13, math.pi / 2), ((286, 116, 3.0), 12, math.pi / 2),
+                        ((283, -78, 3.0), 13, -math.pi / 2), ((260, -121, 3.0), 12, -math.pi / 2),
+                        ((-282, 76, 3.0), 13, math.pi / 2), ((-268, 111, 3.0), 12, math.pi / 2),
+                        ((-282, -72, 3.0), 13, -math.pi / 2), ((-260, -118, 3.0), 12, -math.pi / 2)],
     }
-    for slug, (location, target_height, rotation) in placements.items():
+    for slug, instances in placements.items():
         source = HERO_MODELS / f"{slug}.glb"
         if not source.is_file():
             continue
@@ -535,24 +597,34 @@ def load_hero_assets() -> None:
         meshes = [obj for obj in imported if obj.type == "MESH"]
         if not meshes:
             continue
+        for obj in imported:
+            if coll not in obj.users_collection:
+                coll.objects.link(obj)
+            for source_collection in list(obj.users_collection):
+                if source_collection != coll:
+                    source_collection.objects.unlink(obj)
         bounds = [obj.matrix_world @ Vector(corner) for obj in meshes for corner in obj.bound_box]
         minimum = Vector((min(p.x for p in bounds), min(p.y for p in bounds), min(p.z for p in bounds)))
         maximum = Vector((max(p.x for p in bounds), max(p.y for p in bounds), max(p.z for p in bounds)))
-        factor = target_height / max(maximum.z - minimum.z, .001)
         root = bpy.data.objects.new(f"Hero_{slug}", None)
         coll.objects.link(root)
         root.empty_display_type = "PLAIN_AXES"
         for obj in imported:
             if obj.parent is None:
                 obj.parent = root
-        root.scale = (factor, factor, factor)
-        root.rotation_euler[2] = rotation
-        root.location = (location[0] - (minimum.x + maximum.x) * .5 * factor,
-                         location[1] - (minimum.y + maximum.y) * .5 * factor,
-                         location[2] - minimum.z * factor)
+        for index, (location, target_height, rotation) in enumerate(instances):
+            instance = root if index == 0 else linked_hierarchy_copy(
+                root, f"Hero_{slug}_{index:02d}")
+            instance.name = f"Hero_{slug}_{index:02d}"
+            factor = target_height / max(maximum.z - minimum.z, .001)
+            instance.scale = (factor, factor, factor)
+            instance.rotation_euler = (0, 0, rotation)
+            instance.location = (location[0] - (minimum.x + maximum.x) * .5 * factor,
+                                 location[1] - (minimum.y + maximum.y) * .5 * factor,
+                                 location[2] - minimum.z * factor)
 
 
-def join_collection(collection: bpy.types.Collection) -> int:
+def join_collection(collection: bpy.types.Collection, project_uvs: bool = True) -> int:
     objects = [obj for obj in collection.all_objects if obj.type == "MESH"]
     triangles = sum(sum(len(p.vertices) - 2 for p in obj.data.polygons) for obj in objects)
     bpy.ops.object.select_all(action="DESELECT")
@@ -561,16 +633,17 @@ def join_collection(collection: bpy.types.Collection) -> int:
     if objects:
         bpy.context.view_layer.objects.active = objects[0]
         bpy.ops.object.join()
-        bpy.ops.object.mode_set(mode="EDIT")
-        bpy.ops.mesh.select_all(action="SELECT")
-        bpy.ops.uv.cube_project(cube_size=6.0, correct_aspect=True, scale_to_bounds=False)
-        bpy.ops.object.mode_set(mode="OBJECT")
+        if project_uvs:
+            bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_all(action="SELECT")
+            bpy.ops.uv.cube_project(cube_size=6.0, correct_aspect=True, scale_to_bounds=False)
+            bpy.ops.object.mode_set(mode="OBJECT")
     return triangles
 
 
 def export_module(slug: str, collection_name: str) -> dict:
     collection = bpy.data.collections[collection_name]
-    triangles = join_collection(collection)
+    triangles = join_collection(collection, project_uvs=collection_name != "08_HeroAssets")
     objects = list(collection.all_objects)
     if not objects:
         raise RuntimeError(f"module {slug} is empty")
