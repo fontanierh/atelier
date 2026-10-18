@@ -609,7 +609,10 @@ def belmonte_train_corridor(out):
 
 
 def belmonte_steps(out):
-    """The current town and countryside library, with island planting and a northern apron."""
+    """@cc [owner:fontanierh,label:safety] country-generation-admission
+    The world.belmonte terrain export MUST use normal heavy-job admission and
+    actual-child and aggregate memory guards, preserving their failure status.
+    """
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
@@ -617,7 +620,7 @@ def belmonte_steps(out):
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
-             needs=['world.layout', 'world.treehouse_trees'],
+             needs=['world.layout', 'world.treehouse_trees'], heavy=True,
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
                       out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
