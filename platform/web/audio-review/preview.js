@@ -175,6 +175,10 @@
     $("play").disabled = true;
     $("stop").disabled = false;
     try {
+      // iOS otherwise treats Web Audio as ambient/game audio, which the
+      // phone's silent switch can mute even while the context is running.
+      if (navigator.audioSession && navigator.audioSession.type !== "playback")
+        navigator.audioSession.type = "playback";
       if (!context) {
         context = new AudioContext();
         context.addEventListener("statechange", () => {
@@ -188,7 +192,10 @@
       master.disconnect();
       master.connect(context.destination);
       master.gain.value = Number($("volume").value) / 100;
+      // Call resume in the original tap, before fetching/decoding any WAVs.
       await context.resume();
+      if (token !== generation) return;
+      if (context.state !== "running") throw new Error("Audio did not start");
       const selected =
         $("mode").value === "footstep"
           ? pool("footstep")
@@ -203,6 +210,8 @@
         }),
       );
       if (token !== generation) return;
+      if (context.state !== "running")
+        throw new Error("Audio was interrupted while loading");
       document.querySelectorAll("audio").forEach((a) => a.pause());
       running = true;
       bags.clear();
@@ -217,7 +226,7 @@
     } catch {
       if (token === generation)
         stop(
-          "Preview unavailable · Check the connection and try Start preview again.",
+          "Preview unavailable · Check media volume and connection, then tap Start preview again.",
         );
     }
   }

@@ -4,3 +4,9 @@ Stop, a superseding selection, individual-clip playback or leaving the visible p
 MUST end every scheduled source owned by that audition. A cancelled asynchronous
 load MUST NOT start playback later. The UI MUST distinguish the browser simulation
 from runtime game integration.
+
+@cc [owner:fontanierh,label:correctness] audition-audio-unlock
+A user-initiated audition MUST request an available playback audio session and
+resume its audio context within the initiating gesture, before loading samples.
+It MUST NOT report playing or schedule samples unless that context is running
+after both resume and asynchronous decoding. Cancelled starts MUST stay silent.
