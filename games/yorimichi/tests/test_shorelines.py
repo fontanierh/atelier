@@ -102,6 +102,32 @@ def test_harbor_piers_and_canal_approach_remain_over_water():
     assert S.height(848., -145., 3.) < -1.
 
 
+def test_west_harbor_approach_has_no_extruded_beach_tip_ridge():
+    # The former seaward control at x=380 made this floor rise toward a cusp
+    # before falling into the basin. Grazing rays jumped over that ridge,
+    # producing a straight shallow/deep boundary despite continuous meshes.
+    x = np.linspace(300., 420., 481)
+    for y in [-200., -210.]:
+        z = S.height(x, np.full_like(x, y), -8.)
+        assert np.max(np.diff(z)) < 0.
+        assert np.max(z) < -5.   # The approach remains clear beneath boats.
+    x, y = np.meshgrid(np.arange(280., 440.01, .5), np.arange(-260., -149.99, .5))
+    z = S.height(x, y, -8.)
+    assert np.isfinite(z).all()
+    assert np.max(np.abs(np.diff(z, axis=0))/.5) < .6
+    assert np.max(np.abs(np.diff(z, axis=1))/.5) < .6
+
+
+def test_harbor_basin_and_arrival_edge_keep_their_established_depths():
+    # Witnesses outside the retracted x=300..420 corner retain genuine basin
+    # relief, rather than flattening all bathymetry to hide depth-driven color.
+    x = np.array([300., 420., 600., 900.])
+    y = np.array([-210., -190., -190., -210.])
+    np.testing.assert_allclose(S.height(x, y, np.full_like(x, -8.)),
+                               [-9.89242375370834, -11.928572415293704,
+                                -11.880000000027236, -27.874896326561235], atol=1e-10)
+
+
 def test_spawn_beach_clears_the_existing_skate_pier_frontage():
     from skatepark.pier_site import ORIGIN, HALF_X, HALF_Y
     from skatepark.layout import ENTRANCE_X

@@ -35,7 +35,14 @@ def _smin(a, b, radius=150.):
 
 
 def _base_field(x, y):
-    """Signed inland distance and rock share; the rounded outline stays inside the old envelope."""
+    """@cc [owner:fontanierh,label:correctness] harbor-west-beach-transition
+    The southern outline between x=300 and x=420 MUST turn inland monotonically
+    toward the quay. A seaward cusp there MUST NOT extrude a straight submerged
+    ridge across the harbor approach. The quay outline from x=420 through x=900
+    MUST retain its existing datum.
+
+    Signed inland distance and rock share; the rounded outline stays inside the old envelope.
+    """
     x, y = np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float))
     east = 2970.+90.*np.sin(y/690.)+38.*np.sin(y/177.+.7)
     # Belmonte's reference has two deep sand bays between compact rock points.
@@ -55,9 +62,12 @@ def _base_field(x, y):
     # The existing quay owns the central frontage: its water stays open under
     # the piers. Sand bays sit outside its ends, below the protected city streets.
     # The spawn inlet also clears Sunset Pier's fixed 1.8 m deck and access path.
-    south = np.interp(x, [-3200., -1800., -600., -300., -150., 300., 380., 420.,
+    # Retract the former x=380, y=-190 beach tip into a direct quay transition.
+    # Its extruded underwater cusp occluded the deeper basin, making real
+    # scene-depth-driven shallows jump across a straight diagonal in the water.
+    south = np.interp(x, [-3200., -1800., -600., -300., -150., 300., 420.,
                          900., 1000., 1420., 1800., 2800., 3200.],
-                        [-25., -45., -60., -175., -185., -185., -190., -124.,
+                        [-25., -45., -60., -175., -185., -185., -124.,
                          -124., -195., -185., -60., -45., -25.])
     wild = smooth((np.abs(x)-600.)/500.)
     south += wild*(14.*np.sin(x/175.)+7.*np.sin(x/62.))
