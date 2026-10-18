@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "master-aerial",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: A complete north-up aerial master view. Show the whole city and enough surrounding jungle to understand its boundary: central five-tier temple mountain, rectangular moat and axial gates, inner ceremonial precinct, eastern market terraces, western baray reservoir, canals, bridges, smaller shrine courts, dense forest wall, distant hazy mountains. The composition must clearly match a Belmonte-scale district and read as a navigable map area.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "012047939c12d6007c06695f95ab6d52ec6231a68be5a64792c0ee10f2819394",
+  "status": "done",
+  "started_at": "2026-10-18T00:27:20.280227+00:00",
+  "output": "master-aerial.png",
+  "output_sha256": "d5dcfb715e354fdfcdd399ef2c114a6df73fc3cee50d03f46eb83c9d2aa39947",
+  "usage": {
+    "input_tokens": 2785,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 345
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4157
+  },
+  "elapsed_seconds": 44.2,
+  "finished_at": "2026-10-18T00:28:04.635445+00:00"
+}

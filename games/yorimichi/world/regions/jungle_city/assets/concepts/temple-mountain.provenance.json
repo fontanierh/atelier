@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "temple-mountain",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: Close architectural view of the central temple mountain from its southwest corner. Five broad stepped terraces, steep central stair, galleries, corner towers, lotus-bud spires, worn sandstone, moss and vines, banners and small lanterns. The geometry must be crisp enough to model from: massing, stairs, roof profiles, tower rhythm and terrace proportions must be unmistakable.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "479c9d96844088e18c8b8529005744b77a6f28d8c9833a86542f40526f47001a",
+  "status": "done",
+  "started_at": "2026-10-18T00:30:03.705937+00:00",
+  "output": "temple-mountain.png",
+  "output_sha256": "48013e1fba02a390b6aab15a80ea5451efe2da2b5fb517ec4b9ca61a81da6e80",
+  "usage": {
+    "input_tokens": 2776,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 336
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4148
+  },
+  "elapsed_seconds": 40.8,
+  "finished_at": "2026-10-18T00:30:44.547119+00:00"
+}

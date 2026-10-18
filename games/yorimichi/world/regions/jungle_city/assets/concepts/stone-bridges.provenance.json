@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "stone-bridges",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: A modelling reference for a major stone bridge and canal crossing. Show the arch/span construction, stepped approaches, carved parapets, naga terminals, worn paving, sluice gates, lotus water, and relationship to walls and market roofs. Orthographic-feeling three-quarter composition with strong dimension clarity.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "eccbd6300b1b09f03cdf7fa87cb924fad4e85c923ea6341e3c31f671372e7f85",
+  "status": "done",
+  "started_at": "2026-10-18T00:32:53.144892+00:00",
+  "output": "stone-bridges.png",
+  "output_sha256": "ebee589a4c398aab41bb660fa401f2f356e955591361a340216fcdabf3219644",
+  "usage": {
+    "input_tokens": 2760,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 320
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4132
+  },
+  "elapsed_seconds": 40.7,
+  "finished_at": "2026-10-18T00:33:33.916587+00:00"
+}

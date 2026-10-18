@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "play-scale-check",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: A wide human-scale view from a raised market terrace looking toward the temple mountain. Show ordinary doors, stairs, railings, bridge widths, market stalls and tree trunks at believable walking scale, then the monumental gate and sanctuary beyond. This image is specifically for checking that the full city feels like a game area similar in extent and density to Belmonte.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "a2a85b9bc6db39efc71922ddd2e59dee9a3aeab1880e653d9b65217bb76efbcd",
+  "status": "done",
+  "started_at": "2026-10-18T00:34:58.586162+00:00",
+  "output": "play-scale-check.png",
+  "output_sha256": "ac674a0b912e5a94fc99458746eb6f010ecdccd75bca37321954cfb3dc86138d",
+  "usage": {
+    "input_tokens": 2773,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 333
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4145
+  },
+  "elapsed_seconds": 39.5,
+  "finished_at": "2026-10-18T00:35:38.104028+00:00"
+}

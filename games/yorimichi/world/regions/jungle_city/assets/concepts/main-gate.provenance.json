@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "main-gate",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: Three-quarter view of the eastern city gate from outside the moat. A massive laterite wall, carved sandstone gatehouse with three deep passages, stepped Khmer-inspired roof profile, lotus finials, watch galleries, naga stair rails, flowering trees and roots. People-scale lanterns and small shrines make the monumental size clear.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "886316fe751c1d64ad308cca1a9ebf26b17366fe5e691b9387730afc4b308834",
+  "status": "done",
+  "started_at": "2026-10-18T00:29:24.586336+00:00",
+  "output": "main-gate.png",
+  "output_sha256": "b13609a5acfb6914374c7a51ec9a8c9933362b579edc72ccf69265525d581ee3",
+  "usage": {
+    "input_tokens": 2766,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 326
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4138
+  },
+  "elapsed_seconds": 39.1,
+  "finished_at": "2026-10-18T00:30:03.665677+00:00"
+}

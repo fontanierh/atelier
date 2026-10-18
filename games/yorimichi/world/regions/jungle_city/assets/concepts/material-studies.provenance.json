@@ -1,0 +1,34 @@
+{
+  "stage": "jungle-city-concept",
+  "view": "material-studies",
+  "prompt": "Use the visual language of Image 1 and the aerial character of Image 2:\nhand-painted stylised game concept art, warm clear light, readable silhouettes,\nrich but restrained colour, subtle paper/canvas texture, cinematic depth, and\narchitecture that feels inhabitable rather than archaeological display.\n\nThe place is Jungle City in Yorimichi: a complete city about 650 by 520 metres,\nin the middle of dense tropical jungle, inspired by Angkor in Cambodia without\ncopying a specific monument. Warm sandstone, red laterite, mossy steps, dark\nteal-green roofs, broad lotus reservoirs, monumental axial causeways, naga\nbalustrades, stepped temple-mountain silhouettes, carved gates, stilt houses,\nmarket roofs, stone bridges, kapok and fig trees, palms, vines, and roots\nspilling over old walls. The city must read as a coherent urban landscape with\nclear districts, circulation, water management, and jungle pressure at its\nedges. No modern buildings, vehicles, signage, text, labels, pins, frames,\ncopyrighted characters, or photoreal people.\n\nVIEW: A clean concept sheet-like scene containing large readable examples of the proposal materials in use: warm carved sandstone, red laterite blockwork, mossy stair stone, dark green roof tile, aged timber, woven thatch, teal reservoir water, jungle ground, flowering canopy, and orange lantern light. Keep a single coherent environment and avoid text callouts.\n\nNo text or labels anywhere in the image.",
+  "reference_files": [
+    "games/yorimichi/world/map/painted/world_map.png",
+    "games/yorimichi/assets/southwest/concepts/aerial.jpg"
+  ],
+  "execution": "games/yorimichi/world/regions/jungle_city/concepts.py",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "prompt_sha256": "2d657d3442b48eb06d7a3c9705ea01fa0e5f45aa14da0b7ca12bdc11adb4d57a",
+  "status": "done",
+  "started_at": "2026-10-18T00:33:33.979781+00:00",
+  "output": "material-studies.png",
+  "output_sha256": "9d547c9ad5f9de91b359dd4bc265a110df232aabfaf153f8d103f165768747b7",
+  "usage": {
+    "input_tokens": 2772,
+    "input_tokens_details": {
+      "image_tokens": 2440,
+      "text_tokens": 332
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 4144
+  },
+  "elapsed_seconds": 43.1,
+  "finished_at": "2026-10-18T00:34:17.087212+00:00"
+}
