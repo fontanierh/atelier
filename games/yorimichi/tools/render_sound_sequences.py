@@ -1,6 +1,7 @@
 """Render bounded listening examples from prepared candidates; no inference.
 
-Run this offline batch under atelier.harness.safety.guarded. Footstep cadence is
+The batch guards each actual encoder/decoder through ordinary admission; do not wrap
+the Python orchestrator in a second guard. Footstep cadence is
 an explicit audition stand-in for animation bone plants, not a recorded gameplay
 trace. Runtime gain/pitch, skate envelopes and contact gain are pinned below.
 """
@@ -15,8 +16,18 @@ import random
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import wave
+
+# The direct batch entrypoint starts numerical libraries in a fresh, bounded process.
+# Importing this module does not modify another caller's numerical-library settings.
+from atelier.harness import ffmpeg_audio
+from atelier.harness.ffmpeg_audio import WORKER_ENV, worker_environment
+
+
+if __name__ == '__main__' and any(os.environ.get(name) != value for name, value in WORKER_ENV.items()):
+    os.execve(sys.executable, [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], worker_environment())
 
 import numpy as np
 
@@ -28,6 +39,7 @@ RATE = 48000
 SECONDS = 8
 MAX_FILE = 160 * 1024
 MAX_BANK = 10 * 1024 * 1024
+MAX_SOURCE = 10 * RATE * 2 + 64 * 1024
 RUNTIME = {
     'games/yorimichi/unreal/Source/Yorimichi/JapanFootsteps.cpp':
         '26e57e1a9589b2d73521ea3b7e3cdcf9fad3322aa0f4a753686f3f0f86e36e80',
@@ -43,6 +55,24 @@ def runtime_identity():
         if digest(REPO / name) != expected:
             raise ValueError('Revalidate sound profile against changed runtime: ' + name)
     return RUNTIME
+
+
+class PreparedSample:
+    """Retain a source identity instead of retaining every decoded waveform in memory."""
+    def __init__(self, path, sha256, frames):
+        self.path, self.sha256, self.frames = path, sha256, frames
+
+    def load(self):
+        if self.path.stat().st_size > MAX_SOURCE or digest(self.path) != self.sha256:
+            raise ValueError('Prepared source checksum/path changed')
+        with wave.open(str(self.path), 'rb') as handle:
+            if ((handle.getnchannels(), handle.getsampwidth(), handle.getframerate(), handle.getnframes())
+                    != (1, 2, RATE, self.frames)):
+                raise ValueError('Prepared source format changed')
+            raw = handle.readframes(self.frames)
+        if len(raw) != self.frames * 2 or digest(self.path) != self.sha256:
+            raise ValueError('Prepared source changed while loading')
+        return np.frombuffer(raw, '<i2').astype(np.float64) / 32768
 
 
 def prepared_sources(root):
@@ -65,7 +95,8 @@ def prepared_sources(root):
             raise ValueError('Invalid or duplicate prepared candidate')
         ids.add(clip['id'])
         source = (root / name).resolve()
-        if not source.is_relative_to(root) or digest(source) != clip['audio']['sha256']:
+        if (not source.is_relative_to(root) or source.stat().st_size > MAX_SOURCE
+                or digest(source) != clip['audio']['sha256']):
             raise ValueError('Prepared source checksum/path changed')
         with wave.open(str(source), 'rb') as handle:
             if (handle.getnchannels(), handle.getsampwidth(), handle.getframerate()) != (1, 2, RATE):
@@ -82,7 +113,7 @@ def prepared_sources(root):
         if np.max(np.abs(samples)) < .001:
             raise ValueError('Silent prepared candidate')
         identities.append({'id': clip['id'], 'file': name, 'sha256': digest(source)})
-        pools.setdefault(clip['cue'], []).append((clip['id'], samples))
+        pools.setdefault(clip['cue'], []).append((clip['id'], PreparedSample(source, clip['audio']['sha256'], frames)))
     return pools, identities, digest(path)
 
 
@@ -139,7 +170,8 @@ def render(kind, surface, pools, seed):
             raise ValueError('Missing surface cue: ' + cue)
         if not bags.get(cue):
             bags[cue] = list(pools[cue]); rng.shuffle(bags[cue])
-        return bags[cue].pop()
+        identity, sample = bags[cue].pop()
+        return identity, sample.load() if isinstance(sample, PreparedSample) else sample
 
     def contact(cue, at, gain, pitch, side=None, wrap=False):
         identity, samples = take(cue)
@@ -211,20 +243,24 @@ def render(kind, surface, pools, seed):
     return audio, events, description
 
 
-def encode(samples, path):
+def encode(samples, path, *, encoder=None, report=None):
+    encoder = encoder or shutil.which('ffmpeg')
+    if not encoder:
+        raise ValueError('ffmpeg is required')
+    report = Path(report) if report is not None else path.parent / '.audio-guards' / path.stem
     with tempfile.TemporaryDirectory() as folder:
         source = Path(folder) / 'source.wav'
         with wave.open(str(source), 'wb') as handle:
             handle.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
             handle.writeframes(np.round(samples * 32767).astype('<i2').tobytes())
-        subprocess.run(['ffmpeg', '-v', 'error', '-nostdin', '-threads', '1', '-i', str(source),
-                        '-map_metadata', '-1', '-ac', '1', '-ar', str(RATE), '-c:a', 'aac',
-                        '-b:a', '96k', '-threads', '1', '-fflags', '+bitexact', '-flags:a', '+bitexact',
-                        '-movflags', '+faststart', str(path)], check=True, timeout=20)
-    decoded = subprocess.run(['ffmpeg', '-v', 'error', '-nostdin', '-threads', '1', '-i', str(path),
-                              '-ac', '1', '-ar', str(RATE), '-f', 'f32le', '-'],
-                             capture_output=True, check=True, timeout=20)
-    signal = np.frombuffer(decoded.stdout, '<f4')
+        command = ffmpeg_audio.Command.create(encoder, source, path, mode='encode', output_dir=path.parent)
+        ffmpeg_audio.run(command, report / 'encode', purpose='Bounded local audio encode')
+        pcm = Path(folder) / 'decoded.f32'
+        command = ffmpeg_audio.Command.create(encoder, path, pcm, mode='decode', output_dir=pcm.parent)
+        ffmpeg_audio.run(command, report / 'decode', purpose='Bounded local audio validation')
+        if pcm.stat().st_size > (len(samples) + 2048) * 4:
+            raise ValueError('Decoded output exceeds its frame budget')
+        signal = np.frombuffer(pcm.read_bytes(), '<f4')
     if (abs(len(signal) - len(samples)) > 2048 or not np.isfinite(signal).all()
             or np.max(np.abs(signal)) > 1 or np.sqrt(np.mean(signal ** 2)) < .0001
             or not 1 <= path.stat().st_size <= MAX_FILE):
@@ -247,10 +283,14 @@ def build(root):
         runtime = runtime_identity()
         pools, identities, manifest_hash = prepared_sources(root)
         encoder = shutil.which('ffmpeg')
+        if encoder:
+            encoder = str(Path(encoder).resolve())
         if not encoder:
             raise ValueError('ffmpeg is required')
         version = subprocess.check_output([encoder, '-version'], text=True, timeout=10)
-        identity = dict(prepared_sha256=manifest_hash, sources=identities, runtime=runtime,
+        codec_sources = [Path(ffmpeg_audio.__file__), Path(ffmpeg_audio.__file__).with_name('ffmpeg_audio_exec.py')]
+        codec_hashes = {p.name: digest(p) for p in codec_sources}
+        identity = dict(codec_helpers=codec_hashes, prepared_sha256=manifest_hash, sources=identities, runtime=runtime,
                         renderer_sha256=digest(Path(__file__)), encoder_sha256=digest(encoder),
                         review_helpers_sha256=digest(Path(review.__file__)),
                         encoder_version=version, codec='AAC96k-mono48k-faststart', duration=SECONDS)
@@ -264,7 +304,7 @@ def build(root):
             fd, temporary = tempfile.mkstemp(suffix='.m4a', dir=folder)
             os.close(fd); Path(temporary).unlink()
             try:
-                audio = encode(samples, Path(temporary))
+                audio = encode(samples, Path(temporary), encoder=encoder, report=root / '.audio-guards' / bank / name)
                 output = folder / name
                 if output.exists():
                     if digest(output) != audio['sha256']:
@@ -285,7 +325,8 @@ def build(root):
             raise ValueError('Sequence inputs changed during rendering')
         if (digest(Path(__file__)) != identity['renderer_sha256']
                 or digest(Path(review.__file__)) != identity['review_helpers_sha256']
-                or digest(encoder) != identity['encoder_sha256']):
+                or digest(encoder) != identity['encoder_sha256']
+                or {p.name: digest(p) for p in codec_sources} != codec_hashes):
             raise ValueError('Renderer or encoder changed during rendering')
         if any(digest(root / c['file']) != c['sha256'] or (root / c['file']).stat().st_size != c['bytes'] for c in clips):
             raise ValueError('Encoded media changed before publication')

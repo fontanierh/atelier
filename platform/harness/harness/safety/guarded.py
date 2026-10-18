@@ -379,7 +379,9 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     A typed broker completion observation MUST NOT grant continued execution. The actual bound
     launcher MUST exit within two seconds, both final guards MUST pass, a terminal capacity
     observation MUST be established, and normal affirmative capacity close MUST still succeed.
-    Only automatic full sessions MAY select the existing measured-small 4 GiB envelope. Both
+    Only automatic full sessions MAY select the measured-small Blender or reviewed bounded-audio
+    4 GiB envelope. Typed audio commands MUST retain aggregate protection and the normal lock;
+    their exact tool/input/output pins MUST be rechecked after GO before exec. Both
     process and aggregate guards MUST use that actual ceiling and the matching reservation.
     Explicit sessions MUST retain and cover the caller's actual requested ceiling.
     An opted-in legacy worker binding MUST publish only after both guards are ready and actual GO,
@@ -397,6 +399,11 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     `performance` asks a configured broker to drain other grants before this run and exclude new ones.
     An explicit admission session must already carry that flag when performance exclusion is requested.
     """
+    from atelier.harness.ffmpeg_audio import Command as AudioCommand, CEILING_GIB
+    if type(command) is AudioCommand:
+        if kind != 'job' or not lock or limit_gib < CEILING_GIB:
+            raise ValueError('Bounded audio requires a normal aggregate job with its full ceiling')
+        aggregate_tree = True
     if worker_binding is not None:
         from atelier.harness.safety.worker_binding import WorkerBinding, require_legacy
         if (type(worker_binding) is not WorkerBinding or not lock or not aggregate_tree or kind != 'job'
@@ -542,7 +549,9 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
                 gate = stack.enter_context(os.fdopen(write_fd, 'wb', buffering=0))
             gate_read = stack.enter_context(os.fdopen(read_fd, 'rb', buffering=0))
             descriptors += (read_fd,)
-            command = [sys.executable, str(Path(__file__).with_name('exec_gate.py')), str(read_fd), *command]
+            from atelier.harness.ffmpeg_audio import Command as AudioCommand
+            payload = command.prepared_argv() if type(command) is AudioCommand else command
+            command = [sys.executable, str(Path(__file__).with_name('exec_gate.py')), str(read_fd), *payload]
         inherited = {'pass_fds': descriptors, 'stdin': subprocess.DEVNULL} if descriptors else {}
         child = spawn(command, kind=kind, stdout=log, stderr=subprocess.STDOUT, env=env, **inherited)
         _timings['spawned'] = time.monotonic()

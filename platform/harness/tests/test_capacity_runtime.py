@@ -222,3 +222,63 @@ def test_incomplete_profile_set_cannot_fall_back_for_other_work(client):
     client[2]()
     with pytest.raises(ValueError, match='job, game and compile'):
         runtime.configured_session(kind='job', limit_gib=10, timeout=0)
+
+
+@pytest.fixture
+def bounded_audio(tmp_path,monkeypatch):
+    import wave
+    from atelier.harness import ffmpeg_audio as audio
+    from atelier.harness.ffmpeg_audio import Command
+    tool=tmp_path/'ffmpeg';tool.write_text('fixture executable');tool.chmod(0o700)
+    monkeypatch.setattr(audio,'REVIEWED_EXECUTABLES',frozenset({audio.digest(tool)}))
+    source=tmp_path/'input.wav'
+    with wave.open(str(source),'wb') as handle:
+        handle.setparams((1,2,48000,0,'NONE','not compressed'));handle.writeframes(b'\1\0'*4800)
+    return Command.create(tool,source,tmp_path/'output.m4a',mode='encode',output_dir=tmp_path)
+
+
+def test_full_pinned_audio_pairs_guard_reservation_and_worker_budget(client,monkeypatch,bounded_audio):
+    configure_schema(client,monkeypatch,2)
+    client[1]['profiles']['job']['resources']['gpu_mib']=0;client[2]()
+    before=client[0].read_bytes()
+    monkeypatch.setitem(sys.modules,'atelier.harness.capacity_client',SimpleNamespace(
+        AdmissionSession=lambda socket,request,**kwargs:SimpleNamespace(request=request,**kwargs)))
+    admission=runtime.configured_session(kind='job',command=bounded_audio,limit_gib=10,timeout=20)
+    assert admission.guard_limit_gib==4
+    assert admission.request['resources']['memory_mib']==4096
+    assert admission.request['resources']['cpu_millis']==4000
+    assert admission.request['workers']==4 and admission.request['performance'] is False
+    assert client[0].read_bytes()==before
+    runtime.validate_session_profile(admission,kind='job',command=bounded_audio,limit_gib=4)
+
+
+@pytest.mark.parametrize('kind',['game','compile'])
+def test_audio_does_not_weaken_non_job_exclusion(client,monkeypatch,bounded_audio,kind):
+    configure_schema(client,monkeypatch,2);client[2]()
+    request=runtime.configured_session(kind=kind,command=bounded_audio,limit_gib=10,timeout=20)
+    assert request['resources']['cpu_millis']==8000 and request['performance'] is True
+    assert request['resources']['memory_mib']==10240
+
+
+def test_plain_ffmpeg_argv_is_still_unknown(client,monkeypatch,bounded_audio):
+    configure_schema(client,monkeypatch,2);client[2]()
+    request=runtime.configured_session(kind='job',command=list(bounded_audio),limit_gib=10,timeout=20)
+    assert request['resources']['cpu_millis']==8000 and request['performance'] is True
+    assert request['resources']['memory_mib']==10240
+
+
+def test_audio_cannot_select_guard_below_reviewed_ceiling(client,monkeypatch,bounded_audio):
+    configure_schema(client,monkeypatch,2);client[2]()
+    with pytest.raises(ValueError,match='reviewed guard ceiling'):
+        runtime.configured_session(kind='job',command=bounded_audio,limit_gib=3,timeout=20)
+
+
+def test_unreviewed_audio_binary_keeps_full_exclusion(client, monkeypatch, bounded_audio):
+    from atelier.harness import ffmpeg_audio as audio
+    monkeypatch.setattr(audio, 'REVIEWED_EXECUTABLES', frozenset())
+    configure_schema(client, monkeypatch, 2)
+    client[2]()
+    request = runtime.configured_session(kind='job', command=bounded_audio, limit_gib=10, timeout=20)
+    assert request['resources']['cpu_millis'] == 8000
+    assert request['resources']['memory_mib'] == 10240
+    assert request['performance'] is True

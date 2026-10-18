@@ -41,8 +41,13 @@ def read_configuration(path):
     return json.loads(raw)
 
 
-def _worker_profile(command):
-    """Recognize only explicit Blender worker limits; never change the command's settings."""
+def _worker_profile(command, *, kind='job'):
+    """Recognize explicit Blender workers or the fixed pinned local-audio command class."""
+    if kind == 'job':
+        from atelier.harness.ffmpeg_audio import workers
+        selected = workers(command)
+        if selected is not None:
+            return selected
     if not command or Path(command[0]).name.lower() != 'blender':
         return None
     args = list(map(str, command[1:]))
@@ -78,7 +83,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
     """
     from atelier.harness import capacity_protocol as wire
     request = admission.request
-    workers = _worker_profile(command)
+    workers = _worker_profile(command, kind=kind)
     resources = wire.resources(request.get('resources'))
     if (request.get('checkout') != str(REPO) or 'checkout:' + str(REPO) not in request.get('locks', [])):
         raise ValueError('Full-capacity session must hold the actual checkout named lock')
@@ -96,7 +101,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
             raise ValueError('Maintenance requires exclusive admission and the complete managed CPU budget')
     if workers is None:
         if request.get('workers') is not None:
-            raise ValueError('Unknown commands cannot declare bounded Blender workers')
+            raise ValueError('Unknown commands cannot declare bounded workers')
         from atelier.harness import capacity_compat
         proof = proof if maintenance else capacity_compat.verify(admission.cutover)
         if resources.cpu_millis < proof['total']['cpu_millis'] - proof['reserve']['cpu_millis']:
@@ -104,7 +109,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
     if workers is not None:
         declared = request.get('workers')
         if type(declared) is not int or declared < workers or resources.cpu_millis < declared * 1000:
-            raise ValueError('Full-capacity session does not cover actual unchanged Blender workers')
+            raise ValueError('Full-capacity session does not cover the bounded worker envelope')
     if kind == 'compile' and resources.cpu_millis < 3000:
         raise ValueError('Full-capacity compile reservation must cover the existing three workers')
     if not math.isfinite(limit_gib) or limit_gib <= 0 or resources.memory_mib < math.ceil(limit_gib * 1024):
@@ -126,6 +131,9 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     That SMALL memory reservation MUST equal the actual selected guard ceiling; bridge and
     explicit-session limits MUST NOT be changed by this selection. Sealed maintenance MUST retain
     nominal guard ceilings and reserve all managed CPU with performance exclusion for every job.
+    Fixed audio commands MAY select four CPU units and a matching four GiB aggregate ceiling only
+    with reviewed executable SHA, bounded local inputs/outputs and codec/filter worker limits.
+    Unreviewed audio binaries and arbitrary FFmpeg argv MUST retain full exclusive admission.
     Full automatic games MAY increase only their session memory reservation to cover a caller's
     explicitly selected guard ceiling within the documented game range. The configured profile
     MUST already cover the default game ceiling; neither the configuration nor the guard changes.
@@ -180,9 +188,16 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         raise ValueError('capacity profile reservation is smaller than the actual guard ceiling')
     if resources.cpu_millis == 0:
         raise ValueError('capacity profiles must reserve CPU capacity')
-    workers = _worker_profile(command) if full or maintenance or kind == 'job' else None
+    workers = _worker_profile(command, kind=kind) if full or maintenance or kind == 'job' else None
     guard_limit_gib = limit_gib
-    if full and kind == 'job' and not performance and workers is not None:
+    from atelier.harness.ffmpeg_audio import Command as AudioCommand, CEILING_GIB
+    audio = type(command) is AudioCommand and kind == 'job' and workers is not None
+    if audio and limit_gib < CEILING_GIB:
+        raise ValueError('Bounded audio cannot lower its reviewed guard ceiling')
+    if full and audio and not performance and resources.gpu_mib <= CEILING_GIB * 1024:
+        guard_limit_gib = min(limit_gib, CEILING_GIB)
+        resources = replace(resources, memory_mib=math.ceil(guard_limit_gib * 1024))
+    if full and kind == 'job' and not performance and workers is not None and not audio:
         from atelier.harness.safety.render_lock import SMALL_LIMIT_GIB, SMALL_PEAK_GIB
         selected = min(limit_gib, SMALL_LIMIT_GIB)
         if (type(small_gib) in (int, float) and math.isfinite(small_gib)
