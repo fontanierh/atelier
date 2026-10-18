@@ -37,13 +37,15 @@ Coordinates are Blender metres (x east, y north). Station-local x points east an
 | Key | Name | Origin |
 | --- | --- | --- |
 | `zeppelin_forest` | Woodland air station | (-205, 230), 70.4 m |
-| `zeppelin_city` | Hidamari air station | (1273, 308), 34.3 m |
+| `zeppelin_city` | Hidamari air station | (1273, 321), 35.5 m |
 | `zeppelin_megapark` | Mega Park air station | (-200, 1484), 130 m |
 | `zeppelin_belmonte` | Belmonte air station | (410, 4660), 217.75 m |
 
-Woodland keeps the lake cabin, water and islet untouched. Hidamari stands on dry grass east of the x 1240 road, with
-local grading and a paved forecourt joined to the streets; it never touches the x 1240 road or the y 335 road and
-crossing.
+Woodland keeps the lake cabin, water and islet untouched. Hidamari stands on dry grass east of the x 1240 road and
+north of the town railway. Its apron, docked ship and turning envelope clear the tracks; its pedestrian link joins
+the open lane at (1240, 329), beyond the railway barrier, and skirts the ticket hut to the apron. Local grading
+leaves the railway cutting and the y 335 road and crossing untouched. The ship, entry, safe landing and all three
+Hidamari flight legs derive their positions and durations from the same station origin.
 
 ## The ship
 

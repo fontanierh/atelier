@@ -62,6 +62,8 @@ def sea_material():
          U.MaterialProperty.MP_SPECULAR)
     prop(_node(m,U.MaterialExpressionConstant,-250,800,r=1.0),U.MaterialProperty.MP_OPACITY)
     m.set_editor_property('blend_mode',U.BlendMode.BLEND_TRANSLUCENT)
+    # Low-tessellation sea planes must evaluate the same fog at every pixel.
+    m.set_editor_property('compute_fog_per_pixel',True)
     # forward shaded: the sun's specular on the wave normals gives the glints
     m.set_editor_property('translucency_lighting_mode',U.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
     MEL.recompile_material(m);EAL.save_loaded_asset(m);return m

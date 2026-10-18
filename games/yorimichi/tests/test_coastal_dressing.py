@@ -31,3 +31,17 @@ def test_new_coastal_rocks_and_trees_use_existing_assets_and_safe_footprints():
         assert np.isfinite(p).all()
         radius = p[:, 4]*1.8 if name.startswith('SW_Boulder') else np.full(len(p), 13.)
         assert D.clear_footprint(p[:, 0], p[:, 1], radius).all()
+
+
+def test_country_groves_reach_into_backshore_and_leave_meadow_gaps():
+    objects = D.placements(lambda x,y: S.height(x,y,np.full_like(x,120.)))
+    p = np.array([row for name,rows in objects.items() if name.startswith('Tree_') for row in rows])
+    p = p[(p[:,1] > 4200.) & (p[:,1] < 6200.)]
+    d, _ = S.field(p[:,0],p[:,1])
+    assert np.count_nonzero(d > 350.) > 500
+    # Dense groves and empty patches must coexist at the same distance from
+    # the coast; a thin uniform parallel row cannot meet this occupancy range.
+    p = p[(d > 130.) & (d < 350.) & (p[:,0] > 1500.)]
+    counts, _ = np.histogram(p[:,1], np.arange(4200.,6201.,100.))
+    assert counts.max() > 15
+    assert np.count_nonzero(counts < 4) >= 3

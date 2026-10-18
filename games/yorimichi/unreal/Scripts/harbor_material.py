@@ -65,6 +65,8 @@ def material(water=False):
         # Read the same underlying depth as the open sea. A constant "deep"
         # depth here would leave a rectangular blue seam across turquoise bays.
         m.set_editor_property('blend_mode',unreal.BlendMode.BLEND_TRANSLUCENT)
+        # Low-tessellation sea planes must evaluate the same fog at every pixel.
+        m.set_editor_property('compute_fog_per_pixel',True)
         m.set_editor_property('translucency_lighting_mode',unreal.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
         prop(node(unreal.MaterialExpressionConstant,r=1.),unreal.MaterialProperty.MP_OPACITY)
         # E: 0 on the rectangle's outline .. 1 once EDGE m inside. On the outline this is the open sea (M_Sea, sea_look.py):

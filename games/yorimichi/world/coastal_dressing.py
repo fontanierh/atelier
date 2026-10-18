@@ -24,8 +24,7 @@ def clear_footprint(x, y, radius):
     for dx in [-1., 0., 1.]:
         for dy in [-1., 0., 1.]:
             px, py = x+dx*radius, y+dy*radius
-            distance, _ = coast.field(px, py)
-            perimeter = 1.-coast.smooth((distance-100.)/(coast.REACH-100.))
+            perimeter = coast.perimeter_weight(px, py)
             safe &= (perimeter > .02) & (coast.weight(px, py) >= perimeter*(1.-1e-6))
     return safe
 
@@ -61,18 +60,25 @@ def placements(ground):
         if -9. < zz < 65.:
             put(names[i % len(names)], xx, yy, zz+size*.20, size)
 
-    x, y = np.meshgrid(np.arange(-3050., 3051., 23.), np.arange(-210., 6971., 23.))
+    # Full-cell jitter and a two-dimensional clump field leave open meadows
+    # between groves. The inland edge follows the rolling country transition,
+    # not a constant-distance row parallel to the beach.
+    x, y = np.meshgrid(np.arange(-3050., 3051., 17.), np.arange(-210., 6971., 17.))
     x, y = x.ravel(), y.ravel()
-    x += rng.uniform(-7., 7., len(x)); y += rng.uniform(-7., 7., len(y))
+    x += rng.uniform(-8.5, 8.5, len(x)); y += rng.uniform(-8.5, 8.5, len(y))
     d, rock = coast.field(x, y)
-    grove = .5+.5*np.sin(y/83.+x/71.)*np.sin(y/151.-x/109.)
-    keep = (d > 86.-20.*rock) & (d < 192.) & (rng.random(len(x)) < .2+.65*grove)
+    grove = (.52*np.sin(y/193.+x/157.)+.31*np.cos(y/101.-x/239.)
+             +.17*np.sin(y/337.+x/79.))
+    front = 88.-18.*rock+24.*np.sin(y/103.+x/67.)
+    back = np.minimum(coast.reach(x, y)-45., 160.+.62*coast.reach(x, y)+75.*grove)
+    keep = (d > front) & (d < back) & (grove > .30)
+    keep &= rng.random(len(x)) < .35+.5*np.clip(grove, 0., 1.)
     keep &= clear_footprint(x, y, 13.)
     x, y = x[keep], y[keep]
     z = ground(x, y)
     slope = np.hypot((ground(x+2., y)-ground(x-2., y))/4.,
                      (ground(x, y+2.)-ground(x, y-2.))/4.)
-    keep = (z > 3.) & (slope < 1.05)
+    keep = (z > 3.) & (slope < .48)
     x, y, z = x[keep], y[keep], z[keep]
     species = ['Tree_Pine_B', 'Tree_Maple_A', 'Tree_Ginkgo', 'Tree_Cedar_B']
     for xx, yy, zz in zip(x, y, z):

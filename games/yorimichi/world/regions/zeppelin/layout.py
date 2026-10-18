@@ -9,7 +9,7 @@ ROOT=yori.REGIONS
 # Station-local X points east, -Y is the front. Each platform shares this module. The list is the line's order: the
 # zeppelin carries on the way it came and turns back at either end, and a passenger can choose any other stop.
 STATIONS=[dict(key='zeppelin_forest',name='Woodland air station',origin=[-205.,230.,70.4]),
-          dict(key='zeppelin_city',name='Hidamari air station',origin=[1273.,308.,34.3]),
+          dict(key='zeppelin_city',name='Hidamari air station',origin=[1273.,321.,35.5]),
           dict(key='zeppelin_megapark',name='Mega Park air station',origin=[-200.,1484.,130.]),
           dict(key='zeppelin_belmonte',name='Belmonte air station',origin=[410.,4660.,217.75])]
 MESHES=['ZP_Woodland','ZP_City','ZP_MegaPark','ZP_Belmonte']
@@ -33,6 +33,10 @@ PROPELLER_RADIUS=1.65
 SHIP=[6.,4.,1.65]; ENTRY=[6.,-.8,1.65]; SAFE=[6.,-8.7,.05]
 
 def metadata():
+    """@cc [owner:fontanierh,label:correctness] hidamari-air-rail-clearance
+    The city air station, its pedestrian approach and the docked ship's turning envelope MUST clear the town
+    railway. Station origins MUST also determine ship, entry, landing and flight endpoints and leg durations.
+    """
     stations=[]
     for s in STATIONS:
         def world(p):return [a+b for a,b in zip(s['origin'],p)]
@@ -43,10 +47,16 @@ def metadata():
 
 def city_pad(x,y,z):
     # Never touch the X=1240 road or Y=335 road/crossing.
+    ox,oy,oz=STATIONS[1]['origin']
     x,y=np.asarray(x),np.asarray(y)
-    d=np.maximum(abs(x-1275)-14,abs(y-308)-10)
+    d=np.maximum(abs(x-(ox+2))-14,abs(y-oy)-10)
     w=smooth((5-d)/5)*smooth((x-1253)/3)*smooth((327-y)/3)
-    return z*(1-w)+34.3*w
+    return z*(1-w)+oz*w
+
+def city_path():
+    """Join the open east lane north of its railway barrier, then skirt the ticket hut to the front apron."""
+    ox,oy,_=STATIONS[1]['origin']
+    return spline([(1240.,329.),(1255.,329.),(1255.,oy+SAFE[1]),(ox+SAFE[0],oy+SAFE[1])])[0]
 
 def megapark_pad(x,y,z):
     """The north terrain `z` levelled for the Mega Park stop and its footpath, never under the park itself."""
@@ -77,6 +87,7 @@ def belmonte_clear(x,y,kind='tree'):
 def clear(instances,station=0,path=None,h=None,before=None):
     """Clear the vegetation over station `station` and within reach of its footpath `path` (x, y[, z] points).
     With h and before, heightmaps after and before levelling, re-seat what is kept on the levelled ground."""
+    if station==1 and path is None:path=city_path()
     removed={}
     for name,placements in list(instances.items()):
         if not name.startswith(('Tree','Bush','Grass','Rock','Litter')) and not (station and ('Tree' in name or 'Bush' in name)):continue

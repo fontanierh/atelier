@@ -1,7 +1,7 @@
 """The island's coastal profile, shared by terrain, planting and the map.
 
 Metres in the Blender frame. Inland terrain remains owned by its existing region;
-only a narrow perimeter band is reshaped. Beaches and cliffs are actual ground,
+only the coastal transition is reshaped. Beaches and cliffs are actual ground,
 not almost-coplanar ribbons over the sea or the original terrain.
 """
 import json
@@ -13,12 +13,14 @@ import numpy as np
 from coast_water import HARBOR_RECT
 
 REACH = 260.
+COUNTRY_REACH = 1050.
 FLOOR = -32.
 STEP = 6.
 RAIL_LINE = Path(__file__).resolve().parents[1]/'assets/vehicles/belmonte-train/line.json'
 SAND = np.array([.38, .305, .185])
 WET_SAND = np.array([.145, .119, .080])
-ROCK = np.array([.105, .111, .104])
+ROCK = np.array([.185, .180, .155])
+MEADOW = np.array([.175, .185, .067])
 
 
 def smooth(t):
@@ -38,8 +40,9 @@ def _base_field(x, y):
     # Belmonte's reference has two deep sand bays between compact rock points.
     # Broad inlets change the silhouette; small noise alone only frays a straight bank.
     country = smooth((y-3500.)/350.)
-    east -= country*(150.*np.exp(-((y-4680.)/340.)**2)
-                     +135.*np.exp(-((y-5810.)/330.)**2))
+    east -= country*(235.*np.exp(-((y-4680.)/290.)**2)
+                     +205.*np.exp(-((y-5810.)/280.)**2))
+    east += 19.*np.sin(y/61.)+9.*np.sin(y/29.+.5)
     west = -2970.+85.*np.sin(y/740.+1.2)+42.*np.sin(y/193.)
     north = 6835.-100.*(x/3000.)**2+65.*np.sin(x/530.)
     # The existing quay owns the central frontage: its water stays open under
@@ -76,7 +79,7 @@ def _rail_headlands():
     rows = json.loads(RAIL_LINE.read_text())['samples']
     p = np.array([[r['x'], r['y']] for r in rows])
     d, _ = _base_field(p[:, 0], p[:, 1])
-    near = d < REACH+60.
+    near = d < reach(p[:, 0], p[:, 1])+60.
     edges = np.flatnonzero(np.diff(np.r_[False, near, False]))
     return tuple((float(q[:, 0].min()-30.), float(q[:, 1].min()-30.),
                   float(q[:, 0].max()+30.), float(q[:, 1].max()+30.))
@@ -100,10 +103,21 @@ def field(x, y):
     return d, rock
 
 
+def reach(x, y):
+    """Country-only rolling backshore; the arrival coast keeps its established band."""
+    x, y = np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float))
+    country = smooth((y-3500.)/700.)*(1.-smooth((y-6200.)/500.))
+    return REACH+(COUNTRY_REACH-REACH)*country
+
+
+def perimeter_weight(x, y):
+    d, _ = field(x, y)
+    return 1.-smooth((d-100.)/(reach(x, y)-100.))
+
+
 def weight(x, y):
     x, y = np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float))
-    d, _ = field(x, y)
-    w = 1.-smooth((d-100.)/(REACH-100.))
+    w = perimeter_weight(x, y)
     # Preserve the occupied mainland above the coastal strip. The quay's drop
     # is hidden inside its existing retaining wall, not stretched under boats.
     south = smooth((-125.-y)/28.)
@@ -119,7 +133,9 @@ def weight(x, y):
 
 def height(x, y, base):
     """@cc [owner:fontanierh,label:correctness] coast-ground-ownership
-    Ground at least REACH metres inside the coast MUST remain unchanged.
+    Ground beyond reach(x, y) inside the coast MUST remain unchanged.
+    Country bays MUST retain broad dry sand followed by a rolling backshore,
+    without compressing the high country into the southern 260 metre band.
     Exterior ground MUST pass through sea level into a submerged toe; it MUST
     NOT retain broad zero-height quads. The occupied southern road/quay ground
     above y=-125 MUST remain unchanged. The committed railway and its natural
@@ -133,18 +149,31 @@ def height(x, y, base):
     # coves keep their thirty-metre raised shore bench, which also supports
     # Sunset Pier's existing grade-limited approach to its fixed deck.
     beach = (.075*inland+.0005*inland**2)*(1.-country)
-    beach += (.025*inland+.0003*inland**2)*country
+    # Keep the dry strip, then ease into meadow rather than extending the
+    # quadratic sand ramp. A broad transition meets the old high country.
+    bench = .025*inland+.0003*inland**2
+    meadow = 3.6+.070*np.maximum(inland-75., 0.)
+    rolling = (8.*np.sin(x/145.+y/213.)+4.*np.sin(y/97.-x/191.))
+    meadow = np.maximum(3.6, meadow+rolling*smooth((inland-90.)/160.))
+    bench = bench*(1.-smooth((inland-75.)/55.))+meadow*smooth((inland-75.)/55.)
+    beach += bench*country
     dunes = (.65+.35*np.sin(x/23.+y/31.))*smooth((inland-55.)/30.)*country
     beach += dunes
     crown = np.minimum(68.+12.*np.sin(y/320.+x/430.), np.maximum(8., base+10.))
-    crown = crown*(1.-country)+(22.+9.*np.sin(y/190.+x/300.))*country
+    crown = crown*(1.-country)+(28.+10.*np.sin(y/190.+x/300.))*country
+    crown *= .78+.16*np.sin(y/77.+x/211.)+.06*np.sin(y/29.)
     # Two risers separated by a physical rock shelf; their widths vary along
     # the coast so the face reads as joined rock masses from a distant lookout.
-    rib = 1.8*np.sin(x/17.+y/23.)+1.1*np.sin(y/8.-x/29.)
-    ledge = inland+rib*smooth(inland/8.)
+    rib = 7.*np.sin(y/47.+x/91.)+3.*np.sin(y/19.-x/53.)
+    # Broad gullies divide connected masses; their shoulders have different
+    # shelf widths instead of repeating the same vertical wall everywhere.
+    gully = np.exp(-(np.sin(y/83.+x/401.)/.22)**2)
+    crown *= 1.-.36*gully
+    ledge = inland+rib*smooth(inland/18.)
+    shelf = 1.+.28*np.sin(y/59.+x/173.)
     cliff = 1.2*smooth(inland/8.)
-    cliff += (crown-1.2)*(.54*smooth((ledge-4.)/12.)+.13*smooth((ledge-23.)/10.)
-                         +.33*smooth((ledge-41.)/14.))
+    cliff += (crown-1.2)*(.48*smooth((ledge-5.)/(16.*shelf))+.16*smooth((ledge-29.*shelf)/12.)
+                         +.36*smooth((ledge-49.*shelf)/20.))
     cliff += .05*np.maximum(inland-46., 0.)
     target = beach*(1.-rock)+cliff*rock
     target = np.where(d < 0., np.maximum(FLOOR, d*(.18+.42*rock)), target)
@@ -189,7 +218,12 @@ def paint(x, y, z, normal_z):
 
 def colours(x, y, z, normal_z, base):
     shore, w = paint(x,y,z,normal_z)
-    return np.asarray(base)*(1.-w[..., None])+shore*w[..., None]
+    d, _ = field(x, y)
+    country = smooth((np.asarray(y)-3500.)/500.)
+    patches = .62+.20*np.sin(np.asarray(x)/91.+np.asarray(y)/167.)
+    meadow = weight(x,y)*country*smooth((d-65.)/100.)*smooth((np.asarray(normal_z)-.82)/.14)
+    base = np.asarray(base)*(1.-(meadow*patches)[..., None])+MEADOW*(meadow*patches)[..., None]
+    return base*(1.-w[..., None])+shore*w[..., None]
 
 
 def sea_mesh(radius=24000.):
@@ -224,7 +258,7 @@ def grid_mesh(xs, ys, z, *, hidden=None, step=STEP, shape=height):
                 continue
             corners_x = np.array([ax, bx, bx, ax]); corners_y = np.array([ay, ay, by, by])
             d, _ = field(corners_x, corners_y)
-            refine = d.min() < REACH+100. and d.max() > -220.
+            refine = np.any(d < reach(corners_x, corners_y)+100.) and d.max() > -220.
             nx = max(1, math.ceil((bx-ax)/step)) if refine else 1
             ny = max(1, math.ceil((by-ay)/step)) if refine else 1
             u, v = np.meshgrid(np.linspace(0., 1., nx+1), np.linspace(0., 1., ny+1))

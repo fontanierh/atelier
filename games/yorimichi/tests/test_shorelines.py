@@ -177,3 +177,29 @@ def test_city_and_main_coastal_rims_share_exported_edge_heights(monkeypatch):
     vertices,_=S.grid_mesh([1420.,1490.],coarse_y,np.full((len(coarse_y),2),-6.),shape=layout.coastal_backdrop_height)
     p=np.asarray(vertices);edge=p[np.isclose(p[:,0],1420.)]
     np.testing.assert_allclose(edge[:,2],np.interp(edge[:,1],city_y,layout.height(1420.,city_y)),atol=1e-12)
+
+
+def test_country_backshore_reaches_high_ground_without_a_short_wall():
+    # A 225 m countryside compressed into the old 260 m strip produced the
+    # rejected native wall. Exercise that actual height scale across both bays.
+    x = np.arange(1500., 3200., .5)
+    for y in [4680., 5810.]:
+        d, rock = S.field(x, y)
+        base = 225.*S.smooth((3000.-x)/750.)
+        z = S.height(x, y, base)
+        backshore = (d > 100.) & (d < 600.)
+        assert np.max(abs(np.gradient(z, .5)[backshore])) < .55
+        assert np.max(z[(d > 100.) & (d < 220.)]) < 30.
+        np.testing.assert_array_equal(z[d >= S.reach(x,y)], base[d >= S.reach(x,y)])
+    assert S.reach(35., -150.) == 260.
+
+
+def test_wider_country_refinement_matches_ground_beyond_old_coast_band(monkeypatch):
+    from belmonte import terrain
+    xs = np.array([1850., 2050., 2250.]); ys = np.array([4500., 4550.])
+    z = np.array([[200., 230., 180.], [190., 210., 165.]])
+    monkeypatch.setattr(terrain, 'country_grid', lambda: (xs, ys, z))
+    vertices, faces = S.grid_mesh(xs, ys, z)
+    p = np.asarray(vertices)
+    assert len(faces) > 100
+    np.testing.assert_allclose(p[:,2], terrain.country_height(p[:,0],p[:,1]), atol=1e-10)

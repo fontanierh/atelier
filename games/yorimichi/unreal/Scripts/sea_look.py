@@ -1,4 +1,9 @@
-"""The open-sea look, shared by the sea plane's M_Sea (import_southwest.py) and the Hidamari harbour's M_HarborWater
+"""@cc [owner:fontanierh,label:correctness] coastal-water-depth-seams
+Surf antialiasing MUST have a bounded vertical depth width, so a discontinuity
+behind deep water MUST NOT generate shoreline foam. Both water materials MUST
+use this shared depth look and per-pixel translucent fog at their shared edge.
+
+The open-sea look, shared by the sea plane's M_Sea (import_southwest.py) and the Hidamari harbour's M_HarborWater
 (harbor_material.py), so the two read as one sea from any distance.
 
 M_Sea covers the sea outside the harbour's HD_Sea rectangle. M_HarborWater owns that rectangle at the same z=0;
@@ -76,9 +81,11 @@ WIND = -1.2645
 K0 = 0.30
 A0 = 0.065
 
-# Surf: a band SURF_M vertical metres deep near the camera; far away it widens to about one and a half
-# pixels, so a cliff 400 m off still gets its white line. None beyond SURF_FAR metres (the dome meets the sea at 20 km).
+# Surf: SURF_M vertical metres plus bounded pixel antialiasing. The bound avoids
+# treating a submerged terrain edge / sky depth discontinuity as a waterline.
+# None beyond SURF_FAR metres (the dome meets the sea at 20 km).
 SURF_M = 0.35
+SURF_AA_MAX_M = 1.0
 SURF_FAR = (2500.0, 4000.0)
 FLECK = 0.16
 
@@ -126,7 +133,9 @@ float l=max(0,L)*.01*max(V.z,.03);
 float3 c=lerp(lerp(%(shallow)s,%(body)s,saturate(l/%(shallow_m)s)),sky,fres);
 // surf: white at the waterline, fading over w metres behind the surface, with a wobbling edge and a slow wash
 float fp=max(abs(ddx(l)),abs(ddy(l)));
-float w=%(surf_m)s+1.5*fp;
+// A submerged mesh edge can have an enormous depth derivative. It is not
+// a waterline: bound AA in vertical metres so deep water never becomes foam.
+float w=%(surf_m)s+min(1.5*fp,%(surf_aa_max_m)s);
 float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
 float edge=saturate(1-l/(w*(.55+.9*wob)));
 float surf=edge*edge*(3-2*edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
@@ -134,7 +143,7 @@ float fleck=smoothstep(.58,.84,W.z)*(.6+.8*gust)*%(fleck)s;
 c=lerp(c,%(foam)s,saturate(max(surf,fleck)));
 return lerp(c,%(far)s,1-exp(-D/%(haze)s));
 ''' % dict(graze_power=num(GRAZE_POWER), reflect=num(REFLECT), graze=num(GRAZE), horizon=f3(HORIZON), zenith=f3(ZENITH),
-           shallow=f3(SHALLOW), body=f3(BODY), shallow_m=num(SHALLOW_M), surf_m=num(SURF_M), far0=num(SURF_FAR[0]),
+           shallow=f3(SHALLOW), body=f3(BODY), shallow_m=num(SHALLOW_M), surf_m=num(SURF_M), surf_aa_max_m=num(SURF_AA_MAX_M), far0=num(SURF_FAR[0]),
            far1=num(SURF_FAR[1]), fleck=num(FLECK), foam=f3(FOAM), far=f3(FAR_COLOUR), haze=num(HAZE_CM))
 
 # D: pixel depth (cm) -> the haze's share, as in LOOK (the lit harbour water fades by it)
