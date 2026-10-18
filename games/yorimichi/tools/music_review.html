@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yorimichi · zone soundtrack</title>
+<style>
+:root {
+  --bg: #0e120f;
+  --panel: #161c18;
+  --panel-2: #1c241f;
+  --line: #2a352e;
+  --text: #e9e7dd;
+  --muted: #9aa79d;
+  --gold: #d8b36a;
+  --green: #8cbf8c;
+  --red: #d98679;
+  --blue: #8fb6c9;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at 20% 0%, #1a241d 0%, var(--bg) 42%, #090c0a 100%);
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.top {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; gap: 24px; align-items: flex-end; justify-content: space-between;
+  padding: 22px 28px 18px;
+  background: rgba(14, 18, 15, .88);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+.eyebrow { margin: 0 0 4px; color: var(--gold); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+h1 { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 650; letter-spacing: -.02em; }
+.sub { margin: 7px 0 0; color: var(--muted); }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+button {
+  appearance: none; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; cursor: pointer;
+}
+button:hover { border-color: #4b5d51; }
+button.selected[data-rating="good"] { background: #24452c; border-color: var(--green); color: #d7f0d7; }
+button.selected[data-rating="maybe"] { background: #4a3e22; border-color: var(--gold); color: #f5e6c0; }
+button.selected[data-rating="no"] { background: #4b2924; border-color: var(--red); color: #f3d4cf; }
+.progress { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.banner {
+  margin: 18px 28px 0; padding: 10px 14px; border: 1px solid #5b4a28;
+  background: #2b2416; color: #f0dfb8; border-radius: 10px;
+}
+main { padding: 24px 28px 80px; max-width: 1560px; margin: 0 auto; }
+.empty { color: var(--muted); padding: 40px 0; }
+.zone {
+  margin: 0 0 26px; padding: 20px; border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(28, 36, 31, .92), rgba(22, 28, 24, .92));
+  border-radius: 16px;
+}
+.zone-head { display: flex; gap: 14px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.zone h2 { margin: 0; font-size: 20px; font-weight: 620; letter-spacing: -.01em; }
+.zone .hint { margin: 2px 0 0; color: var(--muted); }
+.zone .count { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 14px; margin-top: 16px; }
+.track { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(14, 18, 15, .55); }
+.track-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+.track h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.role { color: var(--gold); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.dur { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+audio { width: 100%; margin: 12px 0 8px; filter: saturate(.8); }
+.meta { color: var(--muted); font-size: 11px; margin-bottom: 10px; }
+.review { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.review button { padding: 5px 10px; font-size: 12px; }
+.note { flex: 1 1 130px; min-width: 110px; border: 1px solid var(--line); background: #111713; color: var(--text); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 12px; }
+.note:focus { outline: 1px solid #4b5d51; }
+details { margin-top: 10px; color: var(--muted); font-size: 12px; }
+details p { margin: 8px 0 0; color: #b9c4bb; }
+.waiting { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+footer { color: #6f7c72; text-align: center; font-size: 12px; padding: 0 20px 40px; }
+@media (max-width: 720px) {
+  .top { padding: 16px; flex-direction: column; align-items: flex-start; }
+  main { padding: 16px 12px 60px; }
+  .zone { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="eyebrow">Yorimichi · original score</p>
+    <h1>Zone soundtrack review</h1>
+    <p class="sub">Suno v6 · long-form instrumentals · four tracks per zone</p>
+  </div>
+  <div class="actions">
+    <div id="progress" class="progress">loading…</div>
+    <button id="refresh" type="button">Refresh</button>
+    <button id="copy" type="button">Copy feedback</button>
+  </div>
+</header>
+<div id="banner" class="banner" hidden></div>
+<main id="zones"><p class="empty">Loading the soundtrack…</p></main>
+<footer>Good / Maybe / No and a note are saved as you go. The page checks for newly rendered zones every 15 seconds.</footer>
+<script>
+var zonesEl = document.getElementById('zones');
+var progressEl = document.getElementById('progress');
+var bannerEl = document.getElementById('banner');
+var current = { zones: [] };
+var reviews = {};
+var lastSignature = '';
+
+function getJSON(url, fallback) {
+  return fetch(url, { cache: 'no-store' }).then(function (r) {
+    if (!r.ok) return fallback;
+    return r.json();
+  }).catch(function () { return fallback; });
+}
+
+function el(tag, cls, text) {
+  var node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function fmtDuration(seconds) {
+  if (!seconds) return '';
+  var m = Math.floor(seconds / 60);
+  var s = Math.round(seconds % 60);
+  if (s === 60) { m += 1; s = 0; }
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function trackCount(index) {
+  return (index.zones || []).reduce(function (n, z) {
+    return n + ((z.tracks || []).length);
+  }, 0);
+}
+
+function signature(index) {
+  return (index.zones || []).map(function (z) {
+    return z.key + ':' + (z.tracks || []).length;
+  }).join(',');
+}
+
+function basename(path) {
+  return String(path || '').split('/').pop();
+}
+
+function render() {
+  zonesEl.textContent = '';
+  var zones = current.zones || [];
+  if (!zones.length) {
+    zonesEl.appendChild(el('p', 'empty', 'The soundtrack is still rendering. This page updates automatically.'));
+    progressEl.textContent = '0 / ' + (current.total_tracks || 112) + ' tracks';
+    return;
+  }
+  zones.forEach(function (zone) {
+    var section = el('section', 'zone');
+    var head = el('div', 'zone-head');
+    var left = el('div');
+    left.appendChild(el('h2', '', zone.name));
+    left.appendChild(el('p', 'hint', zone.hint || ''));
+    head.appendChild(left);
+    head.appendChild(el('span', 'count', (zone.tracks || []).length + ' / 4 tracks'));
+    section.appendChild(head);
+
+    var grid = el('div', 'tracks');
+    (zone.tracks || []).forEach(function (track) {
+      var card = el('article', 'track');
+      card.dataset.clip = track.clip_id;
+      var trackHead = el('div', 'track-head');
+      var name = el('div');
+      name.appendChild(el('span', 'role', track.role === 'day' ? 'Day theme' : 'Quiet exploration'));
+      name.appendChild(el('h3', '', track.title || track.clip_id));
+      trackHead.appendChild(name);
+      trackHead.appendChild(el('span', 'dur', fmtDuration(track.duration_s)));
+      card.appendChild(trackHead);
+
+      var audio = el('audio');
+      audio.controls = true;
+      audio.preload = 'none';
+      audio.src = '/music/' + encodeURIComponent(zone.key) + '/' + encodeURIComponent(basename(track.mp3));
+      card.appendChild(audio);
+
+      card.appendChild(el('div', 'meta', 'v6 · ' + track.clip_id.slice(0, 8) + ' · ' + (track.model || 'chirp-hawk')));
+
+      var review = el('div', 'review');
+      var saved = reviews[track.clip_id] || {};
+      [['good', 'Good'], ['maybe', 'Maybe'], ['no', 'No']].forEach(function (pair) {
+        var button = el('button', saved.rating === pair[0] ? 'selected' : '', pair[1]);
+        button.type = 'button';
+        button.dataset.rating = pair[0];
+        review.appendChild(button);
+      });
+      var note = el('input', 'note');
+      note.type = 'text';
+      note.placeholder = 'note';
+      note.value = saved.note || '';
+      review.appendChild(note);
+      card.appendChild(review);
+
+      var details = el('details');
+      details.appendChild(el('summary', '', 'Prompt'));
+      details.appendChild(el('p', '', track.prompt || ''));
+      card.appendChild(details);
+      grid.appendChild(card);
+    });
+    section.appendChild(grid);
+    if ((zone.tracks || []).length < 4) {
+      section.appendChild(el('p', 'waiting', 'The remaining tracks for this zone are still rendering.'));
+    }
+    zonesEl.appendChild(section);
+  });
+  var count = trackCount(current);
+  var total = current.total_tracks || 112;
+  progressEl.textContent = count + ' / ' + total + ' tracks · ' + zones.length + ' zones';
+  lastSignature = signature(current);
+}
+
+function saveReview(clipId, rating, note) {
+  return fetch('/api/review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clip_id: clipId, rating: rating, note: note })
+  }).then(function (r) {
+    if (!r.ok) throw new Error('review failed');
+    return r.json();
+  }).then(function (saved) {
+    reviews[clipId] = saved;
+  }).catch(function () {});
+}
+
+zonesEl.addEventListener('click', function (event) {
+  var button = event.target.closest('button[data-rating]');
+  if (!button) return;
+  var card = button.closest('.track');
+  if (!card) return;
+  var clipId = card.dataset.clip;
+  var note = card.querySelector('.note');
+  saveReview(clipId, button.dataset.rating, note ? note.value : '');
+  card.querySelectorAll('button[data-rating]').forEach(function (b) {
+    b.classList.toggle('selected', b === button);
+  });
+});
+
+zonesEl.addEventListener('change', function (event) {
+  if (!event.target.classList.contains('note')) return;
+  var card = event.target.closest('.track');
+  if (!card) return;
+  var clipId = card.dataset.clip;
+  var saved = reviews[clipId] || {};
+  saveReview(clipId, saved.rating || null, event.target.value);
+});
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  var area = document.createElement('textarea');
+  area.value = text;
+  document.body.appendChild(area);
+  area.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  area.remove();
+  return Promise.resolve();
+}
+
+document.getElementById('copy').addEventListener('click', function () {
+  getJSON('/api/reviews', reviews).then(function (all) {
+    reviews = all || reviews;
+    var lines = ['# Yorimichi music review', ''];
+    (current.zones || []).forEach(function (zone) {
+      (zone.tracks || []).forEach(function (track) {
+        var saved = reviews[track.clip_id] || {};
+        if (!saved.rating && !saved.note) return;
+        var line = '- **' + zone.name + ' — ' + track.title + '** (' +
+          (track.role === 'day' ? 'day' : 'quiet') + '): ' + (saved.rating || 'unrated');
+        if (saved.note) line += ' — ' + saved.note;
+        lines.push(line);
+      });
+    });
+    copyText(lines.join('\n'));
+    var button = document.getElementById('copy');
+    button.textContent = 'Copied';
+    setTimeout(function () { button.textContent = 'Copy feedback'; }, 1500);
+  });
+});
+
+document.getElementById('refresh').addEventListener('click', function () {
+  getJSON('/index.json', current).then(function (index) {
+    current = index || current;
+    bannerEl.hidden = true;
+    render();
+  });
+});
+
+function poll() {
+  getJSON('/index.json', null).then(function (index) {
+    if (!index) return;
+    if (signature(index) === lastSignature) return;
+    if (document.querySelector('audio:not([paused])')) {
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'New tracks are ready. Finish or pause playback, then press Refresh.';
+      return;
+    }
+    current = index;
+    render();
+  });
+}
+
+Promise.all([
+  getJSON('/index.json', { zones: [] }),
+  getJSON('/api/reviews', {})
+]).then(function (values) {
+  current = values[0] || { zones: [] };
+  reviews = values[1] || {};
+  render();
+  setInterval(poll, 15000);
+});
+</script>
+</body>
+</html>

@@ -300,6 +300,7 @@ Tailscale. `/play/` is the plain player, and `/` serves the game's own touch pag
 | Skating | [Skate](platform/engine/Plugins/Activities/Skate/README.md) | C++ board and rider physics, Flick-It, animation, tricks, camera |
 | Stream pages | [platform/web/stream](platform/web/stream/README.md) | the stream server, the plain player, touch controls for game pages |
 | Motion helpers | [platform/web/motion](platform/web/motion/README.md) | retargeting generated motion onto a game's rig |
+| Music | [docs/SUNO_API.md](docs/SUNO_API.md) | the internal Suno flow used to generate and decrypt instrumental game tracks |
 | Conventions | [platform/conventions](platform/conventions) | units and axes, the humanoid bone contract, clip roles, sound cues, naming |
 | Games | [games/sandbox](games/sandbox/README.md), [games/yorimichi](games/yorimichi/README.md) | the smallest game (the template for `atelier new`), and a full one |
 

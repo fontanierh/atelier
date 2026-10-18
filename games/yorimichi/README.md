@@ -5,6 +5,7 @@ roll through a coastal countryside, a forest hamlet, the city of Hidamari, a fis
 a dinghy, ride a horse, the bike and the zeppelin, skate the pier, Mega Park and Crater Park with skate.-style Flick-It controls, and fight the fox
 hunter with a wooden sword. Blender and Python generate the world, characters and animation; Unreal runs the game.
 The story and setting are drafted in [docs/LORE.md](docs/LORE.md).
+The generated zone score, its prompts and the tailnet review page are described in [docs/MUSIC.md](docs/MUSIC.md).
 
 ## Build and play
 
