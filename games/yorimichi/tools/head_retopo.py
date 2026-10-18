@@ -30,6 +30,8 @@ def main(argv=None):
     p.add_argument('--quads', type=int, default=15000)
     p.add_argument('--depth', type=int, choices=[8, 9], default=9)
     p.add_argument('--triangles', type=int, nargs='+', default=[40000, 100000])
+    p.add_argument('--allow-repair', action='store_true',
+                   help='retain a cleaned nonmanifold reconstruction candidate for validated repair')
     p.add_argument('--texture-size', type=int, choices=[1024, 2048, 4096], default=2048)
     p.add_argument('--neighbors', type=int, choices=[1, 8, 16, 32], default=16)
     p.add_argument('--memory-gib', type=int, choices=range(4, 11), default=8)
@@ -48,6 +50,8 @@ def main(argv=None):
         p.error('Use at most four triangle budgets between 1,000 and 500,000')
     if args.stage != 'setup' and args.output is None:
         p.error('This stage requires --output')
+    if args.allow_repair and args.stage != 'reconstruct':
+        p.error('--allow-repair is only valid for reconstruction')
     if args.stage in ('surface', 'reconstruct', 'reduce', 'bake', 'dense') and args.checkpoint is None:
         p.error('This stage requires the native --checkpoint directory')
     if args.stage in ('reconstruct', 'remesh', 'bake', 'dense') and args.source is None:
@@ -62,6 +66,8 @@ def main(argv=None):
     if args.stage in ('surface', 'reconstruct'):
         command = [str(py), '-u', str(WORKERS/'surface.py'), args.stage, *forwarded,
                    '--depth', str(args.depth), '--triangles', *map(str, args.triangles)]
+        if args.stage == 'reconstruct' and args.allow_repair:
+            command.append('--allow-repair')
     elif args.stage == 'remesh':
         command = [str(args.blender), '--background', '--threads', '3',
                    '--python-exit-code', '1', '--python', str(WORKERS/'retopo_blender.py'),

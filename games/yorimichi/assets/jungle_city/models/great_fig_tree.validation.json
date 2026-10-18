@@ -1,0 +1,37 @@
+{
+  "file": "head.glb",
+  "bytes": 7190800,
+  "sha256": "d90c1c8a249bee2bc0595f889cfe1cbfb52109319ce132ebae538e06903dcc5b",
+  "meshes": 1,
+  "components": 1,
+  "vertices": 12853,
+  "triangles": 26658,
+  "degenerate_triangles": 0,
+  "boundary_edges": 0,
+  "nonmanifold_edges": 0,
+  "winding_consistent": true,
+  "watertight": true,
+  "dimensions": [
+    0.7598,
+    0.9177,
+    0.9792
+  ],
+  "uv_meshes": 1,
+  "uv_vertices": 12853,
+  "images": 1,
+  "textures": 1,
+  "materials": 1,
+  "acceptance": {
+    "bounded_triangles": true,
+    "bounded_components": true,
+    "no_degenerate_triangles": true,
+    "no_nonmanifold_edges": true,
+    "no_boundary_edges": true,
+    "consistent_winding": true,
+    "watertight": true,
+    "has_uvs": true,
+    "has_texture": true,
+    "finite_dimensions": true
+  },
+  "passed": true
+}

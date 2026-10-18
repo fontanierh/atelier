@@ -139,6 +139,8 @@ def reconstruct(args):
     Reconstruction MUST use a separate copy and one Poisson solver thread, avoiding
     the observed ARM threading failure. Input samples MUST have finite positions,
     colors and unit normals. Reported counts MUST describe cleaned float32 exports.
+    Nonmanifold reductions MUST fail closed unless the caller explicitly requests a
+    retained repair-required candidate for a later validated repair stage.
     """
     import open3d as o3d
     fresh(args.output)
@@ -186,12 +188,14 @@ def reconstruct(args):
         removed = int((~valid).sum())
         f = f[valid]
         qa = topology(v, f)
-        if qa['nonmanifold_edges']:
+        repair_required = bool(qa['nonmanifold_edges'])
+        if repair_required and not args.allow_repair:
             raise ValueError(f'Reduced candidate has nonmanifold edges: {qa}')
         target = args.output/f'mesh-{budget}.npz'
         np.savez_compressed(target, vertices=v, faces=f)
         results.append(dict(target_triangles=budget, **qa, sha256=digest(target),
-                            removed_degenerate_float32_triangles=removed))
+                            removed_degenerate_float32_triangles=removed,
+                            repair_required=repair_required))
         print('Reduced candidate:', json.dumps(results[-1]), flush=True)
     if digest(args.source) != before:
         raise ValueError('Reconstruction changed retained exterior samples')
@@ -213,6 +217,8 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--depth', type=int, default=9)
     p.add_argument('--triangles', type=int, nargs='+', default=[40000, 100000])
+    p.add_argument('--allow-repair', action='store_true',
+                   help='retain a cleaned nonmanifold candidate for validated downstream repair')
     args = p.parse_args()
     return globals()[args.stage](args)
 

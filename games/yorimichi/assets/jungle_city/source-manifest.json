@@ -74,6 +74,18 @@
       "model_sha256": "ff8e8d6efa3430ce8846b1680b73cf2c9cb7d5cede9c647f5fc99c019157811d",
       "validation": "monumental_gate.validation.json",
       "validation_sha256": "906ed1789b28be8ab5b2e06b77fc6f7a6b8b6e8ed0cfbda8cf03a1d8c21a59a0"
+    },
+    "market_hall": {
+      "model": "market_hall.glb",
+      "model_sha256": "6f3972b4a73cdf49cd1a06c0d00d446c7846ded8015734dacd184df42b2c12d5",
+      "validation": "market_hall.validation.json",
+      "validation_sha256": "2a13ea0e6cd6170f40f52d119200cd4876e7bf46005f19588b1e7130980d7978"
+    },
+    "great_fig_tree": {
+      "model": "great_fig_tree.glb",
+      "model_sha256": "d90c1c8a249bee2bc0595f889cfe1cbfb52109319ce132ebae538e06903dcc5b",
+      "validation": "great_fig_tree.validation.json",
+      "validation_sha256": "278cf5ad0a35cbb32919086629502898ee42024c91229378466220b0b2a8f82b"
     }
   },
   "generator": "games/yorimichi/tools/jungle_city_manifest.py"

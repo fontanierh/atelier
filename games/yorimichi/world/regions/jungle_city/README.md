@@ -76,3 +76,9 @@ uv run python games/yorimichi/tools/jungle_city_promote.py \
 Promotion is deliberately separate: generation or reconstruction success does not
 make an asset library source. Repeat the same sequence with fresh paths for each
 remaining object, then rebuild the assembled Blender scene and viewer model.
+
+Organic sources such as 'great_fig_tree' can reduce to a small number of nonmanifold
+edges around thin roots or canopy seams. For those candidates, run reconstruction
+with '--allow-repair' to retain the cleaned float32 mesh and 'repair_required' report,
+then run 'games/yorimichi/tools/jungle_city_meshfix.py' on that exact candidate.
+Promotion still requires the watertight, manifold 'jungle_city_validate.py' record.

@@ -215,6 +215,26 @@ def test_blender_launcher_is_aggregate_guarded_and_python_errors_fail(monkeypatc
     assert len(calls) == 1
 
 
+def test_reconstruction_repair_opt_in_is_explicit_and_forwarded(monkeypatch, tmp_path):
+    from atelier.harness.safety import guarded
+    m = load('head_retopo.py')
+    monkeypatch.setattr(m, 'REPO', tmp_path)
+    calls = []
+    monkeypatch.setattr(guarded, 'run', lambda *a, **kw: calls.append((a, kw)) or 0)
+    root = tmp_path/'build/yorimichi/retopo'
+    common = ['reconstruct', '--root', str(root), '--checkpoint', str(root/'checkpoints'),
+              '--source', str(root/'cloud.npz'), '--output', str(root/'mesh'),
+              '--report', str(tmp_path/'guard')]
+    assert m.main(common+['--allow-repair', '--timeout', '240']) == 0
+    command = calls[0][0][0]
+    assert command[-1] == '--allow-repair'
+    with pytest.raises(SystemExit):
+        m.main(['surface', '--root', str(root), '--checkpoint', str(root/'checkpoints'),
+                '--output', str(root/'surface'), '--report', str(tmp_path/'guard2'),
+                '--allow-repair'])
+    assert len(calls) == 1
+
+
 def test_segmentation_projection_matches_pixel_center_rays(monkeypatch):
     monkeypatch.syspath_prepend(str(TOOLS/'head_models'))
     m = load('head_models/masks.py')

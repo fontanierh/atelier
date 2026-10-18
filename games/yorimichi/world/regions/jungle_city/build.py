@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import math
 import random
+import argparse
+import sys
 from pathlib import Path
 
 import bpy
@@ -297,7 +299,7 @@ def undergrowth(name: str, x: float, y: float, z: float, scale: float,
 
 
 def terrain_grid(name: str, collection: bpy.types.Collection) -> None:
-    nx, ny = 52, 42
+    nx, ny = 72, 58
     verts, faces = [], []
     for row in range(ny + 1):
         y = -270 + row * 540 / ny
@@ -306,6 +308,7 @@ def terrain_grid(name: str, collection: bpy.types.Collection) -> None:
             edge = max(abs(x) / 335, abs(y) / 270)
             height = 1.2 + 8.5 * max(0, edge - .72) ** 1.35
             height += 2.1 * math.sin(x / 61) * math.cos(y / 67) + 1.05 * math.sin((x - y) / 37)
+            height += 0.42 * math.sin(x / 19 + y / 23) + 0.28 * math.cos(x / 31 - y / 27)
             if abs(x) < 250 and abs(y) < 205:
                 height *= .24
             verts.append((x, y, height))
@@ -341,9 +344,13 @@ def build_waterworks() -> None:
     box("West_Baray", (-218, -28, 3.15), (62, 132, .65), "water", coll, 1.2)
     box("East_Reflector", (198, 78, 3.15), (37, 68, .65), "water", coll, 1.0)
     for y in (-174, -148, -82, 72, 145, 177):
-        box(f"Canal_EW_{y}", (0, y, 3.45), (245, 4.5, .32), "water", coll, .45)
+        for index, x in enumerate((-170, -85, 0, 85, 170)):
+            box(f"Canal_EW_{y}_{index}", (x, y + RNG.uniform(-1.8, 1.8), 3.45),
+                (89, 4.2, .32), "water", coll, .45, RNG.uniform(-.035, .035))
     for x in (-172, -96, 96, 172, 218):
-        box(f"Canal_NS_{x}", (x, 0, 3.48), (4.5, 193, .32), "water", coll, .45)
+        for index, y in enumerate((-145, -72, 0, 72, 145)):
+            box(f"Canal_NS_{x}_{index}", (x + RNG.uniform(-1.5, 1.5), y, 3.48),
+                (4.2, 75, .32), "water", coll, .45, RNG.uniform(-.035, .035))
     box("Axis_Causeway_EW", (0, 0, 5.25), (316, 6.4, .75), "sandstone_light", coll, .34)
     box("Axis_Causeway_NS", (0, 0, 5.28), (6.4, 246, .75), "sandstone_light", coll, .34)
     for x, y in [(-88, 58), (88, 58), (-88, -55), (88, -55)]:
@@ -382,10 +389,7 @@ def build_temple() -> None:
                     (1.35, 1.25, 3.55), "sandstone_light", coll, .18)
     stair_run("Temple_Main_Stair", Vector((0, -57, 5.8)), Vector((0, 1, 0)), 18, 34, .72, 1.55, coll)
     stair_run("Temple_West_Stair", Vector((-112, 7, 5.8)), Vector((1, 0, 0)), 15, 32, .72, 1.75, coll)
-    temple_tower("Temple_Centre", 0, 7, 31.2, 1.34, coll)
-    for x, y, scale in [(-35, -16, .74), (35, -16, .74), (-35, 30, .74), (35, 30, .74),
-                        (-75, 7, .58), (75, 7, .58)]:
-        temple_tower(f"Temple_Tower_{x}_{y}", x, y, 26.4, scale, coll)
+    # Hero prangs replace the former procedural tower placeholders.
 
 
 def gate(name: str, x: float, y: float, rotation: float, collection: bpy.types.Collection) -> None:
@@ -434,14 +438,7 @@ def build_gates_walls() -> None:
         ("OuterWall_WS", (-236, -105, 11.5), (3.4, 81, 8.8), math.pi / 2),
     ]:
         box(name, loc, scale, "laterite", coll, .48, rotation)
-    gate("Gate_E", 116, 0, math.pi / 2, coll)
-    gate("Gate_W", -116, 0, math.pi / 2, coll)
-    gate("Gate_N", 0, 104, 0, coll)
-    gate("Gate_S", 0, -104, 0, coll)
-    gate("OuterGate_E", 236, 0, math.pi / 2, coll)
-    gate("OuterGate_W", -236, 0, math.pi / 2, coll)
-    gate("OuterGate_N", 0, 190, 0, coll)
-    gate("OuterGate_S", 0, -190, 0, coll)
+    # Monumental gate assets replace the former procedural gate placeholders.
     positions = []
     for x in (-236, -118, 118, 236):
         positions.extend([(x, -190), (x, 190)])
@@ -465,40 +462,43 @@ def build_city() -> None:
     coll = bpy.data.collections.new("05_MarketAndHousing")
     bpy.context.scene.collection.children.link(coll)
     zones = []
-    for y in range(-168, 169, 38):
-        for x in range(142, 225, 32):
-            zones.append((x + RNG.uniform(-3, 3), y + RNG.uniform(-4, 4), math.pi / 2))
-    for y in (-171, -145):
-        for x in range(-215, 216, 34):
-            if abs(x) >= 128:
-                zones.append((x + RNG.uniform(-3, 3), y, 0))
-    for y in (138, 166):
-        for x in range(-215, 216, 34):
-            if abs(x) >= 128:
-                zones.append((x + RNG.uniform(-3, 3), y, 0))
-    for y in range(-145, 146, 38):
-        for x in (-284, -264, 270, 290):
-            zones.append((x, y + RNG.uniform(-4, 4), math.pi / 2))
+    # Dense but irregular urban fingers keep the map reading as a city in the jungle.
+    for y in range(-174, 175, 27):
+        for x in range(132, 232, 23):
+            if abs(y) < 48 and x < 160:
+                continue
+            zones.append((x + RNG.uniform(-5, 5), y + RNG.uniform(-5, 5),
+                          math.pi / 2 + RNG.uniform(-.08, .08)))
+    for y in (-174, -151, 143, 169):
+        for x in range(-226, 227, 25):
+            if abs(x) >= 132:
+                zones.append((x + RNG.uniform(-5, 5), y + RNG.uniform(-3, 3),
+                              RNG.uniform(-.08, .08)))
+    for y in range(-166, 167, 29):
+        for x in (-292, -270, -248, 248, 270, 292):
+            zones.append((x + RNG.uniform(-4, 4), y + RNG.uniform(-5, 5),
+                          math.pi / 2 + RNG.uniform(-.09, .09)))
+    for y in range(-148, 149, 37):
+        for x in (-116, -92, 92, 116):
+            if abs(y) > 104:
+                zones.append((x + RNG.uniform(-3, 3), y + RNG.uniform(-5, 5),
+                              RNG.uniform(-.08, .08)))
     for index, (x, y, rotation) in enumerate(zones):
-        house(f"House_{index:03d}", x, y, rotation, RNG.uniform(13.5, 20.5),
-              RNG.uniform(10.5, 15.5), coll, index % 9 == 0)
-    for index, (x, y, rotation) in enumerate([
-        (165, -118, 0), (202, -118, 0), (165, -67, 0), (202, -67, 0),
-        (165, 67, math.pi / 2), (202, 67, math.pi / 2), (-185, 122, 0), (-222, 122, 0),
-    ]):
-        market_hall(f"MarketHall_{index}", x, y, rotation, coll)
+        house(f"House_{index:03d}", x, y, rotation, RNG.uniform(11.5, 19.5),
+              RNG.uniform(9.5, 15.5), coll, index % 11 == 0)
+    # Market hall assets replace the former procedural market placeholders.
 
 
 def build_jungle() -> None:
     coll = bpy.data.collections.new("06_Jungle")
     bpy.context.scene.collection.children.link(coll)
     points = []
-    for _ in range(270):
+    for _ in range(330):
         x, y = RNG.uniform(-326, 326), RNG.uniform(-258, 258)
-        if abs(x) >= 265 or abs(y) >= 218:
+        if abs(x) >= 255 or abs(y) >= 210:
             points.append((x, y))
-    for x in (-314, -292, 292, 314):
-        for y in range(-242, 243, 27):
+    for x in (-326, -304, -282, 282, 304, 326):
+        for y in range(-242, 243, 25):
             points.append((x + RNG.uniform(-7, 7), y + RNG.uniform(-9, 9)))
     for index, (x, y) in enumerate(points):
         tree(f"JungleTree_{index:03d}", x, y, 3.0, RNG.uniform(.72, 1.62), coll,
@@ -507,11 +507,11 @@ def build_jungle() -> None:
             undergrowth(f"JungleUnderstory_{index:03d}", x + RNG.uniform(-4, 4),
                         y + RNG.uniform(-4, 4), 3.0, RNG.uniform(.65, 1.25), coll)
     inner = []
-    for x in (-222, -188, -155, -121, 121, 155, 188, 222):
-        for y in range(-178, 179, 31):
+    for x in (-222, -196, -170, -144, -121, 121, 144, 170, 196, 222):
+        for y in range(-178, 179, 28):
             inner.append((x + RNG.uniform(-5, 5), y + RNG.uniform(-8, 8)))
-    for y in (-151, -120, 118, 151):
-        for x in range(-105, 106, 29):
+    for y in (-151, -120, 92, 118, 151):
+        for x in range(-105, 106, 28):
             inner.append((x + RNG.uniform(-4, 4), y + RNG.uniform(-4, 4)))
     for index, (x, y) in enumerate(inner):
         tree(f"CityGrove_{index:03d}", x, y, 5.4, RNG.uniform(.55, .92), coll,
@@ -519,9 +519,7 @@ def build_jungle() -> None:
         if index % 2 == 0:
             undergrowth(f"CityUnderstory_{index:03d}", x + RNG.uniform(-3, 3),
                         y + RNG.uniform(-3, 3), 5.4, RNG.uniform(.5, .85), coll)
-    for index, (x, y) in enumerate([(-302, -142), (-298, 126), (298, -154), (303, 153),
-                                    (-166, 239), (169, -239), (-274, 226), (276, 226)]):
-        tree(f"GuardianFig_{index}", x, y, 3.1, 2.35, coll, index % 2 == 0)
+    # Great fig assets replace the former procedural guardian-fig placeholders.
 
 
 def build_props() -> None:
@@ -668,6 +666,17 @@ MODULES = [
     ("props_and_shrines", "07_PropsAndShrines"), ("hero_assets", "08_HeroAssets"),
 ]
 
+BUILDERS = {
+    "terrain": ("terrain", build_terrain),
+    "waterworks": ("waterworks", build_waterworks),
+    "temple_mountain": ("temple", build_temple),
+    "gates_and_walls": ("gates and walls", build_gates_walls),
+    "market_district": ("market and housing", build_city),
+    "jungle": ("jungle", build_jungle),
+    "props_and_shrines": ("props", build_props),
+    "hero_assets": ("hero assets", load_hero_assets),
+}
+
 
 def assemble() -> dict:
     reset()
@@ -686,24 +695,37 @@ def assemble() -> dict:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--modules", default=",".join(slug for slug, _ in MODULES))
+    args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    selected = set(args.modules.split(",")) if args.modules else set()
+    unknown = selected - {slug for slug, _ in MODULES}
+    if unknown:
+        parser.error("unknown modules: " + ", ".join(sorted(unknown)))
+    previous = {}
+    if (OUT / "manifest.json").is_file():
+        previous = {item["slug"]: item for item in json.loads((OUT / "manifest.json").read_text())["modules"]}
     OUT.mkdir(parents=True, exist_ok=True)
     reset()
     setup_materials()
-    stages = (
-        ("terrain", build_terrain), ("waterworks", build_waterworks),
-        ("temple", build_temple), ("gates and walls", build_gates_walls),
-        ("market and housing", build_city), ("jungle", build_jungle),
-        ("props", build_props), ("hero assets", load_hero_assets),
-    )
-    for name, builder in stages:
+    for slug, _ in MODULES:
+        if slug not in selected:
+            continue
+        name, builder = BUILDERS[slug]
         print(f"JUNGLE CITY STAGE {name}", flush=True)
         builder()
     print("JUNGLE CITY STAGE module export", flush=True)
     modules = []
     for slug, collection_name in MODULES:
         collection = bpy.data.collections.get(collection_name)
-        if collection and collection.all_objects:
+        if slug in selected:
+            if not collection or not collection.all_objects:
+                raise RuntimeError(f"selected module {slug} is empty")
             modules.append(dict(slug=slug, **export_module(slug, collection_name)))
+        elif slug in previous:
+            modules.append(previous[slug])
+        else:
+            raise RuntimeError(f"missing reused module {slug}")
     print("JUNGLE CITY STAGE assemble", flush=True)
     assembled = assemble()
     manifest = {
