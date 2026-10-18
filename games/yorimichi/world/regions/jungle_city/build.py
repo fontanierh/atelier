@@ -394,19 +394,32 @@ def build_gates_walls() -> None:
     coll = bpy.data.collections.new("04_GatesAndWalls")
     bpy.context.scene.collection.children.link(coll)
     for name, loc, scale, rotation in [
-        ("InnerWall_N", (0, 104, 13), (116, 3.8, 10), 0), ("InnerWall_S", (0, -104, 13), (116, 3.8, 10), 0),
-        ("InnerWall_E", (116, 0, 13), (3.8, 100, 10), math.pi / 2),
-        ("InnerWall_W", (-116, 0, 13), (3.8, 100, 10), math.pi / 2),
-        ("OuterWall_N", (0, 190, 11.5), (236, 3.4, 8.8), 0),
-        ("OuterWall_S", (0, -190, 11.5), (236, 3.4, 8.8), 0),
-        ("OuterWall_E", (236, 0, 11.5), (3.4, 186, 8.8), math.pi / 2),
-        ("OuterWall_W", (-236, 0, 11.5), (3.4, 186, 8.8), math.pi / 2),
+        ("InnerWall_NW", (-64, 104, 13), (52, 3.8, 10), 0),
+        ("InnerWall_NE", (64, 104, 13), (52, 3.8, 10), 0),
+        ("InnerWall_SW", (-64, -104, 13), (52, 3.8, 10), 0),
+        ("InnerWall_SE", (64, -104, 13), (52, 3.8, 10), 0),
+        ("InnerWall_EN", (116, 56, 13), (3.8, 44, 10), math.pi / 2),
+        ("InnerWall_ES", (116, -56, 13), (3.8, 44, 10), math.pi / 2),
+        ("InnerWall_WN", (-116, 56, 13), (3.8, 44, 10), math.pi / 2),
+        ("InnerWall_WS", (-116, -56, 13), (3.8, 44, 10), math.pi / 2),
+        ("OuterWall_NW", (-124, 190, 11.5), (112, 3.4, 8.8), 0),
+        ("OuterWall_NE", (124, 190, 11.5), (112, 3.4, 8.8), 0),
+        ("OuterWall_SW", (-124, -190, 11.5), (112, 3.4, 8.8), 0),
+        ("OuterWall_SE", (124, -190, 11.5), (112, 3.4, 8.8), 0),
+        ("OuterWall_EN", (236, 105, 11.5), (3.4, 81, 8.8), math.pi / 2),
+        ("OuterWall_ES", (236, -105, 11.5), (3.4, 81, 8.8), math.pi / 2),
+        ("OuterWall_WN", (-236, 105, 11.5), (3.4, 81, 8.8), math.pi / 2),
+        ("OuterWall_WS", (-236, -105, 11.5), (3.4, 81, 8.8), math.pi / 2),
     ]:
         box(name, loc, scale, "laterite", coll, .48, rotation)
     gate("Gate_E", 116, 0, math.pi / 2, coll)
     gate("Gate_W", -116, 0, math.pi / 2, coll)
     gate("Gate_N", 0, 104, 0, coll)
     gate("Gate_S", 0, -104, 0, coll)
+    gate("OuterGate_E", 236, 0, math.pi / 2, coll)
+    gate("OuterGate_W", -236, 0, math.pi / 2, coll)
+    gate("OuterGate_N", 0, 190, 0, coll)
+    gate("OuterGate_S", 0, -190, 0, coll)
     positions = []
     for x in (-236, -118, 118, 236):
         positions.extend([(x, -190), (x, 190)])
