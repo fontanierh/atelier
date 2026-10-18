@@ -9,30 +9,30 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'d
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.08;
+renderer.toneMappingExposure=1.16;
 renderer.shadowMap.enabled=false;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color('#82b9c2');
-scene.fog=new THREE.FogExp2('#8eb4a7',0.00072);
+scene.background=new THREE.Color('#91c5cb');
+scene.fog=new THREE.FogExp2('#a6c3ac',0.00056);
 const camera=new THREE.PerspectiveCamera(42,1,1,3200);
 const controls=new OrbitControls(camera,canvas);
 controls.enableDamping=true;controls.dampingFactor=.065;controls.screenSpacePanning=true;
 controls.minDistance=18;controls.maxDistance=1550;controls.maxPolarAngle=Math.PI*.492;
 
-scene.add(new THREE.HemisphereLight('#e4f7f2','#31583a',2.05));
-const sun=new THREE.DirectionalLight('#fff0c2',3.65);sun.position.set(-360,520,280);scene.add(sun);
+scene.add(new THREE.HemisphereLight('#eefcf5','#31583a',2.35));
+const sun=new THREE.DirectionalLight('#fff0c2',4.05);sun.position.set(-360,520,280);scene.add(sun);
 const rim=new THREE.DirectionalLight('#8bd1d2',.95);rim.position.set(420,180,-360);scene.add(rim);
 
 const locations={
-  aerial:{target:[0,25,-12],position:[455,505,-445],description:'Whole city'},
-  east:{target:[80,15,0],position:[360,85,-40],description:'East causeway'},
-  temple:{target:[0,35,-7],position:[195,175,-175],description:'Temple mountain'},
-  market:{target:[180,15,20],position:[325,105,195],description:'Market city'},
-  baray:{target:[-218,10,20],position:[-345,125,155],description:'West baray'},
-  gate:{target:[0,18,104],position:[20,105,235],description:'South gate'},
-  bridge:{target:[0,7,119],position:[135,75,210],description:'Naga bridge'},
-  jungle:{target:[-275,15,-35],position:[-425,150,-170],description:'Jungle edge'},
+  aerial:{target:[0,25,-12],position:[505,395,-505],description:'Whole city'},
+  east:{target:[80,15,0],position:[345,72,-52],description:'East causeway'},
+  temple:{target:[0,35,-7],position:[178,128,-168],description:'Temple mountain'},
+  market:{target:[180,15,20],position:[318,82,188],description:'Market city'},
+  baray:{target:[-218,10,20],position:[-348,96,158],description:'West baray'},
+  gate:{target:[0,18,104],position:[18,82,228],description:'South gate'},
+  bridge:{target:[0,7,119],position:[128,58,205],description:'Naga bridge'},
+  jungle:{target:[-275,15,-35],position:[-420,112,-168],description:'Jungle edge'},
 };
 let cameraTween=null,tourTimer=0,touring=false;
 
@@ -72,6 +72,7 @@ loader.load('./models/JungleCity.glb',gltf=>{
   const model=gltf.scene;
   const tintMaterial=material=>{
     const name=(material.name||'').toLowerCase();
+    if(material.map){material.color.setRGB(1,1,1);material.envMapIntensity=1.05;return;}
     if(name.includes('water')){material.color.setRGB(.03,.31,.38);material.roughness=.27;material.metalness=.02;}
     else if(name.includes('leaf')||name.includes('grass')) material.color.setRGB(1.35,1.75,1.25);
     else if(name.includes('flower')) material.color.setRGB(1.8,1.25,.9);

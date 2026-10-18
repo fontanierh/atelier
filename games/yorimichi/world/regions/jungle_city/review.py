@@ -14,14 +14,14 @@ REPO = HERE.parents[4]
 MODEL = REPO / "build" / "yorimichi" / "jungle-city" / "models" / "JungleCity.blend"
 OUT = REPO / "build" / "yorimichi" / "jungle-city" / "reviews"
 VIEWS = {
-    "master-aerial": ((535, 515, 575), (0, 12, 0)),
-    "east-causeway": ((390, 112, 116), (112, 8, 5)),
-    "temple-mountain": ((215, 176, 182), (0, 34, 12)),
-    "market-terraces": ((355, -338, 192), (178, -18, 18)),
-    "baray-reservoir": ((-452, -282, 238), (-218, -18, 12)),
-    "main-gate": ((18, -356, 122), (0, -188, 18)),
-    "stone-bridges": ((148, -338, 88), (0, -224, 9)),
-    "play-scale-check": ((305, -292, 142), (0, 0, 34)),
+    "master-aerial": ((505, 455, 385), (0, 14, 0)),
+    "east-causeway": ((315, 118, 82), (108, 8, 8)),
+    "temple-mountain": ((188, 142, 122), (0, 34, 18)),
+    "market-terraces": ((315, -248, 122), (176, -12, 16)),
+    "baray-reservoir": ((-392, -242, 168), (-206, -12, 11)),
+    "main-gate": ((22, -302, 88), (0, -184, 19)),
+    "stone-bridges": ((126, -282, 73), (0, -220, 8)),
+    "play-scale-check": ((252, -238, 98), (0, 0, 28)),
 }
 
 
@@ -41,17 +41,17 @@ def main() -> int:
     scene.render.film_transparent = False
     world = bpy.data.worlds.new("Jungle City review sky")
     world.use_nodes = True
-    world.node_tree.nodes["Background"].inputs[0].default_value = (0.27, 0.42, 0.44, 1)
-    world.node_tree.nodes["Background"].inputs[1].default_value = 0.28
+    world.node_tree.nodes["Background"].inputs[0].default_value = (0.43, 0.61, 0.64, 1)
+    world.node_tree.nodes["Background"].inputs[1].default_value = 0.72
     scene.world = world
     sun_data = bpy.data.lights.new("Review sun", "SUN")
-    sun_data.energy = 3.2
+    sun_data.energy = 4.4
     sun_data.angle = math.radians(4)
     sun = bpy.data.objects.new("Review sun", sun_data)
     scene.collection.objects.link(sun)
     sun.rotation_euler = (math.radians(48), 0, math.radians(-32))
     fill_data = bpy.data.lights.new("Sky fill", "AREA")
-    fill_data.energy = 1250
+    fill_data.energy = 1850
     fill_data.shape = "DISK"
     fill_data.size = 350
     fill = bpy.data.objects.new("Sky fill", fill_data)
