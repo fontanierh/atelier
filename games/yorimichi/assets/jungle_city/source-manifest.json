@@ -62,6 +62,13 @@
       "provenance": "warm_carved_sandstone.provenance.json"
     }
   },
-  "models": {},
+  "models": {
+    "hero_prang": {
+      "model": "hero_prang.glb",
+      "model_sha256": "b27b5c97952d2914a8230464023753ce7537270d70f32c0438f56ffedc7ef752",
+      "validation": "hero_prang.validation.json",
+      "validation_sha256": "708c0cbc8ceaf362d1adf96bdc0aeeb0c3981d195f605a33229c3cca2845f271"
+    }
+  },
   "generator": "games/yorimichi/tools/jungle_city_manifest.py"
 }

@@ -44,6 +44,26 @@ def test_uv_shared_edge_is_not_overlap_but_duplicate_interiors_are():
         m.raster_uv(triangles.astype(float)*np.nan, 16)
 
 
+def test_triangle_uv_islands_preserve_geometry_and_unselected_layout():
+    m = load('head_models/retopo.py')
+    vertices = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0],
+                         [1, 0, 0], [2, 0, 0], [1, 1, 0]], dtype='float32')
+    faces = np.array([[0, 1, 2], [3, 4, 5]], dtype='uint32')
+    uv = np.array([[[0, 0], [1, 0], [0, 1]],
+                   [[0, 0], [1, 0], [0, 1]]], dtype='float32')
+    before_vertices, before_faces, before_uv = vertices.copy(), faces.copy(), uv.copy()
+    repaired, count = m.triangle_uv_islands(vertices, faces, uv, [False, True])
+    assert count == 1
+    np.testing.assert_array_equal(vertices, before_vertices)
+    np.testing.assert_array_equal(faces, before_faces)
+    np.testing.assert_array_equal(uv, before_uv)
+    np.testing.assert_array_equal(repaired[0], uv[0])
+    edge_a = repaired[1, 1]-repaired[1, 0]
+    edge_b = repaired[1, 2]-repaired[1, 0]
+    area = np.abs(edge_a[0]*edge_b[1]-edge_a[1]*edge_b[0])/2
+    assert area == pytest.approx(0.5)
+
+
 def test_surface_median_removes_isolated_color_and_keeps_inputs_and_large_features():
     m = load('head_models/retopo.py')
     colors = np.array([[0, 0, .01]]+[[.8, .4, .25]]*7, dtype='float32')

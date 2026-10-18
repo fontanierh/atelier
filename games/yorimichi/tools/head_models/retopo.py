@@ -150,6 +150,32 @@ def _raster_uv(uv_corners, size):
     return owner, weights, conflicts
 
 
+def triangle_uv_islands(vertices, faces, uv, split):
+    """Replace selected triangle UVs with isometric islands without touching geometry."""
+    selected = np.flatnonzero(np.asarray(split, dtype=bool))
+    if not len(selected):
+        return np.asarray(uv, dtype='float32').copy(), 0
+    points = vertices[faces[selected]].astype('float64')
+    a, b = points[:, 1]-points[:, 0], points[:, 2]-points[:, 0]
+    length = np.linalg.norm(a, axis=1)
+    along = (a*b).sum(1)/np.maximum(length, 1e-30)
+    height = np.sqrt(np.maximum((b*b).sum(1)-along*along, 0))
+    world_area = np.linalg.norm(np.cross(
+        vertices[faces[:, 1]]-vertices[faces[:, 0]],
+        vertices[faces[:, 2]]-vertices[faces[:, 0]]), axis=1)
+    edge_a, edge_b = uv[:, 1]-uv[:, 0], uv[:, 2]-uv[:, 0]
+    uv_area = np.abs(edge_a[:, 0]*edge_b[:, 1]-edge_a[:, 1]*edge_b[:, 0])
+    valid = (world_area > 1e-15) & (uv_area > 1e-15)
+    scale = np.sqrt(np.median(uv_area[valid]/world_area[valid])) if valid.any() else 1.0
+    flat = np.zeros((len(selected), 3, 2), dtype='float32')
+    flat[:, 1, 0] = length*scale
+    flat[:, 2, 0] = along*scale
+    flat[:, 2, 1] = height*scale
+    output = np.asarray(uv, dtype='float32').copy()
+    output[selected] = flat
+    return output, len(selected)
+
+
 def unwrap(vertices, faces, size):
     """@cc [owner:fontanierh,label:correctness] head-uv-repair-is-layout-only
     UV repair MUST NOT change any ordered geometric triangle. Overlapping charts
@@ -167,56 +193,53 @@ def unwrap(vertices, faces, size):
     pack.padding = 8
     with progress('Generating one-page xatlas UV charts'):
         atlas.generate(chart_options=chart, pack_options=pack)
-    mapping, indices, coords = atlas[0]
-    if atlas.atlas_count != 1 or not np.array_equal(vertices[mapping[indices]], vertices[faces]):
-        raise ValueError('UV generation changed triangles or created multiple pages')
-    uv = coords[indices]
-    with progress('Checking UV chart interiors'):
-        owner, bary, conflicts = _raster_uv(uv, size)
     repaired = 0
-    if conflicts:
+    repaired_rounds = 0
+    for round_index in range(8):
+        mapping, indices, coords = atlas[0]
+        if atlas.atlas_count != 1:
+            raise ValueError('UV generation created multiple pages')
+        corners = np.arange(faces.size, dtype='uint32').reshape(-1, 3)
+        if round_index == 0:
+            geometry_ok = np.array_equal(vertices[mapping[indices]], vertices[faces])
+        else:
+            geometry_ok = np.array_equal(mapping[indices], corners)
+        if not geometry_ok:
+            raise ValueError('UV generation changed triangle corner order')
+        uv = coords[indices]
+        with progress(f'Checking UV chart interiors (pass {round_index + 1})'):
+            owner, bary, conflicts = _raster_uv(uv, size)
+        if not conflicts:
+            break
         _, assignments = atlas.get_mesh_vertex_assignment(0)
         labels = assignments[indices[:, 0]].astype('uint32')
-        bad_charts = np.unique(labels[list(conflicts)])
-        split = np.isin(labels, bad_charts)
-        repaired = int(split.sum())
-        print(f'UV repair: splitting {len(bad_charts)} folded charts / {repaired} triangles', flush=True)
-        # Parameterize each affected triangle isometrically, then repack those
-        # triangles and all intact charts as separate 2D islands.
-        points = vertices[faces[split]].astype('float64')
-        a, b = points[:, 1]-points[:, 0], points[:, 2]-points[:, 0]
-        length = np.linalg.norm(a, axis=1)
-        along = (a*b).sum(1)/np.maximum(length, 1e-30)
-        height = np.sqrt(np.maximum((b*b).sum(1)-along*along, 0))
-        world_area = np.linalg.norm(np.cross(vertices[faces[:, 1]]-vertices[faces[:, 0]],
-                                             vertices[faces[:, 2]]-vertices[faces[:, 0]]), axis=1)
-        edge_a, edge_b = uv[:, 1]-uv[:, 0], uv[:, 2]-uv[:, 0]
-        uv_area = np.abs(edge_a[:, 0]*edge_b[:, 1]-edge_a[:, 1]*edge_b[:, 0])
-        valid = (world_area > 1e-15) & (uv_area > 1e-15)
-        scale = np.sqrt(np.median(uv_area[valid]/world_area[valid]))
-        flat = np.zeros((repaired, 3, 2), dtype='float32')
-        flat[:, 1, 0] = length*scale
-        flat[:, 2, 0] = along*scale
-        flat[:, 2, 1] = height*scale
-        uv[split] = flat
-        labels[split] = np.arange(repaired, dtype='uint32')+int(labels.max())+1
+        if repaired_rounds == 0:
+            bad_charts = np.unique(labels[list(conflicts)])
+            split = np.isin(labels, bad_charts)
+            print(f'UV repair: splitting {len(bad_charts)} folded charts / {int(split.sum())} triangles', flush=True)
+        else:
+            split = np.zeros(len(faces), dtype=bool)
+            split[list(conflicts)] = True
+            print(f'UV repair pass {round_index + 1}: splitting {int(split.sum())} conflicting triangles', flush=True)
+        uv, split_count = triangle_uv_islands(vertices, faces, uv, split)
+        if not split_count:
+            raise ValueError('UV conflicts could not be assigned to triangles')
+        repaired += split_count
+        repaired_rounds += 1
+        labels[split] = np.arange(split_count, dtype='uint32')+int(labels.max())+1
         packed = xatlas.Atlas()
-        corners = np.arange(faces.size, dtype='uint32').reshape(-1, 3)
         packed.add_uv_mesh(uv.reshape(-1, 2), corners, face_materials=labels[:, None])
-        # Thousands of repaired triangle islands need the requested page size.
-        # Automatic packing can choose a smaller page and overlap them at 4096.
-        # Eight texels also over-pads these tiny islands; four is the measured
-        # collision-free layout for the Kiyo 100K surface.
+        # Repacked islands need the requested page size and a small measured pad.
         pack.resolution = size
         pack.padding = 4
-        with progress('Repacking intact charts and repaired triangle islands'):
+        with progress(f'Repacking UV charts and repaired triangle islands (pass {round_index + 1})'):
             packed.generate(pack_options=pack)
         mapping, indices, coords = packed[0]
         if packed.atlas_count != 1 or not np.array_equal(mapping[indices], corners):
             raise ValueError('Repacking changed triangle corner order or page count')
-        uv = coords[indices]
-        owner, bary = raster_uv(uv, size)
         atlas = packed
+    else:
+        raise ValueError('UV repair did not converge to strict interior ownership')
     print(f'UV pass: {atlas.chart_count} charts, zero overlapping interiors', flush=True)
     return uv, owner, bary, atlas.chart_count, repaired
 
