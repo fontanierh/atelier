@@ -36,3 +36,43 @@ Local 3D assets use the documented `head_models.py` TRELLIS.2/MLX cascade and
 `head_retopo.py` exterior reconstruction, adaptive QEM reduction and checked UV
 bake. A candidate is promoted only after `jungle_city_validate.py` records its
 geometry, UV, texture and hash checks in `source-manifest.json`.
+
+For the first `hero_prang` candidate, run each guarded stage with a fresh report
+directory. The raw generation checkpoints remain the reference and are never
+edited by the derived retopology outputs.
+
+```sh
+export ATELIER_AGENT=jungle-city-01a14c57
+retopo_root=build/yorimichi/jungle-city/retopo/hero-prang
+checkpoint=build/yorimichi/jungle-city/trellis/hero-prang-01/checkpoints
+
+nice -n 10 uv run python games/yorimichi/tools/head_retopo.py \
+  setup --root "$retopo_root" --memory-gib 4 \
+  --report build/yorimichi/jungle-city/guard/retopo-hero-prang-setup
+nice -n 10 uv run python games/yorimichi/tools/head_retopo.py \
+  surface --root "$retopo_root" --checkpoint "$checkpoint" \
+  --output "$retopo_root/surface" --memory-gib 8 \
+  --report build/yorimichi/jungle-city/guard/retopo-hero-prang-surface
+nice -n 10 uv run python games/yorimichi/tools/head_retopo.py \
+  reconstruct --root "$retopo_root" --checkpoint "$checkpoint" \
+  --source "$retopo_root/surface/cloud.npz" --output "$retopo_root/reconstruct" \
+  --depth 9 --triangles 40000 100000 --memory-gib 8 \
+  --report build/yorimichi/jungle-city/guard/retopo-hero-prang-reconstruct
+nice -n 10 uv run python games/yorimichi/tools/head_retopo.py \
+  bake --root "$retopo_root" --checkpoint "$checkpoint" \
+  --source "$retopo_root/reconstruct/mesh-100000.npz" \
+  --color-cloud "$retopo_root/surface/cloud.npz" --output "$retopo_root/bake100k" \
+  --texture-size 4096 --neighbors 1 --memory-gib 8 \
+  --report build/yorimichi/jungle-city/guard/retopo-hero-prang-bake
+
+uv run python games/yorimichi/tools/jungle_city_validate.py \
+  "$retopo_root/bake100k/head.glb" \
+  --output "$retopo_root/hero-prang.validation.json"
+uv run python games/yorimichi/tools/jungle_city_promote.py \
+  hero_prang "$retopo_root/bake100k/head.glb" \
+  "$retopo_root/hero-prang.validation.json"
+```
+
+Promotion is deliberately separate: generation or reconstruction success does not
+make an asset library source. Repeat the same sequence with fresh paths for each
+remaining object, then rebuild the assembled Blender scene and viewer model.
