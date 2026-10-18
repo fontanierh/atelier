@@ -627,17 +627,18 @@ def load_hero_assets() -> None:
 def join_collection(collection: bpy.types.Collection, project_uvs: bool = True) -> int:
     objects = [obj for obj in collection.all_objects if obj.type == "MESH"]
     triangles = sum(sum(len(p.vertices) - 2 for p in obj.data.polygons) for obj in objects)
+    if not project_uvs:
+        return triangles
     bpy.ops.object.select_all(action="DESELECT")
     for obj in objects:
         obj.select_set(True)
     if objects:
         bpy.context.view_layer.objects.active = objects[0]
         bpy.ops.object.join()
-        if project_uvs:
-            bpy.ops.object.mode_set(mode="EDIT")
-            bpy.ops.mesh.select_all(action="SELECT")
-            bpy.ops.uv.cube_project(cube_size=6.0, correct_aspect=True, scale_to_bounds=False)
-            bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.uv.cube_project(cube_size=6.0, correct_aspect=True, scale_to_bounds=False)
+        bpy.ops.object.mode_set(mode="OBJECT")
     return triangles
 
 
