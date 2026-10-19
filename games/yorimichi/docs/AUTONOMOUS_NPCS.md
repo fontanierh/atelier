@@ -15,7 +15,7 @@ The design must work with hosted inference only. The target is 200 NPCs, one ins
 | Layer | Responsibility | Cadence |
 | --- | --- | --- |
 | Unreal | Movement, animation, collision, schedule execution, shared clock | Every frame |
-| Decision model | Fast choices from a short list: continue, go to work, eat, talk, apply for a job, go home | On a decision deadline or an event |
+| Decision model | Fast choices from the concrete affordances in range: open a door, talk to Mira, board the train, stay aboard, wait | On a decision deadline or an event |
 | Language model | Speech, periodic reflection, medium- and long-term planning | When someone speaks or a reflection is due |
 
 The decision model is the fast cognitive layer. The language model is the slow cognitive layer. Unreal is the reflex layer.
@@ -96,6 +96,50 @@ The speaker pays for one language-model call. The listeners pay nothing to hear 
 
 Example: Mira tells Bob that the bakery is hiring. Bob hears it directly. The baker standing nearby hears it too. Both remember it. Later, the baker can mention it to someone else. News, gossip, warnings, and secrets spread through the town this way.
 
+## Actions and affordances
+
+The decision model does not choose from a fixed verb list like eat, sleep, or work. It chooses from the concrete interactions available at that moment.
+
+The simulation maintains an affordance registry. Each object, actor, vehicle, or place exposes the actions it supports:
+
+- Door: open, close, enter, leave, lock, knock.
+- Food: eat, buy, cook.
+- Carried item: eat, drink, read, use, give, drop.
+- Bed: sleep, rest.
+- Job board: browse, apply.
+- Shop counter: buy, sell, work a shift.
+- Workstation: work a shift.
+- Train: board, ride, disembark.
+- Zeppelin: board, ride, disembark.
+- NPC: talk, ask, help, trade.
+- Bench: sit, rest, sleep rough.
+- Home: enter, leave, sleep, store items.
+
+Hunger and sleep are needs, not actions. The NPC satisfies hunger by interacting with food, and sleep by interacting with a bed. If no bed is available, the ground or a bench offers sleep rough.
+
+At each decision, the simulation builds the action list from context:
+
+1. Find the objects and actors in range.
+2. Ask each one which actions it currently offers.
+3. Filter by preconditions: is it open, is it locked, is the NPC allowed, is the vehicle docked, does the NPC have money, is the shift active?
+4. Add the always-available actions: wait, and talk to a nearby NPC if one is present.
+5. Add movement options: the relevant reachable destinations, such as home, work, the station, the current goal, or a nearby exit.
+6. Rank and cap the list. If there are more than about 16 candidates, use a two-stage choice: first category (talk, interact, move, wait), then the concrete target.
+
+If nothing is in range to interact with, there is no interact action. If three things are in range, each becomes a separate option. The NPC can always act on what is around them, but only through the actions that object exposes.
+
+Examples:
+
+- At home: open the door, enter home, sleep in bed, eat the bread, leave for work.
+- On the street: talk to Mira, board the train, enter the bakery, walk to the station.
+- At the zeppelin dock: board the zeppelin to Hidamari, talk to the pilot, walk to the market.
+- Aboard a moving zeppelin: talk to a passenger, stay aboard, look out the window. Disembark appears only when docked.
+- Aboard a train: talk to a passenger, stay aboard, disembark at the next stop when the train is stopped.
+
+Context can remove actions. In a moving vehicle, the movement options are replaced by the vehicle's stops. Aboard an in-transit zeppelin, only talk, stay, and look are available. In a conversation, only talk or end the conversation. In a shop during a shift, the work actions are available; leaving is allowed but has consequences.
+
+Each option carries an id, label, target, preconditions, expected effects, and risk. Expected effects include time, money, hunger, energy, happiness, and relationship changes. The decision model picks one option; the simulation validates it again and executes it. The model cannot invent an action that was not offered.
+
 ## Needs, sleep, and happiness
 
 NPCs get tired and hungry. Sleeping at home restores energy. Sleeping on the street gives poor rest and a penalty.
@@ -122,7 +166,7 @@ Example deterministic rewards:
 
 The NPC knows the goal and the next step, not the exact reward formula. They know simple consequences: sleeping at home is better than sleeping outside, and missing rent risks eviction.
 
-Each action option can carry a precomputed expected change and a short label, such as "go home to sleep: +6, safe" or "sleep here: -12, cold." The decision model chooses the action; the simulation does the arithmetic.
+Each action option can carry a precomputed expected change and a short label, such as "Sleep in your bed: +6, safe" or "Sleep rough here: -12, cold." The decision model chooses the action; the simulation does the arithmetic.
 
 Use cooldowns, diminishing returns, and daily caps to prevent farming. Do not let an NPC sleep all day for a reward or repeat the same conversation for points.
 
@@ -167,10 +211,10 @@ Each NPC has a next_decision_at time. When it comes up, or when an event interru
 Then the decision model answers a few narrow questions:
 
 - Noul: "Am I hungry?" "Is the person in front of me someone I know?" "Is my shift starting soon?"
-- Choice: "What do I do next?" with 8 to 16 options.
+- Choice: "What do I do next?" with the 8 to 16 concrete options built from the current affordances.
 - Score: "How urgent is this?" or "How much do I want to talk to this person?"
 
-Use confidence. Above the threshold, act. Below it, continue the current action or idle. If the choice is talk, pass the target and intent to the conversation manager. If the choice is go somewhere, Unreal handles the path.
+Use confidence. Above the threshold, act. Below it, continue the current action or idle. If the choice is talk, pass the target and intent to the conversation manager. If the choice is interact, run the object action. If the choice is go somewhere, Unreal handles the path.
 
 While an NPC is walking, Unreal owns the path. The mind receives progress events: arrived, blocked, interrupted, path failed. If the path fails, re-decide. If a new observation arrives, inject it as an interruption: "You are still heading to the mill. You see Bob on the road. You are not in a hurry."
 
@@ -261,12 +305,13 @@ If NPCs chat twice as much, 48 lines per NPC per hour, the Laya + Gemma 8K stack
 
 ## Implementation plan
 
-1. Build a headless Python simulation with 20 NPCs, five jobs, three stores, one job board, rent, food, sleep, and three life goals. Run 30 in-game days.
-2. Log every decision, wage, purchase, rent payment, conversation, goal update, token count, and cost.
-3. Measure job fill rate, employment, money distribution, rent delinquency, goal progress, conversation repetition, confidence distribution, and cost per simulated day.
-4. Integrate five NPCs into Unreal, starting in Belmonte. Use the existing village and wanderer actors and the live bridge.
-5. Add simulation LOD, batched decisions, concurrency caps, and fallbacks.
-6. Scale to 200 NPCs and compare JEV/Luna against Laya/Gemma on 1,000 decisions and 500 lines.
+1. Build the affordance registry and context filter. Define each interactable's actions, preconditions, and effects, then build the per-NPC action list from range and context.
+2. Build a headless Python simulation with 20 NPCs, five jobs, three stores, one job board, rent, food, sleep, and three life goals. Run 30 in-game days.
+3. Log every decision, wage, purchase, rent payment, conversation, goal update, token count, and cost.
+4. Measure job fill rate, employment, money distribution, rent delinquency, goal progress, conversation repetition, confidence distribution, and cost per simulated day.
+5. Integrate five NPCs into Unreal, starting in Belmonte. Use the existing village and wanderer actors and the live bridge.
+6. Add simulation LOD, batched decisions, concurrency caps, and fallbacks.
+7. Scale to 200 NPCs and compare JEV/Luna against Laya/Gemma on 1,000 decisions and 500 lines.
 
 ## Open questions
 
@@ -278,6 +323,10 @@ If NPCs chat twice as much, 48 lines per NPC per hour, the Laya + Gemma 8K stack
 - Should critical services such as the train be allowed to go unstaffed?
 - How should the simulation catch up when the player is away?
 - How much identity drift should be allowed after major events?
+- How many nearby objects should be offered before switching to a two-stage choice?
+- Which contexts should restrict the action set: vehicles, shops, conversations, jail, sleep?
+- Should vehicle travel be one composite action or a sequence of board, stay, and disembark decisions?
+- How do NPCs learn about interactables they cannot see, such as a job board inside a building or a train at the next platform?
 
 ## References
 
