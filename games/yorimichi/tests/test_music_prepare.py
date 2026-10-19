@@ -76,3 +76,24 @@ def test_full_import_followed_by_narrow_selection_removes_only_old_music():
     other = "/Game/Audio/Music/variety/energy_dnb/MUS_variety_energy_dnb_5678"
     combat = "/Game/Audio/Combat/hit_body/hit_body_01"
     assert inventory.stale_assets([music + "." + music.rsplit("/", 1)[-1], other, combat], {music}) == (other,)
+
+
+def test_music_import_verify_requires_every_package_and_no_stale(tmp_path, monkeypatch):
+    recipe = build.load_recipe("yorimichi")
+    game = tmp_path / "game"
+    asset = game / "unreal/Content/Audio/Music/a/MUS_A.uasset"
+    asset.parent.mkdir(parents=True)
+    asset.write_bytes(b"wave")
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "music_import.json").write_text(json.dumps({
+        "imported": {"MUS_A": {"path": "/Game/Audio/Music/a/MUS_A"}},
+    }))
+    monkeypatch.setattr(recipe, "GAME", game)
+    assert recipe.music_import_present(out)
+    stale = asset.parent / "MUS_OLD.uasset"
+    stale.write_bytes(b"old")
+    assert not recipe.music_import_present(out)
+    stale.unlink()
+    asset.unlink()
+    assert not recipe.music_import_present(out)

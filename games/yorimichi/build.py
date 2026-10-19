@@ -1016,6 +1016,27 @@ def music_files(cache, categories, styles, groups, limit):
     return tuple(chosen)
 
 
+def music_import_present(out):
+    """Every selected SoundWave package exists and no stale owned package remains."""
+    try:
+        data = json.loads((out / 'music_import.json').read_text())
+        imported = data['imported']
+        expected = set()
+        for item in imported.values():
+            path = item.get('path')
+            if not path or not path.startswith('/Game/'):
+                return False
+            asset = GAME / 'unreal/Content' / (path.removeprefix('/Game/') + '.uasset')
+            if not asset.is_file() or asset.stat().st_size == 0:
+                return False
+            expected.add(asset.resolve())
+    except (OSError, KeyError, TypeError, ValueError):
+        return False
+    root = GAME / 'unreal/Content/Audio/Music'
+    actual = {path.resolve() for path in root.rglob('*.uasset')} if root.is_dir() else set()
+    return bool(expected) and actual == expected
+
+
 def sound_effect_steps(ctx):
     """Offline sound slices and procedural effect textures."""
     out = ctx.out
@@ -1182,6 +1203,7 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_music.py', AUDIO / 'music' / 'prepare.py'],
              needs=['audio.music'], after=['unreal.compile'], explicit=True, heavy=True,
              outputs=[out / 'music_import.json', GAME / 'unreal/Content/Data/Music/library.json'],
+             verify=lambda: music_import_present(out),
              about='/Game/Audio/Music from the optional fetched Suno library'),
         Step('unreal.fx', [UnrealScript(SCRIPTS / 'import_combat_fx.py', 'COMBAT FX IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_combat_fx.py'], after=['unreal.compile'], needs=['fx.textures'], heavy=True, about='/Game/FX materials'),
