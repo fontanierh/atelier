@@ -287,12 +287,32 @@ Luna is $0.10 per 1M input and $0.50 per 1M output. These models are cheaper on 
 | `meta-llama/llama-3.1-8b-instruct` | $0.05 | $0.08 | $0.000408 | 131K |
 | `openai/gpt-5-nano` | $0.05 | $0.40 | $0.000440 | 400K |
 
-Luna at the same shape, with no cache, is $0.00085. With a 90% cache hit rate it is $0.00021. That matters: at 90% cache Luna already beats most of this list, and only a handful of models come in under it. At a 0% hit rate the cheap models win by five times or more. The real question is not "which model is cheaper" but "what cache hit rate will the tick actually get".
+Luna at the same shape, with no cache, is $0.00085. With a 90% cache hit rate it is $0.00021. Uncached, Luna beats every model above. Cheap providers also sell cached input, though, and two of them undercut Luna once the cache is warm:
+
+| Model | Provider | In/M | Out/M | Cache/M | 8K + 100, 90% cache |
+| --- | --- | ---: | ---: | ---: | ---: |
+| gpt-oss-20b | Darkbloom, fp8 | $0.018 | $0.09 | $0.009 | $0.000088 |
+| qwen3.7-flash | Alibaba, us-east-1 | $0.0345 | $0.1495 | $0.0069 | $0.000092 |
+| gemma-3-4b | Parasail, bf16 | $0.04 | $0.05 | $0.02 | $0.000181 |
+| gemma-4-26b-a4b | Darkbloom | $0.042 | $0.22 | $0.021 | $0.000207 |
+| Luna | OpenAI | $0.10 | $0.50 | $0.01 | $0.000210 |
+| qwen3.5-9b | Darkbloom, fp4 | $0.08 | $0.13 | $0.04 | $0.000317 |
+| gemma-3-12b | DeepInfra, bf16 | $0.05 | $0.15 | none | $0.000415 |
+
+Two things matter when pinning a provider. First, the model-level price on OpenRouter is the cheapest endpoint, not the endpoint you get; routing can move you to a different provider, quantization, or a broken endpoint. Pin the provider explicitly and allow fallbacks only to endpoints you have tested. Second, the same model can differ in cache support: Qwen 3.7 Flash's base Alibaba endpoint has cache pricing but reports no implicit caching, while its us-east-1 endpoint does.
+
+Tool support is uneven at the small end. The Gemma 3 endpoints advertise structured output but mostly not tool calls, so they are chatter models. GPT-OSS-20B, Qwen 3.7 Flash, Qwen 3.5 9B, and Gemma 4 26B on Darkbloom advertise both.
+
+Cheapest endpoints worth testing, by lane:
+
+- Tick: `gpt-oss-20b` on Darkbloom fp8, then `qwen3.7-flash` on Alibaba us-east-1. Both are about 2.4 times below cached Luna at 8K.
+- Chatter: `gemma-3-4b` on Parasail, or the same `gpt-oss-20b` endpoint if you want one model and one provider for everything.
+- Avoid: the $0.04 Gemma 3 12B endpoint, which showed 0% uptime, and fp4 endpoints for action choice until you have measured JSON validity.
 
 The candidates worth testing, in order:
 
-- `openai/gpt-oss-20b`: cheapest credible structured-output model at this size, and well known.
-- `qwen/qwen3.7-flash`: 1M context, close to Luna's shape, useful if the state grows.
+- `openai/gpt-oss-20b` on Darkbloom: cheapest credible structured-output model at this size, with working cache pricing.
+- `qwen/qwen3.7-flash` on Alibaba us-east-1: 1M context, close to Luna's shape, useful if the state grows.
 - `deepseek/deepseek-v4.1-flash`: output is almost free, so it is the best chatter candidate for long lines.
 - `inclusionai/ling-3.0-flash`: cheapest output on the list, but small models tend to over-think and sometimes return empty content.
 
@@ -385,6 +405,8 @@ Totals for 200 NPCs:
 Tiering cuts the total bill by about 43%, and the tick line by about 72%. The reduction is larger for the 180 background NPCs, who go from $0.0126 to $0.0025 per hour each. Reflection is not reduced by tiering, so at 10% hot it is the single largest line. Moving reflection to every 15 minutes, or shrinking it to 24K, saves more than switching the tick model.
 
 Swapping the tick and reflection lanes to official DeepSeek Flash at 90% cache changes almost nothing: about $0.0122 per agent-hour off-peak, and about double that during peak hours. The choice should be made on measured reliability and latency, not on price.
+
+Moving the tick and chatter lanes to `gpt-oss-20b` on Darkbloom drops the tiered total to about $0.0095 per agent-hour, or **$1.90 per hour for 200 NPCs**. Reflection on Luna then becomes more than half the bill.
 
 ## Implementation plan
 
