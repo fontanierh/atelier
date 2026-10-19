@@ -1016,6 +1016,11 @@ def music_files(cache, categories, styles, groups, limit):
     return tuple(chosen)
 
 
+def music_selector_members(categories, styles, groups, limit, enabled):
+    """Retain the optional-music settings in data.content's build key."""
+    return ()
+
+
 def music_import_present(out):
     """Every selected SoundWave package exists and no stale owned package remains."""
     try:
@@ -1313,6 +1318,14 @@ def steps(ctx):
     policy_spec.loader.exec_module(policy)
     result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
                        inputs=[GAME / 'content_policy.py'],
+                       deferred_inputs=[DeferredInputs(
+                           'music-selectors', music_selector_members,
+                           (os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
+                            os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
+                            os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
+                            os.environ.get('YORIMICHI_MUSIC_LIMIT', '0'),
+                            policy.music_enabled()),
+                           support=(GAME / 'build.py',))],
                        needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage'],
                        outputs=[ctx.out / 'runtime-content.json'],
                        verify=lambda: not any(policy.retired(content)),

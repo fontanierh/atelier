@@ -4,10 +4,12 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from atelier import build
+from atelier import build_deferred
 
 HERE = Path(__file__).resolve().parents[1] / "assets/audio/music"
 
@@ -97,3 +99,18 @@ def test_music_import_verify_requires_every_package_and_no_stale(tmp_path, monke
     stale.unlink()
     asset.unlink()
     assert not recipe.music_import_present(out)
+
+
+def test_music_enablement_changes_the_content_key(tmp_path, monkeypatch):
+    def content_observation():
+        ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps',
+                              uproject=tmp_path/'Yorimichi.uproject', unreal_root=tmp_path/'UE')
+        recipe = build.load_recipe('yorimichi')
+        step = next(s for s in recipe.steps(ctx) if s.name == 'data.content')
+        return build_deferred.observe(step).metadata
+
+    monkeypatch.delenv('YORIMICHI_MUSIC', raising=False)
+    monkeypatch.delenv('YORIMICHI_MUSIC_CATEGORIES', raising=False)
+    plain = content_observation()
+    monkeypatch.setenv('YORIMICHI_MUSIC_CATEGORIES', 'calm')
+    assert plain != content_observation()
