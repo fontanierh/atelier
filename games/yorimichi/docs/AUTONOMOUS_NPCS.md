@@ -408,6 +408,8 @@ Swapping the tick and reflection lanes to official DeepSeek Flash at 90% cache c
 
 Moving the tick and chatter lanes to `gpt-oss-20b` on Darkbloom drops the tiered total to about $0.0095 per agent-hour, or **$1.90 per hour for 200 NPCs**. Reflection on Luna then becomes more than half the bill.
 
+Replacing every Luna lane with Qwen 3.7 Flash on the Alibaba us-east-1 endpoint, still at 90% cache, gives about **$0.0061 per agent-hour**, or $1.23 per hour for 200 NPCs. The breakdown is $0.00155 for ticks, $0.00257 for reflection, $0.00034 for chatter, and $0.00168 for JEV reactions. Reflection is now the largest line. On the cheaper base endpoint with no cache the total rises to $0.0131.
+
 ## Implementation plan
 
 1. Build the affordance registry and context filter. Define each interactable's actions, preconditions, and effects, then build the per-NPC action list from range and context.
