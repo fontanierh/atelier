@@ -998,7 +998,10 @@ def character_steps(ctx):
 
 def music_files(cache, categories, styles, groups, limit):
     """Selected cached tracks; their bytes and declared selectors enter the audio step key."""
-    catalog = json.loads((Path(cache) / 'catalog.json').read_text())
+    catalog_path = Path(cache) / 'catalog.json'
+    if not catalog_path.is_file():
+        return ()
+    catalog = json.loads(catalog_path.read_text())
     categories = {part.strip() for part in categories.split(',') if part.strip()}
     styles = {part.strip() for part in styles.split(',') if part.strip()}
     groups = {part.strip() for part in groups.split(',') if part.strip()}
