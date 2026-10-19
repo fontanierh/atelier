@@ -117,10 +117,14 @@ def _inspect(ctx, steps, wanted, *, force, index):
 
 
 def show(game, wanted=(), *, force=False, explain=False, as_json=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
-         rebuild_touched=False):
-    ctx = engine.Context(game, create=False, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
+         rebuild_touched=False, cook_memory_gib=None):
+    engine.cook_memory_limit(cook_memory_gib, wanted)
+    ctx = engine.Context(game, create=False, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
+                         **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
     ctx.rebuild_touched = rebuild_touched
     report = inspect(ctx, engine.load_recipe(game).steps(ctx), wanted, force=force, verify=verify)
+    if cook_memory_gib is not None:
+        report['cook_memory_gib'] = cook_memory_gib
     if as_json:
         echo(json.dumps(report, indent=2))
         return 0

@@ -112,7 +112,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
 
 
 def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False,
-                       command=None, small_gib=None):
+                       command=None, small_gib=None, compile_memory_gib=None):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
@@ -129,7 +129,14 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     Full automatic games MAY increase only their session memory reservation to cover a caller's
     explicitly selected guard ceiling within the documented game range. The configured profile
     MUST already cover the default game ceiling; neither the configuration nor the guard changes.
+    An explicit cook compile ceiling MAY grow only its full-mode reservation, with finite 10–24 GiB
+    selection equal to the actual guard limit and a profile already covering the default 10 GiB.
+    Other compile requests and legacy/maintenance profiles MUST retain their configured reservation.
     """
+    if compile_memory_gib is not None and (kind != 'compile' or type(compile_memory_gib) not in (int, float)
+            or not math.isfinite(compile_memory_gib) or not GAME_GIB <= compile_memory_gib <= 24.
+            or compile_memory_gib != limit_gib):
+        raise ValueError('Explicit cook ceiling requires compile kind and a matching finite 10 to 24 GiB guard ceiling')
     if type(performance) is not bool:
         raise ValueError('capacity performance request must be a boolean')
     from atelier.harness import capacity_compat
@@ -142,6 +149,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         if selected is None:
             if barrier is not None:
                 raise ValueError('A capacity cutover exists; missing client configuration cannot fall back to slots')
+            if compile_memory_gib is not None:
+                raise ValueError('Explicit cook ceiling requires full-capacity admission')
             return None
         raise ValueError('configured capacity client file is missing') from None
     value = read_configuration(path)
@@ -154,6 +163,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if (not (bridge or full or maintenance) or not isinstance(value['socket'], str)
             or not Path(value['socket']).is_absolute() or not isinstance(value['profiles'], dict)):
         raise ValueError('unsupported capacity client configuration')
+    if compile_memory_gib is not None and not full:
+        raise ValueError('Explicit cook ceiling requires full-capacity admission')
     if bridge and barrier is not None:
         raise ValueError('A sealed capacity cutover refuses legacy bridge clients')
     proof = None
@@ -173,7 +184,7 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if (not math.isfinite(limit_gib) or limit_gib <= 0
             or not math.isfinite(timeout) or timeout < 0):
         raise ValueError('capacity launch needs a positive finite guard ceiling and nonnegative finite timeout')
-    if (full and kind == 'game' and GAME_GIB <= limit_gib <= GAME_MAX_GIB
+    if (full and (kind == 'game' or compile_memory_gib is not None) and GAME_GIB <= limit_gib <= (GAME_MAX_GIB if kind == 'game' else 24.)
             and resources.memory_mib >= math.ceil(GAME_GIB * 1024)):
         resources = replace(resources, memory_mib=max(resources.memory_mib, math.ceil(limit_gib * 1024)))
     if resources.memory_mib < math.ceil(limit_gib * 1024):

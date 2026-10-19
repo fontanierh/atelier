@@ -189,6 +189,7 @@ def make_parser():
     p.add_argument('--cook-mode', choices=('modern-full', 'modern-incremental'),
                    help='experimental UE5.8 package cook; --force recooks packages only')
     p.add_argument('--cook-reason', help='measurement reason required for experimental --force')
+    p.add_argument('--cook-memory-gib', type=float, help='explicit cook-only guard ceiling, 10 to 24 GiB; full reservation required')
     p.add_argument('--recover-cook', metavar='ATTEMPT_ID', help='retry only certification of a positively completed same-checkout cook')
     p.add_argument('--record-cook-recovery', action='store_true', help='opt in before cooking to retain complete local recovery evidence (additional input inventory cost)')
     p.add_argument('--verify', action='store_true', help='read all named-product bytes instead of using the local hash index')
@@ -272,6 +273,16 @@ def main(argv=None):
         from atelier.harness import capacity_cli
         return capacity_cli.main(args)
     if args.command == 'build':
+        cook_memory = {}
+        if args.cook_memory_gib is not None:
+            from .build import cook_memory_limit
+            try:
+                cook_memory_limit(args.cook_memory_gib, args.steps)
+            except ValueError as error:
+                raise SystemExit(str(error)) from None
+            if args.list or args.ddc or args.changes or args.timings or args.touch or args.recover_cook is not None:
+                raise SystemExit('--cook-memory-gib requires cook/package execution or a read-only plan')
+            cook_memory['cook_memory_gib'] = args.cook_memory_gib
         if args.rebuild_touched and (args.force or args.touch or args.recover_cook is not None
                                     or args.record_cook_recovery or args.list or args.ddc or args.changes or args.timings):
             raise SystemExit('--rebuild-touched requires a separate build or plan, without force/touch/cook recovery')
@@ -318,7 +329,7 @@ def main(argv=None):
                 raise SystemExit('--touch cannot be combined with a read-only plan')
             from .build_plan import show
             return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json, verify=args.verify,
-                        **({'rebuild_touched': True} if args.rebuild_touched else {}), **experimental)
+                        **({'rebuild_touched': True} if args.rebuild_touched else {}), **experimental, **cook_memory)
         bounded = {'max_heavy_commands': args.max_heavy_commands} if args.max_heavy_commands is not None else {}
         if args.recover_cook is not None:
             bounded['recover_cook'] = args.recover_cook
@@ -327,7 +338,7 @@ def main(argv=None):
         if args.rebuild_touched:
             bounded['rebuild_touched'] = True
         return build(args.game, args.steps, force=args.force, dry=args.dry_run, touch=args.touch, verify=args.verify,
-                     **experimental, **bounded)
+                     **experimental, **bounded, **cook_memory)
     if args.command == 'play':
         return play(args.game, args.profile, args.set, args.extra, args.memory_gib)
     if args.command == 'playtest':

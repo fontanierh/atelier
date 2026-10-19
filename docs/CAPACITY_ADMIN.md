@@ -202,7 +202,7 @@ Upgraded `guarded.run` clients read the private `~/.cache/atelier/capacity/clien
 and `profiles` for `job`, `game` and `compile`. Each profile contains a complete `resources` vector and a `locks`
 list. The common launcher always adds its checkout lock. A reservation smaller than the actual guard ceiling
 is refused. In full mode, a game profile covering 10 GiB grows its reservation for a supported 10–14 GiB
-per-session ceiling before this check. Other profiles do not grow automatically. CPU reservations must be nonzero. I/O slots are
+per-session ceiling before this check. An explicit normal build `--cook-memory-gib` selection can also grow only its UAT compile reservation within 10–24 GiB, paired with the unchanged selected guard ceiling. Other compile requests and job profiles do not grow automatically. CPU reservations must be nonzero. I/O slots are
 optional calibrated scheduling tokens, defaulting to zero: there is no automatic universal I/O charge per job.
 Use a nonzero I/O reservation only for an identified workload whose measured contention warrants a limit.
 Existing configured nonzero I/O reservations and their limits remain enforced; this does not change machine

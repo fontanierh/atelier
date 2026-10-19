@@ -14,7 +14,7 @@ A `heavy` step's commands run under `atelier.harness.safety.guarded`: a render s
 completed run peaked at 3 GiB or less asks for the small slot; a compile, or a step with no completed run yet, takes the big
 one. The step's log names the slot each command used, and the summary line names it too when two slots are on.
 """
-import hashlib, importlib.util, json, os, subprocess, sys, time
+import hashlib, importlib.util, json, math, os, subprocess, sys, time
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 from pathlib import Path
@@ -26,8 +26,12 @@ from .build_products import Product
 from .build_deferred import DeferredInputs
 from .build_spatial import BBoxQuery
 from .build_cook import CookMode
+from .play_limits import GAME_GIB
+
 from atelier.harness.safety import guarded
 from atelier.harness.safety.render_lock import GiB, slot_count
+
+COOK_MAX_GIB = 24.
 
 SKIP_PARTS = build_inputs.SKIP_PARTS
 SKIP_SUFFIXES = build_inputs.SKIP_SUFFIXES
@@ -211,9 +215,26 @@ def check_modules(steps):
                 raise SystemExit(f'{step.name}: its script uses {missing} but the step does not need them')
 
 
+def cook_memory_limit(value, wanted=None):
+    """@cc [owner:fontanierh,label:safety] invocation-cook-memory
+    An explicitly selected cook ceiling MUST be finite and within 10–24 GiB, validated before
+    creating a build context. It MUST select exactly unreal.cook or unreal.package and MUST
+    affect only typed UnrealPackage execution, not command argv, representation or action keys.
+    The default MUST retain the existing guard/reservation path. The selected ceiling MUST
+    reach the child/tree guards and the matching full-capacity compile reservation together.
+    """
+    if value is not None:
+        if type(value) not in (int, float) or not math.isfinite(value) or not GAME_GIB <= value <= COOK_MAX_GIB:
+            raise ValueError(f'Cook memory ceiling must be {GAME_GIB:g} to {COOK_MAX_GIB:g} GiB')
+        if wanted is not None and list(wanted) not in (['unreal.cook'], ['unreal.package']):
+            raise ValueError('--cook-memory-gib requires exactly unreal.cook or unreal.package')
+    return value
+
+
 # ---------------------------------------------------------------- context
 class Context:
-    def __init__(self, game, *, create=True, cook_mode=None, cook_reason=None, recover_cook=None, record_cook_recovery=False):
+    def __init__(self, game, *, create=True, cook_mode=None, cook_reason=None, recover_cook=None, record_cook_recovery=False, cook_memory_gib=None):
+        self.cook_memory_gib = cook_memory_limit(cook_memory_gib)
         from .build_cook import measurement_reason
         self.cook_reason = measurement_reason(cook_reason)
         self.cook_mode = CookMode.DEFAULT if cook_mode is None else CookMode(cook_mode)
@@ -489,6 +510,9 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
     if isinstance(command, (Python, Blender)):
         source_request = request or (slot_request(ctx, step) if step.heavy else None)
         return build_source.run_argv(ctx, step, command, argv, env, log, source_request, slots, pass_fds=pass_fds)
+    selected_cook_memory = cook_memory_limit(getattr(ctx, 'cook_memory_gib', None)) if isinstance(command, UnrealPackage) else None
+    if selected_cook_memory is not None and not step.heavy:
+        raise ValueError('An explicit cook ceiling requires the normal heavy compile guard lifecycle')
     if isinstance(command, UnrealPackage) and command.cook_mode is not CookMode.DEFAULT and not step.heavy:
         raise ValueError('Experimental cooking requires the normal heavy compile guard lifecycle')
     preflight = isinstance(command, UnrealScript) and 'ATELIER_UNREAL_PREFLIGHT' in dict(command.env)
@@ -508,6 +532,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         inherited = {'pass_fds': pass_fds} if pass_fds else {}
+        if selected_cook_memory is not None:
+            inherited.update(limit_gib=selected_cook_memory, compile_memory_gib=selected_cook_memory)
         if preflight:
             inherited['aggregate_tree'] = True
         cook = None
@@ -590,13 +616,16 @@ def slot_summary(slots):
 
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
-          max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False):
+          max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None):
     """@cc [owner:fontanierh,label:correctness] rebuild-touched-certificates
     An explicit touched-only rebuild MUST replace only explicitly named touched certificates through normal
     execution or verified product restoration, without changing action keys or skipping guards.
     Current proven certificates MUST remain current. Planning MUST explain the same rebuild rule.
     The repair MUST NOT combine with force, touch or cook recording/recovery.
     """
+    cook_memory_limit(cook_memory_gib, wanted)
+    if cook_memory_gib is not None and (touch or recover_cook is not None):
+        raise ValueError('--cook-memory-gib cannot combine with touch or certification-only recovery')
     if rebuild_touched and (force or touch or recover_cook is not None or record_cook_recovery):
         raise ValueError('Rebuilding touched prerequisites is a separate build, without force/touch/cook recovery')
     if recover_cook is not None and (force or dry or touch or cook_mode is not None or max_heavy_commands is not None):
@@ -613,9 +642,11 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
         from .build_plan import show
         return show(game, wanted, force=force, echo=echo, verify=verify,
                     **({'rebuild_touched': True} if rebuild_touched else {}),
-                    **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}))
+                    **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
+                    **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
     ctx = Context(game, **({'cook_mode': cook_mode, 'cook_reason': cook_reason} if cook_mode is not None else {}),
-                  **({'recover_cook': recover_cook} if recover_cook is not None else {}))
+                  **({'recover_cook': recover_cook} if recover_cook is not None else {}),
+                  **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
     ctx.record_cook_recovery = record_cook_recovery
     ctx.rebuild_touched = rebuild_touched
     from .build_hashes import HashIndex

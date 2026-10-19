@@ -153,7 +153,9 @@ def test_streaming_read_budget_and_early_fallback_refusal(tmp_path, monkeypatch)
 
 
 @pytest.mark.parametrize('fallback', [False, True])
-def test_existing_guard_lifecycle_validates_before_following_certification(context, monkeypatch, fallback):
+@pytest.mark.parametrize('memory_gib', [None, 12., 18., 24.])
+def test_existing_guard_lifecycle_validates_before_following_certification(context, monkeypatch, fallback, memory_gib):
+    context.cook_memory_gib = memory_gib
     command = build.UnrealPackage('Fixture', Path('archive'), cook_mode=CookMode.INCREMENTAL)
     step = build.Step('unreal.cook', [command], heavy=True)
     calls = []
@@ -173,6 +175,10 @@ def test_existing_guard_lifecycle_validates_before_following_certification(conte
         assert phases['cook']['validated']
     assert len(calls) == 1 and calls[0]['kind'] == 'compile'
     assert calls[0]['watch'] == command.watch and calls[0]['timeout'] == command.timeout
+    if memory_gib is None:
+        assert 'limit_gib' not in calls[0] and 'compile_memory_gib' not in calls[0]
+    else:
+        assert calls[0]['limit_gib'] == calls[0]['compile_memory_gib'] == memory_gib
 
 
 def test_mode_survives_every_recipe_reload_without_affecting_other_commands(tmp_path, monkeypatch):
@@ -301,3 +307,86 @@ def test_late_previous_registry_failure_is_full_invalidation_not_reuse():
     assert report['reuse_observed'] is None
     warning = 'LogCook: Warning: Previous cook results returned a record for generator package example, but that package can no longer be found; its generated packages will not be removed from cook results. Run a full cook to remove them.'
     assert not observed([ENABLED, INCREMENTAL, warning, *TAIL])['validated']
+
+
+@pytest.mark.parametrize('value', [9.999, 24.001, float('nan'), float('inf'), float('-inf'), True])
+def test_cook_memory_rejected_before_context_or_build_writes(monkeypatch, value):
+    from atelier import cli
+    context_type = build.Context
+    monkeypatch.setattr(build, 'Context', lambda *a, **kw: pytest.fail('invalid ceiling reached Context'))
+    monkeypatch.setattr(cli, 'build', lambda *a, **kw: pytest.fail('invalid ceiling reached build'))
+    with pytest.raises(ValueError, match='Cook memory ceiling'):
+        build.build('fixture', ['unreal.cook'], cook_memory_gib=value)
+    with pytest.raises(ValueError, match='Cook memory ceiling'):
+        context_type('fixture', cook_memory_gib=value)
+    if type(value) is not bool:
+        with pytest.raises(SystemExit, match='Cook memory ceiling'):
+            cli.main(['build', 'fixture', 'unreal.cook', f'--cook-memory-gib={value}'])
+
+
+@pytest.mark.parametrize('target', ['unreal.cook', 'unreal.package'])
+@pytest.mark.parametrize('value', [12., 24.])
+@pytest.mark.parametrize('planning', [False, True])
+def test_cook_memory_cli_forwards_only_explicit_selection(monkeypatch, target, value, planning):
+    from atelier import cli, build_plan
+    calls = []
+    forward = lambda *a, **kw: calls.append((a, kw)) or 0
+    monkeypatch.setattr(cli, 'build', forward)
+    monkeypatch.setattr(build_plan, 'show', forward)
+    assert cli.main(['build', 'fixture', target, '--cook-memory-gib', str(value), *(['--plan'] if planning else [])]) == 0
+    assert calls[0][0] == ('fixture', [target])
+    assert calls[0][1]['cook_memory_gib'] == value
+
+
+@pytest.mark.parametrize('selection', [[], ['unreal.compile'], ['unreal.cook', 'unreal.package']])
+def test_cook_memory_rejects_unrelated_or_ambiguous_targets_before_context(monkeypatch, selection):
+    from atelier import cli
+    monkeypatch.setattr(build, 'Context', lambda *a, **kw: pytest.fail('invalid selection reached Context'))
+    with pytest.raises(ValueError, match='exactly unreal.cook or unreal.package'):
+        build.build('fixture', selection, cook_memory_gib=12.)
+    with pytest.raises(SystemExit, match='exactly unreal.cook or unreal.package'):
+        cli.main(['build', 'fixture', *selection, '--cook-memory-gib', '12'])
+
+
+@pytest.mark.parametrize('options', [['--touch'], ['--list'], ['--ddc'], ['--changes'], ['--timings'], ['--recover-cook', 'old']])
+def test_cook_memory_rejects_nonexecution_modes(monkeypatch, options):
+    from atelier import cli
+    monkeypatch.setattr(cli, 'build', lambda *a, **kw: pytest.fail('invalid mode reached build'))
+    with pytest.raises(SystemExit, match='cook/package execution or a read-only plan'):
+        cli.main(['build', 'fixture', 'unreal.cook', '--cook-memory-gib', '12', *options])
+
+
+def test_cook_memory_does_not_change_command_identity_argv_or_other_fingerprints(context, tmp_path, monkeypatch):
+    recipe = tmp_path / 'build.py'
+    recipe.write_text("from pathlib import Path\nfrom atelier.build import Step, Python, UnrealCompile, UnrealPackage\ndef steps(ctx):\n return [Step('source', [Python(Path('source.py'))]), Step('unreal.compile', [UnrealCompile('Fixture')]), Step('unreal.cook', [UnrealPackage('Fixture', Path('archive'))], heavy=True)]\n")
+    monkeypatch.setattr(build.paths, 'game_dir', lambda _: tmp_path)
+    def identities():
+        steps = build.load_recipe('fixture').steps(context)
+        return [(repr(s.commands[0]), build.fingerprint(s, {})) for s in steps], steps[-1].commands[0].argv(context)
+    context.cook_memory_gib = None
+    before = identities()
+    for ceiling in (10., 12., 24.):
+        context.cook_memory_gib = ceiling
+        assert identities() == before
+
+
+def test_selected_cook_memory_never_changes_other_native_command_guard(context, monkeypatch):
+    context.cook_memory_gib = 18.
+    command = build.UnrealCompile('Fixture')
+    step = build.Step('unreal.compile', [command], heavy=True)
+    calls = []
+    def guard(argv, folder, **kwargs):
+        calls.append(kwargs)
+        folder.mkdir(parents=True)
+        (folder / 'stdout.log').write_text('compiled')
+        return 0
+    monkeypatch.setattr(build.guarded, 'run', guard)
+    build.run_command(context, step, command, io.StringIO())
+    assert calls[0]['kind'] == 'compile'
+    assert 'limit_gib' not in calls[0] and 'compile_memory_gib' not in calls[0]
+
+
+def test_explicit_cook_memory_requires_heavy_package_before_environment(context):
+    context.cook_memory_gib = 12.
+    with pytest.raises(ValueError, match='normal heavy compile guard lifecycle'):
+        build.run_command(context, build.Step('cook', [], heavy=False), build.UnrealPackage('Fixture', Path('archive')), io.StringIO())

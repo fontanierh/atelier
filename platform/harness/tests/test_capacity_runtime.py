@@ -222,3 +222,69 @@ def test_incomplete_profile_set_cannot_fall_back_for_other_work(client):
     client[2]()
     with pytest.raises(ValueError, match='job, game and compile'):
         runtime.configured_session(kind='job', limit_gib=10, timeout=0)
+
+
+@pytest.mark.parametrize('ceiling', [10., 12., 12.0001, 18., 24.])
+def test_explicit_cook_compile_reserves_entire_selected_guard_without_profile_change(client, monkeypatch, ceiling):
+    configure_schema(client, monkeypatch, 2)
+    path, value, write, _ = client
+    write()
+    before = path.read_bytes()
+    monkeypatch.setitem(sys.modules, 'atelier.harness.capacity_client', SimpleNamespace(
+        AdmissionSession=lambda socket, request, **kwargs: SimpleNamespace(request=request, **kwargs)))
+    session = runtime.configured_session(kind='compile', limit_gib=ceiling, compile_memory_gib=ceiling,
+                                         timeout=14400, command=['RunUAT.sh', 'BuildCookRun'])
+    assert session.guard_limit_gib == ceiling
+    assert session.request['resources']['memory_mib'] == math.ceil(ceiling * 1024)
+    assert session.request['resources']['cpu_millis'] == 8000
+    assert session.request['performance'] is True and session.request['phase'] == 'compile'
+    assert session.request['seconds'] == 14400
+    assert path.read_bytes() == before
+    runtime.validate_session_profile(session, kind='compile', command=['RunUAT.sh', 'BuildCookRun'], limit_gib=ceiling)
+
+
+@pytest.mark.parametrize('options', [dict(kind='game'), dict(kind='job'), dict(compile_memory_gib=25.),
+    dict(compile_memory_gib=9.), dict(compile_memory_gib=float('nan')), dict(compile_memory_gib=float('inf')),
+    dict(compile_memory_gib=True), dict(limit_gib=10.)])
+def test_cook_compile_opt_in_rejects_invalid_or_mismatched_selection(client, options):
+    with pytest.raises(ValueError, match='Explicit cook ceiling'):
+        runtime.configured_session(**(dict(kind='compile', limit_gib=12., compile_memory_gib=12., timeout=60) | options))
+    assert client[3] == []
+
+
+@pytest.mark.parametrize('schema', [1, 3])
+def test_cook_compile_opt_in_does_not_resize_legacy_or_maintenance_profiles(client, monkeypatch, schema):
+    configure_schema(client, monkeypatch, 2 if schema == 3 else schema)
+    if schema == 3:
+        client[1].update(schema=3, mode='sealed-maintenance', seal_policy_sha256='a' * 64)
+    client[2]()
+    with pytest.raises(ValueError, match='full-capacity'):
+        runtime.configured_session(kind='compile', limit_gib=12., compile_memory_gib=12., timeout=60)
+    assert client[3] == []
+
+
+def test_cook_compile_opt_in_cannot_fall_back_when_configuration_is_absent(client, monkeypatch):
+    from atelier.harness import capacity_compat
+    monkeypatch.setattr(capacity_compat, 'read', lambda: None)
+    with pytest.raises(ValueError, match='full-capacity'):
+        runtime.configured_session(kind='compile', limit_gib=12., compile_memory_gib=12., timeout=60)
+    assert client[3] == []
+
+
+def test_guarded_public_cook_ceiling_reaches_automatic_session_without_native_work(client, monkeypatch, tmp_path):
+    monkeypatch.delitem(sys.modules, 'atelier.harness.capacity_client')
+    from atelier.harness.safety import guarded
+    calls = []
+    class AtConfiguration(Exception):
+        pass
+    def configure(**kwargs):
+        calls.append(kwargs)
+        raise AtConfiguration
+    monkeypatch.setattr(runtime, 'configured_session', configure)
+    with pytest.raises(AtConfiguration):
+        guarded.run(['RunUAT.sh', 'BuildCookRun'], tmp_path / 'guard', kind='compile',
+                    limit_gib=18., compile_memory_gib=18., timeout=14400)
+    assert calls[0]['kind'] == 'compile'
+    assert calls[0]['limit_gib'] == calls[0]['compile_memory_gib'] == 18.
+    assert calls[0]['timeout'] == 14400
+    assert not (tmp_path / 'guard').exists()

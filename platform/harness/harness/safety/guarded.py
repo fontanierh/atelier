@@ -247,7 +247,7 @@ def completion_watches(tree):
 def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, invocation_id=None, worker_binding=None,
-        completion_path=None):
+        completion_path=None, compile_memory_gib=None):
     """@cc [owner:fontanierh,label:correctness] diagnostic-execution-timings
     Timing diagnostics MUST NOT certify outputs or guess command execution duration. Publication
     MUST require clearing the prior report; failure to clear MUST suppress publication without
@@ -284,6 +284,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
                                 on_slot, watch, progress, track_tree, fitting_gib, pass_fds, aggregate_tree,
                                 on_poll, admission, performance, worker_binding=worker_binding, _timings=events,
                                 _requeue=previous, _queue_deadline=entered + 1800.,
+                                **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}),
                                 **({'_completion': completion} if completion is not None else {}))
                 break
             except CapacityOfferLost as error:
@@ -352,7 +353,7 @@ def run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gi
 def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_gib=10., small_gib=None, kind='job',
         on_slot=None, watch=(), progress=0., track_tree=False, fitting_gib=None, pass_fds=(), aggregate_tree=False,
         on_poll=None, admission=None, performance=False, *, worker_binding=None, _timings, _completion=None,
-        _requeue=None, _queue_deadline=None):
+        _requeue=None, _queue_deadline=None, compile_memory_gib=None):
     """@cc [owner:fontanierh,label:safety] compile-tree-monitor-lifecycle
     Aggregate mode MUST release the command only after a matching monitor readiness receipt, and MUST
     require a successful matching terminal receipt proving observed tree exit before returning success.
@@ -374,6 +375,8 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     1800-second admission deadline, and MUST NOT repeat useful execution or certify success.
     Capacity cleanup MUST follow owned-child cleanup/reap and precede guard detachment.
     Requested performance exclusion MUST reach the configured broker or already belong to an explicit session.
+    Explicit cook ceilings MUST retain automatic full compile admission and forward the same selected
+    ceiling to its reservation, child guards and aggregate guard; other compile requests MUST not resize.
     Optional completion evidence MUST contain the positively waited launcher and matching terminal
     aggregate receipt. Its caller MUST publish it only after successful cleanup and capacity close.
     A typed broker completion observation MUST NOT grant continued execution. The actual bound
@@ -408,17 +411,22 @@ def _run(command, folder, timeout=0., purpose=None, lock=True, env=None, limit_g
     if performance and admission is not None and getattr(admission, 'request', {}).get('performance') is not True:
         raise ValueError('explicit capacity admission must request performance exclusion')
     automatic = admission is None
+    if compile_memory_gib is not None and admission is not None:
+        raise ValueError('Cook ceiling selection requires an automatic full compile session')
     if admission is None:
         from atelier.harness.capacity_runtime import configured_session
         admission = configured_session(kind=kind, limit_gib=limit_gib, timeout=timeout, folder=folder,
                                        purpose=purpose or (Path(command[0]).name if command else kind),
-                                       performance=performance, command=command, small_gib=small_gib)
+                                       performance=performance, command=command, small_gib=small_gib,
+                                       **({'compile_memory_gib': compile_memory_gib} if compile_memory_gib is not None else {}))
         if admission is not None and getattr(admission, 'mode', None) == 'capacity':
             selected = getattr(admission, 'guard_limit_gib', None)
             if selected is not None:
                 if type(selected) not in (int, float) or selected not in (limit_gib, min(limit_gib, SMALL_LIMIT_GIB)):
                     raise ValueError('Configured guard ceiling must retain the nominal or established SMALL envelope')
                 limit_gib = selected
+    if compile_memory_gib is not None and getattr(admission, 'mode', None) != 'capacity':
+        raise ValueError('Cook ceiling selection requires full-capacity admission')
     if _requeue is not None:
         if not automatic or admission is None or admission.mode != 'capacity':
             raise ValueError('Capacity requeue requires an automatic full session')

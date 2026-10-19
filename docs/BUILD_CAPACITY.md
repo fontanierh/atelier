@@ -125,6 +125,15 @@ guards; do not add the machine's host reserve again. A game normally uses 10 GiB
 `atelier play GAME --memory-gib 12` requests and reserves a larger ceiling for that session; the supported range is 10–14 GiB.
 Do not edit machine profiles to use it. Quit test games promptly.
 
+An explicit package cook can select its own invocation ceiling without changing source or compiled outputs:
+`atelier build GAME unreal.package --cook-memory-gib 12` (also `unreal.cook`), within 10–24 GiB.
+Only the UAT package command receives that ceiling; prerequisite compiles/imports retain their normal limits.
+The selected cook uses full-capacity compile admission and reserves at least its entire child/tree ceiling,
+with the existing CPU exclusion and fresh host-headroom check. Other compile requests do not resize.
+The default stays 10 GiB. This execution policy does not change UAT argv, command identity or build keys,
+and does not force an already-current cook. It cannot combine with `--touch` or certification-only recovery.
+A read-only plan accepts the option and records the selected ceiling without acquiring capacity.
+
 Disk is telemetry only. Jobs can still fail when disk fills; admission does not protect against that.
 The Content installer checks staging space before installation, but ordinary package/cook jobs have no
 additional broker disk limit. Optional I/O tokens describe contention, not free space.
