@@ -1,55 +1,40 @@
 # Autonomous NPCs in Yorimichi
 
-Status: design proposal. Nothing in this document is implemented yet.
+Status: design proposal. Nothing here is implemented yet.
 
-Date: 2026-10-19.
+Last updated: 2026-10-20.
+
+Summary: NPCs choose from context-built affordances on a shared tick, remember and gossip, and live inside a job, rent, and housing economy. Hot NPCs run on Luna; the rest run on Qwen 3.7 Flash. Blended cost is about $0.0088 per agent-hour.
 
 ## Goal
 
-Yorimichi should have a town of autonomous NPCs with their own identity, jobs, homes, goals, needs, and social life. They keep living when the player is not interacting with them. The player can watch them, talk to them, and change their circumstances.
+Yorimichi should have a town of NPCs with their own identity, jobs, homes, goals, needs, and social life. They keep living when the player is away. The player can watch them, talk to them, and change their circumstances.
 
-The design must work with hosted inference only. The target is 200 NPCs, one instance per NPC. Local models are not an option.
+Hosted inference only. Target: 200 NPCs, one instance per NPC.
 
 ## Three layers
 
-| Layer | Responsibility | Cadence |
+| Layer | Does | Cadence |
 | --- | --- | --- |
-| Unreal | Movement, animation, collision, schedule execution, shared clock | Every frame |
-| Decision model | Fast choices from the concrete affordances in range: open a door, talk to Mira, board the train, stay aboard, wait | On a decision deadline or an event |
-| Language model | Speech, periodic reflection, medium- and long-term planning | When someone speaks or a reflection is due |
+| Unreal | movement, animation, collision, schedules, shared clock | every frame |
+| Decision model | picks one concrete action from what is in range | decision deadline or event |
+| Language model | speech, reflection, planning | when someone speaks or reflection is due |
 
-The decision model is the fast cognitive layer. The language model is the slow cognitive layer. Unreal is the reflex layer.
+Unreal is the reflex layer. The decision model is fast cognition. The language model is slow cognition.
 
 ## Identity
 
 Each NPC has a fixed sheet and a changing state.
 
-The fixed sheet contains:
+Fixed: name, age, origin, home city, personality, values, fears, secrets, voice, skills, work history, one life goal, and dispositions such as whether they would steal when starving or betray someone for money.
 
-- name, age, origin, and home city
-- personality traits and values
-- fears, secrets, and voice style
-- skills and work history
-- a life goal
-- a compact set of behavioral dispositions, such as whether they would steal if starving, risk their life for a friend, betray someone for money, lie, lead, or leave town
+Changing: mood, energy, hunger, money, job, home, relationships, reputation, beliefs, current intention, recent memories, happiness.
 
-The changing state contains:
-
-- mood, energy, and hunger
-- money, job, and home
-- relationships and reputation
-- knowledge and beliefs
-- current intention
-- recent memories
-- happiness score
-
-Identity is authored once and stored as data. The language model can help write the prose bio and voice guide during development, but identity is not generated at runtime.
+Identity is authored as data, not generated at runtime. Authoring tools can draft the prose.
 
 ### Life goals
 
-Life goals are structured, not free text. A goal has stages, progress, priority, and secrecy.
-
-Example:
+Goals are structured state machines, not free text. Each has stages, progress, priority, and secrecy.
 
     Goal: open a bakery in Hidamari.
     Stage 1: save 300 coins. Progress: 120.
@@ -57,410 +42,222 @@ Example:
     Stage 3: get a permit.
     Stage 4: open and hire one clerk.
 
-The decision model is weak at multi-step planning. It should choose the next action inside the current stage, not invent the whole plan. A deterministic goal state machine owns the stages.
+The deterministic goal machine owns the stages. The model chooses the next action inside the current stage. It does not invent the plan.
 
-## Knowledge and beliefs
+## Knowledge and memory
 
-The world has a shared gazetteer: places, routes, prices, job board, train schedule, shops, and public facts.
+The world has a shared gazetteer: places, routes, prices, the job board, train schedules, shops, public facts.
 
-Each NPC has a personal knowledge graph. A fact has a source, a confidence, and possibly a false belief. NPCs know their hometown, workplace, routes, and a few rumors. They do not know everything. The mind sees their beliefs, not the ground truth. The player can teach them things, lie to them, or spread rumors.
+Each NPC has a personal knowledge graph. A fact has a source, confidence, and possibly a false belief. NPCs know their hometown, workplace, routes, and a few rumors. The mind sees beliefs, not ground truth. The player can teach, lie, and spread rumors.
 
-## Memory
+Memory has four parts: recent events verbatim, older events summarized, conversations and overheard speech, and important facts and relationships retrieved when relevant. Each memory stores who, what, where, when, and whether it was direct or overheard.
 
-Memory has four parts:
-
-- recent events, kept verbatim
-- older events, summarized and compacted
-- direct conversations and overheard speech
-- important facts and relationships, retrieved when relevant
-
-Every memory stores who, what, where, when, and whether it was direct or overheard. The language model writes the summaries during reflection. The decision model receives a compact working set: the current situation, the plan checkpoint, and the most relevant memories.
-
-The full memory can be large. The decision prompt should stay small.
+Reflection writes the summaries. The decision prompt gets a compact working set: situation, plan checkpoint, and the few relevant memories.
 
 ## Talking and hearing
 
-Every NPC who speaks uses a language model. That includes conversations with the player and conversations with other NPCs.
+Every NPC who speaks uses a language model, including NPC-to-NPC talk.
 
-When an NPC decides to talk:
+1. The decision model picks a target and an intent.
+2. The language model writes the line from persona, relationship, memories, and intent.
+3. The line goes to the direct listener and everyone in hearing range.
+4. Every listener stores it in memory. Listening is free.
+5. A listener calls the model only if it decides to respond.
 
-1. The decision model chooses the target and the intent, for example: talk to Mira about the bakery job.
-2. The language model writes the line using the speaker's persona, relationship, relevant memories, and the chosen intent.
-3. The line goes to the direct listener and to every NPC within the hearing radius.
-4. Every listener stores the line in their own memory and context.
-5. A listener calls the language model only if they decide to respond.
-
-A conversation is a short turn-taking session with a lock. One NPC speaks, the direct listener can respond, and nearby NPCs hear the exchange. Overhearers can later join if the decision model chooses to. Walls and rooms can block hearing; start with a radius plus a same-area check.
-
-The speaker pays for one language-model call. The listeners pay nothing to hear the line. They pay later only if their larger context makes a future call bigger, or if they choose to speak.
-
-Example: Mira tells Bob that the bakery is hiring. Bob hears it directly. The baker standing nearby hears it too. Both remember it. Later, the baker can mention it to someone else. News, gossip, warnings, and secrets spread through the town this way.
+A conversation is a short turn-taking session with a lock on both NPCs. Overhearers can join later. Start with a radius plus a same-area check; walls can refine it.
 
 ## Actions and affordances
 
-The decision model does not choose from a fixed verb list like eat, sleep, or work. It chooses from the concrete interactions available at that moment.
+The model does not choose from a fixed verb list. It chooses from the interactions available at that moment.
 
-The simulation maintains an affordance registry. Each object, actor, vehicle, or place exposes the actions it supports:
+Each object, actor, vehicle, or place exposes actions:
 
 - Door: open, close, enter, leave, lock, knock.
-- Food: eat, buy, cook.
-- Carried item: eat, drink, read, use, give, drop.
+- Food or carried item: eat, drink, read, use, give, drop.
 - Bed: sleep, rest.
 - Job board: browse, apply.
 - Shop counter: buy, sell, work a shift.
-- Workstation: work a shift.
-- Train: board, ride, disembark.
-- Zeppelin: board, ride, disembark.
+- Workstation: work.
+- Train or zeppelin: board, ride, disembark.
 - NPC: talk, ask, help, trade.
 - Bench: sit, rest, sleep rough.
-- Home: enter, leave, sleep, store items.
+- Home: enter, leave, sleep, store.
 
-Hunger and sleep are needs, not actions. The NPC satisfies hunger by interacting with food, and sleep by interacting with a bed. If no bed is available, the ground or a bench offers sleep rough.
+Hunger and sleep are needs, not actions. The NPC eats by interacting with food and sleeps by interacting with a bed. If no bed is available, the ground or a bench offers sleep rough.
 
-At each decision, the simulation builds the action list from context:
+The action list is built from context: find what is in range, ask what it offers, filter by preconditions, add wait and talk, add reachable destinations, then rank and cap. Above about 16 candidates, use a two-stage choice: category first, then target.
 
-1. Find the objects and actors in range.
-2. Ask each one which actions it currently offers.
-3. Filter by preconditions: is it open, is it locked, is the NPC allowed, is the vehicle docked, does the NPC have money, is the shift active?
-4. Add the always-available actions: wait, and talk to a nearby NPC if one is present.
-5. Add movement options: the relevant reachable destinations, such as home, work, the station, the current goal, or a nearby exit.
-6. Rank and cap the list. If there are more than about 16 candidates, use a two-stage choice: first category (talk, interact, move, wait), then the concrete target.
+No object in range means no interact action. Three objects mean three options. Context can remove actions: an in-transit zeppelin offers only talk, stay, and look; a conversation offers talk or end; a shift offers work actions.
 
-If nothing is in range to interact with, there is no interact action. If three things are in range, each becomes a separate option. The NPC can always act on what is around them, but only through the actions that object exposes.
+Each option carries an id, label, target, preconditions, expected effects, and risk. The model picks one; the simulation validates and executes it. The model cannot invent an action that was not offered.
 
-Examples:
+### Decision state
 
-- At home: open the door, enter home, sleep in bed, eat the bread, leave for work.
-- On the street: talk to Mira, board the train, enter the bakery, walk to the station.
-- At the zeppelin dock: board the zeppelin to Hidamari, talk to the pilot, walk to the market.
-- Aboard a moving zeppelin: talk to a passenger, stay aboard, look out the window. Disembark appears only when docked.
-- Aboard a train: talk to a passenger, stay aboard, disembark at the next stop when the train is stopped.
+A tick state of about 750 tokens is enough: 608 for state plus 137 for options. Fields: name, day, time, location, current action, ETA, shift, needs, money, rent, wage, job, home, goal, traits, relationships, known facts, nearby actors, inventory, memories, plan, observation.
 
-Context can remove actions. In a moving vehicle, the movement options are replaced by the vehicle's stops. Aboard an in-transit zeppelin, only talk, stay, and look are available. In a conversation, only talk or end the conversation. In a shop during a shift, the work actions are available; leaving is allowed but has consequences.
+Example options: work the counter, buy bread, talk to Bob, read the job board, walk to the station, go home and sleep, wait.
 
-Each option carries an id, label, target, preconditions, expected effects, and risk. Expected effects include time, money, hunger, energy, happiness, and relationship changes. The decision model picks one option; the simulation validates it again and executes it. The model cannot invent an action that was not offered.
+## Needs and happiness
 
-## Needs, sleep, and happiness
+NPCs get tired and hungry. Sleeping at home restores energy. Sleeping rough gives poor rest and a penalty.
 
-NPCs get tired and hungry. Sleeping at home restores energy. Sleeping on the street gives poor rest and a penalty.
-
-Each NPC has a happiness score: an unbounded unsigned integer, clamped at zero.
-
-The score is the lifetime record. Decisions use the expected change and a recent mood value, so a rich NPC still cares about a bad night's sleep. The recent mood is a bounded 0 to 100 value based on the last few days.
-
-Example deterministic rewards:
+Happiness is an unbounded unsigned integer, clamped at zero. It is the lifetime record. Decisions use expected change plus a bounded recent mood, so a rich NPC still cares about a bad night.
 
 | Event | Change | Limit |
 | --- | ---: | --- |
 | Sleep at home | +6 | once per day |
 | Sleep on the street | -12 | once per day |
-| Pay rent | +2 | once per rent period |
-| Miss rent | -25 | once per period |
+| Pay rent | +2 | per rent period |
+| Miss rent | -25 | per period |
 | Get evicted | -60 | once |
-| Complete a work shift | +4 | once per shift |
+| Complete a shift | +4 | per shift |
 | Complete a goal stage | +40 | per stage |
 | Complete a life goal | +250 | once |
 | Go hungry | -2 | per hour |
-| Good conversation | +1 | once per pair per hour |
+| Good conversation | +1 | per pair per hour |
 | Help someone | +5 | per act |
 
-The NPC knows the goal and the next step, not the exact reward formula. They know simple consequences: sleeping at home is better than sleeping outside, and missing rent risks eviction.
+The NPC knows the goal and the next step, not the formula. It knows simple consequences: home sleep beats the street, missing rent risks eviction.
 
-Each action option can carry a precomputed expected change and a short label, such as "Sleep in your bed: +6, safe" or "Sleep rough here: -12, cold." The decision model chooses the action; the simulation does the arithmetic.
+Each option carries a precomputed expected change and a short label: "Sleep in your bed: +6, safe" or "Sleep rough here: -12, cold". The model chooses; the simulation does the arithmetic. Use cooldowns, diminishing returns, and daily caps so nothing can be farmed.
 
-Use cooldowns, diminishing returns, and daily caps to prevent farming. Do not let an NPC sleep all day for a reward or repeat the same conversation for points.
+## Economy and housing
 
-## Economy and jobs
+The world starts with fixed base jobs: shop clerk, cafe worker, station attendant, dock worker, groundskeeper. Each job has a title, employer, location, shift, wage, requirements, capacity, and status.
 
-The world starts with a fixed list of base jobs: shop clerk, cafe worker, station attendant, dock worker, groundskeeper, and so on.
+The job board lists vacancies. NPCs apply when they need money or want a better job. A vacant job goes to an applicant who meets the requirements; if several apply, pick by skill, reliability, or first come. Add an application cooldown and a rejection memory.
 
-Jobs have:
+The world pays wages. Rent, food, taxes, and purchases at world-owned stores take money back. Log every source and sink so the money supply can be audited.
 
-- title
-- employer
-- location
-- shift start and end
-- wage
-- requirements
-- capacity
-- status
+Stores need a clerk to open. No clerk means closed and no revenue. Do not tie critical transport to staffing at first; a missing conductor can break the player's travel.
 
-The job board lists vacancies. NPCs apply when they need money or want a better job. If a job is vacant and the NPC meets the requirements, they get it. If several apply, the employer picks by skill, reliability, or first come. Add an application cooldown and a rejection memory so NPCs do not spam the board.
+Every NPC has a canonical home. Rent is due regularly. Failure to pay means eviction; the home becomes available and another NPC can take it. The evicted NPC is homeless until they recover.
 
-The world pays wages. Rent, food, taxes, and purchases from world-owned stores take money back out. Log every source and sink so the money supply can be checked.
+Later, NPCs can start businesses: save capital, find a storefront, open, hire. That falls out of the goal system.
 
-Stores need a clerk to open. If the clerk is absent, the store is closed and earns nothing. Avoid tying critical transport to staffing at first; a missing train conductor can break the player's travel.
+### Housing audit
 
-Every NPC has a canonical home. Rent is due regularly. If they cannot pay, they are evicted. The home becomes available and another NPC can take it. The evicted NPC becomes homeless until they recover.
+| Region | Strict houses | Other residential | Notes |
+| --- | ---: | --- | --- |
+| Hidamari | 177 `HD_House_*` | 24 apartments, 22 machiya | 437 building instances total |
+| Momiji | 2 cottages | 1 tea house | possibly living quarters |
+| Belmonte | 11 (7 villas, 4 farmhouses) | 39 town blocks | plus civic and hippodrome meshes |
+| Brinecove | 131 townhouses | 39 shacks, 43 taverns | 170 dwellings with shacks, 213 with taverns |
 
-Later, NPCs can start businesses: save capital, find a vacant storefront, open, and hire. This is a natural extension of the goal system.
+Strict total across the four regions: 321 houses. That is enough for 200 NPCs if apartments, machiya, and shacks are used, with room for vacancies and eviction.
 
 ## Decision loop
 
-The world runs on a shared clock. A social tick runs at a fixed rate, for example 1 Hz. All NPCs see the same tick and events in the same order. Movement and animation run inside Unreal at the normal frame rate.
+The world runs on a shared clock. A social tick runs at a fixed rate, for example 1 Hz. All NPCs see the same tick and events in the same order. Movement and animation run in Unreal at frame rate.
 
-Each NPC has a next_decision_at time. When it comes up, or when an event interrupts, the simulation builds a compact state:
+Each NPC has a next_decision_at. When it arrives, or when an event interrupts, the simulation builds the compact state and asks a few narrow questions: how urgent is this, and which option do I pick? Use confidence: above the threshold, act; below, continue or idle.
 
-- identity and current mood
-- place, time, job, money, and home
-- nearby people and available places
-- current plan checkpoint
-- recent and relevant memories
-- the current observation
+Walk, path, and collision belong to Unreal. The mind gets progress events: arrived, blocked, interrupted, path failed. A failed path triggers a new decision. A new observation is injected as an interruption: "You are still heading to the mill. You see Bob on the road. You are not in a hurry."
 
-Then the decision model answers a few narrow questions:
+Observation injection needs a cooldown and a novelty check, or NPCs stop every few meters to talk.
 
-- Noul: "Am I hungry?" "Is the person in front of me someone I know?" "Is my shift starting soon?"
-- Choice: "What do I do next?" with the 8 to 16 concrete options built from the current affordances.
-- Score: "How urgent is this?" or "How much do I want to talk to this person?"
+Decisions run asynchronously with a state version. Apply the answer only if the state is still current; otherwise discard or re-decide.
 
-Use confidence. Above the threshold, act. Below it, continue the current action or idle. If the choice is talk, pass the target and intent to the conversation manager. If the choice is interact, run the object action. If the choice is go somewhere, Unreal handles the path.
+When two NPCs meet, create one encounter event with a deterministic initiator, not two independent decisions. Lock both for the conversation.
 
-While an NPC is walking, Unreal owns the path. The mind receives progress events: arrived, blocked, interrupted, path failed. If the path fails, re-decide. If a new observation arrives, inject it as an interruption: "You are still heading to the mill. You see Bob on the road. You are not in a hurry."
+For determinism: fixed seed, fixed event order, and a log of every request and response. That lets you replay a day.
 
-Observation injection needs a cooldown. Otherwise NPCs stop every few meters to talk. Use a per-pair conversation cooldown and a novelty check.
+## Tiers and models
 
-Decisions can run asynchronously. Send a request with a state version; apply the answer only if the state is still current. If the answer is stale, discard it or re-decide.
+Two tiers keep the bill and the latency budget predictable:
 
-## Shared clock and scale
-
-The shared clock makes encounters ordered and reproducible. When two NPCs meet, create one encounter event with a deterministic initiator, not two independent decisions. Put a conversation lock on both so they cannot start another conversation mid-exchange.
-
-For determinism, use a fixed seed, a fixed event order, and log every decision request and response. That lets you replay a day and see why an NPC did something.
-
-Use simulation level of detail. Nearby NPCs get full cognition. Distant NPCs follow schedules and update the economy at day boundaries. When the player approaches, promote them to full simulation. The shared clock still applies when they are co-simulated.
-
-Two tiers keep the bill predictable:
-
-| Tier | Share of 200 NPCs | Tick | Input | Notes |
+| Tier | Share | Tick | State | Model |
 | --- | ---: | --- | --- | --- |
-| Hot | 10% (about 20) | every 60 s | full state, observations, conversations | Player is close, or the NPC is in a plot thread |
-| Cold | 90% | every 5 min | compressed state and current schedule | Still moves, works, pays rent, and reacts |
+| Hot | 20% | every 60 s | full observations and conversations | Luna |
+| Cold | 80% | every 5 min | compressed state and schedule | Qwen 3.7 Flash |
 
-Reactions are event-driven in both tiers. An NPC who is spoken to, blocked, or robbed gets a decision on the next social tick regardless of its regular cadence. Promotion and demotion happen at tick boundaries so an NPC never has two pending decisions. Cold NPCs lean on their schedule between ticks: if the plan says "walk to the bakery and open at eight", they do that without a new call.
+Reactions are event-driven in both tiers. An NPC who is spoken to, blocked, or robbed answers on the next social tick regardless of cadence. Promotion and demotion happen at tick boundaries so no NPC has two pending decisions. Cold NPCs lean on their schedule between ticks.
 
-Fully off-screen NPCs can drop further, to schedule-only execution with no model call until something changes. That is optional, and it is what makes a 200-NPC town affordable at night when the player is asleep in game.
+Fully off-screen NPCs can drop to schedule-only execution, with no call until something changes.
 
-## Hosted model stack
+## Hosted models
 
-All inference is hosted. No local models.
+All inference is hosted. Four lanes:
 
-There are four lanes with different needs:
-
-| Lane | Trigger | Budget | Latency need | Model |
+| Lane | Trigger | Budget | Latency | Model |
 | --- | --- | ---: | --- | --- |
-| Reaction | someone speaks, path blocked, sudden event | 2K | under 1 s | JEV |
-| Tick | regular decision deadline | 8K | a few seconds | Luna, minimal reasoning |
-| Reflection | every 10 in-game minutes | 32K | tens of seconds | Luna, medium reasoning |
-| Chatter | an NPC says a line | 2K to 8K | under 2 s | Luna cached, or a cheap OpenRouter model |
+| Reaction | speech, blocked path, sudden event | 2K | under 1 s | JEV |
+| Tick | regular deadline | 8K | a few seconds | Luna or Qwen |
+| Reflection | every 10 in-game minutes | 32K | tens of seconds | Luna or Qwen |
+| Chatter | an NPC says a line | 2K | under 2 s | cheap model |
 
-Reaction is the only lane where latency changes how the game feels. JEV answers in about 0.3 s and costs $0.042 per 1M input with free output, so a 2K reaction costs $0.000084. That is cheap enough to spend on responsiveness.
+JEV is $0.042 per 1M input with free output and answers in about 0.3 s. A 2K reaction costs $0.000084.
 
-This split also answers the "same model for everything" question. A tick that thinks for ten seconds is a tick that missed its minute. A reaction that thinks for ten seconds looks broken to the player. A reflection that thinks for ten seconds is fine.
+Luna is $0.10 per 1M input, $0.01 cached, $0.50 output, and about 1.9 s for structured output.
 
-### Decisions
+Qwen 3.7 Flash on Alibaba us-east-1 is $0.0345 input, $0.0069 cached, $0.1495 output. OpenRouter measures p50 728 ms, p90 1.84 s, p99 4.56 s on short probes; an 8K tick lands around 1.5 to 2 s at p50. It is not in EU in-region routing, so calls from Paris cross regions.
 
-Tick and reflection both use Luna (`gpt-6-luna`): $0.10 per 1M input, $0.01 per 1M cached input, $0.50 per 1M output. The state is mostly stable between ticks, so a 90% cache hit rate is realistic. Caching is the largest cost lever after state size.
+Hot-tier and player-facing speech uses Luna. Ambient cold-tier chatter uses the cheap model.
 
-The alternative is OpenAI's Decisions API, which bills $0.10 per 1M input and nothing for output or cache. It is simpler to account for but loses the cached-input discount, so it is worse once the prefix is stable.
+### Cheaper alternatives
 
-Laya Studio is still worth revisiting if the decision state is tiny. At 1K input and $0.0357 per 1M it is very cheap, but a 1,024-token model cannot hold the state described here.
-
-### Cheaper than Luna on OpenRouter
-
-Luna is $0.10 per 1M input and $0.50 per 1M output. These models are cheaper on an 8K input, 100 output call, with no cache:
-
-| Model | Input per 1M | Output per 1M | 8K + 100 out | Context |
-| --- | ---: | ---: | ---: | ---: |
-| `~deepseek/deepseek-v4-flash-latest` | $0.0065 | $0.45 | $0.000097 | 1.05M |
-| `ibm-granite/granite-4.0-h-micro` | $0.017 | $0.112 | $0.000147 | 131K |
-| `openai/gpt-oss-20b` | $0.018 | $0.09 | $0.000153 | 131K |
-| `inclusionai/ling-3.0-flash` | $0.021 | $0.063 | $0.000174 | 262K |
-| `nex-agi/nex-n2.5-mini` | $0.025 | $0.10 | $0.000210 | 262K |
-| `mistralai/mistral-nemo` | $0.029 | $0.03 | $0.000235 | 131K |
-| `qwen/qwen3.7-flash` | $0.03 | $0.13 | $0.000253 | 1M |
-| `deepseek/deepseek-v4.1-flash` | $0.0352 | $0.0112 | $0.000283 | 1.05M |
-| `amazon/nova-micro-v1` | $0.035 | $0.14 | $0.000294 | 128K |
-| `cohere/command-r7b-12-2024` | $0.0375 | $0.15 | $0.000315 | 128K |
-| `inception/mercury-2.5` | $0.04 | $0.15 | $0.000335 | 260K |
-| `z-ai/glm-5.3-flash` | $0.048 | $0.16 | $0.000400 | 1.05M |
-| `meta-llama/llama-3.1-8b-instruct` | $0.05 | $0.08 | $0.000408 | 131K |
-| `openai/gpt-5-nano` | $0.05 | $0.40 | $0.000440 | 400K |
-
-Luna at the same shape, with no cache, is $0.00085. With a 90% cache hit rate it is $0.00021. Uncached, Luna beats every model above. Cheap providers also sell cached input, though, and two of them undercut Luna once the cache is warm:
-
-| Model | Provider | In/M | Out/M | Cache/M | 8K + 100, 90% cache |
+| Model | Provider | In/M | Cache/M | Out/M | 8K tick, 90% cache |
 | --- | --- | ---: | ---: | ---: | ---: |
-| gpt-oss-20b | Darkbloom, fp8 | $0.018 | $0.09 | $0.009 | $0.000088 |
-| qwen3.7-flash | Alibaba, us-east-1 | $0.0345 | $0.1495 | $0.0069 | $0.000092 |
-| gemma-3-4b | Parasail, bf16 | $0.04 | $0.05 | $0.02 | $0.000181 |
-| gemma-4-26b-a4b | Darkbloom | $0.042 | $0.22 | $0.021 | $0.000207 |
-| Luna | OpenAI | $0.10 | $0.50 | $0.01 | $0.000210 |
-| qwen3.5-9b | Darkbloom, fp4 | $0.08 | $0.13 | $0.04 | $0.000317 |
-| gemma-3-12b | DeepInfra, bf16 | $0.05 | $0.15 | none | $0.000415 |
+| gpt-oss-20b | Darkbloom fp8 | $0.018 | $0.009 | $0.09 | $0.000088 |
+| qwen3.7-flash | Alibaba us-east-1 | $0.0345 | $0.0069 | $0.1495 | $0.000092 |
+| gemma-3-4b | Parasail bf16 | $0.04 | $0.02 | $0.05 | $0.000181 |
+| Luna | OpenAI | $0.10 | $0.01 | $0.50 | $0.000210 |
+| gemma-3-12b | DeepInfra bf16 | $0.05 | none | $0.15 | $0.000415 |
 
-Two things matter when pinning a provider. First, the model-level price on OpenRouter is the cheapest endpoint, not the endpoint you get; routing can move you to a different provider, quantization, or a broken endpoint. Pin the provider explicitly and allow fallbacks only to endpoints you have tested. Second, the same model can differ in cache support: Qwen 3.7 Flash's base Alibaba endpoint has cache pricing but reports no implicit caching, while its us-east-1 endpoint does.
+Pin the provider. The model-level OpenRouter price is the cheapest endpoint, not the one you get, and the same model varies in quantization, cache support, and uptime. Check implicit caching per endpoint. Gemma 3 has structured output but usually no tool calls; GPT-OSS-20B, Qwen 3.7, Qwen 3.5 9B, and Gemma 4 26B do.
 
-Tool support is uneven at the small end. The Gemma 3 endpoints advertise structured output but mostly not tool calls, so they are chatter models. GPT-OSS-20B, Qwen 3.7 Flash, Qwen 3.5 9B, and Gemma 4 26B on Darkbloom advertise both.
+Official DeepSeek deepseek-flash is $0.15 input, $0.003 cached, $0.60 output off-peak, double at peak (01:00-04:00 and 06:00-10:00 UTC on weekdays). At 90% cache that is $0.00020 per tick, a wash with Luna, and worse at peak. It is not worth switching for price.
 
-Cheapest endpoints worth testing, by lane:
+Avoid 1B to 4B models for action choice. They work as narrow classifiers, not for picking from sixteen affordances. Batch and free variants are not production options.
 
-- Tick: `gpt-oss-20b` on Darkbloom fp8, then `qwen3.7-flash` on Alibaba us-east-1. Both are about 2.4 times below cached Luna at 8K.
-- Chatter: `gemma-3-4b` on Parasail, or the same `gpt-oss-20b` endpoint if you want one model and one provider for everything.
-- Avoid: the $0.04 Gemma 3 12B endpoint, which showed 0% uptime, and fp4 endpoints for action choice until you have measured JSON validity.
+Nothing is verified against Yorimichi states yet. Test 1,000 decisions and 500 lines, and score JSON validity, action validity, and latency, not just price.
 
-The candidates worth testing, in order:
+## Cost
 
-- `openai/gpt-oss-20b` on Darkbloom: cheapest credible structured-output model at this size, with working cache pricing.
-- `qwen/qwen3.7-flash` on Alibaba us-east-1: 1M context, close to Luna's shape, useful if the state grows.
-- `deepseek/deepseek-v4.1-flash`: output is almost free, so it is the best chatter candidate for long lines.
-- `inclusionai/ling-3.0-flash`: cheapest output on the list, but small models tend to over-think and sometimes return empty content.
+Assumptions: 200 NPCs; 20% hot at 1/min on Luna, 80% cold at 1/5min on Qwen; 8K tick with 100 output; 32K reflection with 800 output every 10 min; 12 chat lines per hour; one 2K JEV reaction every 3 min; 90% cache.
 
-Avoid 1B to 4B models for decisions. They are fine as classifiers for narrow questions such as "is this person a threat", not for picking an action from sixteen affordances. Batch and `:free` variants are not production options: rate limits and queueing will show up as NPCs that stop moving.
-
-Nothing here is verified against Yorimichi states yet. Test on 1,000 logged decisions and 500 lines before switching a lane, and score JSON validity, action validity, and latency, not just price.
-
-### Official DeepSeek API
-
-The DeepSeek row in the table above is OpenInference's fp4 endpoint, not DeepSeek's own API. Calling `api.deepseek.com` with the model name `deepseek-flash` costs:
-
-| Token type | Off-peak | Peak |
+| Lane | Hot (Luna) | Cold (Qwen) |
 | --- | ---: | ---: |
-| Input, cache hit | $0.003 | $0.006 |
-| Input, cache miss | $0.15 | $0.30 |
-| Output | $0.60 | $1.20 |
+| Reactions, 20/hour | $0.0017 | $0.0017 |
+| Tick | $0.0126 | $0.0011 |
+| Reflection, 6/hour | $0.0060 | $0.0026 |
+| Chatter, 12 lines/hour | $0.0008 | $0.0003 |
+| **Total per agent-hour** | **$0.0211** | **$0.0057** |
 
-Peak is 01:00 to 04:00 and 06:00 to 10:00 UTC on weekdays, which is 03:00 to 06:00 and 08:00 to 12:00 in Paris. Weekends and Chinese holidays are off-peak all day.
+Blended: **$0.0088 per agent-hour**, or **$1.76 per hour for 200 NPCs**. A two-hour session is $3.51; a 40-hour month is $70.
 
-The cache is automatic, prefix-based, and billed at 2% of the miss price. That makes a 90% cached 8K tick cost $0.00020 off-peak, the same as Luna, and $0.00040 at peak, twice Luna. Uncached it is $0.00126, which is worse than Luna. Break-even against Luna is about 90% prefix reuse, and only off-peak.
+Same cadence, all-Qwen: $0.0066 per agent-hour ($1.32/hour). All-Luna: $0.0131 ($2.62/hour).
 
-The real advantages are 1M context, native tool calls and JSON output, and 2,500 concurrent requests per account. Thinking mode is on by default, so disable it for ticks and keep it for reflection.
-
-### Chatter
-
-| Model | Input per 1M | Output per 1M | Notes |
-| --- | ---: | ---: | --- |
-| Luna, 90% cached | $0.10 | $0.50 | Effectively $0.01 on the cached prefix; hard to beat on short lines |
-| Gemma 4 E4B | $0.02 | $0.10 | 131K context; cheapest practical chatter |
-| GPT-OSS-20B | $0.018 | $0.09 | 131K context; better general chat quality |
-| DeepSeek V4.1 Flash | $0.0352 | $0.0112 | 1M context; near-free output for longer lines |
-| Ling 3.0 Flash | $0.021 | $0.063 | 262K context; test reliability, can over-think |
-
-Use a cheap model for ambient NPC-to-NPC chatter, and Luna for player-facing or story-critical dialogue. A listener who only needs to understand a line does not call a model at all; the line goes into memory as text.
-
-At 2K input and 60 output tokens, Luna with 90% cache costs $0.000068 per line and the cheap models cost about the same. Cheap chatter only pulls ahead when the context is long, the cache hit rate is low, or the lines are long.
-
-### Reasoning
-
-Keep Luna for periodic planning and reflection, with medium reasoning. It reviews recent events, updates the plan checkpoint, and writes the memory summary. Run it every 10 in-game minutes, not every tick. Reflection is the second largest line on the bill after ticks, so raise the interval before raising the token budget.
-
-### Routing and accounting
-
-Route calls through Vercel AI Gateway so the same key can reach JEV, Laya, Gemma, GPT-OSS, and Luna. Record every paid call through atelier.ai.ledger.
-
-## Cost estimates
-
-These are estimates as of October 2026. Prices change; verify before committing.
-
-Assumptions:
-
-- 200 NPCs, one instance per NPC
-- 10% of NPCs tick every 60 s, 90% every 5 min
-- 8K tick input, 100 output, minimal reasoning
-- 32K reflection input, 800 output, every 10 min
-- one JEV reaction every 3 min on average, 2K input, output free
-- 12 chat lines per NPC per hour, 2K to 8K input, 60 output
-- Luna at 90% cached input unless stated
-- no voice synthesis
-
-Per call:
-
-| Call | Cost |
-| --- | ---: |
-| JEV reaction, 2K input | $0.000084 |
-| Luna tick, 8K in and 100 out, 90% cached | $0.000210 |
-| Luna reflection, 32K in and 800 out, 90% cached | $0.001008 |
-| Luna chat line, 2K in and 60 out, 90% cached | $0.000068 |
-| DeepSeek V4.1 Flash line, 2K in and 60 out | $0.000071 |
-
-Per agent-hour:
-
-| Lane | Cost |
-| --- | ---: |
-| Reaction, 20 calls | $0.00168 |
-| Tick, weighted 10/90 | $0.00353 |
-| Reflection, 6 calls | $0.00605 |
-| Chatter, 12 lines | $0.00082 |
-| **Total** | **$0.0121** |
-
-Totals for 200 NPCs:
-
-| Scenario | Per hour | 2-hour session | 40-hour month |
-| --- | ---: | ---: | ---: |
-| Tiered, 90% cache | $2.41 | $4.82 | $96 |
-| Tiered, no cache | $8.06 | $16.13 | $322 |
-| Uniform 1/min, 90% cache | $4.23 | $8.46 | $169 |
-| Tiered, 90% cache, 48 lines/hr | $2.90 | $5.81 | $116 |
-
-Tiering cuts the total bill by about 43%, and the tick line by about 72%. The reduction is larger for the 180 background NPCs, who go from $0.0126 to $0.0025 per hour each. Reflection is not reduced by tiering, so at 10% hot it is the single largest line. Moving reflection to every 15 minutes, or shrinking it to 24K, saves more than switching the tick model.
-
-Swapping the tick and reflection lanes to official DeepSeek Flash at 90% cache changes almost nothing: about $0.0122 per agent-hour off-peak, and about double that during peak hours. The choice should be made on measured reliability and latency, not on price.
-
-Moving the tick and chatter lanes to `gpt-oss-20b` on Darkbloom drops the tiered total to about $0.0095 per agent-hour, or **$1.90 per hour for 200 NPCs**. Reflection on Luna then becomes more than half the bill.
-
-Replacing every Luna lane with Qwen 3.7 Flash on the Alibaba us-east-1 endpoint, still at 90% cache, gives about **$0.0061 per agent-hour**, or $1.23 per hour for 200 NPCs. The breakdown is $0.00155 for ticks, $0.00257 for reflection, $0.00034 for chatter, and $0.00168 for JEV reactions. Reflection is now the largest line. On the cheaper base endpoint with no cache the total rises to $0.0131.
-
-Qwen 3.7 Flash latency, from OpenRouter's 30-minute window:
-
-| Endpoint | p50 | p90 | p95 | p99 | Output tok/s, p50 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Alibaba | 690 ms | 1.35 s | 1.81 s | 16.6 s | 60 |
-| Alibaba us-east-1 | 728 ms | 1.84 s | 2.46 s | 4.56 s | 64 |
-
-These are short probe requests, not 8K decision states. Add prefill and about 100 output tokens and a tick lands around 1.5 to 2 s at p50, 3 to 4 s at p90. Luna measured about 1.9 s for structured output in the same kind of test, so the two are close for ticks; JEV remains the fast lane for reactions. The base endpoint's 16.6 s p99 is a real tail risk at 200 agents, which is another reason to pin us-east-1.
-
-Qwen 3.7 Flash is not available through OpenRouter's EU in-region routing, so requests from Europe cross to Alibaba's regions. Measure from the actual host before assuming these numbers.
-
-A 20/80 split, with the 20% on Luna ticking every minute and the 80% on Qwen ticking every five, costs about **$0.0088 per agent-hour**, or **$1.76 per hour for 200 NPCs**. That is the natural shape: the agents with full cognition are also the ones on the better model.
+The largest levers, in order: cache hit rate, reflection cadence and size, tick cadence, then the tick model. Tiering cuts the tick line by about 64%. Reflection is the biggest line for the cold tier, so move it to every 15 or 30 minutes before shrinking the state.
 
 ## Implementation plan
 
-1. Build the affordance registry and context filter. Define each interactable's actions, preconditions, and effects, then build the per-NPC action list from range and context.
-2. Build a headless Python simulation with 20 NPCs, five jobs, three stores, one job board, rent, food, sleep, and three life goals. Run 30 in-game days.
+1. Build the affordance registry and context filter.
+2. Build a headless Python simulation with 20 NPCs, five jobs, three stores, one job board, rent, food, sleep, and three goals. Run 30 in-game days.
 3. Log every decision, wage, purchase, rent payment, conversation, goal update, token count, and cost.
-4. Measure job fill rate, employment, money distribution, rent delinquency, goal progress, conversation repetition, confidence distribution, and cost per simulated day.
-5. Integrate five NPCs into Unreal, starting in Belmonte. Use the existing village and wanderer actors and the live bridge.
-6. Add simulation LOD, batched decisions, concurrency caps, and fallbacks.
-7. Scale to 200 NPCs, turn on the 10/90 tiering, and compare the tick lane against GPT-OSS-20B and Qwen 3.7 Flash on 1,000 logged decisions. Compare the chatter lane against DeepSeek V4.1 Flash on 500 lines. Score JSON validity, action validity, latency, and cost at a measured cache hit rate.
+4. Measure job fill, employment, money distribution, delinquency, goal progress, repetition, and cost per day.
+5. Integrate five NPCs in Unreal, starting in Belmonte, using the village and wanderer actors and the live bridge.
+6. Add LOD, batching, concurrency caps, and fallbacks.
+7. Scale to 200 and compare the tick lane on GPT-OSS-20B and Qwen 3.7 Flash over 1,000 logged decisions; compare chatter on DeepSeek V4.1 Flash over 500 lines.
 
 ## Open questions
 
 - How long is an in-game day in real time?
-- Is NPC-to-NPC chatter text-only, audible, or both?
-- How much of the 8K tick and 32K reflection context is static persona and world text, and how much is fresh conversation?
-- Can the player see the happiness score, or only mood through behavior and dialogue?
-- When several NPCs apply for one job, does the employer use skill, reliability, first come, or a lottery?
-- Should critical services such as the train be allowed to go unstaffed?
-- How should the simulation catch up when the player is away?
-- How much identity drift should be allowed after major events?
-- How many nearby objects should be offered before switching to a two-stage choice?
-- Which contexts should restrict the action set: vehicles, shops, conversations, jail, sleep?
-- Should vehicle travel be one composite action or a sequence of board, stay, and disembark decisions?
-- How do NPCs learn about interactables they cannot see, such as a job board inside a building or a train at the next platform?
+- Is chatter text-only, audible, or both?
+- Can the player see happiness, or only infer it from behavior?
+- When several NPCs apply for one job, who wins?
+- Should critical services such as the train go unstaffed?
+- How should the simulation catch up while the player is away?
+- How much identity drift is allowed after major events?
+- Do NPCs learn about unseen interactables, such as a job board inside a building?
 
 ## References
 
-- JEV documentation: https://docs.typesafe.ai/introduction
-- JEV on Vercel AI Gateway: https://vercel.com/ai-gateway/models/jev
-- Laya pricing: https://laya.studio/pricing
-- Laya API: https://laya.studio/docs/api
-- JevTown, a JEV-based AI town: https://github.com/NevaMind-AI/JevTown
-- JevTown data card: https://jevtown.com/data-card
-- BFCL V4 small decision-model pilot: https://huggingface.co/datasets/pyuvraj/bfcl-v4-jev-routing/blob/main/results_report.md
+- JEV: https://docs.typesafe.ai/introduction
 - OpenAI pricing: https://developers.openai.com/api/docs/pricing?tab=suite
-- Gemma 4 E4B pricing: https://www.llmboard.ai/models/gemma-4-e4b
-- GPT-OSS-20B on Vercel: https://vercel.com/ai-gateway/models/gpt-oss-20b/providers
-- OpenRouter model catalog and prices: https://openrouter.ai/models
+- OpenRouter models and prices: https://openrouter.ai/models
+- JevTown: https://github.com/NevaMind-AI/JevTown
+- BFCL small decision-model pilot: https://huggingface.co/datasets/pyuvraj/bfcl-v4-jev-routing/blob/main/results_report.md
 
 ## Related Yorimichi code
 
@@ -469,4 +266,3 @@ A 20/80 split, with the 20% on Luna ticking every minute and the 80% on Qwen tic
 - Live bridge verbs: games/yorimichi/unreal/Source/Yorimichi/YorimichiLive.h
 - Belmonte train service: games/yorimichi/unreal/Source/Yorimichi/BelmonteTrainService.h
 - Zeppelin service: games/yorimichi/unreal/Source/Yorimichi/ZeppelinService.h
-- Happiness, jobs, homes, and memory are new systems proposed by this document.
