@@ -1,0 +1,141 @@
+{
+  "game": "yorimichi",
+  "model": "chirp-hawk",
+  "duration": 480,
+  "style": "Original instrumental action score for a painterly adventure game. Chamber orchestra and taiko, low strings, brass and driving percussion; modal harmony, tense and propulsive, no vocals, no choir, no lyrics, no bombast for its own sake. Steady tempo, immediate entrance, no long intro, loopable where noted.",
+  "negative": "vocals, lyrics, choir, spoken word, rap, EDM drop, trailer drums, distorted electric guitar, saxophone solo, cheesy synth lead",
+  "cues": [
+    {
+      "key": "skirmish",
+      "name": "Skirmish",
+      "intent": "combat",
+      "use": "Light combat",
+      "intensity": 3,
+      "loop": true,
+      "bpm_target": 140,
+      "mood": "Tense, agile, immediate. Pizzicato strings, taiko and short brass hits; quick encounter energy.",
+      "prompt": "A fast skirmish: 140 BPM, pizzicato strings, taiko and short brass hits, tense but agile."
+    },
+    {
+      "key": "ambush",
+      "name": "Ambush",
+      "intent": "combat",
+      "use": "Surprise attack",
+      "intensity": 4,
+      "loop": true,
+      "bpm_target": 120,
+      "mood": "Sudden, sharp, dangerous. Low-string hits and irregular taiko with brass stabs.",
+      "prompt": "An ambush: 120 BPM, sudden low-string hits, irregular taiko and sharp brass, danger."
+    },
+    {
+      "key": "chase",
+      "name": "Chase",
+      "intent": "action",
+      "use": "Pursuit or escape",
+      "intensity": 4,
+      "loop": true,
+      "bpm_target": 150,
+      "mood": "Relentless, forward-driving. Ostinato strings, taiko and low brass.",
+      "prompt": "A chase: 150 BPM, driving ostinato in strings, taiko and low brass, relentless."
+    },
+    {
+      "key": "boss",
+      "name": "Boss",
+      "intent": "combat",
+      "use": "Boss or tall spirit",
+      "intensity": 5,
+      "loop": true,
+      "bpm_target": 100,
+      "mood": "Immense, threatening, ceremonial weight. Heavy low brass, taiko and dissonant strings.",
+      "prompt": "A boss: 100 BPM, heavy low brass, taiko and dissonant strings, immense and threatening."
+    },
+    {
+      "key": "victory",
+      "name": "Victory",
+      "intent": "reward",
+      "use": "Victory or rescue",
+      "intensity": 3,
+      "loop": false,
+      "bpm_target": 120,
+      "mood": "Relief and triumph. Rising brass, strings and cymbals; brief rather than bombastic.",
+      "prompt": "A short victory: 120 BPM, brass and strings rising, cymbals, relief and triumph."
+    },
+    {
+      "key": "stealth",
+      "name": "Stealth",
+      "intent": "tension",
+      "use": "Stealth and caution",
+      "intensity": 2,
+      "loop": true,
+      "bpm_target": 80,
+      "mood": "Sparse, watchful, breath-held. Low pulse, plucked strings and small hits.",
+      "prompt": "Stealth tension: 80 BPM, sparse low pulse, plucked strings, breath and small hits, cautious."
+    },
+    {
+      "key": "storm",
+      "name": "Storm",
+      "intent": "environment",
+      "use": "Storm or sea danger",
+      "intensity": 4,
+      "loop": true,
+      "bpm_target": 100,
+      "mood": "Surging, exposed, maritime danger. Wind, low drums and rising strings.",
+      "prompt": "A storm: 100 BPM, wind, low drums and surging strings, environmental danger."
+    },
+    {
+      "key": "volcano",
+      "name": "Volcano",
+      "intent": "set_piece",
+      "use": "Eruption or caldera",
+      "intensity": 5,
+      "loop": false,
+      "bpm_target": 90,
+      "mood": "Awe and danger. Low brass, taiko and dissonant strings; enormous, not horror.",
+      "prompt": "A volcanic eruption: 90 BPM, low brass, taiko and dissonant strings, awe and danger."
+    },
+    {
+      "key": "race",
+      "name": "Race",
+      "intent": "action",
+      "use": "Race or chase finish",
+      "intensity": 5,
+      "loop": true,
+      "bpm_target": 160,
+      "mood": "Galloping, competitive, bright-edged. Strings, horns and drums at full stride.",
+      "prompt": "A race final stretch: 160 BPM, galloping strings and horns, drums, competitive."
+    },
+    {
+      "key": "ritual",
+      "name": "Ritual",
+      "intent": "set_piece",
+      "use": "Bell ritual or ceremony",
+      "intensity": 4,
+      "loop": false,
+      "bpm_target": 70,
+      "mood": "Ceremonial and intense. Temple bell, slow taiko and low strings.",
+      "prompt": "A bell ritual: 70 BPM, temple bell, slow taiko and low strings, ceremonial and intense."
+    },
+    {
+      "key": "revelation",
+      "name": "Revelation",
+      "intent": "story",
+      "use": "Discovery or twist",
+      "intensity": 3,
+      "loop": false,
+      "bpm_target": 90,
+      "mood": "Wonder edged with unease. Rising strings, harp and a restrained brass statement.",
+      "prompt": "A revelation: 90 BPM, rising strings, harp and brass, wonder and unease."
+    },
+    {
+      "key": "defeat",
+      "name": "Defeat",
+      "intent": "story",
+      "use": "Loss or retreat",
+      "intensity": 2,
+      "loop": false,
+      "bpm_target": 60,
+      "mood": "Quiet falling motion. Slow strings, low piano and a single sustained line.",
+      "prompt": "A defeat: 60 BPM, slow strings, low piano and a quiet falling line, loss."
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
-<title>Yorimichi · zone soundtrack</title>
+<title>Yorimichi · music library</title>
 <style>
 :root {
   --bg: #0e120f;
@@ -37,6 +37,10 @@ body {
 h1 { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 650; letter-spacing: -.02em; }
 .sub { margin: 7px 0 0; color: var(--muted); }
 .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.actions select {
+  appearance: none; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; cursor: pointer;
+}
 button {
   appearance: none; border: 1px solid var(--line); background: var(--panel-2);
   color: var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; cursor: pointer;
@@ -69,6 +73,8 @@ main { padding: 24px 28px 80px; max-width: 1560px; margin: 0 auto; }
 .dur { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 audio { width: 100%; margin: 12px 0 8px; filter: saturate(.8); }
 .meta { color: var(--muted); font-size: 11px; margin-bottom: 10px; }
+.download { display: inline-block; margin: 0 0 10px; color: var(--blue); font-size: 12px; text-decoration: none; }
+.download:hover { text-decoration: underline; }
 .review { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .review button { padding: 5px 10px; font-size: 12px; }
 .note { flex: 1 1 130px; min-width: 110px; border: 1px solid var(--line); background: #111713; color: var(--text); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 12px; }
@@ -76,6 +82,10 @@ audio { width: 100%; margin: 12px 0 8px; filter: saturate(.8); }
 details { margin-top: 10px; color: var(--muted); font-size: 12px; }
 details p { margin: 8px 0 0; color: #b9c4bb; }
 .waiting { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+.tags { color: #8fb6c9; font-size: 11px; margin: -4px 0 9px; }
+.library-head { margin: 38px 0 18px; padding-top: 24px; border-top: 1px solid var(--line); }
+.library-head h2 { margin: 0; font-size: 24px; }
+.library-head .hint { margin: 4px 0 0; color: var(--muted); }
 footer { color: #6f7c72; text-align: center; font-size: 12px; padding: 0 20px 40px; }
 @media (max-width: 720px) {
   .top { padding: 16px; flex-direction: column; align-items: flex-start; }
@@ -88,18 +98,36 @@ footer { color: #6f7c72; text-align: center; font-size: 12px; padding: 0 20px 40
 <header class="top">
   <div>
     <p class="eyebrow">Yorimichi · original score</p>
-    <h1>Zone soundtrack review</h1>
-    <p class="sub">Suno v6 · long-form instrumentals · six tracks per zone</p>
+    <h1>Music library review</h1>
+    <p class="sub">Suno v6 · long-form instrumentals · zones, action and style cues</p>
   </div>
   <div class="actions">
     <div id="progress" class="progress">loading…</div>
+    <select id="category" aria-label="Filter by category">
+      <option value="">All categories</option>
+      <option value="calm">Calm</option>
+      <option value="moderate">Moderate</option>
+      <option value="energetic">Energetic</option>
+      <option value="action">Action</option>
+      <option value="contrast">Contrast</option>
+    </select>
+    <select id="style" aria-label="Filter by style">
+      <option value="">All styles</option>
+      <option value="orchestral">Orchestral</option>
+      <option value="ambient/orchestral">Ambient orchestral</option>
+      <option value="lofi">Lofi</option>
+      <option value="energy">Energy</option>
+      <option value="ambient">Ambient</option>
+      <option value="jazz">Jazz</option>
+      <option value="world">World</option>
+    </select>
     <button id="refresh" type="button">Refresh</button>
     <button id="copy" type="button">Copy feedback</button>
   </div>
 </header>
 <div id="banner" class="banner" hidden></div>
 <main id="zones"><p class="empty">Loading the soundtrack…</p></main>
-<footer>Good / Maybe / No and a note are saved as you go. The page checks for newly rendered zones every 15 seconds.</footer>
+<footer>Good / Maybe / No and a note are saved as you go. The page checks for newly rendered cues every 15 seconds.</footer>
 <script>
 var zonesEl = document.getElementById('zones');
 var progressEl = document.getElementById('progress');
@@ -133,93 +161,143 @@ function fmtDuration(seconds) {
 function roleLabel(role) {
   if (role === 'day') return 'Day theme';
   if (role === 'contrast') return 'Contrast';
+  if (role === 'action') return 'Action';
+  if (role === 'variety') return 'Variety';
   return 'Quiet exploration';
 }
 
 function trackCount(index) {
-  return (index.zones || []).reduce(function (n, z) {
-    return n + ((z.tracks || []).length);
-  }, 0);
+  var zones = (index.zones || []).reduce(function (n, z) { return n + (z.tracks || []).length; }, 0);
+  var library = (index.library || []).reduce(function (n, c) { return n + (c.tracks || []).length; }, 0);
+  var variety = (index.variety || []).reduce(function (n, c) { return n + (c.tracks || []).length; }, 0);
+  return zones + library + variety;
 }
 
 function signature(index) {
-  return (index.zones || []).map(function (z) {
-    return z.key + ':' + (z.tracks || []).length;
-  }).join(',');
+  var a = (index.zones || []).map(function (z) { return z.key + ':' + (z.tracks || []).length; }).join(',');
+  var b = (index.library || []).map(function (c) { return c.key + ':' + (c.tracks || []).length; }).join(',');
+  var d = (index.variety || []).map(function (c) { return c.key + ':' + (c.tracks || []).length; }).join(',');
+  return a + '|' + b + '|' + d;
 }
 
 function basename(path) {
   return String(path || '').split('/').pop();
 }
 
+function renderGroup(group, prefix) {
+  var section = el('section', 'zone');
+  var head = el('div', 'zone-head');
+  var left = el('div');
+  left.appendChild(el('h2', '', group.name));
+  left.appendChild(el('p', 'hint', group.hint || ''));
+  head.appendChild(left);
+  var total = group.total || 6;
+  head.appendChild(el('span', 'count', (group.tracks || []).length + ' / ' + total + ' tracks'));
+  section.appendChild(head);
+
+  var grid = el('div', 'tracks');
+  (group.tracks || []).forEach(function (track) {
+    var card = el('article', 'track');
+    card.dataset.clip = track.clip_id;
+    var trackHead = el('div', 'track-head');
+    var name = el('div');
+    name.appendChild(el('h3', '', track.display_title || track.title || track.clip_id));
+    trackHead.appendChild(name);
+    trackHead.appendChild(el('span', 'dur', fmtDuration(track.duration_s)));
+    card.appendChild(trackHead);
+
+    var audio = el('audio');
+    audio.controls = true;
+    audio.preload = 'none';
+    audio.src = '/music/' + prefix + encodeURIComponent(group.key) + '/' + encodeURIComponent(basename(track.mp3));
+    card.appendChild(audio);
+
+    var download = el('a', 'download', 'Download MP3');
+    download.href = audio.src;
+    download.download = basename(track.mp3);
+    card.appendChild(download);
+
+    card.appendChild(el('div', 'meta', 'v6 · ' + track.clip_id.slice(0, 8) + ' · ' + (track.model || 'chirp-hawk')));
+    var tags = [];
+    if (track.category) tags.push(track.category);
+    if (track.style_family) tags.push(track.style_family);
+    if (track.intent) tags.push(track.intent);
+    if (track.mood) tags.push(track.mood);
+    if (track.energy) tags.push('energy ' + track.energy);
+    if (track.intensity) tags.push('intensity ' + track.intensity);
+    if (track.loop) tags.push('loop');
+    if (tags.length) card.appendChild(el('div', 'tags', tags.join(' · ')));
+
+    var review = el('div', 'review');
+    var saved = reviews[track.clip_id] || {};
+    [['good', 'Good'], ['maybe', 'Maybe'], ['no', 'No']].forEach(function (pair) {
+      var button = el('button', saved.rating === pair[0] ? 'selected' : '', pair[1]);
+      button.type = 'button';
+      button.dataset.rating = pair[0];
+      review.appendChild(button);
+    });
+    var note = el('input', 'note');
+    note.type = 'text';
+    note.placeholder = 'note';
+    note.value = saved.note || '';
+    review.appendChild(note);
+    card.appendChild(review);
+
+    var details = el('details');
+    details.appendChild(el('summary', '', 'Prompt'));
+    details.appendChild(el('p', '', track.prompt || ''));
+    card.appendChild(details);
+    grid.appendChild(card);
+  });
+  section.appendChild(grid);
+  if ((group.tracks || []).length < total) {
+    section.appendChild(el('p', 'waiting', 'The remaining tracks for this group are still rendering.'));
+  }
+  return section;
+}
+
 function render() {
   zonesEl.textContent = '';
-  var zones = current.zones || [];
-  if (!zones.length) {
-    zonesEl.appendChild(el('p', 'empty', 'The soundtrack is still rendering. This page updates automatically.'));
-    progressEl.textContent = '0 / ' + (current.total_tracks || 168) + ' tracks';
+  var category = document.getElementById('category').value;
+  var style = document.getElementById('style').value;
+  function visible(track) {
+    return (!category || track.category === category) && (!style || track.style_family === style);
+  }
+  function filtered(group) {
+    return { key: group.key, name: group.name, hint: group.hint, total: group.total,
+      tracks: (group.tracks || []).filter(visible) };
+  }
+  var zones = (current.zones || []).map(filtered).filter(function (g) { return g.tracks.length; });
+  var library = (current.library || []).map(filtered).filter(function (g) { return g.tracks.length; });
+  var variety = (current.variety || []).map(filtered).filter(function (g) { return g.tracks.length; });
+  if (!zones.length && !library.length && !variety.length) {
+    zonesEl.appendChild(el('p', 'empty', (category || style)
+      ? 'No tracks match this filter.'
+      : 'The soundtrack is still rendering. This page updates automatically.'));
+    progressEl.textContent = '0 / ' + (current.total_tracks || 192) + ' tracks';
     return;
   }
-  zones.forEach(function (zone) {
-    var section = el('section', 'zone');
-    var head = el('div', 'zone-head');
-    var left = el('div');
-    left.appendChild(el('h2', '', zone.name));
-    left.appendChild(el('p', 'hint', zone.hint || ''));
-    head.appendChild(left);
-    head.appendChild(el('span', 'count', (zone.tracks || []).length + ' / 6 tracks'));
-    section.appendChild(head);
-
-    var grid = el('div', 'tracks');
-    (zone.tracks || []).forEach(function (track) {
-      var card = el('article', 'track');
-      card.dataset.clip = track.clip_id;
-      var trackHead = el('div', 'track-head');
-      var name = el('div');
-      name.appendChild(el('span', 'role', roleLabel(track.role)));
-      name.appendChild(el('h3', '', track.display_title || track.title || track.clip_id));
-      trackHead.appendChild(name);
-      trackHead.appendChild(el('span', 'dur', fmtDuration(track.duration_s)));
-      card.appendChild(trackHead);
-
-      var audio = el('audio');
-      audio.controls = true;
-      audio.preload = 'none';
-      audio.src = '/music/' + encodeURIComponent(zone.key) + '/' + encodeURIComponent(basename(track.mp3));
-      card.appendChild(audio);
-
-      card.appendChild(el('div', 'meta', 'v6 · ' + track.clip_id.slice(0, 8) + ' · ' + (track.model || 'chirp-hawk')));
-
-      var review = el('div', 'review');
-      var saved = reviews[track.clip_id] || {};
-      [['good', 'Good'], ['maybe', 'Maybe'], ['no', 'No']].forEach(function (pair) {
-        var button = el('button', saved.rating === pair[0] ? 'selected' : '', pair[1]);
-        button.type = 'button';
-        button.dataset.rating = pair[0];
-        review.appendChild(button);
-      });
-      var note = el('input', 'note');
-      note.type = 'text';
-      note.placeholder = 'note';
-      note.value = saved.note || '';
-      review.appendChild(note);
-      card.appendChild(review);
-
-      var details = el('details');
-      details.appendChild(el('summary', '', 'Prompt'));
-      details.appendChild(el('p', '', track.prompt || ''));
-      card.appendChild(details);
-      grid.appendChild(card);
-    });
-    section.appendChild(grid);
-    if ((zone.tracks || []).length < 6) {
-      section.appendChild(el('p', 'waiting', 'The remaining tracks for this zone are still rendering.'));
-    }
-    zonesEl.appendChild(section);
-  });
+  zones.forEach(function (zone) { zonesEl.appendChild(renderGroup(zone, '')); });
+  if (library.length) {
+    var heading = el('div', 'library-head');
+    heading.appendChild(el('p', 'eyebrow', 'Separate library'));
+    heading.appendChild(el('h2', '', 'Action & set pieces'));
+    heading.appendChild(el('p', 'hint', 'Combat, chases, boss fights, storms, races and other intense moments.'));
+    zonesEl.appendChild(heading);
+    library.forEach(function (cue) { zonesEl.appendChild(renderGroup(cue, 'library/')); });
+  }
+  if (variety.length) {
+    var varietyHeading = el('div', 'library-head');
+    varietyHeading.appendChild(el('p', 'eyebrow', 'Style library'));
+    varietyHeading.appendChild(el('h2', '', 'Lofi, ambient, jazz and rhythm'));
+    varietyHeading.appendChild(el('p', 'hint', 'Distinct styles tagged by family, energy, mood and use.'));
+    zonesEl.appendChild(varietyHeading);
+    variety.forEach(function (cue) { zonesEl.appendChild(renderGroup(cue, 'variety/')); });
+  }
   var count = trackCount(current);
-  var total = current.total_tracks || 168;
-  progressEl.textContent = count + ' / ' + total + ' tracks · ' + zones.length + ' zones';
+  var total = current.total_tracks || 192;
+  progressEl.textContent = count + ' / ' + total + ' tracks · ' + zones.length +
+    ' zones · ' + library.length + ' action cues · ' + variety.length + ' variety cues';
   lastSignature = signature(current);
 }
 
@@ -273,7 +351,7 @@ document.getElementById('copy').addEventListener('click', function () {
   getJSON('/api/reviews', reviews).then(function (all) {
     reviews = all || reviews;
     var lines = ['# Yorimichi music review', ''];
-    (current.zones || []).forEach(function (zone) {
+    (current.zones || []).concat(current.library || []).concat(current.variety || []).forEach(function (zone) {
       (zone.tracks || []).forEach(function (track) {
         var saved = reviews[track.clip_id] || {};
         if (!saved.rating && !saved.note) return;
@@ -297,6 +375,9 @@ document.getElementById('refresh').addEventListener('click', function () {
     render();
   });
 });
+
+document.getElementById('category').addEventListener('change', render);
+document.getElementById('style').addEventListener('change', render);
 
 function poll() {
   getJSON('/index.json', null).then(function (index) {

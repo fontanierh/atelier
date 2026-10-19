@@ -38,13 +38,18 @@ def save_manifest(zone_key, data):
     os.replace(tmp, p)
 
 
+def media_path(value):
+    path = Path(value)
+    return path if path.is_absolute() else OUT / path
+
+
 def role_complete(manifest, role):
     if not manifest:
         return False
     tracks = [t for t in manifest.get("tracks", []) if t.get("role") == role]
     if len(tracks) < 2:
         return False
-    return all(Path(t.get("mp3", "")).exists() for t in tracks)
+    return all(media_path(t.get("mp3", "")).exists() for t in tracks)
 
 
 def write_index(plan):

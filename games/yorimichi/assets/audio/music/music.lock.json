@@ -1,0 +1,1604 @@
+{
+  "schema": 1,
+  "version": "v1",
+  "bundle": "https://github.com/fontanierh/atelier/releases/download/yorimichi-music-v1/yorimichi-music-v1.zip",
+  "bytes": 1796332396,
+  "sha256": "990f0c772cf394d481a95068fbd9d5249168fa83db7a02ac35dda0812a7703c2",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 997,
+      "sha256": "b0282c7cd9189b0427e61c9b8193571ef3daf3872d3bc32b45eb9e5fa5b9bc04"
+    },
+    {
+      "path": "arcade/Lantern Arcade-22827643-6f10-492f-ba29-3db3ada89dc4.mp3",
+      "bytes": 6477466,
+      "sha256": "d5a5a6e3321815fa21a24a20b13da469297aa11f49d17e5122ebab7488413d68"
+    },
+    {
+      "path": "arcade/Lantern Arcade-67a5922d-2b19-49f9-8a74-fe8e6ffb7ff2.mp3",
+      "bytes": 5125022,
+      "sha256": "5d19b041e6ea51c82d280c442e29d799328b79d72b56911a21de4240a411ef59"
+    },
+    {
+      "path": "arcade/Lantern Arcade-73ef77da-ac21-4040-a323-c6addd34e04b.mp3",
+      "bytes": 4772702,
+      "sha256": "fa4cbfcdb2e973fcfa81ff21b03b3998c66d022d3704020169f80e4d3ef068a2"
+    },
+    {
+      "path": "arcade/Lantern Arcade-93699d4c-4ca7-4e0f-9d8b-6d5be5ec020c.mp3",
+      "bytes": 10997423,
+      "sha256": "15dddbe104316ff9fa442bb09f3264c3bf08ea3c026e043179bd88aeb61aae91"
+    },
+    {
+      "path": "arcade/Lantern Arcade-b91139be-7d15-478a-bf2a-2e16dba591a7.mp3",
+      "bytes": 6071002,
+      "sha256": "fac18147599d2c603af1e99c9ffcafd091d916854ab774a3200b8a8e3ab09e31"
+    },
+    {
+      "path": "arcade/Lantern Arcade-eee5b2e1-2457-4ff9-b736-56bc7e12613b.mp3",
+      "bytes": 4452527,
+      "sha256": "740e46451bb8c4b09132c2c11caddcad20a67d6a119d673a393fb660dc7727b5"
+    },
+    {
+      "path": "arcade/manifest.json",
+      "bytes": 9277,
+      "sha256": "8fc26fce436f4dec22cb532f8856ee74572ad27fcb990f2d553288d2e3941398"
+    },
+    {
+      "path": "arrival/Arrival Terraces-a0f9c82e-73f4-42f2-b84c-40c673f146ec.mp3",
+      "bytes": 6036387,
+      "sha256": "398a1aa0960331ccf4a344acd424d0ea3aee74a956f048207ebcae74c9957d6a"
+    },
+    {
+      "path": "arrival/Arrival Terraces-b8ad8900-8eee-47b9-bf16-947a39b63e28.mp3",
+      "bytes": 6500979,
+      "sha256": "b568a83b877a43d808bc346827c4ff7207fb062c9f508f55b3446bb7f222d292"
+    },
+    {
+      "path": "arrival/Hidamari Terraces-c17e594c-840a-476a-84c4-2f78a42e591d.mp3",
+      "bytes": 7722975,
+      "sha256": "533f7fb21d679757930fd3d955fc114ef900ba3140e78e285851c9e7181b9434"
+    },
+    {
+      "path": "arrival/Hidamari Terraces-de1caf21-0db3-45b3-aa1a-336bb1e159e5.mp3",
+      "bytes": 10551999,
+      "sha256": "e79cef9c850c0dfc16d61ffb8cbdf5c834eb9ec4424e4d124e51986543798c66"
+    },
+    {
+      "path": "arrival/Terrace at Night-0a8c6336-7ad7-4311-babb-1aab1c3e8ba8.mp3",
+      "bytes": 5312130,
+      "sha256": "cdf1d70b19ab6d81892ee2b92255d0754115642d71c8acfd2275d4b37fa1087f"
+    },
+    {
+      "path": "arrival/Terrace at Night-31059bf2-f19d-4b82-87d0-3b25c0a404d7.mp3",
+      "bytes": 5093442,
+      "sha256": "5f61f48601355c94dd5a7c3b2902868847995d5ed887c593225c6de7f42b09e1"
+    },
+    {
+      "path": "arrival/manifest.json",
+      "bytes": 9354,
+      "sha256": "3aa6ce0cafc1d07a375e47cb3e050928e02be48683e5ba11b6688ea6ed87ddae"
+    },
+    {
+      "path": "belmonte/Belmonte River Evening-15f66896-a174-4315-be3c-7c22cbb0f518.mp3",
+      "bytes": 5431130,
+      "sha256": "1a47cca00f97bf37e64c8a8c0775d980c90fefbe1e35295b338d8bff6bd52044"
+    },
+    {
+      "path": "belmonte/Belmonte River Evening-35b3ee7f-3e26-4a69-be51-53815f57ee25.mp3",
+      "bytes": 6534170,
+      "sha256": "6778dd20646d4742638314eb0c44dbec5fa85b5f3dd54359f4d94c16bb76e611"
+    },
+    {
+      "path": "belmonte/Belmonte Waltz-9d3a17f6-d733-4bad-94bf-307d0fe9c705.mp3",
+      "bytes": 10424978,
+      "sha256": "03bfa38b6d7ce88a2a479605e906f67d8af122ec242259eb5a0ebcc71a7111a9"
+    },
+    {
+      "path": "belmonte/Belmonte Waltz-bee019a1-9732-4ea6-9382-6cb0ff25c091.mp3",
+      "bytes": 10519274,
+      "sha256": "f7a673306771e5027cfe2adb46d1176fa0101b6cf3aee8bd730957e2f04b0152"
+    },
+    {
+      "path": "belmonte/Belmonte Waltz-bee7d512-f20f-4106-8dc7-de7d721bd4ac.mp3",
+      "bytes": 5347094,
+      "sha256": "9fab2994b60cc15bae68c42f2e431a5107eaedd45ab696f5c807d01847e582e9"
+    },
+    {
+      "path": "belmonte/Belmonte Waltz-dcbdb274-241b-4175-babc-4f1fc140c0a8.mp3",
+      "bytes": 5549774,
+      "sha256": "d4f6c26b12bb8e6b009c0b7dd58bd9d952163d89b3b180883c0d4a140cee9b28"
+    },
+    {
+      "path": "belmonte/manifest.json",
+      "bytes": 9091,
+      "sha256": "ddc31a25bc93a34918c5520c2ac0e09b40af27f7f50db0c0aa7fdafd60835aa4"
+    },
+    {
+      "path": "belmonte_course/After the Hooves-7e2242e7-2549-477b-99ee-6082d55dc494.mp3",
+      "bytes": 5004327,
+      "sha256": "ec3cb197e38144ce833dd80a6d056c98737f02466c14fb3cc0764f94f418d604"
+    },
+    {
+      "path": "belmonte_course/After the Hooves-da5e4e2c-8204-4313-b7ab-7afae2f0b425.mp3",
+      "bytes": 5077815,
+      "sha256": "0b921e68ec77be4b4ea20496b6cc7db6650e24211337e60ec10ecd8ab627db6e"
+    },
+    {
+      "path": "belmonte_course/Belmonte Gallop-95262bf5-37f0-409b-93d8-7e04c06549a1.mp3",
+      "bytes": 4878366,
+      "sha256": "b13f9219f6a89f8119792014739c8687889996c0ca99ca5820faa7f0f4e27ddc"
+    },
+    {
+      "path": "belmonte_course/Belmonte Gallop-cf844265-7484-4ae6-bc73-35fdc57a53b9.mp3",
+      "bytes": 5224446,
+      "sha256": "f2a9e4053fe4bb89f67fb7ce457640164597f7cba45874879f656596feba39fa"
+    },
+    {
+      "path": "belmonte_course/Foxfire Course-063c49fd-98b2-400b-8cba-60f647f843c2.mp3",
+      "bytes": 6319937,
+      "sha256": "d4133756de869a89f1caa561572fa05d18b2e61d193e48f221c3a79f1b9a75b0"
+    },
+    {
+      "path": "belmonte_course/Foxfire Course-d701ffe6-d4af-4405-8a89-00489222bde4.mp3",
+      "bytes": 5091473,
+      "sha256": "861151e1c1319cf2f94f5f7a998e01fe2a2c51e3fa5b8e140cde38b55e06e8b3"
+    },
+    {
+      "path": "belmonte_course/manifest.json",
+      "bytes": 9329,
+      "sha256": "43c27dc0b5b5d2b21f591ad934066781fd85b7a1ac11b1536bb42f9d641a0b67"
+    },
+    {
+      "path": "belmonte_salon/Moonlit Salon Passage-c87f50e1-d656-4d5c-9c7a-bffcc62cc823.mp3",
+      "bytes": 10480933,
+      "sha256": "548d0afbf5dc296f7f18a501f5f1fcca7c38262a3668665ec4e470dafe51b816"
+    },
+    {
+      "path": "belmonte_salon/Moonlit Salon Passage-fb807b47-3b34-4c9e-b785-83d3fd83f5f4.mp3",
+      "bytes": 4253173,
+      "sha256": "5658d42c4c60c244c15f510b4542cbc106d8133b296973adc2d54f7b1122b9b2"
+    },
+    {
+      "path": "belmonte_salon/Salon Des Paris-7f5226e9-e397-49f9-81a2-21d0961d6116.mp3",
+      "bytes": 6399327,
+      "sha256": "7eb2903ed59d36d9dbf055ff3e94aef0fe5d38dfef540f925637cda045deac83"
+    },
+    {
+      "path": "belmonte_salon/Salon Des Paris-bf62d2ee-1de9-4cdc-aed9-d57bb282a2e2.mp3",
+      "bytes": 10266591,
+      "sha256": "0fb37f6f5cf5f1c4147349b0c69fd70b73b6aedba61f2cfa48f9b3dbc3d2936b"
+    },
+    {
+      "path": "belmonte_salon/Salon des Paris-72d6b0fe-105c-4d01-9aab-fce3397c776b.mp3",
+      "bytes": 10626675,
+      "sha256": "aa64f29bbd45998b6c5c57cc441928a4daff85428eccef765208160bd28198fb"
+    },
+    {
+      "path": "belmonte_salon/Salon des Paris-88641081-29d5-498c-84db-cebf21f60141.mp3",
+      "bytes": 4701435,
+      "sha256": "36cac4211d270612f433049f7951f9dc010d5759e56bc48cbb891f518311db67"
+    },
+    {
+      "path": "belmonte_salon/manifest.json",
+      "bytes": 9309,
+      "sha256": "5a7e6045aa3d500bf9089370040495c67eae27eccf21c12559d5aa7405d16480"
+    },
+    {
+      "path": "belmonte_training/Belmonte Dawn-74530420-080c-4b16-982b-92f5a37c986c.mp3",
+      "bytes": 10614367,
+      "sha256": "e428ea6868e777cd54cdc156194a6e3afe8357f041ee38579858183b276bb40e"
+    },
+    {
+      "path": "belmonte_training/Belmonte Dawn-a64341b4-054b-4383-a0c7-ac0810960770.mp3",
+      "bytes": 5305711,
+      "sha256": "373a5621fed6d756e1f2e1f1cc534c0770d7b70c3a452bd1d74017ddd41215be"
+    },
+    {
+      "path": "belmonte_training/Dawn Yard Quiet-64b858f2-d6f2-42b7-9c66-7dc4a77ddc6d.mp3",
+      "bytes": 11147461,
+      "sha256": "de7921a9dfcd436dac62ef04f95a28e53c39db2ef1983186d00e5bc33eabf0bf"
+    },
+    {
+      "path": "belmonte_training/Dawn Yard Quiet-f872d135-5486-418e-ad82-06861f85a4ee.mp3",
+      "bytes": 11977093,
+      "sha256": "0d90ef5e402afb2853fa8d97844e39258a86da1eb0cc1f316965d923cc8c35a4"
+    },
+    {
+      "path": "belmonte_training/Foxglove Trail-b5373637-8721-43b9-9438-8fba8909529a.mp3",
+      "bytes": 5019236,
+      "sha256": "df8c7b8577f310074e6871f857908299d2aa4f07ac46c3ed852c18dff48c867d"
+    },
+    {
+      "path": "belmonte_training/Foxglove Trail-c3ce58d8-416a-49f9-bcdd-1fbb0182533b.mp3",
+      "bytes": 5142596,
+      "sha256": "600a4247a8a8f890960a454fd13cb4bc24df57e64a437ed1fb95bea2fae52c15"
+    },
+    {
+      "path": "belmonte_training/manifest.json",
+      "bytes": 9322,
+      "sha256": "ee99d8a69864d7c0260d6041f80f20b73869b43519cd426dc28c69775fbb9f4f"
+    },
+    {
+      "path": "catalog.json",
+      "bytes": 261604,
+      "sha256": "af4dd279089d8c614a1310a2dcb4df366cc4113ba9a3f740acd3105f86ea8547"
+    },
+    {
+      "path": "communitypark/Dusk at the Skate Park-00504d82-a005-43f6-845c-9b22580c0c0b.mp3",
+      "bytes": 6003588,
+      "sha256": "0e9e7f76e4043e196fa8dd6cb5487c97f44950c1c9befa2703db03b6ab090e32"
+    },
+    {
+      "path": "communitypark/Dusk at the Skate Park-64875f95-bfe6-4821-a602-326f8a86db42.mp3",
+      "bytes": 7000740,
+      "sha256": "6b8a1cffa15b50509ef151ee86111c11d109f60b1879025454decf14ed750c90"
+    },
+    {
+      "path": "communitypark/Rinkside Lanterns-07d38455-81b9-4aae-ac62-02c7daddc662.mp3",
+      "bytes": 5530720,
+      "sha256": "9e21e5456797887773f7139eb4343c938094a5cff2d999dcc0ca38d5c44d7ae8"
+    },
+    {
+      "path": "communitypark/Rinkside Lanterns-15d4910c-a52a-4f95-8afc-4ebe04c2608d.mp3",
+      "bytes": 5177872,
+      "sha256": "c36d0674115ac55d3ba799b0d23d3b847cad0f7f124fdc931538ea613f059a11"
+    },
+    {
+      "path": "communitypark/Vert Ramp Morning-0448d0e5-151e-4a68-8d88-1137530e59e6.mp3",
+      "bytes": 5017108,
+      "sha256": "b9cee0f7adf6cbb96a27effdfd957efbbb238e49caa21a658bcca2802af4f9d4"
+    },
+    {
+      "path": "communitypark/Vert Ramp Morning-ef703123-af9a-4ef0-9a3b-262f8b8940f2.mp3",
+      "bytes": 5306428,
+      "sha256": "336ef1a61a43ae8a02476f107a237ca91bf783d0e71f16c91ff39330ea33b86f"
+    },
+    {
+      "path": "communitypark/manifest.json",
+      "bytes": 9492,
+      "sha256": "6bd9379ba631b7dbfa392bd5c48b3b8cdcce45789a209b2ed2490aa731fb1e8b"
+    },
+    {
+      "path": "cove/Coconut Sailboat-09084c2e-e667-431e-b4f4-814e2c5f66b1.mp3",
+      "bytes": 5601224,
+      "sha256": "59ba18da35f5cfdaeeff6f99f775d997caffa27b9d26964a71c8797bc81d8052"
+    },
+    {
+      "path": "cove/Coconut Sailboat-9eb234b8-67ce-4820-ac2b-465362d73258.mp3",
+      "bytes": 5339960,
+      "sha256": "4f46afede129abd4a4eae4fc8ef2a7df21d36ab29b7d8dba86a623aafd1fe704"
+    },
+    {
+      "path": "cove/Late Afternoon Shore-867cadc1-caf6-4350-bd3b-e372c5f1f171.mp3",
+      "bytes": 10705648,
+      "sha256": "bcf179fcb81fe38449b4fae62db63c3d5aaee952ddd65b41b436272a2c49a893"
+    },
+    {
+      "path": "cove/Late Afternoon Shore-fcfcc8b1-87c1-461f-ab53-42e763a9bcdb.mp3",
+      "bytes": 5357536,
+      "sha256": "f9413e305f82d9fc5b3943a34666fc617b1ff4c8f9971cb8e3a81552e4c11564"
+    },
+    {
+      "path": "cove/Tidewatch Promenade-062e72c0-18e0-4d62-9980-07d38e93cb4e.mp3",
+      "bytes": 5870447,
+      "sha256": "e6cbe1a06b98ae6ea62a2e920bf4c40263a1feda38a9fdcfc7759e4fd8ee02de"
+    },
+    {
+      "path": "cove/Tidewatch Promenade-16e1bf72-bbe3-4321-a0af-6edecacdb02b.mp3",
+      "bytes": 5642255,
+      "sha256": "924f96d95c25e516a2c05ad3d4c62231330bad84ea9e7aaef0488c8d5f74684f"
+    },
+    {
+      "path": "cove/manifest.json",
+      "bytes": 9223,
+      "sha256": "9b6c931d7c59104efe68fe869130ab8ac4586e14b388f5452c51944cda44c771"
+    },
+    {
+      "path": "craterpark/Caldera at Dusk-073a1629-55da-4ff4-a5ea-fc34a42035f5.mp3",
+      "bytes": 6510296,
+      "sha256": "24e1e516fcc34df279df6a9d7a268b96927dd2f11a30653ef1ab8d5620b62074"
+    },
+    {
+      "path": "craterpark/Caldera at Dusk-b9c7d67c-2150-44ba-8790-3cd5c942f09f.mp3",
+      "bytes": 5517512,
+      "sha256": "b37dce810dc5e4fb5b10f8be74c3c4eea42ba85cfd63411b43d6783b29ea4354"
+    },
+    {
+      "path": "craterpark/Crater Park-7b957768-51da-4276-9ec4-e49ad05ad19b.mp3",
+      "bytes": 5859640,
+      "sha256": "d0c667fac708b6b5130b306b7fb1f92d0f11292801ff06106a2d4b62708ba2b4"
+    },
+    {
+      "path": "craterpark/Crater Park-9e182148-957a-4f3a-aa1f-5b9fbe432a96.mp3",
+      "bytes": 5286352,
+      "sha256": "501195eee9c15ac2000c32e7cd17e90f81c4ba19e194799810a30ad728ae0d81"
+    },
+    {
+      "path": "craterpark/Night Caldera Floor-e88e8be5-2d0f-40df-b998-040a356d807e.mp3",
+      "bytes": 6143840,
+      "sha256": "1c2c0f94dddb79d916ffeb81aeea4f7ccd22502179d59d28dd8f0e053f33fba2"
+    },
+    {
+      "path": "craterpark/Night Caldera Floor-f63551a7-c91a-4028-9b98-a4c9b8be4c9a.mp3",
+      "bytes": 6861920,
+      "sha256": "2d6b5df31c035d727a1ca1744d5c4ad9150201323fcee4d242307df80065acc1"
+    },
+    {
+      "path": "craterpark/manifest.json",
+      "bytes": 9230,
+      "sha256": "27261dc14fae3242cbfbae51f87bf4b6496e0f7dd05e66cfb0f8a95db873def8"
+    },
+    {
+      "path": "fishing/Before Sunrise Harbor-1046ecd9-c13f-482d-be13-2a6bfbfaabef.mp3",
+      "bytes": 10911623,
+      "sha256": "9262adea6cce33403bb8d286f5418f08b09c57d8e18c23fb68acab57021836ab"
+    },
+    {
+      "path": "fishing/Before Sunrise Harbor-25ce9180-f487-434d-b998-907a070d894c.mp3",
+      "bytes": 5418215,
+      "sha256": "9b11e932d388c5640fe6f584a6091eb324e99be6fb6bb0193454bc12a804b1e6"
+    },
+    {
+      "path": "fishing/Low Tide Harbor-745737aa-4cd7-4706-bbb0-4e75acd9297b.mp3",
+      "bytes": 6138445,
+      "sha256": "891844c5083f2463e9b4d80d95aed04b5a7d642f790e36d79f44a16268d46f5a"
+    },
+    {
+      "path": "fishing/Low Tide Harbor-88e31937-093b-4055-9f40-efbd2e72dbcc.mp3",
+      "bytes": 6558349,
+      "sha256": "d4a3ecaa2ae0c248974a96ac4ddedef6a3e3426675e3761a2ec5a1f67905e425"
+    },
+    {
+      "path": "fishing/Storm at the Harbor-648b9da4-bbf4-4192-a3d3-4c7f539f4db8.mp3",
+      "bytes": 5331893,
+      "sha256": "dfd19f5feeff5e21d5cf6f820875bcc76438c701d0fdced81814dcd571c562d6"
+    },
+    {
+      "path": "fishing/Storm at the Harbor-e89f1df5-7475-46dc-acb1-c57836d6fc1a.mp3",
+      "bytes": 4257653,
+      "sha256": "b7a5791af2211e588783d0b4a1752248ea5caf6ddac00f2df8305ea22713065a"
+    },
+    {
+      "path": "fishing/manifest.json",
+      "bytes": 9247,
+      "sha256": "e6b327f042dcf0729497f2ccb92dba06ee9cf3a9384914df54d5730029030ed9"
+    },
+    {
+      "path": "foothills/Clouds Over Asahi Pass-113eadc0-81c9-4e9f-967a-364009ca4398.mp3",
+      "bytes": 6558892,
+      "sha256": "c1649f382d876a26622a56f65331217da42acb0d0af59d4f251bb4239923528a"
+    },
+    {
+      "path": "foothills/Clouds Over Asahi Pass-c495a56a-39cf-406d-bea9-2196c97a940c.mp3",
+      "bytes": 6025012,
+      "sha256": "2376bd12caeafdcbfca3e2b106964c49826f0326f4f272b6f926e92f8d2030b6"
+    },
+    {
+      "path": "foothills/Northern Trail-46366b63-3524-4427-ad4b-572268251cf2.mp3",
+      "bytes": 6030869,
+      "sha256": "a425c2b91484ecd3034b9d201546a8e76ed64f3b61889692728d417e70b299fe"
+    },
+    {
+      "path": "foothills/Northern Trail-bcab4128-772d-43d4-820a-f30ba4058ac8.mp3",
+      "bytes": 11258693,
+      "sha256": "adc06a7ca9866c63cc67286a5c9a785973e86c84042efe27cd8a9a53fec171f1"
+    },
+    {
+      "path": "foothills/Snowline Over Kiso-35ff966f-e73b-4383-ab61-02681f0281a5.mp3",
+      "bytes": 11882228,
+      "sha256": "50e0ce6804f1c7c310f0ed74a072b5d528e70018ffb497057068c24343076f5b"
+    },
+    {
+      "path": "foothills/Snowline Over Kiso-dbb2f2c5-4260-4dde-9343-a4e4d3ff1aa2.mp3",
+      "bytes": 11469596,
+      "sha256": "2d10730068147bfe58a8ced895e71f90ddbfc7cb563e5d7566237402daa36d13"
+    },
+    {
+      "path": "foothills/manifest.json",
+      "bytes": 9359,
+      "sha256": "bc55c2666cecfe930a92f3b9f300312828d05ecc78e08837585e9d4c1eac9271"
+    },
+    {
+      "path": "forest_lake/Hidden Lake Cabin-16e3915d-f736-489c-ae4f-7c4a8db362c1.mp3",
+      "bytes": 5972903,
+      "sha256": "c5736cfb47686016833ad7119f41f6cd93856abfc7acb59725385bb87e9653ce"
+    },
+    {
+      "path": "forest_lake/Hidden Lake Cabin-d014db6f-f150-47a2-930b-50bc6214367a.mp3",
+      "bytes": 5515223,
+      "sha256": "31e53f3b826ef0f38b5d693eb8ac37804bc0cc078d584d809b5381e564a60382"
+    },
+    {
+      "path": "forest_lake/Moon on Cedar Lake-9e732ab3-1533-42b5-91ff-c45b47324d18.mp3",
+      "bytes": 11194876,
+      "sha256": "d5bb6df8aa78a76f01085086b94648d49d98c18c097ab3c6b2cacf200d820b6c"
+    },
+    {
+      "path": "forest_lake/Moon on Cedar Lake-f60df12d-327d-46c4-8eb2-9437093ad8e1.mp3",
+      "bytes": 5268364,
+      "sha256": "887be3f48b777940604fb9b12782f9d1545d2f113ec2218eaa31e906f2a6978c"
+    },
+    {
+      "path": "forest_lake/Moon on the Lake-73a11d93-4433-4723-902b-5bafd14bd9b9.mp3",
+      "bytes": 5992330,
+      "sha256": "5a2112590d80ac00862dad734cddf5ce3e7bfe7fab3bae599d0aba9b63446f3b"
+    },
+    {
+      "path": "forest_lake/Moon on the Lake-d9efcc40-fdfa-4cad-994b-5563cbfd4416.mp3",
+      "bytes": 6447370,
+      "sha256": "37fc8526da5143a2cc0d142aaaa069c7e164003799c9a883d827f7c2e9065d48"
+    },
+    {
+      "path": "forest_lake/manifest.json",
+      "bytes": 9335,
+      "sha256": "13fe2a23eaa803e1da8ccb77979829340d46fadee3ad0df7e9e7566349209df4"
+    },
+    {
+      "path": "hamlet/Chamber orchestral adventure score-01fb3131-683d-4449-b561-4ced4217839e.mp3",
+      "bytes": 5728770,
+      "sha256": "1ff70014f10ab2fb6450291a4ef8b653c2c14447428ef4f1e36625c2ed406ebb"
+    },
+    {
+      "path": "hamlet/Chamber orchestral adventure score-61314a44-cc9b-45a2-b662-a35e9ff83b33.mp3",
+      "bytes": 6945282,
+      "sha256": "0623baff11f21a64a5d6856573925abbfc1a8f7cea80b884be90e905aa04b982"
+    },
+    {
+      "path": "hamlet/Momiji Hamlet-46e7f711-65cc-4e3d-bd66-f14c6757c9e2.mp3",
+      "bytes": 10433097,
+      "sha256": "54d8c523808bb31fa48e6a37af09ce7120c3f844d40e99eb71092be232c6fa96"
+    },
+    {
+      "path": "hamlet/Momiji Hamlet-7b527e77-6a1f-46fa-a6c4-64af5de9611c.mp3",
+      "bytes": 7431349,
+      "sha256": "d78ffc146efe94190bad69cf85eac1132a590e0de9415101f4510fcd2a3112b3"
+    },
+    {
+      "path": "hamlet/Momiji Hamlet-829b4eb2-c46d-499f-b007-4f542e4e634d.mp3",
+      "bytes": 5395741,
+      "sha256": "98bdec76ef6aed944c4ad4ea0758b55b4acee8d4a25d1f9d642ce4e313d9bfaf"
+    },
+    {
+      "path": "hamlet/Momiji Hamlet-896e944e-4902-4468-a77b-67a941aa14f3.mp3",
+      "bytes": 5386665,
+      "sha256": "8e22816e7f75cd5bc9b6f8c2810096defa4d2da9bd16259e0e62ccbc7a4b8c47"
+    },
+    {
+      "path": "hamlet/manifest.json",
+      "bytes": 9297,
+      "sha256": "734b0b0ac3025048e986587110db7a9be9c815391030a4c6af441c3ed4f7856e"
+    },
+    {
+      "path": "harbor/Harbor At Dusk-b3dbaa8c-dedf-45b8-ba3f-c31c1de6d698.mp3",
+      "bytes": 12104894,
+      "sha256": "a396b162529acd1d438e718eecccba8eeb2ff94b2f12a887f56c2c7298914456"
+    },
+    {
+      "path": "harbor/Harbor At Dusk-cb082840-64d4-42b6-8a45-bf95d5ff007f.mp3",
+      "bytes": 11633966,
+      "sha256": "cf19b22b685db2d1bf30f6c10cba44a88baa56f0e70d307496d2fb3819797abd"
+    },
+    {
+      "path": "harbor/Harbor of Reedlight-350afc1d-ec9c-4eef-acfe-7145e6b30c3f.mp3",
+      "bytes": 4966719,
+      "sha256": "c05c01aac3d957b10d6eaa8d8447e870f251e373352147e7ba912a96a99054e0"
+    },
+    {
+      "path": "harbor/Harbor of Reedlight-ee601493-0a13-4314-b8ea-466e24b91b1f.mp3",
+      "bytes": 5890479,
+      "sha256": "537247c41f28c727042ed350adaa1425041141e8832ce9f3d88516ab9f084ebd"
+    },
+    {
+      "path": "harbor/Squall at the Lighthouse-3ed736d1-6352-490a-bb17-0c2167e8fbb4.mp3",
+      "bytes": 11434952,
+      "sha256": "31f02ec369cd17d24ea7064ce5e6a68f80f5afc97b1f5b33fdb7316df77cfcf2"
+    },
+    {
+      "path": "harbor/Squall at the Lighthouse-6c742fdd-f71e-4995-9bdf-d5ed4d4a4b36.mp3",
+      "bytes": 11848520,
+      "sha256": "95739b22d1c7e990c58be93f74037c4f441dab02fa74e5a56fc81fc191c9ae3f"
+    },
+    {
+      "path": "harbor/manifest.json",
+      "bytes": 9248,
+      "sha256": "52a8387418afa21af971bd68a7f55913a29fa758af9408737ca2272f6bfad5d9"
+    },
+    {
+      "path": "hillside/Stone Steps Shrine-0c61a0b3-1cc0-4a42-9afb-5450bb92bf69.mp3",
+      "bytes": 5639994,
+      "sha256": "71968ac304accc09e9c0a4a65f44a447df55548cc51b1c7e8691f4e8caafc84e"
+    },
+    {
+      "path": "hillside/Stone Steps Shrine-362ba336-486d-4333-a148-5054af76bdf5.mp3",
+      "bytes": 6590514,
+      "sha256": "34750e7692014f197f83b0f1d4f7e3aee86eebb561bccac73b7338e2974664ea"
+    },
+    {
+      "path": "hillside/Temple Hill Dawn-544c1d64-486d-4e21-8c22-ae90b41a0326.mp3",
+      "bytes": 6127060,
+      "sha256": "e890d5600a3353f589918296495fe7dbd5a12cc7c397d592e2211f8dc1803dc2"
+    },
+    {
+      "path": "hillside/Temple Hill Dawn-9c3abaf5-48f1-4547-abc2-162707ea52b2.mp3",
+      "bytes": 5436244,
+      "sha256": "abdc6a5e217e7431a377c24f078c2a979f90c127a4659fc31fb0c66a5c6b3f9c"
+    },
+    {
+      "path": "hillside/Temple Hill Dusk-1c192275-e2cb-4a07-aa40-ebf56b10da3c.mp3",
+      "bytes": 5739332,
+      "sha256": "45f48a2fabd6dba35b211d1901ad6380c36ec0aa8ee92cf2ad10fdf08742aa4b"
+    },
+    {
+      "path": "hillside/Temple Hill Dusk-26c81380-a189-4ee9-811f-b4d983709bac.mp3",
+      "bytes": 11083268,
+      "sha256": "4f9c9a75355ad8eaeb8a9c93a2fe78f1abd2fb2f6feabff6c65ce6cbccbadfca"
+    },
+    {
+      "path": "hillside/manifest.json",
+      "bytes": 9283,
+      "sha256": "3cd9a49be3ba802eff10c7b16541d0a03d61f5e424c6a66fc4de0ba06942694d"
+    },
+    {
+      "path": "hippodrome/Hidamari Finish Post-14e2cd9b-6298-41c8-a4d1-b0324a23a91d.mp3",
+      "bytes": 10761529,
+      "sha256": "8bf87dee0fa3a12e641fd4ff4ba49831e65b9255c9743e362082d3dacd19eafd"
+    },
+    {
+      "path": "hippodrome/Hidamari Finish Post-e8d5fd26-da8b-4d01-8aba-b43b39c6bc54.mp3",
+      "bytes": 4899865,
+      "sha256": "d617be766e8456925416656a2910bcd1db039e0ec56499f418c70e72a49c36b2"
+    },
+    {
+      "path": "hippodrome/Hippodrome Dawn-de2de131-ec54-45b8-983d-f567851a7716.mp3",
+      "bytes": 11158199,
+      "sha256": "d1cf8970cb267a97b3c366636031d200a627006273876df0b6229336d9c90d35"
+    },
+    {
+      "path": "hippodrome/Hippodrome Dawn-e8509359-cba0-4c62-a5bc-bbd636ca13b6.mp3",
+      "bytes": 5368055,
+      "sha256": "2fa530aa9e04ea5e565afe9a55462e0448aa8e06cc9834a2567e63fa64f1ec90"
+    },
+    {
+      "path": "hippodrome/Hippodrome Gallop-a887eb53-1cc6-4fc4-b69b-54eeff3191e3.mp3",
+      "bytes": 10704922,
+      "sha256": "04765d9a549fc0049ca7e1539f444ed0a04dd9c8beaa1343e1a8a23e4dc80a62"
+    },
+    {
+      "path": "hippodrome/Hippodrome Gallop-e1b02bc4-1345-40da-bd7c-62ac4a606a4d.mp3",
+      "bytes": 6735322,
+      "sha256": "8206566da7b58925709085015504765e7edfbd090b1c4bc951e1900abe29d9c9"
+    },
+    {
+      "path": "hippodrome/manifest.json",
+      "bytes": 9313,
+      "sha256": "73e89a3bb0fc16ef86cc9ad486a5ea709ad6433430d9efecef910b26f75e769a"
+    },
+    {
+      "path": "index.json",
+      "bytes": 412152,
+      "sha256": "5bdd589b77ff872d1d1bb8f556bc0cbc420bfed0edcf3f9c1edc3bdf36a62f18"
+    },
+    {
+      "path": "landing/Misty Island Stair-80f3ad1a-4e56-4931-9743-49dd386a4b4d.mp3",
+      "bytes": 6307108,
+      "sha256": "e978448de01b06d225f0382e51dce2b846e2543ae9120bec1130fa5bb386aef3"
+    },
+    {
+      "path": "landing/Misty Island Stair-95d34145-3cb0-45db-83ff-6043dd156c9b.mp3",
+      "bytes": 5899876,
+      "sha256": "5d506e8b3094d737869b54bdea31510f0bf20a2dbd97bdd70fa7c5ba53c115b6"
+    },
+    {
+      "path": "landing/Sea Mist Landing-3c45517b-8e81-4bcc-b73a-9b9c38c142b2.mp3",
+      "bytes": 5108418,
+      "sha256": "21febd3969c921e00e913469a24a9b340d1037be4d060e28222234b577bc19c2"
+    },
+    {
+      "path": "landing/Sea Mist Landing-c67a84eb-a434-40f6-9c9a-e1ffae17bf94.mp3",
+      "bytes": 4652754,
+      "sha256": "1bae2de292ec3b442ec1c29275780749bbe285240a47e10636d25cc7c64194eb"
+    },
+    {
+      "path": "landing/Stone Stair Cove-6a6ae4d4-d4ac-4a07-9928-8fa789dd4157.mp3",
+      "bytes": 5353646,
+      "sha256": "a83d344eb789dc20796e1d91d4690325dacf1b41669158eb4238e1a709883a9d"
+    },
+    {
+      "path": "landing/Stone Stair Cove-d9b76a75-cfc3-4274-a7fa-3f7ab992587f.mp3",
+      "bytes": 5617502,
+      "sha256": "13802f4b08e8099f7ecf04604a61c5efd0e7533331b33ea31b7633a99d387aa7"
+    },
+    {
+      "path": "landing/manifest.json",
+      "bytes": 9260,
+      "sha256": "5b9ce2350c688b13d62165505c4bf408b46ee53ce2d9665c6d7e13d4273ca665"
+    },
+    {
+      "path": "library/ambush/Ambush-48203b55-f616-4d67-bcac-aa22ef669844.mp3",
+      "bytes": 4432312,
+      "sha256": "5dd42781ba2bac96aa68ba6b2e297d9498dd5485e3cecedb56c82217dc7b213b"
+    },
+    {
+      "path": "library/ambush/Ambush-c3dba163-96cf-4a60-99db-66ff4e59b37e.mp3",
+      "bytes": 4501288,
+      "sha256": "ecb116d1c415974b6ceb94b7fb1e567d64735ff709a17b778e0beafec29b3a40"
+    },
+    {
+      "path": "library/ambush/manifest.json",
+      "bytes": 3571,
+      "sha256": "637cee192e82848fc4eb0a8f0b90e11e3b4a1bc2f82e2639ba2dd77ece87dcc2"
+    },
+    {
+      "path": "library/boss/Boss-54e34cb8-d91f-454c-8613-dcffe8c60699.mp3",
+      "bytes": 3967583,
+      "sha256": "a55ca0cb03133a7b261152fb30b44d31ea7d7021831888975e91304bf32d33a4"
+    },
+    {
+      "path": "library/boss/Boss-62825ea9-8bf5-45a7-8e27-2f8457232248.mp3",
+      "bytes": 4625903,
+      "sha256": "68eac58524ff8e6e9b15742b55c4bd60e36c75fb9c229d0dd731ca9addcc8e0d"
+    },
+    {
+      "path": "library/boss/manifest.json",
+      "bytes": 3607,
+      "sha256": "bae42e7ba84f9739b6d44394fa3e09fe0a04a58b11da11ddced8fa376c637e14"
+    },
+    {
+      "path": "library/chase/Chase-21804f40-590b-4169-ab02-dd78ed1a4022.mp3",
+      "bytes": 4283596,
+      "sha256": "b994bd489a5fb6f120067e510dea3c67acda9a6df9b4dd6daad49fecf1d9c5b7"
+    },
+    {
+      "path": "library/chase/Chase-a52bee4e-a036-41d5-9252-f0dafc08d92b.mp3",
+      "bytes": 4435420,
+      "sha256": "0a4fdd4e80c7f9b708c294bf9f56867ccef68a0434769c83adb46bc437ddb597"
+    },
+    {
+      "path": "library/chase/manifest.json",
+      "bytes": 3498,
+      "sha256": "3e64052cb5965ebb9a8e5d9c59571b848ac26a4efce83cddb4929db0351be2bb"
+    },
+    {
+      "path": "library/defeat/Defeat-6d3b8502-5b34-4c67-9e8c-1db1fcb487af.mp3",
+      "bytes": 4623056,
+      "sha256": "09bd55bdc0dc9b18506fbe227d6262b9224e605e895531e7117d8fad38cfdc11"
+    },
+    {
+      "path": "library/defeat/Defeat-f0026434-de4c-4ee3-b1ea-54770a103369.mp3",
+      "bytes": 4651136,
+      "sha256": "3c414d212502e0b5059c492e81c0c5492d92ae8d81a351452a593553c6cfb677"
+    },
+    {
+      "path": "library/defeat/manifest.json",
+      "bytes": 3510,
+      "sha256": "3991f7f95f53349196050770500f1f829c090906134e73979b451d9dc4c2539c"
+    },
+    {
+      "path": "library/race/Race-b2e08b3f-e7e2-4160-aef0-7a5d4910afcc.mp3",
+      "bytes": 10914328,
+      "sha256": "8841913545eb2717ac22bb6b8a5b38d0098fb73014cbf660e7173e4348e6cf7e"
+    },
+    {
+      "path": "library/race/Race-f33d8dd6-7e24-41cf-a951-76b1be1a3d43.mp3",
+      "bytes": 2993272,
+      "sha256": "f57bb64181efc80b99074ea9eaa40212dc57e86880c0e3d37d1e33311c77f1c5"
+    },
+    {
+      "path": "library/race/manifest.json",
+      "bytes": 3556,
+      "sha256": "5dd15840670a312b5ab6822803688cf61364aab5361260151e45691154d5e19a"
+    },
+    {
+      "path": "library/revelation/Revelation-31fd541b-c7c1-45e9-a619-6968713bb00b.mp3",
+      "bytes": 4250883,
+      "sha256": "df3a539b4be8237885ff21bc3bfadbb4c43a528af37965435ffef5e3ef50ead3"
+    },
+    {
+      "path": "library/revelation/Revelation-5e8bf9bf-a2c5-4e39-ba9b-d011b0f5d590.mp3",
+      "bytes": 5462691,
+      "sha256": "c22d9866a2a79250c2f87240f85b706743c19d3630a6e66cf2bd5e4120b28918"
+    },
+    {
+      "path": "library/revelation/manifest.json",
+      "bytes": 3609,
+      "sha256": "ebb564b8c87a3571a35a92bf1aaf5925cdbfe4e74e5a496adccfe0b307d7b7ac"
+    },
+    {
+      "path": "library/ritual/Ritual-42293259-b909-4549-9b42-bb97f9b48da3.mp3",
+      "bytes": 4327188,
+      "sha256": "9f7bc01bc43177675ebaf0f15b1e8c480c9cffcd4062f6b55150959367a30fe2"
+    },
+    {
+      "path": "library/ritual/Ritual-70e105f0-e8b2-4507-b421-08574feaaede.mp3",
+      "bytes": 3396660,
+      "sha256": "ba0ad74003252565fc0fb41d1477780a9d88f420c6f02dfa30b419f25366c5a3"
+    },
+    {
+      "path": "library/ritual/manifest.json",
+      "bytes": 3557,
+      "sha256": "ac589af3682600ad72f457944b18a98224a3f333b6556a66e88c5943c92e51c9"
+    },
+    {
+      "path": "library/skirmish/Skirmish-288f90ac-dac2-4756-9178-c1afd372a48d.mp3",
+      "bytes": 3541545,
+      "sha256": "af4f3e16c4c20aff66ed239679fb3bd54d8bccae54efcd9717c4931c7f8b15d8"
+    },
+    {
+      "path": "library/skirmish/Skirmish-f57c7e7c-c0ed-4ccc-8679-317186b040bf.mp3",
+      "bytes": 10931433,
+      "sha256": "475927570d6d1bd19d9f3aa8c02001d4e8ab76a9ea1a53cb1ffa109e81e9c49b"
+    },
+    {
+      "path": "library/skirmish/manifest.json",
+      "bytes": 3669,
+      "sha256": "b8d17f758e7d7bada05d15244ce1ac1a76c38e7f0f1810fd36b928918f832db4"
+    },
+    {
+      "path": "library/stealth/Stealth-07ee289e-c943-40f7-a3d7-2c96cba58d34.mp3",
+      "bytes": 3707438,
+      "sha256": "6d6a8be2e9de8141455cffcb2a06726f9109bb13efd8c060f352eb5b81eb0ac6"
+    },
+    {
+      "path": "library/stealth/Stealth-b97a15fa-894a-4ee9-93c8-5e81d1954915.mp3",
+      "bytes": 3872534,
+      "sha256": "dfa2b8d84f9bced855c1f18478f20c3654e3fdf8d91d1f5f3e84a3a125331780"
+    },
+    {
+      "path": "library/stealth/manifest.json",
+      "bytes": 3633,
+      "sha256": "424efcb742099b7dfed4a86b863b0b3530c9def27014f312f7bb7246ef1be75b"
+    },
+    {
+      "path": "library/storm/Storm-baa0e0a4-ca9d-4006-89b7-859449056bac.mp3",
+      "bytes": 4914470,
+      "sha256": "c851b740a6b749c4eba533b623ed00a6f669c14174b06ba5bebec03360b94d16"
+    },
+    {
+      "path": "library/storm/Storm-efad6812-2d70-4866-add0-cf78743f2b90.mp3",
+      "bytes": 4725134,
+      "sha256": "a70606a873c77458fcc64a456e4aa56ad3b1a7d8014f071dc108493c6fc9b24c"
+    },
+    {
+      "path": "library/storm/manifest.json",
+      "bytes": 3541,
+      "sha256": "3e58f1d9756bd4d5e1bf2f945ea7707e5166fe2eebdcd39e7724c4b56d788c0a"
+    },
+    {
+      "path": "library/victory/Victory-bb9a4770-a0a2-443d-a28c-9df373e68da9.mp3",
+      "bytes": 1375489,
+      "sha256": "5a5bf5baa26abd8c2cc0d0cfe8b996c999957a3e772dd3d7ebeaf23229723180"
+    },
+    {
+      "path": "library/victory/Victory-f9efadcb-826c-4406-a5dd-3df6e662fd01.mp3",
+      "bytes": 3436897,
+      "sha256": "ee0b3f63a624be2497da5dbb5205bed23f2faac22ca139627b9abb5f1d429a04"
+    },
+    {
+      "path": "library/victory/manifest.json",
+      "bytes": 3607,
+      "sha256": "1c35950c414239bfa814b714b7497332e070682ba05a83aaec315b7da3180999"
+    },
+    {
+      "path": "library/volcano/Volcano-51e9c649-2890-42a4-9ca0-582ce9311b80.mp3",
+      "bytes": 4334639,
+      "sha256": "ee1b7ddd186b7939775ed5e3ddaad2e4679078938b369abb109179905381a388"
+    },
+    {
+      "path": "library/volcano/Volcano-e45ed07e-9607-423d-9bf6-99f9526e8872.mp3",
+      "bytes": 4865975,
+      "sha256": "ef682d461b9a05584b936b2fc54a99fb4a1a8ae957a5f6853d691de2773aed5c"
+    },
+    {
+      "path": "library/volcano/manifest.json",
+      "bytes": 3607,
+      "sha256": "9e7e677e9871c3eb4517f3f57197d83f6e344727cb24bcfdbed673ea0e6163ed"
+    },
+    {
+      "path": "mega/Mini Mega Dusk-4ec35d22-1337-43b2-8912-c4963eeb4a20.mp3",
+      "bytes": 4846810,
+      "sha256": "aced73f131737f36e3e8396b85bf1e09d5cd29379a12e199c215aeabf4b9f1aa"
+    },
+    {
+      "path": "mega/Mini Mega Dusk-dd28622f-64ec-4752-9a92-f9df7008bff6.mp3",
+      "bytes": 4845898,
+      "sha256": "ddda015b6cf9958d53c481dfad810f03782abdb0f9a787029d2a992c487dc8b9"
+    },
+    {
+      "path": "mega/Mini-Mega Clearing-46830621-a1b4-4a2c-8c85-e7032cfbc63f.mp3",
+      "bytes": 4648031,
+      "sha256": "9008fc3203c7ae111a7974ff9b0d0360f5043aed84e608a551635611fe78e112"
+    },
+    {
+      "path": "mega/Mini-Mega Clearing-e4d567e9-9315-49a6-9220-2259c1321e43.mp3",
+      "bytes": 4529495,
+      "sha256": "65870038619af103e0b70bf43e38765b84134e22a18ddf3eaccb0407b3eda601"
+    },
+    {
+      "path": "mega/Sunlit Forest Ramp-46059938-ed4a-407b-9266-1a53148552b8.mp3",
+      "bytes": 10590059,
+      "sha256": "84d7afbf2448c662610b3d012a12143db8c3bba510c8209adbf4524a09103dfc"
+    },
+    {
+      "path": "mega/Sunlit Forest Ramp-bcad5bf6-5189-4519-8570-5dbd7908e070.mp3",
+      "bytes": 5090315,
+      "sha256": "1985f37dc3887ab3b1664251d9f37b108fe60f0af08bd3661beda6640be86d8a"
+    },
+    {
+      "path": "mega/manifest.json",
+      "bytes": 9234,
+      "sha256": "e3467e6e6230a11a11b105a431737a294edba0fed9aa52033b8ccbd606162aa8"
+    },
+    {
+      "path": "megapark/Canyon After Session-a7ac38b6-72c8-4867-8928-3aedb7b63bbe.mp3",
+      "bytes": 11157192,
+      "sha256": "071a6c10f2f2334846a63944c16c7d4c98c8d4b11efd0eb7cb669147315206c7"
+    },
+    {
+      "path": "megapark/Canyon After Session-d18a18c3-8261-451f-bb7e-8c11d23942e7.mp3",
+      "bytes": 5544984,
+      "sha256": "57fcc9abf1c39573115221bc98e9121b8a563c7140917d39d72abe757a8c7088"
+    },
+    {
+      "path": "megapark/Canyon Line-73a3708b-f16c-4cab-944d-173301e97915.mp3",
+      "bytes": 4962300,
+      "sha256": "09840d205b1346725f50a346961525c4730592f923cb8d50b9bd1ddfb232f546"
+    },
+    {
+      "path": "megapark/Canyon Line-ecaf5954-499b-4c8d-bdb0-0cbbf8c18f4a.mp3",
+      "bytes": 5112540,
+      "sha256": "96d3f69f1a584290b6749a1c192724ccbe22760e117a196303f00a19f65ff3a1"
+    },
+    {
+      "path": "megapark/Canyon Run-9702a48f-7d9a-4d06-bbf7-a017d1be0e21.mp3",
+      "bytes": 4823951,
+      "sha256": "7da4515ddee427481f2c88d473aa1a5b451812842135d54f4abbc6907ec9507a"
+    },
+    {
+      "path": "megapark/Canyon Run-ab8ba8b0-11e3-466b-96d8-c74ffb092010.mp3",
+      "bytes": 4894703,
+      "sha256": "b650755991407950cf2c9d83b858197163f67a7763d8aa2192963a2716a9b1e1"
+    },
+    {
+      "path": "megapark/manifest.json",
+      "bytes": 9167,
+      "sha256": "39b5a6cc1f5c2e621e92d74204dd99d34a58e69cab4f8bf84f730ab9e512803b"
+    },
+    {
+      "path": "park/Closing Time Pond-6021c23d-1aa8-4c5b-b19f-c252ad0d48bc.mp3",
+      "bytes": 5139421,
+      "sha256": "8dbaf73f20f15abda203137088154dca66d7f9d2fae431de45c61981ece6ff97"
+    },
+    {
+      "path": "park/Closing Time Pond-ba086b87-1e60-4625-8509-3aea430e1fad.mp3",
+      "bytes": 6604957,
+      "sha256": "ef5e39b9a00117c25f55eaf4cc10ff88986dd6961b04a3d23121a477787499e7"
+    },
+    {
+      "path": "park/Paper Kites Park-653c4ed2-5ba2-415e-a620-89366f47ffb0.mp3",
+      "bytes": 10820204,
+      "sha256": "eeeb6044795779b67eaae383d6654ab1fbef359b03ccbb4a9fff662ba937fbd1"
+    },
+    {
+      "path": "park/Paper Kites Park-ba4f2824-4e10-4f5e-a4a5-88e549a1e9ae.mp3",
+      "bytes": 11132876,
+      "sha256": "d732da325f9fb9e917f64070b8427af330b4929949c19e42e05614ed1762e13c"
+    },
+    {
+      "path": "park/Pavilion Pond Path-6a888520-7109-4715-82fe-79f0ded17c7c.mp3",
+      "bytes": 7000522,
+      "sha256": "1a2a487f7b6e3efe89ce83625e805fbb23cd148ed069175d38f30a935f81871a"
+    },
+    {
+      "path": "park/Pavilion Pond Path-e572d2dc-cbca-445f-8df9-da3dc8b1545b.mp3",
+      "bytes": 5370970,
+      "sha256": "90bc4aaca7639c547246f84a6e7d0aa497dcc3ce063686a811a5966c0e8f4e7d"
+    },
+    {
+      "path": "park/manifest.json",
+      "bytes": 9146,
+      "sha256": "4dead828a08b13817c26512c0680787017a2da4660038b2ca3f9d5711a3ebe5a"
+    },
+    {
+      "path": "plaza/Clock Square Festival-2775b2ce-3de3-4dc9-9d03-e0b3a2293403.mp3",
+      "bytes": 4803028,
+      "sha256": "8ecf7abd51a538480880505c98476a2d0702894a8cbbca1d164372c6dd1687bf"
+    },
+    {
+      "path": "plaza/Clock Square Festival-a6bc803d-65ab-4c4b-80d1-96d0183e524d.mp3",
+      "bytes": 5493772,
+      "sha256": "9a9f3941860eea1ab39532ef395fdb035c49607bfcc0992baff4d10a105afbbd"
+    },
+    {
+      "path": "plaza/Clock Square Fountain-06b39406-3916-4087-aae3-fce713f12f57.mp3",
+      "bytes": 11520063,
+      "sha256": "88146922dc4a3d95ddcbeb65dc9134f4653cf32119d5b3470548e2c3bd86a073"
+    },
+    {
+      "path": "plaza/Clock Square Fountain-49fce78e-4cee-4e4d-912e-fa5a5ef9111b.mp3",
+      "bytes": 11351439,
+      "sha256": "640d507aa7e36c4c0f98d4043dde571834e65985a956ebdc6c25627302056e3c"
+    },
+    {
+      "path": "plaza/Moonlit Clock Square-47886b0e-2591-4faa-8ebc-cce8a1ef5404.mp3",
+      "bytes": 4438290,
+      "sha256": "719fc4388289325515378cc0fc272714e9221952ff8c85b15b1658f7bc59acbc"
+    },
+    {
+      "path": "plaza/Moonlit Clock Square-b85a73e9-9c98-4e45-bf7f-86b64c97f908.mp3",
+      "bytes": 5654658,
+      "sha256": "4cd4286857742b0f21ee806b7a871348c7701fd6f934f6f085a77e2df07d45e5"
+    },
+    {
+      "path": "plaza/manifest.json",
+      "bytes": 9272,
+      "sha256": "8d699ed7ff5cf8be65e4b5705faa99a2a790bf7bd6611d5750bffee9205555b1"
+    },
+    {
+      "path": "skatepier/Sunset Bowl Drift-7b94ca6f-8db1-4016-9107-5d14c734b3ee.mp3",
+      "bytes": 11425556,
+      "sha256": "5f491af0836a338bbc064a399205d91e5c102558930772122b19484c8253a879"
+    },
+    {
+      "path": "skatepier/Sunset Bowl Drift-7f2932b6-fc4c-45e3-ab01-cb0723d77576.mp3",
+      "bytes": 10818308,
+      "sha256": "f3e51ce17870041cc60bc4458ee4ee0d7ac75c1c3a55a3669a89838323b0d43a"
+    },
+    {
+      "path": "skatepier/Sunset Pier-0fabe886-b2e3-48bf-be56-ea6aad24a9ef.mp3",
+      "bytes": 6758609,
+      "sha256": "eb4723f25d4ef00f20a5a1e2d63f8677b9e0d1150e2996eca4c6e86a566329d6"
+    },
+    {
+      "path": "skatepier/Sunset Pier-17e54948-ae47-451d-aef7-bc531cd51886.mp3",
+      "bytes": 4729274,
+      "sha256": "21c4f33f87875f26a70815f317101a40d70545e95c44c70cc66325bd2b0d6b03"
+    },
+    {
+      "path": "skatepier/Sunset Pier-7f47a37e-909f-4fbe-9a61-377456345322.mp3",
+      "bytes": 5633954,
+      "sha256": "0af24ccd9b84bc3aeca10fa47209ac395d7504da9ec6d84f7b484a5afe40b26f"
+    },
+    {
+      "path": "skatepier/Sunset Pier-ecde0611-0929-4be4-be95-b3d7e0a6f626.mp3",
+      "bytes": 11377649,
+      "sha256": "3387b545a47da7a2d8e0a574641b90c96a088f035c4ecf6e32efa9b41434df7e"
+    },
+    {
+      "path": "skatepier/manifest.json",
+      "bytes": 9251,
+      "sha256": "d58dbef399e90e760bc23cd3f65b8ec3523e231087e95c814b07715c6a5b445f"
+    },
+    {
+      "path": "spawn/Before Dawn Road-1e926f96-d34a-42ce-9c03-18477af50051.mp3",
+      "bytes": 11835854,
+      "sha256": "485618bb2ca4c05a459f517b0d22690b8e1e9b488652ee95a8fbb7662bfb5ba0"
+    },
+    {
+      "path": "spawn/Before Dawn Road-aeb3560c-e685-4067-8d5d-1cbfb3179f49.mp3",
+      "bytes": 11971454,
+      "sha256": "0c7315ed4b37c4de78930a9b48b6192cebfa4f031769def01c267e6b6f0e7588"
+    },
+    {
+      "path": "spawn/Coastal Road at Night-a708406b-077f-4b7e-ab29-79c4df00ff5f.mp3",
+      "bytes": 6094803,
+      "sha256": "64c560c919eddd45f613f3cbc84c544555e2fba360ff44aa1e9ea359b9ea5345"
+    },
+    {
+      "path": "spawn/Coastal Road at Night-bafa1f65-3ba7-48a7-91ba-44fe29ebbfdb.mp3",
+      "bytes": 5034867,
+      "sha256": "802a5db9e166656ba1132fff398bacb7a1e6d079e57965bfce85d87765b80064"
+    },
+    {
+      "path": "spawn/First Light on the Causeway-59d7ba8d-38af-4d9c-a12b-5c0cc1dfff72.mp3",
+      "bytes": 10509333,
+      "sha256": "7bb7b7432dd60f605e5c478df7321fa1227619ba9f3fc44f1b61b937489c74bd"
+    },
+    {
+      "path": "spawn/First Light on the Causeway-e2466267-b5aa-4ed6-87d3-5df51243a9fc.mp3",
+      "bytes": 10349877,
+      "sha256": "3a4ad318beb0d23d870c116b293d1bea3ec99a86315f1263e65cb6f034afdb94"
+    },
+    {
+      "path": "spawn/manifest.json",
+      "bytes": 9431,
+      "sha256": "6e1b6fc2381cd561e580b4f8d901850b404cf9dab945ebf2fad6208f6bc41b72"
+    },
+    {
+      "path": "station/End of the Line-2266c8c7-f51d-4d57-b2d6-1754dca4330e.mp3",
+      "bytes": 6162397,
+      "sha256": "eb03657b998fc8ed3de9057acaab9a86253e0fb78bf3a28612e719100e9ad344"
+    },
+    {
+      "path": "station/End of the Line-77091fce-4f2d-4645-a7dc-06f20e608032.mp3",
+      "bytes": 10565557,
+      "sha256": "3d1e3c31838d712dac2692eceeb23d96774559f72808595946a7b16b22334774"
+    },
+    {
+      "path": "station/Last Train Station-92cfd6d7-f6f1-4e43-8ec3-63eb38c4fa79.mp3",
+      "bytes": 5257508,
+      "sha256": "5110dea333553e3ed16921f51c58c75852cdbd2d55d046aa2054a3b35af82042"
+    },
+    {
+      "path": "station/Last Train Station-96b42fac-7a14-4d9f-836a-75e57619cc9a.mp3",
+      "bytes": 7149644,
+      "sha256": "c6a19377fa3d4aa624edd515e30d43675dcc60b0bd5d8ba668f4953560031ff1"
+    },
+    {
+      "path": "station/Station Farewell-71dd8920-7429-4cc2-8923-249b0d5cab7d.mp3",
+      "bytes": 11376962,
+      "sha256": "d3fc33575e6ef1e457b96dc978baace1548140ffb829f9eca768957674b891d9"
+    },
+    {
+      "path": "station/Station Farewell-8d7d3942-e4ae-40a4-b48a-a60aaadd2ee6.mp3",
+      "bytes": 11861954,
+      "sha256": "987ee87236fb9fa314d1ff59bb9817b46996339dd07f8827e3a13a89dba48aa7"
+    },
+    {
+      "path": "station/manifest.json",
+      "bytes": 9214,
+      "sha256": "07fe1d42fb4a1d85e474a43aa8624c6f0b64e9edf51192165023b774f0f0494c"
+    },
+    {
+      "path": "temple/First Light Shrine-75f0d8bc-9d2c-4b47-8c83-8364678d1b87.mp3",
+      "bytes": 4961634,
+      "sha256": "ba7ddd990fe7123a479b55751f0619a23b246ad7e43cdc88a2150d477ded910f"
+    },
+    {
+      "path": "temple/First Light Shrine-94df47fb-9cf8-4051-9c9b-84f7377852bb.mp3",
+      "bytes": 6171618,
+      "sha256": "2664923caaedf9d764e4340571a5691416356ff2aad82241aac1a6c5d5168331"
+    },
+    {
+      "path": "temple/Summit Shrine Rite-1e662043-7c91-47e6-90e7-fbd76c291e8e.mp3",
+      "bytes": 10971890,
+      "sha256": "41af0672459a476199bb3e94d30148e623eff574f611e18face5c2a1b18be9be"
+    },
+    {
+      "path": "temple/Summit Shrine Rite-86b804d3-91f2-4261-91e3-0748ec6dfba8.mp3",
+      "bytes": 5610194,
+      "sha256": "2077e044e40169a78fba201ba8ebae305f436ca007c4dd73926da8c63ae14c15"
+    },
+    {
+      "path": "temple/Torii Over Sea-30494f64-de13-4107-91a5-fe417a2d928b.mp3",
+      "bytes": 6125098,
+      "sha256": "9fc76daf516bfafdd66f607603e4b46da4ac33d2bf788ef7c37a0997c3dfa85f"
+    },
+    {
+      "path": "temple/Torii Over Sea-4cb6579e-645c-4541-9757-7da89d2c9fe1.mp3",
+      "bytes": 6614530,
+      "sha256": "e4d3889cdf27ddbf2cab1a382ace7b6cf0507a685116ad9ba4b79312abb205a1"
+    },
+    {
+      "path": "temple/manifest.json",
+      "bytes": 9180,
+      "sha256": "f52874682805d87d376e1f4a538e9fe5e986d2d39dae00db13cfab9905cd1e81"
+    },
+    {
+      "path": "variety/calm_dawn/Dawn Drone-4cb0d7fb-aa0d-49c9-8e1a-b0597dbe019c.mp3",
+      "bytes": 10773357,
+      "sha256": "a71519b8ed5e9e3e97971b1dcf1daf1bf6270657777b5efc0d3ae135ecde37ac"
+    },
+    {
+      "path": "variety/calm_dawn/Dawn Drone-9cb5db45-2b07-4c40-96c9-84517506dde7.mp3",
+      "bytes": 6532437,
+      "sha256": "23dde84763480f2463cdc7c8a16f149bbbf3faa744c3b01188df9d42e423b44a"
+    },
+    {
+      "path": "variety/calm_dawn/manifest.json",
+      "bytes": 2635,
+      "sha256": "a17d8a45ac13f2737d2247674a1a670b9abd19ac67230f2494e99754f4bb6506"
+    },
+    {
+      "path": "variety/calm_high/High Altitude-298166eb-285c-4b76-941e-9e8ca16fdb1a.mp3",
+      "bytes": 6853122,
+      "sha256": "8b32c65cd3656393265647c262b03dd76e2a6f93de0ea228f87bd2201dfd47cd"
+    },
+    {
+      "path": "variety/calm_high/High Altitude-beeeef7a-e143-4de3-8a4d-02218eeb2d3e.mp3",
+      "bytes": 6570882,
+      "sha256": "d5fd706072e71bf5794962de3749f20f7e1cf7b70d61736bb50f32645872dda4"
+    },
+    {
+      "path": "variety/calm_high/manifest.json",
+      "bytes": 2602,
+      "sha256": "6dbcafd2c2083a6261c8038a5b2cd83adb61286fc75b70a203b631ca3c81706c"
+    },
+    {
+      "path": "variety/calm_underwater/Underwater-0ac4022a-52a6-47b0-98de-6688e7921ba1.mp3",
+      "bytes": 10623434,
+      "sha256": "746bd984c0821c1cfe737c032f84acc128cca04c9b028bfa742db975fcd291a4"
+    },
+    {
+      "path": "variety/calm_underwater/Underwater-9a8ff187-380a-4fe5-9ed4-3bd9c328dd17.mp3",
+      "bytes": 10661834,
+      "sha256": "1e1b7dfd3c0145acf0bfbdf002f953fd9f9dbb0caf488506101f186f572b9835"
+    },
+    {
+      "path": "variety/calm_underwater/manifest.json",
+      "bytes": 2675,
+      "sha256": "392528a3e4a14a3010421a0e89793d300feb2d5102306d021375a14255bc47e3"
+    },
+    {
+      "path": "variety/energy_boss/Boss Stomp-cd7cd3b0-a352-45e8-a109-00fbb3eb6b03.mp3",
+      "bytes": 4653733,
+      "sha256": "f20846ee83223acbada223a4a45c3c461d4c18a4c9946cf0f488e25aa890d508"
+    },
+    {
+      "path": "variety/energy_boss/Boss Stomp-fb566702-6fd1-4d5d-83ba-a0b200d7f532.mp3",
+      "bytes": 4236901,
+      "sha256": "dc239fe31632841bdc93085421ca8024705befab473abdb2c4aa14b52369c866"
+    },
+    {
+      "path": "variety/energy_boss/manifest.json",
+      "bytes": 2727,
+      "sha256": "8615c6b063b377957e5d8047bd7f26cbf08d242a1230e821c996a6ba10956bf3"
+    },
+    {
+      "path": "variety/energy_breakbeat/Breakbeat Pursuit-5802705e-ba66-4ef4-aec6-5949333bfc7b.mp3",
+      "bytes": 10440430,
+      "sha256": "f44236266dd6cc50fdcbede84dcff5470bf8b14884938f7467fbdface2fa1781"
+    },
+    {
+      "path": "variety/energy_breakbeat/Breakbeat Pursuit-fc0ef66d-6766-4d53-ba34-d5ae9cb699f8.mp3",
+      "bytes": 5621998,
+      "sha256": "b3d6ca63b7f37f3baaa187ac1b9a4b107c4d26739c2caa0bcd8c6840b03cbc77"
+    },
+    {
+      "path": "variety/energy_breakbeat/manifest.json",
+      "bytes": 2802,
+      "sha256": "9b62d086fedbf7e298f5823558f672b234fac1ef89685ab44b4ece53d70c1be2"
+    },
+    {
+      "path": "variety/energy_dnb/Neon Current-78d799c0-6c41-4a4b-a5bf-b784053f3529.mp3",
+      "bytes": 12035751,
+      "sha256": "61c6e0ee6ea1f6e0837932be5e527a13db27a996004ee17541221ed9d55eeeab"
+    },
+    {
+      "path": "variety/energy_dnb/Neon Current-a1860ff1-9c91-4fd8-b752-e8338069cd2a.mp3",
+      "bytes": 11844423,
+      "sha256": "a5a6ab6a5528d0d90361c2c42262bcb8a72e2eb73520ff4d218409e38a3c4a2e"
+    },
+    {
+      "path": "variety/energy_dnb/manifest.json",
+      "bytes": 2788,
+      "sha256": "ece1db320b4f413555902534777123844eeacfbab5a879197612e17b8e0c4caf"
+    },
+    {
+      "path": "variety/energy_duel/Duel-165b81e0-8368-4014-8dd5-80152febe510.mp3",
+      "bytes": 11128541,
+      "sha256": "00a5e58982342a3d5644d9b1e28e969c35e5f65d4faa72a473fa7c0f3729736b"
+    },
+    {
+      "path": "variety/energy_duel/Duel-9f2fc381-cb1d-415b-a9f3-d820bc5a5e9d.mp3",
+      "bytes": 3783821,
+      "sha256": "9043b2a1863726d8164d1c0d8a0927efd304209186214d5308c36a79e689bf45"
+    },
+    {
+      "path": "variety/energy_duel/manifest.json",
+      "bytes": 2703,
+      "sha256": "6df477aa1f04839dcfe377634d819a649bc06d0736e004788e04ef311512f895"
+    },
+    {
+      "path": "variety/energy_festival/Festival Drums-86a7cb69-f6ce-4cd4-aa01-97fdce658ddd.mp3",
+      "bytes": 4166162,
+      "sha256": "f9193c18b5d55d26e3e85ad87e97ab8b6652fd7c451451663aaa19b08e50ed11"
+    },
+    {
+      "path": "variety/energy_festival/Festival Drums-df6e57c7-ff75-4818-a506-7c3a2025471c.mp3",
+      "bytes": 4199426,
+      "sha256": "642aa5080f7b5800777cd49e424906af10fa3c3337d76d66caf84c1b8982b537"
+    },
+    {
+      "path": "variety/energy_festival/manifest.json",
+      "bytes": 2795,
+      "sha256": "c8741dfd40ced3c022891024d33555dd86d3ca6e9195cbdc8c867b948c7225d2"
+    },
+    {
+      "path": "variety/energy_iron/Iron Pulse-68e9cfd0-6dec-48f4-bd47-7f243d7d05e9.mp3",
+      "bytes": 5879043,
+      "sha256": "5876f34195a11ee7e8ffb3cbc870d86d20236f158f8b806ea01cb7bf030194f6"
+    },
+    {
+      "path": "variety/energy_iron/Iron Pulse-db5c6062-b04e-4a44-aab6-b4ad1947ca6f.mp3",
+      "bytes": 11381763,
+      "sha256": "bb1c750787ac44193d689d5ac3d425373dfe13c52f5ae4d7f296ed98a3e82341"
+    },
+    {
+      "path": "variety/energy_iron/manifest.json",
+      "bytes": 2840,
+      "sha256": "debbf697e4fac9bea4d157af7601bd1a62d4db519f3adbdc49bab517d041e112"
+    },
+    {
+      "path": "variety/energy_race/Final Stretch-870a7687-0147-4ac5-adde-feb0a15fe579.mp3",
+      "bytes": 4330842,
+      "sha256": "a756ef596f594e8a053b5f5bcc9830f0263340b1d49c13e5bdac4b635f98bbef"
+    },
+    {
+      "path": "variety/energy_race/Final Stretch-96fe3fb9-d579-4555-90b5-5134cc224a8b.mp3",
+      "bytes": 4909002,
+      "sha256": "d7aec0c60a942f3cad968d29785d29d9f714f7c69a6dd8344586d307a7bd16b6"
+    },
+    {
+      "path": "variety/energy_race/manifest.json",
+      "bytes": 2725,
+      "sha256": "6a5bbee7d451ae9120a989763cac8e37fa89bf906a60194f4777ea652a4be10a"
+    },
+    {
+      "path": "variety/energy_siege/Siege-492a6e99-7355-4e35-989f-3e01a9eeadfa.mp3",
+      "bytes": 10310970,
+      "sha256": "9ae9cbb3b7293e4924ea9df07b67be9aaca618c6ef938c45894ff6ae338d0c30"
+    },
+    {
+      "path": "variety/energy_siege/Siege-e836e8cd-99d2-41ae-900e-a01504c7f6fd.mp3",
+      "bytes": 10697610,
+      "sha256": "d686800937345eab6af66e697175b23a3f7b36fa818cee426decc5d49d243e51"
+    },
+    {
+      "path": "variety/energy_siege/manifest.json",
+      "bytes": 2751,
+      "sha256": "d27b4ec1a4ee99086e96176cc816a07dff9c9f1570852f3cdefe48fc82baece0"
+    },
+    {
+      "path": "variety/energy_storm/Storm Surge-049f9854-2848-4c22-919d-aefe456f9961.mp3",
+      "bytes": 4844202,
+      "sha256": "49348fec43619e74215e0423a3b4eeae4c10d0a8711bf0d620930ed1e914e979"
+    },
+    {
+      "path": "variety/energy_storm/Storm Surge-f110a060-7e41-4ccb-946f-11f6de6049ec.mp3",
+      "bytes": 4460994,
+      "sha256": "67580948a093ab78b3ba40d9f5420f84cde6c4fe7269c6774c8308760aa2c840"
+    },
+    {
+      "path": "variety/energy_storm/manifest.json",
+      "bytes": 2742,
+      "sha256": "d64261121cc369c6077ac6b7b34a142cd9166b7ccc03c948c9c18209793ecafd"
+    },
+    {
+      "path": "variety/energy_taiko/Taiko Sprint-d1b49d00-f89e-425c-b514-61fc5acd022b.mp3",
+      "bytes": 10853501,
+      "sha256": "c48ee99b0acfa15ffc5ee8eae7d827c1f6a2a5620b4f7492e01a08e01fffc84c"
+    },
+    {
+      "path": "variety/energy_taiko/Taiko Sprint-fc79be2d-7567-43b3-84da-734a51eb671a.mp3",
+      "bytes": 12236621,
+      "sha256": "9b15a5a87e869dd9445d6f972b515ed852f3279e5dd21434f4c208c2282aeadd"
+    },
+    {
+      "path": "variety/energy_taiko/manifest.json",
+      "bytes": 2695,
+      "sha256": "a12d0e9e095b3a5efad3effbb854f02be9e42c2167b63b39e0df2dbf21a9a6c8"
+    },
+    {
+      "path": "variety/jazz_harbor/Harbor Lounge-26cbde9f-48a4-42e3-af6e-6518b4d05eb4.mp3",
+      "bytes": 9540791,
+      "sha256": "f8445d158fb5535c48c1d553f9d5dbed62e4c79c38e5239b90a228d34d0a04d5"
+    },
+    {
+      "path": "variety/jazz_harbor/Harbor Lounge-508699d0-8143-4924-a11e-a1bdd60956de.mp3",
+      "bytes": 7391207,
+      "sha256": "9bf322023ab17d85144bb0ea4d1b95d51d8faa78f8dfe0ac03539de9157dd21d"
+    },
+    {
+      "path": "variety/jazz_harbor/manifest.json",
+      "bytes": 2642,
+      "sha256": "01d5488de68ebf416f6e531b218ebd8781140ab4ac245d325f22cd7c8ef801d7"
+    },
+    {
+      "path": "variety/jazz_salon/Salon Jazz-19fedb51-66cc-4ec8-91c0-a0201c47fe1d.mp3",
+      "bytes": 10970167,
+      "sha256": "f94d768d962be1858220d9a3bf8fd6875769eacc48b48009ee6a71d91280caac"
+    },
+    {
+      "path": "variety/jazz_salon/Salon Jazz-31e4ec90-e227-4b4e-963c-77593a2b58b0.mp3",
+      "bytes": 10448479,
+      "sha256": "24046bd792ed6072d311e6ef86bea607ad49570c58b173888436bb1fa7c79fb7"
+    },
+    {
+      "path": "variety/jazz_salon/manifest.json",
+      "bytes": 2715,
+      "sha256": "9ebd73a6a2eac09253ee10b2f446a5aa1b16cb3f84a6169675fad4f34bd8e049"
+    },
+    {
+      "path": "variety/lofi_campfire/Campfire-8134a13d-d888-4f2f-9b93-03798371a93a.mp3",
+      "bytes": 5845509,
+      "sha256": "dc14855917e06dcd112354053d54f7e0b8abe4e55abe3efa6b4faab49bd2c8e9"
+    },
+    {
+      "path": "variety/lofi_campfire/Campfire-a8501c62-4e20-4f21-9edc-156d34670393.mp3",
+      "bytes": 10658757,
+      "sha256": "be0b6160e6e0cb67fae69875619bc95ef098ee8a12fb04873b3843802315d1d3"
+    },
+    {
+      "path": "variety/lofi_campfire/manifest.json",
+      "bytes": 2710,
+      "sha256": "9231b789b4477882493e719a93d84faaa035ffd9dac3c8718c26985df506eaf9"
+    },
+    {
+      "path": "variety/lofi_coffee/Coffee Shop-055e7d39-0e67-48e1-93e8-838fc862dfbf.mp3",
+      "bytes": 10681669,
+      "sha256": "cfaf40b133b4e99c17f4b252379c39e8ee0958956a3113591e4596a49af092fe"
+    },
+    {
+      "path": "variety/lofi_coffee/Coffee Shop-e975082a-1cc5-408f-b0b1-54cd856c7059.mp3",
+      "bytes": 10978453,
+      "sha256": "2f5e68e95097d4e3ea1171aa5cb1d888ac34045daf3758b3c611d56c903d9da1"
+    },
+    {
+      "path": "variety/lofi_coffee/manifest.json",
+      "bytes": 2800,
+      "sha256": "a807cdaa5798ac24f8144ce856f158279160cfe43b17653ff63eb6b679aa8811"
+    },
+    {
+      "path": "variety/lofi_dojo/Dojo Dust-31ce89cb-d65d-4800-bcf7-4de1255f73e1.mp3",
+      "bytes": 10774980,
+      "sha256": "03ddfe3752ad6450950672a461a9f5584b1bd21c332db1cfa834d63ed6f214ae"
+    },
+    {
+      "path": "variety/lofi_dojo/Dojo Dust-df0ebda8-bc66-40d7-837e-9136cdf827f6.mp3",
+      "bytes": 10577556,
+      "sha256": "11506da09d615c0059bda2d84e3e50eaeb54e3f2b57111265bfa27fc18991238"
+    },
+    {
+      "path": "variety/lofi_dojo/manifest.json",
+      "bytes": 2791,
+      "sha256": "fecdc0ada6195bb901975146e7c422d54062a6284cb9242bb0ad9c59533472db"
+    },
+    {
+      "path": "variety/lofi_lighthouse/Lighthouse Tape-81f97005-13f8-463c-aaf6-4eecc1de9815.mp3",
+      "bytes": 10331763,
+      "sha256": "03023726a77f357358fd377a3c422d817840cdff9c6fcdf5edbae1a1f1860519"
+    },
+    {
+      "path": "variety/lofi_lighthouse/Lighthouse Tape-d1cda95d-2088-4324-8be0-4343a27940b1.mp3",
+      "bytes": 10483683,
+      "sha256": "1be1ba35f21a35baa6435e9c8d88ba2dee74466cdec53ac19e3618d6d4f577da"
+    },
+    {
+      "path": "variety/lofi_lighthouse/manifest.json",
+      "bytes": 2905,
+      "sha256": "46e84be1ca686645900be771147abe5b166bdd9d9e3648016f0c2612802bbe60"
+    },
+    {
+      "path": "variety/lofi_market/Market Shuffle-27157d51-460d-4da3-b71a-2b9ae0a6081d.mp3",
+      "bytes": 9717829,
+      "sha256": "f931fd2c96a51cc8f447d855a05aec49c7afc441a6b7838a77c463015f32d923"
+    },
+    {
+      "path": "variety/lofi_market/Market Shuffle-e168aae2-be23-4753-8fda-fffb0fd584a3.mp3",
+      "bytes": 10392565,
+      "sha256": "b60e912c62193d9119c2130ddbc9a9b4a9a98e3e570e877f2f112cf0d29b989d"
+    },
+    {
+      "path": "variety/lofi_market/manifest.json",
+      "bytes": 2886,
+      "sha256": "fc6b391cfe2756413f61a9cfa7dc8d094a20576447137e551ea27ae1c812c102"
+    },
+    {
+      "path": "variety/lofi_rain/Rainy Window-68f6861c-0520-4c82-b0e0-29268bf5690b.mp3",
+      "bytes": 4664725,
+      "sha256": "f11feb22072c5a6aaae73d4254bba3bb696f36e47197d6df397023a7623c7f98"
+    },
+    {
+      "path": "variety/lofi_rain/Rainy Window-a184eaa9-a12e-4770-a1f3-eb9d71cdca24.mp3",
+      "bytes": 4407829,
+      "sha256": "fd82c137715bf7fc6ebe723728e228766d493072a08e20c193dca8f9a7bd4848"
+    },
+    {
+      "path": "variety/lofi_rain/manifest.json",
+      "bytes": 2882,
+      "sha256": "3cd58f72cd4ae1026861dbb8e96dd0eacc37d2e09e6e4bba7e2fdd58f3decca1"
+    },
+    {
+      "path": "variety/lofi_rain_train/Rain on the Line-661b43a3-243f-4d2a-9bd7-1f9ad88ff342.mp3",
+      "bytes": 9365927,
+      "sha256": "b740e826538da49f4d76f7ebe700d861b4295f6638d6639a182c89f012f803a1"
+    },
+    {
+      "path": "variety/lofi_rain_train/Rain on the Line-67c9760a-c69e-451c-b4db-dc61f2f9fc6e.mp3",
+      "bytes": 9840335,
+      "sha256": "53d524ec7d479f9a3cf6e98737fba1fd478bada6f596122837f097abc890a165"
+    },
+    {
+      "path": "variety/lofi_rain_train/manifest.json",
+      "bytes": 2892,
+      "sha256": "39c408bba66364b2d06e79d20d147841d152c5f19b12efadb09c4e392a56e710"
+    },
+    {
+      "path": "variety/lofi_rooftop/Rooftop Sunset-00bde42b-857e-46bc-9565-35585a5bb31b.mp3",
+      "bytes": 4777194,
+      "sha256": "e8a8b942f34dfda1172a242ae9c3b40b0562cf3055d0f2d74ba06acd380468fa"
+    },
+    {
+      "path": "variety/lofi_rooftop/Rooftop Sunset-b0f36ca5-d392-4efe-b930-ebdc8620d888.mp3",
+      "bytes": 4859274,
+      "sha256": "1a1485013f624489ef627e7a557fe1a3c914072bc82f2acb878ae0c803fc3e36"
+    },
+    {
+      "path": "variety/lofi_rooftop/manifest.json",
+      "bytes": 2865,
+      "sha256": "f746c122203b113e3f35dba5568c775c5012a0cb60ae7d0010af0eea40ac8509"
+    },
+    {
+      "path": "variety/lofi_seaside/Seaside Dusk-62d742af-2ee2-4ea8-9ed8-943ac7764100.mp3",
+      "bytes": 4663037,
+      "sha256": "351b238e60ccc3e829b34b02a112529c0a0c882cef2731e05c2a10277a4e561c"
+    },
+    {
+      "path": "variety/lofi_seaside/Seaside Dusk-f0786840-22ca-4eeb-9fce-ae7ad1e17b1b.mp3",
+      "bytes": 4842845,
+      "sha256": "84a51445a0e98d25a536d9071f31cd0da748b4df8c83ead6d0b2340ab1d5adb7"
+    },
+    {
+      "path": "variety/lofi_seaside/manifest.json",
+      "bytes": 2719,
+      "sha256": "1cd652adccd9cff8dbb8c90a34650126284a2ab66a7177aa09ca54fcee9ddf55"
+    },
+    {
+      "path": "variety/lofi_snow/Snowfall-09526773-a24b-4719-b9cd-7a41ceebb83c.mp3",
+      "bytes": 10667158,
+      "sha256": "e4738ab917708cbe40ad3f26b3e3bb8baa7c566576b6a1c66caf478f8001473f"
+    },
+    {
+      "path": "variety/lofi_snow/Snowfall-4b0ffbf9-63e8-4afa-8e10-62a00dc22df7.mp3",
+      "bytes": 10573030,
+      "sha256": "733f380cd02c002f68a9e670a6dd4cbaf93244656245999d5fd6b0a577bf02e8"
+    },
+    {
+      "path": "variety/lofi_snow/manifest.json",
+      "bytes": 2685,
+      "sha256": "e17fe50ff05295191532df7d8625e59490ae602d4a78ce5dc6697f0a2dbf01ce"
+    },
+    {
+      "path": "variety/lofi_study/Late-Night Study-af6e8e4b-3513-4cbb-bcd4-3cace5504825.mp3",
+      "bytes": 10509108,
+      "sha256": "18cd7c89226d090b461976d677eb0e2dd91d26530097e119fff91fc21e4707e9"
+    },
+    {
+      "path": "variety/lofi_study/Late-Night Study-f49e1e8e-0915-454d-9994-e2a48da730ab.mp3",
+      "bytes": 10092948,
+      "sha256": "b0e28ecd22e7d839da53b1a518ea474a0f5081ebd8a2918f444ba6781a7b8bc2"
+    },
+    {
+      "path": "variety/lofi_study/manifest.json",
+      "bytes": 2804,
+      "sha256": "a8056f8db92e4de724c4e371f5b068e535b320d72c56216e8c33b241e0373f67"
+    },
+    {
+      "path": "variety/lofi_train/Night Train-6612a7f5-7ffe-4288-98b0-66bcd8fa9e2c.mp3",
+      "bytes": 10429136,
+      "sha256": "f0b250451f2ff39eb68822aa038f1ac2df8fd60ebc08179d334d56743f299a9e"
+    },
+    {
+      "path": "variety/lofi_train/Night Train-d7c66bf1-1683-48c7-be5f-da0d369e13a0.mp3",
+      "bytes": 10189520,
+      "sha256": "a8b7d482b59cd33b0c638a074942ec99cea2de6703b8b04e5ab9485cca22d6d3"
+    },
+    {
+      "path": "variety/lofi_train/manifest.json",
+      "bytes": 2781,
+      "sha256": "9732ed05bf86c310dab9560d76da15625acc51959d92a3be2a2376a956293300"
+    },
+    {
+      "path": "variety/world_koto/Koto Village-011f1269-8b7a-4058-9a5b-f270364b3318.mp3",
+      "bytes": 11403537,
+      "sha256": "c131f811e1aebd3bee7bc9fffcc00587949c5bae6f5e4587d036348cfcdaff00"
+    },
+    {
+      "path": "variety/world_koto/Koto Village-84811ff6-0004-413b-b59e-83fb57d51f5a.mp3",
+      "bytes": 5506305,
+      "sha256": "c049437e9b840b1ddb80d3ae1eea9539033c120bf3e259701c846c775d5ce483"
+    },
+    {
+      "path": "variety/world_koto/manifest.json",
+      "bytes": 2754,
+      "sha256": "fff9a96b9bc5eff57872857ae985a57ee45f26ae2f2dd1a18617b3b0d2899c31"
+    },
+    {
+      "path": "zeppelin_city/Air Station Departure-647e3e56-ed21-45c9-b6fe-507444f9b5a3.mp3",
+      "bytes": 6187556,
+      "sha256": "7a5845b1c43b3f3ed7c1eb2ee65da0608bf0253e9cd28f284637f71bce37a1e3"
+    },
+    {
+      "path": "zeppelin_city/Air Station Departure-a296bea3-bc6e-44bc-9e09-227379c1d55f.mp3",
+      "bytes": 5446676,
+      "sha256": "b500b80b4434721ca6b83b5f9df93d2caab8e0d44c87e7a70a7eab835e828a9c"
+    },
+    {
+      "path": "zeppelin_city/Air Station Hidamari-090a7758-22b6-4738-9bea-536201c5ce92.mp3",
+      "bytes": 6520734,
+      "sha256": "01c8c243f644ceae1fc271d7779cb48e4fb2c5ff81253b3333ac2f2f43b78d01"
+    },
+    {
+      "path": "zeppelin_city/Air Station Hidamari-75e5bdf3-e7bf-4ee2-9bfb-a2709a90f7d7.mp3",
+      "bytes": 6952686,
+      "sha256": "ca5f53f773ac0b3ca8afbb28167ca34795ce969c0079fe55a14c1e47b509eb54"
+    },
+    {
+      "path": "zeppelin_city/Night Air Station-71627be2-aa74-4094-89d8-89675362571e.mp3",
+      "bytes": 11214271,
+      "sha256": "726e6d7763ab8b6da27b969f69c440fb5e408b2b86d3e0cfc52069687ff9bb39"
+    },
+    {
+      "path": "zeppelin_city/Night Air Station-c712f31f-63b0-436b-ae13-07f7dd45098d.mp3",
+      "bytes": 11689519,
+      "sha256": "05fb062e37d18c1415fecd6ceaf2d7f42a99dc69d11ee97805ebbff1e271e7ad"
+    },
+    {
+      "path": "zeppelin_city/manifest.json",
+      "bytes": 9404,
+      "sha256": "03a397d112f590693686d1397cd02b2c2bf6de44024cf201cd2beb29dd28a675"
+    },
+    {
+      "path": "zeppelin_forest/Dawn at the Air Station-4cf26459-14d8-42f8-80b3-d535f0cf30d5.mp3",
+      "bytes": 5543273,
+      "sha256": "8b9b752519d77b022db37b68239946302e16dc6a4f40fca4db07c06586ef2013"
+    },
+    {
+      "path": "zeppelin_forest/Dawn at the Air Station-c2d670b6-76c4-4c7e-8777-fea0462e2dbd.mp3",
+      "bytes": 4695641,
+      "sha256": "bb35b03183abe324289fc41eff0e698685db26bdf903c73a536e7a3d8aee796b"
+    },
+    {
+      "path": "zeppelin_forest/Woodland Air Station-41fc2ed1-289f-4228-8c93-5731d22d6c63.mp3",
+      "bytes": 11235047,
+      "sha256": "6ebad8fd002eea11ff48cd7ada6aa0018c83c39dd919893d95bc7667fb7521be"
+    },
+    {
+      "path": "zeppelin_forest/Woodland Air Station-c60b084c-8345-43d9-a83c-d9023995c7ff.mp3",
+      "bytes": 6052199,
+      "sha256": "25c3d0d56d00554bba4f98b1cac5fb2de6789544e893d6b985e8a45e398bc0d9"
+    },
+    {
+      "path": "zeppelin_forest/Zeppelin Among Pines-85b59e91-d9a3-4ff9-92a8-e57fa4465a5f.mp3",
+      "bytes": 6766258,
+      "sha256": "5ff52616b90e760d63fab69969c9759e5fff37731241772e246a32b08df3adfc"
+    },
+    {
+      "path": "zeppelin_forest/Zeppelin Among Pines-8bb72f45-6366-423e-bd0a-ea3847e2448a.mp3",
+      "bytes": 5480146,
+      "sha256": "4a64337d16a809c5bf1fc88676eab2c724f61de868c9463941d8a2c913a01d59"
+    },
+    {
+      "path": "zeppelin_forest/manifest.json",
+      "bytes": 9460,
+      "sha256": "999e3e4c0de944c2b3517a6f791e3fc0c1d71535b2f2f254775d40ff723f004a"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Air Station-8c25bf47-1527-4de8-a9ed-77454525b3e1.mp3",
+      "bytes": 10879288,
+      "sha256": "6fff8678159b48ec3e74a164f6aaa29e2623d8f70e6eed64594cc68427217637"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Air Station-afc1e1d4-ac9c-43ef-857a-df7853819427.mp3",
+      "bytes": 10713396,
+      "sha256": "23e79faf3b4318f68d65ce42d9dede44daf5d67226e1689183e0d2ffecf57d84"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Air Station-be2cb474-5330-4cba-a184-6682ed9fdc3b.mp3",
+      "bytes": 6427528,
+      "sha256": "460b1d1fc3b9a24fd621354c083d7fe8ef432cb97fccfc9429837eab1577418c"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Air Station-c2ec776e-5c4d-4803-8128-a0e075721423.mp3",
+      "bytes": 7130244,
+      "sha256": "0090e9b26c019cbae108bfd049e0d7b2ab66b359f1dd0ef9c1309b6e5c16e32f"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Wind Overlook-431d9b6e-5ae6-43ab-9587-cc7432ef9c25.mp3",
+      "bytes": 11150763,
+      "sha256": "99ed7d04e8f7f5322420985ccde014bf4f5a70af7012970776b433d54a6abbf5"
+    },
+    {
+      "path": "zeppelin_megapark/Canyon Wind Overlook-f2544d38-334c-4cd4-b26a-ddb36ca3f074.mp3",
+      "bytes": 6338571,
+      "sha256": "3e09420728beb3a72b8945acde2e1ae0dbffb45676789144297d62820d3af221"
+    },
+    {
+      "path": "zeppelin_megapark/manifest.json",
+      "bytes": 9425,
+      "sha256": "078b0d84d79c28e03c6fa28c52ab2e9fea0fed042199d3c25406c642ebda4a2f"
+    }
+  ]
+}

@@ -187,9 +187,12 @@ Generation needs the local Chrome debug port 9223 open on a `suno.com` page. Out
 
 ## Music for games
 
-- Six tracks per zone: day, quiet and contrast pairs; each generation returns two variants.
-- Instrumental only, no lyrics or choir. Keep the palette chamber-orchestral with Japanese color, restrained rather
-  than bombastic.
+- The Yorimichi library has 28 zone scores (day, quiet and contrast pairs), 12 action/set-piece cues and 28 style
+  cues (lofi, percussion-heavy energy, ambient, jazz and world). Each request returns two takes.
+- Instrumental only, no lyrics or choir. Zone music is restrained chamber-orchestral with Japanese color; the style
+  library deliberately leaves that palette for lofi, percussion and other moods.
 - Validate the decrypted file with `ffprobe`. Keep the model, prompt, clip id and credit cost in a provenance file.
-- Store generated masters under `build/<game>/music/` while under review; only approved, shipped tracks belong in
-  the game's asset pipeline.
+- Keep the decrypted M4A masters and MP3 review copies under `build/<game>/music/` while under review. Publish the
+  MP3s, manifests and catalog as a release asset; the optional game build selects and imports only what it needs.
+- Tag every track with `category`, `style_family`, `energy`, `intent`, `mood`, `use`, `bpm_target`, `loop` and clip
+  provenance. A flat dump of files is not enough for a runtime that has to choose music by context.

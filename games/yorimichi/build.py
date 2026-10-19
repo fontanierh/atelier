@@ -392,7 +392,7 @@ def cook_step(ctx, steps):
                 [Call('prepare_cook', package_cook.prepare), UnrealPackage('Yorimichi', out / 'package' / 'archive'),
                  Call('certify_cook', package_cook.finish)],
                 inputs=[SOURCE, ctx.uproject, paths.ENGINE_PLUGINS, GAME / 'unreal' / 'Config', TOOLS / 'package_cook.py', *engine_inputs],
-                needs=[s.name for s in steps if s.name.startswith('unreal.')] + ['data.stage', 'data.network'], heavy=True, explicit=True,
+                needs=[s.name for s in steps if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.network'], heavy=True, explicit=True,
                 outputs=[out / 'package' / 'cook.json'], verify=lambda: package_cook.cook_present(out / 'package'),
                 cook_recovery=CookRecovery(package_cook.source_snapshot, package_cook.finish, package_cook.recovery_inputs),
                 about='cook the macOS app once and certify its source and immutable archived files')
@@ -1009,6 +1009,14 @@ def sound_effect_steps(ctx):
              outputs=[out / 'audio' / 'skate' / 'manifest.json'], about='board loops and cues'),
         Step('audio.bike', [Python(AUDIO / 'bike' / 'make.py')], inputs=[AUDIO / 'bike', AUDIO / 'skate' / 'make.py', paths.cache_dir('sonniss', 'combat', create=False)],
              outputs=[out / 'audio' / 'bike' / 'manifest.json'], about="the bike's tyres, freewheel, chain, wind, bell and knocks"),
+        # The Suno library is optional: naming `audio.music` or `unreal.music` selects
+        # only the tracks requested by YORIMICHI_MUSIC_* selectors. A plain build
+        # never downloads or imports the large release.
+        Step('audio.music', [Python(AUDIO / 'music' / 'prepare.py')],
+             inputs=[AUDIO / 'music' / 'prepare.py',
+                     paths.cache_dir('yorimichi', 'music', create=False) / 'catalog.json'],
+             outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,
+             about='select fetched Suno tracks for the optional music import'),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],
              outputs=[out / 'combat_fx' / 'T_FX_Glow.png'], about='glow, spark, ring, dust and trail sprites'),
     ]
@@ -1137,6 +1145,11 @@ def unreal_steps(ctx):
              inputs=[SCRIPTS / 'import_footsteps.py', SCRIPTS / 'import_combat_audio.py', SCRIPTS / 'import_skate_audio.py', SCRIPTS / 'import_bike_audio.py'],
              # The footstep library lives in /Game/Japan, which the world import clears, so a world import reruns this.
              needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate', 'audio.bike'], heavy=True, about='footstep library, combat, skate and bike sounds'),
+        Step('unreal.music', [UnrealScript(SCRIPTS / 'import_music.py', 'MUSIC IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_music.py', AUDIO / 'music' / 'prepare.py'],
+             needs=['audio.music'], after=['unreal.compile'], explicit=True, heavy=True,
+             outputs=[out / 'music_import.json', GAME / 'unreal/Content/Data/Music/library.json'],
+             about='/Game/Audio/Music from the optional fetched Suno library'),
         Step('unreal.fx', [UnrealScript(SCRIPTS / 'import_combat_fx.py', 'COMBAT FX IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_combat_fx.py'], after=['unreal.compile'], needs=['fx.textures'], heavy=True, about='/Game/FX materials'),
         Step('unreal.fox_hunter', [UnrealScript(SCRIPTS / 'import_fox_hunter.py', 'FOX HUNTER IMPORT COMPLETE')],
@@ -1244,7 +1257,7 @@ def steps(ctx):
     policy_spec.loader.exec_module(policy)
     result.append(Step('data.content', [Call('archive_retired_content', policy.archive)],
                        inputs=[GAME / 'content_policy.py'],
-                       needs=[s.name for s in result if s.name.startswith('unreal.')] + ['data.stage'],
+                       needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage'],
                        outputs=[ctx.out / 'runtime-content.json'],
                        verify=lambda: not any(policy.retired(content)),
                        about='archive retired generated imports before multiplayer identity and cooking'))
@@ -1253,7 +1266,7 @@ def steps(ctx):
                                paths.ENGINE_PLUGINS],
                        deferred_inputs=[DeferredInputs('content', identity.content_files, (content,),
                                                        support=(GAME / 'network_identity.py',))],
-                       needs=[s.name for s in result if s.name.startswith('unreal.')] + ['data.stage', 'data.content'],
+                       needs=[s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage', 'data.content'],
                        outputs=[content / 'Data/Network/session.json'],
                        about='matching multiplayer code, imported assets and staged gameplay data'))
     return result + [cook_step(ctx, result), package_step(ctx, result)]
