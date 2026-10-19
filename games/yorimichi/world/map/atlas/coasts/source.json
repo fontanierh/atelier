@@ -1,13 +1,13 @@
 {
   "kind": "semantic-terrain-water-masks",
   "geography": {
-    "world/gen_world.py": "8de171737b8153806269cbce9f59ec1c488255849ad106b10e0a15e7602e6fd4",
+    "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
     "world/build_terrain.py": "2a810d3a4698765c24044379e053f67e56817b90ab871b78814a2233d9515a09",
-    "world/farhills_surface.py": "3f1bcb705333efce9c3fce3349c16f88b3b8dbbf210f4794a695909cf9c7f2b3",
+    "world/farhills_surface.py": "497530bb634a84f69dae54c5abcec20088ed4dff1359a11bde8423e0601ae182",
     "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
     "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
     "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
-    "world/regions/hidamari/layout.py": "77a123cab1392733328d2d1601adb2598312648a9080c7926898269d13955487",
+    "world/regions/hidamari/layout.py": "e75a568aa7ed08af5ceb386078922ed41daea8455afc241d1d41987940b2bbbf",
     "world/regions/hidamari/mountains.py": "f2a09621e6e6d61b070b284e79333b5312bcc118f681d8cedac53eb82a13aae6",
     "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
     "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
@@ -19,7 +19,7 @@
     "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
     "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
     "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f",
-    "world/shorelines.py": "2577aa192cdf093e208ccbebe7f46cd075ab731c3e29bacfef7b259499a51eb9"
+    "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
   },
   "frames": {
     "world": {
@@ -29,8 +29,8 @@
         4200.0,
         7200.0
       ],
-      "sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78",
-      "reference_sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7"
+      "sha256": "6540b9efbda5f3fdb4394cad2b95148cf8a7c877cec4f849d168df80907a2ff8",
+      "reference_sha256": "d8dd3fbc039e0b601031dfc08c9304b094f6367c3c8a14a4edf005b544444757"
     },
     "momiji_coast": {
       "bounds": [
@@ -39,8 +39,8 @@
         400.0,
         350.0
       ],
-      "sha256": "fe097804f3b52374305283ef2e1fbf1f1ca8d432230f73200a3b971328ad6638",
-      "reference_sha256": "b04f45d028487ccaf977ade69c4504a8d0c5abbb7b762eb046dc6942ef056e76"
+      "sha256": "cf290e00757116d5b54530187380776e60d21708211c85ff752db1f0f1504313",
+      "reference_sha256": "6858a1c2a8986ba57bb1554e0e923600e598df84c0236e6214c80c62a86dd8cd"
     },
     "momiji_woods": {
       "bounds": [
@@ -49,8 +49,8 @@
         440.0,
         530.0
       ],
-      "sha256": "8cd6b927265b5cbedee5b6ab225a304d27968bf6a5f4ed787df0a64bc60dba15",
-      "reference_sha256": "4d5d9c68f815b4e7ca763298c89562b3a51357f0d166bf33be57e1f0e8e0e747"
+      "sha256": "7aa0aba45ee9c8bb015ccfffa2453ee512e404c299add4477c32aa18ab61063c",
+      "reference_sha256": "4a3f170fd2127026a7537ae2911f1a22c8c982b752fc84e0b0e0a0ab1e67d3d1"
     },
     "hidamari": {
       "bounds": [
@@ -102,66 +102,5 @@
       "sha256": "a4e6632e31d2aacbf778e02c1914a70eddbaaf742810a611495877c4c7adb9ee",
       "reference_sha256": "55197030c0956f087168ff77ee1d2f8804bd445687979c91736bf7e325601df1"
     }
-  },
-  "accepted_export": {
-    "reference_source": "572b67aadb98a6605fa41de13d884c74180b250d",
-    "attestation_source": "30a63229516f59cdbb822294658526b0d509ddd7",
-    "native_visual_source": "57516d2651c1b4b1f6fa169d946ac1106f68aca8",
-    "inputs": {
-      "world.json": "bdf409ca410fd7989429a6056eeedc5f1b9761280145d22c76392e84d7b06342",
-      "heightmap.npy": "ef8b9726a3510bf101d841ece7df8887bf89dd25fcda10e3283e4515d619e35c",
-      "farhills.npy": "3fdd1e1f80973c785b02ec49bdb264b2667ea3519601c9062b75e6ffa6f81a42",
-      "hidamari/city.json": "2019031e96009ac73d1e9eab777c598eefc9039293e1b7fa571fe1a7c7071d96",
-      "belmonte/runtime.json": "c73b98246bbb5d98d21e2e7d73167129296a3e3d69428f81470c03bb7e8aa3c0",
-      "belmonte/glb/SM_BM_NorthCountry.glb": "26f83e450d12aee7c3afe38e49e22f927616482b237946f5006a819ed137988a",
-      "belmonte/glb/SM_BM_NorthApron.glb": "6e1a9c6725a0ed467e521ebfd081db390038181f1d05dfa117cf7b8b1a6e3239",
-      "megapark/trail.json": "82b355b770234fd4835d5841bf85b712b2ef1d875a8e86ca8b54bfaa9632ceb9",
-      "heightmap.bin": "c4d59b8b3935f7f1761e3df51d02c5422cabee391d70c85689ddd322c66a7cbb",
-      "craterpark/v2/geometry.npz": "244a8556f48a21d224391d4dfdd4ae1cb2fa44bfff590c6450c7dd2aaac4ba04"
-    },
-    "source_helpers": {
-      "world/shorelines.py": "2577aa192cdf093e208ccbebe7f46cd075ab731c3e29bacfef7b259499a51eb9",
-      "world/build_terrain.py": "46bd9b5e15bd0d059a4419848dccc5ad4e814bf6e8e27126a9b87b70934b3624",
-      "world/coastal_surface.py": "e625c3913f408b70cb642d24a93325de485baeb762ae510d52e47cb63538c1f2",
-      "world/coastal_dressing.py": "1f545f34ed1c956945438c010fd610ad0eef71c0b7e968f01272155c2f6a17b7",
-      "world/regions/hidamari/forest_backdrop.py": "077dd7459d69bd432c18449e0e6ffc8aaa359a11f26f49ebc77cf0efdeec2983",
-      "world/regions/hidamari/layout.py": "77a123cab1392733328d2d1601adb2598312648a9080c7926898269d13955487",
-      "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
-      "world/train/earthworks.py": "df83a60f4ea86dff9413d9972a9129fcbf21b7d9f74a9f605618515c8eaeeecf",
-      "world/train/route.py": "88a742f1d19cddbb56cf610a7cf6c2ca0b7fe7ebfb1928ce25e2b708e741817e",
-      "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f"
-    },
-    "reference_generation_geography": {
-      "world/gen_world.py": "8de171737b8153806269cbce9f59ec1c488255849ad106b10e0a15e7602e6fd4",
-      "world/build_terrain.py": "46bd9b5e15bd0d059a4419848dccc5ad4e814bf6e8e27126a9b87b70934b3624",
-      "world/regions/hidamari/layout.py": "77a123cab1392733328d2d1601adb2598312648a9080c7926898269d13955487",
-      "world/regions/hidamari/mountains.py": "6affe36cd3a866e0ae3907995c46707383ea2784b4c4c19ddfaa9c2a6e6e3334",
-      "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
-      "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
-      "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
-      "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
-      "world/train/route.py": "88a742f1d19cddbb56cf610a7cf6c2ca0b7fe7ebfb1928ce25e2b708e741817e",
-      "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
-      "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
-      "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
-      "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
-      "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f",
-      "world/shorelines.py": "2577aa192cdf093e208ccbebe7f46cd075ab731c3e29bacfef7b259499a51eb9"
-    },
-    "normal_city_equivalence": {
-      "pinned_head": "572b67aadb98a6605fa41de13d884c74180b250d",
-      "pinned_source_sha256": "46bd9b5e15bd0d059a4419848dccc5ad4e814bf6e8e27126a9b87b70934b3624",
-      "candidate_source_sha256": "64c477db0cfdd91356171c8819fa0763900507255a8a524e86d8af97aa00ffe7",
-      "city_true_main_ast_exact_after_inlining_equivalent_ownership_wrappers": true,
-      "city_true_ownership_expression_exact": true,
-      "city_true_sea_returns_original_arrays_without_modification": true,
-      "normal_generated_inputs_changed": false,
-      "scope": "Static production control/data-flow equivalence plus actual generated-face/sea-array focused tests; final normal fingerprint rebuild and native output comparison remain required."
-    },
-    "scope": "Frozen corrected export references; final combined native world acceptance remains a separate shipping gate."
-  },
-  "refactor_revalidation": {
-    "witness": "coasts/mountain-equivalence.json",
-    "sha256": "9d973eed0d51cbba66088af58e304dac73d26e9249ac2dc29d0fe659a9c3a149"
   }
 }

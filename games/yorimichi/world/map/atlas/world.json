@@ -1,4 +1,5 @@
 {
+  "kind": "island-alpha-atlas-painting",
   "bounds": [
     -4200.0,
     -1200.0,
@@ -7,10 +8,14 @@
   ],
   "labels_baked": false,
   "geography": {
-    "world/gen_world.py": "8de171737b8153806269cbce9f59ec1c488255849ad106b10e0a15e7602e6fd4",
-    "world/build_terrain.py": "64c477db0cfdd91356171c8819fa0763900507255a8a524e86d8af97aa00ffe7",
-    "world/regions/hidamari/layout.py": "77a123cab1392733328d2d1601adb2598312648a9080c7926898269d13955487",
-    "world/regions/hidamari/mountains.py": "6affe36cd3a866e0ae3907995c46707383ea2784b4c4c19ddfaa9c2a6e6e3334",
+    "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
+    "world/build_terrain.py": "2a810d3a4698765c24044379e053f67e56817b90ab871b78814a2233d9515a09",
+    "world/farhills_surface.py": "497530bb634a84f69dae54c5abcec20088ed4dff1359a11bde8423e0601ae182",
+    "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
+    "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
+    "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
+    "world/regions/hidamari/layout.py": "e75a568aa7ed08af5ceb386078922ed41daea8455afc241d1d41987940b2bbbf",
+    "world/regions/hidamari/mountains.py": "f2a09621e6e6d61b070b284e79333b5312bcc118f681d8cedac53eb82a13aae6",
     "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
     "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
     "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
@@ -21,61 +26,157 @@
     "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
     "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
     "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f",
-    "world/shorelines.py": "2577aa192cdf093e208ccbebe7f46cd075ab731c3e29bacfef7b259499a51eb9"
+    "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
   },
-  "prompt": "Use case: precise-object-edit. Production north-up fantasy RPG world atlas.\nImage1 is the edit target, the already accepted-style world painting. Preserve its exact framing, all coastlines, mountains, country town, roads, railway, colours and ocean.\nMake ONLY this required landmark correction: the small pale cluster southwest of the volcano at about pixel(746,1080) is the Mega Park concrete skate park, NOT rocks or a tall white stone tower. Replace that small pale cluster with its correct flat grey concrete skatepark footprint, seen vertically from above, with tiny bowls, ramps and paved decks. Its location/outline is the white polygon in Image2 at the same coordinates. Image4 shows the same park in the regional painting and is a concrete-park appearance reference ONLY; do not import its framing or other geography.\nImage2 is the authoritative exact world plan. Image3 is the exact binary land/sea mask. Match them strictly; all other parts of Image1 must stay unchanged. No added landmarks or buildings, no perspective, no isometric mountains, no text, letters, names, icons, borders or UI. The park is a small flat landmark in the existing forest, not a mountain. Retain the same full1536x1536 north-up world frame and the exact coast silhouette.",
-  "inputs": [
-    {
-      "role": "edit target",
-      "sha256": "56e5473d87dd140269005c748f1dbc24721e0656c9046784e08d2ea59803c50a"
-    },
-    {
-      "role": "exact geography",
-      "sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7"
-    },
-    {
-      "role": "exact coast mask",
-      "sha256": "1fc1bedf2acfc321c29cc20a2ed155046af48a7bb7dc9aaa8295d1cc1da503c0"
-    },
-    {
-      "role": "same park appearance",
-      "sha256": "9e03e5a3d90ee0835a0f294da8e5db7459cab6a9bad61c269b2cacda44dea3c0"
-    }
-  ],
+  "prompt": "Use case: stylized-concept. Asset: production fantasy RPG atlas texture.\nImage 1 is the authoritative exact top-down geographic plan. Image 2 is the authoritative binary land/water mask. Image 3 is ONLY a painterly style reference; ignore all its text, layout, symbols, geography and frame.\nPaint the whole known world as one continuous, beautifully hand-painted atlas plate: the autumn southern coast, Momiji Hamlet and its maple woods, the blue-roofed coastal city of Hidamari, the great snowy volcanic caldera, the wooded northern foothills and the pastoral Haras Valley with its racecourse and railway. Deep turquoise sea with layered coastal shallows, soft surf and subtle painted depth. Warm land tones, fine ink contours, delicate roof plans, individually readable tree crowns. Classic hand-illuminated adventure atlas, not a satellite photograph and not a game minimap.\nSTRICT CAMERA: orthographic top view, north up, looking vertically down. No perspective, no horizon, no isometric buildings or mountain silhouettes. Circles remain circles. No rotation, recentering, zoom, crop or changed scale.\nGEOMETRY: preserve Image 1's exact frame, coastline, land/water mask, islands, road and rail alignments, city street grid and building footprints, racecourse, caldera position and every landmark footprint. Image 2 overrides all artistic interpretation of the coast. Do not invent towns, roads, rivers, islands or mountains.\nREMOVE TILE SEAMS: Image 1 contains large straight-edged rectangular tint boundaries from terrain data products, especially a square around Haras Valley, a rectangle around the volcanic highlands, and a translucent rectangle over the western hills. These are rendering artifacts, NOT real borders. Blend them away completely into continuous terrain. There must be no straight-edged rectangular colour changes, no hard tile boundaries and no visible product seams anywhere. Preserve the real contours and terrain inside those areas.\nWATER SEMANTICS: only saturated blue/cyan shapes in the plan are water. Muted grey/green/brown closed contour rings are DRY HILLTOPS, never lakes. White is snow or concrete, never water. Do not flood the caldera or northern depressions. Preserve the river and coastal water exactly.\nNO TEXT OF ANY KIND: no letters, numbers, place names, title, legend, compass rose, banners, scrolls, map pins, icons, badges, borders or UI. All names are live overlays. Fill the entire image with map terrain and sea; no decorative margins. High finish, fine paper grain, crisp paths, restrained contrast, readable at game UI scale.",
   "requested_model": "gpt-image-2.5-sunburst",
   "quality": "high",
-  "size": "1536x1536",
-  "endpoint": "/v1/images/edits",
-  "prompt_sha256": "5220d8dd6ae67fd6b7e6b1dc19e895e1c70ba3eeb0d807f29045af746ce4d61f",
-  "status": "done",
-  "started_at": "2026-10-18T11:45:55.620220+00:00",
-  "output": "world.png",
-  "output_sha256": "e7ec9ecc384cc74df073ede48c0c18798f0d1a224265ebd0add70b6e2bab2c8c",
-  "usage": {
-    "input_tokens": 5952,
-    "input_tokens_details": {
-      "image_tokens": 5643,
-      "text_tokens": 309
+  "output_sha256": "04effa6784cc791fc79a409328a9d9605e944997dca5a1111a3cad53c47416a1",
+  "generation": {
+    "kind": "restored-ground-registered-coast-patch",
+    "bounds": [
+      -4200.0,
+      -1200.0,
+      4200.0,
+      7200.0
+    ],
+    "labels_baked": false,
+    "prompt": "Use case: stylized-concept. Asset: production fantasy RPG atlas texture.\nImage 1 is the authoritative exact top-down geographic plan. Image 2 is the authoritative binary land/water mask. Image 3 is ONLY a painterly style reference; ignore all its text, layout, symbols, geography and frame.\nPaint the whole known world as one continuous, beautifully hand-painted atlas plate: the autumn southern coast, Momiji Hamlet and its maple woods, the blue-roofed coastal city of Hidamari, the great snowy volcanic caldera, the wooded northern foothills and the pastoral Haras Valley with its racecourse and railway. Deep turquoise sea with layered coastal shallows, soft surf and subtle painted depth. Warm land tones, fine ink contours, delicate roof plans, individually readable tree crowns. Classic hand-illuminated adventure atlas, not a satellite photograph and not a game minimap.\nSTRICT CAMERA: orthographic top view, north up, looking vertically down. No perspective, no horizon, no isometric buildings or mountain silhouettes. Circles remain circles. No rotation, recentering, zoom, crop or changed scale.\nGEOMETRY: preserve Image 1's exact frame, coastline, land/water mask, islands, road and rail alignments, city street grid and building footprints, racecourse, caldera position and every landmark footprint. Image 2 overrides all artistic interpretation of the coast. Do not invent towns, roads, rivers, islands or mountains.\nREMOVE TILE SEAMS: Image 1 contains large straight-edged rectangular tint boundaries from terrain data products, especially a square around Haras Valley, a rectangle around the volcanic highlands, and a translucent rectangle over the western hills. These are rendering artifacts, NOT real borders. Blend them away completely into continuous terrain. There must be no straight-edged rectangular colour changes, no hard tile boundaries and no visible product seams anywhere. Preserve the real contours and terrain inside those areas.\nWATER SEMANTICS: only saturated blue/cyan shapes in the plan are water. Muted grey/green/brown closed contour rings are DRY HILLTOPS, never lakes. White is snow or concrete, never water. Do not flood the caldera or northern depressions. Preserve the river and coastal water exactly.\nNO TEXT OF ANY KIND: no letters, numbers, place names, title, legend, compass rose, banners, scrolls, map pins, icons, badges, borders or UI. All names are live overlays. Fill the entire image with map terrain and sea; no decorative margins. High finish, fine paper grain, crisp paths, restrained contrast, readable at game UI scale.",
+    "requested_model": "gpt-image-2.5-sunburst",
+    "quality": "high",
+    "output_sha256": "1a6dd105b207e814a95241435abb6248ce2aa5e7755e6acbe0c0391a247ee9dd",
+    "inputs": [
+      {
+        "role": "exact geography",
+        "sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7"
+      },
+      {
+        "role": "exact coast mask",
+        "sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78"
+      },
+      {
+        "role": "style only",
+        "sha256": "5436f62f64174f230b5cacde4bee02f8b41553ad87494c7c8fb3dfd172b6d439"
+      }
+    ],
+    "generation": {
+      "bounds": [
+        -4200.0,
+        -1200.0,
+        4200.0,
+        7200.0
+      ],
+      "labels_baked": false,
+      "prompt": "Use case: stylized-concept. Asset: production fantasy RPG atlas texture.\nImage 1 is the authoritative exact top-down geographic plan. Image 2 is the authoritative binary land/water mask. Image 3 is ONLY a painterly style reference; ignore all its text, layout, symbols, geography and frame.\nPaint the whole known world as one continuous, beautifully hand-painted atlas plate: the autumn southern coast, Momiji Hamlet and its maple woods, the blue-roofed coastal city of Hidamari, the great snowy volcanic caldera, the wooded northern foothills and the pastoral Haras Valley with its racecourse and railway. Deep turquoise sea with layered coastal shallows, soft surf and subtle painted depth. Warm land tones, fine ink contours, delicate roof plans, individually readable tree crowns. Classic hand-illuminated adventure atlas, not a satellite photograph and not a game minimap.\nSTRICT CAMERA: orthographic top view, north up, looking vertically down. No perspective, no horizon, no isometric buildings or mountain silhouettes. Circles remain circles. No rotation, recentering, zoom, crop or changed scale.\nGEOMETRY: preserve Image 1's exact frame, coastline, land/water mask, islands, road and rail alignments, city street grid and building footprints, racecourse, caldera position and every landmark footprint. Image 2 overrides all artistic interpretation of the coast. Do not invent towns, roads, rivers, islands or mountains.\nREMOVE TILE SEAMS: Image 1 contains large straight-edged rectangular tint boundaries from terrain data products, especially a square around Haras Valley, a rectangle around the volcanic highlands, and a translucent rectangle over the western hills. These are rendering artifacts, NOT real borders. Blend them away completely into continuous terrain. There must be no straight-edged rectangular colour changes, no hard tile boundaries and no visible product seams anywhere. Preserve the real contours and terrain inside those areas.\nWATER SEMANTICS: only saturated blue/cyan shapes in the plan are water. Muted grey/green/brown closed contour rings are DRY HILLTOPS, never lakes. White is snow or concrete, never water. Do not flood the caldera or northern depressions. Preserve the river and coastal water exactly.\nNO TEXT OF ANY KIND: no letters, numbers, place names, title, legend, compass rose, banners, scrolls, map pins, icons, badges, borders or UI. All names are live overlays. Fill the entire image with map terrain and sea; no decorative margins. High finish, fine paper grain, crisp paths, restrained contrast, readable at game UI scale.",
+      "inputs": [
+        {
+          "role": "exact geography",
+          "sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7"
+        },
+        {
+          "role": "exact coast mask",
+          "sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78"
+        },
+        {
+          "role": "style only",
+          "sha256": "5436f62f64174f230b5cacde4bee02f8b41553ad87494c7c8fb3dfd172b6d439"
+        }
+      ],
+      "requested_model": "gpt-image-2.5-sunburst",
+      "quality": "high",
+      "size": "1536x1536",
+      "endpoint": "/v1/images/edits",
+      "prompt_sha256": "951c3535935a8bb1c082cb4099e83e36f46c5593bb6399c0bb54be5b1ab7d4ea",
+      "status": "done",
+      "started_at": "2026-10-18T20:45:55.671125+00:00",
+      "output": "world-v2.png",
+      "output_sha256": "65a9b9f6e876cfd179e8313a5caddaace63845650207f9cb1d3a5344fe8491fe",
+      "usage": {
+        "input_tokens": 4695,
+        "input_tokens_details": {
+          "image_tokens": 4122,
+          "text_tokens": 573
+        },
+        "output_tokens": 2511,
+        "output_tokens_details": {
+          "image_tokens": 2511,
+          "text_tokens": 0
+        },
+        "total_tokens": 7206
+      },
+      "elapsed_seconds": 51.7,
+      "finished_at": "2026-10-18T20:46:47.457425+00:00"
     },
-    "output_tokens": 2511,
-    "output_tokens_details": {
-      "image_tokens": 2511,
-      "text_tokens": 0
-    },
-    "total_tokens": 8463
+    "correction": {
+      "kind": "restored-ground-patch",
+      "source": {
+        "name": "momiji_coast.png",
+        "sha256": "45d27bb9984ffb43f11e50563575c987e381e41dc252c6caded33f9b1cd0d16d",
+        "receipt": "momiji_coast.json",
+        "receipt_sha256": "ea7b16abf7ddcfc7a1c9cb00aa126cdff722c3b7850b98d6b702e3aa0aa9d6a2",
+        "bounds": [
+          -650.0,
+          -350.0,
+          400.0,
+          350.0
+        ],
+        "role": "independently approved registered painterly Coast texture; no raw-plan fill",
+        "receipt_binding": "approved finalized helper 96a1759f receipt; attached board 20944"
+      },
+      "old_coast_sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78",
+      "new_coast_sha256": "6540b9efbda5f3fdb4394cad2b95148cf8a7c877cec4f849d168df80907a2ff8",
+      "reference_sha256": "d8dd3fbc039e0b601031dfc08c9304b094f6367c3c8a14a4edf005b544444757",
+      "crop_bbox": [
+        645,
+        1290,
+        737,
+        1368
+      ],
+      "changed_pixels": 3871,
+      "outside_crop_unchanged": true,
+      "restored_core_pixels": 836,
+      "registered_source_water_pixels_in_core": 4,
+      "forced_land_pixels": 5,
+      "final_core_water_pixels": 0,
+      "feather": "linear distance ramp R=18",
+      "samples": [
+        {
+          "x": -350,
+          "y": -99.51,
+          "old": "water",
+          "new": "land"
+        },
+        {
+          "x": -350,
+          "y": -50,
+          "old": "water",
+          "new": "land"
+        },
+        {
+          "x": -400,
+          "y": 0,
+          "old": "water",
+          "new": "land"
+        },
+        {
+          "x": -350,
+          "y": 0,
+          "old": "water",
+          "new": "land"
+        }
+      ]
+    }
   },
-  "elapsed_seconds": 39.8,
-  "finished_at": "2026-10-18T11:46:35.447335+00:00",
-  "verified_geography": {
+  "generation_witness": {
     "kind": "terrain-reference-revalidation",
     "geography": {
-      "world/gen_world.py": "8de171737b8153806269cbce9f59ec1c488255849ad106b10e0a15e7602e6fd4",
+      "world/gen_world.py": "9763dfffa7b4c2e9c186d469124289fad26510254a7c16e15d6a1604ed26c4ef",
       "world/build_terrain.py": "2a810d3a4698765c24044379e053f67e56817b90ab871b78814a2233d9515a09",
-      "world/farhills_surface.py": "3f1bcb705333efce9c3fce3349c16f88b3b8dbbf210f4794a695909cf9c7f2b3",
+      "world/farhills_surface.py": "497530bb634a84f69dae54c5abcec20088ed4dff1359a11bde8423e0601ae182",
       "world/farhills_grid.py": "6451e5894c63e3eedcded121cef2f477a9615c36b1dd61715d16938ab53228c4",
       "world/terrain_product.py": "6d9dc77173d8edb5a5486154e0cc1004d7b649f9ed87b1f7e3aa4c5655ed84bd",
       "world/north_mountain_surface.py": "380fac8eece8794a9d8737444af73b3e3979227470aba3de49d415df42477816",
-      "world/regions/hidamari/layout.py": "77a123cab1392733328d2d1601adb2598312648a9080c7926898269d13955487",
+      "world/regions/hidamari/layout.py": "e75a568aa7ed08af5ceb386078922ed41daea8455afc241d1d41987940b2bbbf",
       "world/regions/hidamari/mountains.py": "f2a09621e6e6d61b070b284e79333b5312bcc118f681d8cedac53eb82a13aae6",
       "world/regions/belmonte/layout.py": "2ecad733eda23105dad686e57efe82182a2eca5762a507fe070bfd0807836890",
       "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
@@ -87,14 +188,24 @@
       "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
       "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
       "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f",
-      "world/shorelines.py": "2577aa192cdf093e208ccbebe7f46cd075ab731c3e29bacfef7b259499a51eb9"
+      "world/shorelines.py": "087b0fe32ea76a8082e1aed80581b24261bead89ee2db165a3ee053f5f5d1006"
     },
-    "painting_sha256": "e7ec9ecc384cc74df073ede48c0c18798f0d1a224265ebd0add70b6e2bab2c8c",
-    "coast_sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78",
-    "reference_sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7"
+    "painting_sha256": "1a6dd105b207e814a95241435abb6248ce2aa5e7755e6acbe0c0391a247ee9dd",
+    "original_coast_sha256": "d15fde5a57d8935f7ca4d32b651d33301691d2ebc3d34edc641b0fb07110ca78",
+    "current_coast_sha256": "6540b9efbda5f3fdb4394cad2b95148cf8a7c877cec4f849d168df80907a2ff8",
+    "original_reference_sha256": "ca5d881064ee480b3b3c4d57f1c8bfab59c00f1de4e1ab79a37e51c8e85f3ef7",
+    "reference_sha256": "d8dd3fbc039e0b601031dfc08c9304b094f6367c3c8a14a4edf005b544444757"
   },
-  "refactor_revalidation": {
-    "witness": "coasts/mountain-equivalence.json",
-    "sha256": "9d973eed0d51cbba66088af58e304dac73d26e9249ac2dc29d0fe659a9c3a149"
+  "display": {
+    "kind": "island-alpha-from-signed-coast",
+    "mask_sha256": "6540b9efbda5f3fdb4394cad2b95148cf8a7c877cec4f849d168df80907a2ff8",
+    "alpha_sha256": "c6305b9931f0c350caf353415cf4fceb5605dcc33e1c4dd5c2e0448594431cf3",
+    "dilation_pixels": 9,
+    "feather_pixels": 24,
+    "alpha_threshold": 6,
+    "coast_error": 0.0006107754177517361,
+    "land_alpha_min": 255,
+    "far_sea_sample_alpha_max": 0,
+    "changed_rgb": false
   }
 }
