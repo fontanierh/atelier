@@ -1,8 +1,8 @@
 # Zone soundtrack
 
 Yorimichi's zone score is generated with Suno v6 from the plan in
-[`assets/audio/music/plan.json`](../assets/audio/music/plan.json). The plan covers 28 zones, each with two prompts
-(`day` and `quiet`); each generation returns two variants, so every zone gets four tracks.
+[`assets/audio/music/plan.json`](../assets/audio/music/plan.json). The plan covers 28 zones, each with three prompts
+(day, quiet and contrast); each generation returns two variants, so every zone gets six tracks.
 
 The direction is an original instrumental adventure score: chamber orchestra, warm woodwinds, harp and strings,
 light hand percussion, and touches of koto and shinobue. The melodies are restrained rather than bombastic, and no
@@ -48,7 +48,24 @@ so the browser can scrub long tracks.
 
 ## Integration
 
-Keep the generated masters under `build/yorimichi/music/` until they are reviewed. When a zone's four tracks are
+Keep the generated masters under `build/yorimichi/music/` until they are reviewed. When a zone's six tracks are
 approved, add the selected files to the game's audio asset pipeline with their manifest entry (prompt, model, clip
 id and duration) as provenance. The tracks are deliberately long and musically similar within a zone so the game
 can crossfade between them; do not cut them into short loops before the blend is designed.
+
+## Bundling
+
+The complete set is about 1.2 GB with the contrast pass, so it should not be committed to git. Use a release asset or object store and the existing fetch pattern:
+
+1. Build the zip and lock file:
+
+   python3 games/yorimichi/assets/audio/music/bundle.py --url https://example.invalid/yorimichi-music-v1.zip
+
+2. Publish that zip at the URL. A GitHub Release asset or the project object store both work.
+3. Commit music.lock.json: it records the bundle URL, the zip SHA-256, and every file's path, size and SHA-256.
+4. Add assets/audio/music/fetch.py to game.toml [fetch].scripts, with needs = ["yorimichi/music"].
+5. Run atelier fetch yorimichi. The fetch script downloads and verifies the zip into the Atelier cache; the game build imports from there.
+
+The lock file is the contract. A fresh clone can verify exactly which bytes belong to the soundtrack without carrying the audio in git. The review page and the full-size bundle stay outside the repository.
+
+If a single-clone workflow is required, Git LFS is the alternative. The full set is near the free LFS storage and bandwidth limits, and compressed loop edits are the practical way to keep a committed subset under a few hundred megabytes.

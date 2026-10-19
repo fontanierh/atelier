@@ -187,7 +187,7 @@ Generation needs the local Chrome debug port 9223 open on a `suno.com` page. Out
 
 ## Music for games
 
-- Four tracks per zone: a day/theme pair and a quiet/exploration pair; each generation returns two variants.
+- Six tracks per zone: day, quiet and contrast pairs; each generation returns two variants.
 - Instrumental only, no lyrics or choir. Keep the palette chamber-orchestral with Japanese color, restrained rather
   than bombastic.
 - Validate the decrypted file with `ffprobe`. Keep the model, prompt, clip id and credit cost in a provenance file.

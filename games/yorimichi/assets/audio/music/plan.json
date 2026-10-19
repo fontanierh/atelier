@@ -11,7 +11,8 @@
       "hint": "Where the walk begins",
       "prompts": {
         "day": "Coastal road at first light on an autumn island; calm sea, the journey just beginning. Flute and harp over soft strings, a walking pulse from low strings.",
-        "quiet": "The same coastal road before dawn; solo shinobue and muted strings, distant waves, no percussion."
+        "quiet": "The same coastal road before dawn; solo shinobue and muted strings, distant waves, no percussion.",
+        "contrast": "A darker night version of the coastal road; low strings, distant surf, a single shakuhachi line, uneasy but not frightening."
       }
     },
     {
@@ -20,7 +21,8 @@
       "hint": "Tea house, cottages and the pottery workshop",
       "prompts": {
         "day": "Momiji Hamlet: tea houses, cottages and a pottery workshop under autumn maples. Koto, shinobue, cello and light hand drum; homely and welcoming.",
-        "quiet": "Momiji Hamlet after the shops close; solo koto and low strings, a hearth-quiet night."
+        "quiet": "Momiji Hamlet after the shops close; solo koto and low strings, a hearth-quiet night.",
+        "contrast": "A lantern-lit festival evening in Momiji Hamlet; taiko, shinobue and koto, lively but intimate."
       }
     },
     {
@@ -29,7 +31,8 @@
       "hint": "The forest mini-mega ramp in its sunlit clearing",
       "prompts": {
         "day": "A forest mini-mega ramp in a sunlit clearing; youthful momentum and clean air. Pizzicato strings, marimba and light taiko; buoyant and playful.",
-        "quiet": "The mini-mega clearing at dusk; muted strings, soft marimba and leaves, no drums."
+        "quiet": "The mini-mega clearing at dusk; muted strings, soft marimba and leaves, no drums.",
+        "contrast": "A fast, kinetic run through the mini-mega clearing; driving pizzicato, taiko and brass, playful competition."
       }
     },
     {
@@ -38,7 +41,8 @@
       "hint": "Fisher houses and the boat shed",
       "prompts": {
         "day": "A working fishing village of fisher houses, nets and a boat shed at low tide. Oboe, viola, low strings and a gentle work rhythm.",
-        "quiet": "The fishing village before sunrise; solo oboe over sustained strings, gulls and water."
+        "quiet": "The fishing village before sunrise; solo oboe over sustained strings, gulls and water.",
+        "contrast": "A storm rolling into the fishing village; low strings, ominous drum, wind and spray, tense."
       }
     },
     {
@@ -47,7 +51,8 @@
       "hint": "The beach: launch a sailboat from the sand",
       "prompts": {
         "day": "A sunny beach with a coconut stand and a sailboat pulled onto the sand. Light plucked strings, flute and shaker; breezy and carefree.",
-        "quiet": "The beach at late afternoon; nylon-string plucks, soft flute and surf, very sparse."
+        "quiet": "The beach at late afternoon; nylon-string plucks, soft flute and surf, very sparse.",
+        "contrast": "A warm sunset beach party; plucked strings, flute and hand drums, relaxed celebration."
       }
     },
     {
@@ -56,7 +61,8 @@
       "hint": "The cove at the foot of the stair",
       "prompts": {
         "day": "An island cove at the foot of a long stone stair; the sea is close and the climb waits. Low strings, bass flute and distant bells; expectant.",
-        "quiet": "The island landing in sea mist; shakuhachi, low drone and wave wash; mysterious and still."
+        "quiet": "The island landing in sea mist; shakuhachi, low drone and wave wash; mysterious and still.",
+        "contrast": "A sacred, misty approach to the island stair; low drone, shakuhachi and distant bell, mysterious."
       }
     },
     {
@@ -65,7 +71,8 @@
       "hint": "The summit shrine above the sea",
       "prompts": {
         "day": "A summit shrine above the sea, torii and old stone under a wide sky. Temple bell, shakuhachi, strings and slow taiko; sacred and panoramic.",
-        "quiet": "The summit shrine at first light; solo shinobue and low strings, wind; reverent."
+        "quiet": "The summit shrine at first light; solo shinobue and low strings, wind; reverent.",
+        "contrast": "A ritual at the summit shrine; slow taiko, temple bell and low strings, ceremonial."
       }
     },
     {
@@ -74,7 +81,8 @@
       "hint": "The terraces where the road enters the city",
       "prompts": {
         "day": "The arrival terraces where the road enters Hidamari; a living town opens ahead. Strings, horns and flute; welcoming, civic, gently grand.",
-        "quiet": "The arrival terraces at night; strings and clarinet, distant town hum; reflective."
+        "quiet": "The arrival terraces at night; strings and clarinet, distant town hum; reflective.",
+        "contrast": "A busy market morning on the arrival terraces; plucked strings, clarinet and hand percussion, bustling."
       }
     },
     {
@@ -83,7 +91,8 @@
       "hint": "Covered street of shops and lanterns",
       "prompts": {
         "day": "A covered shopping arcade of shops, lanterns and passing people. Plucked strings, clarinet and hand percussion; lively and warm.",
-        "quiet": "The shopping arcade after hours; muted clarinet, koto and soft footsteps; lantern-lit and quiet."
+        "quiet": "The shopping arcade after hours; muted clarinet, koto and soft footsteps; lantern-lit and quiet.",
+        "contrast": "The arcade after dark; muted clarinet, koto and soft lantern glow, intimate and slightly nostalgic."
       }
     },
     {
@@ -92,7 +101,8 @@
       "hint": "The fountain square under the clock hall",
       "prompts": {
         "day": "The clock square and fountain under the clock hall at midday. Waltz-like strings, flute and light brass; bright and civic.",
-        "quiet": "The clock square at night; piano, strings and fountain water; unhurried."
+        "quiet": "The clock square at night; piano, strings and fountain water; unhurried.",
+        "contrast": "A festival in the clock square; strings, flute, brass and light taiko, celebratory."
       }
     },
     {
@@ -101,7 +111,8 @@
       "hint": "Quays, boats and the lighthouse",
       "prompts": {
         "day": "A fishing harbor of quays, boats and a lighthouse. Reed melody, strings and a steady work rhythm; maritime and warm.",
-        "quiet": "The harbor at dusk; low strings, distant horn and water; the boats asleep."
+        "quiet": "The harbor at dusk; low strings, distant horn and water; the boats asleep.",
+        "contrast": "A lighthouse in a squall; low strings, horn and driving drum, maritime tension."
       }
     },
     {
@@ -110,7 +121,8 @@
       "hint": "The hill temple and the shrine",
       "prompts": {
         "day": "A temple hillside of stone steps and a small shrine above the town. Koto, strings and soft flute; contemplative and sunlit.",
-        "quiet": "The temple hillside in the evening; solo koto, low drone and wind; meditative."
+        "quiet": "The temple hillside in the evening; solo koto, low drone and wind; meditative.",
+        "contrast": "Dawn meditation on the temple hillside; solo shakuhachi, low drone and wind, ethereal."
       }
     },
     {
@@ -119,7 +131,8 @@
       "hint": "Pavilions, the pond and the playground",
       "prompts": {
         "day": "A sunlit park with pavilions, a pond and a playground. Woodwinds, harp and light strings; pastoral and playful.",
-        "quiet": "The park at closing time; harp, flute and pond ambience; gentle."
+        "quiet": "The park at closing time; harp, flute and pond ambience; gentle.",
+        "contrast": "Children playing in the park; playful woodwinds, pizzicato and light percussion, bright."
       }
     },
     {
@@ -128,7 +141,8 @@
       "hint": "The far end of town",
       "prompts": {
         "day": "The town station at the end of the line; a train waits. Piano, strings and soft percussion; nostalgic departure.",
-        "quiet": "The station after the last train; piano and low strings, a distant announcement; bittersweet."
+        "quiet": "The station after the last train; piano and low strings, a distant announcement; bittersweet.",
+        "contrast": "The departure rush at the station; brisk strings, piano and light percussion, forward motion."
       }
     },
     {
@@ -137,7 +151,8 @@
       "hint": "Wooded trail with a view of the snowcapped summit",
       "prompts": {
         "day": "A wooded northern trail with a view of the snowcapped volcano. French horn, strings and low flute; expansive adventure.",
-        "quiet": "The northern foothills under cloud; solo horn, wind and sparse strings; vast and quiet."
+        "quiet": "The northern foothills under cloud; solo horn, wind and sparse strings; vast and quiet.",
+        "contrast": "High wind on the northern trail; horn, low strings and wide intervals, awe."
       }
     },
     {
@@ -146,7 +161,8 @@
       "hint": "A quiet fishing cabin and timber jetty deep in the woods",
       "prompts": {
         "day": "A hidden woodland lake with a fishing cabin and timber jetty. Plucked guitar-like strings, low strings and soft flute; secluded.",
-        "quiet": "The woodland lake at night; solo plucks, water and low drone; mysterious and still."
+        "quiet": "The woodland lake at night; solo plucks, water and low drone; mysterious and still.",
+        "contrast": "The woodland lake at night; dark low strings, sparse plucks and water, mysterious."
       }
     },
     {
@@ -155,7 +171,8 @@
       "hint": "The canyon skate park in the western foothills",
       "prompts": {
         "day": "A canyon skate park in the western foothills; concrete lines and big air. Driving pizzicato, taiko and brass stabs; energetic and rhythmic.",
-        "quiet": "The canyon skate park after the session; muted strings, low pulse and wind; empty and open."
+        "quiet": "The canyon skate park after the session; muted strings, low pulse and wind; empty and open.",
+        "contrast": "A competition run in the canyon; driving taiko, pizzicato and brass, intense."
       }
     },
     {
@@ -164,7 +181,8 @@
       "hint": "Seaside street plaza, bowl and mini-ramp",
       "prompts": {
         "day": "A seaside skate plaza at sunset; bowl, mini-ramp and long rails. Plucked strings, light drums and bass; youthful and breezy.",
-        "quiet": "Sunset Pier after dark; soft bass, muted strings and surf; the session over."
+        "quiet": "Sunset Pier after dark; soft bass, muted strings and surf; the session over.",
+        "contrast": "A night session at Sunset Pier; cool plucked strings, soft bass and light drums, confident."
       }
     },
     {
@@ -173,7 +191,8 @@
       "hint": "Climb the short steps and use the zeppelin to travel",
       "prompts": {
         "day": "A woodland air station where a zeppelin waits among the trees. Woodwinds, harp and a soft propeller pulse; airy adventure.",
-        "quiet": "The woodland air station at dawn; harp, low strings and wind; anticipation."
+        "quiet": "The woodland air station at dawn; harp, low strings and wind; anticipation.",
+        "contrast": "Lift-off from the woodland air station; soaring strings, harp and wind, adventurous."
       }
     },
     {
@@ -182,7 +201,8 @@
       "hint": "Climb the short steps and use the zeppelin to travel",
       "prompts": {
         "day": "Hidamari's air station above the town; departure and arrival. Strings, clarinet and light brass; elegant and bustling.",
-        "quiet": "The city air station at night; clarinet, strings and distant town; reflective."
+        "quiet": "The city air station at night; clarinet, strings and distant town; reflective.",
+        "contrast": "Departure from the city air station; bustling strings, clarinet and brass, elegant motion."
       }
     },
     {
@@ -191,7 +211,8 @@
       "hint": "Climb the short steps and use the zeppelin to travel",
       "prompts": {
         "day": "The Mega Park air station on the canyon rim; open sky and wind. Horns, strings and wide intervals; flight and scale.",
-        "quiet": "The canyon air station in the evening; solo horn, wind and sparse strings; open."
+        "quiet": "The canyon air station in the evening; solo horn, wind and sparse strings; open.",
+        "contrast": "High altitude over the canyon; wide horns, strings and wind, vast."
       }
     },
     {
@@ -200,7 +221,8 @@
       "hint": "Bowls, rails and the tall vert ramp above the station",
       "prompts": {
         "day": "A neighborhood skate park with bowls, rails and a tall vert ramp. Plucked strings, light drums and playful brass; friendly energy.",
-        "quiet": "The community skate park at dusk; muted strings and a soft pulse; evening."
+        "quiet": "The community skate park at dusk; muted strings and a soft pulse; evening.",
+        "contrast": "A local skate contest; energetic plucked strings, drums and brass, friendly competition."
       }
     },
     {
@@ -209,7 +231,8 @@
       "hint": "Grandstand, judges' tower and the finish post",
       "prompts": {
         "day": "The Hidamari Hippodrome: grandstand, judges' tower and the finish post. Strings, horns and a light gallop rhythm; festive and elegant.",
-        "quiet": "The hippodrome before the races; strings, oboe and a distant crowd; expectant."
+        "quiet": "The hippodrome before the races; strings, oboe and a distant crowd; expectant.",
+        "contrast": "Race day at the Hippodrome; galloping rhythm, strings and horns, festive tension."
       }
     },
     {
@@ -218,7 +241,8 @@
       "hint": "The caldera floor and its marked ramp drop-in",
       "prompts": {
         "day": "Crater Park on a volcano caldera floor; vast rock walls and snow above. Low brass, taiko and strings; awe and danger, not horror.",
-        "quiet": "The caldera floor at night; low drone, sparse taiko and wind; enormous and still."
+        "quiet": "The caldera floor at night; low drone, sparse taiko and wind; enormous and still.",
+        "contrast": "The volcano's caldera at dusk; low brass, taiko and dark strings, awe and danger."
       }
     },
     {
@@ -227,7 +251,8 @@
       "hint": "A European hillside town and racecourse above a river",
       "prompts": {
         "day": "Belmonte, a European hillside town and racecourse above a river. Strings, oboe and a waltz; elegant pastoral.",
-        "quiet": "Belmonte in the evening; piano, strings and the river; gentle."
+        "quiet": "Belmonte in the evening; piano, strings and the river; gentle.",
+        "contrast": "A festival in Belmonte; elegant strings, oboe and waltz, warm celebration."
       }
     },
     {
@@ -236,7 +261,8 @@
       "hint": "The racecourse during a race",
       "prompts": {
         "day": "The Belmonte racecourse during a race; hooves, speed and competition. Galloping rhythm, strings and horns; brisk and exciting.",
-        "quiet": "The racecourse after the crowd leaves; strings, low pulse and distant hooves; focused."
+        "quiet": "The racecourse after the crowd leaves; strings, low pulse and distant hooves; focused.",
+        "contrast": "The final stretch of the race; galloping strings, horns and drums, intense."
       }
     },
     {
@@ -245,7 +271,8 @@
       "hint": "Early morning training before the race",
       "prompts": {
         "day": "Early morning training at Belmonte; quiet discipline before the race. Piano, strings and light percussion; focused and steady.",
-        "quiet": "The training yard at dawn; piano, cello and morning air; intimate."
+        "quiet": "The training yard at dawn; piano, cello and morning air; intimate.",
+        "contrast": "A disciplined morning workout; steady piano, strings and light percussion, focused."
       }
     },
     {
@@ -254,7 +281,8 @@
       "hint": "A refined interior of conversation and betting",
       "prompts": {
         "day": "The Salon des Paris: a refined interior of conversation and betting. Piano, clarinet and cello; intimate chamber music.",
-        "quiet": "The salon late at night; solo piano and soft strings; refined and hushed."
+        "quiet": "The salon late at night; solo piano and soft strings; refined and hushed.",
+        "contrast": "Intrigue in the Salon des Paris; muted piano, clarinet and cello, sly and refined."
       }
     }
   ]

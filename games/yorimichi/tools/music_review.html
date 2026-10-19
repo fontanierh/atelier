@@ -88,7 +88,7 @@ footer { color: #6f7c72; text-align: center; font-size: 12px; padding: 0 20px 40
   <div>
     <p class="eyebrow">Yorimichi · original score</p>
     <h1>Zone soundtrack review</h1>
-    <p class="sub">Suno v6 · long-form instrumentals · four tracks per zone</p>
+    <p class="sub">Suno v6 · long-form instrumentals · six tracks per zone</p>
   </div>
   <div class="actions">
     <div id="progress" class="progress">loading…</div>
@@ -129,6 +129,12 @@ function fmtDuration(seconds) {
   return m + ':' + String(s).padStart(2, '0');
 }
 
+function roleLabel(role) {
+  if (role === 'day') return 'Day theme';
+  if (role === 'contrast') return 'Contrast';
+  return 'Quiet exploration';
+}
+
 function trackCount(index) {
   return (index.zones || []).reduce(function (n, z) {
     return n + ((z.tracks || []).length);
@@ -150,7 +156,7 @@ function render() {
   var zones = current.zones || [];
   if (!zones.length) {
     zonesEl.appendChild(el('p', 'empty', 'The soundtrack is still rendering. This page updates automatically.'));
-    progressEl.textContent = '0 / ' + (current.total_tracks || 112) + ' tracks';
+    progressEl.textContent = '0 / ' + (current.total_tracks || 168) + ' tracks';
     return;
   }
   zones.forEach(function (zone) {
@@ -160,7 +166,7 @@ function render() {
     left.appendChild(el('h2', '', zone.name));
     left.appendChild(el('p', 'hint', zone.hint || ''));
     head.appendChild(left);
-    head.appendChild(el('span', 'count', (zone.tracks || []).length + ' / 4 tracks'));
+    head.appendChild(el('span', 'count', (zone.tracks || []).length + ' / 6 tracks'));
     section.appendChild(head);
 
     var grid = el('div', 'tracks');
@@ -169,7 +175,7 @@ function render() {
       card.dataset.clip = track.clip_id;
       var trackHead = el('div', 'track-head');
       var name = el('div');
-      name.appendChild(el('span', 'role', track.role === 'day' ? 'Day theme' : 'Quiet exploration'));
+      name.appendChild(el('span', 'role', roleLabel(track.role)));
       name.appendChild(el('h3', '', track.title || track.clip_id));
       trackHead.appendChild(name);
       trackHead.appendChild(el('span', 'dur', fmtDuration(track.duration_s)));
@@ -205,13 +211,13 @@ function render() {
       grid.appendChild(card);
     });
     section.appendChild(grid);
-    if ((zone.tracks || []).length < 4) {
+    if ((zone.tracks || []).length < 6) {
       section.appendChild(el('p', 'waiting', 'The remaining tracks for this zone are still rendering.'));
     }
     zonesEl.appendChild(section);
   });
   var count = trackCount(current);
-  var total = current.total_tracks || 112;
+  var total = current.total_tracks || 168;
   progressEl.textContent = count + ' / ' + total + ' tracks · ' + zones.length + ' zones';
   lastSignature = signature(current);
 }
@@ -271,7 +277,7 @@ document.getElementById('copy').addEventListener('click', function () {
         var saved = reviews[track.clip_id] || {};
         if (!saved.rating && !saved.note) return;
         var line = '- **' + zone.name + ' — ' + track.title + '** (' +
-          (track.role === 'day' ? 'day' : 'quiet') + '): ' + (saved.rating || 'unrated');
+          track.role + '): ' + (saved.rating || 'unrated');
         if (saved.note) line += ' — ' + saved.note;
         lines.push(line);
       });

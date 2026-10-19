@@ -56,7 +56,8 @@ def write_index(plan):
                           "tracks": m.get("tracks", [])})
     index = {"game": plan["game"], "generated_at": datetime.now(timezone.utc).isoformat(),
              "model": plan["model"], "duration": plan["duration"],
-             "total_zones": len(plan["zones"]), "total_tracks": len(plan["zones"]) * 4,
+             "total_zones": len(plan["zones"]),
+             "total_tracks": 2 * sum(len(z["prompts"]) for z in plan["zones"]),
              "zones": zones}
     p = OUT / "index.json"
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +73,7 @@ def generate_role(client, plan, zone, role):
     data = client.generate(
         prompt, instrumental=True, model=plan["model"], duration=plan["duration"],
         negative_tags=plan.get("negative", ""),
+        title=f"{zone['name']} · {role.title()}",
     )
     clips = data.get("clips", [])
     ids = [c["id"] for c in clips]
@@ -110,7 +112,7 @@ def generate_role(client, plan, zone, role):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--zone", action="append", default=[])
-    ap.add_argument("--role", choices=("day", "quiet"))
+    ap.add_argument("--role", choices=("day", "quiet", "contrast"))
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
 
@@ -124,7 +126,8 @@ def main():
             "zone": zone["key"], "name": zone["name"], "hint": zone["hint"],
             "tracks": [],
         }
-        for role in (("day",) if args.role == "day" else ("quiet",) if args.role == "quiet" else ("day", "quiet")):
+        roles = tuple(r for r in ("day", "quiet", "contrast") if r in zone["prompts"])
+        for role in ((args.role,) if args.role else roles):
             if not args.force and role_complete(manifest, role):
                 print(f"[{i}/{len(zones)}] {zone['key']}/{role}: already complete", flush=True)
                 continue
