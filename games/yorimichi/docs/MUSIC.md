@@ -135,6 +135,8 @@ as `/Game/Audio/Music/<section>/<group>/` and stages the tagged asset list at
 `/Game/Data/Music/library.json`. Selectors are comma-separated and can
 be combined with `YORIMICHI_MUSIC_GROUPS` and `YORIMICHI_MUSIC_LIMIT`. A build
 without the music steps remains valid and contains no music assets.
+Each import is an exact inventory: waves under `/Game/Audio/Music` that the new
+selection does not own are deleted, while other Audio folders stay untouched.
 
 Set `YORIMICHI_MUSIC=1` when importing the whole library with no selectors. The
 same flag (or any selector) also tells `data.content` to keep the optional

@@ -12,6 +12,7 @@ from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "world"))
 import yori  # noqa: E402
 import unreal as U  # noqa: E402
+from music_inventory import stale_assets  # noqa: E402
 
 ROOT = yori.OUT
 GAME = _Path(__file__).resolve().parents[2]
@@ -65,6 +66,13 @@ def main():
                 "duration": wave.get_editor_property("duration"),
             }
     missing = sorted(set(expected) - set(imported))
+    if missing:
+        raise SystemExit(f"music: {len(missing)} files not imported: {missing[:10]}")
+    deleted = stale_assets(E.list_assets(DEST, recursive=True, include_folder=False),
+                           set(expected.values()))
+    for path in deleted:
+        if not E.delete_asset(path):
+            raise RuntimeError(f"could not delete stale owned music: {path}")
     runtime = []
     for name, track in by_name.items():
         asset = imported.get(name)
@@ -96,10 +104,9 @@ def main():
         "schema": 1, "library": data.get("library"), "tracks": runtime,
     }, indent=2, ensure_ascii=False) + "\n")
     (ROOT / "music_import.json").write_text(json.dumps({
-        "imported": imported, "missing": missing, "library": str(STAGED),
+        "imported": imported, "missing": missing, "deleted": list(deleted),
+        "library": str(STAGED),
     }, indent=2) + "\n")
-    if missing:
-        raise SystemExit(f"music: {len(missing)} files not imported: {missing[:10]}")
     U.log(f"MUSIC IMPORT COMPLETE {len(imported)} waves")
 
 

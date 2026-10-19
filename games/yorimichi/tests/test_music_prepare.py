@@ -65,3 +65,14 @@ def test_recipe_collector_selects_cached_bytes(tmp_path):
     recipe = build.load_recipe("yorimichi")
     assert recipe.music_files(cache, "calm", "", "", 0) == (calm,)
     assert recipe.music_files(cache, "", "energy", "", 0) == (action,)
+
+
+def test_full_import_followed_by_narrow_selection_removes_only_old_music():
+    spec = importlib.util.spec_from_file_location(
+        "music_inventory_test", HERE.parents[2] / "unreal/Scripts/music_inventory.py")
+    inventory = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(inventory)
+    music = "/Game/Audio/Music/variety/lofi_rain/MUS_variety_lofi_rain_1234"
+    other = "/Game/Audio/Music/variety/energy_dnb/MUS_variety_energy_dnb_5678"
+    combat = "/Game/Audio/Combat/hit_body/hit_body_01"
+    assert inventory.stale_assets([music + "." + music.rsplit("/", 1)[-1], other, combat], {music}) == (other,)
