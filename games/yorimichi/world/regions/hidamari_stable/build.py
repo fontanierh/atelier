@@ -927,6 +927,8 @@ def anchors(coll, data):
 
 
 def main():
+    if not L.is_enabled():
+        raise SystemExit('HIDAMARI STABLE is disabled (ENABLED = False in hidamari_stable/layout.py): enable it and rebuild world.layout first')
     palette()
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)

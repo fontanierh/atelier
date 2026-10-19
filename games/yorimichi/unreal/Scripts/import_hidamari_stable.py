@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori
+from regions.hidamari_stable import layout as stable_layout
 import hashlib
 import json
 import unreal
@@ -122,6 +123,7 @@ assert material, f'{MATERIAL} is missing: build unreal.world first'
 for key, entry in manifest['files'].items():
     assert sha(BUILD / entry['path']) == entry['sha256'], 'stale stable build: ' + key
 (DATA / 'stable.json').unlink(missing_ok=True)
+assert stable_layout.is_enabled(), 'Hidamari stable is disabled (ENABLED = False in hidamari_stable/layout.py)'
 if E.does_directory_exist(ROOT):
     E.delete_directory(ROOT)
 E.make_directory(ROOT)

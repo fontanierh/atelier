@@ -168,4 +168,5 @@ def stable(spot='arrival'):
     spots['yard'] = ((-20., 12., 0.), 0.)
     spots['paddock'] = ((16., -14., 0.), 90.)
     (x, y, _), yaw = spots[spot]
-    return teleport(ground((ox + x) * 100., -(oy + y) * 100., (oz + 1.5) * 100.), -float(yaw))
+    # GroundAt traces from z + 20 m down to z - 60 m: start it 1.5 m over the pad, under the barn's roof
+    return teleport(ground((ox + x) * 100., -(oy + y) * 100., (oz + 1.5 - 20.) * 100.), -float(yaw))

@@ -224,12 +224,18 @@ class Site(unittest.TestCase):
     def test_hidamari_terrain_carries_the_grading(self):
         import numpy as np
         from regions.hidamari import layout as H
-        ungraded = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0])
-        self.assertNotAlmostEqual(ungraded, L.PAD_Z, 1)
+        with patch.object(L, 'is_enabled', return_value=False):
+            ungraded = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0])
+            self.assertNotAlmostEqual(ungraded, L.PAD_Z, 1)
         with patch.object(L, 'is_enabled', return_value=True):
             self.assertAlmostEqual(float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0]), L.PAD_Z, 3)
             far = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1] + L.COMPOUND[3] + L.GRADE_REACH + 1.]))[0])
             self.assertAlmostEqual(far, float(H.north_height(np.array([L.SITE[0]]), np.array([500.]))[0]), 1)
+
+    def test_committed_switch_matches_cpp_header(self):
+        header = (Path(__file__).resolve().parents[1] / 'unreal/Source/Yorimichi/HidamariStable.h').read_text(encoding='utf-8')
+        expected = 'static constexpr bool bEnabled = true;' if L.ENABLED else 'static constexpr bool bEnabled = false;'
+        self.assertIn(expected, header)
 
     @unittest.skipUnless((yori.OUT / 'heightmap.npy').exists(), 'world.layout not built')
     def test_road_climbs_gently(self):

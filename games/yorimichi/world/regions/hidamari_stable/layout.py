@@ -15,9 +15,9 @@ jockeys' office first, then five stalls on each side, then the east door towards
 Standard library and numpy only: build.py (Blender) and the tests import it.
 """
 import math
-import os
 
 NAME = '陽だまり厩舎'
+ENABLED = False                # committed switch (paired with AHidamariStable::bEnabled in HidamariStable.h)
 SITE = (955., 447.)            # world (x, y) of the frame's origin: chosen by Paul on the slope above the city's north edge
 YAW = 0.                       # degrees; the frame is axis-aligned with the island
 COMPOUND = (-40., -35., 40., 35.)   # pad rectangle (x0, y0, x1, y1)
@@ -29,9 +29,8 @@ GRADE_REACH = 22.              # the farthest the grading reaches from the pad (
 
 
 def is_enabled():
-    """Whether the Hidamari stable is enabled in the world build (opt-in while world.hidamari_stable and
-    unreal.hidamari_stable are explicit, so default builds and peers without the import keep identical terrain)."""
-    return os.environ.get('YORIMICHI_HIDAMARI_STABLE') == '1'
+    """Whether the Hidamari stable is enabled in the world build (committed switch, never ambient os.environ)."""
+    return ENABLED
 
 
 def grade_offset(d):

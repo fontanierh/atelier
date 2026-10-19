@@ -28,6 +28,8 @@ class YORIMICHI_API AHidamariStable : public AActor
 {
     GENERATED_BODY()
 public:
+    /** Committed switch paired with ENABLED in world/regions/hidamari_stable/layout.py. */
+    static constexpr bool bEnabled = false;
     bool bGameplayReady = false;
     AHidamariStable();
     /** The stable described by Path (stable.json); null when the file is missing (the step is optional) or nothing
