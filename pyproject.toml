@@ -13,6 +13,7 @@ dependencies = [
   "markdown-it-py>=4,<5",
   "cryptography>=43",
   "manifold3d==3.5.4",
+  "requests>=2.32",
 ]
 
 [project.scripts]

@@ -12,6 +12,7 @@ it, or restrict the import with comma-separated environment selectors:
 The selected list is a build artifact; the release catalog remains the source of
 truth for every track and its intent tags.
 """
+import argparse
 import json
 import os
 import sys
@@ -26,11 +27,17 @@ CACHE = cache_dir("yorimichi", "music")
 OUT = ROOT / "audio" / "music" / "manifest.json"
 
 
-def values(name):
-    return {part.strip() for part in os.environ.get(name, "").split(",") if part.strip()}
+def values(text):
+    return {part.strip() for part in text.split(",") if part.strip()}
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--categories", default=os.environ.get("YORIMICHI_MUSIC_CATEGORIES", ""))
+    parser.add_argument("--styles", default=os.environ.get("YORIMICHI_MUSIC_STYLES", ""))
+    parser.add_argument("--groups", default=os.environ.get("YORIMICHI_MUSIC_GROUPS", ""))
+    parser.add_argument("--limit", default=os.environ.get("YORIMICHI_MUSIC_LIMIT", "0"))
+    args = parser.parse_args()
     catalog_path = CACHE / "catalog.json"
     if not catalog_path.exists():
         raise SystemExit(
@@ -38,10 +45,10 @@ def main():
             "run: python3 games/yorimichi/assets/audio/music/fetch.py"
         )
     catalog = json.loads(catalog_path.read_text())
-    categories = values("YORIMICHI_MUSIC_CATEGORIES")
-    styles = values("YORIMICHI_MUSIC_STYLES")
-    groups = values("YORIMICHI_MUSIC_GROUPS")
-    limit = int(os.environ.get("YORIMICHI_MUSIC_LIMIT", "0") or 0)
+    categories = values(args.categories)
+    styles = values(args.styles)
+    groups = values(args.groups)
+    limit = int(args.limit or 0)
 
     selected = []
     for track in catalog.get("tracks", []):

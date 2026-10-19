@@ -54,6 +54,11 @@ python3 games/yorimichi/tools/generate_action.py           # action library
 python3 games/yorimichi/tools/generate_variety.py          # style library
 ```
 
+Each paid submission gets an exclusive record under `~/.cache/suno/ledger/` before the request is sent. A recorded
+prompt is never submitted again automatically; an uncertain response stays recorded. Only the free Turnstile step is
+retried. To deliberately pay for a new take of the same prompt, set the old ledger record aside with
+`atelier.ai.ledger.set_aside`.
+
 Add `--zone KEY --role quiet`, or `--cue KEY`, to regenerate one item. Outputs
 go to the ignored `build/yorimichi/music/`:
 

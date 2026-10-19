@@ -999,6 +999,12 @@ def character_steps(ctx):
 def sound_effect_steps(ctx):
     """Offline sound slices and procedural effect textures."""
     out = ctx.out
+    music_args = (
+        '--categories', os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
+        '--styles', os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
+        '--groups', os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
+        '--limit', os.environ.get('YORIMICHI_MUSIC_LIMIT', '0'),
+    )
     return [
         # ------------------------------------------------------------ sounds and effects
         Step('audio.footsteps', [Python(AUDIO / 'footsteps' / 'slice.py')], inputs=[AUDIO / 'footsteps', paths.cache_dir('sonniss', 'footsteps', create=False)],
@@ -1012,7 +1018,7 @@ def sound_effect_steps(ctx):
         # The Suno library is optional: naming `audio.music` or `unreal.music` selects
         # only the tracks requested by YORIMICHI_MUSIC_* selectors. A plain build
         # never downloads or imports the large release.
-        Step('audio.music', [Python(AUDIO / 'music' / 'prepare.py')],
+        Step('audio.music', [Python(AUDIO / 'music' / 'prepare.py', music_args)],
              inputs=[AUDIO / 'music' / 'prepare.py',
                      paths.cache_dir('yorimichi', 'music', create=False) / 'catalog.json'],
              outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,

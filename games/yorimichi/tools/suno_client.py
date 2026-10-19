@@ -15,16 +15,21 @@ import shutil
 import subprocess
 import time
 import uuid
+import sys
 from pathlib import Path
 
 import requests
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "platform" / "studio"))
+from atelier.ai import ledger  # noqa: E402
+
 CACHE = Path.home() / ".cache/suno"
 REFRESH = CACHE / "refresh.json"
 SESSION = CACHE / "session.json"
 OUT = CACHE / "out"
+LEDGER = CACHE / "ledger"
 ENV = Path(os.environ.get("ATELIER_ENV", Path(__file__).resolve().parents[3] / ".env"))
 API = "https://studio-api-prod.suno.com"
 AUTH = "https://auth.suno.com"
@@ -32,6 +37,10 @@ PARAMS = {"__clerk_api_version": "2025-11-10", "_clerk_js_version": "5.117.0"}
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/155.0.8059.82 Safari/537.36")
 TURNSTILE_SITEKEY = "0x4AAAAAADI7xDNyj-3LcIbi"
+
+
+class TurnstileError(RuntimeError):
+    """The free captcha step failed before any paid submission."""
 
 
 def write_private(path, data):
@@ -140,12 +149,12 @@ def turnstile_token():
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        raise SystemExit("Playwright is required for generation: pip install playwright")
+        raise TurnstileError("Playwright is required for generation: pip install playwright")
     with sync_playwright() as p:
         try:
             browser = p.chromium.connect_over_cdp("http://127.0.0.1:9223")
         except Exception as e:
-            raise RuntimeError(
+            raise TurnstileError(
                 "Chrome debug port 9223 is not available. Start "
                 "'Google Chrome --remote-debugging-port=9223 --user-data-dir=~/.cache/suno/chrome-profile'."
             ) from e
@@ -192,12 +201,12 @@ def turnstile_token():
                     page.goto("https://suno.com/create", wait_until="domcontentloaded", timeout=60000)
                 except Exception:
                     pass
-                raise RuntimeError(f"Turnstile failed: {state['e']}")
+                raise TurnstileError(f"Turnstile failed: {state['e']}")
         try:
             page.goto("https://suno.com/create", wait_until="domcontentloaded", timeout=60000)
         except Exception:
             pass
-        raise RuntimeError("Turnstile did not issue a token")
+        raise TurnstileError("Turnstile did not issue a token")
 
 
 class Suno:
@@ -249,7 +258,9 @@ class Suno:
         return r.json()
 
     def generate(self, prompt, instrumental=False, model="chirp-hawk",
-                 title="", tags="", lyrics="", duration=480, negative_tags=""):
+                 title="", tags="", lyrics="", duration=480, negative_tags="",
+                 ledger_metadata=None):
+        """Submit one paid generation, recorded before the HTTP call and never retried on uncertainty."""
         captcha = turnstile_token()
         body = {
             "prompt": lyrics, "title": title,
@@ -264,10 +275,38 @@ class Suno:
         }
         if lyrics:
             body["tags"] = tags
-        r = self.api("POST", "/api/generate/v2-web/", json=body, timeout=30)
-        if r.status_code != 200:
-            raise RuntimeError(f"generate failed {r.status_code}: {r.text[:500]}")
-        return r.json()
+        prompt_hash = hashlib.sha256(f"{model}\0{duration}\0{prompt}".encode()).hexdigest()[:24]
+        record_path = LEDGER / f"{prompt_hash}.json"
+        record = {
+            "provider": "suno", "endpoint": "/api/generate/v2-web/",
+            "model": model, "duration": duration, "instrumental": instrumental,
+            "prompt": prompt, "prompt_sha256": prompt_hash,
+            "credits_estimate": 10, **(ledger_metadata or {}),
+        }
+        ledger.begin(record_path, record)
+        finished = False
+        try:
+            r = self.api("POST", "/api/generate/v2-web/", json=body, timeout=30)
+            if r.status_code != 200:
+                ledger.finish(record_path, status="submission_uncertain",
+                              result={"http_status": r.status_code})
+                finished = True
+                raise RuntimeError(f"generate failed {r.status_code}: {r.text[:500]}")
+            data = r.json()
+            clips = data.get("clips", [])
+            ledger.finish(record_path, status="done", result={
+                "http_status": 200, "clip_ids": [c.get("id") for c in clips],
+            })
+            finished = True
+            return data
+        except BaseException as error:
+            if not finished:
+                try:
+                    ledger.finish(record_path, status="submission_uncertain",
+                                  result={"error_type": type(error).__name__})
+                except BaseException as receipt_error:
+                    error.add_note(f"Could not finalize paid-operation receipt: {type(receipt_error).__name__}")
+            raise
 
     def wait(self, ids, timeout=300, interval=5):
         deadline = time.time() + timeout

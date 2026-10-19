@@ -24,16 +24,32 @@ def recipe_steps(tmp_path):
     return ctx, build.load_recipe('yorimichi').steps(ctx)
 
 
+def test_music_selectors_are_part_of_the_build_key(tmp_path, monkeypatch):
+    monkeypatch.setenv('YORIMICHI_MUSIC_CATEGORIES', 'calm')
+    _, calm_steps = recipe_steps(tmp_path)
+    calm = next(s for s in calm_steps if s.name == 'audio.music')
+    assert calm.explicit and calm.commands[0].args[:2] == ('--categories', 'calm')
+    monkeypatch.setenv('YORIMICHI_MUSIC_CATEGORIES', 'action')
+    _, action_steps = recipe_steps(tmp_path)
+    action = next(s for s in action_steps if s.name == 'audio.music')
+    assert repr(calm.commands) != repr(action.commands)
+
+
 def test_package_cooks_after_every_import_then_assembles_in_a_separate_turn(tmp_path):
     ctx, steps = recipe_steps(tmp_path)
     package = next(s for s in steps if s.name == 'unreal.package')
     cook = next(s for s in steps if s.name == 'unreal.cook')
-    imports = {s.name for s in steps if s.name.startswith('unreal.') and s.name not in {'unreal.cook', 'unreal.package'}}
+    imports = {s.name for s in steps if s.name.startswith('unreal.') and not s.explicit
+               and s.name not in {'unreal.cook', 'unreal.package'}}
     assert imports <= set(cook.needs) and 'data.stage' in cook.needs and cook.heavy and cook.explicit
+    assert 'unreal.music' not in cook.needs
     assert package.needs == ['unreal.cook'] and package.heavy and package.explicit
     # Never part of a plain or prefix build: only when named.
     assert not {'unreal.package', 'unreal.cook'} & {s.name for s in build.order(steps, [])}
     assert not {'unreal.package', 'unreal.cook'} & {s.name for s in build.order(steps, ['unreal'])}
+    assert 'unreal.music' not in {s.name for s in build.order(steps, [])}
+    assert 'unreal.music' not in {s.name for s in build.order(steps, ['unreal'])}
+    assert 'unreal.music' in {s.name for s in build.order(steps, ['unreal.music'])}
     assert 'unreal.package' in {s.name for s in build.order(steps, ['unreal.package'])}
     # Compile kind: the big slot and the small one, like any compile.
     assert build.slot_request(ctx, cook) == ('compile', None)

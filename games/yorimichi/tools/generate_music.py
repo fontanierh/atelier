@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from suno_client import Suno
+from suno_client import Suno, TurnstileError
 
 ROOT = Path(__file__).resolve().parents[3]
 PLAN = ROOT / "games/yorimichi/assets/audio/music/plan.json"
@@ -72,13 +72,25 @@ def write_index(plan):
     return index
 
 
+def submit(client, prompt, *, cue, **kwargs):
+    for attempt in (1, 2, 3, 4):
+        try:
+            return client.generate(prompt, **kwargs)
+        except TurnstileError as error:
+            print(f"  {cue} turnstile attempt {attempt} failed: {error}", flush=True)
+            if attempt == 4:
+                raise
+            time.sleep(30)
+
+
 def generate_role(client, plan, zone, role):
     prompt = plan["style"] + " " + zone["prompts"][role]
     print(f"  {zone['key']}/{role}: submitting", flush=True)
-    data = client.generate(
-        prompt, instrumental=True, model=plan["model"], duration=plan["duration"],
+    data = submit(client, prompt, cue=f"{zone['key']}/{role}", instrumental=True,
+        model=plan["model"], duration=plan["duration"],
         negative_tags=plan.get("negative", ""),
         title=f"{zone['name']} · {role.title()}",
+        ledger_metadata={"kind": "music", "zone": zone["key"], "role": role, "name": zone["name"]},
     )
     clips = data.get("clips", [])
     ids = [c["id"] for c in clips]
@@ -137,23 +149,14 @@ def main():
                 print(f"[{i}/{len(zones)}] {zone['key']}/{role}: already complete", flush=True)
                 continue
             print(f"[{i}/{len(zones)}] {zone['key']}/{role}: generating", flush=True)
-            last = None
-            for attempt in (1, 2, 3, 4):
-                try:
-                    tracks = generate_role(client, plan, zone, role)
-                    manifest["tracks"] = [t for t in manifest["tracks"] if t.get("role") != role] + tracks
-                    save_manifest(zone["key"], manifest)
-                    for t in tracks:
-                        print(f"  saved {t['mp3']} ({t['duration_s']}s)", flush=True)
-                    last = None
-                    break
-                except Exception as e:
-                    last = e
-                    print(f"  {zone['key']}/{role} attempt {attempt} failed: {type(e).__name__}: {e}", flush=True)
-                    if attempt < 4:
-                        time.sleep(30)
-            if last is not None:
-                print(f"  {zone['key']}/{role}: giving up for this pass", flush=True)
+            try:
+                tracks = generate_role(client, plan, zone, role)
+                manifest["tracks"] = [t for t in manifest["tracks"] if t.get("role") != role] + tracks
+                save_manifest(zone["key"], manifest)
+                for t in tracks:
+                    print(f"  saved {t['mp3']} ({t['duration_s']}s)", flush=True)
+            except Exception as e:
+                print(f"  {zone['key']}/{role}: giving up: {type(e).__name__}: {e}", flush=True)
             time.sleep(5)
         write_index(plan)
         print(f"[{i}/{len(zones)}] index updated; elapsed {time.time()-started:.0f}s", flush=True)

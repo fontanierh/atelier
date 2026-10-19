@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from suno_client import Suno
+from suno_client import Suno, TurnstileError
 import music_index
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -39,14 +39,26 @@ def complete(cue):
     return len(tracks) >= 2 and all(media_path(t["mp3"]).exists() for t in tracks)
 
 
+def submit(client, prompt, *, cue, **kwargs):
+    for attempt in (1, 2, 3, 4):
+        try:
+            return client.generate(prompt, **kwargs)
+        except TurnstileError as error:
+            print(f"  {cue} turnstile attempt {attempt} failed: {error}", flush=True)
+            if attempt == 4:
+                raise
+            time.sleep(30)
+
+
 def generate(client, plan, cue):
     dest = OUT / "variety" / cue["key"]
     dest.mkdir(parents=True, exist_ok=True)
     prompt = cue["prompt"]
     print(f"  {cue['key']}: submitting", flush=True)
-    data = client.generate(
-        prompt, instrumental=True, model=plan["model"], duration=plan["duration"],
+    data = submit(client, prompt, cue=cue["key"],
+        instrumental=True, model=plan["model"], duration=plan["duration"],
         negative_tags=plan.get("negative", ""), title=cue["name"],
+        ledger_metadata={"kind": "music", "cue": cue["key"], "name": cue["name"], "role": "variety"},
     )
     clips = data.get("clips", [])
     print(f"  {cue['key']}: clips {[c['id'] for c in clips]}", flush=True)
@@ -109,27 +121,18 @@ def main():
             print(f"[{i}/{len(cues)}] {cue['key']}: already complete", flush=True)
             continue
         print(f"[{i}/{len(cues)}] {cue['key']}: generating", flush=True)
-        last = None
-        for attempt in (1, 2, 3, 4):
-            try:
-                tracks = generate(client, plan, cue)
-                save(OUT / "variety" / cue["key"] / "manifest.json", {
-                    "kind": "variety", "cue": cue["key"], "name": cue["name"],
-                    "style_family": cue["style_family"], "intent": cue["intent"],
-                    "energy": cue["energy"], "mood": cue["mood"], "use": cue["use"],
-                    "loop": cue["loop"], "bpm_target": cue["bpm_target"], "tracks": tracks,
-                })
-                for track in tracks:
-                    print(f"  saved {track['mp3']} ({track['duration_s']}s)", flush=True)
-                last = None
-                break
-            except Exception as error:
-                last = error
-                print(f"  {cue['key']} attempt {attempt} failed: {type(error).__name__}: {error}", flush=True)
-                if attempt < 4:
-                    time.sleep(30)
-        if last is not None:
-            print(f"  {cue['key']}: giving up for this pass", flush=True)
+        try:
+            tracks = generate(client, plan, cue)
+            save(OUT / "variety" / cue["key"] / "manifest.json", {
+                "kind": "variety", "cue": cue["key"], "name": cue["name"],
+                "style_family": cue["style_family"], "intent": cue["intent"],
+                "energy": cue["energy"], "mood": cue["mood"], "use": cue["use"],
+                "loop": cue["loop"], "bpm_target": cue["bpm_target"], "tracks": tracks,
+            })
+            for track in tracks:
+                print(f"  saved {track['mp3']} ({track['duration_s']}s)", flush=True)
+        except Exception as error:
+            print(f"  {cue['key']}: giving up: {type(error).__name__}: {error}", flush=True)
         music_index.build(ZONES, ACTION, PLAN, OUT)
         print(f"[{i}/{len(cues)}] index updated; elapsed {time.time()-started:.0f}s", flush=True)
         time.sleep(5)

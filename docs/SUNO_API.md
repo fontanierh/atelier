@@ -184,6 +184,8 @@ python3 games/yorimichi/tools/suno_client.py download <clip-id>
 ```
 
 Generation needs the local Chrome debug port 9223 open on a `suno.com` page. Outputs go to the Atelier cache under `suno/out/`.
+The client writes an exclusive `atelier.ai.ledger` record under `~/.cache/suno/ledger/` immediately before every paid
+generation request; a recorded or uncertain prompt is never resubmitted automatically.
 
 ## Music for games
 
