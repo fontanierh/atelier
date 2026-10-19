@@ -35,6 +35,7 @@
 #include "SuperUltraMegaPark.h"
 #include "CraterCloud.h"
 #include "Hippodrome.h"
+#include "HidamariStable.h"
 #include "BelmonteRegion.h"
 #include "ZeppelinService.h"
 #include "BelmonteTrainService.h"
@@ -351,6 +352,9 @@ void AJapanWorld::Load()
     // The hippodrome on the slope north of Hidamari (docs/HIPPODROME.md) keeps its oval and stands clear too.
     const FString HippodromePath = AtelierDataPath(TEXT("hippodrome/hippodrome.json"));
     ParkClearance.Append(ASkatePark::LoadClearance(HippodromePath));
+    // Henry's stable east of the course (world/regions/hidamari_stable/README.md): its pad and path stand clear too.
+    const FString StablePath = AtelierDataPath(TEXT("hidamari_stable/stable.json"));
+    ParkClearance.Append(ASkatePark::LoadClearance(StablePath));
     int32 Cleared = 0;
     // Playable ground far from the origin, such as the forest round the Mega Park (megapark/forest.py): the detailed
     // trees there are near ones, with shadows, collision and the camera fade; the low-poly crowns stay backdrop.
@@ -665,6 +669,12 @@ void AJapanWorld::Load()
     if (GetNetMode() != NM_DedicatedServer) ACraterCloud::Spawn(GetWorld(), AtelierDataPath(TEXT("craterpark/cloud.json")));
     const auto* Hippodrome = AHippodrome::Spawn(GetWorld(), HippodromePath);
     if (!Hippodrome || !Hippodrome->bGameplayReady) Incomplete.Add(TEXT("hippodrome"));
+    // Optional until its explicit import has run: only a stable that is imported but incomplete holds the island back.
+    if (FPaths::FileExists(StablePath))
+    {
+        const auto* Stable = AHidamariStable::Spawn(GetWorld(), StablePath);
+        if (!Stable || !Stable->bGameplayReady) Incomplete.Add(TEXT("hidamari stable"));
+    }
     const auto* Belmonte = ABelmonteRegion::Spawn(this, AtelierDataPath(TEXT("belmonte/runtime.json")));
     if (!Belmonte || !Belmonte->bGameplayReady) Incomplete.Add(TEXT("belmonte"));
     // The pirate port in the western reach (docs/WORLD_MAP.md), placed from the same runtime schema.

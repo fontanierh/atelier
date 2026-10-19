@@ -600,7 +600,7 @@ def hippodrome_steps(out):
     region = REGIONS / 'hippodrome'
     return [
         Step('world.hippodrome', [Python(region / 'build.py')],
-             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
+             inputs=[region, ASSETS / 'hippodrome' / 'props', REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      *NORTH_LAYOUT],
              needs=['world.layout', 'world.treehouse_trees'], outputs=[out / 'hippodrome' / 'region' / 'hippodrome.json'],
              about='hippodrome course meshes (platform, skirt, track, rails, lane), its Tripo structures and venue data'),
@@ -609,7 +609,38 @@ def hippodrome_steps(out):
              inputs=[SCRIPTS / 'import_hippodrome.py'], needs=['world.hippodrome.meshes', 'unreal.world'], heavy=True,
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hippodrome' / 'hippodrome.json'],
              about='/Game/Hippodrome: the course meshes with collision, and the data AHippodrome places them from'),
+        *hidamari_stable_steps(out),
+    ]
 
+
+def hidamari_stable_steps(out):
+    """Henry's racing stable east of the hippodrome (world/regions/hidamari_stable/README.md): the Blender model, its
+    control renders and the Unreal import. All three steps are explicit, so plain builds skip them."""
+    region = REGIONS / 'hidamari_stable'
+    root = out / 'hidamari-stable'
+    kit = [REGIONS / 'village' / 'build.py', REGIONS / 'village' / 'layout.py', REGIONS / 'hidamari' / 'arcade.py',
+           REGIONS / 'hidamari' / 'kit' / 'kawara.py', REGIONS / 'hidamari' / 'kit' / '_lettering.py',
+           REGIONS / 'hidamari' / 'fonts' / 'NotoSansJP.ttf']
+    return [
+        Step('world.hidamari_stable', [Blender(region / 'build.py', threads=3)],
+             inputs=[region / 'build.py', region / 'layout.py', *kit, REGIONS / 'hippodrome' / 'layout.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
+                     REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', *NORTH_LAYOUT, YORI],
+             needs=['world.layout', 'world.treehouse_trees'], explicit=True,
+             outputs=[root / 'hidamari-stable.blend', root / 'placements.json', root / 'manifest.json',
+                      *(root / 'glb' / f'SM_HS_{m}_LOD{k}.glb' for m in ('Stable', 'StallDoor', 'RoomDoor') for k in (0, 1, 2)),
+                      *(root / 'glb' / f'SM_HS_{m}.glb' for m in ('Ground', 'Road', 'RoadSign')), root / 'glb' / 'SM_HS_Stable_Collision.glb'],
+             about='Hidamari stable: barn (10 stalls, tack room, office), gate, yard, paddock; LOD0-2, collision, placements'),
+        Step('world.hidamari_stable_review', [Blender(region / 'render.py', threads=3)],
+             inputs=[region / 'render.py', region / 'layout.py', REGIONS / 'hippodrome' / 'layout.py'],
+             needs=['world.hidamari_stable', 'world.hippodrome'], heavy=True, explicit=True,
+             outputs=[root / 'review' / f'{v}.png' for v in ('road', 'front', 'three_quarter', 'aerial', 'aisle')],
+             about='Hidamari stable control renders: road from the street, front, three-quarter, aerial, interior aisle'),
+        Step('unreal.hidamari_stable', [UnrealScript(SCRIPTS / 'import_hidamari_stable.py', 'HIDAMARI STABLE IMPORT COMPLETE', null_rhi=True)],
+             inputs=[SCRIPTS / 'import_hidamari_stable.py'], needs=['world.hidamari_stable', 'unreal.world'],
+             after=['unreal.compile'], heavy=True, explicit=True,
+             outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'hidamari_stable' / 'stable.json', root / 'import-report.json'],
+             about='/Game/HidamariStable: the stable (3 LODs, box collision), door leaves, pad, road and sign, AHidamariStable data'),
     ]
 
 
@@ -661,7 +692,7 @@ def belmonte_steps(out):
              inputs=[region, WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
              needs=['world.layout', 'world.treehouse_trees'], heavy=True,
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
                       out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
@@ -754,7 +785,7 @@ def world_steps(ctx):
                      REGIONS / 'forest_lake' / 'layout.py', REGIONS / 'zeppelin' / 'layout.py', TREEHOUSE / 'layout.py',
                      TREEHOUSE / 'screen.py', REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py',
                      REGIONS / 'megapark' / 'trail.py', REGIONS / 'megapark' / 'gate.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'forest_backdrop.py', WORLD / 'farhills_grid.py',
                      *belmonte_train_corridor(out)],
              needs=['world.treehouse_trees', *crater_geometry], cutoff=True,
              outputs=[out / 'world.json', out / 'heightmap.npy', out / 'heightmap.bin', out / 'farhills.npy', out / 'treehouse' / 'layout.json',
@@ -774,7 +805,7 @@ def world_steps(ctx):
         Step('world.farhills', [Blender(WORLD / 'farhills_surface.py', threads=3)],
              inputs=[WORLD / 'farhills_surface.py', WORLD / 'farhills_grid.py', WORLD / 'terrain_product.py',
                      WORLD / 'shorelines.py', YORI, *belmonte_train_corridor(out), REGIONS / 'brinecove' / 'region.py',
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK,
                      *(REGIONS / 'belmonte' / name for name in ('terrain.py', 'source.py', 'layout.py')),
                      *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
                        if entry['name'].startswith('SM_BM_BT_Terrain_')),
@@ -970,7 +1001,7 @@ def world_steps(ctx):
         Step('world.belmonte_train_route', [Python(WORLD / 'train' / 'route.py')],
              inputs=[WORLD / 'train' / 'route.py', WORLD / 'train' / 'corridor.py', WORLD / 'train' / 'station_site.py',
                      ASSETS / 'vehicles' / 'belmonte-train' / 'line.json', *CRATERPARK, *NORTH_LAYOUT,
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte', out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb',
                      out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
@@ -982,7 +1013,7 @@ def world_steps(ctx):
         Step('world.belmonte_track', [Blender(WORLD / 'train' / 'track_build.py', threads=3)],
              inputs=[WORLD / 'train' / 'track.py', WORLD / 'train' / 'track_build.py', WORLD / 'train' / 'earthworks.py',
                      WORLD / 'train' / 'corridor.py', WORLD / 'train' / 'station_site.py', *CRATERPARK, *NORTH_LAYOUT,
-                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
+                     REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py',
                      REGIONS / 'belmonte' / 'layout.py', REGIONS / 'belmonte' / 'source.py', REGIONS / 'belmonte' / 'terrain.py',
                      ASSETS / 'belmonte' / 'source.json',
                      *(ASSETS / 'belmonte' / entry['path'] for entry in json.loads((ASSETS / 'belmonte/source.json').read_text())['meshes']
