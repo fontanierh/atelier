@@ -6,9 +6,10 @@ from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world' / 'regions'))
 import yori  # noqa: E402,F401
-from regions.hidamari_stable import layout as L  # noqa: E402
-from regions.hippodrome import layout as HL  # noqa: E402
+from hidamari_stable import layout as L  # noqa: E402
+from hippodrome import layout as HL  # noqa: E402
 
 
 def corners(box):
@@ -223,11 +224,12 @@ class Site(unittest.TestCase):
     @unittest.skipUnless((yori.OUT / 'heightmap.npy').exists(), 'world.layout not built')
     def test_hidamari_terrain_carries_the_grading(self):
         import numpy as np
-        from regions.hidamari import layout as H
-        with patch.object(L, 'is_enabled', return_value=False):
+        from hidamari import layout as H
+        self.assertIs(H.stable, L)
+        with patch.object(H.stable, 'is_enabled', return_value=False):
             ungraded = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0])
             self.assertNotAlmostEqual(ungraded, L.PAD_Z, 1)
-        with patch.object(L, 'is_enabled', return_value=True):
+        with patch.object(H.stable, 'is_enabled', return_value=True):
             self.assertAlmostEqual(float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0]), L.PAD_Z, 3)
             far = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1] + L.COMPOUND[3] + L.GRADE_REACH + 1.]))[0])
             self.assertAlmostEqual(far, float(H.north_height(np.array([L.SITE[0]]), np.array([500.]))[0]), 1)
@@ -240,7 +242,7 @@ class Site(unittest.TestCase):
     @unittest.skipUnless((yori.OUT / 'heightmap.npy').exists(), 'world.layout not built')
     def test_road_climbs_gently(self):
         import numpy as np
-        from regions.hidamari import layout as H
+        from hidamari import layout as H
         pts = np.array(L.road_points()) + L.SITE
         z = H.north_height(pts[:, 0], pts[:, 1])
         run = np.hypot(*np.diff(pts, axis=0).T)
