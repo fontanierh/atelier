@@ -87,7 +87,7 @@ def test_music_import_verify_requires_every_package_and_no_stale(tmp_path, monke
     out = tmp_path / "out"
     out.mkdir()
     (out / "music_import.json").write_text(json.dumps({
-        "imported": {"MUS_A": {"path": "/Game/Audio/Music/a/MUS_A"}},
+        "imported": {"MUS_A": {"path": "/Game/Audio/Music/a/MUS_A.MUS_A"}},
     }))
     monkeypatch.setattr(recipe, "GAME", game)
     assert recipe.music_import_present(out)

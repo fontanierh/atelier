@@ -1026,7 +1026,8 @@ def music_import_present(out):
             path = item.get('path')
             if not path or not path.startswith('/Game/'):
                 return False
-            asset = GAME / 'unreal/Content' / (path.removeprefix('/Game/') + '.uasset')
+            package = path.rsplit('.', 1)[0] if '.' in path.rsplit('/', 1)[-1] else path
+            asset = GAME / 'unreal/Content' / (package.removeprefix('/Game/') + '.uasset')
             if not asset.is_file() or asset.stat().st_size == 0:
                 return False
             expected.add(asset.resolve())
@@ -1200,7 +1201,7 @@ def unreal_steps(ctx):
              # The footstep library lives in /Game/Japan, which the world import clears, so a world import reruns this.
              needs=['unreal.world', 'audio.footsteps', 'audio.combat', 'audio.skate', 'audio.bike'], heavy=True, about='footstep library, combat, skate and bike sounds'),
         Step('unreal.music', [UnrealScript(SCRIPTS / 'import_music.py', 'MUSIC IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_music.py', AUDIO / 'music' / 'prepare.py'],
+             inputs=[SCRIPTS / 'import_music.py', SCRIPTS / 'music_inventory.py', AUDIO / 'music' / 'prepare.py'],
              needs=['audio.music'], after=['unreal.compile'], explicit=True, heavy=True,
              outputs=[out / 'music_import.json', GAME / 'unreal/Content/Data/Music/library.json'],
              verify=lambda: music_import_present(out),
