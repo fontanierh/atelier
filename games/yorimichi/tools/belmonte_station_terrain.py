@@ -309,6 +309,13 @@ def library(manifest):
     LIBRARY.write_text(json.dumps(contract, indent=2) + '\n')
 
 
+def carve_digest():
+    """Short digest of every source that governs the carved valley tiles."""
+    parts = [C.LINE.read_bytes(), Path(SS.__file__).read_bytes(), Path(E.__file__).read_bytes(),
+             Path(C.__file__).read_bytes(), Path(__file__).read_bytes(), json.dumps(SALON_PATH).encode()]
+    return hashlib.sha256(b''.join(parts)).hexdigest()[:16]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--dry-run', action='store_true')
@@ -319,8 +326,7 @@ def main(argv=None):
         sys.exit('no committed line (assets/vehicles/belmonte-train/line.json)')
     if ln.station() is None:
         sys.exit('the committed line does not end at the Belmonte station site (train/station_site.py)')
-    digest = hashlib.sha256(C.LINE.read_bytes() + Path(SS.__file__).read_bytes() +
-                            json.dumps(SALON_PATH).encode()).hexdigest()[:16]
+    digest = carve_digest()
     manifest_path = yori.ASSETS / 'belmonte' / 'source.json'
     manifest = json.loads(manifest_path.read_text())
     origin = np.asarray(BM.ORIGIN, float)

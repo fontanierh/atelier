@@ -1658,7 +1658,7 @@ FString ABelmonteTrainService::StateJson() const
     FString Base = Player && Player->GetMovementBase() ? Player->GetMovementBase()->GetName() : FString();
     // The player in their vehicle's frame (cm, same frame as the rest of this state): drift checks need both at once.
     const FVector Local = Rider && Vehicles.IsValidIndex(Rider->Vehicle) ? Vehicles[Rider->Vehicle].Body->GetComponentTransform().InverseTransformPosition(At) : FVector::ZeroVector;
-    return FString::Printf(TEXT("{"time":%.2f,"scale":%.2f,"trains":[%s],"boards":[%s],"player":[%.1f,%.1f,%.1f],"aboard":%s,"vehicle":"%s","train":%d,"seat":"%s","nosprint":%s,"base":"%s","mode":%d,"action":"%s","boarding":%s,"camera":%.2f,"arm":%.0f,"yaw":%.1f,"local":[%.1f,%.1f,%.1f],"admitted":%s,"first_person":%s,"on_vehicle":%s}"),
+    return FString::Printf(TEXT("{\"time\":%.2f,\"scale\":%.2f,\"trains\":[%s],\"boards\":[%s],\"player\":[%.1f,%.1f,%.1f],\"aboard\":%s,\"vehicle\":\"%s\",\"train\":%d,\"seat\":\"%s\",\"nosprint\":%s,\"base\":\"%s\",\"mode\":%d,\"action\":\"%s\",\"boarding\":%s,\"camera\":%.2f,\"arm\":%.0f,\"yaw\":%.1f,\"local\":[%.1f,%.1f,%.1f],\"admitted\":%s,\"first_person\":%s,\"on_vehicle\":%s}"),
         Time, ClockScale(), *Trains, *BoardText, At.X, At.Y, At.Z, Rider && Rider->bAboard ? TEXT("true") : TEXT("false"),
         Rider && Vehicles.IsValidIndex(Rider->Vehicle) ? *Vehicles[Rider->Vehicle].Id : TEXT(""),
         Rider && Vehicles.IsValidIndex(Rider->Vehicle) ? Vehicles[Rider->Vehicle].Train : -1,

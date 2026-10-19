@@ -151,8 +151,7 @@ class RouteGround(unittest.TestCase):
         self.assertTrue(carved)
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
         import belmonte_station_terrain as tool
-        digest = hashlib.sha256(C.LINE.read_bytes() + Path(S.__file__).read_bytes() +
-                                json.dumps(tool.SALON_PATH).encode()).hexdigest()[:16]
+        digest = tool.carve_digest()
         for entry in carved:
             self.assertEqual(entry['railway_carved'], digest, f"{entry['name']}: run tools/belmonte_station_terrain.py")
             self.assertTrue((yori.ASSETS / 'belmonte' / 'natural' / f"{entry['name']}.glb").is_file(), entry['name'])
