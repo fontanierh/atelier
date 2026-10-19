@@ -300,6 +300,22 @@ Avoid 1B to 4B models for decisions. They are fine as classifiers for narrow que
 
 Nothing here is verified against Yorimichi states yet. Test on 1,000 logged decisions and 500 lines before switching a lane, and score JSON validity, action validity, and latency, not just price.
 
+### Official DeepSeek API
+
+The DeepSeek row in the table above is OpenInference's fp4 endpoint, not DeepSeek's own API. Calling `api.deepseek.com` with the model name `deepseek-flash` costs:
+
+| Token type | Off-peak | Peak |
+| --- | ---: | ---: |
+| Input, cache hit | $0.003 | $0.006 |
+| Input, cache miss | $0.15 | $0.30 |
+| Output | $0.60 | $1.20 |
+
+Peak is 01:00 to 04:00 and 06:00 to 10:00 UTC on weekdays, which is 03:00 to 06:00 and 08:00 to 12:00 in Paris. Weekends and Chinese holidays are off-peak all day.
+
+The cache is automatic, prefix-based, and billed at 2% of the miss price. That makes a 90% cached 8K tick cost $0.00020 off-peak, the same as Luna, and $0.00040 at peak, twice Luna. Uncached it is $0.00126, which is worse than Luna. Break-even against Luna is about 90% prefix reuse, and only off-peak.
+
+The real advantages are 1M context, native tool calls and JSON output, and 2,500 concurrent requests per account. Thinking mode is on by default, so disable it for ticks and keep it for reflection.
+
 ### Chatter
 
 | Model | Input per 1M | Output per 1M | Notes |
@@ -367,6 +383,8 @@ Totals for 200 NPCs:
 | Tiered, 90% cache, 48 lines/hr | $2.90 | $5.81 | $116 |
 
 Tiering cuts the total bill by about 43%, and the tick line by about 72%. The reduction is larger for the 180 background NPCs, who go from $0.0126 to $0.0025 per hour each. Reflection is not reduced by tiering, so at 10% hot it is the single largest line. Moving reflection to every 15 minutes, or shrinking it to 24K, saves more than switching the tick model.
+
+Swapping the tick and reflection lanes to official DeepSeek Flash at 90% cache changes almost nothing: about $0.0122 per agent-hour off-peak, and about double that during peak hours. The choice should be made on measured reliability and latency, not on price.
 
 ## Implementation plan
 
