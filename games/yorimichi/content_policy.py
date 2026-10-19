@@ -5,6 +5,7 @@ imports out of Content as well as stop producing them. Archives stay under build
 """
 import importlib.util
 import json
+import os
 import shutil
 import sys
 import time
@@ -52,10 +53,24 @@ DONOR = MOVERS[0]
 DONOR_CLIPS = frozenset('A_' + clip for clip in DONOR.donor['clips'] + DONOR.donor['gestures'])
 
 
+def music_enabled():
+    """Optional music is declared by the same selectors the audio build uses."""
+    if os.environ.get('YORIMICHI_MUSIC', '').strip().lower() in {'1', 'true', 'yes'}:
+        return True
+    return any(os.environ.get(name, '').strip() not in ('', '0')
+               for name in ('YORIMICHI_MUSIC_CATEGORIES', 'YORIMICHI_MUSIC_STYLES',
+                            'YORIMICHI_MUSIC_GROUPS', 'YORIMICHI_MUSIC_LIMIT'))
+
+
 def retired(content):
     """Unknown generated imports at owned recipe boundaries; no traversal inside committed source data."""
-    boundaries = [(content, ASSET_ROOTS), (content / 'Data', DATA_ROOTS),
-                  (content / 'Audio', {'Bike', 'Combat', 'Skate'})]
+    data_roots = set(DATA_ROOTS)
+    audio_roots = {'Bike', 'Combat', 'Skate'}
+    if music_enabled():
+        data_roots.add('Music')
+        audio_roots.add('Music')
+    boundaries = [(content, ASSET_ROOTS), (content / 'Data', data_roots),
+                  (content / 'Audio', audio_roots)]
     boundaries.extend((content / 'Data' / name, names) for name, names in CHARACTER_DATA.items())
     for parent, allowed in boundaries:
         if parent.is_dir():

@@ -996,14 +996,37 @@ def character_steps(ctx):
     ]
 
 
+def music_files(cache, categories, styles, groups, limit):
+    """Selected cached tracks; their bytes and declared selectors enter the audio step key."""
+    catalog = json.loads((Path(cache) / 'catalog.json').read_text())
+    categories = {part.strip() for part in categories.split(',') if part.strip()}
+    styles = {part.strip() for part in styles.split(',') if part.strip()}
+    groups = {part.strip() for part in groups.split(',') if part.strip()}
+    chosen = []
+    for track in catalog.get('tracks', []):
+        if categories and track.get('category') not in categories:
+            continue
+        if styles and track.get('style_family') not in styles:
+            continue
+        if groups and track.get('group') not in groups and track.get('zone') not in groups:
+            continue
+        chosen.append(Path(cache) / track['path'])
+        if limit and len(chosen) >= limit:
+            break
+    return tuple(chosen)
+
+
 def sound_effect_steps(ctx):
     """Offline sound slices and procedural effect textures."""
     out = ctx.out
+    music_cache = paths.cache_dir('yorimichi', 'music', create=False)
+    music_categories = os.environ.get('YORIMICHI_MUSIC_CATEGORIES', '')
+    music_styles = os.environ.get('YORIMICHI_MUSIC_STYLES', '')
+    music_groups = os.environ.get('YORIMICHI_MUSIC_GROUPS', '')
+    music_limit = os.environ.get('YORIMICHI_MUSIC_LIMIT', '0')
     music_args = (
-        '--categories', os.environ.get('YORIMICHI_MUSIC_CATEGORIES', ''),
-        '--styles', os.environ.get('YORIMICHI_MUSIC_STYLES', ''),
-        '--groups', os.environ.get('YORIMICHI_MUSIC_GROUPS', ''),
-        '--limit', os.environ.get('YORIMICHI_MUSIC_LIMIT', '0'),
+        '--categories', music_categories, '--styles', music_styles,
+        '--groups', music_groups, '--limit', music_limit,
     )
     return [
         # ------------------------------------------------------------ sounds and effects
@@ -1019,8 +1042,12 @@ def sound_effect_steps(ctx):
         # only the tracks requested by YORIMICHI_MUSIC_* selectors. A plain build
         # never downloads or imports the large release.
         Step('audio.music', [Python(AUDIO / 'music' / 'prepare.py', music_args)],
-             inputs=[AUDIO / 'music' / 'prepare.py',
-                     paths.cache_dir('yorimichi', 'music', create=False) / 'catalog.json'],
+             inputs=[AUDIO / 'music' / 'prepare.py', music_cache / 'catalog.json',
+                     AUDIO / 'music' / 'music.lock.json'],
+             deferred_inputs=[DeferredInputs(
+                 'music', music_files,
+                 (music_cache, music_categories, music_styles, music_groups,
+                  int(music_limit or 0)), support=(GAME / 'build.py',))],
              outputs=[out / 'audio' / 'music' / 'manifest.json'], explicit=True,
              about='select fetched Suno tracks for the optional music import'),
         Step('fx.textures', [Python(ASSETS / 'fx' / 'gen_textures.py')], inputs=[ASSETS / 'fx'],

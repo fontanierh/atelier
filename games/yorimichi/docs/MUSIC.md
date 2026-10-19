@@ -136,6 +136,11 @@ as `/Game/Audio/Music/<section>/<group>/` and stages the tagged asset list at
 be combined with `YORIMICHI_MUSIC_GROUPS` and `YORIMICHI_MUSIC_LIMIT`. A build
 without the music steps remains valid and contains no music assets.
 
+Set `YORIMICHI_MUSIC=1` when importing the whole library with no selectors. The
+same flag (or any selector) also tells `data.content` to keep the optional
+`Audio/Music` and `Data/Music` assets during packaging; without it, a normal
+build archives stale music before cooking.
+
 The runtime should not play a track continuously just because one exists. Start
 music on arrival or after a landmark, leave silence and ambience between cues,
 and crossfade on a phrase boundary over several seconds. Calm and lofi cues fit

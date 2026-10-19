@@ -13,6 +13,7 @@ The selected list is a build artifact; the release catalog remains the source of
 truth for every track and its intent tags.
 """
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -25,6 +26,15 @@ from atelier.paths import cache_dir  # noqa: E402
 ROOT = yori.OUT
 CACHE = cache_dir("yorimichi", "music")
 OUT = ROOT / "audio" / "music" / "manifest.json"
+LOCK = Path(__file__).with_name("music.lock.json")
+
+
+def digest(path):
+    h = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def values(text):
@@ -67,6 +77,15 @@ def main():
 
     if not selected:
         raise SystemExit("music selection is empty; check YORIMICHI_MUSIC_* selectors")
+    lock = json.loads(LOCK.read_text())
+    wanted = {entry["path"]: entry for entry in lock.get("files", [])}
+    for track in selected:
+        entry = wanted.get(str(track.get("path") or ""))
+        path = CACHE / str(track.get("path") or "")
+        if not entry or not path.is_file() or path.stat().st_size != entry["bytes"]:
+            raise SystemExit(f"selected music does not match the release lock: {path}")
+        if digest(path) != entry["sha256"]:
+            raise SystemExit(f"selected music failed its release checksum: {path}")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps({
