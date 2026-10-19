@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Yorimichi · zone soundtrack</title>
 <style>
 :root {
@@ -176,7 +177,7 @@ function render() {
       var trackHead = el('div', 'track-head');
       var name = el('div');
       name.appendChild(el('span', 'role', roleLabel(track.role)));
-      name.appendChild(el('h3', '', track.title || track.clip_id));
+      name.appendChild(el('h3', '', track.display_title || track.title || track.clip_id));
       trackHead.appendChild(name);
       trackHead.appendChild(el('span', 'dur', fmtDuration(track.duration_s)));
       card.appendChild(trackHead);
@@ -276,7 +277,7 @@ document.getElementById('copy').addEventListener('click', function () {
       (zone.tracks || []).forEach(function (track) {
         var saved = reviews[track.clip_id] || {};
         if (!saved.rating && !saved.note) return;
-        var line = '- **' + zone.name + ' — ' + track.title + '** (' +
+        var line = '- **' + zone.name + ' — ' + (track.display_title || track.title) + '** (' +
           track.role + '): ' + (saved.rating || 'unrated');
         if (saved.note) line += ' — ' + saved.note;
         lines.push(line);
