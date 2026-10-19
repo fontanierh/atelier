@@ -13,6 +13,9 @@ Full reference exports remain outside git; the game finishes these maps at 1K. N
 crowd, character, distant backdrop, level, plugin or gameplay script is consumed. Embedded foliage
 faces are removed from the architectural models. Planting is rebuilt using the existing island flora.
 Terrain consists of the 56 current static mesh tiles, rather than a copied landscape or stale authoring grid.
+The railway's last cutting and the Belmonte station are carved into four of them by `tools/belmonte_station_terrain.py`;
+their natural versions stay in `natural/` for the route study (docs/BELMONTE_STATION.md).
+The same tool paints a dirt path up the Salon des paris' cypress avenue, from the road to its terrace.
 
 The acquisition tools are `tools/belmonte_extract.py` (read-only isolated reference editor) and
 `tools/belmonte_convert.py` (guarded Blender). Normal builds never use the reference project:

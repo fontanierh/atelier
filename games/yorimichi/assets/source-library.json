@@ -1142,8 +1142,8 @@
       "sha256": "12db7450045226c80f8957cb8d47faa845d72d6a1ca990b9be0eb97c878bf6d6"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_4_3.glb": {
-      "bytes": 193984,
-      "sha256": "b1aba9a70688449d779988520d0f635b56f76bacfba8a5faea4a50149c4e3366"
+      "bytes": 878916,
+      "sha256": "1e026fb0ee430a1928fb63e5b345e0747181978ae68ee9f86028d972d1d75a2f"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_4_4.glb": {
       "bytes": 241888,
@@ -1166,12 +1166,12 @@
       "sha256": "eedb636a4a93f42255834ca46cf94970400670653097c7254467f297568cd9c5"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_5_2.glb": {
-      "bytes": 119228,
-      "sha256": "ca4820d65fb08441ecbb8e477205d30bc71014c96233d11bf99a32368d51fbeb"
+      "bytes": 2196408,
+      "sha256": "e1fe37e947fbc869a3b52a6349b00502463bcc45bb8bfe056b44076ef349fd7c"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_5_3.glb": {
-      "bytes": 117520,
-      "sha256": "065c2a737ee8eaebbedef934b261d1dafa5412302fc78150bae9486ebd478c9a"
+      "bytes": 375128,
+      "sha256": "959f7c3d229575c35cb5ffe83f44c9a949af3c74e5ca205bdc675bf16e7bb157"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_5_4.glb": {
       "bytes": 115628,
@@ -1194,8 +1194,8 @@
       "sha256": "a3958c48d3feba4807d4d0abc316c2c1e2e96906d60f0ce27657bc23c229c414"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_6_2.glb": {
-      "bytes": 162640,
-      "sha256": "d40549ef0ba63133a1374885fcbb7f398346f593ede1f24344f8bc3e8c9c25bb"
+      "bytes": 277592,
+      "sha256": "5f0e9eccbc53bb20da67825d624c2144e76ff3b4ee8cb9dab5690ef823a12b0a"
     },
     "belmonte/meshes/SM_BM_BT_Terrain_6_3.glb": {
       "bytes": 59704,
@@ -7512,6 +7512,42 @@
     "brinecove/textures/waterfall_streaks.png": {
       "bytes": 522955,
       "sha256": "10dcff8531ea9a042a609ecd207d977fe457dd74247657f4393f70b800bcdc19"
+    },
+    "belmonte/concepts/station/back.jpg": {
+      "bytes": 534739,
+      "sha256": "21f3417e161bd5ec8411a698c896ea6a7c35c3a6d39ed8ad1d913e053b032718"
+    },
+    "belmonte/concepts/station/front.jpg": {
+      "bytes": 490975,
+      "sha256": "1ed61f43973bdd9459088fd5156f0c1cb0b9eff30cb57edaee524017af629a69"
+    },
+    "belmonte/concepts/station/roof_plan.jpg": {
+      "bytes": 509184,
+      "sha256": "4071c86cce622bca18a5761582b437d4d894c6bd4b207cefe07816861e4d4e8c"
+    },
+    "belmonte/concepts/station/side_left.jpg": {
+      "bytes": 451723,
+      "sha256": "ab567d23f7d27d7d8dc8c4f6ffe9e7436c3bd1b354a5d48f3ccf2d245fb390bd"
+    },
+    "belmonte/concepts/station/side_right.jpg": {
+      "bytes": 410440,
+      "sha256": "0981fabd3aabe2587fbd66be9dc29a3fc18dc109000e58e62189a1cbe8fbb595"
+    },
+    "belmonte/natural/SM_BM_BT_Terrain_4_3.glb": {
+      "bytes": 193984,
+      "sha256": "b1aba9a70688449d779988520d0f635b56f76bacfba8a5faea4a50149c4e3366"
+    },
+    "belmonte/natural/SM_BM_BT_Terrain_5_2.glb": {
+      "bytes": 119228,
+      "sha256": "ca4820d65fb08441ecbb8e477205d30bc71014c96233d11bf99a32368d51fbeb"
+    },
+    "belmonte/natural/SM_BM_BT_Terrain_5_3.glb": {
+      "bytes": 117520,
+      "sha256": "065c2a737ee8eaebbedef934b261d1dafa5412302fc78150bae9486ebd478c9a"
+    },
+    "belmonte/natural/SM_BM_BT_Terrain_6_2.glb": {
+      "bytes": 162640,
+      "sha256": "d40549ef0ba63133a1374885fcbb7f398346f593ede1f24344f8bc3e8c9c25bb"
     }
   }
 }

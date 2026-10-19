@@ -62,12 +62,13 @@ class Station:
 # the x=1120 lane; the old engine shed gives way to the approach. Share the rail datum with the station builder.
 from hidamari import station_yard
 HIDAMARI = Station('Hidamari', station_yard.SERVICE_CENTRE, 0., 160., (160., 56.))
-# The old RAILWAY end (1350, 3780 + NORTH_SHIFT), moved 25 m east and north: inside Belmonte's eastern bounds on the
-# river's north bank, 650 m east of the town's south-east gate and 150 m south of the eastern estate, clear of every
-# building and of the water. Ground 181.6-184.9 m along the track (12 m across the whole 200 x 60 m reserve). A flatter
-# site 190 m from the gate (900, 4625, bearing 140, ground 211 m) needs 27 m more climb: 570 m more line, 7.0 instead
-# of 6.3 minutes, 2840 m of tunnel instead of 2720 and a 209 s timetable offset at the loop. Trains arrive running west.
-BELMONTE = Station('Belmonte', (1375., 4375.), 170., 160., (200., 60.))
+# Paul, 2026-10-17: the station moves next to the town, on the flat ground (206-214 m) north of the road from the
+# south-east gate to the Dunes Basses estate, its facade facing north-west towards the town (train/station_site.py).
+# The line keeps the riverside approach of the former terminus (1375, 4375, bearing 170) through its coastal curve,
+# so the shoreline's railway headlands stay as they are (shorelines._rail_headlands), then turns right onto the
+# station's axis and passes under that road in a cutting about 230 m before the buffer stop: the road keeps its line
+# and level on a stone overbridge (track.py). Trains arrive running north-west.
+BELMONTE = Station('Belmonte', (900., 4625.), 140., 160., (200., 60.))
 
 STEP = 10.                  # sampling along the line
 MIN_RADIUS = 450.          # in the open; a spiral loop keeps its own radius
@@ -142,13 +143,16 @@ GRID = 20.                  # ground raster for views and the plan
 CELL = 50.                  # empty-space cells
 RASTER_BOUNDS = (-1280., -1780., 4600., 6800.)    # the line's box plus VIEW_RANGE, fixed so the cache survives tuning
 
-# Tangent points between the two stations, tuned by `optimise` (python route.py --optimise prints new values). The line
-# leaves the town station east, enters the far hills' southern slope and climbs one turn of spiral tunnel, runs north
-# over the plateau east of the volcano and comes down through Belmonte's country. An entry (x, y, turns, radius) is the
-# spiral (see spiral_loops). FIRST and LAST are distances along the stations' axes from their centres.
+# Tangent points between the two stations, tuned by `optimise` (python route.py --optimise prints new values). The
+# line leaves the town station east, enters the far hills' southern slope and climbs one turn of spiral tunnel, runs
+# north over the plateau east of the volcano and comes down through Belmonte's country. An entry (x, y, turns, radius)
+# is the spiral (see spiral_loops); with 0 turns, a plain curve kept on that radius (fixed_radii). FIRST and LAST are
+# distances along the stations' axes from their centres.
 FIRST = 400.
-PIS = [(2300., 710.), (2170., 1580.), (2440., 2080., -1, 300.), (2490., 2345.), (2465., 3440.), (2075., 3880.)]
-LAST = 390.
+# The last entry is the former terminus's approach curve, kept in place and on its radius (see BELMONTE).
+PIS = [(2300., 710.), (2170., 1580.), (2440., 2080., -1, 300.), (2490., 2345.), (2465., 3440.), (2075., 3880.),
+       (1759.075, 4307.277, 0, 625.622)]
+LAST = 327.447              # where the former terminus's straight meets the station's axis
 # Alternatives costed in route.json: the first study's short line round the volcano's eastern flank (v1, tunnel-heavy)
 # and the second study's line in the open (v2: horseshoe out of H2, coastal viaduct and a hairpin on the far hills).
 ALTERNATIVES = {
@@ -195,10 +199,18 @@ def tangent_points(first=None, pis=None, last=None):
 
 
 def spiral_loops(pis=None):
-    """{inner tangent point index: (turns, radius)} for the entries of `pis` written (x, y, turns, radius): a curve
-    there turns `turns` full circles more than its deflection (negative: clockwise), on a fixed radius."""
+    """{inner tangent point index: (turns, radius)} for the entries of `pis` written (x, y, turns, radius) with turns
+    other than 0: a curve there turns `turns` full circles more than its deflection (negative: clockwise), on a fixed
+    radius."""
     pis = PIS if pis is None else pis
-    return {i + 2: (p[2], p[3]) for i, p in enumerate(pis) if len(p) > 2}      # keys index tangent_points()
+    return {i + 2: (p[2], p[3]) for i, p in enumerate(pis) if len(p) > 2 and p[2]}   # keys index tangent_points()
+
+
+def fixed_radii(pis=None):
+    """{inner tangent point index: radius} for the entries of `pis` written (x, y, 0, radius): a plain curve kept on
+    that radius (not a spiral loop), where the line must follow an existing one exactly."""
+    pis = PIS if pis is None else pis
+    return {i + 2: p[3] for i, p in enumerate(pis) if len(p) > 2 and not p[2]}
 
 
 # --- horizontal alignment -------------------------------------------------------------------------------------------
@@ -219,12 +231,13 @@ def _curve(deflection, radius):
     return spiral, (radius + p) * math.tan(abs(deflection) / 2) + k      # negative past half a turn: a loop
 
 
-def curves(points, loops=None):
+def curves(points, loops=None, radii=None):
     """Per inner tangent point: (deflection, radius, spiral, tangent length). Every radius starts at PREFERRED_RADIUS
     and shrinks until the tangents fit their legs, the station reserves staying straight. None if a radius would go
     below MIN_RADIUS. A spiral loop (`loops`, see spiral_loops) keeps its radius and adds its full turns to the
-    deflection: its tangents are those of the plain deflection, so the line leaves it on the same outgoing tangent."""
-    loops = loops or {}
+    deflection: its tangents are those of the plain deflection, so the line leaves it on the same outgoing tangent.
+    A fixed radius (`radii`, see fixed_radii) is kept as it is."""
+    loops, radii = loops or {}, radii or {}
     points = [np.asarray(p, float) for p in points]
     legs = [b - a for a, b in zip(points, points[1:])]
     lengths = [float(np.hypot(*leg)) for leg in legs]
@@ -235,7 +248,9 @@ def curves(points, loops=None):
     for i, (turns, loop_radius) in loops.items():
         deflection[i - 1] += 2 * math.pi * turns
         radius[i - 1] = loop_radius
-    fixed = {i - 1 for i in loops}
+    for i, r in radii.items():
+        radius[i - 1] = r
+    fixed = {i - 1 for i in (*loops, *radii)}
     room = list(lengths)
     room[0] -= HIDAMARI.reserve[0]
     room[-1] -= BELMONTE.reserve[0]
@@ -304,14 +319,14 @@ class Alignment:
                 np.interp(s, self.s, np.unwrap(self.heading)), np.interp(s, self.s, self.curvature))
 
 
-def alignment(points=None, step=STEP, loops=None):
-    """Build the alignment through the tangent points (default: FIRST, PIS, LAST with PIS's spiral loops), None
-    when the curves cannot fit."""
+def alignment(points=None, step=STEP, loops=None, radii=None):
+    """Build the alignment through the tangent points (default: FIRST, PIS, LAST with PIS's spiral loops and fixed
+    radii), None when the curves cannot fit."""
     if points is None:
-        points, loops = tangent_points(), spiral_loops()
+        points, loops, radii = tangent_points(), spiral_loops(), fixed_radii()
     points = [np.asarray(p, float) for p in points]
     loops = loops or {}
-    plan = curves(points, loops)
+    plan = curves(points, loops, radii)
     if plan is None:
         return None
     parts = []
@@ -373,13 +388,14 @@ def volcano_distance(x, y):
 @lru_cache(maxsize=1)
 def _belmonte_surfaces():
     from belmonte import source
-    # The natural ground (belmonte/build.py writes it before the railway's earthworks carve the built meshes).
+    # The natural ground: belmonte/build.py writes the apron and country before the railway's earthworks carve the
+    # built meshes; the valley tiles the railway carved keep their natural copies (tools/belmonte_station_terrain.py).
     paths = [yori.OUT / f'belmonte/natural/{name}.glb' for name in ('SM_BM_NorthCountry', 'SM_BM_NorthApron')]
     for p in paths:
         if not p.is_file():
             raise FileNotFoundError(f'missing Belmonte natural ground {p}; run world.belmonte first')
     north = [source.Surface(source.triangles(p)) for p in paths]
-    return source.terrain(), north
+    return source.terrain(natural=True), north
 
 
 @lru_cache(maxsize=1)
@@ -455,7 +471,9 @@ class Raster:
     def _source_digest():
         """@cc [owner:fontanierh,label:correctness] route-coast-cache
         Cached ground MUST be invalidated when the shoreline profile, water bounds
-        or committed railway geometry used for coastal headlands changes.
+        or committed railway geometry used for coastal headlands changes, and
+        when the committed Belmonte valley tiles the study samples change,
+        including the natural copies of the tiles the railway carved.
         """
         h = hashlib.sha256()
         regions = _Path(__file__).resolve().parents[1] / 'regions'
@@ -470,6 +488,7 @@ class Raster:
             regions / 'belmonte' / 'source.py',
             regions / 'belmonte' / 'terrain.py',
             yori.ASSETS / 'belmonte' / 'source.json',
+            *sorted((yori.ASSETS / 'belmonte' / 'natural').glob('*.glb')),
             yori.OUT / 'world.json',
             yori.OUT / 'heightmap.npy',
             yori.OUT / 'farhills.npy',
@@ -1297,12 +1316,15 @@ def brief(report):
 
 def optimise(sampler, iterations=6, grade=MAX_GRADE):
     """Pattern search over FIRST, the inner tangent points and LAST against the profile cost, the volcano clearance and
-    the loop. Prints the result; paste it into FIRST, PIS and LAST."""
+    the loop. Prints the result; paste it into FIRST, PIS and LAST. A fixed-radius tangent point (fixed_radii) stays
+    where it is: the line follows an existing curve there."""
     v = [FIRST, *np.ravel([p[:2] for p in PIS]), LAST]
+    pinned = set(fixed_radii())
 
     def score(values):
-        pis = [(*xy, *PIS[i][2:]) for i, xy in enumerate(np.reshape(values[1:-1], (-1, 2)))]
-        line = alignment(tangent_points(values[0], pis, values[-1]), loops=spiral_loops(pis))
+        pis = [(*(PIS[i][:2] if i + 2 in pinned else xy), *PIS[i][2:])
+               for i, xy in enumerate(np.reshape(values[1:-1], (-1, 2)))]
+        line = alignment(tangent_points(values[0], pis, values[-1]), loops=spiral_loops(pis), radii=fixed_radii(pis))
         if line is None:
             return math.inf
         clearance = float(volcano_distance(line.x, line.y).min())
@@ -1331,6 +1353,8 @@ def optimise(sampler, iterations=6, grade=MAX_GRADE):
         while improved:
             improved = False
             for i in range(len(v)):
+                if 0 < i < len(v) - 1 and (i - 1) // 2 + 2 in pinned:
+                    continue
                 for d in (step, -step):
                     trial = list(v)
                     trial[i] += d

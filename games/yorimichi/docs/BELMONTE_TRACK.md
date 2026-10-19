@@ -24,7 +24,7 @@ Built:
 - The passing loop. Its second track sits 4 m to one side, with a turnout at each end built as a simple
   points-and-crossing mesh.
 - The ends of the line. At each terminus the track runs to a buffer stop, and a stop board marks the stopping point.
-  There are no station buildings. The 200 m station reserves stay in the data, but nothing is built on them.
+  Belmonte has its station (`station.py`, `BELMONTE_STATION.md`); Hidamari's is the clock-tower station's yard.
 - Tunnels: four portals in Belmonte stone, and a simple horseshoe lining for both tunnels, the spiral included.
 - Dark tunnels with lamps (14 October 2026): the lining is soot-black stone (`MI_TK_TunnelLining`). A wall lamp
   (`SM_TK_TunnelLamp`: iron bracket, emissive globe `MI_TK_LampGlow`) stands every ~30 m, 3.0 m over the rail, on
@@ -80,7 +80,9 @@ are for the worst view, either a player on the viaduct or at the loop looking do
 | Sleeper | 12 tris; ≤ 400 drawn instances in view (11.4k in total) |
 | Tunnel lining chunk, LOD0 / LOD1 | ≤ 600 / 200 tris; nothing drawn from outside a tunnel |
 | Portal | ≤ 2,000 / 600 tris |
-| Viaduct (290 m in total), LOD0 / LOD1 / LOD2 | ≤ 25k / 6k / 1.5k tris |
+| Viaducts (all pieces together), LOD0 / LOD1 / LOD2 | ≤ 25k / 6k / 2.5k tris (LOD2, the collision: about 2.5 per metre) |
+| Belmonte overbridge (`SM_ST_Overbridge`), LOD0 / LOD1 / LOD2 | ≤ 6,000 / 1,500 / 800 tris |
+| Belmonte station (`SM_ST_Headhouse` / `SM_ST_Sheds` / `SM_ST_Coaches`), LOD0 | ≤ 14,500 / 34,000 / 2,000 tris (LODs in `BELMONTE_STATION.md`) |
 | Turnout | ≤ 3,000 tris each |
 | Buffer stop | ≤ 800 tris |
 | Materials | reuse the Belmonte MIs (`MI_B_ashlar`, `MI_B_stone`, `MI_B_gravel`, `MI_B_iron`) plus one 1k ballast-and-sleeper texture set |
@@ -115,6 +117,15 @@ The GLBs take 7.6 MB in total and `track.json` 1 MB.
 - The ballast texture with painted sleepers is still to come; the GLBs use flat material colours named after the
   Belmonte material instances.
 - Collision comes from the chunk's LOD2 (ballast), the lining's LOD1 and the viaduct's LOD2.
+- Since the terminus moved next to Belmonte (route v4, Paul 2026-10-17), the line passes under the road from the
+  south-east gate in its final cutting. `overbridge.py` builds the stone overbridge (`SM_ST_Overbridge`, placed by
+  `track.json`'s `overbridge` piece, collision from LOD2): a straight deck square to the road whose surface is one
+  plane climbing with it, parapets on its edges, abutments under its ends, straight retaining walls along the cutting
+  with straight copings parallel to the deck, and a return wall closing each end. The structure is regular and the
+  ground fits it (`station_site.OVERBRIDGE` and `Bridge`, `earthworks.bridge_ground`): the road is graded onto the
+  deck's plane and eased back to its own ground (at most 12.5 %), the ground behind the walls is flush with their
+  copings, and the cutting opens into its ordinary slopes beyond the return walls. The valley tiles are carved to it
+  by `tools/belmonte_station_terrain.py`, finer along the walls so the ground steps within their thickness.
 
 ## Outputs (`build/yorimichi/belmonte-track/`)
 
@@ -122,6 +133,8 @@ The GLBs take 7.6 MB in total and `track.json` 1 MB.
 - `meshes/SM_TK_Loop_LOD*.glb`: the loop track's rails.
 - Tunnel linings: `SM_TK_Tunnel_<tunnel>_<nn>_LOD*.glb`.
 - Viaduct pieces: `SM_TK_Viaduct_<nn>_LOD*.glb`.
+- The Belmonte overbridge: `SM_ST_Overbridge_LOD*.glb`.
+- The Belmonte station: `SM_ST_Headhouse_LOD*.glb`, `SM_ST_Sheds_LOD*.glb`, `SM_ST_Coaches_LOD*.glb`.
 - One file each for the turnouts, portal, sleeper, buffer stop and stop board: `SM_TK_Turnout_*`, `SM_TK_Portal`,
   `SM_TK_Sleeper`, `SM_TK_BufferStop`, `SM_TK_StopBoard`.
 - `track.json`, listing:

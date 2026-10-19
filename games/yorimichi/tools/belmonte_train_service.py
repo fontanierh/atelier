@@ -30,7 +30,9 @@ from pathlib import Path
 GAME = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(GAME / 'world'))
 import yori  # noqa: E402
-from train import bake_manifest as BM  # noqa: E402
+from train import bake_manifest as BM, station_site  # noqa: E402
+sys.path.insert(0, str(GAME / 'world' / 'regions'))
+from hidamari import station_yard  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gltf_subset as G  # noqa: E402
 
@@ -471,11 +473,12 @@ def split_meshes(root, train, folder):
 # ---------------------------------------------------------------- the termini
 
 PLATFORM = {'edge_m': 1.85, 'width_m': 4.0, 'top_above_rail_m': 1.0, 'extra_length_m': 12.0}
+BUILT = {'Belmonte'}        # termini whose station brings its own platforms (train/station.py): no makeshift block
 
 
 def stations(route, train, terminals):
     """The platform on the station's authored side (left by default), its buffer stop and map arrival near a door.
-    Hidamari's platform extends the town station at its existing floor height; Belmonte keeps the raised platform.
+    Hidamari's platform extends the town station at its existing floor height; Belmonte's station (BUILT) brings its own.
     """
     samples = route['samples']
     chain = [s['s'] for s in samples]
@@ -518,7 +521,72 @@ def stations(route, train, terminals):
             # Facing the train: the yaw toward the line, a few degrees along it toward the door.
             'arrival': {'location': to_ue(*arrival), 'yaw': round(-math.degrees(math.atan2(-ly, -lx)), 3)},
         })
+        if name in BUILT:
+            del out[-1]['platform']
+        out[-1]['boards'] = boards(name, samples, at, chainage, sign, z + height)
     return out
+
+
+# ---------------------------------------------------------------- arrival boards
+
+# Arrival boards (ABelmonteTrainService): a dark board whose amber text counts down, in real minutes, to the next train
+# and the one after. Sizes are metres (width, height, depth); the text is readable from about 10 m.
+BOARD_SIZES = {'concourse': (3.6, 1.6, .14), 'platform': (3.0, 1.1, .12)}
+# Hidamari: the clock-tower station's platform canopy (world/regions/hidamari/kit/station.py, building at
+# station_yard.STATION, yaw 0): posts every 6 m at local x -21..21 on y 9.2 and a tie beam between them 5.0 m over the
+# station floor (the platform top is .25 over that floor). The boards hang from the beam between posts, near the
+# arrival point (x -18) and mid-canopy (x 6), facing the benches and doubled toward the track.
+HIDAMARI_CANOPY = {'y': 9.2, 'beam_z': 5.0 - .11, 'floor_below_platform': .25, 'xs': (-18., 6.), 'centre_z': 4.2}
+# Belmonte, in station_site's frame (a toward the buffer stop and the facade, u left of an arriving train, z over the
+# platform): the concourse board on the face of the landing block between the two flights (a 7, u -21..-8), facing the
+# platforms; one on posts on each platform beside the line's track (P1 and the island), 5 m short of the buffer stop
+# and beyond the head of a standing train, facing the concourse and doubled.
+# (key, size, a, u, z, facing (a, u), double sided, mount)
+BELMONTE_BOARDS = (
+    ('belmonte_concourse', 'concourse', 7.0, -14.5, 3.4, (-1., 0.), False, 'wall'),
+    ('belmonte_p1', 'platform', -6.0, 6.3, 3.0, (1., 0.), True, 'posts'),
+    ('belmonte_island', 'platform', -6.0, -6.5, 3.0, (1., 0.), True, 'posts'),
+)
+
+
+def board_record(key, kind, centre, facing, double_sided, mount, mount_z):
+    """A board for Unreal: its centre (cm), the yaw its front faces (toward its readers), its size (cm, width, height,
+    depth) and how it is held: 'wall' (nothing), 'posts' down to mount_z or 'rods' up to mount_z (cm)."""
+    w, h, d = BOARD_SIZES[kind]
+    return {'id': key, 'kind': kind, 'location': to_ue(*centre),
+            'yaw': round(-math.degrees(math.atan2(facing[1], facing[0])), 3),
+            'size': [round(w * 100, 1), round(h * 100, 1), round(d * 100, 1)],
+            'double_sided': double_sided, 'mount': mount, 'mount_z': round(mount_z * 100, 2)}
+
+
+def boards(name, samples, at, chainage, sign, platform_top):
+    """The arrival boards of the terminus `name`: Belmonte's in its station, Hidamari's under the town station's canopy,
+    otherwise one on posts at the back of the platform level with the train's centre."""
+    if name == 'Belmonte':
+        site = station_site.for_line([(s['x'], s['y']) for s in samples[-2:]], [s['rail_z'] for s in samples[-2:]])
+        if site is not None:
+            out = []
+            for key, kind, a, u, z, (fa, fu), double, mount in BELMONTE_BOARDS:
+                if mount == 'wall':     # its back against the wall
+                    a += fa * BOARD_SIZES[kind][2] / 2
+                x, y = site.world(a, u)
+                floor = site.rail + station_site.PLATFORM
+                out.append(board_record(key, kind, (float(x), float(y), floor + z), site.t * fa + site.n * fu,
+                                        double, mount, floor))
+            return out
+    if name == 'Hidamari':
+        sx, sy = station_yard.STATION
+        cx, cy, _, _, _ = at(chainage)
+        if math.hypot(cx - sx, cy - sy) < 60.:
+            c = HIDAMARI_CANOPY
+            floor = platform_top - c['floor_below_platform']
+            return [board_record(f'hidamari_canopy_{k + 1}', 'platform', (sx + x, sy + c['y'], floor + c['centre_z']),
+                                 (0., -1.), True, 'rods', floor + c['beam_z'])
+                    for k, x in enumerate(c['xs'])]
+    x, y, _, dx, dy = at(chainage)
+    back = PLATFORM['edge_m'] + PLATFORM['width_m'] - .6
+    return [board_record(name.lower() + '_platform', 'platform', (x - dy * sign * back, y + dx * sign * back, platform_top + 3.),
+                         (dx, dy), True, 'posts', platform_top)]
 
 
 # ---------------------------------------------------------------- the file

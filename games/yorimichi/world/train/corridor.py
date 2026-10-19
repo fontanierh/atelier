@@ -78,7 +78,7 @@ class Corridor:
             t = np.clip(((px - ax) * dx + (py - ay) * dy) / max(dx * dx + dy * dy, 1e-9), 0., 1.)
             d = np.hypot(px - ax - t * dx, py - ay - t * dy) - w
             out[near] = np.minimum(out[near], d)
-        # The Belmonte station's footprint and forecourt keep ROAD_CLEAR of plants too.
+        # The Belmonte station's footprint, forecourt and access road keep ROAD_CLEAR of plants too.
         out = np.minimum(out, self.station_margin(x, y))
         return out
 

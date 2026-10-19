@@ -9,6 +9,9 @@ Reads build/yorimichi/belmonte-train/service/service.json (tools/belmonte_train_
 - each furniture asset as SM_BTF_<Asset>, from its required, verified LOD chain in furniture/lod/.
   The complete bake and service mesh references are checked before any Unreal mutation.
 
+- M_BT_BoardText, the station boards' lettering: unlit, masked by the distance-field font, glowing in the text's colour
+  (ABelmonteTrainService's arrival boards, TextRender components), readable by night.
+
 Then copies service.json to Content/Data/belmonte_train/ and writes import-report.json beside it in the build.
 """
 import sys
@@ -107,6 +110,38 @@ def instanced_materials(mesh, two_sided=False):
         E.save_loaded_asset(instance, only_if_is_dirty=False)
 
 
+def board_text_material():
+    """M_BT_BoardText: TextRender lettering that glows. The component sets the font parameter itself; the mask is the
+    distance-field font's distance, the emissive the text colour (vertex colour) times Strength. The font sample's
+    outputs are all unnamed and the first is RGB, so the mask takes R: the distance-field page is single-channel
+    (G8), its distance in R."""
+    mel = unreal.MaterialEditingLibrary
+    material = AT.create_asset('M_BT_BoardText', f'{ROOT}/Materials', unreal.Material, unreal.MaterialFactoryNew())
+    material.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
+    material.set_editor_property('blend_mode', unreal.BlendMode.BLEND_MASKED)
+    material.set_editor_property('opacity_mask_clip_value', .5)
+    font = mel.create_material_expression(material, unreal.MaterialExpressionFontSampleParameter)
+    font.set_editor_property('parameter_name', 'Font')
+    font.set_editor_property('font', unreal.load_asset('/Engine/EngineFonts/RobotoDistanceField'))
+    alpha = mel.create_material_expression(material, unreal.MaterialExpressionComponentMask)
+    for channel, keep in (('r', True), ('g', False), ('b', False), ('a', False)):
+        alpha.set_editor_property(channel, keep)
+    colour = mel.create_material_expression(material, unreal.MaterialExpressionVertexColor)
+    strength = mel.create_material_expression(material, unreal.MaterialExpressionScalarParameter)
+    strength.set_editor_property('parameter_name', 'Strength')
+    strength.set_editor_property('default_value', 4.)
+    product = mel.create_material_expression(material, unreal.MaterialExpressionMultiply)
+    assert mel.connect_material_expressions(font, '', alpha, '')
+    assert mel.connect_material_expressions(colour, '', product, 'A')
+    assert mel.connect_material_expressions(strength, '', product, 'B')
+    assert mel.connect_material_property(product, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    assert mel.connect_material_property(alpha, '', unreal.MaterialProperty.MP_OPACITY_MASK)
+    mel.recompile_material(material)
+    E.save_loaded_asset(material, only_if_is_dirty=False)
+    assert E.does_asset_exist(f'{ROOT}/Materials/M_BT_BoardText')
+    return material
+
+
 def box(values):
     lo, hi = unreal.Vector(*values[:3]), unreal.Vector(*values[3:])
     try:
@@ -130,6 +165,8 @@ def main():
     if E.does_directory_exist(ROOT):
         E.delete_directory(ROOT)
     E.make_directory(ROOT)
+    E.make_directory(f'{ROOT}/Materials')
+    board_text_material()
     sizes = data['render']['screen_sizes']
     report = {'vehicles': {}, 'furniture': {}}
     for vehicle in data['consist']['vehicles']:

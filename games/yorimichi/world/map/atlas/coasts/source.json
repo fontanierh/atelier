@@ -16,12 +16,12 @@
     "world/regions/belmonte/terrain.py": "8e832f29acab661fd7fceadda4e816d52bdb8ae0453d8ce35033b1831c1df2b5",
     "world/regions/belmonte/plan.py": "b2b10ac599577713c36ca27b28343ec2cff244b0272640da45e4bc671821612c",
     "world/regions/southwest/island.py": "977f38a49fb5eb699f8164544fee1cde5f804372ddaeb03826125242e9c7b96f",
-    "world/train/route.py": "d97c9533851742fe6d3f880a402400ccc9de9201aa461a0f75de508593cff540",
+    "world/train/route.py": "ef24170e9be3f5f80f1f133998e80be682f9016d60a87b43e89363e554968931",
     "world/regions/skatepark/park.json": "a0fe294c872e312cbb07f57895782d914f62a8758cba5d681e4506b32688d637",
     "world/regions/craterpark/placement.py": "f8ab80eb99b84d3dc9bb8ba6219b30f9fac2b2d20d4c2b199d3a6eb717444d42",
     "world/regions/megapark/placement.py": "b3cf874a6d444b61e0504374ea691330fb7c9326dbbcbfda64ddd6ebed05fbdf",
-    "assets/belmonte/source.json": "a83ec8c74dd8d031c7d44d722e9358a8240556af649298f37743e5088fcdd1b9",
-    "assets/vehicles/belmonte-train/line.json": "00a94a56e5c6d74d398d5bca73a65d70392595c155c0c1df1408a6910b21915f",
+    "assets/belmonte/source.json": "7638ae1251e847f4ff55e3440e863fc5bebb588e03f2031c976d2edf73328a87",
+    "assets/vehicles/belmonte-train/line.json": "fd64b115e1596efb3102be2129cfbf8c095fd05dd4d6e457e27d03a8bfc2f180",
     "world/regions/brinecove/region.py": "9e007570e353c305964befbc9db53755c52d95c55069a6253058a39792e67408",
     "world/regions/brinecove/layout.py": "c17638453c0609316cef6bd2db523f2590711a44f104625097e9c67c7cb549f5",
     "world/regions/brinecove/ground.py": "d0cb5decc01c21b55c8e658ce1c29aa3f1e8e7c9da3002688cb1b60278d5f062",
@@ -37,7 +37,7 @@
         7200.0
       ],
       "sha256": "64d77c3608cdc9e2753e36744c2e259cac39547c2b1a0bc758e1cddbf99cdac4",
-      "reference_sha256": "ac79c6e7b0d5a89c5b109b006d42eee235e2c64720773282c071f3ef6c035e76"
+      "reference_sha256": "062f0c0fe0cb738d24a920849aceabf1e3884fb39a5fe0d9d9dd633c41089d40"
     },
     "momiji_coast": {
       "bounds": [
@@ -107,7 +107,7 @@
         5900.0
       ],
       "sha256": "a4e6632e31d2aacbf778e02c1914a70eddbaaf742810a611495877c4c7adb9ee",
-      "reference_sha256": "55197030c0956f087168ff77ee1d2f8804bd445687979c91736bf7e325601df1"
+      "reference_sha256": "90ec8b1162783fd557e00a111b92a3fe8502c1616930fd0ad415d517b80c8d63"
     },
     "brinecove": {
       "bounds": [

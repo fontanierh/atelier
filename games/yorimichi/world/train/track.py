@@ -61,18 +61,34 @@ MATERIALS = {               # Blender colour stand-ins; the names are the Unreal
     'MI_TK_TunnelLining': (.075, .07, .065, .95),   # soot-blackened stone: the tunnel stays dark between its lamps
     'MI_TK_LampGlow': (1., .72, .38, .3),            # emissive in Unreal (track_build.py lights it in Blender)
     'MI_TK_Bank': (.10, .14, .045, .95),             # the grass of a bank built over ground that is not carved
+    # the Belmonte station (station.py)
+    'MI_B_flag': (.55, .40, .25, .9),
+    'MI_B_cobble': (.55, .38, .22, .9),
+    'MI_B_plaster': (.72, .42, .17, .9),
+    'MI_B_roof': (.62, .25, .12, .85),
+    'MI_B_glass_dark': (.03, .03, .025, .3),
+    'MI_ST_Green': (.045, .11, .075, .5),            # painted ironwork
+    'MI_ST_Glass': (.20, .26, .30, .25),             # roof glazing, seen from outside and afar
+    'MI_ST_Clock': (.86, .81, .67, .6),              # clock dials and lamp globes
+    'MI_ST_Coach': (.28, .11, .055, .55),            # the old coaches' varnished teak
+    'MI_ST_CoachRoof': (.22, .22, .21, .8),
 }
 BUDGETS = {                 # triangles per LOD (BELMONTE_TRACK.md)
     'SM_TK_Chunk': (1200, 400, 120),
     'SM_TK_Loop': (2000, 400, 120),           # the loop's own rails, 260 m in one mesh
     'SM_TK_Tunnel': (600, 200),
     'SM_TK_Portal': (2000, 600),
-    'SM_TK_Viaduct': (25000, 6000, 1500),     # all pieces together
+    'SM_TK_Viaduct': (25000, 6000, 2500),     # all pieces together (LOD2, the collision: about 2.5 per metre)
     'SM_TK_Turnout': (3000,),
     'SM_TK_BufferStop': (800,),
     'SM_TK_Sleeper': (12,),
     'SM_TK_TunnelLamp': (120,),
     'SM_TK_Bank': (6000, 1500),                # per 100 m piece
+    'SM_ST_Overbridge': (6000, 1500, 800),     # the road over the Belmonte cutting (overbridge.py; LOD2 its collision)
+    'SM_ST_Headhouse': (14500, 4200, 1200),    # the Belmonte station (station.py), one mesh each; LOD2 the collision
+    'SM_ST_Sheds': (34000, 6000, 2400),
+    'SM_ST_Coaches': (2000, 300, 60),
+    'SM_ST_Forecourt': (220, 80, 40),
 }
 
 
@@ -488,10 +504,12 @@ def bank_ranges(line):
 
 def bank_mesh(line, start, end, lod, origin):
     """The bank from start to end: the earthworks' formation and slopes, over the ground as it is shown (the apron
-    partly raised by its own carving near the seam) by 2 cm, and down to 0.3 m under it beyond the slopes' toes."""
+    partly raised by its own carving near the seam, the valley tiles carved along a final cutting into the Belmonte
+    station: earthworks.valley_carve_start) by 2 cm, and down to 0.3 m under it beyond the slopes' toes."""
     from belmonte import layout as BM
     from train import earthworks as E
     ln = E.line()
+    carved_from = E.valley_carve_start(ln, line.route['samples'])
     mesh = Mesh()
     s_values = stations(start, end, BANK_SLICES[lod])
     reach = E.FLOOR_HALF + E.ROUND + E.RATIO[1] * max(float(np.max(line.rail - line.ground)), 1.) + 4.
@@ -500,6 +518,8 @@ def bank_mesh(line, start, end, lod, origin):
     def section(s):
         p = line.place(np.full(len(u), s), u, 0.)
         g = R.ground(p[:, 0], p[:, 1])
+        if carved_from is not None and s >= carved_from:
+            g = E.carve(p[:, 0], p[:, 1], g, ln)        # the valley tile is carved there, not natural
         _, lo, _ = E.design(p[:, 0], p[:, 1], ln)
         lo = np.where(np.isfinite(lo), lo, -np.inf)
         shown = g + E.seam_weight(p[:, 0], p[:, 1], BM.BOUNDS) * (np.maximum(lo, g) - g)
@@ -723,8 +743,14 @@ def layout(line=None):
         stations=dict(Hidamari=dict(buffer_stop=BUFFER_OFFSET, stopping_point=STOP_OFFSET),
                       Belmonte=dict(buffer_stop=round(line.length - BUFFER_OFFSET, 2),
                                     stopping_point=round(line.length - STOP_OFFSET, 2)),
-                      note='no station buildings; the 200 m reserves are kept in route.json for later'),
+                      note='Belmonte has its station (station.py, station below); Hidamari\'s yard is its own region\'s'),
         materials=list(MATERIALS))
+    from train import overbridge        # the road over the final cutting, on a line ending at the station's site
+    bridge_meshes, doc['overbridge'] = overbridge.layout(line)
+    from train import station           # the Belmonte terminus's buildings, on a line ending at the station's site
+    station_meshes, doc['station'] = station.layout(line)
+    meshes.update(station_meshes)
+    meshes.update(bridge_meshes)
     return meshes, doc
 
 
