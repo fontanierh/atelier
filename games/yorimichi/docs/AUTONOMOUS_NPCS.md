@@ -230,34 +230,93 @@ For determinism, use a fixed seed, a fixed event order, and log every decision r
 
 Use simulation level of detail. Nearby NPCs get full cognition. Distant NPCs follow schedules and update the economy at day boundaries. When the player approaches, promote them to full simulation. The shared clock still applies when they are co-simulated.
 
+Two tiers keep the bill predictable:
+
+| Tier | Share of 200 NPCs | Tick | Input | Notes |
+| --- | ---: | --- | --- | --- |
+| Hot | 10% (about 20) | every 60 s | full state, observations, conversations | Player is close, or the NPC is in a plot thread |
+| Cold | 90% | every 5 min | compressed state and current schedule | Still moves, works, pays rent, and reacts |
+
+Reactions are event-driven in both tiers. An NPC who is spoken to, blocked, or robbed gets a decision on the next social tick regardless of its regular cadence. Promotion and demotion happen at tick boundaries so an NPC never has two pending decisions. Cold NPCs lean on their schedule between ticks: if the plan says "walk to the bakery and open at eight", they do that without a new call.
+
+Fully off-screen NPCs can drop further, to schedule-only execution with no model call until something changes. That is optional, and it is what makes a 200-NPC town affordable at night when the player is asleep in game.
+
 ## Hosted model stack
 
 All inference is hosted. No local models.
 
+There are four lanes with different needs:
+
+| Lane | Trigger | Budget | Latency need | Model |
+| --- | --- | ---: | --- | --- |
+| Reaction | someone speaks, path blocked, sudden event | 2K | under 1 s | JEV |
+| Tick | regular decision deadline | 8K | a few seconds | Luna, minimal reasoning |
+| Reflection | every 10 in-game minutes | 32K | tens of seconds | Luna, medium reasoning |
+| Chatter | an NPC says a line | 2K to 8K | under 2 s | Luna cached, or a cheap OpenRouter model |
+
+Reaction is the only lane where latency changes how the game feels. JEV answers in about 0.3 s and costs $0.042 per 1M input with free output, so a 2K reaction costs $0.000084. That is cheap enough to spend on responsiveness.
+
+This split also answers the "same model for everything" question. A tick that thinks for ten seconds is a tick that missed its minute. A reaction that thinks for ten seconds looks broken to the player. A reflection that thinks for ten seconds is fine.
+
 ### Decisions
 
-Use JEV or Laya.
+Tick and reflection both use Luna (`gpt-6-luna`): $0.10 per 1M input, $0.01 per 1M cached input, $0.50 per 1M output. The state is mostly stable between ticks, so a 90% cache hit rate is realistic. Caching is the largest cost lever after state size.
 
-| Model | Hosting | Price | Context | Notes |
-| --- | --- | ---: | ---: | --- |
-| JEV 1.14 | TypeSafe or Vercel AI Gateway | $0.042 per 1M input, output free | 32K | Handles a 20K decision prompt |
-| Laya Studio | Laya Studio | $0.0357 per 1M input | 1,024-token model | 15% below JEV; compact the decision state to about 800 tokens |
+The alternative is OpenAI's Decisions API, which bills $0.10 per 1M input and nothing for output or cache. It is simpler to account for but loses the cached-input discount, so it is worse once the prefix is stable.
 
-Laya is the cheaper hosted decision model, but it cannot take a 20K prompt. If the decision state must stay at 20K, use JEV. If the state is compact, Laya is much cheaper.
+Laya Studio is still worth revisiting if the decision state is tiny. At 1K input and $0.0357 per 1M it is very cheap, but a 1,024-token model cannot hold the state described here.
+
+### Cheaper than Luna on OpenRouter
+
+Luna is $0.10 per 1M input and $0.50 per 1M output. These models are cheaper on an 8K input, 100 output call, with no cache:
+
+| Model | Input per 1M | Output per 1M | 8K + 100 out | Context |
+| --- | ---: | ---: | ---: | ---: |
+| `~deepseek/deepseek-v4-flash-latest` | $0.0065 | $0.45 | $0.000097 | 1.05M |
+| `ibm-granite/granite-4.0-h-micro` | $0.017 | $0.112 | $0.000147 | 131K |
+| `openai/gpt-oss-20b` | $0.018 | $0.09 | $0.000153 | 131K |
+| `inclusionai/ling-3.0-flash` | $0.021 | $0.063 | $0.000174 | 262K |
+| `nex-agi/nex-n2.5-mini` | $0.025 | $0.10 | $0.000210 | 262K |
+| `mistralai/mistral-nemo` | $0.029 | $0.03 | $0.000235 | 131K |
+| `qwen/qwen3.7-flash` | $0.03 | $0.13 | $0.000253 | 1M |
+| `deepseek/deepseek-v4.1-flash` | $0.0352 | $0.0112 | $0.000283 | 1.05M |
+| `amazon/nova-micro-v1` | $0.035 | $0.14 | $0.000294 | 128K |
+| `cohere/command-r7b-12-2024` | $0.0375 | $0.15 | $0.000315 | 128K |
+| `inception/mercury-2.5` | $0.04 | $0.15 | $0.000335 | 260K |
+| `z-ai/glm-5.3-flash` | $0.048 | $0.16 | $0.000400 | 1.05M |
+| `meta-llama/llama-3.1-8b-instruct` | $0.05 | $0.08 | $0.000408 | 131K |
+| `openai/gpt-5-nano` | $0.05 | $0.40 | $0.000440 | 400K |
+
+Luna at the same shape, with no cache, is $0.00085. With a 90% cache hit rate it is $0.00021. That matters: at 90% cache Luna already beats most of this list, and only a handful of models come in under it. At a 0% hit rate the cheap models win by five times or more. The real question is not "which model is cheaper" but "what cache hit rate will the tick actually get".
+
+The candidates worth testing, in order:
+
+- `openai/gpt-oss-20b`: cheapest credible structured-output model at this size, and well known.
+- `qwen/qwen3.7-flash`: 1M context, close to Luna's shape, useful if the state grows.
+- `deepseek/deepseek-v4.1-flash`: output is almost free, so it is the best chatter candidate for long lines.
+- `inclusionai/ling-3.0-flash`: cheapest output on the list, but small models tend to over-think and sometimes return empty content.
+
+Avoid 1B to 4B models for decisions. They are fine as classifiers for narrow questions such as "is this person a threat", not for picking an action from sixteen affordances. Batch and `:free` variants are not production options: rate limits and queueing will show up as NPCs that stop moving.
+
+Nothing here is verified against Yorimichi states yet. Test on 1,000 logged decisions and 500 lines before switching a lane, and score JSON validity, action validity, and latency, not just price.
 
 ### Chatter
 
 | Model | Input per 1M | Output per 1M | Notes |
 | --- | ---: | ---: | --- |
+| Luna, 90% cached | $0.10 | $0.50 | Effectively $0.01 on the cached prefix; hard to beat on short lines |
 | Gemma 4 E4B | $0.02 | $0.10 | 131K context; cheapest practical chatter |
-| GPT-OSS-20B | $0.05 | $0.20 | 131K context; better general chat quality |
-| Ling 3.0 Flash | $0.02 | $0.06 | 256K context; test reliability, can over-think |
+| GPT-OSS-20B | $0.018 | $0.09 | 131K context; better general chat quality |
+| DeepSeek V4.1 Flash | $0.0352 | $0.0112 | 1M context; near-free output for longer lines |
+| Ling 3.0 Flash | $0.021 | $0.063 | 262K context; test reliability, can over-think |
 
-Use Gemma or GPT-OSS for ambient NPC-to-NPC chatter. Use Luna for player-facing or story-critical dialogue.
+Use a cheap model for ambient NPC-to-NPC chatter, and Luna for player-facing or story-critical dialogue. A listener who only needs to understand a line does not call a model at all; the line goes into memory as text.
+
+At 2K input and 60 output tokens, Luna with 90% cache costs $0.000068 per line and the cheap models cost about the same. Cheap chatter only pulls ahead when the context is long, the cache hit rate is low, or the lines are long.
 
 ### Reasoning
 
-Keep Luna for periodic planning and reflection. It reviews recent events, updates the plan checkpoint, and writes the memory summary. Run it every 30 to 60 in-game minutes, not every tick.
+Keep Luna for periodic planning and reflection, with medium reasoning. It reviews recent events, updates the plan checkpoint, and writes the memory summary. Run it every 10 in-game minutes, not every tick. Reflection is the second largest line on the bill after ticks, so raise the interval before raising the token budget.
 
 ### Routing and accounting
 
@@ -270,38 +329,44 @@ These are estimates as of October 2026. Prices change; verify before committing.
 Assumptions:
 
 - 200 NPCs, one instance per NPC
-- 20K input tokens per call unless marked compact
-- one decision every 30 seconds
-- 24 chat lines per NPC per hour, about six conversations of four lines
-- two Luna reflections per NPC per hour
-- Luna reasoning at 90% cached input
+- 10% of NPCs tick every 60 s, 90% every 5 min
+- 8K tick input, 100 output, minimal reasoning
+- 32K reflection input, 800 output, every 10 min
+- one JEV reaction every 3 min on average, 2K input, output free
+- 12 chat lines per NPC per hour, 2K to 8K input, 60 output
+- Luna at 90% cached input unless stated
 - no voice synthesis
 
-Per 1,000 calls:
+Per call:
 
-| Call | Cost per 1,000 |
+| Call | Cost |
 | --- | ---: |
-| JEV decision, 20K input | $0.84 |
-| Laya Studio decision, 1K input | $0.036 |
-| Gemma decision, 20K in and 50 out | $0.405 |
-| Gemma line, 20K in and 150 out | $0.415 |
-| GPT-OSS-20B line, 20K in and 150 out | $1.03 |
-| Luna line, 20K in and 150 out, 90% cached | $0.455 |
+| JEV reaction, 2K input | $0.000084 |
+| Luna tick, 8K in and 100 out, 90% cached | $0.000210 |
+| Luna reflection, 32K in and 800 out, 90% cached | $0.001008 |
+| Luna chat line, 2K in and 60 out, 90% cached | $0.000068 |
+| DeepSeek V4.1 Flash line, 2K in and 60 out | $0.000071 |
+
+Per agent-hour:
+
+| Lane | Cost |
+| --- | ---: |
+| Reaction, 20 calls | $0.00168 |
+| Tick, weighted 10/90 | $0.00353 |
+| Reflection, 6 calls | $0.00605 |
+| Chatter, 12 lines | $0.00082 |
+| **Total** | **$0.0121** |
 
 Totals for 200 NPCs:
 
-| Stack | Per hour | 2-hour session | 40-hour month |
+| Scenario | Per hour | 2-hour session | 40-hour month |
 | --- | ---: | ---: | ---: |
-| Laya 1K + Gemma chatter 8K + Luna reasoning | $1.88 | $3.76 | $75 |
-| Laya 1K + Gemma chatter 20K + Luna reasoning | $3.03 | $6.06 | $121 |
-| JEV 20K + Gemma chatter 8K + Luna reasoning | $21.18 | $42.36 | $847 |
-| JEV 20K + Gemma chatter 20K + Luna reasoning | $22.33 | $44.67 | $893 |
-| JEV 20K + Luna cached chatter 20K + reasoning | $22.53 | $45.05 | $901 |
-| Gemma decisions 20K + Gemma chatter 20K + Luna reasoning | $11.89 | $23.79 | $476 |
+| Tiered, 90% cache | $2.41 | $4.82 | $96 |
+| Tiered, no cache | $8.06 | $16.13 | $322 |
+| Uniform 1/min, 90% cache | $4.23 | $8.46 | $169 |
+| Tiered, 90% cache, 48 lines/hr | $2.90 | $5.81 | $116 |
 
-The largest lever is compacting the decision state. Laya at 1K is about 24 times cheaper than JEV at 20K for the decision step. Switching chatter from cached Luna to Gemma saves a smaller amount because Luna's cached input is already cheap.
-
-If NPCs chat twice as much, 48 lines per NPC per hour, the Laya + Gemma 8K stack rises to about $2.72 per hour, or $5.44 per two-hour session. The JEV 20K + Gemma 8K stack rises to about $22.02 per hour, or $44.04 per session.
+Tiering cuts the total bill by about 43%, and the tick line by about 72%. The reduction is larger for the 180 background NPCs, who go from $0.0126 to $0.0025 per hour each. Reflection is not reduced by tiering, so at 10% hot it is the single largest line. Moving reflection to every 15 minutes, or shrinking it to 24K, saves more than switching the tick model.
 
 ## Implementation plan
 
@@ -311,13 +376,13 @@ If NPCs chat twice as much, 48 lines per NPC per hour, the Laya + Gemma 8K stack
 4. Measure job fill rate, employment, money distribution, rent delinquency, goal progress, conversation repetition, confidence distribution, and cost per simulated day.
 5. Integrate five NPCs into Unreal, starting in Belmonte. Use the existing village and wanderer actors and the live bridge.
 6. Add simulation LOD, batched decisions, concurrency caps, and fallbacks.
-7. Scale to 200 NPCs and compare JEV/Luna against Laya/Gemma on 1,000 decisions and 500 lines.
+7. Scale to 200 NPCs, turn on the 10/90 tiering, and compare the tick lane against GPT-OSS-20B and Qwen 3.7 Flash on 1,000 logged decisions. Compare the chatter lane against DeepSeek V4.1 Flash on 500 lines. Score JSON validity, action validity, latency, and cost at a measured cache hit rate.
 
 ## Open questions
 
 - How long is an in-game day in real time?
 - Is NPC-to-NPC chatter text-only, audible, or both?
-- How much of the 20K context is static persona and world text, and how much is fresh conversation?
+- How much of the 8K tick and 32K reflection context is static persona and world text, and how much is fresh conversation?
 - Can the player see the happiness score, or only mood through behavior and dialogue?
 - When several NPCs apply for one job, does the employer use skill, reliability, first come, or a lottery?
 - Should critical services such as the train be allowed to go unstaffed?
@@ -340,6 +405,7 @@ If NPCs chat twice as much, 48 lines per NPC per hour, the Laya + Gemma 8K stack
 - OpenAI pricing: https://developers.openai.com/api/docs/pricing?tab=suite
 - Gemma 4 E4B pricing: https://www.llmboard.ai/models/gemma-4-e4b
 - GPT-OSS-20B on Vercel: https://vercel.com/ai-gateway/models/gpt-oss-20b/providers
+- OpenRouter model catalog and prices: https://openrouter.ai/models
 
 ## Related Yorimichi code
 
