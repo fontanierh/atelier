@@ -16,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "world"))
+import yori  # noqa: E402,F401  (adds the Studio package to sys.path)
 from atelier.paths import cache_dir  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -53,15 +54,16 @@ def main():
         print(f"music cache is complete: {dest}")
         return
 
-    url = args.bundle.as_uri() if args.bundle else lock.get("bundle")
+    bundle = args.bundle.expanduser().resolve() if args.bundle else None
+    url = bundle.as_uri() if bundle else lock.get("bundle")
     if not url:
         raise SystemExit("music.lock.json has no bundle URL; pass --bundle PATH")
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=dest) as tmp:
         tmp = Path(tmp)
         archive = tmp / "bundle.zip"
-        if args.bundle:
-            shutil.copy2(args.bundle, archive)
+        if bundle:
+            shutil.copy2(bundle, archive)
         else:
             print(f"downloading {url}")
             with urllib.request.urlopen(url, timeout=300) as response, archive.open("wb") as out:
