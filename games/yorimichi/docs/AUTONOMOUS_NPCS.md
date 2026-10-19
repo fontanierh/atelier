@@ -4,7 +4,7 @@ Status: design proposal. Nothing here is implemented yet.
 
 Last updated: 2026-10-20.
 
-Summary: NPCs choose from context-built affordances on a shared tick, remember and gossip, and live inside a job, rent, and housing economy. Hot NPCs run on Luna; the rest run on Qwen 3.7 Flash. Blended cost is about $0.0088 per agent-hour.
+Summary: NPCs choose from context-built affordances on a shared tick, remember and gossip, and live inside a job, rent, and housing economy. Hot NPCs run on Luna; the rest run on Qwen 3.7 Flash. Blended cost is about $0.0098 per agent-hour including one god agent.
 
 ## Goal
 
@@ -175,6 +175,16 @@ Reactions are event-driven in both tiers. An NPC who is spoken to, blocked, or r
 
 Fully off-screen NPCs can drop to schedule-only execution, with no call until something changes.
 
+## God agent
+
+One Luna agent with high reasoning runs once a minute and watches the whole town. It reads a 128K prompt: about 115K of stable material (rules, all 200 identity sheets, standing arcs) and 13K of fresh state (location, current action, goal stage, happiness trend, and flags for stuck, starving, homeless, or unpaid rent). The stable part is what makes a 90% cache rate plausible. The snapshot itself changes every minute and cannot be cached, so the prompt has to be laid out with the static roster first.
+
+It does not command. It writes a short "god thought" into an NPC's context as an observation, with a reason and an expiry, and the NPC can ignore it. Cap inserts at a few per pass, use a per-NPC cooldown, and log every thought. The job is to catch an NPC who is stuck, looping, or about to do something destructive, not to play the town for them.
+
+At 128K input per minute and 90% cache, input costs $0.146 per hour. With 2K output per pass the god agent costs about $0.21 per hour; with 4K, about $0.27. That adds $0.0010 to $0.0013 per agent-hour. Without cache it would be $0.77 per hour for input alone.
+
+A high-reasoning pass may not finish in 60 seconds. Run it asynchronously and skip a minute rather than queue; the town can wait one pass for a nudge.
+
 ## Hosted models
 
 All inference is hosted. Four lanes:
@@ -227,6 +237,8 @@ Assumptions: 200 NPCs; 20% hot at 1/min on Luna, 80% cold at 1/5min on Qwen; 8K 
 Blended: **$0.0088 per agent-hour**, or **$1.76 per hour for 200 NPCs**. A two-hour session is $3.51; a 40-hour month is $70.
 
 Same cadence, all-Qwen: $0.0066 per agent-hour ($1.32/hour). All-Luna: $0.0131 ($2.62/hour).
+
+Adding the god agent at 2K output per pass: **$0.0098 per agent-hour**, or **$1.97 per hour for 200 NPCs**. At 4K output it is $0.0101 and $2.03.
 
 The largest levers, in order: cache hit rate, reflection cadence and size, tick cadence, then the tick model. Tiering cuts the tick line by about 64%. Reflection is the biggest line for the cold tier, so move it to every 15 or 30 minutes before shrinking the state.
 
