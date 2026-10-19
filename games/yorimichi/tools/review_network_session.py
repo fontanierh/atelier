@@ -313,7 +313,7 @@ def mixed_character_checks(folder):
     return checks
 
 
-def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None, aggregate_memory_gib=10, rendered_memory_gib=10, mixed_characters=False):
+def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, loss_percent=0, tailnet=False, combat=False, combat_host_fps=20, enemy=False, app=None, cook_receipt=None, expected_identity=None, plain_package=False, movement_hitch_ms=0, skate_hitch_ms=0, modori_shield=None, vehicle_case=None, jump_replay=None, reaction_delivery_case=None, reaction_delivery_moving=False, feature_case=None, render_view=None, aggregate_memory_gib=10, rendered_memory_gib=10, mixed_characters=False, soundbanks=False):
     from atelier.build import Context
     from atelier.harness.safety import process_tree
     from atelier.harness.safety.guard import attach, reap
@@ -372,6 +372,9 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
                            f'-port={port}', '-networkqa=' + role, '-networkqadir=' + str(folder),
                            '-preferencesfile=' + str(folder / (role + '-preferences.txt')),
                            '-ExecCmds=t.MaxFPS ' + ('60' if vehicle_case and role == 'server' else str(combat_host_fps) if combat and role == 'server' else '30')]
+                if soundbanks:
+                    command.remove('-nosound')
+                    command += ['-networksoundbanks', '-AudioMixer']
                 if render_view == ('host' if role == 'server' else 'guest'):
                     command.remove('-nullrhi')
                     command += ['-windowed', '-ResX=960', '-ResY=540', '-ForceRes', '-networkrender']
@@ -478,6 +481,9 @@ def worker(folder, port, gameplay=False, listen=False, lag_ms=0, variance_ms=0, 
             checks = compare_receipts(folder, gameplay, listen, emulation, f'{host}:{port}', combat, combat_host_fps, enemy, vehicle_case)
             if app:
                 checks.update(runtime_identity_checks(folder, expected_identity, package_source['code_digest']))
+        if soundbanks:
+            from network_soundbank_receipts import soundbank_checks
+            checks.update(soundbank_checks(folder))
         if movement_hitch_ms or skate_hitch_ms:
             from network_clock_review import clock_checks
             checks.update(clock_checks(load(folder / 'server-gameplay.json') or {},
@@ -563,6 +569,7 @@ def main():
     parser.add_argument('--app', type=Path, help='Independently extracted signed macOS Development app')
     parser.add_argument('--cook-receipt', type=Path, help='Cook receipt on the current clean source commit')
     parser.add_argument('--expected-identity', help='Identity from the accepted native receipt at that cook revision')
+    parser.add_argument('--soundbanks', action='store_true', help='Development packaged listen gameplay with actual local/remote audio receipts')
     parser.add_argument('--plain-package', action='store_true', help='Ordinary Solo with no network QA flags, bounded by UE seconds')
     parser.add_argument('--jump-replay', type=int, choices=range(6), help='Real correction at 0 pre-press, 1 takeoff, 2 first air; 3/4/5 also deliver a later real good ACK before replay')
     parser.add_argument('--movement-hitch-ms', type=int, choices=(0, 229, 500, 1050), default=0)
@@ -617,9 +624,16 @@ def main():
         if args.app or args.vehicle_case or args.enemy or args.combat or args.reaction_delivery_case is not None:
             parser.error('Feature checks use their own editor listen route')
         args.listen = True
+    if args.soundbanks and (not args.app or not args.listen or args.plain_package or args.render_view or
+            args.combat or args.enemy or args.vehicle_case or args.feature_case or args.jump_replay is not None or
+            args.reaction_delivery_case is not None or args.modori_shield is not None or args.mixed_characters or
+            args.lag_ms or args.variance_ms or args.loss_percent or args.movement_hitch_ms or args.skate_hitch_ms):
+        parser.error('Soundbank proof requires its own zero-lag packaged listen/gameplay pair')
+    if args.soundbanks and args.aggregate_memory_gib not in (10, 14):
+        parser.error('Soundbank packaged proof supports full10 or14GiB aggregate sessions')
     if args.render_view and not args.listen:
         parser.error('A rendered observer requires a listen pair')
-    if args.aggregate_memory_gib != 10 and not args.render_view:
+    if args.aggregate_memory_gib != 10 and not args.render_view and not args.soundbanks:
         parser.error('An authorized larger aggregate ceiling requires a rendered observer')
     if args.rendered_memory_gib != 10 and not args.render_view:
         parser.error('An authorized larger game ceiling requires a rendered observer')
@@ -681,7 +695,8 @@ def main():
                       *([args.feature_case, args.render_view, args.aggregate_memory_gib, args.rendered_memory_gib]
                         if args.rendered_memory_gib != 10 else [args.feature_case, args.render_view, args.aggregate_memory_gib]
                         if args.aggregate_memory_gib != 10 else [args.feature_case, args.render_view] if args.feature_case or args.render_view else []),
-                      **({'mixed_characters': True} if args.mixed_characters else {}))
+                      **({'mixed_characters': True} if args.mixed_characters else {}),
+                      **({'soundbanks': True} if args.soundbanks else {}))
     if any(folder.iterdir()):
         raise RuntimeError('Use a fresh evidence directory; old receipts cannot establish a new run')
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -693,6 +708,7 @@ def main():
                        (['--render-view', args.render_view] if args.render_view else []) +
                        (['--aggregate-memory-gib', str(args.aggregate_memory_gib)] if args.aggregate_memory_gib != 10 else []) +
                        (['--rendered-memory-gib', str(args.rendered_memory_gib)] if args.rendered_memory_gib != 10 else []) +
+                       (['--soundbanks'] if args.soundbanks else []) +
                        (['--mixed-characters'] if args.mixed_characters else []) +
                        (['--reaction-delivery-moving'] if args.reaction_delivery_moving else []) +
                        (['--reaction-delivery-case', str(args.reaction_delivery_case)] if args.reaction_delivery_case is not None else []) +
@@ -702,7 +718,8 @@ def main():
                        (['--app', str(args.app.resolve()), '--cook-receipt', str(args.cook_receipt.resolve()), '--expected-identity', args.expected_identity] if args.app else []) +
                        (['--plain-package'] if args.plain_package else []) + (['--vehicle-case', args.vehicle_case] if args.vehicle_case else []),
                        folder / 'guard', timeout=750 if args.app else 330, purpose='native local network session smoke', kind='game',
-                       progress=15, track_tree=True)
+                       progress=15, track_tree=True,
+                       **({'limit_gib': args.aggregate_memory_gib} if args.soundbanks else {}))
 
 
 if __name__ == '__main__':

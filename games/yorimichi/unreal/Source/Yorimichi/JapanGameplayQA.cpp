@@ -1,4 +1,5 @@
 #include "JapanGameplayQA.h"
+#include "Dev/JapanSoundBankNetworkQA.h"
 #include "JapanCharacterMovement.h"
 #include "JapanJumpReplayQA.h"
 #include "JapanActivityState.h"
@@ -298,6 +299,7 @@ bool JapanGameplayQA::Tick(UWorld* World, bool Server, const FString& Folder, FS
         if (Elapsed > 5. && (!Listen || Script.PeerFrames >= 60))
         {
             if (Script.MaximumSavedMoves > 0) { Error = TEXT("CMC saved moves accumulated during trusted skating"); break; }
+            if (!JapanSoundBankNetworkQA::Tick(Player, Error)) break;
             Player->GetSkate()->Toggle(); Next();
         }
         break;

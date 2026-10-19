@@ -67,3 +67,11 @@ Online player map targets MUST use session player identity, follow the current p
 when that player leaves. Travel MUST resolve the identity on the host at request time and retain epoch,
 encounter, pending-contact and rate admission. A destination MUST have walkable ground and standing
 capsule clearance; the chosen floor MUST NOT be replaced by an overhead bridge or roof.
+
+@cc [owner:fontanierh,label:correctness] soundbank-network-native-receipt
+The opt-in development soundbank network probe MUST observe the actual game world's one local
+and one remote player, actor-owned ready foot/skate components and genuinely playing roll loops.
+It MUST NOT create emitters, force playback, inject velocity or drive remote simulation. Host bank
+changes MUST leave the guest's local selection unchanged and restore exact Original references.
+Missing assets, incomplete observations or timeout MUST fail; normal admission, pose replication,
+disconnect and guard cleanup MUST remain prerequisites for the enclosing acceptance result.
