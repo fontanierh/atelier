@@ -410,6 +410,19 @@ Moving the tick and chatter lanes to `gpt-oss-20b` on Darkbloom drops the tiered
 
 Replacing every Luna lane with Qwen 3.7 Flash on the Alibaba us-east-1 endpoint, still at 90% cache, gives about **$0.0061 per agent-hour**, or $1.23 per hour for 200 NPCs. The breakdown is $0.00155 for ticks, $0.00257 for reflection, $0.00034 for chatter, and $0.00168 for JEV reactions. Reflection is now the largest line. On the cheaper base endpoint with no cache the total rises to $0.0131.
 
+Qwen 3.7 Flash latency, from OpenRouter's 30-minute window:
+
+| Endpoint | p50 | p90 | p95 | p99 | Output tok/s, p50 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Alibaba | 690 ms | 1.35 s | 1.81 s | 16.6 s | 60 |
+| Alibaba us-east-1 | 728 ms | 1.84 s | 2.46 s | 4.56 s | 64 |
+
+These are short probe requests, not 8K decision states. Add prefill and about 100 output tokens and a tick lands around 1.5 to 2 s at p50, 3 to 4 s at p90. Luna measured about 1.9 s for structured output in the same kind of test, so the two are close for ticks; JEV remains the fast lane for reactions. The base endpoint's 16.6 s p99 is a real tail risk at 200 agents, which is another reason to pin us-east-1.
+
+Qwen 3.7 Flash is not available through OpenRouter's EU in-region routing, so requests from Europe cross to Alibaba's regions. Measure from the actual host before assuming these numbers.
+
+A 20/80 split, with the 20% on Luna ticking every minute and the 80% on Qwen ticking every five, costs about **$0.0088 per agent-hour**, or **$1.76 per hour for 200 NPCs**. That is the natural shape: the agents with full cognition are also the ones on the better model.
+
 ## Implementation plan
 
 1. Build the affordance registry and context filter. Define each interactable's actions, preconditions, and effects, then build the per-NPC action list from range and context.
