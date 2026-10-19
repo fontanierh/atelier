@@ -115,12 +115,13 @@ def bounds_cm(mesh):
     return [[b.min.x, b.min.y, b.min.z], [b.max.x, b.max.y, b.max.z]]
 
 
-placements = json.loads((BUILD / 'placements.json').read_text())
-manifest = json.loads((BUILD / 'manifest.json').read_text())
+placements = json.loads((BUILD / 'placements.json').read_text(encoding='utf-8'))
+manifest = json.loads((BUILD / 'manifest.json').read_text(encoding='utf-8'))
 material = E.load_asset(MATERIAL)
 assert material, f'{MATERIAL} is missing: build unreal.world first'
 for key, entry in manifest['files'].items():
     assert sha(BUILD / entry['path']) == entry['sha256'], 'stale stable build: ' + key
+(DATA / 'stable.json').unlink(missing_ok=True)
 if E.does_directory_exist(ROOT):
     E.delete_directory(ROOT)
 E.make_directory(ROOT)
@@ -161,6 +162,6 @@ lo, hi = report['SM_HS_Stable']['bounds_cm']
 assert lo[0] < placements['barn']['doorways'][0][0] * 100 < hi[0], ('unit/axis conversion', lo, hi)
 assert lo[1] < -placements['barn']['centre'][1] * 100 < hi[1], ('unit/axis conversion', lo, hi)
 DATA.mkdir(parents=True, exist_ok=True)
-(DATA / 'stable.json').write_text(json.dumps(dict(placements, asset_root=ROOT), indent=1, ensure_ascii=False) + '\n')
-(BUILD / 'import-report.json').write_text(json.dumps(report, indent=1) + '\n')
+(DATA / 'stable.json').write_text(json.dumps(dict(placements, asset_root=ROOT), indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+(BUILD / 'import-report.json').write_text(json.dumps(report, indent=1) + '\n', encoding='utf-8')
 unreal.log(f'HIDAMARI STABLE IMPORT COMPLETE: {len(report)} meshes, {len(placements["collision"])} boxes')

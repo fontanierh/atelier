@@ -2,6 +2,7 @@
 import math
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
@@ -223,9 +224,12 @@ class Site(unittest.TestCase):
     def test_hidamari_terrain_carries_the_grading(self):
         import numpy as np
         from regions.hidamari import layout as H
-        self.assertAlmostEqual(float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0]), L.PAD_Z, 3)
-        far = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1] + L.COMPOUND[3] + L.GRADE_REACH + 1.]))[0])
-        self.assertAlmostEqual(far, float(H.north_height(np.array([L.SITE[0]]), np.array([500.]))[0]), 1)
+        ungraded = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0])
+        self.assertNotAlmostEqual(ungraded, L.PAD_Z, 1)
+        with patch.object(L, 'is_enabled', return_value=True):
+            self.assertAlmostEqual(float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1]]))[0]), L.PAD_Z, 3)
+            far = float(H.height(np.array([L.SITE[0]]), np.array([L.SITE[1] + L.COMPOUND[3] + L.GRADE_REACH + 1.]))[0])
+            self.assertAlmostEqual(far, float(H.north_height(np.array([L.SITE[0]]), np.array([500.]))[0]), 1)
 
     @unittest.skipUnless((yori.OUT / 'heightmap.npy').exists(), 'world.layout not built')
     def test_road_climbs_gently(self):

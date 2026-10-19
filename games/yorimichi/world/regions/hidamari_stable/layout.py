@@ -15,6 +15,7 @@ jockeys' office first, then five stalls on each side, then the east door towards
 Standard library and numpy only: build.py (Blender) and the tests import it.
 """
 import math
+import os
 
 NAME = '陽だまり厩舎'
 SITE = (955., 447.)            # world (x, y) of the frame's origin: chosen by Paul on the slope above the city's north edge
@@ -25,6 +26,12 @@ GRADE_SLOPE = 4.               # the graded ground's run per metre of cut or fil
 GRADE_CREST = 3.               # metres over which the slopes round off from the flat pad
 GRADE_ROUND = 1.5              # metres over which they round into the natural ground (crest and toe)
 GRADE_REACH = 22.              # the farthest the grading reaches from the pad (3 m of fill plus the rounding)
+
+
+def is_enabled():
+    """Whether the Hidamari stable is enabled in the world build (opt-in while world.hidamari_stable and
+    unreal.hidamari_stable are explicit, so default builds and peers without the import keep identical terrain)."""
+    return os.environ.get('YORIMICHI_HIDAMARI_STABLE') == '1'
 
 
 def grade_offset(d):
@@ -152,7 +159,7 @@ def notice_board():
 # ------------------------------------------------------------------ grounds
 YARD = (-35.8, -1.4, BARN_X0 - .2, 27.4)     # sand yard between the gate and the barn's west door, inside its fence
 GATE = dict(at=(-36., BARN_CENTRE[1]), opening=4.2, height=3.4, post=.32)    # the entrance gate faces west
-SIGN = dict(centre=(GATE['at'][0] - .30, GATE['at'][1], 2.82), normal=(-1., 0., 0.), size=(2.6, .72), text=.46)
+SIGN = dict(centre=(GATE['at'][0] - .30, GATE['at'][1], 3.28), normal=(-1., 0., 0.), size=(2.6, .72), text=.46)
 # The yard's low fence: the gate's bamboo fences run along the west side to YARD_FENCE's y0 and y1, a low timber fence
 # closes the north and south sides up to x_north and x_south. The gap left south-east is the way to the paddock.
 YARD_FENCE = dict(y0=-1.5, y1=27.5, x_north=-6.5, x_south=-9., height=.95)

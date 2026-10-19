@@ -60,6 +60,15 @@ void AHidamariStable::SetDoorOpen(int32 Stall, float Alpha)
     S.Door->SetWorldLocation(S.DoorClosed + S.DoorSlide * FMath::Clamp(Alpha, 0.f, 1.f));
 }
 
+void AHidamariStable::SetRoomDoorOpen(const FString& Room, float Alpha)
+{
+    TObjectPtr<UStaticMeshComponent>* Door = RoomDoors.Find(Room);
+    const FVector* Closed = RoomDoorClosed.Find(Room);
+    const FVector* Slide = RoomDoorSlide.Find(Room);
+    if (!Door || !*Door || !Closed || !Slide) return;
+    (*Door)->SetWorldLocation(*Closed + *Slide * FMath::Clamp(Alpha, 0.f, 1.f));
+}
+
 bool AHidamariStable::Initialize(const FString& Path)
 {
     const TSharedPtr<FJsonObject> Data = AtelierReadJson(Path);
@@ -78,6 +87,7 @@ bool AHidamariStable::Initialize(const FString& Path)
     auto Place = [&](UStaticMesh* Mesh, const FString& Name, const FVector& Local, float Yaw, bool bBlocks)
     {
         auto* Component = NewObject<UStaticMeshComponent>(this, *Name);
+        Component->SetMobility(EComponentMobility::Static);
         Component->SetStaticMesh(Mesh); Component->SetupAttachment(RootComponent);
         Component->SetWorldLocationAndRotation(World(Local), FRotator(0, -Yaw, 0));
         Component->SetCollisionEnabled(bBlocks ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
@@ -134,6 +144,16 @@ bool AHidamariStable::Initialize(const FString& Path)
             Stalls[StallIndex[Stall]].Door = Leaf;
             Stalls[StallIndex[Stall]].DoorClosed = Leaf->GetComponentLocation();
             Stalls[StallIndex[Stall]].DoorSlide = FVector(Slide.X * 100., -Slide.Y * 100., Slide.Z * 100.);
+        }
+        FString Room;
+        if (D->TryGetStringField(TEXT("room"), Room) && !Room.IsEmpty())
+        {
+            const FVector Slide = StableField(D, TEXT("slide")) * D->GetNumberField(TEXT("travel"));
+            Leaf->SetMobility(EComponentMobility::Movable);
+            RoomDoors.Add(Room, Leaf);
+            RoomDoorClosed.Add(Room, Leaf->GetComponentLocation());
+            RoomDoorSlide.Add(Room, FVector(Slide.X * 100., -Slide.Y * 100., Slide.Z * 100.));
+            SetRoomDoorOpen(Room, 1.f);
         }
     }
     RootComponent->SetMobility(EComponentMobility::Static);

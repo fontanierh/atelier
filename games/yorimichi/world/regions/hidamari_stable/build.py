@@ -40,7 +40,6 @@ from hidamari_stable import layout as L
 
 OUT = yori.OUT / 'hidamari-stable'
 GLB = OUT / 'glb'
-R = random.Random(1907)
 MATERIAL = 'M_HS_Stable'
 
 
@@ -498,7 +497,7 @@ def gate(m, lod):
     m.box((sx - .01, sy, sz), (.04, sw, sh), 'hs_sign')
     if lod <= 1:
         for s in (-1, 1):
-            m.beam((sx + .04, sy + s * (sw / 2 - .15), sz + sh / 2), (gx, sy + s * (sw / 2 - .15), h - .4), .03, .03, 'hs_iron')
+            m.beam((sx + .04, sy + s * (sw / 2 - .15), sz + sh / 2), (gx, sy + s * (sw / 2 - .15), h + .08), .03, .03, 'hs_iron')
         with m.at((sx - .035, sy, sz), -90):
             raised_text(m, L.NAME, (0, 0, -L.SIGN['text'] * .25), L.SIGN['text'], 'hs_letter', .006, .015)
     # bamboo fences either side of the gate
@@ -767,7 +766,7 @@ def ground(pad_z):
     def rect(a, b, c, d, z, key):
         m.poly([(a, b, z), (c, b, z), (c, d, z), (a, d, z)], key)
     rect(*L.YARD, .015, 'hs_yard_earth')
-    rect(*L.GARDEN, .02, 'hs_bed')
+    rect(*L.GARDEN, .02, 'hs_soil')
     rect(L.YARD[2], L.PADDOCK[3] + .2, L.PADDOCK_GATE['x'] + L.PADDOCK_GATE['width'] / 2 + .3, L.BARN_Y0 - .3, .016, 'hs_yard_earth')
     rect(L.BARN_X1, L.BARN_CENTRE[1] - 2., L.BARN_X1 + 4., L.BARN_CENTRE[1] + 2., .015, 'hs_yard_earth')
     px0, py0, px1, py1 = L.PADDOCK
@@ -799,7 +798,7 @@ def road(pad_z):
         lift = .02 + .06 * min(1., sk / 6.)                                    # flush with the street at its end
         t = min(1., max(0., (sk - (edge - L.ROAD_BLEND)) / L.ROAD_BLEND))
         t = t * t * (3 - 2 * t)
-        return (gz(x, y) + lift) * (1 - t)
+        return gz(x, y) + lift * (1. - t)
     rows = []
     for k, (x, y) in enumerate(pts):
         a, b = pts[max(k - 1, 0)], pts[min(k + 1, len(pts) - 1)]
@@ -986,7 +985,7 @@ def main():
         export_glb(path_, [obj]); files[name] = path_
     path_ = GLB / 'SM_HS_Stable_Collision.glb'
     export_glb(path_, ucx); files['SM_HS_Stable_Collision'] = path_
-    (OUT / 'placements.json').write_text(json.dumps(data, indent=1, ensure_ascii=False))
+    (OUT / 'placements.json').write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding='utf-8')
     for c in hide:
         c.hide_render = True; c.hide_viewport = True
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'hidamari-stable.blend'))
@@ -1001,15 +1000,15 @@ def main():
         checks.append('LODs do not decrease')
     if counts['SM_HS_StallDoor_LOD0'] > budgets['door_LOD0']:
         checks.append('stall door over budget')
-    if len(ucx) > budgets['collision_boxes']:
+    if len(data['collision']) > budgets['collision_boxes']:
         checks.append('too many collision boxes')
     manifest = dict(
         step='world.hidamari_stable', name=L.NAME,
         units='metres in the .blend and placements; GLBs are standard glTF (Y-up) exported by Blender',
-        site=data['site'], budgets=budgets, triangles=counts, collision_boxes=len(ucx),
+        site=data['site'], budgets=budgets, triangles=counts, collision_boxes=len(data['collision']),
         files={k: dict(path=str(f.relative_to(OUT)), sha256=sha(f), bytes=f.stat().st_size) for k, f in files.items()},
         checks=checks)
-    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1, ensure_ascii=False))
+    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=1, ensure_ascii=False), encoding='utf-8')
     print('HIDAMARI STABLE triangles:', json.dumps(counts), flush=True)
     if checks:
         raise SystemExit('HIDAMARI STABLE checks failed: ' + '; '.join(checks))

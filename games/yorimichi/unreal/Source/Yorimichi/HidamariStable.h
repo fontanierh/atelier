@@ -36,11 +36,15 @@ public:
     static AHidamariStable* Find(const UObject* WorldContext);
 
     TArray<FHidamariStall> Stalls;
+    TMap<FString, TObjectPtr<UStaticMeshComponent>> RoomDoors;
+    TMap<FString, FVector> RoomDoorClosed, RoomDoorSlide;
     FTransform Sign, NoticeBoard, Arrival;
     TMap<FString, FTransform> NpcSpots;
 
     /** Slides a stall's door open (Alpha 1) or closed (0). */
     void SetDoorOpen(int32 Stall, float Alpha);
+    /** Slides a room's door ('tack' or 'office') open (Alpha 1) or closed (0). */
+    void SetRoomDoorOpen(const FString& Room, float Alpha);
 
 private:
     UPROPERTY() TObjectPtr<USceneComponent> Root;

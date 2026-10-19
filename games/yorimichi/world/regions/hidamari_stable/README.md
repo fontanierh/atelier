@@ -55,7 +55,7 @@ the importer has to remove the island's trees and grass inside them, as the hipp
 - **Yard**: sand, between the gate and the barn. It holds a stone water trough with a bamboo spout, a hitching rail,
   four stone lanterns, hay bales and garden trees.
 - **Gate**: two posts with a small tiled roof and a 4.2 m opening, flanked by bamboo fences. The name plate
-  陽だまり厩舎 (2.1 × 0.62 m) hangs on its west face.
+  陽だまり厩舎 (2.6 × 0.72 m) hangs on its west face.
 - **Paddock**: 36 × 32 m south of the barn, post-and-rail fence 1.35 m, with a 3.6 m gate in its north side.
 
 ## Outputs (`build/yorimichi/hidamari-stable/`)

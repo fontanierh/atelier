@@ -158,7 +158,8 @@ def stable(spot='arrival'):
     """Go to Henry's Hidamari stable (world/regions/hidamari_stable/README.md): 'arrival' outside the gate, 'aisle' at
     the barn's west door looking down the stalls, 'yard', 'paddock', or an NPC spot's id from stable.json."""
     import json
-    data = json.load(open(os.path.join(ROOT, 'games/yorimichi/unreal/Content/Data/hidamari_stable/stable.json')))
+    with open(os.path.join(ROOT, 'games/yorimichi/unreal/Content/Data/hidamari_stable/stable.json'), encoding='utf-8') as f:
+        data = json.load(f)
     ox, oy, oz = data['site']['origin']
     spots = {p['id']: (p['at'], p['yaw']) for p in data['spots']['npc']}
     spots['arrival'] = (data['spots']['arrival']['at'], data['spots']['arrival']['yaw'])
@@ -167,5 +168,4 @@ def stable(spot='arrival'):
     spots['yard'] = ((-20., 12., 0.), 0.)
     spots['paddock'] = ((16., -14., 0.), 90.)
     (x, y, _), yaw = spots[spot]
-    # GroundAt traces from z + 20 m down to z - 60 m: start it 1.5 m over the pad, under the barn's roof
-    return teleport(ground((ox + x) * 100., -(oy + y) * 100., (oz + 1.5 - 20.) * 100.), -float(yaw))
+    return teleport(ground((ox + x) * 100., -(oy + y) * 100., (oz + 1.5) * 100.), -float(yaw))
