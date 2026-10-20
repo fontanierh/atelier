@@ -165,6 +165,26 @@ When two NPCs meet, create one encounter event with a deterministic initiator, n
 
 For determinism: fixed seed, fixed event order, and a log of every request and response. That lets you replay a day.
 
+## Perception and sampling
+
+Unreal is the sensor and actuator. The simulation owns identity, memory, and choice, and never reads the level directly. Unreal reports facts; the simulation decides whether a fact is an event or just a new option.
+
+Three inputs:
+
+- Events, pushed immediately: spoken to, bumped, attacked, path blocked, vehicle docked, shift started. Small and rate-limited; JEV handles them.
+- Snapshots, pulled at decision time: position, movement, path status, inventory, time, and nearby actors and objects with distance, state, and visibility.
+- Diffs, pushed at low frequency: a new actor in range or an interactable changing state. Coalesced into at most one event per NPC every few seconds.
+
+Interactables carry an affordance component: actions, preconditions, state, and radius. A world registry answers a sphere query plus a few line-of-sight traces for the closest candidates. Nothing raycasts the whole level per NPC.
+
+Sampling follows the tiers: 1 Hz hot, 0.2 Hz cold, staggered across frames by NPC id so 200 NPCs do not spike one frame. Idle NPCs sample slower. Off-screen NPCs get no physics query and run on their schedule until promoted.
+
+Ranges: interact at 2 to 3 m, notice people at 15 to 25 m, hear speech at 8 to 10 m. Cap a snapshot at about 12 objects and 8 actors, sorted by distance and importance. Above 16 options, use the two-stage choice. Destinations are gazetteer ids; Unreal owns pathfinding.
+
+A snapshot is about 1 KB, so 200 NPCs at 1 Hz is roughly 200 KB/s. Batch one message per tick. The live bridge is a single-caller player scripting API, not an event bus; add a dedicated loopback channel for the simulation, or run it in-process for the first prototype.
+
+Every snapshot carries a state version. Apply a model answer only if the version is still current. Log the snapshot hash with the decision so a day can be replayed.
+
 ## Tiers and models
 
 Two tiers keep the bill and the latency budget predictable:
@@ -251,7 +271,7 @@ The largest levers, in order: cache hit rate, reflection cadence and size, tick 
 2. Build a headless Python simulation with 20 NPCs, five jobs, three stores, one job board, rent, food, sleep, and three goals. Run 30 in-game days.
 3. Log every decision, wage, purchase, rent payment, conversation, goal update, token count, and cost.
 4. Measure job fill, employment, money distribution, delinquency, goal progress, repetition, and cost per day.
-5. Integrate five NPCs in Unreal, starting in Belmonte, using the village and wanderer actors and the live bridge.
+5. Integrate five NPCs in Unreal: a navigable actor with a controller, an affordance registry, and one batched snapshot channel. Start in Belmonte.
 6. Add LOD, batching, concurrency caps, and fallbacks.
 7. Scale to 200 and compare the tick lane on GPT-OSS-20B and Qwen 3.7 Flash over 1,000 logged decisions; compare chatter on DeepSeek V4.1 Flash over 500 lines.
 
@@ -276,7 +296,7 @@ The largest levers, in order: cache hit rate, reflection cadence and size, tick 
 
 ## Related Yorimichi code
 
-- Village residents: games/yorimichi/unreal/Source/Yorimichi/VillageLife.h
+- Village residents: games/yorimichi/unreal/Source/Yorimichi/VillageLife.h (cosmetic today; no AI, navigation, or collision)
 - Playable wanderer: games/yorimichi/unreal/Source/Yorimichi/WandererCharacter.h
 - Live bridge verbs: games/yorimichi/unreal/Source/Yorimichi/YorimichiLive.h
 - Belmonte train service: games/yorimichi/unreal/Source/Yorimichi/BelmonteTrainService.h
