@@ -27,15 +27,19 @@ Policy stays in the game: the platform provides accounts and transfers, not a re
 
 Platform modules never name a game. Games configure the platform; they do not reimplement it.
 
-### Money and happiness
+### Money, utility, and needs
 
 | Concept | Core | Game |
 | --- | --- | --- |
 | Money | accounts, transfers, reservations, conservation checks, multi-resource ledger | currency name, starting balances, wages, prices, rent, debt and eviction rules |
-| Happiness | named stat container, bounds, decay, reward application, option scoring | that the stat is called happiness, what changes it, the values, caps, and cooldowns |
+| Utility | signed 64-bit scalar, accumulation, bounds, reward application, cooldowns, option scoring | what events are worth, weights, the display name (happiness), caps |
 | Needs | decay and threshold machinery | which needs exist, their rates, and the failure effects |
 
-The core has no Rent or Happiness type. It has accounts, stats, and effects keyed by game-defined names.
+The core needs a scalar objective. Without one, options have effects but no ranking, reflections have no measure, and the god agent cannot tell whether an inhabitant is drifting. Call it Utility in the core; a game may call it happiness and show it to the player.
+
+The core owns the type, arithmetic, bounds, cooldowns, and score comparison. The game owns the reward table. The core never has a Happiness or Rent type; it has accounts, a utility scalar, stats, and effects keyed by game-defined names.
+
+A game with several objectives aggregates them into this scalar with its own weights. The core may keep the components for debugging, but it ranks options by the scalar.
 
 Proposed locations:
 
@@ -69,6 +73,7 @@ Core rules:
 
 - C++20 and the standard library only. No UObject, UWorld, FString, FHttp, or engine math in the core.
 - Integer ticks and integer money. No floating point for balances or deadlines.
+- Utility is a signed 64-bit scalar. The game configures its bounds and reward values; the core never hardcodes them.
 - Single-threaded and deterministic. Adapters enqueue async results; the core consumes them at a tick boundary in a fixed order.
 - The core owns the RNG. A seed plus a scenario must reproduce the same log.
 - The same sources compile into the native CLI and into the Unreal module. Do not link a separately built core library into UE.
@@ -158,7 +163,7 @@ The action list is built at decision time: find what is in range, ask what it of
 
 No object in range means no interact action. Context can remove actions: an in-transit zeppelin offers talk, stay, and look; a conversation offers talk or end; a shift offers work actions.
 
-Each option carries an id, label, target, preconditions, expected effects, and risk. The model picks an id; the simulation validates it against the current option set. The model cannot invent an action.
+Each option carries an id, label, target, preconditions, expected effects, expected utility delta, and risk. The model picks an id; the simulation validates it against the current option set. The model cannot invent an action.
 
 Starting an action is a transaction: take the reservation, apply the effects once, and release on completion, cancellation, or timeout. A late or retried answer must never apply the same effect twice.
 
@@ -186,7 +191,7 @@ A snapshot is about 1 KB. Two hundred inhabitants at 1 Hz is roughly 200 KB/s, i
 
 The simulation runs a fixed social tick, for example 1 Hz, independent of frame rate. All inhabitants see the same tick and events in the same order. Movement and animation run in Unreal at frame rate.
 
-Each brain has a next decision time. When it arrives, or when an event interrupts, the subsystem builds the compact state and asks how urgent this is and which option to pick. Treat self-reported confidence as a weak hint, not a gate: validate the chosen option and use a deterministic fallback when it fails.
+Each brain has a next decision time. When it arrives, or when an event interrupts, the subsystem builds the compact state and asks how urgent this is and which option gives the best expected utility. Treat self-reported confidence as a weak hint, not a gate: validate the chosen option and use a deterministic fallback when it fails.
 
 Walk, path, and collision belong to the game's controller. The action executor owns start, progress, cancellation, completion, and timeout, and takes atomic reservations for resources such as a seat, a bed, or a shop counter. The brain receives progress events: arrived, blocked, interrupted, path failed. A failed path triggers a new decision. A new observation is injected as an interruption with a cooldown and a novelty check.
 

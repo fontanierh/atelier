@@ -18,6 +18,14 @@ Yorimichi owns its verbs and their effects. It registers actions such as train.b
 
 Life goals and stage predicates are also game data. The platform runs the state machine, tracks progress, and applies rewards.
 
+## Utility in Yorimichi
+
+Yorimichi calls its utility score happiness: an unbounded unsigned value clamped at zero. The core stores and compares it; the game supplies the rewards.
+
+Examples: sleep at home +6 once a day, sleep rough -12, pay rent +2, miss rent -25, eviction -60, a shift +4, a goal stage +40, a life goal +250, hungry -2 per hour, a good conversation +1 per pair per hour, help someone +5.
+
+The NPC knows the goal and the next step, not the formula. It knows simple consequences: home sleep beats the street, missing rent risks eviction.
+
 Scenarios live under games/yorimichi/scenarios/npc/ and use the game's world data. They run on the native platform CLI, with no game process and no Unreal startup.
 
 ## Housing audit
