@@ -5,10 +5,61 @@ from pathlib import Path
 
 from atelier import build_inputs, unreal_modules
 from atelier.build import Batch, Blender, Product, Step, UnrealScript
+from atelier.build import DeferredInputs
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
 SCRIPTS = GAME / 'unreal/Scripts'
+
+
+def system_inputs(content):
+    """Discovery is content-dependent: new regional foliage invalidates the registry.
+
+    The derivative owner's own packages and Data must never become its inputs.
+    Native source packages include their material/texture dependencies; per-asset
+    fingerprints inside the adapter avoid rebuilding unchanged representations.
+    """
+    return sorted(p for p in Path(content).rglob('*') if p.is_file()
+                  and p.suffix in ('.uasset', '.uexp', '.ubulk')
+                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'Data'))
+
+
+def system_packages(content):
+    spec=importlib.util.spec_from_file_location('yorimichi_foliage_system',GAME/'foliage_system.py')
+    kernel=importlib.util.module_from_spec(spec);spec.loader.exec_module(kernel)
+    return kernel.package_inventory(content)
+
+
+def verify_system(content, report_path):
+    """A directory's existence cannot certify its mesh/material packages."""
+    try:
+        report=json.loads(Path(report_path).read_text())
+        registry=json.loads((Path(content)/'Data/foliage_system/registry.json').read_text())
+        expected=report['packages']
+        return (report==registry and report['version']==1 and bool(report['assets'])
+                and bool(expected) and system_packages(content)==expected)
+    except (OSError,ValueError,KeyError,TypeError):
+        return False
+
+
+def system_step(ctx, prerequisites):
+    content = GAME/'unreal/Content'
+    command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
+                           modules=('YorimichiImport',), null_rhi=True,
+                           args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
+    command.timeout = 3600
+    command.progress = 25
+    return Step('unreal.foliage_system',
+                [command],
+                inputs=[GAME/'foliage_system.py', WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
+                        SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', GAME/'unreal/Config'],
+                deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
+                                                support=(GAME/'foliage_build.py',))],
+                needs=[*prerequisites, *unreal_modules.needs(('YorimichiImport',))],
+                outputs=[content/'FoliageSystem', content/'Data/foliage_system/registry.json',
+                         ctx.out/'foliage_system/report.json'],
+                verify=lambda:verify_system(content,ctx.out/'foliage_system/report.json'),
+                heavy=True, about='all foliage: closed canopies, leaf fringes, shadow proxies and verified runtime registry')
 
 
 def source_module(name):

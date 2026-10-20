@@ -21,7 +21,12 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
         seeded = _import_mesh(seed, dest, name)
         if not isinstance(seeded.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData):
             raise RuntimeError('FBX seed did not establish legacy import data: ' + name)
-    return _import_mesh(path, dest, name, fresh_slots)
+    mesh = _import_mesh(path, dest, name, fresh_slots)
+    unreal.load_module('YorimichiImport')
+    if not unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh):
+        raise RuntimeError('Invalid foliage face roles: '+name)
+    EAL.save_loaded_asset(mesh)
+    return mesh
 
 
 def _import_mesh(path, dest, name, fresh_slots=False):

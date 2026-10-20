@@ -28,6 +28,7 @@ class Mesh(v.Mesh):
         start=len(self.colors)
         key=color if isinstance(color,str) else ''
         super().poly(points,COLORS.get(key,color))
+        if len(self.colors)>start and key:self.foliage_roles[len(self.faces)-1]=key
         tag=1 if key=='h_glass' else .5 if key=='h_paving' else .75 if key in ('h_stone','stone','stone_light') else .25 if key in ('h_wood','h_deck','wood','wood_dark','wood_light') else 0
         for i in range(start,len(self.colors)):
             self.colors[i]=(*self.colors[i][:3],tag)

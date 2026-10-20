@@ -179,8 +179,10 @@ def lantern_post(m,x,y,z,wall=False):
 
 def bloom(m,x,y,z,r,color):
     # Cupped, solid blossoms read as flowers from street height, not thin cards.
-    m.lathe((x,y,z),[(0,.015),(.025,r),(.06,r*.82),(.075,r*.42)],color,10)
-    m.lathe((x,y,z+.064),[(0,r*.35),(.04,r*.28),(.045,0)],'arc_bloom',10)
+    with v.foliage_roles.surfaces(m,'flower'):
+        m.lathe((x,y,z),[(0,.015),(.025,r),(.06,r*.82),(.075,r*.42)],color,10)
+    with v.foliage_roles.surfaces(m,'flower'):
+        m.lathe((x,y,z+.064),[(0,r*.35),(.04,r*.28),(.045,0)],'arc_bloom',10)
 
 
 def planter(m,x,y,z,w=3,d=1.6,seed=0):
@@ -191,7 +193,8 @@ def planter(m,x,y,z,w=3,d=1.6,seed=0):
     m.collider((x,y,z+.28),(w,d,.56))
     for j in range(round(w*d*15)):
         xx=x+r.uniform(-w*.42,w*.42);yy=y+r.uniform(-d*.38,d*.38);zz=z+r.uniform(.72,.93)
-        m.lathe((xx,yy,z+.60),[(0,.08),(.12,.18),(.22,.13),(.28,0)],'green_dark' if j%3 else 'green',7)
+        with v.foliage_roles.surfaces(m,'groundcover_leaf'):
+            m.lathe((xx,yy,z+.60),[(0,.08),(.12,.18),(.22,.13),(.28,0)],'green_dark' if j%3 else 'green',7)
         if j%2==0:bloom(m,xx,yy,zz,.09+r.random()*.05,['arc_ivory','arc_rose','arc_bloom'][j%3])
 
 

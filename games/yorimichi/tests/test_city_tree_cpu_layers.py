@@ -13,7 +13,7 @@ def test_cpu_metadata_edit_reruns_only_the_tree_overlay_desktop_and_package(tmp_
     changed = changed_by(recipe.SCRIPTS / 'city_tree_cpu_access.py', tmp_path, monkeypatch)
     # Changed imported bytes must also refresh the multiplayer compatibility manifest.
     assert changed == {
-        'unreal.city_tree_cpu_access', 'unreal.desktop', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
+        'unreal.city_tree_cpu_access', 'unreal.desktop', 'unreal.foliage_system', 'data.content', 'data.network', 'unreal.cook', 'unreal.package'}
 
     # A real world importer change still invalidates the world and overlays.
     world_changed = changed_by(recipe.SCRIPTS / 'import_hidamari.py', tmp_path, monkeypatch)

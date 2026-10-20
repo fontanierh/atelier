@@ -1,4 +1,5 @@
 #include "SuperUltraMegaPark.h"
+#include "FoliageSystem.h"
 #include "PlayableCharacter.h"
 #include "WandererCharacter.h"
 #include "JapanHUD.h"
@@ -140,7 +141,7 @@ ASuperUltraMegaPark* ASuperUltraMegaPark::Spawn(UWorld* World, const FString& Pa
                 Xs.Add(FTransform(FRotator(0., A[3]->AsNumber(), 0.), FVector(A[0]->AsNumber(), A[1]->AsNumber(), A[2]->AsNumber()),
                     FVector(A[4]->AsNumber())));
             }
-            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(Park, *Key);
+            auto* H = UYorimichiFoliageSubsystem::NewInstances(Park, *Key);
             H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(Park->GetRootComponent());
             H->SetCanEverAffectNavigation(false);
             H->SetCollisionEnabled(ECollisionEnabled::NoCollision);

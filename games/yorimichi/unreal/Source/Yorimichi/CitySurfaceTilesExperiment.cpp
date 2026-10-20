@@ -1,4 +1,5 @@
 #include "JapanWorld.h"
+#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -76,7 +77,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
             for (const auto& Pair:Pending)
             {
                 auto* Source=Pair.Key;
-                auto* Tile=NewObject<UHierarchicalInstancedStaticMeshComponent>(World);
+                auto* Tile=UYorimichiFoliageSubsystem::NewInstances(World);
                 Tile->SetupAttachment(World->GetRootComponent());
                 Tile->SetMobility(EComponentMobility::Static);
                 Tile->SetStaticMesh(Pair.Value);

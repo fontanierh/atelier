@@ -51,6 +51,7 @@ public:
     // its own preferences exist.
     static float Saved(const FString& Key, float Default);
 private:
+    friend class FYorimichiFoliageToggleTest;
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     TArray<FJapanPreference> Values;

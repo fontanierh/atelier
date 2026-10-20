@@ -360,8 +360,11 @@ def planter(m,x,y,z,w,d,seed):
     m.box((x,y,z+.55),(w-.16,d-.16,.03),'soil')
     for j in range(int(w*d*10)):
         xx=x+r.uniform(-w*.4,w*.4);yy=y+r.uniform(-d*.35,d*.35)
-        m.lathe((xx,yy,z+.55),[(0,.10),(.14,.20),(.26,.12),(.31,0)],'green_dark' if j%3 else 'green',7)
-        if j%2==0:m.lathe((xx,yy,z+.84),[(0,.02),(.03,.10),(.06,.07),(.065,0)],'arc_ivory',7)
+        with v.foliage_roles.surfaces(m,'groundcover_leaf'):
+            m.lathe((xx,yy,z+.55),[(0,.10),(.14,.20),(.26,.12),(.31,0)],'green_dark' if j%3 else 'green',7)
+        if j%2==0:
+            with v.foliage_roles.surfaces(m,'flower'):
+                m.lathe((xx,yy,z+.84),[(0,.02),(.03,.10),(.06,.07),(.065,0)],'arc_ivory',7)
     m.collider((x,y,z+.27),(w,d,.55))
 
 

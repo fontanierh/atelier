@@ -49,8 +49,10 @@ def test_every_release_default_is_a_preference_within_its_range():
         assert key in prefs, key
         _, low, high = prefs[key]
         assert low <= value <= high, (key, value, low, high)
-    # The preset covers every saved preference; desktop is a launch flag, never saved.
-    assert set(prefs) - set(release_defaults()) == {'desktop'}
+    # New preferences retain their built-in defaults until the operator publishes
+    # another preset. Never rewrite the historical operator fixture to add one.
+    assert set(prefs) - set(release_defaults()) == {'desktop', 'foliage_optimization'}
+    assert prefs['foliage_optimization'] == (1., 0., 1.)
 
 
 def test_retired_and_separately_kept_keys_are_not_preferences():

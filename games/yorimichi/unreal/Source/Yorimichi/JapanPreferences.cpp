@@ -1,5 +1,6 @@
 #include "JapanPreferences.h"
 #include "JapanAudioPreferences.h"
+#include "FoliageSystem.h"
 #include "JapanMusic.h"
 #include "JapanCharacterSelect.h"
 #include "DevNotes.h"
@@ -214,6 +215,7 @@ TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors)
         {TEXT("performance"),TEXT("Graphics"),1.f,0.f,1.f},
         {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
         {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
+        {TEXT("foliage_optimization"),TEXT("Foliage optimization"),1.f,0.f,1.f},
         {TEXT("tree_lod_mode"),TEXT("Tree detail comparison"),0.f,0.f,3.f,1.f},
         {TEXT("tree_lod_distance"),TEXT("Keep tree detail farther (x)"),1.5f,.5f,3.f,.1f},
         // Session-only desktop tuning; both profiles share instance occlusion culling.
@@ -375,7 +377,7 @@ bool UJapanPreferences::MusicReady() const
 }
 bool UJapanPreferences::IsToggle(const FString& Key)
 {
-    return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+    return Key == TEXT("performance") || Key == TEXT("renderer") || Key == TEXT("tree_optimization") || Key == TEXT("foliage_optimization") ||
         Key == TEXT("show_fps") || Key == TEXT("fog") || Key == TEXT("leaf_motion") || Key == TEXT("laptop") || Key == TEXT("goofy") ||
         Key == TEXT("music") || Key == TEXT("soften_footsteps") || Key == TEXT("soften_skate");
 }
@@ -393,7 +395,7 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
         GraphicsError = LumenUnavailable;   // refused before anything is changed or saved
         return false;
     }
-    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization") ||
+    if (Key == TEXT("renderer") || Key == TEXT("tree_optimization") || Key == TEXT("foliage_optimization") ||
         Key == TEXT("tree_lod_mode") || Key == TEXT("tree_lod_distance")) return SetGraphicsChoice(Key,Number);
     // Custom from a preset, with nothing tuned yet, starts on that preset's difficulty (the menu and the phone alike).
     if (Key == TEXT("skate_mode") && FMath::RoundToInt(Number) == SkateCustom && IsSkateCustomStock())
@@ -425,6 +427,9 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
         Number=FMath::Clamp(Number,Value.Minimum,Value.Maximum);
         if (Value.Step>0.f) Number=FMath::Clamp(Value.Minimum+FMath::RoundToFloat((Number-Value.Minimum)/Value.Step)*Value.Step,Value.Minimum,Value.Maximum);
         if (IsToggle(Key)) Number=Number>.5f?1.f:0.f;
+        auto* Foliage=Owner && Owner->GetWorld()?Owner->GetWorld()->GetSubsystem<UYorimichiFoliageSubsystem>():nullptr;
+        if (Key==TEXT("foliage_optimization") && Foliage && !Foliage->SetEnabled(Number>.5f))
+        { GraphicsError=Foliage->GetError();return false; }
         const bool bTree=Key==TEXT("tree_optimization") || Key==TEXT("tree_lod_mode") || Key==TEXT("tree_lod_distance");
         const bool BeforeEnabled=Get(TEXT("tree_optimization"))>.5f;
         const int32 BeforeMode=FMath::RoundToInt(Get(TEXT("tree_lod_mode")));
@@ -456,6 +461,8 @@ bool UJapanPreferences::SetGraphicsChoice(const FString& Key, float Number)
         if (!Save())
         {
             Value.Value = Before;
+            if (Key==TEXT("foliage_optimization") && Foliage && !Foliage->SetEnabled(Before>.5f))
+            { GraphicsError=TEXT("The previous foliage setting could not be restored. Restart the game.");return false; }
             GraphicsError = RestoreTrees()
                 ? TEXT("Settings could not be saved. The game has not restarted. Try again after checking storage access.")
                 : TEXT("Settings could not be saved and the previous tree detail could not be restored. Restart the game before changing tree detail again.");
@@ -598,6 +605,14 @@ void UJapanPreferences::Apply()
             GraphicsError = TEXT("Tree optimization could not be applied. Check that the game's tree assets are built.");
         It->ApplyVolumetricFog(Fog,FogLook);
     }
+    if (auto* Foliage=Owner->GetWorld()->GetSubsystem<UYorimichiFoliageSubsystem>())
+    {
+        Foliage->SetDistances(PerformanceMode!=0,
+            Laptop?FMath::Min(Get(TEXT("forest_detail")),.25f):Get(TEXT("forest_detail")),
+            Laptop?FMath::Min(Get(TEXT("tree_sway")),20.f):Get(TEXT("tree_sway")),
+            Laptop?FMath::Min(Get(TEXT("tree_shadow")),40.f):Get(TEXT("tree_shadow")));
+        if (!Foliage->SetEnabled(Get(TEXT("foliage_optimization"))>.5f)) GraphicsError=Foliage->GetError();
+    }
     // The sun: warmth 0 is a white noon sun, .5 the map's own (1, .90, .76), 1 a golden afternoon.
     const float Warmth = Get(TEXT("sun_warmth"));
     const FLinearColor SunColour = Warmth < .5f
@@ -703,6 +718,7 @@ void UJapanPreferences::ReportProfile() const
     }
     UE_LOG(LogTemp,Display,TEXT("PROFILE {\"desktop\": %.0f, \"haze\": %.3f, \"supersample\": %.3f, ")
         TEXT("\"forward_shading\": %s, \"renderer_requested\": %.0f, \"tree_optimization_requested\": %.0f, ")
+        TEXT("\"foliage_optimization_requested\": %.0f, ")
         TEXT("\"performance\": %.0f, \"render_scale\": %.1f, \"painterly\": %.3f, ")
         TEXT("\"gi_quality\": %s, \"gi_gather\": %s, \"gi_probe_resolution\": %s, \"gi_probe_budget\": %s, ")
         TEXT("\"gi_irradiance_format\": %s, \"gi_stochastic\": %s, ")
@@ -712,7 +728,7 @@ void UJapanPreferences::ReportProfile() const
         TEXT("\"dynres_mode\": %s, \"dynres_min\": %s, \"dynres_max\": %s, \"dynres_headroom\": %s, ")
         TEXT("\"dynres_budget\": %s, \"screen_percentage\": %s, \"aa_method\": %s, \"max_fps\": %s}"),
         Get(TEXT("desktop")),0.f,1.f,
-        *Number(TEXT("r.ForwardShading")),Get(TEXT("renderer")),Get(TEXT("tree_optimization")),
+        *Number(TEXT("r.ForwardShading")),Get(TEXT("renderer")),Get(TEXT("tree_optimization")),Get(TEXT("foliage_optimization")),
         Get(TEXT("performance")),Get(TEXT("render_scale")),Get(TEXT("painterly")),
         *Number(TEXT("sg.GlobalIlluminationQuality")),*Number(TEXT("r.Lumen.FinalGatherMethod")),
         *Number(TEXT("r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution")),
@@ -780,6 +796,7 @@ FString MainHint(const FString& Key)
 {
     static const TMap<FString,FString> Hints = {
         {TEXT("performance"),TEXT("Performance keeps shadows light for a steady 60 fps. Quality draws sharper, farther shadows: in the forest they take about 21 ms instead of 6.5, roughly doubling the frame time (1080p, M1 Max, moving through the forest).")},
+        {TEXT("foliage_optimization"),TEXT("Uses simpler tree crowns, separate shadow geometry and distant forest patches. Off restores original foliage immediately. Your choice is saved on this device.")},
         {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
         {TEXT("laptop"),TEXT("For a MacBook Air or another light GPU: forest detail at most 0.25x, tree shadows at most 40 m, tree sway at most 20 m, one shadow cascade, the lighter scene format and anti-aliasing, and a resolution that may drop to 50% to hold 60 fps. Your sliders keep their own values for when it is off.")},
         {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},
@@ -1155,13 +1172,23 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
             Warn(TEXT("renderer"));
         }),TEXT("renderer"),TEXT("Forward lighting, or Lumen where the build has it. Lumen costs much more GPU time."))];
     Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
-        { return FText::FromString(Get(TEXT("tree_optimization")) > .5f
-            ? TEXT("Tree optimization: on · lighter distant leaves") : TEXT("Tree optimization: off · full detail at every distance")); },
-        [this,Warn]
-        {
-            if (Get(TEXT("tree_optimization")) < .5f) SetValue(TEXT("tree_optimization"),1.f);
-            else { GraphicsError.Reset(); Warn(TEXT("tree_optimization")); }
-        }),TEXT("tree_optimization"),TEXT("Automatic changes distant leaf outlines only. Turning optimization off restores original full-detail trees immediately."))];
+        { return FText::FromString(Get(TEXT("foliage_optimization"))>.5f
+            ? TEXT("Foliage optimization: on") : TEXT("Foliage optimization: off · original foliage")); },
+        [this] { SetValue(TEXT("foliage_optimization"),Get(TEXT("foliage_optimization"))>.5f?0.f:1.f); }),
+        TEXT("foliage_optimization"),MainHint(TEXT("foliage_optimization")))];
+    {
+        TSharedRef<SChoiceButton> City=Setting([this]
+            { return FText::FromString(Get(TEXT("tree_optimization"))>.5f
+                ? TEXT("City tree optimization: on · lighter distant leaves") : TEXT("City tree optimization: off · full detail at every distance")); },
+            [this,Warn]
+            {
+                if (Get(TEXT("tree_optimization"))<.5f) SetValue(TEXT("tree_optimization"),1.f);
+                else { GraphicsError.Reset();Warn(TEXT("tree_optimization")); }
+            });
+        City->SetEnabled(TAttribute<bool>::CreateLambda([this] { return Get(TEXT("foliage_optimization"))<.5f; }));
+        Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(City,TEXT("tree_optimization"),
+            TEXT("City tree comparisons are available with Foliage optimization off. Automatic changes distant leaf outlines only."))];
+    }
     {
         const auto StepDetail = [this,Warn](int32 Way)
         {
@@ -1176,7 +1203,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
                 return FText::FromString(FString(TEXT("Tree detail: "))+Names[FMath::Clamp(FMath::RoundToInt(Get(TEXT("tree_lod_mode"))),0,3)]);
             },
             [StepDetail] { StepDetail(1); }, StepDetail);
-        Detail->SetEnabled(TAttribute<bool>::CreateLambda([this] { return Get(TEXT("tree_optimization"))>.5f; }));
+        Detail->SetEnabled(TAttribute<bool>::CreateLambda([this] { return Get(TEXT("foliage_optimization"))<.5f && Get(TEXT("tree_optimization"))>.5f; }));
         Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Detail,TEXT("tree_lod_mode"),
             TEXT("Higher distance values keep detailed trees farther away and cost more GPU time. Forced intermediate/distant modes are comparisons, not the default."))];
     }
@@ -1298,7 +1325,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
         if (Values[I].Key == TEXT("stamina_rings") && JapanNetwork::IsOnline(Owner->GetWorld())) continue;
         const bool bFogDetail = Values[I].Key.StartsWith(TEXT("fog_"));
         if (Values[I].Key==TEXT("tree_lod_distance"))
-        { AddSlider(I,[this] { return Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },MainHint(Values[I].Key));continue; }
+        { AddSlider(I,[this] { return Get(TEXT("foliage_optimization"))<.5f && Get(TEXT("tree_optimization"))>.5f && Get(TEXT("tree_lod_mode"))<.5f; },MainHint(Values[I].Key));continue; }
         if (Values[I].Key == TEXT("music_volume"))
         { AddSlider(I,[this] { return Get(TEXT("music")) > .5f && MusicReady(); },MainHint(Values[I].Key)); continue; }
         AddSlider(I, bFogDetail ? TFunction<bool()>([this] { return Get(TEXT("fog")) > .5f; }) : TFunction<bool()>(), MainHint(Values[I].Key));

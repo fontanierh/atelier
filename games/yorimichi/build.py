@@ -1466,6 +1466,20 @@ def steps(ctx):
         for command in step.commands:
             if isinstance(command, (Python, Blender)) and WORLD in Path(command.script).parents:
                 step.inputs += [f for f in scanner.local_imports(command.script, (WORLD, REGIONS)) if f not in step.inputs]
+        # The shared FBX boundary certifies cooked foliage roles using the import
+        # module. Legacy run_path callers have an explicit source edge; normal
+        # imports use their static closure. Keep unrelated editor scripts outside it.
+        for command in step.commands:
+            if not isinstance(command, UnrealScript):
+                continue
+            code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
+            if any('import_village.py' in file.read_text() for file in code):
+                code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
+            if SCRIPTS / 'mesh_import.py' in code:
+                step.inputs += [file for file in code if file not in step.inputs]
+                step.needs += [name for name in unreal_modules.needs(IMPORT_CODE) if name not in step.needs]
+                if command.modules:
+                    command.modules = tuple(dict.fromkeys((*command.modules, *IMPORT_CODE)))
         # Shorelines preserve natural cover from the committed railway geometry.
         rail_line = ASSETS / 'vehicles' / 'belmonte-train' / 'line.json'
         if WORLD / 'shorelines.py' in step.inputs and rail_line not in step.inputs:
@@ -1484,6 +1498,10 @@ def steps(ctx):
     identity_spec = importlib.util.spec_from_file_location('yorimichi_network_identity', GAME / 'network_identity.py')
     identity = importlib.util.module_from_spec(identity_spec)
     identity_spec.loader.exec_module(identity)
+    # Every import namespace participates, including future normal region owners.
+    # The derivative foliage owner sees their final material graphs and meshes.
+    result.append(foliage_build.system_step(ctx,
+        [s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage']))
     content = GAME / 'unreal' / 'Content'
     policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
     policy = importlib.util.module_from_spec(policy_spec)

@@ -1,4 +1,5 @@
 #include "SkatePark.h"
+#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -144,7 +145,7 @@ bool ASkatePark::Initialize(const FString& Path)
             UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr,
                 *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
             if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: missing tree %s"), *Key); continue; }
-            auto* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Key);
+            auto* H = UYorimichiFoliageSubsystem::NewInstances(this, *Key);
             H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(RootComponent);
             H->SetCollisionEnabled(ECollisionEnabled::NoCollision); H->SetCanEverAffectNavigation(false);
             const int32 Fade = JapanSeeThrough::FadeMode(Key, Mesh);

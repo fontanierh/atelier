@@ -1,4 +1,5 @@
 #include "BelmonteRegion.h"
+#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "JapanWorld.h"
 #include "SeeThrough.h"
@@ -86,7 +87,7 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
             continue;
         }
         const bool Plant = Entry->GetBoolField(TEXT("plant"));
-        auto* Group = NewObject<UHierarchicalInstancedStaticMeshComponent>(Plant ? static_cast<UObject*>(Landscape) : Region);
+        auto* Group = UYorimichiFoliageSubsystem::NewInstances(Plant ? static_cast<UObject*>(Landscape) : Region);
         Group->SetStaticMesh(Mesh);
         Group->SetMobility(EComponentMobility::Static);
         Group->SetupAttachment(Plant ? Landscape->GetRootComponent() : Region->GetRootComponent());

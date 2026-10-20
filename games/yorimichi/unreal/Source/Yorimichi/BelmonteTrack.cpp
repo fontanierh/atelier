@@ -1,4 +1,5 @@
 #include "BelmonteTrack.h"
+#include "FoliageSystem.h"
 #include "AtelierData.h"
 #include "Components/BoxComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -94,7 +95,7 @@ bool ABelmonteTrack::Initialize(const FString& Path)
         if (!Mesh) continue;
         const FString Name = FString::Printf(TEXT("%s_%s_%s"), *G->GetStringField(TEXT("kind")), *Mesh->GetName(), *G->GetStringField(TEXT("key")));
         UInstancedStaticMeshComponent* C = G->GetBoolField(TEXT("hierarchical"))
-            ? NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Name) : NewObject<UInstancedStaticMeshComponent>(this, *Name);
+            ? UYorimichiFoliageSubsystem::NewInstances(this, *Name) : NewObject<UInstancedStaticMeshComponent>(this, *Name);
         C->SetupAttachment(RootComponent);
         C->SetStaticMesh(Mesh);
         const float Distance = float(G->GetNumberField(TEXT("cull_cm")));

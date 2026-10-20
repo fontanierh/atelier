@@ -25,6 +25,7 @@ from contextlib import nullcontext
 from functools import wraps
 from pathlib import Path
 import bpy
+import foliage_roles
 import numpy as np
 from mathutils import Vector
 from village.layout import sample
@@ -338,7 +339,7 @@ def maple_leaf(d, x, y, z, s=.09):
     if any(abs(z-lz) < .004 and math.hypot(x-lx, y-ly) < s+ls for lx, ly, lz, ls in LEAVES):
         return
     LEAVES.append((x, y, z, s))
-    a = R.uniform(0, 2*math.pi); c = vary(R.choice(LEAF), .08)
+    a = R.uniform(0, 2*math.pi); c = foliage_roles.PaletteColour(vary(R.choice(LEAF), .08),'foliage_litter')
     pts = []
     for k in range(10):
         rr = s*(1 if k % 2 == 0 else .45)*(1.15 if k == 0 else 1)
@@ -368,7 +369,7 @@ def potted_plant(d, x, y, z, s=1.):
             a = k*2.39; zz = z+(.28+.03*k)*s; L0 = (.22+.02*k)*s
             tip = np.array([x+math.cos(a)*L0, y+math.sin(a)*L0, zz+.18*s]); base = np.array([x, y, zz])
             side = np.array([-math.sin(a), math.cos(a), 0])*.06*s; mid = (base+tip)/2
-            two_sided(d, [tuple(base), tuple(mid+side), tuple(tip), tuple(mid-side)], vary((.22, .38, .10), .15))
+            two_sided(d, [tuple(base), tuple(mid+side), tuple(tip), tuple(mid-side)], foliage_roles.PaletteColour(vary((.22, .38, .10), .15),'leaf'))
 
 
 def cloth(d, quad, uv, alphas):
@@ -1164,7 +1165,7 @@ def furnish_kitchen(m, d, c, ang, side, W):
             potted = q+[0, 0, 1.6]
             for j in range(6):
                 a_ = j*1.05; tip = potted+[.12*math.cos(a_), .12*math.sin(a_), -.18]
-                two_sided(d, [tuple(potted), tuple((potted+tip)/2+[.03, 0, 0]), tuple(tip), tuple((potted+tip)/2-[.03, 0, 0])], vary((.30, .42, .14), .12))
+                two_sided(d, [tuple(potted), tuple((potted+tip)/2+[.03, 0, 0]), tuple(tip), tuple((potted+tip)/2-[.03, 0, 0])], foliage_roles.PaletteColour(vary((.30, .42, .14), .12),'leaf'))
     q = Hl(d2-.55, w2-.55, 2.1); glass_float(d, q[0], q[1], q[2], .14, .35)
     q = Hl(d2-.35, -w2+.4); crate(m, q[0], q[1], z, (.5, .42, .4), ang+6)
     q = Hl(d2-.35, -w2+.4, .4); basket(d, q[0], q[1], q[2], .18, .2, fruit=4)

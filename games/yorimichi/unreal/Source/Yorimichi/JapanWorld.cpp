@@ -1,4 +1,5 @@
 #include "JapanWorld.h"
+#include "FoliageSystem.h"
 #include "JapanGameplayCollision.h"
 #include "AtelierData.h"
 #include "HarborLook.h"
@@ -405,7 +406,7 @@ void AJapanWorld::Load()
             auto AddGroup = [&](const TArray<FTransform>& Xs, bool bBackdrop)
             {
                 if (Xs.IsEmpty()) return;
-                UHierarchicalInstancedStaticMeshComponent* H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+                UHierarchicalInstancedStaticMeshComponent* H = UYorimichiFoliageSubsystem::NewInstances(this);
                 H->SetStaticMesh(Mesh); H->SetupAttachment(RootComponent);
                 H->SetMobility(EComponentMobility::Static);
                 if (Key==TEXT("HD_Harbor") || Key==TEXT("HD_Boat") || Key==TEXT("HD_Sea") || Key==TEXT("HD_Bollard"))
@@ -460,7 +461,7 @@ void AJapanWorld::Load()
                 // camera in shadow passes too) ends tree shadows at the menu's tree shadow distance.
                 if (bTree && !bBackdrop)
                 {
-                    UHierarchicalInstancedStaticMeshComponent* S = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+                    UHierarchicalInstancedStaticMeshComponent* S = UYorimichiFoliageSubsystem::NewInstances(this);
                     S->SetStaticMesh(Mesh); S->SetupAttachment(RootComponent);
                     S->SetMobility(EComponentMobility::Static);
                     S->SetCanEverAffectNavigation(false);
@@ -745,6 +746,8 @@ void AJapanWorld::Load()
     if (HouseLayout && !HouseRuntime.IsValid()) Incomplete.Add(TEXT("tree house data"));
     if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
     JapanGameplayCollision::Install(GetWorld());
+    if (auto* Foliage=GetWorld()->GetSubsystem<UYorimichiFoliageSubsystem>(); Foliage && !Foliage->Refresh())
+        Incomplete.Add(Foliage->GetError());
     BootstrapError = FString::Join(Incomplete, TEXT(", "));
     bGameplayReady = bLoaded && Incomplete.IsEmpty();
     if (!bGameplayReady) UE_LOG(LogTemp, Warning, TEXT("NETWORK world incomplete: %s"), *BootstrapError);

@@ -5,12 +5,13 @@ rope, layered-pad pines, a red maple, shrubs, grass and faceted boulders at the 
 Front faces -Y. Origin = ground at the summit; the plinth top is z=1.0, the stair ends at z=-1.6 around y=-12."""
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[2])); import yori  # noqa: E402,F401
 import math, random, sys
+import foliage_roles
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from mesh import Mesh, PALETTE
 R=random.Random(41)
 def cv(key,amount=.05):
-    f=R.uniform(1-amount,1+amount);return tuple(min(1,c*f) for c in PALETTE[key])
+    f=R.uniform(1-amount,1+amount);return foliage_roles.PaletteColour((min(1,c*f) for c in PALETTE[key]),key)
 def lerp(a,b,t):return a+(b-a)*t
 
 def site_ground(x,y):
@@ -191,9 +192,9 @@ def pine(m,x,y,z,h=5.0,yaw=0,seed=0):
         def pad(cx,cy,cz,rad):
             ring=[(cx+math.cos(a)*rad*(1+.22*math.sin(3*a+cx)),cy+math.sin(a)*rad*(1+.18*math.cos(2*a+cy)),cz+.05*math.sin(4*a)) for a in [i*2*math.pi/8 for i in range(8)]]
             top=[(q[0]*.6+cx*.4,q[1]*.6+cy*.4,q[2]+.26) for q in ring]
-            m.poly(ring[::-1],'green_dark')                                   # underside
-            for i in range(8):m.poly([ring[i],ring[(i+1)%8],top[(i+1)%8],top[i]],'green' if i%2 else 'green_dark')
-            m.poly(top,'green')
+            m.poly(ring[::-1],foliage_roles.PaletteColour(PALETTE['green_dark'],'leaf'))                                   # underside
+            for i in range(8):m.poly([ring[i],ring[(i+1)%8],top[(i+1)%8],top[i]],foliage_roles.PaletteColour(PALETTE['green'],'leaf') if i%2 else foliage_roles.PaletteColour(PALETTE['green_dark'],'leaf'))
+            m.poly(top,foliage_roles.PaletteColour(PALETTE['green'],'leaf'))
         for k,base in enumerate(pts[1:]):
             for j in range(3 if k<3 else 2):
                 ang=r.uniform(0,2*math.pi);dist=r.uniform(.5,1.3)*(1-.15*k)
@@ -213,7 +214,8 @@ def maple(m,x,y,z,h=3.6,seed=3):
 
 def shrub(m,x,y,z,r=.6,key='shrub_yellow',seed=0):
     rr=random.Random(seed)
-    for k in range(3):m.sphere((x+rr.uniform(-r*.6,r*.6),y+rr.uniform(-r*.6,r*.6),z+r*.5),r*rr.uniform(.6,.9),key,n=6,rings=3,squash=.8)
+    with foliage_roles.surfaces(m,'shrub_leaf'):
+        for k in range(3):m.sphere((x+rr.uniform(-r*.6,r*.6),y+rr.uniform(-r*.6,r*.6),z+r*.5),r*rr.uniform(.6,.9),key,n=6,rings=3,squash=.8)
 
 def boulder(m,x,y,z,s,seed=0,key='granite'):
     rr=random.Random(seed);n=6;rings=4
@@ -250,7 +252,7 @@ def grass_patch(m,x,y,z,r,seed=0):
         gx,gy=x+rr.uniform(-r,r),y+rr.uniform(-r,r);gh=rr.uniform(.25,.5);z=site_ground(gx,gy)
         tipx=rr.uniform(-.1,.1);tipy=rr.uniform(-.1,.1)
         if paved_contact(gx,gy):continue
-        m.poly([(gx-.06,gy,z),(gx+.06,gy,z),(gx+tipx,gy,z+gh)],'green');m.poly([(gx,gy-.06,z),(gx,gy+.06,z),(gx,gy+tipy,z+gh*.8)],'green_dark')
+        m.poly([(gx-.06,gy,z),(gx+.06,gy,z),(gx+tipx,gy,z+gh)],foliage_roles.PaletteColour(PALETTE['green'],'cover_grass'));m.poly([(gx,gy-.06,z),(gx,gy+.06,z),(gx,gy+tipy,z+gh*.8)],foliage_roles.PaletteColour(PALETTE['green_dark'],'cover_grass'))
 
 def stair(m,y0,z0,steps,rise,run,width,cheek=True):
     """descending stair toward -Y from (y0,z0); returns (y,z) at the bottom"""

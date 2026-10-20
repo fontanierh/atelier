@@ -17,6 +17,7 @@ ALeafStorm::ALeafStorm()
     Leaves->SetCanEverAffectNavigation(false);
     Leaves->bAffectDistanceFieldLighting = false;
     Leaves->SetCastShadow(false);
+    Leaves->ComponentTags.Add(TEXT("DetachedFoliageParticle"));
     Leaves->SetCullDistances(9000, 11000);
 }
 

@@ -1,0 +1,20 @@
+@cc [owner:fontanierh,label:architecture;performance] universal-foliage-pipeline
+ALL current and future vegetation (trees, palms, bushes, hedges, flowers, grass,
+groundcover and vegetation embedded in mixed meshes), in every region and import
+namespace, MUST pass through foliage_system's build-time classification, bounded
+representation generation and validation, and UYorimichiFoliageSubsystem at runtime.
+New vegetation MUST declare recognizable foliage material/asset semantics or certified per-face roles; hiding
+foliage inside an unclassified material or bypassing the registry is forbidden.
+Missing, stale or invalid representations MUST fail the normal build and gameplay
+readiness, never silently render an unoptimized fallback. Preparation and all cooked
+dependencies MUST belong to the normal incremental build graph.
+The persistent graphics switch MUST restore the original rendering when disabled;
+both modes MUST remain managed by the same subsystem. Switching MUST preserve authored
+placements, collision, camera visibility behavior and gameplay, without a restart.
+Indivisible textured plant props MAY retain authored surfaces only through the shared,
+explicit authored-prop policy and its hard whole-mesh budget; this MUST NOT become a
+fallback for unclassified sources or the policy for dense vegetation.
+Visual and shadow representations MUST have separate budgets; distant forest patches
+MUST preserve silhouettes and clearings. Changes MUST carry revision-bound ground,
+canopy and aerial captures plus real-time frame/GPU timings before performance or
+visual-equivalence claims. Detached cosmetic particles are not vegetation placements.

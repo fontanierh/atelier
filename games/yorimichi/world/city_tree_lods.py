@@ -27,7 +27,7 @@ CORNERS = {1: (0, 1, 3, 6, 8, 10), 2: (0, 1, 6, 10)}
 def simplified(source, level):
     target = village.Mesh(source.name + f'_LOD{level}')
     leaf_faces = 0
-    for face in source.faces:
+    for face_index, face in enumerate(source.faces):
         selected = face
         if len(face) == 11:
             # The generator emits front then reversed back faces. Select matching
@@ -41,6 +41,8 @@ def simplified(source, level):
         target.vertices.extend(source.vertices[i] for i in selected)
         target.colors.extend(source.colors[i] for i in selected)
         target.faces.append(tuple(range(first, len(target.vertices))))
+        target.keys.append(source.keys[face_index])
+        if face_index in source.foliage_roles:target.foliage_roles[face_index]=source.foliage_roles[face_index]
     expected = 15 * (310 if source.name == 'HD_ArcadeTree' else 210) * 2
     assert leaf_faces == expected, (source.name, 'unexpected leaf topology', leaf_faces)
     assert len(target.faces) == len(source.faces)
@@ -78,6 +80,7 @@ def main():
         for level in CORNERS:
             mesh, leaves = simplified(source, level)
             obj = mesh.object(material)
+            village.foliage_roles.export_roles(obj,mesh)
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
