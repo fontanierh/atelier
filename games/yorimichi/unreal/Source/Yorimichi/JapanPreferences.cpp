@@ -1174,7 +1174,11 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
     Rows->AddSlot().AutoHeight().Padding(0,0,0,4)[Page->Add(Setting([this]
         { return FText::FromString(Get(TEXT("foliage_optimization"))>.5f
             ? TEXT("Foliage optimization: on") : TEXT("Foliage optimization: off · original foliage")); },
-        [this] { SetValue(TEXT("foliage_optimization"),Get(TEXT("foliage_optimization"))>.5f?0.f:1.f); }),
+        [this,Warn]
+        {
+            if (Get(TEXT("foliage_optimization"))<.5f) SetValue(TEXT("foliage_optimization"),1.f);
+            else { GraphicsError.Reset();Warn(TEXT("foliage_optimization")); }
+        }),
         TEXT("foliage_optimization"),MainHint(TEXT("foliage_optimization")))];
     {
         TSharedRef<SChoiceButton> City=Setting([this]
@@ -1341,14 +1345,17 @@ void UJapanPreferences::OpenGraphicsWarning(const FString& Key)
     if (!Owner || !GEngine || !GEngine->GameViewport) return;
     const bool bRenderer = Key == TEXT("renderer");
     const bool bFullComparison=Key==TEXT("tree_lod_mode");
+    const bool bFoliage=Key==TEXT("foliage_optimization");
     const float Choice = Get(*Key) > .5f ? 0.f : 1.f;
     const bool bRestart = bRenderer && CurrentRenderer() != int32(Choice);
     const bool bLauncherRestart = CanRestartRenderer();
     const FString Title = bRenderer ? FString::Printf(TEXT("Switch to %s?"),RendererName(int32(Choice)))
+        : bFoliage ? TEXT("Turn off foliage optimization?")
         : bFullComparison ? TEXT("Compare full-detail trees?") : TEXT("Turn off tree optimization?");
     FString Warning = bRenderer
         ? (Choice > .5f ? TEXT("Lumen is a resource hog: it uses substantially more GPU time and memory, and can lower the frame rate. Forward is the recommended default for smooth play.")
             : TEXT("Forward uses lighter lighting and is the recommended default for smooth play."))
+        : bFoliage ? TEXT("Original foliage can use substantially more GPU time and lower the frame rate. Your placements and collision stay the same. This change applies immediately, and you can turn optimization back on here.")
         : TEXT("Full-detail trees at every distance use more GPU time and can lower the frame rate. Optimization preserves close trees, materials and collision, while simplifying distant leaf outlines. This change applies immediately.");
     if (bRestart) Warning += bLauncherRestart
         ? TEXT("\n\nThe game must restart to change lighting. Your settings will be saved; your position in the current session will be lost.")
