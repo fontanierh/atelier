@@ -83,7 +83,8 @@ def export_roles(obj, source):
     # An explicit rigid use of a vegetation material (e.g. fruit painted with
     # leaf_sun) also needs certification, even when no plant shares this mesh.
     explicit=getattr(source,'foliage_roles',{})
-    rigid_override=any(key_role(source.keys[i])>0 and key_role(key)==0 for i,key in explicit.items())
+    keys=getattr(source,'keys',())
+    rigid_override=any(i<len(keys) and key_role(keys[i])>0 and key_role(key)==0 for i,key in explicit.items())
     if not any(leaves) and not rigid_override:
         return
     if len(leaves) != len(source.faces) or len(leaves) != len(obj.data.polygons):
@@ -111,7 +112,8 @@ def surfaces(source, key='leaf'):
 def face_keys(source):
     """Material selection keys and foliage roles are independent authoring channels."""
     explicit=getattr(source,'foliage_roles',{})
-    return [explicit.get(i,source.keys[i] if i<len(source.keys) else None) for i in range(len(source.faces))]
+    keys=getattr(source,'keys',())
+    return [explicit.get(i,keys[i] if i<len(keys) else None) for i in range(len(source.faces))]
 
 
 def export_authored(obj):

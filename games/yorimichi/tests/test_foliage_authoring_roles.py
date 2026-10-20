@@ -49,6 +49,13 @@ def test_treehouse_litter_and_potted_leaves_are_explicit_despite_literal_colours
     assert [R.key_role(key) for key in R.face_keys(plant)]==[0,0]+[1]*18
 
 
+def test_rigid_terrain_adapter_needs_no_palette_role_or_reserved_uv():
+    # Hidamari's SheetMesh carries baked per-vertex colour, without palette keys.
+    terrain=S(name='Terrain',faces=[(0,1,2)])
+    assert R.face_keys(terrain)==[None]
+    R.export_roles(S(),terrain) # No UV access for an entirely rigid surface.
+
+
 @pytest.mark.parametrize('path,name,arguments',[
     ('regions/hidamari/build.py','flowerbed',(0,0,0)),
     ('regions/hidamari/plaza.py','planter',(0,0,0)),

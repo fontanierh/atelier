@@ -62,6 +62,8 @@ def test_dense_crown_has_bounded_levels_retains_rigid_geometry_and_does_not_muta
     assert counts == sorted(counts,reverse=True)
     assert counts[0] <= 8*32+160+1
     assert counts[-1] <= 33
+    assert len(result['coverage']) == 1
+    assert result['coverage'][0] == [v['p'] for v in result['levels'][-1]['vertices'][:18]]
     assert len(result['patch']['faces']) == 32
     assert original['faces'][-1]['s'] == 0
     rigid = original['faces'][-1]
@@ -78,6 +80,7 @@ def test_dense_crown_has_bounded_levels_retains_rigid_geometry_and_does_not_muta
 def test_thin_groundcover_does_not_gain_a_closed_canopy_or_duplicate_triangles():
     original = source(3, 'groundcover')
     result = F.build(original)
+    assert not result['coverage']
     for level in result['levels']:
         assert all(face['s'] < len(original['materials']) for face in level['faces'])
         positions = [tuple(tuple(level['vertices'][i]['p']) for i in f['v']) for f in level['faces']]
@@ -88,6 +91,7 @@ def test_existing_tiny_far_proxy_is_preserved_and_shadow_still_has_closed_cores(
     original = source(900)
     original['far_proxy'] = source(2)
     result = F.build(original)
+    assert not result['coverage'] # The authored proxy has no certified opaque footprint.
     assert result['levels'][-1]['faces'] == original['far_proxy']['faces']
     assert result['levels'][-1]['vertices'] == original['far_proxy']['vertices']
     assert any(f['s'] == len(original['materials'])+1 for f in result['shadow']['faces'])

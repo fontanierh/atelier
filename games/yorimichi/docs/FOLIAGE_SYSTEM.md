@@ -25,9 +25,13 @@ The older city-tree detail controls describe the original comparison path while 
 
 Dense forest interiors use 64 m cells and a 200–250 m coverage transition. Cells need at least twelve
 trees. A candidate covers only the central half of the cell's crown bounds, and every tile (at most 2 m)
-of its bounding rectangle must fit entirely inside one existing convex crown ellipse. This certifies
-area coverage, including spaces between sample points. Boundary crowns retain their individual LODs;
-only crowns wholly inside the patch ellipse may transition to it. At least eight interior trees and
+of its bounding rectangle must fit entirely inside the projected convex hull of one certified opaque,
+closed generated distant core. Only the exact core vertices may certify this footprint; smooth bounding
+ellipses and arbitrary source/alpha-proxy hulls cannot prove occupied area. Authored far proxies without
+that certificate retain individual optimized LODs. This certifies area coverage, including spaces between
+sample points. Boundary crowns retain their individual LODs; only crowns wholly inside the patch's
+inscribed .92 ellipse may transition to it. Nonuniform component scale also keeps individual LODs, avoiding
+shear loss when converting world-aligned patches to relative transforms. At least eight interior trees and
 a fourfold reduction from their certified final-LOD triangle cost are required. Sparse or uncertain cells retain
 individual optimized trees. Render-only patch transforms derive from the actual placed instances;
 the source placement and all collision bodies stay intact. Shadow proxies use the shared tree-shadow

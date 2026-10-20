@@ -233,7 +233,8 @@ def main():
                             identity=identity, leaf_materials=leaf_materials,
                             output_sha256={k:digest(v) for k,v in variants.items()},
                             source_triangles=mesh.get_num_triangles(0), shadow_triangles=len(product['shadow']['faces']), rigid_triangles=product['rigid_triangles'],
-                            aggregate=classification!='authored' and kind=='tree' and F.vegetation(mesh.get_name())
+                            coverage=product['coverage'],
+                            aggregate=bool(product['coverage']) and classification!='authored' and kind=='tree' and F.vegetation(mesh.get_name())
                                       and 'palm' not in mesh.get_name().lower(),
                             canopy_bounds=product['canopy_bounds'],
                             triangles=[len(v['faces']) for v in product['levels']], **variants))

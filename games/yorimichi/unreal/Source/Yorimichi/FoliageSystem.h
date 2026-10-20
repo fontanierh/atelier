@@ -48,7 +48,7 @@ public:
     virtual void Deinitialize() override;
 private:
     struct FAsset { FString Optimized, Shadow, Patch, Kind; int32 Triangles=0,ShadowTriangles=0;
-        TArray<int32> LODTriangles;bool Aggregate=false;FBox Canopy; };
+        TArray<int32> LODTriangles;TArray<TArray<FVector>> Coverage;bool Aggregate=false;FBox Canopy; };
     TMap<FString,FAsset> Assets;
     TSet<FString> LeafMaterials;
     TArray<FString> Words;

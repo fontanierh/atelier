@@ -88,6 +88,29 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             }
         }
         if (Corners[0].X>Corners[1].X || Corners[0].Y>Corners[1].Y || Corners[0].Z>Corners[1].Z) return Invalid();
+        const TArray<TSharedPtr<FJsonValue>>* Coverage=nullptr;
+        if (!Row->TryGetArrayField(TEXT("coverage"),Coverage) || Coverage->Num()>4096 ||
+            (Asset.Aggregate && Coverage->IsEmpty())) return Invalid();
+        for (const auto& Core:*Coverage)
+        {
+            // A generated subdivided octahedron has exactly 18 vertices. No
+            // authored or masked source hull is eligible for this certificate.
+            if (!Core || Core->Type!=EJson::Array || Core->AsArray().Num()!=18) return Invalid();
+            TArray<FVector> Points;
+            for (const auto& Point:Core->AsArray())
+            {
+                if (!Point || Point->Type!=EJson::Array || Point->AsArray().Num()!=3) return Invalid();
+                FVector P;
+                for (int32 Axis=0;Axis<3;++Axis)
+                {
+                    const auto& V=Point->AsArray()[Axis];
+                    if (!V || V->Type!=EJson::Number || !FMath::IsFinite(V->AsNumber())) return Invalid();
+                    P[Axis]=V->AsNumber();
+                }
+                Points.Add(P);
+            }
+            Asset.Coverage.Add(MoveTemp(Points));
+        }
         Asset.Canopy=FBox(Corners[0],Corners[1]);Assets.Add(Source,MoveTemp(Asset));
     }
     bRegistryLoaded=true;Error.Reset();return true;
@@ -165,18 +188,27 @@ UStaticMeshComponent* RenderCopy(UStaticMeshComponent* Source,UStaticMesh* Mesh,
 // Dense interiors can become one distant canopy per 64 m cell. Coverage testing
 // keeps sparse groves, skyline edges and clearings as individual tree impostors.
 // No placement or collision body moves; these transforms are rendering only.
-void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,const FBox& Prototype,int32 DistantTriangles,
+void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,const TArray<TArray<FVector>>& Coverage,const FBox& Prototype,int32 DistantTriangles,
                    TArray<FTransform>& Singles,TArray<FTransform>& Near,TArray<FTransform>& Patches)
 {
-    struct FCell { TArray<FTransform> Local;TArray<FBox> Crowns;FBox Bounds=FBox(ForceInit); };
+    using FoliagePatchCoverage::FCrown;
+    struct FCell { TArray<FTransform> Local;TArray<FBox> BoundsPerTree;TArray<FCrown> Crowns;FBox Bounds=FBox(ForceInit); };
     TMap<FIntPoint,FCell> Cells;
     const FTransform World=Source->GetComponentTransform();
+    const FVector WorldScale=World.GetScale3D();
+    // A nonuniform parent can introduce shear when converting a world-aligned
+    // patch back to a relative FTransform. Keep individual LODs in that case.
+    const bool CanAggregate=!World.ContainsNaN() && WorldScale.X>UE_SMALL_NUMBER && FMath::IsNearlyEqual(WorldScale.X,WorldScale.Y) &&
+        FMath::IsNearlyEqual(WorldScale.X,WorldScale.Z);
     for (int32 I=0;I<Source->GetInstanceCount();++I)
     {
         FTransform Local;Source->GetInstanceTransform(I,Local,false);
-        const FBox Crown=Canopy.TransformBy(Local*World);const FVector Centre=Crown.GetCenter();
+        if (!CanAggregate || Local.ContainsNaN()) { Singles.Add(Local);continue; }
+        const FTransform Pose=Local*World;
+        const FBox Bounds=Canopy.TransformBy(Pose);const FVector Centre=Bounds.GetCenter();
         auto& Cell=Cells.FindOrAdd(FIntPoint(FMath::FloorToInt(Centre.X/6400.),FMath::FloorToInt(Centre.Y/6400.)));
-        Cell.Local.Add(Local);Cell.Crowns.Add(Crown);Cell.Bounds+=Crown;
+        Cell.Local.Add(Local);Cell.BoundsPerTree.Add(Bounds);Cell.Bounds+=Bounds;
+        for (const auto& Core:Coverage) Cell.Crowns.Emplace(Core,Pose);
     }
     TArray<FIntPoint> Keys;Cells.GetKeys(Keys);Keys.Sort([](const FIntPoint& A,const FIntPoint& B){return A.X==B.X?A.Y<B.Y:A.X<B.X;});
     for (const FIntPoint& Key:Keys)
@@ -190,7 +222,11 @@ void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,cons
             { Singles.Append(Cell.Local);continue; }
         TArray<FTransform> InteriorTrees;
         for (int32 I=0;I<Cell.Local.Num();++I)
-            if (FoliagePatchCoverage::Contains(Interior,Cell.Crowns[I])) InteriorTrees.Add(Cell.Local[I]);
+            // The prototype's XY silhouette is an inscribed octagon. Its .92
+            // ellipse fits inside that polygon; keep the surrounding trees.
+            if (FoliagePatchCoverage::Contains(FBox(Interior.GetCenter()-Interior.GetExtent()*FVector(.92,.92,1.),
+                                                    Interior.GetCenter()+Interior.GetExtent()*FVector(.92,.92,1.)),
+                                               Cell.BoundsPerTree[I])) InteriorTrees.Add(Cell.Local[I]);
             else Singles.Add(Cell.Local[I]);
         if (!FoliagePatchCoverage::Worthwhile(InteriorTrees.Num(),DistantTriangles))
             { Singles.Append(InteriorTrees);continue; }
@@ -236,7 +272,7 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
         if (auto* Instances=Cast<UInstancedStaticMeshComponent>(Component);Instances && Asset->Aggregate)
         {
             TArray<FTransform> Singles,Near,Patches;
-            ForestPatches(Instances,Asset->Canopy,Patch->GetBoundingBox(),Asset->LODTriangles.Last(),Singles,Near,Patches);
+            ForestPatches(Instances,Asset->Canopy,Asset->Coverage,Patch->GetBoundingBox(),Asset->LODTriangles.Last(),Singles,Near,Patches);
             Entry.Visual=RenderCopy(Component,Optimized,&Singles);
             if (!Near.IsEmpty()) Entry.NearVisual=RenderCopy(Component,Optimized,&Near);
             if (!Patches.IsEmpty()) Entry.Patches=RenderCopy(Component,Patch,&Patches);
@@ -281,7 +317,7 @@ void UYorimichiFoliageSubsystem::Apply(FYorimichiFoliageSource& Entry)
     }
     if (auto* Shadow=Entry.Shadow.Get())
     {
-        const bool ShadowsEnabled=ShadowDistance>0.f && Entry.Visible && (!Entry.Hidden || Entry.ShadowOnly);
+        const bool ShadowsEnabled=Entry.CastShadow && ShadowDistance>0.f && Entry.Visible && (!Entry.Hidden || Entry.ShadowOnly);
         Shadow->SetHiddenInGame(true,false);Shadow->bCastHiddenShadow=true;Shadow->SetCastShadow(ShadowsEnabled);
         Shadow->SetVisibility(ShadowsEnabled,false);Shadow->SetEvaluateWorldPositionOffset(false);
         if (auto* Group=Cast<UHierarchicalInstancedStaticMeshComponent>(Shadow))

@@ -15,6 +15,20 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
+namespace
+{
+TArray<FVector> CorePoints(const FBox& Bounds)
+{
+    TArray<FVector> Directions={FVector(1,0,0),FVector(-1,0,0),FVector(0,1,0),
+        FVector(0,-1,0),FVector(0,0,1),FVector(0,0,-1)};
+    const int32 Axes=Directions.Num();
+    for (int32 I=0;I<Axes;++I) for (int32 J=I+1;J<Axes;++J)
+        if (FVector::DotProduct(Directions[I],Directions[J])==0.) Directions.Add((Directions[I]+Directions[J]).GetSafeNormal());
+    for (auto& P:Directions) P=Bounds.GetCenter()+P*Bounds.GetExtent();
+    return Directions;
+}
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageCoverageTest,"Yorimichi.Foliage.PatchCoverage",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
@@ -22,16 +36,16 @@ bool FYorimichiFoliageCoverageTest::RunTest(const FString&)
 {
     const FBox Patch(FVector(-1600,-1600,0),FVector(1600,1600,1000));
     const FBox Full(FVector(-2400,-2400,0),FVector(2400,2400,1000));
-    TestTrue(TEXT("Fully covered interior accepted"),FoliagePatchCoverage::Covered(Patch,{Full}));
-    TArray<FBox> Ring,Diagonal;
+    TestTrue(TEXT("Fully covered interior accepted"),FoliagePatchCoverage::Covered(Patch,{CorePoints(Full)}));
+    TArray<FoliagePatchCoverage::FCrown> Ring,Diagonal;
     for (int32 X=0;X<8;++X) for (int32 Y=0;Y<8;++Y)
     {
         const FVector C(-1400+X*400,-1400+Y*400,500),R(285,285,500);
         // Every old sample center is covered, but a narrow diagonal path between
         // centers remains open. Whole tiles must refuse it.
         const FVector PathRadius((X-Y==0 || X-Y==1)?140.:285.,(X-Y==0 || X-Y==1)?140.:285.,500.);
-        Diagonal.Add(FBox(C-PathRadius,C+PathRadius));
-        if (X<3 || X>4 || Y<3 || Y>4) Ring.Add(FBox(C-R,C+R));
+        Diagonal.Emplace(CorePoints(FBox(C-PathRadius,C+PathRadius)));
+        if (X<3 || X>4 || Y<3 || Y>4) Ring.Emplace(CorePoints(FBox(C-R,C+R)));
     }
     TestFalse(TEXT("Central clearing cannot become a patch"),FoliagePatchCoverage::Covered(Patch,Ring));
     TestFalse(TEXT("Paths between point samples cannot become a patch"),FoliagePatchCoverage::Covered(Patch,Diagonal));
@@ -43,6 +57,28 @@ bool FYorimichiFoliageCoverageTest::RunTest(const FString&)
         FoliagePatchCoverage::Worthwhile(1,8));
     TestFalse(TEXT("Already cheap individual impostors need enough savings"),FoliagePatchCoverage::Worthwhile(8,8));
     TestTrue(TEXT("Useful 4x distant saving qualifies"),FoliagePatchCoverage::Worthwhile(16,8));
+    const FoliagePatchCoverage::FCrown RotatedCircle(CorePoints(FBox(FVector(-100,-100,-100),FVector(100,100,100))),
+        FTransform(FRotator(0,45,0)));
+    TestTrue(TEXT("Circular crown stays circular after yaw"),RotatedCircle.Inside(FVector2D(90,0)));
+    TestFalse(TEXT("Yaw cannot inflate a circular crown into a clearing"),RotatedCircle.Inside(FVector2D(120,0)));
+    const FoliagePatchCoverage::FCrown RotatedOval(CorePoints(FBox(FVector(-200,-50,-100),FVector(200,50,100))),
+        FTransform(FRotator(0,45,0)));
+    TestTrue(TEXT("Rotated major axis retains its footprint"),RotatedOval.Inside(FVector2D(100,100)));
+    TestFalse(TEXT("Rotated minor axis cannot fill a path"),RotatedOval.Inside(FVector2D(90,-90)));
+    const auto Unit=CorePoints(FBox(FVector(-1,-1,-1),FVector(1,1,1)));
+    const FoliagePatchCoverage::FCrown Faceted(Unit);
+    TestFalse(TEXT("A smooth ellipse cannot certify the space outside a faceted core"),
+        Faceted.Inside(FVector2D(.896163,.371203)));
+    const FTransform Instance(FRotator(12,31,7),FVector(20,30,40),FVector(3,1,2));
+    const FTransform Component(FRotator(0,41,0),FVector(100,200,300),FVector(2));
+    const FTransform Pose=Instance*Component;
+    const FoliagePatchCoverage::FCrown Transformed(Unit,Pose);
+    const FVector Mid=Component.TransformPosition(Instance.TransformPosition(FVector::ZeroVector));
+    TestTrue(TEXT("Rotated component and nonuniform instance retain the occupied center"),Transformed.Inside(FVector2D(Mid)));
+    const FVector Outside=Pose.TransformPosition(FVector(10,10,0));
+    TestFalse(TEXT("Rotated component cannot certify exterior space"),Transformed.Inside(FVector2D(Outside)));
+    TestFalse(TEXT("Degenerate crowns cannot certify coverage"),FoliagePatchCoverage::FCrown(Unit,
+        FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector)).Inside(FVector2D::ZeroVector));
     return true;
 }
 
@@ -103,6 +139,12 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
         FTransform Actual;Source->GetInstanceTransform(0,Actual,false);
         TestTrue(TEXT("Authored transform retained"),Actual.Equals(Placement));
     }
+    System->Sources[0].CastShadow=false;Source->SetCastShadow(false);
+    System->SetEnabled(true);
+    TestFalse(TEXT("A visual source without shadows must not duplicate its separate shadow owner"),bool(Entry.Shadow->CastShadow));
+    System->SetEnabled(false);
+    TestFalse(TEXT("A source's disabled shadows remain disabled in original mode"),bool(Source->CastShadow));
+    System->Sources[0].CastShadow=true;Source->SetCastShadow(true);
     System->SetDistances(true,.4f,0.f,0.f);System->SetEnabled(true);
     TestFalse(TEXT("Zero sway disables vertex motion"),bool(Entry.Visual->bEvaluateWorldPositionOffset));
     TestFalse(TEXT("Zero sway disables dense-cell motion"),bool(Entry.NearVisual->bEvaluateWorldPositionOffset));
@@ -150,9 +192,11 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
     const FString Valid=TEXT(R"({"version":1,"words":["tree"],"materials":[],"assets":[{
         "source":"/Game/Test/Tree.Tree","optimized":"/Game/FoliageSystem/Tree.Tree",
         "shadow":"/Game/FoliageSystem/Tree_Shadow.Tree_Shadow","patch":"/Game/FoliageSystem/Tree_Patch.Tree_Patch",
-        "kind":"tree","aggregate":true,"source_triangles":900,"shadow_triangles":32,
+        "kind":"tree","aggregate":false,"coverage":[],"source_triangles":900,"shadow_triangles":32,
         "triangles":[416,160,64,32],"canopy_bounds":[[0,0,0],[100,100,100]]}]})");
     TestTrue(TEXT("Complete registry accepted"),Read(Valid));
+    TestFalse(TEXT("Aggregation requires certified core geometry"),Read(Valid.Replace(TEXT("\"aggregate\":false"),TEXT("\"aggregate\":true"))));
+    TestFalse(TEXT("Truncated coverage refuses"),Read(Valid.Replace(TEXT("\"coverage\":[]"),TEXT("\"coverage\":[[]]"))));
     TestFalse(TEXT("Fractional version refuses"),Read(Valid.Replace(TEXT("\"version\":1"),TEXT("\"version\":1.5"))));
     TestFalse(TEXT("Fractional source count refuses"),Read(Valid.Replace(TEXT("\"source_triangles\":900"),TEXT("\"source_triangles\":900.5"))));
     TestFalse(TEXT("Overflowing shadow count refuses"),Read(Valid.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":4294967328"))));

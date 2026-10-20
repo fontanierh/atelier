@@ -206,7 +206,7 @@ def build(source):
         pv,pf=core(points,[1.,1.,1.,0.],len(source['materials'])+1)
         return dict(version=VERSION,source=source['path'],kind=source['kind'],screens=list(SCREENS),
                     rigid_triangles=0,source_triangles=len(faces),levels=levels,shadow=levels[-1],
-                    patch=dict(vertices=pv,faces=pf),canopy_bounds=bounds(points))
+                    patch=dict(vertices=pv,faces=pf),canopy_bounds=bounds(points),coverage=[])
     canopy,rigid=classified_faces(source)
     if not canopy:
         raise ValueError('Vegetation source has no classified foliage surfaces: '+source['path'])
@@ -225,6 +225,7 @@ def build(source):
         crowns.setdefault(key, []).append(f)
     source_kind = source['kind']
     levels = []
+    coverage = []
     for level, (count, fringe) in enumerate(zip(CORE_GROUPS, EDGE_BUDGETS)):
         result = dict(vertices=[], faces=[])
         if level and source.get('rigid_lods'):
@@ -263,6 +264,10 @@ def build(source):
                 core_slot = len(source['materials']) + (0 if level == 0 else 1)
                 cv, cf = core(points, colour, core_slot)
                 append_mesh(result, cv, cf)
+                if level == len(CORE_GROUPS)-1:
+                    # Only these known opaque, closed convex cores can certify
+                    # occupied ground. Never hull arbitrary masked/source faces.
+                    coverage.append([v['p'] for v in cv])
                 if fringe:
                     centre = tuple((a+b)/2 for a,b in zip(lo,hi))
                     radius = tuple(max((b-a)/2, .25) for a,b in zip(lo,hi))
@@ -292,13 +297,16 @@ def build(source):
             original = cheap[min(i,len(cheap)-1)]
             result['levels'][i] = {key:original[key] for key in ('vertices','faces')}
         result['shadow'] = result['levels'][-1]
+        coverage = []
     if source.get('far_proxy'):
         validate_source(source['far_proxy'])
         result['levels'][-1] = {key:source['far_proxy'][key] for key in ('vertices','faces')}
+        coverage = []
     points = [vertices[i]['p'] for f in canopy for i in f['v']]
     colour = [sum(vertices[i].get('sample',vertices[i]['c'])[c] for f in canopy for i in f['v'])/(len(canopy)*3)
               for c in range(4)]
     pv, pf = core(points, colour, len(source['materials'])+1)
     result['patch'] = dict(vertices=pv, faces=pf)
     result['canopy_bounds'] = bounds(points)
+    result['coverage'] = coverage
     return result
