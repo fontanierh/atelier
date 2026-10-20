@@ -1,4 +1,5 @@
 #include "FoliageSystem.h"
+#include "FoliagePatchCoverage.h"
 #include "JapanWorld.h"
 #include "EngineUtils.h"
 #include "AtelierData.h"
@@ -34,9 +35,16 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
 {
     Assets.Reset();Words.Reset();LeafMaterials.Reset();bRegistryLoaded=false;
     auto Invalid=[this]() { Error=TEXT("Foliage registry is missing, invalid or unsupported. Build unreal.foliage_system.");return false; };
+    const auto PositiveInteger=[](const TSharedPtr<FJsonObject>& Object,const TCHAR* Key,int32& Out)
+    {
+        double Number=0.;
+        if (!Object || !Object->TryGetNumberField(Key,Number) || !FMath::IsFinite(Number) ||
+            Number<=0. || Number>MAX_int32 || Number!=FMath::FloorToDouble(Number)) return false;
+        Out=int32(Number);return true;
+    };
     int32 Version=0;
     const TArray<TSharedPtr<FJsonValue>> *RegistryWords=nullptr,*RegistryMaterials=nullptr,*Rows=nullptr;
-    if (!Registry || !Registry->TryGetNumberField(TEXT("version"),Version) || Version!=1 ||
+    if (!Registry || !PositiveInteger(Registry,TEXT("version"),Version) || Version!=1 ||
         !Registry->TryGetArrayField(TEXT("words"),RegistryWords) || RegistryWords->IsEmpty() ||
         !Registry->TryGetArrayField(TEXT("materials"),RegistryMaterials) ||
         !Registry->TryGetArrayField(TEXT("assets"),Rows) || Rows->IsEmpty()) return Invalid();
@@ -57,8 +65,8 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             !Row->TryGetBoolField(TEXT("aggregate"),Asset.Aggregate) ||
             !Row->TryGetStringField(TEXT("kind"),Asset.Kind) ||
             (Asset.Kind!=TEXT("tree") && Asset.Kind!=TEXT("shrub") && Asset.Kind!=TEXT("groundcover")) ||
-            !Row->TryGetNumberField(TEXT("source_triangles"),Asset.Triangles) || Asset.Triangles<=0 ||
-            !Row->TryGetNumberField(TEXT("shadow_triangles"),Asset.ShadowTriangles) || Asset.ShadowTriangles<=0 ||
+            !PositiveInteger(Row,TEXT("source_triangles"),Asset.Triangles) ||
+            !PositiveInteger(Row,TEXT("shadow_triangles"),Asset.ShadowTriangles) ||
             !Row->TryGetArrayField(TEXT("triangles"),Counts) || Counts->Num()!=4 ||
             !Row->TryGetArrayField(TEXT("canopy_bounds"),Bounds) || Bounds->Num()!=2) return Invalid();
         for (const auto& Count:*Counts)
@@ -153,7 +161,7 @@ UStaticMeshComponent* RenderCopy(UStaticMeshComponent* Source,UStaticMesh* Mesh,
 // Dense interiors can become one distant canopy per 64 m cell. Coverage testing
 // keeps sparse groves, skyline edges and clearings as individual tree impostors.
 // No placement or collision body moves; these transforms are rendering only.
-void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,const FBox& Prototype,
+void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,const FBox& Prototype,int32 DistantTriangles,
                    TArray<FTransform>& Singles,TArray<FTransform>& Near,TArray<FTransform>& Patches)
 {
     struct FCell { TArray<FTransform> Local;TArray<FBox> Crowns;FBox Bounds=FBox(ForceInit); };
@@ -169,20 +177,24 @@ void ForestPatches(UInstancedStaticMeshComponent* Source,const FBox& Canopy,cons
     TArray<FIntPoint> Keys;Cells.GetKeys(Keys);Keys.Sort([](const FIntPoint& A,const FIntPoint& B){return A.X==B.X?A.Y<B.Y:A.X<B.X;});
     for (const FIntPoint& Key:Keys)
     {
-        const auto& Cell=Cells[Key];int32 Covered=0;
-        const FVector Span=Cell.Bounds.GetSize();
-        if (Cell.Local.Num()>=12) for (int32 X=0;X<8;++X) for (int32 Y=0;Y<8;++Y)
-        {
-            const FVector P=Cell.Bounds.Min+FVector((X+.5)/8*Span.X,(Y+.5)/8*Span.Y,0);
-            if (Cell.Crowns.ContainsByPredicate([&P](const FBox& B)
-                { const FVector C=B.GetCenter(),R=B.GetExtent();return FMath::Square((P.X-C.X)/FMath::Max(R.X,1.))+
-                    FMath::Square((P.Y-C.Y)/FMath::Max(R.Y,1.))<=1.; })) ++Covered;
-        }
-        if (Covered<61) { Singles.Append(Cell.Local);continue; }
-        Near.Append(Cell.Local);
+        const auto& Cell=Cells[Key];
+        // Aggregate only the certified interior; all boundary crowns keep their
+        // individual LODs at every distance, preserving the authored silhouette.
+        const FVector Inset=Cell.Bounds.GetSize()*FVector(.25,.25,0.);
+        const FBox Interior(Cell.Bounds.Min+Inset,Cell.Bounds.Max-Inset);
+        if (Cell.Local.Num()<12 || !FoliagePatchCoverage::Covered(Interior,Cell.Crowns))
+            { Singles.Append(Cell.Local);continue; }
+        TArray<FTransform> InteriorTrees;
+        for (int32 I=0;I<Cell.Local.Num();++I)
+            if (FoliagePatchCoverage::Contains(Interior,Cell.Crowns[I])) InteriorTrees.Add(Cell.Local[I]);
+            else Singles.Add(Cell.Local[I]);
+        if (!FoliagePatchCoverage::Worthwhile(InteriorTrees.Num(),DistantTriangles))
+            { Singles.Append(InteriorTrees);continue; }
+        Near.Append(InteriorTrees);
+        const FVector Span=Interior.GetSize();
         const FVector Size=Prototype.GetSize();
         const FVector Scale(Span.X/FMath::Max(Size.X,1.),Span.Y/FMath::Max(Size.Y,1.),Span.Z/FMath::Max(Size.Z,1.));
-        const FTransform Patch(FQuat::Identity,Cell.Bounds.GetCenter()-Prototype.GetCenter()*Scale,Scale);
+        const FTransform Patch(FQuat::Identity,Interior.GetCenter()-Prototype.GetCenter()*Scale,Scale);
         Patches.Add(Patch.GetRelativeTransform(World));
     }
 }
@@ -220,7 +232,7 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
         if (auto* Instances=Cast<UInstancedStaticMeshComponent>(Component);Instances && Asset->Aggregate)
         {
             TArray<FTransform> Singles,Near,Patches;
-            ForestPatches(Instances,Asset->Canopy,Patch->GetBoundingBox(),Singles,Near,Patches);
+            ForestPatches(Instances,Asset->Canopy,Patch->GetBoundingBox(),Asset->LODTriangles.Last(),Singles,Near,Patches);
             Entry.Visual=RenderCopy(Component,Optimized,&Singles);
             if (!Near.IsEmpty()) Entry.NearVisual=RenderCopy(Component,Optimized,&Near);
             if (!Patches.IsEmpty()) Entry.Patches=RenderCopy(Component,Patch,&Patches);

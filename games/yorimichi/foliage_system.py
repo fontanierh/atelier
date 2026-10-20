@@ -119,7 +119,10 @@ def core(points, colour, slot):
         shade = .78+.22*max(d[2], 0)
         vertices.append(dict(p=[c[i]+d[i]*radii[i] for i in range(3)], n=list(normal(tuple(d[i]/radii[i] for i in range(3)))),
                              uv=[0.,0.], c=[min(1.,max(0.,v*shade)) for v in colour[:3]]+[colour[3]]))
-    return vertices, [dict(v=list(t), s=slot) for t in triangles]
+    # MeshDescription's UE normal is cross(P2-P0,P1-P0), the reverse of
+    # the usual right-handed mesh formula (StaticMeshOperations.cpp). Source
+    # faces already use UE order; only our newly generated cores need reversal.
+    return vertices, [dict(v=[t[0],t[2],t[1]], s=slot) for t in triangles]
 
 
 def append_mesh(target, vertices, faces):

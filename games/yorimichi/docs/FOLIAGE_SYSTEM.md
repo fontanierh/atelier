@@ -23,9 +23,13 @@ Off restores the original rendering, including the existing city-tree comparison
 opt out of registration or validation. Failed settings saves restore the previous rendering mode.
 The older city-tree detail controls describe the original comparison path while optimization is off.
 
-Dense forest interiors use 64 m cells and a 200–250 m coverage transition. Only cells with at least twelve
-trees and at least 61/64 covered canopy samples qualify. Sparse groves and cells with clearings retain
-their individual trees. Render-only patch transforms are derived from the actual placed instances;
+Dense forest interiors use 64 m cells and a 200–250 m coverage transition. Cells need at least twelve
+trees. A candidate covers only the central half of the cell's crown bounds, and every tile (at most 2 m)
+of its bounding rectangle must fit entirely inside one existing convex crown ellipse. This certifies
+area coverage, including spaces between sample points. Boundary crowns retain their individual LODs;
+only crowns wholly inside the patch ellipse may transition to it. At least eight interior trees and
+a fourfold reduction from their certified final-LOD triangle cost are required. Sparse or uncertain cells retain
+individual optimized trees. Render-only patch transforms derive from the actual placed instances;
 the source placement and all collision bodies stay intact. Shadow proxies use the shared tree-shadow
 distance, including city and regional vegetation.
 
@@ -80,3 +84,12 @@ For paired diagnostic runs, `japan.FoliageOptimization 0` and `1` temporarily sw
 world without rewriting player preferences. The menu remains the persistent control. Keep the same camera,
 resolution, lighting and settled simulation for each pair; record the effective `FOLIAGE SYSTEM enabled` log
 and GPU captures with the results.
+
+The repeatable real-time comparison driver is `scenarios/foliage_performance.py`. Run it against an
+owned normal game with `--port OWN_PORT --take UNIQUE_NAME` from a clean checkout. It verifies the
+project, compiled code identity, gameplay readiness and effective renderer switch, samples off/on/on/off at fixed camera paths, captures game
+screenshots and requests GPU event breakdowns in the owned stdout log. Frame and GPU means/p95/p99,
+raw samples, settings and source revision go under `build/yorimichi/foliage_performance/`. It refuses
+missing GPU timing (including NullRHI) and either fixed-clock mode, restores the active foliage
+preference (including launcher-selected settings files), CVars, HUD mode and player camera,
+and never treats fixed-step filming as a real-time performance result. Inspect captures before publishing.

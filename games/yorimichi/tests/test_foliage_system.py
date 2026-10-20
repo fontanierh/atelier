@@ -46,7 +46,7 @@ def test_closed_core_has_outward_winding_and_two_incident_faces_per_edge():
     edges = {}
     for face in faces:
         a,b,c = [vertices[i]['p'] for i in face['v']]
-        assert F.dot(F.cross(F.sub(b,a),F.sub(c,a)),a) > 0
+        assert F.dot(F.cross(F.sub(c,a),F.sub(b,a)),a) > 0
         for x,y in zip(face['v'],face['v'][1:]+face['v'][:1]):
             key = tuple(sorted((x,y))); edges[key] = edges.get(key,0)+1
     assert len(faces) == 32

@@ -2,6 +2,10 @@
 #include "LiveLibrary.h"
 #include "WandererCharacter.h"
 #include "JapanPreferences.h"
+#include "JapanWorld.h"
+#include "FoliageSystem.h"
+#include "YorimichiBuildIdentity.h"
+#include "Misc/App.h"
 #include "JapanCharacterSelect.h"
 #include "WandererSword.h"
 #include "SkateComponent.h"
@@ -90,6 +94,27 @@ bool UYorimichiLive::SetPreference(const FString& Key, float Value)
 {
     AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player());
     return P && P->GetPreferences() && P->GetPreferences()->SetValue(Key, Value);
+}
+
+FString UYorimichiLive::FoliageReviewState()
+{
+    const auto O=MakeShared<FJsonObject>();const auto Values=MakeShared<FJsonObject>();
+    const auto* Player=Cast<AWandererCharacter>(ULiveLibrary::Player());
+    if (Player && Player->GetPreferences())
+        for (const auto& Value:Player->GetPreferences()->GetValues()) Values->SetNumberField(Value.Key,Value.Value);
+    O->SetObjectField(TEXT("preferences"),Values);
+    O->SetStringField(TEXT("code"),UTF8_TO_TCHAR(YORIMICHI_NETWORK_BUILD_ID));
+    O->SetBoolField(TEXT("fixed_step"),FApp::UseFixedTimeStep());
+    O->SetBoolField(TEXT("fixed_frame_rate"),GEngine && GEngine->bUseFixedFrameRate);
+    O->SetBoolField(TEXT("film_hud"),IsFilmHud());
+    bool Ready=false;bool Enabled=false;
+    if (auto* World=ULiveLibrary::GameWorld())
+    {
+        for (TActorIterator<AJapanWorld> It(World);It;++It) Ready=It->bGameplayReady && It->BootstrapError.IsEmpty();
+        if (const auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>()) Enabled=System->IsEnabled();
+    }
+    O->SetBoolField(TEXT("ready"),Ready);O->SetBoolField(TEXT("enabled"),Enabled);
+    FString Out;FJsonSerializer::Serialize(O,TJsonWriterFactory<>::Create(&Out));return Out;
 }
 
 bool UYorimichiLive::HippodromeVisit()

@@ -1,4 +1,5 @@
 #include "FoliageSystem.h"
+#include "FoliagePatchCoverage.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "JapanPreferences.h"
 #include "WandererCharacter.h"
@@ -13,6 +14,37 @@
 #include "Misc/AutomationTest.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageCoverageTest,"Yorimichi.Foliage.PatchCoverage",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageCoverageTest::RunTest(const FString&)
+{
+    const FBox Patch(FVector(-1600,-1600,0),FVector(1600,1600,1000));
+    const FBox Full(FVector(-2400,-2400,0),FVector(2400,2400,1000));
+    TestTrue(TEXT("Fully covered interior accepted"),FoliagePatchCoverage::Covered(Patch,{Full}));
+    TArray<FBox> Ring,Diagonal;
+    for (int32 X=0;X<8;++X) for (int32 Y=0;Y<8;++Y)
+    {
+        const FVector C(-1400+X*400,-1400+Y*400,500),R(285,285,500);
+        // Every old sample center is covered, but a narrow diagonal path between
+        // centers remains open. Whole tiles must refuse it.
+        const FVector PathRadius((X-Y==0 || X-Y==1)?140.:285.,(X-Y==0 || X-Y==1)?140.:285.,500.);
+        Diagonal.Add(FBox(C-PathRadius,C+PathRadius));
+        if (X<3 || X>4 || Y<3 || Y>4) Ring.Add(FBox(C-R,C+R));
+    }
+    TestFalse(TEXT("Central clearing cannot become a patch"),FoliagePatchCoverage::Covered(Patch,Ring));
+    TestFalse(TEXT("Paths between point samples cannot become a patch"),FoliagePatchCoverage::Covered(Patch,Diagonal));
+    TestFalse(TEXT("Boundary crown retains individual skyline"),FoliagePatchCoverage::Contains(Patch,
+        FBox(FVector(1200,-200,0),FVector(1800,200,1000))));
+    TestTrue(TEXT("Interior crown may use the certified patch"),FoliagePatchCoverage::Contains(Patch,
+        FBox(FVector(-200,-200,0),FVector(200,200,1000))));
+    TestFalse(TEXT("Twelve total trees with only one interior tree cannot increase distant cost"),
+        FoliagePatchCoverage::Worthwhile(1,8));
+    TestFalse(TEXT("Already cheap individual impostors need enough savings"),FoliagePatchCoverage::Worthwhile(8,8));
+    TestTrue(TEXT("Useful 4x distant saving qualifies"),FoliagePatchCoverage::Worthwhile(16,8));
+    return true;
+}
 
 TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors);
 
@@ -121,6 +153,9 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
         "kind":"tree","aggregate":true,"source_triangles":900,"shadow_triangles":32,
         "triangles":[416,160,64,32],"canopy_bounds":[[0,0,0],[100,100,100]]}]})");
     TestTrue(TEXT("Complete registry accepted"),Read(Valid));
+    TestFalse(TEXT("Fractional version refuses"),Read(Valid.Replace(TEXT("\"version\":1"),TEXT("\"version\":1.5"))));
+    TestFalse(TEXT("Fractional source count refuses"),Read(Valid.Replace(TEXT("\"source_triangles\":900"),TEXT("\"source_triangles\":900.5"))));
+    TestFalse(TEXT("Overflowing shadow count refuses"),Read(Valid.Replace(TEXT("\"shadow_triangles\":32"),TEXT("\"shadow_triangles\":4294967328"))));
     TestFalse(TEXT("Truncated bounds refuse without indexing"),Read(Valid.Replace(TEXT("[[0,0,0],[100,100,100]]"),TEXT("[]"))));
     TestFalse(TEXT("Non-numeric bounds refuse"),Read(Valid.Replace(TEXT("[0,0,0]"),TEXT("[null,0,0]"))));
     TestFalse(TEXT("Unbounded variant refuses"),Read(Valid.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,-1]"))));

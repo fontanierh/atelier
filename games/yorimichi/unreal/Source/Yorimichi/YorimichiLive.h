@@ -32,6 +32,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static FString MenuFocus();
     /** Change a setting as the Esc menu and the phone do (UJapanPreferences::SetValue, saved); false for an unknown key. */
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SetPreference(const FString& Key, float Value);
+    /** Active preferences, readiness, compiled code identity and both fixed-clock flags as JSON.
+     *  Reads the running preferences object, including launcher-selected preference files. */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString FoliageReviewState();
     /** An adventure move set's state (UAdventureMoveSet::Describe: mode, action, stamina, glider, wall, target, counts) as JSON;
      *  "{}" when the player has none. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString MoveState();

@@ -38,6 +38,7 @@ public:
     /** Call after editing an already registered instance layout/material binding, before rendering it again. */
     bool RefreshSource(UStaticMeshComponent* Component);
     bool SetEnabled(bool Enabled);
+    UFUNCTION(BlueprintPure, Category="Foliage")
     bool IsEnabled() const { return bEnabled; }
     void SetDistances(bool Performance, float Detail, float SwayMetres, float ShadowMetres);
     const FString& GetError() const { return Error; }
