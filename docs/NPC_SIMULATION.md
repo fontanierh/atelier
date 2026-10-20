@@ -85,6 +85,8 @@ The platform keeps a shared gazetteer: places, routes, prices, schedules, public
 
 Each inhabitant has a personal knowledge graph. A fact has a source, confidence, and possibly a false belief. Inhabitants know their hometown, workplace, routes, and a few rumors. The mind sees beliefs, not ground truth. The player can teach, lie, and spread rumors.
 
+Start with a flat, tagged fact list per inhabitant and promote it to a graph when retrieval needs it.
+
 Memory has four parts: recent events verbatim, older events summarized, conversations and overheard speech, and important facts and relationships retrieved when relevant. Each memory stores who, what, where, when, and whether it was direct or overheard.
 
 Reflection writes summaries. The tick prompt gets a compact working set: situation, plan checkpoint, and a few relevant memories. Keep bounded buffers per inhabitant.
@@ -123,7 +125,7 @@ The game returns a descriptor valid for the current actor and state, not a stati
 
 Hunger and sleep are needs, not actions. The inhabitant eats by interacting with food and sleeps by interacting with a bed. A bench or the ground offers sleep rough.
 
-The action list is built at decision time: find what is in range, ask what it offers, filter by preconditions, add wait and talk, add reachable destinations, then rank and cap. Above about 16 candidates, use a two-stage choice: category, then target.
+The action list is built at decision time: find what is in range, ask what it offers, filter by preconditions, add wait and talk, add reachable destinations, then rank and cap. Above about 16 candidates, use a two-stage choice: category, then target. Start with one stage and add this only when the cap is routinely exceeded.
 
 No object in range means no interact action. Context can remove actions: an in-transit zeppelin offers talk, stay, and look; a conversation offers talk or end; a shift offers work actions.
 
