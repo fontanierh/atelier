@@ -118,3 +118,52 @@ def test_stand_live_shoot_colours_keep_their_explicit_thin_role():
     exec(compile(ast.Module(body=body,type_ignores=[]),'stand shoots','exec'),owner)
     assert tuple(owner['SHOOT'])==(.10,.18,.03) and tuple(owner['SHOOT_LIGHT'])==(.17,.26,.05)
     assert all(R.key_role(owner[key].foliage_key)==2 for key in ('SHOOT','SHOOT_LIGHT'))
+
+
+@pytest.fixture
+def brine(monkeypatch):
+    monkeypatch.syspath_prepend(str(WORLD))
+    monkeypatch.syspath_prepend(str(WORLD/'regions'))
+    from brinecove import kit
+    from brinecove.geom import Builder
+    return kit,Builder
+
+
+@pytest.mark.parametrize('name,args',[('flower_box',(0,0,0,0,0,0)),('banana',(0,0,0)),('vine',(0,0,0))])
+def test_brinecove_generic_painted_plants_have_explicit_roles_and_keep_rigid_parts(brine,name,args):
+    kit,Builder=brine;b=Builder('Mixed')
+    getattr(kit,name)(b,*args)
+    roles=[R.key_role(key) for key in R.face_keys(b)]
+    assert any(roles) and 0 in roles
+    assert all(isinstance(key,str) for key in b.mats)
+    if name=='banana':assert roles[-12:]==[2]*12
+    if name=='flower_box':
+        assert roles[:6]==[0]*6 # the container keeps wood, collision and source geometry
+        assert set(b.mats)=={'wood_dark','jungle','jungle_light','blossom','coral','gold','blossom_pale','cream'}
+        assert all(role>0 for role in roles[6:])
+
+
+def test_brinecove_leaf_painted_fruit_remains_rigid(brine):
+    kit,Builder=brine;found=0
+    for seed in range(40):
+        b=Builder('Market');kit.goods(b,0,0,0,rng=random.Random(seed))
+        for material,key in zip(b.mats,R.face_keys(b)):
+            if material=='leaf_sun':
+                found+=1;assert R.key_role(key)==0
+    assert found>0
+
+
+def test_brinecove_tile_split_preserves_roles_through_dropped_faces(brine):
+    _,Builder=brine;b=Builder('Mixed')
+    b.tri((0,0,0),(1,0,0),(0,1,0),R.SurfaceKey('leaf_sun','rigid'))
+    b.tri((0,0,0),(0,0,0),(0,0,0),'stone') # dropped, so role indices must be remapped
+    b.tri((2,0,0),(3,0,0),(2,1,0),R.SurfaceKey('jungle','groundcover_leaf'))
+    owner=functions(Path('regions/brinecove/build.py'),['split'])
+    from brinecove.geom import distinct_corners
+    owner.update(R=S(OUTER=(-10,-10,10,10)),Builder=Builder,TILE=256.,soft=lambda key:False,
+                 distinct_corners=distinct_corners)
+    parts,_,_,degenerate=owner['split'](b,'Mixed',None)
+    assert degenerate==1 and len(parts)==1
+    part=next(iter(parts.values()))
+    assert [R.key_role(key) for key in R.face_keys(part)]==[0,2]
+    assert part.mats==['leaf_sun','jungle']

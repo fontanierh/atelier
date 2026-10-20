@@ -14,6 +14,7 @@ CHANNEL = 5
 MARKER = 73.125
 SLOT_PREFIX = 'FoliageRoles_'
 AUTHORED_PREFIX = 'FoliageAuthored_'
+RIGID_PREFIX = 'FoliageRigid_'
 AUTHORED_BUDGET = 12288
 
 
@@ -23,6 +24,12 @@ class PaletteColour(tuple):
         colour = super().__new__(cls, values)
         colour.foliage_key = key
         return colour
+
+
+class SurfaceKey(str):
+    """An unchanged material-selection key with an explicit per-face semantic role."""
+    def __new__(cls, value, role):
+        key=super().__new__(cls,value);key.foliage_key=role;return key
 
 
 def vegetation(name):
@@ -73,7 +80,11 @@ def key_role(key):
 def export_roles(obj, source):
     """Call after all visible UV baking, immediately before FBX export."""
     leaves = [key_role(key) for key in face_keys(source)]
-    if not any(leaves):
+    # An explicit rigid use of a vegetation material (e.g. fruit painted with
+    # leaf_sun) also needs certification, even when no plant shares this mesh.
+    explicit=getattr(source,'foliage_roles',{})
+    rigid_override=any(key_role(source.keys[i])>0 and key_role(key)==0 for i,key in explicit.items())
+    if not any(leaves) and not rigid_override:
         return
     if len(leaves) != len(source.faces) or len(leaves) != len(obj.data.polygons):
         raise ValueError('Foliage face roles lost during geometry assembly: '+source.name)

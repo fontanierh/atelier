@@ -42,6 +42,10 @@ separate, recognizable material slots or explicit face roles. The shared procedu
 keys in a separate role channel and encode face roles in UV channel 5 after camera UV baking; the source importer stamps
 `FoliageRoles_` into cooked slot names. UV channels 0–4 and imported material binding names stay intact.
 Visible material selection keys are never rewritten by role annotation.
+Brinecove's material-key builder uses `SurfaceKey` for generic plant paint and preserves these roles
+through tile splitting. Both GLB export and Interchange import verify that UV5 survives; the source
+importer stamps it before LOD reduction. All-zero explicit roles use `FoliageRigid_` for non-vegetation
+such as market fruit painted with a leaf palette. Actual vegetation may never use this rigid certification.
 Literal plant colours must retain a semantic key with `foliage_roles.PaletteColour`, or explicitly set
 the face's key. Cloth canopies, bark, canes and opaque grass paint are rigid surfaces.
 The vertex-painted city trees retain a legacy palette adapter for older source chains.

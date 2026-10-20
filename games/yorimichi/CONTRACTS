@@ -5,6 +5,8 @@ namespace, MUST pass through foliage_system's build-time classification, bounded
 representation generation and validation, and UYorimichiFoliageSubsystem at runtime.
 New vegetation MUST declare recognizable foliage material/asset semantics or certified per-face roles; hiding
 foliage inside an unclassified material or bypassing the registry is forbidden.
+Explicit rigid role certification is only for non-vegetation surfaces (such as fruit reusing leaf paint),
+never an exemption for vegetation or an optimization fallback.
 Missing, stale or invalid representations MUST fail the normal build and gameplay
 readiness, never silently render an unoptimized fallback. Preparation and all cooked
 dependencies MUST belong to the normal incremental build graph.

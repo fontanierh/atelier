@@ -59,6 +59,8 @@ class Builder:
         self.uvs = []
         self.faces = []
         self.mats = []
+        self.keys = self.mats
+        self.foliage_roles = {}
         # Optional per-vertex normals: foliage cards point away from their crown so a canopy shades as one mass.
         # None for a vertex means the flat face normal.
         self.normals = None
@@ -98,6 +100,8 @@ class Builder:
         self.uvs.extend(uvs)
         self.faces.append(tuple(range(i, i + len(points))))
         self.mats.append(mat)
+        role=getattr(mat,'foliage_key',None)
+        if role is not None:self.foliage_roles[len(self.faces)-1]=role
         if self.anchor is not None and self.anchors is None:
             self.anchors = [None] * (len(self.faces) - 1)
         if self.anchors is not None:

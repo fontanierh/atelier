@@ -18,6 +18,7 @@ import math  # noqa: E402
 import random  # noqa: E402
 import shutil  # noqa: E402
 import time  # noqa: E402
+import foliage_roles  # noqa: E402
 
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
@@ -164,6 +165,7 @@ def split(builder, prefix, settle, remap=None):
             part = parts[key] = Builder(f'SM_BC_{prefix}_{key[0]}_{key[1]}' + ('_Soft' if key[2] else ''))
         normals = [builder.normals[f[k]] for k in corners] if builder.normals is not None else None
         part.face([pts[k] for k in corners], mat, [builder.uvs[f[k]] for k in corners], normals)
+        if n in builder.foliage_roles:part.foliage_roles[len(part.faces)-1]=builder.foliage_roles[n]
     return parts, outside, drowned, degenerate
 
 
@@ -285,6 +287,7 @@ def mesh_object(builder, materials):
         mesh.normals_split_custom_set_from_vertices(normals)
     obj = bpy.data.objects.new(builder.name, mesh)
     bpy.context.scene.collection.objects.link(obj)
+    foliage_roles.export_roles(obj,builder)
     return obj
 
 
@@ -296,6 +299,10 @@ def export(obj, path):
                               export_yup=True, export_animations=False, export_skins=False, export_cameras=False,
                               export_lights=False, export_extras=False, export_normals=True,
                               export_image_format='NONE', export_materials='EXPORT')
+    if len(obj.data.uv_layers)>foliage_roles.CHANNEL:
+        doc,_=glb_parts(path.read_bytes())
+        assert all('TEXCOORD_5' in primitive['attributes'] for mesh in doc['meshes'] for primitive in mesh['primitives']), \
+            ('Foliage UV5 lost in GLB export',obj.name)
 
 
 def glb_info(path):
@@ -443,6 +450,7 @@ def main(argv=None):
         report_degenerate[prefix] = degenerate
         for (_, _, is_soft), part in sorted(parts.items()):
             obj = mesh_object(part, materials)
+            has_roles=len(obj.data.uv_layers)>foliage_roles.CHANNEL
             path = OUT / 'glb' / f'{part.name}.glb'
             export(obj, path)
             bpy.data.objects.remove(obj, do_unlink=True)
@@ -451,6 +459,7 @@ def main(argv=None):
             used.update(slots)
             water = all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots)
             meshes.append({'name': part.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
+                           'foliage_roles':has_roles,
                            'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': not is_soft})
             groups.append(group(part.name, slots, [IDENTITY], collision=not is_soft, shadow=not water,
                                 cull_cm=0 if prefix in ('Ground', 'Rocks') else 120000))
@@ -478,6 +487,7 @@ def main(argv=None):
             continue
         builder.name = 'SM_BC_Plant_' + ''.join(part.title() for part in proto.split('_'))
         obj = mesh_object(builder, materials)
+        has_roles=len(obj.data.uv_layers)>foliage_roles.CHANNEL
         path = OUT / 'glb' / f'{builder.name}.glb'
         export(obj, path)
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -488,6 +498,7 @@ def main(argv=None):
                 material_entries.update(material_report({s}))
         height = bounds[1][2] - bounds[0][2]
         meshes.append({'name': builder.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
+                       'foliage_roles':has_roles,
                        'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': False, 'lods': True})
         low = proto.startswith('cover_')
         if proto in placements:

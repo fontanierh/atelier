@@ -376,6 +376,13 @@ def main():
             material = E.load_asset(f"{ROOT}/Materials/{report['materials'][key]['name']}")
             assert material, key
             mesh.set_material(slot, material)
+        # GLB/Interchange imports bypass the common FBX importer. Certify their
+        # shared UV5 face roles at this source boundary too, before reduction.
+        unreal.load_module('YorimichiImport')
+        assert unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh), (name,'invalid foliage roles')
+        stamps=[str(slot.get_editor_property('material_slot_name')) for slot in mesh.get_editor_property('static_materials')]
+        has_roles=bool(stamps) and all(stamp.startswith(('FoliageRoles_','FoliageRigid_')) for stamp in stamps)
+        assert has_roles==entry.get('foliage_roles',False), (name,'foliage UV5 lost across source import')
         # Unreal drops a few degenerate slivers from the procedural kit.
         triangles = mesh.get_num_triangles(0)
         assert entry['triangles'] * .98 <= triangles <= entry['triangles'], (name, 'triangle count', triangles, entry['triangles'])

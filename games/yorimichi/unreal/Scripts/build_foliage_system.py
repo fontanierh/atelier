@@ -55,6 +55,8 @@ def leaf_material(material):
 
 
 def classify(mesh):
+    names=[str(slot.get_editor_property('material_slot_name')) for slot in mesh.get_editor_property('static_materials')]
+    if names and all(name.startswith(F.roles.RIGID_PREFIX) for name in names):return None
     if any(str(slot.get_editor_property('material_slot_name')).startswith(F.roles.AUTHORED_PREFIX)
            for slot in mesh.get_editor_property('static_materials')):
         return [], 'authored'

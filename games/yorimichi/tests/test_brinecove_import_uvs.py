@@ -11,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 GAME = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(GAME / 'world'))
@@ -39,7 +40,7 @@ def test_half_precision_uvs_flatten_the_grand_stair_nosings():
     assert sum(np.ptp(v.astype(np.float16)) == 0 for v in tops) > len(tops) // 4  # many sample one texel row
 
 
-def run_import(tmp_path, meshes):
+def run_import(tmp_path, meshes, *, role_transport=True):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
@@ -48,10 +49,11 @@ def run_import(tmp_path, meshes):
 
     class Mesh(Properties):
         def __init__(self, entry):
-            super().__init__(static_materials=[None] * len(entry['slots']), body_setup=Properties())
+            super().__init__(static_materials=[Properties(material_slot_name=key) for key in entry['slots']],
+                             materials=[None]*len(entry['slots']),body_setup=Properties())
             self.build = dict(use_full_precision_u_vs=False, remove_degenerates=True)
             self.entry = entry
-        def set_material(self, slot, value): self.values['static_materials'][slot] = value
+        def set_material(self, slot, value): self.values['materials'][slot] = value
         def get_num_triangles(self, lod): return self.entry['triangles']
         def get_bounding_box(self):
             (x0, y0, z0), (x1, y1, z1) = self.entry['bounds_m']
@@ -76,7 +78,14 @@ def run_import(tmp_path, meshes):
     (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=meshes, materials=materials)))
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
+    def stamp_roles(mesh):
+        assert 'YorimichiImport' in loaded
+        if mesh.entry.get('foliage_roles') and role_transport:
+            for slot in mesh.values['static_materials']:
+                slot.set_editor_property('material_slot_name','FoliageRoles_'+slot.get_editor_property('material_slot_name'))
+        return True
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
+        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=stamp_roles),
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
     assets = SimpleNamespace(make_directory=lambda *_: None, does_asset_exist=lambda *_: False,
@@ -108,3 +117,11 @@ def test_every_uv_textured_brinecove_mesh_imports_full_precision_uvs(tmp_path):
     assert builds['SM_BC_Ground_3_3']['use_full_precision_u_vs']        # its paving samples world-metre UVs
     assert not builds['SM_BC_Rocks_9_9']['use_full_precision_u_vs']     # world-position material only
     assert not builds['SM_BC_Plant_Palm0']['use_full_precision_u_vs']   # atlas cells within 0-1
+
+
+def test_source_import_refuses_roles_lost_by_interchange(tmp_path):
+    meshes=[dict(name='SM_BC_Plant',path='glb/a.glb',slots=['leaf'],triangles=10,
+                 bounds_m=[[0,0,0],[1,1,1]],collision=False,foliage_roles=True)]
+    with pytest.raises(AssertionError,match='foliage UV5 lost across source import'):
+        run_import(tmp_path,meshes,role_transport=False)
+    assert run_import(tmp_path,meshes)['SM_BC_Plant']['use_full_precision_u_vs']

@@ -98,6 +98,10 @@ bool UYorimichiFoliageSubsystem::RequiresRegistration(UStaticMeshComponent* Comp
     UStaticMesh* Mesh=Component->GetStaticMesh();
     if (!Mesh || Component->ComponentHasTag(TEXT("FoliageSystemOwned")) ||
         Component->ComponentHasTag(TEXT("DetachedFoliageParticle"))) return false;
+    bool CertifiedRigid=!Mesh->GetStaticMaterials().IsEmpty();
+    for (const auto& Slot:Mesh->GetStaticMaterials())
+        CertifiedRigid&=Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageRigid_"));
+    if (CertifiedRigid) return false;
     if (Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/"))) return true;
     if (Assets.Contains(Mesh->GetPathName())) return true;
     const FString MeshName=Mesh->GetName().Replace(TEXT("Treehouse"),TEXT(""),ESearchCase::IgnoreCase).Replace(TEXT("Planter"),TEXT(""),ESearchCase::IgnoreCase);

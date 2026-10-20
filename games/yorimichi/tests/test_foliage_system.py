@@ -147,6 +147,7 @@ def test_cook_registry_and_normal_graph_are_not_optional():
 
 
 def test_committed_brinecove_groundcover_corpus_and_mixed_materials_never_gain_cores(monkeypatch):
+    monkeypatch.syspath_prepend(str(GAME/'world'))
     monkeypatch.syspath_prepend(str(GAME/'world/regions'))
     from brinecove import flora
     for name, builder in flora.prototypes().items():
@@ -290,6 +291,17 @@ def test_authoring_role_export_reserves_only_uv5_and_retains_camera_layers():
         F.roles.export_roles(obj,source)
     colour=F.roles.PaletteColour((.1,.2,.3),'leaf')
     assert tuple(colour)==(.1,.2,.3) and F.material_vegetation(colour.foliage_key)
+
+
+def test_rigid_use_of_leaf_paint_still_exports_an_explicit_all_zero_role_channel():
+    from types import SimpleNamespace as S
+    class Layers(list):
+        def new(self,name):self.append(S(data=[S(uv=None) for _ in range(3)]))
+    layers=Layers();obj=S(data=S(uv_layers=layers,polygons=[S(loop_indices=range(3))]))
+    source=S(name='Fruit',faces=[(0,1,2)],keys=['leaf_sun'],foliage_roles={0:'rigid'})
+    F.roles.export_roles(obj,source)
+    assert len(layers)==6
+    assert [value.uv for value in layers[5].data]==[(0.,F.roles.MARKER)]*3
 
 
 def test_embedded_thin_roles_never_receive_solid_crowns_from_neutral_building_material():
