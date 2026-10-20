@@ -12,15 +12,18 @@ Yorimichi should have a town of NPCs with their own identity, jobs, homes, goals
 
 Hosted inference only. Target: 200 NPCs, one instance per NPC.
 
-## Three layers
+## Four layers
 
-| Layer | Does | Cadence |
-| --- | --- | --- |
-| Unreal | movement, animation, collision, schedules, shared clock | every frame |
-| Decision model | picks one concrete action from what is in range | decision deadline or event |
-| Language model | speech, reflection, planning | when someone speaks or reflection is due |
+| Layer | Does | Cadence | Model |
+| --- | --- | --- | --- |
+| Unreal | movement, animation, collision, schedules, shared clock | every frame | none |
+| Reaction | answers speech, a block, or a sudden event | event-driven, under 1 s | JEV |
+| Tick | picks one concrete action from what is in range | 1 min hot, 5 min cold | Luna hot, Qwen cold; cached 8K state |
+| Reflection | planning, memory summaries, goal checkpoints | every 10 in-game minutes | Luna hot, Qwen cold; 32K |
 
-Unreal is the reflex layer. The decision model is fast cognition. The language model is slow cognition.
+Unreal is the reflex layer. JEV is fast cognition: it handles events where a second of delay is visible. The tick model is deliberate cognition: its prompt is mostly stable, so cached input makes it cheap, and reflection is slow enough to think.
+
+Chatter is a separate call lane rather than a cognitive layer: hot and player-facing speech uses Luna, ambient cold-tier chatter uses a cheap model.
 
 ## Identity
 
