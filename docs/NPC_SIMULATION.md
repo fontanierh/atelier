@@ -16,17 +16,21 @@ The runtime is C++ inside an Unreal plugin. Python stays for build tooling, data
 | Affordance registry, schema, and queries | owns | defines actions, effects, and handlers |
 | Brain, scheduler, decision loop | owns | attaches to its pawns |
 | Identity, goals, needs, memory | behavior and schema | authors content |
-| Economy primitives | accounts, wages, rent, eviction | sets the numbers |
+| Accounts, reservations, transfers | mechanisms | wages, rent, eviction, happiness rules |
+| Event urgency | scheduling hooks | classifies urgency |
 | Model client, routing, caching, ledger | owns | configures keys and prices |
 | Navigation, animation, physics | none | owns |
-| Save and load | schema | game fields |
+| Persistence | versioned inhabitant state | save envelope and game fields |
+| World query, action executor | interfaces | implementations |
 
-Platform files never name a game. Games configure the platform; they do not reimplement it.
+Policy stays in the game: the platform provides accounts and transfers, not a rent rule. It provides urgency hooks, not a definition of what is urgent. Three interfaces carry that policy: world query, action executor, and persistence.
+
+Platform modules never name a game. Games configure the platform; they do not reimplement it.
 
 Proposed locations:
 
 - platform/engine/Plugins/AtelierNPC/: runtime C++ plugin.
-- platform/conventions/npc_protocol.md: snapshot, event, and action schema.
+- platform/conventions/npc_protocol.schema.json: machine-readable and versioned. C++ and Python validators read the same file; the Markdown explains it.
 - platform/studio/atelier/npc/: build-time validation, prompt evals, cost reports. Not the runtime.
 - games/<game>/: NPC content, world bindings, actor classes, nav, save data.
 
@@ -40,7 +44,7 @@ Proposed locations:
            ├─ UNPCModelClient            async HTTP, one interface
            └─ UNPCEconomySubsystem       jobs, wages, rent, homes
 
-The brain is a component, so any pawn can be an inhabitant. One subsystem owns the clock and the frame budget; there are no per-NPC timers.
+The brain is a component, so any pawn can be an inhabitant. One subsystem owns the clock and the frame budget; there are no per-NPC timers. HTTP completions arrive on a worker callback; world access and action commits happen on the game thread. Worker inputs are immutable, object references are weak, and every request is cancelled on world teardown or load.
 
 ## Four layers
 
@@ -97,6 +101,8 @@ Every inhabitant who speaks uses a language model, including NPC-to-NPC talk.
 
 A conversation is a short turn-taking session with a lock on both sides. Overhearers can join later. Start with a radius plus a same-area check; walls refine it.
 
+Add consent, a turn limit, an expiry, and an interruption rule. Two inhabitants who both want the last word must not loop.
+
 ## Affordances and perception
 
 The model does not choose from a fixed verb list. It chooses from the interactions available at that moment.
@@ -123,17 +129,25 @@ No object in range means no interact action. Context can remove actions: an in-t
 
 Each option carries an id, label, target, preconditions, expected effects, and risk. The model picks an id; the simulation validates it against the current option set. The model cannot invent an action.
 
-Unreal reports facts; the simulation decides whether a fact is an event or a new option:
+Starting an action is a transaction: take the reservation, apply the effects once, and release on completion, cancellation, or timeout. A late or retried answer must never apply the same effect twice.
+
+Unreal reports facts, the game tags their urgency, and the platform decides whether a fact enters the event queue or only the option set:
 
 - Events are pushed immediately: spoken to, bumped, attacked, path blocked, vehicle docked, shift started. JEV handles them.
 - Snapshots are pulled at decision time: position, movement, path status, inventory, time, and nearby actors and objects with distance, state, and visibility.
 - Diffs are pushed at low frequency: a new actor in range or an interactable changing state, coalesced to at most one per inhabitant every few seconds.
 
-A new person walking past is not an event; it is an option at the next tick. Being addressed by that person is an event. The platform owns that classification, because only it knows the plan, relationship, and urgency.
+A new person walking past is not an event; it is an option at the next tick. Being addressed by that person is an event. The game supplies urgency policy; the platform applies it and keeps the queues.
 
-Sampling follows the tiers: 1 Hz hot, 0.2 Hz cold, staggered across frames by inhabitant id with a per-frame budget. Idle inhabitants sample slower. Off-screen inhabitants get no physics query and run on their schedule until promoted.
+Use reliable, ordered events for speech and action outcomes, coalesced diffs for reconstructible state, and snapshots for reconciliation. Carry timestamps, sequence numbers, and removal tombstones. Absence from a capped snapshot must never mean the object is gone; it means only that it was not among the closest candidates.
 
-Ranges: interact at 2 to 3 m, notice people at 15 to 25 m, hear speech at 8 to 10 m. Cap a snapshot at about 12 objects and 8 actors, sorted by distance and importance. Destinations are gazetteer ids; Unreal owns pathfinding.
+Sampling follows the tiers: 1 Hz hot, 0.2 Hz cold. That is about 72 passes per second at 200 inhabitants, before off-screen reductions. Stagger them across frames by inhabitant id with a per-frame budget; idle inhabitants sample slower.
+
+Budget in game-thread milliseconds, not kilobytes. Measure overlaps, visibility traces, path queries, and allocations. Share one spatial index, bound the number of visibility traces, and never pathfind for every candidate. Reserve snapshot slots for the current target and goal destination so a cap cannot hide what the plan needs.
+
+Off-screen inhabitants need an authoritative persistent record independent of the pawn. Visibility, cognition tier, and simulation fidelity are separate switches. Promotion reconciles travel, occupancy, schedules, and reservations before the pawn takes over.
+
+Ranges: interact at 2 to 3 m, notice people at 15 to 25 m, hear speech at 8 to 10 m. Cap a snapshot at about 12 objects and 8 actors, sorted by distance and importance. Destinations are gazetteer ids; the game owns pathfinding.
 
 A snapshot is about 1 KB. Two hundred inhabitants at 1 Hz is roughly 200 KB/s, in-process. No bridge is involved.
 
@@ -141,15 +155,17 @@ A snapshot is about 1 KB. Two hundred inhabitants at 1 Hz is roughly 200 KB/s, i
 
 The simulation runs a fixed social tick, for example 1 Hz, independent of frame rate. All inhabitants see the same tick and events in the same order. Movement and animation run in Unreal at frame rate.
 
-Each brain has a next decision time. When it arrives, or when an event interrupts, the subsystem builds the compact state and asks how urgent this is and which option to pick. Use confidence: above the threshold, act; below, continue or idle.
+Each brain has a next decision time. When it arrives, or when an event interrupts, the subsystem builds the compact state and asks how urgent this is and which option to pick. Treat self-reported confidence as a weak hint, not a gate: validate the chosen option and use a deterministic fallback when it fails.
 
-Walk, path, and collision belong to Unreal. The brain receives progress events: arrived, blocked, interrupted, path failed. A failed path triggers a new decision. A new observation is injected as an interruption with a cooldown and a novelty check.
+Walk, path, and collision belong to the game's controller. The action executor owns start, progress, cancellation, completion, and timeout, and takes atomic reservations for resources such as a seat, a bed, or a shop counter. The brain receives progress events: arrived, blocked, interrupted, path failed. A failed path triggers a new decision. A new observation is injected as an interruption with a cooldown and a novelty check.
 
-Model calls are async and carry a state version. Apply the answer only if the version is still current; otherwise discard or re-decide. A stale answer is worse than a late one.
+Model calls are async and carry a decision generation plus versions for the relevant targets and preconditions. Apply the answer only if those still match at commit; otherwise discard or re-decide. A whole-world version is too coarse: movement alone would expire every answer. Reflection updates memory independently of ticks. A reaction supersedes a pending tick for the same inhabitant.
+
+Urgent admission is separate from the social tick. A 1 Hz tick boundary must not consume the sub-second reaction budget, so reactions get reserved capacity and their own queue. Stagger model deadlines as well as sensing; long reflections must not occupy every request slot.
 
 When two inhabitants meet, create one encounter event with a deterministic initiator, not two independent decisions. Lock both for the conversation.
 
-For determinism: fixed seed, fixed event order, stable sorting, and a log of every request, response, and applied action. That lets a day be replayed.
+Fixed seeds and sorted events do not make Unreal itself deterministic. Promise deterministic cognition replay against recorded observations, model completions, and action outcomes, with the tick each was applied. Save stable ids, logical travel and action state, RNG state, deadlines, and reservations. Cancel outstanding HTTP work on load.
 
 ## Tiers and models
 
@@ -212,14 +228,17 @@ The god agent sees a stable roster plus a fresh snapshot, writes short thoughts 
 
 The largest levers, in order: cache hit rate, reflection cadence and size, tick cadence, then the tick model. Tiering cuts the tick line by about 64%.
 
+This is a scenario, not a measured budget. It assumes six reflection calls per real hour, which requires a defined in-game clock, and it ignores cache expiry, reasoning-token variance, retries, and provider drift. Measure the cached share and set a hard session cap before trusting it.
+
 ## Model runtime
 
 The plugin talks to OpenAI-compatible APIs directly from C++ with UE's HTTP and JSON modules.
 
 - INPCModelClient interface: HTTP client, fake client, and a future gateway client.
-- Request pool with a max in flight, and a priority queue: reactions, hot ticks, cold ticks, reflection, god.
+- Request pool with a max in flight, and a priority queue: reactions, hot ticks, cold ticks, reflection, god (later).
 - Per-lane timeouts: reaction 1.5 s, tick 8 s, reflection 60 s, god 90 s.
-- One retry on 429 or 5xx with jitter, recording both attempts and both charges. Never retry blindly.
+- Ledger contract: an exclusive record before submission, then terminal or uncertain. A 429 is a non-execution and may be retried with jitter. A 5xx after submission is uncertain and must not be retried automatically; reconcile it first.
+- Hard per-session spend cap, enforced before the request leaves the process.
 - Circuit breaker: above a 20% error rate over a minute, fall back to schedule-only and log.
 - Stable prompt prefix first (system, identity, rules, goal), volatile state last. That is what makes caching work.
 - Estimate tokens before sending and reject over-budget prompts.
@@ -235,18 +254,20 @@ The same brain runs against a synthetic world, with no map, no rendering, and no
 - FFakeNPCModelClient returns scripted decisions with configurable latency and error rate.
 - Run 200 inhabitants for 30 in-game days in a commandlet or automation test.
 
-Invariants: money is conserved, every inhabitant has at most one home and one job, no double-booked shifts, no inhabitant has two pending decisions, queues are bounded, and a replay reproduces the same day.
+Invariants: every transfer has a source and a sink, the treasury balances, every inhabitant has at most one home and one job, no double-booked shifts, no inhabitant has two pending decisions, queues are bounded, and a replay reproduces the same day.
 
 Live validation then uses five inhabitants in one region and the real model client.
 
 ## Implementation plan
 
-1. Define the protocol and build the synthetic world, fake client, scheduler, and option builder in the C++ plugin. Get headless tests green.
-2. Add identity, goals, needs, memory, and the economy primitives.
-3. Add the HTTP model client, router, token estimates, and ledger.
-4. Add the Unreal sensor and affordance components, plus a debug view.
-5. Bind Yorimichi: five inhabitants, one job board, rent, sleep, and one shop.
-6. Scale to 200 and measure cache hit rate, queue depth, staleness, and cost per day.
+1. Define the machine-readable protocol and the action transaction model: reservations, cancellation, stale replies, and exactly-once effects.
+2. Separate persistent inhabitant records from pawns: save and load, streaming, and promotion.
+3. Split clocks and budgets: urgent admission, the social tick, request caps, the ledger contract, and a session spend cap.
+4. Build the synthetic world, fake client, scheduler, and option builder in the C++ plugin. Get headless tests green.
+5. Add identity, goals, needs, memory, and the economy mechanisms.
+6. Add the Unreal sensor and affordance components, plus a debug view.
+7. Bind five real inhabitants in one game region. Test contention, model outages, save and reload, and off-screen transitions.
+8. Scale to 200 and measure cache hit rate, queue depth, staleness, and cost per day. Add the god agent after the five behave convincingly.
 
 ## Open questions
 

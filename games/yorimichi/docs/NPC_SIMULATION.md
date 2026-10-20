@@ -10,7 +10,7 @@ Status: design proposal. Yorimichi is the first consumer of the platform layer i
 - Homes and their canonical occupants.
 - Affordance bindings: doors, beds, food, job boards, shop counters, trains, zeppelins, benches.
 - Navigation, animation, collision, and crowd LOD.
-- Game save fields for identity, memory, goals, and scheduler state.
+- A save envelope. The plugin serializes its own versioned identity, memory, goal, and scheduler state into it.
 
 ## Action vocabulary
 
@@ -29,11 +29,13 @@ Life goals and stage predicates are also game data. The platform runs the state 
 
 Strict total across the four regions: 321 houses. That is enough for 200 NPCs once apartments, machiya, and shacks are used, with room for vacancies and eviction.
 
+This is a building count, not a housing audit. Usable interiors, reachable beds, door access, and whether a house can actually be entered still need checking before assigning 200 homes.
+
 ## Base jobs
 
 The world starts with shop clerk, cafe worker, station attendant, dock worker, and groundskeeper. Each has an employer, location, shift, wage, requirements, and capacity.
 
-The world pays wages. Rent, food, taxes, and purchases at world-owned stores take money back. Stores need a clerk to open; a missing clerk means closed and no revenue. Do not tie critical transport to staffing at first.
+The world pays wages. Rent, food, taxes, and purchases at world-owned stores take money back. Stores need a clerk to open; a missing clerk means closed and no revenue. Do not tie critical transport to staffing at first. Give the treasury explicit source and sink accounts so money conservation is testable.
 
 Every NPC has a canonical home. Missed rent means eviction; the home becomes available and another NPC can take it. The evicted NPC is homeless until they recover.
 
