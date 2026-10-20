@@ -1,6 +1,6 @@
 # AI NPCs in Yorimichi
 
-Status: design proposal. Yorimichi is the first consumer of the platform layer in [docs/NPC_SIMULATION.md](../../../docs/NPC_SIMULATION.md). The cognition loop lives in the Atelier plugin; this page lists only what the game supplies.
+Status: design proposal. Yorimichi is the first consumer of the platform layer in [docs/NPC_SIMULATION.md](../../../docs/NPC_SIMULATION.md). The cognition loop lives in the Atelier plugin; this page lists only what the game supplies. The world itself is not simulation-ready yet; see [NPC_READINESS.md](NPC_READINESS.md).
 
 ## What the game supplies
 
@@ -62,4 +62,4 @@ AVillageLife stays cosmetic and separate for now.
 
 ## First milestone
 
-Five NPCs in Belmonte: one shop clerk, one job board, two homes, one bench. Test a shift, a rent payment, a home sleep, a street sleep, one refused action, and one conversation. Measure job fill, money, happiness delta, and cost per in-game day before scaling.
+Pass the readiness gate in [NPC_READINESS.md](NPC_READINESS.md) first: the Momiji pilot with five enterable buildings, one NPC, one shop, one clock, save and reload, and a full day. Belmonte comes later; its scanned blocks have no interiors.
