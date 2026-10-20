@@ -27,6 +27,16 @@ Policy stays in the game: the platform provides accounts and transfers, not a re
 
 Platform modules never name a game. Games configure the platform; they do not reimplement it.
 
+### Money and happiness
+
+| Concept | Core | Game |
+| --- | --- | --- |
+| Money | accounts, transfers, reservations, conservation checks, multi-resource ledger | currency name, starting balances, wages, prices, rent, debt and eviction rules |
+| Happiness | named stat container, bounds, decay, reward application, option scoring | that the stat is called happiness, what changes it, the values, caps, and cooldowns |
+| Needs | decay and threshold machinery | which needs exist, their rates, and the failure effects |
+
+The core has no Rent or Happiness type. It has accounts, stats, and effects keyed by game-defined names.
+
 Proposed locations:
 
 - platform/npc/core/: portable C++20 core. No UObject, UWorld, FString, FHttp, or engine headers.
@@ -137,7 +147,7 @@ An action descriptor carries:
 - an id and label, namespaced by the game, such as train.board
 - target kind and interaction radius
 - preconditions: money, item, skill, time window, state tag, or a game predicate
-- expected effects: time, money, hunger, energy, happiness, relationship
+- expected effects: time plus deltas on game-defined stats and resources, such as money, hunger, energy, happiness, and relationship in Yorimichi
 - an execution handler that starts the action and reports progress
 
 The game returns a descriptor valid for the current actor and state, not a static list. The platform filters, ranks, validates, and dispatches. The game decides what the action means and how it looks.
