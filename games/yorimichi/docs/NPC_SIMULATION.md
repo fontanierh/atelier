@@ -10,13 +10,15 @@ Status: design proposal. Yorimichi is the first consumer of the platform layer i
 - Homes and their canonical occupants.
 - Affordance bindings: doors, beds, food, job boards, shop counters, trains, zeppelins, benches.
 - Navigation, animation, collision, and crowd LOD.
-- A save envelope. The plugin serializes its own versioned identity, memory, goal, and scheduler state into it.
+- A save envelope. The core serializes its own versioned identity, memory, goal, and scheduler state; the game stores the blob.
 
 ## Action vocabulary
 
 Yorimichi owns its verbs and their effects. It registers actions such as train.board, train.ride, train.disembark, zeppelin.board, door.open, bed.sleep, food.eat, job.apply, shop.buy, shop.work, and talk. Each one returns its preconditions and expected effects for the current state; the platform builds and validates the options.
 
 Life goals and stage predicates are also game data. The platform runs the state machine, tracks progress, and applies rewards.
+
+Scenarios live under games/yorimichi/scenarios/npc/ and use the game's world data. They run on the native platform CLI, with no game process and no Unreal startup.
 
 ## Housing audit
 

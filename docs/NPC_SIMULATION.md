@@ -6,7 +6,7 @@ Last updated: 2026-10-20.
 
 Atelier should own the generic simulation and cognition layer for AI-driven inhabitants. Yorimichi is the first consumer and the reference implementation, not the home of the system.
 
-The runtime is C++ inside an Unreal plugin. Python stays for build tooling, data validation, and offline evaluation, never in the live loop.
+The simulation core is portable C++20 with no Unreal types. Unreal is one adapter; a native CLI runs the same core with no engine, map, or rendering. Python stays for build tooling, data validation, and report rendering, never in the live loop.
 
 ## Platform and game boundary
 
@@ -29,22 +29,41 @@ Platform modules never name a game. Games configure the platform; they do not re
 
 Proposed locations:
 
-- platform/engine/Plugins/AtelierNPC/: runtime C++ plugin.
+- platform/npc/core/: portable C++20 core. No UObject, UWorld, FString, FHttp, or engine headers.
+- platform/npc/cli/: native scenario runner and report output.
+- platform/npc/tests/: unit, scenario, and replay tests.
+- platform/engine/Plugins/AtelierNPC/: Unreal adapter. World queries, action execution, HTTP, pawn components, save envelope.
 - platform/conventions/npc_protocol.schema.json: machine-readable and versioned. C++ and Python validators read the same file; the Markdown explains it.
-- platform/studio/atelier/npc/: build-time validation, prompt evals, cost reports. Not the runtime.
+- platform/studio/atelier/npc/: build orchestration, data validation, prompt evals, report rendering. Not the runtime.
 - games/<game>/: NPC content, world bindings, actor classes, nav, save data.
 
 ## Runtime shape
 
-    UWorld
-      └─ UNPCSimulationSubsystem        fixed social tick, scheduler, ledger
-           ├─ UNPCBrainComponent         one per inhabitant
-           ├─ UNPCSensorComponent        range and line-of-sight queries
-           ├─ UAffordanceRegistry        world subsystem
-           ├─ UNPCModelClient            async HTTP, one interface
-           └─ UNPCEconomySubsystem       jobs, wages, rent, homes
+    Core (portable C++, no engine)
+      Simulation
+        ├─ WorldModel          places, travel, resources, occupancy
+        ├─ Scheduler           fixed ticks, admissions, deadlines
+        ├─ Brains              identity, needs, goals, memory, options
+        ├─ IModelClient        live, utility, scripted, or recorded
+        ├─ IPersistence        versioned snapshot
+        └─ IEventSink          JSONL, in-memory, or engine log
 
-The brain is a component, so any pawn can be an inhabitant. One subsystem owns the clock and the frame budget; there are no per-NPC timers. HTTP completions arrive on a worker callback; world access and action commits happen on the game thread. Worker inputs are immutable, object references are weak, and every request is cancelled on world teardown or load.
+    Unreal adapter
+      UNPCSimulationSubsystem ── owns one Simulation
+      UNPCBrainComponent      ── maps a pawn to a brain id
+      UNPCSensorComponent     ── answers world queries
+      UNPCActionExecutor      ── moves, animates, reserves, reports
+      UNPCModelClient         ── implements IModelClient with UE HTTP
+
+Core rules:
+
+- C++20 and the standard library only. No UObject, UWorld, FString, FHttp, or engine math in the core.
+- Integer ticks and integer money. No floating point for balances or deadlines.
+- Single-threaded and deterministic. Adapters enqueue async results; the core consumes them at a tick boundary in a fixed order.
+- The core owns the RNG. A seed plus a scenario must reproduce the same log.
+- The same sources compile into the native CLI and into the Unreal module. Do not link a separately built core library into UE.
+
+The Unreal adapter owns the game thread, world access, weak object references, async HTTP, and cancellation on teardown. The core never calls into the engine.
 
 ## Four layers
 
@@ -234,9 +253,9 @@ This is a scenario, not a measured budget. It assumes six reflection calls per r
 
 ## Model runtime
 
-The plugin talks to OpenAI-compatible APIs directly from C++ with UE's HTTP and JSON modules.
+The Unreal adapter implements IModelClient with UE's HTTP and JSON modules. The core only sees requests and completions, so the CLI can use the utility, scripted, or recorded client.
 
-- INPCModelClient interface: HTTP client, fake client, and a future gateway client.
+- IModelClient: live HTTP, utility, scripted, recorded, and a future gateway client.
 - Request pool with a max in flight, and a priority queue: reactions, hot ticks, cold ticks, reflection, god (later).
 - Per-lane timeouts: reaction 1.5 s, tick 8 s, reflection 60 s, god 90 s.
 - Ledger contract: an exclusive record before submission, then terminal or uncertain. A 429 is a non-execution and may be retried with jitter. A 5xx after submission is uncertain and must not be retried automatically; reconcile it first.
@@ -248,36 +267,61 @@ The plugin talks to OpenAI-compatible APIs directly from C++ with UE's HTTP and 
 
 Keys never ship in a client build. The prototype reads the local environment; a release goes through a backend proxy that holds the key and enforces spend limits.
 
-## Headless simulation and tests
+## Headless-first simulation
 
-The same brain runs against a synthetic world, with no map, no rendering, and no network:
+The core must run without Unreal, a map, rendering, navigation, or a model. The Unreal adapter is optional. If a behavior cannot run natively, it is in the wrong layer.
 
-- FNPCSyntheticWorld implements the snapshot and event source over a graph of places, travel times, jobs, homes, and shops.
-- FFakeNPCModelClient returns scripted decisions with configurable latency and error rate.
-- Run 200 inhabitants for 30 in-game days in a commandlet or automation test.
+The native runner:
 
-Invariants: every transfer has a source and a sink, the treasury balances, every inhabitant has at most one home and one job, no double-booked shifts, no inhabitant has two pending decisions, queues are bounded, and a replay reproduces the same day.
+    atelier npc sim scenarios/bakery.json --days 30 --seed 7
 
-Live validation then uses five inhabitants in one region and the real model client.
+It runs fixed ticks as fast as the CPU allows, with no engine startup and no network. Python only launches the binary and renders the report.
+
+Scenarios are versioned JSON: world graph, inhabitants, jobs, homes, prices, initial memories, and a timeline. The timeline injects events at sim times:
+
+    {"t":120,"type":"speech","from":"mira","to":"bob","text":"the bakery is hiring"}
+    {"t":300,"type":"rent_due"}
+    {"t":600,"type":"train_arrives"}
+    {"t":900,"type":"model_outage","duration":120}
+
+Inject speech, bumps, attacks, blocked paths, locked doors, closed shops, vacancies, rent, eviction, weather, region entry, save/load, promotion, and every model fault: timeout, 429, 5xx, malformed JSON, empty response, stale response, slow response.
+
+Model clients form a ladder:
+
+- Utility: picks the best expected effect. Deterministic, free, tests the economy and scheduler.
+- Scripted: returns a fixed option or line per tick. Tests a hypothesis.
+- Recorded: replays a logged trace. Reproduces a real day offline.
+- Live: the real API, for calibration only.
+
+Metrics and assertions:
+
+- Economy: money supply, employment, vacancies, delinquency, evictions, homelessness, Gini.
+- Behavior: goal progress, action mix, repeated actions, stuck time, conversation loops, path failures.
+- System: decision latency, queue depth, stale rate, cache hit rate, error rate, cost per day.
+
+CI runs a 30-day scenario and fails on broken invariants, unbounded queues, or a changed log hash for the same seed. Faults are first-class: every failure mode and every promotion boundary has a scenario. Save at tick N, reload, continue, and compare with a run that never reloaded.
+
+Invariants: every transfer has a source and a sink, the treasury balances, every inhabitant has at most one home and one job, no double-booked shifts, no inhabitant has two pending decisions, and queues are bounded.
 
 ## Implementation plan
 
-1. Define the machine-readable protocol and the action transaction model: reservations, cancellation, stale replies, and exactly-once effects.
-2. Separate persistent inhabitant records from pawns: save and load, streaming, and promotion.
-3. Split clocks and budgets: urgent admission, the social tick, request caps, the ledger contract, and a session spend cap.
-4. Build the synthetic world, fake client, scheduler, and option builder in the C++ plugin. Get headless tests green.
+1. Define the machine-readable protocol, the portable core interfaces, and the action transaction model: reservations, cancellation, stale replies, and exactly-once effects.
+2. Build the native runner: synthetic world, event timeline, utility and scripted clients, metrics, and assertions.
+3. Add persistence and replay: save and load, promotion, and deterministic log hashes.
+4. Split clocks and budgets: urgent admission, the social tick, request caps, the ledger contract, and a session spend cap.
 5. Add identity, goals, needs, memory, and the economy mechanisms.
-6. Add the Unreal sensor and affordance components, plus a debug view.
-7. Bind five real inhabitants in one game region. Test contention, model outages, save and reload, and off-screen transitions.
-8. Scale to 200 and measure cache hit rate, queue depth, staleness, and cost per day. Add the god agent after the five behave convincingly.
+6. Add the Unreal adapter: subsystem, pawn components, sensor, executor, HTTP client, and save envelope.
+7. Bind five real inhabitants in one region. Test contention, outages, save and reload, and off-screen transitions.
+8. Scale to 200, measure, then add the god agent.
 
 ## Open questions
 
 - One C++ HTTP client, or a local gateway sidecar for keys, rate limits, and spend caps?
-- DataAssets or JSON for identity sheets and affordance catalogs?
+- CMake for the native core and CLI, or a small shell build?
+- JSON for identity sheets and affordance catalogs, with a UE DataAsset mirror only if editors need one?
 - How much of the economy belongs to the platform, and how much is game balance?
-- What is the save format for memories, goals, and scheduler state?
-- How do we keep determinism across engine versions?
+- What is the versioned save format for memories, goals, and scheduler state?
+- How do we verify determinism across compilers and platforms?
 
 ## References
 
