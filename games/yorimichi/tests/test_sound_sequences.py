@@ -135,6 +135,16 @@ def test_skate_preferences_revalidation_witness():
             assert _body_digest(text, row['owner'], name) == expected
 
 
+def test_skate_volume_reaches_the_main_menu_and_phone():
+    game = Path(__file__).resolve().parents[1]
+    menu = (game / 'unreal/Source/Yorimichi/JapanPreferences.cpp').read_text(encoding='utf-8')
+    # the Skate feel page owns its knobs by membership; a skate_ prefix filter hid the audio slider
+    assert 'StartsWith(TEXT("skate_"))' not in menu
+    assert 'if (IsSkateFeelKey(Values[I].Key)) continue;' in menu
+    phone = (game / 'phone/settings.js').read_text(encoding='utf-8')
+    assert "['Audio',['volume','music','music_volume','soften_footsteps','footstep_volume','soften_skate','skate_volume']]" in phone
+
+
 def test_missing_surface_or_modified_candidate_fails(prepared):
     pools, _, _ = sequences.prepared_sources(prepared)
     with pytest.raises(ValueError, match='Missing surface'):

@@ -101,7 +101,7 @@ centre, facing its yaw, in Belmonte-local cm. Haras Valley's frame is the region
 origin plus its pivot (the osteria's watch point is its map stop at plan (-30.4, 1.6) m). The screens are 1.4 times
 Haras Valley's 70-inch one (2.17 m of picture); the Salon's bar screen is 1.3 times and 15 cm higher, to stay over the
 mirror's frame. Each is a procedural frame and picture with no collision or shadow; the picture's material is
-`/Game/Racing/M_RacingTv` (`unreal.racing_tv`, `Scripts/racing_tv_material.py`): unlit, it decodes the picture's
+`/Game/Racing/M_RacingTv` (`unreal.belmonte`, `Scripts/racing_tv_material.py`): unlit, it decodes the picture's
 display-encoded colours.
 
 It is presentation only, on every machine that draws (never a dedicated server), from the service's replicated snapshot:

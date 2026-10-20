@@ -306,6 +306,20 @@ def park_walk(m,z):
    m.box((x,y+side*.98,z+bottom+.25),(.5,.5,.5),STONE,.04)
   rail(m,(b0+.2,y+side*1.08),(b1-.3,y+side*1.08),top)
 
+def city_ground(x,y):
+ """HD_Terrain's surface at (x, y): the layout height carved by the railway earthworks and levelled by the air
+ station's pad, read off its grid like the mesh, and never below the exact surface."""
+ from hidamari.layout import height,terrain_axes
+ from train import earthworks
+ from zeppelin.layout import city_pad
+ def final(gx,gy):return city_pad(gx,gy,earthworks.carve(gx,gy,height(gx,gy)))
+ xs,ys=map(np.asarray,terrain_axes())
+ i=int(np.clip(np.searchsorted(xs,x)-1,0,len(xs)-2));j=int(np.clip(np.searchsorted(ys,y)-1,0,len(ys)-2))
+ gx,gy=np.meshgrid(xs[i:i+2],ys[j:j+2]);z=np.asarray(final(gx,gy),float)
+ u=(x-xs[i])/(xs[i+1]-xs[i]);w=(y-ys[j])/(ys[j+1]-ys[j])
+ grid=z[0,0]*(1-u)*(1-w)+z[0,1]*u*(1-w)+z[1,0]*(1-u)*w+z[1,1]*u*w
+ return float(max(grid,float(np.asarray(final(np.array([x]),np.array([y])),float).ravel()[0])))
+
 def belmonte_walk(m):
  from belmonte import layout as bm_layout,source as bm_source
  surf=bm_source.terrain();path=belmonte_path()
@@ -344,14 +358,17 @@ def main():
    q=path[k,:2]+n[k]*1.25*side;p.append((*q,float(upper_surface(h,*q))+.04))
   m.poly(p,(.25,.16,.079))
  # The city link starts beyond the closed railway lane and reaches the moved apron without crossing the tracks.
- from hidamari.layout import height
+ # It follows HD_Terrain as built (railway earthworks carved, then the apron pad), never the uncarved layout
+ # height, which left it floating over the cutting's bank; side skirts close any gap at its edges.
  path=city_path();tangent=np.gradient(path,axis=0);tangent/=np.linalg.norm(tangent,axis=1)[:,None]
  normal=np.column_stack([-tangent[:,1],tangent[:,0]])
  for i in range(len(path)-1):
   p=[]
   for k,side in [(i,-1),(i+1,-1),(i+1,1),(i,1)]:
-   xx,yy=path[k]+normal[k]*.8*side;p.append((float(xx),float(yy),float(height(xx,yy))+.035))
+   xx,yy=path[k]+normal[k]*.8*side;p.append((float(xx),float(yy),city_ground(xx,yy)+.04))
   m.poly(p,STONE)
+  for a,b in [(p[0],p[1]),(p[2],p[3])]:
+   m.poly([(a[0],a[1],a[2]-.35),(b[0],b[1],b[2]-.35),b,a],STONE)
  _,report[m.name]=v.export(m,mat)
  from zeppelin.check_rotors import check
  check()

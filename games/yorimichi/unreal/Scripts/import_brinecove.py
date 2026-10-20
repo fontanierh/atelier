@@ -151,7 +151,8 @@ def terrain_parent():
     inputs = [('WP', node(unreal.MaterialExpressionWorldPosition)), ('N', node(unreal.MaterialExpressionVertexNormalWS)),
               ('SeaZ', node(unreal.MaterialExpressionScalarParameter, parameter_name='SeaZ', default_value=0.)),
               ('RockOnly', node(unreal.MaterialExpressionScalarParameter, parameter_name='RockOnly', default_value=0.)),
-              ('Tint', node(unreal.MaterialExpressionVectorParameter, parameter_name='Colour', default_value=unreal.LinearColor(1., 1., 1., 1.)))]
+              ('Tint', node(unreal.MaterialExpressionVectorParameter, parameter_name='Colour', default_value=unreal.LinearColor(1., 1., 1., 1.))),
+              ('Cam', node(unreal.MaterialExpressionCameraPositionWS))]
     for layer in ('Sand', 'Meadow', 'Forest', 'Rock'):
         for key in (layer, layer + 'N'):
             inputs.append((key, node(unreal.MaterialExpressionTextureObjectParameter, parameter_name=key, texture=white)))
@@ -175,6 +176,31 @@ cM = lerp(Texture2DSampleLevel(Meadow, MeadowSampler, uM, 12).rgb, cM, 0.55);
 float3 cF = Texture2DSample(Forest, ForestSampler, uF).rgb;
 float3 cR = Texture2DSample(Rock, RockSampler, p.yz / 6.0).rgb * bw.x + Texture2DSample(Rock, RockSampler, p.xz / 6.0).rgb * bw.y
           + Texture2DSample(Rock, RockSampler, p.xy / 6.0).rgb * bw.z;
+// Distant cliffs showed the 6 m rock print as wallpaper stripes (playtest note 1, 192 m away). Far away a second,
+// rotated print at 23 m takes over half the colour, and a triplanar macro noise at 41 m and 13 m breaks the value
+// and hue in broad patches; the xy-only noises above ran straight down a cliff face as vertical streaks.
+float far = smoothstep(35.0, 150.0, length(WP - Cam) / 100.0);
+float2 rq = float2(0.8, 0.6);
+float3 cR2 = Texture2DSample(Rock, RockSampler, float2(dot(p.yz, rq), dot(p.yz, float2(-rq.y, rq.x))) / 23.0 + 0.37).rgb * bw.x
+           + Texture2DSample(Rock, RockSampler, float2(dot(p.xz, rq), dot(p.xz, float2(-rq.y, rq.x))) / 23.0 + 0.61).rgb * bw.y
+           + Texture2DSample(Rock, RockSampler, float2(dot(p.xy, rq), dot(p.xy, float2(-rq.y, rq.x))) / 23.0 + 0.13).rgb * bw.z;
+cR = lerp(cR, cR * 0.45 + cR2 * 0.55, 0.15 + 0.6 * far);
+float2 planes[3] = { p.yz, p.xz, p.xy };
+float wts[3] = { bw.x, bw.y, bw.z };
+float macro = 0.0;
+for (int k = 0; k < 3; k++) {
+    for (int o = 0; o < 2; o++) {
+        float2 mq = planes[k] / (o == 0 ? 41.0 : 13.0) + float(o) * 7.3;
+        float2 mi = floor(mq); float2 mf = frac(mq); mf = mf * mf * (3.0 - 2.0 * mf);
+        float a = frac(sin(dot(mi, float2(41.3, 289.1))) * 43758.5453);
+        float b = frac(sin(dot(mi + float2(1, 0), float2(41.3, 289.1))) * 43758.5453);
+        float c0 = frac(sin(dot(mi + float2(0, 1), float2(41.3, 289.1))) * 43758.5453);
+        float d = frac(sin(dot(mi + float2(1, 1), float2(41.3, 289.1))) * 43758.5453);
+        macro += wts[k] * (o == 0 ? 0.65 : 0.35) * lerp(lerp(a, b, mf.x), lerp(c0, d, mf.x), mf.y);
+    }
+}
+float3 breakup = lerp(float3(0.84, 0.86, 0.9), float3(1.1, 1.04, 0.95), macro);
+cR *= lerp(float3(1, 1, 1), breakup, 0.55 + 0.45 * far);
 float3 c = wS * cS + wM * cM + wF * cF + wR * cR * Tint.rgb;
 return c * lerp(0.88, 1.08, n1);
 """, unreal.CustomMaterialOutputType.CMOT_FLOAT3)

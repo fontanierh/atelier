@@ -68,7 +68,7 @@ fails on missing media, stale indices or a changed runtime profile. The report
 records actual source hashes, renderer/producer identities and runtime pins.
 This does not select a bank or establish subjective listening acceptance.
 
-The menu's **Soften footsteps** switch defaults off. It applies a 3 kHz low-pass
+The menu's **Soften footsteps** switch defaults on (the release defaults, JapanPreferences.cpp). It applies a 3 kHz low-pass
 to human footsteps and foot landings. **Footstep volume** defaults to 1 and ranges
 from 0 to 1. Both save locally and update existing and future footstep voices
 across all four banks, including other players heard on this device. Horse
@@ -81,8 +81,8 @@ contact timing and the reviewed playback change, without claiming a new native
 listening or compilation check.
 
 **Soften skate sounds** works the same way for the skateboard and also defaults
-off. It applies a 3 kHz low-pass to board rolls, grinds, slides, skids, foot
-brakes, pops and landings. **Skate volume** defaults to 1 and ranges from 0 to 1.
+on. It applies a 3 kHz low-pass to board rolls, grinds, slides, skids, foot
+brakes, pops and landings. **Skate volume** defaults to 0.5 and ranges from 0 to 1.
 Both save locally. They update loops and one-shots that are already playing as
 well as future ones, for every bank and for other riders heard on this device.
 Footsteps, hooves, music and overall volume are unaffected. Envelopes, pitch,

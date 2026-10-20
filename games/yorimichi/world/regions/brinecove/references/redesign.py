@@ -92,6 +92,35 @@ JOBS = {
         'white plunge zone with spray and mist, and soft concentric foam rings and ripples spreading and fading '
         'across the pool, thin foam lines hugging the rocks at the shore. No hard white stripes floating on '
         'open water.')),
+    # The r10 playtest notes (2026-10-19 23:26); their context frames carry an r10- prefix beside the earlier set.
+    'market-stall': ('r10:note-009.png', '1536x1024', (
+        'The subject is the striped market stalls on the harbour square. Redesign each stall as a detailed working '
+        'pirate-port market stall: a sturdy four-post timber frame with corner braces and a ridge beam, a thick '
+        'two-layer striped canvas canopy with a scalloped valance and visible timber battens underneath, a solid '
+        'planked counter with front boards and a lower shelf, and tiered wares resting firmly on it: crates of '
+        'oranges and limes, baskets of fish on ice, clay amphorae and jars, rolled bolts of cloth, coils of rope; '
+        'dried fish, lanterns and garlic hanging from the beam on short cords; sacks and barrels on the ground. '
+        'Every object sits on a surface or hangs from the frame; nothing floats.')),
+    'market-stall-under': ('r10:note-010.png', '1536x1024', (
+        'The subject is the market stall canopy seen from below. Redesign it as a solid striped canvas canopy whose '
+        'underside is clearly visible: canvas stretched over timber rafters and a ridge beam on four braced posts, '
+        'the stripes showing through in a slightly darker shade, a scalloped valance all round, lanterns and goods '
+        'hanging from the rafters, the counter and wares beneath. Nothing is see-through or missing.')),
+    'anchor': ('r10:note-013.png', '1536x1024', (
+        'The subject is the anchor monument on the quay. Redesign it as a handsome old admiralty anchor set upright '
+        'on a low dressed-stone plinth: a long dark wrought-iron shank, an oak stock bound with iron bands across '
+        'the top, a heavy iron ring wrapped in thick hemp rope, two curved arms ending in broad spade flukes, a '
+        'length of chain draped over the plinth, clean continuous surfaces with subtle rust and painted highlights.')),
+    'waterfall': ('r10:note-005.png', '1536x1024', (
+        'The subject is the waterfall falling off the sea cliff. Redesign it as a natural cascade: three to five '
+        'separate tongues of white water pouring over an uneven rocky lip at different heights, split by dark wet '
+        'rock ribs, each tongue narrowing and breaking into ragged streaks as it falls, a few small ledges where the '
+        'water bounces, mist and foam at the bottom. No rectangular sheet, no flat top edge.')),
+    'arcade': ('r10:note-011.png', '1536x1024', (
+        'The subject is the long dark plank on round pillars at the edge of the market square. Redesign it as a '
+        'short covered stone colonnade along the square: separate bays of sturdy stone columns with capitals '
+        'carrying arched or lintelled openings, a timber pergola roof with rafters and a striped canvas shade over '
+        'each bay, a clear end at each side before the terrace wall. No long floating beam.')),
     'tex_forest_floor': (None, '1024x1024', (
         'forest floor of dark loamy soil with scattered fallen leaves in ochre, rust and olive, small twigs, tiny '
         'pebbles and patches of low moss; no large leaves, no plants standing up')),
@@ -132,8 +161,9 @@ def paint_one(slug, notes):
     (OUT / f'{slug}.prompt.txt').write_text(prompt + '\n')
     shown = []
     if context:
+        tag, _, context = context.rpartition(':')
         source = notes / context
-        frame = OUT / 'context' / (Path(context).stem + '.jpg')
+        frame = OUT / 'context' / ((tag + '-' if tag else '') + Path(context).stem + '.jpg')
         images.compact(source, frame, 1280, 85)
         shown = [frame]
     if record.exists():

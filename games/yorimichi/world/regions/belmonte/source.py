@@ -165,13 +165,19 @@ class Surface:
 
 @lru_cache(maxsize=2)
 def terrain(natural=False):
-    """The 56 terrain tiles. natural: the tiles the railway carved (tools/belmonte_station_terrain.py) as they were
-    before, from natural/ (the route study plans on that ground)."""
+    """The 56 terrain tiles. natural=True reads the untouched committed GLBs directly; natural=False evaluates
+    the railway/station carving on the 4 valley tiles without mutating assets/belmonte/."""
+    from belmonte import terrain as bm_terrain
     entries = [entry for entry in manifest()['meshes'] if entry['name'].startswith('SM_BM_BT_Terrain_')]
     assert len(entries) == 56, 'Current Belmonte terrain coverage changed; review the source census'
-    paths = [LIBRARY / 'natural' / f"{entry['name']}.glb" if natural and entry.get('railway_carved')
-             else LIBRARY / entry['path'] for entry in entries]
-    return Surface(np.concatenate([triangles(path) for path in paths]))
+    parts = []
+    for entry in entries:
+        path = LIBRARY / entry['path']
+        if not natural and entry['name'] in bm_terrain.VALLEY_CARVED_TILES:
+            parts.append(bm_terrain.valley_tile_triangles(path))
+        else:
+            parts.append(triangles(path))
+    return Surface(np.concatenate(parts))
 
 
 @lru_cache(maxsize=1)

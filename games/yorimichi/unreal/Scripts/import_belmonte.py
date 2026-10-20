@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori  # noqa: E402
 import json
+import runpy
 import unreal
 import atmosphere
 import ground_grain
@@ -211,6 +212,25 @@ def import_mesh(path, name):
     return E.load_asset(target)
 
 
+def generate_terrain_lods(mesh):
+    """Two reduced LODs for refined valley terrain tiles over 12,000 triangles; collision stays on LOD0."""
+    unreal.load_module('StaticMeshEditor')
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    assert editor is not None, 'StaticMeshEditor subsystem is unavailable'
+    options = unreal.StaticMeshReductionOptions()
+    options.set_editor_property('auto_compute_lod_screen_size', False)
+    plan = ((1., 1.), (.5, .35), (.25, .15))
+    levels = []
+    for percent, screen in plan:
+        level = unreal.StaticMeshReductionSettings()
+        level.set_editor_property('percent_triangles', percent)
+        level.set_editor_property('screen_size', screen)
+        levels.append(level)
+    options.set_editor_property('reduction_settings', levels)
+    assert editor.set_lods(mesh, options) == len(plan), (mesh.get_name(), 'LOD generation')
+    assert editor.set_lod_screen_sizes(mesh, [screen for _, screen in plan]), (mesh.get_name(), 'LOD screen sizes')
+
+
 def main():
     """@cc [owner:fontanierh,label:correctness] collision-hull-distance-fields
     Separate source collision hulls MUST disable LOD0 mesh distance-field generation. This
@@ -257,6 +277,8 @@ def main():
         body = mesh.get_editor_property('body_setup')
         if name.startswith('SM_BM_BT_Terrain_'):
             mesh.set_editor_property('allow_cpu_access', name in {'SM_BM_BT_Terrain_0_0', 'SM_BM_BT_Terrain_4_4'})
+            if entry['triangles'] > 12000:
+                generate_terrain_lods(mesh)
         assert body, name
         body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
         body.set_editor_property('double_sided_geometry', True)
@@ -273,6 +295,7 @@ def main():
     # Both render and collision assets now reference only the region's materials.
     # Drop Interchange's placeholder materials and rename redirectors.
     E.delete_directory(ROOT + '/Import')
+    runpy.run_path(str(Path(__file__).with_name('racing_tv_material.py')))
     unreal.log(f'BELMONTE IMPORT COMPLETE: {len(imported)} meshes')
 
 

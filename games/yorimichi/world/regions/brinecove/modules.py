@@ -273,9 +273,9 @@ def harbor():
         for x0, x1 in ((-half, n0), (n1, half)):
             b.box(((x0 + x1) / 2, y, z), (x1 - x0, sy, sz), mat)
 
-    # Quay wall and its cap.
+    # Quay wall and its coping, seated on the wall top (it used to sit buried in the wall with its back edge proud).
     run(390, L.QUAY_Y, 0.35, 4.2, 9.4, 'stone')
-    run(392, L.QUAY_Y + 1.9, 4.65, 1.6, 0.45, 'stone_light')
+    run(392, L.QUAY_Y + 1.15, 5.15, 1.9, 0.2, 'stone_light')
     # The seaward face needs a scale and rhythm of its own: a wet base,
     # horizontal courses and recessed arch-headed doors between the buttresses.
     # Everything on the face stays below the wall's top (0.35 + 9.4 / 2 = 5.05 m).
@@ -331,7 +331,16 @@ def harbor():
         lantern_post(b, px - width / 2 + 1.4, y1 + 3, 5.3, 3.0)
         lantern_post(b, px + width / 2 - 1.4, y0 - 16, 5.3, 3.0)
     # Quay promenade paving and steps into the water.
-    paving(b, -390.0, 390.0, 65.0, 107.0, z=4.745, tile=7.0, thick=0.25, kerbs=(True, False), seed=7)
+    # The promenade runs right up to the quay wall's back (y 62.1): a 2.9 m strip of bare ground between them
+    # z-fought with the paving and showed as grass under the kerb (playtest notes 3 and 4). The wall's coping is the
+    # seaward edge now.
+    paving(b, -390.0, 390.0, 65.0, 107.0, z=4.745, tile=7.0, thick=0.25, kerbs=(False, False), seed=7)
+    n0, n1 = LM.SLIP_NOTCH
+    for x0, x1 in ((-390.0, n0), (n1, 390.0)):
+        paving(b, x0, x1, L.QUAY_Y + 2.1, 65.0, z=4.745, tile=7.0, thick=0.25, kerbs=(False, False), seed=8)
+        # Ground under the quay wall itself stays below the paving too: build.split clamps vertex by vertex, so a
+        # ground triangle with one corner under the wall stood up past the paving edge as a grass wedge (note 3).
+        FLAT_PAVING.append((x0, x1, L.QUAY_Y - 2.1, L.QUAY_Y + 2.1, 4.745 - 0.25))
     for x in (-130, 135):
         for i in range(6):
             b.box((x, L.QUAY_Y - 1.0 - i * 0.8, 4.3 - i * 0.7), (9.0, 0.9, 0.3), 'stone')
@@ -343,11 +352,18 @@ def harbor():
         b.cylinder((px, py, pz + 0.95), (px, py, pz + 1.08), 1.12, 'clay', 9)
         palm(b, px, py, pz + 1.05, RNG.uniform(0, 360), RNG.uniform(0.62, 0.82), RNG)
     # Fish market shed by the east pier.
+    # Posts every 8 m carry eave plates and tie beams; the roof is a solid slab seated on the plates. Its single-sided
+    # roof used to vanish from the street, leaving only two 36 m fascia beams floating overhead (playtest note 14).
     shed_x, shed_y = 305, 86
-    for xx in (-16, 16):
-        for yy in (-6, 6):
+    for xx in range(-16, 17, 8):
+        for yy in (-7, 7):
             b.beam((shed_x + xx, shed_y + yy, 5.0), (shed_x + xx, shed_y + yy, 11.0), 0.34, 'wood_dark')
-    b.gable_roof((shed_x, shed_y, 11.0), 34, 14, 11.0, 3.0, 'roof_terra', 0, ridge='x', overhang=1.0)
+            b.beam((shed_x + xx, shed_y + yy, 9.9), (shed_x + xx + (1.0 if xx < 16 else -1.0), shed_y + yy, 10.9),
+                   0.16, 'wood_dark')
+        b.beam((shed_x + xx, shed_y - 7, 10.8), (shed_x + xx, shed_y + 7, 10.8), 0.28, 'wood_dark')
+    for yy in (-7, 7):
+        b.beam((shed_x - 17, shed_y + yy, 10.85), (shed_x + 17, shed_y + yy, 10.85), 0.3, 'wood_dark')
+    b.gable_roof((shed_x, shed_y, 11.0), 32, 14, 11.0, 3.0, 'roof_terra', 0, ridge='x', overhang=1.0)
     b.box((shed_x, shed_y - 2.0, 5.7), (30, 2.0, 1.2), 'wood_light')
     for i in range(6):
         b.box((shed_x - 12 + i * 4.8, shed_y - 2.3, 6.5), (2.2, 1.0, 0.5), 'sail_stripe' if i % 2 else 'cream')
@@ -416,7 +432,7 @@ def paving(b, x0, x1, y0, y1, z=None, tile=6.5, thick=0.22, kerbs=(True, True), 
                 b.box((cx, edge, top + 0.06), (sx, 0.5, 0.36), 'stone_light')
                 # A dark gutter of upright setts just inside the kerb.
                 gy = edge + (0.6 if edge < (y0 + y1) / 2 else -0.6)
-                b.box((cx, gy, top + 0.005), (sx, 0.7, 0.03), 'cobble_dark')
+                b.box((cx, gy, top), (sx, 0.7, 0.06), 'cobble_dark')
 
 
 def pave_band(b, y0, y1, skip_market=True):
@@ -440,9 +456,9 @@ def pave_band(b, y0, y1, skip_market=True):
         b.rope((lx, ly, lz + 5.0), (lx + 24, ly + 5.0, lz + 5.0), 0.5, 0.03)
         for k in range(3):
             qx = lx + 4 + k * 6.4
-            b.quad((qx, ly + k * 1.25, lz + 4.95), (qx + 4.6, ly + k * 1.25, lz + 4.95),
-                   (qx + 4.6, ly + k * 1.25, lz + 2.8), (qx, ly + k * 1.25, lz + 2.8),
-                   ('canvas', 'canvas_red', 'canvas_teal')[k])
+            b.panel((qx, ly + k * 1.25, lz + 4.95), (qx + 4.6, ly + k * 1.25, lz + 4.95),
+                    (qx + 4.6, ly + k * 1.25, lz + 2.8), (qx, ly + k * 1.25, lz + 2.8),
+                    ('canvas', 'canvas_red', 'canvas_teal')[k], thick=0.04)
 
 
 def lower_town():
@@ -496,9 +512,14 @@ def lower_town():
         b.box((x, y, L.ground(x, y) + 0.65), (34, 1.0, 1.3), 'stone')
         if x % 3 == 0:
             b.sphere((x + RNG.uniform(-8, 8), y + 3.5, L.ground(x, y) + 0.5), 1.1, 'jungle', (1.2, 1, 0.8), subdiv=0)
-    # Bunting and working clutter along the waterfront lane.
+    # Bunting and working clutter along the waterfront lane: short local spans between pairs of posts, never one
+    # line along the whole front (playtest note 14).
     for x in (-300, -150, 0, 150, 300):
-        pennants(b, (x, 94, 9.2), (x + 140, 94, 9.2), 0.9, 11)
+        for k, run in enumerate((14.0, 11.0)):
+            x0 = x - 16 + k * 22
+            for xx in (x0, x0 + run):
+                b.beam((xx, 96.5, L.ground(xx, 96.5)), (xx, 96.5, L.ground(xx, 96.5) + 6.2), 0.14, 'wood_dark')
+            pennants(b, (x0, 96.5, L.ground(x0, 96.5) + 5.9), (x0 + run, 96.5, L.ground(x0 + run, 96.5) + 5.9), 0.6, 7)
     for x, y, yaw in ((-300, 91, 12), (-150, 91, -10), (0, 91, 8), (150, 91, -12), (300, 91, 10)):
         fish_crate(b, x, y, L.ground(x, y) + 0.1, yaw, 1.1)
     for x, y in ((-260, 166), (-90, 166), (60, 166), (220, 166)):
@@ -522,12 +543,9 @@ def market():
         for gy in range(106, 203, 12):
             if rocks.fbm(gx, gy, 30.0, 2, 17) > 0.62:
                 b.box((gx + 6, gy + 6, 4.825), (11.3, 11.3, 0.05), 'cobble_dark')
-    # A low lantern string crosses just in front of the market camera.
+    # Lantern posts at the square's front corners (their strings ran 184 m across the square: playtest note 14).
     for xx in (-92, 92):
         lantern_post(b, xx, 96, L.ground(xx, 96) + 0.1, 5.0)
-    b.rope((-92, 96, 9.1), (92, 96, 9.1), 0.9, 0.05)
-    for xx in range(-84, 85, 12):
-        b.sphere((xx, 96, 8.8), 0.22, 'lantern', subdiv=0)
     cloths = ('canvas', 'canvas_red', 'canvas_teal', 'canvas_gold', 'canvas_blue', 'canvas_green', 'canvas_red')
     for i, (x, y, w, d, cloth) in enumerate(L.MARKET_STALLS):
         # Loosen the grid: real market rows drift, turn and leave gaps.
@@ -544,33 +562,52 @@ def market():
         market_stall(b, x, y, L.ground(x, y) + 0.1, 13, 8, cloth, -7 if x < 0 else 8)
     for x, y, cloth in ((-96, 108, 'canvas_red'), (96, 112, 'canvas_teal')):
         b.cylinder((x, y, L.ground(x, y) + 0.1), (x, y, L.ground(x, y) + 7.5), 0.12, 'wood_dark', 6)
-        b.quad((x, y, L.ground(x, y) + 7.4), (x + 4.0, y, L.ground(x, y) + 6.8),
-               (x + 4.0, y, L.ground(x, y) + 4.4), (x, y, L.ground(x, y) + 5.0), cloth)
+        b.panel((x, y, L.ground(x, y) + 7.4), (x + 4.0, y, L.ground(x, y) + 6.8),
+                (x + 4.0, y, L.ground(x, y) + 4.4), (x, y, L.ground(x, y) + 5.0), cloth, thick=0.04)
     for x, y in ((-70, 105), (-30, 105), (30, 105), (70, 105)):
         barrel(b, x, y, L.ground(x, y) + 0.1, 0.8)
         crate(b, x + 2.2, y + 1.2, L.ground(x, y) + 0.1, 0.8, 12)
-    # Stone arcades frame the square and give the market edges real depth.
+    # Stone colonnades frame the square after the arcade concept (references/redesign/arcade.jpg): short groups of
+    # square piers, each with its own lintel, a timber pergola on posts and a striped shade per bay. One 122 m
+    # lintel and plank used to run the whole side into the terrace wall (playtest note 11).
     for side in (-1, 1):
         x = side * 96
-        for y in range(106, 222, 14):
-            b.cylinder((x, y, L.ground(x, y) + 0.1), (x, y, L.ground(x, y) + 4.3), 0.38, 'stone_light', 8)
-            b.box((x, y, L.ground(x, y) + 4.5), (1.1, 1.1, 0.45), 'stone', 0)
-        b.box((x, 164, L.ground(x, 164) + 4.85), (1.6, 122, 0.6), 'stone_light')
-        b.box((x - side * 1.2, 164, L.ground(x, 164) + 5.2), (2.6, 122, 0.25), 'wood_dark')
-        for y in range(110, 220, 18):
-            b.quad((x - side * 1.0, y - 6, L.ground(x, y) + 5.35),
-                   (x - side * 3.0, y - 6, L.ground(x, y) + 4.6),
-                   (x - side * 3.0, y + 6, L.ground(x, y) + 4.6),
-                   (x - side * 1.0, y + 6, L.ground(x, y) + 5.35),
-                   'canvas' if (y // 18) % 2 else 'canvas_red')
+        xi = x - side * 3.4
+        for g, ys in enumerate(((108, 120, 132, 144), (158, 170, 182, 194), (206, 217))):
+            gz = L.ground(x, (ys[0] + ys[-1]) / 2)
+            top = gz + 4.9
+            for y in ys:
+                pz = L.ground(x, y)
+                b.box((x, y, pz + 0.25), (1.15, 1.15, 0.5), 'stone')
+                b.box((x, y, (pz + 0.5 + top - 0.6) / 2), (0.78, 0.78, top - 0.6 - pz - 0.5), 'stone_light')
+                b.box((x, y, top - 0.45), (1.1, 1.1, 0.3), 'stone')
+                b.beam((xi, y, L.ground(xi, y)), (xi, y, top - 0.25), 0.24, 'wood_dark')
+                b.box((xi, y, L.ground(xi, y) + 0.12), (0.5, 0.5, 0.24), 'stone')
+            b.box((x, (ys[0] + ys[-1]) / 2, top), (1.3, ys[-1] - ys[0] + 1.6, 0.6), 'stone_light')
+            b.beam((xi, ys[0] - 0.7, top - 0.2), (xi, ys[-1] + 0.7, top - 0.2), 0.26, 'wood_dark')
+            n = int((ys[-1] - ys[0]) / 1.5)
+            for k in range(n + 1):
+                y = ys[0] + (ys[-1] - ys[0]) * k / n
+                b.beam((x + side * 0.9, y, top + 0.38), (xi - side * 0.6, y, top - 0.02), 0.14, 'wood_dark', 0.2)
+            for k, (y0, y1) in enumerate(zip(ys, ys[1:])):
+                b.panel((x + side * 0.4, y0 + 0.4, top + 0.5), (x + side * 0.4, y1 - 0.4, top + 0.5),
+                        (xi - side * 0.3, y1 - 0.4, top + 0.12), (xi - side * 0.3, y0 + 0.4, top + 0.12),
+                        ('canvas', 'canvas_teal', 'canvas_red')[(g + k) % 3], thick=0.05)
     # Lantern strings and a loose crowd make the open square read as a working
     # market rather than an empty plaza from the harbor camera.
+    # Each string is a short local span between two posts, never one line across the whole square.
     for yy in (118, 168, 214):
-        for xx in (-92, 92):
-            lantern_post(b, xx, yy, L.ground(xx, yy) + 0.1, 5.5)
-        b.rope((-92, yy, 9.6), (92, yy, 9.6), 0.8, 0.06)
-        for xx in range(-84, 85, 12):
-            b.sphere((xx, yy, 9.3), 0.22, 'lantern', subdiv=0)
+        for x0, x1 in ((-89, -68), (-10, 10), (68, 89)):
+            for xx in (x0, x1):
+                lantern_post(b, xx, yy, L.ground(xx, yy) + 0.1, 5.5)
+            za, zc = L.ground(x0, yy) + 5.6, L.ground(x1, yy) + 5.6
+            b.rope((x0, yy, za), (x1, yy, zc), 0.6, 0.05)
+            for k in range(1, 4):
+                t = k / 4
+                b.sphere((x0 + (x1 - x0) * t, yy, za + (zc - za) * t - 0.6 * math.sin(math.pi * t) - 0.3), 0.22,
+                         'lantern', subdiv=1)
+                b.beam((x0 + (x1 - x0) * t, yy, za + (zc - za) * t - 0.6 * math.sin(math.pi * t)),
+                       (x0 + (x1 - x0) * t, yy, za + (zc - za) * t - 0.6 * math.sin(math.pi * t) - 0.1), 0.02, 'metal')
     # Handcarts, fish baskets and sack piles fill the lanes between stalls.
     for cx, cy, cyaw in ((-66, 150, 18), (66, 152, -24), (-52, 206, 8), (54, 204, -12)):
         cz = L.ground(cx, cy) + 0.1
@@ -626,16 +663,16 @@ def market():
     b.ring((mx, my, mz + 18.5), 1.2, 0.10, 'wood', axis='z', sides=10)
     for i in range(5):
         xx = -4.5 + i * 2.25
-        b.quad((mx + xx, my, mz + 19.5), (mx + xx + 1.0, my, mz + 19.5),
-               (mx + xx + 1.0, my, mz + 18.1), (mx + xx, my, mz + 18.1),
-               ('flag_red', 'cream', 'roof_teal')[i % 3])
+        b.panel((mx + xx, my, mz + 19.5), (mx + xx + 1.0, my, mz + 19.5),
+                (mx + xx + 1.0, my, mz + 18.1), (mx + xx, my, mz + 18.1),
+                ('flag_red', 'cream', 'roof_teal')[i % 3], thick=0.04)
     b.rope((mx, my, mz + 17), (mx - 18, my + 6, 9.0), 0.7, 0.05)
     b.rope((mx, my, mz + 17), (mx + 18, my - 6, 9.0), 0.7, 0.05)
     for i in range(7):
         xx = -15 + i * 5
         yy = my + 6 - (abs(xx) / 18) * 12
-        b.quad((mx + xx, yy, 9.0 - (abs(xx) / 18) * 0.8), (mx + xx + 2.0, yy - 0.8, 8.8),
-               (mx + xx + 2.0, yy - 0.8, 7.8), (mx + xx, yy, 8.0), ('flag_red', 'cream')[i % 2])
+        b.panel((mx + xx, yy, 9.0 - (abs(xx) / 18) * 0.8), (mx + xx + 2.0, yy - 0.8, 8.8),
+                (mx + xx + 2.0, yy - 0.8, 7.8), (mx + xx, yy, 8.0), ('flag_red', 'cream')[i % 2], thick=0.04)
     # Well.
     wx, wy = 47, 137
     b.cylinder((wx, wy, 4.8), (wx, wy, 6.1), 2.2, 'stone', 12)
@@ -746,8 +783,8 @@ def upper_town():
     # Painted banners break up the long retaining wall.
     for i, bx in enumerate(range(-300, 301, 74)):
         mat = ('flag_red', 'cream', 'roof_teal', 'canvas_red')[i % 4]
-        b.quad((bx - 3.0, 278.2, 21.5), (bx + 3.0, 278.2, 21.5),
-               (bx + 2.4, 278.2, 12.5), (bx - 2.4, 278.2, 12.5), mat)
+        b.panel((bx - 3.0, 278.2, 21.5), (bx + 3.0, 278.2, 21.5),
+                (bx + 2.4, 278.2, 12.5), (bx - 2.4, 278.2, 12.5), mat, thick=0.04)
         b.beam((bx - 3.2, 278.1, 21.6), (bx + 3.2, 278.1, 21.6), 0.12, 'wood_dark')
     # A planted string course halfway up breaks the 25 m wall into two tiers.
     for x0, x1 in ((-322, -252), (-224, -26), (26, 224), (262, 342)):
@@ -818,9 +855,9 @@ def upper_town():
     b.cylinder((cx, cy, L.UPPER_Z + 2.5), (cx, cy, L.UPPER_Z + 2.65), 3.0, 'stone_light', 12)
     for i in range(3):
         b.rope((cx - 7, cy + 4 + i * 0.4, L.UPPER_Z + 4.5), (cx - 1, cy + 4 + i * 0.4, L.UPPER_Z + 4.5), 0.3, 0.03)
-        b.quad((cx - 6, cy + 4 + i * 0.4, L.UPPER_Z + 4.45), (cx - 4.3, cy + 4 + i * 0.4, L.UPPER_Z + 4.45),
-               (cx - 4.3, cy + 4 + i * 0.4, L.UPPER_Z + 2.9), (cx - 6, cy + 4 + i * 0.4, L.UPPER_Z + 2.9),
-               ('cream', 'flag_red', 'roof_teal')[i])
+        b.panel((cx - 6, cy + 4 + i * 0.4, L.UPPER_Z + 4.45), (cx - 4.3, cy + 4 + i * 0.4, L.UPPER_Z + 4.45),
+                (cx - 4.3, cy + 4 + i * 0.4, L.UPPER_Z + 2.9), (cx - 6, cy + 4 + i * 0.4, L.UPPER_Z + 2.9),
+                ('cream', 'flag_red', 'roof_teal')[i], thick=0.04)
     # Foreground pots and a laundry line frame the terrace view.
     for x, y in ((-14, 310), (14, 310), (-34, 306), (34, 306)):
         b.cylinder((x, y, L.UPPER_Z + 0.1), (x, y, L.UPPER_Z + 1.1), 0.9, 'clay', 8, radius_b=0.7)
@@ -828,9 +865,9 @@ def upper_town():
     b.rope((-36, 314, L.UPPER_Z + 4.8), (36, 314, L.UPPER_Z + 4.8), 0.5, 0.04)
     for i in range(4):
         x = -24 + i * 16
-        b.quad((x, 314, L.UPPER_Z + 4.7), (x + 6, 314, L.UPPER_Z + 4.7),
-               (x + 6, 314, L.UPPER_Z + 2.7), (x, 314, L.UPPER_Z + 2.7),
-               ('canvas', 'canvas_red', 'canvas_teal', 'canvas')[i])
+        b.panel((x, 314, L.UPPER_Z + 4.7), (x + 6, 314, L.UPPER_Z + 4.7),
+                (x + 6, 314, L.UPPER_Z + 2.7), (x, 314, L.UPPER_Z + 2.7),
+                ('canvas', 'canvas_red', 'canvas_teal', 'canvas')[i], thick=0.04)
     # A switchback stair climbs from the terrace to the ridge hamlet's shelf.
     LM.hill_stair(b)
     # Bunting, pots and seating make the upper lane read as a street.
@@ -1238,12 +1275,14 @@ def props():
         for i in range(6):
             yy = y - 3.0 + i * 1.2
             b.rope((x - 0.2, yy, 8.8), (x + 0.2, yy, 5.4), 0.35, 0.035)
-            b.quad((x - 1.4, yy - 0.5, 8.7), (x + 1.4, yy - 0.5, 8.7),
-                   (x + 1.6, yy + 0.5, 5.6), (x - 1.6, yy + 0.5, 5.6), 'rope')
+            b.panel((x - 1.4, yy - 0.5, 8.7), (x + 1.4, yy - 0.5, 8.7),
+                    (x + 1.6, yy + 0.5, 5.6), (x - 1.6, yy + 0.5, 5.6), 'rope', thick=0.04)
     # Two big cannon on the quay aimed at the harbor mouth, at the old hero model's landmark size (the TRELLIS hero
     # cannon imported as broken triangles).
     for x, y, yaw in ((-206, 88.0, 18), (210, 88.0, -14)):
         LM.cannon(b, x, y, max(L.ground(x, y), LM.QUAY_TOP), yaw, 2.5)
+    # The quay anchor is procedural too (the TRELLIS one imported with scrambled triangles: playtest note 13).
+    LM.anchor(b, -292, 90, max(L.ground(-292, 90), LM.QUAY_TOP), 28)
     # Gulls over the harbor mouth.
     for i in range(18):
         gx = RNG.uniform(-320, 320)
@@ -1263,12 +1302,12 @@ def rowboat(b, x, y, z, yaw, scale=1.0):
     def T(lx, ly, lz):
         return local(x, y, yaw, lx * scale, ly * scale) + (z + lz * scale,)
     for side in (-1, 1):
-        b.quad(T(side * 1.4, -4.2, 1.2), T(side * 1.4, 4.2, 1.4),
-               T(side * 1.0, 4.8, 0.4), T(side * 1.0, -4.8, 0.4), 'wood')
-        b.quad(T(side * 1.4, -4.2, 1.2), T(side * 1.4, 4.2, 1.4),
-               T(side * 1.45, 4.2, 1.8), T(side * 1.45, -4.2, 1.6), 'wood_dark')
+        b.panel(T(side * 1.4, -4.2, 1.2), T(side * 1.4, 4.2, 1.4),
+                T(side * 1.0, 4.8, 0.4), T(side * 1.0, -4.8, 0.4), 'wood', thick=0.04)
+        b.panel(T(side * 1.4, -4.2, 1.2), T(side * 1.4, 4.2, 1.4),
+                T(side * 1.45, 4.2, 1.8), T(side * 1.45, -4.2, 1.6), 'wood_dark', thick=0.04)
     b.box((*local(x, y, yaw, 0, 0), z + 0.7 * scale), (2.0 * scale, 8.0 * scale, 0.2 * scale), 'wood_light', yaw)
-    b.quad(T(-1.4, -4.2, 1.2), T(1.4, -4.2, 1.2), T(1.0, -4.8, 0.4), T(-1.0, -4.8, 0.4), 'wood')
+    b.panel(T(-1.4, -4.2, 1.2), T(1.4, -4.2, 1.2), T(1.0, -4.8, 0.4), T(-1.0, -4.8, 0.4), 'wood', thick=0.04)
     b.beam(T(-1.6, 0, 1.5), T(1.6, 0, 1.5), 0.12, 'wood_dark')
     b.beam(T(0, -3.0, 1.1), T(0, 3.0, 1.3), 0.08, 'wood_dark')
 

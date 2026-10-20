@@ -363,7 +363,7 @@ def test_apron_outer_east_edge_uses_the_same_shaped_country_height(monkeypatch):
         faces=vertices[[[0,1,2],[0,2,3]]]
         def height(self,x,y):
             return np.full_like(x,210.-layout.ORIGIN[2])
-    monkeypatch.setattr(source,'terrain',lambda:FixedTown())
+    monkeypatch.setattr(source,'terrain',lambda *, natural=False:FixedTown())
     monkeypatch.setattr(terrain,'country_grid',lambda:(np.array([-3200.,3200.]),np.array([3200.,7000.]),np.full((2,2),225.)))
     monkeypatch.setattr(terrain,'old_height',lambda x,y:np.full_like(x,225.))
     monkeypatch.setattr(terrain.H,'north_height',lambda x,y,**kw:S.height(x,y,np.full_like(x,225.)))
@@ -487,7 +487,7 @@ def test_collar_deformation_keeps_actual_rail_support_triangles(monkeypatch):
     class Town:
         faces=vertices[[[0,1,2],[0,2,3]]]
         def height(self,x,y):return np.full_like(x,210.-layout.ORIGIN[2])
-    monkeypatch.setattr(source,'terrain',lambda:Town())
+    monkeypatch.setattr(source,'terrain',lambda *, natural=False:Town())
     monkeypatch.setattr(terrain,'country_grid',lambda:(np.array([-3200.,3200.]),np.array([3200.,7000.]),np.full((2,2),225.)))
     monkeypatch.setattr(terrain,'old_height',lambda x,y:np.full_like(x,225.))
     monkeypatch.setattr(terrain.H,'north_height',lambda x,y,**kw:S.profile_height(x,y,np.full_like(x,225.)))

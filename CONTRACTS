@@ -15,6 +15,14 @@ uncertain record afterward. An uncertain operation MUST NOT be retried automatic
 Platform modules MUST NOT name a particular game. Game-specific recipes, assets and runtime
 behavior belong under games/<game>; reusable mechanisms belong under platform/.
 
+@cc [owner:fontanierh,label:architecture] fork-import-cleanliness
+Code ported from contributor forks MUST conform to upstream ownership and build rules before
+merge. Committed assets under games/<game>/assets/ MUST remain immutable inputs and MUST NOT be
+overwritten in place by carving or baking scripts or duplicated into shadow backup folders.
+Derived meshes and materials MUST be produced under build/<game>/ or unreal/Content/ by the
+owning build steps with bounded triangle counts and LODs, and runtime consumers MUST share
+existing domain tables and authored placement transforms rather than duplicating them in C++.
+
 @cc [owner:fontanierh,label:correctness] contract-review-before-merge
 Every PR MUST check contract syntax/owners and review applicable contracts on its final code.
 Review findings are advisory: an agent MAY resolve a false positive with a recorded explanation.

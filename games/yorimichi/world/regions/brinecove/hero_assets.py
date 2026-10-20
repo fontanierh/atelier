@@ -56,7 +56,7 @@ def placements(hull):
         name, x, y, yaw, scale, sails = L.SHIPS[0]
         result['ships-wheel'] = [(*kit.local(x, y, yaw, 0.0, -16.5 * scale), -1.1 + 4.72 * scale, yaw + 90, 0.9, 0.0)]
     # The harbor cannon is procedural now (landmarks.cannon, placed by modules.props).
-    result['ship-anchor'] = [(-292, 90, L.ground(-292, 90) + 0.1, 28, 1.0, 0.0)]
+    # The quay anchor is procedural now (landmarks.anchor, placed by modules.props).
     result['harbor-capstan'] = [(x, y, 5.35, yaw, 1.0, 0.0) for x, y, yaw in ((8, -24, 0), (238, -50, 34))]
     return result
 

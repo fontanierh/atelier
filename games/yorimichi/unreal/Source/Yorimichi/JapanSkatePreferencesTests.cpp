@@ -48,4 +48,18 @@ bool FJapanSkatePreferencesTest::RunTest(const FString&)
     World->DestroyWorld(false);
     return true;
 }
+bool IsSkateFeelKey(const FString& Key);   // JapanPreferences.cpp: which values the Skate feel page owns
+
+// The Esc menu's main page lists every value the Skate feel page does not own; skate_volume must stay on it.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJapanSkateVolumeMenuTest,"Yorimichi.Audio.SkateVolumeMenu",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FJapanSkateVolumeMenuTest::RunTest(const FString&)
+{
+    TestFalse(TEXT("Skate volume is on the main page"),IsSkateFeelKey(TEXT("skate_volume")));
+    TestFalse(TEXT("Skate softening is on the main page"),IsSkateFeelKey(TEXT("soften_skate")));
+    TestTrue(TEXT("Skating mode stays on the Skate feel page"),IsSkateFeelKey(TEXT("skate_mode")));
+    TestTrue(TEXT("Skate camera stays on the Skate feel page"),IsSkateFeelKey(TEXT("skate_cam_dist")));
+    return true;
+}
 #endif

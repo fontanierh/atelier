@@ -1,6 +1,7 @@
 """Incremental checkouts archive retired imports before cooking and keep current source data intact."""
 import importlib.util
 import io
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -66,6 +67,17 @@ def test_every_staged_data_root_and_region_import_is_current():
     runtime_spec.loader.exec_module(runtime_data)
     assert {rel.split('/')[0] for rel in runtime_data.STAGED} <= policy.DATA_ROOTS
     assert {'Belmonte', 'Brinecove'} <= policy.ASSET_ROOTS
+
+
+def test_every_content_folder_a_build_step_writes_is_kept():
+    """A step output under Content/<folder> (or Content/Data/<folder>) outside the policy is archived as retired
+    content by data.content, so the package ships without it: /Game/Racing's TV material was lost this way."""
+    source = (Path(__file__).resolve().parents[1] / 'build.py').read_text()
+    assets = set(re.findall(r"'Content'\s*/\s*'(\w+)'", source))
+    data = set(re.findall(r"'Content'\s*/\s*'Data'\s*/\s*'([\w.]+)'", source))
+    assert {'Racing', 'Data'} <= assets and data
+    assert assets <= policy.ASSET_ROOTS
+    assert data <= policy.DATA_ROOTS
 
 
 def test_optional_music_survives_only_when_a_selector_enables_it(tmp_path, monkeypatch):

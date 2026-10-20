@@ -52,8 +52,10 @@ def face_x(y, z, x_hi, x_lo=425.0):
     return lo
 
 
-def sheet(b, lip_x, y0, y1, top, bottom, rng, throw=4.0, segments=12, widen=0.18):
-    """One continuous curtain of falling water from a lip at lip_x toward -x, widening as it falls.
+def sheet(b, lip_x, y0, y1, top, bottom, rng, throw=4.0, segments=12, widen=0.18, ragged=0.0):
+    """One curtain of falling water from a lip at lip_x toward -x, widening (or, with widen < 0, narrowing) as it falls.
+
+    ragged drops parts of the crest by up to that many metres, so the lip never reads as a ruler edge.
 
     The streak texture's alpha breaks the curtain up; a darker water body sits just behind it. Strips of separate
     ribbons overlapped into a shattered-glass staircase.
@@ -65,12 +67,12 @@ def sheet(b, lip_x, y0, y1, top, bottom, rng, throw=4.0, segments=12, widen=0.18
     grid = []
     for k in range(rows + 1):
         s = k / rows
-        z = top - (top - bottom) * s
         spread = widen * (y1 - y0) * s * s
         row = []
         for c in range(cols + 1):
             t = c / cols
             y = y0 - spread + (y1 - y0 + 2 * spread) * t
+            z = top - (top - bottom) * s - ragged * (0.5 + 0.5 * math.sin(t * 7.0 + phase)) * (1 - s)
             # Ballistic throw off the lip, a little ripple across the width, and never inside the rock.
             x = lip_x - throw * math.sqrt(s) - 0.3 + 0.35 * math.sin(t * 9.0 + phase) * s
             x = min(x, face_x(y, z, lip_x) - 0.8)
@@ -195,10 +197,26 @@ def waterfall(b):
     # It widens only a little: where its edges spread over the notch's flanks, the cliff toe stands proud of the lip
     # and the clamp to the face dragged the curtain's corner out along the slope (note 9 third capture). The paired
     # ribbon beside it hugged the same toe as a white smear with rock showing through, so it is gone.
-    sheet(b, lower_lip, L.GORGE_Y - 8.0, L.GORGE_Y + 8.0, pool, -0.4, rng, throw=4.5, segments=24, widen=0.05)
-    # A second, slightly proud layer fills the gaps, so the curtain reads white and continuous.
-    sheet(b, lower_lip - 0.5, L.GORGE_Y - 6.5, L.GORGE_Y + 6.5, pool - 0.3, -0.4, rng, throw=5.2, segments=24,
-          widen=0.05)
+    # Since the r10 notes (5: 'looks too square') it falls as four tongues of different width, crest height and
+    # length, split by dark wet rock ribs on the lip, after references/redesign/waterfall.jpg.
+    tongues = ((-8.6, -4.7, -0.7, -0.4, 4.0, -0.06), (-3.3, 1.3, 0.0, -0.4, 4.8, 0.03),
+               (2.3, 5.1, -0.35, -0.4, 4.4, -0.05), (6.1, 8.3, -1.5, pool * 0.38, 3.2, -0.12))
+    for lo, hi, crest, foot, throw, widen in tongues:
+        sheet(b, lower_lip, L.GORGE_Y + lo, L.GORGE_Y + hi, pool + crest, foot, rng, throw=throw, segments=24,
+              widen=widen, ragged=0.45)
+    # A second, slightly proud layer thickens the main tongue so it reads white.
+    sheet(b, lower_lip - 0.5, L.GORGE_Y - 2.6, L.GORGE_Y + 0.6, pool - 0.3, -0.4, rng, throw=5.2, segments=24,
+          widen=0.02, ragged=0.3)
+    # The short north tongue breaks onto a ledge: spray where it lands.
+    mist(b, face_x(L.GORGE_Y + 7.2, pool * 0.38, lower + 4.0) - 2.5, L.GORGE_Y + 7.2, pool * 0.38, 3.0, 4, rng,
+         height=2.0)
+    # Wet rock ribs between the tongues, standing on the lip and running a little way down the face.
+    for yy, height in ((-4.0, 5.5), (1.8, 4.2), (5.6, 6.0)):
+        py = L.GORGE_Y + yy
+        px = face_x(py, pool - 2.0, lower + 4.0) + 0.6
+        rocks.boulder(b, px, py, pool - height, (3.4, 1.5, height + 1.0), rng, 'rock_dark', bury=0.1, strata=0.8)
+        rocks.boulder(b, px - 0.8, py + rng.uniform(-0.3, 0.3), pool * 0.55 - 2.0, (2.4, 1.3, 4.0), rng,
+                      'rock_dark', bury=0.1, strata=0.8)
     # Froth down the curtain and white water spilling over the lip: the painting's fall is a churning white
     # column, not one smooth sheet.
     for k in range(5):

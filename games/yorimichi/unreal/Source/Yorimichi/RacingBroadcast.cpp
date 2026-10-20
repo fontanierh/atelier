@@ -1,4 +1,5 @@
 #include "RacingBroadcast.h"
+#include "AtelierData.h"
 #include "BelmonteRegion.h"
 #include "HRClock.h"
 #include "LiveLibrary.h"
@@ -19,9 +20,12 @@
 #include "HAL/IConsoleManager.h"
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/FileHelper.h"
 #include "ProceduralMeshComponent.h"
 #include "RenderUtils.h"
 #include "RHI.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "UObject/ConstructorHelpers.h"
 
 static TAutoConsoleVariable<int32> CVarRacingTvCapture(TEXT("racing.TvCapture"), 1,
@@ -46,18 +50,86 @@ namespace RacingTv
     // Haras Valley's 70-inch screens were too small to read across a room: 1.4 times as large (2.17 m of picture), on the
     // same walls. The Salon's bar screen is 1.3 times and 15 cm higher, so its bottom stays over the mirror's brass frame
     // (2.21 m); the taproom's front screen still clears the door's reveal and the window's.
-    const FSpot SpotTable[] = {
-        {TEXT("osteria_front"), FVector(-2600., -190., 248.), 180.f, FVector(-3040., -160., 18.), -4.f, 1.4f},
-        {TEXT("osteria_back"), FVector(-4050., 485., 248.), 0.f, FVector(-3700., 160., 18.), 136.2f, 1.4f},
-        {TEXT("salon_paris"), FVector(7500., -29720., 3255.), -90.f, FVector(7500., -30150., 3015.), 90.f, 1.4f},
-        {TEXT("salon_bar"), FVector(5750., -31637.6, 3305.), 90.f, FVector(5750., -31160., 3015.), -90.f, 1.3f},
+    const TCHAR* const SpotIds[] = {
+        TEXT("osteria_front"), TEXT("osteria_back"), TEXT("salon_paris"), TEXT("salon_bar")
     };
 
-    TConstArrayView<FSpot> Spots() { return SpotTable; }
-
-    int32 FindSpot(const FString& Id)
+    bool ParseSpots(const FString& RuntimeJson, TArray<FSpot>& Out, FString* OutError)
     {
-        for (int32 I = 0; I < UE_ARRAY_COUNT(SpotTable); ++I) if (Id == SpotTable[I].Id) return I;
+        Out.Reset();
+        auto Fail = [&](const FString& Why) { if (OutError) *OutError = Why; return false; };
+        TSharedPtr<FJsonObject> Root;
+        const TArray<TSharedPtr<FJsonValue>>* Rows = nullptr;
+        if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(RuntimeJson), Root) || !Root)
+            return Fail(TEXT("invalid JSON"));
+        if (!Root->TryGetArrayField(TEXT("tv_spots"), Rows) || !Rows || Rows->Num() != UE_ARRAY_COUNT(SpotIds))
+            return Fail(TEXT("missing or incomplete tv_spots"));
+        auto Vec3 = [](const TSharedPtr<FJsonObject>& Obj, const TCHAR* Key, FVector& V)
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Arr = nullptr;
+            if (!Obj->TryGetArrayField(Key, Arr) || Arr->Num() != 3) return false;
+            V = FVector((*Arr)[0]->AsNumber(), (*Arr)[1]->AsNumber(), (*Arr)[2]->AsNumber());
+            return V.ContainsNaN() == false;
+        };
+        TArray<FSpot> Parsed;
+        for (int32 I = 0; I < UE_ARRAY_COUNT(SpotIds); ++I)
+        {
+            const TSharedPtr<FJsonObject>* Item = nullptr;
+            FString Id;
+            double Yaw = 0., WatchYaw = 0., Scale = 0.;
+            FSpot S{SpotIds[I], FVector::ZeroVector, 0.f, FVector::ZeroVector, 0.f, 1.f};
+            if (!(*Rows)[I]->TryGetObject(Item) || !(*Item)->TryGetStringField(TEXT("id"), Id) || Id != S.Id ||
+                !Vec3(*Item, TEXT("pivot_cm"), S.Pivot) || !Vec3(*Item, TEXT("watch_cm"), S.Watch) ||
+                !(*Item)->TryGetNumberField(TEXT("yaw"), Yaw) || !(*Item)->TryGetNumberField(TEXT("watch_yaw"), WatchYaw) ||
+                !(*Item)->TryGetNumberField(TEXT("scale"), Scale) || !FMath::IsFinite(Yaw) || !FMath::IsFinite(WatchYaw) ||
+                !FMath::IsFinite(Scale) || Scale <= 0.)
+                return Fail(FString::Printf(TEXT("invalid spot %s"), S.Id));
+            S.Yaw = float(Yaw);
+            S.WatchYaw = float(WatchYaw);
+            S.Scale = float(Scale);
+            Parsed.Add(S);
+        }
+        Out = MoveTemp(Parsed);
+        return true;
+    }
+
+    bool LoadSpots(const FString& Path, TArray<FSpot>& Out, FString* OutError)
+    {
+        Out.Reset();
+        FString Json;
+        if (!FFileHelper::LoadFileToString(Json, *Path))
+        {
+            const FString Why = FString::Printf(TEXT("cannot read %s"), *Path);
+            if (OutError) *OutError = Why;
+            UE_LOG(LogTemp, Warning, TEXT("RACING TV placements unavailable: %s"), *Why);
+            return false;
+        }
+        FString Why;
+        if (!ParseSpots(Json, Out, &Why))
+        {
+            if (OutError) *OutError = Why;
+            UE_LOG(LogTemp, Warning, TEXT("RACING TV placements invalid in %s: %s"), *Path, *Why);
+            return false;
+        }
+        return true;
+    }
+
+    TConstArrayView<FSpot> Spots()
+    {
+        static TArray<FSpot> Loaded;
+        static bool bTried = false;
+        if (!bTried)
+        {
+            bTried = true;
+            LoadSpots(AtelierDataPath(TEXT("belmonte/runtime.json")), Loaded);
+        }
+        return TConstArrayView<FSpot>(Loaded);
+    }
+
+    int32 FindSpot(const FString& Id, TConstArrayView<FSpot> InSpots)
+    {
+        const TConstArrayView<FSpot> All = InSpots.IsEmpty() ? Spots() : InSpots;
+        for (int32 I = 0; I < All.Num(); ++I) if (Id == All[I].Id) return I;
         return INDEX_NONE;
     }
 
@@ -416,7 +488,14 @@ bool ARacingBroadcast::Build()
     if (!PictureBase) PictureBase = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Racing/M_RacingTv.M_RacingTv"));
     if (!PictureBase)
     {
-        UE_LOG(LogTemp, Warning, TEXT("RACING TV no picture material /Game/Racing/M_RacingTv (build unreal.racing_tv): no screens"));
+        UE_LOG(LogTemp, Warning, TEXT("RACING TV no picture material /Game/Racing/M_RacingTv (build unreal.belmonte): no screens"));
+        bBuilt = true;
+        return true;
+    }
+    const TConstArrayView<RacingTv::FSpot> LoadedSpots = RacingTv::Spots();
+    if (LoadedSpots.IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("RACING TV no valid tv_spots in belmonte/runtime.json (run world.belmonte + data.stage): no screens"));
         bBuilt = true;
         return true;
     }
@@ -459,7 +538,7 @@ bool ARacingBroadcast::Build()
     // Seen from the front (looking along -X) the viewer's right is -Y: u runs from +Y to -Y, v from the top down.
     Quad(PV, PT, PN, PU, {{PX, PY, PZ}, {PX, -PY, PZ}, {PX, -PY, -PZ}, {PX, PY, -PZ}}, FVector::ForwardVector);
 
-    for (const RacingTv::FSpot& Spot : RacingTv::Spots())
+    for (const RacingTv::FSpot& Spot : LoadedSpots)
     {
         auto* Mesh = NewObject<UProceduralMeshComponent>(this, MakeUniqueObjectName(this, UProceduralMeshComponent::StaticClass(),
             *FString::Printf(TEXT("RacingTv_%s"), Spot.Id)));
@@ -547,8 +626,9 @@ void ARacingBroadcast::SetLive(bool bOn)
     if (bOn) Camera->bCameraCutThisFrame = true;
     Shot = RacingTv::EShot::None;
     NextIdle = 0.;
+    const TConstArrayView<RacingTv::FSpot> All = RacingTv::Spots();
     UE_LOG(LogTemp, Display, TEXT("RACING TV %s (nearest %s at %.1f m)"), bOn ? TEXT("live") : TEXT("idle card"),
-        Nearest != INDEX_NONE ? RacingTv::Spots()[Nearest].Id : TEXT("none"), NearestM);
+        All.IsValidIndex(Nearest) ? All[Nearest].Id : TEXT("none"), NearestM);
 }
 
 void ARacingBroadcast::Tick(float DeltaSeconds)
@@ -779,11 +859,12 @@ bool ARacingBroadcast::GoToScreen(const FString& Id)
 {
     TActorIterator<ABelmonteRegion> It(GetWorld());
     const ABelmonteRegion* Region = It ? *It : nullptr;
-    const int32 Index = Id.IsEmpty() ? 0 : RacingTv::FindSpot(Id);
+    const TConstArrayView<RacingTv::FSpot> All = RacingTv::Spots();
+    const int32 Index = Id.IsEmpty() ? (All.IsEmpty() ? INDEX_NONE : 0) : RacingTv::FindSpot(Id, All);
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     auto* Player = PC ? Cast<AWandererCharacter>(PC->GetPawn()) : nullptr;
-    if (!Region || Index == INDEX_NONE || !Player) return false;
-    const RacingTv::FSpot& Spot = RacingTv::Spots()[Index];
+    if (!Region || !All.IsValidIndex(Index) || !Player) return false;
+    const RacingTv::FSpot& Spot = All[Index];
     // Indoors: the landing trace starts just over the floor, under the ceiling.
     return Player->TravelTo(Region->GetActorLocation() + Spot.Watch, Spot.WatchYaw, TEXT("racing tv"), 150.f);
 }
@@ -791,14 +872,15 @@ bool ARacingBroadcast::GoToScreen(const FString& Id)
 FString ARacingBroadcast::StateJson() const
 {
     const ARacingService* Service = ARacingService::Find(this);
+    const TConstArrayView<RacingTv::FSpot> All = RacingTv::Spots();
     FString Rows;
-    for (int32 I = 0; I < Centres.Num(); ++I)
-        Rows += FString::Printf(TEXT("%s{\"id\":\"%s\",\"centre\":[%.1f,%.1f,%.1f],\"yaw\":%.1f}"), I ? TEXT(",") : TEXT(""), RacingTv::Spots()[I].Id,
-            Centres[I].X, Centres[I].Y, Centres[I].Z, RacingTv::Spots()[I].Yaw);
+    for (int32 I = 0; I < Centres.Num() && All.IsValidIndex(I); ++I)
+        Rows += FString::Printf(TEXT("%s{\"id\":\"%s\",\"centre\":[%.1f,%.1f,%.1f],\"yaw\":%.1f}"), I ? TEXT(",") : TEXT(""), All[I].Id,
+            Centres[I].X, Centres[I].Y, Centres[I].Z, All[I].Yaw);
     return FString::Printf(TEXT("{\"built\":%s,\"live\":%s,\"shot\":\"%s\",\"nearest\":\"%s\",\"distance_m\":%.1f,\"captures\":%d,\"skipped\":%d,\"idle_draws\":%d,"
         "\"frame_ms\":%.2f,\"gpu_ms\":%.2f,\"runners_shown\":%d,\"camera\":[%.0f,%.0f,%.0f],\"fov\":%.1f,\"screens\":[%s]}"),
         bBuilt ? TEXT("true") : TEXT("false"), bLive ? TEXT("true") : TEXT("false"), RacingTv::ShotName(Shot),
-        Nearest != INDEX_NONE ? RacingTv::Spots()[Nearest].Id : TEXT(""), NearestM, Captures, Skipped, IdleDraws, FrameMs, GpuMs,
+        All.IsValidIndex(Nearest) ? All[Nearest].Id : TEXT(""), NearestM, Captures, Skipped, IdleDraws, FrameMs, GpuMs,
         Service ? Service->NumRunnersShown() : 0, Camera ? Camera->GetComponentLocation().X : 0., Camera ? Camera->GetComponentLocation().Y : 0.,
         Camera ? Camera->GetComponentLocation().Z : 0., Camera ? Camera->FOVAngle : 0.f, *Rows);
 }

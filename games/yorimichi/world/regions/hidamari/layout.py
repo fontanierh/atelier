@@ -9,6 +9,7 @@ from forest.specs import MODEL_BY_KIND
 
 import numpy as np
 import shorelines
+from hidamari_stable import layout as stable
 ROOT=yori.REGIONS
 OUT=yori.OUT/'hidamari'
 ROAD_Y=[-90,15,140,230,335,75]
@@ -199,7 +200,8 @@ def height(x,y):
     # the city-side operation so that this shared edge is never shaped twice.
     coast=shorelines.height(x,y,base)
     base=base+(coast-base)*mountains.smooth((x-300.)/70.)
-    if not x.size or np.max(x)<435 or np.min(x)>station_yard.X1+4 or np.max(y)<-110 or np.min(y)>372:return base
+    if not x.size or np.max(x)<435 or np.min(x)>station_yard.X1+4 or np.max(y)<-110 or np.min(y)>372:
+        return stable.grade(x,y,base) if stable.is_enabled() else base
     shape=x.shape;xx=x.ravel();yy=y.ravel();weights=np.zeros(xx.size);targets=np.zeros(xx.size)
     coverage=np.zeros(xx.size)
     core=np.zeros(xx.size,dtype=bool);core_z=np.zeros(xx.size)
@@ -231,7 +233,9 @@ def height(x,y):
     road_distance=np.minimum(vertical,np.min(abs(yy[:,None]-np.asarray(ROAD_Y)),axis=1))
     # Roads occupy +/-8 m. The closest pad starts at 8.4 m; retain a smooth join.
     strength*=mountains.smooth((road_distance-8)/.4)
-    return (base.ravel()+(target-base.ravel())*strength).reshape(shape)
+    shaped=(base.ravel()+(target-base.ravel())*strength).reshape(shape)
+    # Henry's stable sits on its own graded pad north of the streets (hidamari_stable/layout.py grade).
+    return stable.grade(x,y,shaped) if stable.is_enabled() else shaped
 
 def terrain_axes():
     """Keep the coarse distant grid; resolve plateau edges and shoulder curves."""
@@ -247,6 +251,10 @@ def terrain_axes():
         for edge in [p['front'],p['back']]:
             side=-1 if edge<0 else 1
             for distance in np.linspace(0,p['fade_y'],6):ys.add(p['y']+sign*(edge+side*distance))
+    if stable.is_enabled():
+        # The stable's pad edges and the start of its slopes' rounding, so the pad stays flat to its edge.
+        sx0,sy0,sx1,sy1=stable.SITE[0]+stable.COMPOUND[0],stable.SITE[1]+stable.COMPOUND[1],stable.SITE[0]+stable.COMPOUND[2],stable.SITE[1]+stable.COMPOUND[3]
+        for d in (0.,1.5,3.):xs.update((sx0-d,sx1+d));ys.update((sy0-d,sy1+d))
     for cx in ROAD_X:
         for side in [-1,1]:
             for d in sorted({8.,8.2,8.4,road_width(x=cx)[0],road_width(x=cx)[0]+.2}):xs.add(cx+side*d)

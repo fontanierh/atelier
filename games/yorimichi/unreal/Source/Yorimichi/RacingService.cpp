@@ -2,6 +2,7 @@
 #include "AtelierData.h"
 #include "BelmonteRegion.h"
 #include "Hippodrome.h"
+#include "HorseComponent.h"
 #include "HRBreeds.h"
 #include "HRClock.h"
 #include "HRContent.h"
@@ -85,21 +86,9 @@ namespace RacingLooks
     const TCHAR* const HorseClips[] = {TEXT("Idle"), TEXT("Walk"), TEXT("Trot"), TEXT("Canter"), TEXT("Gallop"), TEXT("Sprint")};
     const TCHAR* const RiderClips[] = {TEXT("HorseIdle"), TEXT("HorseWalk"), TEXT("HorseTrot"), TEXT("HorseCanter"), TEXT("HorseGallop"), TEXT("HorseSprint")};
     constexpr int32 GaitCount = UE_ARRAY_COUNT(HorseClips);
-    struct FBand { float Low, High, RateLow, RateHigh; };
-    const FBand Bands[GaitCount] = {{0.f, 12.f, 1.f, 1.f}, {12.f, 260.f, .82f, 1.22f}, {260.f, 540.f, .88f, 1.20f},
-        {540.f, 880.f, .90f, 1.18f}, {880.f, 1180.f, .92f, 1.16f}, {1180.f, 1480.f, .95f, 1.22f}};
-    int32 GaitFor(float SpeedCm)
-    {
-        for (int32 G = GaitCount - 1; G > 0; --G) if (SpeedCm >= Bands[G].Low) return G;
-        return 0;
-    }
-    float RateFor(int32 Gait, float SpeedCm)
-    {
-        const FBand& B = Bands[Gait];
-        const float Alpha = (SpeedCm - B.Low) / FMath::Max(B.High - B.Low, 1.f);
-        // Faster than the sprint band: the legs keep up, within reason.
-        return FMath::Clamp(FMath::Lerp(B.RateLow, B.RateHigh, Alpha), B.RateLow, Gait == GaitCount - 1 ? 1.45f : B.RateHigh);
-    }
+    static_assert(GaitCount == UHorseComponent::GaitCount, "Racing gaits must match UHorseComponent::GaitCount");
+    int32 GaitFor(float SpeedCm) { return UHorseComponent::GaitForSpeed(SpeedCm); }
+    float RateFor(int32 Gait, float SpeedCm) { return UHorseComponent::PlayRateForGait(Gait, SpeedCm, true); }
 
     /** The look of a horse: (breed index, coat index, scale percent) from its visual genome on day T. */
     FIntVector Look(const FHRHorse& H, int32 T)
@@ -780,20 +769,10 @@ bool ARacingService::LoadLooks()
     else Missing.Add(TEXT("tack sets"));
     FString ReferenceSlug;
     Roster->TryGetStringField(TEXT("reference_breed"), ReferenceSlug);
-    auto Contacts = [](const TSharedPtr<FJsonObject>& Breed, FVector& Saddle, double& SeatZ)
-    {
-        const TSharedPtr<FJsonObject>* C = nullptr;
-        const TArray<TSharedPtr<FJsonValue>>* P = nullptr;
-        if (!Breed->TryGetObjectField(TEXT("contacts"), C) || !(*C)->TryGetArrayField(TEXT("saddle_root"), P) || P->Num() != 3 ||
-            !(*C)->TryGetNumberField(TEXT("seat_z"), SeatZ)) return false;
-        Saddle = FVector((*P)[0]->AsNumber(), (*P)[1]->AsNumber(), (*P)[2]->AsNumber()) * 100.;
-        SeatZ *= 100.;
-        return true;
-    };
     FVector RefSaddle = FVector::ZeroVector;
     double RefSeat = 0.;
     const TSharedPtr<FJsonObject>* RefBreed = nullptr;
-    if (!(*Breeds)->TryGetObjectField(ReferenceSlug, RefBreed) || !Contacts(*RefBreed, RefSaddle, RefSeat))
+    if (!(*Breeds)->TryGetObjectField(ReferenceSlug, RefBreed) || !UHorseComponent::ReadSeatContacts(*RefBreed, RefSaddle, RefSeat))
         Missing.Add(FString::Printf(TEXT("reference breed '%s' contacts"), *ReferenceSlug));
     for (int32 I = 0; I < RacingLooks::BreedCount; ++I)
     {
@@ -831,7 +810,7 @@ bool ARacingService::LoadLooks()
         if (!Look.Saddle) Missing.Add(FString::Printf(TEXT("breed %s saddle %s"), *Look.Slug, *Tack));
         FVector Saddle;
         double Seat = 0.;
-        if (Contacts(*Breed, Saddle, Seat))
+        if (UHorseComponent::ReadSeatContacts(*Breed, Saddle, Seat))
         {
             Look.SeatForward = float(Saddle.X - RefSaddle.X);
             Look.SeatUp = float(Seat - RefSeat);

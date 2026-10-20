@@ -25,7 +25,7 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
         def get_bounding_box(self):
             return SimpleNamespace(min=SimpleNamespace(x=0, y=-200, z=0), max=SimpleNamespace(x=100, y=0, z=300))
 
-    meshes, changed, saved = {}, [], []
+    meshes, changed, saved, tv_imports = {}, [], [], []
     def imported(path, name):
         meshes[name] = Mesh(name)
         return meshes[name]
@@ -56,9 +56,11 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     function = next(node for node in ast.parse(script.read_text()).body
                     if isinstance(node, ast.FunctionDef) and node.name == 'main')
     namespace = dict(OUT=tmp_path, ROOT='/Game/Belmonte', E=assets, unreal=unreal, Path=Path, json=json,
+        __file__=str(script), runpy=SimpleNamespace(run_path=lambda path: tv_imports.append(Path(path))),
         parent=lambda: None, textures=lambda _: None, surfaces=lambda *_: None, import_mesh=imported)
     exec(compile(ast.Module(body=[function], type_ignores=[]), str(script), 'exec'), namespace)
     namespace['main']()
+    assert tv_imports == [script.with_name('racing_tv_material.py')]
     render = meshes['SM_BM_House']
     assert render.build == dict(distance_field_resolution_scale=1., use_full_precision_u_vs=True,
                                 remove_degenerates=False)

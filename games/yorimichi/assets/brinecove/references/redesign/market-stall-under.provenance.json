@@ -1,0 +1,36 @@
+{
+  "stage": "brinecove-redesign",
+  "slug": "market-stall-under",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/regions/brinecove/references/redesign.py",
+  "context": [
+    {
+      "file": "context/r10-note-010.jpg",
+      "sha256": "d2504bb189d9668e2d4bc30ccdfc19d5742adf5e941b2e71e03d5d36c8a1af5c"
+    }
+  ],
+  "prompt_file": "market-stall-under.prompt.txt",
+  "prompt_sha256": "3477e5f4c52a49edf6ff5a2c3b17ff1460862d7fcc3aba30d2304bb9e1eb4a2f",
+  "status": "done",
+  "started_at": "2026-10-19T21:49:45.489942+00:00",
+  "elapsed_seconds": 35.2,
+  "output": "market-stall-under.png",
+  "output_sha256": "7cf38e4766c2a1e68c775611ef6e7773932eb0a9172c2952f7c9cb0fa36b0d31",
+  "usage": {
+    "input_tokens": 1247,
+    "input_tokens_details": {
+      "image_tokens": 1040,
+      "text_tokens": 207
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2619
+  },
+  "finished_at": "2026-10-19T21:50:20.837914+00:00"
+}

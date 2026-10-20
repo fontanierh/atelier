@@ -36,7 +36,11 @@ namespace RacingTv
     };
     /** The Salon des Paris (two) and the osteria's taproom (two). */
     YORIMICHI_API TConstArrayView<FSpot> Spots();
-    YORIMICHI_API int32 FindSpot(const FString& Id);
+    /** Parse the building-derived TV spots from Belmonte's runtime.json ('tv_spots'); false when absent or invalid. */
+    YORIMICHI_API bool ParseSpots(const FString& RuntimeJson, TArray<FSpot>& Out, FString* OutError = nullptr);
+    /** Load and validate the building-derived TV spots from a runtime.json file path; logs and returns false on error. */
+    YORIMICHI_API bool LoadSpots(const FString& Path, TArray<FSpot>& Out, FString* OutError = nullptr);
+    YORIMICHI_API int32 FindSpot(const FString& Id, TConstArrayView<FSpot> InSpots = {});
     /** Haras Valley's 70-inch screen: the picture (cm), the frame round it, and how far the picture stands off the wall;
      *  each spot scales it. */
     inline constexpr double PictureWidth = 155., PictureHeight = 87.2, FrameWidth = 159.4, FrameHeight = 91.6, PictureFront = 11.2;

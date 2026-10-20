@@ -52,7 +52,7 @@ def test_all_current_destination_families_keep_their_travel_identity():
         'skatepier': (-104, -174), 'hippodrome': (563, 459), 'ronin_camp': (-55, -74),
         'zeppelin_forest': (-199, 221), 'zeppelin_city': (1279, 299), 'zeppelin_megapark': (-194, 1475),
         'zeppelin_belmonte': (416, 4651), 'belmonte': (550, 4482), 'belmonte_course': (385, 4855),
-        'belmonte_training': (230, 5160), 'hidamari_station': (1184, 335), 'belmonte_station': (1375, 4375),
+        'belmonte_training': (230, 5160), 'hidamari_station': (1184, 335), 'belmonte_station': (900, 4625),
         'belmonte_salon': (617.8, 4806.8), 'brinecove_quay': (-1500, -45),
         'marker_custom': (5000, 8000),
     }

@@ -235,38 +235,7 @@ class Builder:
         for f in faces:
             self.face(tuple(points[i] for i in f), mat)
 
-    def gable_roof(self, center, width, depth, z, rise, mat, yaw=0.0, ridge='x', overhang=0.8):
-        """Gable roof with deep eaves, ridge along x or y."""
-        cx, cy, _ = center
-        start = len(self.verts)
-        w, d = width / 2 + overhang, depth / 2 + overhang
-        if ridge == 'x':
-            e1 = (cx - w, cy - d, z); e2 = (cx + w, cy - d, z)
-            e3 = (cx + w, cy + d, z); e4 = (cx - w, cy + d, z)
-            r1 = (cx - w, cy, z + rise); r2 = (cx + w, cy, z + rise)
-            self.quad(e1, e2, r2, r1, mat)
-            self.quad(e4, r1, r2, e3, mat)
-            self.tri(e1, r1, e4, mat)
-            self.tri(e2, e3, r2, mat)
-            # fascia and a few battens
-            for yy in (-d, d):
-                self.beam((cx - w, cy + yy, z), (cx + w, cy + yy, z), 0.18, 'wood_dark')
-        else:
-            e1 = (cx - w, cy - d, z); e2 = (cx + w, cy - d, z)
-            e3 = (cx + w, cy + d, z); e4 = (cx - w, cy + d, z)
-            r1 = (cx, cy - d, z + rise); r2 = (cx, cy + d, z + rise)
-            self.quad(e1, r1, r2, e4, mat)
-            self.quad(e2, e3, r2, r1, mat)
-            self.tri(e1, e2, r1, mat)
-            self.tri(e4, r2, e3, mat)
-            for xx in (-w, w):
-                self.beam((cx + xx, cy - d, z), (cx + xx, cy + d, z), 0.18, 'wood_dark')
-        # Ridge cap in fired clay; grey slate battens striped every terracotta roof.
-        cap = 'roof_slate' if mat == 'roof_slate' else 'clay'
-        if ridge == 'x':
-            self.beam((cx - w, cy, z + rise), (cx + w, cy, z + rise), 0.3, cap)
-        else:
-            self.beam((cx, cy - d, z + rise), (cx, cy + d, z + rise), 0.3, cap)
+    def _yaw_since(self, start, cx, cy, yaw):
         if yaw:
             a = math.radians(yaw)
             c, s = math.cos(a), math.sin(a)
@@ -275,39 +244,106 @@ class Builder:
                 dx, dy = x - cx, y - cy
                 self.verts[i] = (cx + dx * c - dy * s, cy + dx * s + dy * c, zz)
 
-    def hip_roof(self, center, width, depth, z, rise, mat, yaw=0.0, overhang=0.8):
+    def panel(self, a, b, c, d, mat, under=None, thick=0.06):
+        """A thin two-sided sheet (awning, lean-to, canopy, hanging cloth): both faces and its edges.
+
+        A bare quad is one-sided, so seen from beneath an awning vanished (playtest note 10). A sloped sheet always
+        faces up; the back face sits thick behind it along the normal.
+        """
+        pts = [tuple(float(c) for c in p) for p in (a, b, c, d)]
+        n = _unit(_cross(tuple(pts[1][k] - pts[0][k] for k in range(3)), tuple(pts[3][k] - pts[0][k] for k in range(3))))
+        if n[2] < -0.1:
+            pts.reverse()
+            n = (-n[0], -n[1], -n[2])
+        low = [tuple(p[k] - n[k] * thick for k in range(3)) for p in pts]
+        self.quad(*pts, mat)
+        self.quad(low[3], low[2], low[1], low[0], under or mat)
+        for i in range(4):
+            j = (i + 1) % 4
+            self.quad(low[i], low[j], pts[j], pts[i], under or mat)
+
+    def roof_pitch(self, width, depth, rise, overhang=0.8, ridge='x', hip=False):
+        """Rise per metre of a roof's slopes; eave details (rafter tails) follow it down."""
+        if hip:
+            return rise / (min(width, depth) / 2 + overhang)
+        return rise / ((depth if ridge == 'x' else width) / 2 + overhang)
+
+    def gable_roof(self, center, width, depth, z, rise, mat, yaw=0.0, ridge='x', overhang=0.8, gable='planks',
+                   soffit='wood', thick=0.14):
+        """Gable roof seated on a wall plate at z: deep eaves, a planked soffit, closed gables, ridge along x or y.
+
+        The roof is a slab: the slopes' underside passes through the wall top at the wall line, so no roof floats
+        above its walls, and the soffit and gable infill keep it solid from below (playtest notes 6-8 and 12).
+        """
+        cx, cy, _ = center
+        start = len(self.verts)
+        U, V = (width / 2, depth / 2) if ridge == 'x' else (depth / 2, width / 2)
+        Ua, Va, t = U + overhang, V + overhang, thick
+        ze = z + t - rise * overhang / Va
+        top = ze + rise
+
+        def F(pts, m, flip=False):
+            # Local (u along the ridge, v across); swapping axes for a y ridge mirrors, so the winding flips too.
+            pts = [(cx + u, cy + v, h) if ridge == 'x' else (cx + v, cy + u, h) for u, v, h in pts]
+            self.face(tuple(pts if (ridge == 'x') != flip else reversed(pts)), m)
+
+        for s in (-1, 1):
+            slope = [(-Ua, s * Va, ze), (Ua, s * Va, ze), (Ua, 0, top), (-Ua, 0, top)]
+            F(slope, mat, s > 0)
+            F([(u, v, h - t) for u, v, h in slope], soffit, s < 0)
+            F([(-Ua, s * Va, ze - t), (Ua, s * Va, ze - t), (Ua, s * Va, ze), (-Ua, s * Va, ze)], 'wood_dark', s > 0)
+            for e in (-1, 1):
+                F([(e * Ua, s * Va, ze - t), (e * Ua, s * Va, ze), (e * Ua, 0, top), (e * Ua, 0, top - t)],
+                  'wood_dark', e * s < 0)
+            self.beam(*[(cx + u, cy + s * Va, ze - t / 2) if ridge == 'x' else (cx + s * Va, cy + u, ze - t / 2)
+                        for u in (-Ua, Ua)], 0.2, 'wood_dark')
+        # Gable infill at each end wall, up to the soffit, from both sides.
+        for e in (-1, 1):
+            tri = [(e * U, -V, z), (e * U, 0, top - t), (e * U, V, z)]
+            F(tri, gable, e > 0)
+            F(tri, gable, e < 0)
+        # Ridge cap in fired clay; grey slate battens striped every terracotta roof.
+        cap = 'roof_slate' if mat == 'roof_slate' else 'clay'
+        if ridge == 'x':
+            self.beam((cx - Ua, cy, top), (cx + Ua, cy, top), 0.3, cap)
+        else:
+            self.beam((cx, cy - Ua, top), (cx, cy + Ua, top), 0.3, cap)
+        self._yaw_since(start, cx, cy, yaw)
+
+    def hip_roof(self, center, width, depth, z, rise, mat, yaw=0.0, overhang=0.8, soffit='wood', thick=0.14):
+        """Hip roof seated on a wall plate at z, all four slopes at one pitch, with a soffit and eave edges.
+
+        Equal pitches put every eave's underside on the wall top, so no side gaps open above the walls.
+        """
         cx, cy, _ = center
         start = len(self.verts)
         w, d = width / 2 + overhang, depth / 2 + overhang
-        e = [(cx - w, cy - d, z), (cx + w, cy - d, z), (cx + w, cy + d, z), (cx - w, cy + d, z)]
-        # ridge shorter than the long axis
-        if w >= d:
-            r1 = (cx - w * 0.35, cy, z + rise); r2 = (cx + w * 0.35, cy, z + rise)
-            self.quad(e[0], e[1], r2, r1, mat)
-            self.quad(e[3], r1, r2, e[2], mat)
-            self.tri(e[0], r1, e[3], mat)
-            self.tri(e[1], e[2], r2, mat)
-            self.beam(r1, r2, 0.3, 'roof_slate' if mat == 'roof_slate' else 'clay')
-        else:
-            r1 = (cx, cy - d * 0.35, z + rise); r2 = (cx, cy + d * 0.35, z + rise)
-            self.quad(e[0], r1, r2, e[3], mat)
-            self.quad(e[1], e[2], r2, r1, mat)
-            self.tri(e[0], e[1], r1, mat)
-            self.tri(e[3], r2, e[2], mat)
-            self.beam(r1, r2, 0.3, 'roof_slate' if mat == 'roof_slate' else 'clay')
-        # Hip rafters down each corner and a fascia board along the eaves.
+        t = thick
+        run = min(w, d)
+        ze = z + t - rise * overhang / run
+        top = ze + rise
+        e = [(cx - w, cy - d, ze), (cx + w, cy - d, ze), (cx + w, cy + d, ze), (cx - w, cy + d, ze)]
+        k = max(0.05, abs(w - d))
         cap = 'roof_slate' if mat == 'roof_slate' else 'clay'
-        for k in range(4):
-            near = r1 if math.dist(e[k], r1) < math.dist(e[k], r2) else r2
-            self.beam(e[k], near, 0.2, cap)
-            self.beam(e[k], e[(k + 1) % 4], 0.16, 'wood_dark')
-        if yaw:
-            a = math.radians(yaw)
-            c, s = math.cos(a), math.sin(a)
-            for i in range(start, len(self.verts)):
-                x, y, zz = self.verts[i]
-                dx, dy = x - cx, y - cy
-                self.verts[i] = (cx + dx * c - dy * s, cy + dx * s + dy * c, zz)
+        if w >= d:
+            r1 = (cx - k, cy, top); r2 = (cx + k, cy, top)
+            faces = [(e[0], e[1], r2, r1), (e[3], r1, r2, e[2]), (e[0], r1, e[3]), (e[1], e[2], r2)]
+        else:
+            r1 = (cx, cy - k, top); r2 = (cx, cy + k, top)
+            faces = [(e[0], r1, r2, e[3]), (e[1], e[2], r2, r1), (e[0], e[1], r1), (e[3], r2, e[2])]
+        for f in faces:
+            self.face(f, mat)
+            self.face(tuple((p[0], p[1], p[2] - t) for p in reversed(f)), soffit)
+        self.beam(r1, r2, 0.3, cap)
+        # Hip rafters down each corner, eave edges and a fascia board.
+        for i in range(4):
+            j = (i + 1) % 4
+            p, q = e[i], e[j]
+            self.quad((p[0], p[1], ze - t), (q[0], q[1], ze - t), q, p, 'wood_dark')
+            near = r1 if math.dist(p, r1) < math.dist(p, r2) else r2
+            self.beam(p, near, 0.2, cap)
+            self.beam((p[0], p[1], ze - t / 2), (q[0], q[1], ze - t / 2), 0.18, 'wood_dark')
+        self._yaw_since(start, cx, cy, yaw)
 
     def rope(self, a, b, sag=1.0, radius=0.09, mat='rope', segments=8):
         a = tuple(float(c) for c in a); b = tuple(float(c) for c in b)

@@ -216,6 +216,79 @@ def cannon(b, x, y, z, yaw=0.0, scale=1.0):
     _place(b, start, x, y, z, yaw, scale)
 
 
+def _plate(b, pts, y0, y1, mat):
+    """A flat plate: a polygon in the x-z plane (counter-clockwise seen from -y), extruded from y0 to y1."""
+    front = [(px, y0, pz) for px, pz in pts]
+    back = [(px, y1, pz) for px, pz in pts]
+    b.face(tuple(front), mat)
+    b.face(tuple(reversed(back)), mat)
+    n = len(pts)
+    for i in range(n):
+        j = (i + 1) % n
+        b.quad(front[j], front[i], back[i], back[j], mat)
+
+
+def anchor(b, x, y, z, yaw=0.0, scale=1.0):
+    """The quay's admiralty anchor on a stepped plinth, after references/redesign/anchor.jpg.
+
+    It replaces the TRELLIS anchor, whose micro-UV triangles imported as scrambled patches (playtest note 13). The
+    arms lie in the x-z plane and the oak stock runs along y, so yaw turns the whole monument.
+    """
+    start = len(b.verts)
+    iron = 'metal'
+    # Two dressed steps of plinth.
+    b.box((0, 0, 0.25), (3.6, 2.6, 0.5), 'stone')
+    b.box((0, 0, 0.75), (2.9, 2.0, 0.5), 'stone_light')
+    top = 1.0
+    b.box((0, 0, top + 0.12), (0.9, 0.6, 0.24), iron)
+    # Shank, crown and two curved arms ending in spade flukes.
+    crown = top + 0.3
+    b.beam((0, 0, crown), (0, 0, top + 4.3), 0.34, iron, 0.26)
+    radius, reach, segs = 1.5, math.radians(68), 6
+    for side in (-1, 1):
+        prev = (0.0, 0.0, crown)
+        for k in range(1, segs + 1):
+            t = side * reach * k / segs
+            cur = (radius * math.sin(t), 0.0, crown + radius * (1 - math.cos(t)))
+            b.beam(prev, cur, 0.32 - 0.05 * k / segs, iron, 0.24)
+            prev = cur
+        # The fluke points along the arm's tangent, a broad spade with a barb on each shoulder.
+        tx, tz = math.cos(reach), side * math.sin(reach)
+        tx, tz = side * tx, abs(tz)
+        nx, nz = tz * side, -tx * side
+        ex, ez = prev[0], prev[2]
+        pts = [(ex + tx * 0.8, ez + tz * 0.8),
+               (ex + nx * 0.5 - tx * 0.15, ez + nz * 0.5 - tz * 0.15),
+               (ex - tx * 0.4, ez - tz * 0.4),
+               (ex - nx * 0.5 - tx * 0.15, ez - nz * 0.5 - tz * 0.15)]
+        if side > 0:
+            pts.reverse()
+        _plate(b, pts, -0.09, 0.09, iron)
+    b.sphere((0, 0, crown - 0.02), 0.2, iron, (1.2, 1.0, 0.8), subdiv=1)
+    # Oak stock with iron bands, and the ring through the shank's eye.
+    stock = top + 3.85
+    b.beam((0, -1.75, stock), (0, 1.75, stock), 0.38, 'wood', 0.34)
+    for sy in (-1.5, -0.38, 0.38, 1.5):
+        b.box((0, sy, stock), (0.44, 0.12, 0.42), iron)
+    b.ring((0, 0, top + 4.62), 0.36, 0.075, iron, axis='y', sides=14, tube_sides=6)
+    # Hemp rope through the ring, wound down the shank.
+    b.rope((0.3, 0, top + 4.35), (0.24, 0, top + 3.4), 0.0, 0.07, segments=2)
+    for k in range(8):
+        zz = top + 3.3 - k * 0.15
+        b.ring((0.02 * (k % 2), 0, zz), 0.26, 0.065, 'rope', axis='z', sides=10, tube_sides=5)
+    # A length of chain from the crown, over the plinth edge and onto the paving.
+    path = [(0.35, -0.2, crown), (1.4, -0.55, top + 0.08), (1.55, -0.62, 0.55), (1.9, -0.72, 0.08),
+            (2.4, -0.5, 0.06)]
+    links = 0
+    for (ax, ay, az), (cx, cy, cz) in zip(path, path[1:]):
+        n = max(1, int(math.dist((ax, ay, az), (cx, cy, cz)) / 0.2))
+        for i in range(n):
+            t = i / n
+            p = (ax + (cx - ax) * t, ay + (cy - ay) * t, az + (cz - az) * t)
+            b.ring(p, 0.12, 0.035, iron, axis=('y', 'z')[links % 2], sides=8, tube_sides=4)
+            links += 1
+    _place(b, start, x, y, z, yaw, scale)
+
 # --- the crest fort --------------------------------------------------------------------------------------------
 
 FORT_HW, FORT_HD = 17.0, 14.0     # curtain half-extents: the old watchtower's footprint

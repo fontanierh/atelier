@@ -154,11 +154,62 @@ float SkateDefault(const FSkateKnob& Knob, const FSkateFeel& Defaults)
     return float((FCString::Strcmp(Knob.Key, TEXT("skate_auto_push")) == 0 ? Defaults.AutoPush : Defaults.AssistedAir) + 1);
 }
 }
-
-void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
+// Whether Key is a Skate feel page value. Membership, not the skate_ prefix: skate_volume is an audio setting on the
+// main page. External linkage for JapanSkatePreferencesTests.cpp.
+bool IsSkateFeelKey(const FString& Key)
 {
-    Owner = Pawn;
-    Values = {
+    for (const FSkateGroup& Group : SkateGroups())
+        for (const FSkateKnob& Knob : Group.Knobs)
+            if (Key == Knob.Key) return true;
+    return false;
+}
+
+// The release defaults (operator preset, 2026-10-20, Telegram 393): every supported value a fresh install starts
+// from, also what a missing key and the menus' resets come back to. A saved value still wins. The preset's other keys
+// are not preferences: soundbank (0) and light_version (3) are kept by their own code at those values already, and
+// cairo_botw, moveset and shield are retired settings (Cairo's BotW moves gave way to the merged move set; the shield
+// is now the character's network loadout, off), unavailable here and left out on purpose. tests/fixtures holds the
+// preset as given; test_release_defaults.py and JapanReleaseDefaultsTests.cpp check this table against it exactly.
+const TArray<TPair<const TCHAR*, float>>& JapanReleaseDefaults()
+{
+    static const TArray<TPair<const TCHAR*, float>> Preset = {
+        {TEXT("bounce"), 1.9f}, {TEXT("cam_dist"), 420.f}, {TEXT("exposure"), .95f}, {TEXT("fog"), 1.f},
+        {TEXT("fog_density"), .03f}, {TEXT("fog_falloff"), .12f}, {TEXT("fog_glow"), .5f}, {TEXT("fog_reach"), 30.f},
+        {TEXT("fog_shafts"), 1.f}, {TEXT("fog_town"), 0.f}, {TEXT("footstep_volume"), 1.f},
+        {TEXT("forest_detail"), .4f}, {TEXT("fov"), 70.f}, {TEXT("goofy"), 1.f}, {TEXT("laptop"), 0.f},
+        {TEXT("leaf_motion"), 0.f}, {TEXT("mouse"), .4f}, {TEXT("music"), 1.f}, {TEXT("music_volume"), .6f},
+        {TEXT("outline"), 0.f}, {TEXT("paint_radius"), 2.f}, {TEXT("painterly"), .35f}, {TEXT("performance"), 1.f},
+        {TEXT("render_scale"), 100.f}, {TEXT("renderer"), 0.f}, {TEXT("saturation"), 1.f}, {TEXT("show_fps"), 1.f},
+        {TEXT("skate_assisted_air"), 1.f}, {TEXT("skate_auto_push"), 0.f}, {TEXT("skate_boneless"), 1.f},
+        {TEXT("skate_bowl_boost"), 1.2f}, {TEXT("skate_braking"), 1.f}, {TEXT("skate_cam_dist"), 1.f},
+        {TEXT("skate_cam_fov"), -1.f}, {TEXT("skate_cam_pullback"), .8f}, {TEXT("skate_carve"), 1.f},
+        {TEXT("skate_dead_zone"), .25f}, {TEXT("skate_difficulty"), 0.f}, {TEXT("skate_drift_powerslide"), 1.f},
+        {TEXT("skate_flick_120hz"), 1.f}, {TEXT("skate_flick_pace"), 1.f}, {TEXT("skate_flick_radius"), 1.f},
+        {TEXT("skate_flick_window"), 1.f}, {TEXT("skate_get_up"), 1.f}, {TEXT("skate_gravity"), 1.f},
+        {TEXT("skate_grind_friction"), .55f}, {TEXT("skate_grind_pop"), .9f}, {TEXT("skate_grind_tolerance"), 2.f},
+        {TEXT("skate_grip"), 1.f}, {TEXT("skate_hill_speed"), 1.f}, {TEXT("skate_hippy"), 1.f},
+        {TEXT("skate_impact"), 1.f}, {TEXT("skate_landing"), 1.f}, {TEXT("skate_manual_drift"), .7f},
+        {TEXT("skate_mode"), 3.f}, {TEXT("skate_mouse_flick"), 1.f}, {TEXT("skate_pop"), 1.f},
+        {TEXT("skate_powerslide"), .5f}, {TEXT("skate_powerslide_turn"), 1.f}, {TEXT("skate_pump"), 1.f},
+        {TEXT("skate_push_power"), 1.f}, {TEXT("skate_push_speed"), 1.f}, {TEXT("skate_rail_magnetism"), 1.f},
+        {TEXT("skate_rolling_friction"), 1.f}, {TEXT("skate_spin"), 1.2f}, {TEXT("skate_steering"), 1.f},
+        {TEXT("skate_stick_reach"), .95f}, {TEXT("skate_tight_flicks"), 0.f}, {TEXT("skate_trucks"), .5f},
+        {TEXT("skate_vert_assist"), .9f}, {TEXT("skate_volume"), .5f}, {TEXT("skate_wobble"), 1.f},
+        {TEXT("skate_wobble_onset"), 1.f}, {TEXT("sky_fill"), 2.3f}, {TEXT("soften_footsteps"), 1.f},
+        {TEXT("soften_skate"), 1.f}, {TEXT("stamina_rings"), 5.f}, {TEXT("sun_height"), 26.f},
+        {TEXT("sun_strength"), 11.f}, {TEXT("sun_warmth"), .9f}, {TEXT("sun_yaw"), -30.f}, {TEXT("toon"), 0.f},
+        {TEXT("toon_bands"), 7.f}, {TEXT("toon_soft"), .45f}, {TEXT("tree_lod_distance"), 1.5f},
+        {TEXT("tree_lod_mode"), 2.f}, {TEXT("tree_optimization"), 1.f}, {TEXT("tree_shadow"), 80.f},
+        {TEXT("tree_sway"), 60.f}, {TEXT("volume"), .3f}, {TEXT("wind"), 3.5f}
+    };
+    return Preset;
+}
+// The preferences table: built-in defaults and limits, the Skate feel knobs, then the release defaults over them.
+// A release default that names no preference or leaves its range is refused, never clamped, and reported in Errors
+// (the table keeps its built-in value for it). The rest apply exactly as given: a slider's step is not used to round them.
+TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors)
+{
+    TArray<FJapanPreference> Values = {
         {TEXT("performance"),TEXT("Graphics"),1.f,0.f,1.f},
         {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
         {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
@@ -219,6 +270,28 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
             for (const FSkateKnob& Knob : Group.Knobs)
                 Values.Add({Knob.Key, Knob.Label, SkateDefault(Knob, Defaults), Knob.Minimum, Knob.Maximum, Knob.Step});
     }
+    for (const TPair<const TCHAR*, float>& Default : JapanReleaseDefaults())
+    {
+        FJapanPreference* V = Values.FindByPredicate([&](const FJapanPreference& P) { return P.Key == Default.Key; });
+        FString Problem;
+        if (!V) Problem = TEXT("is not a preference");
+        else if (!FMath::IsFinite(Default.Value) || Default.Value < V->Minimum || Default.Value > V->Maximum)
+            Problem = FString::Printf(TEXT("%g is outside %g..%g"), Default.Value, V->Minimum, V->Maximum);
+        if (!Problem.IsEmpty())
+        {
+            UE_LOG(LogTemp, Error, TEXT("PREFERENCES release default %s %s"), Default.Key, *Problem);
+            if (Errors) Errors->Add(FString(Default.Key) + TEXT(" ") + Problem);
+            continue;
+        }
+        V->Value = Default.Value;
+    }
+    return Values;
+}
+
+void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
+{
+    Owner = Pawn;
+    Values = JapanDefaultPreferences(nullptr);   // a refused release default is logged there
     DefaultValues.Reset();
     for (const FJapanPreference& V : Values) DefaultValues.Add(V.Key,V.Value);
     SettingsFile=FilePath();
@@ -568,19 +641,18 @@ FSkateFeel UJapanPreferences::GetSkateFeel() const
 }
 void UJapanPreferences::ResetSkate(bool bCustom)
 {
-    const FSkateFeel Defaults = FSkateFeel::Defaults();
+    // Back to the release defaults (JapanReleaseDefaults), the values a fresh install starts from.
     for (const FSkateGroup& Group : SkateGroups())
         for (const FSkateKnob& Knob : Group.Knobs)
             if (Knob.bAlways != bCustom && FCString::Strcmp(Knob.Key, TEXT("skate_mode")) != 0)
-                for (FJapanPreference& V : Values) if (V.Key == Knob.Key) V.Value = SkateDefault(Knob, Defaults);
+                for (FJapanPreference& V : Values) if (V.Key == Knob.Key) V.Value = DefaultValues.FindRef(V.Key);
     Apply(); Save();
 }
 bool UJapanPreferences::IsSkateCustomStock() const
 {
-    const FSkateFeel Defaults = FSkateFeel::Defaults();
     for (const FSkateGroup& Group : SkateGroups())
         for (const FSkateKnob& Knob : Group.Knobs)
-            if (!Knob.bAlways && FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) != 0 && !FMath::IsNearlyEqual(Get(Knob.Key), SkateDefault(Knob, Defaults), 1e-4f))
+            if (!Knob.bAlways && FCString::Strcmp(Knob.Key, TEXT("skate_difficulty")) != 0 && !FMath::IsNearlyEqual(Get(Knob.Key), DefaultValues.FindRef(Knob.Key), 1e-4f))
                 return false;
     return true;
 }
@@ -1237,7 +1309,7 @@ void UJapanPreferences::OpenMenu(bool bSkate, const FString& FocusKey)
         // stay out of a menu that the phone shows too.
         if (IsSessionOnly(Values[I].Key)) continue;
         if (IsToggle(Values[I].Key) || Values[I].Key == TEXT("tree_lod_mode")) continue;   // a button above
-        if (Values[I].Key.StartsWith(TEXT("skate_"))) continue;                       // the Skate feel page
+        if (IsSkateFeelKey(Values[I].Key)) continue;                                  // the Skate feel page
         if (Values[I].Key == LightKeys[0])
         {
             Page->Section();

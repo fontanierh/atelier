@@ -54,9 +54,12 @@ def city_pad(x,y,z):
     return z*(1-w)+oz*w
 
 def city_path():
-    """Join the open east lane north of its railway barrier, then skirt the ticket hut to the front apron."""
+    """Join the open east lane north of its railway barrier, then skirt the ticket hut to the front apron.
+
+    It turns south at x 1260, on the apron's graded ground: turning at x 1255 took it 2.2 m down the railway
+    cutting's bank and back (operator note 381), and east of x 1261 the station's sign and planter stand."""
     ox,oy,_=STATIONS[1]['origin']
-    return spline([(1240.,329.),(1255.,329.),(1255.,oy+SAFE[1]),(ox+SAFE[0],oy+SAFE[1])])[0]
+    return spline([(1240.,329.),(1255.,329.),(1260.,323.),(1260.,oy+SAFE[1]),(ox+SAFE[0],oy+SAFE[1])])[0]
 
 def megapark_pad(x,y,z):
     """The north terrain `z` levelled for the Mega Park stop and its footpath, never under the park itself."""

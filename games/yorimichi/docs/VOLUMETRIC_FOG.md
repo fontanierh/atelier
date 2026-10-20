@@ -8,7 +8,7 @@ saved like every setting and shown on the phone too:
 
 | Slider (key) | Default | Range, step | Sets |
 |---|---|---|---|
-| Fog density (`fog_density`) | 0.07 | 0–0.2, 0.005 | the height fog's density at sea level |
+| Fog density (`fog_density`) | 0.03 (release default; the look below was tuned at 0.07) | 0–0.2, 0.005 | the height fog's density at sea level |
 | Fog reach (`fog_reach`) | 30 m | 10–120 m, 5 m | the grid's view distance, and so the veil on far views |
 | Fog height falloff (`fog_falloff`) | 0.12 | 0.02–0.5, 0.01 | how fast it thins with height: halving every `1000 / falloff` cm |
 | Fog glow toward the sun (`fog_glow`) | 0.5 | 0–0.9, 0.05 | the scattering distribution (anisotropy) |

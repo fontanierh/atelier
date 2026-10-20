@@ -1,7 +1,9 @@
 #include "RacingService.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "RacingBroadcast.h"
+#include "HorseComponent.h"
 #include "AtelierData.h"
+#include "Dom/JsonObject.h"
 #include "HRClock.h"
 #include "HRRules.h"
 #include "HRSave.h"
@@ -10,6 +12,8 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Guid.h"
 #include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
 
@@ -350,10 +354,18 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingTvPlacementTest, "Yorimichi.Racing.TvPla
 bool FRacingTvPlacementTest::RunTest(const FString&)
 {
     const FVector Origin = RacingTest::BelmonteOrigin;
-    TestEqual(TEXT("Four screens"), RacingTv::Spots().Num(), 4);
-    const int32 Front = RacingTv::FindSpot(TEXT("osteria_front"));
-    if (!TestTrue(TEXT("The osteria's front screen"), Front != INDEX_NONE)) return false;
-    const RacingTv::FSpot& Spot = RacingTv::Spots()[Front];
+    const FString AuthoredJson = TEXT("{\"tv_spots\":[")
+        TEXT("{\"id\":\"osteria_front\",\"pivot_cm\":[-2600,-190,248],\"yaw\":180,\"watch_cm\":[-3040,-160,18],\"watch_yaw\":-4,\"scale\":1.4},")
+        TEXT("{\"id\":\"osteria_back\",\"pivot_cm\":[-4050,485,248],\"yaw\":0,\"watch_cm\":[-3700,160,18],\"watch_yaw\":136.2,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_paris\",\"pivot_cm\":[7500,-29720,3255],\"yaw\":-90,\"watch_cm\":[7500,-30150,3015],\"watch_yaw\":90,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_bar\",\"pivot_cm\":[5750,-31637.6,3305],\"yaw\":90,\"watch_cm\":[5750,-31160,3015],\"watch_yaw\":-90,\"scale\":1.3}]}");
+    TArray<RacingTv::FSpot> Authored;
+    FString Error;
+    if (!TestTrue(TEXT("Authored runtime tv_spots parse"), RacingTv::ParseSpots(AuthoredJson, Authored, &Error) && Authored.Num() == 4))
+        return false;
+    const int32 Front = RacingTv::FindSpot(TEXT("osteria_front"), Authored);
+    if (!TestTrue(TEXT("The osteria's front screen"), Authored.IsValidIndex(Front))) return false;
+    const RacingTv::FSpot& Spot = Authored[Front];
     // Haras Valley's frame is the region's: its watch point (-3040, -160) cm is the osteria's map stop, plan (-30.4, 1.6) m.
     const FVector Watch = Origin + Spot.Watch;
     TestTrue(FString::Printf(TEXT("The watch point is the osteria stop (%s)"), *Watch.ToString()),
@@ -364,7 +376,7 @@ bool FRacingTvPlacementTest::RunTest(const FString&)
     TestTrue(TEXT("The picture's centre"), RacingTv::ScreenCentre(Spot, Origin).Equals(Origin + FVector(-2600. - RacingTv::PictureFront * Spot.Scale, -190., 248.), .01));
     TestTrue(TEXT("1.3 to 1.5 times Haras Valley's screen"), Spot.Scale >= 1.3f && Spot.Scale <= 1.5f);
     TestTrue(TEXT("2.3 m over the floor"), FMath::IsNearlyEqual(Spot.Pivot.Z - Spot.Watch.Z, 230., .01));
-    for (const RacingTv::FSpot& S : RacingTv::Spots())
+    for (const RacingTv::FSpot& S : Authored)
     {
         // Every watch point is in front of its screen, within the capture's 25 m, and faces it within 50 degrees.
         const FVector Centre = RacingTv::ScreenCentre(S, Origin), At = Origin + S.Watch;
@@ -374,6 +386,44 @@ bool FRacingTvPlacementTest::RunTest(const FString&)
         const float ToScreen = float(FMath::RadiansToDegrees(FMath::Atan2(Centre.Y - At.Y, Centre.X - At.X)));
         TestTrue(FString::Printf(TEXT("%s: the viewer faces it"), S.Id), FMath::Abs(FMath::FindDeltaAngleDegrees(S.WatchYaw, ToScreen)) < 50.f);
     }
+    TArray<RacingTv::FSpot> Parsed;
+    const FString CustomJson = TEXT("{\"tv_spots\":[")
+        TEXT("{\"id\":\"osteria_front\",\"pivot_cm\":[-2500,-100,248],\"yaw\":175,\"watch_cm\":[-2940,-70,18],\"watch_yaw\":-9,\"scale\":1.4},")
+        TEXT("{\"id\":\"osteria_back\",\"pivot_cm\":[-4050,485,248],\"yaw\":0,\"watch_cm\":[-3700,160,18],\"watch_yaw\":136.2,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_paris\",\"pivot_cm\":[7500,-29720,3255],\"yaw\":-90,\"watch_cm\":[7500,-30150,3015],\"watch_yaw\":90,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_bar\",\"pivot_cm\":[5750,-31637.6,3305],\"yaw\":90,\"watch_cm\":[5750,-31160,3015],\"watch_yaw\":-90,\"scale\":1.3}]}");
+    if (!TestTrue(TEXT("ParseSpots accepts building-derived runtime JSON"), RacingTv::ParseSpots(CustomJson, Parsed, &Error) && Parsed.Num() == 4))
+        return false;
+    TestTrue(TEXT("ParseSpots updates pivot and yaw"), Parsed[0].Pivot.Equals(FVector(-2500., -100., 248.), .01) && FMath::IsNearlyEqual(Parsed[0].Yaw, 175.f));
+    TestFalse(TEXT("ParseSpots rejects incomplete spots without fallback"), RacingTv::ParseSpots(TEXT("{\"tv_spots\":[]}"), Parsed, &Error));
+    TestTrue(TEXT("Rejected ParseSpots clears output"), Parsed.IsEmpty() && !Error.IsEmpty());
+    TestFalse(TEXT("ParseSpots rejects missing tv_spots key"), RacingTv::ParseSpots(TEXT("{\"version\":1}"), Parsed, &Error));
+    TestFalse(TEXT("LoadSpots rejects missing file without fallback"), RacingTv::LoadSpots(TEXT("/nonexistent/belmonte/runtime.json"), Parsed, &Error) || !Parsed.IsEmpty());
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingSharedHorseGaitTest, "Yorimichi.Racing.SharedHorseGait",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingSharedHorseGaitTest::RunTest(const FString&)
+{
+    TestEqual(TEXT("Idle below 12 cm/s"), UHorseComponent::GaitForSpeed(11.9f), 0);
+    TestEqual(TEXT("Walk at 12 cm/s"), UHorseComponent::GaitForSpeed(12.f), 1);
+    TestEqual(TEXT("Sprint at 1180 cm/s"), UHorseComponent::GaitForSpeed(1180.f), 5);
+    // Mounted walk starts at 10 cm/s; racing starts at 12 cm/s and caps sprint at 1.45x.
+    TestTrue(TEXT("Mounted walk at 10 cm/s is 0.82"), FMath::IsNearlyEqual(UHorseComponent::PlayRateForGait(1, 10.f, false), .82f, 1e-4f));
+    TestTrue(TEXT("Mounted walk at 135 cm/s is midpoint"), UHorseComponent::PlayRateForGait(1, 135.f, false) > UHorseComponent::PlayRateForGait(1, 135.f, true));
+    TestTrue(TEXT("Mounted sprint clamps at 1.22"), FMath::IsNearlyEqual(UHorseComponent::PlayRateForGait(5, 1800.f, false), 1.22f, 1e-4f));
+    TestTrue(TEXT("Racing sprint clamps at 1.45"), FMath::IsNearlyEqual(UHorseComponent::PlayRateForGait(5, 1800.f, true), 1.45f, 1e-4f));
+    TSharedPtr<FJsonObject> Breed;
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(TEXT("{\"contacts\":{\"saddle_root\":[0.04,0.12,1.6],\"seat_z\":1.43}}"));
+    TestTrue(TEXT("Breed JSON parses"), FJsonSerializer::Deserialize(Reader, Breed) && Breed.IsValid());
+    FVector Saddle = FVector::ZeroVector;
+    double SeatZ = 0.;
+    TestTrue(TEXT("ReadSeatContacts succeeds"), UHorseComponent::ReadSeatContacts(Breed, Saddle, SeatZ));
+    TestTrue(TEXT("ReadSeatContacts converts metres to cm and negates Y"), Saddle.Equals(FVector(4., -12., 160.), 1e-3) && FMath::IsNearlyEqual(SeatZ, 143., 1e-3));
+    TSharedPtr<FJsonObject> Empty = MakeShared<FJsonObject>();
+    TestFalse(TEXT("ReadSeatContacts rejects missing contacts"), UHorseComponent::ReadSeatContacts(Empty, Saddle, SeatZ));
     return true;
 }
 

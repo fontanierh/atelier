@@ -1,0 +1,36 @@
+{
+  "stage": "brinecove-redesign",
+  "slug": "waterfall",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/regions/brinecove/references/redesign.py",
+  "context": [
+    {
+      "file": "context/r10-note-005.jpg",
+      "sha256": "5984f48df7cec4925f1f1372c2141254e7d96c00fb73502d12718f295452f466"
+    }
+  ],
+  "prompt_file": "waterfall.prompt.txt",
+  "prompt_sha256": "bcf877773d3c6dfa4dfdfb77c64b2ede1e38bc420abb1bf98107bae1ffbab2de",
+  "status": "done",
+  "started_at": "2026-10-19T21:49:45.489996+00:00",
+  "elapsed_seconds": 34.3,
+  "output": "waterfall.png",
+  "output_sha256": "b0af7e6809f5dc01b0e9076e906dccdfc00347f0cb72bb6286c8de492198f02a",
+  "usage": {
+    "input_tokens": 1248,
+    "input_tokens_details": {
+      "image_tokens": 1040,
+      "text_tokens": 208
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2620
+  },
+  "finished_at": "2026-10-19T21:50:19.928421+00:00"
+}

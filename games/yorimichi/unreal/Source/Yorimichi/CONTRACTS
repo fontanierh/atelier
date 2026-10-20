@@ -12,8 +12,9 @@ use Original pools and their Original shuffle state. Alternatives MUST retain in
 state, and invalid or not-ready requests MUST leave the active bank and plant state unchanged.
 
 @cc [owner:fontanierh,label:correctness] local-world-soundbank-menu
-At default local audio preferences, fresh Original MUST retain existing cue, shuffle, attenuation and mix behavior without loading
-alternative banks or an audition. A bank selection MUST validate its current staged identity,
+With softening off and full footstep and skate volume, fresh Original MUST retain existing cue, shuffle, attenuation and mix
+behavior without loading alternative banks or an audition; the softening and volume preferences, release defaults included,
+adjust only per-voice filter and gain on top of it. A bank selection MUST validate its current staged identity,
 complete loaded foot/skate coverage and every ready emitter before saving or changing any emitter.
 Failed saves, invalid assets and obsolete async completions MUST preserve the active bank.
 The local world's choice MUST apply to new local and remote emitters without replicating that
@@ -22,7 +23,7 @@ stop before a changed wave is installed; Original references MUST remain availab
 One owned menu preview MUST stop/cancel on selection, menu close, backgrounding and world teardown.
 
 @cc [owner:fontanierh,label:correctness] local-footstep-preferences
-Saved footstep softening MUST default off and footstep volume MUST default to one.
+Footstep softening and footstep volume MUST default to their release defaults (JapanReleaseDefaults: on, one).
 These client-local controls MUST update current and future human footstep/landing
 voices for every selected bank, using per-voice filtering and gain without changing
 shared waves, plant timing, replay, attenuation or pitch. Hoof stand-ins, skate,
@@ -30,9 +31,10 @@ music and master volume MUST remain unaffected. Finished voices MUST auto-destro
 world/component teardown MUST stop and release only the owned human footstep voices.
 
 @cc [owner:fontanierh,label:correctness] local-skate-preferences
-Saved skate softening MUST default off and skate volume MUST default to one. These client-local
+Skate softening and skate volume MUST default to their release defaults (JapanReleaseDefaults: on, one half). These client-local
 controls MUST reach current and late audio-ready skate emitters in this world for every selected
 bank without loading a bank, and MUST leave footsteps, hoof stand-ins, music and master volume unaffected.
+Both controls MUST be reachable from the Esc menu's main page; the Skate feel page owns only its own knobs.
 
 @cc [owner:fontanierh,label:performance] horse-appearance-residency
 An accepted appearance change on a locally controlled horse that replaces breed, tack, coat or mask
@@ -125,4 +127,13 @@ local host player until guest identity persistence exists, and replicate only th
 FRacingNetState snapshot (never FHRWorldState::Seed). RacingMotion::Distance, RacingGround::Pick
 hit selection and RacingTv::Direct camera selection from the snapshot, shared clock and
 spectator positions MUST be deterministic, with zero per-frame network traffic and no silent breed/coat/clip
-stand-ins when required assets are missing.
+stand-ins when required assets are missing. Runner gait thresholds, play rates and seat contacts
+MUST share UHorseComponent's definitions, and Belmonte TV placements MUST follow the region's
+authored building transforms from runtime.json without falling back to hardcoded coordinates.
+
+@cc [owner:fontanierh,label:correctness] release-default-preferences
+A fresh install's preferences, a missing saved key and the menus' resets MUST all take the release defaults
+(JapanReleaseDefaults, the operator's preset exactly). A saved value MUST still win, except light values that the existing
+light_version migration retires from a file saved before the current light. A release default that names no
+preference or leaves its range MUST be refused and reported, never clamped or rounded; preferences it does not list
+keep their built-in defaults.

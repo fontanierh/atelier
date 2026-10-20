@@ -422,7 +422,7 @@ namespace HRSave
 					A.Size(F.Segments.Num(), 16, W + TEXT(" segments"));
 					for (const FHRSegment& Seg : F.Segments)
 					{
-						A.Range(Seg.TimeUs, 0, 3600000000LL, W + TEXT(" segment time"));
+						A.Range(Seg.DurationUs, 0, 3600000000LL, W + TEXT(" segment time"));
 						A.Range(Seg.CumulativeUs, 0, 3600000000LL, W + TEXT(" cumulative time"));
 					}
 					A.Size(F.RunTimesUs.Num(), 2, W + TEXT(" run times"));

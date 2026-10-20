@@ -1,0 +1,36 @@
+{
+  "stage": "brinecove-redesign",
+  "slug": "anchor",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/regions/brinecove/references/redesign.py",
+  "context": [
+    {
+      "file": "context/r10-note-013.jpg",
+      "sha256": "4f82d5c5d626b7fd4780de685c933765edf7ad62bf329f5a9c3b4e45328d623d"
+    }
+  ],
+  "prompt_file": "anchor.prompt.txt",
+  "prompt_sha256": "f5ed57149afbf2e6e85dd65a486ca34d4cd07b7aee3ffcb49bded4054c2fddf7",
+  "status": "done",
+  "started_at": "2026-10-19T21:49:45.490107+00:00",
+  "elapsed_seconds": 32.8,
+  "output": "anchor.png",
+  "output_sha256": "a5eca8788f5268887267c697992df452efba506b140ceac82d6c24bf2658b459",
+  "usage": {
+    "input_tokens": 1258,
+    "input_tokens_details": {
+      "image_tokens": 1040,
+      "text_tokens": 218
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2630
+  },
+  "finished_at": "2026-10-19T21:50:18.370636+00:00"
+}

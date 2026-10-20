@@ -30,12 +30,12 @@ ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'AudioBanks', 'Belmonte', 'Collections', 'CraterPark', 'Data', 'Developers',
     'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Horses', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
     'SkateRide', 'SkateRuntime', 'SwordCamp', 'Wanderer',
-    'BelmonteTrack', 'BelmonteTrain', 'Brinecove',
+    'BelmonteTrack', 'BelmonteTrain', 'Brinecove', 'HidamariStable', 'Racing',
 } | CHARACTER_ROOTS)
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'Soundbanks', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'craterpark', 'heightmap.bin',
     'hidamari', 'hippodrome', 'horses', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
-    'belmonte_track', 'belmonte_train', 'brinecove', 'racing',
+    'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing',
 } | {c.id for c in MOVERS})
 # Each mover's runtime data: its move record, its readiness record, bike report if playable, and its posed grips if
 # committed; and the runtime data of the imports that write their own (unreal.hippodrome, unreal.horses).
@@ -63,7 +63,16 @@ def music_enabled():
 
 
 def retired(content):
-    """Unknown generated imports at owned recipe boundaries; no traversal inside committed source data."""
+    """@cc [owner:fontanierh,label:correctness] declared-content-roots-kept
+    Every production Content/<folder> and Content/Data/<folder>, whether a games/yorimichi/build.py
+    step declares it as an output or an import script writes it, MUST be in ASSET_ROOTS or
+    DATA_ROOTS, so data.content never archives a production import as retired. A change adding
+    such a root MUST add it here in the same change. Retirement MUST preserve declared production
+    outputs and runtime/staged content; obsolete outputs MUST be moved into the build's
+    retired-content archive, never deleted. Build output declarations, this policy and cook/staging
+    ownership MUST remain consistent when a root is added or moved.
+    """
+    # Unknown generated imports at owned recipe boundaries; no traversal inside committed source data.
     data_roots = set(DATA_ROOTS)
     audio_roots = {'Bike', 'Combat', 'Skate'}
     if music_enabled():

@@ -10,6 +10,7 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class UInstancedStaticMeshComponent;
 class UBoxComponent;
+class UTextRenderComponent;
 class AWandererCharacter;
 
 /** A track's centreline: chainage (metres) and rail-top points (Unreal cm), in chainage order. */
@@ -30,6 +31,21 @@ struct YORIMICHI_API FBelmonteTrainRun
     double T0 = 0., Dt = .5;
     TArray<float> S;
     TArray<FVector2D> LoopTrack;
+};
+
+/** A train's stand at a terminus within the cycle: the service times (0 .. Cycle) it arrives and leaves. */
+struct YORIMICHI_API FBelmonteTrainStop
+{
+    int32 Train = 0;
+    double Arrive = 0., Depart = 0.;
+};
+
+/** An arrival on a station board: the train and the service seconds until it arrives (0 while it stands there). */
+struct YORIMICHI_API FBelmonteTrainArrival
+{
+    int32 Train = INDEX_NONE;
+    double In = 0.;
+    bool bAtPlatform = false;
 };
 
 /**
@@ -68,6 +84,14 @@ struct YORIMICHI_API FBelmonteTrainLine
     double NextCrossing(double From, double* Where = nullptr) const;
     /** The first service time after From when any train's centre passes Chainage, or -1. */
     double NextPassing(double From, double Chainage, int32* Which = nullptr) const;
+    /** Every train's stands at the terminus at Chainage over one cycle (from the samples), by arrival time. */
+    TArray<FBelmonteTrainStop> Stops(double Chainage) const;
+    /** The next Count arrivals at a terminus with these stops at a service time: trains standing there first, then the
+     *  trains to come, cycle after cycle. */
+    static TArray<FBelmonteTrainArrival> NextArrivals(const TArray<FBelmonteTrainStop>& Stops, double Cycle, double Time, int32 Count);
+    /** A board's countdown in real minutes: "à quai" while the train stands there, "arrive" under a minute, otherwise
+     *  "dans N min" (whole minutes left). Scale is the service clock's speed (service seconds per real second). */
+    static FString Countdown(const FBelmonteTrainArrival& Arrival, double Scale);
 };
 
 /**
@@ -81,6 +105,9 @@ struct YORIMICHI_API FBelmonteTrainLine
  * aboard no vehicle comes out, and anyone else found inside a coach (on a bike or horse through an open door, a jump,
  * the paraglider) is put back on the ground beside it by the host (BelmonteTrainRules.h). Interact opens doors (exterior ones only at a terminus, on the platform
  * side), sits on the nearest free seat and stands up.
+ *
+ * Stations: at each terminus, arrival boards count down to the next train and the one after in real minutes, from the
+ * same shared clock (BelmonteTrainBoards.cpp, docs/BELMONTE_STATION.md).
  *
  * Dev: `train.View [view|loop|a|b|<chainage>]` jumps the service clock and puts the player beside the line where a
  * train is about to pass; `train.TimeScale` runs the service clock faster. `train.Go [belmonte|hidamari]` travels to
@@ -111,6 +138,8 @@ struct FBelmonteTrainNetworkState
     GENERATED_BODY()
     UPROPERTY() uint32 Serial = 0;
     UPROPERTY() double DevOffset = 0.;
+    /** The host's train.TimeScale: the station boards turn service seconds into real ones with it. */
+    UPROPERTY() float TimeScale = 1.f;
     UPROPERTY() TArray<uint8> OpenDoors;
     UPROPERTY() TArray<FBelmonteTrainPassenger> Passengers;
 };
@@ -225,9 +254,30 @@ private:
         float BoardTime = 0.f, BoardLength = 0.f;
         bool bBoardUp = true, bBoardMoving = false;
     };
-    struct FStation { FString Key, Name; double Chainage = 0.; FVector Arrival = FVector::ZeroVector; float Yaw = 0.f; bool bLeft = true; };
+    struct FStation
+    {
+        FString Key, Name;
+        double Chainage = 0.;
+        FVector Arrival = FVector::ZeroVector;
+        float Yaw = 0.f;
+        bool bLeft = true;
+        TArray<FBelmonteTrainStop> Stops;
+    };
+    /** A station's arrival board (BelmonteTrainBoards.cpp): the next train and the one after, counted down in real
+     *  minutes from the shared service clock, so every player reads the same. Text changes at most once a second. */
+    struct FBoard
+    {
+        FString Id;
+        int32 Station = INDEX_NONE;
+        TArray<TObjectPtr<UTextRenderComponent>> Next, After;
+        FString Shown[2];
+    };
     bool Initialize(const FString& Path);
     void BuildStations(const TSharedPtr<FJsonObject>& Root);
+    void BuildBoards(const TSharedPtr<FJsonObject>& Root);
+    void UpdateBoards(double Time);
+    /** Service seconds per real second: train.TimeScale here, the host's on a client. */
+    double ClockScale() const;
     void PlaceVehicles(double Time, bool bForce);
     void UpdateDoors(double Time, float Dt);
     void UpdateRiders(float Dt);
@@ -274,6 +324,8 @@ private:
     TArray<FVehicle> Vehicles;
     TArray<FRider> Riders;
     TArray<FStation> Stations;
+    TArray<FBoard> Boards;
+    double NextBoardUpdate = 0.;
     TArray<bool> TrainAtStation;
     /** Per train: the last door-side point verified while it ran in the open (ERecovery::TrainLastSafe). */
     TArray<FVector> TrainSafe;
@@ -303,7 +355,8 @@ class YORIMICHI_API UBelmonteTrainLive : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 public:
-    /** The service clock, each train (chainage, km/h, at a station) and the player's rider state, as JSON. */
+    /** The service clock, each train (chainage, km/h, at a station), the station boards and the player's rider state,
+     *  as JSON. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString TrainState();
     /** A point on a vehicle of a train in world cm: What = "centre", "door:<id>:<handle index>", "board:<door id>:<path index, -1 last>", "seat:<index>",
      *  "floor:<local x m>". Zero when unknown. */

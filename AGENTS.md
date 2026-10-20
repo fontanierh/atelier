@@ -70,6 +70,14 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
 - Commit every GLB source a game consumes under its `assets/` library. Record its local path and checksum in the
   source manifest; fresh checkouts must use the committed model without a private fetch or personal cache.
 - Keep only the current revision of a source in git. Older revisions, captures and evidence go to the archive.
+- When importing or porting work from a contributor fork, never copy workarounds or hacks verbatim into upstream.
+  Refactor before opening a PR: never mutate committed source assets in place or add shadow backup folders next to
+  `assets/` (all carved, refined or baked outputs belong in `build/<game>/` or `unreal/Content/` in the normal build
+  graph); keep mesh subdivision bounded with planar/curvature filtering and LODs; keep region-specific buildings,
+  bridges and paths out of shared corridor modules; derive indoor/screen placements from authored building transforms
+  rather than hardcoding region coordinates in C++; share existing component gait/contact/material definitions rather
+  than duplicating tables; and fold small materials into the owning region's import step instead of adding standalone
+  Unreal Editor steps.
 
 ## Credentials and paid calls
 

@@ -1,0 +1,36 @@
+{
+  "stage": "brinecove-redesign",
+  "slug": "market-stall",
+  "requested_model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "size": "1536x1024",
+  "endpoint": "/v1/images/edits",
+  "execution": "games/yorimichi/world/regions/brinecove/references/redesign.py",
+  "context": [
+    {
+      "file": "context/r10-note-009.jpg",
+      "sha256": "4c8697c1b32b754722740849da536001fa032256ea1321d49679b4ed60e31dff"
+    }
+  ],
+  "prompt_file": "market-stall.prompt.txt",
+  "prompt_sha256": "0b1b90aa4dc7baba61fd6387fb0c082c19f7d719f5092c0f5c91b0f51e00e0d1",
+  "status": "done",
+  "started_at": "2026-10-19T21:49:45.490008+00:00",
+  "elapsed_seconds": 35.9,
+  "output": "market-stall.png",
+  "output_sha256": "711cceb00742ea2630b8161db6c25c7a5d08751df5077078c5159ee0fa4e1dc9",
+  "usage": {
+    "input_tokens": 1311,
+    "input_tokens_details": {
+      "image_tokens": 1040,
+      "text_tokens": 271
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 2683
+  },
+  "finished_at": "2026-10-19T21:50:21.514663+00:00"
+}

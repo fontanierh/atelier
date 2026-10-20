@@ -7473,6 +7473,46 @@
       "bytes": 374251,
       "sha256": "6ca060ba9360336e9ee381b84966db00c469d549f2d34a9b182b8e887f7a840a"
     },
+    "brinecove/references/redesign/anchor.jpg": {
+      "bytes": 312909,
+      "sha256": "4d4a9fe20b5822550bffc9e1d18f11d31f3ed4cf685fa70c792dbb0798f6115a"
+    },
+    "brinecove/references/redesign/arcade.jpg": {
+      "bytes": 223040,
+      "sha256": "b3a1610d9549ae1a5a2de841ddef1810953e1c44e70bdb42e13ac8a011fbca5f"
+    },
+    "brinecove/references/redesign/context/r10-note-005.jpg": {
+      "bytes": 234542,
+      "sha256": "5984f48df7cec4925f1f1372c2141254e7d96c00fb73502d12718f295452f466"
+    },
+    "brinecove/references/redesign/context/r10-note-009.jpg": {
+      "bytes": 266494,
+      "sha256": "4c8697c1b32b754722740849da536001fa032256ea1321d49679b4ed60e31dff"
+    },
+    "brinecove/references/redesign/context/r10-note-010.jpg": {
+      "bytes": 216934,
+      "sha256": "d2504bb189d9668e2d4bc30ccdfc19d5742adf5e941b2e71e03d5d36c8a1af5c"
+    },
+    "brinecove/references/redesign/context/r10-note-011.jpg": {
+      "bytes": 125750,
+      "sha256": "4fb76ef72753fe6a970a150ad797b882eed2cb7de34f8eb2f6c85b74042f8681"
+    },
+    "brinecove/references/redesign/context/r10-note-013.jpg": {
+      "bytes": 255821,
+      "sha256": "4f82d5c5d626b7fd4780de685c933765edf7ad62bf329f5a9c3b4e45328d623d"
+    },
+    "brinecove/references/redesign/market-stall-under.jpg": {
+      "bytes": 269689,
+      "sha256": "4938c297a6791d7251ddd232f9ff04bfc9114b0e0f72efdb6a58e879674701d9"
+    },
+    "brinecove/references/redesign/market-stall.jpg": {
+      "bytes": 334727,
+      "sha256": "6057e5e033ede76220f34d1ba0d3a0226a1fa08666897743f5996bb35ff2e5b4"
+    },
+    "brinecove/references/redesign/waterfall.jpg": {
+      "bytes": 340601,
+      "sha256": "ce6175ca2846c6e458adc8030798ea365f9db8bae3b8dd957b25eed77efc9a91"
+    },
     "brinecove/textures/foam_lace.png": {
       "bytes": 614381,
       "sha256": "90c5aaceafb803c4170cd2ed74f141e127017facdd256249aa9625b45b677881"
@@ -7512,6 +7552,26 @@
     "brinecove/textures/waterfall_streaks.png": {
       "bytes": 522955,
       "sha256": "10dcff8531ea9a042a609ecd207d977fe457dd74247657f4393f70b800bcdc19"
+    },
+    "belmonte/concepts/station/back.jpg": {
+      "bytes": 534739,
+      "sha256": "21f3417e161bd5ec8411a698c896ea6a7c35c3a6d39ed8ad1d913e053b032718"
+    },
+    "belmonte/concepts/station/front.jpg": {
+      "bytes": 490975,
+      "sha256": "1ed61f43973bdd9459088fd5156f0c1cb0b9eff30cb57edaee524017af629a69"
+    },
+    "belmonte/concepts/station/roof_plan.jpg": {
+      "bytes": 509184,
+      "sha256": "4071c86cce622bca18a5761582b437d4d894c6bd4b207cefe07816861e4d4e8c"
+    },
+    "belmonte/concepts/station/side_left.jpg": {
+      "bytes": 451723,
+      "sha256": "ab567d23f7d27d7d8dc8c4f6ffe9e7436c3bd1b354a5d48f3ccf2d245fb390bd"
+    },
+    "belmonte/concepts/station/side_right.jpg": {
+      "bytes": 410440,
+      "sha256": "0981fabd3aabe2587fbd66be9dc29a3fc18dc109000e58e62189a1cbe8fbb595"
     }
   }
 }

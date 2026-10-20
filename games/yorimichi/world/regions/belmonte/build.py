@@ -134,6 +134,44 @@ def osteria_landing():
     return position, float(np.degrees(np.arctan2(-forward[1], forward[0])))
 
 
+# Local building-space TV placements (mesh_name, local_pivot_cm, local_yaw_deg, local_watch_cm, local_watch_yaw_deg, scale).
+TV_BUILDING_SPOTS = (
+    ('osteria_front', 'SM_BM_BH_Osteria_Taproom', [10., -750., 230.], 90., [40., -310., 0.], -94., 1.4),
+    ('osteria_back', 'SM_BM_BH_Osteria_Taproom', [685., 700., 230.], -90., [360., 350., 0.], 46.2, 1.4),
+    ('salon_paris', 'SM_BM_BHip_SalonHall', [-500., -480., 255.], 90., [-500., -50., 15.], -90., 1.4),
+    ('salon_bar', 'SM_BM_BHip_SalonHall', [1250., 1437.6, 305.], -90., [1250., 960., 15.], 90., 1.3),
+)
+
+
+def tv_spots(data=None):
+    """Derive the four Belmonte racing TV spots from the committed Osteria and Salon placements."""
+    data = data or source.manifest()
+    by_name = {}
+    for mesh_name in {'SM_BM_BH_Osteria_Taproom', 'SM_BM_BHip_SalonHall'}:
+        assets = {m['source_asset'] for m in data['meshes'] if m['name'] == mesh_name}
+        placements = [p['transform'] for p in data['placements'] if p['asset'] in assets]
+        if len(assets) != 1 or len(placements) != 1:
+            raise ValueError(f'TV placement requires exactly one committed {mesh_name} placement')
+        by_name[mesh_name] = placements[0]
+    out = []
+    for spot_id, mesh_name, local_pivot, dyaw, local_watch, dwyaw, scale in TV_BUILDING_SPOTS:
+        tr = by_name[mesh_name]
+        q = tr['rotation_xyzw']
+        t = np.asarray(tr['translation_cm'], float)
+        s = np.asarray(tr['scale'], float)
+        fwd = planting.rotate(q, np.array([1., 0., 0.]))
+        base_yaw = float(np.degrees(np.arctan2(fwd[1], fwd[0])))
+        pivot = (planting.rotate(q, np.asarray(local_pivot, float) * s) + t).round(2).tolist()
+        watch = (planting.rotate(q, np.asarray(local_watch, float) * s) + t).round(2).tolist()
+        yaw = round(((base_yaw + dyaw + 180.) % 360.) - 180., 2)
+        if abs(yaw + 180.) < 1e-6:
+            yaw = 180.
+        watch_yaw = round(((base_yaw + dwyaw + 180.) % 360.) - 180., 2)
+        out.append({'id': spot_id, 'pivot_cm': pivot, 'yaw': yaw, 'watch_cm': watch, 'watch_yaw': watch_yaw,
+                    'scale': float(scale * max(abs(v) for v in s[:2]))})
+    return out
+
+
 def map_zones(town_z):
     """@cc [owner:fontanierh,label:correctness] belmonte-indoor-map-stop
     Indoor stops MUST follow Belmonte's origin and land on their committed floors below
@@ -175,8 +213,13 @@ def main():
         path = source.LIBRARY / entry['path']
         assert source.sha(path) == entry['sha256'], path
         destination = OUT / 'glb' / path.name
-        shutil.copy2(path, destination)
-        entry = dict(entry, path=destination.relative_to(OUT).as_posix())
+        if entry['name'] in terrain.VALLEY_CARVED_TILES:
+            tris, bounds_m, _ = terrain.write_carved_valley_tile(path, destination)
+            entry = dict(entry, path=destination.relative_to(OUT).as_posix(), sha256=source.sha(destination),
+                         triangles=tris, bounds_m=bounds_m)
+        else:
+            shutil.copy2(path, destination)
+            entry = dict(entry, path=destination.relative_to(OUT).as_posix())
         meshes.append(entry)
         by_asset[entry['source_asset']] = entry
         doc, _ = glb_parts(path.read_bytes())
@@ -235,7 +278,7 @@ def main():
     town_z = float(source.terrain().height(0., -18.)) + L.ORIGIN[2] + 1.
     runtime = {'version': 1, 'origin_cm': L.native_origin(), 'bounds_m': L.BOUNDS,
                'clearance_m': list(terrain.OUTER), 'groups': groups, 'signs': signs, 'railway_corridor': L.RAILWAY,
-               'zones': map_zones(town_z)}
+               'zones': map_zones(town_z), 'tv_spots': tv_spots(data)}
     (OUT / 'runtime.json').write_text(json.dumps(runtime, separators=(',', ':')) + '\n')
     (OUT / 'build-report.json').write_text(json.dumps({'meshes': meshes, 'materials': materials,
                                                      'planting': plant_report, 'seam': seam}, indent=1) + '\n')

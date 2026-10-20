@@ -41,7 +41,9 @@ TERRAIN = ('terrain', 'rock')
 GROUND_REMAP = {'sand': 'terrain', 'jungle_dark': 'terrain'}
 TRANSLUCENT = ('mist',)
 EMISSIVE = ('lantern', 'glass_warm')
-PAN_CM_S = {'waterfall': -0.9, 'foam': 0.05}  # UV v per second: the curtain's streaks run down, foam spreads out
+# UV v per second. The glTF export flips v, so in Unreal the curtain's v grows upward: a positive pan runs its streaks
+# down (playtest note 5 saw -0.9 run them up). Foam spreads out.
+PAN_CM_S = {'waterfall': 0.9, 'foam': 0.05}
 # Water motion (import_brinecove.parent): a second, faster streak layer on the curtain; foam lace drifting along the
 # shore while its outer edge washes in and out.
 MOTION = {'waterfall': {'Layer': 1.0}, 'foam': {'Drift': 0.03, 'Wash': 0.22},

@@ -162,6 +162,22 @@ class Flora(unittest.TestCase):
         self.assertEqual(len(first['Tree_Tuscan_Oak']), 2)
         self.assertLessEqual(report['kinds']['tree']['selected'], planting.BUDGETS['tree'])
 
+    def test_tv_spots_follow_committed_building_transforms(self):
+        from belmonte import build as B
+        spots = {s['id']: s for s in B.tv_spots()}
+        self.assertEqual(set(spots), {'osteria_front', 'osteria_back', 'salon_paris', 'salon_bar'})
+        self.assertEqual(spots['osteria_front']['pivot_cm'], [-2600., -190., 248.])
+        self.assertEqual(spots['osteria_front']['watch_cm'], [-3040., -160., 18.])
+        self.assertEqual(spots['salon_paris']['pivot_cm'], [7500., -29720., 3255.])
+        moved = json.loads(json.dumps(source.manifest()))
+        taproom = {m['source_asset'] for m in moved['meshes'] if m['name'] == 'SM_BM_BH_Osteria_Taproom'}
+        for p in moved['placements']:
+            if p['asset'] in taproom:
+                p['transform']['translation_cm'][0] += 250.
+        shifted = {s['id']: s for s in B.tv_spots(moved)}
+        self.assertAlmostEqual(shifted['osteria_front']['pivot_cm'][0], -2350., places=2)
+        self.assertAlmostEqual(shifted['osteria_front']['watch_cm'][0], -2790., places=2)
+
 
 if __name__ == '__main__':
     unittest.main()
