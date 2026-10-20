@@ -12,6 +12,12 @@ Status: design proposal. Yorimichi is the first consumer of the platform layer i
 - Navigation, animation, collision, and crowd LOD.
 - Game save fields for identity, memory, goals, and scheduler state.
 
+## Action vocabulary
+
+Yorimichi owns its verbs and their effects. It registers actions such as train.board, train.ride, train.disembark, zeppelin.board, door.open, bed.sleep, food.eat, job.apply, shop.buy, shop.work, and talk. Each one returns its preconditions and expected effects for the current state; the platform builds and validates the options.
+
+Life goals and stage predicates are also game data. The platform runs the state machine, tracks progress, and applies rewards.
+
 ## Housing audit
 
 | Region | Strict houses | Other residential | Notes |

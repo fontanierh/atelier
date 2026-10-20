@@ -13,7 +13,7 @@ The runtime is C++ inside an Unreal plugin. Python stays for build tooling, data
 | Concern | Platform | Game |
 | --- | --- | --- |
 | Snapshot, event, action, option schema | owns | fills in |
-| Affordance registry and spatial queries | owns | registers its props |
+| Affordance registry, schema, and queries | owns | defines actions, effects, and handlers |
 | Brain, scheduler, decision loop | owns | attaches to its pawns |
 | Identity, goals, needs, memory | behavior and schema | authors content |
 | Economy primitives | accounts, wages, rent, eviction | sets the numbers |
@@ -73,7 +73,7 @@ Goals are state machines with stages, progress, priority, and secrecy:
     Stage 3: get a permit.
     Stage 4: open and hire one clerk.
 
-The goal machine owns the stages. The model chooses the next action inside the current stage. It does not invent the plan.
+The platform owns the goal state-machine runtime. The goal definitions and stage predicates are game data. The model chooses the next action inside the current stage; it does not invent the plan.
 
 ## Knowledge and memory
 
@@ -102,6 +102,18 @@ A conversation is a short turn-taking session with a lock on both sides. Overhea
 The model does not choose from a fixed verb list. It chooses from the interactions available at that moment.
 
 Each interactable carries an affordance component: actions, preconditions, state, and radius. Examples: door, food, bed, job board, shop counter, workstation, train, zeppelin, bench, home, person.
+
+The platform defines the shape of an action, not its vocabulary. Train, zeppelin, bread, and job board are game content. A game can add a new verb without touching the platform.
+
+An action descriptor carries:
+
+- an id and label, namespaced by the game, such as train.board
+- target kind and interaction radius
+- preconditions: money, item, skill, time window, state tag, or a game predicate
+- expected effects: time, money, hunger, energy, happiness, relationship
+- an execution handler that starts the action and reports progress
+
+The game returns a descriptor valid for the current actor and state, not a static list. The platform filters, ranks, validates, and dispatches. The game decides what the action means and how it looks.
 
 Hunger and sleep are needs, not actions. The inhabitant eats by interacting with food and sleeps by interacting with a bed. A bench or the ground offers sleep rough.
 
