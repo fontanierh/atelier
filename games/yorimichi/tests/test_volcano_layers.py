@@ -240,8 +240,8 @@ CITY = {'world.hidamari', 'world.hidamari.city', 'world.hidamari.north', 'world.
         'world.gondola_site', 'world.gondola_service', 'unreal.gondola', 'data.stage',
         'world.gondola_structure_inputs'} | LATER
 # The regions and early FarHills producer conservatively read mountains.py and
-# hidamari/layout.py; the main layout remains a cutoff step.
-NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.textures', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',
+# hidamari/layout.py; the main layout and final Belmonte ground remain cutoff steps.
+NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.ground', 'world.belmonte.textures', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',
             'world.belmonte_train_route', 'world.belmonte_track', 'world.belmonte_track_data', 'world.belmonte_track.meshes'}
 
 
