@@ -251,7 +251,13 @@ def consolidate(remote, store, directory):
             index = directory / INDEX; index.write_bytes(canonical(data))
             release.ensure_asset(remote.github, selected, index, file_digest(index))
         if selected['draft']:
-            remote.github.api(f'releases/{selected["id"]}', method='PATCH', data=dict(draft=False))
+            try:
+                remote.github.api(f'releases/{selected["id"]}', method='PATCH', data=dict(draft=False))
+            except BaseException:
+                # A delayed completion must not become visible after another owner
+                # retires the seed packs. Preserve exclusion until its outcome resolves.
+                remote._checkpoint_mutation_uncertain = True
+                raise
         current = selected
     retire(remote, current, data, old, store=store)
     return current, data
