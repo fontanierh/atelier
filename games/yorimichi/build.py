@@ -808,7 +808,9 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')), paths.STUDIO / 'atelier/model_files.py', WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')),
+                     *(paths.STUDIO / 'atelier' / name for name in ('model_files.py', 'gltf.py', 'gltf_partition.py', 'mesh_partition.py')),
+                     WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
