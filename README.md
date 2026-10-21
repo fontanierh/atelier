@@ -383,6 +383,8 @@ Build normally in every worktree. Input-keyed task results are reused across sou
 retain private checkpoints for future builds. Configure the private repository once in machine-local settings;
 never put its address in tracked source. Unknown or expensive misses stop before native work.
 [Build checkpoints](docs/BUILD_CHECKPOINTS.md) covers setup, output ownership, coverage limits and recovery.
+Merge reviewed PRs with `uv run atelier merge PR`: it retains existing build artifacts locally first, so
+other checkouts can reuse them on latest main. A checkout without build stamps needs no build for retention.
 
 Paid AI calls are recorded before submission and are never retried blindly. Public-repository lint checks protect
 against committed credentials and personal paths. [Code contracts](docs/CODE_CONTRACTS.md) make invariants visible

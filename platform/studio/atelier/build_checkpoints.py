@@ -221,8 +221,57 @@ def protect(ctx, step, *, estimate=None, echo=print):
                                          estimated_seconds=known)) + '\n')
 
 
+def capture_local(source, game):
+    """@cc [owner:fontanierh,label:correctness] retain-existing-build-work
+    Local retention MUST copy only existing generated work through the normal checkpoint guard.
+    It MUST NOT build, cook, change source or manufacture stamps for the merge revision. A failed
+    guard MUST report failure. Published keys MUST remain based on actual inputs and tools,
+    independent of the PR or Git merge commit. No remote repository is required or uploaded here.
+    """
+    source = Path(source).resolve()
+    if not (source / 'games' / game / 'game.toml').is_file():
+        raise CheckpointError('Cannot retain artifacts without a game manifest')
+    folder = paths.build_dir(game) / 'logs' / ('checkpoint-retain-' + os.urandom(12).hex() + '.guard')
+    from atelier.harness.safety import guarded
+    bootstrap = ('import atelier,runpy,sys; atelier.__path__.insert(0,sys.argv.pop(1)); '
+                 'runpy.run_module("atelier.checkpoint_worker",run_name="__main__")')
+    argv = [sys.executable, '-c', bootstrap, str(source / 'platform/studio/atelier'), 'capture', game, str(folder),
+            '--source', str(source), '--release']
+    if guarded.run(argv, folder, aggregate_tree=True, timeout=3600, progress=25,
+                   kind='job', purpose='retain existing build artifacts'):
+        raise CheckpointError('Local checkpoint capture failed; preserve producer outputs and retry')
+    key = read_json(folder / 'result.json')['key']
+    Store(game).load(key)
+    return key
+
+
+def retain(source=None, games=(), *, echo=print):
+    """Save completed work before a merge, including partial builds; never start work to fill gaps."""
+    import re
+    source = Path(source or paths.REPO).resolve()
+    if (not (source / 'games').is_dir() or not (source / '.git').exists()
+            or not (source / 'platform/studio/atelier/build.py').is_file()):
+        raise CheckpointError('Artifact source must be an existing Atelier Git checkout')
+    selected = list(games) or sorted(p.parent.name for p in (source / 'games').glob('*/game.toml'))
+    retained = {}
+    build_root = Path(os.environ.get('ATELIER_BUILD_ROOT') or source / 'build')
+    for game in selected:
+        if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', game):
+            raise CheckpointError('Invalid game ID for local retention')
+        if not (source / 'games' / game / 'game.toml').is_file():
+            raise CheckpointError('Cannot retain artifacts without a game manifest')
+        stamps = build_root / game / 'stamps'
+        if not any(stamps.glob('*.json')):
+            echo(f'{game}: no existing build stamps; no build or cook requested')
+            continue
+        echo(f'{game}: retaining existing artifacts locally; no build or cook requested')
+        retained[game] = capture_local(source, game)
+        echo(f'{game}: local checkpoint {retained[game]}')
+    return retained
+
+
 def publish(source, game, tag, revision, *, revalidate, echo=print):
-    """Run the controller's checkpoint worker against the producer's source and existing outputs."""
+    """Retain the producer locally, then upload its existing outputs to the private release store."""
     # Source may be a different checkout from the release controller. The worker rebases paths
     # before loading its recipe; it never runs a game build, cook or source migration.
     game_manifest = Path(source) / 'games' / game / 'game.toml'
@@ -245,16 +294,7 @@ def publish(source, game, tag, revision, *, revalidate, echo=print):
                               'before publishing a playtest; never put its identity in tracked source')
     remote = Remote(repository, game, echo=echo)
     remote.require_private()  # Refuse before any snapshot/export work.
-    folder = paths.build_dir(game) / 'checkpoint-publish'
-    from atelier.harness.safety import guarded
-    bootstrap = ('import atelier,runpy,sys; atelier.__path__.insert(0,sys.argv.pop(1)); '
-                 'runpy.run_module("atelier.checkpoint_worker",run_name="__main__")')
-    argv = [sys.executable, '-c', bootstrap, str(Path(source) / 'platform/studio/atelier'), 'capture', game, str(folder),
-            '--source', str(source), '--release']
-    if guarded.run(argv, folder, aggregate_tree=True, timeout=3600, progress=25,
-                   kind='job', purpose='retain playtest build checkpoint'):
-        raise CheckpointError('Playtest checkpoint capture failed; public release was not published')
-    key = read_json(folder / 'result.json')['key']
+    key = capture_local(source, game)
     revalidate()
     return remote.publish(Store(game), key, tag, revision=revision, revalidate=revalidate)
 
