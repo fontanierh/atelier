@@ -11,3 +11,10 @@ LINES = (
     {'id':'L3','stations':('floor','floor_rim'),
      'towers':((30.,20.),(158.,20.))},
 )
+
+
+def mesh_names():
+    names=[f'GD_{station}_{piece}' for station in STATIONS for piece in ('Foundation','Access')]
+    names += [f'GD_{line["id"]}_{index}_Tower' for line in LINES for index in range(len(line['towers']))]
+    names += [f'GD_{line["id"]}_Rope_LOD{lod}' for line in LINES for lod in (0,1,2)]
+    return names

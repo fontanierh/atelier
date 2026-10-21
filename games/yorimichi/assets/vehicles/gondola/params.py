@@ -53,3 +53,34 @@ def derived(p):
     d['turn_sweep_outer_radius'] = ((r + half_w) ** 2 + half_l ** 2) ** 0.5
     d['turn_sweep_inner_radius'] = r - half_w
     return d
+
+
+def asset_names():
+    """Canonical runtime mesh/collision closure, shared by preparation and import."""
+    cabin=['GD_Cabin'+suffix for suffix in ('','Hanger','Grip','DoorLeft','DoorRight','_Collision')]
+    towers=[f'GD_Tower_{height:g}m{suffix}' for height in DEFAULTS['tower_heights'] for suffix in ('','_Collision')]
+    stations=[f'GD_Station{kind}_{part}' for kind in ('Valley','Rim','Crater')
+              for part in ('Platform','Machinery','Fittings','Building','Collision')]
+    return cabin+towers+stations
+
+
+def product_files():
+    return ['manifest.json','review/walk_report.json',
+            *(f'layout_{kind}.json' for kind in ('cabin','valley','rim','crater')),
+            *(f'assets/{name}.fbx' for name in asset_names()),
+            *(f'textures/GD_{name}_{kind}.png' for name in
+              ('wood_panel','wood_grain','wood_grain_light','wood_grain_dark','deck_planks','shingle')
+              for kind in ('color','rough'))]
+
+
+def source_hash():
+    """The exact normal kit preparation identity; no Blender import is needed."""
+    import hashlib
+    from pathlib import Path
+    here=Path(__file__).resolve().parent
+    digest=hashlib.sha256()
+    files=[(name,here/name) for name in sorted(BUILD_SOURCES)]
+    files.append(('world/solid_mesh.py',here.parents[2]/'world/solid_mesh.py'))
+    for name,path in files:
+        digest.update(name.encode());digest.update(path.read_bytes())
+    return digest.hexdigest()[:16]

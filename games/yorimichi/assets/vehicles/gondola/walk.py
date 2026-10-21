@@ -18,6 +18,7 @@ The raster analysis (distance transform, labels, bottlenecks, pinch points, pock
 core; the ferry is not on main yet, so it is carried here until both can share one module.
 """
 import json
+import hashlib
 import math
 from collections import deque
 from pathlib import Path
@@ -441,6 +442,9 @@ def audit(quiet=False):
         for p in r['trapping_pockets']:
             print('   pocket', p)
     report['all_pass'] = not failures; report['failures'] = failures
+    report['inputs'] = {'checker_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                        'layouts':{name:hashlib.sha256((OUT/f'layout_{name}.json').read_bytes()).hexdigest()
+                                   for name in report['pieces']}}
     (REVIEW / 'walk_report.json').write_text(json.dumps(report, indent=2) + '\n')
     return report, failures
 

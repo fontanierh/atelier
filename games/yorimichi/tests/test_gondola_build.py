@@ -34,3 +34,13 @@ def test_ground_query_is_narrow_and_keeps_region_layout_edits_out_of_exporters(t
     for name in ('world.hidamari','world.belmonte'):
         assert all(Path(p).name!='gondola.py' for p in rows[name].inputs)
     assert all(c.threads==3 and c.factory_startup for c in rows['world.gondola_ground'].commands)
+
+
+def test_fitted_world_declares_its_complete_code_and_mesh_closure(tmp_path):
+    recipe=build.load_recipe('yorimichi')
+    rows={s.name:s for s in recipe.gondola_steps(SimpleNamespace(out=tmp_path))}
+    site=rows['world.gondola_site']
+    validate_imports(site,site.inputs)
+    assert set(site.needs)=={'world.gondola_kit','world.gondola_ground','world.craterpark_geometry'}
+    assert len(site.outputs)==32
+    assert all(c.threads==3 and c.factory_startup for c in site.commands)

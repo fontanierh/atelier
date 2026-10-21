@@ -1461,16 +1461,7 @@ def gondola_steps(ctx):
     parameters = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(parameters)
     folder = ctx.out / 'gondola'
-    cabin = ['GD_Cabin' + suffix for suffix in ('', 'Hanger', 'Grip', 'DoorLeft', 'DoorRight', '_Collision')]
-    towers = [f'GD_Tower_{height:g}m{suffix}' for height in parameters.DEFAULTS['tower_heights'] for suffix in ('', '_Collision')]
-    stations = [f'GD_Station{kind}_{part}' for kind in ('Valley', 'Rim', 'Crater')
-                for part in ('Platform', 'Machinery', 'Fittings', 'Building', 'Collision')]
-    files = [folder / 'manifest.json', folder / 'review/walk_report.json',
-             *(folder / f'layout_{kind}.json' for kind in ('cabin', 'valley', 'rim', 'crater')),
-             *(folder / 'assets' / f'{name}.fbx' for name in cabin + towers + stations),
-             *(folder / 'textures' / f'GD_{name}_{kind}.png' for name in
-               ('wood_panel', 'wood_grain', 'wood_grain_light', 'wood_grain_dark', 'deck_planks', 'shingle')
-               for kind in ('color', 'rough'))]
+    files = [folder / name for name in parameters.product_files()]
     result = [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
                     env=(('GONDOLA_PIECES', 'cabin,towers,valley,rim,crater'),
                          ('GONDOLA_PARAMS', ''), ('GONDOLA_SOFT_FAIL', '')))],
@@ -1497,6 +1488,18 @@ def gondola_steps(ctx):
                     needs=['world.gondola_ground_inputs'],
                     outputs=[folder / 'world/ground.npz', folder / 'world/ground.json'], heavy=True,
                     about='final exported trail contact and owned Belmonte terrain queries')]
+    site_code = WORLD / 'gondola/validation.py'
+    site_spec = importlib.util.spec_from_file_location('gondola_site_validation', site_code)
+    validation = importlib.util.module_from_spec(site_spec)
+    site_spec.loader.exec_module(validation)
+    names = validation.network_layout().mesh_names()
+    result.append(Step('world.gondola_site',
+                       [Blender(REGIONS / 'gondola/site.py',threads=3,factory_startup=True)],
+                       inputs=[*validation.SITE_CODE, *[kit/name for name in parameters.BUILD_SOURCES],
+                               WORLD / 'solid_mesh.py', query, *craterpark_v4.input_paths(), YORI],
+                       needs=['world.gondola_kit','world.gondola_ground','world.craterpark_geometry'],
+                       outputs=[folder/'world/site.json',*(folder/'world/assets'/f'{name}.fbx' for name in names)],
+                       heavy=True,about='final station supports/access, exact rope paths and actual fitted-span contact gates'))
     return result
 
 

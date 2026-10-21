@@ -46,13 +46,7 @@ def log(*a):
 
 
 def source_hash():
-    h = hashlib.sha256()
-    files = [(name, HERE / name) for name in sorted(P.BUILD_SOURCES)]
-    files.append(('world/solid_mesh.py', HERE.parents[2] / 'world/solid_mesh.py'))
-    for name, path in files:
-        h.update(name.encode()); h.update(path.read_bytes())
-    return h.hexdigest()[:16]
-
+    return P.source_hash()
 
 def fresh_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)

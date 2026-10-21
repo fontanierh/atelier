@@ -28,7 +28,10 @@ SHEAVE_X = (-1.35, -0.6, 0.6, 1.35)
 
 
 class Tower:
-    def __init__(self, p, height):
+    def __init__(self, p, height, ground=None):
+        self.ground = ground
+        self.pedestal_bases = {}
+        self.anchor_bounds = {}
         self.p = p; self.H = float(height); self.g = p['gauge']; self.rr = p['rope_radius']
         self.z_cap = self.H - 0.89
         self.seats = []
@@ -39,6 +42,13 @@ class Tower:
         for i in range(n):
             z -= h0 * q ** i; self.levels.append(z)
         self.levels[-1] = 0.95
+
+    def ground_z(self, x, y):
+        """World placement supplies final contact relative to the foundation datum."""
+        z = 0.0 if self.ground is None else float(self.ground(x, y))
+        if not math.isfinite(z):
+            raise ValueError('Tower foundation has no finite final ground contact')
+        return z
 
     def hx(self, z):
         return HX_TOP + BX * (self.z_cap - z)
@@ -118,7 +128,14 @@ class Tower:
         for sx in (-1, 1):
             for sy in (-1, 1):
                 c = self.leg_pt(sx, sy, LEG_FOOT)
-                rings = [[(c.x + u * s, c.y + v * s, z) for u, v in ((-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5))] for z, s in ((-1.0, 1.0), (0.62, 0.64))]
+                base = -1.0
+                if self.ground is not None:
+                    heights = [self.ground_z(c.x+u*.5,c.y+v*.5) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))]
+                    if max(heights) > .52:
+                        raise ValueError('Tower datum buries a pedestal shoe')
+                    base = min(heights)-.20
+                self.pedestal_bases[(sx,sy)] = base
+                rings = [[(c.x + u * s, c.y + v * s, z) for u, v in ((-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5))] for z, s in ((base, 1.0), (0.62, 0.64))]
                 with m.tagged('pedestal'):
                     m.loft(rings, CONCRETE)
                 with m.tagged('shoe'):
@@ -132,7 +149,7 @@ class Tower:
                 for k in range(3):
                     a = math.radians(45 * (sx + 2) + 120 * k + 17 * sy); r = 0.8
                     size = (0.26 + 0.05 * ((k * 7) % 3), 0.22 + 0.04 * (k % 2), 0.2)
-                    m.rock((c.x + r * math.cos(a), c.y + r * math.sin(a), 0.04), size, STONE, seed=int(100 * self.H) + 10 * k + 3 * sx + sy, n=6, m=4)
+                    m.rock((c.x + r * math.cos(a), c.y + r * math.sin(a), self.ground_z(c.x+r*math.cos(a),c.y+r*math.sin(a)) + 0.04), size, STONE, seed=int(100 * self.H) + 10 * k + 3 * sx + sy, n=6, m=4)
 
     def guys(self, m):
         """Four guy wires along the line from the legs to concrete anchors, with turnbuckles."""
@@ -141,13 +158,18 @@ class Tower:
             for sy in (-1, 1):
                 top = self.leg_pt(sx, sy, zg) + Vector((sx * (LEG / 2 + 0.015), 0, 0))
                 ax = sx * (self.hx(0) + GUY_SPREAD * self.H); ay = sy * self.hy(LEG_FOOT)
-                rings = [[(ax + u * s, ay + v * s, z) for u, v in ((-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5))] for z, s in ((-0.9, 0.9), (0.45, 0.55))]
+                ground,base = 0.,-.9
+                if self.ground is not None:
+                    heights = [self.ground_z(ax+u*.45,ay+v*.45) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))]
+                    ground,base = max(heights)-.27,min(heights)-.20
+                self.anchor_bounds[(sx,sy)] = (base,ground+.55)
+                rings = [[(ax + u * s, ay + v * s, z) for u, v in ((-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5))] for z, s in ((base, 0.9), (ground+0.45, 0.55))]
                 with m.tagged('anchor'):
                     m.loft(rings, CONCRETE)
-                eye = Vector((ax, ay, 0.53))
-                m.box((ax, ay, 0.47), (0.2, 0.08, 0.04), IRON)
-                self.seat('guy anchor plate', ax, ay, 0.45, on=('anchor',))
-                m.lathe((ax, ay, 0.49), [(0, 0.03), (0.08, 0.03)], IRON, n=6)
+                eye = Vector((ax, ay, ground+0.53))
+                m.box((ax, ay, ground+0.47), (0.2, 0.08, 0.04), IRON)
+                self.seat('guy anchor plate', ax, ay, ground+0.45, on=('anchor',))
+                m.lathe((ax, ay, ground+0.49), [(0, 0.03), (0.08, 0.03)], IRON, n=6)
                 d = (top - eye).normalized()
                 tb0 = eye + d * 0.5; tb1 = eye + d * 0.95
                 m.tube([eye, tb0], 0.014, IRON, n=6)
@@ -157,7 +179,7 @@ class Tower:
                 with m.frame(top - Vector((sx * 0.015, 0, 0)), Vector((0, sx, 0)), Vector((0, 0, 1)), Vector((sx, 0, 0))):
                     m.box((0, 0, 0.01), (0.14, 0.2, 0.02), IRON)
                 for k, (dx, dy) in enumerate(((0.55, 0.2), (-0.45, -0.4))):
-                    m.rock((ax + dx, ay + dy, 0.03), (0.2, 0.17, 0.16), STONE, seed=int(10 * self.H) + 50 + k + 7 * sx + 3 * sy, n=6, m=4)
+                    m.rock((ax + dx, ay + dy, self.ground_z(ax+dx,ay+dy)+0.03), (0.2, 0.17, 0.16), STONE, seed=int(10 * self.H) + 50 + k + 7 * sx + 3 * sy, n=6, m=4)
 
     # ---------------------------------------------------------------- head
     def head(self, m):
@@ -255,9 +277,10 @@ class Tower:
             P.append(proxy_box('tower shaft', 0, 0, 2 * hx, 2 * hy, z0, z1))
         for sx in (-1, 1):
             for sy in (-1, 1):
-                c = self.leg_pt(sx, sy, LEG_FOOT); P.append(proxy_box('pedestal', c.x, c.y, 1.0, 1.0, -1.0, LEG_FOOT))
+                c = self.leg_pt(sx, sy, LEG_FOOT); P.append(proxy_box('pedestal', c.x, c.y, 1.0, 1.0, self.pedestal_bases.get((sx,sy),-1.0), LEG_FOOT))
                 ax = sx * (self.hx(0) + GUY_SPREAD * self.H); ay = sy * self.hy(LEG_FOOT)
-                P.append(proxy_box('guy anchor', ax, ay, 0.9, 0.9, -0.9, 0.55))
+                bottom,top = self.anchor_bounds.get((sx,sy),(-.9,.55))
+                P.append(proxy_box('guy anchor', ax, ay, 0.9, 0.9, bottom, top))
         g = self.g
         P.append(proxy_box('crossarm', 0, 0, 0.9, g - 0.24, self.z_cap, self.z_cap + 0.34))
         for s in (-1, 1):
