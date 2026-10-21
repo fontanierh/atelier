@@ -83,6 +83,34 @@ def test_extra_roots_cannot_overwrite_another_owner(fixture):
         actions.validate_ownership(ctx, steps)
 
 
+def test_declared_roots_keep_outermost_order_and_sibling_names(tmp_path):
+    parent = tmp_path / 'owned'
+    sibling = tmp_path / 'owned-other'
+    step = build.Step('geometry', [], checkpoint_outputs=(parent / 'child', sibling,
+                       parent, parent / 'child' / 'file', sibling, tmp_path / 'other'))
+    assert actions.declared(SimpleNamespace(), step) == [sibling, parent, tmp_path / 'other']
+
+
+@pytest.mark.parametrize('root', ['.', '/', 'generated', 'generated/tree', 'generated/trees',
+                                '/generated', '/generated/tree', '/generated/trees', '../source'])
+def test_source_scope_lookup_preserves_lexical_source_protection(root):
+    sources = {Path('generated/tree/model.glb'), Path('/generated/tree/code.py'), Path('../source')}
+    candidate = Path(root)
+    expected = any(candidate == source or candidate in source.parents for source in sources)
+    assert (candidate in actions.source_scopes(sources)) == expected
+
+
+def test_snapshot_rechecks_newly_tracked_files(fixture, monkeypatch):
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    sources = set()
+    monkeypatch.setattr(actions, 'tracked_paths', lambda: sources.copy())
+    actions.snapshot(ctx, steps[0], fixture.store, save_blobs=False)
+    sources.add(steps[0].outputs[0])
+    with pytest.raises(cp.CheckpointError, match='tracked source'):
+        actions.snapshot(ctx, steps[0], fixture.store, save_blobs=False)
+
+
 def test_compile_receipt_requires_every_declared_plugin_binary(tmp_path, monkeypatch):
     repo = tmp_path.resolve()
     monkeypatch.setattr(paths, 'REPO', repo)
