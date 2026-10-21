@@ -68,6 +68,8 @@ private:
     UPROPERTY() TArray<FYorimichiFoliageSource> Sources;
     FString Error;
     bool bRegistryLoaded=false, bEnabled=true, bPerformance=true, bReportedSetting=false;
+    bool bStartupCompleted=false;
+    TSet<TWeakObjectPtr<UStaticMesh>> StartupMeasuredMeshes;
     float Detail=.4f, Sway=60.f, ShadowDistance=80.f, AuditElapsed=0.f;
     bool LoadRegistry();
     bool ReadRegistry(const TSharedPtr<FJsonObject>& Registry);

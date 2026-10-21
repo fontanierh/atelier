@@ -155,3 +155,11 @@ never for the state first observed (a late joiner). There is one transport bank,
 @cc [owner:fontanierh,label:correctness] racing-hud-venue
 The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
 The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-startup-upload-lifetime
+Initial world population MUST bound queued foliage representation uploads after complete source registrations.
+A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve render buffers,
+source collision, geometry, materials, placements and saved packages. Once gameplay readiness has been
+observed, ordinary refreshes and settings toggles MUST NOT introduce GPU-idle drains. Memory diagnostics
+MUST distinguish CPU resource estimates from actual process footprint; a source hypothesis is not proof
+of a startup memory improvement.

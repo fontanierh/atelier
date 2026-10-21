@@ -11,6 +11,9 @@
 #include "UObject/UObjectIterator.h"
 #include "Dom/JsonObject.h"
 #include "HAL/IConsoleManager.h"
+#include "HAL/PlatformMemory.h"
+#include "RenderingThread.h"
+#include "RHICommandList.h"
 
 UHierarchicalInstancedStaticMeshComponent* UYorimichiFoliageSubsystem::NewInstances(UObject* Outer,FName Name)
 {
@@ -311,6 +314,23 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     };
     if (!Matches(Optimized,Asset->LODTriangles) || !Matches(Shadow,{Asset->ShadowTriangles}) || !Matches(Patch,{32}))
     { Error=TEXT("Required foliage representations are missing: ")+Mesh->GetPathName();return false; }
+#if WITH_EDITOR
+    if (!bStartupCompleted && !StartupMeasuredMeshes.Contains(Mesh))
+    {
+        StartupMeasuredMeshes.Add(Mesh);
+        for (UStaticMesh* Value:{Mesh,Optimized,Shadow,Patch})
+        {
+            const auto* Render=Value->GetRenderData();
+            uint64 CPU=0;int32 Platforms=0,CachedDescriptions=0;
+            for (const auto* Platform=Render;Platform;Platform=Platform->NextCachedRenderData.Get())
+            { CPU+=Platform->GetCPUAccessMemoryOverhead();++Platforms; }
+            for (int32 L=0;L<Value->GetNumSourceModels();++L)
+                CachedDescriptions+=Value->GetSourceModel(L).GetCachedMeshDescription()!=nullptr;
+            UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP MESH %s resource_mib=%.1f cpu_mib=%.1f platforms=%d cached_descriptions=%d"),
+                *Value->GetPathName(),Value->GetResourceSizeBytes(EResourceSizeMode::Exclusive)/1048576.,CPU/1048576.,Platforms,CachedDescriptions);
+        }
+    }
+#endif
     FYorimichiFoliageSource Entry;
     Entry.Original=Component;Entry.SourceMesh=Mesh;Entry.Visible=Component->IsVisible();
     Entry.Hidden=Component->bHiddenInGame;Entry.CastShadow=Component->CastShadow;
@@ -397,16 +417,38 @@ bool UYorimichiFoliageSubsystem::Refresh()
             Sources.RemoveAt(I);
         }
     }
+    // Finish only the initial population in bounded upload batches. Later live
+    // refreshes and preference toggles must not introduce GPU-idle stalls.
+    if (!bStartupCompleted)
+        for (TActorIterator<AJapanWorld> It(GetWorld());It;++It)
+            if (It->bGameplayReady) { bStartupCompleted=true;StartupMeasuredMeshes.Reset();break; }
     TSet<UStaticMeshComponent*> Registered;
     for (const auto& Entry:Sources) Registered.Add(Entry.Original);
     TArray<UStaticMeshComponent*> NewSources;
     for (TObjectIterator<UStaticMeshComponent> It;It;++It)
         if (It->GetWorld()==GetWorld() && It->IsRegistered() && !Registered.Contains(*It) && CachedRequiresRegistration(*It)) NewSources.Add(*It);
-    for (auto* Component:NewSources) if (!Register(Component))
+    int32 StartupBatch=0,StartupTotal=0;
+    const auto DrainUploads=[&]()
     {
-        Component->SetVisibility(false,false);Component->SetCastShadow(false);
-        UE_LOG(LogTemp,Error,TEXT("FOLIAGE SYSTEM %s"),*Error);return false;
+        const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
+        ENQUEUE_RENDER_COMMAND(FoliageStartupUploadDrain)([](FRHICommandListImmediate& RHICmdList)
+        { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
+        FlushRenderingCommands();
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP DRAIN registered=%d process_mib_before=%.1f process_mib_after=%.1f"),
+            StartupTotal,Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
+        StartupBatch=0;
+    };
+    for (auto* Component:NewSources)
+    {
+        if (!Register(Component))
+        {
+            Component->SetVisibility(false,false);Component->SetCastShadow(false);
+            UE_LOG(LogTemp,Error,TEXT("FOLIAGE SYSTEM %s"),*Error);return false;
+        }
+        if (!bStartupCompleted && GIsRHIInitialized)
+        { ++StartupTotal;if (++StartupBatch==8) DrainUploads(); }
     }
+    if (StartupBatch) DrainUploads();
     Error.Reset();return true;
 }
 
