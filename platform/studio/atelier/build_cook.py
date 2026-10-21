@@ -1,4 +1,4 @@
-"""Explicit UE 5.8 cook experiments and bounded observations; default cooking is unchanged."""
+"""UE 5.8 dependency-tracked checkpoint cooking and bounded diagnostic observations."""
 from dataclasses import replace
 from enum import Enum
 import hashlib

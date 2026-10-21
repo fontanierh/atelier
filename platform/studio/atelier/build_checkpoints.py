@@ -180,10 +180,15 @@ def protect(ctx, step, *, estimate=None, echo=print):
     settings = getattr(ctx, 'checkpoint_settings', None)
     if settings is None or not step.heavy:
         return
-    from .build import Call, UnrealCompile
+    from .build import Call, Blender, UnrealScript
     if not any(not isinstance(c, Call) for c in step.commands):
         return
     recorded_reason = getattr(ctx, 'rebuild_reason', None)
+    from .checkpoint_actions import declared
+    if any(isinstance(c, (Blender, UnrealScript)) for c in step.commands) and not declared(ctx, step):
+        raise CheckpointError(f'{step.name}: native execution requires complete output ownership. '
+                              'Migrate this task to disjoint named products or checkpoint_outputs first; '
+                              'legacy representative-output rebuilds are retired. No native work was launched.')
     if estimate is None:
         retained = ctx.out / '.state/checkpoint.json' if hasattr(ctx, 'out') else None
         if retained is not None and retained.is_file():

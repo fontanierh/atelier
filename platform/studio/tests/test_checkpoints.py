@@ -206,7 +206,8 @@ def test_artifacts_added_during_capture_refuse_publication(fixture, monkeypatch)
 def test_large_or_unknown_cold_jobs_require_a_recorded_reason(tmp_path):
     ctx = SimpleNamespace(checkpoint_settings=dict(rebuild_budget_seconds=60), logs=tmp_path,
                           rebuild_reason=None, uproject=None)
-    step = build.Step('native.import', [build.UnrealScript(Path('import.py'), 'done')], heavy=True)
+    step = build.Step('native.import', [build.UnrealScript(Path('import.py'), 'done')], heavy=True,
+                      checkpoint_outputs=(tmp_path / 'assets',))
     with pytest.raises(cp.CheckpointError, match='unknown cold'):
         build_checkpoints.protect(ctx, step)
     with pytest.raises(cp.CheckpointError, match='120s'):

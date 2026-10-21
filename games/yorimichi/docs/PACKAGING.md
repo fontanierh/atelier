@@ -7,7 +7,7 @@ plugin, Config or imported-content change invalidates the cook and its download.
 invalidates only download assembly, so it reuses the completed cook.
 
 Both steps are explicit: a plain `atelier build yorimichi` or `atelier build yorimichi unreal` never plans either.
-Do not add `--force`: it reruns every prerequisite, including every import. A missing or invalid cook needs an
+Use normal packaging; a missing cook is restored by input key when available. A real cache miss needs a
 cook to establish `cook.json`; an older package is not silently certified as current.
 
 ```sh

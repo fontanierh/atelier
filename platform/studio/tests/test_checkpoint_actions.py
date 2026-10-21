@@ -170,3 +170,11 @@ def test_private_repository_is_configured_outside_source(fixture, monkeypatch):
     assert result == dict(configured=True, scope='machine-local')
     assert settings.stat().st_mode & 0o777 == 0o600
     assert json.loads(settings.read_text()) == dict(repository='owner/artifacts')
+
+
+def test_legacy_native_miss_stops_even_with_a_reason_or_low_old_estimate(tmp_path):
+    ctx = SimpleNamespace(checkpoint_settings=dict(rebuild_budget_seconds=600), logs=tmp_path,
+                          rebuild_reason='cannot bypass incomplete ownership', uproject=None)
+    step = build.Step('legacy.import', [build.UnrealScript(tmp_path / 'import.py', 'done')], heavy=True)
+    with pytest.raises(cp.CheckpointError, match='complete output ownership'):
+        build_checkpoints.protect(ctx, step, estimate=1)

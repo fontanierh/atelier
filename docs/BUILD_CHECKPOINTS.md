@@ -32,8 +32,9 @@ module/plugin binaries. Missing or corrupted outputs invalidate a previous stamp
 key disable that entry rather than choosing one result silently.
 
 **Coverage limit:** older tasks with only representative `outputs` have no independently reusable task entry.
-Their files are retained in workspace checkpoints, and a compatible checkpoint can seed a fresh checkout, but
-this does not prove complete per-task ownership. Add complete declarations before claiming individual reuse.
+Their files are retained in workspace checkpoints, and a compatible checkpoint can seed a fresh checkout.
+If such a native task is not already current, execution stops until its ownership is migrated. This
+does not prove complete per-task ownership. Add complete declarations before claiming individual reuse.
 Do not infer ownership from changed files, a manifest sample or the mere presence of Intermediate.
 A changed C++ target still goes through UBT; this is not a cross-worktree compiler object cache.
 
