@@ -261,9 +261,11 @@ def bunch(m,x,y,z,seed,n=10):
         c=['arc_ivory','arc_rose','arc_bloom'][(seed+i)%3]
         for j in range(5):
             b=j*math.tau/5
-            m.poly([(xx,yy,zz+.02),(xx+math.cos(b-.5)*.11,yy+math.sin(b-.5)*.11,zz),(xx+math.cos(b+.5)*.11,yy+math.sin(b+.5)*.11,zz)],c)
+            with v.foliage_roles.surfaces(m,'flower'):
+                m.poly([(xx,yy,zz+.02),(xx+math.cos(b-.5)*.11,yy+math.sin(b-.5)*.11,zz),(xx+math.cos(b+.5)*.11,yy+math.sin(b+.5)*.11,zz)],c)
         b=a+1.3
-        m.poly([(xx,yy,zz-.14),(xx+math.cos(b)*.13,yy+math.sin(b)*.13,zz-.08),(xx+.04,yy+.03,zz-.02)],'green')
+        with v.foliage_roles.surfaces(m,'groundcover_leaf'):
+            m.poly([(xx,yy,zz-.14),(xx+math.cos(b)*.13,yy+math.sin(b)*.13,zz-.08),(xx+.04,yy+.03,zz-.02)],'green')
 
 
 def bucket(m,x,y,z,seed):

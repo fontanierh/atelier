@@ -109,6 +109,12 @@ FLinearColor VertexSample(UMaterialInterface* Material,const FLinearColor& Palet
         Result.R*=PaletteLinear(Vertex.X)*2.f;Result.G*=PaletteLinear(Vertex.Y)*2.f;
         Result.B*=PaletteLinear(Vertex.Z)*2.f;Result.A=.035f;
     }
+    else if (Parent==TEXT("M_CP_Flat") || Parent==TEXT("M_CP_Textured"))
+    {
+        // Crater Park uses vertex red as encoded baked cavity, not vertex paint.
+        const float Shade=FMath::Lerp(1.f,PaletteLinear(Vertex.X),Scalar(Material,TEXT("Cavity"),.3f));
+        Result.R*=Shade;Result.G*=Shade;Result.B*=Shade;Result.A=0.f;
+    }
     else if (Parent==TEXT("M_Foliage") || Parent==TEXT("M_Grass"))
     { const float Shade=.5f+.5f*Vertex.Y;Result.R*=Shade;Result.G*=Shade;Result.B*=Shade; }
     return Result;

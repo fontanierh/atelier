@@ -32,6 +32,9 @@ MOSS = 'material_036'         # yellow-green moss and low bushes
 SHRUB = 'material_037'        # autumn orange shrubs
 OLIVE = 'material_042'        # olive moss mats
 GOLD = 'material_044'         # golden-yellow autumn shrubs
+# Explicit source semantics for the generic material ids kept in the park DSL.
+# Moss/snow are painted ground sheets and must stay rigid.
+FOLIAGE_ROLES = {GRASS: 'groundcover_leaf', SHRUB: 'foliage_leaf', GOLD: 'foliage_leaf'}
 SOLID = {ROCK}                # materials with collision; the rest are drawn only (the crags and rocks are ROCK too:
                               # the basalt painting's columns read as flutes on a crag)
 

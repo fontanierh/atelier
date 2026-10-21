@@ -53,12 +53,16 @@ such as market fruit painted with a leaf palette. Actual vegetation may never us
 Literal plant colours must retain a semantic key with `foliage_roles.PaletteColour`, or explicitly set
 the face's key. Cloth canopies, bark, canes and opaque grass paint are rigid surfaces.
 The vertex-painted city trees retain a legacy palette adapter for older source chains.
-Small, indivisible textured props (the current potted plants, planter boxes and bonsai shelf) explicitly
+Small, indivisible planted props (including Belmonte’s nine small flower/herb containers, the potted plants,
+planter boxes and bonsai shelf) explicitly
 declare an authored-surface policy in their source owner. They retain their painted plants and containers
 under a hard 12,288-triangle whole-prop budget, with certified visual/shadow variants and aggregation
 disabled. This is not a missing-classification fallback. Bigger props require normal asset preparation;
 new dense vegetation must use canopy or thin-surface roles. Their UV5 value is 3 and cooked prefix is
 `FoliageAuthored_`; ordinary roles use 0 for rigid, 1 for solid canopy and 2 for thin surfaces.
+Crater Park’s numbered grass/shrub surfaces declare roles at their DSL exporter; painted moss and snow
+remain rigid. Lake shoreline plants, ornamental pier grass, embedded flower buckets and fallen leaves
+also carry explicit roles independently of their visible paint.
 Any new adapter belongs in the shared owner, with source-geometry regression coverage.
 
 Instanced scenery components use `UYorimichiFoliageSubsystem::NewInstances`. The subsystem also audits

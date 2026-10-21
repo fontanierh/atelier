@@ -208,3 +208,65 @@ def test_pier_ornamental_grass_keeps_thin_roles_and_rigid_planters(monkeypatch):
             reverse=winding[::-1]
             assert any(reverse[i:]+reverse[:i] in windings for i in range(3))
     assert len(product['levels'][-1]['faces'])<len(grass.faces)//10
+
+
+
+def test_florist_buckets_classify_all_petals_and_leaves_but_keep_stems_rigid():
+    owner=functions(Path('regions/hidamari/kit/bakery_western.py'),['bucket','bunch'])
+    mesh=Faces();owner['bucket'](mesh,0,0,0,17)
+    pairs=list(zip(mesh.keys,[R.key_role(key) for key in R.face_keys(mesh)]))
+    assert pairs[0]==('bw_bucket',0)
+    assert len(pairs)==71
+    assert all(role==0 for key,role in pairs if key=='green_dark')
+    assert all(role==2 for key,role in pairs if key in ('green','arc_ivory','arc_rose','arc_bloom'))
+    assert {key for key,role in pairs if role==2}=={'green','arc_ivory','arc_rose','arc_bloom'}
+
+
+def test_persimmon_fallen_leaves_are_litter_and_fruit_and_trunk_stay_rigid():
+    owner=functions(Path('regions/hidamari/kit/kura.py'),['persimmon'])
+    mesh=Faces();owner['persimmon'](mesh,0,0,17)
+    pairs=list(zip(mesh.keys,[R.key_role(key) for key in R.face_keys(mesh)]))
+    assert any(key=='kura_fallen' for key,role in pairs)
+    assert all(role==2 for key,role in pairs if key=='kura_fallen')
+    assert all(role==0 for key,role in pairs if key in ('kura_bark','kura_twig','kura_fruit'))
+    assert all(role==1 for key,role in pairs if key in ('kura_leaf_a','kura_leaf_b'))
+
+
+
+def test_lake_islet_grass_is_thin_while_rocks_stay_rigid():
+    owner=functions(Path('regions/forest_lake/details.py'),['islet'])
+    rocks,plants=Faces(),Faces();owner['islet'](rocks,plants)
+    assert len(plants.faces)==30
+    assert {R.key_role(key) for key in R.face_keys(plants)}=={2}
+    assert {R.key_role(key) for key in R.face_keys(rocks)}=={0}
+
+
+def test_belmonte_current_authored_sources_keep_all_original_data(tmp_path,monkeypatch):
+    from atelier.gltf import glb_parts
+    monkeypatch.syspath_prepend(str(WORLD))
+    monkeypatch.syspath_prepend(str(WORLD/'regions'))
+    from belmonte import foliage,source
+    entries={entry['name']:entry for entry in source.manifest()['meshes']}
+    assert len(foliage.AUTHORED)==9
+    for name in foliage.AUTHORED:
+        entry=entries[name]
+        assert entry['triangles']<=R.AUTHORED_BUDGET
+        data=(source.LIBRARY/entry['path']).read_bytes()
+        doc,original=glb_parts(data)
+        path=tmp_path/(name+'.glb');path.write_bytes(data);metadata=foliage.prepare(path)
+        assert metadata['source_sha256']==entry['sha256']
+        assert metadata['sha256']==source.sha(path)
+        assert metadata['sha256']!=metadata['source_sha256']
+        prepared,binary=glb_parts(path.read_bytes())
+        assert binary[:len(original)]==original
+        assert prepared['materials']==doc['materials']
+        assert prepared['nodes']==doc['nodes']
+        for old,new in zip(doc['meshes'],prepared['meshes']):
+            for p,q in zip(old['primitives'],new['primitives']):
+                assert all(q[k]==v for k,v in p.items() if k!='attributes')
+                assert all(q['attributes'][k]==v for k,v in p['attributes'].items())
+                assert all('TEXCOORD_'+str(i) in q['attributes'] for i in range(6))
+                a=prepared['accessors'][q['attributes']['TEXCOORD_5']]
+                view=prepared['bufferViews'][a['bufferView']]
+                uv=np.frombuffer(binary,dtype='<f4',count=a['count']*2,offset=view['byteOffset']).reshape(-1,2)
+                assert np.all(uv==[3.,R.MARKER])

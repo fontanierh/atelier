@@ -251,6 +251,10 @@ def main():
         if E.does_asset_exist(target):
             E.delete_asset(target)
         mesh = import_mesh(OUT / entry['path'], name)
+        if entry.get('foliage') == 'authored':
+            assert unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh), name
+            assert all(str(slot.get_editor_property('material_slot_name')).startswith('FoliageAuthored_')
+                       for slot in mesh.get_editor_property('static_materials')), name
         assert len(mesh.get_editor_property('static_materials')) == len(defaults[name]), (name, 'material slots')
         for slot, path in enumerate(defaults[name]):
             material = E.load_asset(path)

@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from atelier.gltf import glb_parts
-from belmonte import layout as L, source, planting, terrain, appearance
+from belmonte import layout as L, source, planting, terrain, appearance, foliage
 
 OUT = yori.OUT / 'belmonte'
 
@@ -220,6 +220,8 @@ def main():
         else:
             shutil.copy2(path, destination)
             entry = dict(entry, path=destination.relative_to(OUT).as_posix())
+        if entry['name'] in foliage.AUTHORED:
+            entry = dict(entry, **foliage.prepare(destination))
         meshes.append(entry)
         by_asset[entry['source_asset']] = entry
         doc, _ = glb_parts(path.read_bytes())
