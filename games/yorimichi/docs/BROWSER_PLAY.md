@@ -20,17 +20,19 @@ Activate the SDK and set `UE_ROOT` to that source engine. Then, from this checko
 uv run atelier fetch yorimichi
 
 # Normal incremental dependencies prepare and validate the required assets.
-ATELIER_AGENT=YOUR_OWNER nice -n 10 uv run atelier build yorimichi browser.package
+ATELIER_AGENT=YOUR_OWNER nice -n 10 uv run atelier build yorimichi browser.package \
+  --rebuild-reason "Initial source-engine browser scene build in this checkout"
 
 # A dedicated Chrome profile retains this scene's browser storage.
 ATELIER_AGENT=YOUR_OWNER nice -n 10 uv run atelier play yorimichi --profile browser
 ```
 
 `CHROME` may select a Chrome executable. The preview serves only on loopback,
-uses the packaged asset host, and runs its own Chrome process tree under normal
+uses a stable port (8840) for saved settings, and runs its own Chrome process tree under normal
 admission and an aggregate memory guard. Close the session with Ctrl-C; its
 default deadline is three hours. Extra play arguments may set `--seconds N` for
-a shorter diagnostic. Existing browser windows are not controlled.
+a shorter diagnostic. `--port N` selects another stable loopback origin; port 0
+is explicitly temporary. Existing browser windows are not controlled.
 
 The initial Wasm link deliberately uses `-O0` without LTO while C++ compilation
 remains optimized. A required post-link step verifies the link manifest, makes

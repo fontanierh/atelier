@@ -74,7 +74,7 @@ def owned(options):
                     "--bind",
                     "127.0.0.1",
                     "--port",
-                    "0",
+                    str(options.port),
                     "--no-open",
                 ],
                 stdout=subprocess.PIPE,
@@ -147,6 +147,12 @@ def main():
     parser.add_argument("--run", required=True, type=Path)
     parser.add_argument("--package", type=Path)
     parser.add_argument("--profile", type=Path)
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8840,
+        help="Stable loopback origin for saved settings; 0 is temporary",
+    )
     parser.add_argument("--seconds", type=float, default=3 * 3600)
     parser.add_argument("--memory-gib", type=float, default=10)
     parser.add_argument(
@@ -154,6 +160,8 @@ def main():
     )
     parser.add_argument("--owned", action="store_true", help=argparse.SUPPRESS)
     options = parser.parse_args()
+    if not 0 <= options.port <= 65535:
+        parser.error("--port must be from 0 to 65535")
     if not 1 <= options.seconds <= 6 * 3600:
         parser.error("--seconds must be from 1 to 21600")
     ctx = Context("yorimichi")
@@ -176,6 +184,8 @@ def main():
         str(options.package),
         "--profile",
         str(options.profile),
+        "--port",
+        str(options.port),
         "--seconds",
         str(options.seconds),
     ]
