@@ -13,7 +13,7 @@ from .build_cache import atomic_json
 # Immutable Git blob, independent of the producer/receiver commit. No fetch is requested.
 PREVIOUS_BLOB = '3da2f4a72a775615245d4c1e143289ad3c0951fb'
 PREVIOUS_SHA256 = '2c6ee6bcdc07e66c2cd8271f1c01b7a8009f2ec93ceb68f194c5dea96e2ce1e9'
-RECEIPT_HOST_SHA256 = 'ef275ffcdf4cf44ae3db1845193acabfd943e445cda7b8ef4dd878929f0f4223'
+RECEIPT_HOST_SHA256 = '1b333bc9cf3d8ecadd6932e0b7ec8cf3d2188cc88e64a77fbc01f942772e4cda'
 
 
 def previous_host(ctx):
@@ -39,7 +39,7 @@ def migrate(ctx, step, current, input_state, previous, done, *, echo=print):
     from .checkpoint_actions import certified, local_incremental, declared
     if not step.products and not declared(ctx, step):
         return previous
-    reserved = {'ATELIER_BUILD_TASK', 'ATELIER_BUILD_GAME', 'ATELIER_BUILD_SCRIPT', 'ATELIER_MESH_REUSE_NONCE'}
+    reserved = {'ATELIER_BUILD_TASK', 'ATELIER_BUILD_GAME', 'ATELIER_BUILD_SCRIPT', 'ATELIER_MESH_REUSE_NONCE', 'ATELIER_BUILD_PRIOR_STAMP'}
     if any(reserved.intersection(dict(getattr(command, 'env', ()))) for command in step.commands):
         return previous
     host = Path(__file__).with_name('build_batches.py')

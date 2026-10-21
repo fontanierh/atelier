@@ -340,7 +340,11 @@ def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _i
 
 
 def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None):
-    """Hash once, optionally retaining per-input identities for build explanations."""
+    """Hash once, optionally retaining per-input identities for build explanations.
+
+    _input_bytes is only for reproducing historical evidence in bounded migration. Ordinary
+    task/cache identities always read actual current inputs; replacements never certify work.
+    """
     digest = hashlib.sha256()
     named = bool(step.products or step.reads or step.references)
     hasher = (index.digest if index is not None else build_products.file_digest) if named else None
@@ -534,6 +538,12 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
     if isinstance(command, UnrealScript):
         env.update(ATELIER_BUILD_TASK=step.name, ATELIER_BUILD_GAME=ctx.game,
                    ATELIER_BUILD_SCRIPT=str(command.script), ATELIER_MESH_REUSE_NONCE=os.urandom(12).hex())
+        env.pop('ATELIER_BUILD_PRIOR_STAMP', None)
+        from .checkpoint_candidates import save_prior
+        prior = save_prior(ctx, step.name, env['ATELIER_MESH_REUSE_NONCE'],
+                           getattr(ctx, 'native_previous_stamps', {}).get(step.name))
+        if prior is not None:
+            env['ATELIER_BUILD_PRIOR_STAMP'] = str(prior)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'
@@ -856,6 +866,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             previous = task_cache.migrate_boundary(ctx, step, current, input_state, previous, done, echo=echo)
             from .build_batch_migration import migrate as migrate_batch
             previous = migrate_batch(ctx, step, current, input_state, previous, done, echo=echo)
+        ctx.__dict__.setdefault('native_previous_stamps', {})[step.name] = previous
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
         if actions is not None:
             outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)

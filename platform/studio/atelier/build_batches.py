@@ -131,11 +131,14 @@ class Session:
         actions = []
         for step, key, _ in self.candidates:
             command = step.commands[0]
+            from .checkpoint_candidates import save_prior
+            prior = save_prior(self.ctx, step.name, self.mesh_nonces[step.name], self.previous[step.name])
             actions.append({'name': step.name, 'script': str(command.script), 'args': list(getattr(command, 'args', ()))
                             if isinstance(command, build.Blender) else [],
-                            'env': dict(command.env) | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game,
+                            'env': {k: v for k, v in command.env if k != 'ATELIER_BUILD_PRIOR_STAMP'} | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game,
                                                        'ATELIER_BUILD_SCRIPT': str(command.script),
-                                                       'ATELIER_MESH_REUSE_NONCE': self.mesh_nonces[step.name]}})
+                                                       'ATELIER_MESH_REUSE_NONCE': self.mesh_nonces[step.name]}
+                                   | ({'ATELIER_BUILD_PRIOR_STAMP': str(prior)} if prior is not None else {})})
             # An action about to run cannot keep a successful stamp from an older invocation.
             (self.ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
         atomic_json(self.folder / 'plan.json', {'nonce': self.nonce, 'actions': actions,

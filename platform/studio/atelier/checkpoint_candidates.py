@@ -24,6 +24,20 @@ class CandidateScope:
     donor_task: str | None = None
 
 
+def save_prior(ctx, task, nonce, stamp):
+    """Non-success historical evidence; the caller still invalidates its actual build stamp."""
+    if not stamp:
+        return None
+    task_name(task)
+    if not re.fullmatch('[0-9a-f]{24}', nonce) or not isinstance(stamp, dict):
+        raise CheckpointError('Invalid prior native evidence owner or invocation')
+    path = safe_destination(ctx.out, '.state/mesh-import-prior/' + task + '/' + nonce + '.json')
+    if os.path.lexists(path):
+        raise CheckpointError('Prior native invocation evidence already exists')
+    atomic_json(path, dict(schema=1, task=task, nonce=nonce, stamp=stamp))
+    return path
+
+
 def task_name(value):
     if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', value) or '..' in value:
         raise CheckpointError('Invalid candidate task name')
