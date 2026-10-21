@@ -23,12 +23,14 @@ void UInt(FSHA1& Hash,uint32 Value)
 {
     uint8 Bytes[4];for (int32 I=0;I<4;++I) Bytes[I]=uint8(Value>>(I*8));Hash.Update(Bytes,4);
 }
-bool Number(FSHA1& Hash,float Value)
+bool Number(FSHA1& Hash,float Value,bool NumericZero=false)
 {
     if (!FMath::IsFinite(Value)) return false;
-    uint32 Bits;FMemory::Memcpy(&Bits,&Value,4);UInt(Hash,Bits);return true;
+    uint32 Bits;FMemory::Memcpy(&Bits,&Value,4);
+    if (NumericZero && Value==0.f) Bits=0;
+    UInt(Hash,Bits);return true;
 }
-bool TriangleHash(FSHA1& Hash,const FMeshDescription& D,FTriangleID T,int32 Slot,int32 Channels=-1)
+bool TriangleHash(FSHA1& Hash,const FMeshDescription& D,FTriangleID T,int32 Slot,int32 Channels=-1,bool NumericZero=false)
 {
     FStaticMeshConstAttributes A(D);auto P=A.GetVertexPositions();auto N=A.GetVertexInstanceNormals();
     auto C=A.GetVertexInstanceColors();auto UV=A.GetVertexInstanceUVs();
@@ -40,16 +42,16 @@ bool TriangleHash(FSHA1& Hash,const FMeshDescription& D,FTriangleID T,int32 Slot
     {
         const auto V=P[D.GetVertexInstanceVertex(I)];const auto Normal=N[I];const auto Colour=C[I];
         for (float F:{V.X,V.Y,V.Z,Normal.X,Normal.Y,Normal.Z,Colour.X,Colour.Y,Colour.Z,Colour.W})
-            if (!Number(Hash,F)) return false;
+            if (!Number(Hash,F,NumericZero)) return false;
         for (int32 Channel=0;Channel<Channels;++Channel)
-        { const auto U=UV.Get(I,Channel<UV.GetNumChannels()?Channel:0);if (!Number(Hash,U.X) || !Number(Hash,U.Y)) return false; }
+        { const auto U=UV.Get(I,Channel<UV.GetNumChannels()?Channel:0);if (!Number(Hash,U.X,NumericZero) || !Number(Hash,U.Y,NumericZero)) return false; }
     }
     return true;
 }
 FString FinishHash(FSHA1& Hash)
 { Hash.Final();uint8 Digest[20];Hash.GetHash(Digest);return BytesToHex(Digest,20); }
 FString TriangleKey(const FMeshDescription& D,FTriangleID T,int32 Slot,int32 Channels=-1)
-{ FSHA1 Hash;return TriangleHash(Hash,D,T,Slot,Channels)?FinishHash(Hash):FString{}; }
+{ FSHA1 Hash;return TriangleHash(Hash,D,T,Slot,Channels,true)?FinishHash(Hash):FString{}; }
 FString GeometryHash(const FMeshDescription& D)
 {
     FStaticMeshConstAttributes A(D);auto UV=A.GetVertexInstanceUVs();
@@ -128,49 +130,62 @@ bool IsLeaf(const FMeshDescription& D,FTriangleID Triangle,int32 Slot,int32 Sour
 bool Split(UStaticMesh* Input,int32 Level,UStaticMesh* Source,int32 SourceLevel,
     const FString& Mode,const TSet<int32>& LeafSlots,FMeshDescription& Canopy,FMeshDescription* Rigid,int32& RigidCount)
 {
-    const FMeshDescription* D=Input->GetMeshDescription(Level);if (!D || GeometryHash(*D).IsEmpty()) return false;
+    const auto Refuse=[&](const TCHAR* Reason)
+    { UE_LOG(LogTemp,Warning,TEXT("FOLIAGE RESIDENCY split refused source=%s sourceLOD=%d input=%s inputLOD=%d mode=%s reason=%s"),
+        *Source->GetPathName(),SourceLevel,*Input->GetPathName(),Level,*Mode,Reason);return false; };
+    const FMeshDescription* D=Input->GetMeshDescription(Level);
+    if (!D || GeometryHash(*D).IsEmpty()) return Refuse(TEXT("invalid prepared description"));
     FStaticMeshConstAttributes A(*D);auto UV=A.GetVertexInstanceUVs();auto Names=A.GetPolygonGroupMaterialSlotNames();
     const FMeshDescription* Original=Source->GetMeshDescription(SourceLevel);
-    if (!Original || GeometryHash(*Original).IsEmpty()) return false;
+    FMeshDescription RenderOriginal;
+    if (!Original && Source->GetRenderData() && Source->GetRenderData()->LODResources.IsValidIndex(SourceLevel))
+    {
+        // Same source-read path as the certified ExportSource: engine-reduced
+        // LODs have render resources without stored source descriptions.
+        Source->ExportStaticMeshLOD(Source->GetRenderData()->LODResources[SourceLevel],RenderOriginal);
+        Original=&RenderOriginal;
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE RESIDENCY source render readback: %s LOD%d"),*Source->GetPathName(),SourceLevel);
+    }
+    if (!Original || GeometryHash(*Original).IsEmpty()) return Refuse(TEXT("invalid source description/render LOD"));
     FStaticMeshConstAttributes SA(*Original);auto SP=SA.GetVertexPositions();
     FBox3f Bounds(ForceInit);for (auto T:Original->Triangles().GetElementIDs())
         for (auto I:Original->GetTriangleVertexInstances(T)) Bounds+=SP[Original->GetVertexInstanceVertex(I)];
-    if (!Bounds.IsValid) return false;
+    if (!Bounds.IsValid) return Refuse(TEXT("empty source bounds"));
     TMap<FPolygonGroupID,int32> OriginalSlots;int32 Index=0;
-    auto OriginalNames=SA.GetPolygonGroupMaterialSlotNames();if (!OriginalNames.IsValid()) return false;
+    auto OriginalNames=SA.GetPolygonGroupMaterialSlotNames();if (!OriginalNames.IsValid()) return Refuse(TEXT("missing source group names"));
     for (auto G:Original->PolygonGroups().GetElementIDs())
     {
         const FName Name=OriginalNames[G];int32 Slot=Source->GetMaterialIndex(Name);
         if (Slot==INDEX_NONE) for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)
             if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Slot=I;break; }
-        if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return false;OriginalSlots.Add(G,Slot);
+        if (!Source->GetStaticMaterials().IsValidIndex(Slot)) return Refuse(TEXT("unbound source material group"));OriginalSlots.Add(G,Slot);
     }
     TMap<FString,int32> Remaining;RigidCount=0;
     for (auto T:Original->Triangles().GetElementIDs())
     {
         const int32 Slot=OriginalSlots.FindChecked(Original->GetTrianglePolygonGroup(T));bool Leaf;
         if (!IsLeaf(*Original,T,Slot,Source->GetStaticMaterials().Num(),Mode,LeafSlots,
-            double(Bounds.Min.Z)+(double(Bounds.Max.Z)-double(Bounds.Min.Z))*.4,Leaf)) return false;
-        if (!Leaf) { const FString Key=TriangleKey(*Original,T,Slot,UV.GetNumChannels());if (Key.IsEmpty()) return false;++Remaining.FindOrAdd(Key);++RigidCount; }
+            double(Bounds.Min.Z)+(double(Bounds.Max.Z)-double(Bounds.Min.Z))*.4,Leaf)) return Refuse(TEXT("invalid source face classification"));
+        if (!Leaf) { const FString Key=TriangleKey(*Original,T,Slot,UV.GetNumChannels());if (Key.IsEmpty()) return Refuse(TEXT("invalid rigid corner key"));++Remaining.FindOrAdd(Key);++RigidCount; }
     }
     if (!Names.IsValid() || UV.GetNumChannels()<1 || UV.GetNumChannels()>8 ||
-        D->PolygonGroups().Num()!=Input->GetStaticMaterials().Num()) return false;
+        D->PolygonGroups().Num()!=Input->GetStaticMaterials().Num()) return Refuse(TEXT("prepared UV/group/material table mismatch"));
     Initialize(Canopy,Input->GetStaticMaterials(),UV.GetNumChannels());
     if (Rigid) Initialize(*Rigid,Source->GetStaticMaterials(),UV.GetNumChannels());
     TMap<FPolygonGroupID,int32> Slots;Index=0;
     for (auto G:D->PolygonGroups().GetElementIDs())
-    { if (Names[G]!=Input->GetStaticMaterials()[Index].MaterialSlotName) return false;Slots.Add(G,Index++); }
+    { if (Names[G]!=Input->GetStaticMaterials()[Index].MaterialSlotName) return Refuse(TEXT("prepared ordered group names mismatch"));Slots.Add(G,Index++); }
     for (auto Triangle:D->Triangles().GetElementIDs())
     {
         const int32 Slot=Slots.FindChecked(D->GetTrianglePolygonGroup(Triangle));
         int32* Count=Remaining.Find(TriangleKey(*D,Triangle,Slot));
         if (Count && *Count>0)
-        { --*Count;if (Rigid && !CopyTriangle(*D,Triangle,Slot,*Rigid)) return false; }
-        else if (!CopyTriangle(*D,Triangle,Slot,Canopy)) return false;
+        { --*Count;if (Rigid && !CopyTriangle(*D,Triangle,Slot,*Rigid)) return Refuse(TEXT("rigid corner copy failed")); }
+        else if (!CopyTriangle(*D,Triangle,Slot,Canopy)) return Refuse(TEXT("canopy corner copy failed"));
     }
-    for (const auto& Pair:Remaining) if (Pair.Value) return false;
+    for (const auto& Pair:Remaining) if (Pair.Value) return Refuse(TEXT("missing exact rigid corner multiplicity"));
     Input->ClearMeshDescription(Level);Source->ClearMeshDescription(SourceLevel);
-    return Canopy.Triangles().Num()>0;
+    return Canopy.Triangles().Num()>0 || Refuse(TEXT("empty canopy"));
 }
 enum class ECollision { None, SimpleTrunk, Rigid };
 FMeshBuildSettings BuildSettings()
@@ -388,6 +403,12 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     // Prove UV0 normalization and exact duplicate multiplicity independently of
     // physics cooking, which may legitimately deduplicate coincident triangles.
     FMeshDescription Narrow=Levels[0];FStaticMeshAttributes(Narrow).GetVertexInstanceUVs().SetNumChannels(1);
+    FMeshDescription SignedZero=Narrow,NonZero=Narrow;
+    FStaticMeshAttributes(SignedZero).GetVertexPositions()[FVertexID(0)].X=-0.f;
+    FStaticMeshAttributes(NonZero).GetVertexPositions()[FVertexID(0)].X=1.e-20f;
+    const bool ZeroProof=TriangleKey(SignedZero,FTriangleID(0),0)==TriangleKey(Narrow,FTriangleID(0),0) &&
+        GeometryHash(SignedZero)!=GeometryHash(Narrow) &&
+        TriangleKey(NonZero,FTriangleID(0),0)!=TriangleKey(Narrow,FTriangleID(0),0);
     FMeshDescription Duplicate=Narrow;
     // This fixture creates triangle IDs 0 and 1 directly above.
     if (!CopyTriangle(Narrow,FTriangleID(0),0,Duplicate)) return false;
@@ -400,7 +421,7 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     auto* MembershipInput=NewObject<UStaticMesh>();MembershipInput->GetStaticMaterials()=Materials;
     MembershipInput->SetNumSourceModels(1);MembershipInput->CreateMeshDescription(0,Expanded);MembershipInput->CommitMeshDescription(0);
     FMeshDescription LeafProof,RigidProof;int32 Removed=0;TSet<int32> LeafSlots;LeafSlots.Add(1);
-    bool Membership=Split(MembershipInput,0,MembershipSource,0,TEXT("material"),LeafSlots,LeafProof,&RigidProof,Removed) &&
+    bool Membership=ZeroProof && Split(MembershipInput,0,MembershipSource,0,TEXT("material"),LeafSlots,LeafProof,&RigidProof,Removed) &&
         Removed==2 && LeafProof.Triangles().Num()==1 && RigidProof.Triangles().Num()==2;
     MembershipInput->CreateMeshDescription(0,Narrow);MembershipInput->CommitMeshDescription(0);
     FMeshDescription MissingLeaf,MissingRigid;
@@ -446,6 +467,28 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
         auto* Canopy=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Canopy.FixtureTree_Canopy")));
         auto* Shade=LoadObject<UStaticMesh>(nullptr,*(Directory/TEXT("TrunkLODs/FixtureTree_Shadow.FixtureTree_Shadow")));
         Objects.Append({Carrier,Canopy,Shade});Passed=!Row.IsEmpty() && Carrier && Carrier->GetNumSourceModels()==4;
+    }
+    if (Passed)
+    {
+        TArray<FMeshDescription> RenderLevels;RenderLevels.Init(Levels[0],4);
+        auto* Generated=Build(Directory/TEXT("GeneratedTree"),RenderLevels,Source->GetStaticMaterials(),
+            {1.f,.24f,.07f,.018f},ECollision::None,Empty);Objects.Add(Generated);
+        if (!Generated) Passed=false;
+        else
+        {
+            // Retain compiled LOD resources while dropping higher stored source
+            // descriptions: the same state produced by SetLods reduction.
+            Generated->SetNumSourceModels(1);Generated->SetNumSourceModels(4);
+            Passed=Generated->GetMeshDescription(1)==nullptr && Generated->GetRenderData()->LODResources.Num()==4;
+            const FString Row=Passed?Compact(Generated,Input,InputShadow,TEXT("roles"),{},1,false,{0,1,2,3},{},
+                Directory/TEXT("GeneratedLODs"),nullptr):FString{};
+            for (const TCHAR* Suffix:{TEXT(""),TEXT("_Canopy"),TEXT("_Shadow")})
+            {
+                const FString Asset=Directory/TEXT("GeneratedLODs")/(FString(TEXT("GeneratedTree"))+Suffix);
+                Objects.Add(LoadObject<UStaticMesh>(nullptr,*(Asset+TEXT(".")+FPackageName::GetLongPackageAssetName(Asset))));
+            }
+            Passed=Passed && !Row.IsEmpty();
+        }
     }
     for (auto* Object:Objects) if (Object)
     { FAssetRegistryModule::AssetDeleted(Object);Object->ClearFlags(RF_Public|RF_Standalone);Object->MarkAsGarbage(); }
