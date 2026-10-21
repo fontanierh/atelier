@@ -14,6 +14,8 @@
 #include "Misc/PackageName.h"
 #include "StaticMeshCompiler.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageImportRolesTest,"Yorimichi.Foliage.ImportRoles",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -58,6 +60,59 @@ bool FYorimichiFoliageImportRolesTest::RunTest(const FString&)
     TestEqual(TEXT("Original cooked slot restored"),Mesh->GetStaticMaterials()[0].MaterialSlotName,Imported);
     return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliagePavingPaletteTest,"Yorimichi.Foliage.PavingPalette",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliagePavingPaletteTest::RunTest(const FString&)
+{
+    auto* Source=NewObject<UStaticMesh>();Source->SetNumSourceModels(1);
+    TStrongObjectPtr<UStaticMesh> KeepSource(Source);
+    Source->GetStaticMaterials().Add(FStaticMaterial(nullptr,TEXT("FoliageRoles_Paving")));
+    FMeshDescription D;FStaticMeshAttributes A(D);A.Register();
+    auto UV=A.GetVertexInstanceUVs();UV.SetNumChannels(6);
+    const auto Group=D.CreatePolygonGroup();A.GetPolygonGroupMaterialSlotNames()[Group]=TEXT("FoliageRoles_Paving");
+    TArray<FVertexInstanceID> Corners;
+    for (int32 I=0;I<3;++I)
+    {
+        const auto V=D.CreateVertex();A.GetVertexPositions()[V]=FVector3f(I==1?100.f:0.f,I==2?100.f:0.f,0.f);
+        const auto C=D.CreateVertexInstance(V);Corners.Add(C);A.GetVertexInstanceNormals()[C]=FVector3f(0,0,1);
+        A.GetVertexInstanceColors()[C]=FVector4f(.9f,.65f,.1f,1.f);UV.Set(C,0,FVector2f(.2f,.3f));UV.Set(C,5,FVector2f(2.f,73.125f));
+    }
+    Source->CreateMeshDescription(0,MoveTemp(D));
+    const FString Path=FPaths::ProjectSavedDir()/TEXT("FoliagePavingPaletteTest.json");
+    for (const TCHAR* Name:{TEXT("M_ArcadePaving"),TEXT("M_PlazaPaving")})
+    {
+        auto* Material=NewObject<UMaterial>(GetTransientPackage(),FName(Name));
+        Material->GetEditorOnlyData()->BaseColor.UseConstant=false;
+        Source->SetMaterial(0,Material);
+        if (!TestTrue(TEXT("Paving foliage palette exports without altering classification"),
+            UYorimichiFoliageBuilder::ExportSource(Source,{},TEXT("roles"),TEXT("mixed"),Path))) return false;
+        FString Text;TSharedPtr<FJsonObject> Root;
+        if (!TestTrue(TEXT("Exported paving fixture is readable"),FFileHelper::LoadFileToString(Text,*Path) &&
+            FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root))) return false;
+        TestEqual(TEXT("Certified roles are retained"),Root->GetStringField(TEXT("classification")),FString(TEXT("roles")));
+        const auto& Vertex=Root->GetArrayField(TEXT("vertices"))[0]->AsObject();
+        const auto& Sample=Vertex->GetArrayField(TEXT("sample"));
+        const auto Linear=[](float C){return FMath::Pow((C+.055f)/1.055f,2.4f);};
+        TestTrue(TEXT("Leaf colour uses the source shader's linear vertex paint"),
+            FMath::IsNearlyEqual(Sample[0]->AsNumber(),double(Linear(.9f)),1.e-6) &&
+            FMath::IsNearlyEqual(Sample[1]->AsNumber(),double(Linear(.65f)),1.e-6) &&
+            FMath::IsNearlyEqual(Sample[2]->AsNumber(),double(Linear(.1f)),1.e-6));
+        TestTrue(TEXT("Arcade leaf glow and unlit plaza emission remain distinct"),
+            FMath::IsNearlyEqual(Sample[3]->AsNumber(),FCString::Strcmp(Name,TEXT("M_ArcadePaving"))==0?.425:0.,1.e-6));
+        FStaticMeshAttributes Stored(*Source->GetMeshDescription(0));
+        TestTrue(TEXT("Visible UV and certified role are unchanged"),Stored.GetVertexInstanceUVs().Get(Corners[0],0)==FVector2f(.2f,.3f) &&
+            Stored.GetVertexInstanceUVs().Get(Corners[0],5)==FVector2f(2.f,73.125f));
+        for (const auto C:Corners) Stored.GetVertexInstanceColors()[C]=FVector4f(.5f,.5f,.5f,1.f);
+        AddExpectedError(TEXT("FOLIAGE paving leaf uses the unsupported textured branch"),EAutomationExpectedErrorFlags::Contains,1);
+        TestFalse(TEXT("Unsupported textured foliage refuses instead of taking the vertex-colour branch"),
+            UYorimichiFoliageBuilder::ExportSource(Source,{},TEXT("roles"),TEXT("mixed"),Path));
+        for (const auto C:Corners) Stored.GetVertexInstanceColors()[C]=FVector4f(.9f,.65f,.1f,1.f);
+    }
+    IFileManager::Get().Delete(*Path);
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageAuthoredLODsTest,"Yorimichi.Foliage.AuthoredLODs",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
