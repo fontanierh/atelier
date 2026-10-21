@@ -104,7 +104,7 @@ def run_import(tmp_path, meshes, *, role_transport=True):
     namespace = dict(__file__=str(script), Path=Path, PARENTS={}, OUT=tmp_path, ROOT='/Game/Brinecove', E=assets, unreal=unreal, json=json,
         surfaces=lambda *_: None, textures=lambda _: None, import_mesh=imported, generate_lods=lambda _: None)
     from atelier.unreal_mesh_reuse import set_if_changed
-    namespace.update(Context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
+    namespace.update(native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
         atmosphere=SimpleNamespace(__file__=str(script)),
         AssetGroup=lambda *a, **k: SimpleNamespace(matches=lambda _: True), set_if_changed=set_if_changed,
         lods_match=lambda *a: True,

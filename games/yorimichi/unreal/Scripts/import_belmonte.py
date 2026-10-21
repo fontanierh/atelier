@@ -13,7 +13,7 @@ import runpy
 import unreal
 import atmosphere
 import ground_grain
-from atelier.build import Context
+from atelier.native_protocol import native_context
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 
 OUT = yori.OUT / 'belmonte'
@@ -249,14 +249,14 @@ def main():
     material_packages = sorted({ROOT + '/Materials/' + name for name in
         ['M_Belmonte', 'M_BelmonteJoin'] + [entry['name'] for entry in report['materials'].values()]}
         | {ROOT + '/Textures/' + Path(file).stem for file in texture_files})
-    materials = AssetGroup(Context(yori.GAME.name), 'unreal.belmonte', __file__,
+    materials = AssetGroup(native_context(yori.GAME.name), 'unreal.belmonte', __file__,
         ('parent', 'textures', 'join_parent', 'surfaces'), parameters=report['materials'],
         sources=[OUT / 'textures' / file for file in texture_files],
         support=[Path(atmosphere.__file__), Path(ground_grain.__file__)])
     if not materials.matches(material_packages):
         surfaces(report, parent(), textures(report))
         materials.validated(material_packages)
-    reuse = MeshReuse(Context(yori.GAME.name), 'unreal.belmonte', __file__,
+    reuse = MeshReuse(native_context(yori.GAME.name), 'unreal.belmonte', __file__,
                       ('import_mesh', 'generate_terrain_lods'),
                       report_member='generated/belmonte/build-report.json')
     donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
@@ -313,7 +313,7 @@ def main():
                     collision.set_material(slot, ground)
             set_if_changed(mesh, 'complex_collision_mesh', collision)
             assert mesh.get_editor_property('complex_collision_mesh') == collision, name
-            assert E.save_loaded_asset(collision), collision_name
+            assert E.save_loaded_asset(collision, only_if_is_dirty=True), collision_name
         body = mesh.get_editor_property('body_setup')
         if name.startswith('SM_BM_BT_Terrain_'):
             set_if_changed(mesh, 'allow_cpu_access', name in {'SM_BM_BT_Terrain_0_0', 'SM_BM_BT_Terrain_4_4'})

@@ -64,7 +64,7 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
         __file__=str(script), runpy=SimpleNamespace(run_path=lambda path: tv_imports.append(Path(path))),
         parent=lambda: None, textures=lambda _: None, surfaces=lambda *_: None, import_mesh=imported)
     from atelier.unreal_mesh_reuse import set_if_changed
-    namespace.update(Context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
+    namespace.update(native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
         atmosphere=SimpleNamespace(__file__=str(script)), ground_grain=SimpleNamespace(__file__=str(script)),
         AssetGroup=lambda *a, **k: SimpleNamespace(matches=lambda _: True), set_if_changed=set_if_changed,
         MeshReuse=lambda *a, **k: SimpleNamespace(donor={}, acquire=lambda name, *a, **k: meshes.get(name), imported=lambda *a: None,

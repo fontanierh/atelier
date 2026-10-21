@@ -19,7 +19,9 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
     """
     started = time.perf_counter()
     mesh, reuse = common_fbx_mesh(path, dest, name, seed=seed, fresh_slots=fresh_slots,
-                                  script=__file__, validator=legacy_options_match)
+                                  script=__file__, validator=legacy_options_match,
+                                  owner_roots=(Path(__file__).resolve().parents[2] / 'world',
+                                               Path(__file__).resolve().parents[2] / 'world/regions'))
     reused = mesh is not None
     if mesh is None:
         existing = EAL.load_asset(dest + '/' + name) if EAL.does_asset_exist(dest + '/' + name) else None

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori  # noqa: E402
 import json
 import unreal
-from atelier.build import Context
+from atelier.native_protocol import native_context
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 import atmosphere
 
@@ -368,13 +368,13 @@ def main():
     material_packages = sorted({ROOT + '/Materials/' + name for name in list(PARENTS.values())
         + [entry['name'] for entry in report['materials'].values()]}
         | {ROOT + '/Textures/' + Path(file).stem for file in texture_files})
-    materials = AssetGroup(Context(yori.GAME.name), 'unreal.brinecove', __file__,
+    materials = AssetGroup(native_context(yori.GAME.name), 'unreal.brinecove', __file__,
         ('parent', 'terrain_parent', 'textures', 'surfaces'), parameters=report['materials'],
         sources=[OUT / 'textures' / file for file in texture_files], support=[Path(atmosphere.__file__)])
     if not materials.matches(material_packages):
         surfaces(report, textures(report))
         materials.validated(material_packages)
-    reuse = MeshReuse(Context(yori.GAME.name), 'unreal.brinecove', __file__,
+    reuse = MeshReuse(native_context(yori.GAME.name), 'unreal.brinecove', __file__,
                       ('import_mesh', 'keep_full_precision_uvs', 'generate_lods'),
                       report_member='generated/brinecove/build-report.json')
     donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
