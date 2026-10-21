@@ -389,7 +389,8 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
     // physics cooking, which may legitimately deduplicate coincident triangles.
     FMeshDescription Narrow=Levels[0];FStaticMeshAttributes(Narrow).GetVertexInstanceUVs().SetNumChannels(1);
     FMeshDescription Duplicate=Narrow;
-    for (auto Triangle:Narrow.Triangles().GetElementIDs()) { CopyTriangle(Narrow,Triangle,0,Duplicate);break; }
+    // This fixture creates triangle IDs 0 and 1 directly above.
+    if (!CopyTriangle(Narrow,FTriangleID(0),0,Duplicate)) return false;
     FMeshDescription Expanded=Duplicate;auto ExpandedUV=FStaticMeshAttributes(Expanded).GetVertexInstanceUVs();
     ExpandedUV.SetNumChannels(6);
     for (auto I:Expanded.VertexInstances().GetElementIDs())
