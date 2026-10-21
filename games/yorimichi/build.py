@@ -705,7 +705,7 @@ def brinecove_steps(out):
     library = out / 'digests' / 'brinecove-source-library.json'
     return [
         Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library)), threads=3)],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('ferry_terminal.py', '__pycache__')), ASSETS / 'brinecove', library, WORLD / 'source_registry.py', WORLD / 'terrain_product.py', YORI],
+             inputs=[*(p for p in region.iterdir() if p.name not in ('ferry_terminal.py', '__pycache__')), paths.STUDIO / 'atelier/mesh_partition.py', ASSETS / 'brinecove', library, WORLD / 'source_registry.py', WORLD / 'terrain_product.py', YORI],
              needs=['world.brinecove.sources'],
              reads=['terrain.FarHills.final'], heavy=True,
              outputs=[out / 'brinecove' / 'runtime.json', out / 'brinecove' / 'build-report.json'],

@@ -1,7 +1,7 @@
 """Export Brinecove for the game: ground tiles, town and nature meshes, hero models, foliage instances,
 runtime.json and build-report.json in build/yorimichi/brinecove.
 
-    blender -b --factory-startup --python games/yorimichi/world/regions/brinecove/build.py
+    uv run atelier build yorimichi world.brinecove
 
 The ground closes onto the FarHills final product's hole (ground.py), so this step reads that product. Every mesh
 is exported in local metres around region.ORIGIN; the Unreal importer (import_brinecove.py) binds each material
@@ -23,6 +23,7 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
 from atelier.gltf import glb_parts  # noqa: E402
+from atelier.mesh_partition import face_groups  # noqa: E402
 from terrain_product import load  # noqa: E402
 from brinecove import flora, ground, hero_assets, hero_sources, modules, region as R, rocks  # noqa: E402
 from brinecove import layout as L  # noqa: E402
@@ -31,6 +32,8 @@ from brinecove.paths import BUILD as OUT, TEXTURES  # noqa: E402
 
 ROOT = '/Game/Brinecove'
 TILE = 256.0
+# Bound mixed models without increasing draw calls for small existing parts.
+MIXED_TRIANGLE_LIMIT = 32768
 IDENTITY = {'translation_cm': [0., 0., 0.], 'rotation_xyzw': [0., 0., 0., 1.], 'scale': [1., 1., 1.]}
 # Surfaces a player walks through: no collision, and the translucent ones cast no shadow.
 SOFT = ('leaf_', 'palm_', 'waterfall', 'mist', 'spray', 'foam', 'water', 'vine', 'flower', 'grass', 'fern', 'cover_')
@@ -162,11 +165,48 @@ def split(builder, prefix, settle, remap=None):
         part = parts.get(key)
         if part is None:
             part = parts[key] = Builder(f'SM_BC_{prefix}_{key[0]}_{key[1]}' + ('_Soft' if key[2] else ''))
+            part.spatial_centers = []
         normals = [builder.normals[f[k]] for k in corners] if builder.normals is not None else None
         part.face([pts[k] for k in corners], mat, [builder.uvs[f[k]] for k in corners], normals)
-    return parts, outside, drowned, degenerate
+        part.spatial_centers.append((cx, cy))
+    return bounded_parts(parts, prefix), outside, drowned, degenerate
 
 
+
+
+def bounded_parts(parts, prefix):
+    """Keep final ground tiles and small models intact; partition oversized mixed meshes.
+
+    Complete faces keep the same positions, UVs, normals, materials and role labels.
+    Each piece keeps the parent's identity transform and solid/soft policy. Fixed
+    child-cell names stay independent of changes in another occupied child cell.
+    """
+    result = {}
+    for key, part in parts.items():
+        x, y, is_soft = key
+        if prefix == 'Ground' or sum(len(face) - 2 for face in part.faces) <= MIXED_TRIANGLE_LIMIT:
+            result[(*key, '')] = part
+            continue
+        x0, y0 = R.OUTER[0] + x * TILE, R.OUTER[1] + y * TILE
+        groups = face_groups(part.verts, part.faces, (x0, y0, x0 + TILE, y0 + TILE),
+                             triangle_limit=MIXED_TRIANGLE_LIMIT, locations=getattr(part, 'spatial_centers', None))
+        parent_water = all(mat.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for mat in part.mats)
+        roles = getattr(part, 'foliage_roles', {})
+        for suffix, indices in groups:
+            piece = Builder(part.name + '_Piece' + suffix)
+            # Splitting a mixed water/foliage parent must not change its shadow policy.
+            piece.parent_water = parent_water
+            for index in indices:
+                face = part.faces[index]
+                piece.anchor = part.anchors[index] if part.anchors is not None else None
+                normals = [part.normals[i] for i in face] if part.normals is not None else None
+                piece.face([part.verts[i] for i in face], part.mats[index], [part.uvs[i] for i in face], normals)
+                if index in roles:
+                    if not hasattr(piece, 'foliage_roles'):
+                        piece.foliage_roles = {}
+                    piece.foliage_roles[len(piece.faces) - 1] = roles[index]
+            result[(*key, suffix)] = piece
+    return result
 
 
 def under_paving(x, y):
@@ -441,7 +481,7 @@ def main(argv=None):
         report_outside[prefix] = outside
         report_drowned[prefix] = drowned
         report_degenerate[prefix] = degenerate
-        for (_, _, is_soft), part in sorted(parts.items()):
+        for (_, _, is_soft, _), part in sorted(parts.items()):
             obj = mesh_object(part, materials)
             path = OUT / 'glb' / f'{part.name}.glb'
             export(obj, path)
@@ -449,7 +489,8 @@ def main(argv=None):
             triangles, names, bounds = glb_info(path)
             slots = [n[3:] for n in names]
             used.update(slots)
-            water = all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots)
+            water = getattr(part, 'parent_water',
+                            all(s.startswith(('water', 'mist', 'spray', 'foam', 'waterfall')) for s in slots))
             meshes.append({'name': part.name, 'path': path.relative_to(OUT).as_posix(), 'sha256': sha(path),
                            'triangles': triangles, 'bounds_m': bounds, 'slots': slots, 'collision': not is_soft})
             groups.append(group(part.name, slots, [IDENTITY], collision=not is_soft, shadow=not water,

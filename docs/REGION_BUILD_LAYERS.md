@@ -34,3 +34,24 @@ Use the same layers for every region, following [world build practices](WORLD_BU
 Brinecove's builders/prototypes, Hidamari's kit/city/north/vegetation and Belmonte's preparation/materials/terrain/planting are subsequent producer slices. Existing terrain, train, ferry and gondola consumers retain their real source and product reads until their replacements have equivalent coverage. A reference edge must never hide a consumed terrain, bounds, material or collision value.
 
 Each slice needs execution regressions for unchanged inputs, instance movement, model/material changes, footprint changes, terrain changes and membership additions/removals. Assert both the executed task set and unchanged unrelated output bytes. Native adoption additionally reports actual reused/imported counts and current geometry, material and collision checks.
+
+## Bounded mixed-model pieces
+
+The ordinary Brinecove exporter keeps its final ground tiles and existing small model identities.
+Mixed non-ground parts above 32,768 fan triangles are divided into fixed spatial child cells.
+Each whole face goes into one cell, preserving its positions, normals, UVs, material and role labels;
+solid/soft collision policy and identity placement transforms stay with every piece. Child names
+use the original 256 m tile and quadrant path, so a change in another occupied child does not
+rename an unchanged child. The exporter refuses invalid or unresolved coincident over-budget
+geometry rather than silently exporting another oversized monolith.
+
+This is a bound on source triangle work, not a proven bound on a later representation's JSON bytes
+or native memory. Final ground, independent plant prototypes and hero models retain their current
+owners. More pieces can improve culling while adding draw calls/material sections. Actual culling,
+collision continuity, GLB/native bytes and same-input frame/build timing need receiving validation;
+no speed or memory result follows solely from the pure partition tests. The initial topology-owner
+transition is real source work and must wait for an ordinary stopped receiver boundary.
+
+Regional generation/export is still one owner. Separate piece preparation/checkpoints, bounded
+per-LOD transport, per-building owners and compact native geometry transport remain required work.
+The current production foliage run must not adopt this change before its first game measurement.
