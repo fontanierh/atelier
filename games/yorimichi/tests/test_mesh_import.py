@@ -457,3 +457,24 @@ def test_treehouse_binding_uses_import_identity_despite_cooked_foliage_roles():
     report={}
     assert owner['assign'](mesh,dict(bark='BarkMaterial',leaf='LeafMaterial'),report)==['bark','leaf']
     assert bindings==[(0,'BarkMaterial'),(1,'LeafMaterial')] and report=={}
+
+
+@pytest.mark.parametrize('roles,saved', [(True, True), (False, True), (True, False)])
+def test_verified_reuse_still_requires_current_roles_save_and_deferred_receipt(importer, monkeypatch, roles, saved):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert p.module.legacy_options_match(mesh)
+    p.calls.clear()
+    deferred = []
+    reuse = SimpleNamespace(defer_validated=deferred.append)
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (mesh, reuse))
+    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda _: roles
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda _: saved
+    if roles and saved:
+        assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed) is mesh
+        assert deferred == ['/Game/Owned/Mesh']
+    else:
+        with pytest.raises(RuntimeError, match='Could not save' if roles else 'Invalid foliage'):
+            p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+        assert deferred == []
+    assert p.calls == []  # verified reuse does not invoke raw geometry import again

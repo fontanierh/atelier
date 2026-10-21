@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 import yori  # noqa: E402
 import json
 import unreal
+from atelier.build import Context
+from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 import atmosphere
 
 OUT = yori.OUT / 'brinecove'
@@ -358,14 +360,40 @@ def generate_lods(mesh):
 def main():
     report = json.loads((OUT / 'build-report.json').read_text())
     E.make_directory(ROOT)
-    surfaces(report, textures(report))
+    texture_files = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
+    for entry in report['materials'].values():
+        texture_files |= {file for file in list(entry.get('layers', {}).values())
+                         + list(entry.get('normals', {}).values()) if file}
+    texture_files = sorted(texture_files)
+    material_packages = sorted({ROOT + '/Materials/' + name for name in list(PARENTS.values())
+        + [entry['name'] for entry in report['materials'].values()]}
+        | {ROOT + '/Textures/' + Path(file).stem for file in texture_files})
+    materials = AssetGroup(Context(yori.GAME.name), 'unreal.brinecove', __file__,
+        ('parent', 'terrain_parent', 'textures', 'surfaces'), parameters=report['materials'],
+        sources=[OUT / 'textures' / file for file in texture_files], support=[Path(atmosphere.__file__)])
+    if not materials.matches(material_packages):
+        surfaces(report, textures(report))
+        materials.validated(material_packages)
+    reuse = MeshReuse(Context(yori.GAME.name), 'unreal.brinecove', __file__,
+                      ('import_mesh', 'keep_full_precision_uvs', 'generate_lods'),
+                      report_member='generated/brinecove/build-report.json')
+    donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
+    def geometry(entry):
+        return dict(entry, foliage_roles=bool(entry.get('foliage_roles')), lods=bool(entry.get('lods')))
     imported = {}
     for index, entry in enumerate(report['meshes']):
         name = entry['name']
         target = ROOT + '/Meshes/' + name
-        if E.does_asset_exist(target):
-            E.delete_asset(target)
-        mesh = import_mesh(OUT / entry['path'], name)
+        previous = donor.get(name)
+        mesh = reuse.acquire(name, target, geometry=geometry(entry),
+                             donor_geometry=geometry(previous) if previous else None,
+                             sources=[(target, OUT / entry['path'], entry['sha256'])])
+        reused = mesh is not None
+        if mesh is None:
+            if E.does_asset_exist(target):
+                assert E.delete_asset(target), target
+            mesh = import_mesh(OUT / entry['path'], name)
+            reuse.imported(name)
         # Foliage prototypes sample an atlas cell (UVs within 0-1) and the terrain material projects by world position;
         # every other surface samples its world-metre UVs.
         if not entry.get('lods') and any(report['materials'][key]['kind'] != 'terrain' for key in entry['slots']):
@@ -375,7 +403,9 @@ def main():
         for slot, key in enumerate(entry['slots']):
             material = E.load_asset(f"{ROOT}/Materials/{report['materials'][key]['name']}")
             assert material, key
-            mesh.set_material(slot, material)
+            if mesh.get_material(slot) != material:
+                mesh.set_material(slot, material)
+            assert mesh.get_material(slot) == material, (name, 'material binding', slot)
         # GLB/Interchange imports bypass the common FBX importer. Certify their
         # shared UV5 face roles at this source boundary too, before reduction.
         unreal.load_module('YorimichiImport')
@@ -389,20 +419,27 @@ def main():
         body = mesh.get_editor_property('body_setup')
         assert body, name
         if entry['collision']:
-            body.set_editor_property('collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
-            body.set_editor_property('double_sided_geometry', True)
+            set_if_changed(body, 'collision_trace_flag', unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+            set_if_changed(body, 'double_sided_geometry', True)
+            assert body.get_editor_property('collision_trace_flag') == unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE, name
+            assert body.get_editor_property('double_sided_geometry'), name
         if entry.get('lods'):
-            generate_lods(mesh)
-        E.save_loaded_asset(mesh)
+            plan = ((1., 1.), (.45, .3), (.2, .12), (.08, .04))
+            if not reused or not lods_match(mesh, plan):
+                generate_lods(mesh)
+            assert lods_match(mesh, plan), name
+        assert E.save_loaded_asset(mesh, only_if_is_dirty=True), name
         box = mesh.get_bounding_box()
         low, high = entry['bounds_m']
         expected = [low[0] * 100, -high[1] * 100, low[2] * 100, high[0] * 100, -low[1] * 100, high[2] * 100]
         actual = [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z]
         assert max(abs(a - b) for a, b in zip(actual, expected)) < 2., (name, 'bounds', actual, expected)
         imported[name] = {'triangles': triangles, 'bounds_cm': actual, 'collision': entry['collision']}
-        unreal.log(f'BRINECOVE IMPORT {index + 1}/{len(report["meshes"])} {name}')
+        reuse.validated(name)
+        unreal.log(f'BRINECOVE IMPORT {index + 1}/{len(report["meshes"])} {name} reused={int(reused)}')
     (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     E.delete_directory(ROOT + '/Import')
+    reuse.finish()
     unreal.log(f'BRINECOVE IMPORT COMPLETE: {len(imported)} meshes')
 
 
