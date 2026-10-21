@@ -12,6 +12,7 @@ import json
 import runpy
 import unreal
 import atmosphere
+import glb_mesh_validation
 import ground_grain
 from atelier.native_protocol import native_context
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
@@ -233,6 +234,22 @@ def generate_terrain_lods(mesh):
     assert editor.set_lod_screen_sizes(mesh, [screen for _, screen in plan]), (mesh.get_name(), 'LOD screen sizes')
 
 
+def validate_reused_mesh(mesh, entry, slots):
+    try:
+        if not glb_mesh_validation.validate_mesh(mesh, OUT / entry['path'], entry, slots,
+                                                out=yori.OUT, tolerance_cm=1.):
+            return False
+        if entry.get('collision'):
+            source = OUT / 'glb' / Path(entry['collision']['path']).name
+            hull = E.load_asset(ROOT + '/Meshes/' + entry['name'] + '_Collision')
+            hull_entry, hull_slots = glb_mesh_validation.collision_entry(source)
+            return glb_mesh_validation.validate_mesh(hull, source, hull_entry, hull_slots,
+                out=yori.OUT, tolerance_cm=1., minimum_triangles=.98)
+        return True
+    except Exception:
+        return False
+
+
 def main():
     """@cc [owner:fontanierh,label:correctness] collision-hull-distance-fields
     Separate source collision hulls MUST disable LOD0 mesh distance-field generation. This
@@ -258,7 +275,8 @@ def main():
         materials.validated(material_packages)
     reuse = MeshReuse(native_context(yori.GAME.name), 'unreal.belmonte', __file__,
                       ('import_mesh', 'generate_terrain_lods'),
-                      report_member='generated/belmonte/build-report.json')
+                      report_member='generated/belmonte/build-report.json',
+                      validation_functions=('validate_reused_mesh',))
     donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     imported = {}
     for index, entry in enumerate(report['meshes']):
@@ -268,7 +286,8 @@ def main():
         if entry.get('collision'):
             sources.append((target + '_Collision', OUT / 'glb' / Path(entry['collision']['path']).name,
                             entry['collision']['sha256']))
-        mesh = reuse.acquire(name, target, geometry=entry, donor_geometry=donor.get(name), sources=sources)
+        mesh = reuse.acquire(name, target, geometry=entry, donor_geometry=donor.get(name), sources=sources,
+                             validator=lambda mesh: validate_reused_mesh(mesh, entry, len(defaults[name])))
         reused = mesh is not None
         if mesh is None:
             if E.does_asset_exist(target):
