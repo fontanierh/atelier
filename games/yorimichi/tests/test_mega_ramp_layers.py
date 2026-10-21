@@ -33,6 +33,12 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
     registry.write_text(json.dumps({'origin_cm':[55000.,-450000.,21000.],
                                    'groups':[{'asset':f'/Game/{name}.{name}','transforms':[transform],
                                               'plant':False,'collision':True} for name in names]}))
+    ground=tmp_path/'products/belmonte/ground.json'
+    ground.parent.mkdir(parents=True,exist_ok=True)
+    entries={row['name']:row for row in library['meshes'] if row['name'] in names}
+    surfaces=[dict(name=name,path='ground/glb/'+name+'.glb',bounds_m=entries[name]['bounds_m']
+                   if name in entries else [[0,0,0],[100,100,1]]) for name in [*names,'SM_BM_NorthCountry']]
+    ground.write_text(json.dumps(dict(schema=1,origin_cm=[55000.,-450000.,21000.],surfaces=surfaces)))
     # This registry contains ground only. The real structure collector still
     # reads the region report before excluding those ground-owned groups.
     (registry.parent/'build-report.json').write_text(json.dumps({'meshes':[], 'materials':{}}))

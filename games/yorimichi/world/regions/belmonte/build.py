@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from atelier.model_files import source_records, retain_files
-from belmonte import layout as L, source, planting, terrain, appearance, model_pieces
+from belmonte import layout as L, source, planting, terrain, appearance, model_pieces, ground_pieces
 
 OUT = yori.OUT / 'belmonte'
 
@@ -208,7 +208,7 @@ def main():
     (OUT / 'textures').mkdir(exist_ok=True)
     data = source.manifest()
     materials = finish_surfaces(data)
-    by_asset, meshes = {}, []
+    by_asset, meshes, surfaces = {}, [], []
     for entry in data['meshes']:
         path = source.LIBRARY / entry['path']
         assert source.sha(path) == entry['sha256'], path
@@ -220,7 +220,11 @@ def main():
         else:
             shutil.copy2(path, destination)
             entry = dict(entry, path=destination.relative_to(OUT).as_posix())
-        prepared = model_pieces.prepare(entry, destination)
+        if ground_pieces.is_ground(entry['name']):
+            surface, prepared = ground_pieces.prepare(entry, destination, OUT)
+            surfaces.append(surface)
+        else:
+            prepared = model_pieces.prepare(entry, destination)
         meshes.extend(row[0] for row in prepared)
         by_asset[entry['source_asset']] = prepared
         if 'collision' in entry:
@@ -228,6 +232,12 @@ def main():
             assert source.sha(collision) == entry['collision']['sha256'], collision
             shutil.copy2(collision, OUT / 'glb' / collision.name)
     extra, seam = surroundings()
+    pieces = []
+    for entry in extra:
+        surface, prepared = ground_pieces.prepare(entry, OUT / entry['path'], OUT)
+        surfaces.append(surface)
+        pieces.extend(row[0] for row in prepared)
+    extra = pieces
     meshes.extend(extra)
     grouped = {}
     for placement in data['placements']:
@@ -263,7 +273,7 @@ def main():
                        'collision': True, 'shadow': True, 'cull_cm': 0,
                        'transforms': [{'translation_cm': [0., 0., 0.], 'rotation_xyzw': [0., 0., 0., 1.], 'scale': [1., 1., 1.]}]})
     plants, plant_report = planting.replacements(data, source.terrain().height)
-    woods = planting.woodland(source.Surface(source.triangles(OUT / 'glb/SM_BM_NorthApron.glb')))
+    woods = planting.woodland(source.Surface(source.triangles(OUT / 'ground/glb/SM_BM_NorthApron.glb')))
     for name, transforms in woods.items():
         plants.setdefault(name, []).extend(transforms)
     plant_report['connecting_woodland'] = sum(len(v) for v in woods.values())
@@ -287,6 +297,7 @@ def main():
     # model members, so a normal removal/rename cannot strand an invalid inventory.
     expected = [Path(name).relative_to('glb').as_posix()
                 for _, name in source_records(meshes, collision_directory='glb')]
+    ground_pieces.publish(OUT, surfaces, L.native_origin())
     retired = retain_files(OUT / 'glb', expected)
     if retired:
         print(f'BELMONTE retired {len(retired)} superseded generated model files', flush=True)

@@ -816,7 +816,8 @@ def belmonte_steps(out):
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
              needs=['world.layout', 'world.treehouse_trees'], heavy=True,
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
-                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
+                      out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb',
+                      out / 'belmonte/ground/membership.json'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
@@ -827,6 +828,11 @@ def belmonte_steps(out):
              products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime')],
              cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
+        Step('world.belmonte.ground',
+             [Python(region / 'ground_pieces.py', (str(out / 'belmonte'), str(out / 'products/belmonte/ground.json')))],
+             inputs=[*build_inputs.local_imports(region / 'ground_pieces.py'), out / 'belmonte/ground'],
+             needs=['world.belmonte'], products=[Product('belmonte.ground', (out / 'products/belmonte/ground.json',))],
+             cache=True, audit=True, about='complete whole final query surfaces, independent of native render pieces'),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
@@ -836,7 +842,7 @@ def belmonte_steps(out):
              needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
              reads=['belmonte.geometry', 'belmonte.materials'],
              after=['unreal.forest'], heavy=True,
-             outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
+             outputs=[out / 'belmonte' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
              products=belmonte_native_products(out),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
@@ -970,7 +976,7 @@ def world_steps(ctx):
              about='the city: layout (city.json), building kit, harbor, plaza, arcade, mountains', heavy=True),
         digest_step(out, 'world.hidamari', 'city', 'the Hidamari meshes unreal.world reads (all but the volcano)', north=False),
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
-        *belmonte_steps(out)[:2],
+        *belmonte_steps(out)[:3],
         brinecove_source_step(out),
         *brinecove_model_steps(out),
         *brinecove_steps(out)[:2],
@@ -1227,7 +1233,7 @@ def world_steps(ctx):
                                                     'SM_BM_BVV_Farm_', 'SM_BM_BC_Water_', 'SM_BM_BC_Pave', 'SM_BM_BC_Ponte')))],
              needs=['world.layout', 'world.hidamari', 'world.skatepark', 'world.zeppelin', 'world.belmonte',
                     *crater_geometry],
-             reads=['brinecove.map'],
+             reads=['brinecove.map', 'belmonte.ground'],
              outputs=[out / 'map' / 'map.json', out / 'map' / 'map.png',
                       *(out / 'map' / 'atlas' / f'{key}.png' for key in ('world', 'momiji_coast', 'momiji_woods', 'hidamari', 'temple_island',
                                                                      'northern_foothills', 'volcanic_highlands', 'haras_valley',
@@ -1642,8 +1648,9 @@ def gondola_steps(ctx):
     result += [Step('world.gondola_ground_inputs',
                     [Call('ropeway final ground inputs', lambda ctx, log:
                           export_digest.record(digest, queries.snapshot(ctx.out), log))],
-                    inputs=[*queries.CODE.values(), ASSETS / 'belmonte/source.json'],
-                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte'],
+                    inputs=[*queries.CODE.values()],
+                    # Deferred legacy collectors bind the selected product file explicitly.
+                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte.ground'],
                     deferred_inputs=[DeferredInputs('gondola-ground', queries.paths, (ctx.out,), support=(query,))],
                     outputs=[digest], cutoff=True,
                     about='only final terrain, North Trail and corridor-selected Belmonte ground'),
@@ -1766,7 +1773,7 @@ def steps(ctx):
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
               + [step for step in gondola if not step.name.startswith('unreal.')]
-              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
+              + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[3:]
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
               + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)

@@ -95,6 +95,7 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for definition in recipe.brinecove_library.definitions()})
     expected.update({f'belmonte.{part}': 'world.belmonte.meshes'
                      for part in ('geometry', 'materials', 'runtime')})
+    expected['belmonte.ground'] = 'world.belmonte.ground'
     expected.update({f'belmonte.native_{part}': 'unreal.belmonte'
                      for part in ('meshes', 'materials', 'tv', 'report')})
     assert graph.owners == expected

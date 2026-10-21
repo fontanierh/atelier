@@ -8,6 +8,7 @@ import itertools
 import json
 import math
 from pathlib import Path
+import re
 import struct
 
 from atelier.gltf import glb_parts
@@ -109,7 +110,7 @@ def selected(build):
         if group['plant'] or not parent_collision:
             continue
         name = group['asset'].rsplit('/',1)[-1].split('.')[0]
-        if name.startswith('SM_BM_BT_Terrain_') or name == 'SM_BM_NorthApron':
+        if name.startswith('SM_BM_BT_Terrain_') or re.fullmatch(r'SM_BM_NorthApron(?:_Piece[0-3]+)?', name):
             continue
         if name not in entries:
             raise ValueError('Missing final Belmonte structure metadata: '+name)
