@@ -1471,10 +1471,10 @@ def gondola_steps(ctx):
              *(folder / 'textures' / f'GD_{name}_{kind}.png' for name in
                ('wood_panel', 'wood_grain', 'wood_grain_light', 'wood_grain_dark', 'deck_planks', 'shingle')
                for kind in ('color', 'rough'))]
-    return [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3,
+    return [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
                     env=(('GONDOLA_PIECES', 'cabin,towers,valley,rim,crater'),
                          ('GONDOLA_PARAMS', ''), ('GONDOLA_SOFT_FAIL', '')))],
-                 inputs=[*(kit / name for name in parameters.BUILD_SOURCES), WORLD / 'solid_mesh.py', YORI],
+                 inputs=sorted(set(local_imports(kit / 'build.py') + [kit / name for name in parameters.BUILD_SOURCES])),
                  products=[Product('gondola.kit', tuple(files))], heavy=True, cache=True,
                  about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
 
