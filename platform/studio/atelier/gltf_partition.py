@@ -135,9 +135,17 @@ def split(data, bounds, *, triangle_limit=32768, frame=(1, -3, 2)):
                 image['bufferView'] = image_views[index]
 
         def add_accessor(source, payload, values, target):
+            width = WIDTHS[source['type']]*COMPONENTS[source['componentType']][1]
+            stride = width
+            if target == 34962 and width % 4:
+                stride = (width+3)//4*4
+                payload = b''.join(payload[i*width:(i+1)*width]+b'\0'*(stride-width)
+                                   for i in range(len(values)))
             item = {key: value for key, value in source.items()
                     if key not in ('bufferView', 'byteOffset', 'count', 'min', 'max')}
             item.update(bufferView=add_view(payload, target), count=len(values))
+            if stride != width:
+                output['bufferViews'][item['bufferView']]['byteStride'] = stride
             if 'min' in source or 'max' in source:
                 item['min'] = [min(row[i] for row in values) for i in range(len(values[0]))]
                 item['max'] = [max(row[i] for row in values) for i in range(len(values[0]))]

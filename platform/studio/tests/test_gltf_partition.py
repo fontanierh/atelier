@@ -52,7 +52,7 @@ def model():
 
 def rows(doc, binary, index):
     widths = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}
-    sizes = {5121: 1, 5123: 2, 5125: 4, 5126: 4}
+    sizes = {5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
     item = doc['accessors'][index]; view = doc['bufferViews'][item['bufferView']]
     size = widths[item['type']]*sizes[item['componentType']]
     offset = view.get('byteOffset', 0)+item.get('byteOffset', 0)
@@ -95,6 +95,38 @@ def test_small_supported_model_is_byte_identical():
     original = model()
     part, = split(original, (0., 0., 10., 10.), triangle_limit=8)
     assert part['suffix'] == '' and part['data'] is original
+
+
+@pytest.mark.parametrize('component,width', [(5121, 1), (5121, 3), (5122, 3), (5123, 3)])
+def test_each_output_vertex_element_is_four_byte_aligned(component, width):
+    doc, binary = glb_parts(model())
+    size = {5121: 1, 5122: 2, 5123: 2}[component]
+    stride = (width*size+3)//4*4
+    binary += b'\0'*(-len(binary) % 4)
+    offset = len(binary)
+    payload = b''.join(bytes([index+1])*(width*size)+b'\0'*(stride-width*size) for index in range(24))
+    binary += payload
+    doc['bufferViews'].append(dict(buffer=0, byteOffset=offset, byteLength=len(payload), byteStride=stride))
+    index = len(doc['accessors'])
+    doc['accessors'].append(dict(bufferView=len(doc['bufferViews'])-1, componentType=component,
+                                 type='SCALAR' if width == 1 else 'VEC3', count=24))
+    for primitive in doc['meshes'][0]['primitives']:
+        primitive['attributes']['_PACKED'] = index
+    doc['buffers'][0]['byteLength'] = len(binary)
+    original = glb_pack(doc, binary)
+    parts = split(original, (0., 0., 10., 10.), triangle_limit=2)
+    assert sum((corners(part['data']) for part in parts), Counter()) == corners(original)
+    for part in parts:
+        current, _ = glb_parts(part['data'])
+        for primitive in current['meshes'][0]['primitives']:
+            for accessor_index in primitive['attributes'].values():
+                item = current['accessors'][accessor_index]
+                view = current['bufferViews'][item['bufferView']]
+                assert (view.get('byteOffset', 0)+item.get('byteOffset', 0)) % 4 == 0
+                if item['componentType'] in (5121, 5122, 5123) and item['type'] in ('SCALAR', 'VEC3'):
+                    assert view['byteStride'] % 4 == 0
+            indices = current['accessors'][primitive['indices']]
+            assert 'byteStride' not in current['bufferViews'][indices['bufferView']]
 
 
 @pytest.mark.parametrize('fault', ['transform', 'skin', 'animation', 'morph', 'sparse', 'compression',
