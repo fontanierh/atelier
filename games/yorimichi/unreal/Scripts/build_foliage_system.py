@@ -253,6 +253,7 @@ def main():
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.cpp',
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.h',
                  yori.GAME/'unreal/Source/YorimichiFoliagePreparation/MeshGeometrySnapshot.cpp',
+                 OUT.parent/'unreal-modules/YorimichiFoliagePreparation.json',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
         algorithm.update(file.read_bytes())
     algorithm.update(U.SystemLibrary.get_engine_version().encode())

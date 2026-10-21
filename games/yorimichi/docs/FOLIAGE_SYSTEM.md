@@ -144,6 +144,8 @@ constructs derivative meshes, and reads exact stored geometry snapshots. The nor
 `unreal.foliage_system` owner declares this module's compiled digest. Raw import role
 certification remains in `YorimichiImport`, through `YorimichiFoliageBuilder`.
 Neither native module links the other; both use Engine's synchronous garbage collector.
+The preparation digest record is also an explicit input of per-mesh resume policy,
+so compiler, build-rule and linked-library changes cannot retain an earlier unit policy.
 
 Adding the module changes the project descriptor and moves compiled code once. That
 transition requires an ordinary compile and may revalidate imports. Thereafter a

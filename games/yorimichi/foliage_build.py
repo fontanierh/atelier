@@ -54,7 +54,10 @@ def system_step(ctx, prerequisites):
                 [command],
                 inputs=[GAME/'foliage_system.py', WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
                         SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
-                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config'],
+                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config',
+                        *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
+                          ('FoliagePreparation.cpp', 'FoliagePreparation.h', 'MeshGeometrySnapshot.cpp')),
+                        ctx.out/'unreal-modules/YorimichiFoliagePreparation.json'],
                 deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
                                                 support=(GAME/'foliage_build.py',))],
                 needs=[*prerequisites, *unreal_modules.needs(('YorimichiFoliagePreparation',))],

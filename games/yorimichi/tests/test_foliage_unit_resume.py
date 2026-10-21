@@ -17,7 +17,7 @@ GAME = Path(__file__).resolve().parents[1]
 SCRIPT = GAME/'unreal/Scripts/build_foliage_system.py'
 
 
-@pytest.mark.parametrize('corrupt_hint', [None, 'geometry', 'metadata'])
+@pytest.mark.parametrize('corrupt_hint', [None, 'geometry', 'metadata', 'compiled-module'])
 def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypatch, corrupt_hint):
     spec = importlib.util.spec_from_file_location('unit_resume_foliage_kernel', GAME/'foliage_system.py')
     kernel = importlib.util.module_from_spec(spec)
@@ -37,6 +37,10 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     support = tmp_path/'support.py'
     support.write_text('fixture material graph')
     out = tmp_path/'build/foliage_system'
+    module = out.parent/'unreal-modules/YorimichiFoliagePreparation.json'
+    module.parent.mkdir(parents=True)
+    module.write_text(json.dumps(dict(module='YorimichiFoliagePreparation', digest='a'*64,
+                                     files={'preparation.dylib': 'a'*64})))
     sources = ['/Game/Fixture/Mixed_1', '/Game/Fixture/Mixed_2']
     assets = {}
     outputs = {}
@@ -132,7 +136,12 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     assert len(units) == 1
     assert not (out/'report.json').exists()
     assert not (content/'Data/foliage_system/registry.json').exists()
-    if corrupt_hint:
+    if corrupt_hint == 'compiled-module':
+        # No source or package changes: a new compiled preparation closure alone
+        # must reject the old unit policy and recompute current expected geometry.
+        module.write_text(json.dumps(dict(module='YorimichiFoliagePreparation', digest='b'*64,
+                                         files={'preparation.dylib': 'b'*64})))
+    elif corrupt_hint:
         hint = json.loads(units[0].read_text())
         del hint[corrupt_hint]['patch']
         units[0].write_text(json.dumps(hint))

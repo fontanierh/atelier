@@ -25,6 +25,7 @@ def test_actual_graph_keeps_preparation_out_of_raw_imports(tmp_path):
     command, = owner.commands
     assert command.modules == (PREPARATION,)
     assert 'unreal.module.'+PREPARATION in owner.needs
+    assert tmp_path/'unreal-modules'/f'{PREPARATION}.json' in owner.inputs
     raw = [step for step in steps.values() if step.name != owner.name
            and any(isinstance(command, build.UnrealScript) for command in step.commands)]
     assert len(raw) >= 37
