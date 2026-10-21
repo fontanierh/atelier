@@ -15,6 +15,8 @@
 #include "RenderingThread.h"
 #include "RHICommandList.h"
 #include "RenderUtils.h"
+#include "AI/Navigation/NavCollisionBase.h"
+#include "PhysicsEngine/BodySetup.h"
 
 UHierarchicalInstancedStaticMeshComponent* UYorimichiFoliageSubsystem::NewInstances(UObject* Outer,FName Name)
 {
@@ -387,7 +389,33 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
                 !LOD.VertexBuffers.PositionVertexBuffer.VertexBufferRHI.IsValid() ||
                 (LOD.VertexBuffers.ColorVertexBuffer.GetNumVertices()>0 && !LOD.VertexBuffers.ColorVertexBuffer.VertexBufferRHI.IsValid()))) Ready=false;
         if (!Ready) { ++Refusals.FindOrAdd(TEXT("pending_rhi"));continue; }
+        UBodySetup* Body=Mesh->GetBodySetup();
+        UNavCollisionBase* Navigation=Mesh->GetNavCollision();
+        if ((Body && Body->GetOuter()!=Mesh) || (Navigation && Navigation->GetOuter()!=Mesh))
+        { ++Refusals.FindOrAdd(TEXT("shared_collision_owner"));It.RemoveCurrent();continue; }
+        if (Body && Body->CurrentCookHelper)
+        { ++Refusals.FindOrAdd(TEXT("pending_physics_cook"));continue; }
         const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
+        uint64 NavigationBytes=0;
+        if (Navigation)
+        {
+            auto& Triangles=Navigation->GetMutableTriMeshCollision();
+            auto& Convex=Navigation->GetMutableConvexCollision();
+            NavigationBytes=Triangles.VertexBuffer.GetAllocatedSize()+Triangles.IndexBuffer.GetAllocatedSize()+
+                Convex.VertexBuffer.GetAllocatedSize()+Convex.IndexBuffer.GetAllocatedSize();
+            Triangles.VertexBuffer.Empty();Triangles.IndexBuffer.Empty();
+            Convex.VertexBuffer.Empty();Convex.IndexBuffer.Empty();
+        }
+        Mesh->MarkAsNotHavingNavigationData();
+        const int32 PhysicsMeshes=Body?Body->TriMeshGeometries.Num():0;
+        if (Body)
+        {
+            // No managed render copy owns physics or navigation. Never touch
+            // the source/shared BodySetup, or cook/save a replacement here.
+            Body->bNeverNeedsCookedCollisionData=true;
+            Body->ClearPhysicsMeshes();
+            check(Body->TriMeshGeometries.IsEmpty());
+        }
         for (auto& LOD:Render->LODResources)
         {
             auto& Buffers=LOD.VertexBuffers;
@@ -408,6 +436,8 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
         }
         UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX RELEASE %s process_mib_before=%.1f process_mib_after=%.1f"),
             *Mesh->GetPathName(),Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP UNUSED COLLISION %s physics_meshes=%d nav_mib=%.3f"),
+            *Mesh->GetPathName(),PhysicsMeshes,NavigationBytes/1048576.);
         ++Released;It.RemoveCurrent();
     }
     FString Reasons;for (const auto& Item:Refusals) Reasons+=FString::Printf(TEXT(" %s=%d"),*Item.Key,Item.Value);

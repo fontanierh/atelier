@@ -172,3 +172,11 @@ streamable, compiling, pending-upload, Nanite and ray-traced meshes MUST NOT use
 geometry readers or resource rebuilds MUST NOT use a released variant; use the unchanged original or
 the build-time preparation process. Actual physical memory and rendered/toggled gameplay MUST establish
 the effect; resource size estimates alone are insufficient.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-render-only-collision-residency
+Owned prepared foliage render copies MUST NOT retain unused physics meshes or navigation triangle arrays
+in an uncooked game. Runtime release MUST require exact mesh ownership of both BodySetup and navigation
+data and no pending physics cook, leave original/shared collision and gameplay queries intact, and never
+cook, serialize or save mesh packages. Counts, directly allocated navigation bytes and physical footprint
+MAY measure this release; physics resource sizing MUST NOT serialize full meshes during startup.
+CPU corner readers MUST check GetAllowCPUAccess rather than cached raw pointer non-null after release.
