@@ -14,6 +14,7 @@
 #include "HAL/PlatformMemory.h"
 #include "RenderingThread.h"
 #include "RHICommandList.h"
+#include "RenderUtils.h"
 
 UHierarchicalInstancedStaticMeshComponent* UYorimichiFoliageSubsystem::NewInstances(UObject* Outer,FName Name)
 {
@@ -351,7 +352,60 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
         else Entry.Visual=RenderCopy(Component,Optimized);
     }
     if (Entry.CastShadow) Entry.Shadow=RenderCopy(Component,Shadow);
-    Sources.Add(Entry);Apply(Sources.Last());return true;
+    Sources.Add(Entry);Apply(Sources.Last());
+#if WITH_EDITOR
+    if (!GIsEditor && !IsRunningCommandlet() && !bStartupCompleted)
+        for (UStaticMesh* Value:{Optimized,Shadow,Patch}) StartupVertexCopies.Add(Value);
+#endif
+    return true;
+}
+
+void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
+{
+#if WITH_EDITOR
+    // These copies exist because uncooked -game retains editor CPU arrays.
+    // Only our render-only assets qualify; originals still own collision and
+    // CPU queries. The caller has completed GPU upload before entering here.
+    if (GIsEditor || IsRunningCommandlet() || GetWorld()->WorldType!=EWorldType::Game || IsRayTracingEnabled()) return;
+    check(IsInGameThread());
+    for (auto It=StartupVertexCopies.CreateIterator();It;++It)
+    {
+        UStaticMesh* Mesh=It->Get();
+        if (!Mesh) { It.RemoveCurrent();continue; }
+        auto* Render=Mesh->GetRenderData();
+        if (!Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/")) || Mesh->bAllowCPUAccess ||
+            Mesh->IsStreamable() || Mesh->RenderResourceSupportsStreaming() ||
+            !Render || Render->NextCachedRenderData || Render->HasValidNaniteData())
+        { It.RemoveCurrent();continue; }
+        if (Mesh->IsCompiling() || Mesh->HasPendingInitOrStreaming() || !Render->IsInitialized()) continue;
+        bool Ready=true;
+        for (auto& LOD:Render->LODResources)
+            if (LOD.GetNumVertices()>0 && (!LOD.VertexBuffers.StaticMeshVertexBuffer.IsValid() ||
+                !LOD.VertexBuffers.PositionVertexBuffer.VertexBufferRHI.IsValid() ||
+                (LOD.VertexBuffers.ColorVertexBuffer.GetNumVertices()>0 && !LOD.VertexBuffers.ColorVertexBuffer.VertexBufferRHI.IsValid()))) Ready=false;
+        if (!Ready) continue;
+        const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
+        for (auto& LOD:Render->LODResources)
+        {
+            auto& Buffers=LOD.VertexBuffers;
+            const uint32 Vertices=Buffers.StaticMeshVertexBuffer.GetNumVertices();
+            const uint32 Channels=Buffers.StaticMeshVertexBuffer.GetNumTexCoords();
+            const auto PositionRHI=Buffers.PositionVertexBuffer.VertexBufferRHI;
+            const auto TangentRHI=Buffers.StaticMeshVertexBuffer.TangentsVertexBuffer.VertexBufferRHI;
+            const auto UVRHI=Buffers.StaticMeshVertexBuffer.TexCoordVertexBuffer.VertexBufferRHI;
+            Buffers.StaticMeshVertexBuffer.CleanUp();
+            Buffers.PositionVertexBuffer.CleanUp();
+            Buffers.ColorVertexBuffer.CleanUp();
+            check(Vertices==Buffers.StaticMeshVertexBuffer.GetNumVertices() && Channels==Buffers.StaticMeshVertexBuffer.GetNumTexCoords());
+            check(PositionRHI==Buffers.PositionVertexBuffer.VertexBufferRHI &&
+                TangentRHI==Buffers.StaticMeshVertexBuffer.TangentsVertexBuffer.VertexBufferRHI &&
+                UVRHI==Buffers.StaticMeshVertexBuffer.TexCoordVertexBuffer.VertexBufferRHI);
+        }
+        UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX RELEASE %s process_mib_before=%.1f process_mib_after=%.1f"),
+            *Mesh->GetPathName(),Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
+        It.RemoveCurrent();
+    }
+#endif
 }
 
 void UYorimichiFoliageSubsystem::Restore(FYorimichiFoliageSource& Entry)
@@ -434,6 +488,7 @@ bool UYorimichiFoliageSubsystem::Refresh()
         ENQUEUE_RENDER_COMMAND(FoliageStartupUploadDrain)([](FRHICommandListImmediate& RHICmdList)
         { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
         FlushRenderingCommands();
+        ReleaseStartupVertexCopies();
         UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP DRAIN registered=%d process_mib_before=%.1f process_mib_after=%.1f"),
             StartupTotal,Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
         StartupBatch=0;

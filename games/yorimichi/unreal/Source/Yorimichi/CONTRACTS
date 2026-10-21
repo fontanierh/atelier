@@ -158,8 +158,17 @@ The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
 
 @cc [owner:fontanierh,label:correctness;performance] foliage-startup-upload-lifetime
 Initial world population MUST bound queued foliage representation uploads after complete source registrations.
-A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve render buffers,
+A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve GPU render buffers,
 source collision, geometry, materials, placements and saved packages. Once gameplay readiness has been
 observed, ordinary refreshes and settings toggles MUST NOT introduce GPU-idle drains. Memory diagnostics
 MUST distinguish CPU resource estimates from actual process footprint; a source hypothesis is not proof
 of a startup memory improvement.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-game-vertex-residency
+An uncooked non-editor game MAY release CPU vertex copies only for owned prepared render-only
+foliage variants after their completed GPU upload. Originals, collision, index arrays, saved packages,
+vertex/UV/section metadata and GPU resources MUST remain intact. Editor/PIE, commandlets, CPU-access,
+streamable, compiling, pending-upload, Nanite and ray-traced meshes MUST NOT use this path. Later CPU
+geometry readers or resource rebuilds MUST NOT use a released variant; use the unchanged original or
+the build-time preparation process. Actual physical memory and rendered/toggled gameplay MUST establish
+the effect; resource size estimates alone are insufficient.

@@ -70,6 +70,7 @@ private:
     bool bRegistryLoaded=false, bEnabled=true, bPerformance=true, bReportedSetting=false;
     bool bStartupCompleted=false;
     TSet<TWeakObjectPtr<UStaticMesh>> StartupMeasuredMeshes;
+    TSet<TWeakObjectPtr<UStaticMesh>> StartupVertexCopies;
     float Detail=.4f, Sway=60.f, ShadowDistance=80.f, AuditElapsed=0.f;
     bool LoadRegistry();
     bool ReadRegistry(const TSharedPtr<FJsonObject>& Registry);
@@ -79,6 +80,7 @@ private:
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
     bool CachedRequiresRegistration(UStaticMeshComponent* Component);
     bool Register(UStaticMeshComponent* Component);
+    void ReleaseStartupVertexCopies();
     void Apply(FYorimichiFoliageSource& Source);
     void Restore(FYorimichiFoliageSource& Source);
 };
