@@ -112,7 +112,7 @@ def validate_session_profile(admission, *, kind, command, limit_gib):
 
 
 def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, config=None, performance=False,
-                       command=None, small_gib=None, compile_memory_gib=None):
+                       command=None, small_gib=None, compile_memory_gib=None, script_memory_gib=None):
     """@cc [owner:fontanierh,label:safety] configured-capacity-never-falls-back
     A configured common launcher MUST refuse invalid profiles or unavailable admission. The full
     reservation MUST cover its existing guard ceiling; profiles MUST NOT raise that guard limit or
@@ -133,8 +133,15 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     when an oversized configured profile could cover a ceiling outside that range.
     An explicit cook compile ceiling MAY grow only its full-mode reservation, with finite 10–24 GiB
     selection equal to the actual guard limit and a profile already covering the default 10 GiB.
+    An explicit script job ceiling MAY likewise grow only its full-mode reservation, matching
+    the finite 10–24 GiB guard limit, with the complete managed CPU budget and exclusion. It
+    MUST NOT select a bounded Blender worker envelope or change configured profiles.
     Other compile requests and legacy/maintenance profiles MUST retain their configured reservation.
     """
+    if script_memory_gib is not None and (kind != 'job' or type(script_memory_gib) not in (int, float)
+            or not math.isfinite(script_memory_gib) or not GAME_GIB <= script_memory_gib <= GAME_MAX_GIB
+            or script_memory_gib != limit_gib or compile_memory_gib is not None):
+        raise ValueError('Explicit script ceiling requires job kind and a matching finite 10 to 24 GiB guard ceiling')
     if compile_memory_gib is not None and (kind != 'compile' or type(compile_memory_gib) not in (int, float)
             or not math.isfinite(compile_memory_gib) or not GAME_GIB <= compile_memory_gib <= GAME_MAX_GIB
             or compile_memory_gib != limit_gib):
@@ -151,6 +158,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         if selected is None:
             if barrier is not None:
                 raise ValueError('A capacity cutover exists; missing client configuration cannot fall back to slots')
+            if script_memory_gib is not None:
+                raise ValueError('Explicit script ceiling requires full-capacity admission')
             if compile_memory_gib is not None:
                 raise ValueError('Explicit cook ceiling requires full-capacity admission')
             return None
@@ -165,6 +174,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if (not (bridge or full or maintenance) or not isinstance(value['socket'], str)
             or not Path(value['socket']).is_absolute() or not isinstance(value['profiles'], dict)):
         raise ValueError('unsupported capacity client configuration')
+    if script_memory_gib is not None and not full:
+        raise ValueError('Explicit script ceiling requires full-capacity admission')
     if compile_memory_gib is not None and not full:
         raise ValueError('Explicit cook ceiling requires full-capacity admission')
     if bridge and barrier is not None:
@@ -188,7 +199,7 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
         raise ValueError('capacity launch needs a positive finite guard ceiling and nonnegative finite timeout')
     if full and kind == 'game' and not GAME_GIB <= limit_gib <= GAME_MAX_GIB:
         raise ValueError(f'game guard ceiling must be {GAME_GIB:g} to {GAME_MAX_GIB:g} GiB')
-    if (full and (kind == 'game' or compile_memory_gib is not None) and GAME_GIB <= limit_gib <= GAME_MAX_GIB
+    if (full and (kind == 'game' or compile_memory_gib is not None or script_memory_gib is not None) and GAME_GIB <= limit_gib <= GAME_MAX_GIB
             and resources.memory_mib >= math.ceil(GAME_GIB * 1024)):
         resources = replace(resources, memory_mib=max(resources.memory_mib, math.ceil(limit_gib * 1024)))
     if resources.memory_mib < math.ceil(limit_gib * 1024):
@@ -196,6 +207,8 @@ def configured_session(*, kind, limit_gib, timeout, folder=None, purpose=None, c
     if resources.cpu_millis == 0:
         raise ValueError('capacity profiles must reserve CPU capacity')
     workers = _worker_profile(command) if full or maintenance or kind == 'job' else None
+    if script_memory_gib is not None and workers is not None:
+        raise ValueError('Explicit script ceiling cannot select a Blender worker envelope')
     guard_limit_gib = limit_gib
     if full and kind == 'job' and not performance and workers is not None:
         from atelier.harness.safety.render_lock import SMALL_LIMIT_GIB, SMALL_PEAK_GIB

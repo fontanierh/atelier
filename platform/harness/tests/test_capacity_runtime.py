@@ -291,6 +291,80 @@ def test_guarded_public_cook_ceiling_reaches_automatic_session_without_native_wo
     assert not (tmp_path / 'guard').exists()
 
 
+@pytest.mark.parametrize('ceiling', [10., 12.0001, 24.])
+def test_script_ceiling_reserves_entire_actual_guard_and_cpu_without_changing_profile(client, monkeypatch, ceiling):
+    configure_schema(client, monkeypatch, 2)
+    path, value, write, _ = client
+    write()
+    before = path.read_bytes()
+    monkeypatch.setitem(sys.modules, 'atelier.harness.capacity_client', SimpleNamespace(
+        AdmissionSession=lambda socket, request, **kwargs: SimpleNamespace(request=request, mode='capacity', **kwargs)))
+    command = ['UnrealEditor-Cmd', '-run=pythonscript']
+    session = runtime.configured_session(kind='job', limit_gib=ceiling, script_memory_gib=ceiling,
+                                         timeout=1800, command=command, small_gib=1.)
+    assert session.guard_limit_gib == ceiling
+    assert session.request['resources']['memory_mib'] == math.ceil(ceiling * 1024)
+    assert session.request['resources']['cpu_millis'] == 8000
+    assert session.request['performance'] is True and session.request['phase'] == 'job'
+    assert path.read_bytes() == before
+    runtime.validate_session_profile(session, kind='job', command=command, limit_gib=ceiling)
+
+
+@pytest.mark.parametrize('options', [dict(kind='game'), dict(kind='compile'), dict(script_memory_gib=25.),
+    dict(script_memory_gib=9.), dict(script_memory_gib=float('nan')), dict(script_memory_gib=float('inf')),
+    dict(script_memory_gib=True), dict(limit_gib=10.), dict(compile_memory_gib=12.)])
+def test_invalid_script_opt_in_refuses_before_admission(client, options):
+    with pytest.raises(ValueError, match='Explicit script ceiling'):
+        runtime.configured_session(**(dict(kind='job', limit_gib=12., script_memory_gib=12., timeout=60) | options))
+    assert client[3] == []
+
+
+@pytest.mark.parametrize('schema', [None, 1, 3])
+def test_script_ceiling_has_no_legacy_or_maintenance_fallback(client, monkeypatch, schema):
+    from atelier.harness import capacity_compat
+    monkeypatch.setattr(capacity_compat, 'read', lambda: None)
+    if schema is not None:
+        configure_schema(client, monkeypatch, 2 if schema == 3 else schema)
+        if schema == 3:
+            client[1].update(schema=3, mode='sealed-maintenance', seal_policy_sha256='a' * 64)
+        client[2]()
+    with pytest.raises(ValueError, match='full-capacity'):
+        runtime.configured_session(kind='job', limit_gib=24., script_memory_gib=24., timeout=60)
+    assert client[3] == []
+
+
+def test_script_ceiling_refuses_undersized_default_and_bounded_blender_profiles(client, monkeypatch):
+    configure_schema(client, monkeypatch, 2)
+    client[1]['profiles']['job']['resources']['memory_mib'] = 9 * 1024
+    client[1]['profiles']['job']['resources']['gpu_mib'] = 9 * 1024
+    client[2]()
+    with pytest.raises(ValueError, match='smaller than'):
+        runtime.configured_session(kind='job', limit_gib=24., script_memory_gib=24., timeout=60)
+    client[1]['profiles']['job']['resources']['memory_mib'] = 10 * 1024
+    client[2]()
+    with pytest.raises(ValueError, match='Blender worker'):
+        runtime.configured_session(kind='job', limit_gib=24., script_memory_gib=24., timeout=60,
+                                   command=['Blender', '--background', '--threads', '3'])
+    assert client[3] == []
+
+
+def test_public_guard_forwards_script_ceiling_to_automatic_capacity_without_launch(monkeypatch, tmp_path):
+    from atelier.harness.safety import guarded
+    calls = []
+    class AtConfiguration(Exception):
+        pass
+    def configure(**kwargs):
+        calls.append(kwargs)
+        raise AtConfiguration
+    monkeypatch.setattr(runtime, 'configured_session', configure)
+    with pytest.raises(AtConfiguration):
+        guarded.run(['UnrealEditor-Cmd', '-run=pythonscript'], tmp_path / 'guard', kind='job',
+                    limit_gib=24., script_memory_gib=24., aggregate_tree=True, timeout=1800)
+    assert len(calls) == 1 and calls[0]['limit_gib'] == calls[0]['script_memory_gib'] == 24.
+    assert calls[0]['timeout'] == 1800
+    assert not (tmp_path / 'guard').exists()
+
+
 @pytest.mark.parametrize('kind,command,expected,exclusive', [
     ('game', ['UnrealEditor'], 10000, True), ('compile', ['RunUAT.sh'], 10000, True),
     ('job', ['python', 'unknown.py'], 10000, True),

@@ -156,6 +156,12 @@ as one process, regardless of its action count. After the budget is spent, the b
 before preparing or admitting the next heavy command; if none remains it succeeds normally. Completed
 stamps and outputs are retained. Rerun the same command to resume through normal admission.
 Honor a specific release priority or maintenance window before resuming.
+An individual heavy `UnrealScript(..., memory_gib=24)` may explicitly select a finite ceiling
+from 10 to 24 GiB. Full-capacity admission reserves that entire ceiling and the complete managed
+CPU pool, with the normal aggregate memory guard and checkout isolation. The default remains
+10 GiB and keeps its existing command identity. Nondefault ceilings enter the action identity;
+they require a separate process and cannot be combined with `Batch`. No machine profile changes
+are needed. A request still waits or refuses when that reservation cannot be admitted.
 For a step containing multiple heavy commands, a yield partway through leaves that step uncertified;
 resuming reruns it from its first command, so choose a budget large enough for that step. This option
 requires execution and cannot be combined with inspection or `--touch`.
