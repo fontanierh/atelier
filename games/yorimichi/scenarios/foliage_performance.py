@@ -121,6 +121,11 @@ def main():
               'tree_optimization','tree_lod_mode','tree_lod_distance','leaf_motion','painterly','fog')
     report=dict(revision=revision,code=state['code'],settings={key:saved[key] for key in graphics if key in saved},
                 original_enabled=original,original_cvars=cvars,views={},errors=[])
+    # A viewport size alone does not establish internal pixel count or lighting.
+    # Record actual renderer controls as well as the saved player preferences.
+    renderer_cvars=['r.ScreenPercentage','r.SecondaryScreenPercentage.GameViewport','r.ForwardShading',
+                    'r.DynamicGlobalIlluminationMethod','r.ReflectionMethod','r.AntiAliasingMethod','sg.ShadowQuality']
+    report['renderer_cvars']=read_json('{key:unreal.SystemLibrary.get_console_variable_float_value(key) for key in '+repr(renderer_cvars)+'}')
     report['viewport']=read_json('list(unreal.GameplayStatics.get_player_controller(live.L.game_world(),0).get_viewport_size())')
     if min(report['viewport'])<=0:raise RuntimeError('A real viewport is required for a resolution-bound comparison')
     try:
