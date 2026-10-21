@@ -46,7 +46,7 @@ def verify_system(content, report_path):
 def system_step(ctx, prerequisites):
     content = GAME/'unreal/Content'
     command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
-                           modules=('YorimichiImport','Yorimichi'), null_rhi=True, memory_gib=22,
+                           modules=('YorimichiImport','Yorimichi'), null_rhi=True, memory_gib=20,
                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
     command.timeout = 7200
     command.progress = 25
