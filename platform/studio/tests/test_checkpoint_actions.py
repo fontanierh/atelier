@@ -259,3 +259,29 @@ def test_fresh_unsupported_execution_is_current_after_observed_environment_chang
     stamp = dict(fingerprint='a' * 64, checkpoint_key=None,
                  checkpoint_incremental_context=ctx.checkpoint_observed_context)
     assert actions.local_incremental(ctx, steps[0], 'a' * 64, stamp)
+
+
+def test_browser_compile_owns_its_platform_and_requires_receipt_products(tmp_path, monkeypatch):
+    repo = tmp_path.resolve()
+    monkeypatch.setattr(paths, 'REPO', repo)
+    monkeypatch.setattr(paths, 'ENGINE_PLUGINS', repo / 'plugins')
+    project = repo / 'games/fixture/unreal/Fixture.uproject'
+    project.parent.mkdir(parents=True)
+    project.write_text(json.dumps(dict(Modules=[dict(Name='Fixture', Type='Runtime')])))
+    ctx = SimpleNamespace(uproject=project, out=repo / 'build/fixture', game_dir=project.parent.parent)
+    editor = build.Step('editor', [build.UnrealCompile('FixtureEditor')])
+    browser = build.Step('browser', [build.UnrealCompile('Fixture', platform='HTML5')])
+    actions.validate_ownership(ctx, [editor, browser])
+    output = project.parent / 'Binaries/HTML5'
+    output.mkdir(parents=True)
+    wasm = output / 'Fixture.wasm'
+    wasm.write_bytes(b'\0asm\x01\0\0\0')
+    receipt = output / 'Fixture.target'
+    receipt.write_text(json.dumps(dict(TargetName='Fixture', Platform='HTML5', BuildProducts=[
+        dict(Path='$(ProjectDir)/Binaries/HTML5/Fixture.wasm', Type='RequiredResource'),
+        dict(Path='$(ProjectDir)/Binaries/HTML5/Fixture.wasm.debug.wasm', Type='SymbolFile')])))
+    assert actions.compile_present(ctx, browser)
+    # No portable result is claimed under a Mac-only SDK/tool context.
+    assert actions.key(ctx, browser, 'a' * 64) is None
+    wasm.unlink()
+    assert not actions.compile_present(ctx, browser)

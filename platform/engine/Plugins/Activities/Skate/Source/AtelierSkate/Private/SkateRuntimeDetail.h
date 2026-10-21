@@ -104,7 +104,7 @@ namespace SkateRuntimeDetail
     public:
         FScopedSimulationFloatEnvironment()
         {
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__wasm__)
 #pragma STDC FENV_ACCESS ON
 #endif
             SavedOkay_=std::fegetenv(&Saved_)==0;
@@ -112,7 +112,7 @@ namespace SkateRuntimeDetail
         }
         ~FScopedSimulationFloatEnvironment()
         {
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__wasm__)
 #pragma STDC FENV_ACCESS ON
 #endif
             if(SavedOkay_)std::fesetenv(&Saved_);

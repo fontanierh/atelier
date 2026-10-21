@@ -95,12 +95,23 @@ class UnrealScript:
 
 @dataclass
 class UnrealCompile:
-    """Compile the game's editor target (C++ module and any project plugins)."""
+    """Compile a game/editor target with an explicit compiler-worker cap."""
     target: str
+    platform: str = 'Mac'
+    args: tuple = ()
+    workers: int = 3
+    timeout: float = 6 * 3600
+    progress: float = 25.
+    watch: tuple = ('dotnet',)
+
+    @property
+    def env(self):
+        return tuple((name, str(self.workers)) for name in ('DOTNET_PROCESSOR_COUNT', 'EMCC_CORES', 'BINARYEN_CORES'))
 
     def argv(self, ctx):
-        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles/Mac/Build.sh'), self.target, 'Mac', 'Development',
-                f'-project={ctx.uproject}', '-WaitMutex']
+        script = 'Mac/Build.sh' if self.platform == 'Mac' else 'RunUBT.sh'
+        return [str(ctx.unreal_root / 'Engine/Build/BatchFiles' / script), self.target, self.platform, 'Development',
+                f'-project={ctx.uproject}', '-WaitMutex', '-NoUBA', f'-MaxParallelActions={self.workers}', *self.args]
 
 
 @dataclass
@@ -535,6 +546,10 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
             why = why or ('no guard report yet' if kind == 'job' and small_gib is None else '')
             log.write(f'render slot: {slot}' + (f' ({why})' if why else '') + '\n'); log.flush()
         inherited = {'pass_fds': pass_fds} if pass_fds else {}
+        if isinstance(command, UnrealCompile):
+            # Post-link tools are not necessarily dotnet/Unreal processes.
+            # Cover their actual memory together with the compiler descendants.
+            inherited.update(aggregate_tree=True, track_tree=True)
         if selected_cook_memory is not None:
             inherited.update(limit_gib=selected_cook_memory, compile_memory_gib=selected_cook_memory)
         if preflight:

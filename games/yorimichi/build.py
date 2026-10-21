@@ -392,6 +392,12 @@ def engine_version(ctx):
             engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
 
 
+def editor_compile(ctx):
+    root = getattr(ctx, 'unreal_root', None)
+    source = root is not None and not (root / 'Engine/Build/InstalledBuild.txt').is_file()
+    return UnrealCompile('YorimichiEditor', args=('-NoDebugInfo',) if source else ())
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -435,7 +441,7 @@ def moveset_import(character):
     return script, [SCRIPTS / 'import_adventure_moveset.py', SCRIPTS / 'animation_compression.py', *sorted(CHARS.glob('*/adventure.toml'))]
 
 
-def body_export(character, *args, threads=4):
+def body_export(character, *args, threads=3):
     """assets/characters/pipeline/export.py for one character: its body, textures and own clips, to FBX."""
     return Blender(PIPELINE / 'export.py', ('--character', character, *args), threads=threads)
 
@@ -482,7 +488,7 @@ def mover_export_steps(character, out):
     Exporter code changes that reproduce the same content MUST NOT invalidate the import. FBX
     timestamp/ID normalization MUST retain geometry, skinning, animation and connection changes.
     """
-    k, threads = key(character), character.blender['threads']
+    k, threads = key(character), min(3, character.blender['threads'])
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
                   outputs=[out / character.output / 'export.json'], heavy=True,
                   checkpoint_outputs=(out / character.output / 'fbx', out / character.output / 'textures', out / character.output / 'export.json'),
@@ -528,7 +534,7 @@ def mover_import_steps(character, out):
     """Its body (Scripts/import_character.py) and, if playable, its bike and horse clips (Scripts/import_ride_clips.py)."""
     k, modules = key(character), tuple(character.unreal['modules'])
     body, inputs = body_import(character.id, modules)
-    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.world'], needs=[f'characters.{k}.import', *unreal_modules.needs(modules)],
+    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.compile'], needs=[f'characters.{k}.import', *unreal_modules.needs(modules)],
                   outputs=[content(character) / f'SK_{character.name}.uasset'], heavy=True,
                   about=f'{character.unreal_path}: its mesh, materials, own clips and base definition')]
     if character.playable:
@@ -617,7 +623,7 @@ def adventure_steps(out):
         Step('characters.adventure', [Python(adventure / 'export.py')], inputs=[adventure, *library.sources()],
              outputs=[out / 'adventure' / 'export.json'], about='Merged motion reference and two props'),
         Step('unreal.adventure', [UnrealScript(SCRIPTS / 'import_adventure.py', 'ADVENTURE IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.compile'],
              needs=['characters.adventure'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'adventure' / 'reference.json'],
              heavy=True, about='/Game/Adventure: motion reference, sword and paraglider'),
         *[step for character in definition.movers() for step in mover_adventure_steps(character, out)],
@@ -817,7 +823,7 @@ def world_steps(ctx):
     return [*texture_steps(ctx),
         # ------------------------------------------------------------ world
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
-        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
+        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=3)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
              needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
              about='tree house canopy trees (four autumn crowns) and their recoloured leaf atlases', heavy=True),
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
@@ -980,7 +986,7 @@ def world_steps(ctx):
         Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
              inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
              outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
+        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
              inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
                      ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
              needs=['world.layout', 'world.skatepark_textures'],
@@ -988,7 +994,7 @@ def world_steps(ctx):
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
-        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py')],
+        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py', threads=3)],
              inputs=[ASSETS / 'vehicles' / 'bike' / 'build.py', YORI],
              outputs=[out / 'bike' / 'manifest.json'], about="Cairo's bike: frame, steering, wheels, crank, pedals, kickstand, rack board", heavy=True),
         # Verifies every library GLB, measures each breed's contacts and samples the reference breed's clips. A cutoff:
@@ -1241,7 +1247,8 @@ def sound_effect_steps(ctx):
              products=[Product('audio.footsteps', (out / 'audio' / 'footsteps',))],
              about='531 footstep one-shots (needs `atelier fetch`)'),
         Step('audio.combat', [Python(AUDIO / 'combat' / 'slice.py')], inputs=[AUDIO / 'combat', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'combat' / 'manifest.json'], about='combat cues and the countryside ambience'),
+             outputs=[out / 'audio' / 'combat' / 'manifest.json'],
+             products=[Product('audio.combat', (out / 'audio' / 'combat',))], about='combat cues and the countryside ambience'),
         Step('audio.skate', [Python(AUDIO / 'skate' / 'make.py')], inputs=[AUDIO / 'skate', paths.cache_dir('sonniss', 'combat', create=False)],
              outputs=[out / 'audio' / 'skate' / 'manifest.json'],
              products=[Product('audio.skate', (out / 'audio' / 'skate',))], about='board loops and cues'),
@@ -1291,7 +1298,7 @@ def unreal_steps(ctx):
                      SKATE_DATA],
              outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [editor_compile(ctx)], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
@@ -1397,7 +1404,10 @@ def unreal_steps(ctx):
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
+             inputs=[SCRIPTS / name for name in ('import_skatepark.py', 'import_village.py')]
+                    + [REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'],
+             references=['materials.shared', *['foliage.' + name + '.native' for name in
+                         json.loads((REGIONS / 'skatepark' / 'park.json').read_text()).get('trees', {})]],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
@@ -1654,6 +1664,13 @@ def ferry_steps(ctx):
     ]
 
 
+def browser_steps(ctx):
+    spec = importlib.util.spec_from_file_location('yorimichi_browser_build', GAME / 'browser_build.py')
+    browser = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(browser)
+    return browser.steps(ctx)
+
+
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     ferry = ferry_steps(ctx)
@@ -1666,6 +1683,7 @@ def steps(ctx):
               + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
+    result += browser_steps(ctx)
     # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
     for step in result:
         if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':

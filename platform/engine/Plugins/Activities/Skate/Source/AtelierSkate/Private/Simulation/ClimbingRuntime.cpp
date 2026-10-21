@@ -35,7 +35,7 @@ bool ClimbingRuntime::Advance(ClimbingFrame f,ClimbingControls controls,camera::
   const auto& c=clips->reach;auto& a=*active;
   if(a.phase==ClimbingPhase::Hang&&Pressed(controls,23)&&ClearClimbingLedge(physics.world,a.ledge)){a.phase=ClimbingPhase::Mantle;a.time=0;}
   a.time+=dt;
-  const auto yaw=RotationY(std::atan2(a.ledge.forward.x,a.ledge.forward.z));
+  const auto yaw=RotationY(Atan2(a.ledge.forward.x,a.ledge.forward.z));
   const auto hang=c.Sample(c.Duration());const auto hang_globals=c.Globals(hang);
   const auto hang_root=Add(Sub(a.ledge.anchor,Rotate(yaw,c.Hands(hang_globals))),Rotate(yaw,ClimbingContactClearance(c,hang_globals)));
   const auto mantle_end=clips->mantle.Sample(clips->mantle.Duration());

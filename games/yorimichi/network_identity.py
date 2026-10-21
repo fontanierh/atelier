@@ -10,6 +10,12 @@ from pathlib import Path
 
 PROTOCOL = 1
 CODE_SUFFIXES = {'.h', '.hpp', '.cpp', '.c', '.cs', '.uplugin', '.inl', '.inc', '.mm', '.m', '.ush', '.usf', '.ini', '.uproject'}
+# These programs change executable simulation arithmetic after linking. Match
+# Yorimichi.Build.cs so native and browser builds hash the same policy inputs.
+CODE_TOOLS = {
+    'platform/engine/Plugins/Activities/Skate/Tools/' + name
+    for name in ('prepare_wasm.py', 'wasm_float.py', 'wasm_float_helpers.py')
+}
 IGNORED = {'Binaries', 'Intermediate', 'Saved', 'DerivedDataCache', '__pycache__'}
 DESKTOP_METADATA = {'.ds_store', 'thumbs.db'}
 
@@ -23,7 +29,7 @@ def code_files(repo):
     roots = [repo / 'games/yorimichi/unreal/Source', repo / 'games/yorimichi/unreal/Config', repo / 'games/yorimichi/unreal/Plugins',
              repo / 'platform/engine/Plugins']
     files = [p for root in roots for p in root.rglob('*')
-                   if p.is_file() and p.suffix in CODE_SUFFIXES
+                   if p.is_file() and (p.suffix in CODE_SUFFIXES or p.relative_to(repo).as_posix() in CODE_TOOLS)
                    and not (set(p.relative_to(root).parts) & IGNORED)]
     files.extend((repo / 'games/yorimichi/unreal').glob('*.uproject'))
     return sorted(files, key=lambda p: p.relative_to(repo).as_posix())

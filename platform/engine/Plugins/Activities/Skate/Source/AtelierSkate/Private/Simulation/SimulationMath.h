@@ -54,6 +54,8 @@ float Cos(float angle);
 float Asin(float value);
 float Acos(float value);
 float Atan(float value);
+// Preserve the native libm result on native targets and its tested rounding on Wasm.
+float Atan2(float vertical, float horizontal);
 
 Quat QuaternionMultiply(const Quat& first, const Quat& second);
 std::array<float,3> QuaternionRotate(const Quat& rotation, const std::array<float,3>& vector);
@@ -70,6 +72,10 @@ template<std::size_t N> struct PointGraph
 {
     static_assert(N > 0, "PointGraph requires a point");
     std::array<float,N> x{}, y{};
+#if defined(__wasm__)
+    // Keep arithmetic inside the simulation namespace until the FTZ build pass.
+    __attribute__((noinline))
+#endif
     float Evaluate(float input) const
     {
         if (input < x[0]) return y[0];

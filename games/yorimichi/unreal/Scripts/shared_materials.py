@@ -9,6 +9,7 @@ import yori
 from asset_catalog import TEXTURES, material_bindings, shared_packages
 from material_assets import create, instance, import_texture, node, link, opt, save_material
 from painterly_kernel import shader as painterly_shader
+from vertex_material import material as vertex_material
 from foliage_material import enable_distance_fade, enable_bark_lod_blend, supports_lod_blend
 import atmosphere
 import see_through
@@ -115,17 +116,22 @@ def painterly_material():
     params = [("Strength", 0.35), ("Radius", 2.0), ("Toon", 0.0), ("Bands", 5.0), ("Soft", 0.5), ("Outline", 0.0), ("SkyDepth", 600000.0)]
     pnodes = [node(m, U.MaterialExpressionScalarParameter, -700, 200 + 90 * i, parameter_name=n, default_value=v) for i, (n, v) in enumerate(params)]
     code = """
+#if SHADING_PATH_MOBILE
+#define ATELIER_SCENE_TEXTURE(UV, ID, FILTERED) MobileSceneTextureLookup(Parameters, ID, UV)
+#else
+#define ATELIER_SCENE_TEXTURE(UV, ID, FILTERED) SceneTextureLookup(UV, ID, FILTERED)
+#endif
 float2 uv = GetDefaultSceneTextureUV(Parameters, 14);
 // SceneTexture UVs use the backing texture, which may differ from viewport resolution.
 float2 d = GetSceneTextureBufferSize(14).zw;
 float4 uvBounds = GetSceneTextureUVMinMax(14);
 float2 uvMin = uvBounds.xy, uvMax = uvBounds.zw;
-""" + painterly_shader() + """
+""" + painterly_shader(lookup="ATELIER_SCENE_TEXTURE") + """
 if (Toon > 0.001 || Outline > 0.001)
 {
     float2 depthUV = GetDefaultSceneTextureUV(Parameters, 1);
     float2 depthD = GetSceneTextureBufferSize(1).zw;
-    float dc = SceneTextureLookup(depthUV, 1, false).r;
+    float dc = ATELIER_SCENE_TEXTURE(depthUV, 1, false).r;
     float notSky = 1.0 - saturate((dc - SkyDepth * 0.7) / (SkyDepth * 0.3));
     // soft bands: luminance snapped to the centre of its band, with a smooth step between bands
     float lum = dot(outc, float3(0.299, 0.587, 0.114));
@@ -138,8 +144,8 @@ if (Toon > 0.001 || Outline > 0.001)
     toon = lerp(toon, saturate(toon), 1.0);
     outc = lerp(outc, toon, Toon * notSky);
     // outlines: depth discontinuities only (no normal edges: leaves would turn into a scribble)
-    float dl = SceneTextureLookup(depthUV + float2(-depthD.x, 0), 1, false).r, dr = SceneTextureLookup(depthUV + float2(depthD.x, 0), 1, false).r;
-    float du = SceneTextureLookup(depthUV + float2(0, -depthD.y), 1, false).r, dd = SceneTextureLookup(depthUV + float2(0, depthD.y), 1, false).r;
+    float dl = ATELIER_SCENE_TEXTURE(depthUV + float2(-depthD.x, 0), 1, false).r, dr = ATELIER_SCENE_TEXTURE(depthUV + float2(depthD.x, 0), 1, false).r;
+    float du = ATELIER_SCENE_TEXTURE(depthUV + float2(0, -depthD.y), 1, false).r, dd = ATELIER_SCENE_TEXTURE(depthUV + float2(0, depthD.y), 1, false).r;
     float dmin = min(min(dl, dr), min(du, dd));
     float edge = saturate((dc - dmin) / max(dmin * 0.10, 1.0) - 1.0);     // the pixel sits behind a nearer neighbour by more than 10% of its depth
     float far = 1.0 - saturate((dmin - 4000.0) / 60000.0);              // fade the ink with distance: far hills stay soft
@@ -149,7 +155,9 @@ if (Toon > 0.001 || Outline > 0.001)
 // agreement prevents a player behind a wall from changing the wall's treatment.
 // Character and equipped items keep the same original lighting treatment.
 float player = ((abs(Stencil.r - 1.0) < 0.5 || abs(Stencil.r - 2.0) < 0.5) && abs(CustomZ.r - SceneZ.r) < 2.0) ? 1.0 : 0.0;
-return lerp(outc, Scene, player * 0.85);
+float3 result = lerp(outc, Scene, player * 0.85);
+#undef ATELIER_SCENE_TEXTURE
+return result;
 """
     cust = node(m, U.MaterialExpressionCustom, -300, 100, code=code, output_type=U.CustomMaterialOutputType.CMOT_FLOAT3, description="Painterly")
     ins = []
@@ -291,6 +299,7 @@ def main():
             raise RuntimeError('Texture import failed: ' + filename)
         textures[Path(filename).stem] = texture
     build_materials(textures)
+    vertex_material()
     see_through.world_materials()
     owned = []
     for package in shared_packages():

@@ -152,6 +152,12 @@ simulation, timing or authority, and it MUST stay silent without the imported ba
 MUST fade towards state-set targets and stop only once inaudible; one-shots MUST fire once per state transition and
 never for the state first observed (a late joiner). There is one transport bank, with no alternate soundbanks.
 
+@cc [owner:fontanierh,label:correctness] browser-bounded-scene
+HTML5 MUST select the explicit bounded scene and MUST NOT synchronously bootstrap the whole island or
+unavailable vehicles. Native launches MUST retain their normal world unless -browserpilot is requested.
+The browser scene MUST remain unready when its versioned manifest, required assets, park meshes,
+rails or spawn collision are missing. Its normal build graph MUST prepare and stage those dependencies.
+
 @cc [owner:fontanierh,label:correctness] racing-hud-venue
 The race HUD banner MUST be English and MUST appear only inside a venue's grounds near track height.
 The broad runner-rendering proximity radius MUST NOT enable the HUD banner.

@@ -38,7 +38,7 @@ park = json.loads(PARK.read_text())
 assert sha(PARK) == build['identity']['park_json_sha256'], 'park.json changed after the build; rebuild'
 
 material = E.load_asset('/Game/Japan/Materials/M_Village')
-assert material, 'M_Village is missing: import the village first'
+assert material, 'M_Village is missing: build unreal.materials first'
 E.make_directory('/Game/SkatePark'); E.make_directory('/Game/SkatePark/Board')
 
 

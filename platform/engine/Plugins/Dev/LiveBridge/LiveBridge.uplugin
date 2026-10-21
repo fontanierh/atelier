@@ -25,7 +25,8 @@
     },
     {
       "Name": "Interchange",
-      "Enabled": true
+      "Enabled": true,
+      "PlatformDenyList": ["HTML5"]
     }
   ]
 }

@@ -49,6 +49,8 @@ class YORIMICHI_API AJapanWorld : public AActor
 public:
     AJapanWorld();
     virtual void BeginPlay() override;
+    /** HTML5's bounded scene; -browserpilot selects the same scene for native verification. */
+    static bool IsBrowserScene();
 
     static FVector ToUE(double X, double Y, double Z) { return FVector(X * 100.0, -Y * 100.0, Z * 100.0); }
 
@@ -145,4 +147,5 @@ private:
     void UpdateNorthAerialGrade(float Dt);
     bool bSeeThroughProbeIgnored = false;
     void Load();
+    void LoadBrowserScene();
 };

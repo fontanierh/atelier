@@ -140,6 +140,9 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
 bool AJapanWorld::ApplyTreeOptimization(bool bEnabled,int32 LODMode,float DistanceScale)
 {
     if (!bLoaded) return false;
+    // The bounded profile has no city-tree groups. Keep its saved preference
+    // without loading the island's city meshes just to configure empty groups.
+    if (IsBrowserScene()) return true;
     LODMode=FMath::Clamp(LODMode,0,3);DistanceScale=FMath::Clamp(DistanceScale,.5f,3.f);
     if (AppliedTreeOptimization == int32(bEnabled) && AppliedTreeLODMode==LODMode &&
         FMath::IsNearlyEqual(AppliedTreeDistanceScale,DistanceScale)) return true;
