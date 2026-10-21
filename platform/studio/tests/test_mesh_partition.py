@@ -77,3 +77,12 @@ def test_explicit_assignments_preserve_an_existing_pre_cleanup_cell_choice():
                        locations=locations) == [('0', (0,)), ('3', (1,))]
     with pytest.raises(ValueError, match='cover every face'):
         face_groups(vertices, faces[-2:], (0, 0, 2, 2), triangle_limit=2, locations=[])
+
+
+def test_crossing_parent_budget_collapses_adaptive_children_explicitly():
+    vertices, faces = mesh()
+    original = face_groups(vertices, faces, (0, 0, 8, 8), triangle_limit=64)
+    assert [suffix for suffix, _ in original] == ['0', '1', '2', '3']
+    selected = [face for face in faces if vertices[face[0]][1] < 4]
+    collapsed = face_groups(vertices, selected, (0, 0, 8, 8), triangle_limit=64)
+    assert collapsed == [('', tuple(range(len(selected))))]

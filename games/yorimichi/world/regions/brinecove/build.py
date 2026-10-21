@@ -179,7 +179,7 @@ def bounded_parts(parts, prefix):
 
     Complete faces keep the same positions, UVs, normals, materials and role labels.
     Each piece keeps the parent's identity transform and solid/soft policy. Fixed
-    child-cell names stay independent of changes in another occupied child cell.
+    child-cell names stay stable while their ancestor subdivision decisions stay the same.
     """
     result = {}
     for key, part in parts.items():

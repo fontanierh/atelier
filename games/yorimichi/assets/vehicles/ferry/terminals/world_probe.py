@@ -1,7 +1,7 @@
 """Export the real geometry around both ferry berths, as the game places it, for site.py's swept-path checks.
 
-blender --background --factory-startup --threads 3 --python-exit-code 1 -P world_probe.py -- WORLD_BUILD
-WORLD_BUILD is a checkout's build/yorimichi. Each harbour's triangles inside its plan bounds (site.BOUNDS) are written
+Use the ordinary `uv run atelier build yorimichi world.ferry_probes` workflow.
+The input is the current checkout's build/yorimichi. Each harbour's triangles inside its plan bounds (site.BOUNDS) are written
 to world_<harbour>.npz beside site.json, split into ground (the seabed and shore the keel is checked against) and solid
 (everything else the hull outline must keep clear of: quays, piers, breakwater, moored boats, ships, rocks and props),
 with the sha256 of every file read, so site.json binds the exact export it was checked against.
@@ -129,6 +129,9 @@ def unreal_to_blender(t):
 
 def label(name):
     """SM_BC_Harbor_3_3_Soft -> SM_BC_Harbor: one obstacle label per exported module, not per tile."""
+    base, separator, tail = name.rpartition('_')
+    if separator and tail.startswith('Piece') and tail[5:] and all(c in '0123' for c in tail[5:]):
+        name = base
     parts = [p for p in name.split('_') if not p.isdigit() and p != 'Soft']
     return '_'.join(parts)
 

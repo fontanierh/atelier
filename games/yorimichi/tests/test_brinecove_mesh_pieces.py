@@ -117,3 +117,15 @@ def test_actual_runtime_group_keeps_parent_shadow_collision_and_identity_placeme
         record, = scope['groups']
         assert record['collision'] is False and record['shadow'] is True
         assert record['transforms'] == [identity] and record['cull_cm'] == 120000
+
+
+def test_actual_ferry_obstacle_labels_preserve_module_identity_for_spatial_pieces():
+    path = GAME / 'assets/vehicles/ferry/terminals/world_probe.py'
+    node = next(node for node in ast.parse(path.read_text()).body if isinstance(node, ast.FunctionDef) and node.name == 'label')
+    scope = {}; exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), 'exec'), scope)
+    label = scope['label']
+    assert label('SM_BC_Harbor_3_3_Soft_Piece01') == label('SM_BC_Harbor_3_3_Soft') == 'SM_BC_Harbor'
+    assert label('SM_BC_TownLower_2_4_Piece123') == 'SM_BC_TownLower'
+    # Strip only the complete generated quadrant suffix; unrelated names remain meaningful.
+    for name in ('SM_BC_Harbor_Piece', 'SM_BC_Harbor_Piece45', 'SM_BC_Piece01_Harbor'):
+        assert label(name) == name

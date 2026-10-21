@@ -41,9 +41,10 @@ The ordinary Brinecove exporter keeps its final ground tiles and existing small 
 Mixed non-ground parts above 32,768 fan triangles are divided into fixed spatial child cells.
 Each whole face goes into one cell, preserving its positions, normals, UVs, material and role labels;
 solid/soft collision policy and identity placement transforms stay with every piece. Child names
-use the original 256 m tile and quadrant path, so a change in another occupied child does not
-rename an unchanged child. The exporter refuses invalid or unresolved coincident over-budget
-geometry rather than silently exporting another oversized monolith.
+use the original 256 m tile and quadrant path. They remain stable only while their ancestor
+subdivision decisions remain unchanged: crossing the budget can split or collapse a parent and
+rename its children. Persistent authored model/piece ownership remains separate work. The exporter
+refuses invalid or unresolved coincident over-budget geometry rather than silently exporting another oversized monolith.
 
 This is a bound on source triangle work, not a proven bound on a later representation's JSON bytes
 or native memory. Final ground, independent plant prototypes and hero models retain their current
