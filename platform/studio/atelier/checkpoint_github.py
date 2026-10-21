@@ -191,6 +191,17 @@ class Remote:
                         else:
                             self.echo('Private checkpoint is complete; older metadata preserved until the next new backup')
                     return data
+                if INDEX in release.asset_map(self.github, found):
+                    # A previous upload finished its immutable completion asset, then
+                    # stopped before publication. New history must not rewrite that asset.
+                    data = self.descriptor(found, directory)
+                    if data['key'] != key or data.get('source_revision') != revision:
+                        raise CheckpointError('Retained draft completion identity differs')
+                    archive.verify(self, data)
+                    revalidate()
+                    self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
+                    self.echo('Private checkpoint resumed; older metadata preserved for the next new backup')
+                    return data
                 actions, known, retained, old = archive.accumulate(self, store, manifest, directory)
                 needed = blob_inventory(manifest, store)
                 blobs = packs.pack(self, store, needed, known, directory, key, legacy=found)

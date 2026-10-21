@@ -475,3 +475,45 @@ def test_unreferenced_legacy_pack_owner_is_rehomed_for_other_machines(fixture, t
     # A second machine's already prepared descriptor still downloads the same numeric pack.
     receiver = cp.Store('fixture', tmp_path / 'other-machine')
     assert remote.fetch(github.releases[1], old, receiver) == first
+
+
+def test_published_pin_survives_another_machine_without_local_pin_file(fixture, tmp_path):
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'pinned'])
+    remote.publish(store, first, 'A', revision='c' * 40)
+    pins = store.directory / 'pins'; pins.mkdir()
+    local_pin = pins / 'machine-A.json'
+    local_pin.write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    second = checkpoint(store, tmp_path, [b'next'])
+    published = remote.publish(store, second, 'B', revision='d' * 40)
+    assert first in published['retained']
+    local_pin.unlink()  # A different machine knows only remote published retention roots.
+    third = checkpoint(store, tmp_path, [b'latest'])
+    newest = remote.publish(store, third, 'C', revision='e' * 40)
+    assert first in newest['retained']
+    receiver = cp.Store('fixture', tmp_path / 'receiver')
+    assert remote.fetch(remote.candidates()[0], newest['retained'][first], receiver) == first
+    assert receiver.blob(sha(b'pinned')).read_bytes() == b'pinned'
+
+
+def test_resume_existing_draft_index_survives_newer_history_without_rewriting(fixture, tmp_path, monkeypatch):
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'first'])
+    actual = github.api
+    def stop_publication(path, *, method='GET', data=None, pages=False):
+        if path == 'releases/1' and method == 'PATCH' and data == dict(draft=False):
+            raise release.TransportError(500)
+        return actual(path, method=method, data=data, pages=pages)
+    monkeypatch.setattr(github, 'api', stop_publication)
+    with pytest.raises(release.TransportError):
+        remote.publish(store, first, 'A', revision='c' * 40)
+    original_completion = github.files[(1, gh.INDEX)]
+    monkeypatch.setattr(github, 'api', actual)
+    second = checkpoint(store, tmp_path, [b'other'])
+    remote.publish(store, second, 'B', revision='d' * 40)
+    before = [event for event in github.events if event[0] == 'upload']
+    remote.publish(store, first, 'A', revision='c' * 40)
+    assert github.files[(1, gh.INDEX)] == original_completion
+    assert [event for event in github.events if event[0] == 'upload'] == before
+    assert len(remote.candidates()) == 2
+    assert github.releases[1]['draft'] is False

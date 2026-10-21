@@ -176,7 +176,7 @@ publish command or rolls back a successful public release. The worker reads the 
 accessing or holding the producer. It does not rebuild or cook the game. Normal successful tasks retain local
 results; whole-workspace capture runs at release publication. Private release packs are content-addressed,
 checksum-verified and deduplicated. New uploads use six workers and 25 MiB parts; verified older 128 MiB
-packs are reused during interrupted-backup recovery. The temporary spool holds only the active upload window,
+packs are reused during interrupted-backup recovery when their original deterministic blob sequence matches. The temporary spool holds only the active upload window,
 and verified parts are removed immediately. Logs report verified bytes and observed throughput. The completion
 index uploads last; partial drafts are never donors. `atelier cache status` shows backup state. Pending and failed requests pin their manifests/blobs.
 Rerun the same publish command to resume without recapture or clobbering completed assets. If capture itself
@@ -192,9 +192,11 @@ After private publication succeeds, only the newest checkpoint release is kept. 
 input-keyed task results and explicitly pinned checkpoint descriptors. Pack bytes live in separate immutable
 storage releases. Every older release owning packs is rehomed there without copying bytes or changing numeric
 IDs, including packs another machine may concurrently reference. Only older metadata-only checkpoint releases
-are deleted, after the new completion index
-and every referenced pack have been freshly verified. Interrupted drafts and unknown or conflicting metadata
-are preserved. Public playtest releases, other games and other repositories are outside this cleanup.
+are deleted after the new completion index and every referenced pack have been freshly verified. Interrupted drafts and unknown or conflicting metadata
+are preserved. A retry of an older completed backup never retires a newer one. A previously uploaded draft
+completion index resumes unchanged; cleanup is deferred when it cannot cover newer history or pins. Published
+remote pins carry forward on every machine until a separate coordinated retirement. Public playtest releases,
+other games and other repositories are outside this cleanup.
 
 Local manifests, candidate bundles, pending/failed backup requests and their CAS bytes remain protected.
 `atelier cache gc` currently manages only the separate portable source store; it does not delete workspace
