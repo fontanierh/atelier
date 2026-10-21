@@ -153,3 +153,15 @@ def test_exact_unused_slot_prepass_preserves_previously_emitted_samples(pair):
     raw=path.read_bytes().replace(b'UsedSlots.Add(Used)',b'UsedSlots.Add(Used+1)')
     path.write_bytes(raw);pair.witness['current'][new_name]=hashlib.sha256(raw).hexdigest();pair.pin()
     assert pair.run() is None
+
+
+@pytest.mark.parametrize('name',['FoliageSystem.cpp','FoliageSystem.h'])
+def test_reviewed_startup_runtime_pair_is_pinned_even_without_geometry_changes(pair,name):
+    member='games/yorimichi/unreal/Source/Yorimichi/'+name
+    target=pair.root/member;target.parent.mkdir(parents=True,exist_ok=True)
+    raw=b'reviewed startup-only drain/telemetry source'
+    target.write_bytes(raw)
+    pair.witness['current'][member]=hashlib.sha256(raw).hexdigest();pair.pin()
+    assert pair.run()==pair.expected
+    target.write_bytes(raw+b'changed runtime behavior')
+    assert pair.run() is None

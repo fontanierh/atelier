@@ -10,6 +10,8 @@
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp": "f7b5c26347b947806fd470ac2e47fe1dff8edf2d2ad842ef15d2452cf7f19f86",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "7961d93dfc37983dd79346469913667897dd21aea303d534fc7bd7f111fa8872",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "9b1cb51aff4f95d6eba8cec1a848a9eab85d62af6e26b4cfa2c3d41e3cbe3b47",
     "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "87ca815d699ba0117fe51c222e9894b1ef3e762b7e54f2d465b9d0f49b406648",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0",
@@ -27,246 +29,8 @@
     "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
     "platform/studio/atelier/unreal_mesh_reuse.py": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
   },
-  "current_revision": "aba75a7ccbb7d66cf4a28eba29b28a09ff41bb9c",
+  "current_revision": "b96c5d68de7e333bc79d7fd34a43d3105d22757c",
   "policies": [
-    [
-      {
-        "blob": "d3493e6d4e4a1fc14633a510688828ad7ecac5d7",
-        "path": "games/yorimichi/unreal/Scripts/build_foliage_system.py",
-        "sha256": "ffdd2512e0bf0da94fb1370b0c391f85ddc45733f99dd588e44287a81e872e48"
-      },
-      {
-        "blob": "603774ade8704a248a718b9a53550657a6a54d04",
-        "path": "games/yorimichi/foliage_system.py",
-        "sha256": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd"
-      },
-      {
-        "blob": "47d49c9d8987d0622c3e0cf999ca406d1f78be13",
-        "path": "games/yorimichi/world/foliage_roles.py",
-        "sha256": "6b77fd4e8ad8f518fa8e4aadfad6db889d7603030560ec2e74610a9e42bd59d3"
-      },
-      {
-        "blob": "c9f9a0077a4a988927237ee80739d61cdbdd254c",
-        "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
-        "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
-      },
-      {
-        "blob": "02414f68b9eaccba77e31442fc6f5d750638725d",
-        "path": "games/yorimichi/unreal/Scripts/see_through.py",
-        "sha256": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734"
-      },
-      {
-        "blob": "370282b4e4e8e256790f27e0d051bf6b6b9fffed",
-        "path": "games/yorimichi/unreal/Scripts/foliage_material.py",
-        "sha256": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a"
-      },
-      {
-        "blob": "0abc0bdc6b6abf249ea591f4e2f4212f204b0768",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp",
-        "sha256": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a"
-      },
-      {
-        "blob": "ee18165ca8c1c70f90f465b8bb8af5898e0bd2d7",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h",
-        "sha256": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0"
-      },
-      {
-        "blob": "8072ac49eb002da6f1e49f548bfdfe37ffc768e2",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp",
-        "sha256": "741b78024072febab312d3ff6fe0248050973c991049dd1caf56ca09599bd893"
-      },
-      {
-        "blob": "a84d3b3fc0e5baa89b17dc80513ed25d3538ebd7",
-        "path": "platform/studio/atelier/mesh_geometry.py",
-        "sha256": "ef236eb03247e2f13514825128a0728dd5f6197aa17142582fcffd4a96c19abb"
-      },
-      {
-        "blob": "9c4821a8a2aa0e6db5b8a044dfe341b311931f03",
-        "path": "games/yorimichi/unreal/Scripts/foliage_variant_validation.py",
-        "sha256": "0bc3a0ad8d5c93320cf24979603382618758b919c5e5def3d4a474030fbeee6c"
-      },
-      {
-        "blob": "05baee9c9a67a848679d048154c9c1ed04cc0157",
-        "path": "platform/studio/atelier/__init__.py",
-        "sha256": "0219772d0dabb4ef08cb8ffb509cbebb0e0c44c861ee4e59218bb4a1d984b71a"
-      },
-      {
-        "blob": "c7e10cf431a744d8a3352f55b55f473c08194b94",
-        "path": "platform/studio/atelier/atomic_files.py",
-        "sha256": "39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c"
-      },
-      {
-        "blob": "59fc604a1fb0a28e6c935601ab0f04dcde7be7f7",
-        "path": "platform/studio/atelier/build_hashes.py",
-        "sha256": "025cc13adbc3c7568088c08edf65174acfdd11ef9ddb01a3257b6f6bf9d37a38"
-      },
-      {
-        "blob": "6e8dd9f9b33ce5a954baa495d7c01ee7eb0ab86c",
-        "path": "platform/studio/atelier/engine.py",
-        "sha256": "5acaba915e0641bb5a1f8498565db94e214d39241a496ad123bb6aa244f73cde"
-      },
-      {
-        "blob": "fdd21cac81e89a6b13e72885c5942110c8d0a9bb",
-        "path": "platform/studio/atelier/mesh_reuse.py",
-        "sha256": "f5a5f8eb8eb0a1583624fda9e8466653c424d4a0a55897d52ff317e5f3f23399"
-      },
-      {
-        "blob": "a7445183322d801ae67b53892e37002f840c06fb",
-        "path": "platform/studio/atelier/native_candidates.py",
-        "sha256": "2d7d77e2fc5ef0d6af075b17d1d19feb817dc7f1da95f9841c09cd46beb17602"
-      },
-      {
-        "blob": "f2bb99769342eaf93bb2a24f8a5d7ef4e2878603",
-        "path": "platform/studio/atelier/native_protocol.py",
-        "sha256": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82"
-      },
-      {
-        "blob": "94cb97c328134a6cab8ce6724dd2ddb15532652b",
-        "path": "platform/studio/atelier/paths.py",
-        "sha256": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924"
-      },
-      {
-        "blob": "ff482b21c2b7514c0b2e979981d44c32a7ab4250",
-        "path": "platform/studio/atelier/source_imports.py",
-        "sha256": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6"
-      },
-      {
-        "blob": "2ee5577d5c0f194a68fb7a003508911499cb8816",
-        "path": "platform/studio/atelier/unreal_mesh_reuse.py",
-        "sha256": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
-      }
-    ],
-    [
-      {
-        "blob": "90b53b1b65b10f04f60cd9faf3501f13af23411d",
-        "path": "games/yorimichi/unreal/Scripts/build_foliage_system.py",
-        "sha256": "b1ae0ce3cb0a3b7450967dd78f9389a434c76870dd880105db676b52e539263d"
-      },
-      {
-        "blob": "603774ade8704a248a718b9a53550657a6a54d04",
-        "path": "games/yorimichi/foliage_system.py",
-        "sha256": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd"
-      },
-      {
-        "blob": "47d49c9d8987d0622c3e0cf999ca406d1f78be13",
-        "path": "games/yorimichi/world/foliage_roles.py",
-        "sha256": "6b77fd4e8ad8f518fa8e4aadfad6db889d7603030560ec2e74610a9e42bd59d3"
-      },
-      {
-        "blob": "c9f9a0077a4a988927237ee80739d61cdbdd254c",
-        "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
-        "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
-      },
-      {
-        "blob": "02414f68b9eaccba77e31442fc6f5d750638725d",
-        "path": "games/yorimichi/unreal/Scripts/see_through.py",
-        "sha256": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734"
-      },
-      {
-        "blob": "370282b4e4e8e256790f27e0d051bf6b6b9fffed",
-        "path": "games/yorimichi/unreal/Scripts/foliage_material.py",
-        "sha256": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a"
-      },
-      {
-        "blob": "0abc0bdc6b6abf249ea591f4e2f4212f204b0768",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp",
-        "sha256": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a"
-      },
-      {
-        "blob": "ee18165ca8c1c70f90f465b8bb8af5898e0bd2d7",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h",
-        "sha256": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0"
-      },
-      {
-        "blob": "8072ac49eb002da6f1e49f548bfdfe37ffc768e2",
-        "path": "games/yorimichi/unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp",
-        "sha256": "741b78024072febab312d3ff6fe0248050973c991049dd1caf56ca09599bd893"
-      },
-      {
-        "blob": "56ab79f6b51658f9de7e0b71b505870faeb62d35",
-        "path": "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp",
-        "sha256": "9dcb5a13430390ccf9d86cdc3221ec826227572600a402503c51fc03497d39fe"
-      },
-      {
-        "blob": "9515eb789f8e992b36729ca9756d422bad5629ba",
-        "path": "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h",
-        "sha256": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c"
-      },
-      {
-        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"a04796393263677b59064ae2218bec4316956739cb04be7975caf14493696eac\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"2798591f637712fee5cc5d0b1af0a274332c8827dd450c5e6835d364953cd44b\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
-        "sha256": "f9a37d6f8466fbafef45236af6c662fba775ca1bf5ce723cfbfb10b5f4ae05c3"
-      },
-      {
-        "blob": "44ff7ad6c1bf7e7d80f18e7cb6cb5bf6af976745",
-        "path": "games/yorimichi/foliage_unit_policy.py",
-        "sha256": "acb093a5970dfce93eddb97c31b62d445775de617a7312dc50d8b5fe4af03428"
-      },
-      {
-        "blob": "a4713ffa9752007c62949f3dd17a4e04f98eac44",
-        "path": "games/yorimichi/foliage_unit_policy_witness.json",
-        "sha256": "8471f5fa8ff16775419378dfc89edd1ffb568693f16b8b14503d6cd7d0e26f1a"
-      },
-      {
-        "blob": "a84d3b3fc0e5baa89b17dc80513ed25d3538ebd7",
-        "path": "platform/studio/atelier/mesh_geometry.py",
-        "sha256": "ef236eb03247e2f13514825128a0728dd5f6197aa17142582fcffd4a96c19abb"
-      },
-      {
-        "blob": "9c4821a8a2aa0e6db5b8a044dfe341b311931f03",
-        "path": "games/yorimichi/unreal/Scripts/foliage_variant_validation.py",
-        "sha256": "0bc3a0ad8d5c93320cf24979603382618758b919c5e5def3d4a474030fbeee6c"
-      },
-      {
-        "blob": "05baee9c9a67a848679d048154c9c1ed04cc0157",
-        "path": "platform/studio/atelier/__init__.py",
-        "sha256": "0219772d0dabb4ef08cb8ffb509cbebb0e0c44c861ee4e59218bb4a1d984b71a"
-      },
-      {
-        "blob": "c7e10cf431a744d8a3352f55b55f473c08194b94",
-        "path": "platform/studio/atelier/atomic_files.py",
-        "sha256": "39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c"
-      },
-      {
-        "blob": "59fc604a1fb0a28e6c935601ab0f04dcde7be7f7",
-        "path": "platform/studio/atelier/build_hashes.py",
-        "sha256": "025cc13adbc3c7568088c08edf65174acfdd11ef9ddb01a3257b6f6bf9d37a38"
-      },
-      {
-        "blob": "6e8dd9f9b33ce5a954baa495d7c01ee7eb0ab86c",
-        "path": "platform/studio/atelier/engine.py",
-        "sha256": "5acaba915e0641bb5a1f8498565db94e214d39241a496ad123bb6aa244f73cde"
-      },
-      {
-        "blob": "fdd21cac81e89a6b13e72885c5942110c8d0a9bb",
-        "path": "platform/studio/atelier/mesh_reuse.py",
-        "sha256": "f5a5f8eb8eb0a1583624fda9e8466653c424d4a0a55897d52ff317e5f3f23399"
-      },
-      {
-        "blob": "a7445183322d801ae67b53892e37002f840c06fb",
-        "path": "platform/studio/atelier/native_candidates.py",
-        "sha256": "2d7d77e2fc5ef0d6af075b17d1d19feb817dc7f1da95f9841c09cd46beb17602"
-      },
-      {
-        "blob": "f2bb99769342eaf93bb2a24f8a5d7ef4e2878603",
-        "path": "platform/studio/atelier/native_protocol.py",
-        "sha256": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82"
-      },
-      {
-        "blob": "94cb97c328134a6cab8ce6724dd2ddb15532652b",
-        "path": "platform/studio/atelier/paths.py",
-        "sha256": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924"
-      },
-      {
-        "blob": "ff482b21c2b7514c0b2e979981d44c32a7ab4250",
-        "path": "platform/studio/atelier/source_imports.py",
-        "sha256": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6"
-      },
-      {
-        "blob": "2ee5577d5c0f194a68fb7a003508911499cb8816",
-        "path": "platform/studio/atelier/unreal_mesh_reuse.py",
-        "sha256": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
-      }
-    ],
     [
       {
         "blob": "fc300f86cc51090abe37bdb558b32c7fdd86bc75",
@@ -314,9 +78,9 @@
         "sha256": "741b78024072febab312d3ff6fe0248050973c991049dd1caf56ca09599bd893"
       },
       {
-        "blob": "56ab79f6b51658f9de7e0b71b505870faeb62d35",
+        "blob": "eccb18d3b69f75653756f2855ef21828d390c20e",
         "path": "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp",
-        "sha256": "9dcb5a13430390ccf9d86cdc3221ec826227572600a402503c51fc03497d39fe"
+        "sha256": "f7b5c26347b947806fd470ac2e47fe1dff8edf2d2ad842ef15d2452cf7f19f86"
       },
       {
         "blob": "9515eb789f8e992b36729ca9756d422bad5629ba",
@@ -334,18 +98,18 @@
         "sha256": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d"
       },
       {
-        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"d30043bd329e70af7f3da4a8dd73f8737772872959ad02cc1f4b2c99783e29b7\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"2a9fc6994c9e93dd5d4f64e566ac35afd5b531eeb9aed4cd507ca56cb9165d18\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
-        "sha256": "9a79fd923ac4966f68183b297f3476cc7481b3a1ed934f364b7c54620673cb6c"
+        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"b2846ec605532673e352defd8f35e38d4bda4d2efd4d24b6f5c094e2611f9b1b\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"12bba19edd07d66a58149ab8bf0dd958888bb6e886c6593cfa63bcfd0e42dc1f\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
+        "sha256": "368124ea2522e1793c2f3562fde6f2e9d892e38a18a81fdeb6e2217b5f8281c0"
       },
       {
-        "blob": "cdf573ed971035e3d3c4140d9d482be1970d3ca8",
+        "blob": "1d5ca19143cc3232170619de8f9f182ae2f95fc7",
         "path": "games/yorimichi/foliage_unit_policy.py",
-        "sha256": "0f2fabaa2bce728196476e07fdc250a4a3ff49fe17f36c14e194b50c10aedb15"
+        "sha256": "15ba6a2571bf165f63fbe452e4849ca25513eda807992257f6095d4371085605"
       },
       {
-        "blob": "fd738a9f2b65c5be5ec6bcaa4473a82174e08561",
+        "blob": "916d0fb3266392c8b0308c6b593f1a6c6e490a74",
         "path": "games/yorimichi/foliage_unit_policy_witness.json",
-        "sha256": "6ed1ceb949ad7e2d1223da3d486b8c184208ddb46eb90384cad7a7bb2a714af8"
+        "sha256": "a4cc1ffc6d3e9fe6d23f51674041d5a22103616df2ae75a5cd0c3f66a5af86c8"
       },
       {
         "blob": "5e700ab2aaabe6e510fd2834473e17f2b480ec14",
@@ -410,10 +174,8 @@
     ]
   ],
   "previous_revisions": [
-    "7601d2cf6c074f3ca2d5ac644fee04966578a4de",
-    "b1b22408bbac112ff95d498f6b389b65c17b1ffe",
-    "7d9f9144540a6c005ceabdbcf45bed91a347259d"
+    "ad09a4c8"
   ],
   "schema": 2,
-  "scope": "Exact reviewed JSON/binary transport and unused-slot palette prepass only; every emitted corner and current native source/settings/material admission remain required"
+  "scope": "All696 current saved units use a17. The only reviewed receiving delta drains initial RHI uploads and reports memory; geometry generation, transport, native snapshots, settings, source and material admission remain unchanged. Hints never certify a parent task."
 }
