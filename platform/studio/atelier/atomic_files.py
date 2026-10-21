@@ -16,4 +16,3 @@ def atomic_json(path, value):
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
-

@@ -32,13 +32,13 @@ def inventory(ctx, key, task):
     """Original immutable member inventory and historical compatibility evidence, without copies."""
     task_name(task)
     saved = original(Store(ctx.game), key)
-    stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(task)
+    stamp = {**saved['stamps'], **saved.get('incremental_stamps', {}), **saved.get('historical_stamps', {})}.get(task)
     revision = saved.get('source_revision', '')
     if (saved['context'] != context(ctx) or not stamp or stamp.get('touched')
             or not re.fullmatch(r'[0-9a-f]{40}', revision)):
         raise CheckpointError('Candidate needs compatible engine/platform, clean source revision and historical task proof')
     return dict(schema=1, checkpoint=key, donor_task=task, donor_fingerprint=stamp['fingerprint'],
-                source_revision=revision, context=saved['context'], provenance='compatibility-only', files=saved['files'])
+                source_revision=revision, donor_stamp=stamp, context=saved['context'], provenance='compatibility-only', files=saved['files'])
 
 
 def checked_file(directory, member, entry):
@@ -74,7 +74,7 @@ def completion(ctx, value, directory, *, verify_files=True):
         raise CheckpointError('Invalid or incompatible candidate completion')
     task_name(value['donor_task'])
     proof = inventory(ctx, value['checkpoint'], value['donor_task'])
-    if any(value.get(k) != proof[k] for k in ('source_revision', 'context', 'donor_fingerprint')):
+    if any(value.get(k) != proof[k] for k in ('source_revision', 'context', 'donor_fingerprint', 'donor_stamp')):
         raise CheckpointError('Candidate completion differs from immutable donor evidence')
     for member, entry in value['files'].items():
         original_entry = proof['files'].get(member)
@@ -117,4 +117,3 @@ def member_path(ctx, task, member, *, bundle=None):
         return bundle.member_path(member) if bundle is not None else None
     except (OSError, ValueError, KeyError, TypeError, CheckpointError):
         return None
-

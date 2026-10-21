@@ -137,8 +137,27 @@ def certificates(ctx, steps, *, include_incremental=False):
     return records
 
 
+
+def historical_candidates(ctx, steps):
+    """Unmodified old task evidence; never a current fingerprint or success certificate."""
+    result = {}
+    for step in steps:
+        try:
+            stamp = read_json(safe_destination(ctx.stamps, step.name + '.json'))
+            if (isinstance(stamp, dict) and not stamp.get('touched')
+                    and isinstance(stamp.get('fingerprint'), str) and HEX.fullmatch(stamp['fingerprint'])
+                    and isinstance(stamp.get('input_state'), dict)
+                    and isinstance(stamp['input_state'].get('inputs'), dict)):
+                result[step.name] = stamp
+        except (OSError, ValueError, TypeError, CheckpointError):
+            pass
+    return result
+
+
 def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=False, scratch=None):
     """@cc [owner:fontanierh,label:correctness] immutable-checkpoint-capture
+    Historical candidate evidence MUST retain original task input identities and remain
+    separate from current certificates. It MUST be checked again after the copy.
     Saved certificates MUST retain their produced tool key and output inventory proof, matching
     the producer's current declared inputs and complete named
     outputs. Touched/failed/stale certificates MUST NOT publish. Source and output changes during
@@ -146,6 +165,7 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
     Candidate-only capture MUST write hash scratch outside the producer and publish only a
     compatibility catalogue, never a full workspace donor or produced action certificate.
     """
+    history = historical_candidates(ctx, steps)
     before = certificates(ctx, steps, include_incremental=True)
     if candidate_only and (scratch is None or Path(scratch).resolve().is_relative_to(paths.REPO.resolve())):
         raise CheckpointError('Candidate-only capture requires scratch outside the producer')
@@ -203,13 +223,15 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=F
         names = {label + '/' + p.relative_to(root).as_posix()
                  for label, (root, _) in allowed.items() for p in members(root) if p not in source_paths}
         if (names != set(files) or any(signature(p.lstat()) != info for p, info in observations)
-                or certificates(ctx, steps, include_incremental=True) != before):
+                or certificates(ctx, steps, include_incremental=True) != before
+                or (historical_candidates(ctx, steps) != history)):
             raise CheckpointError('Build changed during checkpoint capture; nothing published')
         current_proof = {s.name: before[s.name] for s in steps if not candidate_only and s.name in before
                          and checkpoint_actions.certified(ctx, s, before[s.name]['fingerprint'], before[s.name])}
         incremental = {name: value for name, value in before.items() if name not in current_proof}
         manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
                         checkout=identity(str(paths.REPO.resolve())), files=files, stamps=current_proof, incremental_stamps=incremental,
+                        historical_stamps={name: stamp for name, stamp in history.items() if name not in before},
                         steps=sorted(s.name for s in steps), actions=actions)
         if candidate_only:
             manifest['candidate_only'] = True

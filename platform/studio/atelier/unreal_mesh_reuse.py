@@ -42,12 +42,24 @@ def imported_source_matches(mesh, source):
     return mesh_reuse.recorded_source_matches(tag, source)
 
 
+def packages_clean(packages):
+    """On-disk receipts cannot justify returning an owner-mutated in-memory package."""
+    import unreal
+    try:
+        dirty = {package.get_name() for package in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
+        return not dirty.intersection(packages)
+    except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
 class MeshReuse:
     """@cc [owner:fontanierh,label:correctness] native-mesh-candidate-admission
     Candidate reuse MUST require matching source/geometry policy and engine context,
     verified independent package copies, and Unreal's recorded import source hash.
     Captured old producer provenance MUST remain compatibility-only. Current native
     role, material and collision validation MUST still run before recording a receipt.
+    Dirty loaded packages MUST miss even when their on-disk receipt matches. Owner finishing
+    MUST rerun from current data after reuse and validate current materials, roles and collision.
     Missing evidence MUST use ordinary import, never manufacture a cache hit or task stamp.
     """
     def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None, owner_roots=()):
@@ -106,21 +118,28 @@ class MeshReuse:
         except (OSError, ValueError, KeyError, TypeError, SyntaxError):
             pass
         if self.bundle:
-            donor_source = mesh_reuse.revision_source(paths.REPO, self.bundle.get('source_revision'),
-                self.script.relative_to(paths.REPO).as_posix())
-            if donor_source:
-                try:
+            try:
+                # Captured HEAD identifies the capture only. The original producing
+                # task's per-file identities identify the geometry/finishing policy.
+                donor_inputs = self.bundle['donor_stamp']['input_state']['inputs']
+                if not isinstance(donor_inputs, dict):
+                    raise ValueError('Missing original donor input evidence')
+                relative_script = self.script.relative_to(paths.REPO).as_posix()
+                donor_source = mesh_reuse.saved_source(paths.REPO, relative_script,
+                                                       donor_inputs.get('<repo>/' + relative_script))
+                if donor_source:
                     self.compatible = mesh_reuse.native_policy(donor_source, functions, self.script,
-                                                               revision=self.bundle.get('source_revision')) == self.policy
-                except (ValueError, SyntaxError):
-                    pass
-            if self.compatible and owner_script:
-                for owner_name, current in self.owner_sources.items():
-                    owner_source = mesh_reuse.revision_source(paths.REPO, self.bundle.get('source_revision'), owner_name)
-                    self.compatible &= owner_source is not None and ast_dump(owner_source) == current
-            report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=self.bundle) if report_member else None
-            if report:
-                self.donor = json.loads(report.read_text())
+                                                               inputs=donor_inputs) == self.policy
+                if self.compatible and owner_script:
+                    for owner_name, current in self.owner_sources.items():
+                        owner_source = mesh_reuse.saved_source(paths.REPO, owner_name,
+                                                              donor_inputs.get('<repo>/' + owner_name))
+                        self.compatible &= owner_source is not None and ast_dump(owner_source) == current
+                report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=self.bundle) if report_member else None
+                if report:
+                    self.donor = json.loads(report.read_text())
+            except (OSError, ValueError, KeyError, TypeError, SyntaxError):
+                self.compatible = False
 
     def acquire(self, name, package, *, geometry, donor_geometry, sources, validator=None):
         """sources contains (logical package, current source file, expected SHA256)."""
@@ -137,7 +156,7 @@ class MeshReuse:
         key = mesh_reuse.identity(dict(geometry=geometry, sources=source_hashes))
         self.pending[name] = dict(key=key, packages=packages, sources=sources,
                                   provenance={'kind': 'current-native-import'})
-        if not self.enabled:
+        if not self.enabled or not packages_clean(packages):
             return None
         local = self.receipts.matches(name, key, packages)
         if local:
@@ -195,6 +214,8 @@ class MeshReuse:
                 checkpoint=self.bundle['checkpoint'], donor_task=self.bundle['donor_task'],
                 donor_fingerprint=self.bundle['donor_fingerprint'], source_revision=self.bundle['source_revision'])
         loaded = {target: unreal.load_asset(target) for target in packages}
+        if not packages_clean(packages):
+            return None
         if any(not loaded[target] or not imported_source_matches(loaded[target], source)
                for target, source, _ in sources):
             return None
@@ -264,7 +285,7 @@ class AssetGroup:
         self.sources = [Path(script), *map(Path, sources), *map(Path, support)]
 
     def matches(self, packages):
-        return self.enabled and self.book.matches('assets', self.key, packages)
+        return self.enabled and packages_clean(packages) and self.book.matches('assets', self.key, packages)
 
     def validated(self, packages):
         import unreal
@@ -312,7 +333,7 @@ def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, val
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')
     nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
-    if not task or not game or not owner or not nonce:
+    if not task or not game or not owner or not nonce or not Path(owner).is_absolute():
         return None, None
     key = (task, game, owner, nonce, str(script))
     if key not in _COMMON_FBX:

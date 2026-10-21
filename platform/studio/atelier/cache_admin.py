@@ -144,6 +144,12 @@ def configure(sub):
     capture.add_argument('game')
     capture.add_argument('--source', type=Path, required=True)
     capture.add_argument('--deadline-seconds', type=int, default=900, help='total bounded handoff deadline, 60–900 seconds')
+    recover = commands.add_parser('recover-history', help='owner-authorized metadata-only recovery of unchanged pre-capture task stamps')
+    recover.add_argument('game')
+    recover.add_argument('--source', type=Path, required=True)
+    recover.add_argument('--checkpoint', required=True)
+    recover.add_argument('--before-ns', type=int, required=True, help='known pre-capture boundary as Unix nanoseconds')
+    recover.add_argument('--task', action='append', required=True)
     commands.add_parser('status')
     commands.add_parser('abandon-transfer', help='remove a journaled partial transfer left by an older client').add_argument('game')
     create = commands.add_parser('snapshot-create', help='pin an unsigned local selection of current portable products')
@@ -189,6 +195,10 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'recover-history':
+        from .checkpoint_history import recover
+        print(json.dumps(recover(args.game, args.checkpoint, args.source, args.task, before_ns=args.before_ns)))
+        return 0
     if args.action == 'retain-candidates':
         from .build_checkpoints import capture_local
         print(json.dumps({'checkpoint': capture_local(args.source, args.game, read_only=True,

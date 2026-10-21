@@ -52,7 +52,10 @@ missing clean donor revision, incomplete history or corrupted bytes makes the ca
 
 These are compatibility candidates, not certified task results. The native importer loads one
 validated bundle, verifies each selected member on access, and must prove its current source and
-geometry policy match before reuse. It reruns current material, role, bounds and collision checks.
+geometry policy match before reuse. The bundle carries `donor_stamp`, the original task evidence.
+Its per-file input identities recover historical importer and support code from local Git objects
+without executing it. The capture revision identifies the capture; it does not prove which importer
+produced an older package. Missing original policy evidence is a normal import miss. It reruns current material, role, bounds and collision checks.
 Changed or unproved assets import normally. Only the normal successful importer can publish a
 current result. A whole-task miss can therefore reuse unchanged meshes without accepting stale
 validation or overwriting unrelated completed receiver work. Importers must integrate this shared
@@ -73,7 +76,29 @@ controller and immutable files in the machine cache. It never writes producer `.
 products or Zen data. Only generated/Content members and historical evidence enter a candidate-only
 catalogue; this is not a complete workspace seed or a new task certificate. Normal importer discovery
 finds it automatically. Preserve the producer until the key is reported. This diagnostic capture is
-not required for ordinary merge/release retention.
+not required for ordinary merge/release retention. With the producer owner’s permission,
+`atelier cache recover-history GAME --source CHECKOUT --checkpoint KEY --before-ns N --task TASK`
+can recover explicitly selected small original stamp records. Both timestamps must precede the
+known pre-capture boundary, the checkout must match the captured producer, and each read must
+remain stable. It never reads live output bytes or writes the producer. Rewritten records miss.
+
+All retention paths preserve stale tasks
+separately in `historical_stamps`; these records never become successful action certificates or
+receiving stamps. The read-only command accepts `--deadline-seconds` from 60 to 900 for bounded
+maintenance handoffs, including queue time and cleanup.
+
+A reviewed source-support extraction can preserve complete local products and restore an
+existing portable cache result under its original tool identity. The executor reproduces the full
+old fingerprint with unchanged installed tool bytes, source, commands and dependencies; keyed
+state must also match its complete output inventory. Unknown changes miss. Preserved results
+remain compatibility-only rather than acquiring a new producer certificate. Lookup and migration
+happen before batching, so intact exports are not rerun merely because shared support code moved.
+
+Embedded importers use `native_protocol.native_context(game)` rather than the build controller.
+`native_protocol.runtime_files()` declares the complete small standard-library source closure.
+Recipes include that closure and their actual game helpers, so unrelated release/build-controller
+edits cannot invalidate native geometry. Unsupported source policies rebuild through the ordinary
+importer and do not publish reusable receipts.
 
 The host receipt update preserves proved warm batch results through a bounded equivalence
 check. It reproduces the complete previous fingerprint with current inputs, worker, commands,

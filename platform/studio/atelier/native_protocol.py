@@ -144,7 +144,10 @@ def validate(manifest, game):
     incremental = manifest.get('incremental_stamps', {})
     if type(incremental) is not dict or set(incremental) & set(manifest['stamps']):
         raise CheckpointError('Invalid incremental checkpoint state')
-    for name, stamp in {**manifest['stamps'], **incremental}.items():
+    history = manifest.get('historical_stamps', {})
+    if type(history) is not dict or set(history) & (set(manifest['stamps']) | set(incremental)):
+        raise CheckpointError('Invalid historical candidate evidence')
+    for name, stamp in {**manifest['stamps'], **incremental, **history}.items():
         if (not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name) or type(stamp) is not dict
                 or not HEX.fullmatch(stamp.get('fingerprint', '')) or stamp.get('touched')):
             raise CheckpointError('Checkpoint contains an invalid or touched certificate')
@@ -221,4 +224,4 @@ RUNTIME_FILES = ('__init__.py', 'atomic_files.py', 'build_hashes.py', 'engine.py
 
 def runtime_files():
     """Complete static source closure of the shared native adapter, enforced by regression."""
-    return tuple(Path(__file__).parent / name for name in RUNTIME_FILES)
+    return tuple(Path(__file__).resolve().parent / name for name in RUNTIME_FILES)
