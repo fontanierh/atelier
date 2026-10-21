@@ -985,7 +985,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 for item in batch:
                     candidate = item.step if hasattr(item, 'step') else item[0]
                     from .checkpoint_candidates import prepare as prepare_candidates
-                    prepare_candidates(ctx, candidate, echo=echo)
+                    prepare_candidates(ctx, candidate, fingerprint=fingerprint(candidate, done, index=index, tool_cache=tool_cache), echo=echo)
                     protect(ctx, candidate, estimate=estimate(read_stamp(ctx.stamps / (candidate.name + '.json'))), echo=echo)
             except RuntimeError as error:
                 echo(str(error))
@@ -1072,7 +1072,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             return yield_build(step)
         if not from_cache:
             from .checkpoint_candidates import prepare as prepare_candidates
-            prepare_candidates(ctx, step, echo=echo)
+            prepare_candidates(ctx, step, fingerprint=current, echo=echo)
         if not from_cache and not recovering:
             from .build_checkpoints import protect, estimate
             try:

@@ -531,3 +531,12 @@ Retention requires a clean capture revision and original input evidence. Unsuppo
 missing metadata, changed packages, or an incomplete collision/LOD group remain ordinary misses.
 The catalogue contains historical hints, not portable native action certificates or receiving
 success stamps. Failed-task partial preparation uses its own independently validated unit records.
+
+Local discovery ranks coherent donors by exact current task fingerprint, matching declared
+metadata bytes, then scoped package coverage and recency. The coverage fallback is a heuristic:
+a larger inventory can still contain older versions. Ranking caches compact immutable metadata
+within one build, but staging always revalidates the actual selected manifest and files.
+One receiving invocation still uses one donor bundle, and local candidates precede remote search.
+Independently matching versions spread across donors are not yet combined. Each donor retains
+its own original stamp; files are never merged under invented producer evidence. These limits
+remain separate from successful per-mesh admission.

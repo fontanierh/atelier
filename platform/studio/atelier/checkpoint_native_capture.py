@@ -33,7 +33,10 @@ def _label(ctx, path):
     path = Path(path)
     for label, root in _roots(ctx).items():
         if path.is_relative_to(root):
-            member = label + '/' + path.relative_to(root).as_posix()
+            tail = path.relative_to(root).as_posix()
+            if tail == '.':
+                return label
+            member = label + '/' + tail
             if _destination(ctx, member) == path:
                 return member
     raise CheckpointError('Native candidate source has a noncanonical path')
@@ -79,11 +82,18 @@ def publish(ctx, step, stamp, *, fresh, echo=print):
         current = context(ctx)
         if any(current != packet.get('context') for packet in observations) or fresh() != fingerprint:
             raise CheckpointError('Native candidate inputs/context changed before retention')
+        spoken = time.monotonic()
+        def progress(stage, count):
+            nonlocal spoken
+            if time.monotonic() - spoken >= 25:
+                echo(step.name + ': retaining native candidates: ' + stage + ' ' + str(count))
+                spoken = time.monotonic()
         required = dict(_file(ctx, Path(path)) for path in scope.files)
         prefixes = [_label(ctx, Path(path)).rstrip('/') + '/' for path in scope.directories]
         files, groups, proofs = dict(required), [], []
         for packet in observations:
             for name, record in packet['records'].items():
+                progress('validated groups', len(groups))
                 entry = packet['entries'][name]
                 try:
                     for source in entry['sources']:
@@ -110,21 +120,23 @@ def publish(ctx, step, stamp, *, fresh, echo=print):
         validate(value, ctx.game)
         store = Store(ctx.game)
         with store.locked():
-            spoken = time.monotonic()
             for count, (member, entry) in enumerate(retained.items(), 1):
                 store.put(_destination(ctx, member), entry['sha256'])
-                if time.monotonic() - spoken >= 25:
-                    echo(step.name + ': retaining native candidates ' + str(count) + '/' + str(len(retained)) + ' files')
-                    spoken = time.monotonic()
-            if (_revision() != revision or context(ctx) != current or fresh() != fingerprint
-                    or any(_file(ctx, _destination(ctx, member), entry)[1] != entry for member, entry in retained.items())
-                    or any(package_inventory(ctx.uproject.parent / 'Content', item['packages']) != record['packages']
-                           for item, record in proofs)
-                    or any(build_products.file_digest(resolve_source(ctx, source['member'])) != source['sha256']
-                           for item, _ in proofs for source in item['sources'])):
+                progress('copied files', count)
+            if _revision() != revision or context(ctx) != current or fresh() != fingerprint:
                 raise CheckpointError('Native producer changed during candidate retention')
+            for count, (member, entry) in enumerate(retained.items(), 1):
+                if _file(ctx, _destination(ctx, member), entry)[1] != entry:
+                    raise CheckpointError('Native producer files changed during candidate retention')
+                progress('rechecked files', count)
+            for count, (item, record) in enumerate(proofs, 1):
+                if (package_inventory(ctx.uproject.parent / 'Content', item['packages']) != record['packages']
+                        or any(build_products.file_digest(resolve_source(ctx, source['member'])) != source['sha256']
+                               for source in item['sources'])):
+                    raise CheckpointError('Native producer group changed during candidate retention')
+                progress('rechecked groups', count)
             key = identity(value)
-            target = store.directory/'candidate-sources'/(key+'.json')
+            target = safe_destination(store.directory, 'candidate-sources/' + key + '.json')
             if target.is_symlink():
                 raise CheckpointError('Linked native candidate catalogue')
             atomic_json(target, value)

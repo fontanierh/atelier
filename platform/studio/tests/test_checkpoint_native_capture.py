@@ -30,6 +30,7 @@ def owner(tmp_path, monkeypatch):
     current = native_protocol.context(ctx)
     store = checkpoint_store.Store(ctx.game, tmp_path / 'store')
     monkeypatch.setattr(checkpoint_store, 'Store', lambda *_: store)
+    monkeypatch.setattr(checkpoint_candidates, 'Store', lambda *_: store)
     monkeypatch.setattr(capture, '_revision', lambda: 'a' * 40)
     scope = checkpoint_candidates.CandidateScope(files=(report,), directories=(content / 'Region',))
     step = build.Step('unreal.region', [build.Call('owner', lambda *_: None)],
@@ -161,3 +162,86 @@ def test_proof_rechecked_after_copy(owner, monkeypatch, mutation):
     monkeypatch.setattr(owner.store, 'put', changed)
     assert retain(owner) is None
     assert not list((owner.store.directory / 'candidate-sources').glob('*.json'))
+
+
+def test_new_partial_catalogue_cannot_hide_older_complete_donor(owner, monkeypatch):
+    from atelier import build_checkpoints, native_candidates
+    owner.finalize()
+    complete = retain(owner)
+    hull = owner.content / 'Region/Hull.uasset'
+    # A+B -> A: a later owner roster removes B and publishes a newer partial catalogue.
+    hull.unlink()
+    nonce = '1' * 24
+    entry = dict(key='2' * 64, packages=['/Game/Region/Mesh'], native_source_validated=True,
+                 provenance={'kind': 'current-native-import'},
+                 sources=[dict(package='/Game/Region/Mesh', member='generated/source.glb',
+                               sha256=mesh_reuse.digest(owner.source))])
+    mesh_reuse.queue_pending(owner.ctx, owner.step.name, nonce, 'd' * 64, native_protocol.context(owner.ctx),
+                            'Mesh', entry, dict(imported=1, reused_local=0, reused_candidate=0))
+    mesh_reuse.finalize_pending(owner.ctx, owner.step.name, nonce)
+    partial = retain(owner)
+    assert partial != complete
+    assert checkpoint_candidates.local_keys(owner.store)[0] == partial
+    monkeypatch.setattr(native_candidates, 'Store', lambda *_: owner.store)
+    def guard(ctx, operation, request_id):
+        assert operation == 'stage-candidates'
+        return checkpoint_candidates.stage_worker(ctx, request_id)
+    monkeypatch.setattr(build_checkpoints, '_guard', guard)
+    # A -> A+B: ordinary discovery stages the coherent older donor including B.
+    assert checkpoint_candidates.prepare(owner.ctx, owner.step, echo=lambda _: None)
+    bundle = checkpoint_candidates.load(owner.ctx, owner.step.name)
+    assert bundle['checkpoint'] == complete
+    assert bundle.member_path('content/Region/Hull.uasset').read_bytes() == b'Hull'
+    assert not hull.exists()  # Staging remains independent, without receiving success.
+
+
+def test_linked_catalogue_parent_refuses_without_external_write(owner, tmp_path):
+    owner.finalize()
+    outside = tmp_path / 'outside'; outside.mkdir()
+    (owner.store.directory / 'candidate-sources').symlink_to(outside, target_is_directory=True)
+    assert retain(owner) is None
+    assert not list(outside.iterdir())
+
+
+def test_whole_owned_root_scope_selects_only_observed_groups(owner):
+    owner.finalize()
+    unrelated = owner.content / 'Other/Unrelated.uasset'
+    unrelated.parent.mkdir(); unrelated.write_bytes(b'unobserved')
+    owner.step = replace(owner.step, candidate_scope=checkpoint_candidates.CandidateScope(
+        files=(owner.report,), directories=(owner.content, owner.ctx.out)))
+    key = retain(owner)
+    assert key
+    value = native_protocol.read_json(owner.store.directory / 'candidate-sources' / (key + '.json'))
+    assert 'content/Region/Hull.uasset' in value['files']
+    assert 'content/Other/Unrelated.uasset' not in value['files']
+
+
+@pytest.mark.parametrize('preference', ['fingerprint', 'metadata'])
+def test_matching_newer_donor_outranks_larger_stale_workspace(owner, monkeypatch, preference):
+    from atelier import build_checkpoints, native_candidates
+    owner.finalize()
+    older = retain(owner)
+    if preference == 'metadata':
+        owner.report.write_text('current roster A only')
+    owner.stamp['fingerprint'] = 'f' * 64
+    (owner.content / 'Region/Hull.uasset').unlink()
+    entry = dict(key='2' * 64, packages=['/Game/Region/Mesh'], native_source_validated=True,
+                 provenance={'kind': 'current-native-import'},
+                 sources=[dict(package='/Game/Region/Mesh', member='generated/source.glb',
+                               sha256=mesh_reuse.digest(owner.source))])
+    mesh_reuse.queue_pending(owner.ctx, owner.step.name, '1' * 24, 'd' * 64, native_protocol.context(owner.ctx),
+                            'Mesh', entry, dict(imported=1, reused_local=0, reused_candidate=0))
+    mesh_reuse.finalize_pending(owner.ctx, owner.step.name, '1' * 24)
+    newer = retain(owner)
+    monkeypatch.setattr(native_candidates, 'Store', lambda *_: owner.store)
+    monkeypatch.setattr(build_checkpoints, '_guard', lambda ctx, op, request: checkpoint_candidates.stage_worker(ctx, request))
+    fingerprint = 'f' * 64 if preference == 'fingerprint' else None
+    assert checkpoint_candidates.prepare(owner.ctx, owner.step, fingerprint=fingerprint, echo=lambda _: None)
+    bundle = checkpoint_candidates.load(owner.ctx, owner.step.name)
+    assert bundle['checkpoint'] == newer and newer != older
+    # A cached ranking hint cannot bypass a later descriptor corruption at actual staging.
+    target = owner.store.directory / 'candidate-sources' / (newer + '.json')
+    target.write_text('{}')
+    owner.ctx.prepared_candidate_tasks.clear()
+    assert checkpoint_candidates.prepare(owner.ctx, owner.step, fingerprint=fingerprint, echo=lambda _: None)
+    assert checkpoint_candidates.load(owner.ctx, owner.step.name)['checkpoint'] == older

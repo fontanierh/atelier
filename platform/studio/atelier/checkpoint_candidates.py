@@ -128,7 +128,7 @@ def local_keys(store):
     return list(dict.fromkeys(key for _, key in sorted(candidates, reverse=True)))
 
 
-def prepare(ctx, step, *, echo=print):
+def prepare(ctx, step, *, fingerprint=None, echo=print):
     """Automatically discover compatible candidates before a normal native miss, including batches."""
     scope = getattr(step, 'candidate_scope', None)
     if scope is None:
@@ -147,7 +147,47 @@ def prepare(ctx, step, *, echo=print):
         if not selected:
             return None
         return stage(ctx, key, donor_task, selected, receiver_task=step.name)
-    for key in local_keys(store):
+    # Ranking hints are never admission proof. Re-read the selected immutable descriptor
+    # in attempt()/stage(), even when another task has already ranked it in this build.
+    from .native_candidates import original
+    from .checkpoint_actions import label
+    required = {label(ctx, path): Path(path) for path in scope.files}
+    prefixes = [label(ctx, path).rstrip('/') + '/' for path in scope.directories]
+    current_files = {}
+    for member, path in required.items():
+        try:
+            if not path.is_symlink():
+                current_files[member] = build_products.file_digest(path)
+        except (OSError, ValueError):
+            pass
+    hints = ctx.__dict__.setdefault('candidate_catalogue_ranking_hints', {})
+    ranked, current_context = [], context(ctx)
+    spoken = time.monotonic()
+    for age, key in enumerate(local_keys(store)):
+        try:
+            cache_key = (str(store.directory), key)
+            if cache_key not in hints:
+                saved = original(store, key)
+                stamps = {**saved['stamps'], **saved.get('incremental_stamps', {}), **saved.get('historical_stamps', {})}
+                hints[cache_key] = dict(context=saved['context'], revision=saved.get('source_revision', ''),
+                    stamps={name: stamp['fingerprint'] for name, stamp in stamps.items() if not stamp.get('touched')},
+                    files={name: entry['sha256'] for name, entry in saved['files'].items() if entry['kind'] == 'file'})
+            if time.monotonic() - spoken >= 25:
+                echo(step.name + ': ranking native donor metadata ' + str(age + 1) + ' catalogues inspected')
+                spoken = time.monotonic()
+            hint = hints[cache_key]
+            if (hint['context'] != current_context or donor_task not in hint['stamps']
+                    or not re.fullmatch('[0-9a-f]{40}', hint['revision']) or not set(required) <= hint['files'].keys()):
+                continue
+            selected = set(required) | {name for name in hint['files'] if any(name.startswith(prefix) for prefix in prefixes)}
+            if selected:
+                exact = fingerprint is not None and hint['stamps'][donor_task] == fingerprint
+                matching = sum(hint['files'].get(name) == digest for name, digest in current_files.items())
+                primaries = sum(name.startswith('content/') and name.endswith('.uasset') for name in selected)
+                ranked.append((-int(exact), -matching, -primaries, -len(selected), age, key))
+        except (OSError, ValueError, KeyError, TypeError, CheckpointError) as error:
+            echo(step.name + ': candidate miss (' + str(error) + ')')
+    for *_, key in sorted(ranked):
         try:
             result = attempt(key)
             if result:
