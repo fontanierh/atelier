@@ -39,6 +39,11 @@ def verify_lods(target,screen_sizes,meshes,impostor=None,bark='Bark',interface=N
             'screen_sizes':actual,'materials_by_lod':palettes,'all_slots_blend':True}
 
 def apply_lods(target, data, output, meshes, *, seed, folder, interface=None):
+    """@cc [owner:fontanierh,label:performance] preserve-unchanged-lod-source-packages
+    Current material bindings MUST still be applied and validated. An unchanged binding
+    MUST NOT dirty its source LOD package, and clean source packages MUST NOT be forced
+    through a save. Target LOD assembly and its current validation MUST still run.
+    """
     editor = U.EditorAssetLibrary
     name = target.get_name()
     original_vertices = meshes.get_number_verts(target, 0)
@@ -55,8 +60,11 @@ def apply_lods(target, data, output, meshes, *, seed, folder, interface=None):
             material = editor.load_asset('/Game/Japan/Materials/MI_' + key)
             if not material:
                 raise RuntimeError('LOD material missing: ' + key)
-            source.set_material(index, material)
-        if not editor.save_loaded_asset(source, False):
+            if source.get_material(index) != material:
+                source.set_material(index, material)
+            if source.get_material(index) != material:
+                raise RuntimeError('LOD material binding did not persist: ' + key)
+        if not editor.save_loaded_asset(source, only_if_is_dirty=True):
             raise RuntimeError('Could not save owned LOD package: ' + source.get_path_name())
         assert meshes.set_lod_from_static_mesh(target, level, source, 0, True) == level
     assert meshes.set_lod_screen_sizes(target, data['screen_sizes'])
