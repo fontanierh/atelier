@@ -162,7 +162,7 @@ bool Read(const FString& Path, TSharedPtr<FJsonObject>& Object)
 {
     FString Text;
     return FFileHelper::LoadFileToString(Text,*Path) &&
-        FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Object) && Object.IsValid();
+        FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(MoveTemp(Text)), Object) && Object.IsValid();
 }
 }
 
@@ -378,6 +378,9 @@ UStaticMesh* UYorimichiFoliageBuilder::BuildVariant(UStaticMesh* Source, const F
         Model.ScreenSize.Default=ShadowOnly?1.f:Root->GetArrayField(TEXT("screens"))[L]->AsNumber();
     }
     Mesh->SetAutoComputeLODScreenSize(false);Mesh->bGenerateMeshDistanceField=false;
+    // Every description and screen value now owns its data. Drop both JSON
+    // owners before allocating the render representation.
+    Levels.Empty();Root.Reset();
     UStaticMesh::FBuildMeshDescriptionsParams Params;
     if (!Mesh->BuildFromMeshDescriptions(Pointers,Params)) return nullptr;
     Mesh->SetLightMapCoordinateIndex(0);Mesh->MarkPackageDirty();
