@@ -139,14 +139,14 @@ def test_pre_receipt_warm_game_validator_and_success_only_publication(scene, mon
     from atelier import unreal_mesh_reuse as native
     repo = scene.out.parents[1]
     monkeypatch.setattr(paths, 'REPO', repo)
-    script = repo/'import.py'; script.write_text('def build(): return 1\n')
+    script = repo/'import.py'; script.write_text('def build(): return 1\ndef validate(mesh): return bool(mesh)\n')
     ctx = NS(out=scene.out, uproject=repo/'games/yorimichi/unreal/Game.uproject', game='yorimichi')
     package = '/Game/Region/Mesh'
     saved = ctx.uproject.parent/'Content/Region/Mesh.uasset'
     saved.parent.mkdir(parents=True); saved.write_bytes(b'previous completed mesh')
     old = dict(time=time.time(), fingerprint='a'*64, input_state={'inputs':{'<repo>/import.py':'b'*64}})
     monkeypatch.setattr(mesh_reuse, 'prior_stamp', lambda *a: old)
-    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: script.read_text())
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: 'def build(): return 1\n')
     monkeypatch.setattr(native, 'observed_environment', lambda *a: True)
     monkeypatch.setattr(native_candidates, 'load', lambda *a: None)
     monkeypatch.setattr(native, 'context', lambda _: {'engine':'observed'})
@@ -163,7 +163,7 @@ def test_pre_receipt_warm_game_validator_and_success_only_publication(scene, mon
     if defect == 'dirty': scene.unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages = lambda: [NS(get_name=lambda:package)]
     if defect == 'exception': scene.data.get_pipelines = lambda: 1/0
     def new_adapter():
-        return native.MeshReuse(ctx, 'unreal.region', script, ('build',))
+        return native.MeshReuse(ctx, 'unreal.region', script, ('build',), validation_functions=('validate',))
     def acquire(adapter):
         return adapter.acquire('Mesh', package, geometry=scene.entry, donor_geometry=None,
             sources=[(package, scene.source, mesh_reuse.digest(scene.source))], validator=lambda _: scene.valid())
