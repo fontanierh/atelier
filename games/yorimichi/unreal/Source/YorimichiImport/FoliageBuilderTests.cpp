@@ -84,14 +84,18 @@ bool FYorimichiFoliagePavingPaletteTest::RunTest(const FString&)
     {
         auto* Material=NewObject<UMaterial>(GetTransientPackage(),FName(Name));
         Material->GetEditorOnlyData()->BaseColor.UseConstant=false;
-        Source->SetMaterial(0,Material);
+        // SetMaterial schedules a rebuild of this deliberately uncommitted
+        // source fixture. Set the test slot directly, as the import-role fixture does.
+        Source->GetStaticMaterials()[0].MaterialInterface=Material;
         if (!TestTrue(TEXT("Paving foliage palette exports without altering classification"),
             UYorimichiFoliageBuilder::ExportSource(Source,{},TEXT("roles"),TEXT("mixed"),Path))) return false;
         FString Text;TSharedPtr<FJsonObject> Root;
         if (!TestTrue(TEXT("Exported paving fixture is readable"),FFileHelper::LoadFileToString(Text,*Path) &&
             FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root))) return false;
         TestEqual(TEXT("Certified roles are retained"),Root->GetStringField(TEXT("classification")),FString(TEXT("roles")));
-        const auto& Vertex=Root->GetArrayField(TEXT("vertices"))[0]->AsObject();
+        const auto& Vertices=Root->GetArrayField(TEXT("vertices"));
+        if (!TestEqual(TEXT("Fixture retains all triangle corners"),Vertices.Num(),3)) return false;
+        const auto& Vertex=Vertices[0]->AsObject();
         const auto& Sample=Vertex->GetArrayField(TEXT("sample"));
         const auto Linear=[](float C){return FMath::Pow((C+.055f)/1.055f,2.4f);};
         TestTrue(TEXT("Leaf colour uses the source shader's linear vertex paint"),
