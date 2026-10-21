@@ -135,3 +135,26 @@ raw samples, settings and source revision go under `build/yorimichi/foliage_perf
 missing GPU timing (including NullRHI) and either fixed-clock mode, restores the active foliage
 preference (including launcher-selected settings files), CVars, HUD mode and player camera,
 and never treats fixed-step filming as a real-time performance result. Inspect captures before publishing.
+
+## Native preparation boundary
+
+`YorimichiFoliagePreparation` is an editor-only module. Its
+`YorimichiFoliagePreparation` Python class exports source palettes and geometry,
+constructs derivative meshes, and reads exact stored geometry snapshots. The normal
+`unreal.foliage_system` owner declares this module's compiled digest. Raw import role
+certification remains in `YorimichiImport`, through `YorimichiFoliageBuilder`.
+Neither native module links the other; both use Engine's synchronous garbage collector.
+The preparation digest record is also an explicit input of per-mesh resume policy,
+so compiler, build-rule and linked-library changes cannot retain an earlier unit policy.
+
+Adding the module changes the project descriptor and moves compiled code once. That
+transition requires an ordinary compile and may revalidate imports. Thereafter a
+preparation-only edit changes the preparation library and its cutoff token, while
+unchanged raw import libraries keep their tokens. Source, engine, configuration and
+actually consumed module changes still invalidate their consumers. No fingerprint
+exception or manufactured stamp is involved.
+
+The graph/digest/descriptor tests exercise this boundary with stand-in compiled
+libraries. They do not establish native build compatibility or a production timing
+improvement. Native adoption belongs at a whole-caller boundary after the current
+first-game run, preserving completed products and inspecting the normal build plan.

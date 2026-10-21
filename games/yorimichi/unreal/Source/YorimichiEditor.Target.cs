@@ -10,5 +10,6 @@ public class YorimichiEditorTarget : TargetRules
         IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
         ExtraModuleNames.Add("Yorimichi");
         ExtraModuleNames.Add("YorimichiImport");
+        ExtraModuleNames.Add("YorimichiFoliagePreparation");
     }
 }

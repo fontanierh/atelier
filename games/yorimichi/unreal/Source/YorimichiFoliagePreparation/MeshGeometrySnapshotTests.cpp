@@ -1,4 +1,4 @@
-#include "FoliageBuilder.h"
+#include "FoliagePreparation.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Engine/StaticMesh.h"
 #include "HAL/FileManager.h"
@@ -31,7 +31,7 @@ bool FMeshGeometrySnapshotTest::RunTest(const FString&)
     }
     D.CreateTriangle(Group,Corners);Mesh->CreateMeshDescription(0,MoveTemp(D));
     const FString Path=FPaths::ProjectSavedDir()/TEXT("MeshGeometrySnapshotTest.bin");
-    if (!TestTrue(TEXT("Stored geometry exports"),UYorimichiFoliageBuilder::ExportGeometrySnapshot(Mesh,Path))) return false;
+    if (!TestTrue(TEXT("Stored geometry exports"),UYorimichiFoliagePreparation::ExportGeometrySnapshot(Mesh,Path))) return false;
     TArray<uint8> Bytes;
     if (!TestTrue(TEXT("Snapshot readable"),FFileHelper::LoadFileToArray(Bytes,*Path))) return false;
     // Independent Python struct.pack('<...') golden for exactly this fixture.
@@ -39,12 +39,12 @@ bool FMeshGeometrySnapshotTest::RunTest(const FString&)
     TestEqual(TEXT("Exact Python/native binary parity"),BytesToHex(Bytes.GetData(),Bytes.Num()).ToLower(),Expected);
     auto* Stored=Mesh->GetMeshDescription(0);FStaticMeshAttributes B(*Stored);
     B.GetVertexInstanceNormals()[Corners[0]]=FVector3f(1,0,0);
-    TestTrue(TEXT("Changed geometry still exports"),UYorimichiFoliageBuilder::ExportGeometrySnapshot(Mesh,Path));
+    TestTrue(TEXT("Changed geometry still exports"),UYorimichiFoliagePreparation::ExportGeometrySnapshot(Mesh,Path));
     TArray<uint8> Changed;FFileHelper::LoadFileToArray(Changed,*Path);
     TestTrue(TEXT("Normal mutation changes proof"),Changed!=Bytes);
     Stored->CreateVertex();
-    TestFalse(TEXT("Unexpected topology refuses proof"),UYorimichiFoliageBuilder::ExportGeometrySnapshot(Mesh,Path));
-    TestFalse(TEXT("Null mesh refuses proof"),UYorimichiFoliageBuilder::ExportGeometrySnapshot(nullptr,Path));
+    TestFalse(TEXT("Unexpected topology refuses proof"),UYorimichiFoliagePreparation::ExportGeometrySnapshot(Mesh,Path));
+    TestFalse(TEXT("Null mesh refuses proof"),UYorimichiFoliagePreparation::ExportGeometrySnapshot(nullptr,Path));
     IFileManager::Get().Delete(*Path);
     return true;
 }

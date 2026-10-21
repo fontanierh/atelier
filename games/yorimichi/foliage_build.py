@@ -46,7 +46,7 @@ def verify_system(content, report_path):
 def system_step(ctx, prerequisites):
     content = GAME/'unreal/Content'
     command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
-                           modules=('YorimichiImport',), null_rhi=True, memory_gib=20,
+                           modules=('YorimichiFoliagePreparation',), null_rhi=True, memory_gib=20,
                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
     command.timeout = 3600
     command.progress = 25
@@ -54,10 +54,13 @@ def system_step(ctx, prerequisites):
                 [command],
                 inputs=[GAME/'foliage_system.py', WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
                         SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
-                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config'],
+                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config',
+                        *(GAME/'unreal/Source/YorimichiFoliagePreparation'/name for name in
+                          ('FoliagePreparation.cpp', 'FoliagePreparation.h', 'MeshGeometrySnapshot.cpp')),
+                        ctx.out/'unreal-modules/YorimichiFoliagePreparation.json'],
                 deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
                                                 support=(GAME/'foliage_build.py',))],
-                needs=[*prerequisites, *unreal_modules.needs(('YorimichiImport',))],
+                needs=[*prerequisites, *unreal_modules.needs(('YorimichiFoliagePreparation',))],
                 outputs=[content/'FoliageSystem', content/'Data/foliage_system/registry.json',
                          ctx.out/'foliage_system/report.json', ctx.out/'foliage_system/preparation-counts.json'],
                 verify=lambda:verify_system(content,ctx.out/'foliage_system/report.json'),

@@ -30,3 +30,10 @@ Visual and shadow representations MUST have separate budgets; distant forest pat
 MUST preserve silhouettes and clearings. Changes MUST carry revision-bound ground,
 canopy and aerial captures plus real-time frame/GPU timings before performance or
 visual-equivalence claims. Detached cosmetic particles are not vegetation placements.
+
+@cc [owner:fontanierh,label:architecture;performance] foliage-native-preparation-boundary
+Foliage geometry preparation, palette export and snapshot readback MUST live in the
+YorimichiFoliagePreparation editor module, independently of raw import role certification in
+YorimichiImport. Neither module MAY link the other. The preparation owner MUST declare its own
+module digest; raw imports MUST NOT depend on that digest. A preparation-only compiled change
+MUST preserve raw import keys when their real source, engine, configuration and module bytes are unchanged.

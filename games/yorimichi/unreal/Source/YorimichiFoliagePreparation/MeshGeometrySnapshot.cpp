@@ -1,4 +1,4 @@
-#include "FoliageBuilder.h"
+#include "FoliagePreparation.h"
 #include "Engine/StaticMesh.h"
 #include "HAL/FileManager.h"
 #include "MeshDescription.h"
@@ -23,7 +23,7 @@ bool Float(FArchive& Out, float Value)
 }
 }
 
-bool UYorimichiFoliageBuilder::ExportGeometrySnapshot(UStaticMesh* Mesh, const FString& Path)
+bool UYorimichiFoliagePreparation::ExportGeometrySnapshot(UStaticMesh* Mesh, const FString& Path)
 {
     if (!IsInGameThread() || !Mesh || Path.IsEmpty()) return false;
     FStaticMeshCompilingManager::Get().FinishCompilation({Mesh});
