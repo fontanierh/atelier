@@ -1,0 +1,13 @@
+{
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "prompt": "Use case: precise-object-edit / stylized-concept.\nCreate a restrained FOUR-VIEW polish sheet of the SAME approved go-kart and seated character from the four supplied images. Images 1-4 are exact EDIT TARGETS: front three-quarter, rear three-quarter, side, elevated three-quarter. Arrange those same four viewpoints into a clean 2x2 sheet with ample margins and a plain warm pale-grey background. No typography, numbers, logos or watermark.\nThis is a marginal finish pass, NOT a redesign. Keep every silhouette, dimension and contact geometry unchanged. Keep the seat and its recline, steering-wheel centre/tilt/radius, column, pedal positions, all four tyre centres/radii/widths, wheelbase, track and character scale exactly as in the inputs. Preserve the character's identity, outfit, seated pose, hands, finger grip, arms, legs and foot placements. Do not add anything in the cockpit or between/against the legs. Keep the existing open go-kart assembly, warm terracotta shell/pods, dark exposed frame, warm ivory hubs and ochre seat.\nImprove only the kart's exterior finish so it belongs to this charming stylized hand-painted countryside game: richer warm muted terracotta, softly graduated painted panels, restrained warm-ivory accent bands on the outer pods and front fairing, clean dark edge trim, gently highlighted moulded edges, convincing dark rubber and warm matte metal. Reduce the harsh flatness of the existing panels through broad subtle colour variation, not gloss or photoreal texture. Keep the engine compact and understated. Everything must remain practical as a modest-polygon 3D game asset. No shape growth, no wheel/seat/column motion, no thickening toward the character, no roof/cage/spoiler, no orange dashboard, no racing-simulator detailing, no chrome glare. The result should look 10-15% more finished and beautiful while remaining recognizably the exact same kart.\n",
+  "image_sha256": "3cb59ad1ed7dfb83b86d44d1ef95f8c912d3b8c77d04d1c6edcd7b5c2666c61e",
+  "inputs": {
+    "front": "511c4a2d11ba045ade80b3fb126d0d500702c1cced3f7f1e1fd6e8df60e6fcf7",
+    "rear": "f2009ac5e8bb6b4e8a775f02e59af330e31e50140cfa645a78311261055919f6",
+    "side": "209cb5ae2581b55b6afde24a1fb9430c2c799f8fcee73c7fbb44932bbcdcd748",
+    "elevated": "d9a7aa3e6f34818858280b9b27b6b3239097abc3a57b5be29879fb89c0cf9606"
+  },
+  "ledger_status": "done"
+}

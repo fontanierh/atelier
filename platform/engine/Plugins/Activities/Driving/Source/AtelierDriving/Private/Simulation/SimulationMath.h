@@ -8,9 +8,9 @@
 
 namespace atelier::driving
 {
-inline constexpr float PI = 3.14159265358979323846f;
-inline constexpr float TAU = 2.0f * PI;
-// Correctly rounded degree/radian constants, rather than PI/180 computed in f32 (one ULP off).
+inline constexpr float SIM_PI = 3.14159265358979323846f;
+inline constexpr float SIM_TAU = 2.0f * SIM_PI;
+// Correctly rounded degree/radian constants, rather than pi/180 computed in f32 (one ULP off).
 inline constexpr float DEG_TO_RAD = 0.017453292519943295769236907684886f;
 inline constexpr float RAD_TO_DEG = 57.2957795130823208767981548141051703f;
 
@@ -319,7 +319,7 @@ inline Quat from_rotation_arc(Vec3 from, Vec3 to)
     }
     if (d < -ONE_MINUS_EPS)
     {
-        return from_axis_angle(any_orthonormal_vector(from), PI);
+        return from_axis_angle(any_orthonormal_vector(from), SIM_PI);
     }
     const Vec3 c = cross(from, to);
     return quat_normalize({c.x, c.y, c.z, 1.0f + d});

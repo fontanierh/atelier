@@ -6,6 +6,8 @@
 #include "Serialization/JsonSerializer.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -157,6 +159,35 @@ bool FTransportRiderTransitionTest::RunTest(const FString&)
     TestFalse(TEXT("No stale aboard flag"), Character->bTrainAboard);
     TestTrue(TEXT("Train can board after ferry"), FTransportRiders::SetAboard(Rider, true, true, ETransportVehicle::Train));
     TestTrue(TEXT("Train passenger view remains available"), Character->IsTrainPassenger());
+
+    // Station floors and cabins may have the same service owner; ownership is not a moving-base identity.
+    auto* Service = World->SpawnActor<AActor>(Spawn);
+    if (!TestNotNull(TEXT("Shared station and cabin owner"), Service)) return false;
+    ON_SCOPE_EXIT { Character->SetBase(static_cast<UPrimitiveComponent*>(nullptr)); Service->Destroy(); };
+    auto* Station = NewObject<UBoxComponent>(Service);
+    auto* Body = NewObject<UBoxComponent>(Service);
+    for (UBoxComponent* Part : {Station, Body})
+    {
+        Service->AddInstanceComponent(Part);
+        Part->SetMobility(EComponentMobility::Movable);
+        Part->RegisterComponent();
+    }
+    auto* Movement = Character->GetCharacterMovement();
+    Movement->SetUpdatedComponent(Capsule);
+    Movement->SetMovementMode(MOVE_Walking);
+    Character->SetBase(Station);
+    if (!TestTrue(TEXT("Rider initially bases on the service-owned station"), Character->GetMovementBase() == Station)) return false;
+    const FTransform Previous = Body->GetComponentTransform();
+    const FVector Before = Character->GetActorLocation();
+    Body->SetWorldLocation(Previous.GetLocation() + FVector(25., 0., 0.));
+    FTransportRiders::Carry(Rider, *Service, Body, Previous, true);
+    TestTrue(TEXT("Station-based rider receives the cabin move"), Character->GetActorLocation().Equals(Before + FVector(25., 0., 0.), .001));
+    TestTrue(TEXT("Station-based rider rebases to the exact cabin body"), Character->GetMovementBase() == Body);
+    const FVector Based = Character->GetActorLocation();
+    const FTransform BasedPrevious = Body->GetComponentTransform();
+    Body->SetWorldLocation(BasedPrevious.GetLocation() + FVector(25., 0., 0.));
+    FTransportRiders::Carry(Rider, *Service, Body, BasedPrevious, true);
+    TestTrue(TEXT("The exact movement base is not manually applied twice"), Character->GetActorLocation().Equals(Based, .001));
     return true;
 }
 

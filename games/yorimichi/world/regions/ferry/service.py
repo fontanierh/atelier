@@ -34,7 +34,8 @@ GATE_HEIGHT = 1.2                         # the closed boarding gate's stop, abo
 SHIP_ROOT = '/Game/Ferry/Ship'
 TERMINAL_ROOT = '/Game/Ferry/Terminals'
 SHIP_WALK = yori.ASSETS / 'vehicles/ferry/walk.py'
-CODE = (HERE / 'service.py', HERE / 'timetable.py', HERE.parent / 'hidamari/ferry_source.py', SHIP_WALK)
+SHARED_WALK = yori.WORLD / 'walk_raster.py'
+CODE = (HERE / 'service.py', HERE / 'timetable.py', HERE.parent / 'hidamari/ferry_source.py', SHIP_WALK, SHARED_WALK)
 
 
 def ue(x, y, z=0.0):
@@ -204,10 +205,10 @@ def validate_terminal_audits(data):
         raise ValueError('ferry terminal audit proof is incomplete') from exc
 
 
-def validate_ship_walk(root=FERRY, checker=SHIP_WALK):
+def validate_ship_walk(root=FERRY, checker=SHIP_WALK, raster=SHARED_WALK):
     """Require a passing ship walk bound to this checker and the exact deck."""
     report = json.loads((root / 'review/walk_report.json').read_text())
-    expected = {'checker_sha256': sha(checker),
+    expected = {'checker_sha256': sha(checker), 'raster_sha256': sha(raster),
                 'deck_layout_sha256': sha(root / 'deck_layout.json')}
     if report.get('inputs') != expected:
         raise ValueError('ferry ship walk is stale; rebuild the deck walking audit')

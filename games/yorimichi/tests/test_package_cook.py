@@ -132,3 +132,13 @@ def test_source_snapshot_tracks_experimental_mode_on_every_recipe_reload(tmp_pat
     ctx.cook_mode = CookMode.INCREMENTAL
     after = tool.source_snapshot(ctx)
     assert before['fingerprint'] != after['fingerprint']
+
+
+def test_restored_payload_is_recertified_without_deleting_it(tmp_path, monkeypatch):
+    tool, root, app, ctx = certify(tmp_path, monkeypatch)
+    original = tool.inventory(app, hashes=True)
+    receiving = dict(revision='b' * 40, source_dirty=False, fingerprint='same-payload-inputs', engine={'BuildId': 'test'})
+    monkeypatch.setattr(tool, 'source_snapshot', lambda ctx: receiving.copy())
+    tool.certify_restored(ctx, io.StringIO())
+    assert tool.inventory(app, hashes=True) == original
+    assert json.loads((root / 'cook.json').read_text())['revision'] == 'b' * 40

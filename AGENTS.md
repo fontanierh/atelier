@@ -315,22 +315,18 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   `--verify` when byte corruption is suspected. See [build recipes](docs/BUILD_RECIPES.md). Inspect unique cache
   bytes with `atelier cache status`; preview pruning with `atelier cache gc --dry-run`. Do not enable portable
   caching for Unreal packages or use reference edges to hide reads of bounds, materials or collision.
-- Before building a fresh checkout, look for a completed build of the same source revision and engine version on
-  the machine. Reuse verified artifacts as independent copies (APFS clones are cheap); never share mutable Content,
-  Binaries or Intermediate folders between agents. Keep the same installed engine across checkouts.
-  Use `uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>`; it verifies fingerprints,
-  required outputs and engine build IDs before carrying over successful stamps. Run the incremental build afterward
-  to confirm every unchanged step is up to date. It leaves absolute-path-dependent Intermediate files behind.
-  Reuse and `reuse --abandon` use the normal guarded child lifecycle, including full-capacity admission.
-  In full mode the transfer remains exclusive while it inspects, copies and verifies; no second legacy lock is needed.
-  The transfer has a 30-minute work deadline. A slow byte copy may hit it; the journal still blocks use until
-  `reuse --abandon` removes the partial copy. Success stamps publish only after guard cleanup and capacity close.
-  Final publication and abandonment share a receiver metadata mutex, acquired only for those file operations.
-- Make sure the machine's sound masters are fetched before reuse (`uv run atelier fetch <game>`).
-  The download cache is shared by all checkouts on the machine.
-  Yorimichi's model GLB sources are committed in the asset library, including the skate pier
-  modules; Super Ultra Mega Park's source arrays and textures are committed too. If any consumed input differs
-  from the donor, resolve the mismatch before reuse. Never bypass verification or manufacture stamps.
-- Reuse only outputs whose source fingerprints and required files match. `--touch` records existing outputs as
-  built: use it only after verifying those outputs, never to hide a failed or incomplete build. A source change
-  must still invalidate its affected steps and compile when required.
+- Use the normal `atelier build` command in fresh and warm worktrees. It checks input/tool-keyed task results
+  locally and in the configured private checkpoint repository before native work, independent of Git HEAD.
+  Follow [build checkpoints](docs/BUILD_CHECKPOINTS.md). Keep the same installed engine and independent outputs;
+  never share mutable Content, Binaries or Intermediate.
+- Configure private storage with `atelier cache configure --repository OWNER/REPOSITORY`; its address belongs
+  only in machine-local configuration, never tracked source. Release publication retains an existing verified
+  build before publishing the playtest; it does not request another cook. Preserve producers and all caches
+  until checkpoint verification and receiving restore are accepted. Keep referenced remote releases/packs.
+- Unknown or expensive native misses stop before admission. Inspect `--plan --explain`, fix cache access or
+  declarations, and use a specific `--rebuild-reason` only for unavoidable work. `--touch` is refused. `--force`
+  requires one exact task plus a reason, and must preserve current prerequisites. Never clear caches or stamps.
+- New reusable tasks must declare complete disjoint products/output roots and complete inputs. Representative
+  legacy outputs cannot become a cache entry by inference; migrate ownership before claiming individual reuse.
+  Missing/corrupt outputs must invalidate their stamps. Native compile receipts must include required plugin
+  products. Keep guard/journal recovery intact; never manufacture success stamps.

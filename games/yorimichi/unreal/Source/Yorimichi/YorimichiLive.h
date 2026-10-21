@@ -51,6 +51,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Live") static bool SkateGoofy(bool bGoofy);
     /** The bike (docs/BIKE.md) as text: state, clip and its time, speed, steering, the rider and the bike's placement. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString BikeState();
+    /** The car's state while it is out: speed, gear, wheels on the ground, hint and chassis pose (UDrivingComponent). */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString CarState();
+    /** Chassis height/vertical speed, pitch/roll and each wheel's compression, height and contact (UDrivingComponent). */
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString CarRide();
+    UFUNCTION(BlueprintCallable, Category = "Live") static FString CarLoops();
     /** The skate loops now: "volume pitch" for roll, grind, slide, skid and scrape. */
     UFUNCTION(BlueprintCallable, Category = "Live") static FString SkateLoops();
     /** The bike's loops, "volume pitch" each (UBikeComponent::GetLoopState). */

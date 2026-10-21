@@ -7,7 +7,7 @@ class AWandererCharacter;
 class UPrimitiveComponent;
 
 /** Which passenger vehicle carries a player (AWandererCharacter::AboardVehicle). */
-enum class ETransportVehicle : uint8 { None, Train, Ferry };
+enum class ETransportVehicle : uint8 { None, Train, Ferry, Gondola };
 
 /** A player a passenger vehicle carries: the Belmonte train's coaches (ABelmonteTrainService) or the ferry
  *  (AFerryService). Each service keeps one per player and adds its own state (seats, tickets, boarding walks). */
@@ -22,6 +22,13 @@ struct YORIMICHI_API FTransportRider
     FCollisionResponseContainer Responses;
 };
 
+/** Resolved authoritative membership; unresolved replicated actor references are retried by the caller. */
+struct FTransportMembership
+{
+    AWandererCharacter* Character = nullptr;
+    int32 Vehicle = INDEX_NONE;
+};
+
 /**
  * The one rider mechanism of Yorimichi's passenger vehicles: the vehicles are moved before the characters each frame,
  * and a rider standing on a vehicle's floor is carried by it as the character's movement base (SetBase on the vehicle's
@@ -31,6 +38,10 @@ struct YORIMICHI_API FTransportRider
  */
 struct YORIMICHI_API FTransportRiders
 {
+    static FTransportRider& Find(TArray<FTransportRider>& Riders, AWandererCharacter* Character);
+    /** Apply host membership to simulated proxies, including leave and delayed-reference retries. */
+    static void ApplyRemote(AActor& Service, TArray<FTransportRider>& Riders,
+        const TArray<FTransportMembership>& Membership, int32 VehicleCount, ETransportVehicle Kind);
     /** The service's actor ticks before the rider and the rider's movement (once per rider). */
     static void OrderTick(AActor& Service, FTransportRider& Rider);
     /** Aboard or off. bVehiclesOnly: aboard, only vehicle objects (ECC_Vehicle) and other pawns hold the rider, so

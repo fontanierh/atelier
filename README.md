@@ -379,19 +379,10 @@ The board is advisory; broker admission and process guards enforce the machine's
 
 ### Keep builds and reviews dependable
 
-A fresh worktree at the same clean revision can take independent copy-on-write clones of a completed build.
-Reuse checks source fingerprints, output bytes, engine version and module build IDs; code changes still rebuild
-what they affect.
-
-```sh
-uv run atelier fetch yorimichi
-uv run atelier reuse yorimichi --from ../completed-checkout --to ../fresh-worktree
-cd ../fresh-worktree && uv sync && uv run atelier build yorimichi
-```
-
-Named products carry byte inventories, and an interrupted copy cannot publish successful build stamps.
-[The reuse guide](docs/ARTIFACT_POOL.md#verified-whole-build-reuse) covers recovery and the automatic cache for
-portable products across feature revisions.
+Build normally in every worktree. Input-keyed task results are reused across source revisions, and releases
+retain private checkpoints for future builds. Configure the private repository once in machine-local settings;
+never put its address in tracked source. Unknown or expensive misses stop before native work.
+[Build checkpoints](docs/BUILD_CHECKPOINTS.md) covers setup, output ownership, coverage limits and recovery.
 
 Paid AI calls are recorded before submission and are never retried blindly. Public-repository lint checks protect
 against committed credentials and personal paths. [Code contracts](docs/CODE_CONTRACTS.md) make invariants visible
@@ -404,7 +395,7 @@ in review; semantic findings are advisory and must be addressed with a fix or ex
 | `atelier new <game>` | start a game from the sandbox |
 | `atelier doctor <game>` / `fetch <game>` | check the tools and sources; download what may not be redistributed |
 | `atelier setup [--headless] [--workers N]` | verify Xcode and Metal; prepare the tested installed UE 5.8.2 for SSH builds |
-| `atelier reuse <game> --from PATH [--to PATH]` | copy verified artifacts into a fresh worktree at the same revision |
+| `atelier cache configure --repository OWNER/REPOSITORY` | configure private checkpoint storage locally |
 | `atelier build <game> [step ...]` | build what changed; inspect rebuild reasons with `--plan --explain` ([recipe guide](docs/BUILD_RECIPES.md)) |
 | `atelier play <game> [--profile P] [--set K=V] [--memory-gib N]` | play with resource admission and memory guards; profiles come from the game's `game.toml` |
 | `atelier playtest <game> [--tag T] [--download-only] [--memory-gib N]` | download, verify and play a GitHub release; `[release]` sets the tag prefix, launcher, watched processes and log |

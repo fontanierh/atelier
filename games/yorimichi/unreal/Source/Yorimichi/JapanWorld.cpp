@@ -40,6 +40,7 @@
 #include "ZeppelinService.h"
 #include "BelmonteTrainService.h"
 #include "FerryService.h"
+#include "GondolaService.h"
 #include "RacingBroadcast.h"
 #include "RacingService.h"
 #include "BelmonteTrack.h"
@@ -373,6 +374,7 @@ void AJapanWorld::Load()
         }
     ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("belmonte/runtime.json")));
     ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("brinecove/runtime.json")));
+    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("gondola/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
     if (Root->TryGetObjectField(TEXT("instances"), Inst))
     {
@@ -690,6 +692,8 @@ void AJapanWorld::Load()
     }
     if (GetNetMode() != NM_Client && !AFerryService::Spawn(GetWorld(), AtelierDataPath(TEXT("ferry/service/service.json"))))
         Incomplete.Add(TEXT("ferry"));
+    if (GetNetMode() != NM_Client && !AGondolaService::Spawn(GetWorld(), AtelierDataPath(TEXT("gondola/runtime.json"))))
+        Incomplete.Add(TEXT("gondola"));
     // The racing world (docs/RACING.md): the host owns it; clients receive the replicated service.
     if (GetNetMode() != NM_Client) ARacingService::Spawn(GetWorld());
     // Its TVs in Belmonte's osteria and Salon (docs/RACING.md, "TVs"): drawn on every machine that renders, never replicated.

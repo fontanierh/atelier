@@ -7572,6 +7572,10 @@
     "belmonte/concepts/station/side_right.jpg": {
       "bytes": 410440,
       "sha256": "0981fabd3aabe2587fbd66be9dc29a3fc18dc109000e58e62189a1cbe8fbb595"
+    },
+    "vehicles/kart/reference.png": {
+      "bytes": 1698713,
+      "sha256": "3cb59ad1ed7dfb83b86d44d1ef95f8c912d3b8c77d04d1c6edcd7b5c2666c61e"
     }
   }
 }

@@ -101,6 +101,7 @@ bool AHippodrome::Initialize(const FString& Path)
         Component->SetCollisionResponseToAllChannels(ECR_Block);
         Component->SetCanEverAffectNavigation(false);
         Component->RegisterComponent(); ++Placed;
+        if (Name == TEXT("SM_HD_Ground")) Course.Grounds = Component->Bounds.GetBox();
     }
     RootComponent->SetMobility(EComponentMobility::Static);
     bGameplayReady = Placed > 0 && Placed == Root_->GetArrayField(TEXT("meshes")).Num();

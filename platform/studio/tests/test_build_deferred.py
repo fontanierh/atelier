@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_inputs, build_plan, paths, reuse_inspect
+from atelier import build, build_inputs, build_plan, paths
 from atelier.build import Call, DeferredInputs, Product, Step
 from atelier.build_deferred import observe
 from atelier.build_products import Graph
@@ -187,35 +187,6 @@ def test_plain_legacy_fingerprint_is_unchanged(project):
     build._hash_path(expected, source)
     expected.update(b'dependency')
     assert build.fingerprint(step, {'a': 'dependency', 'order': 'ignored'}) == expected.hexdigest()
-
-
-def test_reuse_observes_once_and_filters_copied_members_including_metadata(project, monkeypatch):
-    p = project
-    version = p.root / 'engine/Engine/Build/Build.version'; version.parent.mkdir(parents=True); version.write_text('{}')
-    p.ctx.unreal_root = p.root / 'engine'
-    p.ctx.uproject = p.root / 'games/standin/unreal/Standin.uproject'
-    p.ctx.uproject.parent.mkdir(parents=True); p.ctx.uproject.write_text('{}')
-    source = p.root / 'source.txt'; source.write_text('source')
-    generated = p.ctx.uproject.parent / 'Content'; generated.mkdir()
-    (generated / 'mesh.uasset').write_text('generated')
-    observed = []
-    def collect(root):
-        observed.append(root)
-        return files(root)
-    step = Step('a', [], inputs=[source], deferred_inputs=[DeferredInputs('content', collect, (generated,), support=(SUPPORT,))])
-    p.steps.append(step)
-    monkeypatch.setattr(reuse_inspect.manifest, 'game', lambda game: {'editor_target': 'StandinEditor'})
-    first = reuse_inspect.inspect_game('standin')['steps'][0]
-    assert observed == [generated]
-    observed.clear()
-    (generated / 'mesh.uasset').unlink()
-    second = reuse_inspect.inspect_game('standin')['steps'][0]
-    assert observed == [generated]
-    assert first['fingerprint'] == first['verified_fingerprint']
-    assert first['fingerprint'] != second['fingerprint']
-    assert first['source'] == second['source']
-    source.write_text('edited source')
-    assert reuse_inspect.inspect_game('standin')['steps'][0]['source'] != first['source']
 
 
 def test_observation_metadata_is_portable_with_unicode_checkout_paths(tmp_path, monkeypatch):

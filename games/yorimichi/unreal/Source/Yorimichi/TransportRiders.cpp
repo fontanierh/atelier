@@ -57,7 +57,8 @@ void FTransportRiders::Carry(FTransportRider& Rider, const AActor& Service, UPri
     // Standing on its floor the character movement follows the vehicle as its base; when it does not (a moment off the
     // floor), offline the vehicle's move this frame is applied to the rider here, before the character's own movement.
     const UPrimitiveComponent* Base = C->GetMovementBase();
-    if (Base && Base->GetOwner() == &Service) return;
+    // A station floor can share the service owner. Only this exact moving body is already following the rider.
+    if (Base == Body) return;
     if (!JapanNetwork::IsOnline(Service.GetWorld()) && bMoved)
     {
         const FTransform Now = Body->GetComponentTransform();
@@ -68,4 +69,26 @@ void FTransportRiders::Carry(FTransportRider& Rider, const AActor& Service, UPri
             C->Controller->SetControlRotation(C->Controller->GetControlRotation() + FRotator(0., Turn, 0.));
     }
     if (C->GetCharacterMovement()->IsMovingOnGround()) C->SetBase(Body);
+}
+
+FTransportRider& FTransportRiders::Find(TArray<FTransportRider>& Riders, AWandererCharacter* Character)
+{
+    for (FTransportRider& R : Riders) if (R.Character.Get() == Character) return R;
+    FTransportRider& R = Riders.AddDefaulted_GetRef(); R.Character = Character; return R;
+}
+
+void FTransportRiders::ApplyRemote(AActor& Service, TArray<FTransportRider>& Riders,
+    const TArray<FTransportMembership>& Membership, int32 VehicleCount, ETransportVehicle Kind)
+{
+    for (const FTransportMembership& P : Membership)
+        if (P.Character && !P.Character->IsLocallyControlled()) Find(Riders, P.Character);
+    for (FTransportRider& R : Riders)
+        if (AWandererCharacter* C = R.Character.Get(); C && !C->IsLocallyControlled())
+        {
+            const FTransportMembership* P = Membership.FindByPredicate(
+                [C](const FTransportMembership& Item) { return Item.Character == C; });
+            R.Vehicle = P && P->Vehicle >= 0 && P->Vehicle < VehicleCount ? P->Vehicle : INDEX_NONE;
+            OrderTick(Service, R);
+            SetAboard(R, R.Vehicle != INDEX_NONE, false, Kind);
+        }
 }

@@ -16,6 +16,7 @@ class YORIMICHI_API ABelmonteRegion : public AActor
     GENERATED_BODY()
 public:
     ABelmonteRegion();
+    static bool InClearance(const TSharedPtr<FJsonObject>& Data, double X, double Y);
     static void Clear(const TSharedPtr<FJsonObject>& WorldData, const FString& Path);
     static ABelmonteRegion* Spawn(AJapanWorld* Landscape, const FString& Path, FName Tag = TEXT("belmonte"));
     UFUNCTION(BlueprintCallable, Category = "Review") static int32 ReviewPendingShaderJobs();

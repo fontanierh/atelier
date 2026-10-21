@@ -59,10 +59,10 @@ struct Window
 inline WheelAngles ackermann(float target_deg, float wheel_base, float track_width)
 {
     const float turns = target_deg / 360.0f;
-    float inside = std::fabs(turns) * TAU;
-    if (inside > PI)
+    float inside = std::fabs(turns) * SIM_TAU;
+    if (inside > SIM_PI)
     {
-        inside -= TAU;
+        inside -= SIM_TAU;
     }
     const float denom = track_width * inside + wheel_base;
     const float outside = std::fabs(denom) > 1e-6f ? wheel_base * inside / denom : inside;

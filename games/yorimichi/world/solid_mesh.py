@@ -17,6 +17,46 @@ def signed_area(pts):
     return 0.5 * sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts)))
 
 
+def is_convex(pts):
+    n = len(pts); sgn = 0
+    for i in range(n):
+        a, b, c = pts[i], pts[(i + 1) % n], pts[(i + 2) % n]
+        cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if abs(cr) < 1e-12:
+            continue
+        s = 1 if cr > 0 else -1
+        if sgn and s != sgn:
+            return False
+        sgn = s
+    return True
+
+def ear_clip(pts):
+    """Triangulate a simple CCW polygon; returns index triples."""
+    idx = list(range(len(pts))); tris = []
+
+    def inside(p, a, b, c):
+        d1 = (p[0] - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (p[1] - b[1])
+        d2 = (p[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (p[1] - c[1])
+        d3 = (p[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (p[1] - a[1])
+        return not ((d1 < -1e-12 or d2 < -1e-12 or d3 < -1e-12) and (d1 > 1e-12 or d2 > 1e-12 or d3 > 1e-12))
+
+    guard = 0
+    while len(idx) > 3 and guard < 10000:
+        guard += 1; n = len(idx); found = False
+        for k in range(n):
+            i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % n]
+            a, b, c = pts[i0], pts[i1], pts[i2]
+            if (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) <= 1e-12:
+                continue
+            if any(inside(pts[j], a, b, c) for j in idx if j not in (i0, i1, i2)):
+                continue
+            tris.append((i0, i1, i2)); idx.pop(k); found = True
+            break
+        if not found:
+            raise ValueError('ear clipping failed (self-intersecting outline?)')
+    tris.append(tuple(idx))
+    return tris
+
 def offset_loop(pts, d):
     """Offset a CCW loop outward by d (negative insets) with mitred corners."""
     n = len(pts); out = []
@@ -41,16 +81,16 @@ def resample(pts, step, closed=True):
     return out
 
 
-def circle(r, n=12, phase=0.0, sx=1.0, sy=1.0):
-    return [(sx * r * math.cos(phase + 2 * math.pi * k / n), sy * r * math.sin(phase + 2 * math.pi * k / n)) for k in range(n)]
+def circle(r, n=12, phase=0.0, sx=1.0, sy=1.0, c=(0.0, 0.0)):
+    return [(c[0] + sx * r * math.cos(phase + 2 * math.pi * k / n), c[1] + sy * r * math.sin(phase + 2 * math.pi * k / n)) for k in range(n)]
 
 
-def rounded_rect(w, h, r, k=3):
+def rounded_rect(w, h, r, k=3, c=(0.0, 0.0)):
     pts = []
     for cx, cy, a0 in [(w / 2 - r, -h / 2 + r, -90), (w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180)]:
         for j in range(k + 1):
             a = math.radians(a0 + 90 * j / k)
-            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+            pts.append((c[0] + cx + r * math.cos(a), c[1] + cy + r * math.sin(a)))
     return pts
 
 
@@ -67,6 +107,12 @@ def _caller():
 
 
 class Mesh:
+    """@cc [owner:fontanierh,label:correctness] solid-part-transform-and-metadata
+    Each primitive MUST call part once per closed solid. part MUST apply the current
+    frame to every vertex, reverse winding under a reflection, preserve face materials
+    and append its contiguous face interval. Kit metadata MAY extend that interval
+    after its first two indices; shared audits MUST preserve and ignore those additions.
+    """
     def __init__(self, name, default_mat=None):
         self.name = name; self.verts = []; self.faces = []; self.mats = []; self.parts = []
         self.origins = []                  # the kit source line that built each part (for audit reports)
@@ -85,8 +131,8 @@ class Mesh:
     def at(self, pos=(0, 0, 0), yaw=0.0):
         return self._push(Matrix.Translation(Vector(pos)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z'))
 
-    def mirrored(self, on=True):
-        return self._push(Matrix.Scale(-1, 4, (0, 1, 0)) if on else Matrix.Identity(4))
+    def mirrored(self, on=True, axis='y'):
+        return self._push(Matrix.Scale(-1, 4, {'x': (1, 0, 0), 'y': (0, 1, 0)}[axis]) if on else Matrix.Identity(4))
 
     def frame(self, origin, U, V, A):
         r = Matrix((tuple(U), tuple(V), tuple(A))).transposed().to_4x4()
@@ -108,6 +154,7 @@ class Mesh:
             self.mats.append(mats[k] if isinstance(mats, list) else mats)
         self.parts.append((start, len(self.faces)))
         self.origins.append(_caller())
+        return len(self.parts) - 1
 
     @contextmanager
     def fitting(self, label, embed=0.06, direction=(0, 0, -1), gap=None, spread=None):
@@ -124,7 +171,7 @@ class Mesh:
                                'spread': spread, 'own': (self.name, start, len(self.parts))})
 
     # ---- primitives (all closed)
-    def prism(self, outline, z0, z1, side, top=None, bottom=None, bevel=0.0, step=None):
+    def prism(self, outline, z0, z1, side, top=None, bottom=None, bevel=0.0, step=None, triangulate_caps=False):
         pts = [tuple(p) for p in outline]
         if step:
             pts = resample(pts, step)
@@ -142,6 +189,13 @@ class Mesh:
             verts += [(x, y, fz(x, y) + dz) for x, y in ring]
         faces = [list(reversed(range(n))), [(len(rings) - 1) * n + k for k in range(n)]]
         mats = [bottom or (side if isinstance(side, str) else self.default_mat), top or (side if isinstance(side, str) else self.default_mat)]
+        if triangulate_caps and (not is_convex(pts) or callable(z0) or callable(z1)):
+            cap_materials = mats
+            faces, mats = [], []
+            last = (len(rings) - 1) * n
+            for a, b, c in ear_clip(rings[0][0]):
+                faces.extend(([c, b, a], [last + a, last + b, last + c]))
+                mats.extend(cap_materials)
         for r in range(len(rings) - 1):
             for k in range(n):
                 k2 = (k + 1) % n
@@ -150,7 +204,7 @@ class Mesh:
                     mats.append(side((pts[k][0] + pts[k2][0]) / 2, (pts[k][1] + pts[k2][1]) / 2))
                 else:
                     mats.append(side)
-        self.part(verts, faces, mats)
+        return self.part(verts, faces, mats)
 
     def loft_prism(self, outline, f0, f1, side, top=None, bottom=None, bevel=0.0, dx=0.5):
         """Solid over an x-monotone plan outline, lofted through x stations so a top that follows the sheer is
@@ -183,7 +237,7 @@ class Mesh:
                     mats.append(sm(xm, rings[i][1][1] if k in (1, 2) else rings[i][0][1]))
         faces.append(list(range(n))); mats.append(sm(xs[0], 0))
         last = (len(rings) - 1) * n; faces.append([last + k for k in range(n)][::-1]); mats.append(sm(xs[-1], 0))
-        self.part(verts, faces, mats)
+        return self.part(verts, faces, mats)
 
     def ring_prism(self, outer, inner, z0, z1, mat):
         """Closed band between two CCW loops of equal count (a frame, rim or valance)."""
@@ -193,20 +247,20 @@ class Mesh:
             j = (k + 1) % n
             faces += [[O1 + k, O1 + j, I1 + j, I1 + k], [O0 + k, I0 + k, I0 + j, O0 + j],
                       [O0 + k, O0 + j, O1 + j, O1 + k], [I0 + k, I1 + k, I1 + j, I0 + j]]
-        self.part(verts, faces, mat)
+        return self.part(verts, faces, mat)
 
-    def box(self, c, s, mat, bevel=0.0, top=None):
+    def box(self, c, s, mat, bevel=0.0, top=None, bottom=None):
         x, y, z = c; w, d, h = s
-        self.prism(rect(x - w / 2, y - d / 2, x + w / 2, y + d / 2), z - h / 2, z + h / 2, mat, top=top, bevel=bevel)
+        return self.prism(rect(x - w / 2, y - d / 2, x + w / 2, y + d / 2), z - h / 2, z + h / 2, mat, top=top, bottom=bottom, bevel=bevel)
 
-    def beam(self, a, b, w, d, mat):
+    def beam(self, a, b, w, d, mat, up=None, bevel=0.0):
         a, b = Vector(a), Vector(b); A = b - a; L = A.length
         if L < 1e-6:
             return
-        A.normalize(); ref = Vector((0, 0, 1)) if abs(A.z) < 0.9 else Vector((1, 0, 0))
-        U = A.cross(ref).normalized(); V = A.cross(U)
+        A.normalize(); ref = Vector(up) if up is not None else (Vector((0, 0, 1)) if abs(A.z) < 0.9 else Vector((1, 0, 0)))
+        U = (ref.cross(A) if up is not None else A.cross(ref)).normalized(); V = A.cross(U)
         with self.frame(a, U, V, A):
-            self.prism(rect(-w / 2, -d / 2, w / 2, d / 2), 0.0, L, mat)
+            return self.prism(rect(-w / 2, -d / 2, w / 2, d / 2), 0.0, L, mat, bevel=bevel)
 
     def tube(self, path, r, mat, n=6, star=1.0, twist=0.0, phase=0.0, sx=1.0, sy=1.0):
         P = [Vector(p) for p in path]; N = len(P)
@@ -229,10 +283,15 @@ class Mesh:
                 j = (k + 1) % n
                 faces.append([i * n + k, i * n + j, (i + 1) * n + j, (i + 1) * n + k])
         faces.append(list(reversed(range(n)))); faces.append([(N - 1) * n + k for k in range(n)])
-        self.part(verts, faces, mat)
+        return self.part(verts, faces, mat)
 
-    def lathe(self, c, profile, mat, n=12, sx=1.0, sy=1.0, phase=0.0):
+    def lathe(self, c, profile, mat, n=12, sx=1.0, sy=1.0, phase=0.0, axis=None):
         """Revolve [(z, r), ...] (bottom to top) around a local z axis through c. r=0 ends close to a point."""
+        if axis is not None:
+            A = Vector(axis).normalized(); ref = Vector((0, 0, 1)) if abs(A.z) < 0.9 else Vector((1, 0, 0))
+            U = ref.cross(A).normalized(); V = A.cross(U)
+            with self.frame(c, U, V, A):
+                return self.lathe((0, 0, 0), profile, mat, n=n, sx=sx, sy=sy, phase=phase)
         cx, cy, cz = c; verts = []; rings = []
         for z, r in profile:
             if r <= 0:
@@ -257,7 +316,7 @@ class Mesh:
             faces.append(list(reversed(rings[0]))); mats.append(band(0))
         if len(rings[-1]) > 1:
             faces.append(list(rings[-1])); mats.append(band(len(rings) - 2))
-        self.part(verts, faces, mats)
+        return self.part(verts, faces, mats)
 
     def torus(self, c, R, r, mat, n=16, m=6, mats=None):
         cx, cy, cz = c; verts = []
@@ -271,8 +330,69 @@ class Mesh:
             for j in range(m):
                 i2, j2 = (i + 1) % n, (j + 1) % m
                 faces.append([i * m + j, i2 * m + j, i2 * m + j2, i * m + j2]); fm.append(mats(i) if mats else mat)
-        self.part(verts, faces, fm)
+        return self.part(verts, faces, fm)
 
+
+    def band(self, outer, inner, z0, z1, mat):
+        """Closed solid between two open plan paths of equal count (outer runs CCW round the inside), with end caps:
+        a wall segment between openings."""
+        n = len(outer)
+        verts = [(*p, z0) for p in outer] + [(*p, z0) for p in inner] + [(*p, z1) for p in outer] + [(*p, z1) for p in inner]
+        O0, I0, O1, I1 = 0, n, 2 * n, 3 * n; faces = []
+        for k in range(n - 1):
+            j = k + 1
+            faces += [[O1 + k, O1 + j, I1 + j, I1 + k], [O0 + k, I0 + k, I0 + j, O0 + j],
+                      [O0 + k, O0 + j, O1 + j, O1 + k], [I0 + k, I1 + k, I1 + j, I0 + j]]
+        faces.append([O0, O1, I1, I0]); faces.append([O0 + n - 1, I0 + n - 1, I1 + n - 1, O1 + n - 1])
+        return self.part(verts, faces, mat)
+
+    def cylinder(self, a, b, r, mat, n=12):
+        A = Vector(b) - Vector(a)
+        return self.lathe(a, [(0, r), (A.length, r)], mat, n=n, axis=tuple(A))
+
+    def torus_arc(self, c, R, r, a0, a1, mat, n=24, m=6, z=0.0):
+        """Closed swept circle along a horizontal arc of radius R round c (angles in radians), capped at both ends."""
+        path = [(c[0] + R * math.cos(a0 + (a1 - a0) * k / n), c[1] + R * math.sin(a0 + (a1 - a0) * k / n), z) for k in range(n + 1)]
+        return self.tube(path, r, mat, n=m)
+
+    def loft(self, rings, mat, caps=True):
+        """Closed solid through equal-count 3D loops (CCW seen from the end the loft runs towards)."""
+        n = len(rings[0]); verts = [v for r in rings for v in r]; faces = []
+        for i in range(len(rings) - 1):
+            for k in range(n):
+                j = (k + 1) % n
+                faces.append([i * n + k, i * n + j, (i + 1) * n + j, (i + 1) * n + k])
+        faces.append(list(reversed(range(n)))); last = (len(rings) - 1) * n; faces.append([last + k for k in range(n)])
+        return self.part(verts, faces, mat)
+
+    def rock(self, c, size, mat, seed, n=7, m=5, embed=0.0):
+        """Rounded low-poly stone: a squashed, jittered ellipsoid (closed)."""
+        import random
+        rnd = random.Random(seed); sx, sy, sz = size; prof = []
+        for i in range(m + 1):
+            t = i / m; phi = -math.pi / 2 + math.pi * t
+            prof.append((math.sin(phi), math.cos(phi)))
+        verts = [(c[0], c[1], c[2] - sz)]; rings = []
+        for i in range(1, m):
+            zr, rr = prof[i]; ring = []
+            for k in range(n):
+                a = 2 * math.pi * (k + 0.5 * (i % 2)) / n; j = 0.82 + 0.3 * rnd.random()
+                ring.append(len(verts)); verts.append((c[0] + sx * rr * j * math.cos(a), c[1] + sy * rr * j * math.sin(a), c[2] + sz * zr * (0.85 + 0.2 * rnd.random())))
+            rings.append(ring)
+        top = len(verts); verts.append((c[0], c[1], c[2] + sz * 0.92)); faces = []
+        for k in range(n):
+            faces.append([0, rings[0][(k + 1) % n], rings[0][k]])
+        for i in range(len(rings) - 1):
+            a, b = rings[i], rings[i + 1]
+            for k in range(n):
+                j = (k + 1) % n
+                faces.append([a[k], a[j], b[j]]); faces.append([a[k], b[j], b[k]])
+        for k in range(n):
+            faces.append([rings[-1][k], rings[-1][(k + 1) % n], top])
+        return self.part(verts, faces, mat)
+
+    def tris(self):
+        return sum(len(f) - 2 for f in self.faces)
 
 def to_object(m, mats, order, sharp_degrees=38.0):
     """A Blender object from a Mesh: materials in the kit's order, smooth shading split at sharp_degrees, planar UVs
@@ -297,6 +417,39 @@ def to_object(m, mats, order, sharp_degrees=38.0):
     return obj, names
 
 
+def closed(m):
+    """Every part closed; any inward-wound part is flipped. Returns a report."""
+    edges = {}
+    for f in m.faces:
+        for a, b in zip(f, f[1:] + f[:1]):
+            k = (min(a, b), max(a, b)); edges[k] = edges.get(k, 0) + 1
+    open_edges = sum(1 for c in edges.values() if c != 2)
+    flipped = 0; V = m.verts; degenerate = 0
+    for part in m.parts:
+        start, end = part[:2]
+        vol = 0.0
+        for f in m.faces[start:end]:
+            a = Vector(V[f[0]])
+            for i in range(1, len(f) - 1):
+                vol += a.dot(Vector(V[f[i]]).cross(Vector(V[f[i + 1]]))) / 6
+        if vol < 0:
+            flipped += 1
+            for i in range(start, end):
+                m.faces[i] = tuple(reversed(m.faces[i]))
+    directed = {}
+    for f in m.faces:
+        for a, b in zip(f, f[1:] + f[:1]):
+            directed[(a, b)] = directed.get((a, b), 0) + 1
+    misoriented = sum(1 for c in directed.values() if c > 1)
+    for f in m.faces:
+        a = Vector(V[f[0]]); area = Vector((0, 0, 0))
+        for i in range(1, len(f) - 1):
+            area += (Vector(V[f[i]]) - a).cross(Vector(V[f[i + 1]]) - a)
+        if area.length < 1e-9:
+            degenerate += 1
+    return {'open_edges': open_edges, 'misoriented_edges': misoriented, 'flipped_parts': flipped, 'parts': len(m.parts), 'degenerate_faces': degenerate}
+
+
 # ------------------------------------------------------------------ audits shared by every kit on this builder
 SEAT_GAP = 0.01        # m: a fitting base may stand at most this far above what carries it
 SEAT_SLACK = 0.005     # m: beyond its declared embedding, how much deeper a base may sit
@@ -307,7 +460,8 @@ def _triangles(meshes):
     """((a, b, c), (mesh name, part index, origin)) for every triangle of the given meshes."""
     out = []
     for m in meshes:
-        for pi, (start, end) in enumerate(m.parts):
+        for pi, part in enumerate(m.parts):
+            start, end = part[:2]
             org = m.origins[pi] if pi < len(m.origins) else '?'
             for f in m.faces[start:end]:
                 for i in range(1, len(f) - 1):
@@ -388,7 +542,8 @@ def seat_failures(meshes, extra_tris=(), probe=0.3, reach=3.0, spread=0.06):
     from mathutils.bvhtree import BVHTree
     verts, faces, owner = [], [], []
     for m in meshes:
-        for pi, (start, end) in enumerate(m.parts):
+        for pi, part in enumerate(m.parts):
+            start, end = part[:2]
             for f in m.faces[start:end]:
                 base = len(verts); verts += [m.verts[i] for i in f]; faces.append(list(range(base, base + len(f))))
                 owner.append((m.name, pi))

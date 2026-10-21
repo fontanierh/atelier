@@ -14,7 +14,7 @@ import sys
 
 from . import paths
 from .build import Context, Python, fingerprint, load_recipe, order, result
-from .reuse import copy_tree
+from .artifact_copy import copy_tree
 from . import artifact_pool_state as state
 
 

@@ -7,6 +7,9 @@ editor_target = "YorimichiEditor"
 player = "assets/characters/cairo"
 build = "build.py"                      # the build recipe: `atelier build yorimichi --list`
 
+[checkpoints]
+rebuild_budget_seconds = 600
+
 [fetch]
 # Audio masters stay in the ignored Atelier cache. Model sources are committed in assets/.
 scripts = ["assets/audio/footsteps/fetch.py", "assets/audio/combat/fetch.py"]

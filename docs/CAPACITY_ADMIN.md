@@ -409,7 +409,7 @@ cannot erase a positively observed enforcement loss; that peer stays charged whi
 Preparing, sealed and active records refuse unsupported raw launchers: stream startup, engine setup's unmanaged
 inner bootstrap, animation-lab persistent model/backend processes, and the direct character/kit laboratory helpers.
 They are **unsupported until migrated**, rather than counted as admitted jobs. Direct legacy render-lock
-entry points also refuse full cutover. `atelier reuse` uses guarded admission. An absent or invalid client file
+entry points also refuse full cutover. Native checkpoint transfers use guarded admission. An absent or invalid client file
 cannot restore legacy slots while
 any cutover marker exists. Old `a+` launchers fail their mandatory holder-record write/open against the seal after
 the boot boundary; all active agents still need reviewed migrated code or explicit refusal before activation.

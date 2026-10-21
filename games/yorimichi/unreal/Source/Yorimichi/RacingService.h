@@ -172,7 +172,7 @@ public:
      *  the standings. Pure, so tests and every host build the same one. */
     static void BuildSnapshot(const FHRWorldState& S, double WorldSeconds, const FRacingNetResult& Previous, FRacingNetState& Out,
         TMap<FString, FIntVector>* LookCache = nullptr);
-    /** French name of a race ("Lantern Sprint · course 2"). */
+    /** English name of a race ("Lantern Sprint · race 2"). */
     static FString RaceName(const FHRRace& Race);
 
     // ------------------------------------------------------------------ the clock
@@ -189,7 +189,7 @@ public:
     const FRacingNetState& GetNetState() const { return Net; }
     /** The venue's course (Track 1: Belmonte's sand), or nullptr when it is not loaded. */
     const FRacingCourse* GetCourse(ERacingVenue Venue, uint8 Track = 0) const;
-    /** The HUD line near a venue (French), empty elsewhere. */
+    /** The English HUD line inside a venue's grounds, empty elsewhere. */
     FString HudLine(const AWandererCharacter* Pawn) const;
     FString StateJson() const;
     int32 NumRunnersShown() const { return Shown.Num(); }

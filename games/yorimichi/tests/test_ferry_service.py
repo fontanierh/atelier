@@ -135,22 +135,26 @@ def test_a_clear_ship_cannot_pass_outside_the_exported_probe(site, batch):
     assert result['conflict_count'] == result['grounding_count'] == 0
 
 
-@pytest.mark.parametrize('fault', ['missing', 'checker', 'layout', 'failed', 'no-verdict'])
+@pytest.mark.parametrize('fault', ['missing', 'checker', 'raster', 'layout', 'failed', 'no-verdict'])
 def test_ship_walk_refuses_missing_stale_and_failed_audit(tmp_path, fault):
     checker = tmp_path / 'walk.py'
     checker.write_text('original walking checker')
+    raster=tmp_path/'walk_raster.py'
+    raster.write_text('original raster core')
     layout = tmp_path / 'deck_layout.json'
     layout.write_text('{"deck": "original"}')
     report_path = tmp_path / 'review/walk_report.json'
     report_path.parent.mkdir()
-    report = {'failures': [], 'inputs': {'checker_sha256': service.sha(checker),
+    report = {'failures': [], 'inputs': {'checker_sha256': service.sha(checker), 'raster_sha256':service.sha(raster),
                                         'deck_layout_sha256': service.sha(layout)}}
     report_path.write_text(json.dumps(report))
-    service.validate_ship_walk(tmp_path, checker)
+    service.validate_ship_walk(tmp_path, checker, raster)
     if fault == 'missing':
         report_path.unlink()
     elif fault == 'checker':
         checker.write_text('changed walking rule')
+    elif fault == 'raster':
+        raster.write_text('changed capsule raster')
     elif fault == 'layout':
         layout.write_text('{"deck": "changed collision"}')
     else:
@@ -160,7 +164,7 @@ def test_ship_walk_refuses_missing_stale_and_failed_audit(tmp_path, fault):
             del report['failures']
         report_path.write_text(json.dumps(report))
     with pytest.raises((ValueError, FileNotFoundError)):
-        service.validate_ship_walk(tmp_path, checker)
+        service.validate_ship_walk(tmp_path, checker, raster)
 
 
 @pytest.mark.parametrize('field', ['failures', 'meshes', 'seats', 'coplanar', 'carried', 'ship_clash', 'walk', 'audit_fixtures'])

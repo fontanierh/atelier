@@ -134,8 +134,11 @@ camera moves in front of the obstacle.
 
 ## HUD
 
-Near a racecourse the HUD shows one line at the top: the next race and its countdown, "Course en cours" while the
-field runs, the podium ("Arrivée : 1. … 2. … 3. …") for five minutes after a finish, or where today's races are run.
+Inside a racecourse's grounds the HUD shows one English line at the top: the next race and its countdown, "Race in
+progress" while the field runs, the podium ("Results: 1. … 2. … 3. …") for five minutes after a finish, or where today's
+races are run. The banner stays hidden outside the venue and more than 20 m above or 3 m below the track. Hidamari uses
+its authored platform; Belmonte uses the closed turf track and its 30 m spectator apron. The wider racehorse rendering
+radius does not enable the banner.
 
 ## Dev and live
 

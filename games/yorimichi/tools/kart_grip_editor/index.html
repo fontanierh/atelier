@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kart grip studio</title><link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+<script type="module" src="app.js"></script></head>
+<body><header><div><span class="eyebrow">YORIMICHI · KART</span><h1>Grip studio</h1></div>
+<label class="character">Character <select id="character"><option value="cairo">Cairo</option><option value="modori">Modori</option><option value="nox">Nox</option><option value="paul">Paul</option></select></label>
+<div class="save-area"><span id="save-state">Loading</span><button id="save" class="primary" disabled>Save grip</button></div></header>
+<main><section id="stage"><canvas id="view" aria-label="3D kart grip editor"></canvas><div id="loading" role="status">Loading character…</div>
+<nav id="views"><button data-view="left">Left hand</button><button data-view="left-palm">Left palm</button><button data-view="right">Mirrored hand</button><button data-view="right-palm">Mirrored palm</button><button data-view="full">Whole kart</button></nav>
+<div class="viewport-note">Drag to orbit · scroll to zoom · right-drag to pan<br><span id="reach"></span></div></section>
+<aside><div class="mirror-badge">EDIT LEFT · RIGHT MIRRORS AUTOMATICALLY</div>
+<p class="intro">Place the palm, then shape each finger. Click a joint in the view or choose one below.</p>
+<div id="edit-lock" hidden>Previewing steering. <button id="centre">Centre wheel to edit</button></div>
+<fieldset id="edit-controls" disabled><legend>1 · Palm placement</legend>
+<button id="palm" class="wide">Select palm &amp; wrist</button><div id="palm-controls"></div>
+<legend>2 · Wheel fit</legend><div id="wheel-controls"></div><legend>3 · Arm position</legend><p class="intro">Shoulder down rotates the upper arm; Elbow bend folds the forearm upward. These direct joint edits move the hand with the arm. Match the wheel height and wrist tilt afterward.</p><div id="arm-controls"></div>
+<legend>4 · Finger joints</legend><div id="joints"></div><div class="selected-label" id="selected-label">Palm &amp; wrist</div><div id="rotation-controls"></div>
+<div class="actions"><button id="undo">Undo</button><button id="redo">Redo</button><button id="reset-joint">Reset joint</button></div></fieldset>
+<section class="preview"><h2>5 · Check the wheel lock</h2><div class="steer-row"><button id="play">▶ Play</button><output id="steer-value">0°</output></div><input id="steer" aria-label="Steering preview" type="range" min="-50" max="50" value="0" step="0.1">
+<div class="range-labels"><span>Left</span><button id="straight">Centre</button><span>Right</span></div><label class="check"><input id="ghost" type="checkbox"> See through the rim</label></section>
+<details><summary>What gets saved?</summary><p>Every hand and finger joint is recorded relative to the steering wheel. The right hand is generated from the left using this character’s own skeleton. Steering moves the saved grip as a whole; it never changes your finger settings.</p><p>Saves stay on this machine, separately for each character. Earlier saves remain recoverable.</p></details>
+<button id="reset-all" class="quiet wide">Reset this character to the starting pose</button><p id="status" role="status"></p></aside></main>
+</body></html>

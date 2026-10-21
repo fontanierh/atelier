@@ -27,9 +27,13 @@
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
+#include "DrivingComponent.h"
+#include "JapanKartGrip.h"
 #include "HorseComponent.h"
 #include "JapanCharacterMovement.h"
 #include "JapanWorld.h"
+#include "DrivingIntent.h"
+#include "EngineUtils.h"
 #include "JapanCameraArm.h"
 #include "SeeThrough.h"
 #include "ZeppelinService.h"
@@ -87,6 +91,7 @@ AWandererCharacter::AWandererCharacter(const FObjectInitializer& ObjectInitializ
     SkateRide = CreateDefaultSubobject<USkateComponent>(TEXT("Skate"));
     Sailboat = CreateDefaultSubobject<USailboatComponent>(TEXT("EquippedSailboat"));
     Bike = CreateDefaultSubobject<UBikeComponent>(TEXT("BikeRide"));   // "Bike" is the input action's name
+    Car = CreateDefaultSubobject<UDrivingComponent>(TEXT("CarRide"));
     Horse = CreateDefaultSubobject<UHorseComponent>(TEXT("HorseRide"));
     Footsteps = CreateDefaultSubobject<UJapanFootstepComponent>(TEXT("Footsteps"));
     Sword = CreateDefaultSubobject<UWandererSwordComponent>(TEXT("Sword"));
@@ -331,6 +336,8 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
     if (!AJapanWorld::IsBrowserScene())
     {
         Bike->Initialize(this);
+        Car->Initialize(this);
+        ConfigureCar();
         Horse->Initialize(this);
         Sailboat->Initialize(this,World);
     }
@@ -345,6 +352,89 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
     if (!bSwitchedIn && FParse::Param(FCommandLine::Get(),TEXT("sworddummy"))) SpawnSwordDummy();
 }
 
+void AWandererCharacter::ConfigureCar()
+{
+    if (AJapanWorld::IsBrowserScene()) return;
+    if (!Car) return;
+    // A late retry can run before world entry reached the car's Initialize; it is idempotent.
+    Car->Initialize(this);
+    if (Car->IsConfigured()) return;
+    Car->SetMeshes(FSoftObjectPath(TEXT("/Game/Japan/Kart/SM_Kart_Body.SM_Kart_Body")),
+                   FSoftObjectPath(TEXT("/Game/Japan/Kart/SM_Kart_Seat.SM_Kart_Seat")),
+                   FSoftObjectPath(TEXT("/Game/Japan/Kart/SM_Kart_Wheel.SM_Kart_Wheel")),
+                   FSoftObjectPath(TEXT("/Game/Japan/Kart/SM_Kart_SteeringWheel.SM_Kart_SteeringWheel")));
+    if (const TSharedPtr<FJsonObject> Data = AtelierReadJson(AtelierDataPath(TEXT("kart/cockpit.json"))))
+    {
+        FDrivingCockpit Fit;
+        bool Valid = true;
+        auto Number = [&](const TCHAR* Key)
+        {
+            double Value = 0;
+            if (!Data->TryGetNumberField(Key, Value) || !FMath::IsFinite(Value)) Valid = false;
+            return float(Value);
+        };
+        Valid = Number(TEXT("schema")) == 1.f && Valid;
+        auto VectorValue = [&](const TArray<TSharedPtr<FJsonValue>>& Values, FVector& Out)
+        {
+            double V[3] = {};
+            if (Values.Num() != 3) { Valid = false; return; }
+            for (int I = 0; I < 3; ++I)
+                if (!Values[I].IsValid() || !Values[I]->TryGetNumber(V[I]) || !FMath::IsFinite(V[I])) Valid = false;
+            Out = FVector(V[0], -V[1], V[2]) * 100.f;
+        };
+        auto Point = [&](const TCHAR* Key, FVector& Out)
+        {
+            const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
+            if (!Data->TryGetArrayField(Key, Values)) { Valid = false; return; }
+            VectorValue(*Values, Out);
+        };
+        Point(TEXT("seat"), Fit.Seat); Point(TEXT("pelvis"), Fit.Pelvis); Point(TEXT("steering"), Fit.Steering);
+        Point(TEXT("steering_column_base"), Fit.SteeringColumnBase);
+        Point(TEXT("foot"), Fit.Foot); Point(TEXT("knee"), Fit.Knee); Point(TEXT("elbow"), Fit.Elbow);
+        Point(TEXT("body_half_extents"), Fit.BodyHalfExtents); Fit.BodyHalfExtents = Fit.BodyHalfExtents.GetAbs();
+        Point(TEXT("foot_forward"), Fit.FootForward);
+        if (!Fit.FootForward.Normalize()) Valid = false;
+        Fit.SteeringRadius = Number(TEXT("steering_radius")) * 100.f;
+        Fit.SteeringTubeRadius = Number(TEXT("steering_tube_radius")) * 100.f;
+        Fit.SteeringTilt = Number(TEXT("steering_tilt_degrees"));
+        Fit.GripElevation = Number(TEXT("grip_elevation_degrees"));
+        Fit.Recline = Number(TEXT("recline_degrees"));
+        Fit.ReferenceLegLength = Number(TEXT("reference_leg_length")) * 100.f;
+        Fit.WheelRadius = Number(TEXT("wheel_radius")) * 100.f;
+        Fit.WheelWidth = Number(TEXT("wheel_width")) * 100.f;
+        const TArray<TSharedPtr<FJsonValue>>* Scale = nullptr;
+        if (Data->TryGetArrayField(TEXT("scale_range"), Scale) && Scale->Num() == 2)
+        {
+            double Low = 0, High = 0;
+            Valid &= (*Scale)[0]->TryGetNumber(Low) && (*Scale)[1]->TryGetNumber(High) && FMath::IsFinite(Low) && FMath::IsFinite(High);
+            Fit.MinScale = Low; Fit.MaxScale = High;
+        }
+        else Valid = false;
+        const TArray<TSharedPtr<FJsonValue>>* Wheels = nullptr;
+        if (Data->TryGetArrayField(TEXT("wheel_positions"), Wheels) && Wheels->Num() == 4)
+        {
+            for (int I = 0; I < 4; ++I)
+            {
+                const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
+                if ((*Wheels)[I]->TryGetArray(Values)) VectorValue(*Values, Fit.WheelPositions[I]);
+                else Valid = false;
+            }
+        }
+        else Valid = false;
+        if (!Valid)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Kart cockpit JSON is invalid"));
+        }
+        else if (!Car->Configure(Fit))
+        {
+            UE_LOG(LogTemp, Error, TEXT("Kart cockpit data or rider dimensions are invalid"));
+        }
+    }
+    else UE_LOG(LogTemp, Error, TEXT("Kart cockpit data missing: build the kart and stage runtime data"));
+    Car->RequireAuthoredGrips(true);
+    ReadKartGrip(this, Car);
+}
+
 void AWandererCharacter::Leave()
 {
     if (FJapanCharacterSelect::IsOpen()) FJapanCharacterSelect::Close(this);
@@ -354,6 +444,7 @@ void AWandererCharacter::Leave()
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
+    Car->StowImmediately();
     Horse->StowImmediately();
     if (APlayerController* PC = Cast<APlayerController>(Controller))
         if (ULocalPlayer* LP = PC->GetLocalPlayer())
@@ -391,6 +482,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     SkateRide->StowImmediately();
     Sailboat->StowImmediately();
     Bike->StowImmediately();
+    Car->StowImmediately();
     Horse->StowImmediately();
     MoveIntent = FVector2D::ZeroVector;
     bJog = bWalk = bSprintHeld = false;
@@ -450,7 +542,7 @@ void AWandererCharacter::BuildInput()
     for (const auto& Pair : TArray<TPair<FName,FKey>>{
         {TEXT("Jog"),EKeys::J},{TEXT("Sprint"),EKeys::LeftShift},{TEXT("Walk"),EKeys::LeftAlt},{TEXT("Jump"),EKeys::SpaceBar},
         {TEXT("Crouch"),EKeys::C},{TEXT("Dodge"),EKeys::LeftControl},{TEXT("Wave"),EKeys::Q},
-        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},
+        {TEXT("Interact"),EKeys::E},{TEXT("Skateboard"),EKeys::B},{TEXT("Dash"),EKeys::F},{TEXT("Sailboat"),EKeys::K},{TEXT("Bike"),EKeys::V},{TEXT("Car"),EKeys::L},
         {TEXT("Horse"),EKeys::H},{TEXT("HorseRandom"),EKeys::N},{TEXT("HorseBreed"),EKeys::U},{TEXT("HorseTack"),EKeys::I},{TEXT("HorseCoat"),EKeys::O},
         {TEXT("Map"),EKeys::M},{TEXT("Menu"),EKeys::Escape},{TEXT("MouseRelease"),EKeys::Tab},{TEXT("Screenshot"),EKeys::F12},
         {TEXT("SetMarker"),EKeys::F5},{TEXT("ReturnMarker"),EKeys::F9},{TEXT("TowerReturn"),EKeys::F7},
@@ -489,10 +581,16 @@ void AWandererCharacter::BuildInput()
         FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("HorsePad"),EInputActionValueType::Boolean),EKeys::Gamepad_RightShoulder);
         auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
     }
+    // The kart: a 0.4 s hold of the left bumper, free on foot (it is the train view and flight speed only aboard those).
+    {
+        FEnhancedActionKeyMapping& Hold = Mapping->MapKey(Axis(TEXT("CarPad"),EInputActionValueType::Boolean),EKeys::Gamepad_LeftShoulder);
+        auto* HoldTrigger = NewObject<UInputTriggerHold>(Mapping); HoldTrigger->HoldTimeThreshold = .4f; HoldTrigger->bIsOneShot = true; Hold.Triggers.Add(HoldTrigger);
+    }
     Key(Axis(TEXT("HorseRandomPad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Left);
     Key(Axis(TEXT("HorseBreedPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Up);
     Key(Axis(TEXT("HorseTackPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Right);
     Key(Axis(TEXT("HorseCoatPad"),EInputActionValueType::Boolean),EKeys::Gamepad_DPad_Left);
+    Key(Axis(TEXT("CarHandbrakePad"),EInputActionValueType::Boolean),EKeys::Gamepad_FaceButton_Right);
     // The board button on foot: a board to the hand, or put away (Ride's carry).
     Key(Axis(TEXT("SkateboardHand"),EInputActionValueType::Boolean),EKeys::G);
     Key(Inputs[TEXT("SkateboardHand")],EKeys::Gamepad_DPad_Right);
@@ -529,6 +627,7 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
             {TEXT("Jump"),&AWandererCharacter::RequestJump},{TEXT("Crouch"),&AWandererCharacter::ToggleCrouch},
             {TEXT("Dodge"),&AWandererCharacter::Dodge},{TEXT("Wave"),&AWandererCharacter::Wave},{TEXT("Interact"),&AWandererCharacter::Interact},
             {TEXT("Skateboard"),&AWandererCharacter::ToggleSkateboard},{TEXT("Dash"),&AWandererCharacter::Dash},{TEXT("Sailboat"),&AWandererCharacter::ToggleSailboat},{TEXT("Bike"),&AWandererCharacter::ToggleBike},
+            {TEXT("Car"),&AWandererCharacter::ToggleCar},
             {TEXT("Horse"),&AWandererCharacter::ToggleHorse},{TEXT("HorseRandom"),&AWandererCharacter::RandomizeHorse},{TEXT("HorseBreed"),&AWandererCharacter::CycleHorseBreed},{TEXT("HorseTack"),&AWandererCharacter::CycleHorseTack},{TEXT("HorseCoat"),&AWandererCharacter::CycleHorseCoat},
             {TEXT("Map"),&AWandererCharacter::ToggleMap},{TEXT("Menu"),&AWandererCharacter::ToggleMenu},{TEXT("MouseRelease"),&AWandererCharacter::ToggleMouse},{TEXT("Screenshot"),&AWandererCharacter::Screenshot},
             {TEXT("FlightSlower"),&AWandererCharacter::FlightSlower},{TEXT("FlightFaster"),&AWandererCharacter::FlightFaster},
@@ -555,6 +654,9 @@ void AWandererCharacter::SetupPlayerInputComponent(UInputComponent* Input)
         E->BindAction(Inputs[TEXT("SkateboardPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleSkateboard);
         E->BindAction(Inputs[TEXT("BikePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleBike);
         E->BindAction(Inputs[TEXT("HorsePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::HorsePad);
+        E->BindAction(Inputs[TEXT("CarPad")],ETriggerEvent::Triggered,this,&AWandererCharacter::ToggleCar);
+        E->BindAction(Inputs[TEXT("CarHandbrakePad")],ETriggerEvent::Triggered,this,&AWandererCharacter::CarHandbrake);
+        E->BindAction(Inputs[TEXT("CarHandbrakePad")],ETriggerEvent::Completed,this,&AWandererCharacter::CarHandbrakeReleased);
         for (const auto& Binding : TArray<TPair<FName,void(AWandererCharacter::*)(const FInputActionValue&)>>{
             {TEXT("HorseRandomPad"),&AWandererCharacter::RandomizeHorse},{TEXT("HorseBreedPad"),&AWandererCharacter::CycleHorseBreed},
             {TEXT("HorseTackPad"),&AWandererCharacter::CycleHorseTack},{TEXT("HorseCoatPad"),&AWandererCharacter::CycleHorseCoat}})
@@ -675,6 +777,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
     // skate component's too, and a double jump takes over from it.
     const bool bSkating = SkateRide->IsRiding();
     if (bSkating && !(GetCharacterMovement()->IsFalling() && SkateRide->CanYieldToCharacter())) return;
+    if (Car->IsEquipped()) { Car->SetHandbrake(true); return; }
     if (Bike->IsEquipped()) { if (bReady && !bMenuOpen) Bike->Hop(); return; }
     if (Horse->IsEquipped()) { if (bReady && !bMenuOpen) Horse->Jump(); return; }
     if (Sailboat->IsEquipped() || bTrainAboard) return;
@@ -706,7 +809,7 @@ void AWandererCharacter::RequestJump(const FInputActionValue&)
     if (bSkating) return;
     if (!bGroundJumped && !bAirJumpUsed) JumpBuffer = .16f;
 }
-void AWandererCharacter::ReleaseJump(const FInputActionValue&) { StopJumping(); if (Moves) Moves->Press(TEXT("jump_release")); }
+void AWandererCharacter::ReleaseJump(const FInputActionValue&) { Car->SetHandbrake(false); StopJumping(); if (Moves) Moves->Press(TEXT("jump_release")); }
 bool AWandererCharacter::PressMove(FName Button)
 {
     if (JapanNetwork::IsOnline(GetWorld()) && NetworkActivity.Kind == EJapanActivity::Bike)
@@ -723,7 +826,7 @@ void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Sailboat->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
 }
-bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped(); }
+bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped() || Car->IsEquipped(); }
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
     if (AJapanWorld::IsBrowserScene()) return;
@@ -743,6 +846,25 @@ void AWandererCharacter::ToggleHorse(const FInputActionValue&)
     if (Horse->IsEquipped()) { Horse->Toggle(); return; }
     if (Sword && !Sword->CancelForInterrupt(true)) return;
     if (CanAct() && StandForAction() && Horse->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
+void AWandererCharacter::ToggleCar(const FInputActionValue&)
+{
+    if (AJapanWorld::IsBrowserScene()) return;
+    if (!Car->IsEquipped() && RefuseVehicleOnTrain()) return;
+    // The car is a local prototype: the vehicle prediction layer does not carry it yet.
+    if (JapanNetwork::IsOnline(GetWorld())) return;
+    if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped()) return;
+    if (Car->IsEquipped()) { Car->Toggle(); return; }
+    if (Sword && !Sword->CancelForInterrupt(true)) return;
+    if (CanAct() && StandForAction() && Car->Toggle()) { if (Moves) Moves->Reset(); SetAction(NAME_None); JumpBuffer = 0.f; bPendingTakeoff = false; StopJumping(); }
+}
+void AWandererCharacter::CarHandbrake(const FInputActionValue&)
+{
+    if (Car->IsEquipped()) Car->SetHandbrake(true);
+}
+void AWandererCharacter::CarHandbrakeReleased(const FInputActionValue&)
+{
+    if (Car->IsEquipped()) Car->SetHandbrake(false);
 }
 // The pad's hold: beside a docked zeppelin and aboard one the shoulders choose its stop or flight speed, so the hold
 // leaves the horse alone there (online it would otherwise ask the host and be refused).
@@ -796,7 +918,8 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 bool AWandererCharacter::RefuseVehicleOnTrain()
 {
     if (!IsOnTrain()) return false;
-    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
+    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Gondola ? TEXT("Pas à bord de la télécabine") :
+        bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
     if (IsLocallyControlled()) ULiveLibrary::Say(Message, 2.f);
     else if (HasAuthority()) ClientActivityRejected(Message);
     return true;
@@ -841,6 +964,7 @@ bool AWandererCharacter::Live_Press(FName Button)
     else if (Button == TEXT("character_select")) { return FJapanCharacterSelect::Open(this, false); }
     else if (Button == TEXT("skate_feel")) { if (!Preferences) return false; Preferences->OpenSkateMenu(); }   // the menu's Skate feel page
     else if (Button == TEXT("bike")) ToggleBike(FInputActionValue(true));
+    else if (Button == TEXT("car")) ToggleCar(FInputActionValue(true));
     else if (Button == TEXT("horse")) ToggleHorse(FInputActionValue(true));
     else if (Button == TEXT("horse_random")) RandomizeHorse(FInputActionValue(true));
     else if (Button == TEXT("horse_breed")) CycleHorseBreed(FInputActionValue(true));
@@ -1480,6 +1604,20 @@ void AWandererCharacter::Tick(float Dt)
             }
         }
     }
+    if (!Landscape || !Landscape->bLoaded)
+    {
+        // A standalone game can start its pawn before the world actor's BeginPlay has handed the world over; the pawn
+        // would then never become ready, and the live bridge (and the character's whole simulation) never starts.
+        TActorIterator<AJapanWorld> It(GetWorld());
+        if (It && It->bLoaded) EnterWorld(*It);
+    }
+    // The world can be handed over before the pawn's mesh and rig are ready; retry only the cockpit setup, once, and
+    // never repeat world entry, travel or preferences.
+    if (Landscape && Landscape->bLoaded && !bCarConfigureTried && !Car->IsConfigured() && GetMesh()->GetSkeletalMeshAsset())
+    {
+        bCarConfigureTried = true;
+        ConfigureCar();
+    }
     if (!Definition || !Landscape || !Landscape->bLoaded) return;
     if (AJapanWorld::IsBrowserScene() && IsLocallyControlled() &&
         GetActorLocation().Z < Landscape->PlayerStart.GetLocation().Z - 500.f)
@@ -1580,6 +1718,15 @@ void AWandererCharacter::Tick(float Dt)
         }
         return;
     }
+    // The bridge must start even when readiness and possession settle on different frames: the old placement only ran
+    // inside the not-ready branch, so a pawn that became ready before it was locally controlled never listened.
+    if (!bLiveStarted && !IsNpc() && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
+    {
+        bLiveStarted = true;
+        AtelierLive::SetTeleport([](APawn* Pawn, const FVector& Ground, float Yaw)
+        { AWandererCharacter* Player = Cast<AWandererCharacter>(Pawn); return Player && Player->TravelTo(Ground, Yaw, TEXT("live")); });
+        AtelierLive::Start(GetWorld());
+    }
     if (bSailboatReview) AdvanceSailboatReview(Dt);
     if (bMapReview && IsLocallyControlled()) AdvanceMapReview(Dt);
     if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
@@ -1590,6 +1737,18 @@ void AWandererCharacter::Tick(float Dt)
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     if (!JapanNetwork::IsOnline(GetWorld())) Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(GetBikeIntent(),GetBikeLean(),bMenuOpen || (Map && Map->IsOpen()));
+    // The kart drives like the reference racer: the triggers (or W / S) are throttle and brake, the left stick only
+    // steers, and the handbrake is the jump button (Space / A) or B.
+    FVector2D CarIntent = MoveIntent;
+    if (Car->IsEquipped())
+    {
+        // The physical left stick only steers; the triggers (or W / S) drive. Scripted intent (Live_Drive) still uses Y.
+        const atelier::driving::FDrivingIntent Drive =
+            atelier::driving::driving_intent(MoveIntent.X, BikeThrottleInput, MoveIntent != InputMove, MoveIntent.Y);
+        CarIntent = FVector2D(Drive.steer, Drive.pedal);
+    }
+    Car->SetInput(CarIntent);
+    if (Car->IsEquipped()) AdvanceCarEffects(Dt);
     if (!JapanNetwork::IsOnline(GetWorld()))
     {
         // The horse rides on the bike's controls (triggers or W / S, the stick steering); Alt and J hold it to a walk or trot.
@@ -1613,15 +1772,17 @@ void AWandererCharacter::Tick(float Dt)
     // a framing still blending out when he gets on it finishes there.
     if(!Sailboat->IsEquipped())
     {
-        const float PreviousSkateCamera=SkateCameraBlend,PreviousHorseCamera=HorseCameraBlend;
+        const float PreviousSkateCamera=SkateCameraBlend,PreviousHorseCamera=HorseCameraBlend,PreviousCarCamera=CarCameraBlend;
         SkateCameraBlend=FMath::FInterpTo(SkateCameraBlend,SkateRide->IsRiding()&&SkateRide->IsOnBoard()?1.f:0.f,Dt,3.f);
         if(SkateCameraBlend<.002f)SkateCameraBlend=0.f;
         HorseCameraBlend=FMath::FInterpTo(HorseCameraBlend,Horse->IsEquipped()?1.f:0.f,Dt,3.f);
         if(HorseCameraBlend<.002f)HorseCameraBlend=0.f;
-        if((SkateCameraBlend>0.f||PreviousSkateCamera>0.f||HorseCameraBlend>0.f||PreviousHorseCamera>0.f)&&Definition)
+        CarCameraBlend=FMath::FInterpTo(CarCameraBlend,Car->IsEquipped()?1.f:0.f,Dt,3.f);
+        if(CarCameraBlend<.002f)CarCameraBlend=0.f;
+        if((SkateCameraBlend>0.f||PreviousSkateCamera>0.f||HorseCameraBlend>0.f||PreviousHorseCamera>0.f||CarCameraBlend>0.f||PreviousCarCamera>0.f)&&Definition)
         {
-            CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend+45.f*HorseCameraBlend;
-            if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.35f*HorseCameraBlend);
+            CameraArm->TargetOffset.Z=Definition->CameraHeight-20.f*SkateCameraBlend+45.f*HorseCameraBlend+70.f*CarCameraBlend;
+            if(PreferredArmLength>0.f)CameraArm->TargetArmLength=PreferredArmLength*(1.f-.22f*SkateCameraBlend+.35f*HorseCameraBlend+.55f*CarCameraBlend);
         }
     }
     // Riding the bike or horse, the camera settles in behind him the same way.
@@ -1629,6 +1790,11 @@ void AWandererCharacter::Tick(float Dt)
     {
         const FRotator Now=Controller->GetControlRotation();
         Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-10.f,GetActorRotation().Yaw,0),Dt,1.6f));
+    }
+    if(IsLocallyControlled()&&Car->IsEquipped()&&Controller&&!bMenuOpen&&LookGrace<=0)
+    {
+        const FRotator Now=Controller->GetControlRotation();
+        Controller->SetControlRotation(FMath::RInterpTo(Now,FRotator(-8.f,GetActorRotation().Yaw,0),Dt,2.2f));
     }
     if(IsLocallyControlled()&&SkateRide->IsRiding()&&Controller&&!bMenuOpen&&LookGrace<=0&&SkateRide->GetCameraYaw(SkateYaw))
     {
@@ -1660,7 +1826,8 @@ void AWandererCharacter::Tick(float Dt)
     const float SkateFOV=SkateRide->IsRiding()?9.f*FMath::Clamp((SkateRide->GetSpeed()-500.f)/750.f,0.f,1.f):0.f;
     const float BikeFOV=Bike->IsRiding()?10.f*FMath::Clamp((Bike->GetSpeed()-700.f)/1100.f,0.f,1.f):0.f;
     const float HorseFOV=Horse->IsRiding()?10.f*FMath::Clamp((Horse->GetSpeed()-600.f)/600.f,0.f,1.f):0.f;
-    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+BikeFOV+HorseFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
+    const float CarFOV=Car->IsEquipped()?12.f*FMath::Clamp((Car->GetSpeed()-900.f)/1400.f,0.f,1.f):0.f;
+    FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView,PreferredFOV+SkateFOV+BikeFOV+HorseFOV+CarFOV+(!bWalk && !bJog && !SkateRide->IsRiding() && M->Velocity.Size2D()>Definition->JogSpeed+30.f ? 3.f : 0.f),Dt,5.f));
     // Combat camera shake: smooth noise scaled by trauma squared, decaying in real time (hit-stop freezes this actor's clock).
     {
         const float Real=FApp::GetDeltaTime();
@@ -1672,6 +1839,58 @@ void AWandererCharacter::Tick(float Dt)
         }
     }
 }
+
+void AWandererCharacter::AdvanceCarEffects(float Dt)
+{
+    if (!Car || !Car->IsEquipped()) return;
+    AAtelierFX* FX = AAtelierFX::Get(GetWorld());
+    if (!FX) return;
+    const FVector Forward = GetActorForwardVector();
+    // Rear tyres: grey rubber smoke that rolls out behind the kart while they slide.
+    for (int32 Side = 0; Side < 2; ++Side)
+    {
+        CarSmokeWait[Side] = FMath::Max(0.f, CarSmokeWait[Side] - Dt);
+        const int32 Wheel = 2 + Side;
+        if (!Car->IsWheelGrounded(Wheel)) continue;
+        const float Slip = Car->GetWheelSlip(Wheel);
+        if (Slip < .10f || CarSmokeWait[Side] > 0.f) continue;
+        CarSmokeWait[Side] = FMath::Lerp(.16f, .035f, FMath::Clamp(Slip, 0.f, 1.f));
+        const FVector At = Car->GetWheelContact(Wheel) + FVector(0, 0, 6.f);
+        for (int32 I = 0; I < 2; ++I)
+        {
+            AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Dust,
+                At + FVector(FMath::FRandRange(-7.f, 7.f), FMath::FRandRange(-7.f, 7.f), 2.f));
+            P.V = -Forward * FMath::FRandRange(40.f, 120.f)
+                + FVector(FMath::FRandRange(-50.f, 50.f), FMath::FRandRange(-50.f, 50.f), FMath::FRandRange(18.f, 60.f));
+            P.Drag = 2.4f; P.Gravity = 10.f; P.Life = FMath::FRandRange(.55f, 1.1f);
+            P.Size0 = FMath::FRandRange(10.f, 16.f); P.Size1 = P.Size0 * FMath::FRandRange(3.2f, 5.2f);
+            P.Color = FLinearColor(.78f, .77f, .75f); P.Alpha = (.16f + .30f * Slip) * FMath::FRandRange(.7f, 1.f);
+            P.FadeIn = .10f; P.Wobble = 9.f;
+        }
+    }
+    // A wall hit: sparks off the nose, a short flash, a puff of paint dust and a knock in the camera.
+    float HitSpeed = 0.f; FVector HitAt = FVector::ZeroVector;
+    if (Car->ConsumeImpact(HitSpeed, HitAt))
+    {
+        const float Hit = FMath::Clamp(HitSpeed / 1400.f, .2f, 1.f);
+        FX->Burst(HitAt, -Forward, FMath::RoundToInt(6 + 16 * Hit), 850.f + 550.f * Hit,
+                  FLinearColor(1.f, .55f, .18f), .42f, 4.f);
+        FX->Flash(HitAt, 34.f + 42.f * Hit, FLinearColor(.55f, .38f, .18f), .12f);
+        FX->Dust(HitAt, .6f + .6f * Hit, -Forward);
+        FX->Shake(.16f + .42f * Hit);
+    }
+    // Blipping the throttle from low speed spits a short flame from the tailpipe.
+    CarExhaustWait = FMath::Max(0.f, CarExhaustWait - Dt);
+    if (CarExhaustWait <= 0.f && Car->GetThrottle() > .55f && Car->GetSpeed() < 1100.f && Car->GetAudioRevs() > 1600.f)
+    {
+        CarExhaustWait = FMath::FRandRange(.10f, .24f);
+        const FVector At = GetActorLocation() - Forward * 96.f + FVector(0, 0, -16.f);
+        AAtelierFX::FParticle& P = FX->Spawn(AAtelierFX::ESprite::Glow, At);
+        P.V = -Forward * 210.f + FVector(0, 0, 30.f); P.Drag = 7.f; P.Life = .085f;
+        P.Size0 = 4.f; P.Size1 = 13.f; P.Color = FLinearColor(1.f, .42f, .10f); P.Alpha = .6f;
+    }
+}
+
 
 void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
 {

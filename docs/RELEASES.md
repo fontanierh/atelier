@@ -86,3 +86,11 @@ Keep one publisher per tag and rerun unchanged after an ambiguous final response
 
 The implementation uses the documented [GitHub asset upload API](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
 through [authenticated `gh api`](https://cli.github.com/manual/gh_api). No real GitHub publication is part of its mocked tests.
+
+## Retain the build checkpoint
+
+Configured games capture existing producer artifacts and upload their private checkpoint before public release
+publication. Configure its private repository once with `atelier cache configure --repository OWNER/REPOSITORY`.
+Its identity stays outside tracked source. No build/cook is requested by checkpoint capture. Keep the stopped
+producer and its outputs until upload, verification and receiving restore are accepted; retain referenced packs.
+See [build checkpoints](BUILD_CHECKPOINTS.md) for recovery and the source-first validation limits.

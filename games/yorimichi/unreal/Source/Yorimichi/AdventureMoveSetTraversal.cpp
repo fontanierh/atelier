@@ -388,7 +388,10 @@ FVector UAdventureMoveSet::FistAxisOf(int32 Side) const
 
 void UAdventureMoveSet::ShowGlider(bool bShow)
 {
-    if (!Glider || bGliderShown == bShow) return;
+    if (!Glider) return;
+    // Reconcile against the component too: a visibility change that propagated from the body (the kart forcing the
+    // rider's children on) leaves bGliderShown stale, and an early return would then never hide the paraglider again.
+    if (bGliderShown == bShow && Glider->IsVisible() == bShow) return;
     bGliderShown = bShow;
     Glider->SetVisibility(bShow, true);
     if (bShow && GliderClip) Glider->PlayAnimation(GliderClip, true);

@@ -1,4 +1,5 @@
 """A change to the mini-mega's shape rebuilds the ramp and the map, never the terrain or the world import."""
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -21,6 +22,20 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
         digest = hashlib.sha256()
         stand_in(digest, path)
         return {'source': digest.hexdigest()}
+    # The real deferred ground collector needs a registry to select membership;
+    # geometry bytes still use the name-only fingerprint stand-in below.
+    library=json.loads((build.paths.game_dir('yorimichi')/'assets/belmonte/source.json').read_text())
+    names=[row['name'] for row in library['meshes'] if row['name'].startswith('SM_BM_BT_Terrain_')]
+    names.append('SM_BM_NorthApron')
+    transform={'translation_cm':[0.,0.,0.],'rotation_xyzw':[0.,0.,0.,1.],'scale':[1.,1.,1.]}
+    registry=tmp_path/'belmonte/runtime.json'
+    registry.parent.mkdir(parents=True,exist_ok=True)
+    registry.write_text(json.dumps({'origin_cm':[55000.,-450000.,21000.],
+                                   'groups':[{'asset':f'/Game/{name}.{name}','transforms':[transform],
+                                              'plant':False,'collision':True} for name in names]}))
+    # This registry contains ground only. The real structure collector still
+    # reads the region report before excluding those ground-owned groups.
+    (registry.parent/'build-report.json').write_text(json.dumps({'meshes':[]}))
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps', uproject=None)
     recipe = build.load_recipe('yorimichi').steps(ctx)
     steps = build.order(recipe, [step.name for step in recipe])

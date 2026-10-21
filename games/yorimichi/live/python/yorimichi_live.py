@@ -49,6 +49,26 @@ def bike_state():
     return L.bike_state()
 
 
+def car():
+    """Get the car out, or (stopped) step off and park it. Drive it with drive() (forward accelerates, back brakes
+    and reverses); press('jump') is its handbrake."""
+    return L.press('car')
+
+
+def car_state():
+    return L.car_state()
+
+
+def car_ride():
+    """Ride telemetry: chassis height, vertical speed, pitch and roll, and each wheel's compression/height/contact."""
+    return L.car_ride()
+
+
+def car_loops():
+    """The kart's engine, tyre, skid and wind loops, as volume@pitch."""
+    return L.car_loops()
+
+
 def skate():
     """Get on or off the board (skate. controls, docs/SKATE.md)."""
     return L.skate_toggle()

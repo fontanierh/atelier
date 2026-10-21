@@ -9,6 +9,7 @@
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
+#include "DrivingComponent.h"
 #include "HorseComponent.h"
 #include "WandererSword.h"
 #include "FoxHunter.h"
@@ -276,10 +277,21 @@ void AJapanHUD::DrawHUD()
             : FString::Printf(TEXT("W ride   S rein in   A / D steer   Alt walk   J trot   Shift sprint (on / off)   Space jump   N random horse   U breed   I tack   O coat   H get off (when stopped)      %s   %.0f km/h"),*Horse->GetStatus(),Kmh);
         Secondary=bController?FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu):TEXT("Mouse look   M map & travel   Esc settings");
     }
+    else if (const UDrivingComponent* Car = Pawn->GetCar(); Car && Car->IsEquipped())
+    {
+        Controls = bController
+            ? FString::Printf(TEXT("%s throttle   %s brake   Left stick steer   %s handbrake   Hold %s step out (stopped)      %s   %.0f km/h"),Pad.Attack,Pad.Parry,Pad.Roll,Pad.LeftBumper,*Car->GetStatus(),Car->GetSpeedKph())
+            : FString::Printf(TEXT("W throttle   S brake   A / D steer   Space handbrake   L step out (stopped)      %s   %.0f km/h"),*Car->GetStatus(),Car->GetSpeedKph());
+        Secondary = bController ? FString::Printf(TEXT("Right stick look   %s map (hold: places)   %s settings"),Pad.Map,Pad.Menu)
+            : TEXT("Mouse look   M map & travel   Esc settings");
+    }
+
     else if (!Pawn->IsOnTrain() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger())
     {
         if (Bike && Bike->IsAvailable())
             Secondary += bController ? FString::Printf(TEXT("   Hold %s bike"),Pad.Skate) : TEXT("   V bike");
+        if (const UDrivingComponent* ParkedCar = Pawn->GetCar(); ParkedCar && !ParkedCar->IsEquipped())
+            Secondary += bController ? FString::Printf(TEXT("   Hold %s kart"),Pad.LeftBumper) : TEXT("   L kart");
         // Only to a character with horse clips; a shared game offers it while its host allows vehicles
         // (AWandererCharacter::RequestNetworkHorse).
         const AJapanGameState* Rules = GetWorld()->GetGameState<AJapanGameState>();
@@ -327,6 +339,58 @@ void AJapanHUD::DrawHUD()
                 DrawRect(Pip<Nearest->GetHealth()?FLinearColor(.95f,.55f,.2f):FLinearColor(.25f,.2f,.16f),TopX+Pip*30,TopY+18,26,7);
         }
     }
+    if (const UDrivingComponent* CarHud = Pawn->GetCar(); CarHud && CarHud->IsEquipped())
+    {
+        // A quiet tachometer and speed read-out in the corner, in the game's cream and clay palette.
+        const float S = FMath::Min(1.25f, FMath::Max(.8f, Canvas->SizeY / 1080.f));
+        const float R = 58.f * S;
+        const float CX = Canvas->SizeX - 104.f * S, CY = Canvas->SizeY - 168.f * S;
+        const float A0 = 145.f, A1 = 35.f;
+        const float Revs = FMath::Clamp(CarHud->GetAudioRevs() / 5600.f, 0.f, 1.f);
+        auto Point = [&](float Deg, float Radius)
+        {
+            const float A = FMath::DegreesToRadians(Deg);
+            return FVector2D(CX + Radius * FMath::Cos(A), CY - Radius * FMath::Sin(A));
+        };
+        auto Arc = [&](float From, float To, float Radius, const FLinearColor& Color, float Thickness)
+        {
+            const int32 Segments = 40;
+            FVector2D Last = Point(From, Radius);
+            for (int32 I = 1; I <= Segments; ++I)
+            {
+                const FVector2D Next = Point(FMath::Lerp(From, To, float(I) / Segments), Radius);
+                DrawLine(Last.X, Last.Y, Next.X, Next.Y, Color, Thickness);
+                Last = Next;
+            }
+        };
+        DrawRect(FLinearColor(0, 0, 0, .26f), CX - R - 16 * S, CY - R - 30 * S, 2 * R + 32 * S, 2 * R + 74 * S);
+        Arc(A0, A1, R, FLinearColor(.18f, .19f, .17f, .55f), 5.f * S);
+        if (Revs > .001f)
+            Arc(A0, FMath::Lerp(A0, A1, Revs), R,
+                Revs > .86f ? FLinearColor(1.f, .58f, .2f) : FLinearColor(.88f, .84f, .64f), 5.f * S);
+        for (int32 I = 0; I <= 8; ++I)
+        {
+            const float Deg = FMath::Lerp(A0, A1, I / 8.f);
+            const FVector2D A = Point(Deg, R - 9.f * S), B = Point(Deg, R - 3.f * S);
+            DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.78f, .75f, .62f, .5f), 1.4f * S);
+        }
+        float W = 0.f, H = 0.f;
+        const FString Speed = FString::Printf(TEXT("%.0f"), CarHud->GetSpeedKph());
+        Canvas->StrLen(Font, Speed, W, H);
+        DrawText(Speed, FLinearColor(1.f, .95f, .82f), CX - W * .95f, CY - 26.f * S, Font, 1.9f * S);
+        const FString Unit = TEXT("km/h");
+        Canvas->StrLen(Font, Unit, W, H);
+        DrawText(Unit, FLinearColor(.8f, .79f, .68f), CX - W * .4f, CY + 20.f * S, Font, .8f * S);
+        const float Slip = CarHud->GetAudioSlip();
+        const FString State = Slip > .35f ? FString(TEXT("drift")) : CarHud->GetSpeedKph() < 1.f ? FString(TEXT("idle")) : FString();
+        if (!State.IsEmpty())
+        {
+            Canvas->StrLen(Font, State, W, H);
+            DrawText(State, Slip > .35f ? FLinearColor(1.f, .72f, .36f) : FLinearColor(.72f, .72f, .62f),
+                     CX - W * .43f, CY + 42.f * S, Font, .85f * S);
+        }
+    }
+
     DrawTrainer(bController, bSailboat);
     // Near a racecourse: the next race, the race running or the last podium (docs/RACING.md).
     if (const ARacingService* Racing = ARacingService::Find(GetWorld()))

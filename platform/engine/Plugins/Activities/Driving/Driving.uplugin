@@ -1,0 +1,11 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1 (experimental)",
+  "FriendlyName": "Atelier Driving",
+  "Description": "A fixed-step four-wheel car simulation, and the component that drives one from a character: mount, steer, brake and step out.",
+  "Category": "Atelier",
+  "CreatedBy": "Atelier",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "AtelierDriving", "Type": "Runtime", "LoadingPhase": "Default" }]
+}

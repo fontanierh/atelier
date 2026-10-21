@@ -236,7 +236,9 @@ def reruns(edited, changed, out):
 # City projections rerun, but unchanged tile inputs stop there. Tree generator code also imports the edited modules.
 CITY = {'world.hidamari', 'world.hidamari.city', 'world.hidamari.north', 'world.zeppelin', 'world.zeppelin.meshes',
         'world.terrain', 'world.terrain.meshes', 'world.map', 'world.hidamari.tiles', 'world.hidamari.trees',
-        'world.city_trees', 'world.city_trees.meshes', 'data.stage'} | LATER
+        'world.city_trees', 'world.city_trees.meshes', 'world.gondola_ground_inputs', 'world.gondola_ground',
+        'world.gondola_site', 'world.gondola_service', 'unreal.gondola', 'data.stage',
+        'world.gondola_structure_inputs'} | LATER
 # The regions and early FarHills producer conservatively read mountains.py and
 # hidamari/layout.py; the main layout remains a cutoff step.
 NORTHERN = {'world.layout', 'world.farhills', 'world.belmonte', 'world.belmonte.meshes', 'world.hippodrome', 'world.hippodrome.meshes',

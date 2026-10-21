@@ -158,7 +158,7 @@ private:
         TArray<FVector> Walk;
         float WalkYaw = 0.f;
     };
-    struct FRider : FTransportRider {};
+    using FRider = FTransportRider;
 
     bool Initialize(const FString& Path);
     UStaticMeshComponent* MeshPart(const FString& Name, const FString& Asset, USceneComponent* Parent, bool bCollision, bool bMovable);

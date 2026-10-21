@@ -22,7 +22,7 @@ def test_archive_moves_old_imports_and_preserves_current_data(tmp_path):
               'SwordTrainer/Adventure/A_Run.uasset', 'SwordTrainer/A_Bow.uasset', 'SwordTrainer/Textures/body.uasset',
               'Data/SkateRide/clips.json', 'Data/cairo/adventure.json', 'Data/cairo/portrait.png',
               'Data/hippodrome/hippodrome.json',
-              'Audio/Skate/roll.uasset', 'Audio/Transport/zeppelin_engine_01.uasset',
+              'Audio/Driving/engine_idle_01.uasset', 'Audio/Skate/roll.uasset', 'Audio/Transport/zeppelin_engine_01.uasset',
               'SkateMotion/MotionData.uasset', 'SkateMotion/Banks/Bank_000.uasset',
               'SkateRuntime/RuntimeData.uasset', 'Nox/SK_Nox.uasset', 'Nox/Adventure/A_Run.uasset',
               'Nox/Textures/T_Nox_Head.uasset', 'NoxBike/A_Ride.uasset',

@@ -6,6 +6,7 @@
 #include "WandererSword.h"
 #include "SkateComponent.h"
 #include "BikeComponent.h"
+#include "DrivingComponent.h"
 #include "HorseComponent.h"
 #include "SkatePark.h"
 #include "YorimichiCombatFX.h"
@@ -188,6 +189,28 @@ FString UYorimichiLive::BikeState()
     return FString::Printf(TEXT("state=%d clip=%s t=%.3f speed=%.0f sprint=%d steer=%.2f parked=%d air=%d gaps=(%.1f,%.1f) groundpitch=%.1f drift=%.2f wheelie=%.1f airtime=%.2f slope=%.1f hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f bike=(%.0f,%.0f,%.0f) bikerot=(%.1f,%.1f,%.1f)"),
         int32(B->GetState()), *B->GetClip().ToString(), B->GetClipTime(), B->GetSpeed(), B->IsSprinting() ? 1 : 0, B->GetSteering(), B->IsParked() ? 1 : 0, P->GetCharacterMovement()->IsMovingOnGround() ? 0 : 1, Gaps.X, Gaps.Y, B->GetGroundPitch(), B->GetDrift(), B->GetWheelie(), B->GetAirTime(), B->GetSlope(), *B->GetStatus().Replace(TEXT(" "), TEXT("_")),
         A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+
+FString UYorimichiLive::CarState()
+{
+    AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UDrivingComponent* C = P ? P->GetCar() : nullptr;
+    if (!C) return TEXT("no car");
+    const FVector A = P->GetActorLocation(); const FTransform T = C->GetCarTransform(); const FRotator R = T.Rotator();
+    return FString::Printf(TEXT("driving=%d speed=%.0f kph=%.1f scale=%.4f hint=%s pos=(%.0f,%.0f,%.0f) yaw=%.1f car=(%.0f,%.0f,%.0f) carrot=(%.1f,%.1f,%.1f)"),
+        C->IsEquipped() ? 1 : 0, C->GetSpeed(), C->GetSpeedKph(), C->GetKartScale(), *C->GetStatus().Replace(TEXT(" "), TEXT("_")),
+        A.X, A.Y, A.Z, P->GetActorRotation().Yaw, T.GetLocation().X, T.GetLocation().Y, T.GetLocation().Z, R.Pitch, R.Yaw, R.Roll);
+}
+
+FString UYorimichiLive::CarLoops()
+{
+    const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UDrivingComponent* C = P ? P->GetCar() : nullptr;
+    return C ? C->GetAudioState() : FString();
+}
+
+FString UYorimichiLive::CarRide()
+{
+    const AWandererCharacter* P = Cast<AWandererCharacter>(ULiveLibrary::Player()); const UDrivingComponent* C = P ? P->GetCar() : nullptr;
+    return C ? C->GetRideState() : FString(TEXT("no car"));
 }
 static bool GFilmHud = false;
 void UYorimichiLive::FilmHud(bool bOn) { GFilmHud = bOn; }
