@@ -78,6 +78,7 @@ bool FYorimichiFoliagePavingPaletteTest::RunTest(const FString&)
         const auto C=D.CreateVertexInstance(V);Corners.Add(C);A.GetVertexInstanceNormals()[C]=FVector3f(0,0,1);
         A.GetVertexInstanceColors()[C]=FVector4f(.9f,.65f,.1f,1.f);UV.Set(C,0,FVector2f(.2f,.3f));UV.Set(C,5,FVector2f(2.f,73.125f));
     }
+    D.CreateTriangle(Group,Corners);
     Source->CreateMeshDescription(0,MoveTemp(D));
     const FString Path=FPaths::ProjectSavedDir()/TEXT("FoliagePavingPaletteTest.json");
     for (const TCHAR* Name:{TEXT("M_ArcadePaving"),TEXT("M_PlazaPaving")})
