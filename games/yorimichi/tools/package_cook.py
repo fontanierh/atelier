@@ -67,10 +67,12 @@ def cook_present(root):
 
 
 def source_snapshot(ctx):
-    from atelier.build import fingerprint, load_recipe
+    from atelier.build import fingerprint, load_recipe, result
     from atelier.provenance import head, status
-    cook = next(step for step in load_recipe(ctx.game).steps(ctx) if step.name == 'unreal.cook')
-    done = {name: json.loads((ctx.stamps / (name + '.json')).read_text())['fingerprint'] for name in cook.needs}
+    steps = {step.name: step for step in load_recipe(ctx.game).steps(ctx)}
+    cook = steps['unreal.cook']
+    stamps = {name: json.loads((ctx.stamps / (name + '.json')).read_text()) for name in cook.needs}
+    done = {name: result(steps[name], stamp['fingerprint'], stamp) for name, stamp in stamps.items()}
     revision, dirty = head(), bool(status(untracked=False))
     engine = json.loads((ctx.unreal_root / 'Engine/Build/Build.version').read_text())
     return dict(revision=revision, source_dirty=dirty, fingerprint=fingerprint(cook, done), engine=engine)

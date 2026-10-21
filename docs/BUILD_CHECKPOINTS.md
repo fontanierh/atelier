@@ -28,15 +28,26 @@ An unchanged task can be reused after unrelated changes or after reverting to ol
 
 A result needs a complete output inventory. Named products provide this; `checkpoint_outputs` can declare
 additional complete, disjoint generated roots. Compiled editor targets also check their target receipt and required
-module/plugin binaries. Missing or corrupted outputs invalidate a previous stamp. Conflicting bytes for one input
+module/plugin binaries. Producer tool keys and complete inventory identities are retained in success stamps. Missing or corrupted outputs
+invalidate a previous stamp. Existing bytes cannot be adopted under a newly selected toolchain. Conflicting bytes for one input
 key disable that entry rather than choosing one result silently.
 
-**Coverage limit:** older tasks with only representative `outputs` have no independently reusable task entry.
-Their files are retained in workspace checkpoints, and a compatible checkpoint can seed a fresh checkout.
-If such a native task is not already current, execution stops until its ownership is migrated. This
-does not prove complete per-task ownership. Add complete declarations before claiming individual reuse.
-Do not infer ownership from changed files, a manifest sample or the mere presence of Intermediate.
+Tasks with complete output declarations have individually reusable entries. Tasks with representative outputs
+continue through compatible workspace incremental state; their files and source fingerprints are retained,
+but that state is not promoted into a produced task/tool certificate. Normal output/input checks still apply.
+This includes existing non-factory Blender steps, whose ambient startup does not support portable action proof.
+Add complete declarations and an explicit factory tool environment when migrating those tasks to individual reuse.
+
+For existing native state, compiled engine BuildId and SDK must be compatible. The receiving observed environment
+is recorded locally; a later tool change invalidates compatibility-only stamps. Unknown or expensive misses still
+stop before native work. Reuse never manufactures producer provenance or treats any Intermediate file as proof.
 A changed C++ target still goes through UBT; this is not a cross-worktree compiler object cache.
+
+Character body, bike and horse imports depend on normalized exported content. An exporter implementation change
+that reproduces the same mesh, skinning, clips and textures leaves the import current. FBX timestamps and generated
+IDs do not count as content changes. Importer implementation, native module, actual asset or engine changes still
+invalidate the tasks that consume them. Existing imports keep their dependency result when the previous
+declaration and retained outputs prove the migration changes only dependency metadata.
 
 Fresh checkouts can receive the latest compatible complete workspace as an incremental seed. Receiving task
 certificates are recomputed against current inputs. Intermediate is path-bound and is restored only at its
@@ -84,8 +95,7 @@ Do not delete a referenced private release to save space.
 Interrupted restoration writes a durable launch barrier and removes success stamps before replacement. Build,
 play and package refuse partial state. Rerun the normal build to finish the recorded restore; after guard exit,
 receiving inputs and bytes are checked again before success publication. Preserve journals and logs on failure.
-The removed whole-build transfer implementation cannot start new copies. For an interrupted transfer left by
-an older client only, `atelier cache abandon-transfer GAME` removes its journaled partial generated files while
+For a journaled partial transfer, `atelier cache abandon-transfer GAME` removes its journaled partial generated files while
 preserving tracked source and logs; then use the normal build.
 
 Configured games use UE dependency-tracked incremental cooking by default. This change was requested as a

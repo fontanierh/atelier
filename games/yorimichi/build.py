@@ -467,11 +467,25 @@ def content(character):
     return GAME / 'unreal' / 'Content' / character.unreal_path.removeprefix('/Game/')
 
 
+def character_export_members(root, names):
+    """Every exported body/clip/texture member, including missing required roots."""
+    result = []
+    for name in names:
+        path = root / name
+        result.extend(sorted(p for p in path.rglob('*') if p.is_file()) if path.is_dir() else [path])
+    return tuple(result)
+
+
 def mover_export_steps(character, out):
-    """Its body (pipeline/export.py) and, if playable, its bike clips (vehicles/bike/rider.py) and horse clips (horses/rider.py), to FBX."""
+    """@cc [owner:fontanierh,label:performance] unchanged-character-content-skips-import
+    Character import dependencies MUST identify every consumed mesh, skin/clip record and texture.
+    Exporter code changes that reproduce the same content MUST NOT invalidate the import. FBX
+    timestamp/ID normalization MUST retain geometry, skinning, animation and connection changes.
+    """
     k, threads = key(character), character.blender['threads']
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
                   outputs=[out / character.output / 'export.json'], heavy=True,
+                  checkpoint_outputs=(out / character.output / 'fbx', out / character.output / 'textures', out / character.output / 'export.json'),
                   about=f"{character.name}'s body, textures and own clips, to FBX")]
     if character.playable:
         steps.append(Step(f'characters.{k}_bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'rider.py', ('--character', character.id), threads=threads)],
@@ -483,6 +497,21 @@ def mover_export_steps(character, out):
                           outputs=[out / character.output / 'horse' / 'export.json',
                                    *(out / character.output / 'horse' / 'fbx' / f'A_{c}.fbx' for c in HORSE_RIDER_CLIPS)], heavy=True,
                           about=f"Every horseback riding action authored on {character.name}'s rig, with its reach errors"))
+    # Imports consume exported character content, not the generator implementation identity.
+    # FBX timestamps/IDs are normalized by the shared export digest; geometry, skinning,
+    # clips, textures and the report remain inputs. Each lane excludes its import reports.
+    for lane in ('body', 'bike', 'horse') if character.playable else ('body',):
+        producer = f'characters.{k}' + ('' if lane == 'body' else '_' + lane)
+        root = out / character.output if lane == 'body' else out / character.output / lane
+        names = ('export.json', 'fbx', 'textures') if lane == 'body' else ('export.json', 'fbx')
+        digest = digest_step(out, producer, 'import', f'{character.name} {lane} content consumed by Unreal', root, names)
+        output, body = digest.outputs[0], character.name if lane == 'body' else None
+        digest.commands = [Call('character consumed export digest',
+                               lambda ctx, log, root=root, names=names, body=body, output=output:
+                               export_digest.record(output, export_digest.character(root, names, body), log))]
+        digest.deferred_inputs = [DeferredInputs('character-exports', character_export_members, (root, names),
+                                                 support=(GAME / 'build.py', GAME / 'export_digest.py'))]
+        steps.append(digest)
     return steps
 
 
@@ -499,7 +528,7 @@ def mover_import_steps(character, out):
     """Its body (Scripts/import_character.py) and, if playable, its bike and horse clips (Scripts/import_ride_clips.py)."""
     k, modules = key(character), tuple(character.unreal['modules'])
     body, inputs = body_import(character.id, modules)
-    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.world'], needs=[f'characters.{k}', *unreal_modules.needs(modules)],
+    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.world'], needs=[f'characters.{k}.import', *unreal_modules.needs(modules)],
                   outputs=[content(character) / f'SK_{character.name}.uasset'], heavy=True,
                   about=f'{character.unreal_path}: its mesh, materials, own clips and base definition')]
     if character.playable:
@@ -507,12 +536,14 @@ def mover_import_steps(character, out):
         ride = lambda kind: UnrealScript(rides, f'{character.id.upper()} {kind.upper()} IMPORT COMPLETE', null_rhi=True,
                                          env=(('RIDE', kind), ('RIDE_CHARACTER', character.id)))
         inputs = [rides, SCRIPTS / 'animation_compression.py', YORI, PIPELINE / 'definition.py', character.folder / 'character.toml']
-        steps.append(Step(f'unreal.{k}_bike', [ride('bike')], inputs=inputs, needs=[f'characters.{k}_bike', f'unreal.{k}'], heavy=True,
+        steps.append(Step(f'unreal.{k}_bike', [ride('bike')], inputs=inputs, needs=[f'characters.{k}_bike.import', f'unreal.{k}'], heavy=True,
                           about=f'{character.unreal_path}Bike: its bike clips on SK_{character.name}'))
-        steps.append(Step(f'unreal.{k}_horse', [ride('horse')], inputs=inputs, needs=[f'characters.{k}_horse', f'unreal.{k}'],
+        steps.append(Step(f'unreal.{k}_horse', [ride('horse')], inputs=inputs, needs=[f'characters.{k}_horse.import', f'unreal.{k}'],
                           outputs=[out / character.output / 'horse' / 'unreal_import.json',
                                    *(GAME / 'unreal' / 'Content' / f"{character.game['bike_rig']}Horse" / f'A_{c}.uasset' for c in HORSE_RIDER_CLIPS)],
                           heavy=True, about=f'{character.unreal_path}Horse: its horseback riding clips on SK_{character.name}'))
+    for step in steps:
+        step.checkpoint_previous_needs = tuple(n.removesuffix('.import') if n.startswith('characters.') else n for n in step.needs)
     return steps
 
 

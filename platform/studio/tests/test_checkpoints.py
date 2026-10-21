@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_checkpoints, build_snapshot, checkpoint_store as cp, paths
+from atelier import build, build_checkpoints, build_snapshot, checkpoint_actions, checkpoint_store as cp, paths
 from atelier.build_cache import atomic_json
 
 
@@ -42,10 +42,14 @@ def fixture(tmp_path, monkeypatch):
             value = build.fingerprint(step, done)
             products = build.build_products.records(step)
             stamp = dict(fingerprint=value, products=products, seconds=3., time=1.)
+            stamp['checkpoint_key'] = checkpoint_actions.certificate_key(ctx, step, value)
+            declarations, files = checkpoint_actions.snapshot(ctx, step, fixture_store, save_blobs=False)
+            stamp['checkpoint_inventory'] = checkpoint_actions.inventory_identity(declarations, files)
             atomic_json(ctx.stamps / (step.name + '.json'), stamp)
             done[step.name] = value
             build.build_products.feed_results(done, products)
-    return SimpleNamespace(checkout=checkout, produce=produce, store=cp.Store('fixture', tmp_path / 'store'))
+    fixture_store = cp.Store('fixture', tmp_path / 'store')
+    return SimpleNamespace(checkout=checkout, produce=produce, store=fixture_store)
 
 
 def snapshot(fixture):
@@ -73,6 +77,51 @@ def test_fresh_dirty_checkout_reuses_unaffected_tasks_without_head_equality(fixt
     assert (paths.REPO / 'combat.txt').read_bytes() == before
     assert steps[1].outputs[0].read_bytes() == b'combat'  # Seed only; no current certificate.
     build_snapshot.require_complete(ctx.out, game='fixture')
+
+
+def test_old_workspace_preserves_import_history_for_content_boundary_migration(fixture, monkeypatch):
+    from dataclasses import replace
+    donor, old_steps = fixture.checkout('old-workspace')
+    old_steps[0] = replace(old_steps[0], needs=['combat'])
+    fixture.produce(donor, [old_steps[1], old_steps[0], old_steps[2]])
+    key = cp.capture(donor, old_steps, fixture.store, echo=lambda _: None)
+    ctx, steps = fixture.checkout('new-recipe')
+    steps[0] = replace(steps[0], needs=['combat.import'], checkpoint_previous_needs=('combat',))
+    digest_output = ctx.out / 'digests/combat.json'
+    digest = build.Step('combat.import', [build.Call('digest', lambda *_: None)], needs=['combat'],
+                        outputs=[digest_output], cutoff=True)
+    stamps = cp.restore(ctx, [*steps, digest], fixture.store, key, echo=lambda _: None)
+    assert 'tree' not in stamps
+    publish_receiver(ctx, [*steps, digest], fixture.store, key, stamps)
+    # The cheap new cutoff runs first; the old importer metadata is absent from current stamps.
+    digest_output.parent.mkdir(parents=True); digest_output.write_bytes(b'normalized combat')
+    done = {'combat': stamps['combat']['fingerprint'], 'combat.import': 'outputs:normalized-combat'}
+    current, state = build.fingerprint_state(steps[0], done)
+    monkeypatch.setattr(checkpoint_actions, 'Store', lambda _: fixture.store)
+    migrated = checkpoint_actions.migrate_boundary(ctx, steps[0], current, state, {}, done)
+    assert migrated['fingerprint'] == current
+    assert migrated['checkpoint_migration_result'] == fixture.store.load(key)['stamps']['tree']['fingerprint']
+    assert steps[0].outputs[0].read_bytes() == b'tree'
+
+
+@pytest.mark.parametrize('change', ['mode', 'link'])
+def test_post_guard_workspace_rejects_changed_mode_or_link(fixture, change):
+    ctx, steps = fixture.checkout('donor')
+    fixture.produce(ctx, steps)
+    link = steps[0].outputs[0].parent / 'asset-link'
+    link.symlink_to('asset.bin')
+    key = cp.capture(ctx, steps, fixture.store, echo=lambda _: None)
+    receiver, receiving = fixture.checkout('receiver')
+    stamps = cp.restore(receiver, receiving, fixture.store, key, echo=lambda _: None)
+    output = receiving[0].outputs[0]
+    if change == 'mode':
+        output.chmod(0o700)
+    else:
+        link = output.parent / 'asset-link'; link.unlink(); link.symlink_to('../combat/asset.bin')
+    with pytest.raises(cp.CheckpointError, match='changed'):
+        publish_receiver(receiver, receiving, fixture.store, key, stamps)
+    assert (receiver.out / cp.JOURNAL).exists()
+    assert not list(receiver.stamps.glob('*.json'))
 
 
 def test_changed_producer_never_certifies_dependent_but_preserves_independent_task(fixture):

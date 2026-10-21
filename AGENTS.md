@@ -318,7 +318,7 @@ contract review reads them on every PR. Playtests keep finding the same defects,
 - Use the normal `atelier build` command in fresh and warm worktrees. It checks input/tool-keyed task results
   locally and in the configured private checkpoint repository before native work, independent of Git HEAD.
   Follow [build checkpoints](docs/BUILD_CHECKPOINTS.md). Keep the same installed engine and independent outputs;
-  never share mutable Content, Binaries or Intermediate. The old exact-commit transfer implementation is removed.
+  never share mutable Content, Binaries or Intermediate.
 - Configure private storage with `atelier cache configure --repository OWNER/REPOSITORY`; its address belongs
   only in machine-local configuration, never tracked source. Release publication retains an existing verified
   build before publishing the playtest; it does not request another cook. Preserve producers and all caches

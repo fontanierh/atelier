@@ -70,10 +70,3 @@ its already certified tile from cache instead of executing it again.
 Normal sandbox builds exclude this example. Targeting a single tile selects only its matching source producers.
 The example validates dependency selection and cached outputs; its JSON shapes do not certify geometric bounds
 or any native world. Authors must declare conservative bounds and the full reach of their actual operation.
-
-
-## Optional cook development modes
-
-Normal sandbox builds do not cook. The explicit `unreal.cook` step exists for separately planned engine
-experiments; it has no complete native correctness acceptance or established speedup. It is not part of
-normal setup or a recommended build optimization. See [cook experiment status](../../docs/COOK_EXPERIMENT.md).

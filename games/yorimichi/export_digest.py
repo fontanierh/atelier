@@ -108,6 +108,21 @@ def files(root, names):
     return made
 
 
+def character(root, names, body=None):
+    """Hash complete consumed character exports; reject missing meshes, clips and textures cheaply."""
+    root = Path(root)
+    report = json.loads((root / 'export.json').read_text())
+    required = [f'fbx/A_{name}.fbx' for name in report['clips']]
+    if body:
+        required.append(f'fbx/{body}.fbx')
+        required.extend(material['texture'] for material in report['materials'].values() if material.get('texture'))
+    for name in required:
+        path = root / name
+        if not path.resolve().is_relative_to(root.resolve()) or not path.is_file() or not path.stat().st_size:
+            raise FileNotFoundError(f'{path}: required character export is missing or invalid')
+    return files(root, names)
+
+
 def hidamari(out, north):
     """The Hidamari meshes the world import (north=False) or the volcano's (north=True, HD_North*) reads: their manifest
     entries and FBX digests. The world's forest ground also reads the snow mask's southern join (forest_ground.py)."""

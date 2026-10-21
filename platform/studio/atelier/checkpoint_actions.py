@@ -72,13 +72,18 @@ def compile_present(ctx, step):
                  for m in json.loads(project.read_text()).get('Modules', []) if m.get('Type') != 'ServerOnly']
     try:
         allowed = set(compile_outputs(ctx, step))
+        engine = getattr(ctx, 'unreal_root', None)
+        engine_id = read_json(engine / 'Engine/Binaries/Mac/UnrealEditor.modules').get('BuildId') if engine else None
+        if engine is not None and (not engine_id or read_json(output / 'UnrealEditor.modules').get('BuildId') != engine_id):
+            return False
         for command in step.commands:
             if not isinstance(command, UnrealCompile):
                 continue
             receipt = output / (command.target + '.target')
             required.append(receipt)
             value = read_json(receipt)
-            if value.get('TargetName') != command.target or value.get('Platform') != 'Mac':
+            if (value.get('TargetName') != command.target or value.get('Platform') != 'Mac'
+                    or (engine_id and value.get('Version', {}).get('BuildId') != engine_id)):
                 return False
             for item in value.get('BuildProducts', []):
                 name = item['Path']
@@ -118,9 +123,14 @@ def destination(ctx, name):
     return safe_destination(root, tail) if tail else safe_destination(root.parent, root.name)
 
 
-def key(ctx, step, fingerprint):
+def key(ctx, step, fingerprint, *, require_outputs=True):
+    from .build import Blender
+    # Ambient Blender startup is not portable producer proof. Existing local incremental
+    # state can continue, but these commands do not publish transferable action entries.
+    if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
+        return None
     outputs = declared(ctx, step)
-    if not outputs:
+    if not outputs and require_outputs:
         return None
     if not hasattr(ctx, 'checkpoint_tool_context'):
         ctx.checkpoint_tool_context = context(ctx)
@@ -132,7 +142,11 @@ def key(ctx, step, fingerprint):
         from .build_cache import tool_context
         from .build_hashes import HashIndex
         with HashIndex(paths.cache_dir('checkpoints') / 'tool-hashes.sqlite3') as index:
-            tool['source_tools'] = tool_context(step, index.digest, cache=ctx.__dict__.setdefault('checkpoint_source_tool_cache', {}))
+            from dataclasses import fields, replace
+            commands = [base(**{f.name: getattr(c, f.name) for f in fields(base)})
+                        for c in step.commands for base in (Python, Blender) if isinstance(c, base)]
+            source_step = replace(step, commands=commands)
+            tool['source_tools'] = tool_context(source_step, index.digest, cache=ctx.__dict__.setdefault('checkpoint_source_tool_cache', {}))
     return identity(dict(schema=1, game=ctx.game, task=step.name, fingerprint=fingerprint,
                          outputs=[label(ctx, p) for p in outputs], tool=tool))
 
@@ -148,7 +162,9 @@ def validate(value, store, action_key):
             or value.get('key') != action_key or type(value.get('roots')) is not list
             or type(value.get('files')) is not dict or type(value.get('stamp')) is not dict
             or not HEX.fullmatch(value.get('fingerprint', '')) or value['stamp'].get('touched')
-            or value['stamp'].get('fingerprint') != value['fingerprint']):
+            or value['stamp'].get('fingerprint') != value['fingerprint']
+            or value['stamp'].get('checkpoint_key') != action_key
+            or value['stamp'].get('checkpoint_inventory') != inventory_identity(value['roots'], value['files'])):
         raise CheckpointError('Invalid task cache manifest')
     for root in value['roots']:
         if type(root) is not dict or root.get('kind') not in ('file', 'directory', 'absent'):
@@ -220,9 +236,11 @@ def equivalent(left, right):
     return normalize(left) == normalize(right)
 
 
-def publish(ctx, step, fingerprint, stamp, *, store=None, done=None):
+def publish(ctx, step, fingerprint, stamp, *, store=None, done=None, produced=False):
     """@cc [owner:fontanierh,label:correctness] complete-task-result-publication
     A reusable task entry MUST have complete declared outputs and fresh input/product proof.
+    Only a completed execution/verified restoration MAY bind a new producer tool key and output
+    inventory identity; an existing legacy stamp MUST NOT be adopted under currently selected tools.
     It MUST NOT infer completeness from changed-file observations or representative legacy outputs.
     Identical input/tool keys producing different output bytes MUST be disabled, never overwritten.
     """
@@ -241,6 +259,11 @@ def publish(ctx, step, fingerprint, stamp, *, store=None, done=None):
         raise CheckpointError('Compiled target is missing required module binaries or its registry')
     with store.locked():
         declarations, files = snapshot(ctx, step, store, save_blobs=True)
+        proof = inventory_identity(declarations, files)
+        if not produced and (stamp.get('checkpoint_key') != action_key or stamp.get('checkpoint_inventory') != proof):
+            raise CheckpointError('Existing output bytes lack compatible producer tool/inventory proof')
+        stamp['checkpoint_key'] = action_key
+        stamp['checkpoint_inventory'] = proof
         value = dict(schema=1, game=ctx.game, key=action_key, task=step.name, fingerprint=fingerprint,
                      roots=declarations, files=files, stamp=stamp)
         second_roots, second_files = snapshot(ctx, step, store, save_blobs=False)
@@ -334,7 +357,7 @@ class Actions:
         self.candidates = None
         self.misses = set()
 
-    def get(self, step, fingerprint):
+    def get(self, step, fingerprint, *, local_only=False):
         action_key = key(self.ctx, step, fingerprint)
         if action_key is None or action_key in self.misses:
             return None
@@ -343,7 +366,7 @@ class Actions:
         value = load(self.store, action_key)
         if value is not None:
             return value
-        if not self.settings.get('repository'):
+        if local_only or not self.settings.get('repository'):
             return None
         from .checkpoint_github import Remote
         if self.remote is None:
@@ -420,3 +443,80 @@ def install(store, value):
             atomic_json(path.with_suffix('.conflict'), dict(key=action_key))
             raise CheckpointError('Remote and local task results conflict; key disabled')
         atomic_json(path, value)
+
+
+def certificate_key(ctx, step, fingerprint):
+    from .build import Call
+    if not declared(ctx, step) and all(isinstance(c, Call) for c in step.commands):
+        return None
+    return key(ctx, step, fingerprint, require_outputs=False)
+
+
+def inventory_identity(declarations, files):
+    return identity(dict(roots=declarations,
+                         files={name: {k: v for k, v in e.items() if k != 'mtime_ns'} for name, e in files.items()}))
+
+
+def certified(ctx, step, fingerprint, stamp):
+    """Existing bytes cannot acquire a new tool identity through stamp migration."""
+    expected = certificate_key(ctx, step, fingerprint)
+    if expected is None:
+        from .build import Call
+        return all(isinstance(c, Call) for c in step.commands)
+    if stamp.get('checkpoint_key') != expected:
+        return False
+    if declared(ctx, step):
+        try:
+            declarations, files = snapshot(ctx, step, Store(ctx.game), save_blobs=False)
+            return stamp.get('checkpoint_inventory') == inventory_identity(declarations, files)
+        except (OSError, ValueError, RuntimeError):
+            return False
+    return True
+
+
+def local_incremental(ctx, step, fingerprint, stamp):
+    """Continue compatible existing state without inventing a producer tool/cache certificate."""
+    observed = getattr(ctx, 'checkpoint_observed_context', None)
+    allowance = (stamp.get('checkpoint_incremental_context') == observed if stamp.get('checkpoint_incremental_context')
+                 else getattr(ctx, 'checkpoint_incremental_compatible', False))
+    return (allowance and not stamp.get('checkpoint_key') and not stamp.get('touched')
+            and stamp.get('fingerprint') == fingerprint)
+
+
+def migrate_boundary(ctx, step, current, input_state, previous, done, *, echo=print):
+    """@cc [owner:fontanierh,label:correctness] verified-input-boundary-migration
+    A dependency-boundary migration MUST reproduce the previous declaration's full current
+    fingerprint and verify its existing outputs. Only dependency names MAY differ. Fresh
+    receiving inputs MUST still match before metadata publication. Retained output bytes MUST
+    remain compatibility-only state; migration MUST NOT invent produced task/tool provenance.
+    """
+    old_needs = getattr(step, 'checkpoint_previous_needs', None)
+    if old_needs is None or previous.get('fingerprint') == current:
+        return previous
+    if not previous:
+        # Historical metadata is evidence for this equivalence check, never a current certificate.
+        retained = ctx.out / '.state/checkpoint.json'
+        if retained.is_file():
+            saved = Store(ctx.game).load(read_json(retained)['key'])
+            previous = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(step.name, {})
+    if not previous:
+        return previous
+    from dataclasses import replace
+    from .build import fingerprint, outputs_present, result
+    old_step = replace(step, needs=list(old_needs), checkpoint_previous_needs=None)
+    old_key = fingerprint(old_step, done)
+    if (old_key != previous.get('fingerprint') or not outputs_present(step)
+            or (step.products and not build_products.valid_records(step, previous.get('products', {})))
+            or not (certified(ctx, old_step, old_key, previous) or local_incremental(ctx, old_step, old_key, previous))):
+        return previous
+    if fingerprint(step, done) != current:
+        raise CheckpointError('Inputs changed during dependency migration')
+    migrated = dict(previous, fingerprint=current, input_state=input_state,
+                    checkpoint_incremental_context=getattr(ctx, 'checkpoint_observed_context', None),
+                    checkpoint_migrated_from=old_key,
+                    checkpoint_migration_result=result(old_step, old_key, previous))
+    migrated.pop('checkpoint_key', None)
+    migrated.pop('checkpoint_inventory', None)
+    atomic_json(ctx.stamps / (step.name + '.json'), migrated)
+    echo(step.name + ': preserved existing import after verified dependency migration')
+    return migrated

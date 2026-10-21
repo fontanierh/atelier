@@ -84,12 +84,14 @@ def _publish_restoration(ctx, steps, store, key, record):
         raise CheckpointError('Checkpoint restore completion does not match its journal')
     saved = store.load(key)
     candidates = record.get('stamps')
-    if not isinstance(candidates, dict) or any(saved['stamps'].get(n) != s for n, s in candidates.items()):
+    known = {**saved['stamps'], **saved.get('incremental_stamps', {})}
+    if not isinstance(candidates, dict) or any(known.get(n) != s for n, s in candidates.items()):
         raise CheckpointError('Checkpoint restore completion contains foreign certificates')
     try:
         for name, stamp in candidates.items():
             atomic_json(ctx.stamps / (name + '.json'), stamp)
-        if certificates(ctx, steps) != candidates:
+        incremental_environment(ctx)
+        if certificates(ctx, steps, include_incremental=True) != candidates:
             raise CheckpointError('Checkpoint receiver changed before certificate publication')
         # Revalidate all copied bytes at the publication boundary, not just named products.
         from .checkpoint_store import roots, safe_destination
@@ -106,9 +108,20 @@ def _publish_restoration(ctx, steps, store, key, record):
             path = safe_destination(root, name)
             expected_digest = post_import.get(member, entry.get('sha256'))
             if entry['kind'] == 'file' and (path.is_symlink() or not path.is_file()
+                    or path.stat().st_mode & 0o777 != entry['mode']
                     or (member not in post_import and path.stat().st_size != entry['size'])
                     or build_products.file_digest(path) != expected_digest):
                 raise CheckpointError('Checkpoint output changed before certificate publication')
+            if entry['kind'] == 'link':
+                if entry['target'].startswith('member:'):
+                    target_label, _, target_name = entry['target'][7:].partition('/')
+                    target = safe_destination(allowed[target_label][0], target_name)
+                else:
+                    target = ctx.unreal_root / entry['target'][7:]
+                if not path.is_symlink() or os.readlink(path) != os.path.relpath(target, path.parent):
+                    raise CheckpointError('Checkpoint link changed before certificate publication')
+            if entry['kind'] == 'directory' and (path.is_symlink() or not path.is_dir()):
+                raise CheckpointError('Checkpoint directory changed before certificate publication')
         journal.unlink()
     except BaseException:
         for name in candidates:
@@ -121,6 +134,7 @@ def prepare(ctx, steps, *, echo=print):
     if settings is None:
         return None
     store = Store(ctx.game)
+    incremental_environment(ctx)
     journal = ctx.out / JOURNAL
     if journal.exists():
         pending = read_json(journal)
@@ -180,15 +194,10 @@ def protect(ctx, step, *, estimate=None, echo=print):
     settings = getattr(ctx, 'checkpoint_settings', None)
     if settings is None or not step.heavy:
         return
-    from .build import Call, Blender, UnrealScript
+    from .build import Call
     if not any(not isinstance(c, Call) for c in step.commands):
         return
     recorded_reason = getattr(ctx, 'rebuild_reason', None)
-    from .checkpoint_actions import declared
-    if any(isinstance(c, (Blender, UnrealScript)) for c in step.commands) and not declared(ctx, step):
-        raise CheckpointError(f'{step.name}: native execution requires complete output ownership. '
-                              'Migrate this task to disjoint named products or checkpoint_outputs first; '
-                              'legacy representative-output rebuilds are retired. No native work was launched.')
     if estimate is None:
         retained = ctx.out / '.state/checkpoint.json' if hasattr(ctx, 'out') else None
         if retained is not None and retained.is_file():
@@ -257,3 +266,41 @@ def estimate(stamp):
     if stamp.get('restored_from') or stamp.get('restore_source'):
         return None
     return stamp.get('seconds')
+
+
+def incremental_environment(ctx):
+    """@cc [owner:fontanierh,label:correctness] incremental-state-compatibility
+    Pre-key state MAY continue under its existing source/output checks and compatible native
+    engine/SDK. Observed tools MUST be recorded locally; a subsequent change MUST invalidate
+    this allowance. Such state MUST NOT acquire or publish a produced task/tool certificate.
+    """
+    observed = context(ctx)
+    project = getattr(ctx, 'uproject', None)
+    compatible = True
+    if project is not None:
+        from .checkpoint_actions import compile_present
+        from .build import Step, UnrealCompile
+        target = project.stem + 'Editor'
+        compatible = compile_present(ctx, Step('compatibility', [UnrealCompile(target)]))
+        if compatible and observed.get('toolchain'):
+            import subprocess
+            developer = Path(subprocess.check_output(['xcode-select', '-p'], text=True, timeout=10).strip())
+            sdk = read_json(developer / 'Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json')
+            receipt = read_json(project.parent / 'Binaries/Mac' / (target + '.target'))
+            versions = [p.get('Value') for p in receipt.get('AdditionalProperties', []) if p.get('Name') == 'SDK']
+            compatible = versions == [sdk.get('Version')]
+    from . import build_products
+    blender = getattr(ctx, 'blender', None)
+    if blender and Path(blender).is_file():
+        observed['blender'] = build_products.file_digest(Path(blender))
+    observed['python'] = build_products.file_digest(Path(sys.executable).resolve())
+    lock = paths.REPO / 'uv.lock'
+    if lock.is_file():
+        observed['lock'] = build_products.file_digest(lock)
+    ctx.checkpoint_observed_context = identity(observed)
+    marker = ctx.out / '.state/incremental-environment.json'
+    if marker.exists():
+        compatible = compatible and read_json(marker).get('context') == observed
+    elif compatible:
+        atomic_json(marker, dict(context=observed))
+    ctx.checkpoint_incremental_compatible = compatible

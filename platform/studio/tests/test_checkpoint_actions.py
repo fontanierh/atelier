@@ -15,7 +15,7 @@ def saved(fixture):
     fixture.produce(ctx, steps)
     step = steps[0]
     stamp = cp.read_json(ctx.stamps / 'tree.json')
-    key = actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={})
+    key = actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
     return ctx, steps, key
 
 
@@ -52,7 +52,7 @@ def test_source_change_during_publication_cannot_save_action(fixture, monkeypatc
         step.inputs[0].write_text('new source while bytes were copied')
     monkeypatch.setattr(fixture.store, 'put', racing)
     with pytest.raises(cp.CheckpointError, match='changed during publication'):
-        actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={})
+        actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
     assert not actions.entry_path(fixture.store, key).exists()
 
 
@@ -62,7 +62,7 @@ def test_same_inputs_different_outputs_disable_key(fixture):
     step.outputs[0].write_bytes(b'different bytes')
     stamp = dict(cp.read_json(ctx.stamps / 'tree.json'), products=build.build_products.records(step))
     with pytest.raises(cp.CheckpointError, match='different outputs'):
-        actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={})
+        actions.publish(ctx, step, stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
     assert actions.entry_path(fixture.store, key).with_suffix('.conflict').exists()
 
 
@@ -159,7 +159,7 @@ def test_tracked_source_cannot_become_an_action_output(fixture, monkeypatch):
     monkeypatch.setattr(actions, 'tracked_paths', lambda: {steps[0].outputs[0]})
     stamp = cp.read_json(ctx.stamps / 'tree.json')
     with pytest.raises(cp.CheckpointError, match='tracked source'):
-        actions.publish(ctx, steps[0], stamp['fingerprint'], stamp, store=fixture.store, done={})
+        actions.publish(ctx, steps[0], stamp['fingerprint'], stamp, store=fixture.store, done={}, produced=True)
 
 
 def test_private_repository_is_configured_outside_source(fixture, monkeypatch):
@@ -172,9 +172,90 @@ def test_private_repository_is_configured_outside_source(fixture, monkeypatch):
     assert json.loads(settings.read_text()) == dict(repository='owner/artifacts')
 
 
-def test_legacy_native_miss_stops_even_with_a_reason_or_low_old_estimate(tmp_path):
-    ctx = SimpleNamespace(checkpoint_settings=dict(rebuild_budget_seconds=600), logs=tmp_path,
-                          rebuild_reason='cannot bypass incomplete ownership', uproject=None)
-    step = build.Step('legacy.import', [build.UnrealScript(tmp_path / 'import.py', 'done')], heavy=True)
-    with pytest.raises(cp.CheckpointError, match='complete output ownership'):
-        build_checkpoints.protect(ctx, step, estimate=1)
+def test_unchanged_source_cannot_adopt_old_outputs_under_new_native_tools(fixture, monkeypatch):
+    ctx, steps = fixture.checkout('producer')
+    steps[0].commands = [build.UnrealScript(steps[0].inputs[0], 'done')]
+    monkeypatch.setattr(actions, 'context', lambda ctx: dict(system='Darwin', machine='arm64', engine={'version': 'old'}))
+    fixture.produce(ctx, steps)
+    step = steps[0]; stamp = cp.read_json(ctx.stamps / 'tree.json')
+    fingerprint = build.fingerprint(step, {})
+    assert actions.certified(ctx, step, fingerprint, stamp)
+    monkeypatch.setattr(actions, 'context', lambda ctx: dict(system='Darwin', machine='arm64', engine={'version': 'new'}))
+    del ctx.checkpoint_tool_context  # A new invocation reads the selected tools again.
+    assert build.fingerprint(step, {}) == fingerprint
+    assert not actions.certified(ctx, step, fingerprint, stamp)
+    with pytest.raises(cp.CheckpointError, match='producer tool/inventory proof'):
+        actions.publish(ctx, step, fingerprint, stamp, store=fixture.store, done={})
+
+
+def test_lost_action_manifest_does_not_allow_changed_secondary_outputs(fixture):
+    ctx, steps, key = saved(fixture)
+    stamp = cp.read_json(ctx.stamps / 'tree.json')
+    actions.entry_path(fixture.store, key).unlink()
+    assert actions.certified(ctx, steps[0], stamp['fingerprint'], stamp)
+    (steps[0].outputs[0].parent / 'unrecorded-secondary').write_text('extra bytes')
+    assert not actions.certified(ctx, steps[0], stamp['fingerprint'], stamp)
+
+
+def test_pre_key_release_retains_only_uncertified_workspace_seed(fixture):
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    for path in ctx.stamps.glob('*.json'):
+        value = cp.read_json(path)
+        value.pop('checkpoint_key'); value.pop('checkpoint_inventory')
+        atomic_json(path, value)
+    key = cp.capture(ctx, steps, fixture.store, allow_seed=True)
+    assert fixture.store.load(key)['stamps'] == {}
+    assert fixture.store.load(key)['actions'] == {}
+    assert fixture.store.load(key)['files']
+
+
+def test_observed_environment_keeps_pre_key_warm_state_without_adopting_it(fixture, monkeypatch):
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    stamp = cp.read_json(ctx.stamps / 'tree.json')
+    stamp.pop('checkpoint_key'); stamp.pop('checkpoint_inventory')
+    monkeypatch.setattr(build_checkpoints, 'context', lambda ctx: dict(engine='first environment'))
+    build_checkpoints.incremental_environment(ctx)
+    assert actions.local_incremental(ctx, steps[0], stamp['fingerprint'], stamp)
+    assert not actions.certified(ctx, steps[0], stamp['fingerprint'], stamp)
+    monkeypatch.setattr(build_checkpoints, 'context', lambda ctx: dict(engine='changed environment'))
+    build_checkpoints.incremental_environment(ctx)
+    assert not actions.local_incremental(ctx, steps[0], stamp['fingerprint'], stamp)
+
+
+def test_non_factory_blender_does_not_claim_a_portable_action_key(fixture):
+    ctx, steps = fixture.checkout('producer')
+    step = steps[0]
+    step.commands = [build.Blender(step.inputs[0], factory_startup=False)]
+    assert actions.key(ctx, step, build.fingerprint(step, {})) is None
+
+
+def test_compatible_workspace_keeps_pre_key_stamps_without_action_certificates(fixture):
+    ctx, steps = fixture.checkout('producer')
+    fixture.produce(ctx, steps)
+    for path in ctx.stamps.glob('*.json'):
+        value = cp.read_json(path); value.pop('checkpoint_key'); value.pop('checkpoint_inventory')
+        atomic_json(path, value)
+    build_checkpoints.incremental_environment(ctx)
+    key = cp.capture(ctx, steps, fixture.store)
+    value = fixture.store.load(key)
+    assert not value['stamps'] and not value['actions']
+    assert set(value['incremental_stamps']) == {'tree', 'combat', 'house'}
+    receiver, current = fixture.checkout('receiver', changed=True)
+    restored = cp.restore(receiver, current, fixture.store, key)
+    build_checkpoints._publish_restoration(receiver, current, fixture.store, key, dict(key=key, stamps=restored))
+    assert set(restored) == {'tree', 'house'}
+    assert all('checkpoint_key' not in record for record in restored.values())
+
+
+def test_fresh_unsupported_execution_is_current_after_observed_environment_change(fixture, monkeypatch):
+    ctx, steps = fixture.checkout('producer')
+    monkeypatch.setattr(build_checkpoints, 'context', lambda ctx: dict(engine='first'))
+    build_checkpoints.incremental_environment(ctx)
+    monkeypatch.setattr(build_checkpoints, 'context', lambda ctx: dict(engine='second'))
+    build_checkpoints.incremental_environment(ctx)
+    assert not ctx.checkpoint_incremental_compatible
+    stamp = dict(fingerprint='a' * 64, checkpoint_key=None,
+                 checkpoint_incremental_context=ctx.checkpoint_observed_context)
+    assert actions.local_incremental(ctx, steps[0], 'a' * 64, stamp)

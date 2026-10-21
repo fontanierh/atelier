@@ -184,6 +184,8 @@ def test_old_task_result_is_found_after_twenty_newer_releases(fixture, tmp_path,
     action_key = 'f' * 64
     action = dict(schema=1, game='fixture', key=action_key, task='asset', fingerprint='b' * 64,
                   roots=[dict(path='generated/0', kind='file')], files=manifest['files'], stamp=manifest['stamps']['asset'])
+    action['stamp']['checkpoint_key'] = action_key
+    action['stamp']['checkpoint_inventory'] = actions.inventory_identity(action['roots'], action['files'])
     old_key = store.save(dict(manifest, actions={action_key: action}))
     remote.publish(store, old_key, 'old', revision='c' * 40)
     for number in range(21):

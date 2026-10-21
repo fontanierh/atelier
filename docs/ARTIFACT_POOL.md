@@ -110,8 +110,8 @@ This installs portable sources only; ordinary native reuse is handled by build c
 
 ## Native build checkpoints
 
-Ordinary builds and releases use [build checkpoints](BUILD_CHECKPOINTS.md). The removed exact-commit
-whole-build transfer is not a setup step. Individual task hits require complete output inventories;
+Ordinary builds and releases use [build checkpoints](BUILD_CHECKPOINTS.md).
+Individual task hits require complete output inventories;
 lookup uses inputs and tools across source revisions. This page documents separate portable source formats.
 
 ## Import a signed offline bundle

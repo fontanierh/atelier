@@ -12,3 +12,10 @@ Native Unreal packages MUST NOT opt into a portable cache until their relocation
 @cc [owner:fontanierh,label:safety] advisory-capacity
 The capacity planner MUST NOT write scheduler state, grant leases, take locks, launch workloads or
 change the live safety system. A queued phase MUST hold no resources or named locks.
+
+@cc [owner:fontanierh,label:correctness] compatible-workspace-incremental-state
+Native workspace checkpoints MAY retain and restore existing incremental state across Git revisions
+when source fingerprints, complete workspace bytes and engine/SDK compatibility still match. Its
+original task/tool provenance MAY be unknown and MUST NOT be invented or promoted into a produced
+individual action certificate. Record the receiving observed environment locally; later tool changes
+MUST invalidate compatibility-only state. Verified action results MUST retain complete output proof.

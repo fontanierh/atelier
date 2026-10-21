@@ -5,7 +5,6 @@ and stops unknown or expensive misses before they become an accidental full rebu
 
 [Build checkpoints](BUILD_CHECKPOINTS.md) is the single operational guide for local and private GitHub reuse,
 release retention, configuration and recovery. Lookup uses actual task inputs and tools, across source revisions.
-The old exact-commit whole-build transfer command and implementation have been removed.
 
 Inspect decisions with `atelier build GAME --plan --explain`; use `--verify` when output corruption is suspected.
 Keep stamps, generated Content, Binaries, Intermediate, the installed engine and DDC. Never routinely force,

@@ -244,16 +244,19 @@ def validate(manifest, game):
             raise CheckpointError('Checkpoint file is another member\'s parent')
     if total > MAX_BYTES or len(canonical(manifest)) > MAX_MANIFEST:
         raise CheckpointError('Checkpoint exceeds its size limit')
-    for name, stamp in manifest['stamps'].items():
+    incremental = manifest.get('incremental_stamps', {})
+    if type(incremental) is not dict or set(incremental) & set(manifest['stamps']):
+        raise CheckpointError('Invalid incremental checkpoint state')
+    for name, stamp in {**manifest['stamps'], **incremental}.items():
         if (not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name) or type(stamp) is not dict
                 or not HEX.fullmatch(stamp.get('fingerprint', '')) or stamp.get('touched')):
             raise CheckpointError('Checkpoint contains an invalid or touched certificate')
 
 
-def certificates(ctx, steps):
+def certificates(ctx, steps, *, include_incremental=False):
     from .build import fingerprint, order, outputs_present, result
     from .build_plan import read_stamp
-    from .checkpoint_actions import compile_present
+    from .checkpoint_actions import compile_present, certified, local_incremental
     done, records = {}, {}
     with HashIndex() as index:
         for step in order(steps, [s.name for s in steps]):
@@ -262,7 +265,7 @@ def certificates(ctx, steps):
                 current = fingerprint(step, done, index=index, tool_cache={})
                 products = build_products.records(step, hasher=index.digest)
                 good = (stamp.get('fingerprint') == current and not stamp.get('touched')
-                        and outputs_present(step) and compile_present(ctx, step) and (not step.products or stamp.get('products') == products)
+                        and outputs_present(step) and compile_present(ctx, step) and (certified(ctx, step, current, stamp) or (include_incremental and local_incremental(ctx, step, current, stamp))) and (not step.products or stamp.get('products') == products)
                         and all(need in records for need in step.needs))
             except (OSError, ValueError, SyntaxError):
                 good = False
@@ -273,14 +276,15 @@ def certificates(ctx, steps):
     return records
 
 
-def capture(ctx, steps, store, *, echo=print):
+def capture(ctx, steps, store, *, echo=print, allow_seed=False):
     """@cc [owner:fontanierh,label:correctness] immutable-checkpoint-capture
-    Saved certificates MUST match the producer's current declared inputs and complete named
+    Saved certificates MUST retain their produced tool key and output inventory proof, matching
+    the producer's current declared inputs and complete named
     outputs. Touched/failed/stale certificates MUST NOT publish. Source and output changes during
     capture MUST refuse publication. HEAD equality with a future receiver MUST NOT be required.
     """
-    before = certificates(ctx, steps)
-    if not before:
+    before = certificates(ctx, steps, include_incremental=True)
+    if not before and not allow_seed:
         raise CheckpointError('No current successful build results to checkpoint')
     from . import checkpoint_actions
     from .build import order, result
@@ -289,7 +293,8 @@ def capture(ctx, steps, store, *, echo=print):
     for step in order(steps, [s.name for s in steps]):
         if step.name in before:
             record = before[step.name]
-            checkpoint_actions.publish(ctx, step, record['fingerprint'], record, store=store, done=done)
+            if checkpoint_actions.certified(ctx, step, record['fingerprint'], record):
+                checkpoint_actions.publish(ctx, step, record['fingerprint'], record, store=store, done=done)
             done[step.name] = result(step, record['fingerprint'], record)
             build_products.feed_results(done, record.get('products', {}))
     actions = {}
@@ -331,10 +336,13 @@ def capture(ctx, steps, store, *, echo=print):
         names = {label + '/' + p.relative_to(root).as_posix()
                  for label, (root, _) in allowed.items() for p in members(root) if p not in source_paths}
         if (names != set(files) or any(signature(p.lstat()) != info for p, info in observations)
-                or certificates(ctx, steps) != before):
+                or certificates(ctx, steps, include_incremental=True) != before):
             raise CheckpointError('Build changed during checkpoint capture; nothing published')
+        current_proof = {s.name: before[s.name] for s in steps if s.name in before
+                         and checkpoint_actions.certified(ctx, s, before[s.name]['fingerprint'], before[s.name])}
+        incremental = {name: value for name, value in before.items() if name not in current_proof}
         manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
-                        checkout=identity(str(paths.REPO.resolve())), files=files, stamps=before,
+                        checkout=identity(str(paths.REPO.resolve())), files=files, stamps=current_proof, incremental_stamps=incremental,
                         steps=sorted(s.name for s in steps), actions=actions)
         key = store.save(manifest)
     echo(f'checkpoint saved: {key[:12]}, {len(files)} files, {len(before)} certified tasks')
@@ -361,6 +369,7 @@ def restore(ctx, steps, store, key, *, echo=print):
     if manifest['context'] != context(ctx):
         raise CheckpointError('Checkpoint engine/platform identity differs')
     allowed = roots(ctx)
+    saved_stamps = {**manifest['stamps'], **manifest.get('incremental_stamps', {})}
     if not set(manifest.get('steps', ())) <= {s.name for s in steps}:
         raise CheckpointError('Checkpoint task ownership changed; a new baseline is required')
     journal = ctx.out / JOURNAL
@@ -398,7 +407,7 @@ def restore(ctx, steps, store, key, *, echo=print):
                 raise CheckpointError('Checkpoint link target is unavailable')
     ctx.stamps.mkdir(parents=True, exist_ok=True)
     atomic_json(journal, resume)
-    for name in manifest['stamps']:
+    for name in saved_stamps:
         (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
     spoken = time.monotonic()
     for count, (destination, entry) in enumerate(selected.values(), 1):
@@ -443,16 +452,18 @@ def restore(ctx, steps, store, key, *, echo=print):
             raise CheckpointError('Restored checkpoint bytes differ; launch barrier retained')
     # Imported source paths remain provenance. Runtime packages retain their logical /Game paths.
     # The installed engine discovers its registry normally; producer registry caches are not copied.
-    for name, stamp in manifest['stamps'].items():
+    for name, stamp in saved_stamps.items():
         atomic_json(ctx.stamps / (name + '.json'), stamp)
-    current = certificates(ctx, steps)
-    for name in manifest['stamps']:
+    from .build_checkpoints import incremental_environment
+    incremental_environment(ctx)
+    current = certificates(ctx, steps, include_incremental=True)
+    for name in saved_stamps:
         path = ctx.stamps / (name + '.json')
         if name not in current:
             path.unlink(missing_ok=True)
     from .build_checkpoints import estimate
     atomic_json(ctx.out / '.state/checkpoint.json', dict(key=key, restored=sorted(current),
-                estimates={name: estimate(stamp) for name, stamp in manifest['stamps'].items()}))
+                estimates={name: estimate(stamp) for name, stamp in saved_stamps.items()}))
     # Publication of current certificates happens only after the outer guard closes in the caller.
     for name in current:
         (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
