@@ -83,12 +83,13 @@ def accumulate(remote, store, manifest, directory):
         if type(previous) is not dict:
             raise CheckpointError('Invalid retained checkpoint index')
         for key, value in {**previous, index['key']: index}.items():
-            if key in pins:
+            if key in pins or key in previous:
                 validate(value['checkpoint'], remote.game)
                 if value.get('key') != key or identity(value['checkpoint']) != key:
                     raise CheckpointError('Pinned checkpoint identity differs')
                 # Prevent recursively growing metadata; retained entries are standalone.
                 retained[key] = {k: value[k] for k in ('schema', 'key', 'source_revision', 'checkpoint', 'blobs')}
+                known.update(value['blobs'])
     merge_actions(actions, manifest.get('actions', {}), store)
     return actions, known, retained, old
 
@@ -145,7 +146,7 @@ def covers(index, old, store):
     for _, prior in old:
         merge_actions(required, records(prior)[0], store)
         merge_actions(required, prior['checkpoint'].get('actions', {}), store)
-        for key in ({prior['key']} | set(prior.get('retained', {}))) & pinned:
+        for key in set(prior.get('retained', {})) | ({prior['key']} & pinned):
             if key != index['key'] and key not in index.get('retained', {}):
                 return False
     for key, action in required.items():
