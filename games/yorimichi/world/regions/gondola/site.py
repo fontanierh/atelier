@@ -373,7 +373,11 @@ def access_stair(key,layout,G,frame):
             support=timber_support(mesh,G,frame,point,top-.23,support_section)
             if support:
                 supports.append(support)
+    # A post's .8m stone foot stands above the ground, so its axis-aligned
+    # footprint must stay behind the stair's end plane, clear of the exit walk.
+    foot_reach=.4*(abs(direction[0])+abs(direction[1]))+.02
     for distance in np.arange(0,length+.01,3):
+        distance=min(distance,length-foot_reach)
         for side in (-1,1):
             point=start+distance*direction+side*(width/2-rail_inset)*across
             level=stringer_top(*point)-.45
