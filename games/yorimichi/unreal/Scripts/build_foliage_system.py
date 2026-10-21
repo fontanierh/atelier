@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
 
 import hashlib
 import json
+import os
+import subprocess
 import unreal as U
 import atmosphere
 import foliage_system as F
@@ -199,6 +201,16 @@ def write_representations(product, path):
     return shadow_path, patch_path
 
 
+def memory_checkpoint(stage, path):
+    """Observe this owned process at large allocation boundaries, without changing its guard."""
+    try:
+        result = subprocess.run(['ps', '-o', 'rss=', '-p', str(os.getpid())],
+                                capture_output=True, text=True, check=True, timeout=2)
+        U.log(f'FOLIAGE MEMORY {stage}: rss_mib={int(result.stdout.strip()) / 1024:.1f} {path}')
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        U.log(f'FOLIAGE MEMORY {stage}: observation unavailable ({type(error).__name__}) {path}')
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     U.load_module('YorimichiImport')
@@ -253,6 +265,8 @@ def main():
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} exporting: {path}')
         assert U.YorimichiFoliageBuilder.export_source(mesh, slots, classification, kind, str(source_path)), path
         source = json.loads(source_path.read_text())
+        large_source = source_path.stat().st_size >= 32 * 1024 * 1024
+        if large_source: memory_checkpoint('source loaded', path)
         source['rigid_lods'] = []
         if F.vegetation(mesh.get_name()):
             for level in range(1, len(F.SCREENS)):
@@ -263,8 +277,10 @@ def main():
             if kind == 'tree' and len(source['rigid_lods'][-1]['faces']) <= 256:
                 source['far_proxy'] = source['rigid_lods'][-1]
         product = F.build(source)
+        if large_source: memory_checkpoint('representations built', path)
         U.log(f'FOLIAGE SYSTEM importing representations: {path}')
         shadow_path, patch_path = write_representations(product, product_path)
+        if large_source: memory_checkpoint('representations written', path)
         counts = [len(level['faces']) for level in product['levels']]
         detail = dict(shadow_triangles=len(product['shadow']['faces']),
                       rigid_triangles=product['rigid_triangles'], coverage=product['coverage'],
@@ -274,6 +290,7 @@ def main():
         # Native parsing and mesh construction allocate their own geometry. Keep
         # only the small validation summary while those allocations are live.
         del source, product
+        if large_source: memory_checkpoint('geometry released', path)
         replacements = [blend_material(mesh.get_material(slot))
                         for slot in range(len(mesh.get_editor_property('static_materials')))]
         variants = {}
