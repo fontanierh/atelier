@@ -6,6 +6,7 @@ task/action certificates, and never replace the importer's current validation.
 import ast
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -272,13 +273,26 @@ def prior_stamp(ctx, task, nonce, pointer):
 
 
 def historical_packages_match(ctx, task, stamp, packages):
-    """Use complete prior proof when present; bound pre-inventory incremental state."""
+    """@cc [owner:fontanierh,label:correctness] distinguish-selection-from-output-proof
+    A selected checkpoint tool key without an inventory or stored action MUST NOT be
+    treated as a produced byte certificate. It MAY use the existing compatibility-only
+    pre-inventory continuity checks. An explicit inventory, stored action or conflict
+    MUST validate or refuse; failed proof MUST NOT fall back to timestamps.
+    Native source/options/owner/context validation remains mandatory outside this helper.
+    """
     try:
         current = package_inventory(ctx.uproject.parent / 'Content', packages)
         key = stamp.get('checkpoint_key')
-        if key:
+        target = None
+        if key is not None:
             store = ReadStore(ctx.game)
-            entry = validate_action(read_json(entry_path(store, key)), store, key)
+            target = entry_path(store, key)
+            if os.path.lexists(target.with_suffix('.conflict')):
+                return False
+        if 'checkpoint_inventory' in stamp or target is not None and os.path.lexists(target):
+            if target is None:
+                return False
+            entry = validate_action(read_json(target), store, key)
             if (entry['task'] != task or entry['fingerprint'] != stamp['fingerprint']
                     or entry['stamp']['checkpoint_inventory'] != stamp['checkpoint_inventory']):
                 return False
