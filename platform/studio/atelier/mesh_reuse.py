@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 
 from .build_cache import atomic_json
 from .checkpoint_store import CheckpointError, canonical, read_json, relative, safe_destination
@@ -66,6 +65,33 @@ def policy(source, functions, resolve_import=None):
             declarations[name] = owner
     for node in tree.body:
         register(node)
+    # Dynamic module initialization can change configuration without mentioning
+    # it at the call site. Refuse this uncommon policy rather than infer purity.
+    def mutates_globals(function, seen):
+        if function.name in seen:
+            return False
+        seen.add(function.name)
+        local = {arg.arg for arg in (*function.args.posonlyargs, *function.args.args, *function.args.kwonlyargs)}
+        local.update(node.id for node in ast.walk(function) if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store))
+        mutators = {'update', 'append', 'extend', 'clear', 'add', 'remove', 'pop', 'setdefault', '__setitem__'}
+        for part in ast.walk(function):
+            if isinstance(part, ast.Global):
+                return True
+            base = (part.value if isinstance(part, (ast.Subscript, ast.Attribute)) and isinstance(part.ctx, ast.Store)
+                    else part.func.value if isinstance(part, ast.Call) and isinstance(part.func, ast.Attribute)
+                    and part.func.attr in mutators else None)
+            if isinstance(base, ast.Name) and base.id in declarations and base.id not in local:
+                return True
+            if isinstance(part, ast.Call) and isinstance(part.func, ast.Name):
+                called = declarations.get(part.func.id)
+                if isinstance(called, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates_globals(called, seen):
+                    return True
+        return False
+    for node in tree.body:
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
+            called = declarations.get(node.value.func.id)
+            if isinstance(called, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates_globals(called, set()):
+                raise ValueError('Dynamic module initialization cannot establish a geometry policy')
     if not functions or any(name not in declarations for name in functions):
         raise ValueError('Geometry policy function is missing')
     pending, selected = list(functions), {}
@@ -95,8 +121,7 @@ def native_policy(source, functions, script, *, revision=None, inputs=None):
     from . import build_inputs, paths
     scanner = build_inputs.ImportScanner()
     repo, script = paths.REPO.resolve(), Path(script).resolve()
-    search = list(dict.fromkeys([script.parent, *(Path(p).resolve() for p in sys.path if p),
-                                *(p for p in script.parents if p.is_relative_to(repo))]))
+    search = list(dict.fromkeys([script.parent, *(p for p in script.parents if p.is_relative_to(repo)), paths.STUDIO]))
     search = [p for p in search if p.is_relative_to(repo)]
     def resolve(node):
         if isinstance(node, ast.Import):
@@ -111,7 +136,7 @@ def native_policy(source, functions, script, *, revision=None, inputs=None):
                 relative_name = file.relative_to(repo).as_posix()
                 text = (revision_source(repo, revision, relative_name) if revision else
                         saved_source(repo, relative_name, inputs.get('<repo>/' + relative_name)) if inputs is not None else
-                        file.read_text())
+                        file.read_bytes().decode())
                 if text is None:
                     raise ValueError('Missing historical geometry support: ' + relative_name)
                 result[relative_name] = hashlib.sha256(text.encode()).hexdigest()

@@ -137,6 +137,9 @@ class MeshReuse:
                      and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
             if local:
                 self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
+                print('NATIVE MESH HISTORICAL COMPATIBILITY ' + json.dumps(dict(task=self.task,
+                    packages=packages, stamp_time=self.previous_stamp['time'],
+                    provenance='compatibility-only'), sort_keys=True), flush=True)
         copied = False
         if not local:
             if not self.compatible or donor_geometry is None or geometry != donor_geometry:

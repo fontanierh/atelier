@@ -203,3 +203,8 @@ def test_preinventory_compatibility_refuses_package_saved_after_success(tmp_path
     assert reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])
     file.write_bytes(b'later vertex edits retaining import-data MD5')
     assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])
+
+
+def test_policy_refuses_dynamic_module_initialization_through_function():
+    with pytest.raises(ValueError, match='Dynamic module initialization'):
+        reuse.policy("T={}\ndef s(): T['a']=1\ns()\ndef build(): return T\n", ('build',))
