@@ -1145,26 +1145,9 @@ def bench(m, x, side):
 
 # ------------------------------------------------------------------ validation and export
 def check(m):
-    """Every part closed; any inward-wound part is flipped. Returns a report."""
-    edges = {}
-    for f in m.faces:
-        for a, b in zip(f, f[1:] + f[:1]):
-            k = (min(a, b), max(a, b))
-            edges[k] = edges.get(k, 0) + 1
-    open_edges = sum(1 for c in edges.values() if c != 2)
-    flipped = 0
-    V = m.verts
-    for start, end in m.parts:
-        vol = 0.0
-        for f in m.faces[start:end]:
-            a = Vector(V[f[0]])
-            for i in range(1, len(f) - 1):
-                vol += a.dot(Vector(V[f[i]]).cross(Vector(V[f[i + 1]]))) / 6
-        if vol < 0:
-            flipped += 1
-            for i in range(start, end):
-                m.faces[i] = tuple(reversed(m.faces[i]))
-    return {'open_edges': open_edges, 'flipped_parts': flipped, 'parts': len(m.parts)}
+    """The shared closure/orientation audit, keeping the ferry report schema."""
+    result = SM.closed(m)
+    return {key: result[key] for key in ('open_edges', 'flipped_parts', 'parts')}
 
 
 def make_materials():

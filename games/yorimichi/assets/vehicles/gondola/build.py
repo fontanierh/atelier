@@ -47,8 +47,10 @@ def log(*a):
 
 def source_hash():
     h = hashlib.sha256()
-    for f in sorted(HERE.glob('*.py')):
-        h.update(f.name.encode()); h.update(f.read_bytes())
+    files = [(f.name, f) for f in sorted(HERE.glob('*.py'))]
+    files.append(('world/solid_mesh.py', HERE.parents[2] / 'world/solid_mesh.py'))
+    for name, path in files:
+        h.update(name.encode()); h.update(path.read_bytes())
     return h.hexdigest()[:16]
 
 
