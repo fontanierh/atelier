@@ -169,6 +169,19 @@ bool UYorimichiFoliageSourceWriter::ExportSource(UStaticMesh* Source, const TArr
     Root->SetStringField(TEXT("path"),Source->GetPathName()); Root->SetStringField(TEXT("kind"),Kind);
     Root->SetNumberField(TEXT("uv_channels"), UVs.GetNumChannels());
     Root->SetStringField(TEXT("classification"),Classification);
+    // Imported meshes can retain unused seed-material slots. They still belong
+    // in the slot table, but no exported corner samples their palette.
+    TSet<int32> UsedSlots;
+    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())
+    {
+        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];
+        int32 Used=Source->GetMaterialIndex(Name);
+        if (Used==INDEX_NONE)
+            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)
+                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }
+        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;
+        UsedSlots.Add(Used);
+    }
     TArray<TSharedPtr<FJsonValue>> Materials, Vertices, Faces;
     TArray<FLinearColor> Palette;
     TArray<FString> MaterialParents;
@@ -182,7 +195,7 @@ bool UYorimichiFoliageSourceWriter::ExportSource(UStaticMesh* Source, const TArr
         Entry->SetBoolField(TEXT("foliage"),LeafSlots.Contains(I));
         Materials.Add(MakeShared<FJsonValueObject>(Entry));
         FLinearColor Colour=FLinearColor::White;
-        if ((LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored"))) && !MaterialColour(Material,Colour)) return false;
+        if (UsedSlots.Contains(I) && (LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored"))) && !MaterialColour(Material,Colour)) return false;
         Palette.Add(Colour);
     }
     TMap<FVertexInstanceID,int32> Remap;
