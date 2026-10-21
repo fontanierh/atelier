@@ -1,17 +1,36 @@
 {
   "current": {
+    "games/yorimichi/content_policy.py": "f3d7e8fc2c0abdf70632840cc5d0958ce64ebcd7ab76600f4a0a8cd3f11bb01b",
+    "games/yorimichi/foliage_build.py": "ff01005a4eab14cb39a7e64ea2dc28b319b0875d96c5098418a6e4c2508fe3e7",
+    "games/yorimichi/foliage_residency_build.py": "3e4e299417684eed992ccdde6dced609ef6789ae058dca9c60948633a6915b3a",
     "games/yorimichi/foliage_system.py": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd",
     "games/yorimichi/unreal/Scripts/atmosphere.py": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
-    "games/yorimichi/unreal/Scripts/build_foliage_system.py": "6aeef7527987f70fb727ac12fb621564b0b7ac092dc4956224d7813af1289e32",
+    "games/yorimichi/unreal/Scripts/build_foliage_system.py": "c6c1f737f70876a0c0017cee84db0fc93c97e5794e9c82a17322435ed13c5d87",
     "games/yorimichi/unreal/Scripts/foliage_material.py": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a",
     "games/yorimichi/unreal/Scripts/foliage_variant_validation.py": "0bc3a0ad8d5c93320cf24979603382618758b919c5e5def3d4a474030fbeee6c",
+    "games/yorimichi/unreal/Scripts/prepare_foliage_residency.py": "913a714a982a5566ecd4e6e076829590b85d17fc7baf401fc6c548f39bf89e23",
     "games/yorimichi/unreal/Scripts/see_through.py": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734",
+    "games/yorimichi/unreal/Source/Yorimichi/BelmonteRegion.cpp": "298792fa6f7449313d8285c04029331134a3d7df277d75788fb48a5e5f373b9c",
+    "games/yorimichi/unreal/Source/Yorimichi/BelmonteTrack.cpp": "28447bed222f99420f34faadecaa1a0025e88fe67a45655323da43b247f05681",
+    "games/yorimichi/unreal/Source/Yorimichi/BelmonteTrainService.cpp": "48e823b3ca646931e19bba4026b5ec014c4a7b4ce73ac7baf80df80145949199",
+    "games/yorimichi/unreal/Source/Yorimichi/CitySurfaceTilesExperiment.cpp": "e746a89f94bfd2ecdb63556c969be876b56f7f28a86d02463b60ada8db76a7e4",
+    "games/yorimichi/unreal/Source/Yorimichi/CityTreeLODExperiment.cpp": "4a86068c32f5fb797f8c1d2e2ad548b7ff5971d42295df0931ab4d5935c87e72",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageGeometryReader.cpp": "128f02bb3a34f25b905134a851c4d20afdcbefb51d5d401d8a8265868058a2d0",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d",
+    "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.cpp": "48aacd8b3d619119072640beb593cfbb0c31934a408202c71d5f76cebdf413d6",
+    "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageResidencyBuilder.h": "f0fb8338ae962f3b4009748dbef9ad11af33d4f2c0c0c9bb070559589b7caf4d",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp": "f7b5c26347b947806fd470ac2e47fe1dff8edf2d2ad842ef15d2452cf7f19f86",
     "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "2c40ef4376b7c261882a52e28bc3fc5e1a5a0d2389dd50c8e90d9b57e657ab68",
-    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "04627bf6600ae247767a7811f6bc809500834ccfe9550775f2b5cef8cc3dfa00",
+    "games/yorimichi/unreal/Source/Yorimichi/FerryService.cpp": "f799ad8667ccb913a35265e1a473f6016d934d863a69d96026ef315e1a9459ec",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.cpp": "a3d5fa95152df8a829e970345baa0cb83926899fcf46113111b51a11957783be",
+    "games/yorimichi/unreal/Source/Yorimichi/FoliageSystem.h": "9bb0b41953d8d8e71fa19535922d5e1142012ac87430c8fe62d4e672aed199fe",
+    "games/yorimichi/unreal/Source/Yorimichi/GondolaService.cpp": "46e86bb34de6a67060313099a1e28ed18e5ff9e68fa8272d281d3cb0e167ea7a",
+    "games/yorimichi/unreal/Source/Yorimichi/HidamariStable.cpp": "3083091601846abdd8a75035f80fade8f561ae2e1954651c65c20049f4075b27",
+    "games/yorimichi/unreal/Source/Yorimichi/Hippodrome.cpp": "cada21b803535672de6533322e289b2e083d968dabc5e2cb0aef1c3a17076954",
+    "games/yorimichi/unreal/Source/Yorimichi/JapanPreferences.cpp": "0ea1c9271dfd2cc7bcc597db1226bcb8eae9a9683122eb5772ff88c57b9136ca",
+    "games/yorimichi/unreal/Source/Yorimichi/JapanWorld.cpp": "f93cba42e9facba3c947f70d2073ebfae0b99f8600c2b72bba08a8aa28f9818b",
+    "games/yorimichi/unreal/Source/Yorimichi/SkatePark.cpp": "235c13d93f8adaa34feb1b378ade2f7e4cecaecedf1a31119ed0e9dd4cfa183a",
+    "games/yorimichi/unreal/Source/Yorimichi/SuperUltraMegaPark.cpp": "bba24fcf896ad2807a6a0a2499aab6f669255c780e4a61e1ee4202cbdbbe90a3",
     "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "87ca815d699ba0117fe51c222e9894b1ef3e762b7e54f2d465b9d0f49b406648",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a",
     "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0",
@@ -97,18 +116,18 @@
         "sha256": "1fda42157ec4096218bcb89ab93abda79b37e37c13ca0c34fa9d62c92f81b11d"
       },
       {
-        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"d83fe661bf0e394c5b96affd5f4c44e941e695c9eb58655c8059d96515136c19\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"6c83af1f29cf19f9eebaef98b5481fe44208ab56dca7654665c82f7f5d1e2077\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
-        "sha256": "20c05d4030a9b2592e21672f815b66d6e5ec4ce9d936bf83150dc95e73d539de"
+        "module_record": "{\n \"module\": \"Yorimichi\",\n \"digest\": \"259fbccb8c393ed1cbef1f568cce18a2e8b43e866c9eecc85f649ebf50cf4e2a\",\n \"files\": {\n  \"<config>/Config/DefaultEditor.ini\": \"f3305471478a279247fd2ea399bbd9c26a59f71d05fa274f8d837ef790f340b1\",\n  \"<config>/Config/DefaultEngine.ini\": \"7f565fdad03f16f15b024427b32b212c18036cb10397301d768e3ef0d8256ec0\",\n  \"<config>/Config/DefaultGame.ini\": \"dc21057702c730616140a14b887f046184c6202f8221c38ca0749e82e6d831bf\",\n  \"<config>/Config/DefaultInput.ini\": \"b6291c25af27ca545d77d198950ff33b423a1ac069ac12005a273778e1e358a2\",\n  \"<config>/Config/Mac/MacEngine.ini\": \"249df24ba47ed6bcdbb02fd3408654a19989866e248f3536a30d017ebc784f34\",\n  \"AtelierAnimation.uplugin\": \"27499ca1d91f0becf2a7e5f2b9e3dada1356a294986f51b125f69ba5613c69de\",\n  \"AtelierCore.uplugin\": \"fdec935bb29838b514292b544e6e30025d7d548f1ca7577b6bcc15f23db31fc0\",\n  \"AtelierFX.uplugin\": \"7b14e99ef17205d17e44255bedc83bc1a60b2116a0601b7ce7393a6201bfeaec\",\n  \"AtelierStream.uplugin\": \"e6f9a6cc074aea8beadd1780bcc6fd1729ec2b98263a133821c83f1df91cc621\",\n  \"Driving.uplugin\": \"85f553c3e9f566d45d7d221f9a8226ab5289f44edf8ad34ec3d4467eee20c23b\",\n  \"LiveBridge.uplugin\": \"cf7a093898725d77829e8c1ea0bb487d6fd1a51d6e88a568fd3ae57e23314e17\",\n  \"Skate.uplugin\": \"188dead3dabd5eaa7036f6ea110088bc6b8c9aa13ffc3bf824e5075c64ae7941\",\n  \"Yorimichi.uproject\": \"46ac8b869ccabd457aaf1585fc4219d68fa7034692679521d5975ea3ea904004\",\n  \"libUnrealEditor-AtelierAnimation.dylib\": \"aedaea1ad167e163c96eb4960ee142604bc5ac902039a0a77ec5c98b573cfd03\",\n  \"libUnrealEditor-AtelierCore.dylib\": \"59cec11bce220ccffcd0b4bdb2889a8841109bafdf8d0502eb90d7bf9a3846b4\",\n  \"libUnrealEditor-AtelierDriving.dylib\": \"3fc68c6da84eee3352e5342e2f2f3b971910ca95c28b8c4b30de05a484d0deda\",\n  \"libUnrealEditor-AtelierFX.dylib\": \"eb0686b848b34ce90906ddb488f1df7b7c0d15112da69994870dc269ece7ea20\",\n  \"libUnrealEditor-AtelierLive.dylib\": \"186935c4dc1ded55783803d4ddd749afa77a0e90ae7a29d36ee4ecf225f9b9a3\",\n  \"libUnrealEditor-AtelierSkate.dylib\": \"c6bd28120bdbc515af0e09dd6d9af5802a3e0b6f82b640fc0480509c36eac611\",\n  \"libUnrealEditor-AtelierStream.dylib\": \"40318c282f598b2e5a2c4f8f7420ce8b4d7ccdd4116decb7fb8912bf0b6999ae\",\n  \"libUnrealEditor-Yorimichi.dylib\": \"117fedaffdc6b0219b5824b94f331c7bc22e2a20c24f5769165f4a4c4ff6ad20\",\n  \"libUnrealEditor-YorimichiAssets.dylib\": \"68259ea5500db9e8fe6632c7296a26e5ce4da0a09e5704e5aa21cc03da96cd82\"\n }\n}\n",
+        "sha256": "7a3a61a89e6975d472a0311669974c85ab603c418f59476111c4bf8960864086"
       },
       {
-        "blob": "c4d048891d2de823828b1724d0051bfb02d54690",
+        "blob": "42ab884e4724e07a23b2335e78292c0a7e4ddc91",
         "path": "games/yorimichi/foliage_unit_policy.py",
-        "sha256": "732d9885cecc9f82ada3114a8e7a6bc1ac42fd090e166e7f961e4ca96f62a931"
+        "sha256": "dd29a24e4bb4aa2d303ecc184cb872c32f0dee6d468a7b60cb530daaaeb1ecc9"
       },
       {
-        "blob": "42fc4c48161e5ae254ce13619b56a59d7155da9e",
+        "blob": "5695d3e7a769b73fa9bbba6b1d619218ccb528ec",
         "path": "games/yorimichi/foliage_unit_policy_witness.json",
-        "sha256": "680e47d85761cf64fe3509c9be26e1f403ebf981fcea7f3fca3e1c689b902116"
+        "sha256": "d58f99054a93fc15510efbf718afa50caf9353e09fdc65f87b7fc5581419ca17"
       },
       {
         "blob": "5e700ab2aaabe6e510fd2834473e17f2b480ec14",

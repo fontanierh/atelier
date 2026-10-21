@@ -93,8 +93,11 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 Tile->AddInstance(Transform,true);
                 World->Groups.Add(Tile); Tiles.Add(Tile);
             }
-            for (auto* Original:Originals) Original->SetVisibility(!Enabled);
-            for (auto* Tile:Tiles) Tile->SetVisibility(Enabled);
+            auto* Foliage=Game->GetSubsystem<UYorimichiFoliageSubsystem>();
+            for (auto* Original:Originals)
+                if (Foliage) Foliage->SetSourceVisibility(Original,!Enabled);else Original->SetVisibility(!Enabled);
+            for (auto* Tile:Tiles)
+                if (Foliage) Foliage->SetSourceVisibility(Tile,Enabled);else Tile->SetVisibility(Enabled);
             if (!Pending.IsEmpty())
             {
                 // Synchronous first-load compilation can let the non-realtime

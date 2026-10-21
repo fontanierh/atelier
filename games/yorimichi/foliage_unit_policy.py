@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = 'd58f99054a93fc15510efbf718afa50caf9353e09fdc65f87b7fc5581419ca17'
+WITNESS_SHA256 = 'aaeff23122c73f70160a9f34a30f9020cc22bfb68829a2a5c87a427c3a036391'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
@@ -108,6 +108,10 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
     Original/shared collision, indices, GPU handles/counts and runtime query ownership MUST
     remain intact; geometry generation, snapshots and current source/settings/material
     admission MUST stay unchanged.
+    Selected-mode loading and deferred unload/reload MAY change runtime residency only.
+    The new separately owned compaction step MAY create distinct packages; it MUST NOT
+    change the old preparation geometry or admit them as old source inputs. Excluding
+    that derivative root from discovery MUST preserve the old source roster.
     The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
     by no exported triangle; it MUST preserve every emitted corner/sample.
     Every current source pin, ordered original Git byte, exact retained compiled-module

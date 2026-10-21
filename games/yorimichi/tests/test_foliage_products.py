@@ -156,3 +156,13 @@ def test_role_codec_is_a_real_authoring_input_and_imports_fingerprint_the_stamp_
                  'unreal.swordcamp','unreal.foliage.Tree_Broad_A'):
         assert SCRIPTS/'mesh_import.py' in steps[name].inputs,name
         assert set(recipe.unreal_modules.needs(recipe.IMPORT_CODE))<=set(steps[name].needs),name
+
+
+def test_default_readiness_requires_residency_after_certified_preparation(tmp_path):
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, uproject=None)
+    graph = build_products.Graph(build.load_recipe('yorimichi').steps(ctx))
+    compact = graph.by_name['unreal.foliage_residency']
+    assert 'unreal.foliage_system' in compact.after
+    for target in ('data.content', 'data.network', 'unreal.cook'):
+        assert compact.name in {step.name for step in graph.select([target])}
+    assert GAME / 'unreal/Content/FoliageResident' in compact.outputs

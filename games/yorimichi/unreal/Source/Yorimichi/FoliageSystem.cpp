@@ -141,15 +141,25 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
             !Row->TryGetArrayField(TEXT("canopy_bounds"),Bounds) || Bounds->Num()!=2) return Invalid();
         if (Version==2)
         {
-            double Rigid=0.;const TArray<TSharedPtr<FJsonValue>>* Materials=nullptr;
+            double Rigid=0.;const TArray<TSharedPtr<FJsonValue>> *Materials=nullptr,*RigidCounts=nullptr;
             if (!Asset.Optimized.StartsWith(TEXT("/Game/FoliageResident/")) || !Asset.Shadow.StartsWith(TEXT("/Game/FoliageResident/")) ||
                 !Row->TryGetStringField(TEXT("rigid"),Asset.Rigid) ||
                 !Row->TryGetNumberField(TEXT("rigid_triangles"),Rigid) || !FMath::IsFinite(Rigid) ||
                 Rigid<0 || Rigid>MAX_int32 || Rigid!=FMath::FloorToDouble(Rigid) ||
                 (Rigid==0)!=Asset.Rigid.IsEmpty() ||
                 (!Asset.Rigid.IsEmpty() && !Asset.Rigid.StartsWith(TEXT("/Game/FoliageResident/"))) ||
-                !Row->TryGetArrayField(TEXT("source_materials"),Materials) || Materials->IsEmpty()) return Invalid();
+                !Row->TryGetArrayField(TEXT("source_materials"),Materials) || Materials->IsEmpty() ||
+                !Row->TryGetArrayField(TEXT("rigid_lod_triangles"),RigidCounts) ||
+                (Rigid==0 && !RigidCounts->IsEmpty()) ||
+                (Rigid>0 && RigidCounts->Num()!=1 && RigidCounts->Num()!=4)) return Invalid();
             Asset.RigidTriangles=int32(Rigid);
+            for (const auto& Count:*RigidCounts)
+            {
+                if (!Count || Count->Type!=EJson::Number || !FMath::IsFinite(Count->AsNumber()) ||
+                    Count->AsNumber()<=0 || Count->AsNumber()>MAX_int32 || Count->AsNumber()!=FMath::FloorToDouble(Count->AsNumber())) return Invalid();
+                Asset.RigidLODTriangles.Add(int32(Count->AsNumber()));
+            }
+            if (Rigid>0 && Asset.RigidLODTriangles[0]!=Asset.RigidTriangles) return Invalid();
             for (const auto& Material:*Materials)
             {
                 if (!Material || Material->Type!=EJson::String ||
@@ -397,7 +407,7 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
     };
     const FString Selected=Asset?(bEnabled?(Asset->Rigid.IsEmpty()?Asset->Optimized:Asset->Rigid):Canonical):FString();
     if (!Asset || !Mesh || Mesh->GetPathName()!=Selected ||
-        (bEnabled && !Matches(Mesh,Asset->Rigid.IsEmpty()?Asset->LODTriangles:TArray<int32>{Asset->RigidTriangles})) ||
+        (bEnabled && !Matches(Mesh,Asset->Rigid.IsEmpty()?Asset->LODTriangles:Asset->RigidLODTriangles)) ||
         (!bEnabled && (!Mesh->GetRenderData() || Mesh->GetRenderData()->LODResources.IsEmpty() ||
             int32(Mesh->GetRenderData()->LODResources[0].GetNumTriangles())!=Asset->Triangles)))
     { Error=TEXT("Uncertified or stale foliage: ")+Canonical+TEXT(". Build unreal.foliage_residency.");return false; }
@@ -456,10 +466,14 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
     if (GIsEditor || IsRunningCommandlet() || GetWorld()->WorldType!=EWorldType::Game || IsRayTracingEnabled()) return;
     check(IsInGameThread());
     int32 Released=0;TMap<FString,int32> Refusals;
+    TSet<UStaticMesh*> Carriers;
+    for (const auto& Entry:Sources) if (IsValid(Entry.Original)) Carriers.Add(Entry.Original->GetStaticMesh());
     for (auto It=StartupVertexCopies.CreateIterator();It;++It)
     {
         UStaticMesh* Mesh=It->Get();
         if (!Mesh) { It.RemoveCurrent();continue; }
+        if (Carriers.Contains(Mesh))
+        { ++Refusals.FindOrAdd(TEXT("carrier_mesh"));It.RemoveCurrent();continue; }
         auto* Render=Mesh->GetRenderData();
         const TCHAR* Refusal=!(Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/")) ||
             Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageResident/")))?TEXT("ownership"):
@@ -550,7 +564,11 @@ void UYorimichiFoliageSubsystem::Apply(FYorimichiFoliageSource& Entry)
     Entry.Original->SetCastShadow(Entry.HasRigid && Entry.CastShadow);
     Entry.Original->bAffectDistanceFieldLighting=false;
     // Rigid cloth and other authored motion remain independent of leaf sway.
-    if (Entry.HasRigid) Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
+    if (Entry.HasRigid)
+    {
+        Entry.Original->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO);
+        if (auto* Group=Cast<UHierarchicalInstancedStaticMeshComponent>(Entry.Original)) Group->SetLODDistanceScale(Detail);
+    }
     if (auto* Near=Cast<UHierarchicalInstancedStaticMeshComponent>(Entry.NearVisual))
     { Near->SetVisibility(Entry.Visible,false);Near->SetHiddenInGame(Entry.Hidden,false);Near->SetLODDistanceScale(Detail);Near->SetCullDistances(20000,25000);Near->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(Sway*100.f));Near->SetEvaluateWorldPositionOffset(Entry.EvaluateWPO && Sway>0.f); }
     if (Entry.Patches) { Entry.Patches->SetVisibility(Entry.Visible,false);Entry.Patches->SetHiddenInGame(Entry.Hidden,false); }
@@ -755,9 +773,12 @@ bool UYorimichiFoliageSubsystem::ReloadMode(bool Enabled)
         JapanGameplayCollision::Install(GetWorld());
         if (Target && GIsRHIInitialized)
         {
+            TSet<UStaticMesh*> Carriers;
+            for (const auto& Entry:Sources) if (IsValid(Entry.Original)) Carriers.Add(Entry.Original->GetStaticMesh());
             for (const auto& Entry:Sources)
                 for (auto* Renderer:{Entry.Visual.Get(),Entry.NearVisual.Get(),Entry.Patches.Get(),Entry.Shadow.Get()})
-                    if (Renderer && Renderer!=Entry.Original && Renderer->GetStaticMesh()) StartupVertexCopies.Add(Renderer->GetStaticMesh());
+                    if (Renderer && Renderer->GetStaticMesh() && !Carriers.Contains(Renderer->GetStaticMesh()))
+                        StartupVertexCopies.Add(Renderer->GetStaticMesh());
             ENQUEUE_RENDER_COMMAND(FoliageModeUpload)([](FRHICommandListImmediate& RHICmdList)
             { RHICmdList.SubmitAndBlockUntilGPUIdle(true); });
             FlushRenderingCommands();ReleaseStartupVertexCopies();

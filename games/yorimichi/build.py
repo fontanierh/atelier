@@ -55,6 +55,9 @@ _kart_identity_spec.loader.exec_module(kart_source_identity)
 _foliage_spec = importlib.util.spec_from_file_location('yorimichi_foliage_build', GAME / 'foliage_build.py')
 foliage_build = importlib.util.module_from_spec(_foliage_spec)
 _foliage_spec.loader.exec_module(foliage_build)
+_residency_spec = importlib.util.spec_from_file_location('yorimichi_foliage_residency_build', GAME / 'foliage_residency_build.py')
+foliage_residency_build = importlib.util.module_from_spec(_residency_spec)
+_residency_spec.loader.exec_module(foliage_residency_build)
 
 # Crater Park on the caldera floor: its block shapes the ground there (craterpark/placement.py terrain).
 _v4_spec = importlib.util.spec_from_file_location('craterpark_v4_config', REGIONS / 'craterpark' / 'v2' / 'v4_config.py')
@@ -1733,6 +1736,7 @@ def steps(ctx):
     # The derivative foliage owner sees their final material graphs and meshes.
     result.append(foliage_build.system_step(ctx,
         [s.name for s in result if s.name.startswith('unreal.') and not s.explicit] + ['data.stage']))
+    result.append(foliage_residency_build.step(ctx))
     content = GAME / 'unreal' / 'Content'
     policy_spec = importlib.util.spec_from_file_location('yorimichi_content_policy', GAME / 'content_policy.py')
     policy = importlib.util.module_from_spec(policy_spec)
