@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
+from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
 
 GAME = Path(__file__).resolve().parent
@@ -1686,11 +1687,30 @@ def steps(ctx):
             code = scanner.local_imports(command.script, (SCRIPTS, WORLD, REGIONS))
             if any('import_village.py' in file.read_text() for file in code):
                 code = sorted(set(code + scanner.local_imports(SCRIPTS / 'import_village.py', (SCRIPTS, WORLD))))
-            if SCRIPTS / 'mesh_import.py' in code:
+            common_mesh = SCRIPTS / 'mesh_import.py' in code
+            native_reuse = paths.STUDIO / 'atelier' / 'unreal_mesh_reuse.py' in code
+            if common_mesh or native_reuse:
                 step.inputs += [file for file in code if file not in step.inputs]
+            if common_mesh:
                 step.needs += [name for name in unreal_modules.needs(IMPORT_CODE) if name not in step.needs]
                 if command.modules:
                     command.modules = tuple(dict.fromkeys((*command.modules, *IMPORT_CODE)))
+                # Candidate staging is read-only metadata. Package adoption remains
+                # per mesh, with current source/options/native validation.
+                content_root = GAME / 'unreal' / 'Content'
+                roots = {Path(output).parent for output in step.outputs
+                         if Path(output).suffix == '.uasset' and Path(output).is_relative_to(content_root)}
+                if step.name in {'unreal.world', 'unreal.north', 'unreal.southwest', 'unreal.kei', 'unreal.bike', 'unreal.forest'}:
+                    roots.add(content_root / 'Japan' / 'Assets')
+                roots = {root for root in roots if not any(other != root and other in root.parents for other in roots)}
+                if roots:
+                    step.candidate_scope = CandidateScope(directories=tuple(sorted(roots)))
+        if step.name in ('unreal.belmonte', 'unreal.brinecove'):
+            region = step.name.removeprefix('unreal.')
+            namespace = {'belmonte': 'Belmonte', 'brinecove': 'Brinecove'}[region]
+            step.candidate_scope = CandidateScope(
+                files=(ctx.out / region / 'build-report.json', ctx.out / region / 'runtime.json'),
+                directories=(GAME / 'unreal' / 'Content' / namespace / 'Meshes',))
         # Shorelines preserve natural cover from the committed railway geometry.
         rail_line = ASSETS / 'vehicles' / 'belmonte-train' / 'line.json'
         if WORLD / 'shorelines.py' in step.inputs and rail_line not in step.inputs:
