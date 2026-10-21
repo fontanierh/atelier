@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'world'))
+import yori  # noqa: E402
 
 import hashlib
 import json
@@ -21,7 +22,6 @@ import foliage_system as F
 import see_through
 from foliage_material import supports_lod_blend, enable_bark_lod_blend
 from foliage_variant_validation import matches as variant_matches
-import yori
 
 OUT = yori.OUT / 'foliage_system'
 E = U.EditorAssetLibrary
