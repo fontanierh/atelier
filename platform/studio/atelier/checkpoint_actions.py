@@ -30,7 +30,17 @@ def declared(ctx, step):
             result += [command.archive]
     result = list(dict.fromkeys(map(Path, result)))
     # Keep only outermost roots; overlapping products have already been rejected by the recipe graph.
-    return [p for p in result if not any(q != p and q in p.parents for q in result)]
+    selected = set(result)
+    return [p for p in result if not any(parent in selected for parent in p.parents)]
+
+
+def source_scopes(sources):
+    """@cc [owner:fontanierh,label:correctness] tracked-source-containment
+    Membership MUST be equivalent to a tracked source or any of its lexical parents.
+    Source inventories MUST remain fresh per check; no filesystem/index state MAY be
+    cached across publication or restoration checks. Paths MUST NOT be resolved differently.
+    """
+    return {parent for source in sources for parent in (source, *source.parents)}
 
 
 def compile_outputs(ctx, step):
@@ -158,10 +168,10 @@ def load(store, action_key):
 
 def snapshot(ctx, step, store, *, save_blobs):
     declarations, files = [], {}
-    sources = tracked_paths()
+    sources = source_scopes(tracked_paths())
     for root in declared(ctx, step):
         name = label(ctx, root)
-        if any(path == root or root in path.parents for path in sources):
+        if root in sources:
             raise CheckpointError('Task output scope contains tracked source')
         if root.is_symlink():
             raise CheckpointError('Task cache root must not be linked')
@@ -265,8 +275,8 @@ def restore_worker(ctx, step, store, action_key):
     value = load(store, action_key)
     if value is None or entry_path(store, action_key).with_suffix('.conflict').exists():
         raise CheckpointError('Task cache entry is missing or disabled')
-    sources = tracked_paths()
-    if any(path == root or root in path.parents for root in declared(ctx, step) for path in sources):
+    sources = source_scopes(tracked_paths())
+    if any(root in sources for root in declared(ctx, step)):
         raise CheckpointError('Task restoration cannot replace tracked source')
     expected = [label(ctx, p) for p in declared(ctx, step)]
     if [r['path'] for r in value['roots']] != expected:
