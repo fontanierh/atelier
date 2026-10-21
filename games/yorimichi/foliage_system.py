@@ -86,7 +86,21 @@ def groups(items, count, centre):
 
 
 def centroid(face, vertices):
-    return tuple(sum(vertices[i]['p'][axis] for i in face['v'])/3 for axis in range(3))
+    # Reversed windings must land in the same bucket even at exact grid borders.
+    return tuple(math.fsum(vertices[i]['p'][axis] for i in face['v'])/3 for axis in range(3))
+
+
+def thin_surfaces(faces, vertices):
+    """Keep authored front/back pairs together, including separate corner vertices."""
+    supports = {}
+    for face in faces:
+        points = [tuple(vertices[i]['p']) for i in face['v']]
+        support = tuple(sorted(points))
+        winding = min(tuple(points[i:]+points[:i]) for i in range(3))
+        # Coincident same-winding duplicates add no coverage; the opposite winding
+        # must survive when the original material is one-sided.
+        supports.setdefault(support, {}).setdefault(winding, face)
+    return [list(windings.values()) for _,windings in sorted(supports.items())]
 
 
 def core(points, colour, slot):
@@ -241,6 +255,17 @@ def build(source):
             is_thin = key[0]
             crown_count = count if is_thin else max(1, round(count*len(crown)/max(1,solid_count)))
             crown_fringe = round(fringe*len(crown)/max(1,solid_count))
+            if is_thin:
+                # Group complete blade surfaces before spatial cuts: cutting the
+                # face list first can split a front/back pair at a median.
+                surfaces = thin_surfaces(crown, vertices)
+                for piece in groups(surfaces, crown_count, lambda unit: centroid(unit[0], vertices)):
+                    budget = (48, 16, 6, 2)[level]
+                    ordered = sorted(piece, key=lambda unit: centroid(unit[0], vertices))
+                    keep = min(len(ordered), budget//max(len(unit) for unit in ordered))
+                    for i in range(keep):
+                        selected.extend(ordered[round(i*(len(ordered)-1)/max(1,keep-1))])
+                continue
             # A source's slots and spatial pieces share one budget. Already
             # cheap groups keep their exact surfaces rather than inflated blobs.
             if not is_thin and len(crown) <= crown_count*32 + crown_fringe:
@@ -250,14 +275,6 @@ def build(source):
             for piece in pieces:
                 points = [vertices[i]['p'] for f in piece for i in f['v']]
                 lo, hi = bounds(points)
-                if is_thin:
-                    budget = max(1, (48, 16, 6, 2)[level])
-                    # Even spatial distribution preserves long palm fronds and groundcover patches.
-                    ordered = sorted(piece, key=lambda f: centroid(f, vertices))
-                    keep = min(len(ordered), budget)
-                    selected.extend(ordered[round(i*(len(ordered)-1)/max(1,keep-1))]
-                                    for i in range(keep))
-                    continue
                 colour = [sum(vertices[i].get('sample',vertices[i]['c'])[c]
                               for f in piece for i in f['v'])/(len(piece)*3) for c in range(4)]
                 # Solid cores get their own material; source leaf masks/lighting remain on the fringe.

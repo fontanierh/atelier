@@ -174,3 +174,37 @@ def test_brinecove_tile_split_preserves_roles_through_dropped_faces(brine):
     part=next(iter(parts.values()))
     assert [R.key_role(key) for key in R.face_keys(part)]==[0,2]
     assert part.mats==['leaf_sun','jungle']
+
+
+def test_pier_ornamental_grass_keeps_thin_roles_and_rigid_planters(monkeypatch):
+    monkeypatch.syspath_prepend(str(WORLD))
+    spec=importlib.util.spec_from_file_location('pier_geom',WORLD/'regions/skatepark/geom.py')
+    geom=importlib.util.module_from_spec(spec);spec.loader.exec_module(geom)
+    owner=functions(Path('regions/skatepark/features.py'),['gardens'],MeshData=geom.MeshData)
+    furniture,grass=owner['gardens']()
+    assert len(grass.faces)==4320
+    assert {R.key_role(key) for key in R.face_keys(grass)}=={2}
+    assert {R.key_role(key) for key in R.face_keys(furniture)}=={0}
+    # Role tags do not alter the visible concrete texture selected for the blades.
+    assert {geom.surface_key(tag,cols) for tag,cols in zip(grass.tags,grass.colors)}=={'concrete'}
+    fspec=importlib.util.spec_from_file_location('pier_foliage',WORLD.parent/'foliage_system.py')
+    foliage=importlib.util.module_from_spec(fspec);fspec.loader.exec_module(foliage)
+    source=dict(path='/Game/SkatePark/SM_SkateParkPlanting',kind='tree',classification='roles',
+                materials=[dict(path='M_Pier_concrete',foliage=False)],vertices=[],faces=[])
+    for face in grass.faces:
+        indices=[]
+        for index in face:
+            indices.append(len(source['vertices']))
+            source['vertices'].append(dict(p=[x*100 for x in grass.verts[index]],n=[0,0,1],uv=[0,0],
+                                          c=[.1,.2,.1,0],uvs=[[0,0]]*5+[[2.,R.MARKER]]))
+        source['faces'].append(dict(v=indices,s=0))
+    product=foliage.build(source)
+    assert not product['coverage'] # thin grass never authorizes solid crown patches
+    original={tuple(vertex['p']) for vertex in source['vertices']}
+    assert all(tuple(v['p']) in original for level in product['levels'] for v in level['vertices'])
+    for level in product['levels']:
+        windings={tuple(tuple(level['vertices'][i]['p']) for i in face['v']) for face in level['faces']}
+        for winding in windings:
+            reverse=winding[::-1]
+            assert any(reverse[i:]+reverse[:i] in windings for i in range(3))
+    assert len(product['levels'][-1]['faces'])<len(grass.faces)//10

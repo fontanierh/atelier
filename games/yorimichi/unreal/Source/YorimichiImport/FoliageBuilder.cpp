@@ -103,6 +103,12 @@ FLinearColor VertexSample(UMaterialInterface* Material,const FLinearColor& Palet
         Result.R*=PaletteLinear(Vertex.X);Result.G*=PaletteLinear(Vertex.Y);Result.B*=PaletteLinear(Vertex.Z);
         Result.A=Parent==TEXT("M_Village")?.06f:.025f;
     }
+    else if (Parent==TEXT("M_Pier_concrete"))
+    {
+        // Sunset Pier: linearize vertex paint, multiply linear albedo and gain 2.
+        Result.R*=PaletteLinear(Vertex.X)*2.f;Result.G*=PaletteLinear(Vertex.Y)*2.f;
+        Result.B*=PaletteLinear(Vertex.Z)*2.f;Result.A=.035f;
+    }
     else if (Parent==TEXT("M_Foliage") || Parent==TEXT("M_Grass"))
     { const float Shade=.5f+.5f*Vertex.Y;Result.R*=Shade;Result.G*=Shade;Result.B*=Shade; }
     return Result;

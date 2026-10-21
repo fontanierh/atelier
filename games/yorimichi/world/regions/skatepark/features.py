@@ -347,9 +347,9 @@ def gardens():
                 ux, uy = math.cos(t+off), math.sin(t+off)
                 plants.poly([(xx-uy*.045, yy+ux*.045, .48), (xx+uy*.045, yy-ux*.045, .48),
                              (xx+math.cos(t)*.2, yy+math.sin(t)*.2, .48+hh)],
-                            'grass_light' if hh > .8 else 'grass', 'leaves')
+                            'grass_light' if hh > .8 else 'grass', 'groundcover_leaf')
                 plants.faces.append(plants.faces[-1][::-1]); plants.colors.append(plants.colors[-1])
-                plants.smooth.append(False); plants.tags.append('leaves')
+                plants.smooth.append(False); plants.tags.append('groundcover_leaf')
     # Cedar pavilion sits on the southern waterfront, clear of the sunset line.
     for x in (20., 28., 36.):
         for y in (-64., -58.): m.box((x-.14, y-.14, 0), (x+.14, y+.14, 3.6), 'timber', 'wood')
