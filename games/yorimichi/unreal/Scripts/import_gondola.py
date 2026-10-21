@@ -18,7 +18,9 @@ from material_assets import import_texture, node, link, save_material
 E=unreal.EditorAssetLibrary
 M=unreal.MaterialEditingLibrary
 TOOLS=unreal.AssetToolsHelpers.get_asset_tools()
+unreal.load_module('StaticMeshEditor')
 EDITOR=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+if EDITOR is None:raise RuntimeError('StaticMeshEditor subsystem is unavailable after loading its module')
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
 manifest=json.loads((ROOT/'manifest.json').read_text())
 site=json.loads((ROOT/'world/site.json').read_text())
