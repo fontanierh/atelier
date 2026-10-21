@@ -244,6 +244,9 @@ def prior_stamp(ctx, task, nonce, pointer):
         if (not isinstance(packet, dict) or packet.get('schema') != 1 or packet.get('task') != task or packet.get('nonce') != nonce
                 or not isinstance(packet.get('stamp'), dict)):
             return None
+        known = packet['stamp'].get('checkpoint_incremental_context')
+        if known is not None and known != packet.get('observed_context'):
+            return None
         return packet['stamp']
     except (OSError, ValueError, TypeError, CheckpointError):
         return None
@@ -271,8 +274,9 @@ def historical_packages_match(ctx, task, stamp, packages):
         finished = stamp['time']
         if type(finished) not in (float, int) or finished <= 0:
             return False
-        return all(safe_destination(ctx.uproject.parent / 'Content', member.removeprefix('content/')).stat().st_mtime <= finished
-                   for member in current)
+        observations = [safe_destination(ctx.uproject.parent / 'Content', member.removeprefix('content/')).stat()
+                        for member in current]
+        return all(info.st_mtime <= finished and info.st_ctime <= finished for info in observations)
     except (OSError, ValueError, KeyError, TypeError, CheckpointError):
         return False
 

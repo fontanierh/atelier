@@ -200,11 +200,24 @@ def test_preinventory_compatibility_refuses_package_saved_after_success(tmp_path
     file = ctx.uproject.parent / 'Content/Region/Mesh.uasset'
     file.parent.mkdir(parents=True); file.write_bytes(b'old imported bytes')
     os.utime(file, (100, 100))
-    assert reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])
+    finished = file.stat().st_ctime
+    assert reuse.historical_packages_match(ctx, 'unreal.region', {'time': finished}, ['/Game/Region/Mesh'])
     file.write_bytes(b'later vertex edits retaining import-data MD5')
-    assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])
+    os.utime(file, (100, 100))  # copying/restoring old mtimes cannot restore continuity
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': finished}, ['/Game/Region/Mesh'])
 
 
 def test_policy_refuses_dynamic_module_initialization_through_function():
     with pytest.raises(ValueError, match='Dynamic module initialization'):
         reuse.policy("T={}\ndef s(): T['a']=1\ns()\ndef build(): return T\n", ('build',))
+
+
+def test_known_prior_environment_cannot_become_unknown(tmp_path):
+    ctx = SimpleNamespace(out=tmp_path); nonce = 'f' * 24
+    target = tmp_path / '.state/mesh-import-prior/task' / (nonce + '.json')
+    target.parent.mkdir(parents=True)
+    packet = dict(schema=1, task='task', nonce=nonce,
+                  stamp={'checkpoint_incremental_context': 'a' * 64})
+    for observed in (None, 'b' * 64, 'a' * 64):
+        packet['observed_context'] = observed; target.write_text(json.dumps(packet))
+        assert (reuse.prior_stamp(ctx, 'task', nonce, str(target)) is not None) == (observed == 'a' * 64)

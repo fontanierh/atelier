@@ -188,3 +188,11 @@ def test_material_group_publishes_only_after_parent_and_preserves_unchanged_byte
     assert again.matches(packages) and saves == packages
     texture.write_bytes(b'changed paint')
     assert not native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={'colour': 1}, sources=[texture]).matches(packages)
+
+
+@pytest.mark.parametrize('saved', [None, [], {}, {'context': {}}])
+def test_malformed_receiving_environment_is_a_miss(tmp_path, saved):
+    ctx = SimpleNamespace(out=tmp_path)
+    file = tmp_path / 'native-imports/environment.json'; file.parent.mkdir()
+    file.write_text(json.dumps(saved))
+    assert not native.observed_environment(ctx, {})
