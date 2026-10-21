@@ -23,6 +23,7 @@ class GitHub:
         self.refs = {'refs/heads/main': 'a' * 40}
         self.commits = {'a' * 40: dict(tree=dict(sha='b' * 40), message='baseline')}
         self.now = 1800000000
+        self.upload_mutex = threading.Lock()
 
     def read(self, path, *, missing=False, pages=False):
         path = path.split('?refresh=')[0].split('&refresh=')[0]
@@ -87,13 +88,38 @@ class GitHub:
 
     def upload(self, item, path):
         key = (item['id'], path.name)
-        self.files[key] = (max((value[0] for value in self.files.values()), default=0) + 1, path.read_bytes())
-        self.events.append(('upload', path.name))
-        if self.interrupt_upload:
-            self.interrupt_upload = False
+        body = path.read_bytes()
+        # Model the server's unique asset IDs: file reads release the GIL and must
+        # finish before the shared allocation/write critical section.
+        with self.upload_mutex:
+            number = max((value[0] for value in self.files.values()), default=0) + 1
+            self.files[key] = (number, body)
+            self.events.append(('upload', path.name))
+            interrupted, self.interrupt_upload = self.interrupt_upload, False
+        if interrupted:
             raise release.TransportError(500)
-        number, body = self.files[key]
         return dict(id=number, name=path.name, state='uploaded', size=len(body), digest='sha256:' + sha(body))
+
+
+def test_fake_transport_allocates_unique_ids_during_concurrent_file_reads(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    github = GitHub()
+    item = github.api('releases', method='POST', data=dict(tag_name='parts', draft=True))
+    files = [tmp_path / 'one.bin', tmp_path / 'two.bin']
+    for path in files:
+        path.write_bytes(path.name.encode())
+    barrier = threading.Barrier(2)
+    original = Path.read_bytes
+    def concurrent_read(path):
+        body = original(path)
+        barrier.wait(timeout=3)
+        return body
+    monkeypatch.setattr(Path, 'read_bytes', concurrent_read)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda path: github.upload(item, path), files))
+    assert len({value['id'] for value in results}) == 2
+    for value, path in zip(results, files):
+        assert github.files[(item['id'], path.name)] == (value['id'], path.name.encode())
 
 
 class Remote(gh.Remote):
