@@ -11,6 +11,62 @@ from test_checkpoints import fixture
 REAL_RETAIN = build_checkpoints.retain
 
 
+def test_read_only_capture_uses_original_fingerprints_and_current_capture_code(tmp_path, monkeypatch):
+    import hashlib
+    import subprocess
+    from atelier import build, checkpoint_candidates
+    from atelier.harness.safety import guarded
+    source = tmp_path / 'producer'; package = source / 'platform/studio/atelier'
+    package.mkdir(parents=True)
+    # This stand-in deliberately retains an old fingerprint function and obsolete mutating
+    # checkpoint modules. No engine or native process is involved.
+    code = Path(build.__file__).read_text()
+    code += '''
+def fingerprint(step, done, **kwargs):
+    return 'a' * 64
+class Context:
+    def __init__(self, game, *, create=True, **kwargs):
+        assert not create
+        self.game = game
+        self.out = paths.REPO / 'build' / game
+        self.stamps = self.out / 'stamps'
+        self.logs = self.out / 'logs'
+        self.uproject = self.unreal_root = self.blender = None
+'''
+    (package / 'build.py').write_text(code)
+    for name in ('checkpoint_store', 'build_checkpoints', 'checkpoint_worker'):
+        (package / (name + '.py')).write_text("raise AssertionError('Old mutating capture code must not execute')\n")
+    game = source / 'games/fixture'; game.mkdir(parents=True)
+    (game / 'game.toml').write_text('')
+    (game / 'helper.py').write_text('VALUE = 1\n')
+    (game / 'build.py').write_text("from atelier.build import Step\ndef steps(ctx):\n    return [Step('mesh', [], outputs=[ctx.out / 'mesh.bin'])]\n")
+    generated = source / 'build/fixture'; (generated / 'stamps').mkdir(parents=True)
+    (generated / 'mesh.bin').write_bytes(b'generated')
+    (generated / 'stamps/mesh.json').write_text(json.dumps(dict(fingerprint='a' * 64)))
+    (source / '.gitignore').write_text('build/\n__pycache__/\n')
+    for args in (['init', '-q'], ['add', '.'], ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'source']):
+        subprocess.run(['git', '-C', str(source), *args], check=True, capture_output=True)
+    def observation():
+        return {p.relative_to(source).as_posix(): (p.stat().st_mtime_ns, hashlib.sha256(p.read_bytes()).hexdigest())
+                for p in source.rglob('*') if p.is_file()}
+    before = observation()
+    monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))
+    monkeypatch.setattr(paths, 'build_root', lambda: tmp_path / 'controller/build')
+    def guard(argv, folder, **kwargs):
+        assert kwargs['aggregate_tree'] and kwargs['timeout'] == 900 and '-B' in argv
+        completed = subprocess.run(argv, text=True, capture_output=True, timeout=20)
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        return 0
+    monkeypatch.setattr(guarded, 'run', guard)
+    key = build_checkpoints.capture_local(source, 'fixture', read_only=True)
+    saved = checkpoint_candidates.original(checkpoint_candidates.Store('fixture'), key)
+    assert saved['candidate_only'] and saved['stamps'] == {}
+    assert saved['incremental_stamps']['mesh']['fingerprint'] == 'a' * 64
+    assert len(saved['source_revision']) == 40
+    assert observation() == before
+    assert not list(source.rglob('__pycache__'))
+
+
 @pytest.fixture
 def merge_environment(monkeypatch, tmp_path):
     events = []

@@ -140,6 +140,9 @@ def configure(sub):
     inspect.add_argument('game')
     inspect.add_argument('--checkpoint', required=True)
     inspect.add_argument('--task', required=True)
+    capture = commands.add_parser('retain-candidates', help='read-only capture of a clean stopped producer into candidate-only local history')
+    capture.add_argument('game')
+    capture.add_argument('--source', type=Path, required=True)
     commands.add_parser('status')
     commands.add_parser('abandon-transfer', help='remove a journaled partial transfer left by an older client').add_argument('game')
     create = commands.add_parser('snapshot-create', help='pin an unsigned local selection of current portable products')
@@ -185,6 +188,10 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'retain-candidates':
+        from .build_checkpoints import capture_local
+        print(json.dumps({'checkpoint': capture_local(args.source, args.game, read_only=True), 'candidate_only': True}))
+        return 0
     if args.action in ('stage-candidates', 'candidate-inventory'):
         from . import build, checkpoint_candidates
         ctx = build.Context(args.game, create=False)

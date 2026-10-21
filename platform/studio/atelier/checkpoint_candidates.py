@@ -62,7 +62,7 @@ def inventory(ctx, key, task):
 
 def checked_file(directory, member, entry):
     relative(member)
-    if entry.get('path') != 'files/' + member or not HEX.fullmatch(entry.get('sha256', '')):
+    if not isinstance(entry, dict) or entry.get('path') != 'files/' + member or not HEX.fullmatch(entry.get('sha256', '')):
         raise CheckpointError('Invalid staged candidate member')
     path = safe_destination(directory, entry['path'])
     if (path.is_symlink() or not path.is_file() or path.stat().st_size != entry['size']
@@ -74,9 +74,10 @@ def checked_file(directory, member, entry):
 
 class Bundle(dict):
     """Loaded once per importer; each member access verifies only that member's actual bytes."""
-    def __init__(self, value, directory):
+    def __init__(self, value, directory, receiver):
         super().__init__(value)
         self.directory = directory
+        self.receiver = receiver
 
     def member_path(self, member):
         entry = self['files'].get(member)
@@ -84,7 +85,7 @@ class Bundle(dict):
 
 
 def completion(ctx, value, directory, *, verify_files=True):
-    if (value.get('schema') != 1 or value.get('provenance') != 'compatibility-only'
+    if (not isinstance(value, dict) or value.get('schema') != 1 or value.get('provenance') != 'compatibility-only'
             or value.get('context') != context(ctx) or not HEX.fullmatch(value.get('checkpoint', ''))
             or not HEX.fullmatch(value.get('donor_fingerprint', ''))
             or not re.fullmatch(r'[0-9a-f]{40}', value.get('source_revision', ''))
@@ -96,10 +97,10 @@ def completion(ctx, value, directory, *, verify_files=True):
         raise CheckpointError('Candidate completion differs from immutable donor evidence')
     for member, entry in value['files'].items():
         original_entry = proof['files'].get(member)
-        if original_entry is None or original_entry['kind'] != 'file' or any(
+        if not isinstance(entry, dict) or original_entry is None or original_entry['kind'] != 'file' or any(
                 entry.get(k) != original_entry[k] for k in ('sha256', 'size', 'mode')):
             raise CheckpointError('Candidate completion contains unproved donor members')
-    bundle = Bundle(value, directory)
+    bundle = Bundle(value, directory, (ctx.game, root(ctx)))
     if verify_files:
         for member in value['files']:
             bundle.member_path(member)
@@ -115,7 +116,7 @@ def load(ctx, task):
     """
     try:
         pointer = read_json(root(ctx) / (task_name(task) + '.json'))
-        if pointer.get('schema') != 1:
+        if not isinstance(pointer, dict) or pointer.get('schema') != 1:
             return None
         manifest = safe_destination(root(ctx), pointer['manifest'])
         bundle = completion(ctx, read_json(manifest), manifest.parent)
@@ -130,6 +131,8 @@ def member_path(ctx, task, member, *, bundle=None):
     """Pass the Bundle from load() to avoid rehashing the bundle on each member access."""
     try:
         bundle = bundle if bundle is not None else load(ctx, task)
+        if bundle is not None and (bundle.get('receiver_task') != task or bundle.receiver != (ctx.game, root(ctx))):
+            return None
         return bundle.member_path(member) if bundle is not None else None
     except (OSError, ValueError, KeyError, TypeError, CheckpointError):
         return None
@@ -138,7 +141,7 @@ def member_path(ctx, task, member, *, bundle=None):
 def stage_worker(ctx, request_id):
     if not re.fullmatch(r'[0-9a-f]{24}', request_id):
         raise CheckpointError('Invalid candidate staging request')
-    request = read_json(ctx.out / '.state/candidate-requests' / (request_id + '.json'))
+    request = read_json(safe_destination(ctx.out, '.state/candidate-requests/' + request_id + '.json'))
     proof = inventory(ctx, request['checkpoint'], request['donor_task'])
     task_name(request['receiver_task'])
     files = {}
@@ -182,7 +185,8 @@ def stage(ctx, key, donor_task, members, *, receiver_task=None):
         raise CheckpointError('Candidate selection must contain existing regular checkpoint members')
     request_id = os.urandom(12).hex()
     request = dict(checkpoint=key, donor_task=donor_task, receiver_task=receiver_task, members=members)
-    atomic_json(ctx.out / '.state/candidate-requests' / (request_id + '.json'), request)
+    request_path = safe_destination(ctx.out, '.state/candidate-requests/' + request_id + '.json')
+    atomic_json(request_path, request)
     from .build_checkpoints import _guard
     result = _guard(ctx, 'stage-candidates', request_id)
     if result.get('folder') != '/'.join((key, receiver_task, request_id)):
@@ -212,6 +216,17 @@ def select(ctx, scope, files):
     return sorted(set(required) | {n for n, e in files.items() if e['kind'] == 'file' and any(n.startswith(p) for p in prefixes)})
 
 
+def local_keys(store):
+    """Defer manifest validation to each attempt so one corrupt donor cannot hide older work."""
+    candidates = []
+    for path in [*store.manifests.glob('*.json'), *(store.directory / 'candidate-sources').glob('*.json')]:
+        try:
+            candidates.append((path.stat().st_mtime_ns, path.stem))
+        except OSError:
+            continue
+    return list(dict.fromkeys(key for _, key in sorted(candidates, reverse=True)))
+
+
 def prepare(ctx, step, *, echo=print):
     """Automatically discover compatible candidates before a normal native miss, including batches."""
     scope = getattr(step, 'candidate_scope', None)
@@ -231,7 +246,7 @@ def prepare(ctx, step, *, echo=print):
         if not selected:
             return None
         return stage(ctx, key, donor_task, selected, receiver_task=step.name)
-    for key, _ in store.latest():
+    for key in local_keys(store):
         try:
             result = attempt(key)
             if result:
@@ -247,22 +262,22 @@ def prepare(ctx, step, *, echo=print):
         try:
             with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
                 for item in remote.candidates():
-                    data = remote.descriptor(item, Path(temporary))
-                    key, saved = data['key'], data['checkpoint']
-                    # Metadata-only catalogues never become full workspace donors.
-                    atomic_json(store.directory / 'candidate-sources' / (key + '.json'), saved)
                     try:
+                        data = remote.descriptor(item, Path(temporary))
+                        key, saved = data['key'], data['checkpoint']
+                        # Metadata-only catalogues never become full workspace donors.
+                        atomic_json(store.directory / 'candidate-sources' / (key + '.json'), saved)
                         proof = inventory(ctx, key, donor_task)
-                    except CheckpointError:
-                        continue
-                    selected = select(ctx, scope, proof['files'])
-                    if not selected:
-                        continue
-                    subset = dict(saved, files={n: saved['files'][n] for n in selected}, stamps={}, incremental_stamps={}, actions={})
-                    needed = {e['sha256'] for e in subset['files'].values()}
-                    transfer = dict(data, checkpoint=subset, key=identity(subset), blobs={n: data['blobs'][n] for n in needed})
-                    remote.fetch(item, transfer, store, save=False)
-                    return attempt(key)
+                        selected = select(ctx, scope, proof['files'])
+                        if not selected:
+                            continue
+                        subset = dict(saved, files={n: saved['files'][n] for n in selected}, stamps={}, incremental_stamps={}, actions={})
+                        needed = {e['sha256'] for e in subset['files'].values()}
+                        transfer = dict(data, checkpoint=subset, key=identity(subset), blobs={n: data['blobs'][n] for n in needed})
+                        remote.fetch(item, transfer, store, save=False)
+                        return attempt(key)
+                    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
+                        echo(step.name + ': remote donor miss (' + str(error) + ')')
         except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
             echo(step.name + ': remote candidate miss (' + str(error) + ')')
     echo(step.name + ': no compatible native candidates; normal import remains required')

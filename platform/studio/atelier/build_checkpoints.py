@@ -221,7 +221,7 @@ def protect(ctx, step, *, estimate=None, echo=print):
                                          estimated_seconds=known)) + '\n')
 
 
-def capture_local(source, game):
+def capture_local(source, game, *, read_only=False):
     """@cc [owner:fontanierh,label:correctness] retain-existing-build-work
     Local retention MUST copy only existing generated work through the normal checkpoint guard.
     It MUST NOT build, cook, change source or manufacture stamps for the merge revision. A failed
@@ -235,31 +235,55 @@ def capture_local(source, game):
         if not (source / '.git').exists():
             return None
         try:
+            if read_only:
+                argv = ['git', '--no-optional-locks', '-C', str(source)]
+                revision = subprocess.check_output([*argv, 'rev-parse', 'HEAD'], text=True, timeout=15).strip()
+                dirty = subprocess.check_output([*argv, 'status', '--porcelain=v1', '-z', '--untracked-files=all'], timeout=30)
+                return revision if not dirty else None
             state = provenance.source_revision(root=source)
             return state['head_sha'] if not state['dirty'] else None
         except (OSError, subprocess.SubprocessError):
             return None
     source_revision = clean_revision()
+    if read_only and source_revision is None:
+        raise CheckpointError('Read-only candidate capture requires clean producer source')
     if not (source / 'games' / game / 'game.toml').is_file():
         raise CheckpointError('Cannot retain artifacts without a game manifest')
     folder = paths.build_dir(game) / 'logs' / ('checkpoint-retain-' + os.urandom(12).hex() + '.guard')
     from atelier.harness.safety import guarded
     bootstrap = ('import atelier,runpy,sys; atelier.__path__.insert(0,sys.argv.pop(1)); '
                  'runpy.run_module("atelier.checkpoint_worker",run_name="__main__")')
-    argv = [sys.executable, '-c', bootstrap, str(source / 'platform/studio/atelier'), 'capture', game, str(folder),
+    if read_only:
+        bootstrap = ('import atelier,sys,importlib; import atelier.checkpoint_worker as worker; '
+                     'atelier.__path__.insert(0,sys.argv.pop(1)); import atelier.build; '
+                     'atelier.__path__.pop(0); '
+                     'modules=[importlib.import_module("atelier."+n) for n in '
+                     '("checkpoint_store","build_checkpoints","checkpoint_actions","checkpoint_candidates")]; '
+                     'assert all(__import__("pathlib").Path(m.__file__).parent == '
+                     '__import__("pathlib").Path(worker.__file__).parent for m in modules), "Foreign capture implementation"; '
+                     'worker.main()')
+    argv = [sys.executable, *(['-B'] if read_only else []), '-c', bootstrap, str(source / 'platform/studio/atelier'), 'capture', game, str(folder),
             '--source', str(source), '--release']
-    if guarded.run(argv, folder, aggregate_tree=True, timeout=3600, progress=25,
+    if read_only:
+        argv.append('--read-only')
+    if guarded.run(argv, folder, aggregate_tree=True, timeout=900 if read_only else 3600, progress=25,
                    kind='job', purpose='retain existing build artifacts'):
         raise CheckpointError('Local checkpoint capture failed; preserve producer outputs and retry')
     key = read_json(folder / 'result.json')['key']
     store = Store(game)
-    saved = store.load(key)
+    from .checkpoint_candidates import original
+    saved = original(store, key) if read_only else store.load(key)
     if source_revision is not None:
         if clean_revision() != source_revision:
             raise CheckpointError('Producer source changed during checkpoint capture')
         # Annotate only a proved clean producer, including when its original worker predates
         # this metadata. The original task/tool stamps are preserved without reinterpretation.
-        key = store.save(dict(saved, source_revision=source_revision))
+        value = dict(saved, source_revision=source_revision)
+        if read_only:
+            key = identity(value)
+            atomic_json(store.directory / 'candidate-sources' / (key + '.json'), value)
+        else:
+            key = store.save(value)
     return key
 
 
@@ -326,7 +350,7 @@ def estimate(stamp):
     return stamp.get('seconds')
 
 
-def incremental_environment(ctx):
+def incremental_environment(ctx, *, record=True):
     """@cc [owner:fontanierh,label:correctness] incremental-state-compatibility
     Pre-key state MAY continue under its existing source/output checks and compatible native
     engine/SDK. Observed tools MUST be recorded locally; a subsequent change MUST invalidate
@@ -359,6 +383,6 @@ def incremental_environment(ctx):
     marker = ctx.out / '.state/incremental-environment.json'
     if marker.exists():
         compatible = compatible and read_json(marker).get('context') == observed
-    elif compatible:
+    elif compatible and record:
         atomic_json(marker, dict(context=observed))
     ctx.checkpoint_incremental_compatible = compatible

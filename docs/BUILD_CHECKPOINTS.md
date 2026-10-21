@@ -58,6 +58,21 @@ current result. A whole-task miss can therefore reuse unchanged meshes without a
 validation or overwriting unrelated completed receiver work. Importers must integrate this shared
 protocol and declare their real artifact boundaries; arbitrary existing importers are not inferred.
 
+For an agreed read-only handoff from a clean, fully stopped older producer, use
+`atelier cache retain-candidates GAME --source CHECKOUT`. It writes capture scratch/logs in the
+controller and immutable files in the machine cache. It never writes producer `.state`, stamps,
+products or Zen data. Only generated/Content members and historical evidence enter a candidate-only
+catalogue; this is not a complete workspace seed or a new task certificate. Normal importer discovery
+finds it automatically. Preserve the producer until the key is reported. This diagnostic capture is
+not required for ordinary merge/release retention.
+
+The host receipt update preserves proved warm batch results through a bounded equivalence
+check. It reproduces the complete previous fingerprint with current inputs, worker, commands,
+tools, dependencies and outputs, substituting only one reviewed predecessor host file. Complete
+retained output evidence must still match. The migrated state remains compatibility-only and
+keeps its downstream result token. Unknown history, changed data/commands or incomplete output
+proof follows the normal miss path; migration never weakens a future execution-policy change.
+
 Character body, bike and horse imports depend on normalized exported content. An exporter implementation change
 that reproduces the same mesh, skinning, clips and textures leaves the import current. FBX timestamps and generated
 IDs do not count as content changes. Importer implementation, native module, actual asset or engine changes still

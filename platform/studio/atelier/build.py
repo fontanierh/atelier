@@ -330,16 +330,16 @@ def missing_product_inputs(step):
     return [str(path) for path in required_inputs(step) if not Path(path).exists()]
 
 
-def fingerprint(step, done, *, index=None, tool_cache=None, observation=None):
+def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _input_bytes=None):
     """@cc [owner:fontanierh,label:correctness] legacy-fingerprint-compatibility
     Legacy steps without deferred inputs MUST retain their existing fingerprint algorithm. Read edges
     MUST include the consumed product's content identity; references and ordering MUST NOT.
     """
     return fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache,
-                             observation=observation)[0]
+                             observation=observation, _input_bytes=_input_bytes)[0]
 
 
-def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None):
+def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None):
     """Hash once, optionally retaining per-input identities for build explanations."""
     digest = hashlib.sha256()
     named = bool(step.products or step.reads or step.references)
@@ -373,11 +373,13 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     if step.cache or step.audit:
         build_inputs.validate_imports(step, declared_inputs(step))
     for item in inputs:
+        replacement = (_input_bytes or {}).get(Path(item))
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
             options = {'complete': True} if step.audit else {}
-            manifest = build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None
+            manifest = (dict(schema=1, files={'0/.': dict(kind='file', size=len(replacement), sha256=hashlib.sha256(replacement).hexdigest())})
+                        if replacement is not None else build_inputs.inventory(item, hasher=hasher, **options) if Path(item).exists() else None)
             value = build_products.identity(manifest)
             label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
             digest.update(json.dumps([label, value]).encode())
@@ -385,11 +387,17 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
             continue
         if capture:
             recording = RecordingDigest(digest)
-            _hash_path(recording, item)
+            if replacement is not None:
+                recording.update(Path(item).name.encode()); recording.update(replacement)
+            else:
+                _hash_path(recording, item)
             label = str(item).replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
             state['inputs'][label] = recording.local.hexdigest()
         else:
-            _hash_path(digest, item)
+            if replacement is not None:
+                digest.update(Path(item).name.encode()); digest.update(replacement)
+            else:
+                _hash_path(digest, item)
     if step.optional_inputs:
         state['optional_inputs'] = {}
         for item in step.optional_inputs:
@@ -524,7 +532,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
         raise ValueError('Unreal preflight requires the normal guarded heavy lifecycle')
     env = ctx.env(env)
     if isinstance(command, UnrealScript):
-        env.update(ATELIER_BUILD_TASK=step.name, ATELIER_BUILD_GAME=ctx.game)
+        env.update(ATELIER_BUILD_TASK=step.name, ATELIER_BUILD_GAME=ctx.game,
+                   ATELIER_BUILD_SCRIPT=str(command.script), ATELIER_MESH_REUSE_NONCE=os.urandom(12).hex())
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'
@@ -600,6 +609,9 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
         if step.heavy and cook is not None:
             cook.finish(success=False)
         raise RuntimeError(f'{step.name}: "{marker}" missing from the log')
+    if isinstance(command, UnrealScript) and 'ATELIER_BATCH' not in dict(command.env):
+        from .mesh_reuse import finalize_pending
+        finalize_pending(ctx, step.name, env['ATELIER_MESH_REUSE_NONCE'])
     from .build_timings import parse_phases
     phases = parse_phases(text, allow_echo=isinstance(command, UnrealScript))
     if step.heavy and cook is not None:
@@ -842,6 +854,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         previous = read_stamp(stamp)
         if actions is not None and not force and not touch:
             previous = task_cache.migrate_boundary(ctx, step, current, input_state, previous, done, echo=echo)
+            from .build_batch_migration import migrate as migrate_batch
+            previous = migrate_batch(ctx, step, current, input_state, previous, done, echo=echo)
         outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
         if actions is not None:
             outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
@@ -986,11 +1000,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 products = build_products.records(step)
                 restore_source = 'checkpoint'
         from_cache = products is not None
+        if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
+            return yield_build(step)
         if not from_cache:
             from .checkpoint_candidates import prepare as prepare_candidates
             prepare_candidates(ctx, step, echo=echo)
-        if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
-            return yield_build(step)
         if not from_cache and not recovering:
             from .build_checkpoints import protect, estimate
             try:

@@ -276,14 +276,18 @@ def certificates(ctx, steps, *, include_incremental=False):
     return records
 
 
-def capture(ctx, steps, store, *, echo=print, allow_seed=False):
+def capture(ctx, steps, store, *, echo=print, allow_seed=False, candidate_only=False, scratch=None):
     """@cc [owner:fontanierh,label:correctness] immutable-checkpoint-capture
     Saved certificates MUST retain their produced tool key and output inventory proof, matching
     the producer's current declared inputs and complete named
     outputs. Touched/failed/stale certificates MUST NOT publish. Source and output changes during
     capture MUST refuse publication. HEAD equality with a future receiver MUST NOT be required.
+    Candidate-only capture MUST write hash scratch outside the producer and publish only a
+    compatibility catalogue, never a full workspace donor or produced action certificate.
     """
     before = certificates(ctx, steps, include_incremental=True)
+    if candidate_only and (scratch is None or Path(scratch).resolve().is_relative_to(paths.REPO.resolve())):
+        raise CheckpointError('Candidate-only capture requires scratch outside the producer')
     if not before and not allow_seed:
         raise CheckpointError('No current successful build results to checkpoint')
     from . import checkpoint_actions
@@ -293,7 +297,7 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False):
     for step in order(steps, [s.name for s in steps]):
         if step.name in before:
             record = before[step.name]
-            if checkpoint_actions.certified(ctx, step, record['fingerprint'], record):
+            if not candidate_only and checkpoint_actions.certified(ctx, step, record['fingerprint'], record):
                 checkpoint_actions.publish(ctx, step, record['fingerprint'], record, store=store, done=done)
             done[step.name] = result(step, record['fingerprint'], record)
             build_products.feed_results(done, record.get('products', {}))
@@ -302,8 +306,10 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False):
         if not action_path.with_suffix('.conflict').exists():
             actions[action_path.stem] = checkpoint_actions.load(store, action_path.stem)
     allowed, files, observations = roots(ctx), {}, []
+    if candidate_only:
+        allowed = {name: value for name, value in allowed.items() if name in ('generated', 'content')}
     source_paths = tracked_paths()
-    with store.locked(), HashIndex(ctx.out / '.state/checkpoint-hashes.sqlite3') as hashes:
+    with store.locked(), HashIndex(scratch if scratch is not None else ctx.out / '.state/checkpoint-hashes.sqlite3') as hashes:
         started = spoken = time.monotonic()
         for label, (root, _) in allowed.items():
             for path in members(root):
@@ -338,13 +344,19 @@ def capture(ctx, steps, store, *, echo=print, allow_seed=False):
         if (names != set(files) or any(signature(p.lstat()) != info for p, info in observations)
                 or certificates(ctx, steps, include_incremental=True) != before):
             raise CheckpointError('Build changed during checkpoint capture; nothing published')
-        current_proof = {s.name: before[s.name] for s in steps if s.name in before
+        current_proof = {s.name: before[s.name] for s in steps if not candidate_only and s.name in before
                          and checkpoint_actions.certified(ctx, s, before[s.name]['fingerprint'], before[s.name])}
         incremental = {name: value for name, value in before.items() if name not in current_proof}
         manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
                         checkout=identity(str(paths.REPO.resolve())), files=files, stamps=current_proof, incremental_stamps=incremental,
                         steps=sorted(s.name for s in steps), actions=actions)
-        key = store.save(manifest)
+        if candidate_only:
+            manifest['candidate_only'] = True
+            manifest['actions'] = {}
+            key = identity(manifest)
+            atomic_json(store.directory / 'candidate-sources' / (key + '.json'), manifest)
+        else:
+            key = store.save(manifest)
     echo(f'checkpoint saved: {key[:12]}, {len(files)} files, {len(before)} certified tasks')
     return key
 

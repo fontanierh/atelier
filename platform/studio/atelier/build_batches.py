@@ -113,6 +113,7 @@ class Session:
         self.products = products
         self.index, self.tool_cache, self.echo = index, tool_cache, echo
         self.nonce = uuid.uuid4().hex
+        self.mesh_nonces = {step.name: uuid.uuid4().hex[:24] for step, _, _ in candidates}
         self.folder = ctx.out / '.state/batches' / self.nonce
         # Never let a session's cumulative report replace an individual action's standalone peak.
         self.guard = ctx.logs / ('batch.' + self.nonce + '.guard')
@@ -132,7 +133,9 @@ class Session:
             command = step.commands[0]
             actions.append({'name': step.name, 'script': str(command.script), 'args': list(getattr(command, 'args', ()))
                             if isinstance(command, build.Blender) else [],
-                            'env': dict(command.env) | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game}})
+                            'env': dict(command.env) | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game,
+                                                       'ATELIER_BUILD_SCRIPT': str(command.script),
+                                                       'ATELIER_MESH_REUSE_NONCE': self.mesh_nonces[step.name]}})
             # An action about to run cannot keep a successful stamp from an older invocation.
             (self.ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
         atomic_json(self.folder / 'plan.json', {'nonce': self.nonce, 'actions': actions,
@@ -289,6 +292,20 @@ def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
     finally:
         session.verify_completed()
     outcome = read_stamp(session.folder / 'result.json')
+    if not session.error:
+        for step, _, _ in candidates:
+            if step.name in session.completed and isinstance(step.commands[0], build.UnrealScript):
+                try:
+                    from .mesh_reuse import finalize_pending
+                    finalize_pending(ctx, step.name, session.mesh_nonces[step.name])
+                except Exception as error:
+                    (ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
+                    session.completed.pop(step.name, None)
+                    session.done.pop(step.name, None)
+                    for product in step.products:
+                        session.done.pop('product:' + product.name, None)
+                    session.error = str(error)
+                    break
     if session.error:
         echo('Batch failed: ' + session.error)
         return set(session.completed), 1
