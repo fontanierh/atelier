@@ -5,7 +5,7 @@ import math
 def matches(mesh, source, replacements, canopies, triangles, screens, geometry, path,
             *, editor, snapshot, digest, refusal=None):
     """@cc [owner:fontanierh,label:correctness] foliage-saved-geometry-admission
-    Saved variants MUST match current expected geometry, source-slot metadata, material
+    Saved variants MUST match current expected geometry, source-slot names/manual UV density overrides, material
     bindings, prepared LOD settings and screens. Missing readback MUST be a miss. This
     check MUST NOT save a candidate or publish a complete foliage registry.
     """
@@ -30,9 +30,20 @@ def matches(mesh, source, replacements, canopies, triangles, screens, geometry, 
         for index, original in enumerate(originals):
             if mesh.get_material(index) != replacements[index]:
                 return miss("source material binding")
-            for key in ('material_slot_name', 'imported_material_slot_name', 'uv_channel_data'):
+            for key in ('material_slot_name', 'imported_material_slot_name'):
                 if slots[index].get_editor_property(key) != original.get_editor_property(key):
                     return miss("source slot metadata: " + key)
+            # Editor material assignment rebuilds automatic streaming densities
+            # from the variant's geometry. Explicit artist overrides must survive;
+            # exact UV corner coordinates are checked by the native digest below.
+            current_uv = slots[index].get_editor_property('uv_channel_data')
+            source_uv = original.get_editor_property('uv_channel_data')
+            override = source_uv.get_editor_property('override_densities')
+            densities = list(current_uv.get_editor_property('local_uv_densities'))
+            if (current_uv.get_editor_property('override_densities') != override or len(densities) != 4 or
+                    any(not math.isfinite(value) or value < 0 for value in densities) or
+                    (override and densities != list(source_uv.get_editor_property('local_uv_densities')))):
+                return miss("source slot UV density override")
         for index, (name, material) in enumerate(zip(('CanopyNear', 'CanopyFar'), canopies), len(originals)):
             if str(slots[index].get_editor_property('material_slot_name')) != name or mesh.get_material(index) != material:
                 return miss("canopy material binding")
