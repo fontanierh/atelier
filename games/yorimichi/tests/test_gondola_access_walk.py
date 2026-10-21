@@ -205,3 +205,34 @@ def test_stringer_post_feet_stay_behind_the_stair_exit():
     corners=np.array([[-.4,-.4],[.4,-.4],[.4,.4],[-.4,.4]])
     assert len(feet)>2
     assert max(float(((foot+corners-end)@direction).max()) for foot in feet)<0
+
+
+def test_rested_stringer_breaks_avoid_tread_riser_and_landing_planes():
+    """floor_rim export refused split stringer end caps lying on slab ends and riser faces."""
+    from contextlib import contextmanager
+    stringers=[];tags=[]
+    class Sink:
+        def __init__(self,*a):pass
+        @contextmanager
+        def tagged(self,tag):
+            tags.append(tag)
+            try:yield
+            finally:tags.pop()
+        @contextmanager
+        def at(self,*a):yield
+        def prism(self,polygon,*a,**k):
+            if tags and tags[-1]=='access_stringer':stringers.append(np.asarray(polygon,float))
+        def box(self,*a,**k):pass
+    ns={'np':np,'math':math,'solid':SimpleNamespace(Mesh=Sink,TIMBER=1,TIMBER_DARK=2,DECK=3),
+        'STATIONS':{'fixture':{'access_turn_deg':180.,'access_fit':{
+            'risers':52,'tread_m':.28,'run_m':21.38,'join_m':3.2,'flights':[13]*4,'landing_m':1.2}}},
+        'Station':lambda *a:SimpleNamespace(seats=[],proxies=[]),'P':SimpleNamespace(DEFAULTS={},derived=lambda p:{}),
+        'world_xy':lambda p,f:np.asarray(p),'ground_edge':lambda *a:(np.array([-1.1,1.1]),np.zeros(2)),
+        'railing':lambda *a,**k:None,'timber_support':lambda *a:None,'floor_intrusion':lambda *a:0.}
+    layout={'access':[{'edge':[[0,-1.2],[0,1.2]],'point':[-.5,.001],'z':13.832}]}
+    _,access=helper('access_stair',ns)('fixture',layout,SimpleNamespace(contact=lambda p:(np.zeros(len(p)),None)),(None,None,None,0))
+    direction=np.array([-1.,0.])
+    planes=sorted({round(float(v),6) for s in access['surfaces'] for v in np.asarray(s['poly'])[:,:2]@direction})
+    breaks=sorted({round(float(v),6) for polygon in stringers for v in polygon@direction})
+    assert len(stringers)>4 and len(planes)>50
+    assert min(abs(b-p) for b in breaks for p in planes)>.0015

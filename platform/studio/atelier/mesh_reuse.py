@@ -6,6 +6,7 @@ task/action certificates, and never replace the importer's current validation.
 import ast
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -272,13 +273,26 @@ def prior_stamp(ctx, task, nonce, pointer):
 
 
 def historical_packages_match(ctx, task, stamp, packages):
-    """Use complete prior proof when present; bound pre-inventory incremental state."""
+    """@cc [owner:fontanierh,label:correctness] distinguish-selection-from-output-proof
+    A selected checkpoint tool key without an inventory or stored action MUST NOT be
+    treated as a produced byte certificate. It MAY use the existing compatibility-only
+    pre-inventory continuity checks. An explicit inventory, stored action or conflict
+    MUST validate or refuse; failed proof MUST NOT fall back to timestamps.
+    Native source/options/owner/context validation remains mandatory outside this helper.
+    """
     try:
         current = package_inventory(ctx.uproject.parent / 'Content', packages)
         key = stamp.get('checkpoint_key')
-        if key:
+        target = None
+        if key is not None:
             store = ReadStore(ctx.game)
-            entry = validate_action(read_json(entry_path(store, key)), store, key)
+            target = entry_path(store, key)
+            if os.path.lexists(target.with_suffix('.conflict')):
+                return False
+        if 'checkpoint_inventory' in stamp or target is not None and os.path.lexists(target):
+            if target is None:
+                return False
+            entry = validate_action(read_json(target), store, key)
             if (entry['task'] != task or entry['fingerprint'] != stamp['fingerprint']
                     or entry['stamp']['checkpoint_inventory'] != stamp['checkpoint_inventory']):
                 return False
@@ -320,7 +334,7 @@ def resolve_source(ctx, member):
     return path
 
 
-def queue_pending(ctx, task, nonce, import_policy, current_context, name, record, counts):
+def queue_pending(ctx, task, nonce, import_policy, current_context, name, record, counts, *, miss_reasons=None):
     """Native child evidence; only the successful parent can finalize package receipts."""
     target = pending_path(ctx, task, nonce)
     header = dict(schema=1, task=task, nonce=nonce, policy=import_policy, context=current_context)
@@ -330,6 +344,8 @@ def queue_pending(ctx, task, nonce, import_policy, current_context, name, record
     if record is not None:
         packet['entries'][name] = record
     packet['counts'] = counts
+    if miss_reasons is not None:
+        packet['miss_reasons'] = miss_reasons
     atomic_json(target, packet)
 
 
@@ -357,6 +373,11 @@ def _finalize_pending(ctx, task, nonce):
             or not re.fullmatch('[0-9a-f]{64}', packet.get('policy', ''))):
         raise ValueError('Malformed pending native mesh evidence')
     content = ctx.uproject.parent / 'Content'
+    misses = packet.get('miss_reasons', {})
+    if (not isinstance(misses, dict) or len(misses) > 64
+            or any(not isinstance(key, str) or not re.fullmatch('[a-z_]{1,80}', key)
+                   or type(value) is not int or value < 0 for key, value in misses.items())):
+        raise ValueError('Malformed native reuse miss diagnostics')
     receipts = Receipts(ctx.out, task, packet['context'], packet['policy'], content)
     prepared = {}
     for name, entry in packet['entries'].items():
@@ -379,7 +400,7 @@ def _finalize_pending(ctx, task, nonce):
         receipts.records.update(prepared)
         atomic_json(receipts.path, dict(**receipts.header, meshes=receipts.records))
     atomic_json(receipts.path.with_name('summary.json'), dict(schema=1, task=task,
-                invocation=nonce, counts=packet['counts'], finalized_after_native_success=True))
+                invocation=nonce, counts=packet['counts'], miss_reasons=misses, finalized_after_native_success=True))
     target.unlink()
 
 

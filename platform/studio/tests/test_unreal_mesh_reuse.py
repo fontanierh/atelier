@@ -366,3 +366,59 @@ def test_declared_validation_cannot_adopt_without_running_its_callback(scene, mo
     assert adapter.local_compatible
     assert acquire(scene, adapter) is None
     assert adapter.counts['reused_local'] == 0
+
+
+@pytest.mark.parametrize('failure,reason', [
+    ('policy', 'unsupported_policy'),
+    ('callback', 'required_validator_missing'),
+    ('dirty', 'dirty_loaded_package'),
+    ('history', 'no_compatible_package_history'),
+    ('geometry', 'candidate_geometry_mismatch'),
+    ('source', 'recorded_source_mismatch'),
+    ('validator', 'current_validator_rejected'),
+    ('exception', 'current_validator_exception'),
+])
+def test_miss_diagnostics_report_the_refusal_without_counting_reuse(scene, monkeypatch, failure, reason):
+    adapter = scene.adapter()
+    options = {}
+    if failure == 'policy': adapter.enabled = False
+    if failure == 'callback': adapter.requires_validator = True
+    if failure == 'dirty':
+        monkeypatch.setattr(native, 'packages_clean', lambda _: False)
+    if failure == 'history': adapter.compatible = False
+    if failure == 'geometry': options['donor_geometry'] = {'source': 'changed'}
+    if failure == 'source': scene.tags[scene.package] = None
+    if failure == 'validator': options['validator'] = lambda _: False
+    if failure == 'exception':
+        def validator(_):
+            raise RuntimeError('private exception text must not enter diagnostics')
+        options['validator'] = validator
+    assert acquire(scene, adapter, **options) is None
+    assert adapter.miss_reasons == {reason: 1}
+    assert adapter.counts == dict(imported=0, reused_local=0, reused_candidate=0)
+    assert not (adapter.receipts.path.parent / 'summary.json').exists()
+
+
+def test_disabled_mesh_policy_finalizes_import_diagnostics_without_a_reusable_receipt(scene):
+    adapter = scene.adapter()
+    adapter.enabled = False
+    assert acquire(scene, adapter) is None
+    adapter.imported('Mesh')
+    adapter.validated('Mesh')
+    summary = adapter.receipts.path.parent / 'summary.json'
+    assert not summary.exists() and not adapter.receipts.path.exists()
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    value = json.loads(summary.read_text())
+    assert value['invocation'] == 'e' * 24 and value['finalized_after_native_success'] is True
+    assert value['counts'] == dict(imported=1, reused_local=0, reused_candidate=0)
+    assert value['miss_reasons'] == {'unsupported_policy': 1}
+    assert not adapter.receipts.path.exists()
+
+
+def test_successful_candidate_has_no_miss_diagnostic(scene):
+    adapter = scene.adapter()
+    assert acquire(scene, adapter)
+    adapter.validated('Mesh')
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    value = json.loads((adapter.receipts.path.parent / 'summary.json').read_text())
+    assert value['counts']['reused_candidate'] == 1 and value['miss_reasons'] == {}

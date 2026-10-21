@@ -10,6 +10,7 @@ import shutil
 import numpy as np
 from PIL import Image
 from atelier.gltf import glb_parts
+from atelier.model_files import source_records, retain_files
 from belmonte import layout as L, source, planting, terrain, appearance
 
 OUT = yori.OUT / 'belmonte'
@@ -279,6 +280,13 @@ def main():
     runtime = {'version': 1, 'origin_cm': L.native_origin(), 'bounds_m': L.BOUNDS,
                'clearance_m': list(terrain.OUTER), 'groups': groups, 'signs': signs, 'railway_corridor': L.RAILWAY,
                'zones': map_zones(town_z), 'tv_spots': tv_spots(data)}
+    # Current meshes/hulls are complete now. Retire only this producer's generated
+    # model members, so a normal removal/rename cannot strand an invalid inventory.
+    expected = [Path(name).relative_to('glb').as_posix()
+                for _, name in source_records(meshes, collision_directory='glb')]
+    retired = retain_files(OUT / 'glb', expected)
+    if retired:
+        print(f'BELMONTE retired {len(retired)} superseded generated model files', flush=True)
     (OUT / 'runtime.json').write_text(json.dumps(runtime, separators=(',', ':')) + '\n')
     (OUT / 'build-report.json').write_text(json.dumps({'meshes': meshes, 'materials': materials,
                                                      'planting': plant_report, 'seam': seam}, indent=1) + '\n')
