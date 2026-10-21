@@ -3,12 +3,13 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_checkpoints, build_products
+from atelier import build, build_batches, build_checkpoints, build_products
 from test_volcano_layers import RECIPE
 
 
@@ -69,6 +70,29 @@ def test_real_model_declarations_have_independent_inputs_and_complete_owners(tmp
     assert RECIPE.paths.STUDIO / 'atelier/model_export.py' in assembly.inputs
     assert RECIPE.REGIONS / 'brinecove/foliage_catalog.json' in assembly.inputs
     assert RECIPE.REGIONS / 'brinecove/review_build.py' not in assembly.inputs
+
+
+def test_fresh_model_batch_serializes_the_actual_declared_arguments(tmp_path):
+    steps = RECIPE.brinecove_model_steps(tmp_path)
+    ctx = SimpleNamespace(out=tmp_path, game='fixture', logs=tmp_path / 'logs', stamps=tmp_path / 'stamps')
+    session = build_batches.Session(ctx, [(step, 'key', {}) for step in steps], {}, None, {}, None, {})
+    session.write_plan()
+    actions = json.loads((session.folder / 'plan.json').read_text())['actions']
+    assert len(actions) == 36
+    for step, action in zip(steps, actions):
+        assert action['args'] == list(step.commands[0].args)
+        assert Path(action['args'][0]).is_file()
+        assert Path(action['args'][1]) == step.products[0].paths[0]
+
+
+def test_model_entrypoint_imports_in_an_isolated_embedded_interpreter(tmp_path):
+    script = RECIPE.REGIONS / 'brinecove/export_foliage_model.py'
+    # No installed Atelier, PYTHONPATH, test sys.path, or script cwd: embedded tools
+    # must find the committed Studio package from the entrypoint itself.
+    result = subprocess.run([sys.executable, '-I', '-S', '-c',
+                             'import runpy, sys; runpy.run_path(sys.argv[1])', str(script)],
+                            cwd=tmp_path, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
 
 
 def test_actual_graph_preserves_models_for_placement_edits_and_rebuilds_only_changed_model(tmp_path, monkeypatch, library):

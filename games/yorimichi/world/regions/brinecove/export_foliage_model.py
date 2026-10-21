@@ -5,7 +5,9 @@ import math
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+_source = Path(__file__).resolve()
+for _path in (_source.parents[5] / 'platform/studio', _source.parents[1]):
+    sys.path.insert(0, str(_path))
 from brinecove import foliage_models, foliage_names  # noqa: E402
 from atelier.model_export import mesh_object, export, glb_info  # noqa: E402
 

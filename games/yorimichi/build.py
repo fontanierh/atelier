@@ -711,7 +711,7 @@ def brinecove_model_steps(out):
     if not definitions:
         raise ValueError('Brinecove requires its committed plant model definitions')
     return [Step('world.brinecove.model.' + definition.stem,
-                 [Blender(script, (definition, out / 'models/brinecove/plants' / definition.stem),
+                 [Blender(script, (str(definition), str(out / 'models/brinecove/plants' / definition.stem)),
                           threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
                  inputs=[*code, definition],
                  products=[Product('brinecove.model.' + definition.stem,
