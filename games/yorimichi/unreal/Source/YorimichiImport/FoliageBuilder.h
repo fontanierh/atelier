@@ -11,6 +11,10 @@ class YORIMICHIIMPORT_API UYorimichiFoliageBuilder : public UBlueprintFunctionLi
 {
     GENERATED_BODY()
 public:
+    /** Exact ordered stored corner geometry, binary v1; false never supplies reuse proof.
+     * Caller additionally validates current materials/settings and hashes the generated file.
+     * This function does not save or modify the mesh, nor publish task success. */
+    UFUNCTION(BlueprintCallable) static bool ExportGeometrySnapshot(UStaticMesh* Mesh, const FString& Path);
     /** Source import boundary: certify UV5 face roles in cooked slot names. */
     UFUNCTION(BlueprintCallable) static bool StampSourceRoles(UStaticMesh* Source);
     /** Synchronous commandlet collection; no future editor tick is required. */
