@@ -21,7 +21,7 @@ import atmosphere
 import foliage_system as F
 import see_through
 from foliage_material import supports_lod_blend, enable_bark_lod_blend
-from foliage_variant_validation import matches as variant_matches
+from foliage_variant_validation import matches as variant_matches, settings_reader
 
 OUT = yori.OUT / 'foliage_system'
 E = U.EditorAssetLibrary
@@ -219,7 +219,7 @@ def memory_checkpoint(stage, path):
 
 def saved_variants(mesh, paths, replacements, canopies, row, geometry, key):
     """Every unit hint and old partial output receives current native readback."""
-    editor = U.get_editor_subsystem(U.StaticMeshEditorSubsystem)
+    editor = settings_reader(U)
     dirty = {p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
     reused = {}
     for role, path in paths.items():

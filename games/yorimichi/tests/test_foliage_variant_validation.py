@@ -154,3 +154,21 @@ def test_unreal_plain_reflection_exception_is_a_normal_miss(tmp_path):
     reasons = []
     assert not validation.matches(**args, refusal=reasons.append)
     assert 'Failed to find property' in reasons[0]
+
+
+def test_commandlet_uses_same_read_only_getters_on_class_default():
+    reader = object()
+    calls = []
+    api = SimpleNamespace(StaticMeshEditorSubsystem='mesh class',
+        get_editor_subsystem=lambda cls: None,
+        get_default_object=lambda cls: calls.append(cls) or reader)
+    assert validation.settings_reader(api) is reader
+    assert calls == ['mesh class']
+    api.get_editor_subsystem = lambda cls: reader
+    calls.clear()
+    assert validation.settings_reader(api) is reader
+    assert calls == []
+    api.get_editor_subsystem = lambda cls: None
+    api.get_default_object = lambda cls: None
+    with pytest.raises(RuntimeError, match='unavailable'):
+        validation.settings_reader(api)
