@@ -89,7 +89,8 @@ def slowest_views(views):
     return dict(gpu=gpu,frame_p95=pacing),selected
 
 
-def summarize(rows):
+def summarize(rows, expected_seconds=None, errors=()):
+    if errors:raise ValueError('Sampling callback failed: '+repr(errors))
     if len(rows)<30:raise ValueError('Too few real frames for a pacing comparison')
     frame=[(b[0]-a[0])*1000 for a,b in zip(rows,rows[1:])]
     gpu=[row[1] for row in rows]
@@ -100,7 +101,10 @@ def summarize(rows):
         return dict(mean_ms=statistics.fmean(values),median_ms=statistics.median(values),
                     p95_ms=ordered[math.ceil(len(ordered)*.95)-1],
                     p99_ms=ordered[math.ceil(len(ordered)*.99)-1],max_ms=max(values))
-    return dict(frames=len(frame),wall_seconds=rows[-1][0]-rows[0][0],frame=stats(frame),gpu=stats(gpu))
+    span=rows[-1][0]-rows[0][0]
+    if expected_seconds is not None and span+max(.1,2*statistics.median(frame)/1000)<expected_seconds:
+        raise ValueError('Sampling ended before the requested interval')
+    return dict(frames=len(frame),wall_seconds=span,frame=stats(frame),gpu=stats(gpu))
 
 
 # Runs in its own namespace in the game's Python interpreter.
@@ -110,16 +114,21 @@ world=live.L.game_world()
 system=unreal.SubsystemBlueprintLibrary.get_world_subsystem(world,unreal.YorimichiFoliageSubsystem)
 assert system, 'Foliage subsystem unavailable'
 def vector(point):return unreal.Vector(point[0]*100.,-point[1]*100.,point[2]*100.)
-def aim(eye,target):unreal.MegaParkValidation.review_camera(vector(eye),vector(target),60.)
+def aim(eye,target):
+    assert unreal.MegaParkValidation.review_camera(vector(eye),vector(target),60.), 'Review camera failed'
 def sample(dt):
-    elapsed=time.perf_counter()-started
-    offset=[speed[i]*elapsed for i in range(3)]
-    if any(speed):aim([eye[i]+offset[i] for i in range(3)],[target[i]+offset[i] for i in range(3)])
-    rows.append([time.perf_counter(),float(unreal.LiveLibrary.gpu_frame_ms())])
+    try:
+        elapsed=time.perf_counter()-started
+        offset=[speed[i]*elapsed for i in range(3)]
+        if any(speed):aim([eye[i]+offset[i] for i in range(3)],[target[i]+offset[i] for i in range(3)])
+        rows.append([time.perf_counter(),float(unreal.LiveLibrary.gpu_frame_ms())])
+    except BaseException as error:
+        errors.append(type(error).__name__+': '+str(error))
+        raise
 def start(e,t,s):
-    global eye,target,speed,rows,started
+    global eye,target,speed,rows,errors,started
     eye,target,speed=e,t,s
-    rows=[];started=time.perf_counter();aim(eye,target)
+    rows=[];errors=[];started=time.perf_counter();aim(eye,target)
     live.behave('foliage_performance',sample)
 '''
 
@@ -207,8 +216,10 @@ def main():
                 time.sleep(args.settle)
                 qa.py(f'live.FOLIAGE_QA["start"]({eye!r},{target!r},{speed!r})')
                 time.sleep(args.seconds)
-                rows=read_json('(live.stop("foliage_performance"),live.FOLIAGE_QA["rows"])[1]')
-                result=dict(enabled=enabled,samples=rows,summary=summarize(rows))
+                capture=read_json('(live.stop("foliage_performance"),dict(rows=live.FOLIAGE_QA["rows"],errors=live.FOLIAGE_QA["errors"]))[1]')
+                (out/f'{name}_{index}_samples.json').write_text(json.dumps(capture)+'\n')
+                rows=capture['rows']
+                result=dict(enabled=enabled,samples=rows,summary=summarize(rows,args.seconds,capture['errors']))
                 results.append(result)
                 shot=out/f'{name}_{index}_{"on" if enabled else "off"}.png'
                 qa.py(f'live.L.screenshot({str(shot)!r})')

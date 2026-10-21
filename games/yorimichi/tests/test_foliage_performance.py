@@ -35,6 +35,30 @@ def test_insufficient_nonmonotonic_or_nullrhi_samples_refuse(metrics,rows):
     with pytest.raises(ValueError):metrics.summarize(rows)
 
 
+def test_partial_or_failed_sampler_cannot_look_like_a_complete_pass(metrics):
+    rows=[[i/1000,5.] for i in range(100)]
+    with pytest.raises(ValueError,match='requested interval'):metrics.summarize(rows,10.)
+    rows=[[i/60,5.] for i in range(600)]
+    assert metrics.summarize(rows,10.)['wall_seconds']>9.9
+    with pytest.raises(ValueError,match='callback failed'):metrics.summarize(rows,10.,['RuntimeError: failed'])
+
+
+def test_sampler_rejects_camera_failures_and_records_callback_exceptions(metrics):
+    live=SimpleNamespace(L=SimpleNamespace(game_world=lambda:None),behave=lambda *args:None)
+    unreal=SimpleNamespace(SubsystemBlueprintLibrary=SimpleNamespace(get_world_subsystem=lambda *args:object()),
+        YorimichiFoliageSubsystem=object(),Vector=lambda *v:v,
+        MegaParkValidation=SimpleNamespace(review_camera=lambda *args:False))
+    owner=dict(live=live,unreal=unreal)
+    exec(metrics.SAMPLER,owner)
+    with pytest.raises(AssertionError,match='Review camera failed'):
+        owner['start']([0,0,1],[0,0,0],[0,0,0])
+    unreal.MegaParkValidation.review_camera=lambda *args:True
+    unreal.LiveLibrary=SimpleNamespace(gpu_frame_ms=lambda:(_ for _ in ()).throw(RuntimeError('GPU read failed')))
+    owner['start']([0,0,1],[0,0,0],[0,0,0])
+    with pytest.raises(RuntimeError,match='GPU read failed'):owner['sample'](.01)
+    assert owner['errors']==['RuntimeError: GPU read failed'] and owner['rows']==[]
+
+
 @pytest.mark.parametrize('save_succeeds',[True,False])
 def test_restores_actual_active_preferences_instead_of_default_file(metrics,monkeypatch,tmp_path,save_succeeds):
     default=tmp_path/'Saved/settings.txt';default.parent.mkdir();default.write_text('foliage_optimization=1.0\n')
