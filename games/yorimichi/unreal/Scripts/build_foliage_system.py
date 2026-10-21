@@ -88,9 +88,9 @@ def canopy_material(near, patch=False):
     M.delete_all_material_expressions(material)
     vertex = M.create_material_expression(material, U.MaterialExpressionVertexColor)
     emission=M.create_material_expression(material,U.MaterialExpressionMultiply)
-    assert M.connect_material_expressions(vertex,'RGB',emission,'A')
+    assert M.connect_material_expressions(vertex,'',emission,'A')
     assert M.connect_material_expressions(vertex,'A',emission,'B')
-    base, glow = atmosphere.apply(material, vertex, emission, base_out='RGB')
+    base, glow = atmosphere.apply(material, vertex, emission)
     assert M.connect_material_property(base, '', U.MaterialProperty.MP_BASE_COLOR)
     assert M.connect_material_property(glow, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop, value in ((U.MaterialProperty.MP_ROUGHNESS, 1.), (U.MaterialProperty.MP_SPECULAR, 0.)):

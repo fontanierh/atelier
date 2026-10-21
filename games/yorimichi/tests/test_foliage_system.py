@@ -1,7 +1,9 @@
 """Universal foliage ownership, geometry bounds and disabled-source invariants."""
 import importlib.util
+import ast
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -9,6 +11,36 @@ GAME = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('foliage_system', GAME/'foliage_system.py')
 F = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(F)
+
+
+def test_canopy_graph_uses_unreal_vertex_colour_default_rgb_and_alpha_outputs():
+    # UE5.8's VertexColor constructor leaves RGB unnamed. The editor library
+    # accepts the default output and individual R/G/B/A masks, but not "RGB".
+    script=GAME/'unreal/Scripts/build_foliage_system.py'
+    function=next(n for n in ast.parse(script.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='canopy_material')
+    class Node:
+        def __init__(self,kind):self.kind=kind
+        def set_editor_property(self,*args):pass
+    edges=[]
+    def connect(src,out,dst,pin):
+        edges.append((src.kind,out,dst.kind,pin))
+        return src.kind!='vertex' or out in ('','R','G','B','A')
+    def haze(material,base,glow,base_out=''):
+        assert base.kind=='vertex' and base_out==''
+        return base,glow
+    editor=SimpleNamespace(does_asset_exist=lambda path:False,save_loaded_asset=lambda asset:True)
+    materials=SimpleNamespace(delete_all_material_expressions=lambda *a:None,
+        create_material_expression=lambda mat,kind,*args:Node(kind),connect_material_expressions=connect,
+        connect_material_property=lambda *a:True,recompile_material=lambda *a:None)
+    unreal=SimpleNamespace(Material='material',MaterialFactoryNew=lambda:None,
+        MaterialExpressionVertexColor='vertex',MaterialExpressionMultiply='multiply',MaterialExpressionConstant='constant',
+        MaterialProperty=SimpleNamespace(MP_BASE_COLOR='base',MP_EMISSIVE_COLOR='glow',MP_ROUGHNESS='rough',MP_SPECULAR='spec'),
+        AssetToolsHelpers=SimpleNamespace(get_asset_tools=lambda:SimpleNamespace(create_asset=lambda *a:Node('material'))))
+    owner=dict(F=F,E=editor,M=materials,U=unreal,atmosphere=SimpleNamespace(apply=haze),
+               see_through=SimpleNamespace(add_mask=lambda *a:None))
+    exec(compile(ast.Module(body=[function],type_ignores=[]),str(script),'exec'),owner)
+    assert owner['canopy_material'](True).kind=='material'
+    assert edges==[('vertex','','multiply','A'),('vertex','A','multiply','B')]
 
 
 def source(count=900, kind='tree'):
