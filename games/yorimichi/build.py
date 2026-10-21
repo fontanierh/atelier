@@ -1403,7 +1403,9 @@ def unreal_steps(ctx):
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'], references=['materials.shared'],
+             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'],
+             references=['materials.shared', *['foliage.' + name + '.native' for name in
+                         json.loads((REGIONS / 'skatepark' / 'park.json').read_text()).get('trees', {})]],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
