@@ -14,8 +14,14 @@ def unreal_root():
 
 
 def unreal_cmd(root=None):
-    """The command-line editor, for imports, scripts and cooks."""
-    return Path(root or unreal_root()) / 'Engine/Binaries/Mac/UnrealEditor-Cmd'
+    """@cc [owner:fontanierh,label:correctness] source-editor-discovery
+    Prefer the command-line editor when present. A source build's actual editor
+    app MAY serve imports/scripts/cooks when that command is absent. Discovery
+    MUST remain inside the explicitly selected engine and MUST NOT execute it.
+    """
+    command = Path(root or unreal_root()) / 'Engine/Binaries/Mac/UnrealEditor-Cmd'
+    app = unreal_app(root)
+    return app if not command.is_file() and app.is_file() else command
 
 
 def unreal_app(root=None):

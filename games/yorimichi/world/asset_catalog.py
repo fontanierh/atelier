@@ -89,7 +89,7 @@ MATERIAL_SLOTS = (
 )
 
 SHARED_MATERIALS = (
-    'MPC_Wind', 'M_Painted', 'M_Foliage', 'M_Grass', 'M_Sky', 'M_CloudShadow', 'M_Painterly',
+    'M_Village', 'MPC_Wind', 'M_Painted', 'M_Foliage', 'M_Grass', 'M_Sky', 'M_CloudShadow', 'M_Painterly',
     *(f'MI_{name}' for name in MATERIAL_SLOTS),
 )
 

@@ -25,7 +25,7 @@ def kernel():
     return [(x, y, tuple(w / totals[k] for k, w in enumerate(ws))) for x, y, ws in taps]
 
 
-def shader():
+def shader(lookup="SceneTextureLookup"):
     lines = [
         "float3 outc = Scene;",
         "if (Strength > 0.001) {",
@@ -38,7 +38,7 @@ def shader():
     for k in range(8):
         lines.append(f"float3 m{k} = 0, s{k} = 0;")
     for i, (x, y, weights) in enumerate(kernel()):
-        sample = "Scene" if x == 0 and y == 0 else f"SceneTextureLookup(clamp(uv + float2({x:.9f}, {y:.9f}) * radius * d, uvMin, uvMax), 14, true).rgb"
+        sample = "Scene" if x == 0 and y == 0 else f"{lookup}(clamp(uv + float2({x:.9f}, {y:.9f}) * radius * d, uvMin, uvMax), 14, true).rgb"
         lines.append(f"float3 c{i} = {sample};")
         lines.append(f"float3 c2_{i} = c{i} * c{i};")
         for k, weight in enumerate(weights):

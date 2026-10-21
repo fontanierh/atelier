@@ -1,5 +1,6 @@
 using UnrealBuildTool;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,9 +17,11 @@ public class Yorimichi : ModuleRules
         string[] Roots = { Path.Combine(Root, "games/yorimichi/unreal/Source"), Path.Combine(Root, "games/yorimichi/unreal/Config"), Path.Combine(Root, "games/yorimichi/unreal/Plugins"), Path.Combine(Root, "platform/engine/Plugins") };
         string[] Extensions = { ".h", ".hpp", ".cpp", ".c", ".cs", ".uplugin", ".inl", ".inc", ".mm", ".m", ".ush", ".usf", ".ini", ".uproject" };
         string[] Ignored = { "Binaries", "Intermediate", "Saved", "DerivedDataCache", "__pycache__" };
+        var CodeTools = new HashSet<string>(new[] { "prepare_wasm.py", "wasm_float.py", "wasm_float_helpers.py" }
+            .Select(Name => Path.Combine(Root, "platform/engine/Plugins/Activities/Skate/Tools", Name)));
         var Files = Roots.SelectMany(Dir => Directory.EnumerateFiles(Dir, "*", SearchOption.AllDirectories))
             .Concat(Directory.EnumerateFiles(Path.Combine(Root, "games/yorimichi/unreal"), "*.uproject"))
-            .Where(File => Extensions.Contains(Path.GetExtension(File)) &&
+            .Where(File => (Extensions.Contains(Path.GetExtension(File)) || CodeTools.Contains(File)) &&
                 !Path.GetRelativePath(Root, File).Split(Path.DirectorySeparatorChar).Any(Ignored.Contains))
             .OrderBy(File => Path.GetRelativePath(Root, File).Replace('\\', '/'), StringComparer.Ordinal);
         StringBuilder Records = new StringBuilder();
@@ -54,9 +57,15 @@ public class Yorimichi : ModuleRules
             System.IO.File.WriteAllText(Header, Contents);
         PrivateIncludePaths.Add(Generated);
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        // UI and developer files keep private helpers with common names. They
+        // must remain separate translation units regardless of adaptive grouping.
+        bUseUnity = false;
         // Dev/ holds the opt-in review, benchmark and film code; it includes the game headers beside this file.
         PrivateIncludePaths.Add(ModuleDirectory);
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "YorimichiAssets", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "AtelierStream", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "Sockets" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "YorimichiAssets", "AtelierCore", "AtelierAnimation", "AtelierLive", "AtelierFX", "AtelierSkate", "EnhancedInput", "AnimGraphRuntime", "Json", "AssetRegistry", "RenderCore", "Slate", "SlateCore", "ProceduralMeshComponent", "Sockets" });
+        bool NativeStream = Target.Platform.ToString() != "HTML5";
+        PublicDefinitions.Add("YORIMICHI_WITH_STREAMING=" + (NativeStream ? "1" : "0"));
+        if (NativeStream) PublicDependencyModuleNames.Add("AtelierStream");
         PublicDependencyModuleNames.Add("OnlineSubsystemUtils");
         PrivateDependencyModuleNames.Add("AnimationCore");
         PrivateDependencyModuleNames.AddRange(new string[] { "MediaAssets", "AudioMixer" });   // the soundtrack (JapanMusic)

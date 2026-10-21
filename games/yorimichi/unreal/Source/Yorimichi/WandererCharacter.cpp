@@ -17,7 +17,9 @@
 #include "AdventureMoveSet.h"
 #include "Algo/Find.h"
 #include "YorimichiPhone.h"
+#if YORIMICHI_WITH_STREAMING
 #include "AtelierStream.h"
+#endif
 #include "Misc/App.h"
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
@@ -258,12 +260,14 @@ void AWandererCharacter::InitializeLocalPlayer()
                 UE_LOG(LogTemp,Display,TEXT("CONTROLLER TRACE viewport key=%s event=%d value=%.2f device=%d"),*Event.Key.ToString(),int32(Event.Event),Event.AmountDepressed,Event.InputDevice.GetId());
         });
     }
+#if YORIMICHI_WITH_STREAMING
     if (FAtelierStream::IsRequested()) PhoneInput=MakeShared<FYorimichiPhone>(this);
+#endif
     SkateRide->Initialize(this);
     Preferences = NewObject<UJapanPreferences>(this);
     Preferences->Initialize(this);
     Map = NewObject<UJapanMap>(this);
-    Map->Initialize(this);
+    if (!AJapanWorld::IsBrowserScene()) Map->Initialize(this);
     bMapReview = FParse::Param(FCommandLine::Get(),TEXT("mapqa"));
     // Countryside ambience under everything (birdsong, breeze, a distant sea); combat sounds sit on top of it. It
     // outlives the character, so a switched-in one keeps it and is ready almost at once.
@@ -301,7 +305,7 @@ void AWandererCharacter::InitializeLocalPlayer()
     SetMouseReleased(!BenchmarkView.IsEmpty() || !TrailerSpecPath.IsEmpty());
     if (Landscape && Landscape->bGameplayReady)
     {
-        if (JapanNetwork::IsOnline(GetWorld()))
+        if (JapanNetwork::IsOnline(GetWorld()) && !AJapanWorld::IsBrowserScene())
         { Sailboat->Initialize(this,Landscape); Bike->Initialize(this); Horse->Initialize(this); }
         if (Preferences) Preferences->Apply();
     }
@@ -324,9 +328,12 @@ void AWandererCharacter::EnterWorld(AJapanWorld* World)
 {
     Landscape = World;
     if (!World || !World->bLoaded || IsNpc()) return;
-    Bike->Initialize(this);
-    Horse->Initialize(this);
-    Sailboat->Initialize(this,World);
+    if (!AJapanWorld::IsBrowserScene())
+    {
+        Bike->Initialize(this);
+        Horse->Initialize(this);
+        Sailboat->Initialize(this,World);
+    }
     if (!bSwitchedIn && !JapanNetwork::IsOnline(GetWorld()))
     {
         SetActorLocation(World->PlayerStart.GetLocation()+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),false,nullptr,ETeleportType::TeleportPhysics);
@@ -610,7 +617,14 @@ void AWandererCharacter::Sprint(const FInputActionValue& V)
 }
 void AWandererCharacter::Jog(const FInputActionValue& V) { bJog = V.Get<bool>(); }
 void AWandererCharacter::Walk(const FInputActionValue& V) { bWalk = V.Get<bool>(); }
-bool AWandererCharacter::IsPhoneTouchActive() const { return PhoneInput && PhoneInput->IsTouchActive(); }
+bool AWandererCharacter::IsPhoneTouchActive() const
+{
+#if YORIMICHI_WITH_STREAMING
+    return PhoneInput && PhoneInput->IsTouchActive();
+#else
+    return false;
+#endif
+}
 bool AWandererCharacter::IsSkateInputBlocked() const { return bMenuOpen || (Map && Map->IsOpen()); }
 FName AWandererCharacter::GetSkateBone(FName Contract) const
 {
@@ -701,6 +715,7 @@ bool AWandererCharacter::PressMove(FName Button)
 }
 void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 {
+    if (AJapanWorld::IsBrowserScene()) return;
     if (!Sailboat->IsEquipped() && RefuseVehicleOnTrain()) return;
     if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkSail(); return; } // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Horse->IsEquipped()) return;
@@ -711,6 +726,7 @@ void AWandererCharacter::ToggleSailboat(const FInputActionValue&)
 bool AWandererCharacter::OnVehicle() const { return Sailboat->IsEquipped() || Bike->IsEquipped() || Horse->IsEquipped(); }
 void AWandererCharacter::ToggleBike(const FInputActionValue&)
 {
+    if (AJapanWorld::IsBrowserScene()) return;
     if (!Bike->IsEquipped() && RefuseVehicleOnTrain()) return;
     if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkBike(); return; } // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Horse->IsEquipped()) return;
@@ -720,6 +736,7 @@ void AWandererCharacter::ToggleBike(const FInputActionValue&)
 }
 void AWandererCharacter::ToggleHorse(const FInputActionValue&)
 {
+    if (AJapanWorld::IsBrowserScene()) return;
     if (!Horse->IsEquipped() && RefuseVehicleOnTrain()) return;
     if (JapanNetwork::IsOnline(GetWorld())) { RequestNetworkHorse(); return; } // Enabled by the vehicle prediction layer.
     if (!bReady || bMenuOpen || IsZeppelinPassenger() || SkateRide->IsRiding() || Sailboat->IsEquipped() || Bike->IsEquipped()) return;
@@ -1056,6 +1073,7 @@ void AWandererCharacter::ToggleMenu(const FInputActionValue&)
 }
 void AWandererCharacter::ToggleMap(const FInputActionValue&)
 {
+    if (AJapanWorld::IsBrowserScene()) return;
     if (!bReady || !Map || bCinematic) return;
     if (Map->IsOpen()) Map->Close();
     else if (!bMenuOpen) Map->Open();     // not over the settings menu
@@ -1463,6 +1481,13 @@ void AWandererCharacter::Tick(float Dt)
         }
     }
     if (!Definition || !Landscape || !Landscape->bLoaded) return;
+    if (AJapanWorld::IsBrowserScene() && IsLocallyControlled() &&
+        GetActorLocation().Z < Landscape->PlayerStart.GetLocation().Z - 500.f)
+    {
+        const bool bWasSkating = SkateRide->IsRiding();
+        ReturnToSpawn();
+        if (bWasSkating) bRemountSkate = true;
+    }
     if(!BuildingReviewSpecPath.IsEmpty())
     {
         ReadyTime+=Dt;if(ReadyTime>1.5f){bReady=true;AdvanceBuildingReview(Dt);}return;
@@ -1540,7 +1565,8 @@ void AWandererCharacter::Tick(float Dt)
         // SafeRetry has its own rate limit. Retry even while the owner sends no
         // moves, otherwise a lost initial restart would leave both sides waiting.
         if (NeedsAck && PC) PC->SafeRetryClientRestart();
-        bReady = ReadyTime > 1.5f && !NeedsAck && (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
+        bReady = ReadyTime > 1.5f && !NeedsAck && (!AJapanWorld::IsBrowserScene() || (Landscape && Landscape->bGameplayReady)) &&
+            (!JapanNetwork::IsOnline(GetWorld()) || HasAuthority() || bNetworkMovementReady);
         if (bReady && HasAuthority() && JapanNetwork::IsOnline(GetWorld()))
         { bNetworkMovementReady = true; ForceNetUpdate(); }
         if (bReady && IsLocallyControlled() && !JapanNetwork::IsOnline(GetWorld()))
@@ -1558,7 +1584,9 @@ void AWandererCharacter::Tick(float Dt)
     if (bMapReview && IsLocallyControlled()) AdvanceMapReview(Dt);
     if (!BenchmarkView.IsEmpty()) AdvanceBenchmark(Dt);
     if (!TrailerSpecPath.IsEmpty()) AdvanceTrailer(Dt);
+#if YORIMICHI_WITH_STREAMING
     if (PhoneInput) PhoneInput->Tick(Dt);
+#endif
     if(IsZeppelinPassenger()){Stamina.Tick(Dt,false,false,bMenuOpen);return;}
     if (!JapanNetwork::IsOnline(GetWorld())) Sailboat->SetInput(MoveIntent,bMenuOpen || (Map && Map->IsOpen()));
     if (!JapanNetwork::IsOnline(GetWorld())) Bike->SetInput(GetBikeIntent(),GetBikeLean(),bMenuOpen || (Map && Map->IsOpen()));

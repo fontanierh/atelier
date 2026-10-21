@@ -152,7 +152,7 @@ std::vector<ControllerIntent> ProduceTrick(const DerivedControllerInput& c)
     if ((now&dark) != 0) emit("DarkCatch",1);
     if ((now&dark) != 0 && (before&dark) == 0) emit("NewDarkCatch",1);
     const auto length = std::sqrt(std::fma(x,x,y*y));
-    if (length > 0) { emit("BoardAdjustAngle",std::atan2(x,-y)); emit("BoardAdjustMag",length); }
+    if (length > 0) { emit("BoardAdjustAngle",Atan2(x,-y)); emit("BoardAdjustMag",length); }
     if (x != 0) emit("TweakX",x); if (y != 0) emit("TweakY",y);
     if ((now&(1u<<28)) != 0) emit("GrabWorld",1);
     if (x != 0) emit("HandPlantTweakX",x); if (y != 0) emit("HandPlantTweakY",y);

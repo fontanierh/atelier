@@ -46,11 +46,13 @@
     },
     {
       "Name": "PixelStreaming2",
-      "Enabled": true
+      "Enabled": true,
+      "PlatformDenyList": ["HTML5"]
     },
     {
       "Name": "Interchange",
-      "Enabled": true
+      "Enabled": true,
+      "PlatformDenyList": ["HTML5"]
     },
     {
       "Name": "AndroidFileServer",
@@ -78,7 +80,8 @@
     },
     {
       "Name": "AtelierStream",
-      "Enabled": true
+      "Enabled": true,
+      "PlatformDenyList": ["HTML5"]
     },
     {
       "Name": "ElectraPlayer",

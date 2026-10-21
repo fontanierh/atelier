@@ -1,9 +1,11 @@
 # Browser port verification
 
-Updated 2026-10-21. The stock Unreal Third Person baseline now builds, cooks and
-renders locally in Chrome through WebAssembly and WebGPU. **Yorimichi itself has
-not yet passed a browser build or gameplay check.** The next gate is its skating
-runtime, followed by a small representative scene.
+Updated 2026-10-21. The stock Unreal Third Person baseline builds, cooks and
+renders locally in Chrome through WebAssembly and WebGPU. Current skating math
+and a complete session replay also match the native FTZ reference in Chrome.
+Yorimichi's C++ has compiled and linked for HTML5; full-module preparation and
+the bounded skate-pier scene are still being integrated. **No Yorimichi browser
+gameplay pass is claimed yet.**
 
 This continues the [browser port handoff](https://github.com/fontanierh/atelier/blob/codex/webgpu-handoff/games/yorimichi/docs/BROWSER_PORT_HANDOFF.md).
 
@@ -101,37 +103,76 @@ Local evidence is retained under `build/yorimichi/webgpu/`: `guards/`,
 independent `sample-package/HTML5` archive. These outputs are ignored and are
 not committed game inputs.
 
-## Skating investigation in progress
+## Skating numeric compatibility
 
-The native float-environment probe confirmed that the real
-`FlushDenormalsToZero` enables FTZ. Wasm preserves subnormal operands/results and
-the unmodified function correctly returns false. Rounding, a fused-operation
-witness and signed zero matched; Emscripten warns that FENV_ACCESS is unsupported.
-Simply returning true would leave a known decaying-vector NaN failure unresolved.
+The original browser core correctly refused readiness: Wasm does not provide
+native flush-to-zero (FTZ). Returning true would hide a known decaying-vector
+failure. The required post-link pass instead makes FTZ arithmetic explicit only
+inside retained skating functions and private copies of their math helpers.
+Unrelated engine arithmetic and the original libc/libm bodies stay IEEE.
+The runtime checks actual input/output arithmetic, including negative zero,
+before becoming ready. An unprepared probe exits with code 3 and no output.
 
-The unchanged math corpus contains 34,309 cases. Native default-environment C++
-matched the frozen Rust oracle exactly. Unmodified Wasm differed by 166 NaN words
-only. Against native FTZ behavior, unmodified Wasm differed by 1,605 words across
-493 cases, including 1,439 non-NaN differences.
+Native default-environment C++ matched the unchanged frozen Rust math corpus.
+Against native FTZ, original Wasm differed in 1,605 words across 493 cases.
+The prepared implementation now matches all bits, including NaN sign and payload,
+without tolerances or canonicalization. A larger 111,469-case check adds 66,020
+atan2 inputs, FMA operand/NaN combinations, pre-rounding underflow and conversion
+boundaries. Its native and Wasm output is 3,029,332 bytes, SHA-256
+`4f96c14c8bf477c1b507746789cf309af93033722e8a8d69d43fb8eedcbf4d1f`.
+The reproducible guarded check is
+`platform/engine/Plugins/Activities/Skate/Tests/check_browser_math.py`.
 
-An ignored diagnostic prototype explicitly handles Wasm subnormal arithmetic,
-pre-rounding fused-operation underflow and min/max boundaries. With the engine's
-SIMD flags, all non-NaN outputs matched native FTZ; 166 NaN sign/payload
-differences remain. Chrome and Node produced identical complete prototype
-outputs: 2,101,476 bytes, SHA-256
-`75004e4ad8e7bf5e0f5c82533213648613848b07816727d85279e3145b6f7922`.
-No NaN canonicalization or tolerance was used. This is a prototype result, not
-an integrated or complete numeric-parity pass.
+A complete current-native session replay matched prepared Wasm in Node and
+Chrome: 187,273,896 bytes, SHA-256
+`f7ed0002cef58f13ec1e3644f40accc60b72ac80b7c9d2ab609103f64cca364e`.
+A diagnostic sustained run covered 48,000 ticks (400 simulated seconds), regular
+and goofy stance, idle/axis decay and six reactivations. Every pose was finite
+and included in the raw-bit digest; periodic full states and final states also
+matched. This does not establish the Unreal worker's lifecycle or input latency.
 
-The older full-session Rust check also found a mismatch against current native
-C++ before Wasm was introduced: byte 280,528, in an actor-query field during
-activation. That failure is retained separately. The current native session has
-also been replayed with verified FTZ; its trace differs from the default float
-environment. Full Wasm session comparison and sustained decay tests are next.
+The expanded check exposed link-time inlining outside the simulation namespace.
+C++ objects therefore remain optimized, but the initial Wasm link must use
+`-O0` without LTO. The pass verifies the actual link manifest and optimizes only
+after FTZ preparation. The complete session was rerun with the final initial-link and optimization
+policy: Node and Chrome again matched every byte, with zero runtime stderr bytes
+in Chrome. The complete guarded check took 49 seconds and peaked at 1.79 GiB.
+The sustained check still needs a final-policy rerun before accepting the scene.
+
+The older frozen Rust full-session check differs from current native C++ before
+Wasm is introduced, at byte 280,528 in an activation actor-query field. That
+failure remains recorded separately; it has not been relabeled as a Wasm pass.
+
+## Actual game integration
+
+All Yorimichi HTML5 C++ compilation and initial linking passed. Native streaming,
+HTTP live tooling and runtime GLB authoring have explicit HTML5 boundaries;
+the game uses cooked assets. Two existing typed JSON loops were made compatible
+with UE 5.8.3's shared-string keys. Game translation units compile separately to
+avoid private helper collisions in Unity files.
+
+The 306,771,833-byte initial module passed scoped arithmetic transformation.
+Pinned Binaryen's text parser repeatedly scanned gigabytes while disambiguating
+implicit SIMD lane memory indices. Naming the same memory explicitly fixed
+assembly without changing the operations: 20,876 spellings were disambiguated,
+and the full module assembled in about a minute. A subsequent optimizer attempt
+hit the normal aggregate 10 GiB guard; no prepared module was published. Inlining
+now uses the default tiny-function threshold, with single-caller expansion disabled.
+Optimization succeeded in 137 seconds at an aggregate peak of 6.84 GiB. The result
+is 254,499,394 bytes (about 243 MiB); it is diagnostic evidence, pending the normal
+final-source build and scene cook.
+
+The explicit browser scene selects the skate pier, Cairo, collision/rails,
+typed simulation data, the shared painterly material and original audio. Its
+build plan excludes the full island import. Readiness requires a versioned
+manifest, required assets and actual riding collision at spawn. Native play
+keeps its normal world; `-browserpilot` selects the bounded scene for diagnosis.
+The source editor and all game/plugin modules now compile successfully. The
+scene's asset imports, mobile shader cook and browser gameplay remain pending.
 
 ## Remaining gates
 
-- Resolve numeric compatibility and validate sustained sessions, worker
+- Rerun final-policy numeric/session checks; validate the actual Unreal worker
   startup/shutdown, resource loading and repeated activation/stow.
 - Add explicit browser boundaries for native streaming/live tooling and validate
   the mobile painterly material path.

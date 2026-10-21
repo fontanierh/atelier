@@ -389,6 +389,12 @@ def engine_version(ctx):
             engine / 'Engine' / 'Binaries' / 'Mac' / 'UnrealEditor.modules'] if engine else []
 
 
+def editor_compile(ctx):
+    root = getattr(ctx, 'unreal_root', None)
+    source = root is not None and not (root / 'Engine/Build/InstalledBuild.txt').is_file()
+    return UnrealCompile('YorimichiEditor', args=('-NoDebugInfo',) if source else ())
+
+
 def cook_step(ctx, steps):
     from atelier.build_cook_recovery import CookRecovery
     out = ctx.out
@@ -495,7 +501,7 @@ def mover_import_steps(character, out):
     """Its body (Scripts/import_character.py) and, if playable, its bike and horse clips (Scripts/import_ride_clips.py)."""
     k, modules = key(character), tuple(character.unreal['modules'])
     body, inputs = body_import(character.id, modules)
-    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.world'], needs=[f'characters.{k}', *unreal_modules.needs(modules)],
+    steps = [Step(f'unreal.{k}', [body], inputs=inputs, after=['unreal.compile'], needs=[f'characters.{k}', *unreal_modules.needs(modules)],
                   outputs=[content(character) / f'SK_{character.name}.uasset'], heavy=True,
                   about=f'{character.unreal_path}: its mesh, materials, own clips and base definition')]
     if character.playable:
@@ -582,7 +588,7 @@ def adventure_steps(out):
         Step('characters.adventure', [Python(adventure / 'export.py')], inputs=[adventure, *library.sources()],
              outputs=[out / 'adventure' / 'export.json'], about='Merged motion reference and two props'),
         Step('unreal.adventure', [UnrealScript(SCRIPTS / 'import_adventure.py', 'ADVENTURE IMPORT COMPLETE', null_rhi=True)],
-             inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.world'],
+             inputs=[SCRIPTS / 'import_adventure.py', SCRIPTS / 'animation_compression.py'], after=['unreal.compile'],
              needs=['characters.adventure'], outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'adventure' / 'reference.json'],
              heavy=True, about='/Game/Adventure: motion reference, sword and paraglider'),
         *[step for character in definition.movers() for step in mover_adventure_steps(character, out)],
@@ -1247,7 +1253,7 @@ def unreal_steps(ctx):
                      SKATE_DATA],
              outputs=[out / 'skate-simulation/verification.json', out / 'skate-simulation/package' / 'package-manifest.json'],
              about="assemble the Skate plugin's simulation package and verify every payload"),
-        Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
+        Step('unreal.compile', [editor_compile(ctx)], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
         *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
@@ -1337,7 +1343,7 @@ def unreal_steps(ctx):
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['unreal.world', 'world.skatepark'],
+             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'], references=['materials.shared'],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),
         Step('unreal.skate_board', [UnrealScript(SCRIPTS / 'board_dissolve_material.py', 'BOARD DISSOLVE MATERIAL COMPLETE')],
              inputs=[SCRIPTS / 'board_dissolve_material.py'], after=['unreal.compile'],
@@ -1504,6 +1510,13 @@ def ferry_steps(ctx):
     ]
 
 
+def browser_steps(ctx):
+    spec = importlib.util.spec_from_file_location('yorimichi_browser_build', GAME / 'browser_build.py')
+    browser = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(browser)
+    return browser.steps(ctx)
+
+
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     ferry = ferry_steps(ctx)
@@ -1513,6 +1526,7 @@ def steps(ctx):
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
+    result += browser_steps(ctx)
     # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
     for step in result:
         if 'unreal.world' in step.needs + step.after and step.name != 'unreal.north':

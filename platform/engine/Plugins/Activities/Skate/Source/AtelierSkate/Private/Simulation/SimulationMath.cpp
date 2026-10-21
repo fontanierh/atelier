@@ -1,4 +1,7 @@
 #include "SimulationMath.h"
+#if defined(__wasm__)
+#include "SimulationWebMath.h"
+#endif
 #if defined(__x86_64__) || defined(_M_X64)
 #include <xmmintrin.h>
 #endif
@@ -44,7 +47,16 @@ __declspec(noinline)
 #endif
 float NegatedProduct(float multiplier, float multiplicand)
 {
+#if defined(__wasm__)
+    // The native FNMUL's operand order selects the multiplicand's NaN first,
+    // then negates its sign. Preserve that order instead of Wasm's unspecified
+    // choice when both operands are NaNs.
+    if (std::isnan(multiplicand)) return -QuietOperand(multiplicand);
+    if (std::isnan(multiplier)) return -QuietOperand(multiplier);
     return -(multiplier*multiplicand);
+#else
+    return -(multiplier*multiplicand);
+#endif
 }
 float RoundTiesEven(float value)
 {
@@ -84,9 +96,23 @@ float RefinedReciprocal(float value, unsigned refinements)
     }
     return inverse;
 }
+#if defined(__wasm__)
+__attribute__((noinline))
+#endif
 bool FlushDenormalsToZero()
 {
-#if defined(__aarch64__) && (defined(__clang__) || defined(__GNUC__))
+#if defined(__wasm__)
+    // Wasm has no FPCR. The required browser build pass supplies FTZ in this
+    // namespace. Verify arithmetic itself; inspecting result bits avoids a
+    // flushed comparison accidentally hiding an unflushed result.
+    volatile float normal=0x1p-126f,subnormal=0x1p-149f,half=0.5f,two=2.0f;
+    const float output=normal*half,input=subnormal*two,negative=-normal*half;
+    std::uint32_t output_bits,input_bits,negative_bits;
+    std::memcpy(&output_bits,&output,4);
+    std::memcpy(&input_bits,&input,4);
+    std::memcpy(&negative_bits,&negative,4);
+    return output_bits==0 && input_bits==0 && negative_bits==0x80000000u;
+#elif defined(__aarch64__) && (defined(__clang__) || defined(__GNUC__))
     std::uint64_t control;
     __asm__ volatile("mrs %0, fpcr" : "=r"(control));
     control |= std::uint64_t(1) << 24;
@@ -108,8 +134,26 @@ float InverseLengthSquared(float value, unsigned refinements)
 }
 // Rust min/max quiet each input before the min-number instruction. Applying
 // fmin directly to a signaling NaN would lose a finite counterpart on arm64.
-float VectorMin(float a, float b) { return std::fmin(QuietOperand(a),QuietOperand(b)); }
-float VectorMax(float a, float b) { return std::fmax(QuietOperand(a),QuietOperand(b)); }
+#if defined(__wasm__)
+__attribute__((noinline))
+#endif
+float VectorMin(float a, float b)
+{
+#if defined(__wasm__)
+    if (std::isnan(a)&&std::isnan(b)) return QuietOperand(a);
+#endif
+    return std::fmin(QuietOperand(a),QuietOperand(b));
+}
+#if defined(__wasm__)
+__attribute__((noinline))
+#endif
+float VectorMax(float a, float b)
+{
+#if defined(__wasm__)
+    if (std::isnan(a)&&std::isnan(b)) return QuietOperand(a);
+#endif
+    return std::fmax(QuietOperand(a),QuietOperand(b));
+}
 float Length3(const Vec4& value)
 {
     const float squared = Dot3(value,value);
@@ -207,6 +251,11 @@ float Cos(float angle)
 }
 float Asin(float value)
 {
+#if defined(__wasm__)
+    // Native fused instructions preserve this input NaN. Wasm's separate
+    // sign operations otherwise select an intermediate with the opposite sign.
+    if (std::isnan(value)) return QuietOperand(value);
+#endif
     const float a=std::fabs(value), cube=(value*value)*a;
     float p0=std::fma(Word(0x400b1889),a,Word(0xc0d1360e));
     float p1=std::fma(Word(0x3e663246),a,Word(0xbf983f2f));
@@ -223,6 +272,14 @@ float Asin(float value)
     return std::fma(residual,r,value*left);
 }
 float Acos(float value) { return (Word(0x40490fdb)*0.5f)-Asin(value); }
+float Atan2(float vertical, float horizontal)
+{
+#if defined(__wasm__)
+    return web::Atan2(vertical,horizontal);
+#else
+    return std::atan2(vertical,horizontal);
+#endif
+}
 float Atan(float value)
 {
     const float absolute=std::fabs(value);

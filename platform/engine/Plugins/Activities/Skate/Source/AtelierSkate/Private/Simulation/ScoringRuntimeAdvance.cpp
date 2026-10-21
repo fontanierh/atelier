@@ -48,7 +48,7 @@ bool ScoringRuntime::Advance(const ScoringFrame& f,std::string& error)
             session.holder.FinishCollector();s.landing_countdown=2;
         }
         s.collector=next;s.start=f.position;s.peak=f.position[1];s.spin=0;
-        s.previous_heading=std::atan2(f.forward[0],f.forward[2]);s.air_metrics={};s.air_repetition=1;
+        s.previous_heading=Atan2(f.forward[0],f.forward[2]);s.air_metrics={};s.air_repetition=1;
         s.air_repetition_set=false;s.air_factor=1;s.grab_chain=0;s.collector_ticks=0;s.manual_revert_ticks=0;s.revert_id.reset();
         if(next==ScoringCollector::Air)
         {
@@ -86,7 +86,7 @@ bool ScoringRuntime::Advance(const ScoringFrame& f,std::string& error)
     {
         if(s.collector_ticks>5||(f.flags&0x01000000)!=0)s.sequence_active=true;
         constexpr float pi=3.14159265358979323846f,tau=6.28318530717958647692f;
-        const float heading=std::atan2(f.forward[0],f.forward[2]);float delta=std::fmod(heading-s.previous_heading+pi,tau);
+        const float heading=Atan2(f.forward[0],f.forward[2]);float delta=std::fmod(heading-s.previous_heading+pi,tau);
         if(delta<0)delta+=std::abs(tau);delta-=pi;s.spin+=delta;s.previous_heading=heading;s.peak=VectorMax(s.peak,f.position[1]);
         const float dx=f.position[0]-s.start[0],dz=f.position[2]-s.start[2],scale=s.air_factor*s.air_repetition;
         s.air_metrics[0]=data.collector.Curve(0x3c0,std::sqrt(dx*dx+dz*dz))*scale;

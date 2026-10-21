@@ -127,10 +127,11 @@ namespace
 		for (TFieldIterator<FProperty> It(Struct); It; ++It)
 		{
 			const FProperty* Prop = *It;
-			for (const TPair<FString, TSharedPtr<FJsonValue>>& Entry : Obj->Values)
+			for (const auto& Entry : Obj->Values)
 			{
-				if (!Entry.Key.Equals(Prop->GetName(), ESearchCase::IgnoreCase)) continue;
-				if (!StrictJsonValue(Prop, Entry.Value, Path.IsEmpty() ? Entry.Key : Path + TEXT(".") + Entry.Key, Error)) return false;
+				const FString Key(Entry.Key);
+				if (!Key.Equals(Prop->GetName(), ESearchCase::IgnoreCase)) continue;
+				if (!StrictJsonValue(Prop, Entry.Value, Path.IsEmpty() ? Key : Path + TEXT(".") + Key, Error)) return false;
 			}
 		}
 		return true;
@@ -182,8 +183,11 @@ namespace
 		{
 			const TSharedPtr<FJsonObject>* Child = nullptr;
 			if (!Val->TryGetObject(Child) || !Child) { Error = Path + TEXT(" must be an object"); return false; }
-			for (const TPair<FString, TSharedPtr<FJsonValue>>& Entry : (*Child)->Values)
-				if (!StrictJsonValue(Map->ValueProp, Entry.Value, Path + TEXT(".") + Entry.Key, Error)) return false;
+			for (const auto& Entry : (*Child)->Values)
+			{
+				const FString Key(Entry.Key);
+				if (!StrictJsonValue(Map->ValueProp, Entry.Value, Path + TEXT(".") + Key, Error)) return false;
+			}
 			return true;
 		}
 		return true;

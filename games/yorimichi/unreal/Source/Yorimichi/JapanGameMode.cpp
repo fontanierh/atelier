@@ -15,6 +15,7 @@
 
 bool AJapanGameMode::IsScriptedSession()
 {
+    if (AJapanWorld::IsBrowserScene()) return true;
     const TCHAR* Cmd = FCommandLine::Get();
     for (const TCHAR* Key : { TEXT("qa"), TEXT("benchmark"), TEXT("trailershot"), TEXT("buildingreview"), TEXT("AtelierStream") })
         if (FCString::Stristr(Cmd, Key)) return true;
@@ -58,7 +59,7 @@ void AJapanGameMode::BeginPlay()
     AWandererCharacter* T = Cast<AWandererCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
     if (T) T->EnterWorld(W);
     SpawnFoxHunter(W, T);
-    if (W && W->bLoaded)
+    if (W && W->bLoaded && !AJapanWorld::IsBrowserScene())
     {
         ASwordTrainer::SpawnInVillage(W, W->VillageRecord);
         ASwordTrainer::SpawnRoninCamp(W);

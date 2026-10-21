@@ -66,6 +66,7 @@ static UStaticMesh* LoadMesh(const FString& Name)
 
 void AJapanWorld::Load()
 {
+    if (IsBrowserScene()) { LoadBrowserScene(); return; }
     const double Started = FPlatformTime::Seconds();
     TArray<FString> Incomplete;
     const FString JsonPath = AtelierDataPath(TEXT("world.json"));

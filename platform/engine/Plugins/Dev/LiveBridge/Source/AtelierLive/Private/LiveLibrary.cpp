@@ -33,6 +33,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#if ATELIER_WITH_NATIVE_LIVE
 #include "MeshDescription.h"
 #include "StaticMeshAttributes.h"
 #include "StaticMeshOperations.h"
@@ -43,6 +44,7 @@
 #include "IHttpRouter.h"
 #include "HttpServerRequest.h"
 #include "HttpServerResponse.h"
+#endif
 #if WITH_EDITOR
 #include "IPythonScriptPlugin.h"
 #include "Interfaces/IPluginManager.h"
@@ -65,8 +67,10 @@ namespace
     TMap<FString, TWeakObjectPtr<ALiveProp>> Props;
     FString Message; double MessageUntil = 0., MessageFrom = 0.;
     bool bStarted = false;
+#if ATELIER_WITH_NATIVE_LIVE
     TSharedPtr<IHttpRouter> Router;
     TArray<FHttpRouteHandle> Routes;
+#endif
 
     TFunction<bool(APawn*, const FVector&, float)> Teleport;
     FString Resolve(const FString& Path) { return ULiveLibrary::Resolve(Path); }
@@ -83,6 +87,12 @@ namespace
      *  world transform, one material slot per glTF material, base-colour texture and factor on the painterly master. */
     FLiveModel& LoadModel(const FString& GlbPath)
     {
+#if !ATELIER_WITH_NATIVE_LIVE
+        FLiveModel& Model = Models.FindOrAdd(GlbPath);
+        Model.Error = TEXT("Runtime GLB authoring is unavailable in a browser build; use cooked assets");
+        UE_LOG(LogTemp, Error, TEXT("%s"), *Model.Error);
+        return Model;
+#else
         const FString Full = Resolve(GlbPath);
         const FDateTime Stamp = IFileManager::Get().GetTimeStamp(*Full);
         FLiveModel& Model = Models.FindOrAdd(Full);
@@ -152,6 +162,7 @@ namespace
         Model.Mesh = Mesh; Model.Bounds = Mesh->GetBoundingBox();
         UE_LOG(LogTemp, Display, TEXT("LIVE model %s: %d parts, %d materials, bounds %s"), *Full, Parts, Mesh->GetStaticMaterials().Num(), *Model.Bounds.ToString());
         return Model;
+#endif
     }
 
     FString JsonString(const TSharedRef<FJsonObject>& Object)
@@ -408,6 +419,7 @@ int32 ULiveLibrary::LoadOverlay(const FString& Name)
 }
 
 // ------------------------------------------------------------------ bridge
+#if ATELIER_WITH_NATIVE_LIVE
 namespace
 {
     TUniquePtr<FHttpServerResponse> Json(const TSharedRef<FJsonObject>& O) { return FHttpServerResponse::Create(JsonString(O), TEXT("application/json")); }
@@ -467,17 +479,25 @@ static bool LoopbackOnly(int32 Port)
     FString Default;
     return GConfig->GetString(TEXT("HTTPServer.Listeners"), TEXT("DefaultBindAddress"), Default, GEngineIni) && IsLoopback(Default);
 }
+#endif
 
 void AtelierLive::SetTeleport(TFunction<bool(APawn*, const FVector&, float)> InTeleport) { Teleport = MoveTemp(InTeleport); }
 
 void AtelierLive::Stop()
 {
+#if ATELIER_WITH_NATIVE_LIVE
     if (Router) for (const FHttpRouteHandle& Route : Routes) Router->UnbindRoute(Route);
-    Routes.Reset(); Router.Reset(); bStarted = false; Teleport = nullptr;
+    Routes.Reset(); Router.Reset();
+#endif
+    bStarted = false; Teleport = nullptr;
 }
 
 void AtelierLive::Start(UWorld* World)
 {
+#if !ATELIER_WITH_NATIVE_LIVE
+    if (FParse::Param(FCommandLine::Get(), TEXT("live")))
+        UE_LOG(LogTemp, Error, TEXT("LIVE HTTP bridge is unavailable in a browser build"));
+#else
     if (bStarted || !World || World->GetNetMode() != NM_Standalone || FParse::Param(FCommandLine::Get(), TEXT("nolive"))) return;
 #if !WITH_EDITOR
     // A packaged game is not inside the repository its overlays and Python helper come from, and should not listen
@@ -519,4 +539,5 @@ void AtelierLive::Start(UWorld* World)
     // Everything accepted so far comes back on every start.
     TArray<FString> Files; IFileManager::Get().FindFiles(Files, *(ULiveLibrary::LiveRoot() / Settings().OverlayFolder / TEXT("*.json")), true, false);
     for (const FString& File : Files) ULiveLibrary::LoadOverlay(FPaths::GetBaseFilename(File));
+#endif
 }

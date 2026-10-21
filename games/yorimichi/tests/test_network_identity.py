@@ -247,7 +247,7 @@ def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
     recipe = build.load_recipe('yorimichi')
     # Isolate only composition, without assembling unrelated world/character declarations.
     for name in ('world_steps', 'character_steps', 'sound_effect_steps', 'unreal_steps', 'staging_steps',
-                 'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'ferry_steps', 'fit_steps', 'pawn_steps'):
+                 'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'ferry_steps', 'fit_steps', 'pawn_steps', 'browser_steps'):
         monkeypatch.setattr(recipe, name, lambda *args: [])
     monkeypatch.setattr(recipe, 'staging_steps', lambda *args: [Step('data.stage', [])])
     monkeypatch.setattr(recipe, 'cook_step', lambda *args: Step('cook', []))
@@ -275,6 +275,16 @@ def test_game_plugin_code_and_configuration_participate_in_network_identity(tmp_
     before = identity.code_identity(tmp_path)
     source.write_bytes(b'changed')
     assert identity.code_identity(tmp_path) != before
+
+
+def test_browser_arithmetic_tools_participate_in_native_and_browser_identity(tmp_path):
+    paths = [write(tmp_path, relative, b'policy') for relative in sorted(identity.CODE_TOOLS)]
+    write(tmp_path, 'platform/engine/Plugins/Activities/Skate/Tools/unrelated.py', b'ignored')
+    assert identity.code_files(tmp_path) == paths
+    for path in paths:
+        before = identity.code_identity(tmp_path)
+        path.write_bytes(path.read_bytes() + b' changed')
+        assert identity.code_identity(tmp_path) != before
 
 
 def test_native_build_steps_track_game_owned_plugins(tmp_path):

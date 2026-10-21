@@ -1,3 +1,4 @@
+#if YORIMICHI_WITH_STREAMING
 #include "YorimichiPhone.h"
 #include "JapanNetwork.h"
 #include "AtelierStream.h"
@@ -207,3 +208,5 @@ void FYorimichiPhone::Tick(float Dt)
         Stream->Send(Stream->GetPlayer(), S);
     }
 }
+
+#endif // YORIMICHI_WITH_STREAMING

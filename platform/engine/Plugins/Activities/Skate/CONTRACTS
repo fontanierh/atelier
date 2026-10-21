@@ -1,0 +1,7 @@
+@cc [owner:fontanierh,label:correctness] browser-simulation-float-policy
+The browser skating runtime MUST verify actual FTZ input/output arithmetic before becoming ready;
+an unprepared Wasm module MUST fail readiness. Its preparation MUST preserve engine arithmetic and
+data, rewriting only named simulation functions and private copies of their libm dependencies.
+Missing retained boundaries, unsupported arithmetic, stale preparation or numeric proof failures
+MUST fail rather than publish an IEEE fallback. Native simulation arithmetic MUST remain unchanged.
+The preparation implementation MUST participate in the compiled game's compatibility identity.
