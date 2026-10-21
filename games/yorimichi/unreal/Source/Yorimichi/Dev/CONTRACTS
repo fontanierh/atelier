@@ -7,6 +7,13 @@ Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored ri
 retain that simplification chain and screen sizes rather than repeating full trunk detail at distance. Canopy LODs and shadow MUST preserve every remaining corner and winding.
 Committed-corner equality MUST NOT substitute for canonical build/reduction/render and collision checks.
 A failed cook, missing rigid corner, stale package or invalid source MUST stop registry publication.
+For engine-reduced original LODs without stored descriptions, compaction MUST use
+the same current ExportStaticMeshLOD readback as the certified source exporter,
+without creating or committing source descriptions. Complete finite attributes,
+material/role classification and exact rigid multiplicity checks MUST still run.
+Original-to-prepared rigid keys MAY equate positive and negative numeric zero,
+because source JSON transport loses zero's sign. Every finite nonzero float MUST
+remain exact; this MUST NOT normalize emitted corners or their saved-output hashes.
 
 @cc [owner:fontanierh,label:correctness] prepared-foliage-collision-ownership
 Mixed scenery MUST retain exact rigid-only complex collision; a district/crown box is forbidden.
