@@ -19,7 +19,7 @@ class Properties(dict):
 
 def fixture(tmp_path):
     slot = Properties(material_slot_name='FoliageRoles_Body', imported_material_slot_name='Body',
-                      uv_channel_data={'densities': [1., 2.]})
+                      uv_channel_data=Properties(override_densities=False, local_uv_densities=[1., 2., 0., 0.]))
     originals = [deepcopy(slot)]
     slots = [deepcopy(slot), Properties(material_slot_name='CanopyNear'), Properties(material_slot_name='CanopyFar')]
     props = Properties(static_materials=slots, auto_compute_lod_screen_size=False,
@@ -81,7 +81,7 @@ def test_changed_render_semantics_refuse_before_snapshot(tmp_path, mutation):
         'far_binding': lambda: bindings.__setitem__(2, 'old'),
         'slot_name': lambda: slots[0].__setitem__('material_slot_name', 'lost_role'),
         'imported_name': lambda: slots[0].__setitem__('imported_material_slot_name', 'other'),
-        'uv_metadata': lambda: slots[0].__setitem__('uv_channel_data', {'densities': [9., 9.]}),
+        'uv_metadata': lambda: slots[0]['uv_channel_data'].__setitem__('override_densities', True),
         'automatic_lod': lambda: props.__setitem__('auto_compute_lod_screen_size', True),
         'distance_fields': lambda: props.__setitem__('generate_mesh_distance_field', True),
         'lightmap_channel': lambda: props.__setitem__('light_map_coordinate_index', 1),
@@ -121,3 +121,25 @@ def test_geometry_change_and_unavailable_readback_are_misses(tmp_path):
     reasons = []
     assert not validation.matches(**args, refusal=reasons.append)
     assert 'KeyError' in reasons[0]
+
+
+def test_generated_uv_densities_follow_variant_geometry(tmp_path):
+    args, _, _, slots, *_ = fixture(tmp_path)
+    slots[0]['uv_channel_data']['local_uv_densities'] = [3., 4., 0., 0.]
+    assert validation.matches(**args)
+
+
+@pytest.mark.parametrize('densities', [[-1., 0., 0., 0.], [float('nan'), 0., 0., 0.], [float('inf'), 0., 0., 0.], []])
+def test_invalid_generated_uv_densities_refuse(tmp_path, densities):
+    args, _, _, slots, *_ = fixture(tmp_path)
+    slots[0]['uv_channel_data']['local_uv_densities'] = densities
+    assert not validation.matches(**args)
+
+
+def test_explicit_uv_density_overrides_are_preserved(tmp_path):
+    args, _, originals, slots, *_ = fixture(tmp_path)
+    originals[0]['uv_channel_data']['override_densities'] = True
+    slots[0]['uv_channel_data']['override_densities'] = True
+    assert validation.matches(**args)
+    slots[0]['uv_channel_data']['local_uv_densities'][0] = 8.
+    assert not validation.matches(**args)
