@@ -178,3 +178,30 @@ def test_headroom_covers_capsule_overhang_at_real_kit_and_ground_endpoints(x):
     head={'name':'boardwalk','poly':[[-1,-1],[0,-1],[0,1],[-1,1]],'z0':[-.2]*4,'z1':[0.]*4}
     with gondola_modules('solid',pure=False),pytest.raises(ValueError,match='headroom'):
         access_headroom({'route':[[0,0,0],[1,0,0]],'surfaces':[floor]},[mesh],{'obstacles':[head]},fixture()[0],fixture()[1])
+
+
+def test_stringer_post_feet_stay_behind_the_stair_exit():
+    """The floor_rim exit was blocked by the last post's raised .8m stone foot."""
+    from contextlib import nullcontext
+    class Sink:
+        def __init__(self,*a):pass
+        def tagged(self,*a):return nullcontext()
+        def at(self,*a):return nullcontext()
+        def prism(self,*a,**k):pass
+        def box(self,*a,**k):pass
+    feet=[]
+    def support(mesh,G,frame,xy,top,section):
+        feet.append(np.asarray(xy,float));return {'xy':list(map(float,xy))}
+    ns={'np':np,'math':math,'solid':SimpleNamespace(Mesh=Sink,TIMBER=1,TIMBER_DARK=2,DECK=3),
+        'STATIONS':{'fixture':{'access_turn_deg':180.,'access_fit':{
+            'risers':52,'tread_m':.28,'run_m':21.38,'join_m':3.2,'flights':[13]*4,'landing_m':1.2}}},
+        'Station':lambda *a:SimpleNamespace(seats=[],proxies=[]),'P':SimpleNamespace(DEFAULTS={},derived=lambda p:{}),
+        'world_xy':lambda p,f:np.asarray(p),'ground_edge':lambda *a:(np.array([-1.1,1.1]),np.zeros(2)),
+        'railing':lambda *a,**k:None,'timber_support':support,'floor_intrusion':lambda *a:0.}
+    layout={'access':[{'edge':[[0,-1.2],[0,1.2]],'point':[-.5,.001],'z':13.832}]}
+    _,access=helper('access_stair',ns)('fixture',layout,SimpleNamespace(contact=lambda p:(np.zeros(len(p)),None)),(None,None,None,0))
+    route=np.asarray(access['route'])[:,:2];end=route[-1]
+    direction=(end-route[-2])/np.linalg.norm(end-route[-2])
+    corners=np.array([[-.4,-.4],[.4,-.4],[.4,.4],[-.4,.4]])
+    assert len(feet)>2
+    assert max(float(((foot+corners-end)@direction).max()) for foot in feet)<0
