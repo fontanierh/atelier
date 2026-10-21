@@ -22,6 +22,7 @@ CONTACT_TOL = 0.002            # m: an intentional contact (jaw, sheave, bullwhe
 FLOOR_TILT_TOL_DEG = 0.01      # the cabin floor stays level (it hangs plumb): largest tilt from level allowed
 BUDGET = {'cabin': 15000, 'tower': 8000, 'station': 60000}   # triangles per piece (a tower: per height)
 STATION_LOOP_MARGIN = 0.10     # m: the cabin body (bounding prism) to station structure, at every loop position
+TOWER_BODY_MARGIN = 0.30       # m: passing cabin body to tower hardware
 SEATED_TAGS = ('jaw', 'sheave', 'bullwheel groove')        # each such part carries the rope: gated per part
 NO_INTRUSION_TAGS = ('clamp',)                             # beside the rope by design: may not cut into it
 EXPECTED_PARTS = {'jaw': 2, 'sheave': 4, 'bullwheel groove': 1}   # parts on one rope: jaw halves, sheaves per train

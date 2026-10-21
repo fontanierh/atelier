@@ -287,7 +287,7 @@ def build_towers(p, d, cab):
             if not rc['ok']:
                 bad.append(f'{m.name}: rope within {rc["required_m"]} m of the cabin on {side}: {rc["where"]}')
         hits = solid.clearance([m], movers, places)
-        env = envelope(p, d, 0.3)
+        env = envelope(p, d, checks.TOWER_BODY_MARGIN)
         env_hits = solid.clearance([m], [env], places)
         tris = m.tris()
         extra = []

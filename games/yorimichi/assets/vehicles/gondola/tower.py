@@ -13,6 +13,7 @@ import math
 
 from mathutils import Vector
 
+from checks import TOWER_BODY_MARGIN
 from solid import (BOLT, CONCRETE, IRON, STEEL, STONE, TIMBER, Mesh, proxy_box)
 
 LEG = 0.30
@@ -168,13 +169,15 @@ class Tower:
                 for sy in (-1, 1):
                     for dx in (-0.08, 0.08):
                         self.seat('crossarm on cap girt', s * 0.32 + dx, sy * self.hy(zc - GIRT_H / 2), zc, on=('girt',))
-        # Steel knee braces from the crossarm (y = +-1.9) to the top girt of each y face.
+        # Keep the whole brace inboard of the passing cabin's clearance envelope.
+        # The top joint and its plate share this attachment; taller towers must not widen it.
+        knee_y = min(1.9, g / 2 - self.p['cabin_width'] / 2 - TOWER_BODY_MARGIN - 0.05)
         z1 = self.levels[1]
         for sx in (-1, 1):
             for sy in (-1, 1):
-                a = Vector((sx * 0.32, sy * 1.9, zc - 0.02)); b = Vector((sx * 0.32, sy * (self.hy(z1) + GIRT_D / 2 + 0.02), z1))
+                a = Vector((sx * 0.32, sy * knee_y, zc - 0.02)); b = Vector((sx * 0.32, sy * (self.hy(z1) + GIRT_D / 2 + 0.02), z1))
                 m.beam(a, b, 0.06, 0.14, IRON, up=(1, 0, 0))
-                m.box((sx * 0.32, sy * 1.9, zc - 0.015), (0.3, 0.32, 0.03), IRON)
+                m.box((sx * 0.32, sy * knee_y, zc - 0.015), (0.3, 0.32, 0.03), IRON)
         for s in (-1, 1):
             yc = s * (g / 2 - 0.11)
             # Timber carrier along the rope, resting on both crossarm beams, with steel end straps.
