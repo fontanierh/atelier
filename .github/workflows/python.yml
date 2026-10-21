@@ -16,7 +16,9 @@ jobs:
   tests:
     name: Python / ${{ matrix.group }}
     runs-on: macos-latest
-    timeout-minutes: 20
+    # The expanded regional suite reaches its final cases after twenty minutes
+    # on hosted macOS; keep the same workers and complete every selected test.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
