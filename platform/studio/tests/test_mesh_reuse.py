@@ -207,9 +207,10 @@ def test_preinventory_compatibility_refuses_package_saved_after_success(tmp_path
     assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': finished}, ['/Game/Region/Mesh'])
 
 
-def test_policy_refuses_dynamic_module_initialization_through_function():
+@pytest.mark.parametrize('call', ['s()', 'if True:\n s()', 'for _ in range(1):\n s()', 'result=s()'])
+def test_policy_refuses_dynamic_module_initialization_through_function(call):
     with pytest.raises(ValueError, match='Dynamic module initialization'):
-        reuse.policy("T={}\ndef s(): T['a']=1\ns()\ndef build(): return T\n", ('build',))
+        reuse.policy("T={}\ndef s(): T['a']=1\n" + call + "\ndef build(): return T\n", ('build',))
 
 
 def test_known_prior_environment_cannot_become_unknown(tmp_path):

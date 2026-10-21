@@ -87,9 +87,15 @@ def policy(source, functions, resolve_import=None):
                 if isinstance(called, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates_globals(called, seen):
                     return True
         return False
-    for node in tree.body:
-        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
-            called = declarations.get(node.value.func.id)
+    def module_execution(node):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            return
+        yield node
+        for child in ast.iter_child_nodes(node):
+            yield from module_execution(child)
+    for node in module_execution(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            called = declarations.get(node.func.id)
             if isinstance(called, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates_globals(called, set()):
                 raise ValueError('Dynamic module initialization cannot establish a geometry policy')
     if not functions or any(name not in declarations for name in functions):
