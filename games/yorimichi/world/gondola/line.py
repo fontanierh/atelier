@@ -1,69 +1,121 @@
-"""Loaded spans joined to the kit's straight, level sheave trains."""
+"""Loaded spans joined by tower saddles and short station vertical curves."""
 import math
 import numpy as np
 
 
-def span_height(s, length, za, zb, *, sag=.035, shoulder=40.):
-    """Parabolic loaded span, eased into zero-slope support contacts.
+def span_height(s, length, za, zb, *, sag=.035):
+    """One loaded span: the small-sag parabola through both supports.
 
-    The central span keeps the authored sag. Within each shoulder a cubic
-    Hermite segment meets both the support's level tangent and the parabola's
-    exact value and derivative. Supports include their actual train extents;
-    the span starts at the last sheave and ends at the next first sheave.
+    The authored sag is a share of the span length, so mid-span drops by
+    sag * length. The end slopes are m - 4*sag and m + 4*sag for chord slope
+    m. Tower saddles and station vertical curves are added by centre_profile;
+    a span itself never changes curvature sign.
     """
-    if not np.isfinite([length,za,zb,sag,shoulder]).all() or length <= 0 or shoulder <= 0 or sag < 0:
+    if not np.isfinite([length,za,zb,sag]).all() or length <= 0 or sag < 0:
         raise ValueError('Invalid rope span')
     x = np.asarray(s, float)
     if not np.isfinite(x).all() or np.any(x < 0) or np.any(x > length):
         raise ValueError('Rope span query outside support interval')
-    w = min(shoulder, length/2)
-    slope = (zb-za)/length
-
-    def parabola(q):
-        t = q/length
-        return za + (zb-za)*t - 4*sag*length*t*(1-t)
-
-    def derivative(q):
-        return slope - 4*sag*(1-2*q/length)
-
-    def hermite(t, a, b, da, db):
-        return (2*t**3-3*t**2+1)*a + (t**3-2*t**2+t)*da + (-2*t**3+3*t**2)*b + (t**3-t**2)*db
-
-    z = parabola(x)
-    z = np.where(x < w, hermite(x/w, za, parabola(w), 0, w*derivative(w)), z)
-    z = np.where(x > length-w, hermite((x-length+w)/w, parabola(length-w), zb,
-                                    w*derivative(length-w), 0), z)
-    return z
+    t = x/length
+    return za + (zb-za)*t - 4*sag*length*t*(1-t)
 
 
-def centre_profile(supports, *, train_half=1.6, step=.05, sag=.035):
+def _hermite(t, a, b, da, db):
+    """Cubic Hermite from (0,a,da) to (1,b,db)."""
+    return (2*t**3-3*t**2+1)*a + (t**3-2*t**2+t)*da + (-2*t**3+3*t**2)*b + (t**3-t**2)*db
+
+
+def _support_contacts(supports, sag, train_half):
+    """Converged rope heights at each support and the span chord slopes.
+
+    A tower's two train contacts sit on its saddle, so each contact height
+    follows the adjacent span slope and vice versa. Eight fixed-point passes
+    resolve that coupling to far below the mesh tolerance.
+    """
+    nominal=[float(z) for _,z,_ in supports]
+    minus=list(nominal); plus=list(nominal)
+    spans=[]
+    for (s0,_,tower0),(s1,_,tower1) in zip(supports,supports[1:]):
+        left=s0+(train_half if tower0 else 0.)
+        right=s1-(train_half if tower1 else 0.)
+        if right<=left:
+            raise ValueError('Overlapping support contact trains')
+        spans.append((left,right))
+    slopes=[0.0]*len(spans)
+    for _ in range(8):
+        for i,((_,_,tower0),(_,_,tower1)) in enumerate(zip(supports,supports[1:])):
+            left=plus[i] if tower0 else nominal[i]
+            right=minus[i+1] if tower1 else nominal[i+1]
+            slopes[i]=(right-left)/(spans[i][1]-spans[i][0])
+        for i in range(1,len(supports)-1):
+            if not supports[i][2]:
+                continue
+            m_in=slopes[i-1]+4*sag; m_out=slopes[i]-4*sag; h=2*train_half
+            minus[i]=nominal[i]-h*(3*m_in+m_out)/8
+            plus[i]=nominal[i]+h*(m_in+3*m_out)/8
+    return nominal,minus,plus,spans,slopes
+
+
+def tower_saddles(supports, *, sag=.035, train_half=1.6):
+    """The fitted saddle of every tower: contact offsets and end slopes."""
+    nominal,minus,plus,spans,slopes=_support_contacts(supports,sag,train_half)
+    out=[None]*len(supports)
+    for i in range(1,len(supports)-1):
+        if not supports[i][2]:
+            continue
+        out[i]={'a':minus[i]-nominal[i],'b':plus[i]-nominal[i],
+                'm_in':slopes[i-1]+4*sag,'m_out':slopes[i]-4*sag,'half':train_half}
+    return out
+
+
+def centre_profile(supports, *, train_half=1.6, step=.05, sag=.035, station_curve=7.0):
     """@cc [owner:fontanierh,label:correctness] gondola-shared-rope-path
     The generated rope, grip placements and runtime samples MUST use this one
-    support profile, with level sheave contacts and continuous span tangents.
+    support profile, with a tangent-continuous saddle over every tower train
+    and continuous span tangents. Each span keeps the authored parabolic sag.
     Production MUST separately refuse actual jaw or hardware clearance failures.
 
     Supports are (longitudinal distance, rope z, is_tower). Station contacts
-    have no train extension here: their kit-owned loops provide that geometry.
+    have no train extension here: their kit-owned loops provide that geometry,
+    joined by a short vertical curve no longer than `station_curve` metres.
     """
-    if (len(supports) < 2 or not np.isfinite([step,train_half,sag]).all() or
-            not np.isfinite(np.asarray(supports,float)).all() or step <= 0 or train_half <= 0 or sag < 0):
+    if (len(supports) < 2 or not np.isfinite([step,train_half,sag,station_curve]).all() or
+            not np.isfinite(np.asarray(supports,float)).all() or step <= 0 or train_half <= 0 or sag < 0 or station_curve <= 0):
         raise ValueError('A rope line requires two stations and a positive sample step')
     if any(b[0] <= a[0] for a,b in zip(supports,supports[1:])):
         raise ValueError('Rope supports must be ordered')
-    pts = []
-    for i, ((s0,z0,tower0),(s1,z1,tower1)) in enumerate(zip(supports,supports[1:])):
-        left, right = s0+(train_half if tower0 else 0), s1-(train_half if tower1 else 0)
-        if right <= left:
-            raise ValueError('Overlapping support contact trains')
-        if not pts:
-            pts.append((s0,z0))
-        if left > pts[-1][0]:
-            pts.append((left,z0))
-        x = np.linspace(0,right-left,max(2,math.ceil((right-left)/step)+1))
-        z = span_height(x,right-left,z0,z1,sag=sag)
-        pts.extend(zip(left+x[1:],z[1:]))
-        if tower1:
-            pts.append((s1+train_half,z1))
+    nominal,minus,plus,spans,slopes=_support_contacts(supports,sag,train_half)
+    saddles=tower_saddles(supports,sag=sag,train_half=train_half)
+    pts=[(supports[0][0],nominal[0])]
+    for i,((s0,_,tower0),(s1,_,tower1)) in enumerate(zip(supports,supports[1:])):
+        left,right=spans[i]
+        L=right-left
+        z0=plus[i] if tower0 else nominal[i]
+        z1=minus[i+1] if tower1 else nominal[i+1]
+        m=slopes[i]
+        x=np.linspace(0,L,max(2,math.ceil(L/step)+1))
+        z=span_height(x,L,z0,z1,sag=sag)
+        if not tower0:
+            w=min(station_curve,L/2)
+            edge=float(span_height(w,L,z0,z1,sag=sag))
+            slope=m-4*sag*(1-2*w/L)
+            z=np.where(x<w,_hermite(x/w,z0,edge,0,w*slope),z)
+        if not tower1:
+            w=min(station_curve,L/2)
+            base=float(span_height(L-w,L,z0,z1,sag=sag))
+            slope=m-4*sag*(1-2*(L-w)/L)
+            z=np.where(x>L-w,_hermite((x-(L-w))/w,base,z1,w*slope,0),z)
+        start=0 if pts[-1][0]<left-1e-12 else 1
+        pts.extend(zip(left+x[start:],z[start:]))
+        if tower1 and i+1 < len(spans):
+            # 3.2 m saddle: tangent to both spans at their contact heights.
+            s=saddles[i+1]
+            h=2*train_half
+            u=np.linspace(0,1,max(2,math.ceil(h/step)+1))[1:]
+            q=-train_half+u*h
+            mid=.5*(s['m_in']+s['m_out']); k=(s['m_out']-s['m_in'])/(2*h)
+            arc=nominal[i+1]+mid*q+k*q*q
+            pts.extend(zip(s1-train_half+u*h,arc))
     return np.asarray(pts,float)
 
 

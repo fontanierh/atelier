@@ -23,7 +23,7 @@ import walk as W
 from cabin import Cabin, pose
 from tower import Tower
 from stations import Station, Valley, Rim, Crater, railing
-from gondola.line import centre_profile, closed_circuit, placed, simplify, station_frame, near_rope_tolerance, float32_cm_axes, stored_groove_audit, recover_rope_vertices
+from gondola.line import centre_profile, closed_circuit, placed, simplify, station_frame, near_rope_tolerance, float32_cm_axes, stored_groove_audit, recover_rope_vertices, tower_saddles
 from gondola.products import ground
 from gondola.structures import validate as validate_structures
 from gondola.clearance import StructureClearance, structure_envelope
@@ -515,7 +515,7 @@ def recovered_rope_axes(mesh,path,ring_counts):
             if data is not None and data.users==0:bpy.data.meshes.remove(data)
 
 
-def tower_fit(key,s,height,A,direction,G,p):
+def tower_fit(key,s,height,A,direction,G,p,saddle=None,build=True):
     xy=A+s*direction
     prototype=Tower(p,height)
     feet=np.array([(sx*prototype.hx(.7)+u*.5,sy*prototype.hy(.7)+v*.5)
@@ -531,10 +531,13 @@ def tower_fit(key,s,height,A,direction,G,p):
     def footprint(poly):
         low,high=owned_range(G,world_xy(poly,frame))
         return low-datum,high-datum
-    tower=Tower(p,height,ground=contact,ground_bounds=footprint)
+    tower=Tower(p,height,ground=contact,ground_bounds=footprint,saddle=saddle)
+    row={'id':key,'s':s,'height':height,'origin':[float(xy[0]),float(xy[1]),datum],
+         'heading':math.degrees(math.atan2(direction[1],direction[0]))}
+    if not build:
+        return tower,None,frame,row
     mesh=tower.build();mesh.name=f'GD_{key}_Tower'
-    return tower,mesh,frame,{'id':key,'s':s,'height':height,'origin':[float(xy[0]),float(xy[1]),datum],
-                           'heading':math.degrees(math.atan2(direction[1],direction[0]))}
+    return tower,mesh,frame,row
 
 
 def audit_span(key,profile,cab,p):
@@ -692,16 +695,22 @@ def main():
             stations[key]=data;frames[key]=frame
         A,B=np.asarray(STATIONS[first]['mouth']),np.asarray(STATIONS[last]['mouth'])
         length=float(np.linalg.norm(B-A));direction=(B-A)/length
-        supports=[(.6,frames[first][3]+d['rope_height_above_platform'],False)]
-        towers=[];tower_geometry=[]
+        fitted=[]
         for index,(s,height) in enumerate(line['towers']):
-            tower,mesh,frame,row=tower_fit(f'{line["id"]}_{index}',s,height,A,direction,G,p)
+            tower,mesh,frame,row=tower_fit(f'{line["id"]}_{index}',s,height,A,direction,G,p,build=False)
+            fitted.append((s,height,frame,row))
+        supports=[(.6,frames[first][3]+d['rope_height_above_platform'],False)]
+        for s,height,frame,row in fitted:
+            supports.append((s,frame[3]+height,True))
+        supports.append((length-.6,frames[last][3]+d['rope_height_above_platform'],False))
+        saddles=[row for row in tower_saddles(supports)]
+        towers=[];tower_geometry=[]
+        for index,(s,height,frame,row) in enumerate(fitted):
+            tower,mesh,frame,row=tower_fit(f'{line["id"]}_{index}',s,height,A,direction,G,p,saddle=saddles[index+1])
             row['mesh']=export_world(mesh,assets,mats,limit=checks.BUDGET['tower'],frame=frame,G=G,seats=tower.seats,riding=riding,
                                      structures=structures if line['id']=='L2' else None)
             exports.append(row['mesh']);towers.append(row);tower_geometry.append((tower,mesh,row))
             if line['id']=='L2':flight_boxes.append(row['mesh']['world_structure']['bounds_m'])
-            supports.append((s,frame[3]+height,True))
-        supports.append((length-.6,frames[last][3]+d['rope_height_above_platform'],False))
         profile=centre_profile(supports)
         if line['id']=='L2':
             world_profile=np.c_[A+profile[:,0,None]*direction,profile[:,1]]

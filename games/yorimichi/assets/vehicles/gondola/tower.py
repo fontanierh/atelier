@@ -28,9 +28,12 @@ SHEAVE_X = (-1.35, -0.6, 0.6, 1.35)
 
 
 class Tower:
-    def __init__(self, p, height, ground=None, ground_bounds=None):
+    def __init__(self, p, height, ground=None, ground_bounds=None, saddle=None):
         self.ground = ground
         self.ground_bounds = ground_bounds
+        # saddle: {m_in, m_out, half} from the fitted line. None keeps the
+        # standalone kit's level shave train (build.py's tower review).
+        self.saddle = saddle
         if ground is not None and ground_bounds is None:
             raise ValueError('Placed tower requires complete footing coverage/relief')
         self.pedestal_bases = {}
@@ -203,18 +206,42 @@ class Tower:
                 a = Vector((sx * 0.32, sy * knee_y, zc - 0.02)); b = Vector((sx * 0.32, sy * (self.hy(z1) + GIRT_D / 2 + 0.02), z1))
                 m.beam(a, b, 0.06, 0.14, IRON, up=(1, 0, 0))
                 m.box((sx * 0.32, sy * knee_y, zc - 0.015), (0.3, 0.32, 0.03), IRON)
+        def saddle_z(x):
+            if not self.saddle:
+                return H
+            h = 2 * self.saddle.get('half', 1.6)
+            mid = .5 * (self.saddle['m_in'] + self.saddle['m_out'])
+            k = (self.saddle['m_out'] - self.saddle['m_in']) / (2 * h)
+            return H + mid * x + k * x * x
+
+        def saddle_slope(x):
+            if not self.saddle:
+                return 0.0
+            h = 2 * self.saddle.get('half', 1.6)
+            mid = .5 * (self.saddle['m_in'] + self.saddle['m_out'])
+            k = (self.saddle['m_out'] - self.saddle['m_in']) / (2 * h)
+            return mid + 2 * k * x
+
         for s in (-1, 1):
             yc = s * (g / 2 - 0.11)
-            # Timber carrier along the rope, resting on both crossarm beams, with steel end straps.
+            # Timber carrier along the rope, following the saddle and resting
+            # on both crossarm beams, with steel end straps.
+            def carrier_z(x):
+                return max(saddle_z(x) - (self.rr + SHEAVE_R), H - 0.375)
             with m.tagged('carrier'):
-                m.box((0, yc, H - 0.375), (3.5, 0.1, 0.35), TIMBER)
+                knots = (-1.6, -1.35, -0.6, 0.6, 1.35, 1.6)
+                for a, b in zip(knots, knots[1:]):
+                    m.beam((a, yc, carrier_z(a)), (b, yc, carrier_z(b)), 0.1, 0.35, TIMBER, up=(0, 0, 1))
             for x in (-1.6, 1.6):
-                m.box((x, yc - s * 0.055, H - 0.375), (0.16, 0.012, 0.37), IRON)
+                m.box((x, yc - s * 0.055, carrier_z(x)), (0.16, 0.012, 0.37), IRON)
             for x in (-0.32, 0.32):
                 self.seat('sheave carrier', x, yc, H - 0.55, on=('crossarm',))
-            # Sheaves under the rope, axles into the carrier.
+            # Sheaves under the rope: each centre offset along the local rope
+            # normal, so the groove stays concentric with a tilted rope.
             for x in SHEAVE_X:
-                c = Vector((x, s * g / 2, H - self.rr - SHEAVE_R))
+                theta = math.atan(saddle_slope(x))
+                reach = self.rr + SHEAVE_R
+                c = Vector((x + reach * math.sin(theta), s * g / 2, saddle_z(x) - reach * math.cos(theta)))
                 # Groove shaped round the rope (never inside it); flanges outside the rope, below the jaws' bottom.
                 # The groove is an arc concentric with the rope, 2 mm larger, so its chords stay clear of the rope.
                 rr = self.rr; hw = rr + 0.035; rf = SHEAVE_R + 0.6 * rr; rg = rr + 0.002
