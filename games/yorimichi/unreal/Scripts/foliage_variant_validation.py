@@ -47,8 +47,8 @@ def matches(mesh, source, replacements, canopies, triangles, screens, geometry, 
         for index, (name, material) in enumerate(zip(('CanopyNear', 'CanopyFar'), canopies), len(originals)):
             if str(slots[index].get_editor_property('material_slot_name')) != name or mesh.get_material(index) != material:
                 return miss("canopy material binding")
-        for key, value in (('auto_compute_lod_screen_size', False), ('generate_mesh_distance_field', False),
-                           ('light_map_coordinate_index', 0)):
+        for key, value in (('bAutoComputeLODScreenSize', False), ('bGenerateMeshDistanceField', False),
+                           ('LightMapCoordinateIndex', 0)):
             if mesh.get_editor_property(key) != value:
                 return miss("mesh setting: " + key)
         expected_build = dict(recompute_normals=False, recompute_tangents=True, remove_degenerates=False,
@@ -65,7 +65,7 @@ def matches(mesh, source, replacements, canopies, triangles, screens, geometry, 
         if not snapshot(mesh, str(path)):
             return miss("native geometry snapshot")
         return True if digest(path) == geometry else miss("geometry digest")
-    except (AttributeError, IndexError, KeyError, OSError, RuntimeError, TypeError, ValueError) as error:
+    except Exception as error:  # Unreal reflection reports unavailable properties as plain Exception.
         return miss("readback: " + type(error).__name__ + ": " + str(error))
     finally:
         path.unlink(missing_ok=True)

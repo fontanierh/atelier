@@ -22,8 +22,8 @@ def fixture(tmp_path):
                       uv_channel_data=Properties(override_densities=False, local_uv_densities=[1., 2., 0., 0.]))
     originals = [deepcopy(slot)]
     slots = [deepcopy(slot), Properties(material_slot_name='CanopyNear'), Properties(material_slot_name='CanopyFar')]
-    props = Properties(static_materials=slots, auto_compute_lod_screen_size=False,
-                       generate_mesh_distance_field=False, light_map_coordinate_index=0)
+    props = Properties(static_materials=slots, bAutoComputeLODScreenSize=False,
+                       bGenerateMeshDistanceField=False, LightMapCoordinateIndex=0)
     bindings = ['wrapped', 'near', 'far']
     build = Properties(recompute_normals=False, recompute_tangents=True, remove_degenerates=False,
                        generate_lightmap_u_vs=False, use_full_precision_u_vs=True,
@@ -82,9 +82,9 @@ def test_changed_render_semantics_refuse_before_snapshot(tmp_path, mutation):
         'slot_name': lambda: slots[0].__setitem__('material_slot_name', 'lost_role'),
         'imported_name': lambda: slots[0].__setitem__('imported_material_slot_name', 'other'),
         'uv_metadata': lambda: slots[0]['uv_channel_data'].__setitem__('override_densities', True),
-        'automatic_lod': lambda: props.__setitem__('auto_compute_lod_screen_size', True),
-        'distance_fields': lambda: props.__setitem__('generate_mesh_distance_field', True),
-        'lightmap_channel': lambda: props.__setitem__('light_map_coordinate_index', 1),
+        'automatic_lod': lambda: props.__setitem__('bAutoComputeLODScreenSize', True),
+        'distance_fields': lambda: props.__setitem__('bGenerateMeshDistanceField', True),
+        'lightmap_channel': lambda: props.__setitem__('LightMapCoordinateIndex', 1),
         'normal_recompute': lambda: build.__setitem__('recompute_normals', True),
         'tangent_recompute': lambda: build.__setitem__('recompute_tangents', False),
         'remove_degenerates': lambda: build.__setitem__('remove_degenerates', True),
@@ -143,3 +143,13 @@ def test_explicit_uv_density_overrides_are_preserved(tmp_path):
     assert validation.matches(**args)
     slots[0]['uv_channel_data']['local_uv_densities'][0] = 8.
     assert not validation.matches(**args)
+
+
+def test_unreal_plain_reflection_exception_is_a_normal_miss(tmp_path):
+    args, *_ = fixture(tmp_path)
+    def missing(*args):
+        raise Exception('StaticMesh: Failed to find property')
+    args['mesh'].get_editor_property = missing
+    reasons = []
+    assert not validation.matches(**args, refusal=reasons.append)
+    assert 'Failed to find property' in reasons[0]
