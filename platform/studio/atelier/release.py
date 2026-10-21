@@ -248,6 +248,15 @@ class GitHub:
         except (ValueError, UnicodeDecodeError):
             raise TransportError() from None
 
+    def server_time(self):
+        """Use GitHub's response clock for shared pin expiry, never local file age."""
+        from email.utils import parsedate_to_datetime
+        raw = self.run(['api', f'repos/{self.repo}?clock={time.time_ns()}', '--hostname', 'github.com', '--include'])
+        for line in raw.splitlines():
+            if line.lower().startswith(b'date:'):
+                return parsedate_to_datetime(line[5:].strip().decode('ascii')).timestamp()
+        raise TransportError()
+
 
 def asset_map(github, release):
     pages = github.read(f'releases/{release["id"]}/assets?per_page=100', pages=True)

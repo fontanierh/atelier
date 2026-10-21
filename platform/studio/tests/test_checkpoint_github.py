@@ -20,8 +20,19 @@ class GitHub:
         self.private = True
         self.releases, self.files, self.events = {}, {}, []
         self.interrupt_upload = False
+        self.refs = {'refs/heads/main': 'a' * 40}
+        self.commits = {'a' * 40: dict(tree=dict(sha='b' * 40), message='baseline')}
+        self.now = 1800000000
 
     def read(self, path, *, missing=False, pages=False):
+        path = path.split('?refresh=')[0].split('&refresh=')[0]
+        if path.startswith('git/matching-refs/'):
+            return [dict(ref=name, object=dict(sha=sha)) for name, sha in self.refs.items() if name.startswith('refs/' + path[len('git/matching-refs/'):])]
+        if path.startswith('git/ref/'):
+            key = 'refs/' + path[len('git/ref/'):]
+            return dict(ref=key, object=dict(sha=self.refs[key])) if key in self.refs else None
+        if path.startswith('git/commits/'):
+            return self.commits[path.split('/')[-1]]
         if not path:
             return dict(private=self.private, default_branch='main')
         if path == 'releases?per_page=100':
@@ -36,6 +47,22 @@ class GitHub:
         return deepcopy(self.releases[release_id])
 
     def api(self, path, *, method='GET', data=None, pages=False):
+        if path == 'git/commits':
+            key = sha(str(data).encode())[:40]
+            self.commits[key] = dict(sha=key, tree=dict(sha=data['tree']), message=data['message'])
+            return deepcopy(self.commits[key])
+        if path == 'git/refs':
+            if data['ref'] in self.refs:
+                raise release.TransportError(422)
+            self.refs[data['ref']] = data['sha']
+            return dict(ref=data['ref'], object=dict(sha=data['sha']))
+        if path.startswith('git/refs/'):
+            key = 'refs/' + path[len('git/refs/'):]
+            if method == 'DELETE':
+                self.refs.pop(key, None)
+                return None
+            self.refs[key] = data['sha']
+            return dict(ref=key, object=dict(sha=data['sha']))
         if method == 'POST':
             number = max(self.releases, default=0) + 1
             self.releases[number] = dict(id=number, published_at=f'{number:04}', **data)
@@ -54,6 +81,9 @@ class GitHub:
         self.releases[number].update(data)
         self.events.append(('publish', number))
         return deepcopy(self.releases[number])
+
+    def server_time(self):
+        return self.now
 
     def upload(self, item, path):
         key = (item['id'], path.name)
@@ -250,7 +280,7 @@ def test_newest_index_rehomes_legacy_packs_and_carries_pinned_checkpoint(fixture
     index = tmp_path / gh.INDEX; index.write_bytes(cp.canonical(old)); github.upload(item, index)
     github.api('releases/1', method='PATCH', data=dict(draft=False))
     pins = store.directory / 'pins'; pins.mkdir()
-    (pins / 'fixture.json').write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    (pins / 'fixture.json').write_text(__import__('json').dumps(dict(checkpoints=[first], release_when='fixture acceptance')))
     second = checkpoint(store, tmp_path, [b'new'])
     current = remote.publish(store, second, 'new', revision='d' * 40)
     assert len(remote.candidates()) == 1
@@ -329,7 +359,7 @@ def test_retention_never_deletes_prior_checkpoint_on_incomplete_proof(fixture, t
     remote.publish(store, first, 'old', revision='c' * 40)
     # Pin the whole older workspace so each proof failure exercises its exact retained bytes.
     pins = store.directory / 'pins'; pins.mkdir()
-    (pins / 'test.json').write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    (pins / 'test.json').write_text(__import__('json').dumps(dict(checkpoints=[first], release_when='fixture acceptance')))
     if damage == 'missing-pack':
         pack_key = next(key for key in github.files if key[1].startswith('pack-'))
         github.files.pop(pack_key)
@@ -425,15 +455,12 @@ def test_older_completed_retry_cannot_retire_newer_results(fixture, tmp_path, mo
     with pytest.raises(cp.CheckpointError, match='interrupted retirement'):
         remote.publish(store, second, 'B', revision='d' * 40)
     monkeypatch.setattr(archive, 'retire', actual)
-    before = deepcopy(github.releases)
+    latest_before = remote.candidates()[0]
     remote.publish(store, first, 'A', revision='c' * 40)
-    assert github.releases == before
-    assert [item['tag_name'] for item in remote.candidates()] == [remote.prefix + 'B', remote.prefix + 'A']
-    receiver = cp.Store('fixture', tmp_path / 'receiver')
+    # Replaying A may consolidate metadata, but the latest B result must stay readable.
     latest = remote.candidates()[0]
+    receiver = cp.Store('fixture', tmp_path / 'receiver')
     assert remote.fetch(latest, remote.descriptor(latest, tmp_path), receiver) == second
-    # Replaying the newest complete backup can finish its interrupted retirement.
-    remote.publish(store, second, 'B', revision='d' * 40)
     assert len(remote.candidates()) == 1
 
 
@@ -443,21 +470,25 @@ def test_new_pin_after_completion_defers_retirement_until_new_checkpoint(fixture
     first = checkpoint(store, tmp_path, [b'first'])
     remote.publish(store, first, 'A', revision='c' * 40)
     actual = archive.retire
-    monkeypatch.setattr(archive, 'retire', lambda *a, **kw: None)
+    def interrupted(*a, **kw):
+        raise cp.CheckpointError('interrupted retirement')
+    monkeypatch.setattr(archive, 'retire', interrupted)
     second = checkpoint(store, tmp_path, [b'newer'])
-    remote.publish(store, second, 'B', revision='d' * 40)
+    with pytest.raises(cp.CheckpointError, match='interrupted retirement'):
+        remote.publish(store, second, 'B', revision='d' * 40)
     monkeypatch.setattr(archive, 'retire', actual)
     pins = store.directory / 'pins'; pins.mkdir()
-    (pins / 'new.json').write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    (pins / 'new.json').write_text(__import__('json').dumps(dict(checkpoints=[first], release_when='fixture acceptance')))
     remote.publish(store, second, 'B', revision='d' * 40)
-    assert len(remote.candidates()) == 2
+    assert len(remote.candidates()) == 1
+    assert first in remote.descriptor(remote.candidates()[0], tmp_path)['retained']
     third = checkpoint(store, tmp_path, [b'latest'])
     data = remote.publish(store, third, 'C', revision='e' * 40)
     assert len(remote.candidates()) == 1
     assert first in data['retained']
 
 
-def test_unreferenced_legacy_pack_owner_is_rehomed_for_other_machines(fixture, tmp_path):
+def test_unreferenced_legacy_pack_owner_is_collected_after_exclusive_save(fixture, tmp_path):
     github, store, remote = fixture
     first = checkpoint(store, tmp_path, [b'old'])
     item = legacy_draft(github, remote, first, b'')
@@ -470,11 +501,9 @@ def test_unreferenced_legacy_pack_owner_is_rehomed_for_other_machines(fixture, t
     second = checkpoint(store, tmp_path, [b'new'])
     newest = remote.publish(store, second, 'next', revision='d' * 40)
     assert sha(b'old') not in newest['blobs']
-    assert github.releases[1]['tag_name'] == 'fixture-cache-packs-retained-1'
-    assert (1, path.name) in github.files
-    # A second machine's already prepared descriptor still downloads the same numeric pack.
-    receiver = cp.Store('fixture', tmp_path / 'other-machine')
-    assert remote.fetch(github.releases[1], old, receiver) == first
+    assert 1 not in github.releases
+    assert (1, path.name) not in github.files
+    assert len(remote.candidates()) == 1
 
 
 def test_published_pin_survives_another_machine_without_local_pin_file(fixture, tmp_path):
@@ -483,7 +512,7 @@ def test_published_pin_survives_another_machine_without_local_pin_file(fixture, 
     remote.publish(store, first, 'A', revision='c' * 40)
     pins = store.directory / 'pins'; pins.mkdir()
     local_pin = pins / 'machine-A.json'
-    local_pin.write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    local_pin.write_text(__import__('json').dumps(dict(checkpoints=[first], release_when='fixture acceptance')))
     second = checkpoint(store, tmp_path, [b'next'])
     published = remote.publish(store, second, 'B', revision='d' * 40)
     assert first in published['retained']
@@ -511,9 +540,13 @@ def test_resume_existing_draft_index_survives_newer_history_without_rewriting(fi
     monkeypatch.setattr(github, 'api', actual)
     second = checkpoint(store, tmp_path, [b'other'])
     remote.publish(store, second, 'B', revision='d' * 40)
-    before = [event for event in github.events if event[0] == 'upload']
-    remote.publish(store, first, 'A', revision='c' * 40)
-    assert github.files[(1, gh.INDEX)] == original_completion
-    assert [event for event in github.events if event[0] == 'upload'] == before
-    assert len(remote.candidates()) == 2
-    assert github.releases[1]['draft'] is False
+    original_upload = github.upload
+    def forbid_rewrite(item, path):
+        assert not (item['id'] == 1 and path.name == gh.INDEX)
+        return original_upload(item, path)
+    monkeypatch.setattr(github, 'upload', forbid_rewrite)
+    before = [event for event in github.events if event[0] == 'upload' and event[1].startswith('pack-')]
+    result = remote.publish(store, first, 'A', revision='c' * 40)
+    assert cp.canonical(result) == original_completion[1]
+    assert [event for event in github.events if event[0] == 'upload' and event[1].startswith('pack-')] == before
+    assert len(remote.candidates()) == 1

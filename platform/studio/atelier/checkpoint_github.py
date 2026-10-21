@@ -3,6 +3,7 @@
 Packed blobs are bounded below GitHub's per-asset limit. A checkpoint directly names every
 pack it needs, including packs rehomed in immutable storage releases; restoring never replays a delta chain.
 """
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import re
@@ -10,6 +11,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import uuid
 
 from . import build_products, release
 from .checkpoint_store import CheckpointError, HEX, MAX_BYTES, MAX_MANIFEST, canonical, identity, read_json, validate
@@ -27,6 +29,21 @@ class Remote:
         self.repository, self.game, self.echo = repository, game, echo
         self.github = github or release.GitHub(repository, threading.Event())
         self.prefix = game + '-checkpoint-'
+
+    @contextmanager
+    def transaction(self):
+        """Protect descriptor selection/downloads and publication against remote collection."""
+        if getattr(self, '_transaction_active', False):
+            yield
+            return
+        self.require_private()
+        from .checkpoint_packs import writer
+        with writer(self):
+            self._transaction_active = True
+            try:
+                yield
+            finally:
+                self._transaction_active = False
 
     def require_private(self):
         metadata = self.github.read('')
@@ -70,7 +87,7 @@ class Remote:
 
     def candidates(self):
         self.require_private()
-        pages = self.github.read('releases?per_page=100', pages=True)
+        pages = self.github.read('releases?per_page=100&refresh=' + uuid.uuid4().hex, pages=True)
         releases = [r for page in pages for r in page
                     if not r.get('draft') and r.get('tag_name', '').startswith(self.prefix)]
         return sorted(releases, key=lambda r: (r.get('published_at', ''), r['id']), reverse=True)
@@ -86,6 +103,12 @@ class Remote:
         validate(manifest, self.game)
         if data.get('key') != identity(manifest) or type(data.get('blobs')) is not dict:
             raise CheckpointError('Checkpoint index identity differs')
+        revision = data.get('source_revision')
+        if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
+            raise CheckpointError('Checkpoint source provenance is invalid')
+        expected_body = f'Build checkpoint {data["key"]}\nSource {revision}\nRetain this release: later checkpoints may reference its packs.'
+        if item.get('body') != expected_body or not item.get('tag_name', '').startswith(self.prefix):
+            raise CheckpointError('Checkpoint source/release binding differs')
         return data
 
     def fetch(self, item, descriptor, store, *, save=True):
@@ -94,6 +117,10 @@ class Remote:
         pack and unpacked blob MUST match its declared length and digest before store publication.
         A release's final manifest is its completion marker; partial drafts MUST NOT be restored.
         """
+        with self.transaction():
+            return self._fetch(item, descriptor, store, save=save)
+
+    def _fetch(self, item, descriptor, store, *, save=True):
         validate(descriptor['checkpoint'], self.game)
         needed = blob_inventory(descriptor['checkpoint'], store)
         if set(descriptor['blobs']) != set(needed):
@@ -166,13 +193,15 @@ class Remote:
         An immutable capture MUST NOT depend on continued existence of its producing checkout.
         Newest-only retirement MUST preserve referenced packs, action history and retention pins.
         """
-        from . import checkpoint_archive as archive, checkpoint_packs as packs
-        with packs.writer(self):
+        from . import checkpoint_archive as archive, checkpoint_packs as packs, checkpoint_pins as pins
+        with self.transaction():
             metadata = self.require_private()
             self.default_branch = metadata['default_branch']
             manifest = store.load(key)
             if manifest.get('source_revision', revision) != revision:
                 raise CheckpointError('Captured checkpoint source differs from the publication request')
+            pins.sync_local(self, store)
+            upload_pin = pins.upload(self, key, tag)
             tag = self.prefix + release.leaf(tag)
             body = f'Build checkpoint {key}\nSource {revision}\nRetain this release: later checkpoints may reference its packs.'
             expected = dict(tag_name=tag, name=tag, body=body, prerelease=False,
@@ -187,13 +216,7 @@ class Remote:
                     data = self.descriptor(found, directory)
                     if data['key'] != key:
                         raise CheckpointError('Checkpoint tag already describes different results')
-                    candidates = self.candidates()
-                    if candidates and candidates[0]['id'] == found['id']:
-                        _, _, _, old = archive.accumulate(self, store, manifest, directory)
-                        if archive.covers(data, old, store):
-                            archive.retire(self, found, data, old, store=store)
-                        else:
-                            self.echo('Private checkpoint is complete; older metadata preserved until the next new backup')
+                    self._complete_cleanup(upload_pin, directory, store)
                     return data
                 if INDEX in release.asset_map(self.github, found):
                     # A previous upload finished its immutable completion asset, then
@@ -205,6 +228,7 @@ class Remote:
                     revalidate()
                     self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
                     self.echo('Private checkpoint resumed; older metadata preserved for the next new backup')
+                    self._complete_cleanup(upload_pin, directory, store)
                     return data
                 actions, known, retained, old = archive.accumulate(self, store, manifest, directory)
                 needed = blob_inventory(manifest, store)
@@ -229,9 +253,15 @@ class Remote:
                 release.ensure_asset(self.github, found, index, build_products.file_digest(index))
                 revalidate()
                 self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
-                archive.retire(self, found, data, old, store=store)
+                self._complete_cleanup(upload_pin, directory, store)
             self.echo(f'published private build checkpoint: {tag}')
             return data
+
+    def _complete_cleanup(self, upload_pin, directory, store):
+        from . import checkpoint_pins as pins, checkpoint_gc as gc, checkpoint_archive as archive
+        pins.release_pin(self, upload_pin, 'private publication completed')
+        latest, index = archive.consolidate(self, store, directory)
+        gc.collect(self, latest, index)
 
 
 def blob_inventory(manifest, store):

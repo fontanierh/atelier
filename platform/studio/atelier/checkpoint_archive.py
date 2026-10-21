@@ -54,23 +54,14 @@ def merge_actions(target, incoming, store):
         target[key] = value
 
 
-def pin_keys(store):
-    result = set()
-    for path in sorted([*store.directory.glob('pins/*.json'), *store.directory.glob('backups/*.json')]):
-        value = read_json(path)
-        if type(value) is not dict:
-            raise CheckpointError('Invalid retention root; previous checkpoints preserved')
-        keys = value.get('checkpoints', []) if path.parent.name == 'pins' else (
-            [value['key']] if value.get('state') != 'complete' else [])
-        if type(keys) is not list or any(not isinstance(key, str) or not HEX.fullmatch(key) for key in keys):
-            raise CheckpointError('Invalid checkpoint retention key')
-        result.update(keys)
-    return result
+def pin_keys(store, remote):
+    from .checkpoint_pins import live
+    return {key for value in live(remote).values() for key in value.get('checkpoints', [])}
 
 
 def accumulate(remote, store, manifest, directory):
     actions, known, retained, old = {}, {}, {}, []
-    pins = pin_keys(store)
+    pins = pin_keys(store, remote)
     for item in remote.candidates():
         index = remote.descriptor(item, directory)
         validate_inventory(index, remote.game)
@@ -83,7 +74,7 @@ def accumulate(remote, store, manifest, directory):
         if type(previous) is not dict:
             raise CheckpointError('Invalid retained checkpoint index')
         for key, value in {**previous, index['key']: index}.items():
-            if key in pins or key in previous:
+            if key in pins:
                 validate(value['checkpoint'], remote.game)
                 if value.get('key') != key or identity(value['checkpoint']) != key:
                     raise CheckpointError('Pinned checkpoint identity differs')
@@ -137,16 +128,16 @@ def verify(remote, index):
     return refs
 
 
-def covers(index, old, store):
+def covers(index, old, store, remote):
     """Replaying a completed tag must never retire results absent from its immutable index."""
     from .checkpoint_actions import equivalent
     available = dict(records(index)[0])
     merge_actions(available, index['checkpoint'].get('actions', {}), store)
-    required, pinned = {}, pin_keys(store)
+    required, pinned = {}, pin_keys(store, remote)
     for _, prior in old:
         merge_actions(required, records(prior)[0], store)
         merge_actions(required, prior['checkpoint'].get('actions', {}), store)
-        for key in set(prior.get('retained', {})) | ({prior['key']} & pinned):
+        for key in (set(prior.get('retained', {})) | {prior['key']}) & pinned:
             if key != index['key'] and key not in index.get('retained', {}):
                 return False
     for key, action in required.items():
@@ -166,7 +157,9 @@ def retire(remote, current, index, old, *, store):
     checkpoint descriptors MUST remain reachable. Drafts, unknown metadata, other games/repos
     and public releases MUST NOT be deleted. Failure MUST preserve the new usable checkpoint.
     """
-    if not covers(index, old, store):
+    if pin_keys(store, remote) - ({index['key']} | set(index.get('retained', {}))):
+        raise CheckpointError('Live checkpoint pin lacks complete descriptor; old metadata preserved')
+    if not covers(index, old, store, remote):
         raise CheckpointError('Completed index lacks historical results or current pins; older checkpoints preserved')
     # Observe the published completion again, rather than trusting the preceding PATCH response.
     fresh = remote.github.read(f'releases/{current["id"]}')
@@ -193,8 +186,72 @@ def retire(remote, current, index, old, *, store):
             # retained descriptors/action history. Remove only its superseded completion asset.
             completion = assets.get('checkpoint.json')
             if completion:
-                remote.github.api(f'releases/assets/{completion["id"]}', method='DELETE')
+                try:
+                    remote.github.api(f'releases/assets/{completion["id"]}', method='DELETE')
+                except (OSError, ValueError, RuntimeError, release.PublishError):
+                    remote._checkpoint_mutation_uncertain = True
+                    raise
         else:
-            remote.github.api(f'releases/{item["id"]}', method='DELETE')
+            try:
+                remote.github.api(f'releases/{item["id"]}', method='DELETE')
+            except (OSError, ValueError, RuntimeError, release.PublishError):
+                remote._checkpoint_mutation_uncertain = True
+                raise
     # Detect unexpected external pack mutations after rehoming before reporting success.
     verify(remote, index)
+
+
+def history_locations(actions, known):
+    result = {}
+    for action in actions.values():
+        for entry in action['files'].values():
+            if entry['kind'] == 'file':
+                if entry['sha256'] not in known:
+                    raise CheckpointError('Historical action has no verified blob location')
+                result[entry['sha256']] = known[entry['sha256']]
+    return result
+
+
+def consolidate(remote, store, directory):
+    """Publish a new immutable metadata index when history or live pin roots change."""
+    from .checkpoint_github import INDEX
+    from .checkpoint_store import canonical, MAX_MANIFEST
+    from .build_products import file_digest
+    candidates = remote.candidates()
+    if not candidates:
+        raise CheckpointError('No completed checkpoint observed for consolidation')
+    current = candidates[0]
+    prior = remote.descriptor(current, directory)
+    actions, known, retained, old = accumulate(remote, store, prior['checkpoint'], directory)
+    retained.pop(prior['key'], None)  # The primary workspace already carries its complete descriptor.
+    missing = pin_keys(store, remote) - ({prior['key']} | set(retained))
+    if missing:
+        raise CheckpointError('Live checkpoint pin has no complete verified descriptor: ' + ', '.join(sorted(missing)))
+    data = dict(schema=1, key=prior['key'], source_revision=prior['source_revision'],
+                checkpoint=prior['checkpoint'], blobs=prior['blobs'],
+                history=dict(actions=actions, blobs=history_locations(actions, known)), retained=retained)
+    if data != prior:
+        if len(canonical(data)) > MAX_MANIFEST:
+            raise CheckpointError('Consolidated checkpoint exceeds its metadata bound')
+        tag = remote.prefix + 'index-' + identity(data)
+        body = f'Build checkpoint {data["key"]}\nSource {data["source_revision"]}\nRetain this release: later checkpoints may reference its packs.'
+        expected = dict(tag_name=tag, name=tag, body=body, prerelease=False, target_commitish=remote.default_branch)
+        selected = release.find_release(remote.github, tag)
+        if selected is None:
+            selected = remote.github.api('releases', method='POST', data=dict(**expected, draft=True))
+        release.check_release(selected, expected)
+        assets = release.asset_map(remote.github, selected)
+        if INDEX in assets:
+            if remote.descriptor(selected, directory) != data:
+                raise CheckpointError('Existing consolidated completion differs; previous metadata preserved')
+        else:
+            if not selected['draft']:
+                raise CheckpointError('Published consolidated checkpoint has no completion')
+            verify(remote, data)
+            index = directory / INDEX; index.write_bytes(canonical(data))
+            release.ensure_asset(remote.github, selected, index, file_digest(index))
+        if selected['draft']:
+            remote.github.api(f'releases/{selected["id"]}', method='PATCH', data=dict(draft=False))
+        current = selected
+    retire(remote, current, data, old, store=store)
+    return current, data

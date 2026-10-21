@@ -49,6 +49,7 @@ def test_failed_upload_retains_request_and_reuses_completed_remote_assets(fixtur
     assert json.loads(path.read_text())['state'] == 'failed'
     count = len([e for e in fixture[0].events if e[0] == 'upload'])
     monkeypatch.setattr(remote, 'publish', publish)
+    remote.github.stop.clear()  # A real retry creates a fresh transport/event in a new worker.
     assert backup.run(path) == 0
     assert json.loads(path.read_text())['attempts'] == 2
     assert len([e for e in fixture[0].events if e[0] == 'upload']) == count + 1  # index only

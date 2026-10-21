@@ -175,7 +175,7 @@ and prints its link, then schedules private upload in a detached process. Privat
 publish command or rolls back a successful public release. The worker reads the immutable store, without
 accessing or holding the producer. It does not rebuild or cook the game. Normal successful tasks retain local
 results; whole-workspace capture runs at release publication. Private release packs are content-addressed,
-checksum-verified and deduplicated. New uploads use six workers and 25 MiB parts; verified older 128 MiB
+checksum-verified and deduplicated. New uploads use six workers and 100 MiB parts; verified older 128 MiB
 packs are reused during interrupted-backup recovery when their original deterministic blob sequence matches. The temporary spool holds only the active upload window,
 and verified parts are removed immediately. Logs report verified bytes and observed throughput. The completion
 index uploads last; partial drafts are never donors. `atelier cache status` shows backup state. Pending and failed requests pin their manifests/blobs.
@@ -188,19 +188,35 @@ Intermediate and Saved/Cooked, until checkpoint upload, verification and a recei
 A running producer and its enclosing caller must stop before any transfer or source/client update. Preserve
 shared engine, fetched inputs and DDC. Never link mutable generated folders between checkouts.
 
-After private publication succeeds, only the newest checkpoint release is kept. Its index carries historical
-input-keyed task results and explicitly pinned checkpoint descriptors. Pack bytes live in separate immutable
-storage releases. Every older release owning packs is rehomed there without copying bytes or changing numeric
-IDs, including packs another machine may concurrently reference. Only older metadata-only checkpoint releases
-are deleted after the new completion index and every referenced pack have been freshly verified. Interrupted drafts and unknown or conflicting metadata
-are preserved. A retry of an older completed backup never retires a newer one. A previously uploaded draft
-completion index resumes unchanged; cleanup is deferred when it cannot cover newer history or pins. Published
-remote pins carry forward on every machine until a separate coordinated retirement. Public playtest releases,
-other games and other repositories are outside this cleanup.
+After each successful private save, a complete immutable index consolidates every certified historical
+input-keyed task result and all explicit live checkpoint pins. Only then are older checkpoint metadata
+releases removed. Referenced packs remain in immutable storage releases, preserving their numeric asset
+IDs; the index may reuse their bytes without another upload. Packs referenced by neither that index nor
+a live pin are deleted, followed by empty storage releases. Logs report only remotely confirmed freed bytes.
+Interrupted uploads receive seven-day retry pins. An explicit acceptance pin carries an expiry or a named
+release condition; releasing it writes a remote tombstone so another machine's stale local file cannot
+resurrect it. Missing or malformed pin evidence stops cleanup. Public playtests, other games and other
+repositories are outside this cleanup.
+
+Inspect pins and release a completed acceptance condition through the ordinary cache command:
+
+```sh
+uv run atelier cache checkpoint-pins GAME
+uv run atelier cache checkpoint-unpin GAME PIN --reason "upload and receiving restore accepted"
+```
+
+Publication, remote download and collection share an atomic private Git writer reference across machines.
+A remote reader may wait up to ten minutes while a backup owns this reference, then reports a retryable
+failure; existing local cache hits do not wait. This conservative exclusion prevents deletion during reads.
+Ownership never expires or gets stolen. A crashed writer requires evidence that its worker and all upload
+transports stopped; `atelier cache writer-recover GAME --claim COMMIT --evidence FILE` verifies the exact
+same-machine claim before removal. The evidence JSON must contain schema1, the exact commit, and true
+`worker_cleanup_complete` and `transport_release_resolved` fields. Never assert these without checking.
+Before enabling this collector, finish older private-upload workers that predate the shared protocol.
 
 Local manifests, candidate bundles, pending/failed backup requests and their CAS bytes remain protected.
-`atelier cache gc` currently manages only the separate portable source store; it does not delete workspace
-outputs or manually retire immutable remote packs.
+`atelier cache gc` currently manages only the separate portable source store; automatic workspace and local
+checkpoint pruning are not implemented by this private-store collector.
 
 ## Recovery and validation
 

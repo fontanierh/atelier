@@ -352,21 +352,22 @@ class Actions:
                     index = self.remote.descriptor(item, Path(temporary))
                     self.indices.append((item, index))
                     yield item, index
-        for item, index in entries():
-            from .checkpoint_archive import records
-            history, history_blobs = records(index)
-            value = index['checkpoint'].get('actions', {}).get(action_key, history.get(action_key))
-            if value is None:
-                continue
-            validate(value, self.store, action_key)
-            subset = dict(index['checkpoint'], actions={}, files=value['files'], stamps={step.name: value['stamp']})
-            needed = {e['sha256'] for e in value['files'].values() if e['kind'] == 'file'}
-            locations = {**history_blobs, **index['blobs']}
-            transfer = dict(index, checkpoint=subset, key=identity(subset),
-                            blobs={digest: locations[digest] for digest in needed})
-            self.remote.fetch(item, transfer, self.store, save=False)
-            install(self.store, value)
-            return value
+        with self.remote.transaction():
+            for item, index in entries():
+                from .checkpoint_archive import records
+                history, history_blobs = records(index)
+                value = index['checkpoint'].get('actions', {}).get(action_key, history.get(action_key))
+                if value is None:
+                    continue
+                validate(value, self.store, action_key)
+                subset = dict(index['checkpoint'], actions={}, files=value['files'], stamps={step.name: value['stamp']})
+                needed = {e['sha256'] for e in value['files'].values() if e['kind'] == 'file'}
+                locations = {**history_blobs, **index['blobs']}
+                transfer = dict(index, checkpoint=subset, key=identity(subset),
+                                blobs={digest: locations[digest] for digest in needed})
+                self.remote.fetch(item, transfer, self.store, save=False)
+                install(self.store, value)
+                return value
         self.misses.add(action_key)
         return None
 

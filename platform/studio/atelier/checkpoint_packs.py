@@ -10,28 +10,39 @@ import time
 from . import build_products, paths, release
 from .checkpoint_store import CheckpointError, identity
 
-PART_BYTES = 25 * 1024**2
+PART_BYTES = 100 * 1024**2
 WORKERS = 6
 VAULT_ASSETS = 900
 VAULT_BODY = 'Immutable build cache packs; retain while referenced by a checkpoint index.'
 
 
 @contextmanager
-def writer(remote):
+def local_writer(remote):
     """Serialize this machine's private metadata writers without holding the CAS/producer."""
     path = paths.cache_dir('checkpoints', 'writers') / (identity([remote.repository, remote.game]) + '.lock')
     descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    started = spoken = time.monotonic()
     try:
         while True:
             try:
                 fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except BlockingIOError:
-                if remote.github.stop.wait(1):
-                    raise CheckpointError('Private upload cancelled while waiting for another writer')
+                if remote.github.stop.wait(1) or time.monotonic() - started >= 600:
+                    raise CheckpointError('Private operation cancelled or timed out waiting for this machine writer')
+                if time.monotonic() - spoken >= 25:
+                    remote.echo(f'private cache: waiting for this machine writer; {time.monotonic() - started:.0f}s elapsed')
+                    spoken = time.monotonic()
         yield
     finally:
         os.close(descriptor)
+
+
+@contextmanager
+def writer(remote):
+    from .checkpoint_coordination import owned
+    with local_writer(remote), owned(remote):
+        yield
 
 
 def upload(remote, item, path, digest, known):
@@ -59,7 +70,7 @@ def upload(remote, item, path, digest, known):
 
 class Spool:
     """@cc [owner:fontanierh,label:correctness] bounded-private-upload-spool
-    Uploads MUST use at most six workers and 25 MiB new parts. Temporary payload bytes MUST be
+    Uploads MUST use at most six workers and 100 MiB new parts. Temporary payload bytes MUST be
     bounded by the active window and removed after verified completion. Existing packs MUST
     match remote size/digest; retries MUST NOT overwrite conflicts. Index publication MUST
     follow a fresh verification of every referenced pack, including reused older packs.
