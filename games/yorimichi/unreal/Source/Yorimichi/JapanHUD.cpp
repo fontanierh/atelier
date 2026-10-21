@@ -1,4 +1,5 @@
 #include "JapanHUD.h"
+#include "JapanWorld.h"
 #include "JapanNetwork.h"
 #include "JapanSession.h"
 #include "AdventureMoveSet.h"
@@ -234,6 +235,17 @@ void AJapanHUD::DrawHUD()
     {
         const FString TrainHint=ABelmonteTrainService::Hint(Pawn);
         if(!TrainHint.IsEmpty())Controls=TrainHint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E"));
+    }
+    if (AJapanWorld::IsBrowserScene())
+    {
+        // This scene provides walking and skating; its guide must not offer
+        // island travel or vehicles whose assets are deliberately absent.
+        Controls = bController
+            ? FString::Printf(TEXT("Left stick move   Hold %s sprint   %s jump / double jump / paraglider   %s dodge / backflip   %s crouch"),Pad.Sprint,Pad.Jump,Pad.Roll,Pad.Crouch)
+            : TEXT("WASD run   Alt / J walk   Shift sprint   Space jump / double jump / paraglider   Ctrl dodge / backflip   C crouch");
+        Secondary = bController
+            ? FString::Printf(TEXT("Right stick look   %s attack   Hold %s guard   %s draw / sheathe   %s settings"),Pad.Attack,Pad.Parry,Pad.Weapon,Pad.Menu)
+            : TEXT("Mouse look   Left click attack   Hold right click guard   R draw / sheathe   Esc settings   Tab release mouse");
     }
     const USkateComponent* Ride=Pawn->GetSkate();
     const bool bRide=Ride && Ride->IsRiding();

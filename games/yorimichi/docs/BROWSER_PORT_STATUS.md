@@ -137,7 +137,11 @@ C++ objects therefore remain optimized, but the initial Wasm link must use
 after FTZ preparation. The complete session was rerun with the final initial-link and optimization
 policy: Node and Chrome again matched every byte, with zero runtime stderr bytes
 in Chrome. The complete guarded check took 49 seconds and peaked at 1.79 GiB.
-The sustained check still needs a final-policy rerun before accepting the scene.
+The sustained check also passed with this final policy in Node and Chrome: all
+48,000 ticks and six reactivations matched every byte of the native reference.
+The complete guarded check took 291 seconds and peaked at 1.06 GiB, with clean
+teardown. Its output is 567,380 bytes, SHA-256
+`170c04eb1eb7f8982ee0b58da791766a36fb402d57a56289db53cf7377515033`.
 
 The older frozen Rust full-session check differs from current native C++ before
 Wasm is introduced, at byte 280,528 in an activation actor-query field. That
@@ -172,10 +176,9 @@ scene's asset imports, mobile shader cook and browser gameplay remain pending.
 
 ## Remaining gates
 
-- Rerun final-policy numeric/session checks; validate the actual Unreal worker
-  startup/shutdown, resource loading and repeated activation/stow.
-- Add explicit browser boundaries for native streaming/live tooling and validate
-  the mobile painterly material path.
+- Validate the actual Unreal worker startup/shutdown, resource loading and
+  repeated activation/stow in the cooked game.
+- Validate the mobile painterly material path in the actual scene cook.
 - Build a bounded Yorimichi scene with Cairo, skating/collision data, essential
   UI and a limited sound set; prevent other regions from loading.
 - Measure startup, transfer, heap/GPU residency, frame cadence and controller feel.
