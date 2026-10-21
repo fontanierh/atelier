@@ -4,9 +4,11 @@ from pathlib import Path
 import hashlib
 import json
 import shutil
+import tempfile
 
-from atelier import paths
+from atelier import paths, build_products
 from atelier.build import Call, Step, UnrealCompile, UnrealPackage, UnrealScript
+from atelier.build_cook import options as cook_options
 
 GAME = Path(__file__).resolve().parent
 SCRIPTS = GAME / "unreal/Scripts"
@@ -54,6 +56,13 @@ class BrowserPackage(UnrealPackage):
         return [Path(__file__), *super().runs()]
 
     def argv(self, ctx):
+        cooker = ['-nullrhi', f'-FOOBASEDIR="{ctx.out / "browser/file-open"}"']
+        extra = []
+        for option in cook_options(self.cook_mode, ctx.unreal_root):
+            if option.startswith('-AdditionalCookerOptions='):
+                cooker.append(option.split('=', 1)[1])
+            else:
+                extra.append(option)
         return [
             str(ctx.unreal_root / "Engine/Build/BatchFiles/RunUAT.sh"),
             "BuildCookRun",
@@ -74,8 +83,9 @@ class BrowserPackage(UnrealPackage):
             "-unattended",
             "-utf8output",
             "-nodebuginfo",
-            "-AdditionalCookerOptions=-nullrhi",
+            "-AdditionalCookerOptions=" + ' '.join(cooker),
             f"-ubtargs=-NoUBA -MaxParallelActions={self.workers} -NoDebugInfo",
+            *extra,
         ]
 
 
@@ -104,6 +114,81 @@ def stage_scene(ctx, log):
     log.write("staged Browser/park.json, scene.json and Cairo portrait\n")
 
 
+def audio_state(ctx):
+    """@cc [owner:fontanierh,label:correctness] browser-audio-complete-proof
+    Browser audio reuse MUST verify the complete manifest-defined source banks and imported
+    packages, including sidecar membership and bytes. Missing, changed, linked, empty or
+    mismatched banks MUST fail; a report or representative asset cannot prove a whole bank.
+    """
+    out, content = ctx.out, GAME / 'unreal/Content'
+    sources, packages, roots = [], [], []
+    for bank in ('footsteps', 'combat', 'skate'):
+        source = out / 'audio' / bank
+        manifest = source / 'manifest.json'
+        data = json.loads(manifest.read_text())
+        if bank == 'skate':
+            if not isinstance(data, dict) or not isinstance(data.get('cues'), dict) or not all(isinstance(c, list) for c in data['cues'].values()):
+                raise ValueError('Malformed skate audio manifest')
+            rows = [row for cue in data['cues'].values() for row in cue]
+        else:
+            rows = data
+        if not isinstance(rows, list) or not rows:
+            raise ValueError('Empty audio bank: ' + bank)
+        if any(not isinstance(row, dict) or not isinstance(row.get('file'), str) for row in rows):
+            raise ValueError('Malformed audio manifest: ' + bank)
+        waves = [source / row['file'] if bank == 'combat' else out / row['file'] for row in rows]
+        actual = {p for p in source.glob('*/*.wav') if bank == 'skate' or p.parent.name != 'preview'}
+        if len(set(waves)) != len(waves) or set(waves) != actual:
+            raise ValueError('Prepared audio bank differs from its manifest: ' + bank)
+        destination = content / ('Japan/Audio/Footsteps' if bank == 'footsteps' else 'Audio/' + bank.title())
+        expected = {destination / (p.parent.name if bank == 'footsteps' else '') / (p.stem + '.uasset') for p in waves}
+        if len(expected) != len(waves) or set(destination.rglob('*.uasset')) != expected:
+            raise ValueError('Imported audio bank is incomplete or stale: ' + bank)
+        sources.extend([manifest, *sorted(waves)])
+        packages.extend(sorted(expected))
+        roots.append(destination)
+    footstep = [content / 'Japan/Audio' / name for name in ('DA_Footsteps.uasset', 'A_Footstep.uasset')]
+    packages.extend(footstep)
+    roots.extend(footstep)
+    for path in [*sources, *packages, *roots]:
+        anchor = out if path.is_relative_to(out) else content
+        if any(part.is_symlink() for part in (path, *path.parents) if part.is_relative_to(anchor)):
+            raise ValueError('Linked audio input/output: ' + str(path))
+    if any(not p.is_file() or p.stat().st_size == 0 for p in [*sources, *packages]):
+        raise ValueError('Missing or empty audio source/package')
+    sidecars = tuple(p.with_suffix(ext) for p in footstep for ext in ('.uexp', '.ubulk', '.uptnl'))
+    return dict(
+        schema=1,
+        source_paths=[p.relative_to(out).as_posix() for p in sources],
+        sources=build_products.inventory(build_products.Product('browser.audio.sources', tuple(sources))),
+        packages=build_products.inventory(build_products.Product('browser.audio.packages', tuple(roots), optional_paths=sidecars)),
+    )
+
+
+def record_audio(ctx, log):
+    state = audio_state(ctx)
+    destination = ctx.out / 'browser/audio-import.json'
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode='w', dir=destination.parent, delete=False) as stream:
+        pending = Path(stream.name)
+        try:
+            json.dump(state, stream, sort_keys=True)
+            stream.write('\n')
+            stream.close()
+            pending.replace(destination)
+        finally:
+            pending.unlink(missing_ok=True)
+    log.write('Complete browser audio source/package inventory verified.\n')
+
+
+def audio_present(ctx):
+    receipt = ctx.out / 'browser/audio-import.json'
+    try:
+        return not receipt.is_symlink() and json.loads(receipt.read_text()) == audio_state(ctx)
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def steps(ctx):
     content = GAME / "unreal/Content"
     return [
@@ -115,7 +200,7 @@ def steps(ctx):
                 GAME / "unreal/Config",
                 GAME / "unreal/Plugins",
                 paths.ENGINE_PLUGINS,
-                ctx.uproject,
+                ctx.uproject or GAME / 'unreal/Yorimichi.uproject',
             ],
             needs=["skate.runtime"],
             explicit=True,
@@ -124,6 +209,7 @@ def steps(ctx):
                 GAME / ("unreal/Binaries/HTML5/Yorimichi" + extension)
                 for extension in (".wasm", ".js", ".html", ".target", ".html5link.json")
             ],
+            products=[build_products.Product('browser.binary', (GAME / 'unreal/Binaries/HTML5',))],
             verify=lambda: prepared_present(ctx),
             about="the complete Yorimichi Wasm module with verified scoped simulation arithmetic",
         ),
@@ -139,14 +225,18 @@ def steps(ctx):
                 UnrealScript(
                     SCRIPTS / "import_skate_audio.py", "SKATE AUDIO IMPORT COMPLETE"
                 ),
+                Call('record_browser_audio', record_audio),
             ],
-            inputs=[
+            inputs=[Path(__file__), Path(build_products.__file__), *[
                 SCRIPTS / ("import_" + name + ".py")
                 for name in ("footsteps", "combat_audio", "skate_audio")
-            ],
+            ]],
             needs=["unreal.compile", "audio.footsteps", "audio.combat", "audio.skate"],
+            reads=['audio.footsteps', 'audio.combat', 'audio.skate'],
             explicit=True,
             heavy=True,
+            outputs=[ctx.out / 'browser/audio-import.json'],
+            verify=lambda: audio_present(ctx),
             about="the bounded scene's original footsteps, ambience and board audio",
         ),
         Step(
@@ -195,6 +285,7 @@ def steps(ctx):
             [BrowserPackage("Yorimichi", ctx.out / "browser/package")],
             inputs=[Path(__file__), GAME / "unreal/Config"],
             needs=["browser.compile", "browser.scene"],
+            reads=['browser.binary', 'materials.shared'],
             explicit=True,
             heavy=True,
             outputs=[

@@ -3,8 +3,9 @@
 Updated 2026-10-21. The stock Unreal Third Person baseline builds, cooks and
 renders locally in Chrome through WebAssembly and WebGPU. Current skating math
 and a complete session replay also match the native FTZ reference in Chrome.
-Yorimichi's C++ has compiled and linked for HTML5; full-module preparation and
-the bounded skate-pier scene are still being integrated. **No Yorimichi browser
+Yorimichi's C++ has compiled and linked for HTML5, full-module preparation has
+passed diagnostically, and the bounded skate-pier asset graph is complete.
+The final-source package and browser gameplay check remain pending. **No Yorimichi browser
 gameplay pass is claimed yet.**
 
 This continues the [browser port handoff](https://github.com/fontanierh/atelier/blob/codex/webgpu-handoff/games/yorimichi/docs/BROWSER_PORT_HANDOFF.md).
@@ -171,8 +172,13 @@ typed simulation data, the shared painterly material and original audio. Its
 build plan excludes the full island import. Readiness requires a versioned
 manifest, required assets and actual riding collision at spawn. Native play
 keeps its normal world; `-browserpilot` selects the bounded scene for diagnosis.
-The source editor and all game/plugin modules now compile successfully. The
-scene's asset imports, mobile shader cook and browser gameplay remain pending.
+The source editor and all game/plugin modules compile successfully. The normal
+`browser.scene` dependency graph completed: the park and board, Cairo's body and
+merged movement/pawn/fit, shared materials and original audio were imported, and
+the browser map and versioned runtime manifest were saved. A fresh typed-data
+reload verified 3,324 clips, 131,642 frames, seven runtime files, and exact
+7,200-step replays across twelve cases, including negative controls. The mobile
+shader cook and actual browser gameplay remain pending.
 
 ## Remaining gates
 

@@ -1247,7 +1247,8 @@ def sound_effect_steps(ctx):
              products=[Product('audio.footsteps', (out / 'audio' / 'footsteps',))],
              about='531 footstep one-shots (needs `atelier fetch`)'),
         Step('audio.combat', [Python(AUDIO / 'combat' / 'slice.py')], inputs=[AUDIO / 'combat', paths.cache_dir('sonniss', 'combat', create=False)],
-             outputs=[out / 'audio' / 'combat' / 'manifest.json'], about='combat cues and the countryside ambience'),
+             outputs=[out / 'audio' / 'combat' / 'manifest.json'],
+             products=[Product('audio.combat', (out / 'audio' / 'combat',))], about='combat cues and the countryside ambience'),
         Step('audio.skate', [Python(AUDIO / 'skate' / 'make.py')], inputs=[AUDIO / 'skate', paths.cache_dir('sonniss', 'combat', create=False)],
              outputs=[out / 'audio' / 'skate' / 'manifest.json'],
              products=[Product('audio.skate', (out / 'audio' / 'skate',))], about='board loops and cues'),
@@ -1403,7 +1404,8 @@ def unreal_steps(ctx):
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
              heavy=True, about='the tree house meshes, textures, props and canopy trees'),
         Step('unreal.skatepark', [UnrealScript(SCRIPTS / 'import_skatepark.py', 'SKATEPARK IMPORT COMPLETE')],
-             inputs=[SCRIPTS / 'import_skatepark.py', REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'],
+             inputs=[SCRIPTS / name for name in ('import_skatepark.py', 'import_village.py')]
+                    + [REGIONS / 'skatepark' / 'park.json'], needs=['world.skatepark'],
              references=['materials.shared', *['foliage.' + name + '.native' for name in
                          json.loads((REGIONS / 'skatepark' / 'park.json').read_text()).get('trees', {})]],
              heavy=True, about='the skate pier and the board (/Game/SkatePark)'),

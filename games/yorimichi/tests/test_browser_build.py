@@ -136,3 +136,113 @@ def test_local_browser_stamp_rejects_changed_wasm_link_and_policy(
     manifest.write_bytes(b"link")
     (tools / "wasm_float.py").write_text("changed arithmetic policy")
     assert not browser.prepared_present(ctx)
+
+
+def test_pier_helpers_invalidate_the_import(tmp_path, monkeypatch):
+    from test_mega_ramp_layers import changed_by
+
+    for name in ('import_village.py', 'mesh_import.py'):
+        changed = changed_by(GAME / 'unreal/Scripts' / name, tmp_path, monkeypatch)
+        assert 'unreal.skatepark' in changed
+
+
+def test_browser_package_forwards_tracked_cook_mode_and_log_root(tmp_path):
+    from atelier.build_cook import CookMode
+
+    engine = tmp_path / 'engine'
+    version = engine / 'Engine/Build/Build.version'
+    version.parent.mkdir(parents=True)
+    version.write_text('{"MajorVersion":5,"MinorVersion":8}')
+    ctx = SimpleNamespace(unreal_root=engine, unreal_cmd=engine / 'Editor',
+                          uproject=tmp_path / 'Game.uproject', out=tmp_path / 'out')
+    for mode, flag in ((CookMode.DEFAULT, None), (CookMode.FULL, '-fullcook'),
+                       (CookMode.INCREMENTAL, '-cookincremental')):
+        command = browser.BrowserPackage('Yorimichi', tmp_path / 'archive', cook_mode=mode)
+        args = command.argv(ctx)
+        options = [a for a in args if a.startswith('-AdditionalCookerOptions=')]
+        assert len(options) == 1 and '-nullrhi' in options[0]
+        assert str(ctx.out / 'browser/file-open') in options[0]
+        if flag:
+            assert flag in options[0] and '-Cook.DependencyTracking=1' in options[0]
+        assert '-cookall' not in args
+
+
+def test_browser_package_tracks_compiled_bytes_at_an_unchanged_source_key(tmp_path):
+    ctx = SimpleNamespace(out=tmp_path, uproject=GAME / 'unreal/Yorimichi.uproject')
+    commands = {s.name: s for s in browser.steps(ctx)}
+    assert commands['browser.compile'].products[0].name == 'browser.binary'
+    package = commands['browser.package']
+    done = {'browser.compile': 'same-source', 'browser.scene': 'same-scene',
+            'product:browser.binary': 'a' * 64, 'product:materials.shared': 'c' * 64}
+    for product in ('browser.binary', 'materials.shared'):
+        before = build.fingerprint(package, done)
+        done['product:' + product] = 'b' * 64
+        assert build.fingerprint(package, done) != before
+
+
+def audio_fixture(tmp_path, monkeypatch):
+    game, out = tmp_path / 'game', tmp_path / 'build'
+    monkeypatch.setattr(browser, 'GAME', game)
+    for bank in ('footsteps', 'combat', 'skate'):
+        root = out / 'audio' / bank
+        wave_files = []
+        for index in range(3):
+            wave = root / 'surface' / f'cue_{index}.wav'
+            wave.parent.mkdir(parents=True, exist_ok=True)
+            wave.write_bytes(b'prepared wave')
+            wave_files.append(wave)
+        rows = [{'file': p.relative_to(root if bank == 'combat' else out).as_posix()} for p in wave_files]
+        (root / 'manifest.json').write_text(json.dumps({'loops': ['surface'], 'cues': {'surface': rows}} if bank == 'skate' else rows))
+        dest = game / 'unreal/Content' / ('Japan/Audio/Footsteps/surface' if bank == 'footsteps' else 'Audio/' + bank.title())
+        dest.mkdir(parents=True)
+        for wave in wave_files:
+            (dest / (wave.stem + '.uasset')).write_bytes(b'native imported wave')
+    for name in ('DA_Footsteps', 'A_Footstep'):
+        (game / 'unreal/Content/Japan/Audio' / (name + '.uasset')).write_bytes(b'native footstep asset')
+    ctx = SimpleNamespace(out=out)
+    browser.record_audio(ctx, io.StringIO())
+    assert browser.audio_present(ctx)
+    return ctx, game / 'unreal/Content'
+
+
+def test_browser_audio_rejects_missing_middle_wave_in_every_bank(tmp_path, monkeypatch):
+    ctx, content = audio_fixture(tmp_path, monkeypatch)
+    for folder in ('Japan/Audio/Footsteps/surface', 'Audio/Combat', 'Audio/Skate'):
+        wave = content / folder / 'cue_1.uasset'
+        saved = wave.read_bytes()
+        wave.unlink()
+        assert not browser.audio_present(ctx)
+        wave.write_bytes(saved)
+        assert browser.audio_present(ctx)
+
+
+def test_browser_audio_rejects_corruption_sidecar_changes_and_links(tmp_path, monkeypatch):
+    ctx, content = audio_fixture(tmp_path, monkeypatch)
+    wave = content / 'Audio/Skate/cue_1.uasset'
+    wave.write_bytes(b'corrupt package')
+    assert not browser.audio_present(ctx)
+    wave.write_bytes(b'native imported wave')
+    sidecar = wave.with_suffix('.ubulk')
+    sidecar.write_bytes(b'bulk')
+    assert not browser.audio_present(ctx)
+    browser.record_audio(ctx, io.StringIO())
+    sidecar.unlink()
+    assert not browser.audio_present(ctx)
+    sidecar.write_bytes(b'bulk')
+    assert browser.audio_present(ctx)
+    wave.unlink()
+    wave.symlink_to(content / 'Audio/Skate/cue_0.uasset')
+    assert not browser.audio_present(ctx)
+
+
+def test_browser_audio_rejects_changed_or_incomplete_prepared_sources(tmp_path, monkeypatch):
+    import pytest
+
+    ctx, _ = audio_fixture(tmp_path, monkeypatch)
+    wave = ctx.out / 'audio/footsteps/surface/cue_1.wav'
+    wave.write_bytes(b'changed source')
+    assert not browser.audio_present(ctx)
+    wave.unlink()
+    with pytest.raises(ValueError, match='differs from its manifest'):
+        browser.record_audio(ctx, io.StringIO())
+    assert not browser.audio_present(ctx)
