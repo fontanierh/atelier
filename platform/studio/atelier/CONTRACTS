@@ -61,3 +61,27 @@ Private pack deletion and metadata consolidation MUST exclude readers and other 
 or otherwise uncertain remote mutation MUST retain the recovery barrier until its outcome is established;
 client exit, local cache presence or an unconfirmed DELETE MUST NOT grant another writer authority.
 Deletion MUST remain restricted to the configured private game-cache ownership, never public releases.
+
+@cc [owner:fontanierh,label:correctness] automatic-native-candidates-retain-original-proof
+Automatic native retention MUST follow successful guarded host and owning task finalization. It MUST
+preserve the original task input evidence and complete validated package groups as immutable candidate
+hints, without installing Content or manufacturing receiving/action success. Donor ranking metadata
+MUST remain advisory: selection and staging MUST freshly validate the descriptor and byte inventory.
+
+@cc [owner:fontanierh,label:safety] local-retirement-preserves-useful-successors
+Local checkpoint/workspace retirement MUST preserve active work and compatible outputs serving the
+current or scheduled builds, including one useful current donor and explicit live pin obligations.
+Being referenced by obsolete metadata alone MUST NOT be presented as evidence of ongoing usefulness.
+Superseded versions and redundant workspaces MAY retire after scope coverage and current-purpose proof;
+an unfinished private restore exercise alone MUST NOT extend a retention hold the operator has retired.
+Public release verification and private checkpoint restoration MUST remain separate evidence claims.
+Personal backups, shared installed tools and another owner's live outputs MUST remain outside cleanup.
+
+@cc [owner:fontanierh,label:safety] local-sweeps-exclude-readers-and-writers
+A local metadata publication mutex alone MUST NOT be treated as excluding older unleased readers.
+Collection MUST obtain reader/writer exclusion, or an explicitly coordinated quiet boundary covering
+every affected old client, without interrupting another owner's native job. It MUST save the retired
+metadata and exact deletion inventory outside the collected store, recompute retained references under
+exclusion, and refuse changed identities or new references before deleting only authorized obsolete data.
+Metadata/blob/workspace removal and observed free-space gain MUST be reported separately: APFS clones
+can retain underlying blocks after one pathname is removed. Logical sizes MUST NOT imply physical reclaim.
