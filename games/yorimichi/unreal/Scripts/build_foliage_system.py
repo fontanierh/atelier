@@ -189,23 +189,17 @@ def bind_variant_materials(mesh, replacements):
         raise ValueError('Foliage variant material bindings did not apply')
 
 
-def write_representations(product, path, needed=('optimized', 'shadow', 'patch')):
+def write_representations(product, path, uv_channels, needed=('optimized','shadow','patch')):
     """@cc [owner:fontanierh,label:correctness;performance] bounded-foliage-serialization
-    Native representation inputs MUST preserve prepared geometry and screens exactly,
-    stream JSON without a whole-document string, and omit unrelated LOD geometry from
-    shadow/patch inputs. They MUST NOT certify a source or publish the runtime registry.
+    Transport MUST preserve every prepared float32 corner, slot and LOD exactly,
+    use mesh_geometry's single shared writer/digest encoder and current native
+    snapshot verification, stream without a whole-document string/DOM, and omit unrelated LOD geometry
+    from shadow/patch inputs. It MUST NOT certify a source or runtime registry.
     """
-    shadow_path = path.with_suffix('.shadow.json')
-    patch_path = path.with_suffix('.patch.json')
-    documents = (('optimized', path, dict(source=product['source'], screens=product['screens'], levels=product['levels'])),
-                 ('shadow', shadow_path, dict(source=product['source'], shadow=product['shadow'])),
-                 ('patch', patch_path, dict(source=product['source'], shadow=product['patch'])))
-    for role, destination, document in documents:
-        if role not in needed:
-            continue
-        with destination.open('w', encoding='utf-8') as handle:
-            json.dump(document, handle, separators=(',', ':'))
-    return shadow_path, patch_path
+    levels = dict(optimized=product['levels'], shadow=[product['shadow']], patch=[product['patch']])
+    paths = {role:path.with_suffix('.'+role+'.mesh') for role in needed}
+    geometry = {role:G.write_geometry(levels[role], uv_channels, destination) for role,destination in paths.items()}
+    return paths, geometry
 
 
 def memory_checkpoint(stage, path):
@@ -256,6 +250,8 @@ def main():
                  yori.GAME/'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
                  yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp',
                  yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h',
+                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.cpp',
+                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h',
                  OUT.parent/'unreal-modules/Yorimichi.json',
                  Path(unit_policy.__file__), yori.GAME/'foliage_unit_policy_witness.json',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
@@ -265,7 +261,7 @@ def main():
     algorithm.update(json.dumps(dict(platform=sys.platform,architecture=platform.machine(),
                                      python=list(sys.version_info[:3])),sort_keys=True).encode())
     algorithm = algorithm.hexdigest()
-    legacy = unit_policy.legacy_policy(yori.GAME,engine_version=U.SystemLibrary.get_engine_version(),
+    legacy = unit_policy.legacy_policies(yori.GAME,engine_version=U.SystemLibrary.get_engine_version(),
         environment=native_environment(native_context(yori.GAME.name)),
         runtime=dict(platform=sys.platform,architecture=platform.machine(),python=list(sys.version_info[:3])))
     previous_path = OUT/'report.json'
@@ -311,8 +307,9 @@ def main():
         unit_path = OUT/'units'/(key+'.json')
         unit = G.load_unit(unit_path, identity=identity, policy=algorithm, content_root=content,
                            assets=list(destinations.values()))
-        if unit is None and legacy:
-            unit = G.load_unit(unit_path, identity=identity, policy=legacy, content_root=content,
+        for old_policy in legacy:
+            if unit is not None:break
+            unit = G.load_unit(unit_path, identity=identity, policy=old_policy, content_root=content,
                                assets=list(destinations.values()))
         if unit:
             row, geometry = unit['metadata'], unit['geometry']
@@ -360,9 +357,11 @@ def main():
                       patch_triangles=len(product['patch']['faces']))
         leaf_materials = [material['path'] for material in source['materials'] if material['foliage']]
         uv_channels=max(1,source['uv_channels'])
-        geometry=dict(optimized=G.expected_digest(product['levels'],uv_channels),
-                      shadow=G.expected_digest([product['shadow']],uv_channels),
-                      patch=G.expected_digest([product['patch']],uv_channels))
+        absent=[role for role,path in destinations.items() if not E.does_asset_exist(path)]
+        documents,geometry=write_representations(product,product_path,uv_channels,absent)
+        levels=dict(optimized=product['levels'],shadow=[product['shadow']],patch=[product['patch']])
+        for role in destinations:
+            if role not in geometry:geometry[role]=G.expected_digest(levels[role],uv_channels)
         # Old partial products have no unit evidence: reproduce the CURRENT source
         # and preparation, then compare every saved corner before accepting them.
         loaded=saved_variants(mesh,destinations,replacements,(near,far,patch_material),detail,geometry,key)
@@ -371,21 +370,28 @@ def main():
         counters['reused_variants']+=len(loaded)
         counters['built_variants']+=len(missing)
         U.log(f'FOLIAGE SAVED {path}: verified={len(loaded)} rebuild={missing}')
-        shadow_path,patch_path=write_representations(product,product_path,missing)
+        repaired,checks=write_representations(product,product_path,uv_channels,[role for role in missing if role not in documents])
+        assert all(checks[role]==geometry[role] for role in checks),path
+        documents.update(repaired)
+        del levels
         if large_source:memory_checkpoint('representations written',path)
         del source,product
         if large_source:memory_checkpoint('geometry released',path)
         for role in missing:
-            shadow=role!='optimized'
-            document=product_path if role=='optimized' else shadow_path if role=='shadow' else patch_path
+            document=documents[role]
             first,second=(patch_material,patch_material) if role=='patch' else (near,far)
-            result=U.YorimichiFoliageBuilder.build_variant(mesh,str(document),destinations[role],first,second,shadow)
+            screens=F.SCREENS if role=='optimized' else [1.]
+            result=U.YorimichiFoliageGeometryReader.build_variant(mesh,str(document),screens,destinations[role],first,second)
             assert result,destinations[role]
             bind_variant_materials(result,replacements)
             assert E.save_loaded_asset(result),destinations[role]
             expected=counts if role=='optimized' else [detail[role+'_triangles']]
             assert result.get_num_lods()==len(expected),destinations[role]
             assert [result.get_num_triangles(i) for i in range(len(expected))]==expected,(destinations[role],expected)
+            assert variant_matches(result,mesh,replacements,(first,second),expected,screens,geometry[role],
+                OUT/(key+'.'+role+'.built.snapshot'),editor=settings_reader(U),
+                snapshot=U.YorimichiFoliageBuilder.export_geometry_snapshot,digest=G.file_digest,
+                refusal=lambda reason:U.log(f'FOLIAGE BUILT MISS {role} {destinations[role]}: {reason}')),destinations[role]
             loaded[role]=result
         variants={role:asset.get_path_name() for role,asset in loaded.items()}
         assert digest(path)==before,('Foliage owner modified its source',path)

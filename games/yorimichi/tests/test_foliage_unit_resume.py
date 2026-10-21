@@ -30,6 +30,11 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     for relative in ('unreal/Source/YorimichiImport/FoliageBuilder.cpp',
                      'unreal/Source/YorimichiImport/FoliageBuilder.h',
                      'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
+                     'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp',
+                     'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h',
+                     'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.cpp',
+                     'unreal/Source/Yorimichi/Dev/FoliageGeometryReader.h',
+                     'foliage_unit_policy_witness.json',
                      'unreal/Scripts/foliage_material.py', 'unreal/Scripts/foliage_variant_validation.py'):
         path = game/relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,6 +42,8 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     support = tmp_path/'support.py'
     support.write_text('fixture material graph')
     out = tmp_path/'build/foliage_system'
+    (out.parent/'unreal-modules').mkdir(parents=True)
+    (out.parent/'unreal-modules/Yorimichi.json').write_text('fixture binary')
     sources = ['/Game/Fixture/Mixed_1', '/Game/Fixture/Mixed_2']
     assets = {}
     outputs = {}
@@ -112,12 +119,14 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     unreal = SimpleNamespace(load_module=lambda name: None, log=lambda text: None,
         AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: registry),
         SystemLibrary=SimpleNamespace(get_engine_version=lambda: 'fixture 5.8'),
-        YorimichiFoliageBuilder=SimpleNamespace(export_source=export, collect_unused=lambda: None,
+        YorimichiFoliageSourceWriter=SimpleNamespace(export_source=export),
+        YorimichiFoliageBuilder=SimpleNamespace(collect_unused=lambda: None,
                                                build_variant=unexpected_rebuild))
     namespace = dict(__file__=str(owner), Path=Path, F=kernel, G=G, U=unreal, OUT=out,
         E=SimpleNamespace(load_asset=assets.__getitem__, does_asset_exist=lambda path: path in assets),
         yori=SimpleNamespace(GAME=game), atmosphere=SimpleNamespace(__file__=str(support)),
         see_through=SimpleNamespace(__file__=str(support)), hashlib=hashlib, json=json, platform=platform, sys=sys,
+        unit_policy=SimpleNamespace(__file__=str(support),legacy_policies=lambda *a,**k: ()),
         native_environment=lambda ctx: dict(engine='fixture', platform='fixture'),
         native_context=lambda name: None, runtime_files=lambda: (),
         classify=lambda *a: ([0], 'material'), source_identity=lambda *a: '1'*64,

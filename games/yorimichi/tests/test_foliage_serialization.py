@@ -1,16 +1,15 @@
 """Native inputs retain geometry without duplicating unused LODs or giant strings."""
 import ast
 from copy import deepcopy
-import io
-import json
 from pathlib import Path
 
 
 def writer():
+    from atelier import mesh_geometry as G
     script = Path(__file__).resolve().parents[1] / 'unreal/Scripts/build_foliage_system.py'
     function = next(node for node in ast.parse(script.read_text()).body
                     if isinstance(node, ast.FunctionDef) and node.name == 'write_representations')
-    namespace = {'json': json}
+    namespace = {'G': G}
     exec(compile(ast.Module(body=[function], type_ignores=[]), str(script), 'exec'), namespace)
     return namespace['write_representations']
 
@@ -26,51 +25,24 @@ def product():
 
 
 def test_native_documents_preserve_all_geometry_and_only_required_fields(tmp_path):
+    from atelier import mesh_geometry as G
     prepared = product()
     before = deepcopy(prepared)
-    path = tmp_path / 'mesh.json'
-    shadow, patch = writer()(prepared, path)
-    visual = json.loads(path.read_text())
-    assert visual == {key: prepared[key] for key in ('source', 'screens', 'levels')}
-    assert json.loads(shadow.read_text()) == dict(source=prepared['source'], shadow=prepared['shadow'])
-    assert json.loads(patch.read_text()) == dict(source=prepared['source'], shadow=prepared['patch'])
+    paths, geometry = writer()(prepared, tmp_path/'mesh.json', 2)
+    for role, levels in dict(optimized=prepared['levels'],shadow=[prepared['shadow']],patch=[prepared['patch']]).items():
+        assert G.file_digest(paths[role]) == geometry[role] == G.expected_digest(levels, 2)
     assert prepared == before
 
 
-def test_large_documents_use_bounded_writes_instead_of_a_document_string():
-    class Sink(io.StringIO):
-        largest_write = 0
-
-        def write(self, value):
-            self.largest_write = max(self.largest_write, len(value))
-            return super().write(value)
-
-        def close(self):
-            pass  # Inspect the completed in-memory test document after its context exits.
-
-    class Destination:
-        def __init__(self):
-            self.handles = {}
-
-        def with_suffix(self, suffix):
-            return self.handles.setdefault(suffix, Destination())
-
-        def open(self, *args, **kwargs):
-            self.sink = Sink()
-            return self.sink
-
-    prepared = product()
-    prepared['levels'][0]['vertices'] *= 1000
-    destination = Destination()
-    writer()(prepared, destination)
-    assert len(destination.sink.getvalue()) > 100000
-    assert destination.sink.largest_write < 1024
-    assert json.loads(destination.sink.getvalue())['levels'] == prepared['levels']
-
-
 def test_validated_visual_and_shadow_are_not_serialized_for_a_patch_only_repair(tmp_path):
+    from atelier import mesh_geometry as G
     prepared = product()
-    path = tmp_path/'mesh.json'
-    shadow, patch = writer()(prepared, path, ['patch'])
-    assert not path.exists() and not shadow.exists()
-    assert json.loads(patch.read_text()) == dict(source=prepared['source'], shadow=prepared['patch'])
+    paths, geometry = writer()(prepared, tmp_path/'mesh.json', 2, ['patch'])
+    assert set(paths) == set(geometry) == {'patch'}
+    assert list(tmp_path.iterdir()) == [paths['patch']]
+    assert G.file_digest(paths['patch']) == G.expected_digest([prepared['patch']],2)
+
+
+def test_no_missing_variants_write_no_transport(tmp_path):
+    assert writer()(product(),tmp_path/'mesh.json',2,[]) == ({},{})
+    assert not list(tmp_path.iterdir())

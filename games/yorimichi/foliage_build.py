@@ -51,9 +51,10 @@ def system_step(ctx, prerequisites):
     command.timeout = 7200
     command.progress = 25
     return Step('unreal.foliage_system',
-                [command],
+                [UnrealScript(SCRIPTS/'verify_foliage_transport.py', 'FOLIAGE BINARY TRANSPORT PASS',
+                              modules=('YorimichiImport','Yorimichi'), null_rhi=True), command],
                 inputs=[GAME/'foliage_system.py', GAME/'foliage_unit_policy.py', GAME/'foliage_unit_policy_witness.json',
-                        WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
+                        WORLD/'foliage_roles.py', SCRIPTS/'verify_foliage_transport.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
                         SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
                         GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config'],
                 deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
