@@ -92,3 +92,20 @@ against its current report. It fingerprints the inventory rather than the genera
 directory. Adding, editing or deleting an unused generated texture therefore runs neither action;
 a selected texture change refreshes the inventory and affected material product. Regional source
 exporters still have their existing asset inputs; this does not separate their material generation or change other regions' texture declarations.
+
+## Independent audio ownership
+
+The legacy world purge preserves the footstep library, attenuation and exact Footsteps subtree;
+similarly named legacy packages remain eligible for its normal cleanup. The sound importer
+depends on its six source audio producers and the saved-type module, rather than a world import.
+Its native product inventories every wave directory, both fixed footstep packages and their
+sidecars, and all six import reports; a missing required member cannot remain a complete product.
+JapanFootstepSet and JapanFootstepBank live in YorimichiAssets; the runtime component stays in
+Yorimichi. Class/struct redirects retain previously saved package identities. The types' fields,
+defaults and Find implementation are unchanged. Native compilation and an existing-library
+load/playback check are required at a stopped receiver boundary; this source change does not
+prove audio playback or require adoption before the current foliage game's first measurement.
+The initial type move and redirect configuration change require an ordinary compile and can
+revalidate other configuration-bound imports once. No old fingerprints or producer evidence
+are adopted to hide that transition. Later preparation-only library changes leave this audio
+owner current when the actual saved-type module, configuration, audio and importer inputs match.

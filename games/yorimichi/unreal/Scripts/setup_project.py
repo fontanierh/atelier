@@ -2,7 +2,7 @@
 
     "$UE/Engine/Binaries/Mac/UnrealEditor-Cmd" "$PROJ/Yorimichi.uproject" -run=pythonscript -script="$PROJ/Scripts/setup_project.py" -unattended -nop4 -nosplash
 
-- replaces legacy /Game/Japan assets, preserving independent material and foliage owners
+- replaces legacy /Game/Japan assets, preserving independent material, foliage and footstep owners
 - imports props, terrain, sea and the traveler, and binds the shared materials by stable path
 - builds the level /Game/Japan/Maps/Slice: terrain, sun, sky light, fog, post-process, player start
 """
@@ -72,7 +72,7 @@ def purge():
             EAL.delete_asset(str(a.package_name))
         except Exception as e:
             LOG(f"  purge failed for {a.package_name}: {e}")
-    LOG("purged legacy world packages; preserved independent material and foliage owners")
+    LOG("purged legacy world packages; preserved independent material, foliage and footstep owners")
 
 
 

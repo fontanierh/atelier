@@ -99,6 +99,7 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
                      for part in ('meshes', 'materials', 'tv', 'report')})
     expected.update({f'brinecove.native_{part}': 'unreal.brinecove'
                      for part in ('meshes', 'materials', 'report')})
+    expected['audio.native'] = 'unreal.sounds'
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
                if any(isinstance(command, (build.UnrealScript, build.UnrealCompile, build.UnrealPackage))
