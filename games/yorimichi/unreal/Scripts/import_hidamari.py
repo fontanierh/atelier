@@ -20,7 +20,7 @@ assert only or not asked,('no Hidamari assets match',sorted(asked))
 north=globals().get('NORTH',True)
 # Hidamari owns the final harbour package. Every world reimport uses the same audited rail opening.
 harbor_source=None
-if not only or 'HD_Harbor' in only:
+if 'HD_Harbor' in manifest and (not only or 'HD_Harbor' in only):
     from regions.hidamari.ferry_source import validated_harbor
     harbor_source=validated_harbor(yori.OUT,yori.REPO)
 mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()

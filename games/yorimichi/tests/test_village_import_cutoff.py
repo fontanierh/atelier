@@ -91,7 +91,7 @@ def test_recipe_changes_only_the_village_import_edge(recipe_graph):
     assert steps['world.village.import'].cutoff and not steps['world.village.import'].heavy
     assert steps['world.village'].needs == ['world.layout']
     assert steps['unreal.world'].needs == [
-        'world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures',
+        'world.hidamari_ferry_cut', 'world.textures', 'world.layout', 'world.props', 'world.hidamari.city', 'world.hidamari_textures',
         'world.hidamari_props.import', 'world.zeppelin.meshes', 'world.terrain.meshes',
         'world.village.import', 'world.sailboat', 'characters.wanderer']
     assert 'unreal.world' in steps['unreal.north'].needs

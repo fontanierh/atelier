@@ -1506,9 +1506,11 @@ def ferry_steps(ctx):
 
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
+    ferry = ferry_steps(ctx)
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
+              + [step for step in ferry if not step.name.startswith('unreal.')]
               + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
-              + brinecove_steps(ctx.out)[2:] + ferry_steps(ctx))
+              + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
     # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.
