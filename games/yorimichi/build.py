@@ -1402,7 +1402,12 @@ def unreal_steps(ctx):
                                            modules=IMPORT_CODE)],
              inputs=[SCRIPTS / 'import_forest.py', SCRIPTS / 'forest_impostor_material.py', SCRIPTS / 'import_foliage_lods.py', SCRIPTS / 'foliage_material.py', SCRIPTS / 'import_village.py', SCRIPTS / 'atmosphere.py'],
              needs=['unreal.world', 'world.forest', *unreal_modules.needs(IMPORT_CODE)], heavy=True,
-             outputs=[out / 'forest/import-report.json'], about='current detailed Mediterranean trees with matching HISM LODs'),
+             outputs=[out / 'forest/import-report.json'],
+             # The legacy owner assembles source LOD packages outside Assets.
+             # These are staging hints only; each requested mesh still needs native proof.
+             candidate_scope=CandidateScope(directories=(GAME / 'unreal/Content/Japan/Assets',
+                                                        GAME / 'unreal/Content/Japan/FoliageLODs')),
+             about='current detailed Mediterranean trees with matching HISM LODs'),
         Step('unreal.treehouse', [UnrealScript(SCRIPTS / 'import_treehouse.py', 'TREEHOUSE IMPORT COMPLETE')],
              inputs=[SCRIPTS / 'import_treehouse.py', SCRIPTS / 'see_through.py'],
              needs=['unreal.world', 'world.treehouse', 'world.treehouse_trees', 'world.treehouse_props', 'world.treehouse_textures'],
@@ -1710,7 +1715,7 @@ def steps(ctx):
                 if step.name in {'unreal.world', 'unreal.north', 'unreal.southwest', 'unreal.kei', 'unreal.bike', 'unreal.forest'}:
                     roots.add(content_root / 'Japan' / 'Assets')
                 roots = {root for root in roots if not any(other != root and other in root.parents for other in roots)}
-                if roots:
+                if roots and step.candidate_scope is None:
                     step.candidate_scope = CandidateScope(directories=tuple(sorted(roots)))
         if step.name in ('unreal.belmonte', 'unreal.brinecove'):
             region = step.name.removeprefix('unreal.')
