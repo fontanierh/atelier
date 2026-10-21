@@ -33,6 +33,8 @@ def validate(step):
     if (not step.heavy or not step.products or step.cutoff or step.pool_roots or len(step.commands) != 1
             or type(step.commands[0]) not in (build.Blender, build.UnrealScript)):
         raise ValueError(f'{step.name}: batching requires one guarded Blender/editor command and named products')
+    if isinstance(step.commands[0], build.UnrealScript) and step.commands[0].memory_limit() != 10:
+        raise ValueError(f'{step.name}: nondefault UnrealScript memory ceilings cannot use batching')
     if set(step.batch.runtime_env) & {'PYTHONHASHSEED', 'PYTHONPATH', 'PYTHONHOME', 'PATH',
                                       'ATELIER_BATCH', 'ATELIER_SCRIPT', 'ATELIER_LEFT_OUT'}:
         raise ValueError('A batch may not vary process-start environment settings between scripts')
@@ -48,6 +50,8 @@ def compatible(first, other):
             or type(other.commands[0]) is not type(first.commands[0])):
         return False
     a, b = first.commands[0], other.commands[0]
+    if isinstance(a, build.UnrealScript) and (a.memory_limit() != 10 or b.memory_limit() != 10):
+        return False
     # The worker inherits the first action's environment. Every action must explicitly
     # replace the same runtime keys, rather than inherit a predecessor's override.
     runtime = set(first.batch.runtime_env)
@@ -269,6 +273,9 @@ class Session:
 
 
 def run(ctx, candidates, done, *, index, tool_cache, echo, products, wanted=()):
+    if any(isinstance(step.commands[0], build.UnrealScript) and step.commands[0].memory_limit() != 10
+           for step, _, _ in candidates):
+        raise ValueError('Nondefault UnrealScript memory ceilings require separate processes')
     # PEP 578 hooks cannot be removed, and warm imports/callbacks carry action state. An audited
     # batch declaration falls back through select() to ordinary fresh-process execution.
     if any(step.audit for step, _, _ in candidates):
