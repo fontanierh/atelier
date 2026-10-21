@@ -11,6 +11,7 @@ import stat
 import tempfile
 
 from . import build_products, paths
+from .native_protocol import entry_path, validate_action as validate, inventory_identity
 from .build_cache import atomic_json, copy_file
 from .checkpoint_store import (CheckpointError, HEX, JOURNAL, Store, canonical, context, identity,
                                members, read_json, relative, roots, safe_destination, tracked_paths)
@@ -104,7 +105,6 @@ def compile_present(ctx, step):
         return False
 
 
-
 def label(ctx, path):
     choices = [(name, root) for name, (root, _) in roots(ctx).items() if path == root or root in path.parents]
     if not choices:
@@ -149,34 +149,6 @@ def key(ctx, step, fingerprint, *, require_outputs=True):
             tool['source_tools'] = tool_context(source_step, index.digest, cache=ctx.__dict__.setdefault('checkpoint_source_tool_cache', {}))
     return identity(dict(schema=1, game=ctx.game, task=step.name, fingerprint=fingerprint,
                          outputs=[label(ctx, p) for p in outputs], tool=tool))
-
-
-def entry_path(store, action_key):
-    if not isinstance(action_key, str) or not HEX.fullmatch(action_key):
-        raise CheckpointError('Invalid task cache identity')
-    return store.directory / 'actions' / (action_key + '.json')
-
-
-def validate(value, store, action_key):
-    if (type(value) is not dict or value.get('schema') != 1 or value.get('game') != store.game
-            or value.get('key') != action_key or type(value.get('roots')) is not list
-            or type(value.get('files')) is not dict or type(value.get('stamp')) is not dict
-            or not HEX.fullmatch(value.get('fingerprint', '')) or value['stamp'].get('touched')
-            or value['stamp'].get('fingerprint') != value['fingerprint']
-            or value['stamp'].get('checkpoint_key') != action_key
-            or value['stamp'].get('checkpoint_inventory') != inventory_identity(value['roots'], value['files'])):
-        raise CheckpointError('Invalid task cache manifest')
-    for root in value['roots']:
-        if type(root) is not dict or root.get('kind') not in ('file', 'directory', 'absent'):
-            raise CheckpointError('Invalid task output root')
-        relative(root['path'])
-    from .checkpoint_store import validate as validate_files
-    validate_files(dict(schema=1, game=store.game, files=value['files'], context={}, checkout='0' * 64,
-                        stamps={value['task']: value['stamp']}), store.game)
-    for name in value['files']:
-        if not any(name == r['path'] or name.startswith(r['path'] + '/') for r in value['roots']):
-            raise CheckpointError('Task cache member escapes its declared roots')
-    return value
 
 
 def load(store, action_key):
@@ -450,11 +422,6 @@ def certificate_key(ctx, step, fingerprint):
     if not declared(ctx, step) and all(isinstance(c, Call) for c in step.commands):
         return None
     return key(ctx, step, fingerprint, require_outputs=False)
-
-
-def inventory_identity(declarations, files):
-    return identity(dict(roots=declarations,
-                         files={name: {k: v for k, v in e.items() if k != 'mtime_ns'} for name, e in files.items()}))
 
 
 def certified(ctx, step, fingerprint, stamp):

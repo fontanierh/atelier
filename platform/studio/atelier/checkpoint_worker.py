@@ -14,6 +14,7 @@ def main(argv=None):
     parser.add_argument('--key')
     parser.add_argument('--source', type=Path)
     parser.add_argument('--release', action='store_true')
+    parser.add_argument('--read-only', action='store_true', help='candidate catalogue only; no producer metadata or Zen writes')
     args = parser.parse_args(argv)
     if args.source:
         paths.REPO = args.source.resolve()
@@ -28,7 +29,7 @@ def main(argv=None):
         previous = checkpoint_store.read_json(previous_cook)
         if previous.get('requested') in ('modern-incremental', 'modern-full'):
             mode = previous['requested']
-    ctx = build.Context(args.game, cook_mode=mode)
+    ctx = build.Context(args.game, cook_mode=mode, create=not args.read_only)
     steps = build.load_recipe(args.game).steps(ctx)
     store = checkpoint_store.Store(args.game)
     args.report.mkdir(parents=True, exist_ok=True)
@@ -41,11 +42,14 @@ def main(argv=None):
         from .build_snapshot import require_complete
         require_complete(ctx.out, game=args.game)
         from .build_checkpoints import incremental_environment
-        incremental_environment(ctx)
+        incremental_environment(ctx, record=not args.read_only)
         from . import checkpoint_zen
-        checkpoint_zen.export(ctx)
-        key = checkpoint_store.capture(ctx, steps, store, allow_seed=args.release)
-        if args.release and ctx.uproject and 'unreal.cook' not in store.load(key)['stamps']:
+        if not args.read_only:
+            checkpoint_zen.export(ctx)
+        print("checkpoint capture: validating existing results, then copying verified outputs; no build requested", flush=True)
+        key = checkpoint_store.capture(ctx, steps, store, echo=lambda message: print(message, flush=True), allow_seed=args.release,
+                                       candidate_only=args.read_only, scratch=args.report / 'capture-hashes.sqlite3' if args.read_only else None)
+        if args.release and not args.read_only and ctx.uproject and 'unreal.cook' not in store.load(key)['stamps']:
             print('Retained compatible incremental workspace state without inventing producer tool proof', flush=True)
         atomic_json(result, dict(key=key))
     elif args.operation == 'restore-action':

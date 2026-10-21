@@ -11,12 +11,11 @@ import shutil
 import tempfile
 
 from . import mesh_reuse, paths
-from .checkpoint_store import context, read_json, safe_destination
+from .native_protocol import context, read_json, safe_destination, native_context, atomic_json, runtime_files
 
 
 def observed_environment(ctx, current):
     """Bound unknown historical state to one receiving engine/SDK observation."""
-    from .build_cache import atomic_json
     target = safe_destination(ctx.out, 'native-imports/environment.json')
     if target.exists():
         saved = read_json(target)
@@ -51,8 +50,8 @@ class MeshReuse:
     role, material and collision validation MUST still run before recording a receipt.
     Missing evidence MUST use ordinary import, never manufacture a cache hit or task stamp.
     """
-    def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None):
-        from . import checkpoint_candidates
+    def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None, owner_roots=()):
+        from . import native_candidates as checkpoint_candidates
         self.ctx, self.task = ctx, task
         self.candidates = checkpoint_candidates
         self.content = ctx.uproject.parent / 'Content'
@@ -63,8 +62,19 @@ class MeshReuse:
         except ValueError:
             self.enabled = False
             self.policy = mesh_reuse.identity({'reuse': 'unsupported-policy'})
+        self.owner_sources = {}
+        if owner_script:
+            from . import source_imports
+            owner_script = Path(owner_script).resolve()
+            # Game-side finishing is part of the saved asset's identity. The
+            # shared FBX boundary has its separate geometry policy above.
+            self.owner_sources = {file.relative_to(paths.REPO).as_posix(): ast_dump(file.read_text())
+                for file in source_imports.local_imports(owner_script, owner_roots)
+                if file != self.script and file not in runtime_files() and file.is_relative_to(paths.REPO)}
+        receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy, owner=self.owner_sources))
+                          if owner_script else self.policy)
         current_context = context(ctx)
-        self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, self.policy, self.content)
+        self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, receipt_policy, self.content)
         self.bundle = checkpoint_candidates.load(ctx, task) if self.enabled else None
         self.donor = {}
         self.pending = {}
@@ -85,10 +95,9 @@ class MeshReuse:
             previous = mesh_reuse.saved_source(paths.REPO, relative_script, inputs.get('<repo>/' + relative_script))
             owner_matches = True
             if owner_script:
-                owner_script = Path(owner_script).resolve()
-                relative_owner = owner_script.relative_to(paths.REPO).as_posix()
-                owner = mesh_reuse.saved_source(paths.REPO, relative_owner, inputs.get('<repo>/' + relative_owner))
-                owner_matches = owner is not None and mesh_reuse.identity(ast_dump(owner)) == mesh_reuse.identity(ast_dump(owner_script.read_text()))
+                for relative_owner, current in self.owner_sources.items():
+                    owner = mesh_reuse.saved_source(paths.REPO, relative_owner, inputs.get('<repo>/' + relative_owner))
+                    owner_matches &= owner is not None and ast_dump(owner) == current
             self.local_compatible = bool(not old.get('touched') and previous and owner_matches
                                          and mesh_reuse.native_policy(previous, functions, self.script, inputs=inputs) == self.policy
                                          and observed_environment(ctx, current_context))
@@ -106,9 +115,9 @@ class MeshReuse:
                 except (ValueError, SyntaxError):
                     pass
             if self.compatible and owner_script:
-                owner_name = Path(owner_script).resolve().relative_to(paths.REPO).as_posix()
-                owner_source = mesh_reuse.revision_source(paths.REPO, self.bundle.get('source_revision'), owner_name)
-                self.compatible = owner_source is not None and ast_dump(owner_source) == ast_dump(Path(owner_script).read_text())
+                for owner_name, current in self.owner_sources.items():
+                    owner_source = mesh_reuse.revision_source(paths.REPO, self.bundle.get('source_revision'), owner_name)
+                    self.compatible &= owner_source is not None and ast_dump(owner_source) == current
             report = checkpoint_candidates.member_path(ctx, task, report_member, bundle=self.bundle) if report_member else None
             if report:
                 self.donor = json.loads(report.read_text())
@@ -216,11 +225,10 @@ class MeshReuse:
             record = dict(key=value['key'], packages=value['packages'], provenance=value['provenance'],
                 native_source_validated=True, sources=[dict(package=target, member=mesh_reuse.source_member(self.ctx, source),
                     sha256=expected) for target, source, expected in value['sources']])
-        mesh_reuse.queue_pending(self.ctx, self.task, nonce, self.policy, self.receipts.header['context'],
+        mesh_reuse.queue_pending(self.ctx, self.task, nonce, self.receipts.header['policy'], self.receipts.header['context'],
                                 name, record, self.counts)
 
     def finish(self):
-        from .build_cache import atomic_json
         result = dict(schema=1, task=self.task, counts=self.counts,
                       donor_checkpoint=self.bundle.get('checkpoint') if self.bundle else None,
                       donor_provenance=self.bundle.get('provenance') if self.bundle else None)
@@ -241,9 +249,13 @@ class AssetGroup:
     successful native loads and saves of every owned asset in the group.
     """
     def __init__(self, ctx, task, script, functions, *, parameters, sources=(), support=()):
-        import_policy = mesh_reuse.identity(dict(
-            code=mesh_reuse.native_policy(Path(script).read_text(), functions, script),
-            support=[mesh_reuse.digest(file) for file in support]))
+        self.enabled = True
+        try:
+            code = mesh_reuse.native_policy(Path(script).read_text(), functions, script)
+        except (ValueError, SyntaxError):
+            self.enabled = False
+            code = mesh_reuse.identity({'reuse': 'unsupported-policy'})
+        import_policy = mesh_reuse.identity(dict(code=code, support=[mesh_reuse.digest(file) for file in support]))
         self.book = mesh_reuse.Receipts(ctx.out, task + '.assets', context(ctx), import_policy,
                                         ctx.uproject.parent / 'Content')
         self.key = mesh_reuse.identity(dict(parameters=parameters,
@@ -252,7 +264,7 @@ class AssetGroup:
         self.sources = [Path(script), *map(Path, sources), *map(Path, support)]
 
     def matches(self, packages):
-        return self.book.matches('assets', self.key, packages)
+        return self.enabled and self.book.matches('assets', self.key, packages)
 
     def validated(self, packages):
         import unreal
@@ -261,7 +273,7 @@ class AssetGroup:
             if not asset or not unreal.EditorAssetLibrary.save_loaded_asset(asset, only_if_is_dirty=True):
                 raise RuntimeError('Native asset group could not save ' + package)
         nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
-        if nonce:
+        if nonce and self.enabled:
             record = dict(kind='asset-group', key=self.key, packages=packages, native_assets_validated=True,
                 provenance={'kind': 'current-native-import'}, sources=[
                     dict(member=mesh_reuse.source_member(self.ctx, file), sha256=mesh_reuse.digest(file))
@@ -292,10 +304,10 @@ def lods_match(mesh, plan):
                         - percent) < 1e-5 for index, (percent, _) in enumerate(plan)))
 
 
-_LEGACY = {}
+_COMMON_FBX = {}
 
 
-def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, validator):
+def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, validator, owner_roots=()):
     """Default shared FBX boundary; unknown owner/provenance simply imports normally."""
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')
@@ -303,12 +315,11 @@ def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, val
     if not task or not game or not owner or not nonce:
         return None, None
     key = (task, game, owner, nonce, str(script))
-    if key not in _LEGACY:
-        from .build import Context
-        _LEGACY[key] = MeshReuse(Context(game), task, script, ('_import_mesh',), owner_script=owner)
-    reuse = _LEGACY[key]
+    if key not in _COMMON_FBX:
+        _COMMON_FBX[key] = MeshReuse(native_context(game), task, script, ('_import_mesh',), owner_script=owner, owner_roots=owner_roots)
+    reuse = _COMMON_FBX[key]
     package = destination + '/' + name
-    inputs = dict(format='legacy-fbx', fresh_slots=bool(fresh_slots), seed_sha256=mesh_reuse.digest(seed))
+    inputs = dict(format='fbx', fresh_slots=bool(fresh_slots), seed_sha256=mesh_reuse.digest(seed))
     mesh = reuse.acquire(package, package, geometry=inputs, donor_geometry=inputs,
                          sources=[(package, Path(source), mesh_reuse.digest(source))], validator=validator)
     return mesh, reuse

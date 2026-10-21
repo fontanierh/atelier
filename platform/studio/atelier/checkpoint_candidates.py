@@ -7,11 +7,11 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
-import stat
 import tempfile
 import time
 
 from . import build_products
+from .native_candidates import (task_name, root, original, inventory, checked_file, Bundle, completion, load, member_path)
 from .build_cache import atomic_json, copy_file
 from .checkpoint_store import (CheckpointError, HEX, Store, context, identity, read_json,
                                relative, safe_destination, validate)
@@ -24,121 +24,25 @@ class CandidateScope:
     donor_task: str | None = None
 
 
-def task_name(value):
-    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', value) or '..' in value:
-        raise CheckpointError('Invalid candidate task name')
-    return value
-
-
-def root(ctx):
-    return safe_destination(ctx.out, '.state/import-candidates')
-
-
-def original(store, key):
-    if not HEX.fullmatch(key):
-        raise CheckpointError('Invalid candidate checkpoint key')
-    try:
-        return store.load(key)
-    except FileNotFoundError:
-        value = read_json(store.directory / 'candidate-sources' / (key + '.json'))
-        validate(value, store.game)
-        if identity(value) != key:
-            raise CheckpointError('Candidate source manifest identity differs')
-        return value
-
-
-def inventory(ctx, key, task):
-    """Original immutable member inventory and historical compatibility evidence, without copies."""
+def save_prior(ctx, task, nonce, stamp):
+    """Non-success historical evidence; the caller still invalidates its actual build stamp."""
+    if not stamp:
+        return None
     task_name(task)
-    saved = original(Store(ctx.game), key)
-    stamp = {**saved['stamps'], **saved.get('incremental_stamps', {})}.get(task)
-    revision = saved.get('source_revision', '')
-    if (saved['context'] != context(ctx) or not stamp or stamp.get('touched')
-            or not re.fullmatch(r'[0-9a-f]{40}', revision)):
-        raise CheckpointError('Candidate needs compatible engine/platform, clean source revision and historical task proof')
-    return dict(schema=1, checkpoint=key, donor_task=task, donor_fingerprint=stamp['fingerprint'],
-                source_revision=revision, context=saved['context'], provenance='compatibility-only', files=saved['files'])
-
-
-def checked_file(directory, member, entry):
-    relative(member)
-    if entry.get('path') != 'files/' + member or not HEX.fullmatch(entry.get('sha256', '')):
-        raise CheckpointError('Invalid staged candidate member')
-    path = safe_destination(directory, entry['path'])
-    if (path.is_symlink() or not path.is_file() or path.stat().st_size != entry['size']
-            or stat.S_IMODE(path.stat().st_mode) != entry['mode']
-            or build_products.file_digest(path) != entry['sha256']):
-        raise CheckpointError('Staged candidate bytes changed')
+    if not re.fullmatch('[0-9a-f]{24}', nonce) or not isinstance(stamp, dict):
+        raise CheckpointError('Invalid prior native evidence owner or invocation')
+    path = safe_destination(ctx.out, '.state/mesh-import-prior/' + task + '/' + nonce + '.json')
+    if os.path.lexists(path):
+        raise CheckpointError('Prior native invocation evidence already exists')
+    atomic_json(path, dict(schema=1, task=task, nonce=nonce, stamp=stamp,
+                           observed_context=getattr(ctx, 'checkpoint_observed_context', None)))
     return path
-
-
-class Bundle(dict):
-    """Loaded once per importer; each member access verifies only that member's actual bytes."""
-    def __init__(self, value, directory):
-        super().__init__(value)
-        self.directory = directory
-
-    def member_path(self, member):
-        entry = self['files'].get(member)
-        return checked_file(self.directory, member, entry) if entry is not None else None
-
-
-def completion(ctx, value, directory, *, verify_files=True):
-    if (value.get('schema') != 1 or value.get('provenance') != 'compatibility-only'
-            or value.get('context') != context(ctx) or not HEX.fullmatch(value.get('checkpoint', ''))
-            or not HEX.fullmatch(value.get('donor_fingerprint', ''))
-            or not re.fullmatch(r'[0-9a-f]{40}', value.get('source_revision', ''))
-            or not isinstance(value.get('files'), dict) or not value['files']):
-        raise CheckpointError('Invalid or incompatible candidate completion')
-    task_name(value['donor_task'])
-    proof = inventory(ctx, value['checkpoint'], value['donor_task'])
-    if any(value.get(k) != proof[k] for k in ('source_revision', 'context', 'donor_fingerprint')):
-        raise CheckpointError('Candidate completion differs from immutable donor evidence')
-    for member, entry in value['files'].items():
-        original_entry = proof['files'].get(member)
-        if original_entry is None or original_entry['kind'] != 'file' or any(
-                entry.get(k) != original_entry[k] for k in ('sha256', 'size', 'mode')):
-            raise CheckpointError('Candidate completion contains unproved donor members')
-    bundle = Bundle(value, directory)
-    if verify_files:
-        for member in value['files']:
-            bundle.member_path(member)
-    return bundle
-
-
-def load(ctx, task):
-    """@cc [owner:fontanierh,label:correctness] compatibility-candidates-are-not-success
-    A candidate pointer MUST stay within ignored receiving staging. Load MUST verify engine/
-    platform context and staged file integrity. It MUST NOT publish a receiving stamp or claim
-    current importer compatibility. A failed check MUST yield a normal cache miss. Reuse of
-    native assets requires the native owner's current source/policy/material/collision proof.
-    """
-    try:
-        pointer = read_json(root(ctx) / (task_name(task) + '.json'))
-        if pointer.get('schema') != 1:
-            return None
-        manifest = safe_destination(root(ctx), pointer['manifest'])
-        bundle = completion(ctx, read_json(manifest), manifest.parent)
-        if bundle.get('receiver_task') != task:
-            return None
-        return bundle
-    except (OSError, ValueError, KeyError, TypeError, CheckpointError):
-        return None
-
-
-def member_path(ctx, task, member, *, bundle=None):
-    """Pass the Bundle from load() to avoid rehashing the bundle on each member access."""
-    try:
-        bundle = bundle if bundle is not None else load(ctx, task)
-        return bundle.member_path(member) if bundle is not None else None
-    except (OSError, ValueError, KeyError, TypeError, CheckpointError):
-        return None
 
 
 def stage_worker(ctx, request_id):
     if not re.fullmatch(r'[0-9a-f]{24}', request_id):
         raise CheckpointError('Invalid candidate staging request')
-    request = read_json(ctx.out / '.state/candidate-requests' / (request_id + '.json'))
+    request = read_json(safe_destination(ctx.out, '.state/candidate-requests/' + request_id + '.json'))
     proof = inventory(ctx, request['checkpoint'], request['donor_task'])
     task_name(request['receiver_task'])
     files = {}
@@ -182,7 +86,8 @@ def stage(ctx, key, donor_task, members, *, receiver_task=None):
         raise CheckpointError('Candidate selection must contain existing regular checkpoint members')
     request_id = os.urandom(12).hex()
     request = dict(checkpoint=key, donor_task=donor_task, receiver_task=receiver_task, members=members)
-    atomic_json(ctx.out / '.state/candidate-requests' / (request_id + '.json'), request)
+    request_path = safe_destination(ctx.out, '.state/candidate-requests/' + request_id + '.json')
+    atomic_json(request_path, request)
     from .build_checkpoints import _guard
     result = _guard(ctx, 'stage-candidates', request_id)
     if result.get('folder') != '/'.join((key, receiver_task, request_id)):
@@ -212,6 +117,17 @@ def select(ctx, scope, files):
     return sorted(set(required) | {n for n, e in files.items() if e['kind'] == 'file' and any(n.startswith(p) for p in prefixes)})
 
 
+def local_keys(store):
+    """Defer manifest validation to each attempt so one corrupt donor cannot hide older work."""
+    candidates = []
+    for path in [*store.manifests.glob('*.json'), *(store.directory / 'candidate-sources').glob('*.json')]:
+        try:
+            candidates.append((path.stat().st_mtime_ns, path.stem))
+        except OSError:
+            continue
+    return list(dict.fromkeys(key for _, key in sorted(candidates, reverse=True)))
+
+
 def prepare(ctx, step, *, echo=print):
     """Automatically discover compatible candidates before a normal native miss, including batches."""
     scope = getattr(step, 'candidate_scope', None)
@@ -231,7 +147,7 @@ def prepare(ctx, step, *, echo=print):
         if not selected:
             return None
         return stage(ctx, key, donor_task, selected, receiver_task=step.name)
-    for key, _ in store.latest():
+    for key in local_keys(store):
         try:
             result = attempt(key)
             if result:
@@ -247,22 +163,22 @@ def prepare(ctx, step, *, echo=print):
         try:
             with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
                 for item in remote.candidates():
-                    data = remote.descriptor(item, Path(temporary))
-                    key, saved = data['key'], data['checkpoint']
-                    # Metadata-only catalogues never become full workspace donors.
-                    atomic_json(store.directory / 'candidate-sources' / (key + '.json'), saved)
                     try:
+                        data = remote.descriptor(item, Path(temporary))
+                        key, saved = data['key'], data['checkpoint']
+                        # Metadata-only catalogues never become full workspace donors.
+                        atomic_json(store.directory / 'candidate-sources' / (key + '.json'), saved)
                         proof = inventory(ctx, key, donor_task)
-                    except CheckpointError:
-                        continue
-                    selected = select(ctx, scope, proof['files'])
-                    if not selected:
-                        continue
-                    subset = dict(saved, files={n: saved['files'][n] for n in selected}, stamps={}, incremental_stamps={}, actions={})
-                    needed = {e['sha256'] for e in subset['files'].values()}
-                    transfer = dict(data, checkpoint=subset, key=identity(subset), blobs={n: data['blobs'][n] for n in needed})
-                    remote.fetch(item, transfer, store, save=False)
-                    return attempt(key)
+                        selected = select(ctx, scope, proof['files'])
+                        if not selected:
+                            continue
+                        subset = dict(saved, files={n: saved['files'][n] for n in selected}, stamps={}, incremental_stamps={}, actions={})
+                        needed = {e['sha256'] for e in subset['files'].values()}
+                        transfer = dict(data, checkpoint=subset, key=identity(subset), blobs={n: data['blobs'][n] for n in needed})
+                        remote.fetch(item, transfer, store, save=False)
+                        return attempt(key)
+                    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
+                        echo(step.name + ': remote donor miss (' + str(error) + ')')
         except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
             echo(step.name + ': remote candidate miss (' + str(error) + ')')
     echo(step.name + ': no compatible native candidates; normal import remains required')

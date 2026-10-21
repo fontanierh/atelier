@@ -18,10 +18,11 @@ import sys
 import tempfile
 
 from . import build_products, paths
+from .atomic_files import atomic_json
 
 SCHEMA = 1
 TOOL_SUPPORT = ('build_source.py', 'build_inputs.py', 'build_products.py', 'build_cache.py',
-                'build_hashes.py', 'paths.py', 'build_deferred.py', 'safety/process.py', 'safety/exec_gate.py')
+                'build_hashes.py', 'source_imports.py', 'atomic_files.py', 'paths.py', 'build_deferred.py', 'safety/process.py', 'safety/exec_gate.py')
 DIGEST = re.compile(r'[0-9a-f]{64}')
 NATIVE_SUFFIXES = {'.uasset', '.umap', '.uexp', '.ubulk', '.dylib', '.dll', '.so'}
 
@@ -33,20 +34,6 @@ def tool_support():
     studio = Path(__file__).parent
     return {name: safety / name.removeprefix('safety/') if name.startswith('safety/') else studio / name
             for name in TOOL_SUPPORT}
-
-
-def atomic_json(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, prefix='.write-', delete=False) as stream:
-        temporary = Path(stream.name)
-        try:
-            json.dump(value, stream, sort_keys=True)
-            stream.write('\n')
-            stream.flush()
-            os.fsync(stream.fileno())
-            temporary.replace(path)
-        finally:
-            temporary.unlink(missing_ok=True)
 
 
 @cache
