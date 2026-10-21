@@ -330,19 +330,19 @@ def missing_product_inputs(step):
     return [str(path) for path in required_inputs(step) if not Path(path).exists()]
 
 
-def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _input_bytes=None):
+def fingerprint(step, done, *, index=None, tool_cache=None, observation=None, _input_bytes=None, _tool_identity=None):
     """@cc [owner:fontanierh,label:correctness] legacy-fingerprint-compatibility
     Legacy steps without deferred inputs MUST retain their existing fingerprint algorithm. Read edges
     MUST include the consumed product's content identity; references and ordering MUST NOT.
     """
     return fingerprint_state(step, done, capture=False, index=index, tool_cache=tool_cache,
-                             observation=observation, _input_bytes=_input_bytes)[0]
+                             observation=observation, _input_bytes=_input_bytes, _tool_identity=_tool_identity)[0]
 
 
-def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None):
+def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, observation=None, _input_bytes=None, _tool_identity=None):
     """Hash once, optionally retaining per-input identities for build explanations.
 
-    _input_bytes is only for reproducing historical evidence in bounded migration. Ordinary
+    _input_bytes and _tool_identity only reproduce historical evidence in bounded migration. Ordinary
     task/cache identities always read actual current inputs; replacements never certify work.
     """
     digest = hashlib.sha256()
@@ -437,7 +437,8 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
             from .build_audit import tool_context
         else:
             from .build_cache import tool_context
-        state['tools'] = build_products.identity(tool_context(step, hasher, cache=tool_cache))
+        state['tools'] = (_tool_identity if _tool_identity is not None else
+                          build_products.identity(tool_context(step, hasher, cache=tool_cache)))
         digest.update(state['tools'].encode())
     if step.batch:
         state['batch'] = repr(step.batch)
@@ -828,6 +829,7 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         return 75
     checkpoint.update(plan=plan, done=done)
     tool_cache = {}
+    ctx.support_migration_tools = tool_cache
     def verify_spatial(step, expected):
         if step.queries:
             from .build_spatial import verify_current
@@ -864,6 +866,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         previous = read_stamp(stamp)
         if actions is not None and not force and not touch:
             previous = task_cache.migrate_boundary(ctx, step, current, input_state, previous, done, echo=echo)
+            from .build_support_migration import migrate as migrate_support
+            previous = migrate_support(ctx, step, current, input_state, previous, done, echo=echo)
             from .build_batch_migration import migrate as migrate_batch
             previous = migrate_batch(ctx, step, current, input_state, previous, done, echo=echo)
         ctx.__dict__.setdefault('native_previous_stamps', {})[step.name] = previous
@@ -914,20 +918,32 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'{print_} touched')
             continue
         local_portable = step.cache and build_cache.Store().action(current).exists()
-        action_hit = (actions.get(step, current, local_only=local_portable)
+        from .build_support_migration import cached_key as previous_cache_key
+        compatible_portable = (previous_cache_key(ctx, step, current, input_state, done)
+                               if not force_step and not local_portable else None)
+        action_hit = (actions.get(step, current, local_only=local_portable or compatible_portable is not None)
                       if actions is not None and not force_step and not recovering else None)
         try:
             # The batch selector skips current certificates; this explicitly requested repair
             # must execute or restore normally before handing later actions to a batch.
-            batch = [] if rebuilding_touched or action_hit is not None or (actions is not None and force_step) else build_batches.select(
+            batch = [] if rebuilding_touched or action_hit is not None or compatible_portable is not None or (actions is not None and force_step) else build_batches.select(
                 ctx, plan, position, done, force=force_step, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
             echo(f'{print_} FAILED: {error}')
             return 1
         if batch and actions is not None and not force_step:
-            # Saved results never enter a native batch.
-            for offset, (candidate, candidate_key, _) in enumerate(batch):
-                if actions.get(candidate, candidate_key) is not None:
+            from .build_support_migration import migrate as migrate_support
+            from .build_batch_migration import migrate as migrate_batch
+            # Saved or equivalently preserved results never enter a native batch.
+            for offset, (candidate, candidate_key, candidate_state) in enumerate(batch):
+                prior = read_stamp(ctx.stamps / (candidate.name + '.json'))
+                prior = migrate_support(ctx, candidate, candidate_key, candidate_state, prior, done, echo=echo)
+                prior = migrate_batch(ctx, candidate, candidate_key, candidate_state, prior, done, echo=echo)
+                if prior.get('fingerprint') == candidate_key and task_cache.local_incremental(ctx, candidate, candidate_key, prior):
+                    batch = batch[:offset]
+                    break
+                if (previous_cache_key(ctx, candidate, candidate_key, candidate_state, done) is not None
+                        or actions.get(candidate, candidate_key) is not None):
                     batch = batch[:offset]
                     break
         if batch:
@@ -995,6 +1011,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 products = store.restore(ctx, step, current)
                 if products is not None:
                     restore_source = 'local'
+                if products is None and compatible_portable is not None:
+                    products = store.restore(ctx, step, compatible_portable)
+                    if products is not None:
+                        restore_source = 'compatible-local'
                 if products is None and remote is not None and remote.fetch(current, store, echo):
                     products = store.restore(ctx, step, current)
                     if products is not None:
@@ -1122,7 +1142,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 stamp.unlink(missing_ok=True)
                 raise RuntimeError('Pool tool context changed during build; outputs not certified')
             record['pool_key'] = pool_key
-        if actions is not None:
+        if restore_source == 'compatible-local':
+            record.pop('checkpoint_key', None)
+            record['checkpoint_migrated_from'] = compatible_portable
+            record['checkpoint_migration_result'] = record.get('result', compatible_portable)
+            record['restored_from'] = compatible_portable
+        if actions is not None and restore_source != 'compatible-local':
             try:
                 task_cache.publish(ctx, step, current, record, store=actions.store, done=done, produced=True)
             except (OSError, ValueError, RuntimeError) as error:

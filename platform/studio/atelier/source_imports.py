@@ -95,4 +95,3 @@ def local_imports(script, roots=()):
     still require explicit recipe inputs. Recipe factories may share one short-lived scanner.
     """
     return ImportScanner().local_imports(script, roots)
-

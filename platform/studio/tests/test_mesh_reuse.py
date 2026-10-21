@@ -232,3 +232,17 @@ def test_known_prior_environment_cannot_become_unknown(tmp_path):
 def test_policy_refuses_definition_time_execution(definition):
     with pytest.raises(ValueError, match='initialization|definition expressions'):
         reuse.policy("T={}\ndef s(): T['a']=1\n" + definition + '\ndef build(): return T\n', ('build',))
+
+
+def test_platform_support_source_resolves_read_only_and_detects_changed_bytes(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from atelier import paths
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    ctx = SimpleNamespace(out=tmp_path / 'build/game', uproject=tmp_path / 'games/game/unreal/Game.uproject')
+    support = tmp_path / 'platform/support.py'; support.parent.mkdir(); support.write_text('SETTING=1\n')
+    member = reuse.source_member(ctx, support)
+    assert member == 'repo/platform/support.py'
+    assert reuse.resolve_source(ctx, member) == support
+    support.unlink(); support.symlink_to(tmp_path / 'missing')
+    with pytest.raises(ValueError):
+        reuse.resolve_source(ctx, member)

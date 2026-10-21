@@ -299,8 +299,9 @@ def historical_packages_match(ctx, task, stamp, packages):
 
 
 def source_member(ctx, source):
+    from . import paths
     source = Path(source).resolve()
-    for label, root in [('generated', ctx.out), ('game', ctx.uproject.parent.parent)]:
+    for label, root in [('generated', ctx.out), ('game', ctx.uproject.parent.parent), ('repo', paths.REPO)]:
         root = root.resolve()
         if source.is_relative_to(root):
             return label + '/' + source.relative_to(root).as_posix()
@@ -309,7 +310,8 @@ def source_member(ctx, source):
 
 def resolve_source(ctx, member):
     label, _, name = relative(member).as_posix().partition('/')
-    roots = {'generated': ctx.out, 'game': ctx.uproject.parent.parent}
+    from . import paths
+    roots = {'generated': ctx.out, 'game': ctx.uproject.parent.parent, 'repo': paths.REPO}
     if label not in roots:
         raise ValueError('Unknown native mesh source root')
     path = safe_destination(roots[label], name)

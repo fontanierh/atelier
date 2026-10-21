@@ -205,7 +205,7 @@ def test_unreal_command_echoes_parse_after_normal_success_checks(tmp_path, monke
     begin, end = interval().splitlines(keepends=True)
     stdout = 'SUCCESS\n' + begin + 'LogPython: ' + begin + end + 'LogPython: ' + end
     monkeypatch.setattr(build.subprocess, 'run', lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=stdout))
-    ctx = SimpleNamespace(env=lambda _: {})
+    ctx = SimpleNamespace(game='fixture', out=tmp_path / 'build', env=lambda _: {})
     command = UnrealScript(tmp_path / 'import.py', 'SUCCESS')
     receipt = build.run_argv(ctx, Step('import', [command]), command, ['fake-command'], (), io.StringIO(), None, None)
     assert receipt['status'] == 'complete'

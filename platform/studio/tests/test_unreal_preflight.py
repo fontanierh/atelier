@@ -137,7 +137,7 @@ def test_explicit_startup_override_preserves_batch_compatibility_and_declares_co
 
 def test_normal_build_keeps_one_guard_and_requires_aggregate_before_preflight(hook, monkeypatch):
     command = build.UnrealScript(Path('import.py'), 'DONE', env=((prepare.KEY, str(hook)),))
-    ctx = SimpleNamespace(logs=hook.parent / 'logs', env=lambda extra: dict(extra), game='fixture')
+    ctx = SimpleNamespace(logs=hook.parent / 'logs', out=hook.parent / 'build', env=lambda extra: dict(extra), game='fixture')
     step = build.Step('import', [command], heavy=True)
     calls = []
     def guard(argv, folder, **kwargs):

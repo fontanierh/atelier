@@ -209,7 +209,7 @@ class ModuleDigestTests(unittest.TestCase):
     def test_a_guarded_run_removes_its_descriptor_whatever_the_outcome(self):
         """Success, a failed editor and a refused render slot all end with the project folder as it was."""
         ctx = types.SimpleNamespace(uproject=self.uproject, unreal_cmd='UnrealEditor-Cmd', logs=Path(self.temp.name) / 'logs',
-                                    game='game', env=lambda extra: dict(extra))
+                                    game='game', out=(Path(self.temp.name) / 'out').resolve(), env=lambda extra: dict(extra))
         command = UnrealScript(Path(self.temp.name) / 'import.py', 'IMPORTED', modules=('Tools',))
         step = Step('import', [command], heavy=True)
         seen = []

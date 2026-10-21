@@ -24,6 +24,7 @@ def scene(tmp_path, monkeypatch):
     monkeypatch.setattr(native_protocol, 'context', lambda _: current)
     monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'e' * 24)
     monkeypatch.setattr(mesh_reuse, 'revision_source', lambda *a: script.read_text())
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: script.read_text())
     source = ctx.out / 'mesh.glb'; source.write_bytes(b'expected mesh source')
     hull = ctx.out / 'hull.glb'; hull.write_bytes(b'expected collision source')
     files, staged = {}, {}
@@ -38,7 +39,8 @@ def scene(tmp_path, monkeypatch):
     report = repo / 'report.json'; report.write_text('{"meshes":[]}')
     staged['generated/report.json'] = report
     bundle = dict(checkpoint='a' * 64, donor_task='unreal.region', donor_fingerprint='b' * 64,
-                  source_revision='c' * 40, provenance='compatibility-only', files=files)
+                  source_revision='c' * 40, provenance='compatibility-only', files=files,
+                  donor_stamp={'fingerprint': 'b' * 64, 'input_state': {'inputs': {'<repo>/import.py': 'd' * 64}}})
     monkeypatch.setattr(checkpoint_candidates, 'load', lambda *a: bundle)
     def member(*args, bundle=None):
         return staged.get(args[2])
@@ -52,6 +54,7 @@ def scene(tmp_path, monkeypatch):
             assert (content / mesh_reuse.package_members(required)[0].removeprefix('content/')).exists()
         return SimpleNamespace(package=package)
     unreal = SimpleNamespace(
+        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: []),
         EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda p:
             (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
         AssetRegistryHelpers=SimpleNamespace(
@@ -176,7 +179,8 @@ def test_material_group_publishes_only_after_parent_and_preserves_unchanged_byte
     monkeypatch.setattr(native_protocol, 'context', lambda _: {})
     monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'a' * 24)
     saves = []
-    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(load_asset=lambda p: p,
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(
+        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: []), load_asset=lambda p: p,
         EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda asset, **kw: saves.append(asset) or True)))
     group = native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={'colour': 1}, sources=[texture])
     packages = ['/Game/Region/Material']
@@ -206,6 +210,7 @@ def test_current_common_receipt_binds_owner_finishing_and_support(scene, monkeyp
     owner.write_text('from finishing import SETTING\ndef main(): return SETTING\n')
     script = paths.REPO / 'import.py'
     monkeypatch.setattr(mesh_reuse, 'revision_source', lambda repo, revision, name: (repo / name).read_text())
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda repo, name, recorded: (repo / name).read_text())
     def adapter():
         return native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',), owner_script=owner, owner_roots=(helper.parent,))
     first = adapter(); assert acquire(scene, first)
@@ -224,10 +229,40 @@ def test_unsupported_material_policy_runs_builder_without_publishing_receipt(tmp
     monkeypatch.setattr(native, 'context', lambda _: {})
     monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'a' * 24)
     saves = []
-    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(load_asset=lambda p: p,
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(
+        EditorLoadingAndSavingUtils=SimpleNamespace(get_dirty_content_packages=lambda: []), load_asset=lambda p: p,
         EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda asset, **kw: saves.append(asset) or True)))
     group = native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={})
     assert not group.matches(['/Game/Region/Material'])
     group.validated(['/Game/Region/Material'])
     assert saves == ['/Game/Region/Material']
     assert not group.book.path.exists() and not (ctx.out / '.state/mesh-import-pending').exists()
+
+
+def test_candidate_uses_original_task_policy_not_capture_head(scene, monkeypatch):
+    script = paths.REPO / 'import.py'
+    monkeypatch.setattr(mesh_reuse, 'revision_source', lambda *args: pytest.fail('capture HEAD is not producer proof'))
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *args: 'def build(): return 2\n')
+    reuse = native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',))
+    assert acquire(scene, reuse) is None and reuse.counts['reused_candidate'] == 0
+
+
+def test_candidate_missing_original_task_evidence_misses(scene):
+    scene.bundle.pop('donor_stamp')
+    reuse = native.MeshReuse(scene.ctx, 'unreal.region', paths.REPO / 'import.py', ('build',))
+    assert acquire(scene, reuse) is None
+
+
+def test_dirty_loaded_mesh_refuses_otherwise_valid_disk_receipt(scene, monkeypatch):
+    reuse = scene.adapter(); assert acquire(scene, reuse)
+    reuse.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    monkeypatch.setattr(sys.modules['unreal'].EditorLoadingAndSavingUtils, 'get_dirty_content_packages',
+                        lambda: [SimpleNamespace(get_name=lambda: scene.package)])
+    again = scene.adapter()
+    assert acquire(scene, again) is None
+    assert again.counts['reused_local'] == 0
+
+
+def test_missing_dirty_package_readback_misses(scene, monkeypatch):
+    monkeypatch.delattr(sys.modules['unreal'], 'EditorLoadingAndSavingUtils')
+    assert acquire(scene, scene.adapter()) is None

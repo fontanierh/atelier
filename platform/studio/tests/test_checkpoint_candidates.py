@@ -289,3 +289,46 @@ def test_candidate_capture_requires_external_scratch(fixture):
     fixture.produce(ctx, steps)
     with pytest.raises(cp.CheckpointError, match='outside the producer'):
         cp.capture(ctx, steps, fixture.store, candidate_only=True, scratch=ctx.out / '.state/hashes.sqlite3')
+
+
+@pytest.mark.parametrize('candidate_only', [False, True])
+def test_capture_retains_original_stale_task_inputs_only_as_candidate_evidence(fixture, tmp_path, monkeypatch, candidate_only):
+    from atelier import build, native_candidates
+    ctx, steps = fixture.checkout('old-producer')
+    fixture.produce(ctx, steps)
+    path = ctx.stamps / 'tree.json'
+    old = cp.read_json(path)
+    old['input_state'] = build.fingerprint_state(steps[0], {})[1]
+    atomic_json(path, old)
+    steps[0].inputs[0].write_text('changed source after the old successful import')
+    key = cp.capture(ctx, steps, fixture.store, candidate_only=candidate_only,
+                     scratch=tmp_path / 'controller/hashes.sqlite3', echo=lambda _: None)
+    saved = candidates.original(fixture.store, key)
+    assert saved['historical_stamps'] == {'tree': old}
+    assert 'tree' not in saved['stamps'] and 'tree' not in saved['incremental_stamps']
+    assert not (fixture.store.directory / 'actions' / (old['checkpoint_key'] + '.json')).exists()
+    saved['source_revision'] = 'a' * 40
+    key = cp.identity(saved)
+    atomic_json(fixture.store.directory / 'candidate-sources' / (key + '.json'), saved)
+    monkeypatch.setattr(native_candidates, 'Store', lambda _: fixture.store)
+    proof = candidates.inventory(ctx, key, 'tree')
+    assert proof['donor_stamp'] == old and proof['donor_fingerprint'] == old['fingerprint']
+
+
+def test_historical_stamp_change_during_capture_refuses_publication(fixture, tmp_path, monkeypatch):
+    from atelier import build
+    ctx, steps = fixture.checkout('moving-history')
+    fixture.produce(ctx, steps)
+    path = ctx.stamps / 'tree.json'; old = cp.read_json(path)
+    old['input_state'] = build.fingerprint_state(steps[0], {})[1]
+    atomic_json(path, old)
+    steps[0].inputs[0].write_text('changed')
+    original = fixture.store.put
+    def move(path, digest):
+        original(path, digest)
+        atomic_json(ctx.stamps / 'tree.json', dict(old, seconds=9))
+    monkeypatch.setattr(fixture.store, 'put', move)
+    with pytest.raises(cp.CheckpointError, match='changed during'):
+        cp.capture(ctx, steps, fixture.store, candidate_only=True,
+                   scratch=tmp_path / 'controller/hashes.sqlite3', echo=lambda _: None)
+    assert not list((fixture.store.directory / 'candidate-sources').glob('*.json'))
