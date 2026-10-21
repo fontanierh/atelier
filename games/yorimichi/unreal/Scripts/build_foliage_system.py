@@ -165,6 +165,20 @@ def blend_material(material):
     return result
 
 
+def bind_variant_materials(mesh, replacements):
+    """@cc [owner:fontanierh,label:correctness;performance] foliage-material-batch
+    Binding source materials MUST preserve slot order, names, UV metadata and the
+    two appended canopy slots. It MUST publish the material array once per variant,
+    rather than invoking an editor mesh update for each source slot.
+    """
+    slots = [slot.copy() for slot in mesh.get_editor_property('static_materials')]
+    if len(slots) != len(replacements) + 2:
+        raise ValueError('Foliage variant material layout differs from its source')
+    for slot, material in zip(slots, replacements):
+        slot.set_editor_property('material_interface', material)
+    mesh.set_editor_property('static_materials', slots)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     U.load_module('YorimichiImport')
@@ -231,13 +245,14 @@ def main():
         product = F.build(source)
         U.log(f'FOLIAGE SYSTEM importing representations: {path}')
         product_path.write_text(json.dumps(product, separators=(',', ':'))+'\n')
+        replacements = [blend_material(mesh.get_material(slot))
+                        for slot in range(len(mesh.get_editor_property('static_materials')))]
         variants = {}
         for shadow in (False, True):
             dest = F.ROOT + '/Meshes/' + key + ('_Shadow' if shadow else '')
             result = U.YorimichiFoliageBuilder.build_variant(mesh, str(product_path), dest, near, far, shadow)
             assert result, dest
-            for slot in range(len(mesh.get_editor_property('static_materials'))):
-                result.set_material(slot, blend_material(mesh.get_material(slot)))
+            bind_variant_materials(result, replacements)
             assert E.save_loaded_asset(result), dest
             expected = [len(product['shadow']['faces'])] if shadow else [len(v['faces']) for v in product['levels']]
             assert result.get_num_lods() == len(expected), dest

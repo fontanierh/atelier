@@ -69,7 +69,7 @@ Inspect the normal `unreal.foliage_system` report and completion marker before p
 - `games/yorimichi/unreal/Content/Data/foliage_system/registry.json`
 - `build/yorimichi/logs/unreal.foliage_system.guard/`
 
-The owner must finish, verify its saved counts/digests and publish `FOLIAGE SYSTEM COMPLETE`. Partial output directories are not success. An observed preparation bottleneck is the per-slot `set_material` loop in `build_foliage_system.py`: UE may rebuild a mesh for each assignment. Batching material bindings is a possible follow-up, **not implemented or validated**. Do not weaken output verification to speed preparation.
+The owner must finish, verify its saved counts/digests and publish `FOLIAGE SYSTEM COMPLETE`. Partial output directories are not success. The receiving-machine follow-up batches material bindings into one editor property update per variant, preserving slot metadata and the appended canopy materials. Source material wrappers are prepared once for both variants. Focused tests cover binding order, metadata preservation and refusing incompatible layouts; native preparation and its timings still need validation. Do not weaken output verification to speed preparation.
 
 On macOS, verify `xcrun -sdk macosx metal --version` before rendered testing. The originating machine initially lacked the Metal compiler; installing Apple's `MetalToolchain` component resolved startup. A successful NullRHI test does not check this prerequisite.
 
@@ -91,6 +91,23 @@ uv run python games/yorimichi/scenarios/foliage_performance.py --port 8841 --tak
 The scout chooses dense neighborhoods from actual tree placements in Momiji, Hidamari, Belmonte and Brinecove, trying down-facing and oblique cameras at three heights. **Inspect its captures:** reject cameras inside terrain/crowns or without enough visible trees, and adjust/replay explicit camera files as needed. Rank original GPU cost and frame p95; report poor results as well as good ones. The scout itself only records baselines.
 
 The paired driver checks compiled identity, readiness, saved/effective settings and real-time clocks; captures the scene; records GPU/frame means and tails; warms both modes; and restores settings/camera afterward. Results go to `build/yorimichi/foliage_performance/`. Ensure no display/frame cap masks gains. Use longer intervals when slow views yield too few frames; do not discard them because they are slow. Record actual resolution and internal scale, hardware, renderer, revision and pass order. Inspect GPU event breakdowns to distinguish shadows, base/depth passes and other costs.
+
+### Momiji Lake to Hidamari
+
+Two repeatable cameras follow the Woodland–Hidamari cruise corridor at approximately
+the authored 155 m height, looking back toward Momiji Lake:
+
+```sh
+uv run python games/yorimichi/scenarios/foliage_performance.py --port 8841 --take zeppelin_lake_abba --views zeppelin_lake_early zeppelin_lake_crossing --seconds 10 --settle 8
+```
+
+These are fixed scenery cameras. For the actual ride, the existing native
+`-benchmarkview=zeppelin` diagnostic boards at Woodland and looks back over the
+lake during the flight to Hidamari. Its CSV records player/camera position and
+real-time frame/GPU timings. Run repeated original/optimized flights with the same
+settings and duration, and verify the recorded route before calling them a moving
+comparison. Keep screenshots outside the measured interval; use the fixed cameras
+above for exact image matching.
 
 ## Remaining acceptance checks
 

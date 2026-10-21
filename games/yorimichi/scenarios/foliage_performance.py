@@ -30,6 +30,10 @@ VIEWS = {
     'canopy': ((-131.,168.,86.),(-145.,145.,87.),(0.,0.,0.)),
     'city_street': ((1100.,-46.,27.),(1200.,-46.,27.),(0.,0.,0.)),
     'aerial_motion': ((-170.,170.,240.),(-125.,170.,75.),(12.,0.,0.)),
+    # Woodland to Hidamari, at the authored 155 m cruise height, looking back
+    # toward Momiji Lake. The separate native zeppelin benchmark rides the ship.
+    'zeppelin_lake_early': ((80.,252.,158.),(-90.,235.,75.),(0.,0.,0.)),
+    'zeppelin_lake_crossing': ((350.,268.,158.),(-90.,235.,75.),(0.,0.,0.)),
 }
 
 
