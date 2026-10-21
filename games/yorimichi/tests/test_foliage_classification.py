@@ -100,3 +100,28 @@ def test_unreadable_hard_mesh_owner_fails_classification():
     hull=Mesh('FlowerBucket_Collision');owner=Mesh('Owner');owner.hull=hull
     classify,_=adapter(hull,missing=[owner])
     with pytest.raises(ValueError,match='Cannot inspect collision owner'):classify()
+
+
+def test_real_hidamari_export_names_do_not_classify_streets_as_trees():
+    tree=ast.parse((GAME/'world/regions/hidamari/build.py').read_text())
+    names={node.value for node in ast.walk(tree) if isinstance(node,ast.Constant)
+           and isinstance(node.value,str) and node.value.startswith('HD_')}
+    assert {'HD_Streets','HD_Planter','HD_ArcadeTree'} <= names
+    plants={'HD_ArcadeTree','HD_PlazaTreeGold','HD_PlazaTreeOrange','HD_Bamboo'}
+    assert {name for name in names if F.vegetation(name)} == plants
+    for name in names-plants:
+        classify,_=adapter(Mesh(name))
+        assert classify() is None,name
+
+
+@pytest.mark.parametrize('name', ['HD_Streets','SM_CityStreet','SM_Backstreet','Treehouse_Floor',
+                                'SM_BarrelPlanter','SM_PineappleCrate'])
+def test_words_embedded_in_non_plant_names_are_not_vegetation(name):
+    assert not F.vegetation(name)
+    assert not F.material_vegetation(name,masked=True)
+
+
+@pytest.mark.parametrize('name', ['StreetTree02','SM_Trees','SM_Bushes','HD_Grasses','UnderstoryFern',
+                                'SM_BC_Plant_CoverLeaf1','M_LeafMid','Treehouse_Leaves'])
+def test_word_boundaries_plural_and_numbered_plants_remain_discoverable(name):
+    assert F.vegetation(name)

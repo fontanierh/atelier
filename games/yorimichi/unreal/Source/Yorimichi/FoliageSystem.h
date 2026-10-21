@@ -6,6 +6,7 @@
 class UStaticMeshComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMesh;
+class UMaterialInterface;
 class FJsonObject;
 
 USTRUCT()
@@ -37,6 +38,8 @@ public:
     bool Refresh();
     /** Call after editing an already registered instance layout/material binding, before rendering it again. */
     bool RefreshSource(UStaticMeshComponent* Component);
+    /** Change authored visibility on the source and its managed renderers together. */
+    void SetSourceVisibility(UStaticMeshComponent* Component, bool Visible);
     bool SetEnabled(bool Enabled);
     UFUNCTION(BlueprintPure, Category="Foliage")
     bool IsEnabled() const { return bEnabled; }
@@ -52,6 +55,16 @@ private:
     TMap<FString,FAsset> Assets;
     TSet<FString> LeafMaterials;
     TArray<FString> Words;
+    struct FClassification
+    {
+        TWeakObjectPtr<UStaticMesh> Mesh;
+        TArray<TWeakObjectPtr<UMaterialInterface>> Materials;
+        TArray<FName> Slots;
+        bool Required=false;
+    };
+    // Weak keys/values do not keep scenery alive. Reclassify only a new or
+    // changed mesh/material/role binding, including previously rigid sources.
+    TMap<TWeakObjectPtr<UStaticMeshComponent>,FClassification> ClassificationCache;
     UPROPERTY() TArray<FYorimichiFoliageSource> Sources;
     FString Error;
     bool bRegistryLoaded=false, bEnabled=true, bPerformance=true, bReportedSetting=false;
@@ -60,7 +73,9 @@ private:
     bool ReadRegistry(const TSharedPtr<FJsonObject>& Registry);
     friend class FYorimichiFoliageToggleTest;
     friend class FYorimichiFoliageRegistryTest;
+    friend class FYorimichiFoliageClassificationTest;
     bool RequiresRegistration(UStaticMeshComponent* Component) const;
+    bool CachedRequiresRegistration(UStaticMeshComponent* Component);
     bool Register(UStaticMeshComponent* Component);
     void Apply(FYorimichiFoliageSource& Source);
     void Restore(FYorimichiFoliageSource& Source);

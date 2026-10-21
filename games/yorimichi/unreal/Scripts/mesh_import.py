@@ -1,5 +1,6 @@
 """Legacy FBX mesh import with explicit seed ownership and fresh material slots."""
 from pathlib import Path
+import time
 import unreal
 
 EAL = unreal.EditorAssetLibrary
@@ -15,6 +16,7 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
     UE converts Interchange import data to legacy FBX defaults before applying task options.
     That first pass must establish FBX data so the final pass can synchronize unit settings.
     """
+    started = time.perf_counter()
     existing = EAL.load_asset(dest + '/' + name) if EAL.does_asset_exist(dest + '/' + name) else None
     legacy = existing is not None and isinstance(existing.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData)
     if not legacy and (existing is not None or Path(path).resolve() != Path(seed).resolve()):
@@ -22,14 +24,18 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
         if not isinstance(seeded.get_editor_property('asset_import_data'), unreal.FbxStaticMeshImportData):
             raise RuntimeError('FBX seed did not establish legacy import data: ' + name)
     mesh = _import_mesh(path, dest, name, fresh_slots)
+    imported = time.perf_counter()
     unreal.load_module('YorimichiImport')
     if not unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh):
         raise RuntimeError('Invalid foliage face roles: '+name)
     if not EAL.save_loaded_asset(mesh):
         raise RuntimeError('Could not save certified mesh: '+name)
+    certified = time.perf_counter()
     # Task/UI locals have gone out of scope and compilation has completed. Keep
     # the returned mesh live, but release prior imports during blocking commandlets.
     unreal.YorimichiFoliageBuilder.collect_unused()
+    print(f'MESH ROLE TIMING {name}: import={imported-started:.3f}s '
+          f'certify_save={certified-imported:.3f}s collect={time.perf_counter()-certified:.3f}s', flush=True)
     return mesh
 
 

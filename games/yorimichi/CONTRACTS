@@ -5,6 +5,12 @@ namespace, MUST pass through foliage_system's build-time classification, bounded
 representation generation and validation, and UYorimichiFoliageSubsystem at runtime.
 New vegetation MUST declare recognizable foliage material/asset semantics or certified per-face roles; hiding
 foliage inside an unclassified material or bypassing the registry is forbidden.
+Name heuristics MUST match semantic words at delimiters/camel-case boundaries, including numbered
+variants and regular plurals; a substring such as tree inside streets MUST NOT classify rigid geometry.
+Build-time and runtime name rules MUST agree. Runtime audits MUST reuse unchanged classification
+verdicts, including non-vegetation, and invalidate them on mesh, material or role-slot changes.
+Authored visibility changes to managed components MUST go through the foliage owner so the current
+renderers and the state restored by switching modes agree.
 Explicit rigid role certification is only for non-vegetation surfaces (such as fruit reusing leaf paint),
 never an exemption for vegetation or an optimization fallback.
 Non-vegetation collision helpers MAY be disambiguated from the name-only heuristic

@@ -846,7 +846,8 @@ void AJapanWorld::ApplyGroupDiagnostics()
         bool Match = false;
         for (const FString& Part : Parts)
             if (!Part.TrimStartAndEnd().IsEmpty() && Name.Contains(Part.TrimStartAndEnd())) Match = true;
-        Group->SetVisibility(!Match,false);
+        if (auto* Foliage=GetWorld()->GetSubsystem<UYorimichiFoliageSubsystem>()) Foliage->SetSourceVisibility(Group,!Match);
+        else Group->SetVisibility(!Match,false);
         Hidden += Match ? 1 : 0;
     }
     UE_LOG(LogTemp,Display,TEXT("DIAGNOSTIC hide groups '%s': %d of %d instanced groups hidden"),

@@ -5,6 +5,8 @@ Channels 0–4 remain available for texture and camera visibility maps. The cook
 slot prefix makes the role discoverable without retaining CPU mesh buffers.
 """
 from contextlib import contextmanager
+from functools import lru_cache
+import re
 
 WORDS = ('tree', 'bush', 'grass', 'foliage', 'leaf', 'leaves', 'palm', 'shrub', 'fern',
          'hedge', 'niwaki', 'azalea', 'flower', 'groundcover', 'plant', 'frond',
@@ -32,29 +34,48 @@ class SurfaceKey(str):
         key=super().__new__(cls,value);key.foliage_key=role;return key
 
 
+@lru_cache(maxsize=4096)
+def semantic_tokens(name):
+    """Recognize delimited/camel-case words, never substrings such as tree in streets.
+
+    Treehouse and planter name containers rather than plant surfaces. Numbered
+    variants and regular plurals retain their plant identity. Runtime uses the
+    same token boundaries and plural rule in FoliageSystem.cpp.
+    """
+    name = re.sub('treehouse|planter', '_', name.rsplit('/', 1)[-1], flags=re.I)
+    name = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', name)
+    name = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', name)
+    return frozenset(re.findall('[a-z]+', name.lower()))
+
+
+@lru_cache(maxsize=4096)
+def plant_words(name):
+    tokens = semantic_tokens(name)
+    return frozenset(word for word in WORDS if any(form in tokens for form in (word, word+'s', word+'es'))
+                     or ('_' in word and set(word.split('_')) <= tokens))
+
+
 def vegetation(name):
-    name = name.rsplit('/', 1)[-1].lower().replace('treehouse', '').replace('planter', '')
-    return any(word in name for word in WORDS)
+    return bool(plant_words(name))
 
 
 def material_vegetation(name, *, masked=False, foliage=False):
     """Opaque grass paint and rigid plant parts are not leaf surfaces."""
-    name = name.rsplit('/', 1)[-1].lower().replace('treehouse', '').replace('planter', '')
     if foliage:
         return True
-    if any(word in name for word in ('bark', 'trunk', 'cane', 'stem', 'wood')):
+    if semantic_tokens(name) & {'bark', 'trunk', 'cane', 'stem', 'wood'}:
         return False
-    words = {word for word in WORDS if word in name}
+    words = plant_words(name)
     return bool(words and (masked or words-{'grass', 'litter'}))
 
 
 def category(name):
-    name = name.lower()
-    if any(word in name for word in ('grass', 'groundcover', 'cover_', 'coverleaf', 'coverfern', 'covergrass', 'fern', 'litter', 'reed', 'vine')):
+    words = plant_words(name)
+    if words & {'grass', 'groundcover', 'cover_leaf', 'coverleaf', 'coverfern', 'covergrass', 'fern', 'litter', 'reed', 'vine'}:
         return 'groundcover'
-    if any(word in name for word in ('bush', 'shrub', 'hedge', 'azalea', 'niwaki', 'bloom')):
+    if words & {'bush', 'shrub', 'hedge', 'azalea', 'niwaki', 'bloom'}:
         return 'shrub'
-    if 'flower' in name and not any(word in name for word in ('tree', 'palm')):
+    if 'flower' in words and not words & {'tree', 'palm'}:
         return 'groundcover'
     return 'tree'
 

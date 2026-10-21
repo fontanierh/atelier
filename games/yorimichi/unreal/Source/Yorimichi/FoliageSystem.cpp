@@ -33,7 +33,7 @@ bool UYorimichiFoliageSubsystem::LoadRegistry()
 
 bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Registry)
 {
-    Assets.Reset();Words.Reset();LeafMaterials.Reset();bRegistryLoaded=false;
+    Assets.Reset();Words.Reset();LeafMaterials.Reset();ClassificationCache.Reset();bRegistryLoaded=false;
     auto Invalid=[this]() { Error=TEXT("Foliage registry is missing, invalid or unsupported. Build unreal.foliage_system.");return false; };
     const auto PositiveInteger=[](const TSharedPtr<FJsonObject>& Object,const TCHAR* Key,int32& Out)
     {
@@ -116,6 +116,37 @@ bool UYorimichiFoliageSubsystem::ReadRegistry(const TSharedPtr<FJsonObject>& Reg
     bRegistryLoaded=true;Error.Reset();return true;
 }
 
+namespace
+{
+// Same ASCII/camel-case boundaries and plural rules as foliage_roles.py.
+TSet<FString> SemanticTokens(FString Name)
+{
+    int32 Slash=INDEX_NONE;if (Name.FindLastChar(TEXT('/'),Slash)) Name.RightChopInline(Slash+1);
+    Name=Name.Replace(TEXT("Treehouse"),TEXT("_"),ESearchCase::IgnoreCase).Replace(TEXT("Planter"),TEXT("_"),ESearchCase::IgnoreCase);
+    const auto Lower=[](TCHAR C){return C>=TEXT('a') && C<=TEXT('z');};
+    const auto Upper=[](TCHAR C){return C>=TEXT('A') && C<=TEXT('Z');};
+    TSet<FString> Tokens;FString Token;
+    const auto Finish=[&](){if (!Token.IsEmpty()) { Tokens.Add(Token.ToLower());Token.Reset(); }};
+    for (int32 I=0;I<Name.Len();++I)
+    {
+        const TCHAR C=Name[I],Previous=I?Name[I-1]:0,Next=I+1<Name.Len()?Name[I+1]:0;
+        if (!Lower(C) && !Upper(C)) { Finish();continue; }
+        if (Upper(C) && (Lower(Previous) || (Upper(Previous) && Lower(Next)))) Finish();
+        Token.AppendChar(C);
+    }
+    Finish();return Tokens;
+}
+
+bool HasWord(const TSet<FString>& Tokens,const FString& Word)
+{
+    if (Tokens.Contains(Word) || Tokens.Contains(Word+TEXT("s")) || Tokens.Contains(Word+TEXT("es"))) return true;
+    TArray<FString> Parts;Word.ParseIntoArray(Parts,TEXT("_"));
+    if (Parts.Num()<2) return false;
+    for (const auto& Part:Parts) if (!Tokens.Contains(Part)) return false;
+    return true;
+}
+}
+
 bool UYorimichiFoliageSubsystem::RequiresRegistration(UStaticMeshComponent* Component) const
 {
     UStaticMesh* Mesh=Component->GetStaticMesh();
@@ -127,24 +158,43 @@ bool UYorimichiFoliageSubsystem::RequiresRegistration(UStaticMeshComponent* Comp
     if (CertifiedRigid) return false;
     if (Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/"))) return true;
     if (Assets.Contains(Mesh->GetPathName())) return true;
-    const FString MeshName=Mesh->GetName().Replace(TEXT("Treehouse"),TEXT(""),ESearchCase::IgnoreCase).Replace(TEXT("Planter"),TEXT(""),ESearchCase::IgnoreCase);
-    for (const auto& Word:Words) if (MeshName.Contains(Word,ESearchCase::IgnoreCase)) return true;
+    const auto MeshWords=SemanticTokens(Mesh->GetName());
+    for (const auto& Word:Words) if (HasWord(MeshWords,Word)) return true;
     for (const FStaticMaterial& Slot:Mesh->GetStaticMaterials())
         if (Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageRoles_")) ||
             Slot.MaterialSlotName.ToString().StartsWith(TEXT("FoliageAuthored_"))) return true;
     for (UMaterialInterface* Material:Component->GetMaterials()) if (Material)
     {
         if (LeafMaterials.Contains(Material->GetPathName()) || Material->GetShadingModels().HasShadingModel(MSM_TwoSidedFoliage)) return true;
-        const FString Name=Material->GetName().Replace(TEXT("Treehouse"),TEXT(""),ESearchCase::IgnoreCase).Replace(TEXT("Planter"),TEXT(""),ESearchCase::IgnoreCase);
+        const auto MaterialWords=SemanticTokens(Material->GetName());
         bool Rigid=false;
         for (const TCHAR* Part:{TEXT("bark"),TEXT("trunk"),TEXT("cane"),TEXT("stem"),TEXT("wood")})
-            Rigid|=Name.Contains(Part,ESearchCase::IgnoreCase);
+            Rigid|=MaterialWords.Contains(Part);
         if (Rigid) continue;
         for (const auto& Word:Words)
-            if (Name.Contains(Word,ESearchCase::IgnoreCase) &&
+            if (HasWord(MaterialWords,Word) &&
                 (Material->GetBlendMode()==BLEND_Masked || (Word!=TEXT("grass") && Word!=TEXT("litter")))) return true;
     }
     return false;
+}
+
+bool UYorimichiFoliageSubsystem::CachedRequiresRegistration(UStaticMeshComponent* Component)
+{
+    if (Component->ComponentHasTag(TEXT("FoliageSystemOwned")) ||
+        Component->ComponentHasTag(TEXT("DetachedFoliageParticle"))) return false;
+    UStaticMesh* Mesh=Component->GetStaticMesh();if (!Mesh) return false;
+    const auto& Slots=Mesh->GetStaticMaterials();const int32 Count=Component->GetNumMaterials();
+    auto* Cached=ClassificationCache.Find(Component);
+    bool Unchanged=Cached && Cached->Mesh==Mesh && Cached->Materials.Num()==Count && Cached->Slots.Num()==Slots.Num();
+    if (Unchanged) for (int32 I=0;I<Count;++I)
+        if (Cached->Materials[I]!=Component->GetMaterial(I)) { Unchanged=false;break; }
+    if (Unchanged) for (int32 I=0;I<Slots.Num();++I)
+        if (Cached->Slots[I]!=Slots[I].MaterialSlotName) { Unchanged=false;break; }
+    if (Unchanged) return Cached->Required;
+    FClassification Verdict;Verdict.Mesh=Mesh;Verdict.Required=RequiresRegistration(Component);
+    for (int32 I=0;I<Count;++I) Verdict.Materials.Add(Component->GetMaterial(I));
+    for (const auto& Slot:Slots) Verdict.Slots.Add(Slot.MaterialSlotName);
+    ClassificationCache.Add(Component,MoveTemp(Verdict));return ClassificationCache.FindChecked(Component).Required;
 }
 
 namespace
@@ -330,6 +380,8 @@ bool UYorimichiFoliageSubsystem::Refresh()
 {
     if (GetWorld()->GetNetMode()==NM_DedicatedServer) return true;
     if (!LoadRegistry()) return false;
+    for (auto It=ClassificationCache.CreateIterator();It;++It)
+        if (!It.Key().IsValid() || !It.Key()->IsRegistered() || It.Key()->GetWorld()!=GetWorld()) It.RemoveCurrent();
     // Drop destroyed components and rebuild a changed source (the legacy city
     // comparison swaps originals live). Original components alone own collision.
     for (int32 I=Sources.Num()-1;I>=0;--I)
@@ -349,7 +401,7 @@ bool UYorimichiFoliageSubsystem::Refresh()
     for (const auto& Entry:Sources) Registered.Add(Entry.Original);
     TArray<UStaticMeshComponent*> NewSources;
     for (TObjectIterator<UStaticMeshComponent> It;It;++It)
-        if (It->GetWorld()==GetWorld() && It->IsRegistered() && !Registered.Contains(*It) && RequiresRegistration(*It)) NewSources.Add(*It);
+        if (It->GetWorld()==GetWorld() && It->IsRegistered() && !Registered.Contains(*It) && CachedRequiresRegistration(*It)) NewSources.Add(*It);
     for (auto* Component:NewSources) if (!Register(Component))
     {
         Component->SetVisibility(false,false);Component->SetCastShadow(false);
@@ -360,6 +412,7 @@ bool UYorimichiFoliageSubsystem::Refresh()
 
 bool UYorimichiFoliageSubsystem::RefreshSource(UStaticMeshComponent* Component)
 {
+    ClassificationCache.Remove(Component);
     for (int32 I=Sources.Num()-1;I>=0;--I) if (Sources[I].Original==Component)
     {
         auto& Entry=Sources[I];Restore(Entry);
@@ -368,6 +421,13 @@ bool UYorimichiFoliageSubsystem::RefreshSource(UStaticMeshComponent* Component)
         Sources.RemoveAt(I);
     }
     return Refresh();
+}
+
+void UYorimichiFoliageSubsystem::SetSourceVisibility(UStaticMeshComponent* Component,bool Visible)
+{
+    for (auto& Entry:Sources) if (Entry.Original==Component)
+    { Entry.Visible=Visible;Apply(Entry);return; }
+    if (Component) Component->SetVisibility(Visible,false);
 }
 
 bool UYorimichiFoliageSubsystem::SetEnabled(bool Enabled)
@@ -403,7 +463,7 @@ void UYorimichiFoliageSubsystem::Deinitialize()
     for (auto& Entry:Sources)
     { Restore(Entry);if (Entry.Visual) Entry.Visual->DestroyComponent();if (Entry.Shadow) Entry.Shadow->DestroyComponent();
       if (Entry.NearVisual) Entry.NearVisual->DestroyComponent();if (Entry.Patches) Entry.Patches->DestroyComponent(); }
-    Sources.Reset();Super::Deinitialize();
+    Sources.Reset();ClassificationCache.Reset();Super::Deinitialize();
 }
 
 // Explicit diagnostic switch for paired captures/timings; settings remains the

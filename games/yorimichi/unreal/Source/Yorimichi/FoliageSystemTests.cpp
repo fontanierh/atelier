@@ -8,6 +8,7 @@
 #include "Misc/Paths.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Dom/JsonObject.h"
@@ -84,6 +85,51 @@ bool FYorimichiFoliageCoverageTest::RunTest(const FString&)
 
 TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors);
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageClassificationTest,"Yorimichi.Foliage.Classification",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageClassificationTest::RunTest(const FString&)
+{
+    auto* System=NewObject<UYorimichiFoliageSubsystem>();
+    System->Words={TEXT("tree"),TEXT("bush"),TEXT("grass"),TEXT("leaf"),TEXT("leaves"),TEXT("plant"),TEXT("fern"),TEXT("cover_leaf")};
+    auto* Source=NewObject<UStaticMeshComponent>();
+    // Real export names and adversarial words exercise the runtime matcher,
+    // including the HD_Streets false positive that would corrupt preparation.
+    for (const TCHAR* Name:{TEXT("HD_Streets"),TEXT("SM_CityStreet"),TEXT("SM_Backstreet"),
+                           TEXT("Treehouse_Floor"),TEXT("SM_BarrelPlanter"),TEXT("SM_PineappleCrate")})
+    {
+        Source->SetStaticMesh(NewObject<UStaticMesh>(GetTransientPackage(),FName(Name)));
+        TestFalse(Name,System->RequiresRegistration(Source));
+    }
+    for (const TCHAR* Name:{TEXT("StreetTree02"),TEXT("SM_Trees"),TEXT("SM_Bushes"),TEXT("HD_Grasses"),
+                           TEXT("UnderstoryFern"),TEXT("SM_BC_Plant_CoverLeaf1"),TEXT("Treehouse_Leaves")})
+    {
+        Source->SetStaticMesh(NewObject<UStaticMesh>(GetTransientPackage(),FName(Name)));
+        TestTrue(Name,System->RequiresRegistration(Source));
+    }
+    auto* Rigid=NewObject<UStaticMesh>();Rigid->GetStaticMaterials().Add(FStaticMaterial(nullptr,FName(TEXT("Ground"))));
+    Source->SetStaticMesh(Rigid);
+    TestFalse(TEXT("Rigid verdict cached"),System->CachedRequiresRegistration(Source));
+    TestEqual(TEXT("Only this component is cached"),System->ClassificationCache.Num(),1);
+    TestFalse(TEXT("Unchanged non-foliage stays cached"),System->CachedRequiresRegistration(Source));
+    auto* Leaf=NewObject<UMaterial>(GetTransientPackage(),TEXT("M_LeafMid"));
+    Source->SetMaterial(0,Leaf);
+    TestTrue(TEXT("Changed material invalidates a negative verdict"),System->CachedRequiresRegistration(Source));
+    Source->SetMaterial(0,nullptr);
+    TestFalse(TEXT("Removing the leaf material reclassifies"),System->CachedRequiresRegistration(Source));
+    Rigid->GetStaticMaterials()[0].MaterialSlotName=TEXT("FoliageRoles_Ground");
+    TestTrue(TEXT("New role certification invalidates a negative verdict"),System->CachedRequiresRegistration(Source));
+    Rigid->GetStaticMaterials()[0].MaterialSlotName=TEXT("FoliageRigid_Ground");
+    TestFalse(TEXT("Explicit rigid certification replaces the verdict"),System->CachedRequiresRegistration(Source));
+    Source->SetStaticMesh(NewObject<UStaticMesh>(GetTransientPackage(),TEXT("Tree_CacheReplacement")));
+    TestTrue(TEXT("A mesh swap invalidates a negative verdict"),System->CachedRequiresRegistration(Source));
+    Source->ComponentTags.Add(TEXT("DetachedFoliageParticle"));
+    TestFalse(TEXT("Owned particles never enter the scenery owner"),System->CachedRequiresRegistration(Source));
+    Source->ComponentTags.Remove(TEXT("DetachedFoliageParticle"));
+    TestTrue(TEXT("Removing an ownership tag resumes classification"),System->CachedRequiresRegistration(Source));
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageToggleTest,"Yorimichi.Foliage.Toggle",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
@@ -117,6 +163,13 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     Entry.Visual=NewRender();Entry.NearVisual=NewRender();Entry.Patches=NewRender();Entry.Shadow=NewRender();
     Entry.Visible=true;Entry.CastShadow=true;Entry.DistanceField=true;Entry.Kind=TEXT("tree");
     System->Sources.Add(Entry);
+    System->SetSourceVisibility(Source,false);
+    TestFalse(TEXT("Diagnostic hide reaches generated visual"),Entry.Visual->IsVisible());
+    TestFalse(TEXT("Diagnostic hide reaches generated shadows"),bool(Entry.Shadow->CastShadow));
+    System->SetEnabled(false);
+    TestFalse(TEXT("Hidden state survives switching to originals"),Source->IsVisible());
+    System->SetSourceVisibility(Source,true);
+    TestTrue(TEXT("Diagnostic show reaches originals"),Source->IsVisible());
     for (int32 Round=0;Round<3;++Round)
     {
         TestTrue(TEXT("Optimization turns on live"),System->SetEnabled(true));

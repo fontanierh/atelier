@@ -41,6 +41,8 @@ distance, including city and regional vegetation.
 
 Use explicit vegetation names/material semantics (`Tree`, `Palm`, `Leaf`, `Bush`, `Grass`, `Plant`,
 `Flower`, `Fern`, `Hedge`, and the shared classifier's other terms), or the foliage shading model.
+Names use delimiter/camel-case word boundaries and regular plurals, so `StreetTree02` and `Trees`
+are plants while `HD_Streets` is rigid. Python preparation and native registration share this rule.
 Do not hide vegetation inside an unclassified opaque material. A mixed asset's vegetation must have
 separate, recognizable material slots or explicit face roles. The shared procedural exporters retain palette
 keys in a separate role channel and encode face roles in UV channel 5 after camera UV baking; the source importer stamps
@@ -76,6 +78,14 @@ treehouse architecture are surfaces; explicit `cover_grass`, `cover_leaf` and `c
 even when their source material is opaque. After editing a registered instance layout, call `RefreshSource` before its next rendered frame. New
 material palettes need certified mesh variants; overriding a registered source's material bindings at runtime refuses. Both rendering
 modes remain under this subsystem. A prototype or import cannot exempt itself from the game contract.
+The audit caches weak component/mesh/material/role-slot verdicts, including rigid components, and
+reclassifies changed bindings. Use `SetSourceVisibility` for authored visibility changes such as the
+hide-groups diagnostic; it updates managed copies and the visibility restored by the graphics toggle.
+Invalid vegetation discovered after bootstrap still fails readiness: the universal production contract
+does not allow an unoptimized fallback. The legacy city-tree selection remains the source for both
+foliage modes; its `/Game/Experiments/CityTrees/v4` meshes are included in the normal registry scan.
+Legacy FBX imports log separate import, role/save and collection timings (`MESH ROLE TIMING`) so the
+cost of bounded package collection can be measured during normal preparation.
 
 Run the ordinary build. Missing/stale outputs rebuild through their owners; there is no production
 prototype flag or missing-output fallback. `Content/FoliageSystem` and its registry belong to the normal
