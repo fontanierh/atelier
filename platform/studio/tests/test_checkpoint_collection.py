@@ -324,3 +324,27 @@ def test_unobserved_asset_delete_does_not_report_freed_bytes(fixture, tmp_path, 
     with pytest.raises(cp.CheckpointError, match='worker and transport cleanup proof'):
         with remote.transaction():
             pytest.fail('unresolved asset mutation ownership reused')
+
+
+def test_ambiguous_consolidated_publication_keeps_writer_claim(fixture, tmp_path, monkeypatch):
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'pinned'])
+    remote.publish(store, first, 'A', revision='c' * 40)
+    pin(store, first)
+    second = checkpoint(store, tmp_path, [b'latest'])
+    remote.publish(store, second, 'B', revision='d' * 40)
+    with remote.transaction():
+        pins.release_pin(remote, 'acceptance', 'receiving acceptance complete')
+    target = coordination.claim_path(remote)
+    original = github.api
+    def uncertain_completion(path, **kw):
+        if (kw.get('method') == 'PATCH' and kw.get('data') == dict(draft=False)
+                and github.releases[int(path.split('/')[1])]['tag_name'].startswith(remote.prefix + 'index-')):
+            raise release.TransportError(500)
+        return original(path, **kw)
+    monkeypatch.setattr(github, 'api', uncertain_completion)
+    with pytest.raises(release.TransportError):
+        remote.publish(store, second, 'B', revision='d' * 40)
+    assert cp.read_json(target)['state'] == 'held'
+    assert 'refs/' + coordination.reference(remote) in github.refs
+    assert any(body == b'pinned' for _, body in github.files.values())
