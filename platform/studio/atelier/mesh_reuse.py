@@ -9,9 +9,10 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 
 from .build_cache import atomic_json
-from .checkpoint_store import canonical, read_json, relative, safe_destination
+from .checkpoint_store import CheckpointError, canonical, read_json, relative, safe_destination
 
 
 def digest(path, algorithm='sha256'):
@@ -26,13 +27,16 @@ def identity(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
-def policy(source, functions):
+def policy(source, functions, resolve_import=None):
     """Hash geometry functions and their local function/global-binding closure.
 
     Comments, formatting, and unrelated finishing/validation code do not change
     a geometry policy. Missing or ambiguous declarations cannot establish it.
     """
     tree = ast.parse(source)
+    if any(isinstance(node, ast.ImportFrom) and any(alias.name == '*' for alias in node.names)
+           for node in ast.walk(tree)):
+        raise ValueError('Wildcard imports cannot establish a geometry policy')
     declarations = {}
     def register(node, owner=None):
         owner = owner or node
@@ -42,6 +46,8 @@ def policy(source, functions):
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             names = [part.id for target in targets for part in ast.walk(target) if isinstance(part, ast.Name)]
+        elif isinstance(node, ast.AugAssign):
+            names = [part.id for part in ast.walk(node.target) if isinstance(part, ast.Name)]
         elif isinstance(node, (ast.Import, ast.ImportFrom)):
             names = [item.asname or item.name.split('.')[0] for item in node.names]
         else:
@@ -50,8 +56,12 @@ def policy(source, functions):
             for field in ('body', 'orelse', 'finalbody', 'handlers', 'cases'):
                 for child in getattr(node, field, ()):
                     register(child, owner)
+            targets = ([node.target] if isinstance(node, (ast.For, ast.AsyncFor)) else
+                       [item.optional_vars for item in node.items if item.optional_vars]
+                       if isinstance(node, (ast.With, ast.AsyncWith)) else [])
+            names = [part.id for target in targets for part in ast.walk(target) if isinstance(part, ast.Name)]
         for name in names:
-            if name in declarations and declarations[name] is not owner:
+            if name in declarations and declarations[name] is not owner and not isinstance(node, ast.AugAssign):
                 raise ValueError('Ambiguous geometry policy declaration: ' + name)
             declarations[name] = owner
     for node in tree.body:
@@ -59,16 +69,54 @@ def policy(source, functions):
     if not functions or any(name not in declarations for name in functions):
         raise ValueError('Geometry policy function is missing')
     pending, selected = list(functions), {}
+    effects = [node for node in tree.body if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+    imports = {}
     while pending:
         name = pending.pop()
         if name in selected:
             continue
         node = declarations[name]
-        selected[name] = ast.dump(node, include_attributes=False)
-        pending.extend(part.id for part in ast.walk(node)
+        related = [node, *(effect for effect in effects
+                          if any(isinstance(part, ast.Name) and part.id == name for part in ast.walk(effect)))]
+        selected[name] = [ast.dump(item, include_attributes=False) for item in related]
+        if resolve_import:
+            for item in related:
+                for part in ast.walk(item):
+                    if isinstance(part, (ast.Import, ast.ImportFrom)):
+                        imports.update(resolve_import(part))
+        pending.extend(part.id for item in related for part in ast.walk(item)
                        if isinstance(part, ast.Name) and isinstance(part.ctx, ast.Load)
                        and part.id in declarations and part.id not in selected)
-    return identity(selected)
+    return identity(dict(declarations=selected, support=imports))
+
+
+def native_policy(source, functions, script, *, revision=None, inputs=None):
+    """Bind selected repository imports without executing historical Python."""
+    from . import build_inputs, paths
+    scanner = build_inputs.ImportScanner()
+    repo, script = paths.REPO.resolve(), Path(script).resolve()
+    search = list(dict.fromkeys([script.parent, *(Path(p).resolve() for p in sys.path if p),
+                                *(p for p in script.parents if p.is_relative_to(repo))]))
+    search = [p for p in search if p.is_relative_to(repo)]
+    def resolve(node):
+        if isinstance(node, ast.Import):
+            names, bases = [alias.name for alias in node.names], search
+        else:
+            names = [node.module or '']
+            bases = [script.parents[node.level - 1]] if node.level else search
+        result = {}
+        for name in names:
+            found = next((files for base in bases if (files := scanner.resolve(base, name.split('.') if name else []))), [])
+            for file in sorted({p for file in found for p in scanner.local_imports(file, search)}):
+                relative_name = file.relative_to(repo).as_posix()
+                text = (revision_source(repo, revision, relative_name) if revision else
+                        saved_source(repo, relative_name, inputs.get('<repo>/' + relative_name)) if inputs is not None else
+                        file.read_text())
+                if text is None:
+                    raise ValueError('Missing historical geometry support: ' + relative_name)
+                result[relative_name] = hashlib.sha256(text.encode()).hexdigest()
+        return result
+    return policy(source, functions, resolve)
 
 
 def revision_source(repo, revision, filename):
@@ -76,9 +124,12 @@ def revision_source(repo, revision, filename):
     if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
         return None
     name = relative(filename).as_posix()
-    result = subprocess.run(['git', 'show', revision + ':' + name], cwd=repo,
-                            capture_output=True, text=True, timeout=10)
-    return result.stdout if result.returncode == 0 else None
+    try:
+        result = subprocess.run(['git', 'show', revision + ':' + name], cwd=repo,
+                                capture_output=True, timeout=10)
+        return result.stdout.decode() if result.returncode == 0 else None
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return None
 
 
 def saved_source(repo, filename, recorded):
@@ -90,8 +141,11 @@ def saved_source(repo, filename, recorded):
     if not isinstance(recorded, str) or not re.fullmatch('[0-9a-f]{64}', recorded):
         return None
     name = relative(filename).as_posix()
-    revisions = subprocess.run(['git', 'log', '-n', '64', '--format=%H', '--', name],
-                               cwd=repo, capture_output=True, text=True, timeout=10)
+    try:
+        revisions = subprocess.run(['git', 'log', '-n', '64', '--format=%H', '--', name],
+                                   cwd=repo, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return None
     if revisions.returncode:
         return None
     for revision in revisions.stdout.splitlines():
@@ -154,6 +208,50 @@ def pending_path(ctx, task, nonce):
     return result
 
 
+def prior_stamp(ctx, task, nonce, pointer):
+    """Historical non-success evidence must belong to this exact invocation."""
+    try:
+        pending_path(ctx, task, nonce)  # shared task/nonce validation
+        target = safe_destination(ctx.out, '.state/mesh-import-prior/' + task + '/' + nonce + '.json')
+        if not pointer or Path(pointer) != target or target.is_symlink():
+            return None
+        packet = read_json(target)
+        if (not isinstance(packet, dict) or packet.get('schema') != 1 or packet.get('task') != task or packet.get('nonce') != nonce
+                or not isinstance(packet.get('stamp'), dict)):
+            return None
+        return packet['stamp']
+    except (OSError, ValueError, TypeError, CheckpointError):
+        return None
+
+
+def historical_packages_match(ctx, task, stamp, packages):
+    """Use complete prior proof when present; bound pre-inventory incremental state."""
+    try:
+        current = package_inventory(ctx.uproject.parent / 'Content', packages)
+        key = stamp.get('checkpoint_key')
+        if key:
+            from . import checkpoint_actions
+            from .checkpoint_store import Store
+            store = Store(ctx.game)
+            entry = checkpoint_actions.validate(read_json(checkpoint_actions.entry_path(store, key)), store, key)
+            if (entry['task'] != task or entry['fingerprint'] != stamp['fingerprint']
+                    or entry['stamp']['checkpoint_inventory'] != stamp['checkpoint_inventory']):
+                return False
+            expected = {member: {k: value[k] for k in ('sha256', 'size')}
+                        for package in packages for member in package_members(package)
+                        if (value := entry['files'].get(member)) and value.get('kind') == 'file'}
+            return expected == current
+        # The old incremental format has no byte proof. Never admit packages
+        # saved after its successful task; native source/options checks remain mandatory.
+        finished = stamp['time']
+        if type(finished) not in (float, int) or finished <= 0:
+            return False
+        return all(safe_destination(ctx.uproject.parent / 'Content', member.removeprefix('content/')).stat().st_mtime <= finished
+                   for member in current)
+    except (OSError, ValueError, KeyError, TypeError, CheckpointError):
+        return False
+
+
 def source_member(ctx, source):
     source = Path(source).resolve()
     for label, root in [('generated', ctx.out), ('game', ctx.uproject.parent.parent)]:
@@ -194,24 +292,34 @@ def finalize_pending(ctx, task, nonce):
     context and unchanged source bytes, then inventory every final saved package.
     Pending child evidence alone MUST NOT publish receipts or receiving task stamps.
     """
+    for owner in (task, task + '.assets'):
+        _finalize_pending(ctx, owner, nonce)
+
+
+def _finalize_pending(ctx, task, nonce):
     target = pending_path(ctx, task, nonce)
     if not target.exists():
         return
     from .checkpoint_store import context
     packet = read_json(target)
-    if (packet.get('schema') != 1 or packet.get('task') != task or packet.get('nonce') != nonce
+    if (not isinstance(packet, dict) or packet.get('schema') != 1 or packet.get('task') != task or packet.get('nonce') != nonce
             or packet.get('context') != context(ctx) or not isinstance(packet.get('entries'), dict)
+            or not isinstance(packet.get('counts'), dict)
+            or any(type(value) is not int or value < 0 for value in packet['counts'].values())
             or not re.fullmatch('[0-9a-f]{64}', packet.get('policy', ''))):
         raise ValueError('Malformed pending native mesh evidence')
     content = ctx.uproject.parent / 'Content'
     receipts = Receipts(ctx.out, task, packet['context'], packet['policy'], content)
     prepared = {}
     for name, entry in packet['entries'].items():
-        if (entry.get('native_source_validated') is not True or not entry.get('sources')
+        asset_group = isinstance(entry, dict) and entry.get('kind') == 'asset-group'
+        if (not isinstance(entry, dict) or
+                (entry.get('native_assets_validated') if asset_group else entry.get('native_source_validated')) is not True
+                or not entry.get('sources')
                 or not re.fullmatch('[0-9a-f]{64}', entry.get('key', ''))):
             raise ValueError('Missing native mesh source validation')
         if (not isinstance(entry.get('packages'), list) or not entry['packages']
-                or sorted(entry['packages']) != sorted(item.get('package') for item in entry['sources'])
+                or (not asset_group and sorted(entry['packages']) != sorted(item.get('package') for item in entry['sources']))
                 or not isinstance(entry.get('provenance'), dict)):
             raise ValueError('Incomplete native mesh package/source group')
         for item in entry['sources']:
@@ -242,13 +350,17 @@ class Receipts:
         self.header = dict(schema=1, context=context, policy=import_policy)
         self.records = {}
         if self.path.exists():
-            saved = read_json(self.path)
-            if all(saved.get(key) == value for key, value in self.header.items()):
-                self.records = saved.get('meshes', {})
+            try:
+                saved = read_json(self.path)
+                if (isinstance(saved, dict) and isinstance(saved.get('meshes'), dict)
+                        and all(saved.get(key) == value for key, value in self.header.items())):
+                    self.records = saved['meshes']
+            except (OSError, ValueError, CheckpointError):
+                pass
 
     def matches(self, name, key, packages):
         old = self.records.get(name)
-        if not old or old.get('identity') != key:
+        if not isinstance(old, dict) or old.get('identity') != key:
             return False
         try:
             return old['packages'] == package_inventory(self.content, packages)
