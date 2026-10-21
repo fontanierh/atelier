@@ -3,11 +3,10 @@
     atelier new <game> [--title T]     start a new game from the sandbox (module, classes, project and paths renamed)
     atelier doctor <game>              check Unreal, Blender, ffmpeg, Python packages and the game's sources
     atelier setup [--headless]         check full Xcode and Metal; repair UE 5.8.2 for SSH-only builds
-    atelier reuse <game> --from PATH [--to PATH]   seed a fresh worktree (this one by default) from a verified build of the same revision
     atelier pool publish|restore|status|abandon <game> <step>   share explicitly owned portable outputs (docs/ARTIFACT_POOL.md)
     atelier cache status|gc|pin|unpin|forget   inspect and prune automatic local product reuse
     atelier fetch <game>               download what a game needs but may not redistribute (sound masters)
-    atelier build <game> [step ...]    build what changed; --list, --force, --dry-run, --touch
+    atelier build <game> [step ...]    restore checkpoints and build changed tasks; --plan --explain
     atelier play <game> [--profile P] [--memory-gib N] [-- unreal args]   launch the game under the render lock and memory guard
     atelier playtest <game> [--tag T] [--download-only] [-- launcher args]   play the latest GitHub release, downloading it if needed
     atelier stream <game> start|stop|status|build-web   stream the game to a phone, a handheld or a friend's browser
@@ -164,11 +163,6 @@ def make_parser():
     p = sub.add_parser('doctor'); p.add_argument('game')
     p = sub.add_parser('setup'); p.add_argument('--headless', action='store_true')
     p.add_argument('--workers', type=int, default=3, help='headless compiler parallelism (default: 3)')
-    p = sub.add_parser('reuse'); p.add_argument('game')
-    mode = p.add_mutually_exclusive_group(required=True)
-    mode.add_argument('--from', dest='source')
-    mode.add_argument('--abandon', action='store_true', help='remove an interrupted generated copy; keep tracked sources/logs')
-    p.add_argument('--to', dest='target', help='fresh worktree path (default: this checkout)')
     p = sub.add_parser('pool'); p.add_argument('action', choices=['publish', 'restore', 'status', 'abandon'])
     p.add_argument('game'); p.add_argument('step')
     p = sub.add_parser('fetch'); p.add_argument('game')
@@ -176,6 +170,7 @@ def make_parser():
     capacity_cli.configure(sub)
     p = sub.add_parser('build'); p.add_argument('game'); p.add_argument('steps', nargs='*')
     p.add_argument('--list', action='store_true'); p.add_argument('--force', action='store_true')
+    p.add_argument('--rebuild-reason', help='record why an unavoidable cold or expensive rebuild is necessary')
     p.add_argument('--rebuild-touched', action='store_true',
                    help='rebuild selected touched certificates; preserve proven current steps and caches')
     p.add_argument('--max-heavy-commands', type=int, metavar='N',
@@ -256,11 +251,6 @@ def main(argv=None):
     if args.command == 'setup':
         from . import setup
         return setup.main(args.headless, args.workers)
-    if args.command == 'reuse':
-        from . import reuse
-        if args.abandon:
-            return reuse.abandon(args.game, args.target)
-        return reuse.main(args.game, args.source, args.target)
     if args.command == 'pool':
         from . import artifact_pool
         return artifact_pool.main(args.action, args.game, args.step)
@@ -331,6 +321,9 @@ def main(argv=None):
             return show(args.game, args.steps, force=args.force, explain=args.explain, as_json=args.json, verify=args.verify,
                         **({'rebuild_touched': True} if args.rebuild_touched else {}), **experimental, **cook_memory)
         bounded = {'max_heavy_commands': args.max_heavy_commands} if args.max_heavy_commands is not None else {}
+        if args.rebuild_reason is not None:
+            from .build_checkpoints import reason
+            bounded['rebuild_reason'] = reason(args.rebuild_reason)
         if args.recover_cook is not None:
             bounded['recover_cook'] = args.recover_cook
         if args.record_cook_recovery:

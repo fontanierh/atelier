@@ -106,39 +106,13 @@ build root and the selected output root. Build, play, package and direct native 
 including when another output root is selected. Repeat the same `snapshot-restore` key in the original checkout,
 output root and cache to resume its recorded nonce and scope. A different key/scope or conflicting nonce is refused;
 normal builds cannot clear this barrier. Successful resume removes it last, after every selected action is certified.
-This installs portable sources only; it does not replace whole-build reuse or enable Unreal package caching.
+This installs portable sources only; ordinary native reuse is handled by build checkpoints.
 
-## Verified whole-build reuse
+## Native build checkpoints
 
-```sh
-uv run atelier reuse <game> --from <completed-checkout> --to <fresh-worktree>
-```
-
-Donor and receiver must be clean at the same source revision and engine build. Legacy steps retain their existing
-checks. Named products additionally require current producer inputs, complete byte inventories and matching
-fingerprints in both checkouts after copying. This includes leaf products that no other step reads and optional
-native sidecars. Every product must lie within the supported copy scope: generated game output, game Content and
-game/plugin Binaries. Copies are independent; Intermediate, Saved, build logs and local hash indexes are not copied.
-
-The target must have no build stamps, occupied destination outputs, or game Intermediate/Saved caches. Starting
-from a fresh target ensures that the receiving editor/cooker discovers its own asset registry instead of loading a
-donor's stale discovery cache. Reuse does not merge a partial build or certify different source revisions.
-
-Before the first replacement, reuse writes and fsyncs a journal under the target's build directory. A completion
-receipt follows the final source, engine and output checks; the journal is removed last. While it exists, builds,
-play, package, stream, QA and shared native launch paths refuse the incomplete snapshot. Do not delete the journal
-or create stamps by hand. Changing `ATELIER_BUILD_ROOT` does not bypass the checkout's default journal: copied
-Content and Binaries still belong to that project. Using normal guarded admission, discard an
-interrupted generated copy with:
-
-```sh
-uv run atelier reuse <game> --abandon --to <interrupted-worktree>
-```
-
-Recovery removes only the journal's allowlisted generated copy scope, plus its stamps and completion receipt. It
-preserves tracked files, logs and unrelated paths, and never follows links. An interrupted recovery can be repeated.
-Then reuse into the fresh target again or build it normally. This protocol supports whole-build native copies;
-it does not enable automatic per-package Unreal caching across revisions.
+Ordinary builds and releases use [build checkpoints](BUILD_CHECKPOINTS.md).
+Individual task hits require complete output inventories;
+lookup uses inputs and tools across source revisions. This page documents separate portable source formats.
 
 ## Import a signed offline bundle
 
@@ -400,7 +374,7 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 
 | Artifact | Current safe workflow |
 | --- | --- |
-| Complete generated game plus compiled module | `atelier reuse` from a clean complete checkout at exactly the same revision and engine; then incremental build |
+| Complete generated game plus compiled module | normal `atelier build`, using compatible input-keyed checkpoints; see BUILD_CHECKPOINTS.md |
 | Named portable products with `cache=True` | Automatic verified restoration during build; inspect/prune with `atelier cache` |
 | Opted-in portable texture folders | Publish/restore matching pool key with full output hashes; independent copies |
 | Other generated Blender/character/audio outputs | Keep them warm; extend recipe ownership and tool/dependency manifests before enabling cross-branch pooling |

@@ -207,7 +207,7 @@ nice -n 10 uv run atelier build yorimichi unreal.horses unreal.cairo_horse chara
   A manual `rider.py --review` run
   re-exports every clip into the build, and `--clips` a subset (into `export-partial.json`), overwriting the step's FBXs
   while its build stamp still says current, as the bike's rider does: after one from changed sources, rebuild it
-  (`uv run atelier build yorimichi --force characters.<key>_horse`, under the guard) before the next import.
+  (`uv run atelier build yorimichi characters.<key>_horse`, under the guard; migrate complete output ownership first if needed) before the next import.
 - **`unreal.horses`** deletes and rebuilds `/Game/Horses`. It imports the coat masks, makes the masters `M_HorseCoat`,
   `M_HorseHair`, `M_HorseTack` and `M_HorseTackMasked`, imports each coat variant as `T_CoatVariant_<id>` with the id's
   dashes as underscores (`T_CoatVariant_kestrel_bay`), then for each breed an upright copy of its GLB

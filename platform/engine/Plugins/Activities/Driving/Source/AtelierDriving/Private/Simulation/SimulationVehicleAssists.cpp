@@ -147,7 +147,7 @@ void Vehicle::update_drift(float dt, float speed, Vec3 angular_velocity)
     const bool fast = speed > mph_to_ms(30.0f);
     if (d.phase == Drift::Phase::In || d.phase == Drift::Phase::Exit)
     {
-        const bool sustaining = yaw * slip < 0.0f && std::fabs(slip) <= PI * 0.5f && fast &&
+        const bool sustaining = yaw * slip < 0.0f && std::fabs(slip) <= SIM_PI * 0.5f && fast &&
                                 steering.average_input() * slip <= 0.0f && std::fabs(slip) > threshold;
         const bool sustaining_or_power = sustaining || (c.gas * c.steering * slip > threshold && fast);
         const bool power = c.gas * std::fabs(slip) > threshold;

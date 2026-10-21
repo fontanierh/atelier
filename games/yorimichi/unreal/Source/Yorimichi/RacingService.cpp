@@ -202,11 +202,11 @@ FString ARacingService::RaceName(const FHRRace& Race)
     const HRContent::FEvent* E = HRContent::FindEvent(Race.EventId);
     const FString Event = E ? FString(E->Name) : Race.EventId;
     FString Round;
-    if (Race.Round == TEXT("final")) Round = TEXT("finale");
-    else if (Race.Round == TEXT("semi")) Round = FString::Printf(TEXT("manche %d"), Race.Group + 1);
-    else if (Race.Round == TEXT("qualif")) Round = FString::Printf(TEXT("sprint qualificatif %d"), Race.Group + 1);
-    else if (Race.Round == TEXT("barrage")) Round = Race.Group == 0 ? FString(TEXT("barrage")) : FString::Printf(TEXT("barrage %d"), Race.Group + 1);
-    else Round = FString::Printf(TEXT("course %d"), Race.Group + 1);
+    if (Race.Round == TEXT("final")) Round = TEXT("final");
+    else if (Race.Round == TEXT("semi")) Round = FString::Printf(TEXT("semi-final %d"), Race.Group + 1);
+    else if (Race.Round == TEXT("qualif")) Round = FString::Printf(TEXT("qualifying sprint %d"), Race.Group + 1);
+    else if (Race.Round == TEXT("barrage")) Round = Race.Group == 0 ? FString(TEXT("play-off")) : FString::Printf(TEXT("play-off %d"), Race.Group + 1);
+    else Round = FString::Printf(TEXT("race %d"), Race.Group + 1);
     return Event + TEXT(" · ") + Round;
 }
 
@@ -1093,20 +1093,20 @@ FString ARacingService::HudLine(const AWandererCharacter* Pawn) const
     const FVector At = Pawn->GetActorLocation();
     ERacingVenue Near = ERacingVenue::Count;
     for (const ERacingVenue V : {ERacingVenue::Hidamari, ERacingVenue::Belmonte})
-        if (const FRacingCourse* C = GetCourse(V); C && NearCourse(*C, At)) { Near = V; break; }
+        if (const FRacingCourse* C = GetCourse(V); C && C->ContainsGrounds(At)) { Near = V; break; }
     if (Near == ERacingVenue::Count) return FString();
-    const FString Venue = FString::Printf(TEXT("Hippodrome de %s"), RacingLooks::VenueName(Near));
+    const FString Venue = FString::Printf(TEXT("%s Hippodrome"), RacingLooks::VenueName(Near));
     const double Now = WorldNow();
     const FRacingNetRace& Race = Net.Race;
     const FRacingNetResult& Last = Net.Last;
     FString Result;
     if (!Last.Top.IsEmpty() && ERacingVenue(Last.Venue) == Near && Now - Last.Finished < 300.)
     {
-        Result = TEXT("Arrivée : ");
+        Result = TEXT("Results: ");
         for (int32 I = 0; I < Last.Top.Num(); ++I) Result += FString::Printf(TEXT("%s%d. %s"), I ? TEXT("   ") : TEXT(""), I + 1, *Last.Top[I]);
     }
     if (Race.Key.IsEmpty())
-        return FString::Printf(TEXT("%s   ·   %s%sProchaine réunion dans %s"), *Venue, *Result, Result.IsEmpty() ? TEXT("") : TEXT("   ·   "),
+        return FString::Printf(TEXT("%s   ·   %s%sNext meeting in %s"), *Venue, *Result, Result.IsEmpty() ? TEXT("") : TEXT("   ·   "),
             *RacingLooks::Countdown(Net.NextMeeting - Now));
     const double T = Now - Race.Start;
     if (ERacingVenue(Race.Venue) != Near)
@@ -1116,23 +1116,23 @@ FString ARacingService::HudLine(const AWandererCharacter* Pawn) const
         double Home = 0.;
         for (const FRacingNetRunner& R : Race.Runners) if (R.Place == 1 && R.SplitMs.Num() == 4) Home = R.SplitMs[3] / 1000.;
         if (T < 0.)
-            return FString::Printf(TEXT("%s   ·   Aujourd'hui les courses sont à %s : %s dans %s"), *Venue, There, *Race.Name, *RacingLooks::Countdown(-T));
-        if (!Race.bRun || T < Home) return FString::Printf(TEXT("%s   ·   En direct de %s : %s"), *Venue, There, *Race.Name);
-        return FString::Printf(TEXT("%s   ·   %s à %s : arrivée"), *Venue, *Race.Name, There);
+            return FString::Printf(TEXT("%s   ·   Today's races at %s: %s in %s"), *Venue, There, *Race.Name, *RacingLooks::Countdown(-T));
+        if (!Race.bRun || T < Home) return FString::Printf(TEXT("%s   ·   Live from %s: %s"), *Venue, There, *Race.Name);
+        return FString::Printf(TEXT("%s   ·   %s at %s: finished"), *Venue, *Race.Name, There);
     }
     if (T < 0.)
-        return FString::Printf(TEXT("%s   ·   %s%sProchaine course : %s (%d m) — %s"), *Venue, *Result, Result.IsEmpty() ? TEXT("") : TEXT("   ·   "),
+        return FString::Printf(TEXT("%s   ·   %s%sNext race: %s (%d m) — %s"), *Venue, *Result, Result.IsEmpty() ? TEXT("") : TEXT("   ·   "),
             *Race.Name, Race.Distance, *RacingLooks::Countdown(-T));
     double Winner = 0.;
     for (const FRacingNetRunner& R : Race.Runners) if (R.Place == 1 && R.SplitMs.Num() == 4) Winner = R.SplitMs[3] / 1000.;
-    if (!Race.bRun || T < Winner) return FString::Printf(TEXT("%s   ·   Course en cours : %s — %d m"), *Venue, *Race.Name, Race.Distance);
+    if (!Race.bRun || T < Winner) return FString::Printf(TEXT("%s   ·   Race in progress: %s — %d m"), *Venue, *Race.Name, Race.Distance);
     if (!Result.IsEmpty()) return FString::Printf(TEXT("%s   ·   %s   ·   %s"), *Venue, *Race.Name, *Result);
     TArray<const FRacingNetRunner*> Order;
     for (const FRacingNetRunner& R : Race.Runners) if (R.Place > 0) Order.Add(&R);
     Order.Sort([](const FRacingNetRunner& A, const FRacingNetRunner& B) { return A.Place < B.Place; });
     FString Top;
     for (int32 I = 0; I < FMath::Min(3, Order.Num()); ++I) Top += FString::Printf(TEXT("%s%d. %s"), I ? TEXT("   ") : TEXT(""), I + 1, *Order[I]->Horse);
-    return FString::Printf(TEXT("%s   ·   %s   ·   Arrivée : %s"), *Venue, *Race.Name, *Top);
+    return FString::Printf(TEXT("%s   ·   %s   ·   Results: %s"), *Venue, *Race.Name, *Top);
 }
 
 bool ARacingService::GoToVenue(const FString& Name)

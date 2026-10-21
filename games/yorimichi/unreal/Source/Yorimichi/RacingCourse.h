@@ -55,6 +55,9 @@ struct YORIMICHI_API FRacingCourse
     /** The lane's offset for runner Index of Count. */
     double LaneOffset(int32 Index, int32 Count) const;
     FVector Centre() const;
+    /** Inside the venue grounds, including spectator space, and within 20 m above / 3 m below the track.
+     *  Used for the local HUD, independently of the much wider runner rendering radius. */
+    bool ContainsGrounds(const FVector& Where) const;
 };
 
 /**

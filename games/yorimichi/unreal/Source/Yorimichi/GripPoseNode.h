@@ -17,6 +17,9 @@ struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
         bool bPin = false;       // the hand moved onto Target (else only its fingers posed)
         bool bInFrame = false;   // Target in Frame's space (else the component's)
         FTransform Target = FTransform::Identity;   // the hand bone's place: its location and rotation
+        bool bWheelLocked = false; // authored component frames, applied after all source animation
+        FTransform Locked[5][3];
+        FVector Pole = FVector::ZeroVector;
         FQuat Local[5][3];       // each finger bone's rotation on its parent (index to little, then the thumb)
         FBoneReference Hand, Bones[5][3];
         float Miss = 0.f;        // the last evaluation's distance between the pinned hand and its Target (component units)
@@ -61,9 +64,11 @@ struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
                 Reach(Output, Posed, Parent(Output, Shoulder), Shoulder, Elbow, HandBone, FMath::Lerp(At(Output, Posed, HandBone).GetLocation(), Goal, Weight));
                 FTransform T[3] = { At(Output, Posed, Shoulder), At(Output, Posed, Elbow), At(Output, Posed, HandBone) };
                 const FQuat Was = T[2].GetRotation();
-                AnimationCore::SolveTwoBoneIK(T[0], T[1], T[2], T[1].GetLocation(), FMath::Lerp(T[2].GetLocation(), Goal, Weight), false, 1., 1.);
+                AnimationCore::SolveTwoBoneIK(T[0], T[1], T[2], H.bWheelLocked ? H.Pole : T[1].GetLocation(), FMath::Lerp(T[2].GetLocation(), Goal, Weight), false, 1., 1.);
                 T[2].SetRotation(FQuat::Slerp(Was, Turn, Weight).GetNormalized());
                 H.Miss = Weight >= 1. ? float((T[2].GetLocation() - Goal).Size()) : 0.f;
+                // Pin contact exactly; Miss still exposes an arm that cannot reach the authored grip.
+                if (H.bWheelLocked) T[2].SetLocation(FMath::Lerp(T[2].GetLocation(), Goal, Weight));
                 Posed.Add(Shoulder.GetInt(), T[0]); Posed.Add(Elbow.GetInt(), T[1]); Posed.Add(HandBone.GetInt(), T[2]);
             }
             for (int32 F = 0; F < 5; ++F)
@@ -71,6 +76,13 @@ struct FGripPoseNode final : public FAnimNode_SkeletalControlBase
                 {
                     if (!H.Bones[F][K].IsValidToEvaluate(C)) continue;
                     const FCompactPoseBoneIndex Bone = H.Bones[F][K].GetCompactPoseIndex(C);
+                    if (H.bWheelLocked)
+                    {
+                        const FTransform Current = At(Output, Posed, Bone);
+                        FTransform Locked = H.Locked[F][K]; Locked.SetScale3D(Current.GetScale3D());
+                        FTransform Target; Target.Blend(Current, Locked, Weight);
+                        Posed.Add(Bone.GetInt(), Target); continue;
+                    }
                     FTransform Local = Output.Pose.GetLocalSpaceTransform(Bone);
                     Local.SetRotation(FQuat::Slerp(Local.GetRotation(), H.Local[F][K], Weight).GetNormalized());
                     Posed.Add(Bone.GetInt(), Local * At(Output, Posed, Parent(Output, Bone)));

@@ -1,7 +1,9 @@
-# Atelier driving simulation
+# Atelier driving
 
-A self-contained C++17 driving simulation for a four-wheel car. It is engine-free: it has no
-engine, renderer, asset or platform dependency. How a host exposes it is outside this module.
+A self-contained C++17 driving simulation for a four-wheel car, and the Unreal component that
+drives one from a character. The simulation is engine-free: it has no engine, renderer, asset or
+platform dependency. `UDrivingComponent` is the Unreal host: it reads the world with a ray per
+wheel, steps the simulation, and moves the character it is attached to.
 
 ## What it does
 
@@ -35,6 +37,24 @@ receives position(), orientation() and wheel(i) and can drive its own presentati
 | SimulationVehicle.* | the car step, wheel loop, aero, wall response and hardware replacement |
 | SimulationPerformance.* | measured top speed and acceleration table |
 | Tests/Simulation/self_test.cpp | standalone C++ checks for driving, shifting, contacts and performance |
+| Private/DrivingComponent.cpp | the Unreal host: summon, mount, ground traces, fixed-step tick, dismount |
+
+## Unreal host
+
+`UDrivingComponent` is a component on the playable character. `Initialize` creates its scene root,
+body mesh, seat, four wheel meshes and steering wheel on that character. `SetMeshes` supplies the four
+required assets, and `Configure` takes the host's cockpit frame in centimetres (+X nose, +Y right).
+The body origin is the ground under its middle, the wheel origin is its axle (+Y), and the steering
+wheel origin is its hub (axis +X). Missing assets or an unsupported rider fit prevent mounting.
+The component fits the entire cockpit and simulation to the rider's reference leg length before mounting.
+
+`Toggle` finds ground beside the rider, places the chassis with `Vehicle::place_on_ground`, keeps the
+character visible for the seated stance, stops CharacterMovement and takes the actor transform each tick. The step is
+the simulation's fixed 1/60 s, fed the character's stick intent: `Move.Y` accelerates or brakes,
+`Move.X` steers right. Each wheel's world contact comes from one downward line trace through
+`Ground::hit`; a box sweep of the chassis stops it at walls. Wheels spin and steer and the steering
+wheel turns from the simulation's own angles. `Toggle` again (stopped) puts the rider on the ground
+beside the car.
 
 ## Units and conventions
 

@@ -53,6 +53,63 @@ namespace RacingTest
     };
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingHudGroundsTest, "Yorimichi.Racing.HudGrounds",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingHudGroundsTest::RunTest(const FString&)
+{
+    FRacingCourse Oval;
+    Oval.Oval.Lap = 4. * Oval.Oval.Half + 2. * PI * Oval.Oval.Radius;
+    Oval.Oval.Z = 40.;
+    auto At = [&](double X, double Y, double Z = 0.) { return Oval.Oval.World(X, Y, Z); };
+    TestFalse(TEXT("Loaded course without platform bounds hides the banner"), Oval.ContainsGrounds(At(600., 525.)));
+    Oval.Oval.Grounds += At(476., 443.);
+    Oval.Oval.Grounds += At(747., 589.);
+    TestTrue(TEXT("Hidamari infield"), Oval.ContainsGrounds(At(600., 525.)));
+    TestTrue(TEXT("Grandstand arrival"), Oval.ContainsGrounds(At(563.5, 458.5, 1.)));
+    TestTrue(TEXT("Grandstand upper seats"), Oval.ContainsGrounds(At(600., 453., 15.)));
+    TestFalse(TEXT("City street, inside old rendering radius"), Oval.ContainsGrounds(At(560., 343.)));
+    TestFalse(TEXT("Approach lane"), Oval.ContainsGrounds(At(560., 442.)));
+    TestFalse(TEXT("Beyond west platform edge"), Oval.ContainsGrounds(At(475., 525.)));
+    TestFalse(TEXT("Beyond east platform edge"), Oval.ContainsGrounds(At(748., 525.)));
+    TestFalse(TEXT("Beyond north platform edge"), Oval.ContainsGrounds(At(600., 590.)));
+    TestFalse(TEXT("Flying over the venue"), Oval.ContainsGrounds(At(600., 525., 30.)));
+    TestFalse(TEXT("Under the platform"), Oval.ContainsGrounds(At(600., 525., -10.)));
+    Oval.Oval.Grounds = FBox(At(500., 500.), At(700., 600.));
+    TestFalse(TEXT("Invalid bounds hide the banner"), Oval.ContainsGrounds(At(600., 525.)));
+
+    ARacingService* Service = NewObject<ARacingService>(GetTransientPackage());
+    FString Error;
+    if (!TestTrue(TEXT("Belmonte loaded"), Service->LoadBelmonteCourses(RacingTest::CoursesJson(), RacingTest::BelmonteOrigin, Error))) return false;
+    const FRacingCourse* Turf = Service->GetCourse(ERacingVenue::Belmonte);
+    if (!TestNotNull(TEXT("Belmonte turf"), Turf)) return false;
+    TestTrue(TEXT("Belmonte infield"), Turf->ContainsGrounds(Turf->Centre()));
+    TestTrue(TEXT("Belmonte post spectator point"), Turf->ContainsGrounds(Turf->At(15., 9.)));
+    TestFalse(TEXT("Belmonte countryside"), Turf->ContainsGrounds(Turf->At(15., 100.)));
+    TestFalse(TEXT("Flying over Belmonte"), Turf->ContainsGrounds(Turf->Centre() + FVector(0., 0., 3000.)));
+    FRacingCourse Empty;
+    TestFalse(TEXT("Unloaded venue"), Empty.ContainsGrounds(FVector::ZeroVector));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingEnglishNameTest, "Yorimichi.Racing.EnglishName",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingEnglishNameTest::RunTest(const FString&)
+{
+    FHRRace Race;
+    Race.EventId = TEXT("test-event");
+    Race.Group = 1;
+    const TCHAR* Rounds[] = {TEXT("final"), TEXT("semi"), TEXT("qualif"), TEXT("barrage"), TEXT("ordinary")};
+    const TCHAR* Expected[] = {TEXT("final"), TEXT("semi-final 2"), TEXT("qualifying sprint 2"), TEXT("play-off 2"), TEXT("race 2")};
+    for (int32 I = 0; I < UE_ARRAY_COUNT(Rounds); ++I)
+    {
+        Race.Round = Rounds[I];
+        TestEqual(Rounds[I], ARacingService::RaceName(Race), FString(TEXT("test-event · ")) + Expected[I]);
+    }
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBelmonteCourseTest, "Yorimichi.Racing.BelmonteCourse",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 

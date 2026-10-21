@@ -419,7 +419,7 @@ namespace RacingTvDraw
         Box(Canvas, X, Y, Size, Size, FLinearColor(Colour));
     }
 
-    /** The event's name without the round ("Cedar Bend · course 2" -> "Cedar Bend"). */
+    /** The event's name without the round ("Cedar Bend · race 2" -> "Cedar Bend"). */
     FString Short(const FString& Name)
     {
         FString Left, Right;

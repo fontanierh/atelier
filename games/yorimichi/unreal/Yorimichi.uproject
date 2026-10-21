@@ -77,6 +77,10 @@
       "Enabled": true
     },
     {
+      "Name": "Driving",
+      "Enabled": true
+    },
+    {
       "Name": "AtelierStream",
       "Enabled": true
     },

@@ -26,9 +26,10 @@ def gondola_modules(*names, pure=True):
     stubs = {'bpy': None, 'mathutils': None} if pure else {'bpy': MagicMock(name='bpy'), 'mathutils': MagicMock(name='mathutils')}
     saved_path = list(sys.path)
     with patch.dict(sys.modules, stubs):
-        for name in KIT_MODULES & set(sys.modules):
+        for name in (KIT_MODULES | {'solid_mesh'}) & set(sys.modules):
             del sys.modules[name]                      # a same-named module from elsewhere must not stand in
         sys.path.insert(0, str(KIT))
+        sys.path.insert(0, str(KIT.parents[2] / 'world'))
         try:
             yield SimpleNamespace(**{n: importlib.import_module(n) for n in names})
         finally:

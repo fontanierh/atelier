@@ -89,9 +89,10 @@ def test_world_selector_includes_native_references_without_reading_their_bytes(t
     expected.update({name: name for name in ('audio.footsteps', 'audio.skate')})
     expected.update({f'terrain.HD_Terrain.{stage}': 'world.hidamari'
                      for stage in ('natural', 'final', 'provenance')})
+    expected['gondola.kit']='world.gondola_kit'
     assert graph.owners == expected
     assert all(not graph.by_name[owner].cache for product, owner in expected.items()
-               if not product.startswith('texture.'))
+               if not product.startswith('texture.') and product!='gondola.kit')
     adapter = build.paths.STUDIO / 'atelier/blender/fbx.py'
     assert all(adapter in step.inputs for step in graph.by_name.values() if step.name.startswith('world.foliage.'))
 

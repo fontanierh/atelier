@@ -192,6 +192,9 @@ class Step:
     toolchain: bool = False                               # installed Python/Blender identity, without cache publication
     batch: Batch | None = None                            # opt-in scripts that reset their own transient process state
     cook_recovery: object = field(default=None, repr=False, compare=False)  # narrowly opted-in cook certification policy
+    checkpoint_previous_needs: tuple | None = field(default=None, repr=False)  # equivalent dependency-boundary migration only
+    checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
+    checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
 
 
 def outputs_present(step):
@@ -343,7 +346,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     if named:
         digest.update(b'product-fingerprint-v2\0')
     # Checkout locations and generated Unreal outputs do not change a step's source. Keeping the command paths
-    # relative to their roots also lets a verified build seed another checkout of the same source revision.
+    # relative to their roots also lets a verified build seed another checkout while each receiving input is revalidated.
     commands = repr([c for c in step.commands])
     commands = commands.replace(str(paths.build_root()), '<build>').replace(str(paths.REPO), '<repo>')
     digest.update(commands.encode())
@@ -439,8 +442,11 @@ def outputs_digest(step):
 
 def result(step, current, stamp):
     """What a step's dependents see: its fingerprint, or for a current cutoff step the outputs digest it recorded."""
-    if step.cutoff and stamp.get('fingerprint') == current and stamp.get('result'):
-        return stamp['result']
+    if stamp.get('fingerprint') == current:
+        if stamp.get('checkpoint_migration_result'):
+            return stamp['checkpoint_migration_result']
+        if step.cutoff and stamp.get('result'):
+            return stamp['result']
     return current
 
 
@@ -613,7 +619,8 @@ def slot_summary(slots):
 
 
 def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, verify=False, cook_mode=None, cook_reason=None,
-          max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None):
+          max_heavy_commands=None, recover_cook=None, record_cook_recovery=False, rebuild_touched=False, cook_memory_gib=None,
+          rebuild_reason=None):
     """@cc [owner:fontanierh,label:correctness] rebuild-touched-certificates
     An explicit touched-only rebuild MUST replace only explicitly named touched certificates through normal
     execution or verified product restoration, without changing action keys or skipping guards.
@@ -634,8 +641,8 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
     if max_heavy_commands is not None and (type(max_heavy_commands) is not int or max_heavy_commands < 1):
         raise ValueError('max_heavy_commands must be a positive integer')
     from .build_snapshot import require_complete
-    require_complete(paths.build_root() / game, game=game)
     if dry:
+        require_complete(paths.build_root() / game, game=game)
         from .build_plan import show
         return show(game, wanted, force=force, echo=echo, verify=verify,
                     **({'rebuild_touched': True} if rebuild_touched else {}),
@@ -646,10 +653,31 @@ def build(game, wanted=(), force=False, dry=False, touch=False, echo=print, veri
                   **({'cook_memory_gib': cook_memory_gib} if cook_memory_gib is not None else {}))
     ctx.record_cook_recovery = record_cook_recovery
     ctx.rebuild_touched = rebuild_touched
+    from . import build_checkpoints
+    ctx.rebuild_reason = build_checkpoints.reason(rebuild_reason)
+    ctx.checkpoint_settings = build_checkpoints.configured(ctx)
+    checkpoint_steps = None
+    if ctx.checkpoint_settings is not None:
+        if touch:
+            raise SystemExit('--touch cannot certify checkpoint builds. Use the normal build command.')
+        if force and not ctx.rebuild_reason:
+            raise SystemExit('--force requires --rebuild-reason for checkpoint builds; normal builds restore matching results.')
+        checkpoint_steps = load_recipe(game).steps(ctx)
+        if force and (len(wanted) != 1 or wanted[0] not in {s.name for s in checkpoint_steps}):
+            raise SystemExit('--force requires one exact task and --rebuild-reason; broad forced rebuilds are retired.')
+        ctx.checkpoint_force_task = wanted[0] if force else None
+        if getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.FULL and not ctx.rebuild_reason:
+            raise SystemExit('A diagnostic full cook requires --rebuild-reason; normal builds cook incrementally.')
+        try:
+            build_checkpoints.prepare(ctx, checkpoint_steps, echo=echo)
+        except (OSError, ValueError, RuntimeError) as error:
+            raise SystemExit(str(error)) from None
+    require_complete(paths.build_root() / game, game=game)
     from .build_hashes import HashIndex
     with HashIndex(ctx.out / '.state' / 'file-hashes.sqlite3', verify=verify) as index:
-        return _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
-                      max_heavy_commands=max_heavy_commands)
+        code = _build(ctx, wanted, force=force, touch=touch, echo=echo, index=index,
+                      steps=checkpoint_steps, max_heavy_commands=max_heavy_commands)
+    return code
 
 
 def touched_targets(ctx, steps, wanted):
@@ -758,6 +786,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             echo(f'Remote cache unavailable ({error}); continuing locally')
     ctx.logs.mkdir(parents=True, exist_ok=True)
     ctx.stamps.mkdir(parents=True, exist_ok=True)
+    from . import checkpoint_actions as task_cache
+    settings = getattr(ctx, 'checkpoint_settings', None)
+    actions = task_cache.Actions(ctx, settings, echo) if settings is not None else None
+    if actions is not None:
+        from .checkpoint_actions import validate_ownership
+        validate_ownership(ctx, steps)
     done, ran, restored = {}, 0, 0
     heavy_commands = 0
     def budget_spent():
@@ -803,7 +837,18 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             return 1
         from .build_plan import read_stamp
         previous = read_stamp(stamp)
-        outputs_ok = outputs_present(step)
+        if actions is not None and not force and not touch:
+            previous = task_cache.migrate_boundary(ctx, step, current, input_state, previous, done, echo=echo)
+        outputs_ok = outputs_present(step) and task_cache.compile_present(ctx, step)
+        if actions is not None:
+            outputs_ok = outputs_ok and (task_cache.certified(ctx, step, current, previous)
+                                         or task_cache.local_incremental(ctx, step, current, previous))
+        saved_action = None
+        if actions is not None:
+            identity = task_cache.key(ctx, step, current)
+            saved_action = task_cache.load(actions.store, identity) if identity else None
+            if saved_action is not None:
+                outputs_ok = outputs_ok and task_cache.valid_outputs(ctx, step, saved_action)
         if step.products:
             outputs_ok = outputs_ok and build_products.valid_records(step, previous.get('products', {}), hasher=index.digest)
         try:
@@ -822,6 +867,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
         if not recovering and not force_step and not rebuilding_touched and previous.get('fingerprint') == current and outputs_ok:
             done[step.name] = result(step, current, previous)
             build_products.feed_results(done, previous.get('products', {}))
+            if actions is not None and saved_action is None and task_cache.certified(ctx, step, current, previous):
+                task_cache.publish(ctx, step, current, previous, store=actions.store, done=done)
             echo(f'{print_} up to date')
             continue
         if getattr(ctx, 'recover_cook', None) is not None and not recovering and step.name != 'unreal.package':
@@ -838,21 +885,53 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             done[step.name] = result(step, current, touched)
             echo(f'{print_} touched')
             continue
+        local_portable = step.cache and build_cache.Store().action(current).exists()
+        action_hit = (actions.get(step, current, local_only=local_portable)
+                      if actions is not None and not force_step and not recovering else None)
         try:
             # The batch selector skips current certificates; this explicitly requested repair
             # must execute or restore normally before handing later actions to a batch.
-            batch = [] if rebuilding_touched else build_batches.select(
+            batch = [] if rebuilding_touched or action_hit is not None or (actions is not None and force_step) else build_batches.select(
                 ctx, plan, position, done, force=force_step, index=index, tool_cache=tool_cache)
         except (OSError, ValueError, SyntaxError) as error:
             echo(f'{print_} FAILED: {error}')
             return 1
+        if batch and actions is not None and not force_step:
+            # Saved results never enter a native batch.
+            for offset, (candidate, candidate_key, _) in enumerate(batch):
+                if actions.get(candidate, candidate_key) is not None:
+                    batch = batch[:offset]
+                    break
         if batch:
             if budget_spent():
                 return yield_build(step)
+            from .build_checkpoints import protect, estimate
+            try:
+                for item in batch:
+                    candidate = item.step if hasattr(item, 'step') else item[0]
+                    protect(ctx, candidate, estimate=estimate(read_stamp(ctx.stamps / (candidate.name + '.json'))), echo=echo)
+            except RuntimeError as error:
+                echo(str(error))
+                return 1
             heavy_commands += 1
             completed, code = build_batches.run(ctx, batch, done, index=index, tool_cache=tool_cache,
                                                 echo=echo, products=declared_products, wanted=wanted)
+            if actions is not None:
+                for completed_step in plan:
+                    if completed_step.name in completed:
+                        saved = read_stamp(ctx.stamps / (completed_step.name + ".json"))
+                        from .build_cache import atomic_json
+                        path = ctx.stamps / (completed_step.name + '.json')
+                        try:
+                            saved['checkpoint_key'] = task_cache.certificate_key(ctx, completed_step, saved['fingerprint'])
+                            saved['checkpoint_incremental_context'] = getattr(ctx, 'checkpoint_observed_context', None)
+                            task_cache.publish(ctx, completed_step, saved['fingerprint'], saved, store=actions.store, done=done, produced=True)
+                            atomic_json(path, saved)
+                        except (OSError, ValueError, RuntimeError):
+                            path.unlink(missing_ok=True)
+                            raise
             completed_batches.update(completed)
+            ctx.checkpoint_changed = True
             ran += len(completed)
             if code:
                 return code
@@ -874,7 +953,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             stamp.unlink(missing_ok=True)
             echo(f'{print_} FAILED: {error}')
             return 1
-        if store is not None and not force_step:
+        if action_hit is not None:
+            actions.restore(step, current, action_hit, done)
+            products = build_products.records(step)
+            restore_source = "checkpoint"
+        if products is None and store is not None and not force_step:
             try:
                 # Source change metadata is local; all transferred output bytes are verified below.
                 if fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
@@ -891,9 +974,22 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
                 echo(f'{print_} cache unavailable ({error}); building')
                 products = None
+        if products is None and actions is not None and local_portable and not force_step:
+            action_hit = actions.get(step, current)
+            if action_hit is not None:
+                actions.restore(step, current, action_hit, done)
+                products = build_products.records(step)
+                restore_source = 'checkpoint'
         from_cache = products is not None
         if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
             return yield_build(step)
+        if not from_cache and not recovering:
+            from .build_checkpoints import protect, estimate
+            try:
+                protect(ctx, step, estimate=estimate(previous), echo=echo)
+            except RuntimeError as error:
+                echo(str(error))
+                return 1
         with open(log_path, 'w') as log:
             try:
                 stamp.unlink(missing_ok=True)
@@ -905,7 +1001,10 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     from .build_cook_recovery import recover
                     recovery = recover(ctx, step, ctx.recover_cook, log)
                     command_times.append(dict(kind='CookCertificationRecovery', **recovery))
-                for command in (() if from_cache or recovering else step.commands):
+                commands = (() if from_cache or recovering else step.commands)
+                if action_hit is not None and step.checkpoint_restore is not None:
+                    commands = [Call('certify_restored_checkpoint', step.checkpoint_restore)]
+                for command in commands:
                     if step.heavy and not isinstance(command, Call):
                         if budget_spent():
                             return yield_build(step)
@@ -942,7 +1041,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                     raise RuntimeError(f'{step.name}: outputs missing after the run: {missing[:3]}')
                 products = build_products.records(step)
                 build_products.verify_reads(step, declared_products, done)
-                if (step.products or step.deferred_inputs) and fingerprint(step, done, index=index, tool_cache=tool_cache) != current:
+                observed_key = (fingerprint(step, done) if actions is not None else
+                                fingerprint(step, done, index=index, tool_cache=tool_cache))
+                if (actions is not None or step.products or step.deferred_inputs) and observed_key != current:
                     raise RuntimeError(f'{step.name}: inputs changed during build; outputs not certified')
                 verify_spatial(step, current)
             except Exception as error:
@@ -968,6 +1069,11 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 record['product_optional_roots'] = optional
             record['output_changes'] = build_changes.compare(previous, products, record['product_roots'],
                                                              restored=from_cache, optional=optional)
+        if actions is not None:
+            from .build_checkpoints import estimate
+            record['checkpoint_key'] = task_cache.certificate_key(ctx, step, current)
+            record['checkpoint_incremental_context'] = getattr(ctx, 'checkpoint_observed_context', None)
+            record['checkpoint_build_seconds'] = estimate(action_hit['stamp']) if action_hit is not None else (None if from_cache else round(seconds, 3))
         if from_cache:
             record['restored_from'] = current
             record['restore_source'] = restore_source
@@ -983,9 +1089,17 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 stamp.unlink(missing_ok=True)
                 raise RuntimeError('Pool tool context changed during build; outputs not certified')
             record['pool_key'] = pool_key
+        if actions is not None:
+            try:
+                task_cache.publish(ctx, step, current, record, store=actions.store, done=done, produced=True)
+            except (OSError, ValueError, RuntimeError) as error:
+                stamp.unlink(missing_ok=True)
+                echo(f'{print_} FAILED: checkpoint publication refused ({error})')
+                return 1
         temporary = stamp.with_suffix('.tmp')
         temporary.write_text(json.dumps(record) + '\n')
         temporary.replace(stamp)
+        ctx.checkpoint_changed = True
         journal.unlink(missing_ok=True)
         if store is not None and not from_cache:
             try:

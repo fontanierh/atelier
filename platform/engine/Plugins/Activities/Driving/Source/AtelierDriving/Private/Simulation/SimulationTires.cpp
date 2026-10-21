@@ -139,7 +139,7 @@ float Tire::update_loaded(const TireParams& p, const LoadedInput& i)
     }
     const float total_torque = drive_torque + brake_torque;
 
-    slip_angle = std::atan2(lat, std::fabs(fwd)) / TAU;
+    slip_angle = std::atan2(lat, std::fabs(fwd)) / SIM_TAU;
     const float slip_value = av * r - fwd;
     slip = slip_value;
     const float pilot = pilot_factor(p, i.body_speed);
@@ -243,7 +243,7 @@ float Tire::update_loaded(const TireParams& p, const LoadedInput& i)
 
     if (fwd > 1.0f)
     {
-        fx -= std::sin(slip_angle * TAU) * fy * drag_reduction / std::fmax(p.grip_scale, EPS);
+        fx -= std::sin(slip_angle * SIM_TAU) * fy * drag_reduction / std::fmax(p.grip_scale, EPS);
     }
     else
     {

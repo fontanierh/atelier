@@ -144,7 +144,7 @@ WheelState Vehicle::wheel(int i) const
     out.load = tire.load;
     out.slip = tire.slip;
     out.lateral_speed = tire.lateral_speed;
-    out.slip_angle = tire.slip_angle * TAU;
+    out.slip_angle = tire.slip_angle * SIM_TAU;
     out.traction = tire.traction;
     out.locked = tire.brake_locked;
     out.lateral_force = tire.lateral_force;
@@ -198,7 +198,8 @@ void Vehicle::step(float dt, const InputState& input, const Ground& ground)
     }
     if (body.state == BodyState::Asleep)
     {
-        if (input.throttle > 0.0f || input.handbrake > 0.0f)
+        // Braking from rest selects reverse (auto-reverse), so it has to wake the body too.
+        if (input.throttle > 0.0f || input.brake > 0.0f || input.handbrake > 0.0f)
         {
             body.wake();
         }

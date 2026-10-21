@@ -2,6 +2,7 @@
 import math
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'world'))
@@ -15,6 +16,21 @@ def inside(poly, x, y):
 
 
 class Course(unittest.TestCase):
+    def test_platform_mesh_bounds_follow_authored_grounds(self):
+        from hippodrome import build
+        import numpy as np
+
+        # The runtime HUD reads SM_HD_Ground's transformed bounds; changing the authored plan must
+        # change that mesh's bounds too. Its top remains separate from the skirt and approach lane.
+        for bounds in (L.PLATFORM, (500., 450., 710., 580.)):
+            with patch.object(build.L, 'PLATFORM', bounds), patch.object(build, 'ground', return_value=35.):
+                top, _ = build.platform(40.)
+            points = np.asarray(top.p)
+            lo, hi = points.min(axis=0), points.max(axis=0)
+            ox, oy = L.ORIGIN
+            self.assertEqual(tuple(lo), (bounds[0] - ox, bounds[1] - oy, 0.))
+            self.assertEqual(tuple(hi), (bounds[2] - ox, bounds[3] - oy, 0.))
+
     def test_centre_line_is_continuous_and_one_lap_long(self):
         step = .05
         points = [L.centre(i * step) for i in range(int(L.LAP / step) + 1)]

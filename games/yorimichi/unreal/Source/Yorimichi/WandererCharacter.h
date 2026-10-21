@@ -26,6 +26,7 @@ class UJapanPreferences;
 class USkateComponent;
 class USailboatComponent;
 class UBikeComponent;
+class UDrivingComponent;
 class UHorseComponent;
 class FJsonObject;
 class FYorimichiPhone;
@@ -128,6 +129,7 @@ public:
     ASwordDummy* GetSwordDummy() const { return SwordDummy; }
     USailboatComponent* GetSailboat() const { return Sailboat; }
     UBikeComponent* GetBike() const { return Bike; }
+    UDrivingComponent* GetCar() const { return Car; }
     UHorseComponent* GetHorse() const { return Horse; }
     /** On the sailboat, the bike, or the horse: the vehicle owns his movement, his animation and his buttons. */
     bool OnVehicle() const;
@@ -265,7 +267,10 @@ private:
     friend class UJapanCharacterMovement;
     friend struct FAdventureNetworkState;
     friend struct FJapanVehicleQAAccess;
-    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, PreferredArmLength=0.f;
+    float LookGrace=0.f, SkateCameraBlend=0.f, HorseCameraBlend=0.f, CarCameraBlend=0.f, PreferredArmLength=0.f;
+    float CarSmokeWait[2]={0.f,0.f}, CarExhaustWait=0.f, CarDustWait=0.f;
+    bool bLiveStarted=false;
+    bool bCarConfigureTried=false;
     // Share of the skating camera in the view (CalcCamera), and its last frame for easing out after a ride.
     float BoardCameraBlend=0.f;
     FMinimalViewInfo BoardCamera;
@@ -274,6 +279,7 @@ private:
     UPROPERTY() TObjectPtr<USkateComponent> SkateRide;
     UPROPERTY() TObjectPtr<USailboatComponent> Sailboat;
     UPROPERTY() TObjectPtr<UBikeComponent> Bike;
+    UPROPERTY() TObjectPtr<UDrivingComponent> Car;
     UPROPERTY() TObjectPtr<UHorseComponent> Horse;
     UPROPERTY() TObjectPtr<UJapanFootstepComponent> Footsteps;
     UPROPERTY() TObjectPtr<UWandererSwordComponent> Sword;
@@ -323,6 +329,10 @@ private:
     bool bBenchmarkCapturing = false, bBenchmarkFinished = false, bBenchmarkBoarding = false, bBenchmarkStillTaken = false;
     FVector BenchmarkLastPosition = FVector::ZeroVector;
     void AdvanceBenchmark(float Dt);
+    /** Tyre smoke, impact sparks and exhaust pops while the kart is out. */
+    void AdvanceCarEffects(float Dt);
+    /** The kart's cockpit fit, called by world entry and once more when the rider's mesh arrives late. */
+    void ConfigureCar();
     bool AdvanceZeppelinBenchmark();
     void AdvanceSailboatReview(float Dt);
     bool bCinematic=false;
@@ -387,6 +397,9 @@ private:
     void ReturnToSpawn();
     void ToggleSailboat(const FInputActionValue& Value);
     void ToggleBike(const FInputActionValue& Value);
+    void ToggleCar(const FInputActionValue& Value);
+    void CarHandbrake(const FInputActionValue& Value);
+    void CarHandbrakeReleased(const FInputActionValue& Value);
     void ToggleHorse(const FInputActionValue& Value);
     void HorsePad(const FInputActionValue& Value);
     void RandomizeHorse(const FInputActionValue& Value);

@@ -174,8 +174,8 @@ Native validation must establish all of the following:
 - Load and cook the assets, including treehouse/forest users of the shared materials. Check references, foliage
   fading and trunk collision in the editor and packaged game.
 - Before portable source or native publication, scan for checkout paths and prove restore/reimport without the
-  donor checkout. Whole-build reuse remains stricter: same clean revision and engine, complete inventories and a
-  fresh target with no Intermediate/Saved discovery caches.
+  donor checkout. Normal build checkpoints require matching inputs/tools and complete inventories across revisions.
+  Path-bound Intermediate never relocates; follow the platform checkpoint guide.
 
 This pilot does not split terrain, regional geometry, characters, sounds or cooking. Their legacy dependencies
 remain until equivalent ownership and edit-boundary proofs exist. Follow the platform's

@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "frame": "Blender metres, +X forward, +Y left, +Z up",
+  "reference_leg_length": 0.7,
+  "scale_range": [
+    0.82,
+    1.16
+  ],
+  "seat": [
+    -0.34,
+    0.0,
+    0.255
+  ],
+  "pelvis": [
+    -0.3,
+    0.0,
+    0.325
+  ],
+  "steering": [
+    0.12,
+    0,
+    0.58
+  ],
+  "steering_radius": 0.132,
+  "grip_elevation_degrees": 12.0,
+  "foot": [
+    0.29,
+    0.17,
+    0.2
+  ],
+  "knee": [
+    0.15,
+    0.19,
+    0.45
+  ],
+  "elbow": [
+    -0.1,
+    0.33,
+    0.57
+  ],
+  "foot_forward": [
+    1.0,
+    0.0,
+    -0.12
+  ],
+  "recline_degrees": 16.0,
+  "wheel_positions": [
+    [
+      0.75,
+      0.55,
+      0.205
+    ],
+    [
+      0.75,
+      -0.55,
+      0.205
+    ],
+    [
+      -0.75,
+      0.62,
+      0.2214
+    ],
+    [
+      -0.75,
+      -0.62,
+      0.2214
+    ]
+  ],
+  "wheel_radius": 0.205,
+  "wheel_width": 0.205,
+  "body_half_extents": [
+    1.16,
+    0.75,
+    0.25
+  ],
+  "steering_column_base": [
+    0.4556398524709121,
+    0,
+    0.18
+  ],
+  "steering_tube_radius": 0.013
+}

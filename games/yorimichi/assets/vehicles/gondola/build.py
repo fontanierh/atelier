@@ -46,11 +46,7 @@ def log(*a):
 
 
 def source_hash():
-    h = hashlib.sha256()
-    for f in sorted(HERE.glob('*.py')):
-        h.update(f.name.encode()); h.update(f.read_bytes())
-    return h.hexdigest()[:16]
-
+    return P.source_hash()
 
 def fresh_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -285,7 +281,7 @@ def build_towers(p, d, cab):
             if not rc['ok']:
                 bad.append(f'{m.name}: rope within {rc["required_m"]} m of the cabin on {side}: {rc["where"]}')
         hits = solid.clearance([m], movers, places)
-        env = envelope(p, d, 0.3)
+        env = envelope(p, d, checks.TOWER_BODY_MARGIN)
         env_hits = solid.clearance([m], [env], places)
         tris = m.tris()
         extra = []
@@ -352,6 +348,8 @@ def main():
             manifest['pieces'][f'station_{key}'] = entry; failures += [f'station {key}: {b}' for b in bad]
     summary = rope_summary(manifest['pieces'])
     manifest['rope_clearance'] = summary
+    manifest['materials'] = solid.MATERIALS
+    manifest['textured_materials'] = solid.TEXTURED
     for row in summary:
         w = row['where'] or {}
         if 'parts' in w:                       # intentional contact, part by part (signed minimum over the poses)

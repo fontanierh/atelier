@@ -14,6 +14,8 @@ struct FHippodromeCourse
 {
     FVector2D Origin = FVector2D(600., 525.);   // Blender metres
     double Half = 60., Radius = 50., Width = 14., Lap = 0., FinishX = 600., Z = 0.;
+    /** World bounds of the imported platform mesh, invalid until the authored ground is loaded. */
+    FBox Grounds = FBox(ForceInit);
     /** layout.centre: the point at S, Offset metres outwards, and the running yaw (Unreal degrees). */
     FVector At(double S, double Offset, float* Yaw = nullptr) const;
     /** layout.curvature_scale: how much further a runner Offset metres outwards travels per metre of centre line. */

@@ -5,8 +5,9 @@ style of the gondola concepts (`gondola_cabin.jpg`, `gondola_tower_pylon.jpg`, `
 `gondola_rim_station.jpg`, `gondola_crater_floor_station.jpg`). The concepts set the look. The structure is designed
 for riding and walking. All lines are monocable detachable gondola (MDG) lines, and every line runs both ways.
 
-This stage builds only route-independent geometry: the cabin, a parametric tower and three station shells. It does
-not place anything in the world, choose routes or import into Unreal.
+The kit builds route-independent geometry: the cabin, a parametric tower and three station shells. The normal
+Yorimichi build also fits and imports three working lines, their foundations and ground access, as described under
+World integration below.
 
 ## Build and review
 
@@ -64,7 +65,7 @@ Overrides come from a JSON file named by `$GONDOLA_PARAMS`, and the build record
 | `gauge` | 6.0 m | distance between the two rope tracks; bullwheel rope diameter; tower crossarm |
 | `rope_radius` | 0.045 m | 90 mm haul rope (six strands); jaw, sheave and bullwheel groove radii; clearances |
 | `hanger_length` | 1.45 m | rope axis to the cabin roof deck; grip-to-floor 3.75 m; rope height at the platforms 3.77 m |
-| `tower_heights` | 10, 13, 16, 20, 24 m | one tower model per height (saddle height above the foundation datum) |
+| `tower_heights` | 10, 13, 16, 20, 24, 28 m | one tower model per height (saddle height above the foundation datum) |
 | `berth_x`, `pit_depth`, `berth_floor_step` | 3.4 m, 0.28 m, 0.02 m | berth position, cabin channel depth, sill step |
 
 `manifest.json` records the attachment points for every piece:
@@ -251,34 +252,46 @@ the gate into the cabin.
 ## Contracts
 
 - **closed-visible-geometry** and **pieces-meet-by-construction:** see Mesh rules.
-- **ground-is-the-rendered-surface:** the towers record their foundation datum and the allowed ground relief at each
-  pedestal; the stations record their platform datum and access edges. Placement is a later, route-dependent stage.
-  - Beyond each station mouth, the ground must stay below the pit floor (−0.28 m), because the cabin bottoms run 0.18 m
-    below the platform.
-- **walkable-routes-traversable:** the raster walk audit is done. A game drive of the routes is not, because nothing
-  is in Unreal yet.
-- **one-implementation-per-mechanism:**
-  - `solid.py` and the raster core of `walk.py` are carried over from the ferry's build. The ferry is not on `main`
-    yet; the two should share one module once it lands.
-  - The rope path, the grip frame and the groove check have one implementation, `rope.py`.
+- **ground-is-the-rendered-surface:** world placement queries the final exported terrain with explicit region ownership
+  and resolves the North Trail overlay for walking contact. Complete foundation, footing and access footprints must
+  be covered. Every access-floor triangle is checked against the owned ground, including landings and fitted joins.
+- **walkable-routes-traversable:** the kit's raster walk audit checks both berths. The committed
+  `scenarios/gondola_roundtrip_live.py` additionally drives the imported access, boarding and alighting routes at both
+  ends of each line, rides both directions and refuses a stall, a lost rider or a tilted cabin.
+- **one-implementation-per-mechanism:** `solid.py` adapts the shared `world/solid_mesh.py` builder and audits while
+  preserving the kit's geometry, tags and timber grain. The rope path, grip frame and groove check use `rope.py`.
+  Runtime riders share `FTransportRiders` with the ferry and train.
 
-## Still to do (B4)
+## World integration (B4)
 
-These belong to placement, the next batch (B4), and are not in this kit:
+The normal dependency graph prepares and imports the complete network:
 
-- **The route against the real terrain.** Nothing here reads terrain, heightmaps or region sources: the towers record
-  a foundation datum and an allowed ground relief, and the stations a platform datum and access edges. Placement must
-  measure the route (span lengths, sag, tower feet, station ground and the ground beyond each mouth) against the real
-  terrain, and its build must record the sha256 of every terrain and region source it reads and refuse a mismatch on
-  rebuild.
-- **Ramps and jumps.** The rider clearance under the floor-to-rim line over Crater Park's ramps and jumps is measured
-  only once the route is placed.
-- **Tower passes on the real routes.** The kit checks each tower with the default 3 degree deflection, 4 m spans
-  and grip positions within 2.4 m of the tower centre. Placement must rerun the passes (groove, rope clearance, the
-  sheaves per part, the cabin envelope) with each route's actual deflection at each tower.
-- **The importer refuses a bad manifest.** The Unreal import must refuse a manifest whose `failures` is not empty,
-  whose `soft_fail` is true, or whose `source_hash` does not match the kit's sources it was built from.
-- **A game drive of the walk routes** in Unreal (walkable-routes-traversable), once the pieces are imported.
+```sh
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi
+```
+
+- **Routes:** L1 joins Hidamari to the southeast rim; L2 joins Belmonte to the northwest rim; L3 joins the crater
+  floor to its separate southeast rim station. Regional placement records supply the station mouths and tower
+  locations; `world/regions/gondola/site.py` fits six stations and ten towers to the final world. Foundations use
+  timber posts and braces with individual stone feet. Access stairs terminate on the existing walking surface.
+- **Required preparation:** the graph builds all canonical kit pieces, extracts source-bound final ground, fits
+  foundations and access, exports all rope detail levels, then writes runtime data. It refuses stale or missing
+  inputs, incomplete footprints, failed closure, coplanar overlaps, unsupported fittings and triangle overruns.
+- **Ramps and jumps:** placement leaves the riding geometry unchanged. Complete triangle bounds include the moving
+  cabin length and sag; the floor-to-rim line must stay at least 15 m above riding and jump geometry. Cabin-to-ground
+  clearance must be at least 6 m outside the station approaches. Approach and access checks remain separate.
+- **Actual fitted contact:** both travel directions use the fitted rope profile. The near rope is reduced only
+  within its remaining 2 mm jaw budget. The build reads the exported FBX back, preserves its imported world
+  transform, models float32 centimetre storage, and checks all 114 groove samples at every directed audit pose.
+  The resulting axis displacement also reduces the hardware-clearance bound, which must remain at least 0.095 m.
+  More distant rope meshes have explicit minimum viewing distances.
+- **Runtime and import:** preflight verifies the current kit, ground, site proofs and every generated file before
+  Unreal asset mutation. Cabins and physical doors follow a shared deterministic clock; cabin floors stay level
+  while the grips follow the rope. The service owns boarding membership, map stops, corridor vegetation clearing
+  and state-driven transport audio. Late snapshot application does not replay historical sound cues.
+- **Game evidence:** the round-trip scenario exercises ordinary walking and the production clock. Native runtime
+  tests, physical traversal captures and any unrun real-peer or listening checks are recorded with their exact
+  revisions in the implementation PR; geometric preparation alone does not establish physical traversal.
 
 The collision is in this kit: every piece (the cabin, each tower, each station's walkable parts) exports its UCX
 convex hulls, and the build fails on a proxy that is not convex, or on a walkable slab (platform, plaza, boardwalk,

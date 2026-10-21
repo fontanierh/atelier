@@ -21,11 +21,9 @@ import rope as RP
 import solid
 from cabin import GRIP, pose as cabin_pose
 from solid import (BASALT, BOLT, CONCRETE, DECK, IRON, LAMP, PAINT, PANEL, PAVING, PLANK, PLASTER, POT, ROPE,
-                   SHINGLE, SIGN, SOIL, STEEL, STONE, TILE, TIMBER, TIMBER_DARK, Mesh, circle, proxy, proxy_box,
+                   SHINGLE, SIGN, SOIL, STEEL, STONE, TILE, TIMBER, TIMBER_DARK, WINDOW, Mesh, circle, proxy, proxy_box,
                    proxy_strip, rect)
 
-WINDOW = 'GD_WindowPane'
-solid.MATERIALS.setdefault(WINDOW, ((96, 110, 120), .2, 0.))
 CABIN_T = 0.075
 ROPE_DROP = 0.15       # the rope inside the station runs this far below the grip line
 ATTACH_ZONE = 1.8      # from the mouth inwards: grips close on / open off the rope here
@@ -83,9 +81,10 @@ def sub_path(pts, s0, s1):
 
 
 # ------------------------------------------------------------------ shared builders
-def railing(m, st, pts, style, h=1.0, spacing=1.6, gaps=(), on=('platform',), label='rail post', z0=0.0, proxy_name='railing', embed=0.0):
+def railing(m, st, pts, style, h=1.0, spacing=1.6, gaps=(), on=('platform',), label='rail post', z0=0.0, proxy_name='railing', embed=0.0, start_post=True):
     """Posts and rails along an open polyline (station plan), leaving gaps (s intervals along the path). z0 is the
-    walking surface under the posts: a constant or a function f(x, y) (ramps and stairs)."""
+    walking surface under the posts: a constant or a function f(x, y) (ramps and stairs).
+    start_post=False reuses a post already built at the first point of an adjoining edge."""
     zf = z0 if callable(z0) else (lambda x, y, c=z0: c)
     total = path_len(pts); runs = []; s = 0.0
     for g0, g1 in sorted(gaps):
@@ -101,7 +100,9 @@ def railing(m, st, pts, style, h=1.0, spacing=1.6, gaps=(), on=('platform',), la
         n = max(1, math.ceil((r1 - r0) / spacing)); posts = []
         for k in range(n + 1):
             p, t = point_at(pts, r0 + (r1 - r0) * k / n); posts.append((p, t, zf(p[0], p[1])))
-        for p, t, z in posts:
+        for index, (p, t, z) in enumerate(posts):
+            if not start_post and r0 == 0 and index == 0:
+                continue
             yaw = math.degrees(math.atan2(t.y, t.x))
             if style == 'timber':
                 with m.at((p[0], p[1], z), yaw), m.grained((0, 0, 1)):

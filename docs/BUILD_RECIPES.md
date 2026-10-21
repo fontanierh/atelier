@@ -102,9 +102,8 @@ reads, environment dependencies or hostile code. It does not import or launch to
 Unselected collectors do not run. Fingerprints include explicit criteria, support bytes, ordered
 member paths and their normal legacy byte feeds, including an empty selection. After executing an
 opted-in action, a fresh selection and fingerprint must still match before a stamp is written.
-Plans and worktree reuse use the same observation API; reuse filters copied generated members from
-both the source-only byte inputs and membership list. No observation is cached on a recipe Step or
-across invocations. Existing actions without this opt-in retain their fingerprint algorithm.
+Plans and fingerprints use the same observation API. Receiving membership and byte identities are
+observed locally rather than copied from a donor. No observation is cached on a recipe Step or across invocations. Existing actions without this opt-in retain their fingerprint algorithm.
 
 This first API supports legacy actions only: named products, reads/references, optional inputs,
 spatial queries, audit, caches, pool roots, explicit toolchains and batches cannot use it. Supporting
@@ -442,14 +441,12 @@ verifies every installed output again. Missing/corrupt blobs fall back to genera
 same action key disable that key's reuse. [Cache maintenance](ARTIFACT_POOL.md#automatic-product-cache) covers
 accounting, pins, LRU pruning and discarding conflicts. Plans remain read-only and never fetch or restore a hit.
 
-`atelier reuse` supports named products as part of a verified whole build at the same clean revision. It compares
-producer source identities before copying and full fingerprints and inventories afterward, including unconsumed
-leaves and optional sidecars. Its journal blocks build and launch after an interrupted copy; see
-[snapshot recovery](ARTIFACT_POOL.md#verified-whole-build-reuse). The older explicit `atelier pool` still rejects named
-products. Unreal packages, native binaries, Content and Intermediate directories remain ineligible for the automatic
-portable source cache. Per-package cross-revision restoration, relocation and remote storage remain described in
-[the architecture](INCREMENTAL_BUILDS.md). Keep native imports conservative until their clean/incremental equivalence
-checks pass, following [world build practices](WORLD_BUILD_PRACTICES.md).
+Normal builds also use [private build checkpoints](BUILD_CHECKPOINTS.md). A checkpoint task result requires
+complete named products or explicit `checkpoint_outputs`, with disjoint ownership. These roots are validated
+against locally allowed generated directories; representative `outputs` are never expanded into ownership.
+An optional `checkpoint_restore(ctx, log)` callback can recertify source-bound receipts without deleting the
+restored payload. It must be non-destructive and covered by declared implementation inputs.
+Native checkpoint files remain separate from the portable source cache. Compiler Intermediate is path-bound.
 
 ## Spatial product reads
 

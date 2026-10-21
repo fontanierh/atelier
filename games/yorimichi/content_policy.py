@@ -30,12 +30,12 @@ ASSET_ROOTS = frozenset({
     'Adventure', 'AtelierValidation', 'Audio', 'Belmonte', 'Collections', 'CraterPark', 'Data', 'Developers',
     'Experiments', 'FX', 'FoxHunter', 'Hippodrome', 'Horses', 'Japan', 'MegaPark', 'SeeThrough', 'SkateMotion', 'SkatePark',
     'SkateRide', 'SkateRuntime', 'SwordCamp', 'Wanderer',
-    'Ferry', 'BelmonteTrack', 'BelmonteTrain', 'Brinecove', 'HidamariStable', 'Racing', 'FoliageSystem',
+    'Gondola', 'Ferry', 'BelmonteTrack', 'BelmonteTrain', 'Brinecove', 'HidamariStable', 'Racing', 'FoliageSystem',
 } | CHARACTER_ROOTS)
 DATA_ROOTS = frozenset({
     'Network', 'SkateRide', 'adventure', 'belmonte', 'bike', 'city_surface_tiles', 'craterpark', 'heightmap.bin',
-    'hidamari', 'hippodrome', 'horses', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
-    'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing', 'foliage_system',
+    'hidamari', 'hippodrome', 'horses', 'kart', 'map', 'megapark', 'skatepark', 'treehouse', 'world.json',
+    'gondola', 'ferry', 'belmonte_track', 'belmonte_train', 'brinecove', 'hidamari_stable', 'racing', 'foliage_system',
 } | {c.id for c in MOVERS})
 # Each mover's runtime data: its move record, its readiness record, bike report if playable, and its posed grips if
 # committed; and the runtime data of the imports that write their own (unreal.hippodrome, unreal.horses).
@@ -74,7 +74,7 @@ def retired(content):
     """
     # Unknown generated imports at owned recipe boundaries; no traversal inside committed source data.
     data_roots = set(DATA_ROOTS)
-    audio_roots = {'Bike', 'Combat', 'Skate', 'Transport'}
+    audio_roots = {'Bike', 'Combat', 'Driving', 'Skate', 'Transport'}
     if music_enabled():
         data_roots.add('Music')
         audio_roots.add('Music')
