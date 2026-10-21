@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from atelier import build, build_batches
+from atelier import build
 
 
 def test_default_script_identity_is_unchanged_and_opt_in_is_distinct():
@@ -47,11 +47,17 @@ def test_unguarded_batched_and_mutated_commands_refuse_before_preparation():
     with pytest.raises(ValueError, match='separate guarded'):
         build.run_argv(SimpleNamespace(), step, command, ['editor'], (), io.StringIO(), None, None)
     step = replace(step, heavy=True, products=[build.Product('mesh', (Path('mesh'),))], batch=build.Batch('native'))
-    with pytest.raises(ValueError, match='cannot use batching'):
-        build_batches.validate(step)
-    assert not build_batches.compatible(step, replace(step, name='second'))
-    with pytest.raises(ValueError, match='separate processes'):
-        build_batches.run(None, [(step, None, None)], {}, index=None, tool_cache=None, echo=None, products=None)
+    with pytest.raises(ValueError, match='without batching'):
+        build.check_modules([step])
+    with pytest.raises(ValueError, match='without batching'):
+        build.run_command(SimpleNamespace(), step, command, io.StringIO())
     command.memory_gib = 30
     with pytest.raises(ValueError, match='10 to 24'):
         build.run_argv(SimpleNamespace(), step, command, ['editor'], (), io.StringIO(), None, None)
+
+
+def test_later_nondefault_batch_member_is_rejected_before_selection_or_execution():
+    first = build.Step('first', [build.UnrealScript(Path('first.py'), 'DONE')], heavy=True, batch=build.Batch('native'))
+    later = replace(first, name='later', commands=[replace(first.commands[0], memory_gib=24)])
+    with pytest.raises(ValueError, match='without batching'):
+        build.check_modules([first, later])

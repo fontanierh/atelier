@@ -68,6 +68,10 @@ class UnrealScript:
             raise ValueError('UnrealScript memory_gib must be a finite number from 10 to 24 GiB')
         return self.memory_gib
 
+    def validate_step(self, step):
+        if self.memory_limit() != 10 and (not step.heavy or step.batch is not None or 'ATELIER_BATCH' in dict(self.env)):
+            raise ValueError('An explicit script ceiling requires a separate guarded heavy command, without batching')
+
     def __repr__(self):
         # The fingerprint's view: declared modules count, and a script without them reads as before they existed.
         shown = [f for f in fields(self) if (f.name != 'modules' or self.modules)
@@ -227,6 +231,8 @@ def check_modules(steps):
     """A script that declares game modules must need their module steps, so their digests feed its fingerprint."""
     for step in steps:
         for command in step.commands:
+            if isinstance(command, UnrealScript):
+                command.validate_step(step)
             missing = [module_step(m) for m in getattr(command, 'modules', ()) if module_step(m) not in step.needs]
             if missing:
                 raise SystemExit(f'{step.name}: its script uses {missing} but the step does not need them')
@@ -523,6 +529,8 @@ def slot_request(ctx, step):
 def run_command(ctx, step, command, log, request=None, slots=None, *, products=None, audit_receipt=None):
     """Run one command of a step. A heavy step's command runs under guarded.run, in a render slot asked for with
     `request` (slot_request's answer, computed now when absent); the slot is written to the log and added to `slots`."""
+    if isinstance(command, UnrealScript):
+        command.validate_step(step)
     if isinstance(command, Call):
         return command.fn(ctx, log)
     if isinstance(command, (Python, Blender)):
