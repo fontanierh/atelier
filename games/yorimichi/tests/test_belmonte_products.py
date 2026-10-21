@@ -65,8 +65,9 @@ def test_actual_graph_propagates_only_consumed_belmonte_views(tmp_path, monkeypa
     def project(ctx, log):
         ran.append('products')
         products.publish_library(out / 'belmonte', out / 'products/belmonte')
-    steps = [producer, replace(projection, name='products', commands=[build.Call('views', project)],
-                               needs=['export'], cache=False, audit=False)]
+    selector = replace(RECIPE.region_texture_step(out, 'belmonte'), needs=['export'])
+    steps = [producer, selector, replace(projection, name='products', commands=[build.Call('views', project)],
+                               needs=['export', selector.name], cache=False, audit=False)]
     actual = {step.name: step for step in RECIPE.belmonte_steps(out)}
     for name, reads in [('import', actual['unreal.belmonte'].reads),
                         ('track', actual['unreal.belmonte_track'].reads), ('stage', ['belmonte.runtime'])]:
@@ -184,9 +185,10 @@ def test_real_library_projection_has_complete_audited_inputs(tmp_path, monkeypat
     out = tmp_path / 'out'
     export(out / 'belmonte', {})
     ctx = SimpleNamespace(out=out, game='fixture', logs=out / 'logs', stamps=out / 'stamps', uproject=None)
-    step = replace(RECIPE.belmonte_steps(out)[1], needs=[])
+    selector = replace(RECIPE.region_texture_step(out, 'belmonte'), needs=[])
+    step = replace(RECIPE.belmonte_steps(out)[1], needs=[selector.name])
     monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
-    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda _: [step]))
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda _: [selector, step]))
     monkeypatch.setattr(build_checkpoints, 'configured', lambda _: None)
     monkeypatch.setenv('ATELIER_CACHE', str(tmp_path / 'cache'))
     assert build.build('fixture', [step.name], echo=lambda _: None) == 0

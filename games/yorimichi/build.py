@@ -721,6 +721,30 @@ def brinecove_model_steps(out):
             for definition in definitions]
 
 
+def region_texture_step(out, region):
+    script = GAME / 'region_texture_inputs.py'
+    spec = importlib.util.spec_from_file_location('region_texture_inputs', script)
+    module = importlib.util.module_from_spec(spec)
+    # The module has only pure Python helpers; resolve its sibling projection normally.
+    import sys
+    game_path = str(GAME)
+    added = game_path not in sys.path
+    if added:
+        sys.path.insert(0, game_path)
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if added:
+            sys.path.remove(game_path)
+    folder, output = out / region, out / f'digests/{region}-textures.json'
+    return Step('world.' + region + '.textures',
+                [Python(script, (str(folder), str(output)))],
+                deferred_inputs=[DeferredInputs('selected-textures', module.members, (folder,),
+                                                support=tuple(build_inputs.local_imports(script)))],
+                needs=['world.' + region], outputs=[output], cutoff=True,
+                about='actual bytes of report-selected textures, layers and normals')
+
+
 def brinecove_steps(out):
     """Brinecove (world/regions/brinecove): the export closes its ground onto the FarHills hole, so it reads the
     final FarHills product; the import builds /Game/Brinecove, which ABelmonteRegion places from runtime.json."""
@@ -738,9 +762,11 @@ def brinecove_steps(out):
              about='Brinecove: pirate port ground joined to the far hills, town, waterfall, ships and flora'),
         Step('world.brinecove.meshes',
              [Python(GAME / 'region_products.py', (out / 'brinecove', out / 'products/brinecove',
-                                                   '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_'))],
+                                                   '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_',
+                                                    '--texture-inventory', out / 'digests/brinecove-textures.json'))],
              inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'brinecove/build-report.json', out / 'brinecove/runtime.json',
-                     out / 'brinecove/glb', out / 'brinecove/textures'], needs=['world.brinecove'],
+                     out / 'brinecove/glb', out / 'digests/brinecove-textures.json'],
+             needs=['world.brinecove', 'world.brinecove.textures'],
              products=[Product('brinecove.' + name, (out / f'products/brinecove/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime', 'map', 'clearance')],
              cache=True, audit=True, about='independent Brinecove model, material, placement, map and clearance views'),
@@ -754,6 +780,7 @@ def brinecove_steps(out):
              outputs=[out / 'brinecove' / 'import-report.json',
                       GAME / 'unreal' / 'Content' / 'Brinecove' / 'Meshes' / 'SM_BC_Ground_0_0.uasset'],
              about='/Game/Brinecove: meshes, collision and painterly surfaces'),
+        region_texture_step(out, 'brinecove'),
     ]
 
 
@@ -791,9 +818,10 @@ def belmonte_steps(out):
              about='Belmonte environment: committed models, northern terrain join and island flora'),
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
-                                                   '--mesh-library'))],
+                                                   '--mesh-library', '--texture-inventory', str(out / 'digests/belmonte-textures.json')))],
              inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'belmonte/build-report.json', out / 'belmonte/runtime.json',
-                     out / 'belmonte/glb', out / 'belmonte/textures'], needs=['world.belmonte'],
+                     out / 'belmonte/glb', out / 'digests/belmonte-textures.json'],
+             needs=['world.belmonte', 'world.belmonte.textures'],
              products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime')],
              cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
@@ -829,6 +857,7 @@ def belmonte_steps(out):
                 after=['unreal.compile'], heavy=True,
                 outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'belmonte_track' / 'track.json', out / 'belmonte-track' / 'runtime' / 'import-report.json'],
                 about='/Game/BelmonteTrack: track chunks, loop, turnouts, buffers, tunnel linings and portals, viaduct, banks, lamps'),
+        region_texture_step(out, 'belmonte'),
     ]
 
 

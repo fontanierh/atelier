@@ -55,8 +55,9 @@ def pipeline(tmp_path, monkeypatch):
         executed.append('products')
         products.publish(out/'brinecove', out/'products/brinecove', ground_prefix='SM_BC_Ground_', plant_prefix='SM_BC_Plant_')
     projection = replace(real, name='products', commands=[build.Call('project consumed views', project)],
-                         needs=['export'], cache=False, audit=False)
-    steps = [producer, projection]
+                         needs=['export', 'world.brinecove.textures'], cache=False, audit=False)
+    selector = replace(RECIPE.region_texture_step(out, 'brinecove'), needs=['export'])
+    steps = [producer, selector, projection]
     def consume(name, reads, needs=()):
         destination = out/(name+'.json')
         def run(ctx, log):
@@ -158,9 +159,11 @@ def test_recipe_consumers_follow_named_brinecove_inputs(tmp_path):
 def test_real_projection_runs_with_complete_audited_inputs(tmp_path, monkeypatch):
     out=tmp_path/'out'; export(out/'brinecove',{})
     ctx=SimpleNamespace(game='fixture',out=out,logs=out/'logs',stamps=out/'stamps',uproject=None)
-    step=replace(RECIPE.brinecove_steps(out)[1],needs=[])
+    selector=replace(RECIPE.region_texture_step(out,'brinecove'),needs=[])
+    step=RECIPE.brinecove_steps(out)[1]
+    step=replace(step,needs=[selector.name])
     monkeypatch.setattr(build,'Context',lambda *a,**k:ctx)
-    monkeypatch.setattr(build,'load_recipe',lambda _:SimpleNamespace(steps=lambda _:[step]))
+    monkeypatch.setattr(build,'load_recipe',lambda _:SimpleNamespace(steps=lambda _:[selector,step]))
     monkeypatch.setattr(build_checkpoints,'configured',lambda _:None)
     monkeypatch.setenv('ATELIER_CACHE',str(tmp_path/'cache'))
     assert build.build('fixture',[step.name],echo=lambda _:None)==0

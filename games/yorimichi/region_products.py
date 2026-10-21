@@ -5,9 +5,8 @@ These views inventory real source membership and bytes; they never certify nativ
 """
 import hashlib
 import json
-import sys
 from pathlib import Path, PurePosixPath
-from atelier.model_files import source_records, regular_files
+from atelier.model_files import member, source_records, regular_files
 
 
 def source(root, member):
@@ -30,11 +29,44 @@ def file_record(root, member):
     return dict(sha256=hashlib.sha256(raw).hexdigest(), size=len(raw))
 
 
+def texture_members(report):
+    names = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
+    for entry in report['materials'].values():
+        names.update(value for field in ('layers', 'normals')
+                     for value in entry.get(field, {}).values() if isinstance(value, str) and value)
+    return sorted({member('textures/' + name) for name in names})
+
+
+def texture_files(folder, report, inventory):
+    """@cc [owner:fontanierh,label:correctness] exact-selected-texture-snapshot
+    A supplied snapshot MUST come from the ordinary selected-byte action and match the
+    current report's exact selected membership with valid complete byte records. The
+    projection MUST NOT reopen undeclared texture files when consuming that snapshot.
+    Direct programmatic views without a snapshot MUST read the selected actual files.
+    """
+    selected = texture_members(report)
+    if inventory is None:
+        return {name: file_record(folder, name) for name in selected}
+    inventory = Path(inventory)
+    snapshot = json.loads(source(inventory.parent, inventory.name).read_text())
+    if (not isinstance(snapshot, dict) or type(snapshot.get('schema')) is not int or snapshot['schema'] != 1
+            or set(snapshot) != {'schema', 'files'} or not isinstance(snapshot['files'], dict)
+            or set(snapshot['files']) != set(selected)):
+        raise ValueError('Region texture snapshot membership differs from the current report')
+    for record in snapshot['files'].values():
+        if (not isinstance(record, dict) or set(record) != {'sha256', 'size'}
+                or type(record['size']) is not int or record['size'] < 0
+                or not isinstance(record['sha256'], str) or len(record['sha256']) != 64
+                or any(c not in '0123456789abcdef' for c in record['sha256'])):
+            raise ValueError('Invalid region texture byte inventory')
+    return snapshot['files']
+
+
 def group_view(group):
     return {key: group[key] for key in ('asset', 'plant', 'transforms')}
 
 
-def library_views(folder, *, collision_basename=False, bindings=False, preserve_mesh_order=False):
+def library_views(folder, *, collision_basename=False, bindings=False, preserve_mesh_order=False, texture_inventory=None):
     """@cc [owner:fontanierh,label:correctness] complete-region-library-views
     Library identities MUST bind every consumed mesh, collision source, texture and material
     binding. Instance transforms and unused runtime fields MUST NOT enter model identities.
@@ -56,13 +88,8 @@ def library_views(folder, *, collision_basename=False, bindings=False, preserve_
     for entry, member in records:
         if entry['sha256'] != model_inventory[member]['sha256']:
             raise ValueError('Region model differs from its producer report: ' + member)
-    texture_names = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
-    for entry in report['materials'].values():
-        texture_names.update(value for field in ('layers', 'normals')
-                             for value in entry.get(field, {}).values() if isinstance(value, str) and value)
-    textures = {'textures/' + name for name in texture_names}
     materials = dict(schema=1, materials=report['materials'],
-                     files={name: file_record(folder, name) for name in sorted(textures)})
+                     files=texture_files(folder, report, texture_inventory))
     if bindings:
         defaults = {}
         for group in runtime['groups']:
@@ -75,7 +102,7 @@ def library_views(folder, *, collision_basename=False, bindings=False, preserve_
                 materials=materials, runtime=runtime)
 
 
-def views(folder, *, ground_prefix, plant_prefix):
+def views(folder, *, ground_prefix, plant_prefix, texture_inventory=None):
     """@cc [owner:fontanierh,label:correctness] independent-region-consumed-views
     Geometry/material views MUST include complete consumed model/texture membership and actual
     bytes. Runtime placements MUST NOT enter geometry identity. Clearance MUST retain all
@@ -83,7 +110,7 @@ def views(folder, *, ground_prefix, plant_prefix):
     collision/footprint changes MUST invalidate those consumers. Missing/deleted source members
     MUST fail rather than preserve an old identity. Map foliage placements remain real map reads.
     """
-    library = library_views(folder)
+    library = library_views(folder, texture_inventory=texture_inventory)
     meshes, runtime = library['geometry']['meshes'], library['runtime']
     groups = runtime['groups']
     plant_groups = [group_view(group) for group in groups
@@ -107,8 +134,9 @@ def views(folder, *, ground_prefix, plant_prefix):
     )
 
 
-def publish(folder, destination, *, ground_prefix, plant_prefix):
-    result = views(Path(folder), ground_prefix=ground_prefix, plant_prefix=plant_prefix)
+def publish(folder, destination, *, ground_prefix, plant_prefix, texture_inventory=None):
+    result = views(Path(folder), ground_prefix=ground_prefix, plant_prefix=plant_prefix,
+                   texture_inventory=texture_inventory)
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     for name, value in result.items():
@@ -116,8 +144,9 @@ def publish(folder, destination, *, ground_prefix, plant_prefix):
     print('REGION PRODUCTS COMPLETE: geometry, materials, runtime, map and clearance', flush=True)
 
 
-def publish_library(folder, destination):
-    result = library_views(Path(folder), collision_basename=True, bindings=True, preserve_mesh_order=True)
+def publish_library(folder, destination, *, texture_inventory=None):
+    result = library_views(Path(folder), collision_basename=True, bindings=True, preserve_mesh_order=True,
+                           texture_inventory=texture_inventory)
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     for name, value in result.items():
@@ -126,10 +155,15 @@ def publish_library(folder, destination):
 
 
 if __name__ == '__main__':
+    import sys
     args = sys.argv[1:]
+    if len(args) < 4 or args[-2] != '--texture-inventory':
+        raise ValueError('Expected a report-selected --texture-inventory path')
+    inventory = Path(args[-1]); args = args[:-2]
     if len(args) == 3 and args[2] == '--mesh-library':
-        publish_library(Path(args[0]), Path(args[1]))
+        publish_library(Path(args[0]), Path(args[1]), texture_inventory=inventory)
     elif len(args) == 6 and args[2] == '--ground-prefix' and args[4] == '--plant-prefix':
-        publish(Path(args[0]), Path(args[1]), ground_prefix=args[3], plant_prefix=args[5])
+        publish(Path(args[0]), Path(args[1]), ground_prefix=args[3], plant_prefix=args[5],
+                texture_inventory=inventory)
     else:
-        raise ValueError('Expected FOLDER DESTINATION --ground-prefix PREFIX --plant-prefix PREFIX')
+        raise ValueError('Expected a mesh library or both ground/plant prefixes')

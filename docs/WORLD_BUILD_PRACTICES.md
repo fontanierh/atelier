@@ -269,7 +269,8 @@ reach the complete runtime view while leaving the model and default-binding view
 These native products are workspace checkpoint results, never portable-cache entries. A changed input or missing
 product still takes the ordinary validated import. Adding these inventories causes one receiving validation
 transition; it must be measured on a stopped warm checkout before claiming native time or cook-byte savings.
-The projection currently fingerprints its whole texture directory to grant audited access to selected texture
-files. As in Brinecove, an unused texture can therefore rerun the small projection without changing its products.
-This is a remaining scoped performance exception, not a completed producer split or an edit-locality guarantee
-for the projection itself. Focused build-graph tests cover actual downstream propagation and missing/hull proof.
+A small selected-texture action observes the current report's texture/layer/normal membership and actual bytes.
+The audited projection consumes its exact inventory rather than fingerprinting the generated texture directory.
+An unused generated texture edit runs neither action; selected texture changes still reach material consumers.
+This leaves the combined source exporters and other regions' material generation as separate producer work.
+Focused build-graph tests cover actual downstream propagation, selected membership and missing/hull proof.

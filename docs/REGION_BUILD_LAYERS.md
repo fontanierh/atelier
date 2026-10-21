@@ -79,3 +79,16 @@ frame-time results. The first transition exports/imports genuinely changed piece
 at an ordinary stopped boundary. Per-unit preparation recertification and broader
 regional generator/placement separation remain distinct work; these two producer
 integrations do not imply that every region has been migrated.
+
+## Selected regional texture inputs
+
+Brinecove and Belmonte use an ordinary selected-texture byte action before their consumed-view
+projection. It observes the current report's texture, layer and normal membership afresh and
+binds the actual selected file bytes plus all collector/support code. Numeric material colours
+are values rather than paths. Missing, linked, escaping or invalid selected files refuse.
+
+The following audited projection reads that completed inventory and checks exact membership
+against its current report. It fingerprints the inventory rather than the generated texture
+directory. Adding, editing or deleting an unused generated texture therefore runs neither action;
+a selected texture change refreshes the inventory and affected material product. Regional source
+exporters still have their existing asset inputs; this does not separate their material generation or change other regions' texture declarations.

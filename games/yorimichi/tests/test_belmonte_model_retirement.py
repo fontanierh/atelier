@@ -60,11 +60,12 @@ def test_normal_belmonte_producer_retires_superseded_glbs_without_touching_sourc
     producer = replace(RECIPE.belmonte_steps(out)[0], commands=[build.Call('real producer', lambda ctx, log: scope['main']())],
                        inputs=[settings, library, script], needs=[], heavy=False)
     projection = RECIPE.belmonte_steps(out)[1]
-    projection = replace(projection, needs=[producer.name], commands=[build.Call('real projection',
+    selector = replace(RECIPE.region_texture_step(out, 'belmonte'), needs=[producer.name])
+    projection = replace(projection, needs=[producer.name, selector.name], commands=[build.Call('real projection',
         lambda ctx, log: products.publish_library(out / 'belmonte', out / 'products/belmonte'))], cache=False, audit=False)
     ctx = SimpleNamespace(game='fixture', out=out, logs=out / 'logs', stamps=out / 'stamps', uproject=None)
     monkeypatch.setattr(build, 'Context', lambda *a, **kw: ctx)
-    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda _: [producer, projection]))
+    monkeypatch.setattr(build, 'load_recipe', lambda _: SimpleNamespace(steps=lambda _: [producer, selector, projection]))
     monkeypatch.setattr(build_checkpoints, 'configured', lambda _: None)
     def run():
         settings.write_text(json.dumps(selected))
