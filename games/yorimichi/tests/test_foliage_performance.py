@@ -74,3 +74,40 @@ def test_review_preflight_refuses_invalid_evidence_without_mutation(metrics,monk
     monkeypatch.setattr(metrics,'read_json',lambda code:state)
     monkeypatch.setattr(metrics.qa,'py',lambda code:pytest.fail('Must refuse before any live mutation'))
     with pytest.raises(RuntimeError):metrics.active_state('compiled')
+
+
+def test_aerial_sweep_uses_dense_real_placements_and_converts_regional_coordinates(metrics,tmp_path):
+    for region in ('hidamari','belmonte','brinecove'):(tmp_path/region).mkdir()
+    for name in ('world.json','hidamari/city.json'):
+        (tmp_path/name).write_text(json.dumps(dict(instances={'Tree_A':[[1,2,3],[3,4,9],[999,999,0]],
+                                                            'House_TreeDecoration':[[900,900,999]]*10})))
+    for region,asset in [('belmonte','Tree_Tuscan_Oak'),('brinecove','SM_BC_Plant_Broad0')]:
+        doc=dict(origin_cm=[1000,-2000,3000],groups=[dict(asset='/Game/'+asset,transforms=[
+            dict(translation_cm=[100,-200,300]),dict(translation_cm=[200,-300,400])])])
+        (tmp_path/region/'runtime.json').write_text(json.dumps(doc))
+    views,centers=metrics.aerial_candidates(tmp_path)
+    assert len(views)==24
+    assert centers['momiji']==dict(center=[2.,3.,9],trees_in_128m_cell=2)
+    assert centers['belmonte']==dict(center=[11.5,22.5,34.],trees_in_128m_cell=2)
+    assert views['momiji_80m_down']==[[2.,3.,89.],[2.,3.,21.],[0.,0.,0.]]
+    assert views['momiji_240m_oblique'][0][1]<3<views['momiji_240m_oblique'][1][1]
+
+
+def test_scout_selection_keeps_cpu_pacing_outlier_and_slowest_gpu_views(metrics):
+    def view(gpu,p95):return dict(passes=[dict(summary=dict(gpu=dict(mean_ms=gpu),frame=dict(p95_ms=p95)))])
+    ranking,selected=metrics.slowest_views(dict(cpu=view(1,200),gpu1=view(40,50),gpu2=view(30,40),gpu3=view(20,30),fast=view(2,3)))
+    assert selected==['cpu','gpu1','gpu2','gpu3']
+    assert ranking['gpu'][0]=='gpu1' and ranking['frame_p95'][0]=='cpu'
+
+
+@pytest.mark.parametrize('camera', [[],{'../unsafe':[[0,0,1],[0,0,0],[0,0,0]]},
+    {'bad':[[0,0,float('nan')],[0,0,0],[0,0,0]]},{'bad':None},{'bad':[[0,0,0]]*3}])
+def test_camera_manifest_refuses_invalid_capture_paths_and_nonfinite_poses(metrics,tmp_path,camera):
+    file=tmp_path/'cameras.json';file.write_text(json.dumps(camera))
+    with pytest.raises(ValueError):metrics.camera_file(file)
+
+
+def test_scout_camera_output_roundtrips_for_exact_abba_replay(metrics,tmp_path):
+    views={'forest':[[10,20,180],[10,20,30],[0,0,0]]}
+    path=tmp_path/'slow_views.json';path.write_text(json.dumps(dict(views=views)))
+    assert metrics.camera_file(path)==views

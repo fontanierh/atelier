@@ -10,6 +10,7 @@ fixed-step capture for timings. GPU timing must be available; NullRHI refuses.
 Screenshots and raw samples go only under build/yorimichi/foliage_performance/.
 """
 import argparse
+from collections import defaultdict
 import importlib.util
 import json
 import math
@@ -30,6 +31,62 @@ VIEWS = {
     'city_street': ((1100.,-46.,27.),(1200.,-46.,27.),(0.,0.,0.)),
     'aerial_motion': ((-170.,170.,240.),(-125.,170.,75.),(12.,0.,0.)),
 }
+
+
+def aerial_candidates(data):
+    """Choose dense tree neighborhoods from actual placements, then vary height and angle."""
+    trees={}
+    for region,file in [('momiji','world.json'),('hidamari','hidamari/city.json')]:
+        doc=json.loads((data/file).read_text())
+        trees[region]=[p[:3] for name,placements in doc['instances'].items()
+                       if name.startswith(('Tree_','HD_ArcadeTree','HD_PlazaTree')) for p in placements]
+    for region in ('belmonte','brinecove'):
+        doc=json.loads((data/region/'runtime.json').read_text());origin=doc['origin_cm']
+        trees[region]=[]
+        for group in doc['groups']:
+            name=group['asset'].rsplit('/',1)[-1]
+            if not name.startswith(('Tree_','SM_BC_Plant_Broad','SM_BC_Plant_Emergent','SM_BC_Plant_Small','SM_BC_Plant_Palm')):continue
+            for pose in group['transforms']:
+                p=pose['translation_cm']
+                trees[region].append([(origin[0]+p[0])/100.,-(origin[1]+p[1])/100.,(origin[2]+p[2])/100.])
+    views,centers={},{}
+    for region,points in trees.items():
+        cells=defaultdict(list)
+        for point in points:cells[(math.floor(point[0]/128.),math.floor(point[1]/128.))].append(point)
+        if not cells:raise ValueError('No tree placements for aerial review: '+region)
+        key=min(cells,key=lambda cell:(-len(cells[cell]),cell));selected=cells[key]
+        center=[sum(p[i] for p in selected)/len(selected) for i in range(2)]+[max(p[2] for p in selected)]
+        centers[region]=dict(center=center,trees_in_128m_cell=len(selected))
+        x,y,z=center
+        for height in (80.,140.,240.):
+            for angle in ('down','oblique'):
+                eye=[x,y if angle=='down' else y-height*.65,z+height]
+                target=[x,y if angle=='down' else y+height*.6,z+12.]
+                views[f'{region}_{int(height)}m_{angle}']=[eye,target,[0.,0.,0.]]
+    return views,centers
+
+
+def camera_file(path):
+    doc=json.loads(path.read_text())
+    if not isinstance(doc,dict):raise ValueError('Expected a camera object')
+    views=doc.get('views',doc)
+    if not isinstance(views,dict) or not 1<=len(views)<=64:raise ValueError('Expected 1–64 review cameras')
+    for key,pose in views.items():
+        if not key or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in key):
+            raise ValueError('Camera name must be a simple label')
+        if not isinstance(pose,(list,tuple)) or len(pose)!=3 or any(not isinstance(v,(list,tuple)) or len(v)!=3 or
+            any(not isinstance(x,(int,float)) or not math.isfinite(x) for x in v) for v in pose):
+            raise ValueError('Camera needs finite eye, target and velocity vectors')
+        if pose[0]==pose[1]:raise ValueError('Camera eye and target must differ')
+    return views
+
+
+def slowest_views(views):
+    gpu=sorted(views,key=lambda key:(-views[key]['passes'][0]['summary']['gpu']['mean_ms'],key))
+    pacing=sorted(views,key=lambda key:(-views[key]['passes'][0]['summary']['frame']['p95_ms'],key))
+    # Preserve the worst pacing view even when its bottleneck is CPU-side.
+    selected=list(dict.fromkeys([pacing[0],*gpu[:3]]))
+    return dict(gpu=gpu,frame_p95=pacing),selected
 
 
 def summarize(rows):
@@ -97,8 +154,14 @@ def main():
     parser.add_argument('--take',required=True)
     parser.add_argument('--seconds',type=float,default=10.)
     parser.add_argument('--settle',type=float,default=8.)
-    parser.add_argument('--views',nargs='+',choices=VIEWS,default=list(VIEWS))
+    parser.add_argument('--views',nargs='+')
+    parser.add_argument('--camera-file',type=Path)
+    parser.add_argument('--aerial-scout',action='store_true',help='rank original-mode aerial views over the densest tree placements')
     args=parser.parse_args()
+    if args.aerial_scout and args.camera_file:parser.error('aerial-scout generates its own placement-based cameras')
+    views,centers=aerial_candidates(paths.build_root()/'yorimichi') if args.aerial_scout else (camera_file(args.camera_file) if args.camera_file else VIEWS,{})
+    chosen=args.views or list(views)
+    if any(name not in views for name in chosen):parser.error('unknown camera in --views')
     if not args.take or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in args.take):
         parser.error('take must be a simple unique name')
     if args.seconds<2 or args.seconds>30 or args.settle<2 or args.settle>30:parser.error('sample/settle must be 2–30 seconds')
@@ -115,12 +178,13 @@ def main():
     saved=state['preferences'];original=saved['foliage_optimization']
     out=paths.build_root()/'yorimichi/foliage_performance'/args.take
     out.mkdir(parents=True,exist_ok=False)
-    settings=['t.MaxFPS','r.VSync','r.DynamicRes.OperationMode','r.ProfileGPU.ShowUI']
+    settings=['t.MaxFPS','r.VSync','r.DynamicRes.OperationMode','r.ProfileGPU.ShowUI','t.IdleWhenNotForeground']
     cvars=read_json('{key:unreal.SystemLibrary.get_console_variable_float_value(key) for key in '+repr(settings)+'}')
     graphics=('renderer','performance','render_scale','forest_detail','tree_sway','tree_shadow','laptop',
               'tree_optimization','tree_lod_mode','tree_lod_distance','leaf_motion','painterly','fog')
     report=dict(revision=revision,code=state['code'],settings={key:saved[key] for key in graphics if key in saved},
-                original_enabled=original,original_cvars=cvars,views={},errors=[])
+                original_enabled=original,original_cvars=cvars,views={},errors=[],
+                mode='original_aerial_scout' if args.aerial_scout else 'abba',tree_centers=centers)
     # A viewport size alone does not establish internal pixel count or lighting.
     # Record actual renderer controls as well as the saved player preferences.
     renderer_cvars=['r.ScreenPercentage','r.SecondaryScreenPercentage.GameViewport','r.ForwardShading',
@@ -131,10 +195,11 @@ def main():
     try:
         qa.py('live.FOLIAGE_QA=dict(live=live,unreal=unreal)\nexec('+repr(SAMPLER)+',live.FOLIAGE_QA)')
         qa.py('live.L.film_hud(True)')
-        for name in args.views:
-            eye,target,speed=VIEWS[name];results=[]
-            for index,enabled in enumerate((False,True,True,False)):
-                print(f'{name} pass {index+1}/4: optimization={enabled}; settling {args.settle:g}s then sampling {args.seconds:g}s',flush=True)
+        for name in chosen:
+            eye,target,speed=views[name];results=[]
+            passes=(False,) if args.aerial_scout else (False,True,True,False)
+            for index,enabled in enumerate(passes):
+                print(f'{name} pass {index+1}/{len(passes)}: optimization={enabled}; settling {args.settle:g}s then sampling {args.seconds:g}s',flush=True)
                 qa.py(f'assert live.L.set_preference("foliage_optimization",{int(enabled)}), "Settings switch refused"\n'
                       f'assert live.FOLIAGE_QA["system"].is_enabled()=={enabled}, "Renderer did not switch"\n'
                       'for key in '+repr(settings)+':unreal.SystemLibrary.execute_console_command(live.L.game_world(),key+" 0")\n'
@@ -150,12 +215,17 @@ def main():
                 # Detailed GPU event breakdown stays in the owned game's stdout log.
                 qa.py('unreal.SystemLibrary.execute_console_command(live.L.game_world(),"ProfileGPU")')
                 print(f'{name} pass {index+1}: '+json.dumps(result['summary']),flush=True)
-            report['views'][name]=dict(eye=eye,target=target,velocity_m_s=speed,passes=results,
+            report['views'][name]=dict(eye=eye,target=target,velocity_m_s=speed,passes=results)
+            if not args.aerial_scout:report['views'][name].update(
                 gpu_mean_speedup=statistics.fmean(p['summary']['gpu']['mean_ms'] for p in results if not p['enabled'])/
                                  statistics.fmean(p['summary']['gpu']['mean_ms'] for p in results if p['enabled']),
                 frame_p95_speedup=statistics.fmean(p['summary']['frame']['p95_ms'] for p in results if not p['enabled'])/
                                   statistics.fmean(p['summary']['frame']['p95_ms'] for p in results if p['enabled']))
             (out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
+        if args.aerial_scout:
+            report['rankings'],selected=slowest_views(report['views'])
+            (out/'slow_views.json').write_text(json.dumps(dict(views={key:views[key] for key in selected}),indent=2)+'\n')
+            print('Slowest aerial review cameras: '+', '.join(selected),flush=True)
     except BaseException as error:
         report['errors'].append(type(error).__name__+': '+str(error))
         raise

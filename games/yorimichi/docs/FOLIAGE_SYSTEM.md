@@ -88,6 +88,20 @@ Compare on/off in the same settled session at fixed resolution and settings. Che
 times and p95/p99 frame time, not just triangle counts. Inspect patch transitions and clearings in motion.
 An optimization claim requires those native checks; geometry unit tests alone do not establish it.
 
+Find slow aerial views before selecting comparisons. The scout bins actual tree placements in 128 m cells,
+chooses the densest neighborhood in each of four regions, and samples down-facing and oblique cameras at
+80, 140 and 240 m above the highest local tree root. It ranks original-mode GPU mean and frame p95 independently;
+the three slowest GPU views plus the worst pacing view become exact replay cameras. Inspect their captures
+to confirm trees fill the frame and the camera clears the terrain. A scout records baselines, never speedup ratios.
+
+```sh
+uv run python games/yorimichi/scenarios/foliage_performance.py --port OWN_PORT --take aerial_scout --aerial-scout --seconds 5 --settle 3
+uv run python games/yorimichi/scenarios/foliage_performance.py --port OWN_PORT --take slow_aerial_abba --camera-file build/yorimichi/foliage_performance/aerial_scout/slow_views.json
+```
+
+The report records actual render-scale and lighting controls as well as saved preferences and viewport dimensions.
+Both phases restore the saved foliage mode, camera, HUD and changed CVars, including background-idle throttling.
+
 For paired diagnostic runs, `japan.FoliageOptimization 0` and `1` temporarily switch rendering in the current
 world without rewriting player preferences. The menu remains the persistent control. Keep the same camera,
 resolution, lighting and settled simulation for each pair; record the effective `FOLIAGE SYSTEM enabled` log
