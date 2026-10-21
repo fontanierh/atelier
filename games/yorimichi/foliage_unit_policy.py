@@ -1,4 +1,4 @@
-"""One reviewed source-pair bridge for local partial foliage hints, never task success."""
+"""Reviewed source-pair bridges for local partial foliage hints, never task success."""
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = '8471f5fa8ff16775419378dfc89edd1ffb568693f16b8b14503d6cd7d0e26f1a'
+WITNESS_SHA256 = '6ed1ceb949ad7e2d1223da3d486b8c184208ddb46eb90384cad7a7bb2a714af8'
 MAX_SOURCE = 8 * 1024 * 1024
 
 
@@ -47,17 +47,32 @@ def _calculate(root, witness, *, engine_version, environment, runtime):
             return None
     value = hashlib.sha256()
     for row in witness['previous']:
-        if (not isinstance(row, dict) or set(row) != {'path', 'blob', 'sha256'}
-                or not isinstance(row['blob'], str) or not re.fullmatch('[0-9a-f]{40}', row['blob'])
-                or not isinstance(row['sha256'], str) or not re.fullmatch('[0-9a-f]{64}', row['sha256'])):
+        if (not isinstance(row, dict) or not isinstance(row.get('sha256'), str)
+                or not re.fullmatch('[0-9a-f]{64}', row['sha256'])):
             raise ValueError('Invalid historical source binding')
-        _member(root, row['path'])
-        result = subprocess.run(['git', '--no-optional-locks', '-C', str(root), 'cat-file', 'blob', row['blob']],
-                                capture_output=True, timeout=10, check=False)
-        if (result.returncode or len(result.stdout) > MAX_SOURCE
-                or hashlib.sha256(result.stdout).hexdigest() != row['sha256']):
+        if set(row) == {'path', 'blob', 'sha256'}:
+            if not isinstance(row['blob'], str) or not re.fullmatch('[0-9a-f]{40}', row['blob']):
+                raise ValueError('Invalid historical Git binding')
+            _member(root, row['path'])
+            result = subprocess.run(['git', '--no-optional-locks', '-C', str(root), 'cat-file', 'blob', row['blob']],
+                                    capture_output=True, timeout=10, check=False)
+            if result.returncode:
+                return None
+            raw = result.stdout
+        elif set(row) == {'module_record', 'sha256'} and isinstance(row['module_record'], str):
+            # This exact retained compiled-module record is evidence, never an
+            # instruction or a replacement for the current compiled identity.
+            raw = row['module_record'].encode()
+            record = json.loads(raw)
+            if (not isinstance(record, dict) or set(record) != {'module', 'digest', 'files'}
+                    or record['module'] != 'Yorimichi' or not isinstance(record['files'], dict)
+                    or not isinstance(record['digest'], str) or not re.fullmatch('[0-9a-f]{64}', record['digest'])):
+                raise ValueError('Invalid retained module record')
+        else:
+            raise ValueError('Invalid historical source binding')
+        if len(raw) > MAX_SOURCE or hashlib.sha256(raw).hexdigest() != row['sha256']:
             return None
-        value.update(result.stdout)
+        value.update(raw)
     value.update(engine_version.encode())
     value.update(json.dumps(environment, sort_keys=True, allow_nan=False).encode())
     value.update(json.dumps(runtime, sort_keys=True, allow_nan=False).encode())
@@ -76,24 +91,38 @@ def _transport(root):
     return palette == copied and before == after.replace('#if WITH_EDITOR\n', '', 1)
 
 
-def legacy_policy(game_root, *, engine_version, environment, runtime):
+def legacy_policies(game_root, *, engine_version, environment, runtime):
     """@cc [owner:fontanierh,label:correctness] reviewed-unit-transport-equivalence
-    Only this immutable reviewed source pair MAY reproduce a historical unit policy.
-    Every current source pin, ordered original Git source byte and current engine/runtime
-    context MUST match; missing evidence MUST be a miss. Historical code MUST NOT execute.
-    The result is a lookup hint, not a certificate: the caller MUST still validate current
-    source identity, complete package bytes, native saved geometry, settings and materials.
-    Successful receiving validation MAY rewrite only the local hint under the fresh policy.
+    Only these immutable reviewed source pairs MAY reproduce historical unit policies.
+    Every current source pin, ordered original Git byte, exact retained compiled-module
+    record and current engine/runtime context MUST match; missing evidence MUST miss.
+    Historical code MUST NOT execute. Results are lookup hints, never certificates:
+    the caller MUST still validate current source identity, complete package bytes,
+    native saved geometry, settings and materials. Receiving success MAY rewrite only
+    the local hint under the fresh policy. A changed transport MUST bind a fresh policy.
     """
     try:
         game = Path(game_root).absolute()
         root = game.parents[1]
         payload = _source(_member(root, game.relative_to(root).as_posix()+'/foliage_unit_policy_witness.json'))
-        if hashlib.sha256(payload).hexdigest() != WITNESS_SHA256:
-            return None
-        if not _transport(root):
-            return None
-        return _calculate(root, json.loads(payload), engine_version=engine_version,
-                          environment=environment, runtime=runtime)
+        if hashlib.sha256(payload).hexdigest() != WITNESS_SHA256 or not _transport(root):
+            return ()
+        witness = json.loads(payload)
+        if (not isinstance(witness, dict) or witness.get('schema') != 2
+                or not isinstance(witness.get('policies'), list) or not 1 <= len(witness['policies']) <= 2):
+            return ()
+        values = []
+        for previous in witness['policies']:
+            value = _calculate(root, dict(schema=1,current=witness['current'],previous=previous),
+                               engine_version=engine_version, environment=environment, runtime=runtime)
+            if value and value not in values:
+                values.append(value)
+        return tuple(values)
     except (OSError, ValueError, TypeError, KeyError, IndexError, subprocess.SubprocessError):
-        return None
+        return ()
+
+
+def legacy_policy(game_root, **context):
+    """Compatibility for the former single-policy caller; all evidence checks still apply."""
+    values = legacy_policies(game_root, **context)
+    return values[0] if values else None
