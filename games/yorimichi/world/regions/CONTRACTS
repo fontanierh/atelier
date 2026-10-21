@@ -1,0 +1,33 @@
+@cc [owner:fontanierh,label:correctness] regional-piece-geometry-parity
+Spatial subdivision MUST preserve every source face exactly once, including winding, positions,
+per-corner normals, every consumed UV/colour channel and material-slot identity. A declared piece budget
+MUST bound every emitted piece under the actual triangle accounting. The partition frame, cell policy
+and budget MUST enter the producer's real inputs; unsupported attributes or geometry MUST refuse rather
+than disappear. Pieces MUST retain authored pivots and placements, with no cracks or moved seams.
+
+@cc [owner:fontanierh,label:correctness] regional-piece-parent-semantics
+Subdivision MUST preserve the logical parent's instance/material grouping, culling policy and shadow
+policy. Omitting an unused material slot from a child MUST NOT merge formerly distinct parent groups.
+A whole authored collision hull MUST have one declared component owner; render-only children MUST
+remain in visual clearance/footprint reads even when another child owns collision. Collision/query
+consumers MUST follow their actual ownership and MUST NOT duplicate a whole hull once per visual child.
+
+@cc [owner:fontanierh,label:correctness] final-query-surface-survives-render-partition
+Partitioning rendered ground MUST NOT change which final surface owns placement, route or collision
+queries. Consumers of a canonical whole surface MUST be explicitly migrated to a complete published
+final-surface product before its native parent retires. They MUST NOT silently read natural terrain,
+stale parent files or an arbitrary piece. This source contract does not replace native seam/traversal
+validation when component/collision boundaries change.
+
+@cc [owner:fontanierh,label:correctness] independent-model-products-are-required-inputs
+Where models are separate named products, normal assembly MUST consume the complete current library
+and reject missing, stale or altered members. It MUST NOT regenerate a missing model inline or require
+an optimization opt-in. Model keys MUST cover their actual geometry, UV/atlas/export helpers, settings
+and tools; placements and unrelated material colours MUST NOT become model inputs without a real read.
+
+@cc [owner:fontanierh,label:correctness] regional-membership-retirement-order
+Only an explicitly exclusive generated owner MAY retire superseded source members. Every current
+model/hull MUST be complete before retirement, and links, escapes, special files or incomplete membership
+MUST refuse before deletion. Committed sources and another owner's outputs MUST remain untouched.
+Native retirement additionally requires successful current validation/saves and complete existence and
+external-reference preflight; a deletion failure MUST prevent a successful import report.

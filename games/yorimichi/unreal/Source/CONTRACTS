@@ -1,0 +1,11 @@
+@cc [owner:fontanierh,label:architecture] preparation-and-raw-import-native-boundaries
+Foliage preparation-only palette export, variant construction and snapshot helpers MUST remain outside
+the native role-certification dependency used by unrelated raw mesh imports. Each consumer MUST bind the
+compiled modules and saved types it actually executes or serializes. A preparation-module fix MUST NOT
+be hidden by a synthetic unchanged module token, nor broaden raw import identity without a real dependency.
+
+@cc [owner:fontanierh,label:correctness] saved-type-moves-preserve-native-compatibility
+Moving a serialized class or struct between modules MUST preserve its intended fields/defaults and
+provide the required old-path redirects. Source equivalence or a successful compile alone MUST NOT be
+claimed as old-package compatibility: an existing saved asset MUST load through the redirects and its
+runtime consumer MUST be validated before that compatibility is accepted.
