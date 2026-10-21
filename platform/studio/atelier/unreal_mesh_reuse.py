@@ -19,7 +19,8 @@ def observed_environment(ctx, current):
     from .build_cache import atomic_json
     target = safe_destination(ctx.out, 'native-imports/environment.json')
     if target.exists():
-        return read_json(target).get('context') == current
+        saved = read_json(target)
+        return isinstance(saved, dict) and saved.get('schema') == 1 and saved.get('context') == current
     if target.is_symlink():
         raise ValueError('Linked native receiving environment')
     try:
