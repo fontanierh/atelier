@@ -53,6 +53,10 @@ such as market fruit painted with a leaf palette. Actual vegetation may never us
 Literal plant colours must retain a semantic key with `foliage_roles.PaletteColour`, or explicitly set
 the face's key. Cloth canopies, bark, canes and opaque grass paint are rigid surfaces.
 The vertex-painted city trees retain a legacy palette adapter for older source chains.
+An unannotated collision hull can share a plant's name without containing visible vegetation. The build
+disambiguates this name heuristic only through a hard StaticMesh reference whose `complex_collision_mesh`
+is exactly that hull. Explicit foliage roles/materials take precedence; a suffix alone proves nothing.
+This adds no rigid stamp or runtime exemption: drawing that named hull directly still fails registration.
 Small, indivisible planted props (including Belmonte’s nine small flower/herb containers, the potted plants,
 planter boxes and bonsai shelf) explicitly
 declare an authored-surface policy in their source owner. They retain their painted plants and containers

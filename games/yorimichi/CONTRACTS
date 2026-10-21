@@ -7,6 +7,10 @@ New vegetation MUST declare recognizable foliage material/asset semantics or cer
 foliage inside an unclassified material or bypassing the registry is forbidden.
 Explicit rigid role certification is only for non-vegetation surfaces (such as fruit reusing leaf paint),
 never an exemption for vegetation or an optimization fallback.
+Non-vegetation collision helpers MAY be disambiguated from the name-only heuristic
+only through an exact hard StaticMesh complex_collision_mesh reference. Explicit
+foliage roles/material semantics MUST win. This MUST NOT add rigid stamps or runtime
+exemptions; naming a mesh Collision alone proves nothing.
 Missing, stale or invalid representations MUST fail the normal build and gameplay
 readiness, never silently render an unoptimized fallback. Preparation and all cooked
 dependencies MUST belong to the normal incremental build graph.

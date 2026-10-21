@@ -54,7 +54,29 @@ def leaf_material(material):
         foliage=U.YorimichiFoliageBuilder.material_uses_foliage_shading(material))
 
 
-def classify(mesh):
+def collision_geometry(mesh, registry):
+    """Disambiguate name-only hulls through their actual hard physics owner.
+
+    Collision usage does not certify exclusive usage. Do not stamp a rigid role:
+    if someone draws this unannotated plant-named hull, the runtime audit must
+    still reject its missing representation. Explicit foliage semantics win.
+    """
+    path=mesh.get_path_name()
+    options=U.AssetRegistryDependencyOptions(include_hard_package_references=True,
+        include_soft_package_references=False,include_searchable_names=False,
+        include_hard_management_references=False,include_soft_management_references=False)
+    for package in sorted(str(p) for p in registry.get_referencers(path.split('.')[0],options)):
+        for asset in registry.get_assets_by_package_name(package):
+            if str(asset.asset_class_path.asset_name)!='StaticMesh':continue
+            owner=E.load_asset(str(asset.package_name))
+            if not owner:raise ValueError('Cannot inspect collision owner: '+package)
+            if owner.get_path_name()==path:continue
+            hull=owner.get_editor_property('complex_collision_mesh')
+            if hull and hull.get_path_name()==path:return True
+    return False
+
+
+def classify(mesh, registry):
     names=[str(slot.get_editor_property('material_slot_name')) for slot in mesh.get_editor_property('static_materials')]
     if names and all(name.startswith(F.roles.RIGID_PREFIX) for name in names):return None
     if any(str(slot.get_editor_property('material_slot_name')).startswith(F.roles.AUTHORED_PREFIX)
@@ -69,6 +91,8 @@ def classify(mesh):
     if slots:
         return slots, 'material'
     if not F.vegetation(name):
+        return None
+    if collision_geometry(mesh,registry):
         return None
     if name.startswith(('HD_ArcadeTree', 'HD_PlazaTree')):
         return [], 'palette'
@@ -171,7 +195,7 @@ def main():
     materials = set()
     for n, path in enumerate(candidates):
         mesh = E.load_asset(path)
-        policy = classify(mesh)
+        policy = classify(mesh,registry)
         if policy is None:
             mesh=None
             U.YorimichiFoliageBuilder.collect_unused()
