@@ -437,7 +437,7 @@ def moveset_import(character):
     return script, [SCRIPTS / 'import_adventure_moveset.py', SCRIPTS / 'animation_compression.py', *sorted(CHARS.glob('*/adventure.toml'))]
 
 
-def body_export(character, *args, threads=4):
+def body_export(character, *args, threads=3):
     """assets/characters/pipeline/export.py for one character: its body, textures and own clips, to FBX."""
     return Blender(PIPELINE / 'export.py', ('--character', character, *args), threads=threads)
 
@@ -471,7 +471,7 @@ def content(character):
 
 def mover_export_steps(character, out):
     """Its body (pipeline/export.py) and, if playable, its bike clips (vehicles/bike/rider.py) and horse clips (horses/rider.py), to FBX."""
-    k, threads = key(character), character.blender['threads']
+    k, threads = key(character), min(3, character.blender['threads'])
     steps = [Step(f'characters.{k}', [body_export(character.id, threads=threads)], inputs=[character.folder, NAMES, PIPELINE],
                   outputs=[out / character.output / 'export.json'], heavy=True,
                   about=f"{character.name}'s body, textures and own clips, to FBX")]
@@ -788,7 +788,7 @@ def world_steps(ctx):
     return [*texture_steps(ctx),
         # ------------------------------------------------------------ world
         # The tree house's tall canopy trees come first: its layout sizes them from trees.json.
-        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=4)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
+        Step('world.treehouse_trees', [Blender(TREEHOUSE / 'trees.py', threads=3)], inputs=[TREEHOUSE / 'trees.py', WORLD / 'asset_mesh.py'],
              needs=['world.textures'], outputs=[out / 'treehouse' / 'trees' / 'trees.json'],
              about='tree house canopy trees (four autumn crowns) and their recoloured leaf atlases', heavy=True),
         Step('world.layout', [Python(WORLD / 'gen_world.py')],
@@ -951,7 +951,7 @@ def world_steps(ctx):
         Step('world.skatepark_textures', [Python(TOOLS / 'pier_textures.py', ('finish',))],
              inputs=[TOOLS / 'pier_textures.py', ASSETS / 'skatepark' / 'textures', ASSETS / 'megapark' / 'restyle' / 'stone_cut.jpg'],
              outputs=[out / 'skatepark' / 'textures' / 'textures.json'], about='Sunburst pier material maps (offline; no paid calls)'),
-        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py')],
+        Step('world.skatepark', [Blender(REGIONS / 'skatepark' / 'build.py', threads=3)],
              inputs=[*sorted((REGIONS / 'skatepark').glob('*.py')), ASSETS / 'skatepark' / 'modules.json',
                      ASSETS / 'skatepark' / 'modules', *VILLAGE_LAYOUT],
              needs=['world.layout', 'world.skatepark_textures'],
@@ -959,7 +959,7 @@ def world_steps(ctx):
         Step('world.sailboat', [Blender(ASSETS / 'vehicles' / 'sailboat' / 'build.py', threads=4)],
              inputs=[ASSETS / 'vehicles' / 'sailboat', REGIONS / 'village' / 'build.py'],
              outputs=[out / 'sailboat' / 'manifest.json'], about='the dinghy', heavy=True),
-        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py')],
+        Step('world.bike', [Blender(ASSETS / 'vehicles' / 'bike' / 'build.py', threads=3)],
              inputs=[ASSETS / 'vehicles' / 'bike' / 'build.py', YORI],
              outputs=[out / 'bike' / 'manifest.json'], about="Cairo's bike: frame, steering, wheels, crank, pedals, kickstand, rack board", heavy=True),
         # Verifies every library GLB, measures each breed's contacts and samples the reference breed's clips. A cutoff:

@@ -40,7 +40,14 @@ def test_browser_scene_graph_is_bounded_but_includes_production_preparation(tmp_
         out=tmp_path, game="yorimichi", uproject=GAME / "unreal/Yorimichi.uproject"
     )
     recipe = build.load_recipe("yorimichi")
-    selected = {step.name for step in build.order(recipe.steps(ctx), ["browser.scene"])}
+    ordered = build.order(recipe.steps(ctx), ["browser.scene"])
+    selected = {step.name for step in ordered}
+    assert all(
+        command.threads <= 3
+        for step in ordered
+        for command in step.commands
+        if isinstance(command, build.Blender)
+    )
     assert {
         "unreal.cairo_pawn",
         "characters.cairo_fit",
