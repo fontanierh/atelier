@@ -86,7 +86,15 @@ bool CopyTriangle(const FMeshDescription& Input,FTriangleID Triangle,int32 Slot,
 bool IsLeaf(const FMeshDescription& D,FTriangleID Triangle,int32 Slot,int32 SourceSlots,
     const FString& Mode,const TSet<int32>& LeafSlots,double Height,bool& Leaf)
 {
-    if (Slot>=SourceSlots || Mode==TEXT("authored")) { Leaf=true;return true; }
+    if (Slot>=SourceSlots) { Leaf=true;return true; }
+    if (Mode==TEXT("authored") || Mode==TEXT("authored-material"))
+    {
+        FStaticMeshConstAttributes A(D);auto UV=A.GetVertexInstanceUVs();
+        if (UV.GetNumChannels()<=5) return false;
+        for (auto I:D.GetTriangleVertexInstances(Triangle))
+        { auto U=UV.Get(I,5);if (U.X!=3.f || FMath::Min(FMath::Abs(U.Y-73.125f),FMath::Abs(U.Y+72.125f))>.01f) return false; }
+        Leaf=Mode==TEXT("authored") || LeafSlots.Contains(Slot);return true;
+    }
     FStaticMeshConstAttributes A(D);const auto Corners=D.GetTriangleVertexInstances(Triangle);
     if (Corners.Num()!=3) return false;
     if (Mode==TEXT("roles"))
@@ -173,7 +181,7 @@ FMeshBuildSettings BuildSettings()
 }
 UStaticMesh* Build(const FString& Destination,TArray<FMeshDescription>& Descriptions,
     const TArray<FStaticMaterial>& Materials,const TArray<float>& Screens,ECollision Collision,
-    const FKAggregateGeom& Trunk,const UBodySetup* OriginalBody=nullptr)
+    const FKAggregateGeom& Trunk,const UBodySetup* OriginalBody=nullptr,UStaticMesh* CollisionProxy=nullptr)
 {
     const FString Name=FPackageName::GetLongPackageAssetName(Destination);
     UPackage* Package=CreatePackage(*Destination);Package->FullyLoad();
@@ -205,7 +213,7 @@ UStaticMesh* Build(const FString& Destination,TArray<FMeshDescription>& Descript
         Model.BuildSettings=BuildSettings();Model.ScreenSize.Default=Screens[L];
     }
     Mesh->SetAutoComputeLODScreenSize(false);Mesh->bGenerateMeshDistanceField=false;Mesh->bAllowCPUAccess=false;Mesh->GetNaniteSettings().bEnabled=false;
-    Mesh->ComplexCollisionMesh=nullptr;Mesh->MarkAsNotHavingNavigationData();Mesh->CreateBodySetup();
+    Mesh->ComplexCollisionMesh=CollisionProxy;Mesh->MarkAsNotHavingNavigationData();Mesh->CreateBodySetup();
     auto* Body=Mesh->GetBodySetup();if (!Body || Body->GetOuter()!=Mesh || Body->CurrentCookHelper) return nullptr;
     Body->ClearPhysicsMeshes();Body->AggGeom.EmptyElements();Body->BuildScale3D=FVector::OneVector;
     Body->bNeverNeedsCookedCollisionData=Collision==ECollision::None;
@@ -231,7 +239,7 @@ UStaticMesh* Build(const FString& Destination,TArray<FMeshDescription>& Descript
         if (!D || GeometryHash(*D)!=Expected[L] ||
             Mesh->GetRenderData()->LODResources[L].GetNumTriangles()!=uint32(Descriptions[L].Triangles().Num())) return nullptr;
     }
-    if (Mesh->GetNavCollision() || Mesh->ComplexCollisionMesh || Body!=Mesh->GetBodySetup() ||
+    if (Mesh->GetNavCollision() || Mesh->ComplexCollisionMesh!=CollisionProxy || Body!=Mesh->GetBodySetup() ||
         Body->BuildScale3D!=FVector::OneVector || Body->bNeverNeedsCookedCollisionData!=(Collision==ECollision::None) ||
         Body->CollisionTraceFlag!=(Collision==ECollision::Rigid?CTF_UseComplexAsSimple:CTF_UseSimpleAsComplex)) return nullptr;
     if (Collision==ECollision::None)
@@ -251,7 +259,7 @@ UStaticMesh* Build(const FString& Destination,TArray<FMeshDescription>& Descript
         {
             int64 Triangles=0;for (const auto& Geometry:Body->TriMeshGeometries)
             { if (!Geometry) return nullptr;Triangles+=Geometry->Elements().GetNumTriangles(); }
-            if (Triangles!=Descriptions[0].Triangles().Num() || Body->AggGeom.GetElementCount()!=0) return nullptr;
+            if (Triangles!=(CollisionProxy?CollisionProxy->GetNumTriangles(0):Descriptions[0].Triangles().Num()) || Body->AggGeom.GetElementCount()!=0) return nullptr;
         }
         else
         {
@@ -273,7 +281,7 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     const FString& Directory,UMaterialInterface* NearInteraction,bool Passable)
 {
 #if WITH_EDITOR
-    if (!IsInGameThread() || !Source || !Prepared || !PreparedShadow || ExpectedRigidTriangles<0 ||
+    if (!IsInGameThread() || !Source || !Prepared || !PreparedShadow || (ExpectedRigidTriangles<0 && !(ExpectedRigidTriangles==-1 && Classification==TEXT("authored-material"))) ||
         !Directory.StartsWith(TEXT("/Game/FoliageResident/")) || !FPackageName::IsValidLongPackageName(Directory) ||
         Prepared->GetNumSourceModels()!=4 || PreparedShadow->GetNumSourceModels()!=1) return {};
     if (Source==Prepared || Source==PreparedShadow || Prepared==PreparedShadow ||
@@ -291,7 +299,7 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
         if (L==0) RigidCount=Removed;Counts.Add(Canopies[L].Triangles().Num());
         Screens.Add(Prepared->GetSourceModel(L).ScreenSize.Default);
     }
-    if (RigidCount!=ExpectedRigidTriangles)
+    if (ExpectedRigidTriangles>=0 && RigidCount!=ExpectedRigidTriangles)
     { UE_LOG(LogTemp,Error,TEXT("FOLIAGE RESIDENCY rigid count mismatch %s expected=%d actual=%d"),*Source->GetPathName(),ExpectedRigidTriangles,RigidCount);return {}; }
     TArray<FMeshDescription> Shadow;Shadow.SetNum(1);int32 Removed=0;
     if (!Split(PreparedShadow,0,Source,SourceLODs.Last(),Classification,Slots,Shadow[0],nullptr,Removed)) return {};
@@ -329,8 +337,11 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     const FString Base=Directory/Source->GetName();
     UStaticMesh* Carrier=nullptr;
     if (RigidCount) Carrier=Build(Base,Rigid,Source->GetStaticMaterials(),TrunkLODs?Screens:TArray<float>{1.f},Passable?ECollision::None:(SimpleTrunk?ECollision::SimpleTrunk:ECollision::Rigid),Trunk,Source->GetBodySetup());
+    UStaticMesh* Proxy=Classification==TEXT("authored")?Source->ComplexCollisionMesh.Get():nullptr;
+    if (Proxy && (Proxy==Source || Proxy==Prepared || Proxy==PreparedShadow || Proxy->ComplexCollisionMesh)) return {};
+    if (Proxy) FStaticMeshCompilingManager::Get().FinishCompilation({Proxy});
     auto* Canopy=Build(Base+TEXT("_Canopy"),Canopies,CanopyMaterials,Screens,
-        SimpleTrunk && !RigidCount?ECollision::SimpleTrunk:ECollision::None,Trunk,Source->GetBodySetup());
+        Proxy?ECollision::Rigid:(SimpleTrunk && !RigidCount?ECollision::SimpleTrunk:ECollision::None),Trunk,Source->GetBodySetup(),Proxy);
     auto* ShadowMesh=Build(Base+TEXT("_Shadow"),Shadow,PreparedShadow->GetStaticMaterials(),{1.f},ECollision::None,Trunk);
     if ((RigidCount && !Carrier) || !Canopy || !ShadowMesh) return {};
     auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("rigid"),Carrier?Carrier->GetPathName():TEXT(""));
@@ -338,11 +349,12 @@ FString UYorimichiFoliageResidencyBuilder::Compact(UStaticMesh* Source,UStaticMe
     TArray<TSharedPtr<FJsonValue>> RigidCounts;if (Carrier) for (const auto& D:Rigid)
         RigidCounts.Add(MakeShared<FJsonValueNumber>(D.Triangles().Num()));
     Row->SetArrayField(TEXT("rigid_lod_triangles"),RigidCounts);Row->SetBoolField(TEXT("simple_trunk"),SimpleTrunk);Row->SetBoolField(TEXT("passable"),Passable);
+    Row->SetStringField(TEXT("collision"),Proxy?Proxy->GetPathName():TEXT(""));
     Row->SetStringField(TEXT("optimized"),Canopy->GetPathName());Row->SetStringField(TEXT("shadow"),ShadowMesh->GetPathName());
     Row->SetNumberField(TEXT("shadow_triangles"),Shadow[0].Triangles().Num());
     TArray<TSharedPtr<FJsonValue>> Values;for (int32 Count:Counts) Values.Add(MakeShared<FJsonValueNumber>(Count));
     Row->SetArrayField(TEXT("triangles"),Values);FString Result;
-    if (!FJsonSerializer::Serialize(Row.ToSharedRef(),TJsonWriterFactory<>::Create(&Result))) return {};
+    if (!FJsonSerializer::Serialize(Row,TJsonWriterFactory<>::Create(&Result))) return {};
     return Result;
 #else
     return {};

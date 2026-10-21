@@ -14,5 +14,9 @@ A standalone semantic tree/palm MAY use a finite positive authored radius/endpoi
 from metres to Unreal centimetres with Y reflection, or a bounded capsule from its classified lower
 rigid trunk. An existing source simple shape alone MUST NOT certify trunk provenance. Bushes and
 leaves MUST remain passable. Canopy/shadow copies MUST have no physics/navigation data except a no-rigid
-tree canopy explicitly serving as its simple-trunk carrier. Original/shared packages MUST remain unchanged.
+tree canopy explicitly serving as its simple-trunk carrier, or an authored prop's declared separate
+collision-only hull. A prop hull MUST match its committed source witness and actual original hard hull
+reference; the original render mesh MUST NOT become its collider. An authored prop without that witness
+MAY partition only affirmative structural material slots from its manifest, preserving every other
+surface; it MUST refuse unknown structural ownership. Original/shared packages MUST remain unchanged.
 A receiving native fixture MUST cover rigid-only mixed collision and nonblocking canopy/trunk separation.
