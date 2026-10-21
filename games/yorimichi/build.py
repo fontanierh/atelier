@@ -713,7 +713,7 @@ def brinecove_steps(out):
         Step('world.brinecove.meshes',
              [Python(GAME / 'region_products.py', (out / 'brinecove', out / 'products/brinecove',
                                                    '--ground-prefix', 'SM_BC_Ground_', '--plant-prefix', 'SM_BC_Plant_'))],
-             inputs=[GAME / 'region_products.py', out / 'brinecove/build-report.json', out / 'brinecove/runtime.json',
+             inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'brinecove/build-report.json', out / 'brinecove/runtime.json',
                      out / 'brinecove/glb', out / 'brinecove/textures'], needs=['world.brinecove'],
              products=[Product('brinecove.' + name, (out / f'products/brinecove/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime', 'map', 'clearance')],
@@ -742,7 +742,8 @@ def belmonte_native_products(out):
     tv = content / 'Racing/M_RacingTv.uasset'
     return [Product('belmonte.native_meshes', (content / 'Belmonte/Meshes',)),
             Product('belmonte.native_materials', (content / 'Belmonte/Materials', content / 'Belmonte/Textures')),
-            Product('belmonte.native_tv', (tv,), optional_paths=(tv.with_suffix('.uexp'), tv.with_suffix('.ubulk'))),
+            Product('belmonte.native_tv', (tv,), optional_paths=tuple(tv.with_suffix(suffix)
+                    for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload'))),
             Product('belmonte.native_report', (out / 'belmonte/import-report.json',))]
 
 
@@ -754,7 +755,7 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')), WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')), paths.STUDIO / 'atelier/model_files.py', WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
@@ -765,7 +766,7 @@ def belmonte_steps(out):
         Step('world.belmonte.meshes',
              [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
                                                    '--mesh-library'))],
-             inputs=[GAME / 'region_products.py', out / 'belmonte/build-report.json', out / 'belmonte/runtime.json',
+             inputs=[*build_inputs.local_imports(GAME / 'region_products.py'), out / 'belmonte/build-report.json', out / 'belmonte/runtime.json',
                      out / 'belmonte/glb', out / 'belmonte/textures'], needs=['world.belmonte'],
              products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
                        for name in ('geometry', 'materials', 'runtime')],

@@ -7,6 +7,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path, PurePosixPath
+from atelier.model_files import source_records, regular_files
 
 
 def source(root, member):
@@ -29,14 +30,6 @@ def file_record(root, member):
     return dict(sha256=hashlib.sha256(raw).hexdigest(), size=len(raw))
 
 
-def paths(value, suffixes):
-    if isinstance(value, dict):
-        return set().union(*(paths(item, suffixes) for item in value.values())) if value else set()
-    if isinstance(value, list):
-        return set().union(*(paths(item, suffixes) for item in value)) if value else set()
-    return {value} if isinstance(value, str) and PurePosixPath(value).suffix.lower() in suffixes else set()
-
-
 def group_view(group):
     return {key: group[key] for key in ('asset', 'plant', 'transforms')}
 
@@ -54,21 +47,13 @@ def library_views(folder, *, collision_basename=False, bindings=False, preserve_
     names = {mesh['name']: mesh for mesh in meshes}
     if len(names) != len(meshes) or not names:
         raise ValueError('Region model inventory is empty or has duplicate owners')
-    model_files = paths(meshes, {'.glb', '.fbx'})
-    collisions = []
-    for mesh in meshes:
-        if mesh.get('collision'):
-            entry = mesh['collision']
-            member = 'glb/' + PurePosixPath(entry['path']).name if collision_basename else entry['path']
-            if collision_basename:
-                model_files.discard(entry['path'])
-                model_files.add(member)
-            collisions.append((entry, member))
-    actual_models = {p.relative_to(folder).as_posix() for p in (folder / 'glb').rglob('*') if p.is_file()}
+    records = source_records(meshes, collision_directory='glb' if collision_basename else None)
+    model_files = {name for _, name in records}
+    actual_models = {'glb/' + name for name in regular_files(folder / 'glb')}
     if model_files != actual_models:
         raise ValueError('Region model inventory differs from generated membership')
     model_inventory = {name: file_record(folder, name) for name in sorted(model_files)}
-    for entry, member in [*((mesh, mesh['path']) for mesh in meshes), *collisions]:
+    for entry, member in records:
         if entry['sha256'] != model_inventory[member]['sha256']:
             raise ValueError('Region model differs from its producer report: ' + member)
     texture_names = {entry['texture'] for entry in report['materials'].values() if entry['texture']}

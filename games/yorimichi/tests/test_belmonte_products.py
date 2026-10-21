@@ -144,7 +144,8 @@ def test_actual_recipe_and_runtime_staging_use_named_belmonte_views(tmp_path, mo
     assert native['belmonte.native_meshes'].paths == (content / 'Belmonte/Meshes',)
     assert native['belmonte.native_materials'].paths == (content / 'Belmonte/Materials', content / 'Belmonte/Textures')
     assert native['belmonte.native_tv'].paths == (content / 'Racing/M_RacingTv.uasset',)
-    assert len(native['belmonte.native_tv'].optional_paths) == 2
+    assert {path.name for path in native['belmonte.native_tv'].optional_paths} == {
+        'M_RacingTv' + suffix for suffix in ('.uexp', '.ubulk', '.uptnl', '.m.ubulk', '.upayload')}
     assert not steps['unreal.belmonte'].cache
     assert 'belmonte.runtime' in steps['data.stage'].reads and 'world.belmonte' not in steps['data.stage'].needs
     export(tmp_path / 'belmonte', {})
