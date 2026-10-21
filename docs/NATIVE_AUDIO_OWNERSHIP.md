@@ -18,3 +18,7 @@ The initial type move and redirect configuration change require an ordinary comp
 revalidate other configuration-bound imports once. No old fingerprints or producer evidence
 are adopted to hide that transition. Later preparation-only library changes leave this audio
 owner current when the actual saved-type module, configuration, audio and importer inputs match.
+
+The offline sound profile follows an explicit asset-module revalidation witness: every runtime
+component body and the moved lookup body is byte-identical, while the current source hashes
+also bind the new saved-type implementation/header. This is source proof, not listening proof.
