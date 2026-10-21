@@ -1,5 +1,6 @@
 """Production preparation keeps diagnostic overrides out of shipped kit data."""
 from types import SimpleNamespace
+from pathlib import Path
 
 from atelier import build
 from atelier.build_inputs import validate_imports
@@ -11,7 +12,7 @@ def test_normal_kit_preparation_cannot_inherit_partial_or_soft_failure_modes(mon
     monkeypatch.setenv('GONDOLA_SOFT_FAIL','1')
     monkeypatch.setenv('GONDOLA_PARAMS','diagnostic-parameters.json')
     recipe = build.load_recipe('yorimichi')
-    step, = recipe.gondola_steps(SimpleNamespace(out=tmp_path))
+    step = next(s for s in recipe.gondola_steps(SimpleNamespace(out=tmp_path)) if s.name=='world.gondola_kit')
     command, = step.commands
     env = environment(command.env)
     assert set(env['GONDOLA_PIECES'].split(',')) == {'cabin','towers','valley','rim','crater'}
@@ -20,3 +21,16 @@ def test_normal_kit_preparation_cannot_inherit_partial_or_soft_failure_modes(mon
     products = {p.name:p for p in step.products}
     assert 'gondola.kit' in products and step.cache
     validate_imports(step, step.inputs)
+
+
+def test_ground_query_is_narrow_and_keeps_region_layout_edits_out_of_exporters(tmp_path):
+    recipe=build.load_recipe('yorimichi')
+    rows={s.name:s for s in recipe.steps(SimpleNamespace(out=tmp_path,uproject=None))}
+    query=rows['world.gondola_ground_inputs']
+    assert 'world.gondola_ground' in {s.name for s in build.order(list(rows.values()),['world.gondola_ground'])}
+    assert query.cutoff
+    assert set(query.needs)=={'world.hidamari','world.terrain.meshes','world.belmonte'}
+    assert rows['world.gondola_ground'].needs==['world.gondola_ground_inputs']
+    for name in ('world.hidamari','world.belmonte'):
+        assert all(Path(p).name!='gondola.py' for p in rows[name].inputs)
+    assert all(c.threads==3 and c.factory_startup for c in rows['world.gondola_ground'].commands)

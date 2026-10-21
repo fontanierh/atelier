@@ -695,7 +695,7 @@ def belmonte_steps(out):
     region = REGIONS / 'belmonte'
     return [
         Step('world.belmonte', [Python(region / 'build.py')],
-             inputs=[region, WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
+             inputs=[*(p for p in region.iterdir() if p.name not in ('gondola.py', '__pycache__')), WORLD / 'surface_textures.py', ASSETS / 'belmonte', ASSETS / 'environment/textures/tuscan-ground.jpg',
                      ASSETS / 'environment/textures/tuscan-ground.provenance.json', REGIONS / 'megapark/forest.py', REGIONS / 'hippodrome' / 'build.py',
                      REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py',
                      REGIONS / 'hidamari' / 'layout.py', REGIONS / 'hidamari_stable' / 'layout.py', REGIONS / 'hidamari' / 'mountains.py', *CRATERPARK, YORI, *NORTH_LAYOUT, *belmonte_train_corridor(out)],
@@ -825,7 +825,7 @@ def world_steps(ctx):
                        Product('terrain.FarHills.provenance', (out / 'terrain/FarHills/manifest.json',))],
              heavy=True, about='authoritative FarHills natural and final ordered geometry before city scenery'),
         Step('world.hidamari', [Blender(REGIONS / 'hidamari' / 'build.py')],
-             inputs=[*(p for p in (REGIONS / 'hidamari').iterdir() if p.name not in ('ferry_terminal.py', 'ferry_cut.py', 'ferry_source.py', '__pycache__')), *CRATERPARK, REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
+             inputs=[*(p for p in (REGIONS / 'hidamari').iterdir() if p.name not in ('ferry_terminal.py', 'ferry_cut.py', 'ferry_source.py', 'gondola.py', '__pycache__')), *CRATERPARK, REGIONS / 'village' / 'build.py', REGIONS / 'zeppelin' / 'layout.py',
                      REGIONS / 'megapark' / 'placement.py', REGIONS / 'megapark' / 'forest.py', REGIONS / 'megapark' / 'trail.py',
                      REGIONS / 'megapark' / 'gate.py', REGIONS / 'forest/ecotone.py', REGIONS / 'forest/specs.py', ASSETS / 'hidamari' / 'props',
                      *TREEHOUSE_LAYOUT, *VILLAGE_LAYOUT, WORLD / 'farhills_grid.py', WORLD / 'north_mountain_surface.py',
@@ -1471,12 +1471,33 @@ def gondola_steps(ctx):
              *(folder / 'textures' / f'GD_{name}_{kind}.png' for name in
                ('wood_panel', 'wood_grain', 'wood_grain_light', 'wood_grain_dark', 'deck_planks', 'shingle')
                for kind in ('color', 'rough'))]
-    return [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
+    result = [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3, factory_startup=True,
                     env=(('GONDOLA_PIECES', 'cabin,towers,valley,rim,crater'),
                          ('GONDOLA_PARAMS', ''), ('GONDOLA_SOFT_FAIL', '')))],
                  inputs=sorted(set(local_imports(kit / 'build.py') + [kit / name for name in parameters.BUILD_SOURCES])),
                  products=[Product('gondola.kit', tuple(files))], heavy=True, cache=True,
                  about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
+
+    query = WORLD / 'gondola/inputs.py'
+    query_spec = importlib.util.spec_from_file_location('gondola_world_inputs', query)
+    queries = importlib.util.module_from_spec(query_spec)
+    query_spec.loader.exec_module(queries)
+    digest = ctx.out / 'digests/world.gondola.ground.json'
+    result += [Step('world.gondola_ground_inputs',
+                    [Call('ropeway final ground inputs', lambda ctx, log:
+                          export_digest.record(digest, queries.snapshot(ctx.out), log))],
+                    inputs=[query, ASSETS / 'belmonte/source.json', GAME / 'export_digest.py'],
+                    needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte'],
+                    deferred_inputs=[DeferredInputs('gondola-ground', queries.paths, (ctx.out,), support=(query,))],
+                    outputs=[digest], cutoff=True,
+                    about='only final terrain, North Trail and corridor-selected Belmonte ground'),
+               Step('world.gondola_ground', [Blender(WORLD / 'gondola/probe.py', threads=3, factory_startup=True)],
+                    inputs=[WORLD / 'gondola/probe.py', query, GAME / 'export_digest.py', REGIONS / 'belmonte/source.py',
+                            paths.STUDIO / 'atelier/gltf.py', YORI],
+                    needs=['world.gondola_ground_inputs'],
+                    outputs=[folder / 'world/ground.npz', folder / 'world/ground.json'], heavy=True,
+                    about='final exported trail contact and owned Belmonte terrain queries')]
+    return result
 
 
 def ferry_steps(ctx):
