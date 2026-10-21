@@ -6,7 +6,7 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = '680e47d85761cf64fe3509c9be26e1f403ebf981fcea7f3fca3e1c689b902116'
+WITNESS_SHA256 = 'd58f99054a93fc15510efbf718afa50caf9353e09fdc65f87b7fc5581419ca17'
 MAX_SOURCE = 8 * 1024 * 1024
 USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
@@ -102,7 +102,10 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
     Only these immutable reviewed source pairs MAY reproduce historical unit policies.
     The reviewed startup upload drain/telemetry and CPU vertex-copy release MAY change
     only resource lifetime for owned prepared render-only variants in an uncooked game.
-    Originals, collision, indices, GPU handles/counts and runtime query ownership MUST
+    The reviewed unused physics/navigation release MAY clear only variant-owned body
+    and navigation allocations after refusing shared ownership or a pending cook; it
+    MUST prevent later collision reconstruction and MUST NOT serialize or save packages.
+    Original/shared collision, indices, GPU handles/counts and runtime query ownership MUST
     remain intact; geometry generation, snapshots and current source/settings/material
     admission MUST stay unchanged.
     The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
