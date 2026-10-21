@@ -73,6 +73,26 @@ def test_mesh_identity_includes_namespace():
     assert F.asset_id('/Game/A/Tree_A.Tree_A') == F.asset_id('/Game/A/Tree_A.Tree_A')
 
 
+def test_ferry_planter_surfaces_have_discoverable_foliage_material_semantics():
+    # The terminal palette is authored inside a Blender script. Read its literal
+    # keys without importing Blender or substituting a separate test palette.
+    script = GAME/'assets/vehicles/ferry/terminals/build.py'
+    palette = {}
+    for node in ast.parse(script.read_text()).body:
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Tuple):
+            names = [target.id for target in node.targets[0].elts if isinstance(target, ast.Name)]
+            if 'MOSS' in names:
+                palette = dict(zip(names, ast.literal_eval(node.value)))
+    assert F.material_vegetation(palette['MOSS'])
+    assert not F.material_vegetation(palette['TERRACOTTA'])
+    for region in ('hidamari', 'brinecove'):
+        author = GAME/'world/regions'/region/'ferry_terminal.py'
+        assert any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                   and node.func.attr in ('lathe', 'prism')
+                   and any(isinstance(arg, ast.Attribute) and arg.attr == 'MOSS' for arg in node.args)
+                   for node in ast.walk(ast.parse(author.read_text())))
+
+
 def test_closed_core_has_outward_winding_and_two_incident_faces_per_edge():
     vertices, faces = F.core([(-3,-4,-5),(3,4,5)], [.8,.4,.02,1.], 0)
     edges = {}
