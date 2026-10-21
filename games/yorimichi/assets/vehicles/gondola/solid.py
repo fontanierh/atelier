@@ -111,6 +111,9 @@ class Mesh(_shared.Mesh):
         with self.grained((0, 0, 1)):
             return super().beam(a, b, w, d, mat, up=reference, bevel=bevel)
 
+    def tube(self, path, r, mat, n=6, phase=0.0, sx=1.0, sy=1.0):
+        return super().tube(path, r, mat, n=n, phase=phase, sx=sx, sy=sy)
+
 
 # ------------------------------------------------------------------ audits
 closed = _shared.closed
