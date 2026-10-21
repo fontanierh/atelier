@@ -45,38 +45,74 @@ def _floats(values, count):
     return result
 
 
+def _geometry_chunks(levels, uv_channels):
+    """One encoder for expected hashes and bounded native transport."""
+    if not isinstance(levels, (list, tuple)) or not levels:
+        raise ValueError('Expected at least one LOD')
+    if type(uv_channels) is not int or not 1 <= uv_channels <= 8:
+        raise ValueError('Invalid UV channel count')
+    yield MAGIC
+    yield _uint(len(levels))
+    for level in levels:
+        vertices, faces = level['vertices'], level['faces']
+        yield _uint(uv_channels) + _uint(len(faces))
+        for face in faces:
+            indices = face['v']
+            if len(indices) != 3:
+                raise ValueError('Expected a triangle')
+            yield _uint(face['s'])
+            for index in indices:
+                if type(index) is not int or not 0 <= index < len(vertices):
+                    raise ValueError('Invalid vertex index')
+                vertex = vertices[index]
+                for field, count in (('p', 3), ('n', 3), ('c', 4)):
+                    yield _floats(vertex[field], count)
+                channels = vertex.get('uvs')
+                if channels is not None and not isinstance(channels, list):
+                    raise ValueError('Invalid UV channels')
+                for channel in range(uv_channels):
+                    pair = channels[channel] if channels is not None and channel < len(channels) else vertex['uv']
+                    yield _floats(pair, 2)
+
+
 def expected_digest(levels, uv_channels):
     """@cc [owner:fontanierh,label:correctness] exact-mesh-corner-stream
     Every triangle slot, winding, position, normal, colour and UV channel MUST
     enter the versioned little-endian stream. Invalid data MUST refuse reuse.
     Settings/material validation is additionally required by the native caller.
     """
-    if not isinstance(levels, (list, tuple)) or not levels:
-        raise ValueError('Expected at least one LOD')
-    if type(uv_channels) is not int or not 1 <= uv_channels <= 8:
-        raise ValueError('Invalid UV channel count')
-    value = hashlib.sha256(MAGIC + _uint(len(levels)))
-    for level in levels:
-        vertices, faces = level['vertices'], level['faces']
-        value.update(_uint(uv_channels) + _uint(len(faces)))
-        for face in faces:
-            indices = face['v']
-            if len(indices) != 3:
-                raise ValueError('Expected a triangle')
-            value.update(_uint(face['s']))
-            for index in indices:
-                if type(index) is not int or not 0 <= index < len(vertices):
-                    raise ValueError('Invalid vertex index')
-                vertex = vertices[index]
-                for field, count in (('p', 3), ('n', 3), ('c', 4)):
-                    value.update(_floats(vertex[field], count))
-                channels = vertex.get('uvs')
-                if channels is not None and not isinstance(channels, list):
-                    raise ValueError('Invalid UV channels')
-                for channel in range(uv_channels):
-                    pair = channels[channel] if channels is not None and channel < len(channels) else vertex['uv']
-                    value.update(_floats(pair, 2))
+    value = hashlib.sha256()
+    for chunk in _geometry_chunks(levels, uv_channels):
+        value.update(chunk)
     return value.hexdigest()
+
+
+def write_geometry(levels, uv_channels, path):
+    """@cc [owner:fontanierh,label:correctness] bounded-mesh-corner-transport
+    Native transport MUST use exactly the expected-digest encoder and versioned stream,
+    with bounded chunks rather than a whole-document text/byte buffer. A failed encode
+    MUST preserve any prior destination. Linked paths MUST refuse. Publication MUST
+    atomically replace the destination only after complete writing and successful sync.
+    Source/material/settings/compiled-tool admission remains the native caller's duty.
+    """
+    target = Path(path).absolute()
+    if any(parent.is_symlink() for parent in (target, *target.parents)):
+        raise ValueError('Linked mesh transport path')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix='.mesh-geometry-', dir=target.parent)
+    try:
+        value = hashlib.sha256()
+        with os.fdopen(descriptor, 'wb') as handle:
+            for chunk in _geometry_chunks(levels, uv_channels):
+                handle.write(chunk)
+                value.update(chunk)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, target)
+        return value.hexdigest()
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def _regular(path, root):
