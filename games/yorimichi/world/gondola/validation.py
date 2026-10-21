@@ -87,6 +87,44 @@ def validate_access_ground(access):
         raise ValueError('Gondola complete access-floor proof is missing or failed')
 
 
+def validate_access_walk(access):
+    proof=access.get('walk_proof',{});continuation=proof.get('continuation',{})
+    def finite(value):return type(value) in (int,float) and math.isfinite(value)
+    numeric=('maximum_slope_deg','maximum_step_m','minimum_tread_m','shared_edge_gap_m','ground_edge_gap_m')
+    steps=proof.get('steps_m')
+    n=access.get('risers');run=access.get('run_m');join=access.get('join_m')
+    tread=access.get('tread');flights=access.get('flights');landing=access.get('landing_m')
+    if (not finite(tread) or tread<.25 or not isinstance(flights,list) or not flights or
+            any(type(v) is not int or v<=0 for v in flights) or sum(flights)!=n or
+            not finite(landing) or landing<1.2):
+        raise ValueError('Gondola access flight/landing plan is missing or failed')
+    if (proof.get('pass') is not True or not all(finite(proof.get(key)) for key in numeric) or
+            type(n) is not int or n<=0 or not finite(run) or not finite(join) or not 0<join<run or
+            proof.get('triangles')!=sum(len(row['poly'])-2 for row in access.get('surfaces',[])) or
+            proof.get('triangles',0)<=0 or proof.get('slope_limit_deg')!=40. or
+            not 0<=proof['maximum_slope_deg']<=40.+1e-8 or proof.get('step_limit_m')!=.30 or
+            not isinstance(steps,list) or len(steps)<n or not all(finite(v) and 0<=v<=.30+1e-9 for v in steps) or
+            abs(proof['maximum_step_m']-max(steps))>1e-9 or
+            not finite(access.get('riser')) or not .1<=access['riser']<=.30 or abs(proof['maximum_step_m']-access['riser'])>1e-8 or
+            proof.get('tread_limit_m')!=.25 or proof['minimum_tread_m']<.25-1e-9 or
+            abs(proof['minimum_tread_m']-(min(tread,run-join-(n-1)*tread-(len(flights)-1)*landing) if n>1 else run-join))>1e-8 or
+            not 0<=proof['shared_edge_gap_m']<=1e-4 or not 0<=proof['ground_edge_gap_m']<=1e-4 or
+            continuation.get('complete_coverage') is not True or continuation.get('width_m')!=.9 or
+            continuation.get('length_m')!=.4 or type(continuation.get('triangles')) is not int or
+            continuation['triangles']<=0 or not finite(continuation.get('maximum_slope_deg')) or
+            not 0<=continuation['maximum_slope_deg']<=40.+1e-8):
+        raise ValueError('Gondola access walkability/continuity proof is missing or failed')
+
+
+def validate_access_headroom(access):
+    proof=access.get('headroom_proof',{})
+    counts=('floor_triangles','visual_triangles','collision_triangles','endpoint_triangles')
+    if (proof.get('pass') is not True or proof.get('width_m')!=.9 or proof.get('height_m')!=1.7 or
+            proof.get('floor_allowance_m')!=.05 or proof.get('complete_turn_caps') is not True or
+            proof.get('complete_endpoint_caps') is not True or proof.get('kit_edge_tolerance_m')!=.001 or
+            any(type(proof.get(key)) is not int or proof[key]<=0 for key in counts)):
+        raise ValueError('Gondola complete cross-mesh access headroom proof is missing or failed')
+
 
 def validate_stored_contact(row,poses,hardware_min):
     proof=row.get('stored_contact',{})
@@ -201,7 +239,10 @@ def validate_site(build):
         value=line['riding']['minimum_m']
         if (value is None and line['riding']['triangles_tested']!=0) or (value is not None and (not math.isfinite(value) or value<15.)):
             raise ValueError('Gondola riding/jump clearance failed')
-    for station in data['stations'].values():
+    for key,station in data['stations'].items():
+        turn=layout.STATIONS[key].get('access_turn_deg',0.)
+        if station.get('id')!=key or station['access'].get('turn_deg')!=turn:
+            raise ValueError('Gondola access does not match its regional station plan')
         if station['id']=='belmonte':
             link=station.get('walking_link',{})
             if (link.get('pass') is not True or link.get('complete_coverage') is not True or
@@ -221,6 +262,9 @@ def validate_site(build):
             validate_structure_proof(station.get('structure_collision',{}),static=True)
             validate_structure_proof(station.get('structure_loop',{}),envelope=envelope)
         validate_access_ground(station['access'])
+        validate_access_walk(station['access'])
+        if turn==180.:
+            validate_access_headroom(station['access'])
         if station.get('static_riding_clear') is not True:
             raise ValueError('Gondola station overlaps riding structure or has no static proof')
         jump=station['jump']

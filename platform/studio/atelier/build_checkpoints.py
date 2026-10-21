@@ -319,8 +319,8 @@ def retain(source=None, games=(), *, echo=print):
     return retained
 
 
-def publish(source, game, tag, revision, *, revalidate, echo=print):
-    """Retain the producer locally, then upload its existing outputs to the private release store."""
+def prepare_publication(source, game, tag, revision, *, revalidate, public_repository, echo=print):
+    """Retain locally and persist a backup request; never upload before public success."""
     # Source may be a different checkout from the release controller. The worker rebases paths
     # before loading its recipe; it never runs a game build, cook or source migration.
     game_manifest = Path(source) / 'games' / game / 'game.toml'
@@ -341,11 +341,16 @@ def publish(source, game, tag, revision, *, revalidate, echo=print):
     if repository is None:
         raise CheckpointError('Configure the private build cache locally with `atelier cache configure --repository OWNER/REPOSITORY` '
                               'before publishing a playtest; never put its identity in tracked source')
-    remote = Remote(repository, game, echo=echo)
-    remote.require_private()  # Refuse before any snapshot/export work.
-    key = capture_local(source, game)
+    Remote(repository, game)  # Local syntax only; private network checks belong to the detached worker.
+    from . import checkpoint_backup
+    store = Store(game)
+    target = checkpoint_backup.record_path(store, tag)
+    if target.exists():
+        key = read_json(target)['key']
+    else:
+        key = capture_local(source, game)
     revalidate()
-    return remote.publish(Store(game), key, tag, revision=revision, revalidate=revalidate)
+    return checkpoint_backup.queue(store, repository, key, tag, revision, public_repository=public_repository)
 
 
 def estimate(stamp):

@@ -89,8 +89,25 @@ through [authenticated `gh api`](https://cli.github.com/manual/gh_api). No real 
 
 ## Retain the build checkpoint
 
-Configured games capture existing producer artifacts and upload their private checkpoint before public release
-publication. Configure its private repository once with `atelier cache configure --repository OWNER/REPOSITORY`.
-Its identity stays outside tracked source. No build/cook is requested by checkpoint capture. Keep the stopped
-producer and its outputs until upload, verification and receiving restore are accepted; retain referenced packs.
-See [build checkpoints](BUILD_CHECKPOINTS.md) for recovery and the source-first validation limits.
+Configured games retain existing producer artifacts locally, publish the verified public package and print its
+link, then start a detached private backup. The publish command does not wait for private network transfers.
+Private failures never fail or roll back the public release. Configure the private repository once with
+`atelier cache configure --repository OWNER/REPOSITORY`; its identity stays outside tracked source.
+
+`atelier cache status` includes pending, uploading, failed and completed backups. Requests and logs live beside
+the immutable checkpoint store. Rerunning the identical publish command reuses the retained capture, observes the
+public release and resumes private upload. Completed remote packs are checksum-verified and reused. The detached
+worker reads only the retained store; it never visits the producer checkout or holds native capacity. A failed
+worker leaves a durable pending request. If local retention itself fails, the public release can still succeed:
+the command explicitly reports the problem; preserve the producer and rerun after repairing cache access.
+
+To resume an already captured backup from an interrupted earlier publisher, without recapturing the producer:
+
+```sh
+uv run atelier cache backup-resume GAME --checkpoint KEY --tag TAG \
+  --revision FULL_SOURCE_SHA --public-repository OWNER/PUBLIC_REPOSITORY
+```
+
+This verifies the existing private capture/source binding and published public tag/readiness assets before
+scheduling upload. No build/cook is requested. Keep agreed producer/evidence pins until checkpoint verification
+and receiving restore are accepted; retain referenced packs. See [build checkpoints](BUILD_CHECKPOINTS.md).

@@ -266,3 +266,81 @@ def test_dirty_loaded_mesh_refuses_otherwise_valid_disk_receipt(scene, monkeypat
 def test_missing_dirty_package_readback_misses(scene, monkeypatch):
     monkeypatch.delattr(sys.modules['unreal'], 'EditorLoadingAndSavingUtils')
     assert acquire(scene, scene.adapter()) is None
+
+
+def validation_scene(scene, monkeypatch, *, geometry_changed=False):
+    script = paths.REPO / 'import.py'
+    old = 'def build(): return 2\n' if geometry_changed else 'def build(): return 1\n'
+    script.write_text('def build(): return 1\ndef validate(mesh): return bool(mesh)\n')
+    previous = dict(fingerprint='f' * 64, time=1., input_state={'inputs': {'<repo>/import.py': 'd' * 64}})
+    monkeypatch.setattr(mesh_reuse, 'saved_source', lambda *a: old)
+    monkeypatch.setattr(mesh_reuse, 'prior_stamp', lambda *a: previous)
+    monkeypatch.setattr(mesh_reuse, 'historical_packages_match', lambda *a: True)
+    monkeypatch.setattr(native, 'observed_environment', lambda *a: True)
+    for member, file in scene.staged.items():
+        if member.startswith('content/'):
+            target = scene.content / member.removeprefix('content/')
+            target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(file.read_bytes())
+    return lambda **kw: native.MeshReuse(scene.ctx, 'unreal.region', script, ('build',),
+                                         validation_functions=('validate',), **kw)
+
+
+def test_new_validator_absent_in_old_source_adopts_warm_packages_after_current_checks(scene, monkeypatch):
+    adapter = validation_scene(scene, monkeypatch)()
+    assert adapter.local_compatible
+    assert acquire(scene, adapter, validator=lambda mesh: bool(mesh))
+    adapter.validated('Mesh')
+    assert not adapter.receipts.path.exists()
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    assert adapter.receipts.path.exists()
+
+
+def test_separate_current_validator_never_weakens_historical_geometry_equality(scene, monkeypatch):
+    adapter = validation_scene(scene, monkeypatch, geometry_changed=True)()
+    assert not adapter.local_compatible
+    assert acquire(scene, adapter, validator=lambda mesh: True) is None
+
+
+def test_validator_change_rekeys_current_receipts_without_changing_geometry_policy(scene, monkeypatch):
+    make = validation_scene(scene, monkeypatch)
+    first = make(); assert acquire(scene, first, validator=lambda mesh: True)
+    first.validated('Mesh'); mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
+    script = paths.REPO / 'import.py'
+    script.write_text('def build(): return 1\ndef validate(mesh): return mesh is not None\n')
+    second = make()
+    assert second.policy == first.policy
+    assert second.receipts.header['policy'] != first.receipts.header['policy']
+    assert acquire(scene, second, validator=lambda mesh: True) is None
+
+
+@pytest.mark.parametrize('failure', ['false', 'exception', 'missing'])
+def test_invalid_current_validator_is_an_ordinary_warm_miss(scene, monkeypatch, failure):
+    make = validation_scene(scene, monkeypatch)
+    if failure == 'missing':
+        (paths.REPO / 'import.py').write_text('def build(): return 1\n')
+    adapter = make()
+    def validator(mesh):
+        if failure == 'exception':
+            raise RuntimeError('readback unavailable')
+        return False
+    assert acquire(scene, adapter, validator=validator) is None
+    assert not adapter.receipts.path.exists()
+
+
+def test_current_validator_support_code_and_explicit_script_are_bound(scene, monkeypatch):
+    make = validation_scene(scene, monkeypatch)
+    script = paths.REPO / 'validator.py'
+    helper = paths.REPO / 'support.py'; helper.write_text('EXPECTED=1\n')
+    script.write_text('import support\ndef validate(mesh): return support.EXPECTED\n')
+    first = make(validation_script=script)
+    helper.write_text('EXPECTED=2\n')
+    second = make(validation_script=script)
+    assert second.policy == first.policy
+    assert second.receipts.header['policy'] != first.receipts.header['policy']
+
+
+def test_declared_validation_cannot_adopt_without_running_its_callback(scene, monkeypatch):
+    adapter = validation_scene(scene, monkeypatch)()
+    assert adapter.local_compatible
+    assert acquire(scene, adapter) is None
+    assert adapter.counts['reused_local'] == 0

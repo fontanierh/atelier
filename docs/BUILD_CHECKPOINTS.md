@@ -170,10 +170,16 @@ merge cache, manufacture success stamps, or copy artifacts manually into another
 
 ## Releases retain work remotely
 
-`atelier release publish` captures existing verified producer outputs and uploads a private checkpoint before
-publishing the public playtest. It does not rebuild or cook the game. Normal successful tasks retain their local results; whole-workspace capture runs at release publication. Private release packs are content-addressed, checksum-verified, deduplicated and bounded to 128 MiB.
-The completion index is uploaded last; partial drafts are never used as donors. Rerun the same publish command
-to resume interrupted uploads without clobbering completed assets.
+`atelier release publish` captures existing verified producer outputs locally, publishes the public playtest
+and prints its link, then schedules private upload in a detached process. Private upload never blocks the
+publish command or rolls back a successful public release. The worker reads the immutable store, without
+accessing or holding the producer. It does not rebuild or cook the game. Normal successful tasks retain local
+results; whole-workspace capture runs at release publication. Private release packs are content-addressed,
+checksum-verified, deduplicated and bounded to 128 MiB. The completion index uploads last; partial drafts are
+never donors. `atelier cache status` shows backup state. Pending and failed requests pin their manifests/blobs.
+Rerun the same publish command to resume without recapture or clobbering completed assets. If capture itself
+failed, preserve the producer and repair access before retrying. The [publishing guide](RELEASES.md) also covers
+resuming an already captured interrupted backup without producer access.
 
 Keep the completed producer at its final source revision, with its build outputs, stamps, Content, Binaries,
 Intermediate and Saved/Cooked, until checkpoint upload, verification and a receiving restore are accepted.

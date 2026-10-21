@@ -4,8 +4,10 @@ STATIONS = {
     'southeast': {'kind':'rim','mouth':(1180.,2040.),'name':'Mont sud-est — Hidamari',
                   'platform_lift_m':.75,'access_turn_deg':90.},
     'northwest': {'kind':'rim','mouth':(488.,2795.),'name':'Mont nord-ouest — Belmonte',
-                  'platform_lift_m':2.},
+                  'platform_lift_m':2.,'access_fit':{'risers':5,'run_m':3.1,'join_m':1.3}},
     'floor': {'kind':'crater','mouth':(1023.,2177.),'name':'Fond du cratère','platform_lift_m':9.},
     'floor_rim': {'kind':'rim','mouth':(1195.,2075.),'name':'Mont sud-est — Cratère',
-                  'access_turn_deg':90.,'platform_lift_m':10.25},
+                  'access_turn_deg':180.,'platform_lift_m':10.25,
+                  'access_fit':{'risers':52,'run_m':21.38,'join_m':3.2,
+                                'tread_m':.28,'flights':[13,13,13,13],'landing_m':1.2}},
 }

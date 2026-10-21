@@ -12,6 +12,7 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
     """@cc [owner:fontanierh,label:correctness] legacy-fbx-migration-before-reimport
     New and non-FBX packages MUST establish legacy FBX import data before the final source pass.
     Existing package identity MUST stay stable, and the final pass MUST apply the declared unit settings.
+    Reuse MUST verify current source/options and defer receipts until the owning guarded script succeeds.
 
     The caller supplies an owned seed; borrowing another region's export hides a build dependency.
     UE converts Interchange import data to legacy FBX defaults before applying task options.

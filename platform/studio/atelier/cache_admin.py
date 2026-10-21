@@ -128,6 +128,12 @@ def configure(sub):
     commands = parser.add_subparsers(dest='action', required=True)
     local = commands.add_parser('configure', help='set the private checkpoint repository in machine-local configuration')
     local.add_argument('--repository', required=True)
+    backup = commands.add_parser('backup-resume', help='resume an already captured private backup after public publication, without producer access')
+    backup.add_argument('game')
+    backup.add_argument('--checkpoint', required=True)
+    backup.add_argument('--tag', required=True)
+    backup.add_argument('--revision', required=True)
+    backup.add_argument('--public-repository', required=True)
     retain = commands.add_parser('retain', help='save existing build artifacts locally without building, cooking or uploading')
     retain.add_argument('games', nargs='*', help='games to retain (default: every game with build stamps)')
     retain.add_argument('--source', type=Path, help='completed producer checkout (default: this repository)')
@@ -195,6 +201,10 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'backup-resume':
+        from .checkpoint_backup import resume
+        print(json.dumps(resume(args.game, args.checkpoint, args.tag, args.revision, args.public_repository)))
+        return 0
     if args.action == 'recover-history':
         from .checkpoint_history import recover
         print(json.dumps(recover(args.game, args.checkpoint, args.source, args.task, before_ns=args.before_ns)))
@@ -230,12 +240,13 @@ def main(args):
     store = Store()
     try:
         if args.action == 'status':
+            from .checkpoint_backup import pending
             if store.root.exists():
                 with store.lock():
                     state = snapshot(store)
             else:
                 state = snapshot(store)
-            print(json.dumps({**state, 'blobs': len(state['blobs']),
+            print(json.dumps({**state, 'private_backups': pending(), 'blobs': len(state['blobs']),
                               'actions': [{**a, 'blobs': len(a['blobs'])} for a in state['actions']]}, indent=2))
         elif args.action.startswith('snapshot-'):
             from . import artifact_snapshot

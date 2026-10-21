@@ -14,6 +14,7 @@ import unreal
 from atelier.native_protocol import native_context
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 import atmosphere
+import glb_mesh_validation
 
 OUT = yori.OUT / 'brinecove'
 ROOT = '/Game/Brinecove'
@@ -357,6 +358,11 @@ def generate_lods(mesh):
     assert editor.set_lod_screen_sizes(mesh, [screen for _, screen in plan]), (mesh.get_name(), 'LOD screen sizes')
 
 
+def validate_reused_mesh(mesh, entry):
+    return glb_mesh_validation.validate_mesh(mesh, OUT / entry['path'], entry, len(entry['slots']),
+        out=yori.OUT, tolerance_cm=2., minimum_triangles=.98)
+
+
 def main():
     report = json.loads((OUT / 'build-report.json').read_text())
     E.make_directory(ROOT)
@@ -376,7 +382,8 @@ def main():
         materials.validated(material_packages)
     reuse = MeshReuse(native_context(yori.GAME.name), 'unreal.brinecove', __file__,
                       ('import_mesh', 'keep_full_precision_uvs', 'generate_lods'),
-                      report_member='generated/brinecove/build-report.json')
+                      report_member='generated/brinecove/build-report.json',
+                      validation_functions=('validate_reused_mesh',))
     donor = {entry['name']: entry for entry in reuse.donor.get('meshes', [])}
     def geometry(entry):
         return dict(entry, foliage_roles=bool(entry.get('foliage_roles')), lods=bool(entry.get('lods')))
@@ -387,7 +394,8 @@ def main():
         previous = donor.get(name)
         mesh = reuse.acquire(name, target, geometry=geometry(entry),
                              donor_geometry=geometry(previous) if previous else None,
-                             sources=[(target, OUT / entry['path'], entry['sha256'])])
+                             sources=[(target, OUT / entry['path'], entry['sha256'])],
+                             validator=lambda mesh: validate_reused_mesh(mesh, entry))
         reused = mesh is not None
         if mesh is None:
             if E.does_asset_exist(target):

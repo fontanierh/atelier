@@ -452,6 +452,12 @@ def _publish_assets(github, stage, metadata, *, workers, revalidate, claim):
 
 def main(game, package, *, tag, verification, title=None, notes_file=None, source=None, part_mib=PART_MIB,
          workers=WORKERS, prerelease=False):
+    """@cc [owner:fontanierh,label:correctness] public-release-before-private-upload
+    A verified public release MUST publish and report its link before private uploads are scheduled.
+    Private backup failure MUST NOT fail or roll back public success. Existing producer work MUST
+    be retained locally or explicitly reported as needing preservation; detached upload workers
+    MUST use immutable retained bytes without holding or revisiting the producer checkout.
+    """
     stop = threading.Event()
     try:
         require(type(part_mib) is int and 1 <= part_mib <= 1900, '--part-mib must be between 1 and 1900')
@@ -481,14 +487,19 @@ def main(game, package, *, tag, verification, title=None, notes_file=None, sourc
                     require(snapshot(notes_path) == notes_snapshot, 'release notes changed during publication')
             revalidate()
             from . import build_checkpoints
+            backup = None
             try:
-                build_checkpoints.publish(source, game, tag, revision, revalidate=revalidate)
-            except RuntimeError as error:
-                raise PublishError(str(error)) from None
+                backup = build_checkpoints.prepare_publication(source, game, tag, revision,
+                    revalidate=revalidate, public_repository=repo)
+            except (RuntimeError, OSError, ValueError, KeyError, TypeError, PublishError):
+                say('Private backup preparation is pending; preserve producer artifacts and rerun this command after repair.')
             result = publish_assets(GitHub(repo, stop), stage,
                 dict(tag_name=tag, target_commitish=revision, name=title, body=notes, prerelease=prerelease),
                 workers=workers, revalidate=revalidate)
             say(f'published verified release: {result.get("html_url", tag)}')
+            if backup is not None:
+                from .checkpoint_backup import start
+                start(backup, echo=say)
             return 0
     except KeyboardInterrupt:
         stop.set()

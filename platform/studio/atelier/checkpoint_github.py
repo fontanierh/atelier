@@ -164,11 +164,15 @@ class Remote:
         """@cc [owner:fontanierh,label:correctness] release-checkpoint-completion
         A checkpoint release MUST be private, immutable by convention, and bound to its source
         revision and input manifest. Uploads MUST resume by verified digest without clobbering.
-        The complete index MUST upload last; publication MUST follow source revalidation.
+        The complete index MUST upload last. Publication MUST revalidate its retained manifest
+        and captured source binding; a present captured revision MUST match the queued revision.
+        An immutable capture MUST NOT depend on continued existence of its producing checkout.
         Previous packs referenced by a checkpoint MUST remain retained.
         """
         metadata = self.require_private()
         manifest = store.load(key)
+        if manifest.get('source_revision', revision) != revision:
+            raise CheckpointError('Captured checkpoint source differs from the publication request')
         tag = self.prefix + release.leaf(tag)
         body = f'Build checkpoint {key}\nSource {revision}\nRetain this release: later checkpoints may reference its packs.'
         expected = dict(tag_name=tag, name=tag, body=body, prerelease=False,
