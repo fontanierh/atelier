@@ -9,3 +9,16 @@ Moving a serialized class or struct between modules MUST preserve its intended f
 provide the required old-path redirects. Source equivalence or a successful compile alone MUST NOT be
 claimed as old-package compatibility: an existing saved asset MUST load through the redirects and its
 runtime consumer MUST be validated before that compatibility is accepted.
+
+@cc [owner:fontanierh,label:correctness] native-snapshot-is-the-saved-corner-stream
+Native mesh snapshots MUST read the saved source mesh descriptions and match the versioned expected
+stream's LOD/triangle/slot order and float32 corner positions, normals, colours and every UV channel.
+Missing attributes, nonfinite data or unsupported shared/rewired topology MUST refuse. Bounds, triangle
+counts and render-buffer similarity MUST NOT substitute for this proof. Readback MUST NOT mutate or save
+the mesh; materials, build/LOD settings and source bindings still require their independent current checks.
+
+@cc [owner:fontanierh,label:performance] foliage-json-allocation-lifetimes
+Foliage variant construction MUST avoid an unnecessary full source-text copy when transferring owned
+JSON text to its reader. Parsed root/level JSON objects MUST be released after conversion and before
+building the mesh descriptions into the asset, once no remaining computation reads them. A lifetime
+change MUST preserve the geometry/settings stream and MUST NOT free the descriptions needed by the build.
