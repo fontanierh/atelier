@@ -47,7 +47,7 @@ def log(*a):
 
 def source_hash():
     h = hashlib.sha256()
-    files = [(f.name, f) for f in sorted(HERE.glob('*.py'))]
+    files = [(name, HERE / name) for name in sorted(P.BUILD_SOURCES)]
     files.append(('world/solid_mesh.py', HERE.parents[2] / 'world/solid_mesh.py'))
     for name, path in files:
         h.update(name.encode()); h.update(path.read_bytes())

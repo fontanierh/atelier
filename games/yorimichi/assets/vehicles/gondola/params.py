@@ -7,6 +7,9 @@ example {"gauge": 6.4, "tower_heights": [12, 18]}; the build records the values 
 import json
 import os
 
+BUILD_SOURCES = ('build.py', 'cabin.py', 'checks.py', 'params.py', 'rope.py',
+                 'solid.py', 'stations.py', 'textures.py', 'walk.py')
+
 DEFAULTS = {
     # Ropeway
     'gauge': 6.0,               # distance between the two haul ropes (up and down track) = bullwheel rope-line diameter
@@ -20,7 +23,7 @@ DEFAULTS = {
     'door_clear_width': 1.00,
     'door_clear_height': 2.05,
     # Towers: rope saddle height above the foundation datum, one exported model per height
-    'tower_heights': [10.0, 13.0, 16.0, 20.0, 24.0],
+    'tower_heights': [10.0, 13.0, 16.0, 20.0, 24.0, 28.0],
     'review_tower_height': 16.0,
     # Stations: platform top is z = 0; the cabin floor stands this much above it in the berth
     'berth_floor_step': 0.02,

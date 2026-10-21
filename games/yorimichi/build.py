@@ -1449,6 +1449,36 @@ def racing_assets_step(out):
                 about='the racing breeds, coats, saddles and jockey clips: present and always cooked')
 
 
+def gondola_steps(ctx):
+    """@cc [owner:fontanierh,label:correctness] production-gondola-preparation
+    Normal preparation MUST build every kit piece using canonical parameters,
+    with soft failure disabled, and preserve closure, seating, rope-contact,
+    level-floor, collision, walking and triangle-budget failures. Verified reuse
+    MUST include every runtime mesh, collision mesh, texture and walking layout.
+    """
+    kit = ASSETS / 'vehicles/gondola'
+    spec = importlib.util.spec_from_file_location('gondola_parameters', kit / 'params.py')
+    parameters = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(parameters)
+    folder = ctx.out / 'gondola'
+    cabin = ['GD_Cabin' + suffix for suffix in ('', 'Hanger', 'Grip', 'DoorLeft', 'DoorRight', '_Collision')]
+    towers = [f'GD_Tower_{height:g}m{suffix}' for height in parameters.DEFAULTS['tower_heights'] for suffix in ('', '_Collision')]
+    stations = [f'GD_Station{kind}_{part}' for kind in ('Valley', 'Rim', 'Crater')
+                for part in ('Platform', 'Machinery', 'Fittings', 'Building', 'Collision')]
+    files = [folder / 'manifest.json', folder / 'review/walk_report.json',
+             *(folder / f'layout_{kind}.json' for kind in ('cabin', 'valley', 'rim', 'crater')),
+             *(folder / 'assets' / f'{name}.fbx' for name in cabin + towers + stations),
+             *(folder / 'textures' / f'GD_{name}_{kind}.png' for name in
+               ('wood_panel', 'wood_grain', 'wood_grain_light', 'wood_grain_dark', 'deck_planks', 'shingle')
+               for kind in ('color', 'rough'))]
+    return [Step('world.gondola_kit', [Blender(kit / 'build.py', threads=3,
+                    env=(('GONDOLA_PIECES', 'cabin,towers,valley,rim,crater'),
+                         ('GONDOLA_PARAMS', ''), ('GONDOLA_SOFT_FAIL', '')))],
+                 inputs=[*(kit / name for name in parameters.BUILD_SOURCES), WORLD / 'solid_mesh.py', YORI],
+                 products=[Product('gondola.kit', tuple(files))], heavy=True, cache=True,
+                 about='ropeway cabin, all tower heights and stations: closure, contact, level-floor and walk gates')]
+
+
 def ferry_steps(ctx):
     """Approved ship and region-owned terminals through audited preparation, import and runtime data."""
     out = ctx.out
@@ -1509,6 +1539,7 @@ def steps(ctx):
     ferry = ferry_steps(ctx)
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
+              + gondola_steps(ctx)
               + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
               + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)

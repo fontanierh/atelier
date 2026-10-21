@@ -64,7 +64,7 @@ Overrides come from a JSON file named by `$GONDOLA_PARAMS`, and the build record
 | `gauge` | 6.0 m | distance between the two rope tracks; bullwheel rope diameter; tower crossarm |
 | `rope_radius` | 0.045 m | 90 mm haul rope (six strands); jaw, sheave and bullwheel groove radii; clearances |
 | `hanger_length` | 1.45 m | rope axis to the cabin roof deck; grip-to-floor 3.75 m; rope height at the platforms 3.77 m |
-| `tower_heights` | 10, 13, 16, 20, 24 m | one tower model per height (saddle height above the foundation datum) |
+| `tower_heights` | 10, 13, 16, 20, 24, 28 m | one tower model per height (saddle height above the foundation datum) |
 | `berth_x`, `pit_depth`, `berth_floor_step` | 3.4 m, 0.28 m, 0.02 m | berth position, cabin channel depth, sill step |
 
 `manifest.json` records the attachment points for every piece:
