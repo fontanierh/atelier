@@ -9,6 +9,11 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
+#include "FileHelpers.h"
+#include "PackageTools.h"
+#include "Misc/PackageName.h"
+#include "StaticMeshCompiler.h"
+#include "UObject/StrongObjectPtr.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageImportRolesTest,"Yorimichi.Foliage.ImportRoles",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -60,6 +65,7 @@ bool FYorimichiFoliageAuthoredLODsTest::RunTest(const FString&)
 {
     auto* Material=UMaterial::GetDefaultMaterial(MD_Surface);
     auto* Source=NewObject<UStaticMesh>();Source->SetNumSourceModels(1);
+    TStrongObjectPtr<UStaticMesh> KeepSource(Source);
     Source->GetStaticMaterials().Add(FStaticMaterial(Material,TEXT("Flat")));
     FMeshDescription D;FStaticMeshAttributes A(D);A.Register();
     A.GetVertexInstanceUVs().SetNumChannels(1);
@@ -97,7 +103,12 @@ bool FYorimichiFoliageAuthoredLODsTest::RunTest(const FString&)
     const FString Json=TEXT("{\"source\":\"")+Source->GetPathName()+TEXT("\",\"screens\":[1,0.24,0.07,0.018],\"levels\":[")+
         FString::Join(Levels,TEXT(","))+TEXT("],\"shadow\":")+Levels[0]+TEXT("}");
     if (!TestTrue(TEXT("Fixture product saved"),FFileHelper::SaveStringToFile(Json,*Path))) return false;
-    const FString Destination=TEXT("/Game/FoliageSystem/Tests/AuthoredLODs");
+    // A test-only mount keeps persisted fixtures outside the game's cook inventory.
+    // Keep the files available for the editor's queued save validation too.
+    const FString PackageDirectory=FPaths::GetPath(Path)/TEXT("packages/");
+    IFileManager::Get().MakeDirectory(*PackageDirectory,true);
+    FPackageName::RegisterMountPoint(TEXT("/FoliageRegression/"),PackageDirectory);
+    const FString Destination=TEXT("/FoliageRegression/AuthoredLODs")+FGuid::NewGuid().ToString(EGuidFormats::Digits);
     auto Check=[&](UStaticMesh* Mesh)
     {
         if (!TestNotNull(TEXT("Prepared variant builds"),Mesh)) return false;
@@ -128,6 +139,36 @@ bool FYorimichiFoliageAuthoredLODsTest::RunTest(const FString&)
         Reduction.MaxNumOfTriangles=4;Reduction.MaxNumOfVerts=6;Reduction.BaseLODModel=0;
     }
     Check(UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination,Material,Material,false));
+    // Rebuild a persisted, unloaded old product too. SavePackages fully loads
+    // its destination, which used to overwrite edits made to a fresh placeholder.
+    for (int32 L=0;L<4;++L)
+    {
+        auto& Model=Mesh->GetSourceModel(L);
+        Model.ReductionSettings.BaseLODModel=0;
+        Model.ReductionSettings.PercentTriangles=FMath::Pow(.5f,L);
+        Model.BuildSettings.bRemoveDegenerates=true;
+    }
+    Mesh->Build(false);FStaticMeshCompilingManager::Get().FinishCompilation({Mesh});
+    const auto& OldPositions=Mesh->GetRenderData()->LODResources[3].VertexBuffers.PositionVertexBuffer;
+    float OldMinX=TNumericLimits<float>::Max();
+    for (uint32 V=0;V<OldPositions.GetNumVertices();++V)OldMinX=FMath::Min(OldMinX,OldPositions.VertexPosition(V).X);
+    TestEqual(TEXT("Old product actually uses the wrong base geometry"),OldMinX,0.f);
+    auto* Package=Mesh->GetOutermost();
+    if (!TestTrue(TEXT("Old product saves"),UEditorLoadingAndSavingUtils::SavePackages({Package},false))) return false;
+    Mesh=nullptr;
+    if (!TestTrue(TEXT("Old product unloads"),UPackageTools::UnloadPackages({Package}))) return false;
+    Package=nullptr;
+    const FString ObjectPath=Destination+TEXT(".")+FPackageName::GetLongPackageAssetName(Destination);
+    if (!TestNull(TEXT("Old product is no longer loaded"),FindObject<UStaticMesh>(nullptr,*ObjectPath))) return false;
+    Mesh=UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination,Material,Material,false);
+    if (!Check(Mesh)) return false;
+    if (!TestTrue(TEXT("Rebuilt persisted product saves"),UEditorLoadingAndSavingUtils::SavePackages({Mesh->GetOutermost()},false))) return false;
+    // Saving must retain the prepared levels, rather than reload the old ones.
+    if (!Check(Mesh)) return false;
+    Package=Mesh->GetOutermost();Mesh=nullptr;
+    if (!TestTrue(TEXT("Rebuilt product unloads"),UPackageTools::UnloadPackages({Package}))) return false;
+    Package=nullptr;
+    Check(LoadObject<UStaticMesh>(nullptr,*ObjectPath));
     auto* Shadow=UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination+TEXT("Shadow"),Material,Material,true);
     if (TestNotNull(TEXT("Shadow variant builds"),Shadow))
     {

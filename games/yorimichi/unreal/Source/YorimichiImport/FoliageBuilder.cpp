@@ -9,6 +9,7 @@
 #include "StaticMeshCompiler.h"
 #include "ImageCore.h"
 #include "UObject/GarbageCollection.h"
+#include "UObject/Package.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 #include "Serialization/JsonReader.h"
@@ -264,8 +265,13 @@ UStaticMesh* UYorimichiFoliageBuilder::BuildVariant(UStaticMesh* Source, const F
         Root->GetStringField(TEXT("source"))!=Source->GetPathName()) return nullptr;
     const FString Name=FPackageName::GetLongPackageAssetName(Destination);
     UPackage* Package=CreatePackage(*Destination);
+    // Saving fully loads existing packages. Load their old contents before any
+    // edits, or serialization can overwrite a newly created placeholder mesh.
+    Package->FullyLoad();
+    if (!Package->IsFullyLoaded()) return nullptr;
     UStaticMesh* Mesh=FindObject<UStaticMesh>(Package,*Name);
     if (!Mesh) { Mesh=NewObject<UStaticMesh>(Package,*Name,RF_Public|RF_Standalone);FAssetRegistryModule::AssetCreated(Mesh); }
+    FStaticMeshCompilingManager::Get().FinishCompilation({Mesh});
     Mesh->Modify(); Mesh->GetStaticMaterials()=Source->GetStaticMaterials();
     Mesh->GetStaticMaterials().Add(FStaticMaterial(NearCanopy,TEXT("CanopyNear")));
     Mesh->GetStaticMaterials().Add(FStaticMaterial(FarCanopy,TEXT("CanopyFar")));
