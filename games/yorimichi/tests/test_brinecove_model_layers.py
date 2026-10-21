@@ -68,6 +68,7 @@ def test_real_model_declarations_have_independent_inputs_and_complete_owners(tmp
     assembly = RECIPE.brinecove_steps(tmp_path)[0]
     assert {p.name for step in steps for p in step.products} <= set(assembly.reads)
     assert RECIPE.paths.STUDIO / 'atelier/model_export.py' in assembly.inputs
+    assert RECIPE.paths.STUDIO / 'atelier/mesh_partition.py' in assembly.inputs
     assert RECIPE.REGIONS / 'brinecove/foliage_catalog.json' in assembly.inputs
     assert RECIPE.REGIONS / 'brinecove/review_build.py' not in assembly.inputs
 
