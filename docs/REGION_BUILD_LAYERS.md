@@ -60,3 +60,22 @@ transition is real source work and must wait for an ordinary stopped receiver bo
 Regional generation/export is still one owner. Separate piece preparation/checkpoints, bounded
 per-LOD transport, per-building owners and compact native geometry transport remain required work.
 The current production foliage run must not adopt this change before its first game measurement.
+
+## Bounded city visibility cells
+
+The desktop profile's city surfaces also use the shared complete-face partitioner.
+Their existing 128 m floor-grid cells remain unchanged below 32,768 fan triangles;
+oversized cells gain spatial `_Piece` children. The exporter keeps original corner
+normals, every UV/colour channel, materials and transforms. Collision stays on the
+unchanged original runtime surface; the new pieces only replace rendering.
+
+After every new native piece validates, the importer retires superseded generated
+tile names in that exact tag's owned namespace. Other tags, production source
+packages and unknown names never enter its deletion list. This prevents obsolete
+large tiles from continuing to appear in all-region preparation discovery.
+
+Pure partition/ownership tests do not establish native byte identity, memory or
+frame-time results. The first transition exports/imports genuinely changed pieces
+at an ordinary stopped boundary. Per-unit preparation recertification and broader
+regional generator/placement separation remain distinct work; these two producer
+integrations do not imply that every region has been migrated.

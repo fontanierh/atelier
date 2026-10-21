@@ -1204,7 +1204,8 @@ def world_steps(ctx):
              heavy=True, about='map zones and label-free regional atlas'),
         city_input_step(out, 'tiles'),
         Step('world.city_tiles', [Blender(WORLD / 'city_surface_tiles.py', ('--tag', 'v1_128m'), threads=3)],
-             inputs=[WORLD / 'city_surface_tiles.py'], needs=['world.hidamari.tiles'],
+             inputs=[WORLD / 'city_surface_tiles.py', paths.STUDIO / 'atelier/mesh_cells.py',
+                     paths.STUDIO / 'atelier/mesh_partition.py'], needs=['world.hidamari.tiles'],
              outputs=[out / 'city_surface_tiles' / 'v1_128m' / 'manifest.json'], about='desktop profile: city surfaces in 128 m tiles', heavy=True),
         digest_step(out, 'world.city_tiles', 'meshes', 'the city tiles unreal.desktop reads', out / 'city_surface_tiles', ['v1_128m']),
         city_input_step(out, 'trees'),
@@ -1514,7 +1515,9 @@ def unreal_steps(ctx):
         Step('unreal.desktop', [
                 UnrealScript(SCRIPTS / 'import_city_surface_tiles.py', 'CITY SURFACE TILE IMPORT COMPLETE', env=(('CITY_SURFACE_TILES_TAG', 'v1_128m'),)),
                 UnrealScript(SCRIPTS / 'import_city_tree_lods.py', 'CITY TREE LODS IMPORT COMPLETE', env=(('CITY_TREE_LODS_TAG', 'v4'),))],
-             inputs=[SCRIPTS / 'import_city_surface_tiles.py', SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
+             inputs=[SCRIPTS / 'import_city_surface_tiles.py', GAME / 'city_tile_products.py',
+                     paths.STUDIO / 'atelier/conventions.py',
+                     SCRIPTS / 'import_city_tree_lods.py', SCRIPTS / 'experiment_mesh_import.py'],
              needs=['unreal.city_tree_cpu_access', 'world.city_tiles.meshes', 'world.city_trees.meshes'], heavy=True,
              about='desktop profile: city tiles and tree LODs (/Game/Experiments)'),
         # The Ride skating clips: the simulation rig and every simulation clip as Unreal assets (/Game/SkateRide), the manifest

@@ -13,9 +13,11 @@ from pathlib import Path
 
 import bpy
 import numpy as np
+from atelier.mesh_cells import cell_face_groups
 
 ROOT = yori.WORLD
 SOURCES = ('HD_Terrain', 'HD_Streets', 'HD_Square')
+TRIANGLE_LIMIT = 32768
 
 
 def values(collection, property_name, width, dtype=np.float32):
@@ -57,18 +59,19 @@ def partition(source, folder, size, expected):
     assert np.allclose(world_positions.min(axis=0), expected['min'], atol=.001, rtol=0), source
     assert np.allclose(world_positions.max(axis=0), expected['max'], atol=.001, rtol=0), source
     centers = np.add.reduceat(world_positions[vertex_indices], starts, axis=0) / counts[:, None]
-    cell = np.floor(centers[:, :2] / size).astype(np.int32)
-    keys, membership = np.unique(cell, axis=0, return_inverse=True)
+    source_faces = [vertex_indices[start:start + count].tolist() for start, count in zip(starts, counts)]
+    pieces = cell_face_groups(world_positions, source_faces, size, triangle_limit=TRIANGLE_LIMIT,
+                             locations=centers[:, :2].tolist())
     tiles = []
     total_polygons = total_triangles = 0
-    for number, (cx, cy) in enumerate(keys):
-        selected = np.flatnonzero(membership == number)
+    for cx, cy, suffix, members in pieces:
+        selected = np.asarray(members, dtype=np.int32)
         loop_map = np.concatenate([np.arange(starts[i], starts[i] + counts[i]) for i in selected])
         used, remapped = np.unique(vertex_indices[loop_map], return_inverse=True)
         lengths = counts[selected]
         ends = np.cumsum(lengths)
         faces = np.split(remapped, ends[:-1])
-        name = f'{source}_cell_{int(cx)}_{int(cy)}'
+        name = f'{source}_cell_{cx}_{cy}' + ('_Piece' + suffix if suffix else '')
         data = bpy.data.meshes.new(name)
         data.from_pydata(positions[used].tolist(), [], [face.tolist() for face in faces])
         data.update()
@@ -103,6 +106,7 @@ def partition(source, folder, size, expected):
             apply_unit_scale=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z',
             object_types={'MESH'}, mesh_smooth_type='FACE', bake_anim=False, use_custom_props=False)
         tri = int(sum(lengths - 2))
+        assert tri <= TRIANGLE_LIMIT, (name, tri)
         bounds = world_positions[used]
         tiles.append(dict(name=name, polygons=len(selected), triangles=tri,
                           min=bounds.min(axis=0).tolist(), max=bounds.max(axis=0).tolist(),
@@ -137,7 +141,7 @@ def main():
     folder.mkdir(parents=True, exist_ok=False)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     expected = json.loads((yori.OUT / 'hidamari/manifest.json').read_text())
-    report = dict(tag=args.tag, cell_metres=args.size, sources={})
+    report = dict(tag=args.tag, cell_metres=args.size, triangle_limit=TRIANGLE_LIMIT, sources={})
     for source in args.sources:
         report['sources'][source] = partition(source, folder, args.size, expected[source])
         (folder / 'manifest.json').write_text(json.dumps(report, indent=2) + '\n')
