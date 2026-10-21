@@ -2,6 +2,7 @@
 import math
 import random
 from brinecove.geom import Builder
+from brinecove.foliage_atlas import LEAF_CELLS, PALM_CELLS, cell_uvs
 
 TAU = math.pi * 2
 
@@ -926,15 +927,6 @@ def bench(b, x, y, z, yaw=0.0):
         b.beam((px, py, z + 0.46), (px, py, z + 0.95), 0.11, 'wood_dark')
     b.box((x, y, z + 0.88), (2.1, 0.12, 0.34), 'wood', yaw)
 
-
-LEAF_CELLS = ((0.02, 0.02, 0.48, 0.48), (0.52, 0.02, 0.98, 0.48),
-              (0.02, 0.52, 0.48, 0.98), (0.52, 0.52, 0.98, 0.98))
-PALM_CELLS = (2, 3)
-
-
-def cell_uvs(cell):
-    u0, v0, u1, v1 = LEAF_CELLS[cell]
-    return ((u0, v0), (u1, v0), (u1, v1), (u0, v1))
 
 
 def leaf_canopy(b, center, radii, count, size, rng, warm=0.15):

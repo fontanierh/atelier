@@ -159,7 +159,8 @@ def test_export_declares_the_selected_source_library_its_hero_check_reads():
     assert selection.outputs == [library]
     assert selection.name in export.needs
     assert library in export.inputs and hero_sources.LIBRARY not in export.inputs
-    assert export.commands[0].args == ('--source-library', str(library))
+    assert export.commands[0].args == ('--source-library', str(library),
+                                       '--foliage-library', str(out / 'models/brinecove/plants'))
     assert recipe.ASSETS / 'brinecove' in export.inputs  # GLB and provenance bytes still invalidate the export
 
 

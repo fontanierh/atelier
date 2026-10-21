@@ -16,7 +16,7 @@ import importlib.util, json, os, tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call
+from atelier.build import Product, Step, DeferredInputs, Python, Blender, UnrealScript, UnrealCompile, UnrealPackage, Call, Batch
 from atelier.checkpoint_candidates import CandidateScope
 from atelier import build_inputs, paths, unreal_modules
 
@@ -55,6 +55,10 @@ _kart_identity_spec.loader.exec_module(kart_source_identity)
 _foliage_spec = importlib.util.spec_from_file_location('yorimichi_foliage_build', GAME / 'foliage_build.py')
 foliage_build = importlib.util.module_from_spec(_foliage_spec)
 _foliage_spec.loader.exec_module(foliage_build)
+
+_brinecove_library_spec = importlib.util.spec_from_file_location('brinecove_foliage_library', REGIONS / 'brinecove/foliage_names.py')
+brinecove_library = importlib.util.module_from_spec(_brinecove_library_spec)
+_brinecove_library_spec.loader.exec_module(brinecove_library)
 
 # Crater Park on the caldera floor: its block shapes the ground there (craterpark/placement.py terrain).
 _v4_spec = importlib.util.spec_from_file_location('craterpark_v4_config', REGIONS / 'craterpark' / 'v2' / 'v4_config.py')
@@ -698,16 +702,38 @@ def brinecove_source_step(out):
                 about='Brinecove model membership/checksums, independent of unrelated source-library entries')
 
 
+def brinecove_model_steps(out):
+    """One deterministic source product per plant model; no terrain or placement inputs."""
+    region = REGIONS / 'brinecove'
+    script = region / 'export_foliage_model.py'
+    code = build_inputs.local_imports(script, (REGIONS,))
+    definitions = brinecove_library.definitions()
+    if not definitions:
+        raise ValueError('Brinecove requires its committed plant model definitions')
+    return [Step('world.brinecove.model.' + definition.stem,
+                 [Blender(script, (definition, out / 'models/brinecove/plants' / definition.stem),
+                          threads=3, factory_startup=True, env=(('PYTHONHASHSEED', '0'),))],
+                 inputs=[*code, definition],
+                 products=[Product('brinecove.model.' + definition.stem,
+                                   (out / 'models/brinecove/plants' / definition.stem,))],
+                 toolchain=True, batch=Batch('Brinecove plant models'), heavy=True,
+                 about='independent Brinecove plant model ' + definition.stem)
+            for definition in definitions]
+
+
 def brinecove_steps(out):
     """Brinecove (world/regions/brinecove): the export closes its ground onto the FarHills hole, so it reads the
     final FarHills product; the import builds /Game/Brinecove, which ABelmonteRegion places from runtime.json."""
     region = REGIONS / 'brinecove'
     library = out / 'digests' / 'brinecove-source-library.json'
     return [
-        Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library)), threads=3)],
-             inputs=[*(p for p in region.iterdir() if p.name not in ('ferry_terminal.py', '__pycache__')), ASSETS / 'brinecove', library, WORLD / 'source_registry.py', WORLD / 'terrain_product.py', YORI],
+        Step('world.brinecove', [Blender(region / 'build.py', ('--source-library', str(library),
+                                    '--foliage-library', str(out / 'models/brinecove/plants')), threads=3)],
+             inputs=[*build_inputs.local_imports(region / 'build.py', (WORLD, REGIONS)),
+                     region / 'foliage_catalog.json', ASSETS / 'brinecove', library],
              needs=['world.brinecove.sources'],
-             reads=['terrain.FarHills.final'], heavy=True,
+             reads=['terrain.FarHills.final', *('brinecove.model.' + path.stem
+                     for path in brinecove_library.definitions())], heavy=True,
              outputs=[out / 'brinecove' / 'runtime.json', out / 'brinecove' / 'build-report.json'],
              about='Brinecove: pirate port ground joined to the far hills, town, waterfall, ships and flora'),
         Step('world.brinecove.meshes',
@@ -889,6 +915,7 @@ def world_steps(ctx):
         digest_step(out, 'world.hidamari', 'north', "the volcano's meshes unreal.north reads (HD_North*)", north=True),
         *belmonte_steps(out)[:2],
         brinecove_source_step(out),
+        *brinecove_model_steps(out),
         *brinecove_steps(out)[:2],
         # Zeppelin samples layout products and shared terrain code, not Hidamari's exported city/assets.
         # Keep the old build order; track tree metadata read by the imported treehouse layout directly.
