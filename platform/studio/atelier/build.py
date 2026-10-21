@@ -377,7 +377,7 @@ def fingerprint_state(step, done, *, capture=True, index=None, tool_cache=None, 
     if step.cache or step.audit:
         build_inputs.validate_imports(step, declared_inputs(step))
     for item in inputs:
-        replacement = (_input_bytes or {}).get(Path(item))
+        replacement = _input_bytes.get(Path(item)) if _input_bytes else None
         if named:
             # Named actions hash a Merkle inventory, not the legacy byte stream. This permits
             # file memoization and includes directory membership and every explicitly selected input.
