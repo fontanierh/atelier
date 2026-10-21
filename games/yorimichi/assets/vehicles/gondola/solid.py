@@ -19,7 +19,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 # Canonical plain data also declares native material/texture package ownership.
-from params import (TIMBER, PLANK, TIMBER_DARK, PLASTER, TILE, SHINGLE, STEEL, IRON, GASKET, GLASS, BOLT, CONCRETE, STONE, BASALT, PAVING, ROPE, BRASS, LAMP, SIGN, POT, SOIL, DECK, RUBBER, PAINT, PANEL, MATERIALS, TEXTURED)
+from params import (TIMBER, PLANK, TIMBER_DARK, PLASTER, TILE, SHINGLE, STEEL, IRON, GASKET, GLASS, BOLT, CONCRETE, STONE, BASALT, PAVING, ROPE, BRASS, LAMP, SIGN, POT, SOIL, DECK, RUBBER, PAINT, PANEL, WINDOW, MATERIALS, TEXTURED)
 
 
 # ------------------------------------------------------------------ shared geometry, kit metadata

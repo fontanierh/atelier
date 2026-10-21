@@ -69,8 +69,21 @@ def test_missing_native_mesh_material_texture_or_receipt_invalidates_import(tmp_
         path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'asset')
     assert build.outputs_present(step)
     for suffix in ('Kit/GD_Cabin_Collision.uasset','World/GD_L3_Rope_LOD0.uasset',
-                   'Materials/GD_Timber.uasset','Textures/GD_wood_panel_color.uasset','import-report.json'):
+                   'Materials/GD_Timber.uasset','Materials/GD_WindowPane.uasset','Textures/GD_wood_panel_color.uasset','import-report.json'):
         path=next(path for path in step.outputs if str(path).endswith(suffix))
         path.unlink()
         assert not build.outputs_present(step),suffix
         path.write_bytes(b'asset')
+
+
+def test_station_import_keeps_the_complete_plain_canonical_material_roster():
+    import importlib
+    from gondola_kit_fixture import gondola_modules
+    with gondola_modules('params','solid',pure=False) as kit:
+        before=dict(kit.params.MATERIALS)
+        assert kit.params.WINDOW=='GD_WindowPane'
+        assert before[kit.params.WINDOW]==((96,110,120),.2,0.)
+        stations=importlib.import_module('stations')
+        assert stations.WINDOW==kit.params.WINDOW
+        assert kit.solid.MATERIALS is kit.params.MATERIALS
+        assert kit.solid.MATERIALS==before

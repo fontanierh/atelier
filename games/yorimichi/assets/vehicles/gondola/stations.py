@@ -21,11 +21,9 @@ import rope as RP
 import solid
 from cabin import GRIP, pose as cabin_pose
 from solid import (BASALT, BOLT, CONCRETE, DECK, IRON, LAMP, PAINT, PANEL, PAVING, PLANK, PLASTER, POT, ROPE,
-                   SHINGLE, SIGN, SOIL, STEEL, STONE, TILE, TIMBER, TIMBER_DARK, Mesh, circle, proxy, proxy_box,
+                   SHINGLE, SIGN, SOIL, STEEL, STONE, TILE, TIMBER, TIMBER_DARK, WINDOW, Mesh, circle, proxy, proxy_box,
                    proxy_strip, rect)
 
-WINDOW = 'GD_WindowPane'
-solid.MATERIALS.setdefault(WINDOW, ((96, 110, 120), .2, 0.))
 CABIN_T = 0.075
 ROPE_DROP = 0.15       # the rope inside the station runs this far below the grip line
 ATTACH_ZONE = 1.8      # from the mouth inwards: grips close on / open off the rope here
