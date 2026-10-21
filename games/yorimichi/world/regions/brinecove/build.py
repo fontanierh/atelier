@@ -1,7 +1,7 @@
 """Export Brinecove for the game: ground tiles, town and nature meshes, hero models, foliage instances,
 runtime.json and build-report.json in build/yorimichi/brinecove.
 
-    blender -b --factory-startup --python games/yorimichi/world/regions/brinecove/build.py
+    uv run atelier build yorimichi world.brinecove
 
 The ground closes onto the FarHills final product's hole (ground.py), so this step reads that product. Every mesh
 is exported in local metres around region.ORIGIN; the Unreal importer (import_brinecove.py) binds each material
