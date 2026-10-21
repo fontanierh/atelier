@@ -285,14 +285,25 @@ def validation_scene(scene, monkeypatch, *, geometry_changed=False):
                                          validation_functions=('validate',), **kw)
 
 
-def test_new_validator_absent_in_old_source_adopts_warm_packages_after_current_checks(scene, monkeypatch):
+def test_new_validator_absent_in_old_source_adopts_warm_packages_after_current_checks(scene, monkeypatch, capsys):
     adapter = validation_scene(scene, monkeypatch)()
     assert adapter.local_compatible
     assert acquire(scene, adapter, validator=lambda mesh: bool(mesh))
+    assert 'NATIVE MESH HISTORICAL COMPATIBILITY ' in capsys.readouterr().out
     adapter.validated('Mesh')
     assert not adapter.receipts.path.exists()
     mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     assert adapter.receipts.path.exists()
+
+
+@pytest.mark.parametrize('failure', ['source', 'validator'])
+def test_failed_historical_validation_does_not_log_an_admission(scene, monkeypatch, capsys, failure):
+    adapter = validation_scene(scene, monkeypatch)()
+    if failure == 'source':
+        scene.tags[scene.package] = None
+    assert acquire(scene, adapter, validator=lambda mesh: failure != 'validator') is None
+    assert adapter.counts['reused_local'] == 0
+    assert 'NATIVE MESH HISTORICAL COMPATIBILITY ' not in capsys.readouterr().out
 
 
 def test_separate_current_validator_never_weakens_historical_geometry_equality(scene, monkeypatch):
