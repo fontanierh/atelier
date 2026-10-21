@@ -30,9 +30,9 @@ def pair(tmp_path, monkeypatch):
         path=tmp_path/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
     historical = [b'raise AssertionError("never executed")\n', b'old source support\n']
     blobs = {str(i)*40:raw for i,raw in enumerate(historical,1)}
-    witness = dict(schema=1,current={name:hashlib.sha256(raw).hexdigest() for name,raw in files.items()},
-        previous=[dict(path='games/fixture/current.py',blob=blob,sha256=hashlib.sha256(raw).hexdigest())
-                  for blob,raw in blobs.items()])
+    witness = dict(schema=2,current={name:hashlib.sha256(raw).hexdigest() for name,raw in files.items()},
+        policies=[[dict(path='games/fixture/current.py',blob=blob,sha256=hashlib.sha256(raw).hexdigest())
+                  for blob,raw in blobs.items()]])
     path=game/'foliage_unit_policy_witness.json'
 
     def pin():
@@ -96,6 +96,32 @@ def test_current_context_changes_rekey_the_lookup(pair,change):
 def test_malformed_context_and_witness_are_misses(pair,change):
     if change=='runtime':pair.context['runtime']['python']=[True,11,8]
     elif change=='nonfinite':pair.context['environment']['bad']=float('nan')
-    elif change=='blob':pair.witness['previous'][0]['blob']='--bad-option';pair.pin()
-    else:pair.witness['previous'][0]['path']='../escape';pair.pin()
+    elif change=='blob':pair.witness['policies'][0][0]['blob']='--bad-option';pair.pin()
+    else:pair.witness['policies'][0][0]['path']='../escape';pair.pin()
     assert pair.run() is None
+
+
+def test_both_ordered_policies_include_exact_retained_module_record(pair):
+    raw=json.dumps(dict(module='Yorimichi',digest='a'*64,files={}),indent=2)+'\n'
+    pair.witness['policies'].append([*pair.witness['policies'][0],
+        dict(module_record=raw,sha256=hashlib.sha256(raw.encode()).hexdigest())])
+    pair.pin()
+    expected=hashlib.sha256(b''.join(pair.blobs.values())+raw.encode()+pair.context['engine_version'].encode()
+        +json.dumps(pair.context['environment'],sort_keys=True).encode()
+        +json.dumps(pair.context['runtime'],sort_keys=True).encode()).hexdigest()
+    assert POLICY.legacy_policies(pair.game,**pair.context)==(pair.expected,expected)
+    assert pair.run()==pair.expected
+    pair.witness['policies'][1][-1]['module_record']=raw+' '
+    pair.pin()
+    assert POLICY.legacy_policies(pair.game,**pair.context)==(pair.expected,)
+
+
+def test_policies_deduplicate_without_weakening_evidence(pair):
+    pair.witness['policies'].append(pair.witness['policies'][0]);pair.pin()
+    assert POLICY.legacy_policies(pair.game,**pair.context)==(pair.expected,)
+
+
+def test_changed_current_pair_refuses_both_histories(pair):
+    pair.witness['policies'].append(pair.witness['policies'][0]);pair.pin()
+    (pair.root/'games/fixture/current.py').write_bytes(b'changed validator')
+    assert POLICY.legacy_policies(pair.game,**pair.context)==()
