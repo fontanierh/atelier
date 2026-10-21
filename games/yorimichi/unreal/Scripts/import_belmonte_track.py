@@ -21,7 +21,7 @@ import unreal
 
 TRACK = yori.OUT / 'belmonte-track'
 RUNTIME = TRACK / 'runtime' / 'track.json'
-BELMONTE_REPORT = yori.OUT / 'belmonte' / 'build-report.json'
+BELMONTE_REPORT = yori.OUT / 'products/belmonte/materials.json'
 ROOT = '/Game/BelmonteTrack'
 DATA = Path(__file__).resolve().parents[1] / 'Content' / 'Data' / 'belmonte_track'
 E = unreal.EditorAssetLibrary

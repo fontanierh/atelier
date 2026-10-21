@@ -46,9 +46,15 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     entry = dict(sha256='0'*64, name='SM_BM_House', path='glb/House.glb', triangles=1, bounds_m=[[0, 0, 0], [1, 2, 3]])
     if with_hull: entry['collision'] = dict(path='glb/House_hull.glb', sha256='0'*64)
-    (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=[entry], materials={})))
-    (tmp_path / 'runtime.json').write_text(json.dumps(dict(groups=[dict(plant=False,
-        asset='/Game/Belmonte/Meshes/SM_BM_House.SM_BM_House', materials=['paint'])])))
+    out = tmp_path / 'belmonte'
+    out.mkdir()
+    products = tmp_path / 'products/belmonte'
+    products.mkdir(parents=True)
+    (products / 'geometry.json').write_text(json.dumps(dict(meshes=[entry])))
+    (products / 'materials.json').write_text(json.dumps(dict(materials={}, bindings={'SM_BM_House': ['paint']})))
+    # The actual native loop must not reopen the placement runtime or broad report.
+    (out / 'build-report.json').write_text('unconsumed broad report')
+    (out / 'runtime.json').write_text('unconsumed placement runtime')
     assets = SimpleNamespace(make_directory=lambda *_: None, does_asset_exist=lambda *_: False,
         load_asset=lambda path: meshes.get(path.rsplit('/', 1)[-1], path), save_loaded_asset=lambda asset, **_: saved.append(asset) or True, delete_directory=lambda *_: None)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
@@ -59,7 +65,7 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     # Execute the actual import loop without Unreal-only module initialization/material compilation.
     function = next(node for node in ast.parse(script.read_text()).body
                     if isinstance(node, ast.FunctionDef) and node.name == 'main')
-    namespace = dict(OUT=tmp_path, ROOT='/Game/Belmonte', E=assets, unreal=unreal, Path=Path, json=json,
+    namespace = dict(OUT=out, ROOT='/Game/Belmonte', E=assets, unreal=unreal, Path=Path, json=json,
         __file__=str(script), runpy=SimpleNamespace(run_path=lambda path: tv_imports.append(Path(path))),
         parent=lambda: None, textures=lambda _: None, surfaces=lambda *_: None, import_mesh=imported)
     from atelier.unreal_mesh_reuse import set_if_changed

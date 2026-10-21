@@ -46,6 +46,7 @@ def staged_source(out, rel):
     portraits = {f'{c.id}/portrait.png': ASSETS / 'characters' / 'portraits' / f'{c.id}.png'
                  for c in definition.movers() if c.playable}
     return {'skatepark/park.json': REGIONS / 'skatepark' / 'park.json',
+            'belmonte/runtime.json': out / 'products/belmonte/runtime.json',
             'brinecove/runtime.json': out / 'products/brinecove/runtime.json',
             'map/atlas-serif.ttf': ASSETS / 'ui/fonts/atlas-serif.ttf',
             'racing/belmonte_courses.json': RACING_COURSES, **bikes, **portraits}.get(rel, out / rel)

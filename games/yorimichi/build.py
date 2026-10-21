@@ -8,8 +8,8 @@ $ATELIER_BUILD_ROOT/yorimichi) and to the ignored unreal/Content. `atelier build
 
 Foliage and shared materials have independent owners. The legacy world importer preserves those packages,
 binds them by stable path and rebuilds the remaining /Game/Japan content. The volcano follows it (unreal.north).
-An import of a legacy region needs a digest step (`digest_step`) instead of an export it reads, so identical
-re-exports leave the import current. Cairo's base import supplies his body and the nine authored clips used by
+Imports follow the named products or digest cutoffs they consume, so identical re-exports leave the import
+current. Cairo's base import supplies his body and the nine authored clips used by
 the merged move set.
 """
 import importlib.util, json, os, tomllib
@@ -731,6 +731,21 @@ def brinecove_steps(out):
     ]
 
 
+def belmonte_native_products(out):
+    """@cc [owner:fontanierh,label:correctness] complete-belmonte-native-library
+    Native ownership MUST cover complete final mesh/collision, material/texture, screen-material
+    and report outputs, including regular package sidecars. Track MUST depend on the native
+    material bytes it loads, without a reference-only edge hiding that read. These native
+    products MUST NOT opt into the portable source cache.
+    """
+    content = GAME / 'unreal/Content'
+    tv = content / 'Racing/M_RacingTv.uasset'
+    return [Product('belmonte.native_meshes', (content / 'Belmonte/Meshes',)),
+            Product('belmonte.native_materials', (content / 'Belmonte/Materials', content / 'Belmonte/Textures')),
+            Product('belmonte.native_tv', (tv,), optional_paths=(tv.with_suffix('.uexp'), tv.with_suffix('.ubulk'))),
+            Product('belmonte.native_report', (out / 'belmonte/import-report.json',))]
+
+
 def belmonte_steps(out):
     """@cc [owner:fontanierh,label:safety] country-generation-admission
     The world.belmonte terrain export MUST use normal heavy-job admission and
@@ -747,17 +762,26 @@ def belmonte_steps(out):
              outputs=[out / 'belmonte' / 'runtime.json', out / 'belmonte' / 'build-report.json',
                       out / 'belmonte' / 'natural' / 'SM_BM_NorthApron.glb', out / 'belmonte' / 'natural' / 'SM_BM_NorthCountry.glb'],
              about='Belmonte environment: committed models, northern terrain join and island flora'),
-        digest_step(out, 'world.belmonte', 'meshes', 'what unreal.belmonte reads of the environment', out, ['belmonte']),
+        Step('world.belmonte.meshes',
+             [Python(GAME / 'region_products.py', (str(out / 'belmonte'), str(out / 'products/belmonte'),
+                                                   '--mesh-library'))],
+             inputs=[GAME / 'region_products.py', out / 'belmonte/build-report.json', out / 'belmonte/runtime.json',
+                     out / 'belmonte/glb', out / 'belmonte/textures'], needs=['world.belmonte'],
+             products=[Product('belmonte.' + name, (out / f'products/belmonte/{name}.json',))
+                       for name in ('geometry', 'materials', 'runtime')],
+             cache=True, audit=True, about='independent Belmonte mesh/collision, material-binding and runtime views'),
         # Keep derived-mesh workers out of material sections while the importer edits them.
         Step('unreal.belmonte', [UnrealScript(SCRIPTS / 'import_belmonte.py', 'BELMONTE IMPORT COMPLETE',
                                              null_rhi=True, modules=IMPORT_CODE,
                                              args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
              inputs=[SCRIPTS / 'import_belmonte.py', SCRIPTS / 'racing_tv_material.py', SCRIPTS / 'atmosphere.py', SCRIPTS / 'ground_grain.py', ASSETS / 'environment/textures/tuscan-ground.jpg'],
              # Reused plants are runtime references, not reads by this library importer.
-             needs=['world.belmonte.meshes', 'unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             needs=['unreal.world', *unreal_modules.needs(IMPORT_CODE)],
+             reads=['belmonte.geometry', 'belmonte.materials'],
              after=['unreal.forest'], heavy=True,
              outputs=[out / 'belmonte' / 'import-report.json', GAME / 'unreal' / 'Content' / 'Belmonte' / 'Meshes' / 'SM_BM_NorthApron.uasset',
                       GAME / 'unreal' / 'Content' / 'Racing' / 'M_RacingTv.uasset'],
+             products=belmonte_native_products(out),
              about='/Game/Belmonte: environment meshes, collision and painterly surfaces'),
         Step('unreal.belmonte_train', [UnrealScript(SCRIPTS / 'import_belmonte_train.py', 'BELMONTE TRAIN IMPORT COMPLETE', null_rhi=True,
                                                        args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
@@ -773,7 +797,8 @@ def belmonte_steps(out):
         Step('unreal.belmonte_track', [UnrealScript(SCRIPTS / 'import_belmonte_track.py', 'BELMONTE TRACK IMPORT COMPLETE', null_rhi=True,
                                                        args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))],
                 inputs=[SCRIPTS / 'import_belmonte_track.py'],
-                needs=['world.belmonte_track.meshes', 'world.belmonte.meshes', 'unreal.belmonte'],
+                needs=['world.belmonte_track.meshes'],
+                reads=['belmonte.materials', 'belmonte.native_materials'],
                 after=['unreal.compile'], heavy=True,
                 outputs=[GAME / 'unreal' / 'Content' / 'Data' / 'belmonte_track' / 'track.json', out / 'belmonte-track' / 'runtime' / 'import-report.json'],
                 about='/Game/BelmonteTrack: track chunks, loop, turnouts, buffers, tunnel linings and portals, viaduct, banks, lamps'),
@@ -1507,10 +1532,10 @@ def staging_steps(ctx):
                      *runtime_data.courses.surface_inputs(),
                      *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
-             needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.belmonte', 'world.bike',
+             needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
-             reads=['brinecove.runtime'],
+             reads=['brinecove.runtime', 'belmonte.runtime'],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
         racing_assets_step(out),
     ]

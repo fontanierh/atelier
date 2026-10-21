@@ -41,6 +41,55 @@ def group_view(group):
     return {key: group[key] for key in ('asset', 'plant', 'transforms')}
 
 
+def library_views(folder, *, collision_basename=False, bindings=False, preserve_mesh_order=False):
+    """@cc [owner:fontanierh,label:correctness] complete-region-library-views
+    Library identities MUST bind every consumed mesh, collision source, texture and material
+    binding. Instance transforms and unused runtime fields MUST NOT enter model identities.
+    Collision relocation MUST match the importer's declared basename mapping and verify its
+    actual bytes. Required default bindings MUST retain the first non-plant group per model.
+    """
+    report = json.loads(source(folder, 'build-report.json').read_text())
+    runtime = json.loads(source(folder, 'runtime.json').read_text())
+    meshes = list(report['meshes']) if preserve_mesh_order else sorted(report['meshes'], key=lambda value: value['name'])
+    names = {mesh['name']: mesh for mesh in meshes}
+    if len(names) != len(meshes) or not names:
+        raise ValueError('Region model inventory is empty or has duplicate owners')
+    model_files = paths(meshes, {'.glb', '.fbx'})
+    collisions = []
+    for mesh in meshes:
+        if mesh.get('collision'):
+            entry = mesh['collision']
+            member = 'glb/' + PurePosixPath(entry['path']).name if collision_basename else entry['path']
+            if collision_basename:
+                model_files.discard(entry['path'])
+                model_files.add(member)
+            collisions.append((entry, member))
+    actual_models = {p.relative_to(folder).as_posix() for p in (folder / 'glb').rglob('*') if p.is_file()}
+    if model_files != actual_models:
+        raise ValueError('Region model inventory differs from generated membership')
+    model_inventory = {name: file_record(folder, name) for name in sorted(model_files)}
+    for entry, member in [*((mesh, mesh['path']) for mesh in meshes), *collisions]:
+        if entry['sha256'] != model_inventory[member]['sha256']:
+            raise ValueError('Region model differs from its producer report: ' + member)
+    texture_names = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
+    for entry in report['materials'].values():
+        texture_names.update(value for field in ('layers', 'normals')
+                             for value in entry.get(field, {}).values() if isinstance(value, str) and value)
+    textures = {'textures/' + name for name in texture_names}
+    materials = dict(schema=1, materials=report['materials'],
+                     files={name: file_record(folder, name) for name in sorted(textures)})
+    if bindings:
+        defaults = {}
+        for group in runtime['groups']:
+            if not group['plant']:
+                defaults.setdefault(group['asset'].split('.')[-1], group['materials'])
+        if not names.keys() <= defaults.keys():
+            raise ValueError('Region model is missing its required material bindings')
+        materials['bindings'] = {name: defaults[name] for name in sorted(names)}
+    return dict(geometry=dict(schema=1, meshes=meshes, files=model_inventory),
+                materials=materials, runtime=runtime)
+
+
 def views(folder, *, ground_prefix, plant_prefix):
     """@cc [owner:fontanierh,label:correctness] independent-region-consumed-views
     Geometry/material views MUST include complete consumed model/texture membership and actual
@@ -49,25 +98,8 @@ def views(folder, *, ground_prefix, plant_prefix):
     collision/footprint changes MUST invalidate those consumers. Missing/deleted source members
     MUST fail rather than preserve an old identity. Map foliage placements remain real map reads.
     """
-    report = json.loads(source(folder, 'build-report.json').read_text())
-    runtime = json.loads(source(folder, 'runtime.json').read_text())
-    meshes = sorted(report['meshes'], key=lambda value: value['name'])
-    names = {mesh['name']: mesh for mesh in meshes}
-    if len(names) != len(meshes) or not names:
-        raise ValueError('Region model inventory is empty or has duplicate owners')
-    model_files = paths(meshes, {'.glb', '.fbx'})
-    actual_models = {p.relative_to(folder).as_posix() for p in (folder / 'glb').rglob('*') if p.is_file()}
-    if model_files != actual_models:
-        raise ValueError('Region model inventory differs from generated membership')
-    model_inventory = {name: file_record(folder, name) for name in sorted(model_files)}
-    for mesh in meshes:
-        if mesh['sha256'] != model_inventory[mesh['path']]['sha256']:
-            raise ValueError('Region model differs from its producer report: ' + mesh['name'])
-    texture_names = {entry['texture'] for entry in report['materials'].values() if entry['texture']}
-    for entry in report['materials'].values():
-        texture_names.update(value for field in ('layers', 'normals')
-                             for value in entry.get(field, {}).values() if value)
-    textures = {'textures/' + name for name in texture_names}
+    library = library_views(folder)
+    meshes, runtime = library['geometry']['meshes'], library['runtime']
     groups = runtime['groups']
     plant_groups = [group_view(group) for group in groups
                     if group['asset'].rsplit('.', 1)[-1].startswith(plant_prefix)]
@@ -83,9 +115,7 @@ def views(folder, *, ground_prefix, plant_prefix):
                        for mesh in meshes if mesh['name'] in solid_names]
     boundary = {key: runtime[key] for key in ('origin_cm', 'bounds_m', 'clearance_m')}
     return dict(
-        geometry=dict(schema=1, meshes=meshes, files=model_inventory),
-        materials=dict(schema=1, materials=report['materials'],
-                       files={name: file_record(folder, name) for name in sorted(textures)}),
+        geometry=library['geometry'], materials=library['materials'],
         runtime=runtime,
         map=dict(schema=1, **boundary, zones=runtime['zones'], groups=plant_groups, meshes=ground),
         clearance=dict(schema=1, origin_cm=runtime['origin_cm'], groups=solid_groups, meshes=clearance_meshes),
@@ -101,8 +131,20 @@ def publish(folder, destination, *, ground_prefix, plant_prefix):
     print('REGION PRODUCTS COMPLETE: geometry, materials, runtime, map and clearance', flush=True)
 
 
+def publish_library(folder, destination):
+    result = library_views(Path(folder), collision_basename=True, bindings=True, preserve_mesh_order=True)
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    for name, value in result.items():
+        (destination / (name + '.json')).write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n')
+    print('REGION LIBRARY COMPLETE: geometry, materials and runtime', flush=True)
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
-    if len(args) != 6 or args[2] != '--ground-prefix' or args[4] != '--plant-prefix':
+    if len(args) == 3 and args[2] == '--mesh-library':
+        publish_library(Path(args[0]), Path(args[1]))
+    elif len(args) == 6 and args[2] == '--ground-prefix' and args[4] == '--plant-prefix':
+        publish(Path(args[0]), Path(args[1]), ground_prefix=args[3], plant_prefix=args[5])
+    else:
         raise ValueError('Expected FOLDER DESTINATION --ground-prefix PREFIX --plant-prefix PREFIX')
-    publish(Path(args[0]), Path(args[1]), ground_prefix=args[3], plant_prefix=args[5])

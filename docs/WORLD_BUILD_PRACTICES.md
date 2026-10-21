@@ -240,8 +240,9 @@ interrupted build, missing outputs and reuse in a different worktree. Timing alo
 
 With today's build engine, use explicit `inputs`, `products` and content-dependent `reads`; use `references` only
 for products whose contents the consumer does not inspect. Legacy `needs`, order-only `after` and cutoff steps
-remain supported. Keep unsupported cases conservative. Adopt the recipe examples and edit-boundary tests as
-games migrate, then add dependency tracing and native cache proofs before enabling automatic import restoration.
+remain supported. Keep unsupported cases conservative. Use the ordinary checkpoint lookup for completed task
+results and current native source/options validation for staged candidates; complete ownership and matching
+inputs are required. Follow the recipe examples and edit-boundary tests when narrowing another region.
 
 For a generator with one Python command, `audit=True` checks observed file reads and writes before certification.
 It catches a placement generator accidentally reading a reference-only mesh or reusing old output bytes. Declare
@@ -250,3 +251,25 @@ temporary files. For a conditional read of one known source, declare `optional_i
 directory. Its absence and content are tracked without making sibling files dependencies; it grants no listing
 or source-write access. The [recipe guide](BUILD_RECIPES.md#audit-a-python-generators-accesses) explains the enforced checks
 and the metadata, environment and native-I/O limits. This audit complements clean-versus-incremental comparisons.
+
+## Current regional consumer boundaries
+
+Brinecove publishes separate geometry, materials, runtime, map and clearance views. Belmonte uses the same
+library projection for geometry (including relocated collision hulls), materials/default bindings and runtime.
+Their exporters still contain combined generation work; these consumer boundaries do not by themselves split
+natural terrain, road/pad constraints or individual building generation into separate producers.
+
+Belmonte's native importer reads `belmonte.geometry` and `belmonte.materials`; it does not reopen placement
+runtime data. Its complete final mesh library, material/texture library, racing screen material and report have
+separate native products. Track import reads the material view and the native material/texture product, so a
+revalidated geometry package or racing screen does not invalidate track when those consumed materials stay
+byte-identical. Runtime staging reads `belmonte.runtime`. Placement transforms, signs and plant instances still
+reach the complete runtime view while leaving the model and default-binding views unchanged.
+
+These native products are workspace checkpoint results, never portable-cache entries. A changed input or missing
+product still takes the ordinary validated import. Adding these inventories causes one receiving validation
+transition; it must be measured on a stopped warm checkout before claiming native time or cook-byte savings.
+The projection currently fingerprints its whole texture directory to grant audited access to selected texture
+files. As in Brinecove, an unused texture can therefore rerun the small projection without changing its products.
+This is a remaining scoped performance exception, not a completed producer split or an edit-locality guarantee
+for the projection itself. Focused build-graph tests cover actual downstream propagation and missing/hull proof.

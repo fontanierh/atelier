@@ -255,12 +255,11 @@ def main():
     Separate source collision hulls MUST disable LOD0 mesh distance-field generation. This
     optimization MUST NOT change visible-mesh build settings, hull geometry or physics association.
     """
-    report = json.loads((OUT / 'build-report.json').read_text())
-    runtime = json.loads((OUT / 'runtime.json').read_text())
-    defaults = {}
-    for group in runtime['groups']:
-        if not group['plant']:
-            defaults.setdefault(group['asset'].split('.')[-1], group['materials'])
+    products = OUT.parent / 'products/belmonte'
+    geometry = json.loads((products / 'geometry.json').read_text())
+    material_view = json.loads((products / 'materials.json').read_text())
+    report = dict(meshes=geometry['meshes'], materials=material_view['materials'])
+    defaults = material_view['bindings']
     E.make_directory(ROOT)
     texture_files = sorted({entry['texture'] for entry in report['materials'].values() if entry['texture']})
     material_packages = sorted({ROOT + '/Materials/' + name for name in
