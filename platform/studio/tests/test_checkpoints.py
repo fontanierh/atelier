@@ -302,3 +302,21 @@ def test_default_checkpoint_cooking_uses_dependency_tracking(tmp_path):
     step = build.Step('cook', [build.UnrealPackage('Fixture', tmp_path / 'archive')])
     apply(ctx, [step])
     assert step.commands[0].cook_mode is CookMode.INCREMENTAL
+
+
+@pytest.mark.parametrize('operation', ['restore', 'restore-action', 'stage-candidates'])
+def test_checkpoint_transfer_reaches_real_guard_boundary_with_valid_invocation(tmp_path, monkeypatch, operation):
+    from atelier.harness.safety import guarded
+    class BeforeNativeLaunch(Exception):
+        pass
+    calls = []
+    def boundary(*args, **kwargs):
+        calls.append(args[0])
+        raise BeforeNativeLaunch
+    # Exercise the production guard's UUID validation, then stop before its
+    # actual admission/child launcher. No native command or fake process runs.
+    monkeypatch.setattr(guarded, '_run', boundary)
+    ctx = SimpleNamespace(game='fixture', logs=tmp_path)
+    with pytest.raises(BeforeNativeLaunch):
+        build_checkpoints._guard(ctx, operation, 'a' * 64)
+    assert len(calls) == 1
