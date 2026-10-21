@@ -175,6 +175,7 @@ class MeshReuse:
         if not self.enabled or (self.requires_validator and validator is None) or not packages_clean(packages):
             return None
         local = self.receipts.matches(name, key, packages)
+        historical = False
         if local:
             self.pending[name]['provenance'] = self.receipts.records[name].get('provenance', {'kind': 'compatibility-only'})
         if not local and not self.receipts.path.exists() and self.local_compatible and validator is not None:
@@ -182,9 +183,7 @@ class MeshReuse:
                      and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
             if local:
                 self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
-                print('NATIVE MESH HISTORICAL COMPATIBILITY ' + json.dumps(dict(task=self.task,
-                    packages=packages, stamp_time=self.previous_stamp['time'],
-                    provenance='compatibility-only'), sort_keys=True), flush=True)
+                historical = True
         copied = False
         if not local:
             if not self.compatible or donor_geometry is None or geometry != donor_geometry:
@@ -242,6 +241,10 @@ class MeshReuse:
             except Exception:
                 return None  # Optional native readback failed; use the normal importer.
         self.counts['reused_candidate' if copied else 'reused_local'] += 1
+        if historical:
+            print('NATIVE MESH HISTORICAL COMPATIBILITY ' + json.dumps(dict(task=self.task,
+                packages=packages, stamp_time=self.previous_stamp['time'],
+                provenance='compatibility-only'), sort_keys=True), flush=True)
         return loaded[package]
 
     def validated(self, name):
