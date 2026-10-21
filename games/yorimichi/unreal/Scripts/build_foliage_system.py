@@ -22,6 +22,7 @@ import foliage_system as F
 import see_through
 from foliage_material import supports_lod_blend, enable_bark_lod_blend
 from foliage_variant_validation import matches as variant_matches, settings_reader
+import foliage_unit_policy as unit_policy
 
 OUT = yori.OUT / 'foliage_system'
 E = U.EditorAssetLibrary
@@ -253,6 +254,10 @@ def main():
                  yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.cpp',
                  yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.h',
                  yori.GAME/'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
+                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp',
+                 yori.GAME/'unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h',
+                 OUT.parent/'unreal-modules/Yorimichi.json',
+                 Path(unit_policy.__file__), yori.GAME/'foliage_unit_policy_witness.json',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
         algorithm.update(file.read_bytes())
     algorithm.update(U.SystemLibrary.get_engine_version().encode())
@@ -260,6 +265,9 @@ def main():
     algorithm.update(json.dumps(dict(platform=sys.platform,architecture=platform.machine(),
                                      python=list(sys.version_info[:3])),sort_keys=True).encode())
     algorithm = algorithm.hexdigest()
+    legacy = unit_policy.legacy_policy(yori.GAME,engine_version=U.SystemLibrary.get_engine_version(),
+        environment=native_environment(native_context(yori.GAME.name)),
+        runtime=dict(platform=sys.platform,architecture=platform.machine(),python=list(sys.version_info[:3])))
     previous_path = OUT/'report.json'
     previous = json.loads(previous_path.read_text()) if previous_path.is_file() else {}
     registry_path=yori.GAME/'unreal/Content/Data/foliage_system/registry.json'
@@ -303,6 +311,9 @@ def main():
         unit_path = OUT/'units'/(key+'.json')
         unit = G.load_unit(unit_path, identity=identity, policy=algorithm, content_root=content,
                            assets=list(destinations.values()))
+        if unit is None and legacy:
+            unit = G.load_unit(unit_path, identity=identity, policy=legacy, content_root=content,
+                               assets=list(destinations.values()))
         if unit:
             row, geometry = unit['metadata'], unit['geometry']
             try:
@@ -320,12 +331,14 @@ def main():
                 row['output_sha256']={role:digest(asset.get_path_name()) for role,asset in loaded.items()}
                 records.append(row);materials.update(row['leaf_materials'])
                 counters['unit_hits']+=1;counters['reused_variants']+=3
+                G.save_unit(unit_path,identity=identity,policy=algorithm,content_root=content,
+                            assets=list(destinations.values()),geometry=geometry,metadata=row)
                 U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} unit readback accepted: {path}')
                 loaded.clear();mesh=None
                 U.YorimichiFoliageBuilder.collect_unused()
                 continue
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} exporting: {path}')
-        assert U.YorimichiFoliageBuilder.export_source(mesh, slots, classification, kind, str(source_path)), path
+        assert U.YorimichiFoliageSourceWriter.export_source(mesh, slots, classification, kind, str(source_path)), path
         source = json.loads(source_path.read_text())
         large_source = source_path.stat().st_size >= 32 * 1024 * 1024
         if large_source: memory_checkpoint('source loaded', path)
@@ -334,7 +347,7 @@ def main():
             for level in range(1, len(F.SCREENS)):
                 lod_path = OUT/(key+f'.rigid{level}.json')
                 lod_index = round(level*(mesh.get_num_lods()-1)/(len(F.SCREENS)-1))
-                assert U.YorimichiFoliageBuilder.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
+                assert U.YorimichiFoliageSourceWriter.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
                 source['rigid_lods'].append(json.loads(lod_path.read_text()))
             if kind == 'tree' and len(source['rigid_lods'][-1]['faces']) <= 256:
                 source['far_proxy'] = source['rigid_lods'][-1]

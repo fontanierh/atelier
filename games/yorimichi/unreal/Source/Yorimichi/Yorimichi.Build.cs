@@ -66,5 +66,7 @@ public class Yorimichi : ModuleRules
         PrivateDependencyModuleNames.Add("ImageCore");
         PrivateDependencyModuleNames.Add("ApplicationCore");
         PrivateDependencyModuleNames.Add("AtelierHorseRacing");
+        if (Target.bBuildEditor)
+            PrivateDependencyModuleNames.AddRange(new string[] { "MeshDescription", "StaticMeshDescription" });
     }
 }
