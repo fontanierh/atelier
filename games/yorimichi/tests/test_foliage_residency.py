@@ -138,3 +138,37 @@ def test_declared_authored_hull_and_structural_material_witnesses():
     assert not stand.get('collision') and stand['slots']==['M_wood','M_vcol']
     with pytest.raises(ValueError):
         R.authored_spec('/Game/Other/SM_BM_BP_BarrelPlanter.SM_BM_BP_BarrelPlanter')
+
+
+def test_actual_flower_stand_retained_glb_slots_preserve_order_and_source_indices():
+    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
+    imported = ['BM_000_M_wood_017', 'BM_001_M_vcol_007']
+    names = ['FoliageAuthored_' + name for name in imported]
+    assert R.authored_structural_slots(source, names, imported) == {0}
+    for actual, original in ((names[::-1], imported), (names, imported[::-1]),
+                             (names[:1], imported[:1]), (['FoliageAuthored_M_wood', names[1]], imported)):
+        with pytest.raises(ValueError, match='slots=.*imported=.*expected='):
+            R.authored_structural_slots(source, actual, original)
+
+
+def test_authored_structural_slots_refuse_changed_committed_glb(tmp_path, monkeypatch):
+    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
+    entry = R.authored_spec(source)
+    library = tmp_path / 'assets/belmonte'
+    file = library / entry['path']
+    file.parent.mkdir(parents=True)
+    file.write_bytes((GAME / 'assets/belmonte' / entry['path']).read_bytes() + b'changed')
+    (library / 'source.json').write_text(json.dumps(dict(meshes=[entry])))
+    monkeypatch.setattr(R, 'GAME', tmp_path)
+    with pytest.raises(ValueError, match='Changed authored structural source'):
+        R.authored_structural_slots(source, [], [])
+
+
+def test_authored_structural_glb_is_a_declared_dependency(tmp_path, monkeypatch):
+    source = '/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand'
+    entry = R.authored_spec(source)
+    report = tmp_path / 'report.json'
+    report.write_text(json.dumps(dict(assets=[dict(source=source, optimized='/Game/Prepared',
+        shadow='/Game/Shadow', patch='/Game/Patch', rigid_triangles=0, leaf_materials=[])])))
+    monkeypatch.setattr(R.mesh_geometry, 'package_inventory', lambda *_: {})
+    assert GAME / 'assets/belmonte' / entry['path'] in R.dependency_inputs(tmp_path, report)

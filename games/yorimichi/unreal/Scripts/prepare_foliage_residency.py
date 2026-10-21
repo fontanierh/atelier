@@ -144,11 +144,10 @@ def main():
             else:
                 if collision:
                     raise ValueError('Undeclared authored collision hull')
-                names = [str(s.get_editor_property('material_slot_name')).removeprefix('FoliageAuthored_')
-                         for s in source.get_editor_property('static_materials')]
-                if names != entry['slots']:
-                    raise ValueError('Authored structural material order differs')
-                rigid_slots = {i for i, name in enumerate(names) if name in {'M_wood', 'M_iron', 'M_ashlar'}}
+                slots = source.get_editor_property('static_materials')
+                names = [str(s.get_editor_property('material_slot_name')) for s in slots]
+                imported = [str(s.get_editor_property('imported_material_slot_name')) for s in slots]
+                rigid_slots = R.authored_structural_slots(old['source'], names, imported)
                 if not rigid_slots:
                     raise ValueError('Authored structure has neither collision hull nor explicit rigid materials')
                 leaf_slots = [i for i in range(len(names)) if i not in rigid_slots]
