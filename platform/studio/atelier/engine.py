@@ -48,7 +48,13 @@ def _forwarded_blender(selected):
         if len(content) > 4096 or any(byte < 32 and byte not in (9, 10) or byte == 127 for byte in content):
             return selected
         lines = content.decode('utf-8').split('\n')
-        if not lines or lines[0] != '#!/bin/sh':
+        if not lines or lines[0] not in ('#!/bin/sh', '#!/bin/bash'):
+            return selected
+        # Homebrew uses Bash for the same transparent exec shim. Startup files
+        # and imported shell functions can change its meaning, so retain those
+        # wrappers rather than skip any user-provided shell behavior.
+        if lines[0] == '#!/bin/bash' and (os.environ.get('BASH_ENV') or os.environ.get('SHELLOPTS')
+                or any(name.startswith('BASH_FUNC_') for name in os.environ)):
             return selected
         commands = [line.strip(' \t') for line in lines[1:]
                     if line.strip(' \t') and not line.lstrip(' \t').startswith('#')]

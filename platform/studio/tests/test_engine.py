@@ -169,3 +169,24 @@ def test_compile_postlink_children_use_aggregate_guard(tmp_path, monkeypatch):
     assert observed['kind'] == 'compile'
     assert observed['aggregate_tree'] and observed['track_tree']
     assert observed['env']['BINARYEN_CORES'] == '3'
+
+
+def test_homebrew_bash_forwarder_resolves_the_complete_app(monkeypatch, tmp_path):
+    wrapper, binary = blender_wrapper(tmp_path, 'exec "{binary}"  "$@"')
+    wrapper.write_text(wrapper.read_text().replace('#!/bin/sh', '#!/bin/bash', 1))
+    monkeypatch.delenv('BASH_ENV', raising=False)
+    monkeypatch.delenv('SHELLOPTS', raising=False)
+    for name in list(os.environ):
+        if name.startswith('BASH_FUNC_'):
+            monkeypatch.delenv(name)
+    monkeypatch.setenv('BLENDER', str(wrapper))
+    assert engine.blender() == str(binary)
+
+
+@pytest.mark.parametrize('name', ['BASH_ENV', 'SHELLOPTS', 'BASH_FUNC_exec%%'])
+def test_bash_custom_startup_retains_wrapper_identity(monkeypatch, tmp_path, name):
+    wrapper, binary = blender_wrapper(tmp_path, 'exec "{binary}" "$@"')
+    wrapper.write_text(wrapper.read_text().replace('#!/bin/sh', '#!/bin/bash', 1))
+    monkeypatch.setenv('BLENDER', str(wrapper))
+    monkeypatch.setenv(name, 'custom-startup')
+    assert engine.blender() == str(wrapper)
