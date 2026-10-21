@@ -34,7 +34,8 @@ def fixture(tmp_path):
     calls = []
     source = Properties(static_materials=originals)
     mesh = SimpleNamespace(get_editor_property=props.get_editor_property, get_num_lods=lambda: len(counts),
-                           get_num_triangles=lambda i: counts[i], get_material=lambda i: bindings[i])
+                           get_num_triangles=lambda i: counts[i], get_material=lambda i: bindings[i],
+                           is_lod_screen_size_auto_computed=lambda: props['bAutoComputeLODScreenSize'])
     editor = SimpleNamespace(get_lod_screen_sizes=lambda _: screens,
                              get_lod_build_settings=lambda _, i: build,
                              get_lod_reduction_settings=lambda _, i: reduction)
