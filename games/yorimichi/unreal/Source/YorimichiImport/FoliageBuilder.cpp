@@ -97,16 +97,32 @@ bool MaterialColour(UMaterialInterface* Material,FLinearColor& Colour)
             *Scalar(Material,TEXT("Gain"),1.f);Known=true;
     }
     else Colour*=TextureColour;
-    if (Parent==TEXT("M_Arcade") || Parent==TEXT("M_Village") || Parent==TEXT("M_Harbor")) { Colour=FLinearColor::White;Known=true; }
+    if (Parent==TEXT("M_Arcade") || Parent==TEXT("M_ArcadePaving") || Parent==TEXT("M_PlazaPaving") ||
+        Parent==TEXT("M_Village") || Parent==TEXT("M_Harbor")) { Colour=FLinearColor::White;Known=true; }
     if (!Known) { UE_LOG(LogTemp,Error,TEXT("FOLIAGE needs a material palette adapter: %s"),*Material->GetPathName());return false; }
     Colour.A=Scalar(Material,TEXT("Glow"),0.f);
     return true;
 }
 
-FLinearColor VertexSample(UMaterialInterface* Material,const FLinearColor& Palette,const FVector4f& Vertex)
+FLinearColor VertexSample(UMaterialInterface* Material,const FString& Parent,const FLinearColor& Palette,const FVector4f& Vertex)
 {
-    const FString Parent=Material->GetMaterial()->GetName();FLinearColor Result=Palette;
-    if (Parent==TEXT("M_Arcade") || Parent==TEXT("M_HDCity"))
+    FLinearColor Result=Palette;
+    if (Parent==TEXT("M_ArcadePaving") || Parent==TEXT("M_PlazaPaving"))
+    {
+        // Both paving graphs select linear vertex paint for their coloured leaf
+        // surfaces. Rigid paving keeps its original texture/material unchanged.
+        Result.R=PaletteLinear(Vertex.X);Result.G=PaletteLinear(Vertex.Y);Result.B=PaletteLinear(Vertex.Z);
+        Result.A=0.f;
+        if (Parent==TEXT("M_ArcadePaving"))
+        {
+            const bool Lamp=Result.R>=.82f && Result.G>=.45f && Result.G<=.68f && Result.B<=.30f;
+            const bool Canvas=Result.R>=.70f && Result.R<=.79f && Result.G>=.55f && Result.B>=.35f;
+            const bool Leaf=Result.R>=.4f && Result.G>=.24f && Result.B<=.07f;
+            const bool Shop=Result.R>=.18f && Result.R<=.22f && Result.G>=.08f && Result.G<=.11f && Result.B>=.02f && Result.B<=.04f;
+            Result.A=.045f+(Lamp?.9f:0.f)+(Canvas?.20f:0.f)+(Leaf?.38f:0.f)+(Shop?.15f:0.f);
+        }
+    }
+    else if (Parent==TEXT("M_Arcade") || Parent==TEXT("M_HDCity"))
     {
         Result.R*=PaletteLinear(Vertex.X);Result.G*=PaletteLinear(Vertex.Y);Result.B*=PaletteLinear(Vertex.Z);
         const bool Leaf=PaletteLinear(Vertex.X)>=.4f && PaletteLinear(Vertex.Y)>=.24f && PaletteLinear(Vertex.Z)<=.07f;
@@ -220,10 +236,12 @@ bool UYorimichiFoliageBuilder::ExportSource(UStaticMesh* Source, const TArray<in
     Root->SetStringField(TEXT("classification"),Classification);
     TArray<TSharedPtr<FJsonValue>> Materials, Vertices, Faces;
     TArray<FLinearColor> Palette;
+    TArray<FString> MaterialParents;
     for (int32 I = 0; I < Source->GetStaticMaterials().Num(); ++I)
     {
         UMaterialInterface* Material = Source->GetMaterial(I);
         if (!Material) return false;
+        MaterialParents.Add(Material->GetMaterial()->GetName());
         auto Entry = MakeShared<FJsonObject>();
         Entry->SetStringField(TEXT("path"),Material->GetPathName());
         Entry->SetBoolField(TEXT("foliage"),LeafSlots.Contains(I));
@@ -259,7 +277,17 @@ bool UYorimichiFoliageBuilder::ExportSource(UStaticMesh* Source, const TArray<in
                 V->SetArrayField(TEXT("c"),Values({C.X,C.Y,C.Z,C.W}));
                 // Vertex-painted trees carry their colour in the source vertex;
                 // texture-based crowns use their alpha-weighted linear palette.
-                const FLinearColor Sample=VertexSample(Source->GetMaterial(Slot),Palette[Slot],C);
+                auto* Material=Source->GetMaterial(Slot);
+                const FString& Parent=MaterialParents[Slot];
+                const bool RoleLeaf=Classification==TEXT("roles") && UVs.GetNumChannels()>5 &&
+                    UVs.Get(Instance,5).X>0.f;
+                if ((IsLeaf || RoleLeaf) && (Parent==TEXT("M_ArcadePaving") || Parent==TEXT("M_PlazaPaving")))
+                {
+                    const FVector3f Linear(PaletteLinear(C.X),PaletteLinear(C.Y),PaletteLinear(C.Z));
+                    if (Linear.GetMax()-Linear.GetMin()<.07f)
+                    { UE_LOG(LogTemp,Error,TEXT("FOLIAGE paving leaf uses the unsupported textured branch: %s"),*Material->GetPathName());return false; }
+                }
+                const FLinearColor Sample=VertexSample(Material,Parent,Palette[Slot],C);
                 V->SetArrayField(TEXT("sample"),Values({Sample.R,Sample.G,Sample.B,Sample.A}));
                 TArray<TSharedPtr<FJsonValue>> Channels;
                 for (int32 Channel=0;Channel<UVs.GetNumChannels();++Channel)
