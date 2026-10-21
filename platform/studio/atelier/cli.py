@@ -14,6 +14,7 @@
     atelier qa <game> <scenario> ...   run games/<game>/scenarios/<scenario>.py against the running game
     atelier board post|read|thread|task|supervise|retire|wait|status|serve ...   coordinate machine-local agents (docs/AGENT_BOARD.md)
     atelier pr-media push <key> FILE... [--remote R] [--dry-run]   publish PR screenshots/films under refs/pr-media/<key>, outside default clones
+    atelier merge <PR> [--source CHECKOUT]   retain existing build artifacts locally, then merge a reviewed PR
     atelier lint                       public-repository rules: no secrets, no personal paths, no game names in the platform
 """
 import argparse, datetime, importlib.util, os, re, shutil, subprocess, sys
@@ -209,6 +210,9 @@ def make_parser():
     p.add_argument('--part-mib', type=int, default=200, help='upload part size, 1 to 1900 MiB (default: 200)')
     p.add_argument('--workers', type=int, default=6, help='concurrent uploads, 1 to 6 (default: 6)')
     p.add_argument('--prerelease', action='store_true', help='publish a prerelease instead of a normal release')
+    p = sub.add_parser('merge', help='retain existing build artifacts locally, then squash-merge a reviewed PR')
+    p.add_argument('pr', help='PR number or GitHub URL')
+    p.add_argument('--source', help='completed producer checkout (default: this repository)')
     p = sub.add_parser('stream'); p.add_argument('game'); p.add_argument('action', choices=['start', 'stop', 'status', 'build-web'])
     p.add_argument('--local', action='store_true', help='this machine only: no Tailscale Serve')
     p.add_argument('--install', action='store_true', help='build-web: reinstall platform/web packages (npm ci)')
@@ -342,6 +346,9 @@ def main(argv=None):
         return release.main(args.game, args.package, tag=args.tag, verification=args.verification,
                             title=args.title, notes_file=args.notes_file, source=args.source,
                             part_mib=args.part_mib, workers=args.workers, prerelease=args.prerelease)
+    if args.command == 'merge':
+        from . import pr_merge
+        return pr_merge.merge(args.pr, source=args.source)
     if args.command == 'stream':
         from . import stream
         return stream.main(args.game, args.action, local=args.local, install=args.install)

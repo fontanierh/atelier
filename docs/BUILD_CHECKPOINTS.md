@@ -74,7 +74,37 @@ Reasons are recorded locally. They do not weaken admission, guards, worker caps 
 certify checkpoint builds. `--force` additionally requires one exact task and forces only that task, preserving
 current prerequisites. Never clear caches, delete stamps or force a whole dependency closure to fix a miss.
 
-## Releases retain work
+## Merges retain work locally
+
+After CI and independent review pass, finish the producer's whole caller and native children, then merge:
+
+```sh
+uv run atelier merge PR
+```
+
+The command saves all games with existing build stamps in the shared local checkpoint store **before**
+calling GitHub. Use `--source CHECKOUT` if another checkout produced the artifacts. It does not move, clean or
+update that source checkout. Partial builds can be retained; missing or stale tasks are not certified.
+Checkouts without build stamps are explicitly skipped, without starting a build or cook. Retention failure
+stops the merge. The command checks exact-head Python CI and refuses a PR that changes during retention;
+agents still obtain independent review before invoking it.
+
+Local retention needs no private repository or upload. Native copies use the normal guard, and an existing
+Zen cook uses UE snapshot export rather than copying its live database. No compilation, import or cook is
+requested. Current task results and compatible workspace state become available to normal builds on latest
+main through their input/tool identities; squash/merge commit hashes do not affect lookup. Keep the producer
+intact until the saved checkpoint keys are reported, and include those keys in the merge handoff.
+
+To retain a completed producer separately, including after an earlier merge:
+
+```sh
+uv run atelier cache retain GAME --source CHECKOUT
+```
+
+With no game arguments it retains every game with build stamps. Never run another build solely to fill a
+merge cache, manufacture success stamps, or copy artifacts manually into another checkout.
+
+## Releases retain work remotely
 
 `atelier release publish` captures existing verified producer outputs and uploads a private checkpoint before
 publishing the public playtest. It does not rebuild or cook the game. Normal successful tasks retain their local results; whole-workspace capture runs at release publication. Private release packs are content-addressed, checksum-verified, deduplicated and bounded to 128 MiB.

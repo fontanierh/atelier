@@ -128,6 +128,9 @@ def configure(sub):
     commands = parser.add_subparsers(dest='action', required=True)
     local = commands.add_parser('configure', help='set the private checkpoint repository in machine-local configuration')
     local.add_argument('--repository', required=True)
+    retain = commands.add_parser('retain', help='save existing build artifacts locally without building, cooking or uploading')
+    retain.add_argument('games', nargs='*', help='games to retain (default: every game with build stamps)')
+    retain.add_argument('--source', type=Path, help='completed producer checkout (default: this repository)')
     commands.add_parser('status')
     commands.add_parser('abandon-transfer', help='remove a journaled partial transfer left by an older client').add_argument('game')
     create = commands.add_parser('snapshot-create', help='pin an unsigned local selection of current portable products')
@@ -173,6 +176,10 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'retain':
+        from .build_checkpoints import retain
+        print(json.dumps({'checkpoints': retain(args.source, args.games)}))
+        return 0
     if args.action == 'configure':
         from .build_checkpoints import configure_repository
         result = configure_repository(args.repository)
