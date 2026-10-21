@@ -36,6 +36,12 @@ def compile_outputs(ctx, step):
     project = getattr(ctx, 'uproject', None)
     if project is None:
         return []
+    from .build import UnrealCompile
+    commands = [c for c in step.commands if isinstance(c, UnrealCompile)]
+    if commands and all(c.platform != 'Mac' for c in commands):
+        # The HTML5 game is monolithic; its loader, module and receipt belong
+        # to its platform directory, not to the editor's dylib inventory.
+        return list(dict.fromkeys(project.parent / 'Binaries' / c.platform for c in commands))
     output = project.parent / 'Binaries/Mac'
     modules = json.loads(project.read_text()).get('Modules', [])
     result = [output / 'UnrealEditor.modules']
@@ -66,6 +72,9 @@ def compile_present(ctx, step):
     project = getattr(ctx, 'uproject', None)
     if project is None:
         return False
+    commands = [c for c in step.commands if isinstance(c, UnrealCompile)]
+    if commands and all(c.platform != 'Mac' for c in commands):
+        return all(platform_compile_present(project, c) for c in commands)
     output = project.parent / 'Binaries/Mac'
     required = [output / 'UnrealEditor.modules']
     required += [output / ('libUnrealEditor-' + m['Name'] + '.dylib')
@@ -104,6 +113,40 @@ def compile_present(ctx, step):
         return False
 
 
+def platform_compile_present(project, command):
+    """@cc [owner:fontanierh,label:correctness] platform-compile-receipt
+    A monolithic platform compile MUST match its target/platform receipt and
+    retain every non-symbol project build product inside that platform's owned
+    output directory. Missing or escaped products MUST invalidate the result.
+    """
+    output = project.parent / 'Binaries' / command.platform
+    try:
+        value = read_json(output / (command.target + '.target'))
+        if value.get('TargetName') != command.target or value.get('Platform') != command.platform:
+            return False
+        products = value.get('BuildProducts')
+        if not isinstance(products, list) or not products:
+            return False
+        for item in products:
+            if item.get('Type') == 'SymbolFile':
+                continue  # DebugInfo=None deliberately emits no symbol sidecars.
+            name = item['Path']
+            if name.startswith('$(EngineDir)/'):
+                continue  # Engine installation identity is checked separately.
+            if name.startswith('$(ProjectDir)/'):
+                path = project.parent / name[len('$(ProjectDir)/'):]
+            else:
+                path = Path(name)
+                if not path.is_absolute():
+                    path = output / path
+            path = Path(os.path.normpath(path.absolute()))
+            if not path.is_relative_to(output.absolute()) or not path.is_file() or path.is_symlink():
+                return False
+        return True
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 
 def label(ctx, path):
     choices = [(name, root) for name, (root, _) in roots(ctx).items() if path == root or root in path.parents]
@@ -128,6 +171,12 @@ def key(ctx, step, fingerprint, *, require_outputs=True):
     # Ambient Blender startup is not portable producer proof. Existing local incremental
     # state can continue, but these commands do not publish transferable action entries.
     if any(isinstance(c, Blender) and not c.factory_startup for c in step.commands):
+        return None
+    from .build import UnrealCompile
+    # Non-Mac SDK/post-link provenance is not yet represented by the portable
+    # action context. Keep verified local incremental builds, without claiming
+    # a transferable compile certificate under the Mac editor's tool identity.
+    if any(isinstance(c, UnrealCompile) and c.platform != 'Mac' for c in step.commands):
         return None
     outputs = declared(ctx, step)
     if not outputs and require_outputs:

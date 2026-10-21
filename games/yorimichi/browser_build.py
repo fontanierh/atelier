@@ -1,6 +1,7 @@
 """The explicit bounded browser scene's normal asset and staging dependencies."""
 
 from pathlib import Path
+import hashlib
 import json
 import shutil
 
@@ -10,6 +11,33 @@ from atelier.build import Call, Step, UnrealCompile, UnrealPackage, UnrealScript
 GAME = Path(__file__).resolve().parent
 SCRIPTS = GAME / "unreal/Scripts"
 PARK = GAME / "world/regions/skatepark/park.json"
+
+
+def prepared_present(ctx):
+    """A local compile stamp cannot admit an unprepared or stale Wasm module."""
+
+    def digest(path):
+        with path.open("rb") as stream:
+            return hashlib.file_digest(stream, "sha256").hexdigest()
+
+    try:
+        binary = GAME / "unreal/Binaries/HTML5/Yorimichi.wasm"
+        report = json.loads(
+            (ctx.out / "browser-float/Yorimichi/latest.json").read_text()
+        )
+        policy = hashlib.sha256()
+        tools = paths.ENGINE_PLUGINS / "Activities/Skate/Tools"
+        for name in ("prepare_wasm.py", "wasm_float.py", "wasm_float_helpers.py"):
+            policy.update(name.encode() + b"\0")
+            policy.update((tools / name).read_bytes().replace(b"\r\n", b"\n"))
+        return (
+            report["policy_sha256"] == policy.hexdigest()
+            and report["output_sha256"] == digest(binary)
+            and report["link_manifest_sha256"]
+            == digest(binary.with_suffix(".html5link.json"))
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
 
 
 class BrowserPackage(UnrealPackage):
@@ -94,8 +122,9 @@ def steps(ctx):
             heavy=True,
             outputs=[
                 GAME / ("unreal/Binaries/HTML5/Yorimichi" + extension)
-                for extension in (".wasm", ".js", ".target", ".html5link.json")
+                for extension in (".wasm", ".js", ".html", ".target", ".html5link.json")
             ],
+            verify=lambda: prepared_present(ctx),
             about="the complete Yorimichi Wasm module with verified scoped simulation arithmetic",
         ),
         Step(
