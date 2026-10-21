@@ -60,9 +60,12 @@ class MeshReuse:
     role, material and collision validation MUST still run before recording a receipt.
     Dirty loaded packages MUST miss even when their on-disk receipt matches. Owner finishing
     MUST rerun from current data after reuse and validate current materials, roles and collision.
+    Current validation code MAY differ from historical geometry code, but its declared closure
+    MUST enter fresh receipt identity. It MUST NOT weaken historical raw-geometry equality.
     Missing evidence MUST use ordinary import, never manufacture a cache hit or task stamp.
     """
-    def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None, owner_roots=()):
+    def __init__(self, ctx, task, script, functions, *, report_member=None, owner_script=None, owner_roots=(),
+                 validation_script=None, validation_functions=()):
         from . import native_candidates as checkpoint_candidates
         self.ctx, self.task = ctx, task
         self.candidates = checkpoint_candidates
@@ -74,6 +77,16 @@ class MeshReuse:
         except ValueError:
             self.enabled = False
             self.policy = mesh_reuse.identity({'reuse': 'unsupported-policy'})
+        validation_policy = None
+        self.requires_validator = bool(validation_functions or validation_script is not None)
+        if self.requires_validator:
+            try:
+                validator = Path(validation_script or self.script).resolve()
+                if not validator.is_relative_to(paths.REPO.resolve()):
+                    raise ValueError('Validation policy must belong to the repository')
+                validation_policy = mesh_reuse.native_policy(validator.read_text(), validation_functions, validator)
+            except (OSError, ValueError, SyntaxError, TypeError):
+                self.enabled = False
         self.owner_sources = {}
         if owner_script:
             from . import source_imports
@@ -85,6 +98,8 @@ class MeshReuse:
                 if file != self.script and file not in runtime_files() and file.is_relative_to(paths.REPO)}
         receipt_policy = (mesh_reuse.identity(dict(geometry=self.policy, owner=self.owner_sources))
                           if owner_script else self.policy)
+        if validation_policy is not None:
+            receipt_policy = mesh_reuse.identity(dict(import_policy=receipt_policy, validation=validation_policy))
         current_context = context(ctx)
         self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, receipt_policy, self.content)
         self.bundle = checkpoint_candidates.load(ctx, task) if self.enabled else None
@@ -156,7 +171,7 @@ class MeshReuse:
         key = mesh_reuse.identity(dict(geometry=geometry, sources=source_hashes))
         self.pending[name] = dict(key=key, packages=packages, sources=sources,
                                   provenance={'kind': 'current-native-import'})
-        if not self.enabled or not packages_clean(packages):
+        if not self.enabled or (self.requires_validator and validator is None) or not packages_clean(packages):
             return None
         local = self.receipts.matches(name, key, packages)
         if local:
@@ -219,8 +234,12 @@ class MeshReuse:
         if any(not loaded[target] or not imported_source_matches(loaded[target], source)
                for target, source, _ in sources):
             return None
-        if validator is not None and not validator(loaded[package]):
-            return None
+        if validator is not None:
+            try:
+                if not validator(loaded[package]):
+                    return None
+            except Exception:
+                return None  # Optional native readback failed; use the normal importer.
         self.counts['reused_candidate' if copied else 'reused_local'] += 1
         return loaded[package]
 
