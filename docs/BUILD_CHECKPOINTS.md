@@ -43,6 +43,21 @@ is recorded locally; a later tool change invalidates compatibility-only stamps. 
 stop before native work. Reuse never manufactures producer provenance or treats any Intermediate file as proof.
 A changed C++ target still goes through UBT; this is not a cross-worktree compiler object cache.
 
+Native importers can also declare a `CandidateScope` on their normal build step. Before a
+cache miss executes, including a batched leaf, the executor discovers compatible retained
+checkpoints locally and in private history. It stages the declared reports and complete package
+directories as independent copies in ignored `.state/import-candidates/`. Existing receiver
+products and stamps remain intact; no manual donor selection is required. An engine/SDK mismatch,
+missing clean donor revision, incomplete history or corrupted bytes makes the candidate unavailable.
+
+These are compatibility candidates, not certified task results. The native importer loads one
+validated bundle, verifies each selected member on access, and must prove its current source and
+geometry policy match before reuse. It reruns current material, role, bounds and collision checks.
+Changed or unproved assets import normally. Only the normal successful importer can publish a
+current result. A whole-task miss can therefore reuse unchanged meshes without accepting stale
+validation or overwriting unrelated completed receiver work. Importers must integrate this shared
+protocol and declare their real artifact boundaries; arbitrary existing importers are not inferred.
+
 Character body, bike and horse imports depend on normalized exported content. An exporter implementation change
 that reproduces the same mesh, skinning, clips and textures leaves the import current. FBX timestamps and generated
 IDs do not count as content changes. Importer implementation, native module, actual asset or engine changes still

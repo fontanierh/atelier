@@ -8,7 +8,7 @@ from .build_cache import atomic_json
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action'])
+    parser.add_argument('operation', choices=['capture', 'restore', 'restore-action', 'stage-candidates'])
     parser.add_argument('game')
     parser.add_argument('report', type=Path)
     parser.add_argument('--key')
@@ -34,7 +34,10 @@ def main(argv=None):
     args.report.mkdir(parents=True, exist_ok=True)
     result = args.report / 'result.json'
     result.unlink(missing_ok=True)
-    if args.operation == 'capture':
+    if args.operation == 'stage-candidates':
+        from .checkpoint_candidates import stage_worker
+        atomic_json(result, stage_worker(ctx, args.key))
+    elif args.operation == 'capture':
         from .build_snapshot import require_complete
         require_complete(ctx.out, game=args.game)
         from .build_checkpoints import incremental_environment

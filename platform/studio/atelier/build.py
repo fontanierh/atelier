@@ -195,6 +195,7 @@ class Step:
     checkpoint_previous_needs: tuple | None = field(default=None, repr=False)  # equivalent dependency-boundary migration only
     checkpoint_restore: object = field(default=None, repr=False)  # optional non-destructive recertification callback
     checkpoint_outputs: tuple = field(default=(), repr=False)  # complete additional output roots, never representative samples
+    candidate_scope: object = field(default=None, repr=False, compare=False)  # generic compatibility candidates; native validation still required
 
 
 def outputs_present(step):
@@ -522,6 +523,8 @@ def run_argv(ctx, step, command, argv, env, log, request, slots, *, pass_fds=())
     if preflight and not step.heavy:
         raise ValueError('Unreal preflight requires the normal guarded heavy lifecycle')
     env = ctx.env(env)
+    if isinstance(command, UnrealScript):
+        env.update(ATELIER_BUILD_TASK=step.name, ATELIER_BUILD_GAME=ctx.game)
     log.write(f'$ {" ".join(argv)}\n'); log.flush()
     if step.heavy:
         folder = ctx.logs / f'{step.name}.guard'
@@ -909,6 +912,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
             try:
                 for item in batch:
                     candidate = item.step if hasattr(item, 'step') else item[0]
+                    from .checkpoint_candidates import prepare as prepare_candidates
+                    prepare_candidates(ctx, candidate, echo=echo)
                     protect(ctx, candidate, estimate=estimate(read_stamp(ctx.stamps / (candidate.name + '.json'))), echo=echo)
             except RuntimeError as error:
                 echo(str(error))
@@ -981,6 +986,9 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 products = build_products.records(step)
                 restore_source = 'checkpoint'
         from_cache = products is not None
+        if not from_cache:
+            from .checkpoint_candidates import prepare as prepare_candidates
+            prepare_candidates(ctx, step, echo=echo)
         if not from_cache and step.heavy and any(not isinstance(c, Call) for c in step.commands) and budget_spent():
             return yield_build(step)
         if not from_cache and not recovering:

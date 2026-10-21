@@ -131,7 +131,8 @@ class Session:
         for step, key, _ in self.candidates:
             command = step.commands[0]
             actions.append({'name': step.name, 'script': str(command.script), 'args': list(getattr(command, 'args', ()))
-                            if isinstance(command, build.Blender) else [], 'env': dict(command.env)})
+                            if isinstance(command, build.Blender) else [],
+                            'env': dict(command.env) | {'ATELIER_BUILD_TASK': step.name, 'ATELIER_BUILD_GAME': self.ctx.game}})
             # An action about to run cannot keep a successful stamp from an older invocation.
             (self.ctx.stamps / (step.name + '.json')).unlink(missing_ok=True)
         atomic_json(self.folder / 'plan.json', {'nonce': self.nonce, 'actions': actions,
