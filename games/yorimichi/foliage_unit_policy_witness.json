@@ -1,0 +1,138 @@
+{
+  "current": {
+    "games/yorimichi/foliage_system.py": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd",
+    "games/yorimichi/unreal/Scripts/atmosphere.py": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
+    "games/yorimichi/unreal/Scripts/build_foliage_system.py": "b1ae0ce3cb0a3b7450967dd78f9389a434c76870dd880105db676b52e539263d",
+    "games/yorimichi/unreal/Scripts/foliage_material.py": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a",
+    "games/yorimichi/unreal/Scripts/foliage_variant_validation.py": "0bc3a0ad8d5c93320cf24979603382618758b919c5e5def3d4a474030fbeee6c",
+    "games/yorimichi/unreal/Scripts/see_through.py": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734",
+    "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp": "9dcb5a13430390ccf9d86cdc3221ec826227572600a402503c51fc03497d39fe",
+    "games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.h": "4cc6586a01573a4c99d3b124dda689c4b2a2258a06884bb20d1c532694f8197c",
+    "games/yorimichi/unreal/Source/Yorimichi/Yorimichi.Build.cs": "87ca815d699ba0117fe51c222e9894b1ef3e762b7e54f2d465b9d0f49b406648",
+    "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a",
+    "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0",
+    "games/yorimichi/unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp": "741b78024072febab312d3ff6fe0248050973c991049dd1caf56ca09599bd893",
+    "games/yorimichi/world/foliage_roles.py": "6b77fd4e8ad8f518fa8e4aadfad6db889d7603030560ec2e74610a9e42bd59d3",
+    "platform/studio/atelier/__init__.py": "0219772d0dabb4ef08cb8ffb509cbebb0e0c44c861ee4e59218bb4a1d984b71a",
+    "platform/studio/atelier/atomic_files.py": "39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c",
+    "platform/studio/atelier/build_hashes.py": "025cc13adbc3c7568088c08edf65174acfdd11ef9ddb01a3257b6f6bf9d37a38",
+    "platform/studio/atelier/engine.py": "5acaba915e0641bb5a1f8498565db94e214d39241a496ad123bb6aa244f73cde",
+    "platform/studio/atelier/mesh_geometry.py": "ef236eb03247e2f13514825128a0728dd5f6197aa17142582fcffd4a96c19abb",
+    "platform/studio/atelier/mesh_reuse.py": "f5a5f8eb8eb0a1583624fda9e8466653c424d4a0a55897d52ff317e5f3f23399",
+    "platform/studio/atelier/native_candidates.py": "2d7d77e2fc5ef0d6af075b17d1d19feb817dc7f1da95f9841c09cd46beb17602",
+    "platform/studio/atelier/native_protocol.py": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82",
+    "platform/studio/atelier/paths.py": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924",
+    "platform/studio/atelier/source_imports.py": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6",
+    "platform/studio/atelier/unreal_mesh_reuse.py": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
+  },
+  "previous": [
+    {
+      "blob": "d3493e6d4e4a1fc14633a510688828ad7ecac5d7",
+      "path": "games/yorimichi/unreal/Scripts/build_foliage_system.py",
+      "sha256": "ffdd2512e0bf0da94fb1370b0c391f85ddc45733f99dd588e44287a81e872e48"
+    },
+    {
+      "blob": "603774ade8704a248a718b9a53550657a6a54d04",
+      "path": "games/yorimichi/foliage_system.py",
+      "sha256": "606c695cade6025d61f3a4cdf94cc54612d953aa7f0df07d760aaaba443949bd"
+    },
+    {
+      "blob": "47d49c9d8987d0622c3e0cf999ca406d1f78be13",
+      "path": "games/yorimichi/world/foliage_roles.py",
+      "sha256": "6b77fd4e8ad8f518fa8e4aadfad6db889d7603030560ec2e74610a9e42bd59d3"
+    },
+    {
+      "blob": "c9f9a0077a4a988927237ee80739d61cdbdd254c",
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+    },
+    {
+      "blob": "02414f68b9eaccba77e31442fc6f5d750638725d",
+      "path": "games/yorimichi/unreal/Scripts/see_through.py",
+      "sha256": "63b00530ffa4a60c1b9b576fa8d32f8fbbe82be2dbcd5a726e4bcacc8bd7b734"
+    },
+    {
+      "blob": "370282b4e4e8e256790f27e0d051bf6b6b9fffed",
+      "path": "games/yorimichi/unreal/Scripts/foliage_material.py",
+      "sha256": "70fbd4b6ad988d7192b78b227711c6ccb30fe40928301d98a4c18288b338249a"
+    },
+    {
+      "blob": "0abc0bdc6b6abf249ea591f4e2f4212f204b0768",
+      "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp",
+      "sha256": "4bba4b2c56f7e44ce1fa0ae29ae451fe1d4fe79d1ddf446d6e3a6c8a289a877a"
+    },
+    {
+      "blob": "ee18165ca8c1c70f90f465b8bb8af5898e0bd2d7",
+      "path": "games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.h",
+      "sha256": "055928322ad2d98b745901ced303ecd79801e58aab3ab088548c35523b7ee6b0"
+    },
+    {
+      "blob": "8072ac49eb002da6f1e49f548bfdfe37ffc768e2",
+      "path": "games/yorimichi/unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp",
+      "sha256": "741b78024072febab312d3ff6fe0248050973c991049dd1caf56ca09599bd893"
+    },
+    {
+      "blob": "a84d3b3fc0e5baa89b17dc80513ed25d3538ebd7",
+      "path": "platform/studio/atelier/mesh_geometry.py",
+      "sha256": "ef236eb03247e2f13514825128a0728dd5f6197aa17142582fcffd4a96c19abb"
+    },
+    {
+      "blob": "9c4821a8a2aa0e6db5b8a044dfe341b311931f03",
+      "path": "games/yorimichi/unreal/Scripts/foliage_variant_validation.py",
+      "sha256": "0bc3a0ad8d5c93320cf24979603382618758b919c5e5def3d4a474030fbeee6c"
+    },
+    {
+      "blob": "05baee9c9a67a848679d048154c9c1ed04cc0157",
+      "path": "platform/studio/atelier/__init__.py",
+      "sha256": "0219772d0dabb4ef08cb8ffb509cbebb0e0c44c861ee4e59218bb4a1d984b71a"
+    },
+    {
+      "blob": "c7e10cf431a744d8a3352f55b55f473c08194b94",
+      "path": "platform/studio/atelier/atomic_files.py",
+      "sha256": "39163e0c3284ecd931b4f182cfded79cd275046de71003d17cdd6134f5533e9c"
+    },
+    {
+      "blob": "59fc604a1fb0a28e6c935601ab0f04dcde7be7f7",
+      "path": "platform/studio/atelier/build_hashes.py",
+      "sha256": "025cc13adbc3c7568088c08edf65174acfdd11ef9ddb01a3257b6f6bf9d37a38"
+    },
+    {
+      "blob": "6e8dd9f9b33ce5a954baa495d7c01ee7eb0ab86c",
+      "path": "platform/studio/atelier/engine.py",
+      "sha256": "5acaba915e0641bb5a1f8498565db94e214d39241a496ad123bb6aa244f73cde"
+    },
+    {
+      "blob": "fdd21cac81e89a6b13e72885c5942110c8d0a9bb",
+      "path": "platform/studio/atelier/mesh_reuse.py",
+      "sha256": "f5a5f8eb8eb0a1583624fda9e8466653c424d4a0a55897d52ff317e5f3f23399"
+    },
+    {
+      "blob": "a7445183322d801ae67b53892e37002f840c06fb",
+      "path": "platform/studio/atelier/native_candidates.py",
+      "sha256": "2d7d77e2fc5ef0d6af075b17d1d19feb817dc7f1da95f9841c09cd46beb17602"
+    },
+    {
+      "blob": "f2bb99769342eaf93bb2a24f8a5d7ef4e2878603",
+      "path": "platform/studio/atelier/native_protocol.py",
+      "sha256": "eeb9f18d563cb13059c4c96a834a3490ed83decfc0a195a6d3d38415bb8f7d82"
+    },
+    {
+      "blob": "94cb97c328134a6cab8ce6724dd2ddb15532652b",
+      "path": "platform/studio/atelier/paths.py",
+      "sha256": "2176891c3779c90215db409bd4d31e9fca34d45642cdfc38972aa5e688f28924"
+    },
+    {
+      "blob": "ff482b21c2b7514c0b2e979981d44c32a7ab4250",
+      "path": "platform/studio/atelier/source_imports.py",
+      "sha256": "b0b70fd764f52f5ced29308041edbf3b6176e34f4e391ba6c4af3474972008f6"
+    },
+    {
+      "blob": "2ee5577d5c0f194a68fb7a003508911499cb8816",
+      "path": "platform/studio/atelier/unreal_mesh_reuse.py",
+      "sha256": "a40864e3d6b0e16d31c6c863b5c2cf59626360c395055945806b0cc3cc157eb4"
+    }
+  ],
+  "previous_revision": "7601d2cf6c074f3ca2d5ac644fee04966578a4de",
+  "schema": 1,
+  "scope": "JSON transport and receiver diagnostic class relocation only; current native unit admission remains required"
+}
