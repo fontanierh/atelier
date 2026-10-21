@@ -1509,6 +1509,12 @@ def gondola_steps(ctx):
                     inputs=[SCRIPTS/'import_gondola.py',SCRIPTS/'mesh_import.py',SCRIPTS/'mesh_materials.py',SCRIPTS/'material_assets.py',
                             service,WORLD/'gondola/clock.py',WORLD/'gondola/inputs.py',*validation.SITE_CODE,YORI,kit/'params.py',kit/'rope.py'],
                     needs=['world.gondola_service','unreal.world'],after=['unreal.compile'],heavy=True,
+                    outputs=[folder/'import-report.json',
+                             *(GAME/'unreal/Content/Gondola/Kit'/f'{name}.uasset' for name in parameters.asset_names()),
+                             *(GAME/'unreal/Content/Gondola/World'/f'{name}.uasset' for name in names if not name.endswith(('_LOD1','_LOD2'))),
+                             *(GAME/'unreal/Content/Gondola/Materials'/f'{name}.uasset' for name in parameters.MATERIALS),
+                             *(GAME/'unreal/Content/Gondola/Textures'/f'{Path(name).stem}.uasset'
+                               for name in parameters.product_files() if name.startswith('textures/'))],
                     about='complete ropeway kit, fitted supports/access and authored rope detail levels')]
     return result
 

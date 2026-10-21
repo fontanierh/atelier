@@ -18,27 +18,8 @@ from contextlib import contextmanager
 import bpy
 from mathutils import Matrix, Vector
 
-# ------------------------------------------------------------------ materials: name -> (sRGB, roughness, metallic)
-TIMBER, PLANK, TIMBER_DARK, PLASTER, TILE = 'GD_Timber', 'GD_TimberPlank', 'GD_TimberDark', 'GD_Plaster', 'GD_RoofTile'
-SHINGLE, STEEL, IRON, GASKET, GLASS = 'GD_Shingle', 'GD_Steel', 'GD_DarkIron', 'GD_Gasket', 'GD_Glass'
-BOLT, CONCRETE, STONE, BASALT, PAVING = 'GD_Bolt', 'GD_Concrete', 'GD_Stone', 'GD_Basalt', 'GD_Paving'
-ROPE, BRASS, LAMP, SIGN, POT, SOIL = 'GD_Rope', 'GD_Brass', 'GD_LampGlow', 'GD_SignBoard', 'GD_Terracotta', 'GD_Soil'
-DECK, RUBBER, PAINT = 'GD_DeckTimber', 'GD_Rubber', 'GD_SafetyPaint'
-PANEL = 'GD_TimberPanel'
-MATERIALS = {
-    TIMBER: ((222, 168, 102), .55, 0.), PLANK: ((232, 184, 120), .6, 0.), TIMBER_DARK: ((96, 62, 40), .6, 0.),
-    PLASTER: ((238, 230, 214), .8, 0.), TILE: ((70, 74, 88), .5, 0.), SHINGLE: ((196, 140, 82), .7, 0.),
-    STEEL: ((172, 168, 160), .45, .5), IRON: ((64, 64, 68), .5, .4), GASKET: ((46, 46, 50), .6, 0.),
-    GLASS: ((150, 176, 192), .08, 0.), BOLT: ((196, 194, 188), .35, .7), CONCRETE: ((178, 172, 162), .85, 0.),
-    STONE: ((132, 128, 122), .85, 0.), BASALT: ((86, 82, 80), .85, 0.), PAVING: ((206, 194, 170), .85, 0.),
-    ROPE: ((74, 74, 76), .6, .3), BRASS: ((206, 164, 78), .35, .55), LAMP: ((255, 214, 150), .4, 0.),
-    SIGN: ((232, 228, 216), .7, 0.), POT: ((156, 100, 62), .7, 0.), SOIL: ((70, 52, 38), .9, 0.),
-    DECK: ((204, 152, 96), .65, 0.), RUBBER: ((40, 40, 42), .8, 0.), PAINT: ((222, 178, 60), .6, 0.),
-    PANEL: ((226, 174, 108), .75, 0.),
-}
-# Materials with a procedural timber texture (textures.py); their UVs are in metres with u along the grain.
-TEXTURED = {TIMBER: 'wood_grain', PANEL: 'wood_panel', PLANK: 'wood_grain_light', TIMBER_DARK: 'wood_grain_dark',
-            DECK: 'deck_planks', SHINGLE: 'shingle'}
+# Canonical plain data also declares native material/texture package ownership.
+from params import (TIMBER, PLANK, TIMBER_DARK, PLASTER, TILE, SHINGLE, STEEL, IRON, GASKET, GLASS, BOLT, CONCRETE, STONE, BASALT, PAVING, ROPE, BRASS, LAMP, SIGN, POT, SOIL, DECK, RUBBER, PAINT, PANEL, MATERIALS, TEXTURED)
 
 
 # ------------------------------------------------------------------ shared geometry, kit metadata

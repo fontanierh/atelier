@@ -58,3 +58,19 @@ def test_runtime_import_and_staging_are_normal_closed_dependencies(tmp_path):
     for name in ('world.gondola_service','unreal.gondola'):
         validate_imports(by_name[name],by_name[name].inputs)
     assert not by_name['unreal.gondola'].explicit
+
+
+def test_missing_native_mesh_material_texture_or_receipt_invalidates_import(tmp_path,monkeypatch):
+    recipe=build.load_recipe('yorimichi')
+    monkeypatch.setattr(recipe,'GAME',tmp_path/'source-game')
+    step=next(row for row in recipe.gondola_steps(SimpleNamespace(out=tmp_path/'build')) if row.name=='unreal.gondola')
+    assert step.outputs and not build.outputs_present(step)
+    for path in step.outputs:
+        path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'asset')
+    assert build.outputs_present(step)
+    for suffix in ('Kit/GD_Cabin_Collision.uasset','World/GD_L3_Rope_LOD0.uasset',
+                   'Materials/GD_Timber.uasset','Textures/GD_wood_panel_color.uasset','import-report.json'):
+        path=next(path for path in step.outputs if str(path).endswith(suffix))
+        path.unlink()
+        assert not build.outputs_present(step),suffix
+        path.write_bytes(b'asset')

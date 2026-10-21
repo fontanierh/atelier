@@ -88,7 +88,8 @@ def build_data(site,build):
             clear.append([a[0]/100.,-a[1]/100.,b[0]/100.,-b[1]/100.,3.])
         origin=station['origin'];along=station['along']
         clear.append([origin[0]-14*along[0],origin[1]-14*along[1],origin[0]+18*along[0],origin[1]+18*along[1],14.])
-    return {'clearance_segments_m':clear,'sources':records(build),'stations':stations,'static':static,'lines':lines,
+    return {'clear_prefixes':['HD_NorthTree','HD_ArcadeTree','HD_PlazaTree'],
+            'clearance_segments_m':clear,'sources':records(build),'stations':stations,'static':static,'lines':lines,
             'cabin':{'parts':[asset(name) for name in PARAMETERS.asset_names()[:6] if not name.endswith('_Collision')],
                      'body':asset('GD_Cabin_Collision'),'grip_pivot_cm':ue(cabin['grip']['pivot']['point']),
                      'floor_z_cm':cabin['floor_top_z']*100.,'size_cm':[p['cabin_length']*100,p['cabin_width']*100],
