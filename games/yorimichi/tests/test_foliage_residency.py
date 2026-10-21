@@ -120,3 +120,21 @@ def test_fresh_plan_retains_missing_producer_dependency_without_certifying_it(tm
     report = tmp_path / 'not-yet-produced/report.json'
     assert R.dependency_inputs(tmp_path, report) == [report]
     assert not R.verify(tmp_path, report)
+
+
+@pytest.mark.parametrize('name,words,tokens', [
+    ('BushFences', {'bush'}, {'bush','fences'}), ('FlowerWalls', {'flower'}, {'flower','walls'}),
+    ('BushPlanter', {'bush'}, {'bush'}), ('Pine_A', {'pine'}, {'pine','a'}),
+    ('Maple_A', {'maple'}, {'maple','a'}), ('Ginkgo_A', {'ginkgo'}, {'ginkgo','a'}),
+    ('Foliage_A', {'foliage'}, {'foliage','a'}), ('Plant_A', {'plant'}, {'plant','a'})])
+def test_container_plural_tree_alias_and_unknown_semantics_preserve_collision(name, words, tokens):
+    assert not R.passable_plant(name, words, tokens)
+
+
+def test_declared_authored_hull_and_structural_material_witnesses():
+    barrel=R.authored_spec('/Game/Belmonte/Meshes/SM_BM_BP_BarrelPlanter.SM_BM_BP_BarrelPlanter')
+    assert barrel['collision']['path'].endswith('_Collision.glb')
+    stand=R.authored_spec('/Game/Belmonte/Meshes/SM_BM_BP_FlowerStand.SM_BM_BP_FlowerStand')
+    assert not stand.get('collision') and stand['slots']==['M_wood','M_vcol']
+    with pytest.raises(ValueError):
+        R.authored_spec('/Game/Other/SM_BM_BP_BarrelPlanter.SM_BM_BP_BarrelPlanter')

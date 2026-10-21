@@ -127,17 +127,37 @@ def main():
             raise ValueError('Certified source lost foliage semantics: ' + old['source'])
         leaf_slots, classification = policy
         standalone = F.vegetation(source.get_name())
-        simple = bool(set(F.roles.plant_words(source.get_name())) & {'tree', 'palm'}) and classification != 'authored'
+        simple = bool(set(F.roles.plant_words(source.get_name())) & R.TREE_WORDS) and classification != 'authored'
         passable = R.passable_plant(source.get_name(), F.roles.plant_words(source.get_name()),
                                      F.roles.semantic_tokens(source.get_name())) and classification != 'authored'
         authored = []
         if source.get_name() in R.species():
             manifest = json.loads((yori.OUT / 'foliage' / source.get_name() / 'manifest.json').read_text())
             authored = R.trunk_bounds(manifest['trunk_collision']) if simple else []
+        expected_rigid = old['rigid_triangles']
+        collision = source.get_editor_property('complex_collision_mesh')
+        if classification == 'authored':
+            entry = R.authored_spec(old['source'])
+            if entry.get('collision'):
+                if not collision or collision.get_path_name().split('.')[0] != old['source'].split('.')[0] + '_Collision':
+                    raise ValueError('Missing current declared authored collision hull')
+            else:
+                if collision:
+                    raise ValueError('Undeclared authored collision hull')
+                names = [str(s.get_editor_property('material_slot_name')).removeprefix('FoliageAuthored_')
+                         for s in source.get_editor_property('static_materials')]
+                if names != entry['slots']:
+                    raise ValueError('Authored structural material order differs')
+                rigid_slots = {i for i, name in enumerate(names) if name in {'M_wood', 'M_iron', 'M_ashlar'}}
+                if not rigid_slots:
+                    raise ValueError('Authored structure has neither collision hull nor explicit rigid materials')
+                leaf_slots = [i for i in range(len(names)) if i not in rigid_slots]
+                classification = 'authored-material'
+                expected_rigid = -1
         before = owner.digest(old['source'])
         directory = R.ROOT + '/' + F.asset_id(old['source'])
         result = U.YorimichiFoliageResidencyBuilder.compact(source, prepared, shadow,
-            classification, leaf_slots, old['rigid_triangles'], simple,
+            classification, leaf_slots, expected_rigid, simple,
             R.source_lods(source.get_num_lods(), standalone), authored, directory, near, passable)
         if not result:
             raise ValueError('Native compaction refused: ' + old['source'])
@@ -145,7 +165,7 @@ def main():
         row['source_materials'] = [source.get_material(i).get_path_name()
                                    for i in range(len(source.get_editor_property('static_materials')))]
         for asset in R.assets(row):
-            if asset == old['patch'].split('.')[0]:
+            if asset in {old['patch'].split('.')[0], row.get('collision', '').split('.')[0]}:
                 continue
             mesh = E.load_asset(asset)
             if not mesh or not E.save_loaded_asset(mesh, True):
