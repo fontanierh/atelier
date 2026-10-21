@@ -15,6 +15,7 @@ import atmosphere
 import glb_mesh_validation
 import ground_grain
 from atelier.native_protocol import native_context
+from atelier import native_membership
 from atelier.unreal_mesh_reuse import AssetGroup, MeshReuse, lods_match, set_if_changed
 
 OUT = yori.OUT / 'belmonte'
@@ -261,6 +262,7 @@ def main():
     report = dict(meshes=geometry['meshes'], materials=material_view['materials'])
     defaults = material_view['bindings']
     E.make_directory(ROOT)
+    previous_meshes = native_membership.inventory(E, ROOT + '/Meshes', 'SM_BM_')
     texture_files = sorted({entry['texture'] for entry in report['materials'].values() if entry['texture']})
     material_packages = sorted({ROOT + '/Materials/' + name for name in
         ['M_Belmonte', 'M_BelmonteJoin'] + [entry['name'] for entry in report['materials'].values()]}
@@ -349,6 +351,10 @@ def main():
                           'collision_hulls': bool(entry.get('collision'))}
         reuse.validated(name)
         unreal.log(f'BELMONTE IMPORT {index + 1}/{len(report["meshes"])} {name} reused={int(reused)}')
+    current_names = [name for entry in report['meshes'] for name in
+                     ([entry['name'], entry['name'] + '_Collision'] if entry.get('collision') else [entry['name']])]
+    retired = native_membership.retire(E, previous_meshes, current_names, ROOT + '/Meshes', 'SM_BM_')
+    unreal.log(f'NATIVE MEMBERSHIP RETIRED: {len(retired)} superseded packages')
     (OUT / 'import-report.json').write_text(json.dumps(imported, indent=1) + '\n')
     # Both render and collision assets now reference only the region's materials.
     # Drop Interchange's placeholder materials and rename redirectors.

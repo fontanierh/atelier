@@ -40,7 +40,7 @@ def test_half_precision_uvs_flatten_the_grand_stair_nosings():
     assert sum(np.ptp(v.astype(np.float16)) == 0 for v in tops) > len(tops) // 4  # many sample one texel row
 
 
-def run_import(tmp_path, meshes):
+def run_import(tmp_path, meshes, *, retired=None, save_failure=False):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
@@ -62,7 +62,14 @@ def run_import(tmp_path, meshes):
                                    max=SimpleNamespace(x=x1 * 100, y=-y0 * 100, z=z1 * 100))
 
     built = {}
+    if retired is not None:
+        built['SM_BC_Superseded'] = Mesh(dict(meshes[0], name='SM_BC_Superseded'))
     imports = []
+
+    def delete(path):
+        if retired is not None: retired.append(path)
+        return built.pop(path.rsplit('/', 1)[-1], None) is not None
+
     def imported(path, name):
         imports.append(name)
         built[name] = Mesh(next(e for e in meshes if e['name'] == name))
@@ -86,8 +93,14 @@ def run_import(tmp_path, meshes):
     unreal = SimpleNamespace(StaticMeshEditorSubsystem=object(), load_module=loaded.add,
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
-    assets = SimpleNamespace(make_directory=lambda *_: None, does_asset_exist=lambda *_: False,
-        load_asset=lambda path: path, save_loaded_asset=lambda *_, **kw: True, delete_directory=lambda *_: None)
+    assets = SimpleNamespace(make_directory=lambda *_: None,
+        list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in built],
+        does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in built,
+        find_package_referencers_for_asset=lambda *a, **k: [],
+        delete_asset=delete,
+        load_asset=lambda path: path,
+        save_loaded_asset=lambda mesh, **kw: not (save_failure and mesh.entry['name'] == meshes[-1]['name']),
+        delete_directory=lambda *_: None)
     script = GAME / 'unreal/Scripts/import_brinecove.py'
     wanted = {'main', 'keep_full_precision_uvs'}
     functions = [node for node in ast.parse(script.read_text()).body
@@ -95,8 +108,9 @@ def run_import(tmp_path, meshes):
     assert {f.name for f in functions} == wanted
     namespace = dict(__file__=str(script), Path=Path, PARENTS={}, OUT=tmp_path, ROOT='/Game/Brinecove', E=assets, unreal=unreal, json=json,
         surfaces=lambda *_: None, textures=lambda _: None, import_mesh=imported, generate_lods=lambda _: None)
+    from atelier import native_membership
     from atelier.unreal_mesh_reuse import set_if_changed
-    namespace.update(native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
+    namespace.update(native_membership=native_membership, native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
         atmosphere=SimpleNamespace(__file__=str(script)),
         AssetGroup=lambda *a, **k: SimpleNamespace(matches=lambda _: True), set_if_changed=set_if_changed,
         lods_match=lambda *a: True,
@@ -126,3 +140,27 @@ def test_every_uv_textured_brinecove_mesh_imports_full_precision_uvs(tmp_path):
     assert builds['SM_BC_Ground_3_3']['use_full_precision_u_vs']        # its paving samples world-metre UVs
     assert not builds['SM_BC_Rocks_9_9']['use_full_precision_u_vs']     # world-position material only
     assert not builds['SM_BC_Plant_Palm0']['use_full_precision_u_vs']   # atlas cells within 0-1
+
+
+@pytest.mark.parametrize('save_failure', [False, True])
+def test_superseded_parent_retires_only_after_all_current_meshes_save(tmp_path, save_failure):
+    entry = dict(name='SM_BC_Town_Piece0', path='glb/piece.glb', slots=['stone'],
+                 triangles=1, bounds_m=[[0, 0, 0], [1, 1, 1]], collision=True, lods=False)
+    retired = []
+    entries = [entry, dict(entry, name='SM_BC_Town_Piece1')]
+    if save_failure:
+        with pytest.raises(AssertionError):
+            run_import(tmp_path, entries, retired=retired, save_failure=True)
+        assert retired == [] and not (tmp_path/'import-report.json').exists()
+    else:
+        assert set(run_import(tmp_path, entries, retired=retired)) == {'SM_BC_Town_Piece0', 'SM_BC_Town_Piece1'}
+        assert retired == ['/Game/Brinecove/Meshes/SM_BC_Superseded']
+
+
+@pytest.mark.parametrize('region', ['belmonte', 'brinecove'])
+def test_native_membership_helper_is_in_the_real_import_input_closure(tmp_path, region):
+    from atelier import build, native_membership
+    ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs',
+                          stamps=tmp_path/'stamps', uproject=None)
+    step = next(step for step in build.load_recipe('yorimichi').steps(ctx) if step.name == 'unreal.'+region)
+    assert Path(native_membership.__file__) in step.inputs
