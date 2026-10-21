@@ -23,9 +23,9 @@ import walk as W
 from cabin import Cabin, pose
 from tower import Tower
 from stations import Station, Valley, Rim, Crater, railing
-from gondola.line import centre_profile, closed_circuit, placed, simplify, station_frame
+from gondola.line import centre_profile, closed_circuit, placed, simplify, station_frame, near_rope_tolerance
 from gondola.products import ground
-from gondola.support import ground_ceiling
+from gondola.support import owned_range, owned_triangles
 from gondola.validation import site_inputs, validate_site
 from regions.gondola.layout import LINES, STATIONS
 from regions.craterpark import placement as PARK
@@ -63,8 +63,8 @@ def fit_station(key,other,G,layouts):
         _,owners=G.base(poly)
         if len(set(owners))!=1:
             raise ValueError('Station support footprint crosses a terrain-owner seam')
-        terrain=owner_surfaces[owners[0]].triangles
-        required=max(required,ground_ceiling(terrain,poly)-min(floor['z1'])+.55)
+        _,ceiling=owned_range(G,poly,contact=False)
+        required=max(required,ceiling-min(floor['z1'])+.55)
         footprint.append(poly.tolist())
     z=required+spec.get('platform_lift_m',0.)
     frame=(*frame[:3],z)
@@ -77,8 +77,9 @@ def timber_support(mesh,G,frame,xy,top,section=.28):
     """One post seats in a stone foot spanning its exact local ground relief."""
     offsets=np.array([[-.4,-.4],[.4,-.4],[.4,.4],[-.4,.4],[0,0]])
     world=world_xy(offsets+xy,frame)
-    heights,_=G.contact(world)
-    low,high=float(heights.min()-frame[3]),float(heights.max()-frame[3])
+    low,high=owned_range(G,world[:4])
+    heights=np.array([low,high])
+    low,high=low-frame[3],high-frame[3]
     foot_top=high+.18
     if top<=foot_top+.1:
         return None
@@ -355,13 +356,16 @@ def tower_fit(key,s,height,A,direction,G,p):
                    for sx in (-1,1) for sy in (-1,1) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))])
     lateral=np.array([-direction[1],direction[0]])
     world=xy+feet[:,0,None]*direction+feet[:,1,None]*lateral
-    heights,_=G.contact(world)
-    broad=xy+np.array([(x,y) for x in (-3,0,3) for y in (-3,0,3)])
-    datum=max(float(G.base(broad)[0].max()+.6),float(heights.max()+.15))
+    heights=[owned_range(G,world[i:i+4])[1] for i in range(0,len(world),4)]
+    broad=xy+np.array([[-3,-3],[3,-3],[3,3],[-3,3]])
+    datum=max(owned_range(G,broad,contact=False)[1]+.6,max(heights)+.15)
     frame=(xy,direction,lateral,datum)
     def contact(x,y):
         return float(G.contact(world_xy([[x,y]],frame))[0][0]-datum)
-    tower=Tower(p,height,ground=contact)
+    def footprint(poly):
+        low,high=owned_range(G,world_xy(poly,frame))
+        return low-datum,high-datum
+    tower=Tower(p,height,ground=contact,ground_bounds=footprint)
     mesh=tower.build();mesh.name=f'GD_{key}_Tower'
     return tower,mesh,frame,{'id':key,'s':s,'height':height,'origin':[float(xy[0]),float(xy[1]),datum],
                            'heading':math.degrees(math.atan2(direction[1],direction[0]))}
@@ -387,8 +391,8 @@ def audit_span(key,profile,cab,p):
         maxima=max(maxima,groove['max_error_mm'])
         # Whole actual-mesh distances and signed jaw surfaces also participate;
         # the denser groove sweep retains every .2m pose in both directions.
-        clearance=K.rope_check(cab,path,frames[::10])
-        jaw=K.jaw_contact(cab,path,frames[::10])
+        clearance=K.rope_check(cab,path,[frame for i in range(0,len(frames),10) for frame in frames[i:i+2]])
+        jaw=K.jaw_contact(cab,path,[frame for i in range(0,len(frames),10) for frame in frames[i:i+2]])
         if not clearance['ok'] or not jaw['ok']:
             raise ValueError(f'{key}: actual cabin/jaw clearance failed: {clearance}, {jaw}')
         minimum=min(minimum,clearance['min_distance_from_rope_axis_m'])
@@ -399,41 +403,32 @@ def audit_span(key,profile,cab,p):
 
 
 def ground_gap(profile,A,direction,G,drop):
+    """Whole owned triangles over both tracks and the inflated cabin footprint."""
+    from gondola.clearance import riding_clearance
     lateral=np.array([-direction[1],direction[0]])
-    floor=profile[:,1]-drop
-    from collections import deque
-    left=np.searchsorted(profile[:,0],profile[:,0]-1.15,side='left')
-    right=np.searchsorted(profile[:,0],profile[:,0]+1.15,side='right')
-    minimum=np.minimum(np.interp(profile[:,0]-1.15,profile[:,0],floor),
-                       np.interp(profile[:,0]+1.15,profile[:,0],floor))
-    pending=deque();next_=0
-    for index in range(len(profile)):
-        while next_<right[index]:
-            while pending and floor[pending[-1]]>=floor[next_]:
-                pending.pop()
-            pending.append(next_);next_+=1
-        while pending and pending[0]<left[index]:
-            pending.popleft()
-        minimum[index]=min(minimum[index],floor[pending[0]])
-    indices=np.arange(len(profile))
-    best=float('inf');approach=float('inf')
-    for start in range(0,len(indices),512):
-        ids=indices[start:start+512]
-        centres=A+profile[ids,0,None]*direction
-        q=centres[:,None,:]+np.linspace(-4.3,4.3,19)[None,:,None]*lateral
-        z=G.contact(q.reshape(-1,2))[0].reshape(-1,19).max(1)
-        gaps=minimum[ids]-z
-        approach=min(approach,float(gaps.min()))
-        interior=(profile[ids,0]>=35)&(profile[ids,0]<=profile[-1,0]-35)
-        if interior.any():
-            best=min(best,float(gaps[interior].min()))
-        if start%4096==0:
-            print(f'GONDOLA ground clearance {min(start+512,len(indices))}/{len(indices)} longitudinal samples',flush=True)
-    if approach<.03:
-        raise ValueError(f'Cabin intersects approach terrain: {approach:.3f}m')
-    if best<6.:
-        raise ValueError(f'Cabin-to-final-ground clearance {best:.3f}m is below6m')
-    return {'minimum_sampled_m':best,'minimum_approach_m':approach,'station_approach_m':35.,'longitudinal_step_m':.05,'lateral_samples':19,'pass':True}
+    best=float('inf');approach=float('inf');count=0
+    for start in np.arange(profile[0,0],profile[-1,0],32.):
+        end=min(profile[-1,0],start+32.)
+        s=np.r_[start,profile[(profile[:,0]>start)&(profile[:,0]<end),0],end]
+        piece=np.c_[s,np.interp(s,profile[:,0],profile[:,1])]
+        polygon=[A+(start-1.15)*direction-4.3*lateral,A+(end+1.15)*direction-4.3*lateral,
+                 A+(end+1.15)*direction+4.3*lateral,A+(start-1.15)*direction+4.3*lateral]
+        triangles=owned_triangles(G,polygon)
+        proof=riding_clearance(triangles,A,direction,piece,lateral=4.3,half_length=1.15,drop=drop)
+        value=proof['minimum_m']
+        if value is None:raise ValueError('No complete ground clearance evidence')
+        approach=min(approach,value);count+=proof['triangles_tested']
+        lo,hi=max(start,35.),min(end,profile[-1,0]-35.)
+        if hi>lo:
+            knots=np.r_[lo,profile[(profile[:,0]>lo)&(profile[:,0]<hi),0],hi]
+            interior=np.c_[knots,np.interp(knots,profile[:,0],profile[:,1])]
+            interior_proof=riding_clearance(triangles,A,direction,interior,lateral=4.3,half_length=1.15,drop=drop)
+            if interior_proof['minimum_m'] is not None:best=min(best,interior_proof['minimum_m'])
+        print(f'GONDOLA complete ground clearance {end:.1f}/{profile[-1,0]:.1f}m, {count} triangles',flush=True)
+    if approach<.03:raise ValueError(f'Cabin intersects approach terrain: {approach:.3f}m')
+    if best<6.:raise ValueError(f'Cabin-to-final-ground clearance {best:.3f}m is below6m')
+    return {'minimum_sampled_m':best,'minimum_approach_m':approach,'station_approach_m':35.,
+            'triangles_tested':count,'complete_coverage':True,'pass':True}
 
 
 def tower_path_audit(tower,mesh,row,profile,cab,p,d):
@@ -518,12 +513,18 @@ def main():
         audit=audit_span(line['id'],profile,cab,p)
         rope_exports=[]
         normal=np.array([-direction[1],direction[0]])
-        for lod,(tolerance,sides) in enumerate(((.0005,12),(.015,8),(.05,6))):
+        near_tolerance=near_rope_tolerance(audit['groove_max_mm'])
+        for lod,(tolerance,sides) in enumerate(((near_tolerance,12),(.015,8),(.05,6))):
             mesh=solid.Mesh(f'GD_{line["id"]}_Rope_LOD{lod}')
             for side in (-1,1):
                 points=np.c_[A+profile[:,0,None]*direction+side*p['gauge']/2*normal,profile[:,1]]
                 mesh.tube(simplify(points,tolerance),p['rope_radius'],solid.STEEL,n=sides)
             row=export_world(mesh,assets,mats,limit=100000)
+            row['axis_deviation_m']=tolerance
+            row['minimum_view_distance_m']=(0.,1000.,2000.)[lod]
+            if lod==0:
+                row['groove_bound_mm']=audit['groove_max_mm']+.0005+tolerance*1000
+                if row['groove_bound_mm']>2.:raise ValueError('Reduced rope exceeds jaw contact budget')
             rope_exports.append(row);exports.append(row)
         lines.append({'id':line['id'],'stations':[first,last],'supports':supports,'towers':towers,
                       'profile':profile.tolist(),'circuit':circuit.tolist(),'ground':gap,'riding':clearance,'span_audit':audit,'rope_meshes':rope_exports})

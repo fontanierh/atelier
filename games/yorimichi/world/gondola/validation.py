@@ -83,12 +83,17 @@ def validate_site(build):
     for line in data['lines']:
         if len(line['towers'])!=tower_counts[line['id']]:
             raise ValueError('Gondola fitted tower roster is incomplete')
+        ropes=line['rope_meshes']
+        if len(ropes)!=3 or ropes[0]['groove_bound_mm']>2. or not math.isfinite(ropes[0]['groove_bound_mm']):
+            raise ValueError('Near rope mesh exceeds the unchanged contact budget')
+        if [row['minimum_view_distance_m'] for row in ropes]!=[0.,1000.,2000.]:
+            raise ValueError('Far rope detail has no explicit distance/contact policy')
         audit=line['span_audit']
         if (audit.get('pass') is not True or audit['poses']<=0 or
                 not all(math.isfinite(audit[key]) for key in ('groove_max_mm','hardware_min_m')) or
                 audit['groove_max_mm']>2. or audit['hardware_min_m']<.095):
             raise ValueError('Gondola fitted-span contact proof is incomplete or failed')
-        if line['ground'].get('pass') is not True or not math.isfinite(line['ground']['minimum_sampled_m']) or line['ground']['minimum_sampled_m']<6.:
+        if line['ground'].get('complete_coverage') is not True or line['ground'].get('triangles_tested',0)<=0 or line['ground'].get('pass') is not True or not math.isfinite(line['ground']['minimum_sampled_m']) or line['ground']['minimum_sampled_m']<6.:
             raise ValueError('Gondola cabin-to-ground proof is missing or failed')
         if not math.isfinite(line['ground']['minimum_approach_m']) or line['ground']['minimum_approach_m']<.03:
             raise ValueError('Gondola approach terrain clearance failed')

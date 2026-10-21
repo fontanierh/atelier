@@ -28,8 +28,11 @@ SHEAVE_X = (-1.35, -0.6, 0.6, 1.35)
 
 
 class Tower:
-    def __init__(self, p, height, ground=None):
+    def __init__(self, p, height, ground=None, ground_bounds=None):
         self.ground = ground
+        self.ground_bounds = ground_bounds
+        if ground is not None and ground_bounds is None:
+            raise ValueError('Placed tower requires complete footing coverage/relief')
         self.pedestal_bases = {}
         self.anchor_bounds = {}
         self.p = p; self.H = float(height); self.g = p['gauge']; self.rr = p['rope_radius']
@@ -130,7 +133,7 @@ class Tower:
                 c = self.leg_pt(sx, sy, LEG_FOOT)
                 base = -1.0
                 if self.ground is not None:
-                    heights = [self.ground_z(c.x+u*.5,c.y+v*.5) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))]
+                    heights = self.ground_bounds([(c.x+u*.5,c.y+v*.5) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))])
                     if max(heights) > .52:
                         raise ValueError('Tower datum buries a pedestal shoe')
                     base = min(heights)-.20
@@ -160,7 +163,7 @@ class Tower:
                 ax = sx * (self.hx(0) + GUY_SPREAD * self.H); ay = sy * self.hy(LEG_FOOT)
                 ground,base = 0.,-.9
                 if self.ground is not None:
-                    heights = [self.ground_z(ax+u*.45,ay+v*.45) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))]
+                    heights = self.ground_bounds([(ax+u*.45,ay+v*.45) for u,v in ((-1,-1),(1,-1),(1,1),(-1,1))])
                     ground,base = max(heights)-.27,min(heights)-.20
                 self.anchor_bounds[(sx,sy)] = (base,ground+.55)
                 rings = [[(ax + u * s, ay + v * s, z) for u, v in ((-.5, -.5), (.5, -.5), (.5, .5), (-.5, .5))] for z, s in ((base, 0.9), (ground+0.45, 0.55))]
