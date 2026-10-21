@@ -35,7 +35,7 @@ def changed_by(edited, tmp_path, monkeypatch, *, stable_products=()):
                                               'plant':False,'collision':True} for name in names]}))
     # This registry contains ground only. The real structure collector still
     # reads the region report before excluding those ground-owned groups.
-    (registry.parent/'build-report.json').write_text(json.dumps({'meshes':[]}))
+    (registry.parent/'build-report.json').write_text(json.dumps({'meshes':[], 'materials':{}}))
     ctx = SimpleNamespace(game='yorimichi', out=tmp_path, logs=tmp_path/'logs', stamps=tmp_path/'stamps', uproject=None)
     recipe = build.load_recipe('yorimichi').steps(ctx)
     steps = build.order(recipe, [step.name for step in recipe])
