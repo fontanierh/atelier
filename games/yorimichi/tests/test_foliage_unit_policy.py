@@ -159,7 +159,7 @@ def test_exact_unused_slot_prepass_preserves_previously_emitted_samples(pair):
 def test_reviewed_startup_runtime_pair_is_pinned_even_without_geometry_changes(pair,name):
     member='games/yorimichi/unreal/Source/Yorimichi/'+name
     target=pair.root/member;target.parent.mkdir(parents=True,exist_ok=True)
-    raw=b'reviewed startup-only drain/telemetry source'
+    raw=b'reviewed startup-only render-variant CPU lifetime source'
     target.write_bytes(raw)
     pair.witness['current'][member]=hashlib.sha256(raw).hexdigest();pair.pin()
     assert pair.run()==pair.expected
