@@ -33,6 +33,9 @@ class Mesh:
         self.slots = value
         self.updates += 1
 
+    def get_material(self, index):
+        return self.slots[index].values['material_interface']
+
 
 def binding():
     script = Path(__file__).resolve().parents[1] / 'unreal/Scripts/build_foliage_system.py'
@@ -63,3 +66,10 @@ def test_incompatible_material_layout_refuses_without_publishing_changes():
     with pytest.raises(ValueError, match='material layout'):
         binding()(mesh, ['new'])
     assert mesh.updates == 0 and mesh.slots[0].values == before
+
+
+def test_editor_no_op_refuses_instead_of_certifying_old_bindings():
+    mesh = Mesh([Slot('old', 'source'), Slot('near', 'CanopyNear'), Slot('far', 'CanopyFar')])
+    mesh.set_editor_property = lambda key, value: None
+    with pytest.raises(ValueError, match='bindings did not apply'):
+        binding()(mesh, ['new'])

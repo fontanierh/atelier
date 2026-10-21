@@ -169,7 +169,8 @@ def bind_variant_materials(mesh, replacements):
     """@cc [owner:fontanierh,label:correctness;performance] foliage-material-batch
     Binding source materials MUST preserve slot order, names, UV metadata and the
     two appended canopy slots. It MUST publish the material array once per variant,
-    rather than invoking an editor mesh update for each source slot.
+    rather than invoking an editor mesh update for each source slot, and refuse
+    if the mesh does not expose the requested bindings afterward.
     """
     slots = [slot.copy() for slot in mesh.get_editor_property('static_materials')]
     if len(slots) != len(replacements) + 2:
@@ -177,6 +178,8 @@ def bind_variant_materials(mesh, replacements):
     for slot, material in zip(slots, replacements):
         slot.set_editor_property('material_interface', material)
     mesh.set_editor_property('static_materials', slots)
+    if any(mesh.get_material(index) != material for index, material in enumerate(replacements)):
+        raise ValueError('Foliage variant material bindings did not apply')
 
 
 def main():
