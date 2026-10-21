@@ -48,7 +48,8 @@ def merge_actions(target, incoming, store):
     for key, value in incoming.items():
         validate_action(value, store, key)
         prior = target.get(key)
-        if prior is not None and (prior['roots'] != value['roots'] or not equivalent(prior['files'], value['files'])):
+        stable = lambda action: {k: v for k, v in action.items() if k not in ('files', 'stamp')}
+        if prior is not None and (stable(prior) != stable(value) or not equivalent(prior['files'], value['files'])):
             raise CheckpointError('Conflicting historical action outputs; previous checkpoints preserved')
         target[key] = value
 
@@ -135,14 +136,37 @@ def verify(remote, index):
     return refs
 
 
-def retire(remote, current, index, old):
+def covers(index, old, store):
+    """Replaying a completed tag must never retire results absent from its immutable index."""
+    from .checkpoint_actions import equivalent
+    available = dict(records(index)[0])
+    merge_actions(available, index['checkpoint'].get('actions', {}), store)
+    required, pinned = {}, pin_keys(store)
+    for _, prior in old:
+        merge_actions(required, records(prior)[0], store)
+        merge_actions(required, prior['checkpoint'].get('actions', {}), store)
+        for key in ({prior['key']} | set(prior.get('retained', {}))) & pinned:
+            if key != index['key'] and key not in index.get('retained', {}):
+                return False
+    for key, action in required.items():
+        current = available.get(key)
+        if current is None or current['roots'] != action['roots'] or not equivalent(current['files'], action['files']):
+            return False
+    return True
+
+
+def retire(remote, current, index, old, *, store):
     """@cc [owner:fontanierh,label:correctness] newest-private-checkpoint-retention
     An older checkpoint release MAY retire only after the new completed index and every pack
-    it references are freshly verified. Referenced older releases MUST be rehomed as immutable
-    pack vaults without changing their numeric ID. All historical certified actions and pinned
+    it references are freshly verified. Every older release owning pack assets MUST be rehomed
+    as immutable pack storage without changing its numeric ID, even when this index does not
+    reference those bytes: another machine may be publishing a reference. Pack deletion requires
+    separate global coordination. All historical certified actions and pinned
     checkpoint descriptors MUST remain reachable. Drafts, unknown metadata, other games/repos
     and public releases MUST NOT be deleted. Failure MUST preserve the new usable checkpoint.
     """
+    if not covers(index, old, store):
+        raise CheckpointError('Completed index lacks historical results or current pins; older checkpoints preserved')
     # Observe the published completion again, rather than trusting the preceding PATCH response.
     fresh = remote.github.read(f'releases/{current["id"]}')
     if fresh.get('draft') is not False or fresh.get('tag_name') != current['tag_name']:
@@ -150,7 +174,7 @@ def retire(remote, current, index, old):
     with tempfile.TemporaryDirectory() as directory:
         if remote.descriptor(fresh, Path(directory)) != index:
             raise CheckpointError('Published checkpoint completion changed; older checkpoints preserved')
-    refs = verify(remote, index)
+    verify(remote, index)
     for item, descriptor in old:
         if item['id'] == current['id']:
             continue
@@ -159,13 +183,13 @@ def retire(remote, current, index, old):
         if (fresh.get('draft') is not False or fresh.get('tag_name') != item['tag_name']
                 or not fresh.get('tag_name', '').startswith(remote.prefix) or fresh.get('body') != body):
             raise CheckpointError('Older checkpoint metadata changed; retained without deletion')
-        if item['id'] in refs:
+        assets = release.asset_map(remote.github, item)
+        if any(name.startswith('pack-') for name in assets):
             tag = remote.game + '-cache-packs-retained-' + str(item['id'])
             remote.github.api(f'releases/{item["id"]}', method='PATCH', data=dict(
                 tag_name=tag, name=tag, body=VAULT_BODY))
             # The numeric release and pack assets stay intact; the newest index carries all
             # retained descriptors/action history. Remove only its superseded completion asset.
-            assets = release.asset_map(remote.github, item)
             completion = assets.get('checkpoint.json')
             if completion:
                 remote.github.api(f'releases/assets/{completion["id"]}', method='DELETE')

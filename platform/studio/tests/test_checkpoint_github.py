@@ -409,3 +409,69 @@ def test_final_fresh_pack_inventory_refuses_uncommitted_upload_claim(fixture, tm
         remote.publish(store, key, 'lie', revision='c' * 40)
     assert not any(name == gh.INDEX for (_, name) in github.files)
     assert github.releases[1]['draft'] is True
+
+
+def test_older_completed_retry_cannot_retire_newer_results(fixture, tmp_path, monkeypatch):
+    from atelier import checkpoint_archive as archive
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'first'])
+    remote.publish(store, first, 'A', revision='c' * 40)
+    # B completes its index, but retirement is interrupted. Both checkpoints survive.
+    actual = archive.retire
+    def interrupted(*a, **kw):
+        raise cp.CheckpointError('interrupted retirement')
+    monkeypatch.setattr(archive, 'retire', interrupted)
+    second = checkpoint(store, tmp_path, [b'newer'])
+    with pytest.raises(cp.CheckpointError, match='interrupted retirement'):
+        remote.publish(store, second, 'B', revision='d' * 40)
+    monkeypatch.setattr(archive, 'retire', actual)
+    before = deepcopy(github.releases)
+    remote.publish(store, first, 'A', revision='c' * 40)
+    assert github.releases == before
+    assert [item['tag_name'] for item in remote.candidates()] == [remote.prefix + 'B', remote.prefix + 'A']
+    receiver = cp.Store('fixture', tmp_path / 'receiver')
+    latest = remote.candidates()[0]
+    assert remote.fetch(latest, remote.descriptor(latest, tmp_path), receiver) == second
+    # Replaying the newest complete backup can finish its interrupted retirement.
+    remote.publish(store, second, 'B', revision='d' * 40)
+    assert len(remote.candidates()) == 1
+
+
+def test_new_pin_after_completion_defers_retirement_until_new_checkpoint(fixture, tmp_path, monkeypatch):
+    from atelier import checkpoint_archive as archive
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'first'])
+    remote.publish(store, first, 'A', revision='c' * 40)
+    actual = archive.retire
+    monkeypatch.setattr(archive, 'retire', lambda *a, **kw: None)
+    second = checkpoint(store, tmp_path, [b'newer'])
+    remote.publish(store, second, 'B', revision='d' * 40)
+    monkeypatch.setattr(archive, 'retire', actual)
+    pins = store.directory / 'pins'; pins.mkdir()
+    (pins / 'new.json').write_text(__import__('json').dumps(dict(checkpoints=[first])))
+    remote.publish(store, second, 'B', revision='d' * 40)
+    assert len(remote.candidates()) == 2
+    third = checkpoint(store, tmp_path, [b'latest'])
+    data = remote.publish(store, third, 'C', revision='e' * 40)
+    assert len(remote.candidates()) == 1
+    assert first in data['retained']
+
+
+def test_unreferenced_legacy_pack_owner_is_rehomed_for_other_machines(fixture, tmp_path):
+    github, store, remote = fixture
+    first = checkpoint(store, tmp_path, [b'old'])
+    item = legacy_draft(github, remote, first, b'')
+    path = tmp_path / ('pack-' + sha(b'old') + '.bin'); path.write_bytes(b'old')
+    github.upload(item, path)
+    old = dict(schema=1, key=first, source_revision='c' * 40, checkpoint=store.load(first),
+               blobs={sha(b'old'): [dict(release=1, pack=sha(b'old'), offset=0, size=3)]})
+    index = tmp_path / gh.INDEX; index.write_bytes(cp.canonical(old)); github.upload(item, index)
+    github.api('releases/1', method='PATCH', data=dict(draft=False))
+    second = checkpoint(store, tmp_path, [b'new'])
+    newest = remote.publish(store, second, 'next', revision='d' * 40)
+    assert sha(b'old') not in newest['blobs']
+    assert github.releases[1]['tag_name'] == 'fixture-cache-packs-retained-1'
+    assert (1, path.name) in github.files
+    # A second machine's already prepared descriptor still downloads the same numeric pack.
+    receiver = cp.Store('fixture', tmp_path / 'other-machine')
+    assert remote.fetch(github.releases[1], old, receiver) == first
