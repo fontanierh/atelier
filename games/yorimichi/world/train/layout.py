@@ -384,7 +384,7 @@ FC_FLOOR = {'cabin': 'carpet-emerald', 'wc': 'tile', 'luggage': 'parquet', 'pant
 
 
 def first_class():
-    c = Coach('first-class', 'Voiture première classe — cabines privées assises')
+    c = Coach('first-class', 'First-class coach — private seated compartments')
     _shared(c)
     corridor_door = (-IN + CORRIDOR / 2 - .45, -IN + CORRIDOR / 2 + .45)   # 0.90 m doorway centred on the corridor
     _bulkheads(c, corridor_door, corridor_door)
@@ -477,7 +477,7 @@ GALLEY_RANGE = 1.00                         # the range's slot at the end of the
 
 
 def restaurant():
-    c = Coach('restaurant', 'Voiture restaurant')
+    c = Coach('restaurant', 'Dining car')
     _shared(c)
     lobby_x1 = -SPAN_X + LOBBY
     salon_x0 = lobby_x1 + PART
@@ -570,7 +570,7 @@ def brake_van():
     body = Body(x_a=-half + (BUFFER_X - BODY_X) + 1.30, x_b=half - (BUFFER_X - BODY_X), buffer_a=-half, buffer_b=half,
                 end_a='balcony', end_b='gangway', bogies=(-3.30, 3.55), wheelbase=2.0,
                 exterior_doors=(('m', .30),), cupola=(1.15, 3.85), crest_x=-2.45)
-    c = Coach('brake-van', 'Fourgon-frein de queue', body=body)
+    c = Coach('brake-van', 'Rear brake van', body=body)
     _shared(c, vestibules=False)
     p1, p2 = (-.45, -.40), (1.00, 1.05)
     c.rooms += [Room('balcony', 'balcony', body.headstock(-1), body.x_a, -IN, IN, 'parquet'),
@@ -634,7 +634,7 @@ def second_class():
     """The poor relation at the back of the train: the same body, worn livery, an open saloon of hard benches facing
     in pairs, and a tiled canteen at end A whose serving hatch opens onto the saloon. A service corridor beside the
     canteen keeps the passage to the vestibule and the brake van."""
-    c = Coach('second-class', 'Deuxième classe et cantine', body=Body(livery='worn'))
+    c = Coach('second-class', 'Second class and canteen', body=Body(livery='worn'))
     _shared(c)
     corridor_door = (-IN + CORRIDOR / 2 - .45, -IN + CORRIDOR / 2 + .45)
     _bulkheads(c, corridor_door, (-.55, .55), glazed=False)
@@ -726,7 +726,7 @@ def baggage_van():
     has its own exterior doors and two projecting lookout bays; the hold has two pairs of wide double sliding doors
     on each side, a few high windows and parcel shelving along the walls."""
     body = Body(end_b='closed', exterior_doors=(('g', -10.55),), cargo_doors=(-3.40, 5.70), crest_x=1.15)
-    c = Coach('baggage-van', 'Fourgon à bagages', body=body)
+    c = Coach('baggage-van', 'Baggage van', body=body)
     _shared(c, vestibules=False)
     hold_x0 = GUARD_X1 + PART
     c.rooms += [Room('guard-room', 'guard', body.in_a, GUARD_X1, -IN, IN, 'parquet'),

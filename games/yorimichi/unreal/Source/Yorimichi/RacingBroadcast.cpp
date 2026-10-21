@@ -758,7 +758,7 @@ void ARacingBroadcast::DrawLowerThird(UCanvas* Canvas, const FRacingNetState& Ne
     if (T >= 0. && Shot != RacingTv::EShot::Finish)
     {
         Box(Canvas, 16.f, 14.f, 96.f, 34.f, Live);
-        Text(Canvas, TEXT("DIRECT"), 64.f, 18.f, 24.f, Ink, 1);
+        Text(Canvas, TEXT("LIVE"), 64.f, 18.f, 24.f, Ink, 1);
     }
 
     // The order now: by distance run, the places once home.
@@ -784,9 +784,9 @@ void ARacingBroadcast::DrawLowerThird(UCanvas* Canvas, const FRacingNetState& Ne
     Box(Canvas, 0.f, Y, Width, Height - Y, Panel);
     Box(Canvas, 0.f, Y, Width, 4.f, Gold);
     FString Head;
-    if (T < 0.) Head = FString::Printf(TEXT("DÉPART  %s"), *Countdown(-T));
-    else if (!bArrived) Head = FString::Printf(TEXT("RESTE  %d m"), FMath::Max(0, FMath::CeilToInt(Race.Distance - (Run.IsEmpty() ? 0. : FMath::Max(Run)))));
-    else Head = TEXT("ARRIVÉE");
+    if (T < 0.) Head = FString::Printf(TEXT("START  %s"), *Countdown(-T));
+    else if (!bArrived) Head = FString::Printf(TEXT("%d m TO GO"), FMath::Max(0, FMath::CeilToInt(Race.Distance - (Run.IsEmpty() ? 0. : FMath::Max(Run)))));
+    else Head = TEXT("FINISH");
     Text(Canvas, Short(Race.Name), 18.f, Y + 12.f, 30.f, Ink);
     Text(Canvas, Head, Width - 18.f, Y + 12.f, 30.f, Gold, 2);
     // Three columns: number and name, the type shrunk to fit its column.
@@ -818,10 +818,10 @@ void ARacingBroadcast::DrawIdle(const FRacingNetState& Net, double Now)
 
     const FRacingNetRace& Race = Net.Race;
     if (!Net.Serial)
-        Text(Canvas, TEXT("COURSES"), Width * .5f, 150.f, 48.f, Ink, 1);
+        Text(Canvas, TEXT("RACING"), Width * .5f, 150.f, 48.f, Ink, 1);
     else if (Race.Key.IsEmpty())
     {
-        Text(Canvas, TEXT("PROCHAINE RÉUNION"), 24.f, 40.f, 30.f, Gold);
+        Text(Canvas, TEXT("NEXT MEETING"), 24.f, 40.f, 30.f, Gold);
         Text(Canvas, Countdown(Net.NextMeeting - Now), 24.f, 90.f, 64.f, Ink);
     }
     else
@@ -830,7 +830,7 @@ void ARacingBroadcast::DrawIdle(const FRacingNetState& Net, double Now)
         const double T = Now - Race.Start;
         Text(Canvas, FString::Printf(TEXT("%s  ·  %d m"), *FString(VenueName(Race.Venue)).ToUpper(), Race.Distance), 24.f, 22.f, 28.f, Gold);
         Text(Canvas, Short(Race.Name), 24.f, 62.f, 40.f, Ink);
-        Text(Canvas, T < 0. ? Countdown(-T) : FString(TEXT("EN COURS")), Width - 24.f, 22.f, 52.f, Gold, 2);
+        Text(Canvas, T < 0. ? Countdown(-T) : FString(TEXT("RUNNING")), Width - 24.f, 22.f, 52.f, Gold, 2);
         TArray<const FRacingNetRunner*> Favourites;
         for (const FRacingNetRunner& R : Race.Runners) if (R.OddsTenths > 0) Favourites.Add(&R);
         Favourites.Sort([](const FRacingNetRunner& A, const FRacingNetRunner& B) { return A.OddsTenths < B.OddsTenths; });
@@ -848,7 +848,7 @@ void ARacingBroadcast::DrawIdle(const FRacingNetState& Net, double Now)
     if (!Net.Last.Top.IsEmpty())
     {
         Box(Canvas, 0.f, Height - 52.f, Width, 52.f, Panel);
-        const float W = Text(Canvas, TEXT("GAGNANT"), 24.f, Height - 42.f, 26.f, Gold);
+        const float W = Text(Canvas, TEXT("WINNER"), 24.f, Height - 42.f, 26.f, Gold);
         Text(Canvas, Net.Last.Top[0], 24.f + W + 18.f, Height - 42.f, 26.f, Ink);
     }
     UKismetRenderingLibrary::EndDrawCanvasToRenderTarget(this, Context);

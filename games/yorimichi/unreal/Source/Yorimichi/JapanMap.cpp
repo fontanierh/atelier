@@ -162,6 +162,8 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             if (!V->TryGetObject(O)) continue;
             FJapanMapZone Zone;
             Zone.Key = (*O)->GetStringField(TEXT("key")); Zone.Name = (*O)->GetStringField(TEXT("name"));
+            if (Zone.Key == TEXT("belmonte_salon"))
+                Zone.Name = TEXT("Belmonte · Betting Hall");
             (*O)->TryGetStringField(TEXT("hint"),Zone.Hint);
             Zone.Location = AJapanWorld::ToUE((*O)->GetNumberField(TEXT("x")),(*O)->GetNumberField(TEXT("y")),(*O)->GetNumberField(TEXT("z")));
             Zone.Yaw = -(*O)->GetNumberField(TEXT("yaw"));
@@ -176,8 +178,17 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
         {
             const auto S=V->AsObject();const auto& Walk=S->GetArrayField(TEXT("walk_cm"));if(Walk.IsEmpty())continue;
             const auto& P=Walk.Last()->AsArray();FJapanMapZone Zone;
-            Zone.Key=TEXT("gondola_")+S->GetStringField(TEXT("id"));Zone.Name=TEXT("Télécabine — ")+S->GetStringField(TEXT("name"));
-            Zone.Hint=TEXT("Montez par l’escalier et attendez une cabine à quai.");
+            const FString StationId = S->GetStringField(TEXT("id"));
+            const FString StationName =
+                StationId == TEXT("hidamari") ? FString(TEXT("Hidamari — Southeast Rim")) :
+                StationId == TEXT("southeast") ? FString(TEXT("Southeast Rim — Hidamari")) :
+                StationId == TEXT("belmonte") ? FString(TEXT("Belmonte — Northwest Rim")) :
+                StationId == TEXT("northwest") ? FString(TEXT("Northwest Rim — Belmonte")) :
+                StationId == TEXT("floor") ? FString(TEXT("Crater Floor")) :
+                StationId == TEXT("floor_rim") ? FString(TEXT("Southeast Rim — Crater")) :
+                S->GetStringField(TEXT("name"));
+            Zone.Key=TEXT("gondola_")+StationId;Zone.Name=TEXT("Gondola — ")+StationName;
+            Zone.Hint=TEXT("Climb the stairs and wait for a cabin at the platform.");
             Zone.Location=FVector(P[0]->AsNumber(),P[1]->AsNumber(),P[2]->AsNumber());
             Zone.Yaw=S->GetNumberField(TEXT("yaw"));Zone.Above=150.f;
             if(!Zones.ContainsByPredicate([&](const FJapanMapZone& Z){return Z.Key==Zone.Key;}))Zones.Add(Zone);

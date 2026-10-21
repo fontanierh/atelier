@@ -1295,7 +1295,7 @@ bool ABelmonteTrainService::Eject(FRider& Rider, int32 VehicleIndex)
         if (!C->TravelTo(Feet, Yaw, TEXT("train: not boarded"), 20.f)) return false;
         UE_LOG(LogTemp, Display, TEXT("TRAIN EJECT %s vehicle=%s chainage=%.0f enclosed=%d recovery=%s on_vehicle=%d at=(%.0f,%.0f,%.0f)"), *C->GetName(), *V.Id,
             Chain, bEnclosed, Names[uint8(Candidate.Kind)], bVehicle, Feet.X, Feet.Y, Feet.Z);
-        const TCHAR* Msg = TEXT("On monte à pied, par une porte");
+        const TCHAR* Msg = TEXT("Board on foot through a door");
         if (C->IsLocallyControlled()) ULiveLibrary::Say(Msg, 2.f); else C->ClientActivityRejected(Msg);
         return true;
     }
@@ -1429,8 +1429,8 @@ bool ABelmonteTrainService::TryInteract(AWandererCharacter* C)
     if (bSeat) { Service->SitDown(Rider, VehicleIndex, Index); Service->PublishNetworkState(); return true; }
     FVehicle& V = Service->Vehicles[VehicleIndex];
     FDoor& Door = V.Doors[Index];
-    if (Door.bLocked) { const FString Msg = Door.Kind == TEXT("staff") ? TEXT("Réservé au personnel") : TEXT("Porte verrouillée"); if (C->IsLocallyControlled()) ULiveLibrary::Say(Msg, 2.f); else C->ClientActivityRejected(Msg); return true; }
-    if (Door.bStation && (!Service->TrainAtStation[V.Train] || !Door.bPlatformSide)) { if (C->IsLocallyControlled()) ULiveLibrary::Say(TEXT("Fermé"), 2.f); else C->ClientActivityRejected(TEXT("Fermé")); return true; }
+    if (Door.bLocked) { const FString Msg = Door.Kind == TEXT("staff") ? TEXT("Staff only") : TEXT("Door locked"); if (C->IsLocallyControlled()) ULiveLibrary::Say(Msg, 2.f); else C->ClientActivityRejected(Msg); return true; }
+    if (Door.bStation && (!Service->TrainAtStation[V.Train] || !Door.bPlatformSide)) { if (C->IsLocallyControlled()) ULiveLibrary::Say(TEXT("Closed"), 2.f); else C->ClientActivityRejected(TEXT("Closed")); return true; }
     // Station doors with steps: Monter from the platform, Descendre from inside.
     if (Door.Boarding.Num())
     {
@@ -1465,16 +1465,16 @@ FString ABelmonteTrainService::Hint(const AWandererCharacter* C)
     if ((C->GetSkate() && C->GetSkate()->IsRiding()) || C->OnVehicle() || C->IsZeppelinPassenger()) return FString();
     const FRider* Rider = Service->FindRider(C);
     if (Rider && Rider->BoardDoor != INDEX_NONE) return FString();
-    if (Rider && Rider->Seat != INDEX_NONE) return TEXT("Use: se lever");
+    if (Rider && Rider->Seat != INDEX_NONE) return TEXT("Use: stand up");
     int32 VehicleIndex, Index; bool bSeat;
     if (!Service->Nearest(C, VehicleIndex, Index, bSeat)) return FString();
-    if (bSeat) return TEXT("Use: s'asseoir");
+    if (bSeat) return TEXT("Use: sit down");
     const FVehicle& V = Service->Vehicles[VehicleIndex];
     const FDoor& Door = V.Doors[Index];
-    if (Door.bLocked) return Door.Kind == TEXT("staff") ? TEXT("Réservé au personnel") : TEXT("Porte verrouillée");
-    if (Door.bStation && (!Service->TrainAtStation[V.Train] || !Door.bPlatformSide)) return TEXT("Fermé");
-    if (Door.Boarding.Num()) return Rider && Rider->bAboard ? TEXT("Use: descendre") : TEXT("Use: monter");
-    return Door.bOpen ? TEXT("Use: fermer la porte") : TEXT("Use: ouvrir la porte");
+    if (Door.bLocked) return Door.Kind == TEXT("staff") ? TEXT("Staff only") : TEXT("Door locked");
+    if (Door.bStation && (!Service->TrainAtStation[V.Train] || !Door.bPlatformSide)) return TEXT("Closed");
+    if (Door.Boarding.Num()) return Rider && Rider->bAboard ? TEXT("Use: step off") : TEXT("Use: board");
+    return Door.bOpen ? TEXT("Use: close door") : TEXT("Use: open door");
 }
 
 FString ABelmonteTrainService::Status(const AWandererCharacter* C) const

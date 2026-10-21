@@ -36,7 +36,7 @@ document.getElementById('close-map').onclick=()=>document.getElementById('map-di
   const title=()=>page.locator('#map-title').textContent();
   const back=()=>page.locator('#map-back').click();
   const row=key=>page.locator(`#map-zones button[data-key="${key}"]`);
-  await page.waitForFunction(()=>document.getElementById('map-title').textContent==='Haras Valley');
+  await page.waitForFunction(()=>document.getElementById('map-title').textContent==='Stud Valley');
   if(await page.locator('.map-air-route line.air-leg').count()!==3)throw Error('Zeppelin itinerary is missing from the atlas');
   const airLegend=await page.locator('#map-air-legend').textContent();
   for(const name of ['Woodland','Hidamari','Mega Park','Belmonte'])if(!airLegend.includes(name))throw Error('Zeppelin legend misses '+name);
@@ -75,7 +75,7 @@ document.getElementById('close-map').onclick=()=>document.getElementById('map-di
   if(await page.evaluate(()=>window.sent.at(-1).zone)!=='craterpark')throw Error('Search changed travel identity');
   await page.evaluate(()=>{window.updateServerMap();window.map.open(true);});
   if(!(await row('alder_stables').textContent()).includes('Changed at desktop')||!await row('marker_fresh').count())throw Error('Reopening kept stale names or saved places');
-  if(await title()!=='Haras Valley'||await page.locator('#map-search').inputValue()!=='')throw Error('Reopening did not reset to current region');
+  if(await title()!=='Stud Valley'||await page.locator('#map-search').inputValue()!=='')throw Error('Reopening did not reset to current region');
   await page.locator('#map-search').fill('My saved ridge');
   await row(marker).click();
   if(await page.evaluate(()=>window.sent.at(-1).zone)!==marker)throw Error('39-character marker key was truncated');

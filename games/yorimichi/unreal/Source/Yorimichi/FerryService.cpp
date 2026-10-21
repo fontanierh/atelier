@@ -486,18 +486,18 @@ void AFerryService::UpdateBoards(double Time)
         const FFerryState State = Line.State(0, Time);
         if (State.Berth == I)
         {
-            Status = Terminal.Down >= .999f ? TEXT("Embarquement ouvert") : TEXT("Passerelle fermee");
+            Status = Terminal.Down >= .999f ? TEXT("Boarding open") : TEXT("Gangway closed");
             for (const FFerryPhase& Phase : Line.Phases)
                 if (Phase.Berth == I && State.CycleTime >= Phase.Start && State.CycleTime < Phase.End)
-                    Status += FString::Printf(TEXT("\nDepart dans %d s"), FMath::CeilToInt((Phase.End - State.CycleTime) / FMath::Max(Scale, .001f)));
+                    Status += FString::Printf(TEXT("\nDeparting in %d s"), FMath::CeilToInt((Phase.End - State.CycleTime) / FMath::Max(Scale, .001f)));
         }
         else
         {
             const double Wait = FMath::Max(0., Line.NextAlongside(I, Time) - Time) / FMath::Max(Scale, .001f);
-            Status = Wait < 60 ? TEXT("Arrive bientot") : FString::Printf(TEXT("Arrive dans %d min"), FMath::CeilToInt(Wait / 60.));
+            Status = Wait < 60 ? TEXT("Arriving soon") : FString::Printf(TEXT("Arrives in %d min"), FMath::CeilToInt(Wait / 60.));
         }
         const FString Destination = Terminals.IsValidIndex(1 - I) ? Terminals[1 - I].Name : FString();
-        Terminal.Board->SetText(FText::FromString(TEXT("Ferry vers ") + Destination + TEXT("\n") + Status));
+        Terminal.Board->SetText(FText::FromString(TEXT("Ferry to ") + Destination + TEXT("\n") + Status));
     }
 }
 

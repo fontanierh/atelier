@@ -14,6 +14,21 @@ from belmonte import layout as L, source, planting, terrain, appearance, model_p
 
 OUT = yori.OUT / 'belmonte'
 
+# Display text only: the committed scene library keeps its source strings, while the
+# runtime signs are written in English. Keys are source labels, not identifiers.
+SIGN_TRANSLATIONS = {
+    'Votre écurie': 'Belmonte Stables',
+    'Haras de Belmonte': 'Belmonte Stables',
+    'Haras des Aulnes': 'Alder Stables',
+    'Écurie du Pont Clair': 'Clearbridge Stables',
+    'Domaine des\nTrois Prés': 'Three Meadows\nEstate',
+    'Écurie des\nDunes Basses': 'Low Dunes\nStables',
+    'Domaine des\nRoches Longues': 'Longstone\nEstate',
+    'Écurie de Montfauve': 'Amberhill Stables',
+    'MAIRIE': 'TOWN HALL',
+    'TAVERNE': 'TAVERN',
+}
+
 
 def clear_railway(plants):
     """Clear the Belmonte railway's corridor (train/corridor.py settle): trees off it, shrubs and grass down to the
@@ -191,7 +206,7 @@ def map_zones(town_z):
          'x': 230., 'y': 4560. + L.NORTH_SHIFT, 'z': float(L.ORIGIN[2] + 30.2), 'yaw': 0.,
          'hint': 'Countryside arenas and practice grounds'},
         # Haras Valley's salon.inside, moved one metre west off the hall fixture; face the counters.
-        {'key': 'belmonte_salon', 'name': 'Belmonte · Salon des Paris',
+        {'key': 'belmonte_salon', 'name': 'Belmonte · Betting Hall',
          'x': L.ORIGIN[0] + 67.8, 'y': L.ORIGIN[1] + 306.8, 'z': float(L.ORIGIN[2] + 30.2),
          'yaw': 0., 'above_m': 1.5,
          'hint': 'The betting hall by the racecourse: betting counters'},
@@ -275,10 +290,7 @@ def main():
         groups.append({'asset': f'/Game/Japan/Assets/{name}.{name}', 'materials': [], 'plant': True,
                        'collision': tree, 'shadow': not grass, 'cull_cm': 8000 if grass else 36000 if not tree else 400000,
                        'transforms': transforms})
-    signs = data['signs']
-    for sign in signs:
-        if sign['text'] == 'Votre écurie':
-            sign['text'] = 'Haras de Belmonte'
+    signs = [dict(sign, text=SIGN_TRANSLATIONS.get(sign['text'], sign['text'])) for sign in data['signs']]
     town_z = float(source.terrain().height(0., -18.)) + L.ORIGIN[2] + 1.
     runtime = {'version': 1, 'origin_cm': L.native_origin(), 'bounds_m': L.BOUNDS,
                'clearance_m': list(terrain.OUTER), 'groups': groups, 'signs': signs, 'railway_corridor': L.RAILWAY,

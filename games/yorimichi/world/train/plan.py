@@ -55,9 +55,9 @@ def plan(c):
     svg = Svg(w, h)
     X = lambda x: margin_x + (x - bd.buffer_a) * S
     Y = lambda y: top + (L.HALF - y) * S            # +Y (compartment / galley side) drawn at the top
-    svg.text(margin_x, 40, f'{c.title} — plan coté (m)', 22, 'start', 'bold')
-    svg.text(margin_x, 64, 'Repère voiture : x le long de la voiture (bout A à gauche, bout B à droite), +Y en haut (côté cabines / cuisine), '
-             'z depuis le dessus du rail. Cotes de conception, pas de relevé.', 12, 'start', color='#555')
+    svg.text(margin_x, 40, f'{c.title} — dimensioned plan (m)', 22, 'start', 'bold')
+    svg.text(margin_x, 64, 'Coach frame: x along the coach (end A on the left, end B on the right), +Y up (compartment / galley side), '
+             'z from the top of the rail. Design dimensions, not a survey.', 12, 'start', color='#555')
     # body, buffers, gangways
     svg.rect(X(bd.x_a), Y(L.HALF), (bd.x_b - bd.x_a) * S, 2 * L.HALF * S, '#20283c', '#20283c', 1)
     for sx in (-1, 1):
@@ -138,7 +138,7 @@ def plan(c):
     chain(win_marks, Y(-L.HALF) + 34, False)
     corr = [bd.x_a, bd.x_b] + [x + d * L.EXT_DOOR_W / 2 for _, x in bd.exterior_doors for d in (-1, 1)]
     chain(corr, Y(-L.HALF) + 64, False)
-    svg.text(X((bd.buffer_a + bd.buffer_b) / 2), Y(-L.HALF) + 96, 'Fenêtres côté +Y (2e chaîne) · portes extérieures 0.75 m (3e chaîne)', 11, color='#555')
+    svg.text(X((bd.buffer_a + bd.buffer_b) / 2), Y(-L.HALF) + 96, 'Windows on the +Y side (2nd chain) · exterior doors 0.75 m (3rd chain)', 11, color='#555')
     # transverse chain at the left end
     xa = X(bd.buffer_a) - 40
     if c.name == 'first-class':
@@ -157,16 +157,16 @@ def plan(c):
             svg.text(xa - 8, Y((a + b) / 2) + 3, f'{b - a:.3f}', 9, 'end')
     # legend and key numbers
     ly = Y(-L.HALF) + 130
-    items = [('#3b2414', 'cloisons 50 mm'), ('#9ad3f0', 'vitrage (ouverture réelle)'), ('#b38b3c', 'vantail coulissant (ouvert)'),
-             ('#3b6fd8', 'réservation fixe (bar, cuisine, WC…)')] + [(v, k) for k, v in ASSET.items() if k in {p.asset for p in c.placements}]
+    items = [('#3b2414', '50 mm partitions'), ('#9ad3f0', 'glazing (real opening)'), ('#b38b3c', 'sliding leaf (open)'),
+             ('#3b6fd8', 'fixed reservation (bar, galley, WC…)')] + [(v, k) for k, v in ASSET.items() if k in {p.asset for p in c.placements}]
     x = margin_x
     for col, label in items:
         svg.rect(x, ly, 14, 10, col, '#222', .5)
         svg.text(x + 20, ly + 9, label, 10, 'start')
         x += 30 + 6.2 * len(label)
     seats = len(c.seats)
-    svg.text(margin_x, ly + 36, f'Places assises : {seats} · portes : {len(c.doors)} · intérieur libre 2.95 m · hauteur libre 2.30 m au centre, '
-             f'2.05 m aux parois · plancher à {L.FLOOR_Z:.2f} m au-dessus du rail', 12, 'start')
+    svg.text(margin_x, ly + 36, f'Seats: {seats} · doors: {len(c.doors)} · clear interior 2.95 m · headroom 2.30 m at the centre, '
+             f'2.05 m at the walls · floor {L.FLOOR_Z:.2f} m above the rail', 12, 'start')
     return svg
 
 
@@ -177,7 +177,7 @@ def section():
     cx, base = 330, 600
     Yy = lambda y: cx + y * S2
     Z = lambda z: base - z * S2
-    svg.text(30, 34, 'Coupe transversale commune (m au-dessus du rail)', 20, 'start', 'bold')
+    svg.text(30, 34, 'Common cross-section (m above the rail)', 20, 'start', 'bold')
     pts = [(-L.HALF, L.SKIRT_Z), (L.HALF, L.SKIRT_Z), (L.HALF, L.CANT_Z)]
     pts += [(L.HALF - 2 * L.HALF * k / 30, L.roof_z(L.HALF - 2 * L.HALF * k / 30)) for k in range(31)]
     svg.add('<polygon points="' + ' '.join(f'{Yy(y):.1f},{Z(z):.1f}' for y, z in pts) + '" fill="#e8e2d6" stroke="#20283c" stroke-width="2"/>')
@@ -192,12 +192,12 @@ def section():
         svg.rect(Yy(y0), Z(2 * L.WHEEL_R), .13 * S2, 2 * L.WHEEL_R * S2, '#bbb', '#555', 1)
     svg.rect(Yy(-.98), Z(L.WHEEL_R + .075), 1.96 * S2, .15 * S2, '#999', '#555', .6)
     # Cairo and the adult gauge in the corridor
-    for y, hgt, col, label in ((-1.13, L.HUMAN['height'], '#c0392b', 'adulte 1.75'), (-.80, L.CAIRO['height'], '#8e44ad', 'Cairo 1.48')):
+    for y, hgt, col, label in ((-1.13, L.HUMAN['height'], '#c0392b', 'adult 1.75'), (-.80, L.CAIRO['height'], '#8e44ad', 'Cairo 1.48')):
         svg.rect(Yy(y) - 12, Z(L.FLOOR_Z + hgt), 24, hgt * S2, col, col, 1, .35)
         svg.text(Yy(y), Z(L.FLOOR_Z + hgt) - 6, label, 9, color=col)
-    levels = [('rail', 0), ('jupe', L.SKIRT_Z), ('tampons', L.BUFFER_Z), ('plancher', L.FLOOR_Z), ('ceinture bleu/ivoire', L.BELT_Z),
-              ('allège fenêtre', L.SILL), ('linteau fenêtre', L.HEAD), ('naissance plafond', L.CEIL_SPRING), ('brisis (haut des parois)', L.CANT_Z),
-              ('plafond au centre', L.CEIL_APEX), ('toit', L.ROOF_TOP), ('ventilateurs', L.VENT_TOP)]
+    levels = [('rail', 0), ('skirt', L.SKIRT_Z), ('buffers', L.BUFFER_Z), ('floor', L.FLOOR_Z), ('blue/ivory belt', L.BELT_Z),
+              ('window sill', L.SILL), ('window head', L.HEAD), ('ceiling spring', L.CEIL_SPRING), ('cants (top of the walls)', L.CANT_Z),
+              ('ceiling at the centre', L.CEIL_APEX), ('roof', L.ROOF_TOP), ('ventilators', L.VENT_TOP)]
     last = None
     for name, z in levels:          # labels pushed apart where two levels are close
         ty = Z(z) + 4 if last is None else min(Z(z) + 4, last - 13)
@@ -206,9 +206,9 @@ def section():
         svg.text(698, ty, f'{z:.3f}  {name}', 11, 'start')
         last = ty
     svg.line(Yy(-L.HALF), Z(-.18), Yy(L.HALF), Z(-.18), '#444', .7)
-    svg.text(Yy(0), Z(-.18) + 15, f'{L.WIDTH:.2f} extérieur · {2 * L.IN:.2f} intérieur · écartement {L.GAUGE:.3f}', 11)
-    svg.text(30, 70, 'Première classe : couloir 0.90 · cloison 0.05 · cabine 2.00 = 2.95', 12, 'start', color='#555')
-    svg.text(30, 88, 'Écartement 1.435 et hauteurs de quai : hypothèses à valider avec la carte', 12, 'start', color='#555')
+    svg.text(Yy(0), Z(-.18) + 15, f'{L.WIDTH:.2f} outside · {2 * L.IN:.2f} inside · gauge {L.GAUGE:.3f}', 11)
+    svg.text(30, 70, 'First class: corridor 0.90 · partition 0.05 · cabin 2.00 = 2.95', 12, 'start', color='#555')
+    svg.text(30, 88, 'Gauge 1.435 and platform heights: assumptions to validate against the map', 12, 'start', color='#555')
     return svg
 
 

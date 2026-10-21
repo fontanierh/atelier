@@ -1,0 +1,5 @@
+@cc [owner:fontanierh,label:correctness] english-user-facing-text
+The game is in English. Every user-facing string in Python, C++, runtime data and UI
+(including station and terminal names, signs, timetables, arrival boards, broadcasts,
+map zones, hints and HUD prompts) MUST be natural English and MUST NOT contain French
+words or French labels. Proper-noun world toponyms that are not French words MAY remain.

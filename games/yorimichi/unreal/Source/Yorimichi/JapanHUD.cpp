@@ -239,7 +239,7 @@ void AJapanHUD::DrawHUD()
     const bool bRide=Ride && Ride->IsRiding();
     if (Pawn->IsTrainPassenger())
     {
-        const TCHAR* View=Pawn->IsTrainFirstPerson()?TEXT("vue à la troisième personne"):TEXT("vue à la première personne");
+        const TCHAR* View=Pawn->IsTrainFirstPerson()?TEXT("third-person view"):TEXT("first-person view");
         Secondary += bController ? FString::Printf(TEXT("   %s %s"),Pad.LeftBumper,View) : FString::Printf(TEXT("   P %s"),View);
     }
     if (!Pawn->IsOnTrain() && !bRide && !bSailboat && !Pawn->IsZeppelinPassenger() && Ride && Ride->IsAvailable())

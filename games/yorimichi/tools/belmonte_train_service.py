@@ -513,7 +513,7 @@ def stations(route, train, terminals):
         arrival = (ax - ady * sign * (PLATFORM['edge_m'] + 2.5), ay + adx * sign * (PLATFORM['edge_m'] + 2.5), az + height)
         ex, ey, ez, edx, edy = at(end)
         out.append({
-            'key': name.lower() + '_station', 'name': 'Gare de ' + name, 'chainage': chainage, 'side': side,
+            'key': name.lower() + '_station', 'name': name + ' Station', 'chainage': chainage, 'side': side,
             'platform': {'centre': to_ue(x + lx * middle, y + ly * middle, (top + bottom) / 2),
                          'yaw': round(-math.degrees(math.atan2(dy, dx)), 3),
                          'size': [round(length * 100, 1), round(PLATFORM['width_m'] * 100, 1), round((top - bottom) * 100, 1)]},
