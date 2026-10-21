@@ -3,17 +3,17 @@ import math
 
 
 def settings_reader(unreal):
-    """Read-only mesh getters are stateless; commandlets need no live editor instance.
-
-    UE's GetLodScreenSizes/GetLodBuildSettings/GetLodReductionSettings read the
-    supplied mesh and editor context only, so their class default object provides
-    the same checks when commandlet startup has no editor subsystem instance.
-    """
+    """Use stateless CDO getters only with positively established editor context."""
     reader = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
-    if reader is None:
+    mode = 'instance'
+    if reader is None and unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem) is not None:
+        # The getter guards dereference GEditor. Another editor subsystem proves
+        # it exists even when StaticMeshEditor loaded after subsystem collection.
         reader = unreal.get_default_object(unreal.StaticMeshEditorSubsystem)
+        mode = 'cdo'
     if reader is None:
-        raise RuntimeError('Static mesh settings reader unavailable')
+        mode = 'unavailable'
+    unreal.log('FOLIAGE SETTINGS READER ' + mode)
     return reader
 
 

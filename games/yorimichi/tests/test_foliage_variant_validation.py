@@ -160,15 +160,27 @@ def test_commandlet_uses_same_read_only_getters_on_class_default():
     reader = object()
     calls = []
     api = SimpleNamespace(StaticMeshEditorSubsystem='mesh class',
-        get_editor_subsystem=lambda cls: None,
+        UnrealEditorSubsystem='editor class', log=lambda message: calls.append(message),
+        get_editor_subsystem=lambda cls: reader if cls == 'editor class' else None,
         get_default_object=lambda cls: calls.append(cls) or reader)
     assert validation.settings_reader(api) is reader
-    assert calls == ['mesh class']
+    assert calls == ['mesh class', 'FOLIAGE SETTINGS READER cdo']
     api.get_editor_subsystem = lambda cls: reader
     calls.clear()
     assert validation.settings_reader(api) is reader
-    assert calls == []
-    api.get_editor_subsystem = lambda cls: None
-    api.get_default_object = lambda cls: None
-    with pytest.raises(RuntimeError, match='unavailable'):
-        validation.settings_reader(api)
+    assert calls == ['FOLIAGE SETTINGS READER instance']
+
+
+def test_missing_editor_context_never_calls_default_getters(tmp_path):
+    calls = []
+    api = SimpleNamespace(StaticMeshEditorSubsystem='mesh class', UnrealEditorSubsystem='editor class',
+        get_editor_subsystem=lambda cls: None, log=calls.append,
+        get_default_object=lambda cls: pytest.fail('CDO getters require GEditor'))
+    assert validation.settings_reader(api) is None
+    assert calls == ['FOLIAGE SETTINGS READER unavailable']
+    args, *rest = fixture(tmp_path)
+    args['editor'] = None
+    reasons = []
+    assert not validation.matches(**args, refusal=reasons.append)
+    assert not rest[-1]
+    assert reasons and 'readback' in reasons[0]
