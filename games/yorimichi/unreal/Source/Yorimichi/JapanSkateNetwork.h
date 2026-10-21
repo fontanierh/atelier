@@ -40,6 +40,7 @@ public:
     UFUNCTION(Server, Unreliable) void ServerBoard(const FJapanBoardState& State);
 private:
     friend class FTrainVehicleAdmissionTest;
+    friend class FFerryRemotePassengerTest;
     UPROPERTY() TObjectPtr<AWandererCharacter> Rider;
     void ConfigureTickOrder();
     void ObserveDisplayedPose();

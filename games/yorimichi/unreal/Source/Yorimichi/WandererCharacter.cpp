@@ -779,7 +779,7 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 bool AWandererCharacter::RefuseVehicleOnTrain()
 {
     if (!IsOnTrain()) return false;
-    const TCHAR* Message = TEXT("Pas à bord du train");
+    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
     if (IsLocallyControlled()) ULiveLibrary::Say(Message, 2.f);
     else if (HasAuthority()) ClientActivityRejected(Message);
     return true;
@@ -1685,7 +1685,7 @@ void AWandererCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult
 
 bool AWandererCharacter::IsTrainPassenger() const
 {
-    return bTrainAboard && !ABelmonteTrainService::IsBoardingRider(this);
+    return bTrainAboard && AboardVehicle == ETransportVehicle::Train && !ABelmonteTrainService::IsBoardingRider(this);
 }
 
 void AWandererCharacter::ToggleTrainView(const FInputActionValue&)

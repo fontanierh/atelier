@@ -11,6 +11,7 @@
 #include "JapanWorld.h"
 #include "LiveLibrary.h"
 #include "BelmonteTrainService.h"
+#include "FerryService.h"
 #include "SkateComponent.h"
 #include "Engine/World.h"
 #include "Components/CapsuleComponent.h"
@@ -239,6 +240,24 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
                     if (!Zones.ContainsByPredicate([&](const FJapanMapZone& Z) { return Z.Key == Zone.Key; })) Zones.Add(Zone);
                 }
         }
+    if (const TSharedPtr<FJsonObject> Ferry = AtelierReadJson(AtelierDataPath(TEXT("ferry/service/service.json"))))
+    {
+        for (const auto& Value : Ferry->GetArrayField(TEXT("terminals")))
+        {
+            const auto Terminal = Value->AsObject();
+            const auto& Walk = Terminal->GetArrayField(TEXT("walk_cm"));
+            if (Walk.IsEmpty()) continue;
+            const auto& At = Walk[0]->AsArray();
+            if (At.Num() != 3) continue;
+            FJapanMapZone Zone;
+            Zone.Key = TEXT("ferry_") + Terminal->GetStringField(TEXT("key"));
+            Zone.Name = Terminal->GetStringField(TEXT("name")) + TEXT(" ferry terminal");
+            Zone.Hint = TEXT("The passenger ferry: wait for the ship and board when the gangway is down");
+            Zone.Location = FVector(At[0]->AsNumber(), At[1]->AsNumber(), At[2]->AsNumber());
+            Zone.Yaw = float(Terminal->GetNumberField(TEXT("walk_yaw"))); Zone.Above = 200.f;
+            Zones.Add(Zone);
+        }
+    }
     ImageFile = Dir/TEXT("map.png");
     Texture = FImageUtils::ImportFileAsTexture2D(ImageFile);
     if (Texture)

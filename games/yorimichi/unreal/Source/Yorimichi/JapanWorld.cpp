@@ -40,6 +40,7 @@
 #include "BelmonteRegion.h"
 #include "ZeppelinService.h"
 #include "BelmonteTrainService.h"
+#include "FerryService.h"
 #include "RacingBroadcast.h"
 #include "RacingService.h"
 #include "BelmonteTrack.h"
@@ -687,6 +688,8 @@ void AJapanWorld::Load()
         if (GetNetMode() != NM_Client)
             ABelmonteTrainService::Spawn(GetWorld(), AtelierDataPath(TEXT("belmonte_train/service.json")));
     }
+    if (GetNetMode() != NM_Client && !AFerryService::Spawn(GetWorld(), AtelierDataPath(TEXT("ferry/service/service.json"))))
+        Incomplete.Add(TEXT("ferry"));
     // The racing world (docs/RACING.md): the host owns it; clients receive the replicated service.
     if (GetNetMode() != NM_Client) ARacingService::Spawn(GetWorld());
     // Its TVs in Belmonte's osteria and Salon (docs/RACING.md, "TVs"): drawn on every machine that renders, never replicated.

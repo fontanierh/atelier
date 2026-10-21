@@ -16,6 +16,37 @@ def require_clean_source():
     return provenance.require_clean_source('Commit the reviewed source before recording native acceptance evidence')
 
 
+def native_module_binary(ctx, name, filename, build_id, platform):
+    """@cc [owner:fontanierh,label:correctness] native-module-provider-identity
+    Each module MUST resolve to exactly one game or declared plugin binary.
+    Plugin candidates MUST match the editor build ID and module filename;
+    missing or ambiguous providers MUST refuse native acceptance.
+    """
+    from atelier.unreal_modules import plugins
+    if Path(filename).name != filename:
+        raise RuntimeError('Unexpected module path in native manifest')
+    project = ctx.uproject.parent
+    direct = project / 'Binaries' / platform / filename
+    candidates = [direct] if direct.is_file() else []
+    for descriptor, names, _ in plugins(ctx.uproject).values():
+        if name not in names:
+            continue
+        folder = descriptor.parent / 'Binaries' / platform
+        manifest = folder / 'UnrealEditor.modules'
+        if not manifest.is_file():
+            continue
+        data = json.loads(manifest.read_text())
+        if data.get('BuildId') != build_id or data.get('Modules', {}).get(name) != filename:
+            continue
+        binary = folder / filename
+        if binary.is_file():
+            candidates.append(binary)
+    candidates = sorted(set(path.resolve() for path in candidates))
+    if len(candidates) != 1:
+        raise RuntimeError('Native module has missing or ambiguous binary providers: ' + name)
+    return candidates[0]
+
+
 def current_native_build(ctx):
     """Tie the real loaded module files to a current successful compile recipe."""
     from atelier.build import fingerprint, load_recipe, order, outputs_present
@@ -39,9 +70,7 @@ def current_native_build(ctx):
 
     files = {}
     for name, filename in sorted(modules['Modules'].items()):
-        if Path(filename).name != filename:
-            raise RuntimeError('Unexpected module path in native manifest')
-        files[name] = signature(folder / filename)
+        files[name] = signature(native_module_binary(ctx, name, filename, modules['BuildId'], platform))
     return dict(compile_fingerprint=done['unreal.compile'], engine_build_id=modules['BuildId'],
                 modules=files, executable=signature(ctx.unreal_app))
 

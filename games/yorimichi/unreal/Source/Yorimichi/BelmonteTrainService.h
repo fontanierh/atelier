@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "BelmonteTrainRules.h"
+#include "TransportRiders.h"
 #include "BelmonteTrainService.generated.h"
 
 class FJsonObject;
@@ -222,11 +223,9 @@ private:
         TArray<FInterior> Interiors;
         TArray<int32> SeatTaken;
     };
-    struct FRider
+    struct FRider : FTransportRider
     {
-        TWeakObjectPtr<AWandererCharacter> Character;
-        int32 Vehicle = INDEX_NONE, Seat = INDEX_NONE;
-        bool bAboard = false, bCameraLag = true, bTickOrdered = false;
+        int32 Seat = INDEX_NONE;
         /** Boarded through a door (the boarding walk): only an admitted rider is carried as a passenger. Anyone else
          *  riding inside a coach is put back outside (Eject). The host owns it; clients follow the passenger list. */
         BelmonteTrainRules::FAdmission Admission;
@@ -244,8 +243,6 @@ private:
         float Seated = 0.f;
         /** Where the service last put the seated rider: moved elsewhere (a teleport, a respawn), they are let go. */
         FVector SeatedAt = FVector::ZeroVector;
-        /** The capsule's responses before boarding (aboard, only the train holds the rider). */
-        FCollisionResponseContainer Responses;
         /** The short train camera's blend (0 outside, 1 inside a coach) and the arm it came from. */
         float Camera = 0.f, SavedArm = -1.f, LastAppliedArm = -1.f;
         /** The scripted step up or down at a door: the path in vehicle cm, the time along it and its length. */

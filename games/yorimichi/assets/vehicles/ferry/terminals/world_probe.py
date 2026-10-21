@@ -48,12 +48,15 @@ def clear_scene():
 
 
 def import_file(path):
+    print(f'FERRY PROBE importing {path.name}', flush=True)
     before = set(bpy.data.objects)
     if path.suffix == '.fbx':
         bpy.ops.import_scene.fbx(filepath=str(path))
     else:
         bpy.ops.import_scene.gltf(filepath=str(path))
-    return [o for o in bpy.data.objects if o not in before and o.type == 'MESH']
+    objects = [o for o in bpy.data.objects if o not in before and o.type == 'MESH']
+    print(f'FERRY PROBE imported {path.name}: {len(objects)} meshes', flush=True)
+    return objects
 
 
 def triangles(objs, matrix=Matrix.Identity(4)):
@@ -83,8 +86,8 @@ def clip(tris, bounds, band=None):
     return tris[keep].astype(np.float32)
 
 
-def hidamari(build):
-    bounds = S.BOUNDS['hidamari']; sources = {}; names = []; skipped = []
+def hidamari(build, bounds=None):
+    bounds = S.BOUNDS['hidamari'] if bounds is None else bounds; sources = {}; names = []; skipped = []
     clear_scene()
     path = build / 'hidamari/assets/HD_Terrain.fbx'; sources[str(path.relative_to(build))] = sha(path)
     ground = [clip(triangles(import_file(path)), bounds)]
@@ -130,11 +133,13 @@ def label(name):
     return '_'.join(parts)
 
 
-def brinecove(build):
-    bounds = S.BOUNDS['brinecove']; sources = {}; names = []; ground = []; solid = []
+def brinecove(build, bounds=None):
+    bounds = S.BOUNDS['brinecove'] if bounds is None else bounds; sources = {}; names = []; ground = []; solid = []
     runtime = build / 'brinecove/runtime.json'; sources[str(runtime.relative_to(build))] = sha(runtime)
     data = json.loads(runtime.read_text())
-    report = {m['name']: m for m in json.loads((build / 'brinecove/build-report.json').read_text())['meshes']}
+    report_path = build / 'brinecove/build-report.json'
+    sources[str(report_path.relative_to(build))] = sha(report_path)
+    report = {m['name']: m for m in json.loads(report_path.read_text())['meshes']}
     x0, y0, x1, y1 = bounds
     for g in data['groups']:
         name = g['asset'].rsplit('.', 1)[-1]
@@ -160,11 +165,45 @@ def brinecove(build):
             {'frame': 'brinecove-local metres', 'origin_cm': data['origin_cm']})
 
 
+def crossing(build):
+    """Export every final surface/solid along the sea corridor in the same placement frames as the game."""
+    sys.path.insert(0, str(S.REPO / 'games/yorimichi/world'))
+    from regions.ferry.route import BOUNDS
+    ground, solid, names, sources, _ = hidamari(build, BOUNDS)
+    ground = [ground]
+    runtime = json.loads((build / 'brinecove/runtime.json').read_text())
+    ox, oy, oz = runtime['origin_cm']
+    origin = np.array((ox / 100, -oy / 100, oz / 100))
+    x0, y0, x1, y1 = BOUNDS
+    bg, bs, bn, bp, _ = brinecove(build, (x0 - origin[0], y0 - origin[1], x1 - origin[0], y1 - origin[1]))
+    ground.append(bg + origin)
+    solid += [t + origin for t in bs]; names += bn; sources.update(bp)
+    path = build / 'world.json'; sources[str(path.relative_to(build))] = sha(path)
+    world = json.loads(path.read_text())
+    for name, rows in sorted(world['instances'].items()):
+        if not name.startswith('SW_'):
+            continue
+        path = build / 'southwest/fbx' / f'{name}.fbx'
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        sources[str(path.relative_to(build))] = sha(path)
+        objs = import_file(path)
+        for x, y, z, yaw, scale in rows:
+            matrix = Matrix.Translation((x, y, z)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z') @ Matrix.Scale(scale, 4)
+            tris = triangles(objs, matrix)
+            solid.append(clip(tris, BOUNDS, Z_BAND)); names.append(name)
+            if name == 'SW_Island':
+                ground.append(clip(tris, BOUNDS))
+        clear_scene()
+        print(f'crossing placed {name}: {len(rows)} instances', flush=True)
+    return np.concatenate(ground), solid, names, sources, {'frame': 'world metres'}
+
+
 def main():
     build = Path(sys.argv[sys.argv.index('--') + 1]).resolve()
     bpy.ops.wm.read_factory_settings(use_empty=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (('hidamari', hidamari), ('brinecove', brinecove)):
+    for name, fn in (('hidamari', hidamari), ('brinecove', brinecove), ('crossing', crossing)):
         ground, parts, names, sources, frame = fn(build)
         labels = sorted(set(names))
         solid = np.concatenate(parts)
@@ -172,9 +211,9 @@ def main():
         if not len(ground) or not len(solid):
             raise SystemExit(f'{name}: no ground or no solid geometry inside {S.BOUNDS[name]}')
         np.savez_compressed(OUT / f'world_{name}.npz', ground=ground, solid=solid, solid_label=solid_label,
-                            meta=json.dumps({'harbour': name, 'bounds': S.BOUNDS[name], 'z_band': Z_BAND, 'labels': labels,
+                            meta=json.dumps({'harbour': name, 'bounds': S.BOUNDS[name] if name != 'crossing' else __import__('regions.ferry.route', fromlist=['BOUNDS']).BOUNDS, 'z_band': Z_BAND, 'labels': labels,
                                              'sources': sources, **frame}))
-        print(name, len(ground), 'ground and', len(solid), 'solid triangles from', len(sources), 'files')
+        print(name, len(ground), 'ground and', len(solid), 'solid triangles from', len(sources), 'files', flush=True)
     print('WORLD PROBE DONE')
 
 

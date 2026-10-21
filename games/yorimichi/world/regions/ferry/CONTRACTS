@@ -1,0 +1,6 @@
+@cc [owner:fontanierh,label:correctness] ferry-authoritative-route-data
+The production ferry MUST be one ship shuttling between Hidamari and Brinecove. Its runtime path,
+arrival/departure manoeuvres, boarding endpoints and world cuts MUST come from the same source-bound
+data checked against the final exported world. Missing seabed, failed audits and stale source or
+export identities MUST refuse production generation and import. The normal build and packaging graph
+MUST include the preparation, access cut, import and runtime staging.

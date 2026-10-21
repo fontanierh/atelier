@@ -13,6 +13,7 @@
 #include "JapanHorsePresentation.h"
 #include "JapanHorseAppearance.h"
 #include "TrainPassengerView.h"
+#include "TransportRiders.h"
 #include "WandererCharacter.generated.h"
 
 class UWandererDefinition;
@@ -259,6 +260,7 @@ private:
     friend class UWandererSwordComponent;
     friend class AZeppelinService;
     friend class ABelmonteTrainService;
+    friend struct FTransportRiders;
     friend class UAdventureMoveSet;
     friend class UJapanCharacterMovement;
     friend struct FAdventureNetworkState;
@@ -330,6 +332,7 @@ public:
     bool IsZeppelinPassenger() const;
     /** Inside a no-sprint volume (aboard the Belmonte train): sprint is unavailable. */
     bool bNoSprint = false, bTrainAboard = false, bTrainDriving = false;
+    ETransportVehicle AboardVehicle = ETransportVehicle::None;
     bool IsTrainPassenger() const;
     bool IsTrainFirstPerson() const { return TrainView.IsFirstPerson(); }
     bool HidesTrainBody() const { return !bFixedView && !bCinematic && TrainView.HidesBody(); }

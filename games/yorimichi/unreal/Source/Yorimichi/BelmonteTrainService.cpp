@@ -633,29 +633,7 @@ const ABelmonteTrainService::FRider* ABelmonteTrainService::FindRider(const AWan
 void ABelmonteTrainService::Board(FRider& Rider, bool bAboard)
 {
     AWandererCharacter* C = Rider.Character.Get();
-    if (!C || Rider.bAboard == bAboard) return;
-    Rider.bAboard = bAboard;
-    C->bTrainAboard = bAboard;
-    UCapsuleComponent* Capsule = C->GetCapsuleComponent();
-    if (bAboard)
-    {
-        // Until the terrain is carved for the line, it runs through hillsides, and the regions' foliage and props stand
-        // in its way: aboard, only the train (vehicle objects) and other people hold the rider, so nothing the coach
-        // passes through can push them out through a wall or take over as their floor.
-        Rider.Responses = Capsule->GetCollisionResponseToChannels();
-        for (const ECollisionChannel Channel : {ECC_WorldStatic, ECC_WorldDynamic, ECC_PhysicsBody, ECC_Destructible})
-            Capsule->SetCollisionResponseToChannel(Channel, ECR_Ignore);
-        Capsule->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-        Rider.bCameraLag = C->CameraArm->bEnableCameraLag;
-        C->CameraArm->bEnableCameraLag = false;   // world-space lag would trail the moving coach
-    }
-    else
-    {
-        Capsule->SetCollisionResponseToChannels(Rider.Responses);
-        C->CameraArm->bEnableCameraLag = Rider.bCameraLag;
-        C->bNoSprint = false;
-        C->bTrainAboard = false;
-    }
+    if (!FTransportRiders::SetAboard(Rider, bAboard, true, ETransportVehicle::Train)) return;
     UE_LOG(LogTemp, Display, TEXT("TRAIN RIDER %s %s vehicle=%s"), *C->GetName(), bAboard ? TEXT("boarded") : TEXT("left"),
         Vehicles.IsValidIndex(Rider.Vehicle) ? *Vehicles[Rider.Vehicle].Id : TEXT("-"));
 }
@@ -1043,6 +1021,7 @@ bool ABelmonteTrainService::ReplacePassenger(AWandererCharacter* From, AWanderer
     if (Index == INDEX_NONE) return false;
     FRider& R = Riders[Index];
     From->bTrainAboard = From->bTrainDriving = From->bNoSprint = false;
+    From->AboardVehicle = ETransportVehicle::None;
     R.bTickOrdered = false;
     R.TrackedVehicle = INDEX_NONE;
     if (R.bAboard)
@@ -1101,13 +1080,7 @@ void ABelmonteTrainService::UpdateRiders(float Dt)
         if (!bOwner && !FindRider(C) && NetworkState.Passengers.ContainsByPredicate([C](const FBelmonteTrainPassenger& P) { return P.Rider == C; }))
         { RiderFor(C); OnRep_NetworkState(); }
         FRider& Rider = RiderFor(C);
-        if (!Rider.bTickOrdered)
-        {
-            // The vehicles move first; the rider's movement then follows its base without a frame of lag.
-            C->PrimaryActorTick.AddPrerequisite(this, PrimaryActorTick);
-            C->GetCharacterMovement()->PrimaryComponentTick.AddPrerequisite(this, PrimaryActorTick);
-            Rider.bTickOrdered = true;
-        }
+        FTransportRiders::OrderTick(*this, Rider);
         if (Rider.BoardDoor != INDEX_NONE) { UpdateBoarding(Rider, Dt); UpdateCamera(Rider, Rider.bAboard, Dt); continue; }
         const float Half = C->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
         if (Rider.Seat != INDEX_NONE && Rider.Seated > 0.f && (C->IsLocallyControlled() || HasAuthority()) && FVector::Dist(C->GetActorLocation(), Rider.SeatedAt) > 300.)
@@ -1209,21 +1182,9 @@ void ABelmonteTrainService::UpdateRiders(float Dt)
         if (Inside != INDEX_NONE)
         {
             const FVehicle& V = Vehicles[Inside];
-            const UPrimitiveComponent* Base = C->GetMovementBase();
-            if (!Base || Base->GetOwner() != this)
-            {
-                if (!JapanNetwork::IsOnline(GetWorld()) && V.bMoved)
-                {
-                    const FTransform Now = V.Body->GetComponentTransform();
-                    const FVector At = Now.TransformPosition(V.Previous.InverseTransformPosition(C->GetActorLocation()));
-                    const double Turn = FRotator::NormalizeAxis(Now.Rotator().Yaw - V.Previous.Rotator().Yaw);
-                    C->SetActorLocationAndRotation(At, C->GetActorRotation() + FRotator(0., Turn, 0.), false, nullptr, ETeleportType::TeleportPhysics);
-                    if (C->IsLocallyControlled() && C->Controller && !FMath::IsNearlyZero(Turn))
-                        C->Controller->SetControlRotation(C->Controller->GetControlRotation() + FRotator(0., Turn, 0.));
-                }
-                if (C->GetCharacterMovement()->IsMovingOnGround()) C->SetBase(V.Body);
-            }
+            FTransportRiders::Carry(Rider, *this, V.Body, V.Previous, V.bMoved);
         }
+
         const bool bWasAboard = Rider.bAboard;
         Rider.Vehicle = Inside;
         Board(Rider, Inside != INDEX_NONE);

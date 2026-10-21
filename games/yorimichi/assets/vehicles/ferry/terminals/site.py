@@ -24,6 +24,7 @@ import json
 import math
 import sys
 import types
+import time
 from pathlib import Path
 
 import numpy as np
@@ -46,6 +47,7 @@ def _ship():
 
 
 ship = _ship()
+OUT = ship.OUT / 'terminals'
 
 DRAFT = -ship.Z_BOTTOM
 KEEL_CLEARANCE = 0.5
@@ -57,7 +59,7 @@ SHIP_TOP = 30.0                                 # above the masthead: solids up 
 GATE_X, GATE_W = ship.GATES[0]
 SILL_Z = ship.deck_z(GATE_X)
 CELL = 0.25
-BOUNDS = {'hidamari': (700.0, -330.0, 1000.0, -110.0), 'brinecove': (-460.0, -260.0, -100.0, 70.0)}
+BOUNDS = {'hidamari': (700.0, -380.0, 1000.0, -110.0), 'brinecove': (-460.0, -330.0, -100.0, 70.0)}
 
 
 def outline(full):
@@ -237,6 +239,8 @@ class Grid:
 def distance(m, limit):
     """Approximate distance (metres) from every cell to the nearest True cell, up to limit (8-neighbour chamfer).
     Cells inside a True cell are 0, so an outline cell on a solid cell reports overlap."""
+    if not m.any():
+        return np.full(m.shape, limit)
     INF = 1e9
     d = np.where(m, 0.0, INF)
     steps = int(limit / CELL) + 1
@@ -255,6 +259,9 @@ class Harbour:
     def __init__(self, name, world, berth, berth_zone, terminal):
         self.name, self.berth, self.terminal = name, berth, terminal
         self.g = Grid(*world['bounds'])
+        tile, probe = world['bounds'], world.get('probe_bounds', world['bounds'])
+        self.checked_bounds = (max(tile[0], probe[0]), max(tile[1], probe[1]),
+                               min(tile[2], probe[2]), min(tile[3], probe[3]))
         self.z = self.g.surface_max(world['ground'])
         self.misses = int(np.isnan(self.z).sum())
         self.z = np.where(np.isnan(self.z), np.inf, self.z)           # no exported ground: never safe water, so a
@@ -277,12 +284,24 @@ class Harbour:
     def check(self, label, start, moves):
         """Sweep both envelopes. The outline keeps STRUCTURE_CLEARANCE from every solid and from land; on the berthing
         crab (and alongside at its end) it keeps it from all but the berth's own structure, and must not touch that."""
-        ps = poses(start, moves)
+        result = self.check_poses(label, poses(start, moves))
+        result[0]['moves'] = moves
+        return result
+
+    def check_poses(self, label, ps):
+        """The same sweep on an already sampled path (also used for bounded open-water tiles)."""
         swept, wet = self.g.mask(), self.g.mask()
         worst, worst_alongside, berth_gap, grounded, hits = 99.0, 99.0, 99.0, [], []
         berthing = [k == 'berth' or (k == 'start' and i + 1 < len(ps) and ps[i + 1][3] == 'berth') or
                     (i > 0 and ps[i - 1][3] == 'berth' and k == 'berth') for i, (_, _, _, k) in enumerate(ps)]
-        for (x, y, h, kind), alongside in zip(ps, berthing):
+        outside = []
+        started = spoken = time.monotonic()
+        for index, ((x, y, h, kind), alongside) in enumerate(zip(ps, berthing)):
+            envelope = place(FULL, x, y, h)
+            lo, hi = envelope.min(0) - STRUCTURE_CLEARANCE, envelope.max(0) + STRUCTURE_CLEARANCE
+            if (lo[0] < self.checked_bounds[0] or lo[1] < self.checked_bounds[1] or
+                    hi[0] > self.checked_bounds[2] or hi[1] > self.checked_bounds[3]):
+                outside.append((round(x, 2), round(y, 2), round(math.degrees(h), 2), kind))
             m = self.g.mask(); self.g.ship(m, FULL, x, y, h)
             w = self.g.mask(); self.g.ship(w, WET, x, y, h)
             swept |= m; wet |= w
@@ -299,6 +318,10 @@ class Harbour:
                     hits.append(pose + (round(other, 2), round(berth, 2)))
             if (w & self.shallow).any():
                 grounded.append(pose + (round(float(self.z[w].max()), 2),))
+            now = time.monotonic()
+            if now - spoken >= 10:
+                print(f'FERRY SWEEP {label}: {index + 1}/{len(ps)} poses checked, {now - started:.0f}s', flush=True)
+                spoken = now
         ds = distance(swept, 30.0)
         near = {}
         for lab, m in self.labels:
@@ -309,10 +332,13 @@ class Harbour:
                   'structure_conflicts': hits[:20], 'conflict_count': len(hits), 'grounding_poses': grounded[:20],
                   'grounding_count': len(grounded), 'deepest_seabed_under_keel_m': round(float(self.z[wet].max()), 2),
                   'swept_cells_without_ground': int(np.isinf(self.z[wet]).sum()),
+                  'probe_boundary_count': len(outside), 'probe_boundary_conflicts': outside[:20],
                   'nearest_by_obstacle_m': dict(sorted(near.items(), key=lambda kv: kv[1])[:8]),
                   'path': [[round(x, 2), round(y, 2), round(math.degrees(h), 1)] for x, y, h, _ in ps[::8]] +
                   [[round(ps[-1][0], 2), round(ps[-1][1], 2), round(math.degrees(ps[-1][2]), 1)]]}
-        result['pass'] = not hits and not grounded
+        result.update(start=[ps[0][0], ps[0][1], math.degrees(ps[0][2])],
+                      end=[ps[-1][0], ps[-1][1], math.degrees(ps[-1][2])])
+        result['pass'] = not hits and not grounded and not outside
         return result, swept, ps, wet
 
     def draw(self, path, results, title):
@@ -408,94 +434,25 @@ def rect_points(x0, y0, x1, y1, step=0.5):
 
 
 # ---------------------------------------------------------------- Hidamari (world metres)
-HIDAMARI_X = 855.0                    # berth centre x: the jetty clears the canal mouth (x 840-856 stays open at the quay)
-HIDAMARI_QUAY_FACE = -127.7           # quay coping outer face (hidamari/build.py harbor(): 3.4 m coping on y -126)
-HIDAMARI_PIVOT = (872.0, -190.0)      # deep water inside the mouth, clear of the workboats and the headland shelf
-HIDAMARI_STANDOFF = -156.0            # the glide line off the berth
-HIDAMARI_TIMETABLE_DX = -6.5         # the timetable board, west of the jetty axis on the quay
-QUAY_RAIL = 2.9                       # quay surfaces sit below the timber rail (posts 2.45-3.55)
+sys.path.insert(0, str(REPO / 'games/yorimichi/world'))
+from regions.hidamari import ferry_terminal as HD  # noqa: E402
+from regions.brinecove import ferry_terminal as BC  # noqa: E402
 
 
 def hidamari_layout(world):
-    """Berth, gate, jetty and the walk levels it stands on, from the exported seabed and quay."""
-    g = Grid(*world['bounds']); z = g.surface_max(world['ground'])
-    z = np.where(np.isnan(z), np.inf, z)
-    cy = berth_offshore(g, z, HIDAMARI_X, 180.0, HIDAMARI_QUAY_FACE - FENDER - ship.BEAM)
-    face_y = cy + ship.BEAM + FENDER     # jetty fender face; the hull side is FENDER outside it
-    berth = (HIDAMARI_X, cy, 180.0)      # bow west; starboard side to the jetty
-    gx, gy = gate_point(berth, -1)
-    jetty = [(gx - 8.0, HIDAMARI_QUAY_FACE), (gx + 8.0, HIDAMARI_QUAY_FACE), (gx + 8.0, face_y), (gx - 8.0, face_y)]
-    quay = levels(world, rect_points(gx - 8, HIDAMARI_QUAY_FACE + 0.1, gx + 8, HIDAMARI_QUAY_FACE + 3.3), QUAY_RAIL)
-    house = levels(world, rect_points(gx - 21.3, -122.3, gx - 8.7, -114.2, 0.25), QUAY_RAIL + 0.5)   # the plinth
-    q = float(np.nanmedian(quay))
-    # The waiting house's door (south wall, 1.2-2.2 m from its west end) steps down to the quay; the timetable board
-    # stands on the quay west of the jetty root (x 840-856 east of it is the canal mouth, water at the quay).
-    door = levels(world, rect_points(gx - 21.0 + 1.0, -123.0, gx - 21.0 + 2.4, -122.3, 0.2), QUAY_RAIL + 0.5)
-    tx, ty = gx + HIDAMARI_TIMETABLE_DX, -122.5
-    board = levels(world, rect_points(tx - 1.5, ty - 0.3, tx + 1.5, ty + 0.3, 0.2), QUAY_RAIL + 0.5)
-    for what, zs in (('waiting house door step', door), ('timetable board', board)):
-        if np.isnan(zs).any():
-            raise ValueError(f'Hidamari {what}: no exported surface under part of its footprint')
-    # The jetty root crosses the quay's timber rail (posts 2.45-3.55, top beam 3.5): B3 cuts it over the jetty's width.
-    cuts = [world_cut("the quay's timber rail and posts across the jetty root", (gx - 8.0, gx + 8.0), (-126.3, -125.7),
-                      q - 0.1)]
-    walk = {'world_cuts': cuts, 'quay_top_z': round(q, 3), 'quay_top_range': [round(float(np.nanmin(quay)), 3), round(float(np.nanmax(quay)), 3)],
-            'promenade_z': round(float(np.nanmax(house)), 3), 'promenade_range': [round(float(np.nanmin(house)), 3), round(float(np.nanmax(house)), 3)],
-            'waiting_house': [gx - 21.0, -122.0, gx - 9.0, -114.5], 'door_ground_z': round(float(np.nanmin(door)), 3),
-            'timetable': [round(tx, 3), ty, round(float(np.nanmax(board)), 3)],
-            'timetable_ground_range': [round(float(np.nanmin(board)), 3), round(float(np.nanmax(board)), 3)]}
-    zone = jetty
-    return berth, (gx, gy), jetty, face_y, zone, walk
+    return HD.layout(world, types.SimpleNamespace(**globals()))
 
 
 def hidamari_moves(berth):
-    bx, by, _ = berth
-    px, py = HIDAMARI_PIVOT
-    # Arrival: in through the harbour mouth heading north, stop in deep water, pivot to port onto west, glide
-    # north-west to the stand-off line, then crab onto the fenders. Departure is the same in reverse.
-    arrive = (px, -290.0, 90.0)
-    arrival = [('ahead', py + 290.0), ('pivot', 90.0), ('move', bx - px, HIDAMARI_STANDOFF - py), ('berth', -(by - HIDAMARI_STANDOFF))]
-    departure = [('berth', by - HIDAMARI_STANDOFF), ('move', px - bx, py - HIDAMARI_STANDOFF), ('pivot', 90.0), ('ahead', py + 290.0)]
-    return (arrive, arrival), (berth, departure)
-
-
-# ---------------------------------------------------------------- Brinecove (region-local metres)
-BRINECOVE_PIER = (-238.0, 13.0)       # west pier centre x and width (brinecove/layout.py PIERS)
-BRINECOVE_BERTH_Y = 10.0
-BRINECOVE_LANE = 4.0                  # the arrival's first leg runs this far west of the berth line, east of the rowboat
-                                      # moored at (-270, -145)
-BRINECOVE_JOG_Y = -95.0               # once the stern has passed that rowboat, the ship glides west...
-BRINECOVE_STANDOFF = 13.0             # ...to this line west of the berth, clear of the rowboat moored at (-250, -40)
-BRINECOVE_CRAB = 40.0                 # west of the berth, a 180-degree pivot clears the west pier by its full radius
+    return HD.moves(berth)
 
 
 def brinecove_layout(world):
-    px, pw = BRINECOVE_PIER
-    face_x = px - pw / 2 - 0.5            # fender piles on the pier's west face
-    cx = face_x - FENDER - ship.BEAM
-    berth = (cx, BRINECOVE_BERTH_Y, 90.0)  # bow north; starboard (east) side to the pier
-    gx, gy = gate_point(berth, -1)
-    landing = [(face_x, gy - 3.6), (face_x + 3.4, gy - 3.6), (face_x + 3.4, gy + 3.6), (face_x, gy + 3.6)]
-    # The berth is the pier's west face along the hull: fender piles, pier deck edge and its piles.
-    half = (ship.STEM - ship.STERN) / 2 + 4.0
-    zone = [(face_x - 0.05, BRINECOVE_BERTH_Y - half), (px + pw / 2, BRINECOVE_BERTH_Y - half),
-            (px + pw / 2, BRINECOVE_BERTH_Y + half), (face_x - 0.05, BRINECOVE_BERTH_Y + half)]
-    deck = levels(world, rect_points(face_x + 0.6, gy - 12.0, face_x + 12.5, gy + 18.0), 5.6)
-    walk = {'world_cuts': [], 'pier_deck_z': round(float(np.nanmedian(deck)), 3), 'pier_deck_range': [round(float(np.nanmin(deck)), 3), round(float(np.nanmax(deck)), 3)]}
-    return berth, (gx, gy), landing, face_x, zone, walk
+    return BC.layout(world, types.SimpleNamespace(**globals()))
 
 
 def brinecove_moves(berth):
-    bx, by, _ = berth
-    # Arrival: up the channel west of the west pier, bow north, between the two moored rowboats: east of the one at
-    # (-270, -145), then a glide west to pass west of the one at (-250, -40), then crab east onto the fenders.
-    arrival_start = (bx - BRINECOVE_LANE, -250.0, 90.0)
-    arrival = [('ahead', BRINECOVE_JOG_Y + 250.0), ('move', BRINECOVE_LANE - BRINECOVE_STANDOFF, 0.0),
-               ('ahead', by - BRINECOVE_JOG_Y), ('berth', -BRINECOVE_STANDOFF)]
-    # Departure: crab off to port (west) into the open basin until a pivot clears the pier, turn on the spot to south,
-    # then ahead out of the bay.
-    departure = [('berth', BRINECOVE_STANDOFF), ('crab', BRINECOVE_CRAB - BRINECOVE_STANDOFF), ('pivot', 180.0), ('ahead', 260.0)]
-    return (arrival_start, arrival), (berth, departure)
+    return BC.moves(berth)
 
 
 # ---------------------------------------------------------------- inputs
@@ -512,30 +469,79 @@ def load_world(name, out=OUT):
                 'labels': meta['labels'], 'bounds': tuple(meta['bounds']), 'meta': meta, 'path': path}
 
 
+def code_inputs():
+    return (HERE / 'site.py', HERE / 'world_probe.py', HERE.parent / 'build.py', Path(HD.__file__), Path(BC.__file__),
+            REPO / 'games/yorimichi/world/solid_mesh.py', REPO / 'games/yorimichi/world/regions/ferry/route.py')
+
+
 def inputs(worlds):
-    """What site.json was computed from: both probes (which carry their own export hashes) and the code."""
+    """Exact probes, exports and code the sweep reads, with portable repository-relative paths."""
     return {'world_probes': {n: sha(w['path']) for n, w in worlds.items()},
             'exports': {n: w['meta']['sources'] for n, w in worlds.items()},
-            'code': {p.name: sha(p) for p in (HERE / 'site.py', HERE.parent / 'build.py')}}
+            'code': {str(p.relative_to(REPO)): sha(p) for p in code_inputs()}}
 
 
 def stale_inputs(report, out=OUT):
-    """Inputs recorded in site.json that no longer match the files on disk (empty when site.json is current)."""
     rec = report.get('inputs') or {}
     bad = [f'world_{n}.npz' for n, h in (rec.get('world_probes') or {}).items()
            if not (out / f'world_{n}.npz').exists() or sha(out / f'world_{n}.npz') != h]
-    bad += [name for name, h in (rec.get('code') or {}).items()
-            if sha(HERE / name if name == 'site.py' else HERE.parent / name) != h]
+    for name, h in (rec.get('code') or {}).items():
+        path = REPO / name if '/' in name else HERE / name if name == 'site.py' else HERE.parent / name
+        if not path.is_file() or sha(path) != h:
+            bad.append(name)
     return bad if rec else ['no inputs recorded']
 
 
+def crossing_sweep(world, start, moves, batch=200):
+    """@cc [owner:fontanierh,label:correctness] ferry-open-water-sweep
+    Every sampled sea pose MUST use the same full-hull, underwater and 4 m structure rules as a harbour.
+    Missing exported seabed MUST fail. Bounded raster tiles MUST overlap by the entire hull and clearance
+    envelope, so changing the batch size cannot omit an obstacle at a tile edge.
+    """
+    ps = poses(start, moves)
+    arrays = {k: world[k] for k in ('ground', 'solid')}
+    boxes = {k: (v.min(1), v.max(1)) for k, v in arrays.items()}
+    results = []
+    pad = math.hypot(max(abs(FULL[:, 0])), max(abs(FULL[:, 1]))) + STRUCTURE_CLEARANCE + 2 * CELL
+    for index in range(0, len(ps), batch):
+        chunk = ps[index:index + batch]
+        xy = np.asarray(chunk)[:, :2].astype(float)
+        lo = np.floor((xy.min(0) - pad) / CELL) * CELL
+        hi = np.ceil((xy.max(0) + pad) / CELL) * CELL
+        tile = dict(world, bounds=(*lo, *hi), probe_bounds=world['bounds'])
+        for k, (mn, mx) in boxes.items():
+            keep = (mx[:, :2] >= lo).all(1) & (mn[:, :2] <= hi).all(1)
+            tile[k] = arrays[k][keep]
+            if k == 'solid':
+                tile['solid_label'] = world['solid_label'][keep]
+        hb = Harbour('sea', tile, (0, 0, 0), [], [])
+        result = hb.check_poses('sea', chunk)[0]
+        results.append(result)
+        print(f'sea sweep {min(index + batch, len(ps))}/{len(ps)} poses; '
+              f'clearance {result["min_structure_clearance_m"]} m; '
+              f'grounding {result["grounding_count"]}; conflicts {result["conflict_count"]}', flush=True)
+    return {'start': list(start), 'moves': moves, 'end': results[-1]['end'], 'poses': len(ps),
+            'pass': all(r['pass'] for r in results),
+            'length_m': round(sum(math.dist(a[:2], b[:2]) for a, b in zip(ps, ps[1:])), 2),
+            'min_structure_clearance_m': min(r['min_structure_clearance_m'] for r in results),
+            'deepest_seabed_under_keel_m': max(r['deepest_seabed_under_keel_m'] for r in results),
+            'grounding_count': sum(r['grounding_count'] for r in results),
+            'conflict_count': sum(r['conflict_count'] for r in results),
+            'structure_conflicts': [c for r in results for c in r['structure_conflicts']][:20],
+            'probe_boundary_count': sum(r['probe_boundary_count'] for r in results),
+            'probe_boundary_conflicts': [c for r in results for c in r['probe_boundary_conflicts']][:20],
+            'nearest_by_obstacle_m': {name: min(r['nearest_by_obstacle_m'].get(name, 99.) for r in results)
+                                      for name in sorted({n for r in results for n in r['nearest_by_obstacle_m']})},
+            'swept_cells_without_ground': sum(r['swept_cells_without_ground'] for r in results)}
+
+
 def main(argv=None):
-    worlds = {n: load_world(n) for n in ('hidamari', 'brinecove')}
+    worlds = {n: load_world(n) for n in ('hidamari', 'brinecove', 'crossing')}
     report = {'ship': {'length': round(FULL[:, 0].max() - FULL[:, 0].min(), 2), 'outline_half_beam': round(FULL[:, 1].max(), 2),
                        'draft': DRAFT, 'keel_clearance': KEEL_CLEARANCE, 'design_margin': DESIGN_MARGIN,
                        'seabed_limit': round(SEABED_MAX, 3), 'sill_z': round(SILL_Z, 3), 'gate_x': GATE_X,
                        'gate_width': GATE_W, 'structure_clearance': STRUCTURE_CLEARANCE,
-                       'fender_gap': FENDER},
+                       'fender_gap': FENDER, 'outline': FULL.tolist()},
               'inputs': inputs(worlds)}
     ok = True
     for name, layout, moves in (('hidamari', hidamari_layout, hidamari_moves), ('brinecove', brinecove_layout, brinecove_moves)):
@@ -546,7 +552,8 @@ def main(argv=None):
         ra = hb.check('arrival', a0, am)
         rd = hb.check('departure', d0, dm)
         ok &= ra[0]['pass'] and rd[0]['pass']        # a swept cell with no exported ground counts as grounding
-        report[name] = {'berth': {'centre': [round(berth[0], 2), round(berth[1], 2)], 'heading_deg': berth[2],
+        origin = world['meta'].get('origin_cm', [0, 0, 0])
+        report[name] = {'origin_m': [origin[0] / 100, -origin[1] / 100], 'berth': {'centre': [round(berth[0], 2), round(berth[1], 2)], 'heading_deg': berth[2],
                                   'gate': [round(gate[0], 2), round(gate[1], 2), round(SILL_Z, 3)], 'face': round(face, 2),
                                   'terminal_deck': [[round(a, 2), round(b, 2)] for a, b in deck],
                                   'berth_zone': [[round(a, 2), round(b, 2)] for a, b in zone], **walk},
@@ -560,6 +567,17 @@ def main(argv=None):
                   'alongside', r['alongside_min_clearance_m'], 'berth gap', r['alongside_berth_gap_m'],
                   'conflicts', r['conflict_count'], r['structure_conflicts'][:3], 'grounding', r['grounding_count'],
                   r['grounding_poses'][:3], 'nearest', r['nearest_by_obstacle_m'])
+    from regions.ferry.route import CROSSINGS, crossing
+    report['crossings'] = {}
+    for name, spec in CROSSINGS.items():
+        start = report[spec['from']]['departure']['end']
+        oa, ob = report[spec['from']]['origin_m'], report[spec['to']]['origin_m']
+        end = report[spec['to']]['arrival']['start']
+        start = (start[0] + oa[0], start[1] + oa[1], start[2])
+        end = (end[0] + ob[0], end[1] + ob[1], end[2])
+        a0, route_moves = crossing(start, end, spec)
+        report['crossings'][name] = crossing_sweep(worlds['crossing'], a0, route_moves)
+        ok &= report['crossings'][name]['pass']
     report['pass'] = bool(ok)
     (OUT / 'site.json').write_text(json.dumps(report, indent=1) + '\n')
     print('SITE', 'PASS' if ok else 'FAIL')

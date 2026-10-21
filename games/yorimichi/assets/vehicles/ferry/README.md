@@ -16,7 +16,8 @@ walk below them. There is a foremast with a
 crosstree and a brass lantern on a forward platform, and an aft mast, both with a few fine tarred stays. A canvas
 canopy covers the stern deck. A stockless anchor sits in a recessed, white-lipped hawse pocket on each bow.
 
-This is a Blender-only stage: nothing imports the ferry into Unreal yet.
+The normal build prepares and imports the ship and both terminals, stages the timetable, and opens the audited
+Hidamari quay access. One ferry shuttles between Hidamari and Brinecove from the shared server clock.
 
 ## Build and review
 
@@ -102,7 +103,7 @@ uv run python games/yorimichi/assets/vehicles/ferry/compare.py
 ## Terminals
 
 [`terminals/`](terminals/) holds the berths and the terminal kits for Hidamari and Brinecove. Like the ship, they are
-Blender-only: nothing is placed in the world or imported yet. Run them in this order; each step fails on its gate.
+placed by the production ferry service. The normal recipe runs these audited preparations in order:
 
 1. [`world_probe.py`](terminals/world_probe.py) (Blender, `-- WORLD_BUILD`) exports the real geometry around both
    berths from a built world: the ground (HD_Terrain and the far hills; the Brinecove ground tiles) and every solid the
@@ -177,13 +178,40 @@ under 0.9 m that is not isolated, a trapping pocket, stair headroom under 2.0 m,
 overlap. `tests/test_ferry_site.py` covers the sweep, the rasterising, the berth-zone rule, input binding, the brow
 fit and the walk verdicts on small fixtures, without Blender or a world build.
 
-Still to do when the ferry goes into the world (B3):
-- import and placement of the kits and their collision;
-- the cut in Hidamari's quay timber rail and posts at the jetty root, read from `site.json` `world_cuts`, not
-  re-derived;
-- moving each harbour's terminal layout and assembly (`site.py` `*_layout`/`*_moves`, `terminals/build.py`
-  `hidamari()`/`brinecove()`) into `world/regions/<region>/`, leaving the reusable terminal pieces here;
-- the ferry runtime following these manoeuvres;
-- rerunning `world_probe.py` and `site.py` on the build that ships, with `manifest.json` also hashing the terminal
-  build and `walkcheck.py`;
-- a guarded game walk of both boarding routes, both ways (walkable-routes-traversable).
+## In the game
+
+`atelier build yorimichi` includes `world.ferry_ship`, `world.ferry_probes`, `world.ferry_site`,
+`world.ferry_terminals`, `world.hidamari_ferry_cut`, `world.ferry_service` and `unreal.ferry`.
+The source-bound manifests refuse failed audits, changed exports and stale source code. Harbour and
+open-water manoeuvres use the same swept full-hull and underwater rules. The sea sweep uses bounded,
+overlapping tiles; missing seabed fails rather than being treated as deep water.
+
+Each harbour owns its berth, manoeuvres and terminal assembly in `world/regions/<region>/ferry_terminal.py`.
+The terminal kit supplies the shared building pieces. Hidamari's own `ferry_cut.py` opens the recorded
+rail/post span while preserving the remainder of its harbour. Hidamari's normal importer owns the final
+harbour package and always selects the validated cut mesh, preserving its materials and collision policy.
+A targeted world reimport therefore retains the terminal opening.
+
+`world/regions/ferry/service.py` writes one shuttle's timetable, with stationary boarding windows.
+The runtime follows those samples from the shared server clock. Brass boarding gates close away from
+the dock; gangway collision moves with the gangway. Walk onto the deck to ride it, and walk off at the
+other harbour. The arrival boards and the ferry sounds follow that same clock and state.
+Map destinations lead to the terminal approach without changing the timetable: wait when the ship is away.
+
+`FTransportRiders` supplies the moving-base, capsule-response and camera-lag mechanism shared with the
+Belmonte train. The ferry retains ordinary world collision and third-person view; the train retains its
+own admission, seats and passenger camera. Alighting restores the captured state and clears the vehicle identity.
+Fine masts and stays cull at 150 m.
+
+For bounded native checks, `ferry.Go hidamari` / `ferry.Go brinecove` selects the next docking window when
+nobody is aboard. `ferry.TimeScale` changes the diagnostic clock speed. Live helpers expose the state,
+audited walking points, ship-local points and sound loops (`FerryState`, `FerryPoint`, `FerryLoops`).
+Native automation tests under `Yorimichi.Ferry` cover interpolation, wrap, boarding windows, invalid
+line data and shared rider cleanup. [Integration validation](https://github.com/fontanierh/atelier/pull/494)
+records guarded, revision-bound ordinary walking over both harbour routes in both directions,
+both sea voyages and moving-deck walking at `bb28064b`, plus companionway ascent/descent at `b2dc033a`.
+The production geometry and native binaries are identical across those two revisions. Arrival/departure
+horns, brow/fender events and engine-loop state were recorded; this is event evidence, not a listening-quality
+assessment. Actual two-process and late-join play was not run because the existing compound worker refused
+its available-memory prerequisite before either game launched. Native remote-membership regression
+coverage is separate from that reduced real-peer coverage.

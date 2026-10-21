@@ -6,6 +6,8 @@ into build/yorimichi/ferry/. Every part is a closed solid with outward normals (
 """
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402,F401
 import json
+import hashlib
+from pathlib import Path
 import math
 
 import bpy
@@ -1379,13 +1381,31 @@ def walk_layout(proxies, seats, boat_hits):
     }
 
 
+def export_fbx(obj, path):
+    bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True); bpy.context.view_layer.objects.active = obj
+    bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, apply_unit_scale=True,
+                             apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
+                             mesh_smooth_type='EDGE', bake_anim=False, use_custom_props=False)
+
+
+def boarding_gate(mesh):
+    """Hinged brass boarding rail; origin is the hinge at floor height, +X runs across the opening."""
+    width = GATES[0][1] - .2
+    for z in (.48, 1.02):
+        mesh.tube([(0, 0, z), (width, 0, z)], .035, GOLD, n=8)
+    for x in (width * i / 6 for i in range(7)):
+        mesh.tube([(float(x), 0, .2), (float(x), 0, 1.02)], .022, GOLD, n=8)
+    mesh.lathe((0, 0, .1), [(0, .055), (.95, .055), (1.02, 0)], BRASS, n=10)
+
+
 def main():
     (OUT / 'assets').mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     mats = make_materials()
     builders = [('FY_Hull', hull), ('FY_Superstructure', superstructure), ('FY_Funnel', funnel), ('FY_Lifeboats', lifeboats),
-                ('FY_Rails', rails), ('FY_Masts', masts), ('FY_Fittings', fittings)]
-    manifest = {'meshes': {}, 'units': 'metres, +X bow, z up, waterline z=0'}
+                ('FY_Rails', rails), ('FY_Masts', masts), ('FY_Fittings', fittings), ('FY_BoardingGate', boarding_gate)]
+    manifest = {'sources': {str(p.relative_to(yori.REPO)): hashlib.sha256(p.read_bytes()).hexdigest()
+                            for p in (Path(__file__), Path(SM.__file__))}, 'materials': MATERIALS, 'meshes': {}, 'units': 'metres, +X bow, z up, waterline z=0'}
     lo = Vector((1e9, 1e9, 1e9)); hi = -lo
     meshes = {}
     for name, fn in builders:
@@ -1398,10 +1418,11 @@ def main():
         manifest['meshes'][name] = {'triangles': tris, 'vertices': len(m.verts), 'materials': names,
                                     'min': [round(v, 3) for v in bmin], 'max': [round(v, 3) for v in bmax], **report}
         print(f'{name}: {tris} triangles, {report}')
-        bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True); bpy.context.view_layer.objects.active = obj
-        bpy.ops.export_scene.fbx(filepath=str(OUT / 'assets' / f'{name}.fbx'), use_selection=True, apply_unit_scale=True,
-                                 apply_scale_options='FBX_SCALE_ALL', axis_forward='-Y', axis_up='Z', object_types={'MESH'},
-                                 mesh_smooth_type='EDGE', bake_anim=False, use_custom_props=False)
+        export_fbx(obj, OUT / 'assets' / f'{name}.fbx')
+    seed = Mesh('FY_ImportSeed'); seed.box((0, 0, 0), (.1, .1, .1), WHITE)
+    seed_object, _ = to_object(seed, mats)
+    export_fbx(seed_object, OUT / 'assets/FY_ImportSeed.fbx')
+    bpy.data.objects.remove(seed_object, do_unlink=True)
     gate_x, gate_w = GATES[0]
     manifest['dimensions'] = {'min': [round(v, 3) for v in lo], 'max': [round(v, 3) for v in hi],
                               'length': round(hi.x - lo.x, 2), 'beam': round(hi.y - lo.y, 2), 'height_above_waterline': round(hi.z, 2),
@@ -1430,6 +1451,8 @@ def main():
         print('SEAT', r)
     print('deck audit:', len(seats), 'seated fittings,', len(bad_seats), 'failures; lifeboat overlaps', boat_hits)
     print('fitting/rail contacts:', len(contacts), contacts)
+    manifest['files'] = {str(p.relative_to(OUT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                         for p in [*(OUT / 'assets').glob('FY_*.fbx'), OUT / 'deck_layout.json']}
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'ferry.blend'))
     bad = [n for n, v in manifest['meshes'].items() if v['open_edges']]

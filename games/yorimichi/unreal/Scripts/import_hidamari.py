@@ -12,13 +12,18 @@ from plaza_material import water_material,paving_material
 import city_material
 ROOT = yori.OUT;OUT=ROOT/'hidamari'
 unreal.SystemLibrary.execute_console_command(None,'Interchange.FeatureFlags.Import.FBX 0')
-mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
 manifest=json.loads((OUT/'manifest.json').read_text());asked=set(filter(None,os.environ.get('HIDAMARI_ASSETS','').split(',')))
 # A name ending in * asks for every manifest asset it begins: unreal.north imports HD_North* (the volcano, its
 # materials and textures). The world import (setup_project.py) runs this with NORTH=False and leaves those out.
 only={a for a in asked if not a.endswith('*')}|{n for n in manifest for a in asked if a.endswith('*') and n.startswith(a[:-1])}
 assert only or not asked,('no Hidamari assets match',sorted(asked))
 north=globals().get('NORTH',True)
+# Hidamari owns the final harbour package. Every world reimport uses the same audited rail opening.
+harbor_source=None
+if 'HD_Harbor' in manifest and (not only or 'HD_Harbor' in only):
+    from regions.hidamari.ferry_source import validated_harbor
+    harbor_source=validated_harbor(yori.OUT,yori.REPO)
+mat=unreal.EditorAssetLibrary.load_asset('/Game/Japan/Materials/M_Village') or material()
 arcade_mat=arcade_material() if not only or any(n.startswith(('HD_Arcade','HD_Plaza','HD_Shop_')) or n in ['HD_ClockHall','HD_Square','HD_Station','HD_Shrine','HD_Park','HD_Streets','HD_CivicGardens'] for n in only) else None
 paving_mat=arcade_material(paving=True) if not only or only & {'HD_ArcadeFloor','HD_PlazaFloor'} else None
 plaza_paving=paving_material() if not only or 'HD_PlazaFloor' in only else None
@@ -112,7 +117,8 @@ def prop_lods(mesh,name,mi,levels):
 
 for name,entry in manifest.items():
     if (only and name not in only) or (not north and name.startswith('HD_North')):continue
-    mesh=import_mesh(OUT/'assets'/f'{name}.fbx','/Game/Japan/Assets',name,fresh_slots='slots' in entry)
+    source=harbor_source if name=='HD_Harbor' else OUT/'assets'/f'{name}.fbx'
+    mesh=import_mesh(source,'/Game/Japan/Assets',name,fresh_slots='slots' in entry)
     if name=='HD_NorthGate': selected=gate_mat
     elif name.startswith('HD_NorthRock'): selected=rock_mat
     elif name.startswith('HD_North'): selected=mountain_mat

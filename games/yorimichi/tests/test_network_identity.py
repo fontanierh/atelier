@@ -247,7 +247,7 @@ def test_shipped_network_declaration_does_not_scan_content(monkeypatch):
     recipe = build.load_recipe('yorimichi')
     # Isolate only composition, without assembling unrelated world/character declarations.
     for name in ('world_steps', 'character_steps', 'sound_effect_steps', 'unreal_steps', 'staging_steps',
-                 'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'fit_steps', 'pawn_steps'):
+                 'adventure_steps', 'hippodrome_steps', 'belmonte_steps', 'brinecove_steps', 'ferry_steps', 'fit_steps', 'pawn_steps'):
         monkeypatch.setattr(recipe, name, lambda *args: [])
     monkeypatch.setattr(recipe, 'staging_steps', lambda *args: [Step('data.stage', [])])
     monkeypatch.setattr(recipe.foliage_build, 'system_step',

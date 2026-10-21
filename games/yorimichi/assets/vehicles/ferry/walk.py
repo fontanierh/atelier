@@ -14,7 +14,9 @@ the routes report their bottleneck (max-min) width. Trapping pockets are free ce
 that the capsule cannot sweep. Unswept slots no wider than 0.3 m are listed separately as slivers: the 0.44 m capsule
 cannot enter them.
 """
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parents[3] / 'world')); import yori  # noqa: E402
 import json
+import hashlib
 import math
 from collections import deque
 from pathlib import Path
@@ -23,7 +25,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 REPO = Path(__file__).resolve().parents[5]
-OUT = REPO / 'build' / 'yorimichi' / 'ferry'
+OUT = yori.OUT / 'ferry'
 REVIEW = OUT / 'review'
 CELL = 0.05
 RADIUS = 0.22
@@ -279,6 +281,7 @@ def verdict(report):
 
 
 def main():
+    REVIEW.mkdir(parents=True, exist_ok=True)
     L = json.loads((OUT / 'deck_layout.json').read_text())
     proxies = L['proxies']; md = L['main_deck']; mx, mw, mz = (np.array(md[k]) for k in ('x', 'half_width', 'z'))
     bz = L['boat_deck']['z']; bx_, bz_ = np.array(bz['x']), np.array(bz['z'])
@@ -356,6 +359,10 @@ def main():
             b['max_gap_m'] = max(b['max_gap_m'], s['gap_m']); b['min_gap_m'] = min(b['min_gap_m'], s['gap_m'])
     report['lifeboat_overlaps'] = L['lifeboat_overlaps']
     report['failures'] = verdict(report)
+    report['inputs'] = {
+        'checker_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        'deck_layout_sha256': hashlib.sha256((OUT / 'deck_layout.json').read_bytes()).hexdigest(),
+    }
     (REVIEW / 'walk_report.json').write_text(json.dumps(report, indent=2) + '\n')
     for name, dk in report['decks'].items():
         print(name, 'area', dk['walkable_area_m2'], 'components', dk['components'])

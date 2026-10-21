@@ -91,6 +91,18 @@ def test_documented_clearance_is_the_code_rule(site):
     assert f'{site.SEABED_MAX:.1f}'.replace('-', '−') in readme
 
 
+def test_terminal_grounding_uses_region_owned_quay_limit(site):
+    # Execute the real helper without importing the Blender-only terminal builder.
+    tree = ast.parse((FERRY / 'terminals/build.py').read_text())
+    helper = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'ground_under')
+    namespace = {'FS': site, 'np': np}
+    exec(compile(ast.Module(body=[helper], type_ignores=[]), '<terminal grounding>', 'exec'), namespace)
+    ground = namespace['ground_under']
+    assert ground(world((-2, -2, 2, 2), seabed=2.7), -1, -1, 1, 1) == pytest.approx(2.7)
+    with pytest.raises(SystemExit, match='no exported ground'):
+        ground(world((-2, -2, 2, 2), seabed=site.HD.QUAY_RAIL + 1), -1, -1, 1, 1)
+
+
 def test_outlines_are_symmetric_and_the_wet_footprint_lies_inside_the_full_outline(site):
     xs, hw = site.ENV[id(site.FULL)]
     assert np.allclose(site.FULL[:161, 1], -site.FULL[161:, 1][::-1])
@@ -284,3 +296,12 @@ def test_cutting_the_rail_clears_the_route(walkcheck, site):
     kept = parts[~site.cut_mask(parts, cut)]
     assert walk_over_quay(walkcheck, site, [kept])['pass']
     assert not walk_over_quay(walkcheck, site, [BEAM])['pass']           # the beam alone blocks at waist height
+
+
+def test_a_harbour_cannot_clip_the_hull_or_its_clearance_at_the_probe_edge(site):
+    probe = world((-80., -40., 80., 60.))
+    hb = site.Harbour('fixture', probe, (0., 0., 0.), [], [])
+    result = hb.check('outside', (60., 0., 0.), [('ahead', 1.)])[0]
+    assert not result['pass']
+    assert result['probe_boundary_count'] == result['poses']
+    assert result['conflict_count'] == result['grounding_count'] == 0
