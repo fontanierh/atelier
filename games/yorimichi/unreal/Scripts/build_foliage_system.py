@@ -182,6 +182,23 @@ def bind_variant_materials(mesh, replacements):
         raise ValueError('Foliage variant material bindings did not apply')
 
 
+def write_representations(product, path):
+    """@cc [owner:fontanierh,label:correctness;performance] bounded-foliage-serialization
+    Native representation inputs MUST preserve prepared geometry and screens exactly,
+    stream JSON without a whole-document string, and omit unrelated LOD geometry from
+    shadow/patch inputs. They MUST NOT certify a source or publish the runtime registry.
+    """
+    shadow_path = path.with_suffix('.shadow.json')
+    patch_path = path.with_suffix('.patch.json')
+    documents = ((path, dict(source=product['source'], screens=product['screens'], levels=product['levels'])),
+                 (shadow_path, dict(source=product['source'], shadow=product['shadow'])),
+                 (patch_path, dict(source=product['source'], shadow=product['patch'])))
+    for destination, document in documents:
+        with destination.open('w', encoding='utf-8') as handle:
+            json.dump(document, handle, separators=(',', ':'))
+    return shadow_path, patch_path
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     U.load_module('YorimichiImport')
@@ -247,39 +264,43 @@ def main():
                 source['far_proxy'] = source['rigid_lods'][-1]
         product = F.build(source)
         U.log(f'FOLIAGE SYSTEM importing representations: {path}')
-        product_path.write_text(json.dumps(product, separators=(',', ':'))+'\n')
+        shadow_path, patch_path = write_representations(product, product_path)
+        counts = [len(level['faces']) for level in product['levels']]
+        detail = dict(shadow_triangles=len(product['shadow']['faces']),
+                      rigid_triangles=product['rigid_triangles'], coverage=product['coverage'],
+                      canopy_bounds=product['canopy_bounds'], triangles=counts)
+        patch_triangles = len(product['patch']['faces'])
+        leaf_materials = [material['path'] for material in source['materials'] if material['foliage']]
+        # Native parsing and mesh construction allocate their own geometry. Keep
+        # only the small validation summary while those allocations are live.
+        del source, product
         replacements = [blend_material(mesh.get_material(slot))
                         for slot in range(len(mesh.get_editor_property('static_materials')))]
         variants = {}
         for shadow in (False, True):
             dest = F.ROOT + '/Meshes/' + key + ('_Shadow' if shadow else '')
-            result = U.YorimichiFoliageBuilder.build_variant(mesh, str(product_path), dest, near, far, shadow)
+            result = U.YorimichiFoliageBuilder.build_variant(mesh, str(shadow_path if shadow else product_path), dest, near, far, shadow)
             assert result, dest
             bind_variant_materials(result, replacements)
             assert E.save_loaded_asset(result), dest
-            expected = [len(product['shadow']['faces'])] if shadow else [len(v['faces']) for v in product['levels']]
+            expected = [detail['shadow_triangles']] if shadow else counts
             assert result.get_num_lods() == len(expected), dest
             assert [result.get_num_triangles(i) for i in range(len(expected))] == expected, (dest, expected)
             variants['shadow' if shadow else 'optimized'] = result.get_path_name()
-        patch_path = OUT/(key+'.patch.json')
-        patch_path.write_text(json.dumps({**product, 'shadow': product['patch']}, separators=(',', ':'))+'\n')
         patch = U.YorimichiFoliageBuilder.build_variant(mesh, str(patch_path), F.ROOT+'/Meshes/'+key+'_Patch',
                                                        patch_material, patch_material, True)
         assert patch and E.save_loaded_asset(patch), path
-        assert patch.get_num_lods() == 1 and patch.get_num_triangles(0) == len(product['patch']['faces']), path
+        assert patch.get_num_lods() == 1 and patch.get_num_triangles(0) == patch_triangles, path
         variants['patch'] = patch.get_path_name()
         assert digest(path) == before, ('Foliage owner modified its source', path)
-        leaf_materials = [m['path'] for m in source['materials'] if m['foliage']]
         materials.update(leaf_materials)
         records.append(dict(source=mesh.get_path_name(), source_sha256=before, kind=kind,
                             identity=identity, leaf_materials=leaf_materials,
                             output_sha256={k:digest(v) for k,v in variants.items()},
-                            source_triangles=mesh.get_num_triangles(0), shadow_triangles=len(product['shadow']['faces']), rigid_triangles=product['rigid_triangles'],
-                            coverage=product['coverage'],
-                            aggregate=bool(product['coverage']) and classification!='authored' and kind=='tree' and F.vegetation(mesh.get_name())
+                            source_triangles=mesh.get_num_triangles(0),
+                            aggregate=bool(detail['coverage']) and classification!='authored' and kind=='tree' and F.vegetation(mesh.get_name())
                                       and 'palm' not in mesh.get_name().lower(),
-                            canopy_bounds=product['canopy_bounds'],
-                            triangles=[len(v['faces']) for v in product['levels']], **variants))
+                            **detail, **variants))
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} {path}: {records[-1]["triangles"]}')
         mesh=None;result=None;patch=None
         U.YorimichiFoliageBuilder.collect_unused()
