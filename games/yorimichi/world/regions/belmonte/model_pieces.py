@@ -51,7 +51,8 @@ def prepare(entry, path, *, triangle_limit=LIMIT):
         destination.write_bytes(part['data'])
         current = dict(entry, name=name, path='glb/'+destination.name,
                        sha256=hashlib.sha256(part['data']).hexdigest(), triangles=part['triangles'],
-                       bounds_m=[list(row) for row in part['bounds']], parent_bounds_m=entry['bounds_m'])
+                       bounds_m=[list(row) for row in part['bounds']], parent_bounds_m=entry['bounds_m'],
+                       parent_material_slots=slots)
         if hull and index:
             del current['collision']
         result.append((current, [slots[i] for i in part['materials']], not hull or index == 0))

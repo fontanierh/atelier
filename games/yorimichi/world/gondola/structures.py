@@ -85,6 +85,13 @@ def placed_bounds(bounds, matrix, offset):
 
 
 def selected(build):
+    """@cc [owner:fontanierh,label:correctness] complete-structure-piece-geometry
+    Every rendered child of a collidable logical structure MUST remain in visual clearance
+    geometry even when a different child owns its whole authored collision hull. Collision
+    geometry MUST enter only through actual collision-enabled components; it MUST NOT be
+    duplicated once per visual child. Legacy groups without parent metadata keep their
+    existing collision ownership. Inconsistent or nonboolean ownership MUST refuse.
+    """
     build = Path(build)
     runtime = json.loads((build/'belmonte/runtime.json').read_text())
     report = json.loads((build/'belmonte/build-report.json').read_text())
@@ -94,9 +101,12 @@ def selected(build):
     for group in runtime['groups']:
         if type(group.get('plant')) is not bool or type(group.get('collision')) is not bool:
             raise ValueError('Belmonte structure roster lacks explicit collision/plant ownership')
+        parent_collision = group.get('parent_collision', group['collision'])
+        if type(parent_collision) is not bool or (group['collision'] and not parent_collision):
+            raise ValueError('Belmonte structure parent collision ownership is inconsistent')
         # Vegetation has its own declared runtime clearing contract. Terrain
         # remains in the separately owned ground products.
-        if group['plant'] or not group['collision']:
+        if group['plant'] or not parent_collision:
             continue
         name = group['asset'].rsplit('/',1)[-1].split('.')[0]
         if name.startswith('SM_BM_BT_Terrain_') or name == 'SM_BM_NorthApron':
@@ -105,8 +115,9 @@ def selected(build):
             raise ValueError('Missing final Belmonte structure metadata: '+name)
         entry = entries[name]
         geometry = {'visual':'belmonte/glb/'+Path(entry['path']).name}
-        geometry['collision'] = ('belmonte/glb/'+Path(entry['collision']['path']).name
-                                 if entry.get('collision') else geometry['visual'])
+        if group['collision']:
+            geometry['collision'] = ('belmonte/glb/'+Path(entry['collision']['path']).name
+                                     if entry.get('collision') else geometry['visual'])
         for relative in set(geometry.values()):
             if relative not in bounds_cache:
                 bounds_cache[relative] = mesh_bounds(build/relative)

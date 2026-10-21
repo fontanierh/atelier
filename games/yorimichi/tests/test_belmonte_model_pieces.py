@@ -74,6 +74,35 @@ def test_bad_triangle_declaration_refuses_before_writing_pieces(tmp_path):
     assert list(tmp_path.iterdir()) == [path]
 
 
+def test_omitted_child_slots_do_not_merge_distinct_parent_cull_groups():
+    # The second child uses only slot1. Two parent instances differ in slot0 and
+    # scale; merging their now-identical child bindings would change distance culling.
+    bounds = [[0., 0., 0.], [4., 4., 1.]]
+    first = dict(name='SM_BM_Test_Piece0', bounds_m=bounds, parent_bounds_m=bounds, parent_material_slots=[0, 1])
+    second = dict(first, name='SM_BM_Test_Piece3')
+    transforms = [dict(translation_cm=[0., 0., 0.], rotation_xyzw=[0., 0., 0., 1.], scale=[s, s, s])
+                  for s in (1., 3.)]
+    namespace = dict(
+        data={'placements': [dict(asset='parent', materials=slots, transform=transform)
+                             for slots, transform in zip((['a', 'b'], ['changed', 'b']), transforms)]},
+        by_asset={'parent': [(first, [0], True), (second, [1], False)]},
+        materials={key: {'name': 'MI_'+key} for key in ('a', 'b', 'changed')},
+        meshes=[first, second], np=np)
+    script = REGION / 'build.py'
+    main = next(node for node in ast.parse(script.read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name == 'main')
+    def assignment(node, name):
+        return isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets)
+    start = next(i for i, node in enumerate(main.body) if assignment(node, 'grouped'))
+    end = next(i for i, node in enumerate(main.body) if assignment(node, 'material_name'))
+    exec(compile(ast.Module(body=main.body[start:end], type_ignores=[]), str(script), 'exec'), namespace)
+    children = [group for group in namespace['groups'] if group['asset'].endswith('SM_BM_Test_Piece3.SM_BM_Test_Piece3')]
+    assert len(children) == 2
+    assert [group['transforms'] for group in children] == [[transforms[0]], [transforms[1]]]
+    assert [group['cull_cm'] for group in children] == [50000, 0]
+    assert all(group['parent_collision'] and not group['collision'] for group in children)
+
+
 @pytest.mark.parametrize('hull', [False, True])
 def test_actual_region_main_preserves_shared_instances_materials_parent_cull_and_collision(tmp_path, monkeypatch, hull):
     # Use one actual small model, with a lower test budget, through the real assembly body.

@@ -235,10 +235,14 @@ def main():
             # Retained glTF names pin the original material slots for every piece.
             names = [materials[placement['materials'][slot]]['name'] for slot in slots]
             bindings = tuple(f'/Game/Belmonte/Materials/{name}.{name}' for name in names)
-            key = (entry['name'], bindings, collides)
+            # A child may omit a material that distinguished two original instance
+            # groups. Keep their parent grouping, including its max-scale cull policy.
+            parent_slots = entry.get('parent_material_slots', slots)
+            parent_bindings = tuple(materials[placement['materials'][slot]]['name'] for slot in parent_slots)
+            key = (entry['name'], bindings, collides, parent_bindings)
             grouped.setdefault(key, []).append(placement['transform'])
     groups = []
-    for (name, bindings, collides), transforms in grouped.items():
+    for (name, bindings, collides, _parent_bindings), transforms in grouped.items():
         water = any(word in name for word in ('Water', 'Foam'))
         entry = next(entry for entry in meshes if entry['name'] == name)
         policy_bounds = entry.get('parent_bounds_m', entry['bounds_m'])
@@ -246,6 +250,7 @@ def main():
         span *= max(max(abs(value) for value in transform['scale']) for transform in transforms)
         groups.append({'asset': f'/Game/Belmonte/Meshes/{name}.{name}', 'materials': list(bindings),
                        'plant': False, 'collision': collides and not water, 'shadow': not water,
+                       'parent_collision': not water,
                        'cull_cm': 50000 if span < 8. else 0, 'transforms': transforms})
     material_name = 'MI_BM_Ground'
     materials['Ground'] = {'name': material_name, 'colour': [.24, .30, .12, 1.], 'tint': [1., 1., 1., 1.],

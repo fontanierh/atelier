@@ -12,10 +12,15 @@ with a limit of 32,768 triangles per rendered piece. All ten currently oversized
 models are covered. Small models retain their exact original bytes and names. Piece pivots
 stay unchanged; repeated instances share the same models and retain authored transforms.
 Material bindings follow the original source slot names. Culling retains the parent model's
-span, and shadow/water policy remains inherited. A separately authored whole-model collision
+span and original full-material instance groups, even when a child omits the differing slot;
+shadow/water policy remains inherited. A separately authored whole-model collision
 hull belongs to one piece and other rendered pieces disable component collision; without a
 separate hull, collision is the union of the unchanged piece faces. Current source membership
 retires the old generated parent GLB only after all current members are complete.
+Runtime query metadata retains the collidable logical parent's ownership. Gondola clearance
+continues to read every visual child while reading the whole authored collision hull only from
+its actual collision-enabled owner. Turning collision off on the other rendering children must
+not make their visible geometry disappear from route/headroom checks.
 
 Native adoption requires the independently reviewed native-membership retirement change
 first: otherwise an obsolete native parent can remain visible to all-content preparation.
