@@ -107,6 +107,7 @@ class MeshReuse:
         self.donor = {}
         self.pending = {}
         self.counts = dict(reused_local=0, reused_candidate=0, imported=0)
+        self.miss_reasons = {}
         self.compatible = False
         self.local_compatible = False
         try:
@@ -172,8 +173,12 @@ class MeshReuse:
         key = mesh_reuse.identity(dict(geometry=geometry, sources=source_hashes))
         self.pending[name] = dict(key=key, packages=packages, sources=sources,
                                   provenance={'kind': 'current-native-import'})
-        if not self.enabled or (self.requires_validator and validator is None) or not packages_clean(packages):
-            return None
+        if not self.enabled:
+            return self.miss('unsupported_policy')
+        if self.requires_validator and validator is None:
+            return self.miss('required_validator_missing')
+        if not packages_clean(packages):
+            return self.miss('dirty_loaded_package')
         local = self.receipts.matches(name, key, packages)
         historical = False
         if local:
@@ -186,26 +191,31 @@ class MeshReuse:
                 historical = True
         copied = False
         if not local:
-            if not self.compatible or donor_geometry is None or geometry != donor_geometry:
-                return None
+            if not self.compatible:
+                reason = ('saved_receipt_mismatch' if self.receipts.path.exists() else
+                          'local_package_history_mismatch' if self.local_compatible else
+                          'no_compatible_package_history')
+                return self.miss(reason)
+            if donor_geometry is None or geometry != donor_geometry:
+                return self.miss('candidate_geometry_mismatch')
             if any(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages):
                 # An unproven existing package belongs to the normal importer;
                 # candidate staging never replaces another completed scope.
-                return None
+                return self.miss('unproved_existing_package')
             selected = []
             for target in packages:
                 members = mesh_reuse.package_members(target)
                 if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
                        for member in members):
-                    return None  # refuse orphan sidecars as well as primary packages
+                    return self.miss('unproved_disk_sidecar')
                 if members[0] not in self.bundle['files']:
-                    return None
+                    return self.miss('candidate_package_missing')
                 for member in members:
                     if member not in self.bundle['files']:
                         continue
                     source = self.candidates.member_path(self.ctx, self.task, member, bundle=self.bundle)
                     if source is None:
-                        return None
+                        return self.miss('candidate_member_missing')
                     destination = safe_destination(self.content, member.removeprefix('content/'))
                     selected.append((source, destination, self.bundle['files'][member]))
             # Prepare all sidecars and collision packages before any mesh load.
@@ -217,7 +227,7 @@ class MeshReuse:
                     shutil.copyfile(source, temporary_file)
                     if (temporary_file.stat().st_size != expected['size']
                             or mesh_reuse.digest(temporary_file) != expected['sha256']):
-                        return None
+                        return self.miss('candidate_copy_mismatch')
                     prepared.append((temporary_file, destination))
                 for temporary_file, destination in prepared:
                     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -230,22 +240,31 @@ class MeshReuse:
                 donor_fingerprint=self.bundle['donor_fingerprint'], source_revision=self.bundle['source_revision'])
         loaded = {target: unreal.load_asset(target) for target in packages}
         if not packages_clean(packages):
-            return None
+            return self.miss('dirty_loaded_package')
         if any(not loaded[target] or not imported_source_matches(loaded[target], source)
                for target, source, _ in sources):
-            return None
+            return self.miss('recorded_source_mismatch')
         if validator is not None:
             try:
                 if not validator(loaded[package]):
-                    return None
+                    return self.miss('current_validator_rejected')
             except Exception:
-                return None  # Optional native readback failed; use the normal importer.
+                return self.miss('current_validator_exception')
         self.counts['reused_candidate' if copied else 'reused_local'] += 1
         if historical:
             print('NATIVE MESH HISTORICAL COMPATIBILITY ' + json.dumps(dict(task=self.task,
                 packages=packages, stamp_time=self.previous_stamp['time'],
                 provenance='compatibility-only'), sort_keys=True), flush=True)
         return loaded[package]
+
+    def miss(self, reason):
+        """@cc [owner:fontanierh,label:correctness] native-reuse-miss-observation
+        Diagnostics MUST describe an observed refusal branch, without changing its decision,
+        counting it as reuse, or exposing exception/source path text. Finalized diagnostics
+        MUST follow the same invocation and successful host boundary as actual reuse counts.
+        """
+        self.miss_reasons[reason] = self.miss_reasons.get(reason, 0) + 1
+        return None
 
     def validated(self, name):
         """Queue after current native checks; the successful host publishes receipts."""
@@ -261,19 +280,19 @@ class MeshReuse:
         import unreal
         value = self.pending.pop(name)
         nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
-        if nonce is None or not self.enabled:
+        if nonce is None:
             return
         record = None
-        if all(imported_source_matches(unreal.load_asset(target), source)
+        if self.enabled and all(imported_source_matches(unreal.load_asset(target), source)
                for target, source, _ in value['sources']):
             record = dict(key=value['key'], packages=value['packages'], provenance=value['provenance'],
                 native_source_validated=True, sources=[dict(package=target, member=mesh_reuse.source_member(self.ctx, source),
                     sha256=expected) for target, source, expected in value['sources']])
         mesh_reuse.queue_pending(self.ctx, self.task, nonce, self.receipts.header['policy'], self.receipts.header['context'],
-                                name, record, self.counts)
+                                name, record, self.counts, miss_reasons=self.miss_reasons)
 
     def finish(self):
-        result = dict(schema=1, task=self.task, counts=self.counts,
+        result = dict(schema=1, task=self.task, counts=self.counts, miss_reasons=self.miss_reasons,
                       donor_checkpoint=self.bundle.get('checkpoint') if self.bundle else None,
                       donor_provenance=self.bundle.get('provenance') if self.bundle else None)
         atomic_json(self.ctx.out / 'native-imports' / self.task / 'summary.json', result)

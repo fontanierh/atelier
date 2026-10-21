@@ -150,6 +150,20 @@ def test_parent_refuses_changed_or_unproved_pending_geometry(tmp_path, monkeypat
     assert not (ctx.out / 'native-imports/unreal.region/meshes.json').exists()
 
 
+@pytest.mark.parametrize('misses', [None, [], {'source': True}, {'source': -1}, {'path/to/source': 1}])
+def test_parent_refuses_malformed_miss_diagnostics_before_receipt_publication(tmp_path, monkeypatch, misses):
+    ctx, nonce, _, _, _ = pending_fixture(tmp_path, monkeypatch)
+    path = reuse.pending_path(ctx, 'unreal.region', nonce)
+    packet = json.loads(path.read_text())
+    packet['miss_reasons'] = misses
+    path.write_text(json.dumps(packet))
+    with pytest.raises(ValueError, match='miss diagnostics'):
+        reuse.finalize_pending(ctx, 'unreal.region', nonce)
+    assert path.exists()
+    assert not (ctx.out / 'native-imports/unreal.region/meshes.json').exists()
+    assert not (ctx.out / 'native-imports/unreal.region/summary.json').exists()
+
+
 @pytest.mark.parametrize('before,after', [
     ("T = {}; T.update({'b': 2})\ndef build(): return T\n", "T = {}; T.update({'b': 3})\ndef build(): return T\n"),
     ('N=100; N+=1\ndef build(): return N\n', 'N=100; N+=5\ndef build(): return N\n'),
