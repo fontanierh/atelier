@@ -125,3 +125,31 @@ def test_changed_current_pair_refuses_both_histories(pair):
     pair.witness['policies'].append(pair.witness['policies'][0]);pair.pin()
     (pair.root/'games/fixture/current.py').write_bytes(b'changed validator')
     assert POLICY.legacy_policies(pair.game,**pair.context)==()
+
+
+def test_three_independent_policy_histories_are_retained(pair):
+    row=pair.witness['policies'][0][0]
+    pair.witness['policies'] += [[row], [pair.witness['policies'][0][1]]]
+    pair.pin()
+    values=POLICY.legacy_policies(pair.game,**pair.context)
+    assert len(values)==3 and values[0]==pair.expected
+
+
+def test_exact_unused_slot_prepass_preserves_previously_emitted_samples(pair):
+    old_name='games/yorimichi/unreal/Source/YorimichiImport/FoliageBuilder.cpp'
+    new_name='games/yorimichi/unreal/Source/Yorimichi/Dev/FoliageSourceWriter.cpp'
+    old_condition='(LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))'
+    new_condition='UsedSlots.Contains(I) && (LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))'
+    statement='    if ('+old_condition+' && !MaterialColour(Material,Colour)) return false;\n'
+    for name in (old_name,new_name):
+        raw=(pair.root/name).read_bytes().replace(b'    geometry();\n',statement.encode())
+        if name==new_name:
+            raw=raw.replace(statement.encode(),(POLICY.USED_SLOT_PREPASS+statement.replace(old_condition,new_condition)).encode())
+        (pair.root/name).write_bytes(raw)
+        pair.witness['current'][name]=hashlib.sha256(raw).hexdigest()
+    pair.pin()
+    assert pair.run()==pair.expected
+    path=pair.root/new_name
+    raw=path.read_bytes().replace(b'UsedSlots.Add(Used)',b'UsedSlots.Add(Used+1)')
+    path.write_bytes(raw);pair.witness['current'][new_name]=hashlib.sha256(raw).hexdigest();pair.pin()
+    assert pair.run() is None

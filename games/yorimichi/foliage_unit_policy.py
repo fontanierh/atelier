@@ -6,8 +6,9 @@ import re
 import subprocess
 
 
-WITNESS_SHA256 = '6ed1ceb949ad7e2d1223da3d486b8c184208ddb46eb90384cad7a7bb2a714af8'
+WITNESS_SHA256 = 'a4cc1ffc6d3e9fe6d23f51674041d5a22103616df2ae75a5cd0c3f66a5af86c8'
 MAX_SOURCE = 8 * 1024 * 1024
+USED_SLOT_PREPASS = '    // Imported meshes can retain unused seed-material slots. They still belong\n    // in the slot table, but no exported corner samples their palette.\n    TSet<int32> UsedSlots;\n    for (const FTriangleID Triangle : Description.Triangles().GetElementIDs())\n    {\n        const FName Name=SlotNames[Description.GetTrianglePolygonGroup(Triangle)];\n        int32 Used=Source->GetMaterialIndex(Name);\n        if (Used==INDEX_NONE)\n            for (int32 I=0;I<Source->GetStaticMaterials().Num();++I)\n                if (Source->GetStaticMaterials()[I].ImportedMaterialSlotName==Name) { Used=I;break; }\n        if (!Source->GetStaticMaterials().IsValidIndex(Used)) return false;\n        UsedSlots.Add(Used);\n    }\n'
 
 
 def _member(root, name):
@@ -88,12 +89,19 @@ def _transport(root):
     copied = new.split(start, 1)[1].split('}\n#endif', 1)[0].strip()
     before = old.split('bool UYorimichiFoliageBuilder::ExportSource(', 1)[1].split('    FString Text;\n', 1)[0]
     after = new.split('bool UYorimichiFoliageSourceWriter::ExportSource(', 1)[1].split('    auto& Files=', 1)[0]
+    # The exact prepass skips palettes only for slots that no triangle uses.
+    # Every emitted corner still resolves its slot and samples the same palette.
+    if USED_SLOT_PREPASS in after:
+        after = after.replace(USED_SLOT_PREPASS, '', 1)
+        after = after.replace('UsedSlots.Contains(I) && (LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))', '(LeafSlots.Contains(I) || (Classification!=TEXT("material") && Classification!=TEXT("authored")))', 1)
     return palette == copied and before == after.replace('#if WITH_EDITOR\n', '', 1)
 
 
 def legacy_policies(game_root, *, engine_version, environment, runtime):
     """@cc [owner:fontanierh,label:correctness] reviewed-unit-transport-equivalence
     Only these immutable reviewed source pairs MAY reproduce historical unit policies.
+    The reviewed unused-slot prepass MAY avoid palette work only for slots referenced
+    by no exported triangle; it MUST preserve every emitted corner/sample.
     Every current source pin, ordered original Git byte, exact retained compiled-module
     record and current engine/runtime context MUST match; missing evidence MUST miss.
     Historical code MUST NOT execute. Results are lookup hints, never certificates:
@@ -109,7 +117,7 @@ def legacy_policies(game_root, *, engine_version, environment, runtime):
             return ()
         witness = json.loads(payload)
         if (not isinstance(witness, dict) or witness.get('schema') != 2
-                or not isinstance(witness.get('policies'), list) or not 1 <= len(witness['policies']) <= 2):
+                or not isinstance(witness.get('policies'), list) or not 1 <= len(witness['policies']) <= 3):
             return ()
         values = []
         for previous in witness['policies']:
