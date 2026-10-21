@@ -1,0 +1,469 @@
+"""Immutable build checkpoints. Source files and live engine/Zen directories are never copied.
+
+This is a native workspace snapshot protocol, separate from the portable product cache.
+Checkout-local compiler state is retained as a seed only at its original path; no PCH relocation
+or compiler-action-cache claim is made. Certificates are recomputed by the receiving recipe.
+"""
+from contextlib import contextmanager
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import stat
+import tempfile
+import time
+import unicodedata
+
+from . import build_products, paths
+from .build_cache import atomic_json, copy_file
+from .build_hashes import HashIndex, signature
+
+SCHEMA = 1
+MAX_MANIFEST = 64 * 1024**2
+MAX_FILES = 500000
+MAX_BYTES = 512 * 1024**3
+HEX = re.compile(r'[0-9a-f]{64}')
+JOURNAL = '.checkpoint-in-progress.json'
+IGNORED = {'logs', 'stamps', '.state', '.DS_Store', '__pycache__', '.git', '.env',
+           'release-publish', 'checkpoint-publish'}
+
+
+class CheckpointError(RuntimeError):
+    pass
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+
+
+def identity(value):
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def read_json(path):
+    if path.is_symlink() or path.stat().st_size > MAX_MANIFEST:
+        raise CheckpointError('Checkpoint metadata is linked or exceeds its size limit')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise CheckpointError('Duplicate checkpoint metadata key')
+            result[key] = value
+        return result
+    return json.loads(path.read_bytes(), object_pairs_hook=unique)
+
+
+def relative(value):
+    if (not isinstance(value, str) or not value or '\\' in value
+            or any(ord(c) < 32 for c in value)):
+        raise CheckpointError('Invalid checkpoint member path')
+    path = PurePosixPath(value)
+    if path.is_absolute() or str(path) != value or any(p in ('.', '..') for p in path.parts):
+        raise CheckpointError('Checkpoint members must be canonical relative paths')
+    return path
+
+
+def roots(ctx):
+    """The allowlist is derived locally, never from a downloaded manifest."""
+    result = {'generated': (ctx.out, False)}
+    if getattr(ctx, 'uproject', None):
+        project = ctx.uproject.parent
+        result.update(content=(project / 'Content', False), binaries=(project / 'Binaries', False),
+                      intermediate=(project / 'Intermediate', True), cooked=(project / 'Saved/Cooked', False),
+                      zen=(ctx.out / '.state/checkpoint-zen', False))
+        for base in (paths.ENGINE_PLUGINS, project / 'Plugins'):
+            for descriptor in sorted(base.rglob('*.uplugin')) if base.exists() else ():
+                plugin = descriptor.parent
+                if any(p in ('Intermediate', 'Binaries') for p in plugin.relative_to(base).parts):
+                    continue
+                name = identity(str(plugin.relative_to(paths.REPO)))[:24]
+                result['plugin-' + name + '-binaries'] = (plugin / 'Binaries', False)
+                result['plugin-' + name + '-intermediate'] = (plugin / 'Intermediate', True)
+    return result
+
+
+def context(ctx):
+    """Engine identity is independent of game HEAD; native ABI identity is mandatory."""
+    import platform
+    engine = getattr(ctx, 'unreal_root', None)
+    files = {}
+    if engine is not None:
+        for name in ('Engine/Build/Build.version', 'Engine/Binaries/Mac/UnrealEditor.modules'):
+            path = engine / name
+            if not path.is_file():
+                raise CheckpointError('Checkpoint requires the installed engine version and module identity')
+            files[name] = build_products.file_digest(path)
+    toolchain = {}
+    if engine is not None and platform.system() == 'Darwin':
+        import subprocess
+        developer = Path(subprocess.check_output(['xcode-select', '-p'], timeout=10, text=True).strip())
+        for name, path in {
+            'xcode': developer.parent / 'Info.plist',
+            'toolchain': developer / 'Toolchains/XcodeDefault.xctoolchain/ToolchainInfo.plist',
+            'sdk': developer / 'Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json',
+        }.items():
+            if not path.is_file():
+                raise CheckpointError('Checkpoint requires the selected Xcode/toolchain/SDK identity')
+            toolchain[name] = build_products.file_digest(path)
+    return dict(system=platform.system(), machine=platform.machine(), engine=files, toolchain=toolchain,
+                engine_location=identity(str(engine.resolve())) if engine else None)
+
+
+def excluded(path):
+    return any(p in IGNORED or p.startswith('.env.') or p.endswith('.guard')
+               or p.startswith(('.restore-', '.checkpoint-', '.reuse-', '.portable-snapshot-'))
+               for p in path.parts)
+
+
+def members(root):
+    if root.is_symlink():
+        raise CheckpointError('Checkpoint roots must not be symlinks')
+    if not root.exists():
+        return
+    for base, directories, files in os.walk(root, followlinks=False):
+        base = Path(base)
+        directories[:] = sorted(d for d in directories if not excluded((base / d).relative_to(root)))
+        for name in sorted([*files, *(d for d in directories if (base / d).is_symlink())]):
+            path = base / name
+            if not excluded(path.relative_to(root)):
+                yield path
+
+
+def safe_destination(root, member):
+    relative(member)
+    path = root.joinpath(*PurePosixPath(member).parts)
+    for parent in path.parents:
+        if parent.is_symlink():
+            raise CheckpointError('Checkpoint destination has a linked ancestor')
+        if parent == root:
+            break
+    # Resolve every ancestor, including parents of an absent root.
+    if root.resolve() != root.absolute():
+        raise CheckpointError('Checkpoint destination root has a linked ancestor')
+    return path
+
+
+class Store:
+    def __init__(self, game, directory=None):
+        self.game = game
+        self.directory = Path(directory) if directory else paths.cache_dir('checkpoints', 'v1', game)
+        self.blobs = self.directory / 'blobs'
+        self.manifests = self.directory / 'manifests'
+        self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        os.chmod(self.directory, 0o700)
+
+    @contextmanager
+    def locked(self):
+        with (self.directory / 'store.lock').open('a+b') as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            yield
+
+    def blob(self, digest):
+        if not isinstance(digest, str) or not HEX.fullmatch(digest):
+            raise CheckpointError('Invalid checkpoint content digest')
+        return self.blobs / digest
+
+    def put(self, path, digest):
+        destination = self.blob(digest)
+        if destination.is_symlink():
+            raise CheckpointError('Linked checkpoint blob')
+        if destination.exists():
+            if build_products.file_digest(destination) != digest:
+                raise CheckpointError('Existing checkpoint blob is corrupt; no results were restored')
+            return
+        self.blobs.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            copied = Path(temporary) / 'blob'
+            copy_file(path, copied)
+            if build_products.file_digest(copied) != digest:
+                raise CheckpointError('Checkpoint output changed while being copied')
+            os.chmod(copied, 0o600)
+            copied.replace(destination)
+
+    def save(self, manifest):
+        validate(manifest, self.game)
+        key = identity(manifest)
+        self.manifests.mkdir(parents=True, exist_ok=True)
+        atomic_json(self.manifests / (key + '.json'), manifest)
+        return key
+
+    def load(self, key):
+        if not HEX.fullmatch(key):
+            raise CheckpointError('Invalid checkpoint identity')
+        manifest = read_json(self.manifests / (key + '.json'))
+        validate(manifest, self.game)
+        if identity(manifest) != key:
+            raise CheckpointError('Checkpoint manifest digest differs')
+        return manifest
+
+    def latest(self):
+        candidates = sorted(self.manifests.glob('*.json'), key=lambda p: p.stat().st_mtime_ns, reverse=True)
+        return [(p.stem, self.load(p.stem)) for p in candidates]
+
+
+def validate(manifest, game):
+    """@cc [owner:fontanierh,label:security] bounded-checkpoint-paths
+    A checkpoint MUST contain only canonical, bounded, uniquely owned member paths and valid
+    content digests. Case/Unicode aliases, linked parents, special files and credential paths MUST
+    be refused. Downloaded root labels MUST NOT grant authority to write arbitrary paths.
+    """
+    if (type(manifest) is not dict or manifest.get('schema') != SCHEMA or manifest.get('game') != game
+            or type(manifest.get('files')) is not dict or len(manifest['files']) > MAX_FILES
+            or type(manifest.get('stamps')) is not dict or type(manifest.get('context')) is not dict
+            or not HEX.fullmatch(manifest.get('checkout', ''))):
+        raise CheckpointError('Invalid checkpoint manifest')
+    aliases, total = set(), 0
+    for name, entry in manifest['files'].items():
+        path = relative(name)
+        alias = unicodedata.normalize('NFC', name).casefold()
+        if alias in aliases or excluded(PurePosixPath(*path.parts[1:])) or len(path.parts) < 2:
+            raise CheckpointError('Aliased or excluded checkpoint member')
+        aliases.add(alias)
+        if type(entry) is not dict or entry.get('kind') not in ('file', 'link', 'directory'):
+            raise CheckpointError('Invalid checkpoint file kind')
+        if type(entry.get('mode')) is not int or not 0 <= entry['mode'] <= 0o777:
+            raise CheckpointError('Invalid checkpoint file permissions')
+        if type(entry.get('mtime_ns')) is not int or entry['mtime_ns'] < 0:
+            raise CheckpointError('Invalid checkpoint timestamp')
+        if entry['kind'] == 'file':
+            if (type(entry.get('size')) is not int or not 0 <= entry['size'] <= MAX_BYTES
+                    or not isinstance(entry.get('sha256'), str) or not HEX.fullmatch(entry['sha256'])):
+                raise CheckpointError('Invalid checkpoint file identity')
+            total += entry['size']
+        elif entry['kind'] == 'link':
+            target = entry.get('target')
+            if not isinstance(target, str) or not target.startswith(('member:', 'engine:')):
+                raise CheckpointError('Invalid checkpoint link target')
+            relative(target.partition(':')[2])
+    leaves = {unicodedata.normalize('NFC', n).casefold() for n, e in manifest['files'].items() if e['kind'] != 'directory'}
+    for name in aliases:
+        if any(str(p) in leaves for p in PurePosixPath(name).parents if str(p) != '.'):
+            raise CheckpointError('Checkpoint file is another member\'s parent')
+    if total > MAX_BYTES or len(canonical(manifest)) > MAX_MANIFEST:
+        raise CheckpointError('Checkpoint exceeds its size limit')
+    for name, stamp in manifest['stamps'].items():
+        if (not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', name) or type(stamp) is not dict
+                or not HEX.fullmatch(stamp.get('fingerprint', '')) or stamp.get('touched')):
+            raise CheckpointError('Checkpoint contains an invalid or touched certificate')
+
+
+def certificates(ctx, steps):
+    from .build import fingerprint, order, outputs_present, result
+    from .build_plan import read_stamp
+    from .checkpoint_actions import compile_present
+    done, records = {}, {}
+    with HashIndex() as index:
+        for step in order(steps, [s.name for s in steps]):
+            stamp = read_stamp(ctx.stamps / (step.name + '.json'))
+            try:
+                current = fingerprint(step, done, index=index, tool_cache={})
+                products = build_products.records(step, hasher=index.digest)
+                good = (stamp.get('fingerprint') == current and not stamp.get('touched')
+                        and outputs_present(step) and compile_present(ctx, step) and (not step.products or stamp.get('products') == products)
+                        and all(need in records for need in step.needs))
+            except (OSError, ValueError, SyntaxError):
+                good = False
+            if good:
+                records[step.name] = stamp
+                done[step.name] = result(step, current, stamp)
+                build_products.feed_results(done, products)
+    return records
+
+
+def capture(ctx, steps, store, *, echo=print):
+    """@cc [owner:fontanierh,label:correctness] immutable-checkpoint-capture
+    Saved certificates MUST match the producer's current declared inputs and complete named
+    outputs. Touched/failed/stale certificates MUST NOT publish. Source and output changes during
+    capture MUST refuse publication. HEAD equality with a future receiver MUST NOT be required.
+    """
+    before = certificates(ctx, steps)
+    if not before:
+        raise CheckpointError('No current successful build results to checkpoint')
+    from . import checkpoint_actions
+    from .build import order, result
+    checkpoint_actions.validate_ownership(ctx, steps)
+    done = {}
+    for step in order(steps, [s.name for s in steps]):
+        if step.name in before:
+            record = before[step.name]
+            checkpoint_actions.publish(ctx, step, record['fingerprint'], record, store=store, done=done)
+            done[step.name] = result(step, record['fingerprint'], record)
+            build_products.feed_results(done, record.get('products', {}))
+    actions = {}
+    for action_path in sorted((store.directory / 'actions').glob('*.json')):
+        if not action_path.with_suffix('.conflict').exists():
+            actions[action_path.stem] = checkpoint_actions.load(store, action_path.stem)
+    allowed, files, observations = roots(ctx), {}, []
+    source_paths = tracked_paths()
+    with store.locked(), HashIndex(ctx.out / '.state/checkpoint-hashes.sqlite3') as hashes:
+        started = spoken = time.monotonic()
+        for label, (root, _) in allowed.items():
+            for path in members(root):
+                if path in source_paths:
+                    continue
+                info = path.lstat()
+                member = label + '/' + path.relative_to(root).as_posix()
+                entry = dict(mode=stat.S_IMODE(info.st_mode), mtime_ns=info.st_mtime_ns)
+                if stat.S_ISLNK(info.st_mode):
+                    target = path.resolve(strict=True)
+                    choices = [(name, base) for name, (base, _) in allowed.items() if target.is_relative_to(base)]
+                    if choices:
+                        name, base = max(choices, key=lambda item: len(item[1].parts))
+                        entry.update(kind='link', target='member:' + name + '/' + target.relative_to(base).as_posix())
+                    elif getattr(ctx, 'unreal_root', None) and target.is_relative_to(ctx.unreal_root):
+                        entry.update(kind='link', target='engine:' + target.relative_to(ctx.unreal_root).as_posix())
+                    else:
+                        raise CheckpointError('Checkpoint link escapes generated outputs and installed engine')
+                elif stat.S_ISREG(info.st_mode):
+                    digest = hashes.digest(path)
+                    store.put(path, digest)
+                    entry.update(kind='file', size=info.st_size, sha256=digest)
+                else:
+                    raise CheckpointError('Special checkpoint output')
+                files[member] = entry
+                observations.append((path, signature(info)))
+                if time.monotonic() - spoken >= 25:
+                    echo(f'checkpoint: {len(files)} files saved, {time.monotonic() - started:.0f}s elapsed')
+                    spoken = time.monotonic()
+        names = {label + '/' + p.relative_to(root).as_posix()
+                 for label, (root, _) in allowed.items() for p in members(root) if p not in source_paths}
+        if (names != set(files) or any(signature(p.lstat()) != info for p, info in observations)
+                or certificates(ctx, steps) != before):
+            raise CheckpointError('Build changed during checkpoint capture; nothing published')
+        manifest = dict(schema=SCHEMA, game=ctx.game, context=context(ctx),
+                        checkout=identity(str(paths.REPO.resolve())), files=files, stamps=before,
+                        steps=sorted(s.name for s in steps), actions=actions)
+        key = store.save(manifest)
+    echo(f'checkpoint saved: {key[:12]}, {len(files)} files, {len(before)} certified tasks')
+    return key
+
+
+def cold(ctx):
+    """Whole-workspace hydration never merges with a receiver's existing generated work."""
+    for label, (root, _) in roots(ctx).items():
+        if any(members(root)):
+            return False
+    return True
+
+
+def restore(ctx, steps, store, key, *, echo=print):
+    """@cc [owner:fontanierh,label:correctness] checkpoint-restoration-certificates
+    Restoration MUST preserve source files, use independent verified copies and stay within
+    locally allowed generated roots. Only certificates matching the receiving recipe's actual
+    inputs MAY survive. A durable launch barrier MUST precede mutation and survive any failure.
+    Existing generated work MUST NOT be overwritten. Compiler intermediates MUST NOT relocate.
+    """
+    from .build_snapshot import require_complete
+    manifest = store.load(key)
+    if manifest['context'] != context(ctx):
+        raise CheckpointError('Checkpoint engine/platform identity differs')
+    allowed = roots(ctx)
+    if not set(manifest.get('steps', ())) <= {s.name for s in steps}:
+        raise CheckpointError('Checkpoint task ownership changed; a new baseline is required')
+    journal = ctx.out / JOURNAL
+    resume = dict(schema=SCHEMA, key=key, game=ctx.game)
+    existing = read_json(journal) if journal.exists() else None
+    if existing is not None and existing != resume:
+        raise CheckpointError('A different checkpoint restoration is incomplete')
+    require_complete(ctx.out, game=ctx.game, checkpoint_resume=resume if existing else None)
+    if existing is None and not cold(ctx):
+        raise CheckpointError('Checkpoint restoration preserves existing generated work; receiver is not empty')
+    selected = {}
+    source_paths = tracked_paths()
+    same_path = manifest['checkout'] == identity(str(paths.REPO.resolve()))
+    for member, entry in manifest['files'].items():
+        label, _, name = member.partition('/')
+        if label not in allowed:
+            raise CheckpointError('Checkpoint root is not owned by this project')
+        root, path_bound = allowed[label]
+        if path_bound and not same_path:
+            continue
+        destination = safe_destination(root, name)
+        if destination in source_paths:
+            raise CheckpointError('Checkpoint cannot replace tracked source')
+        if entry['kind'] == 'file':
+            blob = store.blob(entry['sha256'])
+            if (blob.is_symlink() or blob.stat().st_size != entry['size']
+                    or build_products.file_digest(blob) != entry['sha256']):
+                raise CheckpointError('Checkpoint blob is missing or corrupt')
+        selected[member] = (destination, entry)
+    # Verify link targets before changing anything; never create a link into a skipped root.
+    for destination, entry in selected.values():
+        if entry['kind'] == 'link' and entry['target'].startswith('member:'):
+            if (entry['target'][7:] not in selected
+                    and not any(m.startswith(entry['target'][7:] + '/') for m in selected)):
+                raise CheckpointError('Checkpoint link target is unavailable')
+    ctx.stamps.mkdir(parents=True, exist_ok=True)
+    atomic_json(journal, resume)
+    for name in manifest['stamps']:
+        (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
+    spoken = time.monotonic()
+    for count, (destination, entry) in enumerate(selected.values(), 1):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if entry['kind'] == 'file':
+            if destination.exists() or destination.is_symlink():
+                if (destination.is_symlink() or not destination.is_file()
+                        or build_products.file_digest(destination) != entry['sha256']):
+                    raise CheckpointError('Receiver output changed during checkpoint restoration; preserving it')
+            else:
+                with tempfile.TemporaryDirectory(prefix='.checkpoint-', dir=destination.parent) as temporary:
+                    staged = Path(temporary) / 'file'
+                    copy_file(store.blob(entry['sha256']), staged)
+                    if build_products.file_digest(staged) != entry['sha256']:
+                        raise CheckpointError('Staged checkpoint bytes differ')
+                    os.chmod(staged, entry['mode'])
+                    os.utime(staged, ns=(entry['mtime_ns'], entry['mtime_ns']))
+                    staged.replace(destination)
+        elif entry['kind'] == 'directory':
+            if destination.is_symlink() or destination.exists() and not destination.is_dir():
+                raise CheckpointError('Receiver directory destination is occupied')
+            destination.mkdir(exist_ok=True)
+        else:
+            if entry['target'].startswith('member:'):
+                label, _, name = entry['target'][7:].partition('/')
+                target = safe_destination(allowed[label][0], name)
+            else:
+                target = ctx.unreal_root / entry['target'][7:]
+            link = os.path.relpath(target, destination.parent)
+            if destination.is_symlink():
+                if os.readlink(destination) != link:
+                    raise CheckpointError('Receiver link changed during checkpoint restoration')
+            elif destination.exists():
+                raise CheckpointError('Receiver link destination is occupied')
+            else:
+                destination.symlink_to(link)
+        if time.monotonic() - spoken >= 25:
+            echo(f'checkpoint restore: {count}/{len(selected)} files copied')
+            spoken = time.monotonic()
+    for destination, entry in selected.values():
+        if entry['kind'] == 'file' and build_products.file_digest(destination) != entry['sha256']:
+            raise CheckpointError('Restored checkpoint bytes differ; launch barrier retained')
+    # Imported source paths remain provenance. Runtime packages retain their logical /Game paths.
+    # The installed engine discovers its registry normally; producer registry caches are not copied.
+    for name, stamp in manifest['stamps'].items():
+        atomic_json(ctx.stamps / (name + '.json'), stamp)
+    current = certificates(ctx, steps)
+    for name in manifest['stamps']:
+        path = ctx.stamps / (name + '.json')
+        if name not in current:
+            path.unlink(missing_ok=True)
+    from .build_checkpoints import estimate
+    atomic_json(ctx.out / '.state/checkpoint.json', dict(key=key, restored=sorted(current),
+                estimates={name: estimate(stamp) for name, stamp in manifest['stamps'].items()}))
+    # Publication of current certificates happens only after the outer guard closes in the caller.
+    for name in current:
+        (ctx.stamps / (name + '.json')).unlink(missing_ok=True)
+    return current
+
+
+def tracked_paths():
+    """Tracked source can never be acquired by a generated-output transaction."""
+    import subprocess
+    if not (paths.REPO / '.git').exists():
+        return set()
+    result = subprocess.run(['git', '-C', str(paths.REPO), 'ls-files', '-z'], check=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15)
+    return {paths.REPO / os.fsdecode(name) for name in result.stdout.split(b'\0') if name}

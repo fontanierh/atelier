@@ -126,7 +126,10 @@ def forget(store, key):
 def configure(sub):
     parser = sub.add_parser('cache', help='inspect, prune and import signed portable products')
     commands = parser.add_subparsers(dest='action', required=True)
+    local = commands.add_parser('configure', help='set the private checkpoint repository in machine-local configuration')
+    local.add_argument('--repository', required=True)
     commands.add_parser('status')
+    commands.add_parser('abandon-transfer', help='remove a journaled partial transfer left by an older client').add_argument('game')
     create = commands.add_parser('snapshot-create', help='pin an unsigned local selection of current portable products')
     create.add_argument('game')
     create.add_argument('steps', nargs='+', help='target step names/prefixes; full dependency closure is mandatory')
@@ -170,6 +173,14 @@ def configure(sub):
 
 
 def main(args):
+    if args.action == 'configure':
+        from .build_checkpoints import configure_repository
+        result = configure_repository(args.repository)
+        print(json.dumps(result))
+        return 0
+    if args.action == 'abandon-transfer':
+        from .legacy_transfer import abandon
+        return abandon(args.game)
     store = Store()
     try:
         if args.action == 'status':

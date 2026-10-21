@@ -59,13 +59,10 @@ Structure a game so that changing an asset rebuilds that asset, changing its pla
 and changing terrain updates the affected area. A region should describe the world it uses through explicit
 inputs and references. It should own its outputs and preserve the outputs of other regions.
 
-These authoring practices support the [incremental build proposal](INCREMENTAL_BUILDS.md). Several can be used
-with today's `Step` recipes. Named products and read-only inspection are implemented in the
-[recipe guide](BUILD_RECIPES.md), along with automatic restoration of opted-in portable products. Native Unreal
-restoration across revisions remains proposed. Verified whole-build reuse at the same clean revision supports
-named products, including native packages. Recipe-declared spatial queries are available for audited Python actions;
-native generators and runtime-derived query volumes still need migration and validation.
-The [artifact pool guide](ARTIFACT_POOL.md) describes reuse available today.
+These practices support [normal incremental builds](INCREMENTAL_BUILDS.md). The [recipe guide](BUILD_RECIPES.md)
+explains named products, narrow inputs and spatial queries; [build checkpoints](BUILD_CHECKPOINTS.md) covers
+cross-revision reuse. Older generators need complete independent output ownership before individual cache
+entries are safe. Native generators and runtime-derived query volumes still need migration and validation.
 
 Measure an expensive generator before choosing its split. Emit phase boundaries for source loading, neighbour
 queries, simplification, AO, collision and export, then inspect `atelier build <game> <step> --timings`.

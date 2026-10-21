@@ -297,6 +297,16 @@ def prepare(ctx, log):
     log.write(f'cook source {ctx.cook_source["revision"]}\n'); log.flush()
 
 
+def certify_restored(ctx, log):
+    """@cc [owner:fontanierh,label:correctness] restored-cook-payload-certification
+    Reused payload certification MUST preserve the archive bytes and record receiving source
+    provenance only after source and complete archive inventories are stable. It MUST NOT run
+    destructive cook preparation or claim native parity from a successful cache transfer.
+    """
+    ctx.cook_source = source_snapshot(ctx)
+    finish(ctx, log)
+
+
 def finish(ctx, log):
     if ctx.cook_source != source_snapshot(ctx):
         raise RuntimeError('source or prerequisite stamps changed during the cook; no receipt written')

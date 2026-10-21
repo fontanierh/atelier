@@ -213,7 +213,7 @@ class GitHub:
                     child.wait(timeout=3)
 
     def api(self, path, *, method='GET', data=None, pages=False):
-        args = ['api', f'repos/{self.repo}/{path}', '--hostname', 'github.com', '--method', method]
+        args = ['api', f'repos/{self.repo}' + ('/' + path if path else ''), '--hostname', 'github.com', '--method', method]
         if pages:
             args += ['--paginate', '--slurp']
         if data is not None:
@@ -480,6 +480,11 @@ def main(game, package, *, tag, verification, title=None, notes_file=None, sourc
                 if notes_path:
                     require(snapshot(notes_path) == notes_snapshot, 'release notes changed during publication')
             revalidate()
+            from . import build_checkpoints
+            try:
+                build_checkpoints.publish(source, game, tag, revision, revalidate=revalidate)
+            except RuntimeError as error:
+                raise PublishError(str(error)) from None
             result = publish_assets(GitHub(repo, stop), stage,
                 dict(tag_name=tag, target_commitish=revision, name=title, body=notes, prerelease=prerelease),
                 workers=workers, revalidate=revalidate)

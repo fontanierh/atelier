@@ -23,7 +23,12 @@ def apply(ctx, steps):
     from .build import UnrealPackage
     mode = CookMode(getattr(ctx, 'cook_mode', CookMode.DEFAULT))
     if mode is CookMode.DEFAULT:
-        return steps
+        from .build_checkpoints import configured
+        if configured(ctx) is None:
+            return steps
+        # Checkpoint builds always use dependency-tracked cooking. The unconfigured platform
+        # template keeps its historical command shape; no second production path is advertised.
+        mode = CookMode.INCREMENTAL
     for step in steps:
         step.commands = [replace(command, cook_mode=mode) if isinstance(command, UnrealPackage) else command
                          for command in step.commands]
@@ -39,6 +44,8 @@ def measurement_reason(value):
 
 def forced(ctx, step, force):
     from .build import UnrealPackage
+    if getattr(ctx, 'checkpoint_settings', None) is not None:
+        return bool(force and step.name == getattr(ctx, 'checkpoint_force_task', None))
     return bool(force and (getattr(ctx, 'cook_mode', CookMode.DEFAULT) is CookMode.DEFAULT
                            or any(isinstance(command, UnrealPackage) for command in step.commands)))
 

@@ -7,7 +7,7 @@ plugin, Config or imported-content change invalidates the cook and its download.
 invalidates only download assembly, so it reuses the completed cook.
 
 Both steps are explicit: a plain `atelier build yorimichi` or `atelier build yorimichi unreal` never plans either.
-Do not add `--force`: it reruns every prerequisite, including every import. The first build after this split needs a
+Do not add `--force`: it reruns every prerequisite, including every import. A missing or invalid cook needs an
 cook to establish `cook.json`; an older package is not silently certified as current.
 
 ```sh
@@ -259,3 +259,10 @@ Two mitigations are **unvalidated**; neither is in use, and each needs one measu
 invalidates the makefile on every run, but that costs seconds and is not the cause. Preserve each run's
 `UBA-Yorimichi-Mac-Development.txt` and changed `.rsp` files when investigating: UBT overwrites its logs. Do not
 clear caches, remove `-build` or accept stale binaries to hide the cause.
+
+## Build reuse
+
+Normal builds use [private build checkpoints](../../../docs/BUILD_CHECKPOINTS.md), with task keys independent
+of Git revision. Keep generated outputs, stamps and caches. Unknown/expensive misses require a recorded reason,
+and broad force/touch recovery is retired. The default configured cook tracks dependencies incrementally.
+The operator requested source-first shipping without new native validation; no parity or speedup is claimed.
