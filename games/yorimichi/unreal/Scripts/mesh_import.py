@@ -25,7 +25,11 @@ def import_mesh(path, dest, name, *, seed, fresh_slots=False):
     unreal.load_module('YorimichiImport')
     if not unreal.YorimichiFoliageBuilder.stamp_source_roles(mesh):
         raise RuntimeError('Invalid foliage face roles: '+name)
-    EAL.save_loaded_asset(mesh)
+    if not EAL.save_loaded_asset(mesh):
+        raise RuntimeError('Could not save certified mesh: '+name)
+    # Task/UI locals have gone out of scope and compilation has completed. Keep
+    # the returned mesh live, but release prior imports during blocking commandlets.
+    unreal.YorimichiFoliageBuilder.collect_unused()
     return mesh
 
 

@@ -74,8 +74,8 @@ def importer(monkeypatch, tmp_path):
 
     fake = SimpleNamespace(
         load_module=lambda name: None,
-        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=lambda mesh: True),
-        EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda mesh: None,
+        YorimichiFoliageBuilder=SimpleNamespace(stamp_source_roles=lambda mesh: True, collect_unused=lambda: None),
+        EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda mesh: True,
                                           does_asset_exist=lambda path: path in assets,
                                           load_asset=lambda path: assets.get(path)),
         AssetToolsHelpers=SimpleNamespace(get_asset_tools=lambda: SimpleNamespace(import_asset_tasks=execute)),
@@ -181,7 +181,7 @@ def test_hidamari_terrain_reimport_replaces_seed_slots_and_keeps_terrain_materia
         p.assets[terrain_package].values['body_setup'] = SimpleNamespace(set_editor_property=collision.__setitem__)
     p.module.AT.import_asset_tasks = execute
     p.unreal.AssetToolsHelpers.get_asset_tools = lambda: SimpleNamespace(import_asset_tasks=execute)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: saved.append(mesh) or True
     p.unreal.MaterialEditingLibrary = SimpleNamespace()
     p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
     p.unreal.CollisionTraceFlag = SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex')
@@ -327,7 +327,7 @@ def test_treehouse_trees_seed_from_existing_fbx_before_reimport(importer, monkey
     p.unreal.AssetToolsHelpers.get_asset_tools = lambda: p.module.AT
     p.unreal.EditorAssetLibrary.duplicate_asset = duplicate_asset
     p.unreal.EditorAssetLibrary.delete_asset = lambda path: deleted.append(path) or p.assets.pop(path)
-    p.unreal.EditorAssetLibrary.save_loaded_asset = saved.append
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: saved.append(mesh) or True
     p.unreal.MaterialEditingLibrary = SimpleNamespace(**{name: lambda *args: None for name in (
         'set_material_instance_parent', 'set_material_instance_texture_parameter_value', 'update_material_instance')})
     p.unreal.SystemLibrary = SimpleNamespace(execute_console_command=lambda *args: None)
@@ -426,6 +426,22 @@ def test_source_role_certification_is_required_at_final_import_boundary(importer
         p.module.import_mesh(p.source,'/Game/Owned','Mesh',seed=p.seed)
     assert stamped==[p.assets[p.package]]
     assert [name for name,_,_ in p.calls]==['seed.fbx','mesh.fbx']
+
+
+@pytest.mark.parametrize('valid_roles,saved', [(True, True), (False, True), (True, False)])
+def test_import_cleanup_requires_certified_saved_mesh(importer, valid_roles, saved):
+    p = importer
+    events = []
+    p.unreal.YorimichiFoliageBuilder.stamp_source_roles = lambda mesh: events.append(('stamp', mesh)) or valid_roles
+    p.unreal.EditorAssetLibrary.save_loaded_asset = lambda mesh: events.append(('save', mesh)) or saved
+    p.unreal.YorimichiFoliageBuilder.collect_unused = lambda: events.append(('collect', p.assets[p.package]))
+    if valid_roles and saved:
+        mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+        assert events == [('stamp', mesh), ('save', mesh), ('collect', mesh)]
+    else:
+        with pytest.raises(RuntimeError, match='Could not save' if valid_roles else 'Invalid foliage'):
+            p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+        assert [event for event, _ in events] == (['stamp', 'save'] if valid_roles else ['stamp'])
 
 
 def test_treehouse_binding_uses_import_identity_despite_cooked_foliage_roles():
