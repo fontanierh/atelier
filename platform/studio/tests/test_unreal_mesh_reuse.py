@@ -58,7 +58,8 @@ def scene(tmp_path, monkeypatch):
         EditorAssetLibrary=SimpleNamespace(does_asset_exist=lambda p:
             (content / mesh_reuse.package_members(p)[0].removeprefix('content/')).exists()),
         AssetRegistryHelpers=SimpleNamespace(
-            create_asset_data=lambda mesh: SimpleNamespace(get_tag_value=lambda _: tags[mesh.package]),
+            create_asset_data=lambda mesh: SimpleNamespace(
+                get_tag_value=lambda name: tags[mesh.package] if name == 'AssetImportData' else None),
             get_asset_registry=lambda: SimpleNamespace(scan_files_synchronous=lambda names, force: scans.append(names))),
         load_asset=load)
     monkeypatch.setitem(sys.modules, 'unreal', unreal)
@@ -103,6 +104,16 @@ def test_missing_native_import_hash_never_certifies_captured_bytes(scene):
     adapter.validated('Mesh')
     assert not adapter.receipts.path.exists()
     assert adapter.counts['reused_candidate'] == 0
+
+
+def test_loaded_registry_uses_engine_import_data_key_and_rejects_changed_source(scene):
+    # UObject::SourceFileTagName() emits AssetImportData in UE5.8. The fake
+    # deliberately returns no value for arbitrary tag names, as the engine does.
+    mesh = SimpleNamespace(package=scene.package)
+    source = scene.sources[0][1]
+    assert native.imported_source_matches(mesh, source)
+    source.write_bytes(b'different current geometry')
+    assert not native.imported_source_matches(mesh, source)
 
 
 def test_changed_source_or_corrupt_copy_cannot_publish_candidate_receipt(scene):
