@@ -6,8 +6,7 @@ from pathlib import Path
 import re
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-import yori  # noqa: E402,F401
+sys.path.insert(0, str(Path(__file__).absolute().parents[5]/'platform/studio'))
 
 from atelier.gltf import glb_parts
 from atelier.gltf_partition import split
@@ -22,9 +21,23 @@ def is_ground(name):
     return name in NORTH or name.startswith('SM_BM_BT_Terrain_')
 
 
-def _plain(path):
-    if any(parent.is_symlink() for parent in (path, *path.parents)):
+def _plain(path, *, root=None):
+    parents = (path, *path.parents)
+    if root is not None:
+        path.relative_to(root)
+        parents = tuple(parent for parent in parents if parent == root or root in parent.parents)
+    if any(parent.is_symlink() for parent in parents):
         raise ValueError('Final ground requires unlinked generated paths')
+
+
+def placements(data):
+    """Canonical query terrain requires exactly one actual identity instance per source."""
+    identity = dict(translation_cm=[0., 0., 0.], rotation_xyzw=[0., 0., 0., 1.], scale=[1., 1., 1.])
+    for entry in data['meshes']:
+        if not is_ground(entry['name']): continue
+        instances = [row['transform'] for row in data['placements'] if row['asset'] == entry['source_asset']]
+        if instances != [identity] or any(type(v) not in (int, float) for row in instances for values in row.values() for v in values):
+            raise ValueError('Final query ground requires exactly one identity placement: '+entry['name'])
 
 
 def prepare(entry, path, folder, *, triangle_limit=LIMIT):
@@ -82,7 +95,8 @@ def publish(folder, surfaces, origin_cm):
 
 
 def _validate(folder, data, *, complete):
-    _plain(folder)
+    root = folder/'ground'
+    _plain(root, root=root)
     if not isinstance(data, dict) or type(data.get('schema')) is not int or data['schema'] != 1:
         raise ValueError('Invalid final ground schema')
     origin = data.get('origin_cm')
@@ -106,7 +120,7 @@ def _validate(folder, data, *, complete):
                 or any(type(v) not in (int, float) or not math.isfinite(v) for row in bounds for v in row)
                 or any(a > b for a, b in zip(*bounds))):
             raise ValueError('Invalid final ground bounds')
-        path = folder/entry['path']; _plain(path)
+        path = folder/entry['path']; _plain(path, root=root)
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != entry.get('sha256'):
             raise ValueError('Final ground bytes differ from their complete inventory')
     if not NORTH <= seen:
@@ -118,7 +132,7 @@ def _validate(folder, data, *, complete):
 
 def load(folder):
     folder = Path(folder)
-    path = folder/'ground/membership.json'; _plain(path)
+    path = folder/'ground/membership.json'; _plain(path, root=folder/'ground')
     return _validate(folder, json.loads(path.read_text()), complete=True)
 
 

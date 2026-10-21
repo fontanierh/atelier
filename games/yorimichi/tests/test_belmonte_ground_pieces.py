@@ -4,13 +4,16 @@ from copy import deepcopy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import struct
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 from atelier import build
+from atelier import build_cache, build_inputs
 from atelier.gltf import glb_pack, glb_parts
 from atelier.model_files import retain_files
 
@@ -96,6 +99,44 @@ def test_linked_membership_refuses_before_retiring_any_query(prepared,tmp_path):
         GROUND.publish(folder,surfaces,[0.,0.,0.])
     assert stale.read_bytes()==raw
     assert other.read_text()=='preserve'
+
+
+def test_projection_succeeds_through_the_actual_audited_build(prepared,tmp_path,monkeypatch):
+    folder,_,surfaces,_=prepared
+    GROUND.publish(folder,surfaces,[0.,0.,0.])
+    output=folder.parent/'products/belmonte/ground.json'
+    ctx=SimpleNamespace(game='fixture',out=folder.parent,logs=folder.parent/'logs',
+                        stamps=folder.parent/'stamps',env=lambda extra=():dict(os.environ)|dict(extra))
+    step=build.Step('ground',[build.Python(SCRIPT,(str(folder),str(output)))],
+        inputs=[*build_inputs.local_imports(SCRIPT),folder/'ground'],
+        products=[build.Product('ground',(output,))],audit=True,cache=True)
+    store=build_cache.Store(tmp_path/'store')
+    monkeypatch.setattr(build,'Context',lambda *a,**k:ctx)
+    monkeypatch.setattr(build,'load_recipe',lambda game:SimpleNamespace(steps=lambda ctx:[step]))
+    monkeypatch.setattr(build_cache,'Store',lambda:store)
+    monkeypatch.setattr(build_cache,'tool_context',lambda *a,**k:{'test':'fixed interpreter'})
+    messages=[]
+    assert build.build('fixture',echo=messages.append)==0,messages
+    report=json.loads((ctx.logs/'ground.audit.json').read_text())
+    assert report['passed'] and not report['violations']
+    assert json.loads(output.read_text())==GROUND.load(folder)
+
+
+@pytest.mark.parametrize('change',['move','remove','duplicate'])
+def test_actual_producer_refuses_nonidentity_or_missing_ground_placements(tmp_path,monkeypatch,change):
+    import ast
+    identity=dict(translation_cm=[0.,0.,0.],rotation_xyzw=[0.,0.,0.,1.],scale=[1.,1.,1.])
+    row=dict(asset='ground',transform=identity)
+    data=dict(meshes=[dict(name='SM_BM_BT_Terrain_0_0',source_asset='ground')],placements=[row])
+    if change=='move':row['transform']=dict(identity,translation_cm=[100.,0.,0.])
+    elif change=='remove':data['placements']=[]
+    else:data['placements'].append(deepcopy(row))
+    script=SCRIPT.with_name('build.py')
+    main=next(n for n in ast.parse(script.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='main')
+    namespace=dict(OUT=tmp_path/'out',source=SimpleNamespace(manifest=lambda:data),ground_pieces=GROUND)
+    namespace['finish_surfaces']=lambda data:pytest.fail('Invalid ground must refuse before geometry/material assembly')
+    with pytest.raises(ValueError,match='exactly one identity'):
+        exec(compile(ast.Module(body=main.body,type_ignores=[]),str(script),'exec'),namespace)
 
 
 @pytest.mark.parametrize('fault',['changed','missing','linked','extra','duplicate','missing-country','schema','origin'])

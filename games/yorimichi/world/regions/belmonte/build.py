@@ -207,6 +207,7 @@ def main():
     (OUT / 'glb').mkdir(exist_ok=True)
     (OUT / 'textures').mkdir(exist_ok=True)
     data = source.manifest()
+    ground_pieces.placements(data)
     materials = finish_surfaces(data)
     by_asset, meshes, surfaces = {}, [], []
     for entry in data['meshes']:
