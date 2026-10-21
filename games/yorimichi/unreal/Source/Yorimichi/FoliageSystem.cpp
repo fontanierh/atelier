@@ -321,9 +321,9 @@ bool UYorimichiFoliageSubsystem::Register(UStaticMeshComponent* Component)
         for (UStaticMesh* Value:{Mesh,Optimized,Shadow,Patch})
         {
             const auto* Render=Value->GetRenderData();
-            uint64 CPU=0;int32 Platforms=0,CachedDescriptions=0;
+            const uint64 CPU=Render->GetCPUAccessMemoryOverhead();int32 Platforms=0,CachedDescriptions=0;
             for (const auto* Platform=Render;Platform;Platform=Platform->NextCachedRenderData.Get())
-            { CPU+=Platform->GetCPUAccessMemoryOverhead();++Platforms; }
+            { ++Platforms; }
             for (int32 L=0;L<Value->GetNumSourceModels();++L)
                 CachedDescriptions+=Value->GetSourceModel(L).GetCachedMeshDescription()!=nullptr;
             UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP MESH %s resource_mib=%.1f cpu_mib=%.1f platforms=%d cached_descriptions=%d"),
