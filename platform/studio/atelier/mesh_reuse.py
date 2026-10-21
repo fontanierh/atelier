@@ -357,7 +357,9 @@ def finalize_pending(ctx, task, nonce):
     Pending child evidence alone MUST NOT publish receipts or receiving task stamps.
     """
     for owner in (task, task + '.assets'):
-        _finalize_pending(ctx, owner, nonce)
+        evidence = _finalize_pending(ctx, owner, nonce)
+        if evidence is not None:
+            ctx.__dict__.setdefault('native_candidate_observations', {}).setdefault(task, []).append(evidence)
 
 
 def _finalize_pending(ctx, task, nonce):
@@ -402,6 +404,7 @@ def _finalize_pending(ctx, task, nonce):
     atomic_json(receipts.path.with_name('summary.json'), dict(schema=1, task=task,
                 invocation=nonce, counts=packet['counts'], miss_reasons=misses, finalized_after_native_success=True))
     target.unlink()
+    return dict(context=packet['context'], entries=packet['entries'], records=prepared)
 
 
 class Receipts:

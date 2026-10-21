@@ -1007,6 +1007,12 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                         except (OSError, ValueError, RuntimeError):
                             path.unlink(missing_ok=True)
                             raise
+            from .checkpoint_native_capture import publish as retain_candidates
+            for completed_step in plan:
+                if completed_step.name in completed:
+                    saved = read_stamp(ctx.stamps / (completed_step.name + '.json'))
+                    retain_candidates(ctx, completed_step, saved,
+                                      fresh=lambda item=completed_step: fingerprint(item, done), echo=echo)
             completed_batches.update(completed)
             ctx.checkpoint_changed = True
             ran += len(completed)
@@ -1197,6 +1203,8 @@ def _execute_build(ctx, wanted, *, force, touch, echo, index, steps, produced, c
                 echo(f'{print_} cache publication skipped ({error})')
         done[step.name] = result(step, current, record)
         build_products.feed_results(done, products)
+        from .checkpoint_native_capture import publish as retain_candidates
+        retain_candidates(ctx, step, record, fresh=lambda: fingerprint(step, done), echo=echo)
         restored += int(from_cache)
         ran += int(not from_cache)
         if produced is not None and not from_cache:

@@ -517,3 +517,17 @@ Bounds are author declarations, not a geometric proof. Include each operation's 
 that product bounds contain the generated geometry. Runtime-discovered boxes, generated spatial catalogues,
 nearest-neighbour queries and native import/query adapters are not implemented. Use broader explicit reads until
 those contracts exist. Native Unreal products remain ineligible for portable caching.
+
+
+### Automatic native candidate retention
+
+A native owner with a typed `CandidateScope` automatically retains its finalized mesh and
+asset-group packages after ordinary task success. The catalogue includes complete package
+sidecars, declared metadata, and the original task input evidence. A later failed task does
+not erase that earlier result. No explicit checkpoint capture or Git revision match is needed
+for discovery; each receiver still validates its actual source, policy, package and native state.
+
+Retention requires a clean capture revision and original input evidence. Unsupported policies,
+missing metadata, changed packages, or an incomplete collision/LOD group remain ordinary misses.
+The catalogue contains historical hints, not portable native action certificates or receiving
+success stamps. Failed-task partial preparation uses its own independently validated unit records.
