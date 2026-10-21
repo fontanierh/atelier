@@ -19,10 +19,12 @@ for package in REQUIRED:
     if not E.does_asset_exist(package):
         raise RuntimeError('Required browser scene asset is missing: ' + package)
 
-les = U.get_editor_subsystem(U.LevelEditorSubsystem)
 eas = U.get_editor_subsystem(U.EditorActorSubsystem)
-if not les.new_level(MAP):
-    raise RuntimeError('Could not create browser scene map')
+# Start from an empty world on every rebuild, including when MAP already exists.
+# new_level(MAP) refuses an existing destination instead of replacing it.
+world = U.EditorLoadingAndSavingUtils.new_blank_map(False)
+if not world:
+    raise RuntimeError('Could not create browser scene scratch world')
 sun = eas.spawn_actor_from_class(U.DirectionalLight, U.Vector(0, 0, 3000))
 sun.set_actor_rotation(U.Rotator(roll=0, pitch=-48, yaw=-30), False)
 sun.light_component.set_mobility(U.ComponentMobility.MOVABLE)
@@ -55,7 +57,6 @@ soft_colour_grade(s)
 s.set_editor_property('weighted_blendables', U.WeightedBlendables(array=[
     U.WeightedBlendable(weight=1, object=E.load_asset('/Game/Japan/Materials/M_Painterly'))]))
 post.set_editor_property('settings', s)
-world = U.EditorLevelLibrary.get_editor_world()
 if not U.EditorLoadingAndSavingUtils.save_map(world, MAP):
     raise RuntimeError('Could not save browser scene map')
 root = CONTENT / 'Data/Browser'
