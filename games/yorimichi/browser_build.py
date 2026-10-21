@@ -93,6 +93,19 @@ class BrowserPackage(UnrealPackage):
         ]
 
 
+def cook_config():
+    return ((GAME / 'unreal/Config/DefaultGame.ini').read_text() + '\n'
+            + (GAME / 'unreal/Config/HTML5/HTML5Game.ini').read_text())
+
+
+def cook_config_present(ctx):
+    path = ctx.out / 'browser/CookGame.ini'
+    try:
+        return not path.is_symlink() and path.read_text() == cook_config()
+    except (OSError, ValueError):
+        return False
+
+
 def stage_scene(ctx, log):
     """Stage the committed park with an explicit bounded selection of scenery."""
     park = json.loads(PARK.read_text())
@@ -120,8 +133,7 @@ def stage_scene(ctx, log):
     # while retaining the game's shared simulation/audio settings.
     config = ctx.out / 'browser/CookGame.ini'
     config.parent.mkdir(parents=True, exist_ok=True)
-    config.write_text((GAME / 'unreal/Config/DefaultGame.ini').read_text() + '\n'
-                      + (GAME / 'unreal/Config/HTML5/HTML5Game.ini').read_text())
+    config.write_text(cook_config())
     log.write("staged Browser/park.json, scene.json and Cairo portrait\n")
 
 
@@ -268,6 +280,7 @@ def steps(ctx):
                 content / "Data/cairo/portrait.png",
                 ctx.out / 'browser/CookGame.ini',
             ],
+            verify=lambda: cook_config_present(ctx),
             about="the explicit skate-pier scene manifest and bounded park data",
         ),
         Step(
@@ -297,7 +310,7 @@ def steps(ctx):
         Step(
             "browser.package",
             [BrowserPackage("Yorimichi", ctx.out / "browser/package")],
-            inputs=[Path(__file__), GAME / "unreal/Config"],
+            inputs=[Path(__file__), GAME / "unreal/Config", ctx.out / 'browser/CookGame.ini'],
             needs=["browser.compile", "browser.scene"],
             reads=['browser.binary', 'materials.shared'],
             explicit=True,

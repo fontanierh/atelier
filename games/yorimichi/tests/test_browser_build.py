@@ -37,6 +37,10 @@ def test_browser_scene_keeps_riding_geometry_and_rails(tmp_path, monkeypatch):
     assert '[/Script/AtelierSkate.SkateSettings]' in config
     assert config.index('!DirectoriesToAlwaysCook=ClearArray') > config.index('/Game/Belmonte')
     assert '+DirectoriesToAlwaysCook=(Path="/Game/CairoAdventure")' in config
+    ctx = SimpleNamespace(out=tmp_path)
+    assert browser.cook_config_present(ctx)
+    (tmp_path / 'browser/CookGame.ini').write_text('stale settings')
+    assert not browser.cook_config_present(ctx)
 
 
 def test_browser_scene_graph_is_bounded_but_includes_production_preparation(tmp_path):
