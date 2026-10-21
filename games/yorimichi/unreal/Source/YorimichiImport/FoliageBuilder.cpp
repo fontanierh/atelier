@@ -312,7 +312,12 @@ UStaticMesh* UYorimichiFoliageBuilder::BuildVariant(UStaticMesh* Source, const F
         }
         Pointers.Add(&D);
         auto& Model=Mesh->GetSourceModel(L);
+        // SetNumSourceModels seeds automatic .5^LOD reduction. Every supplied
+        // level is already prepared, including reused assets with old settings.
+        Model.ReductionSettings=FMeshReductionSettings{};
+        Model.ReductionSettings.BaseLODModel=L;
         Model.BuildSettings.bRecomputeNormals=false;Model.BuildSettings.bRecomputeTangents=true;
+        Model.BuildSettings.bRemoveDegenerates=false;
         Model.BuildSettings.bGenerateLightmapUVs=false;Model.BuildSettings.bUseFullPrecisionUVs=true;
         Model.BuildSettings.DistanceFieldResolutionScale=0;Model.BuildSettings.MaxLumenMeshCards=0;
         Model.ScreenSize.Default=ShadowOnly?1.f:Root->GetArrayField(TEXT("screens"))[L]->AsNumber();

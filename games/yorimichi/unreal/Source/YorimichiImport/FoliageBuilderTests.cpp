@@ -4,6 +4,11 @@
 #include "StaticMeshAttributes.h"
 #include "MeshDescription.h"
 #include "Misc/AutomationTest.h"
+#include "StaticMeshResources.h"
+#include "Materials/Material.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageImportRolesTest,"Yorimichi.Foliage.ImportRoles",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
@@ -46,6 +51,89 @@ bool FYorimichiFoliageImportRolesTest::RunTest(const FString&)
     for (const auto C:Corners)Channels.Set(C,5,FVector2f::ZeroVector);
     TestTrue(TEXT("Removing authoring roles clears cooked stamp"),UYorimichiFoliageBuilder::StampSourceRoles(Mesh));
     TestEqual(TEXT("Original cooked slot restored"),Mesh->GetStaticMaterials()[0].MaterialSlotName,Imported);
+    return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FYorimichiFoliageAuthoredLODsTest,"Yorimichi.Foliage.AuthoredLODs",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FYorimichiFoliageAuthoredLODsTest::RunTest(const FString&)
+{
+    auto* Material=UMaterial::GetDefaultMaterial(MD_Surface);
+    auto* Source=NewObject<UStaticMesh>();Source->SetNumSourceModels(1);
+    Source->GetStaticMaterials().Add(FStaticMaterial(Material,TEXT("Flat")));
+    FMeshDescription D;FStaticMeshAttributes A(D);A.Register();
+    A.GetVertexInstanceUVs().SetNumChannels(1);
+    const auto Group=D.CreatePolygonGroup();A.GetPolygonGroupMaterialSlotNames()[Group]=TEXT("Flat");
+    TArray<FVertexInstanceID> Corners;
+    for (int32 I=0;I<3;++I)
+    {
+        const auto V=D.CreateVertex();A.GetVertexPositions()[V]=FVector3f(I==1?100.f:0.f,I==2?100.f:0.f,0.f);
+        const auto C=D.CreateVertexInstance(V);A.GetVertexInstanceNormals()[C]=FVector3f(0,0,1);Corners.Add(C);
+    }
+    D.CreateTriangle(Group,Corners);
+    UStaticMesh::FBuildMeshDescriptionsParams Params;
+    if (!TestTrue(TEXT("Fixture source builds"),Source->BuildFromMeshDescriptions({&D},Params))) return false;
+    TArray<FString> Levels;
+    for (int32 L=0;L<4;++L)
+    {
+        TArray<FString> Vertices,Faces;
+        for (int32 I=0;I<16;++I)
+        {
+            // Eight thin triangles with complete opposite-winding back faces.
+            // Each LOD has distinct positions and UVs, so counts alone cannot pass.
+            for (int32 C=0;C<3;++C)
+            {
+                const int32 Corner=I%2 && C>0?3-C:C;
+                const float X=L*10000.f+(I/2)*200.f+(Corner==1?100.f:0.f);
+                Vertices.Add(FString::Printf(TEXT("{\"p\":[%.2f,%.2f,0],\"n\":[0,0,%d],\"uv\":[%.6f,0],\"c\":[1,1,1,1]}"),
+                    X,Corner==2?100.:0.,I%2?-1:1,.03125+L*.125));
+            }
+            Faces.Add(FString::Printf(TEXT("{\"s\":0,\"v\":[%d,%d,%d]}"),I*3,I*3+1,I*3+2));
+        }
+        Levels.Add(TEXT("{\"vertices\":[")+FString::Join(Vertices,TEXT(","))+TEXT("],\"faces\":[")+FString::Join(Faces,TEXT(","))+TEXT("]}"));
+    }
+    const FString Path=FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()/TEXT("../../../build/yorimichi/foliage-tests/authored-lods.json"));
+    IFileManager::Get().MakeDirectory(*FPaths::GetPath(Path),true);
+    const FString Json=TEXT("{\"source\":\"")+Source->GetPathName()+TEXT("\",\"screens\":[1,0.24,0.07,0.018],\"levels\":[")+
+        FString::Join(Levels,TEXT(","))+TEXT("],\"shadow\":")+Levels[0]+TEXT("}");
+    if (!TestTrue(TEXT("Fixture product saved"),FFileHelper::SaveStringToFile(Json,*Path))) return false;
+    const FString Destination=TEXT("/Game/FoliageSystem/Tests/AuthoredLODs");
+    auto Check=[&](UStaticMesh* Mesh)
+    {
+        if (!TestNotNull(TEXT("Prepared variant builds"),Mesh)) return false;
+        const auto* Data=Mesh->GetRenderData();
+        if (!TestTrue(TEXT("Four prepared LODs survive"),Data && Data->LODResources.Num()==4)) return false;
+        for (int32 L=0;L<4;++L)
+        {
+            const auto& LOD=Data->LODResources[L];
+            TestEqual(TEXT("Exact thin front/back triangle set retained"),LOD.GetNumTriangles(),uint32(16));
+            float MinX=TNumericLimits<float>::Max();
+            for (uint32 V=0;V<LOD.VertexBuffers.PositionVertexBuffer.GetNumVertices();++V)
+            {
+                MinX=FMath::Min(MinX,LOD.VertexBuffers.PositionVertexBuffer.VertexPosition(V).X);
+                TestTrue(TEXT("Prepared UVs come from this LOD"),FMath::IsNearlyEqual(
+                    float(LOD.VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(V,0).X),.03125f+L*.125f));
+            }
+            TestEqual(TEXT("Prepared positions come from this LOD"),MinX,L*10000.f);
+            TestTrue(TEXT("Prepared material identity retained"),Mesh->GetMaterial(0)==Material);
+        }
+        return true;
+    };
+    auto* Mesh=UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination,Material,Material,false);
+    if (!Check(Mesh)) return false;
+    for (int32 L=0;L<4;++L)
+    {
+        auto& Reduction=Mesh->GetSourceModel(L).ReductionSettings;
+        Reduction.PercentTriangles=.25f;Reduction.PercentVertices=.25f;
+        Reduction.MaxNumOfTriangles=4;Reduction.MaxNumOfVerts=6;Reduction.BaseLODModel=0;
+    }
+    Check(UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination,Material,Material,false));
+    auto* Shadow=UYorimichiFoliageBuilder::BuildVariant(Source,Path,Destination+TEXT("Shadow"),Material,Material,true);
+    if (TestNotNull(TEXT("Shadow variant builds"),Shadow))
+    {
+        TestEqual(TEXT("Shadow has its single supplied level"),Shadow->GetNumLODs(),1);
+        TestEqual(TEXT("Shadow retains supplied faces"),Shadow->GetRenderData()->LODResources[0].GetNumTriangles(),uint32(16));
+    }
     return true;
 }
 #endif
