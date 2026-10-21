@@ -34,11 +34,12 @@ def observed_environment(ctx, current):
 
 
 def imported_source_matches(mesh, source):
+    """Read UE's UObject::SourceFileTagName(), whose registry key is AssetImportData."""
     import unreal
     if not mesh:
         return False
     data = unreal.AssetRegistryHelpers.create_asset_data(mesh)
-    tag = data.get_tag_value('SourceFile')
+    tag = data.get_tag_value('AssetImportData')
     return mesh_reuse.recorded_source_matches(tag, source)
 
 
