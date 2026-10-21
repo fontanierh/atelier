@@ -13,9 +13,11 @@ SCRIPTS = Path(__file__).resolve().parents[1] / 'unreal/Scripts'
 
 
 class Properties:
-    def __init__(self, **values): self.values = values
+    def __init__(self, **values): self.values, self.sets = values, []
     def get_editor_property(self, name): return self.values[name]
-    def set_editor_property(self, name, value): self.values[name] = value
+    def set_editor_property(self, name, value):
+        self.sets.append((name, value))
+        self.values[name] = value
 
 
 @pytest.fixture
@@ -25,7 +27,7 @@ def scene(tmp_path, monkeypatch):
             super().__init__(mesh_pipeline=Properties(), animation_pipeline=Properties(),
                 import_offset_translation=NS(x=0, y=0, z=0),
                 import_offset_rotation=NS(pitch=0, yaw=0, roll=0), import_offset_uniform_scale=1.)
-    class GLTF: pass
+    class GLTF(Properties): pass
     class Data:
         def script_extract_filenames(self): return self.names
         def get_pipelines(self): return self.pipelines
@@ -115,6 +117,8 @@ def test_validator_options_equal_every_raw_import_setter(scene, script):
     expected = dict(scene.module.MESH_OPTIONS, combine_static_meshes_behavior=scene.unreal.InterchangeCombineStaticMeshesBehavior.ALL)
     assert generic.values['mesh_pipeline'].values == expected
     assert generic.values['animation_pipeline'].values == scene.module.ANIMATION_OPTIONS
+    assert generic.sets == []
+    assert gltf.sets == []
 
 
 def test_invalid_hull_refuses_whole_belmonte_group(scene):
