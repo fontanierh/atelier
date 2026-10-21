@@ -1430,7 +1430,7 @@ def staging_steps(ctx):
                      *runtime_data.courses.surface_inputs(),
                      *build_inputs.local_imports(runtime_data.courses.SOURCE_READER),
                      *(CHARS / 'portraits' / f'{c.id}.png' for c in definition.movers() if c.playable)],
-             needs=['world.ferry_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.belmonte', 'world.bike',
+             needs=['world.ferry_service', 'world.gondola_service', 'world.layout', 'world.hidamari', 'world.map', 'world.city_tiles', 'world.treehouse', 'world.megapark', 'world.craterpark', 'world.crater_cloud', 'world.belmonte', 'world.bike',
                     *[f'characters.{key(c)}_{kind}' for c in definition.movers() for kind, wanted in
                       (('bike', c.playable), ('grips', (GRIPS / c.id).is_dir())) if wanted]],
              outputs=[GAME / 'unreal' / 'Content' / 'Data' / rel for rel in staged(out)], about='runtime files into unreal/Content/Data'),
@@ -1500,6 +1500,16 @@ def gondola_steps(ctx):
                        needs=['world.gondola_kit','world.gondola_ground','world.craterpark_geometry'],
                        outputs=[folder/'world/site.json',*(folder/'world/assets'/f'{name}.fbx' for name in names)],
                        heavy=True,about='final station supports/access, exact rope paths and actual fitted-span contact gates'))
+    service=WORLD/'gondola/service.py'
+    result += [Step('world.gondola_service',[Python(service)],
+                    inputs=[service,WORLD/'gondola/clock.py',WORLD/'gondola/inputs.py',*validation.SITE_CODE,YORI,kit/'params.py',kit/'rope.py'],
+                    needs=['world.gondola_site'],outputs=[folder/'runtime.json'],
+                    about='source-bound detachable cabin clocks and station boarding data'),
+               Step('unreal.gondola',[UnrealScript(SCRIPTS/'import_gondola.py','GONDOLA IMPORT COMPLETE',null_rhi=True)],
+                    inputs=[SCRIPTS/'import_gondola.py',SCRIPTS/'mesh_import.py',SCRIPTS/'mesh_materials.py',SCRIPTS/'material_assets.py',
+                            service,WORLD/'gondola/clock.py',WORLD/'gondola/inputs.py',*validation.SITE_CODE,YORI,kit/'params.py',kit/'rope.py'],
+                    needs=['world.gondola_service','unreal.world'],after=['unreal.compile'],heavy=True,
+                    about='complete ropeway kit, fitted supports/access and authored rope detail levels')]
     return result
 
 
@@ -1561,11 +1571,13 @@ def ferry_steps(ctx):
 def steps(ctx):
     """Compose the recipe in its established order; packaging is explicit and optional sources remain optional."""
     ferry = ferry_steps(ctx)
+    gondola = gondola_steps(ctx)
     result = (world_steps(ctx) + character_steps(ctx) + sound_effect_steps(ctx)
               + [step for step in ferry if not step.name.startswith('unreal.')]
-              + gondola_steps(ctx)
+              + [step for step in gondola if not step.name.startswith('unreal.')]
               + unreal_steps(ctx) + staging_steps(ctx) + adventure_steps(ctx.out) + hippodrome_steps(ctx.out) + belmonte_steps(ctx.out)[2:]
-              + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')])
+              + brinecove_steps(ctx.out)[2:] + [step for step in ferry if step.name.startswith('unreal.')]
+              + [step for step in gondola if step.name.startswith('unreal.')])
     result += fit_steps(ctx.out, result)
     result += pawn_steps(result)
     # A step layered on the world brings the volcano with it: a targeted build that reimports the world reimports it too.

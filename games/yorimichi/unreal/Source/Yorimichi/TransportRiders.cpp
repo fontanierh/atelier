@@ -69,3 +69,25 @@ void FTransportRiders::Carry(FTransportRider& Rider, const AActor& Service, UPri
     }
     if (C->GetCharacterMovement()->IsMovingOnGround()) C->SetBase(Body);
 }
+
+FTransportRider& FTransportRiders::Find(TArray<FTransportRider>& Riders, AWandererCharacter* Character)
+{
+    for (FTransportRider& R : Riders) if (R.Character.Get() == Character) return R;
+    FTransportRider& R = Riders.AddDefaulted_GetRef(); R.Character = Character; return R;
+}
+
+void FTransportRiders::ApplyRemote(AActor& Service, TArray<FTransportRider>& Riders,
+    const TArray<FTransportMembership>& Membership, int32 VehicleCount, ETransportVehicle Kind)
+{
+    for (const FTransportMembership& P : Membership)
+        if (P.Character && !P.Character->IsLocallyControlled()) Find(Riders, P.Character);
+    for (FTransportRider& R : Riders)
+        if (AWandererCharacter* C = R.Character.Get(); C && !C->IsLocallyControlled())
+        {
+            const FTransportMembership* P = Membership.FindByPredicate(
+                [C](const FTransportMembership& Item) { return Item.Character == C; });
+            R.Vehicle = P && P->Vehicle >= 0 && P->Vehicle < VehicleCount ? P->Vehicle : INDEX_NONE;
+            OrderTick(Service, R);
+            SetAboard(R, R.Vehicle != INDEX_NONE, false, Kind);
+        }
+}

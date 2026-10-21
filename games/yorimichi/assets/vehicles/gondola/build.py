@@ -348,6 +348,8 @@ def main():
             manifest['pieces'][f'station_{key}'] = entry; failures += [f'station {key}: {b}' for b in bad]
     summary = rope_summary(manifest['pieces'])
     manifest['rope_clearance'] = summary
+    manifest['materials'] = solid.MATERIALS
+    manifest['textured_materials'] = solid.TEXTURED
     for row in summary:
         w = row['where'] or {}
         if 'parts' in w:                       # intentional contact, part by part (signed minimum over the poses)

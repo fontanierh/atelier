@@ -779,7 +779,8 @@ bool AWandererCharacter::CanCarrySkateBoard() const
 bool AWandererCharacter::RefuseVehicleOnTrain()
 {
     if (!IsOnTrain()) return false;
-    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
+    const TCHAR* Message = bTrainAboard && AboardVehicle == ETransportVehicle::Gondola ? TEXT("Pas à bord de la télécabine") :
+        bTrainAboard && AboardVehicle == ETransportVehicle::Ferry ? TEXT("Pas à bord du ferry") : TEXT("Pas à bord du train");
     if (IsLocallyControlled()) ULiveLibrary::Say(Message, 2.f);
     else if (HasAuthority()) ClientActivityRejected(Message);
     return true;

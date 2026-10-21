@@ -503,8 +503,7 @@ void AFerryService::UpdateBoards(double Time)
 
 AFerryService::FRider& AFerryService::RiderFor(AWandererCharacter* Character)
 {
-    for (FRider& R : Riders) if (R.Character.Get() == Character) return R;
-    FRider& R = Riders.AddDefaulted_GetRef(); R.Character = Character; return R;
+    return FTransportRiders::Find(Riders, Character);
 }
 
 const AFerryService::FRider* AFerryService::FindRider(const AWandererCharacter* Character) const
@@ -615,20 +614,9 @@ void AFerryService::OnRep_NetworkState()
 void AFerryService::ApplyRemotePassengers()
 {
     if (!NetworkState.Serial || Ships.IsEmpty()) return;
-    // References may resolve after the snapshot itself, so clients retry this in Tick. Simulated proxies
-    // have no local controller: their presentation must use the host's membership, including alighting.
-    for (const FFerryPassenger& P : NetworkState.Passengers)
-        if (AWandererCharacter* C = P.Rider.Get(); C && !C->IsLocallyControlled()) RiderFor(C);
-    for (FRider& R : Riders)
-        if (AWandererCharacter* C = R.Character.Get(); C && !C->IsLocallyControlled())
-        {
-            const FFerryPassenger* P = NetworkState.Passengers.FindByPredicate(
-                [C](const FFerryPassenger& Item) { return Item.Rider == C; });
-            const int32 Ship = P && Ships.IsValidIndex(P->Ship) ? P->Ship : INDEX_NONE;
-            R.Vehicle = Ship;
-            FTransportRiders::OrderTick(*this, R);
-            FTransportRiders::SetAboard(R, Ship != INDEX_NONE, false, ETransportVehicle::Ferry);
-        }
+    TArray<FTransportMembership> Membership;
+    for (const FFerryPassenger& P : NetworkState.Passengers) Membership.Add({P.Rider.Get(), P.Ship});
+    FTransportRiders::ApplyRemote(*this, Riders, Membership, Ships.Num(), ETransportVehicle::Ferry);
 }
 
 static const TCHAR* PhaseName(EFerryAudioPhase Phase)

@@ -170,6 +170,18 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
                 Zone.Above = float(AboveM * 100.);
             if (!Zone.Key.IsEmpty()) Zones.Add(Zone);
         }
+    // Ropeway stops use their fitted access path's actual ground end.
+    if(const auto Ropeway=AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json"))))
+        for(const auto& V:Ropeway->GetArrayField(TEXT("stations")))
+        {
+            const auto S=V->AsObject();const auto& Walk=S->GetArrayField(TEXT("walk_cm"));if(Walk.IsEmpty())continue;
+            const auto& P=Walk.Last()->AsArray();FJapanMapZone Zone;
+            Zone.Key=TEXT("gondola_")+S->GetStringField(TEXT("id"));Zone.Name=TEXT("Télécabine — ")+S->GetStringField(TEXT("name"));
+            Zone.Hint=TEXT("Montez par l’escalier et attendez une cabine à quai.");
+            Zone.Location=FVector(P[0]->AsNumber(),P[1]->AsNumber(),P[2]->AsNumber());
+            Zone.Yaw=S->GetNumberField(TEXT("yaw"));Zone.Above=150.f;
+            if(!Zones.ContainsByPredicate([&](const FJapanMapZone& Z){return Z.Key==Zone.Key;}))Zones.Add(Zone);
+        }
     // The skate pier (world/regions/skatepark) is newer than the painted sheet: add its stop unless map.json already has one.
     if (!Zones.ContainsByPredicate([](const FJapanMapZone& Zone) { return Zone.Key == TEXT("skatepier"); }))
     {

@@ -485,6 +485,7 @@ def main():
             loop=R.station_loop(p['gauge']/2,d['rope_height_above_platform'],d['rope_height_above_platform'],7.6,p['rope_radius'],step=.5).pts
             data['jump']=station_jump_clearance(placed(loop,frame),riding,d['grip_to_floor']+p['cabin_floor_depth'])
             data['posts']=posts;data['access']=access
+            data['boarding_routes']=W.station_routes(layouts[data['kind']],data['kind'])
             data['foundation']=export_world(foundation,assets,mats,frame=frame,G=G,riding=riding)
             data['access_mesh']=export_world(stair,assets,mats,frame=frame,G=G,seats=access['rail_seats'],riding=riding)
             exports += [data['foundation'],data['access_mesh']]

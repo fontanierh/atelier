@@ -44,3 +44,17 @@ def test_fitted_world_declares_its_complete_code_and_mesh_closure(tmp_path):
     assert set(site.needs)=={'world.gondola_kit','world.gondola_ground','world.craterpark_geometry'}
     assert len(site.outputs)==32
     assert all(c.threads==3 and c.factory_startup for c in site.commands)
+
+
+def test_runtime_import_and_staging_are_normal_closed_dependencies(tmp_path):
+    recipe=build.load_recipe('yorimichi')
+    rows=recipe.steps(SimpleNamespace(out=tmp_path,uproject=None))
+    names=[s.name for s in rows]
+    assert len(names)==len(set(names))
+    by_name={s.name:s for s in rows}
+    ordered={s.name for s in build.order(rows,['data.network'])}
+    assert {'world.gondola_kit','world.gondola_ground','world.gondola_site','world.gondola_service','unreal.gondola'}<=ordered
+    assert 'world.gondola_service' in by_name['data.stage'].needs
+    for name in ('world.gondola_service','unreal.gondola'):
+        validate_imports(by_name[name],by_name[name].inputs)
+    assert not by_name['unreal.gondola'].explicit

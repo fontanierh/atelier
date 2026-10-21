@@ -364,14 +364,40 @@ def cabin_report():
     return rep
 
 
-def station_report(key):
+def station_deck(L,key):
     global CELL
     CELL = 0.05
-    L = json.loads((OUT / f'layout_{key}.json').read_text())
     polys = [[tuple(q) for q in r] for r in L['regions']] + [[tuple(q) for q in s['poly']] for s in L.get('surfaces', [])]
     allx = [q[0] for p in polys for q in p]; ally = [q[1] for p in polys for q in p]
-    deck = Deck(f'{key} station (cabins in both berths, doors open)', min(allx) - 0.3, max(allx) + 0.3, min(ally) - 0.3, max(ally) + 0.3,
+    return Deck(f'{key} station (cabins in both berths, doors open)', min(allx) - 0.3, max(allx) + 0.3, min(ally) - 0.3, max(ally) + 0.3,
                 union_fn(polys), surface_fn(L.get('surfaces', [])), set()).rasterise(L['obstacles'])
+
+
+def station_routes(L,key):
+    """Native driving waypoints use the same capsule raster as the kit audit."""
+    deck=station_deck(L,key);w=deck.walk.shape[1];routes={}
+    start=deck.snap(*L['access'][0]['point'])
+    if start is None:raise ValueError('Station access has no walking cell')
+    for berth in L['berths']:
+        end=deck.snap(*berth['cabin_grip'][:2],reach=.2)
+        if end is None:raise ValueError('Station berth has no walking cell')
+        path=bfs_path(deck.walk,start[0]*w+start[1],end[0]*w+end[1])
+        if not path:raise ValueError('No capsule route from station access to cabin')
+        cells=[divmod(c,w) for c in path]
+        # Drop only collinear intermediate cells. Corners and staircase points
+        # remain, so the live drive follows the audited route rather than a chord.
+        keep=[cells[0]]
+        for i in range(1,len(cells)-1):
+            a,b,c=cells[i-1:i+2]
+            if (b[0]-a[0],b[1]-a[1])!=(c[0]-b[0],c[1]-b[1]):keep.append(b)
+        keep.append(cells[-1])
+        routes[str(berth['side'])]=[[float(deck.xs[j]),float(deck.ys[i]),float(deck.S[i,j])] for i,j in keep]
+    return routes
+
+
+def station_report(key):
+    L = json.loads((OUT / f'layout_{key}.json').read_text())
+    deck=station_deck(L,key)
     pts = {}
     for a in L['access']:
         pts[a['name']] = tuple(a['point'])

@@ -33,11 +33,30 @@ ABelmonteRegion::ABelmonteRegion()
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 }
 
+bool ABelmonteRegion::InClearance(const TSharedPtr<FJsonObject>& Data,double X,double Y)
+{
+    if(!Data)return false;
+    const TArray<TSharedPtr<FJsonValue>>* Segments=nullptr;
+    if(Data->TryGetArrayField(TEXT("clearance_segments_m"),Segments))
+    {
+        const FVector P(X,Y,0.);
+        for(const auto& V:*Segments)
+        {
+            const auto& S=V->AsArray();if(S.Num()!=5)continue;
+            const FVector A(S[0]->AsNumber(),S[1]->AsNumber(),0.),B(S[2]->AsNumber(),S[3]->AsNumber(),0.);
+            if(FVector::DistSquared(P,FMath::ClosestPointOnSegment(P,A,B))<=FMath::Square(S[4]->AsNumber()))return true;
+        }
+        return false;
+    }
+    const TArray<TSharedPtr<FJsonValue>>* B=nullptr;
+    return Data->TryGetArrayField(TEXT("clearance_m"),B)&&B->Num()==4&&
+        X>=(*B)[0]->AsNumber()&&X<=(*B)[2]->AsNumber()&&Y>(*B)[1]->AsNumber()&&Y<=(*B)[3]->AsNumber();
+}
+
 void ABelmonteRegion::Clear(const TSharedPtr<FJsonObject>& WorldData, const FString& Path)
 {
     const auto Data = AtelierReadJson(Path);
     if (!WorldData || !Data) return;
-    const auto& B = Data->GetArrayField(TEXT("clearance_m"));
     const TSharedPtr<FJsonObject>* Instances = nullptr;
     if (!WorldData->TryGetObjectField(TEXT("instances"), Instances)) return;
     // Island vegetation by default; a region may name more instance prefixes (Brinecove: coastal boulders).
@@ -54,7 +73,7 @@ void ABelmonteRegion::Clear(const TSharedPtr<FJsonObject>& WorldData, const FStr
         {
             const auto& P = Item->AsArray();
             const double X = P[0]->AsNumber(), Y = P[1]->AsNumber();
-            if (X < B[0]->AsNumber() || X > B[2]->AsNumber() || Y <= B[1]->AsNumber() || Y > B[3]->AsNumber()) Kept.Add(Item);
+            if (!InClearance(Data,X,Y)) Kept.Add(Item);
         }
         Pair.Value = MakeShared<FJsonValueArray>(Kept);
     }
@@ -69,6 +88,7 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     Region->SetActorLocation(Vector(Data->GetArrayField(TEXT("origin_cm"))));
     Region->GetRootComponent()->SetMobility(EComponentMobility::Static);
     Region->Tags.Add(Tag);
+    const auto GondolaClearance=AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json")));
     int32 Missing = 0, Outside = 0;
     // The district's extent in metres (world X, north Y), with a 100 m margin.
     const auto& B = Data->GetArrayField(TEXT("bounds_m"));
@@ -125,7 +145,12 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
             if (!Plant && !Inside(Region->GetActorLocation() + Placement.GetLocation())) { ++Outside; continue; }
             // Plant components belong to JapanWorld, so the normal tree settings
             // and LOD swaps apply to this district too.
-            if (Plant) Placement.AddToTranslation(Region->GetActorLocation());
+            if (Plant)
+            {
+                Placement.AddToTranslation(Region->GetActorLocation());
+                const FVector P=Placement.GetLocation();
+                if(InClearance(GondolaClearance,P.X/100.,-P.Y/100.))continue;
+            }
             Instances.Add(Placement);
         }
         Group->AddInstances(Instances, false, false, false);
