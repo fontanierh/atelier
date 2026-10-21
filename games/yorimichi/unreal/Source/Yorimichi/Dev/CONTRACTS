@@ -1,0 +1,18 @@
+@cc [owner:fontanierh,label:correctness;performance] saved-foliage-residency-compaction
+FoliageResidencyBuilder MUST consume current certified saved source/prepared descriptions, never re-export
+or regenerate them. The selected original LOD's exact classified rigid corner multiset, including slot,
+normal, colour, all UVs and multiplicities, MUST control removal; original UVs MUST use the producer's
+UV0 fallback to the receiving channel count. One carrier MUST own rigid geometry, with the complete original material table.
+Mixed scenery MUST use one rigid LOD; standalone trees with distinct authored rigid source LODs MUST
+retain that simplification chain and screen sizes rather than repeating full trunk detail at distance. Canopy LODs and shadow MUST preserve every remaining corner and winding.
+Committed-corner equality MUST NOT substitute for canonical build/reduction/render and collision checks.
+A failed cook, missing rigid corner, stale package or invalid source MUST stop registry publication.
+
+@cc [owner:fontanierh,label:correctness] prepared-foliage-collision-ownership
+Mixed scenery MUST retain exact rigid-only complex collision; a district/crown box is forbidden.
+A standalone semantic tree/palm MAY use a finite positive authored radius/endpoints manifest converted
+from metres to Unreal centimetres with Y reflection, or a bounded capsule from its classified lower
+rigid trunk. An existing source simple shape alone MUST NOT certify trunk provenance. Bushes and
+leaves MUST remain passable. Canopy/shadow copies MUST have no physics/navigation data except a no-rigid
+tree canopy explicitly serving as its simple-trunk carrier. Original/shared packages MUST remain unchanged.
+A receiving native fixture MUST cover rigid-only mixed collision and nonblocking canopy/trunk separation.
