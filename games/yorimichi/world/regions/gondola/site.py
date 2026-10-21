@@ -327,6 +327,10 @@ def access_stair(key,layout,G,frame):
                                step_limit=W.STEP,tread_min=W.TREAD_MIN,walk_width=W.MIN_WIDTH,last_tread=last_tread,tread=tread)
     stringer_profile.append([length,bottom+.25])
     profile=np.asarray(stringer_profile)
+    # Every profile bend sits on a tread, riser or landing end plane. A rested
+    # stringer is split at its bends, so shift them half a riser thickness down
+    # the stair: its split end caps then never lie on those same-facing faces.
+    profile[:,0]+=.018
     def stringer_top(x,y):
         distance=float((np.array([x,y])-start)@direction)
         if rest_after:
@@ -343,8 +347,8 @@ def access_stair(key,layout,G,frame):
         breaks=[-extension,length+extension]
         if rest_after:
             slopes=np.diff(profile[:,1])/np.diff(profile[:,0])
-            breaks=[-extension,0.,*[float(profile[i,0]) for i in range(1,len(profile)-1)
-                                   if abs(slopes[i]-slopes[i-1])>1e-8],length,length+extension]
+            breaks=[-extension,float(profile[0,0]),*[float(profile[i,0]) for i in range(1,len(profile)-1)
+                                   if abs(slopes[i]-slopes[i-1])>1e-8],float(profile[-1,0]),length+extension]
         for first,last in zip(breaks,breaks[1:]):
             h=start+offset+first*direction;t=start+offset+last*direction
             polygon=[h-across*.09,t-across*.09,t+across*.09,h+across*.09]
