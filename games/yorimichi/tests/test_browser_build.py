@@ -20,7 +20,7 @@ def test_browser_scene_keeps_riding_geometry_and_rails(tmp_path, monkeypatch):
     data = tmp_path / "Data"
     (data / "cairo").mkdir(parents=True)
     monkeypatch.setattr(browser.paths, "content_data", lambda game: data)
-    browser.stage_scene(SimpleNamespace(game="yorimichi"), io.StringIO())
+    browser.stage_scene(SimpleNamespace(game="yorimichi", out=tmp_path), io.StringIO())
     source = json.loads(browser.PARK.read_text())
     staged = json.loads((data / "Browser/park.json").read_text())
     assert staged == {k: v for k, v in source.items() if k != "trees"}
@@ -33,6 +33,10 @@ def test_browser_scene_keeps_riding_geometry_and_rails(tmp_path, monkeypatch):
     assert (data / "cairo/portrait.png").read_bytes() == (
         GAME / "assets/characters/portraits/cairo.png"
     ).read_bytes()
+    config = (tmp_path / 'browser/CookGame.ini').read_text()
+    assert '[/Script/AtelierSkate.SkateSettings]' in config
+    assert config.index('!DirectoriesToAlwaysCook=ClearArray') > config.index('/Game/Belmonte')
+    assert '+DirectoriesToAlwaysCook=(Path="/Game/CairoAdventure")' in config
 
 
 def test_browser_scene_graph_is_bounded_but_includes_production_preparation(tmp_path):
@@ -162,6 +166,8 @@ def test_browser_package_forwards_tracked_cook_mode_and_log_root(tmp_path):
         options = [a for a in args if a.startswith('-AdditionalCookerOptions=')]
         assert len(options) == 1 and '-nullrhi' in options[0]
         assert str(ctx.out / 'browser/file-open') in options[0]
+        assert '-DEFGameIni=' in options[0] and str(ctx.out / 'browser/CookGame.ini') in options[0]
+        assert '-NoDefaultMaps' in options[0]
         if flag:
             assert flag in options[0] and '-Cook.DependencyTracking=1' in options[0]
         assert '-cookall' not in args

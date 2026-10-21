@@ -56,7 +56,11 @@ class BrowserPackage(UnrealPackage):
         return [Path(__file__), *super().runs()]
 
     def argv(self, ctx):
-        cooker = ['-nullrhi', f'-FOOBASEDIR="{ctx.out / "browser/file-open"}"']
+        cooker = [
+            '-nullrhi', '-NoDefaultMaps',
+            f'-DEFGameIni="{ctx.out / "browser/CookGame.ini"}"',
+            f'-FOOBASEDIR="{ctx.out / "browser/file-open"}"',
+        ]
         extra = []
         for option in cook_options(self.cook_mode, ctx.unreal_root):
             if option.startswith('-AdditionalCookerOptions='):
@@ -111,6 +115,13 @@ def stage_scene(ctx, log):
     )
     portrait = GAME / "assets/characters/portraits/cairo.png"
     shutil.copyfile(portrait, paths.content_data(ctx.game) / "cairo/portrait.png")
+    # The cooker is a Mac editor process: its default Game config uses the host
+    # packaging directories. Apply the target's bounded override explicitly,
+    # while retaining the game's shared simulation/audio settings.
+    config = ctx.out / 'browser/CookGame.ini'
+    config.parent.mkdir(parents=True, exist_ok=True)
+    config.write_text((GAME / 'unreal/Config/DefaultGame.ini').read_text() + '\n'
+                      + (GAME / 'unreal/Config/HTML5/HTML5Game.ini').read_text())
     log.write("staged Browser/park.json, scene.json and Cairo portrait\n")
 
 
@@ -246,6 +257,8 @@ def steps(ctx):
                 Path(__file__),
                 PARK,
                 GAME / "assets/characters/portraits/cairo.png",
+                GAME / 'unreal/Config/DefaultGame.ini',
+                GAME / 'unreal/Config/HTML5/HTML5Game.ini',
             ],
             needs=["unreal.cairo_pawn"],
             explicit=True,
@@ -253,6 +266,7 @@ def steps(ctx):
                 content / "Data/Browser/park.json",
                 content / "Data/Browser/scene-source.json",
                 content / "Data/cairo/portrait.png",
+                ctx.out / 'browser/CookGame.ini',
             ],
             about="the explicit skate-pier scene manifest and bounded park data",
         ),
