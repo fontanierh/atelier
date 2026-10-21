@@ -413,3 +413,47 @@ def test_world_without_city_retains_terrain_import_binding_and_collision(tmp_pat
     assert calls[2][1] == '/Game/Japan/Terrain' and calls[2][2]['CoastRock'] is rock
     assert calls[-1][1] is mesh and calls[-2][1] is mesh
     assert collision == {'collision_trace_flag': 'complex'}
+
+
+def test_verified_default_reuse_skips_geometry_and_defers_receipt(importer, monkeypatch):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert p.module.legacy_options_match(mesh)
+    p.calls.clear()
+    deferred = []
+    reuse = SimpleNamespace(defer_validated=deferred.append)
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (mesh, reuse))
+    assert p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed) is mesh
+    assert p.calls == [] and deferred == ['/Game/Owned/Mesh']
+
+
+def test_default_reuse_miss_preserves_seed_migration(importer, monkeypatch):
+    p = importer
+    events = []
+    reuse = SimpleNamespace(imported=lambda name: events.append(('imported', name)),
+                            defer_validated=lambda name: events.append(('pending', name)))
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (None, reuse))
+    p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert [name for name, _, _ in p.calls] == ['seed.fbx', 'mesh.fbx']
+    assert events == [('imported', p.package), ('pending', p.package)]
+
+
+def test_failed_default_import_does_not_publish_pending_receipt(importer, monkeypatch):
+    p = importer
+    pending = []
+    reuse = SimpleNamespace(imported=pending.append, defer_validated=pending.append)
+    monkeypatch.setattr(p.module, 'common_fbx_mesh', lambda *a, **k: (None, reuse))
+    def failed(*args, **kwargs):
+        raise RuntimeError('native import failed')
+    monkeypatch.setattr(p.module, '_import_mesh', failed)
+    with pytest.raises(RuntimeError, match='native import failed'):
+        p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    assert pending == []
+
+
+@pytest.mark.parametrize('key,value', [('convert_scene_unit', False), ('build_nanite', True)])
+def test_reuse_validator_refuses_legacy_option_drift(importer, key, value):
+    p = importer
+    mesh = p.module.import_mesh(p.source, '/Game/Owned', 'Mesh', seed=p.seed)
+    mesh.values['asset_import_data'].values[key] = value
+    assert not p.module.legacy_options_match(mesh)

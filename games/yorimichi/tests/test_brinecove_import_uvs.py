@@ -11,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 GAME = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(GAME / 'world'))
@@ -43,15 +44,17 @@ def run_import(tmp_path, meshes):
     """Execute import_brinecove.main with Unreal faked; returns the build settings each mesh ends with."""
     class Properties:
         def __init__(self, **values): self.values = values
-        def get_editor_property(self, key): return self.values[key]
+        def get_editor_property(self, key): return self.values.get(key)
         def set_editor_property(self, key, value): self.values[key] = value
 
     class Mesh(Properties):
         def __init__(self, entry):
-            super().__init__(static_materials=[None] * len(entry['slots']), body_setup=Properties())
+            super().__init__(static_materials=[Properties(material_slot_name=key) for key in entry['slots']],
+                             materials=[None]*len(entry['slots']),body_setup=Properties())
             self.build = dict(use_full_precision_u_vs=False, remove_degenerates=True)
             self.entry = entry
-        def set_material(self, slot, value): self.values['static_materials'][slot] = value
+        def set_material(self, slot, value): self.values['materials'][slot] = value
+        def get_material(self, slot): return self.values['materials'][slot]
         def get_num_triangles(self, lod): return self.entry['triangles']
         def get_bounding_box(self):
             (x0, y0, z0), (x1, y1, z1) = self.entry['bounds_m']
@@ -59,7 +62,9 @@ def run_import(tmp_path, meshes):
                                    max=SimpleNamespace(x=x1 * 100, y=-y0 * 100, z=z1 * 100))
 
     built = {}
+    imports = []
     def imported(path, name):
+        imports.append(name)
         built[name] = Mesh(next(e for e in meshes if e['name'] == name))
         return built[name]
 
@@ -73,6 +78,8 @@ def run_import(tmp_path, meshes):
 
     materials = {'stone': dict(name='MI_BC_stone', kind='opaque'), 'leaf': dict(name='MI_BC_leaf', kind='masked'),
                  'terrain': dict(name='MI_BC_terrain', kind='terrain')}
+    for material in materials.values(): material['texture'] = ''
+    for entry in meshes: entry.setdefault('sha256', '0'*64)
     (tmp_path / 'build-report.json').write_text(json.dumps(dict(meshes=meshes, materials=materials)))
     editor = SimpleNamespace(get_lod_build_settings=get_settings, set_lod_build_settings=set_settings)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
@@ -80,16 +87,27 @@ def run_import(tmp_path, meshes):
         get_editor_subsystem=lambda _: editor if 'StaticMeshEditor' in loaded else None,
         CollisionTraceFlag=SimpleNamespace(CTF_USE_COMPLEX_AS_SIMPLE='complex-as-simple'), log=lambda *_: None)
     assets = SimpleNamespace(make_directory=lambda *_: None, does_asset_exist=lambda *_: False,
-        load_asset=lambda path: path, save_loaded_asset=lambda *_: None, delete_directory=lambda *_: None)
+        load_asset=lambda path: path, save_loaded_asset=lambda *_, **kw: True, delete_directory=lambda *_: None)
     script = GAME / 'unreal/Scripts/import_brinecove.py'
     wanted = {'main', 'keep_full_precision_uvs'}
     functions = [node for node in ast.parse(script.read_text()).body
                  if isinstance(node, ast.FunctionDef) and node.name in wanted]
     assert {f.name for f in functions} == wanted
-    namespace = dict(OUT=tmp_path, ROOT='/Game/Brinecove', E=assets, unreal=unreal, json=json,
+    namespace = dict(__file__=str(script), Path=Path, PARENTS={}, OUT=tmp_path, ROOT='/Game/Brinecove', E=assets, unreal=unreal, json=json,
         surfaces=lambda *_: None, textures=lambda _: None, import_mesh=imported, generate_lods=lambda _: None)
+    from atelier.unreal_mesh_reuse import set_if_changed
+    namespace.update(native_context=lambda _: None, yori=SimpleNamespace(GAME=SimpleNamespace(name='test')),
+        atmosphere=SimpleNamespace(__file__=str(script)),
+        AssetGroup=lambda *a, **k: SimpleNamespace(matches=lambda _: True), set_if_changed=set_if_changed,
+        lods_match=lambda *a: True,
+        MeshReuse=lambda *a, **k: SimpleNamespace(donor={}, acquire=lambda name, *a, **k: built.get(name), imported=lambda *a: None,
+                                                validated=lambda _: None, finish=lambda: None))
     exec(compile(ast.Module(body=functions, type_ignores=[]), str(script), 'exec'), namespace)
     namespace['main']()
+    first_settings = {name: dict(mesh.build) for name, mesh in built.items()}
+    namespace['main']()
+    assert imports == [entry['name'] for entry in meshes]
+    assert {name: mesh.build for name, mesh in built.items()} == first_settings
     return {name: mesh.build for name, mesh in built.items()}
 
 
