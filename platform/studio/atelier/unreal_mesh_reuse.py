@@ -56,18 +56,30 @@ class MeshReuse:
         self.candidates = checkpoint_candidates
         self.content = ctx.uproject.parent / 'Content'
         self.script = Path(script).resolve()
-        self.policy = mesh_reuse.policy(self.script.read_text(), functions)
+        self.enabled = True
+        try:
+            self.policy = mesh_reuse.native_policy(self.script.read_text(), functions, self.script)
+        except ValueError:
+            self.enabled = False
+            self.policy = mesh_reuse.identity({'reuse': 'unsupported-policy'})
         current_context = context(ctx)
         self.receipts = mesh_reuse.Receipts(ctx.out, task, current_context, self.policy, self.content)
-        self.bundle = checkpoint_candidates.load(ctx, task)
+        self.bundle = checkpoint_candidates.load(ctx, task) if self.enabled else None
         self.donor = {}
         self.pending = {}
         self.counts = dict(reused_local=0, reused_candidate=0, imported=0)
         self.compatible = False
         self.local_compatible = False
         try:
-            old = json.loads((ctx.out / 'stamps' / (task + '.json')).read_text())
+            if not self.enabled:
+                raise ValueError('Unsupported native import policy')
+            old = mesh_reuse.prior_stamp(ctx, task, os.environ.get('ATELIER_MESH_REUSE_NONCE'),
+                                         os.environ.get('ATELIER_BUILD_PRIOR_STAMP'))
+            if old is None:
+                raise ValueError('No invocation-bound prior stamp')
             inputs = old['input_state']['inputs']
+            if not isinstance(inputs, dict):
+                raise ValueError('Malformed prior native inputs')
             relative_script = self.script.relative_to(paths.REPO).as_posix()
             previous = mesh_reuse.saved_source(paths.REPO, relative_script, inputs.get('<repo>/' + relative_script))
             owner_matches = True
@@ -76,17 +88,20 @@ class MeshReuse:
                 relative_owner = owner_script.relative_to(paths.REPO).as_posix()
                 owner = mesh_reuse.saved_source(paths.REPO, relative_owner, inputs.get('<repo>/' + relative_owner))
                 owner_matches = owner is not None and mesh_reuse.identity(ast_dump(owner)) == mesh_reuse.identity(ast_dump(owner_script.read_text()))
-            self.local_compatible = bool(not old.get('touched') and previous and owner_matches and mesh_reuse.policy(previous, functions) == self.policy
+            self.local_compatible = bool(not old.get('touched') and previous and owner_matches
+                                         and mesh_reuse.native_policy(previous, functions, self.script, inputs=inputs) == self.policy
                                          and observed_environment(ctx, current_context))
             self.previous_fingerprint = old.get('fingerprint')
-        except (OSError, ValueError, KeyError, SyntaxError):
+            self.previous_stamp = old
+        except (OSError, ValueError, KeyError, TypeError, SyntaxError):
             pass
         if self.bundle:
             donor_source = mesh_reuse.revision_source(paths.REPO, self.bundle.get('source_revision'),
                 self.script.relative_to(paths.REPO).as_posix())
             if donor_source:
                 try:
-                    self.compatible = mesh_reuse.policy(donor_source, functions) == self.policy
+                    self.compatible = mesh_reuse.native_policy(donor_source, functions, self.script,
+                                                               revision=self.bundle.get('source_revision')) == self.policy
                 except (ValueError, SyntaxError):
                     pass
             if self.compatible and owner_script:
@@ -112,11 +127,14 @@ class MeshReuse:
         key = mesh_reuse.identity(dict(geometry=geometry, sources=source_hashes))
         self.pending[name] = dict(key=key, packages=packages, sources=sources,
                                   provenance={'kind': 'current-native-import'})
+        if not self.enabled:
+            return None
         local = self.receipts.matches(name, key, packages)
         if local:
             self.pending[name]['provenance'] = self.receipts.records[name].get('provenance', {'kind': 'compatibility-only'})
-        if not local and name not in self.receipts.records and self.local_compatible:
-            local = all(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages)
+        if not local and not self.receipts.path.exists() and self.local_compatible and validator is not None:
+            local = (all(unreal.EditorAssetLibrary.does_asset_exist(target) for target in packages)
+                     and mesh_reuse.historical_packages_match(self.ctx, self.task, self.previous_stamp, packages))
             if local:
                 self.pending[name]['provenance'] = dict(kind='compatibility-only', historical_task=self.previous_fingerprint)
         copied = False
@@ -130,6 +148,9 @@ class MeshReuse:
             selected = []
             for target in packages:
                 members = mesh_reuse.package_members(target)
+                if any(os.path.lexists(safe_destination(self.content, member.removeprefix('content/')))
+                       for member in members):
+                    return None  # refuse orphan sidecars as well as primary packages
                 if members[0] not in self.bundle['files']:
                     return None
                 for member in members:
@@ -170,13 +191,8 @@ class MeshReuse:
         return loaded[package]
 
     def validated(self, name):
-        """Call after current native checks and all package saves have succeeded."""
-        import unreal
-        value = self.pending.pop(name)
-        if all(imported_source_matches(unreal.load_asset(target), source)
-               for target, source, _ in value['sources']):
-            self.receipts.record(name, value['key'], value['packages'], evidence='current-native-validation',
-                                 provenance=value['provenance'])
+        """Queue after current native checks; the successful host publishes receipts."""
+        self.defer_validated(name)
 
     def imported(self, name=None):
         self.counts['imported'] += 1
@@ -188,7 +204,7 @@ class MeshReuse:
         import unreal
         value = self.pending.pop(name)
         nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
-        if nonce is None:
+        if nonce is None or not self.enabled:
             return
         record = None
         if all(imported_source_matches(unreal.load_asset(target), source)
@@ -213,10 +229,69 @@ def ast_dump(source):
     return ast.dump(ast.parse(source), include_attributes=False)
 
 
+class AssetGroup:
+    """@cc [owner:fontanierh,label:correctness] unchanged-native-asset-group
+    Skipping a material/texture builder MUST require a receipt for its current
+    parameters, all source/support bytes, engine context and complete saved packages.
+    Historical candidates MUST NOT bootstrap this receipt. A new receipt MUST follow
+    successful native loads and saves of every owned asset in the group.
+    """
+    def __init__(self, ctx, task, script, functions, *, parameters, sources=(), support=()):
+        import_policy = mesh_reuse.identity(dict(
+            code=mesh_reuse.native_policy(Path(script).read_text(), functions, script),
+            support=[mesh_reuse.digest(file) for file in support]))
+        self.book = mesh_reuse.Receipts(ctx.out, task + '.assets', context(ctx), import_policy,
+                                        ctx.uproject.parent / 'Content')
+        self.key = mesh_reuse.identity(dict(parameters=parameters,
+            sources=[mesh_reuse.digest(file) for file in sources]))
+        self.ctx, self.task = ctx, task + '.assets'
+        self.sources = [Path(script), *map(Path, sources), *map(Path, support)]
+
+    def matches(self, packages):
+        return self.book.matches('assets', self.key, packages)
+
+    def validated(self, packages):
+        import unreal
+        for package in packages:
+            asset = unreal.load_asset(package)
+            if not asset or not unreal.EditorAssetLibrary.save_loaded_asset(asset, only_if_is_dirty=True):
+                raise RuntimeError('Native asset group could not save ' + package)
+        nonce = os.environ.get('ATELIER_MESH_REUSE_NONCE')
+        if nonce:
+            record = dict(kind='asset-group', key=self.key, packages=packages, native_assets_validated=True,
+                provenance={'kind': 'current-native-import'}, sources=[
+                    dict(member=mesh_reuse.source_member(self.ctx, file), sha256=mesh_reuse.digest(file))
+                    for file in self.sources])
+            mesh_reuse.queue_pending(self.ctx, self.task, nonce, self.book.header['policy'],
+                                    self.book.header['context'], 'assets', record, {'rebuilt': 1})
+
+
+def set_if_changed(asset, name, value):
+    """Avoid dirtying a package when a current native setting already matches."""
+    if asset.get_editor_property(name) != value:
+        asset.set_editor_property(name, value)
+    if asset.get_editor_property(name) != value:
+        raise RuntimeError('Native property did not persist: ' + name)
+
+
+def lods_match(mesh, plan):
+    """Validate saved reduction and screen settings before skipping regeneration."""
+    import unreal
+    unreal.load_module('StaticMeshEditor')
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    if editor is None or editor.get_lod_count(mesh) != len(plan):
+        return False
+    screens = editor.get_lod_screen_sizes(mesh)
+    return (len(screens) == len(plan)
+            and all(abs(float(actual) - screen) < 1e-5 for actual, (_, screen) in zip(screens, plan))
+            and all(abs(float(editor.get_lod_reduction_settings(mesh, index).get_editor_property('percent_triangles'))
+                        - percent) < 1e-5 for index, (percent, _) in enumerate(plan)))
+
+
 _LEGACY = {}
 
 
-def legacy_mesh(source, destination, name, *, seed, fresh_slots, script, validator):
+def common_fbx_mesh(source, destination, name, *, seed, fresh_slots, script, validator):
     """Default shared FBX boundary; unknown owner/provenance simply imports normally."""
     task, game = os.environ.get('ATELIER_BUILD_TASK'), os.environ.get('ATELIER_BUILD_GAME')
     owner = os.environ.get('ATELIER_BUILD_SCRIPT') or os.environ.get('ATELIER_SCRIPT')

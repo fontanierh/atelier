@@ -90,7 +90,7 @@ def test_saved_input_identity_recovers_named_and_legacy_history_without_executio
     revision = 'a' * 40
     def git(args, **kwargs):
         assert not kwargs.get('shell')
-        return SimpleNamespace(returncode=0, stdout=revision + '\n' if args[1] == 'log' else source)
+        return SimpleNamespace(returncode=0, stdout=revision + '\n' if args[1] == 'log' else source.encode())
     monkeypatch.setattr(reuse.subprocess, 'run', git)
     raw = source.encode()
     old = hashlib.sha256(b'import_mesh.py' + raw).hexdigest()
@@ -148,3 +148,58 @@ def test_parent_refuses_changed_or_unproved_pending_geometry(tmp_path, monkeypat
     with pytest.raises(ValueError):
         reuse.finalize_pending(ctx, 'unreal.region', nonce)
     assert not (ctx.out / 'native-imports/unreal.region/meshes.json').exists()
+
+
+@pytest.mark.parametrize('before,after', [
+    ("T = {}; T.update({'b': 2})\ndef build(): return T\n", "T = {}; T.update({'b': 3})\ndef build(): return T\n"),
+    ('N=100; N+=1\ndef build(): return N\n', 'N=100; N+=5\ndef build(): return N\n'),
+    ('for K in [1]: pass\ndef build(): return K\n', 'for K in [2]: pass\ndef build(): return K\n')])
+def test_policy_covers_global_mutation_and_control_bindings(before, after):
+    assert reuse.policy(before, ('build',)) != reuse.policy(after, ('build',))
+
+
+def test_native_policy_binds_local_helper_bytes(tmp_path, monkeypatch):
+    from atelier import paths
+    monkeypatch.setattr(paths, 'REPO', tmp_path)
+    script = tmp_path / 'importer.py'
+    script.write_text('from kit import box\ndef build(): return box()\n')
+    helper = tmp_path / 'kit.py'; helper.write_text('def box(): return 1\n')
+    first = reuse.native_policy(script.read_text(), ('build',), script)
+    helper.write_text('def box(): return 2\n')
+    assert reuse.native_policy(script.read_text(), ('build',), script) != first
+    with pytest.raises(ValueError, match='historical geometry support'):
+        reuse.native_policy(script.read_text(), ('build',), script, inputs={})
+
+
+def test_prior_stamp_is_bound_to_owner_nonce_root_and_type(tmp_path):
+    ctx = SimpleNamespace(out=tmp_path)
+    nonce = 'a' * 24
+    path = tmp_path / '.state/mesh-import-prior/unreal.region' / (nonce + '.json')
+    path.parent.mkdir(parents=True)
+    packet = dict(schema=1, task='unreal.region', nonce=nonce, stamp={'fingerprint': 'b' * 64})
+    path.write_text(json.dumps(packet))
+    assert reuse.prior_stamp(ctx, 'unreal.region', nonce, str(path)) == packet['stamp']
+    assert reuse.prior_stamp(ctx, 'unreal.region', 'c' * 24, str(path)) is None
+    assert reuse.prior_stamp(ctx, 'unreal.other', nonce, str(path)) is None
+    for bad in (None, [], dict(packet, stamp=[])):
+        path.write_text(json.dumps(bad))
+        assert reuse.prior_stamp(ctx, 'unreal.region', nonce, str(path)) is None
+
+
+@pytest.mark.parametrize('bad', [None, [], {'meshes': []}, {'meshes': {'Mesh': []}}])
+def test_malformed_optional_receipts_are_misses(tmp_path, bad):
+    path = tmp_path / 'build/native-imports/task/meshes.json'; path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(bad))
+    book = reuse.Receipts(tmp_path / 'build', 'task', {}, 'policy', tmp_path / 'Content')
+    assert not book.matches('Mesh', 'key', ['/Game/Mesh'])
+
+
+def test_preinventory_compatibility_refuses_package_saved_after_success(tmp_path):
+    import os
+    ctx = SimpleNamespace(uproject=tmp_path / 'game/unreal/Game.uproject')
+    file = ctx.uproject.parent / 'Content/Region/Mesh.uasset'
+    file.parent.mkdir(parents=True); file.write_bytes(b'old imported bytes')
+    os.utime(file, (100, 100))
+    assert reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])
+    file.write_bytes(b'later vertex edits retaining import-data MD5')
+    assert not reuse.historical_packages_match(ctx, 'unreal.region', {'time': 200}, ['/Game/Region/Mesh'])

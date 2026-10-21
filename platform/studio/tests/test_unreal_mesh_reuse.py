@@ -18,7 +18,11 @@ def scene(tmp_path, monkeypatch):
                           unreal_root=repo / 'engine', game='game')
     ctx.out.mkdir(parents=True); ctx.uproject.parent.mkdir(parents=True)
     script = repo / 'import.py'; script.write_text('def build(): return 1\n')
-    monkeypatch.setattr(native, 'context', lambda _: {'engine': 'engine', 'sdk': 'sdk'})
+    current = {'engine': 'engine', 'sdk': 'sdk'}
+    monkeypatch.setattr(native, 'context', lambda _: current)
+    from atelier import checkpoint_store
+    monkeypatch.setattr(checkpoint_store, 'context', lambda _: current)
+    monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'e' * 24)
     monkeypatch.setattr(mesh_reuse, 'revision_source', lambda *a: script.read_text())
     source = ctx.out / 'mesh.glb'; source.write_bytes(b'expected mesh source')
     hull = ctx.out / 'hull.glb'; hull.write_bytes(b'expected collision source')
@@ -74,6 +78,8 @@ def test_admits_complete_collision_group_then_records_only_after_validation(scen
     assert mesh and len(scene.scans[0]) == 2
     assert not adapter.receipts.path.exists()
     adapter.validated('Mesh')
+    assert not adapter.receipts.path.exists()
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     record = json.loads(adapter.receipts.path.read_text())['meshes']['Mesh']
     assert len(record['packages']) == 6
     assert record['provenance']['kind'] == 'compatibility-only'
@@ -111,6 +117,7 @@ def test_changed_source_or_corrupt_copy_cannot_publish_candidate_receipt(scene):
 def test_warm_receipt_reuses_and_changed_package_refuses(scene):
     first = scene.adapter(); assert acquire(scene, first)
     first.validated('Mesh')
+    mesh_reuse.finalize_pending(scene.ctx, 'unreal.region', 'e' * 24)
     second = scene.adapter(); assert acquire(scene, second)
     assert second.counts['reused_local'] == 1
     (scene.content / 'Region/Mesh.ubulk').write_bytes(b'changed saved geometry')
@@ -137,3 +144,47 @@ def test_receiving_observation_refuses_later_engine_sdk_change(tmp_path):
         path.parent.mkdir(parents=True, exist_ok=True); path.write_text('{"BuildId":"same"}')
     assert native.observed_environment(ctx, {'engine': 'same', 'sdk': 'first'})
     assert not native.observed_environment(ctx, {'engine': 'same', 'sdk': 'changed'})
+
+
+@pytest.mark.parametrize('suffix', ['.uasset', '.ubulk', '.upayload'])
+def test_registry_invisible_disk_members_refuse_copy(scene, suffix):
+    target = scene.content / ('Region/Mesh' + suffix)
+    target.parent.mkdir(parents=True); target.write_bytes(b'unproved existing output')
+    adapter = scene.adapter()
+    assert acquire(scene, adapter) is None
+    assert target.read_bytes() == b'unproved existing output'
+
+
+def test_matching_property_does_not_dirty_asset():
+    writes = []
+    asset = SimpleNamespace(get_editor_property=lambda _: 1,
+                            set_editor_property=lambda *args: writes.append(args))
+    native.set_if_changed(asset, 'setting', 1)
+    assert writes == []
+
+
+def test_material_group_publishes_only_after_parent_and_preserves_unchanged_bytes(tmp_path, monkeypatch):
+    from atelier import checkpoint_store
+    repo = tmp_path.resolve(); monkeypatch.setattr(paths, 'REPO', repo)
+    ctx = SimpleNamespace(out=repo / 'build/game', uproject=repo / 'games/game/unreal/Game.uproject')
+    script = ctx.uproject.parent / 'Scripts/importer.py'; script.parent.mkdir(parents=True)
+    script.write_text('def materials(): return 1\n')
+    texture = ctx.out / 'paint.png'; texture.parent.mkdir(parents=True); texture.write_bytes(b'paint')
+    content = ctx.uproject.parent / 'Content/Region/Material.uasset'
+    content.parent.mkdir(parents=True); content.write_bytes(b'saved native material')
+    monkeypatch.setattr(native, 'context', lambda _: {})
+    monkeypatch.setattr(checkpoint_store, 'context', lambda _: {})
+    monkeypatch.setenv('ATELIER_MESH_REUSE_NONCE', 'a' * 24)
+    saves = []
+    monkeypatch.setitem(sys.modules, 'unreal', SimpleNamespace(load_asset=lambda p: p,
+        EditorAssetLibrary=SimpleNamespace(save_loaded_asset=lambda asset, **kw: saves.append(asset) or True)))
+    group = native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={'colour': 1}, sources=[texture])
+    packages = ['/Game/Region/Material']
+    assert not group.matches(packages)
+    group.validated(packages)
+    assert not group.book.path.exists()  # a failed native child leaves no reuse receipt
+    mesh_reuse.finalize_pending(ctx, 'unreal.region', 'a' * 24)
+    again = native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={'colour': 1}, sources=[texture])
+    assert again.matches(packages) and saves == packages
+    texture.write_bytes(b'changed paint')
+    assert not native.AssetGroup(ctx, 'unreal.region', script, ('materials',), parameters={'colour': 1}, sources=[texture]).matches(packages)
