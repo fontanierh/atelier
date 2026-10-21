@@ -51,12 +51,13 @@ def test_sound_key_uses_its_saved_type_and_audio_instead_of_the_world(tmp_path, 
     monkeypatch.setattr(build, '_hash_path', lambda digest, path: digest.update(str(path).encode()))
     monkeypatch.setattr(build_cache, 'tool_context', lambda *a, **k: {'tools': 'unchanged'})
     before = {name: 'same' for name in graph.by_name}
+    before.update({'product:' + name: 'same audio bytes' for name in sound.reads})
     key = build.fingerprint(sound, before)
     assert build.fingerprint(sound, dict(before, **{'unreal.world': 'new world',
                                                    'unreal.compile': 'new prep compiler output'})) == key
     assert build.fingerprint(sound, dict(before, **{'unreal.module.YorimichiAssets': 'changed saved type'})) != key
     for name in ('footsteps', 'combat', 'skate', 'kart', 'bike', 'transport'):
-        assert build.fingerprint(sound, dict(before, **{'audio.' + name: 'changed source audio'})) != key
+        assert build.fingerprint(sound, dict(before, **{'product:audio.' + name: 'changed source audio'})) != key
 
 
 def test_audio_type_moves_keep_serialized_names_and_runtime_include():

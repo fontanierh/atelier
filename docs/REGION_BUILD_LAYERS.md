@@ -98,8 +98,13 @@ exporters still have their existing asset inputs; this does not separate their m
 The legacy world purge preserves the footstep library, attenuation and exact Footsteps subtree;
 similarly named legacy packages remain eligible for its normal cleanup. The sound importer
 depends on its six source audio producers and the saved-type module, rather than a world import.
+All six producers publish complete WAV-folder products; the importer reads their actual byte
+identities, including changed or missing generated waves, rather than only producer fingerprints.
 Its native product inventories every wave directory, both fixed footstep packages and their
 sidecars, and all six import reports; a missing required member cannot remain a complete product.
+Each imported wave, attenuation and library must report a successful save and leave its regular
+primary package on disk before the importer can report success. An in-memory registry entry is
+insufficient, including on a first partial-directory publication.
 JapanFootstepSet and JapanFootstepBank live in YorimichiAssets; the runtime component stays in
 Yorimichi. Class/struct redirects retain previously saved package identities. The types' fields,
 defaults and Find implementation are unchanged. Native compilation and an existing-library
