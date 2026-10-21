@@ -2,6 +2,21 @@
 import math
 
 
+def settings_reader(unreal):
+    """Read-only mesh getters are stateless; commandlets need no live editor instance.
+
+    UE's GetLodScreenSizes/GetLodBuildSettings/GetLodReductionSettings read the
+    supplied mesh and editor context only, so their class default object provides
+    the same checks when commandlet startup has no editor subsystem instance.
+    """
+    reader = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    if reader is None:
+        reader = unreal.get_default_object(unreal.StaticMeshEditorSubsystem)
+    if reader is None:
+        raise RuntimeError('Static mesh settings reader unavailable')
+    return reader
+
+
 def matches(mesh, source, replacements, canopies, triangles, screens, geometry, path,
             *, editor, snapshot, digest, refusal=None):
     """@cc [owner:fontanierh,label:correctness] foliage-saved-geometry-admission
