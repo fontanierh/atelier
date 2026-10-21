@@ -6,6 +6,7 @@ from pathlib import Path
 from atelier import build_inputs, unreal_modules
 from atelier.build import Batch, Blender, Product, Step, UnrealScript
 from atelier.build import DeferredInputs
+from atelier.native_protocol import runtime_files as native_runtime_files
 
 GAME = Path(__file__).resolve().parent
 WORLD = GAME / 'world'
@@ -52,12 +53,13 @@ def system_step(ctx, prerequisites):
     return Step('unreal.foliage_system',
                 [command],
                 inputs=[GAME/'foliage_system.py', WORLD/'foliage_roles.py', SCRIPTS/'build_foliage_system.py', SCRIPTS/'atmosphere.py',
-                        SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', GAME/'unreal/Config'],
+                        SCRIPTS/'see_through.py', SCRIPTS/'foliage_material.py', SCRIPTS/'foliage_variant_validation.py',
+                        GAME.parents[1]/'platform/studio/atelier/mesh_geometry.py', *native_runtime_files(), GAME/'unreal/Config'],
                 deferred_inputs=[DeferredInputs('foliage-source-packages', system_inputs, (content,),
                                                 support=(GAME/'foliage_build.py',))],
                 needs=[*prerequisites, *unreal_modules.needs(('YorimichiImport',))],
                 outputs=[content/'FoliageSystem', content/'Data/foliage_system/registry.json',
-                         ctx.out/'foliage_system/report.json'],
+                         ctx.out/'foliage_system/report.json', ctx.out/'foliage_system/preparation-counts.json'],
                 verify=lambda:verify_system(content,ctx.out/'foliage_system/report.json'),
                 heavy=True, about='all foliage: closed canopies, leaf fringes, shadow proxies and verified runtime registry')
 

@@ -66,3 +66,11 @@ def test_large_documents_use_bounded_writes_instead_of_a_document_string():
     assert len(destination.sink.getvalue()) > 100000
     assert destination.sink.largest_write < 1024
     assert json.loads(destination.sink.getvalue())['levels'] == prepared['levels']
+
+
+def test_validated_visual_and_shadow_are_not_serialized_for_a_patch_only_repair(tmp_path):
+    prepared = product()
+    path = tmp_path/'mesh.json'
+    shadow, patch = writer()(prepared, path, ['patch'])
+    assert not path.exists() and not shadow.exists()
+    assert json.loads(patch.read_text()) == dict(source=prepared['source'], shadow=prepared['patch'])
