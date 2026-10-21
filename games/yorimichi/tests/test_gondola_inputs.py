@@ -40,3 +40,23 @@ def test_unsupported_ground_placement_is_explicitly_refused(exports):
     path.write_text(json.dumps(runtime))
     with pytest.raises(ValueError,match='identity Belmonte placement'):
         inputs.selected_ground(folder)
+
+
+def test_ground_snapshot_changes_when_extraction_or_decoding_code_changes(exports,monkeypatch):
+    folder,path,runtime=exports
+    asset=folder/'ground.npz';asset.write_bytes(b'unchanged final geometry')
+    extractor=folder/'probe.py';extractor.write_text('old decoding')
+    monkeypatch.setattr(inputs,'CODE',{'probe.py':extractor})
+    monkeypatch.setattr(inputs,'paths',lambda build:[asset])
+    old=inputs.snapshot(folder)
+    product=folder/'gondola/world';product.mkdir(parents=True)
+    (product/'ground.npz').write_bytes(asset.read_bytes())
+    import hashlib
+    (product/'ground.json').write_text(json.dumps({'inputs':old,'output_sha256':hashlib.sha256(asset.read_bytes()).hexdigest()}))
+    extractor.write_text('corrected decoding')
+    new=inputs.snapshot(folder)
+    assert old['files']==new['files'] and old['belmonte_ground']==new['belmonte_ground']
+    assert old['code']!=new['code']
+    from gondola.products import ground
+    with pytest.raises(ValueError,match='ground exports changed'):
+        ground(folder)

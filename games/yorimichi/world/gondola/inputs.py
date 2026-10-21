@@ -9,7 +9,15 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 import export_digest
 
 GROUND_BOUNDS = (390., 3550., 535., 4670.)
+REPO = Path(__file__).resolve().parents[4]
 MANIFEST = Path(__file__).resolve().parents[2] / 'assets/belmonte/source.json'
+CODE = {name: REPO / name for name in (
+    'games/yorimichi/world/gondola/inputs.py',
+    'games/yorimichi/world/gondola/probe.py',
+    'games/yorimichi/world/regions/belmonte/source.py',
+    'games/yorimichi/export_digest.py',
+    'platform/studio/atelier/gltf.py',
+)}
 
 
 def selected_ground(build):
@@ -46,6 +54,7 @@ def paths(build):
 
 def snapshot(build):
     build=Path(build)
-    return {'belmonte_ground':selected_ground(build),
+    return {'code':{name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in CODE.items()},
+            'belmonte_ground':selected_ground(build),
             'files':{str(path.relative_to(build)):(export_digest.fbx(path.read_bytes()) if path.suffix=='.fbx' else hashlib.sha256(path.read_bytes()).hexdigest())
                      for path in paths(build)}}

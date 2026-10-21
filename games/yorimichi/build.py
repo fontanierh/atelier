@@ -1486,7 +1486,7 @@ def gondola_steps(ctx):
     result += [Step('world.gondola_ground_inputs',
                     [Call('ropeway final ground inputs', lambda ctx, log:
                           export_digest.record(digest, queries.snapshot(ctx.out), log))],
-                    inputs=[query, ASSETS / 'belmonte/source.json', GAME / 'export_digest.py'],
+                    inputs=[*queries.CODE.values(), ASSETS / 'belmonte/source.json'],
                     needs=['world.hidamari', 'world.terrain.meshes', 'world.belmonte'],
                     deferred_inputs=[DeferredInputs('gondola-ground', queries.paths, (ctx.out,), support=(query,))],
                     outputs=[digest], cutoff=True,
