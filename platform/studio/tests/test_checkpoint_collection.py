@@ -293,7 +293,7 @@ def test_unreferenced_failed_upload_placeholder_is_collected(fixture, tmp_path, 
     assert (vault['id'], name) not in github.files
 
 
-@pytest.mark.parametrize('transport_failure', [False, True])
+@pytest.mark.parametrize('transport_failure', [False, True, 'interrupt'])
 def test_unobserved_asset_delete_does_not_report_freed_bytes(fixture, tmp_path, monkeypatch, transport_failure):
     github, store, remote = fixture
     target = tmp_path / 'claim.json'
@@ -306,13 +306,15 @@ def test_unobserved_asset_delete_does_not_report_freed_bytes(fixture, tmp_path, 
     original = github.api
     def unobserved(path, **kw):
         if path == 'releases/assets/999':
+            if transport_failure == 'interrupt':
+                raise KeyboardInterrupt()
             if transport_failure:
                 raise release.TransportError(500)
             return None
         return original(path, **kw)
     monkeypatch.setattr(github, 'api', unobserved)
     messages = []; remote.echo = messages.append
-    error = release.TransportError if transport_failure else cp.CheckpointError
+    error = KeyboardInterrupt if transport_failure == 'interrupt' else release.TransportError if transport_failure else cp.CheckpointError
     with remote.transaction(), pytest.raises(error):
         gc.collect(remote, remote.candidates()[0], data)
     assert (vault['id'], name) in github.files

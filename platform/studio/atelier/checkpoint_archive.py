@@ -188,13 +188,13 @@ def retire(remote, current, index, old, *, store):
             if completion:
                 try:
                     remote.github.api(f'releases/assets/{completion["id"]}', method='DELETE')
-                except (OSError, ValueError, RuntimeError, release.PublishError):
+                except BaseException:
                     remote._checkpoint_mutation_uncertain = True
                     raise
         else:
             try:
                 remote.github.api(f'releases/{item["id"]}', method='DELETE')
-            except (OSError, ValueError, RuntimeError, release.PublishError):
+            except BaseException:
                 remote._checkpoint_mutation_uncertain = True
                 raise
     # Detect unexpected external pack mutations after rehoming before reporting success.

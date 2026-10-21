@@ -63,7 +63,7 @@ def collect(remote, current, index):
                         remote.github.api(f'releases/assets/{asset["id"]}', method='DELETE')
                         if name in release.asset_map(remote.github, item):
                             raise CheckpointError('Pack deletion is not observable; cleanup remains pending')
-                    except (OSError, ValueError, RuntimeError, release.PublishError):
+                    except BaseException:
                         # A timed-out server DELETE may still commit after client exit.
                         # Do not allow another owner to reuse the still-visible asset.
                         remote._checkpoint_mutation_uncertain = True
@@ -73,7 +73,7 @@ def collect(remote, current, index):
             if not remaining and item['id'] != current['id'] and not protected:
                 try:
                     remote.github.api(f'releases/{item["id"]}', method='DELETE')
-                except (OSError, ValueError, RuntimeError, release.PublishError):
+                except BaseException:
                     remote._checkpoint_mutation_uncertain = True
                     raise
     remote.echo(f'private cache cleanup: {removed} packs removed, {freed} bytes freed (remote confirmation)')

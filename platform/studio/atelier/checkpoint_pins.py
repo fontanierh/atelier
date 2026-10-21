@@ -66,10 +66,15 @@ def put(remote, value, *, previous=None):
     tree = remote.github.read('git/commits/' + base)['tree']['sha']
     commit = remote.github.api('git/commits', method='POST', data=dict(tree=tree, parents=[base], message=json.dumps(value, sort_keys=True)))
     ref = prefix(remote) + value['id']
-    if previous is None:
-        remote.github.api('git/refs', method='POST', data=dict(ref='refs/' + ref, sha=commit['sha']))
-    else:
-        remote.github.api('git/refs/' + ref, method='PATCH', data=dict(sha=commit['sha'], force=True))
+    try:
+        if previous is None:
+            remote.github.api('git/refs', method='POST', data=dict(ref='refs/' + ref, sha=commit['sha']))
+        else:
+            remote.github.api('git/refs/' + ref, method='PATCH', data=dict(sha=commit['sha'], force=True))
+    except BaseException:
+        # A delayed lifecycle update must not erase a later owner's live pin.
+        remote._checkpoint_mutation_uncertain = True
+        raise
 
 
 def live(remote):
