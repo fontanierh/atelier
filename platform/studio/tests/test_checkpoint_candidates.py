@@ -1,5 +1,6 @@
 """Compatibility-only staging into warm receivers; no Unreal or Blender launched."""
 from dataclasses import replace
+from contextlib import contextmanager
 import json
 
 import pytest
@@ -158,16 +159,30 @@ def test_remote_discovery_skips_unusable_newer_checkpoint(fixture, donor, monkey
     monkeypatch.setattr(candidates, 'local_keys', lambda _: [])
     monkeypatch.setattr(build_checkpoints, 'configured', lambda ctx: dict(repository='owner/private'))
     from atelier import checkpoint_github
-    fetched = []
+    fetched, instances = [], []
     class Remote:
-        def __init__(self, *_, **kwargs): pass
-        def candidates(self): return [bad_key, key]
+        def __init__(self, *_, **kwargs):
+            self.owned = False
+            instances.append(self)
+        @contextmanager
+        def transaction(self):
+            assert not self.owned
+            self.owned = True
+            try:
+                yield
+            finally:
+                self.owned = False
+        def candidates(self):
+            assert self.owned
+            return [bad_key, key]
         def descriptor(self, item, temporary):
+            assert self.owned
             if item == bad_key and failure == 'descriptor':
                 raise cp.CheckpointError('Corrupt remote descriptor')
             value = incompatible if item == bad_key else saved
             return dict(key=item, checkpoint=value, blobs={e['sha256']: [] for e in value['files'].values() if e['kind']=='file'})
         def fetch(self, item, transfer, store, *, save):
+            assert self.owned
             if item == bad_key and failure == 'download':
                 raise cp.CheckpointError('Missing or corrupt pack')
             assert not save and list(transfer['checkpoint']['files']) == ['generated/tree/asset.bin']
@@ -175,6 +190,7 @@ def test_remote_discovery_skips_unusable_newer_checkpoint(fixture, donor, monkey
     monkeypatch.setattr(checkpoint_github, 'Remote', Remote)
     assert candidates.prepare(ctx, step, echo=lambda _: None).is_file()
     assert fetched == [key]
+    assert not instances[0].owned
 
 
 def test_linked_request_directory_cannot_write_receiver_products(fixture, donor):
