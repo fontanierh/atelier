@@ -31,7 +31,8 @@ def test_upload_worker_uses_only_immutable_store_and_survives_missing_producer(f
     monkeypatch.setattr(backup.paths, 'REPO', tmp_path / 'producer-no-longer-exists')
     assert backup.run(path) == 0
     assert json.loads(path.read_text())['state'] == 'complete'
-    assert len(fixture[0].releases) == 1
+    assert len(fixture[2].candidates()) == 1
+    assert len(fixture[0].releases) == 2  # Completion index plus immutable pack storage.
 
 
 def test_failed_upload_retains_request_and_reuses_completed_remote_assets(fixture, tmp_path, monkeypatch):
@@ -48,6 +49,7 @@ def test_failed_upload_retains_request_and_reuses_completed_remote_assets(fixtur
     assert json.loads(path.read_text())['state'] == 'failed'
     count = len([e for e in fixture[0].events if e[0] == 'upload'])
     monkeypatch.setattr(remote, 'publish', publish)
+    remote.github.stop.clear()  # A real retry creates a fresh transport/event in a new worker.
     assert backup.run(path) == 0
     assert json.loads(path.read_text())['attempts'] == 2
     assert len([e for e in fixture[0].events if e[0] == 'upload']) == count + 1  # index only

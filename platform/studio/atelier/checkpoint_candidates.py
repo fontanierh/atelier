@@ -161,7 +161,7 @@ def prepare(ctx, step, *, echo=print):
         from .checkpoint_github import Remote
         remote = Remote(settings['repository'], ctx.game, echo=echo)
         try:
-            with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
+            with remote.transaction(), tempfile.TemporaryDirectory(dir=store.directory) as temporary:
                 for item in remote.candidates():
                     try:
                         data = remote.descriptor(item, Path(temporary))

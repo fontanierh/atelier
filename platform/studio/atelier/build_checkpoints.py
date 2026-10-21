@@ -173,7 +173,7 @@ def prepare(ctx, steps, *, echo=print):
         return store
     remote = Remote(settings['repository'], ctx.game, echo=echo)
     try:
-        with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
+        with remote.transaction(), tempfile.TemporaryDirectory(dir=store.directory) as temporary:
             for item in remote.candidates():
                 data = remote.descriptor(item, Path(temporary))
                 saved = data['checkpoint']

@@ -134,6 +134,16 @@ def configure(sub):
     backup.add_argument('--tag', required=True)
     backup.add_argument('--revision', required=True)
     backup.add_argument('--public-repository', required=True)
+    pins = commands.add_parser('checkpoint-pins', help='inspect explicit remote checkpoint pin lifecycles')
+    pins.add_argument('game')
+    unpin = commands.add_parser('checkpoint-unpin', help='durably release a remote checkpoint pin after its stated condition')
+    unpin.add_argument('game')
+    unpin.add_argument('pin')
+    unpin.add_argument('--reason', required=True)
+    recover_writer = commands.add_parser('writer-recover', help='recover this machine private writer after proven worker/transport cleanup')
+    recover_writer.add_argument('game')
+    recover_writer.add_argument('--claim', required=True)
+    recover_writer.add_argument('--evidence', required=True, type=Path)
     retain = commands.add_parser('retain', help='save existing build artifacts locally without building, cooking or uploading')
     retain.add_argument('games', nargs='*', help='games to retain (default: every game with build stamps)')
     retain.add_argument('--source', type=Path, help='completed producer checkout (default: this repository)')
@@ -201,6 +211,20 @@ def configure(sub):
 
 
 def main(args):
+    if args.action in ('checkpoint-pins', 'checkpoint-unpin', 'writer-recover'):
+        from . import checkpoint_pins, checkpoint_coordination, paths
+        from .checkpoint_github import Remote
+        repository = checkpoint_pins.read_json(paths.cache_dir('checkpoints', create=False) / 'settings.json').get('repository')
+        remote = Remote(repository, args.game)
+        if args.action == 'writer-recover':
+            result = checkpoint_coordination.recover(remote, args.claim, args.evidence)
+        else:
+            with remote.transaction():
+                if args.action == 'checkpoint-unpin':
+                    checkpoint_pins.release_pin(remote, args.pin, args.reason)
+                result = checkpoint_pins.all_records(remote)
+        print(json.dumps(result, indent=2))
+        return 0
     if args.action == 'backup-resume':
         from .checkpoint_backup import resume
         print(json.dumps(resume(args.game, args.checkpoint, args.tag, args.revision, args.public_repository)))

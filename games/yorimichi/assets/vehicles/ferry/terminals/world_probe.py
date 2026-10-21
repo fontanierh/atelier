@@ -135,11 +135,9 @@ def label(name):
 
 def brinecove(build, bounds=None):
     bounds = S.BOUNDS['brinecove'] if bounds is None else bounds; sources = {}; names = []; ground = []; solid = []
-    runtime = build / 'brinecove/runtime.json'; sources[str(runtime.relative_to(build))] = sha(runtime)
+    runtime = build / 'products/brinecove/clearance.json'; sources[str(runtime.relative_to(build))] = sha(runtime)
     data = json.loads(runtime.read_text())
-    report_path = build / 'brinecove/build-report.json'
-    sources[str(report_path.relative_to(build))] = sha(report_path)
-    report = {m['name']: m for m in json.loads(report_path.read_text())['meshes']}
+    report = {m['name']: m for m in data['meshes']}
     x0, y0, x1, y1 = bounds
     for g in data['groups']:
         name = g['asset'].rsplit('.', 1)[-1]
@@ -171,7 +169,7 @@ def crossing(build):
     from regions.ferry.route import BOUNDS
     ground, solid, names, sources, _ = hidamari(build, BOUNDS)
     ground = [ground]
-    runtime = json.loads((build / 'brinecove/runtime.json').read_text())
+    runtime = json.loads((build / 'products/brinecove/clearance.json').read_text())
     ox, oy, oz = runtime['origin_cm']
     origin = np.array((ox / 100, -oy / 100, oz / 100))
     x0, y0, x1, y1 = BOUNDS

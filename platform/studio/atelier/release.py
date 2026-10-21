@@ -219,6 +219,8 @@ class GitHub:
         if data is not None:
             args += ['--input', '-']
         raw = self.run(args, data=json.dumps(data).encode() if data is not None else None)
+        if method == 'DELETE' and not raw:
+            return None
         try:
             return json.loads(raw)
         except (ValueError, UnicodeDecodeError):
@@ -239,8 +241,21 @@ class GitHub:
         # Pin the numeric release, rather than resolving the mutable tag again in `gh release upload`.
         endpoint = (f'https://uploads.github.com/repos/{self.repo}/releases/{release["id"]}/assets?'
                     + 'name=' + quote(path.name, safe=''))
-        self.run(['api', endpoint, '--hostname', 'github.com', '--method', 'POST',
-                  '--header', 'Content-Type: application/octet-stream', '--input', str(path)], timeout=300)
+        raw = self.run(['api', endpoint, '--hostname', 'github.com', '--method', 'POST',
+                        '--header', 'Content-Type: application/octet-stream', '--input', str(path)], timeout=300)
+        try:
+            return json.loads(raw)
+        except (ValueError, UnicodeDecodeError):
+            raise TransportError() from None
+
+    def server_time(self):
+        """Use GitHub's response clock for shared pin expiry, never local file age."""
+        from email.utils import parsedate_to_datetime
+        raw = self.run(['api', f'repos/{self.repo}?clock={time.time_ns()}', '--hostname', 'github.com', '--include'])
+        for line in raw.splitlines():
+            if line.lower().startswith(b'date:'):
+                return parsedate_to_datetime(line[5:].strip().decode('ascii')).timestamp()
+        raise TransportError()
 
 
 def asset_map(github, release):
