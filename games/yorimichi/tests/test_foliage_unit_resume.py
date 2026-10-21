@@ -155,3 +155,25 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     counts = json.loads((out/'preparation-counts.json').read_text())
     assert len(report['assets']) == 2 and counts['built_variants'] == 0
     assert counts['unit_hits'] == (0 if corrupt_hint else 1)
+
+
+def test_owner_bootstraps_studio_without_installed_atelier(tmp_path):
+    """Commandlet Python has no editable venv package or ambient repository path."""
+    import subprocess
+    code = r"""
+import ast, importlib.util, sys, types
+from pathlib import Path
+assert importlib.util.find_spec('atelier') is None
+sys.modules['unreal'] = types.ModuleType('unreal')
+script = Path(sys.argv[1])
+prefix = []
+for node in ast.parse(script.read_text()).body:
+    prefix.append(node)
+    if isinstance(node, ast.ImportFrom) and node.module == 'atelier.native_protocol':
+        break
+exec(compile(ast.Module(body=prefix, type_ignores=[]), str(script), 'exec'), {'__file__': str(script)})
+from atelier import mesh_geometry
+assert Path(mesh_geometry.__file__).resolve().is_relative_to(script.parents[4] / 'platform/studio')
+"""
+    subprocess.run([sys.executable, '-I', '-S', '-c', code, str(SCRIPT)], cwd=tmp_path,
+                   check=True, capture_output=True, text=True, timeout=10)
