@@ -214,12 +214,16 @@ def main():
                       'for key in '+repr(settings)+':unreal.SystemLibrary.execute_console_command(live.L.game_world(),key+" 0")\n'
                       f'live.FOLIAGE_QA["aim"]({eye!r},{target!r})')
                 time.sleep(args.settle)
+                effective_controls=read_json('{key:unreal.SystemLibrary.get_console_variable_float_value(key) for key in '+repr(settings)+'}')
+                if any(not math.isfinite(value) or value!=0. for value in effective_controls.values()):
+                    raise RuntimeError('Timing controls did not apply: '+repr(effective_controls))
                 qa.py(f'live.FOLIAGE_QA["start"]({eye!r},{target!r},{speed!r})')
                 time.sleep(args.seconds)
                 capture=read_json('(live.stop("foliage_performance"),dict(rows=live.FOLIAGE_QA["rows"],errors=live.FOLIAGE_QA["errors"]))[1]')
                 (out/f'{name}_{index}_samples.json').write_text(json.dumps(capture)+'\n')
                 rows=capture['rows']
-                result=dict(enabled=enabled,samples=rows,summary=summarize(rows,args.seconds,capture['errors']))
+                result=dict(enabled=enabled,effective_controls=effective_controls,samples=rows,
+                            summary=summarize(rows,args.seconds,capture['errors']))
                 results.append(result)
                 shot=out/f'{name}_{index}_{"on" if enabled else "off"}.png'
                 qa.py(f'live.L.screenshot({str(shot)!r})')
