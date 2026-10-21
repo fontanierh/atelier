@@ -414,6 +414,12 @@ bool UJapanPreferences::SetValue(const FString& Key, float Number)
     return false;
 }
 bool UJapanPreferences::CanRestartRenderer() { return !RendererRestartRequest().IsEmpty(); }
+void UJapanPreferences::FoliageReloadFailed(bool Enabled,const FString& Reason)
+{
+    for (auto& Value:Values) if (Value.Key==TEXT("foliage_optimization")) Value.Value=Enabled?1.f:0.f;
+    const bool SavedChoice=Save();
+    GraphicsError=Reason+(SavedChoice?TEXT(""):TEXT(" The restored preference could not be saved."));
+}
 int32 UJapanPreferences::CurrentRenderer()
 {
     const auto* Forward = IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForwardShading"));
@@ -796,7 +802,7 @@ FString MainHint(const FString& Key)
 {
     static const TMap<FString,FString> Hints = {
         {TEXT("performance"),TEXT("Performance keeps shadows light for a steady 60 fps. Quality draws sharper, farther shadows: in the forest they take about 21 ms instead of 6.5, roughly doubling the frame time (1080p, M1 Max, moving through the forest).")},
-        {TEXT("foliage_optimization"),TEXT("Uses simpler tree crowns, separate shadow geometry and distant forest patches. Off restores original foliage immediately. Your choice is saved on this device.")},
+        {TEXT("foliage_optimization"),TEXT("Uses simpler tree crowns, separate shadow geometry and distant forest patches. Off unloads these meshes and reloads original foliage. Your choice is saved on this device.")},
         {TEXT("fog"),TEXT("Valley mist and light shafts through the trees. About 0.15 ms a frame; off saves it.")},
         {TEXT("laptop"),TEXT("For a MacBook Air or another light GPU: forest detail at most 0.25x, tree shadows at most 40 m, tree sway at most 20 m, one shadow cascade, the lighter scene format and anti-aliasing, and a resolution that may drop to 50% to hold 60 fps. Your sliders keep their own values for when it is off.")},
         {TEXT("leaf_motion"),TEXT("Fast lets anti-aliasing ignore the wind sway, so leaf edges soften slightly in wind. Precise draws every swaying tree again to follow its leaves exactly: about 2.5 ms more a frame in the forest, up to 4 ms on a hot machine.")},

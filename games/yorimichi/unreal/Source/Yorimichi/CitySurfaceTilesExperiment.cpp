@@ -53,7 +53,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                 const FString SourceName(Pair.Key);
                 UHierarchicalInstancedStaticMeshComponent* Source=nullptr;
                 for (auto* Group:World->Groups)
-                    if (Group && Group->GetStaticMesh() && Group->GetStaticMesh()->GetName()==SourceName) Source=Group;
+                    if (Group && Group->GetStaticMesh() && UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh())==SourceName) Source=Group;
                 if (!Source || Source->GetInstanceCount()!=1) { Valid=false; break; }
                 Originals.Add(Source);
                 if (Enabled && Tiles.IsEmpty())
@@ -61,7 +61,7 @@ static FAutoConsoleCommandWithWorldAndArgs CitySurfaceTilesCommand(TEXT("japan.C
                     {
                         const FString Name=Tile->AsObject()->GetStringField(TEXT("name"));
                         const FString Path=FString::Printf(TEXT("/Game/Experiments/CitySurfaces/%s/%s.%s"),*Tag,*Name,*Name);
-                        UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
+                        UStaticMesh* Mesh=UYorimichiFoliageSubsystem::LoadMesh(Game,Path);
                         if (!Mesh) { Valid=false; break; }
                         Pending.Emplace(Source,Mesh);
                     }

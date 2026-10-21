@@ -160,13 +160,14 @@ The broad runner-rendering proximity radius MUST NOT enable the HUD banner.
 Initial world population MUST bound queued foliage representation uploads after complete source registrations.
 A drain MAY wait for GPU completion and retire deferred resources, but MUST preserve GPU render buffers,
 source collision, geometry, materials, placements and saved packages. Once gameplay readiness has been
-observed, ordinary refreshes and settings toggles MUST NOT introduce GPU-idle drains. Memory diagnostics
+observed, ordinary refreshes MUST NOT introduce GPU-idle drains. An explicit foliage-mode reload MAY
+wait for the old mesh set to unload before loading its replacement. Memory diagnostics
 MUST distinguish CPU resource estimates from actual process footprint; a source hypothesis is not proof
 of a startup memory improvement.
 
 @cc [owner:fontanierh,label:correctness;performance] foliage-game-vertex-residency
 An uncooked non-editor game MAY release CPU vertex copies only for owned prepared render-only
-foliage variants after their completed GPU upload. Originals, collision, index arrays, saved packages,
+foliage variants after their completed GPU upload. Active collision carriers, index arrays, saved packages,
 vertex/UV/section metadata and GPU resources MUST remain intact. Editor/PIE, commandlets, CPU-access,
 streamable, compiling, pending-upload, Nanite and ray-traced meshes MUST NOT use this path. Later CPU
 geometry readers or resource rebuilds MUST NOT use a released variant; use the unchanged original or
@@ -176,7 +177,17 @@ the effect; resource size estimates alone are insufficient.
 @cc [owner:fontanierh,label:correctness;performance] foliage-render-only-collision-residency
 Owned prepared foliage render copies MUST NOT retain unused physics meshes or navigation triangle arrays
 in an uncooked game. Runtime release MUST require exact mesh ownership of both BodySetup and navigation
-data and no pending physics cook, leave original/shared collision and gameplay queries intact, and never
+data and no pending physics cook, leave active-carrier/shared collision and gameplay queries intact, and never
 cook, serialize or save mesh packages. Counts, directly allocated navigation bytes and physical footprint
 MAY measure this release; physics resource sizing MUST NOT serialize full meshes during startup.
 CPU corner readers MUST check GetAllowCPUAccess rather than cached raw pointer non-null after release.
+
+@cc [owner:fontanierh,label:correctness;performance] foliage-single-resident-mode
+Scenery loaders MUST resolve certified canonical source paths before opening mesh packages.
+Optimized mode MUST load prepared meshes only; legacy meshes MUST NOT be retained for invisible
+collision. Source identity MUST remain a string across mode reloads. The selected collision carrier
+MUST preserve placements and scene queries, use simple trunk collision with passable leaves/bushes,
+and preserve rigid ground/building collision in mixed meshes. A mode change MUST detach/destroy the
+inactive mesh bindings and complete their release before loading the next mode, including rollback.
+Render-only CPU/physics cleanup MUST NOT touch an active collision carrier. Bush player interaction,
+see-through custom primitive data and rigid cloth motion MUST survive replacement.

@@ -1,4 +1,5 @@
 #include "BelmonteTrainService.h"
+#include "FoliageSystem.h"
 #include "BelmonteTrainRules.h"
 #include "BelmonteTrainRecovery.h"
 #include "JapanActivityState.h"
@@ -356,10 +357,10 @@ bool ABelmonteTrainService::Initialize(const FString& Path)
     const TSharedPtr<FJsonObject> Assets = Root->GetObjectField(TEXT("furniture"));
     int32 Missing = 0, Instances = 0, Leaves = 0;
     TMap<FString, UStaticMesh*> Meshes;
-    auto Load = [&Meshes](const FString& Asset) -> UStaticMesh*
+    auto Load = [this,&Meshes](const FString& Asset) -> UStaticMesh*
     {
         UStaticMesh*& Mesh = Meshes.FindOrAdd(Asset);
-        if (!Mesh) Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
+        if (!Mesh) Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(),Asset);
         return Mesh;
     };
     for (int32 Train = 0; Train < Line.Trains.Num(); ++Train)

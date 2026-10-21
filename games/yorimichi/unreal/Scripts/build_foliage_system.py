@@ -239,7 +239,7 @@ def main():
     registry.search_all_assets(synchronous_search=True)
     candidates = sorted(str(asset.package_name) for asset in registry.get_assets_by_path('/Game', recursive=True)
                         if str(asset.asset_class_path.asset_name) == 'StaticMesh'
-                        and not str(asset.package_name).startswith(F.ROOT+'/')
+                        and not str(asset.package_name).startswith((F.ROOT+'/', '/Game/FoliageResident/'))
                         and '/FoliageLODs/' not in str(asset.package_name)
                         and '/lods/' not in str(asset.package_name).lower())
     algorithm = hashlib.sha256()

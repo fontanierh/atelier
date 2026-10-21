@@ -99,7 +99,7 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
     {
         const auto Entry = Value->AsObject();
         const FString Asset = Entry->GetStringField(TEXT("asset"));
-        auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
+        auto* Mesh = UYorimichiFoliageSubsystem::LoadMesh(Landscape->GetWorld(),Asset);
         if (!Mesh)
         {
             ++Missing;

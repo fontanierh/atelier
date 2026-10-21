@@ -13,6 +13,7 @@
 #include "GameFramework/Actor.h"
 #include "Dom/JsonObject.h"
 #include "Misc/AutomationTest.h"
+#include "UObject/StrongObjectPtr.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
@@ -140,91 +141,70 @@ bool FYorimichiFoliageToggleTest::RunTest(const FString&)
     if (!TestNotNull(TEXT("Isolated foliage world"),World)) return false;
     auto* System=World->GetSubsystem<UYorimichiFoliageSubsystem>();
     if (!TestNotNull(TEXT("Runtime subsystem"),System)) { World->DestroyWorld(false);return false; }
-    // This test isolates switching from registry I/O and asset generation.
-    System->bRegistryLoaded=true;
+    // Real saved engine assets exercise reloads/GC, not two retained pointers.
+    const FString Legacy=TEXT("/Engine/BasicShapes/Cube.Cube"),Prepared=TEXT("/Engine/BasicShapes/Sphere.Sphere");
+    const FString Shadow=TEXT("/Engine/BasicShapes/Plane.Plane");
+    auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Legacy);
+    auto* Optimized=LoadObject<UStaticMesh>(nullptr,*Prepared);
+    auto* ShadowMesh=LoadObject<UStaticMesh>(nullptr,*Shadow);
+    if (!Mesh || !Optimized || !ShadowMesh) { World->DestroyWorld(false);return false; }
+    UYorimichiFoliageSubsystem::FAsset Asset;
+    Asset.Optimized=Prepared;Asset.Shadow=Shadow;Asset.Kind=TEXT("tree");
+    Asset.Triangles=Mesh->GetNumTriangles(0);Asset.ShadowTriangles=ShadowMesh->GetNumTriangles(0);
+    for (int32 L=0;L<Optimized->GetNumLODs();++L) Asset.LODTriangles.Add(Optimized->GetNumTriangles(L));
+    for (const auto& Material:Mesh->GetStaticMaterials()) Asset.SourceMaterials.Add(Material.MaterialInterface->GetPathName());
+    System->Assets.Add(Legacy,Asset);System->ResidentSources.Add(Prepared,Legacy);
+    System->ResidentSources.Add(Shadow,Legacy);System->bRegistryLoaded=true;System->bEnabled=false;
     auto* Actor=World->SpawnActor<AActor>();
     auto* Source=UYorimichiFoliageSubsystem::NewInstances(Actor);
-    auto* Mesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube"));
-    if (!TestNotNull(TEXT("Engine fixture mesh"),Mesh)) { World->DestroyWorld(false);return false; }
-    Source->SetStaticMesh(Mesh);Actor->SetRootComponent(Source);Source->RegisterComponent();
+    Actor->SetRootComponent(Source);Source->SetStaticMesh(Mesh);Source->RegisterComponent();
     Source->SetCollisionEnabled(ECollisionEnabled::QueryOnly);Source->SetCastShadow(true);
+    Source->SetMobility(EComponentMobility::Static);
+    World->SetBegunPlay(true); // Exercise SetStaticMesh's registered Static mobility refusal.
     Source->bAffectDistanceFieldLighting=true;
     const FTransform Placement(FRotator(0,31,0),FVector(300,400,50),FVector(1,2,3));
     Source->AddInstance(Placement);Source->AddInstance(FTransform(FVector(900,200,0)));
-    const auto NewRender=[Actor,Source,Mesh]()
-    {
-        auto* Result=UYorimichiFoliageSubsystem::NewInstances(Actor);
-        Result->SetStaticMesh(Mesh);Result->SetupAttachment(Source);
-        Result->ComponentTags.Add(TEXT("FoliageSystemOwned"));Result->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        Result->RegisterComponent();return Result;
-    };
-    FYorimichiFoliageSource Entry;
-    Entry.Original=Source;Entry.SourceMesh=Mesh;Entry.InstanceCount=2;
-    Entry.Visual=NewRender();Entry.NearVisual=NewRender();Entry.Patches=NewRender();Entry.Shadow=NewRender();
-    Entry.Visible=true;Entry.CastShadow=true;Entry.DistanceField=true;Entry.Kind=TEXT("tree");
-    System->Sources.Add(Entry);
-    System->SetSourceVisibility(Source,false);
-    TestFalse(TEXT("Diagnostic hide reaches generated visual"),Entry.Visual->IsVisible());
-    TestFalse(TEXT("Diagnostic hide reaches generated shadows"),bool(Entry.Shadow->CastShadow));
-    System->SetEnabled(false);
-    TestFalse(TEXT("Hidden state survives switching to originals"),Source->IsVisible());
-    System->SetSourceVisibility(Source,true);
-    TestTrue(TEXT("Diagnostic show reaches originals"),Source->IsVisible());
+    TestTrue(TEXT("Legacy mode registers without loading prepared copies"),System->Refresh());
+    TestNull(TEXT("Legacy has no prepared child"),System->Sources[0].Visual.Get());
     for (int32 Round=0;Round<3;++Round)
     {
-        TestTrue(TEXT("Optimization turns on live"),System->SetEnabled(true));
-        TestFalse(TEXT("Original renderer is hidden"),Source->IsVisible());
-        TestFalse(TEXT("Original shadow work stops"),bool(Source->CastShadow));
-        TestTrue(TEXT("Generated visual renders"),Entry.Visual->IsVisible());
-        TestTrue(TEXT("Generated shadow renders"),bool(Entry.Shadow->CastShadow));
-        TestEqual(TEXT("Dense interiors honor sway setting"),Entry.NearVisual->GetWorldPositionOffsetDisableDistance(),6000);
-        TestTrue(TEXT("Optimization turns off live"),System->SetEnabled(false));
-        TestTrue(TEXT("Original visibility restored"),Source->IsVisible());
-        TestTrue(TEXT("Original shadows restored"),bool(Source->CastShadow));
-        TestTrue(TEXT("Original distance fields restored"),bool(Source->bAffectDistanceFieldLighting));
-        TestFalse(TEXT("Generated visual stops"),Entry.Visual->IsVisible());
-        TestFalse(TEXT("Generated near visual stops"),Entry.NearVisual->IsVisible());
-        TestFalse(TEXT("Generated patch stops"),Entry.Patches->IsVisible());
-        TestFalse(TEXT("Generated shadow stops"),bool(Entry.Shadow->CastShadow));
-        TestEqual(TEXT("Collision remains on its source"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
-        TestTrue(TEXT("Original mesh retained"),Source->GetStaticMesh()==Mesh);
+        System->SetSourceVisibility(Source,false);
+        TestTrue(TEXT("Optimization reloads live"),System->SetEnabled(true));
+        System->Tick(0.f);
+        TestEqual(TEXT("Primary mesh is prepared, not a retained original"),Source->GetStaticMesh()->GetPathName(),Prepared);
+        TestEqual(TEXT("Canonical identity survives the replacement"),UYorimichiFoliageSubsystem::SourcePath(Source->GetStaticMesh()),Legacy);
+        TestFalse(TEXT("Authored hidden state survives reload"),Source->IsVisible());
+        System->SetSourceVisibility(Source,true);
+        TestTrue(TEXT("Prepared mesh renders"),Source->IsVisible());
+        TestEqual(TEXT("Collision lives on the active component"),Source->GetCollisionEnabled(),ECollisionEnabled::QueryOnly);
         TestEqual(TEXT("Placement count retained"),Source->GetInstanceCount(),2);
         FTransform Actual;Source->GetInstanceTransform(0,Actual,false);
         TestTrue(TEXT("Authored transform retained"),Actual.Equals(Placement));
+        TestTrue(TEXT("Optimization off reloads legacy"),System->SetEnabled(false));
+        System->Tick(0.f);
+        TestEqual(TEXT("Only legacy is bound after disabling"),Source->GetStaticMesh()->GetPathName(),Legacy);
+        TestNull(TEXT("Prepared renderer reference released"),System->Sources[0].Visual.Get());
+        TestNull(TEXT("Prepared shadow reference released"),System->Sources[0].Shadow.Get());
+        TestTrue(TEXT("Legacy visibility restored"),Source->IsVisible());
+        TestTrue(TEXT("Legacy shadow state restored"),bool(Source->CastShadow));
     }
-    System->Sources[0].CastShadow=false;Source->SetCastShadow(false);
-    System->SetEnabled(true);
-    TestFalse(TEXT("A visual source without shadows must not duplicate its separate shadow owner"),bool(Entry.Shadow->CastShadow));
-    System->SetEnabled(false);
-    TestFalse(TEXT("A source's disabled shadows remain disabled in original mode"),bool(Source->CastShadow));
-    System->Sources[0].CastShadow=true;Source->SetCastShadow(true);
-    System->SetDistances(true,.4f,0.f,0.f);System->SetEnabled(true);
-    TestFalse(TEXT("Zero sway disables vertex motion"),bool(Entry.Visual->bEvaluateWorldPositionOffset));
-    TestFalse(TEXT("Zero sway disables dense-cell motion"),bool(Entry.NearVisual->bEvaluateWorldPositionOffset));
-    TestFalse(TEXT("Zero shadow distance cannot mean infinite shadows"),bool(Entry.Shadow->CastShadow));
-    System->SetEnabled(false);
-    TestTrue(TEXT("Disabling restores source after zero shadow setting"),bool(Source->CastShadow));
-    // Exercise the actual persistent menu control, including a failed atomic
-    // save after the renderer has switched: both its value and rendering roll back.
-    auto* Preferences=NewObject<UJapanPreferences>();
-    Preferences->Owner=World->SpawnActor<AWandererCharacter>();
-    Preferences->Values=JapanDefaultPreferences(nullptr);
+    TStrongObjectPtr<UJapanPreferences> KeepPreferences(NewObject<UJapanPreferences>());
+    auto* Preferences=KeepPreferences.Get();
+    World->SetBegunPlay(false); // Keep the settings fixture's pawn from bootstrapping a game.
+    Preferences->Owner=World->SpawnActor<AWandererCharacter>();Preferences->Values=JapanDefaultPreferences(nullptr);
+    World->SetBegunPlay(true);
     const FString Directory=FPaths::ConvertRelativePathToFull(FPaths::ProjectDir(),
         TEXT("../../../build/yorimichi/foliage-tests-settings/"))+FGuid::NewGuid().ToString();
     IFileManager::Get().MakeDirectory(*Directory,true);
     const FString File=Directory/TEXT("settings.txt");Preferences->SettingsFile=File;
-    System->SetEnabled(true);
-    TestTrue(TEXT("Settings switch saves off"),Preferences->SetValue(TEXT("foliage_optimization"),0.f));
-    TestFalse(TEXT("Settings switch restores originals"),System->IsEnabled());
-    TestEqual(TEXT("Off persists to disk"),AtelierSettings::ReadFile(File).FindRef(TEXT("foliage_optimization")),FString(TEXT("0.0")));
-    TestTrue(TEXT("Settings switch saves on"),Preferences->SetValue(TEXT("foliage_optimization"),1.f));
-    TestTrue(TEXT("Settings switch restores optimization"),System->IsEnabled());
-    Preferences->SettingsFile=Directory; // An existing directory cannot become a settings file.
+    TestTrue(TEXT("Settings saves prepared mode"),Preferences->SetValue(TEXT("foliage_optimization"),1.f));
+    System->Tick(0.f);
+    TestEqual(TEXT("On persists"),AtelierSettings::ReadFile(File).FindRef(TEXT("foliage_optimization")),FString(TEXT("1.0")));
+    Preferences->SettingsFile=Directory;
     AddExpectedError(TEXT("PREFERENCES could not save"),EAutomationExpectedErrorFlags::Contains,1);
-    TestFalse(TEXT("Failed save refuses the setting"),Preferences->SetValue(TEXT("foliage_optimization"),0.f));
-    TestTrue(TEXT("Failed save restores previous renderer"),System->IsEnabled());
-    TestEqual(TEXT("Failed save restores menu value"),Preferences->Get(TEXT("foliage_optimization")),1.f);
-    TestEqual(TEXT("Failed save preserves disk value"),AtelierSettings::ReadFile(File).FindRef(TEXT("foliage_optimization")),FString(TEXT("1.0")));
+    TestFalse(TEXT("Failed save rolls mode back"),Preferences->SetValue(TEXT("foliage_optimization"),0.f));
+    TestTrue(TEXT("Prepared mode restored after failed save"),System->IsEnabled());
+    TestEqual(TEXT("Rollback reloads the prepared mesh"),Source->GetStaticMesh()->GetPathName(),Prepared);
     IFileManager::Get().DeleteDirectory(*Directory,false,true);
     System->Sources.Reset();World->DestroyWorld(false);return true;
 }
@@ -258,6 +238,14 @@ bool FYorimichiFoliageRegistryTest::RunTest(const FString&)
     TestFalse(TEXT("Unbounded variant refuses"),Read(Valid.Replace(TEXT("[416,160,64,32]"),TEXT("[416,160,64,-1]"))));
     TestFalse(TEXT("Unowned generated path refuses"),Read(Valid.Replace(TEXT("/Game/FoliageSystem/Tree.Tree"),TEXT("/Game/Other/Tree.Tree"))));
     TestTrue(TEXT("Correction recovers after invalid registry"),Read(Valid));
+    const FString Resident=Valid.Replace(TEXT("\"version\":1"),TEXT("\"version\":2"))
+        .Replace(TEXT("/Game/FoliageSystem/Tree.Tree"),TEXT("/Game/FoliageResident/Tree_Canopy.Tree_Canopy"))
+        .Replace(TEXT("/Game/FoliageSystem/Tree_Shadow.Tree_Shadow"),TEXT("/Game/FoliageResident/Tree_Shadow.Tree_Shadow"))
+        .Replace(TEXT("\"kind\":\"tree\""),TEXT("\"rigid\":\"/Game/FoliageResident/Tree.Tree\",\"rigid_triangles\":4,\"source_materials\":[\"/Engine/EngineMaterials/DefaultMaterial.DefaultMaterial\"],\"kind\":\"tree\""));
+    TestTrue(TEXT("Resident registry retains source identity without source loading"),Read(Resident));
+    TestEqual(TEXT("Carrier resolves to canonical source"),System->ResidentSources.FindRef(TEXT("/Game/FoliageResident/Tree.Tree")),FString(TEXT("/Game/Test/Tree.Tree")));
+    TestFalse(TEXT("Absent rigid path cannot claim rigid geometry"),Read(Resident.Replace(TEXT("/Game/FoliageResident/Tree.Tree"),TEXT(""))));
+    TestFalse(TEXT("Source material proof is required"),Read(Resident.Replace(TEXT("\"source_materials\""),TEXT("\"missing_materials\""))));
     return true;
 }
 #endif

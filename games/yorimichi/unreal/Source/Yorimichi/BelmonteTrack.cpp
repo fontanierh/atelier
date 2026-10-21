@@ -69,7 +69,7 @@ bool ABelmonteTrack::Initialize(const FString& Path)
     auto Load = [&](const FString& Asset) -> UStaticMesh*
     {
         UStaticMesh*& Mesh = Meshes.FindOrAdd(Asset);
-        if (!Mesh) Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
+        if (!Mesh) Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), Asset);
         if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("BELMONTE TRACK missing %s"), *Asset); }
         return Mesh;
     };

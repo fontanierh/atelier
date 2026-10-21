@@ -1,4 +1,5 @@
 #include "JapanWorld.h"
+#include "FoliageSystem.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
@@ -17,6 +18,7 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
 {
     if (!Landscape || !Landscape->bLoaded) return false;
     UWorld* World=Landscape->GetWorld();
+    if (const auto* Foliage=World->GetSubsystem<UYorimichiFoliageSubsystem>();Foliage && Foliage->IsEnabled()) return true;
     Forced=FMath::Clamp(Forced,0,3);
     DistanceScale=FMath::Clamp(DistanceScale,.5f,3.f);
     // UE's HISM renderer treats ForcedLodModel as a zero-based nonzero index.
@@ -89,7 +91,7 @@ static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Ena
         for (auto* Group:Landscape->Groups)
             if (Group && Group->GetStaticMesh())
                 for (const auto& Pair:Replacements)
-                    if (Group->GetStaticMesh()->GetName()==Pair.Key ||
+                    if (UYorimichiFoliageSubsystem::SourceName(Group->GetStaticMesh())==Pair.Key ||
                         (Group->GetStaticMesh()->GetPathName().StartsWith(TEXT("/Game/Experiments/CityTrees/")) && Group->GetStaticMesh()->GetName().StartsWith(Pair.Key+TEXT("_"))))
                     {
                         if (Group->GetStaticMesh()!=Pair.Value)

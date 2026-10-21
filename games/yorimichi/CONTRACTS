@@ -21,8 +21,11 @@ Missing, stale or invalid representations MUST fail the normal build and gamepla
 readiness, never silently render an unoptimized fallback. Preparation and all cooked
 dependencies MUST belong to the normal incremental build graph.
 The persistent graphics switch MUST restore the original rendering when disabled;
-both modes MUST remain managed by the same subsystem. Switching MUST preserve authored
-placements, collision, camera visibility behavior and gameplay, without a restart.
+both modes MUST remain managed by the same subsystem. Optimized play MUST load only prepared meshes;
+legacy meshes MUST load only when explicitly selected. Switching MAY reload assets and MUST release the
+inactive mesh set before loading its replacement, preserving placements, camera visibility and gameplay
+without a restart. Prepared trees MUST provide simple trunk collision with passable foliage; mixed
+meshes MUST preserve solid ground/building collision. Bush interaction MUST remain active.
 Indivisible textured plant props MAY retain authored surfaces only through the shared,
 explicit authored-prop policy and its hard whole-mesh budget; this MUST NOT become a
 fallback for unclassified sources or the policy for dense vegetation.

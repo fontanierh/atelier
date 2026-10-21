@@ -123,7 +123,7 @@ bool ASkatePark::Initialize(const FString& Path)
             Name = Entry->AsObject()->GetStringField(TEXT("name"));
             Entry->AsObject()->TryGetBoolField(TEXT("blocks"), bBlocks); Entry->AsObject()->TryGetBoolField(TEXT("hidden"), bIsHidden);
         }
-        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
+        UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(), FString::Printf(TEXT("%s/%s.%s"), *AssetRoot, *Name, *Name));
         if (!Mesh) { ++Missing; UE_LOG(LogTemp, Warning, TEXT("Skate park: mesh %s is not imported"), *Name); continue; }
         auto* C = NewObject<UStaticMeshComponent>(this, *Name);
         // Static children only attach to a static root: the root is placed first, then fixed.
@@ -142,8 +142,8 @@ bool ASkatePark::Initialize(const FString& Path)
         for (const auto& Pair : (*Trees)->Values)
         {
             const FString Key(Pair.Key);
-            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr,
-                *FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
+            UStaticMesh* Mesh = UYorimichiFoliageSubsystem::LoadMesh(GetWorld(),
+                FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Key, *Key));
             if (!Mesh) { UE_LOG(LogTemp, Warning, TEXT("Skate park: missing tree %s"), *Key); continue; }
             auto* H = UYorimichiFoliageSubsystem::NewInstances(this, *Key);
             H->SetStaticMesh(Mesh); H->SetMobility(EComponentMobility::Static); H->SetupAttachment(RootComponent);

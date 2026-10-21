@@ -22,7 +22,7 @@ def system_inputs(content):
     """
     return sorted(p for p in Path(content).rglob('*') if p.is_file()
                   and p.suffix in ('.uasset', '.uexp', '.ubulk')
-                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'Data'))
+                  and p.relative_to(content).parts[0] not in ('FoliageSystem', 'FoliageResident', 'Data'))
 
 
 def system_packages(content):
