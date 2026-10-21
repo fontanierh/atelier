@@ -44,6 +44,13 @@ def registry_build(tmp_path, monkeypatch):
     world.mkdir()
     helper = world / 'source_registry.py'
     helper.write_bytes((RECIPE.WORLD / helper.name).read_bytes())
+    original_helper = RECIPE.WORLD / helper.name
+    local_imports = RECIPE.build_inputs.local_imports
+    # The production scanner resolves imports from the actual entrypoint. Relocate only
+    # this fixture's copied verifier, preserving the rest of that complete closure.
+    monkeypatch.setattr(RECIPE.build_inputs, 'local_imports', lambda *args, **kwargs:
+                        [helper if path == original_helper else path
+                         for path in local_imports(*args, **kwargs)])
     monkeypatch.setattr(RECIPE, 'WORLD', world)
     out = tmp_path / 'build'
     selector = RECIPE.brinecove_source_step(out)
