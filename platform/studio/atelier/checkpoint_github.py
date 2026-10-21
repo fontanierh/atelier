@@ -73,7 +73,7 @@ class Remote:
         pages = self.github.read('releases?per_page=100', pages=True)
         releases = [r for page in pages for r in page
                     if not r.get('draft') and r.get('tag_name', '').startswith(self.prefix)]
-        return sorted(releases, key=lambda r: r.get('published_at', ''), reverse=True)
+        return sorted(releases, key=lambda r: (r.get('published_at', ''), r['id']), reverse=True)
 
     def descriptor(self, item, directory):
         assets = release.asset_map(self.github, item)
@@ -179,13 +179,19 @@ class Remote:
             release.check_release(found, expected)
             with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
                 directory = Path(temporary)
-                actions, known, retained, old = archive.accumulate(self, store, manifest, directory)
                 if not found['draft']:
                     data = self.descriptor(found, directory)
                     if data['key'] != key:
                         raise CheckpointError('Checkpoint tag already describes different results')
-                    archive.retire(self, found, data, old)
+                    candidates = self.candidates()
+                    if candidates and candidates[0]['id'] == found['id']:
+                        _, _, _, old = archive.accumulate(self, store, manifest, directory)
+                        if archive.covers(data, old, store):
+                            archive.retire(self, found, data, old, store=store)
+                        else:
+                            self.echo('Private checkpoint is complete; older metadata preserved until the next new backup')
                     return data
+                actions, known, retained, old = archive.accumulate(self, store, manifest, directory)
                 needed = blob_inventory(manifest, store)
                 blobs = packs.pack(self, store, needed, known, directory, key, legacy=found)
                 history = {}
@@ -208,7 +214,7 @@ class Remote:
                 release.ensure_asset(self.github, found, index, build_products.file_digest(index))
                 revalidate()
                 self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
-                archive.retire(self, found, data, old)
+                archive.retire(self, found, data, old, store=store)
             self.echo(f'published private build checkpoint: {tag}')
             return data
 

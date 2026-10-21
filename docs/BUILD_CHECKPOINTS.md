@@ -189,9 +189,10 @@ A running producer and its enclosing caller must stop before any transfer or sou
 shared engine, fetched inputs and DDC. Never link mutable generated folders between checkouts.
 
 After private publication succeeds, only the newest checkpoint release is kept. Its index carries historical
-input-keyed task results and explicitly pinned checkpoint descriptors. Referenced pack bytes live in separate
-immutable storage releases; older releases that own referenced packs are rehomed there without copying their
-bytes or changing numeric IDs. Other older checkpoint releases are deleted only after the new completion index
+input-keyed task results and explicitly pinned checkpoint descriptors. Pack bytes live in separate immutable
+storage releases. Every older release owning packs is rehomed there without copying bytes or changing numeric
+IDs, including packs another machine may concurrently reference. Only older metadata-only checkpoint releases
+are deleted, after the new completion index
 and every referenced pack have been freshly verified. Interrupted drafts and unknown or conflicting metadata
 are preserved. Public playtest releases, other games and other repositories are outside this cleanup.
 

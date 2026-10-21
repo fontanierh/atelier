@@ -361,8 +361,9 @@ class Actions:
             validate(value, self.store, action_key)
             subset = dict(index['checkpoint'], actions={}, files=value['files'], stamps={step.name: value['stamp']})
             needed = {e['sha256'] for e in value['files'].values() if e['kind'] == 'file'}
+            locations = {**history_blobs, **index['blobs']}
             transfer = dict(index, checkpoint=subset, key=identity(subset),
-                            blobs={digest: {**history_blobs, **index['blobs']}[digest] for digest in needed})
+                            blobs={digest: locations[digest] for digest in needed})
             self.remote.fetch(item, transfer, self.store, save=False)
             install(self.store, value)
             return value
