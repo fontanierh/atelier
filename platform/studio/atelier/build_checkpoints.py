@@ -229,6 +229,17 @@ def capture_local(source, game):
     independent of the PR or Git merge commit. No remote repository is required or uploaded here.
     """
     source = Path(source).resolve()
+    import subprocess
+    from . import provenance
+    def clean_revision():
+        if not (source / '.git').exists():
+            return None
+        try:
+            state = provenance.source_revision(root=source)
+            return state['head_sha'] if not state['dirty'] else None
+        except (OSError, subprocess.SubprocessError):
+            return None
+    source_revision = clean_revision()
     if not (source / 'games' / game / 'game.toml').is_file():
         raise CheckpointError('Cannot retain artifacts without a game manifest')
     folder = paths.build_dir(game) / 'logs' / ('checkpoint-retain-' + os.urandom(12).hex() + '.guard')
@@ -241,7 +252,14 @@ def capture_local(source, game):
                    kind='job', purpose='retain existing build artifacts'):
         raise CheckpointError('Local checkpoint capture failed; preserve producer outputs and retry')
     key = read_json(folder / 'result.json')['key']
-    Store(game).load(key)
+    store = Store(game)
+    saved = store.load(key)
+    if source_revision is not None:
+        if clean_revision() != source_revision:
+            raise CheckpointError('Producer source changed during checkpoint capture')
+        # Annotate only a proved clean producer, including when its original worker predates
+        # this metadata. The original task/tool stamps are preserved without reinterpretation.
+        key = store.save(dict(saved, source_revision=source_revision))
     return key
 
 

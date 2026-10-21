@@ -131,6 +131,15 @@ def configure(sub):
     retain = commands.add_parser('retain', help='save existing build artifacts locally without building, cooking or uploading')
     retain.add_argument('games', nargs='*', help='games to retain (default: every game with build stamps)')
     retain.add_argument('--source', type=Path, help='completed producer checkout (default: this repository)')
+    candidates = commands.add_parser('stage-candidates', help='stage compatibility candidates without changing Content or success stamps')
+    candidates.add_argument('game')
+    candidates.add_argument('--checkpoint', required=True)
+    candidates.add_argument('--task', required=True)
+    candidates.add_argument('--members', required=True, type=Path, help='JSON array of exact checkpoint members')
+    inspect = commands.add_parser('candidate-inventory', help='read original candidate source inventory without copies')
+    inspect.add_argument('game')
+    inspect.add_argument('--checkpoint', required=True)
+    inspect.add_argument('--task', required=True)
     commands.add_parser('status')
     commands.add_parser('abandon-transfer', help='remove a journaled partial transfer left by an older client').add_argument('game')
     create = commands.add_parser('snapshot-create', help='pin an unsigned local selection of current portable products')
@@ -176,6 +185,17 @@ def configure(sub):
 
 
 def main(args):
+    if args.action in ('stage-candidates', 'candidate-inventory'):
+        from . import build, checkpoint_candidates
+        ctx = build.Context(args.game, create=False)
+        if args.action == 'candidate-inventory':
+            print(json.dumps(checkpoint_candidates.inventory(ctx, args.checkpoint, args.task)))
+        else:
+            members = json.loads(args.members.read_text())
+            if not isinstance(members, list) or not all(isinstance(m, str) for m in members):
+                raise ValueError('Candidate members must be a JSON array of member names')
+            print(json.dumps({'manifest': str(checkpoint_candidates.stage(ctx, args.checkpoint, args.task, members))}))
+        return 0
     if args.action == 'retain':
         from .build_checkpoints import retain
         print(json.dumps({'checkpoints': retain(args.source, args.games)}))
