@@ -15,6 +15,8 @@ public:
     UFUNCTION(BlueprintCallable) static bool StampSourceRoles(UStaticMesh* Source);
     /** Synchronous commandlet collection; no future editor tick is required. */
     UFUNCTION(BlueprintCallable) static void CollectUnused();
+    /** Explicit Entry-map diagnostic only: register Python-created review instances; never publishes readiness. */
+    UFUNCTION(BlueprintCallable) static int32 RegisterReviewInstances(UWorld* World);
     UFUNCTION(BlueprintCallable) static bool MaterialIsMasked(UMaterialInterface* Material);
     UFUNCTION(BlueprintCallable) static bool MaterialUsesFoliageShading(UMaterialInterface* Material);
     UFUNCTION(BlueprintCallable) static bool ExportSource(UStaticMesh* Source, const TArray<int32>& LeafSlots,

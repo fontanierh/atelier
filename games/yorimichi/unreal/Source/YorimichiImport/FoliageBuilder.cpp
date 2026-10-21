@@ -15,6 +15,27 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "EngineUtils.h"
+
+int32 UYorimichiFoliageBuilder::RegisterReviewInstances(UWorld* World)
+{
+    if (!World || !World->IsGameWorld() || World->GetOutermost()->GetName()!=TEXT("/Engine/Maps/Entry")) return 0;
+    int32 Count=0;
+    for (TActorIterator<AActor> It(World);It;++It)
+    {
+        TInlineComponentArray<UHierarchicalInstancedStaticMeshComponent*> Components;
+        It->GetComponents(Components);
+        for (auto* Component:Components)
+        {
+            Component->RegisterComponentWithWorld(World);
+            Component->BuildTreeIfOutdated(false,true);
+            Component->UpdateBounds();
+            Count+=Component->GetInstanceCount();
+        }
+    }
+    return Count;
+}
 
 namespace
 {
