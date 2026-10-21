@@ -175,8 +175,10 @@ and prints its link, then schedules private upload in a detached process. Privat
 publish command or rolls back a successful public release. The worker reads the immutable store, without
 accessing or holding the producer. It does not rebuild or cook the game. Normal successful tasks retain local
 results; whole-workspace capture runs at release publication. Private release packs are content-addressed,
-checksum-verified, deduplicated and bounded to 128 MiB. The completion index uploads last; partial drafts are
-never donors. `atelier cache status` shows backup state. Pending and failed requests pin their manifests/blobs.
+checksum-verified and deduplicated. New uploads use six workers and 25 MiB parts; verified older 128 MiB
+packs are reused during interrupted-backup recovery. The temporary spool holds only the active upload window,
+and verified parts are removed immediately. Logs report verified bytes and observed throughput. The completion
+index uploads last; partial drafts are never donors. `atelier cache status` shows backup state. Pending and failed requests pin their manifests/blobs.
 Rerun the same publish command to resume without recapture or clobbering completed assets. If capture itself
 failed, preserve the producer and repair access before retrying. The [publishing guide](RELEASES.md) also covers
 resuming an already captured interrupted backup without producer access.
@@ -186,9 +188,16 @@ Intermediate and Saved/Cooked, until checkpoint upload, verification and a recei
 A running producer and its enclosing caller must stop before any transfer or source/client update. Preserve
 shared engine, fetched inputs and DDC. Never link mutable generated folders between checkouts.
 
-Retain published private checkpoint releases and their packs: newer indexes can directly reference older packs.
-There is deliberately no automatic checkpoint GC. `atelier cache gc` manages the separate portable source store.
-Do not delete a referenced private release to save space.
+After private publication succeeds, only the newest checkpoint release is kept. Its index carries historical
+input-keyed task results and explicitly pinned checkpoint descriptors. Referenced pack bytes live in separate
+immutable storage releases; older releases that own referenced packs are rehomed there without copying their
+bytes or changing numeric IDs. Other older checkpoint releases are deleted only after the new completion index
+and every referenced pack have been freshly verified. Interrupted drafts and unknown or conflicting metadata
+are preserved. Public playtest releases, other games and other repositories are outside this cleanup.
+
+Local manifests, candidate bundles, pending/failed backup requests and their CAS bytes remain protected.
+`atelier cache gc` currently manages only the separate portable source store; it does not delete workspace
+outputs or manually retire immutable remote packs.
 
 ## Recovery and validation
 

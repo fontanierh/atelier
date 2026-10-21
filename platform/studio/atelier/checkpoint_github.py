@@ -1,11 +1,9 @@
 """Private GitHub Release storage for immutable, deduplicated build checkpoints.
 
 Packed blobs are bounded below GitHub's per-asset limit. A checkpoint directly names every
-pack it needs, including packs retained in older releases; restoring never replays a delta chain.
+pack it needs, including packs rehomed in immutable storage releases; restoring never replays a delta chain.
 """
-import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
@@ -18,7 +16,6 @@ from .checkpoint_store import CheckpointError, HEX, MAX_BYTES, MAX_MANIFEST, can
 
 PACK_BYTES = 128 * 1024**2
 INDEX = 'checkpoint.json'
-MAX_PACKS = 990
 
 
 class Remote:
@@ -108,7 +105,7 @@ class Remote:
                 continue
             parts = descriptor['blobs'][digest]
             missing.add(digest)
-            if not isinstance(parts, list) or not parts or len(parts) > MAX_BYTES // PACK_BYTES + 1:
+            if not isinstance(parts, list) or not parts or len(parts) > MAX_BYTES // min(25 * 1024**2, PACK_BYTES) + 1:
                 raise CheckpointError('Invalid checkpoint blob parts')
             observed = 0
             for part in parts:
@@ -122,7 +119,7 @@ class Remote:
             if observed != size:
                 raise CheckpointError('Checkpoint blob size differs')
             total += size
-        if len(packs) > 10000 or total > MAX_BYTES:
+        if len(packs) > 30000 or total > MAX_BYTES:
             raise CheckpointError('Checkpoint transfer exceeds its bounds')
         with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
             directory = Path(temporary)
@@ -167,95 +164,57 @@ class Remote:
         The complete index MUST upload last. Publication MUST revalidate its retained manifest
         and captured source binding; a present captured revision MUST match the queued revision.
         An immutable capture MUST NOT depend on continued existence of its producing checkout.
-        Previous packs referenced by a checkpoint MUST remain retained.
+        Newest-only retirement MUST preserve referenced packs, action history and retention pins.
         """
-        metadata = self.require_private()
-        manifest = store.load(key)
-        if manifest.get('source_revision', revision) != revision:
-            raise CheckpointError('Captured checkpoint source differs from the publication request')
-        tag = self.prefix + release.leaf(tag)
-        body = f'Build checkpoint {key}\nSource {revision}\nRetain this release: later checkpoints may reference its packs.'
-        expected = dict(tag_name=tag, name=tag, body=body, prerelease=False,
-                        target_commitish=metadata['default_branch'])
-        found = release.find_release(self.github, tag)
-        if found is None:
-            found = self.github.api('releases', method='POST', data={**expected, 'draft': True})
-        release.check_release(found, expected)
-        known = {}
-        with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
-            directory = Path(temporary)
-            # The previous complete index directly references all retained packs; no delta chain.
-            for previous in self.candidates()[:1]:
-                data = self.descriptor(previous, directory)
-                known.update(data['blobs'])
-            if not found['draft']:
-                data = self.descriptor(found, directory)
-                if data['key'] != key:
-                    raise CheckpointError('Checkpoint tag already describes different results')
-                return data
-            blobs, pack_parts, pack_count = {}, [], 0
-            pack = directory / 'pack.tmp'
-            stream = pack.open('wb')
-            pack_hash = hashlib.sha256()
-            def finish_pack():
-                nonlocal stream, pack_hash, pack_parts, pack_count
-                if not pack_parts:
-                    return
-                stream.close()
-                digest = pack_hash.hexdigest()
-                final = directory / ('pack-' + digest + '.bin')
-                pack.replace(final)
-                release.ensure_asset(self.github, found, final, digest)
-                for blob, offset, size in pack_parts:
-                    blobs[blob].append(dict(release=found['id'], pack=digest, offset=offset, size=size))
-                pack_count += 1
-                if pack_count > MAX_PACKS:
-                    raise CheckpointError('Checkpoint exceeds the release asset limit')
-                pack_parts, pack_hash = [], hashlib.sha256()
-                stream = pack.open('wb')
-            needed = blob_inventory(manifest, store)
-            try:
-                for digest, size in sorted(needed.items()):
-                    if digest in known:
-                        blobs[digest] = known[digest]
-                        continue
-                    blobs[digest] = []
-                    source = store.blob(digest)
-                    if source.is_symlink() or source.stat().st_size != size or build_products.file_digest(source) != digest:
-                        raise CheckpointError('Local checkpoint blob changed before upload')
-                    with source.open('rb') as input_:
-                        left = size
-                        # Empty files have an explicit zero-length range in a verified pack.
-                        while left or not blobs[digest] and not any(p[0] == digest for p in pack_parts):
-                            room = PACK_BYTES - stream.tell()
-                            if not room:
-                                finish_pack(); room = PACK_BYTES
-                            offset, length = stream.tell(), min(left, room)
-                            remaining = length
-                            while remaining:
-                                block = input_.read(min(remaining, 1024 * 1024))
-                                if not block:
-                                    raise CheckpointError('Local checkpoint blob was truncated')
-                                stream.write(block); pack_hash.update(block); remaining -= len(block)
-                            pack_parts.append((digest, offset, length)); left -= length
-                            if not left:
-                                break
-                    if stream.tell() == PACK_BYTES:
-                        finish_pack()
-                finish_pack()
-            finally:
-                stream.close()
-            data = dict(schema=1, key=key, source_revision=revision, checkpoint=manifest, blobs=blobs)
-            index = directory / INDEX
-            if len(canonical(data)) > MAX_MANIFEST:
-                raise CheckpointError('Checkpoint index exceeds its size limit')
-            index.write_bytes(canonical(data))
-            revalidate()
-            release.ensure_asset(self.github, found, index, build_products.file_digest(index))
-            revalidate()
-            self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
-        self.echo(f'published private build checkpoint: {tag}')
-        return data
+        from . import checkpoint_archive as archive, checkpoint_packs as packs
+        with packs.writer(self):
+            metadata = self.require_private()
+            self.default_branch = metadata['default_branch']
+            manifest = store.load(key)
+            if manifest.get('source_revision', revision) != revision:
+                raise CheckpointError('Captured checkpoint source differs from the publication request')
+            tag = self.prefix + release.leaf(tag)
+            body = f'Build checkpoint {key}\nSource {revision}\nRetain this release: later checkpoints may reference its packs.'
+            expected = dict(tag_name=tag, name=tag, body=body, prerelease=False,
+                            target_commitish=self.default_branch)
+            found = release.find_release(self.github, tag)
+            if found is None:
+                found = self.github.api('releases', method='POST', data={**expected, 'draft': True})
+            release.check_release(found, expected)
+            with tempfile.TemporaryDirectory(dir=store.directory) as temporary:
+                directory = Path(temporary)
+                actions, known, retained, old = archive.accumulate(self, store, manifest, directory)
+                if not found['draft']:
+                    data = self.descriptor(found, directory)
+                    if data['key'] != key:
+                        raise CheckpointError('Checkpoint tag already describes different results')
+                    archive.retire(self, found, data, old)
+                    return data
+                needed = blob_inventory(manifest, store)
+                blobs = packs.pack(self, store, needed, known, directory, key, legacy=found)
+                history = {}
+                for action in actions.values():
+                    for entry in action['files'].values():
+                        if entry['kind'] == 'file':
+                            digest = entry['sha256']
+                            parts = blobs.get(digest, known.get(digest))
+                            if parts is None:
+                                raise CheckpointError('Retained action has no complete remote blob inventory')
+                            history[digest] = parts
+                data = dict(schema=1, key=key, source_revision=revision, checkpoint=manifest, blobs=blobs,
+                            history=dict(actions=actions, blobs=history), retained=retained)
+                if len(canonical(data)) > MAX_MANIFEST:
+                    raise CheckpointError('Checkpoint history exceeds index size limit; previous checkpoints preserved')
+                archive.verify(self, data)
+                index = directory / INDEX
+                index.write_bytes(canonical(data))
+                revalidate()
+                release.ensure_asset(self.github, found, index, build_products.file_digest(index))
+                revalidate()
+                self.github.api(f'releases/{found["id"]}', method='PATCH', data={'draft': False})
+                archive.retire(self, found, data, old)
+            self.echo(f'published private build checkpoint: {tag}')
+            return data
 
 
 def blob_inventory(manifest, store):
