@@ -48,7 +48,7 @@ def system_step(ctx, prerequisites):
     command = UnrealScript(SCRIPTS/'build_foliage_system.py', 'FOLIAGE SYSTEM COMPLETE',
                            modules=('YorimichiFoliagePreparation',), null_rhi=True, memory_gib=18,
                            args=('-ForceDPCVars=r.GenerateMeshDistanceFields=0,r.MeshCardRepresentation=0',))
-    command.timeout = 3600
+    command.timeout = 7200
     command.progress = 25
     return Step('unreal.foliage_system',
                 [command],
