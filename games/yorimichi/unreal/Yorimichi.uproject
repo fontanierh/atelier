@@ -22,6 +22,11 @@
       "Name": "YorimichiImport",
       "Type": "UncookedOnly",
       "LoadingPhase": "Default"
+    },
+    {
+      "Name": "YorimichiFoliagePreparation",
+      "Type": "UncookedOnly",
+      "LoadingPhase": "Default"
     }
   ],
   "AdditionalPluginDirectories": [

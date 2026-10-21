@@ -27,9 +27,9 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     owner = game/'unreal/Scripts/build_foliage_system.py'
     owner.parent.mkdir(parents=True)
     owner.write_text(SCRIPT.read_text())
-    for relative in ('unreal/Source/YorimichiImport/FoliageBuilder.cpp',
-                     'unreal/Source/YorimichiImport/FoliageBuilder.h',
-                     'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
+    for relative in ('unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.cpp',
+                     'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.h',
+                     'unreal/Source/YorimichiFoliagePreparation/MeshGeometrySnapshot.cpp',
                      'unreal/Scripts/foliage_material.py', 'unreal/Scripts/foliage_variant_validation.py'):
         path = game/relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,7 +112,7 @@ def test_partial_source_resumes_only_after_current_validation(tmp_path, monkeypa
     unreal = SimpleNamespace(load_module=lambda name: None, log=lambda text: None,
         AssetRegistryHelpers=SimpleNamespace(get_asset_registry=lambda: registry),
         SystemLibrary=SimpleNamespace(get_engine_version=lambda: 'fixture 5.8'),
-        YorimichiFoliageBuilder=SimpleNamespace(export_source=export, collect_unused=lambda: None,
+        YorimichiFoliagePreparation=SimpleNamespace(export_source=export, collect_unused=lambda: None,
                                                build_variant=unexpected_rebuild))
     namespace = dict(__file__=str(owner), Path=Path, F=kernel, G=G, U=unreal, OUT=out,
         E=SimpleNamespace(load_asset=assets.__getitem__, does_asset_exist=lambda path: path in assets),

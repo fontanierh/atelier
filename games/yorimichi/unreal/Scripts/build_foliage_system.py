@@ -56,8 +56,8 @@ def source_identity(mesh, registry):
 
 def leaf_material(material):
     return F.material_vegetation(material.get_name(),
-        masked=U.YorimichiFoliageBuilder.material_is_masked(material),
-        foliage=U.YorimichiFoliageBuilder.material_uses_foliage_shading(material))
+        masked=U.YorimichiFoliagePreparation.material_is_masked(material),
+        foliage=U.YorimichiFoliagePreparation.material_uses_foliage_shading(material))
 
 
 def collision_geometry(mesh, registry):
@@ -231,7 +231,7 @@ def saved_variants(mesh, paths, replacements, canopies, row, geometry, key):
         material_pair = (canopies[2], canopies[2]) if role == 'patch' else canopies[:2]
         if variant_matches(candidate, mesh, replacements, material_pair, counts, screens, geometry[role],
                            OUT/(key+'.'+role+'.snapshot'), editor=editor,
-                           snapshot=U.YorimichiFoliageBuilder.export_geometry_snapshot, digest=G.file_digest,
+                           snapshot=U.YorimichiFoliagePreparation.export_geometry_snapshot, digest=G.file_digest,
                            refusal=lambda reason: U.log(f'FOLIAGE SAVED MISS {role} {path}: {reason}')):
             reused[role] = candidate
     return reused
@@ -239,7 +239,7 @@ def saved_variants(mesh, paths, replacements, canopies, row, geometry, key):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    U.load_module('YorimichiImport')
+    U.load_module('YorimichiFoliagePreparation')
     registry = U.AssetRegistryHelpers.get_asset_registry()
     registry.search_all_assets(synchronous_search=True)
     candidates = sorted(str(asset.package_name) for asset in registry.get_assets_by_path('/Game', recursive=True)
@@ -250,9 +250,9 @@ def main():
     algorithm = hashlib.sha256()
     for file in [Path(__file__), Path(F.__file__), Path(F.roles.__file__), Path(atmosphere.__file__), Path(see_through.__file__),
                  Path(__file__).with_name('foliage_material.py'),
-                 yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.cpp',
-                 yori.GAME/'unreal/Source/YorimichiImport/FoliageBuilder.h',
-                 yori.GAME/'unreal/Source/YorimichiImport/MeshGeometrySnapshot.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.cpp',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/FoliagePreparation.h',
+                 yori.GAME/'unreal/Source/YorimichiFoliagePreparation/MeshGeometrySnapshot.cpp',
                  Path(G.__file__), Path(__file__).with_name('foliage_variant_validation.py'), *runtime_files()]:
         algorithm.update(file.read_bytes())
     algorithm.update(U.SystemLibrary.get_engine_version().encode())
@@ -277,7 +277,7 @@ def main():
         policy = classify(mesh,registry)
         if policy is None:
             mesh=None
-            U.YorimichiFoliageBuilder.collect_unused()
+            U.YorimichiFoliagePreparation.collect_unused()
             continue
         slots, classification = policy
         identity = source_identity(mesh,registry)
@@ -290,7 +290,7 @@ def main():
             counters['published_hits']+=1;counters['reused_variants']+=3
             U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} current: {path}')
             mesh=None
-            U.YorimichiFoliageBuilder.collect_unused()
+            U.YorimichiFoliagePreparation.collect_unused()
             continue
         key = F.asset_id(mesh.get_path_name())
         source_path, product_path = OUT/(key+'.source.json'), OUT/(key+'.json')
@@ -322,10 +322,10 @@ def main():
                 counters['unit_hits']+=1;counters['reused_variants']+=3
                 U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} unit readback accepted: {path}')
                 loaded.clear();mesh=None
-                U.YorimichiFoliageBuilder.collect_unused()
+                U.YorimichiFoliagePreparation.collect_unused()
                 continue
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} exporting: {path}')
-        assert U.YorimichiFoliageBuilder.export_source(mesh, slots, classification, kind, str(source_path)), path
+        assert U.YorimichiFoliagePreparation.export_source(mesh, slots, classification, kind, str(source_path)), path
         source = json.loads(source_path.read_text())
         large_source = source_path.stat().st_size >= 32 * 1024 * 1024
         if large_source: memory_checkpoint('source loaded', path)
@@ -334,7 +334,7 @@ def main():
             for level in range(1, len(F.SCREENS)):
                 lod_path = OUT/(key+f'.rigid{level}.json')
                 lod_index = round(level*(mesh.get_num_lods()-1)/(len(F.SCREENS)-1))
-                assert U.YorimichiFoliageBuilder.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
+                assert U.YorimichiFoliagePreparation.export_source(mesh, slots, classification, kind, str(lod_path),lod_index), path
                 source['rigid_lods'].append(json.loads(lod_path.read_text()))
             if kind == 'tree' and len(source['rigid_lods'][-1]['faces']) <= 256:
                 source['far_proxy'] = source['rigid_lods'][-1]
@@ -366,7 +366,7 @@ def main():
             shadow=role!='optimized'
             document=product_path if role=='optimized' else shadow_path if role=='shadow' else patch_path
             first,second=(patch_material,patch_material) if role=='patch' else (near,far)
-            result=U.YorimichiFoliageBuilder.build_variant(mesh,str(document),destinations[role],first,second,shadow)
+            result=U.YorimichiFoliagePreparation.build_variant(mesh,str(document),destinations[role],first,second,shadow)
             assert result,destinations[role]
             bind_variant_materials(result,replacements)
             assert E.save_loaded_asset(result),destinations[role]
@@ -390,7 +390,7 @@ def main():
         loaded.clear()
         U.log(f'FOLIAGE SYSTEM {n+1}/{len(candidates)} {path}: {records[-1]["triangles"]}')
         mesh=None;result=None
-        U.YorimichiFoliageBuilder.collect_unused()
+        U.YorimichiFoliagePreparation.collect_unused()
     assert records, 'No foliage sources were discovered'
     U.log('FOLIAGE PREPARATION COUNTS: '+json.dumps(counters,sort_keys=True))
     (OUT/'preparation-counts.json').write_text(json.dumps(dict(algorithm=algorithm,sources=len(records),**counters),indent=2)+'\n')

@@ -1304,7 +1304,7 @@ def unreal_steps(ctx):
              about="assemble the Skate plugin's simulation package and verify every payload"),
         Step('unreal.compile', [UnrealCompile('YorimichiEditor')], inputs=[SOURCE, ctx.uproject, GAME / 'unreal/Config', GAME / 'unreal/Plugins', paths.ENGINE_PLUGINS], needs=['skate.runtime'], heavy=True,
              about='the Yorimichi C++ modules (editor target)'),
-        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES),
+        *unreal_modules.steps(ctx, IMPORT_CODE + SAVED_TYPES + CONTACT_TYPES + ('YorimichiFoliagePreparation',)),
         *foliage_build.unreal_steps(ctx, IMPORT_CODE, engine_version(ctx)),
         Step('unreal.world', [UnrealScript(SCRIPTS / 'setup_project.py', 'level saved')],
              # The city's arcade and harbor materials read the region's committed paintings.
