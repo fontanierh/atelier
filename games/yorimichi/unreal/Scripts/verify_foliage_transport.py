@@ -5,6 +5,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'world'))
 import yori
 
+import json
 import struct
 import unreal as U
 from atelier import mesh_geometry as G
@@ -38,6 +39,22 @@ try:
         (material,material),[1,1],[1.,.24],expected,folder/'fixture.snapshot',editor=settings_reader(U),
         snapshot=U.YorimichiFoliageBuilder.export_geometry_snapshot,digest=G.file_digest,
         refusal=lambda reason:U.log_error('FOLIAGE TRANSPORT FIXTURE: '+reason))
+    # A retained seed slot with no triangles must not require a foliage palette.
+    # The full used geometry and every existing slot remain unchanged.
+    original=folder/'palette-before.json'
+    changed=folder/'palette-unused.json'
+    assert U.YorimichiFoliageSourceWriter.export_source(mesh,[], 'height','tree',str(original))
+    baseline=json.loads(original.read_text())
+    unused=len(mesh.get_editor_property('static_materials'))-1
+    grid=E.load_asset('/Engine/EngineMaterials/WorldGridMaterial')
+    assert grid
+    mesh.set_material(unused,grid)
+    assert U.YorimichiFoliageSourceWriter.export_source(mesh,[], 'height','tree',str(changed))
+    exported=json.loads(changed.read_text())
+    assert all(face['s']!=unused for face in exported['faces'])
+    assert exported['vertices']==baseline['vertices'] and exported['faces']==baseline['faces']
+    assert exported['materials'][:unused]==baseline['materials'][:unused]
+    assert exported['materials'][unused]['path']==grid.get_path_name()
     data=path.read_bytes()
     malformed=[b'BAD'+data[3:],data[:-1],data+b'x',
                data[:len(G.MAGIC)]+struct.pack('<I',3)+data[len(G.MAGIC)+4:]]
