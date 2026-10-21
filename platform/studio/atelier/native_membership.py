@@ -49,6 +49,8 @@ def retire(editor, previous, names, destination, prefix):
     if any(not editor.does_asset_exist(package) for package in current):
         raise ValueError('Current native membership is incomplete')
     obsolete = previous-current
+    if any(not editor.does_asset_exist(package) for package in obsolete):
+        raise ValueError('Prior native membership changed before retirement')
     # References between retiring packages are allowed: each is removed through
     # the editor API. A live current/foreign package must keep its dependencies.
     for package in sorted(obsolete):

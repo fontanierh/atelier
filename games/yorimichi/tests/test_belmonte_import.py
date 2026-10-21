@@ -61,7 +61,9 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     assets = SimpleNamespace(make_directory=lambda *_: None,
         list_assets=lambda root, **_: [root+'/'+name+'.'+name for name in meshes],
         does_asset_exist=lambda path: path.rsplit('/', 1)[-1] in meshes,
-        find_package_referencers_for_asset=lambda *a, **k: [],
+        find_package_referencers_for_asset=lambda path, **k: [
+            '/Game/Belmonte/Meshes/'+name for name, mesh in meshes.items()
+            if mesh.get_editor_property('complex_collision_mesh') is meshes[path.rsplit('/', 1)[-1]]],
         delete_asset=lambda path: meshes.pop(path.rsplit('/', 1)[-1], None) is not None,
         load_asset=lambda path: meshes.get(path.rsplit('/', 1)[-1], path), save_loaded_asset=lambda asset, **_: saved.append(asset) or True, delete_directory=lambda *_: None)
     loaded = set()                                   # like the commandlet: no subsystem until its module is loaded
@@ -103,3 +105,13 @@ def test_import_disables_distance_fields_only_on_separate_physics_hull(tmp_path,
     writes.clear(); bindings.clear(); changed.clear()
     namespace['main']()
     assert writes == [] and bindings == [] and changed == []
+
+    if with_hull:
+        # A compatible existing render mesh can outlive removal of its source
+        # hull record. Normal finishing must detach/save it before retirement.
+        del entry['collision']
+        (products/'geometry.json').write_text(json.dumps(dict(meshes=[entry])))
+        namespace['main']()
+        assert render.get_editor_property('complex_collision_mesh') is None
+        assert 'SM_BM_House_Collision' not in meshes
+        assert (render, 'complex_collision_mesh') in writes

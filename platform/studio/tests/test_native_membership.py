@@ -60,6 +60,13 @@ def test_all_external_reference_checks_finish_before_first_delete():
     assert paths == {OLD, extra, CURRENT} and deleted == []
 
 
+def test_all_retiring_packages_exist_before_first_delete():
+    e, paths, deleted = editor([OLD, CURRENT])
+    with pytest.raises(ValueError, match='Prior native membership changed'):
+        M.retire(e, {OLD, ROOT+'/'+PREFIX+'ZMissing'}, [PREFIX+'Piece0'], ROOT, PREFIX)
+    assert paths == {OLD, CURRENT} and deleted == []
+
+
 def test_retiring_primary_and_collision_references_are_allowed():
     hull = OLD+'_Collision'
     e, paths, deleted = editor([OLD, hull, CURRENT], {hull: [OLD]})

@@ -328,6 +328,11 @@ def main():
             set_if_changed(mesh, 'complex_collision_mesh', collision)
             assert mesh.get_editor_property('complex_collision_mesh') == collision, name
             assert E.save_loaded_asset(collision, only_if_is_dirty=True), collision_name
+        else:
+            # A compatibility hit may retain a formerly separate physics hull.
+            # Current no-hull ownership must detach it before retiring that package.
+            set_if_changed(mesh, 'complex_collision_mesh', None)
+            assert mesh.get_editor_property('complex_collision_mesh') is None, name
         body = mesh.get_editor_property('body_setup')
         if name.startswith('SM_BM_BT_Terrain_'):
             set_if_changed(mesh, 'allow_cpu_access', name in {'SM_BM_BT_Terrain_0_0', 'SM_BM_BT_Terrain_4_4'})
