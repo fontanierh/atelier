@@ -27,8 +27,8 @@ from gondola.line import centre_profile, closed_circuit, placed, simplify, stati
 from gondola.products import ground
 from gondola.structures import validate as validate_structures
 from gondola.clearance import StructureClearance, structure_envelope
-from gondola.interactions import walking_link, mesh_vertices, flight_clearance
-from gondola.support import owned_range, owned_triangles, floor_intrusion
+from gondola.interactions import walking_link, mesh_vertices, flight_clearance, access_headroom
+from gondola.support import owned_range, owned_triangles, floor_intrusion, floor_caps, access_walk_audit
 from gondola.validation import site_inputs, validate_site
 from regions.gondola.layout import LINES, STATIONS
 from regions.craterpark import placement as PARK
@@ -180,11 +180,22 @@ def rail_bearing(mesh,x,y,direction,across,roof,half_length):
     return top
 
 
+def emit_access_floor(mesh,surface,thickness=.16):
+    """Emit precisely the planar caps consumed by the walking/ground audits."""
+    for triangle in floor_caps(surface):
+        xy,z=triangle[:,:2],triangle[:,2]
+        gradient=np.linalg.solve(xy[1:]-xy[0],z[1:]-z[0])
+        def roof(x,y):return float(z[0]+(np.array([x,y])-xy[0])@gradient)
+        mesh.prism(xy,lambda x,y:roof(x,y)-thickness,roof,solid.TIMBER_DARK,top=solid.DECK)
+
+
 def access_stair(key,layout,G,frame):
     access=layout['access'][0]
     edge=np.asarray(access['edge'],float);start=edge.mean(0)
-    direction=start-np.asarray(access['point']);direction/=np.linalg.norm(direction)
-    across=np.array([-direction[1],direction[0]])
+    across=edge[1]-edge[0];across/=np.linalg.norm(across)
+    direction=np.array([across[1],-across[0]])
+    if direction@(start-np.asarray(access['point']))<0:
+        direction=-direction;across=-across
     width=min(2.2,float(np.linalg.norm(edge[1]-edge[0]))-.10)
     top=float(access['z'])
     mesh=solid.Mesh(f'GD_{key}_Access')
@@ -193,64 +204,133 @@ def access_stair(key,layout,G,frame):
     landing_surfaces=[]
     turn=STATIONS[key].get('access_turn_deg',0.)
     if turn:
-        if turn!=90.:
-            raise ValueError('Access landing supports the authored left quarter turn only')
+        if turn not in (90.,180.):
+            raise ValueError('Access landing supports quarter turns and a return flight only')
         old_start=start.copy();old_direction=direction.copy();old_across=across.copy()
-        polygon=[start-across*width/2,start+direction*width-across*width/2,
-                 start+direction*width+across*width/2,start+across*width/2]
-        landing_surfaces.append({'poly':[list(p) for p in polygon],'top':top})
+        if turn==90.:
+            polygon=[start-across*width/2,start+direction*width-across*width/2,
+                     start+direction*width+across*width/2,start+across*width/2]
+            start=old_start+old_direction*width/2+old_across*width/2
+            direction=old_across;across=-old_direction
+            surface={'poly':[list(p) for p in polygon],'top':top}
+            rails=[(polygon[0],polygon[1]),(polygon[1],polygon[2])]
+            preface.extend([[*(old_start+old_direction*width/2),top],[*start,top]])
+        else:
+            # One flat switchback landing joins the real kit head to a parallel
+            # return flight. Its .4m separation clears the 2.4m kit boardwalk,
+            # the 2.2m flight and their side rails rather than stacking them.
+            separation=width+.4
+            far=separation+width/2+.4
+            polygon=[start-across*width/2,start+direction*width-across*width/2,
+                     start+direction*width+across*far,start+across*far]
+            start=old_start+separation*old_across
+            direction=-old_direction;across=-old_across
+            entry=[old_start-old_across*width/2,old_start+old_across*width/2]
+            exit_=[start-across*width/2,start+across*width/2]
+            surface={'poly':[list(p) for p in polygon],'top':top,
+                     'entry':[list(p) for p in entry],'exit':[list(p) for p in exit_]}
+            rails=[(polygon[0],polygon[1]),(polygon[1],polygon[2]),
+                   (polygon[2],polygon[3]),(polygon[3],exit_[0])]
+            preface.extend([[*(old_start+old_direction*width/2),top],
+                            [*(start+old_direction*width/2),top],[*start,top]])
+        landing_surfaces.append(surface)
         with mesh.tagged('access_landing'):
-            mesh.prism(polygon,top-.24,top,solid.TIMBER_DARK,top=solid.DECK)
-        for index,(a,b) in enumerate(((polygon[0],polygon[1]),(polygon[1],polygon[2]))):
+            emit_access_floor(mesh,surface,.24)
+        for index,(a,b) in enumerate(rails):
             railing(mesh,rail_layout,[a,b],'timber',z0=top,on=('access_landing',),start_post=index==0)
-        start=old_start+old_direction*width/2+old_across*width/2
-        direction=old_across;across=-old_direction
-        preface.extend([[*(old_start+old_direction*width/2),top],[*start,top]])
-    chosen=None
-    for n in range(1,201):
-        length=(n-1)*.32+1.5
+        if turn==180.:
+            # The boardwalk supplies the post at the entry; the return flight
+            # supplies the other end of this short separator rail.
+            railing(mesh,rail_layout,[entry[1],exit_[1]],'timber',z0=top,
+                    on=('access_landing',),start_post=False)
+    fit=STATIONS[key].get('access_fit')
+    join_length=.8;tread=.32
+    if fit is not None:
+        n,length,join_length=fit['risers'],fit['run_m'],fit['join_m']
+        tread=fit.get('tread_m',.32)
+        if (type(n) is not int or not 1<=n<=200 or
+                not all(type(v) in (int,float) and math.isfinite(v) and v>0 for v in (length,join_length))):
+            raise ValueError(f'{key}: invalid authored access fit')
         end=start+length*direction
-        z=float(G.contact(world_xy([end],frame))[0][0]-frame[3])
-        rise=(top-z)/n
-        if .10<=rise<=.27:
-            chosen=(n,length,end,z,rise)
-            break
-    if chosen is None:
-        raise ValueError(f'{key}: no descending access flight to final ground')
-    n,length,end,bottom,rise=chosen
+    else:
+        chosen=None
+        for n in range(1,201):
+            length=(n-1)*.32+1.5
+            end=start+length*direction
+            z=float(G.contact(world_xy([end],frame))[0][0]-frame[3])
+            rise=(top-z)/n
+            if .10<=rise<=.27:
+                chosen=(n,length,end,z,rise)
+                break
+        if chosen is None:
+            raise ValueError(f'{key}: no descending access flight to final ground')
+        n,length,end,bottom,rise=chosen
+    flights=fit.get('flights',[n]) if fit else [n]
+    landing_length=fit.get('landing_m',1.2) if fit else 1.2
+    if (not isinstance(flights,list) or not flights or sum(flights)!=n or
+            any(type(v) is not int or v<=0 for v in flights) or
+            not math.isfinite(tread) or tread<W.TREAD_MIN or
+            not math.isfinite(landing_length) or landing_length<1.2):
+        raise ValueError(f'{key}: invalid access flight/landing plan')
+    rest_after=set(np.cumsum(flights)[:-1])
+    last_tread=length-join_length-(n-1)*tread-len(rest_after)*landing_length
+    if last_tread<W.TREAD_MIN-1e-9:
+        raise ValueError(f'{key}: access fit reverses or shortens the last tread')
     route=preface
     edge_t,edge_z=ground_edge(G,frame,end,across,width)
     bottom=float(max(edge_z))
     rise=(top-bottom)/n
     if not .10<=rise<=.30:
         raise ValueError(f'{key}: fitted final stair riser is invalid')
-    surfaces=landing_surfaces[:]
+    surfaces=landing_surfaces[:];treads=[];joins=[]
+    cursor=0.;stringer_profile=[[0.,top+.25]]
     for k in range(n):
-        a,b=k*.32,(k+1)*.32 if k<n-1 else length-.8
+        a,b=cursor,cursor+tread if k<n-1 else length-join_length
         height=top-(k+1)*rise
         centre=start+(a+b)/2*direction
         poly=[start+a*direction-across*width/2,start+b*direction-across*width/2,
               start+b*direction+across*width/2,start+a*direction+across*width/2]
-        mesh.prism(poly,height-.16,height,solid.TIMBER_DARK,top=solid.DECK)
+        surface={'poly':[list(p) for p in poly],'top':height}
+        with mesh.tagged('access_floor'):
+            emit_access_floor(mesh,surface)
         front=start+a*direction
-        with mesh.at((*front,0),math.degrees(math.atan2(direction[1],direction[0]))):
+        with mesh.tagged('access_riser'),mesh.at((*front,0),math.degrees(math.atan2(direction[1],direction[0]))):
             mesh.box((.018,0,height+rise/2),(.036,width,rise),solid.TIMBER)
-        surfaces.append({'poly':[list(p) for p in poly],'top':height})
+        surfaces.append(surface);treads.append(surface)
         route.append([*centre,height])
-    # The last 0.8m landing shares every terrain triangle-edge knot. Its outer
+        stringer_profile.append([b,height+.25]);cursor=b
+        if k+1 in rest_after:
+            a,b=cursor,cursor+landing_length
+            polygon=[start+a*direction-across*width/2,start+b*direction-across*width/2,
+                     start+b*direction+across*width/2,start+a*direction+across*width/2]
+            surface={'poly':[list(p) for p in polygon],'top':height,'rest_landing':True}
+            with mesh.tagged('access_floor'):
+                emit_access_floor(mesh,surface,.24)
+            surfaces.append(surface);treads.append(surface)
+            route.append([*(start+(a+b)/2*direction),height])
+            stringer_profile.append([b,height+.25]);cursor=b
+    # The fitted join shares every terrain triangle-edge knot. Its outer
     # edge is the actual rendered ground profile rather than a flat guessed lip.
-    join_start=end-.8*direction
+    join_start=end-join_length*direction
     for ta,tb,za,zb in zip(edge_t[:-1],edge_t[1:],edge_z[:-1],edge_z[1:]):
         polygon=[join_start+ta*across,end+ta*across,end+tb*across,join_start+tb*across]
         def floor(x,y):
             q=np.array([x,y])-join_start
-            u=float(np.clip(q@direction/.8,0,1))
+            u=float(np.clip(q@direction/join_length,0,1))
             v=float(np.clip((q@across-ta)/(tb-ta),0,1))
             return bottom+u*((1-v)*za+v*zb-bottom)
-        mesh.prism(polygon,lambda x,y:floor(x,y)-.16,floor,solid.TIMBER_DARK,top=solid.DECK)
-        surfaces.append({'poly':[list(p) for p in polygon],'z1':[floor(*p) for p in polygon]})
+        surface={'poly':[list(p) for p in polygon],'z1':[floor(*p) for p in polygon]}
+        with mesh.tagged('access_floor'):
+            emit_access_floor(mesh,surface)
+        surfaces.append(surface);joins.append(surface)
+    walk_proof=access_walk_audit(G,frame,edge,top,landing_surfaces,treads,joins,end,direction,across,
+                               step_limit=W.STEP,tread_min=W.TREAD_MIN,walk_width=W.MIN_WIDTH,last_tread=last_tread,tread=tread)
+    stringer_profile.append([length,bottom+.25])
+    profile=np.asarray(stringer_profile)
     def stringer_top(x,y):
         distance=float((np.array([x,y])-start)@direction)
+        if rest_after:
+            return float(np.interp(distance,profile[:,0],profile[:,1]))
         return top-(top-bottom)*distance/length+.25
     support_section=.20
     bearing_half_length=.08
@@ -260,10 +340,16 @@ def access_stair(key,layout,G,frame):
         a,b=start+offset,end+offset
         # Clear both the .20m support-post end planes and .16m bearing pads.
         extension=max(support_section/2,bearing_half_length)+.02
-        head=a-extension*direction;tail=b+extension*direction
-        polygon=[head-across*.09,tail-across*.09,tail+across*.09,head+across*.09]
-        with mesh.tagged('access_stringer'):
-            mesh.prism(polygon,lambda x,y:stringer_top(x,y)-.55,stringer_top,solid.TIMBER)
+        breaks=[-extension,length+extension]
+        if rest_after:
+            slopes=np.diff(profile[:,1])/np.diff(profile[:,0])
+            breaks=[-extension,0.,*[float(profile[i,0]) for i in range(1,len(profile)-1)
+                                   if abs(slopes[i]-slopes[i-1])>1e-8],length,length+extension]
+        for first,last in zip(breaks,breaks[1:]):
+            h=start+offset+first*direction;t=start+offset+last*direction
+            polygon=[h-across*.09,t-across*.09,t+across*.09,h+across*.09]
+            with mesh.tagged('access_stringer'):
+                mesh.prism(polygon,lambda x,y:stringer_top(x,y)-.55,stringer_top,solid.TIMBER)
         railing(mesh,rail_layout,[a,b],'timber',
                 z0=lambda x,y:rail_bearing(mesh,x,y,direction,across,stringer_top,bearing_half_length),on=('access_stringer',))
     route.append([*end,float(np.interp(0,edge_t,edge_z))])
@@ -281,14 +367,21 @@ def access_stair(key,layout,G,frame):
     ground_proof={'complete_coverage':True,'surfaces':len(surfaces),
                   'maximum_intrusion_m':max(intrusion),'allowance_m':floor_limit,'pass':True}
     supports=[]
+    if turn==180.:
+        polygon=np.asarray(landing_surfaces[0]['poly'])
+        for point in (polygon[1],polygon[2],polygon[3]):
+            support=timber_support(mesh,G,frame,point,top-.23,support_section)
+            if support:
+                supports.append(support)
     for distance in np.arange(0,length+.01,3):
         for side in (-1,1):
             point=start+distance*direction+side*(width/2-rail_inset)*across
-            level=top-(top-bottom)*distance/length-.20
+            level=stringer_top(*point)-.45
             support=timber_support(mesh,G,frame,point,level,support_section)
             if support:
                 supports.append(support)
-    return mesh,{'route':route,'width':width,'risers':n,'riser':rise,'tread':.32,
+    return mesh,{'route':route,'width':width,'risers':n,'riser':rise,'tread':tread,'flights':flights,'landing_m':landing_length,
+                 'run_m':length,'join_m':join_length,'walk_proof':walk_proof,
                  'ground_proof':ground_proof,'rail_seats':rail_layout.seats,'obstacles':rail_layout.proxies,'turn_deg':turn,'ground_edge_tolerance':.0001,'ground_edge':{'t':edge_t.tolist(),'z':edge_z.tolist()},'surfaces':surfaces,'supports':supports}
 
 
@@ -566,6 +659,8 @@ def main():
             data['static_riding_clear']=True
             foundation,posts=station_foundation(key,layouts[data['kind']],G,frame)
             stair,access=access_stair(key,layouts[data['kind']],G,frame)
+            if access['turn_deg']==180.:
+                access['headroom_proof']=access_headroom(access,[*shells[data['kind']].values(),foundation,stair],layouts[data['kind']],G,frame)
             if key=='belmonte':
                 from regions.zeppelin.layout import belmonte_path
                 access['route'],data['walking_link']=walking_link(G,frame,access['route'],

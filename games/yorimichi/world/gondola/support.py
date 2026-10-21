@@ -5,6 +5,117 @@ from solid_mesh import signed_area, ear_clip
 from gondola.clearance import clip
 
 AREA_TOL=1e-9
+ACCESS_SLOPE_DEG=40.
+
+
+def floor_caps(surface):
+    """The shared prism triangulation, with the exact emitted corner heights."""
+    xy=np.asarray(surface['poly'],float)
+    z=np.broadcast_to(np.asarray(surface.get('z1',surface.get('top')),float),(len(xy),))
+    if signed_area(xy-xy[0])<0:xy,z=xy[::-1],z[::-1]
+    return np.asarray([np.c_[xy,z][list(ids)] for ids in ear_clip(xy)])
+
+
+def cap_slope(triangles):
+    triangles=np.asarray(triangles,float)
+    normal=np.cross(triangles[:,1]-triangles[:,0],triangles[:,2]-triangles[:,0])
+    if not np.isfinite(normal).all():
+        raise ValueError('Invalid walking cap triangle')
+    # Exact owner clipping can retain a boundary-only zero-area triangle.
+    # Nondegenerate vertical faces still refuse as nonwalking surfaces.
+    normal=normal[np.linalg.norm(normal,axis=1)>1e-12]
+    if not len(normal) or np.any(abs(normal[:,2])<1e-12):
+        raise ValueError('Invalid walking cap triangle')
+    return float(np.degrees(np.arctan2(np.linalg.norm(normal[:,:2],axis=1),abs(normal[:,2]))).max())
+
+
+def access_walk_audit(G,frame,head_edge,top,landings,treads,joins,end,direction,across,
+                      *,step_limit,tread_min,walk_width,last_tread,tread=.32):
+    """@cc [owner:fontanierh,label:correctness] emitted-access-walkability
+    Access MUST audit the actual shared cap triangulation, not a smoother
+    bilinear intention. Every cap and the minimum-width final-ground continuation
+    MUST stay at most forty degrees. Head/landing/tread/join edges MUST meet by
+    construction; measured height jumps MUST obey the kit step limit, with the
+    full tread minimum and complete final-owned coverage preserved.
+    """
+    surfaces=landings+treads+joins
+    triangles=np.concatenate([floor_caps(surface) for surface in surfaces])
+    slope=cap_slope(triangles)
+    if slope>ACCESS_SLOPE_DEG+1e-8:
+        raise ValueError(f'Access walking cap slope {slope:.6f} exceeds {ACCESS_SLOPE_DEG} degrees')
+    if last_tread<tread_min-1e-9:
+        raise ValueError('Access final tread is too short or reversed')
+    steps=[];gaps=[]
+    def meet(a,za,b,zb,*,subset=False):
+        a,b=np.asarray(a,float),np.asarray(b,float)
+        if subset:
+            axis=a[1]-a[0];length=np.linalg.norm(axis);axis/=length
+            q=(b-a[0])@axis
+            gap=max(float(np.linalg.norm(b-a[0]-q[:,None]*axis,axis=1).max()),
+                    max(0.,-float(q.min()),float(q.max())-length))
+        else:
+            if np.linalg.norm(a-b[::-1],axis=1).max()<np.linalg.norm(a-b,axis=1).max():
+                b=b[::-1];zb=np.broadcast_to(np.asarray(zb),(2,))[::-1]
+            gap=float(np.linalg.norm(a-b,axis=1).max())
+        gaps.append(gap);steps.append(float(np.max(abs(np.asarray(za)-np.asarray(zb)))))
+    def landing_edge(surface,name):
+        poly=np.asarray(surface['poly'])
+        edge=np.asarray(surface.get(name,poly[[0,3] if name=='entry' else [2,3]]))
+        # An explicit switchback opening must lie on a real cap boundary.
+        errors=[]
+        for a,b in zip(poly,np.roll(poly,-1,axis=0)):
+            axis=b-a;length=np.linalg.norm(axis);axis/=length
+            q=(edge-a)@axis
+            errors.append(max(float(np.linalg.norm(edge-a-q[:,None]*axis,axis=1).max()),
+                              max(0.,-float(q.min()),float(q.max())-length)))
+        gaps.append(min(errors))
+        return edge
+    if landings:
+        meet(head_edge,top,landing_edge(landings[0],'entry'),landings[0]['top'],subset=True)
+        for a,b in zip(landings,landings[1:]):
+            meet(landing_edge(a,'exit'),a['top'],landing_edge(b,'entry'),b['top'])
+        meet(landing_edge(landings[-1],'exit'),landings[-1]['top'],
+             np.asarray(treads[0]['poly'])[[0,3]],treads[0]['top'])
+    else:
+        meet(head_edge,top,np.asarray(treads[0]['poly'])[[0,3]],treads[0]['top'],subset=True)
+    for a,b in zip(treads,treads[1:]):
+        meet(np.asarray(a['poly'])[[1,2]],a['top'],np.asarray(b['poly'])[[0,3]],b['top'])
+    last=treads[-1]
+    intervals=[];edge=np.asarray(last['poly'])[[1,2]];axis=edge[1]-edge[0];length=np.linalg.norm(axis);axis/=length
+    for surface in joins:
+        polygon=np.asarray(surface['poly']);z=np.asarray(surface['z1'])
+        meet(edge,last['top'],polygon[[0,3]],z[[0,3]],subset=True)
+        intervals.append(sorted(((polygon[[0,3]]-edge[0])@axis).tolist()))
+    cursor=0.
+    for a,b in sorted(intervals):
+        gaps.append(abs(a-cursor));cursor=b
+    gaps.append(abs(cursor-length))
+    for a,b in zip(joins,joins[1:]):
+        meet(np.asarray(a['poly'])[[3,2]],np.asarray(a['z1'])[[3,2]],
+             np.asarray(b['poly'])[[0,1]],np.asarray(b['z1'])[[0,1]])
+    origin,along,lateral,datum=frame
+    def world(points):
+        points=np.asarray(points);return origin+points[:,0,None]*along+points[:,1,None]*lateral
+    ground_gap=0.
+    for surface in joins:
+        edge=np.asarray(surface['poly'])[[1,2]];z=np.asarray(surface['z1'])[[1,2]]+datum
+        ground_gap=max(ground_gap,float(np.max(abs(G.contact(world(edge))[0]-z))))
+    if max(gaps)>1e-4 or ground_gap>1e-4 or max(steps)>step_limit+1e-9:
+        raise ValueError(f'Access has an open edge or an excessive height step: edge={max(gaps):.9f}m ground={ground_gap:.9f}m step={max(steps):.9f}m')
+    continuation=np.array([end-across*walk_width/2,end+.4*direction-across*walk_width/2,
+                           end+.4*direction+across*walk_width/2,end+across*walk_width/2])
+    ground=owned_triangles(G,world(continuation))
+    ground_slope=cap_slope(ground)
+    if ground_slope>ACCESS_SLOPE_DEG+1e-8:
+        raise ValueError('Access ends on nonwalkable final ground')
+    proof=dict(triangles=len(triangles),maximum_slope_deg=slope,slope_limit_deg=ACCESS_SLOPE_DEG,
+                steps_m=steps,maximum_step_m=max(steps),step_limit_m=step_limit,
+                minimum_tread_m=min(tread,last_tread) if len(treads)>1 else last_tread,tread_limit_m=tread_min,
+                shared_edge_gap_m=max(gaps),ground_edge_gap_m=ground_gap,
+                continuation=dict(width_m=walk_width,length_m=.4,triangles=len(ground),
+                                  maximum_slope_deg=ground_slope,complete_coverage=True))
+    proof['pass']=True
+    return proof
 
 
 def area(poly):

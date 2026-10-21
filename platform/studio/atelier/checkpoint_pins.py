@@ -121,4 +121,3 @@ def release_pin(remote, name, reason):
         return
     value = dict(schema=1, id=name, state='released', reason=reason, released=clock(remote))
     put(remote, value, previous=previous)
-

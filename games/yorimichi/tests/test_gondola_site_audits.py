@@ -12,8 +12,16 @@ SOURCE=Path(__file__).resolve().parents[1]/'world/regions/gondola/site.py'
 
 def helper(name,namespace):
     tree=ast.parse(SOURCE.read_text())
-    node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
-    exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),namespace)
+    names={name}
+    if name=='access_stair':
+        names.add('emit_access_floor')
+        with gondola_modules('solid',pure=False):
+            from gondola.support import floor_caps
+        namespace.setdefault('floor_caps',floor_caps)
+        namespace.setdefault('access_walk_audit',lambda *a,**k:{'pass':True})
+        namespace.setdefault('W',SimpleNamespace(STEP=.3,TREAD_MIN=.25,MIN_WIDTH=.9))
+    nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in names]
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(SOURCE),'exec'),namespace)
     return namespace[name]
 
 

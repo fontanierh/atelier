@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 import tempfile
 import time
+import uuid
 
 from . import build_products, manifest, paths
 from .build_cache import atomic_json
@@ -58,9 +59,13 @@ def reason(value):
 
 
 def _guard(ctx, operation, key=None):
-    """Native-file copies use one normal owned-child admission/guard lifecycle."""
+    """@cc [owner:fontanierh,label:safety] checkpoint-transfer-invocation
+    Native-file copies MUST enter the normal owned-child admission/guard lifecycle with
+    its required canonical UUID invocation identity. Invalid transfer metadata MUST NOT
+    authorize bypassing the guard or publishing a successful restoration.
+    """
     from atelier.harness.safety import guarded
-    nonce = os.urandom(12).hex()
+    nonce = uuid.uuid4().hex
     folder = ctx.logs / ('checkpoint-' + operation + '-' + nonce + '.guard')
     argv = [sys.executable, '-m', 'atelier.checkpoint_worker', operation, ctx.game, str(folder)]
     if key:

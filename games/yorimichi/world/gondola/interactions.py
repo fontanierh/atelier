@@ -154,6 +154,112 @@ def walking_headroom(query,floors):
                     raise ValueError(f'Walking headroom intersects final {key} triangle {index}')
 
 
+def access_headroom(access,meshes,layout,G,frame):
+    """@cc [owner:fontanierh,label:correctness] cross-mesh-access-headroom
+    The complete minimum-width access corridor MUST clear the station's actual
+    visual/collision shells, foundation and its own rails, bearing pads, posts
+    and feet. Only audited walking slabs and risers MAY supply the floor rather
+    than obstacles. Every turn/end cap MUST include the full capsule footprint.
+    """
+    from types import SimpleNamespace
+    from gondola.support import floor_caps,intersection,area,owned_triangles,clipped_coverage,cap_slope
+    identity=(np.zeros(2),np.array([1.,0.]),np.array([0.,1.]),0.)
+    obstacles=[]
+    for mesh in meshes:
+        faces=[]
+        for first,last,tag,*_ in mesh.parts:
+            if tag not in {'access_floor','access_riser','access_landing'}:
+                faces.extend(mesh.faces[first:last])
+        obstacles.append(SimpleNamespace(verts=mesh.verts,faces=faces))
+    visual=world_triangles(obstacles,identity)
+    collision=[]
+    for proxy in layout['obstacles']:
+        polygon=np.asarray(proxy['poly']);low=np.asarray(proxy['z0']);high=np.asarray(proxy['z1'])
+        collision.extend(floor_caps({'poly':polygon,'z1':low}))
+        collision.extend(floor_caps({'poly':polygon,'z1':high}))
+        for i,j in zip(range(len(polygon)),np.roll(np.arange(len(polygon)),-1)):
+            q=np.array([[*polygon[i],low[i]],[*polygon[j],low[j]],
+                        [*polygon[j],high[j]],[*polygon[i],high[i]]])
+            collision.extend((q[[0,1,2]],q[[0,2,3]]))
+    collision=np.asarray(collision,float).reshape(-1,3,3)
+    path=np.asarray(access['route'],float)[:,:2]
+    masks=[];half=.45
+    for a,b in zip(path,path[1:]):
+        axis=b-a;length=np.linalg.norm(axis)
+        if length<1e-10:continue
+        axis/=length;normal=np.array([-axis[1],axis[0]])
+        masks.append(np.array([a-half*axis-half*normal,b+half*axis-half*normal,
+                               b+half*axis+half*normal,a-half*axis+half*normal]))
+    floors=[]
+    for surface in access['surfaces']:
+        for triangle in floor_caps(surface):
+            for mask in masks:
+                if not (np.all(triangle[:,:2].max(0)>=mask.min(0)) and
+                        np.all(triangle[:,:2].min(0)<=mask.max(0))):continue
+                polygon=intersection(triangle,mask)
+                if area(polygon)<=1e-9:continue
+                for i in range(1,len(polygon)-1):
+                    piece=np.asarray([polygon[0],polygon[i],polygon[i+1]])
+                    if area(piece)>1e-9:floors.append(piece)
+    # Access slabs end at the kit and ground boundaries; their clipped caps
+    # alone cannot cover a capsule overhanging either real endpoint.
+    route=np.asarray(access['route'],float)
+    endpoint_count=0
+    head=route[0];axis=route[1,:2]-head[:2];axis/=np.linalg.norm(axis)
+    normal=np.array([-axis[1],axis[0]])
+    head_mask=np.array([head[:2]-.45*axis-half*normal,head[:2]-half*normal,
+                        head[:2]+half*normal,head[:2]-.45*axis+half*normal])
+    head_floors=[]
+    head_sources=[(triangle,0.) for surface in access['surfaces'] for triangle in floor_caps(surface)]
+    walking_names={'platform','plaza','boardwalk','stair landing','stair step'}
+    for proxy in layout['obstacles']:
+        if proxy['name'] in walking_names:
+            head_sources.extend((t,.001) for t in floor_caps({'poly':proxy['poly'],'z1':proxy['z1']}))
+    for triangle,tolerance in head_sources:
+        xy=triangle[:,:2]
+        gradient=np.linalg.solve(xy[1:]-xy[0],triangle[1:,2]-triangle[0,2])
+        polygon=[np.r_[q,triangle[0,2]+(q-xy[0])@gradient] for q in head_mask]
+        # The kit layout rounds its access edge to millimetres. Extend only
+        # the source floor's identity by that bound; obstacle clipping remains exact.
+        for a,b in zip(xy,np.roll(xy,-1,axis=0)):
+            edge=b-a;length=np.linalg.norm(edge)
+            augmented=[np.r_[(edge[0]*(q[1]-a[1])-edge[1]*(q[0]-a[0]))/length,q] for q in polygon]
+            polygon=[q[1:] for q in clip(augmented,0,-tolerance,True)]
+            if not polygon:break
+        if area(polygon)<=1e-9:continue
+        if np.max(abs(np.asarray(polygon)[:,2]-head[2]))>.1:continue
+        for i in range(1,len(polygon)-1):
+            piece=np.asarray([polygon[0],polygon[i],polygon[i+1]])
+            if area(piece)>1e-9:head_floors.append(piece)
+    clipped_coverage(np.asarray(head_floors),head_mask)
+    if cap_slope(head_floors)>40.+1e-8:
+        raise ValueError('Access head ends on a nonwalkable kit floor')
+    end=route[-1];axis=end[:2]-route[-2,:2];axis/=np.linalg.norm(axis)
+    normal=np.array([-axis[1],axis[0]])
+    end_mask=np.array([end[:2]-half*normal,end[:2]+.45*axis-half*normal,
+                       end[:2]+.45*axis+half*normal,end[:2]+half*normal])
+    origin,along,lateral,datum=frame
+    world=origin+end_mask[:,0,None]*along+end_mask[:,1,None]*lateral
+    ground=owned_triangles(G,world)
+    delta=ground[:,:,:2]-origin
+    end_floors=np.stack((delta@along,delta@lateral,ground[:,:,2]-datum),axis=2)
+    end_floors=end_floors[np.array([area(t)>1e-9 for t in end_floors])]
+    if cap_slope(end_floors)>40.+1e-8:
+        raise ValueError('Access endpoint capsule leaves walkable owned ground')
+    floors.extend(head_floors);floors.extend(end_floors)
+    endpoint_count=len(head_floors)+len(end_floors)
+    if not floors or not len(visual) or not len(collision):
+        raise ValueError('Missing complete access cross-mesh headroom geometry')
+    floors=np.asarray(floors,float)
+    low=floors[:,:,:2].min((0,1))-1.;high=floors[:,:,:2].max((0,1))+1.
+    query=StructureClearance({'visual':visual,'collision':collision},[*low,*high])
+    walking_headroom(query,floors)
+    return {'pass':True,'width_m':2*half,'height_m':1.7,'floor_allowance_m':.05,
+            'floor_triangles':len(floors),'visual_triangles':len(visual),'collision_triangles':len(collision),
+            'complete_turn_caps':True,'complete_endpoint_caps':True,
+            'endpoint_triangles':endpoint_count,'kit_edge_tolerance_m':.001}
+
+
 def flight_clearance(metadata,manifest,boxes,profile,envelope):
     """A rotating hull column during climb, then complete high cruise legs."""
     ship=np.asarray(metadata['stations'][3]['ship'],float)
