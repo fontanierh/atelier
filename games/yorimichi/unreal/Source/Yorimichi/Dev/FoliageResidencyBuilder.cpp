@@ -476,11 +476,35 @@ bool UYorimichiFoliageResidencyBuilder::SelfTest()
         if (!Generated) Passed=false;
         else
         {
+            // The real producer exports each generated source LOD's render
+            // data, including its quantized colours/normals. Its certified
+            // prepared corners therefore come from that exact readback, not
+            // from the pre-render LOD0 float colours used by the other fixtures.
+            TArray<FMeshDescription> GeneratedPrepared;GeneratedPrepared.SetNum(4);
+            GeneratedPrepared[0]=Levels[0];
+            for (int32 L=1;L<4;++L)
+            {
+                Generated->ExportStaticMeshLOD(Generated->GetRenderData()->LODResources[L],GeneratedPrepared[L]);
+                auto Names=FStaticMeshAttributes(GeneratedPrepared[L]).GetPolygonGroupMaterialSlotNames();
+                // Both fixture sections are populated, in explicit Rigid/Leaf order.
+                for (auto G:GeneratedPrepared[L].PolygonGroups().GetElementIDs())
+                    Names[G]=Materials[G.GetValue()].MaterialSlotName;
+            }
+            for (auto& D:GeneratedPrepared)
+            {
+                auto Names=FStaticMeshAttributes(D).GetPolygonGroupMaterialSlotNames();
+                Names[D.CreatePolygonGroup()]=TEXT("CanopyNear");Names[D.CreatePolygonGroup()]=TEXT("CanopyFar");
+            }
+            auto* GeneratedInput=Build(Directory/TEXT("GeneratedInput"),GeneratedPrepared,Materials,
+                {1.f,.24f,.07f,.018f},ECollision::None,Empty);Objects.Add(GeneratedInput);
+            TArray<FMeshDescription> GeneratedShadow={GeneratedPrepared.Last()};
+            auto* GeneratedShade=Build(Directory/TEXT("GeneratedShade"),GeneratedShadow,Materials,
+                {1.f},ECollision::None,Empty);Objects.Add(GeneratedShade);
             // Retain compiled LOD resources while dropping higher stored source
             // descriptions: the same state produced by SetLods reduction.
             Generated->SetNumSourceModels(1);Generated->SetNumSourceModels(4);
-            Passed=Generated->GetMeshDescription(1)==nullptr && Generated->GetRenderData()->LODResources.Num()==4;
-            const FString Row=Passed?Compact(Generated,Input,InputShadow,TEXT("roles"),{},1,false,{0,1,2,3},{},
+            Passed=GeneratedInput && GeneratedShade && Generated->GetMeshDescription(1)==nullptr && Generated->GetRenderData()->LODResources.Num()==4;
+            const FString Row=Passed?Compact(Generated,GeneratedInput,GeneratedShade,TEXT("roles"),{},1,false,{0,1,2,3},{},
                 Directory/TEXT("GeneratedLODs"),nullptr):FString{};
             for (const TCHAR* Suffix:{TEXT(""),TEXT("_Canopy"),TEXT("_Shadow")})
             {
