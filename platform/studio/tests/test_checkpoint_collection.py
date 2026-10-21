@@ -66,6 +66,66 @@ def test_failed_upload_pin_protects_parts_until_bounded_retry_expiry(fixture, tm
     assert not any(body == b'partial' for _, body in github.files.values())
 
 
+def test_pinned_draft_completion_protects_reused_older_packs_and_resumes_without_upload(fixture, tmp_path, monkeypatch):
+    github, store, remote = fixture
+    seed = checkpoint(store, tmp_path, [b'seed'])
+    seed_index = remote.publish(store, seed, 'C', revision='c' * 40)
+    shared = seed_index['blobs'][sha(b'seed')][0]
+    pending = checkpoint(store, tmp_path, [b'seed', b'A'])
+    original = github.api
+    def fail_publication(path, **kwargs):
+        if (kwargs.get('method') == 'PATCH' and kwargs.get('data') == dict(draft=False)
+                and github.releases[int(path.split('/')[1])]['tag_name'] == remote.prefix + 'A'):
+            raise release.TransportError(500)
+        return original(path, **kwargs)
+    monkeypatch.setattr(github, 'api', fail_publication)
+    with pytest.raises(release.TransportError):
+        remote.publish(store, pending, 'A', revision='a' * 40)
+    draft = release.find_release(github, remote.prefix + 'A')
+    original_index = github.files[(draft['id'], 'checkpoint.json')]
+    monkeypatch.setattr(github, 'api', original)
+    newest = checkpoint(store, tmp_path, [b'B'])
+    remote.publish(store, newest, 'B', revision='b' * 40)
+    assert (shared['release'], 'pack-' + shared['pack'] + '.bin') in github.files
+    assert github.files[(draft['id'], 'checkpoint.json')] == original_index
+    def no_upload(*args, **kwargs):
+        pytest.fail('Completed immutable draft must resume without reuploading')
+    monkeypatch.setattr(github, 'upload', no_upload)
+    result = remote.publish(store, pending, 'A', revision='a' * 40)
+    assert cp.canonical(result) == original_index[1]
+
+
+def test_live_publication_without_completion_defers_all_pack_deletion_until_expiry(fixture, tmp_path):
+    github, store, remote = fixture
+    seed = checkpoint(store, tmp_path, [b'seed'])
+    old = remote.publish(store, seed, 'C', revision='c' * 40)
+    pending = checkpoint(store, tmp_path, [b'partial'])
+    def interrupted():
+        raise cp.CheckpointError('interrupted before completion')
+    with pytest.raises(cp.CheckpointError, match='before completion'):
+        remote.publish(store, pending, 'A', revision='a' * 40, revalidate=interrupted)
+    newest = checkpoint(store, tmp_path, [b'B'])
+    remote.publish(store, newest, 'B', revision='b' * 40)
+    part = old['blobs'][sha(b'seed')][0]
+    key = part['release'], 'pack-' + part['pack'] + '.bin'
+    assert key in github.files
+    github.now += pins.RETRY_SECONDS + 1
+    remote.publish(store, newest, 'B', revision='b' * 40)
+    assert key not in github.files
+
+
+def test_mismatched_pinned_draft_completion_refuses_before_any_pack_deletion(fixture, tmp_path):
+    github, store, remote = fixture
+    seed = checkpoint(store, tmp_path, [b'seed'])
+    index = remote.publish(store, seed, 'C', revision='c' * 40)
+    with remote.transaction():
+        pins.upload(remote, 'f' * 64, 'C')
+        before = deepcopy(github.files)
+        with pytest.raises(cp.CheckpointError, match='publication completion identity'):
+            gc.collect(remote, remote.candidates()[0], index)
+        assert github.files == before
+
+
 def test_invalid_remote_pin_blocks_all_deletion(fixture, tmp_path):
     github, store, remote = fixture
     first = checkpoint(store, tmp_path, [b'old'])

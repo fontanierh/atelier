@@ -193,7 +193,9 @@ input-keyed task result and all explicit live checkpoint pins. Only then are old
 releases removed. Referenced packs remain in immutable storage releases, preserving their numeric asset
 IDs; the index may reuse their bytes without another upload. Packs referenced by neither that index nor
 a live pin are deleted, followed by empty storage releases. Logs report only remotely confirmed freed bytes.
-Interrupted uploads receive seven-day retry pins. An explicit acceptance pin carries an expiry or a named
+Interrupted uploads receive seven-day retry pins. Their immutable draft indexes protect every
+referenced pack, including packs reused from older saves. Cleanup defers while a live publication
+has no complete reference inventory; its retry pin bounds that deferral. An explicit acceptance pin carries an expiry or a named
 release condition; releasing it writes a remote tombstone so another machine's stale local file cannot
 resurrect it. Missing or malformed pin evidence stops cleanup. Public playtests, other games and other
 repositories are outside this cleanup.

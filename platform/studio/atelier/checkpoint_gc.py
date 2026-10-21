@@ -22,6 +22,20 @@ def collect(remote, current, index):
     import tempfile
     from pathlib import Path
     with tempfile.TemporaryDirectory() as directory:
+        for publication in publications:
+            item = release.find_release(remote.github, remote.prefix + publication['tag'])
+            if item is None or 'checkpoint.json' not in release.asset_map(remote.github, item):
+                # A retry may already have selected older locations, but has not yet made
+                # its reference inventory durable. Its explicit seven-day pin bounds this
+                # conservative deferral; never guess which shared packs are safe to erase.
+                remote.echo('private cache cleanup deferred: live publication has no complete reference inventory')
+                return dict(removed_packs=0, freed_bytes=0, deferred=True)
+            descriptor = remote.descriptor(item, Path(directory))
+            if descriptor['key'] != publication['key']:
+                raise CheckpointError('Pinned publication completion identity differs; deletion refused')
+            archive.verify(remote, descriptor)
+            for number, packs in archive.references(descriptor).items():
+                references.setdefault(number, {}).update(packs)
         for item in remote.candidates():
             descriptor = remote.descriptor(item, Path(directory))
             if descriptor['key'] in checkpoints:
