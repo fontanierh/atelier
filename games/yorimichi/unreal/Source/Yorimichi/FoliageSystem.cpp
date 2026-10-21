@@ -368,22 +368,25 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
     // CPU queries. The caller has completed GPU upload before entering here.
     if (GIsEditor || IsRunningCommandlet() || GetWorld()->WorldType!=EWorldType::Game || IsRayTracingEnabled()) return;
     check(IsInGameThread());
+    int32 Released=0;TMap<FString,int32> Refusals;
     for (auto It=StartupVertexCopies.CreateIterator();It;++It)
     {
         UStaticMesh* Mesh=It->Get();
         if (!Mesh) { It.RemoveCurrent();continue; }
         auto* Render=Mesh->GetRenderData();
-        if (!Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/")) || Mesh->bAllowCPUAccess ||
-            Mesh->IsStreamable() || Mesh->RenderResourceSupportsStreaming() ||
-            !Render || Render->NextCachedRenderData || Render->HasValidNaniteData())
-        { It.RemoveCurrent();continue; }
-        if (Mesh->IsCompiling() || Mesh->HasPendingInitOrStreaming() || !Render->IsInitialized()) continue;
+        const TCHAR* Refusal=!Mesh->GetPathName().StartsWith(TEXT("/Game/FoliageSystem/"))?TEXT("ownership"):
+            Mesh->bAllowCPUAccess?TEXT("cpu_access"):Mesh->IsStreamable()?TEXT("streaming_registration"):
+            Mesh->RenderResourceSupportsStreaming()?TEXT("streaming_support"):!Render?TEXT("no_render_data"):
+            Render->NextCachedRenderData?TEXT("other_platforms"):Render->HasValidNaniteData()?TEXT("nanite"):nullptr;
+        if (Refusal) { ++Refusals.FindOrAdd(Refusal);It.RemoveCurrent();continue; }
+        if (Mesh->IsCompiling() || Mesh->HasPendingInitOrStreaming() || !Render->IsInitialized())
+        { ++Refusals.FindOrAdd(TEXT("pending_initialization"));continue; }
         bool Ready=true;
         for (auto& LOD:Render->LODResources)
             if (LOD.GetNumVertices()>0 && (!LOD.VertexBuffers.StaticMeshVertexBuffer.IsValid() ||
                 !LOD.VertexBuffers.PositionVertexBuffer.VertexBufferRHI.IsValid() ||
                 (LOD.VertexBuffers.ColorVertexBuffer.GetNumVertices()>0 && !LOD.VertexBuffers.ColorVertexBuffer.VertexBufferRHI.IsValid()))) Ready=false;
-        if (!Ready) continue;
+        if (!Ready) { ++Refusals.FindOrAdd(TEXT("pending_rhi"));continue; }
         const uint64 Before=FPlatformMemory::GetStats().UsedPhysical;
         for (auto& LOD:Render->LODResources)
         {
@@ -396,6 +399,8 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
             Buffers.StaticMeshVertexBuffer.CleanUp();
             Buffers.PositionVertexBuffer.CleanUp();
             Buffers.ColorVertexBuffer.CleanUp();
+            check(!Buffers.StaticMeshVertexBuffer.GetAllowCPUAccess() &&
+                !Buffers.PositionVertexBuffer.GetAllowCPUAccess() && !Buffers.ColorVertexBuffer.GetAllowCPUAccess());
             check(Vertices==Buffers.StaticMeshVertexBuffer.GetNumVertices() && Channels==Buffers.StaticMeshVertexBuffer.GetNumTexCoords());
             check(PositionRHI==Buffers.PositionVertexBuffer.VertexBufferRHI &&
                 TangentRHI==Buffers.StaticMeshVertexBuffer.TangentsVertexBuffer.VertexBufferRHI &&
@@ -403,8 +408,10 @@ void UYorimichiFoliageSubsystem::ReleaseStartupVertexCopies()
         }
         UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX RELEASE %s process_mib_before=%.1f process_mib_after=%.1f"),
             *Mesh->GetPathName(),Before/1048576.,FPlatformMemory::GetStats().UsedPhysical/1048576.);
-        It.RemoveCurrent();
+        ++Released;It.RemoveCurrent();
     }
+    FString Reasons;for (const auto& Item:Refusals) Reasons+=FString::Printf(TEXT(" %s=%d"),*Item.Key,Item.Value);
+    UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP VERTEX SUMMARY released=%d pending=%d refusals:%s"),Released,StartupVertexCopies.Num(),*Reasons);
 #endif
 }
 
@@ -475,7 +482,11 @@ bool UYorimichiFoliageSubsystem::Refresh()
     // refreshes and preference toggles must not introduce GPU-idle stalls.
     if (!bStartupCompleted)
         for (TActorIterator<AJapanWorld> It(GetWorld());It;++It)
-            if (It->bGameplayReady) { bStartupCompleted=true;StartupMeasuredMeshes.Reset();break; }
+            if (It->bGameplayReady)
+            {
+                UE_LOG(LogTemp,Display,TEXT("FOLIAGE STARTUP COMPLETE pending_vertex_copies=%d"),StartupVertexCopies.Num());
+                bStartupCompleted=true;StartupMeasuredMeshes.Reset();break;
+            }
     TSet<UStaticMeshComponent*> Registered;
     for (const auto& Entry:Sources) Registered.Add(Entry.Original);
     TArray<UStaticMeshComponent*> NewSources;
