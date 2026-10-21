@@ -92,6 +92,8 @@ checks source-package hashes before and after generation.
 
 Before claiming visual quality or speed, retain source-revision-bound real-time captures and GPU timings
 for close trees, under-canopy views, treehouse decks, city streets, dense forest and aerial traversal.
+For uncapped Metal timings, use the fullscreen play profile: UE 5.8 forces display synchronization in windowed mode even when `r.VSync=0`. Confirm the effective viewport and pacing before interpreting gains.
+
 Compare on/off in the same settled session at fixed resolution and settings. Check shadow/base/depth pass
 times and p95/p99 frame time, not just triangle counts. Inspect patch transitions and clearings in motion.
 An optimization claim requires those native checks; geometry unit tests alone do not establish it.
